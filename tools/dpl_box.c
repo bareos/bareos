@@ -517,7 +517,7 @@ ls_func(int argc,
       if (1 == lflag)
         {
           stm = localtime(&resource->last_modified);
-          printf("%12ld %04d-%02d-%02d %02d:%02d %s\n", resource->size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, resource->key);
+          printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) resource->size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, resource->key);
         }
       else
         {

@@ -407,9 +407,9 @@ data_pricing_new()
 void
 dpl_data_pricing_print(struct dpl_data_pricing *datp)
 {
-  printf("%lu: %s%.03f/%lu/%s\n", 
-         datp->limit, currency_str(datp->currency),
-         datp->price, datp->quantity, duration_str(datp->duration));
+  printf("%llu: %s%.03f/%llu/%s\n", 
+         (long long unsigned) datp->limit, currency_str(datp->currency),
+         datp->price, (long long unsigned) datp->quantity, duration_str(datp->duration));
 }
 
 void
@@ -481,7 +481,7 @@ duration_type(char *str)
   assert(0);
 }
 
-static size_t 
+static unsigned long long
 multiplicator(enum dpl_unit unit)
 {
   switch (unit)
@@ -1029,7 +1029,7 @@ dpl_log_charged_event(dpl_ctx_t *ctx,
   time_t t;
 
   t = time(0);
-  fprintf(ctx->event_log, "%ld;%s;%s;%ld\n", t, type, subtype, size);
+  fprintf(ctx->event_log, "%ld;%s;%s;%llu\n", t, type, subtype, (unsigned long long) size);
   return DPL_SUCCESS;
 }
               

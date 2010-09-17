@@ -155,5 +155,5 @@ dpl_ctx_t *dpl_ctx_new(char *droplets_dir, char *profile_name);
 void dpl_ctx_free(dpl_ctx_t *ctx);
 double dpl_price_storage(dpl_ctx_t *ctx, size_t size);
 char *dpl_price_storage_str(dpl_ctx_t *ctx, size_t size);
-char *dpl_size_str(size_t size);
+char *dpl_size_str(uint64_t size);
 #endif

@@ -100,7 +100,7 @@ static void *test_main(void *arg)
 
       pthread_testcancel();
 
-      snprintf(id_str, sizeof (id_str), "%ld", oid);
+      snprintf(id_str, sizeof (id_str), "%llu", (unsigned long long) oid);
       
       if (rflag)
         block_size = rand() % max_block_size;

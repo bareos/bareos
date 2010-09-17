@@ -33,7 +33,7 @@ do_ls_obj(dpl_dirent_t *entry,
       struct tm *stm;
       
       stm = localtime(&entry->last_modified);
-      printf("%12ld %04d-%02d-%02d %02d:%02d %s\n", entry->size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, entry->ino.key);
+      printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) entry->size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, entry->ino.key);
     }
   else
     {
@@ -54,7 +54,7 @@ cmd_ls(void *cb_arg,
   dpl_ftype_t obj_type;
   char *path;
   char *obj_name;
-  u_int flags;
+  u_int flags = 0u;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
 

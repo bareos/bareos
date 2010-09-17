@@ -140,7 +140,7 @@ dpl_price_storage_str(dpl_ctx_t *ctx,
  * @return 
  */
 char *
-dpl_size_str(size_t size)
+dpl_size_str(uint64_t size)
 {
   static char str[256];
   char *unit;
@@ -161,14 +161,14 @@ dpl_size_str(size_t size)
       divisor = 1000*1000;
       unit = "MB";
     }
-  else if (size < (1000*1000*1000*1000LL))
+  else if (size < (1000LL*1000LL*1000LL*1000LL))
     {
-      divisor = 1000*1000*1000;
+      divisor = 1000LL*1000LL*1000LL;
       unit = "GB";
     }
   else
     {
-      divisor = 1000*1000*1000*1000LL;
+      divisor = 1000LL*1000LL*1000LL*1000LL;
       unit = "PB";
     }
 
