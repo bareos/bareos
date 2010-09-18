@@ -124,6 +124,7 @@ tcmd_def	cmd_defs[] =
     {"mkdir",   cmd_mkdir,      "make directory"},
     {"pwd",     cmd_pwd,        "print working dir"},
     {"quit",	cmd_quit,	"quit program"},
+    {"rmdir",   cmd_rmdir,      "remove directory"},
     {"set",     cmd_set,        "list/set variables"},
     {"status",  cmd_status,     "get status of last command"},
     {"unset",   cmd_unset,      "remove variable"},

@@ -196,14 +196,6 @@ struct dpl_conf_ctx
 
 /**/
 
-#define DPL_TRACE_CONN  (1u<<0) /*!< trace connection open/get/release/close */
-#define DPL_TRACE_IO    (1u<<1) /*!< trace I/O */
-#define DPL_TRACE_HTTP  (1u<<2) /*!< trace HTTP */
-#define DPL_TRACE_SSL   (1u<<3) /*!< trace SSL */
-#define DPL_TRACE_S3    (1u<<4) /*!< trace S3 */
-#define DPL_TRACE_VDIR  (1u<<5) /*!< trace vdir calls */
-#define DPL_TRACE_BUF   (1u<<6) /*!< trace buffers */
-
 #define DPL_TRACE(ctx, level, format, ...) do {if (ctx->trace_level & level) dpl_trace(ctx, level, __FILE__, __LINE__, format, ##__VA_ARGS__  );} while (0)
 
 /* PROTO droplets_utils.c */

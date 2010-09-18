@@ -61,7 +61,8 @@ cmd_pwd.o \
 cmd_set.o \
 cmd_unset.o \
 cmd_ls.o \
-cmd_mkdir.o
+cmd_mkdir.o \
+cmd_rmdir.o
 
 all: prod
 

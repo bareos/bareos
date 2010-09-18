@@ -40,6 +40,7 @@ typedef int dpl_status_t;
 #define DPL_ELIMIT                (-8) /*!< Limit has been reached */
 #define DPL_ENAMETOOLONG          (-9)
 #define DPL_ENOTDIR               (-10)
+#define DPL_ENOTEMPTY             (-11)
 
 /**/
 
@@ -65,12 +66,20 @@ enum dpl_data_type
 #define DPL_DEFAULT_WRITE_TIMEOUT       30
 #define DPL_DEFAULT_READ_BUF_SIZE       8192
 
+#define DPL_TRACE_CONN  (1u<<0) /*!< trace connection */
+#define DPL_TRACE_IO    (1u<<1) /*!< trace I/O */
+#define DPL_TRACE_HTTP  (1u<<2) /*!< trace HTTP */
+#define DPL_TRACE_SSL   (1u<<3) /*!< trace SSL */
+#define DPL_TRACE_S3    (1u<<4) /*!< trace S3 */
+#define DPL_TRACE_VDIR  (1u<<5) /*!< trace vdir calls */
+#define DPL_TRACE_BUF   (1u<<6) /*!< trace buffers */
+
 #define DPL_MAXPATHLEN 1024
 #define DPL_MAXNAMLEN  255
 
 typedef struct dpl_ino
 {
-  char key[DPL_MAXNAMLEN];
+  char key[DPL_MAXPATHLEN];
 } dpl_ino_t;
 
 typedef struct dpl_ctx
@@ -97,7 +106,6 @@ typedef struct dpl_ctx
   u_int trace_level;
   char *pricing;              /*!< might be NULL */
   u_int read_buf_size;
-  int encrypt;
   char *encrypt_key;
  
   /*

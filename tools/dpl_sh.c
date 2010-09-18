@@ -81,9 +81,11 @@ main(int argc,
     }
 
   ctx->cur_bucket = xstrdup(argv[0]);
+  memset(&ctx->cur_ino, 0, sizeof (ctx->cur_ino));
   ctx->cur_ino = DPL_ROOT_INO;
-  //ctx->trace_level = 0xffffffff & ~0x40;
-  //ctx->trace_level = 0xffffffff;
+  //ctx->trace_level = ~0;
+  //ctx->trace_level = ~0 & DPL_TRACE_BUF;
+  ctx->trace_level = DPL_TRACE_VDIR;
 
   shell_install_cmd_defs(cmd_defs);
   //rl_attempted_completion_function = shell_completion;

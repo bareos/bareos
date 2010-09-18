@@ -288,18 +288,6 @@ conf_cb_func(void *cb_arg,
     {
       ctx->read_buf_size = strtoul(value, NULL, 0);
     }
-  else if (!strcmp(var, "encrypt"))
-    {
-      if (!strcasecmp(value, "true"))
-        ctx->encrypt = 1;
-      else if (!strcasecmp(value, "false"))
-        ctx->encrypt = 0;
-      else
-        {
-          fprintf(stderr, "invalid value '%s'\n", var);
-          return -1;
-        }
-    }
   else if (!strcmp(var, "encrypt_key"))
     {
       ctx->encrypt_key = strdup(value);
@@ -535,18 +523,15 @@ dpl_profile_post(dpl_ctx_t *ctx)
     }
   
   //encrypt
-  if (1 == ctx->encrypt)
+  if (NULL == ctx->encrypt_key)
     {
-      if (NULL == ctx->encrypt_key)
-        {
-          fprintf(stderr, "misding 'encrypt_key'\n");
-          ret = DPL_FAILURE;
-          goto end;
-        }
-
-      OpenSSL_add_all_digests();
-      OpenSSL_add_all_ciphers();
+      fprintf(stderr, "misding 'encrypt_key'\n");
+      ret = DPL_FAILURE;
+      goto end;
     }
+
+  OpenSSL_add_all_digests();
+  OpenSSL_add_all_ciphers();
 
   //event log
   ret2 = dpl_open_event_log(ctx);

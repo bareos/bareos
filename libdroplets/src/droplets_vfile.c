@@ -22,7 +22,7 @@
 void
 dpl_vfile_free(dpl_vfile_t *vfile)
 {
-  if (1 == vfile->conn->ctx->encrypt)
+  if (vfile->flags & DPL_VFILE_MODE_ENCRYPT)
     {
       if (NULL != vfile->cipher_ctx)
         EVP_CIPHER_CTX_free(vfile->cipher_ctx);
@@ -48,7 +48,7 @@ dpl_vfile_new(dpl_conn_t *conn)
   /*
    * encrypt
    */
-  if (1 == conn->ctx->encrypt)
+  if (vfile->flags & DPL_VFILE_MODE_ENCRYPT)
     {
       const EVP_CIPHER *cipher;
       const EVP_MD *md;
@@ -325,7 +325,7 @@ dpl_vfile_write_all(dpl_vfile_t *vfile,
   struct iovec iov;
   int ret;
   
-  if (1 == vfile->conn->ctx->encrypt)
+  if (vfile->flags & DPL_VFILE_MODE_ENCRYPT)
     {
       char *obuf;
       int olen;

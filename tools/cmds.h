@@ -19,7 +19,7 @@
 
 extern tcmd_def	cmd_defs[];
 
-/* PROTO cmds.c cmd_cd.c cmd_lcd.c cmd_pwd.c cmd_set.c cmd_unset.c cmd_ls.c cmd_mkdir.c */
+/* PROTO cmds.c cmd_cd.c cmd_lcd.c cmd_pwd.c cmd_set.c cmd_unset.c cmd_ls.c cmd_mkdir.c cmd_rmdir.c */
 /* ./cmds.c */
 int cmd_quit(void *cb_arg, int argc, char **argv);
 int cmd_echo(void *cb_arg, int argc, char **argv);
@@ -47,4 +47,7 @@ int cmd_ls(void *cb_arg, int argc, char **argv);
 /* ./cmd_mkdir.c */
 void cmd_mkdir_usage(void);
 int cmd_mkdir(void *cb_arg, int argc, char **argv);
+/* ./cmd_rmdir.c */
+void cmd_rmdir_usage(void);
+int cmd_rmdir(void *cb_arg, int argc, char **argv);
 #endif

@@ -39,6 +39,13 @@ dpl_status_str(dpl_status_t status)
       return "DPL_EIO";
     case DPL_ELIMIT:
       return "DPL_ELIMIT";
+    case DPL_ENAMETOOLONG:
+      return "DPL_ENAMETOOLONG";
+    case DPL_ENOTDIR:
+      return "DPL_ENOTDIR";
+    case DPL_ENOTEMPTY:
+      return "DPL_ENOTEMPTY";
+
     }
 
   return "Unknown error";

@@ -17,13 +17,16 @@
 #ifndef __DROPLETS_VFILE_H__
 #define __DROPLETS_VFILE_H__ 1
 
-#define DPL_VFILE_MODE_READ  (1u<<0)
-#define DPL_VFILE_MODE_WRITE (1u<<1)
-#define DPL_VFILE_MODE_CREAT (1u<<2)
-#define DPL_VFILE_MODE_EXCL  (1u<<3)
+#define DPL_VFILE_MODE_READ    (1u<<0)
+#define DPL_VFILE_MODE_WRITE   (1u<<1)
+#define DPL_VFILE_MODE_CREAT   (1u<<2)
+#define DPL_VFILE_MODE_EXCL    (1u<<3)
+#define DPL_VFILE_MODE_ENCRYPT (1u<<4)
 
 typedef struct
 {
+  u_int flags;
+
   dpl_conn_t *conn;
 
   /*
