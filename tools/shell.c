@@ -14,28 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <errno.h>
-#include <readline/readline.h>
-#include <readline/history.h>
-#include "xfuncs.h"
-#include "shell.h"
-#include "vars.h"
+#include "dpl_sh.h"
 
 static char sargmem[SHELL_MAX_ARGV][SHELL_MAX_ARG_LEN];
 static char *sargv[SHELL_MAX_ARGV + 1];
 static int  sargc;
-
-/**/
-
-int
-do_quit()
-{
-  return 0;
-}
 
 /**/
 
@@ -49,12 +32,12 @@ const char *shell_err_strings[] =
   };
 
 const char *
-shell_error_str(tshell_error err)
+shell_error_str(enum shell_error err)
 {
   return (shell_err_strings[err]);
 }
 
-static tcmd_def *g_cmd_defs = NULL;
+static struct cmd_def **g_cmd_defs = NULL;
 
 /** 
  * for completion
@@ -62,7 +45,7 @@ static tcmd_def *g_cmd_defs = NULL;
  * @param defs 
  */
 void 
-shell_install_cmd_defs(tcmd_def *defs)
+shell_install_cmd_defs(struct cmd_def **defs)
 {
   g_cmd_defs = defs;
 }
@@ -73,6 +56,7 @@ command_generator(const char *text,
 {
   static int list_index, len;
   char *name;
+  struct cmd_def *def;
 
   if (!state)
     {
@@ -80,16 +64,19 @@ command_generator(const char *text,
       len = strlen (text);
     }
 
-  while ((name = g_cmd_defs[list_index].name))
+  while (g_cmd_defs[list_index])
     {
+      def = g_cmd_defs[list_index];
+      name = def->name;
+
       list_index++;
 
-      if (strncmp (name, text, len) == 0)
+      if (strncmp(name, text, len) == 0)
         return xstrdup(name);
     }
 
   /* If no names matched, then return NULL. */
-  return ((char *)NULL);
+  return ((char *) NULL);
 }
 
 char **
@@ -111,14 +98,14 @@ shell_completion(const char *text,
 }
 
 int
-shell_do_cmd(tcmd_def *defs,
+shell_do_cmd(struct cmd_def **defs,
              int argc,
-             char **argv,
-             void *cb_arg)
+             char **argv)
 {
-  tcmd_def	*def, *tmp;
+  struct cmd_def *def, *tmp;
   int ret, len, found;
   char *p;
+  int i;
 
   if (argc == 0)
     return SHELL_CONT;
@@ -167,13 +154,22 @@ shell_do_cmd(tcmd_def *defs,
       var_set(argv[0], p, VAR_CMD_SET, NULL);
       return SHELL_CONT;
     }
+  else if (argc == 1 && (NULL != (p = index(argv[0], ':'))))
+    {
+      *p = 0;
+      free(ctx->cur_bucket);
+      ctx->cur_bucket = xstrdup(argv[0]);
+      ctx->cur_ino = DPL_ROOT_INO;
+      return SHELL_CONT;
+    }
 
   len = strlen(argv[0]);
 
   def = NULL;
   found = 0;
-  for (tmp = defs;tmp->name;tmp++)
+  for (i = 0;defs[i];i++)
     {
+      tmp = defs[i];
       //printf("'%s' '%s'\n", argv[0], tmp->name);
       if (!strcmp(argv[0], tmp->name))
         {
@@ -199,7 +195,7 @@ shell_do_cmd(tcmd_def *defs,
       return SHELL_CONT;
     }
 
-  ret = def->cmd(cb_arg, argc, argv);
+  ret = def->func(argc, argv);
   return ret;
 }
 
@@ -208,7 +204,6 @@ shell_do_cmd(tcmd_def *defs,
  * static. understands comments (sharp sign), double quotes, semicolon.
  * ignore whitspaces
  *
- * @param cb_arg
  * @param str the input string
  * @param cmd the callback
  * @param errp the error code
@@ -216,10 +211,9 @@ shell_do_cmd(tcmd_def *defs,
  * @return 0 if OK, -1 on failure
  */
 int	
-shell_parse(tcmd_def *defs,
+shell_parse(struct cmd_def **defs,
             char *str, 
-            void *cb_arg,
-            tshell_error *errp)
+            enum shell_error *errp)
 {
   int i, pos, skip_ws, comment, dblquote, ret;
   char c;
@@ -277,7 +271,7 @@ shell_parse(tcmd_def *defs,
 	      return -1;
 	    }
 	  
-	  if ((ret = shell_do_cmd(defs, sargc, sargv, cb_arg)) != SHELL_CONT)
+	  if ((ret = shell_do_cmd(defs, sargc, sargv)) != SHELL_CONT)
 	    return ret;
 
           memset(sargmem, 0, sizeof (sargmem));
@@ -348,22 +342,23 @@ shell_parse(tcmd_def *defs,
 }
 
 void
-shell_do(tcmd_def *defs,
-         const char *prompt,
-         void *cb_arg)
+shell_do(struct cmd_def **defs)
 {
   using_history();
 
   while (1)
     {
       char      *line;
+      char prompt[256];
+
+      snprintf(prompt, sizeof (prompt), "%s:/%s> ", ctx->cur_bucket ? ctx->cur_bucket : "", ctx->cur_ino.key);
       
       if ((line = readline(prompt)))
         {
-          tshell_error shell_err;
+          enum shell_error shell_err;
           int ret;
           
-          ret = shell_parse(defs, line, cb_arg, &shell_err);
+          ret = shell_parse(defs, line, &shell_err);
           if (ret == SHELL_EPARSE)
             {
               fprintf(stderr, 
@@ -379,7 +374,6 @@ shell_do(tcmd_def *defs,
         }
       else
         {
-          do_quit();
           return ;
         }
     }

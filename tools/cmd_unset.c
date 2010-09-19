@@ -16,16 +16,19 @@
 
 #include "dpl_sh.h"
 
-void
-unset_usage()
-{
-  fprintf(stderr, "usage: unset var\n");
-}
+int cmd_unset(int argc, char **argv);
+
+struct usage_def unset_usage[] =
+  {
+    {USAGE_NO_OPT, USAGE_MANDAT, "var", ""},
+    {0, 0u, NULL, NULL},
+  };
+
+struct cmd_def unset_cmd = {"unset", "unset variable", unset_usage, cmd_unset};
 
 int
-cmd_unset(void *cb_arg,
-        int argc,
-        char **argv)
+cmd_unset(int argc,
+          char **argv)
 {
   tvar *var;
 
@@ -33,7 +36,7 @@ cmd_unset(void *cb_arg,
   
   if (2 != argc)
     {
-      unset_usage();
+      usage_help(&unset_cmd);
       return SHELL_CONT;
     }
 

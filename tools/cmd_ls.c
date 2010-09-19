@@ -16,15 +16,19 @@
 
 #include "dpl_sh.h"
 
-void
-cmd_ls_usage()
-{
-  fprintf(stderr, "usage: ls [-l (long format)] [path]\n");
-}
+int cmd_ls(int argc, char **argv);
+
+struct usage_def ls_usage[] =
+  {
+    {'l', 0u, NULL, "long display"},
+    {0, 0u, NULL, NULL},
+  };
+
+struct cmd_def ls_cmd = {"ls", "list directory", ls_usage, cmd_ls};
 
 #define LFLAG (1u<<0)
 
-void
+static void
 do_ls_obj(dpl_dirent_t *entry,
           u_int flags)
 {
@@ -42,18 +46,14 @@ do_ls_obj(dpl_dirent_t *entry,
 }
 
 int
-cmd_ls(void *cb_arg,
-       int argc,
+cmd_ls(int argc,
        char **argv)
 {
   char opt;
   int ret;
   void *dir_hdl = NULL;
   dpl_dirent_t entry;
-  dpl_ino_t obj_ino;
-  dpl_ftype_t obj_type;
   char *path;
-  char *obj_name;
   u_int flags = 0u;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
@@ -68,7 +68,7 @@ cmd_ls(void *cb_arg,
         break ;
       case '?':
       default:
-        cmd_ls_usage();
+        usage_help(&ls_cmd);
         return SHELL_CONT;
       }
   argc -= optind;
@@ -84,37 +84,17 @@ cmd_ls(void *cb_arg,
     }
   else
     {
-      cmd_ls_usage();
+      usage_help(&ls_cmd);
+      return SHELL_CONT;
+    }
+
+  ret = dpl_opendir(ctx, path, &dir_hdl);
+  if (DPL_SUCCESS != ret)
+    {
+      fprintf(stderr, "opendir failure %s (%d)\n", dpl_status_str(ret), ret);
       return SHELL_CONT;
     }
   
-  obj_name = rindex(path, '/');
-  if (NULL != obj_name)
-    obj_name++;
-  else
-    obj_name = path;
-
-  ret = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
-  if (0 != ret)
-    {
-      fprintf(stderr, "path resolve failed %s\n", path);
-      return SHELL_CONT;
-    }
-
-  if (DPL_FTYPE_REG == obj_type)
-    {
-      fprintf(stderr, "cannot list a file\n");
-      var_set("status", "1", VAR_CMD_SET, NULL);
-      return SHELL_CONT;
-    }
-
-  ret = dpl_vdir_opendir(ctx, ctx->cur_bucket, obj_ino, &dir_hdl);
-  if (DPL_SUCCESS != ret)
-    {
-      fprintf(stderr, "unable to open %s:%s\n", ctx->cur_bucket, obj_ino.key);
-      goto end;
-    }
-
   while (1 != dpl_vdir_eof(dir_hdl))
     {
       ret = dpl_vdir_readdir(dir_hdl, &entry);

@@ -16,15 +16,18 @@
 
 #include "dpl_sh.h"
 
-void
-cmd_rmdir_usage()
-{
-  fprintf(stderr, "usage: rmdir path\n");
-}
+int cmd_rmdir(int argc, char **argv);
+
+struct usage_def rmdir_usage[] =
+  {
+    {USAGE_NO_OPT, USAGE_MANDAT, "path", ""},
+    {0, 0u, NULL, NULL},
+  };
+
+struct cmd_def rmdir_cmd = {"rmdir", "remove directory", rmdir_usage, cmd_rmdir};
 
 int
-cmd_rmdir(void *cb_arg,
-          int argc,
+cmd_rmdir(int argc,
           char **argv)
 {
   char opt;
@@ -42,7 +45,7 @@ cmd_rmdir(void *cb_arg,
       {
       case '?':
       default:
-        cmd_rmdir_usage();
+        usage_help(&rmdir_cmd);
         return SHELL_CONT;
       }
   argc -= optind;
@@ -50,7 +53,7 @@ cmd_rmdir(void *cb_arg,
 
   if (1 != argc)
     {
-      cmd_rmdir_usage();
+      usage_help(&rmdir_cmd);
       return SHELL_CONT;
     }
 

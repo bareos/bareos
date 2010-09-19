@@ -17,37 +17,29 @@
 #ifndef __SHELL_H__
 #define __SHELL_H__	1
 
+#include "usage.h"
+
 #define SHELL_MAX_ARG_LEN	128
 #define SHELL_MAX_ARGV		16
 
-typedef enum
+enum shell_error
   {
     SHELL_ERROR_NONE,
     SHELL_ERROR_TOO_MANY_ARGS,
     SHELL_ERROR_ARG_TOO_LONG,
     SHELL_ERROR_DBL_QUOTE,
-  } tshell_error;
+  };
 
 #define SHELL_CONT	0
 #define SHELL_EPARSE	-1
 #define SHELL_RETURN	-2
 
-typedef int	(*tcmd_func)(void *cb_arg, int argc, char **argv);
-
-typedef struct
-{
-  char	*name;
-  tcmd_func cmd;
-  char *help;
-} tcmd_def;
-
 /* PROTO shell.c */
 /* ./shell.c */
-int do_quit(void);
-const char *shell_error_str(tshell_error err);
-void shell_install_cmd_defs(tcmd_def *defs);
+const char *shell_error_str(enum shell_error err);
+void shell_install_cmd_defs(struct cmd_def **defs);
 char **shell_completion(const char *text, int start, int end);
-int shell_do_cmd(tcmd_def *defs, int argc, char **argv, void *cb_arg);
-int shell_parse(tcmd_def *defs, char *str, void *cb_arg, tshell_error *errp);
-void shell_do(tcmd_def *defs, const char *prompt, void *cb_arg);
+int shell_do_cmd(struct cmd_def **defs, int argc, char **argv);
+int shell_parse(struct cmd_def **defs, char *str, enum shell_error *errp);
+void shell_do(struct cmd_def **defs);
 #endif

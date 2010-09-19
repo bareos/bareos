@@ -14,10 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include "xfuncs.h"
+#include "dpl_sh.h"
 
 char *
 xstrdup(char *str)

@@ -33,7 +33,7 @@ struct cmd_def
   char *name;
   char *purpose;
   struct usage_def *defs;
-  int (*func)(int argc, char **argv);
+  int	(*func)(int argc, char **argv);
 };
 
 /* PROTO usage.c */

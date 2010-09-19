@@ -17,37 +17,23 @@
 #ifndef __CMDS_H__
 #define __CMDS_H__	1
 
-extern tcmd_def	cmd_defs[];
+extern struct cmd_def cd_cmd;
+extern struct cmd_def lcd_cmd;
+extern struct cmd_def la_cmd;
+extern struct cmd_def rawls_cmd;
+extern struct cmd_def rawput_cmd;
+extern struct cmd_def mb_cmd;
+extern struct cmd_def ls_cmd;
+extern struct cmd_def mkdir_cmd;
+extern struct cmd_def pwd_cmd;
+extern struct cmd_def rmdir_cmd;
+extern struct cmd_def set_cmd;
+extern struct cmd_def unset_cmd;
 
-/* PROTO cmds.c cmd_cd.c cmd_lcd.c cmd_pwd.c cmd_set.c cmd_unset.c cmd_ls.c cmd_mkdir.c cmd_rmdir.c */
+extern struct cmd_def	*cmd_defs[];
+
+/* PROTO cmds.c */
 /* ./cmds.c */
-int cmd_quit(void *cb_arg, int argc, char **argv);
-int cmd_echo(void *cb_arg, int argc, char **argv);
-int cmd_status(void *cb_arg, int argc, char **argv);
-int cmd_help(void *cb_arg, int argc, char **argv);
-int do_cmd(void *cb_arg, int argc, char **argv);
-/* ./cmd_cd.c */
-int cmd_cd(void *cb_arg, int argc, char **argv);
-/* ./cmd_lcd.c */
-int cmd_lcd(void *cb_arg, int argc, char **argv);
-/* ./cmd_pwd.c */
-void cmd_pwd_usage(void);
-int cmd_pwd(void *cb_arg, int argc, char **argv);
-/* ./cmd_set.c */
-void set_usage(void);
-void var_print_cb(tvar *var, void *cb_arg);
-int cmd_set(void *cb_arg, int argc, char **argv);
-/* ./cmd_unset.c */
-void unset_usage(void);
-int cmd_unset(void *cb_arg, int argc, char **argv);
-/* ./cmd_ls.c */
-void cmd_ls_usage(void);
-void do_ls_obj(dpl_dirent_t *entry, u_int flags);
-int cmd_ls(void *cb_arg, int argc, char **argv);
-/* ./cmd_mkdir.c */
-void cmd_mkdir_usage(void);
-int cmd_mkdir(void *cb_arg, int argc, char **argv);
-/* ./cmd_rmdir.c */
-void cmd_rmdir_usage(void);
-int cmd_rmdir(void *cb_arg, int argc, char **argv);
+int cmd_quit(int argc, char **argv);
+int cmd_help(int argc, char **argv);
 #endif

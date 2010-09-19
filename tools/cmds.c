@@ -16,72 +16,64 @@
 
 #include "dpl_sh.h"
 
+int cmd_quit(int argc, char **argv);
+int cmd_help(int argc, char **argv);
+
+struct usage_def quit_usage[] =
+  {
+    {0, 0u, NULL, NULL},
+  };
+
+struct cmd_def quit_cmd = {"quit", "quit program", quit_usage, cmd_quit};
+
 int
-cmd_quit(void *cb_arg,
-	 int argc,
+cmd_quit(int argc,
 	 char **argv)
 {
-  do_quit();
-
   return SHELL_RETURN;
 }
 
-int
-cmd_echo(void *cb_arg,
-         int argc,
-         char **argv)
-{
-  int i;
-  
-  for (i = 1;i < argc;i++)
-    printf("%s ", argv[i]);
-  printf("\n");
+struct usage_def help_usage[] =
+  {
+    {0, 0u, NULL, NULL},
+  };
 
-  return SHELL_CONT;
-}
-
-int
-cmd_status(void *cb_arg,
-           int argc,
-           char **argv)
-{
-  printf("%d\n", status);
-
-  return SHELL_CONT;
-}
+struct cmd_def help_cmd = {"help", "help", help_usage, cmd_help};
 
 int 
-cmd_help(void *cb_arg,
-	 int argc,
+cmd_help(int argc,
 	 char **argv)
 {
   if (argc == 1)
     {
-      tcmd_def	*cmdp;
-      int i;
+      struct cmd_def *cmdp;
+      int i, j;
 
-      i = 0;
-      for (cmdp = cmd_defs;cmdp->name;cmdp++)
+      j = 0;
+      for (i = 0;cmd_defs[i];i++)
 	{
+          cmdp = cmd_defs[i];
 	  printf("%16s", cmdp->name);
-	  i++;
-	  if (i == 4)
+	  j++;
+	  if (j == 4)
 	    {
 	      printf("\n");
-	      i = 0;
+	      j = 0;
 	    }
 	}
       printf("\n");
     }
   else if (argc == 2)
     {
-      tcmd_def	*cmdp;
+      struct cmd_def *cmdp;
+      int i;
 
-      for (cmdp = cmd_defs;cmdp->name;cmdp++)
+      for (i = 0;cmd_defs[i];i++)
 	{
+          cmdp = cmd_defs[i];
 	  if (!strcmp(argv[1], cmdp->name))
 	    {
-	      printf("%s\n", cmdp->help);
+	      printf("%s\n", cmdp->purpose);
 	      break ;
 	    }
 	}
@@ -90,44 +82,22 @@ cmd_help(void *cb_arg,
   return SHELL_CONT;
 }
 
-int
-do_cmd(void *cb_arg,
-       int argc,
-       char **argv)
-{
-  tcmd_def	*cmdp;
-  int ret;
-
-  if (argc == 0)
-    return SHELL_CONT;
-
-  for (cmdp = cmd_defs;cmdp->name;cmdp++)
-    {
-      if (!strcmp(argv[0], cmdp->name))
-	{
-	  ret = cmdp->cmd(cb_arg, argc, argv);
-	  return ret;
-	}
-    }
-
-  fprintf(stderr, "cmd %s: not found\n", argv[0]);
-  return SHELL_CONT;
-}
-
-tcmd_def	cmd_defs[] =
+struct cmd_def	*cmd_defs[] =
   {
-    {"cd",      cmd_cd,         "change directory"},
-    {"echo",    cmd_echo,       "echo arguments"},
-    {"help",	cmd_help,	"gives help on a command"},
-    {"lcd",     cmd_lcd,        "local chdir"},
-    {"ls",      cmd_ls,         "list directory"},
-    {"mkdir",   cmd_mkdir,      "make directory"},
-    {"pwd",     cmd_pwd,        "print working dir"},
-    {"quit",	cmd_quit,	"quit program"},
-    {"rmdir",   cmd_rmdir,      "remove directory"},
-    {"set",     cmd_set,        "list/set variables"},
-    {"status",  cmd_status,     "get status of last command"},
-    {"unset",   cmd_unset,      "remove variable"},
-    {NULL,	NULL,		NULL},
+    &cd_cmd,
+    &help_cmd,
+    &lcd_cmd,
+    &la_cmd,
+    &ls_cmd,
+    &mb_cmd,
+    &mkdir_cmd,
+    &pwd_cmd,
+    &quit_cmd,
+    &rawls_cmd,
+    &rawput_cmd,
+    &rmdir_cmd,
+    &set_cmd,
+    &unset_cmd,
+    NULL,
   };
 

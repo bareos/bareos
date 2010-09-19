@@ -29,18 +29,26 @@
 #include <ctype.h>
 #include <errno.h>
 #include <sys/wait.h>
-#include <fnmatch.h>
+#include <fcntl.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include <droplets.h>
 #include "xfuncs.h"
+#include "usage.h"
 #include "vars.h"
 #include "shell.h"
 #include "cmds.h"
+#include "utils.h"
 
 extern int optind;
 
 extern dpl_ctx_t *ctx;
 extern int status;
 
-/* PROTO filecompl.c */
-/* ./filecompl.c */
+/* PROTO dpl_sh.c */
+/* ./dpl_sh.c */
+int do_quit(void);
+char *var_set_status(char *value);
+char *var_set_trace_level(char *value);
+int main(int argc, char **argv);
 #endif

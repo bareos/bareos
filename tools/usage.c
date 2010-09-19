@@ -14,10 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "usage.h"
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
+#include "dpl_sh.h"
 
 /** 
  * not reentrant

@@ -642,3 +642,46 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
 
   return ret;
 }
+
+/*
+ * path based routines
+ */
+
+dpl_status_t
+dpl_opendir(dpl_ctx_t *ctx,
+            char *path,
+            void **dir_hdlp)
+{
+  int ret, ret2;
+  dpl_ino_t obj_ino;
+  dpl_ftype_t obj_type;
+
+  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
+  if (0 != ret2)
+    {
+      DPLERR(0, "path resolve failed %s", path);
+      ret = ret2;
+      goto end;
+    }
+
+  if (DPL_FTYPE_REG == obj_type)
+    {
+      DPLERR(0, "cannot list a file");
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
+  ret2 = dpl_vdir_opendir(ctx, ctx->cur_bucket, obj_ino, dir_hdlp);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPLERR(0, "unable to open %s:%s", ctx->cur_bucket, obj_ino.key);
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
+}

@@ -16,33 +16,39 @@
 
 #include "dpl_sh.h"
 
-int cmd_pwd(int argc, char **argv);
+int cmd_la(int argc, char **argv);
 
-struct usage_def pwd_usage[] =
+struct usage_def la_usage[] =
   {
+    {'l', 0u, NULL, "long display"},
     {0, 0u, NULL, NULL},
   };
 
-struct cmd_def pwd_cmd = {"pwd", "print working directory", pwd_usage, cmd_pwd};
+struct cmd_def la_cmd = {"la", "list all my buckets", la_usage, cmd_la};
 
-int
-cmd_pwd(int argc,
-        char **argv)
+int 
+cmd_la(int argc,
+       char **argv)
 {
+  int ret;
   char opt;
-  //int ret;
-  //char path[DPL_MAXPATHLEN];
-
-  var_set("status", "1", VAR_CMD_SET, NULL);
+  dpl_vec_t *vec = NULL;
+  int lflag = 0;
+  int i;
 
   optind = 0;
 
-  while ((opt = getopt(argc, argv, "")) != -1)
+  var_set("status", "1", VAR_CMD_SET, NULL);
+
+  while ((opt = getopt(argc, argv, usage_getoptstr(la_usage))) != -1)
     switch (opt)
       {
+      case 'l':
+        lflag = 1;
+        break ;
       case '?':
       default:
-        usage_help(&pwd_cmd);
+        usage_help(&la_cmd);
         return SHELL_CONT;
       }
   argc -= optind;
@@ -50,21 +56,36 @@ cmd_pwd(int argc,
 
   if (0 != argc)
     {
-      usage_help(&pwd_cmd);
+      usage_help(&la_cmd);
       return SHELL_CONT;
+    }
+  
+  ret = dpl_list_all_my_buckets(ctx, &vec);
+  if (DPL_SUCCESS != ret)
+    {
+      fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);
+      return SHELL_CONT;
+    }
+  
+  for (i = 0;i < vec->n_items;i++)
+    {
+      dpl_bucket_t *bucket;
+
+      bucket = vec->array[i];
+      if (1 == lflag)
+        {
+          struct tm *stm;
+
+          stm = localtime(&bucket->creation_time);
+          printf("%04d-%02d-%02d %02d:%02d %s\n", 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, bucket->name);
+        }
+      else
+        {
+          printf("%s\n", bucket->name);
+        }
     }
 
-#if 0  
-  ret = dpl_vdir_iname(ctx, ctx->cur_bucket, ctx->cur_ino, path, sizeof (path));
-  if (0 != ret)
-    {
-      fprintf(stderr, "iname failed for %s:%s %d\n", ctx->cur_bucket, ctx->cur_ino.key, ret);
-      return SHELL_CONT;
-    }
-  printf("%s\n", path);
-#else
-  printf("%s:/%s\n", ctx->cur_bucket, ctx->cur_ino.key);
-#endif
+  dpl_vec_buckets_free(vec);
 
   var_set("status", "0", VAR_CMD_SET, NULL);
 

@@ -27,39 +27,25 @@ CFLAGS=$(CFLAGSDEBUG)
 LDFLAGS=$(LDFLAGSDEBUG)
 
 PROGS = \
-dpl_box \
 dpl_sh
 
-DPL_BOX_LINKS = \
-dpl_la \
-dpl_ls \
-dpl_mb \
-dpl_get \
-dpl_head \
-dpl_put \
-dpl_bput \
-dpl_bget \
-dpl_delete
-
-COMMON_OBJS = \
-usage.o \
-xfuncs.o
-
-DPL_BOX_OBJS = \
-$(COMMON_OBJS) \
-dpl_box.o 
-
 DPL_SH_OBJS = \
-$(COMMON_OBJS) \
+usage.o \
+xfuncs.o \
 shell.o \
 cmds.o \
 vars.o \
+utils.o \
 dpl_sh.o \
 cmd_cd.o \
 cmd_lcd.o \
 cmd_pwd.o \
 cmd_set.o \
 cmd_unset.o \
+cmd_la.o \
+cmd_rawls.o \
+cmd_rawput.o \
+cmd_mb.o \
 cmd_ls.o \
 cmd_mkdir.o \
 cmd_rmdir.o
@@ -82,31 +68,16 @@ valgrind: CFLAGS=$(CFLAGSVALGRIND)
 valgrind: LDFLAGS=$(LDFLAGSVALGRIND)
 valgrind: compile
 
-compile: $(PROGS) $(DPL_BOX_LINKS)
-
-dpl_box: $(DPL_BOX_OBJS) $(DEPENDS)
-	$(CC) -o dpl_box $(DPL_BOX_OBJS) $(LDFLAGS)
-
-$(DPL_BOX_LINKS): dpl_box
-	ln -sf dpl_box $@
+compile: $(PROGS) $(DPL_SH_LINKS)
 
 dpl_sh: $(DPL_SH_OBJS) $(DEPENDS)
 	$(CC) -o dpl_sh $(DPL_SH_OBJS) $(LDFLAGS)
 	
 install:
 	install -m755 -c $(PROGS) $(PREFIX)/bin
-	cd $(PREFIX)/bin; \
-	ln -sf dpl_box dpl_la; \
-	ln -sf dpl_box dpl_ls; \
-	ln -sf dpl_box dpl_mb; \
-	ln -sf dpl_box dpl_get; \
-	ln -sf dpl_box dpl_head; \
-	ln -sf dpl_box dpl_put; \
-	ln -sf dpl_box dpl_bput; \
-	ln -sf dpl_box dpl_delete;
 
 clean:
-	$(RM) *.o $(PROGS) $(DPL_BOX_LINKS)
+	$(RM) *.o $(PROGS) $(DPL_SH_LINKS)
 
 fproto:
 	touch *.c

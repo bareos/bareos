@@ -14,42 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dpl_sh.h"
+#ifndef __UTILS_H__
+#define __UTILS_H__ 1
 
-int cmd_lcd(int argc, char **argv);
-
-struct usage_def lcd_usage[] =
-  {
-    {USAGE_NO_OPT, USAGE_MANDAT, "path", "local path"},
-    {0, 0u, NULL, NULL},
-  };
-
-struct cmd_def lcd_cmd = {"lcd", "change directory", lcd_usage, cmd_lcd};
-
-int
-cmd_lcd(int argc,
-        char **argv)
-{
-  int ret;
-
-  var_set("status", "1", VAR_CMD_SET, NULL);
-
-  if (2 != argc)
-    {
-      usage_help(&lcd_cmd);
-      return SHELL_CONT;
-    }
-
-  ret = chdir(argv[1]);
-  if (-1 == ret)
-    {
-      perror("chdir");
-      goto end;
-    }
-
-  var_set("status", "0", VAR_CMD_SET, NULL);
-
- end:
-
-  return SHELL_CONT;
-}
+/* PROTO utils.c */
+/* ./utils.c */
+int ask_for_confirmation(char *str);
+int write_all(int fd, char *buf, int len);
+int read_all(int fd, char *buf, int len);
+int read_fd(int fd, char **data_bufp, u_int *data_lenp);
+#endif

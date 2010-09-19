@@ -16,16 +16,19 @@
 
 #include "dpl_sh.h"
 
-void
-cmd_mkdir_usage()
-{
-  fprintf(stderr, "usage: mkdir path\n");
-}
+int cmd_mkdir(int argc, char **argv);
+
+struct usage_def mkdir_usage[] =
+  {
+    {USAGE_NO_OPT, USAGE_MANDAT, "path", ""},
+    {0, 0u, NULL, NULL},
+  };
+
+struct cmd_def mkdir_cmd = {"mkdir", "create directory", mkdir_usage, cmd_mkdir};
 
 int
-cmd_mkdir(void *cb_arg,
-       int argc,
-       char **argv)
+cmd_mkdir(int argc,
+          char **argv)
 {
   char opt;
   int ret;
@@ -42,7 +45,7 @@ cmd_mkdir(void *cb_arg,
       {
       case '?':
       default:
-        cmd_mkdir_usage();
+        usage_help(&mkdir_cmd);
         return SHELL_CONT;
       }
   argc -= optind;
@@ -50,7 +53,7 @@ cmd_mkdir(void *cb_arg,
 
   if (1 != argc)
     {
-      cmd_mkdir_usage();
+      usage_help(&mkdir_cmd);
       return SHELL_CONT;
     }
 

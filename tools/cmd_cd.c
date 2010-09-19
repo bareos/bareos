@@ -16,9 +16,18 @@
 
 #include "dpl_sh.h"
 
+int cmd_cd(int argc, char **argv);
+
+struct usage_def cd_usage[] =
+  {
+    {USAGE_NO_OPT, USAGE_MANDAT, "path", "remote path"},
+    {0, 0u, NULL, NULL},
+  };
+
+struct cmd_def cd_cmd = {"cd", "change directory", cd_usage, cmd_cd};
+
 int
-cmd_cd(void *cb_arg,
-       int argc,
+cmd_cd(int argc,
        char **argv)
 {
   int ret;
@@ -30,7 +39,7 @@ cmd_cd(void *cb_arg,
 
   if (2 != argc)
     {
-      fprintf(stderr, "usage: cd path\n");
+      usage_help(&cd_cmd);
       return SHELL_CONT;
     }
 

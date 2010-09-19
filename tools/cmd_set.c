@@ -16,13 +16,18 @@
 
 #include "dpl_sh.h"
 
-void
-set_usage()
-{
-  fprintf(stderr, "usage: set [var value]\n");
-}
+int cmd_set(int argc, char **argv);
 
-void
+struct usage_def set_usage[] =
+  {
+    {USAGE_NO_OPT, USAGE_MANDAT, "var", ""},
+    {USAGE_NO_OPT, USAGE_MANDAT, "value", ""},
+    {0, 0u, NULL, NULL},
+  };
+
+struct cmd_def set_cmd = {"set", "set variable", set_usage, cmd_set};
+
+static void
 var_print_cb(tvar *var,
              void *cb_arg)
 {
@@ -30,12 +35,9 @@ var_print_cb(tvar *var,
 }
 
 int
-cmd_set(void *cb_arg,
-        int argc,
+cmd_set(int argc,
         char **argv)
 {
-  var_set("status", "1", VAR_CMD_SET, NULL);
-
   if (3 == argc)
     {
       var_set(argv[1], argv[2], VAR_CMD_SET, NULL);
@@ -48,11 +50,9 @@ cmd_set(void *cb_arg,
     }
   else
     {
-      set_usage();
+      usage_help(&set_cmd);
       goto end;
     }
-
-  var_set("status", "0", VAR_CMD_SET, NULL);
 
  end:
 
