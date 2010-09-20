@@ -1,5 +1,5 @@
-
 - Timeout detection in SSL connect/read/write
 - use const keyword when appropriate
 - remote file completion
 - handle subresources in vfile api
+- unhandled case 
