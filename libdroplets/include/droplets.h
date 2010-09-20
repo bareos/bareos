@@ -38,9 +38,11 @@ typedef int dpl_status_t;
 #define DPL_ESYS                  (-6) /*!< System error */
 #define DPL_EIO                   (-7) /*!< I/O error */
 #define DPL_ELIMIT                (-8) /*!< Limit has been reached */
-#define DPL_ENAMETOOLONG          (-9)
-#define DPL_ENOTDIR               (-10)
-#define DPL_ENOTEMPTY             (-11)
+#define DPL_ENAMETOOLONG          (-9)  /*!< Name is too long */
+#define DPL_ENOTDIR               (-10) /*!< Not a directory */
+#define DPL_ENOTEMPTY             (-11) /*!< Directory is not empty */
+#define DPL_EISDIR                (-12) /*!< Is a directory */
+#define DPL_EEXIST                (-13) /*!< Object already exists */
 
 /**/
 

@@ -62,7 +62,7 @@ DPLTESTBUCKET1=dropletstest01
 DPLTESTBUCKET2=dropletstest02
 
 test: $(DPLTOOLSDIR)/dplsh
-	rm dpltest.tmp dpltest.tmp2
+	$(RM) dpltest.tmp dpltest.tmp2
 	@echo make bucket
 	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "mb $(DPLTESTBUCKET1);$(DPLTESTBUCKET1):"
 	@echo put file
@@ -72,7 +72,7 @@ test: $(DPLTOOLSDIR)/dplsh
 	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "get dpltest.tmp dpltest.tmp2"
 	diff dpltest.tmp dpltest.tmp2
 	@echo list bucket
-	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "rm $(DPLTESTBUCKET1):dpltest.tmp"
+	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "rm dpltest.tmp"
 	@echo remove bucket
 	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "rb $(DPLTESTBUCKET1)"
 

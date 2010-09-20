@@ -45,7 +45,10 @@ dpl_status_str(dpl_status_t status)
       return "DPL_ENOTDIR";
     case DPL_ENOTEMPTY:
       return "DPL_ENOTEMPTY";
-
+    case DPL_EISDIR:
+      return "DPL_EISDIR";
+    case DPL_EEXIST:
+      return "DPL_EEXIST";
     }
 
   return "Unknown error";

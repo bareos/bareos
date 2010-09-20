@@ -32,9 +32,7 @@ cmd_rm(int argc,
 {
   int ret;
   char opt;
-  char *bucket = NULL;
-  char *resource = NULL;
-  char *subresource = NULL;
+  char *path = NULL;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
 
@@ -57,22 +55,9 @@ cmd_rm(int argc,
       return SHELL_CONT;
     }
   
-  bucket = argv[0];
-  resource = index(bucket, ':');
-  if (NULL == resource)
-    {
-      resource = bucket;
-      bucket = ctx->cur_bucket;
-    }
-  else
-    {
-      *resource++ = 0;
-    }
-  subresource = index(resource, '?');
-  if (NULL != subresource)
-    *subresource++ = 0;
+  path = argv[0];
   
-  ret = dpl_delete(ctx, bucket, resource, subresource);
+  ret = dpl_unlink(ctx, path);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);

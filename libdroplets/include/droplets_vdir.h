@@ -61,4 +61,6 @@ dpl_status_t dpl_vdir_count_entries(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino,
 dpl_status_t dpl_vdir_rmdir(dpl_ctx_t *ctx, char *bucket, dpl_ino_t parent_ino, const char *obj_name);
 dpl_status_t dpl_opendir(dpl_ctx_t *ctx, char *path, void **dir_hdlp);
 dpl_status_t dpl_chdir(dpl_ctx_t *ctx, char *path);
+dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, char *path);
+dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, char *path);
 #endif

@@ -46,7 +46,7 @@ cmd_la.o \
 cmd_put.o \
 cmd_get.o \
 cmd_rm.o \
-cmd_attr.o \
+cmd_getattr.o \
 cmd_mb.o \
 cmd_rb.o \
 cmd_ls.o \

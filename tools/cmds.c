@@ -84,9 +84,9 @@ cmd_help(int argc,
 
 struct cmd_def	*cmd_defs[] =
   {
-    &attr_cmd,
     &cd_cmd,
     &get_cmd,
+    &getattr_cmd,
     &help_cmd,
     &lcd_cmd,
     &la_cmd,

@@ -723,3 +723,116 @@ dpl_chdir(dpl_ctx_t *ctx,
 
   return ret;
 }
+
+dpl_status_t
+dpl_mkdir(dpl_ctx_t *ctx,
+          char *path)
+{
+  char *dir_name = NULL;
+  dpl_ino_t parent_ino;
+  int ret, ret2;
+  char *npath;
+
+  DPL_TRACE(ctx, DPL_TRACE_VDIR, "mkdir path=%s", path);
+
+  npath = strdup(path);
+  if (NULL == npath)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      if (DPL_ENOENT == ret2)
+        {
+          dir_name = rindex(path, '/');
+          if (NULL != dir_name)
+            {
+              *dir_name++ = 0;
+              
+              //fetch parent directory                                         
+              ret2 = dpl_vdir_namei(ctx, !strcmp(path, "") ? "/" : path, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
+              if (DPL_SUCCESS != ret2)
+                {
+                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", path, dpl_status_str(ret));
+                  ret = ret2;
+                  goto end;
+                }
+            }
+          else
+            {
+              parent_ino = ctx->cur_ino;
+              dir_name = path;
+            }
+        }
+      else
+        {
+          DPLERR(0, "path resolve failed %s: %s (%d)\n", path, dpl_status_str(ret), ret);
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      ret = DPL_EEXIST;
+      goto end;
+    }
+
+  ret2 = dpl_vdir_mkdir(ctx, ctx->cur_bucket, parent_ino, dir_name);
+  if (0 != ret2)
+    {
+      DPLERR(0, "mkdir failed");
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != npath)
+    free(npath);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_rmdir(dpl_ctx_t *ctx,
+          char *path)
+{
+  int ret, ret2;
+  char *dir_name = NULL;
+  dpl_ino_t parent_ino;
+
+  DPL_TRACE(ctx, DPL_TRACE_VDIR, "rmdir path=%s", path);
+  
+  dir_name = rindex(path, '/');
+  if (NULL != dir_name)
+    dir_name++;
+  else
+    dir_name = path;
+
+  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPLERR(0, "path resolved failed");
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_vdir_rmdir(ctx, ctx->cur_bucket, parent_ino, dir_name);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPLERR(0, "rmdir failed");
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
+}

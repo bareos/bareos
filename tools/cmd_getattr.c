@@ -16,40 +16,38 @@
 
 #include "dplsh.h"
 
-int cmd_attr(int argc, char **argv);
+int cmd_getattr(int argc, char **argv);
 
-struct usage_def attr_usage[] =
+struct usage_def getattr_usage[] =
   {
-    {USAGE_NO_OPT, USAGE_MANDAT, "[bucket:]resource[?subresource]", "remote object"},
+    {USAGE_NO_OPT, USAGE_MANDAT, "path", "remote object"},
     {0, 0u, NULL, NULL},
   };
 
-struct cmd_def attr_cmd = {"attr", "dump metadata of object", attr_usage, cmd_attr};
+struct cmd_def getattr_cmd = {"getattr", "dump attributes of object", getattr_usage, cmd_getattr};
 
 static void
-cb_attr(dpl_var_t *var,
+cb_getattr(dpl_var_t *var,
         void *cb_arg)
 {
   printf("%s=%s\n", var->key, var->value);
 }
 
 int
-cmd_attr(int argc,
+cmd_getattr(int argc,
          char **argv)
 {
   int ret;
   char opt;
-  char *bucket = NULL;
-  char *resource = NULL;
-  char *subresource = NULL;
+  char *path = NULL;
   dpl_dict_t *metadata = NULL;
 
-  while ((opt = getopt(argc, argv, usage_getoptstr(attr_usage))) != -1)
+  while ((opt = getopt(argc, argv, usage_getoptstr(getattr_usage))) != -1)
     switch (opt)
       {
       case '?':
       default:
-        usage_help(&attr_cmd);
+        usage_help(&getattr_cmd);
         exit(1);
       }
   argc -= optind;
@@ -57,33 +55,20 @@ cmd_attr(int argc,
 
   if (1 != argc)
     {
-      usage_help(&get_cmd);
+      usage_help(&getattr_cmd);
       exit(1);
     }
   
-  bucket = argv[0];
-  resource = index(bucket, ':');
-  if (NULL == resource)
-    {
-      resource = bucket;
-      bucket = ctx->cur_bucket;
-    }
-  else
-    {
-      *resource++ = 0;
-    }
-  subresource = index(resource, '?');
-  if (NULL != subresource)
-    *subresource++ = 0;
+  path = argv[0];
   
-  ret = dpl_head(ctx, bucket, resource, subresource, NULL, &metadata);
+  ret = dpl_getattr(ctx, path, NULL, &metadata);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);
       goto end;
     }
 
-  dpl_dict_iterate(metadata, cb_attr, NULL);
+  dpl_dict_iterate(metadata, cb_getattr, NULL);
 
  end:
 

@@ -24,7 +24,7 @@ extern struct cmd_def put_cmd;
 extern struct cmd_def get_cmd;
 extern struct cmd_def rm_cmd;
 extern struct cmd_def rb_cmd;
-extern struct cmd_def attr_cmd;
+extern struct cmd_def getattr_cmd;
 extern struct cmd_def mb_cmd;
 extern struct cmd_def ls_cmd;
 extern struct cmd_def mkdir_cmd;

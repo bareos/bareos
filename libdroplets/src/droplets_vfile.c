@@ -182,7 +182,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
 
   if (DPL_FTYPE_REG != obj_type)
     {
-      ret = DPL_ENOTDIR;
+      ret = DPL_EISDIR;
       goto end;
     }
 
@@ -444,7 +444,7 @@ dpl_openread(dpl_ctx_t *ctx,
 
   if (DPL_FTYPE_REG != obj_type)
     {
-      ret = DPL_ENOTDIR;
+      ret = DPL_EISDIR;
       goto end;
     }
 
@@ -468,6 +468,82 @@ dpl_openread(dpl_ctx_t *ctx,
 
   if (NULL != vfile)
     dpl_close(vfile);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_unlink(dpl_ctx_t *ctx,
+           char *path)
+{
+  int ret, ret2;
+  dpl_ino_t parent_ino, obj_ino;
+  dpl_ftype_t obj_type;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "unlink path=%s", path);
+
+  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (DPL_FTYPE_REG != obj_type)
+    {
+      ret = DPL_EISDIR;
+      goto end;
+    }
+
+  ret2 = dpl_delete(ctx, ctx->cur_bucket, obj_ino.key, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
+}
+
+dpl_status_t
+dpl_getattr(dpl_ctx_t *ctx,
+            char *path,
+            dpl_condition_t *condition,
+            dpl_dict_t **metadatap)
+{
+  int ret, ret2;
+  dpl_ino_t parent_ino, obj_ino;
+  dpl_ftype_t obj_type;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "unlink path=%s", path);
+
+  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (DPL_FTYPE_REG != obj_type)
+    {
+      ret = DPL_EISDIR;
+      goto end;
+    }
+
+  ret2 = dpl_head(ctx, ctx->cur_bucket, obj_ino.key, NULL, condition, metadatap);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+  
+ end:
 
   return ret;
 }

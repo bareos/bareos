@@ -33,8 +33,6 @@ cmd_rmdir(int argc,
   char opt;
   int ret;
   char *path = NULL;
-  char *dir_name = NULL;
-  dpl_ino_t parent_ino;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
 
@@ -59,23 +57,10 @@ cmd_rmdir(int argc,
 
   path = argv[0];
 
-  dir_name = rindex(path, '/');
-  if (NULL != dir_name)
-    dir_name++;
-  else
-    dir_name = path;
-
-  ret = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
-  if (0 != ret)
+  ret = dpl_rmdir(ctx, path);
+  if (DPL_SUCCESS != ret)
     {
-      fprintf(stderr, "path resolve failed %s\n", path);
-      return SHELL_CONT;
-    }
-
-  ret = dpl_vdir_rmdir(ctx, ctx->cur_bucket, parent_ino, dir_name);
-  if (0 != ret)
-    {
-      fprintf(stderr, "rmdir %s failed: %s\n", dir_name, dpl_status_str(ret));
+      fprintf(stderr, "status %s (%d)\n", dpl_status_str(ret), ret);
       goto end;
     }
 

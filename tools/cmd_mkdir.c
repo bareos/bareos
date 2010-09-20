@@ -33,8 +33,6 @@ cmd_mkdir(int argc,
   char opt;
   int ret;
   char *path = NULL;
-  char *dir_name = NULL;
-  dpl_ino_t parent_ino;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
 
@@ -57,58 +55,18 @@ cmd_mkdir(int argc,
       return SHELL_CONT;
     }
 
-  path = xstrdup(argv[0]);
+  path = argv[0];
 
-  ret = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
+  ret = dpl_mkdir(ctx, path);
   if (DPL_SUCCESS != ret)
     {
-      if (DPL_ENOENT == ret)
-        {
-          dir_name = rindex(path, '/');
-          if (NULL != dir_name)
-            {
-              *dir_name++ = 0;
-              
-              //fetch parent directory                                         
-              ret = dpl_vdir_namei(ctx, !strcmp(path, "") ? "/" : path, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
-              if (DPL_SUCCESS != ret)
-                {
-                  fprintf(stderr, "dst parent dir resolve failed %s: %s\n", path, dpl_status_str(ret));
-                  return SHELL_CONT;
-                }
-            }
-          else
-            {
-              parent_ino = ctx->cur_ino;
-              dir_name = path;
-            }
-        }
-      else
-        {
-          fprintf(stderr, "path resolve failed %s: %s (%d)\n", path, dpl_status_str(ret), ret);
-          return SHELL_CONT;
-        }
-    }
-  else
-    {
-      fprintf(stderr, "directory already exists\n");
-
-      return SHELL_CONT;
-    }
-
-  ret = dpl_vdir_mkdir(ctx, ctx->cur_bucket, parent_ino, dir_name);
-  if (0 != ret)
-    {
-      fprintf(stderr, "mkdir %s failed: %s\n", dir_name, dpl_status_str(ret));
+      fprintf(stderr, "status %s (%d)\n", dpl_status_str(ret), ret);
       goto end;
     }
 
   var_set("status", "0", VAR_CMD_SET, NULL);
 
  end:
-
-  if (NULL != path)
-    free(path);
 
   return SHELL_CONT;
 }
