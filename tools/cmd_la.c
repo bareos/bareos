@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dpl_sh.h"
+#include "dplsh.h"
 
 int cmd_la(int argc, char **argv);
 

@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dpl_sh.h"
+#include "dplsh.h"
 
 int cmd_cd(int argc, char **argv);
 
@@ -31,8 +31,6 @@ cmd_cd(int argc,
        char **argv)
 {
   int ret;
-  dpl_ino_t obj_ino;
-  dpl_ftype_t obj_type;
   char *path;
   
   var_set("status", "1", VAR_CMD_SET, NULL);
@@ -45,20 +43,12 @@ cmd_cd(int argc,
 
   path = argv[1];
 
-  ret = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
-  if (0 != ret)
+  ret = dpl_chdir(ctx, path);
+  if (DPL_SUCCESS != ret)
     {
-      fprintf(stderr, "path resolve failed %s\n", path);
-      return SHELL_CONT;
-    }
-
-  if (DPL_FTYPE_DIR != obj_type)
-    {
-      fprintf(stderr, "not a directory\n");
+      fprintf(stderr, "chdir failed %s\n", path);
       goto end;
     }
-
-  ctx->cur_ino = obj_ino;
 
   var_set("status", "0", VAR_CMD_SET, NULL);
 

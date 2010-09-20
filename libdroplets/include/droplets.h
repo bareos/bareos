@@ -72,7 +72,8 @@ enum dpl_data_type
 #define DPL_TRACE_SSL   (1u<<3) /*!< trace SSL */
 #define DPL_TRACE_S3    (1u<<4) /*!< trace S3 */
 #define DPL_TRACE_VDIR  (1u<<5) /*!< trace vdir calls */
-#define DPL_TRACE_BUF   (1u<<6) /*!< trace buffers */
+#define DPL_TRACE_VFILE (1u<<6) /*!< trace vfile calls */
+#define DPL_TRACE_BUF   (1u<<7) /*!< trace buffers */
 
 #define DPL_MAXPATHLEN 1024
 #define DPL_MAXNAMLEN  255
@@ -148,9 +149,9 @@ typedef struct dpl_ctx
 } dpl_ctx_t;
 
 #include <droplets_conn.h>
-#include <droplets_requests.h>
 #include <droplets_httpreq.h>
 #include <droplets_httpreply.h>
+#include <droplets_requests.h>
 #include <droplets_vdir.h>
 #include <droplets_vfile.h>
 

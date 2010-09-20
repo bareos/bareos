@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dpl_sh.h"
+#include "dplsh.h"
 
 static char sargmem[SHELL_MAX_ARGV][SHELL_MAX_ARG_LEN];
 static char *sargv[SHELL_MAX_ARGV + 1];
@@ -157,8 +157,7 @@ shell_do_cmd(struct cmd_def **defs,
   else if (argc == 1 && (NULL != (p = index(argv[0], ':'))))
     {
       *p = 0;
-      free(ctx->cur_bucket);
-      ctx->cur_bucket = xstrdup(argv[0]);
+      var_set("bucket", argv[0], VAR_CMD_SET, NULL);
       ctx->cur_ino = DPL_ROOT_INO;
       return SHELL_CONT;
     }
@@ -374,6 +373,7 @@ shell_do(struct cmd_def **defs)
         }
       else
         {
+          fprintf(stderr, "quit\n");
           return ;
         }
     }

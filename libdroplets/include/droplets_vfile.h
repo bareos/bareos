@@ -17,14 +17,14 @@
 #ifndef __DROPLETS_VFILE_H__
 #define __DROPLETS_VFILE_H__ 1
 
-#define DPL_VFILE_MODE_READ    (1u<<0)
-#define DPL_VFILE_MODE_WRITE   (1u<<1)
-#define DPL_VFILE_MODE_CREAT   (1u<<2)
-#define DPL_VFILE_MODE_EXCL    (1u<<3)
-#define DPL_VFILE_MODE_ENCRYPT (1u<<4)
+#define DPL_VFILE_FLAG_CREAT   (1u<<0)
+#define DPL_VFILE_FLAG_EXCL    (1u<<1)
+#define DPL_VFILE_FLAG_ENCRYPT (1u<<2)
 
 typedef struct
 {
+  dpl_ctx_t *ctx;
+
   u_int flags;
 
   dpl_conn_t *conn;
@@ -32,19 +32,24 @@ typedef struct
   /*
    * encrypt
    */
+  u_char salt[PKCS5_SALT_LEN];
   EVP_CIPHER_CTX *cipher_ctx;
+  int header_done;
+
+  /*
+   * read
+   */
+  dpl_buffer_func_t buffer_func;
+  void *cb_arg;
 
 } dpl_vfile_t;
 
+#define DPL_ENCRYPT_MAGIC "Salted__"
+
 /* PROTO droplets_vfile.c */
 /* src/droplets_vfile.c */
-void dpl_vfile_free(dpl_vfile_t *vfile);
-dpl_vfile_t *dpl_vfile_new(dpl_conn_t *conn);
-dpl_status_t dpl_vfile_put(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, u_int data_len, dpl_vfile_t **vfilep);
-dpl_status_t dpl_vfile_write_all(dpl_vfile_t *vfile, char *buf, u_int len);
-dpl_status_t dpl_vfile_open(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, char *path, u_int mode);
-dpl_status_t dpl_vfile_close(void);
-dpl_status_t dpl_vfile_read(void);
-dpl_status_t dpl_vfile_write(void);
-dpl_status_t dpl_vfile_pread(void);
+dpl_status_t dpl_close(dpl_vfile_t *vfile);
+dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, char *path, u_int flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, u_int data_len, dpl_vfile_t **vfilep);
+dpl_status_t dpl_write(dpl_vfile_t *vfile, char *buf, u_int len);
+dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *path, u_int flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg);
 #endif

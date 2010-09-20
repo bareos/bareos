@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __DPL_SH_H__
-#define __DPL_SH_H__ 1
+#ifndef __DPLSH_H__
+#define __DPLSH_H__ 1
 
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -40,15 +40,23 @@
 #include "cmds.h"
 #include "utils.h"
 
+#define DPLSHRC ".dplshrc"
+
 extern int optind;
 
 extern dpl_ctx_t *ctx;
 extern int status;
+extern u_int block_size;
+extern int hash;
 
-/* PROTO dpl_sh.c */
-/* ./dpl_sh.c */
+/* PROTO dplsh.c */
+/* ./dplsh.c */
 int do_quit(void);
 char *var_set_status(char *value);
 char *var_set_trace_level(char *value);
+char *var_set_block_size(char *value);
+char *var_set_hash(char *value);
+char *var_set_bucket(char *value);
+char *var_set_pwd(char *value);
 int main(int argc, char **argv);
 #endif

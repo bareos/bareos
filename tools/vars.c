@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dpl_sh.h"
+#include "dplsh.h"
 
 #define N_VAR_BUCKETS 13 
 
@@ -165,4 +165,93 @@ var_remove(tvar *var)
   free(var->key);
   free(var->value);
   free(var);
+}
+
+/**/
+
+
+void
+save_cb(tvar *var,
+        void *cb_arg)
+{
+  FILE *f = (FILE *) cb_arg;
+
+  fprintf(f, "%s=%s\n", var->key, var->value);
+}
+
+int
+vars_save()
+{
+  char *home;
+  char buf[1024];
+  FILE *f;
+
+  home = getenv("HOME");
+  if (NULL == home)
+    {
+      fprintf(stderr, "no HOME\n");
+      return -1;
+    }
+
+  snprintf(buf, sizeof (buf), "%s/%s", home, DPLSHRC);
+
+  f = fopen(buf, "w");
+  if (NULL == f)
+    {
+      fprintf(stderr, "open %s failed\n", buf);
+      return -1;
+    }
+
+  vars_iterate(save_cb, f);
+
+  fflush(f);
+  fclose(f);
+
+  return 0;
+}
+
+int
+vars_load()
+{
+  char *home;
+  char buf[1024];
+  FILE *f;
+  char * line = NULL;
+  size_t len = 0;
+  ssize_t read;
+
+  home = getenv("HOME");
+  if (NULL == home)
+    {
+      fprintf(stderr, "no HOME\n");
+      return -1;
+    }
+
+  snprintf(buf, sizeof (buf), "%s/%s", home, DPLSHRC);
+
+  f = fopen(buf, "r");
+  if (NULL == f)
+    return -1;
+
+  while ((read = getline(&line, &len, f)) != -1) 
+    {
+      enum shell_error shell_err;
+      int ret;
+      
+      //printf("%s", line);
+
+      ret = shell_parse(cmd_defs, line, &shell_err);
+      if (ret == SHELL_EPARSE)
+        {
+          fprintf(stderr, 
+                  "parsing: %s\n", shell_error_str(shell_err));
+        }
+    }
+
+  if (NULL != line)
+    free(line);
+  
+  fclose(f);
+  
+  return 0;
 }

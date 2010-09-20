@@ -19,374 +19,446 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-void
-dpl_vfile_free(dpl_vfile_t *vfile)
+dpl_status_t
+dpl_close(dpl_vfile_t *vfile)
 {
-  if (vfile->flags & DPL_VFILE_MODE_ENCRYPT)
+  int ret, ret2;
+  dpl_dict_t *headers_returned = NULL;
+  int connection_close = 0;
+
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFILE, "close vfile=%p", vfile);
+
+  if (NULL != vfile->conn)
+    {
+      ret2 = dpl_read_http_reply(vfile->conn, NULL, NULL, &headers_returned);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+      else
+        {
+          connection_close = dpl_connection_close(headers_returned);
+        }
+      
+      if (1 == connection_close)
+        dpl_conn_terminate(vfile->conn);
+      else
+        dpl_conn_release(vfile->conn);
+    }
+
+  if (vfile->flags & DPL_VFILE_FLAG_ENCRYPT)
     {
       if (NULL != vfile->cipher_ctx)
         EVP_CIPHER_CTX_free(vfile->cipher_ctx);
     }
-  
+
   free(vfile);
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != headers_returned)
+    dpl_dict_free(headers_returned);
+  
+  return ret;
 }
 
-dpl_vfile_t *
-dpl_vfile_new(dpl_conn_t *conn)
+static dpl_status_t
+encrypt_init(dpl_vfile_t *vfile, 
+             int enc)
 {
-  dpl_vfile_t *vfile = NULL;
   int ret;
-
-  vfile = malloc(sizeof (*vfile));
-  if (NULL == vfile)
-    return NULL;
-
-  memset(vfile, 0, sizeof (*vfile));
-
-  vfile->conn = conn;
-
-  /*
-   * encrypt
-   */
-  if (vfile->flags & DPL_VFILE_MODE_ENCRYPT)
+  const EVP_CIPHER *cipher;
+  const EVP_MD *md;
+  u_char key[EVP_MAX_KEY_LENGTH];
+  u_char iv[EVP_MAX_IV_LENGTH];
+  
+  if (NULL == vfile->ctx->encrypt_key)
     {
-      const EVP_CIPHER *cipher;
-      const EVP_MD *md;
-      u_char key[EVP_MAX_KEY_LENGTH];
-      u_char iv[EVP_MAX_IV_LENGTH];
-      u_char salt[PKCS5_SALT_LEN];
-      struct iovec iov[2];
-      
-      cipher = EVP_get_cipherbyname("aes-256-cfb");
-      if (NULL == cipher)
-        {
-          fprintf(stderr, "unsupported cipher\n");
-          goto bad;
-        }
-
-      md = EVP_md5();
-      if (NULL == md)
-        {
-          fprintf(stderr, "unsupported md\n");
-          goto bad;
-        }
-
-      vfile->cipher_ctx = EVP_CIPHER_CTX_new();
-      if (NULL == vfile->cipher_ctx)
-        goto bad;
-
-      ret = RAND_pseudo_bytes(salt, sizeof salt);
-      if (0 == ret)
-        goto bad;
-
-      EVP_BytesToKey(cipher, md, salt, (u_char *) conn->ctx->encrypt_key, strlen(conn->ctx->encrypt_key), 1, key, iv);
-
-#define MAGIC "Salted__"
-      iov[0].iov_base = MAGIC;
-      iov[0].iov_len = strlen(MAGIC);
-
-      iov[1].iov_base = salt;
-      iov[1].iov_len = sizeof (salt);
-
-      ret = dpl_conn_writev_all(vfile->conn, iov, 2, DPL_DEFAULT_WRITE_TIMEOUT);
-      if (DPL_SUCCESS != ret)
-        goto bad;
-
-      EVP_CipherInit(vfile->cipher_ctx, cipher, key, iv, 1);
+      fprintf(stderr, "missing encrypt_key in conf\n");
+      ret = DPL_EINVAL;
+      goto end;
     }
   
-  return vfile;
+  cipher = EVP_get_cipherbyname("aes-256-cfb");
+  if (NULL == cipher)
+    {
+      fprintf(stderr, "unsupported cipher\n");
+      ret = DPL_EINVAL;
+      goto end;
+    }
+  
+  vfile->cipher_ctx = EVP_CIPHER_CTX_new();
+  if (NULL == vfile->cipher_ctx)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
 
- bad:
+  md = EVP_md5();
+  if (NULL == md)
+    {
+      fprintf(stderr, "unsupported md\n");
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  EVP_BytesToKey(cipher, md, vfile->salt, (u_char *) vfile->ctx->encrypt_key, strlen(vfile->ctx->encrypt_key), 1, key, iv);
   
-  if (NULL != vfile)
-    dpl_vfile_free(vfile);
+  EVP_CipherInit(vfile->cipher_ctx, cipher, key, iv, enc);
   
-  return NULL;
+  ret = DPL_SUCCESS;
+
+ end:
+  
+  return ret;
 }
 
 dpl_status_t
-dpl_vfile_put(dpl_ctx_t *ctx,
-              char *bucket,
-              char *resource,
-              char *subresource,
+dpl_openwrite(dpl_ctx_t *ctx,
+              char *path,
+              u_int flags,
               dpl_dict_t *metadata,
               dpl_canned_acl_t canned_acl,
               u_int data_len,
               dpl_vfile_t **vfilep)
 {
-  char          host[1024];
-  char          data_len_str[64];
-  int           ret, ret2;
-  struct hostent hret, *hresult;
-  char          hbuf[1024];
-  int           herr;
-  struct in_addr addr;
-  dpl_conn_t    *conn = NULL;
-  char          header[1024];
-  u_int         header_len;
-  struct iovec  iov[10];
-  int           n_iov = 0;
-  int           connection_close = 0;
-  char          *acl_str;
-  dpl_dict_t    *headers = NULL;
-  dpl_dict_t    *headers_returned = NULL;
   dpl_vfile_t *vfile = NULL;
+  int ret, ret2;
+  dpl_ino_t parent_ino, obj_ino;
+  dpl_ftype_t obj_type;
 
-  snprintf(host, sizeof (host), "%s.%s", bucket, ctx->host);
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "openwrite path=%s flags=0x%x", path, flags);
 
-  DPRINTF("dpl_make_bucket: host=%s:%d\n", host, ctx->port);
-
-  headers = dpl_dict_new(13);
-  if (NULL == headers)
+  vfile = malloc(sizeof (*vfile));
+  if (NULL == vfile)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  ret2 = dpl_dict_add(headers, "Host", host, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
+  memset(vfile, 0, sizeof (*vfile));
 
-  ret2 = dpl_dict_add(headers, "Connection", "keep-alive", 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
+  vfile->ctx = ctx;
+  vfile->flags = flags;
 
-  ret2 = dpl_dict_add(headers, "Expect", "100-continue", 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  snprintf(data_len_str, sizeof (data_len_str), "%u", data_len);
-  ret2 = dpl_dict_add(headers, "Content-Length", data_len_str, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  acl_str = dpl_canned_acl_str(canned_acl);
-  if (NULL == acl_str)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  ret2 = dpl_dict_add(headers, "x-amz-acl", acl_str, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  if (NULL != metadata)
-    {
-      ret2 = dpl_add_metadata_to_headers(metadata, headers);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-
-  ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr); 
-  if (0 != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  if (AF_INET != hresult->h_addrtype)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  memcpy(&addr, hresult->h_addr_list[0], hresult->h_length);
-
-  conn = dpl_conn_open(ctx, addr, ctx->port);
-  if (NULL == conn)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  //build request
-  ret2 = dpl_build_s3_request(ctx, 
-                              "PUT",
-                              bucket,
-                              resource,
-                              subresource,
-                              NULL,
-                              headers, 
-                              header,
-                              sizeof (header),
-                              &header_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  iov[n_iov].iov_base = header;
-  iov[n_iov].iov_len = header_len;
-  n_iov++;
-
-  //final crlf
-  iov[n_iov].iov_base = "\r\n";
-  iov[n_iov].iov_len = 2;
-  n_iov++;
-
-  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPLERR(1, "writev failed");
-      connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
-      goto end;
-    }
-
-  ret2 = dpl_read_http_reply(conn, NULL, NULL, &headers_returned);
+  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
         {
-          ret = DPL_ENOENT;
-          goto end;
+          char *remote_name;
+          
+          if (!(vfile->flags & DPL_VFILE_FLAG_CREAT))
+            {
+              ret = DPL_FAILURE;
+              goto end;
+            }
+          remote_name = index(path, '/');
+          if (NULL != remote_name)
+            remote_name++;
+          else
+            remote_name = path;
+          obj_ino = ctx->cur_ino;
+          strcat(obj_ino.key, remote_name); //XXX check length
+          obj_type = DPL_FTYPE_REG;
         }
       else
         {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
+          ret = DPL_FAILURE;
           goto end;
         }
     }
   else
     {
-      if (NULL != headers_returned) //possible if continue succeeded
-        connection_close = dpl_connection_close(headers_returned);
+      if (vfile->flags & DPL_VFILE_FLAG_EXCL)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
     }
 
-  (void) dpl_log_charged_event(ctx, "DATA", "IN", data_len);
-
-  vfile = dpl_vfile_new(conn);
-  if (NULL == vfile)
+  if (DPL_FTYPE_REG != obj_type)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOTDIR;
       goto end;
     }
 
+  if (vfile->flags & DPL_VFILE_FLAG_ENCRYPT)
+    {
+      ret2 = RAND_pseudo_bytes(vfile->salt, sizeof (vfile->salt));
+      if (0 == ret2)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+
+      ret2 = encrypt_init(vfile, 1);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  ret2 = dpl_put_buffered(ctx,
+                          ctx->cur_bucket,
+                          obj_ino.key,
+                          NULL,
+                          metadata,
+                          canned_acl,
+                          data_len,
+                          &vfile->conn);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
   if (NULL != vfilep)
     {
       *vfilep = vfile;
-      vfile = NULL; //consume it
+      vfile = NULL;
     }
 
   ret = DPL_SUCCESS;
-
+  
  end:
 
   if (NULL != vfile)
-    dpl_vfile_free(vfile);
-
-  if (NULL != conn)
-    {
-      if (1 == connection_close)
-        dpl_conn_terminate(conn);
-      else
-        dpl_conn_release(conn);
-    }
-
-  if (NULL != headers)
-    dpl_dict_free(headers);
-
-  if (NULL != headers_returned)
-    dpl_dict_free(headers_returned);
-
-  DPRINTF("ret=%d\n", ret);
+    dpl_close(vfile);
 
   return ret;
 }
 
+/** 
+ * write buffer
+ * 
+ * @param vfile 
+ * @param buf 
+ * @param len 
+ * 
+ * @note ensure that all the buffer is written
+ *
+ * @return 
+ */
 dpl_status_t
-dpl_vfile_write_all(dpl_vfile_t *vfile,
-                    char *buf,
-                    u_int len)
+dpl_write(dpl_vfile_t *vfile,
+          char *buf,
+          u_int len)
 {
-  struct iovec iov;
-  int ret;
-  
-  if (vfile->flags & DPL_VFILE_MODE_ENCRYPT)
+  int ret, ret2;
+  struct iovec iov[10];
+  int n_iov = 0;
+  char *obuf = NULL;
+  int olen;
+
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFILE, "write_all vfile=%p", vfile);
+
+  if (vfile->flags & DPL_VFILE_FLAG_ENCRYPT)
     {
-      char *obuf;
-      int olen;
+      if (0 == vfile->header_done)
+        {
+          iov[n_iov].iov_base = DPL_ENCRYPT_MAGIC;
+          iov[n_iov].iov_len = strlen(DPL_ENCRYPT_MAGIC);
+          
+          n_iov++;
+
+          iov[n_iov].iov_base = vfile->salt;
+          iov[n_iov].iov_len = sizeof (vfile->salt);
+          
+          n_iov++;
+
+          vfile->header_done = 1;
+        }
 
       obuf = malloc(len);
       if (NULL == obuf)
-        return DPL_FAILURE;
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       
       ret = EVP_CipherUpdate(vfile->cipher_ctx, (u_char *) obuf, &olen, (u_char *) buf, len);
       if (0 == ret)
         {
           DPLERR(0, "CipherUpdate failed\n");
-          free(obuf);
-          return DPL_FAILURE;
+          ret = DPL_FAILURE;
+          goto end;
         }
 
-      iov.iov_base = obuf;
-      iov.iov_len = olen;
+      iov[n_iov].iov_base = obuf;
+      iov[n_iov].iov_len = olen;
 
-      ret = dpl_conn_writev_all(vfile->conn, &iov, 1, DPL_DEFAULT_WRITE_TIMEOUT);
-
-      if (DPL_SUCCESS != ret)
-        {
-          DPLERR(0, "writev failed\n");
-          free(obuf);
-          return DPL_FAILURE;
-        }
-
-      //printf("len=%d olen=%d\n", len, olen);
-
-      free(obuf);
-      
-      return DPL_SUCCESS;
+      n_iov++;
     }
   else
     {
-      iov.iov_base = buf;
-      iov.iov_len = len;
+      iov[n_iov].iov_base = buf;
+      iov[n_iov].iov_len = len;
 
-      return dpl_conn_writev_all(vfile->conn, &iov, 1, DPL_DEFAULT_WRITE_TIMEOUT);
+      n_iov++;
     }
 
-  return DPL_FAILURE;
+  ret2 = dpl_conn_writev_all(vfile->conn, iov, n_iov, DPL_DEFAULT_WRITE_TIMEOUT);
+
+  ret = ret2;
+
+ end:
+
+  if (NULL != obuf)
+    free(obuf);
+
+  return ret;
+}
+
+/**/
+
+static dpl_status_t
+cb_vfile_header(void *cb_arg,
+                char *header,
+                char *value)
+{
+  printf("%s=%s\n", header, value);
+
+  return DPL_SUCCESS;
+}
+
+static dpl_status_t
+cb_vfile_buffer(void *cb_arg,
+                char *buf,
+                u_int len)
+{
+  dpl_vfile_t *vfile = (dpl_vfile_t *) cb_arg;
+  char *obuf = NULL;
+  int olen;
+  int ret, ret2;
+
+  if (vfile->flags & DPL_VFILE_FLAG_ENCRYPT)
+    {
+      if (0 == vfile->header_done)
+        {
+          u_int magic_len;
+          u_int header_len;
+
+          magic_len = strlen(DPL_ENCRYPT_MAGIC);
+
+          header_len = magic_len + sizeof (vfile->salt);
+          if (len < header_len)
+            {
+              DPLERR(0, "not enough bytes for decrypting");
+              ret = DPL_EINVAL;
+              goto end;
+            }
+
+          memcpy(vfile->salt, buf + magic_len, sizeof (vfile->salt));
+          buf += header_len;
+          len -= header_len;
+
+          ret2 = encrypt_init(vfile, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+
+          vfile->header_done = 1;
+        }
+
+      obuf = malloc(len);
+      if (NULL == obuf)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+  
+      ret2 = EVP_CipherUpdate(vfile->cipher_ctx, (u_char *) obuf, &olen, (u_char *) buf, len);
+      if (0 == ret2)
+        {
+          DPLERR(0, "CipherUpdate failed\n");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+
+      buf = obuf;
+      len = olen;
+    }
+
+  if (NULL != vfile->buffer_func)
+    {
+      ret2 = vfile->buffer_func(vfile->cb_arg, buf, len);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != obuf)
+    free(obuf);
+
+  return ret;
 }
 
 dpl_status_t
-dpl_vfile_open(dpl_ctx_t *ctx,
-               char *bucket,
-               dpl_ino_t ino,
-               char *path,
-               u_int mode)
+dpl_openread(dpl_ctx_t *ctx,
+             char *path,
+             u_int flags,
+             dpl_condition_t *condition,
+             dpl_buffer_func_t buffer_func,
+             void *cb_arg)
 {
-  //dpl_vfile_t *vfile;
+  dpl_vfile_t *vfile = NULL;
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
 
-  ret2 = dpl_vdir_namei(ctx, path, bucket, ino, &parent_ino, &obj_ino, &obj_type);
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "openread path=%s flags=0x%x", path, flags);
+
+  vfile = malloc(sizeof (*vfile));
+  if (NULL == vfile)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  memset(vfile, 0, sizeof (*vfile));
+
+  vfile->ctx = ctx;
+  vfile->flags = flags;
+  vfile->buffer_func = buffer_func;
+  vfile->cb_arg = cb_arg;
+
+  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
+      goto end;
+    }
+
+  if (DPL_FTYPE_REG != obj_type)
+    {
+      ret = DPL_ENOTDIR;
+      goto end;
+    }
+
+  ret2 = dpl_get_buffered(ctx,
+                          ctx->cur_bucket,
+                          obj_ino.key,
+                          NULL, 
+                          condition,
+                          cb_vfile_header,
+                          cb_vfile_buffer,
+                          vfile);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
       goto end;
     }
 
@@ -394,29 +466,8 @@ dpl_vfile_open(dpl_ctx_t *ctx,
   
  end:
 
+  if (NULL != vfile)
+    dpl_close(vfile);
+
   return ret;
-}
-
-dpl_status_t
-dpl_vfile_close()
-{
-  return DPL_FAILURE;
-}
-
-dpl_status_t
-dpl_vfile_read()
-{
-  return DPL_FAILURE;
-}
-
-dpl_status_t
-dpl_vfile_write()
-{
-  return DPL_FAILURE;
-}
-
-dpl_status_t
-dpl_vfile_pread()
-{
-  return DPL_FAILURE;
 }

@@ -27,25 +27,28 @@ CFLAGS=$(CFLAGSDEBUG)
 LDFLAGS=$(LDFLAGSDEBUG)
 
 PROGS = \
-dpl_sh
+dplsh
 
-DPL_SH_OBJS = \
+DPLSH_OBJS = \
 usage.o \
 xfuncs.o \
 shell.o \
 cmds.o \
 vars.o \
 utils.o \
-dpl_sh.o \
+dplsh.o \
 cmd_cd.o \
 cmd_lcd.o \
 cmd_pwd.o \
 cmd_set.o \
 cmd_unset.o \
 cmd_la.o \
-cmd_rawls.o \
-cmd_rawput.o \
+cmd_put.o \
+cmd_get.o \
+cmd_rm.o \
+cmd_attr.o \
 cmd_mb.o \
+cmd_rb.o \
 cmd_ls.o \
 cmd_mkdir.o \
 cmd_rmdir.o
@@ -68,16 +71,16 @@ valgrind: CFLAGS=$(CFLAGSVALGRIND)
 valgrind: LDFLAGS=$(LDFLAGSVALGRIND)
 valgrind: compile
 
-compile: $(PROGS) $(DPL_SH_LINKS)
+compile: $(PROGS) $(DPLSH_LINKS)
 
-dpl_sh: $(DPL_SH_OBJS) $(DEPENDS)
-	$(CC) -o dpl_sh $(DPL_SH_OBJS) $(LDFLAGS)
+dplsh: $(DPLSH_OBJS) $(DEPENDS)
+	$(CC) -o dplsh $(DPLSH_OBJS) $(LDFLAGS)
 	
 install:
 	install -m755 -c $(PROGS) $(PREFIX)/bin
 
 clean:
-	$(RM) *.o $(PROGS) $(DPL_SH_LINKS)
+	$(RM) *.o $(PROGS) $(DPLSH_LINKS)
 
 fproto:
 	touch *.c

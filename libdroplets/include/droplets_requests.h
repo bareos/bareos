@@ -67,35 +67,37 @@ typedef struct
   char *etag;
 } dpl_condition_t;
 
-/* PROTO droplets_req_listallmybuckets.c droplets_req_listbucket.c droplets_req_put.c droplets_req_get.c droplets_req_delete.c droplets_req_makebucket.c droplets_req_head.c */
-/* src/droplets_req_listallmybuckets.c */
+/* PROTO droplets_listallmybuckets.c droplets_listbucket.c droplets_put.c droplets_get.c droplets_delete.c droplets_makebucket.c droplets_head.c */
+/* src/droplets_listallmybuckets.c */
 void dpl_bucket_free(dpl_bucket_t *bucket);
 void dpl_vec_buckets_free(dpl_vec_t *vec);
 dpl_status_t dpl_parse_list_all_my_buckets(dpl_ctx_t *ctx, char *buf, int len, dpl_vec_t *vec);
 dpl_status_t dpl_list_all_my_buckets(dpl_ctx_t *ctx, dpl_vec_t **vecp);
-/* src/droplets_req_listbucket.c */
+/* src/droplets_listbucket.c */
 void dpl_object_free(dpl_object_t *object);
 void dpl_vec_objects_free(dpl_vec_t *vec);
 void dpl_common_prefix_free(dpl_common_prefix_t *common_prefix);
 void dpl_vec_common_prefixes_free(dpl_vec_t *vec);
 dpl_status_t dpl_parse_list_bucket(dpl_ctx_t *ctx, char *buf, int len, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
 dpl_status_t dpl_list_bucket(dpl_ctx_t *ctx, char *bucket, char *prefix, char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
-/* src/droplets_req_put.c */
+/* src/droplets_put.c */
 dpl_canned_acl_t dpl_canned_acl(char *str);
 char *dpl_canned_acl_str(dpl_canned_acl_t canned_acl);
 dpl_dict_t *dpl_parse_metadata(char *metadata);
 dpl_status_t dpl_add_metadata_to_headers(dpl_dict_t *metadata, dpl_dict_t *headers);
 dpl_status_t dpl_put(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, char *data_buf, u_int data_len);
-/* src/droplets_req_get.c */
+dpl_status_t dpl_put_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, u_int data_len, dpl_conn_t **connp);
+/* src/droplets_get.c */
 dpl_status_t dpl_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
 dpl_status_t dpl_add_condition_to_headers(dpl_condition_t *condition, dpl_dict_t *headers);
 dpl_status_t dpl_get(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, char **data_bufp, u_int *data_lenp, dpl_dict_t **metadatap);
-/* src/droplets_req_delete.c */
+dpl_status_t dpl_get_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
+/* src/droplets_delete.c */
 dpl_status_t dpl_delete(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource);
-/* src/droplets_req_makebucket.c */
+/* src/droplets_makebucket.c */
 dpl_location_constraint_t dpl_location_constraint(char *str);
 char *dpl_location_constraint_str(dpl_location_constraint_t location_constraint);
 dpl_status_t dpl_make_bucket(dpl_ctx_t *ctx, char *bucket, dpl_location_constraint_t location_constraint, dpl_canned_acl_t canned_acl);
-/* src/droplets_req_head.c */
+/* src/droplets_head.c */
 dpl_status_t dpl_head(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
 #endif

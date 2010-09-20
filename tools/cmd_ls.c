@@ -14,36 +14,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dpl_sh.h"
+#include "dplsh.h"
 
 int cmd_ls(int argc, char **argv);
 
 struct usage_def ls_usage[] =
   {
     {'l', 0u, NULL, "long display"},
+    {'P', USAGE_PARAM, "prefix", "default unset"},
+    {'D', USAGE_PARAM, "delimiter", "default unset"},
+    {USAGE_NO_OPT, 0u, "path or bucket", "remote directory"},
     {0, 0u, NULL, NULL},
   };
 
 struct cmd_def ls_cmd = {"ls", "list directory", ls_usage, cmd_ls};
-
-#define LFLAG (1u<<0)
-
-static void
-do_ls_obj(dpl_dirent_t *entry,
-          u_int flags)
-{
-  if (flags & LFLAG)
-    {
-      struct tm *stm;
-      
-      stm = localtime(&entry->last_modified);
-      printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) entry->size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, entry->name);
-    }
-  else
-    {
-      printf("%s\n", entry->name);
-    }
-}
 
 int
 cmd_ls(int argc,
@@ -51,20 +35,31 @@ cmd_ls(int argc,
 {
   char opt;
   int ret;
+  int lflag = 0;
+  char *prefix = NULL;
+  char *delimiter = NULL;
+  size_t total_size = 0;
+  dpl_vec_t *objects = NULL;
+  dpl_vec_t *common_prefixes = NULL;
   void *dir_hdl = NULL;
   dpl_dirent_t entry;
   char *path;
-  u_int flags = 0u;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
 
   optind = 0;
 
-  while ((opt = getopt(argc, argv, "l")) != -1)
+  while ((opt = getopt(argc, argv, usage_getoptstr(ls_usage))) != -1)
     switch (opt)
       {
       case 'l':
-        flags |= LFLAG;
+        lflag = 1;
+        break ;
+      case 'P':
+        prefix = xstrdup(optarg);
+        break ;
+      case 'D':
+        delimiter = xstrdup(optarg);
         break ;
       case '?':
       default:
@@ -75,19 +70,15 @@ cmd_ls(int argc,
   argv += optind;
 
   if (0 == argc)
-    {
-      path = ".";
-    }
+    path = ".";
   else if (1 == argc)
-    {
-      path = argv[0];
-    }
+    path = argv[0];
   else
     {
       usage_help(&ls_cmd);
       return SHELL_CONT;
     }
-
+  
   ret = dpl_opendir(ctx, path, &dir_hdl);
   if (DPL_SUCCESS != ret)
     {
@@ -104,7 +95,25 @@ cmd_ls(int argc,
           goto end;
         }
       
-      do_ls_obj(&entry, flags);
+      if (lflag)
+        {
+          struct tm *stm;
+          
+          stm = localtime(&entry.last_modified);
+          printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) entry.size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, entry.name);
+        }
+      else
+        {
+          printf("%s\n", entry.name);
+        }
+      
+      total_size += entry.size;
+    }
+
+  if (1 == lflag)
+    {
+      if (NULL != ctx->pricing)
+        printf("Total %s Price %s\n", dpl_size_str(total_size), dpl_price_storage_str(ctx, total_size));
     }
 
   var_set("status", "0", VAR_CMD_SET, NULL);
@@ -113,6 +122,18 @@ cmd_ls(int argc,
 
   if (NULL != dir_hdl)
     dpl_vdir_closedir(dir_hdl);
+
+  if (NULL != objects)
+    dpl_vec_objects_free(objects);
+
+  if (NULL != common_prefixes)
+    dpl_vec_common_prefixes_free(common_prefixes);
+
+  if (NULL != prefix)
+    free(prefix);
+
+  if (NULL != delimiter)
+    free(delimiter);
 
   return SHELL_CONT;
 }

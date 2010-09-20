@@ -102,14 +102,16 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
       char *p;
 
       p = rindex(obj->key, '/');
-      if (NULL == p)
+      if (NULL != p)
+        p++;
+      else
         p = obj->key;
 
-      //printf("cmp obj_key=%s obj_name=%s\n", p, obj_name);
+      DPRINTF("cmp obj_key=%s obj_name=%s\n", p, obj_name);
 
       if (!strcmp(p, obj_name))
         {
-          //printf("ok\n");
+          DPRINTF("ok\n");
           
           key_len = strlen(obj->key);
           if (key_len >= DPL_MAXNAMLEN)
@@ -159,11 +161,11 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
 
       key_len = p - p2 + 1;
 
-      //printf("cmp (prefix=%s) prefix=%.*s obj_name=%.*s\n", prefix->prefix, key_len, p2, key_len, obj_name);
+      DPRINTF("cmp (prefix=%s) prefix=%.*s obj_name=%.*s\n", prefix->prefix, key_len, p2, key_len, obj_name);
 
       if (!strncmp(p2, obj_name, key_len))
         {
-          //printf("ok\n");
+          DPRINTF("ok\n");
 
           key_len = strlen(prefix->prefix);
           if (key_len >= DPL_MAXNAMLEN)
@@ -656,6 +658,8 @@ dpl_opendir(dpl_ctx_t *ctx,
   dpl_ino_t obj_ino;
   dpl_ftype_t obj_type;
 
+  DPL_TRACE(ctx, DPL_TRACE_VDIR, "opendir path=%s", path);
+
   ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
   if (0 != ret2)
     {
@@ -681,6 +685,40 @@ dpl_opendir(dpl_ctx_t *ctx,
 
   ret = DPL_SUCCESS;
 
+ end:
+
+  return ret;
+}
+
+dpl_status_t
+dpl_chdir(dpl_ctx_t *ctx,
+          char *path)
+{
+  int ret, ret2;
+  dpl_ino_t obj_ino;
+  dpl_ftype_t obj_type;
+
+  DPL_TRACE(ctx, DPL_TRACE_VDIR, "chdir path=%s", path);
+  
+  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
+  if (0 != ret2)
+    {
+      DPLERR(0, "path resolve failed");
+      ret = ret2;
+      goto end;
+    }
+
+  if (DPL_FTYPE_DIR != obj_type)
+    {
+      DPLERR(0, "not a directory");
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
+  ctx->cur_ino = obj_ino;
+
+  ret = DPL_SUCCESS;
+  
  end:
 
   return ret;

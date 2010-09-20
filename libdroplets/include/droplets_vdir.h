@@ -59,9 +59,6 @@ dpl_status_t dpl_vdir_iname(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, char *p
 dpl_status_t dpl_vdir_namei(dpl_ctx_t *ctx, char *path, char *bucket, dpl_ino_t ino, dpl_ino_t *parent_inop, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
 dpl_status_t dpl_vdir_count_entries(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, u_int *n_entriesp);
 dpl_status_t dpl_vdir_rmdir(dpl_ctx_t *ctx, char *bucket, dpl_ino_t parent_ino, const char *obj_name);
-dpl_status_t
-dpl_opendir(dpl_ctx_t *ctx,
-            char *path,
-            void **dir_hdlp)
-  ;
+dpl_status_t dpl_opendir(dpl_ctx_t *ctx, char *path, void **dir_hdlp);
+dpl_status_t dpl_chdir(dpl_ctx_t *ctx, char *path);
 #endif

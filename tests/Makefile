@@ -61,32 +61,24 @@ VALGRIND = valgrind --leak-check=full --suppressions=valgrind.supp
 DPLTESTBUCKET1=dropletstest01
 DPLTESTBUCKET2=dropletstest02
 
-test: $(DPLTOOLSDIR)/dpl_la $(DPLTOOLSDIR)/dpl_ls $(DPLTOOLSDIR)/dpl_mb $(DPLTOOLSDIR)/dpl_put $(DPLTOOLSDIR)/dpl_get $(DPLTOOLSDIR)/dpl_delete
+test: $(DPLTOOLSDIR)/dplsh
+	rm dpltest.tmp dpltest.tmp2
 	@echo make bucket
-	$(VALGRIND) $(DPLTOOLSDIR)/dpl_mb $(DPLTESTBUCKET1)
+	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "mb $(DPLTESTBUCKET1);$(DPLTESTBUCKET1):"
 	@echo put file
 	dd if=/dev/urandom of=dpltest.tmp bs=1M count=1
-	$(VALGRIND) $(DPLTOOLSDIR)/dpl_put dpltest.tmp $(DPLTESTBUCKET1): -mfoo=bar
+	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "put -mfoo=bar dpltest.tmp"
 	@echo get file
-	$(VALGRIND) $(DPLTOOLSDIR)/dpl_get $(DPLTESTBUCKET1):dpltest.tmp > dpltest.tmp2
+	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "get dpltest.tmp dpltest.tmp2"
 	diff dpltest.tmp dpltest.tmp2
 	@echo list bucket
-	$(VALGRIND) $(DPLTOOLSDIR)/dpl_delete -i $(DPLTESTBUCKET1):dpltest.tmp
-	@echo list bucket
-	$(VALGRIND) $(DPLTOOLSDIR)/dpl_ls $(DPLTESTBUCKET1)
+	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "rm $(DPLTESTBUCKET1):dpltest.tmp"
 	@echo remove bucket
-	$(VALGRIND) $(DPLTOOLSDIR)/dpl_delete -i $(DPLTESTBUCKET1)
-
-test2: $(DPLTOOLSDIR)/dpl_la $(DPLTOOLSDIR)/dpl_ls $(DPLTOOLSDIR)/dpl_mb $(DPLTOOLSDIR)/dpl_put $(DPLTOOLSDIR)/dpl_get $(DPLTOOLSDIR)/dpl_delete
-	@echo put file encrypted
-	dd if=/dev/urandom of=dpltest.tmp bs=1M count=1
-	$(DPLTOOLSDIR)/dpl_bput -C dpltest.tmp $(DPLTESTBUCKET2): -mfoo=bar
-
-test4: dpl_perf_test $(DPLTOOLSDIR)/dpl_mb $(DPLTOOLSDIR)/dpl_delete
-	@echo make bucket
-	./dpl_perf_test -N30 -n100 -b1000000 -B dropletstest04
+	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "rb $(DPLTESTBUCKET1)"
 
 install:
 
 clean:
 	$(RM) *.o $(TESTS) dpltest.tmp dpltest.tmp2
+
+fproto:

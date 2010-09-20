@@ -523,13 +523,6 @@ dpl_profile_post(dpl_ctx_t *ctx)
     }
   
   //encrypt
-  if (NULL == ctx->encrypt_key)
-    {
-      fprintf(stderr, "misding 'encrypt_key'\n");
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
   OpenSSL_add_all_digests();
   OpenSSL_add_all_ciphers();
 

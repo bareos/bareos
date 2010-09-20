@@ -14,14 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dpl_sh.h"
+#include "dplsh.h"
 
 dpl_ctx_t *ctx = NULL;
 int status = 0;
+u_int block_size = 0;
+int hash = 0;
 
 int
 do_quit()
 {
+  vars_save();
+
   dpl_ctx_free(ctx);
   dpl_free();
 
@@ -39,6 +43,40 @@ char *
 var_set_trace_level(char *value)
 {
   ctx->trace_level = strtoul(value, NULL, 0);
+  return xstrdup(value);
+}
+
+char *
+var_set_block_size(char *value)
+{
+  block_size = strtoul(value, NULL, 0);
+  return xstrdup(value);
+}
+
+char *
+var_set_hash(char *value)
+{
+  hash = strtoul(value, NULL, 0) == 0 ? 0 : 1;
+  return xstrdup(value);
+}
+
+char *
+var_set_bucket(char *value)
+{
+  if (NULL != ctx->cur_bucket)
+    free(ctx->cur_bucket);
+  ctx->cur_bucket = xstrdup(value);
+  return xstrdup(value);
+}
+
+char *
+var_set_pwd(char *value)
+{
+  int ret;
+
+  ret = dpl_chdir(ctx, value);
+  if (DPL_SUCCESS != ret)
+    return NULL;
   return xstrdup(value);
 }
 
@@ -108,6 +146,18 @@ main(int argc,
   var_set("status", "0", VAR_CMD_SET, NULL);
   var_set("trace_level", NULL, VAR_CMD_SET_SPECIAL, var_set_trace_level);
   var_set("trace_level", "0", VAR_CMD_SET, NULL);
+  var_set("block_size", NULL, VAR_CMD_SET_SPECIAL, var_set_block_size);
+  var_set("block_size", "8192", VAR_CMD_SET, NULL);
+  var_set("hash", NULL, VAR_CMD_SET_SPECIAL, var_set_hash);
+  var_set("hash", "1", VAR_CMD_SET, NULL);
+  var_set("bucket", NULL, VAR_CMD_SET_SPECIAL, var_set_bucket);
+  var_set("bucket", "", VAR_CMD_SET, NULL);
+  //var_set("pwd", NULL, VAR_CMD_SET_SPECIAL, var_set_pwd);
+  //var_set("pwd", "/", VAR_CMD_SET, NULL);
+
+  ctx->cur_ino = DPL_ROOT_INO;
+
+  vars_load();
 
   if (NULL != cmd)
     {
@@ -118,9 +168,6 @@ main(int argc,
       do_quit();
     }
 
-  ctx->cur_bucket = xstrdup("");
-  ctx->cur_ino = DPL_ROOT_INO;
-  
   shell_install_cmd_defs(cmd_defs);
   rl_attempted_completion_function = shell_completion;
   //rl_completion_entry_function = file_completion;

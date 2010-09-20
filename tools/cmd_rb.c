@@ -16,34 +16,57 @@
 
 #include "dplsh.h"
 
-int cmd_lcd(int argc, char **argv);
+int cmd_rb(int argc, char **argv);
 
-struct usage_def lcd_usage[] =
+struct usage_def rb_usage[] =
   {
-    {USAGE_NO_OPT, USAGE_MANDAT, "path", "local path"},
+    {USAGE_NO_OPT, 0u, "bucket", "remote bucket"},
     {0, 0u, NULL, NULL},
   };
 
-struct cmd_def lcd_cmd = {"lcd", "change directory", lcd_usage, cmd_lcd};
+struct cmd_def rb_cmd = {"rb", "remove bucket", rb_usage, cmd_rb};
 
 int
-cmd_lcd(int argc,
-        char **argv)
+cmd_rb(int argc,
+       char **argv)
 {
   int ret;
+  char opt;
+  char *bucket = NULL;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
 
-  if (2 != argc)
+  optind = 0;
+
+  while ((opt = getopt(argc, argv, usage_getoptstr(rb_usage))) != -1)
+    switch (opt)
+      {
+      case '?':
+      default:
+        usage_help(&rb_cmd);
+        return SHELL_CONT;
+      }
+  argc -= optind;
+  argv += optind;
+
+  if (1 == argc)
     {
-      usage_help(&lcd_cmd);
+      bucket = argv[0];
+    }
+  else if (0 == argc)
+    {
+      bucket = ctx->cur_bucket;
+    }
+  else
+    {
+      usage_help(&rb_cmd);
       return SHELL_CONT;
     }
-
-  ret = chdir(argv[1]);
-  if (-1 == ret)
+  
+  ret = dpl_delete(ctx, bucket, "/", NULL);
+  if (DPL_SUCCESS != ret)
     {
-      perror("chdir");
+      fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);
       goto end;
     }
 

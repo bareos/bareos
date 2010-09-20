@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dpl_sh.h"
+#include "dplsh.h"
 
 int cmd_quit(int argc, char **argv);
 int cmd_help(int argc, char **argv);
@@ -84,17 +84,20 @@ cmd_help(int argc,
 
 struct cmd_def	*cmd_defs[] =
   {
+    &attr_cmd,
     &cd_cmd,
+    &get_cmd,
     &help_cmd,
     &lcd_cmd,
     &la_cmd,
     &ls_cmd,
     &mb_cmd,
     &mkdir_cmd,
+    &put_cmd,
     &pwd_cmd,
     &quit_cmd,
-    &rawls_cmd,
-    &rawput_cmd,
+    &rb_cmd,
+    &rm_cmd,
     &rmdir_cmd,
     &set_cmd,
     &unset_cmd,
