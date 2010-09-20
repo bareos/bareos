@@ -1,7 +1,6 @@
 
 #use_https = true
 
-#encrypt = true
 encrypt_key = hello
 
 ssl_cert_file = client.pem
