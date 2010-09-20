@@ -600,7 +600,7 @@ dpl_connection_close(dpl_dict_t *headers_returned)
 /*
  * convenience function
  */
-struct read_conven
+struct httreply_conven
 {
   char *data_buf;
   u_int data_len;
@@ -608,21 +608,21 @@ struct read_conven
 };
 
 static dpl_status_t
-cb_header(void *cb_arg,
-          char *header,
-          char *value)
+cb_httpreply_header(void *cb_arg,
+                    char *header,
+                    char *value)
 {
-  struct read_conven *rc = (struct read_conven *) cb_arg;
+  struct httreply_conven *hc = (struct httreply_conven *) cb_arg;
   int ret;
   
-  if (NULL == rc->headers)
+  if (NULL == hc->headers)
     {
-      rc->headers = dpl_dict_new(13);
-      if (NULL == rc->headers)
+      hc->headers = dpl_dict_new(13);
+      if (NULL == hc->headers)
         return DPL_ENOMEM;
     }
 
-  ret = dpl_dict_add(rc->headers, header, value, 1);
+  ret = dpl_dict_add(hc->headers, header, value, 1);
   if (DPL_SUCCESS != ret)
     return DPL_ENOMEM;
 
@@ -630,35 +630,35 @@ cb_header(void *cb_arg,
 }
 
 static dpl_status_t
-cb_buffer(void *cb_arg,
-          char *buf,
-          u_int len)
+cb_httpreply_buffer(void *cb_arg,
+                    char *buf,
+                    u_int len)
 {
-  struct read_conven *rc = (struct read_conven *) cb_arg;
+  struct httreply_conven *hc = (struct httreply_conven *) cb_arg;
 
-  if (NULL == rc->data_buf)
+  if (NULL == hc->data_buf)
     {
-      rc->data_buf = malloc(len);
-      if (NULL == rc->data_buf)
+      hc->data_buf = malloc(len);
+      if (NULL == hc->data_buf)
         return DPL_ENOMEM;
 
-      memcpy(rc->data_buf, buf, len);
-      rc->data_len = len;
+      memcpy(hc->data_buf, buf, len);
+      hc->data_len = len;
     }
   else
     {
       char *nptr;
 
-      nptr = realloc(rc->data_buf, rc->data_len + len);
+      nptr = realloc(hc->data_buf, hc->data_len + len);
       if (NULL == nptr)
         return DPL_ENOMEM;
       
-      rc->data_buf = nptr;
-      memcpy(rc->data_buf + rc->data_len, buf, len);
-      rc->data_len += len;
+      hc->data_buf = nptr;
+      memcpy(hc->data_buf + hc->data_len, buf, len);
+      hc->data_len += len;
     }
 
-  return 0;
+  return DPL_SUCCESS;
 }
 
 /** 
@@ -678,11 +678,11 @@ dpl_read_http_reply(dpl_conn_t *conn,
                     dpl_dict_t **headersp)
 {
   int ret, ret2;
-  struct read_conven rc;
+  struct httreply_conven hc;
 
-  memset(&rc, 0, sizeof (rc));
+  memset(&hc, 0, sizeof (hc));
 
-  ret2 = dpl_read_http_reply_buffered(conn, cb_header, cb_buffer, &rc);
+  ret2 = dpl_read_http_reply_buffered(conn, cb_httpreply_header, cb_httpreply_buffer, &hc);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -697,26 +697,26 @@ dpl_read_http_reply(dpl_conn_t *conn,
     {
       if (NULL != data_bufp)
         {
-          *data_bufp = rc.data_buf;
-          rc.data_buf = NULL; //consumed
+          *data_bufp = hc.data_buf;
+          hc.data_buf = NULL; //consumed
         }
       
       if (NULL != data_lenp)
-        *data_lenp = rc.data_len;
+        *data_lenp = hc.data_len;
 
       if (NULL != headersp)
         {
-          *headersp = rc.headers;
-          rc.headers = NULL; //consumed
+          *headersp = hc.headers;
+          hc.headers = NULL; //consumed
         }
     }
 
   //if not consumed
-  if (NULL != rc.data_buf)
-    free(rc.data_buf);
+  if (NULL != hc.data_buf)
+    free(hc.data_buf);
 
-  if (NULL != rc.headers)
-    dpl_dict_free(rc.headers);
+  if (NULL != hc.headers)
+    dpl_dict_free(hc.headers);
 
   return ret;
 }

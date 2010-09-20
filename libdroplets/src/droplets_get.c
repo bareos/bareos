@@ -329,15 +329,62 @@ dpl_get(dpl_ctx_t *ctx,
   return ret;
 }
 
+struct get_conven
+{
+  dpl_dict_t *headers;
+  dpl_buffer_func_t buffer_func;
+  void *cb_arg;
+};
+
+static dpl_status_t
+cb_get_header(void *cb_arg,
+              char *header,
+              char *value)
+{
+  struct get_conven *gc = (struct get_conven *) cb_arg;
+  int ret;
+  
+  if (NULL == gc->headers)
+    {
+      gc->headers = dpl_dict_new(13);
+      if (NULL == gc->headers)
+        return DPL_ENOMEM;
+    }
+
+  ret = dpl_dict_add(gc->headers, header, value, 1);
+  if (DPL_SUCCESS != ret)
+    return DPL_ENOMEM;
+
+  return DPL_SUCCESS;
+}
+
+static dpl_status_t
+cb_get_buffer(void *cb_arg,
+              char *buf,
+              u_int len)
+{
+  struct get_conven *gc = (struct get_conven *) cb_arg;
+  int ret;
+
+  if (NULL != gc->buffer_func)
+    {
+      ret = gc->buffer_func(gc->cb_arg, buf, len);
+      if (DPL_SUCCESS != ret)
+        return ret;
+    }
+
+  return DPL_SUCCESS;
+}
+
 dpl_status_t
 dpl_get_buffered(dpl_ctx_t *ctx,
                  char *bucket,
                  char *resource,
                  char *subresource,
                  dpl_condition_t *condition,
-                 dpl_header_func_t header_func,
                  dpl_buffer_func_t buffer_func,
-                 void *cb_arg)
+                 void *cb_arg,
+                 dpl_dict_t **metadatap)
 {
   char          host[1024];
   int           ret, ret2;
@@ -353,10 +400,16 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   int           connection_close = 0;
   dpl_vec_t     *vec = NULL;
   dpl_dict_t    *headers = NULL;
+  dpl_dict_t    *metadata = NULL;
+  struct get_conven gc;
 
   snprintf(host, sizeof (host), "%s.%s", bucket, ctx->host);
 
   DPRINTF("dpl_list_bucket: host=%s:%d\n", host, ctx->port);
+
+  memset(&gc, 0, sizeof (gc));
+  gc.buffer_func = buffer_func;
+  gc.cb_arg = cb_arg;
 
   headers = dpl_dict_new(13);
   if (NULL == headers)
@@ -374,6 +427,13 @@ dpl_get_buffered(dpl_ctx_t *ctx,
 
   ret2 = dpl_dict_add(headers, "Connection", "keep-alive", 0);
   if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
     {
       ret = DPL_ENOMEM;
       goto end;
@@ -446,7 +506,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply_buffered(conn, header_func, buffer_func, cb_arg);
+  ret2 = dpl_read_http_reply_buffered(conn, cb_get_header, cb_get_buffer, &gc);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -461,6 +521,15 @@ dpl_get_buffered(dpl_ctx_t *ctx,
           ret = DPL_ENOENT; //mapped to 404
           goto end;
         }
+    }
+
+  connection_close = dpl_connection_close(gc.headers);
+  
+  ret2 = dpl_get_metadata_from_headers(gc.headers, metadata);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
     }
 
   //caller is responsible for logging the event
@@ -480,8 +549,14 @@ dpl_get_buffered(dpl_ctx_t *ctx,
         dpl_conn_release(conn);
     }
 
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
   if (NULL != headers)
     dpl_dict_free(headers);
+
+  if (NULL != gc.headers)
+    dpl_dict_free(gc.headers);
 
   DPRINTF("ret=%d\n", ret);
 

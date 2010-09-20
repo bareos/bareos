@@ -317,16 +317,6 @@ dpl_write(dpl_vfile_t *vfile,
 /**/
 
 static dpl_status_t
-cb_vfile_header(void *cb_arg,
-                char *header,
-                char *value)
-{
-  printf("%s=%s\n", header, value);
-
-  return DPL_SUCCESS;
-}
-
-static dpl_status_t
 cb_vfile_buffer(void *cb_arg,
                 char *buf,
                 u_int len)
@@ -412,7 +402,8 @@ dpl_openread(dpl_ctx_t *ctx,
              u_int flags,
              dpl_condition_t *condition,
              dpl_buffer_func_t buffer_func,
-             void *cb_arg)
+             void *cb_arg,
+             dpl_dict_t **metadatap)
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
@@ -453,9 +444,9 @@ dpl_openread(dpl_ctx_t *ctx,
                           obj_ino.key,
                           NULL, 
                           condition,
-                          cb_vfile_header,
                           cb_vfile_buffer,
-                          vfile);
+                          vfile,
+                          metadatap);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

@@ -136,7 +136,7 @@ cmd_get(int argc,
         }
     }
 
-  ret = dpl_openread(ctx, path, (1 == kflag ? DPL_VFILE_FLAG_ENCRYPT : 0u), NULL, cb_get_buffered, &get_data);
+  ret = dpl_openread(ctx, path, (1 == kflag ? DPL_VFILE_FLAG_ENCRYPT : 0u), NULL, cb_get_buffered, &get_data, &metadata);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);

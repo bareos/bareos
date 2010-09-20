@@ -51,7 +51,7 @@ typedef struct
 dpl_status_t dpl_close(dpl_vfile_t *vfile);
 dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, char *path, u_int flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, u_int data_len, dpl_vfile_t **vfilep);
 dpl_status_t dpl_write(dpl_vfile_t *vfile, char *buf, u_int len);
-dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *path, u_int flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg);
+dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *path, u_int flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap);
 dpl_status_t dpl_unlink(dpl_ctx_t *ctx, char *path);
 dpl_status_t dpl_getattr(dpl_ctx_t *ctx, char *path, dpl_condition_t *condition, dpl_dict_t **metadatap);
 #endif
