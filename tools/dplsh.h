@@ -1,6 +1,6 @@
 /*
- * Droplets, high performance cloud storage client library
- * Copyright (C) 2010 Scality http://github.com/scality/Droplets
+ * Droplet, high performance cloud storage client library
+ * Copyright (C) 2010 Scality http://github.com/scality/Droplet
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
@@ -32,7 +32,7 @@
 #include <fcntl.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include <droplets.h>
+#include <droplet.h>
 #include "xfuncs.h"
 #include "usage.h"
 #include "vars.h"

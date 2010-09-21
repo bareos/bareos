@@ -2,7 +2,7 @@
  * simple example which recurses a directory tree
  */
 
-#include <droplets.h>
+#include <droplet.h>
 
 dpl_status_t
 recurse(dpl_ctx_t *ctx,

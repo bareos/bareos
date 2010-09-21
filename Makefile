@@ -1,7 +1,7 @@
 
 DIRS = \
 build-tools \
-libdroplets \
+libdroplet \
 tools \
 tests
 

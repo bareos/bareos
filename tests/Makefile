@@ -3,15 +3,15 @@ PREFIX = /usr/local
 
 RM = rm -f
 
-INCS = -I../libdroplets/include
+INCS = -I../libdroplet/include
 
 PLATFORM ?= $(shell uname -o)
 ifeq ($(PLATFORM),Solaris)
 EXTRA_LIBS = -lsocket -lnsl
 endif
 
-LIBS = -L../libdroplets/lib -ldroplets -lm -lz -lssl -lcrypto -lpthread $(EXTRA_LIBS)
-DEPENDS = ../libdroplets/lib/libdroplets.a
+LIBS = -L../libdroplet/lib -ldroplet -lm -lz -lssl -lcrypto -lpthread $(EXTRA_LIBS)
+DEPENDS = ../libdroplet/lib/libdroplet.a
 
 DPLTOOLSDIR=../tools
 
@@ -58,8 +58,8 @@ dpl_perf_test: $(DPL_PERF_TEST_OBJS) $(COMMON_OBJS) $(DEPENDS)
 	$(CC) -o dpl_perf_test $(DPL_PERF_TEST_OBJS) $(COMMON_OBJS) $(LDFLAGS)
 
 VALGRIND = valgrind --leak-check=full --suppressions=valgrind.supp
-DPLTESTBUCKET1=dropletstest01
-DPLTESTBUCKET2=dropletstest02
+DPLTESTBUCKET1=droplettest01
+DPLTESTBUCKET2=droplettest02
 
 test: $(DPLTOOLSDIR)/dplsh
 	$(RM) dpltest.tmp dpltest.tmp2

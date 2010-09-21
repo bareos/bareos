@@ -1,6 +1,6 @@
 /*
- * Droplets, high performance cloud storage client library
- * Copyright (C) 2010 Scality http://github.com/scality/Droplets
+ * Droplet, high performance cloud storage client library
+ * Copyright (C) 2010 Scality http://github.com/scality/Droplet
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
@@ -83,12 +83,12 @@ var_set_pwd(char *value)
 struct usage_def main_usage[] =
   {
     {'e', USAGE_PARAM, "cmd", "execute command"},
-    {'d', USAGE_PARAM, "droplets_dir", "default is '~/.droplets'"},
+    {'d', USAGE_PARAM, "droplet_dir", "default is '~/.droplet'"},
     {'p', USAGE_PARAM, "profile_name", "default is 'default'"},
     {0, 0u, NULL, NULL},
   };
 
-struct cmd_def main_cmd = {"dpl_sh", "Droplets Shell", main_usage};
+struct cmd_def main_cmd = {"dpl_sh", "Droplet Shell", main_usage};
 
 int 
 main(int argc, 
@@ -99,13 +99,13 @@ main(int argc,
   enum shell_error shell_err;
   char *cmd = NULL;
   optind = 0;
-  char *droplets_dir = NULL;
+  char *droplet_dir = NULL;
   char *profile_name = NULL;
 
   ret = dpl_init();
   if (DPL_SUCCESS != ret)
     {
-      fprintf(stderr, "error initing droplets\n");
+      fprintf(stderr, "error initing droplet\n");
       exit(1);
     }
 
@@ -116,7 +116,7 @@ main(int argc,
         cmd = xstrdup(optarg);
         break ;
       case 'd':
-        droplets_dir = xstrdup(optarg);
+        droplet_dir = xstrdup(optarg);
         break ;
       case 'p':
         profile_name = xstrdup(optarg);
@@ -135,10 +135,10 @@ main(int argc,
       exit(1);
     }
 
-  ctx = dpl_ctx_new(droplets_dir, profile_name);
+  ctx = dpl_ctx_new(droplet_dir, profile_name);
   if (NULL == ctx)
     {
-      fprintf(stderr, "error creating droplets ctx\n");
+      fprintf(stderr, "error creating droplet ctx\n");
       exit(1);
     }
 
