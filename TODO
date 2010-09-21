@@ -4,3 +4,4 @@
 - handle subresources in vfile api
 - unhandled case for dpl_openwrite() when DPL_ENOENT
 - create metadata when file is encrypted
+- log multiple requests at the same time (instead of one line per request: overkill)
