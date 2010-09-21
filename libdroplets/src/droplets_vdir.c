@@ -703,7 +703,7 @@ dpl_chdir(dpl_ctx_t *ctx,
   ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
   if (0 != ret2)
     {
-      DPLERR(0, "path resolve failed");
+      DPLERR(0, "path resolve failed %s", path);
       ret = ret2;
       goto end;
     }
