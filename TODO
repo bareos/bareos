@@ -1,5 +1,6 @@
 - Timeout detection in SSL connect/read/write
 - use const keyword when appropriate
-- remote file completion
+- remote file completion in dplsh
 - handle subresources in vfile api
-- unhandled case 
+- unhandled case for dpl_openwrite() when DPL_ENOENT
+- create metadata when file is encrypted
