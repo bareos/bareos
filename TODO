@@ -6,3 +6,5 @@
 - create metadata when file is encrypted
 - log multiple requests at the same time (instead of one line per request: overkill)
 - provide a callback for HTTP return code value
+- Compute MD5 of file when offloading
+- Range extension
