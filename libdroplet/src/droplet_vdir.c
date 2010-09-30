@@ -19,45 +19,6 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-#if 0
-/** 
- * find the last occurence of needle in haystack
- * 
- * @param haystack 
- * @param needle 
- * 
- * @return 
- */
-static char *
-strrstr(const char *haystack,
-        const char *needle)
-{
-  int haystack_len = strlen(haystack);
-  int needle_len = strlen(needle);
-  int i;
-
-  for (i = haystack_len - needle_len;i >= 0;i--)
-    {
-      //printf("%s\n", haystack + i);
-      if (!strncmp(haystack + i, needle, needle_len))
-        {
-          //printf("found '%s'\n", haystack + i);
-          return (char *) (haystack + i);
-        }
-    }
-  
-  return NULL;
-}
-#endif
-
-#if 0
-static void
-test_strrstr()
-{
-  printf("%s\n", strrstr("lev1DIRlev2DIRlev3", "DIR"));
-}
-#endif
-
 dpl_status_t
 dpl_vdir_lookup(dpl_ctx_t *ctx,
                 char *bucket,
@@ -72,6 +33,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
   int i;
   dpl_ino_t obj_ino;
   dpl_ftype_t obj_type;
+  int delim_len = strlen(ctx->delim);
 
   memset(&obj_ino, 0, sizeof (obj_ino));
 
@@ -92,23 +54,36 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
     {
       char *p, *p2;
 
+      if (!strcmp(parent_ino.key, ""))
+        {
+          //silent success for root dir
+          if (NULL != obj_inop)
+            *obj_inop = DPL_ROOT_INO;
+          
+          if (NULL != obj_typep)
+            *obj_typep = DPL_FTYPE_DIR;
+          
+          ret = DPL_SUCCESS;
+          goto end;
+        }
+
       obj_ino = parent_ino;
 
-      p = rindex(obj_ino.key, '/');
+      p = dpl_strrstr(obj_ino.key, ctx->delim);
       if (NULL == p)
         {
-          //weird prefix
+          fprintf(stderr, "parent key shall contain delim %s\n", ctx->delim);
           ret = DPL_FAILURE;
           goto end;
         }
 
-      p--;
+      p -= delim_len;
 
-      for (p2 = p;p2 > obj_ino.key;p2--)
+      for (p2 = p;p2 > obj_ino.key;p2 -= delim_len)
         {
-          if (*p2 == '/')
+          if (!strncmp(p2, ctx->delim, delim_len))
             {
-              p2++;
+              p2 += delim_len;
               break ;
             }
         }
@@ -126,7 +101,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
     }
   
   //AWS do not like "" as a prefix
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(parent_ino.key, "") ? NULL : parent_ino.key, "/", &files, &directories);
+  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(parent_ino.key, "") ? NULL : parent_ino.key, ctx->delim, &files, &directories);
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "list_bucket failed %s:%s", bucket, parent_ino.key);
@@ -140,9 +115,9 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
       int key_len;
       char *p;
 
-      p = rindex(obj->key, '/');
+      p = dpl_strrstr(obj->key, ctx->delim);
       if (NULL != p)
-        p++;
+        p += delim_len;
       else
         p = obj->key;
 
@@ -161,7 +136,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
             }
           memcpy(obj_ino.key, obj->key, key_len);
           obj_ino.key[key_len] = 0;
-          if ('/' == obj->key[key_len-1])
+          if (strlen(obj->key) >= delim_len && !strcmp(obj->key - delim_len, ctx->delim))
             obj_type = DPL_FTYPE_DIR;
           else
             obj_type = DPL_FTYPE_REG;
@@ -183,17 +158,24 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
       int key_len;
       char *p, *p2;
 
-      p = rindex(prefix->prefix, '/');
+      p = dpl_strrstr(prefix->prefix, ctx->delim);
       if (NULL == p)
-        continue ; //weird prefix
-
-      p--;
-
-      for (p2 = p;p2 > prefix->prefix;p2--)
         {
-          if (*p2 == '/')
+          fprintf(stderr, "prefix %s shall contain delim %s\n", prefix->prefix, ctx->delim);
+          continue ;
+        }
+
+      DPRINTF("p='%s'\n", p);
+
+      p -= delim_len;
+
+      for (p2 = p;p2 > prefix->prefix;p2 -= delim_len)
+        {
+          DPRINTF("p2='%s'\n", p2);
+
+          if (!strncmp(p2, ctx->delim, delim_len))
             {
-              p2++;
+              p2 += delim_len;
               break ;
             }
         }
@@ -254,7 +236,7 @@ dpl_vdir_mkdir(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "mkdir bucket=%s parent_ino=%s name=%s", bucket, parent_ino.key, obj_name);
 
-  snprintf(resource, sizeof (resource), "%s%s/", parent_ino.key, obj_name);
+  snprintf(resource, sizeof (resource), "%s%s%s", parent_ino.key, obj_name, ctx->delim);
 
   ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, DPL_CANNED_ACL_PRIVATE, NULL, 0);
   if (DPL_SUCCESS != ret2)
@@ -309,7 +291,7 @@ dpl_vdir_opendir(dpl_ctx_t *ctx,
   dir->ino = ino;
 
   //AWS prefers NULL for listing the root dir
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(ino.key, "") ? NULL : ino.key, "/", &dir->files, &dir->directories);
+  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(ino.key, "") ? NULL : ino.key, ctx->delim, &dir->files, &dir->directories);
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "list_bucket failed %s:%s", bucket, ino.key);
@@ -353,6 +335,7 @@ dpl_vdir_readdir(void *dir_hdl,
   char *name;
   int name_len;
   int key_len;
+  int delim_len = strlen(dir->ctx->delim);
 
   DPL_TRACE(dir->ctx, DPL_TRACE_VDIR, "readdir dir_hdl=%p files_cursor=%d directories_cursor=%d", dir_hdl, dir->files_cursor, dir->directories_cursor);
 
@@ -434,7 +417,7 @@ dpl_vdir_readdir(void *dir_hdl,
       memcpy(dirent->ino.key, obj->key, key_len);
       dirent->ino.key[key_len] = 0;
 
-      if ('/' == obj->key[key_len-1])
+      if (strlen(obj->key) >= delim_len && !strcmp(obj->key - delim_len, dir->ctx->delim))
         dirent->type = DPL_FTYPE_DIR;
       else
         dirent->type = DPL_FTYPE_REG;
@@ -492,12 +475,13 @@ dpl_vdir_namei(dpl_ctx_t *ctx,
   int ret;
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
+  int delim_len = strlen(ctx->delim);
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "namei path=%s bucket=%s ino=%s", path, bucket, ino.key);
 
   p1 = path;
 
-  if (!strcmp(p1, "/"))
+  if (!strcmp(p1, ctx->delim))
     {
       if (NULL != parent_inop)
         *parent_inop = DPL_ROOT_INO;
@@ -509,10 +493,10 @@ dpl_vdir_namei(dpl_ctx_t *ctx,
     }
 
   //absolute path
-  if ('/' == p1[0])
+  if (!strncmp(p1, ctx->delim, delim_len))
     {
       parent_ino = DPL_ROOT_INO;
-      p1++;
+      p1 += delim_len;
     }
   else
     {
@@ -521,14 +505,14 @@ dpl_vdir_namei(dpl_ctx_t *ctx,
 
   while (1)
     {
-      p2 = index(p1, '/');
+      p2 = strstr(p1, ctx->delim);
       if (NULL == p2)
         {
           namelen = strlen(p1);
         }
       else
         {
-          p2++;
+          p2 += delim_len;
           namelen = p2 - p1 - 1;
         }
 
@@ -647,7 +631,7 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
   ino = parent_ino;
   //XXX check length
   strcat(ino.key, obj_name);
-  strcat(ino.key, "/");
+  strcat(ino.key, ctx->delim);
 
   ret2 = dpl_vdir_count_entries(ctx, bucket, ino, &n_entries);
   if (DPL_SUCCESS != ret2)
@@ -784,6 +768,7 @@ dpl_mkdir(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino;
   int ret, ret2;
   char *npath;
+  int delim_len = strlen(ctx->delim);
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "mkdir path=%s", path);
 
@@ -799,16 +784,17 @@ dpl_mkdir(dpl_ctx_t *ctx,
     {
       if (DPL_ENOENT == ret2)
         {
-          dir_name = rindex(npath, '/');
+          dir_name = dpl_strrstr(npath, ctx->delim);
           if (NULL != dir_name)
             {
-              *dir_name++ = 0;
+              dir_name += delim_len;
+              *dir_name = 0;
               
               //fetch parent directory                                         
-              ret2 = dpl_vdir_namei(ctx, !strcmp(npath, "") ? "/" : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
+              ret2 = dpl_vdir_namei(ctx, !strcmp(npath, "") ? ctx->delim : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
               if (DPL_SUCCESS != ret2)
                 {
-                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", npath, dpl_status_str(ret));
+                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", npath, dpl_status_str(ret2));
                   ret = ret2;
                   goto end;
                 }
@@ -821,7 +807,7 @@ dpl_mkdir(dpl_ctx_t *ctx,
         }
       else
         {
-          DPLERR(0, "path resolve failed %s: %s (%d)\n", npath, dpl_status_str(ret), ret);
+          DPLERR(0, "path resolve failed %s: %s (%d)\n", npath, dpl_status_str(ret2), ret2);
           ret = ret2;
           goto end;
         }
@@ -857,12 +843,13 @@ dpl_rmdir(dpl_ctx_t *ctx,
   int ret, ret2;
   char *dir_name = NULL;
   dpl_ino_t parent_ino;
+  int delim_len = strlen(ctx->delim);
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "rmdir path=%s", path);
   
-  dir_name = rindex(path, '/');
+  dir_name = dpl_strrstr(path, ctx->delim);
   if (NULL != dir_name)
-    dir_name++;
+    dir_name += delim_len;
   else
     dir_name = path;
 

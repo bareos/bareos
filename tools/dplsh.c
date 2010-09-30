@@ -80,6 +80,14 @@ var_set_pwd(char *value)
   return xstrdup(value);
 }
 
+char *
+var_set_delim(char *value)
+{
+  free(ctx->delim);
+  ctx->delim = xstrdup(value);
+  return xstrdup(value);
+}
+
 struct usage_def main_usage[] =
   {
     {'e', USAGE_PARAM, "cmd", "execute command"},
@@ -162,6 +170,8 @@ main(int argc,
   var_set("bucket", "", VAR_CMD_SET, NULL);
   //var_set("pwd", NULL, VAR_CMD_SET_SPECIAL, var_set_pwd);
   //var_set("pwd", "/", VAR_CMD_SET, NULL);
+  var_set("delim", NULL, VAR_CMD_SET_SPECIAL, var_set_delim);
+  var_set("delim", DPL_DEFAULT_DELIM, VAR_CMD_SET, NULL);
 
   ctx->cur_ino = DPL_ROOT_INO;
 

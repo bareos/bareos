@@ -211,4 +211,5 @@ size_t dpl_iov_size(struct iovec *iov, int n_iov);
 void dpl_iov_dump(struct iovec *iov, int n_iov, size_t n_bytes);
 time_t dpl_iso8601totime(const char *str);
 void dpl_url_decode(char *str);
+char *dpl_strrstr(const char *haystack, const char *needle);
 #endif

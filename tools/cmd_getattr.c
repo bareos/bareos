@@ -52,7 +52,7 @@ cmd_getattr(int argc,
       case '?':
       default:
         usage_help(&getattr_cmd);
-        exit(1);
+      return SHELL_CONT;
       }
   argc -= optind;
   argv += optind;
@@ -60,7 +60,7 @@ cmd_getattr(int argc,
   if (1 != argc)
     {
       usage_help(&getattr_cmd);
-      exit(1);
+      return SHELL_CONT;
     }
   
   path = argv[0];

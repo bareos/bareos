@@ -350,7 +350,7 @@ shell_do(struct cmd_def **defs)
       char      *line;
       char prompt[256];
 
-      snprintf(prompt, sizeof (prompt), "%s:/%s> ", ctx->cur_bucket ? ctx->cur_bucket : "", ctx->cur_ino.key);
+      snprintf(prompt, sizeof (prompt), "%s:%s%s> ", ctx->cur_bucket ? ctx->cur_bucket : "", ctx->delim, ctx->cur_ino.key);
       
       if ((line = readline(prompt)))
         {

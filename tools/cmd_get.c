@@ -31,6 +31,7 @@ struct cmd_def get_cmd = {"get", "get file", get_usage, cmd_get};
 struct get_data
 {
   int fd;
+  FILE *pipe;
 };
 
 static dpl_status_t
@@ -41,17 +42,31 @@ cb_get_buffered(void *cb_arg,
   struct get_data *get_data = (struct get_data *) cb_arg;
   int ret;
 
-  if (1 == hash)
+  if (NULL != get_data->pipe)
     {
-      fprintf(stderr, "#");
-      fflush(stderr);
+      size_t s;
+
+      s = fwrite(buf, 1, len, get_data->pipe);
+      if (s != len)
+        {
+          perror("fwrite");
+          return DPL_FAILURE;
+        }
     }
-  
-  ret = write_all(get_data->fd, buf, len);
-  if (0 != ret)
+  else
     {
-      ret = DPL_FAILURE;
-      goto end;
+      if (1 == hash)
+        {
+          fprintf(stderr, "#");
+          fflush(stderr);
+        }
+      
+      ret = write_all(get_data->fd, buf, len);
+      if (0 != ret)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
     }
 
   ret = DPL_SUCCESS;
@@ -70,10 +85,11 @@ cmd_get(int argc,
   char *path = NULL;
   dpl_dict_t *metadata = NULL;
   struct get_data get_data;
-  int local_is_stdout = 0;
+  int do_stdout = 0;
   int kflag = 0;
   char *local_file = NULL;
 
+  memset(&get_data, 0, sizeof (get_data));
   get_data.fd = -1;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
@@ -117,7 +133,16 @@ cmd_get(int argc,
   if (!strcmp(local_file, "-"))
     {
       get_data.fd = 1;
-      local_is_stdout = 1;
+      do_stdout = 1;
+    }
+  else if ('|' == local_file[0])
+    {
+      get_data.pipe = popen(local_file + 1, "w");
+      if (NULL == get_data.pipe)
+        {
+          fprintf(stderr, "pipe failed\n");
+          goto end;
+        }
     }
   else
     {
@@ -150,10 +175,13 @@ cmd_get(int argc,
   if (NULL != metadata)
     dpl_dict_free(metadata);
 
-  if (0 == local_is_stdout)
+  if (0 == do_stdout)
     {
       if (-1 != get_data.fd)
         close(get_data.fd);
+
+      if (NULL != get_data.pipe)
+        pclose(get_data.pipe);
     }
 
   return SHELL_CONT;

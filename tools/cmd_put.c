@@ -103,9 +103,9 @@ cmd_put(int argc,
   else if (1 == argc)
     {
       local_file = argv[0];
-      remote_file = index(local_file, '/');
+      remote_file = strstr(local_file, ctx->delim);
       if (NULL != remote_file)
-        remote_file++;
+        remote_file += strlen(ctx->delim);
       else
         remote_file = local_file;
     }
@@ -130,7 +130,7 @@ cmd_put(int argc,
       perror("fstat");
       exit(1);
     }
-  
+
   ret = dpl_openwrite(ctx, remote_file, DPL_VFILE_FLAG_CREAT | (1 == kflag ? DPL_VFILE_FLAG_ENCRYPT : 0u), metadata, canned_acl, st.st_size, &vfile);
   if (DPL_SUCCESS != ret)
     {

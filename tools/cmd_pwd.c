@@ -63,7 +63,7 @@ cmd_pwd(int argc,
     }
   printf("%s\n", path);
 #else
-  printf("%s:/%s\n", ctx->cur_bucket, ctx->cur_ino.key);
+  printf("%s:%s%s\n", ctx->cur_bucket, ctx->delim, ctx->cur_ino.key);
 #endif
 
   var_set("status", "0", VAR_CMD_SET, NULL);

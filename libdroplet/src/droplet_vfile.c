@@ -130,6 +130,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
   char *npath;
+  int delim_len = strlen(ctx->delim);
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "openwrite path=%s flags=0x%x", path, flags);
 
@@ -165,16 +166,17 @@ dpl_openwrite(dpl_ctx_t *ctx,
               goto end;
             }
 
-          remote_name = rindex(npath, '/');
+          remote_name = dpl_strrstr(npath, ctx->delim);
           if (NULL != remote_name)
             {
-              *remote_name++ = 0;
+              remote_name += delim_len;
+              *remote_name = 0;
               
               //fetch parent directory                                         
-              ret2 = dpl_vdir_namei(ctx, !strcmp(npath, "") ? "/" : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
+              ret2 = dpl_vdir_namei(ctx, !strcmp(npath, "") ? ctx->delim : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
               if (DPL_SUCCESS != ret2)
                 {
-                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", npath, dpl_status_str(ret));
+                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", npath, dpl_status_str(ret2));
                   ret = ret2;
                   goto end;
                 }

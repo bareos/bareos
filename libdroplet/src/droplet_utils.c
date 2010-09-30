@@ -381,3 +381,41 @@ dpl_url_decode(char *str)
     }
   *str = 0;
 }
+
+/** 
+ * find the last occurence of needle in haystack
+ * 
+ * @param haystack 
+ * @param needle 
+ * 
+ * @return 
+ */
+char *
+dpl_strrstr(const char *haystack,
+            const char *needle)
+{
+  int haystack_len = strlen(haystack);
+  int needle_len = strlen(needle);
+  int i;
+
+  for (i = haystack_len - needle_len;i >= 0;i--)
+    {
+      //printf("%s\n", haystack + i);
+      if (!strncmp(haystack + i, needle, needle_len))
+        {
+          //printf("found '%s'\n", haystack + i);
+          return (char *) (haystack + i);
+        }
+    }
+  
+  return NULL;
+}
+
+#if 1
+void
+test_strrstr()
+{
+  printf("%s\n", dpl_strrstr("lev1DIRlev2DIRlev3", "DIR"));
+  printf("%s\n", dpl_strrstr("foo/bar/", "/"));
+}
+#endif
