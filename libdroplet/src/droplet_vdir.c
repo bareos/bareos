@@ -19,6 +19,45 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+#if 0
+/** 
+ * find the last occurence of needle in haystack
+ * 
+ * @param haystack 
+ * @param needle 
+ * 
+ * @return 
+ */
+static char *
+strrstr(const char *haystack,
+        const char *needle)
+{
+  int haystack_len = strlen(haystack);
+  int needle_len = strlen(needle);
+  int i;
+
+  for (i = haystack_len - needle_len;i >= 0;i--)
+    {
+      //printf("%s\n", haystack + i);
+      if (!strncmp(haystack + i, needle, needle_len))
+        {
+          //printf("found '%s'\n", haystack + i);
+          return (char *) (haystack + i);
+        }
+    }
+  
+  return NULL;
+}
+#endif
+
+#if 0
+static void
+test_strrstr()
+{
+  printf("%s\n", strrstr("lev1DIRlev2DIRlev3", "DIR"));
+}
+#endif
+
 dpl_status_t
 dpl_vdir_lookup(dpl_ctx_t *ctx,
                 char *bucket,

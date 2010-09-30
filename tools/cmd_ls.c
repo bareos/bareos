@@ -21,7 +21,7 @@ int cmd_ls(int argc, char **argv);
 struct usage_def ls_usage[] =
   {
     {'l', 0u, NULL, "long display"},
-    {'a', 0u, NULL, "list all files"},
+    {'a', 0u, NULL, "list all files in the bucket (do not use vdir interface)"},
     {'P', USAGE_PARAM, "prefix", "default unset"},
     {'D', USAGE_PARAM, "delimiter", "default unset"},
     {USAGE_NO_OPT, 0u, "path or bucket", "remote directory"},
@@ -83,36 +83,71 @@ cmd_ls(int argc,
       usage_help(&ls_cmd);
       return SHELL_CONT;
     }
-  
-  ret = dpl_opendir(ctx, path, &dir_hdl);
-  if (DPL_SUCCESS != ret)
+
+  if (1 == aflag)
     {
-      fprintf(stderr, "opendir failure %s (%d)\n", dpl_status_str(ret), ret);
-      return SHELL_CONT;
-    }
-  
-  while (1 != dpl_eof(dir_hdl))
-    {
-      ret = dpl_readdir(dir_hdl, &entry);
-      if (0 != ret)
-        {
-          fprintf(stderr, "read dir failure %d\n", ret);
-          goto end;
-        }
+      int i;
       
-      if (lflag)
+      //raw listing
+      ret = dpl_list_bucket(ctx, ctx->cur_bucket, NULL, NULL, &objects, NULL);
+      if (DPL_SUCCESS != ret)
         {
-          struct tm *stm;
+          fprintf(stderr, "listbucket failure %s (%d)\n", dpl_status_str(ret), ret);
+          return SHELL_CONT;
+        }      
+
+      for (i = 0;i < objects->n_items;i++)
+        {
+          dpl_object_t *obj = (dpl_object_t *) objects->array[i];
           
-          stm = localtime(&entry.last_modified);
-          printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) entry.size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, entry.name);
+          if (lflag)
+            {
+              struct tm *stm;
+              
+              stm = localtime(&obj->last_modified);
+              printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) obj->size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, obj->key);
+            }
+          else
+            {
+              printf("%s\n", obj->key);
+            }
+          
+          total_size += obj->size;
         }
-      else
+
+    }
+  else
+    {
+      ret = dpl_opendir(ctx, path, &dir_hdl);
+      if (DPL_SUCCESS != ret)
         {
-          printf("%s\n", entry.name);
+          fprintf(stderr, "opendir failure %s (%d)\n", dpl_status_str(ret), ret);
+          return SHELL_CONT;
         }
       
-      total_size += entry.size;
+      while (1 != dpl_eof(dir_hdl))
+        {
+          ret = dpl_readdir(dir_hdl, &entry);
+          if (0 != ret)
+            {
+              fprintf(stderr, "read dir failure %d\n", ret);
+              goto end;
+            }
+          
+          if (lflag)
+            {
+              struct tm *stm;
+              
+              stm = localtime(&entry.last_modified);
+              printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) entry.size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, entry.name);
+            }
+          else
+            {
+              printf("%s\n", entry.name);
+            }
+          
+          total_size += entry.size;
+        }
     }
 
   if (1 == lflag)

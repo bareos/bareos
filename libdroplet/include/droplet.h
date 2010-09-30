@@ -80,6 +80,8 @@ enum dpl_data_type
 #define DPL_MAXPATHLEN 1024
 #define DPL_MAXNAMLEN  255
 
+#define DPL_DEFAULT_DELIM "/"
+
 typedef struct dpl_ino
 {
   char key[DPL_MAXPATHLEN];
@@ -110,6 +112,7 @@ typedef struct dpl_ctx
   char *pricing;              /*!< might be NULL */
   u_int read_buf_size;
   char *encrypt_key;
+  char *delim;                /*!< vdir delimiter */
  
   /*
    * pricing

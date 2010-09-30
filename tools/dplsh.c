@@ -129,6 +129,14 @@ main(int argc,
   argc -= optind;
   argv += optind;
 
+#if 0
+  {
+    extern void test_strrstr();
+    test_strrstr();
+    exit(0);
+  }
+#endif
+  
   if (0 != argc)
     {
       usage_help(&main_cmd);
