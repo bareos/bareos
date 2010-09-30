@@ -3,7 +3,8 @@ DIRS = \
 build-tools \
 libdroplet \
 tools \
-tests
+tests \
+examples
 
 ALLDIRS = $(DIRS) 
 

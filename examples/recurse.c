@@ -21,9 +21,9 @@ recurse(dpl_ctx_t *ctx,
   if (DPL_SUCCESS != ret)
     return ret;
 
-  while (!dpl_vdir_eof(dir_hdl))
+  while (!dpl_eof(dir_hdl))
     {
-      ret = dpl_vdir_readdir(dir_hdl, &dirent);
+      ret = dpl_readdir(dir_hdl, &dirent);
       if (DPL_SUCCESS != ret)
         return ret;
 
@@ -44,7 +44,7 @@ recurse(dpl_ctx_t *ctx,
         }
     }
   
-  dpl_vdir_closedir(dir_hdl);
+  dpl_closedir(dir_hdl);
 
   if (level > 0)
     {

@@ -205,12 +205,6 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_vdir_mknod()
-{
-  return DPL_FAILURE;
-}
-
-dpl_status_t
 dpl_vdir_mkdir(dpl_ctx_t *ctx,
                char *bucket,
                dpl_ino_t parent_ino,
@@ -691,6 +685,25 @@ dpl_opendir(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
+dpl_readdir(void *dir_hdl,
+            dpl_dirent_t *dirent)
+{
+  return dpl_vdir_readdir(dir_hdl, dirent);
+}
+
+int
+dpl_eof(void *dir_hdl)
+{
+  return dpl_vdir_eof(dir_hdl);
+}
+
+void
+dpl_closedir(void *dir_hdl)
+{
+  dpl_vdir_closedir(dir_hdl);
+}
+
+dpl_status_t
 dpl_chdir(dpl_ctx_t *ctx,
           char *path)
 {
@@ -742,21 +755,21 @@ dpl_mkdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
+  ret2 = dpl_vdir_namei(ctx, npath, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
         {
-          dir_name = rindex(path, '/');
+          dir_name = rindex(npath, '/');
           if (NULL != dir_name)
             {
               *dir_name++ = 0;
               
               //fetch parent directory                                         
-              ret2 = dpl_vdir_namei(ctx, !strcmp(path, "") ? "/" : path, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
+              ret2 = dpl_vdir_namei(ctx, !strcmp(npath, "") ? "/" : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
               if (DPL_SUCCESS != ret2)
                 {
-                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", path, dpl_status_str(ret));
+                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", npath, dpl_status_str(ret));
                   ret = ret2;
                   goto end;
                 }
@@ -764,12 +777,12 @@ dpl_mkdir(dpl_ctx_t *ctx,
           else
             {
               parent_ino = ctx->cur_ino;
-              dir_name = path;
+              dir_name = npath;
             }
         }
       else
         {
-          DPLERR(0, "path resolve failed %s: %s (%d)\n", path, dpl_status_str(ret), ret);
+          DPLERR(0, "path resolve failed %s: %s (%d)\n", npath, dpl_status_str(ret), ret);
           ret = ret2;
           goto end;
         }

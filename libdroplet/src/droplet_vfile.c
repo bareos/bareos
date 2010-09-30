@@ -129,8 +129,16 @@ dpl_openwrite(dpl_ctx_t *ctx,
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
+  char *npath;
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "openwrite path=%s flags=0x%x", path, flags);
+
+  npath = strdup(path);
+  if (NULL == npath)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
 
   vfile = malloc(sizeof (*vfile));
   if (NULL == vfile)
@@ -144,7 +152,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
   vfile->ctx = ctx;
   vfile->flags = flags;
 
-  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
+  ret2 = dpl_vdir_namei(ctx, npath, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -156,12 +164,28 @@ dpl_openwrite(dpl_ctx_t *ctx,
               ret = DPL_FAILURE;
               goto end;
             }
-          remote_name = index(path, '/');
+
+          remote_name = rindex(npath, '/');
           if (NULL != remote_name)
-            remote_name++;
+            {
+              *remote_name++ = 0;
+              
+              //fetch parent directory                                         
+              ret2 = dpl_vdir_namei(ctx, !strcmp(npath, "") ? "/" : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
+              if (DPL_SUCCESS != ret2)
+                {
+                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", npath, dpl_status_str(ret));
+                  ret = ret2;
+                  goto end;
+                }
+            }
           else
-            remote_name = path;
-          obj_ino = ctx->cur_ino;
+            {
+              parent_ino = ctx->cur_ino;
+              remote_name = npath;
+            }
+
+          obj_ino = parent_ino;
           strcat(obj_ino.key, remote_name); //XXX check length
           obj_type = DPL_FTYPE_REG;
         }
@@ -226,6 +250,9 @@ dpl_openwrite(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
   
  end:
+
+  if (NULL != npath)
+    free(npath);
 
   if (NULL != vfile)
     dpl_close(vfile);

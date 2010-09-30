@@ -32,6 +32,8 @@ cmd_cd(int argc,
 {
   int ret;
   char *path;
+  char *p;
+  int bucket_changed = 0;
   
   var_set("status", "1", VAR_CMD_SET, NULL);
 
@@ -43,7 +45,19 @@ cmd_cd(int argc,
 
   path = argv[1];
 
-  ret = dpl_chdir(ctx, path);
+  p = index(path, ':');
+  if (NULL != p)
+    {
+      *p++ = 0;
+      var_set("bucket", path, VAR_CMD_SET, NULL);
+      bucket_changed = 1;
+    }
+  else
+    {
+      p = path;
+    }
+
+  ret = dpl_chdir(ctx, p);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "chdir failed %s\n", path);

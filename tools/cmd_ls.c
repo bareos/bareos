@@ -21,6 +21,7 @@ int cmd_ls(int argc, char **argv);
 struct usage_def ls_usage[] =
   {
     {'l', 0u, NULL, "long display"},
+    {'a', 0u, NULL, "list all files"},
     {'P', USAGE_PARAM, "prefix", "default unset"},
     {'D', USAGE_PARAM, "delimiter", "default unset"},
     {USAGE_NO_OPT, 0u, "path or bucket", "remote directory"},
@@ -36,6 +37,7 @@ cmd_ls(int argc,
   char opt;
   int ret;
   int lflag = 0;
+  int aflag = 0;
   char *prefix = NULL;
   char *delimiter = NULL;
   size_t total_size = 0;
@@ -52,6 +54,9 @@ cmd_ls(int argc,
   while ((opt = getopt(argc, argv, usage_getoptstr(ls_usage))) != -1)
     switch (opt)
       {
+      case 'a':
+        aflag = 1;
+        break ;
       case 'l':
         lflag = 1;
         break ;
@@ -86,9 +91,9 @@ cmd_ls(int argc,
       return SHELL_CONT;
     }
   
-  while (1 != dpl_vdir_eof(dir_hdl))
+  while (1 != dpl_eof(dir_hdl))
     {
-      ret = dpl_vdir_readdir(dir_hdl, &entry);
+      ret = dpl_readdir(dir_hdl, &entry);
       if (0 != ret)
         {
           fprintf(stderr, "read dir failure %d\n", ret);
@@ -121,7 +126,7 @@ cmd_ls(int argc,
  end:
 
   if (NULL != dir_hdl)
-    dpl_vdir_closedir(dir_hdl);
+    dpl_closedir(dir_hdl);
 
   if (NULL != objects)
     dpl_vec_objects_free(objects);
