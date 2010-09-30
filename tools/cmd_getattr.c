@@ -42,6 +42,10 @@ cmd_getattr(int argc,
   char *path = NULL;
   dpl_dict_t *metadata = NULL;
 
+  var_set("status", "1", VAR_CMD_SET, NULL);
+
+  optind = 0;
+
   while ((opt = getopt(argc, argv, usage_getoptstr(getattr_usage))) != -1)
     switch (opt)
       {
@@ -69,6 +73,8 @@ cmd_getattr(int argc,
     }
 
   dpl_dict_iterate(metadata, cb_getattr, NULL);
+
+  var_set("status", "0", VAR_CMD_SET, NULL);
 
  end:
 
