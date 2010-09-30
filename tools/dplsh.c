@@ -170,7 +170,7 @@ main(int argc,
 
   shell_install_cmd_defs(cmd_defs);
   rl_attempted_completion_function = shell_completion;
-  //rl_completion_entry_function = file_completion;
+  rl_completion_entry_function = file_completion;
 
   shell_do(cmd_defs);
 

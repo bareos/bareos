@@ -37,6 +37,7 @@ cmds.o \
 vars.o \
 utils.o \
 dplsh.o \
+filecompl.o \
 cmd_cd.o \
 cmd_lcd.o \
 cmd_pwd.o \

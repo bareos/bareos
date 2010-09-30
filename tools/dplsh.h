@@ -49,7 +49,7 @@ extern int status;
 extern u_int block_size;
 extern int hash;
 
-/* PROTO dplsh.c */
+/* PROTO dplsh.c filecompl.c */
 /* ./dplsh.c */
 int do_quit(void);
 char *var_set_status(char *value);
@@ -59,4 +59,9 @@ char *var_set_hash(char *value);
 char *var_set_bucket(char *value);
 char *var_set_pwd(char *value);
 int main(int argc, char **argv);
+/* ./filecompl.c */
+void *do_opendir(char *path);
+dpl_dirent_t *do_readdir(void *dir_hdl);
+void do_closedir(void *dir_hdl);
+char *file_completion(const char *text, int state);
 #endif
