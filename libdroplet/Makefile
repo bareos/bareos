@@ -31,6 +31,8 @@ $(OBJDIR)/droplet_conn.o \
 $(OBJDIR)/droplet_vec.o \
 $(OBJDIR)/droplet_dict.o \
 $(OBJDIR)/droplet_httpreq.o \
+$(OBJDIR)/droplet_reqbuilder.o \
+$(OBJDIR)/droplet_reqdo.o \
 $(OBJDIR)/droplet_s3req.o \
 $(OBJDIR)/droplet_httpreply.o \
 $(OBJDIR)/droplet_utils.o \

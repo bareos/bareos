@@ -23,9 +23,10 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <openssl/ssl.h>
+#include <openssl/md5.h>
 
 /*
- * return codes
+ * misc types
  */
 typedef int dpl_status_t;
 
@@ -44,29 +45,7 @@ typedef int dpl_status_t;
 #define DPL_EISDIR                (-12) /*!< Is a directory */
 #define DPL_EEXIST                (-13) /*!< Object already exists */
 
-/**/
-
 typedef void (*dpl_trace_func_t)(pid_t tid, u_int level, char *file, int lineno, char *buf);
-
-#include <droplet_vec.h>
-#include <droplet_dict.h>
-
-enum dpl_data_type
-  {
-    DPL_DATA_TYPE_IN,
-    DPL_DATA_TYPE_OUT,
-    DPL_DATA_TYPE_STORAGE,
-  };
-#define DPL_N_DATA_TYPE (DPL_DATA_TYPE_STORAGE+1)
-
-#define DPL_DEFAULT_N_CONN_BUCKETS      1021
-#define DPL_DEFAULT_N_CONN_MAX          900
-#define DPL_DEFAULT_N_CONN_MAX_HITS     50
-#define DPL_DEFAULT_CONN_IDLE_TIME      100
-#define DPL_DEFAULT_CONN_TIMEOUT        5
-#define DPL_DEFAULT_READ_TIMEOUT        30
-#define DPL_DEFAULT_WRITE_TIMEOUT       30
-#define DPL_DEFAULT_READ_BUF_SIZE       8192
 
 #define DPL_TRACE_CONN  (1u<<0) /*!< trace connection */
 #define DPL_TRACE_IO    (1u<<1) /*!< trace I/O */
@@ -76,6 +55,71 @@ enum dpl_data_type
 #define DPL_TRACE_VDIR  (1u<<5) /*!< trace vdir calls */
 #define DPL_TRACE_VFILE (1u<<6) /*!< trace vfile calls */
 #define DPL_TRACE_BUF   (1u<<7) /*!< trace buffers */
+
+#include <droplet_vec.h>
+#include <droplet_dict.h>
+
+/*
+ * S3 types
+ */
+typedef enum
+  {
+    DPL_METHOD_GET,
+    DPL_METHOD_PUT,
+    DPL_METHOD_DELETE,
+    DPL_METHOD_HEAD,
+  } dpl_method_t;
+
+enum dpl_data_type
+  {
+    DPL_DATA_TYPE_IN,
+    DPL_DATA_TYPE_OUT,
+    DPL_DATA_TYPE_STORAGE,
+  };
+#define DPL_N_DATA_TYPE (DPL_DATA_TYPE_STORAGE+1)
+
+typedef enum
+  {
+    DPL_LOCATION_CONSTRAINT_US_STANDARD,
+    DPL_LOCATION_CONSTRAINT_EU,
+    DPL_LOCATION_CONSTRAINT_US_WEST_1,
+    DPL_LOCATION_CONSTRAINT_AP_SOUTHEAST_1
+  } dpl_location_constraint_t;
+#define DPL_N_LOCATION_CONSTRAINT (DPL_LOCATION_CONSTRAINT_AP_SOUTHEAST_1+1)
+
+typedef enum
+  {
+    DPL_CANNED_ACL_PRIVATE,
+    DPL_CANNED_ACL_PUBLIC_READ,
+    DPL_CANNED_ACL_PUBLIC_READ_WRITE,
+    DPL_CANNED_ACL_AUTHENTICATED_READ,
+    DPL_CANNED_ACL_BUCKET_OWNER_READ,
+    DPL_CANNED_ACL_BUCKET_OWNER_FULL_CONTROL,
+  } dpl_canned_acl_t;
+#define DPL_N_CANNED_ACL (DPL_CANNED_ACL_BUCKET_OWNER_FULL_CONTROL+1)
+
+typedef struct
+{
+#define DPL_CONDITION_IF_MODIFIED_SINCE   (1u<<0)
+#define DPL_CONDITION_IF_UNMODIFIED_SINCE (1u<<1)
+#define DPL_CONDITION_IF_MATCH            (1u<<2)
+#define DPL_CONDITION_IF_NONE_MATCH       (1u<<3)
+  u_int mask;
+  time_t time;
+  char etag[MD5_DIGEST_LENGTH];
+} dpl_condition_t;
+
+/*
+ * default values
+ */
+#define DPL_DEFAULT_N_CONN_BUCKETS      1021
+#define DPL_DEFAULT_N_CONN_MAX          900
+#define DPL_DEFAULT_N_CONN_MAX_HITS     50
+#define DPL_DEFAULT_CONN_IDLE_TIME      100
+#define DPL_DEFAULT_CONN_TIMEOUT        5
+#define DPL_DEFAULT_READ_TIMEOUT        30
+#define DPL_DEFAULT_WRITE_TIMEOUT       30
+#define DPL_DEFAULT_READ_BUF_SIZE       8192
 
 #define DPL_MAXPATHLEN 1024
 #define DPL_MAXNAMLEN  255
@@ -153,9 +197,27 @@ typedef struct dpl_ctx
 
 } dpl_ctx_t;
 
+typedef struct
+{
+  dpl_ctx_t *ctx;
+  dpl_method_t method;
+  char *bucket;
+  char *resource;
+  char *subresource;
+
+  dpl_location_constraint_t location_constraint;
+  dpl_canned_acl_t canned_acl;
+  dpl_condition_t condition;
+
+  u_char digest[MD5_DIGEST_LENGTH];
+
+} dpl_req_t;
+
 #include <droplet_conn.h>
+#include <droplet_reqbuilder.h>
 #include <droplet_httpreq.h>
 #include <droplet_httpreply.h>
+#include <droplet_reqdo.h>
 #include <droplet_requests.h>
 #include <droplet_vdir.h>
 #include <droplet_vfile.h>

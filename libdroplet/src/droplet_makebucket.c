@@ -19,39 +19,6 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-dpl_location_constraint_t 
-dpl_location_constraint(char *str)
-{
-  if (!strcasecmp(str, ""))
-    return DPL_LOCATION_CONSTRAINT_US_STANDARD;
-  else if (!strcasecmp(str, "EU"))
-    return DPL_LOCATION_CONSTRAINT_EU;
-  else if (!strcasecmp(str, "us-west-1"))
-    return DPL_LOCATION_CONSTRAINT_US_WEST_1;
-  else if (!strcasecmp(str, "ap-southeast-1"))
-    return DPL_LOCATION_CONSTRAINT_AP_SOUTHEAST_1;
-
-  return -1;
-}
-
-char *
-dpl_location_constraint_str(dpl_location_constraint_t location_constraint)
-{
-  switch (location_constraint)
-    {
-    case DPL_LOCATION_CONSTRAINT_US_STANDARD:
-      return "";
-    case DPL_LOCATION_CONSTRAINT_EU:
-      return "EU";
-    case DPL_LOCATION_CONSTRAINT_US_WEST_1:
-      return "us-west-1";
-    case DPL_LOCATION_CONSTRAINT_AP_SOUTHEAST_1:
-      return "ap-southeast-1";
-    }
-  
-  return NULL;
-}
-
 /** 
  * make a bucket
  * 
