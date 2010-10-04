@@ -202,7 +202,7 @@ dpl_dump_simple(char *buf,
 
 void
 dpl_trace(dpl_ctx_t *ctx,
-          u32 level,
+          u_int level,
           char *file,
           int lineno,
           char *fmt,
@@ -419,3 +419,108 @@ test_strrstr()
   printf("%s\n", dpl_strrstr("foo/bar/", "/"));
 }
 #endif
+
+/** 
+ * compute HMAC-SHA1
+ * 
+ * @param key_buf 
+ * @param key_len 
+ * @param data_buf 
+ * @param data_len 
+ * @param digest_buf 
+ * @param digest_lenp 
+ *
+ * @return digest_len
+ */
+u_int
+dpl_hmac_sha1(char *key_buf,
+              u_int key_len,
+              char *data_buf,
+              u_int data_len,
+              char *digest_buf)
+{
+  HMAC_CTX ctx;
+  u_int digest_len;
+
+  HMAC_CTX_init(&ctx);
+  HMAC_Init_ex(&ctx, key_buf, key_len, EVP_sha1(), NULL);
+  HMAC_Update(&ctx, (u_char *) data_buf, data_len);
+  HMAC_Final(&ctx, (u_char *) digest_buf, &digest_len);
+  HMAC_CTX_cleanup(&ctx);
+
+  return digest_len;
+}
+
+/** 
+ * base64 encode
+ * 
+ * @param in_buf 
+ * @param in_len 
+ * @param out_buf 
+ * 
+ * @return out_len
+ */
+u_int 
+dpl_base64_encode(const unsigned char *in_buf,
+                  u_int in_len,
+                  char *out_buf)
+{
+  static const char *base = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  char *saved_out_buf = out_buf;
+  
+  while (in_len) 
+    {
+      *out_buf++ = base[*in_buf >> 2];
+      if (!--in_len) 
+        {
+          *out_buf++ = base[(*in_buf & 0x3) << 4];
+          *out_buf++ = '=';
+          *out_buf++ = '=';
+          break;
+        }
+      
+      *out_buf++ = base[((*in_buf & 0x3) << 4) | (*(in_buf + 1) >> 4)];
+      in_buf++;
+      if (!--in_len) 
+        {
+          *out_buf++ = base[(*in_buf & 0xF) << 2];
+          *out_buf++ = '=';
+          break;
+        }
+      
+      *out_buf++ = base[((*in_buf & 0xF) << 2) | (*(in_buf + 1) >> 6)];
+      in_buf++;
+
+      *out_buf++ = base[*in_buf & 0x3F];
+      in_buf++, in_len--;
+    }
+  
+  return (out_buf - saved_out_buf);
+}
+
+/**
+ * encode str into URL form. str_ue length must be at least strlen(str)*3+1
+ *
+ * @param str
+ * @param str_ue
+ *
+ * @return
+ */
+void
+dpl_url_encode(char *str,
+               char *str_ue)
+{
+  int   i;
+  
+  for (i = 0;*str;str++)
+    {
+      if (isalnum(*str))
+        str_ue[i++] = *str;
+      else
+        {
+          sprintf(str_ue + i, "%%%02X", *str);
+          i+=3;
+        }
+    }
+  str_ue[i] = 0;
+}

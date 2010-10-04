@@ -103,39 +103,6 @@ int linux_gethostbyname_r(const char *name,
                           struct hostent **result, 
                           int *h_errnop);
 
-/*
- * std types
- */
-
-typedef signed char s8;
-typedef unsigned char u8;
-typedef signed short s16;
-typedef unsigned short u16;
-typedef signed int s32;
-typedef unsigned int u32;
-typedef signed long long s64;
-typedef unsigned long long u64;
-
-#if __WORDSIZE == 64
-
-#define PTR_TO_U64(p) ((u64)(p))
-#define PTR_TO_U32(p) ((u32)((u64)(p) % UINT_MAX))
-#define PTR_TO_INT(p) ((int)((u64)(p) % INT_MAX))
-#define U64_TO_PTR(p) ((void*)(p))
-#define U32_TO_PTR(p) ((void*)(u64)(p))
-#define INT_TO_PTR(p) ((void*)(u64)(p))
-
-#else
-
-#define PTR_TO_U64(p) ((u64)(u32)(p))
-#define PTR_TO_U32(p) ((u32)(p))
-#define PTR_TO_INT(p) ((int)(p))
-#define U64_TO_PTR(p) ((void*)(u32)(p))
-#define U32_TO_PTR(p) ((void*)(p))
-#define INT_TO_PTR(p) ((void*)(p))
-
-#endif // __WORDSIZE == 64
-
 /**/
 
 #ifndef MIN
@@ -206,11 +173,14 @@ void dpl_dump_init(struct dpl_dump_ctx *ctx);
 void dpl_dump_line(struct dpl_dump_ctx *ctx, u_int off, u_char *b, u_int l);
 void dpl_dump(struct dpl_dump_ctx *ctx, char *buf, int len);
 void dpl_dump_simple(char *buf, int len);
-void dpl_trace(dpl_ctx_t *ctx, u32 level, char *file, int lineno, char *fmt, ...);
+void dpl_trace(dpl_ctx_t *ctx, u_int level, char *file, int lineno, char *fmt, ...);
 size_t dpl_iov_size(struct iovec *iov, int n_iov);
 void dpl_iov_dump(struct iovec *iov, int n_iov, size_t n_bytes);
 time_t dpl_iso8601totime(const char *str);
 void dpl_url_decode(char *str);
 char *dpl_strrstr(const char *haystack, const char *needle);
 void test_strrstr(void);
+u_int dpl_hmac_sha1(char *key_buf, u_int key_len, char *data_buf, u_int data_len, char *digest_buf);
+u_int dpl_base64_encode(const unsigned char *in_buf, u_int in_len, char *out_buf);
+void dpl_url_encode(char *str, char *str_ue);
 #endif

@@ -28,9 +28,12 @@ CFLAGS=$(CFLAGSDEBUG)
 LDFLAGS=$(LDFLAGSDEBUG)
 
 TESTS = \
-dpl_perf_test
+dpl_perf_test \
+test_req
 
 DPL_PERF_TEST_OBJS = dpl_perf_test.o
+
+TEST_REQ_OBJS = test_req.o
 
 COMMON_OBJS = gendata.o
 
@@ -56,6 +59,9 @@ compile: $(TESTS)
 
 dpl_perf_test: $(DPL_PERF_TEST_OBJS) $(COMMON_OBJS) $(DEPENDS)
 	$(CC) -o dpl_perf_test $(DPL_PERF_TEST_OBJS) $(COMMON_OBJS) $(LDFLAGS)
+
+test_req: $(TEST_REQ_OBJS) $(COMMON_OBJS) $(DEPENDS)
+	$(CC) -o test_req $(TEST_REQ_OBJS) $(COMMON_OBJS) $(LDFLAGS)
 
 VALGRIND = valgrind --leak-check=full --suppressions=valgrind.supp
 DPLTESTBUCKET1=droplettest01

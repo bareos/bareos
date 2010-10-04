@@ -66,7 +66,7 @@ dpl_init()
 void
 dpl_free()
 {
-  //XXX free ssl stuff
+  ERR_free_strings();
 }
 
 dpl_ctx_t *

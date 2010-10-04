@@ -14,10 +14,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __DROPLET_HTTPREQ_H__
-#define __DROPLET_HTTPREQ_H__ 1
+#ifndef __DROPLET_CONVERTERS_H__
+#define __DROPLET_CONVERTERS_H__ 1
 
-/* PROTO droplet_httpreq.c */
-/* src/droplet_httpreq.c */
-dpl_status_t dpl_conn_writev_all(dpl_conn_t *conn, struct iovec *iov, int n_iov, int timeout);
+/* PROTO droplet_converters.c */
+/* src/droplet_converters.c */
+dpl_method_t dpl_method(char *str);
+char *method_str(dpl_method_t method);
+dpl_location_constraint_t dpl_location_constraint(char *str);
+char *dpl_location_constraint_str(dpl_location_constraint_t location_constraint);
+dpl_canned_acl_t dpl_canned_acl(char *str);
+char *dpl_canned_acl_str(dpl_canned_acl_t canned_acl);
+dpl_storage_class_t dpl_storage_class(char *str);
+char *dpl_storage_class_str(dpl_storage_class_t storage_class);
+dpl_dict_t *dpl_parse_metadata(char *metadata);
+dpl_dict_t *dpl_parse_query_params(char *query_params);
 #endif

@@ -22,7 +22,7 @@ struct usage_def get_usage[] =
   {
     {'k', 0u, NULL, "encrypt file"},
     {USAGE_NO_OPT, USAGE_MANDAT, "path", "remote file"},
-    {USAGE_NO_OPT, 0u, "local_file or -", "local file"},
+    {USAGE_NO_OPT, 0u, "local_file or - or |cmd", "local file"},
     {0, 0u, NULL, NULL},
   };
 

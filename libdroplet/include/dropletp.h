@@ -47,7 +47,6 @@
 #include <droplet_utils.h>
 #include <droplet_profile.h>
 #include <droplet_httpreply.h>
-#include <droplet_httpreq.h>
 #include <droplet_s3req.h>
 #include <droplet_pricing.h>
 

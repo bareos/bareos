@@ -294,12 +294,6 @@ conf_cb_func(void *cb_arg,
       if (NULL == ctx->encrypt_key)
         return -1;
     }
-  else if (!strcmp(var, "delim"))
-    {
-      ctx->delim = strdup(value);
-      if (NULL == ctx->delim)
-        return -1;
-    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);
@@ -392,10 +386,6 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->port = -1;
   ctx->pricing = NULL;
   ctx->read_buf_size = DPL_DEFAULT_READ_BUF_SIZE;
-
-  ctx->delim = strdup(DPL_DEFAULT_DELIM);
-  if (NULL == ctx->delim)
-    return DPL_ENOMEM;
 
   return DPL_SUCCESS;
 }
@@ -625,6 +615,13 @@ dpl_profile_load(dpl_ctx_t *ctx,
       goto end;
     }
 
+  ctx->delim = strdup(DPL_DEFAULT_DELIM);
+  if (NULL == ctx->delim)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
   snprintf(path, sizeof (path), "%s/%s.profile", droplet_dir, profile_name);
       
   ret2 = dpl_profile_parse(ctx, path);
@@ -692,5 +689,7 @@ dpl_profile_free(dpl_ctx_t *ctx)
     free(ctx->droplet_dir);
   if (NULL != ctx->profile_name)
     free(ctx->profile_name);
+  if (NULL != ctx->delim)
+    free(ctx->delim);
 
 }

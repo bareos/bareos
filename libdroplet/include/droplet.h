@@ -80,6 +80,7 @@ enum dpl_data_type
 
 typedef enum
   {
+    DPL_LOCATION_CONSTRAINT_UNDEF,
     DPL_LOCATION_CONSTRAINT_US_STANDARD,
     DPL_LOCATION_CONSTRAINT_EU,
     DPL_LOCATION_CONSTRAINT_US_WEST_1,
@@ -89,6 +90,7 @@ typedef enum
 
 typedef enum
   {
+    DPL_CANNED_ACL_UNDEF,
     DPL_CANNED_ACL_PRIVATE,
     DPL_CANNED_ACL_PUBLIC_READ,
     DPL_CANNED_ACL_PUBLIC_READ_WRITE,
@@ -97,6 +99,14 @@ typedef enum
     DPL_CANNED_ACL_BUCKET_OWNER_FULL_CONTROL,
   } dpl_canned_acl_t;
 #define DPL_N_CANNED_ACL (DPL_CANNED_ACL_BUCKET_OWNER_FULL_CONTROL+1)
+
+typedef enum
+  {
+    DPL_STORAGE_CLASS_UNDEF,
+    DPL_STORAGE_CLASS_STANDARD,
+    DPL_STORAGE_CLASS_REDUCED_REDUNDANCY,
+  } dpl_storage_class_t;
+#define DPL_N_STORAGE_CLASS (DPL_STORAGE_CLASS_REDUCED_REDUNDANCY+1)
 
 typedef struct
 {
@@ -197,27 +207,47 @@ typedef struct dpl_ctx
 
 } dpl_ctx_t;
 
+/**/
+
+typedef struct
+{
+  char *buf;
+  u_int len;
+} dpl_chunk_t;
+
 typedef struct
 {
   dpl_ctx_t *ctx;
+
+#define DPL_BEHAVIOR_COMPUTE_MD5 (1u<<0)
+#define DPL_BEHAVIOR_EXPECT      (1u<<1)
+#define DPL_BEHAVIOR_VIRTUAL_HOSTING (1u<<2)
+#define DPL_BEHAVIOR_KEEP_ALIVE (1u<<3)
+  u_int behavior_flags;
+
   dpl_method_t method;
   char *bucket;
   char *resource;
   char *subresource;
 
+  char *cache_control;
+  char *content_disposition;
+  char *content_encoding;
+  char *content_type;
   dpl_location_constraint_t location_constraint;
   dpl_canned_acl_t canned_acl;
   dpl_condition_t condition;
+  dpl_storage_class_t storage_class;
 
-  u_char digest[MD5_DIGEST_LENGTH];
+  dpl_dict_t *metadata;
+  dpl_chunk_t *chunk;
 
 } dpl_req_t;
 
 #include <droplet_conn.h>
+#include <droplet_converters.h>
 #include <droplet_reqbuilder.h>
-#include <droplet_httpreq.h>
 #include <droplet_httpreply.h>
-#include <droplet_reqdo.h>
 #include <droplet_requests.h>
 #include <droplet_vdir.h>
 #include <droplet_vfile.h>

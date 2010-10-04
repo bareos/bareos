@@ -22,9 +22,6 @@
 
 /* PROTO droplet_s3req.c */
 /* src/droplet_s3req.c */
-u_int dpl_hmac_sha1(char *key_buf, u_int key_len, char *data_buf, u_int data_len, char *digest_buf);
-u_int dpl_base64_encode(const unsigned char *in_buf, u_int in_len, char *out_buf);
-void dpl_url_encode(char *str, char *str_ue);
 dpl_status_t dpl_build_s3_signature(dpl_ctx_t *ctx, char *method, char *bucket, char *resource_ue, char *subresource_ue, dpl_dict_t *headers, char *buf, u_int len, u_int *lenp);
 dpl_status_t dpl_build_s3_request(dpl_ctx_t *ctx, char *method, char *bucket, char *resource, char *subresource, dpl_dict_t *query_params, dpl_dict_t *headers, char *buf, u_int len, u_int *lenp);
 #endif

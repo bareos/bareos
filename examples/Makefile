@@ -54,7 +54,7 @@ compile: $(PROGS) $(RECURSE_LINKS)
 
 recurse: $(RECURSE_OBJS) $(DEPENDS)
 	$(CC) -o recurse $(RECURSE_OBJS) $(LDFLAGS)
-	
+
 install:
 	install -m755 -c $(PROGS) $(PREFIX)/bin
 
@@ -62,5 +62,5 @@ clean:
 	$(RM) *.o $(PROGS) $(RECURSE_LINKS)
 
 fproto:
-	touch *.c
-	$(DO_PROTO) $(INCS) *.h 
+#	touch *.c
+#	$(DO_PROTO) $(INCS) *.h 
