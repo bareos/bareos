@@ -66,7 +66,7 @@ dpl_req_new(dpl_ctx_t *ctx)
   if (NULL == req->metadata)
     goto bad;
 
-  req->behavior_flags = DPL_BEHAVIOR_KEEP_ALIVE;
+  req->behavior_flags = DPL_BEHAVIOR_KEEP_ALIVE|DPL_BEHAVIOR_VIRTUAL_HOSTING;
 
   return req;
 
@@ -243,11 +243,34 @@ dpl_req_set_chunk(dpl_req_t *req,
 }
 
 dpl_status_t
-dpl_req_add_metadata(dpl_req_t *req,
-                     char *key,
-                     char *value)
+dpl_req_add_metadatum(dpl_req_t *req,
+                      char *key,
+                      char *value)
 {
   return dpl_dict_add(req->metadata, key, value, 0);
+}
+
+dpl_status_t
+dpl_req_add_metadata(dpl_req_t *req,
+                     dpl_dict_t *metadata)
+{
+  int bucket;
+  dpl_var_t *var;
+  int ret;
+
+  for (bucket = 0;bucket < metadata->n_buckets;bucket++)
+    {
+      for (var = metadata->buckets[bucket];var;var = var->prev)
+        {
+          ret = dpl_dict_add(req->metadata, var->key, var->value, 0);
+          if (DPL_SUCCESS != ret)
+            {
+              return DPL_FAILURE;
+            }
+        }
+    }
+
+  return DPL_SUCCESS;
 }
 
 dpl_status_t 
@@ -504,7 +527,7 @@ dpl_make_signature(dpl_ctx_t *ctx,
 
   if (NULL != resource)
     {
-      APPEND_STR("/");
+      //APPEND_STR("/");
       APPEND_STR(resource);
     }
 
@@ -534,6 +557,21 @@ dpl_req_build(dpl_req_t *req,
   dpl_dict_t *headers = NULL;
   int ret, ret2;
   char *method = method_str(req->method);
+  char *resource_ue = NULL;
+
+  //resource
+  if ('/' != req->resource[0])
+    {
+      resource_ue = alloca(DPL_URL_LENGTH(strlen(req->resource)) + 1);
+      resource_ue[0] = '/';
+      dpl_url_encode(req->resource, resource_ue + 1);
+    }
+  else
+    {
+      resource_ue = alloca(DPL_URL_LENGTH(strlen(req->resource)) + 1);
+      resource_ue[0] = '/'; //some servers do not like encoded slash
+      dpl_url_encode(req->resource + 1, resource_ue + 1);
+    }
     
   headers = dpl_dict_new(13);
   if (NULL == headers)
@@ -755,7 +793,7 @@ dpl_req_build(dpl_req_t *req,
     u_int base64_len;
     char auth_str[1024];
 
-    ret = dpl_make_signature(req->ctx, method, req->bucket, req->resource, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
+    ret = dpl_make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
     if (DPL_SUCCESS != ret)
       return DPL_FAILURE;
 
@@ -776,14 +814,10 @@ dpl_req_build(dpl_req_t *req,
       }
   }
 
-  /*
-   * launch request
-   */
+  //make it
   {
     char *p;
     u_int tmp_len;
-    char *resource_ue = NULL;
-    char *subresource_ue = NULL;
 
     DPL_TRACE(req->ctx, DPL_TRACE_S3, "method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);
     
@@ -794,19 +828,6 @@ dpl_req_build(dpl_req_t *req,
     
     APPEND_STR(" ");
     
-    //resource
-    if ('/' != req->resource[0])
-      {
-        resource_ue = alloca(DPL_URL_LENGTH(strlen(req->resource)) + 1);
-        resource_ue[0] = '/';
-        dpl_url_encode(req->resource, resource_ue + 1);
-      }
-    else
-      {
-        resource_ue = alloca(DPL_URL_LENGTH(strlen(req->resource)) + 1);
-        resource_ue[0] = '/'; //some servers do not like encoded slash
-        dpl_url_encode(req->resource + 1, resource_ue + 1);
-      }
     APPEND_STR(resource_ue);
     
     //subresource and query params
@@ -814,11 +835,7 @@ dpl_req_build(dpl_req_t *req,
       APPEND_STR("?");
     
     if (NULL != req->subresource)
-      {
-        subresource_ue = alloca(DPL_URL_LENGTH(strlen(req->subresource)));
-        dpl_url_encode(req->subresource, subresource_ue);
-        APPEND_STR(req->subresource);
-      }
+      APPEND_STR(req->subresource);
     
     if (NULL != query_params)
       {

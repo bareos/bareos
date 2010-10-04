@@ -35,16 +35,15 @@
  */
 dpl_status_t
 dpl_put(dpl_ctx_t *ctx,
-        char *bucket,
-        char *resource,
-        char *subresource,
-        dpl_dict_t *metadata,
-        dpl_canned_acl_t canned_acl,
-        char *data_buf,
-        u_int data_len)
+            char *bucket,
+            char *resource,
+            char *subresource,
+            dpl_dict_t *metadata,
+            dpl_canned_acl_t canned_acl,
+            char *data_buf,
+            u_int data_len)
 {
   char          host[1024];
-  char          data_len_str[64];
   int           ret, ret2;
   struct hostent hret, *hresult;
   char          hbuf[1024];
@@ -56,9 +55,203 @@ dpl_put(dpl_ctx_t *ctx,
   struct iovec  iov[10];
   int           n_iov = 0;
   int           connection_close = 0;
-  char          *acl_str;
-  dpl_dict_t    *headers = NULL;
   dpl_dict_t    *headers_returned = NULL;
+  dpl_req_t     *req = NULL;
+  dpl_chunk_t   chunk;
+
+  snprintf(host, sizeof (host), "%s.%s", bucket, ctx->host);
+
+  DPL_TRACE(ctx, DPL_TRACE_S3, "put bucket=%s resource=%s", bucket, resource);
+
+  req = dpl_req_new(ctx);
+  if (NULL == req)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  dpl_req_set_method(req, DPL_METHOD_PUT);
+
+  ret2 = dpl_req_set_bucket(req, bucket);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_set_resource(req, resource);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != subresource)
+    {
+      ret2 = dpl_req_set_subresource(req, subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  chunk.buf = data_buf;
+  chunk.len = data_len;
+  dpl_req_set_chunk(req, &chunk);
+
+  dpl_req_set_canned_acl(req, canned_acl);
+
+  if (NULL != metadata)
+    {
+      ret2 = dpl_req_add_metadata(req, metadata);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr); 
+  if (0 != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  if (AF_INET != hresult->h_addrtype)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  memcpy(&addr, hresult->h_addr_list[0], hresult->h_length);
+
+  conn = dpl_conn_open(ctx, addr, ctx->port);
+  if (NULL == conn)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  //build request
+  ret2 = dpl_req_build(req, NULL, header, sizeof (header), &header_len);
+
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  iov[n_iov].iov_base = header;
+  iov[n_iov].iov_len = header_len;
+  n_iov++;
+
+  //final crlf
+  iov[n_iov].iov_base = "\r\n";
+  iov[n_iov].iov_len = 2;
+  n_iov++;
+
+  //buffer
+  iov[n_iov].iov_base = data_buf;
+  iov[n_iov].iov_len = data_len;
+  n_iov++;
+  
+  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPLERR(1, "writev failed");
+      connection_close = 1;
+      ret = DPL_ENOENT; //mapped to 404
+      goto end;
+    }
+
+  ret2 = dpl_read_http_reply(conn, NULL, NULL, &headers_returned);
+  if (DPL_SUCCESS != ret2)
+    {
+      if (DPL_ENOENT == ret2)
+        {
+          ret = DPL_ENOENT;
+          goto end;
+        }
+      else
+        {
+          DPLERR(0, "read http answer failed");
+          connection_close = 1;
+          ret = DPL_ENOENT; //mapped to 404
+          goto end;
+        }
+    }
+  else
+    {
+      connection_close = dpl_connection_close(headers_returned);
+    }
+
+  (void) dpl_log_charged_event(ctx, "DATA", "IN", data_len);
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != conn)
+    {
+      if (1 == connection_close)
+        dpl_conn_terminate(conn);
+      else
+        dpl_conn_release(conn);
+    }
+
+  if (NULL != headers_returned)
+    dpl_dict_free(headers_returned);
+
+  if (NULL != req)
+    dpl_req_free(req);
+
+  DPRINTF("ret=%d\n", ret);
+
+  return ret;
+}
+
+/**
+ * put a resource
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ * @param metadata can be NULL
+ * @param canned_acl
+ * @param data_buf
+ * @param data_len
+ *
+ * @return
+ */
+dpl_status_t
+dpl_put_old(dpl_ctx_t *ctx,
+        char *bucket,
+        char *resource,
+        char *subresource,
+        dpl_dict_t *metadata,
+        dpl_canned_acl_t canned_acl,
+        char *data_buf,
+        u_int data_len)
+{
+  char host[1024];
+  char data_len_str[64];
+  int ret, ret2;
+  struct hostent hret, *hresult;
+  char hbuf[1024];
+  int herr;
+  struct in_addr addr;
+  dpl_conn_t *conn = NULL;
+  char header[1024];
+  u_int header_len;
+  struct iovec iov[10];
+  int n_iov = 0;
+  int connection_close = 0;
+  char *acl_str;
+  dpl_dict_t *headers = NULL;
+  dpl_dict_t *headers_returned = NULL;
 
   snprintf(host, sizeof (host), "%s.%s", bucket, ctx->host);
 
@@ -117,7 +310,7 @@ dpl_put(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr); 
+  ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
   if (0 != ret2)
     {
       ret = DPL_FAILURE;
@@ -140,13 +333,13 @@ dpl_put(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_build_s3_request(ctx, 
+  ret2 = dpl_build_s3_request(ctx,
                               "PUT",
                               bucket,
                               resource,
                               subresource,
                               NULL,
-                              headers, 
+                              headers,
                               header,
                               sizeof (header),
                               &header_len);

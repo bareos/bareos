@@ -238,6 +238,13 @@ main(int argc,
       exit(1);
     }
 
+  if (NULL != query_params)
+    dpl_dict_free(query_params);
+  if (NULL != req->chunk)
+    {
+      free(req->chunk->buf);
+      free(req->chunk);
+    }
   dpl_req_free(req);
   dpl_ctx_free(ctx);
   dpl_free();
