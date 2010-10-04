@@ -290,9 +290,9 @@ dpl_list_bucket(dpl_ctx_t *ctx,
   u_int         data_len;
   dpl_vec_t     *objects = NULL;
   dpl_vec_t     *common_prefixes = NULL;
-  dpl_dict_t    *headers = NULL;
   dpl_dict_t    *query_params = NULL;
   dpl_dict_t    *headers_returned = NULL;
+  dpl_req_t     *req = NULL;
 
   snprintf(host, sizeof (host), "%s.%s", bucket, ctx->host);
 
@@ -300,24 +300,26 @@ dpl_list_bucket(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_S3, "listbucket bucket=%s prefix=%s delimiter=%s", bucket, prefix, delimiter);
 
-  headers = dpl_dict_new(13);
-  if (NULL == headers)
+  req = dpl_req_new(ctx);
+  if (NULL == req)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  ret2 = dpl_dict_add(headers, "Host", host, 0);
+  dpl_req_set_method(req, DPL_METHOD_GET);
+
+  ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ENOMEM;
+      ret = ret2;
       goto end;
     }
 
-  ret2 = dpl_dict_add(headers, "Connection", "keep-alive", 0);
+  ret2 = dpl_req_set_resource(req, "/");
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ENOMEM;
+      ret = ret2;
       goto end;
     }
 
@@ -371,16 +373,8 @@ dpl_list_bucket(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_build_s3_request(ctx, 
-                              "GET",
-                              bucket,
-                              "/",
-                              NULL,
-                              query_params,
-                              headers, 
-                              header,
-                              sizeof (header),
-                              &header_len);
+  ret2 = dpl_req_build(req, query_params, header, sizeof (header), &header_len);
+
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -485,11 +479,11 @@ dpl_list_bucket(dpl_ctx_t *ctx,
   if (NULL != query_params)
     dpl_dict_free(query_params);
 
-  if (NULL != headers)
-    dpl_dict_free(headers);
-
   if (NULL != headers_returned)
     dpl_dict_free(headers_returned);
+
+  if (NULL != req)
+    dpl_req_free(req);
   
   DPRINTF("ret=%d\n", ret);
 

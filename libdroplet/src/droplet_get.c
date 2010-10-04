@@ -58,33 +58,50 @@ dpl_get(dpl_ctx_t *ctx,
   char          *data_buf = NULL;
   u_int         data_len;
   dpl_vec_t     *vec = NULL;
-  dpl_dict_t    *headers = NULL;
   dpl_dict_t    *headers_returned = NULL;
   dpl_dict_t    *metadata = NULL;
+  dpl_req_t     *req = NULL;
 
   snprintf(host, sizeof (host), "%s.%s", bucket, ctx->host);
 
-  DPRINTF("dpl_list_bucket: host=%s:%d\n", host, ctx->port);
+  DPRINTF("dpl_get: host=%s:%d\n", host, ctx->port);
 
-  headers = dpl_dict_new(13);
-  if (NULL == headers)
+  req = dpl_req_new(ctx);
+  if (NULL == req)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  ret2 = dpl_dict_add(headers, "Host", host, 0);
+  dpl_req_set_method(req, DPL_METHOD_GET);
+
+  ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ENOMEM;
+      ret = ret2;
       goto end;
     }
 
-  ret2 = dpl_dict_add(headers, "Connection", "keep-alive", 0);
+  ret2 = dpl_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ENOMEM;
+      ret = ret2;
       goto end;
+    }
+
+  if (NULL != subresource)
+    {
+      ret2 = dpl_req_set_subresource(req, subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  if (NULL != condition)
+    {
+      dpl_req_set_condition(req, condition);
     }
 
   metadata = dpl_dict_new(13);
@@ -92,16 +109,6 @@ dpl_get(dpl_ctx_t *ctx,
     {
       ret = DPL_ENOMEM;
       goto end;
-    }
-
-  if (NULL != condition)
-    {
-      ret2 = dpl_add_condition_to_headers(condition, headers);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
     }
 
   ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr); 
@@ -127,16 +134,14 @@ dpl_get(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_build_s3_request(ctx, 
-                              "GET",
-                              bucket,
-                              resource,
-                              subresource,
-                              NULL,
-                              headers, 
-                              header,
-                              sizeof (header),
-                              &header_len);
+  ret2 = dpl_req_build(req, NULL, header, sizeof (header), &header_len);
+
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -227,11 +232,11 @@ dpl_get(dpl_ctx_t *ctx,
   if (NULL != metadata)
     dpl_dict_free(metadata);
 
-  if (NULL != headers)
-    dpl_dict_free(headers);
-
   if (NULL != headers_returned)
     dpl_dict_free(headers_returned);
+
+  if (NULL != req)
+    dpl_req_free(req);
 
   DPRINTF("ret=%d\n", ret);
 

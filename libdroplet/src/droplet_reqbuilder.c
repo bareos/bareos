@@ -291,6 +291,24 @@ dpl_req_set_content_type(dpl_req_t *req,
   return DPL_SUCCESS;
 }
 
+dpl_status_t
+dpl_req_add_range(dpl_req_t *req,
+                  int start,
+                  int end)
+{
+  if (req->n_ranges < DPL_RANGE_MAX)
+    {
+      req->ranges[req->n_ranges].start = start;
+      req->ranges[req->n_ranges].end = end;
+
+      req->n_ranges++;
+
+      return DPL_SUCCESS;
+    }
+
+  return DPL_EINVAL;
+}
+
 /*
  * builder
  */
@@ -421,6 +439,57 @@ dpl_add_condition_to_headers(dpl_condition_t *condition,
       return DPL_FAILURE;                                       \
     memcpy(p, (Str), tmp_len); p += tmp_len; len -= tmp_len;    \
     } while (0);
+
+dpl_status_t
+dpl_add_ranges_to_headers(dpl_range_t *ranges, 
+                          int n_ranges,
+                          dpl_dict_t *headers)
+{
+  //int ret, ret2;
+  int i;
+  char buf[1024];
+  int len = sizeof (buf);
+  char *p;
+  int tmp_len;
+  int first = 1;
+
+  p = buf;
+
+  if (0 != n_ranges)
+    {
+      APPEND_STR("Range:bytes=");
+  
+      for (i = 0;i < n_ranges;i++)
+        {
+          char str[64];
+
+          if (1 == first)
+            first = 0;
+          else
+            APPEND_STR(",");
+
+          if (DPL_UNDEF == ranges[i].start && DPL_UNDEF == ranges[i].end)
+            return DPL_EINVAL;
+          else if (DPL_UNDEF == ranges[i].start)
+            {
+              snprintf(str, sizeof (str), "-%d", ranges[i].end);
+              APPEND_STR(str);
+            }
+          else if (DPL_UNDEF == ranges[i].end)
+            {
+              snprintf(str, sizeof (str), "%d-", ranges[i].start);
+              APPEND_STR(str);
+            }
+          else
+            {
+              snprintf(str, sizeof (str), "%d-%d", ranges[i].start, ranges[i].end);
+              APPEND_STR(str);
+            }
+        }
+    }
+  
+  return DPL_SUCCESS;
+}
 
 static int
 var_cmp(const void *p1,
@@ -583,8 +652,22 @@ dpl_req_build(dpl_req_t *req,
   /*
    * per method headers
    */
-  if (DPL_METHOD_GET == req->method)
+  if (DPL_METHOD_GET == req->method ||
+      DPL_METHOD_HEAD == req->method)
     {
+      ret2 = dpl_add_ranges_to_headers(req->ranges, req->n_ranges, headers);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      ret2 = dpl_add_condition_to_headers(&req->condition, headers);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
   else if (DPL_METHOD_PUT == req->method)
     {
@@ -727,9 +810,7 @@ dpl_req_build(dpl_req_t *req,
     }
   else if (DPL_METHOD_DELETE == req->method)
     {
-    }
-  else if (DPL_METHOD_HEAD == req->method)
-    {
+      //XXX todo x-amz-mfa
     }
   else 
     {

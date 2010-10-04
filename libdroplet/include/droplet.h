@@ -217,6 +217,13 @@ typedef struct
 
 typedef struct
 {
+#define DPL_UNDEF -1
+  int start;
+  int end;
+} dpl_range_t;
+
+typedef struct
+{
   dpl_ctx_t *ctx;
 
 #define DPL_BEHAVIOR_COMPUTE_MD5 (1u<<0)
@@ -241,6 +248,10 @@ typedef struct
 
   dpl_dict_t *metadata;
   dpl_chunk_t *chunk;
+
+#define DPL_RANGE_MAX 10
+  dpl_range_t ranges[DPL_RANGE_MAX];
+  int n_ranges;
 
 } dpl_req_t;
 
