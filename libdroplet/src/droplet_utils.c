@@ -343,46 +343,6 @@ dpl_iso8601totime(const char *str)
 /**/
 
 /** 
- * decode an URL
- * 
- * @param str 
- */
-void
-dpl_url_decode(char *str)
-{
-  char buf[3], *p;
-  int   state;
-  
-  state = 0;
-  for (p = str;*p;p++)
-    {
-      switch (state)
-        {
-        case 0:
-          if (*p == '%')
-            {
-              state = 1;
-              break ;
-            }
-          else
-            *str++ = *p;
-          break ;
-        case 1:
-          buf[0] = *p;
-          state++;
-          break ;
-        case 2:
-          buf[1] = *p;
-          buf[2] = 0;
-          *str++ = strtoul(buf, NULL, 16);
-          state = 0;
-          break ;
-        }
-    }
-  *str = 0;
-}
-
-/** 
  * find the last occurence of needle in haystack
  * 
  * @param haystack 
@@ -523,4 +483,44 @@ dpl_url_encode(char *str,
         }
     }
   str_ue[i] = 0;
+}
+
+/** 
+ * decode an URL
+ * 
+ * @param str 
+ */
+void
+dpl_url_decode(char *str)
+{
+  char buf[3], *p;
+  int   state;
+  
+  state = 0;
+  for (p = str;*p;p++)
+    {
+      switch (state)
+        {
+        case 0:
+          if (*p == '%')
+            {
+              state = 1;
+              break ;
+            }
+          else
+            *str++ = *p;
+          break ;
+        case 1:
+          buf[0] = *p;
+          state++;
+          break ;
+        case 2:
+          buf[1] = *p;
+          buf[2] = 0;
+          *str++ = strtoul(buf, NULL, 16);
+          state = 0;
+          break ;
+        }
+    }
+  *str = 0;
 }

@@ -219,10 +219,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
                         dpl_vec_t **vecp)
 {
   int           ret, ret2;
-  struct hostent hret, *hresult;
-  char          hbuf[1024];
-  int           herr;
-  struct in_addr addr;
+  char          *host = NULL;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
   u_int         header_len;
@@ -232,65 +229,54 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
   char          *data_buf = NULL;
   u_int         data_len;
   dpl_vec_t     *vec = NULL;
-  dpl_dict_t    *headers = NULL;
-  dpl_dict_t    *headers_returned = NULL;
+  dpl_dict_t    *headers_request = NULL;
+  dpl_dict_t    *headers_reply = NULL;
+  dpl_req_t     *req = NULL;
 
-  DPL_TRACE(ctx, DPL_TRACE_S3, "listallmybuckets");
+  DPL_TRACE(ctx, DPL_TRACE_CONV, "listallmybuckets");
 
-  headers = dpl_dict_new(13);
-  if (NULL == headers)
+  req = dpl_req_new(ctx);
+  if (NULL == req)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  ret2 = dpl_dict_add(headers, "Host", ctx->host, 0);
+  dpl_req_set_method(req, DPL_METHOD_GET);
+
+  ret2 = dpl_req_set_resource(req, "/");
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ENOMEM;
+      ret = ret2;
       goto end;
     }
 
-  ret2 = dpl_dict_add(headers, "Connection", "keep-alive", 0);
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  //build request
+  ret2 = dpl_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  ret2 = linux_gethostbyname_r(ctx->host, &hret, hbuf, sizeof (hbuf), &hresult, &herr); 
-  if (0 != ret2)
     {
       ret = DPL_FAILURE;
       goto end;
     }
 
-  if (AF_INET != hresult->h_addrtype)
+  host = dpl_dict_get_value(headers_request, "Host");
+  if (NULL == host)
     {
       ret = DPL_FAILURE;
       goto end;
     }
 
-  memcpy(&addr, hresult->h_addr_list[0], hresult->h_length);
-
-  conn = dpl_conn_open(ctx, addr, ctx->port);
+  conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
       ret = DPL_FAILURE;
       goto end;
     }
 
-  //build request
-  ret2 = dpl_build_s3_request(ctx, 
-                              "GET",
-                              NULL,
-                              "/",
-                              NULL,
-                              NULL,
-                              headers, 
-                              header,
-                              sizeof (header),
-                              &header_len);
+  ret2 = dpl_req_gen(req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -315,7 +301,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, &data_buf, &data_len, &headers_returned);
+  ret2 = dpl_read_http_reply(conn, &data_buf, &data_len, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -333,7 +319,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
     }
   else
     {
-      connection_close = dpl_connection_close(headers_returned);
+      connection_close = dpl_connection_close(headers_reply);
     }
 
   (void) dpl_log_charged_event(ctx, "REQUEST", "LIST", 0);
@@ -376,11 +362,14 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
         dpl_conn_release(conn);
     }
 
-  if (NULL != headers)
-    dpl_dict_free(headers);
+  if (NULL != headers_reply)
+    dpl_dict_free(headers_reply);
 
-  if (NULL != headers_returned)
-    dpl_dict_free(headers_returned);
+  if (NULL != headers_request)
+    dpl_dict_free(headers_request);
+
+  if (NULL != req)
+    dpl_req_free(req);
 
   DPRINTF("ret=%d\n", ret);
 

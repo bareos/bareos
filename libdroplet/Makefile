@@ -32,7 +32,6 @@ $(OBJDIR)/droplet_vec.o \
 $(OBJDIR)/droplet_dict.o \
 $(OBJDIR)/droplet_converters.o \
 $(OBJDIR)/droplet_reqbuilder.o \
-$(OBJDIR)/droplet_s3req.o \
 $(OBJDIR)/droplet_httpreply.o \
 $(OBJDIR)/droplet_utils.o \
 $(OBJDIR)/droplet_listallmybuckets.o \

@@ -35,7 +35,7 @@ dpl_method(char *str)
 }
 
 char *
-method_str(dpl_method_t method)
+dpl_method_str(dpl_method_t method)
 {
   switch (method)
     {

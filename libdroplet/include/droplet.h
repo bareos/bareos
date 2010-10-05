@@ -51,10 +51,11 @@ typedef void (*dpl_trace_func_t)(pid_t tid, u_int level, char *file, int lineno,
 #define DPL_TRACE_IO    (1u<<1) /*!< trace I/O */
 #define DPL_TRACE_HTTP  (1u<<2) /*!< trace HTTP */
 #define DPL_TRACE_SSL   (1u<<3) /*!< trace SSL */
-#define DPL_TRACE_S3    (1u<<4) /*!< trace S3 */
-#define DPL_TRACE_VDIR  (1u<<5) /*!< trace vdir calls */
-#define DPL_TRACE_VFILE (1u<<6) /*!< trace vfile calls */
-#define DPL_TRACE_BUF   (1u<<7) /*!< trace buffers */
+#define DPL_TRACE_REQ   (1u<<5) /*!< trace request builder */
+#define DPL_TRACE_CONV  (1u<<6) /*!< trace convenience functions */
+#define DPL_TRACE_VDIR  (1u<<7) /*!< trace vdir */
+#define DPL_TRACE_VFILE (1u<<8) /*!< trace vfile */
+#define DPL_TRACE_BUF   (1u<<31) /*!< trace buffers */
 
 #include <droplet_vec.h>
 #include <droplet_dict.h>

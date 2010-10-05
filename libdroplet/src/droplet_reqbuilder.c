@@ -66,6 +66,7 @@ dpl_req_new(dpl_ctx_t *ctx)
   if (NULL == req->metadata)
     goto bad;
 
+  //virtual hosting is prefered since it "disperses" connections
   req->behavior_flags = DPL_BEHAVIOR_KEEP_ALIVE|DPL_BEHAVIOR_VIRTUAL_HOSTING;
 
   return req;
@@ -616,17 +617,24 @@ dpl_make_signature(dpl_ctx_t *ctx,
  *
  */
 
+/** 
+ * build headers from request
+ * 
+ * @param req 
+ * @param headersp 
+ * 
+ * @return 
+ */
 dpl_status_t
 dpl_req_build(dpl_req_t *req,
-              dpl_dict_t *query_params,
-              char *buf,
-              int len,
-              u_int *lenp)
+              dpl_dict_t **headersp)
 {
   dpl_dict_t *headers = NULL;
   int ret, ret2;
-  char *method = method_str(req->method);
+  char *method = dpl_method_str(req->method);
   char *resource_ue = NULL;
+
+  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);
 
   //resource
   if ('/' != req->resource[0])
@@ -834,6 +842,15 @@ dpl_req_build(dpl_req_t *req,
           goto end;
         }
     }
+  else
+    {
+      ret2 = dpl_dict_add(headers, "Host", req->ctx->host, 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
 
   if (req->behavior_flags & DPL_BEHAVIOR_KEEP_ALIVE)
     {
@@ -878,8 +895,7 @@ dpl_req_build(dpl_req_t *req,
     if (DPL_SUCCESS != ret)
       return DPL_FAILURE;
 
-    if (req->ctx->trace_level & DPL_TRACE_S3)
-      dpl_dump_simple(sign_str, sign_len);
+    DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build stringtosign=%.*s", sign_len, sign_str);
     
     hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
     
@@ -895,81 +911,11 @@ dpl_req_build(dpl_req_t *req,
       }
   }
 
-  //make it
-  {
-    char *p;
-    u_int tmp_len;
-
-    DPL_TRACE(req->ctx, DPL_TRACE_S3, "method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);
-    
-    p = buf;
-    
-    //method
-    APPEND_STR(method);
-    
-    APPEND_STR(" ");
-    
-    APPEND_STR(resource_ue);
-    
-    //subresource and query params
-    if (NULL != req->subresource || NULL != query_params)
-      APPEND_STR("?");
-    
-    if (NULL != req->subresource)
-      APPEND_STR(req->subresource);
-    
-    if (NULL != query_params)
-      {
-        int bucket;
-        dpl_var_t *var;
-        int amp = 0;
-        
-        if (NULL != req->subresource)
-          amp = 1;
-        
-        for (bucket = 0;bucket < query_params->n_buckets;bucket++)
-          {
-            for (var = query_params->buckets[bucket];var;var = var->prev)
-              {
-                if (amp)
-                  APPEND_STR("&");
-                APPEND_STR(var->key);
-                APPEND_STR("=");
-                APPEND_STR(var->value);
-                amp = 1;
-              }
-          }
-      }
-    
-    APPEND_STR(" ");
-    
-    //version
-    APPEND_STR("HTTP/1.1");
-    APPEND_STR("\r\n");
-
-    //headers
-    if (NULL != headers)
-      {
-        int bucket;
-        dpl_var_t *var;
-        
-        for (bucket = 0;bucket < headers->n_buckets;bucket++)
-          {
-            for (var = headers->buckets[bucket];var;var = var->prev)
-              {
-                APPEND_STR(var->key);
-                APPEND_STR(": ");
-                APPEND_STR(var->value);
-                APPEND_STR("\r\n");
-              }
-          }
-      }
-
-    //final crlf managed by caller
-
-    if (NULL != lenp)
-      *lenp = (p - buf);
-  }
+  if (NULL != headersp)
+    {
+      *headersp = headers;
+      headers = NULL; //consume it
+    }
 
   ret = DPL_SUCCESS;
 
@@ -979,4 +925,116 @@ dpl_req_build(dpl_req_t *req,
     dpl_dict_free(headers);
   
   return ret;
+}
+
+/** 
+ * generate HTTP request
+ * 
+ * @param req 
+ * @param headers 
+ * @param query_params 
+ * @param buf 
+ * @param len 
+ * @param lenp 
+ * 
+ * @return 
+ */
+dpl_status_t
+dpl_req_gen(dpl_req_t *req,
+            dpl_dict_t *headers,
+            dpl_dict_t *query_params,
+            char *buf,
+            int len,
+            u_int *lenp)
+{
+  char *p;
+  u_int tmp_len;
+  char *method = dpl_method_str(req->method);
+  char *resource_ue = NULL;
+  
+  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_gen");
+    
+  p = buf;
+
+  //resource
+  if ('/' != req->resource[0])
+    {
+      resource_ue = alloca(DPL_URL_LENGTH(strlen(req->resource)) + 1);
+      resource_ue[0] = '/';
+      dpl_url_encode(req->resource, resource_ue + 1);
+    }
+  else
+    {
+      resource_ue = alloca(DPL_URL_LENGTH(strlen(req->resource)) + 1);
+      resource_ue[0] = '/'; //some servers do not like encoded slash
+      dpl_url_encode(req->resource + 1, resource_ue + 1);
+    }
+  
+  //method
+  APPEND_STR(method);
+  
+  APPEND_STR(" ");
+  
+  APPEND_STR(resource_ue);
+  
+  //subresource and query params
+  if (NULL != req->subresource || NULL != query_params)
+    APPEND_STR("?");
+  
+  if (NULL != req->subresource)
+    APPEND_STR(req->subresource);
+  
+  if (NULL != query_params)
+    {
+      int bucket;
+      dpl_var_t *var;
+      int amp = 0;
+      
+      if (NULL != req->subresource)
+        amp = 1;
+      
+      for (bucket = 0;bucket < query_params->n_buckets;bucket++)
+        {
+          for (var = query_params->buckets[bucket];var;var = var->prev)
+            {
+              if (amp)
+                APPEND_STR("&");
+              APPEND_STR(var->key);
+              APPEND_STR("=");
+              APPEND_STR(var->value);
+              amp = 1;
+            }
+        }
+    }
+  
+  APPEND_STR(" ");
+  
+  //version
+  APPEND_STR("HTTP/1.1");
+  APPEND_STR("\r\n");
+  
+  //headers
+  if (NULL != headers)
+    {
+      int bucket;
+      dpl_var_t *var;
+      
+      for (bucket = 0;bucket < headers->n_buckets;bucket++)
+        {
+          for (var = headers->buckets[bucket];var;var = var->prev)
+            {
+              APPEND_STR(var->key);
+              APPEND_STR(": ");
+              APPEND_STR(var->value);
+              APPEND_STR("\r\n");
+            }
+        }
+    }
+  
+  //final crlf managed by caller
+  
+  if (NULL != lenp)
+    *lenp = (p - buf);
+
+  return DPL_SUCCESS;
 }

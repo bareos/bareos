@@ -274,12 +274,8 @@ dpl_list_bucket(dpl_ctx_t *ctx,
                 dpl_vec_t **objectsp,
                 dpl_vec_t **common_prefixesp)
 {
-  char          host[1024];
+  char          *host;
   int           ret, ret2;
-  struct hostent hret, *hresult;
-  char          hbuf[1024];
-  int           herr;
-  struct in_addr addr;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
   u_int         header_len;
@@ -291,14 +287,11 @@ dpl_list_bucket(dpl_ctx_t *ctx,
   dpl_vec_t     *objects = NULL;
   dpl_vec_t     *common_prefixes = NULL;
   dpl_dict_t    *query_params = NULL;
-  dpl_dict_t    *headers_returned = NULL;
+  dpl_dict_t    *headers_request = NULL;
+  dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
 
-  snprintf(host, sizeof (host), "%s.%s", bucket, ctx->host);
-
-  DPRINTF("dpl_list_bucket: host=%s:%d\n", host, ctx->port);
-
-  DPL_TRACE(ctx, DPL_TRACE_S3, "listbucket bucket=%s prefix=%s delimiter=%s", bucket, prefix, delimiter);
+  DPL_TRACE(ctx, DPL_TRACE_CONV, "listbucket bucket=%s prefix=%s delimiter=%s", bucket, prefix, delimiter);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -350,31 +343,28 @@ dpl_list_bucket(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr); 
-  if (0 != ret2)
+    ret2 = dpl_req_build(req, &headers_request);
+  if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
       goto end;
     }
 
-  if (AF_INET != hresult->h_addrtype)
+  host = dpl_dict_get_value(headers_request, "Host");
+  if (NULL == host)
     {
       ret = DPL_FAILURE;
       goto end;
     }
 
-  memcpy(&addr, hresult->h_addr_list[0], hresult->h_length);
-
-  conn = dpl_conn_open(ctx, addr, ctx->port);
+  conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
       ret = DPL_FAILURE;
       goto end;
     }
 
-  //build request
-  ret2 = dpl_req_build(req, query_params, header, sizeof (header), &header_len);
-
+  ret2 = dpl_req_gen(req, headers_request, query_params, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -399,7 +389,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, &data_buf, &data_len, &headers_returned);
+  ret2 = dpl_read_http_reply(conn, &data_buf, &data_len, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -417,7 +407,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
     }
   else
     {
-      connection_close = dpl_connection_close(headers_returned);
+      connection_close = dpl_connection_close(headers_reply);
     }
 
   (void) dpl_log_charged_event(ctx, "REQUEST", "LIST", 0);
@@ -446,7 +436,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
   if (NULL != objectsp)
     {
       *objectsp = objects;
-      objects = NULL; //consume i
+      objects = NULL; //consume it
     }
 
   if (NULL != common_prefixesp)
@@ -479,8 +469,11 @@ dpl_list_bucket(dpl_ctx_t *ctx,
   if (NULL != query_params)
     dpl_dict_free(query_params);
 
-  if (NULL != headers_returned)
-    dpl_dict_free(headers_returned);
+  if (NULL != headers_reply)
+    dpl_dict_free(headers_reply);
+
+  if (NULL != headers_request)
+    dpl_dict_free(headers_request);
 
   if (NULL != req)
     dpl_req_free(req);

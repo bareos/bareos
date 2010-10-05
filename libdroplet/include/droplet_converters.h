@@ -20,7 +20,7 @@
 /* PROTO droplet_converters.c */
 /* src/droplet_converters.c */
 dpl_method_t dpl_method(char *str);
-char *method_str(dpl_method_t method);
+char *dpl_method_str(dpl_method_t method);
 dpl_location_constraint_t dpl_location_constraint(char *str);
 char *dpl_location_constraint_str(dpl_location_constraint_t location_constraint);
 dpl_canned_acl_t dpl_canned_acl(char *str);

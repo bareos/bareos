@@ -38,9 +38,12 @@ void dpl_req_set_chunk(dpl_req_t *req, dpl_chunk_t *chunk);
 dpl_status_t dpl_req_add_metadatum(dpl_req_t *req, char *key, char *value);
 dpl_status_t dpl_req_add_metadata(dpl_req_t *req, dpl_dict_t *metadata);
 dpl_status_t dpl_req_set_content_type(dpl_req_t *req, char *content_type);
+dpl_status_t dpl_req_add_range(dpl_req_t *req, int start, int end);
 dpl_status_t dpl_add_metadata_to_headers(dpl_dict_t *metadata, dpl_dict_t *headers);
 dpl_status_t dpl_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
 dpl_status_t dpl_add_condition_to_headers(dpl_condition_t *condition, dpl_dict_t *headers);
+dpl_status_t dpl_add_ranges_to_headers(dpl_range_t *ranges, int n_ranges, dpl_dict_t *headers);
 dpl_status_t dpl_make_signature(dpl_ctx_t *ctx, char *method, char *bucket, char *resource, char *subresource, dpl_dict_t *headers, char *buf, u_int len, u_int *lenp);
-dpl_status_t dpl_req_build(dpl_req_t *req, dpl_dict_t *query_params, char *buf, int len, u_int *lenp);
+dpl_status_t dpl_req_build(dpl_req_t *req, dpl_dict_t **headersp);
+dpl_status_t dpl_req_gen(dpl_req_t *req, dpl_dict_t *headers, dpl_dict_t *query_params, char *buf, int len, u_int *lenp);
 #endif

@@ -163,6 +163,11 @@ struct dpl_conf_ctx
 
 /**/
 
+#define DPL_BASE64_LENGTH(len) (4 * (((len) + 2) / 3))
+#define DPL_URL_LENGTH(len) ((len)*3+1)
+
+/**/
+
 #define DPL_TRACE(ctx, level, format, ...) do {if (ctx->trace_level & level) dpl_trace(ctx, level, __FILE__, __LINE__, format, ##__VA_ARGS__  );} while (0)
 
 /* PROTO droplet_utils.c */
@@ -177,10 +182,10 @@ void dpl_trace(dpl_ctx_t *ctx, u_int level, char *file, int lineno, char *fmt, .
 size_t dpl_iov_size(struct iovec *iov, int n_iov);
 void dpl_iov_dump(struct iovec *iov, int n_iov, size_t n_bytes);
 time_t dpl_iso8601totime(const char *str);
-void dpl_url_decode(char *str);
 char *dpl_strrstr(const char *haystack, const char *needle);
 void test_strrstr(void);
 u_int dpl_hmac_sha1(char *key_buf, u_int key_len, char *data_buf, u_int data_len, char *digest_buf);
 u_int dpl_base64_encode(const unsigned char *in_buf, u_int in_len, char *out_buf);
 void dpl_url_encode(char *str, char *str_ue);
+void dpl_url_decode(char *str);
 #endif

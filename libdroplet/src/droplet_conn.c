@@ -365,6 +365,47 @@ dpl_conn_open(dpl_ctx_t *ctx,
   return conn;
 }
 
+dpl_conn_t *
+dpl_conn_open_host(dpl_ctx_t *ctx,
+                   char *host,
+                   u_int port)
+{
+  int           ret2;
+  struct hostent hret, *hresult;
+  char          hbuf[1024];
+  int           herr;
+  struct in_addr addr;
+  dpl_conn_t    *conn;
+  
+  ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr); 
+  if (0 != ret2)
+    {
+      DPLERR(1, "gethostbyname failed");
+      goto bad;
+    }
+
+  if (AF_INET != hresult->h_addrtype)
+    {
+      DPLERR(0, "bad addr family");
+      goto bad;
+    }
+
+  memcpy(&addr, hresult->h_addr_list[0], hresult->h_length);
+
+  conn = dpl_conn_open(ctx, addr, ctx->port);
+  if (NULL == conn)
+    {
+      DPLERR(0, "connect failed");
+      goto bad;
+    }
+
+  return conn;
+
+ bad:
+
+  return NULL;
+}
+
 /** 
  * release the connection
  * 

@@ -70,6 +70,7 @@ main(int argc,
   int ret;
   char opt;
   dpl_req_t *req = NULL;
+  dpl_dict_t *headers_request = NULL;
   dpl_dict_t *query_params = NULL;
   char header[8192];
   u_int header_len;
@@ -224,7 +225,14 @@ main(int argc,
       usage();
     }
 
-  ret = dpl_req_build(req, query_params, header, sizeof (header), &header_len);
+  ret = dpl_req_build(req, &headers_request);
+  if (DPL_SUCCESS != ret)
+    {
+      fprintf(stderr, "error in request: %s (%d)\n", dpl_status_str(ret), ret);
+      exit(1);
+    }
+
+  ret = dpl_req_gen(req, headers_request, query_params, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error in request: %s (%d)\n", dpl_status_str(ret), ret);
@@ -238,6 +246,7 @@ main(int argc,
       exit(1);
     }
 
+  dpl_dict_free(headers_request);
   if (NULL != query_params)
     dpl_dict_free(query_params);
   if (NULL != req->chunk)
