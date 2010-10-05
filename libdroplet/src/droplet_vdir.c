@@ -34,6 +34,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
   dpl_ino_t obj_ino;
   dpl_ftype_t obj_type;
   int delim_len = strlen(ctx->delim);
+  int obj_name_len = strlen(obj_name);
 
   memset(&obj_ino, 0, sizeof (obj_ino));
 
@@ -79,10 +80,12 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
 
       p -= delim_len;
 
-      for (p2 = p;p2 > obj_ino.key;p2 -= delim_len)
+      for (p2 = p;p2 > obj_ino.key;p2--)
         {
           if (!strncmp(p2, ctx->delim, delim_len))
             {
+              DPRINTF("found delim\n");
+
               p2 += delim_len;
               break ;
             }
@@ -169,22 +172,24 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
 
       p -= delim_len;
 
-      for (p2 = p;p2 > prefix->prefix;p2 -= delim_len)
+      for (p2 = p;p2 > prefix->prefix;p2--)
         {
           DPRINTF("p2='%s'\n", p2);
 
           if (!strncmp(p2, ctx->delim, delim_len))
             {
+              DPRINTF("found delim\n");
+
               p2 += delim_len;
               break ;
             }
         }
 
       key_len = p - p2 + 1;
+      
+      DPRINTF("cmp (prefix=%s) prefix=%.*s obj_name=%s\n", prefix->prefix, key_len, p2, obj_name);
 
-      DPRINTF("cmp (prefix=%s) prefix=%.*s obj_name=%.*s\n", prefix->prefix, key_len, p2, key_len, obj_name);
-
-      if (!strncmp(p2, obj_name, key_len))
+      if (key_len == obj_name_len && !strncmp(p2, obj_name, obj_name_len))
         {
           DPRINTF("ok\n");
 

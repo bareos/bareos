@@ -460,8 +460,12 @@ dpl_profile_post(dpl_ctx_t *ctx)
   //ssl stuff
   if (1 == ctx->use_https)
     {
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+      const SSL_METHOD *method;
+#else
       SSL_METHOD *method;
-
+#endif
+      
       if (NULL == ctx->ssl_cert_file ||
           NULL == ctx->ssl_key_file ||
           NULL == ctx->ssl_password)
