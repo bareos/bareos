@@ -131,7 +131,7 @@ cmd_put(int argc,
       exit(1);
     }
 
-  ret = dpl_openwrite(ctx, remote_file, DPL_VFILE_FLAG_CREAT | (1 == kflag ? DPL_VFILE_FLAG_ENCRYPT : 0u), metadata, canned_acl, st.st_size, &vfile);
+  ret = dpl_openwrite(ctx, remote_file, DPL_VFILE_FLAG_CREAT | (1 == kflag ? DPL_VFILE_FLAG_ENCRYPT : DPL_VFILE_FLAG_MD5), metadata, canned_acl, st.st_size, &vfile);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);

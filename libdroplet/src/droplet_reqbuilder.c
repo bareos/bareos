@@ -1023,6 +1023,8 @@ dpl_req_gen(dpl_req_t *req,
         {
           for (var = headers->buckets[bucket];var;var = var->prev)
             {
+              DPL_TRACE(req->ctx, DPL_TRACE_REQ, "header='%s' value='%s'", var->key, var->value);
+
               APPEND_STR(var->key);
               APPEND_STR(": ");
               APPEND_STR(var->value);

@@ -25,21 +25,53 @@ dpl_close(dpl_vfile_t *vfile)
   int ret, ret2;
   dpl_dict_t *headers_returned = NULL;
   int connection_close = 0;
+  dpl_var_t *var;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFILE, "close vfile=%p", vfile);
+
+  ret = DPL_SUCCESS;
 
   if (NULL != vfile->conn)
     {
       ret2 = dpl_read_http_reply(vfile->conn, NULL, NULL, &headers_returned);
       if (DPL_SUCCESS != ret2)
         {
+          fprintf(stderr, "read http_reply failed %s (%d)\n", dpl_status_str(ret2), ret2);
           ret = ret2;
-          goto end;
         }
       else
         {
-          connection_close = dpl_connection_close(headers_returned);
+          if (vfile->flags & DPL_VFILE_FLAG_MD5)
+            {
+              ret2 = dpl_dict_get_lowered(headers_returned, "Etag", &var);
+              if (DPL_SUCCESS != ret2 || NULL == var)
+                {
+                  fprintf(stderr, "missing 'Etag' in answer\n");
+                  ret = DPL_FAILURE;
+                }
+              else
+                {
+                  //compare MD5 with etag
+                  u_char digest[MD5_DIGEST_LENGTH];
+                  char bcd_digest[DPL_BCD_LENGTH(MD5_DIGEST_LENGTH) + 1];
+                  u_int bcd_digest_len;
+                  
+                  MD5_Final(digest, &vfile->md5_ctx);
+                  
+                  bcd_digest_len = dpl_bcd_encode(digest, MD5_DIGEST_LENGTH, bcd_digest);
+                  bcd_digest[bcd_digest_len] = 0;
+
+                  //skip quotes
+                  if (strncmp(var->value + 1, bcd_digest, DPL_BCD_LENGTH(MD5_DIGEST_LENGTH)))
+                    {
+                      fprintf(stderr, "MD5 checksum dont match\n");
+                      ret = DPL_FAILURE;
+                    }
+                }
+            }
         }
+
+      connection_close = dpl_connection_close(headers_returned);
       
       if (1 == connection_close)
         dpl_conn_terminate(vfile->conn);
@@ -55,13 +87,9 @@ dpl_close(dpl_vfile_t *vfile)
 
   free(vfile);
 
-  ret = DPL_SUCCESS;
-
- end:
-
   if (NULL != headers_returned)
     dpl_dict_free(headers_returned);
-  
+
   return ret;
 }
 
@@ -212,6 +240,11 @@ dpl_openwrite(dpl_ctx_t *ctx,
       goto end;
     }
 
+  if (vfile->flags & DPL_VFILE_FLAG_MD5)
+    {
+      MD5_Init(&vfile->md5_ctx);
+    }
+
   if (vfile->flags & DPL_VFILE_FLAG_ENCRYPT)
     {
       ret2 = RAND_pseudo_bytes(vfile->salt, sizeof (vfile->salt));
@@ -285,6 +318,11 @@ dpl_write(dpl_vfile_t *vfile,
   int olen;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFILE, "write_all vfile=%p", vfile);
+
+  if (vfile->flags & DPL_VFILE_FLAG_MD5)
+    {
+      MD5_Update(&vfile->md5_ctx, buf, len);
+    }
 
   if (vfile->flags & DPL_VFILE_FLAG_ENCRYPT)
     {

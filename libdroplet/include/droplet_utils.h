@@ -165,6 +165,7 @@ struct dpl_conf_ctx
 
 #define DPL_BASE64_LENGTH(len) (4 * (((len) + 2) / 3))
 #define DPL_URL_LENGTH(len) ((len)*3+1)
+#define DPL_BCD_LENGTH(len) (2*(len))
 
 /**/
 
@@ -184,8 +185,10 @@ void dpl_iov_dump(struct iovec *iov, int n_iov, size_t n_bytes);
 time_t dpl_iso8601totime(const char *str);
 char *dpl_strrstr(const char *haystack, const char *needle);
 void test_strrstr(void);
+void dpl_strlower(char *str);
 u_int dpl_hmac_sha1(char *key_buf, u_int key_len, char *data_buf, u_int data_len, char *digest_buf);
 u_int dpl_base64_encode(const unsigned char *in_buf, u_int in_len, char *out_buf);
 void dpl_url_encode(char *str, char *str_ue);
 void dpl_url_decode(char *str);
+u_int dpl_bcd_encode(u_char *in_buf, u_int in_len, char *out_buf);
 #endif

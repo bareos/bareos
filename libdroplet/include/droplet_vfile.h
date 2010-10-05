@@ -19,7 +19,8 @@
 
 #define DPL_VFILE_FLAG_CREAT   (1u<<0)
 #define DPL_VFILE_FLAG_EXCL    (1u<<1)
-#define DPL_VFILE_FLAG_ENCRYPT (1u<<2)
+#define DPL_VFILE_FLAG_MD5     (1u<<2) /*!< check MD5 */
+#define DPL_VFILE_FLAG_ENCRYPT (1u<<3) /*!< encrypt on the fly */
 
 typedef struct
 {
@@ -28,6 +29,11 @@ typedef struct
   u_int flags;
 
   dpl_conn_t *conn;
+
+  /*
+   * MD5
+   */
+  MD5_CTX md5_ctx;
 
   /*
    * encrypt

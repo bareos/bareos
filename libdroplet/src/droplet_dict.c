@@ -16,13 +16,6 @@
 
 #include "dropletp.h"
 
-static void
-dict_strlower(char *str)
-{
-  for (;*str;str++)
-    *str = tolower(*str);
-}
-
 /** 
  * compute a simple hash code 
  *
@@ -105,6 +98,8 @@ dpl_dict_get_lowered(dpl_dict_t *dict,
   nkey = strdup(key);
   if (NULL == nkey)
     return DPL_ENOMEM;
+
+  dpl_strlower(nkey);
 
   var = dpl_dict_get(dict, nkey);
   
@@ -210,7 +205,7 @@ dpl_dict_add(dpl_dict_t *dict,
         }
       
       if (1 == lowered)
-        dict_strlower(var->key);
+        dpl_strlower(var->key);
 
       var->value = strdup(value);
       if (NULL == var->value)

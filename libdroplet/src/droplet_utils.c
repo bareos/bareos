@@ -21,6 +21,10 @@
 
 //#define DEBUG
 
+/*
+ * port
+ */
+
 #ifndef HAVE_DRAND48_R
 int 
 srand48_r(long int seedval, 
@@ -85,7 +89,9 @@ linux_gethostbyname_r(const char *name,
 #endif
 }
 
-/**/
+/*
+ * debug
+ */
 
 void
 dpl_dump_init(struct dpl_dump_ctx *ctx)
@@ -260,7 +266,9 @@ dpl_iov_dump(struct iovec *iov,
     }
 }
 
-/**/
+/*
+ * utils
+ */
 
 static int 
 check_string(const char *str,
@@ -379,6 +387,16 @@ test_strrstr()
   printf("%s\n", dpl_strrstr("foo/bar/", "/"));
 }
 #endif
+
+void
+dpl_strlower(char *str)
+{
+  for (;*str;str++)
+    {
+      if (isupper(*str))
+        *str = tolower(*str);
+    }
+}
 
 /** 
  * compute HMAC-SHA1
@@ -523,4 +541,28 @@ dpl_url_decode(char *str)
         }
     }
   *str = 0;
+}
+
+/**/
+
+u_int
+dpl_bcd_encode(u_char *in_buf,
+               u_int in_len,
+               char *out_buf)
+{
+  int i;
+  u_int out_len = 0;
+
+  for (i = 0;i < in_len;i++)
+    {
+      int       c1, c2;
+
+      c1 = (in_buf[i] & 0xf0) >> 4;
+      c2 = in_buf[i] & 0xf;
+      out_buf[i*2] = c1 >= 10 ? c1 - 10 + 'a' : c1 + '0';
+      out_buf[i*2+1] = c2 >= 10 ? c2 - 10 + 'a' : c2 + '0';
+      out_len += 2;
+    }
+
+  return out_len;
 }
