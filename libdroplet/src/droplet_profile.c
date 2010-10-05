@@ -696,4 +696,7 @@ dpl_profile_free(dpl_ctx_t *ctx)
   if (NULL != ctx->delim)
     free(ctx->delim);
 
+  if (NULL != ctx->cur_bucket)
+    free(ctx->cur_bucket);
+
 }

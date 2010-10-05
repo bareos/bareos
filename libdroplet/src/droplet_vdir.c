@@ -139,7 +139,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
             }
           memcpy(obj_ino.key, obj->key, key_len);
           obj_ino.key[key_len] = 0;
-          if (strlen(obj->key) >= delim_len && !strcmp(obj->key - delim_len, ctx->delim))
+          if (key_len >= delim_len && !strcmp(obj->key + key_len - delim_len, ctx->delim))
             obj_type = DPL_FTYPE_DIR;
           else
             obj_type = DPL_FTYPE_REG;
@@ -422,7 +422,7 @@ dpl_vdir_readdir(void *dir_hdl,
       memcpy(dirent->ino.key, obj->key, key_len);
       dirent->ino.key[key_len] = 0;
 
-      if (strlen(obj->key) >= delim_len && !strcmp(obj->key - delim_len, dir->ctx->delim))
+      if (key_len >= delim_len && !strcmp(obj->key + key_len - delim_len, dir->ctx->delim))
         dirent->type = DPL_FTYPE_DIR;
       else
         dirent->type = DPL_FTYPE_REG;
@@ -624,6 +624,8 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
   u_int n_entries;
   dpl_ino_t ino;
   int ret, ret2;
+  int obj_name_len = strlen(obj_name);
+  int delim_len = strlen(ctx->delim);
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "rmdir bucket=%s parent_ino=%s name=%s", bucket, parent_ino.key, obj_name);
 
@@ -636,7 +638,9 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
   ino = parent_ino;
   //XXX check length
   strcat(ino.key, obj_name);
-  strcat(ino.key, ctx->delim);
+  //append delim to key if not already
+  if (obj_name_len > delim_len && strcmp(obj_name + obj_name_len - delim_len, ctx->delim))
+    strcat(ino.key, ctx->delim);
 
   ret2 = dpl_vdir_count_entries(ctx, bucket, ino, &n_entries);
   if (DPL_SUCCESS != ret2)

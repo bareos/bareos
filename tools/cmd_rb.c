@@ -63,7 +63,7 @@ cmd_rb(int argc,
       return SHELL_CONT;
     }
   
-  ret = dpl_delete(ctx, bucket, "/", NULL);
+  ret = dpl_deletebucket(ctx, bucket);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);

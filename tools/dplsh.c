@@ -25,7 +25,7 @@ int
 do_quit()
 {
   vars_save();
-
+  vars_free();
   dpl_ctx_free(ctx);
   dpl_free();
 

@@ -146,7 +146,7 @@ main(int argc,
         }
       case 'M':
         {
-          dpl_req_add_behavior(req, DPL_BEHAVIOR_COMPUTE_MD5);
+          dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
           break ;
         }
       case 'c':

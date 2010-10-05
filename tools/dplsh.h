@@ -37,10 +37,21 @@
 #include "usage.h"
 #include "vars.h"
 #include "shell.h"
-#include "cmds.h"
 #include "utils.h"
 
 #define DPLSHRC ".dplshrc"
+
+struct ls_data
+{
+  dpl_ctx_t *ctx;
+  int lflag; //print long
+  int Rflag; //recursive (vdir)
+  int aflag; //list all (raw)
+  int pflag; //do not print
+  size_t total_size;
+};
+
+#include "cmds.h"
 
 extern int optind;
 

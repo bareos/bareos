@@ -42,6 +42,8 @@ char *var_get_value(char *key);
 void vars_iterate(tvar_iterate_func cb_func, void *cb_arg);
 void var_set(char *key, char *value, int cmd, tvar_special_func special_func);
 void var_remove(tvar *var);
+void free_cb(tvar *var, void *cb_arg);
+int vars_free(void);
 void save_cb(tvar *var, void *cb_arg);
 int vars_save(void);
 int vars_load(void);

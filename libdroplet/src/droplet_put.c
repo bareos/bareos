@@ -95,6 +95,8 @@ dpl_put(dpl_ctx_t *ctx,
   chunk.len = data_len;
   dpl_req_set_chunk(req, &chunk);
 
+  dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
+
   dpl_req_set_canned_acl(req, canned_acl);
 
   if (NULL != metadata)
@@ -376,6 +378,9 @@ dpl_put_buffered(dpl_ctx_t *ctx,
 
   if (NULL != headers_request)
     dpl_dict_free(headers_request);
+
+  if (NULL != req)
+    dpl_req_free(req);
 
   DPRINTF("ret=%d\n", ret);
 

@@ -63,7 +63,7 @@ dpl_perf_test: $(DPL_PERF_TEST_OBJS) $(COMMON_OBJS) $(DEPENDS)
 test_req: $(TEST_REQ_OBJS) $(COMMON_OBJS) $(DEPENDS)
 	$(CC) -o test_req $(TEST_REQ_OBJS) $(COMMON_OBJS) $(LDFLAGS)
 
-VALGRIND = valgrind --leak-check=full --suppressions=valgrind.supp
+VALGRIND = valgrind --leak-check=full
 DPLTESTBUCKET1=droplettest01
 DPLTESTBUCKET2=droplettest02
 

@@ -21,6 +21,8 @@ int cmd_la(int argc, char **argv);
 struct usage_def la_usage[] =
   {
     {'l', 0u, NULL, "long display"},
+    {'R', 0u, NULL, "recurse over buckets"},
+    {'a', 0u, NULL, "list all files in buckets (do not use vdir interface)"},
     {0, 0u, NULL, NULL},
   };
 
@@ -34,7 +36,10 @@ cmd_la(int argc,
   char opt;
   dpl_vec_t *vec = NULL;
   int lflag = 0;
+  int Rflag = 0;
+  int aflag = 0;
   int i;
+  size_t total_size = 0;
 
   optind = 0;
 
@@ -43,8 +48,14 @@ cmd_la(int argc,
   while ((opt = getopt(argc, argv, usage_getoptstr(la_usage))) != -1)
     switch (opt)
       {
+      case 'R':
+        Rflag = 1;
+        break ;
       case 'l':
         lflag = 1;
+        break ;
+      case 'a':
+        aflag = 1;
         break ;
       case '?':
       default:
@@ -83,6 +94,42 @@ cmd_la(int argc,
         {
           printf("%s\n", bucket->name);
         }
+
+      if (1 == Rflag)
+        {
+          char *bucket_save;
+          struct ls_data ls_data;
+
+          memset(&ls_data, 0, sizeof (ls_data));
+          
+          bucket_save = ctx->cur_bucket;
+          ctx->cur_bucket = bucket->name;
+
+          ls_data.lflag = lflag;
+          ls_data.Rflag = 1;
+          ls_data.aflag = aflag;
+
+          ret = ls_recurse(&ls_data, "/", 0);
+          if (DPL_SUCCESS != ret)
+            {
+              fprintf(stderr, "recursing %s (%d)\n", dpl_status_str(ret), ret);
+            }
+          else
+            {
+              if (NULL != ctx->pricing)
+                printf("Total %s Price %s\n", dpl_size_str(ls_data.total_size), dpl_price_storage_str(ctx, ls_data.total_size));
+
+              total_size += ls_data.total_size;
+            }
+          
+          ctx->cur_bucket = bucket_save;
+        }
+    }
+
+  if (1 == Rflag)
+    {
+      if (NULL != ctx->pricing)
+        printf("Grand total %s Price %s\n", dpl_size_str(total_size), dpl_price_storage_str(ctx, total_size));
     }
 
   dpl_vec_buckets_free(vec);

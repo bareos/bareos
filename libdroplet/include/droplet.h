@@ -227,7 +227,7 @@ typedef struct
 {
   dpl_ctx_t *ctx;
 
-#define DPL_BEHAVIOR_COMPUTE_MD5 (1u<<0)
+#define DPL_BEHAVIOR_MD5         (1u<<0)
 #define DPL_BEHAVIOR_EXPECT      (1u<<1)
 #define DPL_BEHAVIOR_VIRTUAL_HOSTING (1u<<2)
 #define DPL_BEHAVIOR_KEEP_ALIVE (1u<<3)

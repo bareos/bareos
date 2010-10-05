@@ -35,8 +35,11 @@ extern struct cmd_def unset_cmd;
 
 extern struct cmd_def	*cmd_defs[];
 
-/* PROTO cmds.c */
+/* PROTO cmds.c cmd_ls.c */
 /* ./cmds.c */
 int cmd_quit(int argc, char **argv);
 int cmd_help(int argc, char **argv);
+/* ./cmd_ls.c */
+dpl_status_t ls_recurse(struct ls_data *ls_data, char *dir, int level);
+int cmd_ls(int argc, char **argv);
 #endif

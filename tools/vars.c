@@ -83,12 +83,13 @@ vars_iterate(tvar_iterate_func cb_func,
              void *cb_arg)
 {
   int bucket;
-  tvar *var;
+  tvar *var, *prev;
 
   for (bucket = 0;bucket < N_VAR_BUCKETS;bucket++)
     {
-      for (var = var_buckets[bucket];var;var = var->prev)
+      for (var = var_buckets[bucket];var;var = prev)
         {
+          prev = var->prev;
           cb_func(var, cb_arg);
         }
     }
@@ -167,8 +168,24 @@ var_remove(tvar *var)
   free(var);
 }
 
-/**/
+void
+free_cb(tvar *var,
+        void *cb_arg)
+{
+  free(var->key);
+  free(var->value);
+  free(var);
+}
 
+int
+vars_free()
+{
+  vars_iterate(free_cb, NULL);
+
+  return 0;
+}
+
+/**/
 
 void
 save_cb(tvar *var,

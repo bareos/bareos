@@ -41,6 +41,7 @@ $(OBJDIR)/droplet_put.o \
 $(OBJDIR)/droplet_get.o \
 $(OBJDIR)/droplet_head.o \
 $(OBJDIR)/droplet_delete.o \
+$(OBJDIR)/droplet_deletebucket.o \
 $(OBJDIR)/droplet_profile.o \
 $(OBJDIR)/droplet_pricing.o \
 $(OBJDIR)/droplet_vdir.o \

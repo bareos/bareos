@@ -23,87 +23,122 @@ struct usage_def ls_usage[] =
     {'l', 0u, NULL, "long display"},
     {'R', 0u, NULL, "recurse subdirectories"},
     {'a', 0u, NULL, "list all files in the bucket (do not use vdir interface)"},
-    {'P', USAGE_PARAM, "prefix", "default unset"},
-    {'D', USAGE_PARAM, "delimiter", "default unset"},
     {USAGE_NO_OPT, 0u, "path or bucket", "remote directory"},
     {0, 0u, NULL, NULL},
   };
 
 struct cmd_def ls_cmd = {"ls", "list directory", ls_usage, cmd_ls};
 
-struct ls_data
+dpl_status_t
+ls_recurse(struct ls_data *ls_data,
+           char *dir,
+           int level)
 {
-  dpl_ctx_t *ctx;
-  int lflag;
-  int Rflag;
-  size_t total_size;
-};
-
-static dpl_status_t
-recurse(struct ls_data *ls_data,
-        char *dir,
-        int level)
-{
-  void *dir_hdl;
-  dpl_dirent_t entry;
   int ret;
 
-  if (1 == ls_data->Rflag)
+  if (1 == ls_data->aflag)
     {
-      ret = dpl_chdir(ctx, dir);
-      if (DPL_SUCCESS != ret)
-        return ret;
+      dpl_vec_t *objects = NULL;
+      int i;
       
-      printf("%s%s%s:\n", 0 == level ? "" : "\n", ctx->delim, ctx->cur_ino.key);
-
-      ret = dpl_opendir(ctx, ".", &dir_hdl);
+      //raw listing
+      ret = dpl_list_bucket(ctx, ctx->cur_bucket, NULL, NULL, &objects, NULL);
       if (DPL_SUCCESS != ret)
-        return ret;
+        {
+          fprintf(stderr, "listbucket failure %s (%d)\n", dpl_status_str(ret), ret);
+          return ret;
+        }      
+
+      for (i = 0;i < objects->n_items;i++)
+        {
+          dpl_object_t *obj = (dpl_object_t *) objects->array[i];
+
+          if (0 == ls_data->pflag)
+            {
+              if (ls_data->lflag)
+                {
+                  struct tm *stm;
+                  
+                  stm = localtime(&obj->last_modified);
+                  printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) obj->size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, obj->key);
+                }
+              else
+                {
+                  printf("%s\n", obj->key);
+                }
+            }
+          
+          ls_data->total_size += obj->size;
+        }
+
+      if (NULL != objects)
+        dpl_vec_objects_free(objects);
     }
   else
     {
-      ret = dpl_opendir(ctx, dir, &dir_hdl);
-      if (DPL_SUCCESS != ret)
-        return ret;
-    }
+      void *dir_hdl;
+      dpl_dirent_t entry;
 
-  while (!dpl_eof(dir_hdl))
-    {
-      ret = dpl_readdir(dir_hdl, &entry);
-      if (DPL_SUCCESS != ret)
-        return ret;
-
-      if (ls_data->lflag)
+      if (1 == ls_data->Rflag)
         {
-          struct tm *stm;
+          ret = dpl_chdir(ctx, dir);
+          if (DPL_SUCCESS != ret)
+            return ret;
           
-          stm = localtime(&entry.last_modified);
-          printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) entry.size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, entry.name);
-        }
-      else
-        {
-          printf("%s\n", entry.name);
-        }
-      
-      ls_data->total_size += entry.size;
-
-      if (1 == ls_data->Rflag &&
-          strcmp(entry.name, ".") && 
-          (DPL_FTYPE_DIR == entry.type))
-        {
-          ret = recurse(ls_data, entry.name, level + 1);
+          printf("%s%s%s:\n", 0 == level ? "" : "\n", ctx->delim, ctx->cur_ino.key);
+          
+          ret = dpl_opendir(ctx, ".", &dir_hdl);
           if (DPL_SUCCESS != ret)
             return ret;
         }
-    }
-  
-  dpl_closedir(dir_hdl);
+      else
+        {
+          ret = dpl_opendir(ctx, dir, &dir_hdl);
+          if (DPL_SUCCESS != ret)
+            return ret;
+        }
+      
+      while (!dpl_eof(dir_hdl))
+        {
+          ret = dpl_readdir(dir_hdl, &entry);
+          if (DPL_SUCCESS != ret)
+            return ret;
 
-  if (1 == ls_data->Rflag && level > 0)
-    {
-      ret = dpl_chdir(ctx, "..");
-      if (DPL_SUCCESS != ret)
-        return ret;
+          if (0 == ls_data->pflag)
+            {
+              if (ls_data->lflag)
+                {
+                  struct tm *stm;
+                  
+                  stm = localtime(&entry.last_modified);
+                  printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) entry.size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, entry.name);
+                }
+              else
+                {
+                  printf("%s\n", entry.name);
+                }
+            }
+          
+          ls_data->total_size += entry.size;
+          
+          if (1 == ls_data->Rflag &&
+              strcmp(entry.name, ".") && 
+              (DPL_FTYPE_DIR == entry.type))
+            {
+              ret = ls_recurse(ls_data, entry.name, level + 1);
+              if (DPL_SUCCESS != ret)
+                return ret;
+            }
+        }
+      
+      dpl_closedir(dir_hdl);
+      
+      if (1 == ls_data->Rflag && level > 0)
+        {
+          ret = dpl_chdir(ctx, "..");
+          if (DPL_SUCCESS != ret)
+            return ret;
+        }
     }
 
   return DPL_SUCCESS;
@@ -118,13 +153,9 @@ cmd_ls(int argc,
   int lflag = 0;
   int aflag = 0;
   int Rflag = 0;
-  char *prefix = NULL;
-  char *delimiter = NULL;
   size_t total_size = 0;
-  dpl_vec_t *objects = NULL;
-  dpl_vec_t *common_prefixes = NULL;
-  void *dir_hdl = NULL;
   char *path;
+  struct ls_data ls_data;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
 
@@ -141,12 +172,6 @@ cmd_ls(int argc,
         break ;
       case 'l':
         lflag = 1;
-        break ;
-      case 'P':
-        prefix = xstrdup(optarg);
-        break ;
-      case 'D':
-        delimiter = xstrdup(optarg);
         break ;
       case '?':
       default:
@@ -166,56 +191,20 @@ cmd_ls(int argc,
       return SHELL_CONT;
     }
 
-  if (1 == aflag)
+  memset(&ls_data, 0, sizeof (ls_data));
+  ls_data.ctx = ctx;
+  ls_data.lflag = lflag;
+  ls_data.Rflag = Rflag;
+  ls_data.aflag = aflag;
+  
+  ret = ls_recurse(&ls_data, path, 0);
+  if (DPL_SUCCESS != ret)
     {
-      int i;
-      
-      //raw listing
-      ret = dpl_list_bucket(ctx, ctx->cur_bucket, NULL, NULL, &objects, NULL);
-      if (DPL_SUCCESS != ret)
-        {
-          fprintf(stderr, "listbucket failure %s (%d)\n", dpl_status_str(ret), ret);
-          goto end;
-        }      
-
-      for (i = 0;i < objects->n_items;i++)
-        {
-          dpl_object_t *obj = (dpl_object_t *) objects->array[i];
-          
-          if (lflag)
-            {
-              struct tm *stm;
-              
-              stm = localtime(&obj->last_modified);
-              printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) obj->size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, obj->key);
-            }
-          else
-            {
-              printf("%s\n", obj->key);
-            }
-          
-          total_size += obj->size;
-        }
-
+      fprintf(stderr, "ls failure %s (%d)\n", dpl_status_str(ret), ret);
+      goto end;
     }
-  else
-    {
-      struct ls_data ls_data;
-
-      memset(&ls_data, 0, sizeof (ls_data));
-      ls_data.ctx = ctx;
-      ls_data.lflag = lflag;
-      ls_data.Rflag = Rflag;
-
-      ret = recurse(&ls_data, path, 0);
-      if (DPL_SUCCESS != ret)
-        {
-          fprintf(stderr, "ls failure %s (%d)\n", dpl_status_str(ret), ret);
-          goto end;
-        }
-      
-      total_size = ls_data.total_size;
-    }
+  
+  total_size = ls_data.total_size;
 
   if (1 == lflag)
     {
@@ -226,21 +215,6 @@ cmd_ls(int argc,
   var_set("status", "0", VAR_CMD_SET, NULL);
 
  end:
-
-  if (NULL != dir_hdl)
-    dpl_closedir(dir_hdl);
-
-  if (NULL != objects)
-    dpl_vec_objects_free(objects);
-
-  if (NULL != common_prefixes)
-    dpl_vec_common_prefixes_free(common_prefixes);
-
-  if (NULL != prefix)
-    free(prefix);
-
-  if (NULL != delimiter)
-    free(delimiter);
 
   return SHELL_CONT;
 }

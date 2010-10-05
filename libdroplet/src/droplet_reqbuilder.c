@@ -709,7 +709,7 @@ dpl_req_build(dpl_req_t *req,
             }
         }
 
-      if (req->behavior_flags & DPL_BEHAVIOR_COMPUTE_MD5)
+      if (req->behavior_flags & DPL_BEHAVIOR_MD5)
         {
           MD5_CTX ctx;
           u_char digest[MD5_DIGEST_LENGTH];
