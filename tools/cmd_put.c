@@ -103,9 +103,9 @@ cmd_put(int argc,
   else if (1 == argc)
     {
       local_file = argv[0];
-      remote_file = strstr(local_file, ctx->delim);
+      remote_file = rindex(local_file, '/');
       if (NULL != remote_file)
-        remote_file += strlen(ctx->delim);
+        remote_file++;
       else
         remote_file = local_file;
     }

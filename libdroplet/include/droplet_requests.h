@@ -36,7 +36,7 @@ typedef struct
   char *prefix;
 } dpl_common_prefix_t;
 
-/* PROTO droplet_listallmybuckets.c droplet_listbucket.c droplet_put.c droplet_get.c droplet_delete.c droplet_makebucket.c droplet_head.c droplet_deletebucket.c */
+/* PROTO droplet_listallmybuckets.c droplet_listbucket.c droplet_put.c droplet_get.c droplet_delete.c droplet_makebucket.c droplet_head.c droplet_deletebucket.c droplet_genurl.c */
 /* src/droplet_listallmybuckets.c */
 void dpl_bucket_free(dpl_bucket_t *bucket);
 void dpl_vec_buckets_free(dpl_vec_t *vec);
@@ -63,4 +63,6 @@ dpl_status_t dpl_make_bucket(dpl_ctx_t *ctx, char *bucket, dpl_location_constrai
 dpl_status_t dpl_head(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
 /* src/droplet_deletebucket.c */
 dpl_status_t dpl_deletebucket(dpl_ctx_t *ctx, char *bucket);
+/* src/droplet_genurl.c */
+dpl_status_t dpl_genurl(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, time_t expires, char *buf, u_int len, u_int *lenp);
 #endif

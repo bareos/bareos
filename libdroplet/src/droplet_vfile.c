@@ -605,3 +605,37 @@ dpl_getattr(dpl_ctx_t *ctx,
 
   return ret;
 }
+
+dpl_status_t
+dpl_vfile_genurl(dpl_ctx_t *ctx,
+                 char *path,
+                 time_t expires,
+                 char *buf,
+                 u_int len,
+                 u_int *lenp)
+{
+  int ret, ret2;
+  dpl_ino_t obj_ino;
+  dpl_ftype_t obj_type;
+
+  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPLERR(0, "namei failed %s (%d)\n", dpl_status_str(ret2), ret2);
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_genurl(ctx, ctx->cur_bucket, obj_ino.key, NULL, expires, buf, len, lenp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+  
+  return ret;
+}

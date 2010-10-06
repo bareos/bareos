@@ -232,7 +232,7 @@ main(int argc,
       exit(1);
     }
 
-  ret = dpl_req_gen(req, headers_request, query_params, header, sizeof (header), &header_len);
+  ret = dpl_req_gen_http_request(req, headers_request, query_params, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error in request: %s (%d)\n", dpl_status_str(ret), ret);

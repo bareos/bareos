@@ -310,6 +310,13 @@ dpl_req_add_range(dpl_req_t *req,
   return DPL_EINVAL;
 }
 
+void
+dpl_req_set_expires(dpl_req_t *req,
+                    time_t expires)
+{
+  req->expires = expires;
+}
+
 /*
  * builder
  */
@@ -432,60 +439,60 @@ dpl_add_condition_to_headers(dpl_condition_t *condition,
   return DPL_SUCCESS;
 }
 
-#define APPEND_STR(Str)                                         \
-  do                                                            \
-    {                                                           \
-    tmp_len = strlen((Str));                                    \
-    if (len < tmp_len)                                          \
-      return DPL_FAILURE;                                       \
-    memcpy(p, (Str), tmp_len); p += tmp_len; len -= tmp_len;    \
-    } while (0);
-
 dpl_status_t
 dpl_add_ranges_to_headers(dpl_range_t *ranges, 
                           int n_ranges,
                           dpl_dict_t *headers)
 {
-  //int ret, ret2;
+  int ret;
   int i;
   char buf[1024];
   int len = sizeof (buf);
   char *p;
-  int tmp_len;
   int first = 1;
 
   p = buf;
 
   if (0 != n_ranges)
     {
-      APPEND_STR("Range:bytes=");
-  
+      DPL_APPEND_STR("bytes=");
+      
       for (i = 0;i < n_ranges;i++)
         {
-          char str[64];
+          char str[128];
 
           if (1 == first)
             first = 0;
           else
-            APPEND_STR(",");
+            DPL_APPEND_STR(",");
 
           if (DPL_UNDEF == ranges[i].start && DPL_UNDEF == ranges[i].end)
             return DPL_EINVAL;
           else if (DPL_UNDEF == ranges[i].start)
             {
               snprintf(str, sizeof (str), "-%d", ranges[i].end);
-              APPEND_STR(str);
+              DPL_APPEND_STR(str);
             }
           else if (DPL_UNDEF == ranges[i].end)
             {
               snprintf(str, sizeof (str), "%d-", ranges[i].start);
-              APPEND_STR(str);
+              DPL_APPEND_STR(str);
             }
           else
             {
               snprintf(str, sizeof (str), "%d-%d", ranges[i].start, ranges[i].end);
-              APPEND_STR(str);
+              DPL_APPEND_STR(str);
             }
+        }
+
+      if (len < 1)
+        return DPL_FAILURE;
+      *p = 0;p++;len--;
+        
+      ret = dpl_dict_add(headers, "Range", buf, 0);
+      if (DPL_SUCCESS != ret)
+        {
+          return DPL_FAILURE;
         }
     }
   
@@ -515,33 +522,40 @@ dpl_make_signature(dpl_ctx_t *ctx,
 {
   char *p;
   //char *tmp_str;
-  u_int tmp_len;
   char *value;
   int ret;
   
   p = buf;
 
   //method
-  APPEND_STR(method);
-  APPEND_STR("\n");
+  DPL_APPEND_STR(method);
+  DPL_APPEND_STR("\n");
 
   //md5
   value = dpl_dict_get_value(headers, "Content-MD5");
   if (NULL != value)
-    APPEND_STR(value);
-  APPEND_STR("\n");
+    DPL_APPEND_STR(value);
+  DPL_APPEND_STR("\n");
 
   //content type
   value = dpl_dict_get_value(headers, "Content-Type");
   if (NULL != value)
-    APPEND_STR(value);
-  APPEND_STR("\n");
+    DPL_APPEND_STR(value);
+  DPL_APPEND_STR("\n");
 
-  //date
-  value = dpl_dict_get_value(headers, "Date");
+  //expires or date
+  value = dpl_dict_get_value(headers, "Expires");
   if (NULL != value)
-    APPEND_STR(value);
-  APPEND_STR("\n");
+    {
+      DPL_APPEND_STR(value);
+    }
+  else
+    {
+      value = dpl_dict_get_value(headers, "Date");
+      if (NULL != value)
+        DPL_APPEND_STR(value);
+    }
+  DPL_APPEND_STR("\n");
 
   //x-amz headers
   {
@@ -578,10 +592,10 @@ dpl_make_signature(dpl_ctx_t *ctx,
         var = (dpl_var_t *) vec->array[i];
         
         DPRINTF("%s:%s\n", var->key, var->value);
-        APPEND_STR(var->key);
-        APPEND_STR(":");
-        APPEND_STR(var->value);
-        APPEND_STR("\n");
+        DPL_APPEND_STR(var->key);
+        DPL_APPEND_STR(":");
+        DPL_APPEND_STR(var->value);
+        DPL_APPEND_STR("\n");
       }
 
     dpl_vec_free(vec);
@@ -591,20 +605,20 @@ dpl_make_signature(dpl_ctx_t *ctx,
 
   if (NULL != bucket)
     {
-      APPEND_STR("/");
-      APPEND_STR(bucket);
+      DPL_APPEND_STR("/");
+      DPL_APPEND_STR(bucket);
     }
 
   if (NULL != resource)
     {
-      //APPEND_STR("/");
-      APPEND_STR(resource);
+      //DPL_APPEND_STR("/");
+      DPL_APPEND_STR(resource);
     }
 
   if (NULL != subresource)
     {
-      APPEND_STR("?");
-      APPEND_STR(subresource);
+      DPL_APPEND_STR("?");
+      DPL_APPEND_STR(subresource);
     }
 
   if (NULL != lenp)
@@ -613,9 +627,85 @@ dpl_make_signature(dpl_ctx_t *ctx,
   return DPL_SUCCESS;
 }
 
-/*
- *
- */
+dpl_status_t
+dpl_add_date_to_headers(dpl_dict_t *headers)
+{
+  int ret, ret2;
+  time_t t;
+  struct tm tm_buf;
+  char date_str[128];
+  
+  (void) time(&t);
+  ret = strftime(date_str, sizeof (date_str), "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&t, &tm_buf));
+  if (0 == ret)
+    return DPL_FAILURE;
+  
+  ret2 = dpl_dict_add(headers, "Date", date_str, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_add_authorization_to_headers(dpl_req_t *req,
+                                 dpl_dict_t *headers)
+{
+  int ret, ret2;
+  char *method = dpl_method_str(req->method);
+  char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
+  char sign_str[1024];
+  u_int sign_len;
+  char hmac_str[1024];
+  u_int hmac_len;
+  char base64_str[1024];
+  u_int base64_len;
+  char auth_str[1024];
+  
+  //resource
+  if ('/' != req->resource[0])
+    {
+      resource_ue[0] = '/';
+      dpl_url_encode(req->resource, resource_ue + 1);
+    }
+  else
+    {
+      resource_ue[0] = '/'; //some servers do not like encoded slash
+      dpl_url_encode(req->resource + 1, resource_ue + 1);
+    }
+
+  ret = dpl_make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
+  if (DPL_SUCCESS != ret)
+    return DPL_FAILURE;
+  
+  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "stringtosign=%.*s", sign_len, sign_str);
+  
+  hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
+  
+  base64_len = dpl_base64_encode((u_char *) hmac_str, hmac_len, base64_str);
+  
+  snprintf(auth_str, sizeof (auth_str), "AWS %s:%.*s", req->ctx->access_key, base64_len, base64_str);
+  
+  ret2 = dpl_dict_add(headers, "Authorization", auth_str, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
+}
 
 /** 
  * build headers from request
@@ -632,20 +722,18 @@ dpl_req_build(dpl_req_t *req,
   dpl_dict_t *headers = NULL;
   int ret, ret2;
   char *method = dpl_method_str(req->method);
-  char *resource_ue = NULL;
+  char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
 
   DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);
 
   //resource
   if ('/' != req->resource[0])
     {
-      resource_ue = alloca(DPL_URL_LENGTH(strlen(req->resource)) + 1);
       resource_ue[0] = '/';
       dpl_url_encode(req->resource, resource_ue + 1);
     }
   else
     {
-      resource_ue = alloca(DPL_URL_LENGTH(strlen(req->resource)) + 1);
       resource_ue[0] = '/'; //some servers do not like encoded slash
       dpl_url_encode(req->resource + 1, resource_ue + 1);
     }
@@ -862,54 +950,34 @@ dpl_req_build(dpl_req_t *req,
         }
     }
 
-  //date
-  {
-    time_t t;
-    struct tm tm_buf;
-    char date_str[128];
+  if (req->behavior_flags & DPL_BEHAVIOR_QUERY_STRING)
+    {
+      char str[128];
+      
+      snprintf(str, sizeof (str), "%ld", req->expires);
+      ret2 = dpl_dict_add(headers, "Expires", str, 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+  else
+    {
+      ret2 = dpl_add_date_to_headers(headers);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
 
-    (void) time(&t);
-    ret = strftime(date_str, sizeof (date_str), "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&t, &tm_buf));
-    if (0 == ret)
-      return DPL_FAILURE;
-
-    ret2 = dpl_dict_add(headers, "Date", date_str, 0);
-    if (DPL_SUCCESS != ret2)
-      {
-        ret = ret2;
-        goto end;
-      }
-  }
-
-  //authorization
-  {
-    char sign_str[1024];
-    u_int sign_len;
-    char hmac_str[1024];
-    u_int hmac_len;
-    char base64_str[1024];
-    u_int base64_len;
-    char auth_str[1024];
-
-    ret = dpl_make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
-    if (DPL_SUCCESS != ret)
-      return DPL_FAILURE;
-
-    DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build stringtosign=%.*s", sign_len, sign_str);
-    
-    hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
-    
-    base64_len = dpl_base64_encode((u_char *) hmac_str, hmac_len, base64_str);
-    
-    snprintf(auth_str, sizeof (auth_str), "AWS %s:%.*s", req->ctx->access_key, base64_len, base64_str);
-
-    ret2 = dpl_dict_add(headers, "Authorization", auth_str, 0);
-    if (DPL_SUCCESS != ret2)
-      {
-        ret = ret2;
-        goto end;
-      }
-  }
+  ret2 = dpl_add_authorization_to_headers(req, headers);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
 
   if (NULL != headersp)
     {
@@ -940,49 +1008,46 @@ dpl_req_build(dpl_req_t *req,
  * @return 
  */
 dpl_status_t
-dpl_req_gen(dpl_req_t *req,
-            dpl_dict_t *headers,
-            dpl_dict_t *query_params,
-            char *buf,
-            int len,
-            u_int *lenp)
+dpl_req_gen_http_request(dpl_req_t *req,
+                         dpl_dict_t *headers,
+                         dpl_dict_t *query_params,
+                         char *buf,
+                         int len,
+                         u_int *lenp)
 {
   char *p;
-  u_int tmp_len;
   char *method = dpl_method_str(req->method);
-  char *resource_ue = NULL;
+  char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
   
-  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_gen");
+  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_gen_http_request");
     
   p = buf;
 
   //resource
   if ('/' != req->resource[0])
     {
-      resource_ue = alloca(DPL_URL_LENGTH(strlen(req->resource)) + 1);
       resource_ue[0] = '/';
       dpl_url_encode(req->resource, resource_ue + 1);
     }
   else
     {
-      resource_ue = alloca(DPL_URL_LENGTH(strlen(req->resource)) + 1);
       resource_ue[0] = '/'; //some servers do not like encoded slash
       dpl_url_encode(req->resource + 1, resource_ue + 1);
     }
   
   //method
-  APPEND_STR(method);
+  DPL_APPEND_STR(method);
   
-  APPEND_STR(" ");
+  DPL_APPEND_STR(" ");
   
-  APPEND_STR(resource_ue);
+  DPL_APPEND_STR(resource_ue);
   
   //subresource and query params
   if (NULL != req->subresource || NULL != query_params)
-    APPEND_STR("?");
+    DPL_APPEND_STR("?");
   
   if (NULL != req->subresource)
-    APPEND_STR(req->subresource);
+    DPL_APPEND_STR(req->subresource);
   
   if (NULL != query_params)
     {
@@ -998,20 +1063,20 @@ dpl_req_gen(dpl_req_t *req,
           for (var = query_params->buckets[bucket];var;var = var->prev)
             {
               if (amp)
-                APPEND_STR("&");
-              APPEND_STR(var->key);
-              APPEND_STR("=");
-              APPEND_STR(var->value);
+                DPL_APPEND_STR("&");
+              DPL_APPEND_STR(var->key);
+              DPL_APPEND_STR("=");
+              DPL_APPEND_STR(var->value);
               amp = 1;
             }
         }
     }
   
-  APPEND_STR(" ");
+  DPL_APPEND_STR(" ");
   
   //version
-  APPEND_STR("HTTP/1.1");
-  APPEND_STR("\r\n");
+  DPL_APPEND_STR("HTTP/1.1");
+  DPL_APPEND_STR("\r\n");
   
   //headers
   if (NULL != headers)
@@ -1025,10 +1090,10 @@ dpl_req_gen(dpl_req_t *req,
             {
               DPL_TRACE(req->ctx, DPL_TRACE_REQ, "header='%s' value='%s'", var->key, var->value);
 
-              APPEND_STR(var->key);
-              APPEND_STR(": ");
-              APPEND_STR(var->value);
-              APPEND_STR("\r\n");
+              DPL_APPEND_STR(var->key);
+              DPL_APPEND_STR(": ");
+              DPL_APPEND_STR(var->value);
+              DPL_APPEND_STR("\r\n");
             }
         }
     }
@@ -1039,4 +1104,106 @@ dpl_req_gen(dpl_req_t *req,
     *lenp = (p - buf);
 
   return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_req_gen_url(dpl_req_t *req,
+                dpl_dict_t *headers,
+                char *buf,
+                int len,
+                u_int *lenp)
+{
+  int ret, ret2;
+  char *p;
+  char *host;
+  char *method = dpl_method_str(req->method);
+  char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
+  char sign_str[1024];
+  u_int sign_len;
+  char hmac_str[1024];
+  u_int hmac_len;
+  char base64_str[1024];
+  u_int base64_len;
+  char base64_ue_str[1024];
+  char str[128];
+  
+  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_gen_query_string");
+    
+  p = buf;
+
+  if (1 == req->ctx->use_https)
+    {
+      DPL_APPEND_STR("https");
+    }
+  else
+    {
+      DPL_APPEND_STR("http");
+    }
+  
+  DPL_APPEND_STR("://");
+
+  host = dpl_dict_get_value(headers, "Host");
+  if (NULL == host)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  DPL_APPEND_STR(host);
+
+  //resource
+  if ('/' != req->resource[0])
+    {
+      resource_ue[0] = '/';
+      dpl_url_encode(req->resource, resource_ue + 1);
+    }
+  else
+    {
+      resource_ue[0] = '/'; //some servers do not like encoded slash
+      dpl_url_encode(req->resource + 1, resource_ue + 1);
+    }
+  
+  DPL_APPEND_STR(resource_ue);
+  
+  DPL_APPEND_STR("?");
+
+  DPL_APPEND_STR("AWSAccessKeyId=");
+  DPL_APPEND_STR(req->ctx->access_key);
+
+  DPL_APPEND_STR("&");
+
+  DPL_APPEND_STR("Signature=");
+  ret2 = dpl_make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "stringtosign=%.*s", sign_len, sign_str);
+  
+  hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
+
+  base64_len = dpl_base64_encode((u_char *) hmac_str, hmac_len, base64_str);
+
+  base64_str[base64_len] = 0; //XXX
+
+  dpl_url_encode(base64_str, base64_ue_str);
+
+  DPL_APPEND_STR(base64_ue_str);
+
+  DPL_APPEND_STR("&");
+
+  DPL_APPEND_STR("Expires=");
+  snprintf(str, sizeof (str), "%ld", req->expires);
+  DPL_APPEND_STR(str);
+    
+  if (NULL != lenp)
+    *lenp = (p - buf);
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
 }

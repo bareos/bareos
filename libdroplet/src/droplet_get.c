@@ -53,7 +53,6 @@ dpl_get(dpl_ctx_t *ctx,
   int           connection_close = 0;
   char          *data_buf = NULL;
   u_int         data_len;
-  dpl_vec_t     *vec = NULL;
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_dict_t    *metadata = NULL;
@@ -128,7 +127,7 @@ dpl_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -201,9 +200,6 @@ dpl_get(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
-
-  if (NULL != vec)
-    dpl_vec_objects_free(vec);
 
   if (NULL != data_buf)
     free(data_buf);
@@ -298,7 +294,6 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   struct iovec  iov[10];
   int           n_iov = 0;
   int           connection_close = 0;
-  dpl_vec_t     *vec = NULL;
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
@@ -377,7 +372,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -433,9 +428,6 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
-
-  if (NULL != vec)
-    dpl_vec_objects_free(vec);
 
   if (NULL != conn)
     {

@@ -169,6 +169,17 @@ struct dpl_conf_ctx
 
 /**/
 
+#define DPL_APPEND_BUF(Buf, Len)                                \
+  do {                                                          \
+    if (len < (Len))                                            \
+      return DPL_FAILURE;                                       \
+    memcpy(p, (Buf), (Len)); p += (Len); len -= (Len);          \
+  } while (0);
+
+#define DPL_APPEND_STR(Str) DPL_APPEND_BUF((Str), strlen(Str))
+
+/**/
+
 #define DPL_TRACE(ctx, level, format, ...) do {if (ctx->trace_level & level) dpl_trace(ctx, level, __FILE__, __LINE__, format, ##__VA_ARGS__  );} while (0)
 
 /* PROTO droplet_utils.c */

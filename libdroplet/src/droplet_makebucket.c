@@ -127,7 +127,7 @@ dpl_make_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
