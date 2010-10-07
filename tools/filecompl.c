@@ -30,17 +30,9 @@ void *
 do_opendir(char *path)
 {
   int ret;
-  dpl_ino_t obj_ino;
   void *dir_hdl = NULL;
 
-  ret = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, NULL);
-  if (DPL_SUCCESS != ret)
-    {
-      fprintf(stderr, "path resolve error\n");
-      return NULL;
-    }
-  
-  ret = dpl_vdir_opendir(ctx, ctx->cur_bucket, obj_ino, &dir_hdl);
+  ret = dpl_opendir(ctx, path, &dir_hdl);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dir open error\n");
@@ -56,7 +48,7 @@ do_readdir(void *dir_hdl)
   static dpl_dirent_t entry;
   int ret;
 
-  if (1 == dpl_vdir_eof(dir_hdl))
+  if (1 == dpl_eof(dir_hdl))
     return NULL;
   
   ret = dpl_readdir(dir_hdl, &entry);

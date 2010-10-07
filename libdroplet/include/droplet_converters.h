@@ -27,6 +27,8 @@ dpl_canned_acl_t dpl_canned_acl(char *str);
 char *dpl_canned_acl_str(dpl_canned_acl_t canned_acl);
 dpl_storage_class_t dpl_storage_class(char *str);
 char *dpl_storage_class_str(dpl_storage_class_t storage_class);
+dpl_metadata_directive_t dpl_metadata_directive(char *str);
+char *dpl_metadata_directive_str(dpl_metadata_directive_t metadata_directive);
 dpl_dict_t *dpl_parse_metadata(char *metadata);
 dpl_dict_t *dpl_parse_query_params(char *query_params);
 #endif

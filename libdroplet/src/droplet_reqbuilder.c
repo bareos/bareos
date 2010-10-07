@@ -46,6 +46,15 @@ dpl_req_free(dpl_req_t *req)
   if (NULL != req->metadata)
     dpl_dict_free(req->metadata);
 
+  if (NULL != req->src_bucket)
+    free(req->src_bucket);
+
+  if (NULL != req->src_resource)
+    free(req->src_resource);
+
+  if (NULL != req->src_subresource)
+    free(req->src_subresource);
+
   free(req);
 }
 
@@ -179,7 +188,7 @@ void
 dpl_req_set_condition(dpl_req_t *req,
                       dpl_condition_t *condition)
 {
-  req->condition = *condition; //XXX etag
+  req->condition = *condition;
 }
 
 dpl_status_t 
@@ -317,11 +326,79 @@ dpl_req_set_expires(dpl_req_t *req,
   req->expires = expires;
 }
 
+dpl_status_t 
+dpl_req_set_src_bucket(dpl_req_t *req,
+                       char *src_bucket)
+{
+  char *nstr;
+
+  nstr = strdup(src_bucket);
+  if (NULL == nstr)
+    return DPL_ENOMEM;
+
+  if (NULL != req->src_bucket)
+    free(req->src_bucket);
+  
+  req->src_bucket = nstr;
+
+  return DPL_SUCCESS;
+}
+
+dpl_status_t 
+dpl_req_set_src_resource(dpl_req_t *req,
+                         char *src_resource)
+{
+  char *nstr;
+
+  nstr = strdup(src_resource);
+  if (NULL == nstr)
+    return DPL_ENOMEM;
+
+  if (NULL != req->src_resource)
+    free(req->src_resource);
+  
+  req->src_resource = nstr;
+
+  return DPL_SUCCESS;
+}
+
+dpl_status_t 
+dpl_req_set_src_subresource(dpl_req_t *req,
+                            char *src_subresource)
+{
+  char *nstr;
+
+  nstr = strdup(src_subresource);
+  if (NULL == nstr)
+    return DPL_ENOMEM;
+
+  if (NULL != req->src_subresource)
+    free(req->src_subresource);
+  
+  req->src_subresource = nstr;
+
+  return DPL_SUCCESS;
+}
+
+void
+dpl_req_set_metadata_directive(dpl_req_t *req,
+                               dpl_metadata_directive_t metadata_directive)
+{
+  req->metadata_directive = metadata_directive;
+}
+
+void
+dpl_req_set_copy_sourcecondition(dpl_req_t *req,
+                                 dpl_condition_t *condition)
+{
+  req->copy_source_condition = *condition;
+}
+
 /*
  * builder
  */
 
-dpl_status_t
+static dpl_status_t
 dpl_add_metadata_to_headers(dpl_dict_t *metadata,
                             dpl_dict_t *headers)
                             
@@ -348,46 +425,13 @@ dpl_add_metadata_to_headers(dpl_dict_t *metadata,
   return DPL_SUCCESS;
 }
 
-
-dpl_status_t
-dpl_get_metadata_from_headers(dpl_dict_t *headers,
-                              dpl_dict_t *metadata)
-{
-  int bucket;
-  dpl_var_t *var;
-  int ret;
-
-  for (bucket = 0;bucket < headers->n_buckets;bucket++)
-    {
-      for (var = headers->buckets[bucket];var;var = var->prev)
-        {
-          int x_amz_meta_len;
-
-#define X_AMZ_META "x-amz-meta-"
-          x_amz_meta_len = strlen(X_AMZ_META);
-          if (!strncmp(var->key, X_AMZ_META, x_amz_meta_len))
-            {
-              char *p;
-
-              p = var->key + x_amz_meta_len;
-
-              ret = dpl_dict_add(metadata, p, var->value, 0);
-              if (DPL_SUCCESS != ret)
-                {
-                  return DPL_FAILURE;
-                }
-            }
-        }
-    }
-
-  return DPL_SUCCESS;
-}
-
-dpl_status_t
+static dpl_status_t
 dpl_add_condition_to_headers(dpl_condition_t *condition,
-                             dpl_dict_t *headers)
+                             dpl_dict_t *headers,
+                             int copy_source)
 {
   int ret;
+  char *header;
 
   if (condition->mask & (DPL_CONDITION_IF_MODIFIED_SINCE|
                          DPL_CONDITION_IF_UNMODIFIED_SINCE))
@@ -401,7 +445,11 @@ dpl_add_condition_to_headers(dpl_condition_t *condition,
       
       if (condition->mask & DPL_CONDITION_IF_MODIFIED_SINCE)
         {
-          ret = dpl_dict_add(headers, "If-Modified-Since", date_str, 0);
+          if (1 == copy_source)
+            header = "x-amz-copy-source-if-modified-since";
+          else
+            header = "If-Modified-Since";
+          ret = dpl_dict_add(headers, header, date_str, 0);
           if (DPL_SUCCESS != ret)
             {
               return DPL_FAILURE;
@@ -410,7 +458,11 @@ dpl_add_condition_to_headers(dpl_condition_t *condition,
       
       if (condition->mask & DPL_CONDITION_IF_UNMODIFIED_SINCE)
         {
-          ret = dpl_dict_add(headers, "If-Unodified-Since", date_str, 0);
+          if (1 == copy_source)
+            header = "x-amz-copy-source-if-unmodified-since";
+          else
+            header = "If-Unodified-Since";
+          ret = dpl_dict_add(headers, header, date_str, 0);
           if (DPL_SUCCESS != ret)
             {
               return DPL_FAILURE;
@@ -420,7 +472,11 @@ dpl_add_condition_to_headers(dpl_condition_t *condition,
 
   if (condition->mask & DPL_CONDITION_IF_MATCH)
     {
-      ret = dpl_dict_add(headers, "If-Match", condition->etag, 0);
+      if (1 == copy_source)
+        header = "x-amz-copy-source-if-match";
+      else
+        header = "If-Match";
+      ret = dpl_dict_add(headers, header, condition->etag, 0);
       if (DPL_SUCCESS != ret)
         {
           return DPL_FAILURE;
@@ -429,7 +485,11 @@ dpl_add_condition_to_headers(dpl_condition_t *condition,
 
   if (condition->mask & DPL_CONDITION_IF_NONE_MATCH)
     {
-      ret = dpl_dict_add(headers, "If-None-Match", condition->etag, 0);
+      if (1 == copy_source)
+        header = "x-amz-copy-source-if-none-match";
+      else
+        header = "If-None-Match";
+      ret = dpl_dict_add(headers, header, condition->etag, 0);
       if (DPL_SUCCESS != ret)
         {
           return DPL_FAILURE;
@@ -439,7 +499,7 @@ dpl_add_condition_to_headers(dpl_condition_t *condition,
   return DPL_SUCCESS;
 }
 
-dpl_status_t
+static dpl_status_t
 dpl_add_ranges_to_headers(dpl_range_t *ranges, 
                           int n_ranges,
                           dpl_dict_t *headers)
@@ -485,9 +545,7 @@ dpl_add_ranges_to_headers(dpl_range_t *ranges,
             }
         }
 
-      if (len < 1)
-        return DPL_FAILURE;
-      *p = 0;p++;len--;
+      DPL_APPEND_CHAR(0);
         
       ret = dpl_dict_add(headers, "Range", buf, 0);
       if (DPL_SUCCESS != ret)
@@ -509,7 +567,7 @@ var_cmp(const void *p1,
   return strcmp(var1->key, var2->key);
 }
 
-dpl_status_t
+static dpl_status_t
 dpl_make_signature(dpl_ctx_t *ctx,
                    char *method,
                    char *bucket,
@@ -627,7 +685,7 @@ dpl_make_signature(dpl_ctx_t *ctx,
   return DPL_SUCCESS;
 }
 
-dpl_status_t
+static dpl_status_t
 dpl_add_date_to_headers(dpl_dict_t *headers)
 {
   int ret, ret2;
@@ -654,7 +712,7 @@ dpl_add_date_to_headers(dpl_dict_t *headers)
   return ret;
 }
 
-dpl_status_t
+static dpl_status_t
 dpl_add_authorization_to_headers(dpl_req_t *req,
                                  dpl_dict_t *headers)
 {
@@ -694,6 +752,47 @@ dpl_add_authorization_to_headers(dpl_req_t *req,
   snprintf(auth_str, sizeof (auth_str), "AWS %s:%.*s", req->ctx->access_key, base64_len, base64_str);
   
   ret2 = dpl_dict_add(headers, "Authorization", auth_str, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
+}
+
+static dpl_status_t
+dpl_add_source_to_headers(dpl_req_t *req,
+                          dpl_dict_t *headers)
+{
+  int ret, ret2;
+  char buf[1024];
+  u_int len = sizeof (buf);
+  char *p;
+  char buf_ue[1024];
+
+  p = buf;
+  
+  DPL_APPEND_STR(req->src_bucket);
+  DPL_APPEND_STR("/");
+  DPL_APPEND_STR(req->src_resource);
+  
+  //subresource and query params
+  if (NULL != req->src_subresource)
+    {
+      DPL_APPEND_STR("?");
+      DPL_APPEND_STR(req->src_subresource);
+    }
+  
+  DPL_APPEND_CHAR(0);
+
+  dpl_url_encode(buf, buf_ue);
+
+  ret2 = dpl_dict_add(headers, "x-amz-copy-source", buf_ue, 0);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -758,7 +857,7 @@ dpl_req_build(dpl_req_t *req,
           goto end;
         }
 
-      ret2 = dpl_add_condition_to_headers(&req->condition, headers);
+      ret2 = dpl_add_condition_to_headers(&req->condition, headers, 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -903,6 +1002,41 @@ dpl_req_build(dpl_req_t *req,
             }
         }
 
+      /*
+       * copy
+       */
+      ret2 = dpl_add_source_to_headers(req, headers);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      if (DPL_METADATA_DIRECTIVE_UNDEF != req->metadata_directive)
+        {
+          char *str;
+
+          str = dpl_metadata_directive_str(req->metadata_directive);
+          if (NULL == str)
+            {
+              ret = DPL_FAILURE;
+              goto end;
+            }
+          
+          ret2 = dpl_dict_add(headers, "x-amz-metadata-directive", str, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+        }
+
+      ret2 = dpl_add_condition_to_headers(&req->copy_source_condition, headers, 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
   else if (DPL_METHOD_DELETE == req->method)
     {

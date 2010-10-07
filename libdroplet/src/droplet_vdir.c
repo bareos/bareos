@@ -19,7 +19,7 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-dpl_status_t
+static dpl_status_t
 dpl_vdir_lookup(dpl_ctx_t *ctx,
                 char *bucket,
                 dpl_ino_t parent_ino,
@@ -230,7 +230,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
+static dpl_status_t
 dpl_vdir_mkdir(dpl_ctx_t *ctx,
                char *bucket,
                dpl_ino_t parent_ino,
@@ -259,19 +259,7 @@ dpl_vdir_mkdir(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
-dpl_vdir_unlink()
-{
-  return DPL_FAILURE;
-}
-
-dpl_status_t
-dpl_vdir_rename()
-{
-  return DPL_FAILURE;
-}
-
-dpl_status_t
+static dpl_status_t
 dpl_vdir_opendir(dpl_ctx_t *ctx,
                  char *bucket,
                  dpl_ino_t ino,
@@ -332,7 +320,7 @@ dpl_vdir_opendir(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
+static dpl_status_t
 dpl_vdir_readdir(void *dir_hdl,
                  dpl_dirent_t *dirent)
 {
@@ -436,7 +424,7 @@ dpl_vdir_readdir(void *dir_hdl,
     }
 }
 
-int
+static int
 dpl_vdir_eof(void *dir_hdl)
 {
   dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
@@ -445,7 +433,7 @@ dpl_vdir_eof(void *dir_hdl)
     dir->directories_cursor == dir->directories->n_items;
 }
 
-void
+static void
 dpl_vdir_closedir(void *dir_hdl)
 {
   dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
@@ -453,12 +441,118 @@ dpl_vdir_closedir(void *dir_hdl)
   DPL_TRACE(dir->ctx, DPL_TRACE_VDIR, "closedir dir_hdl=%p", dir_hdl);
 }
 
-dpl_status_t
-dpl_vdir_iname(dpl_ctx_t *ctx,
+static dpl_status_t
+dpl_vdir_count_entries(dpl_ctx_t *ctx,
+                       char *bucket,
+                       dpl_ino_t ino,
+                       u_int *n_entriesp)
+{
+  void *dir_hdl = NULL;
+  int ret, ret2;
+  u_int n_entries = 0;
+  dpl_dirent_t dirent;
+
+  ret2 = dpl_vdir_opendir(ctx, bucket, ino, &dir_hdl);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  while (1 != dpl_vdir_eof(dir_hdl))
+    {
+      ret2 = dpl_vdir_readdir(dir_hdl, &dirent);
+      if (DPL_SUCCESS != ret2)
+        {
+          if (DPL_ENOENT == ret2)
+            break ;
+          ret = ret2;
+          goto end;
+        }
+      
+      if (strcmp(dirent.name, "."))
+        n_entries++;
+    }
+  
+  if (NULL != n_entriesp)
+    *n_entriesp = n_entries;
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != dir_hdl)
+    dpl_vdir_closedir(dir_hdl);
+  
+  return ret;
+}
+
+static dpl_status_t
+dpl_vdir_rmdir(dpl_ctx_t *ctx,
                char *bucket,
-               dpl_ino_t ino,
-               char *path,
-               u_int path_len)
+               dpl_ino_t parent_ino,
+               const char *obj_name)
+{
+  u_int n_entries;
+  dpl_ino_t ino;
+  int ret, ret2;
+  int obj_name_len = strlen(obj_name);
+  int delim_len = strlen(ctx->delim);
+
+  DPL_TRACE(ctx, DPL_TRACE_VDIR, "rmdir bucket=%s parent_ino=%s name=%s", bucket, parent_ino.key, obj_name);
+
+  if (!strcmp(obj_name, "."))
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
+  ino = parent_ino;
+  //XXX check length
+  strcat(ino.key, obj_name);
+  //append delim to key if not already
+  if (obj_name_len > delim_len && strcmp(obj_name + obj_name_len - delim_len, ctx->delim))
+    strcat(ino.key, ctx->delim);
+
+  ret2 = dpl_vdir_count_entries(ctx, bucket, ino, &n_entries);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  //printf("n_entries=%d\n", n_entries);
+
+  if (0 != n_entries)
+    {
+      ret = DPL_ENOTEMPTY;
+      goto end;
+    }
+
+  ret2 = dpl_delete(ctx, bucket, ino.key, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
+}
+
+/*
+ * path based routines
+ */
+
+dpl_status_t
+dpl_iname(dpl_ctx_t *ctx,
+          char *bucket,
+          dpl_ino_t ino,
+          char *path,
+          u_int path_len)
 {
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "iname bucket=%s ino=%s", bucket, ino.key);
 
@@ -466,13 +560,13 @@ dpl_vdir_iname(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_vdir_namei(dpl_ctx_t *ctx,
-               char *path,
-               char *bucket,
-               dpl_ino_t ino,
-               dpl_ino_t *parent_inop,
-               dpl_ino_t *obj_inop,
-               dpl_ftype_t *obj_typep)
+dpl_namei(dpl_ctx_t *ctx,
+          char *path,
+          char *bucket,
+          dpl_ino_t ino,
+          dpl_ino_t *parent_inop,
+          dpl_ino_t *obj_inop,
+          dpl_ftype_t *obj_typep)
 {
   char *p1, *p2;
   char name[DPL_MAXNAMLEN];
@@ -570,112 +664,6 @@ dpl_vdir_namei(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_vdir_count_entries(dpl_ctx_t *ctx,
-                       char *bucket,
-                       dpl_ino_t ino,
-                       u_int *n_entriesp)
-{
-  void *dir_hdl = NULL;
-  int ret, ret2;
-  u_int n_entries = 0;
-  dpl_dirent_t dirent;
-
-  ret2 = dpl_vdir_opendir(ctx, bucket, ino, &dir_hdl);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  while (1 != dpl_vdir_eof(dir_hdl))
-    {
-      ret2 = dpl_vdir_readdir(dir_hdl, &dirent);
-      if (DPL_SUCCESS != ret2)
-        {
-          if (DPL_ENOENT == ret2)
-            break ;
-          ret = ret2;
-          goto end;
-        }
-      
-      if (strcmp(dirent.name, "."))
-        n_entries++;
-    }
-  
-  if (NULL != n_entriesp)
-    *n_entriesp = n_entries;
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != dir_hdl)
-    dpl_vdir_closedir(dir_hdl);
-  
-  return ret;
-}
-
-dpl_status_t
-dpl_vdir_rmdir(dpl_ctx_t *ctx,
-               char *bucket,
-               dpl_ino_t parent_ino,
-               const char *obj_name)
-{
-  u_int n_entries;
-  dpl_ino_t ino;
-  int ret, ret2;
-  int obj_name_len = strlen(obj_name);
-  int delim_len = strlen(ctx->delim);
-
-  DPL_TRACE(ctx, DPL_TRACE_VDIR, "rmdir bucket=%s parent_ino=%s name=%s", bucket, parent_ino.key, obj_name);
-
-  if (!strcmp(obj_name, "."))
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  ino = parent_ino;
-  //XXX check length
-  strcat(ino.key, obj_name);
-  //append delim to key if not already
-  if (obj_name_len > delim_len && strcmp(obj_name + obj_name_len - delim_len, ctx->delim))
-    strcat(ino.key, ctx->delim);
-
-  ret2 = dpl_vdir_count_entries(ctx, bucket, ino, &n_entries);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  //printf("n_entries=%d\n", n_entries);
-
-  if (0 != n_entries)
-    {
-      ret = DPL_ENOTEMPTY;
-      goto end;
-    }
-
-  ret2 = dpl_delete(ctx, bucket, ino.key, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
-}
-
-/*
- * path based routines
- */
-
-dpl_status_t
 dpl_opendir(dpl_ctx_t *ctx,
             char *path,
             void **dir_hdlp)
@@ -686,7 +674,7 @@ dpl_opendir(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "opendir path=%s", path);
 
-  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
+  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
   if (0 != ret2)
     {
       DPLERR(0, "path resolve failed %s", path);
@@ -745,7 +733,7 @@ dpl_chdir(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "chdir path=%s", path);
   
-  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
+  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
   if (0 != ret2)
     {
       DPLERR(0, "path resolve failed %s", path);
@@ -788,7 +776,7 @@ dpl_mkdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_vdir_namei(ctx, npath, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
+  ret2 = dpl_namei(ctx, npath, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -800,7 +788,7 @@ dpl_mkdir(dpl_ctx_t *ctx,
               *dir_name = 0;
               
               //fetch parent directory                                         
-              ret2 = dpl_vdir_namei(ctx, !strcmp(npath, "") ? ctx->delim : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
+              ret2 = dpl_namei(ctx, !strcmp(npath, "") ? ctx->delim : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
               if (DPL_SUCCESS != ret2)
                 {
                   DPLERR(0, "dst parent dir resolve failed %s: %s\n", npath, dpl_status_str(ret2));
@@ -862,7 +850,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
   else
     dir_name = path;
 
-  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
+  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "path resolved failed");

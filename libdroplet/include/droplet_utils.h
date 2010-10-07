@@ -169,6 +169,13 @@ struct dpl_conf_ctx
 
 /**/
 
+#define DPL_APPEND_CHAR(Char)                                   \
+  do {                                                          \
+    if (len < 1)                                                \
+      return DPL_FAILURE;                                       \
+    *p = (Char);p++;len--;                                      \
+  } while (0);
+
 #define DPL_APPEND_BUF(Buf, Len)                                \
   do {                                                          \
     if (len < (Len))                                            \

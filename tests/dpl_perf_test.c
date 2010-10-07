@@ -470,6 +470,9 @@ int main(int argc, char **argv)
   if (argc != 0)
     usage();
 
+  if (NULL == bucket)
+    usage();
+
   doit();
   
   return 0;

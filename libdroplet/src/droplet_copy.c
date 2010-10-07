@@ -20,33 +20,44 @@
 #define DPRINTF(fmt,...)
 
 /** 
- * list all buckets
+ * copy a resource
  * 
  * @param ctx 
- * @param vecp 
+ * @param bucket 
+ * @param resource 
+ * @param subresource can be NULL
+ * @param metadata can be NULL
+ * @param canned_acl 
+ * @param data_buf 
+ * @param data_len 
  * 
  * @return 
  */
 dpl_status_t
-dpl_list_all_my_buckets(dpl_ctx_t *ctx,
-                        dpl_vec_t **vecp)
+dpl_copy(dpl_ctx_t *ctx,
+         char *src_bucket,
+         char *src_resource,
+         char *src_subresource,
+         char *dst_bucket,
+         char *dst_resource,
+         char *dst_subresource,
+         dpl_metadata_directive_t metadata_directive,
+         dpl_dict_t *metadata,
+         dpl_canned_acl_t canned_acl)
 {
+  char          *host;
   int           ret, ret2;
-  char          *host = NULL;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
   int           connection_close = 0;
-  char          *data_buf = NULL;
-  u_int         data_len;
-  dpl_vec_t     *vec = NULL;
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
 
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "listallmybuckets");
+  DPL_TRACE(ctx, DPL_TRACE_CONV, "copy src_bucket=%s src_resource=%s dst_bucket=%s dst_resource=%s", src_bucket, src_resource, dst_bucket, dst_resource);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -55,17 +66,69 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
 
-  dpl_req_set_method(req, DPL_METHOD_GET);
+  dpl_req_set_method(req, DPL_METHOD_PUT);
 
-  ret2 = dpl_req_set_resource(req, "/");
+  ret2 = dpl_req_set_bucket(req, dst_bucket);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+  ret2 = dpl_req_set_resource(req, dst_resource);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != dst_subresource)
+    {
+      ret2 = dpl_req_set_subresource(req, dst_subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  ret2 = dpl_req_set_src_bucket(req, src_bucket);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_set_src_resource(req, src_resource);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != dst_subresource)
+    {
+      ret2 = dpl_req_set_src_subresource(req, src_subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  dpl_req_set_metadata_directive(req, metadata_directive);
+
+  if (NULL != metadata)
+    {
+      ret2 = dpl_req_add_metadata(req, metadata);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  dpl_req_set_canned_acl(req, canned_acl);
 
   //build request
   ret2 = dpl_req_build(req, &headers_request);
@@ -95,7 +158,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
       ret = DPL_FAILURE;
       goto end;
     }
-  
+
   iov[n_iov].iov_base = header;
   iov[n_iov].iov_len = header_len;
   n_iov++;
@@ -104,7 +167,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = "\r\n";
   iov[n_iov].iov_len = 2;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
@@ -114,7 +177,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, NULL, NULL, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -135,37 +198,11 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
       connection_close = dpl_connection_close(headers_reply);
     }
 
-  (void) dpl_log_charged_event(ctx, "REQUEST", "LIST", 0);
-  
-  vec = dpl_vec_new(2, 2);
-  if (NULL == vec)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  ret = dpl_parse_list_all_my_buckets(ctx, data_buf, data_len, vec);
-  if (DPL_SUCCESS != ret)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  if (NULL != vecp)
-    {
-      *vecp = vec;
-      vec = NULL; //consume vec
-    }
+  (void) dpl_log_charged_event(ctx, "REQUEST", "COPY", 0);
 
   ret = DPL_SUCCESS;
 
  end:
-
-  if (NULL != vec)
-    dpl_vec_buckets_free(vec);
-
-  if (NULL != data_buf)
-    free(data_buf);
 
   if (NULL != conn)
     {
@@ -188,4 +225,3 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
 
   return ret;
 }
-

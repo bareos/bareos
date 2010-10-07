@@ -165,6 +165,33 @@ dpl_storage_class_str(dpl_storage_class_t storage_class)
 
 /**/
 
+dpl_metadata_directive_t
+dpl_metadata_directive(char *str)
+{
+  if (!strcasecmp(str, "copy"))
+    return DPL_METADATA_DIRECTIVE_COPY;
+  else if (!strcasecmp(str, "replace"))
+    return DPL_METADATA_DIRECTIVE_REPLACE;
+
+  return -1;
+}
+
+char *
+dpl_metadata_directive_str(dpl_metadata_directive_t metadata_directive)
+{
+  switch (metadata_directive)
+    {
+    case DPL_METADATA_DIRECTIVE_UNDEF:
+      return NULL;
+    case DPL_METADATA_DIRECTIVE_COPY:
+      return "copy";
+    case DPL_METADATA_DIRECTIVE_REPLACE:
+      return "replace";
+    }
+  
+  return NULL;
+}
+
 /** 
  * parse a string of the form metadata1=value1;metadata2=value2...
  * 
@@ -276,3 +303,6 @@ dpl_parse_query_params(char *query_params)
 
   return dict;
 }
+
+/**/
+

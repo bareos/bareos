@@ -64,7 +64,7 @@ cmd_genurl(int argc,
 
   path = argv[0];
 
-  ret = dpl_vfile_genurl(ctx, path, time(0) + duration, buf, sizeof (buf), &len);
+  ret = dpl_fgenurl(ctx, path, time(0) + duration, buf, sizeof (buf), &len);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "genurl failed %s (%d)\n", dpl_status_str(ret), ret);

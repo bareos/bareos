@@ -26,7 +26,24 @@
 #include <openssl/md5.h>
 
 /*
- * misc types
+ * default values
+ */
+#define DPL_DEFAULT_N_CONN_BUCKETS      1021
+#define DPL_DEFAULT_N_CONN_MAX          900
+#define DPL_DEFAULT_N_CONN_MAX_HITS     50
+#define DPL_DEFAULT_CONN_IDLE_TIME      100
+#define DPL_DEFAULT_CONN_TIMEOUT        5
+#define DPL_DEFAULT_READ_TIMEOUT        30
+#define DPL_DEFAULT_WRITE_TIMEOUT       30
+#define DPL_DEFAULT_READ_BUF_SIZE       8192
+
+#define DPL_MAXPATHLEN 1024
+#define DPL_MAXNAMLEN  255
+
+#define DPL_DEFAULT_DELIM "/"
+
+/*
+ * types
  */
 typedef int dpl_status_t;
 
@@ -45,8 +62,6 @@ typedef int dpl_status_t;
 #define DPL_EISDIR                (-12) /*!< Is a directory */
 #define DPL_EEXIST                (-13) /*!< Object already exists */
 
-typedef void (*dpl_trace_func_t)(pid_t tid, u_int level, char *file, int lineno, char *buf);
-
 #define DPL_TRACE_CONN  (1u<<0) /*!< trace connection */
 #define DPL_TRACE_IO    (1u<<1) /*!< trace I/O */
 #define DPL_TRACE_HTTP  (1u<<2) /*!< trace HTTP */
@@ -57,12 +72,11 @@ typedef void (*dpl_trace_func_t)(pid_t tid, u_int level, char *file, int lineno,
 #define DPL_TRACE_VFILE (1u<<8) /*!< trace vfile */
 #define DPL_TRACE_BUF   (1u<<31) /*!< trace buffers */
 
+typedef void (*dpl_trace_func_t)(pid_t tid, u_int level, char *file, int lineno, char *buf);
+
 #include <droplet_vec.h>
 #include <droplet_dict.h>
 
-/*
- * S3 types
- */
 typedef enum
   {
     DPL_METHOD_GET,
@@ -120,27 +134,49 @@ typedef struct
   char etag[MD5_DIGEST_LENGTH];
 } dpl_condition_t;
 
-/*
- * default values
- */
-#define DPL_DEFAULT_N_CONN_BUCKETS      1021
-#define DPL_DEFAULT_N_CONN_MAX          900
-#define DPL_DEFAULT_N_CONN_MAX_HITS     50
-#define DPL_DEFAULT_CONN_IDLE_TIME      100
-#define DPL_DEFAULT_CONN_TIMEOUT        5
-#define DPL_DEFAULT_READ_TIMEOUT        30
-#define DPL_DEFAULT_WRITE_TIMEOUT       30
-#define DPL_DEFAULT_READ_BUF_SIZE       8192
-
-#define DPL_MAXPATHLEN 1024
-#define DPL_MAXNAMLEN  255
-
-#define DPL_DEFAULT_DELIM "/"
-
 typedef struct dpl_ino
 {
   char key[DPL_MAXPATHLEN];
 } dpl_ino_t;
+
+typedef struct
+{
+  char *buf;
+  u_int len;
+} dpl_chunk_t;
+
+typedef struct
+{
+#define DPL_UNDEF -1
+  int start;
+  int end;
+} dpl_range_t;
+
+typedef enum
+  {
+    DPL_METADATA_DIRECTIVE_UNDEF,
+    DPL_METADATA_DIRECTIVE_COPY,
+    DPL_METADATA_DIRECTIVE_REPLACE,
+  } dpl_metadata_directive_t;
+
+typedef struct
+{
+  char *name;
+  time_t creation_time;
+} dpl_bucket_t;
+
+typedef struct
+{
+  char *key;
+  time_t last_modified;
+  size_t size;
+  char *etags;
+} dpl_object_t;
+
+typedef struct
+{
+  char *prefix;
+} dpl_common_prefix_t;
 
 typedef struct dpl_ctx
 {
@@ -212,19 +248,6 @@ typedef struct dpl_ctx
 
 typedef struct
 {
-  char *buf;
-  u_int len;
-} dpl_chunk_t;
-
-typedef struct
-{
-#define DPL_UNDEF -1
-  int start;
-  int end;
-} dpl_range_t;
-
-typedef struct
-{
   dpl_ctx_t *ctx;
 
 #define DPL_BEHAVIOR_MD5         (1u<<0)
@@ -255,17 +278,27 @@ typedef struct
   dpl_range_t ranges[DPL_RANGE_MAX];
   int n_ranges;
 
+  time_t expires; /*!< for query strings */
+
   /*
-   * query strings
+   * server side copy
    */
-  time_t expires;
+  char *src_bucket;
+  char *src_resource;
+  char *src_subresource;
+  dpl_metadata_directive_t metadata_directive;
+  dpl_condition_t copy_source_condition;
 
 } dpl_req_t;
 
+/*
+ * public functions
+ */
 #include <droplet_conn.h>
 #include <droplet_converters.h>
 #include <droplet_reqbuilder.h>
 #include <droplet_httpreply.h>
+#include <droplet_replyparser.h>
 #include <droplet_requests.h>
 #include <droplet_vdir.h>
 #include <droplet_vfile.h>

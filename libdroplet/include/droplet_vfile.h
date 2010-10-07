@@ -60,5 +60,5 @@ dpl_status_t dpl_write(dpl_vfile_t *vfile, char *buf, u_int len);
 dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *path, u_int flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap);
 dpl_status_t dpl_unlink(dpl_ctx_t *ctx, char *path);
 dpl_status_t dpl_getattr(dpl_ctx_t *ctx, char *path, dpl_condition_t *condition, dpl_dict_t **metadatap);
-dpl_status_t dpl_vfile_genurl(dpl_ctx_t *ctx, char *path, time_t expires, char *buf, u_int len, u_int *lenp);
+dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, char *path, time_t expires, char *buf, u_int len, u_int *lenp);
 #endif

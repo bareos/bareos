@@ -181,7 +181,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
   vfile->ctx = ctx;
   vfile->flags = flags;
 
-  ret2 = dpl_vdir_namei(ctx, npath, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
+  ret2 = dpl_namei(ctx, npath, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -201,7 +201,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
               *remote_name = 0;
               
               //fetch parent directory                                         
-              ret2 = dpl_vdir_namei(ctx, !strcmp(npath, "") ? ctx->delim : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
+              ret2 = dpl_namei(ctx, !strcmp(npath, "") ? ctx->delim : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
               if (DPL_SUCCESS != ret2)
                 {
                   DPLERR(0, "dst parent dir resolve failed %s: %s\n", npath, dpl_status_str(ret2));
@@ -493,7 +493,7 @@ dpl_openread(dpl_ctx_t *ctx,
   vfile->buffer_func = buffer_func;
   vfile->cb_arg = cb_arg;
 
-  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
+  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -540,7 +540,7 @@ dpl_unlink(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "unlink path=%s", path);
 
-  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
+  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -579,7 +579,7 @@ dpl_getattr(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "unlink path=%s", path);
 
-  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
+  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -607,18 +607,18 @@ dpl_getattr(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_vfile_genurl(dpl_ctx_t *ctx,
-                 char *path,
-                 time_t expires,
-                 char *buf,
-                 u_int len,
-                 u_int *lenp)
+dpl_fgenurl(dpl_ctx_t *ctx,
+            char *path,
+            time_t expires,
+            char *buf,
+            u_int len,
+            u_int *lenp)
 {
   int ret, ret2;
   dpl_ino_t obj_ino;
   dpl_ftype_t obj_type;
 
-  ret2 = dpl_vdir_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
+  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "namei failed %s (%d)\n", dpl_status_str(ret2), ret2);

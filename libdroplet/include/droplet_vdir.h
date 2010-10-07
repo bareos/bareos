@@ -46,18 +46,8 @@ typedef struct
 
 /* PROTO droplet_vdir.c */
 /* src/droplet_vdir.c */
-dpl_status_t dpl_vdir_lookup(dpl_ctx_t *ctx, char *bucket, dpl_ino_t parent_ino, const char *obj_name, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
-dpl_status_t dpl_vdir_mkdir(dpl_ctx_t *ctx, char *bucket, dpl_ino_t parent_ino, const char *obj_name);
-dpl_status_t dpl_vdir_unlink(void);
-dpl_status_t dpl_vdir_rename(void);
-dpl_status_t dpl_vdir_opendir(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, void **dir_hdlp);
-dpl_status_t dpl_vdir_readdir(void *dir_hdl, dpl_dirent_t *dirent);
-int dpl_vdir_eof(void *dir_hdl);
-void dpl_vdir_closedir(void *dir_hdl);
-dpl_status_t dpl_vdir_iname(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, char *path, u_int path_len);
-dpl_status_t dpl_vdir_namei(dpl_ctx_t *ctx, char *path, char *bucket, dpl_ino_t ino, dpl_ino_t *parent_inop, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
-dpl_status_t dpl_vdir_count_entries(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, u_int *n_entriesp);
-dpl_status_t dpl_vdir_rmdir(dpl_ctx_t *ctx, char *bucket, dpl_ino_t parent_ino, const char *obj_name);
+dpl_status_t dpl_iname(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, char *path, u_int path_len);
+dpl_status_t dpl_namei(dpl_ctx_t *ctx, char *path, char *bucket, dpl_ino_t ino, dpl_ino_t *parent_inop, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
 dpl_status_t dpl_opendir(dpl_ctx_t *ctx, char *path, void **dir_hdlp);
 dpl_status_t dpl_readdir(void *dir_hdl, dpl_dirent_t *dirent);
 int dpl_eof(void *dir_hdl);
