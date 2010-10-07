@@ -27,13 +27,6 @@ struct usage_def setattr_usage[] =
 
 struct cmd_def setattr_cmd = {"setattr", "dump attributes of object", setattr_usage, cmd_setattr};
 
-static void
-cb_setattr(dpl_var_t *var,
-        void *cb_arg)
-{
-  printf("%s=%s\n", var->key, var->value);
-}
-
 int
 cmd_setattr(int argc,
          char **argv)
@@ -80,8 +73,6 @@ cmd_setattr(int argc,
       fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);
       goto end;
     }
-
-  dpl_dict_iterate(metadata, cb_setattr, NULL);
 
   var_set("status", "0", VAR_CMD_SET, NULL);
 

@@ -184,9 +184,9 @@ dpl_metadata_directive_str(dpl_metadata_directive_t metadata_directive)
     case DPL_METADATA_DIRECTIVE_UNDEF:
       return NULL;
     case DPL_METADATA_DIRECTIVE_COPY:
-      return "copy";
+      return "COPY"; //case is important
     case DPL_METADATA_DIRECTIVE_REPLACE:
-      return "replace";
+      return "REPLACE"; //case is important
     }
   
   return NULL;
