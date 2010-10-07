@@ -65,7 +65,7 @@ cmd_getattr(int argc,
   
   path = argv[0];
   
-  ret = dpl_getattr(ctx, path, NULL, &metadata);
+  ret = dpl_getattr(ctx, path, &metadata);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);

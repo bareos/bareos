@@ -584,6 +584,8 @@ dpl_connection_close(dpl_dict_t *headers_returned)
   dpl_var_t *var;
   int ret;
 
+  assert(NULL != headers_returned);
+
   ret = dpl_dict_get_lowered(headers_returned, "Connection", &var);
   if (DPL_SUCCESS != ret)
     return 0;

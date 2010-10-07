@@ -1043,7 +1043,7 @@ dpl_req_build(dpl_req_t *req,
                 }
             }
           
-          ret2 = dpl_add_condition_to_headers(&req->copy_source_condition, headers, 0);
+          ret2 = dpl_add_condition_to_headers(&req->copy_source_condition, headers, 1);
           if (DPL_SUCCESS != ret2)
             {
               ret = ret2;

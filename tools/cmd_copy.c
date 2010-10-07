@@ -16,70 +16,60 @@
 
 #include "dplsh.h"
 
-int cmd_setattr(int argc, char **argv);
+int cmd_copy(int argc, char **argv);
 
-struct usage_def setattr_usage[] =
+struct usage_def copy_usage[] =
   {
-    {'m', USAGE_PARAM, "metadata", "semicolon separated list of variables e.g. var1=val1;var2=val2;..."},
-    {USAGE_NO_OPT, USAGE_MANDAT, "path", "remote object"},
+    {USAGE_NO_OPT, USAGE_MANDAT, "local_file", "local file"},
+    {USAGE_NO_OPT, USAGE_MANDAT, "remote_file", "remote file"},
     {0, 0u, NULL, NULL},
   };
 
-struct cmd_def setattr_cmd = {"setattr", "dump attributes of object", setattr_usage, cmd_setattr};
+struct cmd_def copy_cmd = {"copy", "server side copy", copy_usage, cmd_copy};
 
 int
-cmd_setattr(int argc,
-         char **argv)
+cmd_copy(int argc,
+           char **argv)
 {
   int ret;
   char opt;
-  char *path = NULL;
-  dpl_dict_t *metadata = NULL;
+  char *src_path = NULL;
+  char *dst_path = NULL;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
-
+  
   optind = 0;
 
-  while ((opt = getopt(argc, argv, usage_getoptstr(setattr_usage))) != -1)
+  while ((opt = getopt(argc, argv, usage_getoptstr(copy_usage))) != -1)
     switch (opt)
       {
-      case 'm':
-        metadata = dpl_parse_metadata(optarg);
-        if (NULL == metadata)
-          {
-            fprintf(stderr, "error parsing metadata\n");
-            return SHELL_CONT;
-          }
-        break ;
       case '?':
       default:
-        usage_help(&setattr_cmd);
-      return SHELL_CONT;
+        usage_help(&copy_cmd);
+        exit(1);
       }
   argc -= optind;
   argv += optind;
 
-  if (1 != argc)
+  if (2 != argc)
     {
-      usage_help(&setattr_cmd);
-      return SHELL_CONT;
+      usage_help(&copy_cmd);
+      goto end;
     }
+
+  src_path = argv[0];
+  dst_path = argv[1];      
   
-  path = argv[0];
-  
-  ret = dpl_setattr(ctx, path, metadata);
+  ret = dpl_fcopy(ctx, src_path, dst_path);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);
       goto end;
     }
-
+  
   var_set("status", "0", VAR_CMD_SET, NULL);
-
+  
  end:
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
 
   return SHELL_CONT;
 }

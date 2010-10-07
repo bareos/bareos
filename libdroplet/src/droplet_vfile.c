@@ -570,7 +570,6 @@ dpl_unlink(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_getattr(dpl_ctx_t *ctx,
             char *path,
-            dpl_condition_t *condition,
             dpl_dict_t **metadatap)
 {
   int ret, ret2;
@@ -592,7 +591,7 @@ dpl_getattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_head(ctx, ctx->cur_bucket, obj_ino.key, NULL, condition, metadatap);
+  ret2 = dpl_head(ctx, ctx->cur_bucket, obj_ino.key, NULL, NULL, metadatap);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -609,8 +608,7 @@ dpl_getattr(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_setattr(dpl_ctx_t *ctx,
             char *path,
-            dpl_dict_t *metadata,
-            dpl_condition_t *condition)
+            dpl_dict_t *metadata)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -631,7 +629,7 @@ dpl_setattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, ctx->cur_bucket, obj_ino.key, NULL, ctx->cur_bucket, obj_ino.key, NULL, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, condition);
+  ret2 = dpl_copy(ctx, ctx->cur_bucket, obj_ino.key, NULL, ctx->cur_bucket, obj_ino.key, NULL, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -641,6 +639,88 @@ dpl_setattr(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
   
  end:
+
+  return ret;
+}
+
+dpl_status_t
+dpl_fcopy(dpl_ctx_t *ctx,
+          char *src_path,
+          char *dst_path)
+{
+  int ret, ret2;
+  dpl_ino_t src_obj_ino;
+  dpl_ftype_t src_obj_type;
+  dpl_ino_t dst_obj_ino;
+  dpl_ftype_t dst_obj_type;
+  char *npath = NULL;
+  int delim_len = strlen(ctx->delim);
+  dpl_ino_t parent_ino;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "fcopy src_path=%s dst_path=%s", src_path, dst_path);
+
+  npath = strdup(dst_path);
+  if (NULL == npath)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  ret2 = dpl_namei(ctx, src_path, ctx->cur_bucket, ctx->cur_ino, NULL, &src_obj_ino, &src_obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPLERR(0, "namei failed %s (%d)\n", dpl_status_str(ret2), ret2);
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_namei(ctx, dst_path, ctx->cur_bucket, ctx->cur_ino, NULL, &dst_obj_ino, &dst_obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      if (DPL_ENOENT == ret2)
+        {
+          char *remote_name;
+          
+          remote_name = dpl_strrstr(npath, ctx->delim);
+          if (NULL != remote_name)
+            {
+              remote_name += delim_len;
+              *remote_name = 0;
+              
+              //fetch parent directory                                         
+              ret2 = dpl_namei(ctx, !strcmp(npath, "") ? ctx->delim : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
+              if (DPL_SUCCESS != ret2)
+                {
+                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", npath, dpl_status_str(ret2));
+                  ret = ret2;
+                  goto end;
+                }
+            }
+          else
+            {
+              parent_ino = ctx->cur_ino;
+              remote_name = npath;
+            }
+
+          dst_obj_ino = parent_ino;
+          strcat(dst_obj_ino.key, remote_name); //XXX check length
+          dst_obj_type = DPL_FTYPE_REG;
+        }
+    }
+
+  ret2 = dpl_copy(ctx, ctx->cur_bucket, src_obj_ino.key, NULL, ctx->cur_bucket, dst_obj_ino.key, NULL, DPL_METADATA_DIRECTIVE_COPY, NULL, DPL_CANNED_ACL_UNDEF, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != npath)
+    free(npath);
 
   return ret;
 }
@@ -656,6 +736,8 @@ dpl_fgenurl(dpl_ctx_t *ctx,
   int ret, ret2;
   dpl_ino_t obj_ino;
   dpl_ftype_t obj_type;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "fgenurl path=%s", path);
 
   ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
   if (DPL_SUCCESS != ret2)
@@ -678,3 +760,4 @@ dpl_fgenurl(dpl_ctx_t *ctx,
   
   return ret;
 }
+
