@@ -44,7 +44,7 @@ dpl_status_t dpl_req_set_src_bucket(dpl_req_t *req, char *src_bucket);
 dpl_status_t dpl_req_set_src_resource(dpl_req_t *req, char *src_resource);
 dpl_status_t dpl_req_set_src_subresource(dpl_req_t *req, char *src_subresource);
 void dpl_req_set_metadata_directive(dpl_req_t *req, dpl_metadata_directive_t metadata_directive);
-void dpl_req_set_copy_sourcecondition(dpl_req_t *req, dpl_condition_t *condition);
+void dpl_req_set_copy_source_condition(dpl_req_t *req, dpl_condition_t *condition);
 dpl_status_t dpl_req_build(dpl_req_t *req, dpl_dict_t **headersp);
 dpl_status_t dpl_req_gen_http_request(dpl_req_t *req, dpl_dict_t *headers, dpl_dict_t *query_params, char *buf, int len, u_int *lenp);
 dpl_status_t dpl_req_gen_url(dpl_req_t *req, dpl_dict_t *headers, char *buf, int len, u_int *lenp);

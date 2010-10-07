@@ -250,11 +250,12 @@ typedef struct
 {
   dpl_ctx_t *ctx;
 
-#define DPL_BEHAVIOR_MD5         (1u<<0)
-#define DPL_BEHAVIOR_EXPECT      (1u<<1)
+#define DPL_BEHAVIOR_MD5          (1u<<0)
+#define DPL_BEHAVIOR_EXPECT       (1u<<1)
 #define DPL_BEHAVIOR_VIRTUAL_HOSTING (1u<<2)
-#define DPL_BEHAVIOR_KEEP_ALIVE (1u<<3)
+#define DPL_BEHAVIOR_KEEP_ALIVE   (1u<<3)
 #define DPL_BEHAVIOR_QUERY_STRING (1u<<4)
+#define DPL_BEHAVIOR_COPY         (1u<<5)
   u_int behavior_flags;
 
   dpl_method_t method;

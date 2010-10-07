@@ -53,7 +53,8 @@ cmd_rb.o \
 cmd_ls.o \
 cmd_mkdir.o \
 cmd_rmdir.o \
-cmd_genurl.o
+cmd_genurl.o \
+cmd_setattr.o
 
 all: prod
 

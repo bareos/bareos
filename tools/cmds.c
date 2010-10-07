@@ -101,6 +101,7 @@ struct cmd_def	*cmd_defs[] =
     &rm_cmd,
     &rmdir_cmd,
     &set_cmd,
+    &setattr_cmd,
     &unset_cmd,
     NULL,
   };

@@ -388,8 +388,8 @@ dpl_req_set_metadata_directive(dpl_req_t *req,
 }
 
 void
-dpl_req_set_copy_sourcecondition(dpl_req_t *req,
-                                 dpl_condition_t *condition)
+dpl_req_set_copy_source_condition(dpl_req_t *req,
+                                  dpl_condition_t *condition)
 {
   req->copy_source_condition = *condition;
 }
@@ -773,13 +773,25 @@ dpl_add_source_to_headers(dpl_req_t *req,
   char buf[1024];
   u_int len = sizeof (buf);
   char *p;
-  char buf_ue[1024];
+  char src_resource_ue[DPL_URL_LENGTH(strlen(req->src_resource)) + 1];
+
+  //resource
+  if ('/' != req->src_resource[0])
+    {
+      src_resource_ue[0] = '/';
+      dpl_url_encode(req->src_resource, src_resource_ue + 1);
+    }
+  else
+    {
+      src_resource_ue[0] = '/'; //some servers do not like encoded slash
+      dpl_url_encode(req->src_resource + 1, src_resource_ue + 1);
+    }
 
   p = buf;
   
-  DPL_APPEND_STR(req->src_bucket);
   DPL_APPEND_STR("/");
-  DPL_APPEND_STR(req->src_resource);
+  DPL_APPEND_STR(req->src_bucket);
+  DPL_APPEND_STR(src_resource_ue);
   
   //subresource and query params
   if (NULL != req->src_subresource)
@@ -790,9 +802,7 @@ dpl_add_source_to_headers(dpl_req_t *req,
   
   DPL_APPEND_CHAR(0);
 
-  dpl_url_encode(buf, buf_ue);
-
-  ret2 = dpl_dict_add(headers, "x-amz-copy-source", buf_ue, 0);
+  ret2 = dpl_dict_add(headers, "x-amz-copy-source", buf, 0);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1005,37 +1015,40 @@ dpl_req_build(dpl_req_t *req,
       /*
        * copy
        */
-      ret2 = dpl_add_source_to_headers(req, headers);
-      if (DPL_SUCCESS != ret2)
+      if (req->behavior_flags & DPL_BEHAVIOR_COPY)
         {
-          ret = ret2;
-          goto end;
-        }
-
-      if (DPL_METADATA_DIRECTIVE_UNDEF != req->metadata_directive)
-        {
-          char *str;
-
-          str = dpl_metadata_directive_str(req->metadata_directive);
-          if (NULL == str)
+          ret2 = dpl_add_source_to_headers(req, headers);
+          if (DPL_SUCCESS != ret2)
             {
-              ret = DPL_FAILURE;
+              ret = ret2;
               goto end;
             }
           
-          ret2 = dpl_dict_add(headers, "x-amz-metadata-directive", str, 0);
+          if (DPL_METADATA_DIRECTIVE_UNDEF != req->metadata_directive)
+            {
+              char *str;
+              
+              str = dpl_metadata_directive_str(req->metadata_directive);
+              if (NULL == str)
+                {
+                  ret = DPL_FAILURE;
+                  goto end;
+                }
+              
+              ret2 = dpl_dict_add(headers, "x-amz-metadata-directive", str, 0);
+              if (DPL_SUCCESS != ret2)
+                {
+                  ret = DPL_ENOMEM;
+                  goto end;
+                }
+            }
+          
+          ret2 = dpl_add_condition_to_headers(&req->copy_source_condition, headers, 0);
           if (DPL_SUCCESS != ret2)
             {
-              ret = DPL_ENOMEM;
+              ret = ret2;
               goto end;
             }
-        }
-
-      ret2 = dpl_add_condition_to_headers(&req->copy_source_condition, headers, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
         }
     }
   else if (DPL_METHOD_DELETE == req->method)

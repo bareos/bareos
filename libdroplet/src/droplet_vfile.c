@@ -577,7 +577,7 @@ dpl_getattr(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
 
-  DPL_TRACE(ctx, DPL_TRACE_VFILE, "unlink path=%s", path);
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "getattr path=%s", path);
 
   ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
   if (DPL_SUCCESS != ret2)
@@ -593,6 +593,45 @@ dpl_getattr(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_head(ctx, ctx->cur_bucket, obj_ino.key, NULL, condition, metadatap);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
+}
+
+dpl_status_t
+dpl_setattr(dpl_ctx_t *ctx,
+            char *path,
+            dpl_dict_t *metadata,
+            dpl_condition_t *condition)
+{
+  int ret, ret2;
+  dpl_ino_t parent_ino, obj_ino;
+  dpl_ftype_t obj_type;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "setattr path=%s", path);
+
+  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, &obj_ino, &obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (DPL_FTYPE_REG != obj_type)
+    {
+      ret = DPL_EISDIR;
+      goto end;
+    }
+
+  ret2 = dpl_copy(ctx, ctx->cur_bucket, obj_ino.key, NULL, ctx->cur_bucket, obj_ino.key, NULL, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, condition);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

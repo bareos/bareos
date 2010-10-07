@@ -31,6 +31,7 @@ extern struct cmd_def mkdir_cmd;
 extern struct cmd_def pwd_cmd;
 extern struct cmd_def rmdir_cmd;
 extern struct cmd_def set_cmd;
+extern struct cmd_def setattr_cmd;
 extern struct cmd_def unset_cmd;
 extern struct cmd_def genurl_cmd;
 

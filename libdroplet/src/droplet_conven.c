@@ -2002,13 +2002,16 @@ dpl_genurl(dpl_ctx_t *ctx,
  * copy a resource
  * 
  * @param ctx 
- * @param bucket 
- * @param resource 
- * @param subresource can be NULL
- * @param metadata can be NULL
+ * @param src_bucket 
+ * @param src_resource 
+ * @param src_subresource 
+ * @param dst_bucket 
+ * @param dst_resource 
+ * @param dst_subresource 
+ * @param metadata_directive 
+ * @param metadata 
  * @param canned_acl 
- * @param data_buf 
- * @param data_len 
+ * @param condition
  * 
  * @return 
  */
@@ -2022,7 +2025,8 @@ dpl_copy(dpl_ctx_t *ctx,
          char *dst_subresource,
          dpl_metadata_directive_t metadata_directive,
          dpl_dict_t *metadata,
-         dpl_canned_acl_t canned_acl)
+         dpl_canned_acl_t canned_acl,
+         dpl_condition_t *condition)
 {
   char          *host;
   int           ret, ret2;
@@ -2046,6 +2050,10 @@ dpl_copy(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_PUT);
+  dpl_req_add_behavior(req, DPL_BEHAVIOR_COPY);
+
+  if (NULL != condition)
+    dpl_req_set_copy_source_condition(req, condition);
 
   ret2 = dpl_req_set_bucket(req, dst_bucket);
   if (DPL_SUCCESS != ret2)
