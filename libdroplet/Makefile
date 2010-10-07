@@ -35,16 +35,7 @@ $(OBJDIR)/droplet_reqbuilder.o \
 $(OBJDIR)/droplet_httpreply.o \
 $(OBJDIR)/droplet_replyparser.o \
 $(OBJDIR)/droplet_utils.o \
-$(OBJDIR)/droplet_listallmybuckets.o \
-$(OBJDIR)/droplet_listbucket.o \
-$(OBJDIR)/droplet_makebucket.o \
-$(OBJDIR)/droplet_put.o \
-$(OBJDIR)/droplet_get.o \
-$(OBJDIR)/droplet_head.o \
-$(OBJDIR)/droplet_delete.o \
-$(OBJDIR)/droplet_deletebucket.o \
-$(OBJDIR)/droplet_copy.o \
-$(OBJDIR)/droplet_genurl.o \
+$(OBJDIR)/droplet_conven.o \
 $(OBJDIR)/droplet_profile.o \
 $(OBJDIR)/droplet_pricing.o \
 $(OBJDIR)/droplet_vdir.o \

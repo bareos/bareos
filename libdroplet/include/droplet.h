@@ -299,7 +299,7 @@ typedef struct
 #include <droplet_reqbuilder.h>
 #include <droplet_httpreply.h>
 #include <droplet_replyparser.h>
-#include <droplet_requests.h>
+#include <droplet_conven.h>
 #include <droplet_vdir.h>
 #include <droplet_vfile.h>
 

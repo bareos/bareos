@@ -10,7 +10,7 @@ ifeq ($(PLATFORM),Solaris)
 EXTRA_LIBS = -lsocket -lnsl
 endif
 
-LIBS = -L../libdroplet/lib -ldroplet -lm -lz -lssl -lcrypto -lpthread $(EXTRA_LIBS)
+LIBS = -L../libdroplet/lib -ldroplet -lm -lz -lssl -lcrypto -lpthread -lxml2 $(EXTRA_LIBS)
 DEPENDS = ../libdroplet/lib/libdroplet.a
 
 DPLTOOLSDIR=../tools
