@@ -55,7 +55,7 @@ cmd_pwd(int argc,
 
   cur_ino = dpl_cwd(ctx, ctx->cur_bucket);
 
-  printf("%s:%s%s\n", ctx->cur_bucket ? ctx->cur_bucket : "", ctx->delim, cur_ino.key);
+  printf("%s:%s%s\n", ctx->cur_bucket, ctx->delim, cur_ino.key);
 
   var_set("status", "0", VAR_CMD_SET, NULL);
 

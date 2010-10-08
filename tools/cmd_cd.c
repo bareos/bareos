@@ -26,6 +26,33 @@ struct usage_def cd_usage[] =
 
 struct cmd_def cd_cmd = {"cd", "change directory", cd_usage, cmd_cd};
 
+char *path_saved = NULL;
+
+int
+do_cd(char *path)
+{
+  int ret;
+  char wd[1024];
+  dpl_ino_t cur_ino;
+
+  cur_ino = dpl_cwd(ctx, ctx->cur_bucket);
+
+  snprintf(wd, sizeof (wd), "%s:%s%s", ctx->cur_bucket, ctx->delim, cur_ino.key);
+
+  ret = dpl_chdir(ctx, path);
+  if (DPL_SUCCESS != ret)
+    {
+      fprintf(stderr, "chdir failed %s: %s (%d)\n", path, dpl_status_str(ret), ret);
+      return DPL_FAILURE;
+    }
+
+  if (NULL != path_saved)
+    free(path_saved);
+  path_saved = strdup(wd);
+  
+  return DPL_SUCCESS;
+}
+
 int
 cmd_cd(int argc,
        char **argv)
@@ -43,13 +70,15 @@ cmd_cd(int argc,
 
   path = argv[1];
 
-  ret = dpl_chdir(ctx, path);
+  if (!strcmp(path, "-") && NULL != path_saved)
+    path = path_saved;
+
+  ret = do_cd(path);
   if (DPL_SUCCESS != ret)
     {
-      fprintf(stderr, "chdir failed %s: %s (%d)\n", path, dpl_status_str(ret), ret);
       goto end;
     }
-
+  
   var_set("status", "0", VAR_CMD_SET, NULL);
 
  end:
