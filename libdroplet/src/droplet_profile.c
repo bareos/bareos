@@ -546,6 +546,13 @@ dpl_profile_post(dpl_ctx_t *ctx)
       goto end;
     }
 
+  ctx->cwds = dpl_dict_new(13);
+  if (NULL == ctx->cwds)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
   ret = DPL_SUCCESS;
   
  end:
@@ -696,6 +703,8 @@ dpl_profile_free(dpl_ctx_t *ctx)
   if (NULL != ctx->delim)
     free(ctx->delim);
 
+  if (NULL != ctx->cwds)
+    dpl_dict_free(ctx->cwds);
   if (NULL != ctx->cur_bucket)
     free(ctx->cur_bucket);
 

@@ -576,6 +576,9 @@ dpl_namei(dpl_ctx_t *ctx,
   dpl_ftype_t obj_type;
   int delim_len = strlen(ctx->delim);
 
+  if (NULL == bucket)
+    return DPL_EINVAL;
+
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "namei path=%s bucket=%s ino=%s", path, bucket, ino.key);
 
   p1 = path;
@@ -663,18 +666,74 @@ dpl_namei(dpl_ctx_t *ctx,
   return DPL_FAILURE;
 }
 
+dpl_ino_t
+dpl_cwd(dpl_ctx_t *ctx,
+        char *bucket)
+{
+  dpl_var_t *var;
+  dpl_ino_t cwd;
+
+  if (NULL == bucket)
+    {
+      cwd = DPL_ROOT_INO;
+    }
+  else
+    {
+      var = dpl_dict_get(ctx->cwds, bucket);
+      if (NULL != var)
+        strcpy(cwd.key, var->value); //XXX check overflow
+      else
+        cwd = DPL_ROOT_INO;
+    }
+  
+  return cwd;
+}
+
+/** 
+ * open a directory
+ * 
+ * @param ctx 
+ * @param locator [bucket:]path
+ * @param dir_hdlp 
+ * 
+ * @return 
+ */
 dpl_status_t
 dpl_opendir(dpl_ctx_t *ctx,
-            char *path,
+            char *locator,
             void **dir_hdlp)
 {
   int ret, ret2;
   dpl_ino_t obj_ino;
   dpl_ftype_t obj_type;
+  char *nlocator = NULL;
+  char *bucket, *path;
+  dpl_ino_t cur_ino;
 
-  DPL_TRACE(ctx, DPL_TRACE_VDIR, "opendir path=%s", path);
+  DPL_TRACE(ctx, DPL_TRACE_VDIR, "opendir locator=%s", locator);
 
-  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      bucket = nlocator;
+      *path++ = 0;
+    }
+  else
+    {
+      bucket = ctx->cur_bucket;
+      path = nlocator;
+    }
+
+  cur_ino = dpl_cwd(ctx, bucket);
+
+  ret2 = dpl_namei(ctx, path, bucket, cur_ino, NULL, &obj_ino, &obj_type);
   if (0 != ret2)
     {
       DPLERR(0, "path resolve failed %s", path);
@@ -689,10 +748,10 @@ dpl_opendir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_vdir_opendir(ctx, ctx->cur_bucket, obj_ino, dir_hdlp);
+  ret2 = dpl_vdir_opendir(ctx, bucket, obj_ino, dir_hdlp);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(0, "unable to open %s:%s", ctx->cur_bucket, obj_ino.key);
+      DPLERR(0, "unable to open %s:%s", bucket, obj_ino.key);
       ret = ret2;
       goto end;
     }
@@ -700,6 +759,9 @@ dpl_opendir(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != nlocator)
+    free(nlocator);
 
   return ret;
 }
@@ -725,18 +787,43 @@ dpl_closedir(void *dir_hdl)
 
 dpl_status_t
 dpl_chdir(dpl_ctx_t *ctx,
-          char *path)
+          char *locator)
 {
   int ret, ret2;
   dpl_ino_t obj_ino;
   dpl_ftype_t obj_type;
-
-  DPL_TRACE(ctx, DPL_TRACE_VDIR, "chdir path=%s", path);
+  char *nlocator = NULL;
+  dpl_ino_t cur_ino;
+  char *nbucket;
+  char *path, *bucket;
   
-  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, NULL, &obj_ino, &obj_type);
+  DPL_TRACE(ctx, DPL_TRACE_VDIR, "chdir locator=%s", locator);
+  
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      bucket = nlocator;
+      *path++ = 0;
+    }
+  else
+    {
+      bucket = ctx->cur_bucket;
+      path = nlocator;
+    }
+
+  cur_ino = dpl_cwd(ctx, bucket);
+
+  ret2 = dpl_namei(ctx, path, bucket, cur_ino, NULL, &obj_ino, &obj_type);
   if (0 != ret2)
     {
-      DPLERR(0, "path resolve failed %s", path);
+      DPLERR(0, "path resolve failed %s: %s (%d)", path, dpl_status_str(ret2), ret2);
       ret = ret2;
       goto end;
     }
@@ -748,63 +835,100 @@ dpl_chdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ctx->cur_ino = obj_ino;
+  if (NULL == ctx->cur_bucket || strcmp(bucket, ctx->cur_bucket))
+    {
+      nbucket = strdup(bucket);
+      if (NULL == nbucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      if (NULL != ctx->cur_bucket)
+        free(ctx->cur_bucket);
+      ctx->cur_bucket = nbucket;
+    }
+
+  ret2 = dpl_dict_add(ctx->cwds, ctx->cur_bucket, obj_ino.key, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
 
   ret = DPL_SUCCESS;
   
  end:
+
+  if (NULL != nlocator)
+    free(nlocator);
 
   return ret;
 }
 
 dpl_status_t
 dpl_mkdir(dpl_ctx_t *ctx,
-          char *path)
+          char *locator)
 {
   char *dir_name = NULL;
   dpl_ino_t parent_ino;
   int ret, ret2;
-  char *npath;
+  char *nlocator = NULL;
   int delim_len = strlen(ctx->delim);
+  char *bucket, *path;
+  dpl_ino_t cur_ino;
 
-  DPL_TRACE(ctx, DPL_TRACE_VDIR, "mkdir path=%s", path);
+  DPL_TRACE(ctx, DPL_TRACE_VDIR, "mkdir locator=%s", locator);
 
-  npath = strdup(path);
-  if (NULL == npath)
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  ret2 = dpl_namei(ctx, npath, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      bucket = nlocator;
+      *path++ = 0;
+    }
+  else
+    {
+      bucket = ctx->cur_bucket;
+      path = nlocator;
+    }
+
+  cur_ino = dpl_cwd(ctx, bucket);
+
+  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
         {
-          dir_name = dpl_strrstr(npath, ctx->delim);
+          dir_name = dpl_strrstr(path, ctx->delim);
           if (NULL != dir_name)
             {
               dir_name += delim_len;
               *dir_name = 0;
               
               //fetch parent directory                                         
-              ret2 = dpl_namei(ctx, !strcmp(npath, "") ? ctx->delim : npath, ctx->cur_bucket, ctx->cur_ino, NULL, &parent_ino, NULL);
+              ret2 = dpl_namei(ctx, !strcmp(path, "") ? ctx->delim : path, bucket, cur_ino, NULL, &parent_ino, NULL);
               if (DPL_SUCCESS != ret2)
                 {
-                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", npath, dpl_status_str(ret2));
+                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", path, dpl_status_str(ret2));
                   ret = ret2;
                   goto end;
                 }
             }
           else
             {
-              parent_ino = ctx->cur_ino;
-              dir_name = npath;
+              parent_ino = cur_ino;
+              dir_name = path;
             }
         }
       else
         {
-          DPLERR(0, "path resolve failed %s: %s (%d)\n", npath, dpl_status_str(ret2), ret2);
+          DPLERR(0, "path resolve failed %s: %s (%d)\n", path, dpl_status_str(ret2), ret2);
           ret = ret2;
           goto end;
         }
@@ -815,7 +939,7 @@ dpl_mkdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_vdir_mkdir(ctx, ctx->cur_bucket, parent_ino, dir_name);
+  ret2 = dpl_vdir_mkdir(ctx, bucket, parent_ino, dir_name);
   if (0 != ret2)
     {
       DPLERR(0, "mkdir failed");
@@ -827,22 +951,46 @@ dpl_mkdir(dpl_ctx_t *ctx,
 
  end:
 
-  if (NULL != npath)
-    free(npath);
+  if (NULL != nlocator)
+    free(nlocator);
 
   return ret;
 }
 
 dpl_status_t
 dpl_rmdir(dpl_ctx_t *ctx,
-          char *path)
+          char *locator)
 {
   int ret, ret2;
   char *dir_name = NULL;
   dpl_ino_t parent_ino;
   int delim_len = strlen(ctx->delim);
+  char *nlocator = NULL;
+  char *bucket, *path;
+  dpl_ino_t cur_ino;
 
-  DPL_TRACE(ctx, DPL_TRACE_VDIR, "rmdir path=%s", path);
+  DPL_TRACE(ctx, DPL_TRACE_VDIR, "rmdir locator=%s", locator);
+
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      bucket = nlocator;
+      *path++ = 0;
+    }
+  else
+    {
+      bucket = ctx->cur_bucket;
+      path = nlocator;
+    }
+
+  cur_ino = dpl_cwd(ctx, bucket);
   
   dir_name = dpl_strrstr(path, ctx->delim);
   if (NULL != dir_name)
@@ -850,7 +998,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
   else
     dir_name = path;
 
-  ret2 = dpl_namei(ctx, path, ctx->cur_bucket, ctx->cur_ino, &parent_ino, NULL, NULL);
+  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "path resolved failed");
@@ -858,7 +1006,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_vdir_rmdir(ctx, ctx->cur_bucket, parent_ino, dir_name);
+  ret2 = dpl_vdir_rmdir(ctx, bucket, parent_ino, dir_name);
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "rmdir failed");
@@ -869,6 +1017,9 @@ dpl_rmdir(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != nlocator)
+    free(nlocator);
 
   return ret;
 }

@@ -34,7 +34,7 @@ extern struct cmd_def set_cmd;
 extern struct cmd_def setattr_cmd;
 extern struct cmd_def unset_cmd;
 extern struct cmd_def genurl_cmd;
-extern struct cmd_def copy_cmd;
+extern struct cmd_def cp_cmd;
 
 extern struct cmd_def	*cmd_defs[];
 

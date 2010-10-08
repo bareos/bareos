@@ -48,11 +48,12 @@ typedef struct
 /* src/droplet_vdir.c */
 dpl_status_t dpl_iname(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, char *path, u_int path_len);
 dpl_status_t dpl_namei(dpl_ctx_t *ctx, char *path, char *bucket, dpl_ino_t ino, dpl_ino_t *parent_inop, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
-dpl_status_t dpl_opendir(dpl_ctx_t *ctx, char *path, void **dir_hdlp);
+dpl_ino_t dpl_cwd(dpl_ctx_t *ctx, char *bucket);
+dpl_status_t dpl_opendir(dpl_ctx_t *ctx, char *locator, void **dir_hdlp);
 dpl_status_t dpl_readdir(void *dir_hdl, dpl_dirent_t *dirent);
 int dpl_eof(void *dir_hdl);
 void dpl_closedir(void *dir_hdl);
-dpl_status_t dpl_chdir(dpl_ctx_t *ctx, char *path);
-dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, char *path);
-dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, char *path);
+dpl_status_t dpl_chdir(dpl_ctx_t *ctx, char *locator);
+dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, char *locator);
+dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, char *locator);
 #endif

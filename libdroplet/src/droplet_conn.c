@@ -380,7 +380,7 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr); 
   if (0 != ret2)
     {
-      DPLERR(1, "gethostbyname failed");
+      DPLERR(0, "gethostbyname failed");
       goto bad;
     }
 

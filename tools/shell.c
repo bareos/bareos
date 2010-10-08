@@ -156,9 +156,11 @@ shell_do_cmd(struct cmd_def **defs,
     }
   else if (argc == 1 && (NULL != (p = index(argv[0], ':'))))
     {
-      *p = 0;
-      var_set("bucket", argv[0], VAR_CMD_SET, NULL);
-      ctx->cur_ino = DPL_ROOT_INO;
+      ret = dpl_chdir(ctx, argv[0]);
+      if (DPL_SUCCESS != ret)
+        {
+          fprintf(stderr, "chdir failed: %s (%d)\n", dpl_status_str(ret), ret);
+        }
       return SHELL_CONT;
     }
 
@@ -347,10 +349,13 @@ shell_do(struct cmd_def **defs)
 
   while (1)
     {
-      char      *line;
+      char *line;
       char prompt[256];
+      dpl_ino_t cur_ino;
 
-      snprintf(prompt, sizeof (prompt), "%s:%s%s> ", ctx->cur_bucket ? ctx->cur_bucket : "", ctx->delim, ctx->cur_ino.key);
+      cur_ino = dpl_cwd(ctx, ctx->cur_bucket);
+
+      snprintf(prompt, sizeof (prompt), "%s:%s%s> ", ctx->cur_bucket ? ctx->cur_bucket : "", ctx->delim, cur_ino.key);
       
       if ((line = readline(prompt)))
         {

@@ -78,6 +78,7 @@ ls_recurse(struct ls_data *ls_data,
     {
       void *dir_hdl;
       dpl_dirent_t entry;
+      dpl_ino_t cur_ino;
 
       if (1 == ls_data->Rflag)
         {
@@ -85,7 +86,9 @@ ls_recurse(struct ls_data *ls_data,
           if (DPL_SUCCESS != ret)
             return ret;
           
-          printf("%s%s%s:\n", 0 == level ? "" : "\n", ctx->delim, ctx->cur_ino.key);
+          cur_ino = dpl_cwd(ctx, ctx->cur_bucket);
+
+          printf("%s%s%s:\n", 0 == level ? "" : "\n", ctx->delim, cur_ino.key);
           
           ret = dpl_opendir(ctx, ".", &dir_hdl);
           if (DPL_SUCCESS != ret)

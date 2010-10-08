@@ -67,8 +67,6 @@ char *var_set_status(char *value);
 char *var_set_trace_level(char *value);
 char *var_set_block_size(char *value);
 char *var_set_hash(char *value);
-char *var_set_bucket(char *value);
-char *var_set_pwd(char *value);
 char *var_set_delim(char *value);
 int main(int argc, char **argv);
 /* ./filecompl.c */

@@ -30,8 +30,7 @@ cmd_pwd(int argc,
         char **argv)
 {
   char opt;
-  //int ret;
-  //char path[DPL_MAXPATHLEN];
+  dpl_ino_t cur_ino;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
 
@@ -54,17 +53,9 @@ cmd_pwd(int argc,
       return SHELL_CONT;
     }
 
-#if 0  
-  ret = dpl_vdir_iname(ctx, ctx->cur_bucket, ctx->cur_ino, path, sizeof (path));
-  if (0 != ret)
-    {
-      fprintf(stderr, "iname failed for %s:%s %d\n", ctx->cur_bucket, ctx->cur_ino.key, ret);
-      return SHELL_CONT;
-    }
-  printf("%s\n", path);
-#else
-  printf("%s:%s%s\n", ctx->cur_bucket, ctx->delim, ctx->cur_ino.key);
-#endif
+  cur_ino = dpl_cwd(ctx, ctx->cur_bucket);
+
+  printf("%s:%s%s\n", ctx->cur_bucket ? ctx->cur_bucket : "", ctx->delim, cur_ino.key);
 
   var_set("status", "0", VAR_CMD_SET, NULL);
 

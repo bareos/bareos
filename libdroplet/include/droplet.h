@@ -225,10 +225,10 @@ typedef struct dpl_ctx
   int n_conn_fds;                  /*!< number of active fds      */
 
   /*
-   * vfile
+   * vdir
    */
+  dpl_dict_t *cwds;
   char *cur_bucket;
-  dpl_ino_t cur_ino;
 
   /*
    * common

@@ -55,7 +55,7 @@ cmd_mkdir.o \
 cmd_rmdir.o \
 cmd_genurl.o \
 cmd_setattr.o \
-cmd_copy.o
+cmd_cp.o
 
 all: prod
 

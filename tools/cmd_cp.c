@@ -16,19 +16,19 @@
 
 #include "dplsh.h"
 
-int cmd_copy(int argc, char **argv);
+int cmd_cp(int argc, char **argv);
 
-struct usage_def copy_usage[] =
+struct usage_def cp_usage[] =
   {
     {USAGE_NO_OPT, USAGE_MANDAT, "local_file", "local file"},
     {USAGE_NO_OPT, USAGE_MANDAT, "remote_file", "remote file"},
     {0, 0u, NULL, NULL},
   };
 
-struct cmd_def copy_cmd = {"copy", "server side copy", copy_usage, cmd_copy};
+struct cmd_def cp_cmd = {"cp", "server side copy", cp_usage, cmd_cp};
 
 int
-cmd_copy(int argc,
+cmd_cp(int argc,
            char **argv)
 {
   int ret;
@@ -40,12 +40,12 @@ cmd_copy(int argc,
   
   optind = 0;
 
-  while ((opt = getopt(argc, argv, usage_getoptstr(copy_usage))) != -1)
+  while ((opt = getopt(argc, argv, usage_getoptstr(cp_usage))) != -1)
     switch (opt)
       {
       case '?':
       default:
-        usage_help(&copy_cmd);
+        usage_help(&cp_cmd);
         exit(1);
       }
   argc -= optind;
@@ -53,7 +53,7 @@ cmd_copy(int argc,
 
   if (2 != argc)
     {
-      usage_help(&copy_cmd);
+      usage_help(&cp_cmd);
       goto end;
     }
 

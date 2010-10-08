@@ -61,26 +61,6 @@ var_set_hash(char *value)
 }
 
 char *
-var_set_bucket(char *value)
-{
-  if (NULL != ctx->cur_bucket)
-    free(ctx->cur_bucket);
-  ctx->cur_bucket = xstrdup(value);
-  return xstrdup(value);
-}
-
-char *
-var_set_pwd(char *value)
-{
-  int ret;
-
-  ret = dpl_chdir(ctx, value);
-  if (DPL_SUCCESS != ret)
-    return NULL;
-  return xstrdup(value);
-}
-
-char *
 var_set_delim(char *value)
 {
   free(ctx->delim);
@@ -166,14 +146,8 @@ main(int argc,
   var_set("block_size", "8192", VAR_CMD_SET, NULL);
   var_set("hash", NULL, VAR_CMD_SET_SPECIAL, var_set_hash);
   var_set("hash", "1", VAR_CMD_SET, NULL);
-  var_set("bucket", NULL, VAR_CMD_SET_SPECIAL, var_set_bucket);
-  var_set("bucket", "", VAR_CMD_SET, NULL);
-  //var_set("pwd", NULL, VAR_CMD_SET_SPECIAL, var_set_pwd);
-  //var_set("pwd", "/", VAR_CMD_SET, NULL);
   var_set("delim", NULL, VAR_CMD_SET_SPECIAL, var_set_delim);
   var_set("delim", DPL_DEFAULT_DELIM, VAR_CMD_SET, NULL);
-
-  ctx->cur_ino = DPL_ROOT_INO;
 
   vars_load();
 

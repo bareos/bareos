@@ -55,12 +55,12 @@ typedef struct
 /* PROTO droplet_vfile.c */
 /* src/droplet_vfile.c */
 dpl_status_t dpl_close(dpl_vfile_t *vfile);
-dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, char *path, u_int flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, u_int data_len, dpl_vfile_t **vfilep);
+dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, char *locator, u_int flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, u_int data_len, dpl_vfile_t **vfilep);
 dpl_status_t dpl_write(dpl_vfile_t *vfile, char *buf, u_int len);
-dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *path, u_int flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap);
-dpl_status_t dpl_unlink(dpl_ctx_t *ctx, char *path);
-dpl_status_t dpl_getattr(dpl_ctx_t *ctx, char *path, dpl_dict_t **metadatap);
-dpl_status_t dpl_setattr(dpl_ctx_t *ctx, char *path, dpl_dict_t *metadata);
-dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, char *src_path, char *dst_path);
-dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, char *path, time_t expires, char *buf, u_int len, u_int *lenp);
+dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *locator, u_int flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap);
+dpl_status_t dpl_unlink(dpl_ctx_t *ctx, char *locator);
+dpl_status_t dpl_getattr(dpl_ctx_t *ctx, char *locator, dpl_dict_t **metadatap);
+dpl_status_t dpl_setattr(dpl_ctx_t *ctx, char *locator, dpl_dict_t *metadata);
+dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, char *locator, time_t expires, char *buf, u_int len, u_int *lenp);
+dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, char *src_locator, char *dst_locator);
 #endif
