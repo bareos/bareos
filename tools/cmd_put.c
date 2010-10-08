@@ -97,8 +97,29 @@ cmd_put(int argc,
 
   if (2 == argc)
     {
+      char *p, *p2;
+      
       local_file = argv[0];
       remote_file = argv[1];      
+      
+      p = index(remote_file, ':');
+      if (NULL != p)
+        {
+          p++;
+          if (!strcmp(p, ""))
+            {
+              p2 = rindex(local_file, '/');
+              if (NULL != p2)
+                {
+                  p2++;
+                  strcat(remote_file, p2);
+                }
+              else
+                {
+                  strcat(remote_file, local_file);
+                }
+            }
+        }
     }
   else if (1 == argc)
     {

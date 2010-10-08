@@ -576,9 +576,6 @@ dpl_namei(dpl_ctx_t *ctx,
   dpl_ftype_t obj_type;
   int delim_len = strlen(ctx->delim);
 
-  if (NULL == bucket)
-    return DPL_EINVAL;
-
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "namei path=%s bucket=%s ino=%s", path, bucket, ino.key);
 
   p1 = path;
@@ -673,18 +670,11 @@ dpl_cwd(dpl_ctx_t *ctx,
   dpl_var_t *var;
   dpl_ino_t cwd;
 
-  if (NULL == bucket)
-    {
-      cwd = DPL_ROOT_INO;
-    }
+  var = dpl_dict_get(ctx->cwds, bucket);
+  if (NULL != var)
+    strcpy(cwd.key, var->value); //XXX check overflow
   else
-    {
-      var = dpl_dict_get(ctx->cwds, bucket);
-      if (NULL != var)
-        strcpy(cwd.key, var->value); //XXX check overflow
-      else
-        cwd = DPL_ROOT_INO;
-    }
+    cwd = DPL_ROOT_INO;
   
   return cwd;
 }
@@ -835,7 +825,7 @@ dpl_chdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  if (NULL == ctx->cur_bucket || strcmp(bucket, ctx->cur_bucket))
+  if (strcmp(bucket, ctx->cur_bucket))
     {
       nbucket = strdup(bucket);
       if (NULL == nbucket)
@@ -843,8 +833,7 @@ dpl_chdir(dpl_ctx_t *ctx,
           ret = DPL_ENOMEM;
           goto end;
         }
-      if (NULL != ctx->cur_bucket)
-        free(ctx->cur_bucket);
+      free(ctx->cur_bucket);
       ctx->cur_bucket = nbucket;
     }
 

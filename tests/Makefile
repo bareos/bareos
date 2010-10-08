@@ -70,15 +70,15 @@ DPLTESTBUCKET2=droplettest02
 test: $(DPLTOOLSDIR)/dplsh
 	$(RM) dpltest.tmp dpltest.tmp2
 	@echo make bucket
-	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "mb $(DPLTESTBUCKET1);$(DPLTESTBUCKET1):"
+	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "mb $(DPLTESTBUCKET1)"
 	@echo put file
 	dd if=/dev/urandom of=dpltest.tmp bs=1M count=1
-	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "put -mfoo=bar dpltest.tmp"
+	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "put -mfoo=bar dpltest.tmp $(DPLTESTBUCKET1):"
 	@echo get file
-	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "get dpltest.tmp dpltest.tmp2"
+	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "get $(DPLTESTBUCKET1):dpltest.tmp dpltest.tmp2"
 	diff dpltest.tmp dpltest.tmp2
 	@echo list bucket
-	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "rm dpltest.tmp"
+	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "rm $(DPLTESTBUCKET1):dpltest.tmp"
 	@echo remove bucket
 	$(VALGRIND) $(DPLTOOLSDIR)/dplsh -e "rb $(DPLTESTBUCKET1)"
 

@@ -59,6 +59,22 @@ cmd_cp(int argc,
 
   src_path = argv[0];
   dst_path = argv[1];      
+
+  if (!strcmp(dst_path, "."))
+    {
+      char *p;
+      
+      p = rindex(src_path, '/');
+      if (NULL != p)
+        {
+          p++;
+          dst_path = p;
+        }
+      else
+        {
+          dst_path = src_path;
+        }
+    }
   
   ret = dpl_fcopy(ctx, src_path, dst_path);
   if (DPL_SUCCESS != ret)

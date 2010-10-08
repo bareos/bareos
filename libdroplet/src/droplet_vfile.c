@@ -279,7 +279,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_put_buffered(ctx,
-                          ctx->cur_bucket,
+                          bucket,
                           obj_ino.key,
                           NULL,
                           metadata,
@@ -547,7 +547,7 @@ dpl_openread(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_get_buffered(ctx,
-                          ctx->cur_bucket,
+                          bucket,
                           obj_ino.key,
                           NULL, 
                           condition,

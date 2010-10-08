@@ -553,6 +553,13 @@ dpl_profile_post(dpl_ctx_t *ctx)
       goto end;
     }
 
+  ctx->cur_bucket = strdup("");
+  if (NULL == ctx->cur_bucket)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
   ret = DPL_SUCCESS;
   
  end:
