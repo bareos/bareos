@@ -384,6 +384,12 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
       goto bad;
     }
 
+  if (!hresult)
+    {
+      DPLERR(0, "Invalid hostname");
+      goto bad;
+    }
+
   if (AF_INET != hresult->h_addrtype)
     {
       DPLERR(0, "bad addr family");
