@@ -21,6 +21,9 @@ int cmd_get(int argc, char **argv);
 struct usage_def get_usage[] =
   {
     {'k', 0u, NULL, "encrypt file"},
+    {'s', USAGE_PARAM, "start", "range start offset"},
+    {'e', USAGE_PARAM, "end", "range end offset"},
+    {'m', 0u, NULL, "print metadata"},
     {USAGE_NO_OPT, USAGE_MANDAT, "path", "remote file"},
     {USAGE_NO_OPT, 0u, "local_file or - or |cmd", "local file"},
     {0, 0u, NULL, NULL},
@@ -76,6 +79,13 @@ cb_get_buffered(void *cb_arg,
   return ret;
 }
 
+static void
+cb_print_metadata(dpl_var_t *var,
+                  void *cb_arg)
+{
+  fprintf(stderr, "%s=%s\n", var->key, var->value);
+}
+
 int
 cmd_get(int argc,
         char **argv)
@@ -88,6 +98,11 @@ cmd_get(int argc,
   int do_stdout = 0;
   int kflag = 0;
   char *local_file = NULL;
+  int start = -1;
+  int start_inited = 0;
+  int end = -1;
+  int end_inited = 0;
+  int mflag = 0;
 
   memset(&get_data, 0, sizeof (get_data));
   get_data.fd = -1;
@@ -99,6 +114,17 @@ cmd_get(int argc,
   while ((opt = getopt(argc, argv, usage_getoptstr(get_usage))) != -1)
     switch (opt)
       {
+      case 'm':
+        mflag = 1;
+        break ;
+      case 's':
+        start = strtol(optarg, NULL, 0);
+        start_inited = 1;
+        break ;
+      case 'e':
+        end = strtol(optarg, NULL, 0);
+        end_inited = 1;
+        break ;
       case 'k':
         kflag = 1;
         break ;
@@ -109,6 +135,12 @@ cmd_get(int argc,
       }
   argc -= optind;
   argv += optind;
+
+  if (start_inited != end_inited)
+    {
+      fprintf(stderr, "please provide -s and -e\n");
+      return SHELL_CONT;
+    }
 
   if (2 == argc)
     {
@@ -161,11 +193,37 @@ cmd_get(int argc,
         }
     }
 
-  ret = dpl_openread(ctx, path, (1 == kflag ? DPL_VFILE_FLAG_ENCRYPT : 0u), NULL, cb_get_buffered, &get_data, &metadata);
-  if (DPL_SUCCESS != ret)
+  if (1 == start_inited && 1 == end_inited)
     {
-      fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);
-      goto end;
+      char *data_buf;
+      u_int data_len;
+
+      ret = dpl_openread_range(ctx, path, (1 == kflag ? DPL_VFILE_FLAG_ENCRYPT : 0u), NULL, start, end, &data_buf, &data_len, &metadata);
+      if (DPL_SUCCESS != ret)
+        {
+          fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);
+          goto end;
+        }
+      ret = write_all(get_data.fd, data_buf, data_len);
+      free(data_buf);
+      if (0 != ret)
+        {
+          fprintf(stderr, "short write\n");
+          goto end;
+        }
+      if (1 == mflag)
+        dpl_dict_iterate(metadata, cb_print_metadata, NULL);
+    }
+  else
+    {
+      ret = dpl_openread(ctx, path, (1 == kflag ? DPL_VFILE_FLAG_ENCRYPT : 0u), NULL, cb_get_buffered, &get_data, &metadata);
+      if (DPL_SUCCESS != ret)
+        {
+          fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);
+          goto end;
+        }
+      if (1 == mflag)
+        dpl_dict_iterate(metadata, cb_print_metadata, NULL);
     }
   
   var_set("status", "0", VAR_CMD_SET, NULL);

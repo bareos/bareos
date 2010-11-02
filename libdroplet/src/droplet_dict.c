@@ -178,6 +178,19 @@ dpl_dict_free(dpl_dict_t *dict)
   free(dict);
 }
 
+static void
+cb_var_print(dpl_var_t *var,
+             void *arg)
+{
+  fprintf(stderr, "%s=%s\n", var->key, var->value);
+}
+
+void
+dpl_dict_print(dpl_dict_t *dict)
+{
+  dpl_dict_iterate(dict, cb_var_print, NULL);
+}
+
 dpl_status_t
 dpl_dict_add(dpl_dict_t *dict,
              char *key,

@@ -43,6 +43,7 @@ char *dpl_dict_get_value(dpl_dict_t *dict, char *key);
 void dpl_dict_iterate(dpl_dict_t *dict, dpl_dict_func_t cb_func, void *cb_arg);
 int dpl_dict_count(dpl_dict_t *dict);
 void dpl_dict_free(dpl_dict_t *dict);
+void dpl_dict_print(dpl_dict_t *dict);
 dpl_status_t dpl_dict_add(dpl_dict_t *dict, char *key, char *value, int lowered);
 void dpl_dict_remove(dpl_dict_t *dict, dpl_var_t *var);
 #endif

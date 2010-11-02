@@ -574,6 +574,86 @@ dpl_openread(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
+dpl_openread_range(dpl_ctx_t *ctx,
+                   char *locator,
+                   u_int flags,
+                   dpl_condition_t *condition,
+                   int start, 
+                   int end,
+                   char **data_bufp,
+                   u_int *data_lenp,
+                   dpl_dict_t **metadatap)
+{
+  int ret, ret2;
+  dpl_ino_t parent_ino, obj_ino;
+  dpl_ftype_t obj_type;
+  char *nlocator = NULL;
+  char *bucket, *path;
+  dpl_ino_t cur_ino;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "openread locator=%s flags=0x%x", locator, flags);
+
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      bucket = nlocator;
+      *path++ = 0;
+    }
+  else
+    {
+      bucket = ctx->cur_bucket;
+      path = nlocator;
+    }
+
+  cur_ino = dpl_cwd(ctx, bucket);
+
+  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  if (DPL_FTYPE_REG != obj_type)
+    {
+      ret = DPL_EISDIR;
+      goto end;
+    }
+
+  ret2 = dpl_get_range(ctx,
+                       bucket,
+                       obj_ino.key,
+                       NULL, 
+                       condition,
+                       start, 
+                       end,
+                       data_bufp,
+                       data_lenp,
+                       metadatap);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != nlocator)
+    free(nlocator);
+
+  return ret;
+}
+
+dpl_status_t
 dpl_unlink(dpl_ctx_t *ctx,
            char *locator)
 {

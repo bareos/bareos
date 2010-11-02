@@ -25,10 +25,11 @@ struct dpl_http_reply
 #define DPL_HTTP_VERSION_1_0        0
 #define DPL_HTTP_VERSION_1_1        1
   int	version;
-#define DPL_HTTP_CODE_CONTINUE      100
-#define DPL_HTTP_CODE_OK	    200
-#define DPL_HTTP_CODE_NO_CONTENT    204
-#define DPL_HTTP_CODE_NOT_FOUND     404
+#define DPL_HTTP_CODE_CONTINUE        100
+#define DPL_HTTP_CODE_OK	      200
+#define DPL_HTTP_CODE_NO_CONTENT      204
+#define DPL_HTTP_CODE_PARTIAL_CONTENT 206
+#define DPL_HTTP_CODE_NOT_FOUND       404
   int	code;
   char	*descr_start;
   char	*descr_end;
