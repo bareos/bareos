@@ -45,6 +45,7 @@ typedef struct
   /*
    * read
    */
+  dpl_dict_t *headers_reply;
   dpl_buffer_func_t buffer_func;
   void *cb_arg;
 

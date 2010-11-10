@@ -1553,9 +1553,10 @@ dpl_get_range(dpl_ctx_t *ctx,
 
 struct get_conven
 {
-  dpl_dict_t *headers_reply;
+  dpl_header_func_t header_func;
   dpl_buffer_func_t buffer_func;
   void *cb_arg;
+  int connection_close;
 };
 
 static dpl_status_t
@@ -1565,18 +1566,20 @@ cb_get_header(void *cb_arg,
 {
   struct get_conven *gc = (struct get_conven *) cb_arg;
   int ret;
-  
-  if (NULL == gc->headers_reply)
+
+  if (NULL != gc->header_func)
     {
-      gc->headers_reply = dpl_dict_new(13);
-      if (NULL == gc->headers_reply)
-        return DPL_ENOMEM;
+      ret = gc->header_func(gc->cb_arg, header, value);
+      if (DPL_SUCCESS != ret)
+        return ret;
     }
 
-  ret = dpl_dict_add(gc->headers_reply, header, value, 1);
-  if (DPL_SUCCESS != ret)
-    return DPL_ENOMEM;
-
+  if (!strcasecmp(header, "connection"))
+    {
+      if (!strcasecmp(value, "close"))
+        gc->connection_close = 1;
+    }
+  
   return DPL_SUCCESS;
 }
 
@@ -1604,9 +1607,9 @@ dpl_get_buffered(dpl_ctx_t *ctx,
                  char *resource,
                  char *subresource,
                  dpl_condition_t *condition,
+                 dpl_header_func_t header_func,
                  dpl_buffer_func_t buffer_func,
-                 void *cb_arg,
-                 dpl_dict_t **metadatap)
+                 void *cb_arg)
 {
   char          *host;
   int           ret, ret2;
@@ -1615,15 +1618,14 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
-  int           connection_close = 0;
   dpl_dict_t    *headers_request = NULL;
-  dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
   struct get_conven gc;
 
   DPL_TRACE(ctx, DPL_TRACE_CONV, "get_buffered bucket=%s resource=%s", bucket, resource);
 
   memset(&gc, 0, sizeof (gc));
+  gc.header_func = header_func;
   gc.buffer_func = buffer_func;
   gc.cb_arg = cb_arg;
 
@@ -1663,13 +1665,6 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   if (NULL != condition)
     {
       dpl_req_set_condition(req, condition);
-    }
-
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
     }
 
   //build request
@@ -1714,7 +1709,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(1, "writev failed");
-      connection_close = 1;
+      gc.connection_close = 1;
       ret = DPL_ENOENT; //mapped to 404
       goto end;
     }
@@ -1730,30 +1725,13 @@ dpl_get_buffered(dpl_ctx_t *ctx,
       else
         {
           DPLERR(0, "read http answer failed");
-          connection_close = 1;
+          gc.connection_close = 1;
           ret = DPL_ENOENT; //mapped to 404
           goto end;
         }
     }
 
-  connection_close = dpl_connection_close(gc.headers_reply);
-  
-  ret2 = dpl_get_metadata_from_headers(gc.headers_reply, metadata);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
   //caller is responsible for logging the event
-
-  //dpl_dict_print(gc.headers_reply);
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL; //consume it
-    }
 
   ret = DPL_SUCCESS;
 
@@ -1761,17 +1739,11 @@ dpl_get_buffered(dpl_ctx_t *ctx,
 
   if (NULL != conn)
     {
-      if (1 == connection_close)
+      if (1 == gc.connection_close)
         dpl_conn_terminate(conn);
       else
         dpl_conn_release(conn);
     }
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
-  if (NULL != gc.headers_reply)
-    dpl_dict_free(gc.headers_reply);
 
   if (NULL != headers_request)
     dpl_dict_free(headers_request);

@@ -85,6 +85,9 @@ dpl_close(dpl_vfile_t *vfile)
         EVP_CIPHER_CTX_free(vfile->cipher_ctx);
     }
 
+  if (NULL != vfile->headers_reply)
+    dpl_dict_free(vfile->headers_reply);
+
   free(vfile);
 
   if (NULL != headers_returned)
@@ -429,6 +432,38 @@ dpl_write(dpl_vfile_t *vfile,
 /**/
 
 static dpl_status_t
+cb_vfile_header(void *cb_arg,
+                char *header,
+                char *value)
+{
+  dpl_vfile_t *vfile = (dpl_vfile_t *) cb_arg;
+  int ret, ret2;
+
+  ret2 = dpl_dict_add(vfile->headers_reply, header, value, 1);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+  
+  if (!strcmp(header, "x-amz-meta-cipher"))
+    {
+      if (!strcmp(value, "yes"))
+        {
+          vfile->flags |= DPL_VFILE_FLAG_ENCRYPT;
+        }
+    }
+  
+  //XXX check cipher-type
+  
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
+}
+
+static dpl_status_t
 cb_vfile_buffer(void *cb_arg,
                 char *buf,
                 u_int len)
@@ -524,7 +559,8 @@ dpl_openread(dpl_ctx_t *ctx,
   char *nlocator = NULL;
   char *bucket, *path;
   dpl_ino_t cur_ino;
-
+  dpl_dict_t *metadata = NULL;
+  
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "openread locator=%s flags=0x%x", locator, flags);
 
   nlocator = strdup(locator);
@@ -557,6 +593,13 @@ dpl_openread(dpl_ctx_t *ctx,
 
   memset(vfile, 0, sizeof (*vfile));
 
+  vfile->headers_reply = dpl_dict_new(13);
+  if (NULL == vfile->headers_reply)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
   vfile->ctx = ctx;
   vfile->flags = flags;
   vfile->buffer_func = buffer_func;
@@ -580,13 +623,33 @@ dpl_openread(dpl_ctx_t *ctx,
                           obj_ino.key,
                           NULL, 
                           condition,
+                          cb_vfile_header,
                           cb_vfile_buffer,
-                          vfile,
-                          metadatap);
+                          vfile);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
+    }
+
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  ret2 = dpl_get_metadata_from_headers(vfile->headers_reply, metadata);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
     }
 
   ret = DPL_SUCCESS;
@@ -598,6 +661,9 @@ dpl_openread(dpl_ctx_t *ctx,
 
   if (NULL != nlocator)
     free(nlocator);
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
 
   return ret;
 }
