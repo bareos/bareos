@@ -60,8 +60,8 @@ typedef struct dpl_conn
   BIO *bio;
 } dpl_conn_t;
 
-/* PROTO droplet_conn.c */
-/* src/droplet_conn.c */
+/* PROTO conn.c */
+/* src/conn.c */
 dpl_conn_t *dpl_conn_open(dpl_ctx_t *ctx, struct in_addr addr, u_int port);
 dpl_conn_t *dpl_conn_open_host(dpl_ctx_t *ctx, char *host, u_int port);
 void dpl_conn_release(dpl_conn_t *conn);

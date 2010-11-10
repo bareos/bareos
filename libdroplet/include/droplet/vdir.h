@@ -44,8 +44,8 @@ typedef struct
   size_t size;
 } dpl_dirent_t;
 
-/* PROTO droplet_vdir.c */
-/* src/droplet_vdir.c */
+/* PROTO vdir.c */
+/* src/vdir.c */
 dpl_status_t dpl_iname(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, char *path, u_int path_len);
 dpl_status_t dpl_namei(dpl_ctx_t *ctx, char *path, char *bucket, dpl_ino_t ino, dpl_ino_t *parent_inop, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
 dpl_ino_t dpl_cwd(dpl_ctx_t *ctx, char *bucket);

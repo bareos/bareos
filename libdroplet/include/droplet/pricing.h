@@ -160,8 +160,8 @@ struct dpl_parse_ctx
 
 }; 
 
-/* PROTO droplet_pricing.c */
-/* src/droplet_pricing.c */
+/* PROTO pricing.c */
+/* src/pricing.c */
 enum dpl_tok identifier(char *str);
 struct dpl_request_pricing *request_pricing_new(void);
 void dpl_request_pricing_free(struct dpl_request_pricing *reqp);

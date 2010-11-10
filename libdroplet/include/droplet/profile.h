@@ -17,8 +17,8 @@
 #ifndef __DROPLET_PROFILE_H__
 #define __DROPLET_PROFILE_H__ 1
 
-/* PROTO droplet_profile.c */
-/* src/droplet_profile.c */
+/* PROTO profile.c */
+/* src/profile.c */
 struct dpl_conf_ctx *dpl_conf_new(dpl_conf_cb_func_t cb_func, void *cb_arg);
 void dpl_conf_free(struct dpl_conf_ctx *ctx);
 dpl_status_t dpl_conf_parse(struct dpl_conf_ctx *ctx, char *buf, int len);

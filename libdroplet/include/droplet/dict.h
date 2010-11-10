@@ -34,8 +34,8 @@ typedef struct
   u_int n_buckets;
 } dpl_dict_t;
 
-/* PROTO droplet_dict.c */
-/* src/droplet_dict.c */
+/* PROTO dict.c */
+/* src/dict.c */
 dpl_dict_t *dpl_dict_new(int n_buckets);
 dpl_var_t *dpl_dict_get(dpl_dict_t *dict, char *key);
 dpl_status_t dpl_dict_get_lowered(dpl_dict_t *dict, char *key, dpl_var_t **varp);

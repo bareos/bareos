@@ -25,8 +25,8 @@ typedef struct
   int n_items;
 } dpl_vec_t;
 
-/* PROTO droplet_vec.c */
-/* src/droplet_vec.c */
+/* PROTO vec.c */
+/* src/vec.c */
 dpl_vec_t *dpl_vec_new(int init_size, int incr_size);
 dpl_status_t dpl_vec_add(dpl_vec_t *vec, void *item);
 void dpl_vec_free(dpl_vec_t *vec);

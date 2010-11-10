@@ -17,8 +17,8 @@
 #ifndef __DROPLET_CONVERTERS_H__
 #define __DROPLET_CONVERTERS_H__ 1
 
-/* PROTO droplet_converters.c */
-/* src/droplet_converters.c */
+/* PROTO converters.c */
+/* src/converters.c */
 dpl_method_t dpl_method(char *str);
 char *dpl_method_str(dpl_method_t method);
 dpl_location_constraint_t dpl_location_constraint(char *str);

@@ -17,8 +17,8 @@
 #ifndef __DROPLET_REQBUILDER_H__
 #define __DROPLET_REQBUILDER_H__ 1
 
-/* PROTO droplet_reqbuilder.c */
-/* src/droplet_reqbuilder.c */
+/* PROTO reqbuilder.c */
+/* src/reqbuilder.c */
 void dpl_req_free(dpl_req_t *req);
 dpl_req_t *dpl_req_new(dpl_ctx_t *ctx);
 void dpl_req_set_method(dpl_req_t *req, dpl_method_t method);

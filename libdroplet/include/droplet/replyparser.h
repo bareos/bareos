@@ -17,8 +17,8 @@
 #ifndef __DROPLET_REPLYPARSER_H__
 #define __DROPLET_REPLYPARSER_H__ 1
 
-/* PROTO droplet_replyparser.c */
-/* src/droplet_replyparser.c */
+/* PROTO replyparser.c */
+/* src/replyparser.c */
 dpl_status_t dpl_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
 void dpl_bucket_free(dpl_bucket_t *bucket);
 void dpl_vec_buckets_free(dpl_vec_t *vec);

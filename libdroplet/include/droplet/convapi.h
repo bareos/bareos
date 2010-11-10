@@ -17,8 +17,8 @@
 #ifndef __DROPLET_CONVAPI_H__
 #define __DROPLET_CONVAPI_H__ 1
 
-/* PROTO droplet_convapi.c */
-/* src/droplet_convapi.c */
+/* PROTO convapi.c */
+/* src/convapi.c */
 dpl_status_t dpl_list_all_my_buckets(dpl_ctx_t *ctx, dpl_vec_t **vecp);
 dpl_status_t dpl_list_bucket(dpl_ctx_t *ctx, char *bucket, char *prefix, char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
 dpl_status_t dpl_make_bucket(dpl_ctx_t *ctx, char *bucket, dpl_location_constraint_t location_constraint, dpl_canned_acl_t canned_acl);

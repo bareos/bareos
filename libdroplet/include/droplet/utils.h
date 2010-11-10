@@ -189,8 +189,8 @@ struct dpl_conf_ctx
 
 #define DPL_TRACE(ctx, level, format, ...) do {if (ctx->trace_level & level) dpl_trace(ctx, level, __FILE__, __LINE__, format, ##__VA_ARGS__  );} while (0)
 
-/* PROTO droplet_utils.c */
-/* src/droplet_utils.c */
+/* PROTO utils.c */
+/* src/utils.c */
 pid_t gettid(void);
 int linux_gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
 void dpl_dump_init(struct dpl_dump_ctx *ctx);

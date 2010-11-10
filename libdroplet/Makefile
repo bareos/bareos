@@ -77,3 +77,4 @@ clean:
 fproto:
 	touch $(SRCDIR)/*.c
 	$(DO_PROTO) $(INCS) -P$(SRCDIR) $(INCDIR)/*.h 
+	$(DO_PROTO) $(INCS) -P$(SRCDIR) $(INCDIR)/droplet/*.h 
