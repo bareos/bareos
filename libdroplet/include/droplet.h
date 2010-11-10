@@ -74,8 +74,8 @@ typedef int dpl_status_t;
 
 typedef void (*dpl_trace_func_t)(pid_t tid, u_int level, char *file, int lineno, char *buf);
 
-#include <droplet_vec.h>
-#include <droplet_dict.h>
+#include <droplet/vec.h>
+#include <droplet/dict.h>
 
 typedef enum
   {
@@ -295,14 +295,14 @@ typedef struct
 /*
  * public functions
  */
-#include <droplet_conn.h>
-#include <droplet_converters.h>
-#include <droplet_reqbuilder.h>
-#include <droplet_httpreply.h>
-#include <droplet_replyparser.h>
-#include <droplet_conven.h>
-#include <droplet_vdir.h>
-#include <droplet_vfile.h>
+#include <droplet/conn.h>
+#include <droplet/converters.h>
+#include <droplet/reqbuilder.h>
+#include <droplet/httpreply.h>
+#include <droplet/replyparser.h>
+#include <droplet/convapi.h>
+#include <droplet/vdir.h>
+#include <droplet/vfile.h>
 
 /* PROTO droplet.c */
 /* src/droplet.c */

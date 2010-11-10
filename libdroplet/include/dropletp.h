@@ -44,9 +44,9 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <fcntl.h>
-#include <droplet_utils.h>
-#include <droplet_profile.h>
-#include <droplet_httpreply.h>
-#include <droplet_pricing.h>
+#include <droplet/utils.h>
+#include <droplet/profile.h>
+#include <droplet/httpreply.h>
+#include <droplet/pricing.h>
 
 #endif

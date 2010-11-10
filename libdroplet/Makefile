@@ -27,19 +27,19 @@ EXTRA_OBJS :=
 endif
 
 OBJS = \
-$(OBJDIR)/droplet_conn.o \
-$(OBJDIR)/droplet_vec.o \
-$(OBJDIR)/droplet_dict.o \
-$(OBJDIR)/droplet_converters.o \
-$(OBJDIR)/droplet_reqbuilder.o \
-$(OBJDIR)/droplet_httpreply.o \
-$(OBJDIR)/droplet_replyparser.o \
-$(OBJDIR)/droplet_utils.o \
-$(OBJDIR)/droplet_conven.o \
-$(OBJDIR)/droplet_profile.o \
-$(OBJDIR)/droplet_pricing.o \
-$(OBJDIR)/droplet_vdir.o \
-$(OBJDIR)/droplet_vfile.o \
+$(OBJDIR)/conn.o \
+$(OBJDIR)/vec.o \
+$(OBJDIR)/dict.o \
+$(OBJDIR)/converters.o \
+$(OBJDIR)/reqbuilder.o \
+$(OBJDIR)/httpreply.o \
+$(OBJDIR)/replyparser.o \
+$(OBJDIR)/utils.o \
+$(OBJDIR)/convapi.o \
+$(OBJDIR)/profile.o \
+$(OBJDIR)/pricing.o \
+$(OBJDIR)/vdir.o \
+$(OBJDIR)/vfile.o \
 $(OBJDIR)/droplet.o
 
 all: prod
