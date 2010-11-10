@@ -21,8 +21,9 @@ int cmd_ls(int argc, char **argv);
 struct usage_def ls_usage[] =
   {
     {'l', 0u, NULL, "long display"},
+    {'a', 0u, NULL, "ignored for now"},
     {'R', 0u, NULL, "recurse subdirectories"},
-    {'a', 0u, NULL, "list all files in the bucket (do not use vdir interface)"},
+    {'A', 0u, NULL, "list all files in the bucket (do not use vdir interface)"},
     {USAGE_NO_OPT, 0u, "path or bucket", "remote directory"},
     {0, 0u, NULL, NULL},
   };
@@ -171,6 +172,8 @@ cmd_ls(int argc,
         Rflag = 1;
         break ;
       case 'a':
+        break ;
+      case 'A':
         aflag = 1;
         break ;
       case 'l':

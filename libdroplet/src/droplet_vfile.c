@@ -161,6 +161,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
   char *bucket, *path;
   int delim_len = strlen(ctx->delim);
   dpl_ino_t cur_ino;
+  int own_metadata = 0;
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "openwrite locator=%s flags=0x%x", locator, flags);
 
@@ -276,6 +277,31 @@ dpl_openwrite(dpl_ctx_t *ctx,
           ret = ret2;
           goto end;
         }
+
+      if (NULL == metadata)
+        {
+          metadata = dpl_dict_new(13);
+          if (NULL == metadata)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+          own_metadata = 1;
+        }
+
+      ret2 = dpl_dict_add(metadata, "cipher", "yes", 1);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      ret2 = dpl_dict_add(metadata, "cipher-type", "aes-256-cfb", 1);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
 
   ret2 = dpl_put_buffered(ctx,
@@ -307,6 +333,9 @@ dpl_openwrite(dpl_ctx_t *ctx,
 
   if (NULL != nlocator)
     free(nlocator);
+
+  if (1 == own_metadata)
+    dpl_dict_free(metadata);
 
   return ret;
 }

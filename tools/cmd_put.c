@@ -83,7 +83,7 @@ cmd_put(int argc,
       case '?':
       default:
         usage_help(&put_cmd);
-        exit(1);
+      return SHELL_CONT;
       }
   argc -= optind;
   argv += optind;
@@ -149,7 +149,7 @@ cmd_put(int argc,
   if (-1 == ret)
     {
       perror("fstat");
-      exit(1);
+      return SHELL_CONT;
     }
 
   ret = dpl_openwrite(ctx, remote_file, DPL_VFILE_FLAG_CREAT | (1 == kflag ? DPL_VFILE_FLAG_ENCRYPT : DPL_VFILE_FLAG_MD5), metadata, canned_acl, st.st_size, &vfile);
