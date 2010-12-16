@@ -513,7 +513,7 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
                dpl_ino_t parent_ino,
                const char *obj_name)
 {
-  u_int n_entries;
+  u_int n_entries = 0;
   dpl_ino_t ino;
   int ret, ret2;
   int obj_name_len = strlen(obj_name);
