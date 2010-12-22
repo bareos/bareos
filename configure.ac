@@ -39,6 +39,7 @@ examples/Makefile
 libdroplet/Makefile
 tests/Makefile
 tools/Makefile
+droplet-1.0.pc
 ])
 AC_OUTPUT
 

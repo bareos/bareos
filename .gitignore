@@ -10,6 +10,7 @@ configure.in
 configure
 config.*
 depcomp
+droplet-1.0.pc
 install-sh
 missing
 stamp-h1
