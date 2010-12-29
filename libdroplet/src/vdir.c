@@ -231,17 +231,18 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-dpl_vdir_mkdir(dpl_ctx_t *ctx,
+dpl_vdir_mkgen(dpl_ctx_t *ctx,
                char *bucket,
                dpl_ino_t parent_ino,
-               const char *obj_name)
+               const char *obj_name,
+               const char *delim)
 {
   int ret, ret2;
   char resource[DPL_MAXPATHLEN];
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "mkdir bucket=%s parent_ino=%s name=%s", bucket, parent_ino.key, obj_name);
 
-  snprintf(resource, sizeof (resource), "%s%s%s", parent_ino.key, obj_name, ctx->delim);
+  snprintf(resource, sizeof (resource), "%s%s%s", parent_ino.key, obj_name, delim);
 
   ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, DPL_CANNED_ACL_PRIVATE, NULL, 0);
   if (DPL_SUCCESS != ret2)
@@ -257,6 +258,25 @@ dpl_vdir_mkdir(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "ret=%d", ret);
 
   return ret;
+}
+
+static dpl_status_t
+dpl_vdir_mkdir(dpl_ctx_t *ctx,
+               char *bucket,
+               dpl_ino_t parent_ino,
+               const char *obj_name)
+{
+  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, ctx->delim);
+}
+
+
+static dpl_status_t
+dpl_vdir_mknod(dpl_ctx_t *ctx,
+               char *bucket,
+               dpl_ino_t parent_ino,
+               const char *obj_name)
+{
+  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, "");
 }
 
 static dpl_status_t
@@ -854,9 +874,11 @@ dpl_chdir(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
-dpl_mkdir(dpl_ctx_t *ctx,
-          char *locator)
+
+static dpl_status_t
+dpl_mkgen(dpl_ctx_t *ctx,
+          char *locator,
+          dpl_status_t (*cb)(dpl_ctx_t *, char *, dpl_ino_t, const char *))
 {
   char *dir_name = NULL;
   dpl_ino_t parent_ino;
@@ -928,7 +950,7 @@ dpl_mkdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_vdir_mkdir(ctx, bucket, parent_ino, dir_name);
+  ret2 = cb(ctx, bucket, parent_ino, dir_name);
   if (0 != ret2)
     {
       DPLERR(0, "mkdir failed");
@@ -945,6 +967,22 @@ dpl_mkdir(dpl_ctx_t *ctx,
 
   return ret;
 }
+
+dpl_status_t
+dpl_mkdir(dpl_ctx_t *ctx,
+          char *locator)
+{
+  return dpl_mkgen(ctx, locator, dpl_vdir_mkdir);
+}
+
+
+dpl_status_t
+dpl_mknod(dpl_ctx_t *ctx,
+          char *locator)
+{
+  return dpl_mkgen(ctx, locator, dpl_vdir_mknod);
+}
+
 
 dpl_status_t
 dpl_rmdir(dpl_ctx_t *ctx,

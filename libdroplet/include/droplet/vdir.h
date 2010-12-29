@@ -55,5 +55,6 @@ int dpl_eof(void *dir_hdl);
 void dpl_closedir(void *dir_hdl);
 dpl_status_t dpl_chdir(dpl_ctx_t *ctx, char *locator);
 dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, char *locator);
+dpl_status_t dpl_mknod(dpl_ctx_t *ctx, char *locator);
 dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, char *locator);
 #endif
