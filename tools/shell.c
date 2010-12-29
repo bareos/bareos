@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -39,12 +39,12 @@ shell_error_str(enum shell_error err)
 
 static struct cmd_def **g_cmd_defs = NULL;
 
-/** 
+/**
  * for completion
- * 
- * @param defs 
+ *
+ * @param defs
  */
-void 
+void
 shell_install_cmd_defs(struct cmd_def **defs)
 {
   g_cmd_defs = defs;
@@ -85,7 +85,7 @@ shell_completion(const char *text,
                  int end)
 {
   char **matches;
-  
+
   if (NULL == g_cmd_defs)
     return NULL;
 
@@ -206,9 +206,9 @@ shell_do_cmd(struct cmd_def **defs,
  *
  * @return 0 if OK, -1 on failure
  */
-int	
+int
 shell_parse(struct cmd_def **defs,
-            char *str, 
+            char *str,
             enum shell_error *errp)
 {
   int i, pos, skip_ws, comment, dblquote, ret;
@@ -254,19 +254,19 @@ shell_parse(struct cmd_def **defs,
             }
 
 	  sargv[sargc] = &sargmem[sargc][0];
-	  
-	  if (!skip_ws) 
+
+	  if (!skip_ws)
 	    sargc++;
-	  
+
 	  sargv[sargc] = NULL;
-	  
+
 	  if (dblquote)
 	    {
 	      if (errp)
 		*errp = SHELL_ERROR_DBL_QUOTE;
 	      return -1;
 	    }
-	  
+
 	  if ((ret = shell_do_cmd(defs, sargc, sargv)) != SHELL_CONT)
 	    return ret;
 
@@ -311,7 +311,7 @@ shell_parse(struct cmd_def **defs,
               skip_ws = 1;
             }
           break ;
-          
+
         default:
 
           if (comment)
@@ -333,7 +333,7 @@ shell_parse(struct cmd_def **defs,
         }
       str++;
     }
-  
+
   return 0;
 }
 
@@ -351,16 +351,16 @@ shell_do(struct cmd_def **defs)
       cur_ino = dpl_cwd(ctx, ctx->cur_bucket);
 
       snprintf(prompt, sizeof (prompt), "%s:%s%s> ", ctx->cur_bucket, ctx->delim, cur_ino.key);
-      
+
       if ((line = readline(prompt)))
         {
           enum shell_error shell_err;
           int ret;
-          
+
           ret = shell_parse(defs, line, &shell_err);
           if (ret == SHELL_EPARSE)
             {
-              fprintf(stderr, 
+              fprintf(stderr,
                       "parsing: %s\n", shell_error_str(shell_err));
             }
           else if (ret == SHELL_RETURN)

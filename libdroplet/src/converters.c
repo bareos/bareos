@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -48,13 +48,13 @@ dpl_method_str(dpl_method_t method)
     case DPL_METHOD_HEAD:
       return "HEAD";
     }
-  
+
   return NULL;
 }
 
 /**/
 
-dpl_location_constraint_t 
+dpl_location_constraint_t
 dpl_location_constraint(char *str)
 {
   if (!strcasecmp(str, ""))
@@ -85,13 +85,13 @@ dpl_location_constraint_str(dpl_location_constraint_t location_constraint)
     case DPL_LOCATION_CONSTRAINT_AP_SOUTHEAST_1:
       return "ap-southeast-1";
     }
-  
+
   return NULL;
 }
 
 /**/
 
-dpl_canned_acl_t 
+dpl_canned_acl_t
 dpl_canned_acl(char *str)
 {
   if (!strcasecmp(str, "private"))
@@ -130,13 +130,13 @@ dpl_canned_acl_str(dpl_canned_acl_t canned_acl)
     case DPL_CANNED_ACL_BUCKET_OWNER_FULL_CONTROL:
       return "bucket-owner-full-control";
     }
-  
+
   return NULL;
 }
 
 /**/
 
-dpl_storage_class_t 
+dpl_storage_class_t
 dpl_storage_class(char *str)
 {
   if (!strcasecmp(str, "standard"))
@@ -159,7 +159,7 @@ dpl_storage_class_str(dpl_storage_class_t storage_class)
     case DPL_STORAGE_CLASS_REDUCED_REDUNDANCY:
       return "reduced_redundancy";
     }
-  
+
   return NULL;
 }
 
@@ -188,16 +188,16 @@ dpl_metadata_directive_str(dpl_metadata_directive_t metadata_directive)
     case DPL_METADATA_DIRECTIVE_REPLACE:
       return "REPLACE"; //case is important
     }
-  
+
   return NULL;
 }
 
-/** 
+/**
  * parse a string of the form metadata1=value1;metadata2=value2...
- * 
- * @param metadata 
- * 
- * @return 
+ *
+ * @param metadata
+ *
+ * @return
  */
 dpl_dict_t *
 dpl_parse_metadata(char *metadata)
@@ -207,11 +207,11 @@ dpl_parse_metadata(char *metadata)
   int ret;
   dpl_dict_t *dict;
   char *nmetadata;
-  
+
   nmetadata = strdup(metadata);
   if (NULL == nmetadata)
     return NULL;
-  
+
   dict = dpl_dict_new(13);
   if (NULL == dict)
     {
@@ -232,7 +232,7 @@ dpl_parse_metadata(char *metadata)
         p = "";
       else
         *p++ = 0;
-      
+
       ret = dpl_dict_add(dict, tok, p, 0);
       if (DPL_SUCCESS != ret)
         {
@@ -249,12 +249,12 @@ dpl_parse_metadata(char *metadata)
 
 /**/
 
-/** 
+/**
  * parse a string of the form query_params1=value1;query_params2=value2...
- * 
- * @param query_params 
- * 
- * @return 
+ *
+ * @param query_params
+ *
+ * @return
  */
 dpl_dict_t *
 dpl_parse_query_params(char *query_params)
@@ -264,11 +264,11 @@ dpl_parse_query_params(char *query_params)
   int ret;
   dpl_dict_t *dict;
   char *nquery_params;
-  
+
   nquery_params = strdup(query_params);
   if (NULL == nquery_params)
     return NULL;
-  
+
   dict = dpl_dict_new(13);
   if (NULL == dict)
     {
@@ -289,7 +289,7 @@ dpl_parse_query_params(char *query_params)
         p = "";
       else
         *p++ = 0;
-      
+
       ret = dpl_dict_add(dict, tok, p, 0);
       if (DPL_SUCCESS != ret)
         {

@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -50,7 +50,7 @@ do_readdir(void *dir_hdl)
 
   if (1 == dpl_eof(dir_hdl))
     return NULL;
-  
+
   ret = dpl_readdir(dir_hdl, &entry);
   if (DPL_SUCCESS != ret)
     {

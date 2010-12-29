@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -41,14 +41,14 @@ ls_recurse(struct ls_data *ls_data,
     {
       dpl_vec_t *objects = NULL;
       int i;
-      
+
       //raw listing
       ret = dpl_list_bucket(ctx, ctx->cur_bucket, NULL, NULL, &objects, NULL);
       if (DPL_SUCCESS != ret)
         {
           fprintf(stderr, "listbucket failure %s (%d)\n", dpl_status_str(ret), ret);
           return ret;
-        }      
+        }
 
       for (i = 0;i < objects->n_items;i++)
         {
@@ -59,7 +59,7 @@ ls_recurse(struct ls_data *ls_data,
               if (ls_data->lflag)
                 {
                   struct tm *stm;
-                  
+
                   stm = localtime(&obj->last_modified);
                   printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) obj->size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, obj->key);
                 }
@@ -68,7 +68,7 @@ ls_recurse(struct ls_data *ls_data,
                   printf("%s\n", obj->key);
                 }
             }
-          
+
           ls_data->total_size += obj->size;
         }
 
@@ -86,11 +86,11 @@ ls_recurse(struct ls_data *ls_data,
           ret = dpl_chdir(ctx, dir);
           if (DPL_SUCCESS != ret)
             return ret;
-          
+
           cur_ino = dpl_cwd(ctx, ctx->cur_bucket);
 
           printf("%s%s%s:\n", 0 == level ? "" : "\n", ctx->delim, cur_ino.key);
-          
+
           ret = dpl_opendir(ctx, ".", &dir_hdl);
           if (DPL_SUCCESS != ret)
             return ret;
@@ -101,7 +101,7 @@ ls_recurse(struct ls_data *ls_data,
           if (DPL_SUCCESS != ret)
             return ret;
         }
-      
+
       while (!dpl_eof(dir_hdl))
         {
           ret = dpl_readdir(dir_hdl, &entry);
@@ -113,7 +113,7 @@ ls_recurse(struct ls_data *ls_data,
               if (ls_data->lflag)
                 {
                   struct tm *stm;
-                  
+
                   stm = localtime(&entry.last_modified);
                   printf("%12llu %04d-%02d-%02d %02d:%02d %s\n", (unsigned long long) entry.size, 1900 + stm->tm_year, 1 + stm->tm_mon, stm->tm_mday, stm->tm_hour, stm->tm_min, entry.name);
                 }
@@ -122,11 +122,11 @@ ls_recurse(struct ls_data *ls_data,
                   printf("%s\n", entry.name);
                 }
             }
-          
+
           ls_data->total_size += entry.size;
-          
+
           if (1 == ls_data->Rflag &&
-              strcmp(entry.name, ".") && 
+              strcmp(entry.name, ".") &&
               (DPL_FTYPE_DIR == entry.type))
             {
               ret = ls_recurse(ls_data, entry.name, level + 1);
@@ -134,9 +134,9 @@ ls_recurse(struct ls_data *ls_data,
                 return ret;
             }
         }
-      
+
       dpl_closedir(dir_hdl);
-      
+
       if (1 == ls_data->Rflag && level > 0)
         {
           ret = dpl_chdir(ctx, "..");
@@ -202,14 +202,14 @@ cmd_ls(int argc,
   ls_data.lflag = lflag;
   ls_data.Rflag = Rflag;
   ls_data.aflag = aflag;
-  
+
   ret = ls_recurse(&ls_data, path, 0);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "ls failure %s (%d)\n", dpl_status_str(ret), ret);
       goto end;
     }
-  
+
   total_size = ls_data.total_size;
 
   if (1 == lflag)

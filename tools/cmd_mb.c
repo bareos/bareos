@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -42,12 +42,12 @@ cmd_mb(int argc,
   int Aflag = 0;
   int i;
   dpl_location_constraint_t location_constraint = DPL_LOCATION_CONSTRAINT_US_STANDARD;
-  int Lflag = 0;  
+  int Lflag = 0;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
 
   optind = 0;
-  
+
   while ((opt = getopt(argc, argv, usage_getoptstr(mb_usage))) != -1)
     switch (opt)
       {
@@ -94,13 +94,13 @@ cmd_mb(int argc,
         printf("%s\n", dpl_location_constraint_str(i));
       return SHELL_CONT;
     }
-  
+
   if (1 != argc)
     {
       usage_help(&mb_cmd);
       return SHELL_CONT;
     }
-  
+
   bucket = argv[0];
   resource = "/";
 
@@ -112,7 +112,7 @@ cmd_mb(int argc,
     }
 
   var_set("status", "0", VAR_CMD_SET, NULL);
-  
+
   return SHELL_CONT;
 }
 

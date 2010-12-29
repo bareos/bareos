@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -16,12 +16,12 @@
 
 #include "dplsh.h"
 
-/** 
+/**
  * not reentrant
- * 
- * @param defs 
- * 
- * @return 
+ *
+ * @param defs
+ *
+ * @return
  */
 char *
 usage_getoptstr(struct usage_def *defs)
@@ -46,7 +46,7 @@ usage_getoptstr(struct usage_def *defs)
   return buf;
 }
 
-void 
+void
 usage_help(struct cmd_def *cmd)
 {
   char buf[1024];
@@ -88,14 +88,14 @@ usage_help(struct cmd_def *cmd)
 
           if (!(def->flags & USAGE_MANDAT))
             strcat(buf, "[");
-          
+
           strcat(buf, def->param);
-          
+
           if (!(def->flags & USAGE_MANDAT))
             strcat(buf, "]");
         }
     }
-    
+
   strcat(buf, "\n");
 
   for (def = cmd->defs;def->opt != 0;def++)
@@ -131,11 +131,11 @@ usage_help(struct cmd_def *cmd)
         {
           strcat(buf, "   ");
           strcat(buf, def->param);
-          
+
           strcat(buf, "\t");
-          
+
           strcat(buf, def->long_descr);
-          
+
           strcat(buf, "\n");
         }
     }

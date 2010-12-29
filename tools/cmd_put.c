@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -52,7 +52,7 @@ cmd_put(int argc,
   char *buf;
 
   var_set("status", "1", VAR_CMD_SET, NULL);
-  
+
   optind = 0;
 
   while ((opt = getopt(argc, argv, usage_getoptstr(put_usage))) != -1)
@@ -98,10 +98,10 @@ cmd_put(int argc,
   if (2 == argc)
     {
       char *p, *p2;
-      
+
       local_file = argv[0];
-      remote_file = argv[1];      
-      
+      remote_file = argv[1];
+
       p = index(remote_file, ':');
       if (NULL != p)
         {
@@ -135,7 +135,7 @@ cmd_put(int argc,
       usage_help(&put_cmd);
       return SHELL_CONT;
     }
-  
+
   fd = open(local_file, O_RDONLY);
   if (-1 == fd)
     {
@@ -144,7 +144,7 @@ cmd_put(int argc,
     }
 
   buf = alloca(block_size);
-  
+
   ret = fstat(fd, &st);
   if (-1 == ret)
     {
@@ -158,7 +158,7 @@ cmd_put(int argc,
       fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);
       return SHELL_CONT;
     }
-  
+
   while (1)
     {
       cc = read(fd, buf, block_size);
@@ -167,37 +167,37 @@ cmd_put(int argc,
           perror("read");
           return -1;
         }
-      
+
       if (0 == cc)
         {
           break ;
         }
-      
+
       ret = dpl_write(vfile, buf, cc);
       if (DPL_SUCCESS != ret)
         {
           fprintf(stderr, "write failed\n");
           return SHELL_CONT;
         }
-      
+
       if (1 == hash)
         {
           fprintf(stderr, "#");
           fflush(stderr);
         }
     }
-  
+
   ret = dpl_close(vfile);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "close failed %s (%d)\n", dpl_status_str(ret), ret);
       return SHELL_CONT;
     }
-  
+
   vfile = NULL;
 
   var_set("status", "0", VAR_CMD_SET, NULL);
-  
+
  end:
 
   if (-1 != fd)

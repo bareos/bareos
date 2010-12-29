@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -29,7 +29,7 @@ enum dpl_tok
     DPL_TOK_DATA,
     DPL_TOK_DATA_TYPE,
     DPL_TOK_DURATION,
-  }; 
+  };
 
 enum dpl_lex_state
   {
@@ -136,7 +136,7 @@ struct dpl_parse_ctx
 
   int lineno;
   int byteno;
-  
+
   struct
   {
     enum dpl_lex_state state;
@@ -158,7 +158,7 @@ struct dpl_parse_ctx
     struct dpl_data_pricing *cur_data_pricing;
   } parse;
 
-}; 
+};
 
 /* PROTO pricing.c */
 /* src/pricing.c */

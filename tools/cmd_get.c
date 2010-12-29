@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -63,7 +63,7 @@ cb_get_buffered(void *cb_arg,
           fprintf(stderr, "#");
           fflush(stderr);
         }
-      
+
       ret = write_all(get_data->fd, buf, len);
       if (0 != ret)
         {
@@ -73,7 +73,7 @@ cb_get_buffered(void *cb_arg,
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   return ret;
@@ -225,7 +225,7 @@ cmd_get(int argc,
       if (1 == mflag)
         dpl_dict_iterate(metadata, cb_print_metadata, NULL);
     }
-  
+
   var_set("status", "0", VAR_CMD_SET, NULL);
 
  end:

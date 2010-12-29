@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -115,7 +115,7 @@ dpl_price_storage(dpl_ctx_t *ctx,
 
   for (i = 0;i < ctx->data_pricing[DPL_DATA_TYPE_STORAGE]->n_items;i++)
     {
-      datp = (struct dpl_data_pricing *) ctx->data_pricing[DPL_DATA_TYPE_STORAGE]->array[i];  
+      datp = (struct dpl_data_pricing *) ctx->data_pricing[DPL_DATA_TYPE_STORAGE]->array[i];
 
       //dpl_data_pricing_print(datp);
 
@@ -136,18 +136,18 @@ dpl_price_storage_str(dpl_ctx_t *ctx,
  static char str[256];
 
  snprintf(str, sizeof (str), "$%.03f", dpl_price_storage(ctx, size));
- 
+
  return str;
 }
 
-/** 
+/**
  * convenience function
  *
  * @note not thread safe since it returns a static buffer
- * 
- * @param size 
- * 
- * @return 
+ *
+ * @param size
+ *
+ * @return
  */
 char *
 dpl_size_str(uint64_t size)

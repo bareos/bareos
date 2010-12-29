@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -53,7 +53,7 @@ duration_str(enum dpl_duration_type duration)
     case DPL_DURATION_TYPE_YEAR:
       return "year";
     }
-  
+
   return "unknown";
 }
 
@@ -81,7 +81,7 @@ text_add(struct dpl_parse_ctx *parse_ctx,
       parse_ctx->lex.text[parse_ctx->lex.text_pos] = 0;
       return DPL_SUCCESS;
     }
-  
+
   return DPL_FAILURE;
 }
 
@@ -140,7 +140,7 @@ lex(struct dpl_parse_ctx *parse_ctx,
   switch (parse_ctx->lex.state)
     {
     case DPL_LEX_STATE_INIT:
-      
+
       if (EOF == c)
         return DPL_TOK_EOF;
       else if (c == '/')
@@ -350,9 +350,9 @@ lex(struct dpl_parse_ctx *parse_ctx,
       // Error!
       break;
     }
-  
+
   CHECK_RETURN(0, DPL_TOK_ERROR);
-  
+
   return DPL_TOK_ERROR;
 }
 
@@ -364,7 +364,7 @@ struct dpl_request_pricing *
 request_pricing_new()
 {
   struct dpl_request_pricing *reqp;
-  
+
   reqp = malloc(sizeof (*reqp));
   if (NULL == reqp)
     return NULL;
@@ -380,7 +380,7 @@ dpl_request_pricing_free(struct dpl_request_pricing *reqp)
   free(reqp);
 }
 
-void 
+void
 dpl_vec_request_pricing_free(dpl_vec_t *vec)
 {
   int i;
@@ -394,7 +394,7 @@ struct dpl_data_pricing *
 data_pricing_new()
 {
   struct dpl_data_pricing *datp;
-  
+
   datp = malloc(sizeof (*datp));
   if (NULL == datp)
     return NULL;
@@ -407,7 +407,7 @@ data_pricing_new()
 void
 dpl_data_pricing_print(struct dpl_data_pricing *datp)
 {
-  printf("%llu: %s%.03f/%llu/%s\n", 
+  printf("%llu: %s%.03f/%llu/%s\n",
          (long long unsigned) datp->limit, currency_str(datp->currency),
          datp->price, (long long unsigned) datp->quantity, duration_str(datp->duration));
 }
@@ -418,7 +418,7 @@ dpl_data_pricing_free(struct dpl_data_pricing *datp)
   free(datp);
 }
 
-void 
+void
 dpl_vec_data_pricing_free(dpl_vec_t *vec)
 {
   int i;
@@ -458,7 +458,7 @@ data_type(char *str)
     return DPL_DATA_TYPE_OUT;
   else if (!strcasecmp(str, "STORAGE"))
     return DPL_DATA_TYPE_STORAGE;
-  
+
   assert(0);
 }
 
@@ -477,7 +477,7 @@ duration_type(char *str)
     return DPL_DURATION_TYPE_HALF;
   else if (!strcasecmp(str, "YEAR"))
     return DPL_DURATION_TYPE_YEAR;
-  
+
   assert(0);
 }
 
@@ -513,7 +513,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
 {
   int i;
   int ret;
-  
+
   i = 0;
   while (1)
     {
@@ -577,7 +577,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
             return DPL_EINVAL;
 
         case DPL_PARSE_STATE_REQUEST:
-          
+
           if (DPL_TOK_REQUEST == tok || '*' == tok)
             {
               parse_ctx->parse.cur_request_pricing = request_pricing_new();
@@ -600,7 +600,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
             return DPL_EINVAL;
 
         case DPL_PARSE_STATE_REQUEST_COLON:
-          
+
           if (':' == tok)
             {
               parse_ctx->parse.state = DPL_PARSE_STATE_REQUEST_CURRENCY;
@@ -610,7 +610,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
             return DPL_EINVAL;
 
         case DPL_PARSE_STATE_REQUEST_CURRENCY:
-          
+
           if ('$' == tok)
             {
               parse_ctx->parse.cur_request_pricing->currency = DPL_CURRENCY_DOLLAR;
@@ -642,7 +642,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
             return DPL_EINVAL;
 
         case DPL_PARSE_STATE_REQUEST_QUANTITY_NUMBER:
-          
+
           if (DPL_TOK_NUMBER == tok)
             {
               parse_ctx->parse.cur_request_pricing->quantity = parse_ctx->lex.number;
@@ -714,7 +714,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
             return DPL_EINVAL;
 
         case DPL_PARSE_STATE_DATA_LIMIT_COLON:
-          
+
           if (':' == tok)
             {
               parse_ctx->parse.state = DPL_PARSE_STATE_DATA_CURRENCY;
@@ -722,7 +722,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
             }
           else
             return DPL_EINVAL;
-          
+
         case DPL_PARSE_STATE_DATA_CURRENCY:
 
           if ('$' == tok)
@@ -756,7 +756,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
             return DPL_EINVAL;
 
         case DPL_PARSE_STATE_DATA_QUANTITY_NUMBER:
-          
+
           if (DPL_TOK_NUMBER == tok)
             {
               parse_ctx->parse.cur_data_pricing->quantity = parse_ctx->lex.number * multiplicator(parse_ctx->lex.unit);
@@ -775,7 +775,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
             }
           else
             return DPL_EINVAL;
-          
+
         case DPL_PARSE_STATE_DATA_DURATION:
 
           if (DPL_TOK_DURATION == tok)
@@ -800,11 +800,11 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
             }
           else
             return DPL_EINVAL;
-          
+
         }
-      
+
       lex_reset(parse_ctx);
-      
+
     next_byte:
       if (parse_ctx->lex.unput_byte)
         parse_ctx->lex.unput_byte = 0;
@@ -835,7 +835,7 @@ parse_ctx_init(struct dpl_parse_ctx *parse_ctx,
   parse_ctx->ctx = ctx;
 
   parse_ctx->lineno = parse_ctx->byteno = 1;
-  
+
   parse_ctx->lex.state = DPL_LEX_STATE_INIT;
   parse_ctx->lex.unput_byte = 0;
   lex_reset(parse_ctx);
@@ -846,7 +846,7 @@ parse_ctx_init(struct dpl_parse_ctx *parse_ctx,
 
 static void
 buf_point_error(char *buf,
-                int len, 
+                int len,
                 int lineno,
                 int byteno)
 {
@@ -994,7 +994,7 @@ dpl_pricing_load(dpl_ctx_t *ctx)
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   return ret;
@@ -1007,18 +1007,18 @@ dpl_pricing_free(dpl_ctx_t *ctx)
 
   for (i = 0;i < DPL_N_DATA_TYPE;i++)
     dpl_vec_data_pricing_free(ctx->data_pricing[i]);
-  
+
   dpl_vec_request_pricing_free(ctx->request_pricing);
 }
 
-/** 
- * 
- * 
+/**
+ *
+ *
  * @param type e.g. "request", or "data"
  * @param subtype e.g. "LIST" or "IN", "OUT", "STORAGE"
  * @param size data size
- * 
- * @return 
+ *
+ * @return
  */
 dpl_status_t
 dpl_log_charged_event(dpl_ctx_t *ctx,
@@ -1032,4 +1032,4 @@ dpl_log_charged_event(dpl_ctx_t *ctx,
   fprintf(ctx->event_log, "%ld;%s;%s;%llu\n", t, type, subtype, (unsigned long long) size);
   return DPL_SUCCESS;
 }
-              
+

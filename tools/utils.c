@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -16,14 +16,14 @@
 
 #include "dplsh.h"
 
-/** 
+/**
  * ask for confirmation
- * 
- * @param str 
- * 
+ *
+ * @param str
+ *
  * @return 0 if 'Yes', else 1
  */
-int 
+int
 ask_for_confirmation(char *str)
 {
   char buf[256];
@@ -38,12 +38,12 @@ ask_for_confirmation(char *str)
       perror("read");
       exit(1);
     }
-  
+
   buf[sizeof (buf) - 1] = 0;
 
   if ((p = index(buf, '\n')))
     *p = 0;
-  
+
   if (!strcmp(buf, "Yes"))
     return 0;
 
@@ -70,7 +70,7 @@ write_all(int fd,
 
           return -1;
         }
-      
+
       remain -= cc;
       buf += cc;
 
@@ -86,7 +86,7 @@ read_all(int fd,
 {
   ssize_t cc;
   int remain;
-  
+
   remain = len;
   while (1)
     {
@@ -99,7 +99,7 @@ read_all(int fd,
 
           return -1;
         }
-      
+
       if (0 == cc && 0 != len)
         {
           return -2;
@@ -132,12 +132,12 @@ read_fd(int fd,
         {
           return -1;
         }
-      
+
       if (0 == cc)
         {
           break ;
         }
-      
+
       if (NULL == data_buf)
         {
           data_buf = malloc(cc);
@@ -157,7 +157,7 @@ read_fd(int fd,
 
   if (NULL != data_bufp)
     *data_bufp = data_buf;
-  
+
   if (NULL != data_lenp)
     *data_lenp = data_len;
 

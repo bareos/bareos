@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -49,7 +49,7 @@ dpl_conf_new(dpl_conf_cb_func_t cb_func,
   ctx = malloc(sizeof (*ctx));
   if (NULL == ctx)
     return NULL;
-  
+
   memset(ctx, 0, sizeof (*ctx));
 
   ctx->backslash = 0;
@@ -65,7 +65,7 @@ dpl_conf_new(dpl_conf_cb_func_t cb_func,
   return ctx;
 }
 
-void	
+void
 dpl_conf_free(struct dpl_conf_ctx *ctx)
 {
   free(ctx);
@@ -105,7 +105,7 @@ dpl_conf_parse(struct dpl_conf_ctx *ctx,
 	    else
 	      if (c == 't')
 		c = '\t';
-	  
+
           ret = cbuf_add_char(ctx->cur_cbuf, c);
           if (-1 == ret)
             return DPL_FAILURE;
@@ -201,7 +201,7 @@ dpl_conf_finish(struct dpl_conf_ctx *ctx)
  */
 
 static int
-conf_cb_func(void *cb_arg, 
+conf_cb_func(void *cb_arg,
              char *var,
              char *value)
 {
@@ -367,10 +367,10 @@ dpl_profile_parse(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * provide default values for config
- * 
- * @param ctx 
+ *
+ * @param ctx
  */
 dpl_status_t
 dpl_profile_default(dpl_ctx_t *ctx)
@@ -390,7 +390,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   return DPL_SUCCESS;
 }
 
-static int 
+static int
 passwd_cb(char *buf,
           int num,
           int rwflag,
@@ -400,7 +400,7 @@ passwd_cb(char *buf,
 
   if (num < strlen(ctx->ssl_password) + 1)
     return 0;
-  
+
   strcpy(buf, ctx->ssl_password);
 
   return strlen(buf);
@@ -412,7 +412,7 @@ dpl_open_event_log(dpl_ctx_t *ctx)
   char path[1024];
 
   snprintf(path, sizeof (path), "%s/%s.csv", ctx->droplet_dir, ctx->profile_name);
-  
+
   ctx->event_log = fopen(path, "a+");
   if (NULL == ctx->event_log)
     return DPL_FAILURE;
@@ -429,12 +429,12 @@ dpl_close_event_log(dpl_ctx_t *ctx)
     }
 }
 
-/** 
+/**
  * post processing of profile, e.g. init SSL
- * 
- * @param ctx 
- * 
- * @return 
+ *
+ * @param ctx
+ *
+ * @return
  */
 dpl_status_t
 dpl_profile_post(dpl_ctx_t *ctx)
@@ -465,7 +465,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
 #else
       SSL_METHOD *method;
 #endif
-      
+
       if (NULL == ctx->ssl_cert_file ||
           NULL == ctx->ssl_key_file ||
           NULL == ctx->ssl_password)
@@ -477,10 +477,10 @@ dpl_profile_post(dpl_ctx_t *ctx)
           ret = DPL_FAILURE;
           goto end;
         }
-  
+
       method = SSLv23_method();
       ctx->ssl_ctx = SSL_CTX_new(method);
-  
+
       if (!(SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)))
         {
           BIO_printf(ctx->ssl_bio_err, "use_certificate_chain_file: ");
@@ -492,7 +492,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
 
       SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
       SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
-  
+
       if (!(SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)))
         {
           BIO_printf(ctx->ssl_bio_err, "use_private_key_file: ");
@@ -525,7 +525,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
           goto end;
         }
     }
-  
+
   //encrypt
   OpenSSL_add_all_digests();
   OpenSSL_add_all_ciphers();
@@ -561,20 +561,20 @@ dpl_profile_post(dpl_ctx_t *ctx)
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   return ret;
 }
 
-/** 
+/**
  * load profile
- * 
- * @param ctx 
+ *
+ * @param ctx
  * @param droplet_dir if NULL loads ~/.droplet
  * @param profile_name if NULL then default
- * 
- * @return 
+ *
+ * @return
  */
 dpl_status_t
 dpl_profile_load(dpl_ctx_t *ctx,
@@ -592,11 +592,11 @@ dpl_profile_load(dpl_ctx_t *ctx,
       ret = DPL_FAILURE;
       goto end;
     }
-  
+
   if (NULL == droplet_dir)
     {
       droplet_dir = getenv("DPLDIR");
-      
+
       if (NULL == droplet_dir)
         {
           pwd = getpwuid(getuid());
@@ -605,7 +605,7 @@ dpl_profile_load(dpl_ctx_t *ctx,
               fprintf(stderr, "unable to get home directory\n");
               return DPL_SUCCESS;
             }
-          
+
           snprintf(default_dir, sizeof (default_dir), "%s/.droplet", pwd->pw_dir);
           droplet_dir = default_dir;
         }
@@ -614,7 +614,7 @@ dpl_profile_load(dpl_ctx_t *ctx,
   if (NULL == profile_name)
     {
       profile_name = getenv("DPLPROFILE");
-      
+
       if (NULL == profile_name)
         profile_name = "default";
     }
@@ -641,7 +641,7 @@ dpl_profile_load(dpl_ctx_t *ctx,
     }
 
   snprintf(path, sizeof (path), "%s/%s.profile", droplet_dir, profile_name);
-      
+
   ret2 = dpl_profile_parse(ctx, path);
   if (DPL_SUCCESS != ret2)
     {

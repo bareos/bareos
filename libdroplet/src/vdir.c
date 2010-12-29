@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -44,10 +44,10 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
     {
       if (NULL != obj_inop)
         *obj_inop = parent_ino;
-      
+
       if (NULL != obj_typep)
         *obj_typep = DPL_FTYPE_DIR;
-      
+
       ret = DPL_SUCCESS;
       goto end;
     }
@@ -60,10 +60,10 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
           //silent success for root dir
           if (NULL != obj_inop)
             *obj_inop = DPL_ROOT_INO;
-          
+
           if (NULL != obj_typep)
             *obj_typep = DPL_FTYPE_DIR;
-          
+
           ret = DPL_SUCCESS;
           goto end;
         }
@@ -95,14 +95,14 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
 
       if (NULL != obj_inop)
         *obj_inop = obj_ino;
-      
+
       if (NULL != obj_typep)
         *obj_typep = DPL_FTYPE_DIR;
-      
+
       ret = DPL_SUCCESS;
       goto end;
     }
-  
+
   //AWS do not like "" as a prefix
   ret2 = dpl_list_bucket(ctx, bucket, !strcmp(parent_ino.key, "") ? NULL : parent_ino.key, ctx->delim, &files, &directories);
   if (DPL_SUCCESS != ret2)
@@ -111,7 +111,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
       ret = DPL_FAILURE;
       goto end;
     }
-  
+
   for (i = 0;i < files->n_items;i++)
     {
       dpl_object_t *obj = (dpl_object_t *) files->array[i];
@@ -129,7 +129,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
       if (!strcmp(p, obj_name))
         {
           DPRINTF("ok\n");
-          
+
           key_len = strlen(obj->key);
           if (key_len >= DPL_MAXNAMLEN)
             {
@@ -143,7 +143,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
             obj_type = DPL_FTYPE_DIR;
           else
             obj_type = DPL_FTYPE_REG;
-          
+
           if (NULL != obj_inop)
             *obj_inop = obj_ino;
 
@@ -186,7 +186,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
         }
 
       key_len = p - p2 + 1;
-      
+
       DPRINTF("cmp (prefix=%s) prefix=%.*s obj_name=%s\n", prefix->prefix, key_len, p2, obj_name);
 
       if (key_len == obj_name_len && !strncmp(p2, obj_name, obj_name_len))
@@ -203,7 +203,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
           memcpy(obj_ino.key, prefix->prefix, key_len);
           obj_ino.key[key_len] = 0;
           obj_type = DPL_FTYPE_DIR;
-          
+
           if (NULL != obj_inop)
             *obj_inop = obj_ino;
 
@@ -313,7 +313,7 @@ dpl_vdir_opendir(dpl_ctx_t *ctx,
     }
 
   //printf("%s:%s n_files=%d n_dirs=%d\n", bucket, ino.key, dir->files->n_items, dir->directories->n_items);
-  
+
   if (NULL != dir_hdlp)
     *dir_hdlp = dir;
 
@@ -378,7 +378,7 @@ dpl_vdir_readdir(void *dir_hdl,
             }
           memcpy(dirent->name, name, name_len);
           dirent->name[name_len] = 0;
-          
+
           if (key_len >= DPL_MAXPATHLEN)
             {
               DPLERR(0, "key is too long");
@@ -390,7 +390,7 @@ dpl_vdir_readdir(void *dir_hdl,
 
           dirent->last_modified = 0; //?
           dirent->size = 0;
-          
+
           dir->directories_cursor++;
 
           return DPL_SUCCESS;
@@ -434,12 +434,12 @@ dpl_vdir_readdir(void *dir_hdl,
         dirent->type = DPL_FTYPE_DIR;
       else
         dirent->type = DPL_FTYPE_REG;
-      
+
       dirent->last_modified = obj->last_modified;
       dirent->size = obj->size;
-      
+
       dir->files_cursor++;
-      
+
       return DPL_SUCCESS;
     }
 }
@@ -489,21 +489,21 @@ dpl_vdir_count_entries(dpl_ctx_t *ctx,
           ret = ret2;
           goto end;
         }
-      
+
       if (strcmp(dirent.name, "."))
         n_entries++;
     }
-  
+
   if (NULL != n_entriesp)
     *n_entriesp = n_entries;
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != dir_hdl)
     dpl_vdir_closedir(dir_hdl);
-  
+
   return ret;
 }
 
@@ -637,12 +637,12 @@ dpl_namei(dpl_ctx_t *ctx,
 
       if (namelen >= DPL_MAXNAMLEN)
         return DPL_ENAMETOOLONG;
-      
+
       memcpy(name, p1, namelen);
       name[namelen] = 0;
-      
+
       DPRINTF("lookup '%s'\n", name);
-      
+
       if (!strcmp(name, ""))
         {
           obj_ino = parent_ino;
@@ -654,7 +654,7 @@ dpl_namei(dpl_ctx_t *ctx,
           if (DPL_SUCCESS != ret)
             return ret;
         }
-      
+
       DPRINTF("p2='%s'\n", p2);
 
       if (NULL == p2)
@@ -672,14 +672,14 @@ dpl_namei(dpl_ctx_t *ctx,
         {
           if (DPL_FTYPE_DIR != obj_type)
             return DPL_ENOTDIR;
-          
+
           parent_ino = obj_ino;
           p1 = p2;
 
           DPRINTF("remain '%s'\n", p1);
         }
     }
-  
+
   return DPL_FAILURE;
 }
 
@@ -695,18 +695,18 @@ dpl_cwd(dpl_ctx_t *ctx,
     strcpy(cwd.key, var->value); //XXX check overflow
   else
     cwd = DPL_ROOT_INO;
-  
+
   return cwd;
 }
 
-/** 
+/**
  * open a directory
- * 
- * @param ctx 
+ *
+ * @param ctx
  * @param locator [bucket:]path
- * @param dir_hdlp 
- * 
- * @return 
+ * @param dir_hdlp
+ *
+ * @return
  */
 dpl_status_t
 dpl_opendir(dpl_ctx_t *ctx,
@@ -806,9 +806,9 @@ dpl_chdir(dpl_ctx_t *ctx,
   dpl_ino_t cur_ino;
   char *nbucket;
   char *path, *bucket;
-  
+
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "chdir locator=%s", locator);
-  
+
   nlocator = strdup(locator);
   if (NULL == nlocator)
     {
@@ -865,7 +865,7 @@ dpl_chdir(dpl_ctx_t *ctx,
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != nlocator)
@@ -1018,7 +1018,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
     }
 
   cur_ino = dpl_cwd(ctx, bucket);
-  
+
   dir_name = dpl_strrstr(path, ctx->delim);
   if (NULL != dir_name)
     dir_name += delim_len;

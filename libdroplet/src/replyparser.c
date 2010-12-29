@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -59,10 +59,10 @@ void
 dpl_bucket_free(dpl_bucket_t *bucket)
 {
   free(bucket->name);
-  free(bucket);  
+  free(bucket);
 }
 
-void 
+void
 dpl_vec_buckets_free(dpl_vec_t *vec)
 {
   int i;
@@ -88,7 +88,7 @@ parse_list_all_my_buckets_bucket(xmlNode *node,
 
   for (tmp = node; NULL != tmp; tmp = tmp->next)
     {
-      if (tmp->type == XML_ELEMENT_NODE) 
+      if (tmp->type == XML_ELEMENT_NODE)
         {
           DPRINTF("name: %s\n", tmp->name);
           if (!strcmp((char *) tmp->name, "Name"))
@@ -102,7 +102,7 @@ parse_list_all_my_buckets_bucket(xmlNode *node,
             {
               bucket->creation_time = dpl_iso8601totime((char *) tmp->children->content);
             }
-          
+
         }
       else if (tmp->type == XML_TEXT_NODE)
         {
@@ -133,7 +133,7 @@ parse_list_all_my_buckets_buckets(xmlNode *node,
 
   for (tmp = node; NULL != tmp; tmp = tmp->next)
     {
-      if (tmp->type == XML_ELEMENT_NODE) 
+      if (tmp->type == XML_ELEMENT_NODE)
         {
           DPRINTF("name: %s\n", tmp->name);
 
@@ -163,10 +163,10 @@ parse_list_all_my_buckets_children(xmlNode *node,
 
   for (tmp = node; NULL != tmp; tmp = tmp->next)
     {
-      if (tmp->type == XML_ELEMENT_NODE) 
+      if (tmp->type == XML_ELEMENT_NODE)
         {
           DPRINTF("name: %s\n", tmp->name);
-          
+
           if (!strcmp((char *) tmp->name, "Buckets"))
             {
               ret = parse_list_all_my_buckets_buckets(tmp->children, vec);
@@ -202,7 +202,7 @@ dpl_parse_list_all_my_buckets(dpl_ctx_t *ctx,
       ret = DPL_FAILURE;
       goto end;
     }
-  
+
   doc = xmlCtxtReadMemory(ctxt, buf, len, NULL, NULL, 0u);
   if (NULL == doc)
     {
@@ -212,10 +212,10 @@ dpl_parse_list_all_my_buckets(dpl_ctx_t *ctx,
 
   for (tmp = xmlDocGetRootElement(doc); NULL != tmp; tmp = tmp->next)
     {
-      if (tmp->type == XML_ELEMENT_NODE) 
+      if (tmp->type == XML_ELEMENT_NODE)
         {
           DPRINTF("name: %s\n", tmp->name);
-          
+
           if (!strcmp((char *) tmp->name, "ListAllMyBucketsResult"))
             {
               ret = parse_list_all_my_buckets_children(tmp->children, vec);
@@ -249,11 +249,11 @@ dpl_object_free(dpl_object_t *object)
 {
   if (NULL != object->key)
     free(object->key);
-  
+
   free(object);
 }
 
-void 
+void
 dpl_vec_objects_free(dpl_vec_t *vec)
 {
   int i;
@@ -272,7 +272,7 @@ dpl_common_prefix_free(dpl_common_prefix_t *common_prefix)
   free(common_prefix);
 }
 
-void 
+void
 dpl_vec_common_prefixes_free(dpl_vec_t *vec)
 {
   int i;
@@ -298,7 +298,7 @@ parse_list_bucket_content(xmlNode *node,
 
   for (tmp = node; NULL != tmp; tmp = tmp->next)
     {
-      if (tmp->type == XML_ELEMENT_NODE) 
+      if (tmp->type == XML_ELEMENT_NODE)
         {
           DPRINTF("name: %s\n", tmp->name);
           if (!strcmp((char *) tmp->name, "Key"))
@@ -315,7 +315,7 @@ parse_list_bucket_content(xmlNode *node,
             {
               object->size = strtoull((char *) tmp->children->content, NULL, 0);
             }
-          
+
         }
       else if (tmp->type == XML_TEXT_NODE)
         {
@@ -353,7 +353,7 @@ parse_list_bucket_common_prefixes(xmlNode *node,
 
   for (tmp = node; NULL != tmp; tmp = tmp->next)
     {
-      if (tmp->type == XML_ELEMENT_NODE) 
+      if (tmp->type == XML_ELEMENT_NODE)
         {
           DPRINTF("name: %s\n", tmp->name);
           if (!strcmp((char *) tmp->name, "Prefix"))
@@ -393,10 +393,10 @@ parse_list_bucket_children(xmlNode *node,
 
   for (tmp = node; NULL != tmp; tmp = tmp->next)
     {
-      if (tmp->type == XML_ELEMENT_NODE) 
+      if (tmp->type == XML_ELEMENT_NODE)
         {
           DPRINTF("name: %s\n", tmp->name);
-          
+
           if (!strcmp((char *) tmp->name, "Contents"))
             {
               ret = parse_list_bucket_content(tmp->children, objects);
@@ -439,7 +439,7 @@ dpl_parse_list_bucket(dpl_ctx_t *ctx,
       ret = DPL_FAILURE;
       goto end;
     }
-  
+
   doc = xmlCtxtReadMemory(ctxt, buf, len, NULL, NULL, 0u);
   if (NULL == doc)
     {
@@ -449,10 +449,10 @@ dpl_parse_list_bucket(dpl_ctx_t *ctx,
 
   for (tmp = xmlDocGetRootElement(doc); NULL != tmp; tmp = tmp->next)
     {
-      if (tmp->type == XML_ELEMENT_NODE) 
+      if (tmp->type == XML_ELEMENT_NODE)
         {
           DPRINTF("name: %s\n", tmp->name);
-          
+
           if (!strcmp((char *) tmp->name, "ListBucketResult"))
             {
               ret = parse_list_bucket_children(tmp->children, objects, common_prefixes);

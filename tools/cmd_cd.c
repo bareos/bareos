@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -49,7 +49,7 @@ do_cd(char *path)
   if (NULL != path_saved)
     free(path_saved);
   path_saved = strdup(wd);
-  
+
   return DPL_SUCCESS;
 }
 
@@ -59,7 +59,7 @@ cmd_cd(int argc,
 {
   int ret;
   char *path;
-  
+
   var_set("status", "1", VAR_CMD_SET, NULL);
 
   if (2 != argc)
@@ -78,7 +78,7 @@ cmd_cd(int argc,
     {
       goto end;
     }
-  
+
   var_set("status", "0", VAR_CMD_SET, NULL);
 
  end:

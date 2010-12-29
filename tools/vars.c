@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -16,18 +16,18 @@
 
 #include "dplsh.h"
 
-#define N_VAR_BUCKETS 13 
+#define N_VAR_BUCKETS 13
 
 static tvar *var_buckets[N_VAR_BUCKETS];
 
-/** 
- * compute a simple hash code 
+/**
+ * compute a simple hash code
  *
  * note: bad dispersion, good for hash tables
- * 
- * @param s 
- * 
- * @return 
+ *
+ * @param s
+ *
+ * @return
  */
 static int
 hashcode(char *s)
@@ -106,7 +106,7 @@ var_set(char *key,
   var = var_get(key);
   if (NULL == var)
     {
-      int bucket; 
+      int bucket;
 
       var = xmalloc(sizeof (*var));
 
@@ -114,9 +114,9 @@ var_set(char *key,
 
       var->key = xstrdup(key);
       var->value = xstrdup("");
-      
+
       bucket = hashcode(key) % N_VAR_BUCKETS;
-      
+
       var->next = NULL;
       var->prev = var_buckets[bucket];
       if (NULL != var_buckets[bucket])
@@ -250,25 +250,25 @@ vars_load()
   if (NULL == f)
     return -1;
 
-  while ((read = getline(&line, &len, f)) != -1) 
+  while ((read = getline(&line, &len, f)) != -1)
     {
       enum shell_error shell_err;
       int ret;
-      
+
       //printf("%s", line);
 
       ret = shell_parse(cmd_defs, line, &shell_err);
       if (ret == SHELL_EPARSE)
         {
-          fprintf(stderr, 
+          fprintf(stderr,
                   "parsing: %s\n", shell_error_str(shell_err));
         }
     }
 
   if (NULL != line)
     free(line);
-  
+
   fclose(f);
-  
+
   return 0;
 }

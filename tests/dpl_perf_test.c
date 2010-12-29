@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -85,14 +85,14 @@ static void *test_main(void *arg)
   char *block;
   size_t block_size;
   uint64_t oid;
-      
+
   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &dummy);
   pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, &dummy);
 
   pthread_cleanup_push(test_cleanup, arg);
 
   oid = get_oid(oflag, &drbuffer);
-      
+
   for (i = 0; i < n_ops;i++)
     {
       struct timeval tv1, tv2;
@@ -101,17 +101,17 @@ static void *test_main(void *arg)
       pthread_testcancel();
 
       snprintf(id_str, sizeof (id_str), "%llu", (unsigned long long) oid);
-      
+
       if (rflag)
         block_size = rand() % max_block_size;
       else
         block_size = max_block_size;
-            
+
       if (vflag)
         fprintf(stderr, "put id %s block_size %llu\n",
                 id_str,
                 (unsigned long long)block_size);
-     
+
       block = malloc(block_size);
       if (NULL == block)
         {
@@ -307,7 +307,7 @@ void doit()
       fprintf(stderr, "pthread_attr_init: %d\n", ret);
       exit(1);
     }
-  
+
   (void)pthread_attr_setdetachstate(&g_detached_thread_attr,
                                     PTHREAD_CREATE_DETACHED);
 
@@ -317,7 +317,7 @@ void doit()
       fprintf(stderr, "pthread_attr_init: %d\n", ret);
       exit(1);
     }
-  
+
   (void)pthread_attr_setdetachstate(&g_joinable_thread_attr,
                                     PTHREAD_CREATE_JOINABLE);
 
@@ -474,6 +474,6 @@ int main(int argc, char **argv)
     usage();
 
   doit();
-  
+
   return 0;
 }

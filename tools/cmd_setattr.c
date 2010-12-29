@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -64,9 +64,9 @@ cmd_setattr(int argc,
       usage_help(&setattr_cmd);
       return SHELL_CONT;
     }
-  
+
   path = argv[0];
-  
+
   ret = dpl_setattr(ctx, path, metadata);
   if (DPL_SUCCESS != ret)
     {

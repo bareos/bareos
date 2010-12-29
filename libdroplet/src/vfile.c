@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -55,9 +55,9 @@ dpl_close(dpl_vfile_t *vfile)
                   u_char digest[MD5_DIGEST_LENGTH];
                   char bcd_digest[DPL_BCD_LENGTH(MD5_DIGEST_LENGTH) + 1];
                   u_int bcd_digest_len;
-                  
+
                   MD5_Final(digest, &vfile->md5_ctx);
-                  
+
                   bcd_digest_len = dpl_bcd_encode(digest, MD5_DIGEST_LENGTH, bcd_digest);
                   bcd_digest[bcd_digest_len] = 0;
 
@@ -72,7 +72,7 @@ dpl_close(dpl_vfile_t *vfile)
         }
 
       connection_close = dpl_connection_close(headers_returned);
-      
+
       if (1 == connection_close)
         dpl_conn_terminate(vfile->conn);
       else
@@ -97,7 +97,7 @@ dpl_close(dpl_vfile_t *vfile)
 }
 
 static dpl_status_t
-encrypt_init(dpl_vfile_t *vfile, 
+encrypt_init(dpl_vfile_t *vfile,
              int enc)
 {
   int ret;
@@ -105,14 +105,14 @@ encrypt_init(dpl_vfile_t *vfile,
   const EVP_MD *md;
   u_char key[EVP_MAX_KEY_LENGTH];
   u_char iv[EVP_MAX_IV_LENGTH];
-  
+
   if (NULL == vfile->ctx->encrypt_key)
     {
       fprintf(stderr, "missing encrypt_key in conf\n");
       ret = DPL_EINVAL;
       goto end;
     }
-  
+
   cipher = EVP_get_cipherbyname("aes-256-cfb");
   if (NULL == cipher)
     {
@@ -120,7 +120,7 @@ encrypt_init(dpl_vfile_t *vfile,
       ret = DPL_EINVAL;
       goto end;
     }
-  
+
   vfile->cipher_ctx = EVP_CIPHER_CTX_new();
   if (NULL == vfile->cipher_ctx)
     {
@@ -137,13 +137,13 @@ encrypt_init(dpl_vfile_t *vfile,
     }
 
   EVP_BytesToKey(cipher, md, vfile->salt, (u_char *) vfile->ctx->encrypt_key, strlen(vfile->ctx->encrypt_key), 1, key, iv);
-  
+
   EVP_CipherInit(vfile->cipher_ctx, cipher, key, iv, enc);
-  
+
   ret = DPL_SUCCESS;
 
  end:
-  
+
   return ret;
 }
 
@@ -207,7 +207,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
       if (DPL_ENOENT == ret2)
         {
           char *remote_name;
-          
+
           if (!(vfile->flags & DPL_VFILE_FLAG_CREAT))
             {
               ret = DPL_FAILURE;
@@ -219,8 +219,8 @@ dpl_openwrite(dpl_ctx_t *ctx,
             {
               remote_name += delim_len;
               *remote_name = 0;
-              
-              //fetch parent directory                                         
+
+              //fetch parent directory
               ret2 = dpl_namei(ctx, !strcmp(path, "") ? ctx->delim : path, bucket, cur_ino, NULL, &parent_ino, NULL);
               if (DPL_SUCCESS != ret2)
                 {
@@ -320,7 +320,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-  
+
   if (NULL != vfilep)
     {
       *vfilep = vfile;
@@ -328,7 +328,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != vfile)
@@ -343,16 +343,16 @@ dpl_openwrite(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * write buffer
- * 
- * @param vfile 
- * @param buf 
- * @param len 
- * 
+ *
+ * @param vfile
+ * @param buf
+ * @param len
+ *
  * @note ensure that all the buffer is written
  *
- * @return 
+ * @return
  */
 dpl_status_t
 dpl_write(dpl_vfile_t *vfile,
@@ -378,12 +378,12 @@ dpl_write(dpl_vfile_t *vfile,
         {
           iov[n_iov].iov_base = DPL_ENCRYPT_MAGIC;
           iov[n_iov].iov_len = strlen(DPL_ENCRYPT_MAGIC);
-          
+
           n_iov++;
 
           iov[n_iov].iov_base = vfile->salt;
           iov[n_iov].iov_len = sizeof (vfile->salt);
-          
+
           n_iov++;
 
           vfile->header_done = 1;
@@ -395,7 +395,7 @@ dpl_write(dpl_vfile_t *vfile,
           ret = DPL_ENOMEM;
           goto end;
         }
-      
+
       ret = EVP_CipherUpdate(vfile->cipher_ctx, (u_char *) obuf, &olen, (u_char *) buf, len);
       if (0 == ret)
         {
@@ -445,7 +445,7 @@ cb_vfile_header(void *cb_arg,
       ret = DPL_ENOMEM;
       goto end;
     }
-  
+
   if (!strcmp(header, "x-amz-meta-cipher"))
     {
       if (!strcmp(value, "yes"))
@@ -453,11 +453,11 @@ cb_vfile_header(void *cb_arg,
           vfile->flags |= DPL_VFILE_FLAG_ENCRYPT;
         }
     }
-  
+
   //XXX check cipher-type
-  
+
   ret = DPL_SUCCESS;
-  
+
  end:
 
   return ret;
@@ -510,7 +510,7 @@ cb_vfile_buffer(void *cb_arg,
           ret = DPL_ENOMEM;
           goto end;
         }
-  
+
       ret2 = EVP_CipherUpdate(vfile->cipher_ctx, (u_char *) obuf, &olen, (u_char *) buf, len);
       if (0 == ret2)
         {
@@ -534,7 +534,7 @@ cb_vfile_buffer(void *cb_arg,
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != obuf)
@@ -560,7 +560,7 @@ dpl_openread(dpl_ctx_t *ctx,
   char *bucket, *path;
   dpl_ino_t cur_ino;
   dpl_dict_t *metadata = NULL;
-  
+
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "openread locator=%s flags=0x%x", locator, flags);
 
   nlocator = strdup(locator);
@@ -621,7 +621,7 @@ dpl_openread(dpl_ctx_t *ctx,
   ret2 = dpl_get_buffered(ctx,
                           bucket,
                           obj_ino.key,
-                          NULL, 
+                          NULL,
                           condition,
                           cb_vfile_header,
                           cb_vfile_buffer,
@@ -653,7 +653,7 @@ dpl_openread(dpl_ctx_t *ctx,
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != vfile)
@@ -673,7 +673,7 @@ dpl_openread_range(dpl_ctx_t *ctx,
                    char *locator,
                    u_int flags,
                    dpl_condition_t *condition,
-                   int start, 
+                   int start,
                    int end,
                    char **data_bufp,
                    u_int *data_lenp,
@@ -725,9 +725,9 @@ dpl_openread_range(dpl_ctx_t *ctx,
   ret2 = dpl_get_range(ctx,
                        bucket,
                        obj_ino.key,
-                       NULL, 
+                       NULL,
                        condition,
-                       start, 
+                       start,
                        end,
                        data_bufp,
                        data_lenp,
@@ -739,7 +739,7 @@ dpl_openread_range(dpl_ctx_t *ctx,
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != nlocator)
@@ -801,9 +801,9 @@ dpl_unlink(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-  
+
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != nlocator)
@@ -866,9 +866,9 @@ dpl_getattr(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-  
+
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != nlocator)
@@ -931,9 +931,9 @@ dpl_setattr(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-  
+
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != nlocator)
@@ -996,9 +996,9 @@ dpl_fgenurl(dpl_ctx_t *ctx,
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
-  
+
   return ret;
 }
 
@@ -1079,14 +1079,14 @@ dpl_fcopy(dpl_ctx_t *ctx,
       if (DPL_ENOENT == ret2)
         {
           char *remote_name;
-          
+
           remote_name = dpl_strrstr(dst_path, ctx->delim);
           if (NULL != remote_name)
             {
               remote_name += delim_len;
               *remote_name = 0;
-              
-              //fetch parent directory                                         
+
+              //fetch parent directory
               ret2 = dpl_namei(ctx, !strcmp(dst_path, "") ? ctx->delim : dst_path, dst_bucket, dst_cur_ino, NULL, &parent_ino, NULL);
               if (DPL_SUCCESS != ret2)
                 {
@@ -1115,7 +1115,7 @@ dpl_fcopy(dpl_ctx_t *ctx,
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != dst_nlocator)

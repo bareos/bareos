@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -16,14 +16,14 @@
 
 #include "dropletp.h"
 
-/** 
- * compute a simple hash code 
+/**
+ * compute a simple hash code
  *
  * note: bad dispersion, good for hash tables
- * 
- * @param s 
- * 
- * @return 
+ *
+ * @param s
+ *
+ * @return
  */
 static int
 dict_hashcode(char *s)
@@ -102,12 +102,12 @@ dpl_dict_get_lowered(dpl_dict_t *dict,
   dpl_strlower(nkey);
 
   var = dpl_dict_get(dict, nkey);
-  
+
   free(nkey);
 
   if (NULL != varp)
     *varp = var;
-  
+
   return DPL_SUCCESS;
 }
 
@@ -155,7 +155,7 @@ int
 dpl_dict_count(dpl_dict_t *dict)
 {
   int count;
-  
+
   dpl_dict_iterate(dict, cb_var_count, &count);
 
   return count;
@@ -202,7 +202,7 @@ dpl_dict_add(dpl_dict_t *dict,
   var = dpl_dict_get(dict, key);
   if (NULL == var)
     {
-      int bucket; 
+      int bucket;
 
       var = malloc(sizeof (*var));
       if (NULL == var)
@@ -216,7 +216,7 @@ dpl_dict_add(dpl_dict_t *dict,
           free(var);
           return DPL_ENOMEM;
         }
-      
+
       if (1 == lowered)
         dpl_strlower(var->key);
 
@@ -227,9 +227,9 @@ dpl_dict_add(dpl_dict_t *dict,
           free(var);
           return DPL_ENOMEM;
         }
-      
+
       bucket = dict_hashcode(var->key) % dict->n_buckets;
-      
+
       var->next = NULL;
       var->prev = dict->buckets[bucket];
       if (NULL != dict->buckets[bucket])

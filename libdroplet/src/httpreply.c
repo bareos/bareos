@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -26,7 +26,7 @@
  *
  * @return -1 on failure, 0 if OK
  */
-static int	
+static int
 http_parse_reply(char *str,
                  struct dpl_http_reply *reply)
 {
@@ -66,7 +66,7 @@ http_parse_reply(char *str,
 
   bcopy(p, code_buf, code_len);
   code_buf[code_len] = 0;
-  
+
   reply->code = atoi(code_buf);
 
   p2++;
@@ -76,14 +76,14 @@ http_parse_reply(char *str,
 
   reply->descr_start = p2;
   reply->descr_end = p;
-  
+
   return 0;
 }
 
-/** 
+/**
  * reset state machine
- * 
- * @param conn 
+ *
+ * @param conn
  */
 static void
 read_line_init(dpl_conn_t *conn)
@@ -120,7 +120,7 @@ read_line(dpl_conn_t *conn)
        * EOF was previously encountered
        */
       conn->status = DPL_EINVAL;
-      return NULL;      
+      return NULL;
     }
 
   conn->status = DPL_SUCCESS;
@@ -130,49 +130,49 @@ read_line(dpl_conn_t *conn)
   /*
    * alloc a new line
    */
-  if ((line = malloc(conn->block_size * size + 1)) == NULL) 
+  if ((line = malloc(conn->block_size * size + 1)) == NULL)
     {
       conn->status = DPL_ENOMEM;
       return NULL;
     }
-  
+
   line_pos = 0;
   found_nl = 0;
 
-  while (conn->cc && !found_nl) 
+  while (conn->cc && !found_nl)
     {
       /*
-       * copies buf from the current pos into the line until 
-       * buf is totally read 
-       * or the line is full 
+       * copies buf from the current pos into the line until
+       * buf is totally read
+       * or the line is full
        * or we found a newline
        */
-      while (conn->read_buf_pos < conn->cc && 
+      while (conn->read_buf_pos < conn->cc &&
 	     line_pos < conn->block_size * size &&
-	     conn->read_buf[conn->read_buf_pos] != '\n') 
+	     conn->read_buf[conn->read_buf_pos] != '\n')
         {
           //DPRINTF("%c\n", conn->read_buf[conn->read_buf_pos]);
 
           line[line_pos++] = conn->read_buf[conn->read_buf_pos++];
         }
-    
-      if (conn->read_buf_pos == conn->cc) 
+
+      if (conn->read_buf_pos == conn->cc)
 	{
 	  /*
 	   * current buf is totally read: read a new buf
 	   */
-         
+
           DPL_TRACE(conn->ctx, DPL_TRACE_IO, "read conn=%p https=%d size=%ld", conn, conn->ctx->use_https, conn->read_buf_size);
-          
+
           if (0 == conn->ctx->use_https)
             {
               struct pollfd fds;
-              
+
             retry:
               memset(&fds, 0, sizeof (fds));
               fds.fd = conn->fd;
               fds.events = POLLIN;
-              
+
               ret = poll(&fds, 1, conn->ctx->read_timeout*1000);
               if (-1 == ret)
                 {
@@ -182,7 +182,7 @@ read_line(dpl_conn_t *conn)
                   conn->status = DPL_ESYS;
                   return NULL;
                 }
-              
+
               if (0 == ret)
                 {
                   free(line);
@@ -217,20 +217,20 @@ read_line(dpl_conn_t *conn)
 
           DPL_TRACE(conn->ctx, DPL_TRACE_IO, "read conn=%p https=%d cc=%ld", conn, conn->ctx->use_https, conn->cc);
 
-	  if (conn->cc == 0) 
+	  if (conn->cc == 0)
             conn->eof = 1;
 
           if (conn->ctx->trace_level & DPL_TRACE_BUF)
             dpl_dump_simple(conn->read_buf, conn->cc);
-          	  
+
 	  conn->read_buf_pos = 0;
-	  
-	} 
-      else if (line_pos >= (conn->block_size * size)) 
+
+	}
+      else if (line_pos >= (conn->block_size * size))
 	{
           DPRINTF("not enough mem line_pos=%d\n", line_pos);
 
-	  if (size == conn->max_blocks) 
+	  if (size == conn->max_blocks)
 	    {
 	      /*
 	       * we didn't find a newline within limit
@@ -238,23 +238,23 @@ read_line(dpl_conn_t *conn)
 	      free(line);
 	      conn->status = DPL_ELIMIT;
 	      return NULL;
-	    } 
-	  
+	    }
+
 	  /*
 	   * line is not large enough: realloc line
 	   */
 
 	  size++;
           DPRINTF("reallocing %d chunks\n", size);
-	  if ((tmp = realloc(line, conn->block_size * size + 1)) == NULL) 
+	  if ((tmp = realloc(line, conn->block_size * size + 1)) == NULL)
 	    {
 	      free(line);
 	      conn->status = DPL_ENOMEM;
 	      return NULL;
 	    }
 	  line = tmp;
-	} 
-      else 
+	}
+      else
 	{
           DPRINTF("found nl\n");
 
@@ -263,20 +263,20 @@ read_line(dpl_conn_t *conn)
 	  conn->read_buf_pos++;
 	}
     }
-  
+
   line[line_pos] = 0;
 
   return line;
 }
 
-/** 
+/**
  * read http reply
- * 
+ *
  * @param conn
  * @param header_func
  * @param buffer_func
  * @param cb_arg
- * 
+ *
  * @return dpl_status
  */
 dpl_status_t
@@ -306,8 +306,8 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
 
   mode = MODE_REPLY;
   ret = DPL_SUCCESS;
-  
-  while (1) 
+
+  while (1)
     {
       if (MODE_CHUNK == mode)
         {
@@ -322,14 +322,14 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
               if (0 == conn->ctx->use_https)
                 {
                   struct pollfd fds;
-                  
+
                   int recvfl = 0;
-                  
+
                 retry:
                   memset(&fds, 0, sizeof (fds));
                   fds.fd = conn->fd;
                   fds.events = POLLIN;
-                  
+
                   ret2 = poll(&fds, 1, conn->ctx->read_timeout*1000);
                   if (-1 == ret2)
                     {
@@ -339,7 +339,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                       ret = DPL_FAILURE;
                       goto end;
                     }
-                  
+
                   if (0 == ret2)
                     {
                       DPLERR(0, "read timeout");
@@ -354,7 +354,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                     }
 
                   recvfl = (chunk_remain >= conn->read_buf_size) ? MSG_WAITALL : 0;
-                  
+
                   conn->cc = recv(conn->fd, conn->read_buf, conn->read_buf_size, recvfl);
                   if (-1 == conn->cc)
                     {
@@ -395,7 +395,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                 }
               conn->read_buf_pos = chunk_remain;
               chunk_off += chunk_remain;
-              
+
               continue ;
             }
 
@@ -417,24 +417,24 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
           line = read_line(conn);
           if (NULL == line)
             {
-              DPLERR(0, "read line: %s", dpl_status_str(conn->status)); 
+              DPLERR(0, "read line: %s", dpl_status_str(conn->status));
               ret = DPL_FAILURE;
               goto end;
             }
-          
+
           switch (mode)
             {
             case MODE_REPLY:
-              
-              if (http_parse_reply(line, &http_reply) != 0) 
+
+              if (http_parse_reply(line, &http_reply) != 0)
                 {
                   DPLERR(0, "bad http reply: %.*s...", 100, line);
                   ret = DPL_FAILURE;
                   goto end;
                 }
-              
+
               DPL_TRACE(conn->ctx, DPL_TRACE_HTTP, "conn=%p http_status=%d", conn, http_reply.code);
-              
+
               if (!(DPL_HTTP_CODE_CONTINUE == http_reply.code ||
                     DPL_HTTP_CODE_OK == http_reply.code ||
                     DPL_HTTP_CODE_NO_CONTENT == http_reply.code ||
@@ -449,14 +449,14 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
 
                   goto end;
                 }
-              
+
               mode = MODE_HEADER;
-              
+
               break ;
-              
+
             case MODE_HEADER:
-              
-              if (line[0] == '\r') 
+
+              if (line[0] == '\r')
                 {
                   if (1 == chunked)
                     {
@@ -481,14 +481,14 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                           chunk_off += chunk_remain;
                         }
                     }
-                  
+
                   break ;
                 }
 
               //headers
               {
                 char *p, *p2;
-                
+
                 p = index(line, ':');
                 if (NULL == p)
                   {
@@ -500,15 +500,15 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                 //skip ws
                 for (;*p;p++)
                   if (!isspace(*p))
-                    break ;                       
-                
+                    break ;
+
                 //remove '\r'
                 p2 = index(p, '\r');
                 if (NULL != p2)
                   *p2 = 0;
 
                 DPL_TRACE(conn->ctx, DPL_TRACE_HTTP, "conn=%p header='%s' value='%s'", conn, line, p);
-                
+
                 if (!strcasecmp(line, "Content-Length"))
                   {
                     chunk_len = atoi(p);
@@ -528,12 +528,12 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                         goto end;
                       }
                   }
-                
+
                 break ;
               }
-              
+
             case MODE_CHUNKED:
-              
+
               chunk_len = strtoul(line, NULL, 16);
 
               DPL_TRACE(conn->ctx, DPL_TRACE_IO, "chunk_len=%d", chunk_len);
@@ -561,11 +561,11 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   chunk_off += chunk_remain;
                 }
               break ;
-              
+
             default:
               assert(0);
             }
-          
+
           free(line);
           line = NULL;
         }
@@ -596,7 +596,7 @@ dpl_connection_close(dpl_dict_t *headers_returned)
       if (!strcasecmp(var->value, "close"))
         return 1;
     }
-  
+
   return 0;
 }
 
@@ -617,7 +617,7 @@ cb_httpreply_header(void *cb_arg,
 {
   struct httreply_conven *hc = (struct httreply_conven *) cb_arg;
   int ret;
-  
+
   if (NULL == hc->headers)
     {
       hc->headers = dpl_dict_new(13);
@@ -655,7 +655,7 @@ cb_httpreply_buffer(void *cb_arg,
       nptr = realloc(hc->data_buf, hc->data_len + len);
       if (NULL == nptr)
         return DPL_ENOMEM;
-      
+
       hc->data_buf = nptr;
       memcpy(hc->data_buf + hc->data_len, buf, len);
       hc->data_len += len;
@@ -664,14 +664,14 @@ cb_httpreply_buffer(void *cb_arg,
   return DPL_SUCCESS;
 }
 
-/** 
+/**
  * read http reply simple version
- * 
- * @param fd 
- * @param data_bufp caller must free it 
- * @param data_lenp 
+ *
+ * @param fd
+ * @param data_bufp caller must free it
+ * @param data_lenp
  * @param headersp caller must free it
- * 
+ *
  * @return dpl_status
  */
 dpl_status_t
@@ -693,7 +693,7 @@ dpl_read_http_reply(dpl_conn_t *conn,
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (0 == ret)
@@ -703,7 +703,7 @@ dpl_read_http_reply(dpl_conn_t *conn,
           *data_bufp = hc.data_buf;
           hc.data_buf = NULL; //consumed
         }
-      
+
       if (NULL != data_lenp)
         *data_lenp = hc.data_len;
 

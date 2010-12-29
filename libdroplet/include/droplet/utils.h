@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -98,9 +98,9 @@ char *canonicalize_file_name(const char *path);
 //one fits all
 int linux_gethostbyname_r(const char *name,
                           struct hostent *ret,
-                          char *buf, 
+                          char *buf,
                           size_t buflen,
-                          struct hostent **result, 
+                          struct hostent **result,
                           int *h_errnop);
 
 /**/
@@ -137,8 +137,8 @@ struct dpl_dump_ctx
 
 /**/
 
-typedef int 
-(*dpl_conf_cb_func_t)(void *cb_arg, 
+typedef int
+(*dpl_conf_cb_func_t)(void *cb_arg,
                       char *var,
                       char *value);
 

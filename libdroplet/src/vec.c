@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -45,7 +45,7 @@ dpl_vec_new(int init_size,
   return vec;
 }
 
-dpl_status_t 
+dpl_status_t
 dpl_vec_add(dpl_vec_t *vec,
             void *item)
 {
@@ -54,7 +54,7 @@ dpl_vec_add(dpl_vec_t *vec,
       // Need to allocate more space
       void *new_array;
       int new_size;
-      
+
       // Compute new size
       if (vec->incr_size <= 0)
         {
@@ -73,11 +73,11 @@ dpl_vec_add(dpl_vec_t *vec,
           // Linear (slow) growth
           new_size = vec->size + vec->incr_size;
         }
-      
+
       new_array = realloc(vec->array, sizeof(void *) * new_size);
       if (new_array == (void*) NULL)
         return -1;
-      
+
       vec->array = new_array;
       vec->size = new_size;
     }
@@ -88,7 +88,7 @@ dpl_vec_add(dpl_vec_t *vec,
   return 0;
 }
 
-void 
+void
 dpl_vec_free(dpl_vec_t *vec)
 {
   free(vec->array);

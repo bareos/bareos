@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -28,7 +28,7 @@ struct usage_def la_usage[] =
 
 struct cmd_def la_cmd = {"la", "list all my buckets", la_usage, cmd_la};
 
-int 
+int
 cmd_la(int argc,
        char **argv)
 {
@@ -70,14 +70,14 @@ cmd_la(int argc,
       usage_help(&la_cmd);
       return SHELL_CONT;
     }
-  
+
   ret = dpl_list_all_my_buckets(ctx, &vec);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "status: %s (%d)\n", dpl_status_str(ret), ret);
       return SHELL_CONT;
     }
-  
+
   for (i = 0;i < vec->n_items;i++)
     {
       dpl_bucket_t *bucket;
@@ -101,7 +101,7 @@ cmd_la(int argc,
           struct ls_data ls_data;
 
           memset(&ls_data, 0, sizeof (ls_data));
-          
+
           bucket_save = ctx->cur_bucket;
           ctx->cur_bucket = bucket->name;
 
@@ -121,7 +121,7 @@ cmd_la(int argc,
 
               total_size += ls_data.total_size;
             }
-          
+
           ctx->cur_bucket = bucket_save;
         }
     }

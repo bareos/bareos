@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -28,9 +28,9 @@ conn_hashcode(char *buf,
               int len)
 {
   u_int h, g, i;
- 
+
   h = g = 0;
- 
+
   for (i=0;i < len;buf++, i--)
     {
       h = (h<<4)+(*buf);
@@ -40,7 +40,7 @@ conn_hashcode(char *buf,
           h=h^g;
         }
     }
- 
+
   return h;
 }
 
@@ -57,7 +57,7 @@ dpl_conn_get_nolock(dpl_ctx_t *ctx,
 
   hash_info.addr.s_addr = addr.s_addr;
   hash_info.port = port;
-  
+
   bucket = conn_hashcode((char *) &hash_info, sizeof (hash_info)) % ctx->n_conn_buckets;
 
   for (conn = ctx->conn_buckets[bucket];conn;conn = conn->prev)
@@ -75,7 +75,7 @@ dpl_conn_add_nolock(dpl_conn_t *conn)
   u_int bucket;
 
   bucket = conn_hashcode((char *) &conn->hash_info, sizeof (conn->hash_info)) % conn->ctx->n_conn_buckets;
-  
+
   conn->next = NULL;
   conn->prev = conn->ctx->conn_buckets[bucket];
 
@@ -122,7 +122,7 @@ safe_close(int fd)
       DPLERR(1, "close failed");
       return -1;
     }
-  
+
   return 0;
 }
 
@@ -137,7 +137,7 @@ dpl_conn_free(dpl_conn_t *conn)
 
   if (NULL != conn->read_buf)
     free(conn->read_buf);
-  
+
   free(conn);
 }
 
@@ -183,7 +183,7 @@ do_connect(dpl_ctx_t *ctx,
     }
 
   DPL_TRACE(ctx, DPL_TRACE_CONN, "connect %s:%d", inet_ntoa(addr), port);
-          
+
   ret = connect(fd, (struct sockaddr *)&sin, sizeof (sin));
 
   if (-1 == ret)
@@ -201,7 +201,7 @@ do_connect(dpl_ctx_t *ctx,
   memset(&fds, 0, sizeof (fds));
   fds.fd = fd;
   fds.events = POLLOUT;
-  
+
   ret = poll(&fds, 1, ctx->conn_timeout*1000);
   if (-1 == ret)
     {
@@ -210,7 +210,7 @@ do_connect(dpl_ctx_t *ctx,
       fd = -1;
       goto end;
     }
-  
+
   if (0 == ret)
     return -1;
   else if (!(fds.revents & POLLOUT))
@@ -235,14 +235,14 @@ do_connect(dpl_ctx_t *ctx,
   return fd;
 }
 
-/** 
+/**
  * check an existing connection bound on (addr,port). if none is found
  * a new connection is created.
- * 
- * @param addr 
- * @param port 
- * 
- * @return 
+ *
+ * @param addr
+ * @param port
+ *
+ * @return
  */
 dpl_conn_t *
 dpl_conn_open(dpl_ctx_t *ctx,
@@ -285,7 +285,7 @@ dpl_conn_open(dpl_ctx_t *ctx,
     }
 
   DPRINTF("allocate new conn\n");
-  
+
   conn = malloc(sizeof (*conn));
   if (NULL == conn)
     {
@@ -293,13 +293,13 @@ dpl_conn_open(dpl_ctx_t *ctx,
       conn = NULL;
       goto end;
     }
-  
+
   memset(conn, 0, sizeof (*conn));
-  
+
   conn->ctx = ctx;
   conn->read_buf_size = ctx->read_buf_size;
   conn->fd = -1;
-  
+
   if ((conn->read_buf = malloc(conn->read_buf_size)) == NULL)
     {
       dpl_conn_free(conn);
@@ -309,7 +309,7 @@ dpl_conn_open(dpl_ctx_t *ctx,
 
   conn->hash_info.addr.s_addr = addr.s_addr;
   conn->hash_info.port = port;
-  
+
   conn->fd = do_connect(ctx, addr, port);
   if (-1 == conn->fd)
     {
@@ -317,10 +317,10 @@ dpl_conn_open(dpl_ctx_t *ctx,
       conn = NULL;
       goto end;
     }
- 
+
   conn->start_time = now;
   conn->n_hits = 0;
-  
+
   if (1 == ctx->use_https)
     {
       conn->ssl = SSL_new(ctx->ssl_ctx);
@@ -330,7 +330,7 @@ dpl_conn_open(dpl_ctx_t *ctx,
           conn = NULL;
           goto end;
         }
-      
+
       conn->bio = BIO_new_socket(conn->fd, BIO_NOCLOSE);
       if (NULL == conn->bio)
         {
@@ -376,8 +376,8 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   int           herr;
   struct in_addr addr;
   dpl_conn_t    *conn;
-  
-  ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr); 
+
+  ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
   if (0 != ret2)
     {
       DPLERR(0, "gethostbyname failed");
@@ -412,10 +412,10 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   return NULL;
 }
 
-/** 
+/**
  * release the connection
- * 
- * @param conn 
+ *
+ * @param conn
  */
 void
 dpl_conn_release(dpl_conn_t *conn)
@@ -425,15 +425,15 @@ dpl_conn_release(dpl_conn_t *conn)
   DPL_TRACE(conn->ctx, DPL_TRACE_CONN, "conn_release conn=%p", conn);
 
   conn->close_time = time(0);
-  dpl_conn_add_nolock(conn);  
+  dpl_conn_add_nolock(conn);
 
   pthread_mutex_unlock(&conn->ctx->lock);
 }
 
-/** 
+/**
  * call this if you encounter an error on conn fd
- * 
- * @param conn 
+ *
+ * @param conn
  */
 void
 dpl_conn_terminate(dpl_conn_t *conn)
@@ -479,7 +479,7 @@ dpl_conn_pool_destroy(dpl_ctx_t *ctx)
               dpl_conn_terminate_nolock(conn);
             }
         }
-      
+
       free(ctx->conn_buckets);
     }
 }
@@ -488,16 +488,16 @@ dpl_conn_pool_destroy(dpl_ctx_t *ctx)
  * I/O
  */
 
-/** 
+/**
  * write a vector with retry
- * 
+ *
  * @note: modify iov content
  *
- * @param fd 
- * @param iov 
- * @param n_iov 
+ * @param fd
+ * @param iov
+ * @param n_iov
  * @param timeout in secs or -1
- * 
+ *
  * @return biznet_status
  */
 static dpl_status_t
@@ -516,7 +516,7 @@ writev_all_plaintext(dpl_conn_t *conn,
       if (-1 != timeout)
         {
           struct pollfd fds;
-          
+
         retry:
           memset(&fds, 0, sizeof (fds));
           fds.fd = conn->fd;
@@ -529,7 +529,7 @@ writev_all_plaintext(dpl_conn_t *conn,
                 goto retry;
               return DPL_FAILURE;
             }
-      
+
           if (0 == ret)
             return DPL_ETIMEOUT;
           else if (!(fds.revents & POLLOUT))
@@ -566,15 +566,15 @@ writev_all_plaintext(dpl_conn_t *conn,
   return DPL_SUCCESS;
 }
 
-/** 
- * 
- * 
- * @param conn 
- * @param iov 
- * @param n_iov 
+/**
+ *
+ *
+ * @param conn
+ * @param iov
+ * @param n_iov
  * @param timeout ignored for now
- * 
- * @return 
+ *
+ * @return
  */
 static dpl_status_t
 writev_all_ssl(dpl_conn_t *conn,
@@ -587,7 +587,7 @@ writev_all_ssl(dpl_conn_t *conn,
   char *ptr = NULL;
 
   total_size = 0;
-  
+
   for (i = 0;i < n_iov;i++)
     total_size += iov[i].iov_len;
 
@@ -611,12 +611,12 @@ writev_all_ssl(dpl_conn_t *conn,
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != ptr)
     free(ptr);
-  
+
   return ret;
 }
 

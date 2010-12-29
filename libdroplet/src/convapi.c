@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -19,13 +19,13 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-/** 
+/**
  * list all buckets
- * 
- * @param ctx 
- * @param vecp 
- * 
- * @return 
+ *
+ * @param ctx
+ * @param vecp
+ *
+ * @return
  */
 dpl_status_t
 dpl_list_all_my_buckets(dpl_ctx_t *ctx,
@@ -95,7 +95,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
       ret = DPL_FAILURE;
       goto end;
     }
-  
+
   iov[n_iov].iov_base = header;
   iov[n_iov].iov_len = header_len;
   n_iov++;
@@ -104,7 +104,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = "\r\n";
   iov[n_iov].iov_len = 2;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
@@ -136,7 +136,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
     }
 
   (void) dpl_log_charged_event(ctx, "REQUEST", "LIST", 0);
-  
+
   vec = dpl_vec_new(2, 2);
   if (NULL == vec)
     {
@@ -189,17 +189,17 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * list bucket
- * 
- * @param ctx 
- * @param bucket 
+ *
+ * @param ctx
+ * @param bucket
  * @param prefix can be NULL
  * @param delimiter can be NULL
- * @param objectsp 
+ * @param objectsp
  * @param prefixesp
- * 
- * @return 
+ *
+ * @return
  */
 dpl_status_t
 dpl_list_bucket(dpl_ctx_t *ctx,
@@ -305,7 +305,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
       ret = DPL_FAILURE;
       goto end;
     }
-  
+
   iov[n_iov].iov_base = header;
   iov[n_iov].iov_len = header_len;
   n_iov++;
@@ -353,7 +353,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
       ret = DPL_FAILURE;
       goto end;
     }
-  
+
   common_prefixes = dpl_vec_new(2, 2);
   if (NULL == common_prefixes)
     {
@@ -412,21 +412,21 @@ dpl_list_bucket(dpl_ctx_t *ctx,
 
   if (NULL != req)
     dpl_req_free(req);
-  
+
   DPRINTF("ret=%d\n", ret);
 
   return ret;
 }
 
-/** 
+/**
  * make a bucket
- * 
- * @param ctx 
- * @param bucket 
- * @param location_constraint 
- * @param canned_acl 
- * 
- * @return 
+ *
+ * @param ctx
+ * @param bucket
+ * @param location_constraint
+ * @param canned_acl
+ *
+ * @return
  */
 dpl_status_t
 dpl_make_bucket(dpl_ctx_t *ctx,
@@ -488,13 +488,13 @@ dpl_make_bucket(dpl_ctx_t *ctx,
           ret = DPL_ENOMEM;
           goto end;
         }
-      
-      snprintf(data_str, sizeof (data_str), 
+
+      snprintf(data_str, sizeof (data_str),
                "<CreateBucketConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
                "<LocationConstraint>%s</LocationConstraint>\n"
                "</CreateBucketConfiguration>\n",
                location_constraint_str);
-      
+
       data_len = strlen(data_str);
     }
 
@@ -546,7 +546,7 @@ dpl_make_bucket(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = data_str;
   iov[n_iov].iov_len = data_len;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
@@ -605,15 +605,15 @@ dpl_make_bucket(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * delete a resource
- * 
- * @param ctx 
- * @param bucket 
- * @param resource 
- * @param subresource can be NULL 
- * 
- * @return 
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ *
+ * @return
  */
 dpl_status_t
 dpl_deletebucket(dpl_ctx_t *ctx,
@@ -692,7 +692,7 @@ dpl_deletebucket(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = "\r\n";
   iov[n_iov].iov_len = 2;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
@@ -752,19 +752,19 @@ dpl_deletebucket(dpl_ctx_t *ctx,
 }
 
 
-/** 
+/**
  * put a resource
- * 
- * @param ctx 
- * @param bucket 
- * @param resource 
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
  * @param subresource can be NULL
  * @param metadata can be NULL
- * @param canned_acl 
- * @param data_buf 
- * @param data_len 
- * 
- * @return 
+ * @param canned_acl
+ * @param data_buf
+ * @param data_len
+ *
+ * @return
  */
 dpl_status_t
 dpl_put(dpl_ctx_t *ctx,
@@ -883,7 +883,7 @@ dpl_put(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = data_buf;
   iov[n_iov].iov_len = data_len;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
@@ -1120,19 +1120,19 @@ dpl_put_buffered(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * get a resource
- * 
- * @param ctx 
- * @param bucket 
- * @param resource 
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
  * @param subresource can be NULL
  * @param condition can be NULL
  * @param data_bufp must be freed by caller
- * @param data_lenp 
+ * @param data_lenp
  * @param metadatap must be freed by caller
- * 
- * @return 
+ *
+ * @return
  */
 dpl_status_t
 dpl_get(dpl_ctx_t *ctx,
@@ -1243,7 +1243,7 @@ dpl_get(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = "\r\n";
   iov[n_iov].iov_len = 2;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
@@ -1272,7 +1272,7 @@ dpl_get(dpl_ctx_t *ctx,
   else
     {
       connection_close = dpl_connection_close(headers_reply);
-      
+
       ret2 = dpl_get_metadata_from_headers(headers_reply, metadata);
       if (DPL_SUCCESS != ret2)
         {
@@ -1330,19 +1330,19 @@ dpl_get(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * get a resource
- * 
- * @param ctx 
- * @param bucket 
- * @param resource 
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
  * @param subresource can be NULL
  * @param condition can be NULL
  * @param data_bufp must be freed by caller
- * @param data_lenp 
+ * @param data_lenp
  * @param metadatap must be freed by caller
- * 
- * @return 
+ *
+ * @return
  */
 dpl_status_t
 dpl_get_range(dpl_ctx_t *ctx,
@@ -1462,7 +1462,7 @@ dpl_get_range(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = "\r\n";
   iov[n_iov].iov_len = 2;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
@@ -1491,7 +1491,7 @@ dpl_get_range(dpl_ctx_t *ctx,
   else
     {
       connection_close = dpl_connection_close(headers_reply);
-      
+
       ret2 = dpl_get_metadata_from_headers(headers_reply, metadata);
       if (DPL_SUCCESS != ret2)
         {
@@ -1579,7 +1579,7 @@ cb_get_header(void *cb_arg,
       if (!strcasecmp(value, "close"))
         gc->connection_close = 1;
     }
-  
+
   return DPL_SUCCESS;
 }
 
@@ -1704,7 +1704,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = "\r\n";
   iov[n_iov].iov_len = 2;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
@@ -1756,17 +1756,17 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * get metadata
- * 
- * @param ctx 
- * @param bucket 
- * @param resource 
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
  * @param subresource can be NULL
  * @param condition can be NULL
  * @param metadatap must be freed by caller
- * 
- * @return 
+ *
+ * @return
  */
 dpl_status_t
 dpl_head(dpl_ctx_t *ctx,
@@ -1873,7 +1873,7 @@ dpl_head(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = "\r\n";
   iov[n_iov].iov_len = 2;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
@@ -1902,7 +1902,7 @@ dpl_head(dpl_ctx_t *ctx,
   else
     {
       connection_close = dpl_connection_close(headers_reply);
-      
+
       ret2 = dpl_get_metadata_from_headers(headers_reply, metadata);
       if (DPL_SUCCESS != ret2)
         {
@@ -1946,15 +1946,15 @@ dpl_head(dpl_ctx_t *ctx,
 }
 
 
-/** 
+/**
  * delete a resource
- * 
- * @param ctx 
- * @param bucket 
- * @param resource 
- * @param subresource can be NULL 
- * 
- * @return 
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ *
+ * @return
  */
 dpl_status_t
 dpl_delete(dpl_ctx_t *ctx,
@@ -2045,7 +2045,7 @@ dpl_delete(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = "\r\n";
   iov[n_iov].iov_len = 2;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
@@ -2104,17 +2104,17 @@ dpl_delete(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * generate url
- * 
- * @param ctx 
- * @param bucket 
- * @param resource 
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
  * @param subresource can be NULL
  * @param condition can be NULL
  * @param metadatap must be freed by caller
- * 
- * @return 
+ *
+ * @return
  */
 dpl_status_t
 dpl_genurl(dpl_ctx_t *ctx,
@@ -2199,22 +2199,22 @@ dpl_genurl(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * copy a resource
- * 
- * @param ctx 
- * @param src_bucket 
- * @param src_resource 
- * @param src_subresource 
- * @param dst_bucket 
- * @param dst_resource 
- * @param dst_subresource 
- * @param metadata_directive 
- * @param metadata 
- * @param canned_acl 
+ *
+ * @param ctx
+ * @param src_bucket
+ * @param src_resource
+ * @param src_subresource
+ * @param dst_bucket
+ * @param dst_resource
+ * @param dst_subresource
+ * @param metadata_directive
+ * @param metadata
+ * @param canned_acl
  * @param condition
- * 
- * @return 
+ *
+ * @return
  */
 dpl_status_t
 dpl_copy(dpl_ctx_t *ctx,

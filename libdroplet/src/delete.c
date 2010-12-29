@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -19,15 +19,15 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-/** 
+/**
  * delete a resource
- * 
- * @param ctx 
- * @param bucket 
- * @param resource 
- * @param subresource can be NULL 
- * 
- * @return 
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ *
+ * @return
  */
 dpl_status_t
 dpl_delete(dpl_ctx_t *ctx,
@@ -118,7 +118,7 @@ dpl_delete(dpl_ctx_t *ctx,
   iov[n_iov].iov_base = "\r\n";
   iov[n_iov].iov_len = 2;
   n_iov++;
-  
+
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {

@@ -34,7 +34,7 @@ recurse(dpl_ctx_t *ctx,
           for (i = 0;i < level;i++)
             printf(" ");
           printf("%s\n", dirent.name);
-          
+
           if (DPL_FTYPE_DIR == dirent.type)
             {
               ret = recurse(ctx, dirent.name, level + 1);
@@ -43,7 +43,7 @@ recurse(dpl_ctx_t *ctx,
             }
         }
     }
-  
+
   dpl_closedir(dir_hdl);
 
   if (level > 0)
@@ -57,7 +57,7 @@ recurse(dpl_ctx_t *ctx,
 }
 
 int
-main(int argc, 
+main(int argc,
      char **argv)
 {
   int ret;
@@ -85,7 +85,7 @@ main(int argc,
       fprintf(stderr, "dpl_ctx_new failed\n");
       exit(1);
     }
-  
+
   ctx->cur_bucket = bucket;
 
   ret = recurse(ctx, "/", 0);
@@ -97,6 +97,6 @@ main(int argc,
 
   dpl_ctx_free(ctx);
   dpl_free();
-  
+
   return 0;
 }
