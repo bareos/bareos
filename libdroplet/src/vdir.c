@@ -919,10 +919,10 @@ dpl_mkgen(dpl_ctx_t *ctx,
           dir_name = dpl_strrstr(path, ctx->delim);
           if (NULL != dir_name)
             {
-              dir_name += delim_len;
               *dir_name = 0;
-              
-              //fetch parent directory                                         
+              dir_name += delim_len;
+
+              //fetch parent directory
               ret2 = dpl_namei(ctx, !strcmp(path, "") ? ctx->delim : path, bucket, cur_ino, NULL, &parent_ino, NULL);
               if (DPL_SUCCESS != ret2)
                 {
