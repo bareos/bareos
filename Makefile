@@ -87,6 +87,11 @@ clean:
 	fi \
 	done;
 
+space:
+	@echo -n "removing the trailing spaces in source files... "
+	@./spaces.sh $$i
+	@echo "done."
+
 fproto:
 	@for i in `echo $(ALLDIRS)`; do \
 	echo Fprototyping $$i...; \
