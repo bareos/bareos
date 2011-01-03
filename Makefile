@@ -89,7 +89,7 @@ clean:
 
 space:
 	@echo -n "removing the trailing spaces in source files... "
-	@./spaces.sh $$i
+	@find . -name \*.h -o -name \*.c -exec sed -i 's:\s\+$$::g' {} \;
 	@echo "done."
 
 fproto:
