@@ -1756,6 +1756,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   return ret;
 }
 
+
 /**
  * get metadata
  *
@@ -1764,17 +1765,20 @@ dpl_get_buffered(dpl_ctx_t *ctx,
  * @param resource
  * @param subresource can be NULL
  * @param condition can be NULL
+ * @param all_headers tells us if we grab all the headers or just metadata
  * @param metadatap must be freed by caller
  *
  * @return
  */
+
 dpl_status_t
-dpl_head(dpl_ctx_t *ctx,
-         char *bucket,
-         char *resource,
-         char *subresource,
-         dpl_condition_t *condition,
-         dpl_dict_t **metadatap)
+dpl_head_gen(dpl_ctx_t *ctx,
+             char *bucket,
+             char *resource,
+             char *subresource,
+             dpl_condition_t *condition,
+             int all_headers,
+             dpl_dict_t **metadatap)
 {
   char          *host;
   int           ret, ret2;
@@ -1903,7 +1907,11 @@ dpl_head(dpl_ctx_t *ctx,
     {
       connection_close = dpl_connection_close(headers_reply);
 
-      ret2 = dpl_get_metadata_from_headers(headers_reply, metadata);
+      if (all_headers)
+        ret2 = dpl_dict_copy(metadata, headers_reply);
+      else
+        ret2 = dpl_get_metadata_from_headers(headers_reply, metadata);
+
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_FAILURE;
@@ -1943,6 +1951,28 @@ dpl_head(dpl_ctx_t *ctx,
   DPRINTF("ret=%d\n", ret);
 
   return ret;
+}
+
+dpl_status_t
+dpl_head(dpl_ctx_t *ctx,
+         char *bucket,
+         char *resource,
+         char *subresource,
+         dpl_condition_t *condition,
+         dpl_dict_t **metadatap)
+{
+  return dpl_head_gen(ctx, bucket, resource, subresource, condition, 0, metadatap);
+}
+
+dpl_status_t
+dpl_head_all_headers(dpl_ctx_t *ctx,
+                     char *bucket,
+                     char *resource,
+                     char *subresource,
+                     dpl_condition_t *condition,
+                     dpl_dict_t **metadatap)
+{
+  return dpl_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap);
 }
 
 

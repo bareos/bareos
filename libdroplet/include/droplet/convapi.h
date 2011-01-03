@@ -29,6 +29,7 @@ dpl_status_t dpl_get(dpl_ctx_t *ctx, char *bucket, char *resource, char *subreso
 dpl_status_t dpl_get_range(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, int start, int end, char **data_bufp, u_int *data_lenp, dpl_dict_t **metadatap);
 dpl_status_t dpl_get_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
 dpl_status_t dpl_head(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
+dpl_status_t dpl_head_all_headers(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
 dpl_status_t dpl_delete(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource);
 dpl_status_t dpl_genurl(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, time_t expires, char *buf, u_int len, u_int *lenp);
 dpl_status_t dpl_copy(dpl_ctx_t *ctx, char *src_bucket, char *src_resource, char *src_subresource, char *dst_bucket, char *dst_resource, char *dst_subresource, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, dpl_condition_t *condition);
