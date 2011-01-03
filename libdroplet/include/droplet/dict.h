@@ -46,4 +46,5 @@ void dpl_dict_free(dpl_dict_t *dict);
 void dpl_dict_print(dpl_dict_t *dict);
 dpl_status_t dpl_dict_add(dpl_dict_t *dict, char *key, char *value, int lowered);
 void dpl_dict_remove(dpl_dict_t *dict, dpl_var_t *var);
+dpl_status_t dpl_dict_copy(dpl_dict_t *dst, dpl_dict_t *src);
 #endif

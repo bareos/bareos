@@ -269,3 +269,27 @@ dpl_dict_remove(dpl_dict_t *dict,
   free(var->value);
   free(var);
 }
+
+
+
+static void
+cb_var_copy(dpl_var_t *var,
+            void *arg)
+{
+  dpl_dict_add((dpl_dict_t *)arg, var->key, var->value, 0);
+}
+
+dpl_status_t
+dpl_dict_copy(dpl_dict_t *dst,
+              dpl_dict_t *src)
+{
+  if (! dst)
+    return DPL_FAILURE;
+
+  if (src)
+    dpl_dict_iterate(src, cb_var_copy, dst);
+  else
+    dpl_dict_free(dst);
+
+  return DPL_SUCCESS;
+}
