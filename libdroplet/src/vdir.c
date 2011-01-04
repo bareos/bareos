@@ -406,7 +406,7 @@ dpl_vdir_readdir(void *dir_hdl,
       name = obj->key + strlen(dir->ino.key);
       name_len = strlen(name);
 
-      if (!strcmp(name, ""))
+      if (!strcmp(name, "/") || !strcmp(name, ""))
         {
           memcpy(dirent->name, ".", 1);
           dirent->name[1] = 0;
