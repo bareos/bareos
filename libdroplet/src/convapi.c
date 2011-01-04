@@ -1965,12 +1965,12 @@ dpl_head(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_head_all_headers(dpl_ctx_t *ctx,
-                     char *bucket,
-                     char *resource,
-                     char *subresource,
-                     dpl_condition_t *condition,
-                     dpl_dict_t **metadatap)
+dpl_head_all(dpl_ctx_t *ctx,
+             char *bucket,
+             char *resource,
+             char *subresource,
+             dpl_condition_t *condition,
+             dpl_dict_t **metadatap)
 {
   return dpl_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap);
 }
