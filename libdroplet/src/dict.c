@@ -148,7 +148,7 @@ cb_var_count(dpl_var_t *var,
 {
   int *count = (int *) cb_arg;
 
-  count++;
+  (*count)++;
 }
 
 int
@@ -156,6 +156,7 @@ dpl_dict_count(dpl_dict_t *dict)
 {
   int count;
 
+  count = 0;
   dpl_dict_iterate(dict, cb_var_count, &count);
 
   return count;
