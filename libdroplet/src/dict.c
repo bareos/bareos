@@ -294,3 +294,28 @@ dpl_dict_copy(dpl_dict_t *dst,
 
   return DPL_SUCCESS;
 }
+
+
+dpl_status_t
+dpl_dict_update_value(dpl_dict_t *dict,
+                      char *key,
+                      char *value)
+{
+  dpl_var_t *var = NULL;
+
+  if (! dict || ! value || ! key)
+    return DPL_FAILURE;
+
+  var = dpl_dict_get(dict, key);
+
+  if (! var)
+    return dpl_dict_add(dict, key, value, 0);
+
+  free(var->value);
+  var->value = strdup(value);
+
+  if (! var->value)
+    return DPL_ENOMEM;
+
+  return DPL_SUCCESS;
+}
