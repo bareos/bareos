@@ -272,7 +272,10 @@ read_line(dpl_conn_t *conn)
 /**
  * read http reply
  *
+ * TODO: use a callback instead of expect_data
+ *
  * @param conn
+ * @param expect_data // always set to 1, expect for HEAD-like methods!
  * @param header_func
  * @param buffer_func
  * @param cb_arg
@@ -281,6 +284,7 @@ read_line(dpl_conn_t *conn)
  */
 dpl_status_t
 dpl_read_http_reply_buffered(dpl_conn_t *conn,
+                             int expect_data,
                              dpl_header_func_t header_func,
                              dpl_buffer_func_t buffer_func,
                              void *cb_arg)
@@ -509,7 +513,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
 
                 DPL_TRACE(conn->ctx, DPL_TRACE_HTTP, "conn=%p header='%s' value='%s'", conn, line, p);
 
-                if (!strcasecmp(line, "Content-Length"))
+                if (expect_data && !strcasecmp(line, "Content-Length"))
                   {
                     chunk_len = atoi(p);
                   }
@@ -528,7 +532,6 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                         goto end;
                       }
                   }
-
                 break ;
               }
 
@@ -668,6 +671,7 @@ cb_httpreply_buffer(void *cb_arg,
  * read http reply simple version
  *
  * @param fd
+ * @param expect_data
  * @param data_bufp caller must free it
  * @param data_lenp
  * @param headersp caller must free it
@@ -676,6 +680,7 @@ cb_httpreply_buffer(void *cb_arg,
  */
 dpl_status_t
 dpl_read_http_reply(dpl_conn_t *conn,
+                    int expect_data,
                     char **data_bufp,
                     u_int *data_lenp,
                     dpl_dict_t **headersp)
@@ -685,7 +690,7 @@ dpl_read_http_reply(dpl_conn_t *conn,
 
   memset(&hc, 0, sizeof (hc));
 
-  ret2 = dpl_read_http_reply_buffered(conn, cb_httpreply_header, cb_httpreply_buffer, &hc);
+  ret2 = dpl_read_http_reply_buffered(conn, expect_data, cb_httpreply_header, cb_httpreply_buffer, &hc);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

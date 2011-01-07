@@ -33,7 +33,7 @@ dpl_close(dpl_vfile_t *vfile)
 
   if (NULL != vfile->conn)
     {
-      ret2 = dpl_read_http_reply(vfile->conn, NULL, NULL, &headers_returned);
+      ret2 = dpl_read_http_reply(vfile->conn, 1, NULL, NULL, &headers_returned);
       if (DPL_SUCCESS != ret2)
         {
           fprintf(stderr, "read http_reply failed %s (%d)\n", dpl_status_str(ret2), ret2);

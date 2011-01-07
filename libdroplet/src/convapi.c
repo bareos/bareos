@@ -114,7 +114,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -324,7 +324,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -556,7 +556,7 @@ dpl_make_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -702,7 +702,7 @@ dpl_deletebucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -893,7 +893,7 @@ dpl_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -1064,7 +1064,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -1253,7 +1253,7 @@ dpl_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -1472,7 +1472,7 @@ dpl_get_range(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -1714,7 +1714,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply_buffered(conn, cb_get_header, cb_get_buffer, &gc);
+  ret2 = dpl_read_http_reply_buffered(conn, 1, cb_get_header, cb_get_buffer, &gc);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -1802,7 +1802,7 @@ dpl_head_gen(dpl_ctx_t *ctx,
       goto end;
     }
 
-  dpl_req_set_method(req, DPL_METHOD_GET);
+  dpl_req_set_method(req, DPL_METHOD_HEAD);
 
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
@@ -1841,7 +1841,7 @@ dpl_head_gen(dpl_ctx_t *ctx,
     }
 
   //build request
-    ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1887,7 +1887,7 @@ dpl_head_gen(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 0, NULL, NULL, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -2085,7 +2085,7 @@ dpl_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -2395,7 +2395,7 @@ dpl_copy(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
