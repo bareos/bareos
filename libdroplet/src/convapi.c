@@ -967,7 +967,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_CONV, "put_buffered bucket=%s resource=%s", bucket, resource);
 
-    req = dpl_req_new(ctx);
+  req = dpl_req_new(ctx);
   if (NULL == req)
     {
       ret = DPL_ENOMEM;
@@ -1947,6 +1947,9 @@ dpl_head_gen(dpl_ctx_t *ctx,
 
   if (NULL != headers_request)
     dpl_dict_free(headers_request);
+
+  if (NULL != req)
+    dpl_req_free(req);
 
   DPRINTF("ret=%d\n", ret);
 
