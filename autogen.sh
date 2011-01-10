@@ -1,3 +1,3 @@
 #!/bin/sh
-autoreconf -i  -I m4
+autoreconf -i
 ./configure $@
