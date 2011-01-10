@@ -1,4 +1,4 @@
-AC_PREREQ(2.65)
+AC_PREREQ(2.59)
 AC_INIT([libdroplet], [0.1.0])
 AC_CONFIG_SRCDIR([libdroplet])
 AC_CONFIG_MACRO_DIR([m4])
@@ -18,6 +18,7 @@ AC_SUBST(LIBDROPLET_SO_VERSION)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip subdir-objects])
 
 AC_PROG_CC
+AM_PROG_CC_C_O
 
 LT_PATH_LD
 LT_INIT
