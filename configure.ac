@@ -27,9 +27,13 @@ AC_PROG_LN_S
 
 PKG_CHECK_MODULES(LIBXML, libxml-2.0)
 PKG_CHECK_MODULES(OPENSSL, openssl)
-AC_CHECK_LIB(readline, rl_abort, [READLINE_LIBS=-lreadline], [AC_MSG_ERROR([readline library missing])])
-AC_SUBST([READLINE_LIBS])
-AC_CHECK_LIB(m, sqrt, [LIBM_LIBS=-lm], [AC_MSG_ERROR([libm library missing])])
+AC_SEARCH_LIBS([rl_abort], [readline])
+if test x"$ac_cv_search_rl_abort" = x"no"; then
+    # Try again linking ncurses this time to workaround a bug on CentOS 5.5
+    # where linking with readline will fail if ncurses isn't linked as well.
+    unset ac_cv_search_rl_abort
+    AC_SEARCH_LIBS([rl_abort], [readline], [LIBS="$LIBS -lncurses"], [AC_MSG_ERROR([readline library missing])], [-lncurses])
+fi
 AC_SUBST([LIBM_LIBS])
 AX_PTHREAD
 
