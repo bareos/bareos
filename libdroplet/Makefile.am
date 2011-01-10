@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = libdroplet.la
 
-libdroplet_la_LDFLAGS = $(LIBXML_LIBS) $(OPENSSL_LIBS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined
+libdroplet_la_LDFLAGS = $(LIBXML_LIBS) $(OPENSSL_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined
 libdroplet_la_CFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS)
 
 libdroplet_la_SOURCES = \
