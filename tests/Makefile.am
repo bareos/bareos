@@ -2,7 +2,6 @@ noinst_PROGRAMS = dpl_perf_test test_req
 
 INCLUDES = -I$(top_srcdir)/libdroplet/include
 LIBS = $(top_builddir)/libdroplet/libdroplet.la
-dpl_perf_test_LDADD = $(LIBM_LIBS)
 dpl_perf_test_LIBS = $(PTHREAD_LIBS)
 dpl_perf_test_CFLAGS = $(PTHREAD_CFLAGS)
 dpl_perf_test_SOURCES = gendata.c dpl_perf_test.c

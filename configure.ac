@@ -34,7 +34,7 @@ if test x"$ac_cv_search_rl_abort" = x"no"; then
     unset ac_cv_search_rl_abort
     AC_SEARCH_LIBS([rl_abort], [readline], [LIBS="$LIBS -lncurses"], [AC_MSG_ERROR([readline library missing])], [-lncurses])
 fi
-AC_SUBST([LIBM_LIBS])
+AC_SEARCH_LIBS([sqrt], [m], [], [AC_MSG_ERROR([libm library missing])])
 AX_PTHREAD
 
 AC_CONFIG_FILES([
