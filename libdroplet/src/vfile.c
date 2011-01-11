@@ -1083,8 +1083,8 @@ dpl_fcopy(dpl_ctx_t *ctx,
           remote_name = dpl_strrstr(dst_path, ctx->delim);
           if (NULL != remote_name)
             {
-              remote_name += delim_len;
               *remote_name = 0;
+              remote_name += delim_len;
 
               //fetch parent directory
               ret2 = dpl_namei(ctx, !strcmp(dst_path, "") ? ctx->delim : dst_path, dst_bucket, dst_cur_ino, NULL, &parent_ino, NULL);
