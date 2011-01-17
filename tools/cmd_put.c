@@ -47,7 +47,7 @@ cmd_put(int argc,
   char *local_file = NULL;
   char *remote_file = NULL;
   dpl_vfile_t *vfile = NULL;
-  size_t block_size = 8192;
+  size_t block_size = 64*1024;
   ssize_t cc;
   struct stat st;
   int kflag = 0;
