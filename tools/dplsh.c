@@ -143,7 +143,7 @@ main(int argc,
   var_set("trace_level", NULL, VAR_CMD_SET_SPECIAL, var_set_trace_level);
   var_set("trace_level", "0", VAR_CMD_SET, NULL);
   var_set("block_size", NULL, VAR_CMD_SET_SPECIAL, var_set_block_size);
-  var_set("block_size", "8192", VAR_CMD_SET, NULL);
+  var_set("block_size", "1000000", VAR_CMD_SET, NULL);
   var_set("hash", NULL, VAR_CMD_SET_SPECIAL, var_set_hash);
   var_set("hash", "1", VAR_CMD_SET, NULL);
   var_set("delim", NULL, VAR_CMD_SET_SPECIAL, var_set_delim);
