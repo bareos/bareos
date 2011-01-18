@@ -24,23 +24,24 @@
 dpl_ctx_t *dpl_default_conn_ctx = NULL;
 
 static u_int
-conn_hashcode(char *buf,
-              int len)
+conn_hashcode(const unsigned char *data,
+              size_t len)
 {
-  u_int h, g, i;
+  const unsigned char *p;
+  u_int h, g;
+  int i = 0;
 
   h = g = 0;
 
-  for (i=0;i < len;buf++, i--)
+  for (p=data;i < len;p=p+1,i++)
     {
-      h = (h<<4)+(*buf);
+      h = (h<<4)+(*p);
       if ((g=h&0xf0000000))
         {
           h=h^(g>>24);
           h=h^g;
         }
     }
-
   return h;
 }
 
