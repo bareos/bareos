@@ -86,7 +86,7 @@ text_add(struct dpl_parse_ctx *parse_ctx,
 }
 
 enum dpl_tok
-identifier(char *str)
+dpl_pricing_identifier(char *str)
 {
   if (!strcasecmp(str, "requests"))
     return DPL_TOK_REQUESTS;
@@ -300,7 +300,7 @@ lex(struct dpl_parse_ctx *parse_ctx,
 	{
 	  enum dpl_tok tok;
 
-	  tok = identifier(parse_ctx->lex.text);
+	  tok = dpl_pricing_identifier(parse_ctx->lex.text);
 
 	  parse_ctx->lex.state = DPL_LEX_STATE_INIT;
 	  parse_ctx->lex.unput_byte = 1;
@@ -361,7 +361,7 @@ lex(struct dpl_parse_ctx *parse_ctx,
  */
 
 struct dpl_request_pricing *
-request_pricing_new()
+dpl_request_pricing_new()
 {
   struct dpl_request_pricing *reqp;
 
@@ -391,7 +391,7 @@ dpl_vec_request_pricing_free(dpl_vec_t *vec)
 }
 
 struct dpl_data_pricing *
-data_pricing_new()
+dpl_data_pricing_new()
 {
   struct dpl_data_pricing *datp;
 
@@ -429,7 +429,7 @@ dpl_vec_data_pricing_free(dpl_vec_t *vec)
 }
 
 enum dpl_request_type
-request_type(char *str)
+dpl_pricing_request_type(char *str)
 {
   if (!strcasecmp(str, "PUT"))
     return DPL_REQUEST_TYPE_PUT;
@@ -450,7 +450,7 @@ request_type(char *str)
 }
 
 enum dpl_data_type
-data_type(char *str)
+dpl_pricing_data_type(char *str)
 {
   if (!strcasecmp(str, "IN"))
     return DPL_DATA_TYPE_IN;
@@ -463,7 +463,7 @@ data_type(char *str)
 }
 
 enum dpl_duration_type
-duration_type(char *str)
+dpl_pricing_duration_type(char *str)
 {
   if (!strcasecmp(str, "DAY"))
     return DPL_DURATION_TYPE_DAY;
@@ -580,13 +580,13 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
 
           if (DPL_TOK_REQUEST == tok || '*' == tok)
             {
-              parse_ctx->parse.cur_request_pricing = request_pricing_new();
+              parse_ctx->parse.cur_request_pricing = dpl_request_pricing_new();
               if (NULL == parse_ctx->parse.cur_request_pricing)
                 return DPL_ENOMEM;
               if ('*' == tok)
                 parse_ctx->parse.cur_request_pricing->type = DPL_REQUEST_TYPE_WILDCARD;
               else
-                parse_ctx->parse.cur_request_pricing->type = request_type(parse_ctx->lex.text);
+                parse_ctx->parse.cur_request_pricing->type = dpl_pricing_request_type(parse_ctx->lex.text);
 
               parse_ctx->parse.state = DPL_PARSE_STATE_REQUEST_COLON;
               break ;
@@ -670,7 +670,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
 
           if (DPL_TOK_DATA_TYPE == tok)
             {
-              parse_ctx->parse.cur_data_type = data_type(parse_ctx->lex.text);
+              parse_ctx->parse.cur_data_type = dpl_pricing_data_type(parse_ctx->lex.text);
               parse_ctx->parse.state = DPL_PARSE_STATE_DATA_BLOCK;
               break ;
             }
@@ -691,7 +691,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
 
           if (DPL_TOK_NUMBER == tok || '*' == tok)
             {
-              parse_ctx->parse.cur_data_pricing = data_pricing_new();
+              parse_ctx->parse.cur_data_pricing = dpl_data_pricing_new();
               if (NULL == parse_ctx->parse.cur_data_pricing)
                 return DPL_ENOMEM;
               if ('*' == tok)
@@ -780,7 +780,7 @@ parse_buf(struct dpl_parse_ctx *parse_ctx,
 
           if (DPL_TOK_DURATION == tok)
             {
-              parse_ctx->parse.cur_data_pricing->duration = duration_type(parse_ctx->lex.text);
+              parse_ctx->parse.cur_data_pricing->duration = dpl_pricing_duration_type(parse_ctx->lex.text);
               parse_ctx->parse.state = DPL_PARSE_STATE_DATA_SEMICOLON;
               break ;
             }
