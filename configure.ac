@@ -27,13 +27,6 @@ AC_PROG_LN_S
 
 PKG_CHECK_MODULES(LIBXML, libxml-2.0)
 PKG_CHECK_MODULES(OPENSSL, openssl)
-AC_SEARCH_LIBS([rl_abort], [readline])
-if test x"$ac_cv_search_rl_abort" = x"no"; then
-    # Try again linking ncurses this time to workaround a bug on CentOS 5.5
-    # where linking with readline will fail if ncurses isn't linked as well.
-    unset ac_cv_search_rl_abort
-    AC_SEARCH_LIBS([rl_abort], [readline], [LIBS="$LIBS -lncurses"], [AC_MSG_ERROR([readline library missing])], [-lncurses])
-fi
 AC_SEARCH_LIBS([sqrt], [m], [], [AC_MSG_ERROR([libm library missing])])
 AX_PTHREAD
 
@@ -42,7 +35,6 @@ Makefile
 examples/Makefile
 libdroplet/Makefile
 tests/Makefile
-tools/Makefile
 droplet-1.0.pc
 ])
 AC_OUTPUT

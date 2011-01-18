@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS=libdroplet tools examples tests
+SUBDIRS=libdroplet examples tests
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = droplet-1.0.pc
