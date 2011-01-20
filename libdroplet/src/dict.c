@@ -296,6 +296,46 @@ dpl_dict_copy(dpl_dict_t *dst,
 }
 
 
+struct conviterate {
+  dpl_dict_t *dict;
+  char *prefix;
+};
+
+static void
+cb_var_filter_string(dpl_var_t *var,
+                     void *cb_arg)
+{
+  struct conviterate *conv = cb_arg;
+  size_t prefix_len;
+
+  if (! conv->prefix)
+    return;
+
+  prefix_len = strlen(conv->prefix);
+
+  if (0 == strncmp(var->key, conv->prefix, prefix_len))
+    dpl_dict_add(conv->dict, var->key + prefix_len, var->value, 0);
+}
+
+dpl_status_t
+dpl_dict_filter_prefix(dpl_dict_t *dst,
+                       dpl_dict_t *src,
+                       char *prefix)
+{
+  if (! dst)
+    return DPL_FAILURE;
+
+  if (src) {
+    struct conviterate conv = { .dict = dst, .prefix = prefix };
+    dpl_dict_iterate(src, cb_var_filter_string, &conv);
+  } else {
+    dpl_dict_free(dst);
+  }
+
+  return DPL_SUCCESS;
+}
+
+
 dpl_status_t
 dpl_dict_update_value(dpl_dict_t *dict,
                       char *key,

@@ -23,34 +23,7 @@ dpl_status_t
 dpl_get_metadata_from_headers(dpl_dict_t *headers,
                               dpl_dict_t *metadata)
 {
-  int bucket;
-  dpl_var_t *var;
-  int ret;
-
-  for (bucket = 0;bucket < headers->n_buckets;bucket++)
-    {
-      for (var = headers->buckets[bucket];var;var = var->prev)
-        {
-          int x_amz_meta_len;
-
-#define X_AMZ_META "x-amz-meta-"
-          x_amz_meta_len = strlen(X_AMZ_META);
-          if (!strncmp(var->key, X_AMZ_META, x_amz_meta_len))
-            {
-              char *p;
-
-              p = var->key + x_amz_meta_len;
-
-              ret = dpl_dict_add(metadata, p, var->value, 0);
-              if (DPL_SUCCESS != ret)
-                {
-                  return DPL_FAILURE;
-                }
-            }
-        }
-    }
-
-  return DPL_SUCCESS;
+  return dpl_dict_filter_prefix(metadata, headers, "x-amz-meta-");
 }
 
 /**/
