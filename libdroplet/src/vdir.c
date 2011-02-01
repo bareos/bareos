@@ -531,7 +531,7 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
   //XXX check length
   strcat(ino.key, obj_name);
   //append delim to key if not already
-  if (obj_name_len > delim_len && strcmp(obj_name + obj_name_len - delim_len, ctx->delim))
+  if (obj_name_len >= delim_len && strcmp(obj_name + obj_name_len - delim_len, ctx->delim))
     strcat(ino.key, ctx->delim);
 
   ret2 = dpl_vdir_count_entries(ctx, bucket, ino, &n_entries);
