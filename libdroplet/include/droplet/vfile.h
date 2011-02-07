@@ -43,7 +43,7 @@ typedef struct
 {
   dpl_ctx_t *ctx;
 
-  u_int flags;
+  unsigned int flags;
 
   dpl_conn_t *conn;
 
@@ -55,7 +55,7 @@ typedef struct
   /*
    * encrypt
    */
-  u_char salt[PKCS5_SALT_LEN];
+  unsigned char salt[PKCS5_SALT_LEN];
   EVP_CIPHER_CTX *cipher_ctx;
   int header_done;
 
@@ -73,13 +73,13 @@ typedef struct
 /* PROTO vfile.c */
 /* src/vfile.c */
 dpl_status_t dpl_close(dpl_vfile_t *vfile);
-dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, char *locator, u_int flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, u_int data_len, dpl_vfile_t **vfilep);
-dpl_status_t dpl_write(dpl_vfile_t *vfile, char *buf, u_int len);
-dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *locator, u_int flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap);
-dpl_status_t dpl_openread_range(dpl_ctx_t *ctx, char *locator, u_int flags, dpl_condition_t *condition, int start, int end, char **data_bufp, u_int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, char *locator, unsigned int flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, unsigned int data_len, dpl_vfile_t **vfilep);
+dpl_status_t dpl_write(dpl_vfile_t *vfile, char *buf, unsigned int len);
+dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *locator, unsigned int flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap);
+dpl_status_t dpl_openread_range(dpl_ctx_t *ctx, char *locator, unsigned int flags, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
 dpl_status_t dpl_unlink(dpl_ctx_t *ctx, char *locator);
 dpl_status_t dpl_getattr(dpl_ctx_t *ctx, char *locator, dpl_dict_t **metadatap);
 dpl_status_t dpl_setattr(dpl_ctx_t *ctx, char *locator, dpl_dict_t *metadata);
-dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, char *locator, time_t expires, char *buf, u_int len, u_int *lenp);
+dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, char *locator, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
 dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, char *src_locator, char *dst_locator);
 #endif

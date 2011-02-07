@@ -482,7 +482,7 @@ static dpl_status_t
 dpl_vdir_count_entries(dpl_ctx_t *ctx,
                        char *bucket,
                        dpl_ino_t ino,
-                       u_int *n_entriesp)
+                       unsigned int *n_entriesp)
 {
   void *dir_hdl = NULL;
   int ret, ret2;
@@ -589,7 +589,7 @@ dpl_iname(dpl_ctx_t *ctx,
           char *bucket,
           dpl_ino_t ino,
           char *path,
-          u_int path_len)
+          unsigned int path_len)
 {
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "iname bucket=%s ino=%s", bucket, ino.key);
 

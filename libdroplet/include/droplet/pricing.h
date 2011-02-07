@@ -112,9 +112,9 @@ enum dpl_request_type
 struct dpl_request_pricing
 {
   enum dpl_request_type type;
-  u_int price;
+  unsigned int price;
   enum dpl_currency currency;
-  u_int quantity;
+  unsigned int quantity;
 };
 
 enum dpl_unit

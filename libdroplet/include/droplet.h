@@ -89,7 +89,7 @@ typedef int dpl_status_t;
 #define DPL_TRACE_VFILE (1u<<8) /*!< trace vfile */
 #define DPL_TRACE_BUF   (1u<<31) /*!< trace buffers */
 
-typedef void (*dpl_trace_func_t)(pid_t tid, u_int level, char *file, int lineno, char *buf);
+typedef void (*dpl_trace_func_t)(pid_t tid, unsigned int level, char *file, int lineno, char *buf);
 
 #include <droplet/vec.h>
 #include <droplet/dict.h>
@@ -146,7 +146,7 @@ typedef struct
 #define DPL_CONDITION_IF_UNMODIFIED_SINCE (1u<<1)
 #define DPL_CONDITION_IF_MATCH            (1u<<2)
 #define DPL_CONDITION_IF_NONE_MATCH       (1u<<3)
-  u_int mask;
+  unsigned int mask;
   time_t time;
   char etag[MD5_DIGEST_LENGTH];
 } dpl_condition_t;
@@ -159,7 +159,7 @@ typedef struct dpl_ino
 typedef struct
 {
   char *buf;
-  u_int len;
+  unsigned int len;
 } dpl_chunk_t;
 
 typedef struct
@@ -216,9 +216,9 @@ typedef struct dpl_ctx
   char *ssl_key_file;
   char *ssl_password;
   char *ssl_ca_list;
-  u_int trace_level;
+  unsigned int trace_level;
   char *pricing;              /*!< might be NULL */
-  u_int read_buf_size;
+  unsigned int read_buf_size;
   char *encrypt_key;
   char *delim;                /*!< vdir delimiter */
 
@@ -273,7 +273,7 @@ typedef struct
 #define DPL_BEHAVIOR_KEEP_ALIVE   (1u<<3)
 #define DPL_BEHAVIOR_QUERY_STRING (1u<<4)
 #define DPL_BEHAVIOR_COPY         (1u<<5)
-  u_int behavior_flags;
+  unsigned int behavior_flags;
 
   dpl_method_t method;
   char *bucket;

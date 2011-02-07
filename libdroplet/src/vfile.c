@@ -167,10 +167,10 @@ encrypt_init(dpl_vfile_t *vfile,
 dpl_status_t
 dpl_openwrite(dpl_ctx_t *ctx,
               char *locator,
-              u_int flags,
+              unsigned int flags,
               dpl_dict_t *metadata,
               dpl_canned_acl_t canned_acl,
-              u_int data_len,
+              unsigned int data_len,
               dpl_vfile_t **vfilep)
 {
   dpl_vfile_t *vfile = NULL;
@@ -374,7 +374,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_write(dpl_vfile_t *vfile,
           char *buf,
-          u_int len)
+          unsigned int len)
 {
   int ret, ret2;
   struct iovec iov[10];
@@ -563,7 +563,7 @@ cb_vfile_buffer(void *cb_arg,
 dpl_status_t
 dpl_openread(dpl_ctx_t *ctx,
              char *locator,
-             u_int flags,
+             unsigned int flags,
              dpl_condition_t *condition,
              dpl_buffer_func_t buffer_func,
              void *cb_arg,
@@ -688,12 +688,12 @@ dpl_openread(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_openread_range(dpl_ctx_t *ctx,
                    char *locator,
-                   u_int flags,
+                   unsigned int flags,
                    dpl_condition_t *condition,
                    int start,
                    int end,
                    char **data_bufp,
-                   u_int *data_lenp,
+                   unsigned int *data_lenp,
                    dpl_dict_t **metadatap)
 {
   int ret, ret2;
@@ -964,8 +964,8 @@ dpl_fgenurl(dpl_ctx_t *ctx,
             char *locator,
             time_t expires,
             char *buf,
-            u_int len,
-            u_int *lenp)
+            unsigned int len,
+            unsigned int *lenp)
 {
   int ret, ret2;
   dpl_ino_t obj_ino;

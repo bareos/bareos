@@ -265,7 +265,7 @@ do_connect(dpl_ctx_t *ctx,
 dpl_conn_t *
 dpl_conn_open(dpl_ctx_t *ctx,
               struct in_addr addr,
-              u_int port)
+              unsigned int port)
 {
   dpl_conn_t *conn = NULL;
   time_t now = time(0);
@@ -386,7 +386,7 @@ dpl_conn_open(dpl_ctx_t *ctx,
 dpl_conn_t *
 dpl_conn_open_host(dpl_ctx_t *ctx,
                    char *host,
-                   u_int port)
+                   unsigned int port)
 {
   int           ret2;
   struct hostent hret, *hresult;

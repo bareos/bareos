@@ -37,7 +37,7 @@
 struct dpl_hash_info
 {
   struct in_addr addr;
-  u_short port;
+  unsigned short port;
 };
 
 typedef struct dpl_conn
@@ -52,7 +52,7 @@ typedef struct dpl_conn
   int fd;
   time_t start_time;
   time_t close_time;
-  u_int	n_hits;
+  unsigned int	n_hits;
 
   /*
    * buffer
@@ -79,8 +79,8 @@ typedef struct dpl_conn
 
 /* PROTO conn.c */
 /* src/conn.c */
-dpl_conn_t *dpl_conn_open(dpl_ctx_t *ctx, struct in_addr addr, u_int port);
-dpl_conn_t *dpl_conn_open_host(dpl_ctx_t *ctx, char *host, u_int port);
+dpl_conn_t *dpl_conn_open(dpl_ctx_t *ctx, struct in_addr addr, unsigned int port);
+dpl_conn_t *dpl_conn_open_host(dpl_ctx_t *ctx, char *host, unsigned int port);
 void dpl_conn_release(dpl_conn_t *conn);
 void dpl_conn_terminate(dpl_conn_t *conn);
 dpl_status_t dpl_conn_pool_init(dpl_ctx_t *ctx);

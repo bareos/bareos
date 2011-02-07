@@ -168,14 +168,14 @@ dpl_req_set_subresource(dpl_req_t *req,
 
 void
 dpl_req_add_behavior(dpl_req_t *req,
-                     u_int flags)
+                     unsigned int flags)
 {
   req->behavior_flags |= flags;
 }
 
 void
 dpl_req_rm_behavior(dpl_req_t *req,
-                    u_int flags)
+                    unsigned int flags)
 {
   req->behavior_flags &= ~flags;
 }
@@ -592,8 +592,8 @@ dpl_make_signature(dpl_ctx_t *ctx,
                    char *subresource,
                    dpl_dict_t *headers,
                    char *buf,
-                   u_int len,
-                   u_int *lenp)
+                   unsigned int len,
+                   unsigned int *lenp)
 {
   char *p;
   //char *tmp_str;
@@ -1177,7 +1177,7 @@ dpl_req_gen_http_request(dpl_req_t *req,
                          dpl_dict_t *query_params,
                          char *buf,
                          int len,
-                         u_int *lenp)
+                         unsigned int *lenp)
 {
   char *p;
   char *method = dpl_method_str(req->method);
@@ -1275,7 +1275,7 @@ dpl_req_gen_url(dpl_req_t *req,
                 dpl_dict_t *headers,
                 char *buf,
                 int len,
-                u_int *lenp)
+                unsigned int *lenp)
 {
   int ret, ret2;
   char *p;

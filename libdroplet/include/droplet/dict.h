@@ -48,7 +48,7 @@ typedef void (*dpl_dict_func_t)(dpl_var_t *var, void *cb_arg);
 typedef struct
 {
   dpl_var_t **buckets;
-  u_int n_buckets;
+  unsigned int n_buckets;
 } dpl_dict_t;
 
 /* PROTO dict.c */

@@ -699,7 +699,7 @@ dpl_status_t
 dpl_read_http_reply(dpl_conn_t *conn,
                     int expect_data,
                     char **data_bufp,
-                    u_int *data_lenp,
+                    unsigned int *data_lenp,
                     dpl_dict_t **headersp)
 {
   int ret, ret2;
