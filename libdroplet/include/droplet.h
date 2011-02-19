@@ -326,7 +326,7 @@ typedef struct
 const char *dpl_status_str(dpl_status_t status);
 dpl_status_t dpl_init(void);
 void dpl_free(void);
-dpl_ctx_t *dpl_ctx_new(char *droplet_dir, char *profile_name);
+dpl_ctx_t *dpl_ctx_new(const char *droplet_dir, const char *profile_name);
 void dpl_ctx_free(dpl_ctx_t *ctx);
 double dpl_price_storage(dpl_ctx_t *ctx, size_t size);
 char *dpl_price_storage_str(dpl_ctx_t *ctx, size_t size);

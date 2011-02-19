@@ -595,8 +595,8 @@ dpl_profile_post(dpl_ctx_t *ctx)
  */
 dpl_status_t
 dpl_profile_load(dpl_ctx_t *ctx,
-                 char *droplet_dir,
-                 char *profile_name)
+                 const char *droplet_dir,
+                 const char *profile_name)
 {
   char path[1024];
   char default_dir[1024];

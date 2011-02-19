@@ -87,8 +87,8 @@ dpl_free()
 }
 
 dpl_ctx_t *
-dpl_ctx_new(char *droplet_dir,
-            char *profile_name)
+dpl_ctx_new(const char *droplet_dir,
+            const char *profile_name)
 {
   dpl_ctx_t *ctx;
   int ret;
