@@ -76,7 +76,7 @@ dpl_conn_get_nolock(dpl_ctx_t *ctx,
   hash_info.addr.s_addr = addr.s_addr;
   hash_info.port = port;
 
-  bucket = conn_hashcode((char *) &hash_info, sizeof (hash_info)) % ctx->n_conn_buckets;
+  bucket = conn_hashcode((unsigned char *)&hash_info, sizeof (hash_info)) % ctx->n_conn_buckets;
 
   for (conn = ctx->conn_buckets[bucket];conn;conn = conn->prev)
     {
@@ -92,7 +92,7 @@ dpl_conn_add_nolock(dpl_conn_t *conn)
 {
   u_int bucket;
 
-  bucket = conn_hashcode((char *) &conn->hash_info, sizeof (conn->hash_info)) % conn->ctx->n_conn_buckets;
+  bucket = conn_hashcode((unsigned char *) &conn->hash_info, sizeof (conn->hash_info)) % conn->ctx->n_conn_buckets;
 
   conn->next = NULL;
   conn->prev = conn->ctx->conn_buckets[bucket];
@@ -110,7 +110,7 @@ dpl_conn_remove_nolock(dpl_ctx_t *ctx,
 {
   u_int bucket;
 
-  bucket = conn_hashcode((char *) &conn->hash_info, sizeof (conn->hash_info)) % ctx->n_conn_buckets;
+  bucket = conn_hashcode((unsigned char *) &conn->hash_info, sizeof (conn->hash_info)) % ctx->n_conn_buckets;
 
   if (conn->prev)
     conn->prev->next = conn->next;
