@@ -576,9 +576,9 @@ dpl_make_bucket(dpl_ctx_t *ctx,
   ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
+      if (DPL_ENOENT == ret2 || DPL_EEXIST == ret2)
         {
-          ret = DPL_ENOENT;
+          ret = ret2;
           goto end;
         }
       else
