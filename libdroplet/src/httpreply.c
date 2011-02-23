@@ -463,10 +463,18 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                 {
                   DPLERR(0, "request failed %d", http_reply.code);
 
-                  if (DPL_HTTP_CODE_NOT_FOUND == http_reply.code)
-                    ret = DPL_ENOENT;
-                  else
-                    ret = DPL_FAILURE;
+                  switch (http_reply.code)
+                    {
+                    case DPL_HTTP_CODE_NOT_FOUND:
+                      ret = DPL_ENOENT;
+                      break;
+                    case DPL_HTTP_CODE_CONFLICT:
+                      ret = DPL_EEXIST;
+                      break;
+                    default:
+                      ret = DPL_FAILURE;
+                      break;
+                    }
 
                   goto end;
                 }

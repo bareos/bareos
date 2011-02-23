@@ -47,6 +47,7 @@ struct dpl_http_reply
 #define DPL_HTTP_CODE_NO_CONTENT      204
 #define DPL_HTTP_CODE_PARTIAL_CONTENT 206
 #define DPL_HTTP_CODE_NOT_FOUND       404
+#define DPL_HTTP_CODE_CONFLICT        409
   int	code;
   char	*descr_start;
   char	*descr_end;
