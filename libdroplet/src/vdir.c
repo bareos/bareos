@@ -348,8 +348,7 @@ dpl_vdir_opendir(dpl_ctx_t *ctx,
       if (NULL != dir->directories)
         dpl_vec_common_prefixes_free(dir->directories);
 
-      if (NULL != dir)
-        free(dir);
+      free(dir);
     }
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "ret=%d", ret);
