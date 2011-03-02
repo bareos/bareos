@@ -473,7 +473,18 @@ dpl_vdir_eof(void *dir_hdl)
 static void
 dpl_vdir_closedir(void *dir_hdl)
 {
-  dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
+  dpl_dir_t *dir = dir_hdl;
+
+  if (dir)
+    {
+      if (dir->files)
+        dpl_vec_objects_free(dir->files);
+
+      if (dir->directories)
+        dpl_vec_common_prefixes_free(dir->directories);
+
+      free(dir);
+    }
 
   DPL_TRACE(dir->ctx, DPL_TRACE_VDIR, "closedir dir_hdl=%p", dir_hdl);
 }
