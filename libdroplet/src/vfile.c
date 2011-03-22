@@ -252,8 +252,14 @@ dpl_openwrite(dpl_ctx_t *ctx,
               remote_name = path;
             }
 
+          // If the remote_name string length is 0,
+          // that means that the parent ino was searched with dpl_namei
+          // and that we should concat the rest of the locator instead.
           obj_ino = parent_ino;
-          strcat(obj_ino.key, remote_name); //XXX check length
+          if (remote_name[0] == '\0')
+              strcat(obj_ino.key, &locator[strlen(path)]);
+          else
+              strcat(obj_ino.key, remote_name); //XXX check length
           obj_type = DPL_FTYPE_REG;
         }
       else
