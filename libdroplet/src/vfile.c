@@ -257,7 +257,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
           // and that we should concat the rest of the locator instead.
           obj_ino = parent_ino;
           if (remote_name[0] == '\0')
-              strcat(obj_ino.key, &locator[strlen(path)]);
+              strcat(obj_ino.key, &locator[path - nlocator + strlen(path)]);
           else
               strcat(obj_ino.key, remote_name); //XXX check length
           obj_type = DPL_FTYPE_REG;
