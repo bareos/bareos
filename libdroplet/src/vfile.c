@@ -272,7 +272,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
     {
       if (vfile->flags & DPL_VFILE_FLAG_EXCL)
         {
-          ret = DPL_FAILURE;
+          ret = DPL_EEXIST;
           goto end;
         }
     }
