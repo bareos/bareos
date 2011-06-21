@@ -67,7 +67,8 @@ main(int argc,
   if (2 != argc)
     {
       fprintf(stderr, "usage: recurse bucket\n");
-      exit(1);
+      ret = 1;
+      goto end;
     }
 
   bucket = argv[1];
@@ -76,27 +77,42 @@ main(int argc,
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_init failed\n");
-      exit(1);
+      ret = 1;
+      goto end;
     }
 
   ctx = dpl_ctx_new(NULL, NULL);
   if (NULL == ctx)
     {
       fprintf(stderr, "dpl_ctx_new failed\n");
-      exit(1);
+      ret = 1;
+      goto free_dpl;
     }
 
-  ctx->cur_bucket = bucket;
+  ctx->cur_bucket = strdup(bucket);
+  if (! ctx->cur_bucket)
+    {
+      perror("strdup");
+      ret = 1;
+      goto free_all;
+    }
 
   ret = recurse(ctx, "/", 0);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error recursing\n");
-      exit(1);
+      ret = 1;
+      goto free_all;
     }
 
+  ret = 0;
+
+ free_all:
   dpl_ctx_free(ctx);
+
+ free_dpl:
   dpl_free();
 
-  return 0;
+ end:
+  return ret;
 }
