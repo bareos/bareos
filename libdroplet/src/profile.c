@@ -311,6 +311,18 @@ conf_cb_func(void *cb_arg,
       if (NULL == ctx->encrypt_key)
         return -1;
     }
+  else if (!strcmp(var, "light_mode"))
+    {
+      if (!strcasecmp(value, "true"))
+        ctx->light_mode = 1;
+      else if (!strcasecmp(value, "false"))
+        ctx->light_mode = 0;
+      else
+        {
+          fprintf(stderr, "invalid value '%s'\n", var);
+          return -1;
+        }
+    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);

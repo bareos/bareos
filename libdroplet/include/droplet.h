@@ -222,6 +222,7 @@ typedef struct dpl_ctx
   unsigned int read_buf_size;
   char *encrypt_key;
   char *delim;                /*!< vdir delimiter */
+  int light_mode; //bypass vdir mechanism
 
   /*
    * pricing

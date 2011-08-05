@@ -219,65 +219,73 @@ dpl_openwrite(dpl_ctx_t *ctx,
   vfile->ctx = ctx;
   vfile->flags = flags;
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (ctx->light_mode)
     {
-      if (DPL_ENOENT == ret2)
+      strcpy(obj_ino.key, path); //XXX check length
+      obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+      if (DPL_SUCCESS != ret2)
         {
-          char *remote_name;
-
-          if (!(vfile->flags & DPL_VFILE_FLAG_CREAT))
+          if (DPL_ENOENT == ret2)
+            {
+              char *remote_name;
+              
+              if (!(vfile->flags & DPL_VFILE_FLAG_CREAT))
+                {
+                  ret = DPL_FAILURE;
+                  goto end;
+                }
+              
+              remote_name = dpl_strrstr(path, ctx->delim);
+              if (NULL != remote_name)
+                {
+                  remote_name += delim_len;
+                  *remote_name = 0;
+                  
+                  //fetch parent directory
+                  ret2 = dpl_namei(ctx, !strcmp(path, "") ? ctx->delim : path, bucket, cur_ino, NULL, &parent_ino, NULL);
+                  if (DPL_SUCCESS != ret2)
+                    {
+                      DPLERR(0, "dst parent dir resolve failed %s: %s\n", path, dpl_status_str(ret2));
+                      ret = ret2;
+                      goto end;
+                    }
+                }
+              else
+                {
+                  parent_ino = cur_ino;
+                  remote_name = path;
+                }
+              
+              // If the remote_name string length is 0,
+              // that means that the parent ino was searched with dpl_namei
+              // and that we should concat the rest of the locator instead.
+              obj_ino = parent_ino;
+              if (remote_name[0] == '\0')
+                strcat(obj_ino.key, &locator[path - nlocator + strlen(path)]);
+              else
+                strcat(obj_ino.key, remote_name); //XXX check length
+              obj_type = DPL_FTYPE_REG;
+            }
+          else
             {
               ret = DPL_FAILURE;
               goto end;
             }
-
-          remote_name = dpl_strrstr(path, ctx->delim);
-          if (NULL != remote_name)
-            {
-              remote_name += delim_len;
-              *remote_name = 0;
-
-              //fetch parent directory
-              ret2 = dpl_namei(ctx, !strcmp(path, "") ? ctx->delim : path, bucket, cur_ino, NULL, &parent_ino, NULL);
-              if (DPL_SUCCESS != ret2)
-                {
-                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", path, dpl_status_str(ret2));
-                  ret = ret2;
-                  goto end;
-                }
-            }
-          else
-            {
-              parent_ino = cur_ino;
-              remote_name = path;
-            }
-
-          // If the remote_name string length is 0,
-          // that means that the parent ino was searched with dpl_namei
-          // and that we should concat the rest of the locator instead.
-          obj_ino = parent_ino;
-          if (remote_name[0] == '\0')
-              strcat(obj_ino.key, &locator[path - nlocator + strlen(path)]);
-          else
-              strcat(obj_ino.key, remote_name); //XXX check length
-          obj_type = DPL_FTYPE_REG;
         }
       else
         {
-          ret = DPL_FAILURE;
-          goto end;
+          if (vfile->flags & DPL_VFILE_FLAG_EXCL)
+            {
+              ret = DPL_EEXIST;
+              goto end;
+            }
         }
     }
-  else
-    {
-      if (vfile->flags & DPL_VFILE_FLAG_EXCL)
-        {
-          ret = DPL_EEXIST;
-          goto end;
-        }
-    }
-
+      
   if (DPL_FTYPE_REG != obj_type)
     {
       ret = DPL_EISDIR;
@@ -629,11 +637,19 @@ dpl_openread(dpl_ctx_t *ctx,
   vfile->buffer_func = buffer_func;
   vfile->cb_arg = cb_arg;
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (ctx->light_mode)
     {
-      ret = DPL_FAILURE;
-      goto end;
+      strcpy(obj_ino.key, path); //XXX check length
+      obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
     }
 
   if (DPL_FTYPE_REG != obj_type)
@@ -733,11 +749,19 @@ dpl_openread_range(dpl_ctx_t *ctx,
 
   cur_ino = dpl_cwd(ctx, bucket);
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (ctx->light_mode)
     {
-      ret = DPL_FAILURE;
-      goto end;
+      strcpy(obj_ino.key, path); //XXX check length
+      obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
     }
 
   if (DPL_FTYPE_REG != obj_type)
@@ -806,11 +830,19 @@ dpl_unlink(dpl_ctx_t *ctx,
 
   cur_ino = dpl_cwd(ctx, bucket);
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (ctx->light_mode)
     {
-      ret = ret2;
-      goto end;
+      strcpy(obj_ino.key, path); //XXX check length
+      obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
 
   if (DPL_FTYPE_REG != obj_type)
@@ -871,11 +903,19 @@ dpl_getattr(dpl_ctx_t *ctx,
 
   cur_ino = dpl_cwd(ctx, bucket);
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (ctx->light_mode)
     {
-      ret = ret2;
-      goto end;
+      strcpy(obj_ino.key, path); //XXX check length
+      obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
 
   if (DPL_FTYPE_REG != obj_type)
@@ -936,11 +976,19 @@ dpl_setattr(dpl_ctx_t *ctx,
 
   cur_ino = dpl_cwd(ctx, bucket);
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (ctx->light_mode)
     {
-      ret = ret2;
-      goto end;
+      strcpy(obj_ino.key, path); //XXX check length
+      obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
 
   if (DPL_FTYPE_REG != obj_type)
@@ -1004,12 +1052,20 @@ dpl_fgenurl(dpl_ctx_t *ctx,
 
   cur_ino = dpl_cwd(ctx, bucket);
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_ino, NULL, &obj_ino, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (ctx->light_mode)
     {
-      DPLERR(0, "namei failed %s (%d)\n", dpl_status_str(ret2), ret2);
-      ret = ret2;
-      goto end;
+      strcpy(obj_ino.key, path); //XXX check length
+      obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, path, bucket, cur_ino, NULL, &obj_ino, &obj_type);
+      if (DPL_SUCCESS != ret2)
+        {
+          DPLERR(0, "namei failed %s (%d)\n", dpl_status_str(ret2), ret2);
+          ret = ret2;
+          goto end;
+        }
     }
 
   ret2 = dpl_genurl(ctx, bucket, obj_ino.key, NULL, expires, buf, len, lenp);
@@ -1089,45 +1145,61 @@ dpl_fcopy(dpl_ctx_t *ctx,
 
   dst_cur_ino = dpl_cwd(ctx, dst_bucket);
 
-  ret2 = dpl_namei(ctx, src_path, src_bucket, src_cur_ino, NULL, &src_obj_ino, &src_obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (ctx->light_mode)
     {
-      DPLERR(0, "namei failed %s (%d)\n", dpl_status_str(ret2), ret2);
-      ret = ret2;
-      goto end;
+      strcpy(src_obj_ino.key, src_path); //XXX check length
+      src_obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, src_path, src_bucket, src_cur_ino, NULL, &src_obj_ino, &src_obj_type);
+      if (DPL_SUCCESS != ret2)
+        {
+          DPLERR(0, "namei failed %s (%d)\n", dpl_status_str(ret2), ret2);
+          ret = ret2;
+          goto end;
+        }
     }
 
-  ret2 = dpl_namei(ctx, dst_path, dst_bucket, dst_cur_ino, NULL, &dst_obj_ino, &dst_obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (ctx->light_mode)
     {
-      if (DPL_ENOENT == ret2)
+      strcpy(dst_obj_ino.key, dst_path); //XXX check length
+      dst_obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, dst_path, dst_bucket, dst_cur_ino, NULL, &dst_obj_ino, &dst_obj_type);
+      if (DPL_SUCCESS != ret2)
         {
-          char *remote_name;
-
-          remote_name = dpl_strrstr(dst_path, ctx->delim);
-          if (NULL != remote_name)
+          if (DPL_ENOENT == ret2)
             {
-              *remote_name = 0;
-              remote_name += delim_len;
-
-              //fetch parent directory
-              ret2 = dpl_namei(ctx, !strcmp(dst_path, "") ? ctx->delim : dst_path, dst_bucket, dst_cur_ino, NULL, &parent_ino, NULL);
-              if (DPL_SUCCESS != ret2)
+              char *remote_name;
+              
+              remote_name = dpl_strrstr(dst_path, ctx->delim);
+              if (NULL != remote_name)
                 {
-                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", dst_path, dpl_status_str(ret2));
-                  ret = ret2;
-                  goto end;
+                  *remote_name = 0;
+                  remote_name += delim_len;
+                  
+                  //fetch parent directory
+                  ret2 = dpl_namei(ctx, !strcmp(dst_path, "") ? ctx->delim : dst_path, dst_bucket, dst_cur_ino, NULL, &parent_ino, NULL);
+                  if (DPL_SUCCESS != ret2)
+                    {
+                      DPLERR(0, "dst parent dir resolve failed %s: %s\n", dst_path, dpl_status_str(ret2));
+                      ret = ret2;
+                      goto end;
+                    }
                 }
+              else
+                {
+                  parent_ino = dst_cur_ino;
+                  remote_name = dst_path;
+                }
+              
+              dst_obj_ino = parent_ino;
+              strcat(dst_obj_ino.key, remote_name); //XXX check length
+              dst_obj_type = DPL_FTYPE_REG;
             }
-          else
-            {
-              parent_ino = dst_cur_ino;
-              remote_name = dst_path;
-            }
-
-          dst_obj_ino = parent_ino;
-          strcat(dst_obj_ino.key, remote_name); //XXX check length
-          dst_obj_type = DPL_FTYPE_REG;
         }
     }
 
