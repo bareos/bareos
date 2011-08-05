@@ -53,7 +53,8 @@ dpl_close(dpl_vfile_t *vfile)
       ret2 = dpl_read_http_reply(vfile->conn, 1, NULL, NULL, &headers_returned);
       if (DPL_SUCCESS != ret2)
         {
-          fprintf(stderr, "read http_reply failed %s (%d)\n", dpl_status_str(ret2), ret2);
+          //too common to print
+          //fprintf(stderr, "read http_reply failed %s (%d)\n", dpl_status_str(ret2), ret2);
           ret = ret2;
         }
       else
