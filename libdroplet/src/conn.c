@@ -137,7 +137,6 @@ safe_close(int fd)
       if (EINTR == errno)
         goto retry;
 
-      DPLERR(1, "close failed");
       return -1;
     }
 
