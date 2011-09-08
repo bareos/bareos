@@ -60,6 +60,18 @@ int seed = 0;
 
 dpl_ctx_t *ctx = NULL;
 
+#if defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+
+struct drand48_data
+{
+    u_short __x[3];
+    u_short __old_x[3];
+    u_short __c;
+    u_short __init;
+    u_int64_t __a;
+};
+#endif
+
 struct drand48_data drbuffer;
 
 pthread_attr_t g_detached_thread_attr, g_joinable_thread_attr;
@@ -471,7 +483,11 @@ int main(int argc, char **argv)
         class = atoi(optarg);
         break;
       case 'S':
+        #if defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+        srand48(atoi(optarg));
+        #else
         srand48_r(atoi(optarg), &drbuffer);
+        #endif
         seed = atoi(optarg);
         break;
       case 'v':
