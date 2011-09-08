@@ -196,6 +196,8 @@ typedef struct
   char *prefix;
 } dpl_common_prefix_t;
 
+struct dpl_backend_s;
+
 typedef struct dpl_ctx
 {
   /*
@@ -223,6 +225,7 @@ typedef struct dpl_ctx
   char *encrypt_key;
   char *delim;                /*!< vdir delimiter */
   int light_mode; //bypass vdir mechanism
+  struct dpl_backend_s *backend;
 
   /*
    * pricing
@@ -316,12 +319,15 @@ typedef struct
  */
 #include <droplet/conn.h>
 #include <droplet/converters.h>
+#include <droplet/req.h>
 #include <droplet/reqbuilder.h>
+#include <droplet/httprequest.h>
 #include <droplet/httpreply.h>
 #include <droplet/replyparser.h>
 #include <droplet/convapi.h>
 #include <droplet/vdir.h>
 #include <droplet/vfile.h>
+#include <droplet/backend.h>
 
 /* PROTO droplet.c */
 /* src/droplet.c */

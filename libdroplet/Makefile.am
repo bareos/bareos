@@ -9,10 +9,12 @@ libdroplet_la_SOURCES = \
 	src/converters.c \
 	src/dict.c \
 	src/droplet.c \
+	src/httprequest.c \
 	src/httpreply.c \
 	src/pricing.c \
 	src/profile.c \
 	src/replyparser.c \
+	src/req.c \
 	src/reqbuilder.c \
 	src/utils.c \
 	src/vdir.c \
@@ -30,10 +32,12 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/convapi.h \
 	include/droplet/converters.h \
 	include/droplet/dict.h \
+	include/droplet/httprequest.h \
 	include/droplet/httpreply.h \
 	include/droplet/pricing.h \
 	include/droplet/profile.h \
 	include/droplet/replyparser.h \
+	include/droplet/req.h \
 	include/droplet/reqbuilder.h \
 	include/droplet/utils.h \
 	include/droplet/vdir.h \
