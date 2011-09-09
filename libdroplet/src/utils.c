@@ -65,6 +65,14 @@ gettid()
 {
   return -1; //XXX
 }
+#elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+#include <sys/syscall.h>
+pid_t
+gettid()
+{
+  return syscall(SYS_gettid);
+}
+
 #else
 #include <syscall.h>
 pid_t
@@ -94,6 +102,18 @@ linux_gethostbyname_r(const char *name,
   struct hostent *resultp;
 
   resultp = gethostbyname_r(name, ret, buf, buflen, h_errnop);
+  if (NULL == resultp)
+    return 1;
+
+  *result = resultp;
+
+  return 0;
+
+#elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+
+  struct hostent *resultp;
+
+  resultp = gethostbyname(name);
   if (NULL == resultp)
     return 1;
 

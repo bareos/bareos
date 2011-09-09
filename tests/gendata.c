@@ -90,7 +90,11 @@ get_oid(int oflag, struct drand48_data *pdrbuffer)
     {
       long int tmp;
       pthread_mutex_lock(&oid_lock);
+      #if defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+      tmp = lrand48();
+      #else
       lrand48_r(pdrbuffer, &tmp);
+      #endif
       oid = tmp;
       pthread_mutex_unlock(&oid_lock);
       return oid;

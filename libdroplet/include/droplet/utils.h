@@ -48,6 +48,7 @@
 # define HAVE_CANONICALIZE_FILE_NAME
 #endif
 
+
 /*
  * endianness
  */
@@ -63,6 +64,15 @@
 #define __BYTE_ORDER __BIG_ENDIAN
 #endif
 
+/* Mac OSX has __BIG_ENDIAN__ or __LITTLE_ENDIAN__ automatically set by the compiler (at least with GCC) */
+#elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+
+    #ifdef _LITTLE_ENDIAN__
+    #define __BYTE_ORDER __LITTLE_ENDIAN__
+    #else // default to big endian
+    #define __BYTE_ORDER __BIG_ENDIAN__
+    #endif
+
 #else
 // linux case
 # include <endian.h>
@@ -70,8 +80,14 @@
 
 #if defined(SOLARIS) || defined(__sun__)
 # include <asm/byteorder.h>
-//defines htonll() and ntohll() natively
+
+#elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+    #include <libkern/OSByteOrder.h>
+    #define le32toh OSSwapLittleToHostInt32
+    #define htole32 OSSwapHostToLittleInt32
+    #define bswap_32 OSSwapInt32
 #else
+//defines htonll() and ntohll() natively
 # include <byteswap.h>
 
 #ifndef __BYTE_ORDER
