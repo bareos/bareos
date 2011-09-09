@@ -34,33 +34,6 @@
 #ifndef __DROPLET_VDIR_H__
 #define __DROPLET_VDIR_H__ 1
 
-#define DPL_ROOT_INO  ((dpl_ino_t) {.key = ""})
-
-typedef enum
-  {
-    DPL_FTYPE_REG,
-    DPL_FTYPE_DIR
-  } dpl_ftype_t;
-
-typedef struct
-{
-  dpl_ino_t ino;
-  dpl_ctx_t *ctx;
-  dpl_vec_t *files;
-  dpl_vec_t *directories;
-  int files_cursor;
-  int directories_cursor;
-} dpl_dir_t;
-
-typedef struct
-{
-  char name[DPL_MAXNAMLEN];
-  dpl_ino_t ino;
-  dpl_ftype_t type;
-  time_t last_modified;
-  size_t size;
-} dpl_dirent_t;
-
 /* PROTO vdir.c */
 /* src/vdir.c */
 dpl_status_t dpl_iname(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, char *path, unsigned int path_len);

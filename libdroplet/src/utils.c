@@ -603,3 +603,60 @@ dpl_bcd_encode(unsigned char *in_buf,
 
   return out_len;
 }
+
+/* other */
+
+void
+dpl_bucket_free(dpl_bucket_t *bucket)
+{
+  free(bucket->name);
+  free(bucket);
+}
+
+void
+dpl_vec_buckets_free(dpl_vec_t *vec)
+{
+  int i;
+
+  for (i = 0;i < vec->n_items;i++)
+    dpl_bucket_free((dpl_bucket_t *) vec->array[i]);
+  dpl_vec_free(vec);
+}
+
+void
+dpl_object_free(dpl_object_t *object)
+{
+  if (NULL != object->key)
+    free(object->key);
+
+  free(object);
+}
+
+void
+dpl_vec_objects_free(dpl_vec_t *vec)
+{
+  int i;
+
+  for (i = 0;i < vec->n_items;i++)
+    dpl_object_free((dpl_object_t *) vec->array[i]);
+  dpl_vec_free(vec);
+}
+
+void
+dpl_common_prefix_free(dpl_common_prefix_t *common_prefix)
+{
+  if (NULL != common_prefix->prefix)
+    free(common_prefix->prefix);
+
+  free(common_prefix);
+}
+
+void
+dpl_vec_common_prefixes_free(dpl_vec_t *vec)
+{
+  int i;
+
+  for (i = 0;i < vec->n_items;i++)
+    dpl_common_prefix_free((dpl_common_prefix_t *) vec->array[i]);
+  dpl_vec_free(vec);
+}

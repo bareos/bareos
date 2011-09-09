@@ -463,8 +463,8 @@ dpl_add_source_to_headers(dpl_req_t *req,
  * @return
  */
 dpl_status_t
-dpl_req_build(dpl_req_t *req,
-              dpl_dict_t **headersp)
+dpl_s3_req_build(dpl_req_t *req,
+                 dpl_dict_t **headersp)
 {
   dpl_dict_t *headers = NULL;
   int ret, ret2;
@@ -781,11 +781,11 @@ dpl_req_build(dpl_req_t *req,
 }
 
 dpl_status_t
-dpl_req_gen_url(dpl_req_t *req,
-                dpl_dict_t *headers,
-                char *buf,
-                int len,
-                unsigned int *lenp)
+dpl_s3_req_gen_url(dpl_req_t *req,
+                   dpl_dict_t *headers,
+                   char *buf,
+                   int len,
+                   unsigned int *lenp)
 {
   int ret, ret2;
   char *p;

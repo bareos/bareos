@@ -5,7 +5,6 @@ libdroplet_la_CFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(OPE
 
 libdroplet_la_SOURCES = \
 	src/conn.c \
-	src/convapi.c \
 	src/converters.c \
 	src/dict.c \
 	src/droplet.c \
@@ -13,13 +12,16 @@ libdroplet_la_SOURCES = \
 	src/httpreply.c \
 	src/pricing.c \
 	src/profile.c \
-	src/replyparser.c \
 	src/req.c \
-	src/reqbuilder.c \
-	src/utils.c \
-	src/vdir.c \
 	src/vec.c \
-	src/vfile.c
+	src/utils.c \
+	src/api.c \
+	s3/convapi.c \
+	s3/replyparser.c \
+	s3/reqbuilder.c \
+	s3/vdir.c \
+	s3/vfile.c \
+	s3/s3.c
 
 libdropletincludedir = $(includedir)/droplet-1.0/
 libdropletinclude_HEADERS = \
@@ -29,20 +31,25 @@ libdropletinclude_HEADERS = \
 libdropletdropletincludedir = $(includedir)/droplet-1.0/droplet
 libdropletdropletinclude_HEADERS = \
 	include/droplet/conn.h \
-	include/droplet/convapi.h \
 	include/droplet/converters.h \
 	include/droplet/dict.h \
 	include/droplet/httprequest.h \
 	include/droplet/httpreply.h \
 	include/droplet/pricing.h \
 	include/droplet/profile.h \
-	include/droplet/replyparser.h \
 	include/droplet/req.h \
-	include/droplet/reqbuilder.h \
-	include/droplet/utils.h \
-	include/droplet/vdir.h \
 	include/droplet/vec.h \
-	include/droplet/vfile.h
+	include/droplet/utils.h \
+	include/droplet/backend.h \
+	include/droplet/api.h
+
+libdropletdroplets3includedir = $(includedir)/droplet-1.0/droplet/s3
+libdropletdroplets3include_HEADERS = \
+	include/droplet/s3/convapi.h \
+	include/droplet/s3/replyparser.h \
+	include/droplet/s3/reqbuilder.h \
+	include/droplet/s3/vdir.h \
+	include/droplet/s3/vfile.h
 
 
 

@@ -66,6 +66,8 @@ dpl_status_str(dpl_status_t status)
       return "DPL_EISDIR";
     case DPL_EEXIST:
       return "DPL_EEXIST";
+    case DPL_ENOTSUPP:
+      return "DPL_ENOTSUPP";
     }
 
   return "Unknown error";
@@ -204,4 +206,19 @@ dpl_size_str(uint64_t size)
   snprintf(str, sizeof (str), "%.02f%s", size_dbl, unit);
 
   return str;
+}
+
+/*
+ *
+ */
+
+extern dpl_backend_t dpl_backend_s3;
+
+dpl_backend_t *
+dpl_backend_find(const char *name)
+{
+  if (!strcmp(name, "s3"))
+    return &dpl_backend_s3;
+
+  return NULL;
 }

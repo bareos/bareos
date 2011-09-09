@@ -323,6 +323,15 @@ conf_cb_func(void *cb_arg,
           return -1;
         }
     }
+  else if (!strcmp(var, "backend"))
+    {
+      ctx->backend = dpl_backend_find(value);
+      if (NULL == ctx->backend)
+        {
+          fprintf(stderr, "no such backend '%s'\n", var);
+          return -1;
+        }
+    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);
@@ -415,6 +424,8 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->port = -1;
   ctx->pricing = NULL;
   ctx->read_buf_size = DPL_DEFAULT_READ_BUF_SIZE;
+  ctx->backend = dpl_backend_find("s3");
+  assert(NULL != ctx->backend);
 
   return DPL_SUCCESS;
 }

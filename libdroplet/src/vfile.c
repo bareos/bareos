@@ -32,6 +32,8 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
+#include <droplet/s3/s3.h>
+#include <droplet/cdmi/cdmi.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
@@ -61,15 +63,15 @@ dpl_close(dpl_vfile_t *vfile)
         {
           if (vfile->flags & DPL_VFILE_FLAG_MD5)
             {
-              ret2 = dpl_dict_get_lowered(headers_returned, "Etag", &var);
+              ret2 = dpl_dict_get_lowered(headers_returned, "Content-MD5", &var);
               if (DPL_SUCCESS != ret2 || NULL == var)
                 {
-                  fprintf(stderr, "missing 'Etag' in answer\n");
-                  ret = DPL_FAILURE;
+                  fprintf(stderr, "missing 'Content-MD5' in answer\n");
+                  //XXX ret = DPL_FAILURE;
                 }
               else
                 {
-                  //compare MD5 with etag
+                  //compare MD5's
                   u_char digest[MD5_DIGEST_LENGTH];
                   char bcd_digest[DPL_BCD_LENGTH(MD5_DIGEST_LENGTH) + 1];
                   u_int bcd_digest_len;
@@ -83,13 +85,12 @@ dpl_close(dpl_vfile_t *vfile)
                   if (strncmp(var->value + 1, bcd_digest, DPL_BCD_LENGTH(MD5_DIGEST_LENGTH)))
                     {
                       fprintf(stderr, "MD5 checksum dont match\n");
-                      ret = DPL_FAILURE;
                     }
                 }
             }
         }
 
-      connection_close = dpl_connection_close(headers_returned);
+      connection_close = dpl_connection_close(vfile->ctx, headers_returned);
 
       if (1 == connection_close)
         dpl_conn_terminate(vfile->conn);
@@ -103,8 +104,37 @@ dpl_close(dpl_vfile_t *vfile)
         EVP_CIPHER_CTX_free(vfile->cipher_ctx);
     }
 
+  if (DPL_SUCCESS == ret)
+    {
+      if (!strcmp(vfile->ctx->backend->name, "cdmi") && vfile->ctx->cdmi_have_metadata)
+        {
+          //require separate metadata update
+          if (NULL != vfile->bucket && 
+              NULL != vfile->resource &&
+              NULL != vfile->metadata)
+            {
+              ret2 = dpl_cdmi_put(vfile->ctx, vfile->bucket, vfile->resource, "metadata",
+                                  DPL_FTYPE_REG, vfile->metadata, DPL_CANNED_ACL_UNDEF,
+                                  NULL, 0);
+              if (DPL_SUCCESS != ret2)
+                {
+                  ret = ret2;
+                }
+            }
+        }
+    }
+
   if (NULL != vfile->headers_reply)
     dpl_dict_free(vfile->headers_reply);
+
+  if (NULL != vfile->bucket)
+    free(vfile->bucket);
+
+  if (NULL != vfile->resource)
+    free(vfile->resource);
+
+  if (NULL != vfile->metadata)
+    dpl_dict_free(vfile->metadata);
 
   free(vfile);
 
@@ -285,7 +315,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
             }
         }
     }
-      
+
   if (DPL_FTYPE_REG != obj_type)
     {
       ret = DPL_EISDIR;
@@ -339,14 +369,39 @@ dpl_openwrite(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_put_buffered(ctx,
-                          bucket,
-                          obj_ino.key,
-                          NULL,
-                          metadata,
-                          canned_acl,
-                          data_len,
-                          &vfile->conn);
+  vfile->bucket = strdup(bucket);
+  if (NULL == vfile->bucket)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  vfile->resource = strdup(obj_ino.key);
+  if (NULL == vfile->resource)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != metadata)
+    {
+      vfile->metadata = dpl_dict_new(13);
+      if (NULL == vfile->metadata)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      
+      ret2 = dpl_dict_copy(vfile->metadata, metadata);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  ret2 = dpl_put_buffered(ctx, bucket, obj_ino.key, NULL, metadata, canned_acl,
+                          data_len, &vfile->conn);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -388,8 +443,8 @@ dpl_openwrite(dpl_ctx_t *ctx,
  */
 dpl_status_t
 dpl_write(dpl_vfile_t *vfile,
-          char *buf,
-          unsigned int len)
+             char *buf,
+             unsigned int len)
 {
   int ret, ret2;
   struct iovec iov[10];
@@ -658,32 +713,38 @@ dpl_openread(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_get_buffered(ctx,
-                          bucket,
-                          obj_ino.key,
-                          NULL,
-                          condition,
-                          cb_vfile_header,
-                          cb_vfile_buffer,
-                          vfile);
+  ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
+                          condition, cb_vfile_header, cb_vfile_buffer, vfile);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
 
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
+  if (!strcmp(ctx->backend->name, "cdmi") && ctx->cdmi_have_metadata)
     {
-      ret = DPL_ENOMEM;
-      goto end;
+      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, NULL, &metadata);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
     }
-
-  ret2 = dpl_get_metadata_from_headers(vfile->headers_reply, metadata);
-  if (DPL_SUCCESS != ret2)
+  else
     {
-      ret = DPL_FAILURE;
-      goto end;
+      metadata = dpl_dict_new(13);
+      if (NULL == metadata)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
+      ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, metadata);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
     }
 
   if (NULL != metadatap)
@@ -710,14 +771,14 @@ dpl_openread(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_openread_range(dpl_ctx_t *ctx,
-                   char *locator,
-                   unsigned int flags,
-                   dpl_condition_t *condition,
-                   int start,
-                   int end,
-                   char **data_bufp,
-                   unsigned int *data_lenp,
-                   dpl_dict_t **metadatap)
+                      char *locator,
+                      unsigned int flags,
+                      dpl_condition_t *condition,
+                      int start,
+                      int end,
+                      char **data_bufp,
+                      unsigned int *data_lenp,
+                      dpl_dict_t **metadatap)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -770,16 +831,8 @@ dpl_openread_range(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_get_range(ctx,
-                       bucket,
-                       obj_ino.key,
-                       NULL,
-                       condition,
-                       start,
-                       end,
-                       data_bufp,
-                       data_lenp,
-                       metadatap);
+  ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
+                       condition, start, end, data_bufp, data_lenp, metadatap);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -798,7 +851,7 @@ dpl_openread_range(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_unlink(dpl_ctx_t *ctx,
-           char *locator)
+              char *locator)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -870,8 +923,8 @@ dpl_unlink(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_getattr(dpl_ctx_t *ctx,
-            char *locator,
-            dpl_dict_t **metadatap)
+               char *locator,
+               dpl_dict_t **metadatap)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -918,12 +971,6 @@ dpl_getattr(dpl_ctx_t *ctx,
         }
     }
 
-  if (DPL_FTYPE_REG != obj_type)
-    {
-      ret = DPL_EISDIR;
-      goto end;
-    }
-
   ret2 = dpl_head(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
   if (DPL_SUCCESS != ret2)
     {
@@ -942,9 +989,76 @@ dpl_getattr(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
+dpl_getattr_raw(dpl_ctx_t *ctx,
+                char *locator,
+                dpl_dict_t **metadatap)
+{
+  int ret, ret2;
+  dpl_ino_t parent_ino, obj_ino;
+  dpl_ftype_t obj_type;
+  char *nlocator = NULL;
+  char *bucket, *path;
+  dpl_ino_t cur_ino;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "getattr locator=%s", locator);
+
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      bucket = nlocator;
+      *path++ = 0;
+    }
+  else
+    {
+      bucket = ctx->cur_bucket;
+      path = nlocator;
+    }
+
+  cur_ino = dpl_cwd(ctx, bucket);
+
+  if (ctx->light_mode)
+    {
+      strcpy(obj_ino.key, path); //XXX check length
+      obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  ret2 = dpl_head_all(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != nlocator)
+    free(nlocator);
+
+  return ret;
+}
+
+dpl_status_t
 dpl_setattr(dpl_ctx_t *ctx,
-            char *locator,
-            dpl_dict_t *metadata)
+               char *locator,
+               dpl_dict_t *metadata)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -997,7 +1111,7 @@ dpl_setattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, bucket, obj_ino.key, NULL, bucket, obj_ino.key, NULL, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, NULL);
+  ret2 = dpl_copy(ctx, bucket, obj_ino.key, NULL, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1016,11 +1130,11 @@ dpl_setattr(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_fgenurl(dpl_ctx_t *ctx,
-            char *locator,
-            time_t expires,
-            char *buf,
-            unsigned int len,
-            unsigned int *lenp)
+               char *locator,
+               time_t expires,
+               char *buf,
+               unsigned int len,
+               unsigned int *lenp)
 {
   int ret, ret2;
   dpl_ino_t obj_ino;
@@ -1084,8 +1198,8 @@ dpl_fgenurl(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_fcopy(dpl_ctx_t *ctx,
-          char *src_locator,
-          char *dst_locator)
+             char *src_locator,
+             char *dst_locator)
 {
   int ret, ret2;
   char *src_nlocator = NULL;
@@ -1203,7 +1317,7 @@ dpl_fcopy(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_copy(ctx, src_bucket, src_obj_ino.key, NULL, dst_bucket, dst_obj_ino.key, NULL, DPL_METADATA_DIRECTIVE_COPY, NULL, DPL_CANNED_ACL_UNDEF, NULL);
+  ret2 = dpl_copy(ctx, src_bucket, src_obj_ino.key, NULL, dst_bucket, dst_obj_ino.key, NULL, DPL_FTYPE_REG, DPL_METADATA_DIRECTIVE_COPY, NULL, DPL_CANNED_ACL_UNDEF, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

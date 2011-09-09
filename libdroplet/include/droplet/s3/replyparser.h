@@ -36,13 +36,7 @@
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */
-dpl_status_t dpl_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
-void dpl_bucket_free(dpl_bucket_t *bucket);
-void dpl_vec_buckets_free(dpl_vec_t *vec);
-dpl_status_t dpl_parse_list_all_my_buckets(dpl_ctx_t *ctx, char *buf, int len, dpl_vec_t *vec);
-void dpl_object_free(dpl_object_t *object);
-void dpl_vec_objects_free(dpl_vec_t *vec);
-void dpl_common_prefix_free(dpl_common_prefix_t *common_prefix);
-void dpl_vec_common_prefixes_free(dpl_vec_t *vec);
-dpl_status_t dpl_parse_list_bucket(dpl_ctx_t *ctx, char *buf, int len, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
+dpl_status_t dpl_s3_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
+dpl_status_t dpl_s3_parse_list_all_my_buckets(dpl_ctx_t *ctx, char *buf, int len, dpl_vec_t *vec);
+dpl_status_t dpl_s3_parse_list_bucket(dpl_ctx_t *ctx, char *buf, int len, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
 #endif

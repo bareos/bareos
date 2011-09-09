@@ -252,6 +252,7 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
                char *bucket,
                dpl_ino_t parent_ino,
                const char *obj_name,
+               dpl_ftype_t object_type,
                const char *delim)
 {
   int ret, ret2;
@@ -261,7 +262,7 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s%s", parent_ino.key, obj_name, delim);
 
-  ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, DPL_CANNED_ACL_PRIVATE, NULL, 0);
+  ret2 = dpl_put(ctx, bucket, resource, NULL, object_type, NULL, DPL_CANNED_ACL_PRIVATE, NULL, 0);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -283,7 +284,7 @@ dpl_vdir_mkdir(dpl_ctx_t *ctx,
                dpl_ino_t parent_ino,
                const char *obj_name)
 {
-  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, ctx->delim);
+  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_DIR, ctx->delim);
 }
 
 
@@ -293,7 +294,7 @@ dpl_vdir_mknod(dpl_ctx_t *ctx,
                dpl_ino_t parent_ino,
                const char *obj_name)
 {
-  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, "");
+  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_REG, "");
 }
 
 static dpl_status_t
@@ -476,6 +477,8 @@ dpl_vdir_closedir(void *dir_hdl)
 
   if (dir)
     {
+      DPL_TRACE(dir->ctx, DPL_TRACE_VDIR, "closedir dir_hdl=%p", dir_hdl);
+
       if (dir->files)
         dpl_vec_objects_free(dir->files);
 
@@ -484,8 +487,6 @@ dpl_vdir_closedir(void *dir_hdl)
 
       free(dir);
     }
-
-  DPL_TRACE(dir->ctx, DPL_TRACE_VDIR, "closedir dir_hdl=%p", dir_hdl);
 }
 
 static dpl_status_t
@@ -596,10 +597,10 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_iname(dpl_ctx_t *ctx,
-          char *bucket,
-          dpl_ino_t ino,
-          char *path,
-          unsigned int path_len)
+             char *bucket,
+             dpl_ino_t ino,
+             char *path,
+             unsigned int path_len)
 {
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "iname bucket=%s ino=%s", bucket, ino.key);
 
@@ -608,12 +609,12 @@ dpl_iname(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_namei(dpl_ctx_t *ctx,
-          char *path,
-          char *bucket,
-          dpl_ino_t ino,
-          dpl_ino_t *parent_inop,
-          dpl_ino_t *obj_inop,
-          dpl_ftype_t *obj_typep)
+             char *path,
+             char *bucket,
+             dpl_ino_t ino,
+             dpl_ino_t *parent_inop,
+             dpl_ino_t *obj_inop,
+             dpl_ftype_t *obj_typep)
 {
   char *p1, *p2;
   char name[DPL_MAXNAMLEN];
@@ -712,7 +713,7 @@ dpl_namei(dpl_ctx_t *ctx,
 
 dpl_ino_t
 dpl_cwd(dpl_ctx_t *ctx,
-        char *bucket)
+           char *bucket)
 {
   dpl_var_t *var;
   dpl_ino_t cwd;
@@ -737,8 +738,8 @@ dpl_cwd(dpl_ctx_t *ctx,
  */
 dpl_status_t
 dpl_opendir(dpl_ctx_t *ctx,
-            char *locator,
-            void **dir_hdlp)
+               char *locator,
+               void **dir_hdlp)
 {
   int ret, ret2;
   dpl_ino_t obj_ino;
@@ -805,7 +806,7 @@ dpl_opendir(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_readdir(void *dir_hdl,
-            dpl_dirent_t *dirent)
+               dpl_dirent_t *dirent)
 {
   return dpl_vdir_readdir(dir_hdl, dirent);
 }
@@ -824,7 +825,7 @@ dpl_closedir(void *dir_hdl)
 
 dpl_status_t
 dpl_chdir(dpl_ctx_t *ctx,
-          char *locator)
+             char *locator)
 {
   int ret, ret2;
   dpl_ino_t obj_ino;
@@ -997,7 +998,7 @@ dpl_mkgen(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_mkdir(dpl_ctx_t *ctx,
-          char *locator)
+             char *locator)
 {
   return dpl_mkgen(ctx, locator, dpl_vdir_mkdir);
 }
@@ -1005,7 +1006,7 @@ dpl_mkdir(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_mknod(dpl_ctx_t *ctx,
-          char *locator)
+             char *locator)
 {
   return dpl_mkgen(ctx, locator, dpl_vdir_mknod);
 }
@@ -1013,7 +1014,7 @@ dpl_mknod(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_rmdir(dpl_ctx_t *ctx,
-          char *locator)
+             char *locator)
 {
   int ret, ret2;
   char *dir_name = NULL;

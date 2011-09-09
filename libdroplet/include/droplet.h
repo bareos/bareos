@@ -79,6 +79,7 @@ typedef int dpl_status_t;
 #define DPL_ENOTEMPTY             (-11) /*!< Directory is not empty */
 #define DPL_EISDIR                (-12) /*!< Is a directory */
 #define DPL_EEXIST                (-13) /*!< Object already exists */
+#define DPL_ENOTSUPP              (-14) /*!< Method not supported */
 
 #define DPL_TRACE_CONN  (1u<<0) /*!< trace connection */
 #define DPL_TRACE_IO    (1u<<1) /*!< trace I/O */
@@ -88,6 +89,7 @@ typedef int dpl_status_t;
 #define DPL_TRACE_CONV  (1u<<6) /*!< trace convenience functions */
 #define DPL_TRACE_VDIR  (1u<<7) /*!< trace vdir */
 #define DPL_TRACE_VFILE (1u<<8) /*!< trace vfile */
+#define DPL_TRACE_API   (1u<<9) /*!< trace API */
 #define DPL_TRACE_BUF   (1u<<31) /*!< trace buffers */
 
 typedef void (*dpl_trace_func_t)(pid_t tid, unsigned int level, char *file, int lineno, char *buf);
@@ -315,19 +317,85 @@ typedef struct
 } dpl_req_t;
 
 /*
- * public functions
+ * vdir
+ */
+#define DPL_ROOT_INO  ((dpl_ino_t) {.key = ""})
+
+typedef enum
+  {
+    DPL_FTYPE_REG,
+    DPL_FTYPE_DIR
+  } dpl_ftype_t;
+
+typedef struct
+{
+  dpl_ino_t ino;
+  dpl_ctx_t *ctx;
+  dpl_vec_t *files;
+  dpl_vec_t *directories;
+  int files_cursor;
+  int directories_cursor;
+} dpl_dir_t;
+
+typedef struct
+{
+  char name[DPL_MAXNAMLEN];
+  dpl_ino_t ino;
+  dpl_ftype_t type;
+  time_t last_modified;
+  size_t size;
+} dpl_dirent_t;
+
+/*
+ * vfile
  */
 #include <droplet/conn.h>
-#include <droplet/converters.h>
-#include <droplet/req.h>
-#include <droplet/reqbuilder.h>
 #include <droplet/httprequest.h>
 #include <droplet/httpreply.h>
-#include <droplet/replyparser.h>
-#include <droplet/convapi.h>
-#include <droplet/vdir.h>
-#include <droplet/vfile.h>
+
+#define DPL_VFILE_FLAG_CREAT   (1u<<0)
+#define DPL_VFILE_FLAG_EXCL    (1u<<1)
+#define DPL_VFILE_FLAG_MD5     (1u<<2) /*!< check MD5 */
+#define DPL_VFILE_FLAG_ENCRYPT (1u<<3) /*!< encrypt on the fly */
+
+typedef struct
+{
+  dpl_ctx_t *ctx;
+
+  unsigned int flags;
+
+  dpl_conn_t *conn;
+
+  /*
+   * MD5
+   */
+  MD5_CTX md5_ctx;
+
+  /*
+   * encrypt
+   */
+  unsigned char salt[PKCS5_SALT_LEN];
+  EVP_CIPHER_CTX *cipher_ctx;
+  int header_done;
+
+  /*
+   * read
+   */
+  dpl_dict_t *headers_reply;
+  dpl_buffer_func_t buffer_func;
+  void *cb_arg;
+
+} dpl_vfile_t;
+
+#define DPL_ENCRYPT_MAGIC "Salted__"
+
+/*
+ * public functions
+ */
+#include <droplet/converters.h>
+#include <droplet/req.h>
 #include <droplet/backend.h>
+#include <droplet/api.h>
 
 /* PROTO droplet.c */
 /* src/droplet.c */
@@ -339,4 +407,5 @@ void dpl_ctx_free(dpl_ctx_t *ctx);
 double dpl_price_storage(dpl_ctx_t *ctx, size_t size);
 char *dpl_price_storage_str(dpl_ctx_t *ctx, size_t size);
 char *dpl_size_str(uint64_t size);
+dpl_backend_t *dpl_backend_find(const char *name);
 #endif

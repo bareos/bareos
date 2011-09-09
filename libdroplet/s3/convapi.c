@@ -45,8 +45,8 @@
  * @return
  */
 dpl_status_t
-dpl_list_all_my_buckets(dpl_ctx_t *ctx,
-                        dpl_vec_t **vecp)
+dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
+                           dpl_vec_t **vecp)
 {
   int           ret, ret2;
   char          *host = NULL;
@@ -85,7 +85,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
   //build request
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -161,7 +161,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = dpl_parse_list_all_my_buckets(ctx, data_buf, data_len, vec);
+  ret = dpl_s3_parse_list_all_my_buckets(ctx, data_buf, data_len, vec);
   if (DPL_SUCCESS != ret)
     {
       ret = DPL_FAILURE;
@@ -219,12 +219,12 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_list_bucket(dpl_ctx_t *ctx,
-                char *bucket,
-                char *prefix,
-                char *delimiter,
-                dpl_vec_t **objectsp,
-                dpl_vec_t **common_prefixesp)
+dpl_s3_list_bucket(dpl_ctx_t *ctx,
+                   char *bucket,
+                   char *prefix,
+                   char *delimiter,
+                   dpl_vec_t **objectsp,
+                   dpl_vec_t **common_prefixesp)
 {
   char          *host;
   int           ret, ret2;
@@ -295,7 +295,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
         }
     }
 
-    ret2 = dpl_req_build(req, &headers_request);
+    ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -378,7 +378,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = dpl_parse_list_bucket(ctx, data_buf, data_len, objects, common_prefixes);
+  ret = dpl_s3_parse_list_bucket(ctx, data_buf, data_len, objects, common_prefixes);
   if (DPL_SUCCESS != ret)
     {
       ret = DPL_FAILURE;
@@ -446,10 +446,10 @@ dpl_list_bucket(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_make_bucket(dpl_ctx_t *ctx,
-                char *bucket,
-                dpl_location_constraint_t location_constraint,
-                dpl_canned_acl_t canned_acl)
+dpl_s3_make_bucket(dpl_ctx_t *ctx,
+                   char *bucket,
+                   dpl_location_constraint_t location_constraint,
+                   dpl_canned_acl_t canned_acl)
 {
   char          *host;
   int           ret, ret2;
@@ -522,7 +522,7 @@ dpl_make_bucket(dpl_ctx_t *ctx,
   dpl_req_set_canned_acl(req, canned_acl);
 
   //build request
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -633,8 +633,8 @@ dpl_make_bucket(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_deletebucket(dpl_ctx_t *ctx,
-                 char *bucket)
+dpl_s3_deletebucket(dpl_ctx_t *ctx,
+                    char *bucket)
 {
   char          *host;
   int           ret, ret2;
@@ -673,7 +673,7 @@ dpl_deletebucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -784,14 +784,14 @@ dpl_deletebucket(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_put(dpl_ctx_t *ctx,
-            char *bucket,
-            char *resource,
-            char *subresource,
-            dpl_dict_t *metadata,
-            dpl_canned_acl_t canned_acl,
-            char *data_buf,
-            unsigned int data_len)
+dpl_s3_put(dpl_ctx_t *ctx,
+           char *bucket,
+           char *resource,
+           char *subresource,
+           dpl_dict_t *metadata,
+           dpl_canned_acl_t canned_acl,
+           char *data_buf,
+           unsigned int data_len)
 {
   char          *host;
   int           ret, ret2;
@@ -859,7 +859,7 @@ dpl_put(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -960,14 +960,14 @@ dpl_put(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_put_buffered(dpl_ctx_t *ctx,
-                 char *bucket,
-                 char *resource,
-                 char *subresource,
-                 dpl_dict_t *metadata,
-                 dpl_canned_acl_t canned_acl,
-                 unsigned int data_len,
-                 dpl_conn_t **connp)
+dpl_s3_put_buffered(dpl_ctx_t *ctx,
+                    char *bucket,
+                    char *resource,
+                    char *subresource,
+                    dpl_dict_t *metadata,
+                    dpl_canned_acl_t canned_acl,
+                    unsigned int data_len,
+                    dpl_conn_t **connp)
 {
   char          *host;
   int           ret, ret2;
@@ -1035,7 +1035,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1152,14 +1152,14 @@ dpl_put_buffered(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_get(dpl_ctx_t *ctx,
-        char *bucket,
-        char *resource,
-        char *subresource,
-        dpl_condition_t *condition,
-        char **data_bufp,
-        unsigned int *data_lenp,
-        dpl_dict_t **metadatap)
+dpl_s3_get(dpl_ctx_t *ctx,
+           char *bucket,
+           char *resource,
+           char *subresource,
+           dpl_condition_t *condition,
+           char **data_bufp,
+           unsigned int *data_lenp,
+           dpl_dict_t **metadatap)
 {
   char          *host;
   int           ret, ret2;
@@ -1224,7 +1224,7 @@ dpl_get(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1290,7 +1290,7 @@ dpl_get(dpl_ctx_t *ctx,
     {
       connection_close = dpl_connection_close(headers_reply);
 
-      ret2 = dpl_get_metadata_from_headers(headers_reply, metadata);
+      ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadata);
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_FAILURE;
@@ -1362,16 +1362,16 @@ dpl_get(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_get_range(dpl_ctx_t *ctx,
-              char *bucket,
-              char *resource,
-              char *subresource,
-              dpl_condition_t *condition,
-              int start,
-              int end,
-              char **data_bufp,
-              unsigned int *data_lenp,
-              dpl_dict_t **metadatap)
+dpl_s3_get_range(dpl_ctx_t *ctx,
+                 char *bucket,
+                 char *resource,
+                 char *subresource,
+                 dpl_condition_t *condition,
+                 int start,
+                 int end,
+                 char **data_bufp,
+                 unsigned int *data_lenp,
+                 dpl_dict_t **metadatap)
 {
   char          *host;
   int           ret, ret2;
@@ -1443,7 +1443,7 @@ dpl_get_range(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1509,7 +1509,7 @@ dpl_get_range(dpl_ctx_t *ctx,
     {
       connection_close = dpl_connection_close(headers_reply);
 
-      ret2 = dpl_get_metadata_from_headers(headers_reply, metadata);
+      ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadata);
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_FAILURE;
@@ -1619,14 +1619,14 @@ cb_get_buffer(void *cb_arg,
 }
 
 dpl_status_t
-dpl_get_buffered(dpl_ctx_t *ctx,
-                 char *bucket,
-                 char *resource,
-                 char *subresource,
-                 dpl_condition_t *condition,
-                 dpl_header_func_t header_func,
-                 dpl_buffer_func_t buffer_func,
-                 void *cb_arg)
+dpl_s3_get_buffered(dpl_ctx_t *ctx,
+                    char *bucket,
+                    char *resource,
+                    char *subresource,
+                    dpl_condition_t *condition,
+                    dpl_header_func_t header_func,
+                    dpl_buffer_func_t buffer_func,
+                    void *cb_arg)
 {
   char          *host;
   int           ret, ret2;
@@ -1685,7 +1685,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1789,13 +1789,13 @@ dpl_get_buffered(dpl_ctx_t *ctx,
  */
 
 dpl_status_t
-dpl_head_gen(dpl_ctx_t *ctx,
-             char *bucket,
-             char *resource,
-             char *subresource,
-             dpl_condition_t *condition,
-             int all_headers,
-             dpl_dict_t **metadatap)
+dpl_s3_head_gen(dpl_ctx_t *ctx,
+                char *bucket,
+                char *resource,
+                char *subresource,
+                dpl_condition_t *condition,
+                int all_headers,
+                dpl_dict_t **metadatap)
 {
   char          *host;
   int           ret, ret2;
@@ -1858,7 +1858,7 @@ dpl_head_gen(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1927,7 +1927,7 @@ dpl_head_gen(dpl_ctx_t *ctx,
       if (all_headers)
         ret2 = dpl_dict_copy(metadata, headers_reply);
       else
-        ret2 = dpl_get_metadata_from_headers(headers_reply, metadata);
+        ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadata);
 
       if (DPL_SUCCESS != ret2)
         {
@@ -1974,25 +1974,25 @@ dpl_head_gen(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_head(dpl_ctx_t *ctx,
-         char *bucket,
-         char *resource,
-         char *subresource,
-         dpl_condition_t *condition,
-         dpl_dict_t **metadatap)
+dpl_s3_head(dpl_ctx_t *ctx,
+            char *bucket,
+            char *resource,
+            char *subresource,
+            dpl_condition_t *condition,
+            dpl_dict_t **metadatap)
 {
-  return dpl_head_gen(ctx, bucket, resource, subresource, condition, 0, metadatap);
+  return dpl_s3_head_gen(ctx, bucket, resource, subresource, condition, 0, metadatap);
 }
 
 dpl_status_t
-dpl_head_all(dpl_ctx_t *ctx,
-             char *bucket,
-             char *resource,
-             char *subresource,
-             dpl_condition_t *condition,
-             dpl_dict_t **metadatap)
+dpl_s3_head_all(dpl_ctx_t *ctx,
+                char *bucket,
+                char *resource,
+                char *subresource,
+                dpl_condition_t *condition,
+                dpl_dict_t **metadatap)
 {
-  return dpl_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap);
+  return dpl_s3_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap);
 }
 
 
@@ -2007,10 +2007,10 @@ dpl_head_all(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_delete(dpl_ctx_t *ctx,
-           char *bucket,
-           char *resource,
-           char *subresource)
+dpl_s3_delete(dpl_ctx_t *ctx,
+              char *bucket,
+              char *resource,
+              char *subresource)
 {
   char          *host;
   int           ret, ret2;
@@ -2059,7 +2059,7 @@ dpl_delete(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -2167,14 +2167,14 @@ dpl_delete(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_genurl(dpl_ctx_t *ctx,
-           char *bucket,
-           char *resource,
-           char *subresource,
-           time_t expires,
-           char *buf,
-           unsigned int len,
-           unsigned int *lenp)
+dpl_s3_genurl(dpl_ctx_t *ctx,
+              char *bucket,
+              char *resource,
+              char *subresource,
+              time_t expires,
+              char *buf,
+              unsigned int len,
+              unsigned int *lenp)
 {
   int           ret, ret2;
   dpl_dict_t    *headers_request = NULL;
@@ -2220,14 +2220,14 @@ dpl_genurl(dpl_ctx_t *ctx,
   dpl_req_set_expires(req, expires);
 
   //build request
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_req_gen_url(req, headers_request, buf, len, lenp);
+  ret2 = dpl_s3_req_gen_url(req, headers_request, buf, len, lenp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2267,17 +2267,17 @@ dpl_genurl(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_copy(dpl_ctx_t *ctx,
-         char *src_bucket,
-         char *src_resource,
-         char *src_subresource,
-         char *dst_bucket,
-         char *dst_resource,
-         char *dst_subresource,
-         dpl_metadata_directive_t metadata_directive,
-         dpl_dict_t *metadata,
-         dpl_canned_acl_t canned_acl,
-         dpl_condition_t *condition)
+dpl_s3_copy(dpl_ctx_t *ctx,
+            char *src_bucket,
+            char *src_resource,
+            char *src_subresource,
+            char *dst_bucket,
+            char *dst_resource,
+            char *dst_subresource,
+            dpl_metadata_directive_t metadata_directive,
+            dpl_dict_t *metadata,
+            dpl_canned_acl_t canned_acl,
+            dpl_condition_t *condition)
 {
   char          *host;
   int           ret, ret2;
@@ -2369,7 +2369,7 @@ dpl_copy(dpl_ctx_t *ctx,
   dpl_req_set_canned_acl(req, canned_acl);
 
   //build request
-  ret2 = dpl_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
