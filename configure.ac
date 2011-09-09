@@ -34,7 +34,6 @@ AC_CONFIG_FILES([
 Makefile
 examples/Makefile
 libdroplet/Makefile
-tests/Makefile
 droplet-1.0.pc
 ])
 AC_OUTPUT
