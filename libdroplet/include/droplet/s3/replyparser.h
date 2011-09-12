@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_REPLYPARSER_H__
-#define __DROPLET_REPLYPARSER_H__ 1
+#ifndef __DROPLET_S3_REPLYPARSER_H__
+#define __DROPLET_S3_REPLYPARSER_H__ 1
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */

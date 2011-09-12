@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libdroplet.la
 
-libdroplet_la_LDFLAGS = $(LIBXML_LIBS) $(OPENSSL_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined
-libdroplet_la_CFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS)
+libdroplet_la_LDFLAGS = $(LIBXML_LIBS) $(JSON_LIBS) $(OPENSSL_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined
+libdroplet_la_CFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS)
 
 libdroplet_la_SOURCES = \
 	src/conn.c \
@@ -15,13 +15,17 @@ libdroplet_la_SOURCES = \
 	src/req.c \
 	src/vec.c \
 	src/utils.c \
-	src/api.c \
+	src/backend.c \
+	src/vdir.c \
+	src/vfile.c \
 	s3/convapi.c \
 	s3/replyparser.c \
 	s3/reqbuilder.c \
-	s3/vdir.c \
-	s3/vfile.c \
-	s3/s3.c
+	s3/s3.c \
+	cdmi/convapi.c \
+	cdmi/replyparser.c \
+	cdmi/reqbuilder.c \
+	cdmi/cdmi.c
 
 libdropletincludedir = $(includedir)/droplet-1.0/
 libdropletinclude_HEADERS = \
@@ -41,15 +45,20 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/vec.h \
 	include/droplet/utils.h \
 	include/droplet/backend.h \
-	include/droplet/api.h
+	include/droplet/vdir.h \
+	include/droplet/vfile.h
 
 libdropletdroplets3includedir = $(includedir)/droplet-1.0/droplet/s3
 libdropletdroplets3include_HEADERS = \
 	include/droplet/s3/convapi.h \
 	include/droplet/s3/replyparser.h \
 	include/droplet/s3/reqbuilder.h \
-	include/droplet/s3/vdir.h \
-	include/droplet/s3/vfile.h
+	include/droplet/s3/s3.h
 
-
+libdropletdropletcdmiincludedir = $(includedir)/droplet-1.0/droplet/cdmi
+libdropletdropletcdmiinclude_HEADERS = \
+	include/droplet/cdmi/convapi.h \
+	include/droplet/cdmi/replyparser.h \
+	include/droplet/cdmi/reqbuilder.h \
+	include/droplet/cdmi/cdmi.h
 

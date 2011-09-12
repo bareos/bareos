@@ -41,7 +41,6 @@ dpl_backend_t
 dpl_backend_s3 = 
   {
     "s3",
-    /* general */
     .list_all_my_buckets = dpl_s3_list_all_my_buckets,
     .list_bucket 	= dpl_s3_list_bucket,
     .make_bucket 	= dpl_s3_make_bucket,
@@ -52,26 +51,4 @@ dpl_backend_s3 =
     .head_all 		= dpl_s3_head_all,
     .get_metadata_from_headers = dpl_s3_get_metadata_from_headers,
     .delete 		= dpl_s3_delete,
-    /* vdir */
-    .namei		= dpl_s3_namei,
-    .cwd		= dpl_s3_cwd,
-    .opendir		= dpl_s3_opendir,
-    .readdir		= dpl_s3_readdir,
-    .eof		= dpl_s3_eof,
-    .closedir		= dpl_s3_closedir,
-    .chdir		= dpl_s3_chdir,
-    .mkdir		= dpl_s3_mkdir,
-    .mknod		= dpl_s3_mknod,
-    .rmdir		= dpl_s3_rmdir,
-    /* vfile */
-    .close		= dpl_s3_close,
-    .openwrite		= dpl_s3_openwrite,
-    .write		= dpl_s3_write,
-    .openread		= dpl_s3_openread,
-    .openread_range	= dpl_s3_openread_range,
-    .unlink		= dpl_s3_unlink,
-    .getattr		= dpl_s3_getattr,
-    .setattr		= dpl_s3_setattr,
-    .fgenurl		= dpl_s3_fgenurl,
-    .fcopy		= dpl_s3_fcopy,
   };

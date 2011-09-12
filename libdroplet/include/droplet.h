@@ -215,6 +215,7 @@ typedef struct dpl_ctx
   int use_https;
   char *host;
   int port;
+  char *base_path;
   char *access_key;
   char *secret_key;
   char *ssl_cert_file;
@@ -274,12 +275,13 @@ typedef struct
 {
   dpl_ctx_t *ctx;
 
-#define DPL_BEHAVIOR_MD5          (1u<<0)
-#define DPL_BEHAVIOR_EXPECT       (1u<<1)
-#define DPL_BEHAVIOR_VIRTUAL_HOSTING (1u<<2)
-#define DPL_BEHAVIOR_KEEP_ALIVE   (1u<<3)
-#define DPL_BEHAVIOR_QUERY_STRING (1u<<4)
-#define DPL_BEHAVIOR_COPY         (1u<<5)
+#define DPL_BEHAVIOR_MD5          (1u<<0)     /*!< MD5 is computed for object */
+#define DPL_BEHAVIOR_EXPECT       (1u<<1)     /*!< Use the Expect: 100-Continue */
+#define DPL_BEHAVIOR_VIRTUAL_HOSTING (1u<<2)  /*!< Use virtual hosting instead of path-style access */
+#define DPL_BEHAVIOR_KEEP_ALIVE   (1u<<3)     /*!< Reuse connections */
+#define DPL_BEHAVIOR_QUERY_STRING (1u<<4)     /*!< Build a query string instead of a request */
+#define DPL_BEHAVIOR_COPY         (1u<<5)     /*!< It is a server side copy request */
+#define DPL_BEHAVIOR_HTTP_COMPAT  (1u<<6)     /*!< Use the HTTP compatibility mode */
   unsigned int behavior_flags;
 
   dpl_method_t method;
@@ -395,7 +397,8 @@ typedef struct
 #include <droplet/converters.h>
 #include <droplet/req.h>
 #include <droplet/backend.h>
-#include <droplet/api.h>
+#include <droplet/vdir.h>
+#include <droplet/vfile.h>
 
 /* PROTO droplet.c */
 /* src/droplet.c */

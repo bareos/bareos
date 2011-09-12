@@ -36,8 +36,6 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-/* general */
-
 dpl_status_t 
 dpl_list_all_my_buckets(dpl_ctx_t *ctx,
                         dpl_vec_t **vecp)
@@ -166,6 +164,35 @@ dpl_put(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
+dpl_put_buffered(dpl_ctx_t *ctx,
+                 char *bucket,
+                 char *resource,
+                 char *subresource,
+                 dpl_dict_t *metadata,
+                 dpl_canned_acl_t canned_acl,
+                 unsigned int data_len,
+                 dpl_conn_t **connp)
+{
+  int ret;
+
+  DPL_TRACE(ctx, DPL_TRACE_API, "put_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+
+  if (NULL == ctx->backend->put_buffered)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, metadata, canned_acl, data_len, connp);
+  
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
 dpl_get(dpl_ctx_t *ctx,
         char *bucket,
         char *resource,
@@ -186,6 +213,66 @@ dpl_get(dpl_ctx_t *ctx,
     }
   
   ret = ctx->backend->get(ctx, bucket, resource, subresource, condition, data_bufp, data_lenp, metadatap);
+  
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_get_range(dpl_ctx_t *ctx,
+              char *bucket,
+              char *resource,
+              char *subresource,
+              dpl_condition_t *condition,
+              int start,
+              int end,
+              char **data_bufp,
+              unsigned int *data_lenp,
+              dpl_dict_t **metadatap)
+{
+  int ret;
+
+  DPL_TRACE(ctx, DPL_TRACE_API, "get_range bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+
+  if (NULL == ctx->backend->get_range)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, condition, start, end, data_bufp, data_lenp, metadatap);
+  
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t 
+dpl_get_buffered(dpl_ctx_t *ctx,
+                 char *bucket,
+                 char *resource,
+                 char *subresource, 
+                 dpl_condition_t *condition,
+                 dpl_header_func_t header_func, 
+                 dpl_buffer_func_t buffer_func,
+                 void *cb_arg)
+{
+  int ret;
+
+  DPL_TRACE(ctx, DPL_TRACE_API, "get_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+
+  if (NULL == ctx->backend->get_buffered)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret = ctx->backend->get_buffered(ctx, bucket, resource, subresource, condition, header_func, buffer_func, cb_arg);
   
  end:
 
@@ -297,490 +384,59 @@ dpl_delete(dpl_ctx_t *ctx,
   return ret;
 }
 
-/* vdir */
+dpl_status_t
+dpl_genurl(dpl_ctx_t *ctx,
+           char *bucket,
+           char *resource,
+           char *subresource,
+           time_t expires,
+           char *buf,
+           unsigned int len,
+           unsigned int *lenp)
+{
+  int ret;
+
+  DPL_TRACE(ctx, DPL_TRACE_API, "genurl bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+
+  if (NULL == ctx->backend->genurl)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret = ctx->backend->genurl(ctx, bucket, resource, subresource, expires, buf, len, lenp);
+  
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  
+  return ret;
+}
 
 dpl_status_t
-dpl_namei(dpl_ctx_t *ctx,
-          char *path,
-          char *bucket,
-          dpl_ino_t ino,
-          dpl_ino_t *parent_inop,
-          dpl_ino_t *obj_inop,
-          dpl_ftype_t *obj_typep)
+dpl_copy(dpl_ctx_t *ctx,
+         char *src_bucket,
+         char *src_resource,
+         char *src_subresource,
+         char *dst_bucket,
+         char *dst_resource,
+         char *dst_subresource,
+         dpl_metadata_directive_t metadata_directive,
+         dpl_dict_t *metadata,
+         dpl_canned_acl_t canned_acl,
+         dpl_condition_t *condition)
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "namei path=%s bucket=%s", path, bucket);
+  DPL_TRACE(ctx, DPL_TRACE_API, "copy src_bucket=%s src_resource=%s src_subresource=%s dst_bucket=%s dst_resource=%s dst_subresource=%s", src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource);
 
-  if (NULL == ctx->backend->namei)
+  if (NULL == ctx->backend->copy)
     {
       ret = DPL_ENOTSUPP;
       goto end;
     }
   
-  ret = ctx->backend->namei(ctx, path, bucket, ino, parent_inop, obj_inop, obj_typep);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_ino_t
-dpl_cwd(dpl_ctx_t *ctx,
-        char *bucket)
-{
-  dpl_ino_t ino;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "cwd bucket=%s", bucket);
-
-  if (NULL == ctx->backend->cwd)
-    {
-      ino = DPL_ROOT_INO;
-      goto end;
-    }
-  
-  ino = ctx->backend->cwd(ctx, bucket);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%s", ino.key);
-  
-  return ino;
-}
-
-dpl_status_t 
-dpl_opendir(dpl_ctx_t *ctx, 
-            char *locator, 
-            void **dir_hdlp)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "opendir locator=%s", locator);
-
-  if (NULL == ctx->backend->opendir)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->opendir(ctx, locator, dir_hdlp);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_readdir(void *dir_hdl, 
-            dpl_dirent_t *dirent)
-{
-  int ret;
-  dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
-
-  DPL_TRACE(dir->ctx, DPL_TRACE_API, "readdir");
-
-  if (NULL == dir->ctx->backend->readdir)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = dir->ctx->backend->readdir(dir_hdl, dirent);
-  
- end:
-
-  DPL_TRACE(dir->ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-int 
-dpl_eof(void *dir_hdl)
-{
-  int ret;
-  dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
-
-  DPL_TRACE(dir->ctx, DPL_TRACE_API, "eof");
-
-  if (NULL == dir->ctx->backend->eof)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = dir->ctx->backend->eof(dir_hdl);
-  
- end:
-
-  DPL_TRACE(dir->ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-void 
-dpl_closedir(void *dir_hdl)
-{
-  int ret;
-  dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
-
-  DPL_TRACE(dir->ctx, DPL_TRACE_API, "closedir");
-
-  if (NULL == dir->ctx->backend->closedir)
-    {
-      goto end;
-    }
-  
-  dir->ctx->backend->closedir(dir_hdl);
-  
- end:
-
-  DPL_TRACE(dir->ctx, DPL_TRACE_API, "");
-}
-
-dpl_status_t 
-dpl_chdir(dpl_ctx_t *ctx, 
-          char *locator)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "chdir locator=%s", locator);
-
-  if (NULL == ctx->backend->chdir)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->chdir(ctx, locator);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_mkdir(dpl_ctx_t *ctx, 
-          char *locator)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "mkdir locator=%s", locator);
-
-  if (NULL == ctx->backend->mkdir)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->mkdir(ctx, locator);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_mknod(dpl_ctx_t *ctx,
-          char *locator)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "mknod locator=%s", locator);
-
-  if (NULL == ctx->backend->mknod)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->mknod(ctx, locator);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_rmdir(dpl_ctx_t *ctx, 
-          char *locator)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "rmdir locator=%s", locator);
-
-  if (NULL == ctx->backend->rmdir)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->rmdir(ctx, locator);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-/* vfile */
-
-dpl_status_t 
-dpl_close(dpl_vfile_t *vfile)
-{
-  int ret;
-
-  DPL_TRACE(vfile->ctx, DPL_TRACE_API, "close");
-
-  if (NULL == vfile->ctx->backend->close)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = vfile->ctx->backend->close(vfile);
-  
- end:
-
-  DPL_TRACE(vfile->ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_openwrite(dpl_ctx_t *ctx,
-              char *locator,
-              unsigned int flags, 
-              dpl_dict_t *metadata,
-              dpl_canned_acl_t canned_acl,
-              unsigned int data_len,
-              dpl_vfile_t **vfilep)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "openwrite locator=%s", locator);
-
-  if (NULL == ctx->backend->openwrite)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->openwrite(ctx, locator, flags, metadata, canned_acl, data_len, vfilep);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_write(dpl_vfile_t *vfile, 
-          char *buf,
-          unsigned int len)
-{
-  int ret;
-
-  DPL_TRACE(vfile->ctx, DPL_TRACE_API, "write");
-
-  if (NULL == vfile->ctx->backend->write)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = vfile->ctx->backend->write(vfile, buf, len);
-  
- end:
-
-  DPL_TRACE(vfile->ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_openread(dpl_ctx_t *ctx, 
-             char *locator, 
-             unsigned int flags, 
-             dpl_condition_t *condition,
-             dpl_buffer_func_t buffer_func, 
-             void *cb_arg, 
-             dpl_dict_t **metadatap)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "openread locator=%s", locator);
-
-  if (NULL == ctx->backend->openread)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->openread(ctx, locator, flags, condition, buffer_func, cb_arg, metadatap);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_openread_range(dpl_ctx_t *ctx, 
-                   char *locator,
-                   unsigned int flags,
-                   dpl_condition_t *condition, 
-                   int start, 
-                   int end,
-                   char **data_bufp,
-                   unsigned int *data_lenp,
-                   dpl_dict_t **metadatap)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "openread_range locator=%s", locator);
-
-  if (NULL == ctx->backend->openread_range)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->openread_range(ctx, locator, flags, condition, start, end, data_bufp, data_lenp, metadatap);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_unlink(dpl_ctx_t *ctx,
-           char *locator)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "unlink locator=%s", locator);
-
-  if (NULL == ctx->backend->unlink)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->unlink(ctx, locator);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_getattr(dpl_ctx_t *ctx,
-            char *locator,
-            dpl_dict_t **metadatap)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "getattr locator=%s", locator);
-
-  if (NULL == ctx->backend->getattr)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->getattr(ctx, locator, metadatap);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_setattr(dpl_ctx_t *ctx,
-            char *locator,
-            dpl_dict_t *metadata)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "setattr locator=%s", locator);
-
-  if (NULL == ctx->backend->setattr)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->setattr(ctx, locator, metadata);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_fgenurl(dpl_ctx_t *ctx,
-            char *locator,
-            time_t expires,
-            char *buf,
-            unsigned int len,
-            unsigned int *lenp)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "fgenurl locator=%s", locator);
-
-  if (NULL == ctx->backend->fgenurl)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->fgenurl(ctx, locator, expires, buf, len, lenp);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_fcopy(dpl_ctx_t *ctx, 
-          char *src_locator,
-          char *dst_locator)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_API, "fcopy src_locator=%s dst_locator=%s", src_locator, dst_locator);
-
-  if (NULL == ctx->backend->fcopy)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->fcopy(ctx, src_locator, dst_locator);
+  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, metadata_directive, metadata, canned_acl, condition);
   
  end:
 

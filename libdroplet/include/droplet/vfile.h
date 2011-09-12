@@ -43,7 +43,10 @@ dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *locator, unsigned int flags, dpl
 dpl_status_t dpl_openread_range(dpl_ctx_t *ctx, char *locator, unsigned int flags, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
 dpl_status_t dpl_unlink(dpl_ctx_t *ctx, char *locator);
 dpl_status_t dpl_getattr(dpl_ctx_t *ctx, char *locator, dpl_dict_t **metadatap);
+<<<<<<< HEAD
 dpl_status_t dpl_getattr_raw(dpl_ctx_t *ctx, char *locator, dpl_dict_t **metadatap);
+=======
+>>>>>>> 84b7228... missing files
 dpl_status_t dpl_setattr(dpl_ctx_t *ctx, char *locator, dpl_dict_t *metadata);
 dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, char *locator, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
 dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, char *src_locator, char *dst_locator);

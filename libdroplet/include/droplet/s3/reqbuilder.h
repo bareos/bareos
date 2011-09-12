@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_REQBUILDER_H__
-#define __DROPLET_REQBUILDER_H__ 1
+#ifndef __DROPLET_S3_REQBUILDER_H__
+#define __DROPLET_S3_REQBUILDER_H__ 1
 
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */

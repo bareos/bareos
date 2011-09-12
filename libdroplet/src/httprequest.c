@@ -81,6 +81,10 @@ dpl_req_gen_http_request(dpl_req_t *req,
 
   DPL_APPEND_STR(" ");
 
+  if (NULL != req->ctx->base_path)
+    {
+      DPL_APPEND_STR(req->ctx->base_path);
+    }
   DPL_APPEND_STR(resource_ue);
 
   //subresource and query params

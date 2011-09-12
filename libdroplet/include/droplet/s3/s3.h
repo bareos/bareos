@@ -37,7 +37,5 @@
 #include <droplet/s3/reqbuilder.h>
 #include <droplet/s3/replyparser.h>
 #include <droplet/s3/convapi.h>
-#include <droplet/s3/vdir.h>
-#include <droplet/s3/vfile.h>
 
 #endif

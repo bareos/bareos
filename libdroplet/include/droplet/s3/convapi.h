@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CONVAPI_H__
-#define __DROPLET_CONVAPI_H__ 1
+#ifndef __DROPLET_S3_CONVAPI_H__
+#define __DROPLET_S3_CONVAPI_H__ 1
 
 /* PROTO convapi.c */
 /* src/convapi.c */

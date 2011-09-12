@@ -247,6 +247,16 @@ conf_cb_func(void *cb_arg,
       if (NULL == ctx->host)
         return -1;
     }
+  else if (!strcmp(var, "port"))
+    {
+      ctx->port = atoi(value);
+    }
+  else if (!strcmp(var, "base_path"))
+    {
+      ctx->base_path = strdup(value);
+      if (NULL == ctx->base_path)
+        return -1;
+    }
   else if (!strcmp(var, "access_key"))
     {
       ctx->access_key = strdup(value);

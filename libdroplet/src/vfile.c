@@ -197,12 +197,21 @@ encrypt_init(dpl_vfile_t *vfile,
 
 dpl_status_t
 dpl_openwrite(dpl_ctx_t *ctx,
+<<<<<<< HEAD
               char *locator,
               unsigned int flags,
               dpl_dict_t *metadata,
               dpl_canned_acl_t canned_acl,
               unsigned int data_len,
               dpl_vfile_t **vfilep)
+=======
+                 char *locator,
+                 unsigned int flags,
+                 dpl_dict_t *metadata,
+                 dpl_canned_acl_t canned_acl,
+                 unsigned int data_len,
+                 dpl_vfile_t **vfilep)
+>>>>>>> 84b7228... missing files
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
@@ -369,6 +378,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
         }
     }
 
+<<<<<<< HEAD
   vfile->bucket = strdup(bucket);
   if (NULL == vfile->bucket)
     {
@@ -402,6 +412,16 @@ dpl_openwrite(dpl_ctx_t *ctx,
 
   ret2 = dpl_put_buffered(ctx, bucket, obj_ino.key, NULL, metadata, canned_acl,
                           data_len, &vfile->conn);
+=======
+  ret2 = dpl_put_buffered(ctx,
+                             bucket,
+                             obj_ino.key,
+                             NULL,
+                             metadata,
+                             canned_acl,
+                             data_len,
+                             &vfile->conn);
+>>>>>>> 84b7228... missing files
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -632,12 +652,21 @@ cb_vfile_buffer(void *cb_arg,
 
 dpl_status_t
 dpl_openread(dpl_ctx_t *ctx,
+<<<<<<< HEAD
              char *locator,
              unsigned int flags,
              dpl_condition_t *condition,
              dpl_buffer_func_t buffer_func,
              void *cb_arg,
              dpl_dict_t **metadatap)
+=======
+                char *locator,
+                unsigned int flags,
+                dpl_condition_t *condition,
+                dpl_buffer_func_t buffer_func,
+                void *cb_arg,
+                dpl_dict_t **metadatap)
+>>>>>>> 84b7228... missing files
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
@@ -713,8 +742,19 @@ dpl_openread(dpl_ctx_t *ctx,
       goto end;
     }
 
+<<<<<<< HEAD
   ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
                           condition, cb_vfile_header, cb_vfile_buffer, vfile);
+=======
+  ret2 = dpl_get_buffered(ctx,
+                             bucket,
+                             obj_ino.key,
+                             NULL,
+                             condition,
+                             cb_vfile_header,
+                             cb_vfile_buffer,
+                             vfile);
+>>>>>>> 84b7228... missing files
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -730,7 +770,13 @@ dpl_openread(dpl_ctx_t *ctx,
           goto end;
         }
     }
+<<<<<<< HEAD
   else
+=======
+
+  ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, metadata);
+  if (DPL_SUCCESS != ret2)
+>>>>>>> 84b7228... missing files
     {
       metadata = dpl_dict_new(13);
       if (NULL == metadata)
@@ -831,8 +877,21 @@ dpl_openread_range(dpl_ctx_t *ctx,
       goto end;
     }
 
+<<<<<<< HEAD
   ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
                        condition, start, end, data_bufp, data_lenp, metadatap);
+=======
+  ret2 = dpl_get_range(ctx,
+                          bucket,
+                          obj_ino.key,
+                          NULL,
+                          condition,
+                          start,
+                          end,
+                          data_bufp,
+                          data_lenp,
+                          metadatap);
+>>>>>>> 84b7228... missing files
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1009,6 +1068,7 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
+<<<<<<< HEAD
   path = index(nlocator, ':');
   if (NULL != path)
     {
@@ -1039,6 +1099,9 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_head_all(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
+=======
+  ret2 = dpl_head(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
+>>>>>>> 84b7228... missing files
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1111,7 +1174,11 @@ dpl_setattr(dpl_ctx_t *ctx,
       goto end;
     }
 
+<<<<<<< HEAD
   ret2 = dpl_copy(ctx, bucket, obj_ino.key, NULL, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, NULL);
+=======
+  ret2 = dpl_copy(ctx, bucket, obj_ino.key, NULL, bucket, obj_ino.key, NULL, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, NULL);
+>>>>>>> 84b7228... missing files
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1317,7 +1384,11 @@ dpl_fcopy(dpl_ctx_t *ctx,
         }
     }
 
+<<<<<<< HEAD
   ret2 = dpl_copy(ctx, src_bucket, src_obj_ino.key, NULL, dst_bucket, dst_obj_ino.key, NULL, DPL_FTYPE_REG, DPL_METADATA_DIRECTIVE_COPY, NULL, DPL_CANNED_ACL_UNDEF, NULL);
+=======
+  ret2 = dpl_copy(ctx, src_bucket, src_obj_ino.key, NULL, dst_bucket, dst_obj_ino.key, NULL, DPL_METADATA_DIRECTIVE_COPY, NULL, DPL_CANNED_ACL_UNDEF, NULL);
+>>>>>>> 84b7228... missing files
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

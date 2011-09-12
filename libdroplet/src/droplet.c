@@ -213,12 +213,15 @@ dpl_size_str(uint64_t size)
  */
 
 extern dpl_backend_t dpl_backend_s3;
+extern dpl_backend_t dpl_backend_cdmi;
 
 dpl_backend_t *
 dpl_backend_find(const char *name)
 {
   if (!strcmp(name, "s3"))
     return &dpl_backend_s3;
+  else if (!strcmp(name, "cdmi"))
+    return &dpl_backend_cdmi;
 
   return NULL;
 }
