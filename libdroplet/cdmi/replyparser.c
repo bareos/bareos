@@ -51,16 +51,19 @@ dpl_status_t
 dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
                            char *buf,
                            int len,
+                           char *prefix,
                            dpl_vec_t *objects,
                            dpl_vec_t *common_prefixes)
 {
-  int ret;
+  int ret, ret2;
   json_tokener *tok = NULL;
   json_object *obj = NULL;
   json_object *children = NULL;
   int n_children, i;
+  dpl_common_prefix_t *common_prefix = NULL;
+  dpl_object_t *object = NULL;
 
-  write(1, buf, len);
+  //  write(1, buf, len);
 
   tok = json_tokener_new();
   if (NULL == tok)
@@ -94,6 +97,8 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
   for (i = 0;i < n_children;i++)
     {
       json_object *child = json_object_array_get_idx(children, i);
+      char name[1024];
+      int name_len;
       
       if (json_type_string != json_object_get_type(child))
         {
@@ -101,12 +106,71 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
           goto end;
         }
 
-      printf("%s\n", json_object_get_string(child));
+      snprintf(name, sizeof (name), "%s%s", NULL != prefix ? prefix : "", json_object_get_string(child));
+      name_len = strlen(name);
+
+      if (name_len > 0 && name[name_len-1] == '/')
+        {
+          //this is a directory
+          common_prefix = malloc(sizeof (*common_prefix));
+          if (NULL == common_prefix)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+          memset(common_prefix, 0, sizeof (*common_prefix));
+          common_prefix->prefix = strdup(name);
+          if (NULL == common_prefix->prefix)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+
+          ret2 = dpl_vec_add(common_prefixes, common_prefix);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+
+          common_prefix = NULL;
+        }
+      else
+        {
+          object = malloc(sizeof (*object));
+          if (NULL == object)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+          memset(object, 0, sizeof (*object));
+          object->key = strdup(name);
+          if (NULL == object->key)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+
+          ret2 = dpl_vec_add(objects, object);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+
+          object = NULL;
+        }
     }
 
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != common_prefix)
+    dpl_common_prefix_free(common_prefix);
+
+  if (NULL != object)
+    dpl_object_free(object);
 
   if (NULL != obj)
     json_object_put(obj);

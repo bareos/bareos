@@ -31,12 +31,12 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_cdmi_REPLYPARSER_H__
-#define __DROPLET_cdmi_REPLYPARSER_H__ 1
+#ifndef __DROPLET_CDMI_REPLYPARSER_H__
+#define __DROPLET_CDMI_REPLYPARSER_H__ 1
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */
 dpl_status_t dpl_cdmi_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
 dpl_status_t dpl_cdmi_parse_list_all_my_buckets(dpl_ctx_t *ctx, char *buf, int len, dpl_vec_t *vec);
-dpl_status_t dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx, char *buf, int len, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
+dpl_status_t dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx, char *buf, int len, char *prefix, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
 #endif

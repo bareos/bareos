@@ -228,7 +228,7 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = dpl_cdmi_parse_list_bucket(ctx, data_buf, data_len, objects, common_prefixes);
+  ret = dpl_cdmi_parse_list_bucket(ctx, data_buf, data_len, prefix, objects, common_prefixes);
   if (DPL_SUCCESS != ret)
     {
       ret = DPL_FAILURE;

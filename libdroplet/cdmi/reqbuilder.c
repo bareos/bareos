@@ -79,7 +79,7 @@ dpl_add_authorization_to_headers(dpl_req_t *req,
 
   base64_len = dpl_base64_encode((u_char *) basic_str, basic_len, base64_str);
 
-  snprintf(auth_str, sizeof (auth_str), "Basic %s", base64_str);
+  snprintf(auth_str, sizeof (auth_str), "Basic %.*s", base64_len, base64_str);
 
   ret2 = dpl_dict_add(headers, "Authorization", auth_str, 0);
   if (DPL_SUCCESS != ret2)
