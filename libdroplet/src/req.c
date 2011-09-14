@@ -319,6 +319,15 @@ dpl_req_set_content_type(dpl_req_t *req,
 }
 
 dpl_status_t
+dpl_req_set_object_type(dpl_req_t *req,
+                        dpl_object_type_t object_type)
+{
+  req->object_type = object_type;
+
+  return DPL_SUCCESS;
+}
+
+dpl_status_t
 dpl_req_add_range(dpl_req_t *req,
                   int start,
                   int end)

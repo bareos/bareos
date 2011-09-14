@@ -41,12 +41,12 @@ dpl_backend_t
 dpl_backend_cdmi = 
   {
     "cdmi",
-    .list_all_my_buckets = dpl_cdmi_list_all_my_buckets,
     .list_bucket 	= dpl_cdmi_list_bucket,
-    .make_bucket 	= dpl_cdmi_make_bucket,
-    .delete_bucket 	= dpl_cdmi_deletebucket,
     .put 		= dpl_cdmi_put,
+    .put_buffered       = dpl_cdmi_put_buffered,
     .get 		= dpl_cdmi_get,
+    .get_range          = dpl_cdmi_get_range,
+    .get_buffered       = dpl_cdmi_get_buffered,
     .head 		= dpl_cdmi_head,
     .head_all 		= dpl_cdmi_head_all,
     .get_metadata_from_headers = dpl_cdmi_get_metadata_from_headers,

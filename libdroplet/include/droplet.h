@@ -185,6 +185,12 @@ typedef struct
   time_t creation_time;
 } dpl_bucket_t;
 
+typedef enum
+  {
+    DPL_OBJECT_TYPE_OBJECT,
+    DPL_OBJECT_TYPE_CONTAINER,
+  } dpl_object_type_t;
+
 typedef struct
 {
   char *key;
@@ -292,6 +298,7 @@ typedef struct
   char *cache_control;
   char *content_disposition;
   char *content_encoding;
+  dpl_object_type_t object_type;
   char *content_type;
   dpl_location_constraint_t location_constraint;
   dpl_canned_acl_t canned_acl;

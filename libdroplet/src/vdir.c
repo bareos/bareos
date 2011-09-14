@@ -252,7 +252,11 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
                char *bucket,
                dpl_ino_t parent_ino,
                const char *obj_name,
+<<<<<<< HEAD
                dpl_ftype_t object_type,
+=======
+               dpl_object_type_t object_type,
+>>>>>>> 1f7fe2b... cdmi mkdir OK
                const char *delim)
 {
   int ret, ret2;
@@ -263,10 +267,14 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
   snprintf(resource, sizeof (resource), "%s%s%s", parent_ino.key, obj_name, delim);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   ret2 = dpl_put(ctx, bucket, resource, NULL, object_type, NULL, DPL_CANNED_ACL_PRIVATE, NULL, 0);
 =======
   ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, DPL_CANNED_ACL_PRIVATE, NULL, 0);
 >>>>>>> 84b7228... missing files
+=======
+  ret2 = dpl_put(ctx, bucket, resource, NULL, object_type, NULL, DPL_CANNED_ACL_PRIVATE, NULL, 0);
+>>>>>>> 1f7fe2b... cdmi mkdir OK
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -288,7 +296,11 @@ dpl_vdir_mkdir(dpl_ctx_t *ctx,
                dpl_ino_t parent_ino,
                const char *obj_name)
 {
+<<<<<<< HEAD
   return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_DIR, ctx->delim);
+=======
+  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_OBJECT_TYPE_CONTAINER, ctx->delim);
+>>>>>>> 1f7fe2b... cdmi mkdir OK
 }
 
 
@@ -298,7 +310,11 @@ dpl_vdir_mknod(dpl_ctx_t *ctx,
                dpl_ino_t parent_ino,
                const char *obj_name)
 {
+<<<<<<< HEAD
   return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_REG, "");
+=======
+  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_OBJECT_TYPE_OBJECT, "");
+>>>>>>> 1f7fe2b... cdmi mkdir OK
 }
 
 static dpl_status_t

@@ -139,6 +139,7 @@ dpl_put(dpl_ctx_t *ctx,
         char *bucket,
         char *resource,
         char *subresource,
+        dpl_object_type_t object_type,
         dpl_dict_t *metadata,
         dpl_canned_acl_t canned_acl,
         char *data_buf,
@@ -154,7 +155,7 @@ dpl_put(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->put(ctx, bucket, resource, subresource, metadata, canned_acl, data_buf, data_len);
+  ret = ctx->backend->put(ctx, bucket, resource, subresource, object_type, metadata, canned_acl, data_buf, data_len);
   
  end:
 
@@ -183,7 +184,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, metadata, canned_acl, data_len, connp);
+  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, DPL_OBJECT_TYPE_OBJECT, metadata, canned_acl, data_len, connp);
   
  end:
 

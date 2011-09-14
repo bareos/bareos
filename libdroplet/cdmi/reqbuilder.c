@@ -32,40 +32,98 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
+#include <droplet/cdmi/reqbuilder.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
 static dpl_status_t
-dpl_add_date_to_headers(dpl_dict_t *headers)
+add_metadata_to_json_body(dpl_dict_t *metadata,
+                          json_object *body_obj)
+
 {
-  int ret, ret2;
-  time_t t;
-  struct tm tm_buf;
-  char date_str[128];
+  int bucket;
+  dpl_var_t *var;
+  int ret;
+  json_object *md_obj = NULL;
+  json_object *tmp;
 
-  (void) time(&t);
-  ret = strftime(date_str, sizeof (date_str), "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&t, &tm_buf));
-  if (0 == ret)
-    return DPL_FAILURE;
-
-  ret2 = dpl_dict_add(headers, "Date", date_str, 0);
-  if (DPL_SUCCESS != ret2)
+  md_obj = json_object_new_object();
+  if (NULL == md_obj)
     {
-      ret = ret2;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
-  ret = DPL_SUCCESS;
+  for (bucket = 0;bucket < metadata->n_buckets;bucket++)
+    {
+      for (var = metadata->buckets[bucket];var;var = var->prev)
+        {
+          tmp = json_object_new_string(var->value);
+          if (NULL == tmp)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
 
+          json_object_object_add(md_obj, var->key, tmp);
+          //XXX check return value
+        }
+    }
+
+  json_object_object_add(body_obj, "metadata", md_obj);
+  //XXX check return value
+  md_obj = NULL;
+
+  ret = DPL_SUCCESS;
+  
  end:
+
+  if (NULL != md_obj)
+    json_object_put(md_obj);
 
   return ret;
 }
 
 static dpl_status_t
-dpl_add_authorization_to_headers(dpl_req_t *req,
-                                 dpl_dict_t *headers)
+add_data_to_json_body(dpl_chunk_t *chunk,
+                      json_object *body_obj)
+
+{
+  int ret;
+  json_object *data_obj = NULL;
+  json_object *tmp;
+  char *base64_str;
+  int base64_len;
+
+  //encode body to base64
+  base64_str = alloca(DPL_BASE64_LENGTH(chunk->len));
+  base64_len = dpl_base64_encode(chunk->buf, chunk->len, base64_str);
+  
+  data_obj = json_object_new_string(base64_str);
+  if (NULL == data_obj)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  json_object_object_add(body_obj, "value", data_obj);
+  //XXX check return value
+  data_obj = NULL;
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != data_obj)
+    json_object_put(data_obj);
+
+  return ret;
+}
+
+static dpl_status_t
+add_authorization_to_headers(dpl_req_t *req,
+                             dpl_dict_t *headers)
 {
   int ret, ret2;
   char basic_str[1024];
@@ -105,11 +163,17 @@ dpl_add_authorization_to_headers(dpl_req_t *req,
  */
 dpl_status_t
 dpl_cdmi_req_build(dpl_req_t *req,
-                   dpl_dict_t **headersp)
+                   dpl_dict_t **headersp,
+                   char **body_strp,
+                   int *body_lenp)
 {
   dpl_dict_t *headers = NULL;
   int ret, ret2;
   char *method = dpl_method_str(req->method);
+  json_object *body_obj = NULL;
+  char *body_str = NULL;
+  int body_len;
+  char buf[256];
 
   DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);
 
@@ -130,6 +194,13 @@ dpl_cdmi_req_build(dpl_req_t *req,
     }
   else if (DPL_METHOD_PUT == req->method)
     {
+      body_obj = json_object_new_object();
+      if (NULL == body_obj)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
       if (NULL != req->cache_control)
         {
           ret2 = dpl_dict_add(headers, "Cache-Control", req->cache_control, 0);
@@ -160,10 +231,45 @@ dpl_cdmi_req_build(dpl_req_t *req,
             }
         }
 
-      if (NULL != req->chunk)
+      if (!(req->behavior_flags & DPL_BEHAVIOR_HTTP_COMPAT))
         {
-          char buf[64];
-
+          ret2 = add_metadata_to_json_body(req->metadata, body_obj);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          
+          if (NULL != req->chunk)
+            {
+              ret2 = add_data_to_json_body(req->chunk, body_obj);
+              if (DPL_SUCCESS != ret2)
+                {
+                  ret = ret2;
+                  goto end;
+                }
+            }
+          
+          //XXX not reentrant
+          body_str = (char *) json_object_to_json_string(body_obj);
+          if (NULL == body_str)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+          
+          body_len = strlen(body_str);
+          
+          snprintf(buf, sizeof (buf), "%u", body_len);
+          ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+        }
+      else
+        {
           snprintf(buf, sizeof (buf), "%u", req->chunk->len);
           ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
           if (DPL_SUCCESS != ret2)
@@ -196,15 +302,24 @@ dpl_cdmi_req_build(dpl_req_t *req,
   /*
    * common headers
    */
-  //CDMI content-type is required even for GET
-  if (NULL != req->content_type)
+  switch (req->object_type)
     {
-      ret2 = dpl_dict_add(headers, "Content-Type", req->content_type, 0);
+    case DPL_OBJECT_TYPE_OBJECT:
+      ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_OBJECT, 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
           goto end;
         }
+      break ;
+    case DPL_OBJECT_TYPE_CONTAINER:
+      ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CONTAINER, 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+      break ;
     }
 
   if (!(req->behavior_flags & DPL_BEHAVIOR_HTTP_COMPAT))
@@ -250,12 +365,32 @@ dpl_cdmi_req_build(dpl_req_t *req,
         }
     }
 
-  ret2 = dpl_add_authorization_to_headers(req, headers);
+  ret2 = add_authorization_to_headers(req, headers);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
+
+  if (NULL != body_strp)
+    {
+      if (NULL == body_str)
+        {
+          *body_strp = NULL;
+        }
+      else
+        {
+          *body_strp = strdup(body_str);
+          if (NULL == body_strp)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+        }
+    }
+
+  if (NULL != body_lenp)
+    *body_lenp = body_len;
 
   if (NULL != headersp)
     {
@@ -266,6 +401,9 @@ dpl_cdmi_req_build(dpl_req_t *req,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != body_obj)
+    json_object_put(body_obj);
 
   if (NULL != headers)
     dpl_dict_free(headers);

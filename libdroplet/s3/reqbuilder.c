@@ -37,8 +37,8 @@
 #define DPRINTF(fmt,...)
 
 static dpl_status_t
-dpl_add_metadata_to_headers(dpl_dict_t *metadata,
-                            dpl_dict_t *headers)
+add_metadata_to_headers(dpl_dict_t *metadata,
+                        dpl_dict_t *headers)
 
 {
   int bucket;
@@ -64,9 +64,9 @@ dpl_add_metadata_to_headers(dpl_dict_t *metadata,
 }
 
 static dpl_status_t
-dpl_add_condition_to_headers(dpl_condition_t *condition,
-                             dpl_dict_t *headers,
-                             int copy_source)
+add_condition_to_headers(dpl_condition_t *condition,
+                         dpl_dict_t *headers,
+                         int copy_source)
 {
   int ret;
   char *header;
@@ -138,9 +138,9 @@ dpl_add_condition_to_headers(dpl_condition_t *condition,
 }
 
 static dpl_status_t
-dpl_add_ranges_to_headers(dpl_range_t *ranges,
-                          int n_ranges,
-                          dpl_dict_t *headers)
+add_ranges_to_headers(dpl_range_t *ranges,
+                      int n_ranges,
+                      dpl_dict_t *headers)
 {
   int ret;
   int i;
@@ -206,15 +206,15 @@ var_cmp(const void *p1,
 }
 
 static dpl_status_t
-dpl_make_signature(dpl_ctx_t *ctx,
-                   char *method,
-                   char *bucket,
-                   char *resource,
-                   char *subresource,
-                   dpl_dict_t *headers,
-                   char *buf,
-                   unsigned int len,
-                   unsigned int *lenp)
+make_signature(dpl_ctx_t *ctx,
+               char *method,
+               char *bucket,
+               char *resource,
+               char *subresource,
+               dpl_dict_t *headers,
+               char *buf,
+               unsigned int len,
+               unsigned int *lenp)
 {
   char *p;
   //char *tmp_str;
@@ -324,7 +324,7 @@ dpl_make_signature(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-dpl_add_date_to_headers(dpl_dict_t *headers)
+add_date_to_headers(dpl_dict_t *headers)
 {
   int ret, ret2;
   time_t t;
@@ -351,8 +351,8 @@ dpl_add_date_to_headers(dpl_dict_t *headers)
 }
 
 static dpl_status_t
-dpl_add_authorization_to_headers(dpl_req_t *req,
-                                 dpl_dict_t *headers)
+add_authorization_to_headers(dpl_req_t *req,
+                             dpl_dict_t *headers)
 {
   int ret, ret2;
   char *method = dpl_method_str(req->method);
@@ -377,7 +377,7 @@ dpl_add_authorization_to_headers(dpl_req_t *req,
       dpl_url_encode(req->resource + 1, resource_ue + 1);
     }
 
-  ret = dpl_make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
+  ret = make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
   if (DPL_SUCCESS != ret)
     return DPL_FAILURE;
 
@@ -404,8 +404,8 @@ dpl_add_authorization_to_headers(dpl_req_t *req,
 }
 
 static dpl_status_t
-dpl_add_source_to_headers(dpl_req_t *req,
-                          dpl_dict_t *headers)
+add_source_to_headers(dpl_req_t *req,
+                      dpl_dict_t *headers)
 {
   int ret, ret2;
   char buf[1024];
@@ -498,14 +498,14 @@ dpl_s3_req_build(dpl_req_t *req,
   if (DPL_METHOD_GET == req->method ||
       DPL_METHOD_HEAD == req->method)
     {
-      ret2 = dpl_add_ranges_to_headers(req->ranges, req->n_ranges, headers);
+      ret2 = add_ranges_to_headers(req->ranges, req->n_ranges, headers);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
           goto end;
         }
 
-      ret2 = dpl_add_condition_to_headers(&req->condition, headers, 0);
+      ret2 = add_condition_to_headers(&req->condition, headers, 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -624,7 +624,7 @@ dpl_s3_req_build(dpl_req_t *req,
             }
         }
 
-      ret2 = dpl_add_metadata_to_headers(req->metadata, headers);
+      ret2 = add_metadata_to_headers(req->metadata, headers);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -655,7 +655,7 @@ dpl_s3_req_build(dpl_req_t *req,
        */
       if (req->behavior_flags & DPL_BEHAVIOR_COPY)
         {
-          ret2 = dpl_add_source_to_headers(req, headers);
+          ret2 = add_source_to_headers(req, headers);
           if (DPL_SUCCESS != ret2)
             {
               ret = ret2;
@@ -681,7 +681,7 @@ dpl_s3_req_build(dpl_req_t *req,
                 }
             }
 
-          ret2 = dpl_add_condition_to_headers(&req->copy_source_condition, headers, 1);
+          ret2 = add_condition_to_headers(&req->copy_source_condition, headers, 1);
           if (DPL_SUCCESS != ret2)
             {
               ret = ret2;
@@ -749,7 +749,7 @@ dpl_s3_req_build(dpl_req_t *req,
     }
   else
     {
-      ret2 = dpl_add_date_to_headers(headers);
+      ret2 = add_date_to_headers(headers);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -757,7 +757,7 @@ dpl_s3_req_build(dpl_req_t *req,
         }
     }
 
-  ret2 = dpl_add_authorization_to_headers(req, headers);
+  ret2 = add_authorization_to_headers(req, headers);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -847,7 +847,7 @@ dpl_s3_req_gen_url(dpl_req_t *req,
   DPL_APPEND_STR("&");
 
   DPL_APPEND_STR("Signature=");
-  ret2 = dpl_make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
+  ret2 = make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

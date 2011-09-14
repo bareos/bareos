@@ -58,6 +58,7 @@
 #include <openssl/rand.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <json/json.h>
 #include <sys/types.h>
 #include <pwd.h>
 #include <fcntl.h>

@@ -55,6 +55,7 @@ void dpl_req_set_chunk(dpl_req_t *req, dpl_chunk_t *chunk);
 dpl_status_t dpl_req_add_metadatum(dpl_req_t *req, char *key, char *value);
 dpl_status_t dpl_req_add_metadata(dpl_req_t *req, dpl_dict_t *metadata);
 dpl_status_t dpl_req_set_content_type(dpl_req_t *req, char *content_type);
+dpl_status_t dpl_req_set_object_type(dpl_req_t *req, dpl_object_type_t object_type);
 dpl_status_t dpl_req_add_range(dpl_req_t *req, int start, int end);
 void dpl_req_set_expires(dpl_req_t *req, time_t expires);
 dpl_status_t dpl_req_set_src_bucket(dpl_req_t *req, char *src_bucket);
