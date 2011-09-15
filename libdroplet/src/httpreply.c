@@ -458,6 +458,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
 
               if (!(DPL_HTTP_CODE_CONTINUE == http_reply.code ||
                     DPL_HTTP_CODE_OK == http_reply.code ||
+                    DPL_HTTP_CODE_CREATED == http_reply.code ||
                     DPL_HTTP_CODE_NO_CONTENT == http_reply.code ||
                     DPL_HTTP_CODE_PARTIAL_CONTENT == http_reply.code))
                 {

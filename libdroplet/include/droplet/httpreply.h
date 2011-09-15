@@ -44,6 +44,7 @@ struct dpl_http_reply
   int	version;
 #define DPL_HTTP_CODE_CONTINUE        100
 #define DPL_HTTP_CODE_OK	      200
+#define DPL_HTTP_CODE_CREATED         201
 #define DPL_HTTP_CODE_NO_CONTENT      204
 #define DPL_HTTP_CODE_PARTIAL_CONTENT 206
 #define DPL_HTTP_CODE_NOT_FOUND       404
