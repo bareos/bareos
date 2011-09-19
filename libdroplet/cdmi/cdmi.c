@@ -41,6 +41,7 @@ dpl_backend_t
 dpl_backend_cdmi = 
   {
     "cdmi",
+    .make_bucket 	= dpl_cdmi_make_bucket,
     .list_bucket 	= dpl_cdmi_list_bucket,
     .put 		= dpl_cdmi_put,
     .put_buffered       = dpl_cdmi_put_buffered,

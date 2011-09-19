@@ -36,5 +36,5 @@
 
 /* PROTO httprequest.c */
 /* src/httprequest.c */
-dpl_status_t dpl_req_gen_http_request(dpl_req_t *req, dpl_dict_t *headers, dpl_dict_t *query_params, char *buf, int len, unsigned int *lenp);
+dpl_status_t dpl_req_gen_http_request(dpl_ctx_t *ctx, dpl_req_t *req, dpl_dict_t *headers, dpl_dict_t *query_params, char *buf, int len, unsigned int *lenp);
 #endif

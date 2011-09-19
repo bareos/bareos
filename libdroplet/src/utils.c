@@ -540,6 +540,25 @@ dpl_url_encode(char *str,
   str_ue[i] = 0;
 }
 
+void
+dpl_url_encode_no_slashes(char *str,
+                          char *str_ue)
+{
+  int   i;
+
+  for (i = 0;*str;str++)
+    {
+      if (isalnum(*str) || *str == '/')
+        str_ue[i++] = *str;
+      else
+        {
+          sprintf(str_ue + i, "%%%02X", *str);
+          i+=3;
+        }
+    }
+  str_ue[i] = 0;
+}
+
 /**
  * decode an URL
  *

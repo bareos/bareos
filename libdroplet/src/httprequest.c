@@ -49,7 +49,8 @@
  * @return
  */
 dpl_status_t
-dpl_req_gen_http_request(dpl_req_t *req,
+dpl_req_gen_http_request(dpl_ctx_t *ctx,
+                         dpl_req_t *req,
                          dpl_dict_t *headers,
                          dpl_dict_t *query_params,
                          char *buf,
@@ -65,17 +66,24 @@ dpl_req_gen_http_request(dpl_req_t *req,
   p = buf;
 
   //resource
-  if ('/' != req->resource[0])
+  if (ctx->encode_slashes)
     {
-      resource_ue[0] = '/';
-      dpl_url_encode(req->resource, resource_ue + 1);
+      if ('/' != req->resource[0])
+        {
+          resource_ue[0] = '/';
+          dpl_url_encode(req->resource, resource_ue + 1);
+        }
+      else
+        {
+          resource_ue[0] = '/'; //some servers do not like encoded slash
+          dpl_url_encode(req->resource + 1, resource_ue + 1);
+        }
     }
   else
     {
-      resource_ue[0] = '/'; //some servers do not like encoded slash
-      dpl_url_encode(req->resource + 1, resource_ue + 1);
+      dpl_url_encode_no_slashes(req->resource, resource_ue);
     }
-
+      
   //method
   DPL_APPEND_STR(method);
 

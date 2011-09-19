@@ -106,7 +106,7 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -316,7 +316,7 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, query_params, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, query_params, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -543,7 +543,7 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -694,7 +694,7 @@ dpl_s3_deletebucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -881,7 +881,7 @@ dpl_s3_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1058,7 +1058,7 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1247,7 +1247,7 @@ dpl_s3_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1466,7 +1466,7 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1708,7 +1708,7 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1881,7 +1881,7 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -2082,7 +2082,7 @@ dpl_s3_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -2392,7 +2392,7 @@ dpl_s3_copy(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;

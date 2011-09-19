@@ -234,6 +234,7 @@ typedef struct dpl_ctx
   char *encrypt_key;
   char *delim;                /*!< vdir delimiter */
   int light_mode; //bypass vdir mechanism
+  int encode_slashes;
   struct dpl_backend_s *backend;
 
   /*

@@ -37,6 +37,15 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+dpl_status_t
+dpl_cdmi_make_bucket(dpl_ctx_t *ctx,
+                     char *bucket,
+                     dpl_location_constraint_t location_constraint,
+                     dpl_canned_acl_t canned_acl)
+{
+  return DPL_SUCCESS;
+}
+
 /**
  * list bucket
  *
@@ -119,7 +128,15 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  //bucket emulation
+  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -348,7 +365,15 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  //bucket emulation
+  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -535,7 +560,15 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  //bucket emulation
+  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -815,7 +848,15 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  //bucket emulation
+  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -990,7 +1031,15 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  //bucket emulation
+  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;

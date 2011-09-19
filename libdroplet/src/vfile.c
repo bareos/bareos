@@ -66,7 +66,11 @@ dpl_close(dpl_vfile_t *vfile)
               ret2 = dpl_dict_get_lowered(headers_returned, "Content-MD5", &var);
               if (DPL_SUCCESS != ret2 || NULL == var)
                 {
+<<<<<<< HEAD
                   fprintf(stderr, "missing 'Content-MD5' in answer\n");
+=======
+                  fprintf(stderr, "missing 'Etag' in answer\n");
+>>>>>>> 50eeba4... bucket emulation
                   //XXX ret = DPL_FAILURE;
                 }
               else
