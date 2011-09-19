@@ -43,7 +43,7 @@ dpl_cdmi_make_bucket(dpl_ctx_t *ctx,
                      dpl_location_constraint_t location_constraint,
                      dpl_canned_acl_t canned_acl)
 {
-  return DPL_SUCCESS;
+  return dpl_mkdir(ctx, bucket);
 }
 
 /**
