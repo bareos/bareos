@@ -42,7 +42,7 @@ dpl_cdmi_get_metadata_from_headers(dpl_dict_t *headers,
                                    dpl_dict_t *metadata)
 {
   //headers are not stored in metadata
-  return DPL_EINVAL;
+  return DPL_SUCCESS;
 }
 
 /**/

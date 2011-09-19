@@ -441,7 +441,179 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
                       unsigned int data_len,
                       dpl_conn_t **connp)
 {
-  return DPL_ENOTSUPP;
+  char          *host;
+  int           ret, ret2;
+  dpl_conn_t    *conn = NULL;
+  char          header[1024];
+  u_int         header_len;
+  struct iovec  iov[10];
+  int           n_iov = 0;
+  int           connection_close = 0;
+  dpl_dict_t    *headers_request = NULL;
+  dpl_dict_t    *headers_reply = NULL;
+  dpl_req_t     *req = NULL;
+  dpl_chunk_t   chunk;
+
+  DPL_TRACE(ctx, DPL_TRACE_CONV, "put_buffered bucket=%s resource=%s", bucket, resource);
+
+  req = dpl_req_new(ctx);
+  if (NULL == req)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  dpl_req_set_method(req, DPL_METHOD_PUT);
+
+  ret2 = dpl_req_set_bucket(req, bucket);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_set_resource(req, resource);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != subresource)
+    {
+      ret2 = dpl_req_set_subresource(req, subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  chunk.buf = NULL;
+  chunk.len = data_len;
+  dpl_req_set_chunk(req, &chunk);
+
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  dpl_req_add_behavior(req, DPL_BEHAVIOR_HTTP_COMPAT);
+
+  dpl_req_set_object_type(req, object_type);
+
+  dpl_req_add_behavior(req, DPL_BEHAVIOR_EXPECT);
+
+  dpl_req_set_canned_acl(req, canned_acl);
+
+  if (NULL != metadata)
+    {
+      ret2 = dpl_req_add_metadata(req, metadata);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  host = dpl_dict_get_value(headers_request, "Host");
+  if (NULL == host)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  conn = dpl_conn_open_host(ctx, host, ctx->port);
+  if (NULL == conn)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  iov[n_iov].iov_base = header;
+  iov[n_iov].iov_len = header_len;
+  n_iov++;
+
+  //final crlf
+  iov[n_iov].iov_base = "\r\n";
+  iov[n_iov].iov_len = 2;
+  n_iov++;
+
+  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPLERR(1, "writev failed");
+      connection_close = 1;
+      ret = DPL_ENOENT; //mapped to 404
+      goto end;
+    }
+
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  if (DPL_SUCCESS != ret2)
+    {
+      if (DPL_ENOENT == ret2)
+        {
+          ret = DPL_ENOENT;
+          goto end;
+        }
+      else
+        {
+          DPLERR(0, "read http answer failed");
+          connection_close = 1;
+          ret = DPL_ENOENT; //mapped to 404
+          goto end;
+        }
+    }
+  else
+    {
+      if (NULL != headers_reply) //possible if continue succeeded
+        connection_close = dpl_connection_close(headers_reply);
+    }
+
+  (void) dpl_log_charged_event(ctx, "DATA", "IN", data_len);
+
+  if (NULL != connp)
+    {
+      *connp = conn;
+      conn = NULL; //consume it
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != conn)
+    {
+      if (1 == connection_close)
+        dpl_conn_terminate(conn);
+      else
+        dpl_conn_release(conn);
+    }
+
+  if (NULL != headers_reply)
+    dpl_dict_free(headers_reply);
+
+  if (NULL != headers_request)
+    dpl_dict_free(headers_request);
+
+  if (NULL != req)
+    dpl_req_free(req);
+
+  DPRINTF("ret=%d\n", ret);
+
+  return ret;
 }
 
 /**
@@ -500,6 +672,56 @@ dpl_cdmi_get_range(dpl_ctx_t *ctx,
   return DPL_ENOTSUPP;
 }
 
+struct get_conven
+{
+  dpl_header_func_t header_func;
+  dpl_buffer_func_t buffer_func;
+  void *cb_arg;
+  int connection_close;
+};
+
+static dpl_status_t
+cb_get_header(void *cb_arg,
+              char *header,
+              char *value)
+{
+  struct get_conven *gc = (struct get_conven *) cb_arg;
+  int ret;
+
+  if (NULL != gc->header_func)
+    {
+      ret = gc->header_func(gc->cb_arg, header, value);
+      if (DPL_SUCCESS != ret)
+        return ret;
+    }
+
+  if (!strcasecmp(header, "connection"))
+    {
+      if (!strcasecmp(value, "close"))
+        gc->connection_close = 1;
+    }
+
+  return DPL_SUCCESS;
+}
+
+static dpl_status_t
+cb_get_buffer(void *cb_arg,
+              char *buf,
+              unsigned int len)
+{
+  struct get_conven *gc = (struct get_conven *) cb_arg;
+  int ret;
+
+  if (NULL != gc->buffer_func)
+    {
+      ret = gc->buffer_func(gc->cb_arg, buf, len);
+      if (DPL_SUCCESS != ret)
+        return ret;
+    }
+
+  return DPL_SUCCESS;
+}
+
 dpl_status_t
 dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
                     char *bucket,
@@ -510,7 +732,154 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
                     dpl_buffer_func_t buffer_func,
                     void *cb_arg)
 {
-  return DPL_ENOTSUPP;
+  char          *host;
+  int           ret, ret2;
+  dpl_conn_t   *conn = NULL;
+  char          header[1024];
+  u_int         header_len;
+  struct iovec  iov[10];
+  int           n_iov = 0;
+  dpl_dict_t    *headers_request = NULL;
+  dpl_req_t     *req = NULL;
+  struct get_conven gc;
+
+  DPL_TRACE(ctx, DPL_TRACE_CONV, "get_buffered bucket=%s resource=%s", bucket, resource);
+
+  memset(&gc, 0, sizeof (gc));
+  gc.header_func = header_func;
+  gc.buffer_func = buffer_func;
+  gc.cb_arg = cb_arg;
+
+  req = dpl_req_new(ctx);
+  if (NULL == req)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  dpl_req_set_method(req, DPL_METHOD_GET);
+
+  ret2 = dpl_req_set_bucket(req, bucket);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_set_resource(req, resource);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != subresource)
+    {
+      ret2 = dpl_req_set_subresource(req, subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  if (NULL != condition)
+    {
+      dpl_req_set_condition(req, condition);
+    }
+
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  dpl_req_add_behavior(req, DPL_BEHAVIOR_HTTP_COMPAT);
+
+  //build request
+  ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  host = dpl_dict_get_value(headers_request, "Host");
+  if (NULL == host)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  conn = dpl_conn_open_host(ctx, host, ctx->port);
+  if (NULL == conn)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(req, headers_request, NULL, header, sizeof (header), &header_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  iov[n_iov].iov_base = header;
+  iov[n_iov].iov_len = header_len;
+  n_iov++;
+
+  //final crlf
+  iov[n_iov].iov_base = "\r\n";
+  iov[n_iov].iov_len = 2;
+  n_iov++;
+
+  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPLERR(1, "writev failed");
+      gc.connection_close = 1;
+      ret = DPL_ENOENT; //mapped to 404
+      goto end;
+    }
+
+  ret2 = dpl_read_http_reply_buffered(conn, 1, cb_get_header, cb_get_buffer, &gc);
+  if (DPL_SUCCESS != ret2)
+    {
+      if (DPL_ENOENT == ret2)
+        {
+          ret = DPL_ENOENT;
+          goto end;
+        }
+      else
+        {
+          DPLERR(0, "read http answer failed");
+          gc.connection_close = 1;
+          ret = DPL_ENOENT; //mapped to 404
+          goto end;
+        }
+    }
+
+  //caller is responsible for logging the event
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != conn)
+    {
+      if (1 == gc.connection_close)
+        dpl_conn_terminate(conn);
+      else
+        dpl_conn_release(conn);
+    }
+
+  if (NULL != headers_request)
+    dpl_dict_free(headers_request);
+
+  if (NULL != req)
+    dpl_req_free(req);
+
+  DPRINTF("ret=%d\n", ret);
+
+  return ret;
 }
 
 
