@@ -784,10 +784,14 @@ dpl_openread(dpl_ctx_t *ctx,
   if (!strcmp(ctx->backend->name, "cdmi") && ctx->cdmi_have_metadata)
     {
 <<<<<<< HEAD
+<<<<<<< HEAD
       ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, NULL, &metadata);
 =======
       ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, "metadata", NULL, &metadata);
 >>>>>>> 568c98f... cdmi getattr support
+=======
+      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, NULL, &metadata);
+>>>>>>> efeeb98... getattr and getattr_raw
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_FAILURE;
@@ -1130,6 +1134,79 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
 =======
   ret2 = dpl_head(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
 >>>>>>> 84b7228... missing files
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != nlocator)
+    free(nlocator);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_getattr_raw(dpl_ctx_t *ctx,
+                char *locator,
+                dpl_dict_t **metadatap)
+{
+  int ret, ret2;
+  dpl_ino_t parent_ino, obj_ino;
+  dpl_ftype_t obj_type;
+  char *nlocator = NULL;
+  char *bucket, *path;
+  dpl_ino_t cur_ino;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFILE, "getattr locator=%s", locator);
+
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      bucket = nlocator;
+      *path++ = 0;
+    }
+  else
+    {
+      bucket = ctx->cur_bucket;
+      path = nlocator;
+    }
+
+  cur_ino = dpl_cwd(ctx, bucket);
+
+  if (ctx->light_mode)
+    {
+      strcpy(obj_ino.key, path); //XXX check length
+      obj_type = DPL_FTYPE_REG;
+    }
+  else
+    {
+      ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  if (DPL_FTYPE_REG != obj_type)
+    {
+      ret = DPL_EISDIR;
+      goto end;
+    }
+
+  ret2 = dpl_head_all(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
