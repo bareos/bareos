@@ -61,27 +61,51 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
   char *method = dpl_method_str(req->method);
   char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
 
-  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_gen_http_request");
+  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_gen_http_request resource=%s", req->resource);
 
   p = buf;
 
   //resource
-  if (ctx->encode_slashes)
+  if (ctx->url_encoding)
     {
-      if ('/' != req->resource[0])
+      if (ctx->encode_slashes)
         {
-          resource_ue[0] = '/';
-          dpl_url_encode(req->resource, resource_ue + 1);
+          if ('/' != req->resource[0])
+            {
+              resource_ue[0] = '/';
+              dpl_url_encode(req->resource, resource_ue + 1);
+            }
+          else
+            {
+              resource_ue[0] = '/'; //some servers do not like encoded slash
+              dpl_url_encode(req->resource + 1, resource_ue + 1);
+            }
         }
       else
         {
-          resource_ue[0] = '/'; //some servers do not like encoded slash
-          dpl_url_encode(req->resource + 1, resource_ue + 1);
+          if ('/' != req->resource[0])
+            {
+              resource_ue[0] = '/';
+              dpl_url_encode_no_slashes(req->resource, resource_ue + 1);
+            }
+          else
+            {
+              dpl_url_encode_no_slashes(req->resource, resource_ue);
+            }
         }
     }
   else
     {
-      dpl_url_encode_no_slashes(req->resource, resource_ue);
+      //no processing
+      if ('/' != req->resource[0])
+        {
+          resource_ue[0] = '/';
+          strcpy(resource_ue + 1, req->resource);
+        }
+      else
+        {
+          strcpy(resource_ue, req->resource);
+        }
     }
       
   //method
@@ -91,8 +115,11 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
 
   if (NULL != req->ctx->base_path)
     {
-      DPL_APPEND_STR(req->ctx->base_path);
+      //dont prepend slash is base path is "/" and resource is "/"
+      if (strcmp(req->ctx->base_path, "/"))
+        DPL_APPEND_STR(req->ctx->base_path);
     }
+
   DPL_APPEND_STR(resource_ue);
 
   //subresource and query params

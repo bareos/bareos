@@ -216,7 +216,6 @@ dpl_conf_finish(struct dpl_conf_ctx *ctx)
 /*
  *
  */
-
 static int
 conf_cb_func(void *cb_arg,
              char *var,
@@ -253,6 +252,15 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "base_path"))
     {
+      if (strcmp(value, "/"))
+        {
+          if (value[strlen(value)-1] == '/')
+            {
+              fprintf(stderr, "base_path must not end by slash\n");
+              return -1;
+            }
+        }
+
       ctx->base_path = strdup(value);
       if (NULL == ctx->base_path)
         return -1;
@@ -366,6 +374,18 @@ conf_cb_func(void *cb_arg,
           return -1;
         }
     }
+  else if (!strcmp(var, "url_encoding"))
+    {
+      if (!strcasecmp(value, "true"))
+        ctx->url_encoding = 1;
+      else if (!strcasecmp(value, "false"))
+        ctx->url_encoding = 0;
+      else
+        {
+          fprintf(stderr, "invalid value '%s'\n", var);
+          return -1;
+        }
+    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);
@@ -462,6 +482,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   assert(NULL != ctx->backend);
   ctx->encode_slashes = 1;
   ctx->keep_alive = 1;
+  ctx->url_encoding = 1;
 
   return DPL_SUCCESS;
 }

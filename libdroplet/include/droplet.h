@@ -236,6 +236,7 @@ typedef struct dpl_ctx
   int light_mode;            /*!< bypass vdir mechanism */
   int encode_slashes;        /*!< client wants slashes encoded */
   int keep_alive;            /*!< client supports keep-alive */
+  int url_encoding;          /*!< some servers does not handle url encoding */
   struct dpl_backend_s *backend;
 
   /*
