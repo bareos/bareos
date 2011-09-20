@@ -609,7 +609,8 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
 }
 
 int
-dpl_connection_close(dpl_dict_t *headers_returned)
+dpl_connection_close(dpl_ctx_t *ctx,
+                     dpl_dict_t *headers_returned)
 {
   dpl_var_t *var;
   int ret;
@@ -619,7 +620,13 @@ dpl_connection_close(dpl_dict_t *headers_returned)
 
   ret = dpl_dict_get_lowered(headers_returned, "Connection", &var);
   if (DPL_SUCCESS != ret)
-    return 0;
+    {
+      //some servers does not send explicit connection information and does not support keep alive
+      if (!ctx->keep_alive)
+        return -1;
+
+      return 0;
+    }
 
   if (NULL != var)
     {

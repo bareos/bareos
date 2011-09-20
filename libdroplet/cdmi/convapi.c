@@ -179,7 +179,7 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
     }
   else
     {
-      connection_close = dpl_connection_close(headers_reply);
+      connection_close = dpl_connection_close(ctx, headers_reply);
     }
 
   (void) dpl_log_charged_event(ctx, "DATA", "OUT", data_len);
@@ -421,7 +421,7 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
     }
   else
     {
-      connection_close = dpl_connection_close(headers_reply);
+      connection_close = dpl_connection_close(ctx, headers_reply);
     }
 
   (void) dpl_log_charged_event(ctx, "DATA", "IN", data_len);
@@ -612,7 +612,7 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
   else
     {
       if (NULL != headers_reply) //possible if continue succeeded
-        connection_close = dpl_connection_close(headers_reply);
+        connection_close = dpl_connection_close(ctx, headers_reply);
     }
 
   (void) dpl_log_charged_event(ctx, "DATA", "IN", data_len);
@@ -1082,7 +1082,7 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
     }
   else
     {
-      connection_close = dpl_connection_close(headers_reply);
+      connection_close = dpl_connection_close(ctx, headers_reply);
     }
 
   (void) dpl_log_charged_event(ctx, "REQUEST", "DELETE", 0);

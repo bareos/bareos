@@ -232,9 +232,10 @@ typedef struct dpl_ctx
   char *pricing;              /*!< might be NULL */
   unsigned int read_buf_size;
   char *encrypt_key;
-  char *delim;                /*!< vdir delimiter */
-  int light_mode; //bypass vdir mechanism
-  int encode_slashes;
+  char *delim;               /*!< vdir delimiter */
+  int light_mode;            /*!< bypass vdir mechanism */
+  int encode_slashes;        /*!< client wants slashes encoded */
+  int keep_alive;            /*!< client supports keep-alive */
   struct dpl_backend_s *backend;
 
   /*

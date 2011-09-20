@@ -354,6 +354,18 @@ conf_cb_func(void *cb_arg,
           return -1;
         }
     }
+  else if (!strcmp(var, "keep_alive"))
+    {
+      if (!strcasecmp(value, "true"))
+        ctx->keep_alive = 1;
+      else if (!strcasecmp(value, "false"))
+        ctx->keep_alive = 0;
+      else
+        {
+          fprintf(stderr, "invalid value '%s'\n", var);
+          return -1;
+        }
+    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);
@@ -447,8 +459,9 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->pricing = NULL;
   ctx->read_buf_size = DPL_DEFAULT_READ_BUF_SIZE;
   ctx->backend = dpl_backend_find("s3");
-  ctx->encode_slashes = 1;
   assert(NULL != ctx->backend);
+  ctx->encode_slashes = 1;
+  ctx->keep_alive = 1;
 
   return DPL_SUCCESS;
 }
