@@ -41,8 +41,8 @@ dpl_status_t
 dpl_cdmi_get_metadata_from_headers(dpl_dict_t *headers,
                                    dpl_dict_t *metadata)
 {
-  //headers are not stored in metadata
-  return DPL_SUCCESS;
+  //metadata are not stored in headers
+  return DPL_FAILURE;
 }
 
 /**/
@@ -183,4 +183,70 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
 
 /**/
 
+dpl_status_t
+dpl_cdmi_parse_metadata(dpl_ctx_t *ctx,
+                        char *buf,
+                        int len,
+                        dpl_dict_t *metadata)
+{
+  int ret, ret2;
+  json_tokener *tok = NULL;
+  json_object *obj = NULL;
+  json_object *md_obj = NULL;
+  char *key; 
+  struct json_object *val_obj;
+  struct lh_entry *entry;
 
+  //  write(1, buf, len);
+
+  tok = json_tokener_new();
+  if (NULL == tok)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  obj = json_tokener_parse_ex(tok, buf, len);
+  if (NULL == obj)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+  
+  md_obj = json_object_object_get(obj, "metadata");
+  if (NULL == metadata)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+
+  for (entry = json_object_get_object(md_obj)->head; (entry ? (key = (char*)entry->k, val_obj = (struct json_object*)entry->v, entry) : 0); entry = entry->next)
+    {
+      ret2 = dpl_dict_add(metadata, key, (char *) json_object_to_json_string(val_obj), 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != obj)
+    json_object_put(obj);
+
+  if (NULL != tok)
+    json_tokener_free(tok);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_cdmi_get_metadata_from_json_metadata(dpl_dict_t *json_metadata,
+                                         dpl_dict_t *metadata)
+{
+  return dpl_dict_filter_no_prefix(metadata, json_metadata, "cdmi_");
+}

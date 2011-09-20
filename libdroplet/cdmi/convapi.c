@@ -804,13 +804,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   else
     {
       connection_close = dpl_connection_close(ctx, headers_reply);
-
-      ret2 = dpl_cdmi_get_metadata_from_headers(headers_reply, metadata);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
     }
 
   (void) dpl_log_charged_event(ctx, "DATA", "OUT", data_len);
@@ -1109,29 +1102,135 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
   return ret;
 }
 
-
-dpl_status_t
-dpl_cdmi_head(dpl_ctx_t *ctx,
-            char *bucket,
-            char *resource,
-            char *subresource,
-            dpl_condition_t *condition,
-            dpl_dict_t **metadatap)
-{
-  return DPL_ENOTSUPP;
-}
-
+/** 
+ * retrieve all metadata present in JSON metadata object
+ * 
+ * @param ctx 
+ * @param bucket 
+ * @param resource 
+ * @param subresource 
+ * @param condition 
+ * @param metadatap 
+ * 
+ * @return 
+ */
 dpl_status_t
 dpl_cdmi_head_all(dpl_ctx_t *ctx,
-                char *bucket,
-                char *resource,
-                char *subresource,
-                dpl_condition_t *condition,
-                dpl_dict_t **metadatap)
+                  char *bucket,
+                  char *resource,
+                  char *subresource,
+                  dpl_condition_t *condition,
+                  dpl_dict_t **metadatap)
 {
-  return DPL_ENOTSUPP;
+  int ret, ret2;
+  char *md_buf = NULL;
+  int md_len;
+  dpl_dict_t *metadata = NULL;
+  
+  //fetch metadata from JSON content
+  ret2 = dpl_get(ctx, bucket, resource, subresource, condition, &md_buf, &md_len, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+  
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_parse_metadata(ctx, md_buf, md_len, metadata);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
+    }
+  
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
+  if (NULL != md_buf)
+    free(md_buf);
+  
+  return ret;
 }
 
+/** 
+ * retrieve user metadata
+ * 
+ * @param ctx 
+ * @param bucket 
+ * @param resource 
+ * @param subresource 
+ * @param condition 
+ * @param metadatap 
+ * 
+ * @return 
+ */
+dpl_status_t
+dpl_cdmi_head(dpl_ctx_t *ctx,
+              char *bucket,
+              char *resource,
+              char *subresource,
+              dpl_condition_t *condition,
+              dpl_dict_t **metadatap)
+{
+  int ret, ret2;
+  dpl_dict_t *all_mds = NULL;
+  dpl_dict_t *metadata = NULL;
+
+  ret2 = dpl_cdmi_head_all(ctx, bucket, resource, subresource, condition, &all_mds);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_get_metadata_from_json_metadata(all_mds, metadata);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
+  if (NULL != all_mds)
+    dpl_dict_free(all_mds);
+
+  return ret;
+}
 
 /**
  * delete a resource

@@ -657,12 +657,16 @@ cb_vfile_buffer(void *cb_arg,
 dpl_status_t
 dpl_openread(dpl_ctx_t *ctx,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 568c98f... cdmi getattr support
              char *locator,
              unsigned int flags,
              dpl_condition_t *condition,
              dpl_buffer_func_t buffer_func,
              void *cb_arg,
              dpl_dict_t **metadatap)
+<<<<<<< HEAD
 =======
                 char *locator,
                 unsigned int flags,
@@ -671,6 +675,8 @@ dpl_openread(dpl_ctx_t *ctx,
                 void *cb_arg,
                 dpl_dict_t **metadatap)
 >>>>>>> 84b7228... missing files
+=======
+>>>>>>> 568c98f... cdmi getattr support
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
@@ -751,6 +757,7 @@ dpl_openread(dpl_ctx_t *ctx,
                           condition, cb_vfile_header, cb_vfile_buffer, vfile);
 =======
   ret2 = dpl_get_buffered(ctx,
+<<<<<<< HEAD
                              bucket,
                              obj_ino.key,
                              NULL,
@@ -759,6 +766,15 @@ dpl_openread(dpl_ctx_t *ctx,
                              cb_vfile_buffer,
                              vfile);
 >>>>>>> 84b7228... missing files
+=======
+                          bucket,
+                          obj_ino.key,
+                          NULL,
+                          condition,
+                          cb_vfile_header,
+                          cb_vfile_buffer,
+                          vfile);
+>>>>>>> 568c98f... cdmi getattr support
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -767,7 +783,11 @@ dpl_openread(dpl_ctx_t *ctx,
 
   if (!strcmp(ctx->backend->name, "cdmi") && ctx->cdmi_have_metadata)
     {
+<<<<<<< HEAD
       ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, NULL, &metadata);
+=======
+      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, "metadata", NULL, &metadata);
+>>>>>>> 568c98f... cdmi getattr support
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_FAILURE;
@@ -775,12 +795,16 @@ dpl_openread(dpl_ctx_t *ctx,
         }
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
   else
 =======
 
   ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, metadata);
   if (DPL_SUCCESS != ret2)
 >>>>>>> 84b7228... missing files
+=======
+  else
+>>>>>>> 568c98f... cdmi getattr support
     {
       metadata = dpl_dict_new(13);
       if (NULL == metadata)

@@ -237,6 +237,7 @@ typedef struct dpl_ctx
   int encode_slashes;        /*!< client wants slashes encoded */
   int keep_alive;            /*!< client supports keep-alive */
   int url_encoding;          /*!< some servers does not handle url encoding */
+  int cdmi_have_metadata;    /*!< some impl does not manage the ?metadata subresource */
   struct dpl_backend_s *backend;
 
   /*

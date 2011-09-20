@@ -316,6 +316,7 @@ dpl_dict_copy(dpl_dict_t *dst,
 struct conviterate {
   dpl_dict_t *dict;
   char *prefix;
+  int reverse_logic;
 };
 
 static void
@@ -331,7 +332,15 @@ cb_var_filter_string(dpl_var_t *var,
   prefix_len = strlen(conv->prefix);
 
   if (0 == strncmp(var->key, conv->prefix, prefix_len))
-    dpl_dict_add(conv->dict, var->key + prefix_len, var->value, 0);
+    {
+      if (!conv->reverse_logic)
+        dpl_dict_add(conv->dict, var->key + prefix_len, var->value, 0);
+    }
+  else
+    {
+      if (conv->reverse_logic)
+        dpl_dict_add(conv->dict, var->key + prefix_len, var->value, 0);
+    }
 }
 
 dpl_status_t
@@ -343,7 +352,7 @@ dpl_dict_filter_prefix(dpl_dict_t *dst,
     return DPL_FAILURE;
 
   if (src) {
-    struct conviterate conv = { .dict = dst, .prefix = prefix };
+    struct conviterate conv = { .dict = dst, .prefix = prefix, .reverse_logic = 0 };
     dpl_dict_iterate(src, cb_var_filter_string, &conv);
   } else {
     dpl_dict_free(dst);
@@ -352,6 +361,23 @@ dpl_dict_filter_prefix(dpl_dict_t *dst,
   return DPL_SUCCESS;
 }
 
+dpl_status_t
+dpl_dict_filter_no_prefix(dpl_dict_t *dst,
+                          dpl_dict_t *src,
+                          char *prefix)
+{
+  if (! dst)
+    return DPL_FAILURE;
+
+  if (src) {
+    struct conviterate conv = { .dict = dst, .prefix = prefix, .reverse_logic = 1 };
+    dpl_dict_iterate(src, cb_var_filter_string, &conv);
+  } else {
+    dpl_dict_free(dst);
+  }
+
+  return DPL_SUCCESS;
+}
 
 dpl_status_t
 dpl_dict_update_value(dpl_dict_t *dict,

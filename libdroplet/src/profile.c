@@ -386,6 +386,18 @@ conf_cb_func(void *cb_arg,
           return -1;
         }
     }
+  else if (!strcmp(var, "have_cdmi_metadata"))
+    {
+      if (!strcasecmp(value, "true"))
+        ctx->cdmi_have_metadata = 1;
+      else if (!strcasecmp(value, "false"))
+        ctx->cdmi_have_metadata = 0;
+      else
+        {
+          fprintf(stderr, "invalid value '%s'\n", var);
+          return -1;
+        }
+    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);
@@ -483,6 +495,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->encode_slashes = 1;
   ctx->keep_alive = 1;
   ctx->url_encoding = 1;
+  ctx->cdmi_have_metadata = 1;
 
   return DPL_SUCCESS;
 }
