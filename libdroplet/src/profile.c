@@ -576,11 +576,6 @@ dpl_profile_post(dpl_ctx_t *ctx)
       SSL_METHOD *method;
 #endif
 
-      if (NULL == ctx->ssl_cert_file ||
-          NULL == ctx->ssl_key_file ||
-          NULL == ctx->ssl_password)
-        return DPL_EINVAL;
-
       ctx->ssl_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
       if (NULL == ctx->ssl_bio_err)
         {
@@ -591,25 +586,36 @@ dpl_profile_post(dpl_ctx_t *ctx)
       method = SSLv23_method();
       ctx->ssl_ctx = SSL_CTX_new(method);
 
-      if (!(SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)))
+      //SSL_CTX_set_ssl_version(ctx->ssl_ctx, TLSv1_method());
+
+      if (NULL != ctx->ssl_cert_file)
         {
-          BIO_printf(ctx->ssl_bio_err, "use_certificate_chain_file: ");
-          ERR_print_errors(ctx->ssl_bio_err);
-          BIO_printf(ctx->ssl_bio_err, "\n");
-          ret = DPL_FAILURE;
-          goto end;
+          if (!(SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)))
+            {
+              BIO_printf(ctx->ssl_bio_err, "use_certificate_chain_file: ");
+              ERR_print_errors(ctx->ssl_bio_err);
+              BIO_printf(ctx->ssl_bio_err, "\n");
+              ret = DPL_FAILURE;
+              goto end;
+            }
         }
 
-      SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
-      SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
-
-      if (!(SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)))
+      if (NULL != ctx->ssl_password)
         {
-          BIO_printf(ctx->ssl_bio_err, "use_private_key_file: ");
-          ERR_print_errors(ctx->ssl_bio_err);
-          BIO_printf(ctx->ssl_bio_err, "\n");
-          ret = DPL_FAILURE;
-          goto end;
+          SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
+          SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
+        }
+      
+      if (NULL != ctx->ssl_key_file)
+        {
+          if (!(SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)))
+            {
+              BIO_printf(ctx->ssl_bio_err, "use_private_key_file: ");
+              ERR_print_errors(ctx->ssl_bio_err);
+              BIO_printf(ctx->ssl_bio_err, "\n");
+              ret = DPL_FAILURE;
+              goto end;
+            }
         }
 
       if (NULL != ctx->ssl_ca_list)

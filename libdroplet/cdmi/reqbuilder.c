@@ -92,13 +92,12 @@ add_data_to_json_body(dpl_chunk_t *chunk,
 {
   int ret;
   json_object *data_obj = NULL;
-  json_object *tmp;
   char *base64_str;
   int base64_len;
 
   //encode body to base64
   base64_str = alloca(DPL_BASE64_LENGTH(chunk->len));
-  base64_len = dpl_base64_encode(chunk->buf, chunk->len, base64_str);
+  base64_len = dpl_base64_encode((u_char *) chunk->buf, chunk->len, base64_str);
   
   data_obj = json_object_new_string(base64_str);
   if (NULL == data_obj)
@@ -172,7 +171,7 @@ dpl_cdmi_req_build(dpl_req_t *req,
   char *method = dpl_method_str(req->method);
   json_object *body_obj = NULL;
   char *body_str = NULL;
-  int body_len;
+  int body_len = 0;
   char buf[256];
 
   DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);
@@ -304,6 +303,9 @@ dpl_cdmi_req_build(dpl_req_t *req,
    */
   switch (req->object_type)
     {
+    case DPL_OBJECT_TYPE_UNDEF:
+      //do nothing
+      break ;
     case DPL_OBJECT_TYPE_OBJECT:
       ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_OBJECT, 0);
       if (DPL_SUCCESS != ret2)
@@ -314,6 +316,14 @@ dpl_cdmi_req_build(dpl_req_t *req,
       break ;
     case DPL_OBJECT_TYPE_CONTAINER:
       ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CONTAINER, 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+      break ;
+    case DPL_OBJECT_TYPE_CAPABILITY:
+      ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CAPABILITY, 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;

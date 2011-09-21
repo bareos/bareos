@@ -41,13 +41,13 @@ typedef dpl_status_t (*dpl_make_bucket_t)(dpl_ctx_t *ctx, char *bucket, dpl_loca
 typedef dpl_status_t (*dpl_delete_bucket_t)(dpl_ctx_t *ctx, char *bucket);
 typedef dpl_status_t (*dpl_put_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, char *data_buf, unsigned int data_len);
 typedef dpl_status_t (*dpl_put_buffered_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, unsigned int data_len, dpl_conn_t **connp);
-typedef dpl_status_t (*dpl_get_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-typedef dpl_status_t (*dpl_get_range_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-typedef dpl_status_t (*dpl_get_buffered_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
-typedef dpl_status_t (*dpl_head_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
-typedef dpl_status_t (*dpl_head_all_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
+typedef dpl_status_t (*dpl_get_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+typedef dpl_status_t (*dpl_get_range_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+typedef dpl_status_t (*dpl_get_buffered_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
+typedef dpl_status_t (*dpl_head_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_condition_t *condition, dpl_dict_t **metadatap);
+typedef dpl_status_t (*dpl_head_all_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_condition_t *condition, dpl_dict_t **metadatap);
 typedef dpl_status_t (*dpl_get_metadata_from_headers_t)(dpl_dict_t *headers, dpl_dict_t *metadata);
-typedef dpl_status_t (*dpl_delete_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource);
+typedef dpl_status_t (*dpl_delete_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type);
 typedef dpl_status_t (*dpl_genurl_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
 typedef dpl_status_t (*dpl_copy_t)(dpl_ctx_t *ctx, char *src_bucket, char *src_resource, char *src_subresource, char *dst_bucket, char *dst_resource, char *dst_subresource, dpl_object_type_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, dpl_condition_t *condition);
 
@@ -78,9 +78,9 @@ dpl_status_t dpl_make_bucket(dpl_ctx_t *ctx, char *bucket, dpl_location_constrai
 dpl_status_t dpl_deletebucket(dpl_ctx_t *ctx, char *bucket);
 dpl_status_t dpl_put(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, char *data_buf, unsigned int data_len);
 dpl_status_t dpl_put_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, unsigned int data_len, dpl_conn_t **connp);
-dpl_status_t dpl_get(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-dpl_status_t dpl_get_range(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-dpl_status_t dpl_get_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
+dpl_status_t dpl_get(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_get_range(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_get_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_object_type_t object_type, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
 dpl_status_t dpl_head(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
 dpl_status_t dpl_head_all(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
 dpl_status_t dpl_get_metadata_from_headers(dpl_ctx_t *ctx, dpl_dict_t *headers, dpl_dict_t *metadata);

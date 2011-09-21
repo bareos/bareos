@@ -187,8 +187,10 @@ typedef struct
 
 typedef enum
   {
+    DPL_OBJECT_TYPE_UNDEF,
     DPL_OBJECT_TYPE_OBJECT,
     DPL_OBJECT_TYPE_CONTAINER,
+    DPL_OBJECT_TYPE_CAPABILITY,
   } dpl_object_type_t;
 
 typedef struct
@@ -429,4 +431,10 @@ double dpl_price_storage(dpl_ctx_t *ctx, size_t size);
 char *dpl_price_storage_str(dpl_ctx_t *ctx, size_t size);
 char *dpl_size_str(uint64_t size);
 dpl_backend_t *dpl_backend_find(const char *name);
+void dpl_bucket_free(dpl_bucket_t *bucket);
+void dpl_vec_buckets_free(dpl_vec_t *vec);
+void dpl_object_free(dpl_object_t *object);
+void dpl_vec_objects_free(dpl_vec_t *vec);
+void dpl_common_prefix_free(dpl_common_prefix_t *common_prefix);
+void dpl_vec_common_prefixes_free(dpl_vec_t *vec);
 #endif

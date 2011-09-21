@@ -32,7 +32,7 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
-#include <droplet/cdmi/reqbuilder.h>
+#include <droplet/cdmi/cdmi.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
@@ -78,7 +78,6 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
   u_int         data_len;
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
-  dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
   dpl_vec_t     *common_prefixes = NULL;
   dpl_vec_t     *objects = NULL;
@@ -668,13 +667,14 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
  */
 dpl_status_t
 dpl_cdmi_get(dpl_ctx_t *ctx,
-           char *bucket,
-           char *resource,
-           char *subresource,
-           dpl_condition_t *condition,
-           char **data_bufp,
-           unsigned int *data_lenp,
-           dpl_dict_t **metadatap)
+             char *bucket,
+             char *resource,
+             char *subresource,
+             dpl_object_type_t object_type,
+             dpl_condition_t *condition,
+             char **data_bufp,
+             unsigned int *data_lenp,
+             dpl_dict_t **metadatap)
 {
   char          *host;
   int           ret, ret2;
@@ -733,6 +733,8 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
 
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  dpl_req_set_object_type(req, object_type);
 
   metadata = dpl_dict_new(13);
   if (NULL == metadata)
@@ -874,15 +876,16 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
  */
 dpl_status_t
 dpl_cdmi_get_range(dpl_ctx_t *ctx,
-                 char *bucket,
-                 char *resource,
-                 char *subresource,
-                 dpl_condition_t *condition,
-                 int start,
-                 int end,
-                 char **data_bufp,
-                 unsigned int *data_lenp,
-                 dpl_dict_t **metadatap)
+                   char *bucket,
+                   char *resource,
+                   char *subresource,
+                   dpl_object_type_t object_type,
+                   dpl_condition_t *condition,
+                   int start,
+                   int end,
+                   char **data_bufp,
+                   unsigned int *data_lenp,
+                   dpl_dict_t **metadatap)
 {
   return DPL_ENOTSUPP;
 }
@@ -939,13 +942,14 @@ cb_get_buffer(void *cb_arg,
 
 dpl_status_t
 dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
-                    char *bucket,
-                    char *resource,
-                    char *subresource,
-                    dpl_condition_t *condition,
-                    dpl_header_func_t header_func,
-                    dpl_buffer_func_t buffer_func,
-                    void *cb_arg)
+                      char *bucket,
+                      char *resource,
+                      char *subresource,
+                      dpl_object_type_t object_type,
+                      dpl_condition_t *condition,
+                      dpl_header_func_t header_func,
+                      dpl_buffer_func_t buffer_func,
+                      void *cb_arg)
 {
   char          *host;
   int           ret, ret2;
@@ -1122,16 +1126,17 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
                   char *bucket,
                   char *resource,
                   char *subresource,
+                  dpl_object_type_t object_type,
                   dpl_condition_t *condition,
                   dpl_dict_t **metadatap)
 {
   int ret, ret2;
   char *md_buf = NULL;
-  int md_len;
+  u_int md_len;
   dpl_dict_t *metadata = NULL;
   
   //fetch metadata from JSON content
-  ret2 = dpl_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", condition, &md_buf, &md_len, NULL);
+  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", object_type, condition, &md_buf, &md_len, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1188,6 +1193,7 @@ dpl_cdmi_head(dpl_ctx_t *ctx,
               char *bucket,
               char *resource,
               char *subresource,
+              dpl_object_type_t object_type,
               dpl_condition_t *condition,
               dpl_dict_t **metadatap)
 {
@@ -1195,7 +1201,7 @@ dpl_cdmi_head(dpl_ctx_t *ctx,
   dpl_dict_t *all_mds = NULL;
   dpl_dict_t *metadata = NULL;
 
-  ret2 = dpl_cdmi_head_all(ctx, bucket, resource, subresource, condition, &all_mds);
+  ret2 = dpl_cdmi_head_all(ctx, bucket, resource, subresource, object_type, condition, &all_mds);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1247,9 +1253,10 @@ dpl_cdmi_head(dpl_ctx_t *ctx,
  */
 dpl_status_t
 dpl_cdmi_delete(dpl_ctx_t *ctx,
-              char *bucket,
-              char *resource,
-              char *subresource)
+                char *bucket,
+                char *resource,
+                char *subresource,
+                dpl_object_type_t object_type)
 {
   char          *host;
   int           ret, ret2;
@@ -1262,7 +1269,6 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
 
   DPL_TRACE(ctx, DPL_TRACE_CONV, "get bucket=%s resource=%s", bucket, resource);
 

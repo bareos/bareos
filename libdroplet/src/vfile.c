@@ -774,6 +774,7 @@ dpl_openread(dpl_ctx_t *ctx,
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
                           condition, cb_vfile_header, cb_vfile_buffer, vfile);
 =======
@@ -800,6 +801,10 @@ dpl_openread(dpl_ctx_t *ctx,
   ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, condition,
                           cb_vfile_header, cb_vfile_buffer, vfile);
 >>>>>>> 909c195... update metadata after put
+=======
+  ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, DPL_OBJECT_TYPE_OBJECT,
+                          condition, cb_vfile_header, cb_vfile_buffer, vfile);
+>>>>>>> 4f5b40a... full support for object_types (otherwise caused issues with CDMI)
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -810,6 +815,7 @@ dpl_openread(dpl_ctx_t *ctx,
     {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, NULL, &metadata);
 =======
       ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, "metadata", NULL, &metadata);
@@ -817,6 +823,9 @@ dpl_openread(dpl_ctx_t *ctx,
 =======
       ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, NULL, &metadata);
 >>>>>>> efeeb98... getattr and getattr_raw
+=======
+      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_OBJECT_TYPE_OBJECT, NULL, &metadata);
+>>>>>>> 4f5b40a... full support for object_types (otherwise caused issues with CDMI)
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_FAILURE;
@@ -936,6 +945,7 @@ dpl_openread_range(dpl_ctx_t *ctx,
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
                        condition, start, end, data_bufp, data_lenp, metadatap);
 =======
@@ -954,6 +964,10 @@ dpl_openread_range(dpl_ctx_t *ctx,
   ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, condition,
                        start, end, data_bufp, data_lenp, metadatap);
 >>>>>>> 909c195... update metadata after put
+=======
+  ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, DPL_OBJECT_TYPE_OBJECT,
+                       condition, start, end, data_bufp, data_lenp, metadatap);
+>>>>>>> 4f5b40a... full support for object_types (otherwise caused issues with CDMI)
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

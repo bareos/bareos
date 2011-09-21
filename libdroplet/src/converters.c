@@ -209,6 +209,39 @@ dpl_metadata_directive_str(dpl_metadata_directive_t metadata_directive)
   return NULL;
 }
 
+/**/
+
+dpl_object_type_t
+dpl_object_type(char *str)
+{
+  if (!strcasecmp(str, "object"))
+    return DPL_OBJECT_TYPE_OBJECT;
+  else if (!strcasecmp(str, "container"))
+    return DPL_OBJECT_TYPE_CONTAINER;
+  else if (!strcasecmp(str, "capability"))
+    return DPL_OBJECT_TYPE_CAPABILITY;
+
+  return -1;
+}
+
+char *
+dpl_object_type_str(dpl_object_type_t object_type)
+{
+  switch (object_type)
+    {
+    case DPL_OBJECT_TYPE_UNDEF:
+      return NULL;
+    case DPL_OBJECT_TYPE_OBJECT:
+      return "object";
+    case DPL_OBJECT_TYPE_CONTAINER:
+      return "container";
+    case DPL_OBJECT_TYPE_CAPABILITY:
+      return "capability";
+    }
+
+  return NULL;
+}
+
 /**
  * parse a string of the form metadata1=value1;metadata2=value2...
  *

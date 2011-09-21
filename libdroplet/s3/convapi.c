@@ -32,6 +32,7 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
+#include <droplet/s3/s3.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
@@ -1158,6 +1159,7 @@ dpl_s3_get(dpl_ctx_t *ctx,
            char *bucket,
            char *resource,
            char *subresource,
+           dpl_object_type_t object_type,
            dpl_condition_t *condition,
            char **data_bufp,
            unsigned int *data_lenp,
@@ -1368,6 +1370,7 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
                  char *bucket,
                  char *resource,
                  char *subresource,
+                 dpl_object_type_t object_type,
                  dpl_condition_t *condition,
                  int start,
                  int end,
@@ -1625,6 +1628,7 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
                     char *bucket,
                     char *resource,
                     char *subresource,
+                    dpl_object_type_t object_type,
                     dpl_condition_t *condition,
                     dpl_header_func_t header_func,
                     dpl_buffer_func_t buffer_func,
@@ -1980,6 +1984,7 @@ dpl_s3_head(dpl_ctx_t *ctx,
             char *bucket,
             char *resource,
             char *subresource,
+            dpl_object_type_t object_type,
             dpl_condition_t *condition,
             dpl_dict_t **metadatap)
 {
@@ -1991,6 +1996,7 @@ dpl_s3_head_all(dpl_ctx_t *ctx,
                 char *bucket,
                 char *resource,
                 char *subresource,
+                dpl_object_type_t object_type,
                 dpl_condition_t *condition,
                 dpl_dict_t **metadatap)
 {
@@ -2012,7 +2018,8 @@ dpl_status_t
 dpl_s3_delete(dpl_ctx_t *ctx,
               char *bucket,
               char *resource,
-              char *subresource)
+              char *subresource,
+              dpl_object_type_t object_type)
 {
   char          *host;
   int           ret, ret2;

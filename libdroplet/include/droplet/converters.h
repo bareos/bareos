@@ -46,6 +46,8 @@ dpl_storage_class_t dpl_storage_class(char *str);
 char *dpl_storage_class_str(dpl_storage_class_t storage_class);
 dpl_metadata_directive_t dpl_metadata_directive(char *str);
 char *dpl_metadata_directive_str(dpl_metadata_directive_t metadata_directive);
+dpl_object_type_t dpl_object_type(char *str);
+char *dpl_object_type_str(dpl_object_type_t object_type);
 dpl_dict_t *dpl_parse_metadata(char *metadata);
 dpl_dict_t *dpl_parse_query_params(char *query_params);
 #endif
