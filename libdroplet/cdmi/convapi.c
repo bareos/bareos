@@ -1430,7 +1430,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
       //replace the metadata
       ret2 = dpl_cdmi_put(ctx, dst_bucket, dst_resource,
                           NULL != dst_subresource ? dst_subresource : "metadata",
-                          object_type, metadata, canned_acl, NULL, 0);
+                          object_type, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;

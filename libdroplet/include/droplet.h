@@ -398,6 +398,13 @@ typedef struct
   dpl_buffer_func_t buffer_func;
   void *cb_arg;
 
+  /*
+   * for updating metadata at dpl_close() (e.g. CDMI)
+   */
+  char *bucket;
+  char *resource;
+  dpl_dict_t *metadata;
+  
 } dpl_vfile_t;
 
 #define DPL_ENCRYPT_MAGIC "Salted__"

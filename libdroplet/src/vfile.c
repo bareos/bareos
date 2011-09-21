@@ -122,7 +122,11 @@ dpl_close(dpl_vfile_t *vfile)
               NULL != vfile->metadata)
             {
               ret2 = dpl_cdmi_put(vfile->ctx, vfile->bucket, vfile->resource, "metadata",
+<<<<<<< HEAD
                                   DPL_FTYPE_REG, vfile->metadata, DPL_CANNED_ACL_UNDEF,
+=======
+                                  DPL_OBJECT_TYPE_OBJECT, vfile->metadata, DPL_CANNED_ACL_UNDEF,
+>>>>>>> 909c195... update metadata after put
                                   NULL, 0);
               if (DPL_SUCCESS != ret2)
                 {
@@ -206,12 +210,16 @@ encrypt_init(dpl_vfile_t *vfile,
 dpl_status_t
 dpl_openwrite(dpl_ctx_t *ctx,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 909c195... update metadata after put
               char *locator,
               unsigned int flags,
               dpl_dict_t *metadata,
               dpl_canned_acl_t canned_acl,
               unsigned int data_len,
               dpl_vfile_t **vfilep)
+<<<<<<< HEAD
 =======
                  char *locator,
                  unsigned int flags,
@@ -220,6 +228,8 @@ dpl_openwrite(dpl_ctx_t *ctx,
                  unsigned int data_len,
                  dpl_vfile_t **vfilep)
 >>>>>>> 84b7228... missing files
+=======
+>>>>>>> 909c195... update metadata after put
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
@@ -387,6 +397,9 @@ dpl_openwrite(dpl_ctx_t *ctx,
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 909c195... update metadata after put
   vfile->bucket = strdup(bucket);
   if (NULL == vfile->bucket)
     {
@@ -420,6 +433,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
 
   ret2 = dpl_put_buffered(ctx, bucket, obj_ino.key, NULL, metadata, canned_acl,
                           data_len, &vfile->conn);
+<<<<<<< HEAD
 =======
   ret2 = dpl_put_buffered(ctx,
                              bucket,
@@ -430,6 +444,8 @@ dpl_openwrite(dpl_ctx_t *ctx,
                              data_len,
                              &vfile->conn);
 >>>>>>> 84b7228... missing files
+=======
+>>>>>>> 909c195... update metadata after put
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -757,6 +773,7 @@ dpl_openread(dpl_ctx_t *ctx,
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
                           condition, cb_vfile_header, cb_vfile_buffer, vfile);
 =======
@@ -779,6 +796,10 @@ dpl_openread(dpl_ctx_t *ctx,
                           cb_vfile_buffer,
                           vfile);
 >>>>>>> 568c98f... cdmi getattr support
+=======
+  ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, condition,
+                          cb_vfile_header, cb_vfile_buffer, vfile);
+>>>>>>> 909c195... update metadata after put
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -914,6 +935,7 @@ dpl_openread_range(dpl_ctx_t *ctx,
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
                        condition, start, end, data_bufp, data_lenp, metadatap);
 =======
@@ -928,6 +950,10 @@ dpl_openread_range(dpl_ctx_t *ctx,
                           data_lenp,
                           metadatap);
 >>>>>>> 84b7228... missing files
+=======
+  ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, condition,
+                       start, end, data_bufp, data_lenp, metadatap);
+>>>>>>> 909c195... update metadata after put
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
