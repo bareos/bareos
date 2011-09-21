@@ -186,10 +186,40 @@ dpl_cdmi_req_build(dpl_req_t *req,
   /*
    * per method headers
    */
-  if (DPL_METHOD_GET == req->method ||
-      DPL_METHOD_HEAD == req->method)
+  if (DPL_METHOD_GET == req->method)
     {
       //XXX ranges, conditions
+
+      switch (req->object_type)
+        {
+        case DPL_OBJECT_TYPE_UNDEF:
+          //do nothing
+          break ;
+        case DPL_OBJECT_TYPE_OBJECT:
+          ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_OBJECT, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_OBJECT_TYPE_CONTAINER:
+          ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_CONTAINER, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_OBJECT_TYPE_CAPABILITY:
+          ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_CAPABILITY, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        }
     }
   else if (DPL_METHOD_PUT == req->method)
     {
@@ -288,6 +318,36 @@ dpl_cdmi_req_build(dpl_req_t *req,
             }
         }
 
+      switch (req->object_type)
+        {
+        case DPL_OBJECT_TYPE_UNDEF:
+          //do nothing
+          break ;
+        case DPL_OBJECT_TYPE_OBJECT:
+          ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_OBJECT, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_OBJECT_TYPE_CONTAINER:
+          ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CONTAINER, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_OBJECT_TYPE_CAPABILITY:
+          ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CAPABILITY, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        }
     }
   else if (DPL_METHOD_DELETE == req->method)
     {
@@ -301,37 +361,6 @@ dpl_cdmi_req_build(dpl_req_t *req,
   /*
    * common headers
    */
-  switch (req->object_type)
-    {
-    case DPL_OBJECT_TYPE_UNDEF:
-      //do nothing
-      break ;
-    case DPL_OBJECT_TYPE_OBJECT:
-      ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_OBJECT, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-      break ;
-    case DPL_OBJECT_TYPE_CONTAINER:
-      ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CONTAINER, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-      break ;
-    case DPL_OBJECT_TYPE_CAPABILITY:
-      ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CAPABILITY, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-      break ;
-    }
-
   if (!(req->behavior_flags & DPL_BEHAVIOR_HTTP_COMPAT))
     {
       ret2 = dpl_dict_add(headers, "X-CDMI-Specification-Version", "1.0.1", 0);
