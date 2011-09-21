@@ -223,7 +223,34 @@ dpl_cdmi_parse_metadata(dpl_ctx_t *ctx,
 
   for (entry = json_object_get_object(md_obj)->head; (entry ? (key = (char*)entry->k, val_obj = (struct json_object*)entry->v, entry) : 0); entry = entry->next)
     {
-      ret2 = dpl_dict_add(metadata, key, (char *) json_object_to_json_string(val_obj), 0);
+      char *val, *valp;
+      int val_len;
+
+      //XXX not reentrant
+      val = strdup((char *) json_object_to_json_string(val_obj));
+      if (NULL == val)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
+      val_len = strlen(val);
+
+      if (val[0] == '"')
+        valp = val + 1;
+      else
+        valp = val;
+          
+      if (val_len > 0)
+        {
+          if (val[val_len-1] == '"')
+            val[val_len-1] = 0;
+        }
+
+      ret2 = dpl_dict_add(metadata, key, valp, 0);
+
+      free(val);
+
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
