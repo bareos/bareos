@@ -1062,6 +1062,7 @@ dpl_getattr(dpl_ctx_t *ctx,
         }
     }
 
+<<<<<<< HEAD
   ret2 = dpl_head(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
   if (DPL_SUCCESS != ret2)
     {
@@ -1132,6 +1133,8 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
 
   ret2 = dpl_head_all(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
 =======
+=======
+>>>>>>> c67c12d... fix getattr
   ret2 = dpl_head(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
 >>>>>>> 84b7228... missing files
   if (DPL_SUCCESS != ret2)
@@ -1198,12 +1201,6 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
           ret = ret2;
           goto end;
         }
-    }
-
-  if (DPL_FTYPE_REG != obj_type)
-    {
-      ret = DPL_EISDIR;
-      goto end;
     }
 
   ret2 = dpl_head_all(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);

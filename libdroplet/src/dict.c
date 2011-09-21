@@ -339,7 +339,7 @@ cb_var_filter_string(dpl_var_t *var,
   else
     {
       if (conv->reverse_logic)
-        dpl_dict_add(conv->dict, var->key + prefix_len, var->value, 0);
+        dpl_dict_add(conv->dict, var->key, var->value, 0);
     }
 }
 
