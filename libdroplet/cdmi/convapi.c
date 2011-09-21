@@ -1397,3 +1397,49 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
 
   return ret;
 }
+
+dpl_status_t
+dpl_cdmi_copy(dpl_ctx_t *ctx,
+              char *src_bucket,
+              char *src_resource,
+              char *src_subresource,
+              char *dst_bucket,
+              char *dst_resource,
+              char *dst_subresource,
+              dpl_object_type_t object_type,
+              dpl_metadata_directive_t metadata_directive,
+              dpl_dict_t *metadata,
+              dpl_canned_acl_t canned_acl,
+              dpl_condition_t *condition)
+{
+  int ret, ret2;
+
+  switch (metadata_directive)
+    {
+    case DPL_METADATA_DIRECTIVE_UNDEF:
+      ret = DPL_ENOTSUPP;
+      goto end;
+    case DPL_METADATA_DIRECTIVE_COPY:
+      ret = DPL_ENOTSUPP;
+      goto end;
+    case DPL_METADATA_DIRECTIVE_REPLACE:
+
+      //replace the metadata
+      ret2 = dpl_cdmi_put(ctx, dst_bucket, dst_resource, dst_subresource, object_type,
+                          metadata, canned_acl, NULL, 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      break ;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
+}
+

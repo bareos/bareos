@@ -238,7 +238,7 @@ dpl_parse_metadata(char *metadata)
 
   for (str = metadata;;str = NULL)
     {
-      tok = strtok_r(str, ";", &saveptr);
+      tok = strtok_r(str, ";,", &saveptr);
       if (NULL == tok)
         break ;
 

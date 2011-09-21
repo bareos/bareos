@@ -422,6 +422,7 @@ dpl_copy(dpl_ctx_t *ctx,
          char *dst_bucket,
          char *dst_resource,
          char *dst_subresource,
+         dpl_object_type_t object_type,
          dpl_metadata_directive_t metadata_directive,
          dpl_dict_t *metadata,
          dpl_canned_acl_t canned_acl,
@@ -437,7 +438,7 @@ dpl_copy(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, metadata_directive, metadata, canned_acl, condition);
+  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, metadata_directive, metadata, canned_acl, condition);
   
  end:
 

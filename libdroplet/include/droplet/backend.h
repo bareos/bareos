@@ -49,7 +49,7 @@ typedef dpl_status_t (*dpl_head_all_t)(dpl_ctx_t *ctx, char *bucket, char *resou
 typedef dpl_status_t (*dpl_get_metadata_from_headers_t)(dpl_dict_t *headers, dpl_dict_t *metadata);
 typedef dpl_status_t (*dpl_delete_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource);
 typedef dpl_status_t (*dpl_genurl_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
-typedef dpl_status_t (*dpl_copy_t)(dpl_ctx_t *ctx, char *src_bucket, char *src_resource, char *src_subresource, char *dst_bucket, char *dst_resource, char *dst_subresource, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, dpl_condition_t *condition);
+typedef dpl_status_t (*dpl_copy_t)(dpl_ctx_t *ctx, char *src_bucket, char *src_resource, char *src_subresource, char *dst_bucket, char *dst_resource, char *dst_subresource, dpl_object_type_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, dpl_condition_t *condition);
 
 typedef struct dpl_backend_s
 {
@@ -86,5 +86,5 @@ dpl_status_t dpl_head_all(dpl_ctx_t *ctx, char *bucket, char *resource, char *su
 dpl_status_t dpl_get_metadata_from_headers(dpl_ctx_t *ctx, dpl_dict_t *headers, dpl_dict_t *metadata);
 dpl_status_t dpl_delete(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource);
 dpl_status_t dpl_genurl(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
-dpl_status_t dpl_copy(dpl_ctx_t *ctx, char *src_bucket, char *src_resource, char *src_subresource, char *dst_bucket, char *dst_resource, char *dst_subresource, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, dpl_condition_t *condition);
+dpl_status_t dpl_copy(dpl_ctx_t *ctx, char *src_bucket, char *src_resource, char *src_subresource, char *dst_bucket, char *dst_resource, char *dst_subresource, dpl_object_type_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, dpl_condition_t *condition);
 #endif

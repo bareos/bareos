@@ -52,4 +52,5 @@ dpl_backend_cdmi =
     .head_all 		= dpl_cdmi_head_all,
     .get_metadata_from_headers = dpl_cdmi_get_metadata_from_headers,
     .delete 		= dpl_cdmi_delete,
+    .copy               = dpl_cdmi_copy,
   };
