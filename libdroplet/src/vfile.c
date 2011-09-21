@@ -67,10 +67,14 @@ dpl_close(dpl_vfile_t *vfile)
               if (DPL_SUCCESS != ret2 || NULL == var)
                 {
 <<<<<<< HEAD
+<<<<<<< HEAD
                   fprintf(stderr, "missing 'Content-MD5' in answer\n");
 =======
                   fprintf(stderr, "missing 'Etag' in answer\n");
 >>>>>>> 50eeba4... bucket emulation
+=======
+                  fprintf(stderr, "missing 'Content-MD5' in answer\n");
+>>>>>>> 64e70a0... misinterpreation of Etag. shall be Content-MD5
                   //XXX ret = DPL_FAILURE;
                 }
               else
