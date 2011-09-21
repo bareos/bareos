@@ -325,9 +325,12 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
 
   dpl_req_set_object_type(req, object_type);
 
-  chunk.buf = data_buf;
-  chunk.len = data_len;
-  dpl_req_set_chunk(req, &chunk);
+  if (NULL != data_buf)
+    {
+      chunk.buf = data_buf;
+      chunk.len = data_len;
+      dpl_req_set_chunk(req, &chunk);
+    }
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
 
@@ -1425,8 +1428,9 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
     case DPL_METADATA_DIRECTIVE_REPLACE:
 
       //replace the metadata
-      ret2 = dpl_cdmi_put(ctx, dst_bucket, dst_resource, dst_subresource, object_type,
-                          metadata, canned_acl, NULL, 0);
+      ret2 = dpl_cdmi_put(ctx, dst_bucket, dst_resource,
+                          NULL != dst_subresource ? dst_subresource : "metadata",
+                          object_type, metadata, canned_acl, NULL, 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
