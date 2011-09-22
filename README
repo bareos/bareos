@@ -1,7 +1,7 @@
 Home of Scality Droplet, a cloud storage client library.
 Scality - http://www.scality.com
 
-Scality Droplet is open source and released under the GPLv2.
+Scality Droplet is open source and released under the BSD License.
 
 Mission: Help the transition to object based cloud storage by providing a
 structured API to simplify application developers job and address key user
