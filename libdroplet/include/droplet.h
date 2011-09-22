@@ -34,6 +34,9 @@
 #ifndef __DROPLET_H__
 #define __DROPLET_H__ 1
 
+#define DPL_VERSION_MAJOR 0
+#define DPL_VERSION_MINOR 2
+
 /*
  * dependencies
  */
