@@ -398,6 +398,16 @@ conf_cb_func(void *cb_arg,
           return -1;
         }
     }
+  else if (!strcmp(var, "delim"))
+    {
+      char *ndelim;
+
+      ndelim = strdup(value);
+      if (NULL == ndelim)
+        return -1;
+      free(ctx->delim);
+      ctx->delim = ndelim;
+    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);
@@ -496,6 +506,9 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->keep_alive = 1;
   ctx->url_encoding = 1;
   ctx->cdmi_have_metadata = 1;
+  ctx->delim = strdup(DPL_DEFAULT_DELIM);
+  if (NULL == ctx->delim)
+    return DPL_ENOMEM;
 
   return DPL_SUCCESS;
 }
@@ -744,13 +757,6 @@ dpl_profile_load(dpl_ctx_t *ctx,
 
   ctx->profile_name = strdup(profile_name);
   if (NULL == ctx->profile_name)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  ctx->delim = strdup(DPL_DEFAULT_DELIM);
-  if (NULL == ctx->delim)
     {
       ret = DPL_FAILURE;
       goto end;
