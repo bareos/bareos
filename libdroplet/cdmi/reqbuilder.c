@@ -192,10 +192,18 @@ dpl_cdmi_req_build(dpl_req_t *req,
 
       switch (req->object_type)
         {
-        case DPL_OBJECT_TYPE_UNDEF:
+        case DPL_FTYPE_UNDEF:
           //do nothing
           break ;
-        case DPL_OBJECT_TYPE_OBJECT:
+        case DPL_FTYPE_ANY:
+          ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_ANY, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_FTYPE_REG:
           ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_OBJECT, 0);
           if (DPL_SUCCESS != ret2)
             {
@@ -203,7 +211,7 @@ dpl_cdmi_req_build(dpl_req_t *req,
               goto end;
             }
           break ;
-        case DPL_OBJECT_TYPE_CONTAINER:
+        case DPL_FTYPE_DIR:
           ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_CONTAINER, 0);
           if (DPL_SUCCESS != ret2)
             {
@@ -211,7 +219,7 @@ dpl_cdmi_req_build(dpl_req_t *req,
               goto end;
             }
           break ;
-        case DPL_OBJECT_TYPE_CAPABILITY:
+        case DPL_FTYPE_CAP:
           ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_CAPABILITY, 0);
           if (DPL_SUCCESS != ret2)
             {
@@ -320,10 +328,13 @@ dpl_cdmi_req_build(dpl_req_t *req,
 
       switch (req->object_type)
         {
-        case DPL_OBJECT_TYPE_UNDEF:
+        case DPL_FTYPE_UNDEF:
           //do nothing
           break ;
-        case DPL_OBJECT_TYPE_OBJECT:
+        case DPL_FTYPE_ANY:
+          //error ?
+          break ;
+        case DPL_FTYPE_REG:
           ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_OBJECT, 0);
           if (DPL_SUCCESS != ret2)
             {
@@ -331,7 +342,7 @@ dpl_cdmi_req_build(dpl_req_t *req,
               goto end;
             }
           break ;
-        case DPL_OBJECT_TYPE_CONTAINER:
+        case DPL_FTYPE_DIR:
           ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CONTAINER, 0);
           if (DPL_SUCCESS != ret2)
             {
@@ -339,7 +350,7 @@ dpl_cdmi_req_build(dpl_req_t *req,
               goto end;
             }
           break ;
-        case DPL_OBJECT_TYPE_CAPABILITY:
+        case DPL_FTYPE_CAP:
           ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CAPABILITY, 0);
           if (DPL_SUCCESS != ret2)
             {

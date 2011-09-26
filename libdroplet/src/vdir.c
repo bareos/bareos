@@ -253,10 +253,14 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
                dpl_ino_t parent_ino,
                const char *obj_name,
 <<<<<<< HEAD
+<<<<<<< HEAD
                dpl_ftype_t object_type,
 =======
                dpl_object_type_t object_type,
 >>>>>>> 1f7fe2b... cdmi mkdir OK
+=======
+               dpl_ftype_t object_type,
+>>>>>>> 558a543... transform dpl_object_type_t to dpl_ftype_t
                const char *delim)
 {
   int ret, ret2;
@@ -297,10 +301,14 @@ dpl_vdir_mkdir(dpl_ctx_t *ctx,
                const char *obj_name)
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
   return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_DIR, ctx->delim);
 =======
   return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_OBJECT_TYPE_CONTAINER, ctx->delim);
 >>>>>>> 1f7fe2b... cdmi mkdir OK
+=======
+  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_DIR, ctx->delim);
+>>>>>>> 558a543... transform dpl_object_type_t to dpl_ftype_t
 }
 
 
@@ -311,10 +319,14 @@ dpl_vdir_mknod(dpl_ctx_t *ctx,
                const char *obj_name)
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
   return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_REG, "");
 =======
   return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_OBJECT_TYPE_OBJECT, "");
 >>>>>>> 1f7fe2b... cdmi mkdir OK
+=======
+  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_REG, "");
+>>>>>>> 558a543... transform dpl_object_type_t to dpl_ftype_t
 }
 
 static dpl_status_t

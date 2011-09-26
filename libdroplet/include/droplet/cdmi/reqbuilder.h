@@ -38,6 +38,7 @@
 #define DPL_CDMI_CONTENT_TYPE_OBJECT     "application/cdmi-object"
 #define DPL_CDMI_CONTENT_TYPE_CAPABILITY "application/cdmi-capability"
 #define DPL_CDMI_CONTENT_TYPE_DOMAIN     "application/cdmi-domain"
+#define DPL_CDMI_CONTENT_TYPE_ANY        "application/*"
 
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */

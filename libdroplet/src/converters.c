@@ -211,32 +211,36 @@ dpl_metadata_directive_str(dpl_metadata_directive_t metadata_directive)
 
 /**/
 
-dpl_object_type_t
+dpl_ftype_t
 dpl_object_type(char *str)
 {
-  if (!strcasecmp(str, "object"))
-    return DPL_OBJECT_TYPE_OBJECT;
-  else if (!strcasecmp(str, "container"))
-    return DPL_OBJECT_TYPE_CONTAINER;
-  else if (!strcasecmp(str, "capability"))
-    return DPL_OBJECT_TYPE_CAPABILITY;
+  if (!strcasecmp(str, "any"))
+    return DPL_FTYPE_ANY;
+  else if (!strcasecmp(str, "reg") || !strcasecmp(str, "object"))
+    return DPL_FTYPE_REG;
+  else if (!strcasecmp(str, "dir") || !strcasecmp(str, "container"))
+    return DPL_FTYPE_DIR;
+  else if (!strcasecmp(str, "cap")|| !strcasecmp(str, "capability"))
+    return DPL_FTYPE_CAP;
 
   return -1;
 }
 
 char *
-dpl_object_type_str(dpl_object_type_t object_type)
+dpl_object_type_str(dpl_ftype_t object_type)
 {
   switch (object_type)
     {
-    case DPL_OBJECT_TYPE_UNDEF:
+    case DPL_FTYPE_UNDEF:
       return NULL;
-    case DPL_OBJECT_TYPE_OBJECT:
-      return "object";
-    case DPL_OBJECT_TYPE_CONTAINER:
-      return "container";
-    case DPL_OBJECT_TYPE_CAPABILITY:
-      return "capability";
+    case DPL_FTYPE_ANY:
+      return "any";
+    case DPL_FTYPE_REG:
+      return "reg";
+    case DPL_FTYPE_DIR:
+      return "dir";
+    case DPL_FTYPE_CAP:
+      return "cap";
     }
 
   return NULL;

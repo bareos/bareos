@@ -35,7 +35,7 @@
 #define __DROPLET_H__ 1
 
 #define DPL_VERSION_MAJOR 0
-#define DPL_VERSION_MINOR 2
+#define DPL_VERSION_MINOR 5
 
 /*
  * dependencies
@@ -188,14 +188,6 @@ typedef struct
   time_t creation_time;
 } dpl_bucket_t;
 
-typedef enum
-  {
-    DPL_OBJECT_TYPE_UNDEF,
-    DPL_OBJECT_TYPE_OBJECT,
-    DPL_OBJECT_TYPE_CONTAINER,
-    DPL_OBJECT_TYPE_CAPABILITY,
-  } dpl_object_type_t;
-
 typedef struct
 {
   char *key;
@@ -208,6 +200,15 @@ typedef struct
 {
   char *prefix;
 } dpl_common_prefix_t;
+
+typedef enum
+  {
+    DPL_FTYPE_UNDEF,
+    DPL_FTYPE_ANY,
+    DPL_FTYPE_REG,
+    DPL_FTYPE_DIR,
+    DPL_FTYPE_CAP,
+  } dpl_ftype_t;
 
 struct dpl_backend_s;
 
@@ -307,7 +308,7 @@ typedef struct
   char *cache_control;
   char *content_disposition;
   char *content_encoding;
-  dpl_object_type_t object_type;
+  dpl_ftype_t object_type;
   char *content_type;
   dpl_location_constraint_t location_constraint;
   dpl_canned_acl_t canned_acl;
@@ -338,12 +339,6 @@ typedef struct
  * vdir
  */
 #define DPL_ROOT_INO  ((dpl_ino_t) {.key = ""})
-
-typedef enum
-  {
-    DPL_FTYPE_REG,
-    DPL_FTYPE_DIR
-  } dpl_ftype_t;
 
 typedef struct
 {

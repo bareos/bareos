@@ -139,7 +139,7 @@ dpl_put(dpl_ctx_t *ctx,
         char *bucket,
         char *resource,
         char *subresource,
-        dpl_object_type_t object_type,
+        dpl_ftype_t object_type,
         dpl_dict_t *metadata,
         dpl_canned_acl_t canned_acl,
         char *data_buf,
@@ -184,7 +184,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, DPL_OBJECT_TYPE_OBJECT, metadata, canned_acl, data_len, connp);
+  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, DPL_FTYPE_REG, metadata, canned_acl, data_len, connp);
   
  end:
 
@@ -198,7 +198,7 @@ dpl_get(dpl_ctx_t *ctx,
         char *bucket,
         char *resource,
         char *subresource,
-        dpl_object_type_t object_type,
+        dpl_ftype_t object_type,
         dpl_condition_t *condition,
         char **data_bufp,
         unsigned int *data_lenp,
@@ -228,7 +228,7 @@ dpl_get_range(dpl_ctx_t *ctx,
               char *bucket,
               char *resource,
               char *subresource,
-              dpl_object_type_t object_type,
+              dpl_ftype_t object_type,
               dpl_condition_t *condition,
               int start,
               int end,
@@ -260,7 +260,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
                  char *bucket,
                  char *resource,
                  char *subresource, 
-                 dpl_object_type_t object_type,
+                 dpl_ftype_t object_type,
                  dpl_condition_t *condition,
                  dpl_header_func_t header_func, 
                  dpl_buffer_func_t buffer_func,
@@ -303,7 +303,7 @@ dpl_head(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head(ctx, bucket, resource, subresource, DPL_OBJECT_TYPE_UNDEF, condition, metadatap);
+  ret = ctx->backend->head(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap);
   
  end:
 
@@ -330,7 +330,7 @@ dpl_head_all(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head_all(ctx, bucket, resource, subresource, DPL_OBJECT_TYPE_UNDEF, condition, metadatap);
+  ret = ctx->backend->head_all(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap);
   
  end:
 
@@ -379,7 +379,7 @@ dpl_delete(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->delete(ctx, bucket, resource, subresource, DPL_OBJECT_TYPE_UNDEF);
+  ret = ctx->backend->delete(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF);
   
  end:
 
@@ -425,7 +425,7 @@ dpl_copy(dpl_ctx_t *ctx,
          char *dst_bucket,
          char *dst_resource,
          char *dst_subresource,
-         dpl_object_type_t object_type,
+         dpl_ftype_t object_type,
          dpl_metadata_directive_t metadata_directive,
          dpl_dict_t *metadata,
          dpl_canned_acl_t canned_acl,
