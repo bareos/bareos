@@ -66,15 +66,7 @@ dpl_close(dpl_vfile_t *vfile)
               ret2 = dpl_dict_get_lowered(headers_returned, "Content-MD5", &var);
               if (DPL_SUCCESS != ret2 || NULL == var)
                 {
-<<<<<<< HEAD
-<<<<<<< HEAD
                   fprintf(stderr, "missing 'Content-MD5' in answer\n");
-=======
-                  fprintf(stderr, "missing 'Etag' in answer\n");
->>>>>>> 50eeba4... bucket emulation
-=======
-                  fprintf(stderr, "missing 'Content-MD5' in answer\n");
->>>>>>> 64e70a0... misinterpreation of Etag. shall be Content-MD5
                   //XXX ret = DPL_FAILURE;
                 }
               else
@@ -122,15 +114,7 @@ dpl_close(dpl_vfile_t *vfile)
               NULL != vfile->metadata)
             {
               ret2 = dpl_cdmi_put(vfile->ctx, vfile->bucket, vfile->resource, "metadata",
-<<<<<<< HEAD
-<<<<<<< HEAD
                                   DPL_FTYPE_REG, vfile->metadata, DPL_CANNED_ACL_UNDEF,
-=======
-                                  DPL_OBJECT_TYPE_OBJECT, vfile->metadata, DPL_CANNED_ACL_UNDEF,
->>>>>>> 909c195... update metadata after put
-=======
-                                  DPL_FTYPE_REG, vfile->metadata, DPL_CANNED_ACL_UNDEF,
->>>>>>> 558a543... transform dpl_object_type_t to dpl_ftype_t
                                   NULL, 0);
               if (DPL_SUCCESS != ret2)
                 {
@@ -213,27 +197,12 @@ encrypt_init(dpl_vfile_t *vfile,
 
 dpl_status_t
 dpl_openwrite(dpl_ctx_t *ctx,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 909c195... update metadata after put
               char *locator,
               unsigned int flags,
               dpl_dict_t *metadata,
               dpl_canned_acl_t canned_acl,
               unsigned int data_len,
               dpl_vfile_t **vfilep)
-<<<<<<< HEAD
-=======
-                 char *locator,
-                 unsigned int flags,
-                 dpl_dict_t *metadata,
-                 dpl_canned_acl_t canned_acl,
-                 unsigned int data_len,
-                 dpl_vfile_t **vfilep)
->>>>>>> 84b7228... missing files
-=======
->>>>>>> 909c195... update metadata after put
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
@@ -400,10 +369,6 @@ dpl_openwrite(dpl_ctx_t *ctx,
         }
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 909c195... update metadata after put
   vfile->bucket = strdup(bucket);
   if (NULL == vfile->bucket)
     {
@@ -437,19 +402,6 @@ dpl_openwrite(dpl_ctx_t *ctx,
 
   ret2 = dpl_put_buffered(ctx, bucket, obj_ino.key, NULL, metadata, canned_acl,
                           data_len, &vfile->conn);
-<<<<<<< HEAD
-=======
-  ret2 = dpl_put_buffered(ctx,
-                             bucket,
-                             obj_ino.key,
-                             NULL,
-                             metadata,
-                             canned_acl,
-                             data_len,
-                             &vfile->conn);
->>>>>>> 84b7228... missing files
-=======
->>>>>>> 909c195... update metadata after put
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -680,27 +632,12 @@ cb_vfile_buffer(void *cb_arg,
 
 dpl_status_t
 dpl_openread(dpl_ctx_t *ctx,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 568c98f... cdmi getattr support
              char *locator,
              unsigned int flags,
              dpl_condition_t *condition,
              dpl_buffer_func_t buffer_func,
              void *cb_arg,
              dpl_dict_t **metadatap)
-<<<<<<< HEAD
-=======
-                char *locator,
-                unsigned int flags,
-                dpl_condition_t *condition,
-                dpl_buffer_func_t buffer_func,
-                void *cb_arg,
-                dpl_dict_t **metadatap)
->>>>>>> 84b7228... missing files
-=======
->>>>>>> 568c98f... cdmi getattr support
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
@@ -776,43 +713,8 @@ dpl_openread(dpl_ctx_t *ctx,
       goto end;
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
   ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
                           condition, cb_vfile_header, cb_vfile_buffer, vfile);
-=======
-  ret2 = dpl_get_buffered(ctx,
-<<<<<<< HEAD
-                             bucket,
-                             obj_ino.key,
-                             NULL,
-                             condition,
-                             cb_vfile_header,
-                             cb_vfile_buffer,
-                             vfile);
->>>>>>> 84b7228... missing files
-=======
-                          bucket,
-                          obj_ino.key,
-                          NULL,
-                          condition,
-                          cb_vfile_header,
-                          cb_vfile_buffer,
-                          vfile);
->>>>>>> 568c98f... cdmi getattr support
-=======
-  ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, condition,
-                          cb_vfile_header, cb_vfile_buffer, vfile);
->>>>>>> 909c195... update metadata after put
-=======
-  ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, DPL_OBJECT_TYPE_OBJECT,
-=======
-  ret2 = dpl_get_buffered(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
->>>>>>> 558a543... transform dpl_object_type_t to dpl_ftype_t
-                          condition, cb_vfile_header, cb_vfile_buffer, vfile);
->>>>>>> 4f5b40a... full support for object_types (otherwise caused issues with CDMI)
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -821,40 +723,14 @@ dpl_openread(dpl_ctx_t *ctx,
 
   if (!strcmp(ctx->backend->name, "cdmi") && ctx->cdmi_have_metadata)
     {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
       ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, NULL, &metadata);
-=======
-      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, "metadata", NULL, &metadata);
->>>>>>> 568c98f... cdmi getattr support
-=======
-      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, NULL, &metadata);
->>>>>>> efeeb98... getattr and getattr_raw
-=======
-      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_OBJECT_TYPE_OBJECT, NULL, &metadata);
->>>>>>> 4f5b40a... full support for object_types (otherwise caused issues with CDMI)
-=======
-      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, NULL, &metadata);
->>>>>>> 558a543... transform dpl_object_type_t to dpl_ftype_t
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_FAILURE;
           goto end;
         }
     }
-<<<<<<< HEAD
-<<<<<<< HEAD
   else
-=======
-
-  ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, metadata);
-  if (DPL_SUCCESS != ret2)
->>>>>>> 84b7228... missing files
-=======
-  else
->>>>>>> 568c98f... cdmi getattr support
     {
       metadata = dpl_dict_new(13);
       if (NULL == metadata)
@@ -955,35 +831,8 @@ dpl_openread_range(dpl_ctx_t *ctx,
       goto end;
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
   ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
                        condition, start, end, data_bufp, data_lenp, metadatap);
-=======
-  ret2 = dpl_get_range(ctx,
-                          bucket,
-                          obj_ino.key,
-                          NULL,
-                          condition,
-                          start,
-                          end,
-                          data_bufp,
-                          data_lenp,
-                          metadatap);
->>>>>>> 84b7228... missing files
-=======
-  ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, condition,
-                       start, end, data_bufp, data_lenp, metadatap);
->>>>>>> 909c195... update metadata after put
-=======
-  ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, DPL_OBJECT_TYPE_OBJECT,
-=======
-  ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
->>>>>>> 558a543... transform dpl_object_type_t to dpl_ftype_t
-                       condition, start, end, data_bufp, data_lenp, metadatap);
->>>>>>> 4f5b40a... full support for object_types (otherwise caused issues with CDMI)
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1122,81 +971,7 @@ dpl_getattr(dpl_ctx_t *ctx,
         }
     }
 
-<<<<<<< HEAD
   ret2 = dpl_head(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != nlocator)
-    free(nlocator);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_getattr_raw(dpl_ctx_t *ctx,
-                char *locator,
-                dpl_dict_t **metadatap)
-{
-  int ret, ret2;
-  dpl_ino_t parent_ino, obj_ino;
-  dpl_ftype_t obj_type;
-  char *nlocator = NULL;
-  char *bucket, *path;
-  dpl_ino_t cur_ino;
-
-  DPL_TRACE(ctx, DPL_TRACE_VFILE, "getattr locator=%s", locator);
-
-  nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-<<<<<<< HEAD
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      bucket = nlocator;
-      *path++ = 0;
-    }
-  else
-    {
-      bucket = ctx->cur_bucket;
-      path = nlocator;
-    }
-
-  cur_ino = dpl_cwd(ctx, bucket);
-
-  if (ctx->light_mode)
-    {
-      strcpy(obj_ino.key, path); //XXX check length
-      obj_type = DPL_FTYPE_REG;
-    }
-  else
-    {
-      ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  ret2 = dpl_head_all(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
-=======
-=======
->>>>>>> c67c12d... fix getattr
-  ret2 = dpl_head(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
->>>>>>> 84b7228... missing files
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1336,19 +1111,7 @@ dpl_setattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
   ret2 = dpl_copy(ctx, bucket, obj_ino.key, NULL, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, NULL);
-=======
-  ret2 = dpl_copy(ctx, bucket, obj_ino.key, NULL, bucket, obj_ino.key, NULL, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, NULL);
->>>>>>> 84b7228... missing files
-=======
-  ret2 = dpl_copy(ctx, bucket, obj_ino.key, NULL, bucket, obj_ino.key, NULL, DPL_OBJECT_TYPE_OBJECT, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, NULL);
->>>>>>> b4bbed8... cdmi setattr
-=======
-  ret2 = dpl_copy(ctx, bucket, obj_ino.key, NULL, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, NULL);
->>>>>>> 558a543... transform dpl_object_type_t to dpl_ftype_t
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1554,19 +1317,7 @@ dpl_fcopy(dpl_ctx_t *ctx,
         }
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
   ret2 = dpl_copy(ctx, src_bucket, src_obj_ino.key, NULL, dst_bucket, dst_obj_ino.key, NULL, DPL_FTYPE_REG, DPL_METADATA_DIRECTIVE_COPY, NULL, DPL_CANNED_ACL_UNDEF, NULL);
-=======
-  ret2 = dpl_copy(ctx, src_bucket, src_obj_ino.key, NULL, dst_bucket, dst_obj_ino.key, NULL, DPL_METADATA_DIRECTIVE_COPY, NULL, DPL_CANNED_ACL_UNDEF, NULL);
->>>>>>> 84b7228... missing files
-=======
-  ret2 = dpl_copy(ctx, src_bucket, src_obj_ino.key, NULL, dst_bucket, dst_obj_ino.key, NULL, DPL_OBJECT_TYPE_OBJECT, DPL_METADATA_DIRECTIVE_COPY, NULL, DPL_CANNED_ACL_UNDEF, NULL);
->>>>>>> b4bbed8... cdmi setattr
-=======
-  ret2 = dpl_copy(ctx, src_bucket, src_obj_ino.key, NULL, dst_bucket, dst_obj_ino.key, NULL, DPL_FTYPE_REG, DPL_METADATA_DIRECTIVE_COPY, NULL, DPL_CANNED_ACL_UNDEF, NULL);
->>>>>>> 558a543... transform dpl_object_type_t to dpl_ftype_t
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
