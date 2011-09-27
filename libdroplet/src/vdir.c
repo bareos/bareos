@@ -718,11 +718,13 @@ dpl_cwd(dpl_ctx_t *ctx,
   dpl_var_t *var;
   dpl_ino_t cwd;
 
+  pthread_mutex_lock(&ctx->lock);
   var = dpl_dict_get(ctx->cwds, bucket);
   if (NULL != var)
     strcpy(cwd.key, var->value); //XXX check overflow
   else
     cwd = DPL_ROOT_INO;
+  pthread_mutex_unlock(&ctx->lock);
 
   return cwd;
 }
@@ -745,7 +747,8 @@ dpl_opendir(dpl_ctx_t *ctx,
   dpl_ino_t obj_ino;
   dpl_ftype_t obj_type;
   char *nlocator = NULL;
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   dpl_ino_t cur_ino;
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "opendir locator=%s", locator);
@@ -760,12 +763,24 @@ dpl_opendir(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -797,6 +812,9 @@ dpl_opendir(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != bucket)
+    free(bucket);
 
   if (NULL != nlocator)
     free(nlocator);
@@ -833,7 +851,8 @@ dpl_chdir(dpl_ctx_t *ctx,
   char *nlocator = NULL;
   dpl_ino_t cur_ino;
   char *nbucket;
-  char *path, *bucket;
+  char *path;
+  char *bucket = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "chdir locator=%s", locator);
 
@@ -847,12 +866,24 @@ dpl_chdir(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -873,11 +904,13 @@ dpl_chdir(dpl_ctx_t *ctx,
       goto end;
     }
 
+  pthread_mutex_lock(&ctx->lock);
   if (strcmp(bucket, ctx->cur_bucket))
     {
       nbucket = strdup(bucket);
       if (NULL == nbucket)
         {
+          pthread_mutex_unlock(&ctx->lock);
           ret = DPL_ENOMEM;
           goto end;
         }
@@ -886,6 +919,7 @@ dpl_chdir(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_dict_add(ctx->cwds, ctx->cur_bucket, obj_ino.key, 0);
+  pthread_mutex_unlock(&ctx->lock);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -895,6 +929,9 @@ dpl_chdir(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != bucket)
+    free(bucket);
 
   if (NULL != nlocator)
     free(nlocator);
@@ -913,7 +950,8 @@ dpl_mkgen(dpl_ctx_t *ctx,
   int ret, ret2;
   char *nlocator = NULL;
   int delim_len = strlen(ctx->delim);
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   dpl_ino_t cur_ino;
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "mkdir locator=%s", locator);
@@ -928,12 +966,24 @@ dpl_mkgen(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL != bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -990,6 +1040,9 @@ dpl_mkgen(dpl_ctx_t *ctx,
 
  end:
 
+  if (NULL != bucket)
+    free(bucket);
+
   if (NULL != nlocator)
     free(nlocator);
 
@@ -1021,7 +1074,8 @@ dpl_rmdir(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino;
   int delim_len = strlen(ctx->delim);
   char *nlocator = NULL;
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   dpl_ino_t cur_ino;
 
   DPL_TRACE(ctx, DPL_TRACE_VDIR, "rmdir locator=%s", locator);
@@ -1036,12 +1090,24 @@ dpl_rmdir(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -1072,6 +1138,9 @@ dpl_rmdir(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != bucket)
+    free(bucket);
 
   if (NULL != nlocator)
     free(nlocator);

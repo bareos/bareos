@@ -287,8 +287,9 @@ dpl_cdmi_req_build(dpl_req_t *req,
                 }
             }
           
-          //XXX not reentrant
+          pthread_mutex_lock(&req->ctx->lock);
           body_str = (char *) json_object_to_json_string(body_obj);
+          pthread_mutex_unlock(&req->ctx->lock);
           if (NULL == body_str)
             {
               ret = DPL_ENOMEM;

@@ -209,7 +209,8 @@ dpl_openwrite(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
   char *nlocator = NULL;
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   int delim_len = strlen(ctx->delim);
   dpl_ino_t cur_ino;
   int own_metadata = 0;
@@ -226,12 +227,24 @@ dpl_openwrite(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -417,6 +430,9 @@ dpl_openwrite(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != bucket)
+    free(bucket);
 
   if (NULL != vfile)
     dpl_close(vfile);
@@ -644,7 +660,8 @@ dpl_openread(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
   char *nlocator = NULL;
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   dpl_ino_t cur_ino;
   dpl_dict_t *metadata = NULL;
 
@@ -660,12 +677,24 @@ dpl_openread(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -757,6 +786,9 @@ dpl_openread(dpl_ctx_t *ctx,
 
  end:
 
+  if (NULL != bucket)
+    free(bucket);
+
   if (NULL != vfile)
     dpl_close(vfile);
 
@@ -784,7 +816,8 @@ dpl_openread_range(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
   char *nlocator = NULL;
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   dpl_ino_t cur_ino;
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "openread locator=%s flags=0x%x", locator, flags);
@@ -799,12 +832,24 @@ dpl_openread_range(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL != bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -843,6 +888,9 @@ dpl_openread_range(dpl_ctx_t *ctx,
 
  end:
 
+  if (NULL != bucket)
+    free(bucket);
+
   if (NULL != nlocator)
     free(nlocator);
 
@@ -857,7 +905,8 @@ dpl_unlink(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
   char *nlocator = NULL;
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   dpl_ino_t cur_ino;
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "unlink locator=%s", locator);
@@ -872,12 +921,24 @@ dpl_unlink(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -915,6 +976,9 @@ dpl_unlink(dpl_ctx_t *ctx,
 
  end:
 
+  if (NULL != bucket)
+    free(bucket);
+
   if (NULL != nlocator)
     free(nlocator);
 
@@ -930,7 +994,8 @@ dpl_getattr(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
   char *nlocator = NULL;
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   dpl_ino_t cur_ino;
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "getattr locator=%s", locator);
@@ -945,12 +1010,24 @@ dpl_getattr(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -982,6 +1059,9 @@ dpl_getattr(dpl_ctx_t *ctx,
 
  end:
 
+  if (NULL != bucket)
+    free(bucket);
+
   if (NULL != nlocator)
     free(nlocator);
 
@@ -997,7 +1077,8 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
   char *nlocator = NULL;
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   dpl_ino_t cur_ino;
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "getattr locator=%s", locator);
@@ -1012,12 +1093,24 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -1049,6 +1142,9 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
 
  end:
 
+  if (NULL != bucket)
+    free(bucket);
+
   if (NULL != nlocator)
     free(nlocator);
 
@@ -1064,7 +1160,8 @@ dpl_setattr(dpl_ctx_t *ctx,
   dpl_ino_t parent_ino, obj_ino;
   dpl_ftype_t obj_type;
   char *nlocator = NULL;
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   dpl_ino_t cur_ino;
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "setattr locator=%s", locator);
@@ -1079,12 +1176,24 @@ dpl_setattr(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -1122,6 +1231,9 @@ dpl_setattr(dpl_ctx_t *ctx,
 
  end:
 
+  if (NULL != bucket)
+    free(bucket);
+
   if (NULL != nlocator)
     free(nlocator);
 
@@ -1140,7 +1252,8 @@ dpl_fgenurl(dpl_ctx_t *ctx,
   dpl_ino_t obj_ino;
   dpl_ftype_t obj_type;
   char *nlocator = NULL;
-  char *bucket, *path;
+  char *bucket = NULL;
+  char *path;
   dpl_ino_t cur_ino;
 
   DPL_TRACE(ctx, DPL_TRACE_VFILE, "fgenurl locator=%s", locator);
@@ -1155,12 +1268,24 @@ dpl_fgenurl(dpl_ctx_t *ctx,
   path = index(nlocator, ':');
   if (NULL != path)
     {
-      bucket = nlocator;
       *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL != bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       path = nlocator;
     }
 
@@ -1203,12 +1328,14 @@ dpl_fcopy(dpl_ctx_t *ctx,
 {
   int ret, ret2;
   char *src_nlocator = NULL;
-  char *src_bucket, *src_path;
+  char *src_bucket = NULL;
+  char *src_path;
   dpl_ino_t src_cur_ino;
   dpl_ino_t src_obj_ino;
   dpl_ftype_t src_obj_type;
   char *dst_nlocator = NULL;
-  char *dst_bucket, *dst_path;
+  char *dst_bucket = NULL;
+  char *dst_path;
   dpl_ino_t dst_cur_ino;
   dpl_ino_t dst_obj_ino;
   dpl_ftype_t dst_obj_type;
@@ -1227,12 +1354,24 @@ dpl_fcopy(dpl_ctx_t *ctx,
   src_path = index(src_nlocator, ':');
   if (NULL != src_path)
     {
-      src_bucket = src_nlocator;
       *src_path++ = 0;
+      src_bucket = strdup(src_nlocator);
+      if (NULL == src_bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      src_bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      src_bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == src_bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       src_path = src_nlocator;
     }
 
@@ -1248,12 +1387,24 @@ dpl_fcopy(dpl_ctx_t *ctx,
   dst_path = index(dst_nlocator, ':');
   if (NULL != dst_path)
     {
-      dst_bucket = dst_nlocator;
       *dst_path++ = 0;
+      dst_bucket = strdup(dst_nlocator);
+      if (NULL == dst_bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
     }
   else
     {
-      dst_bucket = ctx->cur_bucket;
+      pthread_mutex_lock(&ctx->lock);
+      dst_bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == dst_bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
       dst_path = dst_nlocator;
     }
 
@@ -1327,6 +1478,12 @@ dpl_fcopy(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != dst_bucket)
+    free(dst_bucket);
+
+  if (NULL != src_bucket)
+    free(src_bucket);
 
   if (NULL != dst_nlocator)
     free(dst_nlocator);

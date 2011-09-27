@@ -226,8 +226,9 @@ dpl_cdmi_parse_metadata(dpl_ctx_t *ctx,
       char *val, *valp;
       int val_len;
 
-      //XXX not reentrant
+      pthread_mutex_lock(&ctx->lock);
       val = strdup((char *) json_object_to_json_string(val_obj));
+      pthread_mutex_unlock(&ctx->lock);
       if (NULL == val)
         {
           ret = DPL_ENOMEM;
