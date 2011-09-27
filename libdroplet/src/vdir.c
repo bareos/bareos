@@ -979,7 +979,7 @@ dpl_mkgen(dpl_ctx_t *ctx,
       pthread_mutex_lock(&ctx->lock);
       bucket = strdup(ctx->cur_bucket);
       pthread_mutex_unlock(&ctx->lock);
-      if (NULL != bucket)
+      if (NULL == bucket)
         {
           ret = DPL_ENOMEM;
           goto end;
