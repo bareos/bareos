@@ -87,6 +87,47 @@ dpl_conn_get_nolock(dpl_ctx_t *ctx,
   return NULL;
 }
 
+static int 
+is_usable(dpl_conn_t *conn)
+{
+  struct pollfd pfd;
+  int retval;
+
+  memset(&pfd, 0, sizeof(struct pollfd));
+
+  pfd.fd = conn->fd;
+#ifdef POLLRDHUP
+  pfd.events = POLLIN|POLLPRI|POLLRDHUP;
+#else
+  pfd.events = POLLIN|POLLPRI;
+#endif
+
+  retval = poll(&pfd, 1, 0);
+
+  switch (retval)
+    {
+    case 1:
+      {
+        char buf[1];
+        /* something is waiting for us ? */
+        if (0 == recv(conn->fd, buf, 1, MSG_DONTWAIT|MSG_PEEK))
+          {
+            DPRINTF("is_usable: rv %d returning False\n", retval);
+            return 0;
+          }
+      }
+      /* fall down */
+    case 0:
+      DPRINTF("is_usable: rv %d returning True\n", retval);
+      return 1;
+    default:
+      DPRINTF("is_usable: rv %d returning False\n", retval);
+      return 0;
+    }
+
+  return 0; /* not reached */
+}
+
 static void
 dpl_conn_add_nolock(dpl_conn_t *conn)
 {
@@ -274,10 +315,19 @@ dpl_conn_open(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open %s:%d", inet_ntoa(addr), port);
 
+ again:
+
   conn = dpl_conn_get_nolock(ctx, addr, port);
 
   if (NULL != conn)
     {
+      if (0 == is_usable(conn))
+        {
+          dpl_conn_remove_nolock(ctx, conn);
+          dpl_conn_terminate_nolock(conn);
+          goto again;
+        }
+
       dpl_conn_remove_nolock(ctx, conn);
       if (conn->n_hits >= ctx->n_conn_max_hits ||
           (now - conn->close_time) >= ctx->conn_idle_time)
