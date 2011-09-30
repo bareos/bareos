@@ -243,4 +243,7 @@ void dpl_url_encode(char *str, char *str_ue);
 void dpl_url_encode_no_slashes(char *str, char *str_ue);
 void dpl_url_decode(char *str);
 unsigned int dpl_bcd_encode(unsigned char *in_buf, unsigned int in_len, char *out_buf);
+dpl_status_t dpl_rand(char *buf, int len);
+dpl_status_t dpl_uuid_rand(dpl_uuid_t *uuid);
+void dpl_uuid_tostr(dpl_uuid_t *uuid, char *ostr);
 #endif

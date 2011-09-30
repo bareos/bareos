@@ -31,20 +31,29 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_VFILE_H__
-#define __DROPLET_VFILE_H__ 1
+#ifndef __DROPLET_SREST_REPLYPARSER_H__
+#define __DROPLET_SREST_REPLYPARSER_H__ 1
 
-/* PROTO vfile.c */
-/* src/vfile.c */
-dpl_status_t dpl_close(dpl_vfile_t *vfile);
-dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, char *locator, unsigned int flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, unsigned int data_len, dpl_vfile_t **vfilep);
-dpl_status_t dpl_write(dpl_vfile_t *vfile, char *buf, unsigned int len);
-dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *locator, unsigned int flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap);
-dpl_status_t dpl_openread_range(dpl_ctx_t *ctx, char *locator, unsigned int flags, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-dpl_status_t dpl_unlink(dpl_ctx_t *ctx, char *locator);
-dpl_status_t dpl_getattr(dpl_ctx_t *ctx, char *locator, dpl_dict_t **metadatap);
-dpl_status_t dpl_getattr_raw(dpl_ctx_t *ctx, char *locator, dpl_dict_t **metadatap);
-dpl_status_t dpl_setattr(dpl_ctx_t *ctx, char *locator, dpl_dict_t *metadata);
-dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, char *locator, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
-dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, char *src_locator, char *dst_locator);
+#define SCAL_SREST_X_SCALITY_ID            "x-scality-id"
+#define SCAL_SREST_X_SCALITY_WRITE_CACHE   "x-scality-write-cache"
+#define SCAL_SREST_X_SCALITY_WRITE_QUEUE   "x-scality-write-queue"
+#define SCAL_SREST_X_SCALITY_STORED        "x-scality-stored"
+#define SCAL_SREST_X_SCALITY_STORED_STATUS "x-scality-stored-status"
+#define SCAL_SREST_X_SCALITY_SIZE          "x-scality-size"
+#define SCAL_SREST_X_SCALITY_ATIME         "x-scality-atime"
+#define SCAL_SREST_X_SCALITY_MTIME         "x-scality-mtime"
+#define SCAL_SREST_X_SCALITY_CTIME         "x-scality-ctime"
+#define SCAL_SREST_X_SCALITY_VERSION       "x-scality-version"
+#define SCAL_SREST_X_SCALITY_CRC32         "x-scality-crc32"
+#define SCAL_SREST_X_SCALITY_DELETED       "x-scality-deleted"
+
+#define SCAL_SREST_YES                     "Yes"
+#define SCAL_SREST_NO                      "No"
+
+/* PROTO replyparser.c */
+/* src/replyparser.c */
+dpl_status_t dpl_srest_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
+dpl_status_t dpl_srest_parse_list_bucket(dpl_ctx_t *ctx, char *buf, int len, char *prefix, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
+dpl_status_t dpl_srest_get_metadata_from_json_metadata(dpl_dict_t *json_metadata, dpl_dict_t *metadata);
+dpl_status_t dpl_srest_parse_metadata(dpl_ctx_t *ctx, char *buf, int len, dpl_dict_t *metadata);
 #endif

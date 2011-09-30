@@ -84,15 +84,14 @@ typedef int dpl_status_t;
 #define DPL_EEXIST                (-13) /*!< Object already exists */
 #define DPL_ENOTSUPP              (-14) /*!< Method not supported */
 
-#define DPL_TRACE_CONN  (1u<<0) /*!< trace connection */
-#define DPL_TRACE_IO    (1u<<1) /*!< trace I/O */
-#define DPL_TRACE_HTTP  (1u<<2) /*!< trace HTTP */
-#define DPL_TRACE_SSL   (1u<<3) /*!< trace SSL */
-#define DPL_TRACE_REQ   (1u<<5) /*!< trace request builder */
-#define DPL_TRACE_CONV  (1u<<6) /*!< trace convenience functions */
-#define DPL_TRACE_VDIR  (1u<<7) /*!< trace vdir */
-#define DPL_TRACE_VFILE (1u<<8) /*!< trace vfile */
-#define DPL_TRACE_API   (1u<<9) /*!< trace API */
+#define DPL_TRACE_CONN  (1u<<0)  /*!< trace connection */
+#define DPL_TRACE_IO    (1u<<1)  /*!< trace I/O */
+#define DPL_TRACE_HTTP  (1u<<2)  /*!< trace HTTP */
+#define DPL_TRACE_SSL   (1u<<3)  /*!< trace SSL */
+#define DPL_TRACE_REQ   (1u<<5)  /*!< trace request builder */
+#define DPL_TRACE_REST  (1u<<6)  /*!< trace REST based calls */
+#define DPL_TRACE_ID    (1u<<7)  /*!< trace ID based calls */
+#define DPL_TRACE_VFS   (1u<<8)  /*!< trace VFS based calls */
 #define DPL_TRACE_BUF   (1u<<31) /*!< trace buffers */
 
 typedef void (*dpl_trace_func_t)(pid_t tid, unsigned int level, char *file, int lineno, char *buf);
@@ -106,6 +105,7 @@ typedef enum
     DPL_METHOD_PUT,
     DPL_METHOD_DELETE,
     DPL_METHOD_HEAD,
+    DPL_METHOD_POST,
   } dpl_method_t;
 
 enum dpl_data_type
@@ -145,6 +145,35 @@ typedef enum
     DPL_STORAGE_CLASS_REDUCED_REDUNDANCY,
   } dpl_storage_class_t;
 #define DPL_N_STORAGE_CLASS (DPL_STORAGE_CLASS_REDUCED_REDUNDANCY+1)
+
+/**/
+
+typedef enum
+  {
+    DPL_SYSMD_MASK_CANNED_ACL    = (1u<<0),
+    DPL_SYSMD_MASK_STORAGE_CLASS = (1u<<1),
+    DPL_SYSMD_MASK_SIZE          = (1u<<2),
+    DPL_SYSMD_MASK_ATIME         = (1u<<3),
+    DPL_SYSMD_MASK_MTIME         = (1u<<4),
+    DPL_SYSMD_MASK_CTIME         = (1u<<5),
+    DPL_SYSMD_MASK_MD5           = (1u<<6),
+    DPL_SYSMD_MASK_LOCATION_CONSTRAINT = (1u<<8),
+  } dpl_sysmd_mask_t;
+
+typedef struct
+{
+  dpl_sysmd_mask_t mask;
+  dpl_canned_acl_t canned_acl;
+  dpl_storage_class_t storage_class;
+  uint64_t size;
+  time_t atime;
+  time_t mtime;
+  time_t ctime;
+  char *md5;
+  dpl_location_constraint_t location_constraint;
+} dpl_sysmd_t;
+
+/**/
 
 typedef struct
 {
@@ -209,6 +238,16 @@ typedef enum
     DPL_FTYPE_DIR,
     DPL_FTYPE_CAP,
   } dpl_ftype_t;
+
+typedef struct 
+{
+  uint32_t time_low;
+  uint16_t time_mid;
+  uint16_t time_hi_and_version;
+  uint8_t clock_seq_hi_and_reserved;
+  uint8_t clock_seq_low;
+  uint8_t node_addr[6];
+} dpl_uuid_t;
 
 struct dpl_backend_s;
 
@@ -366,10 +405,14 @@ typedef struct
 #include <droplet/httprequest.h>
 #include <droplet/httpreply.h>
 
-#define DPL_VFILE_FLAG_CREAT   (1u<<0)
-#define DPL_VFILE_FLAG_EXCL    (1u<<1)
-#define DPL_VFILE_FLAG_MD5     (1u<<2) /*!< check MD5 */
-#define DPL_VFILE_FLAG_ENCRYPT (1u<<3) /*!< encrypt on the fly */
+typedef enum
+  {
+    DPL_VFILE_FLAG_CREAT =   (1u<<0),
+    DPL_VFILE_FLAG_EXCL =    (1u<<1),
+    DPL_VFILE_FLAG_MD5 =     (1u<<2),     /*!< check MD5 */
+    DPL_VFILE_FLAG_ENCRYPT = (1u<<3),     /*!< encrypt on the fly */
+    DPL_VFILE_FLAG_POST =    (1u<<4),     /*!< use POST to write/creat file */
+  } dpl_vfile_flag_t;
 
 typedef struct
 {
@@ -415,8 +458,9 @@ typedef struct
 #include <droplet/converters.h>
 #include <droplet/req.h>
 #include <droplet/backend.h>
-#include <droplet/vdir.h>
-#include <droplet/vfile.h>
+#include <droplet/rest.h>
+#include <droplet/id.h>
+#include <droplet/vfs.h>
 
 /* PROTO droplet.c */
 /* src/droplet.c */

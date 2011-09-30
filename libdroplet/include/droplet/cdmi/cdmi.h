@@ -36,6 +36,6 @@
 
 #include <droplet/cdmi/reqbuilder.h>
 #include <droplet/cdmi/replyparser.h>
-#include <droplet/cdmi/convapi.h>
+#include <droplet/cdmi/backend.h>
 
 #endif

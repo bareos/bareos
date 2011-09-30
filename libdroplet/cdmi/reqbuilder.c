@@ -229,7 +229,8 @@ dpl_cdmi_req_build(dpl_req_t *req,
           break ;
         }
     }
-  else if (DPL_METHOD_PUT == req->method)
+  else if (DPL_METHOD_PUT == req->method ||
+           DPL_METHOD_POST == req->method)
     {
       body_obj = json_object_new_object();
       if (NULL == body_obj)

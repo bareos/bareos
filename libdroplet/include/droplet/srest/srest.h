@@ -31,20 +31,11 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_VDIR_H__
-#define __DROPLET_VDIR_H__ 1
+#ifndef __DROPLET_SREST_H__
+#define __DROPLET_SREST_H__ 1
 
-/* PROTO vdir.c */
-/* src/vdir.c */
-dpl_status_t dpl_iname(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, char *path, unsigned int path_len);
-dpl_status_t dpl_namei(dpl_ctx_t *ctx, char *path, char *bucket, dpl_ino_t ino, dpl_ino_t *parent_inop, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
-dpl_ino_t dpl_cwd(dpl_ctx_t *ctx, char *bucket);
-dpl_status_t dpl_opendir(dpl_ctx_t *ctx, char *locator, void **dir_hdlp);
-dpl_status_t dpl_readdir(void *dir_hdl, dpl_dirent_t *dirent);
-int dpl_eof(void *dir_hdl);
-void dpl_closedir(void *dir_hdl);
-dpl_status_t dpl_chdir(dpl_ctx_t *ctx, char *locator);
-dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, char *locator);
-dpl_status_t dpl_mknod(dpl_ctx_t *ctx, char *locator);
-dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, char *locator);
+#include <droplet/srest/reqbuilder.h>
+#include <droplet/srest/replyparser.h>
+#include <droplet/srest/backend.h>
+
 #endif

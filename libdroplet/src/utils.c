@@ -622,3 +622,65 @@ dpl_bcd_encode(unsigned char *in_buf,
 
   return out_len;
 }
+
+/**/
+
+dpl_status_t
+dpl_rand(char *buf, int len)
+{
+  int ret;
+
+  ret = RAND_pseudo_bytes((u_char *) buf, len);
+  if (-1 == ret)
+    {
+      return DPL_FAILURE;
+    }
+
+  return DPL_SUCCESS;
+}
+
+/**/
+
+dpl_status_t
+dpl_uuid_rand(dpl_uuid_t *uuid)
+{
+  int ret2, ret;
+
+  memset(uuid, 0, sizeof(*uuid));
+  ret2 = dpl_rand((char *) uuid, sizeof (*uuid));
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+  
+  uuid->time_hi_and_version = (uuid->time_hi_and_version & 0x0fff) |  0x4;
+  uuid->clock_seq_hi_and_reserved = (uuid->clock_seq_hi_and_reserved & 0x0fff) | 0xa;
+
+  ret = DPL_SUCCESS;
+  
+ end:
+  
+  return ret;
+}
+
+/**/
+
+void
+dpl_uuid_tostr(dpl_uuid_t *uuid,
+               char *ostr)
+{
+  (void) sprintf(ostr,
+                 "%8.8x-%4.4x-%4.4x-%2.2x%2.2x-%2.2x%2.2x%2.2x%2.2x%2.2x%2.2x",
+                 uuid->time_low,
+                 uuid->time_mid,
+                 uuid->time_hi_and_version,
+                 uuid->clock_seq_hi_and_reserved,
+                 uuid->clock_seq_low,
+                 uuid->node_addr[0],
+                 uuid->node_addr[1],
+                 uuid->node_addr[2],
+                 uuid->node_addr[3],
+                 uuid->node_addr[4],
+                 uuid->node_addr[5]);
+}

@@ -36,6 +36,6 @@
 
 #include <droplet/s3/reqbuilder.h>
 #include <droplet/s3/replyparser.h>
-#include <droplet/s3/convapi.h>
+#include <droplet/s3/backend.h>
 
 #endif

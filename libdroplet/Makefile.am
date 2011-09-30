@@ -15,17 +15,21 @@ libdroplet_la_SOURCES = \
 	src/req.c \
 	src/vec.c \
 	src/utils.c \
-	src/backend.c \
-	src/vdir.c \
-	src/vfile.c \
-	s3/convapi.c \
+	src/rest.c \
+	src/id.c \
+	src/vfs.c \
+	s3/backend.c \
 	s3/replyparser.c \
 	s3/reqbuilder.c \
 	s3/s3.c \
-	cdmi/convapi.c \
+	cdmi/backend.c \
 	cdmi/replyparser.c \
 	cdmi/reqbuilder.c \
-	cdmi/cdmi.c
+	cdmi/cdmi.c \
+	srest/backend.c \
+	srest/replyparser.c \
+	srest/reqbuilder.c \
+	srest/srest.c
 
 libdropletincludedir = $(includedir)/droplet-1.0/
 libdropletinclude_HEADERS = \
@@ -45,20 +49,27 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/vec.h \
 	include/droplet/utils.h \
 	include/droplet/backend.h \
-	include/droplet/vdir.h \
-	include/droplet/vfile.h
+	include/droplet/rest.h \
+	include/droplet/id.h \
+	include/droplet/vfs.h
 
 libdropletdroplets3includedir = $(includedir)/droplet-1.0/droplet/s3
 libdropletdroplets3include_HEADERS = \
-	include/droplet/s3/convapi.h \
+	include/droplet/s3/backend.h \
 	include/droplet/s3/replyparser.h \
 	include/droplet/s3/reqbuilder.h \
 	include/droplet/s3/s3.h
 
 libdropletdropletcdmiincludedir = $(includedir)/droplet-1.0/droplet/cdmi
 libdropletdropletcdmiinclude_HEADERS = \
-	include/droplet/cdmi/convapi.h \
+	include/droplet/cdmi/backend.h \
 	include/droplet/cdmi/replyparser.h \
 	include/droplet/cdmi/reqbuilder.h \
 	include/droplet/cdmi/cdmi.h
 
+libdropletdropletsrestincludedir = $(includedir)/droplet-1.0/droplet/srest
+libdropletdropletsrestinclude_HEADERS = \
+	include/droplet/srest/backend.h \
+	include/droplet/srest/replyparser.h \
+	include/droplet/srest/reqbuilder.h \
+	include/droplet/srest/srest.h

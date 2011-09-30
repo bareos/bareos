@@ -47,6 +47,8 @@ dpl_method(char *str)
     return DPL_METHOD_DELETE;
   else if (!strcasecmp(str, "HEAD"))
     return DPL_METHOD_HEAD;
+  else if (!strcasecmp(str, "POST"))
+    return DPL_METHOD_POST;
 
   return -1;
 }
@@ -64,6 +66,8 @@ dpl_method_str(dpl_method_t method)
       return "DELETE";
     case DPL_METHOD_HEAD:
       return "HEAD";
+    case DPL_METHOD_POST:
+      return "POST";
     }
 
   return NULL;

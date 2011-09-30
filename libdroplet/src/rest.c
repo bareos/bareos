@@ -36,13 +36,21 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+/**
+ * list all buckets
+ *
+ * @param ctx
+ * @param vecp
+ *
+ * @return
+ */
 dpl_status_t 
 dpl_list_all_my_buckets(dpl_ctx_t *ctx,
                         dpl_vec_t **vecp)
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "list_all_my_buckets");
+  DPL_TRACE(ctx, DPL_TRACE_REST, "list_all_my_buckets");
 
   if (NULL == ctx->backend->list_all_my_buckets)
     {
@@ -54,11 +62,23 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
 
  end:
   
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
 
+/**
+ * list bucket
+ *
+ * @param ctx
+ * @param bucket
+ * @param prefix can be NULL
+ * @param delimiter can be NULL
+ * @param objectsp
+ * @param prefixesp
+ *
+ * @return
+ */
 dpl_status_t 
 dpl_list_bucket(dpl_ctx_t *ctx, 
                 char *bucket,
@@ -69,7 +89,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "list_bucket bucket=%s prefix=%s delimiter=%s", bucket, prefix, delimiter);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "list_bucket bucket=%s prefix=%s delimiter=%s", bucket, prefix, delimiter);
 
   if (NULL == ctx->backend->list_bucket)
     {
@@ -81,11 +101,21 @@ dpl_list_bucket(dpl_ctx_t *ctx,
 
  end:
   
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
 
+/**
+ * make a bucket
+ *
+ * @param ctx
+ * @param bucket
+ * @param location_constraint
+ * @param canned_acl
+ *
+ * @return
+ */
 dpl_status_t
 dpl_make_bucket(dpl_ctx_t *ctx,
                 char *bucket, 
@@ -93,8 +123,9 @@ dpl_make_bucket(dpl_ctx_t *ctx,
                 dpl_canned_acl_t canned_acl)
 {
   int ret;
+  dpl_sysmd_t sysmd;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "makebucket bucket=%s", bucket);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "makebucket bucket=%s", bucket);
 
   if (NULL == ctx->backend->make_bucket)
     {
@@ -102,22 +133,37 @@ dpl_make_bucket(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->make_bucket(ctx, bucket, location_constraint, canned_acl);
+  memset(&sysmd, 0, sizeof (sysmd));
+  sysmd.mask = DPL_SYSMD_MASK_CANNED_ACL|DPL_SYSMD_MASK_LOCATION_CONSTRAINT;
+  sysmd.canned_acl = canned_acl;
+  sysmd.location_constraint = location_constraint;
+
+  ret = ctx->backend->make_bucket(ctx, bucket, &sysmd);
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
 
+/**
+ * delete a resource
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ *
+ * @return
+ */
 dpl_status_t 
 dpl_deletebucket(dpl_ctx_t *ctx,
                  char *bucket)
 {
   int ret;
   
-  DPL_TRACE(ctx, DPL_TRACE_API, "deletebucket bucket=%s", bucket);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "deletebucket bucket=%s", bucket);
 
   if (NULL == ctx->backend->delete_bucket)
     {
@@ -129,11 +175,108 @@ dpl_deletebucket(dpl_ctx_t *ctx,
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
 
+/** 
+ * create or post data into a resource
+ *
+ * @note this function is expected to return a newly created object
+ * 
+ * @param ctx 
+ * @param bucket 
+ * @param resource can be NULL
+ * @param subresource can be NULL
+ * @param object_type 
+ * @param metadata 
+ * @param canned_acl 
+ * @param data_buf 
+ * @param data_len 
+ * @param query_params can be NULL
+ * @param resource_idp ID of newly created object. caller must free it
+ * 
+ * @return 
+ */
+dpl_status_t
+dpl_post(dpl_ctx_t *ctx,
+         char *bucket,
+         char *resource,
+         char *subresource,
+         dpl_ftype_t object_type,
+         dpl_dict_t *metadata,
+         dpl_sysmd_t *sysmd,
+         char *data_buf,
+         unsigned int data_len,
+         dpl_dict_t *query_params,
+         char **resource_idp)
+{
+  int ret;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "put bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+
+  if (NULL == ctx->backend->post)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+ret = ctx->backend->post(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len, query_params, resource_idp);
+  
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_post_buffered(dpl_ctx_t *ctx,
+                  char *bucket,
+                  char *resource,
+                  char *subresource,
+                  dpl_ftype_t object_type,
+                  dpl_dict_t *metadata,
+                  dpl_sysmd_t *sysmd,
+                  unsigned int data_len,
+                  dpl_dict_t *query_params,
+                  dpl_conn_t **connp)
+{
+  int ret;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "post bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+
+  if (NULL == ctx->backend->post_buffered)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->post_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, query_params, connp);
+  
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+  
+  return ret;
+}
+
+
+/**
+ * put a resource
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ * @param metadata can be NULL
+ * @param canned_acl
+ * @param data_buf
+ * @param data_len
+ *
+ * @return
+ */
 dpl_status_t
 dpl_put(dpl_ctx_t *ctx,
         char *bucket,
@@ -141,25 +284,25 @@ dpl_put(dpl_ctx_t *ctx,
         char *subresource,
         dpl_ftype_t object_type,
         dpl_dict_t *metadata,
-        dpl_canned_acl_t canned_acl,
+        dpl_sysmd_t *sysmd,
         char *data_buf,
         unsigned int data_len)
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "put bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "put bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
   if (NULL == ctx->backend->put)
     {
       ret = DPL_ENOTSUPP;
       goto end;
     }
-  
-  ret = ctx->backend->put(ctx, bucket, resource, subresource, object_type, metadata, canned_acl, data_buf, data_len);
+
+  ret = ctx->backend->put(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len);
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
@@ -169,30 +312,45 @@ dpl_put_buffered(dpl_ctx_t *ctx,
                  char *bucket,
                  char *resource,
                  char *subresource,
+                 dpl_ftype_t object_type,
                  dpl_dict_t *metadata,
-                 dpl_canned_acl_t canned_acl,
+                 dpl_sysmd_t *sysmd,
                  unsigned int data_len,
                  dpl_conn_t **connp)
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "put_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "put_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
   if (NULL == ctx->backend->put_buffered)
     {
       ret = DPL_ENOTSUPP;
       goto end;
     }
-  
-  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, DPL_FTYPE_REG, metadata, canned_acl, data_len, connp);
+
+  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, connp);
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
 
+/**
+ * get a resource
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ * @param condition can be NULL
+ * @param data_bufp must be freed by caller
+ * @param data_lenp
+ * @param metadatap must be freed by caller
+ *
+ * @return
+ */
 dpl_status_t
 dpl_get(dpl_ctx_t *ctx,
         char *bucket,
@@ -206,7 +364,7 @@ dpl_get(dpl_ctx_t *ctx,
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "get bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "get bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
   if (NULL == ctx->backend->get)
     {
@@ -218,11 +376,25 @@ dpl_get(dpl_ctx_t *ctx,
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
 
+/**
+ * get a resource
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ * @param condition can be NULL
+ * @param data_bufp must be freed by caller
+ * @param data_lenp
+ * @param metadatap must be freed by caller
+ *
+ * @return
+ */
 dpl_status_t
 dpl_get_range(dpl_ctx_t *ctx,
               char *bucket,
@@ -238,7 +410,7 @@ dpl_get_range(dpl_ctx_t *ctx,
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "get_range bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "get_range bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
   if (NULL == ctx->backend->get_range)
     {
@@ -250,7 +422,7 @@ dpl_get_range(dpl_ctx_t *ctx,
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
@@ -268,7 +440,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "get_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "get_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
   if (NULL == ctx->backend->get_buffered)
     {
@@ -280,7 +452,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
@@ -295,7 +467,7 @@ dpl_head(dpl_ctx_t *ctx,
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "head bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "head bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
   if (NULL == ctx->backend->head)
     {
@@ -307,11 +479,25 @@ dpl_head(dpl_ctx_t *ctx,
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
 
+
+/**
+ * get metadata
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ * @param condition can be NULL
+ * @param all_headers tells us if we grab all the headers or just metadata
+ * @param metadatap must be freed by caller
+ *
+ * @return
+ */
 dpl_status_t
 dpl_head_all(dpl_ctx_t *ctx,
              char *bucket,
@@ -322,7 +508,7 @@ dpl_head_all(dpl_ctx_t *ctx,
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "head_all bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "head_all bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
   if (NULL == ctx->backend->head_all)
     {
@@ -334,7 +520,35 @@ dpl_head_all(dpl_ctx_t *ctx,
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_head_sysmd(dpl_ctx_t *ctx,
+               char *bucket,
+               char *resource,
+               char *subresource,
+               dpl_condition_t *condition,
+               dpl_sysmd_t *sysmdp,
+               dpl_dict_t **metadatap)
+{
+  int ret;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "head_sysmd bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+
+  if (NULL == ctx->backend->head_sysmd)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->head_sysmd(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, sysmdp, metadatap);
+  
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
@@ -346,7 +560,7 @@ dpl_get_metadata_from_headers(dpl_ctx_t *ctx,
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "get_metadata_from_headers");
+  DPL_TRACE(ctx, DPL_TRACE_REST, "get_metadata_from_headers");
 
   if (NULL == ctx->backend->get_metadata_from_headers)
     {
@@ -358,11 +572,22 @@ dpl_get_metadata_from_headers(dpl_ctx_t *ctx,
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
 
+
+/**
+ * delete a resource
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ *
+ * @return
+ */
 dpl_status_t
 dpl_delete(dpl_ctx_t *ctx,
            char *bucket,
@@ -371,7 +596,7 @@ dpl_delete(dpl_ctx_t *ctx,
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "delete bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "delete bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
   if (NULL == ctx->backend->delete)
     {
@@ -383,11 +608,23 @@ dpl_delete(dpl_ctx_t *ctx,
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
 
+/**
+ * generate url
+ *
+ * @param ctx
+ * @param bucket
+ * @param resource
+ * @param subresource can be NULL
+ * @param condition can be NULL
+ * @param metadatap must be freed by caller
+ *
+ * @return
+ */
 dpl_status_t
 dpl_genurl(dpl_ctx_t *ctx,
            char *bucket,
@@ -400,7 +637,7 @@ dpl_genurl(dpl_ctx_t *ctx,
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "genurl bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "genurl bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
   if (NULL == ctx->backend->genurl)
     {
@@ -412,11 +649,28 @@ dpl_genurl(dpl_ctx_t *ctx,
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }
 
+/**
+ * copy a resource
+ *
+ * @param ctx
+ * @param src_bucket
+ * @param src_resource
+ * @param src_subresource
+ * @param dst_bucket
+ * @param dst_resource
+ * @param dst_subresource
+ * @param metadata_directive
+ * @param metadata
+ * @param canned_acl
+ * @param condition
+ *
+ * @return
+ */
 dpl_status_t
 dpl_copy(dpl_ctx_t *ctx,
          char *src_bucket,
@@ -428,12 +682,12 @@ dpl_copy(dpl_ctx_t *ctx,
          dpl_ftype_t object_type,
          dpl_metadata_directive_t metadata_directive,
          dpl_dict_t *metadata,
-         dpl_canned_acl_t canned_acl,
+         dpl_sysmd_t *sysmd,
          dpl_condition_t *condition)
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "copy src_bucket=%s src_resource=%s src_subresource=%s dst_bucket=%s dst_resource=%s dst_subresource=%s", src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "copy src_bucket=%s src_resource=%s src_subresource=%s dst_bucket=%s dst_resource=%s dst_subresource=%s", src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource);
 
   if (NULL == ctx->backend->copy)
     {
@@ -441,11 +695,11 @@ dpl_copy(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, metadata_directive, metadata, canned_acl, condition);
+  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, metadata_directive, metadata, sysmd, condition);
   
  end:
 
-  DPL_TRACE(ctx, DPL_TRACE_API, "ret=%d", ret);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
   
   return ret;
 }

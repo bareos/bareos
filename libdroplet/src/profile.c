@@ -331,6 +331,7 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "light_mode"))
     {
+      //better to configure it from shell
       if (!strcasecmp(value, "true"))
         ctx->light_mode = 1;
       else if (!strcasecmp(value, "false"))
@@ -509,6 +510,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->delim = strdup(DPL_DEFAULT_DELIM);
   if (NULL == ctx->delim)
     return DPL_ENOMEM;
+  ctx->light_mode = 1;
 
   return DPL_SUCCESS;
 }

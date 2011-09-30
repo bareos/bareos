@@ -32,28 +32,22 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
-#include <droplet/cdmi/cdmi.h>
+#include <droplet/srest/srest.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
 dpl_backend_t
-dpl_backend_cdmi = 
+dpl_backend_srest = 
   {
-    "cdmi",
-    .make_bucket 	= dpl_cdmi_make_bucket,
-    .list_bucket 	= dpl_cdmi_list_bucket,
-    .post 		= dpl_cdmi_post,
-    .post_buffered      = dpl_cdmi_post_buffered,
-    .put 		= dpl_cdmi_put,
-    .put_buffered       = dpl_cdmi_put_buffered,
-    .get 		= dpl_cdmi_get,
-    .get_range          = dpl_cdmi_get_range,
-    .get_buffered       = dpl_cdmi_get_buffered,
-    .head 		= dpl_cdmi_head,
-    .head_all 		= dpl_cdmi_head_all,
-    .get_metadata_from_headers = dpl_cdmi_get_metadata_from_headers,
-    .delete 		= dpl_cdmi_delete,
-    .copy               = dpl_cdmi_copy,
-    .get_id_path        = dpl_cdmi_get_id_path,
+    "srest",
+    .post 		= dpl_srest_post,
+    .post_buffered	= dpl_srest_post_buffered,
+    .get 		= dpl_srest_get,
+    .get_buffered       = dpl_srest_get_buffered,
+    .head 		= dpl_srest_head,
+    .head_all 		= dpl_srest_head_all,
+    .get_metadata_from_headers = dpl_srest_get_metadata_from_headers,
+    .delete 		= dpl_srest_delete,
+    .get_id_path        = dpl_srest_get_id_path,
   };

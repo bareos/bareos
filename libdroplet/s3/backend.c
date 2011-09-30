@@ -37,14 +37,6 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-/**
- * list all buckets
- *
- * @param ctx
- * @param vecp
- *
- * @return
- */
 dpl_status_t
 dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
                            dpl_vec_t **vecp)
@@ -63,8 +55,6 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "listallmybuckets");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -207,18 +197,6 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
- * list bucket
- *
- * @param ctx
- * @param bucket
- * @param prefix can be NULL
- * @param delimiter can be NULL
- * @param objectsp
- * @param prefixesp
- *
- * @return
- */
 dpl_status_t
 dpl_s3_list_bucket(dpl_ctx_t *ctx,
                    char *bucket,
@@ -243,8 +221,6 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "listbucket bucket=%s prefix=%s delimiter=%s", bucket, prefix, delimiter);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -442,15 +418,14 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
  * @param ctx
  * @param bucket
  * @param location_constraint
- * @param canned_acl
+ * @param sysmd
  *
  * @return
  */
 dpl_status_t
 dpl_s3_make_bucket(dpl_ctx_t *ctx,
                    char *bucket,
-                   dpl_location_constraint_t location_constraint,
-                   dpl_canned_acl_t canned_acl)
+                   dpl_sysmd_t *sysmd)
 {
   char          *host;
   int           ret, ret2;
@@ -467,8 +442,6 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
   dpl_chunk_t   chunk;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "makebucket bucket=%s", bucket);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -493,34 +466,46 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  if (DPL_LOCATION_CONSTRAINT_US_STANDARD == location_constraint)
+  if (sysmd->mask & DPL_SYSMD_MASK_LOCATION_CONSTRAINT)
     {
-      data_str[0] = 0;
-      data_len = 0;
+      if (DPL_LOCATION_CONSTRAINT_US_STANDARD == sysmd->location_constraint)
+        {
+          data_str[0] = 0;
+          data_len = 0;
+        }
+      else
+        {
+          location_constraint_str = dpl_location_constraint_str(sysmd->location_constraint);
+          if (NULL == location_constraint_str)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+          
+          snprintf(data_str, sizeof (data_str),
+                   "<CreateBucketConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
+                   "<LocationConstraint>%s</LocationConstraint>\n"
+                   "</CreateBucketConfiguration>\n",
+                   location_constraint_str);
+          
+          data_len = strlen(data_str);
+        }
     }
   else
     {
-      location_constraint_str = dpl_location_constraint_str(location_constraint);
-      if (NULL == location_constraint_str)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-
-      snprintf(data_str, sizeof (data_str),
-               "<CreateBucketConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
-               "<LocationConstraint>%s</LocationConstraint>\n"
-               "</CreateBucketConfiguration>\n",
-               location_constraint_str);
-
-      data_len = strlen(data_str);
+      data_str[0] = 0;
+      data_len = 0;
     }
 
   chunk.buf = data_str;
   chunk.len = data_len;
   dpl_req_set_chunk(req, &chunk);
 
-  dpl_req_set_canned_acl(req, canned_acl);
+  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
+    dpl_req_set_canned_acl(req, sysmd->canned_acl);
+
+  if (sysmd->mask & DPL_SYSMD_MASK_STORAGE_CLASS)
+    dpl_req_set_storage_class(req, sysmd->storage_class);
 
   //build request
   ret2 = dpl_s3_req_build(req, &headers_request);
@@ -623,16 +608,6 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
- * delete a resource
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- *
- * @return
- */
 dpl_status_t
 dpl_s3_deletebucket(dpl_ctx_t *ctx,
                     char *bucket)
@@ -648,8 +623,6 @@ dpl_s3_deletebucket(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "deletebucket bucket=%s", bucket);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -769,21 +742,6 @@ dpl_s3_deletebucket(dpl_ctx_t *ctx,
   return ret;
 }
 
-
-/**
- * put a resource
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- * @param metadata can be NULL
- * @param canned_acl
- * @param data_buf
- * @param data_len
- *
- * @return
- */
 dpl_status_t
 dpl_s3_put(dpl_ctx_t *ctx,
            char *bucket,
@@ -791,7 +749,7 @@ dpl_s3_put(dpl_ctx_t *ctx,
            char *subresource,
            dpl_ftype_t object_type,
            dpl_dict_t *metadata,
-           dpl_canned_acl_t canned_acl,
+           dpl_sysmd_t *sysmd,
            char *data_buf,
            unsigned int data_len)
 {
@@ -807,8 +765,6 @@ dpl_s3_put(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
   dpl_chunk_t   chunk;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "put bucket=%s resource=%s", bucket, resource);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -849,7 +805,8 @@ dpl_s3_put(dpl_ctx_t *ctx,
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
 
-  dpl_req_set_canned_acl(req, canned_acl);
+  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
+    dpl_req_set_canned_acl(req, sysmd->canned_acl);
 
   if (NULL != metadata)
     {
@@ -968,7 +925,7 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
                     char *subresource,
                     dpl_ftype_t object_type,
                     dpl_dict_t *metadata,
-                    dpl_canned_acl_t canned_acl,
+                    dpl_sysmd_t *sysmd,
                     unsigned int data_len,
                     dpl_conn_t **connp)
 {
@@ -984,8 +941,6 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
   dpl_chunk_t   chunk;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "put_buffered bucket=%s resource=%s", bucket, resource);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1026,7 +981,8 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_EXPECT);
 
-  dpl_req_set_canned_acl(req, canned_acl);
+  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
+    dpl_req_set_canned_acl(req, sysmd->canned_acl);
 
   if (NULL != metadata)
     {
@@ -1140,20 +1096,6 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
- * get a resource
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- * @param condition can be NULL
- * @param data_bufp must be freed by caller
- * @param data_lenp
- * @param metadatap must be freed by caller
- *
- * @return
- */
 dpl_status_t
 dpl_s3_get(dpl_ctx_t *ctx,
            char *bucket,
@@ -1179,8 +1121,6 @@ dpl_s3_get(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "get bucket=%s resource=%s", bucket, resource);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1351,20 +1291,6 @@ dpl_s3_get(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
- * get a resource
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- * @param condition can be NULL
- * @param data_bufp must be freed by caller
- * @param data_lenp
- * @param metadatap must be freed by caller
- *
- * @return
- */
 dpl_status_t
 dpl_s3_get_range(dpl_ctx_t *ctx,
                  char *bucket,
@@ -1392,8 +1318,6 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "get bucket=%s resource=%s", bucket, resource);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1645,8 +1569,6 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
   dpl_req_t     *req = NULL;
   struct get_conven gc;
 
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "get_buffered bucket=%s resource=%s", bucket, resource);
-
   memset(&gc, 0, sizeof (gc));
   gc.header_func = header_func;
   gc.buffer_func = buffer_func;
@@ -1779,21 +1701,6 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
   return ret;
 }
 
-
-/**
- * get metadata
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- * @param condition can be NULL
- * @param all_headers tells us if we grab all the headers or just metadata
- * @param metadatap must be freed by caller
- *
- * @return
- */
-
 dpl_status_t
 dpl_s3_head_gen(dpl_ctx_t *ctx,
                 char *bucket,
@@ -1815,8 +1722,6 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "head bucket=%s resource=%s", bucket, resource);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -2003,17 +1908,6 @@ dpl_s3_head_all(dpl_ctx_t *ctx,
   return dpl_s3_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap);
 }
 
-
-/**
- * delete a resource
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- *
- * @return
- */
 dpl_status_t
 dpl_s3_delete(dpl_ctx_t *ctx,
               char *bucket,
@@ -2032,8 +1926,6 @@ dpl_s3_delete(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "delete bucket=%s resource=%s", bucket, resource);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -2163,18 +2055,6 @@ dpl_s3_delete(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
- * generate url
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- * @param condition can be NULL
- * @param metadatap must be freed by caller
- *
- * @return
- */
 dpl_status_t
 dpl_s3_genurl(dpl_ctx_t *ctx,
               char *bucket,
@@ -2188,8 +2068,6 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
   int           ret, ret2;
   dpl_dict_t    *headers_request = NULL;
   dpl_req_t     *req = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "genurl bucket=%s resource=%s", bucket, resource);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -2258,23 +2136,6 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
- * copy a resource
- *
- * @param ctx
- * @param src_bucket
- * @param src_resource
- * @param src_subresource
- * @param dst_bucket
- * @param dst_resource
- * @param dst_subresource
- * @param metadata_directive
- * @param metadata
- * @param canned_acl
- * @param condition
- *
- * @return
- */
 dpl_status_t
 dpl_s3_copy(dpl_ctx_t *ctx,
             char *src_bucket,
@@ -2286,7 +2147,7 @@ dpl_s3_copy(dpl_ctx_t *ctx,
             dpl_ftype_t object_type,
             dpl_metadata_directive_t metadata_directive,
             dpl_dict_t *metadata,
-            dpl_canned_acl_t canned_acl,
+            dpl_sysmd_t *sysmd,
             dpl_condition_t *condition)
 {
   char          *host;
@@ -2300,8 +2161,6 @@ dpl_s3_copy(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_CONV, "copy src_bucket=%s src_resource=%s dst_bucket=%s dst_resource=%s", src_bucket, src_resource, dst_bucket, dst_resource);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -2376,7 +2235,8 @@ dpl_s3_copy(dpl_ctx_t *ctx,
         }
     }
 
-  dpl_req_set_canned_acl(req, canned_acl);
+  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
+    dpl_req_set_canned_acl(req, sysmd->canned_acl);
 
   //build request
   ret2 = dpl_s3_req_build(req, &headers_request);
