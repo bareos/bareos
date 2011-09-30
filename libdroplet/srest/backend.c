@@ -883,48 +883,7 @@ dpl_srest_head(dpl_ctx_t *ctx,
               dpl_condition_t *condition,
               dpl_dict_t **metadatap)
 {
-  int ret, ret2;
-  dpl_dict_t *all_mds = NULL;
-  dpl_dict_t *metadata = NULL;
-
-  ret2 = dpl_srest_head_all(ctx, bucket, resource, subresource, object_type, condition, &all_mds);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  ret2 = dpl_srest_get_metadata_from_json_metadata(all_mds, metadata);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
-  if (NULL != all_mds)
-    dpl_dict_free(all_mds);
-
-  return ret;
+  return DPL_ENOTSUPP;
 }
 
 dpl_status_t
