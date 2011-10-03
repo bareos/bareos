@@ -31,15 +31,13 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CDMI_CONVAPI_H__
-#define __DROPLET_CDMI_CONVAPI_H__ 1
+#ifndef __DROPLET_CDMI_BACKEND_H__
+#define __DROPLET_CDMI_BACKEND_H__ 1
 
-/* PROTO convapi.c */
-/* src/convapi.c */
-dpl_status_t dpl_cdmi_list_all_my_buckets(dpl_ctx_t *ctx, dpl_vec_t **vecp);
+/* PROTO backend.c */
+/* src/backend.c */
 dpl_status_t dpl_cdmi_list_bucket(dpl_ctx_t *ctx, char *bucket, char *prefix, char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
 dpl_status_t dpl_cdmi_make_bucket(dpl_ctx_t *ctx, char *bucket, dpl_sysmd_t *sysmd);
-dpl_status_t dpl_cdmi_deletebucket(dpl_ctx_t *ctx, char *bucket);
 dpl_status_t dpl_cdmi_post(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len, dpl_dict_t *query_string, char **resource_idp);
 dpl_status_t dpl_cdmi_post_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_dict_t *query_string, dpl_conn_t **connp);
 dpl_status_t dpl_cdmi_put(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len);

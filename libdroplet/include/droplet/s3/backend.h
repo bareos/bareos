@@ -31,11 +31,11 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_S3_CONVAPI_H__
-#define __DROPLET_S3_CONVAPI_H__ 1
+#ifndef __DROPLET_S3_BACKEND_H__
+#define __DROPLET_S3_BACKEND_H__ 1
 
-/* PROTO convapi.c */
-/* src/convapi.c */
+/* PROTO backend.c */
+/* src/backend.c */
 dpl_status_t dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx, dpl_vec_t **vecp);
 dpl_status_t dpl_s3_list_bucket(dpl_ctx_t *ctx, char *bucket, char *prefix, char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
 dpl_status_t dpl_s3_make_bucket(dpl_ctx_t *ctx, char *bucket, dpl_sysmd_t *sysmd);

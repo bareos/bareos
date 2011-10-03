@@ -31,20 +31,21 @@
  *
  * https://github.com/scality/Droplet
  */
-#include "dropletp.h"
-#include <droplet/srest/srest.h>
+#ifndef __DROPLET_SRWS_REPLYPARSER_H__
+#define __DROPLET_SRWS_REPLYPARSER_H__ 1
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define SCAL_SRWS_X_BIZ_USERMD               "x-biz-usermd:"
+#define SCAL_SRWS_X_BIZ_CMD                  "x-biz-cmd:"
+#define SCAL_SRWS_UPDATEUSERMD               "updateusermd"
+#define SCAL_SRWS_X_BIZ_REPLICA_POLICY       "x-biz-replica-policy:"
+#define SCAL_SRWS_LAZY                       "lazy"
+#define SCAL_SRWS_X_BIZ_DATA_HINT            "x-biz-data-hint"
+#define SCAL_SRWS_CACHED                     "cached"
 
-dpl_backend_t
-dpl_backend_srest = 
-  {
-    "srest",
-    .post 		= dpl_srest_post,
-    .post_buffered	= dpl_srest_post_buffered,
-    .get 		= dpl_srest_get,
-    .get_buffered       = dpl_srest_get_buffered,
-    .delete 		= dpl_srest_delete,
-    .get_id_path        = dpl_srest_get_id_path,
-  };
+/* PROTO replyparser.c */
+/* src/replyparser.c */
+dpl_status_t dpl_srws_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
+dpl_status_t dpl_srws_parse_list_bucket(dpl_ctx_t *ctx, char *buf, int len, char *prefix, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
+dpl_status_t dpl_srws_get_metadata_from_json_metadata(dpl_dict_t *json_metadata, dpl_dict_t *metadata);
+dpl_status_t dpl_srws_parse_metadata(dpl_ctx_t *ctx, char *buf, int len, dpl_dict_t *metadata);
+#endif

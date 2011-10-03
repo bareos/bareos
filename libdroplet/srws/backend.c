@@ -32,593 +32,14 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
-#include <droplet/cdmi/cdmi.h>
+#include <droplet/srws/srws.h>
+#include <sys/param.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
 dpl_status_t
-dpl_cdmi_make_bucket(dpl_ctx_t *ctx,
-                     char *bucket,
-                     dpl_sysmd_t *sysmd)
-{
-  return dpl_mkdir(ctx, bucket);
-}
-
-dpl_status_t
-dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
-                     char *bucket,
-                     char *prefix,
-                     char *delimiter,
-                     dpl_vec_t **objectsp,
-                     dpl_vec_t **common_prefixesp)
-{
-  char          *host;
-  int           ret, ret2;
-  dpl_conn_t   *conn = NULL;
-  char          header[1024];
-  u_int         header_len;
-  struct iovec  iov[10];
-  int           n_iov = 0;
-  int           connection_close = 0;
-  char          *data_buf = NULL;
-  u_int         data_len;
-  dpl_dict_t    *headers_request = NULL;
-  dpl_dict_t    *headers_reply = NULL;
-  dpl_req_t     *req = NULL;
-  dpl_vec_t     *common_prefixes = NULL;
-  dpl_vec_t     *objects = NULL;
-
-  req = dpl_req_new(ctx);
-  if (NULL == req)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  dpl_req_set_method(req, DPL_METHOD_GET);
-
-  ret2 = dpl_req_set_resource(req, NULL != prefix ? prefix : "/");
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
-  dpl_req_set_object_type(req, DPL_FTYPE_DIR);
-
-  //build request
-  ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  iov[n_iov].iov_base = header;
-  iov[n_iov].iov_len = header_len;
-  n_iov++;
-
-  //final crlf
-  iov[n_iov].iov_base = "\r\n";
-  iov[n_iov].iov_len = 2;
-  n_iov++;
-
-  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPLERR(1, "writev failed");
-      connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
-      goto end;
-    }
-
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
-  if (DPL_SUCCESS != ret2)
-    {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
-    }
-
-  (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
-
-  objects = dpl_vec_new(2, 2);
-  if (NULL == objects)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  common_prefixes = dpl_vec_new(2, 2);
-  if (NULL == common_prefixes)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  ret = dpl_cdmi_parse_list_bucket(ctx, data_buf, data_len, prefix, objects, common_prefixes);
-  if (DPL_SUCCESS != ret)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  if (NULL != objectsp)
-    {
-      *objectsp = objects;
-      objects = NULL; //consume it
-    }
-
-  if (NULL != common_prefixesp)
-    {
-      *common_prefixesp = common_prefixes;
-      common_prefixes = NULL; //consume it
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != objects)
-    dpl_vec_objects_free(objects);
-
-  if (NULL != common_prefixes)
-    dpl_vec_common_prefixes_free(common_prefixes);
-
-  if (NULL != data_buf)
-    free(data_buf);
-
-  if (NULL != conn)
-    {
-      if (1 == connection_close)
-        dpl_conn_terminate(conn);
-      else
-        dpl_conn_release(conn);
-    }
-
-  if (NULL != headers_reply)
-    dpl_dict_free(headers_reply);
-
-  if (NULL != headers_request)
-    dpl_dict_free(headers_request);
-
-  if (NULL != req)
-    dpl_req_free(req);
-
-  DPRINTF("ret=%d\n", ret);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_cdmi_post(dpl_ctx_t *ctx,
-              char *bucket,
-              char *resource,
-              char *subresource,
-              dpl_ftype_t object_type,
-              dpl_dict_t *metadata,
-              dpl_sysmd_t *sysmd,
-              char *data_buf,
-              unsigned int data_len,
-              dpl_dict_t *query_params,
-              char **resource_idp)
-{
-  char          *host;
-  int           ret, ret2;
-  dpl_conn_t   *conn = NULL;
-  char          header[1024];
-  u_int         header_len;
-  struct iovec  iov[10];
-  int           n_iov = 0;
-  int           connection_close = 0;
-  dpl_dict_t    *headers_request = NULL;
-  dpl_dict_t    *headers_reply = NULL;
-  dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
-  char          *body_str = NULL;
-  int           body_len = 0;
-
-  req = dpl_req_new(ctx);
-  if (NULL == req)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  dpl_req_set_method(req, DPL_METHOD_POST);
-
-  ret2 = dpl_req_set_resource(req, resource);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != subresource)
-    {
-      ret2 = dpl_req_set_subresource(req, subresource);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
-  dpl_req_set_object_type(req, object_type);
-
-  if (NULL != data_buf)
-    {
-      chunk.buf = data_buf;
-      chunk.len = data_len;
-      dpl_req_set_chunk(req, &chunk);
-    }
-
-  dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
-
-  if (NULL != metadata)
-    {
-      ret2 = dpl_req_add_metadata(req, metadata);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  //build request
-  ret2 = dpl_cdmi_req_build(req, &headers_request, &body_str, &body_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  iov[n_iov].iov_base = header;
-  iov[n_iov].iov_len = header_len;
-  n_iov++;
-
-  //final crlf
-  iov[n_iov].iov_base = "\r\n";
-  iov[n_iov].iov_len = 2;
-  n_iov++;
-
-  //buffer
-  iov[n_iov].iov_base = body_str;
-  iov[n_iov].iov_len = body_len;
-  n_iov++;
-
-  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPLERR(1, "writev failed");
-      connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
-      goto end;
-    }
-
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
-  if (DPL_SUCCESS != ret2)
-    {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
-    }
-
-  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != body_str)
-    free(body_str);
-
-  if (NULL != conn)
-    {
-      if (1 == connection_close)
-        dpl_conn_terminate(conn);
-      else
-        dpl_conn_release(conn);
-    }
-
-  if (NULL != headers_reply)
-    dpl_dict_free(headers_reply);
-
-  if (NULL != headers_request)
-    dpl_dict_free(headers_request);
-
-  if (NULL != req)
-    dpl_req_free(req);
-
-  DPRINTF("ret=%d\n", ret);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
-                       char *bucket,
-                       char *resource,
-                       char *subresource,
-                       dpl_ftype_t object_type,
-                       dpl_dict_t *metadata,
-                       dpl_sysmd_t *sysmd,
-                       unsigned int data_len,
-                       dpl_dict_t *query_params,
-                       dpl_conn_t **connp)
-{
-  char          *host;
-  int           ret, ret2;
-  dpl_conn_t    *conn = NULL;
-  char          header[1024];
-  u_int         header_len;
-  struct iovec  iov[10];
-  int           n_iov = 0;
-  int           connection_close = 0;
-  dpl_dict_t    *headers_request = NULL;
-  dpl_dict_t    *headers_reply = NULL;
-  dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
-
-  req = dpl_req_new(ctx);
-  if (NULL == req)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  dpl_req_set_method(req, DPL_METHOD_POST);
-
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_req_set_resource(req, resource);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != subresource)
-    {
-      ret2 = dpl_req_set_subresource(req, subresource);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  chunk.buf = NULL;
-  chunk.len = data_len;
-  dpl_req_set_chunk(req, &chunk);
-
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
-  dpl_req_add_behavior(req, DPL_BEHAVIOR_HTTP_COMPAT);
-
-  dpl_req_set_object_type(req, object_type);
-
-  dpl_req_add_behavior(req, DPL_BEHAVIOR_EXPECT);
-
-  if (NULL != metadata)
-    {
-      ret2 = dpl_req_add_metadata(req, metadata);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  iov[n_iov].iov_base = header;
-  iov[n_iov].iov_len = header_len;
-  n_iov++;
-
-  //final crlf
-  iov[n_iov].iov_base = "\r\n";
-  iov[n_iov].iov_len = 2;
-  n_iov++;
-
-  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPLERR(1, "writev failed");
-      connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
-      goto end;
-    }
-
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
-  if (DPL_SUCCESS != ret2)
-    {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      if (NULL != headers_reply) //possible if continue succeeded
-        connection_close = dpl_connection_close(ctx, headers_reply);
-    }
-
-  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
-
-  if (NULL != connp)
-    {
-      *connp = conn;
-      conn = NULL; //consume it
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != conn)
-    {
-      if (1 == connection_close)
-        dpl_conn_terminate(conn);
-      else
-        dpl_conn_release(conn);
-    }
-
-  if (NULL != headers_reply)
-    dpl_dict_free(headers_reply);
-
-  if (NULL != headers_request)
-    dpl_dict_free(headers_request);
-
-  if (NULL != req)
-    dpl_req_free(req);
-
-  DPRINTF("ret=%d\n", ret);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_cdmi_put(dpl_ctx_t *ctx,
+dpl_srws_put(dpl_ctx_t *ctx,
              char *bucket,
              char *resource,
              char *subresource,
@@ -640,8 +61,6 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
   dpl_chunk_t   chunk;
-  char          *body_str = NULL;
-  int           body_len = 0;
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -694,7 +113,7 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_cdmi_req_build(req, &headers_request, &body_str, &body_len);
+  ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -740,8 +159,8 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
   n_iov++;
 
   //buffer
-  iov[n_iov].iov_base = body_str;
-  iov[n_iov].iov_len = body_len;
+  iov[n_iov].iov_base = data_buf;
+  iov[n_iov].iov_len = data_len;
   n_iov++;
 
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
@@ -780,9 +199,6 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
 
  end:
 
-  if (NULL != body_str)
-    free(body_str);
-
   if (NULL != conn)
     {
       if (1 == connection_close)
@@ -806,7 +222,7 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
+dpl_srws_put_buffered(dpl_ctx_t *ctx,
                       char *bucket,
                       char *resource,
                       char *subresource,
@@ -885,7 +301,7 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
+  ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -996,7 +412,7 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_cdmi_get(dpl_ctx_t *ctx,
+dpl_srws_get(dpl_ctx_t *ctx,
              char *bucket,
              char *resource,
              char *subresource,
@@ -1072,7 +488,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
+  ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1188,22 +604,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
-dpl_cdmi_get_range(dpl_ctx_t *ctx,
-                   char *bucket,
-                   char *resource,
-                   char *subresource,
-                   dpl_ftype_t object_type,
-                   dpl_condition_t *condition,
-                   int start,
-                   int end,
-                   char **data_bufp,
-                   unsigned int *data_lenp,
-                   dpl_dict_t **metadatap)
-{
-  return DPL_ENOTSUPP;
-}
-
 struct get_conven
 {
   dpl_header_func_t header_func;
@@ -1255,7 +655,7 @@ cb_get_buffer(void *cb_arg,
 }
 
 dpl_status_t
-dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
+dpl_srws_get_buffered(dpl_ctx_t *ctx,
                       char *bucket,
                       char *resource,
                       char *subresource,
@@ -1322,10 +722,8 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
-  dpl_req_add_behavior(req, DPL_BEHAVIOR_HTTP_COMPAT);
-
   //build request
-  ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
+  ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1343,14 +741,6 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
   if (NULL == conn)
     {
       ret = DPL_FAILURE;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
       goto end;
     }
 
@@ -1422,7 +812,7 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_cdmi_head_all(dpl_ctx_t *ctx,
+dpl_srws_head_all(dpl_ctx_t *ctx,
                   char *bucket,
                   char *resource,
                   char *subresource,
@@ -1436,7 +826,7 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
   dpl_dict_t *metadata = NULL;
   
   //fetch metadata from JSON content
-  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", object_type, condition, &md_buf, &md_len, NULL);
+  ret2 = dpl_srws_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", object_type, condition, &md_buf, &md_len, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1450,7 +840,7 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_cdmi_parse_metadata(ctx, md_buf, md_len, metadata);
+  ret2 = dpl_srws_parse_metadata(ctx, md_buf, md_len, metadata);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1477,7 +867,7 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_cdmi_head(dpl_ctx_t *ctx,
+dpl_srws_head(dpl_ctx_t *ctx,
               char *bucket,
               char *resource,
               char *subresource,
@@ -1485,52 +875,11 @@ dpl_cdmi_head(dpl_ctx_t *ctx,
               dpl_condition_t *condition,
               dpl_dict_t **metadatap)
 {
-  int ret, ret2;
-  dpl_dict_t *all_mds = NULL;
-  dpl_dict_t *metadata = NULL;
-
-  ret2 = dpl_cdmi_head_all(ctx, bucket, resource, subresource, object_type, condition, &all_mds);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  ret2 = dpl_cdmi_get_metadata_from_json_metadata(all_mds, metadata);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
-  if (NULL != all_mds)
-    dpl_dict_free(all_mds);
-
-  return ret;
+  return DPL_ENOTSUPP;
 }
 
 dpl_status_t
-dpl_cdmi_delete(dpl_ctx_t *ctx,
+dpl_srws_delete(dpl_ctx_t *ctx,
                 char *bucket,
                 char *resource,
                 char *subresource,
@@ -1577,10 +926,8 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
-  dpl_req_add_behavior(req, DPL_BEHAVIOR_HTTP_COMPAT);
-
   //build request
-  ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
+  ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1598,14 +945,6 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
   if (NULL == conn)
     {
       ret = DPL_FAILURE;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
       goto end;
     }
 
@@ -1684,63 +1023,199 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_cdmi_copy(dpl_ctx_t *ctx,
-              char *src_bucket,
-              char *src_resource,
-              char *src_subresource,
-              char *dst_bucket,
-              char *dst_resource,
-              char *dst_subresource,
-              dpl_ftype_t object_type,
-              dpl_metadata_directive_t metadata_directive,
-              dpl_dict_t *metadata,
-              dpl_sysmd_t *sysmd,
-              dpl_condition_t *condition)
+dpl_srws_get_id_path(dpl_ctx_t *ctx,
+                      char *bucket,
+                      char **id_pathp)
 {
-  int ret, ret2;
+  //natively support id access
+  *id_pathp = NULL;
+  
+  return DPL_SUCCESS;
+}
 
-  switch (metadata_directive)
+#define BIT_SET(bit)   (entropy[(bit)/NBBY] |= (1<<((bit)%NBBY)))
+#define BIT_CLEAR(bit) (entropy[(bit)/NBBY] &= ~(1<<((bit)%NBBY)))
+
+static dpl_status_t
+srws_gen_key(BIGNUM *id,
+             uint64_t oid,
+             uint32_t volid,
+             uint8_t serviceid,
+             uint32_t specific)
+{
+  int off, i;
+  MD5_CTX ctx;
+  char entropy[SRWS_PAYLOAD_NBITS/NBBY];
+  u_char hash[MD5_DIGEST_LENGTH];
+
+  BN_zero(id);
+  
+  off = SRWS_REPLICA_NBITS +
+    SRWS_CLASS_NBITS;
+
+  for (i = 0;i < SRWS_SPECIFIC_NBITS;i++)
     {
-    case DPL_METADATA_DIRECTIVE_UNDEF:
-      ret = DPL_ENOTSUPP;
-      goto end;
-    case DPL_METADATA_DIRECTIVE_COPY:
-      ret = DPL_ENOTSUPP;
-      goto end;
-    case DPL_METADATA_DIRECTIVE_REPLACE:
-
-      //replace the metadata
-      ret2 = dpl_cdmi_put(ctx, dst_bucket, dst_resource,
-                          NULL != dst_subresource ? dst_subresource : "metadata",
-                          object_type, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0);
-      if (DPL_SUCCESS != ret2)
+      if (specific & 1<<i)
         {
-          ret = ret2;
-          goto end;
+          BN_set_bit(id, off + i);
+          BIT_SET(off - SRWS_EXTRA_NBITS + i);
         }
-
-      break ;
+      else
+        {
+          BN_clear_bit(id, off + i);
+          BIT_CLEAR(off - SRWS_EXTRA_NBITS + i);
+        }
     }
 
-  ret = DPL_SUCCESS;
-  
- end:
+  off += SRWS_SPECIFIC_NBITS;
 
-  return ret;
+  for (i = 0;i < SRWS_SERVICEID_NBITS;i++)
+    {
+      if (serviceid & 1<<i)
+        {
+          BN_set_bit(id, off + i);
+          BIT_SET(off - SRWS_EXTRA_NBITS + i);
+        }
+      else
+        {
+          BN_clear_bit(id, off + i);
+          BIT_CLEAR(off - SRWS_EXTRA_NBITS + i);
+        }
+    }
+
+  off += SRWS_SERVICEID_NBITS;
+
+  for (i = 0;i < SRWS_VOLID_NBITS;i++)
+    {
+      if (volid & 1<<i)
+        {
+          BN_set_bit(id, off + i);
+          BIT_SET(off - SRWS_EXTRA_NBITS + i);
+        }
+      else
+        {
+          BN_clear_bit(id, off + i);
+          BIT_CLEAR(off - SRWS_EXTRA_NBITS + i);
+        }
+    }
+
+  off += SRWS_VOLID_NBITS;
+
+  for (i = 0;i < SRWS_OID_NBITS;i++)
+    {
+      if (oid & (1ULL<<i))
+        {
+          BN_set_bit(id, off + i);
+          BIT_SET(off - SRWS_EXTRA_NBITS + i);
+        }
+      else
+        {
+          BN_clear_bit(id, off + i);
+          BIT_CLEAR(off  - SRWS_EXTRA_NBITS + i);
+        }
+    }
+
+  off += SRWS_OID_NBITS;
+
+  MD5_Init(&ctx);
+  MD5_Update(&ctx, entropy, sizeof (entropy));
+  MD5_Final(hash, &ctx);
+
+  for (i = 0;i < SRWS_HASH_NBITS;i++)
+    {
+      if (hash[i/8] & 1<<(i%8))
+        BN_set_bit(id, off + i);
+      else
+        BN_clear_bit(id, off + i);
+    }
+
+  return DPL_SUCCESS;
 }
 
 dpl_status_t
-dpl_cdmi_get_id_path(dpl_ctx_t *ctx,
-                     char *bucket,
-                     char **id_pathp)
+srws_set_class(BIGNUM *k,
+               int class)
 {
-  char *id_path;
-
-  id_path = strdup("/cdmi_objectid/");
-  if (NULL == id_path)
-    return DPL_ENOMEM;
+  int i;
   
-  *id_pathp = id_path;
-
+  if (class < 0 ||
+      class >= 1<<SRWS_CLASS_NBITS)
+    return DPL_FAILURE;
+  
+  for (i = 0;i < SRWS_CLASS_NBITS;i++)
+    if (class & 1<<i)
+      BN_set_bit(k, SRWS_REPLICA_NBITS + i);
+    else
+      BN_clear_bit(k, SRWS_REPLICA_NBITS + i);
+  
   return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_srws_gen_id_from_oid(dpl_ctx_t *ctx,
+                         uint64_t oid,
+                         dpl_storage_class_t storage_class,
+                         char **resource_idp)
+{
+  BIGNUM *bn = NULL;
+  int ret, ret2;
+  int class;
+  char *resource_id = NULL;
+
+  bn = BN_new();
+  if (NULL == bn)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  ret2 = srws_gen_key(bn, oid, 0, SRWS_SERVICE_ID_TEST, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  class = 2;
+  switch (storage_class)
+    {
+    case DPL_STORAGE_CLASS_UNDEF:
+    case DPL_STORAGE_CLASS_STANDARD:
+      break ;
+    case DPL_STORAGE_CLASS_REDUCED_REDUNDANCY:
+      class = 1;
+      break ;
+    }
+
+  ret2 = srws_set_class(bn, class);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  resource_id = BN_bn2hex(bn);
+  if (NULL == resource_id)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != resource_idp)
+    {
+      *resource_idp = resource_id;
+      resource_id = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != resource_id)
+    free(resource_id);
+
+  if (NULL != bn)
+    BN_free(bn);
+  
+  return ret;
 }

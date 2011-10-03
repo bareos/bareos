@@ -32,19 +32,23 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
-#include <droplet/srest/srest.h>
+#include <droplet/srws/srws.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
 dpl_backend_t
-dpl_backend_srest = 
+dpl_backend_srws = 
   {
-    "srest",
-    .post 		= dpl_srest_post,
-    .post_buffered	= dpl_srest_post_buffered,
-    .get 		= dpl_srest_get,
-    .get_buffered       = dpl_srest_get_buffered,
-    .delete 		= dpl_srest_delete,
-    .get_id_path        = dpl_srest_get_id_path,
+    "srws",
+    .put 		= dpl_srws_put,
+    .put_buffered	= dpl_srws_put_buffered,
+    .get 		= dpl_srws_get,
+    .get_buffered       = dpl_srws_get_buffered,
+    .head 		= dpl_srws_head,
+    .head_all 		= dpl_srws_head_all,
+    .get_metadata_from_headers = dpl_srws_get_metadata_from_headers,
+    .delete 		= dpl_srws_delete,
+    .get_id_path        = dpl_srws_get_id_path,
+    .gen_id_from_oid    = dpl_srws_gen_id_from_oid,
   };

@@ -1044,10 +1044,10 @@ dpl_pricing_free(dpl_ctx_t *ctx)
  * @return
  */
 dpl_status_t
-dpl_log_charged_event(dpl_ctx_t *ctx,
-                      char *type,
-                      char *subtype,
-                      size_t size)
+dpl_log_event(dpl_ctx_t *ctx,
+              char *type,
+              char *subtype,
+              size_t size)
 {
   time_t t;
 

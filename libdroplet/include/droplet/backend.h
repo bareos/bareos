@@ -54,6 +54,7 @@ typedef dpl_status_t (*dpl_delete_t)(dpl_ctx_t *ctx, char *bucket, char *resourc
 typedef dpl_status_t (*dpl_genurl_t)(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
 typedef dpl_status_t (*dpl_copy_t)(dpl_ctx_t *ctx, char *src_bucket, char *src_resource, char *src_subresource, char *dst_bucket, char *dst_resource, char *dst_subresource, dpl_ftype_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_condition_t *condition);
 typedef dpl_status_t (*dpl_get_id_path_t)(dpl_ctx_t *ctx, char *bucket, char **id_pathp);
+typedef dpl_status_t (*dpl_gen_id_from_oid_t)(dpl_ctx_t *ctx, uint64_t oid, dpl_storage_class_t storage_class, char **resource_idp);
 
 typedef struct dpl_backend_s
 {
@@ -77,6 +78,7 @@ typedef struct dpl_backend_s
   dpl_genurl_t genurl;
   dpl_copy_t copy;
   dpl_get_id_path_t get_id_path;
+  dpl_gen_id_from_oid_t gen_id_from_oid;
 } dpl_backend_t;
 
 /* PROTO backend.c */

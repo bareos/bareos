@@ -347,7 +347,7 @@ conf_cb_func(void *cb_arg,
       ctx->backend = dpl_backend_find(value);
       if (NULL == ctx->backend)
         {
-          fprintf(stderr, "no such backend '%s'\n", var);
+          fprintf(stderr, "no such backend '%s'\n", value);
           return -1;
         }
     }

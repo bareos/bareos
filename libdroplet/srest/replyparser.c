@@ -37,14 +37,6 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-dpl_status_t
-dpl_srest_get_metadata_from_headers(dpl_dict_t *headers,
-                                   dpl_dict_t *metadata)
-{
-  //metadata are not stored in headers
-  return DPL_FAILURE;
-}
-
 /**/
 
 dpl_status_t

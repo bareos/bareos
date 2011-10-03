@@ -32,19 +32,26 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
-#include <droplet/srest/srest.h>
+#include <json/json.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-dpl_backend_t
-dpl_backend_srest = 
-  {
-    "srest",
-    .post 		= dpl_srest_post,
-    .post_buffered	= dpl_srest_post_buffered,
-    .get 		= dpl_srest_get,
-    .get_buffered       = dpl_srest_get_buffered,
-    .delete 		= dpl_srest_delete,
-    .get_id_path        = dpl_srest_get_id_path,
-  };
+dpl_status_t
+dpl_srws_get_metadata_from_headers(dpl_dict_t *headers,
+                                   dpl_dict_t *metadata)
+{
+  //metadata are not stored in headers
+  return DPL_FAILURE;
+}
+
+/**/
+
+dpl_status_t
+dpl_srws_parse_metadata(dpl_ctx_t *ctx,
+                        char *buf,
+                        int len,
+                        dpl_dict_t *metadata)
+{
+  return DPL_ENOTSUPP;
+}

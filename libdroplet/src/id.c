@@ -177,7 +177,7 @@ dpl_put_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s/%s", id_path ? id_path : "", id);
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
   if (NULL == ctx->backend->put)
     {
@@ -226,7 +226,7 @@ dpl_put_buffered_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s/%s", id_path ? id_path : "", id);
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
   if (NULL == ctx->backend->put_buffered)
     {
@@ -275,7 +275,7 @@ dpl_get_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s/%s", id_path ? id_path : "", id);
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
   if (NULL == ctx->backend->get)
     {
@@ -326,7 +326,7 @@ dpl_get_range_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s/%s", id_path ? id_path : "", id);
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
   if (NULL == ctx->backend->get_range)
     {
@@ -375,7 +375,7 @@ dpl_get_buffered_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s/%s", id_path ? id_path : "", id);
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
   if (NULL == ctx->backend->get_buffered)
     {
@@ -421,7 +421,7 @@ dpl_head_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s/%s", id_path ? id_path : "", id);
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
   if (NULL == ctx->backend->head)
     {
@@ -467,7 +467,7 @@ dpl_head_all_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s/%s", id_path ? id_path : "", id);
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
   if (NULL == ctx->backend->head_all)
     {
@@ -514,7 +514,7 @@ dpl_head_sysmd_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s/%s", id_path ? id_path : "", id);
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
   if (NULL == ctx->backend->head_sysmd)
     {
@@ -558,7 +558,7 @@ dpl_delete_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s/%s", id_path ? id_path : "", id);
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
   if (NULL == ctx->backend->delete)
     {
@@ -577,3 +577,43 @@ dpl_delete_id(dpl_ctx_t *ctx,
   
   return ret;
 }
+
+dpl_status_t
+dpl_gen_id_from_oid(dpl_ctx_t *ctx,
+                    uint64_t oid,
+                    dpl_storage_class_t storage_class,
+                    char **resource_idp)
+{
+  int ret;
+  char *resource_id = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "gen_id_from_oid oid=%llu\n", (unsigned long long) oid);
+
+  if (NULL == ctx->backend->gen_id_from_oid)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->gen_id_from_oid(ctx, oid, storage_class, &resource_id);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  if (NULL != resource_idp)
+    {
+      *resource_idp = resource_id;
+      resource_id = NULL;
+    }
+  
+ end:
+
+  if (NULL != resource_id)
+    free(resource_id);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+

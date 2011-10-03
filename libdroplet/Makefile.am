@@ -29,7 +29,11 @@ libdroplet_la_SOURCES = \
 	srest/backend.c \
 	srest/replyparser.c \
 	srest/reqbuilder.c \
-	srest/srest.c
+	srest/srest.c \
+	srws/backend.c \
+	srws/replyparser.c \
+	srws/reqbuilder.c \
+	srws/srws.c
 
 libdropletincludedir = $(includedir)/droplet-1.0/
 libdropletinclude_HEADERS = \
@@ -73,3 +77,10 @@ libdropletdropletsrestinclude_HEADERS = \
 	include/droplet/srest/replyparser.h \
 	include/droplet/srest/reqbuilder.h \
 	include/droplet/srest/srest.h
+
+libdropletdropletsrwsincludedir = $(includedir)/droplet-1.0/droplet/srws
+libdropletdropletsrwsinclude_HEADERS = \
+	include/droplet/srws/backend.h \
+	include/droplet/srws/replyparser.h \
+	include/droplet/srws/reqbuilder.h \
+	include/droplet/srws/srws.h

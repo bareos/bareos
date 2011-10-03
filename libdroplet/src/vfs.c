@@ -1296,6 +1296,8 @@ dpl_close_ex(dpl_vfile_t *vfile,
                 }
             }
         }
+
+      //XXX get resource id
     }
 
   if (NULL != vfile->headers_reply)

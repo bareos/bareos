@@ -193,5 +193,5 @@ enum dpl_duration_type dpl_pricing_duration_type(char *str);
 dpl_status_t dpl_pricing_parse(dpl_ctx_t *ctx, char *path);
 dpl_status_t dpl_pricing_load(dpl_ctx_t *ctx);
 void dpl_pricing_free(dpl_ctx_t *ctx);
-dpl_status_t dpl_log_charged_event(dpl_ctx_t *ctx, char *type, char *subtype, size_t size);
+dpl_status_t dpl_log_event(dpl_ctx_t *ctx, char *type, char *subtype, size_t size);
 #endif

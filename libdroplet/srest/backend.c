@@ -62,6 +62,8 @@ dpl_srest_post(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
   dpl_chunk_t   chunk;
+  dpl_var_t     *var;
+  char          *resource_id = NULL;
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -210,11 +212,32 @@ dpl_srest_post(dpl_ctx_t *ctx,
       connection_close = dpl_connection_close(ctx, headers_reply);
     }
 
-  (void) dpl_log_charged_event(ctx, "DATA", "IN", data_len);
+  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
+
+  //get resource_id
+  ret = dpl_dict_get_lowered(headers_reply, SCAL_SREST_X_SCALITY_ID, &var);
+  if (DPL_SUCCESS != ret)
+    goto end;
+
+  resource_id = strdup(var->value);
+  if (NULL == resource_id)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != resource_idp)
+    {
+      *resource_idp = resource_id;
+      resource_id = NULL;
+    }
 
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != resource_id)
+    free(resource_id);
 
   if (NULL != conn)
     {
@@ -385,7 +408,7 @@ dpl_srest_post_buffered(dpl_ctx_t *ctx,
         connection_close = dpl_connection_close(ctx, headers_reply);
     }
 
-  (void) dpl_log_charged_event(ctx, "DATA", "IN", data_len);
+  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
 
   if (NULL != connp)
     {
@@ -461,16 +484,10 @@ dpl_srest_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_set_resource(req, resource);
-  if (DPL_SUCCESS != ret2)
+  //on SREST the resource is the subresource
+  if (NULL != resource)
     {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != subresource)
-    {
-      ret2 = dpl_req_set_subresource(req, subresource);
+      ret2 = dpl_req_set_subresource(req, resource);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -563,7 +580,7 @@ dpl_srest_get(dpl_ctx_t *ctx,
       connection_close = dpl_connection_close(ctx, headers_reply);
     }
 
-  (void) dpl_log_charged_event(ctx, "DATA", "OUT", data_len);
+  (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
 
   if (NULL != data_bufp)
     {
@@ -705,16 +722,10 @@ dpl_srest_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_set_resource(req, resource);
-  if (DPL_SUCCESS != ret2)
+  //on SREST the resource is the subresource
+  if (NULL != resource)
     {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != subresource)
-    {
-      ret2 = dpl_req_set_subresource(req, subresource);
+      ret2 = dpl_req_set_subresource(req, resource);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -820,73 +831,6 @@ dpl_srest_get_buffered(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_srest_head_all(dpl_ctx_t *ctx,
-                  char *bucket,
-                  char *resource,
-                  char *subresource,
-                  dpl_ftype_t object_type,
-                  dpl_condition_t *condition,
-                  dpl_dict_t **metadatap)
-{
-  int ret, ret2;
-  char *md_buf = NULL;
-  u_int md_len;
-  dpl_dict_t *metadata = NULL;
-  
-  //fetch metadata from JSON content
-  ret2 = dpl_srest_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", object_type, condition, &md_buf, &md_len, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-  
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  ret2 = dpl_srest_parse_metadata(ctx, md_buf, md_len, metadata);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
-    }
-  
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
-  if (NULL != md_buf)
-    free(md_buf);
-  
-  return ret;
-}
-
-dpl_status_t
-dpl_srest_head(dpl_ctx_t *ctx,
-              char *bucket,
-              char *resource,
-              char *subresource,
-              dpl_ftype_t object_type,
-              dpl_condition_t *condition,
-              dpl_dict_t **metadatap)
-{
-  return DPL_ENOTSUPP;
-}
-
-dpl_status_t
 dpl_srest_delete(dpl_ctx_t *ctx,
                 char *bucket,
                 char *resource,
@@ -914,16 +858,10 @@ dpl_srest_delete(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_DELETE);
 
-  ret2 = dpl_req_set_resource(req, resource);
-  if (DPL_SUCCESS != ret2)
+  //on SREST the resource is the subresource
+  if (NULL != resource)
     {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != subresource)
-    {
-      ret2 = dpl_req_set_subresource(req, subresource);
+      ret2 = dpl_req_set_subresource(req, resource);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1002,7 +940,7 @@ dpl_srest_delete(dpl_ctx_t *ctx,
       connection_close = dpl_connection_close(ctx, headers_reply);
     }
 
-  (void) dpl_log_charged_event(ctx, "REQUEST", "DELETE", 0);
+  (void) dpl_log_event(ctx, "REQUEST", "DELETE", 0);
 
   ret = DPL_SUCCESS;
 

@@ -31,20 +31,11 @@
  *
  * https://github.com/scality/Droplet
  */
-#include "dropletp.h"
-#include <droplet/srest/srest.h>
+#ifndef __DROPLET_SRWS_H__
+#define __DROPLET_SRWS_H__ 1
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#include <droplet/srws/reqbuilder.h>
+#include <droplet/srws/replyparser.h>
+#include <droplet/srws/backend.h>
 
-dpl_backend_t
-dpl_backend_srest = 
-  {
-    "srest",
-    .post 		= dpl_srest_post,
-    .post_buffered	= dpl_srest_post_buffered,
-    .get 		= dpl_srest_get,
-    .get_buffered       = dpl_srest_get_buffered,
-    .delete 		= dpl_srest_delete,
-    .get_id_path        = dpl_srest_get_id_path,
-  };
+#endif
