@@ -825,6 +825,13 @@ dpl_s3_req_gen_url(dpl_req_t *req,
 
   DPL_APPEND_STR(host);
 
+  if (((1 == req->ctx->use_https) && (req->ctx->port != 443)) ||
+      ((0 == req->ctx->use_https) && (req->ctx->port != 80)))
+    {
+      snprintf(str, sizeof(str), ":%d", req->ctx->port);
+      DPL_APPEND_STR(str);
+    }
+  
   //resource
   if ('/' != req->resource[0])
     {
