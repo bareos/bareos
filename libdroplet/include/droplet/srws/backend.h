@@ -46,4 +46,6 @@ dpl_status_t dpl_srws_delete(dpl_ctx_t *ctx, char *bucket, char *resource, char 
 dpl_status_t dpl_srws_genurl(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
 dpl_status_t dpl_srws_get_id_path(dpl_ctx_t *ctx, char *bucket, char **id_pathp);
 dpl_status_t dpl_srws_gen_id_from_oid(dpl_ctx_t *ctx, uint64_t oid, dpl_storage_class_t storage_class, char **resource_idp);
+dpl_status_t dpl_srws_gen_key(BIGNUM *id, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
+dpl_status_t dpl_srws_set_class(BIGNUM *k, int class);
 #endif

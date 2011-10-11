@@ -1036,12 +1036,12 @@ dpl_srws_get_id_path(dpl_ctx_t *ctx,
 #define BIT_SET(bit)   (entropy[(bit)/NBBY] |= (1<<((bit)%NBBY)))
 #define BIT_CLEAR(bit) (entropy[(bit)/NBBY] &= ~(1<<((bit)%NBBY)))
 
-static dpl_status_t
-srws_gen_key(BIGNUM *id,
-             uint64_t oid,
-             uint32_t volid,
-             uint8_t serviceid,
-             uint32_t specific)
+dpl_status_t
+dpl_srws_gen_key(BIGNUM *id,
+                 uint64_t oid,
+                 uint32_t volid,
+                 uint8_t serviceid,
+                 uint32_t specific)
 {
   int off, i;
   MD5_CTX ctx;
@@ -1133,8 +1133,8 @@ srws_gen_key(BIGNUM *id,
 }
 
 dpl_status_t
-srws_set_class(BIGNUM *k,
-               int class)
+dpl_srws_set_class(BIGNUM *k,
+                   int class)
 {
   int i;
   
@@ -1169,7 +1169,7 @@ dpl_srws_gen_id_from_oid(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = srws_gen_key(bn, oid, 0, SRWS_SERVICE_ID_TEST, 0);
+  ret2 = dpl_srws_gen_key(bn, oid, 0, SRWS_SERVICE_ID_TEST, 0);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1187,7 +1187,7 @@ dpl_srws_gen_id_from_oid(dpl_ctx_t *ctx,
       break ;
     }
 
-  ret2 = srws_set_class(bn, class);
+  ret2 = dpl_srws_set_class(bn, class);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
