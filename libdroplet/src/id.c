@@ -560,13 +560,13 @@ dpl_delete_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
-  if (NULL == ctx->backend->delete)
+  if (NULL == ctx->backend->deletef)
     {
       ret = DPL_ENOTSUPP;
       goto end;
     }
   
-  ret = ctx->backend->delete(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF);
+  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF);
   
  end:
 

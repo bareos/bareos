@@ -598,13 +598,13 @@ dpl_delete(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "delete bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
-  if (NULL == ctx->backend->delete)
+  if (NULL == ctx->backend->deletef)
     {
       ret = DPL_ENOTSUPP;
       goto end;
     }
   
-  ret = ctx->backend->delete(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF);
+  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF);
   
  end:
 

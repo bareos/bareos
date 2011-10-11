@@ -48,7 +48,7 @@ dpl_backend_srws =
     .head 		= dpl_srws_head,
     .head_all 		= dpl_srws_head_all,
     .get_metadata_from_headers = dpl_srws_get_metadata_from_headers,
-    .delete 		= dpl_srws_delete,
+    .deletef 		= dpl_srws_delete,
     .get_id_path        = dpl_srws_get_id_path,
     .gen_id_from_oid    = dpl_srws_gen_id_from_oid,
   };

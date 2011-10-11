@@ -53,7 +53,7 @@ dpl_backend_s3 =
     .head 		= dpl_s3_head,
     .head_all 		= dpl_s3_head_all,
     .get_metadata_from_headers = dpl_s3_get_metadata_from_headers,
-    .delete 		= dpl_s3_delete,
+    .deletef 		= dpl_s3_delete,
     .genurl             = dpl_s3_genurl,
     .copy               = dpl_s3_copy,
   };

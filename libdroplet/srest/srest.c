@@ -45,6 +45,6 @@ dpl_backend_srest =
     .post_buffered	= dpl_srest_post_buffered,
     .get 		= dpl_srest_get,
     .get_buffered       = dpl_srest_get_buffered,
-    .delete 		= dpl_srest_delete,
+    .deletef 		= dpl_srest_delete,
     .get_id_path        = dpl_srest_get_id_path,
   };

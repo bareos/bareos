@@ -66,5 +66,6 @@
 #include <droplet/profile.h>
 #include <droplet/httpreply.h>
 #include <droplet/pricing.h>
+#include <droplet/backend.h>
 
 #endif

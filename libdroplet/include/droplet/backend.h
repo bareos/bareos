@@ -74,7 +74,7 @@ typedef struct dpl_backend_s
   dpl_head_all_t head_all;
   dpl_get_metadata_from_headers_t get_metadata_from_headers; /*!< broken by design since not all backends have metadata in headers */
   dpl_head_sysmd_t head_sysmd;
-  dpl_delete_t delete;
+  dpl_delete_t deletef;
   dpl_genurl_t genurl;
   dpl_copy_t copy;
   dpl_get_id_path_t get_id_path;
