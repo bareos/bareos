@@ -295,13 +295,6 @@ dpl_srest_post_buffered(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_POST);
 
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
   ret2 = dpl_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
@@ -476,13 +469,6 @@ dpl_srest_get(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_GET);
-
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
 
   //on SREST the resource is the subresource
   if (NULL != resource)
@@ -714,13 +700,6 @@ dpl_srest_get_buffered(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_GET);
-
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
 
   //on SREST the resource is the subresource
   if (NULL != resource)

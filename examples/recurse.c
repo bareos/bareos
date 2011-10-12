@@ -1,5 +1,5 @@
 /*
- * simple example which recurses a directory tree
+ * simple example which recurses a directory tree in using VFS abstraction
  */
 
 #include <droplet.h>

@@ -231,6 +231,12 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_GET);
 
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
     {
@@ -452,6 +458,12 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_PUT);
 
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
     {
@@ -633,6 +645,12 @@ dpl_s3_deletebucket(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_DELETE);
 
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
     {
@@ -774,6 +792,12 @@ dpl_s3_put(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_PUT);
+
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
 
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
@@ -950,6 +974,12 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_PUT);
+
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
 
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
@@ -1130,6 +1160,12 @@ dpl_s3_get(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_GET);
+
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
 
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
@@ -1327,6 +1363,12 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_GET);
+
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
 
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
@@ -1583,6 +1625,12 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_GET);
 
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
     {
@@ -1731,6 +1779,12 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_HEAD);
+
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
 
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
@@ -1936,6 +1990,12 @@ dpl_s3_delete(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_DELETE);
 
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
     {
@@ -2080,6 +2140,12 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_QUERY_STRING);
 
+  if (NULL == bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
   ret2 = dpl_req_set_bucket(req, bucket);
   if (DPL_SUCCESS != ret2)
     {
@@ -2174,6 +2240,12 @@ dpl_s3_copy(dpl_ctx_t *ctx,
 
   if (NULL != condition)
     dpl_req_set_copy_source_condition(req, condition);
+
+  if (NULL == src_bucket || NULL == dst_bucket)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
 
   ret2 = dpl_req_set_bucket(req, dst_bucket);
   if (DPL_SUCCESS != ret2)

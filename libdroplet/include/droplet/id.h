@@ -47,5 +47,6 @@ dpl_status_t dpl_head_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresour
 dpl_status_t dpl_head_all_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
 dpl_status_t dpl_head_sysmd_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource, dpl_condition_t *condition, dpl_sysmd_t *sysmdp, dpl_dict_t **metadatap);
 dpl_status_t dpl_delete_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource);
+dpl_status_t dpl_copy_id(dpl_ctx_t *ctx, char *src_bucket, char *src_id, char *src_subresource, char *dst_bucket, char *dst_id, char *dst_subresource, dpl_ftype_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_condition_t *condition);
 dpl_status_t dpl_gen_id_from_oid(dpl_ctx_t *ctx, uint64_t oid, dpl_storage_class_t storage_class, char **resource_idp);
 #endif

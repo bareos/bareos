@@ -31,18 +31,13 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SRWS_REPLYPARSER_H__
-#define __DROPLET_SRWS_REPLYPARSER_H__ 1
+#ifndef __DROPLET_NTINYDB_H__
+#define __DROPLET_NTINYDB_H__ 1
 
-#define SCAL_SRWS_X_BIZ_USERMD               "x-biz-usermd"
-#define SCAL_SRWS_X_BIZ_CMD                  "x-biz-cmd"
-#define SCAL_SRWS_UPDATEUSERMD               "updateusermd"
-#define SCAL_SRWS_X_BIZ_REPLICA_POLICY       "x-biz-replica-policy"
-#define SCAL_SRWS_LAZY                       "lazy"
-#define SCAL_SRWS_X_BIZ_DATA_HINT            "x-biz-data-hint"
-#define SCAL_SRWS_CACHED                     "cached"
+typedef int (*dpl_ntinydb_func_t)(char *key_ptr, int key_len, void *cb_arg);
 
-/* PROTO replyparser.c */
-/* src/replyparser.c */
-dpl_status_t dpl_srws_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
+/* PROTO ntinydb.c */
+dpl_status_t dpl_ntinydb_set(dpl_sbuf_t *blob, char *key, char *buf, int len);
+dpl_status_t dpl_ntinydb_get(char *buf, int len, char *key, char **data_returned, int *datalen_returned);
+dpl_status_t dpl_ntinydb_list(char *buf, int len, dpl_ntinydb_func_t cb_func, void *cb_arg);
 #endif

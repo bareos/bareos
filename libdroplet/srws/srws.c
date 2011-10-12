@@ -51,4 +51,5 @@ dpl_backend_srws =
     .deletef 		= dpl_srws_delete,
     .get_id_path        = dpl_srws_get_id_path,
     .gen_id_from_oid    = dpl_srws_gen_id_from_oid,
+    .copy               = dpl_srws_copy,
   };

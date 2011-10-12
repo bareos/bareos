@@ -48,4 +48,5 @@ dpl_status_t dpl_srws_get_id_path(dpl_ctx_t *ctx, char *bucket, char **id_pathp)
 dpl_status_t dpl_srws_gen_id_from_oid(dpl_ctx_t *ctx, uint64_t oid, dpl_storage_class_t storage_class, char **resource_idp);
 dpl_status_t dpl_srws_gen_key(BIGNUM *id, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
 dpl_status_t dpl_srws_set_class(BIGNUM *k, int class);
+dpl_status_t dpl_srws_copy(dpl_ctx_t *ctx, char *src_bucket, char *src_resource, char *src_subresource, char *dst_bucket, char *dst_resource, char *dst_subresource, dpl_ftype_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_condition_t *condition);
 #endif

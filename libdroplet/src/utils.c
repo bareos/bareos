@@ -466,6 +466,10 @@ dpl_hmac_sha1(char *key_buf,
   return digest_len;
 }
 
+/**/
+
+static const char *base = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
 /**
  * base64 encode
  *
@@ -475,13 +479,12 @@ dpl_hmac_sha1(char *key_buf,
  *
  * @return out_len
  */
-unsigned int
-dpl_base64_encode(const unsigned char *in_buf,
-                  unsigned int in_len,
-                  char *out_buf)
+u_int
+dpl_base64_encode(const u_char *in_buf,
+                  u_int in_len,
+                  u_char *out_buf)
 {
-  static const char *base = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  char *saved_out_buf = out_buf;
+  u_char *saved_out_buf = out_buf;
 
   while (in_len)
     {
@@ -512,6 +515,79 @@ dpl_base64_encode(const unsigned char *in_buf,
 
   return (out_buf - saved_out_buf);
 }
+
+static int 
+isbase64(char c)
+{
+  return c && strchr(base, c) != NULL;
+}
+
+static char 
+value(char c)
+{
+  const char *p = strchr(base, c);
+
+  if (p)
+    {
+      return p-base;
+    } 
+  else
+    {
+      return 0;
+    }
+}
+
+u_int 
+dpl_base64_decode(const u_char *in_buf,
+                  u_int in_len,
+                  u_char *out_buf)
+{
+  unsigned char *p = out_buf;
+
+  *out_buf = 0;
+  
+  if (*in_buf == 0) 
+    {
+      return 0;
+    }
+
+  do
+    {
+      char a = value(in_buf[0]);
+      char b = value(in_buf[1]);
+      char c = value(in_buf[2]);
+      char d = value(in_buf[3]);
+      *p++ = (a << 2) | (b >> 4);
+      *p++ = (b << 4) | (c >> 2);
+      *p++ = (c << 6) | d;
+      if(!isbase64(in_buf[1])) 
+        {
+          p -= 2;
+          break;
+        } 
+      else if (!isbase64(in_buf[2])) 
+        {
+          p -= 2;
+          break;
+        } 
+      else if (!isbase64(in_buf[3])) 
+        {
+          p--;
+          break;
+        }
+      in_buf += 4;
+
+      while (*in_buf && (*in_buf == 13 || *in_buf == 10)) 
+        in_buf++;
+    }
+  while (in_len-= 4);
+
+  *p = 0;
+  
+  return p - out_buf;
+}
+
+/**/
 
 /**
  * encode str into URL form. str_ue length must be at least strlen(str)*3+1
@@ -637,6 +713,26 @@ dpl_rand(char *buf, int len)
     }
 
   return DPL_SUCCESS;
+}
+
+uint64_t
+dpl_rand_u64(void)
+{
+  uint64_t random_val = 0xDEADBEEFBAADF00DLL;
+
+  dpl_rand((char *)&random_val, sizeof(random_val));
+
+  return random_val;
+}
+
+uint32_t
+dpl_rand_u32(void)
+{
+  uint32_t random_val = 0xDEADBEEF;
+
+  dpl_rand((char *)&random_val, sizeof(random_val));
+
+  return random_val;
 }
 
 /**/

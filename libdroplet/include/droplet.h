@@ -341,6 +341,7 @@ typedef struct
 #define DPL_BEHAVIOR_QUERY_STRING (1u<<4)     /*!< Build a query string instead of a request */
 #define DPL_BEHAVIOR_COPY         (1u<<5)     /*!< It is a server side copy request */
 #define DPL_BEHAVIOR_HTTP_COMPAT  (1u<<6)     /*!< Use the HTTP compatibility mode */
+#define DPL_BEHAVIOR_MDONLY       (1u<<7)     /*!< Some REST server like it this way */
   unsigned int behavior_flags;
 
   dpl_method_t method;

@@ -33,9 +33,63 @@
  */
 #include "dropletp.h"
 #include <droplet/srws/reqbuilder.h>
+#include <droplet/srws/replyparser.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
+
+static dpl_status_t
+add_metadata_to_headers(dpl_dict_t *metadata,
+                        dpl_dict_t *headers)
+
+{
+  int bucket;
+  dpl_var_t *var;
+  int ret;
+  dpl_sbuf_t *sbuf = NULL;
+  char *usermd = NULL;
+  int usermd_len;
+
+  sbuf = dpl_sbuf_new(2);
+  if (NULL == sbuf)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  for (bucket = 0;bucket < metadata->n_buckets;bucket++)
+    {
+      for (var = metadata->buckets[bucket];var;var = var->prev)
+        {
+          ret = dpl_ntinydb_set(sbuf, var->key, var->value, strlen(var->value));
+          if (DPL_SUCCESS != ret)
+            {
+              ret = DPL_FAILURE;
+              goto end;
+            }
+        }
+    }
+  
+  usermd = alloca(DPL_BASE64_LENGTH(sbuf->len) + 1);
+
+  usermd_len = dpl_base64_encode((u_char *) sbuf->buf, sbuf->len, (u_char *) usermd);
+  usermd[usermd_len] = 0;
+
+  ret = dpl_dict_add(headers, SCAL_SRWS_X_BIZ_USERMD, usermd, 0);
+  if (DPL_SUCCESS != ret)
+    {
+      return DPL_FAILURE;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+  
+  if (NULL != sbuf)
+    dpl_sbuf_free(sbuf);
+
+  return ret;
+}
 
 /**
  * build headers from request
@@ -66,18 +120,22 @@ dpl_srws_req_build(dpl_req_t *req,
   /*
    * per method headers
    */
-  if (DPL_METHOD_GET == req->method)
+  if (DPL_METHOD_GET == req->method ||
+      DPL_METHOD_HEAD == req->method)
     {
       //XXX ranges, conditions
     }
   else if (DPL_METHOD_PUT == req->method)
     {
-      snprintf(buf, sizeof (buf), "%u", req->chunk->len);
-      ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
-      if (DPL_SUCCESS != ret2)
+      if (NULL != req->chunk)
         {
-          ret = DPL_ENOMEM;
-          goto end;
+          snprintf(buf, sizeof (buf), "%u", req->chunk->len);
+          ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
         }
 
       if (req->behavior_flags & DPL_BEHAVIOR_EXPECT)
@@ -90,6 +148,22 @@ dpl_srws_req_build(dpl_req_t *req,
             }
         }
 
+      ret2 = add_metadata_to_headers(req->metadata, headers);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      if (req->behavior_flags & DPL_BEHAVIOR_MDONLY)
+        {
+          ret2 = dpl_dict_add(headers, SCAL_SRWS_X_BIZ_CMD, SCAL_SRWS_UPDATEUSERMD, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+        }
     }
   else if (DPL_METHOD_DELETE == req->method)
     {

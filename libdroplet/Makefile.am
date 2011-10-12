@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libdroplet.la
 
 libdroplet_la_LDFLAGS = $(LIBXML_LIBS) $(JSON_LIBS) $(OPENSSL_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined
-libdroplet_la_CFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS) #-Werror -Wall
+libdroplet_la_CFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS) -Werror -Wall
 
 libdroplet_la_SOURCES = \
 	src/conn.c \
@@ -14,6 +14,8 @@ libdroplet_la_SOURCES = \
 	src/profile.c \
 	src/req.c \
 	src/vec.c \
+	src/sbuf.c \
+	src/ntinydb.c \
 	src/utils.c \
 	src/rest.c \
 	src/id.c \
@@ -51,6 +53,8 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/profile.h \
 	include/droplet/req.h \
 	include/droplet/vec.h \
+	include/droplet/sbuf.h \
+	include/droplet/ntinydb.h \
 	include/droplet/utils.h \
 	include/droplet/backend.h \
 	include/droplet/rest.h \

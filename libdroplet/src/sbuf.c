@@ -31,18 +31,66 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SRWS_REPLYPARSER_H__
-#define __DROPLET_SRWS_REPLYPARSER_H__ 1
+#include "dropletp.h"
 
-#define SCAL_SRWS_X_BIZ_USERMD               "x-biz-usermd"
-#define SCAL_SRWS_X_BIZ_CMD                  "x-biz-cmd"
-#define SCAL_SRWS_UPDATEUSERMD               "updateusermd"
-#define SCAL_SRWS_X_BIZ_REPLICA_POLICY       "x-biz-replica-policy"
-#define SCAL_SRWS_LAZY                       "lazy"
-#define SCAL_SRWS_X_BIZ_DATA_HINT            "x-biz-data-hint"
-#define SCAL_SRWS_CACHED                     "cached"
+dpl_sbuf_t *
+dpl_sbuf_new(int size)
+{
+  dpl_sbuf_t *sb = NULL;
 
-/* PROTO replyparser.c */
-/* src/replyparser.c */
-dpl_status_t dpl_srws_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
-#endif
+  sb = malloc(sizeof(dpl_sbuf_t));
+  if (NULL == sb)
+    {
+      return NULL;
+    }
+
+  sb->buf=malloc(size);
+  if (NULL == sb->buf)
+    {
+      free(sb);
+      return NULL;
+    }
+  
+  sb->len=0;
+  sb->allocated=size;
+
+  return sb;
+}
+
+dpl_status_t
+dpl_sbuf_add(dpl_sbuf_t *sb, char *buf, int len)
+{
+  if (sb->len+len > sb->allocated)
+    {
+      char *tmp = NULL;
+
+      tmp = realloc(sb->buf, sb->len+len);
+      if (NULL == tmp)
+	{
+	  return DPL_FAILURE;
+	}
+
+      sb->buf = tmp;
+      sb->allocated = sb->len+len;
+    }
+
+  memcpy(&sb->buf[sb->len], buf, len);
+  sb->len = sb->len+len;
+
+  return DPL_SUCCESS;
+}
+
+void 
+dpl_sbuf_free(dpl_sbuf_t *sb)
+{
+  free(sb->buf);
+  free(sb);
+
+  return;
+}
+
+void
+dpl_sbuf_print(dpl_sbuf_t *sb)
+{
+  printf("%.*s", sb->len, sb->buf);
+}

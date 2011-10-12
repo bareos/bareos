@@ -196,7 +196,10 @@ struct dpl_conf_ctx
 
 /**/
 
-#define DPL_BASE64_LENGTH(len) (4 * (((len) + 2) / 3))
+//overkill: #define DPL_BASE64_LENGTH(len) (4 * (((len) + 2) / 3))
+#define DPL_BASE64_LENGTH(len) (((len) - 1) * 4 / 3 + 2)
+#define DPL_BASE64_ORIG_LENGTH(len) ((((len) - 1) * 3) / 4 + 1)
+
 #define DPL_URL_LENGTH(len) ((len)*3+1)
 #define DPL_BCD_LENGTH(len) (2*(len))
 
@@ -238,12 +241,15 @@ char *dpl_strrstr(const char *haystack, const char *needle);
 void test_strrstr(void);
 void dpl_strlower(char *str);
 unsigned int dpl_hmac_sha1(char *key_buf, unsigned int key_len, char *data_buf, unsigned int data_len, char *digest_buf);
-unsigned int dpl_base64_encode(const unsigned char *in_buf, unsigned int in_len, char *out_buf);
+u_int dpl_base64_encode(const u_char *in_buf, u_int in_len, u_char *out_buf);
+u_int dpl_base64_decode(const u_char *in_buf, u_int in_len, u_char *out_buf);
 void dpl_url_encode(char *str, char *str_ue);
 void dpl_url_encode_no_slashes(char *str, char *str_ue);
 void dpl_url_decode(char *str);
 unsigned int dpl_bcd_encode(unsigned char *in_buf, unsigned int in_len, char *out_buf);
 dpl_status_t dpl_rand(char *buf, int len);
+uint64_t dpl_rand_u64(void);
+uint32_t dpl_rand_u32(void);
 dpl_status_t dpl_uuid_rand(dpl_uuid_t *uuid);
 void dpl_uuid_tostr(dpl_uuid_t *uuid, char *ostr);
 #endif

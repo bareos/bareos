@@ -579,6 +579,71 @@ dpl_delete_id(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
+dpl_copy_id(dpl_ctx_t *ctx,
+            char *src_bucket,
+            char *src_id,
+            char *src_subresource,
+            char *dst_bucket,
+            char *dst_id,
+            char *dst_subresource,
+            dpl_ftype_t object_type,
+            dpl_metadata_directive_t metadata_directive,
+            dpl_dict_t *metadata,
+            dpl_sysmd_t *sysmd,
+            dpl_condition_t *condition)
+{
+  int ret;
+  char *src_id_path = NULL;
+  char *dst_id_path = NULL;
+  char src_resource[DPL_MAXPATHLEN];
+  char dst_resource[DPL_MAXPATHLEN];
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "copy src_bucket=%s src_id=%s src_subresource=%s dst_bucket=%s dst_id=%s dst_subresource=%s", src_bucket, src_id, src_subresource, dst_bucket, dst_id, dst_subresource);
+
+  if (NULL == ctx->backend->get_id_path)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->get_id_path(ctx, src_bucket, &src_id_path);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  snprintf(src_resource, sizeof (src_resource), "%s%s", src_id_path ? src_id_path : "", src_id);
+
+  ret = ctx->backend->get_id_path(ctx, dst_bucket, &dst_id_path);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  snprintf(dst_resource, sizeof (dst_resource), "%s%s", dst_id_path ? dst_id_path : "", dst_id);
+
+  if (NULL == ctx->backend->copy)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, metadata_directive, metadata, sysmd, condition);
+  
+ end:
+
+  if (NULL != dst_id_path)
+    free(dst_id_path);
+
+  if (NULL != src_id_path)
+    free(src_id_path);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
 dpl_gen_id_from_oid(dpl_ctx_t *ctx,
                     uint64_t oid,
                     dpl_storage_class_t storage_class,

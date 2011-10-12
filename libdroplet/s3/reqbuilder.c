@@ -385,7 +385,7 @@ add_authorization_to_headers(dpl_req_t *req,
 
   hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
 
-  base64_len = dpl_base64_encode((u_char *) hmac_str, hmac_len, base64_str);
+  base64_len = dpl_base64_encode((u_char *) hmac_str, hmac_len, (u_char *) base64_str);
 
   snprintf(auth_str, sizeof (auth_str), "AWS %s:%.*s", req->ctx->access_key, base64_len, base64_str);
 
@@ -561,7 +561,7 @@ dpl_s3_req_build(dpl_req_t *req,
           MD5_Update(&ctx, req->chunk->buf, req->chunk->len);
           MD5_Final(digest, &ctx);
 
-          b64_digest_len = dpl_base64_encode(digest, MD5_DIGEST_LENGTH, b64_digest);
+          b64_digest_len = dpl_base64_encode(digest, MD5_DIGEST_LENGTH, (u_char *) b64_digest);
           b64_digest[b64_digest_len] = 0;
 
           ret2 = dpl_dict_add(headers, "Content-MD5", b64_digest, 0);
@@ -865,7 +865,7 @@ dpl_s3_req_gen_url(dpl_req_t *req,
 
   hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
 
-  base64_len = dpl_base64_encode((u_char *) hmac_str, hmac_len, base64_str);
+  base64_len = dpl_base64_encode((u_char *) hmac_str, hmac_len, (u_char *) base64_str);
 
   base64_str[base64_len] = 0; //XXX
 

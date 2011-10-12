@@ -39,15 +39,16 @@
 #define DPRINTF(fmt,...)
 
 dpl_status_t
-dpl_srws_put(dpl_ctx_t *ctx,
-             char *bucket,
-             char *resource,
-             char *subresource,
-             dpl_ftype_t object_type,
-             dpl_dict_t *metadata,
-             dpl_sysmd_t *sysmd,
-             char *data_buf,
-             unsigned int data_len)
+dpl_srws_put_internal(dpl_ctx_t *ctx,
+                      char *bucket,
+                      char *resource,
+                      char *subresource,
+                      dpl_ftype_t object_type,
+                      dpl_dict_t *metadata,
+                      dpl_sysmd_t *sysmd,
+                      char *data_buf,
+                      unsigned int data_len,
+                      int mdonly)
 {
   char          *host;
   int           ret, ret2;
@@ -93,11 +94,18 @@ dpl_srws_put(dpl_ctx_t *ctx,
 
   dpl_req_set_object_type(req, object_type);
 
-  if (NULL != data_buf)
+  if (mdonly)
     {
-      chunk.buf = data_buf;
-      chunk.len = data_len;
-      dpl_req_set_chunk(req, &chunk);
+      dpl_req_add_behavior(req, DPL_BEHAVIOR_MDONLY);
+    }
+  else
+    {
+      if (NULL != data_buf)
+        {
+          chunk.buf = data_buf;
+          chunk.len = data_len;
+          dpl_req_set_chunk(req, &chunk);
+        }
     }
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
@@ -131,14 +139,6 @@ dpl_srws_put(dpl_ctx_t *ctx,
   if (NULL == conn)
     {
       ret = DPL_FAILURE;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
       goto end;
     }
 
@@ -222,6 +222,21 @@ dpl_srws_put(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
+dpl_srws_put(dpl_ctx_t *ctx,
+             char *bucket,
+             char *resource,
+             char *subresource,
+             dpl_ftype_t object_type,
+             dpl_dict_t *metadata,
+             dpl_sysmd_t *sysmd,
+             char *data_buf,
+             unsigned int data_len)
+{
+  return dpl_srws_put_internal(ctx, bucket, resource, subresource,
+                               object_type, metadata, sysmd, data_buf, data_len, 0);
+}
+
+dpl_status_t
 dpl_srws_put_buffered(dpl_ctx_t *ctx,
                       char *bucket,
                       char *resource,
@@ -253,13 +268,6 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_PUT);
-
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
 
   ret2 = dpl_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
@@ -319,14 +327,6 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
   if (NULL == conn)
     {
       ret = DPL_FAILURE;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
       goto end;
     }
 
@@ -446,13 +446,6 @@ dpl_srws_get(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_GET);
 
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
   ret2 = dpl_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
@@ -553,6 +546,13 @@ dpl_srws_get(dpl_ctx_t *ctx,
   else
     {
       connection_close = dpl_connection_close(ctx, headers_reply);
+
+      ret2 = dpl_srws_get_metadata_from_headers(headers_reply, metadata);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
     }
 
   (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
@@ -690,13 +690,6 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_GET);
 
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
   ret2 = dpl_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
@@ -812,27 +805,58 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_srws_head_all(dpl_ctx_t *ctx,
+dpl_srws_head_gen(dpl_ctx_t *ctx,
                   char *bucket,
                   char *resource,
                   char *subresource,
-                  dpl_ftype_t object_type,
                   dpl_condition_t *condition,
+                  int all_headers,
                   dpl_dict_t **metadatap)
 {
-  int ret, ret2;
-  char *md_buf = NULL;
-  u_int md_len;
-  dpl_dict_t *metadata = NULL;
-  
-  //fetch metadata from JSON content
-  ret2 = dpl_srws_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", object_type, condition, &md_buf, &md_len, NULL);
-  if (DPL_SUCCESS != ret2)
+  char          *host;
+  int           ret, ret2;
+  dpl_conn_t   *conn = NULL;
+  char          header[1024];
+  u_int         header_len;
+  struct iovec  iov[10];
+  int           n_iov = 0;
+  int           connection_close = 0;
+  dpl_dict_t    *headers_request = NULL;
+  dpl_dict_t    *headers_reply = NULL;
+  dpl_dict_t    *metadata = NULL;
+  dpl_req_t     *req = NULL;
+
+  req = dpl_req_new(ctx);
+  if (NULL == req)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
-  
+
+  dpl_req_set_method(req, DPL_METHOD_HEAD);
+
+  ret2 = dpl_req_set_resource(req, resource);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != subresource)
+    {
+      ret2 = dpl_req_set_subresource(req, subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  if (NULL != condition)
+    {
+      dpl_req_set_condition(req, condition);
+    }
+
   metadata = dpl_dict_new(13);
   if (NULL == metadata)
     {
@@ -840,42 +864,147 @@ dpl_srws_head_all(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_srws_parse_metadata(ctx, md_buf, md_len, metadata);
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  //build request
+  ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = ret2;
+      ret = DPL_FAILURE;
       goto end;
     }
+
+  host = dpl_dict_get_value(headers_request, "Host");
+  if (NULL == host)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  conn = dpl_conn_open_host(ctx, host, ctx->port);
+  if (NULL == conn)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  iov[n_iov].iov_base = header;
+  iov[n_iov].iov_len = header_len;
+  n_iov++;
+
+  //final crlf
+  iov[n_iov].iov_base = "\r\n";
+  iov[n_iov].iov_len = 2;
+  n_iov++;
+
+  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPLERR(1, "writev failed");
+      connection_close = 1;
+      ret = DPL_ENOENT; //mapped to 404
+      goto end;
+    }
+
+  ret2 = dpl_read_http_reply(conn, 0, NULL, NULL, &headers_reply);
+  if (DPL_SUCCESS != ret2)
+    {
+      if (DPL_ENOENT == ret2)
+        {
+          ret = DPL_ENOENT;
+          goto end;
+        }
+      else
+        {
+          DPLERR(0, "read http answer failed");
+          connection_close = 1;
+          ret = DPL_ENOENT; //mapped to 404
+          goto end;
+        }
+    }
+  else
+    {
+      connection_close = dpl_connection_close(ctx, headers_reply);
+
+      if (all_headers)
+        ret2 = dpl_dict_copy(metadata, headers_reply);
+      else
+        ret2 = dpl_srws_get_metadata_from_headers(headers_reply, metadata);
+
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+    }
+
+  (void) dpl_log_event(ctx, "REQUEST", "HEAD", 0);
 
   if (NULL != metadatap)
     {
       *metadatap = metadata;
-      metadata = NULL;
+      metadata = NULL; //consume it
     }
-  
+
   ret = DPL_SUCCESS;
-  
+
  end:
+
+  if (NULL != conn)
+    {
+      if (1 == connection_close)
+        dpl_conn_terminate(conn);
+      else
+        dpl_conn_release(conn);
+    }
 
   if (NULL != metadata)
     dpl_dict_free(metadata);
 
-  if (NULL != md_buf)
-    free(md_buf);
-  
+  if (NULL != headers_reply)
+    dpl_dict_free(headers_reply);
+
+  if (NULL != headers_request)
+    dpl_dict_free(headers_request);
+
+  if (NULL != req)
+    dpl_req_free(req);
+
+  DPRINTF("ret=%d\n", ret);
+
   return ret;
 }
 
 dpl_status_t
 dpl_srws_head(dpl_ctx_t *ctx,
-              char *bucket,
-              char *resource,
-              char *subresource,
-              dpl_ftype_t object_type,
-              dpl_condition_t *condition,
-              dpl_dict_t **metadatap)
+            char *bucket,
+            char *resource,
+            char *subresource,
+            dpl_ftype_t object_type,
+            dpl_condition_t *condition,
+            dpl_dict_t **metadatap)
 {
-  return DPL_ENOTSUPP;
+  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 0, metadatap);
+}
+
+dpl_status_t
+dpl_srws_head_all(dpl_ctx_t *ctx,
+                char *bucket,
+                char *resource,
+                char *subresource,
+                dpl_ftype_t object_type,
+                dpl_condition_t *condition,
+                dpl_dict_t **metadatap)
+{
+  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap);
 }
 
 dpl_status_t
@@ -1217,5 +1346,51 @@ dpl_srws_gen_id_from_oid(dpl_ctx_t *ctx,
   if (NULL != bn)
     BN_free(bn);
   
+  return ret;
+}
+
+dpl_status_t
+dpl_srws_copy(dpl_ctx_t *ctx,
+              char *src_bucket,
+              char *src_resource,
+              char *src_subresource,
+              char *dst_bucket,
+              char *dst_resource,
+              char *dst_subresource,
+              dpl_ftype_t object_type,
+              dpl_metadata_directive_t metadata_directive,
+              dpl_dict_t *metadata,
+              dpl_sysmd_t *sysmd,
+              dpl_condition_t *condition)
+{
+  int ret, ret2;
+
+  switch (metadata_directive)
+    {
+    case DPL_METADATA_DIRECTIVE_UNDEF:
+      ret = DPL_ENOTSUPP;
+      goto end;
+    case DPL_METADATA_DIRECTIVE_COPY:
+      ret = DPL_ENOTSUPP;
+      goto end;
+    case DPL_METADATA_DIRECTIVE_REPLACE:
+
+      //replace the metadata
+      ret2 = dpl_srws_put_internal(ctx, dst_bucket, dst_resource,
+                                   dst_subresource, object_type, metadata, 
+                                   DPL_CANNED_ACL_UNDEF, NULL, 0, 1);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      break ;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
   return ret;
 }

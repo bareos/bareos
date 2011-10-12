@@ -31,18 +31,19 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SRWS_REPLYPARSER_H__
-#define __DROPLET_SRWS_REPLYPARSER_H__ 1
+#ifndef __DROPLET_SBUF_H__
+#define __DROPLET_SBUF_H__ 1
 
-#define SCAL_SRWS_X_BIZ_USERMD               "x-biz-usermd"
-#define SCAL_SRWS_X_BIZ_CMD                  "x-biz-cmd"
-#define SCAL_SRWS_UPDATEUSERMD               "updateusermd"
-#define SCAL_SRWS_X_BIZ_REPLICA_POLICY       "x-biz-replica-policy"
-#define SCAL_SRWS_LAZY                       "lazy"
-#define SCAL_SRWS_X_BIZ_DATA_HINT            "x-biz-data-hint"
-#define SCAL_SRWS_CACHED                     "cached"
+typedef struct
+{
+  char *buf;
+  int  len;
+  int  allocated;
+} dpl_sbuf_t;
 
-/* PROTO replyparser.c */
-/* src/replyparser.c */
-dpl_status_t dpl_srws_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
+/* PROTO sbuf.c */
+dpl_sbuf_t *dpl_sbuf_new(int size);
+dpl_status_t dpl_sbuf_add(dpl_sbuf_t *sb, char *buf, int len);
+void dpl_sbuf_free(dpl_sbuf_t *sb);
+void dpl_sbuf_print(dpl_sbuf_t *sb);
 #endif

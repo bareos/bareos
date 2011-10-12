@@ -67,5 +67,7 @@
 #include <droplet/httpreply.h>
 #include <droplet/pricing.h>
 #include <droplet/backend.h>
+#include <droplet/sbuf.h>
+#include <droplet/ntinydb.h>
 
 #endif

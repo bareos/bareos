@@ -96,9 +96,10 @@ add_data_to_json_body(dpl_chunk_t *chunk,
   int base64_len;
 
   //encode body to base64
-  base64_str = alloca(DPL_BASE64_LENGTH(chunk->len));
-  base64_len = dpl_base64_encode((u_char *) chunk->buf, chunk->len, base64_str);
-  
+  base64_str = alloca(DPL_BASE64_LENGTH(chunk->len) + 1);
+  base64_len = dpl_base64_encode((u_char *) chunk->buf, chunk->len, (u_char *) base64_str);
+  base64_str[base64_len] = 0;
+
   data_obj = json_object_new_string(base64_str);
   if (NULL == data_obj)
     {
@@ -134,7 +135,7 @@ add_authorization_to_headers(dpl_req_t *req,
   snprintf(basic_str, sizeof (basic_str), "%s:%s", req->ctx->access_key, req->ctx->secret_key);
   basic_len = strlen(basic_str);
 
-  base64_len = dpl_base64_encode((u_char *) basic_str, basic_len, base64_str);
+  base64_len = dpl_base64_encode((u_char *) basic_str, basic_len, (u_char *) base64_str);
 
   snprintf(auth_str, sizeof (auth_str), "Basic %.*s", base64_len, base64_str);
 

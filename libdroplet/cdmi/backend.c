@@ -460,11 +460,14 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_POST);
 
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
+  if (NULL != bucket)
     {
-      ret = ret2;
-      goto end;
+      ret2 = dpl_req_set_bucket(req, bucket);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
 
   ret2 = dpl_req_set_resource(req, resource);
@@ -838,11 +841,14 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_PUT);
 
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
+  if (NULL != bucket)
     {
-      ret = ret2;
-      goto end;
+      ret2 = dpl_req_set_bucket(req, bucket);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
 
   ret2 = dpl_req_set_resource(req, resource);
@@ -1030,11 +1036,14 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_GET);
 
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
+  if (NULL != bucket)
     {
-      ret = ret2;
-      goto end;
+      ret2 = dpl_req_set_bucket(req, bucket);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
 
   ret2 = dpl_req_set_resource(req, resource);
@@ -1290,11 +1299,14 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_GET);
 
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
+  if (NULL != bucket)
     {
-      ret = ret2;
-      goto end;
+      ret2 = dpl_req_set_bucket(req, bucket);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
 
   ret2 = dpl_req_set_resource(req, resource);
