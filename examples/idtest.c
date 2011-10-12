@@ -21,6 +21,9 @@ main(int argc,
   dpl_dict_t *metadata_returned = NULL;
   dpl_dict_t *metadata2_returned = NULL;
   dpl_var_t *metadatum = NULL;
+  dpl_condition_t condition;
+
+  memset(&condition, 0, sizeof (condition));
 
   if (2 != argc)
     {
@@ -110,12 +113,14 @@ main(int argc,
 
   fprintf(stderr, "getting object+MD\n");
 
+  condition.mask = DPL_CONDITION_LAZY; //enable this for faster GETs
+
   ret = dpl_get_id(ctx,           //the context
                    NULL,          //no bucket
                    id,            //the key
                    NULL,          //no subresource
                    DPL_FTYPE_REG, //object type
-                   NULL,          //no condition
+                   &condition,          //condition of operation
                    &data_buf_returned,  //data object
                    &data_len_returned,  //data object length
                    &metadata_returned); //metadata

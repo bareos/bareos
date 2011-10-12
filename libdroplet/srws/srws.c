@@ -44,6 +44,7 @@ dpl_backend_srws =
     .put 		= dpl_srws_put,
     .put_buffered	= dpl_srws_put_buffered,
     .get 		= dpl_srws_get,
+    .get_range          = dpl_srws_get_range,
     .get_buffered       = dpl_srws_get_buffered,
     .head 		= dpl_srws_head,
     .head_all 		= dpl_srws_head_all,

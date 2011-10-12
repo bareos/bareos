@@ -123,7 +123,23 @@ dpl_srws_req_build(dpl_req_t *req,
   if (DPL_METHOD_GET == req->method ||
       DPL_METHOD_HEAD == req->method)
     {
-      //XXX ranges, conditions
+      ret2 = dpl_add_ranges_to_headers(req->ranges, req->n_ranges, headers);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      if (req->condition.mask & DPL_CONDITION_LAZY)      
+        {
+          ret2 = dpl_dict_add(headers, SCAL_SRWS_X_BIZ_REPLICA_POLICY, SCAL_SRWS_LAZY, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+        }
+
     }
   else if (DPL_METHOD_PUT == req->method)
     {

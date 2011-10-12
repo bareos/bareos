@@ -39,6 +39,7 @@
 dpl_status_t dpl_srws_put(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len);
 dpl_status_t dpl_srws_put_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp);
 dpl_status_t dpl_srws_get(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_srws_get_range(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
 dpl_status_t dpl_srws_get_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
 dpl_status_t dpl_srws_head(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_dict_t **metadatap);
 dpl_status_t dpl_srws_head_all(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_dict_t **metadatap);

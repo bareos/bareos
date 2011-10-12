@@ -137,64 +137,6 @@ add_condition_to_headers(dpl_condition_t *condition,
   return DPL_SUCCESS;
 }
 
-static dpl_status_t
-add_ranges_to_headers(dpl_range_t *ranges,
-                      int n_ranges,
-                      dpl_dict_t *headers)
-{
-  int ret;
-  int i;
-  char buf[1024];
-  int len = sizeof (buf);
-  char *p;
-  int first = 1;
-
-  p = buf;
-
-  if (0 != n_ranges)
-    {
-      DPL_APPEND_STR("bytes=");
-
-      for (i = 0;i < n_ranges;i++)
-        {
-          char str[128];
-
-          if (1 == first)
-            first = 0;
-          else
-            DPL_APPEND_STR(",");
-
-          if (DPL_UNDEF == ranges[i].start && DPL_UNDEF == ranges[i].end)
-            return DPL_EINVAL;
-          else if (DPL_UNDEF == ranges[i].start)
-            {
-              snprintf(str, sizeof (str), "-%d", ranges[i].end);
-              DPL_APPEND_STR(str);
-            }
-          else if (DPL_UNDEF == ranges[i].end)
-            {
-              snprintf(str, sizeof (str), "%d-", ranges[i].start);
-              DPL_APPEND_STR(str);
-            }
-          else
-            {
-              snprintf(str, sizeof (str), "%d-%d", ranges[i].start, ranges[i].end);
-              DPL_APPEND_STR(str);
-            }
-        }
-
-      DPL_APPEND_CHAR(0);
-
-      ret = dpl_dict_add(headers, "Range", buf, 0);
-      if (DPL_SUCCESS != ret)
-        {
-          return DPL_FAILURE;
-        }
-    }
-
-  return DPL_SUCCESS;
-}
-
 static int
 var_cmp(const void *p1,
         const void *p2)
@@ -498,7 +440,7 @@ dpl_s3_req_build(dpl_req_t *req,
   if (DPL_METHOD_GET == req->method ||
       DPL_METHOD_HEAD == req->method)
     {
-      ret2 = add_ranges_to_headers(req->ranges, req->n_ranges, headers);
+      ret2 = dpl_add_ranges_to_headers(req->ranges, req->n_ranges, headers);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;

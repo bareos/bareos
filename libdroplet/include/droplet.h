@@ -162,6 +162,7 @@ typedef enum
     DPL_SYSMD_MASK_CTIME         = (1u<<5),
     DPL_SYSMD_MASK_MD5           = (1u<<6),
     DPL_SYSMD_MASK_LOCATION_CONSTRAINT = (1u<<8),
+    DPL_SYSMD_MASK_LAZY          = (1u<<9), /*!< lazy operation */
   } dpl_sysmd_mask_t;
 
 typedef struct
@@ -185,6 +186,7 @@ typedef struct
 #define DPL_CONDITION_IF_UNMODIFIED_SINCE (1u<<1)
 #define DPL_CONDITION_IF_MATCH            (1u<<2)
 #define DPL_CONDITION_IF_NONE_MATCH       (1u<<3)
+#define DPL_CONDITION_LAZY                (1u<<4) /*!< perform a lazy operation */
   unsigned int mask;
   time_t time;
   char etag[MD5_DIGEST_LENGTH];

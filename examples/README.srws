@@ -8,7 +8,7 @@
    $ ./srwskey 
    3AC98E00000000379EB6F79FD019F70000000010
 
-4) Launch idtest
+4) Launch idtest or idrangetest
 
    $ ./idtest 3AC98E00000000379EB6F79FD019F70000000010
    setting object+MD
