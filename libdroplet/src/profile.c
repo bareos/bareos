@@ -808,6 +808,8 @@ dpl_profile_free(dpl_ctx_t *ctx)
    */
   if (NULL != ctx->host)
     free(ctx->host);
+  if (NULL != ctx->base_path)
+    free(ctx->base_path);
   if (NULL != ctx->access_key)
     free(ctx->access_key);
   if (NULL != ctx->secret_key)
