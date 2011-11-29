@@ -223,7 +223,7 @@ struct dpl_conf_ctx
 
 /**/
 
-#define DPL_TRACE(ctx, level, format, ...) do {if (ctx->trace_level & level) dpl_trace(ctx, level, __FILE__, __LINE__, format, ##__VA_ARGS__  );} while (0)
+#define DPL_TRACE(ctx, level, format, ...) do {if (ctx->trace_level & level) dpl_trace(ctx, level, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__  );} while (0)
 
 /* PROTO utils.c */
 /* src/utils.c */
@@ -233,7 +233,7 @@ void dpl_dump_init(struct dpl_dump_ctx *ctx);
 void dpl_dump_line(struct dpl_dump_ctx *ctx, unsigned int off, unsigned char *b, unsigned int l);
 void dpl_dump(struct dpl_dump_ctx *ctx, char *buf, int len);
 void dpl_dump_simple(char *buf, int len);
-void dpl_trace(dpl_ctx_t *ctx, unsigned int level, char *file, int lineno, char *fmt, ...);
+void dpl_trace(dpl_ctx_t *ctx, unsigned int level, char *file, const char *func, int lineno, char *fmt, ...);
 size_t dpl_iov_size(struct iovec *iov, int n_iov);
 void dpl_iov_dump(struct iovec *iov, int n_iov, size_t n_bytes);
 time_t dpl_iso8601totime(const char *str);

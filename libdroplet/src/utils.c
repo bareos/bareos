@@ -247,6 +247,7 @@ void
 dpl_trace(dpl_ctx_t *ctx,
           unsigned int level,
           char *file,
+          const char *func,
           int lineno,
           char *fmt,
           ...)
@@ -259,9 +260,9 @@ dpl_trace(dpl_ctx_t *ctx,
   va_end(args);
 
   if (NULL != ctx->trace_func)
-    ctx->trace_func(gettid(), level, file, lineno, buf);
+    ctx->trace_func(gettid(), level, file, func, lineno, buf);
   else
-    fprintf(stderr, "trace: %ld: [%x] file %s, line %d: %s\n", (long int) gettid(), level, file, lineno, buf);
+    fprintf(stderr, "trace: %ld: [%x] %s:%s:%d: %s\n", (long int) gettid(), level, file, func, lineno, buf);
 }
 
 /**/
