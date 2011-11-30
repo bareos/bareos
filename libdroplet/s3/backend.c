@@ -2307,8 +2307,11 @@ dpl_s3_copy(dpl_ctx_t *ctx,
         }
     }
 
-  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
-    dpl_req_set_canned_acl(req, sysmd->canned_acl);
+  if (sysmd)
+    {
+      if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
+        dpl_req_set_canned_acl(req, sysmd->canned_acl);
+    }
 
   //build request
   ret2 = dpl_s3_req_build(req, &headers_request);
