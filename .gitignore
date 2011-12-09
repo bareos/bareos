@@ -6,6 +6,7 @@ Makefile.in
 Makefile
 aclocal.m4
 autom4te.cache
+compile
 configure.in
 configure
 config.*
@@ -24,3 +25,4 @@ tests/dpl_perf_test
 tools/dplsh
 .deps
 .libs
+libdroplet.spec
