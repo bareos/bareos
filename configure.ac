@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([libdroplet], [0.1.0])
+AC_INIT([libdroplet], [1.1.0])
 AC_CONFIG_SRCDIR([libdroplet])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -36,6 +36,7 @@ Makefile
 examples/Makefile
 libdroplet/Makefile
 droplet-1.0.pc
+libdroplet.spec
 ])
 AC_OUTPUT
 
