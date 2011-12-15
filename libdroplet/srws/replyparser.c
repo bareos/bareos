@@ -104,7 +104,7 @@ dpl_srws_get_metadata_from_headers(dpl_dict_t *headers,
 
   memset(&arg, 0, sizeof (arg));
 
-  var = dpl_dict_get(headers, SCAL_SRWS_X_BIZ_USERMD);
+  var = dpl_dict_get(headers, DPL_SRWS_X_BIZ_USERMD);
   if (NULL == var)
     {
       //no metadata;

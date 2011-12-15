@@ -34,13 +34,13 @@
 #ifndef __DROPLET_SRWS_REPLYPARSER_H__
 #define __DROPLET_SRWS_REPLYPARSER_H__ 1
 
-#define SCAL_SRWS_X_BIZ_USERMD               "x-biz-usermd"
-#define SCAL_SRWS_X_BIZ_CMD                  "x-biz-cmd"
-#define SCAL_SRWS_UPDATEUSERMD               "updateusermd"
-#define SCAL_SRWS_X_BIZ_REPLICA_POLICY       "x-biz-replica-policy"
-#define SCAL_SRWS_LAZY                       "lazy"
-#define SCAL_SRWS_X_BIZ_DATA_HINT            "x-biz-data-hint"
-#define SCAL_SRWS_CACHED                     "cached"
+#define DPL_SRWS_X_BIZ_USERMD               "x-biz-usermd"
+#define DPL_SRWS_X_BIZ_CMD                  "x-biz-cmd"
+#define DPL_SRWS_UPDATEUSERMD               "updateusermd"
+#define DPL_SRWS_X_BIZ_REPLICA_POLICY       "x-biz-replica-policy"
+#define DPL_SRWS_LAZY                       "lazy"
+#define DPL_SRWS_X_BIZ_DATA_HINT            "x-biz-data-hint"
+#define DPL_SRWS_CACHED                     "cached"
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */
