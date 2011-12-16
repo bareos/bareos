@@ -28,10 +28,6 @@ libdroplet_la_SOURCES = \
 	cdmi/replyparser.c \
 	cdmi/reqbuilder.c \
 	cdmi/cdmi.c \
-	srest/backend.c \
-	srest/replyparser.c \
-	srest/reqbuilder.c \
-	srest/srest.c \
 	srws/backend.c \
 	srws/replyparser.c \
 	srws/reqbuilder.c \
@@ -74,13 +70,6 @@ libdropletdropletcdmiinclude_HEADERS = \
 	include/droplet/cdmi/replyparser.h \
 	include/droplet/cdmi/reqbuilder.h \
 	include/droplet/cdmi/cdmi.h
-
-libdropletdropletsrestincludedir = $(includedir)/droplet-1.0/droplet/srest
-libdropletdropletsrestinclude_HEADERS = \
-	include/droplet/srest/backend.h \
-	include/droplet/srest/replyparser.h \
-	include/droplet/srest/reqbuilder.h \
-	include/droplet/srest/srest.h
 
 libdropletdropletsrwsincludedir = $(includedir)/droplet-1.0/droplet/srws
 libdropletdropletsrwsinclude_HEADERS = \

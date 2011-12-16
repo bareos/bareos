@@ -473,13 +473,6 @@ dpl_srws_get(dpl_ctx_t *ctx,
 
   dpl_req_set_object_type(req, object_type);
 
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
   //build request
   ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
@@ -546,6 +539,13 @@ dpl_srws_get(dpl_ctx_t *ctx,
   else
     {
       connection_close = dpl_connection_close(ctx, headers_reply);
+
+      metadata = dpl_dict_new(13);
+      if (NULL == metadata)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
 
       ret2 = dpl_srws_get_metadata_from_headers(headers_reply, metadata);
       if (DPL_SUCCESS != ret2)

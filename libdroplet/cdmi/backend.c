@@ -1073,13 +1073,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
 
   dpl_req_set_object_type(req, object_type);
 
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
   //build request
   ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)

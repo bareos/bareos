@@ -1815,13 +1815,6 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
   //build request
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
@@ -1888,6 +1881,13 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
   else
     {
       connection_close = dpl_connection_close(ctx, headers_reply);
+
+      metadata = dpl_dict_new(13);
+      if (NULL == metadata)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
 
       if (all_headers)
         ret2 = dpl_dict_copy(metadata, headers_reply);

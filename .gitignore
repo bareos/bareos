@@ -32,3 +32,4 @@ tests/dpl_perf_test
 tools/dplsh
 .deps
 .libs
+libdroplet.spec

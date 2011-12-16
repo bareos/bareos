@@ -75,7 +75,7 @@ add_metadata_to_headers(dpl_dict_t *metadata,
   usermd_len = dpl_base64_encode((const u_char *) sbuf->buf, sbuf->len, (u_char *) usermd);
   usermd[usermd_len] = 0;
 
-  ret = dpl_dict_add(headers, SCAL_SRWS_X_BIZ_USERMD, usermd, 0);
+  ret = dpl_dict_add(headers, DPL_SRWS_X_BIZ_USERMD, usermd, 0);
   if (DPL_SUCCESS != ret)
     {
       return DPL_FAILURE;
@@ -132,7 +132,7 @@ dpl_srws_req_build(const dpl_req_t *req,
 
       if (req->condition.mask & DPL_CONDITION_LAZY)      
         {
-          ret2 = dpl_dict_add(headers, SCAL_SRWS_X_BIZ_REPLICA_POLICY, SCAL_SRWS_LAZY, 0);
+          ret2 = dpl_dict_add(headers, DPL_SRWS_X_BIZ_REPLICA_POLICY, DPL_SRWS_LAZY, 0);
           if (DPL_SUCCESS != ret2)
             {
               ret = DPL_ENOMEM;
@@ -173,7 +173,7 @@ dpl_srws_req_build(const dpl_req_t *req,
 
       if (req->behavior_flags & DPL_BEHAVIOR_MDONLY)
         {
-          ret2 = dpl_dict_add(headers, SCAL_SRWS_X_BIZ_CMD, SCAL_SRWS_UPDATEUSERMD, 0);
+          ret2 = dpl_dict_add(headers, DPL_SRWS_X_BIZ_CMD, DPL_SRWS_UPDATEUSERMD, 0);
           if (DPL_SUCCESS != ret2)
             {
               ret = DPL_ENOMEM;
