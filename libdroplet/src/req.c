@@ -114,7 +114,7 @@ dpl_req_set_method(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_set_bucket(dpl_req_t *req,
-                   char *bucket)
+                   const char *bucket)
 {
   char *nstr;
 
@@ -132,7 +132,7 @@ dpl_req_set_bucket(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_set_resource(dpl_req_t *req,
-                     char *resource)
+                     const char *resource)
 {
   char *nstr;
 
@@ -150,7 +150,7 @@ dpl_req_set_resource(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_set_subresource(dpl_req_t *req,
-                        char *subresource)
+                        const char *subresource)
 {
   char *nstr;
 
@@ -203,14 +203,14 @@ dpl_req_set_storage_class(dpl_req_t *req,
 
 void
 dpl_req_set_condition(dpl_req_t *req,
-                      dpl_condition_t *condition)
+                      const dpl_condition_t *condition)
 {
   req->condition = *condition;
 }
 
 dpl_status_t
 dpl_req_set_cache_control(dpl_req_t *req,
-                        char *cache_control)
+                        const char *cache_control)
 {
   char *nstr;
 
@@ -228,7 +228,7 @@ dpl_req_set_cache_control(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_set_content_disposition(dpl_req_t *req,
-                                char *content_disposition)
+                                const char *content_disposition)
 {
   char *nstr;
 
@@ -246,7 +246,7 @@ dpl_req_set_content_disposition(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_set_content_encoding(dpl_req_t *req,
-                             char *content_encoding)
+                             const char *content_encoding)
 {
   char *nstr;
 
@@ -271,15 +271,15 @@ dpl_req_set_chunk(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_add_metadatum(dpl_req_t *req,
-                      char *key,
-                      char *value)
+                      const char *key,
+                      const char *value)
 {
   return dpl_dict_add(req->metadata, key, value, 0);
 }
 
 dpl_status_t
 dpl_req_add_metadata(dpl_req_t *req,
-                     dpl_dict_t *metadata)
+                     const dpl_dict_t *metadata)
 {
   int bucket;
   dpl_var_t *var;
@@ -302,7 +302,7 @@ dpl_req_add_metadata(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_set_content_type(dpl_req_t *req,
-                         char *content_type)
+                         const char *content_type)
 {
   char *nstr;
 
@@ -354,7 +354,7 @@ dpl_req_set_expires(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_set_src_bucket(dpl_req_t *req,
-                       char *src_bucket)
+                       const char *src_bucket)
 {
   char *nstr;
 
@@ -372,7 +372,7 @@ dpl_req_set_src_bucket(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_set_src_resource(dpl_req_t *req,
-                         char *src_resource)
+                         const char *src_resource)
 {
   char *nstr;
 
@@ -390,7 +390,7 @@ dpl_req_set_src_resource(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_set_src_subresource(dpl_req_t *req,
-                            char *src_subresource)
+                            const char *src_subresource)
 {
   char *nstr;
 
@@ -415,7 +415,7 @@ dpl_req_set_metadata_directive(dpl_req_t *req,
 
 void
 dpl_req_set_copy_source_condition(dpl_req_t *req,
-                                  dpl_condition_t *condition)
+                                  const dpl_condition_t *condition)
 {
   req->copy_source_condition = *condition;
 }

@@ -40,8 +40,8 @@
 /**/
 
 dpl_status_t
-dpl_srest_parse_metadata(dpl_ctx_t *ctx,
-                        char *buf,
+dpl_srest_parse_metadata(const dpl_ctx_t *ctx,
+                        const char *buf,
                         int len,
                         dpl_dict_t *metadata)
 {

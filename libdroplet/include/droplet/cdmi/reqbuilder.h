@@ -42,6 +42,6 @@
 
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */
-dpl_status_t dpl_cdmi_req_build(dpl_req_t *req, dpl_dict_t **headersp, char **body_strp, int *lenp);
-dpl_status_t dpl_cdmi_req_gen_url(dpl_req_t *req, dpl_dict_t *headers, char *buf, int len, unsigned int *lenp);
+dpl_status_t dpl_cdmi_req_build(const dpl_req_t *req, dpl_dict_t **headersp, char **body_strp, int *lenp);
+dpl_status_t dpl_cdmi_req_gen_url(const dpl_req_t *req, dpl_dict_t *headers, char *buf, int len, unsigned int *lenp);
 #endif

@@ -54,17 +54,17 @@ typedef struct
 /* PROTO dict.c */
 /* src/dict.c */
 dpl_dict_t *dpl_dict_new(int n_buckets);
-dpl_var_t *dpl_dict_get(dpl_dict_t *dict, char *key);
-dpl_status_t dpl_dict_get_lowered(dpl_dict_t *dict, char *key, dpl_var_t **varp);
-char *dpl_dict_get_value(dpl_dict_t *dict, char *key);
-void dpl_dict_iterate(dpl_dict_t *dict, dpl_dict_func_t cb_func, void *cb_arg);
-int dpl_dict_count(dpl_dict_t *dict);
+dpl_var_t *dpl_dict_get(const dpl_dict_t *dict, const char *key);
+dpl_status_t dpl_dict_get_lowered(const dpl_dict_t *dict, const char *key, dpl_var_t **varp);
+char *dpl_dict_get_value(const dpl_dict_t *dict, const char *key);
+void dpl_dict_iterate(const dpl_dict_t *dict, dpl_dict_func_t cb_func, void *cb_arg);
+int dpl_dict_count(const dpl_dict_t *dict);
 void dpl_dict_free(dpl_dict_t *dict);
-void dpl_dict_print(dpl_dict_t *dict);
-dpl_status_t dpl_dict_add(dpl_dict_t *dict, char *key, char *value, int lowered);
+void dpl_dict_print(const dpl_dict_t *dict);
+dpl_status_t dpl_dict_add(dpl_dict_t *dict, const char *key, const char *value, int lowered);
 void dpl_dict_remove(dpl_dict_t *dict, dpl_var_t *var);
-dpl_status_t dpl_dict_copy(dpl_dict_t *dst, dpl_dict_t *src);
-dpl_status_t dpl_dict_filter_prefix(dpl_dict_t *dst, dpl_dict_t *src, char * prefix);
-dpl_status_t dpl_dict_filter_no_prefix(dpl_dict_t *dst, dpl_dict_t *src, char * prefix);
-dpl_status_t dpl_dict_update_value(dpl_dict_t *dict, char *key, char *value);
+dpl_status_t dpl_dict_copy(dpl_dict_t *dst, const dpl_dict_t *src);
+dpl_status_t dpl_dict_filter_prefix(dpl_dict_t *dst, const dpl_dict_t *src, const char * prefix);
+dpl_status_t dpl_dict_filter_no_prefix(dpl_dict_t *dst, const dpl_dict_t *src, const char * prefix);
+dpl_status_t dpl_dict_update_value(dpl_dict_t *dict, const char *key, const char *value);
 #endif

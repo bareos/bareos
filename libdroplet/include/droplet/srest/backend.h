@@ -36,11 +36,11 @@
 
 /* PROTO backend.c */
 /* src/backend.c */
-dpl_status_t dpl_srest_post(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len, dpl_dict_t *query_string, char **resource_idp);
-dpl_status_t dpl_srest_post_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_dict_t *query_string, dpl_conn_t **connp);
-dpl_status_t dpl_srest_get(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-dpl_status_t dpl_srest_get_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
-dpl_status_t dpl_srest_delete(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type);
-dpl_status_t dpl_srest_genurl(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
-dpl_status_t dpl_srest_get_id_path(dpl_ctx_t *ctx, char *bucket, char **id_pathp);
+dpl_status_t dpl_srest_post(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, char **resource_idp);
+dpl_status_t dpl_srest_post_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, const dpl_dict_t *query_params, dpl_conn_t **connp);
+dpl_status_t dpl_srest_get(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_srest_get_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
+dpl_status_t dpl_srest_delete(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type);
+dpl_status_t dpl_srest_genurl(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
+dpl_status_t dpl_srest_get_id_path(dpl_ctx_t *ctx, const char *bucket, char **id_pathp);
 #endif

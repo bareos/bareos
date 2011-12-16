@@ -46,12 +46,12 @@
  * @return
  */
 dpl_status_t
-dpl_srest_req_build(dpl_req_t *req,
+dpl_srest_req_build(const dpl_req_t *req,
                     dpl_dict_t **headersp)
 {
   dpl_dict_t *headers = NULL;
   int ret, ret2;
-  char *method = dpl_method_str(req->method);
+  const char *method = dpl_method_str(req->method);
   char buf[256];
 
   DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);

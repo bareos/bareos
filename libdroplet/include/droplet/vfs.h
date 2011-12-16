@@ -35,28 +35,28 @@
 #define __DROPLET_VFS_H__ 1
 
 /* PROTO vfs.c */
-dpl_status_t dpl_iname(dpl_ctx_t *ctx, char *bucket, dpl_ino_t ino, char *path, unsigned int path_len);
-dpl_status_t dpl_namei(dpl_ctx_t *ctx, char *path, char *bucket, dpl_ino_t ino, dpl_ino_t *parent_inop, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
-dpl_ino_t dpl_cwd(dpl_ctx_t *ctx, char *bucket);
-dpl_status_t dpl_opendir(dpl_ctx_t *ctx, char *locator, void **dir_hdlp);
+dpl_status_t dpl_iname(dpl_ctx_t *ctx, const char *bucket, dpl_ino_t ino, char *path, unsigned int path_len);
+dpl_status_t dpl_namei(dpl_ctx_t *ctx, const char *path, const char *bucket, dpl_ino_t ino, dpl_ino_t *parent_inop, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
+dpl_ino_t dpl_cwd(dpl_ctx_t *ctx, const char *bucket);
+dpl_status_t dpl_opendir(dpl_ctx_t *ctx, const char *locator, void **dir_hdlp);
 dpl_status_t dpl_readdir(void *dir_hdl, dpl_dirent_t *dirent);
 int dpl_eof(void *dir_hdl);
 void dpl_closedir(void *dir_hdl);
-dpl_status_t dpl_chdir(dpl_ctx_t *ctx, char *locator);
-dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, char *locator);
-dpl_status_t dpl_mknod(dpl_ctx_t *ctx, char *locator);
-dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, char *locator);
+dpl_status_t dpl_chdir(dpl_ctx_t *ctx, const char *locator);
+dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, const char *locator);
+dpl_status_t dpl_mknod(dpl_ctx_t *ctx, const char *locator);
+dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_close_ex(dpl_vfile_t *vfile, char **resource_idp);
 dpl_status_t dpl_close(dpl_vfile_t *vfile);
-dpl_status_t dpl_openwrite_ex(dpl_ctx_t *ctx, char *locator, dpl_ftype_t object_type, dpl_vfile_flag_t flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, unsigned int data_len, dpl_dict_t *query_params, dpl_vfile_t **vfilep);
-dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, char *locator, dpl_vfile_flag_t flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, unsigned int data_len, dpl_vfile_t **vfilep);
+dpl_status_t dpl_openwrite_ex(dpl_ctx_t *ctx, const char *locator, dpl_ftype_t object_type, dpl_vfile_flag_t flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, unsigned int data_len, dpl_dict_t *query_params, dpl_vfile_t **vfilep);
+dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, const char *locator, dpl_vfile_flag_t flags, dpl_dict_t *metadata, dpl_canned_acl_t canned_acl, unsigned int data_len, dpl_vfile_t **vfilep);
 dpl_status_t dpl_write(dpl_vfile_t *vfile, char *buf, unsigned int len);
-dpl_status_t dpl_openread(dpl_ctx_t *ctx, char *locator, dpl_vfile_flag_t flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap);
-dpl_status_t dpl_openread_range(dpl_ctx_t *ctx, char *locator, dpl_vfile_flag_t flags, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-dpl_status_t dpl_unlink(dpl_ctx_t *ctx, char *locator);
-dpl_status_t dpl_getattr(dpl_ctx_t *ctx, char *locator, dpl_dict_t **metadatap);
-dpl_status_t dpl_getattr_raw(dpl_ctx_t *ctx, char *locator, dpl_dict_t **metadatap);
-dpl_status_t dpl_setattr(dpl_ctx_t *ctx, char *locator, dpl_dict_t *metadata);
-dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, char *locator, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
-dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, char *src_locator, char *dst_locator);
+dpl_status_t dpl_openread(dpl_ctx_t *ctx, const char *locator, dpl_vfile_flag_t flags, dpl_condition_t *condition, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap);
+dpl_status_t dpl_openread_range(dpl_ctx_t *ctx, const char *locator, dpl_vfile_flag_t flags, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_unlink(dpl_ctx_t *ctx, const char *locator);
+dpl_status_t dpl_getattr(dpl_ctx_t *ctx, const char *locator, dpl_dict_t **metadatap);
+dpl_status_t dpl_getattr_raw(dpl_ctx_t *ctx, const char *locator, dpl_dict_t **metadatap);
+dpl_status_t dpl_setattr(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata);
+dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, const char *locator, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
+dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
 #endif

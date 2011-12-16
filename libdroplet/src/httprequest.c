@@ -37,7 +37,7 @@
 #define DPRINTF(fmt,...)
 
 dpl_status_t
-dpl_add_ranges_to_headers(dpl_range_t *ranges,
+dpl_add_ranges_to_headers(const dpl_range_t *ranges,
                           int n_ranges,
                           dpl_dict_t *headers)
 {
@@ -109,8 +109,8 @@ dpl_add_ranges_to_headers(dpl_range_t *ranges,
 dpl_status_t
 dpl_req_gen_http_request(dpl_ctx_t *ctx,
                          dpl_req_t *req,
-                         dpl_dict_t *headers,
-                         dpl_dict_t *query_params,
+                         const dpl_dict_t *headers,
+                         const dpl_dict_t *query_params,
                          char *buf,
                          int len,
                          unsigned int *lenp)

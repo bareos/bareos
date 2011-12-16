@@ -179,7 +179,7 @@ struct dpl_parse_ctx
 
 /* PROTO pricing.c */
 /* src/pricing.c */
-enum dpl_tok identifier(char *str);
+enum dpl_tok identifier(const char *str);
 struct dpl_request_pricing *dpl_request_pricing_new(void);
 void dpl_request_pricing_free(struct dpl_request_pricing *reqp);
 void dpl_vec_request_pricing_free(dpl_vec_t *vec);
@@ -187,11 +187,11 @@ struct dpl_data_pricing *dpl_data_pricing_new(void);
 void dpl_data_pricing_print(struct dpl_data_pricing *datp);
 void dpl_data_pricing_free(struct dpl_data_pricing *datp);
 void dpl_vec_data_pricing_free(dpl_vec_t *vec);
-enum dpl_request_type dpl_pricing_request_type(char *str);
-enum dpl_data_type dpl_pricing_data_type(char *str);
-enum dpl_duration_type dpl_pricing_duration_type(char *str);
-dpl_status_t dpl_pricing_parse(dpl_ctx_t *ctx, char *path);
+enum dpl_request_type dpl_pricing_request_type(const char *str);
+enum dpl_data_type dpl_pricing_data_type(const char *str);
+enum dpl_duration_type dpl_pricing_duration_type(const char *str);
+dpl_status_t dpl_pricing_parse(dpl_ctx_t *ctx, const char *path);
 dpl_status_t dpl_pricing_load(dpl_ctx_t *ctx);
 void dpl_pricing_free(dpl_ctx_t *ctx);
-dpl_status_t dpl_log_event(dpl_ctx_t *ctx, char *type, char *subtype, size_t size);
+dpl_status_t dpl_log_event(dpl_ctx_t *ctx, const char *type, const char *subtype, size_t size);
 #endif

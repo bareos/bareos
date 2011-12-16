@@ -34,10 +34,10 @@
 #ifndef __DROPLET_NTINYDB_H__
 #define __DROPLET_NTINYDB_H__ 1
 
-typedef int (*dpl_ntinydb_func_t)(char *key_ptr, int key_len, void *cb_arg);
+typedef int (*dpl_ntinydb_func_t)(const char *key_ptr, int key_len, void *cb_arg);
 
 /* PROTO ntinydb.c */
-dpl_status_t dpl_ntinydb_set(dpl_sbuf_t *blob, char *key, char *buf, int len);
-dpl_status_t dpl_ntinydb_get(char *buf, int len, char *key, char **data_returned, int *datalen_returned);
-dpl_status_t dpl_ntinydb_list(char *buf, int len, dpl_ntinydb_func_t cb_func, void *cb_arg);
+dpl_status_t dpl_ntinydb_set(dpl_sbuf_t *blob, const char *key, char *buf, int len);
+dpl_status_t dpl_ntinydb_get(const char *buf, int len, const char *key, const char **data_returned, int *datalen_returned);
+dpl_status_t dpl_ntinydb_list(const char *buf, int len, dpl_ntinydb_func_t cb_func, void *cb_arg);
 #endif

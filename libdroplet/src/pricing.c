@@ -103,7 +103,7 @@ text_add(struct dpl_parse_ctx *parse_ctx,
 }
 
 enum dpl_tok
-dpl_pricing_identifier(char *str)
+dpl_pricing_identifier(const char *str)
 {
   if (!strcasecmp(str, "requests"))
     return DPL_TOK_REQUESTS;
@@ -452,7 +452,7 @@ dpl_vec_data_pricing_free(dpl_vec_t *vec)
 }
 
 enum dpl_request_type
-dpl_pricing_request_type(char *str)
+dpl_pricing_request_type(const char *str)
 {
   if (!strcasecmp(str, "PUT"))
     return DPL_REQUEST_TYPE_PUT;
@@ -473,7 +473,7 @@ dpl_pricing_request_type(char *str)
 }
 
 enum dpl_data_type
-dpl_pricing_data_type(char *str)
+dpl_pricing_data_type(const char *str)
 {
   if (!strcasecmp(str, "IN"))
     return DPL_DATA_TYPE_IN;
@@ -486,7 +486,7 @@ dpl_pricing_data_type(char *str)
 }
 
 enum dpl_duration_type
-dpl_pricing_duration_type(char *str)
+dpl_pricing_duration_type(const char *str)
 {
   if (!strcasecmp(str, "DAY"))
     return DPL_DURATION_TYPE_DAY;
@@ -530,7 +530,7 @@ multiplicator(enum dpl_unit unit)
 
 static dpl_status_t
 parse_buf(struct dpl_parse_ctx *parse_ctx,
-          char *buf,
+          const char *buf,
           int len,
           int eof)
 {
@@ -919,7 +919,7 @@ parse_ctx_free(struct dpl_parse_ctx *parse_ctx)
 
 dpl_status_t
 dpl_pricing_parse(dpl_ctx_t *ctx,
-                  char *path)
+                  const char *path)
 {
   struct dpl_parse_ctx *parse_ctx;
   char buf[4096];
@@ -1045,8 +1045,8 @@ dpl_pricing_free(dpl_ctx_t *ctx)
  */
 dpl_status_t
 dpl_log_event(dpl_ctx_t *ctx,
-              char *type,
-              char *subtype,
+              const char *type,
+              const char *subtype,
               size_t size)
 {
   time_t t;

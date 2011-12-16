@@ -90,7 +90,7 @@ dpl_conf_free(struct dpl_conf_ctx *ctx)
 
 dpl_status_t
 dpl_conf_parse(struct dpl_conf_ctx *ctx,
-               char *buf,
+               const char *buf,
                int len)
 {
   int i, ret;
@@ -218,7 +218,7 @@ dpl_conf_finish(struct dpl_conf_ctx *ctx)
  */
 static int
 conf_cb_func(void *cb_arg,
-             char *var,
+             const char *var,
              char *value)
 {
   dpl_ctx_t *ctx = (dpl_ctx_t *) cb_arg;
@@ -420,7 +420,7 @@ conf_cb_func(void *cb_arg,
 
 dpl_status_t
 dpl_profile_parse(dpl_ctx_t *ctx,
-                  char *path)
+                  const char *path)
 {
   struct dpl_conf_ctx *conf_ctx;
   char buf[4096];

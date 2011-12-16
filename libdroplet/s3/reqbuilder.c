@@ -64,7 +64,7 @@ add_metadata_to_headers(dpl_dict_t *metadata,
 }
 
 static dpl_status_t
-add_condition_to_headers(dpl_condition_t *condition,
+add_condition_to_headers(const dpl_condition_t *condition,
                          dpl_dict_t *headers,
                          int copy_source)
 {
@@ -149,10 +149,10 @@ var_cmp(const void *p1,
 
 static dpl_status_t
 make_signature(dpl_ctx_t *ctx,
-               char *method,
-               char *bucket,
-               char *resource,
-               char *subresource,
+               const char *method,
+               const char *bucket,
+               const char *resource,
+               const char *subresource,
                dpl_dict_t *headers,
                char *buf,
                unsigned int len,
@@ -293,11 +293,11 @@ add_date_to_headers(dpl_dict_t *headers)
 }
 
 static dpl_status_t
-add_authorization_to_headers(dpl_req_t *req,
+add_authorization_to_headers(const dpl_req_t *req,
                              dpl_dict_t *headers)
 {
   int ret, ret2;
-  char *method = dpl_method_str(req->method);
+  const char *method = dpl_method_str(req->method);
   char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
   char sign_str[1024];
   u_int sign_len;
@@ -327,7 +327,7 @@ add_authorization_to_headers(dpl_req_t *req,
 
   hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
 
-  base64_len = dpl_base64_encode((u_char *) hmac_str, hmac_len, (u_char *) base64_str);
+  base64_len = dpl_base64_encode((const u_char *) hmac_str, hmac_len, (u_char *) base64_str);
 
   snprintf(auth_str, sizeof (auth_str), "AWS %s:%.*s", req->ctx->access_key, base64_len, base64_str);
 
@@ -346,7 +346,7 @@ add_authorization_to_headers(dpl_req_t *req,
 }
 
 static dpl_status_t
-add_source_to_headers(dpl_req_t *req,
+add_source_to_headers(const dpl_req_t *req,
                       dpl_dict_t *headers)
 {
   int ret, ret2;
@@ -405,12 +405,12 @@ add_source_to_headers(dpl_req_t *req,
  * @return
  */
 dpl_status_t
-dpl_s3_req_build(dpl_req_t *req,
+dpl_s3_req_build(const dpl_req_t *req,
                  dpl_dict_t **headersp)
 {
   dpl_dict_t *headers = NULL;
   int ret, ret2;
-  char *method = dpl_method_str(req->method);
+  const char *method = dpl_method_str(req->method);
   char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
 
   DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);
@@ -723,7 +723,7 @@ dpl_s3_req_build(dpl_req_t *req,
 }
 
 dpl_status_t
-dpl_s3_req_gen_url(dpl_req_t *req,
+dpl_s3_req_gen_url(const dpl_req_t *req,
                    dpl_dict_t *headers,
                    char *buf,
                    int len,
@@ -807,7 +807,7 @@ dpl_s3_req_gen_url(dpl_req_t *req,
 
   hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
 
-  base64_len = dpl_base64_encode((u_char *) hmac_str, hmac_len, (u_char *) base64_str);
+  base64_len = dpl_base64_encode((const u_char *) hmac_str, hmac_len, (u_char *) base64_str);
 
   base64_str[base64_len] = 0; //XXX
 

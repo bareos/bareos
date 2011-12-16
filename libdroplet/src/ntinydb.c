@@ -45,7 +45,7 @@
  */
 dpl_status_t
 dpl_ntinydb_set(dpl_sbuf_t *blob,
-                char *key, 
+                const char *key, 
                 char *data,
                 int datalen)
 {
@@ -86,10 +86,10 @@ dpl_ntinydb_set(dpl_sbuf_t *blob,
 }
 
 dpl_status_t
-dpl_ntinydb_get(char *blob_buf,
+dpl_ntinydb_get(const char *blob_buf,
                 int blob_len,
-                char *key,
-                char **data_returned,
+                const char *key,
+                const char **data_returned,
                 int *datalen_returned)
 {
   int i, keylenref, keylen, datalen, match;
@@ -156,7 +156,7 @@ dpl_ntinydb_get(char *blob_buf,
 }
 
 dpl_status_t
-dpl_ntinydb_list(char *blob_buf,
+dpl_ntinydb_list(const char *blob_buf,
                  int blob_len,
                  dpl_ntinydb_func_t cb_func,
                  void *cb_arg)

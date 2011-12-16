@@ -39,7 +39,7 @@
 
 static dpl_status_t
 dpl_vdir_lookup(dpl_ctx_t *ctx,
-                char *bucket,
+                const char *bucket,
                 dpl_ino_t parent_ino,
                 const char *obj_name,
                 dpl_ino_t *obj_inop,
@@ -250,7 +250,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
 
 static dpl_status_t
 dpl_vdir_mkgen(dpl_ctx_t *ctx,
-               char *bucket,
+               const char *bucket,
                dpl_ino_t parent_ino,
                const char *obj_name,
                dpl_ftype_t object_type,
@@ -286,7 +286,7 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
 
 static dpl_status_t
 dpl_vdir_mkdir(dpl_ctx_t *ctx,
-               char *bucket,
+               const char *bucket,
                dpl_ino_t parent_ino,
                const char *obj_name)
 {
@@ -296,7 +296,7 @@ dpl_vdir_mkdir(dpl_ctx_t *ctx,
 
 static dpl_status_t
 dpl_vdir_mknod(dpl_ctx_t *ctx,
-               char *bucket,
+               const char *bucket,
                dpl_ino_t parent_ino,
                const char *obj_name)
 {
@@ -305,7 +305,7 @@ dpl_vdir_mknod(dpl_ctx_t *ctx,
 
 static dpl_status_t
 dpl_vdir_opendir(dpl_ctx_t *ctx,
-                 char *bucket,
+                 const char *bucket,
                  dpl_ino_t ino,
                  void **dir_hdlp)
 {
@@ -497,7 +497,7 @@ dpl_vdir_closedir(void *dir_hdl)
 
 static dpl_status_t
 dpl_vdir_count_entries(dpl_ctx_t *ctx,
-                       char *bucket,
+                       const char *bucket,
                        dpl_ino_t ino,
                        unsigned int *n_entriesp)
 {
@@ -543,7 +543,7 @@ dpl_vdir_count_entries(dpl_ctx_t *ctx,
 
 static dpl_status_t
 dpl_vdir_rmdir(dpl_ctx_t *ctx,
-               char *bucket,
+               const char *bucket,
                dpl_ino_t parent_ino,
                const char *obj_name)
 {
@@ -603,7 +603,7 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_iname(dpl_ctx_t *ctx,
-             char *bucket,
+             const char *bucket,
              dpl_ino_t ino,
              char *path,
              unsigned int path_len)
@@ -615,14 +615,14 @@ dpl_iname(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_namei(dpl_ctx_t *ctx,
-             char *path,
-             char *bucket,
+             const char *path,
+             const char *bucket,
              dpl_ino_t ino,
              dpl_ino_t *parent_inop,
              dpl_ino_t *obj_inop,
              dpl_ftype_t *obj_typep)
 {
-  char *p1, *p2;
+  const char *p1, *p2;
   char name[DPL_MAXNAMLEN];
   int namelen;
   int ret;
@@ -772,7 +772,7 @@ dpl_namei(dpl_ctx_t *ctx,
 
 dpl_ino_t
 dpl_cwd(dpl_ctx_t *ctx,
-           char *bucket)
+           const char *bucket)
 {
   dpl_var_t *var;
   dpl_ino_t cwd;
@@ -799,7 +799,7 @@ dpl_cwd(dpl_ctx_t *ctx,
  */
 dpl_status_t
 dpl_opendir(dpl_ctx_t *ctx,
-               char *locator,
+               const char *locator,
                void **dir_hdlp)
 {
   int ret, ret2;
@@ -902,7 +902,7 @@ dpl_closedir(void *dir_hdl)
 
 dpl_status_t
 dpl_chdir(dpl_ctx_t *ctx,
-             char *locator)
+             const char *locator)
 {
   int ret, ret2;
   dpl_ino_t obj_ino;
@@ -1001,8 +1001,8 @@ dpl_chdir(dpl_ctx_t *ctx,
 
 static dpl_status_t
 dpl_mkgen(dpl_ctx_t *ctx,
-          char *locator,
-          dpl_status_t (*cb)(dpl_ctx_t *, char *, dpl_ino_t, const char *))
+          const char *locator,
+          dpl_status_t (*cb)(dpl_ctx_t *, const char *, dpl_ino_t, const char *))
 {
   char *dir_name = NULL;
   dpl_ino_t parent_ino;
@@ -1110,7 +1110,7 @@ dpl_mkgen(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_mkdir(dpl_ctx_t *ctx,
-             char *locator)
+             const char *locator)
 {
   return dpl_mkgen(ctx, locator, dpl_vdir_mkdir);
 }
@@ -1118,7 +1118,7 @@ dpl_mkdir(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_mknod(dpl_ctx_t *ctx,
-             char *locator)
+             const char *locator)
 {
   return dpl_mkgen(ctx, locator, dpl_vdir_mknod);
 }
@@ -1126,7 +1126,7 @@ dpl_mknod(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_rmdir(dpl_ctx_t *ctx,
-             char *locator)
+             const char *locator)
 {
   int ret, ret2;
   char *dir_name = NULL;
@@ -1379,7 +1379,7 @@ encrypt_init(dpl_vfile_t *vfile,
 
 dpl_status_t
 dpl_openwrite_ex(dpl_ctx_t *ctx,
-                 char *locator,
+                 const char *locator,
                  dpl_ftype_t object_type,
                  dpl_vfile_flag_t flags,
                  dpl_dict_t *metadata,
@@ -1627,7 +1627,7 @@ dpl_openwrite_ex(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_openwrite(dpl_ctx_t *ctx,
-              char *locator,
+              const char *locator,
               dpl_vfile_flag_t flags,
               dpl_dict_t *metadata,
               dpl_canned_acl_t canned_acl,
@@ -1727,7 +1727,7 @@ dpl_write(dpl_vfile_t *vfile,
 
 static dpl_status_t
 cb_vfile_header(void *cb_arg,
-                char *header,
+                const char *header,
                 char *value)
 {
   dpl_vfile_t *vfile = (dpl_vfile_t *) cb_arg;
@@ -1839,7 +1839,7 @@ cb_vfile_buffer(void *cb_arg,
 
 dpl_status_t
 dpl_openread(dpl_ctx_t *ctx,
-             char *locator,
+             const char *locator,
              dpl_vfile_flag_t flags,
              dpl_condition_t *condition,
              dpl_buffer_func_t buffer_func,
@@ -1980,7 +1980,7 @@ dpl_openread(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_openread_range(dpl_ctx_t *ctx,
-                   char *locator,
+                   const char *locator,
                    dpl_vfile_flag_t flags,
                    dpl_condition_t *condition,
                    int start,
@@ -2062,7 +2062,7 @@ dpl_openread_range(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_unlink(dpl_ctx_t *ctx,
-              char *locator)
+              const char *locator)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -2142,7 +2142,7 @@ dpl_unlink(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_getattr(dpl_ctx_t *ctx,
-               char *locator,
+               const char *locator,
                dpl_dict_t **metadatap)
 {
   int ret, ret2;
@@ -2217,7 +2217,7 @@ dpl_getattr(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_getattr_raw(dpl_ctx_t *ctx,
-                char *locator,
+                const char *locator,
                 dpl_dict_t **metadatap)
 {
   int ret, ret2;
@@ -2292,7 +2292,7 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_setattr(dpl_ctx_t *ctx,
-               char *locator,
+               const char *locator,
                dpl_dict_t *metadata)
 {
   int ret, ret2;
@@ -2373,7 +2373,7 @@ dpl_setattr(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_fgenurl(dpl_ctx_t *ctx,
-               char *locator,
+               const char *locator,
                time_t expires,
                char *buf,
                unsigned int len,
@@ -2447,8 +2447,8 @@ dpl_fgenurl(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_fcopy(dpl_ctx_t *ctx,
-             char *src_locator,
-             char *dst_locator)
+             const char *src_locator,
+             const char *dst_locator)
 {
   int ret, ret2;
   char *src_nlocator = NULL;

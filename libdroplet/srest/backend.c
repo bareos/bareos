@@ -39,15 +39,15 @@
 
 dpl_status_t
 dpl_srest_post(dpl_ctx_t *ctx,
-               char *bucket,
-               char *resource,
-               char *subresource,
+               const char *bucket,
+               const char *resource,
+               const char *subresource,
                dpl_ftype_t object_type,
-               dpl_dict_t *metadata,
-               dpl_sysmd_t *sysmd,
-               char *data_buf,
+               const dpl_dict_t *metadata,
+               const dpl_sysmd_t *sysmd,
+               const char *data_buf,
                unsigned int data_len,
-               dpl_dict_t *query_params,
+               const dpl_dict_t *query_params,
                char **resource_idp)
 {
   char          *host;
@@ -178,7 +178,7 @@ dpl_srest_post(dpl_ctx_t *ctx,
   n_iov++;
 
   //buffer
-  iov[n_iov].iov_base = data_buf;
+  iov[n_iov].iov_base = (void *)data_buf;
   iov[n_iov].iov_len = data_len;
   n_iov++;
 
@@ -263,14 +263,14 @@ dpl_srest_post(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_srest_post_buffered(dpl_ctx_t *ctx,
-                        char *bucket,
-                        char *resource,
-                        char *subresource,
+                        const char *bucket,
+                        const char *resource,
+                        const char *subresource,
                         dpl_ftype_t object_type,
-                        dpl_dict_t *metadata,
-                        dpl_sysmd_t *sysmd,
+                        const dpl_dict_t *metadata,
+                        const dpl_sysmd_t *sysmd,
                         unsigned int data_len,
-                        dpl_dict_t *query_params,
+                        const dpl_dict_t *query_params,
                         dpl_conn_t **connp)
 {
   char          *host;
@@ -437,11 +437,11 @@ dpl_srest_post_buffered(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_srest_get(dpl_ctx_t *ctx,
-             char *bucket,
-             char *resource,
-             char *subresource,
+             const char *bucket,
+             const char *resource,
+             const char *subresource,
              dpl_ftype_t object_type,
-             dpl_condition_t *condition,
+             const dpl_condition_t *condition,
              char **data_bufp,
              unsigned int *data_lenp,
              dpl_dict_t **metadatap)
@@ -625,7 +625,7 @@ struct get_conven
 
 static dpl_status_t
 cb_get_header(void *cb_arg,
-              char *header,
+              const char *header,
               char *value)
 {
   struct get_conven *gc = (struct get_conven *) cb_arg;
@@ -667,11 +667,11 @@ cb_get_buffer(void *cb_arg,
 
 dpl_status_t
 dpl_srest_get_buffered(dpl_ctx_t *ctx,
-                      char *bucket,
-                      char *resource,
-                      char *subresource,
+                      const char *bucket,
+                      const char *resource,
+                      const char *subresource,
                       dpl_ftype_t object_type,
-                      dpl_condition_t *condition,
+                      const dpl_condition_t *condition,
                       dpl_header_func_t header_func,
                       dpl_buffer_func_t buffer_func,
                       void *cb_arg)
@@ -811,9 +811,9 @@ dpl_srest_get_buffered(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_srest_delete(dpl_ctx_t *ctx,
-                char *bucket,
-                char *resource,
-                char *subresource,
+                const char *bucket,
+                const char *resource,
+                const char *subresource,
                 dpl_ftype_t object_type)
 {
   char          *host;
@@ -949,7 +949,7 @@ dpl_srest_delete(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_srest_get_id_path(dpl_ctx_t *ctx,
-                      char *bucket,
+                      const char *bucket,
                       char **id_pathp)
 {
   //natively support id access

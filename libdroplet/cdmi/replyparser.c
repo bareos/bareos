@@ -38,7 +38,7 @@
 #define DPRINTF(fmt,...)
 
 dpl_status_t
-dpl_cdmi_get_metadata_from_headers(dpl_dict_t *headers,
+dpl_cdmi_get_metadata_from_headers(const dpl_dict_t *headers,
                                    dpl_dict_t *metadata)
 {
   //metadata are not stored in headers
@@ -49,9 +49,9 @@ dpl_cdmi_get_metadata_from_headers(dpl_dict_t *headers,
 
 dpl_status_t
 dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
-                           char *buf,
+                           const char *buf,
                            int len,
-                           char *prefix,
+                           const char *prefix,
                            dpl_vec_t *objects,
                            dpl_vec_t *common_prefixes)
 {
@@ -185,7 +185,7 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_cdmi_parse_metadata(dpl_ctx_t *ctx,
-                        char *buf,
+                        const char *buf,
                         int len,
                         dpl_dict_t *metadata)
 {

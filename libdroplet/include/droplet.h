@@ -98,7 +98,7 @@ typedef int dpl_status_t;
 #define DPL_TRACE_VFS   (1u<<8)  /*!< trace VFS based calls */
 #define DPL_TRACE_BUF   (1u<<31) /*!< trace buffers */
 
-typedef void (*dpl_trace_func_t)(pid_t tid, unsigned int level, char *file, const char *func, int lineno, char *buf);
+typedef void (*dpl_trace_func_t)(pid_t tid, unsigned int level, const char *file, const char *func, int lineno, char *buf);
 
 #include <droplet/vec.h>
 #include <droplet/dict.h>
@@ -199,7 +199,7 @@ typedef struct dpl_ino
 
 typedef struct
 {
-  char *buf;
+  const char *buf;
   unsigned int len;
 } dpl_chunk_t;
 

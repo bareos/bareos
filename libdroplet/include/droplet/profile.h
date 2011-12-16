@@ -38,9 +38,9 @@
 /* src/profile.c */
 struct dpl_conf_ctx *dpl_conf_new(dpl_conf_cb_func_t cb_func, void *cb_arg);
 void dpl_conf_free(struct dpl_conf_ctx *ctx);
-dpl_status_t dpl_conf_parse(struct dpl_conf_ctx *ctx, char *buf, int len);
+dpl_status_t dpl_conf_parse(struct dpl_conf_ctx *ctx, const char *buf, int len);
 dpl_status_t dpl_conf_finish(struct dpl_conf_ctx *ctx);
-dpl_status_t dpl_profile_parse(dpl_ctx_t *ctx, char *path);
+dpl_status_t dpl_profile_parse(dpl_ctx_t *ctx, const char *path);
 dpl_status_t dpl_profile_default(dpl_ctx_t *ctx);
 dpl_status_t dpl_open_event_log(dpl_ctx_t *ctx);
 void dpl_close_event_log(dpl_ctx_t *ctx);

@@ -649,7 +649,7 @@ struct httreply_conven
 
 static dpl_status_t
 cb_httpreply_header(void *cb_arg,
-                    char *header,
+                    const char *header,
                     char *value)
 {
   struct httreply_conven *hc = (struct httreply_conven *) cb_arg;
