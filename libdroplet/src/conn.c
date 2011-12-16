@@ -434,7 +434,7 @@ dpl_conn_open(dpl_ctx_t *ctx,
 
 dpl_conn_t *
 dpl_conn_open_host(dpl_ctx_t *ctx,
-                   char *host,
+                   const char *host,
                    unsigned int port)
 {
   int           ret2;

@@ -58,7 +58,7 @@ dpl_sbuf_new(int size)
 }
 
 dpl_status_t
-dpl_sbuf_add(dpl_sbuf_t *sb, char *buf, int len)
+dpl_sbuf_add(dpl_sbuf_t *sb, const char *buf, int len)
 {
   if (sb->len+len > sb->allocated)
     {

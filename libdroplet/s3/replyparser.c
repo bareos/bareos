@@ -37,7 +37,7 @@
 #define DPRINTF(fmt,...)
 
 dpl_status_t
-dpl_s3_get_metadata_from_headers(dpl_dict_t *headers,
+dpl_s3_get_metadata_from_headers(const dpl_dict_t *headers,
                                  dpl_dict_t *metadata)
 {
   return dpl_dict_filter_prefix(metadata, headers, "x-amz-meta-");
@@ -157,8 +157,8 @@ parse_list_all_my_buckets_children(xmlNode *node,
 }
 
 dpl_status_t
-dpl_s3_parse_list_all_my_buckets(dpl_ctx_t *ctx,
-                                 char *buf,
+dpl_s3_parse_list_all_my_buckets(const dpl_ctx_t *ctx,
+                                 const char *buf,
                                  int len,
                                  dpl_vec_t *vec)
 {
@@ -355,8 +355,8 @@ parse_list_bucket_children(xmlNode *node,
 }
 
 dpl_status_t
-dpl_s3_parse_list_bucket(dpl_ctx_t *ctx,
-                         char *buf,
+dpl_s3_parse_list_bucket(const dpl_ctx_t *ctx,
+                         const char *buf,
                          int len,
                          dpl_vec_t *objects,
                          dpl_vec_t *common_prefixes)

@@ -39,19 +39,19 @@
 
 struct mdparse_data
 {
-  char *orig;
+  const char *orig;
   int orig_len;
   dpl_dict_t *metadata;
 };
 
 static int
-cb_ntinydb(char *key_ptr,
+cb_ntinydb(const char *key_ptr,
            int key_len,
            void *cb_arg)
 {
   struct mdparse_data *arg = (struct mdparse_data *) cb_arg;
   int ret, ret2;
-  char *value_returned = NULL;
+  const char *value_returned = NULL;
   int value_len_returned;
   char *key_str;
   char *value_str;
@@ -90,7 +90,7 @@ cb_ntinydb(char *key_ptr,
 }
 
 dpl_status_t
-dpl_srws_get_metadata_from_headers(dpl_dict_t *headers,
+dpl_srws_get_metadata_from_headers(const dpl_dict_t *headers,
                                    dpl_dict_t *metadata)
 {
   int ret;

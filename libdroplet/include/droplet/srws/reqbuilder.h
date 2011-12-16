@@ -53,5 +53,5 @@
 
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */
-dpl_status_t dpl_srws_req_build(dpl_req_t *req, dpl_dict_t **headersp);
+dpl_status_t dpl_srws_req_build(const dpl_req_t *req, dpl_dict_t **headersp);
 #endif

@@ -72,7 +72,7 @@ add_metadata_to_headers(dpl_dict_t *metadata,
   
   usermd = alloca(DPL_BASE64_LENGTH(sbuf->len) + 1);
 
-  usermd_len = dpl_base64_encode((u_char *) sbuf->buf, sbuf->len, (u_char *) usermd);
+  usermd_len = dpl_base64_encode((const u_char *) sbuf->buf, sbuf->len, (u_char *) usermd);
   usermd[usermd_len] = 0;
 
   ret = dpl_dict_add(headers, DPL_SRWS_X_BIZ_USERMD, usermd, 0);
@@ -100,12 +100,12 @@ add_metadata_to_headers(dpl_dict_t *metadata,
  * @return
  */
 dpl_status_t
-dpl_srws_req_build(dpl_req_t *req,
+dpl_srws_req_build(const dpl_req_t *req,
                     dpl_dict_t **headersp)
 {
   dpl_dict_t *headers = NULL;
   int ret, ret2;
-  char *method = dpl_method_str(req->method);
+  const char *method = dpl_method_str(req->method);
   char buf[256];
 
   DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);

@@ -43,9 +43,9 @@
  * @return
  */
 static int
-dict_hashcode(char *s)
+dict_hashcode(const char *s)
 {
-  char *p;
+  const char *p;
   unsigned h, g;
 
   h = g = 0;
@@ -87,8 +87,8 @@ dpl_dict_new(int n_buckets)
 }
 
 dpl_var_t *
-dpl_dict_get(dpl_dict_t *dict,
-             char *key)
+dpl_dict_get(const dpl_dict_t *dict,
+             const char *key)
 {
   int bucket;
   dpl_var_t *var;
@@ -105,8 +105,8 @@ dpl_dict_get(dpl_dict_t *dict,
 }
 
 dpl_status_t
-dpl_dict_get_lowered(dpl_dict_t *dict,
-                     char *key,
+dpl_dict_get_lowered(const dpl_dict_t *dict,
+                     const char *key,
                      dpl_var_t **varp)
 {
   dpl_var_t *var;
@@ -129,8 +129,8 @@ dpl_dict_get_lowered(dpl_dict_t *dict,
 }
 
 char *
-dpl_dict_get_value(dpl_dict_t *dict,
-                   char *key)
+dpl_dict_get_value(const dpl_dict_t *dict,
+                   const char *key)
 {
   dpl_var_t *var;
 
@@ -142,7 +142,7 @@ dpl_dict_get_value(dpl_dict_t *dict,
 }
 
 void
-dpl_dict_iterate(dpl_dict_t *dict,
+dpl_dict_iterate(const dpl_dict_t *dict,
                  dpl_dict_func_t cb_func,
                  void *cb_arg)
 {
@@ -169,7 +169,7 @@ cb_var_count(dpl_var_t *var,
 }
 
 int
-dpl_dict_count(dpl_dict_t *dict)
+dpl_dict_count(const dpl_dict_t *dict)
 {
   int count;
 
@@ -204,15 +204,15 @@ cb_var_print(dpl_var_t *var,
 }
 
 void
-dpl_dict_print(dpl_dict_t *dict)
+dpl_dict_print(const dpl_dict_t *dict)
 {
   dpl_dict_iterate(dict, cb_var_print, NULL);
 }
 
 dpl_status_t
 dpl_dict_add(dpl_dict_t *dict,
-             char *key,
-             char *value,
+             const char *key,
+             const char *value,
              int lowered)
 {
   dpl_var_t *var;
@@ -299,7 +299,7 @@ cb_var_copy(dpl_var_t *var,
 
 dpl_status_t
 dpl_dict_copy(dpl_dict_t *dst,
-              dpl_dict_t *src)
+              const dpl_dict_t *src)
 {
   if (! dst)
     return DPL_FAILURE;
@@ -315,7 +315,7 @@ dpl_dict_copy(dpl_dict_t *dst,
 
 struct conviterate {
   dpl_dict_t *dict;
-  char *prefix;
+  const char *prefix;
   int reverse_logic;
 };
 
@@ -345,8 +345,8 @@ cb_var_filter_string(dpl_var_t *var,
 
 dpl_status_t
 dpl_dict_filter_prefix(dpl_dict_t *dst,
-                       dpl_dict_t *src,
-                       char *prefix)
+                       const dpl_dict_t *src,
+                       const char *prefix)
 {
   if (! dst)
     return DPL_FAILURE;
@@ -363,8 +363,8 @@ dpl_dict_filter_prefix(dpl_dict_t *dst,
 
 dpl_status_t
 dpl_dict_filter_no_prefix(dpl_dict_t *dst,
-                          dpl_dict_t *src,
-                          char *prefix)
+                          const dpl_dict_t *src,
+                          const char *prefix)
 {
   if (! dst)
     return DPL_FAILURE;
@@ -381,8 +381,8 @@ dpl_dict_filter_no_prefix(dpl_dict_t *dst,
 
 dpl_status_t
 dpl_dict_update_value(dpl_dict_t *dict,
-                      char *key,
-                      char *value)
+                      const char *key,
+                      const char *value)
 {
   dpl_var_t *var = NULL;
 

@@ -246,10 +246,10 @@ dpl_dump_simple(char *buf,
 void
 dpl_trace(dpl_ctx_t *ctx,
           unsigned int level,
-          char *file,
+          const char *file,
           const char *func,
           int lineno,
-          char *fmt,
+          const char *fmt,
           ...)
 {
   va_list args;
@@ -449,9 +449,9 @@ dpl_strlower(char *str)
  * @return digest_len
  */
 unsigned int
-dpl_hmac_sha1(char *key_buf,
+dpl_hmac_sha1(const char *key_buf,
               unsigned int key_len,
-              char *data_buf,
+              const char *data_buf,
               unsigned int data_len,
               char *digest_buf)
 {
@@ -599,7 +599,7 @@ dpl_base64_decode(const u_char *in_buf,
  * @return
  */
 void
-dpl_url_encode(char *str,
+dpl_url_encode(const char *str,
                char *str_ue)
 {
   int   i;
@@ -618,7 +618,7 @@ dpl_url_encode(char *str,
 }
 
 void
-dpl_url_encode_no_slashes(char *str,
+dpl_url_encode_no_slashes(const char *str,
                           char *str_ue)
 {
   int   i;

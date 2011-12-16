@@ -97,7 +97,7 @@ add_data_to_json_body(dpl_chunk_t *chunk,
 
   //encode body to base64
   base64_str = alloca(DPL_BASE64_LENGTH(chunk->len) + 1);
-  base64_len = dpl_base64_encode((u_char *) chunk->buf, chunk->len, (u_char *) base64_str);
+  base64_len = dpl_base64_encode((const u_char *) chunk->buf, chunk->len, (u_char *) base64_str);
   base64_str[base64_len] = 0;
 
   data_obj = json_object_new_string(base64_str);
@@ -122,7 +122,7 @@ add_data_to_json_body(dpl_chunk_t *chunk,
 }
 
 static dpl_status_t
-add_authorization_to_headers(dpl_req_t *req,
+add_authorization_to_headers(const dpl_req_t *req,
                              dpl_dict_t *headers)
 {
   int ret, ret2;
@@ -135,7 +135,7 @@ add_authorization_to_headers(dpl_req_t *req,
   snprintf(basic_str, sizeof (basic_str), "%s:%s", req->ctx->access_key, req->ctx->secret_key);
   basic_len = strlen(basic_str);
 
-  base64_len = dpl_base64_encode((u_char *) basic_str, basic_len, (u_char *) base64_str);
+  base64_len = dpl_base64_encode((const u_char *) basic_str, basic_len, (u_char *) base64_str);
 
   snprintf(auth_str, sizeof (auth_str), "Basic %.*s", base64_len, base64_str);
 
@@ -162,7 +162,7 @@ add_authorization_to_headers(dpl_req_t *req,
  * @return
  */
 dpl_status_t
-dpl_cdmi_req_build(dpl_req_t *req,
+dpl_cdmi_req_build(const dpl_req_t *req,
                    dpl_dict_t **headersp,
                    char **body_strp,
                    int *body_lenp)
@@ -465,7 +465,7 @@ dpl_cdmi_req_build(dpl_req_t *req,
 }
 
 dpl_status_t
-dpl_cdmi_req_gen_url(dpl_req_t *req,
+dpl_cdmi_req_gen_url(const dpl_req_t *req,
                    dpl_dict_t *headers,
                    char *buf,
                    int len,

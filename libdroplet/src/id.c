@@ -57,8 +57,8 @@
  */
 dpl_status_t
 dpl_post_id(dpl_ctx_t *ctx,
-            char *bucket,
-            char *subresource,
+            const char *bucket,
+            const char *subresource,
             dpl_ftype_t object_type,
             dpl_dict_t *metadata,
             dpl_sysmd_t *sysmd,
@@ -104,8 +104,8 @@ dpl_post_id(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_post_buffered_id(dpl_ctx_t *ctx,
-                     char *bucket,
-                     char *subresource,
+                     const char *bucket,
+                     const char *subresource,
                      dpl_ftype_t object_type,
                      dpl_dict_t *metadata,
                      dpl_sysmd_t *sysmd,
@@ -150,9 +150,9 @@ dpl_post_buffered_id(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_put_id(dpl_ctx_t *ctx,
-           char *bucket,
-           char *id,
-           char *subresource,
+           const char *bucket,
+           const char *id,
+           const char *subresource,
            dpl_ftype_t object_type,
            dpl_dict_t *metadata,
            dpl_sysmd_t *sysmd,
@@ -199,9 +199,9 @@ dpl_put_id(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_put_buffered_id(dpl_ctx_t *ctx,
-                    char *bucket,
-                    char *id,
-                    char *subresource,
+                    const char *bucket,
+                    const char *id,
+                    const char *subresource,
                     dpl_ftype_t object_type,
                     dpl_dict_t *metadata,
                     dpl_sysmd_t *sysmd,
@@ -248,9 +248,9 @@ dpl_put_buffered_id(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_get_id(dpl_ctx_t *ctx,
-           char *bucket,
-           char *id,
-           char *subresource,
+           const char *bucket,
+           const char *id,
+           const char *subresource,
            dpl_ftype_t object_type,
            dpl_condition_t *condition,
            char **data_bufp,
@@ -297,9 +297,9 @@ dpl_get_id(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_get_range_id(dpl_ctx_t *ctx,
-                 char *bucket,
-                 char *id,
-                 char *subresource,
+                 const char *bucket,
+                 const char *id,
+                 const char *subresource,
                  dpl_ftype_t object_type,
                  dpl_condition_t *condition,
                  int start,
@@ -348,9 +348,9 @@ dpl_get_range_id(dpl_ctx_t *ctx,
 
 dpl_status_t 
 dpl_get_buffered_id(dpl_ctx_t *ctx,
-                    char *bucket,
-                    char *id,
-                    char *subresource, 
+                    const char *bucket,
+                    const char *id,
+                    const char *subresource, 
                     dpl_ftype_t object_type,
                     dpl_condition_t *condition,
                     dpl_header_func_t header_func, 
@@ -397,9 +397,9 @@ dpl_get_buffered_id(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_head_id(dpl_ctx_t *ctx,
-            char *bucket,
-            char *id,
-            char *subresource,
+            const char *bucket,
+            const char *id,
+            const char *subresource,
             dpl_condition_t *condition,
             dpl_dict_t **metadatap)
 {
@@ -443,9 +443,9 @@ dpl_head_id(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_head_all_id(dpl_ctx_t *ctx,
-                char *bucket,
-                char *id,
-                char *subresource,
+                const char *bucket,
+                const char *id,
+                const char *subresource,
                 dpl_condition_t *condition,
                 dpl_dict_t **metadatap)
 {
@@ -489,9 +489,9 @@ dpl_head_all_id(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_head_sysmd_id(dpl_ctx_t *ctx,
-                  char *bucket,
-                  char *id,
-                  char *subresource,
+                  const char *bucket,
+                  const char *id,
+                  const char *subresource,
                   dpl_condition_t *condition,
                   dpl_sysmd_t *sysmdp,
                   dpl_dict_t **metadatap)
@@ -536,9 +536,9 @@ dpl_head_sysmd_id(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_delete_id(dpl_ctx_t *ctx,
-              char *bucket,
-              char *id,
-              char *subresource)
+              const char *bucket,
+              const char *id,
+              const char *subresource)
 {
   int ret;
   char *id_path = NULL;
@@ -580,12 +580,12 @@ dpl_delete_id(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_copy_id(dpl_ctx_t *ctx,
-            char *src_bucket,
-            char *src_id,
-            char *src_subresource,
-            char *dst_bucket,
-            char *dst_id,
-            char *dst_subresource,
+            const char *src_bucket,
+            const char *src_id,
+            const char *src_subresource,
+            const char *dst_bucket,
+            const char *dst_id,
+            const char *dst_subresource,
             dpl_ftype_t object_type,
             dpl_metadata_directive_t metadata_directive,
             dpl_dict_t *metadata,

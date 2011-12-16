@@ -37,17 +37,17 @@
 /* PROTO backend.c */
 /* src/backend.c */
 dpl_status_t dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx, dpl_vec_t **vecp);
-dpl_status_t dpl_s3_list_bucket(dpl_ctx_t *ctx, char *bucket, char *prefix, char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
-dpl_status_t dpl_s3_make_bucket(dpl_ctx_t *ctx, char *bucket, dpl_sysmd_t *sysmd);
-dpl_status_t dpl_s3_deletebucket(dpl_ctx_t *ctx, char *bucket);
-dpl_status_t dpl_s3_put(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len);
-dpl_status_t dpl_s3_put_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp);
-dpl_status_t dpl_s3_get(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-dpl_status_t dpl_s3_get_range(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-dpl_status_t dpl_s3_get_buffered(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
-dpl_status_t dpl_s3_head(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_dict_t **metadatap);
-dpl_status_t dpl_s3_head_all(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_dict_t **metadatap);
-dpl_status_t dpl_s3_delete(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, dpl_ftype_t object_type);
-dpl_status_t dpl_s3_genurl(dpl_ctx_t *ctx, char *bucket, char *resource, char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
-dpl_status_t dpl_s3_copy(dpl_ctx_t *ctx, char *src_bucket, char *src_resource, char *src_subresource, char *dst_bucket, char *dst_resource, char *dst_subresource, dpl_ftype_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_condition_t *condition);
+dpl_status_t dpl_s3_list_bucket(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
+dpl_status_t dpl_s3_make_bucket(dpl_ctx_t *ctx, const char *bucket, const dpl_sysmd_t *sysmd);
+dpl_status_t dpl_s3_deletebucket(dpl_ctx_t *ctx, const char *bucket);
+dpl_status_t dpl_s3_put(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len);
+dpl_status_t dpl_s3_put_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp);
+dpl_status_t dpl_s3_get(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_s3_get_range(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_s3_get_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
+dpl_status_t dpl_s3_head(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap);
+dpl_status_t dpl_s3_head_all(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap);
+dpl_status_t dpl_s3_delete(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type);
+dpl_status_t dpl_s3_genurl(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
+dpl_status_t dpl_s3_copy(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, dpl_ftype_t object_type, dpl_metadata_directive_t metadata_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition);
 #endif

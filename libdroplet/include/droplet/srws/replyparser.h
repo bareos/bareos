@@ -44,5 +44,5 @@
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */
-dpl_status_t dpl_srws_get_metadata_from_headers(dpl_dict_t *headers, dpl_dict_t *metadata);
+dpl_status_t dpl_srws_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t *metadata);
 #endif

@@ -36,17 +36,17 @@
 
 /* PROTO id.c */
 /* src/id.c */
-dpl_status_t dpl_post_id(dpl_ctx_t *ctx, char *bucket, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len, dpl_dict_t *query_params, char **resource_idp);
-dpl_status_t dpl_post_buffered_id(dpl_ctx_t *ctx, char *bucket, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_dict_t *query_params, dpl_conn_t **connp);
-dpl_status_t dpl_put_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len);
-dpl_status_t dpl_put_buffered_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp);
-dpl_status_t dpl_get_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-dpl_status_t dpl_get_range_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-dpl_status_t dpl_get_buffered_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
-dpl_status_t dpl_head_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
-dpl_status_t dpl_head_all_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
-dpl_status_t dpl_head_sysmd_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource, dpl_condition_t *condition, dpl_sysmd_t *sysmdp, dpl_dict_t **metadatap);
-dpl_status_t dpl_delete_id(dpl_ctx_t *ctx, char *bucket, char *id, char *subresource);
-dpl_status_t dpl_copy_id(dpl_ctx_t *ctx, char *src_bucket, char *src_id, char *src_subresource, char *dst_bucket, char *dst_id, char *dst_subresource, dpl_ftype_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_condition_t *condition);
+dpl_status_t dpl_post_id(dpl_ctx_t *ctx, const char *bucket, const char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len, dpl_dict_t *query_params, char **resource_idp);
+dpl_status_t dpl_post_buffered_id(dpl_ctx_t *ctx, const char *bucket, const char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_dict_t *query_params, dpl_conn_t **connp);
+dpl_status_t dpl_put_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len);
+dpl_status_t dpl_put_buffered_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp);
+dpl_status_t dpl_get_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_get_range_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_get_buffered_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
+dpl_status_t dpl_head_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
+dpl_status_t dpl_head_all_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
+dpl_status_t dpl_head_sysmd_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_condition_t *condition, dpl_sysmd_t *sysmdp, dpl_dict_t **metadatap);
+dpl_status_t dpl_delete_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource);
+dpl_status_t dpl_copy_id(dpl_ctx_t *ctx, const char *src_bucket, const char *src_id, const char *src_subresource, const char *dst_bucket, const char *dst_id, const char *dst_subresource, dpl_ftype_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_condition_t *condition);
 dpl_status_t dpl_gen_id_from_oid(dpl_ctx_t *ctx, uint64_t oid, dpl_storage_class_t storage_class, char **resource_idp);
 #endif
