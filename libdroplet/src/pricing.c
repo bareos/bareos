@@ -1051,8 +1051,11 @@ dpl_log_event(dpl_ctx_t *ctx,
 {
   time_t t;
 
-  t = time(0);
-  fprintf(ctx->event_log, "%ld;%s;%s;%llu\n", t, type, subtype, (unsigned long long) size);
+  if (NULL != ctx->event_log)
+    {
+      t = time(0);
+      fprintf(ctx->event_log, "%ld;%s;%s;%llu\n", t, type, subtype, (unsigned long long) size);
+    }
   return DPL_SUCCESS;
 }
 
