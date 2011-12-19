@@ -322,6 +322,7 @@ typedef struct dpl_ctx
   char *droplet_dir;
   char *profile_name;
 
+  char *pricing_dir; /*!< where charged events should be logged, empty string to disable logging */
   FILE *event_log; /*!< log charged events */
 
   dpl_trace_func_t trace_func;

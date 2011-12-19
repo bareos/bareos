@@ -319,6 +319,12 @@ conf_cb_func(void *cb_arg,
       if (NULL == ctx->pricing)
         return -1;
     }
+  else if (!strcmp(var, "pricing_dir"))
+    {
+      ctx->pricing_dir = strdup(value);
+      if (NULL == ctx->pricing)
+        return -1;
+    }
   else if (!strcmp(var, "read_buf_size"))
     {
       ctx->read_buf_size = strtoul(value, NULL, 0);
@@ -500,6 +506,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->use_https = 0;
   ctx->port = -1;
   ctx->pricing = NULL;
+  ctx->pricing_dir = NULL;
   ctx->read_buf_size = DPL_DEFAULT_READ_BUF_SIZE;
   ctx->backend = dpl_backend_find("s3");
   assert(NULL != ctx->backend);
@@ -535,8 +542,20 @@ dpl_status_t
 dpl_open_event_log(dpl_ctx_t *ctx)
 {
   char path[1024];
+  char *pricing_dir;
 
-  snprintf(path, sizeof (path), "%s/%s.csv", ctx->droplet_dir, ctx->profile_name);
+  pricing_dir = ctx->pricing_dir;
+  if (NULL == pricing_dir)
+    {
+      pricing_dir = ctx->droplet_dir;
+    }
+  if (0 == strlen(pricing_dir))
+    {
+      ctx->event_log = NULL;
+      return DPL_SUCCESS;
+    }
+
+  snprintf(path, sizeof (path), "%s/%s.csv", pricing_dir, ctx->profile_name);
 
   ctx->event_log = fopen(path, "a+");
   if (NULL == ctx->event_log)
@@ -826,6 +845,8 @@ dpl_profile_free(dpl_ctx_t *ctx)
     free(ctx->pricing);
   if (NULL != ctx->encrypt_key)
     free(ctx->encrypt_key);
+  if (NULL != ctx->pricing_dir)
+    free(ctx->pricing_dir);
 
   /**/
 
