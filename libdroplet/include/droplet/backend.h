@@ -46,6 +46,7 @@ typedef dpl_status_t (*dpl_put_buffered_t)(dpl_ctx_t *ctx, const char *bucket, c
 typedef dpl_status_t (*dpl_get_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
 typedef dpl_status_t (*dpl_get_range_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
 typedef dpl_status_t (*dpl_get_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
+typedef dpl_status_t (*dpl_get_range_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, int start, int end, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
 typedef dpl_status_t (*dpl_head_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap);
 typedef dpl_status_t (*dpl_head_all_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap);
 typedef dpl_status_t (*dpl_head_sysmd_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_sysmd_t *sysmdp, dpl_dict_t **metadatap);
@@ -70,6 +71,7 @@ typedef struct dpl_backend_s
   dpl_get_t get;
   dpl_get_range_t get_range;
   dpl_get_buffered_t get_buffered;
+  dpl_get_range_buffered_t get_range_buffered;
   dpl_head_t head;
   dpl_head_all_t head_all;
   dpl_get_metadata_from_headers_t get_metadata_from_headers; /*!< broken by design since not all backends have metadata in headers */

@@ -43,6 +43,7 @@ dpl_status_t dpl_put_buffered_id(dpl_ctx_t *ctx, const char *bucket, const char 
 dpl_status_t dpl_get_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
 dpl_status_t dpl_get_range_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
 dpl_status_t dpl_get_buffered_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
+dpl_status_t dpl_get_range_buffered_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, int start, int end, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
 dpl_status_t dpl_head_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
 dpl_status_t dpl_head_all_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
 dpl_status_t dpl_head_sysmd_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_condition_t *condition, dpl_sysmd_t *sysmdp, dpl_dict_t **metadatap);

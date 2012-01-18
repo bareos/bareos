@@ -395,6 +395,58 @@ dpl_get_buffered_id(dpl_ctx_t *ctx,
   return ret;
 }
 
+dpl_status_t 
+dpl_get_range_buffered_id(dpl_ctx_t *ctx,
+                    const char *bucket,
+                    const char *id,
+                    const char *subresource, 
+                    dpl_ftype_t object_type,
+                    dpl_condition_t *condition,
+		    int start,
+		    int end,
+                    dpl_header_func_t header_func, 
+                    dpl_buffer_func_t buffer_func,
+                    void *cb_arg)
+{
+  int ret;
+  char *id_path = NULL;
+  char resource[DPL_MAXPATHLEN];
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "get_range_buffered_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  if (NULL == ctx->backend->get_id_path)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->get_id_path(ctx, bucket, &id_path);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
+
+  if (NULL == ctx->backend->get_range_buffered)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret = ctx->backend->get_range_buffered(ctx, bucket, resource, subresource, object_type, condition, start, end, header_func, buffer_func, cb_arg);
+  
+ end:
+
+  if (NULL != id_path)
+    free(id_path);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+
 dpl_status_t
 dpl_head_id(dpl_ctx_t *ctx,
             const char *bucket,

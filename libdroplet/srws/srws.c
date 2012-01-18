@@ -46,6 +46,7 @@ dpl_backend_srws =
     .get 		= dpl_srws_get,
     .get_range          = dpl_srws_get_range,
     .get_buffered       = dpl_srws_get_buffered,
+    .get_range_buffered = dpl_srws_get_range_buffered,
     .head 		= dpl_srws_head,
     .head_all 		= dpl_srws_head_all,
     .get_metadata_from_headers = dpl_srws_get_metadata_from_headers,
