@@ -1126,9 +1126,16 @@ dpl_status_t
 dpl_mkdir(dpl_ctx_t *ctx,
              const char *locator)
 {
-  return dpl_mkgen(ctx, 0, locator, dpl_vdir_mkdir);
+  return dpl_mkgen(ctx, ctx->light_mode, locator, dpl_vdir_mkdir);
 }
 
+dpl_status_t
+dpl_mkdir_ex(dpl_ctx_t *ctx,
+             const char *locator,
+             int light_mode)
+{
+  return dpl_mkgen(ctx, light_mode, locator, dpl_vdir_mkdir);
+}
 
 dpl_status_t
 dpl_mknod(dpl_ctx_t *ctx,
