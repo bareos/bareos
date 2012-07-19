@@ -196,8 +196,7 @@ struct dpl_conf_ctx
 
 /**/
 
-//overkill: #define DPL_BASE64_LENGTH(len) (4 * (((len) + 2) / 3))
-#define DPL_BASE64_LENGTH(len) (((len) - 1) * 4 / 3 + 2)
+#define DPL_BASE64_LENGTH(len) ((len) * 4 / 3 + 4)
 #define DPL_BASE64_ORIG_LENGTH(len) ((((len) - 1) * 3) / 4 + 1)
 
 #define DPL_URL_LENGTH(len) ((len)*3+1)
