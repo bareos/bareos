@@ -36,6 +36,7 @@
 
 /* PROTO vfs.c */
 dpl_status_t dpl_iname(dpl_ctx_t *ctx, const char *bucket, dpl_ino_t ino, char *path, unsigned int path_len);
+dpl_status_t dpl_namei_ex(dpl_ctx_t *ctx, int light_mode, const char *path, const char *bucket, dpl_ino_t ino, dpl_ino_t *parent_inop, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
 dpl_status_t dpl_namei(dpl_ctx_t *ctx, const char *path, const char *bucket, dpl_ino_t ino, dpl_ino_t *parent_inop, dpl_ino_t *obj_inop, dpl_ftype_t *obj_typep);
 dpl_ino_t dpl_cwd(dpl_ctx_t *ctx, const char *bucket);
 dpl_status_t dpl_opendir(dpl_ctx_t *ctx, const char *locator, void **dir_hdlp);

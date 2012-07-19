@@ -614,7 +614,8 @@ dpl_iname(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_namei(dpl_ctx_t *ctx,
+dpl_namei_ex(dpl_ctx_t *ctx,
+             int light_mode,
              const char *path,
              const char *bucket,
              dpl_ino_t ino,
@@ -648,7 +649,7 @@ dpl_namei(dpl_ctx_t *ctx,
   //absolute path
   if (!strncmp(p1, ctx->delim, delim_len))
     {
-      if (ctx->light_mode)
+      if (light_mode)
         {
           char save_path[DPL_MAXPATHLEN];
           int len;
@@ -768,6 +769,18 @@ dpl_namei(dpl_ctx_t *ctx,
     }
 
   return DPL_FAILURE;
+}
+
+dpl_status_t
+dpl_namei(dpl_ctx_t *ctx,
+          const char *path,
+          const char *bucket,
+          dpl_ino_t ino,
+          dpl_ino_t *parent_inop,
+          dpl_ino_t *obj_inop,
+          dpl_ftype_t *obj_typep)
+{
+  return dpl_namei_ex(ctx, ctx->light_mode, path, bucket, ino, parent_inop, obj_inop, obj_typep);
 }
 
 dpl_ino_t
@@ -1001,6 +1014,7 @@ dpl_chdir(dpl_ctx_t *ctx,
 
 static dpl_status_t
 dpl_mkgen(dpl_ctx_t *ctx,
+          int light_mode,
           const char *locator,
           dpl_status_t (*cb)(dpl_ctx_t *, const char *, dpl_ino_t, const char *))
 {
@@ -1048,7 +1062,7 @@ dpl_mkgen(dpl_ctx_t *ctx,
 
   cur_ino = dpl_cwd(ctx, bucket);
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, NULL, NULL);
+  ret2 = dpl_namei_ex(ctx, light_mode, path, bucket, cur_ino, &parent_ino, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       if (DPL_ENOENT == ret2)
@@ -1060,7 +1074,7 @@ dpl_mkgen(dpl_ctx_t *ctx,
               dir_name += delim_len;
 
               //fetch parent directory
-              ret2 = dpl_namei(ctx, !strcmp(path, "") ? ctx->delim : path, bucket, cur_ino, NULL, &parent_ino, NULL);
+              ret2 = dpl_namei_ex(ctx, light_mode, !strcmp(path, "") ? ctx->delim : path, bucket, cur_ino, NULL, &parent_ino, NULL);
               if (DPL_SUCCESS != ret2)
                 {
                   DPLERR(0, "dst parent dir resolve failed %s: %s\n", path, dpl_status_str(ret2));
@@ -1112,7 +1126,7 @@ dpl_status_t
 dpl_mkdir(dpl_ctx_t *ctx,
              const char *locator)
 {
-  return dpl_mkgen(ctx, locator, dpl_vdir_mkdir);
+  return dpl_mkgen(ctx, 0, locator, dpl_vdir_mkdir);
 }
 
 
@@ -1120,7 +1134,7 @@ dpl_status_t
 dpl_mknod(dpl_ctx_t *ctx,
              const char *locator)
 {
-  return dpl_mkgen(ctx, locator, dpl_vdir_mknod);
+  return dpl_mkgen(ctx, ctx->light_mode, locator, dpl_vdir_mknod);
 }
 
 
