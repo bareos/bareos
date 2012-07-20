@@ -1404,7 +1404,7 @@ dpl_openwrite_ex(dpl_ctx_t *ctx,
                  dpl_ftype_t object_type,
                  dpl_vfile_flag_t flags,
                  dpl_dict_t *metadata,
-                 dpl_canned_acl_t canned_acl,
+                 dpl_sysmd_t *sysmd,
                  unsigned int data_len,
                  dpl_dict_t *query_params,
                  dpl_vfile_t **vfilep)
@@ -1419,7 +1419,6 @@ dpl_openwrite_ex(dpl_ctx_t *ctx,
   int delim_len = strlen(ctx->delim);
   dpl_ino_t cur_ino;
   int own_metadata = 0;
-  dpl_sysmd_t sysmd;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "openwrite locator=%s flags=0x%x", locator, flags);
 
@@ -1605,15 +1604,11 @@ dpl_openwrite_ex(dpl_ctx_t *ctx,
         }
     }
 
-  memset(&sysmd, 0, sizeof (sysmd));
-  sysmd.mask = DPL_SYSMD_MASK_CANNED_ACL;
-  sysmd.canned_acl = canned_acl;
-
   if (flags & DPL_VFILE_FLAG_POST)
-    ret2 = dpl_post_buffered(ctx, bucket, obj_ino.key, NULL, obj_type, metadata, &sysmd,
+    ret2 = dpl_post_buffered(ctx, bucket, obj_ino.key, NULL, obj_type, metadata, sysmd,
                              data_len, query_params, &vfile->conn);
   else
-    ret2 = dpl_put_buffered(ctx, bucket, obj_ino.key, NULL, obj_type, metadata, &sysmd,
+    ret2 = dpl_put_buffered(ctx, bucket, obj_ino.key, NULL, obj_type, metadata, sysmd,
                             data_len, &vfile->conn);
   if (DPL_SUCCESS != ret2)
     {
@@ -1655,7 +1650,13 @@ dpl_openwrite(dpl_ctx_t *ctx,
               unsigned int data_len,
               dpl_vfile_t **vfilep)
 {
-  return dpl_openwrite_ex(ctx, locator, DPL_FTYPE_REG, flags, metadata, canned_acl, data_len, NULL, vfilep);
+  dpl_sysmd_t sysmd;
+
+  memset(&sysmd, 0, sizeof (sysmd));
+  sysmd.mask = DPL_SYSMD_MASK_CANNED_ACL;
+  sysmd.canned_acl = canned_acl;
+
+  return dpl_openwrite_ex(ctx, locator, DPL_FTYPE_REG, flags, metadata, &sysmd, data_len, NULL, vfilep);
 }
 
 /**
@@ -2162,9 +2163,85 @@ dpl_unlink(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
+dpl_getattr_sysmd(dpl_ctx_t *ctx,
+                  const char *locator,
+                  dpl_dict_t **metadatap,
+                  dpl_sysmd_t *sysmdp)
+{
+  int ret, ret2;
+  dpl_ino_t parent_ino, obj_ino;
+  dpl_ftype_t obj_type;
+  char *nlocator = NULL;
+  char *bucket = NULL;
+  char *path;
+  dpl_ino_t cur_ino;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "getattr_sysmd locator=%s", locator);
+
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
+    }
+  else
+    {
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      path = nlocator;
+    }
+
+  cur_ino = dpl_cwd(ctx, bucket);
+
+  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_head_sysmd(ctx, bucket, obj_ino.key, NULL, NULL, sysmdp, metadatap);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != bucket)
+    free(bucket);
+
+  if (NULL != nlocator)
+    free(nlocator);
+
+  return ret;
+}
+
+dpl_status_t
 dpl_getattr(dpl_ctx_t *ctx,
-               const char *locator,
-               dpl_dict_t **metadatap)
+            const char *locator,
+            dpl_dict_t **metadatap)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -2312,9 +2389,10 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_setattr(dpl_ctx_t *ctx,
-               const char *locator,
-               dpl_dict_t *metadata)
+dpl_setattr_sysmd(dpl_ctx_t *ctx,
+                  const char *locator,
+                  dpl_dict_t *metadata,
+                  dpl_sysmd_t *sysmd)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -2372,7 +2450,7 @@ dpl_setattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, bucket, obj_ino.key, NULL, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, DPL_METADATA_DIRECTIVE_REPLACE, metadata, DPL_CANNED_ACL_UNDEF, NULL);
+  ret2 = dpl_copy(ctx, bucket, obj_ino.key, NULL, bucket, obj_ino.key, NULL, DPL_FTYPE_REG, DPL_METADATA_DIRECTIVE_REPLACE, metadata, sysmd, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2390,6 +2468,14 @@ dpl_setattr(dpl_ctx_t *ctx,
     free(nlocator);
 
   return ret;
+}
+
+dpl_status_t
+dpl_setattr(dpl_ctx_t *ctx,
+            const char *locator,
+            dpl_dict_t *metadata)
+{
+  return dpl_setattr_sysmd(ctx, locator, metadata, NULL);
 }
 
 dpl_status_t
