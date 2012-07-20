@@ -386,6 +386,26 @@ dpl_iso8601totime(const char *str)
   return t;
 }
 
+dpl_status_t
+dpl_timetoiso8601(time_t t, 
+                  char *buf,
+                  int buf_size)
+{
+  struct tm *tm_ptr, tm_buf;
+
+  tm_ptr = gmtime_r(&t, &tm_buf);
+
+  snprintf(buf, buf_size, "%04d-%02d-%02dT%02d:%02d:%02dZ",
+           1900 + tm_ptr->tm_year,
+           tm_ptr->tm_mon + 1,
+           tm_ptr->tm_mday,
+           tm_ptr->tm_hour,
+           tm_ptr->tm_min,
+           tm_ptr->tm_sec);
+
+  return DPL_SUCCESS;
+}
+
 /**/
 
 /**

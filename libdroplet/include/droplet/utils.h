@@ -236,6 +236,7 @@ void dpl_trace(dpl_ctx_t *ctx, unsigned int level, const char *file, const char 
 size_t dpl_iov_size(struct iovec *iov, int n_iov);
 void dpl_iov_dump(struct iovec *iov, int n_iov, size_t n_bytes);
 time_t dpl_iso8601totime(const char *str);
+dpl_status_t dpl_timetoiso8601(time_t t, char *buf, int buf_size);
 char *dpl_strrstr(const char *haystack, const char *needle);
 void test_strrstr(void);
 void dpl_strlower(char *str);
