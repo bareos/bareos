@@ -455,6 +455,7 @@ typedef struct
   char *bucket;
   char *resource;
   dpl_dict_t *metadata;
+  dpl_sysmd_t *sysmd;
   
 } dpl_vfile_t;
 
@@ -466,6 +467,7 @@ typedef struct
 #include <droplet/converters.h>
 #include <droplet/req.h>
 #include <droplet/rest.h>
+#include <droplet/sysmd.h>
 #include <droplet/id.h>
 #include <droplet/vfs.h>
 

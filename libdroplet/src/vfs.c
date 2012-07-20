@@ -1309,7 +1309,7 @@ dpl_close_ex(dpl_vfile_t *vfile,
               NULL != vfile->metadata)
             {
               ret2 = dpl_cdmi_put(vfile->ctx, vfile->bucket, vfile->resource, "metadata",
-                                  DPL_FTYPE_REG, vfile->metadata, DPL_CANNED_ACL_UNDEF,
+                                  DPL_FTYPE_REG, vfile->metadata, vfile->sysmd, 
                                   NULL, 0);
               if (DPL_SUCCESS != ret2)
                 {
@@ -1332,6 +1332,9 @@ dpl_close_ex(dpl_vfile_t *vfile,
 
   if (NULL != vfile->metadata)
     dpl_dict_free(vfile->metadata);
+
+  if (NULL != vfile->sysmd)
+    dpl_sysmd_free(vfile->sysmd);
 
   free(vfile);
 
@@ -1600,6 +1603,16 @@ dpl_openwrite_ex(dpl_ctx_t *ctx,
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
+          goto end;
+        }
+    }
+
+  if (NULL != sysmd)
+    {
+      vfile->sysmd = dpl_sysmd_dup(sysmd);
+      if (NULL == vfile->sysmd)
+        {
+          ret = DPL_ENOMEM;
           goto end;
         }
     }

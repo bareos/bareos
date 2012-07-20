@@ -37,6 +37,118 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+static dpl_status_t
+add_sysmd_to_req(const dpl_sysmd_t *sysmd,
+                 dpl_req_t *req)
+{
+  int ret, ret2;
+  char buf[256];
+  dpl_status_t dpl_status;
+  dpl_dict_t *tmp_dict = NULL;
+  
+  tmp_dict = dpl_dict_new(13);
+  if (NULL == tmp_dict)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+  
+  if (sysmd->mask & DPL_SYSMD_MASK_SIZE)
+    {
+      /* optional (computed remotely by storage) */
+      snprintf(buf, sizeof (buf), "%ld", sysmd->size);
+      
+      dpl_status = dpl_dict_add(tmp_dict, "cdmi_size", buf, 0);
+      if (DPL_SUCCESS != dpl_status)
+        {
+          ret = -1;
+          goto end;
+        }
+    }
+
+  if (sysmd->mask & DPL_SYSMD_MASK_ATIME)
+    {
+      /* optional */
+      dpl_status = dpl_timetoiso8601(sysmd->atime, buf, sizeof (buf));
+      if (DPL_SUCCESS != dpl_status)
+        {
+          ret = -1;
+          goto end;
+        }
+      
+      dpl_status = dpl_dict_add(tmp_dict, "cdmi_atime", buf, 0);
+      if (DPL_SUCCESS != dpl_status)
+        {
+          ret = -1;
+          goto end;
+        }
+    }
+
+  if (sysmd->mask & DPL_SYSMD_MASK_MTIME)
+    {
+      /* optional */
+      dpl_status = dpl_timetoiso8601(sysmd->mtime, buf, sizeof (buf));
+      if (DPL_SUCCESS != dpl_status)
+        {
+          ret = -1;
+          goto end;
+        }
+
+      dpl_status = dpl_dict_add(tmp_dict, "cdmi_mtime", buf, 0);
+      if (DPL_SUCCESS != dpl_status)
+        {
+          ret = -1;
+          goto end;
+        }
+    }
+
+  if (sysmd->mask & DPL_SYSMD_MASK_CTIME)
+    {
+      /* optional */
+      dpl_status = dpl_timetoiso8601(sysmd->ctime, buf, sizeof (buf));
+      if (DPL_SUCCESS != dpl_status)
+        {
+          ret = -1;
+          goto end;
+        }
+
+      dpl_status = dpl_dict_add(tmp_dict, "cdmi_ctime", buf, 0);
+      if (DPL_SUCCESS != dpl_status)
+        {
+          ret = -1;
+          goto end;
+        }
+    }
+
+#if 0
+  //XXX ACL
+  dpl_status = dpl_dict_add(tmp_dict, "cdmi_owner", buf, 0);
+  if (DPL_SUCCESS != dpl_status)
+    {
+      ret = -1;
+      goto end;
+    }
+#endif
+
+  //dpl_dict_print(tmp_dict);
+
+  ret2 = dpl_req_add_metadata(req, tmp_dict);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+                            
+  ret = 0;
+
+ end:
+
+  if (NULL != tmp_dict)
+    dpl_dict_free(tmp_dict);
+
+  return ret;
+}
+
 dpl_status_t
 dpl_cdmi_make_bucket(dpl_ctx_t *ctx,
                      const char *bucket,
@@ -304,6 +416,16 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
 
+  if (NULL != sysmd)
+    {
+      ret2 = add_sysmd_to_req(sysmd, req);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
   if (NULL != metadata)
     {
       ret2 = dpl_req_add_metadata(req, metadata);
@@ -500,6 +622,16 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_EXPECT);
 
+  if (NULL != sysmd)
+    {
+      ret2 = add_sysmd_to_req(sysmd, req);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
   if (NULL != metadata)
     {
       ret2 = dpl_req_add_metadata(req, metadata);
@@ -685,6 +817,16 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
     }
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
+
+  if (NULL != sysmd)
+    {
+      ret2 = add_sysmd_to_req(sysmd, req);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
 
   if (NULL != metadata)
     {
@@ -880,6 +1022,16 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
   dpl_req_set_object_type(req, object_type);
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_EXPECT);
+
+  if (NULL != sysmd)
+    {
+      ret2 = add_sysmd_to_req(sysmd, req);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
 
   if (NULL != metadata)
     {
