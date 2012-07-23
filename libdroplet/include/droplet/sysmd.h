@@ -36,4 +36,5 @@
 
 dpl_sysmd_t *dpl_sysmd_dup(dpl_sysmd_t *sysmd);
 void dpl_sysmd_free(dpl_sysmd_t *sysmd);
+void dpl_sysmd_print(dpl_sysmd_t *sysmd, FILE *f);
 #endif

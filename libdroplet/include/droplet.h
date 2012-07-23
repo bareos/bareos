@@ -142,6 +142,99 @@ typedef enum
   } dpl_canned_acl_t;
 #define DPL_N_CANNED_ACL (DPL_CANNED_ACL_BUCKET_OWNER_FULL_CONTROL+1)
 
+/*
+ * ACL mgmt (follow RFC3530)
+ */
+
+typedef enum
+  {
+    DPL_ACE_TYPE_ALLOW = 0x00000001,
+    DPL_ACE_TYPE_DENY  = 0x00000002,
+    DPL_ACE_TPE_AUDIT  = 0x00000003,
+    DPL_ACE_TPE_ALARM  = 0x00000004
+  } dpl_ace_type_t;
+
+typedef enum
+  {
+    DPL_ACE_FLAG_OBJECT_INHERIT =       0x00000001,
+    DPL_ACE_FLAG_CONTAINER_INHERIT =    0x00000002,
+    DPL_ACE_FLAG_NO_PROPAGATE =         0x00000004,
+    DPL_ACE_FLAG_INHERIT_ONLY =         0x00000008,
+    DPL_ACE_FLAG_SUCCESSFUL_ACCESS =    0x00000010,
+    DPL_ACE_FLAG_FAILED_ACCESS =        0x00000020,
+    DPL_ACE_FLAG_IDENTIFIER_GROUP =     0x00000040,
+    DPL_ACE_FLAG_INHERITED =            0x00000080,
+  } dpl_ace_flag_t;
+
+typedef enum
+  {
+    DPL_ACE_MASK_READ_OBJECT =          0x00000001,
+    DPL_ACE_MASK_LIST_CONTAINER =       0x00000001,
+    DPL_ACE_MASK_WRITE_OBJECT =         0x00000002,
+    DPL_ACE_MASK_ADD_OBJECT =           0x00000002,
+    DPL_ACE_MASK_APPEND_DATA =          0x00000004,
+    DPL_ACE_MASK_ADD_SUBCONTAINER =     0x00000004,
+    DPL_ACE_MASK_READ_METADATA =        0x00000008,
+    DPL_ACE_MASK_WRITE_METADATA =       0x00000010,
+    DPL_ACE_MASK_EXECUTE =              0x00000020,
+    DPL_ACE_MASK_DELETE_OBJECT =        0x00000040,
+    DPL_ACE_MASK_DELETE_SUBCONTAINER =  0x00000040,
+    DPL_ACE_MASK_READ_ATTRIBUTES =      0x00000080,
+    DPL_ACE_MASK_WRITE_ATTRIBUTES =     0x00000100,
+    DPL_ACE_MASK_WRITE_RETENTION =      0x00000200,
+    DPL_ACE_MASK_WRITE_RETENTION_HOLD = 0x00000400,
+    DPL_ACE_MASK_DELETE =               0x00010000,
+    DPL_ACE_MASK_READ_ACL =             0x00020000,
+    DPL_ACE_MASK_WRITE_ACL =            0x00040000,
+    DPL_ACE_MASK_WRITE_OWNER =          0x00080000,
+    DPL_ACE_MASK_SYNCHRONIZE =          0x00190000
+  } dpl_ace_mask_t;
+
+#define DPL_ACE_MASK_READ               (DPL_ACE_MASK_READ_OBJECT|\
+                                         DPL_ACE_MASK_READ_METADATA|    \
+                                         DPL_ACE_MASK_EXECUTE|          \
+                                         DPL_ACE_MASK_READ_ATTRIBUTES)
+#define DPL_ACE_MASK_READ_ALL           (DPL_ACE_MASK_READ|             \
+                                         DPL_ACE_MASK_READ_ACL)
+#define DPL_ACE_MASK_WRITE              (DPL_ACE_MASK_WRITE_OBJECT|     \
+                                         DPL_ACE_MASK_ADD_SUBCONTAINER| \
+                                         DPL_ACE_MASK_WRITE_METADATA)
+#define DPL_ACE_MASK_WRITE_ALL          (DPL_ACE_MASK_WRITE|            \
+                                         DPL_ACE_MASK_DELETE_OBJECT|    \
+                                         DPL_ACE_MASK_DELETE|           \
+                                         DPL_ACE_MASK_WRITE_ATTRIBUTES| \
+                                         DPL_ACE_MASK_WRITE_RETENTION|  \
+                                         DPL_ACE_MASK_WRITE_RETENTION_HOLD| \
+                                         DPL_ACE_MASK_WRITE_ACL|        \
+                                         DPL_ACE_MASK_WRITE_OWNER)
+#define DPL_ACE_MASK_RW                 (DPL_ACE_MASK_READ|DPL_ACE_MASK_WRITE)
+#define DPL_ACE_MASK_RW_ALL             (DPL_ACE_MASK_READ_ALL|DPL_ACE_MASK_WRITE_ALL)
+#define DPL_ACE_MASK_ALL                (DPL_ACE_MASK_RW_ALL|DPL_ACE_MASK_SYNCHRONIZE)
+
+typedef enum
+  {
+    DPL_ACE_WHO_OWNER,
+    DPL_ACE_WHO_GROUP,
+    DPL_ACE_WHO_EVERYONE,
+    DPL_ACE_WHO_INTERACTIVE,
+    DPL_ACE_WHO_NETWORK,
+    DPL_ACE_WHO_DIALUP,
+    DPL_ACE_WHO_BATCH,
+    DPL_ACE_WHO_ANONYMOUS,
+    DPL_ACE_WHO_AUTHENTICATED,
+    DPL_ACE_WHO_SERVICE,
+    DPL_ACE_WHO_ADMINISTRATOR,
+    DPL_ACE_WHO_ADMINUSERS,
+  } dpl_ace_who_t;
+
+typedef struct
+{
+  dpl_ace_type_t type;
+  dpl_ace_flag_t flag;
+  dpl_ace_mask_t access_mask;
+  dpl_ace_who_t who;
+} dpl_ace_t;
+
 typedef enum
   {
     DPL_STORAGE_CLASS_UNDEF,
@@ -163,6 +256,9 @@ typedef enum
     DPL_SYSMD_MASK_MD5           = (1u<<6),
     DPL_SYSMD_MASK_LOCATION_CONSTRAINT = (1u<<8),
     DPL_SYSMD_MASK_LAZY          = (1u<<9), /*!< lazy operation */
+    DPL_SYSMD_MASK_OWNER         = (1u<<10),
+    DPL_SYSMD_MASK_GROUP         = (1u<<11),
+    DPL_SYSMD_MASK_ACL           = (1u<<12),
   } dpl_sysmd_mask_t;
 
 typedef struct
@@ -174,8 +270,15 @@ typedef struct
   time_t atime;
   time_t mtime;
   time_t ctime;
-  char *md5;
+  char md5[MD5_DIGEST_LENGTH];
   dpl_location_constraint_t location_constraint;
+#define DPL_SYSMD_OWNER_SIZE 32
+  char owner[DPL_SYSMD_OWNER_SIZE+1];
+#define DPL_SYSMD_GROUP_SIZE 32
+  char group[DPL_SYSMD_OWNER_SIZE+1];
+#define DPL_SYSMD_ACE_MAX 10
+  uint32_t n_aces;
+  dpl_ace_t aces[DPL_SYSMD_ACE_MAX];
 } dpl_sysmd_t;
 
 /**/

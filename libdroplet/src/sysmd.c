@@ -56,3 +56,48 @@ dpl_sysmd_free(dpl_sysmd_t *sysmd)
 {
   free(sysmd);
 }
+
+void
+dpl_sysmd_print(dpl_sysmd_t *sysmd,
+                FILE *f)
+{
+  int i;
+
+  fprintf(f, "mask=0x%x\n", sysmd->mask);
+  
+  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
+    fprintf(f, "canned_acl=%s\n", dpl_canned_acl_str(sysmd->canned_acl));
+
+  if (sysmd->mask & DPL_SYSMD_MASK_STORAGE_CLASS)
+    fprintf(f, "storage_class=%s\n", dpl_storage_class_str(sysmd->storage_class));
+
+  if (sysmd->mask & DPL_SYSMD_MASK_SIZE)
+    fprintf(f, "size=%lu\n", sysmd->size);
+
+  if (sysmd->mask & DPL_SYSMD_MASK_ATIME)
+    fprintf(f, "atime=%lu\n", sysmd->atime);
+
+  if (sysmd->mask & DPL_SYSMD_MASK_MTIME)
+    fprintf(f, "mtime=%lu\n", sysmd->mtime);
+
+  if (sysmd->mask & DPL_SYSMD_MASK_CTIME)
+    fprintf(f, "ctime=%lu\n", sysmd->ctime);
+
+  //if (sysmd->mask & DPL_SYSMD_MASK_MD5)
+
+  if (sysmd->mask & DPL_SYSMD_MASK_LOCATION_CONSTRAINT)
+    fprintf(f, "location_constraint=%s\n", dpl_location_constraint_str(sysmd->location_constraint));
+
+  if (sysmd->mask & DPL_SYSMD_MASK_OWNER)
+    fprintf(f, "owner=%s\n", sysmd->owner);
+
+  if (sysmd->mask & DPL_SYSMD_MASK_GROUP)
+    fprintf(f, "group=%s\n", sysmd->group);
+
+  for (i = 0;i < sysmd->n_aces;i++)
+    {
+      printf("ace%d: type=0x%x flag=0x%x access_mask=0x%x who=0x%x\n",
+             i, sysmd->aces[i].type, sysmd->aces[i].flag, sysmd->aces[i].access_mask,
+             sysmd->aces[i].who);
+    }
+}
