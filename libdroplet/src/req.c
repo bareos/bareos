@@ -285,16 +285,10 @@ dpl_req_add_metadata(dpl_req_t *req,
   dpl_var_t *var;
   int ret;
 
-  for (bucket = 0;bucket < metadata->n_buckets;bucket++)
+  ret = dpl_dict_copy(req->metadata, metadata);
+  if (DPL_SUCCESS != ret)
     {
-      for (var = metadata->buckets[bucket];var;var = var->prev)
-        {
-          ret = dpl_dict_add(req->metadata, var->key, var->value, 0);
-          if (DPL_SUCCESS != ret)
-            {
-              return DPL_FAILURE;
-            }
-        }
+      return DPL_FAILURE;
     }
 
   return DPL_SUCCESS;

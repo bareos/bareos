@@ -38,6 +38,61 @@
 #define DPRINTF(fmt,...)
 
 static dpl_status_t
+add_array_to_json_array(dpl_dict_t *dict,
+                        json_object *array)
+
+{
+  int bucket;
+  dpl_var_t *var;
+  int ret;
+  json_object *tmp;
+  json_object *tmp2;
+
+  tmp = json_object_new_object();
+  if (NULL == tmp)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  for (bucket = 0;bucket < dict->n_buckets;bucket++)
+    {
+      for (var = dict->buckets[bucket];var;var = var->prev)
+        {
+          switch (var->type)
+            {
+            case DPL_VAR_STRING:
+
+              tmp2 = json_object_new_string(var->value);
+              if (NULL == tmp)
+                {
+                  ret = DPL_ENOMEM;
+                  goto end;
+                }
+              
+              json_object_object_add(tmp, var->key, tmp2);
+              //XXX check return value
+
+              break ;
+
+            case DPL_VAR_ARRAY:
+              //XXX do nothing
+              break ;
+            }
+        }
+    }
+
+  json_object_array_add(array, tmp);
+  //XXX check return value
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
+}
+
+static dpl_status_t
 add_metadata_to_json_body(dpl_dict_t *metadata,
                           json_object *body_obj)
 
@@ -59,11 +114,32 @@ add_metadata_to_json_body(dpl_dict_t *metadata,
     {
       for (var = metadata->buckets[bucket];var;var = var->prev)
         {
-          tmp = json_object_new_string(var->value);
-          if (NULL == tmp)
+          switch (var->type)
             {
-              ret = DPL_ENOMEM;
-              goto end;
+            case DPL_VAR_STRING:
+
+              tmp = json_object_new_string(var->value);
+              if (NULL == tmp)
+                {
+                  ret = DPL_ENOMEM;
+                  goto end;
+                }
+              
+              break ;
+
+            case DPL_VAR_ARRAY:
+
+              tmp = json_object_new_array();
+              if (NULL == tmp)
+                {
+                  ret = DPL_ENOMEM;
+                  goto end;
+                }
+
+              add_array_to_json_array(var->array, tmp);
+              //XXX check return value
+              
+              break ;
             }
 
           json_object_object_add(md_obj, var->key, tmp);
@@ -297,7 +373,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
               ret = DPL_ENOMEM;
               goto end;
             }
-          
+
           body_len = strlen(body_str);
           
           snprintf(buf, sizeof (buf), "%u", body_len);

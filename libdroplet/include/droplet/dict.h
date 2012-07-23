@@ -34,18 +34,33 @@
 #ifndef __DROPLET_DICT_H__
 #define __DROPLET_DICT_H__ 1
 
+struct dpl_dict;
+
+typedef enum
+  {
+    DPL_VAR_STRING,
+    DPL_VAR_ARRAY,
+  } dpl_var_type_t;
+
 typedef struct dpl_var
 {
   struct dpl_var *prev;
   struct dpl_var *next;
 
   char *key;
-  char *value;
+
+  union
+  {
+    char *value;
+    struct dpl_dict *array;
+  };
+
+  dpl_var_type_t type;
 } dpl_var_t;
 
 typedef void (*dpl_dict_func_t)(dpl_var_t *var, void *cb_arg);
 
-typedef struct
+typedef struct dpl_dict
 {
   dpl_var_t **buckets;
   unsigned int n_buckets;
@@ -60,10 +75,12 @@ char *dpl_dict_get_value(const dpl_dict_t *dict, const char *key);
 void dpl_dict_iterate(const dpl_dict_t *dict, dpl_dict_func_t cb_func, void *cb_arg);
 int dpl_dict_count(const dpl_dict_t *dict);
 void dpl_dict_free(dpl_dict_t *dict);
-void dpl_dict_print(const dpl_dict_t *dict);
+void dpl_dict_print(const dpl_dict_t *dict, FILE *f, int level);
+dpl_status_t dpl_dict_add_ex(dpl_dict_t *dict, const char *key, dpl_var_type_t type, const void *value, int lowered);
 dpl_status_t dpl_dict_add(dpl_dict_t *dict, const char *key, const char *value, int lowered);
 void dpl_dict_remove(dpl_dict_t *dict, dpl_var_t *var);
 dpl_status_t dpl_dict_copy(dpl_dict_t *dst, const dpl_dict_t *src);
+dpl_dict_t *dpl_dict_dup(const dpl_dict_t *src);
 dpl_status_t dpl_dict_filter_prefix(dpl_dict_t *dst, const dpl_dict_t *src, const char * prefix);
 dpl_status_t dpl_dict_filter_no_prefix(dpl_dict_t *dst, const dpl_dict_t *src, const char * prefix);
 dpl_status_t dpl_dict_update_value(dpl_dict_t *dict, const char *key, const char *value);

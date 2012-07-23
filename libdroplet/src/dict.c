@@ -128,19 +128,6 @@ dpl_dict_get_lowered(const dpl_dict_t *dict,
   return DPL_SUCCESS;
 }
 
-char *
-dpl_dict_get_value(const dpl_dict_t *dict,
-                   const char *key)
-{
-  dpl_var_t *var;
-
-  var = dpl_dict_get(dict, key);
-  if (NULL == var)
-    return NULL;
-
-  return var->value;
-}
-
 void
 dpl_dict_iterate(const dpl_dict_t *dict,
                  dpl_dict_func_t cb_func,
@@ -180,11 +167,25 @@ dpl_dict_count(const dpl_dict_t *dict)
 }
 
 static void
+value_free(dpl_var_t *var)
+{
+  switch (var->type)
+    {
+    case DPL_VAR_STRING:
+      free(var->value);
+      break ;
+    case DPL_VAR_ARRAY:
+      dpl_dict_free(var->array);
+      break ;
+    }
+}
+
+static void
 cb_var_free(dpl_var_t *var,
             void *arg)
 {
   free(var->key);
-  free(var->value);
+  value_free(var);
   free(var);
 }
 
@@ -196,24 +197,55 @@ dpl_dict_free(dpl_dict_t *dict)
   free(dict);
 }
 
+struct print_data
+{
+  FILE *f;
+  int level;
+};
+
 static void
 cb_var_print(dpl_var_t *var,
              void *arg)
 {
-  fprintf(stderr, "%s=%s\n", var->key, var->value);
+  struct print_data *pd = (struct print_data *) arg;
+  int i;
+  
+  for (i = 0;i < pd->level;i++)
+    fprintf(pd->f, " ");
+
+  fprintf(pd->f, "%s=", var->key);
+  switch (var->type)
+    {
+    case DPL_VAR_STRING:
+      fprintf(pd->f, "%s", var->value);
+      break ;
+    case DPL_VAR_ARRAY:
+      fprintf(pd->f, "[\n");
+      dpl_dict_print(var->array, pd->f, pd->level+1);
+      fprintf(pd->f, "]");
+      break ;
+    }
+  fprintf(pd->f, "\n");
 }
 
 void
-dpl_dict_print(const dpl_dict_t *dict)
+dpl_dict_print(const dpl_dict_t *dict,
+               FILE *f,
+               int level)
 {
-  dpl_dict_iterate(dict, cb_var_print, NULL);
+  struct print_data pd;
+
+  pd.f = f;
+  pd.level = level;
+  dpl_dict_iterate(dict, cb_var_print, &pd);
 }
 
 dpl_status_t
-dpl_dict_add(dpl_dict_t *dict,
-             const char *key,
-             const char *value,
-             int lowered)
+dpl_dict_add_ex(dpl_dict_t *dict,
+                const char *key,
+                dpl_var_type_t type,
+                const void *value,
+                int lowered)
 {
   dpl_var_t *var;
 
@@ -238,12 +270,33 @@ dpl_dict_add(dpl_dict_t *dict,
       if (1 == lowered)
         dpl_strlower(var->key);
 
-      var->value = strdup(value);
-      if (NULL == var->value)
+      switch (type)
         {
-          free(var->key);
-          free(var);
-          return DPL_ENOMEM;
+        case DPL_VAR_STRING:
+          
+          var->value = strdup(value);
+          if (NULL == var->value)
+            {
+              free(var->key);
+              free(var);
+              return DPL_ENOMEM;
+            }
+          
+          var->type = DPL_VAR_STRING;
+          break ;
+
+        case DPL_VAR_ARRAY:
+
+          var->array = dpl_dict_dup(value);
+          if (NULL == var->array)
+            {
+              free(var->key);
+              free(var);
+              return DPL_ENOMEM;
+            }
+
+          var->type = DPL_VAR_ARRAY;
+          break ;
         }
 
       bucket = dict_hashcode(var->key) % dict->n_buckets;
@@ -256,16 +309,44 @@ dpl_dict_add(dpl_dict_t *dict,
     }
   else
     {
-      char *nval;
+      void *nval;
 
-      nval = strdup(value);
-      if (NULL == nval)
-        return DPL_ENOMEM;
-      free(var->value);
-      var->value = nval;
+      switch (type)
+        {
+        case DPL_VAR_STRING:
+          
+          nval = strdup(value);
+          if (NULL == nval)
+            return DPL_ENOMEM;
+
+          value_free(var);
+          var->value = nval;
+          break ;
+
+        case DPL_VAR_ARRAY:
+
+          nval = dpl_dict_dup(value);
+          if (NULL == nval)
+            return DPL_ENOMEM;
+
+          value_free(var);
+          var->array = nval;
+          break ;
+        }
+
+      var->type = type;
     }
 
   return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_dict_add(dpl_dict_t *dict,
+             const char *key,
+             const char *value,
+             int lowered)
+{
+  return dpl_dict_add_ex(dict, key, DPL_VAR_STRING, (void *) value, lowered);
 }
 
 void
@@ -284,17 +365,23 @@ dpl_dict_remove(dpl_dict_t *dict,
     dict->buckets[bucket] = var->prev;
 
   free(var->key);
-  free(var->value);
+  value_free(var);
   free(var);
 }
-
-
 
 static void
 cb_var_copy(dpl_var_t *var,
             void *arg)
 {
-  dpl_dict_add((dpl_dict_t *)arg, var->key, var->value, 0);
+  switch (var->type)
+    {
+    case DPL_VAR_STRING:
+      dpl_dict_add_ex((dpl_dict_t *)arg, var->key, var->type, var->value, 0);
+      break ;
+    case DPL_VAR_ARRAY:
+      dpl_dict_add_ex((dpl_dict_t *)arg, var->key, var->type, var->array, 0);
+      break ;
+    }
 }
 
 dpl_status_t
@@ -312,8 +399,28 @@ dpl_dict_copy(dpl_dict_t *dst,
   return DPL_SUCCESS;
 }
 
+dpl_dict_t *
+dpl_dict_dup(const dpl_dict_t *src)
+{
+  dpl_dict_t *dst;
+  dpl_status_t status;
 
-struct conviterate {
+  dst = dpl_dict_new(src->n_buckets);
+  if (NULL == dst)
+    return NULL;
+
+  status = dpl_dict_copy(dst, src);
+  if (DPL_SUCCESS != status)
+    {
+      dpl_dict_free(dst);
+      return NULL;
+    }
+  
+  return dst;
+}
+
+struct conviterate 
+{
   dpl_dict_t *dict;
   const char *prefix;
   int reverse_logic;
@@ -334,12 +441,32 @@ cb_var_filter_string(dpl_var_t *var,
   if (0 == strncmp(var->key, conv->prefix, prefix_len))
     {
       if (!conv->reverse_logic)
-        dpl_dict_add(conv->dict, var->key + prefix_len, var->value, 0);
+        {
+          switch (var->type)
+            {
+            case DPL_VAR_STRING:
+              dpl_dict_add_ex(conv->dict, var->key + prefix_len, var->type, var->value, 0);
+              break ;
+            case DPL_VAR_ARRAY:
+              dpl_dict_add_ex(conv->dict, var->key + prefix_len, var->type, var->array, 0);
+              break ;
+            }
+        }
     }
   else
     {
       if (conv->reverse_logic)
-        dpl_dict_add(conv->dict, var->key, var->value, 0);
+        {
+          switch (var->type)
+            {
+            case DPL_VAR_STRING:
+              dpl_dict_add_ex(conv->dict, var->key, var->type, var->value, 0);
+              break ;
+            case DPL_VAR_ARRAY:
+              dpl_dict_add_ex(conv->dict, var->key, var->type, var->array, 0);
+              break ;
+            }
+        }
     }
 }
 
@@ -379,6 +506,26 @@ dpl_dict_filter_no_prefix(dpl_dict_t *dst,
   return DPL_SUCCESS;
 }
 
+/*
+ * helpers for DPL_VAR_STRING
+ */
+
+char *
+dpl_dict_get_value(const dpl_dict_t *dict,
+                   const char *key)
+{
+  dpl_var_t *var;
+
+  var = dpl_dict_get(dict, key);
+  if (NULL == var)
+    return NULL;
+
+  if (DPL_VAR_STRING != var->type)
+    return NULL; //XXX
+
+  return var->value;
+}
+
 dpl_status_t
 dpl_dict_update_value(dpl_dict_t *dict,
                       const char *key,
@@ -394,8 +541,9 @@ dpl_dict_update_value(dpl_dict_t *dict,
   if (! var)
     return dpl_dict_add(dict, key, value, 0);
 
-  free(var->value);
+  value_free(var);
   var->value = strdup(value);
+  var->type = DPL_VAR_STRING;
 
   if (! var->value)
     return DPL_ENOMEM;

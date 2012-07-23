@@ -37,6 +37,36 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+const char *
+dpl_cdmi_who_str(dpl_ace_who_t who)
+{
+  switch (who)
+    {
+    case DPL_ACE_WHO_OWNER:
+      return "OWNER@";
+    case DPL_ACE_WHO_GROUP:
+      return "GROUP@";
+    case DPL_ACE_WHO_EVERYONE:
+      return "EVERYONE@";
+    case DPL_ACE_WHO_ANONYMOUS:
+      return "ANONYMOUS@";
+    case DPL_ACE_WHO_AUTHENTICATED:
+      return "AUTHENTICATED@";
+    case DPL_ACE_WHO_ADMINISTRATOR:
+      return "ADMINISTRATOR@";
+    case DPL_ACE_WHO_ADMINUSERS:
+      return "ADMINUSERS@";
+    case DPL_ACE_WHO_INTERACTIVE:
+    case DPL_ACE_WHO_NETWORK:
+    case DPL_ACE_WHO_DIALUP:
+    case DPL_ACE_WHO_BATCH:
+    case DPL_ACE_WHO_SERVICE:
+      return NULL;
+    }
+
+  return NULL;
+}
+
 static dpl_status_t
 add_sysmd_to_req(const dpl_sysmd_t *sysmd,
                  dpl_req_t *req)
@@ -45,9 +75,17 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
   char buf[256];
   dpl_status_t dpl_status;
   dpl_dict_t *tmp_dict = NULL;
+  dpl_dict_t *tmp_dict2 = NULL;
   
   tmp_dict = dpl_dict_new(13);
   if (NULL == tmp_dict)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  tmp_dict2 = dpl_dict_new(13);
+  if (NULL == tmp_dict2)
     {
       ret = DPL_FAILURE;
       goto end;
@@ -120,17 +158,76 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
         }
     }
 
-#if 0
-  //XXX ACL
-  dpl_status = dpl_dict_add(tmp_dict, "cdmi_owner", buf, 0);
-  if (DPL_SUCCESS != dpl_status)
+  if (sysmd->mask & DPL_SYSMD_MASK_OWNER)
     {
-      ret = -1;
-      goto end;
+      dpl_status = dpl_dict_add(tmp_dict, "cdmi_owner", sysmd->owner, 0);
+      if (DPL_SUCCESS != dpl_status)
+        {
+          ret = -1;
+          goto end;
+        }
     }
-#endif
 
-  //dpl_dict_print(tmp_dict);
+  if (sysmd->mask & DPL_SYSMD_MASK_ACL)
+    {
+      int i;
+      
+      for (i = 0;i < sysmd->n_aces;i++)
+        {
+          const char *str;
+          char buf[256];
+
+          str = dpl_cdmi_who_str(sysmd->aces[i].who);
+          if (NULL == str)
+            {
+              ret = -1;
+              goto end;
+            }
+
+          dpl_status = dpl_dict_add(tmp_dict2, "identifier", str, 0);
+          if (DPL_SUCCESS != dpl_status)
+            {
+              ret = -1;
+              goto end;
+            }
+
+          snprintf(buf, sizeof (buf), "0x%08x", sysmd->aces[i].type);
+
+          dpl_status = dpl_dict_add(tmp_dict2, "acetype", buf, 0);
+          if (DPL_SUCCESS != dpl_status)
+            {
+              ret = -1;
+              goto end;
+            }
+
+          snprintf(buf, sizeof (buf), "0x%08x", sysmd->aces[i].flag);
+
+          dpl_status = dpl_dict_add(tmp_dict2, "aceflags", buf, 0);
+          if (DPL_SUCCESS != dpl_status)
+            {
+              ret = -1;
+              goto end;
+            }
+
+          snprintf(buf, sizeof (buf), "0x%08x", sysmd->aces[i].access_mask);
+
+          dpl_status = dpl_dict_add(tmp_dict2, "acemask", buf, 0);
+          if (DPL_SUCCESS != dpl_status)
+            {
+              ret = -1;
+              goto end;
+            }
+        }
+
+      dpl_status = dpl_dict_add_ex(tmp_dict, "cdmi_acl", DPL_VAR_ARRAY, tmp_dict2, 0);
+      if (DPL_SUCCESS != dpl_status)
+        {
+          ret = -1;
+          goto end;
+        }
+    }
+
+  //dpl_dict_print(tmp_dict, stderr, 0);
 
   ret2 = dpl_req_add_metadata(req, tmp_dict);
   if (DPL_SUCCESS != ret2)
@@ -142,6 +239,9 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
   ret = 0;
 
  end:
+
+  if (NULL != tmp_dict2)
+    dpl_dict_free(tmp_dict2);
 
   if (NULL != tmp_dict)
     dpl_dict_free(tmp_dict);
