@@ -259,6 +259,7 @@ typedef enum
     DPL_SYSMD_MASK_OWNER         = (1u<<10),
     DPL_SYSMD_MASK_GROUP         = (1u<<11),
     DPL_SYSMD_MASK_ACL           = (1u<<12),
+    DPL_SYSMD_MASK_ID            = (1u<<13)
   } dpl_sysmd_mask_t;
 
 typedef struct
@@ -279,6 +280,8 @@ typedef struct
 #define DPL_SYSMD_ACE_MAX 10
   uint32_t n_aces;
   dpl_ace_t aces[DPL_SYSMD_ACE_MAX];
+#define DPL_SYSMD_ID_SIZE 64
+  char id[DPL_SYSMD_ID_SIZE+1];
 } dpl_sysmd_t;
 
 /**/

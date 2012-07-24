@@ -227,6 +227,17 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
         }
     }
 
+  if (sysmd->mask & DPL_SYSMD_MASK_ID)
+    {
+      //XXX scality extension
+      dpl_status = dpl_dict_add(tmp_dict, "scality_objectid", sysmd->id, 0);
+      if (DPL_SUCCESS != dpl_status)
+        {
+          ret = -1;
+          goto end;
+        }
+    }
+
   //dpl_dict_print(tmp_dict, stderr, 0);
 
   ret2 = dpl_req_add_metadata(req, tmp_dict);
