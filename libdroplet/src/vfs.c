@@ -1163,8 +1163,9 @@ dpl_mknod(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_rmdir(dpl_ctx_t *ctx,
-             const char *locator)
+dpl_rmdir_ex(dpl_ctx_t *ctx,
+             const char *locator,
+             int light_mode)
 {
   int ret, ret2;
   char *dir_name = NULL;
@@ -1216,7 +1217,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
   else
     dir_name = path;
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, NULL, NULL);
+  ret2 = dpl_namei_ex(ctx, light_mode, path, bucket, cur_ino, &parent_ino, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "path resolved failed");
@@ -1243,6 +1244,13 @@ dpl_rmdir(dpl_ctx_t *ctx,
     free(nlocator);
 
   return ret;
+}
+
+dpl_status_t
+dpl_rmdir(dpl_ctx_t *ctx,
+             const char *locator)
+{
+  return dpl_rmdir_ex(ctx, locator, ctx->light_mode);
 }
 
 /* 

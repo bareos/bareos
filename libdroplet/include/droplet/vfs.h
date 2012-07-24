@@ -48,6 +48,7 @@ dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_mkdir_ex(dpl_ctx_t *ctx, const char *locator, int light_mode, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
 dpl_status_t dpl_mknod(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, const char *locator);
+dpl_status_t dpl_rmdir_ex(dpl_ctx_t *ctx, const char *locator, int light_mode);
 dpl_status_t dpl_close_ex(dpl_vfile_t *vfile, char **resource_idp);
 dpl_status_t dpl_close(dpl_vfile_t *vfile);
 dpl_status_t dpl_openwrite_ex(dpl_ctx_t *ctx, const char *locator, dpl_ftype_t object_type, dpl_vfile_flag_t flags, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_dict_t *query_params, dpl_vfile_t **vfilep);
