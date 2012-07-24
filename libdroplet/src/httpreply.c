@@ -237,7 +237,7 @@ read_line(dpl_conn_t *conn)
 	  if (conn->cc == 0)
             conn->eof = 1;
 
-          if (conn->ctx->trace_level & DPL_TRACE_BUF)
+          if (conn->ctx->trace_buffers)
             dpl_dump_simple(conn->read_buf, conn->cc);
 
 	  conn->read_buf_pos = 0;
@@ -403,7 +403,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   break ;
                 }
 
-              if (conn->ctx->trace_level & DPL_TRACE_BUF)
+              if (conn->ctx->trace_buffers)
                 dpl_dump_simple(conn->read_buf, conn->cc);
 
               chunk_remain = MIN(conn->cc, chunk_len - chunk_off);

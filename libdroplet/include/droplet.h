@@ -70,35 +70,38 @@ extern "C" {
 /*
  * types
  */
-typedef int dpl_status_t;
+typedef enum
+  {
+    DPL_SUCCESS              =  0,   /*!< Success */
+    DPL_FAILURE              = (-1), /*!< General failure */
+    DPL_ENOENT               = (-2), /*!< No such entry */
+    DPL_EINVAL               = (-3), /*!< Invalid argument */
+    DPL_ETIMEOUT             = (-4), /*!< Operation timeouted */
+    DPL_ENOMEM               = (-5), /*!< No memory available */
+    DPL_ESYS                 = (-6), /*!< System error */
+    DPL_EIO                  = (-7), /*!< I/O error */
+    DPL_ELIMIT               = (-8), /*!< Limit has been reached */
+    DPL_ENAMETOOLONG         = (-9), /*!< Name is too long */
+    DPL_ENOTDIR              = (-10),/*!< Not a directory */
+    DPL_ENOTEMPTY            = (-11),/*!< Directory is not empty */
+    DPL_EISDIR               = (-12),/*!< Is a directory */
+    DPL_EEXIST               = (-13),/*!< Object already exists */
+    DPL_ENOTSUPP             = (-14) /*!< Method not supported */
+  } dpl_status_t;
 
-#define DPL_SUCCESS               0    /*!< Success */
-#define DPL_FAILURE               (-1) /*!< General failure */
-#define DPL_ENOENT                (-2) /*!< No such entry */
-#define DPL_EINVAL                (-3) /*!< Invalid argument */
-#define DPL_ETIMEOUT              (-4) /*!< Operation timeouted */
-#define DPL_ENOMEM                (-5) /*!< No memory available */
-#define DPL_ESYS                  (-6) /*!< System error */
-#define DPL_EIO                   (-7) /*!< I/O error */
-#define DPL_ELIMIT                (-8) /*!< Limit has been reached */
-#define DPL_ENAMETOOLONG          (-9)  /*!< Name is too long */
-#define DPL_ENOTDIR               (-10) /*!< Not a directory */
-#define DPL_ENOTEMPTY             (-11) /*!< Directory is not empty */
-#define DPL_EISDIR                (-12) /*!< Is a directory */
-#define DPL_EEXIST                (-13) /*!< Object already exists */
-#define DPL_ENOTSUPP              (-14) /*!< Method not supported */
+typedef enum
+  {
+    DPL_TRACE_CONN  = (1u<<0),  /*!< trace connection */
+    DPL_TRACE_IO    = (1u<<1),  /*!< trace I/O */
+    DPL_TRACE_HTTP  = (1u<<2),  /*!< trace HTTP */
+    DPL_TRACE_SSL   = (1u<<3),  /*!< trace SSL */
+    DPL_TRACE_REQ   = (1u<<5),  /*!< trace request builder */
+    DPL_TRACE_REST  = (1u<<6),  /*!< trace REST based calls */
+    DPL_TRACE_ID    = (1u<<7),  /*!< trace ID based calls */
+    DPL_TRACE_VFS   = (1u<<8),  /*!< trace VFS based calls */
+  } dpl_trace_t;
 
-#define DPL_TRACE_CONN  (1u<<0)  /*!< trace connection */
-#define DPL_TRACE_IO    (1u<<1)  /*!< trace I/O */
-#define DPL_TRACE_HTTP  (1u<<2)  /*!< trace HTTP */
-#define DPL_TRACE_SSL   (1u<<3)  /*!< trace SSL */
-#define DPL_TRACE_REQ   (1u<<5)  /*!< trace request builder */
-#define DPL_TRACE_REST  (1u<<6)  /*!< trace REST based calls */
-#define DPL_TRACE_ID    (1u<<7)  /*!< trace ID based calls */
-#define DPL_TRACE_VFS   (1u<<8)  /*!< trace VFS based calls */
-#define DPL_TRACE_BUF   (1u<<31) /*!< trace buffers */
-
-typedef void (*dpl_trace_func_t)(pid_t tid, unsigned int level, const char *file, const char *func, int lineno, char *buf);
+typedef void (*dpl_trace_func_t)(pid_t tid, dpl_trace_t, const char *file, const char *func, int lineno, char *buf);
 
 #include <droplet/vec.h>
 #include <droplet/dict.h>
@@ -386,6 +389,7 @@ typedef struct dpl_ctx
   char *ssl_password;
   char *ssl_ca_list;
   unsigned int trace_level;
+  int trace_buffers;
   char *pricing;              /*!< might be NULL */
   unsigned int read_buf_size;
   char *encrypt_key;
