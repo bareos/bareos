@@ -254,21 +254,18 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
                dpl_ino_t parent_ino,
                const char *obj_name,
                dpl_ftype_t object_type,
-               const char *delim)
+               const char *delim,
+               dpl_dict_t *metadata,
+               dpl_sysmd_t *sysmd)
 {
   int ret, ret2;
   char resource[DPL_MAXPATHLEN];
-  dpl_sysmd_t sysmd;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "mkdir bucket=%s parent_ino=%s name=%s", bucket, parent_ino.key, obj_name);
 
   snprintf(resource, sizeof (resource), "%s%s%s", parent_ino.key, obj_name, delim);
 
-  memset(&sysmd, 0, sizeof (sysmd));
-  sysmd.mask = DPL_SYSMD_MASK_CANNED_ACL;
-  sysmd.canned_acl = DPL_CANNED_ACL_PRIVATE;
-
-  ret2 = dpl_put(ctx, bucket, resource, NULL, object_type, NULL, &sysmd, NULL, 0);
+  ret2 = dpl_put(ctx, bucket, resource, NULL, object_type, metadata, sysmd, NULL, 0);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -288,9 +285,11 @@ static dpl_status_t
 dpl_vdir_mkdir(dpl_ctx_t *ctx,
                const char *bucket,
                dpl_ino_t parent_ino,
-               const char *obj_name)
+               const char *obj_name,
+               dpl_dict_t *metadata,
+               dpl_sysmd_t *sysmd)
 {
-  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_DIR, ctx->delim);
+  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_DIR, ctx->delim, metadata, sysmd);
 }
 
 
@@ -298,9 +297,11 @@ static dpl_status_t
 dpl_vdir_mknod(dpl_ctx_t *ctx,
                const char *bucket,
                dpl_ino_t parent_ino,
-               const char *obj_name)
+               const char *obj_name,
+               dpl_dict_t *metadata,
+               dpl_sysmd_t *sysmd)
 {
-  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_REG, "");
+  return dpl_vdir_mkgen(ctx, bucket, parent_ino, obj_name, DPL_FTYPE_REG, "", metadata, sysmd);
 }
 
 static dpl_status_t
@@ -1011,12 +1012,15 @@ dpl_chdir(dpl_ctx_t *ctx,
   return ret;
 }
 
+typedef dpl_status_t (*dpl_mkgen_func_t)(dpl_ctx_t *, const char *, dpl_ino_t, const char *, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
 
 static dpl_status_t
 dpl_mkgen(dpl_ctx_t *ctx,
           int light_mode,
           const char *locator,
-          dpl_status_t (*cb)(dpl_ctx_t *, const char *, dpl_ino_t, const char *))
+          dpl_mkgen_func_t cb,
+          dpl_dict_t *metadata,
+          dpl_sysmd_t *sysmd)
 {
   char *dir_name = NULL;
   dpl_ino_t parent_ino;
@@ -1101,7 +1105,7 @@ dpl_mkgen(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = cb(ctx, bucket, parent_ino, dir_name);
+  ret2 = cb(ctx, bucket, parent_ino, dir_name, metadata, sysmd);
   if (0 != ret2)
     {
       DPLERR(0, "mkdir failed");
@@ -1126,24 +1130,37 @@ dpl_status_t
 dpl_mkdir(dpl_ctx_t *ctx,
              const char *locator)
 {
-  return dpl_mkgen(ctx, ctx->light_mode, locator, dpl_vdir_mkdir);
+  dpl_sysmd_t sysmd;
+
+  memset(&sysmd, 0, sizeof (sysmd));
+  sysmd.mask = DPL_SYSMD_MASK_CANNED_ACL;
+  sysmd.canned_acl = DPL_CANNED_ACL_PRIVATE;
+
+  return dpl_mkgen(ctx, ctx->light_mode, locator, dpl_vdir_mkdir, NULL, &sysmd);
 }
 
 dpl_status_t
 dpl_mkdir_ex(dpl_ctx_t *ctx,
              const char *locator,
-             int light_mode)
+             int light_mode,
+             dpl_dict_t *metadata,
+             dpl_sysmd_t *sysmd)
 {
-  return dpl_mkgen(ctx, light_mode, locator, dpl_vdir_mkdir);
+  return dpl_mkgen(ctx, light_mode, locator, dpl_vdir_mkdir, metadata, sysmd);
 }
 
 dpl_status_t
 dpl_mknod(dpl_ctx_t *ctx,
              const char *locator)
 {
-  return dpl_mkgen(ctx, ctx->light_mode, locator, dpl_vdir_mknod);
-}
+  dpl_sysmd_t sysmd;
 
+  memset(&sysmd, 0, sizeof (sysmd));
+  sysmd.mask = DPL_SYSMD_MASK_CANNED_ACL;
+  sysmd.canned_acl = DPL_CANNED_ACL_PRIVATE;
+
+  return dpl_mkgen(ctx, ctx->light_mode, locator, dpl_vdir_mknod, NULL, &sysmd);
+}
 
 dpl_status_t
 dpl_rmdir(dpl_ctx_t *ctx,
