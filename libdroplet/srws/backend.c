@@ -420,11 +420,12 @@ dpl_srws_get(dpl_ctx_t *ctx,
              const dpl_condition_t *condition,
              char **data_bufp,
              unsigned int *data_lenp,
-             dpl_dict_t **metadatap)
+             dpl_dict_t **metadatap,
+             dpl_sysmd_t *sysmdp)
 {
   return dpl_srws_get_range(ctx,bucket,resource,subresource,object_type,condition,
 			    -1,-1,
-			    data_bufp,data_lenp,metadatap);
+			    data_bufp,data_lenp,metadatap,sysmdp);
 }
 
 dpl_status_t
@@ -438,7 +439,8 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
                    int end,
                    char **data_bufp,
                    unsigned int *data_lenp,
-                   dpl_dict_t **metadatap)
+                   dpl_dict_t **metadatap,
+                   dpl_sysmd_t *sysmdp)
 {
   char          *host;
   int           ret, ret2;
@@ -452,7 +454,6 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
   u_int         data_len;
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
-  dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
 
   req = dpl_req_new(ctx);
@@ -568,14 +569,7 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
     {
       connection_close = dpl_connection_close(ctx, headers_reply);
 
-      metadata = dpl_dict_new(13);
-      if (NULL == metadata)
-	{
-	  ret = DPL_ENOMEM;
-	  goto end;
-	}
-
-      ret2 = dpl_srws_get_metadata_from_headers(headers_reply, metadata);
+      ret2 = dpl_srws_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_FAILURE;
@@ -594,12 +588,6 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
   if (NULL != data_lenp)
     *data_lenp = data_len;
 
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL; //consume it
-    }
-
   ret = DPL_SUCCESS;
 
  end:
@@ -614,9 +602,6 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
       else
         dpl_conn_release(conn);
     }
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
 
   if (NULL != headers_reply)
     dpl_dict_free(headers_reply);
@@ -867,7 +852,8 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
                   const char *subresource,
                   const dpl_condition_t *condition,
                   int all_headers,
-                  dpl_dict_t **metadatap)
+                  dpl_dict_t **metadatap,
+                  dpl_sysmd_t *sysmdp)
 {
   char          *host;
   int           ret, ret2;
@@ -911,13 +897,6 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
   if (NULL != condition)
     {
       dpl_req_set_condition(req, condition);
-    }
-
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
     }
 
   //contact default host
@@ -991,9 +970,18 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
       connection_close = dpl_connection_close(ctx, headers_reply);
 
       if (all_headers)
-        ret2 = dpl_dict_copy(metadata, headers_reply);
+        {
+          metadata = dpl_dict_new(13);
+          if (NULL == metadata)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+
+          ret2 = dpl_dict_copy(metadata, headers_reply);
+        }
       else
-        ret2 = dpl_srws_get_metadata_from_headers(headers_reply, metadata);
+        ret2 = dpl_srws_get_metadata_from_headers(headers_reply, &metadata, sysmdp);
 
       if (DPL_SUCCESS != ret2)
         {
@@ -1041,14 +1029,15 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_srws_head(dpl_ctx_t *ctx,
-            const char *bucket,
-            const char *resource,
-            const char *subresource,
-            dpl_ftype_t object_type,
-            const dpl_condition_t *condition,
-            dpl_dict_t **metadatap)
+              const char *bucket,
+              const char *resource,
+              const char *subresource,
+              dpl_ftype_t object_type,
+              const dpl_condition_t *condition,
+              dpl_dict_t **metadatap,
+              dpl_sysmd_t *sysmdp)
 {
-  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 0, metadatap);
+  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 0, metadatap, sysmdp);
 }
 
 dpl_status_t
@@ -1060,7 +1049,7 @@ dpl_srws_head_all(dpl_ctx_t *ctx,
                 const dpl_condition_t *condition,
                 dpl_dict_t **metadatap)
 {
-  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap);
+  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap, NULL);
 }
 
 dpl_status_t

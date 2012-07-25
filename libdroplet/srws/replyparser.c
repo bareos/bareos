@@ -91,7 +91,8 @@ cb_ntinydb(const char *key_ptr,
 
 dpl_status_t
 dpl_srws_get_metadata_from_headers(const dpl_dict_t *headers,
-                                   dpl_dict_t *metadata)
+                                   dpl_dict_t **metadatap,
+                                   dpl_sysmd_t *sysmdp)
 {
   int ret;
   dpl_var_t *var;
@@ -99,8 +100,22 @@ dpl_srws_get_metadata_from_headers(const dpl_dict_t *headers,
   char *orig;
   int orig_len;
   struct mdparse_data arg;
+  dpl_dict_t *metadata = NULL;
 
   DPRINTF("srws_get_metadata_from_headers\n");
+
+  if (NULL == metadatap)
+    {
+      ret = DPL_SUCCESS;
+      goto end;
+    }
+
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
 
   memset(&arg, 0, sizeof (arg));
 
@@ -133,9 +148,15 @@ dpl_srws_get_metadata_from_headers(const dpl_dict_t *headers,
   if (DPL_SUCCESS != ret)
     goto end;
 
+  *metadatap = metadata;
+  metadata = NULL;
+
   ret = DPL_SUCCESS;
   
  end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
 
   return ret;
 }

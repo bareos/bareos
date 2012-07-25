@@ -38,8 +38,8 @@
 extern "C" {
 #endif
 
-#define DPL_VERSION_MAJOR 1
-#define DPL_VERSION_MINOR 1
+#define DPL_VERSION_MAJOR 2
+#define DPL_VERSION_MINOR 0
 
 /*
  * dependencies

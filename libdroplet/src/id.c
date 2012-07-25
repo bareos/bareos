@@ -255,7 +255,8 @@ dpl_get_id(dpl_ctx_t *ctx,
            dpl_condition_t *condition,
            char **data_bufp,
            unsigned int *data_lenp,
-           dpl_dict_t **metadatap)
+           dpl_dict_t **metadatap,
+           dpl_sysmd_t *sysmdp)
 {
   int ret;
   char *id_path = NULL;
@@ -283,7 +284,7 @@ dpl_get_id(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get(ctx, bucket, resource, subresource, object_type, condition, data_bufp, data_lenp, metadatap);
+  ret = ctx->backend->get(ctx, bucket, resource, subresource, object_type, condition, data_bufp, data_lenp, metadatap, sysmdp);
   
  end:
 
@@ -306,7 +307,8 @@ dpl_get_range_id(dpl_ctx_t *ctx,
                  int end,
                  char **data_bufp,
                  unsigned int *data_lenp,
-                 dpl_dict_t **metadatap)
+                 dpl_dict_t **metadatap,
+                 dpl_sysmd_t *sysmdp)
 {
   int ret;
   char *id_path = NULL;
@@ -334,7 +336,7 @@ dpl_get_range_id(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap);
+  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap, sysmdp);
   
  end:
 
@@ -453,7 +455,8 @@ dpl_head_id(dpl_ctx_t *ctx,
             const char *id,
             const char *subresource,
             dpl_condition_t *condition,
-            dpl_dict_t **metadatap)
+            dpl_dict_t **metadatap,
+            dpl_sysmd_t *sysmdp)
 {
   int ret;
   char *id_path = NULL;
@@ -481,7 +484,7 @@ dpl_head_id(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap);
+  ret = ctx->backend->head(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap, sysmdp);
   
  end:
 
@@ -528,53 +531,6 @@ dpl_head_all_id(dpl_ctx_t *ctx,
     }
   
   ret = ctx->backend->head_all(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap);
-  
- end:
-
-  if (NULL != id_path)
-    free(id_path);
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t
-dpl_head_sysmd_id(dpl_ctx_t *ctx,
-                  const char *bucket,
-                  const char *id,
-                  const char *subresource,
-                  dpl_condition_t *condition,
-                  dpl_sysmd_t *sysmdp,
-                  dpl_dict_t **metadatap)
-{
-  int ret;
-  char *id_path = NULL;
-  char resource[DPL_MAXPATHLEN];
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "head_sysmd_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
-
-  if (NULL == ctx->backend->get_id_path)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret = ctx->backend->get_id_path(ctx, bucket, &id_path);
-  if (DPL_SUCCESS != ret)
-    {
-      goto end;
-    }
-
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
-
-  if (NULL == ctx->backend->head_sysmd)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->head_sysmd(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, sysmdp, metadatap);
   
  end:
 

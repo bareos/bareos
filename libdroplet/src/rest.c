@@ -360,7 +360,8 @@ dpl_get(dpl_ctx_t *ctx,
         dpl_condition_t *condition,
         char **data_bufp,
         unsigned int *data_lenp,
-        dpl_dict_t **metadatap)
+        dpl_dict_t **metadatap,
+        dpl_sysmd_t *sysmdp)
 {
   int ret;
 
@@ -372,7 +373,7 @@ dpl_get(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get(ctx, bucket, resource, subresource, object_type, condition, data_bufp, data_lenp, metadatap);
+  ret = ctx->backend->get(ctx, bucket, resource, subresource, object_type, condition, data_bufp, data_lenp, metadatap, sysmdp);
   
  end:
 
@@ -406,7 +407,8 @@ dpl_get_range(dpl_ctx_t *ctx,
               int end,
               char **data_bufp,
               unsigned int *data_lenp,
-              dpl_dict_t **metadatap)
+              dpl_dict_t **metadatap,
+              dpl_sysmd_t *sysmdp)
 {
   int ret;
 
@@ -418,7 +420,7 @@ dpl_get_range(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap);
+  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap, sysmdp);
   
  end:
 
@@ -463,7 +465,8 @@ dpl_head(dpl_ctx_t *ctx,
          const char *resource,
          const char *subresource,
          dpl_condition_t *condition,
-         dpl_dict_t **metadatap)
+         dpl_dict_t **metadatap,
+         dpl_sysmd_t *sysmdp)
 {
   int ret;
 
@@ -475,7 +478,7 @@ dpl_head(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap);
+  ret = ctx->backend->head(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap, sysmdp);
   
  end:
 
@@ -526,37 +529,10 @@ dpl_head_all(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_head_sysmd(dpl_ctx_t *ctx,
-               const char *bucket,
-               const char *resource,
-               const char *subresource,
-               dpl_condition_t *condition,
-               dpl_sysmd_t *sysmdp,
-               dpl_dict_t **metadatap)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "head_sysmd bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
-
-  if (NULL == ctx->backend->head_sysmd)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret = ctx->backend->head_sysmd(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, sysmdp, metadatap);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t
 dpl_get_metadata_from_headers(dpl_ctx_t *ctx,
                               const dpl_dict_t *headers,
-                              dpl_dict_t *metadata)
+                              dpl_dict_t **metadatap,
+                              dpl_sysmd_t *sysmdp)
 {
   int ret;
 
@@ -568,7 +544,7 @@ dpl_get_metadata_from_headers(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_metadata_from_headers(headers, metadata);
+  ret = ctx->backend->get_metadata_from_headers(headers, metadatap, sysmdp);
   
  end:
 

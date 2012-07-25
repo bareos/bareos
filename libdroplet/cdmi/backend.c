@@ -1273,7 +1273,8 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
              const dpl_condition_t *condition,
              char **data_bufp,
              unsigned int *data_lenp,
-             dpl_dict_t **metadatap)
+             dpl_dict_t **metadatap,
+             dpl_sysmd_t *sysmdp)
 {
   char          *host;
   int           ret, ret2;
@@ -1464,7 +1465,8 @@ dpl_cdmi_get_range(dpl_ctx_t *ctx,
                    int end,
                    char **data_bufp,
                    unsigned int *data_lenp,
-                   dpl_dict_t **metadatap)
+                   dpl_dict_t **metadatap,
+                   dpl_sysmd_t *sysmdp)
 {
   return DPL_ENOTSUPP;
 }
@@ -1704,7 +1706,7 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
   dpl_dict_t *metadata = NULL;
   
   //fetch metadata from JSON content
-  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", object_type, condition, &md_buf, &md_len, NULL);
+  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", object_type, condition, &md_buf, &md_len, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1751,7 +1753,8 @@ dpl_cdmi_head(dpl_ctx_t *ctx,
               const char *subresource,
               dpl_ftype_t object_type,
               const dpl_condition_t *condition,
-              dpl_dict_t **metadatap)
+              dpl_dict_t **metadatap,
+              dpl_sysmd_t *sysmdp)
 {
   int ret, ret2;
   dpl_dict_t *all_mds = NULL;

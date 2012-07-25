@@ -78,7 +78,8 @@ main(int argc,
                          3, 5,          //range
                          &data_buf_returned,  //data object
                          &data_len_returned,  //data object length
-                         NULL);               //no metadata
+                         NULL,               //no metadata
+                         NULL);              //no sysmd
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_get_id failed: %s (%d)\n", dpl_status_str(ret), ret);

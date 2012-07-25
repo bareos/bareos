@@ -1904,7 +1904,8 @@ dpl_openread(dpl_ctx_t *ctx,
              dpl_condition_t *condition,
              dpl_buffer_func_t buffer_func,
              void *cb_arg,
-             dpl_dict_t **metadatap)
+             dpl_dict_t **metadatap,
+             dpl_sysmd_t *sysmdp)
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
@@ -1989,7 +1990,7 @@ dpl_openread(dpl_ctx_t *ctx,
 
   if (!strcmp(ctx->backend->name, "cdmi") && ctx->cdmi_have_metadata)
     {
-      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_ANY, NULL, &metadata);
+      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_ANY, NULL, &metadata, sysmdp);
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_FAILURE;
@@ -1998,14 +1999,7 @@ dpl_openread(dpl_ctx_t *ctx,
     }
   else
     {
-      metadata = dpl_dict_new(13);
-      if (NULL == metadata)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-
-      ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, metadata);
+      ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, &metadata, sysmdp);
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_FAILURE;
@@ -2047,7 +2041,8 @@ dpl_openread_range(dpl_ctx_t *ctx,
                    int end,
                    char **data_bufp,
                    unsigned int *data_lenp,
-                   dpl_dict_t **metadatap)
+                   dpl_dict_t **metadatap,
+                   dpl_sysmd_t *sysmdp)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -2100,7 +2095,7 @@ dpl_openread_range(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_get_range(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
-                       condition, start, end, data_bufp, data_lenp, metadatap);
+                       condition, start, end, data_bufp, data_lenp, metadatap, sysmdp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2201,85 +2196,10 @@ dpl_unlink(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_getattr_sysmd(dpl_ctx_t *ctx,
-                  const char *locator,
-                  dpl_dict_t **metadatap,
-                  dpl_sysmd_t *sysmdp)
-{
-  int ret, ret2;
-  dpl_ino_t parent_ino, obj_ino;
-  dpl_ftype_t obj_type;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
-  dpl_ino_t cur_ino;
-
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "getattr_sysmd locator=%s", locator);
-
-  nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      pthread_mutex_lock(&ctx->lock);
-      bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
-
-  cur_ino = dpl_cwd(ctx, bucket);
-
-  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_head_sysmd(ctx, bucket, obj_ino.key, NULL, NULL, sysmdp, metadatap);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != bucket)
-    free(bucket);
-
-  if (NULL != nlocator)
-    free(nlocator);
-
-  return ret;
-}
-
-dpl_status_t
 dpl_getattr(dpl_ctx_t *ctx,
             const char *locator,
-            dpl_dict_t **metadatap)
+            dpl_dict_t **metadatap,
+            dpl_sysmd_t *sysmdp)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -2331,7 +2251,7 @@ dpl_getattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_head(ctx, bucket, obj_ino.key, NULL, NULL, metadatap);
+  ret2 = dpl_head(ctx, bucket, obj_ino.key, NULL, NULL, metadatap, sysmdp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2427,10 +2347,10 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_setattr_sysmd(dpl_ctx_t *ctx,
-                  const char *locator,
-                  dpl_dict_t *metadata,
-                  dpl_sysmd_t *sysmd)
+dpl_setattr(dpl_ctx_t *ctx,
+            const char *locator,
+            dpl_dict_t *metadata,
+            dpl_sysmd_t *sysmd)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -2506,14 +2426,6 @@ dpl_setattr_sysmd(dpl_ctx_t *ctx,
     free(nlocator);
 
   return ret;
-}
-
-dpl_status_t
-dpl_setattr(dpl_ctx_t *ctx,
-            const char *locator,
-            dpl_dict_t *metadata)
-{
-  return dpl_setattr_sysmd(ctx, locator, metadata, NULL);
 }
 
 dpl_status_t

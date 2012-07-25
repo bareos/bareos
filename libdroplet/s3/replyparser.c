@@ -38,9 +38,43 @@
 
 dpl_status_t
 dpl_s3_get_metadata_from_headers(const dpl_dict_t *headers,
-                                 dpl_dict_t *metadata)
+                                 dpl_dict_t **metadatap,
+                                 dpl_sysmd_t *sysmdp)
 {
-  return dpl_dict_filter_prefix(metadata, headers, "x-amz-meta-");
+  dpl_dict_t *metadata = NULL;
+  dpl_status_t ret, ret2;
+
+  if (NULL == metadatap)
+    {
+      ret = DPL_SUCCESS;
+      goto end;
+    }
+
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  ret2 = dpl_dict_filter_prefix(metadata, headers, "x-amz-meta-");
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  *metadatap = metadata;
+  metadata = NULL;
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
+  return ret;
 }
 
 /**/

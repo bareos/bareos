@@ -123,7 +123,8 @@ main(int argc,
                    &condition,          //condition of operation
                    &data_buf_returned,  //data object
                    &data_len_returned,  //data object length
-                   &metadata_returned); //metadata
+                   &metadata_returned, //metadata
+                   NULL);              //sysmd
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_get_id failed: %s (%d)\n", dpl_status_str(ret), ret);
@@ -219,7 +220,8 @@ main(int argc,
                     id,       //the key
                     NULL,     //no subresource
                     NULL,     //no condition,
-                    &metadata2_returned);
+                    &metadata2_returned,
+                    NULL);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error getting metadata: %s (%d)\n", dpl_status_str(ret), ret);

@@ -42,13 +42,12 @@ dpl_status_t dpl_post(dpl_ctx_t *ctx, const char *bucket, const char *resource, 
 dpl_status_t dpl_post_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_dict_t *query_params, dpl_conn_t **connp);
 dpl_status_t dpl_put(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len);
 dpl_status_t dpl_put_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp);
-dpl_status_t dpl_get(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
-dpl_status_t dpl_get_range(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap);
+dpl_status_t dpl_get(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_get_range(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_get_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
-dpl_status_t dpl_head(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
+dpl_status_t dpl_head(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_head_all(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
-dpl_status_t dpl_head_sysmd(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_condition_t *condition, dpl_sysmd_t *sysmdp, dpl_dict_t **metadatap);
-dpl_status_t dpl_get_metadata_from_headers(dpl_ctx_t *ctx, const dpl_dict_t *headers, dpl_dict_t *metadata);
+dpl_status_t dpl_get_metadata_from_headers(dpl_ctx_t *ctx, const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_delete(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource);
 dpl_status_t dpl_genurl(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
 dpl_status_t dpl_copy(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, dpl_ftype_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_condition_t *condition);

@@ -39,7 +39,8 @@
 
 dpl_status_t
 dpl_cdmi_get_metadata_from_headers(const dpl_dict_t *headers,
-                                   dpl_dict_t *metadata)
+                                   dpl_dict_t **metadatap,
+                                   dpl_sysmd_t *sysmdp)
 {
   //metadata are not stored in headers
   return DPL_FAILURE;
