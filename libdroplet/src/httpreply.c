@@ -307,6 +307,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                              void *cb_arg)
 {
   int ret, ret2;
+  int will_ret = 0;
   struct dpl_http_reply http_reply;
   char *line = NULL;
   size_t chunk_len = 0;
@@ -467,17 +468,15 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   switch (http_reply.code)
                     {
                     case DPL_HTTP_CODE_NOT_FOUND:
-                      ret = DPL_ENOENT;
+                      will_ret = DPL_ENOENT;
                       break;
                     case DPL_HTTP_CODE_CONFLICT:
-                      ret = DPL_EEXIST;
+                      will_ret = DPL_EEXIST;
                       break;
                     default:
-                      ret = DPL_FAILURE;
+                      will_ret = DPL_FAILURE;
                       break;
                     }
-
-                  goto end;
                 }
 
               mode = MODE_HEADER;
@@ -605,7 +604,10 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
   if (NULL != line)
     free(line);
 
-  return ret;
+  if (0 != will_ret)
+    return will_ret;
+  else
+    return ret;
 }
 
 int
