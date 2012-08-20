@@ -200,7 +200,7 @@ main(int argc,
                     id,            //the same key
                     NULL,          //no subresource
                     DPL_FTYPE_REG, //object type
-                    DPL_METADATA_DIRECTIVE_REPLACE,  //tell server to replace metadata
+                    DPL_COPY_DIRECTIVE_METADATA_REPLACE,  //tell server to replace metadata
                     metadata,      //the updated metadata
                     NULL,          //no sysmd
                     NULL);         //no condition

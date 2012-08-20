@@ -2185,7 +2185,7 @@ dpl_s3_copy(dpl_ctx_t *ctx,
             const char *dst_resource,
             const char *dst_subresource,
             dpl_ftype_t object_type,
-            dpl_metadata_directive_t metadata_directive,
+            dpl_copy_directive_t copy_directive,
             const dpl_dict_t *metadata,
             const dpl_sysmd_t *sysmd,
             const dpl_condition_t *condition)
@@ -2269,7 +2269,7 @@ dpl_s3_copy(dpl_ctx_t *ctx,
         }
     }
 
-  dpl_req_set_metadata_directive(req, metadata_directive);
+  dpl_req_set_copy_directive(req, copy_directive);
 
   if (NULL != metadata)
     {

@@ -61,6 +61,6 @@ void dpl_req_set_expires(dpl_req_t *req, time_t expires);
 dpl_status_t dpl_req_set_src_bucket(dpl_req_t *req, const char *src_bucket);
 dpl_status_t dpl_req_set_src_resource(dpl_req_t *req, const char *src_resource);
 dpl_status_t dpl_req_set_src_subresource(dpl_req_t *req, const char *src_subresource);
-void dpl_req_set_metadata_directive(dpl_req_t *req, dpl_metadata_directive_t metadata_directive);
+void dpl_req_set_copy_directive(dpl_req_t *req, dpl_copy_directive_t copy_directive);
 void dpl_req_set_copy_source_condition(dpl_req_t *req, const dpl_condition_t *condition);
 #endif

@@ -186,28 +186,40 @@ dpl_storage_class_str(dpl_storage_class_t storage_class)
 
 /**/
 
-dpl_metadata_directive_t
-dpl_metadata_directive(char *str)
+dpl_copy_directive_t
+dpl_copy_directive(char *str)
 {
   if (!strcasecmp(str, "copy"))
-    return DPL_METADATA_DIRECTIVE_COPY;
-  else if (!strcasecmp(str, "replace"))
-    return DPL_METADATA_DIRECTIVE_REPLACE;
+    return DPL_COPY_DIRECTIVE_COPY;
+  else if (!strcasecmp(str, "metadata_replace"))
+    return DPL_COPY_DIRECTIVE_METADATA_REPLACE;
+  else if (!strcasecmp(str, "hardlink"))
+    return DPL_COPY_DIRECTIVE_HARDLINK;
+  else if (!strcasecmp(str, "symlink"))
+    return DPL_COPY_DIRECTIVE_SYMLINK;
+  else if (!strcasecmp(str, "rename"))
+    return DPL_COPY_DIRECTIVE_RENAME;
 
   return -1;
 }
 
 char *
-dpl_metadata_directive_str(dpl_metadata_directive_t metadata_directive)
+dpl_copy_directive_str(dpl_copy_directive_t copy_directive)
 {
-  switch (metadata_directive)
+  switch (copy_directive)
     {
-    case DPL_METADATA_DIRECTIVE_UNDEF:
+    case DPL_COPY_DIRECTIVE_UNDEF:
       return NULL;
-    case DPL_METADATA_DIRECTIVE_COPY:
+    case DPL_COPY_DIRECTIVE_COPY:
       return "COPY"; //case is important
-    case DPL_METADATA_DIRECTIVE_REPLACE:
-      return "REPLACE"; //case is important
+    case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
+      return "METADATA_REPLACE"; //case is important
+    case DPL_COPY_DIRECTIVE_HARDLINK:
+      return "HARDLINK"; //case is important
+    case DPL_COPY_DIRECTIVE_SYMLINK:
+      return "SYMLINK"; //case is important
+    case DPL_COPY_DIRECTIVE_RENAME:
+      return "RENAME"; //case is important
     }
 
   return NULL;

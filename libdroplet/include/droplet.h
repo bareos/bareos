@@ -321,10 +321,13 @@ typedef struct
 
 typedef enum
   {
-    DPL_METADATA_DIRECTIVE_UNDEF,
-    DPL_METADATA_DIRECTIVE_COPY,
-    DPL_METADATA_DIRECTIVE_REPLACE,
-  } dpl_metadata_directive_t;
+    DPL_COPY_DIRECTIVE_UNDEF,
+    DPL_COPY_DIRECTIVE_COPY,
+    DPL_COPY_DIRECTIVE_METADATA_REPLACE,
+    DPL_COPY_DIRECTIVE_HARDLINK,
+    DPL_COPY_DIRECTIVE_SYMLINK,
+    DPL_COPY_DIRECTIVE_RENAME,
+  } dpl_copy_directive_t;
 
 typedef struct
 {
@@ -487,7 +490,7 @@ typedef struct
   char *src_bucket;
   char *src_resource;
   char *src_subresource;
-  dpl_metadata_directive_t metadata_directive;
+  dpl_copy_directive_t copy_directive;
   dpl_condition_t copy_source_condition;
 
 } dpl_req_t;

@@ -401,10 +401,10 @@ dpl_req_set_src_subresource(dpl_req_t *req,
 }
 
 void
-dpl_req_set_metadata_directive(dpl_req_t *req,
-                               dpl_metadata_directive_t metadata_directive)
+dpl_req_set_copy_directive(dpl_req_t *req,
+                               dpl_copy_directive_t copy_directive)
 {
-  req->metadata_directive = metadata_directive;
+  req->copy_directive = copy_directive;
 }
 
 void

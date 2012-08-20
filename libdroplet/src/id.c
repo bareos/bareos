@@ -595,7 +595,7 @@ dpl_copy_id(dpl_ctx_t *ctx,
             const char *dst_id,
             const char *dst_subresource,
             dpl_ftype_t object_type,
-            dpl_metadata_directive_t metadata_directive,
+            dpl_copy_directive_t copy_directive,
             dpl_dict_t *metadata,
             dpl_sysmd_t *sysmd,
             dpl_condition_t *condition)
@@ -636,7 +636,7 @@ dpl_copy_id(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, metadata_directive, metadata, sysmd, condition);
+  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, copy_directive, metadata, sysmd, condition);
   
  end:
 

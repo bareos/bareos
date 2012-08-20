@@ -1963,22 +1963,22 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
               const char *dst_resource,
               const char *dst_subresource,
               dpl_ftype_t object_type,
-              dpl_metadata_directive_t metadata_directive,
+              dpl_copy_directive_t copy_directive,
               const dpl_dict_t *metadata,
               const dpl_sysmd_t *sysmd,
               const dpl_condition_t *condition)
 {
   int ret, ret2;
 
-  switch (metadata_directive)
+  switch (copy_directive)
     {
-    case DPL_METADATA_DIRECTIVE_UNDEF:
+    case DPL_COPY_DIRECTIVE_UNDEF:
       ret = DPL_ENOTSUPP;
       goto end;
-    case DPL_METADATA_DIRECTIVE_COPY:
+    case DPL_COPY_DIRECTIVE_COPY:
       ret = DPL_ENOTSUPP;
       goto end;
-    case DPL_METADATA_DIRECTIVE_REPLACE:
+    case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
 
       //replace the metadata
       ret2 = dpl_cdmi_put(ctx, dst_bucket, dst_resource,

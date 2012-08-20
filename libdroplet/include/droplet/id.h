@@ -47,6 +47,6 @@ dpl_status_t dpl_get_range_buffered_id(dpl_ctx_t *ctx, const char *bucket, const
 dpl_status_t dpl_head_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_head_all_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource, dpl_condition_t *condition, dpl_dict_t **metadatap);
 dpl_status_t dpl_delete_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const char *subresource);
-dpl_status_t dpl_copy_id(dpl_ctx_t *ctx, const char *src_bucket, const char *src_id, const char *src_subresource, const char *dst_bucket, const char *dst_id, const char *dst_subresource, dpl_ftype_t object_type, dpl_metadata_directive_t metadata_directive, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_condition_t *condition);
+dpl_status_t dpl_copy_id(dpl_ctx_t *ctx, const char *src_bucket, const char *src_id, const char *src_subresource, const char *dst_bucket, const char *dst_id, const char *dst_subresource, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_condition_t *condition);
 dpl_status_t dpl_gen_id_from_oid(dpl_ctx_t *ctx, uint64_t oid, dpl_storage_class_t storage_class, char **resource_idp);
 #endif

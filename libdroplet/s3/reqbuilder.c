@@ -604,11 +604,11 @@ dpl_s3_req_build(const dpl_req_t *req,
               goto end;
             }
 
-          if (DPL_METADATA_DIRECTIVE_UNDEF != req->metadata_directive)
+          if (DPL_COPY_DIRECTIVE_UNDEF != req->copy_directive)
             {
               char *str;
 
-              str = dpl_metadata_directive_str(req->metadata_directive);
+              str = dpl_copy_directive_str(req->copy_directive);
               if (NULL == str)
                 {
                   ret = DPL_FAILURE;
