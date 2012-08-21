@@ -1404,15 +1404,15 @@ encrypt_init(dpl_vfile_t *vfile,
 }
 
 dpl_status_t
-dpl_openwrite_ex(dpl_ctx_t *ctx,
-                 const char *locator,
-                 dpl_ftype_t object_type,
-                 dpl_vfile_flag_t flags,
-                 dpl_dict_t *metadata,
-                 dpl_sysmd_t *sysmd,
-                 unsigned int data_len,
-                 dpl_dict_t *query_params,
-                 dpl_vfile_t **vfilep)
+dpl_openwrite(dpl_ctx_t *ctx,
+              const char *locator,
+              dpl_ftype_t object_type,
+              dpl_vfile_flag_t flags,
+              dpl_dict_t *metadata,
+              dpl_sysmd_t *sysmd,
+              unsigned int data_len,
+              dpl_dict_t *query_params,
+              dpl_vfile_t **vfilep)
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
@@ -1656,24 +1656,6 @@ dpl_openwrite_ex(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
-dpl_openwrite(dpl_ctx_t *ctx,
-              const char *locator,
-              dpl_vfile_flag_t flags,
-              dpl_dict_t *metadata,
-              dpl_canned_acl_t canned_acl,
-              unsigned int data_len,
-              dpl_vfile_t **vfilep)
-{
-  dpl_sysmd_t sysmd;
-
-  memset(&sysmd, 0, sizeof (sysmd));
-  sysmd.mask = DPL_SYSMD_MASK_CANNED_ACL;
-  sysmd.canned_acl = canned_acl;
-
-  return dpl_openwrite_ex(ctx, locator, DPL_FTYPE_REG, flags, metadata, &sysmd, data_len, NULL, vfilep);
-}
-
 /**
  * write buffer
  *
@@ -1756,6 +1738,85 @@ dpl_write(dpl_vfile_t *vfile,
 
   if (NULL != obuf)
     free(obuf);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_vfs_put(dpl_ctx_t *ctx,
+            const char *locator,
+            dpl_dict_t *metadata,
+            dpl_sysmd_t *sysmd,
+            char *data_buf,
+            unsigned int data_len)
+{
+  int ret, ret2;
+  dpl_ino_t parent_ino, obj_ino;
+  dpl_ftype_t obj_type;
+  char *nlocator = NULL;
+  char *bucket = NULL;
+  char *path;
+  dpl_ino_t cur_ino;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "vfs_get locator=%s", locator);
+
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
+    }
+  else
+    {
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      path = nlocator;
+    }
+
+  cur_ino = dpl_cwd(ctx, bucket);
+
+  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  ret2 = dpl_put(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
+                 metadata, sysmd, data_buf, data_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != bucket)
+    free(bucket);
+
+  if (NULL != nlocator)
+    free(nlocator);
 
   return ret;
 }
@@ -1998,16 +2059,13 @@ dpl_openread(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_openread_range(dpl_ctx_t *ctx,
-                   const char *locator,
-                   dpl_vfile_flag_t flags,
-                   dpl_condition_t *condition,
-                   int start,
-                   int end,
-                   char **data_bufp,
-                   unsigned int *data_lenp,
-                   dpl_dict_t **metadatap,
-                   dpl_sysmd_t *sysmdp)
+dpl_vfs_get(dpl_ctx_t *ctx,
+            const char *locator,
+            dpl_condition_t *condition,
+            char **data_bufp,
+            unsigned int *data_lenp,
+            dpl_dict_t **metadatap,
+            dpl_sysmd_t *sysmdp)
 {
   int ret, ret2;
   dpl_ino_t parent_ino, obj_ino;
@@ -2017,7 +2075,89 @@ dpl_openread_range(dpl_ctx_t *ctx,
   char *path;
   dpl_ino_t cur_ino;
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "openread locator=%s flags=0x%x", locator, flags);
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "vfs_get locator=%s", locator);
+
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
+    }
+  else
+    {
+      pthread_mutex_lock(&ctx->lock);
+      bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      path = nlocator;
+    }
+
+  cur_ino = dpl_cwd(ctx, bucket);
+
+  ret2 = dpl_namei(ctx, path, bucket, cur_ino, &parent_ino, &obj_ino, &obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  ret2 = dpl_get(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_REG,
+                 condition, data_bufp, data_lenp, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != bucket)
+    free(bucket);
+
+  if (NULL != nlocator)
+    free(nlocator);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_vfs_get_range(dpl_ctx_t *ctx,
+                  const char *locator,
+                  dpl_condition_t *condition,
+                  int start,
+                  int end,
+                  char **data_bufp,
+                  unsigned int *data_lenp,
+                  dpl_dict_t **metadatap,
+                  dpl_sysmd_t *sysmdp)
+{
+  int ret, ret2;
+  dpl_ino_t parent_ino, obj_ino;
+  dpl_ftype_t obj_type;
+  char *nlocator = NULL;
+  char *bucket = NULL;
+  char *path;
+  dpl_ino_t cur_ino;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "vfs_get_range locator=%s", locator);
 
   nlocator = strdup(locator);
   if (NULL == nlocator)
