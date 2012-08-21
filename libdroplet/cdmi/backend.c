@@ -1968,34 +1968,204 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
               const dpl_sysmd_t *sysmd,
               const dpl_condition_t *condition)
 {
-  int ret, ret2;
+  char          *host;
+  int           ret, ret2;
+  dpl_conn_t   *conn = NULL;
+  char          header[1024];
+  u_int         header_len;
+  struct iovec  iov[10];
+  int           n_iov = 0;
+  int           connection_close = 0;
+  dpl_dict_t    *headers_request = NULL;
+  dpl_dict_t    *headers_reply = NULL;
+  dpl_req_t     *req = NULL;
+  dpl_chunk_t   chunk;
+  char          *body_str = NULL;
+  int           body_len = 0;
 
-  switch (copy_directive)
+  if (DPL_COPY_DIRECTIVE_METADATA_REPLACE == copy_directive)
+    return dpl_cdmi_put(ctx, dst_bucket, dst_resource,
+                        NULL != dst_subresource ? dst_subresource : "metadata",
+                        object_type, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0);
+
+  req = dpl_req_new(ctx);
+  if (NULL == req)
     {
-    case DPL_COPY_DIRECTIVE_UNDEF:
-      ret = DPL_ENOTSUPP;
+      ret = DPL_ENOMEM;
       goto end;
-    case DPL_COPY_DIRECTIVE_COPY:
-      ret = DPL_ENOTSUPP;
-      goto end;
-    case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
+    }
 
-      //replace the metadata
-      ret2 = dpl_cdmi_put(ctx, dst_bucket, dst_resource,
-                          NULL != dst_subresource ? dst_subresource : "metadata",
-                          object_type, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0);
+  dpl_req_set_method(req, DPL_METHOD_PUT);
+
+  ret2 = dpl_req_set_resource(req, dst_resource);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != dst_subresource)
+    {
+      ret2 = dpl_req_set_subresource(req, dst_subresource);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
           goto end;
         }
+    }
 
-      break ;
+  ret2 = dpl_req_set_src_resource(req, src_resource);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != src_subresource)
+    {
+      ret2 = dpl_req_set_src_subresource(req, src_subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  dpl_req_set_copy_directive(req, copy_directive);
+
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  dpl_req_set_object_type(req, object_type);
+
+  dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
+
+  if (NULL != sysmd)
+    {
+      ret2 = add_sysmd_to_req(sysmd, req);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  if (NULL != metadata)
+    {
+      ret2 = dpl_req_add_metadata(req, metadata);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  //build request
+  ret2 = dpl_cdmi_req_build(req, &headers_request, &body_str, &body_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  host = dpl_dict_get_value(headers_request, "Host");
+  if (NULL == host)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  conn = dpl_conn_open_host(ctx, host, ctx->port);
+  if (NULL == conn)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  //bucket emulation
+  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", dst_bucket, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  iov[n_iov].iov_base = header;
+  iov[n_iov].iov_len = header_len;
+  n_iov++;
+
+  //final crlf
+  iov[n_iov].iov_base = "\r\n";
+  iov[n_iov].iov_len = 2;
+  n_iov++;
+
+  //buffer
+  iov[n_iov].iov_base = body_str;
+  iov[n_iov].iov_len = body_len;
+  n_iov++;
+
+  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPLERR(1, "writev failed");
+      connection_close = 1;
+      ret = DPL_ENOENT; //mapped to 404
+      goto end;
+    }
+
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  if (DPL_SUCCESS != ret2)
+    {
+      if (DPL_ENOENT == ret2)
+        {
+          ret = DPL_ENOENT;
+          goto end;
+        }
+      else
+        {
+          DPLERR(0, "read http answer failed");
+          connection_close = 1;
+          ret = DPL_ENOENT; //mapped to 404
+          goto end;
+        }
+    }
+  else
+    {
+      connection_close = dpl_connection_close(ctx, headers_reply);
     }
 
   ret = DPL_SUCCESS;
-  
+
  end:
+
+  if (NULL != body_str)
+    free(body_str);
+
+  if (NULL != conn)
+    {
+      if (1 == connection_close)
+        dpl_conn_terminate(conn);
+      else
+        dpl_conn_release(conn);
+    }
+
+  if (NULL != headers_reply)
+    dpl_dict_free(headers_reply);
+
+  if (NULL != headers_request)
+    dpl_dict_free(headers_request);
+
+  if (NULL != req)
+    dpl_req_free(req);
+
+  DPRINTF("ret=%d\n", ret);
 
   return ret;
 }

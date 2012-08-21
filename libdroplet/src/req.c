@@ -88,10 +88,6 @@ dpl_req_new(dpl_ctx_t *ctx)
 
   req->ctx = ctx;
 
-  req->metadata = dpl_dict_new(13);
-  if (NULL == req->metadata)
-    goto bad;
-
   //virtual hosting is prefered since it "disperses" connections
   req->behavior_flags = DPL_BEHAVIOR_KEEP_ALIVE|DPL_BEHAVIOR_VIRTUAL_HOSTING;
 
@@ -274,6 +270,13 @@ dpl_req_add_metadatum(dpl_req_t *req,
                       const char *key,
                       const char *value)
 {
+  if (NULL == req->metadata)
+    {
+      req->metadata = dpl_dict_new(13);
+      if (NULL == req->metadata)
+        return DPL_ENOMEM;
+    }
+
   return dpl_dict_add(req->metadata, key, value, 0);
 }
 

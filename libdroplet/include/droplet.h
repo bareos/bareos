@@ -326,7 +326,7 @@ typedef enum
     DPL_COPY_DIRECTIVE_METADATA_REPLACE,
     DPL_COPY_DIRECTIVE_HARDLINK,
     DPL_COPY_DIRECTIVE_SYMLINK,
-    DPL_COPY_DIRECTIVE_RENAME,
+    DPL_COPY_DIRECTIVE_MOVE,
   } dpl_copy_directive_t;
 
 typedef struct
@@ -384,7 +384,7 @@ typedef struct dpl_ctx
   int use_https;
   char *host;
   int port;
-  char *base_path;
+  char *base_path;            /*!< or RootURI */
   char *access_key;
   char *secret_key;
   char *ssl_cert_file;
@@ -397,11 +397,12 @@ typedef struct dpl_ctx
   unsigned int read_buf_size;
   char *encrypt_key;
   char *delim;               /*!< vdir delimiter */
-  int light_mode;            /*!< bypass vdir mechanism */
+  int light_mode;            /*!< do not resolve pathes */
   int encode_slashes;        /*!< client wants slashes encoded */
   int keep_alive;            /*!< client supports keep-alive */
   int url_encoding;          /*!< some servers does not handle url encoding */
   int cdmi_have_metadata;    /*!< some impl does not manage the ?metadata subresource */
+  int base_path_in_refs;     /*!< include base_path in references */
   struct dpl_backend_s *backend;
 
   /*

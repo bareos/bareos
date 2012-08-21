@@ -61,5 +61,6 @@ dpl_status_t dpl_getattr(dpl_ctx_t *ctx, const char *locator, dpl_dict_t **metad
 dpl_status_t dpl_getattr_raw(dpl_ctx_t *ctx, const char *locator, dpl_dict_t **metadatap);
 dpl_status_t dpl_setattr(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
 dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, const char *locator, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
+dpl_status_t dpl_fcopy_ex(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator, dpl_copy_directive_t copy_directive);
 dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
 #endif

@@ -2259,7 +2259,7 @@ dpl_s3_copy(dpl_ctx_t *ctx,
       goto end;
     }
 
-  if (NULL != dst_subresource)
+  if (NULL != src_subresource)
     {
       ret2 = dpl_req_set_src_subresource(req, src_subresource);
       if (DPL_SUCCESS != ret2)

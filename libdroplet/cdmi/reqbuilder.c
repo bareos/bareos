@@ -103,6 +103,12 @@ add_metadata_to_json_body(dpl_dict_t *metadata,
   json_object *md_obj = NULL;
   json_object *tmp;
 
+  if (NULL == metadata)
+    {
+      ret = DPL_SUCCESS;
+      goto end;
+    }
+
   md_obj = json_object_new_object();
   if (NULL == md_obj)
     {
@@ -157,6 +163,107 @@ add_metadata_to_json_body(dpl_dict_t *metadata,
 
   if (NULL != md_obj)
     json_object_put(md_obj);
+
+  return ret;
+}
+
+static dpl_status_t
+add_copy_directive_to_json_body(const dpl_req_t *req,
+                                json_object *body_obj)
+
+{
+  dpl_ctx_t *ctx = (dpl_ctx_t *) req->ctx;
+  int ret;
+  json_object *tmp = NULL;
+  const char *field = NULL;
+  char *buf;
+  char *src_resource;
+
+  if (NULL == req->src_resource)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }    
+
+  switch (req->copy_directive)
+    {
+    case DPL_COPY_DIRECTIVE_UNDEF:
+      ret = DPL_SUCCESS;
+      goto end;
+    case DPL_COPY_DIRECTIVE_COPY:
+      field = "copy";
+      break ;
+    case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
+      ret = DPL_EINVAL;
+      goto end;
+    case DPL_COPY_DIRECTIVE_HARDLINK:
+      field = "scality_link";
+      goto end;
+    case DPL_COPY_DIRECTIVE_SYMLINK:
+      field = "reference";
+      break ;
+    case DPL_COPY_DIRECTIVE_MOVE:
+      field = "move";
+      break ;
+    default:
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  if (ctx->base_path_in_refs)
+    {
+      int base_path_len = 0;
+      int delim_len = 0;
+      int src_resource_len = 0;
+
+      if (NULL != ctx->base_path)
+        base_path_len = strlen(ctx->base_path);
+      
+      delim_len = strlen(ctx->delim);
+
+      src_resource_len = strlen(req->src_resource);
+
+      buf = alloca(base_path_len + delim_len + src_resource_len + 1);
+      if (NULL == buf)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      
+      buf[0] = 0;
+
+      if (NULL != ctx->base_path)
+        strcat(buf, ctx->base_path);
+
+      strcat(buf, ctx->delim);
+
+      strcat(buf, req->src_resource);
+
+      src_resource = buf;
+    }
+  else
+    {
+      src_resource = req->src_resource;
+    }
+
+  tmp = json_object_new_string(src_resource);
+  if (NULL == tmp)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  assert(NULL != field);
+  json_object_object_add(body_obj, field, tmp);
+  //XXX check return value
+  tmp = NULL;
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != tmp)
+    json_object_put(tmp);
 
   return ret;
 }
@@ -349,6 +456,13 @@ dpl_cdmi_req_build(const dpl_req_t *req,
       if (!(req->behavior_flags & DPL_BEHAVIOR_HTTP_COMPAT))
         {
           ret2 = add_metadata_to_json_body(req->metadata, body_obj);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+
+          ret2 = add_copy_directive_to_json_body(req, body_obj);
           if (DPL_SUCCESS != ret2)
             {
               ret = ret2;

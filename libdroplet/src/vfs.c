@@ -2503,9 +2503,10 @@ dpl_fgenurl(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_fcopy(dpl_ctx_t *ctx,
+dpl_fcopy_ex(dpl_ctx_t *ctx,
              const char *src_locator,
-             const char *dst_locator)
+             const char *dst_locator,
+             dpl_copy_directive_t copy_directive)
 {
   int ret, ret2;
   char *src_nlocator = NULL;
@@ -2633,7 +2634,7 @@ dpl_fcopy(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_copy(ctx, src_bucket, src_obj_ino.key, NULL, dst_bucket, dst_obj_ino.key, NULL, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_COPY, NULL, DPL_CANNED_ACL_UNDEF, NULL);
+  ret2 = dpl_copy(ctx, src_bucket, src_obj_ino.key, NULL, dst_bucket, dst_obj_ino.key, NULL, DPL_FTYPE_REG, copy_directive, NULL, DPL_CANNED_ACL_UNDEF, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2657,4 +2658,12 @@ dpl_fcopy(dpl_ctx_t *ctx,
     free(src_nlocator);
 
   return ret;
+}
+
+dpl_status_t
+dpl_fcopy(dpl_ctx_t *ctx,
+          const char *src_locator,
+          const char *dst_locator)
+{
+  return dpl_fcopy_ex(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_COPY);
 }

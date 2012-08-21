@@ -197,8 +197,8 @@ dpl_copy_directive(char *str)
     return DPL_COPY_DIRECTIVE_HARDLINK;
   else if (!strcasecmp(str, "symlink"))
     return DPL_COPY_DIRECTIVE_SYMLINK;
-  else if (!strcasecmp(str, "rename"))
-    return DPL_COPY_DIRECTIVE_RENAME;
+  else if (!strcasecmp(str, "move"))
+    return DPL_COPY_DIRECTIVE_MOVE;
 
   return -1;
 }
@@ -218,8 +218,8 @@ dpl_copy_directive_str(dpl_copy_directive_t copy_directive)
       return "HARDLINK"; //case is important
     case DPL_COPY_DIRECTIVE_SYMLINK:
       return "SYMLINK"; //case is important
-    case DPL_COPY_DIRECTIVE_RENAME:
-      return "RENAME"; //case is important
+    case DPL_COPY_DIRECTIVE_MOVE:
+      return "MOVE"; //case is important
     }
 
   return NULL;
