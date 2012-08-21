@@ -393,18 +393,6 @@ conf_cb_func(void *cb_arg,
           return -1;
         }
     }
-  else if (!strcmp(var, "have_cdmi_metadata"))
-    {
-      if (!strcasecmp(value, "true"))
-        ctx->cdmi_have_metadata = 1;
-      else if (!strcasecmp(value, "false"))
-        ctx->cdmi_have_metadata = 0;
-      else
-        {
-          fprintf(stderr, "invalid value '%s'\n", var);
-          return -1;
-        }
-    }
   else if (!strcmp(var, "delim"))
     {
       char *ndelim;
@@ -517,12 +505,12 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->encode_slashes = 1;
   ctx->keep_alive = 1;
   ctx->url_encoding = 1;
-  ctx->cdmi_have_metadata = 1;
   ctx->delim = strdup(DPL_DEFAULT_DELIM);
   if (NULL == ctx->delim)
     return DPL_ENOMEM;
   ctx->light_mode = 1;
   ctx->base_path_in_refs = 0;
+  ctx->max_redirects = DPL_DEFAULT_MAX_REDIRECTS;
 
   return DPL_SUCCESS;
 }

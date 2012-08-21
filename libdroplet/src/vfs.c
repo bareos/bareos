@@ -32,7 +32,6 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
-#include "droplet/cdmi/cdmi.h"
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
@@ -1324,28 +1323,6 @@ dpl_close_ex(dpl_vfile_t *vfile,
         EVP_CIPHER_CTX_free(vfile->cipher_ctx);
     }
 
-  if (DPL_SUCCESS == ret)
-    {
-      if (!strcmp(vfile->ctx->backend->name, "cdmi") && vfile->ctx->cdmi_have_metadata)
-        {
-          //require separate metadata update
-          if (NULL != vfile->bucket && 
-              NULL != vfile->resource &&
-              NULL != vfile->metadata)
-            {
-              ret2 = dpl_cdmi_put(vfile->ctx, vfile->bucket, vfile->resource, "metadata",
-                                  DPL_FTYPE_REG, vfile->metadata, vfile->sysmd, 
-                                  NULL, 0);
-              if (DPL_SUCCESS != ret2)
-                {
-                  ret = ret2;
-                }
-            }
-        }
-
-      //XXX get resource id
-    }
-
   if (NULL != vfile->headers_reply)
     dpl_dict_free(vfile->headers_reply);
 
@@ -1988,25 +1965,13 @@ dpl_openread(dpl_ctx_t *ctx,
       goto end;
     }
 
-  if (!strcmp(ctx->backend->name, "cdmi") && ctx->cdmi_have_metadata)
+  ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, &metadata, sysmdp);
+  if (DPL_SUCCESS != ret2)
     {
-      ret2 = dpl_cdmi_head(ctx, bucket, obj_ino.key, NULL, DPL_FTYPE_ANY, NULL, &metadata, sysmdp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
+      ret = DPL_FAILURE;
+      goto end;
     }
-  else
-    {
-      ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, &metadata, sysmdp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
-    }
-
+  
   if (NULL != metadatap)
     {
       *metadatap = metadata;

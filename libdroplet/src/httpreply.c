@@ -473,6 +473,9 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                     case DPL_HTTP_CODE_CONFLICT:
                       will_ret = DPL_EEXIST;
                       break;
+                    case DPL_HTTP_CODE_REDIR_FOUND:
+                      will_ret = DPL_EREDIRECT;
+                      break ;
                     default:
                       will_ret = DPL_FAILURE;
                       break;
@@ -639,6 +642,21 @@ dpl_connection_close(dpl_ctx_t *ctx,
   return 0;
 }
 
+char *
+dpl_location(dpl_ctx_t *ctx,
+             dpl_dict_t *headers_returned)
+{
+  dpl_status_t ret;
+  dpl_var_t *var;
+  char *location = NULL;
+  
+  ret = dpl_dict_get_lowered(headers_returned, "Location", &var);
+  if (DPL_SUCCESS == ret)
+    location = strdup(var->value);
+  
+  return location;
+}
+
 /*
  * convenience function
  */
@@ -737,24 +755,21 @@ dpl_read_http_reply(dpl_conn_t *conn,
 
  end:
 
-  if (0 == ret)
+  if (NULL != data_bufp)
     {
-      if (NULL != data_bufp)
-        {
-          *data_bufp = hc.data_buf;
-          hc.data_buf = NULL; //consumed
-        }
-
-      if (NULL != data_lenp)
-        *data_lenp = hc.data_len;
-
-      if (NULL != headersp)
-        {
-          *headersp = hc.headers;
-          hc.headers = NULL; //consumed
-        }
+      *data_bufp = hc.data_buf;
+      hc.data_buf = NULL; //consumed
     }
-
+  
+  if (NULL != data_lenp)
+    *data_lenp = hc.data_len;
+  
+  if (NULL != headersp)
+    {
+      *headersp = hc.headers;
+      hc.headers = NULL; //consumed
+    }
+  
   //if not consumed
   if (NULL != hc.data_buf)
     free(hc.data_buf);

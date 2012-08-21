@@ -58,7 +58,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->list_all_my_buckets(ctx, vecp);
+  ret = ctx->backend->list_all_my_buckets(ctx, vecp, NULL);
 
  end:
   
@@ -97,7 +97,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->list_bucket(ctx, bucket, prefix, delimiter, objectsp, common_prefixesp);
+  ret = ctx->backend->list_bucket(ctx, bucket, prefix, delimiter, objectsp, common_prefixesp, NULL);
 
  end:
   
@@ -138,7 +138,7 @@ dpl_make_bucket(dpl_ctx_t *ctx,
   sysmd.canned_acl = canned_acl;
   sysmd.location_constraint = location_constraint;
 
-  ret = ctx->backend->make_bucket(ctx, bucket, &sysmd);
+  ret = ctx->backend->make_bucket(ctx, bucket, &sysmd, NULL);
   
  end:
 
@@ -171,7 +171,7 @@ dpl_deletebucket(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->delete_bucket(ctx, bucket);
+  ret = ctx->backend->delete_bucket(ctx, bucket, NULL);
   
  end:
 
@@ -222,7 +222,7 @@ dpl_post(dpl_ctx_t *ctx,
       goto end;
     }
   
-ret = ctx->backend->post(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len, query_params, resource_idp);
+  ret = ctx->backend->post(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len, query_params, resource_idp, NULL);
   
  end:
 
@@ -253,7 +253,7 @@ dpl_post_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->post_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, query_params, connp);
+  ret = ctx->backend->post_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, query_params, connp, NULL);
   
  end:
 
@@ -298,7 +298,7 @@ dpl_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->put(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len);
+  ret = ctx->backend->put(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len, NULL);
   
  end:
 
@@ -328,7 +328,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, connp);
+  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, connp, NULL);
   
  end:
 
@@ -373,8 +373,8 @@ dpl_get(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get(ctx, bucket, resource, subresource, object_type, condition, data_bufp, data_lenp, metadatap, sysmdp);
-  
+  ret = ctx->backend->get(ctx, bucket, resource, subresource, object_type, condition, data_bufp, data_lenp, metadatap, sysmdp, NULL);
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -420,7 +420,7 @@ dpl_get_range(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap, sysmdp);
+  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap, sysmdp, NULL);
   
  end:
 
@@ -450,11 +450,43 @@ dpl_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_buffered(ctx, bucket, resource, subresource, object_type, condition, header_func, buffer_func, cb_arg);
+  ret = ctx->backend->get_buffered(ctx, bucket, resource, subresource, object_type, condition, header_func, buffer_func, cb_arg, NULL);
   
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t 
+dpl_get_range_buffered(dpl_ctx_t *ctx,
+                    const char *bucket,
+                    const char *resource,
+                    const char *subresource, 
+                    dpl_ftype_t object_type,
+                    dpl_condition_t *condition,
+		    int start,
+		    int end,
+                    dpl_header_func_t header_func, 
+                    dpl_buffer_func_t buffer_func,
+                    void *cb_arg)
+{
+  int ret;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "get_range_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+
+  if (NULL == ctx->backend->get_range_buffered)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret = ctx->backend->get_range_buffered(ctx, bucket, resource, subresource, object_type, condition, start, end, header_func, buffer_func, cb_arg, NULL);
+  
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
   
   return ret;
 }
@@ -478,7 +510,7 @@ dpl_head(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap, sysmdp);
+  ret = ctx->backend->head(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap, sysmdp, NULL);
   
  end:
 
@@ -519,7 +551,7 @@ dpl_head_all(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head_all(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap);
+  ret = ctx->backend->head_all(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap, NULL);
   
  end:
 
@@ -580,7 +612,7 @@ dpl_delete(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF);
+  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, NULL);
   
  end:
 
@@ -621,7 +653,7 @@ dpl_genurl(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->genurl(ctx, bucket, resource, subresource, expires, buf, len, lenp);
+  ret = ctx->backend->genurl(ctx, bucket, resource, subresource, expires, buf, len, lenp, NULL);
   
  end:
 
@@ -671,7 +703,7 @@ dpl_copy(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, copy_directive, metadata, sysmd, condition);
+  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, copy_directive, metadata, sysmd, condition, NULL);
   
  end:
 

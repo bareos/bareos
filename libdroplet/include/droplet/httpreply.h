@@ -47,6 +47,7 @@ struct dpl_http_reply
 #define DPL_HTTP_CODE_CREATED         201
 #define DPL_HTTP_CODE_NO_CONTENT      204
 #define DPL_HTTP_CODE_PARTIAL_CONTENT 206
+#define DPL_HTTP_CODE_REDIR_FOUND     302
 #define DPL_HTTP_CODE_NOT_FOUND       404
 #define DPL_HTTP_CODE_CONFLICT        409
   int	code;
@@ -64,5 +65,6 @@ typedef dpl_status_t (*dpl_buffer_func_t)(void *cb_arg, char *buf, unsigned int 
 /* src/httpreply.c */
 dpl_status_t dpl_read_http_reply_buffered(dpl_conn_t *conn, int expect_data, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
 int dpl_connection_close(dpl_ctx_t *ctx, dpl_dict_t *headers_returned);
+char *dpl_location(dpl_ctx_t *ctx, dpl_dict_t *headers_returned);
 dpl_status_t dpl_read_http_reply(dpl_conn_t *conn, int expect_data, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **headersp);
 #endif

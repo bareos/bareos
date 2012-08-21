@@ -84,13 +84,7 @@ dpl_post_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  if (NULL == ctx->backend->post)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->post(ctx, bucket, id_path, subresource, object_type, metadata, sysmd, data_buf, data_len, query_params, resource_idp);
+  ret = dpl_post(ctx, bucket, id_path, subresource, object_type, metadata, sysmd, data_buf, data_len, query_params, resource_idp);
   
  end:
 
@@ -130,13 +124,7 @@ dpl_post_buffered_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  if (NULL == ctx->backend->post_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret = ctx->backend->post_buffered(ctx, bucket, id_path, subresource, object_type, metadata, sysmd, data_len, query_params, connp);
+  ret = dpl_post_buffered(ctx, bucket, id_path, subresource, object_type, metadata, sysmd, data_len, query_params, connp);
   
  end:
 
@@ -179,13 +167,7 @@ dpl_put_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
-  if (NULL == ctx->backend->put)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret = ctx->backend->put(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len);
+  ret = dpl_put(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len);
   
  end:
 
@@ -228,13 +210,7 @@ dpl_put_buffered_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
-  if (NULL == ctx->backend->put_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, connp);
+  ret = dpl_put_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, connp);
   
  end:
 
@@ -278,13 +254,7 @@ dpl_get_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
-  if (NULL == ctx->backend->get)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->get(ctx, bucket, resource, subresource, object_type, condition, data_bufp, data_lenp, metadatap, sysmdp);
+  ret = dpl_get(ctx, bucket, resource, subresource, object_type, condition, data_bufp, data_lenp, metadatap, sysmdp);
   
  end:
 
@@ -330,13 +300,7 @@ dpl_get_range_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
-  if (NULL == ctx->backend->get_range)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap, sysmdp);
+  ret = dpl_get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap, sysmdp);
   
  end:
 
@@ -379,13 +343,7 @@ dpl_get_buffered_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
-  if (NULL == ctx->backend->get_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->get_buffered(ctx, bucket, resource, subresource, object_type, condition, header_func, buffer_func, cb_arg);
+  ret = dpl_get_buffered(ctx, bucket, resource, subresource, object_type, condition, header_func, buffer_func, cb_arg);
   
  end:
 
@@ -430,13 +388,7 @@ dpl_get_range_buffered_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
-  if (NULL == ctx->backend->get_range_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->get_range_buffered(ctx, bucket, resource, subresource, object_type, condition, start, end, header_func, buffer_func, cb_arg);
+  ret = dpl_get_range_buffered(ctx, bucket, resource, subresource, object_type, condition, start, end, header_func, buffer_func, cb_arg);
   
  end:
 
@@ -478,13 +430,7 @@ dpl_head_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
-  if (NULL == ctx->backend->head)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->head(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap, sysmdp);
+  ret = dpl_head(ctx, bucket, resource, subresource, condition, metadatap, sysmdp);
   
  end:
 
@@ -524,13 +470,7 @@ dpl_head_all_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
-  if (NULL == ctx->backend->head_all)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->head_all(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap);
+  ret = dpl_head_all(ctx, bucket, resource, subresource, condition, metadatap);
   
  end:
 
@@ -568,13 +508,7 @@ dpl_delete_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
 
-  if (NULL == ctx->backend->deletef)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF);
+  ret = dpl_delete(ctx, bucket, resource, subresource);
   
  end:
 
@@ -630,13 +564,7 @@ dpl_copy_id(dpl_ctx_t *ctx,
 
   snprintf(dst_resource, sizeof (dst_resource), "%s%s", dst_id_path ? dst_id_path : "", dst_id);
 
-  if (NULL == ctx->backend->copy)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, copy_directive, metadata, sysmd, condition);
+  ret = dpl_copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, copy_directive, metadata, sysmd, condition);
   
  end:
 

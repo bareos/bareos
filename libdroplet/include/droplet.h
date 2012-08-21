@@ -61,6 +61,7 @@ extern "C" {
 #define DPL_DEFAULT_READ_TIMEOUT        30
 #define DPL_DEFAULT_WRITE_TIMEOUT       30
 #define DPL_DEFAULT_READ_BUF_SIZE       8192
+#define DPL_DEFAULT_MAX_REDIRECTS       10
 
 #define DPL_MAXPATHLEN 1024
 #define DPL_MAXNAMLEN  255
@@ -86,7 +87,9 @@ typedef enum
     DPL_ENOTEMPTY            = (-11),/*!< Directory is not empty */
     DPL_EISDIR               = (-12),/*!< Is a directory */
     DPL_EEXIST               = (-13),/*!< Object already exists */
-    DPL_ENOTSUPP             = (-14) /*!< Method not supported */
+    DPL_ENOTSUPP             = (-14),/*!< Method not supported */
+    DPL_EREDIRECT            = (-15),/*!< Redirection */
+    DPL_ETOOMANYREDIR        = (-16),/*!< Too many redirects */
   } dpl_status_t;
 
 typedef enum
@@ -401,8 +404,8 @@ typedef struct dpl_ctx
   int encode_slashes;        /*!< client wants slashes encoded */
   int keep_alive;            /*!< client supports keep-alive */
   int url_encoding;          /*!< some servers does not handle url encoding */
-  int cdmi_have_metadata;    /*!< some impl does not manage the ?metadata subresource */
   int base_path_in_refs;     /*!< include base_path in references */
+  int max_redirects;         /*!< maximum number of redirects */
   struct dpl_backend_s *backend;
 
   /*

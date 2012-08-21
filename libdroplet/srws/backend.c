@@ -48,7 +48,8 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
                       const dpl_sysmd_t *sysmd,
                       const char *data_buf,
                       unsigned int data_len,
-                      int mdonly)
+                      int mdonly,
+                      char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -230,10 +231,11 @@ dpl_srws_put(dpl_ctx_t *ctx,
              const dpl_dict_t *metadata,
              const dpl_sysmd_t *sysmd,
              const char *data_buf,
-             unsigned int data_len)
+             unsigned int data_len,
+             char **locationp)
 {
   return dpl_srws_put_internal(ctx, bucket, resource, subresource,
-                               object_type, metadata, sysmd, data_buf, data_len, 0);
+                               object_type, metadata, sysmd, data_buf, data_len, 0, locationp);
 }
 
 dpl_status_t
@@ -245,7 +247,8 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
                       const dpl_dict_t *metadata,
                       const dpl_sysmd_t *sysmd,
                       unsigned int data_len,
-                      dpl_conn_t **connp)
+                      dpl_conn_t **connp,
+                      char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -421,11 +424,12 @@ dpl_srws_get(dpl_ctx_t *ctx,
              char **data_bufp,
              unsigned int *data_lenp,
              dpl_dict_t **metadatap,
-             dpl_sysmd_t *sysmdp)
+             dpl_sysmd_t *sysmdp,
+             char **locationp)
 {
   return dpl_srws_get_range(ctx,bucket,resource,subresource,object_type,condition,
 			    -1,-1,
-			    data_bufp,data_lenp,metadatap,sysmdp);
+			    data_bufp,data_lenp,metadatap,sysmdp,locationp);
 }
 
 dpl_status_t
@@ -440,7 +444,8 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
                    char **data_bufp,
                    unsigned int *data_lenp,
                    dpl_dict_t **metadatap,
-                   dpl_sysmd_t *sysmdp)
+                   dpl_sysmd_t *sysmdp,
+                   char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -669,18 +674,19 @@ cb_get_buffer(void *cb_arg,
 
 dpl_status_t
 dpl_srws_get_buffered(dpl_ctx_t *ctx,
-			    const char *bucket,
-			    const char *resource,
-			    const char *subresource,
-			    dpl_ftype_t object_type,
-			    const dpl_condition_t *condition,
-			    dpl_header_func_t header_func,
-			    dpl_buffer_func_t buffer_func,
-			    void *cb_arg)
+                      const char *bucket,
+                      const char *resource,
+                      const char *subresource,
+                      dpl_ftype_t object_type,
+                      const dpl_condition_t *condition,
+                      dpl_header_func_t header_func,
+                      dpl_buffer_func_t buffer_func,
+                      void *cb_arg,
+                      char **locationp)
 {
   return dpl_srws_get_range_buffered(ctx,bucket,resource,subresource,object_type,condition,
 				     -1,-1,
-				     header_func, buffer_func, cb_arg);
+				     header_func, buffer_func, cb_arg, locationp);
 }
 
 dpl_status_t
@@ -694,7 +700,8 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
 			    int end,
 			    dpl_header_func_t header_func,
 			    dpl_buffer_func_t buffer_func,
-			    void *cb_arg)
+			    void *cb_arg,
+                            char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -853,7 +860,8 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
                   const dpl_condition_t *condition,
                   int all_headers,
                   dpl_dict_t **metadatap,
-                  dpl_sysmd_t *sysmdp)
+                  dpl_sysmd_t *sysmdp,
+                  char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -1035,21 +1043,23 @@ dpl_srws_head(dpl_ctx_t *ctx,
               dpl_ftype_t object_type,
               const dpl_condition_t *condition,
               dpl_dict_t **metadatap,
-              dpl_sysmd_t *sysmdp)
+              dpl_sysmd_t *sysmdp,
+              char **locationp)
 {
-  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 0, metadatap, sysmdp);
+  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 0, metadatap, sysmdp, locationp);
 }
 
 dpl_status_t
 dpl_srws_head_all(dpl_ctx_t *ctx,
-                const char *bucket,
-                const char *resource,
-                const char *subresource,
-                dpl_ftype_t object_type,
-                const dpl_condition_t *condition,
-                dpl_dict_t **metadatap)
+                  const char *bucket,
+                  const char *resource,
+                  const char *subresource,
+                  dpl_ftype_t object_type,
+                  const dpl_condition_t *condition,
+                  dpl_dict_t **metadatap,
+                  char **locationp)
 {
-  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap, NULL);
+  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap, NULL, locationp);
 }
 
 dpl_status_t
@@ -1057,7 +1067,8 @@ dpl_srws_delete(dpl_ctx_t *ctx,
                 const char *bucket,
                 const char *resource,
                 const char *subresource,
-                dpl_ftype_t object_type)
+                dpl_ftype_t object_type,
+                char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -1406,7 +1417,8 @@ dpl_srws_copy(dpl_ctx_t *ctx,
               dpl_copy_directive_t copy_directive,
               const dpl_dict_t *metadata,
               const dpl_sysmd_t *sysmd,
-              const dpl_condition_t *condition)
+              const dpl_condition_t *condition,
+              char **locationp)
 {
   int ret, ret2;
 
@@ -1423,7 +1435,7 @@ dpl_srws_copy(dpl_ctx_t *ctx,
       //replace the metadata
       ret2 = dpl_srws_put_internal(ctx, dst_bucket, dst_resource,
                                    dst_subresource, object_type, metadata, 
-                                   DPL_CANNED_ACL_UNDEF, NULL, 0, 1);
+                                   DPL_CANNED_ACL_UNDEF, NULL, 0, 1, locationp);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;

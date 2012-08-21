@@ -261,9 +261,35 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
 }
 
 dpl_status_t
+dpl_cdmi_req_set_resource(dpl_req_t *req,
+                          const char *resource)
+{
+  char *nstr;
+  int len;
+  dpl_status_t ret;
+
+  nstr = strdup(resource);
+  if (NULL == nstr)
+    return DPL_ENOMEM;
+
+  len = strlen(nstr);
+
+  //suppress special chars
+  if ('?' == nstr[len - 1])
+    nstr[len - 1] = 0;
+
+  ret = dpl_req_set_resource(req, nstr);
+
+  free(nstr);
+
+  return ret;
+}
+
+dpl_status_t
 dpl_cdmi_make_bucket(dpl_ctx_t *ctx,
                      const char *bucket,
-                     const dpl_sysmd_t *sysmd)
+                     const dpl_sysmd_t *sysmd,
+                     char **locationp)
 {
   return dpl_mkdir(ctx, bucket);
 }
@@ -274,7 +300,8 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
                      const char *prefix,
                      const char *delimiter,
                      dpl_vec_t **objectsp,
-                     dpl_vec_t **common_prefixesp)
+                     dpl_vec_t **common_prefixesp,
+                     char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -301,7 +328,7 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_GET);
 
-  ret2 = dpl_req_set_resource(req, NULL != prefix ? prefix : "/");
+  ret2 = dpl_cdmi_req_set_resource(req, NULL != prefix ? prefix : "/");
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -470,7 +497,8 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
               const char *data_buf,
               unsigned int data_len,
               const dpl_dict_t *query_params,
-              char **resource_idp)
+              char **resource_idp,
+              char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -496,7 +524,7 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_POST);
 
-  ret2 = dpl_req_set_resource(req, resource);
+  ret2 = dpl_cdmi_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -669,7 +697,8 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
                        const dpl_sysmd_t *sysmd,
                        unsigned int data_len,
                        const dpl_dict_t *query_params,
-                       dpl_conn_t **connp)
+                       dpl_conn_t **connp,
+                       char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -703,7 +732,7 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_req_set_resource(req, resource);
+  ret2 = dpl_cdmi_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -872,7 +901,8 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
              const dpl_dict_t *metadata,
              const dpl_sysmd_t *sysmd,
              const char *data_buf,
-             unsigned int data_len)
+             unsigned int data_len,
+             char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -898,7 +928,7 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_PUT);
 
-  ret2 = dpl_req_set_resource(req, resource);
+  ret2 = dpl_cdmi_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1070,7 +1100,8 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
                       const dpl_dict_t *metadata,
                       const dpl_sysmd_t *sysmd,
                       unsigned int data_len,
-                      dpl_conn_t **connp)
+                      dpl_conn_t **connp,
+                      char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -1104,7 +1135,7 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_req_set_resource(req, resource);
+  ret2 = dpl_cdmi_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1274,7 +1305,8 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
              char **data_bufp,
              unsigned int *data_lenp,
              dpl_dict_t **metadatap,
-             dpl_sysmd_t *sysmdp)
+             dpl_sysmd_t *sysmdp,
+             char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -1290,6 +1322,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
+  char          *location = NULL;
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1310,7 +1343,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_req_set_resource(req, resource);
+  ret2 = dpl_cdmi_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1392,6 +1425,15 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
           ret = DPL_ENOENT;
           goto end;
         }
+      else if (DPL_EREDIRECT == ret2)
+        {
+          location = dpl_location(ctx, headers_reply);
+          if (NULL == location)
+            ret = DPL_FAILURE;
+          else
+            ret = DPL_EREDIRECT;
+          goto end;
+        }
       else
         {
           DPLERR(0, "read http answer failed");
@@ -1425,6 +1467,15 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (DPL_EREDIRECT == ret && NULL != locationp)
+    {
+      *locationp = location;
+      location = NULL;
+    }
+
+  if (NULL != location)
+    free(location);
 
   if (NULL != data_buf)
     free(data_buf);
@@ -1466,7 +1517,8 @@ dpl_cdmi_get_range(dpl_ctx_t *ctx,
                    char **data_bufp,
                    unsigned int *data_lenp,
                    dpl_dict_t **metadatap,
-                   dpl_sysmd_t *sysmdp)
+                   dpl_sysmd_t *sysmdp,
+                   char **locationp)
 {
   return DPL_ENOTSUPP;
 }
@@ -1530,7 +1582,8 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
                       const dpl_condition_t *condition,
                       dpl_header_func_t header_func,
                       dpl_buffer_func_t buffer_func,
-                      void *cb_arg)
+                      void *cb_arg,
+                      char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -1567,7 +1620,7 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_req_set_resource(req, resource);
+  ret2 = dpl_cdmi_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1698,7 +1751,8 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
                   const char *subresource,
                   dpl_ftype_t object_type,
                   const dpl_condition_t *condition,
-                  dpl_dict_t **metadatap)
+                  dpl_dict_t **metadatap,
+                  char **locationp)
 {
   int ret, ret2;
   char *md_buf = NULL;
@@ -1706,7 +1760,7 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
   dpl_dict_t *metadata = NULL;
   
   //fetch metadata from JSON content
-  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", object_type, condition, &md_buf, &md_len, NULL, NULL);
+  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", object_type, condition, &md_buf, &md_len, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1754,13 +1808,14 @@ dpl_cdmi_head(dpl_ctx_t *ctx,
               dpl_ftype_t object_type,
               const dpl_condition_t *condition,
               dpl_dict_t **metadatap,
-              dpl_sysmd_t *sysmdp)
+              dpl_sysmd_t *sysmdp,
+              char **locationp)
 {
   int ret, ret2;
   dpl_dict_t *all_mds = NULL;
   dpl_dict_t *metadata = NULL;
 
-  ret2 = dpl_cdmi_head_all(ctx, bucket, resource, subresource, object_type, condition, &all_mds);
+  ret2 = dpl_cdmi_head_all(ctx, bucket, resource, subresource, object_type, condition, &all_mds, locationp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1805,7 +1860,8 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
                 const char *bucket,
                 const char *resource,
                 const char *subresource,
-                dpl_ftype_t object_type)
+                dpl_ftype_t object_type,
+                char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -1828,7 +1884,7 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_DELETE);
 
-  ret2 = dpl_req_set_resource(req, resource);
+  ret2 = dpl_cdmi_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1966,7 +2022,8 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
               dpl_copy_directive_t copy_directive,
               const dpl_dict_t *metadata,
               const dpl_sysmd_t *sysmd,
-              const dpl_condition_t *condition)
+              const dpl_condition_t *condition,
+              char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -1986,7 +2043,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
   if (DPL_COPY_DIRECTIVE_METADATA_REPLACE == copy_directive)
     return dpl_cdmi_put(ctx, dst_bucket, dst_resource,
                         NULL != dst_subresource ? dst_subresource : "metadata",
-                        object_type, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0);
+                        object_type, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, locationp);
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1997,7 +2054,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_PUT);
 
-  ret2 = dpl_req_set_resource(req, dst_resource);
+  ret2 = dpl_cdmi_req_set_resource(req, dst_resource);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
