@@ -103,7 +103,7 @@ add_metadata_to_json_body(dpl_dict_t *metadata,
   json_object *md_obj = NULL;
   json_object *tmp;
 
-  if (NULL == metadata)
+  if (0 == dpl_dict_count(metadata))
     {
       ret = DPL_SUCCESS;
       goto end;
@@ -215,6 +215,12 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
   char *buf;
   char *src_resource;
 
+  if (DPL_COPY_DIRECTIVE_UNDEF == req->copy_directive)
+    {
+      ret = DPL_SUCCESS;
+      goto end;
+    }
+
   if (NULL == req->src_resource)
     {
       ret = DPL_EINVAL;
@@ -223,9 +229,6 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
 
   switch (req->copy_directive)
     {
-    case DPL_COPY_DIRECTIVE_UNDEF:
-      ret = DPL_SUCCESS;
-      goto end;
     case DPL_COPY_DIRECTIVE_COPY:
       field = "copy";
       break ;
