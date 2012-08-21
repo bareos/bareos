@@ -168,6 +168,42 @@ add_metadata_to_json_body(dpl_dict_t *metadata,
 }
 
 static dpl_status_t
+add_metadata_to_headers(dpl_dict_t *metadata,
+                        dpl_dict_t *headers,
+                        dpl_ftype_t object_type)
+
+{
+  int bucket;
+  dpl_var_t *var;
+  char header[1024];
+  int ret;
+
+  for (bucket = 0;bucket < metadata->n_buckets;bucket++)
+    {
+      for (var = metadata->buckets[bucket];var;var = var->prev)
+        {
+          switch (object_type)
+            {
+            case DPL_FTYPE_DIR:
+              snprintf(header, sizeof (header), "X-Container-Meta-%s", var->key);
+              break ;
+            default:
+              snprintf(header, sizeof (header), "X-Object-Meta-%s", var->key);
+              break ;
+            }
+
+          ret = dpl_dict_add(headers, header, var->value, 0);
+          if (DPL_SUCCESS != ret)
+            {
+              return DPL_FAILURE;
+            }
+        }
+    }
+
+  return DPL_SUCCESS;
+}
+
+static dpl_status_t
 add_copy_directive_to_json_body(const dpl_req_t *req,
                                 json_object *body_obj)
 
@@ -500,6 +536,13 @@ dpl_cdmi_req_build(const dpl_req_t *req,
         }
       else
         {
+          ret2 = add_metadata_to_headers(req->metadata, headers, req->object_type);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+
           snprintf(buf, sizeof (buf), "%u", req->chunk->len);
           ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
           if (DPL_SUCCESS != ret2)
