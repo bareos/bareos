@@ -1271,7 +1271,7 @@ dpl_close_ex(dpl_vfile_t *vfile,
 
   if (NULL != vfile->conn)
     {
-      ret2 = dpl_read_http_reply(vfile->conn, 1, NULL, NULL, &headers_returned);
+      ret2 = dpl_read_http_reply(vfile->conn, 1, NULL, NULL, &headers_returned, &connection_close);
       if (DPL_SUCCESS != ret2)
         {
           //too common to print
@@ -1308,8 +1308,6 @@ dpl_close_ex(dpl_vfile_t *vfile,
                 }
             }
         }
-
-      connection_close = dpl_connection_close(vfile->ctx, headers_returned);
 
       if (1 == connection_close)
         dpl_conn_terminate(vfile->conn);

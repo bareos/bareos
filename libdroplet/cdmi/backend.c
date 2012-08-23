@@ -391,29 +391,15 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
@@ -631,29 +617,15 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "IN", data_len);
@@ -832,30 +804,15 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      if (NULL != headers_reply) //possible if continue succeeded
-        connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "IN", data_len);
@@ -1035,29 +992,15 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "IN", data_len);
@@ -1235,30 +1178,15 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      if (NULL != headers_reply) //possible if continue succeeded
-        connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "IN", data_len);
@@ -1322,7 +1250,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
-  char          *location = NULL;
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1413,38 +1340,15 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else if (DPL_EREDIRECT == ret2)
-        {
-          location = dpl_location(ctx, headers_reply);
-          if (NULL == location)
-            ret = DPL_FAILURE;
-          else
-            ret = DPL_EREDIRECT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
@@ -1467,15 +1371,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
-
-  if (DPL_EREDIRECT == ret && NULL != locationp)
-    {
-      *locationp = location;
-      location = NULL;
-    }
-
-  if (NULL != location)
-    free(location);
 
   if (NULL != data_buf)
     free(data_buf);
@@ -1595,6 +1490,7 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_req_t     *req = NULL;
   struct get_conven gc;
+  int http_status;
 
   memset(&gc, 0, sizeof (gc));
   gc.header_func = header_func;
@@ -1698,26 +1594,24 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       gc.connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply_buffered(conn, 1, cb_get_header, cb_get_buffer, &gc);
+  ret2 = dpl_read_http_reply_buffered(conn, 1, &http_status, cb_get_header, cb_get_buffer, &gc);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          gc.connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
+      DPLERR(0, "read http answer failed");
+      gc.connection_close = 1;
+      ret = ret2;
+      goto end;
     }
+
+  if (!conn->ctx->keep_alive)
+    gc.connection_close = 1;
+  
+  //map http_status to relevant value
+  ret = dpl_map_http_status(http_status);
 
   //caller is responsible for logging the event
 
@@ -1957,29 +1851,15 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "REQUEST", "DELETE", 0);
@@ -2173,29 +2053,15 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   ret = DPL_SUCCESS;

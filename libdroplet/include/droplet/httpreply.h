@@ -63,8 +63,9 @@ typedef dpl_status_t (*dpl_buffer_func_t)(void *cb_arg, char *buf, unsigned int 
 
 /* PROTO httpreply.c */
 /* src/httpreply.c */
-dpl_status_t dpl_read_http_reply_buffered(dpl_conn_t *conn, int expect_data, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
-int dpl_connection_close(dpl_ctx_t *ctx, dpl_dict_t *headers_returned);
-char *dpl_location(dpl_ctx_t *ctx, dpl_dict_t *headers_returned);
-dpl_status_t dpl_read_http_reply(dpl_conn_t *conn, int expect_data, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **headersp);
+dpl_status_t dpl_read_http_reply_buffered(dpl_conn_t *conn, int expect_data, int *http_statusp, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg);
+int dpl_connection_close(dpl_dict_t *headers_returned);
+char *dpl_location(dpl_dict_t *headers_returned);
+dpl_status_t dpl_map_http_status(int http_status);
+dpl_status_t dpl_read_http_reply(dpl_conn_t *conn, int expect_data, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **headersp, int *connection_closep);
 #endif

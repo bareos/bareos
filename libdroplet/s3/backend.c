@@ -119,29 +119,15 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "REQUEST", "LIST", 0);
@@ -322,29 +308,15 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "REQUEST", "LIST", 0);
@@ -570,29 +542,15 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2 || DPL_EEXIST == ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "IN", data_len);
@@ -711,29 +669,15 @@ dpl_s3_deletebucket(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "REQUEST", "DELETE", 0);
@@ -894,29 +838,15 @@ dpl_s3_put(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "IN", data_len);
@@ -1072,30 +1002,15 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      if (NULL != headers_reply) //possible if continue succeeded
-        connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "IN", data_len);
@@ -1246,30 +1161,18 @@ dpl_s3_get(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
+      ret = ret2;
+      goto end;
     }
   else
     {
-      connection_close = dpl_connection_close(ctx, headers_reply);
-
       ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
       if (DPL_SUCCESS != ret2)
         {
@@ -1441,30 +1344,18 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
+      ret = ret2;
+      goto end;
     }
   else
     {
-      connection_close = dpl_connection_close(ctx, headers_reply);
-
       ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
       if (DPL_SUCCESS != ret2)
         {
@@ -1587,6 +1478,7 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_req_t     *req = NULL;
   struct get_conven gc;
+  int http_status;
 
   memset(&gc, 0, sizeof (gc));
   gc.header_func = header_func;
@@ -1680,30 +1572,26 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       gc.connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply_buffered(conn, 1, cb_get_header, cb_get_buffer, &gc);
+  ret2 = dpl_read_http_reply_buffered(conn, 1, &http_status, cb_get_header, cb_get_buffer, &gc);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          gc.connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
+      DPLERR(0, "read http answer failed");
+      gc.connection_close = 1;
+      ret = ret2;
+      goto end;
     }
 
-  //caller is responsible for logging the event
+  if (!conn->ctx->keep_alive)
+    gc.connection_close = 1;
+  
+  //map http_status to relevant value
+  ret = dpl_map_http_status(http_status);
 
-  ret = DPL_SUCCESS;
+  //caller is responsible for logging the event
 
  end:
 
@@ -1837,30 +1725,18 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 0, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 0, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
+      ret = ret2;
+      goto end;
     }
   else
     {
-      connection_close = dpl_connection_close(ctx, headers_reply);
-
       if (all_headers)
         {
           metadata = dpl_dict_new(13);
@@ -2049,29 +1925,15 @@ dpl_s3_delete(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "REQUEST", "DELETE", 0);
@@ -2345,29 +2207,15 @@ dpl_s3_copy(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_ENOENT; //mapped to 404
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply);
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      if (DPL_ENOENT == ret2)
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-      else
-        {
-          DPLERR(0, "read http answer failed");
-          connection_close = 1;
-          ret = DPL_ENOENT; //mapped to 404
-          goto end;
-        }
-    }
-  else
-    {
-      connection_close = dpl_connection_close(ctx, headers_reply);
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "REQUEST", "COPY", 0);

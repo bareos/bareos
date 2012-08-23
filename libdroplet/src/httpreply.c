@@ -293,6 +293,7 @@ read_line(dpl_conn_t *conn)
  *
  * @param conn
  * @param expect_data // always set to 1, expect for HEAD-like methods!
+ * @param http_statusp returns the http status
  * @param header_func
  * @param buffer_func
  * @param cb_arg
@@ -302,6 +303,7 @@ read_line(dpl_conn_t *conn)
 dpl_status_t
 dpl_read_http_reply_buffered(dpl_conn_t *conn,
                              int expect_data,
+                             int *http_statusp,
                              dpl_header_func_t header_func,
                              dpl_buffer_func_t buffer_func,
                              void *cb_arg)
@@ -457,31 +459,6 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
 
               DPL_TRACE(conn->ctx, DPL_TRACE_HTTP, "conn=%p http_status=%d", conn, http_reply.code);
 
-              if (!(DPL_HTTP_CODE_CONTINUE == http_reply.code ||
-                    DPL_HTTP_CODE_OK == http_reply.code ||
-                    DPL_HTTP_CODE_CREATED == http_reply.code ||
-                    DPL_HTTP_CODE_NO_CONTENT == http_reply.code ||
-                    DPL_HTTP_CODE_PARTIAL_CONTENT == http_reply.code))
-                {
-                  DPLERR(0, "request failed %d", http_reply.code);
-
-                  switch (http_reply.code)
-                    {
-                    case DPL_HTTP_CODE_NOT_FOUND:
-                      will_ret = DPL_ENOENT;
-                      break;
-                    case DPL_HTTP_CODE_CONFLICT:
-                      will_ret = DPL_EEXIST;
-                      break;
-                    case DPL_HTTP_CODE_REDIR_FOUND:
-                      will_ret = DPL_EREDIRECT;
-                      break ;
-                    default:
-                      will_ret = DPL_FAILURE;
-                      break;
-                    }
-                }
-
               mode = MODE_HEADER;
 
               break ;
@@ -607,15 +584,25 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
   if (NULL != line)
     free(line);
 
-  if (0 != will_ret)
-    return will_ret;
-  else
-    return ret;
+  if (DPL_SUCCESS == ret)
+    {
+      if (NULL != http_statusp)
+        *http_statusp = http_reply.code;
+    }
+
+  return ret;
 }
 
+/** 
+ * check for Connection header
+ * 
+ * @param headers_returned 
+ * 
+ * @return 1 if found
+ * @return 0 if not found
+ */
 int
-dpl_connection_close(dpl_ctx_t *ctx,
-                     dpl_dict_t *headers_returned)
+dpl_connection_close(dpl_dict_t *headers_returned)
 {
   dpl_var_t *var;
   int ret;
@@ -626,10 +613,6 @@ dpl_connection_close(dpl_ctx_t *ctx,
   ret = dpl_dict_get_lowered(headers_returned, "Connection", &var);
   if (DPL_SUCCESS != ret)
     {
-      //some servers does not send explicit connection information and does not support keep alive
-      if (!ctx->keep_alive)
-        return -1;
-
       return 0;
     }
 
@@ -642,9 +625,16 @@ dpl_connection_close(dpl_ctx_t *ctx,
   return 0;
 }
 
+/** 
+ * check for Location header
+ * 
+ * @param headers_returned 
+ * 
+ * @return the location
+ * @return NULL if not found
+ */
 char *
-dpl_location(dpl_ctx_t *ctx,
-             dpl_dict_t *headers_returned)
+dpl_location(dpl_dict_t *headers_returned)
 {
   dpl_status_t ret;
   dpl_var_t *var;
@@ -652,9 +642,9 @@ dpl_location(dpl_ctx_t *ctx,
   
   ret = dpl_dict_get_lowered(headers_returned, "Location", &var);
   if (DPL_SUCCESS == ret)
-    location = strdup(var->value);
-  
-  return location;
+    return location;
+  else
+    return NULL;
 }
 
 /*
@@ -721,6 +711,37 @@ cb_httpreply_buffer(void *cb_arg,
   return DPL_SUCCESS;
 }
 
+dpl_status_t
+dpl_map_http_status(int http_status)
+{
+  dpl_status_t ret;
+
+  switch (http_status)
+    {
+    case DPL_HTTP_CODE_CONTINUE:
+    case DPL_HTTP_CODE_OK:
+    case DPL_HTTP_CODE_CREATED:
+    case DPL_HTTP_CODE_NO_CONTENT:
+    case DPL_HTTP_CODE_PARTIAL_CONTENT:
+      ret = DPL_SUCCESS;
+      break ;
+    case DPL_HTTP_CODE_NOT_FOUND:
+      ret = DPL_ENOENT;
+      break;
+    case DPL_HTTP_CODE_CONFLICT:
+      ret = DPL_EEXIST;
+      break;
+    case DPL_HTTP_CODE_REDIR_FOUND:
+      ret = DPL_EREDIRECT;
+      break ;
+    default:
+      ret = DPL_FAILURE;
+      break;
+    }
+
+  return ret;
+}
+
 /**
  * read http reply simple version
  *
@@ -737,21 +758,35 @@ dpl_read_http_reply(dpl_conn_t *conn,
                     int expect_data,
                     char **data_bufp,
                     unsigned int *data_lenp,
-                    dpl_dict_t **headersp)
+                    dpl_dict_t **headersp,
+                    int *connection_closep)
 {
   int ret, ret2;
   struct httreply_conven hc;
+  int connection_close = 0;
+  int http_status;
 
   memset(&hc, 0, sizeof (hc));
 
-  ret2 = dpl_read_http_reply_buffered(conn, expect_data, cb_httpreply_header, cb_httpreply_buffer, &hc);
+  ret2 = dpl_read_http_reply_buffered(conn, expect_data, &http_status, cb_httpreply_header, cb_httpreply_buffer, &hc);
   if (DPL_SUCCESS != ret2)
     {
+      //on I/O failure close connection
+      connection_close = 1;
       ret = ret2;
       goto end;
     }
 
-  ret = DPL_SUCCESS;
+  //connection_close might explicitely be requested
+  if (dpl_connection_close(hc.headers))
+    connection_close = 1;
+
+  //some servers does not send explicit connection information and does not support keep alive
+  if (!conn->ctx->keep_alive)
+    connection_close = 1;
+
+  //map http_status to relevant value
+  ret = dpl_map_http_status(http_status);
 
  end:
 
@@ -776,6 +811,9 @@ dpl_read_http_reply(dpl_conn_t *conn,
 
   if (NULL != hc.headers)
     dpl_dict_free(hc.headers);
+
+  if (NULL != connection_closep)
+    *connection_closep = connection_close;
 
   return ret;
 }
