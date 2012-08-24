@@ -313,7 +313,8 @@ add_data_to_json_body(dpl_chunk_t *chunk,
 
 {
   int ret;
-  json_object *data_obj = NULL;
+  json_object *value_obj = NULL;
+  json_object *valuetransferencoding_obj = NULL;
   char *base64_str;
   int base64_len;
 
@@ -322,23 +323,39 @@ add_data_to_json_body(dpl_chunk_t *chunk,
   base64_len = dpl_base64_encode((const u_char *) chunk->buf, chunk->len, (u_char *) base64_str);
   base64_str[base64_len] = 0;
 
-  data_obj = json_object_new_string(base64_str);
-  if (NULL == data_obj)
+  value_obj = json_object_new_string(base64_str);
+  if (NULL == value_obj)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  json_object_object_add(body_obj, "value", data_obj);
+  json_object_object_add(body_obj, "value", value_obj);
   //XXX check return value
-  data_obj = NULL;
+  value_obj = NULL;
+
+  /**/
+
+  valuetransferencoding_obj = json_object_new_string("base64");
+  if (NULL == valuetransferencoding_obj)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  json_object_object_add(body_obj, "valuetransferencoding", valuetransferencoding_obj);
+  //XXX check return valuetransferencoding
+  valuetransferencoding_obj = NULL;
 
   ret = DPL_SUCCESS;
   
  end:
 
-  if (NULL != data_obj)
-    json_object_put(data_obj);
+  if (NULL != valuetransferencoding_obj)
+    json_object_put(valuetransferencoding_obj);
+
+  if (NULL != value_obj)
+    json_object_put(value_obj);
 
   return ret;
 }
