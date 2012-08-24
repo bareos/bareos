@@ -450,20 +450,24 @@ typedef struct dpl_ctx
 
 /**/
 
+typedef enum
+  {
+    DPL_BEHAVIOR_MD5 =         (1u<<0),     /*!< MD5 is computed for object */
+    DPL_BEHAVIOR_EXPECT =      (1u<<1),     /*!< Use the Expect: 100-Continue */
+    DPL_BEHAVIOR_VIRTUAL_HOSTING = (1u<<2), /*!< Use virtual hosting instead of path-style access */
+    DPL_BEHAVIOR_KEEP_ALIVE =  (1u<<3),     /*!< Reuse connections */
+    DPL_BEHAVIOR_QUERY_STRING = (1u<<4),    /*!< Build a query string instead of a request */
+    DPL_BEHAVIOR_COPY =        (1u<<5),     /*!< It is a server side copy request */
+    DPL_BEHAVIOR_HTTP_COMPAT = (1u<<6),     /*!< Use the HTTP compatibility mode */
+    DPL_BEHAVIOR_MDONLY =      (1u<<7)      /*!< Some REST server like it this way */
+  } dpl_behavior_flag_t;
+
 typedef struct
 {
   dpl_ctx_t *ctx;
 
-#define DPL_BEHAVIOR_MD5          (1u<<0)     /*!< MD5 is computed for object */
-#define DPL_BEHAVIOR_EXPECT       (1u<<1)     /*!< Use the Expect: 100-Continue */
-#define DPL_BEHAVIOR_VIRTUAL_HOSTING (1u<<2)  /*!< Use virtual hosting instead of path-style access */
-#define DPL_BEHAVIOR_KEEP_ALIVE   (1u<<3)     /*!< Reuse connections */
-#define DPL_BEHAVIOR_QUERY_STRING (1u<<4)     /*!< Build a query string instead of a request */
-#define DPL_BEHAVIOR_COPY         (1u<<5)     /*!< It is a server side copy request */
-#define DPL_BEHAVIOR_HTTP_COMPAT  (1u<<6)     /*!< Use the HTTP compatibility mode */
-#define DPL_BEHAVIOR_MDONLY       (1u<<7)     /*!< Some REST server like it this way */
-  unsigned int behavior_flags;
-
+  dpl_behavior_flag_t behavior_flags;
+  
   dpl_method_t method;
   char *bucket;
   char *resource;
@@ -532,11 +536,13 @@ typedef struct
 
 typedef enum
   {
-    DPL_VFILE_FLAG_CREAT =   (1u<<0),
-    DPL_VFILE_FLAG_EXCL =    (1u<<1),
+    DPL_VFILE_FLAG_CREAT =   (1u<<0),     /*!< create file if it doesnt exist */
+    DPL_VFILE_FLAG_EXCL =    (1u<<1),     /*!< exclusive creation */
     DPL_VFILE_FLAG_MD5 =     (1u<<2),     /*!< check MD5 */
     DPL_VFILE_FLAG_ENCRYPT = (1u<<3),     /*!< encrypt on the fly */
     DPL_VFILE_FLAG_POST =    (1u<<4),     /*!< use POST to write/creat file */
+    DPL_VFILE_FLAG_RANGE =   (1u<<5),     /*!< use specified range (get only) */
+    DPL_VFILE_FLAG_ONESHOT = (1u<<6),     /*!< get/put file in one-shot */
   } dpl_vfile_flag_t;
 
 typedef struct
@@ -567,12 +573,14 @@ typedef struct
   void *cb_arg;
 
   /*
-   * for updating metadata at dpl_close() (e.g. CDMI)
+   * for one shot
    */
   char *bucket;
   char *resource;
+  dpl_ftype_t obj_type;
   dpl_dict_t *metadata;
   dpl_sysmd_t *sysmd;
+  dpl_dict_t *query_params;
   
 } dpl_vfile_t;
 
