@@ -42,8 +42,41 @@ dpl_cdmi_get_metadata_from_headers(const dpl_dict_t *headers,
                                    dpl_dict_t **metadatap,
                                    dpl_sysmd_t *sysmdp)
 {
-  //metadata are not stored in headers
-  return DPL_FAILURE;
+  dpl_dict_t *metadata = NULL;
+  dpl_status_t ret, ret2;
+
+  if (NULL == metadatap)
+    {
+      ret = DPL_SUCCESS;
+      goto end;
+    }
+
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  //XXX check if container
+  ret2 = dpl_dict_filter_prefix(metadata, headers, "X-Object-Meta-");
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  *metadatap = metadata;
+  metadata = NULL;
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
+  return ret;
 }
 
 /**/
