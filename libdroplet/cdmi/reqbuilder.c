@@ -236,7 +236,7 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
       ret = DPL_EINVAL;
       goto end;
     case DPL_COPY_DIRECTIVE_HARDLINK:
-      field = "scality_link";
+      field = "link";
       goto end;
     case DPL_COPY_DIRECTIVE_SYMLINK:
       field = "reference";
