@@ -318,11 +318,17 @@ add_data_to_json_body(dpl_chunk_t *chunk,
   int ret;
   json_object *value_obj = NULL;
   json_object *valuetransferencoding_obj = NULL;
-  char *base64_str;
+  char *base64_str = NULL;
   int base64_len;
 
   //encode body to base64
-  base64_str = alloca(DPL_BASE64_LENGTH(chunk->len) + 1);
+  base64_str = malloc(DPL_BASE64_LENGTH(chunk->len) + 1);
+  if (NULL == base64_str)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
   base64_len = dpl_base64_encode((const u_char *) chunk->buf, chunk->len, (u_char *) base64_str);
   base64_str[base64_len] = 0;
 
@@ -354,6 +360,9 @@ add_data_to_json_body(dpl_chunk_t *chunk,
   
  end:
 
+  if (NULL != base64_str)
+    free(base64_str);
+  
   if (NULL != valuetransferencoding_obj)
     json_object_put(valuetransferencoding_obj);
 
