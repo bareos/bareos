@@ -193,12 +193,14 @@ dpl_copy_directive(char *str)
     return DPL_COPY_DIRECTIVE_COPY;
   else if (!strcasecmp(str, "metadata_replace"))
     return DPL_COPY_DIRECTIVE_METADATA_REPLACE;
-  else if (!strcasecmp(str, "hardlink"))
-    return DPL_COPY_DIRECTIVE_HARDLINK;
+  else if (!strcasecmp(str, "link"))
+    return DPL_COPY_DIRECTIVE_LINK;
   else if (!strcasecmp(str, "symlink"))
     return DPL_COPY_DIRECTIVE_SYMLINK;
   else if (!strcasecmp(str, "move"))
     return DPL_COPY_DIRECTIVE_MOVE;
+  else if (!strcasecmp(str, "mkdent"))
+    return DPL_COPY_DIRECTIVE_MKDENT;
 
   return -1;
 }
@@ -214,12 +216,14 @@ dpl_copy_directive_str(dpl_copy_directive_t copy_directive)
       return "COPY"; //case is important
     case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
       return "METADATA_REPLACE"; //case is important
-    case DPL_COPY_DIRECTIVE_HARDLINK:
-      return "HARDLINK"; //case is important
+    case DPL_COPY_DIRECTIVE_LINK:
+      return "LINK"; //case is important
     case DPL_COPY_DIRECTIVE_SYMLINK:
       return "SYMLINK"; //case is important
     case DPL_COPY_DIRECTIVE_MOVE:
       return "MOVE"; //case is important
+    case DPL_COPY_DIRECTIVE_MKDENT:
+      return "MKDENT"; //case is important
     }
 
   return NULL;
