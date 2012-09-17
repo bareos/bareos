@@ -237,7 +237,7 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
       goto end;
     case DPL_COPY_DIRECTIVE_LINK:
       field = "link";
-      goto end;
+      break ;
     case DPL_COPY_DIRECTIVE_SYMLINK:
       field = "reference";
       break ;
@@ -257,14 +257,14 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
       int base_path_len = 0;
       int delim_len = 0;
       int src_resource_len = 0;
-
+      
       if (NULL != ctx->base_path)
         base_path_len = strlen(ctx->base_path);
       
       delim_len = strlen(ctx->delim);
-
+      
       src_resource_len = strlen(req->src_resource);
-
+      
       buf = alloca(base_path_len + delim_len + src_resource_len + 1);
       if (NULL == buf)
         {
@@ -273,14 +273,14 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
         }
       
       buf[0] = 0;
-
+      
       if (NULL != ctx->base_path)
         strcat(buf, ctx->base_path);
-
+      
       strcat(buf, ctx->delim);
-
+      
       strcat(buf, req->src_resource);
-
+      
       src_resource = buf;
     }
   else
