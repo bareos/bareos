@@ -272,8 +272,8 @@ parse_list_bucket_content(xmlNode *node,
           DPRINTF("name: %s\n", tmp->name);
           if (!strcmp((char *) tmp->name, "Key"))
             {
-              object->key = strdup((char *) tmp->children->content);
-              if (NULL == object->key)
+              object->path = strdup((char *) tmp->children->content);
+              if (NULL == object->path)
                 goto bad;
             }
           else if (!strcmp((char *) tmp->name, "LastModified"))

@@ -178,8 +178,8 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
               goto end;
             }
           memset(object, 0, sizeof (*object));
-          object->key = strdup(name);
-          if (NULL == object->key)
+          object->path = strdup(name);
+          if (NULL == object->path)
             {
               ret = DPL_ENOMEM;
               goto end;

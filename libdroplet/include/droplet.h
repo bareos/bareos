@@ -304,10 +304,10 @@ typedef struct
   char etag[MD5_DIGEST_LENGTH];
 } dpl_condition_t;
 
-typedef struct dpl_ino
+typedef struct dpl_fqn
 {
-  char key[DPL_MAXPATHLEN];
-} dpl_ino_t;
+  char path[DPL_MAXPATHLEN];
+} dpl_fqn_t;
 
 typedef struct
 {
@@ -341,7 +341,7 @@ typedef struct
 
 typedef struct
 {
-  char *key;
+  char *path;
   time_t last_modified;
   size_t size;
   char *etags;
@@ -507,11 +507,11 @@ typedef struct
 /*
  * vdir
  */
-#define DPL_ROOT_INO  ((dpl_ino_t) {.key = ""})
+#define DPL_ROOT_FQN  ((dpl_fqn_t) {.path = ""})
 
 typedef struct
 {
-  dpl_ino_t ino;
+  dpl_fqn_t fqn;
   dpl_ctx_t *ctx;
   dpl_vec_t *files;
   dpl_vec_t *directories;
@@ -522,7 +522,7 @@ typedef struct
 typedef struct
 {
   char name[DPL_MAXNAMLEN];
-  dpl_ino_t ino;
+  dpl_fqn_t fqn;
   dpl_ftype_t type;
   time_t last_modified;
   size_t size;

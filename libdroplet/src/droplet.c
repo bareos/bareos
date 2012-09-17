@@ -251,8 +251,8 @@ dpl_vec_buckets_free(dpl_vec_t *vec)
 void
 dpl_object_free(dpl_object_t *object)
 {
-  if (NULL != object->key)
-    free(object->key);
+  if (NULL != object->path)
+    free(object->path);
 
   free(object);
 }
