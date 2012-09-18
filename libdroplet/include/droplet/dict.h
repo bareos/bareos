@@ -38,7 +38,7 @@ struct dpl_dict;
 
 typedef enum
   {
-    DPL_VAR_STRING,
+    DPL_VAR_STRING = 0,
     DPL_VAR_ARRAY,
   } dpl_var_type_t;
 
@@ -74,9 +74,11 @@ dpl_status_t dpl_dict_get_lowered(const dpl_dict_t *dict, const char *key, dpl_v
 char *dpl_dict_get_value(const dpl_dict_t *dict, const char *key);
 void dpl_dict_iterate(const dpl_dict_t *dict, dpl_dict_func_t cb_func, void *cb_arg);
 int dpl_dict_count(const dpl_dict_t *dict);
+void dpl_dict_var_free(dpl_var_t *var);
 void dpl_dict_free(dpl_dict_t *dict);
 void dpl_dict_print(const dpl_dict_t *dict, FILE *f, int level);
 dpl_status_t dpl_dict_add_ex(dpl_dict_t *dict, const char *key, dpl_var_type_t type, const void *value, int lowered);
+dpl_status_t dpl_dict_add_var(dpl_dict_t *dict, const char *key, dpl_var_t *var, int lowered);
 dpl_status_t dpl_dict_add(dpl_dict_t *dict, const char *key, const char *value, int lowered);
 void dpl_dict_remove(dpl_dict_t *dict, dpl_var_t *var);
 dpl_status_t dpl_dict_copy(dpl_dict_t *dst, const dpl_dict_t *src);

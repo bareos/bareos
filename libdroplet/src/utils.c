@@ -285,7 +285,7 @@ dpl_iov_dump(struct iovec *iov,
              int n_iov,
              size_t n_bytes)
 {
-  size_t total;
+  __attribute__((unused)) size_t total;
   ssize_t dump_size;
   int i;
   struct dpl_dump_ctx dump_ctx;

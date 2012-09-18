@@ -309,7 +309,6 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                              void *cb_arg)
 {
   int ret, ret2;
-  int will_ret = 0;
   struct dpl_http_reply http_reply;
   char *line = NULL;
   size_t chunk_len = 0;

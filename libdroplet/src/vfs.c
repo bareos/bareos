@@ -1929,6 +1929,8 @@ cb_vfile_buffer(void *cb_arg,
 
 /** 
  * open a file for reading
+ *
+ * @note this function cannot be used to retrieve subresources
  * 
  * @param ctx 
  * @param locator 
@@ -2029,7 +2031,7 @@ dpl_openread(dpl_ctx_t *ctx,
   ret2 = dpl_namei(ctx, path, bucket, cur_fqn, &parent_fqn, &obj_fqn, &obj_type);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 

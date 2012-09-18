@@ -281,8 +281,6 @@ dpl_status_t
 dpl_req_add_metadata(dpl_req_t *req,
                      const dpl_dict_t *metadata)
 {
-  int bucket;
-  dpl_var_t *var;
   int ret;
 
   ret = dpl_dict_copy(req->metadata, metadata);

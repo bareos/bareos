@@ -1648,27 +1648,20 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
   dpl_dict_t *metadata = NULL;
   
   //fetch metadata from JSON content
-  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata", object_type, condition, &md_buf, &md_len, NULL, NULL, NULL);
+  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata;objectID", object_type, condition, &md_buf, &md_len, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
       goto end;
     }
   
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  ret2 = dpl_cdmi_parse_metadata(ctx, md_buf, md_len, metadata);
+  ret2 = dpl_cdmi_parse_metadata(ctx, md_buf, md_len, &metadata);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
-
+  
   if (NULL != metadatap)
     {
       *metadatap = metadata;
@@ -1710,14 +1703,14 @@ dpl_cdmi_head(dpl_ctx_t *ctx,
       goto end;
     }
 
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
+  ret2 = dpl_cdmi_get_metadata_from_json_metadata(all_mds, &metadata);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ENOMEM;
+      ret = DPL_FAILURE;
       goto end;
     }
 
-  ret2 = dpl_cdmi_get_metadata_from_json_metadata(all_mds, metadata);
+  ret2 = dpl_cdmi_get_sysmd_from_json_metadata(all_mds, sysmdp);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;
@@ -1910,7 +1903,6 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
   char          *body_str = NULL;
   int           body_len = 0;
 

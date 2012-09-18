@@ -218,18 +218,138 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
 /**/
 
 dpl_status_t
+convert_obj_to_var(dpl_ctx_t *ctx,
+                   struct json_object *obj,
+                   int level,
+                   dpl_var_t **varp)
+{
+  int ret, ret2;
+  dpl_var_t *var = NULL;
+  char *key; 
+  struct json_object *val_obj;
+  struct lh_entry *entry;
+  dpl_dict_t *array = NULL;
+
+  DPRINTF("convert_obj_to_var level=%d type=%d\n", level, json_object_get_type(obj));
+
+  var = malloc(sizeof (*var));
+  if (NULL == var)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+  memset(var, 0, sizeof (*var));
+
+  switch (json_object_get_type(obj))
+    {
+    case json_type_null:
+      return DPL_ENOTSUPP;
+    case json_type_object:
+    case json_type_array:
+      {
+        array = dpl_dict_new(13);
+        if (NULL == array)
+          {
+            ret = DPL_ENOMEM;
+            goto end;
+          }
+
+        for (entry = json_object_get_object(obj)->head; (entry ? (key = (char*)entry->k, val_obj = (struct json_object*)entry->v, entry) : 0); entry = entry->next)
+          {
+            dpl_var_t *subvar;
+
+            DPRINTF("key='%s'\n", key);
+
+            ret2 = convert_obj_to_var(ctx, val_obj, level+1, &subvar);
+            if (DPL_SUCCESS != ret2)
+              {
+                ret = ret2;
+                goto end;
+              }
+            
+            ret2 = dpl_dict_add_var(array, key, subvar, 0);
+
+            dpl_dict_var_free(subvar);
+
+            if (DPL_SUCCESS != ret2)
+              {
+                ret = ret2;
+                goto end;
+              }
+          }
+
+        var->array = array;
+        array = NULL;
+        var->type = DPL_VAR_ARRAY;
+        break ;
+      }
+    case json_type_boolean:
+    case json_type_double:
+    case json_type_int:
+    case json_type_string:
+      {
+        char *val, *valp;
+        int val_len;
+
+        pthread_mutex_lock(&ctx->lock);
+        val = (char *) json_object_to_json_string(obj);
+        val_len = strlen(val);
+        
+        if (val[0] == '"')
+          valp = val + 1;
+        else
+          valp = val;
+        
+        if (val_len > 0)
+          {
+            if (val[val_len-1] == '"')
+              val[val_len-1] = 0;
+          }
+
+        var->value = strdup(valp);
+        pthread_mutex_unlock(&ctx->lock);
+
+        if (NULL == var->value)
+          {
+            ret = DPL_ENOMEM;
+            goto end;
+          }
+        var->type = DPL_VAR_STRING;
+        break ;
+      }
+    }
+
+  if (NULL != varp)
+    {
+      *varp = var;
+      var = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != array)
+    dpl_dict_free(array);
+
+  if (NULL != var)
+    dpl_dict_var_free(var);
+
+  DPRINTF("level=%d ret=%d\n", level, ret);
+
+  return ret;
+}
+
+dpl_status_t
 dpl_cdmi_parse_metadata(dpl_ctx_t *ctx,
                         const char *buf,
                         int len,
-                        dpl_dict_t *metadata)
+                        dpl_dict_t **metadatap)
 {
   int ret, ret2;
   json_tokener *tok = NULL;
   json_object *obj = NULL;
-  json_object *md_obj = NULL;
-  char *key; 
-  struct json_object *val_obj;
-  struct lh_entry *entry;
+  dpl_var_t *value;
 
   //  write(1, buf, len);
 
@@ -246,56 +366,33 @@ dpl_cdmi_parse_metadata(dpl_ctx_t *ctx,
       ret = DPL_FAILURE;
       goto end;
     }
-  
-  md_obj = json_object_object_get(obj, "metadata");
-  if (NULL == metadata)
+
+  ret2 = convert_obj_to_var(ctx, obj, 0, &value);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
+      goto end;
+    }
+  
+  if (DPL_VAR_ARRAY != value->type)
+    {
+      ret = DPL_EINVAL;
       goto end;
     }
 
-
-  for (entry = json_object_get_object(md_obj)->head; (entry ? (key = (char*)entry->k, val_obj = (struct json_object*)entry->v, entry) : 0); entry = entry->next)
+  if (NULL != metadatap)
     {
-      char *val, *valp;
-      int val_len;
-
-      pthread_mutex_lock(&ctx->lock);
-      val = strdup((char *) json_object_to_json_string(val_obj));
-      pthread_mutex_unlock(&ctx->lock);
-      if (NULL == val)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-
-      val_len = strlen(val);
-
-      if (val[0] == '"')
-        valp = val + 1;
-      else
-        valp = val;
-          
-      if (val_len > 0)
-        {
-          if (val[val_len-1] == '"')
-            val[val_len-1] = 0;
-        }
-
-      ret2 = dpl_dict_add(metadata, key, valp, 0);
-
-      free(val);
-
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
+      //pointer stealing
+      *metadatap = (dpl_dict_t *) value->array;
+      value->array = NULL;
     }
 
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != value)
+    dpl_dict_var_free(value);
 
   if (NULL != obj)
     json_object_put(obj);
@@ -308,7 +405,76 @@ dpl_cdmi_parse_metadata(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_cdmi_get_metadata_from_json_metadata(dpl_dict_t *json_metadata,
-                                         dpl_dict_t *metadata)
+                                         dpl_dict_t **metadatap)
 {
-  return dpl_dict_filter_no_prefix(metadata, json_metadata, "cdmi_");
+  dpl_status_t ret, ret2;
+  dpl_var_t *var = NULL;
+  dpl_dict_t *metadata = NULL;
+
+  //find the metadata ARRAY
+  ret2 = dpl_dict_get_lowered(json_metadata, "metadata", &var);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (DPL_VAR_ARRAY != var->type)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
+  metadata = dpl_dict_dup(var->array);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_cdmi_get_sysmd_from_json_metadata(dpl_dict_t *json_metadata,
+                                      dpl_sysmd_t *sysmd)
+{
+  dpl_status_t ret;
+  dpl_var_t *var = NULL;
+
+  var = dpl_dict_get(json_metadata, "objectID");
+  if (NULL == var)
+    {
+      ret = DPL_ENOENT;
+      goto end;
+    }
+
+  if (DPL_VAR_STRING != var->type)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
+  sysmd->mask |= DPL_SYSMD_MASK_ID;
+  strncpy(sysmd->id, var->value, DPL_SYSMD_ID_SIZE);
+  sysmd->id[DPL_SYSMD_ID_SIZE] = 0;
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
 }

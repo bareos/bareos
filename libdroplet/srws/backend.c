@@ -1375,6 +1375,11 @@ dpl_srws_copy(dpl_ctx_t *ctx,
         }
 
       break ;
+    case DPL_COPY_DIRECTIVE_LINK:
+    case DPL_COPY_DIRECTIVE_SYMLINK:
+    case DPL_COPY_DIRECTIVE_MOVE:
+    case DPL_COPY_DIRECTIVE_MKDENT:
+      break ;
     }
 
   ret = DPL_SUCCESS;

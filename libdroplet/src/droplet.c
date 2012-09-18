@@ -68,6 +68,10 @@ dpl_status_str(dpl_status_t status)
       return "DPL_EEXIST";
     case DPL_ENOTSUPP:
       return "DPL_ENOTSUPP";
+    case DPL_EREDIRECT:
+      return "DPL_EREDIRECT";
+    case DPL_ETOOMANYREDIR:
+      return "DPL_ETOOMANYREDIR";
     }
 
   return "Unknown error";

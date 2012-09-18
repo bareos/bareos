@@ -33,6 +33,9 @@
  */
 #include "dropletp.h"
 
+//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
+#define DPRINTF(fmt,...)
+
 /**
  * compute a simple hash code
  *
@@ -122,6 +125,9 @@ dpl_dict_get_lowered(const dpl_dict_t *dict,
 
   free(nkey);
 
+  if (NULL == var)
+    return DPL_ENOENT;
+
   if (NULL != varp)
     *varp = var;
 
@@ -175,9 +181,17 @@ value_free(dpl_var_t *var)
       free(var->value);
       break ;
     case DPL_VAR_ARRAY:
-      dpl_dict_free(var->array);
+      if (NULL != var->array) //allow NULL arrays
+        dpl_dict_free(var->array);
       break ;
     }
+}
+
+void
+dpl_dict_var_free(dpl_var_t *var)
+{
+  value_free(var);
+  free(var);
 }
 
 static void
@@ -185,8 +199,7 @@ cb_var_free(dpl_var_t *var,
             void *arg)
 {
   free(var->key);
-  value_free(var);
-  free(var);
+  dpl_dict_var_free(var);
 }
 
 void
@@ -340,6 +353,32 @@ dpl_dict_add_ex(dpl_dict_t *dict,
   return DPL_SUCCESS;
 }
 
+/** 
+ * make a copy of the variable
+ * 
+ * @param dict 
+ * @param key 
+ * @param var 
+ * @param lowered 
+ * 
+ * @return 
+ */
+dpl_status_t
+dpl_dict_add_var(dpl_dict_t *dict,
+                 const char *key,
+                 dpl_var_t *var,
+                 int lowered)
+{
+  switch (var->type)
+    {
+    case DPL_VAR_STRING:
+      return dpl_dict_add_ex(dict, key, DPL_VAR_STRING, (void *) var->value, lowered);
+    case DPL_VAR_ARRAY:
+      return dpl_dict_add_ex(dict, key, DPL_VAR_ARRAY, (void *) var->array, lowered);
+    }
+  return DPL_ENOTSUPP;
+}
+
 dpl_status_t
 dpl_dict_add(dpl_dict_t *dict,
              const char *key,
@@ -365,8 +404,7 @@ dpl_dict_remove(dpl_dict_t *dict,
     dict->buckets[bucket] = var->prev;
 
   free(var->key);
-  value_free(var);
-  free(var);
+  dpl_dict_var_free(var);
 }
 
 static void

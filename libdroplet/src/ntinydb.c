@@ -93,7 +93,7 @@ dpl_ntinydb_get(const char *blob_buf,
                 int *datalen_returned)
 {
   int i, keylenref, keylen, datalen, match;
-  char flag;
+  __attribute__((unused)) char flag;
   uint32_t len;
 
   keylenref = strlen(key);
@@ -161,8 +161,9 @@ dpl_ntinydb_list(const char *blob_buf,
                  dpl_ntinydb_func_t cb_func,
                  void *cb_arg)
 {
-  int i, keylen, datalen, match;
-  char flag;
+  int i, keylen, datalen;
+  __attribute__((unused)) int match;
+  __attribute__((unused)) char flag;
   uint32_t len;
 
   match = 0;
