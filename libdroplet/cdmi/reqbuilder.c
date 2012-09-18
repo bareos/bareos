@@ -479,6 +479,14 @@ dpl_cdmi_req_build(const dpl_req_t *req,
               goto end;
             }
           break ;
+        case DPL_FTYPE_DOM:
+          ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_DOMAIN, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
         }
     }
   else if (DPL_METHOD_PUT == req->method ||
@@ -620,6 +628,14 @@ dpl_cdmi_req_build(const dpl_req_t *req,
           break ;
         case DPL_FTYPE_CAP:
           ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CAPABILITY, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_FTYPE_DOM:
+          ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_DOMAIN, 0);
           if (DPL_SUCCESS != ret2)
             {
               ret = ret2;

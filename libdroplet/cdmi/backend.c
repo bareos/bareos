@@ -1648,7 +1648,7 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
   dpl_dict_t *metadata = NULL;
   
   //fetch metadata from JSON content
-  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata;objectID", object_type, condition, &md_buf, &md_len, NULL, NULL, NULL);
+  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata;objectID;parentID;objectType", object_type, condition, &md_buf, &md_len, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = DPL_FAILURE;

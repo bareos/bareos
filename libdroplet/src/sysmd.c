@@ -63,10 +63,14 @@ dpl_sysmd_print(dpl_sysmd_t *sysmd,
 {
   int i;
 
-  fprintf(f, "mask=0x%x\n", sysmd->mask);
-  
   if (sysmd->mask & DPL_SYSMD_MASK_ID)
     fprintf(f, "id=%s\n", sysmd->id);
+
+  if (sysmd->mask & DPL_SYSMD_MASK_PARENT_ID)
+    fprintf(f, "parent_id=%s\n", sysmd->parent_id);
+
+  if (sysmd->mask & DPL_SYSMD_MASK_FTYPE)
+    fprintf(f, "ftype=%s\n", dpl_object_type_str(sysmd->ftype));
 
   if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
     fprintf(f, "canned_acl=%s\n", dpl_canned_acl_str(sysmd->canned_acl));

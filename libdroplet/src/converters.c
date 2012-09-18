@@ -261,6 +261,8 @@ dpl_object_type_str(dpl_ftype_t object_type)
       return "dir";
     case DPL_FTYPE_CAP:
       return "cap";
+    case DPL_FTYPE_DOM:
+      return "dom";
     }
 
   return NULL;

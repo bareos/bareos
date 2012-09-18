@@ -33,6 +33,7 @@
  */
 #include "dropletp.h"
 #include <json/json.h>
+#include <droplet/cdmi/reqbuilder.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
@@ -288,25 +289,11 @@ convert_obj_to_var(dpl_ctx_t *ctx,
     case json_type_int:
     case json_type_string:
       {
-        char *val, *valp;
-        int val_len;
+        char *val;
 
         pthread_mutex_lock(&ctx->lock);
-        val = (char *) json_object_to_json_string(obj);
-        val_len = strlen(val);
-        
-        if (val[0] == '"')
-          valp = val + 1;
-        else
-          valp = val;
-        
-        if (val_len > 0)
-          {
-            if (val[val_len-1] == '"')
-              val[val_len-1] = 0;
-          }
-
-        var->value = strdup(valp);
+        val = (char *) json_object_get_string(obj);
+        var->value = strdup(val);
         pthread_mutex_unlock(&ctx->lock);
 
         if (NULL == var->value)
@@ -408,7 +395,7 @@ dpl_cdmi_get_metadata_from_json_metadata(dpl_dict_t *json_metadata,
                                          dpl_dict_t **metadatap)
 {
   dpl_status_t ret, ret2;
-  dpl_var_t *var = NULL;
+  dpl_var_t *var;
   dpl_dict_t *metadata = NULL;
 
   //find the metadata ARRAY
@@ -448,29 +435,117 @@ dpl_cdmi_get_metadata_from_json_metadata(dpl_dict_t *json_metadata,
   return ret;
 }
 
+dpl_ftype_t
+dpl_cdmi_content_type_to_ftype(const char *str)
+{
+  if (!strcmp(DPL_CDMI_CONTENT_TYPE_OBJECT, str))
+    return DPL_FTYPE_REG;
+  else if (!strcmp(DPL_CDMI_CONTENT_TYPE_CONTAINER, str))
+    return DPL_FTYPE_DIR;
+  else if (!strcmp(DPL_CDMI_CONTENT_TYPE_CAPABILITY, str))
+    return DPL_FTYPE_CAP;
+  else if (!strcmp(DPL_CDMI_CONTENT_TYPE_DOMAIN, str))
+    return DPL_FTYPE_DOM;
+
+  return DPL_FTYPE_UNDEF;
+}
+
 dpl_status_t
 dpl_cdmi_get_sysmd_from_json_metadata(dpl_dict_t *json_metadata,
                                       dpl_sysmd_t *sysmd)
 {
-  dpl_status_t ret;
-  dpl_var_t *var = NULL;
+  dpl_status_t ret, ret2;
+  dpl_var_t *var, *var2;
 
-  var = dpl_dict_get(json_metadata, "objectID");
-  if (NULL == var)
+  if (NULL == sysmd)
     {
-      ret = DPL_ENOENT;
+      ret = DPL_SUCCESS;
       goto end;
     }
 
-  if (DPL_VAR_STRING != var->type)
+  sysmd->mask = 0;
+
+  var = dpl_dict_get(json_metadata, "objectID");
+  if (NULL != var)
+    {
+      if (DPL_VAR_STRING != var->type)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+      
+      sysmd->mask |= DPL_SYSMD_MASK_ID;
+      strncpy(sysmd->id, var->value, DPL_SYSMD_ID_SIZE);
+      sysmd->id[DPL_SYSMD_ID_SIZE] = 0;
+    }
+
+  var = dpl_dict_get(json_metadata, "parentID");
+  if (NULL != var)
+    {
+      if (DPL_VAR_STRING != var->type)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+
+      sysmd->mask |= DPL_SYSMD_MASK_PARENT_ID;
+      strncpy(sysmd->parent_id, var->value, DPL_SYSMD_ID_SIZE);
+      sysmd->parent_id[DPL_SYSMD_ID_SIZE] = 0;
+    }
+
+  var = dpl_dict_get(json_metadata, "objectType");
+  if (NULL != var)
+    {
+      if (DPL_VAR_STRING != var->type)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+      
+      sysmd->mask |= DPL_SYSMD_MASK_FTYPE;
+      sysmd->ftype = dpl_cdmi_content_type_to_ftype(var->value);
+    }
+
+  //those sysmds are stored in metadata
+
+  ret2 = dpl_dict_get_lowered(json_metadata, "metadata", &var);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  if (DPL_VAR_ARRAY != var->type)
     {
       ret = DPL_EINVAL;
       goto end;
     }
+  
+  var2 = dpl_dict_get(var->array, "cdmi_mtime");
+  if (NULL != var2)
+    {
+      if (DPL_VAR_STRING != var2->type)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+      
+      sysmd->mask |= DPL_SYSMD_MASK_MTIME;
+      sysmd->mtime = dpl_iso8601totime(var2->value);
+    }
 
-  sysmd->mask |= DPL_SYSMD_MASK_ID;
-  strncpy(sysmd->id, var->value, DPL_SYSMD_ID_SIZE);
-  sysmd->id[DPL_SYSMD_ID_SIZE] = 0;
+  var2 = dpl_dict_get(var->array, "cdmi_atime");
+  if (NULL != var2)
+    {
+      if (DPL_VAR_STRING != var2->type)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+      
+      sysmd->mask |= DPL_SYSMD_MASK_ATIME;
+      sysmd->atime = dpl_iso8601totime(var2->value);
+    }
 
   ret = DPL_SUCCESS;
   

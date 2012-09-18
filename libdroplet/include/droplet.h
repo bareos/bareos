@@ -249,6 +249,16 @@ typedef enum
   } dpl_storage_class_t;
 #define DPL_N_STORAGE_CLASS (DPL_STORAGE_CLASS_REDUCED_REDUNDANCY+1)
 
+typedef enum
+  {
+    DPL_FTYPE_UNDEF,
+    DPL_FTYPE_ANY,
+    DPL_FTYPE_REG,
+    DPL_FTYPE_DIR,
+    DPL_FTYPE_CAP,
+    DPL_FTYPE_DOM,
+  } dpl_ftype_t;
+
 /**/
 
 typedef enum
@@ -265,7 +275,9 @@ typedef enum
     DPL_SYSMD_MASK_OWNER         = (1u<<10),
     DPL_SYSMD_MASK_GROUP         = (1u<<11),
     DPL_SYSMD_MASK_ACL           = (1u<<12),
-    DPL_SYSMD_MASK_ID            = (1u<<13)
+    DPL_SYSMD_MASK_ID            = (1u<<13),
+    DPL_SYSMD_MASK_PARENT_ID     = (1u<<14),
+    DPL_SYSMD_MASK_FTYPE         = (1u<<15)
   } dpl_sysmd_mask_t;
 
 typedef struct
@@ -288,6 +300,8 @@ typedef struct
   dpl_ace_t aces[DPL_SYSMD_ACE_MAX];
 #define DPL_SYSMD_ID_SIZE 64
   char id[DPL_SYSMD_ID_SIZE+1];
+  char parent_id[DPL_SYSMD_ID_SIZE+1];
+  dpl_ftype_t ftype;
 } dpl_sysmd_t;
 
 /**/
@@ -351,15 +365,6 @@ typedef struct
 {
   char *prefix;
 } dpl_common_prefix_t;
-
-typedef enum
-  {
-    DPL_FTYPE_UNDEF,
-    DPL_FTYPE_ANY,
-    DPL_FTYPE_REG,
-    DPL_FTYPE_DIR,
-    DPL_FTYPE_CAP,
-  } dpl_ftype_t;
 
 typedef struct 
 {
