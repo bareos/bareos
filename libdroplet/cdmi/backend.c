@@ -76,21 +76,18 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
   dpl_status_t dpl_status;
   dpl_dict_t *tmp_dict = NULL;
   dpl_dict_t *tmp_dict2 = NULL;
+  dpl_vec_t *tmp_vec = NULL;
+  int do_acl = 0;
+  uint32_t n_aces;
+  dpl_ace_t aces[DPL_SYSMD_ACE_MAX], *acesp;
   
   tmp_dict = dpl_dict_new(13);
   if (NULL == tmp_dict)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
-  tmp_dict2 = dpl_dict_new(13);
-  if (NULL == tmp_dict2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-  
   if (sysmd->mask & DPL_SYSMD_MASK_SIZE)
     {
       /* optional (computed remotely by storage) */
@@ -167,17 +164,93 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
           goto end;
         }
     }
+  
+  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
+    {
+      switch (sysmd->canned_acl)
+        {
+        case DPL_CANNED_ACL_UNDEF:
+          n_aces = 0;
+          break ;
+        case DPL_CANNED_ACL_PRIVATE:
+          aces[0].type = DPL_ACE_TYPE_ALLOW;
+          aces[0].flag = 0;
+          aces[0].access_mask = DPL_ACE_MASK_ALL;
+          aces[0].who = DPL_ACE_WHO_OWNER;
+          n_aces = 1;
+          break ;
+        case DPL_CANNED_ACL_PUBLIC_READ:
+          aces[0].type = DPL_ACE_TYPE_ALLOW;
+          aces[0].flag = 0;
+          aces[0].access_mask = DPL_ACE_MASK_READ_OBJECT|
+            DPL_ACE_MASK_EXECUTE;
+          aces[0].who = DPL_ACE_WHO_EVERYONE;
+          aces[1].type = DPL_ACE_TYPE_ALLOW;
+          aces[1].flag = 0;
+          aces[1].access_mask = DPL_ACE_MASK_READ_OBJECT|
+            DPL_ACE_MASK_EXECUTE;
+          aces[1].who = DPL_ACE_WHO_OWNER;
+          n_aces = 2;
+          break ;
+        case DPL_CANNED_ACL_PUBLIC_READ_WRITE:
+          aces[0].type = DPL_ACE_TYPE_ALLOW;
+          aces[0].flag = 0;
+          aces[0].access_mask = DPL_ACE_MASK_RW_ALL;
+          aces[0].who = DPL_ACE_WHO_EVERYONE;
+          n_aces = 1;
+          break ;
+        case DPL_CANNED_ACL_AUTHENTICATED_READ:
+          aces[0].type = DPL_ACE_TYPE_ALLOW;
+          aces[0].flag = 0;
+          aces[0].access_mask = DPL_ACE_MASK_READ_ALL;
+          aces[0].who = DPL_ACE_WHO_AUTHENTICATED;
+          n_aces = 1;
+          break ;
+        case DPL_CANNED_ACL_BUCKET_OWNER_READ:
+          //XXX ?
+          break ;
+        case DPL_CANNED_ACL_BUCKET_OWNER_FULL_CONTROL:
+          //XXX ?
+          break ;
+        }
+
+      acesp = aces;
+      do_acl = 1;
+    }
 
   if (sysmd->mask & DPL_SYSMD_MASK_ACL)
     {
+      n_aces = sysmd->n_aces;
+      acesp = (dpl_ace_t *) sysmd->aces;
+      do_acl = 1;
+    }
+
+  if (do_acl)
+    {
       int i;
-      
-      for (i = 0;i < sysmd->n_aces;i++)
+      dpl_value_t value;
+
+      tmp_vec = dpl_vec_new(2, 2);
+      if (NULL == tmp_vec)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
+      for (i = 0;i < n_aces;i++)
         {
           const char *str;
           char buf[256];
+          dpl_value_t row_value;
 
-          str = dpl_cdmi_who_str(sysmd->aces[i].who);
+          tmp_dict2 = dpl_dict_new(13);
+          if (NULL == tmp_dict2)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+  
+          str = dpl_cdmi_who_str(acesp[i].who);
           if (NULL == str)
             {
               ret = -1;
@@ -191,7 +264,7 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
               goto end;
             }
 
-          snprintf(buf, sizeof (buf), "0x%08x", sysmd->aces[i].type);
+          snprintf(buf, sizeof (buf), "0x%08x", acesp[i].type);
 
           dpl_status = dpl_dict_add(tmp_dict2, "acetype", buf, 0);
           if (DPL_SUCCESS != dpl_status)
@@ -200,7 +273,7 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
               goto end;
             }
 
-          snprintf(buf, sizeof (buf), "0x%08x", sysmd->aces[i].flag);
+          snprintf(buf, sizeof (buf), "0x%08x", acesp[i].flag);
 
           dpl_status = dpl_dict_add(tmp_dict2, "aceflags", buf, 0);
           if (DPL_SUCCESS != dpl_status)
@@ -209,7 +282,7 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
               goto end;
             }
 
-          snprintf(buf, sizeof (buf), "0x%08x", sysmd->aces[i].access_mask);
+          snprintf(buf, sizeof (buf), "0x%08x", acesp[i].access_mask);
 
           dpl_status = dpl_dict_add(tmp_dict2, "acemask", buf, 0);
           if (DPL_SUCCESS != dpl_status)
@@ -217,14 +290,31 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
               ret = -1;
               goto end;
             }
+          
+          row_value.type = DPL_VALUE_SUBDICT;
+          row_value.subdict = tmp_dict2;
+          dpl_status = dpl_vec_add_value(tmp_vec, &row_value);
+          if (DPL_SUCCESS != dpl_status)
+            {
+              ret = -1;
+              goto end;
+            }
+
+          dpl_dict_free(tmp_dict2);
+          tmp_dict2 = NULL;
         }
 
-      dpl_status = dpl_dict_add_ex(tmp_dict, "cdmi_acl", DPL_VAR_ARRAY, tmp_dict2, 0);
+      value.type = DPL_VALUE_VECTOR;
+      value.vector = tmp_vec;
+      dpl_status = dpl_dict_add_value(tmp_dict, "cdmi_acl", &value, 0);
       if (DPL_SUCCESS != dpl_status)
         {
           ret = -1;
           goto end;
         }
+
+      dpl_vec_free(tmp_vec);
+      tmp_vec = NULL;
     }
 
   if (sysmd->mask & DPL_SYSMD_MASK_ID)
@@ -244,6 +334,9 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
   ret = 0;
 
  end:
+
+  if (NULL != tmp_vec)
+    dpl_vec_free(tmp_vec);
 
   if (NULL != tmp_dict2)
     dpl_dict_free(tmp_dict2);

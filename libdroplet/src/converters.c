@@ -137,7 +137,7 @@ dpl_canned_acl_str(dpl_canned_acl_t canned_acl)
   switch (canned_acl)
     {
     case DPL_CANNED_ACL_UNDEF:
-      return NULL;
+      return "undef";
     case DPL_CANNED_ACL_PRIVATE:
       return "private";
     case DPL_CANNED_ACL_PUBLIC_READ:

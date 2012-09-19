@@ -95,7 +95,7 @@ dpl_srws_get_metadata_from_headers(const dpl_dict_t *headers,
                                    dpl_sysmd_t *sysmdp)
 {
   int ret;
-  dpl_var_t *var;
+  dpl_dict_var_t *var;
   int value_len;
   char *orig;
   int orig_len;
@@ -127,17 +127,18 @@ dpl_srws_get_metadata_from_headers(const dpl_dict_t *headers,
       goto end;
     }
 
-  DPRINTF("val=%s\n", var->value);
+  assert(var->val->type == DPL_VALUE_STRING);
+  DPRINTF("val=%s\n", var->val->string);
 
   //decode base64
-  value_len = strlen(var->value);
+  value_len = strlen(var->val->string);
   if (value_len == 0)
     return DPL_EINVAL;
 
   orig_len = DPL_BASE64_ORIG_LENGTH(value_len);
   orig = alloca(orig_len);
 
-  orig_len = dpl_base64_decode((u_char *) var->value, value_len, (u_char *) orig);
+  orig_len = dpl_base64_decode((u_char *) var->val->string, value_len, (u_char *) orig);
   
   //dpl_dump_simple(orig, orig_len);
 

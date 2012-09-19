@@ -31,43 +31,37 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_DICT_H__
-#define __DROPLET_DICT_H__ 1
+#ifndef __DROPLET_VAR_H__
+#define __DROPLET_VAR_H__ 1
 
+struct dpl_vec;
 struct dpl_dict;
 
-typedef struct dpl_dict_var
+typedef enum
+  {
+    DPL_VALUE_STRING = 0,
+    DPL_VALUE_SUBDICT,
+    DPL_VALUE_VECTOR,
+    DPL_VALUE_VOIDPTR,
+  } dpl_value_type_t;
+
+typedef struct dpl_value
 {
-  struct dpl_dict_var *prev;
-  struct dpl_dict_var *next;
-  char *key;
-  dpl_value_t *val;
-} dpl_dict_var_t;
+  union
+  {
+    char *string;
+    struct dpl_dict *subdict;
+    struct dpl_vec *vector;
+    void *ptr;
+  };
 
-typedef dpl_status_t (*dpl_dict_func_t)(dpl_dict_var_t *var, void *cb_arg);
+  dpl_value_type_t type;
+} dpl_value_t;
 
-typedef struct dpl_dict
-{
-  dpl_dict_var_t **buckets;
-  unsigned int n_buckets;
-} dpl_dict_t;
+typedef int (*dpl_value_cmp_func_t)(const void *p1, const void *p2);
 
-/* PROTO dict.c */
-/* src/dict.c */
-dpl_dict_t *dpl_dict_new(int n_buckets);
-dpl_dict_var_t *dpl_dict_get(const dpl_dict_t *dict, const char *key);
-dpl_status_t dpl_dict_get_lowered(const dpl_dict_t *dict, const char *key, dpl_dict_var_t **varp);
-char *dpl_dict_get_value(const dpl_dict_t *dict, const char *key);
-dpl_status_t dpl_dict_iterate(const dpl_dict_t *dict, dpl_dict_func_t cb_func, void *cb_arg);
-int dpl_dict_count(const dpl_dict_t *dict);
-void dpl_dict_var_free(dpl_dict_var_t *var);
-void dpl_dict_free(dpl_dict_t *dict);
-void dpl_dict_print(const dpl_dict_t *dict, FILE *f, int level);
-dpl_status_t dpl_dict_add_value(dpl_dict_t *dict, const char *key, dpl_value_t *value, int lowered);
-dpl_status_t dpl_dict_add(dpl_dict_t *dict, const char *key, const char *string, int lowered);
-void dpl_dict_remove(dpl_dict_t *dict, dpl_dict_var_t *var);
-dpl_status_t dpl_dict_copy(dpl_dict_t *dst, const dpl_dict_t *src);
-dpl_dict_t *dpl_dict_dup(const dpl_dict_t *src);
-dpl_status_t dpl_dict_filter_prefix(dpl_dict_t *dst, const dpl_dict_t *src, const char * prefix);
-dpl_status_t dpl_dict_filter_no_prefix(dpl_dict_t *dst, const dpl_dict_t *src, const char * prefix);
+/* PROTO value.c */
+void dpl_value_free(dpl_value_t *value);
+dpl_value_t *dpl_value_dup(dpl_value_t *src);
+void dpl_value_print(dpl_value_t *val, FILE *f, int level);
 #endif

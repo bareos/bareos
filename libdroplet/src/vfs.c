@@ -131,7 +131,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
 
   for (i = 0;i < files->n_items;i++)
     {
-      dpl_object_t *obj = (dpl_object_t *) files->array[i];
+      dpl_object_t *obj = (dpl_object_t *) dpl_vec_get(files, i);
       int path_len;
       char *p;
 
@@ -174,7 +174,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
 
   for (i = 0;i < directories->n_items;i++)
     {
-      dpl_common_prefix_t *prefix = (dpl_common_prefix_t *) directories->array[i];
+      dpl_common_prefix_t *prefix = (dpl_common_prefix_t *) dpl_vec_get(directories, i);
       int path_len;
       char *p, *p2;
 
@@ -388,7 +388,7 @@ dpl_vdir_readdir(void *dir_hdl,
         {
           dpl_common_prefix_t *prefix;
 
-          prefix = (dpl_common_prefix_t *) dir->directories->array[dir->directories_cursor];
+          prefix = (dpl_common_prefix_t *) dpl_vec_get(dir->directories, dir->directories_cursor);
 
           path_len = strlen(prefix->prefix);
           name = prefix->prefix + strlen(dir->fqn.path);
@@ -423,7 +423,7 @@ dpl_vdir_readdir(void *dir_hdl,
     {
       dpl_object_t *obj;
 
-      obj = (dpl_object_t *) dir->files->array[dir->files_cursor];
+      obj = (dpl_object_t *) dpl_vec_get(dir->files, dir->files_cursor);
 
       path_len = strlen(obj->path);
       name = obj->path + strlen(dir->fqn.path);
@@ -787,13 +787,16 @@ dpl_fqn_t
 dpl_cwd(dpl_ctx_t *ctx,
            const char *bucket)
 {
-  dpl_var_t *var;
+  dpl_dict_var_t *var;
   dpl_fqn_t cwd;
 
   pthread_mutex_lock(&ctx->lock);
   var = dpl_dict_get(ctx->cwds, bucket);
   if (NULL != var)
-    strcpy(cwd.path, var->value); //XXX check overflow
+    {
+      assert(var->val->type == DPL_VALUE_STRING);
+      strcpy(cwd.path, var->val->string); //XXX check overflow
+    }
   else
     cwd = DPL_ROOT_FQN;
   pthread_mutex_unlock(&ctx->lock);
@@ -1263,7 +1266,7 @@ dpl_close_ex(dpl_vfile_t *vfile,
   int ret, ret2;
   dpl_dict_t *headers_returned = NULL;
   int connection_close = 0;
-  dpl_var_t *var;
+  dpl_dict_var_t *var;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "close vfile=%p", vfile);
 
@@ -1307,7 +1310,8 @@ dpl_close_ex(dpl_vfile_t *vfile,
                       bcd_digest[bcd_digest_len] = 0;
                       
                       //skip quotes
-                      if (strncmp(var->value + 1, bcd_digest, DPL_BCD_LENGTH(MD5_DIGEST_LENGTH)))
+                      assert(var->val->type == DPL_VALUE_STRING);
+                      if (strncmp(var->val->string + 1, bcd_digest, DPL_BCD_LENGTH(MD5_DIGEST_LENGTH)))
                         {
                           fprintf(stderr, "MD5 checksum dont match\n");
                         }

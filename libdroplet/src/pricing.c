@@ -406,7 +406,7 @@ dpl_vec_request_pricing_free(dpl_vec_t *vec)
     return;
 
   for (i = 0;i < vec->n_items;i++)
-    dpl_request_pricing_free((struct dpl_request_pricing *) vec->array[i]);
+    dpl_request_pricing_free((struct dpl_request_pricing *) dpl_vec_get(vec, i));
   dpl_vec_free(vec);
 }
 
@@ -447,7 +447,7 @@ dpl_vec_data_pricing_free(dpl_vec_t *vec)
     return;
 
   for (i = 0;i < vec->n_items;i++)
-    dpl_data_pricing_free((struct dpl_data_pricing *) vec->array[i]);
+    dpl_data_pricing_free((struct dpl_data_pricing *) dpl_vec_get(vec, i));
   dpl_vec_free(vec);
 }
 

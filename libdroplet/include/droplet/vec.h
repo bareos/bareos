@@ -34,17 +34,22 @@
 #ifndef __DROPLET_VEC_H__
 #define __DROPLET_VEC_H__ 1
 
-typedef struct
+typedef struct dpl_vec
 {
-  void **array;
+  dpl_value_t **items;
+  int n_items;
   int size;
   int incr_size;
-  int n_items;
 } dpl_vec_t;
 
 /* PROTO vec.c */
 /* src/vec.c */
-dpl_vec_t *dpl_vec_new(int init_size, int incr_size);
-dpl_status_t dpl_vec_add(dpl_vec_t *vec, void *item);
 void dpl_vec_free(dpl_vec_t *vec);
+dpl_vec_t *dpl_vec_new(int init_size, int incr_size);
+dpl_status_t dpl_vec_add_value(dpl_vec_t *vec, dpl_value_t *value);
+dpl_status_t dpl_vec_add(dpl_vec_t *vec, void *item);
+void *dpl_vec_get(dpl_vec_t *vec, int i);
+void dpl_vec_print(dpl_vec_t *vec, FILE *f, int level);
+dpl_vec_t *dpl_vec_dup(dpl_vec_t *vec);
+void dpl_vec_sort(dpl_vec_t *vec, dpl_value_cmp_func_t cmp_func);
 #endif

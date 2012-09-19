@@ -138,7 +138,7 @@ dpl_price_storage(dpl_ctx_t *ctx,
 
   for (i = 0;i < ctx->data_pricing[DPL_DATA_TYPE_STORAGE]->n_items;i++)
     {
-      datp = (struct dpl_data_pricing *) ctx->data_pricing[DPL_DATA_TYPE_STORAGE]->array[i];
+      datp = (struct dpl_data_pricing *) dpl_vec_get(ctx->data_pricing[DPL_DATA_TYPE_STORAGE], i);
 
       //dpl_data_pricing_print(datp);
 
@@ -248,7 +248,7 @@ dpl_vec_buckets_free(dpl_vec_t *vec)
   int i;
 
   for (i = 0;i < vec->n_items;i++)
-    dpl_bucket_free((dpl_bucket_t *) vec->array[i]);
+    dpl_bucket_free((dpl_bucket_t *) dpl_vec_get(vec, i));
   dpl_vec_free(vec);
 }
 
@@ -267,7 +267,7 @@ dpl_vec_objects_free(dpl_vec_t *vec)
   int i;
 
   for (i = 0;i < vec->n_items;i++)
-    dpl_object_free((dpl_object_t *) vec->array[i]);
+    dpl_object_free((dpl_object_t *) dpl_vec_get(vec, i));
   dpl_vec_free(vec);
 }
 
@@ -286,6 +286,6 @@ dpl_vec_common_prefixes_free(dpl_vec_t *vec)
   int i;
 
   for (i = 0;i < vec->n_items;i++)
-    dpl_common_prefix_free((dpl_common_prefix_t *) vec->array[i]);
+    dpl_common_prefix_free((dpl_common_prefix_t *) dpl_vec_get(vec, i));
   dpl_vec_free(vec);
 }

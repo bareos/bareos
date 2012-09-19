@@ -204,7 +204,7 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
   if (NULL != query_params)
     {
       int bucket;
-      dpl_var_t *var;
+      dpl_dict_var_t *var;
       int amp = 0;
 
       if (NULL != req->subresource)
@@ -218,7 +218,8 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
                 DPL_APPEND_STR("&");
               DPL_APPEND_STR(var->key);
               DPL_APPEND_STR("=");
-              DPL_APPEND_STR(var->value);
+              assert(var->val->type == DPL_VALUE_STRING);
+              DPL_APPEND_STR(var->val->string);
               amp = 1;
             }
         }
@@ -234,17 +235,18 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
   if (NULL != headers)
     {
       int bucket;
-      dpl_var_t *var;
+      dpl_dict_var_t *var;
 
       for (bucket = 0;bucket < headers->n_buckets;bucket++)
         {
           for (var = headers->buckets[bucket];var;var = var->prev)
             {
-              DPL_TRACE(req->ctx, DPL_TRACE_REQ, "header='%s' value='%s'", var->key, var->value);
+              DPL_TRACE(req->ctx, DPL_TRACE_REQ, "header='%s' value='%s'", var->key, var->val);
 
               DPL_APPEND_STR(var->key);
               DPL_APPEND_STR(": ");
-              DPL_APPEND_STR(var->value);
+              assert(var->val->type == DPL_VALUE_STRING);
+              DPL_APPEND_STR(var->val->string);
               DPL_APPEND_STR("\r\n");
             }
         }

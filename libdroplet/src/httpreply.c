@@ -603,7 +603,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
 int
 dpl_connection_close(dpl_dict_t *headers_returned)
 {
-  dpl_var_t *var;
+  dpl_dict_var_t *var;
   int ret;
 
   if (NULL == headers_returned)
@@ -617,7 +617,8 @@ dpl_connection_close(dpl_dict_t *headers_returned)
 
   if (NULL != var)
     {
-      if (!strcasecmp(var->value, "close"))
+      assert(var->val->type == DPL_VALUE_STRING);
+      if (!strcasecmp(var->val->string, "close"))
         return 1;
     }
 
@@ -636,7 +637,7 @@ char *
 dpl_location(dpl_dict_t *headers_returned)
 {
   dpl_status_t ret;
-  dpl_var_t *var;
+  dpl_dict_var_t *var;
   char *location = NULL;
   
   ret = dpl_dict_get_lowered(headers_returned, "Location", &var);

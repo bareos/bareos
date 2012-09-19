@@ -44,7 +44,7 @@ add_metadata_to_headers(dpl_dict_t *metadata,
 
 {
   int bucket;
-  dpl_var_t *var;
+  dpl_dict_var_t *var;
   int ret;
   dpl_sbuf_t *sbuf = NULL;
   char *usermd = NULL;
@@ -61,7 +61,8 @@ add_metadata_to_headers(dpl_dict_t *metadata,
     {
       for (var = metadata->buckets[bucket];var;var = var->prev)
         {
-          ret = dpl_ntinydb_set(sbuf, var->key, var->value, strlen(var->value));
+          assert(var->val->type == DPL_VALUE_STRING);
+          ret = dpl_ntinydb_set(sbuf, var->key, var->val->string, strlen(var->val->string));
           if (DPL_SUCCESS != ret)
             {
               ret = DPL_FAILURE;

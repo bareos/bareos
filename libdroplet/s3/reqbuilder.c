@@ -42,7 +42,7 @@ add_metadata_to_headers(dpl_dict_t *metadata,
 
 {
   int bucket;
-  dpl_var_t *var;
+  dpl_dict_var_t *var;
   char header[1024];
   int ret;
 
@@ -52,7 +52,8 @@ add_metadata_to_headers(dpl_dict_t *metadata,
         {
           snprintf(header, sizeof (header), "x-amz-meta-%s", var->key);
 
-          ret = dpl_dict_add(headers, header, var->value, 0);
+          assert(DPL_VALUE_STRING != var->val->type);
+          ret = dpl_dict_add(headers, header, var->val->string, 0);
           if (DPL_SUCCESS != ret)
             {
               return DPL_FAILURE;
@@ -141,8 +142,11 @@ static int
 var_cmp(const void *p1,
         const void *p2)
 {
-  dpl_var_t *var1 = *(dpl_var_t **) p1;
-  dpl_var_t *var2 = *(dpl_var_t **) p2;
+  dpl_dict_var_t *var1 = (dpl_dict_var_t *) p1;
+  dpl_dict_var_t *var2 = (dpl_dict_var_t *) p2;
+
+  assert(var1->val->type == DPL_VALUE_VOIDPTR);
+  assert(var2->val->type == DPL_VALUE_VOIDPTR);
 
   return strcmp(var1->key, var2->key);
 }
@@ -198,7 +202,7 @@ make_signature(dpl_ctx_t *ctx,
   //x-amz headers
   {
     int bucket;
-    dpl_var_t *var;
+    dpl_dict_var_t *var;
     dpl_vec_t *vec;
     int i;
 
@@ -212,7 +216,8 @@ make_signature(dpl_ctx_t *ctx,
           {
             if (!strncmp(var->key, "x-amz-", 6))
               {
-                DPRINTF("%s: %s\n", var->key, var->value);
+                assert(DPL_VALUE_STRING != var->val->type);
+                DPRINTF("%s: %s\n", var->key, var->val->string);
                 ret = dpl_vec_add(vec, var);
                 if (DPL_SUCCESS != ret)
                   {
@@ -223,16 +228,17 @@ make_signature(dpl_ctx_t *ctx,
           }
       }
 
-    qsort(vec->array, vec->n_items, sizeof (var), var_cmp);
+    dpl_vec_sort(vec, var_cmp);
 
     for (i = 0;i < vec->n_items;i++)
       {
-        var = (dpl_var_t *) vec->array[i];
+        var = (dpl_dict_var_t *) dpl_vec_get(vec, i);
 
-        DPRINTF("%s:%s\n", var->key, var->value);
+        assert(DPL_VALUE_STRING != var->val->type);
+        DPRINTF("%s:%s\n", var->key, var->val->string);
         DPL_APPEND_STR(var->key);
         DPL_APPEND_STR(":");
-        DPL_APPEND_STR(var->value);
+        DPL_APPEND_STR(var->val->string);
         DPL_APPEND_STR("\n");
       }
 

@@ -33,43 +33,79 @@
  */
 #include "dropletp.h"
 
+void
+dpl_vec_free(dpl_vec_t *vec)
+{
+  int i;
+
+  if (NULL != vec->items)
+    {
+      for (i = 0;i < vec->n_items;i++)
+        dpl_value_free(vec->items[i]);
+      free(vec->items);
+    }
+  free(vec);
+}
+
 dpl_vec_t *
 dpl_vec_new(int init_size,
             int incr_size)
 {
-  dpl_vec_t *vec;
+  dpl_vec_t *vec = NULL;
 
   if (init_size < 1)
     return NULL;
 
   vec = malloc(sizeof (*vec));
   if (NULL == vec)
-    return NULL;
+    goto bad;
 
   vec->size = init_size;
   vec->incr_size = incr_size;
   vec->n_items = 0;
 
-  vec->array = malloc(sizeof (void *) * init_size);
-  if (NULL == vec->array)
-    {
-      free(vec);
-      return NULL;
-    }
+  vec->items = malloc(sizeof (dpl_value_t *) * init_size);
+  if (NULL == vec->items)
+    goto bad;
 
-  memset(vec->array, 0, sizeof (void *) * init_size);
+  memset(vec->items, 0, sizeof (dpl_value_t *) * init_size);
 
   return vec;
+
+ bad:
+
+  if (NULL != vec)
+    dpl_vec_free(vec);
+
+  return NULL;
 }
 
-dpl_status_t
-dpl_vec_add(dpl_vec_t *vec,
-            void *item)
+/** 
+ * add a value to vector
+ * 
+ * @param vec 
+ * @param val
+ * 
+ * @return 
+ */
+dpl_status_t 
+dpl_vec_add_value(dpl_vec_t *vec, 
+                  dpl_value_t *val)
 {
+  dpl_value_t *nval = NULL;
+  dpl_status_t ret;
+
+  nval = dpl_value_dup(val);
+  if (NULL == nval)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
   if (vec->n_items == vec->size)
     {
       // Need to allocate more space
-      void *new_array;
+      void *new_items;
       int new_size;
 
       // Compute new size
@@ -91,23 +127,137 @@ dpl_vec_add(dpl_vec_t *vec,
           new_size = vec->size + vec->incr_size;
         }
 
-      new_array = realloc(vec->array, sizeof(void *) * new_size);
-      if (new_array == (void*) NULL)
-        return -1;
+      new_items = realloc(vec->items, sizeof(dpl_value_t *) * new_size);
+      if (new_items == (void*) NULL)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
 
-      vec->array = new_array;
+      vec->items = new_items;
       vec->size = new_size;
     }
 
-  vec->array[vec->n_items] = item;
+  vec->items[vec->n_items] = nval;
+  nval = NULL;
   vec->n_items++;
 
-  return 0;
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != nval)
+    dpl_value_free(nval);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_vec_add(dpl_vec_t *vec,
+            void *item)
+{
+  dpl_value_t *nval = NULL;
+  dpl_status_t ret, ret2;
+ 
+  nval = malloc(sizeof (*nval));
+  if (NULL == nval)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+  memset(nval, 0, sizeof (*nval));
+
+  nval->type = DPL_VALUE_VOIDPTR;
+  nval->ptr = item;
+
+  ret2 = dpl_vec_add_value(vec, nval);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != nval)
+    dpl_value_free(nval);
+
+  return ret;
+}
+
+/** 
+ * return the void ptr bound to ith elt
+ * 
+ * @param vec 
+ * @param i 
+ * 
+ * @return 
+ */
+void *
+dpl_vec_get(dpl_vec_t *vec,
+            int i)
+{
+  assert(i < vec->n_items);
+  assert(vec->items[i]->type == DPL_VALUE_VOIDPTR);
+  return vec->items[i]->ptr;
 }
 
 void
-dpl_vec_free(dpl_vec_t *vec)
+dpl_vec_print(dpl_vec_t *vec, 
+              FILE *f,
+              int level)
 {
-  free(vec->array);
-  free(vec);
+  int i;
+
+  for (i = 0;i < vec->n_items;i++)
+    dpl_value_print(vec->items[i], f, level);
+}
+
+dpl_vec_t *
+dpl_vec_dup(dpl_vec_t *vec)
+{
+  dpl_vec_t *nvec = NULL;
+  int i;
+  dpl_status_t ret2;
+  dpl_value_t *nval;
+
+  assert(NULL != vec);
+
+  nvec = dpl_vec_new(vec->size, vec->incr_size);
+  if (NULL == nvec)
+    goto bad;
+
+  for (i = 0;i < vec->n_items;i++)
+    {
+      nval = dpl_value_dup(vec->items[i]);
+      if (NULL == nval)
+        goto bad;
+
+      ret2 = dpl_vec_add_value(nvec, nval);
+      if (DPL_SUCCESS != ret2)
+        goto bad;
+
+      nval = NULL;
+    }
+  
+  return nvec;
+
+ bad:
+
+  if (NULL != nval)
+    dpl_value_free(nval);
+
+  if (NULL != nvec)
+    dpl_vec_free(nvec);
+
+  return NULL;
+}
+
+void
+dpl_vec_sort(dpl_vec_t *vec,
+             dpl_value_cmp_func_t cmp_func)
+{
+  qsort(vec->items, vec->n_items, sizeof (dpl_value_t *), cmp_func);
 }

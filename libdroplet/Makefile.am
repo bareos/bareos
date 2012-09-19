@@ -6,6 +6,7 @@ libdroplet_la_CFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(JSO
 libdroplet_la_SOURCES = \
 	src/conn.c \
 	src/converters.c \
+	src/value.c \
 	src/dict.c \
 	src/droplet.c \
 	src/httprequest.c \
@@ -45,6 +46,7 @@ libdropletdropletincludedir = $(includedir)/droplet-1.0/droplet
 libdropletdropletinclude_HEADERS = \
 	include/droplet/conn.h \
 	include/droplet/converters.h \
+	include/droplet/value.h \
 	include/droplet/dict.h \
 	include/droplet/httprequest.h \
 	include/droplet/httpreply.h \

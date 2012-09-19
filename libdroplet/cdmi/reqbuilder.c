@@ -38,123 +38,135 @@
 #define DPRINTF(fmt,...)
 
 static dpl_status_t
-add_array_to_json_array(dpl_dict_t *dict,
-                        json_object *array)
-
+convert_value_to_obj(dpl_value_t *val,
+                     json_object **objp)
 {
-  int bucket;
-  dpl_var_t *var;
-  int ret;
-  json_object *tmp;
-  json_object *tmp2;
+  dpl_status_t ret, ret2;
+  json_object *obj = NULL;
+  json_object *tmp = NULL;
 
-  tmp = json_object_new_object();
-  if (NULL == tmp)
+  switch (val->type)
     {
-      ret = DPL_ENOMEM;
-      goto end;
+    case DPL_VALUE_STRING:
+      {
+        obj = json_object_new_string(val->string);
+        if (NULL == obj)
+          {
+            ret = DPL_ENOMEM;
+            goto end;
+          }
+
+        break ;
+      }
+    case DPL_VALUE_SUBDICT:
+      {
+        int bucket;
+        dpl_dict_t *dict = val->subdict;
+        dpl_dict_var_t *var;
+
+        obj = json_object_new_object();
+        if (NULL == obj)
+          {
+            ret = DPL_ENOMEM;
+            goto end;
+          }
+
+        for (bucket = 0;bucket < dict->n_buckets;bucket++)
+          {
+            for (var = dict->buckets[bucket];var;var = var->prev)
+              {
+                ret2 = convert_value_to_obj(var->val, &tmp);
+                if (DPL_SUCCESS != ret2)
+                  {
+                    ret = ret2;
+                    goto end;
+                  }
+
+                json_object_object_add(obj, var->key, tmp);
+                tmp = NULL;
+              }
+          }
+        
+        break ;
+      }
+    case DPL_VALUE_VECTOR:
+      {
+        int i;
+        dpl_vec_t *vec = val->vector;
+        
+        obj = json_object_new_array();
+        if (NULL == obj)
+          {
+            ret = DPL_ENOMEM;
+            goto end;
+          }
+
+        for (i = 0;i < vec->n_items;i++)
+          {
+            ret2 = convert_value_to_obj(vec->items[i], &tmp);
+            if (DPL_SUCCESS != ret2)
+              {
+                ret = ret2;
+                goto end;
+              }
+            
+            json_object_array_add(obj, tmp);
+            tmp = NULL;
+          }
+
+        break ;
+      }
+    case DPL_VALUE_VOIDPTR:
+      assert(0);
+      break ;
     }
 
-  for (bucket = 0;bucket < dict->n_buckets;bucket++)
+  if (NULL != objp)
     {
-      for (var = dict->buckets[bucket];var;var = var->prev)
-        {
-          switch (var->type)
-            {
-            case DPL_VAR_STRING:
-
-              tmp2 = json_object_new_string(var->value);
-              if (NULL == tmp)
-                {
-                  ret = DPL_ENOMEM;
-                  goto end;
-                }
-              
-              json_object_object_add(tmp, var->key, tmp2);
-              //XXX check return value
-
-              break ;
-
-            case DPL_VAR_ARRAY:
-              //XXX do nothing
-              break ;
-            }
-        }
+      *objp = obj;
+      obj = NULL;
     }
-
-  json_object_array_add(array, tmp);
-  //XXX check return value
 
   ret = DPL_SUCCESS;
 
  end:
 
+  if (NULL != tmp)
+    json_object_put(tmp);
+
+  if (NULL != obj)
+    json_object_put(obj);
+
   return ret;
 }
 
 static dpl_status_t
-add_metadata_to_json_body(dpl_dict_t *metadata,
+add_metadata_to_json_body(const dpl_req_t *req,
                           json_object *body_obj)
 
 {
-  int bucket;
-  dpl_var_t *var;
-  int ret;
+  dpl_value_t value;
+  dpl_status_t ret, ret2;
   json_object *md_obj = NULL;
-  json_object *tmp;
 
-  if (0 == dpl_dict_count(metadata))
+  if (0 == dpl_dict_count(req->metadata))
     {
       ret = DPL_SUCCESS;
       goto end;
     }
 
-  md_obj = json_object_new_object();
-  if (NULL == md_obj)
+  //fake value
+  value.type = DPL_VALUE_SUBDICT;
+  value.subdict = req->metadata;
+
+  ret2 = convert_value_to_obj(&value, &md_obj);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ENOMEM;
+      ret = ret2;
       goto end;
     }
 
-  for (bucket = 0;bucket < metadata->n_buckets;bucket++)
-    {
-      for (var = metadata->buckets[bucket];var;var = var->prev)
-        {
-          switch (var->type)
-            {
-            case DPL_VAR_STRING:
-
-              tmp = json_object_new_string(var->value);
-              if (NULL == tmp)
-                {
-                  ret = DPL_ENOMEM;
-                  goto end;
-                }
-              
-              break ;
-
-            case DPL_VAR_ARRAY:
-
-              tmp = json_object_new_array();
-              if (NULL == tmp)
-                {
-                  ret = DPL_ENOMEM;
-                  goto end;
-                }
-
-              add_array_to_json_array(var->array, tmp);
-              //XXX check return value
-              
-              break ;
-            }
-
-          json_object_object_add(md_obj, var->key, tmp);
-          //XXX check return value
-        }
-    }
-
   json_object_object_add(body_obj, "metadata", md_obj);
-  //XXX check return value
   md_obj = NULL;
 
   ret = DPL_SUCCESS;
@@ -168,19 +180,20 @@ add_metadata_to_json_body(dpl_dict_t *metadata,
 }
 
 static dpl_status_t
-add_metadata_to_headers(dpl_dict_t *metadata,
+add_metadata_to_headers(const dpl_req_t *req,
                         dpl_dict_t *headers,
                         dpl_ftype_t object_type)
 
 {
   int bucket;
-  dpl_var_t *var;
+  dpl_dict_var_t *var;
   char header[1024];
-  int ret;
-
-  for (bucket = 0;bucket < metadata->n_buckets;bucket++)
+  dpl_status_t ret, ret2;
+  json_object *obj = NULL;
+  
+  for (bucket = 0;bucket < req->metadata->n_buckets;bucket++)
     {
-      for (var = metadata->buckets[bucket];var;var = var->prev)
+      for (var = req->metadata->buckets[bucket];var;var = var->prev)
         {
           switch (object_type)
             {
@@ -192,15 +205,32 @@ add_metadata_to_headers(dpl_dict_t *metadata,
               break ;
             }
 
-          ret = dpl_dict_add(headers, header, var->value, 0);
-          if (DPL_SUCCESS != ret)
+          ret2 = convert_value_to_obj(var->val, &obj);
+          if (DPL_SUCCESS != ret2)
             {
-              return DPL_FAILURE;
+              ret = ret2;
+              goto end;
+            }
+
+          pthread_mutex_lock(&req->ctx->lock);
+          ret2 = dpl_dict_add(headers, header, json_object_get_string(obj), 0);
+          pthread_mutex_unlock(&req->ctx->lock);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
             }
         }
     }
 
-  return DPL_SUCCESS;
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != obj)
+    json_object_put(obj);
+
+  return ret;
 }
 
 static dpl_status_t
@@ -311,7 +341,7 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
 }
 
 static dpl_status_t
-add_data_to_json_body(dpl_chunk_t *chunk,
+add_data_to_json_body(const dpl_req_t *req,
                       json_object *body_obj)
 
 {
@@ -322,14 +352,14 @@ add_data_to_json_body(dpl_chunk_t *chunk,
   int base64_len;
 
   //encode body to base64
-  base64_str = malloc(DPL_BASE64_LENGTH(chunk->len) + 1);
+  base64_str = malloc(DPL_BASE64_LENGTH(req->chunk->len) + 1);
   if (NULL == base64_str)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  base64_len = dpl_base64_encode((const u_char *) chunk->buf, chunk->len, (u_char *) base64_str);
+  base64_len = dpl_base64_encode((const u_char *) req->chunk->buf, req->chunk->len, (u_char *) base64_str);
   base64_str[base64_len] = 0;
 
   value_obj = json_object_new_string(base64_str);
@@ -531,7 +561,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
 
       if (!(req->behavior_flags & DPL_BEHAVIOR_HTTP_COMPAT))
         {
-          ret2 = add_metadata_to_json_body(req->metadata, body_obj);
+          ret2 = add_metadata_to_json_body(req, body_obj);
           if (DPL_SUCCESS != ret2)
             {
               ret = ret2;
@@ -547,7 +577,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
           
           if (NULL != req->chunk)
             {
-              ret2 = add_data_to_json_body(req->chunk, body_obj);
+              ret2 = add_data_to_json_body(req, body_obj);
               if (DPL_SUCCESS != ret2)
                 {
                   ret = ret2;
@@ -576,7 +606,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
         }
       else
         {
-          ret2 = add_metadata_to_headers(req->metadata, headers, req->object_type);
+          ret2 = add_metadata_to_headers(req, headers, req->object_type);
           if (DPL_SUCCESS != ret2)
             {
               ret = ret2;

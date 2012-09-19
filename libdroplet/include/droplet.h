@@ -106,6 +106,7 @@ typedef enum
 
 typedef void (*dpl_trace_func_t)(pid_t tid, dpl_trace_t, const char *file, const char *func, int lineno, char *buf);
 
+#include <droplet/value.h>
 #include <droplet/vec.h>
 #include <droplet/dict.h>
 

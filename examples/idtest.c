@@ -5,6 +5,7 @@
  */
 
 #include <droplet.h>
+#include <assert.h>
 
 int
 main(int argc,
@@ -20,7 +21,7 @@ main(int argc,
   u_int data_len_returned;
   dpl_dict_t *metadata_returned = NULL;
   dpl_dict_t *metadata2_returned = NULL;
-  dpl_var_t *metadatum = NULL;
+  dpl_dict_var_t *metadatum = NULL;
   dpl_condition_t condition;
 
   memset(&condition, 0, sizeof (condition));
@@ -158,7 +159,8 @@ main(int argc,
       goto free_all;
     }
 
-  if (strcmp(metadatum->value, "bar"))
+  assert(metadatum->val->type == DPL_VALUE_STRING);
+  if (strcmp(metadatum->val->string, "bar"))
     {
       fprintf(stderr, "bad value in metadatum\n");
       ret = 1;
@@ -173,7 +175,8 @@ main(int argc,
       goto free_all;
     }
 
-  if (strcmp(metadatum->value, "qux"))
+  assert(metadatum->val->type == DPL_VALUE_STRING);
+  if (strcmp(metadatum->val->string, "qux"))
     {
       fprintf(stderr, "bad value in metadatum\n");
       ret = 1;
@@ -184,7 +187,7 @@ main(int argc,
 
   fprintf(stderr, "setting MD only\n");
 
-  ret = dpl_dict_update_value(metadata, "foo", "bar2");
+  ret = dpl_dict_add(metadata, "foo", "bar2", 0);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error updating metadatum: %s (%d)\n", dpl_status_str(ret), ret);
@@ -239,7 +242,8 @@ main(int argc,
       goto free_all;
     }
 
-  if (strcmp(metadatum->value, "bar2"))
+  assert(metadatum->val->type == DPL_VALUE_STRING);
+  if (strcmp(metadatum->val->string, "bar2"))
     {
       fprintf(stderr, "bad value in metadatum\n");
       ret = 1;
@@ -254,7 +258,8 @@ main(int argc,
       goto free_all;
     }
 
-  if (strcmp(metadatum->value, "qux"))
+  assert(metadatum->val->type == DPL_VALUE_STRING);
+  if (strcmp(metadatum->val->string, "qux"))
     {
       fprintf(stderr, "bad value in metadatum\n");
       ret = 1;
