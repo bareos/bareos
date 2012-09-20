@@ -34,6 +34,7 @@
 #ifndef __DROPLET_REST_H__
 #define __DROPLET_REST_H__ 1
 
+const char *dpl_get_backend_name(dpl_ctx_t *ctx);
 dpl_status_t dpl_list_all_my_buckets(dpl_ctx_t *ctx, dpl_vec_t **vecp);
 dpl_status_t dpl_list_bucket(dpl_ctx_t *ctx, const const char *bucket, const char *prefix, const char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
 dpl_status_t dpl_make_bucket(dpl_ctx_t *ctx, const char *bucket, dpl_location_constraint_t location_constraint, dpl_canned_acl_t canned_acl);

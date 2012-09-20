@@ -587,6 +587,19 @@ dpl_cdmi_get_sysmd_from_json_metadata(dpl_dict_t *json_metadata,
       sysmd->atime = dpl_iso8601totime(var2->val->string);
     }
 
+  var2 = dpl_dict_get(var->val->subdict, "cdmi_size");
+  if (NULL != var2)
+    {
+      if (DPL_VALUE_STRING != var2->val->type)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+      
+      sysmd->mask |= DPL_SYSMD_MASK_SIZE;
+      sysmd->size = strtoull(var2->val->string, NULL, 0);
+    }
+
   ret = DPL_SUCCESS;
   
  end:

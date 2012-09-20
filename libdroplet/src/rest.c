@@ -36,6 +36,12 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+const char *
+dpl_get_backend_name(dpl_ctx_t *ctx)
+{
+  return ctx->backend->name;
+}
+
 /**
  * list all buckets
  *
