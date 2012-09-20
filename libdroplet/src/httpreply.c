@@ -725,6 +725,9 @@ dpl_map_http_status(int http_status)
     case DPL_HTTP_CODE_PARTIAL_CONTENT:
       ret = DPL_SUCCESS;
       break ;
+    case DPL_HTTP_CODE_FORBIDDEN:
+      ret = DPL_EPERM;
+      break ;
     case DPL_HTTP_CODE_NOT_FOUND:
       ret = DPL_ENOENT;
       break;

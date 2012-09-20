@@ -90,6 +90,8 @@ typedef enum
     DPL_ENOTSUPP             = (-14),/*!< Method not supported */
     DPL_EREDIRECT            = (-15),/*!< Redirection */
     DPL_ETOOMANYREDIR        = (-16),/*!< Too many redirects */
+    DPL_ECONNECT             = (-17),/*!< Connect error */
+    DPL_EPERM                = (-18),/*!< Permission denied */
   } dpl_status_t;
 
 typedef enum

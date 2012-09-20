@@ -125,28 +125,28 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
   ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -301,28 +301,28 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -340,7 +340,7 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -482,28 +482,28 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
   ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -521,7 +521,7 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -536,7 +536,7 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
       ret2 = dpl_srws_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
       if (DPL_SUCCESS != ret2)
         {
-          ret = DPL_FAILURE;
+          ret = ret2;
           goto end;
         }
     }
@@ -727,28 +727,28 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -766,7 +766,7 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       gc.connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -872,28 +872,28 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
   ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -911,7 +911,7 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -939,7 +939,7 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
 
       if (DPL_SUCCESS != ret2)
         {
-          ret = DPL_FAILURE;
+          ret = ret2;
           goto end;
         }
     }
@@ -1061,28 +1061,28 @@ dpl_srws_delete(dpl_ctx_t *ctx,
   ret2 = dpl_srws_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1100,7 +1100,7 @@ dpl_srws_delete(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 

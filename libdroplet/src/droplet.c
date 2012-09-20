@@ -72,6 +72,10 @@ dpl_status_str(dpl_status_t status)
       return "DPL_EREDIRECT";
     case DPL_ETOOMANYREDIR:
       return "DPL_ETOOMANYREDIR";
+    case DPL_ECONNECT:
+      return "DPL_ECONNECT";
+    case DPL_EPERM:
+      return "DPL_EPERM";
     }
 
   return "Unknown error";

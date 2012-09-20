@@ -80,28 +80,28 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -119,7 +119,7 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -135,14 +135,14 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
   vec = dpl_vec_new(2, 2);
   if (NULL == vec)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
-  ret = dpl_s3_parse_list_all_my_buckets(ctx, data_buf, data_len, vec);
-  if (DPL_SUCCESS != ret)
+  ret2 = dpl_s3_parse_list_all_my_buckets(ctx, data_buf, data_len, vec);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -266,31 +266,31 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
         }
     }
 
-    ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, query_params, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -308,7 +308,7 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -324,21 +324,21 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
   objects = dpl_vec_new(2, 2);
   if (NULL == objects)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
   common_prefixes = dpl_vec_new(2, 2);
   if (NULL == common_prefixes)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
   ret = dpl_s3_parse_list_bucket(ctx, data_buf, data_len, objects, common_prefixes);
   if (DPL_SUCCESS != ret)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -498,28 +498,28 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -542,7 +542,7 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -630,28 +630,28 @@ dpl_s3_deletebucket(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -669,7 +669,7 @@ dpl_s3_deletebucket(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -794,28 +794,28 @@ dpl_s3_put(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -838,7 +838,7 @@ dpl_s3_put(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -963,28 +963,28 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1002,7 +1002,7 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1122,28 +1122,28 @@ dpl_s3_get(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1161,7 +1161,7 @@ dpl_s3_get(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1176,7 +1176,7 @@ dpl_s3_get(dpl_ctx_t *ctx,
       ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
       if (DPL_SUCCESS != ret2)
         {
-          ret = DPL_FAILURE;
+          ret = ret2;
           goto end;
         }
     }
@@ -1305,28 +1305,28 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1344,7 +1344,7 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1359,7 +1359,7 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
       ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
       if (DPL_SUCCESS != ret2)
         {
-          ret = DPL_FAILURE;
+          ret = ret2;
           goto end;
         }
     }
@@ -1533,28 +1533,28 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1572,7 +1572,7 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       gc.connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1686,28 +1686,28 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1725,7 +1725,7 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1755,7 +1755,7 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
 
       if (DPL_SUCCESS != ret2)
         {
-          ret = DPL_FAILURE;
+          ret = ret2;
           goto end;
         }
     }
@@ -1886,28 +1886,28 @@ dpl_s3_delete(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1925,7 +1925,7 @@ dpl_s3_delete(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -2026,7 +2026,7 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -2168,28 +2168,28 @@ dpl_s3_copy(dpl_ctx_t *ctx,
   ret2 = dpl_s3_req_build(req, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 

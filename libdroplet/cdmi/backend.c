@@ -71,9 +71,8 @@ static dpl_status_t
 add_sysmd_to_req(const dpl_sysmd_t *sysmd,
                  dpl_req_t *req)
 {
-  int ret, ret2;
+  dpl_status_t ret, ret2;
   char buf[256];
-  dpl_status_t dpl_status;
   dpl_dict_t *tmp_dict = NULL;
   dpl_dict_t *tmp_dict2 = NULL;
   dpl_vec_t *tmp_vec = NULL;
@@ -93,10 +92,10 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
       /* optional (computed remotely by storage) */
       snprintf(buf, sizeof (buf), "%ld", sysmd->size);
       
-      dpl_status = dpl_dict_add(tmp_dict, "cdmi_size", buf, 0);
-      if (DPL_SUCCESS != dpl_status)
+      ret2 = dpl_dict_add(tmp_dict, "cdmi_size", buf, 0);
+      if (DPL_SUCCESS != ret2)
         {
-          ret = -1;
+          ret = ret2;
           goto end;
         }
     }
@@ -104,17 +103,17 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
   if (sysmd->mask & DPL_SYSMD_MASK_ATIME)
     {
       /* optional */
-      dpl_status = dpl_timetoiso8601(sysmd->atime, buf, sizeof (buf));
-      if (DPL_SUCCESS != dpl_status)
+      ret2 = dpl_timetoiso8601(sysmd->atime, buf, sizeof (buf));
+      if (DPL_SUCCESS != ret2)
         {
-          ret = -1;
+          ret = ret2;
           goto end;
         }
       
-      dpl_status = dpl_dict_add(tmp_dict, "cdmi_atime", buf, 0);
-      if (DPL_SUCCESS != dpl_status)
+      ret2 = dpl_dict_add(tmp_dict, "cdmi_atime", buf, 0);
+      if (DPL_SUCCESS != ret2)
         {
-          ret = -1;
+          ret = ret2;
           goto end;
         }
     }
@@ -122,17 +121,17 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
   if (sysmd->mask & DPL_SYSMD_MASK_MTIME)
     {
       /* optional */
-      dpl_status = dpl_timetoiso8601(sysmd->mtime, buf, sizeof (buf));
-      if (DPL_SUCCESS != dpl_status)
+      ret2 = dpl_timetoiso8601(sysmd->mtime, buf, sizeof (buf));
+      if (DPL_SUCCESS != ret2)
         {
-          ret = -1;
+          ret = ret2;
           goto end;
         }
 
-      dpl_status = dpl_dict_add(tmp_dict, "cdmi_mtime", buf, 0);
-      if (DPL_SUCCESS != dpl_status)
+      ret2 = dpl_dict_add(tmp_dict, "cdmi_mtime", buf, 0);
+      if (DPL_SUCCESS != ret2)
         {
-          ret = -1;
+          ret = ret2;
           goto end;
         }
     }
@@ -140,27 +139,27 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
   if (sysmd->mask & DPL_SYSMD_MASK_CTIME)
     {
       /* optional */
-      dpl_status = dpl_timetoiso8601(sysmd->ctime, buf, sizeof (buf));
-      if (DPL_SUCCESS != dpl_status)
+      ret2 = dpl_timetoiso8601(sysmd->ctime, buf, sizeof (buf));
+      if (DPL_SUCCESS != ret2)
         {
-          ret = -1;
+          ret = ret2;
           goto end;
         }
 
-      dpl_status = dpl_dict_add(tmp_dict, "cdmi_ctime", buf, 0);
-      if (DPL_SUCCESS != dpl_status)
+      ret2 = dpl_dict_add(tmp_dict, "cdmi_ctime", buf, 0);
+      if (DPL_SUCCESS != ret2)
         {
-          ret = -1;
+          ret = ret2;
           goto end;
         }
     }
 
   if (sysmd->mask & DPL_SYSMD_MASK_OWNER)
     {
-      dpl_status = dpl_dict_add(tmp_dict, "cdmi_owner", sysmd->owner, 0);
-      if (DPL_SUCCESS != dpl_status)
+      ret2 = dpl_dict_add(tmp_dict, "cdmi_owner", sysmd->owner, 0);
+      if (DPL_SUCCESS != ret2)
         {
-          ret = -1;
+          ret = ret2;
           goto end;
         }
     }
@@ -185,12 +184,7 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
           aces[0].access_mask = DPL_ACE_MASK_READ_OBJECT|
             DPL_ACE_MASK_EXECUTE;
           aces[0].who = DPL_ACE_WHO_EVERYONE;
-          aces[1].type = DPL_ACE_TYPE_ALLOW;
-          aces[1].flag = 0;
-          aces[1].access_mask = DPL_ACE_MASK_READ_OBJECT|
-            DPL_ACE_MASK_EXECUTE;
-          aces[1].who = DPL_ACE_WHO_OWNER;
-          n_aces = 2;
+          n_aces = 1;
           break ;
         case DPL_CANNED_ACL_PUBLIC_READ_WRITE:
           aces[0].type = DPL_ACE_TYPE_ALLOW;
@@ -253,50 +247,50 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
           str = dpl_cdmi_who_str(acesp[i].who);
           if (NULL == str)
             {
-              ret = -1;
+              ret = DPL_EINVAL;
               goto end;
             }
 
-          dpl_status = dpl_dict_add(tmp_dict2, "identifier", str, 0);
-          if (DPL_SUCCESS != dpl_status)
+          ret2 = dpl_dict_add(tmp_dict2, "identifier", str, 0);
+          if (DPL_SUCCESS != ret2)
             {
-              ret = -1;
+              ret = ret2;
               goto end;
             }
 
           snprintf(buf, sizeof (buf), "0x%08x", acesp[i].type);
 
-          dpl_status = dpl_dict_add(tmp_dict2, "acetype", buf, 0);
-          if (DPL_SUCCESS != dpl_status)
+          ret2 = dpl_dict_add(tmp_dict2, "acetype", buf, 0);
+          if (DPL_SUCCESS != ret2)
             {
-              ret = -1;
+              ret = ret2;
               goto end;
             }
 
           snprintf(buf, sizeof (buf), "0x%08x", acesp[i].flag);
 
-          dpl_status = dpl_dict_add(tmp_dict2, "aceflags", buf, 0);
-          if (DPL_SUCCESS != dpl_status)
+          ret2 = dpl_dict_add(tmp_dict2, "aceflags", buf, 0);
+          if (DPL_SUCCESS != ret2)
             {
-              ret = -1;
+              ret = ret2;
               goto end;
             }
 
           snprintf(buf, sizeof (buf), "0x%08x", acesp[i].access_mask);
 
-          dpl_status = dpl_dict_add(tmp_dict2, "acemask", buf, 0);
-          if (DPL_SUCCESS != dpl_status)
+          ret2 = dpl_dict_add(tmp_dict2, "acemask", buf, 0);
+          if (DPL_SUCCESS != ret2)
             {
-              ret = -1;
+              ret = ret2;
               goto end;
             }
           
           row_value.type = DPL_VALUE_SUBDICT;
           row_value.subdict = tmp_dict2;
-          dpl_status = dpl_vec_add_value(tmp_vec, &row_value);
-          if (DPL_SUCCESS != dpl_status)
+          ret2 = dpl_vec_add_value(tmp_vec, &row_value);
+          if (DPL_SUCCESS != ret2)
             {
-              ret = -1;
+              ret = ret2;
               goto end;
             }
 
@@ -306,10 +300,10 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
 
       value.type = DPL_VALUE_VECTOR;
       value.vector = tmp_vec;
-      dpl_status = dpl_dict_add_value(tmp_dict, "cdmi_acl", &value, 0);
-      if (DPL_SUCCESS != dpl_status)
+      ret2 = dpl_dict_add_value(tmp_dict, "cdmi_acl", &value, 0);
+      if (DPL_SUCCESS != ret2)
         {
-          ret = -1;
+          ret = ret2;
           goto end;
         }
 
@@ -431,21 +425,21 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
@@ -460,7 +454,7 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -478,7 +472,7 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -494,21 +488,21 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
   objects = dpl_vec_new(2, 2);
   if (NULL == objects)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
   common_prefixes = dpl_vec_new(2, 2);
   if (NULL == common_prefixes)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
-  ret = dpl_cdmi_parse_list_bucket(ctx, data_buf, data_len, prefix, objects, common_prefixes);
-  if (DPL_SUCCESS != ret)
+  ret2 = dpl_cdmi_parse_list_bucket(ctx, data_buf, data_len, prefix, objects, common_prefixes);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -652,21 +646,21 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_req_build(req, &headers_request, &body_str, &body_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
@@ -681,7 +675,7 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -704,7 +698,7 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -844,21 +838,21 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
@@ -873,7 +867,7 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -891,7 +885,7 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1027,21 +1021,21 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_req_build(req, &headers_request, &body_str, &body_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
@@ -1056,7 +1050,7 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1079,7 +1073,7 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1218,21 +1212,21 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
@@ -1247,7 +1241,7 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1265,7 +1259,7 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1388,28 +1382,28 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1427,7 +1421,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1634,21 +1628,21 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
@@ -1663,7 +1657,7 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1681,7 +1675,7 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       gc.connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1744,7 +1738,7 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata;objectID;parentID;objectType", object_type, condition, &md_buf, &md_len, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
   
@@ -1799,14 +1793,14 @@ dpl_cdmi_head(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_get_metadata_from_json_metadata(all_mds, &metadata);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   ret2 = dpl_cdmi_get_sysmd_from_json_metadata(all_mds, sysmdp);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1884,21 +1878,21 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_req_build(req, &headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
@@ -1913,7 +1907,7 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -1931,7 +1925,7 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -2080,21 +2074,21 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
   ret2 = dpl_cdmi_req_build(req, &headers_request, &body_str, &body_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
   host = dpl_dict_get_value(headers_request, "Host");
   if (NULL == host)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_EINVAL;
       goto end;
     }
 
   conn = dpl_conn_open_host(ctx, host, ctx->port);
   if (NULL == conn)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ECONNECT;
       goto end;
     }
 
@@ -2109,7 +2103,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -2132,7 +2126,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
     {
       DPLERR(1, "writev failed");
       connection_close = 1;
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
