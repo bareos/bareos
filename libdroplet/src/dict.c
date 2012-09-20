@@ -228,7 +228,7 @@ cb_var_print(dpl_dict_var_t *var,
     fprintf(pd->f, " ");
 
   fprintf(pd->f, "%s=", var->key);
-  dpl_value_print(var->val, pd->f, pd->level + 1);
+  dpl_value_print(var->val, pd->f, pd->level + 1, 0);
   fprintf(pd->f, "\n");
 
   return DPL_SUCCESS;
@@ -424,7 +424,7 @@ cb_var_filter_string(dpl_dict_var_t *var,
 {
   struct conviterate *conv = cb_arg;
   size_t prefix_len;
-  dpl_status_t ret;
+  dpl_status_t ret = DPL_SUCCESS;
 
   if (! conv->prefix)
     return DPL_SUCCESS;

@@ -89,8 +89,9 @@ dpl_sysmd_print(dpl_sysmd_t *sysmd,
 
   if (sysmd->mask & DPL_SYSMD_MASK_CTIME)
     fprintf(f, "ctime=%lu\n", sysmd->ctime);
-
-  //if (sysmd->mask & DPL_SYSMD_MASK_MD5)
+  
+  if (sysmd->mask & DPL_SYSMD_MASK_ETAG)
+    fprintf(f, "etag=%s\n", sysmd->etag);
 
   if (sysmd->mask & DPL_SYSMD_MASK_LOCATION_CONSTRAINT)
     fprintf(f, "location_constraint=%s\n", dpl_location_constraint_str(sysmd->location_constraint));
@@ -101,10 +102,13 @@ dpl_sysmd_print(dpl_sysmd_t *sysmd,
   if (sysmd->mask & DPL_SYSMD_MASK_GROUP)
     fprintf(f, "group=%s\n", sysmd->group);
 
-  for (i = 0;i < sysmd->n_aces;i++)
+  if (sysmd->mask & DPL_SYSMD_MASK_ACL)
     {
-      printf("ace%d: type=0x%x flag=0x%x access_mask=0x%x who=0x%x\n",
-             i, sysmd->aces[i].type, sysmd->aces[i].flag, sysmd->aces[i].access_mask,
-             sysmd->aces[i].who);
+      for (i = 0;i < sysmd->n_aces;i++)
+        {
+          printf("ace%d: type=0x%x flag=0x%x access_mask=0x%x who=0x%x\n",
+                 i, sysmd->aces[i].type, sysmd->aces[i].flag, sysmd->aces[i].access_mask,
+                 sysmd->aces[i].who);
+        }
     }
 }

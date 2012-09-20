@@ -204,17 +204,6 @@ dpl_vec_get(dpl_vec_t *vec,
   return vec->items[i]->ptr;
 }
 
-void
-dpl_vec_print(dpl_vec_t *vec, 
-              FILE *f,
-              int level)
-{
-  int i;
-
-  for (i = 0;i < vec->n_items;i++)
-    dpl_value_print(vec->items[i], f, level);
-}
-
 dpl_vec_t *
 dpl_vec_dup(dpl_vec_t *vec)
 {
@@ -260,4 +249,21 @@ dpl_vec_sort(dpl_vec_t *vec,
              dpl_value_cmp_func_t cmp_func)
 {
   qsort(vec->items, vec->n_items, sizeof (dpl_value_t *), cmp_func);
+}
+
+void
+dpl_vec_print(dpl_vec_t *vec, 
+              FILE *f,
+              int level)
+{
+  int i;
+
+  for (i = 0;i < vec->n_items;i++)
+    {
+      int last = (i == (vec->n_items - 1));
+
+      dpl_value_print(vec->items[i], f, level, 0);
+      if (!last)
+        fprintf(f, ",");
+    }
 }

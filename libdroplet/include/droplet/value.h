@@ -63,5 +63,5 @@ typedef int (*dpl_value_cmp_func_t)(const void *p1, const void *p2);
 /* PROTO value.c */
 void dpl_value_free(dpl_value_t *value);
 dpl_value_t *dpl_value_dup(dpl_value_t *src);
-void dpl_value_print(dpl_value_t *val, FILE *f, int level);
+void dpl_value_print(dpl_value_t *val, FILE *f, int level, int indent);
 #endif

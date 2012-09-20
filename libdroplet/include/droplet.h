@@ -270,7 +270,7 @@ typedef enum
     DPL_SYSMD_MASK_ATIME         = (1u<<3),
     DPL_SYSMD_MASK_MTIME         = (1u<<4),
     DPL_SYSMD_MASK_CTIME         = (1u<<5),
-    DPL_SYSMD_MASK_MD5           = (1u<<6),
+    DPL_SYSMD_MASK_ETAG          = (1u<<6),
     DPL_SYSMD_MASK_LOCATION_CONSTRAINT = (1u<<8),
     DPL_SYSMD_MASK_LAZY          = (1u<<9), /*!< lazy operation */
     DPL_SYSMD_MASK_OWNER         = (1u<<10),
@@ -290,7 +290,8 @@ typedef struct
   time_t atime;
   time_t mtime;
   time_t ctime;
-  char md5[MD5_DIGEST_LENGTH];
+#define DPL_SYSMD_ETAG_SIZE 64
+  char etag[DPL_SYSMD_ETAG_SIZE+1];
   dpl_location_constraint_t location_constraint;
 #define DPL_SYSMD_OWNER_SIZE 32
   char owner[DPL_SYSMD_OWNER_SIZE+1];

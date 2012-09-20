@@ -43,29 +43,60 @@ dpl_s3_get_metadata_from_headers(const dpl_dict_t *headers,
 {
   dpl_dict_t *metadata = NULL;
   dpl_status_t ret, ret2;
+  char *tmp;
 
-  if (NULL == metadatap)
+  if (metadatap)
     {
-      ret = DPL_SUCCESS;
-      goto end;
+      metadata = dpl_dict_new(13);
+      if (NULL == metadata)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      
+      ret2 = dpl_dict_filter_prefix(metadata, headers, "x-amz-meta-");
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+      
+      *metadatap = metadata;
+      metadata = NULL;
     }
 
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
+  if (sysmdp)
     {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
+      sysmdp->mask = 0;
 
-  ret2 = dpl_dict_filter_prefix(metadata, headers, "x-amz-meta-");
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+      tmp = dpl_dict_get_value(headers, "content-length");
+      if (NULL != tmp)
+        {
+          sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
+          sysmdp->size = atoi(tmp);
+        }
 
-  *metadatap = metadata;
-  metadata = NULL;
+      tmp = dpl_dict_get_value(headers, "last-modified");
+      if (NULL != tmp)
+        {
+          sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
+          sysmdp->mtime = dpl_get_date(tmp, NULL);
+        }
+
+      tmp = dpl_dict_get_value(headers, "etag");
+      if (NULL != tmp)
+        {
+          int tmp_len = strlen(tmp);
+
+          if (tmp_len < DPL_SYSMD_ETAG_SIZE && tmp_len >= 2)
+            {
+              sysmdp->mask |= DPL_SYSMD_MASK_ETAG;
+              //supress double quotes
+              strncpy(sysmdp->etag, tmp + 1, DPL_SYSMD_ETAG_SIZE);
+              sysmdp->etag[tmp_len-2] = 0;
+            }
+        }
+    }
 
   ret = DPL_SUCCESS;
   

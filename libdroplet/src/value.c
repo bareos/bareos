@@ -134,20 +134,31 @@ dpl_value_dup(dpl_value_t *src)
 void
 dpl_value_print(dpl_value_t *val,
                 FILE *f,
-                int level)
+                int level,
+                int indent)
 {
+  int i;
+
   switch (val->type)
     {
     case DPL_VALUE_STRING:
       fprintf(f, "%s", val->string);
       break ;
     case DPL_VALUE_SUBDICT:
+      if (indent)
+        for (i = 0;i < level;i++)
+          fprintf(f, " ");
       fprintf(f, "{\n");
       dpl_dict_print(val->subdict, f, level+1);
+      for (i = 0;i < level;i++)
+        fprintf(f, " ");
       fprintf(f, "}");
       break ;
     case DPL_VALUE_VECTOR:
-      fprintf(f, "[\n");
+      if (indent)
+        for (i = 0;i < level;i++)
+          fprintf(f, " ");
+      fprintf(f, "[");
       dpl_vec_print(val->vector, f, level+1);
       fprintf(f, "]");
       break ;

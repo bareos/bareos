@@ -252,4 +252,5 @@ uint64_t dpl_rand_u64(void);
 uint32_t dpl_rand_u32(void);
 dpl_status_t dpl_uuid_rand(dpl_uuid_t *uuid);
 void dpl_uuid_tostr(dpl_uuid_t *uuid, char *ostr);
+time_t dpl_get_date(const char *p, const time_t *now);
 #endif

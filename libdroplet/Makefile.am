@@ -22,6 +22,7 @@ libdroplet_la_SOURCES = \
 	src/sysmd.c \
 	src/id.c \
 	src/vfs.c \
+	src/getdate.y \
 	s3/backend.c \
 	s3/replyparser.c \
 	s3/reqbuilder.c \
