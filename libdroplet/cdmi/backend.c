@@ -2191,10 +2191,19 @@ dpl_cdmi_convert_id_to_native(dpl_ctx_t *ctx,
 {
   dpl_cdmi_object_id_t obj_id;
   dpl_status_t ret, ret2;
+  char opaque[DPL_CDMI_OBJECT_ID_LEN];
+  int opaque_len;
   char native_id[DPL_CDMI_OBJECT_ID_LEN];
   char *str = NULL;
 
-  ret2 = dpl_cdmi_object_id_init(&obj_id, enterprise_number, id, strlen(id));
+  ret2 = dpl_cdmi_string_to_opaque(id, opaque, &opaque_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_object_id_init(&obj_id, enterprise_number, opaque, opaque_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

@@ -40,8 +40,10 @@
 dpl_status_t
 dpl_cdmi_object_id_init(dpl_cdmi_object_id_t *object_id, uint32_t enterprise_number, const void *opaque_data, char opaque_len)
 {
+#if 0 
   if ( enterprise_number & 0xff000000 )
     return DPL_EINVAL;
+#endif
   if ( opaque_len > 32 )
     return DPL_EINVAL;
 
@@ -142,6 +144,36 @@ dpl_cdmi_string_to_object_id(const char *input, dpl_cdmi_object_id_t *output)
   return DPL_SUCCESS;
 }
 
+dpl_status_t
+dpl_cdmi_string_to_opaque(const char *input, char *output, int *output_lenp)
+{
+  int i;
+  int odd = FALSE;
+  for ( i = 0; input[i]; ++i )
+    {
+      char nibble;
+      if ( input[i] >= '0' && input[i] <= '9' )
+	nibble = input[i] - '0';
+      else if ( input[i] >= 'a' && input[i] <= 'f' )
+	nibble = input[i] - 'a' + 10;
+      else if ( input[i] >= 'A' && input[i] <= 'F' )
+	nibble = input[i] -'A' + 10;
+
+      else return DPL_EINVAL;
+
+      if ( !odd )
+	((char*)output)[i/2] = nibble << 4;
+      else
+	((char*)output)[i/2] = ((char*)output)[i/2] | nibble;
+
+      odd = !odd;
+    }
+
+  if (NULL != output_lenp)
+    *output_lenp = i/2;
+
+  return DPL_SUCCESS;
+}
 
 void dpl_cdmi_object_id_undef(dpl_cdmi_object_id_t *object_id)
 {

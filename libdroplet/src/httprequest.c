@@ -241,11 +241,11 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
         {
           for (var = headers->buckets[bucket];var;var = var->prev)
             {
-              DPL_TRACE(req->ctx, DPL_TRACE_REQ, "header='%s' value='%s'", var->key, var->val);
+              assert(var->val->type == DPL_VALUE_STRING);
+              DPL_TRACE(req->ctx, DPL_TRACE_REQ, "header='%s' value='%s'", var->key, var->val->string);
 
               DPL_APPEND_STR(var->key);
               DPL_APPEND_STR(": ");
-              assert(var->val->type == DPL_VALUE_STRING);
               DPL_APPEND_STR(var->val->string);
               DPL_APPEND_STR("\r\n");
             }

@@ -49,6 +49,7 @@ dpl_status_t dpl_cdmi_object_id_init(dpl_cdmi_object_id_t *object_id, uint32_t e
 dpl_status_t dpl_cdmi_object_id_to_string(const dpl_cdmi_object_id_t *object_id, char *output);
 dpl_status_t dpl_cdmi_opaque_to_string(const dpl_cdmi_object_id_t *object_id, char *output);
 dpl_status_t dpl_cdmi_string_to_object_id(const char *input, dpl_cdmi_object_id_t *output);
+dpl_status_t dpl_cdmi_string_to_opaque(const char *input, char *output, int *opaque_lenp);
 void dpl_cdmi_object_id_undef(dpl_cdmi_object_id_t *object_id);
 int dpl_cdmi_object_id_is_def(const dpl_cdmi_object_id_t *object_id);
 dpl_status_t dpl_cdmi_object_id_opaque_len(const dpl_cdmi_object_id_t *object_id, size_t *lenp);
