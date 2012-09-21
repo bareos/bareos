@@ -52,7 +52,7 @@ add_metadata_to_headers(dpl_dict_t *metadata,
         {
           snprintf(header, sizeof (header), "x-amz-meta-%s", var->key);
 
-          assert(DPL_VALUE_STRING != var->val->type);
+          assert(DPL_VALUE_STRING == var->val->type);
           ret = dpl_dict_add(headers, header, var->val->string, 0);
           if (DPL_SUCCESS != ret)
             {
@@ -142,11 +142,13 @@ static int
 var_cmp(const void *p1,
         const void *p2)
 {
-  dpl_dict_var_t *var1 = (dpl_dict_var_t *) p1;
-  dpl_dict_var_t *var2 = (dpl_dict_var_t *) p2;
+  dpl_value_t *val1 = *(dpl_value_t **) p1;
+  dpl_value_t *val2 = *(dpl_value_t **) p2;
+  dpl_dict_var_t *var1 = (dpl_dict_var_t *) val1->ptr;
+  dpl_dict_var_t *var2 = (dpl_dict_var_t *) val2->ptr;
 
-  assert(var1->val->type == DPL_VALUE_VOIDPTR);
-  assert(var2->val->type == DPL_VALUE_VOIDPTR);
+  assert(var1->val->type == DPL_VALUE_STRING);
+  assert(var2->val->type == DPL_VALUE_STRING);
 
   return strcmp(var1->key, var2->key);
 }
@@ -216,7 +218,7 @@ make_signature(dpl_ctx_t *ctx,
           {
             if (!strncmp(var->key, "x-amz-", 6))
               {
-                assert(DPL_VALUE_STRING != var->val->type);
+                assert(DPL_VALUE_STRING == var->val->type);
                 DPRINTF("%s: %s\n", var->key, var->val->string);
                 ret = dpl_vec_add(vec, var);
                 if (DPL_SUCCESS != ret)
@@ -234,7 +236,7 @@ make_signature(dpl_ctx_t *ctx,
       {
         var = (dpl_dict_var_t *) dpl_vec_get(vec, i);
 
-        assert(DPL_VALUE_STRING != var->val->type);
+        assert(DPL_VALUE_STRING == var->val->type);
         DPRINTF("%s:%s\n", var->key, var->val->string);
         DPL_APPEND_STR(var->key);
         DPL_APPEND_STR(":");
