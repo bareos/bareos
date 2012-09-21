@@ -51,4 +51,6 @@ dpl_status_t dpl_cdmi_delete(dpl_ctx_t *ctx, const char *bucket, const char *res
 dpl_status_t dpl_cdmi_genurl(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp, char **locationp);
 dpl_status_t dpl_cdmi_copy(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition, char **locationp);
 dpl_status_t dpl_cdmi_get_id_path(dpl_ctx_t *ctx, const char *bucket, char **id_pathp);
+dpl_status_t dpl_cdmi_convert_id_to_native(dpl_ctx_t *ctx, const char *id, uint32_t enterprise_number, char **native_idp);
+dpl_status_t dpl_cdmi_convert_native_to_id(dpl_ctx_t *ctx, const char *native_id, char **idp, uint32_t *enterprise_numberp);
 #endif

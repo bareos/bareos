@@ -47,6 +47,7 @@ typedef struct
 
 dpl_status_t dpl_cdmi_object_id_init(dpl_cdmi_object_id_t *object_id, uint32_t enterprise_number, const void *opaque_data, char opaque_len);
 dpl_status_t dpl_cdmi_object_id_to_string(const dpl_cdmi_object_id_t *object_id, char *output);
+dpl_status_t dpl_cdmi_opaque_to_string(const dpl_cdmi_object_id_t *object_id, char *output);
 dpl_status_t dpl_cdmi_string_to_object_id(const char *input, dpl_cdmi_object_id_t *output);
 void dpl_cdmi_object_id_undef(dpl_cdmi_object_id_t *object_id);
 int dpl_cdmi_object_id_is_def(const dpl_cdmi_object_id_t *object_id);

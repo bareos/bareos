@@ -34,6 +34,7 @@
 #include "dropletp.h"
 #include <json/json.h>
 #include <droplet/cdmi/reqbuilder.h>
+#include <droplet/cdmi/object_id.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
@@ -496,6 +497,7 @@ dpl_cdmi_get_sysmd_from_json_metadata(dpl_dict_t *json_metadata,
 {
   dpl_status_t ret, ret2;
   dpl_dict_var_t *var, *var2;
+  dpl_cdmi_object_id_t obj_id;
 
   if (NULL == sysmd)
     {
@@ -514,9 +516,24 @@ dpl_cdmi_get_sysmd_from_json_metadata(dpl_dict_t *json_metadata,
           goto end;
         }
       
+      ret2 = dpl_cdmi_string_to_object_id(var->val->string, &obj_id);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      ret2 = dpl_cdmi_opaque_to_string(&obj_id, sysmd->id);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
       sysmd->mask |= DPL_SYSMD_MASK_ID;
-      strncpy(sysmd->id, var->val->string, DPL_SYSMD_ID_SIZE);
-      sysmd->id[DPL_SYSMD_ID_SIZE] = 0;
+
+      sysmd->enterprise_number = obj_id.enterprise_number;
+      sysmd->mask |= DPL_SYSMD_MASK_ENTERPRISE_NUMBER;
     }
 
   var = dpl_dict_get(json_metadata, "parentID");
@@ -528,9 +545,21 @@ dpl_cdmi_get_sysmd_from_json_metadata(dpl_dict_t *json_metadata,
           goto end;
         }
 
+      ret2 = dpl_cdmi_string_to_object_id(var->val->string, &obj_id);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      ret2 = dpl_cdmi_opaque_to_string(&obj_id, sysmd->parent_id);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
       sysmd->mask |= DPL_SYSMD_MASK_PARENT_ID;
-      strncpy(sysmd->parent_id, var->val->string, DPL_SYSMD_ID_SIZE);
-      sysmd->parent_id[DPL_SYSMD_ID_SIZE] = 0;
     }
 
   var = dpl_dict_get(json_metadata, "objectType");

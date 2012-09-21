@@ -274,13 +274,13 @@ typedef enum
     DPL_SYSMD_MASK_CTIME         = (1u<<5),
     DPL_SYSMD_MASK_ETAG          = (1u<<6),
     DPL_SYSMD_MASK_LOCATION_CONSTRAINT = (1u<<8),
-    DPL_SYSMD_MASK_LAZY          = (1u<<9), /*!< lazy operation */
-    DPL_SYSMD_MASK_OWNER         = (1u<<10),
-    DPL_SYSMD_MASK_GROUP         = (1u<<11),
-    DPL_SYSMD_MASK_ACL           = (1u<<12),
-    DPL_SYSMD_MASK_ID            = (1u<<13),
-    DPL_SYSMD_MASK_PARENT_ID     = (1u<<14),
-    DPL_SYSMD_MASK_FTYPE         = (1u<<15)
+    DPL_SYSMD_MASK_OWNER         = (1u<<9),
+    DPL_SYSMD_MASK_GROUP         = (1u<<10),
+    DPL_SYSMD_MASK_ACL           = (1u<<11),
+    DPL_SYSMD_MASK_ID            = (1u<<12),
+    DPL_SYSMD_MASK_PARENT_ID     = (1u<<13),
+    DPL_SYSMD_MASK_FTYPE         = (1u<<14),
+    DPL_SYSMD_MASK_ENTERPRISE_NUMBER  = (1u<<15)
   } dpl_sysmd_mask_t;
 
 typedef struct
@@ -306,6 +306,7 @@ typedef struct
   char id[DPL_SYSMD_ID_SIZE+1];
   char parent_id[DPL_SYSMD_ID_SIZE+1];
   dpl_ftype_t ftype;
+  uint32_t enterprise_number;
 } dpl_sysmd_t;
 
 /**/

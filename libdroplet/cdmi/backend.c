@@ -33,6 +33,7 @@
  */
 #include "dropletp.h"
 #include <droplet/cdmi/cdmi.h>
+#include <droplet/cdmi/object_id.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
@@ -2180,4 +2181,103 @@ dpl_cdmi_get_id_path(dpl_ctx_t *ctx,
   *id_pathp = id_path;
 
   return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_cdmi_convert_id_to_native(dpl_ctx_t *ctx, 
+                              const char *id,
+                              uint32_t enterprise_number,
+                              char **native_idp)
+{
+  dpl_cdmi_object_id_t obj_id;
+  dpl_status_t ret, ret2;
+  char native_id[DPL_CDMI_OBJECT_ID_LEN];
+  char *str = NULL;
+
+  ret2 = dpl_cdmi_object_id_init(&obj_id, enterprise_number, id, strlen(id));
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_object_id_to_string(&obj_id, native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  str = strdup(native_id);
+  if (NULL == str)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != native_idp)
+    {
+      *native_idp = str;
+      str = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != str)
+    free(str);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_cdmi_convert_native_to_id(dpl_ctx_t *ctx, 
+                              const char *native_id,
+                              char **idp, 
+                              uint32_t *enterprise_numberp)
+{
+  dpl_status_t ret, ret2;
+  dpl_cdmi_object_id_t obj_id;
+  char id[DPL_CDMI_OBJECT_ID_LEN]; //at least
+  char *str = NULL;
+
+  ret2 = dpl_cdmi_string_to_object_id(native_id, &obj_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_opaque_to_string(&obj_id, id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  str = strdup(id);
+  if (NULL == str)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != idp)
+    {
+      *idp = str;
+      str = NULL;
+    }
+
+  if (NULL != enterprise_numberp)
+    *enterprise_numberp = obj_id.enterprise_number;
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != str)
+    free(str);
+
+  return ret;
 }

@@ -52,6 +52,7 @@ main(int argc,
   ret = dpl_put_id(ctx,           //the context
                    NULL,          //no bucket
                    id,            //the key
+                   0,
                    NULL,          //no subresource
                    DPL_FTYPE_REG, //regular object
                    NULL,          //no metadata
@@ -72,6 +73,7 @@ main(int argc,
   ret = dpl_get_range_id(ctx,           //the context
                          NULL,          //no bucket
                          id,            //the key
+                         0,
                          NULL,          //no subresource
                          DPL_FTYPE_REG, //object type
                          NULL,          //no condition of operation
@@ -110,6 +112,7 @@ main(int argc,
   ret = dpl_delete_id(ctx,       //the context
                       NULL,      //no bucket
                       id,        //the key
+                      0,
                       NULL);     //no subresource
   if (DPL_SUCCESS != ret)
     {

@@ -2496,11 +2496,11 @@ dpl_fgenurl(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
-dpl_fcopy_ex(dpl_ctx_t *ctx,
-             const char *src_locator,
-             const char *dst_locator,
-             dpl_copy_directive_t copy_directive)
+static dpl_status_t
+copy_path_to_path(dpl_ctx_t *ctx,
+                  const char *src_locator,
+                  const char *dst_locator,
+                  dpl_copy_directive_t copy_directive)
 {
   int ret, ret2;
   char *src_nlocator = NULL;
@@ -2518,7 +2518,7 @@ dpl_fcopy_ex(dpl_ctx_t *ctx,
   int delim_len = strlen(ctx->delim);
   dpl_fqn_t parent_fqn;
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "fcopy src_locator=%s dst_locator=%s", src_locator, dst_locator);
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_path_to_path src_locator=%s dst_locator=%s", src_locator, dst_locator);
 
   src_nlocator = strdup(src_locator);
   if (NULL == src_nlocator)
@@ -2654,10 +2654,176 @@ dpl_fcopy_ex(dpl_ctx_t *ctx,
   return ret;
 }
 
+/** 
+ * server side copy
+ * 
+ * @param ctx 
+ * @param src_locator 
+ * @param dst_locator 
+ * 
+ * @return 
+ */
 dpl_status_t
 dpl_fcopy(dpl_ctx_t *ctx,
           const char *src_locator,
           const char *dst_locator)
 {
-  return dpl_fcopy_ex(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_COPY);
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_COPY);
+}
+
+dpl_status_t
+dpl_rename(dpl_ctx_t *ctx,
+           const char *src_locator,
+           const char *dst_locator)
+{
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_MOVE);
+}
+
+dpl_status_t
+dpl_symlink(dpl_ctx_t *ctx,
+            const char *src_locator,
+            const char *dst_locator)
+{
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_SYMLINK);
+}
+
+static dpl_status_t
+copy_id_to_path(dpl_ctx_t *ctx,
+                const char *src_id,
+                const uint32_t enterprise_number,
+                const char *dst_locator,
+                dpl_copy_directive_t copy_directive)
+{
+  int ret, ret2;
+  char *dst_nlocator = NULL;
+  char *dst_bucket = NULL;
+  char *dst_path;
+  dpl_fqn_t dst_cur_fqn;
+  dpl_fqn_t dst_obj_fqn;
+  dpl_ftype_t dst_obj_type;
+  int delim_len = strlen(ctx->delim);
+  dpl_fqn_t parent_fqn;
+  char *native_id = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_id_to_path src_id=%s dst_locator=%s", src_id, dst_locator);
+
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, src_id, enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  dst_nlocator = strdup(dst_locator);
+  if (NULL == dst_nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  dst_path = index(dst_nlocator, ':');
+  if (NULL != dst_path)
+    {
+      *dst_path++ = 0;
+      dst_bucket = strdup(dst_nlocator);
+      if (NULL == dst_bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
+    }
+  else
+    {
+      pthread_mutex_lock(&ctx->lock);
+      dst_bucket = strdup(ctx->cur_bucket);
+      pthread_mutex_unlock(&ctx->lock);
+      if (NULL == dst_bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      dst_path = dst_nlocator;
+    }
+
+  dst_cur_fqn = dpl_cwd(ctx, dst_bucket);
+
+  ret2 = dpl_namei(ctx, dst_path, dst_bucket, dst_cur_fqn, NULL, &dst_obj_fqn, &dst_obj_type);
+  if (DPL_SUCCESS != ret2)
+    {
+      if (DPL_ENOENT == ret2)
+        {
+          char *remote_name;
+          
+          remote_name = dpl_strrstr(dst_path, ctx->delim);
+          if (NULL != remote_name)
+            {
+              *remote_name = 0;
+              remote_name += delim_len;
+              
+              //fetch parent directory
+              ret2 = dpl_namei(ctx, !strcmp(dst_path, "") ? ctx->delim : dst_path, dst_bucket, dst_cur_fqn, NULL, &parent_fqn, NULL);
+              if (DPL_SUCCESS != ret2)
+                {
+                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", dst_path, dpl_status_str(ret2));
+                  ret = ret2;
+                  goto end;
+                }
+            }
+          else
+            {
+              parent_fqn = dst_cur_fqn;
+              remote_name = dst_path;
+            }
+          
+          dst_obj_fqn = parent_fqn;
+          strcat(dst_obj_fqn.path, remote_name); //XXX check length
+          dst_obj_type = DPL_FTYPE_REG;
+        }
+    }
+
+  ret2 = dpl_copy(ctx, dst_bucket, native_id, NULL, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, NULL, DPL_CANNED_ACL_UNDEF, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != native_id)
+    free(native_id);
+
+  if (NULL != dst_bucket)
+    free(dst_bucket);
+
+  if (NULL != dst_nlocator)
+    free(dst_nlocator);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_link(dpl_ctx_t *ctx,
+         const char *src_id,
+         uint32_t enterprise_number,
+         const char *dst_locator)
+{
+  return copy_id_to_path(ctx, src_id, enterprise_number, dst_locator, DPL_COPY_DIRECTIVE_LINK);
+}
+
+dpl_status_t
+dpl_mkdent(dpl_ctx_t *ctx,
+           const char *src_id,
+           uint32_t enterprise_number,
+           const char *dst_locator)
+{
+  return copy_id_to_path(ctx, src_id, enterprise_number, dst_locator, DPL_COPY_DIRECTIVE_MKDENT);
 }

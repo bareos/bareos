@@ -66,6 +66,9 @@ dpl_sysmd_print(dpl_sysmd_t *sysmd,
   if (sysmd->mask & DPL_SYSMD_MASK_ID)
     fprintf(f, "id=%s\n", sysmd->id);
 
+  if (sysmd->mask & DPL_SYSMD_MASK_ENTERPRISE_NUMBER)
+    fprintf(f, "enterprise_number=%u\n", sysmd->enterprise_number);
+
   if (sysmd->mask & DPL_SYSMD_MASK_PARENT_ID)
     fprintf(f, "parent_id=%s\n", sysmd->parent_id);
 

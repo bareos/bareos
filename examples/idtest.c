@@ -97,6 +97,7 @@ main(int argc,
   ret = dpl_put_id(ctx,           //the context
                    NULL,          //no bucket
                    id,            //the key
+                   0,
                    NULL,          //no subresource
                    DPL_FTYPE_REG, //regular object
                    metadata,      //the metadata
@@ -119,6 +120,7 @@ main(int argc,
   ret = dpl_get_id(ctx,           //the context
                    NULL,          //no bucket
                    id,            //the key
+                   0,
                    NULL,          //no subresource
                    DPL_FTYPE_REG, //object type
                    &condition,          //condition of operation
@@ -198,9 +200,11 @@ main(int argc,
   ret = dpl_copy_id(ctx,           //the context
                     NULL,          //no src bucket
                     id,            //the key
+                    0,
                     NULL,          //no subresource
                     NULL,          //no dst bucket
                     id,            //the same key
+                    0,
                     NULL,          //no subresource
                     DPL_FTYPE_REG, //object type
                     DPL_COPY_DIRECTIVE_METADATA_REPLACE,  //tell server to replace metadata
@@ -221,6 +225,7 @@ main(int argc,
   ret = dpl_head_id(ctx,      //the context
                     NULL,     //no bucket,
                     id,       //the key
+                    0,
                     NULL,     //no subresource
                     NULL,     //no condition,
                     &metadata2_returned,
@@ -273,6 +278,7 @@ main(int argc,
   ret = dpl_delete_id(ctx,       //the context
                       NULL,      //no bucket
                       id,        //the key
+                      0,
                       NULL);     //no subresource
   if (DPL_SUCCESS != ret)
     {

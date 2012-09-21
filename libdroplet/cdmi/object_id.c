@@ -81,6 +81,25 @@ dpl_cdmi_object_id_to_string(const dpl_cdmi_object_id_t *object_id, char *output
 }
 
 dpl_status_t
+dpl_cdmi_opaque_to_string(const dpl_cdmi_object_id_t *object_id, char *output)
+{
+  int i, j;
+
+  if ( NULL == output ) return DPL_EINVAL;
+
+  for ( i = 8,j = 0 ; i < object_id->length ; ++i,++j )
+    {
+      if ( j*2+1 > DPL_CDMI_OBJECT_ID_LEN ) return DPL_FAILURE;
+
+      output[j*2] = ((((char*)object_id)[i]&0xf0)>>4)[HEXLUT];
+      output[j*2+1] = (((char*)object_id)[i]&0x0f)[HEXLUT];
+    }
+  output[ j * 2 ]='\0';
+
+  return DPL_SUCCESS;
+}
+
+dpl_status_t
 dpl_cdmi_string_to_object_id(const char *input, dpl_cdmi_object_id_t *output)
 {
   int i;

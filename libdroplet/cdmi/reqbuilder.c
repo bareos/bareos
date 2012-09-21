@@ -240,13 +240,11 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
 
 {
   dpl_ctx_t *ctx = (dpl_ctx_t *) req->ctx;
-  dpl_status_t ret, ret2;
+  dpl_status_t ret;
   json_object *tmp = NULL;
   const char *field = NULL;
   char *buf;
   char *src_resource;
-  int src_is_id = 0;
-  dpl_sysmd_t sysmd;
 
   if (DPL_COPY_DIRECTIVE_UNDEF == req->copy_directive)
     {
@@ -270,7 +268,6 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
       goto end;
     case DPL_COPY_DIRECTIVE_LINK:
       field = "link";
-      src_is_id = 1;
       break ;
     case DPL_COPY_DIRECTIVE_SYMLINK:
       field = "reference";
@@ -280,67 +277,46 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
       break ;
     case DPL_COPY_DIRECTIVE_MKDENT:
       field = "mkdent";
-      src_is_id = 1;
       break ;
     default:
       ret = DPL_ENOTSUPP;
       goto end;
     }
 
-  if (src_is_id)
+  if (ctx->base_path_in_refs)
     {
-      ret2 = dpl_cdmi_head(ctx, req->bucket, req->src_resource, NULL,
-                           req->object_type, NULL, NULL, &sysmd, NULL);
-      if (DPL_SUCCESS != ret2)
+      int base_path_len = 0;
+      int delim_len = 0;
+      int src_resource_len = 0;
+      
+      if (NULL != ctx->base_path)
+        base_path_len = strlen(ctx->base_path);
+      
+      delim_len = strlen(ctx->delim);
+      
+      src_resource_len = strlen(req->src_resource);
+      
+      buf = alloca(base_path_len + delim_len + src_resource_len + 1);
+      if (NULL == buf)
         {
-          ret = ret2;
+          ret = DPL_ENOMEM;
           goto end;
         }
-
-      if (!(sysmd.mask & DPL_SYSMD_MASK_ID))
-        {
-          ret = DPL_ENOTSUPP;
-          goto end;
-        }
-      src_resource = sysmd.id;
+      
+      buf[0] = 0;
+      
+      if (NULL != ctx->base_path)
+        strcat(buf, ctx->base_path);
+      
+      strcat(buf, ctx->delim);
+      
+      strcat(buf, req->src_resource);
+      
+      src_resource = buf;
     }
   else
     {
-      if (ctx->base_path_in_refs)
-        {
-          int base_path_len = 0;
-          int delim_len = 0;
-          int src_resource_len = 0;
-          
-          if (NULL != ctx->base_path)
-            base_path_len = strlen(ctx->base_path);
-          
-          delim_len = strlen(ctx->delim);
-          
-          src_resource_len = strlen(req->src_resource);
-          
-          buf = alloca(base_path_len + delim_len + src_resource_len + 1);
-          if (NULL == buf)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
-          
-          buf[0] = 0;
-          
-          if (NULL != ctx->base_path)
-            strcat(buf, ctx->base_path);
-          
-          strcat(buf, ctx->delim);
-          
-          strcat(buf, req->src_resource);
-          
-          src_resource = buf;
-        }
-      else
-        {
-          src_resource = req->src_resource;
-        }
+      src_resource = req->src_resource;
     }
 
   tmp = json_object_new_string(src_resource);

@@ -39,7 +39,7 @@ typedef dpl_status_t (*dpl_list_all_my_buckets_t)(dpl_ctx_t *ctx, dpl_vec_t **ve
 typedef dpl_status_t (*dpl_list_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
 typedef dpl_status_t (*dpl_make_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const dpl_sysmd_t *sysmd, char **locationp);
 typedef dpl_status_t (*dpl_delete_bucket_t)(dpl_ctx_t *ctx, const char *bucket, char **locationp);
-typedef dpl_status_t (*dpl_post_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, char **resource_idp, char **locationp);
+typedef dpl_status_t (*dpl_post_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, char **native_idp, char **locationp);
 typedef dpl_status_t (*dpl_post_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, const dpl_dict_t *query_params, dpl_conn_t **connp, char **locationp);
 typedef dpl_status_t (*dpl_put_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, char **locationp);
 typedef dpl_status_t (*dpl_put_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp, char **locationp);
@@ -54,7 +54,8 @@ typedef dpl_status_t (*dpl_delete_t)(dpl_ctx_t *ctx, const char *bucket, const c
 typedef dpl_status_t (*dpl_genurl_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, time_t expires, char *buf, unsigned int len, unsigned int *lenp, char **locationp);
 typedef dpl_status_t (*dpl_copy_t)(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition, char **locationp);
 typedef dpl_status_t (*dpl_get_id_path_t)(dpl_ctx_t *ctx, const char *bucket, char **id_pathp);
-typedef dpl_status_t (*dpl_gen_id_from_oid_t)(dpl_ctx_t *ctx, uint64_t oid, dpl_storage_class_t storage_class, char **resource_idp);
+typedef dpl_status_t (*dpl_convert_id_to_native_t)(dpl_ctx_t *ctx, const char *id, uint32_t enterprise_number, char **native_idp);
+typedef dpl_status_t (*dpl_convert_native_to_id_t)(dpl_ctx_t *ctx, const char *native_id, char **idp, uint32_t *enterprise_numberp);
 
 typedef struct dpl_backend_s
 {
@@ -78,7 +79,8 @@ typedef struct dpl_backend_s
   dpl_genurl_t genurl;
   dpl_copy_t copy;
   dpl_get_id_path_t get_id_path;
-  dpl_gen_id_from_oid_t gen_id_from_oid;
+  dpl_convert_id_to_native_t convert_id_to_native;
+  dpl_convert_native_to_id_t convert_native_to_id;
 } dpl_backend_t;
 
 /* PROTO backend.c */

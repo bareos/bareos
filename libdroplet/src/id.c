@@ -51,7 +51,8 @@
  * @param data_buf 
  * @param data_len 
  * @param query_params can be NULL
- * @param resource_idp ID of newly created object. caller must free it
+ * @param idp ID of newly created object. caller must free it
+ * @param entreprise_numberp
  * 
  * @return 
  */
@@ -65,10 +66,12 @@ dpl_post_id(dpl_ctx_t *ctx,
             char *data_buf,
             unsigned int data_len,
             dpl_dict_t *query_params,
-            char **resource_idp)
+            char **idp,
+            uint32_t *enterprise_numberp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *id_path = NULL;
+  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "post_id bucket=%s subresource=%s", bucket, subresource);
 
@@ -78,15 +81,39 @@ dpl_post_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->get_id_path(ctx, bucket, &id_path);
-  if (DPL_SUCCESS != ret)
+  ret2 = ctx->backend->get_id_path(ctx, bucket, &id_path);
+  if (DPL_SUCCESS != ret2)
     {
+      ret = ret2;
       goto end;
     }
 
-  ret = dpl_post(ctx, bucket, id_path, subresource, object_type, metadata, sysmd, data_buf, data_len, query_params, resource_idp);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = dpl_post(ctx, bucket, id_path, subresource, object_type, metadata, sysmd, data_buf, data_len, query_params, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_native_to_id(ctx, native_id, idp, enterprise_numberp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
   
  end:
+
+  if (NULL != native_id)
+    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
@@ -107,7 +134,7 @@ dpl_post_buffered_id(dpl_ctx_t *ctx,
                      dpl_dict_t *query_params,
                      dpl_conn_t **connp)
 {
-  int ret;
+  dpl_status_t ret;
   char *id_path = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "post_buffered_id bucket=%s subresource=%s", bucket, subresource);
@@ -140,6 +167,7 @@ dpl_status_t
 dpl_put_id(dpl_ctx_t *ctx,
            const char *bucket,
            const char *id,
+           const uint32_t enterprise_number,
            const char *subresource,
            dpl_ftype_t object_type,
            dpl_dict_t *metadata,
@@ -147,9 +175,10 @@ dpl_put_id(dpl_ctx_t *ctx,
            char *data_buf,
            unsigned int data_len)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *id_path = NULL;
   char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "put_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
 
@@ -165,11 +194,27 @@ dpl_put_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, id, enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
   ret = dpl_put(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len);
   
  end:
+
+  if (NULL != native_id)
+    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
@@ -183,6 +228,7 @@ dpl_status_t
 dpl_put_buffered_id(dpl_ctx_t *ctx,
                     const char *bucket,
                     const char *id,
+                    const uint32_t enterprise_number,
                     const char *subresource,
                     dpl_ftype_t object_type,
                     dpl_dict_t *metadata,
@@ -190,9 +236,10 @@ dpl_put_buffered_id(dpl_ctx_t *ctx,
                     unsigned int data_len,
                     dpl_conn_t **connp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *id_path = NULL;
   char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "put_buffered_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
 
@@ -208,11 +255,27 @@ dpl_put_buffered_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, id, enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
   ret = dpl_put_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, connp);
   
  end:
+
+  if (NULL != native_id)
+    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
@@ -226,6 +289,7 @@ dpl_status_t
 dpl_get_id(dpl_ctx_t *ctx,
            const char *bucket,
            const char *id,
+           const uint32_t enterprise_number,
            const char *subresource,
            dpl_ftype_t object_type,
            dpl_condition_t *condition,
@@ -234,9 +298,10 @@ dpl_get_id(dpl_ctx_t *ctx,
            dpl_dict_t **metadatap,
            dpl_sysmd_t *sysmdp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *id_path = NULL;
   char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "get_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
 
@@ -252,11 +317,27 @@ dpl_get_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, id, enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
   ret = dpl_get(ctx, bucket, resource, subresource, object_type, condition, data_bufp, data_lenp, metadatap, sysmdp);
   
  end:
+
+  if (NULL != native_id)
+    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
@@ -270,6 +351,7 @@ dpl_status_t
 dpl_get_range_id(dpl_ctx_t *ctx,
                  const char *bucket,
                  const char *id,
+                 const uint32_t enterprise_number,
                  const char *subresource,
                  dpl_ftype_t object_type,
                  dpl_condition_t *condition,
@@ -280,9 +362,10 @@ dpl_get_range_id(dpl_ctx_t *ctx,
                  dpl_dict_t **metadatap,
                  dpl_sysmd_t *sysmdp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *id_path = NULL;
   char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "get_range_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
 
@@ -298,11 +381,27 @@ dpl_get_range_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, id, enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
   ret = dpl_get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap, sysmdp);
   
  end:
+
+  if (NULL != native_id)
+    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
@@ -316,6 +415,7 @@ dpl_status_t
 dpl_get_buffered_id(dpl_ctx_t *ctx,
                     const char *bucket,
                     const char *id,
+                    const uint32_t enterprise_number,
                     const char *subresource, 
                     dpl_ftype_t object_type,
                     dpl_condition_t *condition,
@@ -323,9 +423,10 @@ dpl_get_buffered_id(dpl_ctx_t *ctx,
                     dpl_buffer_func_t buffer_func,
                     void *cb_arg)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *id_path = NULL;
   char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "get_buffered_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
 
@@ -341,11 +442,27 @@ dpl_get_buffered_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, id, enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
   ret = dpl_get_buffered(ctx, bucket, resource, subresource, object_type, condition, header_func, buffer_func, cb_arg);
   
  end:
+
+  if (NULL != native_id)
+    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
@@ -357,20 +474,22 @@ dpl_get_buffered_id(dpl_ctx_t *ctx,
 
 dpl_status_t 
 dpl_get_range_buffered_id(dpl_ctx_t *ctx,
-                    const char *bucket,
-                    const char *id,
-                    const char *subresource, 
-                    dpl_ftype_t object_type,
-                    dpl_condition_t *condition,
-		    int start,
-		    int end,
-                    dpl_header_func_t header_func, 
-                    dpl_buffer_func_t buffer_func,
-                    void *cb_arg)
+                          const char *bucket,
+                          const char *id,
+                          const uint32_t enterprise_number,
+                          const char *subresource, 
+                          dpl_ftype_t object_type,
+                          dpl_condition_t *condition,
+                          int start,
+                          int end,
+                          dpl_header_func_t header_func, 
+                          dpl_buffer_func_t buffer_func,
+                          void *cb_arg)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *id_path = NULL;
   char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "get_range_buffered_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
 
@@ -386,11 +505,27 @@ dpl_get_range_buffered_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, id, enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
   ret = dpl_get_range_buffered(ctx, bucket, resource, subresource, object_type, condition, start, end, header_func, buffer_func, cb_arg);
   
  end:
+
+  if (NULL != native_id)
+    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
@@ -400,19 +535,20 @@ dpl_get_range_buffered_id(dpl_ctx_t *ctx,
   return ret;
 }
 
-
 dpl_status_t
 dpl_head_id(dpl_ctx_t *ctx,
             const char *bucket,
             const char *id,
+            const uint32_t enterprise_number,
             const char *subresource,
             dpl_condition_t *condition,
             dpl_dict_t **metadatap,
             dpl_sysmd_t *sysmdp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *id_path = NULL;
   char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "head_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
 
@@ -428,11 +564,27 @@ dpl_head_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, id, enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
   ret = dpl_head(ctx, bucket, resource, subresource, condition, metadatap, sysmdp);
   
  end:
+
+  if (NULL != native_id)
+    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
@@ -446,13 +598,15 @@ dpl_status_t
 dpl_head_all_id(dpl_ctx_t *ctx,
                 const char *bucket,
                 const char *id,
+                const uint32_t enterprise_number,
                 const char *subresource,
                 dpl_condition_t *condition,
                 dpl_dict_t **metadatap)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *id_path = NULL;
   char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "head_all_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
 
@@ -468,11 +622,27 @@ dpl_head_all_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, id, enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
   ret = dpl_head_all(ctx, bucket, resource, subresource, condition, metadatap);
   
  end:
+
+  if (NULL != native_id)
+    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
@@ -486,11 +656,13 @@ dpl_status_t
 dpl_delete_id(dpl_ctx_t *ctx,
               const char *bucket,
               const char *id,
+              const uint32_t enterprise_number,
               const char *subresource)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *id_path = NULL;
   char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "delete bucket=%s id=%s subresource=%s", bucket, id, subresource);
 
@@ -506,11 +678,27 @@ dpl_delete_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", id);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, id, enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
   ret = dpl_delete(ctx, bucket, resource, subresource);
   
  end:
+
+  if (NULL != native_id)
+    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
@@ -524,9 +712,11 @@ dpl_status_t
 dpl_copy_id(dpl_ctx_t *ctx,
             const char *src_bucket,
             const char *src_id,
+            const uint32_t src_enterprise_number,
             const char *src_subresource,
             const char *dst_bucket,
             const char *dst_id,
+            const uint32_t dst_enterprise_number,
             const char *dst_subresource,
             dpl_ftype_t object_type,
             dpl_copy_directive_t copy_directive,
@@ -534,11 +724,13 @@ dpl_copy_id(dpl_ctx_t *ctx,
             dpl_sysmd_t *sysmd,
             dpl_condition_t *condition)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   char *src_id_path = NULL;
   char *dst_id_path = NULL;
   char src_resource[DPL_MAXPATHLEN];
   char dst_resource[DPL_MAXPATHLEN];
+  char *src_native_id = NULL;
+  char *dst_native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "copy src_bucket=%s src_id=%s src_subresource=%s dst_bucket=%s dst_id=%s dst_subresource=%s", src_bucket, src_id, src_subresource, dst_bucket, dst_id, dst_subresource);
 
@@ -554,7 +746,20 @@ dpl_copy_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(src_resource, sizeof (src_resource), "%s%s", src_id_path ? src_id_path : "", src_id);
+  if (NULL == ctx->backend->convert_id_to_native)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->convert_id_to_native(ctx, src_id, src_enterprise_number, &src_native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(src_resource, sizeof (src_resource), "%s%s", src_id_path ? src_id_path : "", src_native_id);
 
   ret = ctx->backend->get_id_path(ctx, dst_bucket, &dst_id_path);
   if (DPL_SUCCESS != ret)
@@ -562,11 +767,24 @@ dpl_copy_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(dst_resource, sizeof (dst_resource), "%s%s", dst_id_path ? dst_id_path : "", dst_id);
+  ret2 = ctx->backend->convert_id_to_native(ctx, dst_id, dst_enterprise_number, &dst_native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(dst_resource, sizeof (dst_resource), "%s%s", dst_id_path ? dst_id_path : "", dst_native_id);
 
   ret = dpl_copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, copy_directive, metadata, sysmd, condition);
   
  end:
+
+  if (NULL != dst_native_id)
+    free(dst_native_id);
+
+  if (NULL != src_native_id)
+    free(src_native_id);
 
   if (NULL != dst_id_path)
     free(dst_id_path);
@@ -578,43 +796,3 @@ dpl_copy_id(dpl_ctx_t *ctx,
   
   return ret;
 }
-
-dpl_status_t
-dpl_gen_id_from_oid(dpl_ctx_t *ctx,
-                    uint64_t oid,
-                    dpl_storage_class_t storage_class,
-                    char **resource_idp)
-{
-  int ret;
-  char *resource_id = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "gen_id_from_oid oid=%llu\n", (unsigned long long) oid);
-
-  if (NULL == ctx->backend->gen_id_from_oid)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret = ctx->backend->gen_id_from_oid(ctx, oid, storage_class, &resource_id);
-  if (DPL_SUCCESS != ret)
-    {
-      goto end;
-    }
-
-  if (NULL != resource_idp)
-    {
-      *resource_idp = resource_id;
-      resource_id = NULL;
-    }
-  
- end:
-
-  if (NULL != resource_id)
-    free(resource_id);
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
-  
-  return ret;
-}
-

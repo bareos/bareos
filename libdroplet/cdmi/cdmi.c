@@ -56,4 +56,6 @@ dpl_backend_cdmi =
     .deletef 		= dpl_cdmi_delete,
     .copy               = dpl_cdmi_copy,
     .get_id_path        = dpl_cdmi_get_id_path,
+    .convert_id_to_native = dpl_cdmi_convert_id_to_native,
+    .convert_native_to_id = dpl_cdmi_convert_native_to_id,
   };
