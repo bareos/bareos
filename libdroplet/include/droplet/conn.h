@@ -40,8 +40,16 @@ struct dpl_hash_info
   unsigned short port;
 };
 
+typedef enum
+  {
+    DPL_CONN_TYPE_HTTP,
+    DPL_CONN_TYPE_FILE,
+  } dpl_conn_type_t;
+
 typedef struct dpl_conn
 {
+  dpl_conn_type_t type;
+
   struct dpl_ctx *ctx;
 
   struct dpl_conn *next;
@@ -86,4 +94,5 @@ void dpl_conn_terminate(dpl_conn_t *conn);
 dpl_status_t dpl_conn_pool_init(dpl_ctx_t *ctx);
 void dpl_conn_pool_destroy(dpl_ctx_t *ctx);
 dpl_status_t dpl_conn_writev_all(dpl_conn_t *conn, struct iovec *iov, int n_iov, int timeout);
+dpl_conn_t *dpl_conn_open_file(dpl_ctx_t *ctx, const char *path, mode_t mode);
 #endif

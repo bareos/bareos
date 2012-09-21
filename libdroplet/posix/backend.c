@@ -34,8 +34,9 @@
 #include "dropletp.h"
 #include <droplet/posix/posix.h>
 #include <sys/types.h>
-#include <dirent.h>
 #include <sys/param.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 #define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 //#define DPRINTF(fmt,...)
@@ -201,6 +202,44 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
   return ret;
 }
 
+static dpl_status_t
+do_create(dpl_ftype_t object_type,
+          char *path,
+          mode_t mode)
+{
+  dpl_status_t ret;
+  int iret;
+
+  switch (object_type)
+    {
+    case DPL_FTYPE_UNDEF:
+    case DPL_FTYPE_ANY:
+    case DPL_FTYPE_CAP:
+    case DPL_FTYPE_DOM:
+      ret = DPL_EINVAL;
+      goto end;
+    case DPL_FTYPE_DIR:
+      iret = mkdir(path, 0700);
+      break ;
+    case DPL_FTYPE_REG:
+      iret = mknod(path, S_IFREG|0600, -1);
+      break ;
+    }
+
+  if (-1 == iret)
+    {
+      perror("mknod");
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
+}
+
 dpl_status_t
 dpl_posix_post(dpl_ctx_t *ctx,
               const char *bucket,
@@ -215,7 +254,53 @@ dpl_posix_post(dpl_ctx_t *ctx,
               char **resource_idp,
               char **locationp)
 {
-  return DPL_ENOTSUPP;
+  dpl_status_t ret, ret2;
+  int iret;
+  char path[MAXPATHLEN];
+  char id[256];
+  struct stat st;
+  char *native_id = NULL;
+
+  snprintf(path, sizeof (path), "/%s/%s/%s", ctx->base_path ? ctx->base_path : "", bucket ? bucket : "", resource);
+
+  ret2 = do_create(object_type, path, 0700);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  iret = stat(path, &st);
+  if (-1 == iret)
+    {
+      perror("stat");
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  snprintf(id, sizeof (id), "%lu", st.st_ino);
+
+  native_id = strdup(id);
+  if (NULL == native_id)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != resource_idp)
+    {
+      *resource_idp = native_id;
+      native_id = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != native_id)
+    free(native_id);
+
+  return ret;
 }
 
 dpl_status_t
@@ -231,7 +316,33 @@ dpl_posix_post_buffered(dpl_ctx_t *ctx,
                        dpl_conn_t **connp,
                        char **locationp)
 {
-  return DPL_ENOTSUPP;
+  dpl_conn_t *conn = NULL;
+  dpl_status_t ret;
+  char path[MAXPATHLEN];
+
+  snprintf(path, sizeof (path), "/%s/%s/%s", ctx->base_path ? ctx->base_path : "", bucket ? bucket : "", resource);
+
+  conn = dpl_conn_open_file(ctx, path, 0700);
+  if (NULL == conn)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  if (NULL != connp)
+    {
+      *connp = conn;
+      conn = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != conn)
+    dpl_conn_release(conn);
+
+  return ret;
 }
 
 dpl_status_t

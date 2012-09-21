@@ -363,6 +363,7 @@ dpl_conn_open(dpl_ctx_t *ctx,
 
   memset(conn, 0, sizeof (*conn));
 
+  conn->type = DPL_CONN_TYPE_HTTP;
   conn->ctx = ctx;
   conn->read_buf_size = ctx->read_buf_size;
   conn->fd = -1;
@@ -488,6 +489,15 @@ void
 dpl_conn_release(dpl_conn_t *conn)
 {
   pthread_mutex_lock(&conn->ctx->lock);
+
+  if (conn->type == DPL_CONN_TYPE_FILE)
+    {
+      if (-1 != conn->fd)
+        close(conn->fd);
+      free(conn);
+      pthread_mutex_unlock(&conn->ctx->lock);
+      return ;
+    }
 
   DPL_TRACE(conn->ctx, DPL_TRACE_CONN, "conn_release conn=%p", conn);
 
@@ -702,4 +712,64 @@ dpl_conn_writev_all(dpl_conn_t *conn,
     return writev_all_plaintext(conn, iov, n_iov, timeout);
   else
     return writev_all_ssl(conn, iov, n_iov, timeout);
+}
+
+/** 
+ * hack function for posix layer
+ * 
+ * @param ctx 
+ * @param path 
+ * 
+ * @return 
+ */
+dpl_conn_t *
+dpl_conn_open_file(dpl_ctx_t *ctx,
+                   const char *path,
+                   mode_t mode)
+{
+  dpl_conn_t *conn = NULL;
+  time_t now = time(0);
+
+  DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open_file %s", path);
+
+  DPRINTF("allocate new conn\n");
+
+  conn = malloc(sizeof (*conn));
+  if (NULL == conn)
+    {
+      DPLERR(1, "malloc failed");
+      conn = NULL;
+      goto end;
+    }
+
+  memset(conn, 0, sizeof (*conn));
+
+  conn->type = DPL_CONN_TYPE_FILE;
+  conn->ctx = ctx;
+  conn->read_buf_size = ctx->read_buf_size;
+  conn->fd = -1;
+
+  if ((conn->read_buf = malloc(conn->read_buf_size)) == NULL)
+    {
+      dpl_conn_free(conn);
+      conn = NULL;
+      goto end;
+    }
+
+  conn->fd = open(path, O_RDWR, mode);
+  if (-1 == conn->fd)
+    {
+      dpl_conn_free(conn);
+      conn = NULL;
+      goto end;
+    }
+
+  conn->start_time = now;
+  conn->n_hits = 0;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open conn=%p", conn);
+
+  return conn;
 }
