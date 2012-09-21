@@ -403,10 +403,6 @@ conf_cb_func(void *cb_arg,
       free(ctx->delim);
       ctx->delim = ndelim;
     }
-  else if (!strcmp(var, "base_path_in_refs"))
-    {
-      ctx->base_path_in_refs = 1;
-    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);
@@ -509,7 +505,6 @@ dpl_profile_default(dpl_ctx_t *ctx)
   if (NULL == ctx->delim)
     return DPL_ENOMEM;
   ctx->light_mode = 1;
-  ctx->base_path_in_refs = 0;
   ctx->max_redirects = DPL_DEFAULT_MAX_REDIRECTS;
 
   return DPL_SUCCESS;

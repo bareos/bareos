@@ -415,7 +415,6 @@ typedef struct dpl_ctx
   int encode_slashes;        /*!< client wants slashes encoded */
   int keep_alive;            /*!< client supports keep-alive */
   int url_encoding;          /*!< some servers does not handle url encoding */
-  int base_path_in_refs;     /*!< include base_path in references */
   int max_redirects;         /*!< maximum number of redirects */
   struct dpl_backend_s *backend;
 

@@ -245,6 +245,7 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
   const char *field = NULL;
   char *buf;
   char *src_resource;
+  int prepend_base_path = 0;
 
   if (DPL_COPY_DIRECTIVE_UNDEF == req->copy_directive)
     {
@@ -271,6 +272,7 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
       break ;
     case DPL_COPY_DIRECTIVE_SYMLINK:
       field = "reference";
+      prepend_base_path = 1;
       break ;
     case DPL_COPY_DIRECTIVE_MOVE:
       field = "move";
@@ -283,7 +285,7 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
       goto end;
     }
 
-  if (ctx->base_path_in_refs)
+  if (prepend_base_path)
     {
       int base_path_len = 0;
       int delim_len = 0;
