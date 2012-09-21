@@ -125,7 +125,7 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "list_bucket failed %s:%s", bucket, parent_fqn.path);
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -267,7 +267,7 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
   ret2 = dpl_put(ctx, bucket, resource, NULL, object_type, metadata, sysmd, NULL, 0);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -332,7 +332,7 @@ dpl_vdir_opendir(dpl_ctx_t *ctx,
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "list_bucket failed %s:%s", bucket, fqn.path);
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
 
@@ -2089,7 +2089,7 @@ dpl_openread(dpl_ctx_t *ctx,
   ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, &metadata, sysmdp);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
     }
   

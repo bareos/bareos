@@ -36,7 +36,9 @@ libdroplet_la_SOURCES = \
 	srws/backend.c \
 	srws/replyparser.c \
 	srws/reqbuilder.c \
-	srws/srws.c
+	srws/srws.c \
+	posix/posix.c \
+	posix/backend.c
 
 libdropletincludedir = $(includedir)/droplet-1.0/
 libdropletinclude_HEADERS = \
@@ -86,3 +88,8 @@ libdropletdropletsrwsinclude_HEADERS = \
 	include/droplet/srws/replyparser.h \
 	include/droplet/srws/reqbuilder.h \
 	include/droplet/srws/srws.h
+
+libdropletdropletposixincludedir = $(includedir)/droplet-1.0/droplet/posix
+libdropletdropletposixinclude_HEADERS = \
+	include/droplet/posix/backend.h \
+	include/droplet/posix/posix.h

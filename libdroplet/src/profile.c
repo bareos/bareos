@@ -574,11 +574,15 @@ dpl_profile_post(dpl_ctx_t *ctx)
   int ret, ret2;
 
   //sanity checks
-  if (NULL == ctx->host)
+
+  if (strcmp(ctx->backend->name, "posix"))
     {
-      fprintf(stderr, "missing 'host' in profile\n");
-      ret = DPL_FAILURE;
-      goto end;
+      if (NULL == ctx->host)
+        {
+          fprintf(stderr, "missing 'host' in profile\n");
+          ret = DPL_FAILURE;
+          goto end;
+        }
     }
 
   if (-1 == ctx->port)
