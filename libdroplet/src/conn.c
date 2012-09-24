@@ -311,7 +311,7 @@ dpl_conn_open(dpl_ctx_t *ctx,
   time_t now = time(0);
   int ret;
 
-  pthread_mutex_lock(&ctx->lock);
+  dpl_ctx_lock(ctx);
 
   DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open %s:%d", inet_ntoa(addr), port);
 
@@ -426,7 +426,7 @@ dpl_conn_open(dpl_ctx_t *ctx,
 
  end:
 
-  pthread_mutex_unlock(&ctx->lock);
+  dpl_ctx_unlock(ctx);
 
   DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open conn=%p", conn);
 
@@ -488,14 +488,14 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
 void
 dpl_conn_release(dpl_conn_t *conn)
 {
-  pthread_mutex_lock(&conn->ctx->lock);
+  dpl_ctx_lock(conn->ctx);
 
   if (conn->type == DPL_CONN_TYPE_FILE)
     {
       if (-1 != conn->fd)
         close(conn->fd);
+      dpl_ctx_unlock(conn->ctx);
       free(conn);
-      pthread_mutex_unlock(&conn->ctx->lock);
       return ;
     }
 
@@ -504,7 +504,7 @@ dpl_conn_release(dpl_conn_t *conn)
   conn->close_time = time(0);
   dpl_conn_add_nolock(conn);
 
-  pthread_mutex_unlock(&conn->ctx->lock);
+  dpl_ctx_unlock(conn->ctx);
 }
 
 /**
@@ -521,11 +521,12 @@ dpl_conn_terminate(dpl_conn_t *conn)
 
   ctx = conn->ctx;
 
-  pthread_mutex_lock(&ctx->lock);
+  dpl_ctx_lock(ctx);
 
+  assert(conn->type == DPL_CONN_TYPE_HTTP);
   dpl_conn_terminate_nolock(conn);
 
-  pthread_mutex_unlock(&ctx->lock);
+  dpl_ctx_unlock(ctx);
 }
 
 dpl_status_t
@@ -724,13 +725,12 @@ dpl_conn_writev_all(dpl_conn_t *conn,
  */
 dpl_conn_t *
 dpl_conn_open_file(dpl_ctx_t *ctx,
-                   const char *path,
-                   mode_t mode)
+                   int fd)
 {
   dpl_conn_t *conn = NULL;
   time_t now = time(0);
 
-  DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open_file %s", path);
+  DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open_file fd=%d", fd);
 
   DPRINTF("allocate new conn\n");
 
@@ -747,17 +747,9 @@ dpl_conn_open_file(dpl_ctx_t *ctx,
   conn->type = DPL_CONN_TYPE_FILE;
   conn->ctx = ctx;
   conn->read_buf_size = ctx->read_buf_size;
-  conn->fd = -1;
+  conn->fd = fd;
 
   if ((conn->read_buf = malloc(conn->read_buf_size)) == NULL)
-    {
-      dpl_conn_free(conn);
-      conn = NULL;
-      goto end;
-    }
-
-  conn->fd = open(path, O_RDWR, mode);
-  if (-1 == conn->fd)
     {
       dpl_conn_free(conn);
       conn = NULL;

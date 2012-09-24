@@ -46,6 +46,8 @@
 #define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 //#define DPRINTF(fmt,...)
 
+#define XATTR_PREFIX "user."
+
 dpl_status_t
 dpl_posix_make_bucket(dpl_ctx_t *ctx,
                      const char *bucket,
@@ -212,40 +214,117 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-do_create(dpl_ftype_t object_type,
-          char *path,
-          mode_t mode)
+cb_posix_setattr(dpl_dict_var_t *var,
+                 void *cb_arg)
 {
-  dpl_status_t ret;
+  char *path = (char *) cb_arg;
   int iret;
+  char buf[256];
 
-  switch (object_type)
-    {
-    case DPL_FTYPE_UNDEF:
-    case DPL_FTYPE_ANY:
-    case DPL_FTYPE_CAP:
-    case DPL_FTYPE_DOM:
-      ret = DPL_EINVAL;
-      goto end;
-    case DPL_FTYPE_DIR:
-      iret = mkdir(path, 0700);
-      break ;
-    case DPL_FTYPE_REG:
-      iret = mknod(path, S_IFREG|0600, -1);
-      break ;
-    }
+  assert(var->val->type == DPL_VALUE_STRING);
 
+  snprintf(buf, sizeof (buf), "%s%s", XATTR_PREFIX, var->key);
+ 
+  iret = lsetxattr(path, buf, var->val->string, strlen(var->val->string), 0);
   if (-1 == iret)
     {
-      perror("mknod");
-      ret = DPL_FAILURE;
-      goto end;
+      perror("lsetxattr");
+      return DPL_FAILURE;
     }
 
+  return DPL_SUCCESS;
+}
+
+static dpl_status_t
+posix_setattr(const char *path,
+              const dpl_dict_t *metadata,
+              const dpl_sysmd_t *sysmd)
+{
+  dpl_status_t ret, ret2;
+  int iret;
+
+  if (sysmd)
+    {
+      switch (sysmd->mask)
+        {
+        case DPL_SYSMD_MASK_SIZE:
+          iret = truncate(path, sysmd->size);
+          if (-1 == iret)
+            {
+              perror("truncate");
+              ret = DPL_FAILURE;
+              goto end;
+            }
+          break ;
+        case DPL_SYSMD_MASK_CANNED_ACL:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_STORAGE_CLASS:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_ATIME:
+        case DPL_SYSMD_MASK_MTIME:
+          {
+            struct utimbuf times;
+            
+            times.actime = sysmd->atime;
+            times.modtime = sysmd->mtime;
+            iret = utime(path, &times);
+            if (-1 == iret)
+              {
+                perror("utime");
+                ret = DPL_FAILURE;
+                goto end;
+              }
+          }
+          break ;
+        case DPL_SYSMD_MASK_CTIME:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_ETAG:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_LOCATION_CONSTRAINT:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_OWNER:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_GROUP:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_ACL:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_ID:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_PARENT_ID:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_FTYPE:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        case DPL_SYSMD_MASK_ENTERPRISE_NUMBER:
+          ret = DPL_ENOTSUPP;
+          goto end;
+        }
+    }
+
+  if (metadata)
+    {
+      ret2 = dpl_dict_iterate(metadata, cb_posix_setattr, (char *) path);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+     
   ret = DPL_SUCCESS;
   
  end:
-
+  
   return ret;
 }
 
@@ -269,10 +348,56 @@ dpl_posix_post(dpl_ctx_t *ctx,
   char id[256];
   struct stat st;
   char *native_id = NULL;
+  ssize_t cc;
+  int fd = -1;
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
-  ret2 = do_create(object_type, path, 0700);
+  switch (object_type)
+    {
+    case DPL_FTYPE_UNDEF:
+    case DPL_FTYPE_ANY:
+    case DPL_FTYPE_CAP:
+    case DPL_FTYPE_DOM:
+      ret = DPL_EINVAL;
+      goto end;
+    case DPL_FTYPE_DIR:
+      iret = mkdir(path, 0700);
+      if (-1 == iret)
+        {
+          perror("mknod");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      break ;
+    case DPL_FTYPE_REG:
+      fd = creat(path, -1);
+      if (-1 == fd)
+        {
+          perror("creat");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      break ;
+    }
+
+  if (DPL_FTYPE_REG == object_type)
+    {
+      cc = write(fd, data_buf, data_len);
+      if (-1 == cc)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      
+      if (data_len != cc)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+    }
+
+  ret2 = posix_setattr(path, metadata, sysmd);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -306,6 +431,9 @@ dpl_posix_post(dpl_ctx_t *ctx,
 
  end:
 
+  if (-1 != fd)
+    close(fd);
+
   if (NULL != native_id)
     free(native_id);
 
@@ -326,17 +454,46 @@ dpl_posix_post_buffered(dpl_ctx_t *ctx,
                        char **locationp)
 {
   dpl_conn_t *conn = NULL;
-  dpl_status_t ret;
+  dpl_status_t ret, ret2;
   char path[MAXPATHLEN];
+  int fd = -1;
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
-  conn = dpl_conn_open_file(ctx, path, 0700);
+  switch (object_type)
+    {
+    case DPL_FTYPE_UNDEF:
+    case DPL_FTYPE_ANY:
+    case DPL_FTYPE_CAP:
+    case DPL_FTYPE_DOM:
+    case DPL_FTYPE_DIR:
+      ret = DPL_EINVAL;
+      goto end;
+    case DPL_FTYPE_REG:
+      fd = creat(path, 0700);
+      if (-1 == fd)
+        {
+          perror("mknod");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      break ;
+    }
+
+  ret2 = posix_setattr(path, metadata, sysmd);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  conn = dpl_conn_open_file(ctx, fd);
   if (NULL == conn)
     {
       ret = DPL_FAILURE;
       goto end;
     }
+  fd = -1;
 
   if (NULL != connp)
     {
@@ -350,6 +507,9 @@ dpl_posix_post_buffered(dpl_ctx_t *ctx,
 
   if (NULL != conn)
     dpl_conn_release(conn);
+
+  if (-1 == fd)
+    close(fd);
 
   return ret;
 }
@@ -366,23 +526,9 @@ dpl_posix_put(dpl_ctx_t *ctx,
              unsigned int data_len,
              char **locationp)
 {
-  dpl_status_t ret, ret2;
-  char path[MAXPATHLEN];
-
-  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
-
-  ret2 = do_create(object_type, path, 0700);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
+  return dpl_posix_put_range(ctx, bucket, resource, subresource,
+                             object_type, NULL, metadata, sysmd,
+                             data_buf, data_len, locationp);
 }
 
 dpl_status_t
@@ -399,11 +545,87 @@ dpl_posix_put_range(dpl_ctx_t *ctx,
                     char **locationp)
 {
   dpl_status_t ret, ret2;
+  int iret;
   char path[MAXPATHLEN];
+  ssize_t cc;
+  int fd = -1;
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
-  ret2 = do_create(object_type, path, 0700);
+  switch (object_type)
+    {
+    case DPL_FTYPE_UNDEF:
+    case DPL_FTYPE_ANY:
+    case DPL_FTYPE_CAP:
+    case DPL_FTYPE_DOM:
+      ret = DPL_EINVAL;
+      goto end;
+    case DPL_FTYPE_DIR:
+      iret = mkdir(path, 0700);
+      if (-1 == iret)
+        {
+          perror("mknod");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      break ;
+    case DPL_FTYPE_REG:
+      fd = creat(path, -1);
+      if (-1 == fd)
+        {
+          perror("creat");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      break ;
+    }
+
+  if (DPL_FTYPE_REG == object_type)
+    {
+      uint64_t offset, length;
+
+      if (range)
+        {
+          int range_len;
+
+          offset = range->start;
+          range_len = range->start - range->end;
+          if (data_len > range_len)
+            {
+              ret = DPL_EINVAL;
+              goto end;
+            }
+
+          length = data_len;
+        }
+      else
+        {
+          offset = 0;
+          length = data_len;
+        }
+
+      iret = ftruncate(fd, offset + length);
+      if (-1 == iret)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+
+      cc = pwrite(fd, data_buf, length, offset);
+      if (-1 == cc)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      
+      if (data_len != cc)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+    }
+
+  ret2 = posix_setattr(path, metadata, sysmd);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -413,6 +635,9 @@ dpl_posix_put_range(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (-1 != fd)
+    close(fd);
 
   return ret;
 }
@@ -429,7 +654,9 @@ dpl_posix_put_buffered(dpl_ctx_t *ctx,
                        dpl_conn_t **connp,
                        char **locationp)
 {
-  return DPL_ENOTSUPP;
+  return dpl_posix_put_range_buffered(ctx, bucket, resource, subresource,
+                                      object_type, NULL, metadata, sysmd,
+                                      data_len, connp, locationp);
 }
 
 dpl_status_t
@@ -445,7 +672,86 @@ dpl_posix_put_range_buffered(dpl_ctx_t *ctx,
                              dpl_conn_t **connp,
                              char **locationp)
 {
-  return DPL_ENOTSUPP;
+  dpl_conn_t *conn = NULL;
+  dpl_status_t ret, ret2;
+  char path[MAXPATHLEN];
+  int fd = -1;
+  int iret;
+
+  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
+
+  switch (object_type)
+    {
+    case DPL_FTYPE_UNDEF:
+    case DPL_FTYPE_ANY:
+    case DPL_FTYPE_CAP:
+    case DPL_FTYPE_DOM:
+    case DPL_FTYPE_DIR:
+      ret = DPL_EINVAL;
+      goto end;
+    case DPL_FTYPE_REG:
+      fd = creat(path, 0700);
+      if (-1 == fd)
+        {
+          perror("mknod");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      break ;
+    }
+
+  ret2 = posix_setattr(path, metadata, sysmd);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (range)
+    {
+      int range_len;
+      
+      range_len = range->start - range->end;
+      if (data_len > range_len)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+
+      iret = lseek(fd, range->start, SEEK_SET);
+      if (-1 == iret)
+        {
+          perror("lseek");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+    }
+
+  conn = dpl_conn_open_file(ctx, fd);
+  if (NULL == conn)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+  fd = -1;
+
+  if (NULL != connp)
+    {
+      *connp = conn;
+      conn = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != conn)
+    dpl_conn_release(conn);
+
+  if (-1 == fd)
+    close(fd);
+
+  return ret;
 }
 
 dpl_status_t
@@ -461,7 +767,10 @@ dpl_posix_get(dpl_ctx_t *ctx,
              dpl_sysmd_t *sysmdp,
              char **locationp)
 {
-  return DPL_ENOTSUPP;
+  return dpl_posix_get_range(ctx, bucket, resource, subresource, 
+                             object_type, condition, NULL, 
+                             data_bufp, data_lenp, 
+                             metadatap, sysmdp, locationp);
 }
 
 dpl_status_t
@@ -478,7 +787,108 @@ dpl_posix_get_range(dpl_ctx_t *ctx,
                     dpl_sysmd_t *sysmdp,
                     char **locationp)
 {
-  return DPL_ENOTSUPP;
+  dpl_status_t ret;
+  int iret;
+  char path[MAXPATHLEN];
+  ssize_t cc;
+  int fd = -1;
+  uint64_t offset, length;
+  struct stat st;
+  u_int data_len;
+  char *data_buf = NULL;
+
+  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
+
+  switch (object_type)
+    {
+    case DPL_FTYPE_UNDEF:
+    case DPL_FTYPE_CAP:
+    case DPL_FTYPE_DIR:
+    case DPL_FTYPE_DOM:
+      ret = DPL_EINVAL;
+      goto end;
+    case DPL_FTYPE_ANY:
+    case DPL_FTYPE_REG:
+      fd = open(path, O_RDONLY);
+      if (-1 == fd)
+        {
+          perror("open");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      break ;
+    }
+
+  iret = fstat(fd, &st);
+  if (-1 == iret)
+    {
+      perror("fstat");
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  data_len = st.st_size;
+
+  if (range)
+    {
+      int range_len;
+      
+      offset = range->start;
+      range_len = range->start - range->end;
+      if (data_len > range_len)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+      
+      length = data_len;
+    }
+  else
+    {
+      offset = 0;
+      length = data_len;
+    }
+
+  data_buf = malloc(length);
+  if (NULL == data_buf)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  cc = pread(fd, data_buf, length, offset);
+  if (-1 == cc)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+  
+  if (data_len != cc)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  if (NULL != data_lenp)
+    *data_lenp = length;
+
+  if (NULL != data_bufp)
+    {
+      *data_bufp = data_buf;
+      data_buf = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != data_buf)
+    free(data_buf);
+
+  if (-1 != fd)
+    close(fd);
+
+  return ret;
 }
 
 dpl_status_t
@@ -493,7 +903,54 @@ dpl_posix_get_buffered(dpl_ctx_t *ctx,
                       void *cb_arg,
                       char **locationp)
 {
-  return DPL_ENOTSUPP;
+  return dpl_posix_get_range_buffered(ctx, bucket, resource, subresource, 
+                                      object_type, condition, NULL,
+                                      header_func, buffer_func, 
+                                      cb_arg, locationp);
+}
+
+struct get_conven
+{
+  dpl_header_func_t header_func;
+  dpl_buffer_func_t buffer_func;
+  void *cb_arg;
+  int connection_close;
+};
+
+static dpl_status_t
+cb_get_header(dpl_dict_var_t *var,
+              void *cb_arg)
+{
+  struct get_conven *gc = (struct get_conven *) cb_arg;
+  int ret;
+
+  if (NULL != gc->header_func)
+    {
+      assert(var->val->type == DPL_VALUE_STRING);
+      ret = gc->header_func(gc->cb_arg, var->key, var->val->string);
+      if (DPL_SUCCESS != ret)
+        return ret;
+    }
+
+  return DPL_SUCCESS;
+}
+
+static dpl_status_t
+cb_get_buffer(void *cb_arg,
+              char *buf,
+              unsigned int len)
+{
+  struct get_conven *gc = (struct get_conven *) cb_arg;
+  int ret;
+
+  if (NULL != gc->buffer_func)
+    {
+      ret = gc->buffer_func(gc->cb_arg, buf, len);
+      if (DPL_SUCCESS != ret)
+        return ret;
+    }
+
+  return DPL_SUCCESS;
 }
 
 dpl_status_t
@@ -509,7 +966,100 @@ dpl_posix_get_range_buffered(dpl_ctx_t *ctx,
                              void *cb_arg,
                              char **locationp)
 {
-  return DPL_ENOTSUPP;
+  dpl_status_t ret, ret2;
+  char path[MAXPATHLEN];
+  int fd = -1;
+  int iret;
+  char buf[8192];
+  ssize_t cc;
+  dpl_dict_t *all_mds = NULL;
+  struct get_conven gc;
+
+  memset(&gc, 0, sizeof (gc));
+  gc.header_func = header_func;
+  gc.buffer_func = buffer_func;
+  gc.cb_arg = cb_arg;
+
+  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
+
+  switch (object_type)
+    {
+    case DPL_FTYPE_UNDEF:
+    case DPL_FTYPE_CAP:
+    case DPL_FTYPE_DOM:
+    case DPL_FTYPE_DIR:
+      ret = DPL_EINVAL;
+      goto end;
+    case DPL_FTYPE_ANY:
+    case DPL_FTYPE_REG:
+      fd = open(path, O_RDONLY);
+      if (-1 == fd)
+        {
+          perror("open");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      break ;
+    }
+
+  if (range)
+    {
+      iret = lseek(fd, range->start, SEEK_SET);
+      if (-1 == iret)
+        {
+          perror("lseek");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+    }
+
+  ret2 = dpl_posix_head_all(ctx, bucket, resource, subresource, 
+                            object_type, condition, &all_mds, locationp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_dict_iterate(all_mds, cb_get_header, &gc);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  while (1)
+    {
+      cc = read(fd, buf, sizeof (buf));
+      if (-1 == cc)
+        {
+          perror("read");
+          ret = DPL_FAILURE;
+          goto end;
+        }
+
+      ret2 = cb_get_buffer(&gc, buf, cc);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+      
+      if (0 == cc)
+        break ;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != all_mds)
+    dpl_dict_free(all_mds);
+
+  if (-1 == fd)
+    close(fd);
+
+  return ret;
 }
 
 dpl_status_t
@@ -528,6 +1078,10 @@ dpl_posix_head_all(dpl_ctx_t *ctx,
   struct stat st;
   char buf[256];
   dpl_dict_t *metadata = NULL;
+  char xattr[64*1024];
+  ssize_t ssize_ret, off;
+  dpl_dict_t *subdict = NULL;
+  dpl_value_t value;
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
@@ -649,6 +1203,64 @@ dpl_posix_head_all(dpl_ctx_t *ctx,
       goto end;
     }
 
+  subdict = dpl_dict_new(13);
+  if (NULL == subdict)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  ssize_ret = llistxattr(path, xattr, sizeof (xattr));
+  if (-1 == ssize_ret)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  off = 0;
+  while (off < ssize_ret)
+    {
+      char *key;
+      int key_len;
+      ssize_t val_len;
+      
+      key = (xattr + off);
+      key_len = strlen(key);
+
+      val_len = lgetxattr(path, key, buf, sizeof (buf) - 1);
+      if (val_len == -1)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+
+      if (strncmp(key, XATTR_PREFIX, strlen(XATTR_PREFIX)))
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+
+      buf[val_len] = 0;
+      ret2 = dpl_dict_add(subdict, key + strlen(XATTR_PREFIX), buf, 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      off += key_len + 1;
+    }
+
+  value.type = DPL_VALUE_SUBDICT;
+  value.subdict = subdict;
+  subdict = NULL;
+  ret2 = dpl_dict_add_value(metadata, "xattr", &value, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
   if (NULL != metadatap)
     {
       *metadatap = metadata;
@@ -657,6 +1269,132 @@ dpl_posix_head_all(dpl_ctx_t *ctx,
 
   ret = DPL_SUCCESS;
 
+ end:
+
+  if (NULL != subdict)
+    dpl_dict_free(subdict);
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
+  return ret;
+}
+
+dpl_status_t 
+dpl_posix_get_metadata_from_headers(const dpl_dict_t *all_mds, 
+                                    dpl_dict_t **metadatap, 
+                                    dpl_sysmd_t *sysmdp)
+{
+  dpl_status_t ret, ret2;
+  dpl_dict_t *metadata = NULL;
+  dpl_dict_var_t *var;
+  int iret;
+  char buf[256];
+
+  if (sysmdp)
+    {
+      sysmdp->mask = 0;
+
+      var = dpl_dict_get(all_mds, "atime");
+      if (var)
+        {
+          assert(var->val->type == DPL_VALUE_STRING);
+          sysmdp->atime = strtoul(var->val->string, NULL, 0);
+          sysmdp->mask |= DPL_SYSMD_MASK_ATIME;
+        }
+
+      var = dpl_dict_get(all_mds, "mtime");
+      if (var)
+        {
+          assert(var->val->type == DPL_VALUE_STRING);
+          sysmdp->mtime = strtoul(var->val->string, NULL, 0);
+          sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
+        }
+
+      var = dpl_dict_get(all_mds, "ctime");
+      if (var)
+        {
+          assert(var->val->type == DPL_VALUE_STRING);
+          sysmdp->ctime = strtoul(var->val->string, NULL, 0);
+          sysmdp->mask |= DPL_SYSMD_MASK_CTIME;
+        }
+
+      var = dpl_dict_get(all_mds, "size");
+      if (var)
+        {
+          assert(var->val->type == DPL_VALUE_STRING);
+          sysmdp->size = strtoul(var->val->string, NULL, 0);
+          sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
+        }
+
+      var = dpl_dict_get(all_mds, "uid");
+      if (var)
+        {
+          uid_t uid;
+          struct passwd pwd, *pwdp;
+
+          assert(var->val->type == DPL_VALUE_STRING);
+          uid = atoi(var->val->string);
+          iret = getpwuid_r(uid, &pwd, buf, sizeof (buf), &pwdp);
+          if (iret == -1)
+            {
+              perror("getpwuid");
+              ret = DPL_FAILURE;
+              goto end;
+            }
+          snprintf(sysmdp->owner, sizeof (sysmdp->owner), "%s", pwdp->pw_name);
+          sysmdp->mask |= DPL_SYSMD_MASK_OWNER;
+        }
+
+      var = dpl_dict_get(all_mds, "gid");
+      if (var)
+        {
+          gid_t gid;
+          struct group grp, *grpp;
+
+          assert(var->val->type == DPL_VALUE_STRING);
+          gid = atoi(var->val->string);
+          iret = getgrgid_r(gid, &grp, buf, sizeof (buf), &grpp);
+          if (iret == -1)
+            {
+              perror("getgrgid");
+              ret = DPL_FAILURE;
+              goto end;
+            }
+          snprintf(sysmdp->group, sizeof (sysmdp->group), "%s", grpp->gr_name);
+          sysmdp->mask |= DPL_SYSMD_MASK_GROUP;
+        }
+    }
+
+  //find the xattr
+  ret2 = dpl_dict_get_lowered(all_mds, "xattr", &var);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (DPL_VALUE_SUBDICT != var->val->type)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
+  metadata = dpl_dict_dup(var->val->subdict);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
  end:
 
   if (NULL != metadata)
@@ -677,127 +1415,32 @@ dpl_posix_head(dpl_ctx_t *ctx,
               char **locationp)
 {
   dpl_status_t ret, ret2;
-  dpl_dict_t *sys_metadata = NULL;
-  dpl_dict_t *metadata = NULL;
-  ssize_t ssize_ret;
+  dpl_dict_t *all_mds = NULL;
   char path[MAXPATHLEN];
-  char xattr[64*1024];
-  dpl_dict_var_t *var;
-  int iret;
-  char buf[256];
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
   ret2 = dpl_posix_head_all(ctx, bucket, resource, subresource, 
-                            object_type, condition, &sys_metadata, locationp);
+                            object_type, condition, &all_mds, locationp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
 
-  if (sysmdp)
+  ret2 = dpl_posix_get_metadata_from_headers(all_mds, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2)
     {
-      var = dpl_dict_get(sys_metadata, "atime");
-      if (var)
-        {
-          assert(var->val->type == DPL_VALUE_STRING);
-          sysmdp->atime = strtoul(var->val->string, NULL, 0);
-          sysmdp->mask |= DPL_SYSMD_MASK_ATIME;
-        }
-
-      var = dpl_dict_get(sys_metadata, "mtime");
-      if (var)
-        {
-          assert(var->val->type == DPL_VALUE_STRING);
-          sysmdp->mtime = strtoul(var->val->string, NULL, 0);
-          sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
-        }
-
-      var = dpl_dict_get(sys_metadata, "ctime");
-      if (var)
-        {
-          assert(var->val->type == DPL_VALUE_STRING);
-          sysmdp->ctime = strtoul(var->val->string, NULL, 0);
-          sysmdp->mask |= DPL_SYSMD_MASK_CTIME;
-        }
-
-      var = dpl_dict_get(sys_metadata, "size");
-      if (var)
-        {
-          assert(var->val->type == DPL_VALUE_STRING);
-          sysmdp->size = strtoul(var->val->string, NULL, 0);
-          sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
-        }
-
-      var = dpl_dict_get(sys_metadata, "uid");
-      if (var)
-        {
-          uid_t uid;
-          struct passwd pwd, *pwdp;
-
-          assert(var->val->type == DPL_VALUE_STRING);
-          uid = atoi(var->val->string);
-          iret = getpwuid_r(uid, &pwd, buf, sizeof (buf), &pwdp);
-          if (iret == -1)
-            {
-              perror("getpwuid");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-          snprintf(sysmdp->owner, sizeof (sysmdp->owner), "%s", pwdp->pw_name);
-          sysmdp->mask |= DPL_SYSMD_MASK_OWNER;
-        }
-
-      var = dpl_dict_get(sys_metadata, "gid");
-      if (var)
-        {
-          gid_t gid;
-          struct group grp, *grpp;
-
-          assert(var->val->type == DPL_VALUE_STRING);
-          gid = atoi(var->val->string);
-          iret = getgrgid_r(gid, &grp, buf, sizeof (buf), &grpp);
-          if (iret == -1)
-            {
-              perror("getgrgid");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-          snprintf(sysmdp->group, sizeof (sysmdp->group), "%s", grpp->gr_name);
-          sysmdp->mask |= DPL_SYSMD_MASK_GROUP;
-        }
-    }
-
-  ssize_ret = llistxattr(path, xattr, sizeof (xattr));
-  if (-1 == ssize_ret)
-    {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
-    }
-
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
     }
 
   ret = DPL_SUCCESS;
   
  end:
 
-  if (NULL != sys_metadata)
-    dpl_dict_free(sys_metadata);
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
+  if (NULL != all_mds)
+    dpl_dict_free(all_mds);
 
   return ret;
 }
@@ -872,7 +1515,7 @@ dpl_posix_copy(dpl_ctx_t *ctx,
               const dpl_condition_t *condition,
               char **locationp)
 {
-  dpl_status_t ret;//, ret2;
+  dpl_status_t ret, ret2;
   int iret;
   char src_path[MAXPATHLEN];
   char dst_path[MAXPATHLEN];
@@ -893,70 +1536,14 @@ dpl_posix_copy(dpl_ctx_t *ctx,
           ret = DPL_EINVAL;
           goto end;
         }
-      switch (sysmd->mask)
-        {
-        case DPL_SYSMD_MASK_SIZE:
-          iret = truncate(src_path, sysmd->size);
-          if (-1 == iret)
-            {
-              perror("truncate");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-          break ;
-        case DPL_SYSMD_MASK_CANNED_ACL:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_STORAGE_CLASS:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_ATIME:
-        case DPL_SYSMD_MASK_MTIME:
-          {
-            struct utimbuf times;
 
-            times.actime = sysmd->atime;
-            times.modtime = sysmd->mtime;
-            iret = utime(src_path, &times);
-            if (-1 == iret)
-              {
-                perror("utime");
-                ret = DPL_FAILURE;
-                goto end;
-              }
-          }
-          break ;
-        case DPL_SYSMD_MASK_CTIME:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_ETAG:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_LOCATION_CONSTRAINT:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_OWNER:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_GROUP:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_ACL:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_ID:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_PARENT_ID:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_FTYPE:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_ENTERPRISE_NUMBER:
-          ret = DPL_ENOTSUPP;
+      ret2 = posix_setattr(src_path, metadata, sysmd);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
           goto end;
         }
+
       break ;
     case DPL_COPY_DIRECTIVE_LINK:
       iret = link(src_path, dst_path);

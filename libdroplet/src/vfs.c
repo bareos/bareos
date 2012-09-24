@@ -792,7 +792,7 @@ dpl_cwd(dpl_ctx_t *ctx,
   dpl_dict_var_t *var;
   dpl_fqn_t cwd;
 
-  pthread_mutex_lock(&ctx->lock);
+  dpl_ctx_lock(ctx);
   var = dpl_dict_get(ctx->cwds, bucket);
   if (NULL != var)
     {
@@ -801,7 +801,7 @@ dpl_cwd(dpl_ctx_t *ctx,
     }
   else
     cwd = DPL_ROOT_FQN;
-  pthread_mutex_unlock(&ctx->lock);
+  dpl_ctx_unlock(ctx);
 
   return cwd;
 }
@@ -850,9 +850,9 @@ dpl_opendir(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = ENOMEM;
@@ -955,9 +955,9 @@ dpl_chdir(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = DPL_ENOMEM;
@@ -983,13 +983,13 @@ dpl_chdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  pthread_mutex_lock(&ctx->lock);
+  dpl_ctx_lock(ctx);
   if (strcmp(bucket, ctx->cur_bucket))
     {
       nbucket = strdup(bucket);
       if (NULL == nbucket)
         {
-          pthread_mutex_unlock(&ctx->lock);
+          dpl_ctx_unlock(ctx);
           ret = DPL_ENOMEM;
           goto end;
         }
@@ -998,7 +998,7 @@ dpl_chdir(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_dict_add(ctx->cwds, ctx->cur_bucket, obj_fqn.path, 0);
-  pthread_mutex_unlock(&ctx->lock);
+  dpl_ctx_unlock(ctx);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1061,9 +1061,9 @@ dpl_mkgen(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = DPL_ENOMEM;
@@ -1208,9 +1208,9 @@ dpl_rmdir_ex(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = DPL_ENOMEM;
@@ -1290,40 +1290,43 @@ dpl_close_ex(dpl_vfile_t *vfile,
         }
       else
         {
-          ret2 = dpl_read_http_reply(vfile->conn, 1, NULL, NULL, &headers_returned, &connection_close);
-          if (DPL_SUCCESS != ret2)
+          if (vfile->conn->type == DPL_CONN_TYPE_HTTP)
             {
-              //too common to print
-              //fprintf(stderr, "read http_reply failed %s (%d)\n", dpl_status_str(ret2), ret2);
-              ret = ret2;
-            }
-          else
-            {
-              if (vfile->flags & DPL_VFILE_FLAG_MD5)
+              ret2 = dpl_read_http_reply(vfile->conn, 1, NULL, NULL, &headers_returned, &connection_close);
+              if (DPL_SUCCESS != ret2)
                 {
-                  ret2 = dpl_dict_get_lowered(headers_returned, "Content-MD5", &var);
-                  if (DPL_SUCCESS != ret2 || NULL == var)
+                  //too common to print
+                  //fprintf(stderr, "read http_reply failed %s (%d)\n", dpl_status_str(ret2), ret2);
+                  ret = ret2;
+                }
+              else
+                {
+                  if (vfile->flags & DPL_VFILE_FLAG_MD5)
                     {
-                      fprintf(stderr, "missing 'Content-MD5' in answer\n");
-                      //XXX ret = DPL_FAILURE;
-                    }
-                  else
-                    {
-                      //compare MD5's
-                      u_char digest[MD5_DIGEST_LENGTH];
-                      char bcd_digest[DPL_BCD_LENGTH(MD5_DIGEST_LENGTH) + 1];
-                      u_int bcd_digest_len;
-                      
-                      MD5_Final(digest, &vfile->md5_ctx);
-                      
-                      bcd_digest_len = dpl_bcd_encode(digest, MD5_DIGEST_LENGTH, bcd_digest);
-                      bcd_digest[bcd_digest_len] = 0;
-                      
-                      //skip quotes
-                      assert(var->val->type == DPL_VALUE_STRING);
-                      if (strncmp(var->val->string + 1, bcd_digest, DPL_BCD_LENGTH(MD5_DIGEST_LENGTH)))
+                      ret2 = dpl_dict_get_lowered(headers_returned, "Content-MD5", &var);
+                      if (DPL_SUCCESS != ret2 || NULL == var)
                         {
-                          fprintf(stderr, "MD5 checksum dont match\n");
+                          fprintf(stderr, "missing 'Content-MD5' in answer\n");
+                          //XXX ret = DPL_FAILURE;
+                        }
+                      else
+                        {
+                          //compare MD5's
+                          u_char digest[MD5_DIGEST_LENGTH];
+                          char bcd_digest[DPL_BCD_LENGTH(MD5_DIGEST_LENGTH) + 1];
+                          u_int bcd_digest_len;
+                          
+                          MD5_Final(digest, &vfile->md5_ctx);
+                          
+                          bcd_digest_len = dpl_bcd_encode(digest, MD5_DIGEST_LENGTH, bcd_digest);
+                          bcd_digest[bcd_digest_len] = 0;
+                          
+                          //skip quotes
+                          assert(var->val->type == DPL_VALUE_STRING);
+                          if (strncmp(var->val->string + 1, bcd_digest, DPL_BCD_LENGTH(MD5_DIGEST_LENGTH)))
+                            {
+                              fprintf(stderr, "MD5 checksum dont match\n");
+                            }
                         }
                     }
                 }
@@ -1500,9 +1503,9 @@ dpl_openwrite(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = DPL_ENOMEM;
@@ -1855,13 +1858,13 @@ cb_vfile_header(void *cb_arg,
       goto end;
     }
 
-  if (!strcmp(header, "x-amz-meta-cipher"))
-    {
-      if (!strcmp(value, "yes"))
-        {
-          vfile->flags |= DPL_VFILE_FLAG_ENCRYPT;
-        }
-    }
+  //if (!strcmp(header, "x-amz-meta-cipher"))
+  //{
+  //if (!strcmp(value, "yes"))
+  //{
+  //vfile->flags |= DPL_VFILE_FLAG_ENCRYPT;
+  //}
+  //}
 
   //XXX check cipher-type
 
@@ -2024,9 +2027,9 @@ dpl_openread(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = DPL_ENOMEM;
@@ -2098,15 +2101,15 @@ dpl_openread(dpl_ctx_t *ctx,
           ret = ret2;
           goto end;
         }
+
+      ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, &metadata, sysmdp);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
 
-  ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, &metadata, sysmdp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
   if (NULL != metadatap)
     {
       *metadatap = metadata;
@@ -2171,9 +2174,9 @@ dpl_unlink(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = DPL_ENOMEM;
@@ -2255,9 +2258,9 @@ dpl_getattr(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = DPL_ENOMEM;
@@ -2332,9 +2335,9 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = DPL_ENOMEM;
@@ -2410,9 +2413,9 @@ dpl_setattr(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = DPL_ENOMEM;
@@ -2427,12 +2430,6 @@ dpl_setattr(dpl_ctx_t *ctx,
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
-      goto end;
-    }
-
-  if (DPL_FTYPE_REG != obj_type)
-    {
-      ret = DPL_EISDIR;
       goto end;
     }
 
@@ -2502,9 +2499,9 @@ copy_path_to_path(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       src_bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == src_bucket)
         {
           ret = DPL_ENOMEM;
@@ -2535,9 +2532,9 @@ copy_path_to_path(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       dst_bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == dst_bucket)
         {
           ret = DPL_ENOMEM;
@@ -2671,9 +2668,9 @@ copy_id_to_path(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       dst_bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == dst_bucket)
         {
           ret = DPL_ENOMEM;
@@ -2898,9 +2895,9 @@ dpl_fgenurl(dpl_ctx_t *ctx,
     }
   else
     {
-      pthread_mutex_lock(&ctx->lock);
+      dpl_ctx_lock(ctx);
       bucket = strdup(ctx->cur_bucket);
-      pthread_mutex_unlock(&ctx->lock);
+      dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
           ret = DPL_ENOMEM;

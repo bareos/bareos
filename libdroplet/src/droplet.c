@@ -96,6 +96,22 @@ dpl_free()
   ERR_free_strings();
 }
 
+void
+dpl_ctx_lock(dpl_ctx_t *ctx)
+{
+  pthread_mutex_lock(&ctx->lock);
+  assert(0 == ctx->canary);
+  ctx->canary++;
+}
+
+void
+dpl_ctx_unlock(dpl_ctx_t *ctx)
+{
+  ctx->canary--;
+  assert(0 == ctx->canary);
+  pthread_mutex_unlock(&ctx->lock);
+}
+
 dpl_ctx_t *
 dpl_ctx_new(const char *droplet_dir,
             const char *profile_name)
