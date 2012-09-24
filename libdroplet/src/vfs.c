@@ -1437,6 +1437,8 @@ encrypt_init(dpl_vfile_t *vfile,
  * @param flags DPL_VFILE_FLAG_ENCRYPT encrypt on the fly
  * @param flags DPL_VFILE_FLAG_POST use POST to write/creat file
  * @param flags DPL_VFILE_FLAG_ONESHOT put is done in one shot
+ * @param flags DPL_VFILE_FLAG_RANGE put range
+ * @param range
  * @param metadata 
  * @param sysmd 
  * @param data_len 
@@ -1452,6 +1454,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
               const char *locator,
               dpl_ftype_t object_type,
               dpl_vfile_flag_t flags,
+              dpl_range_t *range,
               dpl_dict_t *metadata,
               dpl_sysmd_t *sysmd,
               unsigned int data_len,
@@ -1470,6 +1473,12 @@ dpl_openwrite(dpl_ctx_t *ctx,
   int own_metadata = 0;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "openwrite locator=%s flags=0x%x", locator, flags);
+
+  if (flags & DPL_VFILE_FLAG_RANGE && !range)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
 
   nlocator = strdup(locator);
   if (NULL == nlocator)
@@ -1969,8 +1978,7 @@ dpl_openread(dpl_ctx_t *ctx,
              const char *locator,
              dpl_vfile_flag_t flags,
              dpl_condition_t *condition,
-             int range_start,
-             int range_end,
+             dpl_range_t *range,
              dpl_buffer_func_t buffer_func,
              void *cb_arg,
              dpl_dict_t **metadatap,
@@ -1989,6 +1997,12 @@ dpl_openread(dpl_ctx_t *ctx,
   unsigned int data_len;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "openread locator=%s flags=0x%x", locator, flags);
+
+  if (flags & DPL_VFILE_FLAG_RANGE && !range)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
 
   nlocator = strdup(locator);
   if (NULL == nlocator)
@@ -2055,7 +2069,7 @@ dpl_openread(dpl_ctx_t *ctx,
     {
       if (flags & DPL_VFILE_FLAG_RANGE)
         ret2 = dpl_get_range(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
-                             condition, range_start, range_end, &data_buf, &data_len, &metadata, sysmdp);
+                             condition, range->start, range->end, &data_buf, &data_len, &metadata, sysmdp);
       else
         ret2 = dpl_get(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
                        condition, &data_buf, &data_len, &metadata, sysmdp);
@@ -2074,7 +2088,7 @@ dpl_openread(dpl_ctx_t *ctx,
     {
       if (flags & DPL_VFILE_FLAG_RANGE)
         ret2 = dpl_get_range_buffered(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
-                                      condition, range_start, range_end, cb_vfile_header, cb_vfile_buffer, vfile);
+                                      condition, range->start, range->end, cb_vfile_header, cb_vfile_buffer, vfile);
       else
         ret2 = dpl_get_buffered(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
                                 condition, cb_vfile_header, cb_vfile_buffer, vfile);

@@ -42,7 +42,9 @@ typedef dpl_status_t (*dpl_delete_bucket_t)(dpl_ctx_t *ctx, const char *bucket, 
 typedef dpl_status_t (*dpl_post_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, char **native_idp, char **locationp);
 typedef dpl_status_t (*dpl_post_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, const dpl_dict_t *query_params, dpl_conn_t **connp, char **locationp);
 typedef dpl_status_t (*dpl_put_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, char **locationp);
+typedef dpl_status_t (*dpl_put_range_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, int start, int end, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, char **locationp);
 typedef dpl_status_t (*dpl_put_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp, char **locationp);
+typedef dpl_status_t (*dpl_put_range_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, int start, int end, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp, char **locationp);
 typedef dpl_status_t (*dpl_get_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, char **locationp);
 typedef dpl_status_t (*dpl_get_range_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, int start, int end, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, char **locationp);
 typedef dpl_status_t (*dpl_get_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_header_func_t header_func, dpl_buffer_func_t buffer_func, void *cb_arg, char **locationp);
@@ -67,7 +69,9 @@ typedef struct dpl_backend_s
   dpl_post_t post;
   dpl_post_buffered_t post_buffered;
   dpl_put_t put;
+  dpl_put_range_t put_range;
   dpl_put_buffered_t put_buffered;
+  dpl_put_range_buffered_t put_range_buffered;
   dpl_get_t get;
   dpl_get_range_t get_range;
   dpl_get_buffered_t get_buffered;
