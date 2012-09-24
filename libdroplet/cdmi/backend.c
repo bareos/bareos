@@ -444,14 +444,6 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
@@ -665,14 +657,6 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
       goto end;
     }
 
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
@@ -857,14 +841,6 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
@@ -1037,14 +1013,6 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
   if (NULL == conn)
     {
       ret = DPL_ECONNECT;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
       goto end;
     }
 
@@ -1228,14 +1196,6 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
   if (NULL == conn)
     {
       ret = DPL_ECONNECT;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
       goto end;
     }
 
@@ -1489,8 +1449,7 @@ dpl_cdmi_get_range(dpl_ctx_t *ctx,
                    const char *subresource,
                    dpl_ftype_t object_type,
                    const dpl_condition_t *condition,
-                   int start,
-                   int end,
+                   const dpl_range_t *range,
                    char **data_bufp,
                    unsigned int *data_lenp,
                    dpl_dict_t **metadatap,
@@ -1644,14 +1603,6 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
   if (NULL == conn)
     {
       ret = DPL_ECONNECT;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
       goto end;
     }
 
@@ -1897,14 +1848,6 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
@@ -2090,14 +2033,6 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
   if (NULL == conn)
     {
       ret = DPL_ECONNECT;
-      goto end;
-    }
-
-  //bucket emulation
-  ret2 = dpl_dict_add(headers_request, "X-Scality-Bucket", dst_bucket, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
       goto end;
     }
 

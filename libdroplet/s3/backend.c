@@ -1228,8 +1228,7 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
                  const char *subresource,
                  dpl_ftype_t object_type,
                  const dpl_condition_t *condition,
-                 int start,
-                 int end,
+                 const dpl_range_t *range,
                  char **data_bufp,
                  unsigned int *data_lenp,
                  dpl_dict_t **metadatap,
@@ -1294,11 +1293,14 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  ret2 = dpl_req_add_range(req, start, end);
-  if (DPL_SUCCESS != ret2)
+  if (range)
     {
-      ret = ret2;
-      goto end;
+      ret2 = dpl_req_add_range(req, range->start, range->end);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
 
   //build request

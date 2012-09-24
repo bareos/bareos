@@ -2069,7 +2069,7 @@ dpl_openread(dpl_ctx_t *ctx,
     {
       if (flags & DPL_VFILE_FLAG_RANGE)
         ret2 = dpl_get_range(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
-                             condition, range->start, range->end, &data_buf, &data_len, &metadata, sysmdp);
+                             condition, range, &data_buf, &data_len, &metadata, sysmdp);
       else
         ret2 = dpl_get(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
                        condition, &data_buf, &data_len, &metadata, sysmdp);
@@ -2088,7 +2088,7 @@ dpl_openread(dpl_ctx_t *ctx,
     {
       if (flags & DPL_VFILE_FLAG_RANGE)
         ret2 = dpl_get_range_buffered(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
-                                      condition, range->start, range->end, cb_vfile_header, cb_vfile_buffer, vfile);
+                                      condition, range, cb_vfile_header, cb_vfile_buffer, vfile);
       else
         ret2 = dpl_get_buffered(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
                                 condition, cb_vfile_header, cb_vfile_buffer, vfile);

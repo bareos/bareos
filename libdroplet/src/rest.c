@@ -409,8 +409,7 @@ dpl_get_range(dpl_ctx_t *ctx,
               const char *subresource,
               dpl_ftype_t object_type,
               dpl_condition_t *condition,
-              int start,
-              int end,
+              dpl_range_t *range, 
               char **data_bufp,
               unsigned int *data_lenp,
               dpl_dict_t **metadatap,
@@ -426,7 +425,7 @@ dpl_get_range(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap, sysmdp, NULL);
+  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp, NULL);
   
  end:
 
@@ -467,16 +466,15 @@ dpl_get_buffered(dpl_ctx_t *ctx,
 
 dpl_status_t 
 dpl_get_range_buffered(dpl_ctx_t *ctx,
-                    const char *bucket,
-                    const char *resource,
-                    const char *subresource, 
-                    dpl_ftype_t object_type,
-                    dpl_condition_t *condition,
-		    int start,
-		    int end,
-                    dpl_header_func_t header_func, 
-                    dpl_buffer_func_t buffer_func,
-                    void *cb_arg)
+                       const char *bucket,
+                       const char *resource,
+                       const char *subresource, 
+                       dpl_ftype_t object_type,
+                       dpl_condition_t *condition,
+                       dpl_range_t *range,
+                       dpl_header_func_t header_func, 
+                       dpl_buffer_func_t buffer_func,
+                       void *cb_arg)
 {
   int ret;
 
@@ -488,7 +486,7 @@ dpl_get_range_buffered(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_range_buffered(ctx, bucket, resource, subresource, object_type, condition, start, end, header_func, buffer_func, cb_arg, NULL);
+  ret = ctx->backend->get_range_buffered(ctx, bucket, resource, subresource, object_type, condition, range, header_func, buffer_func, cb_arg, NULL);
   
  end:
 

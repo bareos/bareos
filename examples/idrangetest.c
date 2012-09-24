@@ -15,6 +15,7 @@ main(int argc,
   char *id = NULL;
   char *data_buf_returned = NULL;
   u_int data_len_returned;
+  dpl_range_t range;
 
   if (2 != argc)
     {
@@ -70,6 +71,8 @@ main(int argc,
 
   fprintf(stderr, "getting partial object+MD\n");
 
+  range.start = 3;
+  range.end = 5;
   ret = dpl_get_range_id(ctx,           //the context
                          NULL,          //no bucket
                          id,            //the key
@@ -77,7 +80,7 @@ main(int argc,
                          NULL,          //no subresource
                          DPL_FTYPE_REG, //object type
                          NULL,          //no condition of operation
-                         3, 5,          //range
+                         &range,          //range
                          &data_buf_returned,  //data object
                          &data_len_returned,  //data object length
                          NULL,               //no metadata

@@ -399,7 +399,7 @@ dpl_srws_get(dpl_ctx_t *ctx,
              char **locationp)
 {
   return dpl_srws_get_range(ctx,bucket,resource,subresource,object_type,condition,
-			    -1,-1,
+                            NULL,
 			    data_bufp,data_lenp,metadatap,sysmdp,locationp);
 }
 
@@ -410,8 +410,7 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
                    const char *subresource,
                    dpl_ftype_t object_type,
                    const dpl_condition_t *condition,
-                   int start,
-                   int end,
+                   const dpl_range_t *range,
                    char **data_bufp,
                    unsigned int *data_lenp,
                    dpl_dict_t **metadatap,
@@ -463,14 +462,17 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  if ( start > 0 && end > 0 )
+  if (range)
     {
-      ret2 = dpl_req_add_range(req, start, end);
-      if (DPL_SUCCESS != ret2)
-	{
-	  ret = ret2;
-	  goto end;
-	}
+      if ( range->start > 0 && range->end > 0 )
+        {
+          ret2 = dpl_req_add_range(req, range->start, range->end);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
     }
 
   //contact default host
@@ -644,7 +646,7 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
                       char **locationp)
 {
   return dpl_srws_get_range_buffered(ctx,bucket,resource,subresource,object_type,condition,
-				     -1,-1,
+                                     NULL,
 				     header_func, buffer_func, cb_arg, locationp);
 }
 
@@ -655,8 +657,7 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
 			    const char *subresource,
 			    dpl_ftype_t object_type,
 			    const dpl_condition_t *condition,
-			    int start,
-			    int end,
+                            const dpl_range_t *range,
 			    dpl_header_func_t header_func,
 			    dpl_buffer_func_t buffer_func,
 			    void *cb_arg,
@@ -710,14 +711,17 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  if ( start > 0 && end > 0 )
+  if (range)
     {
-      ret2 = dpl_req_add_range(req, start, end);
-      if (DPL_SUCCESS != ret2)
-	{
-	  ret = ret2;
-	  goto end;
-	}
+      if ( range->start > 0 && range->end > 0 )
+        {
+          ret2 = dpl_req_add_range(req, range->start, range->end);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
     }
 
   //contact default host

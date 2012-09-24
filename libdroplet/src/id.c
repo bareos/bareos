@@ -355,8 +355,7 @@ dpl_get_range_id(dpl_ctx_t *ctx,
                  const char *subresource,
                  dpl_ftype_t object_type,
                  dpl_condition_t *condition,
-                 int start,
-                 int end,
+                 dpl_range_t *range,
                  char **data_bufp,
                  unsigned int *data_lenp,
                  dpl_dict_t **metadatap,
@@ -396,7 +395,7 @@ dpl_get_range_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
-  ret = dpl_get_range(ctx, bucket, resource, subresource, object_type, condition, start, end, data_bufp, data_lenp, metadatap, sysmdp);
+  ret = dpl_get_range(ctx, bucket, resource, subresource, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp);
   
  end:
 
@@ -480,8 +479,7 @@ dpl_get_range_buffered_id(dpl_ctx_t *ctx,
                           const char *subresource, 
                           dpl_ftype_t object_type,
                           dpl_condition_t *condition,
-                          int start,
-                          int end,
+                          dpl_range_t *range,
                           dpl_header_func_t header_func, 
                           dpl_buffer_func_t buffer_func,
                           void *cb_arg)
@@ -520,7 +518,7 @@ dpl_get_range_buffered_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
-  ret = dpl_get_range_buffered(ctx, bucket, resource, subresource, object_type, condition, start, end, header_func, buffer_func, cb_arg);
+  ret = dpl_get_range_buffered(ctx, bucket, resource, subresource, object_type, condition, range, header_func, buffer_func, cb_arg);
   
  end:
 
