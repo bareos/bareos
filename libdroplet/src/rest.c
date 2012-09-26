@@ -353,6 +353,24 @@ dpl_put(dpl_ctx_t *ctx,
   return ret;
 }
 
+/** 
+ * put a resource with bufferization
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param resource mandatory resource
+ * @param subresource optional
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type DPL_FTYPE_REG create a file
+ * @param condition optional condition
+ * @param metadata optional user metadata
+ * @param sysmd optional system metadata
+ * @param data_len advertise the length
+ * @param connp the connection object
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
 dpl_status_t
 dpl_put_buffered(dpl_ctx_t *ctx,
                  const char *bucket,
@@ -385,19 +403,24 @@ dpl_put_buffered(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
+/** 
  * get a resource
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- * @param condition can be NULL
- * @param data_bufp must be freed by caller
- * @param data_lenp
- * @param metadatap must be freed by caller
- *
- * @return
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param resource the mandatory resource
+ * @param subresource the optional subresource
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type DPL_FTYPE_ANY get any type of resource
+ * @param condition the optional condition
+ * @param data_bufp the returned buffer client shall free
+ * @param data_lenp the returned buffer length
+ * @param metadatap the returned user metadata client shall free
+ * @param sysmdp the returned system metadata passed through stack
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ * @return DPL_ENOENT the resource does not exist
  */
 dpl_status_t
 dpl_get(dpl_ctx_t *ctx,
@@ -431,19 +454,25 @@ dpl_get(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
- * get a resource
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- * @param condition can be NULL
- * @param data_bufp must be freed by caller
- * @param data_lenp
- * @param metadatap must be freed by caller
- *
- * @return
+/** 
+ * get a resource with range
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param resource the mandat resource
+ * @param subresource the optional subresource
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type DPL_FTYPE_ANY get any type of resource
+ * @param condition the optional condition
+ * @param range the optional range
+ * @param data_bufp the returned data buffer client shall free
+ * @param data_lenp the returned data length
+ * @param metadatap the returned user metadata client shall free
+ * @param sysmdp the returned system metadata passed through stack
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ * @return DPL_ENOENT resource does not exist
  */
 dpl_status_t
 dpl_get_range(dpl_ctx_t *ctx,
@@ -478,6 +507,25 @@ dpl_get_range(dpl_ctx_t *ctx,
   return ret;
 }
 
+/** 
+ * get with bufferization
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param resource the mandat resource
+ * @param subresource the optional subresource
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type DPL_FTYPE_ANY get any type of resource
+ * @param condition the optional condition
+ * @param metadatum_func each time a metadata is discovered into the stream it is called back
+ * @param metadatap the returned user metadata client shall free
+ * @param sysmdp the returned system metadata passed through stack
+ * @param buffer_func the function called each time a buffer is discovered
+ * @param cb_arg the callback argument
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
 dpl_status_t 
 dpl_get_buffered(dpl_ctx_t *ctx,
                  const char *bucket,
@@ -511,6 +559,26 @@ dpl_get_buffered(dpl_ctx_t *ctx,
   return ret;
 }
 
+/** 
+ * get range with bufferization
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param resource the mandat resource
+ * @param subresource the optional subresource
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type DPL_FTYPE_ANY get any type of resource
+ * @param condition the optional condition
+ * @param range the optional range
+ * @param metadatum_func each time a metadata is discovered into the stream it is called back
+ * @param metadatap the returned user metadata client shall free
+ * @param sysmdp the returned system metadata passed through stack
+ * @param buffer_func the function called each time a buffer is discovered
+ * @param cb_arg the callback argument
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
 dpl_status_t 
 dpl_get_range_buffered(dpl_ctx_t *ctx,
                        const char *bucket,
@@ -545,6 +613,23 @@ dpl_get_range_buffered(dpl_ctx_t *ctx,
   return ret;
 }
 
+/** 
+ * get user and system metadata
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param resource the mandat resource
+ * @param subresource the optional subresource
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type DPL_FTYPE_ANY get any type of resource
+ * @param condition the optional condition
+ * @param metadatap the returned user metadata client shall free
+ * @param sysmdp the returned system metadata passed through stack
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ * @return DPL_ENOENT resource does not exist
+ */
 dpl_status_t
 dpl_head(dpl_ctx_t *ctx,
          const char *bucket,
@@ -574,19 +659,20 @@ dpl_head(dpl_ctx_t *ctx,
   return ret;
 }
 
-
-/**
- * get metadata
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- * @param condition can be NULL
- * @param all_headers tells us if we grab all the headers or just metadata
- * @param metadatap must be freed by caller
- *
- * @return
+/** 
+ * get raw metadata
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param resource the mandat resource
+ * @param subresource the optional subresource
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param condition the optional condition
+ * @param metadatap the returned metadata client shall free
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ * @return DPL_ENOENT
  */
 dpl_status_t
 dpl_head_all(dpl_ctx_t *ctx,
@@ -616,15 +702,19 @@ dpl_head_all(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
+/** 
  * delete a resource
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- *
- * @return
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param resource the mandat resource
+ * @param subresource the optional subresource
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param condition the optional condition
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ * @return DPL_ENOENT resource does not exist
  */
 dpl_status_t
 dpl_delete(dpl_ctx_t *ctx,
@@ -653,17 +743,21 @@ dpl_delete(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
- * generate url
- *
- * @param ctx
- * @param bucket
- * @param resource
- * @param subresource can be NULL
- * @param condition can be NULL
- * @param metadatap must be freed by caller
- *
- * @return
+/** 
+ * generate a valid URL for sharing object
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param resource the mandat resource
+ * @param subresource the optional subresource
+ * @param option unused
+ * @param expires expire time of URL
+ * @param buf URL is created in this buffer
+ * @param len buffer length
+ * @param lenp real buffer returned
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
  */
 dpl_status_t
 dpl_genurl(dpl_ctx_t *ctx,
@@ -695,22 +789,30 @@ dpl_genurl(dpl_ctx_t *ctx,
   return ret;
 }
 
-/**
- * copy a resource
+/** 
+ * perform various flavors of server side copies
+ * 
+ * @param ctx the droplet context
+ * @param src_bucket the optional source bucket
+ * @param src_resource the mandat source resource
+ * @param src_subresource the optional src subresource
+ * @param dst_bucket the optional destination bucket
+ * @param dst_resource the optional destination resource (if dst equals src)
+ * @param dst_subresource the optional dest subresource
+ * @param option unused
+ * @param object_type unused
+ * @param copy_directive DPL_COPY_DIRECTIVE_COPY server side copy
+ * @param copy_directive DPL_COPY_DIRECTIVE_METADATA_REPLACE setattr
+ * @param copy_directive DPL_COPY_DIRECTIVE_LINK hard link
+ * @param copy_directive DPL_COPY_DIRECTIVE_SYMLINK reference
+ * @param copy_directive DPL_COPY_DIRECTIVE_MOVE rename
+ * @param copy_directive DPL_COPY_DIRECTIVE_MKDENT create a directory entry
+ * @param metadata the optional user metadata
+ * @param sysmd the optional system metadata
+ * @param condition the optional condition
  *
- * @param ctx
- * @param src_bucket
- * @param src_resource
- * @param src_subresource
- * @param dst_bucket
- * @param dst_resource
- * @param dst_subresource
- * @param copy_directive
- * @param metadata
- * @param canned_acl
- * @param condition
- *
- * @return
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
  */
 dpl_status_t
 dpl_copy(dpl_ctx_t *ctx,
