@@ -33,6 +33,7 @@
  */
 #include "dropletp.h"
 #include <droplet/cdmi/reqbuilder.h>
+#include <droplet/cdmi/replyparser.h>
 #include <droplet/cdmi/backend.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
@@ -199,10 +200,10 @@ add_metadata_to_headers(const dpl_req_t *req,
           switch (object_type)
             {
             case DPL_FTYPE_DIR:
-              snprintf(header, sizeof (header), "X-Container-Meta-%s", var->key);
+              snprintf(header, sizeof (header), "%s%s", DPL_X_CONTAINER_META_PREFIX, var->key);
               break ;
             default:
-              snprintf(header, sizeof (header), "X-Object-Meta-%s", var->key);
+              snprintf(header, sizeof (header), "%s%s", DPL_X_OBJECT_META_PREFIX, var->key);
               break ;
             }
 
@@ -474,8 +475,6 @@ dpl_cdmi_req_build(const dpl_req_t *req,
    */
   if (DPL_METHOD_GET == req->method)
     {
-      //XXX ranges, conditions
-
       switch (req->object_type)
         {
         case DPL_FTYPE_UNDEF:
@@ -690,6 +689,20 @@ dpl_cdmi_req_build(const dpl_req_t *req,
   /*
    * common headers
    */
+  ret2 = dpl_add_ranges_to_headers(req->ranges, req->n_ranges, headers);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret2 = dpl_add_condition_to_headers(&req->condition, headers);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
   if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
     {
       ret2 = dpl_dict_add(headers, "X-CDMI-Specification-Version", "1.0.1", 0);

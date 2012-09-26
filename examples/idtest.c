@@ -202,11 +202,11 @@ main(int argc,
                     id,            //the key
                     0,
                     NULL,          //no subresource
-                    NULL,
                     NULL,          //no dst bucket
                     id,            //the same key
                     0,
                     NULL,          //no subresource
+                    NULL,
                     DPL_FTYPE_REG, //object type
                     DPL_COPY_DIRECTIVE_METADATA_REPLACE,  //tell server to replace metadata
                     metadata,      //the updated metadata

@@ -94,6 +94,67 @@ dpl_add_ranges_to_headers(const dpl_range_t *ranges,
   return DPL_SUCCESS;
 }
 
+dpl_status_t
+dpl_add_condition_to_headers(const dpl_condition_t *condition,
+                             dpl_dict_t *headers)
+{
+  int ret;
+  char *header;
+
+  if (condition->mask & (DPL_CONDITION_IF_MODIFIED_SINCE|
+                         DPL_CONDITION_IF_UNMODIFIED_SINCE))
+    {
+      char date_str[128];
+      struct tm tm_buf;
+
+      ret = strftime(date_str, sizeof (date_str), "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&condition->time, &tm_buf));
+      if (0 == ret)
+        return DPL_FAILURE;
+
+      if (condition->mask & DPL_CONDITION_IF_MODIFIED_SINCE)
+        {
+          header = "If-Modified-Since";
+          ret = dpl_dict_add(headers, header, date_str, 0);
+          if (DPL_SUCCESS != ret)
+            {
+              return DPL_FAILURE;
+            }
+        }
+
+      if (condition->mask & DPL_CONDITION_IF_UNMODIFIED_SINCE)
+        {
+          header = "If-Unodified-Since";
+          ret = dpl_dict_add(headers, header, date_str, 0);
+          if (DPL_SUCCESS != ret)
+            {
+              return DPL_FAILURE;
+            }
+        }
+    }
+
+  if (condition->mask & DPL_CONDITION_IF_MATCH)
+    {
+      header = "If-Match";
+      ret = dpl_dict_add(headers, header, condition->etag, 0);
+      if (DPL_SUCCESS != ret)
+        {
+          return DPL_FAILURE;
+        }
+    }
+
+  if (condition->mask & DPL_CONDITION_IF_NONE_MATCH)
+    {
+      header = "If-None-Match";
+      ret = dpl_dict_add(headers, header, condition->etag, 0);
+      if (DPL_SUCCESS != ret)
+        {
+          return DPL_FAILURE;
+        }
+    }
+
+  return DPL_SUCCESS;
+}
+
 /**
  * generate HTTP request
  *

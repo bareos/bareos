@@ -34,8 +34,8 @@
 #ifndef __DROPLET_CDMI_REPLYPARSER_H__
 #define __DROPLET_CDMI_REPLYPARSER_H__ 1
 
-#define X_OBJECT_META_PREFIX "X-Object-Meta-"
-#define X_CONTAINER_META_PREFIX "X-Container-Meta-"
+#define DPL_X_OBJECT_META_PREFIX "X-Object-Meta-"
+#define DPL_X_CONTAINER_META_PREFIX "X-Container-Meta-"
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */

@@ -1091,11 +1091,11 @@ dpl_s3_get_metadatum_from_header(const char *header,
 {
   dpl_status_t ret, ret2;
 
-  if (!strncmp(header, X_AMZ_META_PREFIX, strlen(X_AMZ_META_PREFIX)))
+  if (!strncmp(header, DPL_X_AMZ_META_PREFIX, strlen(DPL_X_AMZ_META_PREFIX)))
     {
       char *key;
 
-      key = (char *) header + strlen(X_AMZ_META_PREFIX);
+      key = (char *) header + strlen(DPL_X_AMZ_META_PREFIX);
 
       if (metadatum_func)
         {

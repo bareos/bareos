@@ -1140,6 +1140,24 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
                                      connp, locationp);
 }
 
+/** 
+ * put range buffered
+ *
+ * @param ctx 
+ * @param bucket 
+ * @param resource 
+ * @param subresource 
+ * @param option DPL_OPTION_HTTP_COMPAT is mandatory
+ * @param object_type 
+ * @param range 
+ * @param metadata 
+ * @param sysmd 
+ * @param data_len 
+ * @param connp 
+ * @param locationp 
+ * 
+ * @return 
+ */
 dpl_status_t
 dpl_cdmi_put_range_buffered(dpl_ctx_t *ctx,
                             const char *bucket,
@@ -1217,11 +1235,12 @@ dpl_cdmi_put_range_buffered(dpl_ctx_t *ctx,
     {
       if (option->mask & DPL_OPTION_HTTP_COMPAT)
         req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
-      else
-        {
-          ret = DPL_ENOTSUPP;
-          goto end;
-        }
+    }
+
+  if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
     }
 
   dpl_req_set_object_type(req, object_type);
@@ -1619,11 +1638,11 @@ dpl_cdmi_get_metadatum_from_header(const char *header,
 {
   dpl_status_t ret, ret2;
 
-  if (!strncmp(header, X_OBJECT_META_PREFIX, strlen(X_OBJECT_META_PREFIX)))
+  if (!strncmp(header, DPL_X_OBJECT_META_PREFIX, strlen(DPL_X_OBJECT_META_PREFIX)))
     {
       char *key;
 
-      key = (char *) header + strlen(X_OBJECT_META_PREFIX);
+      key = (char *) header + strlen(DPL_X_OBJECT_META_PREFIX);
 
       ret2 = dpl_cdmi_get_metadatum_from_string(key, value, 
                                                 metadatum_func, cb_arg,
@@ -1634,11 +1653,11 @@ dpl_cdmi_get_metadatum_from_header(const char *header,
           goto end;
         }
     }
-  else if (!strncmp(header, X_CONTAINER_META_PREFIX, strlen(X_CONTAINER_META_PREFIX)))
+  else if (!strncmp(header, DPL_X_CONTAINER_META_PREFIX, strlen(DPL_X_CONTAINER_META_PREFIX)))
     {
       char *key;
 
-      key = (char *) header + strlen(X_CONTAINER_META_PREFIX);
+      key = (char *) header + strlen(DPL_X_CONTAINER_META_PREFIX);
 
       ret2 = dpl_cdmi_get_metadatum_from_string(key, value, 
                                                 metadatum_func, cb_arg,
@@ -2222,6 +2241,26 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
                                      cb_arg, locationp);
 }
 
+/** 
+ * get range buffered
+ * 
+ * @param ctx 
+ * @param bucket 
+ * @param resource 
+ * @param subresource 
+ * @param option DPL_OPTION_HTTP_COMPAT is mandatory
+ * @param object_type 
+ * @param condition 
+ * @param range 
+ * @param metadatum_func 
+ * @param metadatap 
+ * @param sysmdp 
+ * @param buffer_func 
+ * @param cb_arg 
+ * @param locationp 
+ * 
+ * @return 
+ */
 dpl_status_t
 dpl_cdmi_get_range_buffered(dpl_ctx_t *ctx,
                             const char *bucket,
@@ -2320,8 +2359,7 @@ dpl_cdmi_get_range_buffered(dpl_ctx_t *ctx,
 
   if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
     {
-      //XXX dont known how to desencapsulate data from buffered json yet
-      ret = DPL_EINVAL;
+      ret = DPL_ENOTSUPP;
       goto end;
     }
 

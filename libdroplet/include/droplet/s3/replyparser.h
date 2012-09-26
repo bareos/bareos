@@ -34,7 +34,7 @@
 #ifndef __DROPLET_S3_REPLYPARSER_H__
 #define __DROPLET_S3_REPLYPARSER_H__ 1
 
-#define X_AMZ_META_PREFIX "x-amz-meta-"
+#define DPL_X_AMZ_META_PREFIX "x-amz-meta-"
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */

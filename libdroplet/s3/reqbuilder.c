@@ -52,7 +52,7 @@ add_metadata_to_headers(dpl_dict_t *metadata,
     {
       for (var = metadata->buckets[bucket];var;var = var->prev)
         {
-          snprintf(header, sizeof (header), "%s-%s", X_AMZ_META_PREFIX, var->key);
+          snprintf(header, sizeof (header), "%s%s", DPL_X_AMZ_META_PREFIX, var->key);
 
           assert(DPL_VALUE_STRING == var->val->type);
           ret = dpl_dict_add(headers, header, var->val->string, 0);
