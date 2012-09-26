@@ -577,7 +577,12 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
   dpl_chunk_t   chunk;
   char          *body_str = NULL;
   int           body_len = 0;
-
+  char *data_buf_returned = NULL;
+  u_int data_len_returned;
+  dpl_dict_var_t *var;
+  dpl_value_t *val = NULL;
+  char *native_id = NULL;
+  
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
@@ -692,18 +697,67 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
+  ret2 = dpl_read_http_reply(conn, 1, &data_buf_returned, &data_len_returned, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
 
+  ret2 = dpl_cdmi_parse_json_buffer(ctx, data_buf_returned, data_len_returned, &val);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  if (DPL_VALUE_SUBDICT != val->type)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+  
+  //find the value object
+  var = dpl_dict_get(val->subdict, "objectID");
+  if (NULL == var)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  if (DPL_VALUE_STRING != var->val->type)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
+  native_id = strdup(var->val->string);
+  if (NULL == native_id)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != resource_idp)
+    {
+      *resource_idp = native_id;
+      native_id = NULL;
+    }
+  
   (void) dpl_log_event(ctx, "DATA", "IN", data_len);
 
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != native_id)
+    free(native_id);
+
+  if (NULL != val)
+    dpl_value_free(val);
+
+  if (NULL != data_buf_returned)
+    free(data_buf_returned);
 
   if (NULL != body_str)
     free(body_str);
@@ -807,6 +861,12 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
     {
       if (option->mask & DPL_OPTION_HTTP_COMPAT)
         req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
+    }
+
+  if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
     }
 
   dpl_req_set_object_type(req, object_type);
