@@ -74,14 +74,14 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
 }
 
 /**
- * list bucket
+ * list bucket or directory
  *
- * @param ctx
- * @param bucket
- * @param prefix can be NULL
- * @param delimiter can be NULL
- * @param objectsp
- * @param prefixesp
+ * @param ctx the droplet context
+ * @param bucket can be NULL
+ * @param prefix directory can be NULL
+ * @param delimiter e.g. "/" can be NULL
+ * @param objectsp vector of files
+ * @param prefixesp vector of directories
  *
  * @return
  */
@@ -115,10 +115,10 @@ dpl_list_bucket(dpl_ctx_t *ctx,
 /**
  * make a bucket
  *
- * @param ctx
- * @param bucket
- * @param location_constraint
- * @param canned_acl
+ * @param ctx the droplet context
+ * @param bucket can be NULL
+ * @param location_constraint geographic location
+ * @param canned_acl simplified ACL
  *
  * @return
  */
@@ -156,20 +156,20 @@ dpl_make_bucket(dpl_ctx_t *ctx,
 /**
  * delete a resource
  *
- * @param ctx
- * @param bucket
- * @param resource
+ * @param ctx the droplet context
+ * @param bucket can be NULL
+ * @param resource the resource
  * @param subresource can be NULL
  *
  * @return
  */
 dpl_status_t 
-dpl_deletebucket(dpl_ctx_t *ctx,
-                 const char *bucket)
+dpl_delete_bucket(dpl_ctx_t *ctx,
+                  const char *bucket)
 {
   int ret;
   
-  DPL_TRACE(ctx, DPL_TRACE_REST, "deletebucket bucket=%s", bucket);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "delete_bucket bucket=%s", bucket);
 
   if (NULL == ctx->backend->delete_bucket)
     {
@@ -195,6 +195,7 @@ dpl_deletebucket(dpl_ctx_t *ctx,
  * @param bucket 
  * @param resource can be NULL
  * @param subresource can be NULL
+ * @param option
  * @param object_type 
  * @param metadata 
  * @param canned_acl 

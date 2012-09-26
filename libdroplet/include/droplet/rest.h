@@ -38,7 +38,7 @@ const char *dpl_get_backend_name(dpl_ctx_t *ctx);
 dpl_status_t dpl_list_all_my_buckets(dpl_ctx_t *ctx, dpl_vec_t **vecp);
 dpl_status_t dpl_list_bucket(dpl_ctx_t *ctx, const const char *bucket, const char *prefix, const char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
 dpl_status_t dpl_make_bucket(dpl_ctx_t *ctx, const char *bucket, dpl_location_constraint_t location_constraint, dpl_canned_acl_t canned_acl);
-dpl_status_t dpl_deletebucket(dpl_ctx_t *ctx, const char *bucket);
+dpl_status_t dpl_delete_bucket(dpl_ctx_t *ctx, const char *bucket);
 dpl_status_t dpl_post(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_option_t *option, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len, dpl_dict_t *query_params, char **resource_idp);
 dpl_status_t dpl_post_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_option_t *option, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_dict_t *query_params, dpl_conn_t **connp);
 dpl_status_t dpl_put(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, dpl_option_t *option, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len);
