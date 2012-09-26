@@ -53,10 +53,11 @@ main(int argc,
   ret = dpl_put_id(ctx,           //the context
                    NULL,          //no bucket
                    id,            //the key
-                   0,
+                   0,             //enterprise number
                    NULL,          //no subresource
-                   NULL, 
+                   NULL,          //no option
                    DPL_FTYPE_REG, //regular object
+                   NULL,          //no condition
                    NULL,          //no metadata
                    NULL,          //no sysmd
                    "foobarbaz",   //object body
@@ -117,9 +118,10 @@ main(int argc,
   ret = dpl_delete_id(ctx,       //the context
                       NULL,      //no bucket
                       id,        //the key
-                      0,
-                      NULL,     //no subresource
-                      NULL);
+                      0,         //enterprise number
+                      NULL,      //no subresource
+                      NULL,      //no option
+                      NULL);     //no condition
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error deleting object: %s (%d)\n", dpl_status_str(ret), ret);

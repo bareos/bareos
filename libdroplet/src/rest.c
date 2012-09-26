@@ -36,6 +36,13 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+/** 
+ * return the name of the backend currently used
+ * 
+ * @param ctx 
+ * 
+ * @return the backend name
+ */
 const char *
 dpl_get_backend_name(dpl_ctx_t *ctx)
 {
@@ -45,10 +52,11 @@ dpl_get_backend_name(dpl_ctx_t *ctx)
 /**
  * list all buckets
  *
- * @param ctx
- * @param vecp
+ * @param ctx the droplect context
+ * @param vecp a vector of dpl_bucket_t *
  *
- * @return
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
  */
 dpl_status_t 
 dpl_list_all_my_buckets(dpl_ctx_t *ctx,
@@ -80,10 +88,11 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
  * @param bucket can be NULL
  * @param prefix directory can be NULL
  * @param delimiter e.g. "/" can be NULL
- * @param objectsp vector of files
- * @param prefixesp vector of directories
+ * @param objectsp vector of dpl_object_t * (files)
+ * @param prefixesp vector of dpl_common_prefix_t * (directories)
  *
- * @return
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
  */
 dpl_status_t 
 dpl_list_bucket(dpl_ctx_t *ctx, 
@@ -120,7 +129,8 @@ dpl_list_bucket(dpl_ctx_t *ctx,
  * @param location_constraint geographic location
  * @param canned_acl simplified ACL
  *
- * @return
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
  */
 dpl_status_t
 dpl_make_bucket(dpl_ctx_t *ctx,
@@ -161,7 +171,8 @@ dpl_make_bucket(dpl_ctx_t *ctx,
  * @param resource the resource
  * @param subresource can be NULL
  *
- * @return
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
  */
 dpl_status_t 
 dpl_delete_bucket(dpl_ctx_t *ctx,
@@ -191,34 +202,35 @@ dpl_delete_bucket(dpl_ctx_t *ctx,
  *
  * @note this function is expected to return a newly created object
  * 
- * @param ctx 
- * @param bucket 
+ * @param ctx the droplet context
+ * @param bucket can be NULL
  * @param resource can be NULL
  * @param subresource can be NULL
- * @param option
- * @param object_type 
- * @param metadata 
- * @param canned_acl 
- * @param data_buf 
- * @param data_len 
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type DPL_FTYPE_REG create a file
+ * @param metadata the user metadata. optional
+ * @param sysmd the system metadata. optional
+ * @param data_buf the data buffer
+ * @param data_len the data length
  * @param query_params can be NULL
- * @param resource_idp ID of newly created object. caller must free it
+ * @param id_resourcep the id_path of the new object. caller must free it
  * 
- * @return 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
  */
 dpl_status_t
 dpl_post(dpl_ctx_t *ctx,
          const char *bucket,
          const char *resource,
          const char *subresource,
-         dpl_option_t *option,
+         const dpl_option_t *option,
          dpl_ftype_t object_type,
-         dpl_dict_t *metadata,
-         dpl_sysmd_t *sysmd,
-         char *data_buf,
+         const dpl_dict_t *metadata,
+         const dpl_sysmd_t *sysmd,
+         const char *data_buf,
          unsigned int data_len,
-         dpl_dict_t *query_params,
-         char **resource_idp)
+         const dpl_dict_t *query_params,
+         char **id_resourcep)
 {
   int ret;
 
@@ -230,7 +242,7 @@ dpl_post(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->post(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, resource_idp, NULL);
+  ret = ctx->backend->post(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, id_resourcep, NULL);
   
  end:
 
@@ -239,17 +251,35 @@ dpl_post(dpl_ctx_t *ctx,
   return ret;
 }
 
+/** 
+ * post a resource with bufferization enabled
+ * 
+ * @param ctx the droplet context
+ * @param bucket can be NULL
+ * @param resource can be NULL
+ * @param subresource can be NULL
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type DPL_FTYPE_REG create a file
+ * @param metadata the optional user metadata
+ * @param sysmd the optional system metadata
+ * @param data_len the data length
+ * @param query_params the optional query parameters
+ * @param connp the returned connection object
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
 dpl_status_t
 dpl_post_buffered(dpl_ctx_t *ctx,
                   const char *bucket,
                   const char *resource,
                   const char *subresource,
-                  dpl_option_t *option,
+                  const dpl_option_t *option,
                   dpl_ftype_t object_type,
-                  dpl_dict_t *metadata,
-                  dpl_sysmd_t *sysmd,
+                  const dpl_dict_t *metadata,
+                  const dpl_sysmd_t *sysmd,
                   unsigned int data_len,
-                  dpl_dict_t *query_params,
+                  const dpl_dict_t *query_params,
                   dpl_conn_t **connp)
 {
   int ret;
@@ -271,31 +301,37 @@ dpl_post_buffered(dpl_ctx_t *ctx,
   return ret;
 }
 
-
 /**
  * put a resource
  *
- * @param ctx
- * @param bucket
- * @param resource
+ * @param ctx the droplet context
+ * @param bucket optional
+ * @param resource mandatory
  * @param subresource can be NULL
- * @param metadata can be NULL
- * @param canned_acl
- * @param data_buf
- * @param data_len
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type DPL_FTYPE_REG create a file
+ * @param object_type DPL_FTYPE_DIR create a directory
+ * @param condition the optional condition
+ * @param metadata the optional user metadata
+ * @param sysmd the optional system metadata
+ * @param data_buf the data buffer
+ * @param data_len the data length
  *
- * @return
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ * @return DPL_EEXIST
  */
 dpl_status_t
 dpl_put(dpl_ctx_t *ctx,
         const char *bucket,
         const char *resource,
         const char *subresource,
-        dpl_option_t *option,
+        const dpl_option_t *option,
         dpl_ftype_t object_type,
-        dpl_dict_t *metadata,
-        dpl_sysmd_t *sysmd,
-        char *data_buf,
+        const dpl_condition_t *condition,
+        const dpl_dict_t *metadata,
+        const dpl_sysmd_t *sysmd,
+        const char *data_buf,
         unsigned int data_len)
 {
   int ret;
@@ -308,7 +344,7 @@ dpl_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->put(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_buf, data_len, NULL);
+  ret = ctx->backend->put(ctx, bucket, resource, subresource, option, object_type, condition, metadata, sysmd, data_buf, data_len, NULL);
   
  end:
 
@@ -322,10 +358,11 @@ dpl_put_buffered(dpl_ctx_t *ctx,
                  const char *bucket,
                  const char *resource,
                  const char *subresource,
-                 dpl_option_t *option,
+                 const dpl_option_t *option,
                  dpl_ftype_t object_type,
-                 dpl_dict_t *metadata,
-                 dpl_sysmd_t *sysmd,
+                 const dpl_condition_t *condition,
+                 const dpl_dict_t *metadata,
+                 const dpl_sysmd_t *sysmd,
                  unsigned int data_len,
                  dpl_conn_t **connp)
 {
@@ -339,7 +376,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_len, connp, NULL);
+  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, option, object_type, condition, metadata, sysmd, data_len, connp, NULL);
   
  end:
 
@@ -367,9 +404,9 @@ dpl_get(dpl_ctx_t *ctx,
         const char *bucket,
         const char *resource,
         const char *subresource,
-        dpl_option_t *option,
+        const dpl_option_t *option,
         dpl_ftype_t object_type,
-        dpl_condition_t *condition,
+        const dpl_condition_t *condition,
         char **data_bufp,
         unsigned int *data_lenp,
         dpl_dict_t **metadatap,
@@ -413,10 +450,10 @@ dpl_get_range(dpl_ctx_t *ctx,
               const char *bucket,
               const char *resource,
               const char *subresource,
-              dpl_option_t *option,
+              const dpl_option_t *option,
               dpl_ftype_t object_type,
-              dpl_condition_t *condition,
-              dpl_range_t *range, 
+              const dpl_condition_t *condition,
+              const dpl_range_t *range, 
               char **data_bufp,
               unsigned int *data_lenp,
               dpl_dict_t **metadatap,
@@ -446,9 +483,9 @@ dpl_get_buffered(dpl_ctx_t *ctx,
                  const char *bucket,
                  const char *resource,
                  const char *subresource, 
-                 dpl_option_t *option,
+                 const dpl_option_t *option,
                  dpl_ftype_t object_type,
-                 dpl_condition_t *condition,
+                 const dpl_condition_t *condition,
                  dpl_metadatum_func_t metadatum_func,
                  dpl_dict_t **metadatap,
                  dpl_sysmd_t *sysmdp,
@@ -479,10 +516,10 @@ dpl_get_range_buffered(dpl_ctx_t *ctx,
                        const char *bucket,
                        const char *resource,
                        const char *subresource, 
-                       dpl_option_t *option,
+                       const dpl_option_t *option,
                        dpl_ftype_t object_type,
-                       dpl_condition_t *condition,
-                       dpl_range_t *range,
+                       const dpl_condition_t *condition,
+                       const dpl_range_t *range,
                        dpl_metadatum_func_t metadatum_func,
                        dpl_dict_t **metadatap,
                        dpl_sysmd_t *sysmdp, 
@@ -513,8 +550,8 @@ dpl_head(dpl_ctx_t *ctx,
          const char *bucket,
          const char *resource,
          const char *subresource,
-         dpl_option_t *option,
-         dpl_condition_t *condition,
+         const dpl_option_t *option,
+         const dpl_condition_t *condition,
          dpl_dict_t **metadatap,
          dpl_sysmd_t *sysmdp)
 {
@@ -556,8 +593,8 @@ dpl_head_all(dpl_ctx_t *ctx,
              const char *bucket,
              const char *resource,
              const char *subresource,
-             dpl_option_t *option,
-             dpl_condition_t *condition,
+             const dpl_option_t *option,
+             const dpl_condition_t *condition,
              dpl_dict_t **metadatap)
 {
   int ret;
@@ -594,7 +631,8 @@ dpl_delete(dpl_ctx_t *ctx,
            const char *bucket,
            const char *resource,
            const char *subresource,
-           dpl_option_t *option)
+           const dpl_option_t *option,
+           const dpl_condition_t *condition)
 {
   int ret;
 
@@ -632,7 +670,7 @@ dpl_genurl(dpl_ctx_t *ctx,
            const char *bucket,
            const char *resource,
            const char *subresource,
-           dpl_option_t *option,
+           const dpl_option_t *option,
            time_t expires,
            char *buf,
            unsigned int len,
@@ -682,12 +720,12 @@ dpl_copy(dpl_ctx_t *ctx,
          const char *dst_bucket,
          const char *dst_resource,
          const char *dst_subresource,
-         dpl_option_t *option,
+         const dpl_option_t *option,
          dpl_ftype_t object_type,
          dpl_copy_directive_t copy_directive,
-         dpl_dict_t *metadata,
-         dpl_sysmd_t *sysmd,
-         dpl_condition_t *condition)
+         const dpl_dict_t *metadata,
+         const dpl_sysmd_t *sysmd,
+         const dpl_condition_t *condition)
 {
   int ret;
 

@@ -60,13 +60,13 @@ dpl_status_t
 dpl_post_id(dpl_ctx_t *ctx,
             const char *bucket,
             const char *subresource,
-            dpl_option_t *option,
+            const dpl_option_t *option,
             dpl_ftype_t object_type,
-            dpl_dict_t *metadata,
-            dpl_sysmd_t *sysmd,
-            char *data_buf,
+            const dpl_dict_t *metadata,
+            const dpl_sysmd_t *sysmd,
+            const char *data_buf,
             unsigned int data_len,
-            dpl_dict_t *query_params,
+            const dpl_dict_t *query_params,
             char **idp,
             uint32_t *enterprise_numberp)
 {
@@ -128,12 +128,12 @@ dpl_status_t
 dpl_post_buffered_id(dpl_ctx_t *ctx,
                      const char *bucket,
                      const char *subresource,
-                     dpl_option_t *option,
+                     const dpl_option_t *option,
                      dpl_ftype_t object_type,
-                     dpl_dict_t *metadata,
-                     dpl_sysmd_t *sysmd,
+                     const dpl_dict_t *metadata,
+                     const dpl_sysmd_t *sysmd,
                      unsigned int data_len,
-                     dpl_dict_t *query_params,
+                     const dpl_dict_t *query_params,
                      dpl_conn_t **connp)
 {
   dpl_status_t ret;
@@ -171,11 +171,12 @@ dpl_put_id(dpl_ctx_t *ctx,
            const char *id,
            const uint32_t enterprise_number,
            const char *subresource,
-           dpl_option_t *option,
+           const dpl_option_t *option,
            dpl_ftype_t object_type,
-           dpl_dict_t *metadata,
-           dpl_sysmd_t *sysmd,
-           char *data_buf,
+           const dpl_condition_t *condition,
+           const dpl_dict_t *metadata,
+           const dpl_sysmd_t *sysmd,
+           const char *data_buf,
            unsigned int data_len)
 {
   dpl_status_t ret, ret2;
@@ -212,7 +213,7 @@ dpl_put_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
-  ret = dpl_put(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_buf, data_len);
+  ret = dpl_put(ctx, bucket, resource, subresource, option, object_type, condition, metadata, sysmd, data_buf, data_len);
   
  end:
 
@@ -233,10 +234,11 @@ dpl_put_buffered_id(dpl_ctx_t *ctx,
                     const char *id,
                     const uint32_t enterprise_number,
                     const char *subresource,
-                    dpl_option_t *option,
+                    const dpl_option_t *option,
                     dpl_ftype_t object_type,
-                    dpl_dict_t *metadata,
-                    dpl_sysmd_t *sysmd,
+                    const dpl_condition_t *condition,
+                    const dpl_dict_t *metadata,
+                    const dpl_sysmd_t *sysmd,
                     unsigned int data_len,
                     dpl_conn_t **connp)
 {
@@ -274,7 +276,7 @@ dpl_put_buffered_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
-  ret = dpl_put_buffered(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_len, connp);
+  ret = dpl_put_buffered(ctx, bucket, resource, subresource, option, object_type, condition, metadata, sysmd, data_len, connp);
   
  end:
 
@@ -295,9 +297,9 @@ dpl_get_id(dpl_ctx_t *ctx,
            const char *id,
            const uint32_t enterprise_number,
            const char *subresource,
-           dpl_option_t *option,
+           const dpl_option_t *option,
            dpl_ftype_t object_type,
-           dpl_condition_t *condition,
+           const dpl_condition_t *condition,
            char **data_bufp,
            unsigned int *data_lenp,
            dpl_dict_t **metadatap,
@@ -358,10 +360,10 @@ dpl_get_range_id(dpl_ctx_t *ctx,
                  const char *id,
                  const uint32_t enterprise_number,
                  const char *subresource,
-                 dpl_option_t *option,
+                 const dpl_option_t *option,
                  dpl_ftype_t object_type,
-                 dpl_condition_t *condition,
-                 dpl_range_t *range,
+                 const dpl_condition_t *condition,
+                 const dpl_range_t *range,
                  char **data_bufp,
                  unsigned int *data_lenp,
                  dpl_dict_t **metadatap,
@@ -422,9 +424,9 @@ dpl_get_buffered_id(dpl_ctx_t *ctx,
                     const char *id,
                     const uint32_t enterprise_number,
                     const char *subresource, 
-                    dpl_option_t *option,
+                    const dpl_option_t *option,
                     dpl_ftype_t object_type,
-                    dpl_condition_t *condition,
+                    const dpl_condition_t *condition,
                     dpl_metadatum_func_t metadatum_func,
                     dpl_dict_t **metadatap,
                     dpl_sysmd_t *sysmdp, 
@@ -486,10 +488,10 @@ dpl_get_range_buffered_id(dpl_ctx_t *ctx,
                           const char *id,
                           const uint32_t enterprise_number,
                           const char *subresource, 
-                          dpl_option_t *option,
+                          const dpl_option_t *option,
                           dpl_ftype_t object_type,
-                          dpl_condition_t *condition,
-                          dpl_range_t *range,
+                          const dpl_condition_t *condition,
+                          const dpl_range_t *range,
                           dpl_metadatum_func_t metadatum_func,
                           dpl_dict_t **metadatap,
                           dpl_sysmd_t *sysmdp, 
@@ -551,8 +553,8 @@ dpl_head_id(dpl_ctx_t *ctx,
             const char *id,
             const uint32_t enterprise_number,
             const char *subresource,
-            dpl_option_t *option,
-            dpl_condition_t *condition,
+            const dpl_option_t *option,
+            const dpl_condition_t *condition,
             dpl_dict_t **metadatap,
             dpl_sysmd_t *sysmdp)
 {
@@ -611,8 +613,8 @@ dpl_head_all_id(dpl_ctx_t *ctx,
                 const char *id,
                 const uint32_t enterprise_number,
                 const char *subresource,
-                dpl_option_t *option,
-                dpl_condition_t *condition,
+                const dpl_option_t *option,
+                const dpl_condition_t *condition,
                 dpl_dict_t **metadatap)
 {
   dpl_status_t ret, ret2;
@@ -670,7 +672,8 @@ dpl_delete_id(dpl_ctx_t *ctx,
               const char *id,
               const uint32_t enterprise_number,
               const char *subresource,
-              dpl_option_t *option)
+              const dpl_option_t *option,
+              const dpl_condition_t *condition)
 {
   dpl_status_t ret, ret2;
   char *id_path = NULL;
@@ -706,7 +709,7 @@ dpl_delete_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
-  ret = dpl_delete(ctx, bucket, resource, subresource, option);
+  ret = dpl_delete(ctx, bucket, resource, subresource, option, condition);
   
  end:
 
@@ -731,12 +734,12 @@ dpl_copy_id(dpl_ctx_t *ctx,
             const char *dst_id,
             const uint32_t dst_enterprise_number,
             const char *dst_subresource,
-            dpl_option_t *option,
+            const dpl_option_t *option,
             dpl_ftype_t object_type,
             dpl_copy_directive_t copy_directive,
-            dpl_dict_t *metadata,
-            dpl_sysmd_t *sysmd,
-            dpl_condition_t *condition)
+            const dpl_dict_t *metadata,
+            const dpl_sysmd_t *sysmd,
+            const dpl_condition_t *condition)
 {
   dpl_status_t ret, ret2;
   char *src_id_path = NULL;

@@ -264,7 +264,7 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s%s", parent_fqn.path, obj_name, delim);
 
-  ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, object_type, metadata, sysmd, NULL, 0);
+  ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, object_type, NULL, metadata, sysmd, NULL, 0);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -583,7 +583,7 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_delete(ctx, bucket, fqn.path, NULL, NULL);
+  ret2 = dpl_delete(ctx, bucket, fqn.path, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1695,7 +1695,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
         ret2 = dpl_post_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, obj_type, metadata, sysmd,
                                  data_len, query_params, &vfile->conn);
       else
-        ret2 = dpl_put_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, obj_type, metadata, sysmd,
+        ret2 = dpl_put_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, obj_type, NULL, metadata, sysmd,
                                 data_len, &vfile->conn);
       if (DPL_SUCCESS != ret2)
         {
@@ -1813,7 +1813,7 @@ dpl_write(dpl_vfile_t *vfile,
                         buf, len, vfile->query_params, NULL); //XXX resource_idp ?
       else
         ret2 = dpl_put(vfile->ctx, vfile->bucket, vfile->resource, NULL, NULL,
-                       vfile->obj_type, vfile->metadata, vfile->sysmd,
+                       vfile->obj_type, NULL, vfile->metadata, vfile->sysmd,
                        buf, len);
       if (DPL_SUCCESS != ret2)
         {
@@ -2158,7 +2158,7 @@ dpl_unlink(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, NULL);
+  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
