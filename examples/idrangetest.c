@@ -55,6 +55,7 @@ main(int argc,
                    id,            //the key
                    0,
                    NULL,          //no subresource
+                   NULL, 
                    DPL_FTYPE_REG, //regular object
                    NULL,          //no metadata
                    NULL,          //no sysmd
@@ -78,6 +79,7 @@ main(int argc,
                          id,            //the key
                          0,
                          NULL,          //no subresource
+                         NULL,
                          DPL_FTYPE_REG, //object type
                          NULL,          //no condition of operation
                          &range,          //range
@@ -116,7 +118,8 @@ main(int argc,
                       NULL,      //no bucket
                       id,        //the key
                       0,
-                      NULL);     //no subresource
+                      NULL,     //no subresource
+                      NULL);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error deleting object: %s (%d)\n", dpl_status_str(ret), ret);

@@ -43,6 +43,7 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
                       const char *bucket,
                       const char *resource,
                       const char *subresource,
+                      dpl_option_t *option,
                       dpl_ftype_t object_type,
                       const dpl_dict_t *metadata,
                       const dpl_sysmd_t *sysmd,
@@ -63,6 +64,9 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
   dpl_chunk_t   chunk;
+  dpl_srws_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -93,11 +97,23 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_LAZY)
+        req_mask |= DPL_SRWS_REQ_LAZY;
+    }
+
   dpl_req_set_object_type(req, object_type);
+
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_LAZY)
+        req_mask |= DPL_SRWS_REQ_LAZY;
+    }
 
   if (mdonly)
     {
-      dpl_req_add_behavior(req, DPL_BEHAVIOR_MDONLY);
+      req_mask |= DPL_SRWS_REQ_MD_ONLY;
     }
   else
     {
@@ -111,6 +127,12 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_LAZY)
+        req_mask |= DPL_SRWS_REQ_LAZY;
+    }
+
   if (NULL != metadata)
     {
       ret2 = dpl_req_add_metadata(req, metadata);
@@ -122,7 +144,7 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_srws_req_build(req, &headers_request);
+  ret2 = dpl_srws_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -203,7 +225,7 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -213,6 +235,7 @@ dpl_srws_put(dpl_ctx_t *ctx,
              const char *bucket,
              const char *resource,
              const char *subresource,
+             dpl_option_t *option,
              dpl_ftype_t object_type,
              const dpl_dict_t *metadata,
              const dpl_sysmd_t *sysmd,
@@ -220,7 +243,7 @@ dpl_srws_put(dpl_ctx_t *ctx,
              unsigned int data_len,
              char **locationp)
 {
-  return dpl_srws_put_internal(ctx, bucket, resource, subresource,
+  return dpl_srws_put_internal(ctx, bucket, resource, subresource, option,
                                object_type, metadata, sysmd, data_buf, data_len, 0, locationp);
 }
 
@@ -229,6 +252,7 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
                       const char *bucket,
                       const char *resource,
                       const char *subresource,
+                      dpl_option_t *option,
                       dpl_ftype_t object_type,
                       const dpl_dict_t *metadata,
                       const dpl_sysmd_t *sysmd,
@@ -248,6 +272,9 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
   dpl_chunk_t   chunk;
+  dpl_srws_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -282,7 +309,11 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
-  dpl_req_add_behavior(req, DPL_BEHAVIOR_HTTP_COMPAT);
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_LAZY)
+        req_mask |= DPL_SRWS_REQ_LAZY;
+    }
 
   dpl_req_set_object_type(req, object_type);
 
@@ -298,7 +329,7 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_srws_req_build(req, &headers_request);
+  ret2 = dpl_srws_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -380,7 +411,226 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+/**/
+
+struct mdparse_data
+{
+  const char *orig;
+  int orig_len;
+  dpl_dict_t *metadata;
+  dpl_metadatum_func_t metadatum_func;
+  void *cb_arg;
+};
+
+static int
+cb_ntinydb(const char *key_ptr,
+           int key_len,
+           void *cb_arg)
+{
+  struct mdparse_data *arg = (struct mdparse_data *) cb_arg;
+  int ret, ret2;
+  const char *value_returned = NULL;
+  int value_len_returned;
+  char *key_str;
+  char *value_str;
+
+  DPRINTF("%.*s\n", key_len, key_ptr);
+  
+  key_str = alloca(key_len + 1);
+  memcpy(key_str, key_ptr, key_len);
+  key_str[key_len] = 0;
+
+  ret2 = dpl_ntinydb_get(arg->orig, arg->orig_len, key_str, &value_returned, &value_len_returned);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = -1;
+      goto end;
+    }
+
+  DPRINTF("%.*s\n", value_len_returned, value_returned);
+
+  value_str = alloca(value_len_returned + 1);
+  memcpy(value_str, value_returned, value_len_returned);
+  value_str[value_len_returned] = 0;
+
+  if (arg->metadatum_func)
+    {
+      dpl_value_t val;
+      
+      val.type = DPL_VALUE_STRING;
+      val.string = value_str;
+      ret2 = arg->metadatum_func(arg->cb_arg, key_str, &val);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  
+  ret2 = dpl_dict_add(arg->metadata, key_str, value_str, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = -1;
+      goto end;
+    }
+
+  ret = 0;
+  
+ end:
+
+  return ret;
+}
+
+dpl_status_t
+dpl_srws_get_metadatum_from_header(const char *header,
+                                   const char *value,
+                                   dpl_metadatum_func_t metadatum_func,
+                                   void *cb_arg,
+                                   dpl_dict_t *metadata,
+                                   dpl_sysmd_t *sysmdp)
+{
+  dpl_status_t ret, ret2;
+  char *orig;
+  int orig_len;
+  struct mdparse_data arg;
+  int value_len;
+
+  if (!strcmp(header, DPL_SRWS_X_BIZ_USERMD))
+    {
+      DPRINTF("val=%s\n", value);
+      
+      //decode base64
+      value_len = strlen(value);
+      if (value_len == 0)
+        return DPL_EINVAL;
+      
+      orig_len = DPL_BASE64_ORIG_LENGTH(value_len);
+      orig = alloca(orig_len);
+      
+      orig_len = dpl_base64_decode((u_char *) value, value_len, (u_char *) orig);
+      
+      //dpl_dump_simple(orig, orig_len);
+      
+      arg.metadata = metadata;
+      arg.orig = orig;
+      arg.orig_len = orig_len;
+      arg.metadatum_func = metadatum_func;
+      arg.cb_arg = cb_arg;
+
+      ret2 = dpl_ntinydb_list(orig, orig_len, cb_ntinydb, &arg);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      if (sysmdp)
+        {
+          if (!strcmp(header, "content-length"))
+            {
+              sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
+              sysmdp->size = atoi(value);
+            }
+          else if (!strcmp(header, "last-modified"))
+            {
+              sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
+              sysmdp->mtime = dpl_get_date(value, NULL);
+            }
+          else if (!strcmp(header, "etag"))
+            {
+              int value_len = strlen(value);
+              
+              if (value_len < DPL_SYSMD_ETAG_SIZE && value_len >= 2)
+                {
+                  sysmdp->mask |= DPL_SYSMD_MASK_ETAG;
+                  //supress double quotes
+                  strncpy(sysmdp->etag, value + 1, DPL_SYSMD_ETAG_SIZE);
+                  sysmdp->etag[value_len-2] = 0;
+                }
+            }
+        }
+    }
+    
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
+}
+
+struct metadata_conven
+{
+  dpl_dict_t *metadata;
+  dpl_sysmd_t *sysmdp;
+};
+
+static dpl_status_t
+cb_headers_iterate(dpl_dict_var_t *var,
+                   void *cb_arg)
+{
+  struct metadata_conven *mc = (struct metadata_conven *) cb_arg;
+  
+  assert(var->val->type == DPL_VALUE_STRING);
+  return dpl_srws_get_metadatum_from_header(var->key,
+                                          var->val->string,
+                                          NULL,
+                                          NULL,
+                                          mc->metadata,
+                                          mc->sysmdp);
+}
+
+dpl_status_t
+dpl_srws_get_metadata_from_headers(const dpl_dict_t *headers,
+                                   dpl_dict_t **metadatap,
+                                   dpl_sysmd_t *sysmdp)
+{
+  dpl_dict_t *metadata = NULL;
+  dpl_status_t ret, ret2;
+  struct metadata_conven mc;
+
+  if (metadatap)
+    {
+      metadata = dpl_dict_new(13);
+      if (NULL == metadata)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  memset(&mc, 0, sizeof (mc));
+  mc.metadata = metadata;
+  mc.sysmdp = sysmdp;
+
+  if (sysmdp)
+    sysmdp->mask = 0;
+      
+  ret2 = dpl_dict_iterate(headers, cb_headers_iterate, &mc);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
 
   return ret;
 }
@@ -390,6 +640,7 @@ dpl_srws_get(dpl_ctx_t *ctx,
              const char *bucket,
              const char *resource,
              const char *subresource,
+             dpl_option_t *option,
              dpl_ftype_t object_type,
              const dpl_condition_t *condition,
              char **data_bufp,
@@ -398,7 +649,7 @@ dpl_srws_get(dpl_ctx_t *ctx,
              dpl_sysmd_t *sysmdp,
              char **locationp)
 {
-  return dpl_srws_get_range(ctx,bucket,resource,subresource,object_type,condition,
+  return dpl_srws_get_range(ctx,bucket,resource,subresource,option,object_type,condition,
                             NULL,
 			    data_bufp,data_lenp,metadatap,sysmdp,locationp);
 }
@@ -408,6 +659,7 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
                    const char *bucket,
                    const char *resource,
                    const char *subresource,
+                   dpl_option_t *option,
                    dpl_ftype_t object_type,
                    const dpl_condition_t *condition,
                    const dpl_range_t *range,
@@ -430,6 +682,9 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
+  dpl_srws_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -478,10 +733,16 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_LAZY)
+        req_mask |= DPL_SRWS_REQ_LAZY;
+    }
+
   dpl_req_set_object_type(req, object_type);
 
   //build request
-  ret2 = dpl_srws_req_build(req, &headers_request);
+  ret2 = dpl_srws_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -533,14 +794,12 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-  else
+
+  ret2 = dpl_srws_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2)
     {
-      ret2 = dpl_srws_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
@@ -578,14 +837,16 @@ dpl_srws_get_range(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
 
 struct get_conven
 {
-  dpl_header_func_t header_func;
+  dpl_dict_t *metadata;
+  dpl_sysmd_t *sysmdp;
+  dpl_metadatum_func_t metadatum_func;
   dpl_buffer_func_t buffer_func;
   void *cb_arg;
   int connection_close;
@@ -594,25 +855,36 @@ struct get_conven
 static dpl_status_t
 cb_get_header(void *cb_arg,
               const char *header,
-              char *value)
+              const char *value)
 {
   struct get_conven *gc = (struct get_conven *) cb_arg;
-  int ret;
-
-  if (NULL != gc->header_func)
-    {
-      ret = gc->header_func(gc->cb_arg, header, value);
-      if (DPL_SUCCESS != ret)
-        return ret;
-    }
+  dpl_status_t ret, ret2;
 
   if (!strcasecmp(header, "connection"))
     {
       if (!strcasecmp(value, "close"))
         gc->connection_close = 1;
     }
+  else
+    {
+      ret2 = dpl_srws_get_metadatum_from_header(header,
+                                                value,
+                                                gc->metadatum_func,
+                                                gc->cb_arg,
+                                                gc->metadata,
+                                                gc->sysmdp);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
 
-  return DPL_SUCCESS;
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
 }
 
 static dpl_status_t
@@ -638,16 +910,20 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
                       const char *bucket,
                       const char *resource,
                       const char *subresource,
+                      dpl_option_t *option,
                       dpl_ftype_t object_type,
                       const dpl_condition_t *condition,
-                      dpl_header_func_t header_func,
+                      dpl_metadatum_func_t metadatum_func,
+                      dpl_dict_t **metadatap,
+                      dpl_sysmd_t *sysmdp,
                       dpl_buffer_func_t buffer_func,
                       void *cb_arg,
                       char **locationp)
 {
-  return dpl_srws_get_range_buffered(ctx,bucket,resource,subresource,object_type,condition,
+  return dpl_srws_get_range_buffered(ctx,bucket,resource,subresource,option,object_type,condition,
                                      NULL,
-				     header_func, buffer_func, cb_arg, locationp);
+				     metadatum_func, metadatap, sysmdp, buffer_func,
+                                     cb_arg, locationp);
 }
 
 dpl_status_t
@@ -655,10 +931,13 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
 			    const char *bucket,
 			    const char *resource,
 			    const char *subresource,
+                            dpl_option_t *option,
 			    dpl_ftype_t object_type,
 			    const dpl_condition_t *condition,
                             const dpl_range_t *range,
-			    dpl_header_func_t header_func,
+                            dpl_metadatum_func_t metadatum_func,
+                            dpl_dict_t **metadatap,
+                            dpl_sysmd_t *sysmdp,
 			    dpl_buffer_func_t buffer_func,
 			    void *cb_arg,
                             char **locationp)
@@ -674,9 +953,19 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
   dpl_req_t     *req = NULL;
   struct get_conven gc;
   int http_status;
+  dpl_srws_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   memset(&gc, 0, sizeof (gc));
-  gc.header_func = header_func;
+  gc.metadata = dpl_dict_new(13);
+  if (NULL == gc.metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+  gc.sysmdp = sysmdp;
+  gc.metadatum_func = metadatum_func;
   gc.buffer_func = buffer_func;
   gc.cb_arg = cb_arg;
 
@@ -727,8 +1016,14 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_LAZY)
+        req_mask |= DPL_SRWS_REQ_LAZY;
+    }
+
   //build request
-  ret2 = dpl_srws_req_build(req, &headers_request);
+  ret2 = dpl_srws_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -785,6 +1080,12 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
 
   if (!conn->ctx->keep_alive)
     gc.connection_close = 1;
+
+  if (NULL != metadatap)
+    {
+      *metadatap = gc.metadata;
+      gc.metadata = NULL;
+    }
   
   //map http_status to relevant value
   ret = dpl_map_http_status(http_status);
@@ -803,26 +1104,29 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
         dpl_conn_release(conn);
     }
 
+  if (NULL != gc.metadata)
+    dpl_dict_free(gc.metadata);
+
   if (NULL != headers_request)
     dpl_dict_free(headers_request);
 
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
 
-dpl_status_t
-dpl_srws_head_gen(dpl_ctx_t *ctx,
-                  const char *bucket,
+dpl_status_t 
+dpl_srws_head_all(dpl_ctx_t *ctx, 
+                  const char *bucket, 
                   const char *resource,
                   const char *subresource,
+                  dpl_option_t *option,
+                  dpl_ftype_t object_type,
                   const dpl_condition_t *condition,
-                  int all_headers,
                   dpl_dict_t **metadatap,
-                  dpl_sysmd_t *sysmdp,
                   char **locationp)
 {
   char          *host;
@@ -835,8 +1139,10 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
   int           connection_close = 0;
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
-  dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
+  dpl_srws_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -872,8 +1178,14 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_LAZY)
+        req_mask |= DPL_SRWS_REQ_LAZY;
+    }
+
   //build request
-  ret2 = dpl_srws_req_build(req, &headers_request);
+  ret2 = dpl_srws_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -925,35 +1237,13 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-  else
-    {
-      if (all_headers)
-        {
-          metadata = dpl_dict_new(13);
-          if (NULL == metadata)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
-
-          ret2 = dpl_dict_copy(metadata, headers_reply);
-        }
-      else
-        ret2 = dpl_srws_get_metadata_from_headers(headers_reply, &metadata, sysmdp);
-
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
 
   (void) dpl_log_event(ctx, "REQUEST", "HEAD", 0);
 
   if (NULL != metadatap)
     {
-      *metadatap = metadata;
-      metadata = NULL; //consume it
+      *metadatap = headers_reply;
+      headers_reply = NULL;
     }
 
   ret = DPL_SUCCESS;
@@ -968,9 +1258,6 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
         dpl_conn_release(conn);
     }
 
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
   if (NULL != headers_reply)
     dpl_dict_free(headers_reply);
 
@@ -980,7 +1267,7 @@ dpl_srws_head_gen(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -990,26 +1277,44 @@ dpl_srws_head(dpl_ctx_t *ctx,
               const char *bucket,
               const char *resource,
               const char *subresource,
+              dpl_option_t *option,
               dpl_ftype_t object_type,
               const dpl_condition_t *condition,
               dpl_dict_t **metadatap,
               dpl_sysmd_t *sysmdp,
               char **locationp)
 {
-  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 0, metadatap, sysmdp, locationp);
-}
+  dpl_status_t ret, ret2;
+  dpl_dict_t *headers_reply = NULL;
 
-dpl_status_t
-dpl_srws_head_all(dpl_ctx_t *ctx,
-                  const char *bucket,
-                  const char *resource,
-                  const char *subresource,
-                  dpl_ftype_t object_type,
-                  const dpl_condition_t *condition,
-                  dpl_dict_t **metadatap,
-                  char **locationp)
-{
-  return dpl_srws_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap, NULL, locationp);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  ret2 = dpl_srws_head_all(ctx, bucket, resource, subresource, option,
+                           object_type, condition, 
+                           &headers_reply, locationp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_srws_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != headers_reply)
+    dpl_dict_free(headers_reply);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
 }
 
 dpl_status_t
@@ -1017,6 +1322,7 @@ dpl_srws_delete(dpl_ctx_t *ctx,
                 const char *bucket,
                 const char *resource,
                 const char *subresource,
+                dpl_option_t *option,
                 dpl_ftype_t object_type,
                 char **locationp)
 {
@@ -1031,6 +1337,9 @@ dpl_srws_delete(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
+  dpl_srws_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1061,8 +1370,14 @@ dpl_srws_delete(dpl_ctx_t *ctx,
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_LAZY)
+        req_mask |= DPL_SRWS_REQ_LAZY;
+    }
+
   //build request
-  ret2 = dpl_srws_req_build(req, &headers_request);
+  ret2 = dpl_srws_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1138,7 +1453,7 @@ dpl_srws_delete(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -1349,6 +1664,7 @@ dpl_srws_copy(dpl_ctx_t *ctx,
               const char *dst_bucket,
               const char *dst_resource,
               const char *dst_subresource,
+              dpl_option_t *option,
               dpl_ftype_t object_type,
               dpl_copy_directive_t copy_directive,
               const dpl_dict_t *metadata,
@@ -1357,6 +1673,8 @@ dpl_srws_copy(dpl_ctx_t *ctx,
               char **locationp)
 {
   int ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   switch (copy_directive)
     {
@@ -1370,7 +1688,7 @@ dpl_srws_copy(dpl_ctx_t *ctx,
 
       //replace the metadata
       ret2 = dpl_srws_put_internal(ctx, dst_bucket, dst_resource,
-                                   dst_subresource, object_type, metadata, 
+                                   dst_subresource, option, object_type, metadata, 
                                    DPL_CANNED_ACL_UNDEF, NULL, 0, 1, locationp);
       if (DPL_SUCCESS != ret2)
         {
@@ -1389,6 +1707,8 @@ dpl_srws_copy(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
   
  end:
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }

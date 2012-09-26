@@ -63,7 +63,7 @@ struct dpl_http_reply
 /*
  *
  */
-typedef dpl_status_t (*dpl_header_func_t)(void *cb_arg, const char *header, char*value);
+typedef dpl_status_t (*dpl_header_func_t)(void *cb_arg, const char *header, const char *value);
 typedef dpl_status_t (*dpl_buffer_func_t)(void *cb_arg, char *buf, unsigned int len);
 
 /* PROTO httpreply.c */

@@ -264,7 +264,7 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s%s", parent_fqn.path, obj_name, delim);
 
-  ret2 = dpl_put(ctx, bucket, resource, NULL, object_type, metadata, sysmd, NULL, 0);
+  ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, object_type, metadata, sysmd, NULL, 0);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -583,7 +583,7 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_delete(ctx, bucket, fqn.path, NULL);
+  ret2 = dpl_delete(ctx, bucket, fqn.path, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1143,8 +1143,6 @@ dpl_mkdir(dpl_ctx_t *ctx,
   dpl_sysmd_t sysmd;
 
   memset(&sysmd, 0, sizeof (sysmd));
-  sysmd.mask = DPL_SYSMD_MASK_CANNED_ACL;
-  sysmd.canned_acl = DPL_CANNED_ACL_PRIVATE;
 
   return dpl_mkgen(ctx, ctx->light_mode, locator, dpl_vdir_mkdir, NULL, &sysmd);
 }
@@ -1166,8 +1164,6 @@ dpl_mknod(dpl_ctx_t *ctx,
   dpl_sysmd_t sysmd;
 
   memset(&sysmd, 0, sizeof (sysmd));
-  sysmd.mask = DPL_SYSMD_MASK_CANNED_ACL;
-  sysmd.canned_acl = DPL_CANNED_ACL_PRIVATE;
 
   return dpl_mkgen(ctx, ctx->light_mode, locator, dpl_vdir_mknod, NULL, &sysmd);
 }
@@ -1344,9 +1340,6 @@ dpl_close_ex(dpl_vfile_t *vfile,
       if (NULL != vfile->cipher_ctx)
         EVP_CIPHER_CTX_free(vfile->cipher_ctx);
     }
-
-  if (NULL != vfile->headers_reply)
-    dpl_dict_free(vfile->headers_reply);
 
   if (NULL != vfile->bucket)
     free(vfile->bucket);
@@ -1619,14 +1612,14 @@ dpl_openwrite(dpl_ctx_t *ctx,
           own_metadata = 1;
         }
 
-      ret2 = dpl_dict_add(metadata, "cipher", "yes", 1);
+      ret2 = dpl_dict_add(metadata, DPL_CIPHER, "yes", 1);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
           goto end;
         }
 
-      ret2 = dpl_dict_add(metadata, "cipher-type", "aes-256-cfb", 1);
+      ret2 = dpl_dict_add(metadata, DPL_CIPHER_TYPE, "aes-256-cfb", 1);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1699,10 +1692,10 @@ dpl_openwrite(dpl_ctx_t *ctx,
   else
     {
       if (flags & DPL_VFILE_FLAG_POST)
-        ret2 = dpl_post_buffered(ctx, bucket, obj_fqn.path, NULL, obj_type, metadata, sysmd,
+        ret2 = dpl_post_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, obj_type, metadata, sysmd,
                                  data_len, query_params, &vfile->conn);
       else
-        ret2 = dpl_put_buffered(ctx, bucket, obj_fqn.path, NULL, obj_type, metadata, sysmd,
+        ret2 = dpl_put_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, obj_type, metadata, sysmd,
                                 data_len, &vfile->conn);
       if (DPL_SUCCESS != ret2)
         {
@@ -1815,11 +1808,11 @@ dpl_write(dpl_vfile_t *vfile,
   if (vfile->flags & DPL_VFILE_FLAG_ONESHOT)
     {
       if (vfile->flags & DPL_VFILE_FLAG_POST)
-        ret2 = dpl_post(vfile->ctx, vfile->bucket, vfile->resource, NULL, 
+        ret2 = dpl_post(vfile->ctx, vfile->bucket, vfile->resource, NULL, NULL,
                         vfile->obj_type, vfile->metadata, vfile->sysmd,
                         buf, len, vfile->query_params, NULL); //XXX resource_idp ?
       else
-        ret2 = dpl_put(vfile->ctx, vfile->bucket, vfile->resource, NULL, 
+        ret2 = dpl_put(vfile->ctx, vfile->bucket, vfile->resource, NULL, NULL,
                        vfile->obj_type, vfile->metadata, vfile->sysmd,
                        buf, len);
       if (DPL_SUCCESS != ret2)
@@ -1844,35 +1837,24 @@ dpl_write(dpl_vfile_t *vfile,
 /**/
 
 static dpl_status_t
-cb_vfile_header(void *cb_arg,
-                const char *header,
-                char *value)
+cb_vfile_metadatum(void *cb_arg,
+                   const char *key,
+                   dpl_value_t *val)
 {
-  dpl_vfile_t *vfile = (dpl_vfile_t *) cb_arg;
-  int ret, ret2;
+  //dpl_vfile_t *vfile = (dpl_vfile_t *) cb_arg;
 
-  ret2 = dpl_dict_add(vfile->headers_reply, header, value, 1);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  //if (!strcmp(header, "x-amz-meta-cipher"))
+  //if (!strcmp(key, DPL_CIPHER))
   //{
-  //if (!strcmp(value, "yes"))
+  //if (val->type == DPL_VALUE_STRING &&
+  //!strcmp(val->string, "yes"))
   //{
   //vfile->flags |= DPL_VFILE_FLAG_ENCRYPT;
   //}
   //}
 
-  //XXX check cipher-type
+  //XXX check DPL_CIPHER_TYPE
 
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
+  return DPL_SUCCESS;
 }
 
 static dpl_status_t
@@ -1995,7 +1977,6 @@ dpl_openread(dpl_ctx_t *ctx,
   char *bucket = NULL;
   char *path;
   dpl_fqn_t cur_fqn;
-  dpl_dict_t *metadata = NULL;
   char *data_buf = NULL;
   unsigned int data_len;
 
@@ -2049,13 +2030,6 @@ dpl_openread(dpl_ctx_t *ctx,
 
   memset(vfile, 0, sizeof (*vfile));
 
-  vfile->headers_reply = dpl_dict_new(13);
-  if (NULL == vfile->headers_reply)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
   vfile->ctx = ctx;
   vfile->flags = flags;
   vfile->buffer_func = buffer_func;
@@ -2071,11 +2045,11 @@ dpl_openread(dpl_ctx_t *ctx,
   if (flags & DPL_VFILE_FLAG_ONESHOT)
     {
       if (flags & DPL_VFILE_FLAG_RANGE)
-        ret2 = dpl_get_range(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
-                             condition, range, &data_buf, &data_len, &metadata, sysmdp);
+        ret2 = dpl_get_range(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
+                             condition, range, &data_buf, &data_len, metadatap, sysmdp);
       else
-        ret2 = dpl_get(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
-                       condition, &data_buf, &data_len, &metadata, sysmdp);
+        ret2 = dpl_get(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
+                       condition, &data_buf, &data_len, metadatap, sysmdp);
 
       if (DPL_SUCCESS != ret2)
         {
@@ -2090,30 +2064,17 @@ dpl_openread(dpl_ctx_t *ctx,
   else
     {
       if (flags & DPL_VFILE_FLAG_RANGE)
-        ret2 = dpl_get_range_buffered(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
-                                      condition, range, cb_vfile_header, cb_vfile_buffer, vfile);
+        ret2 = dpl_get_range_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
+                                      condition, range, cb_vfile_metadatum, metadatap, sysmdp, cb_vfile_buffer, vfile);
       else
-        ret2 = dpl_get_buffered(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
-                                condition, cb_vfile_header, cb_vfile_buffer, vfile);
+        ret2 = dpl_get_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
+                                condition, cb_vfile_metadatum, metadatap, sysmdp, cb_vfile_buffer, vfile);
 
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
           goto end;
         }
-
-      ret2 = dpl_get_metadata_from_headers(ctx, vfile->headers_reply, &metadata, sysmdp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
     }
 
   ret = DPL_SUCCESS;
@@ -2128,9 +2089,6 @@ dpl_openread(dpl_ctx_t *ctx,
 
   if (NULL != nlocator)
     free(nlocator);
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
 
   if (NULL != data_buf)
     free(data_buf);
@@ -2200,7 +2158,7 @@ dpl_unlink(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL);
+  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2278,7 +2236,7 @@ dpl_getattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_head(ctx, bucket, obj_fqn.path, NULL, NULL, metadatap, sysmdp);
+  ret2 = dpl_head(ctx, bucket, obj_fqn.path, NULL, NULL, NULL, metadatap, sysmdp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2355,7 +2313,7 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_head_all(ctx, bucket, obj_fqn.path, NULL, NULL, metadatap);
+  ret2 = dpl_head_all(ctx, bucket, obj_fqn.path, NULL, NULL, NULL, metadatap);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2433,7 +2391,7 @@ dpl_setattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, bucket, obj_fqn.path, NULL, bucket, obj_fqn.path, NULL, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_METADATA_REPLACE, metadata, sysmd, NULL);
+  ret2 = dpl_copy(ctx, bucket, obj_fqn.path, NULL, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_METADATA_REPLACE, metadata, sysmd, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2587,7 +2545,7 @@ copy_path_to_path(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_copy(ctx, src_bucket, src_obj_fqn.path, NULL, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, NULL, DPL_CANNED_ACL_UNDEF, NULL);
+  ret2 = dpl_copy(ctx, src_bucket, src_obj_fqn.path, NULL, dst_bucket, dst_obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2715,7 +2673,7 @@ copy_id_to_path(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_copy(ctx, dst_bucket, native_id, NULL, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, NULL, DPL_CANNED_ACL_UNDEF, NULL);
+  ret2 = dpl_copy(ctx, dst_bucket, native_id, NULL, dst_bucket, dst_obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2916,7 +2874,7 @@ dpl_fgenurl(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_genurl(ctx, bucket, obj_fqn.path, NULL, expires, buf, len, lenp);
+  ret2 = dpl_genurl(ctx, bucket, obj_fqn.path, NULL, NULL, expires, buf, len, lenp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

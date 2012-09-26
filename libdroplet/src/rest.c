@@ -210,6 +210,7 @@ dpl_post(dpl_ctx_t *ctx,
          const char *bucket,
          const char *resource,
          const char *subresource,
+         dpl_option_t *option,
          dpl_ftype_t object_type,
          dpl_dict_t *metadata,
          dpl_sysmd_t *sysmd,
@@ -228,7 +229,7 @@ dpl_post(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->post(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len, query_params, resource_idp, NULL);
+  ret = ctx->backend->post(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, resource_idp, NULL);
   
  end:
 
@@ -242,6 +243,7 @@ dpl_post_buffered(dpl_ctx_t *ctx,
                   const char *bucket,
                   const char *resource,
                   const char *subresource,
+                  dpl_option_t *option,
                   dpl_ftype_t object_type,
                   dpl_dict_t *metadata,
                   dpl_sysmd_t *sysmd,
@@ -259,7 +261,7 @@ dpl_post_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->post_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, query_params, connp, NULL);
+  ret = ctx->backend->post_buffered(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_len, query_params, connp, NULL);
   
  end:
 
@@ -288,6 +290,7 @@ dpl_put(dpl_ctx_t *ctx,
         const char *bucket,
         const char *resource,
         const char *subresource,
+        dpl_option_t *option,
         dpl_ftype_t object_type,
         dpl_dict_t *metadata,
         dpl_sysmd_t *sysmd,
@@ -304,7 +307,7 @@ dpl_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->put(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_buf, data_len, NULL);
+  ret = ctx->backend->put(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_buf, data_len, NULL);
   
  end:
 
@@ -318,6 +321,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
                  const char *bucket,
                  const char *resource,
                  const char *subresource,
+                 dpl_option_t *option,
                  dpl_ftype_t object_type,
                  dpl_dict_t *metadata,
                  dpl_sysmd_t *sysmd,
@@ -334,7 +338,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, object_type, metadata, sysmd, data_len, connp, NULL);
+  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_len, connp, NULL);
   
  end:
 
@@ -362,6 +366,7 @@ dpl_get(dpl_ctx_t *ctx,
         const char *bucket,
         const char *resource,
         const char *subresource,
+        dpl_option_t *option,
         dpl_ftype_t object_type,
         dpl_condition_t *condition,
         char **data_bufp,
@@ -379,7 +384,7 @@ dpl_get(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get(ctx, bucket, resource, subresource, object_type, condition, data_bufp, data_lenp, metadatap, sysmdp, NULL);
+  ret = ctx->backend->get(ctx, bucket, resource, subresource, option, object_type, condition, data_bufp, data_lenp, metadatap, sysmdp, NULL);
 
  end:
 
@@ -407,6 +412,7 @@ dpl_get_range(dpl_ctx_t *ctx,
               const char *bucket,
               const char *resource,
               const char *subresource,
+              dpl_option_t *option,
               dpl_ftype_t object_type,
               dpl_condition_t *condition,
               dpl_range_t *range, 
@@ -425,7 +431,7 @@ dpl_get_range(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp, NULL);
+  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, option, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp, NULL);
   
  end:
 
@@ -439,9 +445,12 @@ dpl_get_buffered(dpl_ctx_t *ctx,
                  const char *bucket,
                  const char *resource,
                  const char *subresource, 
+                 dpl_option_t *option,
                  dpl_ftype_t object_type,
                  dpl_condition_t *condition,
-                 dpl_header_func_t header_func, 
+                 dpl_metadatum_func_t metadatum_func,
+                 dpl_dict_t **metadatap,
+                 dpl_sysmd_t *sysmdp,
                  dpl_buffer_func_t buffer_func,
                  void *cb_arg)
 {
@@ -455,7 +464,7 @@ dpl_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_buffered(ctx, bucket, resource, subresource, object_type, condition, header_func, buffer_func, cb_arg, NULL);
+  ret = ctx->backend->get_buffered(ctx, bucket, resource, subresource, option, object_type, condition, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
   
  end:
 
@@ -469,10 +478,13 @@ dpl_get_range_buffered(dpl_ctx_t *ctx,
                        const char *bucket,
                        const char *resource,
                        const char *subresource, 
+                       dpl_option_t *option,
                        dpl_ftype_t object_type,
                        dpl_condition_t *condition,
                        dpl_range_t *range,
-                       dpl_header_func_t header_func, 
+                       dpl_metadatum_func_t metadatum_func,
+                       dpl_dict_t **metadatap,
+                       dpl_sysmd_t *sysmdp, 
                        dpl_buffer_func_t buffer_func,
                        void *cb_arg)
 {
@@ -486,7 +498,7 @@ dpl_get_range_buffered(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_range_buffered(ctx, bucket, resource, subresource, object_type, condition, range, header_func, buffer_func, cb_arg, NULL);
+  ret = ctx->backend->get_range_buffered(ctx, bucket, resource, subresource, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
   
  end:
 
@@ -500,6 +512,7 @@ dpl_head(dpl_ctx_t *ctx,
          const char *bucket,
          const char *resource,
          const char *subresource,
+         dpl_option_t *option,
          dpl_condition_t *condition,
          dpl_dict_t **metadatap,
          dpl_sysmd_t *sysmdp)
@@ -514,7 +527,7 @@ dpl_head(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap, sysmdp, NULL);
+  ret = ctx->backend->head(ctx, bucket, resource, subresource, option, DPL_FTYPE_UNDEF, condition, metadatap, sysmdp, NULL);
   
  end:
 
@@ -542,6 +555,7 @@ dpl_head_all(dpl_ctx_t *ctx,
              const char *bucket,
              const char *resource,
              const char *subresource,
+             dpl_option_t *option,
              dpl_condition_t *condition,
              dpl_dict_t **metadatap)
 {
@@ -555,7 +569,7 @@ dpl_head_all(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head_all(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, condition, metadatap, NULL);
+  ret = ctx->backend->head_all(ctx, bucket, resource, subresource, option, DPL_FTYPE_UNDEF, condition, metadatap, NULL);
   
  end:
 
@@ -563,32 +577,6 @@ dpl_head_all(dpl_ctx_t *ctx,
   
   return ret;
 }
-
-dpl_status_t
-dpl_get_metadata_from_headers(dpl_ctx_t *ctx,
-                              const dpl_dict_t *headers,
-                              dpl_dict_t **metadatap,
-                              dpl_sysmd_t *sysmdp)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "get_metadata_from_headers");
-
-  if (NULL == ctx->backend->get_metadata_from_headers)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->get_metadata_from_headers(headers, metadatap, sysmdp);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
-  
-  return ret;
-}
-
 
 /**
  * delete a resource
@@ -604,7 +592,8 @@ dpl_status_t
 dpl_delete(dpl_ctx_t *ctx,
            const char *bucket,
            const char *resource,
-           const char *subresource)
+           const char *subresource,
+           dpl_option_t *option)
 {
   int ret;
 
@@ -616,7 +605,7 @@ dpl_delete(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, DPL_FTYPE_UNDEF, NULL);
+  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, option, DPL_FTYPE_UNDEF, NULL);
   
  end:
 
@@ -642,6 +631,7 @@ dpl_genurl(dpl_ctx_t *ctx,
            const char *bucket,
            const char *resource,
            const char *subresource,
+           dpl_option_t *option,
            time_t expires,
            char *buf,
            unsigned int len,
@@ -657,7 +647,7 @@ dpl_genurl(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->genurl(ctx, bucket, resource, subresource, expires, buf, len, lenp, NULL);
+  ret = ctx->backend->genurl(ctx, bucket, resource, subresource, option, expires, buf, len, lenp, NULL);
   
  end:
 
@@ -691,6 +681,7 @@ dpl_copy(dpl_ctx_t *ctx,
          const char *dst_bucket,
          const char *dst_resource,
          const char *dst_subresource,
+         dpl_option_t *option,
          dpl_ftype_t object_type,
          dpl_copy_directive_t copy_directive,
          dpl_dict_t *metadata,
@@ -707,7 +698,7 @@ dpl_copy(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, object_type, copy_directive, metadata, sysmd, condition, NULL);
+  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, option, object_type, copy_directive, metadata, sysmd, condition, NULL);
   
  end:
 

@@ -54,6 +54,7 @@ dpl_posix_make_bucket(dpl_ctx_t *ctx,
                      const dpl_sysmd_t *sysmd,
                      char **locationp)
 {
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
   return DPL_ENOTSUPP;
 }
 
@@ -76,6 +77,8 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
   dpl_common_prefix_t *common_prefix = NULL;
   dpl_object_t *object = NULL;
   char buf[MAXPATHLEN];
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   if (strcmp(delimiter, "/"))
     {
@@ -124,10 +127,12 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
           !strcmp(entryp->d_name, ".."))
         continue ;
 
+      DPL_TRACE(ctx, DPL_TRACE_BACKEND, "%s", entryp->d_name);
+
       if (entryp->d_type == DT_DIR)
         {
           //this is a directory
-          snprintf(buf, sizeof (buf), "%s/", entryp->d_name);
+          snprintf(buf, sizeof (buf), "%s%s/", prefix ? prefix : "", entryp->d_name);
           common_prefix = malloc(sizeof (*common_prefix));
           if (NULL == common_prefix)
             {
@@ -153,6 +158,7 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
         }
       else
         {
+          snprintf(buf, sizeof (buf), "%s%s", prefix ? prefix : "", entryp->d_name);
           object = malloc(sizeof (*object));
           if (NULL == object)
             {
@@ -160,7 +166,7 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
               goto end;
             }
           memset(object, 0, sizeof (*object));
-          object->path = strdup(entryp->d_name);
+          object->path = strdup(buf);
           if (NULL == object->path)
             {
               ret = DPL_ENOMEM;
@@ -209,6 +215,8 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
 
   if (NULL != dir)
     closedir(dir);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -324,23 +332,24 @@ posix_setattr(const char *path,
   ret = DPL_SUCCESS;
   
  end:
-  
+
   return ret;
 }
 
 dpl_status_t
 dpl_posix_post(dpl_ctx_t *ctx,
-              const char *bucket,
-              const char *resource,
-              const char *subresource,
-              dpl_ftype_t object_type,
-              const dpl_dict_t *metadata,
-              const dpl_sysmd_t *sysmd,
-              const char *data_buf,
-              unsigned int data_len,
-              const dpl_dict_t *query_params,
-              char **resource_idp,
-              char **locationp)
+               const char *bucket,
+               const char *resource,
+               const char *subresource,
+               dpl_option_t *option, 
+               dpl_ftype_t object_type,
+               const dpl_dict_t *metadata,
+               const dpl_sysmd_t *sysmd,
+               const char *data_buf,
+               unsigned int data_len,
+               const dpl_dict_t *query_params,
+               char **resource_idp,
+               char **locationp)
 {
   dpl_status_t ret, ret2;
   int iret;
@@ -350,6 +359,8 @@ dpl_posix_post(dpl_ctx_t *ctx,
   char *native_id = NULL;
   ssize_t cc;
   int fd = -1;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
@@ -437,26 +448,31 @@ dpl_posix_post(dpl_ctx_t *ctx,
   if (NULL != native_id)
     free(native_id);
 
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
   return ret;
 }
 
 dpl_status_t
 dpl_posix_post_buffered(dpl_ctx_t *ctx,
-                       const char *bucket,
-                       const char *resource,
-                       const char *subresource,
-                       dpl_ftype_t object_type,
-                       const dpl_dict_t *metadata,
-                       const dpl_sysmd_t *sysmd,
-                       unsigned int data_len,
-                       const dpl_dict_t *query_params,
-                       dpl_conn_t **connp,
-                       char **locationp)
+                        const char *bucket,
+                        const char *resource,
+                        const char *subresource,
+                        dpl_option_t *option, 
+                        dpl_ftype_t object_type,
+                        const dpl_dict_t *metadata,
+                        const dpl_sysmd_t *sysmd,
+                        unsigned int data_len,
+                        const dpl_dict_t *query_params,
+                        dpl_conn_t **connp,
+                        char **locationp)
 {
   dpl_conn_t *conn = NULL;
   dpl_status_t ret, ret2;
   char path[MAXPATHLEN];
   int fd = -1;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
@@ -511,22 +527,25 @@ dpl_posix_post_buffered(dpl_ctx_t *ctx,
   if (-1 == fd)
     close(fd);
 
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
   return ret;
 }
 
 dpl_status_t
 dpl_posix_put(dpl_ctx_t *ctx,
-             const char *bucket,
-             const char *resource,
-             const char *subresource,
-             dpl_ftype_t object_type,
-             const dpl_dict_t *metadata,
-             const dpl_sysmd_t *sysmd,
-             const char *data_buf,
-             unsigned int data_len,
-             char **locationp)
+              const char *bucket,
+              const char *resource,
+              const char *subresource,
+              dpl_option_t *option, 
+              dpl_ftype_t object_type,
+              const dpl_dict_t *metadata,
+              const dpl_sysmd_t *sysmd,
+              const char *data_buf,
+              unsigned int data_len,
+              char **locationp)
 {
-  return dpl_posix_put_range(ctx, bucket, resource, subresource,
+  return dpl_posix_put_range(ctx, bucket, resource, subresource, option,
                              object_type, NULL, metadata, sysmd,
                              data_buf, data_len, locationp);
 }
@@ -536,6 +555,7 @@ dpl_posix_put_range(dpl_ctx_t *ctx,
                     const char *bucket,
                     const char *resource,
                     const char *subresource,
+                    dpl_option_t *option, 
                     dpl_ftype_t object_type,
                     const dpl_range_t *range,
                     const dpl_dict_t *metadata,
@@ -549,6 +569,8 @@ dpl_posix_put_range(dpl_ctx_t *ctx,
   char path[MAXPATHLEN];
   ssize_t cc;
   int fd = -1;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
@@ -639,6 +661,8 @@ dpl_posix_put_range(dpl_ctx_t *ctx,
   if (-1 != fd)
     close(fd);
 
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
   return ret;
 }
 
@@ -647,6 +671,7 @@ dpl_posix_put_buffered(dpl_ctx_t *ctx,
                        const char *bucket,
                        const char *resource,
                        const char *subresource,
+                       dpl_option_t *option, 
                        dpl_ftype_t object_type,
                        const dpl_dict_t *metadata,
                        const dpl_sysmd_t *sysmd,
@@ -654,7 +679,7 @@ dpl_posix_put_buffered(dpl_ctx_t *ctx,
                        dpl_conn_t **connp,
                        char **locationp)
 {
-  return dpl_posix_put_range_buffered(ctx, bucket, resource, subresource,
+  return dpl_posix_put_range_buffered(ctx, bucket, resource, subresource, option,
                                       object_type, NULL, metadata, sysmd,
                                       data_len, connp, locationp);
 }
@@ -664,6 +689,7 @@ dpl_posix_put_range_buffered(dpl_ctx_t *ctx,
                              const char *bucket,
                              const char *resource,
                              const char *subresource,
+                             dpl_option_t *option, 
                              dpl_ftype_t object_type,
                              const dpl_range_t *range,
                              const dpl_dict_t *metadata,
@@ -677,6 +703,8 @@ dpl_posix_put_range_buffered(dpl_ctx_t *ctx,
   char path[MAXPATHLEN];
   int fd = -1;
   int iret;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
@@ -751,23 +779,224 @@ dpl_posix_put_range_buffered(dpl_ctx_t *ctx,
   if (-1 == fd)
     close(fd);
 
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+/**/
+
+dpl_status_t
+dpl_posix_get_metadatum_from_value(const char *key,
+                                   dpl_value_t *val,
+                                   dpl_metadatum_func_t metadatum_func,
+                                   void *cb_arg,
+                                   dpl_dict_t *metadata,
+                                   dpl_sysmd_t *sysmdp)
+{
+  dpl_status_t ret, ret2;
+  int iret;
+  char buf[256];
+
+  if (sysmdp)
+    {
+      if (!strcmp(key, "atime"))
+        {
+          assert(val->type == DPL_VALUE_STRING);
+          sysmdp->atime = strtoul(val->string, NULL, 0);
+          sysmdp->mask |= DPL_SYSMD_MASK_ATIME;
+        }
+      else if (!strcmp(key, "mtime"))
+        {
+          assert(val->type == DPL_VALUE_STRING);
+          sysmdp->mtime = strtoul(val->string, NULL, 0);
+          sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
+        }
+      else if (!strcmp(key, "ctime"))
+        {
+          assert(val->type == DPL_VALUE_STRING);
+          sysmdp->ctime = strtoul(val->string, NULL, 0);
+          sysmdp->mask |= DPL_SYSMD_MASK_CTIME;
+        }
+      else if (!strcmp(key, "size"))
+        {
+          assert(val->type == DPL_VALUE_STRING);
+          sysmdp->size = strtoul(val->string, NULL, 0);
+          sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
+        }
+      else if (!strcmp(key, "uid"))
+        {
+          uid_t uid;
+          struct passwd pwd, *pwdp;
+
+          assert(val->type == DPL_VALUE_STRING);
+          uid = atoi(val->string);
+          iret = getpwuid_r(uid, &pwd, buf, sizeof (buf), &pwdp);
+          if (iret == -1)
+            {
+              perror("getpwuid");
+              ret = DPL_FAILURE;
+              goto end;
+            }
+          snprintf(sysmdp->owner, sizeof (sysmdp->owner), "%s", pwdp->pw_name);
+          sysmdp->mask |= DPL_SYSMD_MASK_OWNER;
+        }
+      else if (!strcmp(key, "gid"))
+        {
+          gid_t gid;
+          struct group grp, *grpp;
+
+          assert(val->type == DPL_VALUE_STRING);
+          gid = atoi(val->string);
+          iret = getgrgid_r(gid, &grp, buf, sizeof (buf), &grpp);
+          if (iret == -1)
+            {
+              perror("getgrgid");
+              ret = DPL_FAILURE;
+              goto end;
+            }
+          snprintf(sysmdp->group, sizeof (sysmdp->group), "%s", grpp->gr_name);
+          sysmdp->mask |= DPL_SYSMD_MASK_GROUP;
+        }
+      else if (!strcmp(key, "ino"))
+        {
+          assert(val->type == DPL_VALUE_STRING);
+          snprintf(sysmdp->id, sizeof (sysmdp->id), "%s", val->string);
+          sysmdp->mask |= DPL_SYSMD_MASK_ID;
+        }
+    }
+
+  if (!strcmp(key, "xattr"))
+    {
+      //this is the metadata object
+      if (DPL_VALUE_SUBDICT != val->type)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+
+      if (metadata)
+        {
+          if (metadatum_func)
+            {
+              ret2 = metadatum_func(cb_arg, key, val);
+              if (DPL_SUCCESS != ret2)
+                {
+                  ret = ret2;
+                  goto end;
+                }
+            }
+
+          //add md into metadata
+          ret2 = dpl_dict_add_value(metadata, key, val, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
+    }
+  
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
+}
+
+struct metadata_conven
+{
+  dpl_dict_t *metadata;
+  dpl_sysmd_t *sysmdp;
+};
+
+static dpl_status_t
+cb_values_iterate(dpl_dict_var_t *var,
+                  void *cb_arg)
+{
+  struct metadata_conven *mc = (struct metadata_conven *) cb_arg;
+  
+  return dpl_posix_get_metadatum_from_value(var->key,
+                                            var->val,
+                                            NULL,
+                                            NULL,
+                                            mc->metadata,
+                                            mc->sysmdp);
+}
+
+/** 
+ * get metadata from values
+ * 
+ * @param values 
+ * @param metadatap 
+ * @param sysmdp 
+ * 
+ * @return 
+ */
+dpl_status_t
+dpl_posix_get_metadata_from_values(const dpl_dict_t *values,
+                                   dpl_dict_t **metadatap,
+                                   dpl_sysmd_t *sysmdp)
+{
+  dpl_dict_t *metadata = NULL;
+  dpl_status_t ret, ret2;
+  struct metadata_conven mc;
+
+  if (metadatap)
+    {
+      metadata = dpl_dict_new(13);
+      if (NULL == metadata)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  memset(&mc, 0, sizeof (mc));
+  mc.metadata = metadata;
+  mc.sysmdp = sysmdp;
+
+  if (sysmdp)
+    sysmdp->mask = 0;
+
+  ret2 = dpl_dict_iterate(values, cb_values_iterate, &mc);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
   return ret;
 }
 
 dpl_status_t
 dpl_posix_get(dpl_ctx_t *ctx,
-             const char *bucket,
-             const char *resource,
-             const char *subresource,
-             dpl_ftype_t object_type,
-             const dpl_condition_t *condition,
-             char **data_bufp,
-             unsigned int *data_lenp,
-             dpl_dict_t **metadatap,
-             dpl_sysmd_t *sysmdp,
-             char **locationp)
+              const char *bucket,
+              const char *resource,
+              const char *subresource,
+              dpl_option_t *option, 
+              dpl_ftype_t object_type,
+              const dpl_condition_t *condition,
+              char **data_bufp,
+              unsigned int *data_lenp,
+              dpl_dict_t **metadatap,
+              dpl_sysmd_t *sysmdp,
+              char **locationp)
 {
-  return dpl_posix_get_range(ctx, bucket, resource, subresource, 
+  return dpl_posix_get_range(ctx, bucket, resource, subresource, option,
                              object_type, condition, NULL, 
                              data_bufp, data_lenp, 
                              metadatap, sysmdp, locationp);
@@ -778,6 +1007,7 @@ dpl_posix_get_range(dpl_ctx_t *ctx,
                     const char *bucket,
                     const char *resource,
                     const char *subresource,
+                    dpl_option_t *option, 
                     dpl_ftype_t object_type,
                     const dpl_condition_t *condition,
                     const dpl_range_t *range,
@@ -796,6 +1026,8 @@ dpl_posix_get_range(dpl_ctx_t *ctx,
   struct stat st;
   u_int data_len;
   char *data_buf = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
@@ -888,51 +1120,65 @@ dpl_posix_get_range(dpl_ctx_t *ctx,
   if (-1 != fd)
     close(fd);
 
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
   return ret;
 }
 
 dpl_status_t
 dpl_posix_get_buffered(dpl_ctx_t *ctx,
-                      const char *bucket,
-                      const char *resource,
-                      const char *subresource,
-                      dpl_ftype_t object_type,
-                      const dpl_condition_t *condition,
-                      dpl_header_func_t header_func,
-                      dpl_buffer_func_t buffer_func,
-                      void *cb_arg,
-                      char **locationp)
+                       const char *bucket,
+                       const char *resource,
+                       const char *subresource,
+                       dpl_option_t *option,
+                       dpl_ftype_t object_type,
+                       const dpl_condition_t *condition,
+                       dpl_metadatum_func_t metadatum_func,
+                       dpl_dict_t **metadatap,
+                       dpl_sysmd_t *sysmdp,
+                       dpl_buffer_func_t buffer_func,
+                       void *cb_arg,
+                       char **locationp)
 {
-  return dpl_posix_get_range_buffered(ctx, bucket, resource, subresource, 
+  return dpl_posix_get_range_buffered(ctx, bucket, resource, subresource, option,
                                       object_type, condition, NULL,
-                                      header_func, buffer_func, 
+                                      metadatum_func, metadatap, sysmdp, buffer_func, 
                                       cb_arg, locationp);
 }
 
 struct get_conven
 {
-  dpl_header_func_t header_func;
+  dpl_metadatum_func_t metadatum_func;
+  dpl_dict_t *metadata;
+  dpl_sysmd_t *sysmdp;
   dpl_buffer_func_t buffer_func;
   void *cb_arg;
-  int connection_close;
 };
 
 static dpl_status_t
-cb_get_header(dpl_dict_var_t *var,
-              void *cb_arg)
+cb_get_value(dpl_dict_var_t *var,
+             void *cb_arg)
 {
   struct get_conven *gc = (struct get_conven *) cb_arg;
-  int ret;
-
-  if (NULL != gc->header_func)
+  dpl_status_t ret, ret2;
+  
+  ret2 = dpl_posix_get_metadatum_from_value(var->key,
+                                            var->val,
+                                            gc->metadatum_func,
+                                            gc->cb_arg,
+                                            gc->metadata,
+                                            gc->sysmdp);
+  if (DPL_SUCCESS != ret2)
     {
-      assert(var->val->type == DPL_VALUE_STRING);
-      ret = gc->header_func(gc->cb_arg, var->key, var->val->string);
-      if (DPL_SUCCESS != ret)
-        return ret;
+      ret = ret2;
+      goto end;
     }
 
-  return DPL_SUCCESS;
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
 }
 
 static dpl_status_t
@@ -958,10 +1204,13 @@ dpl_posix_get_range_buffered(dpl_ctx_t *ctx,
                              const char *bucket,
                              const char *resource,
                              const char *subresource,
+                             dpl_option_t *option, 
                              dpl_ftype_t object_type,
                              const dpl_condition_t *condition,
                              const dpl_range_t *range, 
-                             dpl_header_func_t header_func,
+                             dpl_metadatum_func_t metadatum_func,
+                             dpl_dict_t **metadatap,
+                             dpl_sysmd_t *sysmdp,
                              dpl_buffer_func_t buffer_func,
                              void *cb_arg,
                              char **locationp)
@@ -975,8 +1224,17 @@ dpl_posix_get_range_buffered(dpl_ctx_t *ctx,
   dpl_dict_t *all_mds = NULL;
   struct get_conven gc;
 
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
   memset(&gc, 0, sizeof (gc));
-  gc.header_func = header_func;
+  gc.metadata = dpl_dict_new(13);
+  if (NULL == gc.metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+  gc.sysmdp = sysmdp;
+  gc.metadatum_func = metadatum_func;
   gc.buffer_func = buffer_func;
   gc.cb_arg = cb_arg;
 
@@ -1013,7 +1271,7 @@ dpl_posix_get_range_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_posix_head_all(ctx, bucket, resource, subresource, 
+  ret2 = dpl_posix_head_all(ctx, bucket, resource, subresource, option,
                             object_type, condition, &all_mds, locationp);
   if (DPL_SUCCESS != ret2)
     {
@@ -1021,7 +1279,7 @@ dpl_posix_get_range_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_dict_iterate(all_mds, cb_get_header, &gc);
+  ret2 = dpl_dict_iterate(all_mds, cb_get_value, &gc);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1049,6 +1307,12 @@ dpl_posix_get_range_buffered(dpl_ctx_t *ctx,
         break ;
     }
 
+  if (NULL != metadatap)
+    {
+      *metadatap = gc.metadata;
+      gc.metadata = NULL;
+    }
+
   ret = DPL_SUCCESS;
 
  end:
@@ -1056,21 +1320,27 @@ dpl_posix_get_range_buffered(dpl_ctx_t *ctx,
   if (NULL != all_mds)
     dpl_dict_free(all_mds);
 
+  if (NULL != gc.metadata)
+    dpl_dict_free(gc.metadata);
+
   if (-1 == fd)
     close(fd);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
 
 dpl_status_t
 dpl_posix_head_all(dpl_ctx_t *ctx,
-                  const char *bucket,
-                  const char *resource,
-                  const char *subresource,
-                  dpl_ftype_t object_type,
-                  const dpl_condition_t *condition,
-                  dpl_dict_t **metadatap,
-                  char **locationp)
+                   const char *bucket,
+                   const char *resource,
+                   const char *subresource,
+                   dpl_option_t *option, 
+                   dpl_ftype_t object_type,
+                   const dpl_condition_t *condition,
+                   dpl_dict_t **metadatap,
+                   char **locationp)
 {
   dpl_status_t ret, ret2;
   char path[MAXPATHLEN];
@@ -1082,6 +1352,8 @@ dpl_posix_head_all(dpl_ctx_t *ctx,
   ssize_t ssize_ret, off;
   dpl_dict_t *subdict = NULL;
   dpl_value_t value;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
@@ -1277,150 +1549,32 @@ dpl_posix_head_all(dpl_ctx_t *ctx,
   if (NULL != metadata)
     dpl_dict_free(metadata);
 
-  return ret;
-}
-
-dpl_status_t 
-dpl_posix_get_metadata_from_headers(const dpl_dict_t *all_mds, 
-                                    dpl_dict_t **metadatap, 
-                                    dpl_sysmd_t *sysmdp)
-{
-  dpl_status_t ret, ret2;
-  dpl_dict_t *metadata = NULL;
-  dpl_dict_var_t *var;
-  int iret;
-  char buf[256];
-
-  if (sysmdp)
-    {
-      sysmdp->mask = 0;
-
-      var = dpl_dict_get(all_mds, "atime");
-      if (var)
-        {
-          assert(var->val->type == DPL_VALUE_STRING);
-          sysmdp->atime = strtoul(var->val->string, NULL, 0);
-          sysmdp->mask |= DPL_SYSMD_MASK_ATIME;
-        }
-
-      var = dpl_dict_get(all_mds, "mtime");
-      if (var)
-        {
-          assert(var->val->type == DPL_VALUE_STRING);
-          sysmdp->mtime = strtoul(var->val->string, NULL, 0);
-          sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
-        }
-
-      var = dpl_dict_get(all_mds, "ctime");
-      if (var)
-        {
-          assert(var->val->type == DPL_VALUE_STRING);
-          sysmdp->ctime = strtoul(var->val->string, NULL, 0);
-          sysmdp->mask |= DPL_SYSMD_MASK_CTIME;
-        }
-
-      var = dpl_dict_get(all_mds, "size");
-      if (var)
-        {
-          assert(var->val->type == DPL_VALUE_STRING);
-          sysmdp->size = strtoul(var->val->string, NULL, 0);
-          sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
-        }
-
-      var = dpl_dict_get(all_mds, "uid");
-      if (var)
-        {
-          uid_t uid;
-          struct passwd pwd, *pwdp;
-
-          assert(var->val->type == DPL_VALUE_STRING);
-          uid = atoi(var->val->string);
-          iret = getpwuid_r(uid, &pwd, buf, sizeof (buf), &pwdp);
-          if (iret == -1)
-            {
-              perror("getpwuid");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-          snprintf(sysmdp->owner, sizeof (sysmdp->owner), "%s", pwdp->pw_name);
-          sysmdp->mask |= DPL_SYSMD_MASK_OWNER;
-        }
-
-      var = dpl_dict_get(all_mds, "gid");
-      if (var)
-        {
-          gid_t gid;
-          struct group grp, *grpp;
-
-          assert(var->val->type == DPL_VALUE_STRING);
-          gid = atoi(var->val->string);
-          iret = getgrgid_r(gid, &grp, buf, sizeof (buf), &grpp);
-          if (iret == -1)
-            {
-              perror("getgrgid");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-          snprintf(sysmdp->group, sizeof (sysmdp->group), "%s", grpp->gr_name);
-          sysmdp->mask |= DPL_SYSMD_MASK_GROUP;
-        }
-    }
-
-  //find the xattr
-  ret2 = dpl_dict_get_lowered(all_mds, "xattr", &var);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (DPL_VALUE_SUBDICT != var->val->type)
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  metadata = dpl_dict_dup(var->val->subdict);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
 
 dpl_status_t
 dpl_posix_head(dpl_ctx_t *ctx,
-              const char *bucket,
-              const char *resource,
-              const char *subresource,
-              dpl_ftype_t object_type,
-              const dpl_condition_t *condition,
-              dpl_dict_t **metadatap,
-              dpl_sysmd_t *sysmdp,
-              char **locationp)
+               const char *bucket,
+               const char *resource,
+               const char *subresource,
+               dpl_option_t *option, 
+               dpl_ftype_t object_type,
+               const dpl_condition_t *condition,
+               dpl_dict_t **metadatap,
+               dpl_sysmd_t *sysmdp,
+               char **locationp)
 {
   dpl_status_t ret, ret2;
   dpl_dict_t *all_mds = NULL;
   char path[MAXPATHLEN];
 
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
-  ret2 = dpl_posix_head_all(ctx, bucket, resource, subresource, 
+  ret2 = dpl_posix_head_all(ctx, bucket, resource, subresource, option,
                             object_type, condition, &all_mds, locationp);
   if (DPL_SUCCESS != ret2)
     {
@@ -1428,7 +1582,7 @@ dpl_posix_head(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_posix_get_metadata_from_headers(all_mds, metadatap, sysmdp);
+  ret2 = dpl_posix_get_metadata_from_values(all_mds, metadatap, sysmdp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1442,20 +1596,25 @@ dpl_posix_head(dpl_ctx_t *ctx,
   if (NULL != all_mds)
     dpl_dict_free(all_mds);
 
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
   return ret;
 }
 
 dpl_status_t
 dpl_posix_delete(dpl_ctx_t *ctx,
-                const char *bucket,
-                const char *resource,
-                const char *subresource,
-                dpl_ftype_t object_type,
-                char **locationp)
+                 const char *bucket,
+                 const char *resource,
+                 const char *subresource,
+                 dpl_option_t *option, 
+                 dpl_ftype_t object_type,
+                 char **locationp)
 {
   dpl_status_t ret;
   char path[MAXPATHLEN];
   int iret;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
@@ -1497,28 +1656,33 @@ dpl_posix_delete(dpl_ctx_t *ctx,
   
  end:
 
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
   return ret;
 }
 
 dpl_status_t
 dpl_posix_copy(dpl_ctx_t *ctx,
-              const char *src_bucket,
-              const char *src_resource,
-              const char *src_subresource,
-              const char *dst_bucket,
-              const char *dst_resource,
-              const char *dst_subresource,
-              dpl_ftype_t object_type,
-              dpl_copy_directive_t copy_directive,
-              const dpl_dict_t *metadata,
-              const dpl_sysmd_t *sysmd,
-              const dpl_condition_t *condition,
-              char **locationp)
+               const char *src_bucket,
+               const char *src_resource,
+               const char *src_subresource,
+               const char *dst_bucket,
+               const char *dst_resource,
+               const char *dst_subresource,
+               dpl_option_t *option, 
+               dpl_ftype_t object_type,
+               dpl_copy_directive_t copy_directive,
+               const dpl_dict_t *metadata,
+               const dpl_sysmd_t *sysmd,
+               const dpl_condition_t *condition,
+               char **locationp)
 {
   dpl_status_t ret, ret2;
   int iret;
   char src_path[MAXPATHLEN];
   char dst_path[MAXPATHLEN];
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   snprintf(src_path, sizeof (src_path), "/%s/%s", ctx->base_path ? ctx->base_path : "", src_resource);
   snprintf(dst_path, sizeof (src_path), "/%s/%s", ctx->base_path ? ctx->base_path : "", src_resource);
@@ -1580,6 +1744,8 @@ dpl_posix_copy(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
   
  end:
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }

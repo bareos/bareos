@@ -34,6 +34,9 @@
 #ifndef __DROPLET_VFS_H__
 #define __DROPLET_VFS_H__ 1
 
+#define DPL_CIPHER      "dpl_cipher"
+#define DPL_CIPHER_TYPE "dpl_cipher_type"
+
 /* PROTO vfs.c */
 dpl_status_t dpl_iname(dpl_ctx_t *ctx, const char *bucket, dpl_fqn_t fqn, char *path, unsigned int path_len);
 dpl_status_t dpl_namei_ex(dpl_ctx_t *ctx, int light_mode, const char *path, const char *bucket, dpl_fqn_t fqn, dpl_fqn_t *parent_fqnp, dpl_fqn_t *obj_fqnp, dpl_ftype_t *obj_typep);

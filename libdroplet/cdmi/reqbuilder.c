@@ -447,6 +447,7 @@ add_authorization_to_headers(const dpl_req_t *req,
  */
 dpl_status_t
 dpl_cdmi_req_build(const dpl_req_t *req,
+                   dpl_cdmi_req_mask_t req_mask,
                    dpl_dict_t **headersp,
                    char **body_strp,
                    int *body_lenp)
@@ -562,7 +563,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
             }
         }
 
-      if (!(req->behavior_flags & DPL_BEHAVIOR_HTTP_COMPAT))
+      if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
         {
           ret2 = add_metadata_to_json_body(req, body_obj);
           if (DPL_SUCCESS != ret2)
@@ -689,7 +690,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
   /*
    * common headers
    */
-  if (!(req->behavior_flags & DPL_BEHAVIOR_HTTP_COMPAT))
+  if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
     {
       ret2 = dpl_dict_add(headers, "X-CDMI-Specification-Version", "1.0.1", 0);
       if (DPL_SUCCESS != ret2)

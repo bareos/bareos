@@ -49,7 +49,6 @@ dpl_backend_srws =
     .get_range_buffered = dpl_srws_get_range_buffered,
     .head 		= dpl_srws_head,
     .head_all 		= dpl_srws_head_all,
-    .get_metadata_from_headers = dpl_srws_get_metadata_from_headers,
     .deletef 		= dpl_srws_delete,
     .get_id_path        = dpl_srws_get_id_path,
     .copy               = dpl_srws_copy,

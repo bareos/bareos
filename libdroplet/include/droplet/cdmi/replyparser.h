@@ -34,11 +34,12 @@
 #ifndef __DROPLET_CDMI_REPLYPARSER_H__
 #define __DROPLET_CDMI_REPLYPARSER_H__ 1
 
+#define X_OBJECT_META_PREFIX "X-Object-Meta-"
+#define X_CONTAINER_META_PREFIX "X-Container-Meta-"
+
 /* PROTO replyparser.c */
 /* src/replyparser.c */
-dpl_status_t dpl_cdmi_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx, const char *buf, int len, const char *prefix, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
-dpl_status_t dpl_cdmi_parse_metadata(dpl_ctx_t *ctx, const char *buf, int len, dpl_dict_t **metadatap);
-dpl_status_t dpl_cdmi_get_metadata_from_json_metadata(const dpl_dict_t *json_metadata, dpl_dict_t **metadatap);
-dpl_status_t dpl_cdmi_get_sysmd_from_json_metadata(dpl_dict_t *json_metadata, dpl_sysmd_t *sysmd);
+dpl_status_t dpl_cdmi_parse_json_buffer(dpl_ctx_t *ctx, const char *buf, int len, dpl_value_t **valp);
+dpl_ftype_t dpl_cdmi_content_type_to_ftype(const char *str);
 #endif

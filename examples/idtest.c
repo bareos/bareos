@@ -22,9 +22,7 @@ main(int argc,
   dpl_dict_t *metadata_returned = NULL;
   dpl_dict_t *metadata2_returned = NULL;
   dpl_dict_var_t *metadatum = NULL;
-  dpl_condition_t condition;
-
-  memset(&condition, 0, sizeof (condition));
+  dpl_option_t option;
 
   if (2 != argc)
     {
@@ -99,6 +97,7 @@ main(int argc,
                    id,            //the key
                    0,
                    NULL,          //no subresource
+                   NULL,          //no option
                    DPL_FTYPE_REG, //regular object
                    metadata,      //the metadata
                    NULL,          //no sysmd
@@ -115,15 +114,16 @@ main(int argc,
 
   fprintf(stderr, "getting object+MD\n");
 
-  condition.mask = DPL_CONDITION_LAZY; //enable this for faster GETs
+  option.mask = DPL_OPTION_LAZY; //enable this for faster GETs
 
   ret = dpl_get_id(ctx,           //the context
                    NULL,          //no bucket
                    id,            //the key
                    0,
                    NULL,          //no subresource
+                   &option,
                    DPL_FTYPE_REG, //object type
-                   &condition,          //condition of operation
+                   NULL,
                    &data_buf_returned,  //data object
                    &data_len_returned,  //data object length
                    &metadata_returned, //metadata
@@ -202,6 +202,7 @@ main(int argc,
                     id,            //the key
                     0,
                     NULL,          //no subresource
+                    NULL,
                     NULL,          //no dst bucket
                     id,            //the same key
                     0,
@@ -227,6 +228,7 @@ main(int argc,
                     id,       //the key
                     0,
                     NULL,     //no subresource
+                    NULL,
                     NULL,     //no condition,
                     &metadata2_returned,
                     NULL);
@@ -279,7 +281,8 @@ main(int argc,
                       NULL,      //no bucket
                       id,        //the key
                       0,
-                      NULL);     //no subresource
+                      NULL,     //no subresource
+                      NULL);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error deleting object: %s (%d)\n", dpl_status_str(ret), ret);

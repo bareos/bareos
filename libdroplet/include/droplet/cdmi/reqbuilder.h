@@ -34,6 +34,11 @@
 #ifndef __DROPLET_CDMI_REQBUILDER_H__
 #define __DROPLET_CDMI_REQBUILDER_H__ 1
 
+typedef enum
+  {
+    DPL_CDMI_REQ_HTTP_COMPAT = (1u<<0),
+  } dpl_cdmi_req_mask_t;
+
 #define DPL_CDMI_CONTENT_TYPE_CONTAINER  "application/cdmi-container"
 #define DPL_CDMI_CONTENT_TYPE_OBJECT     "application/cdmi-object"
 #define DPL_CDMI_CONTENT_TYPE_CAPABILITY "application/cdmi-capability"
@@ -42,6 +47,6 @@
 
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */
-dpl_status_t dpl_cdmi_req_build(const dpl_req_t *req, dpl_dict_t **headersp, char **body_strp, int *lenp);
+dpl_status_t dpl_cdmi_req_build(const dpl_req_t *req, dpl_cdmi_req_mask_t req_mask, dpl_dict_t **headersp, char **body_strp, int *lenp);
 dpl_status_t dpl_cdmi_req_gen_url(const dpl_req_t *req, dpl_dict_t *headers, char *buf, int len, unsigned int *lenp);
 #endif

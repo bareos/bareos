@@ -102,7 +102,8 @@ add_metadata_to_headers(dpl_dict_t *metadata,
  */
 dpl_status_t
 dpl_srws_req_build(const dpl_req_t *req,
-                    dpl_dict_t **headersp)
+                   dpl_srws_req_mask_t req_mask,
+                   dpl_dict_t **headersp)
 {
   dpl_dict_t *headers = NULL;
   int ret, ret2;
@@ -131,7 +132,7 @@ dpl_srws_req_build(const dpl_req_t *req,
           goto end;
         }
 
-      if (req->condition.mask & DPL_CONDITION_LAZY)      
+      if (req_mask & DPL_SRWS_REQ_LAZY)
         {
           ret2 = dpl_dict_add(headers, DPL_SRWS_X_BIZ_REPLICA_POLICY, DPL_SRWS_LAZY, 0);
           if (DPL_SUCCESS != ret2)
@@ -172,7 +173,7 @@ dpl_srws_req_build(const dpl_req_t *req,
           goto end;
         }
 
-      if (req->behavior_flags & DPL_BEHAVIOR_MDONLY)
+      if (req_mask & DPL_SRWS_REQ_MD_ONLY)
         {
           ret2 = dpl_dict_add(headers, DPL_SRWS_X_BIZ_CMD, DPL_SRWS_UPDATEUSERMD, 0);
           if (DPL_SUCCESS != ret2)

@@ -32,6 +32,8 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
+#include "droplet/s3/replyparser.h"
+#include "droplet/s3/reqbuilder.h"
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
@@ -50,7 +52,7 @@ add_metadata_to_headers(dpl_dict_t *metadata,
     {
       for (var = metadata->buckets[bucket];var;var = var->prev)
         {
-          snprintf(header, sizeof (header), "x-amz-meta-%s", var->key);
+          snprintf(header, sizeof (header), "%s-%s", X_AMZ_META_PREFIX, var->key);
 
           assert(DPL_VALUE_STRING == var->val->type);
           ret = dpl_dict_add(headers, header, var->val->string, 0);
@@ -414,6 +416,7 @@ add_source_to_headers(const dpl_req_t *req,
  */
 dpl_status_t
 dpl_s3_req_build(const dpl_req_t *req,
+                 dpl_s3_req_mask_t req_mask,
                  dpl_dict_t **headersp)
 {
   dpl_dict_t *headers = NULL;
@@ -603,7 +606,7 @@ dpl_s3_req_build(const dpl_req_t *req,
       /*
        * copy
        */
-      if (req->behavior_flags & DPL_BEHAVIOR_COPY)
+      if (req_mask & DPL_S3_REQ_COPY)
         {
           ret2 = add_source_to_headers(req, headers);
           if (DPL_SUCCESS != ret2)

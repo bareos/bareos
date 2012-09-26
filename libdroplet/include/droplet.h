@@ -104,6 +104,7 @@ typedef enum
     DPL_TRACE_REST  = (1u<<6),  /*!< trace REST based calls */
     DPL_TRACE_ID    = (1u<<7),  /*!< trace ID based calls */
     DPL_TRACE_VFS   = (1u<<8),  /*!< trace VFS based calls */
+    DPL_TRACE_BACKEND = (1u<<9),  /*!< trace backend calls */
   } dpl_trace_t;
 
 typedef void (*dpl_trace_func_t)(pid_t tid, dpl_trace_t, const char *file, const char *func, int lineno, char *buf);
@@ -311,17 +312,32 @@ typedef struct
 
 /**/
 
+typedef enum
+  {
+    DPL_CONDITION_IF_MODIFIED_SINCE   = (1u<<0),
+    DPL_CONDITION_IF_UNMODIFIED_SINCE = (1u<<1),
+    DPL_CONDITION_IF_MATCH            = (1u<<2),
+    DPL_CONDITION_IF_NONE_MATCH       = (1u<<3)
+  } dpl_condition_mask_t;
+
 typedef struct
 {
-#define DPL_CONDITION_IF_MODIFIED_SINCE   (1u<<0)
-#define DPL_CONDITION_IF_UNMODIFIED_SINCE (1u<<1)
-#define DPL_CONDITION_IF_MATCH            (1u<<2)
-#define DPL_CONDITION_IF_NONE_MATCH       (1u<<3)
-#define DPL_CONDITION_LAZY                (1u<<4) /*!< perform a lazy operation */
-  unsigned int mask;
+  dpl_condition_mask_t mask;
   time_t time;
   char etag[MD5_DIGEST_LENGTH];
 } dpl_condition_t;
+
+typedef enum
+  {
+    DPL_OPTION_LAZY                = (1u<<0), /*!< perform a lazy operation */
+    DPL_OPTION_HTTP_COMPAT         = (1u<<1), /*!< use HTTP compat mode */
+    DPL_OPTION_RAW                 = (1u<<2)  /*!< put/get RAW buffer */
+  } dpl_option_mask_t;
+
+typedef struct
+{
+  dpl_option_mask_t mask;
+} dpl_option_t;
 
 typedef struct dpl_fqn
 {
@@ -468,9 +484,6 @@ typedef enum
     DPL_BEHAVIOR_VIRTUAL_HOSTING = (1u<<2), /*!< Use virtual hosting instead of path-style access */
     DPL_BEHAVIOR_KEEP_ALIVE =  (1u<<3),     /*!< Reuse connections */
     DPL_BEHAVIOR_QUERY_STRING = (1u<<4),    /*!< Build a query string instead of a request */
-    DPL_BEHAVIOR_COPY =        (1u<<5),     /*!< It is a server side copy request */
-    DPL_BEHAVIOR_HTTP_COMPAT = (1u<<6),     /*!< Use the HTTP compatibility mode */
-    DPL_BEHAVIOR_MDONLY =      (1u<<7)      /*!< Some REST server like it this way */
   } dpl_behavior_flag_t;
 
 typedef struct
@@ -579,7 +592,6 @@ typedef struct
   /*
    * read
    */
-  dpl_dict_t *headers_reply;
   dpl_buffer_func_t buffer_func;
   void *cb_arg;
 
@@ -600,6 +612,12 @@ typedef struct
 /*
  * public functions
  */
+
+typedef dpl_status_t (*dpl_metadatum_func_t)(void *cb_arg,
+                                             const char *key,
+                                             dpl_value_t *val);
+
+
 #include <droplet/converters.h>
 #include <droplet/req.h>
 #include <droplet/rest.h>

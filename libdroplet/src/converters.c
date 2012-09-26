@@ -268,13 +268,6 @@ dpl_object_type_str(dpl_ftype_t object_type)
   return NULL;
 }
 
-/**
- * parse a string of the form metadata1=value1;metadata2=value2...
- *
- * @param metadata
- *
- * @return
- */
 dpl_dict_t *
 dpl_parse_metadata(char *metadata)
 {
@@ -322,8 +315,6 @@ dpl_parse_metadata(char *metadata)
 
   return dict;
 }
-
-/**/
 
 /**
  * parse a string of the form query_params1=value1;query_params2=value2...

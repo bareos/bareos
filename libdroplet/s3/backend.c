@@ -56,6 +56,9 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -77,7 +80,7 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
   //build request
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -179,7 +182,7 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -209,6 +212,9 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -266,7 +272,7 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -387,7 +393,7 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -423,6 +429,9 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
   dpl_chunk_t   chunk;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -495,7 +504,7 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
     dpl_req_set_storage_class(req, sysmd->storage_class);
 
   //build request
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -576,15 +585,15 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
 
 dpl_status_t
-dpl_s3_deletebucket(dpl_ctx_t *ctx,
-                    const char *bucket,
-                    char **locationp)
+dpl_s3_delete_bucket(dpl_ctx_t *ctx,
+                     const char *bucket,
+                     char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -597,6 +606,9 @@ dpl_s3_deletebucket(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -627,7 +639,7 @@ dpl_s3_deletebucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -703,7 +715,7 @@ dpl_s3_deletebucket(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -713,6 +725,7 @@ dpl_s3_put(dpl_ctx_t *ctx,
            const char *bucket,
            const char *resource,
            const char *subresource,
+           dpl_option_t *option,
            dpl_ftype_t object_type,
            const dpl_dict_t *metadata,
            const dpl_sysmd_t *sysmd,
@@ -732,6 +745,9 @@ dpl_s3_put(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
   dpl_chunk_t   chunk;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -791,7 +807,7 @@ dpl_s3_put(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -872,7 +888,7 @@ dpl_s3_put(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -882,6 +898,7 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
                     const char *bucket,
                     const char *resource,
                     const char *subresource,
+                    dpl_option_t *option,
                     dpl_ftype_t object_type,
                     const dpl_dict_t *metadata,
                     const dpl_sysmd_t *sysmd,
@@ -901,6 +918,9 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
   dpl_chunk_t   chunk;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -960,7 +980,7 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1042,7 +1062,167 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+/**/
+
+/** 
+ * parse a HTTP header into a suitable metadata or sysmd
+ * 
+ * @param header 
+ * @param value 
+ * @param metadatum_func optional
+ * @param cb_arg for metadatum_func
+ * @param metadata optional
+ * @param sysmdp optional
+ * 
+ * @return 
+ */
+dpl_status_t
+dpl_s3_get_metadatum_from_header(const char *header,
+                                 const char *value,
+                                 dpl_metadatum_func_t metadatum_func,
+                                 void *cb_arg,
+                                 dpl_dict_t *metadata,
+                                 dpl_sysmd_t *sysmdp)
+{
+  dpl_status_t ret, ret2;
+
+  if (!strncmp(header, X_AMZ_META_PREFIX, strlen(X_AMZ_META_PREFIX)))
+    {
+      char *key;
+
+      key = (char *) header + strlen(X_AMZ_META_PREFIX);
+
+      if (metadatum_func)
+        {
+          dpl_value_t val;
+          
+          val.type = DPL_VALUE_STRING;
+          val.string = (char *) value;
+          ret2 = metadatum_func(cb_arg, key, &val);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
+
+      if (metadata)
+        {
+          ret2 = dpl_dict_add(metadata, key, value, 1);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
+    }
+  else
+    {
+      if (sysmdp)
+        {
+          if (!strcmp(header, "content-length"))
+            {
+              sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
+              sysmdp->size = atoi(value);
+            }
+          else if (!strcmp(header, "last-modified"))
+            {
+              sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
+              sysmdp->mtime = dpl_get_date(value, NULL);
+            }
+          else if (!strcmp(header, "etag"))
+            {
+              int value_len = strlen(value);
+              
+              if (value_len < DPL_SYSMD_ETAG_SIZE && value_len >= 2)
+                {
+                  sysmdp->mask |= DPL_SYSMD_MASK_ETAG;
+                  //supress double quotes
+                  strncpy(sysmdp->etag, value + 1, DPL_SYSMD_ETAG_SIZE);
+                  sysmdp->etag[value_len-2] = 0;
+                }
+            }
+        }
+    }
+    
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
+}
+
+struct metadata_conven
+{
+  dpl_dict_t *metadata;
+  dpl_sysmd_t *sysmdp;
+};
+
+static dpl_status_t
+cb_headers_iterate(dpl_dict_var_t *var,
+                   void *cb_arg)
+{
+  struct metadata_conven *mc = (struct metadata_conven *) cb_arg;
+  
+  assert(var->val->type == DPL_VALUE_STRING);
+  return dpl_s3_get_metadatum_from_header(var->key,
+                                          var->val->string,
+                                          NULL,
+                                          NULL,
+                                          mc->metadata,
+                                          mc->sysmdp);
+}
+
+dpl_status_t
+dpl_s3_get_metadata_from_headers(const dpl_dict_t *headers,
+                                 dpl_dict_t **metadatap,
+                                 dpl_sysmd_t *sysmdp)
+{
+  dpl_dict_t *metadata = NULL;
+  dpl_status_t ret, ret2;
+  struct metadata_conven mc;
+
+  if (metadatap)
+    {
+      metadata = dpl_dict_new(13);
+      if (NULL == metadata)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  memset(&mc, 0, sizeof (mc));
+  mc.metadata = metadata;
+  mc.sysmdp = sysmdp;
+
+  if (sysmdp)
+    sysmdp->mask = 0;
+      
+  ret2 = dpl_dict_iterate(headers, cb_headers_iterate, &mc);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
 
   return ret;
 }
@@ -1052,6 +1232,7 @@ dpl_s3_get(dpl_ctx_t *ctx,
            const char *bucket,
            const char *resource,
            const char *subresource,
+           dpl_option_t *option,
            dpl_ftype_t object_type,
            const dpl_condition_t *condition,
            char **data_bufp,
@@ -1060,165 +1241,11 @@ dpl_s3_get(dpl_ctx_t *ctx,
            dpl_sysmd_t *sysmdp,
            char **locationp)
 {
-  char          *host;
-  int           ret, ret2;
-  dpl_conn_t   *conn = NULL;
-  char          header[1024];
-  u_int         header_len;
-  struct iovec  iov[10];
-  int           n_iov = 0;
-  int           connection_close = 0;
-  char          *data_buf = NULL;
-  u_int         data_len;
-  dpl_dict_t    *headers_request = NULL;
-  dpl_dict_t    *headers_reply = NULL;
-  dpl_req_t     *req = NULL;
-
-  req = dpl_req_new(ctx);
-  if (NULL == req)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  dpl_req_set_method(req, DPL_METHOD_GET);
-
-  if (NULL == bucket)
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_req_set_resource(req, resource);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != subresource)
-    {
-      ret2 = dpl_req_set_subresource(req, subresource);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  if (NULL != condition)
-    {
-      dpl_req_set_condition(req, condition);
-    }
-
-  //build request
-  ret2 = dpl_s3_req_build(req, &headers_request);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
-    {
-      ret = DPL_ECONNECT;
-      goto end;
-    }
-
-  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  iov[n_iov].iov_base = header;
-  iov[n_iov].iov_len = header_len;
-  n_iov++;
-
-  //final crlf
-  iov[n_iov].iov_base = "\r\n";
-  iov[n_iov].iov_len = 2;
-  n_iov++;
-
-  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPLERR(1, "writev failed");
-      connection_close = 1;
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  else
-    {
-      ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
-
-  if (NULL != data_bufp)
-    {
-      *data_bufp = data_buf;
-      data_buf = NULL; //consume it
-    }
-
-  if (NULL != data_lenp)
-    *data_lenp = data_len;
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != data_buf)
-    free(data_buf);
-
-  if (NULL != conn)
-    {
-      if (1 == connection_close)
-        dpl_conn_terminate(conn);
-      else
-        dpl_conn_release(conn);
-    }
-
-  if (NULL != headers_reply)
-    dpl_dict_free(headers_reply);
-
-  if (NULL != headers_request)
-    dpl_dict_free(headers_request);
-
-  if (NULL != req)
-    dpl_req_free(req);
-
-  DPRINTF("ret=%d\n", ret);
-
-  return ret;
+  return dpl_s3_get_range(ctx, bucket, resource, subresource, option,
+                          object_type, condition, NULL,
+                          data_bufp, data_lenp,
+                          metadatap, sysmdp,
+                          locationp);
 }
 
 dpl_status_t
@@ -1226,6 +1253,7 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
                  const char *bucket,
                  const char *resource,
                  const char *subresource,
+                 dpl_option_t *option,
                  dpl_ftype_t object_type,
                  const dpl_condition_t *condition,
                  const dpl_range_t *range,
@@ -1248,6 +1276,9 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1304,7 +1335,7 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1356,14 +1387,12 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-  else
+
+  ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2)
     {
-      ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
+      ret = ret2;
+      goto end;
     }
 
   (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
@@ -1403,14 +1432,16 @@ dpl_s3_get_range(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
 
 struct get_conven
 {
-  dpl_header_func_t header_func;
+  dpl_dict_t *metadata;
+  dpl_sysmd_t *sysmdp;
+  dpl_metadatum_func_t metadatum_func;
   dpl_buffer_func_t buffer_func;
   void *cb_arg;
   int connection_close;
@@ -1419,25 +1450,36 @@ struct get_conven
 static dpl_status_t
 cb_get_header(void *cb_arg,
               const char *header,
-              char *value)
+              const char *value)
 {
   struct get_conven *gc = (struct get_conven *) cb_arg;
-  int ret;
-
-  if (NULL != gc->header_func)
-    {
-      ret = gc->header_func(gc->cb_arg, header, value);
-      if (DPL_SUCCESS != ret)
-        return ret;
-    }
+  dpl_status_t ret, ret2;
 
   if (!strcasecmp(header, "connection"))
     {
       if (!strcasecmp(value, "close"))
         gc->connection_close = 1;
     }
+  else 
+    {
+      ret2 = dpl_s3_get_metadatum_from_header(header,
+                                              value,
+                                              gc->metadatum_func,
+                                              gc->cb_arg,
+                                              gc->metadata,
+                                              gc->sysmdp);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
 
-  return DPL_SUCCESS;
+  ret =  DPL_SUCCESS;
+  
+ end:
+
+  return ret;
 }
 
 static dpl_status_t
@@ -1463,9 +1505,12 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
                     const char *bucket,
                     const char *resource,
                     const char *subresource,
+                    dpl_option_t *option,
                     dpl_ftype_t object_type,
                     const dpl_condition_t *condition,
-                    dpl_header_func_t header_func,
+                    dpl_metadatum_func_t metadatum_func,
+                    dpl_dict_t **metadatap,
+                    dpl_sysmd_t *sysmdp,
                     dpl_buffer_func_t buffer_func,
                     void *cb_arg,
                     char **locationp)
@@ -1481,9 +1526,19 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
   dpl_req_t     *req = NULL;
   struct get_conven gc;
   int http_status;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   memset(&gc, 0, sizeof (gc));
-  gc.header_func = header_func;
+  gc.metadata = dpl_dict_new(13);
+  if (NULL == gc.metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+  gc.sysmdp = sysmdp;
+  gc.metadatum_func = metadatum_func;
   gc.buffer_func = buffer_func;
   gc.cb_arg = cb_arg;
 
@@ -1532,7 +1587,7 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1589,6 +1644,12 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
 
   if (!conn->ctx->keep_alive)
     gc.connection_close = 1;
+
+  if (NULL != metadatap)
+    {
+      *metadatap = gc.metadata;
+      gc.metadata = NULL;
+    }
   
   //map http_status to relevant value
   ret = dpl_map_http_status(http_status);
@@ -1605,26 +1666,29 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
         dpl_conn_release(conn);
     }
 
+  if (NULL != gc.metadata)
+    dpl_dict_free(gc.metadata);
+
   if (NULL != headers_request)
     dpl_dict_free(headers_request);
 
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
 
 dpl_status_t
-dpl_s3_head_gen(dpl_ctx_t *ctx,
+dpl_s3_head_all(dpl_ctx_t *ctx,
                 const char *bucket,
                 const char *resource,
                 const char *subresource,
+                dpl_option_t *option,
+                dpl_ftype_t object_type,
                 const dpl_condition_t *condition,
-                int all_headers,
                 dpl_dict_t **metadatap,
-                dpl_sysmd_t *sysmdp,
                 char **locationp)
 {
   char          *host;
@@ -1637,8 +1701,10 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
   int           connection_close = 0;
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
-  dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1685,7 +1751,7 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1737,38 +1803,14 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-  else
-    {
-      if (all_headers)
-        {
-          metadata = dpl_dict_new(13);
-          if (NULL == metadata)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
-
-          ret2 = dpl_dict_copy(metadata, headers_reply);
-        }
-      else
-        {
-          ret2 = dpl_s3_get_metadata_from_headers(headers_reply, &metadata, sysmdp);
-        }
-
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  (void) dpl_log_event(ctx, "REQUEST", "HEAD", 0);
 
   if (NULL != metadatap)
     {
-      *metadatap = metadata;
-      metadata = NULL; //consume it
+      *metadatap = headers_reply;
+      headers_reply = NULL;
     }
+
+  (void) dpl_log_event(ctx, "REQUEST", "HEAD", 0);
 
   ret = DPL_SUCCESS;
 
@@ -1782,9 +1824,6 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
         dpl_conn_release(conn);
     }
 
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
   if (NULL != headers_reply)
     dpl_dict_free(headers_reply);
 
@@ -1794,7 +1833,7 @@ dpl_s3_head_gen(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -1804,26 +1843,43 @@ dpl_s3_head(dpl_ctx_t *ctx,
             const char *bucket,
             const char *resource,
             const char *subresource,
+            dpl_option_t *option,
             dpl_ftype_t object_type,
             const dpl_condition_t *condition,
             dpl_dict_t **metadatap,
             dpl_sysmd_t *sysmdp,
             char **locationp)
 {
-  return dpl_s3_head_gen(ctx, bucket, resource, subresource, condition, 0, metadatap, sysmdp, locationp);
-}
+  dpl_status_t ret, ret2;
+  dpl_dict_t *headers_reply = NULL;
 
-dpl_status_t
-dpl_s3_head_all(dpl_ctx_t *ctx,
-                const char *bucket,
-                const char *resource,
-                const char *subresource,
-                dpl_ftype_t object_type,
-                const dpl_condition_t *condition,
-                dpl_dict_t **metadatap,
-                char **locationp)
-{
-  return dpl_s3_head_gen(ctx, bucket, resource, subresource, condition, 1, metadatap, NULL, NULL);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  ret2 = dpl_s3_head_all(ctx, bucket, resource, subresource, NULL,
+                         object_type, condition, &headers_reply, locationp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != headers_reply)
+    dpl_dict_free(headers_reply);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
 }
 
 dpl_status_t
@@ -1831,6 +1887,7 @@ dpl_s3_delete(dpl_ctx_t *ctx,
               const char *bucket,
               const char *resource,
               const char *subresource,
+              dpl_option_t *option,
               dpl_ftype_t object_type,
               char **locationp)
 {
@@ -1845,6 +1902,9 @@ dpl_s3_delete(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1885,7 +1945,7 @@ dpl_s3_delete(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1961,7 +2021,7 @@ dpl_s3_delete(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -1971,6 +2031,7 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
               const char *bucket,
               const char *resource,
               const char *subresource,
+              dpl_option_t *option,
               time_t expires,
               char *buf,
               unsigned int len,
@@ -1980,6 +2041,9 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
   int           ret, ret2;
   dpl_dict_t    *headers_request = NULL;
   dpl_req_t     *req = NULL;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -2025,7 +2089,7 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
   dpl_req_set_expires(req, expires);
 
   //build request
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2049,7 +2113,7 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }
@@ -2062,6 +2126,7 @@ dpl_s3_copy(dpl_ctx_t *ctx,
             const char *dst_bucket,
             const char *dst_resource,
             const char *dst_subresource,
+            dpl_option_t *option,
             dpl_ftype_t object_type,
             dpl_copy_directive_t copy_directive,
             const dpl_dict_t *metadata,
@@ -2080,6 +2145,9 @@ dpl_s3_copy(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
+  dpl_s3_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -2089,7 +2157,8 @@ dpl_s3_copy(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_PUT);
-  dpl_req_add_behavior(req, DPL_BEHAVIOR_COPY);
+
+  req_mask |= DPL_S3_REQ_COPY;
 
   if (NULL != condition)
     dpl_req_set_copy_source_condition(req, condition);
@@ -2167,7 +2236,7 @@ dpl_s3_copy(dpl_ctx_t *ctx,
     }
 
   //build request
-  ret2 = dpl_s3_req_build(req, &headers_request);
+  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2243,7 +2312,7 @@ dpl_s3_copy(dpl_ctx_t *ctx,
   if (NULL != req)
     dpl_req_free(req);
 
-  DPRINTF("ret=%d\n", ret);
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
 }

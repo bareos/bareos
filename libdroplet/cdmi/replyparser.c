@@ -40,50 +40,6 @@
 #define DPRINTF(fmt,...)
 
 dpl_status_t
-dpl_cdmi_get_metadata_from_headers(const dpl_dict_t *headers,
-                                   dpl_dict_t **metadatap,
-                                   dpl_sysmd_t *sysmdp)
-{
-  dpl_dict_t *metadata = NULL;
-  dpl_status_t ret, ret2;
-
-  if (NULL == metadatap)
-    {
-      ret = DPL_SUCCESS;
-      goto end;
-    }
-
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  //XXX check if container
-  ret2 = dpl_dict_filter_prefix(metadata, headers, "X-Object-Meta-");
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  *metadatap = metadata;
-  metadata = NULL;
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
-  return ret;
-}
-
-/**/
-
-dpl_status_t
 dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
                            const char *buf,
                            int len,
@@ -368,11 +324,21 @@ convert_obj_to_value(dpl_ctx_t *ctx,
   return ret;
 }
 
+/** 
+ * parse a JSON buffer into a value
+ * 
+ * @param ctx 
+ * @param buf 
+ * @param len 
+ * @param valp 
+ * 
+ * @return 
+ */
 dpl_status_t
-dpl_cdmi_parse_metadata(dpl_ctx_t *ctx,
-                        const char *buf,
-                        int len,
-                        dpl_dict_t **metadatap)
+dpl_cdmi_parse_json_buffer(dpl_ctx_t *ctx,
+                           const char *buf,
+                           int len,
+                           dpl_value_t **valp)
 {
   int ret, ret2;
   json_tokener *tok = NULL;
@@ -402,17 +368,10 @@ dpl_cdmi_parse_metadata(dpl_ctx_t *ctx,
       goto end;
     }
   
-  if (DPL_VALUE_SUBDICT != val->type)
+  if (NULL != valp)
     {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      //pointer stealing
-      *metadatap = (dpl_dict_t *) val->subdict;
-      val->subdict = NULL;
+      *valp = val;
+      val = NULL;
     }
 
   ret = DPL_SUCCESS;
@@ -431,51 +390,6 @@ dpl_cdmi_parse_metadata(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
-dpl_cdmi_get_metadata_from_json_metadata(dpl_dict_t *json_metadata,
-                                         dpl_dict_t **metadatap)
-{
-  dpl_status_t ret, ret2;
-  dpl_dict_var_t *var;
-  dpl_dict_t *metadata = NULL;
-
-  //find the metadata ARRAY
-  ret2 = dpl_dict_get_lowered(json_metadata, "metadata", &var);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (DPL_VALUE_SUBDICT != var->val->type)
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  metadata = dpl_dict_dup(var->val->subdict);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
-  return ret;
-}
-
 dpl_ftype_t
 dpl_cdmi_content_type_to_ftype(const char *str)
 {
@@ -489,149 +403,4 @@ dpl_cdmi_content_type_to_ftype(const char *str)
     return DPL_FTYPE_DOM;
 
   return DPL_FTYPE_UNDEF;
-}
-
-dpl_status_t
-dpl_cdmi_get_sysmd_from_json_metadata(dpl_dict_t *json_metadata,
-                                      dpl_sysmd_t *sysmd)
-{
-  dpl_status_t ret, ret2;
-  dpl_dict_var_t *var, *var2;
-  dpl_cdmi_object_id_t obj_id;
-
-  if (NULL == sysmd)
-    {
-      ret = DPL_SUCCESS;
-      goto end;
-    }
-
-  sysmd->mask = 0;
-
-  var = dpl_dict_get(json_metadata, "objectID");
-  if (NULL != var)
-    {
-      if (DPL_VALUE_STRING != var->val->type)
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-      
-      ret2 = dpl_cdmi_string_to_object_id(var->val->string, &obj_id);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      ret2 = dpl_cdmi_opaque_to_string(&obj_id, sysmd->id);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      sysmd->mask |= DPL_SYSMD_MASK_ID;
-
-      sysmd->enterprise_number = obj_id.enterprise_number;
-      sysmd->mask |= DPL_SYSMD_MASK_ENTERPRISE_NUMBER;
-    }
-
-  var = dpl_dict_get(json_metadata, "parentID");
-  if (NULL != var)
-    {
-      if (DPL_VALUE_STRING != var->val->type)
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-
-      ret2 = dpl_cdmi_string_to_object_id(var->val->string, &obj_id);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      ret2 = dpl_cdmi_opaque_to_string(&obj_id, sysmd->parent_id);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      sysmd->mask |= DPL_SYSMD_MASK_PARENT_ID;
-    }
-
-  var = dpl_dict_get(json_metadata, "objectType");
-  if (NULL != var)
-    {
-      if (DPL_VALUE_STRING != var->val->type)
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-      
-      sysmd->mask |= DPL_SYSMD_MASK_FTYPE;
-      sysmd->ftype = dpl_cdmi_content_type_to_ftype(var->val->string);
-    }
-
-  //those sysmds are stored in metadata
-
-  ret2 = dpl_dict_get_lowered(json_metadata, "metadata", &var);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
-  if (DPL_VALUE_SUBDICT != var->val->type)
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-  
-  var2 = dpl_dict_get(var->val->subdict, "cdmi_mtime");
-  if (NULL != var2)
-    {
-      if (DPL_VALUE_STRING != var2->val->type)
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-      
-      sysmd->mask |= DPL_SYSMD_MASK_MTIME;
-      sysmd->mtime = dpl_iso8601totime(var2->val->string);
-    }
-
-  var2 = dpl_dict_get(var->val->subdict, "cdmi_atime");
-  if (NULL != var2)
-    {
-      if (DPL_VALUE_STRING != var2->val->type)
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-      
-      sysmd->mask |= DPL_SYSMD_MASK_ATIME;
-      sysmd->atime = dpl_iso8601totime(var2->val->string);
-    }
-
-  var2 = dpl_dict_get(var->val->subdict, "cdmi_size");
-  if (NULL != var2)
-    {
-      if (DPL_VALUE_STRING != var2->val->type)
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-      
-      sysmd->mask |= DPL_SYSMD_MASK_SIZE;
-      sysmd->size = strtoull(var2->val->string, NULL, 0);
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  return ret;
 }

@@ -55,7 +55,6 @@ dpl_backend_posix =
     .get_range_buffered = dpl_posix_get_range_buffered,
     .head 		= dpl_posix_head,
     .head_all 		= dpl_posix_head_all,
-    .get_metadata_from_headers = dpl_posix_get_metadata_from_headers,
     .deletef 		= dpl_posix_delete,
     .copy               = dpl_posix_copy,
   };
