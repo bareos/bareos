@@ -1677,3 +1677,78 @@ dpl_srws_copy(dpl_ctx_t *ctx,
 
   return ret;
 }
+
+dpl_status_t
+dpl_srws_convert_id_to_native(dpl_ctx_t *ctx, 
+                              const char *id,
+                              uint32_t enterprise_number,
+                              char **native_idp)
+{
+  dpl_status_t ret;
+  char *str = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  str = strdup(id);
+  if (NULL == str)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != native_idp)
+    {
+      *native_idp = str;
+      str = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != str)
+    free(str);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_srws_convert_native_to_id(dpl_ctx_t *ctx, 
+                              const char *native_id,
+                              char **idp, 
+                              uint32_t *enterprise_numberp)
+{
+  dpl_status_t ret;
+  char *str = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  str = strdup(native_id);
+  if (NULL == str)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != idp)
+    {
+      *idp = str;
+      str = NULL;
+    }
+
+  if (NULL != enterprise_numberp)
+    *enterprise_numberp = 0;
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != str)
+    free(str);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}

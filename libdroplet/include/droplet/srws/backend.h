@@ -48,4 +48,6 @@ dpl_status_t dpl_srws_get_id_path(dpl_ctx_t *ctx, const char *bucket, char **id_
 dpl_status_t dpl_srws_gen_key(BIGNUM *id, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
 dpl_status_t dpl_srws_set_class(BIGNUM *k, int class);
 dpl_status_t dpl_srws_copy(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, const const dpl_option_t *option, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition, char **locationp);
+dpl_status_t dpl_srws_convert_id_to_native(dpl_ctx_t *ctx, const char *id, uint32_t enterprise_number, char **native_idp);
+dpl_status_t dpl_srws_convert_native_to_id(dpl_ctx_t *ctx, const char *native_id, char **idp, uint32_t *enterprise_numberp);
 #endif

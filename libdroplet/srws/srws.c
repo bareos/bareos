@@ -50,4 +50,6 @@ dpl_backend_srws =
     .deletef 		= dpl_srws_delete,
     .get_id_path        = dpl_srws_get_id_path,
     .copy               = dpl_srws_copy,
+    .convert_id_to_native = dpl_srws_convert_id_to_native,
+    .convert_native_to_id = dpl_srws_convert_native_to_id,
   };
