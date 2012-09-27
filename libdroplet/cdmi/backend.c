@@ -814,6 +814,12 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_HTTP_COMPAT)
+        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
+    }
+
   req = dpl_req_new(ctx);
   if (NULL == req)
     {
@@ -856,12 +862,6 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
 
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
-  if (option)
-    {
-      if (option->mask & DPL_OPTION_HTTP_COMPAT)
-        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
-    }
 
   if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
     {
@@ -1211,6 +1211,12 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_HTTP_COMPAT)
+        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
+    }
+
   req = dpl_req_new(ctx);
   if (NULL == req)
     {
@@ -1253,12 +1259,6 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
 
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
-  if (option)
-    {
-      if (option->mask & DPL_OPTION_HTTP_COMPAT)
-        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
-    }
 
   if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
     {
@@ -1920,6 +1920,15 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_HTTP_COMPAT)
+        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
+
+      if (option->mask & DPL_OPTION_RAW)
+        raw = 1;
+    }
+
   req = dpl_req_new(ctx);
   if (NULL == req)
     {
@@ -1961,29 +1970,35 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
   if (range)
     {
       if ( range->start > 0 && range->end > 0 )
         {
-          ret2 = dpl_req_add_range(req, range->start, range->end);
-          if (DPL_SUCCESS != ret2)
+          if (req_mask & DPL_CDMI_REQ_HTTP_COMPAT)
             {
-              ret = ret2;
-              goto end;
+              ret2 = dpl_req_add_range(req, range->start, range->end);
+              if (DPL_SUCCESS != ret2)
+                {
+                  ret = ret2;
+                  goto end;
+                }
+            }
+          else
+            {
+              char buf[256];
+
+              snprintf(buf, sizeof (buf), "value:%d-%d", range->start, range->end);
+              ret2 = dpl_req_set_subresource(req, buf);
+              if (DPL_SUCCESS != ret2)
+                {
+                  ret = ret2;
+                  goto end;
+                }
             }
         }
-    }
-
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
-  if (option)
-    {
-      if (option->mask & DPL_OPTION_HTTP_COMPAT)
-        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
-
-      if (option->mask & DPL_OPTION_RAW)
-        raw = 1;
     }
 
   dpl_req_set_object_type(req, object_type);
@@ -2298,6 +2313,15 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
   gc.buffer_func = buffer_func;
   gc.cb_arg = cb_arg;
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_HTTP_COMPAT)
+        {
+          req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
+          gc.http_compat = 1;
+        }
+    }
+
   req = dpl_req_new(ctx);
   if (NULL == req)
     {
@@ -2341,15 +2365,6 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
 
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
-  if (option)
-    {
-      if (option->mask & DPL_OPTION_HTTP_COMPAT)
-        {
-          req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
-          gc.http_compat = 1;
-        }
-    }
 
   if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
     {
@@ -2599,6 +2614,12 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_HTTP_COMPAT)
+        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
+    }
+
   req = dpl_req_new(ctx);
   if (NULL == req)
     {
@@ -2627,12 +2648,6 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
 
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
-  if (option)
-    {
-      if (option->mask & DPL_OPTION_HTTP_COMPAT)
-        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
-    }
 
   //build request
   ret2 = dpl_cdmi_req_build(req, req_mask, &headers_request, NULL, NULL);

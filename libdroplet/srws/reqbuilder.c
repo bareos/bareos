@@ -125,11 +125,14 @@ dpl_srws_req_build(const dpl_req_t *req,
   if (DPL_METHOD_GET == req->method ||
       DPL_METHOD_HEAD == req->method)
     {
-      ret2 = dpl_add_ranges_to_headers(req->ranges, req->n_ranges, headers);
-      if (DPL_SUCCESS != ret2)
+      if (req->range_enabled)
         {
-          ret = ret2;
-          goto end;
+          ret2 = dpl_add_range_to_headers(&req->range, headers);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
         }
 
       if (req_mask & DPL_SRWS_REQ_LAZY)

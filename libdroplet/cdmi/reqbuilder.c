@@ -475,6 +475,16 @@ dpl_cdmi_req_build(const dpl_req_t *req,
    */
   if (DPL_METHOD_GET == req->method)
     {
+      if (req->range_enabled)
+        {
+          ret2 = dpl_add_range_to_headers(&req->range, headers);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
+  
       switch (req->object_type)
         {
         case DPL_FTYPE_UNDEF:
@@ -525,6 +535,16 @@ dpl_cdmi_req_build(const dpl_req_t *req,
   else if (DPL_METHOD_PUT == req->method ||
            DPL_METHOD_POST == req->method)
     {
+      if (req->range_enabled)
+        {
+          ret2 = dpl_add_content_range_to_headers(&req->range, headers);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
+
       body_obj = json_object_new_object();
       if (NULL == body_obj)
         {
@@ -689,13 +709,6 @@ dpl_cdmi_req_build(const dpl_req_t *req,
   /*
    * common headers
    */
-  ret2 = dpl_add_ranges_to_headers(req->ranges, req->n_ranges, headers);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
   ret2 = dpl_add_condition_to_headers(&req->condition, headers);
   if (DPL_SUCCESS != ret2)
     {

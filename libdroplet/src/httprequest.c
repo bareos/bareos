@@ -37,61 +37,67 @@
 #define DPRINTF(fmt,...)
 
 dpl_status_t
-dpl_add_ranges_to_headers(const dpl_range_t *ranges,
-                          int n_ranges,
-                          dpl_dict_t *headers)
+dpl_add_range_to_headers_internal(const dpl_range_t *range,
+                                  const char *field,
+                                  dpl_dict_t *headers)
 {
   int ret;
-  int i;
   char buf[1024];
   int len = sizeof (buf);
   char *p;
   int first = 1;
+  char str[128];
 
   p = buf;
 
-  if (0 != n_ranges)
+  DPL_APPEND_STR("bytes=");
+
+  if (1 == first)
+    first = 0;
+  else
+    DPL_APPEND_STR(",");
+  
+  if (DPL_UNDEF == range->start && DPL_UNDEF == range->end)
+    return DPL_EINVAL;
+  else if (DPL_UNDEF == range->start)
     {
-      DPL_APPEND_STR("bytes=");
+      snprintf(str, sizeof (str), "-%d", range->end);
+      DPL_APPEND_STR(str);
+    }
+  else if (DPL_UNDEF == range->end)
+    {
+      snprintf(str, sizeof (str), "%d-", range->start);
+      DPL_APPEND_STR(str);
+    }
+  else
+    {
+      snprintf(str, sizeof (str), "%d-%d", range->start, range->end);
+      DPL_APPEND_STR(str);
+    }
 
-      for (i = 0;i < n_ranges;i++)
-        {
-          char str[128];
-
-          if (1 == first)
-            first = 0;
-          else
-            DPL_APPEND_STR(",");
-
-          if (DPL_UNDEF == ranges[i].start && DPL_UNDEF == ranges[i].end)
-            return DPL_EINVAL;
-          else if (DPL_UNDEF == ranges[i].start)
-            {
-              snprintf(str, sizeof (str), "-%d", ranges[i].end);
-              DPL_APPEND_STR(str);
-            }
-          else if (DPL_UNDEF == ranges[i].end)
-            {
-              snprintf(str, sizeof (str), "%d-", ranges[i].start);
-              DPL_APPEND_STR(str);
-            }
-          else
-            {
-              snprintf(str, sizeof (str), "%d-%d", ranges[i].start, ranges[i].end);
-              DPL_APPEND_STR(str);
-            }
-        }
-
-      DPL_APPEND_CHAR(0);
-
-      ret = dpl_dict_add(headers, "Range", buf, 0);
-      if (DPL_SUCCESS != ret)
-        {
-          return DPL_FAILURE;
-        }
+  DPL_APPEND_CHAR(0);
+  
+  ret = dpl_dict_add(headers, field, buf, 0);
+  if (DPL_SUCCESS != ret)
+    {
+      return DPL_FAILURE;
     }
 
   return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_add_range_to_headers(const dpl_range_t *range,
+                         dpl_dict_t *headers)
+{
+  return dpl_add_range_to_headers_internal(range, "Range", headers);
+}
+
+dpl_status_t
+dpl_add_content_range_to_headers(const dpl_range_t *range,
+                                 dpl_dict_t *headers)
+{
+  return dpl_add_range_to_headers_internal(range, "Content-Range", headers);
 }
 
 dpl_status_t

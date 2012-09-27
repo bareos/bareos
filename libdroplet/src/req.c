@@ -324,17 +324,11 @@ dpl_req_add_range(dpl_req_t *req,
                   int start,
                   int end)
 {
-  if (req->n_ranges < DPL_RANGE_MAX)
-    {
-      req->ranges[req->n_ranges].start = start;
-      req->ranges[req->n_ranges].end = end;
+  req->range.start = start;
+  req->range.end = end;
+  req->range_enabled = 1;
 
-      req->n_ranges++;
-
-      return DPL_SUCCESS;
-    }
-
-  return DPL_EINVAL;
+  return DPL_SUCCESS;
 }
 
 void

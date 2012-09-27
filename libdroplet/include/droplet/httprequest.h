@@ -36,7 +36,8 @@
 
 /* PROTO httprequest.c */
 /* src/httprequest.c */
-dpl_status_t dpl_add_ranges_to_headers(const dpl_range_t *ranges, int n_ranges, dpl_dict_t *headers);
+dpl_status_t dpl_add_range_to_headers(const dpl_range_t *range, dpl_dict_t *headers);
+dpl_status_t dpl_add_content_range_to_headers(const dpl_range_t *range, dpl_dict_t *headers);
 dpl_status_t dpl_add_condition_to_headers(const dpl_condition_t *condition, dpl_dict_t *headers);
 dpl_status_t dpl_req_gen_http_request(dpl_ctx_t *ctx, dpl_req_t *req, const dpl_dict_t *headers, const dpl_dict_t *query_params, char *buf, int len, unsigned int *lenp);
 #endif

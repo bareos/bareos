@@ -510,9 +510,8 @@ typedef struct
   dpl_dict_t *metadata;
   dpl_chunk_t *chunk;
 
-#define DPL_RANGE_MAX 10
-  dpl_range_t ranges[DPL_RANGE_MAX];
-  int n_ranges;
+  dpl_range_t range;
+  int range_enabled;
 
   time_t expires; /*!< for query strings */
 
