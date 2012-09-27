@@ -196,8 +196,9 @@ struct dpl_conf_ctx
 
 /**/
 
-#define DPL_BASE64_LENGTH(len) ((len) * 4 / 3 + 4)
-#define DPL_BASE64_ORIG_LENGTH(len) ((((len) - 1) * 3) / 4 + 1)
+int dpl_base64_init(void);
+#define DPL_BASE64_LENGTH(len) (((len) + 2) / 3 * 4)
+#define DPL_BASE64_ORIG_LENGTH(len) (((len) + 3) / 4 * 3)
 
 #define DPL_URL_LENGTH(len) ((len)*3+1)
 #define DPL_BCD_LENGTH(len) (2*(len))

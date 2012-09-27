@@ -490,20 +490,51 @@ dpl_hmac_sha1(const char *key_buf,
 /**/
 
 static const char *base = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static int valueof[256] = {0};
+
+static void create_valueof_table(void)
+{
+  int i;
+
+  for (i = 0; i < 256; ++i)
+    {
+      valueof[i] = -1;
+    }
+
+  for (i = 0; i < 64; ++i)
+    {
+      valueof[(int)base[i]] = i;
+    }
+}
+
+int dpl_base64_init(void)
+{
+  create_valueof_table();
+
+  return 0;
+}
+
+
+#define isbase64(c) (-1 != valueof[(c)])
+#define value(c) valueof[(c)]
+
 
 /**
  * base64 encode
  *
- * @param in_buf
- * @param in_len
- * @param out_buf
+ * @brief encode a binary buffer in base64.
  *
- * @return out_len
+ * @param in_buf input buffer to encode
+ * @param in_len input buffer size
+ * @param out_buf base64 output buffer that must be at least of size
+ * DPL_BASE64_LENGTH(in_len)
+ *
+ * @return out_len length of base64 output
  */
 u_int
 dpl_base64_encode(const u_char *in_buf,
-                  u_int in_len,
-                  u_char *out_buf)
+                   u_int in_len,
+                   u_char *out_buf)
 {
   u_char *saved_out_buf = out_buf;
 
@@ -537,76 +568,81 @@ dpl_base64_encode(const u_char *in_buf,
   return (out_buf - saved_out_buf);
 }
 
-static int 
-isbase64(char c)
-{
-  return c && strchr(base, c) != NULL;
-}
-
-static char 
-value(char c)
-{
-  const char *p = strchr(base, c);
-
-  if (p)
-    {
-      return p-base;
-    } 
-  else
-    {
-      return 0;
-    }
-}
-
+/**
+ * base64 decode
+ *
+ * @brief decode a base64-encoded buffer to the original binary data.
+ *
+ * @param in_buf input buffer to decode
+ * @param in_len input buffer size
+ * @param out_buf base64 output buffer (must be at least of size
+ * DPL_BASE64_ORIG_LENGTH(in_len))
+ *
+ * @return out_len length of decoded output
+ */
 u_int 
 dpl_base64_decode(const u_char *in_buf,
-                  u_int in_len,
-                  u_char *out_buf)
+                   u_int in_len,
+                   u_char *out_buf)
 {
   unsigned char *p = out_buf;
+  char a, b, c, d;
 
-  *out_buf = 0;
-  
-  if (*in_buf == 0) 
+  while (in_len > 0)
     {
-      return 0;
-    }
+      if (in_len < 4)
+        return (u_int)-1;
 
-  do
-    {
-      char a = value(in_buf[0]);
-      char b = value(in_buf[1]);
-      char c = value(in_buf[2]);
-      char d = value(in_buf[3]);
+      if (!isbase64(in_buf[0]) ||
+          !isbase64(in_buf[1]))
+        return (u_int)-1;
+
+      a = value(*in_buf);
+      ++in_buf;
+      b = value(*in_buf);
+      ++in_buf;
+
       *p++ = (a << 2) | (b >> 4);
-      *p++ = (b << 4) | (c >> 2);
-      *p++ = (c << 6) | d;
-      if(!isbase64(in_buf[1])) 
+
+      if (!isbase64(*in_buf))
         {
-          p -= 2;
-          break;
-        } 
-      else if (!isbase64(in_buf[2])) 
-        {
-          p -= 2;
-          break;
-        } 
-      else if (!isbase64(in_buf[3])) 
-        {
-          p--;
-          break;
+          if ('=' == *in_buf)
+            {
+              if ('=' == in_buf[1])
+                break ;
+            }
+          return (u_int)-1;
         }
-      in_buf += 4;
 
-      while (*in_buf && (*in_buf == 13 || *in_buf == 10)) 
-        in_buf++;
+      c = value(*in_buf);
+      ++in_buf;
+
+      *p++ = (b << 4) | (c >> 2);
+
+      if (!isbase64(*in_buf))
+        {
+          if ('=' == *in_buf)
+            break ;
+          return (u_int)-1;
+        }
+
+      d = value(*in_buf);
+      ++in_buf;
+
+      *p++ = (c << 6) | d;
+
+      in_len -= 4;
+
+      while (in_len > 0 && (*in_buf == '\r' || *in_buf == '\n'))
+        {
+          ++in_buf;
+          --in_len;
+        }
     }
-  while (in_len-= 4);
 
-  *p = 0;
-  
   return p - out_buf;
 }
+
 
 /**/
 
