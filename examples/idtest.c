@@ -21,10 +21,15 @@ main(int argc,
   dpl_dict_var_t *metadatum = NULL;
   dpl_option_t option;
   dpl_sysmd_t sysmd;
+  char *force_id = NULL;
   
-  if (1 != argc)
+  if (2 == argc)
     {
-      fprintf(stderr, "usage: idtest\n");
+      force_id = argv[1];
+    }
+  else if (1 != argc)
+    {
+      fprintf(stderr, "usage: idtest [id]\n");
       ret = 1;
       goto end;
     }
@@ -89,31 +94,61 @@ main(int argc,
   
   fprintf(stderr, "setting object+MD\n");
 
-  ret = dpl_post_id(ctx,           //the context
-                    NULL,          //no bucket
-                    NULL,          //no subresource
-                    NULL,          //no option
-                    DPL_FTYPE_REG, //regular object
-                    metadata,      //the metadata
-                    NULL,          //no sysmd
-                    data_buf,      //object body
-                    data_len,      //object length
-                    NULL,          //no query params
-                    &sysmd);       //the returned sysmd
-  if (DPL_SUCCESS != ret)
+  if (force_id)
     {
-      fprintf(stderr, "dpl_put_id failed: %s (%d)\n", dpl_status_str(ret), ret);
-      ret = 1;
-      goto free_all;
-    }
+      //we have a broken cloud storage with no POST
+      ret = dpl_put_id(ctx,           //the context
+                       NULL,          //no bucket
+                       force_id,      //the id
+                       0,             //the enterprise number
+                       NULL,          //no subresource
+                       NULL,          //no option
+                       DPL_FTYPE_REG, //regular object
+                       NULL,          //no condition
+                       NULL,          //no range
+                       metadata,      //the metadata
+                       NULL,          //no sysmd
+                       data_buf,      //object body
+                       data_len);     //object length
+      if (DPL_SUCCESS != ret)
+        {
+          fprintf(stderr, "dpl_put_id failed: %s (%d)\n", dpl_status_str(ret), ret);
+          ret = 1;
+          goto free_all;
+        }
 
-  if (!(sysmd.mask & DPL_SYSMD_MASK_ID))
+      //emulate returned sysmd
+      memset(&sysmd, 0, sizeof (sysmd));
+      strncpy(sysmd.id, force_id, sizeof (sysmd.id));
+    }
+  else
     {
-      fprintf(stderr, "backend is not capable of retrieving resource id\n");
-      exit(1);
+      ret = dpl_post_id(ctx,           //the context
+                        NULL,          //no bucket
+                        NULL,          //no subresource
+                        NULL,          //no option
+                        DPL_FTYPE_REG, //regular object
+                        metadata,      //the metadata
+                        NULL,          //no sysmd
+                        data_buf,      //object body
+                        data_len,      //object length
+                        NULL,          //no query params
+                        &sysmd);       //the returned sysmd
+      if (DPL_SUCCESS != ret)
+        {
+          fprintf(stderr, "dpl_post_id failed: %s (%d)\n", dpl_status_str(ret), ret);
+          ret = 1;
+          goto free_all;
+        }
+      
+      if (!(sysmd.mask & DPL_SYSMD_MASK_ID))
+        {
+          fprintf(stderr, "backend is not capable of retrieving resource id\n");
+          exit(1);
+        }
+      
+      fprintf(stderr, "id=%s enterprise_number=%u\n", sysmd.id, sysmd.enterprise_number);
     }
-
-  fprintf(stderr, "id=%s enterprise_number=%u\n", sysmd.id, sysmd.enterprise_number);
 
   /**/
 
