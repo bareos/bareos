@@ -210,7 +210,7 @@ dpl_vec_dup(dpl_vec_t *vec)
   dpl_vec_t *nvec = NULL;
   int i;
   dpl_status_t ret2;
-  dpl_value_t *nval;
+  dpl_value_t *nval = NULL;
 
   assert(NULL != vec);
 
