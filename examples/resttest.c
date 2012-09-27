@@ -1,5 +1,5 @@
 /*
- * simple example which operates into a folder (creation of a folder, atomic file creation + get/set data/metadata + deletion + listing)
+ * simple example which operates into a folder (creation of a folder, atomic file creation + get/set data/metadata + listing of a folder + getattr + deletion)
  */
 
 #include <droplet.h>
@@ -26,6 +26,9 @@ main(int argc,
   dpl_sysmd_t sysmd;
   char *resource_path = NULL;
   char new_path[MAXPATHLEN];
+  dpl_vec_t *files = NULL;
+  dpl_vec_t *sub_directories = NULL;
+  int i;
 
   if (2 != argc)
     {
@@ -180,23 +183,20 @@ main(int argc,
 
   /**/
 
-#if 0
   fprintf(stderr, "getting object+MD\n");
 
-  option.mask = DPL_OPTION_LAZY; //enable this for faster GETs
-
-  ret = dpl_get_id(ctx,           //the context
-                   NULL,          //no bucket
-                   id,            //the key
-                   0,
-                   NULL,          //no subresource
-                   &option,
-                   DPL_FTYPE_REG, //object type
-                   NULL,
-                   &data_buf_returned,  //data object
-                   &data_len_returned,  //data object length
-                   &metadata_returned, //metadata
-                   NULL);              //sysmd
+  ret = dpl_get(ctx,           //the context
+                NULL,          //no bucket
+                new_path,      //the key
+                NULL,          //no subresource
+                NULL,          //no opion
+                DPL_FTYPE_REG, //object type
+                NULL,          //no condition
+                NULL,          //no range
+                &data_buf_returned,  //data object
+                &data_len_returned,  //data object length
+                &metadata_returned, //metadata
+                NULL);              //sysmd
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_get_id failed: %s (%d)\n", dpl_status_str(ret), ret);
@@ -266,21 +266,19 @@ main(int argc,
       goto free_all;
     }
 
-  ret = dpl_copy_id(ctx,           //the context
-                    NULL,          //no src bucket
-                    id,            //the key
-                    0,
-                    NULL,          //no subresource
-                    NULL,          //no dst bucket
-                    id,            //the same key
-                    0,
-                    NULL,          //no subresource
-                    NULL,
-                    DPL_FTYPE_REG, //object type
-                    DPL_COPY_DIRECTIVE_METADATA_REPLACE,  //tell server to replace metadata
-                    metadata,      //the updated metadata
-                    NULL,          //no sysmd
-                    NULL);         //no condition
+  ret = dpl_copy(ctx,           //the context
+                 NULL,          //no src bucket
+                 new_path,      //the key
+                 NULL,          //no subresource
+                 NULL,          //no dst bucket
+                 new_path,      //the same key
+                 NULL,          //no subresource
+                 NULL,          //no option
+                 DPL_FTYPE_REG, //object type
+                 DPL_COPY_DIRECTIVE_METADATA_REPLACE,  //tell server to replace metadata
+                 metadata,      //the updated metadata
+                 NULL,          //no sysmd
+                 NULL);         //no condition
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error updating metadata: %s (%d)\n", dpl_status_str(ret), ret);
@@ -292,15 +290,14 @@ main(int argc,
 
   fprintf(stderr, "getting MD only\n");
 
-  ret = dpl_head_id(ctx,      //the context
-                    NULL,     //no bucket,
-                    id,       //the key
-                    0,
-                    NULL,     //no subresource
-                    NULL,
-                    NULL,     //no condition,
-                    &metadata2_returned,
-                    NULL);
+  ret = dpl_head(ctx,      //the context
+                 NULL,     //no bucket,
+                 new_path, //the key
+                 NULL,     //no subresource
+                 NULL,     //no option
+                 NULL,     //no condition,
+                 &metadata2_returned,
+                 NULL);
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error getting metadata: %s (%d)\n", dpl_status_str(ret), ret);
@@ -344,26 +341,80 @@ main(int argc,
 
   /**/
 
+  fprintf(stderr, "listing of folder\n");
+
+  ret = dpl_list_bucket(ctx, 
+                        NULL,
+                        folder,
+                        "/",
+                        &files,
+                        &sub_directories);
+  if (DPL_SUCCESS != ret)
+    {
+      fprintf(stderr, "error listing folder: %s (%d)\n", dpl_status_str(ret), ret);
+      ret = 1;
+      goto free_all;
+    }
+
+  for (i = 0;i < files->n_items;i++)
+    {
+      dpl_object_t *obj = (dpl_object_t *) dpl_vec_get(files, i);
+      dpl_sysmd_t obj_sysmd;
+      dpl_dict_t *obj_md = NULL;
+      
+      ret = dpl_head(ctx, 
+                     NULL, //no bucket
+                     obj->path, 
+                     NULL, //subresource
+                     NULL, //option
+                     NULL, //condition
+                     &obj_md, //user metadata
+                     &obj_sysmd); //system metadata
+      if (DPL_SUCCESS != ret)
+        {
+          fprintf(stderr, "getattr error on %s: %s (%d)\n", obj->path, dpl_status_str(ret), ret);
+          ret = 1;
+          goto free_all;
+        }
+
+      fprintf(stderr, "file %s: size=%ld mtime=%lu\nmetadata:\n", obj->path, obj_sysmd.size, obj_sysmd.mtime);
+      dpl_dict_print(obj_md, stderr, 5);
+      dpl_dict_free(obj_md);
+    }
+
+  for (i = 0;i < sub_directories->n_items;i++)
+    {
+      dpl_common_prefix_t *dir = (dpl_common_prefix_t *) dpl_vec_get(files, i);
+
+      fprintf(stderr, "dir %s\n", dir->prefix);
+    }
+
+  /**/
+
   fprintf(stderr, "delete object+MD\n");
 
-  ret = dpl_delete_id(ctx,       //the context
-                      NULL,      //no bucket
-                      id,        //the key
-                      0,         //enterprise number
-                      NULL,      //no subresource
-                      NULL,      //no option
-                      NULL);     //no condition
+  ret = dpl_delete(ctx,       //the context
+                   NULL,      //no bucket
+                   new_path,  //the key
+                   NULL,      //no subresource
+                   NULL,      //no option
+                   NULL);     //no condition
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error deleting object: %s (%d)\n", dpl_status_str(ret), ret);
       ret = 1;
       goto free_all;
     }
-#endif
 
   ret = 0;
 
  free_all:
+
+  if (NULL != sub_directories)
+    dpl_vec_common_prefixes_free(sub_directories);
+
+  if (NULL != files)
+    dpl_vec_objects_free(files);
 
   if (NULL != resource_path)
     free(resource_path);
