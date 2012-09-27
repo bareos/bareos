@@ -416,7 +416,7 @@ dpl_status_t
 dpl_profile_parse(dpl_ctx_t *ctx,
                   const char *path)
 {
-  struct dpl_conf_ctx *conf_ctx;
+  struct dpl_conf_ctx *conf_ctx = NULL;
   char buf[4096];
   ssize_t cc;
   int fd = -1;
@@ -464,11 +464,12 @@ dpl_profile_parse(dpl_ctx_t *ctx,
       goto end;
     }
 
-  dpl_conf_free(conf_ctx);
-
   ret = DPL_SUCCESS;
 
  end:
+
+  if (conf_ctx)
+    dpl_conf_free(conf_ctx);
 
   if (-1 != fd)
     (void) close(fd);

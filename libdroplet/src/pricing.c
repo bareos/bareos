@@ -921,7 +921,7 @@ dpl_status_t
 dpl_pricing_parse(dpl_ctx_t *ctx,
                   const char *path)
 {
-  struct dpl_parse_ctx *parse_ctx;
+  struct dpl_parse_ctx *parse_ctx = NULL;
   char buf[4096];
   ssize_t cc;
   int fd = -1;
@@ -971,11 +971,12 @@ dpl_pricing_parse(dpl_ctx_t *ctx,
         }
     }
 
-  parse_ctx_free(parse_ctx);
-
   ret = DPL_SUCCESS;
 
  end:
+
+  if (parse_ctx)
+    parse_ctx_free(parse_ctx);
 
   if (-1 != fd)
     (void) close(fd);
