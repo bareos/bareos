@@ -100,6 +100,7 @@ main(int argc,
                    NULL,          //no option
                    DPL_FTYPE_REG, //regular object
                    NULL,          //no condition
+                   NULL,          //no range
                    metadata,      //the metadata
                    NULL,          //no sysmd
                    data_buf,      //object body
@@ -120,11 +121,12 @@ main(int argc,
   ret = dpl_get_id(ctx,           //the context
                    NULL,          //no bucket
                    id,            //the key
-                   0,
+                   0,             //enterprise number
                    NULL,          //no subresource
-                   &option,
+                   &option,       //options
                    DPL_FTYPE_REG, //object type
-                   NULL,
+                   NULL,          //no condition
+                   NULL,          //no range
                    &data_buf_returned,  //data object
                    &data_len_returned,  //data object length
                    &metadata_returned, //metadata
@@ -201,13 +203,13 @@ main(int argc,
   ret = dpl_copy_id(ctx,           //the context
                     NULL,          //no src bucket
                     id,            //the key
-                    0,
+                    0,             //src enterprise number
                     NULL,          //no subresource
                     NULL,          //no dst bucket
                     id,            //the same key
-                    0,
+                    0,             //dst enterprise number
                     NULL,          //no subresource
-                    NULL,
+                    NULL,          //no option
                     DPL_FTYPE_REG, //object type
                     DPL_COPY_DIRECTIVE_METADATA_REPLACE,  //tell server to replace metadata
                     metadata,      //the updated metadata
@@ -227,12 +229,12 @@ main(int argc,
   ret = dpl_head_id(ctx,      //the context
                     NULL,     //no bucket,
                     id,       //the key
-                    0,
+                    0,        //enterprise number
                     NULL,     //no subresource
-                    NULL,
+                    NULL,     //option
                     NULL,     //no condition,
                     &metadata2_returned,
-                    NULL);
+                    NULL);    //no sysmd
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "error getting metadata: %s (%d)\n", dpl_status_str(ret), ret);

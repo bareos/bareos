@@ -264,7 +264,7 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s%s", parent_fqn.path, obj_name, delim);
 
-  ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, object_type, NULL, metadata, sysmd, NULL, 0);
+  ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, object_type, NULL, NULL, metadata, sysmd, NULL, 0);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1695,7 +1695,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
         ret2 = dpl_post_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, obj_type, metadata, sysmd,
                                  data_len, query_params, &vfile->conn);
       else
-        ret2 = dpl_put_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, obj_type, NULL, metadata, sysmd,
+        ret2 = dpl_put_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, obj_type, NULL, NULL, metadata, sysmd,
                                 data_len, &vfile->conn);
       if (DPL_SUCCESS != ret2)
         {
@@ -1813,7 +1813,7 @@ dpl_write(dpl_vfile_t *vfile,
                         buf, len, vfile->query_params, NULL); //XXX resource_idp ?
       else
         ret2 = dpl_put(vfile->ctx, vfile->bucket, vfile->resource, NULL, NULL,
-                       vfile->obj_type, NULL, vfile->metadata, vfile->sysmd,
+                       vfile->obj_type, NULL, NULL, vfile->metadata, vfile->sysmd,
                        buf, len);
       if (DPL_SUCCESS != ret2)
         {
@@ -2045,11 +2045,11 @@ dpl_openread(dpl_ctx_t *ctx,
   if (flags & DPL_VFILE_FLAG_ONESHOT)
     {
       if (flags & DPL_VFILE_FLAG_RANGE)
-        ret2 = dpl_get_range(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
-                             condition, range, &data_buf, &data_len, metadatap, sysmdp);
+        ret2 = dpl_get(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
+                       condition, range, &data_buf, &data_len, metadatap, sysmdp);
       else
         ret2 = dpl_get(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
-                       condition, &data_buf, &data_len, metadatap, sysmdp);
+                       condition, NULL, &data_buf, &data_len, metadatap, sysmdp);
 
       if (DPL_SUCCESS != ret2)
         {
@@ -2064,11 +2064,11 @@ dpl_openread(dpl_ctx_t *ctx,
   else
     {
       if (flags & DPL_VFILE_FLAG_RANGE)
-        ret2 = dpl_get_range_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
-                                      condition, range, cb_vfile_metadatum, metadatap, sysmdp, cb_vfile_buffer, vfile);
+        ret2 = dpl_get_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
+                                condition, range, cb_vfile_metadatum, metadatap, sysmdp, cb_vfile_buffer, vfile);
       else
         ret2 = dpl_get_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
-                                condition, cb_vfile_metadatum, metadatap, sysmdp, cb_vfile_buffer, vfile);
+                                condition, NULL, cb_vfile_metadatum, metadatap, sysmdp, cb_vfile_buffer, vfile);
 
       if (DPL_SUCCESS != ret2)
         {
@@ -2313,7 +2313,7 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_head_all(ctx, bucket, obj_fqn.path, NULL, NULL, NULL, metadatap);
+  ret2 = dpl_head_raw(ctx, bucket, obj_fqn.path, NULL, NULL, NULL, metadatap);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

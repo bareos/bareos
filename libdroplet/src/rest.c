@@ -312,6 +312,7 @@ dpl_post_buffered(dpl_ctx_t *ctx,
  * @param object_type DPL_FTYPE_REG create a file
  * @param object_type DPL_FTYPE_DIR create a directory
  * @param condition the optional condition
+ * @param range optional range
  * @param metadata the optional user metadata
  * @param sysmd the optional system metadata
  * @param data_buf the data buffer
@@ -329,6 +330,7 @@ dpl_put(dpl_ctx_t *ctx,
         const dpl_option_t *option,
         dpl_ftype_t object_type,
         const dpl_condition_t *condition,
+        const dpl_range_t *range,
         const dpl_dict_t *metadata,
         const dpl_sysmd_t *sysmd,
         const char *data_buf,
@@ -344,7 +346,7 @@ dpl_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->put(ctx, bucket, resource, subresource, option, object_type, condition, metadata, sysmd, data_buf, data_len, NULL);
+  ret = ctx->backend->put(ctx, bucket, resource, subresource, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL);
   
  end:
 
@@ -363,6 +365,7 @@ dpl_put(dpl_ctx_t *ctx,
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_REG create a file
  * @param condition optional condition
+ * @param range optional range
  * @param metadata optional user metadata
  * @param sysmd optional system metadata
  * @param data_len advertise the length
@@ -379,6 +382,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
                  const dpl_option_t *option,
                  dpl_ftype_t object_type,
                  const dpl_condition_t *condition,
+                 const dpl_range_t *range,
                  const dpl_dict_t *metadata,
                  const dpl_sysmd_t *sysmd,
                  unsigned int data_len,
@@ -394,59 +398,8 @@ dpl_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, option, object_type, condition, metadata, sysmd, data_len, connp, NULL);
+  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, option, object_type, condition, range, metadata, sysmd, data_len, connp, NULL);
   
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
-  
-  return ret;
-}
-
-/** 
- * get a resource
- * 
- * @param ctx the droplet context
- * @param bucket the optional bucket
- * @param resource the mandatory resource
- * @param subresource the optional subresource
- * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
- * @param object_type DPL_FTYPE_ANY get any type of resource
- * @param condition the optional condition
- * @param data_bufp the returned buffer client shall free
- * @param data_lenp the returned buffer length
- * @param metadatap the returned user metadata client shall free
- * @param sysmdp the returned system metadata passed through stack
- * 
- * @return DPL_SUCCESS
- * @return DPL_FAILURE
- * @return DPL_ENOENT the resource does not exist
- */
-dpl_status_t
-dpl_get(dpl_ctx_t *ctx,
-        const char *bucket,
-        const char *resource,
-        const char *subresource,
-        const dpl_option_t *option,
-        dpl_ftype_t object_type,
-        const dpl_condition_t *condition,
-        char **data_bufp,
-        unsigned int *data_lenp,
-        dpl_dict_t **metadatap,
-        dpl_sysmd_t *sysmdp)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "get bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
-
-  if (NULL == ctx->backend->get)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->get(ctx, bucket, resource, subresource, option, object_type, condition, data_bufp, data_lenp, metadatap, sysmdp, NULL);
-
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -475,82 +428,30 @@ dpl_get(dpl_ctx_t *ctx,
  * @return DPL_ENOENT resource does not exist
  */
 dpl_status_t
-dpl_get_range(dpl_ctx_t *ctx,
-              const char *bucket,
-              const char *resource,
-              const char *subresource,
-              const dpl_option_t *option,
-              dpl_ftype_t object_type,
-              const dpl_condition_t *condition,
-              const dpl_range_t *range, 
-              char **data_bufp,
-              unsigned int *data_lenp,
-              dpl_dict_t **metadatap,
-              dpl_sysmd_t *sysmdp)
+dpl_get(dpl_ctx_t *ctx,
+        const char *bucket,
+        const char *resource,
+        const char *subresource,
+        const dpl_option_t *option,
+        dpl_ftype_t object_type,
+        const dpl_condition_t *condition,
+        const dpl_range_t *range, 
+        char **data_bufp,
+        unsigned int *data_lenp,
+        dpl_dict_t **metadatap,
+        dpl_sysmd_t *sysmdp)
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "get_range bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "get bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
-  if (NULL == ctx->backend->get_range)
+  if (NULL == ctx->backend->get)
     {
       ret = DPL_ENOTSUPP;
       goto end;
     }
   
-  ret = ctx->backend->get_range(ctx, bucket, resource, subresource, option, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp, NULL);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
-  
-  return ret;
-}
-
-/** 
- * get with bufferization
- * 
- * @param ctx the droplet context
- * @param bucket the optional bucket
- * @param resource the mandat resource
- * @param subresource the optional subresource
- * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
- * @param object_type DPL_FTYPE_ANY get any type of resource
- * @param condition the optional condition
- * @param metadatum_func each time a metadata is discovered into the stream it is called back
- * @param metadatap the returned user metadata client shall free
- * @param sysmdp the returned system metadata passed through stack
- * @param buffer_func the function called each time a buffer is discovered
- * @param cb_arg the callback argument
- * 
- * @return DPL_SUCCESS
- * @return DPL_FAILURE
- */
-dpl_status_t 
-dpl_get_buffered(dpl_ctx_t *ctx,
-                 const char *bucket,
-                 const char *resource,
-                 const char *subresource, 
-                 const dpl_option_t *option,
-                 dpl_ftype_t object_type,
-                 const dpl_condition_t *condition,
-                 dpl_metadatum_func_t metadatum_func,
-                 dpl_dict_t **metadatap,
-                 dpl_sysmd_t *sysmdp,
-                 dpl_buffer_func_t buffer_func,
-                 void *cb_arg)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "get_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
-
-  if (NULL == ctx->backend->get_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->get_buffered(ctx, bucket, resource, subresource, option, object_type, condition, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
+  ret = ctx->backend->get(ctx, bucket, resource, subresource, option, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp, NULL);
   
  end:
 
@@ -580,31 +481,31 @@ dpl_get_buffered(dpl_ctx_t *ctx,
  * @return DPL_FAILURE
  */
 dpl_status_t 
-dpl_get_range_buffered(dpl_ctx_t *ctx,
-                       const char *bucket,
-                       const char *resource,
-                       const char *subresource, 
-                       const dpl_option_t *option,
-                       dpl_ftype_t object_type,
-                       const dpl_condition_t *condition,
-                       const dpl_range_t *range,
-                       dpl_metadatum_func_t metadatum_func,
-                       dpl_dict_t **metadatap,
-                       dpl_sysmd_t *sysmdp, 
-                       dpl_buffer_func_t buffer_func,
-                       void *cb_arg)
+dpl_get_buffered(dpl_ctx_t *ctx,
+                 const char *bucket,
+                 const char *resource,
+                 const char *subresource, 
+                 const dpl_option_t *option,
+                 dpl_ftype_t object_type,
+                 const dpl_condition_t *condition,
+                 const dpl_range_t *range,
+                 dpl_metadatum_func_t metadatum_func,
+                 dpl_dict_t **metadatap,
+                 dpl_sysmd_t *sysmdp, 
+                 dpl_buffer_func_t buffer_func,
+                 void *cb_arg)
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_ID, "get_range_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_ID, "get_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
-  if (NULL == ctx->backend->get_range_buffered)
+  if (NULL == ctx->backend->get_buffered)
     {
       ret = DPL_ENOTSUPP;
       goto end;
     }
   
-  ret = ctx->backend->get_range_buffered(ctx, bucket, resource, subresource, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
+  ret = ctx->backend->get_buffered(ctx, bucket, resource, subresource, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
   
  end:
 
@@ -675,7 +576,7 @@ dpl_head(dpl_ctx_t *ctx,
  * @return DPL_ENOENT
  */
 dpl_status_t
-dpl_head_all(dpl_ctx_t *ctx,
+dpl_head_raw(dpl_ctx_t *ctx,
              const char *bucket,
              const char *resource,
              const char *subresource,
@@ -685,15 +586,15 @@ dpl_head_all(dpl_ctx_t *ctx,
 {
   int ret;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "head_all bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "head_raw bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
-  if (NULL == ctx->backend->head_all)
+  if (NULL == ctx->backend->head_raw)
     {
       ret = DPL_ENOTSUPP;
       goto end;
     }
   
-  ret = ctx->backend->head_all(ctx, bucket, resource, subresource, option, DPL_FTYPE_UNDEF, condition, metadatap, NULL);
+  ret = ctx->backend->head_raw(ctx, bucket, resource, subresource, option, DPL_FTYPE_UNDEF, condition, metadatap, NULL);
   
  end:
 

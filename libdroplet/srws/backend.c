@@ -46,6 +46,7 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
                       const dpl_option_t *option,
                       dpl_ftype_t object_type,
                       const dpl_condition_t *condition,
+                      const dpl_range_t *range,
                       const dpl_dict_t *metadata,
                       const dpl_sysmd_t *sysmd,
                       const char *data_buf,
@@ -239,6 +240,7 @@ dpl_srws_put(dpl_ctx_t *ctx,
              const dpl_option_t *option,
              dpl_ftype_t object_type,
              const dpl_condition_t *condition,
+             const dpl_range_t *range,
              const dpl_dict_t *metadata,
              const dpl_sysmd_t *sysmd,
              const char *data_buf,
@@ -246,7 +248,8 @@ dpl_srws_put(dpl_ctx_t *ctx,
              char **locationp)
 {
   return dpl_srws_put_internal(ctx, bucket, resource, subresource, option,
-                               object_type, condition, metadata, sysmd, data_buf, data_len, 0, locationp);
+                               object_type, condition, range,
+                               metadata, sysmd, data_buf, data_len, 0, locationp);
 }
 
 dpl_status_t
@@ -257,6 +260,7 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
                       const dpl_option_t *option,
                       dpl_ftype_t object_type,
                       const dpl_condition_t *condition,
+                      const dpl_range_t *range,
                       const dpl_dict_t *metadata,
                       const dpl_sysmd_t *sysmd,
                       unsigned int data_len,
@@ -646,31 +650,12 @@ dpl_srws_get(dpl_ctx_t *ctx,
              const dpl_option_t *option,
              dpl_ftype_t object_type,
              const dpl_condition_t *condition,
+             const dpl_range_t *range,
              char **data_bufp,
              unsigned int *data_lenp,
              dpl_dict_t **metadatap,
              dpl_sysmd_t *sysmdp,
              char **locationp)
-{
-  return dpl_srws_get_range(ctx,bucket,resource,subresource,option,object_type,condition,
-                            NULL,
-			    data_bufp,data_lenp,metadatap,sysmdp,locationp);
-}
-
-dpl_status_t
-dpl_srws_get_range(dpl_ctx_t *ctx,
-                   const char *bucket,
-                   const char *resource,
-                   const char *subresource,
-                   const dpl_option_t *option,
-                   dpl_ftype_t object_type,
-                   const dpl_condition_t *condition,
-                   const dpl_range_t *range,
-                   char **data_bufp,
-                   unsigned int *data_lenp,
-                   dpl_dict_t **metadatap,
-                   dpl_sysmd_t *sysmdp,
-                   char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -916,34 +901,13 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
                       const dpl_option_t *option,
                       dpl_ftype_t object_type,
                       const dpl_condition_t *condition,
+                      const dpl_range_t *range,
                       dpl_metadatum_func_t metadatum_func,
                       dpl_dict_t **metadatap,
                       dpl_sysmd_t *sysmdp,
                       dpl_buffer_func_t buffer_func,
                       void *cb_arg,
                       char **locationp)
-{
-  return dpl_srws_get_range_buffered(ctx,bucket,resource,subresource,option,object_type,condition,
-                                     NULL,
-				     metadatum_func, metadatap, sysmdp, buffer_func,
-                                     cb_arg, locationp);
-}
-
-dpl_status_t
-dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
-			    const char *bucket,
-			    const char *resource,
-			    const char *subresource,
-                            const dpl_option_t *option,
-			    dpl_ftype_t object_type,
-			    const dpl_condition_t *condition,
-                            const dpl_range_t *range,
-                            dpl_metadatum_func_t metadatum_func,
-                            dpl_dict_t **metadatap,
-                            dpl_sysmd_t *sysmdp,
-			    dpl_buffer_func_t buffer_func,
-			    void *cb_arg,
-                            char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -1122,7 +1086,7 @@ dpl_srws_get_range_buffered(dpl_ctx_t *ctx,
 }
 
 dpl_status_t 
-dpl_srws_head_all(dpl_ctx_t *ctx, 
+dpl_srws_head_raw(dpl_ctx_t *ctx, 
                   const char *bucket, 
                   const char *resource,
                   const char *subresource,
@@ -1292,7 +1256,7 @@ dpl_srws_head(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  ret2 = dpl_srws_head_all(ctx, bucket, resource, subresource, option,
+  ret2 = dpl_srws_head_raw(ctx, bucket, resource, subresource, option,
                            object_type, condition, 
                            &headers_reply, locationp);
   if (DPL_SUCCESS != ret2)
@@ -1691,7 +1655,7 @@ dpl_srws_copy(dpl_ctx_t *ctx,
 
       //replace the metadata
       ret2 = dpl_srws_put_internal(ctx, dst_bucket, dst_resource,
-                                   dst_subresource, option, object_type, condition, metadata, 
+                                   dst_subresource, option, object_type, condition, NULL, metadata, 
                                    DPL_CANNED_ACL_UNDEF, NULL, 0, 1, locationp);
       if (DPL_SUCCESS != ret2)
         {

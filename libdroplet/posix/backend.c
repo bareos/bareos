@@ -540,31 +540,12 @@ dpl_posix_put(dpl_ctx_t *ctx,
               const dpl_option_t *option, 
               dpl_ftype_t object_type,
               const dpl_condition_t *condition,
+              const dpl_range_t *range,
               const dpl_dict_t *metadata,
               const dpl_sysmd_t *sysmd,
               const char *data_buf,
               unsigned int data_len,
               char **locationp)
-{
-  return dpl_posix_put_range(ctx, bucket, resource, subresource, option,
-                             object_type, condition, NULL, metadata, sysmd,
-                             data_buf, data_len, locationp);
-}
-
-dpl_status_t
-dpl_posix_put_range(dpl_ctx_t *ctx,
-                    const char *bucket,
-                    const char *resource,
-                    const char *subresource,
-                    const dpl_option_t *option, 
-                    dpl_ftype_t object_type,
-                    const dpl_condition_t *condition,
-                    const dpl_range_t *range,
-                    const dpl_dict_t *metadata,
-                    const dpl_sysmd_t *sysmd,
-                    const char *data_buf,
-                    unsigned int data_len,
-                    char **locationp)
 {
   dpl_status_t ret, ret2;
   int iret;
@@ -676,31 +657,12 @@ dpl_posix_put_buffered(dpl_ctx_t *ctx,
                        const dpl_option_t *option, 
                        dpl_ftype_t object_type,
                        const dpl_condition_t *condition,
+                       const dpl_range_t *range,
                        const dpl_dict_t *metadata,
                        const dpl_sysmd_t *sysmd,
                        unsigned int data_len,
                        dpl_conn_t **connp,
                        char **locationp)
-{
-  return dpl_posix_put_range_buffered(ctx, bucket, resource, subresource, option,
-                                      object_type, condition, NULL, metadata, sysmd,
-                                      data_len, connp, locationp);
-}
-
-dpl_status_t
-dpl_posix_put_range_buffered(dpl_ctx_t *ctx,
-                             const char *bucket,
-                             const char *resource,
-                             const char *subresource,
-                             const dpl_option_t *option, 
-                             dpl_ftype_t object_type,
-                             const dpl_condition_t *condition,
-                             const dpl_range_t *range,
-                             const dpl_dict_t *metadata,
-                             const dpl_sysmd_t *sysmd,
-                             unsigned int data_len,
-                             dpl_conn_t **connp,
-                             char **locationp)
 {
   dpl_conn_t *conn = NULL;
   dpl_status_t ret, ret2;
@@ -994,32 +956,12 @@ dpl_posix_get(dpl_ctx_t *ctx,
               const dpl_option_t *option, 
               dpl_ftype_t object_type,
               const dpl_condition_t *condition,
+              const dpl_range_t *range,
               char **data_bufp,
               unsigned int *data_lenp,
               dpl_dict_t **metadatap,
               dpl_sysmd_t *sysmdp,
               char **locationp)
-{
-  return dpl_posix_get_range(ctx, bucket, resource, subresource, option,
-                             object_type, condition, NULL, 
-                             data_bufp, data_lenp, 
-                             metadatap, sysmdp, locationp);
-}
-
-dpl_status_t
-dpl_posix_get_range(dpl_ctx_t *ctx,
-                    const char *bucket,
-                    const char *resource,
-                    const char *subresource,
-                    const dpl_option_t *option, 
-                    dpl_ftype_t object_type,
-                    const dpl_condition_t *condition,
-                    const dpl_range_t *range,
-                    char **data_bufp,
-                    unsigned int *data_lenp,
-                    dpl_dict_t **metadatap,
-                    dpl_sysmd_t *sysmdp,
-                    char **locationp)
 {
   dpl_status_t ret;
   int iret;
@@ -1129,27 +1071,6 @@ dpl_posix_get_range(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
-dpl_posix_get_buffered(dpl_ctx_t *ctx,
-                       const char *bucket,
-                       const char *resource,
-                       const char *subresource,
-                       const dpl_option_t *option,
-                       dpl_ftype_t object_type,
-                       const dpl_condition_t *condition,
-                       dpl_metadatum_func_t metadatum_func,
-                       dpl_dict_t **metadatap,
-                       dpl_sysmd_t *sysmdp,
-                       dpl_buffer_func_t buffer_func,
-                       void *cb_arg,
-                       char **locationp)
-{
-  return dpl_posix_get_range_buffered(ctx, bucket, resource, subresource, option,
-                                      object_type, condition, NULL,
-                                      metadatum_func, metadatap, sysmdp, buffer_func, 
-                                      cb_arg, locationp);
-}
-
 struct get_conven
 {
   dpl_metadatum_func_t metadatum_func;
@@ -1204,20 +1125,20 @@ cb_get_buffer(void *cb_arg,
 }
 
 dpl_status_t
-dpl_posix_get_range_buffered(dpl_ctx_t *ctx,
-                             const char *bucket,
-                             const char *resource,
-                             const char *subresource,
-                             const dpl_option_t *option, 
-                             dpl_ftype_t object_type,
-                             const dpl_condition_t *condition,
-                             const dpl_range_t *range, 
-                             dpl_metadatum_func_t metadatum_func,
-                             dpl_dict_t **metadatap,
-                             dpl_sysmd_t *sysmdp,
-                             dpl_buffer_func_t buffer_func,
-                             void *cb_arg,
-                             char **locationp)
+dpl_posix_get_buffered(dpl_ctx_t *ctx,
+                       const char *bucket,
+                       const char *resource,
+                       const char *subresource,
+                       const dpl_option_t *option, 
+                       dpl_ftype_t object_type,
+                       const dpl_condition_t *condition,
+                       const dpl_range_t *range, 
+                       dpl_metadatum_func_t metadatum_func,
+                       dpl_dict_t **metadatap,
+                       dpl_sysmd_t *sysmdp,
+                       dpl_buffer_func_t buffer_func,
+                       void *cb_arg,
+                       char **locationp)
 {
   dpl_status_t ret, ret2;
   char path[MAXPATHLEN];
@@ -1275,7 +1196,7 @@ dpl_posix_get_range_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_posix_head_all(ctx, bucket, resource, subresource, option,
+  ret2 = dpl_posix_head_raw(ctx, bucket, resource, subresource, option,
                             object_type, condition, &all_mds, locationp);
   if (DPL_SUCCESS != ret2)
     {
@@ -1336,7 +1257,7 @@ dpl_posix_get_range_buffered(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_posix_head_all(dpl_ctx_t *ctx,
+dpl_posix_head_raw(dpl_ctx_t *ctx,
                    const char *bucket,
                    const char *resource,
                    const char *subresource,
@@ -1578,7 +1499,7 @@ dpl_posix_head(dpl_ctx_t *ctx,
 
   snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
 
-  ret2 = dpl_posix_head_all(ctx, bucket, resource, subresource, option,
+  ret2 = dpl_posix_head_raw(ctx, bucket, resource, subresource, option,
                             object_type, condition, &all_mds, locationp);
   if (DPL_SUCCESS != ret2)
     {

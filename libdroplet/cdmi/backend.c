@@ -988,33 +988,12 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
              const dpl_option_t *option,
              dpl_ftype_t object_type,
              const dpl_condition_t *condition,
+             const dpl_range_t *range,
              const dpl_dict_t *metadata,
              const dpl_sysmd_t *sysmd,
              const char *data_buf,
              unsigned int data_len,
              char **locationp)
-{
-  return dpl_cdmi_put_range(ctx, bucket, resource, subresource, option,
-                            object_type, condition, NULL, 
-                            metadata, sysmd,
-                            data_buf, data_len, 
-                            locationp);
-}
-
-dpl_status_t
-dpl_cdmi_put_range(dpl_ctx_t *ctx,
-                   const char *bucket,
-                   const char *resource,
-                   const char *subresource,
-                   const dpl_option_t *option,
-                   dpl_ftype_t object_type,
-                   const dpl_condition_t *condition,
-                   const dpl_range_t *range,
-                   const dpl_dict_t *metadata,
-                   const dpl_sysmd_t *sysmd,
-                   const char *data_buf,
-                   unsigned int data_len,
-                   char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -1183,26 +1162,6 @@ dpl_cdmi_put_range(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
-dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
-                      const char *bucket,
-                      const char *resource,
-                      const char *subresource,
-                      const dpl_option_t *option,
-                      dpl_ftype_t object_type,
-                      const dpl_condition_t *condition,
-                      const dpl_dict_t *metadata,
-                      const dpl_sysmd_t *sysmd,
-                      unsigned int data_len,
-                      dpl_conn_t **connp,
-                      char **locationp)
-{
-  return dpl_cdmi_put_range_buffered(ctx, bucket, resource, subresource, option,
-                                     object_type, condition, NULL,
-                                     metadata, sysmd, data_len,
-                                     connp, locationp);
-}
-
 /** 
  * put range buffered
  *
@@ -1222,19 +1181,19 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
  * @return 
  */
 dpl_status_t
-dpl_cdmi_put_range_buffered(dpl_ctx_t *ctx,
-                            const char *bucket,
-                            const char *resource,
-                            const char *subresource,
-                            const dpl_option_t *option,
-                            dpl_ftype_t object_type,
-                            const dpl_condition_t *condition,
-                            const dpl_range_t *range,
-                            const dpl_dict_t *metadata,
-                            const dpl_sysmd_t *sysmd,
-                            unsigned int data_len,
-                            dpl_conn_t **connp,
-                            char **locationp)
+dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
+                      const char *bucket,
+                      const char *resource,
+                      const char *subresource,
+                      const dpl_option_t *option,
+                      dpl_ftype_t object_type,
+                      const dpl_condition_t *condition,
+                      const dpl_range_t *range,
+                      const dpl_dict_t *metadata,
+                      const dpl_sysmd_t *sysmd,
+                      unsigned int data_len,
+                      dpl_conn_t **connp,
+                      char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -1929,33 +1888,12 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
              const dpl_option_t *option,
              dpl_ftype_t object_type,
              const dpl_condition_t *condition,
+             const dpl_range_t *range,
              char **data_bufp,
              unsigned int *data_lenp,
              dpl_dict_t **metadatap,
              dpl_sysmd_t *sysmdp,
              char **locationp)
-{
-  return dpl_cdmi_get_range(ctx, bucket, resource, subresource, option,
-                            object_type, condition, NULL,
-                            data_bufp, data_lenp,
-                            metadatap, sysmdp,
-                            locationp);
-}
-
-dpl_status_t
-dpl_cdmi_get_range(dpl_ctx_t *ctx,
-                   const char *bucket,
-                   const char *resource,
-                   const char *subresource,
-                   const dpl_option_t *option,
-                   dpl_ftype_t object_type,
-                   const dpl_condition_t *condition,
-                   const dpl_range_t *range,
-                   char **data_bufp,
-                   unsigned int *data_lenp,
-                   dpl_dict_t **metadatap,
-                   dpl_sysmd_t *sysmdp,
-                   char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -2284,27 +2222,6 @@ cb_get_buffer(void *cb_arg,
   return DPL_SUCCESS;
 }
 
-dpl_status_t
-dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
-                      const char *bucket,
-                      const char *resource,
-                      const char *subresource,
-                      const dpl_option_t *option,
-                      dpl_ftype_t object_type,
-                      const dpl_condition_t *condition,
-                      dpl_metadatum_func_t metadatum_func,
-                      dpl_dict_t **metadatap,
-                      dpl_sysmd_t *sysmdp,
-                      dpl_buffer_func_t buffer_func,
-                      void *cb_arg,
-                      char **locationp)
-{
-  return dpl_cdmi_get_range_buffered(ctx, bucket, resource, subresource, option,
-                                     object_type, condition, NULL, 
-                                     metadatum_func, metadatap, sysmdp, buffer_func,
-                                     cb_arg, locationp);
-}
-
 /** 
  * get range buffered
  * 
@@ -2326,20 +2243,20 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
  * @return 
  */
 dpl_status_t
-dpl_cdmi_get_range_buffered(dpl_ctx_t *ctx,
-                            const char *bucket,
-                            const char *resource,
-                            const char *subresource,
-                            const dpl_option_t *option,
-                            dpl_ftype_t object_type,
-                            const dpl_condition_t *condition,
-                            const dpl_range_t *range,
-                            dpl_metadatum_func_t metadatum_func,
-                            dpl_dict_t **metadatap,
-                            dpl_sysmd_t *sysmdp,
-                            dpl_buffer_func_t buffer_func,
-                            void *cb_arg,
-                            char **locationp)
+dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
+                      const char *bucket,
+                      const char *resource,
+                      const char *subresource,
+                      const dpl_option_t *option,
+                      dpl_ftype_t object_type,
+                      const dpl_condition_t *condition,
+                      const dpl_range_t *range,
+                      dpl_metadatum_func_t metadatum_func,
+                      dpl_dict_t **metadatap,
+                      dpl_sysmd_t *sysmdp,
+                      dpl_buffer_func_t buffer_func,
+                      void *cb_arg,
+                      char **locationp)
 {
   char          *host;
   int           ret, ret2;
@@ -2531,7 +2448,7 @@ dpl_cdmi_get_range_buffered(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_cdmi_head_all(dpl_ctx_t *ctx,
+dpl_cdmi_head_raw(dpl_ctx_t *ctx,
                   const char *bucket,
                   const char *resource,
                   const char *subresource,
@@ -2551,7 +2468,7 @@ dpl_cdmi_head_all(dpl_ctx_t *ctx,
   
   //fetch metadata from JSON content
   option2.mask |= DPL_OPTION_RAW;
-  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata;objectID;parentID;objectType", &option2, object_type, condition, &md_buf, &md_len, NULL, NULL, NULL);
+  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata;objectID;parentID;objectType", &option2, object_type, condition, NULL, &md_buf, &md_len, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2610,7 +2527,7 @@ dpl_cdmi_head(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  ret2 = dpl_cdmi_head_all(ctx, bucket, resource, subresource, option, object_type, condition, &all_mds, locationp);
+  ret2 = dpl_cdmi_head_raw(ctx, bucket, resource, subresource, option, object_type, condition, &all_mds, locationp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2817,7 +2734,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
   if (DPL_COPY_DIRECTIVE_METADATA_REPLACE == copy_directive)
     return dpl_cdmi_put(ctx, dst_bucket, dst_resource,
                         NULL != dst_subresource ? dst_subresource : "metadata", NULL,
-                        object_type, condition, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, locationp);
+                        object_type, condition, NULL, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, locationp);
 
   req = dpl_req_new(ctx);
   if (NULL == req)

@@ -58,6 +58,7 @@ main(int argc,
                    NULL,          //no option
                    DPL_FTYPE_REG, //regular object
                    NULL,          //no condition
+                   NULL,          //no range
                    NULL,          //no metadata
                    NULL,          //no sysmd
                    "foobarbaz",   //object body
@@ -75,19 +76,19 @@ main(int argc,
 
   range.start = 3;
   range.end = 5;
-  ret = dpl_get_range_id(ctx,           //the context
-                         NULL,          //no bucket
-                         id,            //the key
-                         0,
-                         NULL,          //no subresource
-                         NULL,
-                         DPL_FTYPE_REG, //object type
-                         NULL,          //no condition of operation
-                         &range,          //range
-                         &data_buf_returned,  //data object
-                         &data_len_returned,  //data object length
-                         NULL,               //no metadata
-                         NULL);              //no sysmd
+  ret = dpl_get_id(ctx,           //the context
+                   NULL,          //no bucket
+                   id,            //the key
+                   0,             //enterprise number
+                   NULL,          //no subresource
+                   NULL,          //no option
+                   DPL_FTYPE_REG, //object type
+                   NULL,          //no condition of operation
+                   &range,          //range
+                   &data_buf_returned,  //data object
+                   &data_len_returned,  //data object length
+                   NULL,               //no metadata
+                   NULL);              //no sysmd
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_get_id failed: %s (%d)\n", dpl_status_str(ret), ret);

@@ -78,6 +78,7 @@ main(int argc,
                 NULL,          //no option
                 DPL_FTYPE_DIR, //directory
                 NULL,          //no condition
+                NULL,          //no range
                 NULL,          //no metadata
                 NULL,          //no sysmd
                 NULL,          //object body
