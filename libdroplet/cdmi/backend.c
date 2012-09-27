@@ -2509,6 +2509,7 @@ dpl_cdmi_head_raw(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
   
   //fetch metadata from JSON content
+  memset(&option2, 0, sizeof (option2));
   option2.mask |= DPL_OPTION_RAW;
   ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata;objectID;parentID;objectType", &option2, object_type, condition, NULL, &md_buf, &md_len, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)

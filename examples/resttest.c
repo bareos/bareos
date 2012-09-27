@@ -22,7 +22,6 @@ main(int argc,
   dpl_dict_t *metadata_returned = NULL;
   dpl_dict_t *metadata2_returned = NULL;
   dpl_dict_var_t *metadatum = NULL;
-  dpl_option_t option;
   dpl_sysmd_t sysmd;
   char *resource_path = NULL;
   char new_path[MAXPATHLEN];

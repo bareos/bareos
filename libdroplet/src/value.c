@@ -64,6 +64,7 @@ dpl_value_free(dpl_value_t *value)
       //cannot take decision
       break ;
     }
+  free(value);
 }
 
 /** 
