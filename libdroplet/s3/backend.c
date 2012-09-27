@@ -462,46 +462,52 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  if (sysmd->mask & DPL_SYSMD_MASK_LOCATION_CONSTRAINT)
+  if (sysmd)
     {
-      if (DPL_LOCATION_CONSTRAINT_US_STANDARD == sysmd->location_constraint)
+      if (sysmd->mask & DPL_SYSMD_MASK_LOCATION_CONSTRAINT)
+        {
+          if (DPL_LOCATION_CONSTRAINT_US_STANDARD == sysmd->location_constraint)
+            {
+              data_str[0] = 0;
+              data_len = 0;
+            }
+          else
+            {
+              location_constraint_str = dpl_location_constraint_str(sysmd->location_constraint);
+              if (NULL == location_constraint_str)
+                {
+                  ret = DPL_ENOMEM;
+                  goto end;
+                }
+
+              snprintf(data_str, sizeof (data_str),
+                       "<CreateBucketConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
+                       "<LocationConstraint>%s</LocationConstraint>\n"
+                       "</CreateBucketConfiguration>\n",
+                       location_constraint_str);
+
+              data_len = strlen(data_str);
+            }
+        }
+      else
         {
           data_str[0] = 0;
           data_len = 0;
         }
-      else
-        {
-          location_constraint_str = dpl_location_constraint_str(sysmd->location_constraint);
-          if (NULL == location_constraint_str)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
-          
-          snprintf(data_str, sizeof (data_str),
-                   "<CreateBucketConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
-                   "<LocationConstraint>%s</LocationConstraint>\n"
-                   "</CreateBucketConfiguration>\n",
-                   location_constraint_str);
-          
-          data_len = strlen(data_str);
-        }
-    }
-  else
-    {
-      data_str[0] = 0;
-      data_len = 0;
     }
 
   chunk.buf = data_str;
   chunk.len = data_len;
   dpl_req_set_chunk(req, &chunk);
 
-  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
-    dpl_req_set_canned_acl(req, sysmd->canned_acl);
+  if (sysmd)
+    {
+      if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
+        dpl_req_set_canned_acl(req, sysmd->canned_acl);
 
-  if (sysmd->mask & DPL_SYSMD_MASK_STORAGE_CLASS)
-    dpl_req_set_storage_class(req, sysmd->storage_class);
+      if (sysmd->mask & DPL_SYSMD_MASK_STORAGE_CLASS)
+        dpl_req_set_storage_class(req, sysmd->storage_class);
+    }
 
   //build request
   ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
@@ -796,8 +802,11 @@ dpl_s3_put(dpl_ctx_t *ctx,
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
 
-  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
-    dpl_req_set_canned_acl(req, sysmd->canned_acl);
+  if (sysmd)
+    {
+      if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
+        dpl_req_set_canned_acl(req, sysmd->canned_acl);
+    }
 
   if (NULL != metadata)
     {
@@ -971,8 +980,11 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_EXPECT);
 
-  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
-    dpl_req_set_canned_acl(req, sysmd->canned_acl);
+  if (sysmd)
+    {
+      if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
+        dpl_req_set_canned_acl(req, sysmd->canned_acl);
+    }
 
   if (NULL != metadata)
     {
