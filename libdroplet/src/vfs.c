@@ -2885,6 +2885,9 @@ dpl_fgenurl(dpl_ctx_t *ctx,
 
  end:
 
+  if (nlocator)
+    free(nlocator);
+
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
