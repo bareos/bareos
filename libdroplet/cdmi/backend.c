@@ -1451,6 +1451,8 @@ dpl_cdmi_get_metadatum_from_value(const char *key,
   dpl_dict_var_t *var;
   dpl_cdmi_object_id_t obj_id;
 
+  DPRINTF("key=%s val.type=%d\n", key, val->type);
+
   if (sysmdp)
     {
       if (!strcmp(key, "objectID"))
@@ -1907,7 +1909,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   u_int         data_len;
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
-  dpl_dict_t    *metadata = NULL;
   dpl_req_t     *req = NULL;
   int raw = 0;
   dpl_value_t *val = NULL;
@@ -1958,6 +1959,19 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   if (NULL != condition)
     {
       dpl_req_set_condition(req, condition);
+    }
+
+  if (range)
+    {
+      if ( range->start > 0 && range->end > 0 )
+        {
+          ret2 = dpl_req_add_range(req, range->start, range->end);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
     }
 
   //contact default host
@@ -2057,6 +2071,13 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
               ret = DPL_EINVAL;
               goto end;
             }
+
+          ret2 = dpl_cdmi_get_metadata_from_values(val->subdict, metadatap, sysmdp);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
           
           //find the value object
           ret2 = dpl_dict_get_lowered(val->subdict, "value", &var);
@@ -2095,6 +2116,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
           data_buf = orig_buf;
           orig_buf = tmp;
           data_len = orig_len;
+
         }
     }
 
@@ -2108,12 +2130,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
 
   if (NULL != data_lenp)
     *data_lenp = data_len;
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL; //consume it
-    }
 
   ret = DPL_SUCCESS;
 
@@ -2135,9 +2151,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
       else
         dpl_conn_release(conn);
     }
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
 
   if (NULL != headers_reply)
     dpl_dict_free(headers_reply);
@@ -2615,7 +2628,11 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
-  req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_HTTP_COMPAT)
+        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
+    }
 
   //build request
   ret2 = dpl_cdmi_req_build(req, req_mask, &headers_request, NULL, NULL);

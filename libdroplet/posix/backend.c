@@ -1304,7 +1304,7 @@ dpl_posix_head_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(buf, sizeof (buf), "%ld", st.st_ino);
+  snprintf(buf, sizeof (buf), "%lX", st.st_ino);
   ret2 = dpl_dict_add(metadata, "ino", buf, 0);
   if (DPL_SUCCESS != ret2)
     {

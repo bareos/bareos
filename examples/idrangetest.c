@@ -1,7 +1,5 @@
 /*
  * simple example which use ID capable REST services
- *
- * @note this test suppose you are able to generate a suitable key for your REST system
  */
 
 #include <droplet.h>
@@ -13,18 +11,17 @@ main(int argc,
   int ret;
   dpl_ctx_t *ctx;
   char *id = NULL;
+  u_int enterprise_id;
   char *data_buf_returned = NULL;
   u_int data_len_returned;
   dpl_range_t range;
 
-  if (2 != argc)
+  if (1 != argc)
     {
-      fprintf(stderr, "usage: idrangetest key\n");
+      fprintf(stderr, "usage: idrangetest\n");
       ret = 1;
       goto end;
     }
-
-  id = argv[1];
 
   ret = dpl_init();           //init droplet library
   if (DPL_SUCCESS != ret)
@@ -50,19 +47,18 @@ main(int argc,
   
   fprintf(stderr, "setting object+MD\n");
 
-  ret = dpl_put_id(ctx,           //the context
-                   NULL,          //no bucket
-                   id,            //the key
-                   0,             //enterprise number
-                   NULL,          //no subresource
-                   NULL,          //no option
-                   DPL_FTYPE_REG, //regular object
-                   NULL,          //no condition
-                   NULL,          //no range
-                   NULL,          //no metadata
-                   NULL,          //no sysmd
-                   "foobarbaz",   //object body
-                   9);            //object length
+  ret = dpl_post_id(ctx,           //the context
+                    NULL,          //no bucket
+                    NULL,          //no subresource
+                    NULL,          //no option
+                    DPL_FTYPE_REG, //regular object
+                    NULL,         //the metadata
+                    NULL,          //no sysmd
+                    "foobarbaz",   //object body
+                    9,             //object length
+                    NULL,          //no query params
+                    &id,           //the returned id
+                    &enterprise_id); //the returned enterprise id
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_put_id failed: %s (%d)\n", dpl_status_str(ret), ret);
@@ -100,7 +96,7 @@ main(int argc,
 
   if (data_len_returned != 3)
     {
-      fprintf(stderr, "bad content length\n");
+      fprintf(stderr, "bad content length %d\n", data_len_returned);
       ret = 1;
       goto free_all;
     }

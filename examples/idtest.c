@@ -1,7 +1,5 @@
 /*
  * simple example which use ID capable REST services
- *
- * @note this test suppose you are able to generate a suitable key for your REST system
  */
 
 #include <droplet.h>
@@ -13,7 +11,6 @@ main(int argc,
 {
   int ret;
   dpl_ctx_t *ctx;
-  char *id = NULL;
   dpl_dict_t *metadata = NULL;
   char *data_buf = NULL;
   size_t data_len;
@@ -23,15 +20,15 @@ main(int argc,
   dpl_dict_t *metadata2_returned = NULL;
   dpl_dict_var_t *metadatum = NULL;
   dpl_option_t option;
+  char *id = NULL;
+  u_int enterprise_id;
 
-  if (2 != argc)
+  if (1 != argc)
     {
-      fprintf(stderr, "usage: idtest key\n");
+      fprintf(stderr, "usage: idtest\n");
       ret = 1;
       goto end;
     }
-
-  id = argv[1];
 
   ret = dpl_init();           //init droplet library
   if (DPL_SUCCESS != ret)
@@ -52,6 +49,7 @@ main(int argc,
     }
 
   //ctx->trace_level = ~0;
+  //ctx->trace_buffers = 1;
 
   data_len = 10000;
   data_buf = malloc(data_len);
@@ -92,25 +90,26 @@ main(int argc,
   
   fprintf(stderr, "setting object+MD\n");
 
-  ret = dpl_put_id(ctx,           //the context
-                   NULL,          //no bucket
-                   id,            //the key
-                   0,             //enterprise number
-                   NULL,          //no subresource
-                   NULL,          //no option
-                   DPL_FTYPE_REG, //regular object
-                   NULL,          //no condition
-                   NULL,          //no range
-                   metadata,      //the metadata
-                   NULL,          //no sysmd
-                   data_buf,      //object body
-                   data_len);     //object length
+  ret = dpl_post_id(ctx,           //the context
+                    NULL,          //no bucket
+                    NULL,          //no subresource
+                    NULL,          //no option
+                    DPL_FTYPE_REG, //regular object
+                    metadata,      //the metadata
+                    NULL,          //no sysmd
+                    data_buf,      //object body
+                    data_len,      //object length
+                    NULL,          //no query params
+                    &id,           //the returned id
+                    &enterprise_id); //the returned enterprise id
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_put_id failed: %s (%d)\n", dpl_status_str(ret), ret);
       ret = 1;
       goto free_all;
     }
+
+  fprintf(stderr, "id=%s enterprise_id=%u\n", id, enterprise_id);
 
   /**/
 
@@ -121,7 +120,7 @@ main(int argc,
   ret = dpl_get_id(ctx,           //the context
                    NULL,          //no bucket
                    id,            //the key
-                   0,             //enterprise number
+                   enterprise_id, //enterprise number
                    NULL,          //no subresource
                    &option,       //options
                    DPL_FTYPE_REG, //object type
@@ -203,11 +202,11 @@ main(int argc,
   ret = dpl_copy_id(ctx,           //the context
                     NULL,          //no src bucket
                     id,            //the key
-                    0,             //src enterprise number
+                    enterprise_id, //src enterprise number
                     NULL,          //no subresource
                     NULL,          //no dst bucket
                     id,            //the same key
-                    0,             //dst enterprise number
+                    -1,            //dst enterprise number
                     NULL,          //no subresource
                     NULL,          //no option
                     DPL_FTYPE_REG, //object type
@@ -229,7 +228,7 @@ main(int argc,
   ret = dpl_head_id(ctx,      //the context
                     NULL,     //no bucket,
                     id,       //the key
-                    0,        //enterprise number
+                    enterprise_id, //enterprise number
                     NULL,     //no subresource
                     NULL,     //option
                     NULL,     //no condition,
@@ -283,7 +282,7 @@ main(int argc,
   ret = dpl_delete_id(ctx,       //the context
                       NULL,      //no bucket
                       id,        //the key
-                      0,         //enterprise number
+                      enterprise_id, //enterprise number
                       NULL,      //no subresource
                       NULL,      //no option
                       NULL);     //no condition
@@ -297,6 +296,9 @@ main(int argc,
   ret = 0;
 
  free_all:
+
+  if (NULL != id)
+    free(id);
 
   if (NULL != metadata2_returned)
     dpl_dict_free(metadata2_returned);

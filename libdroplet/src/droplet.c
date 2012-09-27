@@ -118,6 +118,7 @@ dpl_ctx_new(const char *droplet_dir,
 {
   dpl_ctx_t *ctx;
   int ret;
+  char *str;
 
   ctx = malloc(sizeof (*ctx));
   if (NULL == ctx)
@@ -133,6 +134,12 @@ dpl_ctx_new(const char *droplet_dir,
       dpl_ctx_free(ctx);
       return NULL;
     }
+
+  if ((str = getenv("DPL_TRACE_LEVEL")))
+    ctx->trace_level = strtoul(str, NULL, 0);
+
+  if ((str = getenv("DPL_TRACE_BUFFERS")))
+    ctx->trace_buffers = atoi(str);
 
   return ctx;
 }
