@@ -213,7 +213,8 @@ dpl_delete_bucket(dpl_ctx_t *ctx,
  * @param data_buf the data buffer
  * @param data_len the data length
  * @param query_params can be NULL
- * @param id_resourcep the id_path of the new object. caller must free it
+ * @param returned_sysmdp the returned system metadata passed through stack
+ * @param locationp the returned resource path
  * 
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
@@ -230,7 +231,8 @@ dpl_post(dpl_ctx_t *ctx,
          const char *data_buf,
          unsigned int data_len,
          const dpl_dict_t *query_params,
-         char **id_resourcep)
+         dpl_sysmd_t *returned_sysmdp,
+         char **locationp)
 {
   int ret;
 
@@ -242,7 +244,7 @@ dpl_post(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->post(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, id_resourcep, NULL);
+  ret = ctx->backend->post(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, locationp);
   
  end:
 

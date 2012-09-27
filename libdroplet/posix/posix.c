@@ -41,7 +41,6 @@ dpl_backend_t
 dpl_backend_posix = 
   {
     "posix",
-    .make_bucket 	= dpl_posix_make_bucket,
     .list_bucket 	= dpl_posix_list_bucket,
     .post 		= dpl_posix_post,
     .post_buffered      = dpl_posix_post_buffered,

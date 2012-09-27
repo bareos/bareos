@@ -10,11 +10,10 @@ main(int argc,
 {
   int ret;
   dpl_ctx_t *ctx;
-  char *id = NULL;
-  u_int enterprise_id;
   char *data_buf_returned = NULL;
   u_int data_len_returned;
   dpl_range_t range;
+  dpl_sysmd_t sysmd;
 
   if (1 != argc)
     {
@@ -57,14 +56,21 @@ main(int argc,
                     "foobarbaz",   //object body
                     9,             //object length
                     NULL,          //no query params
-                    &id,           //the returned id
-                    &enterprise_id); //the returned enterprise id
+                    &sysmd);       //the returned sysmd
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_put_id failed: %s (%d)\n", dpl_status_str(ret), ret);
       ret = 1;
       goto free_all;
     }
+
+  if (!(sysmd.mask & DPL_SYSMD_MASK_ID))
+    {
+      fprintf(stderr, "backend is not capable of retrieving resource id\n");
+      exit(1);
+    }
+
+  fprintf(stderr, "id=%s enterprise_number=%u\n", sysmd.id, sysmd.enterprise_number);
 
   /**/
 
@@ -74,8 +80,8 @@ main(int argc,
   range.end = 5;
   ret = dpl_get_id(ctx,           //the context
                    NULL,          //no bucket
-                   id,            //the key
-                   0,             //enterprise number
+                   sysmd.id,      //the key
+                   sysmd.enterprise_number, //enterprise number
                    NULL,          //no subresource
                    NULL,          //no option
                    DPL_FTYPE_REG, //object type
@@ -114,8 +120,8 @@ main(int argc,
 
   ret = dpl_delete_id(ctx,       //the context
                       NULL,      //no bucket
-                      id,        //the key
-                      0,         //enterprise number
+                      sysmd.id,  //the key
+                      sysmd.enterprise_number, //enterprise number
                       NULL,      //no subresource
                       NULL,      //no option
                       NULL);     //no condition

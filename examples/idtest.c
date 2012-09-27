@@ -20,9 +20,8 @@ main(int argc,
   dpl_dict_t *metadata2_returned = NULL;
   dpl_dict_var_t *metadatum = NULL;
   dpl_option_t option;
-  char *id = NULL;
-  u_int enterprise_id;
-
+  dpl_sysmd_t sysmd;
+  
   if (1 != argc)
     {
       fprintf(stderr, "usage: idtest\n");
@@ -100,8 +99,7 @@ main(int argc,
                     data_buf,      //object body
                     data_len,      //object length
                     NULL,          //no query params
-                    &id,           //the returned id
-                    &enterprise_id); //the returned enterprise id
+                    &sysmd);       //the returned sysmd
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_put_id failed: %s (%d)\n", dpl_status_str(ret), ret);
@@ -109,7 +107,13 @@ main(int argc,
       goto free_all;
     }
 
-  fprintf(stderr, "id=%s enterprise_id=%u\n", id, enterprise_id);
+  if (!(sysmd.mask & DPL_SYSMD_MASK_ID))
+    {
+      fprintf(stderr, "backend is not capable of retrieving resource id\n");
+      exit(1);
+    }
+
+  fprintf(stderr, "id=%s enterprise_number=%u\n", sysmd.id, sysmd.enterprise_number);
 
   /**/
 
@@ -119,8 +123,8 @@ main(int argc,
 
   ret = dpl_get_id(ctx,           //the context
                    NULL,          //no bucket
-                   id,            //the key
-                   enterprise_id, //enterprise number
+                   sysmd.id,      //the key
+                   sysmd.enterprise_number, //enterprise number
                    NULL,          //no subresource
                    &option,       //options
                    DPL_FTYPE_REG, //object type
@@ -201,11 +205,11 @@ main(int argc,
 
   ret = dpl_copy_id(ctx,           //the context
                     NULL,          //no src bucket
-                    id,            //the key
-                    enterprise_id, //src enterprise number
+                    sysmd.id,      //the key
+                    sysmd.enterprise_number, //src enterprise number
                     NULL,          //no subresource
                     NULL,          //no dst bucket
-                    id,            //the same key
+                    sysmd.id,      //the same key
                     -1,            //dst enterprise number
                     NULL,          //no subresource
                     NULL,          //no option
@@ -227,8 +231,8 @@ main(int argc,
 
   ret = dpl_head_id(ctx,      //the context
                     NULL,     //no bucket,
-                    id,       //the key
-                    enterprise_id, //enterprise number
+                    sysmd.id, //the key
+                    sysmd.enterprise_number, //enterprise number
                     NULL,     //no subresource
                     NULL,     //option
                     NULL,     //no condition,
@@ -281,8 +285,8 @@ main(int argc,
 
   ret = dpl_delete_id(ctx,       //the context
                       NULL,      //no bucket
-                      id,        //the key
-                      enterprise_id, //enterprise number
+                      sysmd.id,  //the key
+                      sysmd.enterprise_number, //enterprise number
                       NULL,      //no subresource
                       NULL,      //no option
                       NULL);     //no condition
@@ -296,9 +300,6 @@ main(int argc,
   ret = 0;
 
  free_all:
-
-  if (NULL != id)
-    free(id);
 
   if (NULL != metadata2_returned)
     dpl_dict_free(metadata2_returned);

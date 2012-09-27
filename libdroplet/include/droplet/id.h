@@ -36,7 +36,7 @@
 
 /* PROTO id.c */
 /* src/id.c */
-dpl_status_t dpl_post_id(dpl_ctx_t *ctx, const char *bucket, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, char **idp, uint32_t *enterprise_numberp);
+dpl_status_t dpl_post_id(dpl_ctx_t *ctx, const char *bucket, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, dpl_sysmd_t *returned_sysmdp);
 dpl_status_t dpl_post_buffered_id(dpl_ctx_t *ctx, const char *bucket, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, const dpl_dict_t *query_params, dpl_conn_t **connp);
 dpl_status_t dpl_put_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const uint32_t enterprise_number, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len);
 dpl_status_t dpl_put_buffered_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const uint32_t enterprise_number, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp);

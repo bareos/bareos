@@ -4,6 +4,7 @@
 
 #include <droplet.h>
 #include <assert.h>
+#include <sys/param.h>
 
 int
 main(int argc,
@@ -22,7 +23,9 @@ main(int argc,
   dpl_dict_t *metadata2_returned = NULL;
   dpl_dict_var_t *metadatum = NULL;
   dpl_option_t option;
-  char *id_resource = NULL;
+  dpl_sysmd_t sysmd;
+  char *resource_path = NULL;
+  char new_path[MAXPATHLEN];
 
   if (2 != argc)
     {
@@ -142,7 +145,8 @@ main(int argc,
                  data_buf,      //object body
                  data_len,      //object length
                  NULL,          //no query params
-                 &id_resource); //the id resource path
+                 &sysmd,        //the returned sysmd
+                 &resource_path); //the resource location
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_post failed: %s (%d)\n", dpl_status_str(ret), ret);
@@ -150,9 +154,29 @@ main(int argc,
       goto free_all;
     }
 
-  /**/
+  fprintf(stderr, "resource path %s (key %s)\n", resource_path, sysmd.id);
 
-  fprintf(stderr, "id resource path (unique): %s\n", id_resource);
+  snprintf(new_path, sizeof (new_path), "%su.1", folder);
+
+  ret = dpl_copy(ctx,
+                 NULL,          //no src bucket
+                 resource_path, //the src resource
+                 NULL,          //no src sub resource
+                 NULL,          //no dst bucket
+                 new_path,      //dst resource
+                 NULL,          //no dst sub resource
+                 NULL,          //no option
+                 DPL_FTYPE_REG, //regular file
+                 DPL_COPY_DIRECTIVE_MOVE, //rename
+                 NULL,          //no metadata
+                 NULL,          //no sysmd
+                 NULL);         //no server side condition
+  if (DPL_SUCCESS != ret)
+    {
+      fprintf(stderr, "dpl_move %s to %s failed: %s (%d)\n", resource_path, new_path, dpl_status_str(ret), ret);
+      ret = 1;
+      goto free_all;
+    }
 
   /**/
 
@@ -340,6 +364,9 @@ main(int argc,
   ret = 0;
 
  free_all:
+
+  if (NULL != resource_path)
+    free(resource_path);
 
   if (NULL != metadata2_returned)
     dpl_dict_free(metadata2_returned);

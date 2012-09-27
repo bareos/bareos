@@ -51,8 +51,7 @@
  * @param data_buf 
  * @param data_len 
  * @param query_params can be NULL
- * @param idp ID of newly created object. caller must free it
- * @param entreprise_numberp
+ * @param returned_sysmdp
  * 
  * @return 
  */
@@ -67,12 +66,10 @@ dpl_post_id(dpl_ctx_t *ctx,
             const char *data_buf,
             unsigned int data_len,
             const dpl_dict_t *query_params,
-            char **idp,
-            uint32_t *enterprise_numberp)
+            dpl_sysmd_t *returned_sysmdp)
 {
   dpl_status_t ret, ret2;
   char *id_path = NULL;
-  char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "post_id bucket=%s subresource=%s", bucket, subresource);
 
@@ -95,14 +92,7 @@ dpl_post_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_post(ctx, bucket, id_path, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, &native_id);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = ctx->backend->convert_native_to_id(ctx, native_id, idp, enterprise_numberp);
+  ret2 = dpl_post(ctx, bucket, id_path, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -112,9 +102,6 @@ dpl_post_id(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
   
  end:
-
-  if (NULL != native_id)
-    free(native_id);
 
   if (NULL != id_path)
     free(id_path);
