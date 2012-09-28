@@ -22,6 +22,8 @@ libdroplet_la_SOURCES = \
 	src/sysmd.c \
 	src/id.c \
 	src/vfs.c \
+	src/task.c \
+	src/async.c \
 	src/getdate.y \
 	s3/backend.c \
 	s3/replyparser.c \
@@ -64,7 +66,8 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/rest.h \
 	include/droplet/sysmd.h \
 	include/droplet/id.h \
-	include/droplet/vfs.h
+	include/droplet/vfs.h \
+	include/droplet/task.h
 
 libdropletdroplets3includedir = $(includedir)/droplet-1.0/droplet/s3
 libdropletdroplets3include_HEADERS = \

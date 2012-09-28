@@ -96,15 +96,17 @@ typedef enum
 
 typedef enum
   {
-    DPL_TRACE_CONN  = (1u<<0),  /*!< trace connection */
-    DPL_TRACE_IO    = (1u<<1),  /*!< trace I/O */
-    DPL_TRACE_HTTP  = (1u<<2),  /*!< trace HTTP */
-    DPL_TRACE_SSL   = (1u<<3),  /*!< trace SSL */
-    DPL_TRACE_REQ   = (1u<<5),  /*!< trace request builder */
-    DPL_TRACE_REST  = (1u<<6),  /*!< trace REST based calls */
-    DPL_TRACE_ID    = (1u<<7),  /*!< trace ID based calls */
-    DPL_TRACE_VFS   = (1u<<8),  /*!< trace VFS based calls */
-    DPL_TRACE_BACKEND = (1u<<9),  /*!< trace backend calls */
+    DPL_TRACE_ERR   = (1u<<0),  /*!< trace errors */
+    DPL_TRACE_WARN  = (1u<<1),  /*!< trace warnings */
+    DPL_TRACE_CONN  = (1u<<2),  /*!< trace connections */
+    DPL_TRACE_IO    = (1u<<3),  /*!< trace I/O */
+    DPL_TRACE_HTTP  = (1u<<4),  /*!< trace HTTP */
+    DPL_TRACE_SSL   = (1u<<5),  /*!< trace SSL */
+    DPL_TRACE_REQ   = (1u<<6),  /*!< trace request builder */
+    DPL_TRACE_REST  = (1u<<7),  /*!< trace REST based calls */
+    DPL_TRACE_ID    = (1u<<8),  /*!< trace ID based calls */
+    DPL_TRACE_VFS   = (1u<<9),  /*!< trace VFS based calls */
+    DPL_TRACE_BACKEND = (1u<<10),  /*!< trace backend calls */
   } dpl_trace_t;
 
 typedef void (*dpl_trace_func_t)(pid_t tid, dpl_trace_t, const char *file, const char *func, int lineno, char *buf);

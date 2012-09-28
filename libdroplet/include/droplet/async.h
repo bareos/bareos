@@ -31,45 +31,45 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLETP_H__
-#define __DROPLETP_H__ 1
+#ifndef __DPL_ASYNC_H__
+#define __DPL_ASYNC_H__ 1
 
-/*
- * dependencies
- */
-#include <droplet.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <poll.h>
-#include <time.h>
-#include <pthread.h>
-#include <sys/ioctl.h>
-#include <ctype.h>
-#include <assert.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <openssl/hmac.h>
-#include <openssl/err.h>
-#include <openssl/rand.h>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
-#include <json/json.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <fcntl.h>
-#include <sys/prctl.h>
-#include <droplet/utils.h>
-#include <droplet/profile.h>
-#include <droplet/httpreply.h>
-#include <droplet/pricing.h>
-#include <droplet/backend.h>
-#include <droplet/sbuf.h>
-#include <droplet/ntinydb.h>
-#include <droplet/task.h>
+typedef enum
+  {
+    TASK_LIST_ALL_MY_BUCKETS,
+    TASK_LIST_BUCKET,
+  } dpl_async_task_type_t;
+
+typedef struct
+{
+  dpl_task_t task; /*!< mandatory */
+  dpl_ctx_t *ctx;
+  dpl_async_task_type_t type;
+  dpl_task_func_t cb_func;
+  void *cb_arg;
+  dpl_status_t ret;
+  union
+  {
+    struct
+    {
+      /* output */
+      dpl_vec_t *buckets;
+    } list_all_my_buckets;
+    struct
+    {
+      /* input */
+      char *bucket;
+      char *prefix;
+      char *delimiter;
+      /* output */
+      dpl_vec_t *objects;
+      dpl_vec_t *common_prefixes;
+    } list_bucket;
+  } u;
+} dpl_async_task_t;
+
+void dpl_async_task_free(dpl_async_task_t *task);
+dpl_task_t *dpl_list_all_my_buckets_async_prepare(dpl_ctx_t *ctx);
+dpl_task_t *dpl_list_bucket_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter);
 
 #endif

@@ -31,45 +31,48 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLETP_H__
-#define __DROPLETP_H__ 1
+#ifndef __DPL_TASK_H__
+#define __DPL_TASK_H__ 1
 
-/*
- * dependencies
- */
-#include <droplet.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <poll.h>
-#include <time.h>
-#include <pthread.h>
-#include <sys/ioctl.h>
-#include <ctype.h>
-#include <assert.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <openssl/hmac.h>
-#include <openssl/err.h>
-#include <openssl/rand.h>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
-#include <json/json.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <fcntl.h>
-#include <sys/prctl.h>
-#include <droplet/utils.h>
-#include <droplet/profile.h>
-#include <droplet/httpreply.h>
-#include <droplet/pricing.h>
-#include <droplet/backend.h>
-#include <droplet/sbuf.h>
-#include <droplet/ntinydb.h>
-#include <droplet/task.h>
+#define DPL_TASK_DEFAULT_N_WORKERS 10
+
+typedef void (*dpl_task_func_t)(void *handle);
+
+typedef struct dpl_task
+{
+  struct dpl_task *next;
+  dpl_task_func_t func;
+} dpl_task_t;
+
+typedef struct dpl_task_pool
+{
+  dpl_ctx_t *ctx;
+  int n_workers;
+  int n_workers_needed;
+  int n_workers_running;
+  dpl_task_t *task_queue;
+  dpl_task_t *task_last;
+  pthread_mutex_t task_lock;
+  pthread_cond_t task_cond;
+  pthread_cond_t idle_cond;
+  int n_tasks;
+  pthread_attr_t joinable_thread_attr;
+  int canceled;
+  int enable_congestion_logging;
+  int congestion_threshold;
+  int congestion_log_threshold;
+  char *name;
+  int worker_id;
+} dpl_task_pool_t;
+
+dpl_task_t *dpl_task_get(dpl_task_pool_t *pool);
+void dpl_task_pool_put(dpl_task_pool_t *pool, dpl_task_t *task);
+dpl_task_pool_t *dpl_task_pool_create(dpl_ctx_t *ctx, char *name, int n_workers);
+void dpl_task_pool_cancel(dpl_task_pool_t *pool);
+void dpl_task_pool_destroy(dpl_task_pool_t *pool);
+int dpl_task_pool_set_workers(dpl_task_pool_t *pool, int n_workers);
+int dpl_task_pool_get_workers(dpl_task_pool_t *pool);
+void dpl_task_pool_enable_congestion(dpl_task_pool_t *pool, int threshold);
+void dpl_task_pool_wait_idle(dpl_task_pool_t *pool);
 
 #endif
