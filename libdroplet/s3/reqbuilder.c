@@ -622,11 +622,19 @@ dpl_s3_req_build(const dpl_req_t *req,
             {
               char *str;
 
-              str = dpl_copy_directive_str(req->copy_directive);
-              if (NULL == str)
+              switch (req->copy_directive)
                 {
-                  ret = DPL_FAILURE;
+                case DPL_COPY_DIRECTIVE_UNDEF:
+                case DPL_COPY_DIRECTIVE_COPY:
+                case DPL_COPY_DIRECTIVE_LINK:
+                case DPL_COPY_DIRECTIVE_SYMLINK:
+                case DPL_COPY_DIRECTIVE_MOVE:
+                case DPL_COPY_DIRECTIVE_MKDENT:
+                  ret = DPL_ENOTSUPP;
                   goto end;
+                case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
+                  str = "REPLACE";
+                  break ;
                 }
 
               ret2 = dpl_dict_add(headers, "x-amz-metadata-directive", str, 0);
