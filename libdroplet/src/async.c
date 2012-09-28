@@ -84,7 +84,8 @@ async_do(void *arg)
                                   &task->u.list_bucket.objects, 
                                   &task->u.list_bucket.common_prefixes);
     }
-  task->cb_func(task);
+  if (NULL != task->cb_func)
+    task->cb_func(task);
 }
 
 /**
