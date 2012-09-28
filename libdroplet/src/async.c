@@ -37,29 +37,111 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+#define DUP_IF_NOT_NULL(Struct, Member)                 \
+  if (NULL != Member)                                   \
+    {                                                   \
+      Struct.Member = strdup(Member);                   \
+      if (Struct.Member == NULL)                        \
+        goto bad;                                       \
+    }
+
+#define FREE_IF_NOT_NULL(StructMember)          \
+  if (NULL != StructMember)                     \
+    free(StructMember);
+
+dpl_buf_t *
+dpl_buf_new(size_t size)
+{
+  dpl_buf_t *buf = NULL;
+
+  buf = malloc(sizeof (dpl_buf_t) + size);
+  if (NULL == buf)
+    return NULL;
+  
+  buf->size = size;
+  buf->refcnt = 0;
+
+  return buf;
+}
+
+size_t dpl_buf_size(dpl_buf_t *buf)
+{
+  if (buf)
+    return buf->size;
+  return 0;
+}
+
+char *
+dpl_buf_ptr(dpl_buf_t *buf)
+{
+  if (buf)
+    return ((char *) buf) + sizeof (dpl_buf_t);
+  return NULL;
+}
+
+void
+dpl_buf_acquire(dpl_buf_t *buf)
+{
+  buf->refcnt++;
+}
+
+void
+dpl_buf_release(dpl_buf_t *buf)
+{
+  buf->refcnt--;
+  if (0 == buf->refcnt)
+    free(buf);
+}
+
 void
 dpl_async_task_free(dpl_async_task_t *task)
 {
   switch (task->type)
     {
-    case TASK_LIST_ALL_MY_BUCKETS:
+    case DPL_TASK_LIST_ALL_MY_BUCKETS:
+      /* input */
       /* output */
       if (NULL != task->u.list_all_my_buckets.buckets)
         dpl_vec_buckets_free(task->u.list_all_my_buckets.buckets);
       break ;
-    case TASK_LIST_BUCKET:
+    case DPL_TASK_LIST_BUCKET:
       /* input */
-      if (NULL != task->u.list_bucket.bucket)
-        free(task->u.list_bucket.bucket);
-      if (NULL != task->u.list_bucket.prefix)
-        free(task->u.list_bucket.prefix);
-      if (NULL != task->u.list_bucket.delimiter)
-        free(task->u.list_bucket.delimiter);
+      FREE_IF_NOT_NULL(task->u.list_bucket.bucket);
+      FREE_IF_NOT_NULL(task->u.list_bucket.prefix);
+      FREE_IF_NOT_NULL(task->u.list_bucket.delimiter);
       /* output */
       if (NULL != task->u.list_bucket.objects)
         dpl_vec_objects_free(task->u.list_bucket.objects);
       if (NULL != task->u.list_bucket.common_prefixes)
         dpl_vec_common_prefixes_free(task->u.list_bucket.common_prefixes);
+      break ;
+    case DPL_TASK_MAKE_BUCKET:
+      /* input */
+      FREE_IF_NOT_NULL(task->u.make_bucket.bucket);
+      /* output */
+      break ;
+    case DPL_TASK_DELETE_BUCKET:
+      /* input */
+      FREE_IF_NOT_NULL(task->u.delete_bucket.bucket);
+      /* output */
+      break ;
+    case DPL_TASK_POST:
+      /* input */
+      FREE_IF_NOT_NULL(task->u.post.bucket);
+      FREE_IF_NOT_NULL(task->u.post.resource);
+      FREE_IF_NOT_NULL(task->u.post.subresource);
+      if (NULL != task->u.post.option)
+        dpl_option_free(task->u.post.option);
+      if (NULL != task->u.post.metadata)
+        dpl_dict_free(task->u.post.metadata);
+      if (NULL != task->u.post.sysmd)
+        dpl_sysmd_free(task->u.post.sysmd);
+      if (NULL != task->u.post.buf)
+        dpl_buf_release(task->u.post.buf);
+      if (NULL != task->u.post.query_params)
+        dpl_dict_free(task->u.post.query_params);
+      /* output */
+       FREE_IF_NOT_NULL(task->u.post.location);
       break ;
     }
   free(task);
@@ -72,17 +154,43 @@ async_do(void *arg)
 
   switch (task->type)
     {
-    case TASK_LIST_ALL_MY_BUCKETS:
+    case DPL_TASK_LIST_ALL_MY_BUCKETS:
       task->ret = dpl_list_all_my_buckets(task->ctx, 
                                           &task->u.list_all_my_buckets.buckets);
       break ;
-    case TASK_LIST_BUCKET:
+    case DPL_TASK_LIST_BUCKET:
       task->ret = dpl_list_bucket(task->ctx, 
                                   task->u.list_bucket.bucket,
                                   task->u.list_bucket.prefix,
                                   task->u.list_bucket.delimiter,
                                   &task->u.list_bucket.objects, 
                                   &task->u.list_bucket.common_prefixes);
+      break ;
+    case DPL_TASK_MAKE_BUCKET:
+      task->ret = dpl_make_bucket(task->ctx, 
+                                  task->u.make_bucket.bucket,
+                                  task->u.make_bucket.location_constraint,
+                                  task->u.make_bucket.canned_acl);
+      break ;
+    case DPL_TASK_DELETE_BUCKET:
+      task->ret = dpl_delete_bucket(task->ctx, 
+                                    task->u.make_bucket.bucket);
+      break ;
+    case DPL_TASK_POST:
+      task->ret = dpl_post(task->ctx, 
+                           task->u.post.bucket,
+                           task->u.post.resource,
+                           task->u.post.subresource,
+                           task->u.post.option,
+                           task->u.post.object_type,
+                           task->u.post.metadata,
+                           task->u.post.sysmd,
+                           dpl_buf_ptr(task->u.post.buf),
+                           dpl_buf_size(task->u.post.buf),
+                           task->u.post.query_params,
+                           &task->u.post.sysmd_returned,
+                           &task->u.post.location);
+      break ;
     }
   if (NULL != task->cb_func)
     task->cb_func(task);
@@ -107,7 +215,7 @@ dpl_list_all_my_buckets_async_prepare(dpl_ctx_t *ctx)
     goto bad;
 
   task->ctx = ctx;
-  task->type = TASK_LIST_ALL_MY_BUCKETS;
+  task->type = DPL_TASK_LIST_ALL_MY_BUCKETS;
   task->task.func = async_do;
 
   return (dpl_task_t *) task;
@@ -145,17 +253,11 @@ dpl_list_bucket_async_prepare(dpl_ctx_t *ctx,
     goto bad;
 
   task->ctx = ctx;
-  task->type = TASK_LIST_BUCKET;
+  task->type = DPL_TASK_LIST_BUCKET;
   task->task.func = async_do;
-  task->u.list_bucket.bucket = strdup(bucket);
-  if (NULL == task->u.list_bucket.bucket)
-    goto bad;
-  task->u.list_bucket.prefix = strdup(prefix);
-  if (NULL == task->u.list_bucket.prefix)
-    goto bad;
-  task->u.list_bucket.delimiter = strdup(delimiter);
-  if (NULL == task->u.list_bucket.delimiter)
-    goto bad;
+  DUP_IF_NOT_NULL(task->u.list_bucket, bucket);
+  DUP_IF_NOT_NULL(task->u.list_bucket, prefix);
+  DUP_IF_NOT_NULL(task->u.list_bucket, delimiter);
 
   return (dpl_task_t *) task;
 
@@ -167,7 +269,6 @@ dpl_list_bucket_async_prepare(dpl_ctx_t *ctx,
   return NULL;
 }
 
-#if 0
 /**
  * make a bucket
  *
@@ -176,38 +277,35 @@ dpl_list_bucket_async_prepare(dpl_ctx_t *ctx,
  * @param location_constraint geographic location
  * @param canned_acl simplified ACL
  *
- * @return DPL_SUCCESS
- * @return DPL_FAILURE
+ * @return task
  */
-dpl_status_t
-dpl_make_bucket(dpl_ctx_t *ctx,
-                const char *bucket, 
-                dpl_location_constraint_t location_constraint,
-                dpl_canned_acl_t canned_acl)
+dpl_task_t *
+dpl_make_bucket_async_prepare(dpl_ctx_t *ctx,
+                              const char *bucket, 
+                              dpl_location_constraint_t location_constraint,
+                              dpl_canned_acl_t canned_acl)
 {
-  int ret;
-  dpl_sysmd_t sysmd;
+  dpl_async_task_t *task = NULL;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "makebucket bucket=%s", bucket);
+  task = calloc(1, sizeof (*task));
+  if (NULL == task)
+    goto bad;
 
-  if (NULL == ctx->backend->make_bucket)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
+  task->ctx = ctx;
+  task->type = DPL_TASK_MAKE_BUCKET;
+  task->task.func = async_do;
+  DUP_IF_NOT_NULL(task->u.make_bucket, bucket);
+  task->u.make_bucket.location_constraint = location_constraint;
+  task->u.make_bucket.canned_acl = canned_acl;
+
+  return (dpl_task_t *) task;
+
+ bad:
+
+  if (NULL != task)
+    dpl_async_task_free(task);
   
-  memset(&sysmd, 0, sizeof (sysmd));
-  sysmd.mask = DPL_SYSMD_MASK_CANNED_ACL|DPL_SYSMD_MASK_LOCATION_CONSTRAINT;
-  sysmd.canned_acl = canned_acl;
-  sysmd.location_constraint = location_constraint;
-
-  ret = ctx->backend->make_bucket(ctx, bucket, &sysmd, NULL);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
-  
-  return ret;
+  return NULL;
 }
 
 /**
@@ -218,30 +316,31 @@ dpl_make_bucket(dpl_ctx_t *ctx,
  * @param resource the resource
  * @param subresource can be NULL
  *
- * @return DPL_SUCCESS
- * @return DPL_FAILURE
+ * @return task
  */
-dpl_status_t 
-dpl_delete_bucket(dpl_ctx_t *ctx,
-                  const char *bucket)
+dpl_task_t  *
+dpl_delete_bucket_prepare(dpl_ctx_t *ctx,
+                          const char *bucket)
 {
-  int ret;
-  
-  DPL_TRACE(ctx, DPL_TRACE_REST, "delete_bucket bucket=%s", bucket);
+  dpl_async_task_t *task = NULL;
 
-  if (NULL == ctx->backend->delete_bucket)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->delete_bucket(ctx, bucket, NULL);
-  
- end:
+  task = calloc(1, sizeof (*task));
+  if (NULL == task)
+    goto bad;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+  task->ctx = ctx;
+  task->type = DPL_TASK_DELETE_BUCKET;
+  task->task.func = async_do;
+  DUP_IF_NOT_NULL(task->u.delete_bucket, bucket);
+
+  return (dpl_task_t *) task;
+
+ bad:
+
+  if (NULL != task)
+    dpl_async_task_free(task);
   
-  return ret;
+  return NULL;
 }
 
 /** 
@@ -261,44 +360,60 @@ dpl_delete_bucket(dpl_ctx_t *ctx,
  * @param data_len the data length
  * @param query_params can be NULL
  * @param returned_sysmdp the returned system metadata passed through stack
- * @param locationp the returned resource path
  * 
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
-dpl_status_t
-dpl_post(dpl_ctx_t *ctx,
-         const char *bucket,
-         const char *resource,
-         const char *subresource,
-         const dpl_option_t *option,
-         dpl_ftype_t object_type,
-         const dpl_dict_t *metadata,
-         const dpl_sysmd_t *sysmd,
-         const char *data_buf,
-         unsigned int data_len,
-         const dpl_dict_t *query_params,
-         dpl_sysmd_t *returned_sysmdp,
-         char **locationp)
+dpl_task_t *
+dpl_post_async_prepare(dpl_ctx_t *ctx,
+                       const char *bucket,
+                       const char *resource,
+                       const char *subresource,
+                       const dpl_option_t *option,
+                       dpl_ftype_t object_type,
+                       const dpl_dict_t *metadata,
+                       const dpl_sysmd_t *sysmd,
+                       dpl_buf_t *buf,
+                       const dpl_dict_t *query_params)
 {
-  int ret;
+  dpl_async_task_t *task = NULL;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "put bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  task = calloc(1, sizeof (*task));
+  if (NULL == task)
+    goto bad;
 
-  if (NULL == ctx->backend->post)
+  task->ctx = ctx;
+  task->type = DPL_TASK_POST;
+  task->task.func = async_do;
+  DUP_IF_NOT_NULL(task->u.post, bucket);
+  DUP_IF_NOT_NULL(task->u.post, resource);
+  DUP_IF_NOT_NULL(task->u.post, subresource);
+  if (NULL != option)
+    task->u.post.option = dpl_option_dup(option);
+  task->u.post.object_type = object_type;
+  if (NULL != metadata)
+    task->u.post.metadata = dpl_dict_dup(metadata);
+  if (NULL != sysmd)
+    task->u.post.sysmd = dpl_sysmd_dup(sysmd);
+  if (NULL != buf)
     {
-      ret = DPL_ENOTSUPP;
-      goto end;
+      task->u.post.buf = buf;
+      dpl_buf_acquire(buf);
     }
-  
-  ret = ctx->backend->post(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, locationp);
-  
- end:
+  if (NULL != query_params)
+    task->u.post.query_params = dpl_dict_dup(query_params);
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+  return (dpl_task_t *) task;
+
+ bad:
+
+  if (NULL != task)
+    dpl_async_task_free(task);
   
-  return ret;
+  return NULL;
 }
+
+#if 0
 
 /** 
  * post a resource with bufferization enabled

@@ -645,6 +645,8 @@ void dpl_object_free(dpl_object_t *object);
 void dpl_vec_objects_free(dpl_vec_t *vec);
 void dpl_common_prefix_free(dpl_common_prefix_t *common_prefix);
 void dpl_vec_common_prefixes_free(dpl_vec_t *vec);
+dpl_option_t *dpl_option_dup(const dpl_option_t *src);
+void dpl_option_free(dpl_option_t *option);
 
 #ifdef __cplusplus
 }

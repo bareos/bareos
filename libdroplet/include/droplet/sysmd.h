@@ -34,7 +34,7 @@
 #ifndef __DROPLET_SYSMD_H__
 #define __DROPLET_SYSMD_H__ 1
 
-dpl_sysmd_t *dpl_sysmd_dup(dpl_sysmd_t *sysmd);
+dpl_sysmd_t *dpl_sysmd_dup(const dpl_sysmd_t *sysmd);
 void dpl_sysmd_free(dpl_sysmd_t *sysmd);
 void dpl_sysmd_print(dpl_sysmd_t *sysmd, FILE *f);
 #endif

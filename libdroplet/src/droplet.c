@@ -321,3 +321,23 @@ dpl_vec_common_prefixes_free(dpl_vec_t *vec)
     dpl_common_prefix_free((dpl_common_prefix_t *) dpl_vec_get(vec, i));
   dpl_vec_free(vec);
 }
+
+dpl_option_t *
+dpl_option_dup(const dpl_option_t *src)
+{
+  dpl_option_t *dst = NULL;
+
+  dst = malloc(sizeof (*dst));
+  if (NULL == dst)
+    return NULL;
+  
+  memcpy(dst, src, sizeof (*src));
+  
+  return dst;
+}
+
+void
+dpl_option_free(dpl_option_t *option)
+{
+  free(option);
+}

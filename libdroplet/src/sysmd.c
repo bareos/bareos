@@ -37,7 +37,7 @@
 #define DPRINTF(fmt,...)
 
 dpl_sysmd_t *
-dpl_sysmd_dup(dpl_sysmd_t *sysmd)
+dpl_sysmd_dup(const dpl_sysmd_t *sysmd)
 {
   dpl_sysmd_t *nsysmd;
   

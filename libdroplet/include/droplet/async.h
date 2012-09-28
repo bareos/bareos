@@ -34,10 +34,19 @@
 #ifndef __DPL_ASYNC_H__
 #define __DPL_ASYNC_H__ 1
 
+typedef struct
+{
+  size_t size;
+  int refcnt;
+} dpl_buf_t;
+
 typedef enum
   {
-    TASK_LIST_ALL_MY_BUCKETS,
-    TASK_LIST_BUCKET,
+    DPL_TASK_LIST_ALL_MY_BUCKETS,
+    DPL_TASK_LIST_BUCKET,
+    DPL_TASK_MAKE_BUCKET,
+    DPL_TASK_DELETE_BUCKET,
+    DPL_TASK_POST,
   } dpl_async_task_type_t;
 
 typedef struct
@@ -52,6 +61,7 @@ typedef struct
   {
     struct
     {
+      /* input */
       /* output */
       dpl_vec_t *buckets;
     } list_all_my_buckets;
@@ -65,11 +75,47 @@ typedef struct
       dpl_vec_t *objects;
       dpl_vec_t *common_prefixes;
     } list_bucket;
+    struct
+    {
+      /* input */
+      char *bucket;
+      dpl_location_constraint_t location_constraint;
+      dpl_canned_acl_t canned_acl;
+      /* output */
+    } make_bucket;
+    struct
+    {
+      /* input */
+      char *bucket;
+      /* output */
+    } delete_bucket;
+    struct
+    {
+      /* input */
+      char *bucket;
+      char *resource;
+      char *subresource;
+      dpl_option_t *option;
+      dpl_ftype_t object_type;
+      dpl_dict_t *metadata;
+      dpl_sysmd_t *sysmd;
+      dpl_buf_t *buf;
+      dpl_dict_t *query_params;
+      /* output */
+      dpl_sysmd_t sysmd_returned;
+      char *location;
+    } post;
   } u;
 } dpl_async_task_t;
 
+dpl_buf_t *dpl_buf_new(size_t size);
+size_t dpl_buf_size(dpl_buf_t *buf);
+char *dpl_buf_ptr(dpl_buf_t *buf);
+void dpl_buf_acquire(dpl_buf_t *buf);
+void dpl_buf_release(dpl_buf_t *buf);
 void dpl_async_task_free(dpl_async_task_t *task);
 dpl_task_t *dpl_list_all_my_buckets_async_prepare(dpl_ctx_t *ctx);
 dpl_task_t *dpl_list_bucket_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter);
+dpl_task_t *dpl_make_bucket_async_prepare(dpl_ctx_t *ctx, const char *bucket, dpl_location_constraint_t location_constraint, dpl_canned_acl_t canned_acl);
 
 #endif
