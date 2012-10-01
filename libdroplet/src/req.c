@@ -269,6 +269,7 @@ dpl_req_set_data(dpl_req_t *req,
 {
   req->data_buf = data_buf;
   req->data_len = data_len;
+  req->data_enabled = 1;
 }
 
 dpl_status_t

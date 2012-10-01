@@ -598,11 +598,14 @@ dpl_cdmi_req_build(const dpl_req_t *req,
               goto end;
             }
           
-          ret2 = add_data_to_json_body(req, body_obj);
-          if (DPL_SUCCESS != ret2)
+          if (req->data_enabled)
             {
-              ret = ret2;
-              goto end;
+              ret2 = add_data_to_json_body(req, body_obj);
+              if (DPL_SUCCESS != ret2)
+                {
+                  ret = ret2;
+                  goto end;
+                }
             }
           
           pthread_mutex_lock(&req->ctx->lock);
@@ -633,12 +636,15 @@ dpl_cdmi_req_build(const dpl_req_t *req,
               goto end;
             }
 
-          snprintf(buf, sizeof (buf), "%u", req->data_len);
-          ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
-          if (DPL_SUCCESS != ret2)
+          if (req->data_enabled)
             {
-              ret = DPL_ENOMEM;
-              goto end;
+              snprintf(buf, sizeof (buf), "%u", req->data_len);
+              ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
+              if (DPL_SUCCESS != ret2)
+                {
+                  ret = DPL_ENOMEM;
+                  goto end;
+                }
             }
         }
 

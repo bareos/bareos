@@ -499,8 +499,10 @@ typedef struct
   dpl_storage_class_t storage_class;
 
   dpl_dict_t *metadata;
+
   const char *data_buf;
   u_int data_len;
+  int data_enabled;
 
   dpl_range_t range;
   int range_enabled;
