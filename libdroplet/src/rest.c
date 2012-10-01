@@ -539,6 +539,7 @@ dpl_head(dpl_ctx_t *ctx,
          const char *resource,
          const char *subresource,
          const dpl_option_t *option,
+         dpl_ftype_t object_type,
          const dpl_condition_t *condition,
          dpl_dict_t **metadatap,
          dpl_sysmd_t *sysmdp)
@@ -553,7 +554,7 @@ dpl_head(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head(ctx, bucket, resource, subresource, option, DPL_FTYPE_UNDEF, condition, metadatap, sysmdp, NULL);
+  ret = ctx->backend->head(ctx, bucket, resource, subresource, option, object_type, condition, metadatap, sysmdp, NULL);
   
  end:
 
@@ -583,6 +584,7 @@ dpl_head_raw(dpl_ctx_t *ctx,
              const char *resource,
              const char *subresource,
              const dpl_option_t *option,
+             dpl_ftype_t object_type,
              const dpl_condition_t *condition,
              dpl_dict_t **metadatap)
 {
@@ -596,7 +598,7 @@ dpl_head_raw(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head_raw(ctx, bucket, resource, subresource, option, DPL_FTYPE_UNDEF, condition, metadatap, NULL);
+  ret = ctx->backend->head_raw(ctx, bucket, resource, subresource, option, object_type, condition, metadatap, NULL);
   
  end:
 
@@ -625,6 +627,7 @@ dpl_delete(dpl_ctx_t *ctx,
            const char *resource,
            const char *subresource,
            const dpl_option_t *option,
+           dpl_ftype_t object_type,
            const dpl_condition_t *condition)
 {
   int ret;
@@ -637,7 +640,7 @@ dpl_delete(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, option, DPL_FTYPE_UNDEF, NULL);
+  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, option, object_type, NULL);
   
  end:
 

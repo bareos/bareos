@@ -584,7 +584,7 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_delete(ctx, bucket, fqn.path, NULL, NULL, NULL);
+  ret2 = dpl_delete(ctx, bucket, fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2159,7 +2159,7 @@ dpl_unlink(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, NULL, NULL);
+  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2237,7 +2237,7 @@ dpl_getattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_head(ctx, bucket, obj_fqn.path, NULL, NULL, NULL, metadatap, sysmdp);
+  ret2 = dpl_head(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL, metadatap, sysmdp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2314,7 +2314,7 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_head_raw(ctx, bucket, obj_fqn.path, NULL, NULL, NULL, metadatap);
+  ret2 = dpl_head_raw(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL, metadatap);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

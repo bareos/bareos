@@ -294,6 +294,7 @@ main(int argc,
                  new_path, //the key
                  NULL,     //no subresource
                  NULL,     //no option
+                 DPL_FTYPE_UNDEF, //no matter the file type
                  NULL,     //no condition,
                  &metadata2_returned,
                  NULL);
@@ -366,6 +367,7 @@ main(int argc,
                      obj->path, 
                      NULL, //subresource
                      NULL, //option
+                     DPL_FTYPE_UNDEF, //no matter the file type
                      NULL, //condition
                      &obj_md, //user metadata
                      &obj_sysmd); //system metadata
@@ -397,6 +399,7 @@ main(int argc,
                    new_path,  //the key
                    NULL,      //no subresource
                    NULL,      //no option
+                   DPL_FTYPE_UNDEF, //no matter the file type
                    NULL);     //no condition
   if (DPL_SUCCESS != ret)
     {

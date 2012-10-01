@@ -36,9 +36,13 @@
 
 typedef struct
 {
-  size_t size;
+  char *ptr;
+  u_int size;
   int refcnt;
 } dpl_buf_t;
+
+#define dpl_buf_ptr(Buf) ((Buf)->ptr)
+#define dpl_buf_size(Buf) ((Buf)->size)
 
 typedef enum
   {
@@ -48,6 +52,8 @@ typedef enum
     DPL_TASK_DELETE_BUCKET,
     DPL_TASK_POST,
     DPL_TASK_PUT,
+    DPL_TASK_GET,
+    DPL_TASK_HEAD,
   } dpl_async_task_type_t;
 
 typedef struct
@@ -121,12 +127,38 @@ typedef struct
       dpl_buf_t *buf;
       /* output */
     } put;
+    struct
+    {
+      /* input */
+      char *bucket;
+      char *resource;
+      char *subresource;
+      dpl_option_t *option;
+      dpl_ftype_t object_type;
+      dpl_condition_t *condition;
+      dpl_range_t *range;
+      /* output */
+      dpl_buf_t *buf;
+      dpl_dict_t *metadata;
+      dpl_sysmd_t sysmd;
+    } get;
+    struct
+    {
+      /* input */
+      char *bucket;
+      char *resource;
+      char *subresource;
+      dpl_option_t *option;
+      dpl_ftype_t object_type;
+      dpl_condition_t *condition;
+      /* output */
+      dpl_dict_t *metadata;
+      dpl_sysmd_t sysmd;
+    } head;
   } u;
 } dpl_async_task_t;
 
-dpl_buf_t *dpl_buf_new(size_t size);
-size_t dpl_buf_size(dpl_buf_t *buf);
-char *dpl_buf_ptr(dpl_buf_t *buf);
+dpl_buf_t *dpl_buf_new();
 void dpl_buf_acquire(dpl_buf_t *buf);
 void dpl_buf_release(dpl_buf_t *buf);
 void dpl_async_task_free(dpl_async_task_t *task);

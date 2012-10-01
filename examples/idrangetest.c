@@ -161,6 +161,7 @@ main(int argc,
                       sysmd.enterprise_number, //enterprise number
                       NULL,      //no subresource
                       NULL,      //no option
+                      DPL_FTYPE_UNDEF, //no matter the file type
                       NULL);     //no condition
   if (DPL_SUCCESS != ret)
     {

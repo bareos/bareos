@@ -416,6 +416,7 @@ dpl_head_id(dpl_ctx_t *ctx,
             const uint32_t enterprise_number,
             const char *subresource,
             const dpl_option_t *option,
+            dpl_ftype_t object_type,
             const dpl_condition_t *condition,
             dpl_dict_t **metadatap,
             dpl_sysmd_t *sysmdp)
@@ -454,7 +455,7 @@ dpl_head_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
-  ret = dpl_head(ctx, bucket, resource, subresource, option, condition, metadatap, sysmdp);
+  ret = dpl_head(ctx, bucket, resource, subresource, option, object_type, condition, metadatap, sysmdp);
   
  end:
 
@@ -476,6 +477,7 @@ dpl_head_raw_id(dpl_ctx_t *ctx,
                 const uint32_t enterprise_number,
                 const char *subresource,
                 const dpl_option_t *option,
+                dpl_ftype_t object_type,
                 const dpl_condition_t *condition,
                 dpl_dict_t **metadatap)
 {
@@ -513,7 +515,7 @@ dpl_head_raw_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
-  ret = dpl_head_raw(ctx, bucket, resource, subresource, option, condition, metadatap);
+  ret = dpl_head_raw(ctx, bucket, resource, subresource, option, object_type, condition, metadatap);
   
  end:
 
@@ -535,6 +537,7 @@ dpl_delete_id(dpl_ctx_t *ctx,
               const uint32_t enterprise_number,
               const char *subresource,
               const dpl_option_t *option,
+              dpl_ftype_t object_type,
               const dpl_condition_t *condition)
 {
   dpl_status_t ret, ret2;
@@ -571,7 +574,7 @@ dpl_delete_id(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
-  ret = dpl_delete(ctx, bucket, resource, subresource, option, condition);
+  ret = dpl_delete(ctx, bucket, resource, subresource, option, object_type, condition);
   
  end:
 
