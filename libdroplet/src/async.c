@@ -143,6 +143,25 @@ dpl_async_task_free(dpl_async_task_t *task)
       /* output */
        FREE_IF_NOT_NULL(task->u.post.location);
       break ;
+    case DPL_TASK_PUT:
+      /* input */
+      FREE_IF_NOT_NULL(task->u.put.bucket);
+      FREE_IF_NOT_NULL(task->u.put.resource);
+      FREE_IF_NOT_NULL(task->u.put.subresource);
+      if (NULL != task->u.put.option)
+        dpl_option_free(task->u.put.option);
+      if (NULL != task->u.put.condition)
+        dpl_condition_free(task->u.put.condition);
+      if (NULL != task->u.put.range)
+        dpl_range_free(task->u.put.range);
+      if (NULL != task->u.put.metadata)
+        dpl_dict_free(task->u.put.metadata);
+      if (NULL != task->u.put.sysmd)
+        dpl_sysmd_free(task->u.put.sysmd);
+      if (NULL != task->u.put.buf)
+        dpl_buf_release(task->u.put.buf);
+      /* output */
+      break ;
     }
   free(task);
 }
@@ -190,6 +209,20 @@ async_do(void *arg)
                            task->u.post.query_params,
                            &task->u.post.sysmd_returned,
                            &task->u.post.location);
+      break ;
+    case DPL_TASK_PUT:
+      task->ret = dpl_put(task->ctx, 
+                          task->u.put.bucket,
+                          task->u.put.resource,
+                          task->u.put.subresource,
+                          task->u.put.option,
+                          task->u.put.object_type,
+                          task->u.put.condition,
+                          task->u.put.range,  
+                          task->u.put.metadata,
+                          task->u.put.sysmd,
+                          dpl_buf_ptr(task->u.put.buf),
+                          dpl_buf_size(task->u.put.buf));
       break ;
     }
   if (NULL != task->cb_func)
@@ -356,8 +389,7 @@ dpl_delete_bucket_prepare(dpl_ctx_t *ctx,
  * @param object_type DPL_FTYPE_REG create a file
  * @param metadata the user metadata. optional
  * @param sysmd the system metadata. optional
- * @param data_buf the data buffer
- * @param data_len the data length
+ * @param buf the data buffer
  * @param query_params can be NULL
  * @param returned_sysmdp the returned system metadata passed through stack
  * 
@@ -413,58 +445,6 @@ dpl_post_async_prepare(dpl_ctx_t *ctx,
   return NULL;
 }
 
-#if 0
-
-/** 
- * post a resource with bufferization enabled
- * 
- * @param ctx the droplet context
- * @param bucket can be NULL
- * @param resource can be NULL
- * @param subresource can be NULL
- * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
- * @param object_type DPL_FTYPE_REG create a file
- * @param metadata the optional user metadata
- * @param sysmd the optional system metadata
- * @param data_len the data length
- * @param query_params the optional query parameters
- * @param connp the returned connection object
- * 
- * @return DPL_SUCCESS
- * @return DPL_FAILURE
- */
-dpl_status_t
-dpl_post_buffered(dpl_ctx_t *ctx,
-                  const char *bucket,
-                  const char *resource,
-                  const char *subresource,
-                  const dpl_option_t *option,
-                  dpl_ftype_t object_type,
-                  const dpl_dict_t *metadata,
-                  const dpl_sysmd_t *sysmd,
-                  unsigned int data_len,
-                  const dpl_dict_t *query_params,
-                  dpl_conn_t **connp)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "post bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
-
-  if (NULL == ctx->backend->post_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret = ctx->backend->post_buffered(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_len, query_params, connp, NULL);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
-  
-  return ret;
-}
-
 /**
  * put a resource
  *
@@ -479,46 +459,65 @@ dpl_post_buffered(dpl_ctx_t *ctx,
  * @param range optional range
  * @param metadata the optional user metadata
  * @param sysmd the optional system metadata
- * @param data_buf the data buffer
- * @param data_len the data length
+ * @param buf the data buffer
  *
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  * @return DPL_EEXIST
  */
-dpl_status_t
-dpl_put(dpl_ctx_t *ctx,
-        const char *bucket,
-        const char *resource,
-        const char *subresource,
-        const dpl_option_t *option,
-        dpl_ftype_t object_type,
-        const dpl_condition_t *condition,
-        const dpl_range_t *range,
-        const dpl_dict_t *metadata,
-        const dpl_sysmd_t *sysmd,
-        const char *data_buf,
-        unsigned int data_len)
+dpl_task_t *
+dpl_put_async_prepare(dpl_ctx_t *ctx,
+                      const char *bucket,
+                      const char *resource,
+                      const char *subresource,
+                      const dpl_option_t *option,
+                      dpl_ftype_t object_type,
+                      const dpl_condition_t *condition,
+                      const dpl_range_t *range,
+                      const dpl_dict_t *metadata,
+                      const dpl_sysmd_t *sysmd,
+                      dpl_buf_t *buf)
 {
-  int ret;
+  dpl_async_task_t *task = NULL;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "put bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  task = calloc(1, sizeof (*task));
+  if (NULL == task)
+    goto bad;
 
-  if (NULL == ctx->backend->put)
+  task->ctx = ctx;
+  task->type = DPL_TASK_PUT;
+  task->task.func = async_do;
+  DUP_IF_NOT_NULL(task->u.put, bucket);
+  DUP_IF_NOT_NULL(task->u.put, resource);
+  DUP_IF_NOT_NULL(task->u.put, subresource);
+  if (NULL != option)
+    task->u.put.option = dpl_option_dup(option);
+  task->u.put.object_type = object_type;
+  if (NULL != condition)
+    task->u.put.condition = dpl_condition_dup(condition);
+  if (NULL != range)
+    task->u.put.range = dpl_range_dup(range);
+  if (NULL != metadata)
+    task->u.put.metadata = dpl_dict_dup(metadata);
+  if (NULL != sysmd)
+    task->u.put.sysmd = dpl_sysmd_dup(sysmd);
+  if (NULL != buf)
     {
-      ret = DPL_ENOTSUPP;
-      goto end;
+      task->u.put.buf = buf;
+      dpl_buf_acquire(buf);
     }
 
-  ret = ctx->backend->put(ctx, bucket, resource, subresource, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL);
-  
- end:
+  return (dpl_task_t *) task;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+ bad:
+
+  if (NULL != task)
+    dpl_async_task_free(task);
   
-  return ret;
+  return NULL;
 }
 
+#if 0
 /** 
  * put a resource with bufferization
  * 

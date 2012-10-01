@@ -47,6 +47,7 @@ typedef enum
     DPL_TASK_MAKE_BUCKET,
     DPL_TASK_DELETE_BUCKET,
     DPL_TASK_POST,
+    DPL_TASK_PUT,
   } dpl_async_task_type_t;
 
 typedef struct
@@ -105,6 +106,21 @@ typedef struct
       dpl_sysmd_t sysmd_returned;
       char *location;
     } post;
+    struct
+    {
+      /* input */
+      char *bucket;
+      char *resource;
+      char *subresource;
+      dpl_option_t *option;
+      dpl_ftype_t object_type;
+      dpl_condition_t *condition;
+      dpl_range_t *range;
+      dpl_dict_t *metadata;
+      dpl_sysmd_t *sysmd;
+      dpl_buf_t *buf;
+      /* output */
+    } put;
   } u;
 } dpl_async_task_t;
 

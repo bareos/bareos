@@ -341,3 +341,43 @@ dpl_option_free(dpl_option_t *option)
 {
   free(option);
 }
+
+dpl_condition_t *
+dpl_condition_dup(const dpl_condition_t *src)
+{
+  dpl_condition_t *dst = NULL;
+
+  dst = malloc(sizeof (*dst));
+  if (NULL == dst)
+    return NULL;
+  
+  memcpy(dst, src, sizeof (*src));
+  
+  return dst;
+}
+
+void
+dpl_condition_free(dpl_condition_t *condition)
+{
+  free(condition);
+}
+
+dpl_range_t *
+dpl_range_dup(const dpl_range_t *src)
+{
+  dpl_range_t *dst = NULL;
+
+  dst = malloc(sizeof (*dst));
+  if (NULL == dst)
+    return NULL;
+  
+  memcpy(dst, src, sizeof (*src));
+  
+  return dst;
+}
+
+void
+dpl_range_free(dpl_range_t *range)
+{
+  free(range);
+}

@@ -3,6 +3,7 @@
  */
 
 #include <droplet.h>
+#include <droplet/vfs.h>
 
 dpl_status_t
 recurse(dpl_ctx_t *ctx,

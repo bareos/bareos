@@ -21,10 +21,10 @@ libdroplet_la_SOURCES = \
 	src/rest.c \
 	src/sysmd.c \
 	src/id.c \
-	src/vfs.c \
 	src/task.c \
 	src/async.c \
 	src/getdate.y \
+	src/vfs.c \
 	s3/backend.c \
 	s3/replyparser.c \
 	s3/reqbuilder.c \
