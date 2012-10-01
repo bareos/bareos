@@ -385,7 +385,7 @@ main(int argc,
 
   for (i = 0;i < sub_directories->n_items;i++)
     {
-      dpl_common_prefix_t *dir = (dpl_common_prefix_t *) dpl_vec_get(files, i);
+      dpl_common_prefix_t *dir = (dpl_common_prefix_t *) dpl_vec_get(sub_directories, i);
 
       fprintf(stderr, "dir %s\n", dir->prefix);
     }

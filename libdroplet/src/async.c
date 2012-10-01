@@ -150,6 +150,7 @@ dpl_async_task_free(dpl_async_task_t *task)
       if (NULL != task->u.put.buf)
         dpl_buf_release(task->u.put.buf);
       /* output */
+      break ;
     case DPL_TASK_GET:
       /* inget */
       FREE_IF_NOT_NULL(task->u.get.bucket);
@@ -208,6 +209,7 @@ dpl_async_task_free(dpl_async_task_t *task)
       if (NULL != task->u.copy.condition)
         dpl_condition_free(task->u.copy.condition);
       /* output */
+      break ;
     }
   free(task);
 }
@@ -328,7 +330,7 @@ async_do(void *arg)
       break ;
     }
   if (NULL != task->cb_func)
-    task->cb_func(task);
+    task->cb_func(task->cb_arg);
 }
 
 /**
@@ -744,7 +746,7 @@ dpl_head_async_prepare(dpl_ctx_t *ctx,
  * @return DPL_ENOENT resource does not exist
  */
 dpl_task_t *
-dpl_delete_async_preapre(dpl_ctx_t *ctx,
+dpl_delete_async_prepare(dpl_ctx_t *ctx,
                          const char *bucket,
                          const char *resource,
                          const char *subresource,

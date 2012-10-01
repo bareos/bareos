@@ -34,6 +34,8 @@
 #ifndef __DPL_ASYNC_H__
 #define __DPL_ASYNC_H__ 1
 
+#include <droplet/task.h>
+
 typedef struct
 {
   char *ptr;
@@ -195,5 +197,12 @@ void dpl_async_task_free(dpl_async_task_t *task);
 dpl_task_t *dpl_list_all_my_buckets_async_prepare(dpl_ctx_t *ctx);
 dpl_task_t *dpl_list_bucket_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter);
 dpl_task_t *dpl_make_bucket_async_prepare(dpl_ctx_t *ctx, const char *bucket, dpl_location_constraint_t location_constraint, dpl_canned_acl_t canned_acl);
+dpl_task_t *dpl_delete_bucket_prepare(dpl_ctx_t *ctx, const char *bucket);
+dpl_task_t *dpl_post_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, dpl_buf_t *buf, const dpl_dict_t *query_params);
+dpl_task_t *dpl_put_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, dpl_buf_t *buf);
+dpl_task_t *dpl_get_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range);
+dpl_task_t *dpl_head_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition);
+dpl_task_t *dpl_delete_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition);
+dpl_task_t *dpl_copy_async_prepare(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, const dpl_option_t *option, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition);
 
 #endif
