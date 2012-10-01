@@ -38,12 +38,12 @@
 #define DPRINTF(fmt,...)
 
 static dpl_status_t
-dpl_vdir_lookup(dpl_ctx_t *ctx,
-                const char *bucket,
-                dpl_fqn_t parent_fqn,
-                const char *obj_name,
-                dpl_fqn_t *obj_fqnp,
-                dpl_ftype_t *obj_typep)
+vdir_lookup(dpl_ctx_t *ctx,
+            const char *bucket,
+            dpl_fqn_t parent_fqn,
+            const char *obj_name,
+            dpl_fqn_t *obj_fqnp,
+            dpl_ftype_t *obj_typep)
 {
   int ret, ret2;
   dpl_vec_t *files = NULL;
@@ -249,14 +249,14 @@ dpl_vdir_lookup(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-dpl_vdir_mkgen(dpl_ctx_t *ctx,
-               const char *bucket,
-               dpl_fqn_t parent_fqn,
-               const char *obj_name,
-               dpl_ftype_t object_type,
-               const char *delim,
-               dpl_dict_t *metadata,
-               dpl_sysmd_t *sysmd)
+vdir_mkgen(dpl_ctx_t *ctx,
+           const char *bucket,
+           dpl_fqn_t parent_fqn,
+           const char *obj_name,
+           dpl_ftype_t object_type,
+           const char *delim,
+           dpl_dict_t *metadata,
+           dpl_sysmd_t *sysmd)
 {
   int ret, ret2;
   char resource[DPL_MAXPATHLEN];
@@ -282,33 +282,33 @@ dpl_vdir_mkgen(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-dpl_vdir_mkdir(dpl_ctx_t *ctx,
-               const char *bucket,
-               dpl_fqn_t parent_fqn,
-               const char *obj_name,
-               dpl_dict_t *metadata,
-               dpl_sysmd_t *sysmd)
+vdir_mkdir(dpl_ctx_t *ctx,
+           const char *bucket,
+           dpl_fqn_t parent_fqn,
+           const char *obj_name,
+           dpl_dict_t *metadata,
+           dpl_sysmd_t *sysmd)
 {
-  return dpl_vdir_mkgen(ctx, bucket, parent_fqn, obj_name, DPL_FTYPE_DIR, ctx->delim, metadata, sysmd);
+  return vdir_mkgen(ctx, bucket, parent_fqn, obj_name, DPL_FTYPE_DIR, ctx->delim, metadata, sysmd);
 }
 
 
 static dpl_status_t
-dpl_vdir_mknod(dpl_ctx_t *ctx,
-               const char *bucket,
-               dpl_fqn_t parent_fqn,
-               const char *obj_name,
-               dpl_dict_t *metadata,
-               dpl_sysmd_t *sysmd)
+vdir_mknod(dpl_ctx_t *ctx,
+           const char *bucket,
+           dpl_fqn_t parent_fqn,
+           const char *obj_name,
+           dpl_dict_t *metadata,
+           dpl_sysmd_t *sysmd)
 {
-  return dpl_vdir_mkgen(ctx, bucket, parent_fqn, obj_name, DPL_FTYPE_REG, "", metadata, sysmd);
+  return vdir_mkgen(ctx, bucket, parent_fqn, obj_name, DPL_FTYPE_REG, "", metadata, sysmd);
 }
 
 static dpl_status_t
-dpl_vdir_opendir(dpl_ctx_t *ctx,
-                 const char *bucket,
-                 dpl_fqn_t fqn,
-                 void **dir_hdlp)
+vdir_opendir(dpl_ctx_t *ctx,
+             const char *bucket,
+             dpl_fqn_t fqn,
+             void **dir_hdlp)
 {
   dpl_dir_t *dir;
   int ret, ret2;
@@ -365,8 +365,8 @@ dpl_vdir_opendir(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-dpl_vdir_readdir(void *dir_hdl,
-                 dpl_dirent_t *dirent)
+vdir_readdir(void *dir_hdl,
+             dpl_dirent_t *dirent)
 {
   dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
   char *name;
@@ -469,7 +469,7 @@ dpl_vdir_readdir(void *dir_hdl,
 }
 
 static int
-dpl_vdir_eof(void *dir_hdl)
+vdir_eof(void *dir_hdl)
 {
   dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
 
@@ -478,7 +478,7 @@ dpl_vdir_eof(void *dir_hdl)
 }
 
 static void
-dpl_vdir_closedir(void *dir_hdl)
+vdir_closedir(void *dir_hdl)
 {
   dpl_dir_t *dir = dir_hdl;
 
@@ -497,26 +497,26 @@ dpl_vdir_closedir(void *dir_hdl)
 }
 
 static dpl_status_t
-dpl_vdir_count_entries(dpl_ctx_t *ctx,
-                       const char *bucket,
-                       dpl_fqn_t fqn,
-                       unsigned int *n_entriesp)
+vdir_count_entries(dpl_ctx_t *ctx,
+                   const char *bucket,
+                   dpl_fqn_t fqn,
+                   unsigned int *n_entriesp)
 {
   void *dir_hdl = NULL;
   int ret, ret2;
   u_int n_entries = 0;
   dpl_dirent_t dirent;
 
-  ret2 = dpl_vdir_opendir(ctx, bucket, fqn, &dir_hdl);
+  ret2 = vdir_opendir(ctx, bucket, fqn, &dir_hdl);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
 
-  while (1 != dpl_vdir_eof(dir_hdl))
+  while (1 != vdir_eof(dir_hdl))
     {
-      ret2 = dpl_vdir_readdir(dir_hdl, &dirent);
+      ret2 = vdir_readdir(dir_hdl, &dirent);
       if (DPL_SUCCESS != ret2)
         {
           if (DPL_ENOENT == ret2)
@@ -537,16 +537,16 @@ dpl_vdir_count_entries(dpl_ctx_t *ctx,
  end:
 
   if (NULL != dir_hdl)
-    dpl_vdir_closedir(dir_hdl);
+    vdir_closedir(dir_hdl);
 
   return ret;
 }
 
 static dpl_status_t
-dpl_vdir_rmdir(dpl_ctx_t *ctx,
-               const char *bucket,
-               dpl_fqn_t parent_fqn,
-               const char *obj_name)
+vdir_rmdir(dpl_ctx_t *ctx,
+           const char *bucket,
+           dpl_fqn_t parent_fqn,
+           const char *obj_name)
 {
   u_int n_entries = 0;
   dpl_fqn_t fqn;
@@ -569,7 +569,7 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
   if (obj_name_len >= delim_len && strcmp(obj_name + obj_name_len - delim_len, ctx->delim))
     strcat(fqn.path, ctx->delim);
 
-  ret2 = dpl_vdir_count_entries(ctx, bucket, fqn, &n_entries);
+  ret2 = vdir_count_entries(ctx, bucket, fqn, &n_entries);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -606,10 +606,10 @@ dpl_vdir_rmdir(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_iname(dpl_ctx_t *ctx,
-             const char *bucket,
-             dpl_fqn_t fqn,
-             char *path,
-             unsigned int path_len)
+          const char *bucket,
+          dpl_fqn_t fqn,
+          char *path,
+          unsigned int path_len)
 {
   DPL_TRACE(ctx, DPL_TRACE_VFS, "iname bucket=%s fqn=%s", bucket, fqn.path);
 
@@ -741,7 +741,7 @@ dpl_namei_ex(dpl_ctx_t *ctx,
         }
       else
         {
-          ret = dpl_vdir_lookup(ctx, bucket, parent_fqn, name, &obj_fqn, &obj_type);
+          ret = vdir_lookup(ctx, bucket, parent_fqn, name, &obj_fqn, &obj_type);
           if (DPL_SUCCESS != ret)
             return ret;
         }
@@ -788,7 +788,7 @@ dpl_namei(dpl_ctx_t *ctx,
 
 dpl_fqn_t
 dpl_cwd(dpl_ctx_t *ctx,
-           const char *bucket)
+        const char *bucket)
 {
   dpl_dict_var_t *var;
   dpl_fqn_t cwd;
@@ -818,8 +818,8 @@ dpl_cwd(dpl_ctx_t *ctx,
  */
 dpl_status_t
 dpl_opendir(dpl_ctx_t *ctx,
-               const char *locator,
-               void **dir_hdlp)
+            const char *locator,
+            void **dir_hdlp)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
@@ -879,7 +879,7 @@ dpl_opendir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_vdir_opendir(ctx, bucket, obj_fqn, dir_hdlp);
+  ret2 = vdir_opendir(ctx, bucket, obj_fqn, dir_hdlp);
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "unable to open %s:%s", bucket, obj_fqn.path);
@@ -904,26 +904,26 @@ dpl_opendir(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_readdir(void *dir_hdl,
-               dpl_dirent_t *dirent)
+            dpl_dirent_t *dirent)
 {
-  return dpl_vdir_readdir(dir_hdl, dirent);
+  return vdir_readdir(dir_hdl, dirent);
 }
 
 int
 dpl_eof(void *dir_hdl)
 {
-  return dpl_vdir_eof(dir_hdl);
+  return vdir_eof(dir_hdl);
 }
 
 void
 dpl_closedir(void *dir_hdl)
 {
-  dpl_vdir_closedir(dir_hdl);
+  vdir_closedir(dir_hdl);
 }
 
 dpl_status_t
 dpl_chdir(dpl_ctx_t *ctx,
-             const char *locator)
+          const char *locator)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
@@ -1139,13 +1139,13 @@ dpl_mkgen(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_mkdir(dpl_ctx_t *ctx,
-             const char *locator)
+          const char *locator)
 {
   dpl_sysmd_t sysmd;
 
   memset(&sysmd, 0, sizeof (sysmd));
 
-  return dpl_mkgen(ctx, ctx->light_mode, locator, dpl_vdir_mkdir, NULL, &sysmd);
+  return dpl_mkgen(ctx, ctx->light_mode, locator, vdir_mkdir, NULL, &sysmd);
 }
 
 dpl_status_t
@@ -1155,18 +1155,18 @@ dpl_mkdir_ex(dpl_ctx_t *ctx,
              dpl_dict_t *metadata,
              dpl_sysmd_t *sysmd)
 {
-  return dpl_mkgen(ctx, light_mode, locator, dpl_vdir_mkdir, metadata, sysmd);
+  return dpl_mkgen(ctx, light_mode, locator, vdir_mkdir, metadata, sysmd);
 }
 
 dpl_status_t
 dpl_mknod(dpl_ctx_t *ctx,
-             const char *locator)
+          const char *locator)
 {
   dpl_sysmd_t sysmd;
 
   memset(&sysmd, 0, sizeof (sysmd));
 
-  return dpl_mkgen(ctx, ctx->light_mode, locator, dpl_vdir_mknod, NULL, &sysmd);
+  return dpl_mkgen(ctx, ctx->light_mode, locator, vdir_mknod, NULL, &sysmd);
 }
 
 dpl_status_t
@@ -1232,7 +1232,7 @@ dpl_rmdir_ex(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_vdir_rmdir(ctx, bucket, parent_fqn, dir_name);
+  ret2 = vdir_rmdir(ctx, bucket, parent_fqn, dir_name);
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "rmdir failed");
@@ -1257,7 +1257,7 @@ dpl_rmdir_ex(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_rmdir(dpl_ctx_t *ctx,
-             const char *locator)
+          const char *locator)
 {
   return dpl_rmdir_ex(ctx, locator, ctx->light_mode);
 }
@@ -1822,8 +1822,8 @@ dpl_write(dpl_vfile_t *vfile,
           goto end;
         }
     }
-    else
-      ret2 = dpl_conn_writev_all(vfile->conn, iov, n_iov, DPL_DEFAULT_WRITE_TIMEOUT);
+  else
+    ret2 = dpl_conn_writev_all(vfile->conn, iov, n_iov, DPL_DEFAULT_WRITE_TIMEOUT);
 
   ret = ret2;
 
@@ -2101,7 +2101,7 @@ dpl_openread(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_unlink(dpl_ctx_t *ctx,
-              const char *locator)
+           const char *locator)
 {
   int ret, ret2;
   dpl_fqn_t parent_fqn, obj_fqn;
@@ -2711,9 +2711,9 @@ copy_id_to_path(dpl_ctx_t *ctx,
  */
 static dpl_status_t
 copy_path_to_path2(dpl_ctx_t *ctx,
-                  const char *src_locator,
-                  const char *dst_locator,
-                  dpl_copy_directive_t copy_directive)
+                   const char *src_locator,
+                   const char *dst_locator,
+                   dpl_copy_directive_t copy_directive)
 {
   int ret, ret2;
   dpl_sysmd_t sysmd;
@@ -2818,11 +2818,11 @@ dpl_mkdent(dpl_ctx_t *ctx,
 
 dpl_status_t
 dpl_fgenurl(dpl_ctx_t *ctx,
-               const char *locator,
-               time_t expires,
-               char *buf,
-               unsigned int len,
-               unsigned int *lenp)
+            const char *locator,
+            time_t expires,
+            char *buf,
+            unsigned int len,
+            unsigned int *lenp)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
