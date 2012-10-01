@@ -263,10 +263,12 @@ dpl_req_set_content_encoding(dpl_req_t *req,
 }
 
 void
-dpl_req_set_chunk(dpl_req_t *req,
-                  dpl_chunk_t *chunk)
+dpl_req_set_data(dpl_req_t *req,
+                 const char *data_buf,
+                 u_int data_len)
 {
-  req->chunk = chunk;
+  req->data_buf = data_buf;
+  req->data_len = data_len;
 }
 
 dpl_status_t

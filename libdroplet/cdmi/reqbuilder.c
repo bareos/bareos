@@ -356,14 +356,14 @@ add_data_to_json_body(const dpl_req_t *req,
   int base64_len;
 
   //encode body to base64
-  base64_str = malloc(DPL_BASE64_LENGTH(req->chunk->len) + 1);
+  base64_str = malloc(DPL_BASE64_LENGTH(req->data_len) + 1);
   if (NULL == base64_str)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  base64_len = dpl_base64_encode((const u_char *) req->chunk->buf, req->chunk->len, (u_char *) base64_str);
+  base64_len = dpl_base64_encode((const u_char *) req->data_buf, req->data_len, (u_char *) base64_str);
   base64_str[base64_len] = 0;
 
   value_obj = json_object_new_string(base64_str);
@@ -598,14 +598,11 @@ dpl_cdmi_req_build(const dpl_req_t *req,
               goto end;
             }
           
-          if (NULL != req->chunk)
+          ret2 = add_data_to_json_body(req, body_obj);
+          if (DPL_SUCCESS != ret2)
             {
-              ret2 = add_data_to_json_body(req, body_obj);
-              if (DPL_SUCCESS != ret2)
-                {
-                  ret = ret2;
-                  goto end;
-                }
+              ret = ret2;
+              goto end;
             }
           
           pthread_mutex_lock(&req->ctx->lock);
@@ -636,7 +633,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
               goto end;
             }
 
-          snprintf(buf, sizeof (buf), "%u", req->chunk->len);
+          snprintf(buf, sizeof (buf), "%u", req->data_len);
           ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
           if (DPL_SUCCESS != ret2)
             {

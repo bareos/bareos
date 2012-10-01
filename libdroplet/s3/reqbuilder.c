@@ -470,6 +470,8 @@ dpl_s3_req_build(const dpl_req_t *req,
     }
   else if (DPL_METHOD_PUT == req->method)
     {
+      char buf[64];
+
       if (NULL != req->cache_control)
         {
           ret2 = dpl_dict_add(headers, "Cache-Control", req->cache_control, 0);
@@ -507,14 +509,8 @@ dpl_s3_req_build(const dpl_req_t *req,
           char b64_digest[DPL_BASE64_LENGTH(MD5_DIGEST_LENGTH) + 1];
           u_int b64_digest_len;
 
-          if (NULL == req->chunk)
-            {
-              ret = DPL_EINVAL;
-              goto end;
-            }
-
           MD5_Init(&ctx);
-          MD5_Update(&ctx, req->chunk->buf, req->chunk->len);
+          MD5_Update(&ctx, req->data_buf, req->data_len);
           MD5_Final(digest, &ctx);
 
           b64_digest_len = dpl_base64_encode(digest, MD5_DIGEST_LENGTH, (u_char *) b64_digest);
@@ -528,17 +524,12 @@ dpl_s3_req_build(const dpl_req_t *req,
             }
         }
 
-      if (NULL != req->chunk)
+      snprintf(buf, sizeof (buf), "%u", req->data_len);
+      ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
+      if (DPL_SUCCESS != ret2)
         {
-          char buf[64];
-
-          snprintf(buf, sizeof (buf), "%u", req->chunk->len);
-          ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
+          ret = DPL_ENOMEM;
+          goto end;
         }
 
       if (NULL != req->content_type)

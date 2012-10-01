@@ -341,17 +341,6 @@ typedef struct
   dpl_option_mask_t mask;
 } dpl_option_t;
 
-typedef struct dpl_fqn
-{
-  char path[DPL_MAXPATHLEN];
-} dpl_fqn_t;
-
-typedef struct
-{
-  const char *buf;
-  unsigned int len;
-} dpl_chunk_t;
-
 typedef struct
 {
 #define DPL_UNDEF -1
@@ -510,7 +499,8 @@ typedef struct
   dpl_storage_class_t storage_class;
 
   dpl_dict_t *metadata;
-  dpl_chunk_t *chunk;
+  const char *data_buf;
+  u_int data_len;
 
   dpl_range_t range;
   int range_enabled;

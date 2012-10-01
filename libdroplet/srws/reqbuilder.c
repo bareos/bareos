@@ -148,15 +148,12 @@ dpl_srws_req_build(const dpl_req_t *req,
     }
   else if (DPL_METHOD_PUT == req->method)
     {
-      if (NULL != req->chunk)
+      snprintf(buf, sizeof (buf), "%u", req->data_len);
+      ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
+      if (DPL_SUCCESS != ret2)
         {
-          snprintf(buf, sizeof (buf), "%u", req->chunk->len);
-          ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
+          ret = DPL_ENOMEM;
+          goto end;
         }
 
       if (req->behavior_flags & DPL_BEHAVIOR_EXPECT)

@@ -586,7 +586,6 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
   dpl_s3_req_mask_t req_mask = 0u;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
@@ -654,9 +653,7 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
         }
     }
 
-  chunk.buf = data_str;
-  chunk.len = data_len;
-  dpl_req_set_chunk(req, &chunk);
+  dpl_req_set_data(req, data_str, data_len);
 
   if (sysmd)
     {
@@ -910,7 +907,6 @@ dpl_s3_put(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
   dpl_s3_req_mask_t req_mask = 0u;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
@@ -954,9 +950,7 @@ dpl_s3_put(dpl_ctx_t *ctx,
         }
     }
 
-  chunk.buf = data_buf;
-  chunk.len = data_len;
-  dpl_req_set_chunk(req, &chunk);
+  dpl_req_set_data(req, data_buf, data_len);
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
 
@@ -1088,7 +1082,6 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
   dpl_s3_req_mask_t req_mask = 0u;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
@@ -1132,9 +1125,7 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  chunk.buf = NULL;
-  chunk.len = data_len;
-  dpl_req_set_chunk(req, &chunk);
+  dpl_req_set_data(req, NULL, data_len);
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_EXPECT);
 

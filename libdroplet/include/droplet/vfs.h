@@ -37,6 +37,11 @@
 /*
  * vdir
  */
+typedef struct dpl_fqn
+{
+  char path[DPL_MAXPATHLEN];
+} dpl_fqn_t;
+
 #define DPL_ROOT_FQN  ((dpl_fqn_t) {.path = ""})
 
 typedef struct

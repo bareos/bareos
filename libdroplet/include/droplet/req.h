@@ -51,7 +51,7 @@ void dpl_req_set_condition(dpl_req_t *req, const dpl_condition_t *condition);
 dpl_status_t dpl_req_set_cache_control(dpl_req_t *req, const char *cache_control);
 dpl_status_t dpl_req_set_content_disposition(dpl_req_t *req, const char *content_disposition);
 dpl_status_t dpl_req_set_content_encoding(dpl_req_t *req, const char *content_encoding);
-void dpl_req_set_chunk(dpl_req_t *req, dpl_chunk_t *chunk);
+void dpl_req_set_data(dpl_req_t *req, const char *data_buf, u_int data_len);
 dpl_status_t dpl_req_add_metadatum(dpl_req_t *req, const char *key, const char *value);
 dpl_status_t dpl_req_add_metadata(dpl_req_t *req, const dpl_dict_t *metadata);
 dpl_status_t dpl_req_set_content_type(dpl_req_t *req, const char *content_type);

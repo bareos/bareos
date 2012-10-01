@@ -1068,7 +1068,6 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
   char          *body_str = NULL;
   int           body_len = 0;
   char *data_buf_returned = NULL;
@@ -1117,12 +1116,7 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
 
   dpl_req_set_object_type(req, object_type);
 
-  if (NULL != data_buf)
-    {
-      chunk.buf = data_buf;
-      chunk.len = data_len;
-      dpl_req_set_chunk(req, &chunk);
-    }
+  dpl_req_set_data(req, data_buf, data_len);
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
 
@@ -1328,7 +1322,6 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
   dpl_cdmi_req_mask_t req_mask = 0u;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
@@ -1375,9 +1368,7 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  chunk.buf = NULL;
-  chunk.len = data_len;
-  dpl_req_set_chunk(req, &chunk);
+  dpl_req_set_data(req, NULL, data_len);
 
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
@@ -1525,7 +1516,6 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
   char          *body_str = NULL;
   int           body_len = 0;
 
@@ -1562,12 +1552,7 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
 
   dpl_req_set_object_type(req, object_type);
 
-  if (NULL != data_buf)
-    {
-      chunk.buf = data_buf;
-      chunk.len = data_len;
-      dpl_req_set_chunk(req, &chunk);
-    }
+  dpl_req_set_data(req, data_buf, data_len);
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
 
@@ -1725,7 +1710,6 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_chunk_t   chunk;
   dpl_cdmi_req_mask_t req_mask = 0u;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
@@ -1772,9 +1756,7 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  chunk.buf = NULL;
-  chunk.len = data_len;
-  dpl_req_set_chunk(req, &chunk);
+  dpl_req_set_data(req, NULL, data_len);
 
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
