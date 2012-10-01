@@ -1045,10 +1045,10 @@ dpl_pricing_free(dpl_ctx_t *ctx)
  * @return
  */
 dpl_status_t
-dpl_log_event(dpl_ctx_t *ctx,
-              const char *type,
-              const char *subtype,
-              size_t size)
+dpl_log_request(dpl_ctx_t *ctx,
+                const char *type,
+                const char *subtype,
+                size_t size)
 {
   time_t t;
 

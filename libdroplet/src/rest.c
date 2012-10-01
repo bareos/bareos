@@ -77,6 +77,9 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
  end:
   
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "REQUEST", "LIST", 0);
   
   return ret;
 }
@@ -117,6 +120,9 @@ dpl_list_bucket(dpl_ctx_t *ctx,
  end:
   
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "REQUEST", "LIST", 0);
   
   return ret;
 }
@@ -159,6 +165,9 @@ dpl_make_bucket(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "PUT", 0);
   
   return ret;
 }
@@ -193,6 +202,9 @@ dpl_delete_bucket(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "DELETE", 0);
   
   return ret;
 }
@@ -249,6 +261,9 @@ dpl_post(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "IN", data_len);
   
   return ret;
 }
@@ -299,6 +314,9 @@ dpl_post_buffered(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "IN", data_len);
   
   return ret;
 }
@@ -353,6 +371,9 @@ dpl_put(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "IN", data_len);
   
   return ret;
 }
@@ -405,6 +426,9 @@ dpl_put_buffered(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "IN", data_len);
   
   return ret;
 }
@@ -444,6 +468,7 @@ dpl_get(dpl_ctx_t *ctx,
         dpl_sysmd_t *sysmdp)
 {
   int ret;
+  u_int data_len;
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "get bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
 
@@ -453,11 +478,20 @@ dpl_get(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get(ctx, bucket, resource, subresource, option, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp, NULL);
+  ret = ctx->backend->get(ctx, bucket, resource, subresource, option, object_type, condition, range, data_bufp, &data_len, metadatap, sysmdp, NULL);
   
+  if (DPL_SUCCESS == ret)
+    {
+      if (NULL != data_lenp)
+        *data_lenp = data_len;
+    }
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "OUT", data_len);
   
   return ret;
 }
@@ -512,6 +546,9 @@ dpl_get_buffered(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "OUT", 0);
   
   return ret;
 }
@@ -559,6 +596,9 @@ dpl_head(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "GET", 0);
   
   return ret;
 }
@@ -603,6 +643,9 @@ dpl_head_raw(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "GET", 0);
   
   return ret;
 }
@@ -645,6 +688,9 @@ dpl_delete(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "DELETE", 0);
   
   return ret;
 }
@@ -750,6 +796,9 @@ dpl_copy(dpl_ctx_t *ctx,
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "PUT", 0);
   
   return ret;
 }

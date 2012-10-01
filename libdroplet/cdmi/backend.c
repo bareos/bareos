@@ -972,8 +972,6 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
-
   objects = dpl_vec_new(2, 2);
   if (NULL == objects)
     {
@@ -1257,8 +1255,6 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
       location = NULL;
     }
 
-  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
-
   ret = DPL_SUCCESS;
 
  end:
@@ -1456,8 +1452,6 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
-
   if (NULL != connp)
     {
       *connp = conn;
@@ -1634,8 +1628,6 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-
-  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
 
   ret = DPL_SUCCESS;
 
@@ -1843,8 +1835,6 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-
-  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
 
   if (NULL != connp)
     {
@@ -2130,8 +2120,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
 
         }
     }
-
-  (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
 
   if (NULL != data_bufp)
     {
@@ -2699,8 +2687,6 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-
-  (void) dpl_log_event(ctx, "REQUEST", "DELETE", 0);
 
   ret = DPL_SUCCESS;
 

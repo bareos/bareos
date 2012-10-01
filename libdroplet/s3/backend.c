@@ -291,8 +291,6 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
 
-  (void) dpl_log_event(ctx, "REQUEST", "LIST", 0);
-
   vec = dpl_vec_new(2, 2);
   if (NULL == vec)
     {
@@ -482,8 +480,6 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-
-  (void) dpl_log_event(ctx, "REQUEST", "LIST", 0);
 
   objects = dpl_vec_new(2, 2);
   if (NULL == objects)
@@ -723,8 +719,6 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
-
   ret = DPL_SUCCESS;
 
  end:
@@ -852,8 +846,6 @@ dpl_s3_delete_bucket(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-
-  (void) dpl_log_event(ctx, "REQUEST", "DELETE", 0);
 
   ret = DPL_SUCCESS;
 
@@ -1028,8 +1020,6 @@ dpl_s3_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
-
   ret = DPL_SUCCESS;
 
  end:
@@ -1197,8 +1187,6 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-
-  (void) dpl_log_event(ctx, "DATA", "IN", data_len);
 
   if (NULL != connp)
     {
@@ -1378,8 +1366,6 @@ dpl_s3_get(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-
-  (void) dpl_log_event(ctx, "DATA", "OUT", data_len);
 
   if (NULL != data_bufp)
     {
@@ -1795,8 +1781,6 @@ dpl_s3_head_raw(dpl_ctx_t *ctx,
       headers_reply = NULL;
     }
 
-  (void) dpl_log_event(ctx, "REQUEST", "HEAD", 0);
-
   ret = DPL_SUCCESS;
 
  end:
@@ -1982,8 +1966,6 @@ dpl_s3_delete(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-
-  (void) dpl_log_event(ctx, "REQUEST", "DELETE", 0);
 
   ret = DPL_SUCCESS;
 
@@ -2273,8 +2255,6 @@ dpl_s3_copy(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-
-  (void) dpl_log_event(ctx, "REQUEST", "COPY", 0);
 
   ret = DPL_SUCCESS;
 
