@@ -180,6 +180,34 @@ dpl_async_task_free(dpl_async_task_t *task)
       if (NULL != task->u.head.metadata)
         dpl_dict_free(task->u.head.metadata);
       break ;
+    case DPL_TASK_DELETE:
+      /* indelete */
+      FREE_IF_NOT_NULL(task->u.delete.bucket);
+      FREE_IF_NOT_NULL(task->u.delete.resource);
+      FREE_IF_NOT_NULL(task->u.delete.subresource);
+      if (NULL != task->u.delete.option)
+        dpl_option_free(task->u.delete.option);
+      if (NULL != task->u.delete.condition)
+        dpl_condition_free(task->u.delete.condition);
+      /* output */
+      break ;
+    case DPL_TASK_COPY:
+      /* incopy */
+      FREE_IF_NOT_NULL(task->u.copy.src_bucket);
+      FREE_IF_NOT_NULL(task->u.copy.src_resource);
+      FREE_IF_NOT_NULL(task->u.copy.src_subresource);
+      FREE_IF_NOT_NULL(task->u.copy.dst_bucket);
+      FREE_IF_NOT_NULL(task->u.copy.dst_resource);
+      FREE_IF_NOT_NULL(task->u.copy.dst_subresource);
+      if (NULL != task->u.copy.option)
+        dpl_option_free(task->u.copy.option);
+      if (NULL != task->u.copy.metadata)
+        dpl_dict_free(task->u.copy.metadata);
+      if (NULL != task->u.copy.sysmd)
+        dpl_sysmd_free(task->u.copy.sysmd);
+      if (NULL != task->u.copy.condition)
+        dpl_condition_free(task->u.copy.condition);
+      /* output */
     }
   free(task);
 }
@@ -273,6 +301,30 @@ async_do(void *arg)
                            task->u.head.condition,
                            &task->u.head.metadata,
                            &task->u.head.sysmd);
+      break ;
+    case DPL_TASK_DELETE:
+      task->ret = dpl_delete(task->ctx, 
+                             task->u.delete.bucket,
+                             task->u.delete.resource,
+                             task->u.delete.subresource,
+                             task->u.delete.option,
+                             task->u.delete.object_type,
+                             task->u.delete.condition);
+      break ;
+    case DPL_TASK_COPY:
+      task->ret = dpl_copy(task->ctx, 
+                           task->u.copy.src_bucket,
+                           task->u.copy.src_resource,
+                           task->u.copy.src_subresource,
+                           task->u.copy.dst_bucket,
+                           task->u.copy.dst_resource,
+                           task->u.copy.dst_subresource,
+                           task->u.copy.option,
+                           task->u.copy.object_type,
+                           task->u.copy.copy_directive,
+                           task->u.copy.metadata,
+                           task->u.copy.sysmd,
+                           task->u.copy.condition);
       break ;
     }
   if (NULL != task->cb_func)
@@ -677,7 +729,6 @@ dpl_head_async_prepare(dpl_ctx_t *ctx,
   return NULL;
 }
 
-#if 0
 /** 
  * delete a resource
  * 
@@ -692,78 +743,41 @@ dpl_head_async_prepare(dpl_ctx_t *ctx,
  * @return DPL_FAILURE
  * @return DPL_ENOENT resource does not exist
  */
-dpl_status_t
-dpl_delete(dpl_ctx_t *ctx,
-           const char *bucket,
-           const char *resource,
-           const char *subresource,
-           const dpl_option_t *option,
-           dpl_ftype_t object_type,
-           const dpl_condition_t *condition)
+dpl_task_t *
+dpl_delete_async_preapre(dpl_ctx_t *ctx,
+                         const char *bucket,
+                         const char *resource,
+                         const char *subresource,
+                         const dpl_option_t *option,
+                         dpl_ftype_t object_type,
+                         const dpl_condition_t *condition)
 {
-  int ret;
+  dpl_async_task_t *task = NULL;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "delete bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  task = calloc(1, sizeof (*task));
+  if (NULL == task)
+    goto bad;
 
-  if (NULL == ctx->backend->deletef)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
+  task->ctx = ctx;
+  task->type = DPL_TASK_DELETE;
+  task->task.func = async_do;
+  DUP_IF_NOT_NULL(task->u.delete, bucket);
+  DUP_IF_NOT_NULL(task->u.delete, resource);
+  DUP_IF_NOT_NULL(task->u.delete, subresource);
+  if (NULL != option)
+    task->u.delete.option = dpl_option_dup(option);
+  task->u.delete.object_type = object_type;
+  if (NULL != condition)
+    task->u.delete.condition = dpl_condition_dup(condition);
+
+  return (dpl_task_t *) task;
+
+ bad:
+
+  if (NULL != task)
+    dpl_async_task_free(task);
   
-  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, option, DPL_FTYPE_UNDEF, NULL);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
-  
-  return ret;
-}
-
-/** 
- * generate a valid URL for sharing object
- * 
- * @param ctx the droplet context
- * @param bucket the optional bucket
- * @param resource the mandat resource
- * @param subresource the optional subresource
- * @param option unused
- * @param expires expire time of URL
- * @param buf URL is created in this buffer
- * @param len buffer length
- * @param lenp real buffer returned
- * 
- * @return DPL_SUCCESS
- * @return DPL_FAILURE
- */
-dpl_status_t
-dpl_genurl(dpl_ctx_t *ctx,
-           const char *bucket,
-           const char *resource,
-           const char *subresource,
-           const dpl_option_t *option,
-           time_t expires,
-           char *buf,
-           unsigned int len,
-           unsigned int *lenp)
-{
-  int ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "genurl bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
-
-  if (NULL == ctx->backend->genurl)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->genurl(ctx, bucket, resource, subresource, option, expires, buf, len, lenp, NULL);
-  
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
-  
-  return ret;
+  return NULL;
 }
 
 /** 
@@ -791,37 +805,53 @@ dpl_genurl(dpl_ctx_t *ctx,
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
-dpl_status_t
-dpl_copy(dpl_ctx_t *ctx,
-         const char *src_bucket,
-         const char *src_resource,
-         const char *src_subresource,
-         const char *dst_bucket,
-         const char *dst_resource,
-         const char *dst_subresource,
-         const dpl_option_t *option,
-         dpl_ftype_t object_type,
-         dpl_copy_directive_t copy_directive,
-         const dpl_dict_t *metadata,
-         const dpl_sysmd_t *sysmd,
-         const dpl_condition_t *condition)
+dpl_task_t *
+dpl_copy_async_prepare(dpl_ctx_t *ctx,
+                       const char *src_bucket,
+                       const char *src_resource,
+                       const char *src_subresource,
+                       const char *dst_bucket,
+                       const char *dst_resource,
+                       const char *dst_subresource,
+                       const dpl_option_t *option,
+                       dpl_ftype_t object_type,
+                       dpl_copy_directive_t copy_directive,
+                       const dpl_dict_t *metadata,
+                       const dpl_sysmd_t *sysmd,
+                       const dpl_condition_t *condition)
 {
-  int ret;
+  dpl_async_task_t *task = NULL;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "copy src_bucket=%s src_resource=%s src_subresource=%s dst_bucket=%s dst_resource=%s dst_subresource=%s", src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource);
+  task = calloc(1, sizeof (*task));
+  if (NULL == task)
+    goto bad;
 
-  if (NULL == ctx->backend->copy)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, option, object_type, copy_directive, metadata, sysmd, condition, NULL);
-  
- end:
+  task->ctx = ctx;
+  task->type = DPL_TASK_COPY;
+  task->task.func = async_do;
+  DUP_IF_NOT_NULL(task->u.copy, src_bucket);
+  DUP_IF_NOT_NULL(task->u.copy, src_resource);
+  DUP_IF_NOT_NULL(task->u.copy, src_subresource);
+  DUP_IF_NOT_NULL(task->u.copy, dst_bucket);
+  DUP_IF_NOT_NULL(task->u.copy, dst_resource);
+  DUP_IF_NOT_NULL(task->u.copy, dst_subresource);
+  if (NULL != option)
+    task->u.copy.option = dpl_option_dup(option);
+  task->u.copy.object_type = object_type;
+  task->u.copy.copy_directive = copy_directive;
+  if (NULL != metadata)
+    task->u.copy.metadata = dpl_dict_dup(metadata);
+  if (NULL != sysmd)
+    task->u.copy.sysmd = dpl_sysmd_dup(sysmd);
+  if (NULL != condition)
+    task->u.copy.condition = dpl_condition_dup(condition);
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+  return (dpl_task_t *) task;
+
+ bad:
+
+  if (NULL != task)
+    dpl_async_task_free(task);
   
-  return ret;
+  return NULL;
 }
-#endif

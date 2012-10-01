@@ -54,6 +54,8 @@ typedef enum
     DPL_TASK_PUT,
     DPL_TASK_GET,
     DPL_TASK_HEAD,
+    DPL_TASK_DELETE,
+    DPL_TASK_COPY,
   } dpl_async_task_type_t;
 
 typedef struct
@@ -155,6 +157,34 @@ typedef struct
       dpl_dict_t *metadata;
       dpl_sysmd_t sysmd;
     } head;
+    struct
+    {
+      /* input */
+      char *bucket;
+      char *resource;
+      char *subresource;
+      dpl_option_t *option;
+      dpl_ftype_t object_type;
+      dpl_condition_t *condition;
+      /* output */
+    } delete;
+    struct
+    {
+      /* input */
+      char *src_bucket;
+      char *src_resource;
+      char *src_subresource;
+      char *dst_bucket;
+      char *dst_resource;
+      char *dst_subresource;
+      dpl_option_t *option;
+      dpl_ftype_t object_type;
+      dpl_copy_directive_t copy_directive;
+      dpl_dict_t *metadata;
+      dpl_sysmd_t *sysmd;
+      dpl_condition_t *condition;
+      /* output */
+    } copy;
   } u;
 } dpl_async_task_t;
 
