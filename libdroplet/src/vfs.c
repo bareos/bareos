@@ -796,6 +796,8 @@ dpl_chdir(dpl_ctx_t *ctx,
       goto end;
     }
 
+  strcat(obj_fqn.path, ctx->delim); //XXX
+
   //recheck obj_type
   ret2 = dpl_getattr(ctx, obj_fqn.path, NULL, &sysmd);
   if (DPL_SUCCESS != ret2)
@@ -804,6 +806,7 @@ dpl_chdir(dpl_ctx_t *ctx,
       goto end;
     }
 
+#if 0
   if (!(sysmd.mask & DPL_SYSMD_MASK_FTYPE))
     {
       ret = DPL_ENOTSUPP;
@@ -815,6 +818,7 @@ dpl_chdir(dpl_ctx_t *ctx,
       ret = DPL_ENOTDIR;
       goto end;
     }
+#endif
 
   ret = DPL_SUCCESS;
 
