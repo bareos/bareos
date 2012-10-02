@@ -240,13 +240,11 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
                                 json_object *body_obj)
 
 {
-  dpl_ctx_t *ctx = (dpl_ctx_t *) req->ctx;
+  //dpl_ctx_t *ctx = (dpl_ctx_t *) req->ctx;
   dpl_status_t ret;
   json_object *tmp = NULL;
   const char *field = NULL;
-  char *buf;
   char *src_resource;
-  int prepend_base_path = 0;
 
   if (DPL_COPY_DIRECTIVE_UNDEF == req->copy_directive)
     {
@@ -264,22 +262,18 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
     {
     case DPL_COPY_DIRECTIVE_COPY:
       field = "copy";
-      prepend_base_path = 1;
       break ;
     case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
       ret = DPL_EINVAL;
       goto end;
     case DPL_COPY_DIRECTIVE_LINK:
       field = "link";
-      prepend_base_path = 1;
       break ;
     case DPL_COPY_DIRECTIVE_SYMLINK:
       field = "reference";
-      prepend_base_path = 1;
       break ;
     case DPL_COPY_DIRECTIVE_MOVE:
       field = "move";
-      prepend_base_path = 1;
       break ;
     case DPL_COPY_DIRECTIVE_MKDENT:
       field = "mkdent";
@@ -292,41 +286,7 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
       goto end;
     }
 
-  if (prepend_base_path)
-    {
-      int base_path_len = 0;
-      int delim_len = 0;
-      int src_resource_len = 0;
-      
-      if (NULL != ctx->base_path)
-        base_path_len = strlen(ctx->base_path);
-      
-      delim_len = strlen(ctx->delim);
-      
-      src_resource_len = strlen(req->src_resource);
-      
-      buf = alloca(base_path_len + delim_len + src_resource_len + 1);
-      if (NULL == buf)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      
-      buf[0] = 0;
-      
-      if (NULL != ctx->base_path)
-        strcat(buf, ctx->base_path);
-      
-      strcat(buf, ctx->delim);
-      
-      strcat(buf, req->src_resource);
-      
-      src_resource = buf;
-    }
-  else
-    {
-      src_resource = req->src_resource;
-    }
+  src_resource = req->src_resource;
 
   tmp = json_object_new_string(src_resource);
   if (NULL == tmp)

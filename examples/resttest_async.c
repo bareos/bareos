@@ -646,7 +646,7 @@ main(int argc,
     }
 
   //ctx->trace_level = ~0;
-  ctx->trace_buffers = 1;
+  //ctx->trace_buffers = 1;
 
   pool = dpl_task_pool_create(ctx, "resttest", 10);
   if (NULL == pool)
