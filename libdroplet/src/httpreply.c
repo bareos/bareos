@@ -523,8 +523,11 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   }
                 else if (!strcasecmp(line, "Transfer-Encoding"))
                   {
-                    if (!strcasecmp(p, "chunked"))
-                      chunked = 1;
+                    if (expect_data)
+                      {
+                        if (!strcasecmp(p, "chunked"))
+                          chunked = 1;
+                      }
                   }
                 else
                   {

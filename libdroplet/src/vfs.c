@@ -717,7 +717,7 @@ dpl_chdir(dpl_ctx_t *ctx,
           const char *locator)
 {
   int ret, ret2;
-  dpl_fqn_t obj_fqn;
+  dpl_fqn_t obj_fqn, tmp_fqn;
   char *nlocator = NULL;
   dpl_fqn_t cur_fqn;
   char *nbucket;
@@ -768,6 +768,7 @@ dpl_chdir(dpl_ctx_t *ctx,
           ret = ret2;
           goto end;
         }
+      tmp_fqn = obj_fqn;
     }
   else
     {
@@ -787,38 +788,46 @@ dpl_chdir(dpl_ctx_t *ctx,
       free(ctx->cur_bucket);
       ctx->cur_bucket = nbucket;
     }
+  dpl_ctx_unlock(ctx);
+
+  //recheck obj_type: append delim at the end of object to be compatible with all backend
+  tmp_fqn = obj_fqn;
+  
+  if (strcmp(tmp_fqn.path, ""))
+    {
+      int len = strlen(tmp_fqn.path);
+      int delim_len = strlen(ctx->delim);
+      
+      //append delim if not present
+      if (len > delim_len)
+        {
+          if (strcmp(tmp_fqn.path + len - delim_len, ctx->delim))
+            strcat(tmp_fqn.path, ctx->delim);
+        }
+    }
+
+  ret2 = dpl_head(ctx, ctx->cur_bucket, tmp_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL, NULL, &sysmd);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (sysmd.mask & DPL_SYSMD_MASK_FTYPE)
+    {
+      if (DPL_FTYPE_DIR != sysmd.ftype)
+        {
+          ret = DPL_ENOTDIR;
+          goto end;
+        }
+    }
 
   ret2 = dpl_dict_add(ctx->cwds, ctx->cur_bucket, obj_fqn.path, 0);
-  dpl_ctx_unlock(ctx);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
-
-  strcat(obj_fqn.path, ctx->delim); //XXX
-
-  //recheck obj_type
-  ret2 = dpl_getattr(ctx, obj_fqn.path, NULL, &sysmd);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-#if 0
-  if (!(sysmd.mask & DPL_SYSMD_MASK_FTYPE))
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  if (sysmd.ftype != DPL_FTYPE_DIR)
-    {
-      ret = DPL_ENOTDIR;
-      goto end;
-    }
-#endif
 
   ret = DPL_SUCCESS;
 
