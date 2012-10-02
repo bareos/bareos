@@ -129,7 +129,7 @@ int dpl_eof(void *dir_hdl);
 void dpl_closedir(void *dir_hdl);
 dpl_status_t dpl_chdir(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
-dpl_status_t dpl_mkdnod(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
+dpl_status_t dpl_mknod(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
 dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_close_ex(dpl_vfile_t *vfile, dpl_sysmd_t *returned_sysmdp, char **locationp);
 dpl_status_t dpl_close(dpl_vfile_t *vfile);
