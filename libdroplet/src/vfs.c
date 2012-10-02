@@ -774,26 +774,6 @@ dpl_chdir(dpl_ctx_t *ctx,
       strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
     }
 
-  //recheck obj_type
-  ret2 = dpl_getattr(ctx, path, NULL, &sysmd);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (!(sysmd.mask & DPL_SYSMD_MASK_FTYPE))
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  if (sysmd.ftype != DPL_FTYPE_DIR)
-    {
-      ret = DPL_ENOTDIR;
-      goto end;
-    }
-
   dpl_ctx_lock(ctx);
   if (strcmp(bucket, ctx->cur_bucket))
     {
@@ -813,6 +793,26 @@ dpl_chdir(dpl_ctx_t *ctx,
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
+      goto end;
+    }
+
+  //recheck obj_type
+  ret2 = dpl_getattr(ctx, obj_fqn.path, NULL, &sysmd);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (!(sysmd.mask & DPL_SYSMD_MASK_FTYPE))
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  if (sysmd.ftype != DPL_FTYPE_DIR)
+    {
+      ret = DPL_ENOTDIR;
       goto end;
     }
 
