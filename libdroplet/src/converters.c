@@ -201,6 +201,8 @@ dpl_copy_directive(char *str)
     return DPL_COPY_DIRECTIVE_MOVE;
   else if (!strcasecmp(str, "mkdent"))
     return DPL_COPY_DIRECTIVE_MKDENT;
+  else if (!strcasecmp(str, "rmdent"))
+    return DPL_COPY_DIRECTIVE_RMDENT;
 
   return -1;
 }
@@ -224,6 +226,8 @@ dpl_copy_directive_str(dpl_copy_directive_t copy_directive)
       return "MOVE"; //case is important
     case DPL_COPY_DIRECTIVE_MKDENT:
       return "MKDENT"; //case is important
+    case DPL_COPY_DIRECTIVE_RMDENT:
+      return "RMDENT"; //case is important
     }
 
   return NULL;

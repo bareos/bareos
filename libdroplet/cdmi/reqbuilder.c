@@ -264,12 +264,14 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
     {
     case DPL_COPY_DIRECTIVE_COPY:
       field = "copy";
+      prepend_base_path = 1;
       break ;
     case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
       ret = DPL_EINVAL;
       goto end;
     case DPL_COPY_DIRECTIVE_LINK:
       field = "link";
+      prepend_base_path = 1;
       break ;
     case DPL_COPY_DIRECTIVE_SYMLINK:
       field = "reference";
@@ -277,9 +279,13 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
       break ;
     case DPL_COPY_DIRECTIVE_MOVE:
       field = "move";
+      prepend_base_path = 1;
       break ;
     case DPL_COPY_DIRECTIVE_MKDENT:
       field = "mkdent";
+      break ;
+    case DPL_COPY_DIRECTIVE_RMDENT:
+      field = "rmdent";
       break ;
     default:
       ret = DPL_ENOTSUPP;

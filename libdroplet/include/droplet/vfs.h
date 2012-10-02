@@ -122,23 +122,18 @@ typedef struct
 #define DPL_CIPHER_TYPE "dpl_cipher_type"
 
 /* PROTO vfs.c */
-dpl_status_t dpl_iname(dpl_ctx_t *ctx, const char *bucket, dpl_fqn_t fqn, char *path, unsigned int path_len);
-dpl_status_t dpl_namei_ex(dpl_ctx_t *ctx, int light_mode, const char *path, const char *bucket, dpl_fqn_t fqn, dpl_fqn_t *parent_fqnp, dpl_fqn_t *obj_fqnp, dpl_ftype_t *obj_typep);
-dpl_status_t dpl_namei(dpl_ctx_t *ctx, const char *path, const char *bucket, dpl_fqn_t fqn, dpl_fqn_t *parent_fqnp, dpl_fqn_t *obj_fqnp, dpl_ftype_t *obj_typep);
 dpl_fqn_t dpl_cwd(dpl_ctx_t *ctx, const char *bucket);
 dpl_status_t dpl_opendir(dpl_ctx_t *ctx, const char *locator, void **dir_hdlp);
 dpl_status_t dpl_readdir(void *dir_hdl, dpl_dirent_t *dirent);
 int dpl_eof(void *dir_hdl);
 void dpl_closedir(void *dir_hdl);
 dpl_status_t dpl_chdir(dpl_ctx_t *ctx, const char *locator);
-dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, const char *locator);
-dpl_status_t dpl_mkdir_ex(dpl_ctx_t *ctx, const char *locator, int light_mode, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
-dpl_status_t dpl_mknod(dpl_ctx_t *ctx, const char *locator);
+dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
+dpl_status_t dpl_mkdnod(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
 dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, const char *locator);
-dpl_status_t dpl_rmdir_ex(dpl_ctx_t *ctx, const char *locator, int light_mode);
-dpl_status_t dpl_close_ex(dpl_vfile_t *vfile, char **resource_idp);
+dpl_status_t dpl_close_ex(dpl_vfile_t *vfile, dpl_sysmd_t *returned_sysmdp, char **locationp);
 dpl_status_t dpl_close(dpl_vfile_t *vfile);
-dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, const char *locator, dpl_ftype_t object_type, dpl_vfile_flag_t flags, dpl_range_t *range, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_dict_t *query_params, dpl_vfile_t **vfilep);
+dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, const char *locator, dpl_ftype_t obj_type, dpl_vfile_flag_t flags, dpl_range_t *range, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_dict_t *query_params, dpl_vfile_t **vfilep);
 dpl_status_t dpl_write(dpl_vfile_t *vfile, char *buf, unsigned int len);
 dpl_status_t dpl_openread(dpl_ctx_t *ctx, const char *locator, dpl_vfile_flag_t flags, dpl_condition_t *condition, dpl_range_t *range, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_unlink(dpl_ctx_t *ctx, const char *locator);
@@ -149,8 +144,7 @@ dpl_status_t dpl_fgenurl(dpl_ctx_t *ctx, const char *locator, time_t expires, ch
 dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
 dpl_status_t dpl_rename(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
 dpl_status_t dpl_symlink(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
-dpl_status_t dpl_link_id(dpl_ctx_t *ctx, const char *src_id, uint32_t enterprise_number, const char *dst_locator);
-dpl_status_t dpl_mkdent_id(dpl_ctx_t *ctx, const char *src_id, uint32_t enterprise_number, const char *dst_locator);
 dpl_status_t dpl_link(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
-dpl_status_t dpl_mkdent(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
+dpl_status_t dpl_mkdent(dpl_ctx_t *ctx, const char *src_id, uint32_t enterprise_number, const char *dst_locator);
+dpl_status_t dpl_rmdent(dpl_ctx_t *ctx, const char *src_name, const char *dst_locator);
 #endif

@@ -357,6 +357,7 @@ typedef enum
     DPL_COPY_DIRECTIVE_SYMLINK,
     DPL_COPY_DIRECTIVE_MOVE,
     DPL_COPY_DIRECTIVE_MKDENT,
+    DPL_COPY_DIRECTIVE_RMDENT,
   } dpl_copy_directive_t;
 
 typedef struct
@@ -418,7 +419,6 @@ typedef struct dpl_ctx
   unsigned int read_buf_size;
   char *encrypt_key;
   char *delim;               /*!< vdir delimiter */
-  int light_mode;            /*!< do not resolve pathes */
   int encode_slashes;        /*!< client wants slashes encoded */
   int keep_alive;            /*!< client supports keep-alive */
   int url_encoding;          /*!< some servers does not handle url encoding */

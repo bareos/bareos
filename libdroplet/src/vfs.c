@@ -38,12 +38,12 @@
 #define DPRINTF(fmt,...)
 
 static dpl_status_t
-vdir_lookup(dpl_ctx_t *ctx,
-            const char *bucket,
-            dpl_fqn_t parent_fqn,
-            const char *obj_name,
-            dpl_fqn_t *obj_fqnp,
-            dpl_ftype_t *obj_typep)
+dir_lookup(dpl_ctx_t *ctx,
+           const char *bucket,
+           dpl_fqn_t parent_fqn,
+           const char *obj_name,
+           dpl_fqn_t *obj_fqnp,
+           dpl_ftype_t *obj_typep)
 {
   int ret, ret2;
   dpl_vec_t *files = NULL;
@@ -249,66 +249,10 @@ vdir_lookup(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-vdir_mkgen(dpl_ctx_t *ctx,
-           const char *bucket,
-           dpl_fqn_t parent_fqn,
-           const char *obj_name,
-           dpl_ftype_t object_type,
-           const char *delim,
-           dpl_dict_t *metadata,
-           dpl_sysmd_t *sysmd)
-{
-  int ret, ret2;
-  char resource[DPL_MAXPATHLEN];
-
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "mkdir bucket=%s parent_fqn=%s name=%s", bucket, parent_fqn.path, obj_name);
-
-  snprintf(resource, sizeof (resource), "%s%s%s", parent_fqn.path, obj_name, delim);
-
-  ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, object_type, NULL, NULL, metadata, sysmd, NULL, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
-
-  return ret;
-}
-
-static dpl_status_t
-vdir_mkdir(dpl_ctx_t *ctx,
-           const char *bucket,
-           dpl_fqn_t parent_fqn,
-           const char *obj_name,
-           dpl_dict_t *metadata,
-           dpl_sysmd_t *sysmd)
-{
-  return vdir_mkgen(ctx, bucket, parent_fqn, obj_name, DPL_FTYPE_DIR, ctx->delim, metadata, sysmd);
-}
-
-
-static dpl_status_t
-vdir_mknod(dpl_ctx_t *ctx,
-           const char *bucket,
-           dpl_fqn_t parent_fqn,
-           const char *obj_name,
-           dpl_dict_t *metadata,
-           dpl_sysmd_t *sysmd)
-{
-  return vdir_mkgen(ctx, bucket, parent_fqn, obj_name, DPL_FTYPE_REG, "", metadata, sysmd);
-}
-
-static dpl_status_t
-vdir_opendir(dpl_ctx_t *ctx,
-             const char *bucket,
-             dpl_fqn_t fqn,
-             void **dir_hdlp)
+dir_open(dpl_ctx_t *ctx,
+         const char *bucket,
+         dpl_fqn_t fqn,
+         void **dir_hdlp)
 {
   dpl_dir_t *dir;
   int ret, ret2;
@@ -365,8 +309,8 @@ vdir_opendir(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-vdir_readdir(void *dir_hdl,
-             dpl_dirent_t *dirent)
+dir_read(void *dir_hdl,
+         dpl_dirent_t *dirent)
 {
   dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
   char *name;
@@ -469,7 +413,7 @@ vdir_readdir(void *dir_hdl,
 }
 
 static int
-vdir_eof(void *dir_hdl)
+dir_eof(void *dir_hdl)
 {
   dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
 
@@ -478,7 +422,7 @@ vdir_eof(void *dir_hdl)
 }
 
 static void
-vdir_closedir(void *dir_hdl)
+dir_close(void *dir_hdl)
 {
   dpl_dir_t *dir = dir_hdl;
 
@@ -496,222 +440,43 @@ vdir_closedir(void *dir_hdl)
     }
 }
 
-static dpl_status_t
-vdir_count_entries(dpl_ctx_t *ctx,
-                   const char *bucket,
-                   dpl_fqn_t fqn,
-                   unsigned int *n_entriesp)
+static int
+is_rel_path(dpl_ctx_t *ctx,
+                 const char *path)
 {
-  void *dir_hdl = NULL;
-  int ret, ret2;
-  u_int n_entries = 0;
-  dpl_dirent_t dirent;
-
-  ret2 = vdir_opendir(ctx, bucket, fqn, &dir_hdl);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  while (1 != vdir_eof(dir_hdl))
-    {
-      ret2 = vdir_readdir(dir_hdl, &dirent);
-      if (DPL_SUCCESS != ret2)
-        {
-          if (DPL_ENOENT == ret2)
-            break ;
-          ret = ret2;
-          goto end;
-        }
-
-      if (strcmp(dirent.name, "."))
-        n_entries++;
-    }
-
-  if (NULL != n_entriesp)
-    *n_entriesp = n_entries;
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != dir_hdl)
-    vdir_closedir(dir_hdl);
-
-  return ret;
-}
-
-static dpl_status_t
-vdir_rmdir(dpl_ctx_t *ctx,
-           const char *bucket,
-           dpl_fqn_t parent_fqn,
-           const char *obj_name)
-{
-  u_int n_entries = 0;
-  dpl_fqn_t fqn;
-  int ret, ret2;
-  int obj_name_len = strlen(obj_name);
   int delim_len = strlen(ctx->delim);
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "rmdir bucket=%s parent_fqn=%s name=%s", bucket, parent_fqn.path, obj_name);
-
-  if (!strcmp(obj_name, "."))
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  fqn = parent_fqn;
-  //XXX check length
-  strcat(fqn.path, obj_name);
-  //append delim to path if not already
-  if (obj_name_len >= delim_len && strcmp(obj_name + obj_name_len - delim_len, ctx->delim))
-    strcat(fqn.path, ctx->delim);
-
-  ret2 = vdir_count_entries(ctx, bucket, fqn, &n_entries);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  //printf("n_entries=%d\n", n_entries);
-
-  if (0 != n_entries)
-    {
-      ret = DPL_ENOTEMPTY;
-      goto end;
-    }
-
-  ret2 = dpl_delete(ctx, bucket, fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
-
-  return ret;
+  //absolute path
+  if (!strncmp(path, ctx->delim, delim_len))
+    return 0;
+  return 1;
 }
 
-/*
- * path based routines
- */
-
-dpl_status_t
-dpl_iname(dpl_ctx_t *ctx,
-          const char *bucket,
-          dpl_fqn_t fqn,
-          char *path,
-          unsigned int path_len)
-{
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "iname bucket=%s fqn=%s", bucket, fqn.path);
-
-  return DPL_FAILURE;
-}
-
-dpl_status_t
-dpl_namei_ex(dpl_ctx_t *ctx,
-             int light_mode,
-             const char *path,
-             const char *bucket,
-             dpl_fqn_t fqn,
-             dpl_fqn_t *parent_fqnp,
-             dpl_fqn_t *obj_fqnp,
-             dpl_ftype_t *obj_typep)
+static dpl_status_t
+make_abs_path(dpl_ctx_t *ctx,
+              const char *bucket,
+              const char *path,
+              dpl_fqn_t fqn,
+              dpl_fqn_t *obj_fqnp)
 {
   const char *p1, *p2;
   char name[DPL_MAXNAMLEN];
   int namelen;
-  int ret;
+  dpl_status_t ret, ret2;
   dpl_fqn_t parent_fqn, obj_fqn;
-  dpl_ftype_t obj_type;
   int delim_len = strlen(ctx->delim);
+  dpl_ftype_t obj_type;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "namei path=%s bucket=%s fqn=%s", path, bucket, fqn.path);
 
+  if (!is_rel_path(ctx, path))
+    return DPL_EINVAL;
+
+  obj_fqn.path[0] = 0;
+
   p1 = path;
 
-  if (!strcmp(p1, ctx->delim))
-    {
-      if (NULL != parent_fqnp)
-        *parent_fqnp = DPL_ROOT_FQN;
-      if (NULL != obj_fqnp)
-        *obj_fqnp = DPL_ROOT_FQN;
-      if (NULL != obj_typep)
-        *obj_typep = DPL_FTYPE_DIR;
-      return DPL_SUCCESS;
-    }
-
-  //absolute path
-  if (!strncmp(p1, ctx->delim, delim_len))
-    {
-      if (light_mode)
-        {
-          char save_path[DPL_MAXPATHLEN];
-          int len;
-          char *p;
-
-          len = strlen(path);
-          strcpy(save_path, path); //XXX check length
-
-          //dont try to resolve path
-          if (NULL != obj_fqnp)
-            strcpy(obj_fqnp->path, save_path); //XXX check length
-
-          obj_type = DPL_FTYPE_REG; //default
-
-          if (len > delim_len)
-            {
-              p = dpl_strrstr(save_path, ctx->delim);
-              if (NULL == p)
-                goto fallback;
-
-              //last bytes are delim
-              if (!strcmp(p, ctx->delim))
-                obj_type = DPL_FTYPE_DIR;
-              else
-                obj_type = DPL_FTYPE_REG;
-              
-              *p = 0;
-
-              //again for parent
-              p = dpl_strrstr(save_path, ctx->delim);
-              if (NULL == p)
-                goto fallback;
-
-              *p = 0;
-            }
-          else
-            {
-            fallback:
-              save_path[0] = 0;
-            }
-
-          if (save_path[0] == 0)
-            strcpy(save_path, ctx->delim);
-
-          if (NULL != parent_fqnp)
-            strcpy(parent_fqnp->path, save_path); //XXX check length
-
-          if (NULL != obj_typep)
-            *obj_typep = obj_type;
-          return DPL_SUCCESS;
-        }
-
-      parent_fqn = DPL_ROOT_FQN;
-      p1 += delim_len;
-    }
-  else
-    {
-      parent_fqn = fqn;
-    }
+  parent_fqn = fqn;
 
   while (1)
     {
@@ -727,7 +492,10 @@ dpl_namei_ex(dpl_ctx_t *ctx,
         }
 
       if (namelen >= DPL_MAXNAMLEN)
-        return DPL_ENAMETOOLONG;
+        {
+          ret = DPL_ENAMETOOLONG;
+          goto end;
+        }
 
       memcpy(name, p1, namelen);
       name[namelen] = 0;
@@ -736,33 +504,40 @@ dpl_namei_ex(dpl_ctx_t *ctx,
 
       if (!strcmp(name, ""))
         {
+          //this is a dir terminator
           obj_fqn = parent_fqn;
-          obj_type = DPL_FTYPE_DIR;
         }
       else
         {
-          ret = vdir_lookup(ctx, bucket, parent_fqn, name, &obj_fqn, &obj_type);
-          if (DPL_SUCCESS != ret)
-            return ret;
+          ret2 = dir_lookup(ctx, bucket, parent_fqn, name, &obj_fqn, &obj_type);
+          if (DPL_SUCCESS != ret2)
+            {
+              //make a fake path
+
+              obj_fqn.path[0] = 0;
+              strcat(obj_fqn.path, parent_fqn.path); //XXX
+              strcat(obj_fqn.path, ctx->delim); //XXX
+              strcat(obj_fqn.path, name); //XXX
+              
+              ret = DPL_SUCCESS;
+              goto end;
+            }
         }
 
       DPRINTF("p2='%s'\n", p2);
 
       if (NULL == p2)
         {
-          if (NULL != parent_fqnp)
-            *parent_fqnp = parent_fqn;
-          if (NULL != obj_fqnp)
-            *obj_fqnp = obj_fqn;
-          if (NULL != obj_typep)
-            *obj_typep = obj_type;
-
-          return DPL_SUCCESS;
+          ret = DPL_SUCCESS;
+          goto end;
         }
       else
         {
           if (DPL_FTYPE_DIR != obj_type)
-            return DPL_ENOTDIR;
+            {
+              ret = DPL_ENOTDIR;
+              goto end;
+            }
 
           parent_fqn = obj_fqn;
           p1 = p2;
@@ -771,20 +546,38 @@ dpl_namei_ex(dpl_ctx_t *ctx,
         }
     }
 
-  return DPL_FAILURE;
+  ret = DPL_FAILURE;
+  
+ end:
+
+  if (DPL_SUCCESS == ret)
+    {
+      if (NULL != obj_fqnp)
+        *obj_fqnp = obj_fqn;
+    }
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d obj_fqn=%s", ret, obj_fqn.path);
+
+  return ret;
 }
 
-dpl_status_t
-dpl_namei(dpl_ctx_t *ctx,
-          const char *path,
-          const char *bucket,
-          dpl_fqn_t fqn,
-          dpl_fqn_t *parent_fqnp,
-          dpl_fqn_t *obj_fqnp,
-          dpl_ftype_t *obj_typep)
+static const char *
+obj_type_ext(dpl_ftype_t type)
 {
-  return dpl_namei_ex(ctx, ctx->light_mode, path, bucket, fqn, parent_fqnp, obj_fqnp, obj_typep);
+  switch (type)
+    {
+    case DPL_FTYPE_DIR:
+      return "/";
+    default:
+      return "";
+    }
+
+  return "";
 }
+
+/*
+ * path based routines
+ */
 
 dpl_fqn_t
 dpl_cwd(dpl_ctx_t *ctx,
@@ -823,7 +616,6 @@ dpl_opendir(dpl_ctx_t *ctx,
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  dpl_ftype_t obj_type;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
@@ -862,24 +654,23 @@ dpl_opendir(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  cur_fqn = dpl_cwd(ctx, bucket);
-
-  ret2 = dpl_namei(ctx, path, bucket, cur_fqn, NULL, &obj_fqn, &obj_type);
-  if (0 != ret2)
+  if (is_rel_path(ctx, path))
     {
-      DPLERR(0, "path resolve failed %s", path);
-      ret = ret2;
-      goto end;
+      cur_fqn = dpl_cwd(ctx, bucket);
+      
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (0 != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
     }
 
-  if (DPL_FTYPE_REG == obj_type)
-    {
-      DPLERR(0, "cannot list a file");
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  ret2 = vdir_opendir(ctx, bucket, obj_fqn, dir_hdlp);
+  ret2 = dir_open(ctx, bucket, obj_fqn, dir_hdlp);
   if (DPL_SUCCESS != ret2)
     {
       DPLERR(0, "unable to open %s:%s", bucket, obj_fqn.path);
@@ -906,19 +697,19 @@ dpl_status_t
 dpl_readdir(void *dir_hdl,
             dpl_dirent_t *dirent)
 {
-  return vdir_readdir(dir_hdl, dirent);
+  return dir_read(dir_hdl, dirent);
 }
 
 int
 dpl_eof(void *dir_hdl)
 {
-  return vdir_eof(dir_hdl);
+  return dir_eof(dir_hdl);
 }
 
 void
 dpl_closedir(void *dir_hdl)
 {
-  vdir_closedir(dir_hdl);
+  dir_close(dir_hdl);
 }
 
 dpl_status_t
@@ -927,12 +718,12 @@ dpl_chdir(dpl_ctx_t *ctx,
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  dpl_ftype_t obj_type;
   char *nlocator = NULL;
   dpl_fqn_t cur_fqn;
   char *nbucket;
   char *path;
   char *bucket = NULL;
+  dpl_sysmd_t sysmd;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "chdir locator=%s", locator);
 
@@ -967,20 +758,39 @@ dpl_chdir(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  cur_fqn = dpl_cwd(ctx, bucket);
-
-  ret2 = dpl_namei(ctx, path, bucket, cur_fqn, NULL, &obj_fqn, &obj_type);
-  if (0 != ret2)
+  if (is_rel_path(ctx, path))
     {
-      DPLERR(0, "path resolve failed %s: %s (%d)", path, dpl_status_str(ret2), ret2);
+      cur_fqn = dpl_cwd(ctx, bucket);
+      
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (0 != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
+    }
+
+  //recheck obj_type
+  ret2 = dpl_getattr(ctx, path, NULL, &sysmd);
+  if (DPL_SUCCESS != ret2)
+    {
       ret = ret2;
       goto end;
     }
 
-  if (DPL_FTYPE_DIR != obj_type)
+  if (!(sysmd.mask & DPL_SYSMD_MASK_FTYPE))
     {
-      DPLERR(0, "not a directory");
-      ret = DPL_EINVAL;
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  if (sysmd.ftype != DPL_FTYPE_DIR)
+    {
+      ret = DPL_ENOTDIR;
       goto end;
     }
 
@@ -1021,254 +831,14 @@ dpl_chdir(dpl_ctx_t *ctx,
   return ret;
 }
 
-typedef dpl_status_t (*dpl_mkgen_func_t)(dpl_ctx_t *, const char *, dpl_fqn_t, const char *, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
-
-static dpl_status_t
-dpl_mkgen(dpl_ctx_t *ctx,
-          int light_mode,
-          const char *locator,
-          dpl_mkgen_func_t cb,
-          dpl_dict_t *metadata,
-          dpl_sysmd_t *sysmd)
-{
-  char *dir_name = NULL;
-  dpl_fqn_t parent_fqn;
-  int ret, ret2;
-  char *nlocator = NULL;
-  int delim_len = strlen(ctx->delim);
-  char *bucket = NULL;
-  char *path;
-  dpl_fqn_t cur_fqn;
-
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "mkdir locator=%s", locator);
-
-  nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
-
-  cur_fqn = dpl_cwd(ctx, bucket);
-
-  ret2 = dpl_namei_ex(ctx, light_mode, path, bucket, cur_fqn, &parent_fqn, NULL, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      if (DPL_ENOENT == ret2)
-        {
-          dir_name = dpl_strrstr(path, ctx->delim);
-          if (NULL != dir_name)
-            {
-              *dir_name = 0;
-              dir_name += delim_len;
-
-              //fetch parent directory
-              ret2 = dpl_namei_ex(ctx, light_mode, !strcmp(path, "") ? ctx->delim : path, bucket, cur_fqn, NULL, &parent_fqn, NULL);
-              if (DPL_SUCCESS != ret2)
-                {
-                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", path, dpl_status_str(ret2));
-                  ret = ret2;
-                  goto end;
-                }
-            }
-          else
-            {
-              parent_fqn = cur_fqn;
-              dir_name = path;
-            }
-        }
-      else
-        {
-          DPLERR(0, "path resolve failed %s: %s (%d)\n", path, dpl_status_str(ret2), ret2);
-          ret = ret2;
-          goto end;
-        }
-    }
-  else
-    {
-      ret = DPL_EEXIST;
-      goto end;
-    }
-
-  ret2 = cb(ctx, bucket, parent_fqn, dir_name, metadata, sysmd);
-  if (0 != ret2)
-    {
-      DPLERR(0, "mkdir failed");
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != bucket)
-    free(bucket);
-
-  if (NULL != nlocator)
-    free(nlocator);
-
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_mkdir(dpl_ctx_t *ctx,
-          const char *locator)
-{
-  dpl_sysmd_t sysmd;
-
-  memset(&sysmd, 0, sizeof (sysmd));
-
-  return dpl_mkgen(ctx, ctx->light_mode, locator, vdir_mkdir, NULL, &sysmd);
-}
-
-dpl_status_t
-dpl_mkdir_ex(dpl_ctx_t *ctx,
-             const char *locator,
-             int light_mode,
-             dpl_dict_t *metadata,
-             dpl_sysmd_t *sysmd)
-{
-  return dpl_mkgen(ctx, light_mode, locator, vdir_mkdir, metadata, sysmd);
-}
-
-dpl_status_t
-dpl_mknod(dpl_ctx_t *ctx,
-          const char *locator)
-{
-  dpl_sysmd_t sysmd;
-
-  memset(&sysmd, 0, sizeof (sysmd));
-
-  return dpl_mkgen(ctx, ctx->light_mode, locator, vdir_mknod, NULL, &sysmd);
-}
-
-dpl_status_t
-dpl_rmdir_ex(dpl_ctx_t *ctx,
-             const char *locator,
-             int light_mode)
-{
-  int ret, ret2;
-  char *dir_name = NULL;
-  dpl_fqn_t parent_fqn;
-  int delim_len = strlen(ctx->delim);
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
-  dpl_fqn_t cur_fqn;
-
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "rmdir locator=%s", locator);
-
-  nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
-
-  cur_fqn = dpl_cwd(ctx, bucket);
-
-  dir_name = dpl_strrstr(path, ctx->delim);
-  if (NULL != dir_name)
-    dir_name += delim_len;
-  else
-    dir_name = path;
-
-  ret2 = dpl_namei_ex(ctx, light_mode, path, bucket, cur_fqn, &parent_fqn, NULL, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPLERR(0, "path resolved failed");
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = vdir_rmdir(ctx, bucket, parent_fqn, dir_name);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPLERR(0, "rmdir failed");
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != bucket)
-    free(bucket);
-
-  if (NULL != nlocator)
-    free(nlocator);
-
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_rmdir(dpl_ctx_t *ctx,
-          const char *locator)
-{
-  return dpl_rmdir_ex(ctx, locator, ctx->light_mode);
-}
-
 /* 
  * vfile
  */
 
 dpl_status_t
 dpl_close_ex(dpl_vfile_t *vfile,
-             char **resource_idp)
+             dpl_sysmd_t *returned_sysmdp,
+             char **locationp)
 {
   int ret, ret2;
   dpl_dict_t *headers_returned = NULL;
@@ -1368,7 +938,7 @@ dpl_close_ex(dpl_vfile_t *vfile,
 dpl_status_t
 dpl_close(dpl_vfile_t *vfile)
 {
-  return dpl_close_ex(vfile, NULL);
+  return dpl_close_ex(vfile, NULL, NULL);
 }
 
 static dpl_status_t
@@ -1427,7 +997,7 @@ encrypt_init(dpl_vfile_t *vfile,
  * 
  * @param ctx 
  * @param locator 
- * @param object_type 
+ * @param obj_type 
  * @param flags DPL_VFILE_FLAG_CREAT create file if it doesnt exist
  * @param flags DPL_VFILE_FLAG_EXCL exclusive creation
  * @param flags DPL_VFILE_FLAG_MD5 check MD5
@@ -1449,7 +1019,7 @@ encrypt_init(dpl_vfile_t *vfile,
 dpl_status_t
 dpl_openwrite(dpl_ctx_t *ctx,
               const char *locator,
-              dpl_ftype_t object_type,
+              dpl_ftype_t obj_type,
               dpl_vfile_flag_t flags,
               dpl_range_t *range,
               dpl_dict_t *metadata,
@@ -1460,12 +1030,10 @@ dpl_openwrite(dpl_ctx_t *ctx,
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
-  dpl_fqn_t parent_fqn, obj_fqn;
-  dpl_ftype_t obj_type;
+  dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
-  int delim_len = strlen(ctx->delim);
   dpl_fqn_t cur_fqn;
   int own_metadata = 0;
 
@@ -1508,8 +1076,6 @@ dpl_openwrite(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  cur_fqn = dpl_cwd(ctx, bucket);
-
   vfile = malloc(sizeof (*vfile));
   if (NULL == vfile)
     {
@@ -1522,63 +1088,20 @@ dpl_openwrite(dpl_ctx_t *ctx,
   vfile->ctx = ctx;
   vfile->flags = flags;
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_fqn, &parent_fqn, &obj_fqn, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (is_rel_path(ctx, path))
     {
-      if (DPL_ENOENT == ret2)
+      cur_fqn = dpl_cwd(ctx, bucket);
+      
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (DPL_SUCCESS != ret2)
         {
-          char *remote_name;
-          
-          if (!(vfile->flags & DPL_VFILE_FLAG_CREAT))
-            {
-              ret = DPL_FAILURE;
-              goto end;
-            }
-          
-          remote_name = dpl_strrstr(path, ctx->delim);
-          if (NULL != remote_name)
-            {
-              remote_name += delim_len;
-              *remote_name = 0;
-              
-              //fetch parent directory
-              ret2 = dpl_namei(ctx, !strcmp(path, "") ? ctx->delim : path, bucket, cur_fqn, NULL, &parent_fqn, NULL);
-              if (DPL_SUCCESS != ret2)
-                {
-                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", path, dpl_status_str(ret2));
-                  ret = ret2;
-                  goto end;
-                }
-            }
-          else
-            {
-              parent_fqn = cur_fqn;
-              remote_name = path;
-            }
-          
-          // If the remote_name string length is 0,
-          // that means that the parent fqn was searched with dpl_namei
-          // and that we should concat the rest of the locator instead.
-          obj_fqn = parent_fqn;
-          if (remote_name[0] == '\0')
-            strcat(obj_fqn.path, &locator[path - nlocator + strlen(path)]);
-          else
-            strcat(obj_fqn.path, remote_name); //XXX check length
-          obj_type = object_type;
-        }
-      else
-        {
-          ret = DPL_FAILURE;
+          ret = ret2;
           goto end;
         }
     }
   else
     {
-      if (vfile->flags & DPL_VFILE_FLAG_EXCL)
-        {
-          ret = DPL_EEXIST;
-          goto end;
-        }
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
     }
 
   if (vfile->flags & DPL_VFILE_FLAG_MD5)
@@ -1972,8 +1495,7 @@ dpl_openread(dpl_ctx_t *ctx,
 {
   dpl_vfile_t *vfile = NULL;
   int ret, ret2;
-  dpl_fqn_t parent_fqn, obj_fqn;
-  dpl_ftype_t obj_type;
+  dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
@@ -2020,8 +1542,6 @@ dpl_openread(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  cur_fqn = dpl_cwd(ctx, bucket);
-
   vfile = malloc(sizeof (*vfile));
   if (NULL == vfile)
     {
@@ -2036,11 +1556,20 @@ dpl_openread(dpl_ctx_t *ctx,
   vfile->buffer_func = buffer_func;
   vfile->cb_arg = cb_arg;
 
-  ret2 = dpl_namei(ctx, path, bucket, cur_fqn, &parent_fqn, &obj_fqn, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (is_rel_path(ctx, path))
     {
-      ret = ret2;
-      goto end;
+      cur_fqn = dpl_cwd(ctx, bucket);
+
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
     }
 
   if (flags & DPL_VFILE_FLAG_ONESHOT)
@@ -2099,13 +1628,202 @@ dpl_openread(dpl_ctx_t *ctx,
   return ret;
 }
 
+static dpl_status_t
+dpl_mkobj(dpl_ctx_t *ctx,
+          const char *locator,
+          dpl_ftype_t obj_type,
+          dpl_dict_t *metadata,
+          dpl_sysmd_t *sysmd)
+{
+  dpl_fqn_t obj_fqn;
+  int ret, ret2;
+  char *nlocator = NULL;
+  char *bucket = NULL;
+  char *path;
+  dpl_fqn_t cur_fqn;
+  char resource[DPL_MAXPATHLEN];
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "mkobj locator=%s", locator);
+
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
+    }
+  else
+    {
+      dpl_ctx_lock(ctx);
+      bucket = strdup(ctx->cur_bucket);
+      dpl_ctx_unlock(ctx);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      path = nlocator;
+    }
+
+  if (is_rel_path(ctx, path))
+    {
+      cur_fqn = dpl_cwd(ctx, bucket);
+      
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", obj_fqn.path, obj_type_ext(obj_type));
+  
+  ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, obj_type, NULL, NULL, metadata, sysmd, NULL, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_mkdir(dpl_ctx_t *ctx,
+          const char *locator,
+          dpl_dict_t *metadata,
+          dpl_sysmd_t *sysmd)
+{
+  return dpl_mkobj(ctx, locator, DPL_FTYPE_DIR, metadata, sysmd);
+}
+
+dpl_status_t
+dpl_mknod(dpl_ctx_t *ctx,
+          const char *locator,
+          dpl_dict_t *metadata,
+          dpl_sysmd_t *sysmd)
+{
+  return dpl_mkobj(ctx, locator, DPL_FTYPE_REG, metadata, sysmd);
+}
+
+dpl_status_t
+dpl_rmdir(dpl_ctx_t *ctx,
+          const char *locator)
+{
+  int ret, ret2;
+  char *dir_name = NULL;
+  dpl_fqn_t obj_fqn;
+  int delim_len = strlen(ctx->delim);
+  char *nlocator = NULL;
+  char *bucket = NULL;
+  char *path;
+  dpl_fqn_t cur_fqn;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "rmdir locator=%s", locator);
+
+  nlocator = strdup(locator);
+  if (NULL == nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (NULL != path)
+    {
+      *path++ = 0;
+      bucket = strdup(nlocator);
+      if (NULL == bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
+    }
+  else
+    {
+      dpl_ctx_lock(ctx);
+      bucket = strdup(ctx->cur_bucket);
+      dpl_ctx_unlock(ctx);
+      if (NULL == bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      path = nlocator;
+    }
+
+  dir_name = dpl_strrstr(path, ctx->delim);
+  if (NULL != dir_name)
+    dir_name += delim_len;
+  else
+    dir_name = path;
+
+  if (is_rel_path(ctx, path))
+    {
+      cur_fqn = dpl_cwd(ctx, bucket);
+
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
+    }
+  
+  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_DIR, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != bucket)
+    free(bucket);
+
+  if (NULL != nlocator)
+    free(nlocator);
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
+
+  return ret;
+}
+
 dpl_status_t
 dpl_unlink(dpl_ctx_t *ctx,
            const char *locator)
 {
   int ret, ret2;
-  dpl_fqn_t parent_fqn, obj_fqn;
-  dpl_ftype_t obj_type;
+  dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
@@ -2144,22 +1862,23 @@ dpl_unlink(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  cur_fqn = dpl_cwd(ctx, bucket);
-
-  ret2 = dpl_namei(ctx, path, bucket, cur_fqn, &parent_fqn, &obj_fqn, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (is_rel_path(ctx, path))
     {
-      ret = ret2;
-      goto end;
+      cur_fqn = dpl_cwd(ctx, bucket);
+
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
     }
 
-  if (DPL_FTYPE_REG != obj_type)
-    {
-      ret = DPL_EISDIR;
-      goto end;
-    }
-
-  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL);
+  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2188,8 +1907,7 @@ dpl_getattr(dpl_ctx_t *ctx,
             dpl_sysmd_t *sysmdp)
 {
   int ret, ret2;
-  dpl_fqn_t parent_fqn, obj_fqn;
-  dpl_ftype_t obj_type;
+  dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
@@ -2228,13 +1946,20 @@ dpl_getattr(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  cur_fqn = dpl_cwd(ctx, bucket);
-
-  ret2 = dpl_namei(ctx, path, bucket, cur_fqn, &parent_fqn, &obj_fqn, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (is_rel_path(ctx, path))
     {
-      ret = ret2;
-      goto end;
+      cur_fqn = dpl_cwd(ctx, bucket);
+
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
     }
 
   ret2 = dpl_head(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL, metadatap, sysmdp);
@@ -2265,8 +1990,7 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
                 dpl_dict_t **metadatap)
 {
   int ret, ret2;
-  dpl_fqn_t parent_fqn, obj_fqn;
-  dpl_ftype_t obj_type;
+  dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
@@ -2305,13 +2029,20 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  cur_fqn = dpl_cwd(ctx, bucket);
-
-  ret2 = dpl_namei(ctx, path, bucket, cur_fqn, &parent_fqn, &obj_fqn, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (is_rel_path(ctx, path))
     {
-      ret = ret2;
-      goto end;
+      cur_fqn = dpl_cwd(ctx, bucket);
+
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
     }
 
   ret2 = dpl_head_raw(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL, metadatap);
@@ -2343,8 +2074,7 @@ dpl_setattr(dpl_ctx_t *ctx,
             dpl_sysmd_t *sysmd)
 {
   int ret, ret2;
-  dpl_fqn_t parent_fqn, obj_fqn;
-  dpl_ftype_t obj_type;
+  dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
@@ -2383,13 +2113,20 @@ dpl_setattr(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  cur_fqn = dpl_cwd(ctx, bucket);
-
-  ret2 = dpl_namei(ctx, path, bucket, cur_fqn, &parent_fqn, &obj_fqn, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (is_rel_path(ctx, path))
     {
-      ret = ret2;
-      goto end;
+      cur_fqn = dpl_cwd(ctx, bucket);
+
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
     }
 
   ret2 = dpl_copy(ctx, bucket, obj_fqn.path, NULL, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_METADATA_REPLACE, metadata, sysmd, NULL);
@@ -2426,15 +2163,11 @@ copy_path_to_path(dpl_ctx_t *ctx,
   char *src_path;
   dpl_fqn_t src_cur_fqn;
   dpl_fqn_t src_obj_fqn;
-  dpl_ftype_t src_obj_type;
   char *dst_nlocator = NULL;
   char *dst_bucket = NULL;
   char *dst_path;
   dpl_fqn_t dst_cur_fqn;
   dpl_fqn_t dst_obj_fqn;
-  dpl_ftype_t dst_obj_type;
-  int delim_len = strlen(ctx->delim);
-  dpl_fqn_t parent_fqn;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_path_to_path src_locator=%s dst_locator=%s", src_locator, dst_locator);
 
@@ -2469,8 +2202,6 @@ copy_path_to_path(dpl_ctx_t *ctx,
       src_path = src_nlocator;
     }
 
-  src_cur_fqn = dpl_cwd(ctx, src_bucket);
-
   dst_nlocator = strdup(dst_locator);
   if (NULL == dst_nlocator)
     {
@@ -2502,48 +2233,36 @@ copy_path_to_path(dpl_ctx_t *ctx,
       dst_path = dst_nlocator;
     }
 
-  dst_cur_fqn = dpl_cwd(ctx, dst_bucket);
-
-  ret2 = dpl_namei(ctx, src_path, src_bucket, src_cur_fqn, NULL, &src_obj_fqn, &src_obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (is_rel_path(ctx, src_path))
     {
-      DPLERR(0, "namei failed %s (%d)\n", dpl_status_str(ret2), ret2);
-      ret = ret2;
-      goto end;
+      src_cur_fqn = dpl_cwd(ctx, src_bucket);
+      
+      ret2 = make_abs_path(ctx, src_bucket, src_path, src_cur_fqn, &src_obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(src_obj_fqn.path, src_path + strlen(ctx->delim)); //XXX
     }
 
-  ret2 = dpl_namei(ctx, dst_path, dst_bucket, dst_cur_fqn, NULL, &dst_obj_fqn, &dst_obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (is_rel_path(ctx, dst_path))
     {
-      if (DPL_ENOENT == ret2)
+      dst_cur_fqn = dpl_cwd(ctx, dst_bucket);
+      
+      ret2 = make_abs_path(ctx, dst_bucket, dst_path, dst_cur_fqn, &dst_obj_fqn);
+      if (DPL_SUCCESS != ret2)
         {
-          char *remote_name;
-          
-          remote_name = dpl_strrstr(dst_path, ctx->delim);
-          if (NULL != remote_name)
-            {
-              *remote_name = 0;
-              remote_name += delim_len;
-              
-              //fetch parent directory
-              ret2 = dpl_namei(ctx, !strcmp(dst_path, "") ? ctx->delim : dst_path, dst_bucket, dst_cur_fqn, NULL, &parent_fqn, NULL);
-              if (DPL_SUCCESS != ret2)
-                {
-                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", dst_path, dpl_status_str(ret2));
-                  ret = ret2;
-                  goto end;
-                }
-            }
-          else
-            {
-              parent_fqn = dst_cur_fqn;
-              remote_name = dst_path;
-            }
-          
-          dst_obj_fqn = parent_fqn;
-          strcat(dst_obj_fqn.path, remote_name); //XXX check length
-          dst_obj_type = DPL_FTYPE_REG;
+          ret = ret2;
+          goto end;
         }
+    }
+  else
+    {
+      strcpy(dst_obj_fqn.path, dst_path + strlen(ctx->delim)); //XXX
     }
 
   ret2 = dpl_copy(ctx, src_bucket, src_obj_fqn.path, NULL, dst_bucket, dst_obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
@@ -2587,9 +2306,6 @@ copy_id_to_path(dpl_ctx_t *ctx,
   char *dst_path;
   dpl_fqn_t dst_cur_fqn;
   dpl_fqn_t dst_obj_fqn;
-  dpl_ftype_t dst_obj_type;
-  int delim_len = strlen(ctx->delim);
-  dpl_fqn_t parent_fqn;
   char *native_id = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_id_to_path src_id=%s dst_locator=%s", src_id, dst_locator);
@@ -2638,40 +2354,20 @@ copy_id_to_path(dpl_ctx_t *ctx,
       dst_path = dst_nlocator;
     }
 
-  dst_cur_fqn = dpl_cwd(ctx, dst_bucket);
-
-  ret2 = dpl_namei(ctx, dst_path, dst_bucket, dst_cur_fqn, NULL, &dst_obj_fqn, &dst_obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (is_rel_path(ctx, dst_path))
     {
-      if (DPL_ENOENT == ret2)
+      dst_cur_fqn = dpl_cwd(ctx, dst_bucket);
+      
+      ret2 = make_abs_path(ctx, dst_bucket, dst_path, dst_cur_fqn, &dst_obj_fqn);
+      if (DPL_SUCCESS != ret2)
         {
-          char *remote_name;
-          
-          remote_name = dpl_strrstr(dst_path, ctx->delim);
-          if (NULL != remote_name)
-            {
-              *remote_name = 0;
-              remote_name += delim_len;
-              
-              //fetch parent directory
-              ret2 = dpl_namei(ctx, !strcmp(dst_path, "") ? ctx->delim : dst_path, dst_bucket, dst_cur_fqn, NULL, &parent_fqn, NULL);
-              if (DPL_SUCCESS != ret2)
-                {
-                  DPLERR(0, "dst parent dir resolve failed %s: %s\n", dst_path, dpl_status_str(ret2));
-                  ret = ret2;
-                  goto end;
-                }
-            }
-          else
-            {
-              parent_fqn = dst_cur_fqn;
-              remote_name = dst_path;
-            }
-          
-          dst_obj_fqn = parent_fqn;
-          strcat(dst_obj_fqn.path, remote_name); //XXX check length
-          dst_obj_type = DPL_FTYPE_REG;
+          ret = ret2;
+          goto end;
         }
+    }
+  else
+    {
+      strcpy(dst_obj_fqn.path, dst_path + strlen(ctx->delim)); //XXX
     }
 
   ret2 = dpl_copy(ctx, dst_bucket, native_id, NULL, dst_bucket, dst_obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
@@ -2699,41 +2395,62 @@ copy_id_to_path(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
- * get the id from src_locator
- * 
- * @param ctx 
- * @param src_locator 
- * @param dst_locator 
- * @param copy_directive 
- * 
- * @return 
- */
 static dpl_status_t
-copy_path_to_path2(dpl_ctx_t *ctx,
-                   const char *src_locator,
-                   const char *dst_locator,
-                   dpl_copy_directive_t copy_directive)
+copy_name_to_path(dpl_ctx_t *ctx,
+                  const char *src_name,
+                  const char *dst_locator,
+                  dpl_copy_directive_t copy_directive)
 {
   int ret, ret2;
-  dpl_sysmd_t sysmd;
+  char *dst_nlocator = NULL;
+  char *dst_bucket = NULL;
+  char *dst_path;
+  dpl_fqn_t dst_cur_fqn;
+  dpl_fqn_t dst_obj_fqn;
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_path_to_path src_locator=%s dst_locator=%s", src_locator, dst_locator);
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_name_to_path src_id=%s dst_locator=%s", src_name, dst_locator);
 
-  ret2 = dpl_getattr(ctx, src_locator, NULL, &sysmd);
-  if (DPL_SUCCESS != ret2)
+  dst_path = index(dst_nlocator, ':');
+  if (NULL != dst_path)
     {
-      ret = ret2;
-      goto end;
+      *dst_path++ = 0;
+      dst_bucket = strdup(dst_nlocator);
+      if (NULL == dst_bucket)
+        {
+          ret = ENOMEM;
+          goto end;
+        }
+    }
+  else
+    {
+      dpl_ctx_lock(ctx);
+      dst_bucket = strdup(ctx->cur_bucket);
+      dpl_ctx_unlock(ctx);
+      if (NULL == dst_bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      dst_path = dst_nlocator;
     }
 
-  if (!((sysmd.mask & DPL_SYSMD_MASK_ID) && (sysmd.mask & DPL_SYSMD_MASK_ENTERPRISE_NUMBER)))
+  if (is_rel_path(ctx, dst_path))
     {
-      ret = DPL_EINVAL;
-      goto end;
+      dst_cur_fqn = dpl_cwd(ctx, dst_bucket);
+      
+      ret2 = make_abs_path(ctx, dst_bucket, dst_path, dst_cur_fqn, &dst_obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(dst_obj_fqn.path, dst_path + strlen(ctx->delim)); //XXX
     }
 
-  ret2 = copy_id_to_path(ctx, sysmd.id, sysmd.enterprise_number, dst_locator, copy_directive);
+  ret2 = dpl_copy(ctx, dst_bucket, src_name, NULL, dst_bucket, dst_obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2743,6 +2460,12 @@ copy_path_to_path2(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != dst_bucket)
+    free(dst_bucket);
+
+  if (NULL != dst_nlocator)
+    free(dst_nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
@@ -2783,37 +2506,28 @@ dpl_symlink(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_link_id(dpl_ctx_t *ctx,
-            const char *src_id,
-            uint32_t enterprise_number,
-            const char *dst_locator)
+dpl_link(dpl_ctx_t *ctx,
+         const char *src_locator,
+         const char *dst_locator)
 {
-  return copy_id_to_path(ctx, src_id, enterprise_number, dst_locator, DPL_COPY_DIRECTIVE_LINK);
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_LINK);
 }
 
 dpl_status_t
-dpl_mkdent_id(dpl_ctx_t *ctx,
-              const char *src_id,
-              uint32_t enterprise_number,
-              const char *dst_locator)
+dpl_mkdent(dpl_ctx_t *ctx,
+           const char *src_id,
+           uint32_t enterprise_number,
+           const char *dst_locator)
 {
   return copy_id_to_path(ctx, src_id, enterprise_number, dst_locator, DPL_COPY_DIRECTIVE_MKDENT);
 }
 
 dpl_status_t
-dpl_link(dpl_ctx_t *ctx,
-         const char *src_locator,
-         const char *dst_locator)
-{
-  return copy_path_to_path2(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_LINK);
-}
-
-dpl_status_t
-dpl_mkdent(dpl_ctx_t *ctx,
-           const char *src_locator,
+dpl_rmdent(dpl_ctx_t *ctx,
+           const char *src_name,
            const char *dst_locator)
 {
-  return copy_path_to_path2(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_MKDENT);
+  return copy_name_to_path(ctx, src_name, dst_locator, DPL_COPY_DIRECTIVE_RMDENT);
 }
 
 dpl_status_t
@@ -2826,7 +2540,6 @@ dpl_fgenurl(dpl_ctx_t *ctx,
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  dpl_ftype_t obj_type;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
@@ -2865,14 +2578,20 @@ dpl_fgenurl(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  cur_fqn = dpl_cwd(ctx, bucket);
-
-  ret2 = dpl_namei(ctx, path, bucket, cur_fqn, NULL, &obj_fqn, &obj_type);
-  if (DPL_SUCCESS != ret2)
+  if (is_rel_path(ctx, path))
     {
-      DPLERR(0, "namei failed %s (%d)\n", dpl_status_str(ret2), ret2);
-      ret = ret2;
-      goto end;
+      cur_fqn = dpl_cwd(ctx, bucket);
+
+      ret2 = make_abs_path(ctx, bucket, path, cur_fqn, &obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+  else
+    {
+      strcpy(obj_fqn.path, path + strlen(ctx->delim)); //XXX
     }
 
   ret2 = dpl_genurl(ctx, bucket, obj_fqn.path, NULL, NULL, expires, buf, len, lenp);

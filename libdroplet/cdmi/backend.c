@@ -381,12 +381,6 @@ cb_metadata_list(dpl_dict_var_t *var,
   struct mdparse_data *arg = (struct mdparse_data *) cb_arg;
   dpl_status_t ret, ret2;
 
-  if (DPL_VALUE_STRING != var->val->type)
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
   if (arg->metadatum_func)
     {
       dpl_value_t val;
@@ -401,7 +395,7 @@ cb_metadata_list(dpl_dict_var_t *var,
         }
     }
   
-  ret2 = dpl_dict_add(arg->metadata, var->key, var->val->string, 0);
+  ret2 = dpl_dict_add_value(arg->metadata, var->key, var->val, 0);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -477,22 +471,25 @@ dpl_cdmi_get_metadatum_from_value(const char *key,
               ret = DPL_EINVAL;
               goto end;
             }
-          
-          ret2 = dpl_cdmi_string_to_object_id(val->string, &obj_id);
-          if (DPL_SUCCESS != ret2)
+
+          if (strcmp(val->string, ""))
             {
-              ret = ret2;
-              goto end;
+              ret2 = dpl_cdmi_string_to_object_id(val->string, &obj_id);
+              if (DPL_SUCCESS != ret2)
+                {
+                  ret = ret2;
+                  goto end;
+                }
+              
+              ret2 = dpl_cdmi_opaque_to_string(&obj_id, sysmdp->parent_id);
+              if (DPL_SUCCESS != ret2)
+                {
+                  ret = ret2;
+                  goto end;
+                }
+              
+              sysmdp->mask |= DPL_SYSMD_MASK_PARENT_ID;
             }
-          
-          ret2 = dpl_cdmi_opaque_to_string(&obj_id, sysmdp->parent_id);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-          
-          sysmdp->mask |= DPL_SYSMD_MASK_PARENT_ID;
         }
       else if (!strcmp(key, "objectType"))
         {

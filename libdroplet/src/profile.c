@@ -335,19 +335,6 @@ conf_cb_func(void *cb_arg,
       if (NULL == ctx->encrypt_key)
         return -1;
     }
-  else if (!strcmp(var, "light_mode"))
-    {
-      //better to configure it from shell
-      if (!strcasecmp(value, "true"))
-        ctx->light_mode = 1;
-      else if (!strcasecmp(value, "false"))
-        ctx->light_mode = 0;
-      else
-        {
-          fprintf(stderr, "invalid value '%s'\n", var);
-          return -1;
-        }
-    }
   else if (!strcmp(var, "backend"))
     {
       ctx->backend = dpl_backend_find(value);
@@ -505,7 +492,6 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->delim = strdup(DPL_DEFAULT_DELIM);
   if (NULL == ctx->delim)
     return DPL_ENOMEM;
-  ctx->light_mode = 1;
   ctx->max_redirects = DPL_DEFAULT_MAX_REDIRECTS;
 
   return DPL_SUCCESS;

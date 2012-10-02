@@ -1454,6 +1454,7 @@ dpl_posix_copy(dpl_ctx_t *ctx,
         }
       break ;
     case DPL_COPY_DIRECTIVE_MKDENT:
+    case DPL_COPY_DIRECTIVE_RMDENT:
       ret = DPL_ENOTSUPP;
       goto end;
     }

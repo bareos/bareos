@@ -1647,7 +1647,9 @@ dpl_srws_copy(dpl_ctx_t *ctx,
     case DPL_COPY_DIRECTIVE_SYMLINK:
     case DPL_COPY_DIRECTIVE_MOVE:
     case DPL_COPY_DIRECTIVE_MKDENT:
-      break ;
+    case DPL_COPY_DIRECTIVE_RMDENT:
+      ret = DPL_ENOTSUPP;
+      goto end;
     }
 
   ret = DPL_SUCCESS;
