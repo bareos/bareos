@@ -627,7 +627,7 @@ dpl_dir_is_empty(dpl_ctx_t *ctx,
 
   if (objects->n_items || common_prefixes->n_items)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOTEMPTY;
       goto end;
     }
 
