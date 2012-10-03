@@ -1908,14 +1908,15 @@ dpl_getattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  /* if no sysmd.ftype is not set, do it! (s3 does not know the ftype) */
+  /* if sysmd.ftype is not set, do it! (s3 does not know the ftype) */
   if (sysmdp)
     {
       if (! (sysmdp->mask & DPL_SYSMD_MASK_FTYPE))
         {
           sysmdp->mask |= DPL_SYSMD_MASK_FTYPE;
+          size_t path_len = strlen(obj_fqn.path);
 
-          if (ctx->delimiter == obj_fqn.path[strlen(obj_fqn.path) - 1])
+          if (path_len > 1 && ctx->delimiter == obj_fqn.path[path_len - 1])
             sysmdp->ftype = DPL_FTYPE_DIR;
           else
             sysmdp->ftype = DPL_FTYPE_REG;
