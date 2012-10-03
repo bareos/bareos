@@ -389,6 +389,10 @@ conf_cb_func(void *cb_arg,
         }
       ctx->delimiter = value[0];
     }
+  else if (!strcmp(var, "enterprise_number"))
+    {
+      ctx->enterprise_number = strtoul(value, NULL, 0);
+    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);
@@ -490,6 +494,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->url_encoding = 1;
   ctx->delimiter = DPL_DEFAULT_DELIM;
   ctx->max_redirects = DPL_DEFAULT_MAX_REDIRECTS;
+  ctx->enterprise_number = DPL_DEFAULT_ENTERPRISE_NUMBER;
 
   return DPL_SUCCESS;
 }

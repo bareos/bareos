@@ -20,7 +20,6 @@ libdroplet_la_SOURCES = \
 	src/utils.c \
 	src/rest.c \
 	src/sysmd.c \
-	src/id.c \
 	src/task.c \
 	src/async.c \
 	src/getdate.y \
@@ -65,7 +64,6 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/backend.h \
 	include/droplet/rest.h \
 	include/droplet/sysmd.h \
-	include/droplet/id.h \
 	include/droplet/vfs.h \
 	include/droplet/task.h
 

@@ -62,7 +62,7 @@ dpl_status_t
 dpl_list_all_my_buckets(dpl_ctx_t *ctx,
                         dpl_vec_t **vecp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "list_all_my_buckets");
 
@@ -72,8 +72,15 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->list_all_my_buckets(ctx, vecp, NULL);
-
+  ret2 = ctx->backend->list_all_my_buckets(ctx, vecp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+  
  end:
   
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -105,7 +112,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
                 dpl_vec_t **objectsp, 
                 dpl_vec_t **common_prefixesp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "list_bucket bucket=%s prefix=%s delimiter=%s", bucket, prefix, delimiter);
 
@@ -115,7 +122,14 @@ dpl_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->list_bucket(ctx, bucket, prefix, delimiter, objectsp, common_prefixesp, NULL);
+  ret2 = ctx->backend->list_bucket(ctx, bucket, prefix, delimiter, objectsp, common_prefixesp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
 
  end:
   
@@ -144,7 +158,7 @@ dpl_make_bucket(dpl_ctx_t *ctx,
                 dpl_location_constraint_t location_constraint,
                 dpl_canned_acl_t canned_acl)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   dpl_sysmd_t sysmd;
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "makebucket bucket=%s", bucket);
@@ -160,8 +174,15 @@ dpl_make_bucket(dpl_ctx_t *ctx,
   sysmd.canned_acl = canned_acl;
   sysmd.location_constraint = location_constraint;
 
-  ret = ctx->backend->make_bucket(ctx, bucket, &sysmd, NULL);
+  ret2 = ctx->backend->make_bucket(ctx, bucket, &sysmd, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -173,11 +194,11 @@ dpl_make_bucket(dpl_ctx_t *ctx,
 }
 
 /**
- * delete a resource
+ * delete a path
  *
  * @param ctx the droplet context
  * @param bucket can be NULL
- * @param resource the resource
+ * @param path the path
  * @param subresource can be NULL
  *
  * @return DPL_SUCCESS
@@ -187,7 +208,7 @@ dpl_status_t
 dpl_delete_bucket(dpl_ctx_t *ctx,
                   const char *bucket)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   
   DPL_TRACE(ctx, DPL_TRACE_REST, "delete_bucket bucket=%s", bucket);
 
@@ -197,8 +218,15 @@ dpl_delete_bucket(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->delete_bucket(ctx, bucket, NULL);
+  ret2 = ctx->backend->delete_bucket(ctx, bucket, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -210,13 +238,13 @@ dpl_delete_bucket(dpl_ctx_t *ctx,
 }
 
 /** 
- * create or post data into a resource
+ * create or post data into a path
  *
  * @note this function is expected to return a newly created object
  * 
  * @param ctx the droplet context
  * @param bucket can be NULL
- * @param resource can be NULL
+ * @param path can be NULL
  * @param subresource can be NULL
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_REG create a file
@@ -226,7 +254,7 @@ dpl_delete_bucket(dpl_ctx_t *ctx,
  * @param data_len the data length
  * @param query_params can be NULL
  * @param returned_sysmdp the returned system metadata passed through stack
- * @param locationp the returned resource path
+ * @param locationp the returned path path
  * 
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
@@ -234,7 +262,7 @@ dpl_delete_bucket(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_post(dpl_ctx_t *ctx,
          const char *bucket,
-         const char *resource,
+         const char *path,
          const char *subresource,
          const dpl_option_t *option,
          dpl_ftype_t object_type,
@@ -246,9 +274,9 @@ dpl_post(dpl_ctx_t *ctx,
          dpl_sysmd_t *returned_sysmdp,
          char **locationp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "put bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "put bucket=%s path=%s subresource=%s", bucket, path, subresource);
 
   if (NULL == ctx->backend->post)
     {
@@ -256,8 +284,15 @@ dpl_post(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->post(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, locationp);
+  ret2 = ctx->backend->post(ctx, bucket, path, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, locationp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -269,11 +304,11 @@ dpl_post(dpl_ctx_t *ctx,
 }
 
 /** 
- * post a resource with bufferization enabled
+ * post a path with bufferization enabled
  * 
  * @param ctx the droplet context
  * @param bucket can be NULL
- * @param resource can be NULL
+ * @param path can be NULL
  * @param subresource can be NULL
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_REG create a file
@@ -289,7 +324,7 @@ dpl_post(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_post_buffered(dpl_ctx_t *ctx,
                   const char *bucket,
-                  const char *resource,
+                  const char *path,
                   const char *subresource,
                   const dpl_option_t *option,
                   dpl_ftype_t object_type,
@@ -299,9 +334,9 @@ dpl_post_buffered(dpl_ctx_t *ctx,
                   const dpl_dict_t *query_params,
                   dpl_conn_t **connp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "post bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "post bucket=%s path=%s subresource=%s", bucket, path, subresource);
 
   if (NULL == ctx->backend->post_buffered)
     {
@@ -309,8 +344,15 @@ dpl_post_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->post_buffered(ctx, bucket, resource, subresource, option, object_type, metadata, sysmd, data_len, query_params, connp, NULL);
+  ret2 = ctx->backend->post_buffered(ctx, bucket, path, subresource, option, object_type, metadata, sysmd, data_len, query_params, connp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -322,11 +364,11 @@ dpl_post_buffered(dpl_ctx_t *ctx,
 }
 
 /**
- * put a resource
+ * put a path
  *
  * @param ctx the droplet context
  * @param bucket optional
- * @param resource mandatory
+ * @param path mandatory
  * @param subresource can be NULL
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_REG create a file
@@ -345,7 +387,7 @@ dpl_post_buffered(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_put(dpl_ctx_t *ctx,
         const char *bucket,
-        const char *resource,
+        const char *path,
         const char *subresource,
         const dpl_option_t *option,
         dpl_ftype_t object_type,
@@ -356,9 +398,9 @@ dpl_put(dpl_ctx_t *ctx,
         const char *data_buf,
         unsigned int data_len)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "put bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "put bucket=%s path=%s subresource=%s", bucket, path, subresource);
 
   if (NULL == ctx->backend->put)
     {
@@ -366,8 +408,15 @@ dpl_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->put(ctx, bucket, resource, subresource, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL);
+  ret2 = ctx->backend->put(ctx, bucket, path, subresource, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -379,11 +428,11 @@ dpl_put(dpl_ctx_t *ctx,
 }
 
 /** 
- * put a resource with bufferization
+ * put a path with bufferization
  * 
  * @param ctx the droplet context
  * @param bucket the optional bucket
- * @param resource mandatory resource
+ * @param path mandatory path
  * @param subresource optional
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_REG create a file
@@ -400,7 +449,7 @@ dpl_put(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_put_buffered(dpl_ctx_t *ctx,
                  const char *bucket,
-                 const char *resource,
+                 const char *path,
                  const char *subresource,
                  const dpl_option_t *option,
                  dpl_ftype_t object_type,
@@ -411,9 +460,9 @@ dpl_put_buffered(dpl_ctx_t *ctx,
                  unsigned int data_len,
                  dpl_conn_t **connp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "put_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "put_buffered bucket=%s path=%s subresource=%s", bucket, path, subresource);
 
   if (NULL == ctx->backend->put_buffered)
     {
@@ -421,8 +470,15 @@ dpl_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret = ctx->backend->put_buffered(ctx, bucket, resource, subresource, option, object_type, condition, range, metadata, sysmd, data_len, connp, NULL);
+  ret2 = ctx->backend->put_buffered(ctx, bucket, path, subresource, option, object_type, condition, range, metadata, sysmd, data_len, connp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -434,14 +490,14 @@ dpl_put_buffered(dpl_ctx_t *ctx,
 }
 
 /** 
- * get a resource with range
+ * get a path with range
  * 
  * @param ctx the droplet context
  * @param bucket the optional bucket
- * @param resource the mandat resource
+ * @param path the mandat path
  * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
- * @param object_type DPL_FTYPE_ANY get any type of resource
+ * @param object_type DPL_FTYPE_ANY get any type of path
  * @param condition the optional condition
  * @param range the optional range
  * @param data_bufp the returned data buffer client shall free
@@ -451,12 +507,12 @@ dpl_put_buffered(dpl_ctx_t *ctx,
  * 
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
- * @return DPL_ENOENT resource does not exist
+ * @return DPL_ENOENT path does not exist
  */
 dpl_status_t
 dpl_get(dpl_ctx_t *ctx,
         const char *bucket,
-        const char *resource,
+        const char *path,
         const char *subresource,
         const dpl_option_t *option,
         dpl_ftype_t object_type,
@@ -467,10 +523,10 @@ dpl_get(dpl_ctx_t *ctx,
         dpl_dict_t **metadatap,
         dpl_sysmd_t *sysmdp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
   u_int data_len;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "get bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "get bucket=%s path=%s subresource=%s", bucket, path, subresource);
 
   if (NULL == ctx->backend->get)
     {
@@ -478,13 +534,17 @@ dpl_get(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get(ctx, bucket, resource, subresource, option, object_type, condition, range, data_bufp, &data_len, metadatap, sysmdp, NULL);
-  
-  if (DPL_SUCCESS == ret)
+  ret2 = ctx->backend->get(ctx, bucket, path, subresource, option, object_type, condition, range, data_bufp, &data_len, metadatap, sysmdp, NULL);
+  if (DPL_SUCCESS != ret2)
     {
-      if (NULL != data_lenp)
-        *data_lenp = data_len;
+      ret = ret2;
+      goto end;
     }
+  
+  if (NULL != data_lenp)
+    *data_lenp = data_len;
+
+  ret = DPL_SUCCESS;
 
  end:
 
@@ -501,10 +561,10 @@ dpl_get(dpl_ctx_t *ctx,
  * 
  * @param ctx the droplet context
  * @param bucket the optional bucket
- * @param resource the mandat resource
+ * @param path the mandat path
  * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
- * @param object_type DPL_FTYPE_ANY get any type of resource
+ * @param object_type DPL_FTYPE_ANY get any type of path
  * @param condition the optional condition
  * @param range the optional range
  * @param metadatum_func each time a metadata is discovered into the stream it is called back
@@ -519,7 +579,7 @@ dpl_get(dpl_ctx_t *ctx,
 dpl_status_t 
 dpl_get_buffered(dpl_ctx_t *ctx,
                  const char *bucket,
-                 const char *resource,
+                 const char *path,
                  const char *subresource, 
                  const dpl_option_t *option,
                  dpl_ftype_t object_type,
@@ -531,9 +591,9 @@ dpl_get_buffered(dpl_ctx_t *ctx,
                  dpl_buffer_func_t buffer_func,
                  void *cb_arg)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_ID, "get_buffered bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_ID, "get_buffered bucket=%s path=%s subresource=%s", bucket, path, subresource);
 
   if (NULL == ctx->backend->get_buffered)
     {
@@ -541,8 +601,15 @@ dpl_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->get_buffered(ctx, bucket, resource, subresource, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
+  ret2 = ctx->backend->get_buffered(ctx, bucket, path, subresource, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
@@ -558,22 +625,22 @@ dpl_get_buffered(dpl_ctx_t *ctx,
  * 
  * @param ctx the droplet context
  * @param bucket the optional bucket
- * @param resource the mandat resource
+ * @param path the mandat path
  * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
- * @param object_type DPL_FTYPE_ANY get any type of resource
+ * @param object_type DPL_FTYPE_ANY get any type of path
  * @param condition the optional condition
  * @param metadatap the returned user metadata client shall free
  * @param sysmdp the returned system metadata passed through stack
  * 
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
- * @return DPL_ENOENT resource does not exist
+ * @return DPL_ENOENT path does not exist
  */
 dpl_status_t
 dpl_head(dpl_ctx_t *ctx,
          const char *bucket,
-         const char *resource,
+         const char *path,
          const char *subresource,
          const dpl_option_t *option,
          dpl_ftype_t object_type,
@@ -581,9 +648,9 @@ dpl_head(dpl_ctx_t *ctx,
          dpl_dict_t **metadatap,
          dpl_sysmd_t *sysmdp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "head bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "head bucket=%s path=%s subresource=%s", bucket, path, subresource);
 
   if (NULL == ctx->backend->head)
     {
@@ -591,8 +658,15 @@ dpl_head(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head(ctx, bucket, resource, subresource, option, object_type, condition, metadatap, sysmdp, NULL);
+  ret2 = ctx->backend->head(ctx, bucket, path, subresource, option, object_type, condition, metadatap, sysmdp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -608,7 +682,7 @@ dpl_head(dpl_ctx_t *ctx,
  * 
  * @param ctx the droplet context
  * @param bucket the optional bucket
- * @param resource the mandat resource
+ * @param path the mandat path
  * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param condition the optional condition
@@ -621,16 +695,16 @@ dpl_head(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_head_raw(dpl_ctx_t *ctx,
              const char *bucket,
-             const char *resource,
+             const char *path,
              const char *subresource,
              const dpl_option_t *option,
              dpl_ftype_t object_type,
              const dpl_condition_t *condition,
              dpl_dict_t **metadatap)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "head_raw bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "head_raw bucket=%s path=%s subresource=%s", bucket, path, subresource);
 
   if (NULL == ctx->backend->head_raw)
     {
@@ -638,8 +712,15 @@ dpl_head_raw(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->head_raw(ctx, bucket, resource, subresource, option, object_type, condition, metadatap, NULL);
+  ret2 = ctx->backend->head_raw(ctx, bucket, path, subresource, option, object_type, condition, metadatap, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -651,31 +732,31 @@ dpl_head_raw(dpl_ctx_t *ctx,
 }
 
 /** 
- * delete a resource
+ * delete a path
  * 
  * @param ctx the droplet context
  * @param bucket the optional bucket
- * @param resource the mandat resource
+ * @param path the mandat path
  * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param condition the optional condition
  * 
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
- * @return DPL_ENOENT resource does not exist
+ * @return DPL_ENOENT path does not exist
  */
 dpl_status_t
 dpl_delete(dpl_ctx_t *ctx,
            const char *bucket,
-           const char *resource,
+           const char *path,
            const char *subresource,
            const dpl_option_t *option,
            dpl_ftype_t object_type,
            const dpl_condition_t *condition)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "delete bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "delete bucket=%s path=%s subresource=%s", bucket, path, subresource);
 
   if (NULL == ctx->backend->deletef)
     {
@@ -683,8 +764,15 @@ dpl_delete(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->deletef(ctx, bucket, resource, subresource, option, object_type, NULL);
+  ret2 = ctx->backend->deletef(ctx, bucket, path, subresource, option, object_type, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -696,11 +784,370 @@ dpl_delete(dpl_ctx_t *ctx,
 }
 
 /** 
+ * create or post data into a path
+ *
+ * @note this function is expected to return a newly created object
+ * 
+ * @param ctx 
+ * @param bucket 
+ * @param path can be NULL
+ * @param subresource can be NULL
+ * @param object_type 
+ * @param metadata 
+ * @param canned_acl 
+ * @param data_buf 
+ * @param data_len 
+ * @param query_params can be NULL
+ * @param returned_sysmdp
+ * 
+ * @return 
+ */
+dpl_status_t
+dpl_post_id(dpl_ctx_t *ctx,
+            const char *bucket,
+            const char *subresource,
+            const dpl_option_t *option,
+            dpl_ftype_t object_type,
+            const dpl_dict_t *metadata,
+            const dpl_sysmd_t *sysmd,
+            const char *data_buf,
+            unsigned int data_len,
+            const dpl_dict_t *query_params,
+            dpl_sysmd_t *returned_sysmdp)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "post_id bucket=%s subresource=%s", bucket, subresource);
+
+  if (NULL == ctx->backend->post_id)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret2 = ctx->backend->post_id(ctx, bucket, NULL, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_post_id_buffered(dpl_ctx_t *ctx,
+                     const char *bucket,
+                     const char *subresource,
+                     const dpl_option_t *option,
+                     dpl_ftype_t object_type,
+                     const dpl_dict_t *metadata,
+                     const dpl_sysmd_t *sysmd,
+                     unsigned int data_len,
+                     const dpl_dict_t *query_params,
+                     dpl_conn_t **connp)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "post_buffered_id bucket=%s subresource=%s", bucket, subresource);
+
+  if (NULL == ctx->backend->post_id_buffered)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->post_id_buffered(ctx, bucket, NULL, subresource, option, object_type, metadata, sysmd, data_len, query_params, connp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_put_id(dpl_ctx_t *ctx,
+           const char *bucket,
+           const char *id,
+           const char *subresource,
+           const dpl_option_t *option,
+           dpl_ftype_t object_type,
+           const dpl_condition_t *condition,
+           const dpl_range_t *range,
+           const dpl_dict_t *metadata,
+           const dpl_sysmd_t *sysmd,
+           const char *data_buf,
+           unsigned int data_len)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "put_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  ret2 = ctx->backend->put_id(ctx, bucket, id, subresource, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_put_id_buffered(dpl_ctx_t *ctx,
+                    const char *bucket,
+                    const char *id,
+                    const char *subresource,
+                    const dpl_option_t *option,
+                    dpl_ftype_t object_type,
+                    const dpl_condition_t *condition,
+                    const dpl_range_t *range,
+                    const dpl_dict_t *metadata,
+                    const dpl_sysmd_t *sysmd,
+                    unsigned int data_len,
+                    dpl_conn_t **connp)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "put_buffered_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  if (NULL == ctx->backend->put_id_buffered)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->put_id_buffered(ctx, bucket, id, subresource, option, object_type, condition, range, metadata, sysmd, data_len, connp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_get_id(dpl_ctx_t *ctx,
+           const char *bucket,
+           const char *id,
+           const char *subresource,
+           const dpl_option_t *option,
+           dpl_ftype_t object_type,
+           const dpl_condition_t *condition,
+           const dpl_range_t *range,
+           char **data_bufp,
+           unsigned int *data_lenp,
+           dpl_dict_t **metadatap,
+           dpl_sysmd_t *sysmdp)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "get_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  if (NULL == ctx->backend->get_id)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->get_id(ctx, bucket, id, subresource, option, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t 
+dpl_get_id_buffered(dpl_ctx_t *ctx,
+                    const char *bucket,
+                    const char *id,
+                    const char *subresource, 
+                    const dpl_option_t *option,
+                    dpl_ftype_t object_type,
+                    const dpl_condition_t *condition,
+                    const dpl_range_t *range,
+                    dpl_metadatum_func_t metadatum_func,
+                    dpl_dict_t **metadatap,
+                    dpl_sysmd_t *sysmdp, 
+                    dpl_buffer_func_t buffer_func,
+                    void *cb_arg)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "get_buffered_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  if (NULL == ctx->backend->get_id_buffered)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->get_id_buffered(ctx, bucket, id, subresource, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_head_id(dpl_ctx_t *ctx,
+            const char *bucket,
+            const char *id,
+            const char *subresource,
+            const dpl_option_t *option,
+            dpl_ftype_t object_type,
+            const dpl_condition_t *condition,
+            dpl_dict_t **metadatap,
+            dpl_sysmd_t *sysmdp)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "head_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  if (NULL == ctx->backend->head_id)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->head_id(ctx, bucket, id, subresource, option, object_type, condition, metadatap, sysmdp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_head_raw_id(dpl_ctx_t *ctx,
+                const char *bucket,
+                const char *id,
+                const char *subresource,
+                const dpl_option_t *option,
+                dpl_ftype_t object_type,
+                const dpl_condition_t *condition,
+                dpl_dict_t **metadatap)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "head_raw_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  if (NULL == ctx->backend->head_id_raw)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->head_id_raw(ctx, bucket, id, subresource, option, object_type, condition, metadatap, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_delete_id(dpl_ctx_t *ctx,
+              const char *bucket,
+              const char *id,
+              const char *subresource,
+              const dpl_option_t *option,
+              dpl_ftype_t object_type,
+              const dpl_condition_t *condition)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "delete bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  if (NULL == ctx->backend->delete_id)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->delete_id(ctx, bucket, id, subresource, option, object_type, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+/** 
  * generate a valid URL for sharing object
  * 
  * @param ctx the droplet context
  * @param bucket the optional bucket
- * @param resource the mandat resource
+ * @param path the mandat path
  * @param subresource the optional subresource
  * @param option unused
  * @param expires expire time of URL
@@ -714,7 +1161,7 @@ dpl_delete(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_genurl(dpl_ctx_t *ctx,
            const char *bucket,
-           const char *resource,
+           const char *path,
            const char *subresource,
            const dpl_option_t *option,
            time_t expires,
@@ -722,9 +1169,9 @@ dpl_genurl(dpl_ctx_t *ctx,
            unsigned int len,
            unsigned int *lenp)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "genurl bucket=%s resource=%s subresource=%s", bucket, resource, subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "genurl bucket=%s path=%s subresource=%s", bucket, path, subresource);
 
   if (NULL == ctx->backend->genurl)
     {
@@ -732,8 +1179,15 @@ dpl_genurl(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->genurl(ctx, bucket, resource, subresource, option, expires, buf, len, lenp, NULL);
+  ret2 = ctx->backend->genurl(ctx, bucket, path, subresource, option, expires, buf, len, lenp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
@@ -746,10 +1200,10 @@ dpl_genurl(dpl_ctx_t *ctx,
  * 
  * @param ctx the droplet context
  * @param src_bucket the optional source bucket
- * @param src_resource the mandat source resource
+ * @param src_path the mandat source path
  * @param src_subresource the optional src subresource
  * @param dst_bucket the optional destination bucket
- * @param dst_resource the optional destination resource (if dst equals src)
+ * @param dst_path the optional destination path (if dst equals src)
  * @param dst_subresource the optional dest subresource
  * @param option unused
  * @param object_type unused
@@ -769,10 +1223,10 @@ dpl_genurl(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_copy(dpl_ctx_t *ctx,
          const char *src_bucket,
-         const char *src_resource,
+         const char *src_path,
          const char *src_subresource,
          const char *dst_bucket,
-         const char *dst_resource,
+         const char *dst_path,
          const char *dst_subresource,
          const dpl_option_t *option,
          dpl_ftype_t object_type,
@@ -781,9 +1235,9 @@ dpl_copy(dpl_ctx_t *ctx,
          const dpl_sysmd_t *sysmd,
          const dpl_condition_t *condition)
 {
-  int ret;
+  dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "copy src_bucket=%s src_resource=%s src_subresource=%s dst_bucket=%s dst_resource=%s dst_subresource=%s", src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "copy src_bucket=%s src_path=%s src_subresource=%s dst_bucket=%s dst_path=%s dst_subresource=%s", src_bucket, src_path, src_subresource, dst_bucket, dst_path, dst_subresource);
 
   if (NULL == ctx->backend->copy)
     {
@@ -791,8 +1245,59 @@ dpl_copy(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret = ctx->backend->copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource, option, object_type, copy_directive, metadata, sysmd, condition, NULL);
+  ret2 = ctx->backend->copy(ctx, src_bucket, src_path, src_subresource, dst_bucket, dst_path, dst_subresource, option, object_type, copy_directive, metadata, sysmd, condition, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
   
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    (void) dpl_log_request(ctx, "DATA", "PUT", 0);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_copy_id(dpl_ctx_t *ctx,
+            const char *src_bucket,
+            const char *src_id,
+            const char *src_subresource,
+            const char *dst_bucket,
+            const char *dst_path,
+            const char *dst_subresource,
+            const dpl_option_t *option,
+            dpl_ftype_t object_type,
+            dpl_copy_directive_t copy_directive,
+            const dpl_dict_t *metadata,
+            const dpl_sysmd_t *sysmd,
+            const dpl_condition_t *condition)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "copy_d src_bucket=%s src_id=%s src_subresource=%s dst_bucket=%s dst_path=%s dst_subresource=%s", src_bucket, src_id, src_subresource, dst_bucket, dst_path, dst_subresource);
+
+  if (NULL == ctx->backend->copy)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret2 = ctx->backend->copy_id(ctx, src_bucket, src_id, src_subresource, dst_bucket, dst_path, dst_subresource, option, object_type, copy_directive, metadata, sysmd, condition, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+
  end:
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);

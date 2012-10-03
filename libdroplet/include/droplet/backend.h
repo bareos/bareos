@@ -50,9 +50,6 @@ typedef dpl_status_t (*dpl_head_raw_t)(dpl_ctx_t *ctx, const char *bucket, const
 typedef dpl_status_t (*dpl_delete_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, char **locationp);
 typedef dpl_status_t (*dpl_genurl_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, time_t expires, char *buf, unsigned int len, unsigned int *lenp, char **locationp);
 typedef dpl_status_t (*dpl_copy_t)(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, const dpl_option_t *option, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition, char **locationp);
-typedef dpl_status_t (*dpl_get_id_path_t)(dpl_ctx_t *ctx, const char *bucket, char **id_pathp);
-typedef dpl_status_t (*dpl_convert_id_to_native_t)(dpl_ctx_t *ctx, const char *id, uint32_t enterprise_number, char **native_idp);
-typedef dpl_status_t (*dpl_convert_native_to_id_t)(dpl_ctx_t *ctx, const char *native_id, char **idp, uint32_t *enterprise_numberp);
 
 typedef struct dpl_backend_s
 {
@@ -70,11 +67,18 @@ typedef struct dpl_backend_s
   dpl_head_t head;
   dpl_head_raw_t head_raw;
   dpl_delete_t deletef;
+  dpl_post_t post_id;
+  dpl_post_buffered_t post_id_buffered;
+  dpl_put_t put_id;
+  dpl_put_buffered_t put_id_buffered;
+  dpl_get_t get_id;
+  dpl_get_buffered_t get_id_buffered;
+  dpl_head_t head_id;
+  dpl_head_raw_t head_id_raw;
+  dpl_delete_t delete_id;
   dpl_genurl_t genurl;
   dpl_copy_t copy;
-  dpl_get_id_path_t get_id_path;
-  dpl_convert_id_to_native_t convert_id_to_native;
-  dpl_convert_native_to_id_t convert_native_to_id;
+  dpl_copy_t copy_id;
 } dpl_backend_t;
 
 /* PROTO backend.c */
