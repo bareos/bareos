@@ -76,6 +76,8 @@ dpl_status_str(dpl_status_t status)
       return "DPL_ECONNECT";
     case DPL_EPERM:
       return "DPL_EPERM";
+    case DPL_EPRECOND:
+      return "DPL_EPRECOND";
     }
 
   return "Unknown error";

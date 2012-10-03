@@ -56,6 +56,264 @@ free_all()
 }
 
 void
+cb_append_to_nonexisting_named_object_precond(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+
+  if (DPL_EPRECOND != atask->ret)
+    {
+      fprintf(stderr, "abnormal answer: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  dpl_async_task_free(atask);
+
+  //append_data_to_named_object_precond();
+}
+
+void
+append_to_nonexisting_named_object_precond()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+  dpl_condition_t condition;
+
+  buf = dpl_buf_new();
+  if (NULL == buf)
+    exit(1);
+
+  buf->size = 10000;
+  buf->ptr = malloc(buf->size);
+  if (NULL == buf->ptr)
+    {
+      fprintf(stderr, "alloc data failed\n");
+      exit(1);
+    }
+
+  memset(buf->ptr, 'z', buf->size);
+
+  fprintf(stderr, "3 - add existing named object with precondition\n");
+  
+  condition.mask = DPL_CONDITION_IF_MATCH;
+  condition.etag[0] = '*';
+  condition.etag[1] = 0;
+
+  atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
+                                                     NULL,          //no bucket
+                                                     file2_path,    //the id
+                                                     NULL,          //no subresource
+                                                     NULL,          //no option
+                                                     DPL_FTYPE_REG, //regular object
+                                                     &condition,    //expect failure if exists
+                                                     NULL,          //no range
+                                                     NULL,          //the metadata
+                                                     NULL,          //no sysmd
+                                                     buf);          //object body
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_append_to_nonexisting_named_object_precond;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_add_existing_named_object(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+
+  if (DPL_EPRECOND != atask->ret)
+    {
+      fprintf(stderr, "abnormal answer: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  dpl_async_task_free(atask);
+
+  append_to_nonexisting_named_object_precond();
+}
+
+void
+add_existing_named_object()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+  dpl_condition_t condition;
+
+  buf = dpl_buf_new();
+  if (NULL == buf)
+    exit(1);
+
+  buf->size = 10000;
+  buf->ptr = malloc(buf->size);
+  if (NULL == buf->ptr)
+    {
+      fprintf(stderr, "alloc data failed\n");
+      exit(1);
+    }
+
+  memset(buf->ptr, 'y', buf->size);
+
+  fprintf(stderr, "3 - add existing named object with precondition\n");
+  
+  condition.mask = DPL_CONDITION_IF_NONE_MATCH;
+  condition.etag[0] = '*';
+  condition.etag[1] = 0;
+
+  atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
+                                                     NULL,          //no bucket
+                                                     file2_path,    //the id
+                                                     NULL,          //no subresource
+                                                     NULL,          //no option
+                                                     DPL_FTYPE_REG, //regular object
+                                                     &condition,    //expect failure if exists
+                                                     NULL,          //no range
+                                                     NULL,          //the metadata
+                                                     NULL,          //no sysmd
+                                                     buf);          //object body
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_add_existing_named_object;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_add_existing_named_object_no_precond(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+
+  if (DPL_EPRECOND != atask->ret)
+    {
+      fprintf(stderr, "abnormal answer: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  dpl_async_task_free(atask);
+
+  add_existing_named_object();
+}
+
+void
+add_existing_named_object_no_precond()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+
+  buf = dpl_buf_new();
+  if (NULL == buf)
+    exit(1);
+
+  buf->size = 10000;
+  buf->ptr = malloc(buf->size);
+  if (NULL == buf->ptr)
+    {
+      fprintf(stderr, "alloc data failed\n");
+      exit(1);
+    }
+
+  memset(buf->ptr, 'y', buf->size);
+
+  fprintf(stderr, "2bis - add existing named object\n");
+  
+  atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
+                                                     NULL,          //no bucket
+                                                     file2_path,    //the id
+                                                     NULL,          //no subresource
+                                                     NULL,          //no option
+                                                     DPL_FTYPE_REG, //regular object
+                                                     NULL,         //no condition
+                                                     NULL,          //no range
+                                                     NULL,          //the metadata
+                                                     NULL,          //no sysmd
+                                                     buf);          //object body
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_add_existing_named_object;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_add_nonexisting_named_object(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+
+  if (DPL_SUCCESS != atask->ret)
+    {
+      fprintf(stderr, "add named object failed: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  dpl_async_task_free(atask);
+
+  add_existing_named_object();
+}
+
+void
+add_nonexisting_named_object()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+
+  buf = dpl_buf_new();
+  if (NULL == buf)
+    exit(1);
+
+  buf->size = 10000;
+  buf->ptr = malloc(buf->size);
+  if (NULL == buf->ptr)
+    {
+      fprintf(stderr, "alloc data failed\n");
+      exit(1);
+    }
+
+  memset(buf->ptr, 'y', buf->size);
+
+  fprintf(stderr, "2 - add nonexisting named object\n");
+  
+  atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
+                                                     NULL,          //no bucket
+                                                     file2_path,    //the id
+                                                     NULL,          //no subresource
+                                                     NULL,          //no option
+                                                     DPL_FTYPE_REG, //regular object
+                                                     NULL,          //no condition
+                                                     NULL,          //no range
+                                                     NULL,          //the metadata
+                                                     NULL,          //no sysmd
+                                                     buf);          //object body
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_add_nonexisting_named_object;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
 cb_name_nameless_object(void *handle)
 {
   dpl_async_task_t *atask = (dpl_async_task_t *) handle;
@@ -67,6 +325,8 @@ cb_name_nameless_object(void *handle)
     }
 
   dpl_async_task_free(atask);
+
+  add_nonexisting_named_object();
 }
 
 void
@@ -105,7 +365,7 @@ name_nameless_object(char *id)
 }
 
 void
-cb_add_namess_object(void *handle)
+cb_add_nameless_object(void *handle)
 {
   dpl_async_task_t *atask = (dpl_async_task_t *) handle;
 
@@ -123,7 +383,7 @@ cb_add_namess_object(void *handle)
 }
 
 void
-add_namess_object()
+add_nameless_object()
 {
   dpl_async_task_t *atask = NULL;
   dpl_buf_t *buf = NULL;
@@ -141,7 +401,7 @@ add_namess_object()
       exit(1);
     }
 
-  memset(buf->ptr, 'z', buf->size);
+  memset(buf->ptr, 'x', buf->size);
 
   fprintf(stderr, "1 - add nameless object\n");
 
@@ -160,7 +420,7 @@ add_namess_object()
       exit(1);
     }
 
-  atask->cb_func = cb_add_namess_object;
+  atask->cb_func = cb_add_nameless_object;
   atask->cb_arg = atask;
   
   dpl_task_pool_put(pool, (dpl_task_t *) atask);
@@ -179,7 +439,7 @@ cb_make_folder(void *handle)
 
   dpl_async_task_free(atask);
 
-  add_namess_object();
+  add_nameless_object();
 }
 
 void
