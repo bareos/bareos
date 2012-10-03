@@ -607,8 +607,8 @@ dpl_cwd(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-dpl_dir_is_empty(dpl_ctx_t *ctx,
-                 const char *locator)
+dir_is_empty(dpl_ctx_t *ctx,
+             const char *path)
 {
   dpl_status_t ret;
   dpl_status_t ret2;
@@ -616,16 +616,17 @@ dpl_dir_is_empty(dpl_ctx_t *ctx,
   dpl_vec_t *objects = NULL;
   dpl_vec_t *common_prefixes = NULL;
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "dir_is_empty locator=%s", locator);
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "dir_is_empty path=%s", path);
 
-  ret2 = dpl_list_bucket(ctx, ctx->cur_bucket, locator, delim, 1, &objects, &common_prefixes);
+  /* since dir_is_empty(<directory>) returns at least 1 common_prefix (itself), ask for two... */
+  ret2 = dpl_list_bucket(ctx, ctx->cur_bucket, path, delim, 10, &objects, &common_prefixes);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
 
-  if (objects->n_items || common_prefixes->n_items)
+  if (objects->n_items + common_prefixes->n_items >= 2)
     {
       ret = DPL_ENOTEMPTY;
       goto end;
@@ -1749,13 +1750,6 @@ dpl_rmdir(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "rmdir locator=%s", locator);
 
-  ret2 = dpl_dir_is_empty(ctx, locator);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
   nlocator = strdup(locator);
   if (NULL == nlocator)
     {
@@ -1797,6 +1791,15 @@ dpl_rmdir(dpl_ctx_t *ctx,
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
+      goto end;
+    }
+ 
+  char delim[] = { ctx->delimiter, 0 };
+  char *path_slash = strcat((char *) path, delim);
+  ret2 = dir_is_empty(ctx, path_slash);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
       goto end;
     }
   
