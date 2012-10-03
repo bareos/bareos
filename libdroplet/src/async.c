@@ -230,6 +230,7 @@ async_do(void *arg)
                                   task->u.list_bucket.bucket,
                                   task->u.list_bucket.prefix,
                                   task->u.list_bucket.delimiter,
+                                  task->u.list_bucket.max_keys,
                                   &task->u.list_bucket.objects, 
                                   &task->u.list_bucket.common_prefixes);
       break ;

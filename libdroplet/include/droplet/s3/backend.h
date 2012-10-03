@@ -37,7 +37,7 @@
 /* PROTO backend.c */
 /* src/backend.c */
 dpl_status_t dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx, dpl_vec_t **vecp, char **locationp);
-dpl_status_t dpl_s3_list_bucket(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
+dpl_status_t dpl_s3_list_bucket(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
 dpl_status_t dpl_s3_make_bucket(dpl_ctx_t *ctx, const char *bucket, const dpl_sysmd_t *sysmd, char **locationp);
 dpl_status_t dpl_s3_delete_bucket(dpl_ctx_t *ctx, const char *bucket, char **locationp);
 dpl_status_t dpl_s3_put(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, char **locationp);

@@ -36,7 +36,7 @@
 
 /* general */
 typedef dpl_status_t (*dpl_list_all_my_buckets_t)(dpl_ctx_t *ctx, dpl_vec_t **vecp, char **locationp);
-typedef dpl_status_t (*dpl_list_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
+typedef dpl_status_t (*dpl_list_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
 typedef dpl_status_t (*dpl_make_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const dpl_sysmd_t *sysmd, char **locationp);
 typedef dpl_status_t (*dpl_delete_bucket_t)(dpl_ctx_t *ctx, const char *bucket, char **locationp);
 typedef dpl_status_t (*dpl_post_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, dpl_sysmd_t *returned_sysmdp, char **locationp);

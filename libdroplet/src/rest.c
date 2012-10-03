@@ -98,6 +98,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
  * @param bucket can be NULL
  * @param prefix directory can be NULL
  * @param delimiter e.g. "/" can be NULL
+ * @param max number of keys we want to get (-1 for no limit)
  * @param objectsp vector of dpl_object_t * (files)
  * @param prefixesp vector of dpl_common_prefix_t * (directories)
  *
@@ -109,6 +110,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
                 const char *bucket,
                 const char *prefix,
                 const char *delimiter,
+                const int max_keys,
                 dpl_vec_t **objectsp, 
                 dpl_vec_t **common_prefixesp)
 {
@@ -122,7 +124,7 @@ dpl_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret2 = ctx->backend->list_bucket(ctx, bucket, prefix, delimiter, objectsp, common_prefixesp, NULL);
+  ret2 = ctx->backend->list_bucket(ctx, bucket, prefix, delimiter, max_keys, objectsp, common_prefixesp, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

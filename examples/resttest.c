@@ -347,6 +347,7 @@ main(int argc,
                         NULL,
                         folder,
                         "/",
+                        -1,
                         &files,
                         &sub_directories);
   if (DPL_SUCCESS != ret)

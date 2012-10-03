@@ -361,12 +361,13 @@ posix_setattr(const char *path,
 
 dpl_status_t
 dpl_posix_list_bucket(dpl_ctx_t *ctx,
-                     const char *bucket,
-                     const char *prefix,
-                     const char *delimiter,
-                     dpl_vec_t **objectsp,
-                     dpl_vec_t **common_prefixesp,
-                     char **locationp)
+                      const char *bucket,
+                      const char *prefix,
+                      const char *delimiter,
+                      const int max_keys,
+                      dpl_vec_t **objectsp,
+                      dpl_vec_t **common_prefixesp,
+                      char **locationp)
 {
   DIR *dir = NULL;
   dpl_status_t ret, ret2;

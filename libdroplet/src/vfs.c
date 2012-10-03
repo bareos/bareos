@@ -124,7 +124,7 @@ dir_lookup(dpl_ctx_t *ctx,
   //AWS do not like "" as a prefix
   delim[0] = ctx->delimiter;
   delim[1] = 0;
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(parent_fqn.path, "") ? NULL : parent_fqn.path, delim, &files, &directories);
+  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(parent_fqn.path, "") ? NULL : parent_fqn.path, delim, -1, &files, &directories);
   if (DPL_SUCCESS != ret2)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, parent_fqn.path);
@@ -278,7 +278,7 @@ dir_open(dpl_ctx_t *ctx,
   //AWS prefers NULL for listing the root dir
   delim[0] = ctx->delimiter;
   delim[1] = 0;
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(fqn.path, "") ? NULL : fqn.path, delim, &dir->files, &dir->directories);
+  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(fqn.path, "") ? NULL : fqn.path, delim, -1, &dir->files, &dir->directories);
   if (DPL_SUCCESS != ret2)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, fqn.path);
@@ -604,6 +604,45 @@ dpl_cwd(dpl_ctx_t *ctx,
   dpl_ctx_unlock(ctx);
 
   return cwd;
+}
+
+dpl_status_t
+dpl_dir_is_empty(dpl_ctx_t *ctx,
+                 const char *locator)
+{
+  dpl_status_t ret;
+  dpl_status_t ret2;
+  int empty = 0;
+  char delim[2] = { ctx->delimiter, 0 };
+  dpl_vec_t *objects = NULL;
+  dpl_vec_t *common_prefixes = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "dir_is_empty locator=%s", locator);
+
+  ret2 = dpl_list_bucket(ctx, ctx->cur_bucket, locator, delim, 1, &objects, &common_prefixes);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (0 == objects->n_items && 0 == common_prefixes->n_items)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (objects)
+    dpl_vec_objects_free(objects);
+
+  if (common_prefixes)
+    dpl_vec_common_prefixes_free(common_prefixes);
+
+  return ret;
 }
 
 /**

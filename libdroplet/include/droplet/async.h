@@ -82,6 +82,7 @@ typedef struct
       char *bucket;
       char *prefix;
       char *delimiter;
+      size_t max_keys;
       /* output */
       dpl_vec_t *objects;
       dpl_vec_t *common_prefixes;
