@@ -48,6 +48,7 @@ typedef enum
     DPL_HTTP_CODE_FORBIDDEN        = 403,
     DPL_HTTP_CODE_NOT_FOUND        = 404,
     DPL_HTTP_CODE_CONFLICT         = 409,
+    DPL_HTTP_CODE_PRECOND_FAILED   = 412,
   } dpl_http_code_t;
 
 struct dpl_http_reply

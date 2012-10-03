@@ -94,6 +94,7 @@ typedef enum
     DPL_ETOOMANYREDIR        = (-16),/*!< Too many redirects */
     DPL_ECONNECT             = (-17),/*!< Connect error */
     DPL_EPERM                = (-18),/*!< Permission denied */
+    DPL_EPRECOND             = (-19),/*!< Precondition failed */
   } dpl_status_t;
 
 typedef enum

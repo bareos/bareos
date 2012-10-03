@@ -1538,6 +1538,11 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
         }
     }
 
+  if (NULL != condition)
+    {
+      dpl_req_set_condition(req, condition);
+    }
+
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
@@ -1746,6 +1751,11 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_data(req, NULL, data_len);
+
+  if (NULL != condition)
+    {
+      dpl_req_set_condition(req, condition);
+    }
 
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
@@ -2627,6 +2637,13 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
           goto end;
         }
     }
+
+#if 0
+  if (NULL != condition)
+    {
+      dpl_req_set_condition(req, condition);
+    }
+#endif
 
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
