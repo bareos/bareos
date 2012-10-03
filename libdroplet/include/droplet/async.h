@@ -58,6 +58,12 @@ typedef enum
     DPL_TASK_HEAD,
     DPL_TASK_DELETE,
     DPL_TASK_COPY,
+    DPL_TASK_POST_ID,
+    DPL_TASK_PUT_ID,
+    DPL_TASK_GET_ID,
+    DPL_TASK_HEAD_ID,
+    DPL_TASK_DELETE_ID,
+    DPL_TASK_COPY_ID,
   } dpl_async_task_type_t;
 
 typedef struct
@@ -204,5 +210,10 @@ dpl_task_t *dpl_get_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char
 dpl_task_t *dpl_head_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition);
 dpl_task_t *dpl_delete_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition);
 dpl_task_t *dpl_copy_async_prepare(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, const dpl_option_t *option, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition);
-
+dpl_task_t *dpl_post_id_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, dpl_buf_t *buf, const dpl_dict_t *query_params);
+dpl_task_t *dpl_put_id_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, dpl_buf_t *buf);
+dpl_task_t *dpl_get_id_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range);
+dpl_task_t *dpl_head_id_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition);
+dpl_task_t *dpl_delete_id_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition);
+dpl_task_t *dpl_copy_id_async_prepare(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, const dpl_option_t *option, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition);
 #endif
