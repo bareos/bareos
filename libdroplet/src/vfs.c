@@ -2209,7 +2209,7 @@ copy_path_to_path(dpl_ctx_t *ctx,
 static dpl_status_t
 copy_id_to_path(dpl_ctx_t *ctx,
                 const char *src_id,
-                const uint32_t enterprise_number,
+                uint32_t enterprise_number,
                 const char *dst_locator,
                 dpl_copy_directive_t copy_directive)
 {
@@ -2217,24 +2217,10 @@ copy_id_to_path(dpl_ctx_t *ctx,
   char *dst_nlocator = NULL;
   char *dst_bucket = NULL;
   char *dst_path;
-  char *native_id = NULL;
   dpl_fqn_t dst_obj_fqn;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_id_to_path src_id=%s dst_locator=%s", src_id, dst_locator);
 
-  if (NULL == ctx->backend->convert_id_to_native)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret2 = ctx->backend->convert_id_to_native(ctx, src_id, enterprise_number, &native_id);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
   dst_nlocator = strdup(dst_locator);
   if (NULL == dst_nlocator)
     {
@@ -2273,7 +2259,7 @@ copy_id_to_path(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, dst_bucket, native_id, NULL, dst_bucket, dst_obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
+  ret2 = dpl_copy_id(ctx, dst_bucket, src_id, NULL, dst_bucket, dst_obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2283,9 +2269,6 @@ copy_id_to_path(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
-
-  if (NULL != native_id)
-    free(native_id);
 
   if (NULL != dst_bucket)
     free(dst_bucket);

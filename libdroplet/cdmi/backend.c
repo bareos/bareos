@@ -2744,10 +2744,12 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   if (DPL_COPY_DIRECTIVE_METADATA_REPLACE == copy_directive)
-    return dpl_cdmi_put(ctx, dst_bucket, dst_resource,
-                        NULL != dst_subresource ? dst_subresource : "metadata", NULL,
-                        object_type, condition, NULL, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, locationp);
-
+    {
+      ret = dpl_cdmi_put(ctx, dst_bucket, dst_resource, "metadata", NULL,
+                         object_type, condition, NULL, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, locationp);
+      goto end;
+    }
+      
   req = dpl_req_new(ctx);
   if (NULL == req)
     {
@@ -3041,3 +3043,393 @@ dpl_cdmi_convert_native_to_id(dpl_ctx_t *ctx,
 
   return ret;
 }
+
+dpl_status_t
+dpl_cdmi_post_id(dpl_ctx_t *ctx,
+                 const char *bucket,
+                 const char *resource,
+                 const char *subresource,
+                 const dpl_option_t *option,
+                 dpl_ftype_t object_type,
+                 const dpl_dict_t *metadata,
+                 const dpl_sysmd_t *sysmd,
+                 const char *data_buf,
+                 unsigned int data_len,
+                 const dpl_dict_t *query_params,
+                 dpl_sysmd_t *returned_sysmdp,
+                 char **locationp)
+{
+  dpl_status_t ret, ret2;
+  char *id_path = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "post_id bucket=%s subresource=%s", bucket, subresource);
+
+  ret2 = dpl_cdmi_get_id_path(ctx, bucket, &id_path);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_post(ctx, bucket, id_path, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != id_path)
+    free(id_path);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_cdmi_post_id_buffered(dpl_ctx_t *ctx,
+                          const char *bucket,
+                          const char *resource,
+                          const char *subresource,
+                          const dpl_option_t *option,
+                          dpl_ftype_t object_type,
+                          const dpl_dict_t *metadata,
+                          const dpl_sysmd_t *sysmd,
+                          unsigned int data_len,
+                          const dpl_dict_t *query_params,
+                          dpl_conn_t **connp,
+                          char **locationp)
+{
+  dpl_status_t ret;
+  char *id_path = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "post_buffered_id bucket=%s subresource=%s", bucket, subresource);
+
+  ret = dpl_cdmi_get_id_path(ctx, bucket, &id_path);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret = dpl_cdmi_post_buffered(ctx, bucket, id_path, subresource, option, object_type, metadata, sysmd, data_len, query_params, connp, locationp);
+  
+ end:
+
+  if (NULL != id_path)
+    free(id_path);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_cdmi_get_id(dpl_ctx_t *ctx,
+                const char *bucket,
+                const char *id,
+                const char *subresource,
+                const dpl_option_t *option,
+                dpl_ftype_t object_type,
+                const dpl_condition_t *condition,
+                const dpl_range_t *range,
+                char **data_bufp,
+                unsigned int *data_lenp,
+                dpl_dict_t **metadatap,
+                dpl_sysmd_t *sysmdp,
+                char **locationp)
+{
+  dpl_status_t ret, ret2;
+  char *id_path = NULL;
+  char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "get_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  ret = dpl_cdmi_get_id_path(ctx, bucket, &id_path);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_convert_id_to_native(ctx, id, ctx->enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
+
+  ret = dpl_cdmi_get(ctx, bucket, resource, subresource, option, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp, locationp);
+  
+ end:
+
+  if (NULL != native_id)
+    free(native_id);
+
+  if (NULL != id_path)
+    free(id_path);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t 
+dpl_cdmi_get_id_buffered(dpl_ctx_t *ctx,
+                         const char *bucket,
+                         const char *id,
+                         const char *subresource, 
+                         const dpl_option_t *option,
+                         dpl_ftype_t object_type,
+                         const dpl_condition_t *condition,
+                         const dpl_range_t *range,
+                         dpl_metadatum_func_t metadatum_func,
+                         dpl_dict_t **metadatap,
+                         dpl_sysmd_t *sysmdp, 
+                         dpl_buffer_func_t buffer_func,
+                         void *cb_arg,
+                         char **locationp)
+{
+  dpl_status_t ret, ret2;
+  char *id_path = NULL;
+  char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "get_buffered_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  ret = dpl_cdmi_get_id_path(ctx, bucket, &id_path);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_convert_id_to_native(ctx, id, ctx->enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
+
+  ret = dpl_cdmi_get_buffered(ctx, bucket, resource, subresource, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, locationp);
+  
+ end:
+
+  if (NULL != native_id)
+    free(native_id);
+
+  if (NULL != id_path)
+    free(id_path);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_cdmi_head_id(dpl_ctx_t *ctx,
+                 const char *bucket,
+                 const char *id,
+                 const char *subresource,
+                 const dpl_option_t *option,
+                 dpl_ftype_t object_type,
+                 const dpl_condition_t *condition,
+                 dpl_dict_t **metadatap,
+                 dpl_sysmd_t *sysmdp,
+                 char **locationp)
+{
+  dpl_status_t ret, ret2;
+  char *id_path = NULL;
+  char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "head_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  ret = dpl_cdmi_get_id_path(ctx, bucket, &id_path);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_convert_id_to_native(ctx, id, ctx->enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
+
+  ret = dpl_cdmi_head(ctx, bucket, resource, subresource, option, object_type, condition, metadatap, sysmdp, locationp);
+  
+ end:
+
+  if (NULL != native_id)
+    free(native_id);
+
+  if (NULL != id_path)
+    free(id_path);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_cdmi_head_id_raw(dpl_ctx_t *ctx,
+                     const char *bucket,
+                     const char *id,
+                     const char *subresource,
+                     const dpl_option_t *option,
+                     dpl_ftype_t object_type,
+                     const dpl_condition_t *condition,
+                     dpl_dict_t **metadatap,
+                     char **locationp)
+{
+  dpl_status_t ret, ret2;
+  char *id_path = NULL;
+  char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "head_raw_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  ret = dpl_cdmi_get_id_path(ctx, bucket, &id_path);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_convert_id_to_native(ctx, id, ctx->enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
+
+  ret = dpl_cdmi_head_raw(ctx, bucket, resource, subresource, option, object_type, condition, metadatap, locationp);
+  
+ end:
+
+  if (NULL != native_id)
+    free(native_id);
+
+  if (NULL != id_path)
+    free(id_path);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_cdmi_delete_id(dpl_ctx_t *ctx,
+                   const char *bucket,
+                   const char *id,
+                   const char *subresource,
+                   const dpl_option_t *option,
+                   dpl_ftype_t object_type,
+                   char **locationp)
+{
+  dpl_status_t ret, ret2;
+  char *id_path = NULL;
+  char resource[DPL_MAXPATHLEN];
+  char *native_id = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "delete bucket=%s id=%s subresource=%s", bucket, id, subresource);
+
+  ret = dpl_cdmi_get_id_path(ctx, bucket, &id_path);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_convert_id_to_native(ctx, id, ctx->enterprise_number, &native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
+
+  ret = dpl_cdmi_delete(ctx, bucket, resource, subresource, option, object_type, locationp);
+  
+ end:
+
+  if (NULL != native_id)
+    free(native_id);
+
+  if (NULL != id_path)
+    free(id_path);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_cdmi_copy_id(dpl_ctx_t *ctx,
+                 const char *src_bucket,
+                 const char *src_id,
+                 const char *src_subresource,
+                 const char *dst_bucket,
+                 const char *dst_resource,
+                 const char *dst_subresource,
+                 const dpl_option_t *option,
+                 dpl_ftype_t object_type,
+                 dpl_copy_directive_t copy_directive,
+                 const dpl_dict_t *metadata,
+                 const dpl_sysmd_t *sysmd,
+                 const dpl_condition_t *condition,
+                 char **locationp)
+{
+  dpl_status_t ret, ret2;
+  char *id_path = NULL;
+  char src_resource[DPL_MAXPATHLEN];
+  char *src_native_id = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "delete src_bucket=%s src_id=%s src_subresource=%s", src_bucket, src_id, src_subresource);
+
+  ret = dpl_cdmi_get_id_path(ctx, src_bucket, &id_path);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_convert_id_to_native(ctx, src_id, ctx->enterprise_number, &src_native_id);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(src_resource, sizeof (src_resource), "%s%s", id_path ? id_path : "", src_native_id);
+
+  if (DPL_COPY_DIRECTIVE_METADATA_REPLACE == copy_directive)
+    ret = dpl_cdmi_put(ctx, src_bucket, src_resource, "metadata", NULL,
+                       object_type, condition, NULL, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, locationp);
+  else
+    ret = dpl_cdmi_copy(ctx, src_bucket, src_resource, src_subresource, dst_bucket, dst_resource, dst_subresource,
+                        option, object_type, copy_directive, metadata, sysmd, condition, locationp);
+  
+ end:
+
+  if (NULL != src_native_id)
+    free(src_native_id);
+
+  if (NULL != id_path)
+    free(id_path);
+
+  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
+  
+  return ret;
+}
+

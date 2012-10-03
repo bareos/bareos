@@ -41,15 +41,12 @@ dpl_backend_t
 dpl_backend_srws = 
   {
     "srws",
-    .put 		= dpl_srws_put,
-    .put_buffered	= dpl_srws_put_buffered,
-    .get 		= dpl_srws_get,
-    .get_buffered       = dpl_srws_get_buffered,
-    .head 		= dpl_srws_head,
-    .head_raw 		= dpl_srws_head_raw,
-    .deletef 		= dpl_srws_delete,
-    .get_id_path        = dpl_srws_get_id_path,
-    .copy               = dpl_srws_copy,
-    .convert_id_to_native = dpl_srws_convert_id_to_native,
-    .convert_native_to_id = dpl_srws_convert_native_to_id,
+    .put_id 		= dpl_srws_put,
+    .put_id_buffered	= dpl_srws_put_buffered,
+    .get_id 		= dpl_srws_get,
+    .get_id_buffered    = dpl_srws_get_buffered,
+    .head_id 		= dpl_srws_head,
+    .head_id_raw	= dpl_srws_head_raw,
+    .delete_id 		= dpl_srws_delete,
+    .copy_id            = dpl_srws_copy,
   };

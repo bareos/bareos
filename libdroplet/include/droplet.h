@@ -265,6 +265,7 @@ typedef enum
     DPL_FTYPE_DOM,
   } dpl_ftype_t;
 
+#define DPL_DEFAULT_ENTERPRISE_NUMBER 37489 /*!< scality */
 /**/
 
 typedef enum
@@ -423,6 +424,7 @@ typedef struct dpl_ctx
   int keep_alive;            /*!< client supports keep-alive */
   int url_encoding;          /*!< some servers does not handle url encoding */
   int max_redirects;         /*!< maximum number of redirects */
+  uint32_t enterprise_number; /*!< for generating native IDs */
   struct dpl_backend_s *backend;
 
   /*
@@ -536,7 +538,6 @@ typedef dpl_status_t (*dpl_metadatum_func_t)(void *cb_arg,
 #include <droplet/req.h>
 #include <droplet/rest.h>
 #include <droplet/sysmd.h>
-#include <droplet/id.h>
 
 /* PROTO droplet.c */
 /* src/droplet.c */

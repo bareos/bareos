@@ -9,11 +9,15 @@ ssl_password = foobar
 #ssl_ca_list = 
 
 host = localhost
-port = 81
+port = 80
 base_path = /dewpoint
 access_key = root
 secret_key = root
 
 #pricing = 
 
+encode_slashes = false
+
 backend = cdmi
+
+#light_mode = true

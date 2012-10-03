@@ -59,7 +59,6 @@ main(int argc,
       ret = dpl_put_id(ctx,           //the context
                        NULL,          //no bucket
                        force_id,      //the id
-                       0,             //the enterprise number
                        NULL,          //no subresource
                        NULL,          //no option
                        DPL_FTYPE_REG, //regular object
@@ -118,7 +117,6 @@ main(int argc,
   ret = dpl_get_id(ctx,           //the context
                    NULL,          //no bucket
                    sysmd.id,      //the key
-                   sysmd.enterprise_number, //enterprise number
                    NULL,          //no subresource
                    NULL,          //no option
                    DPL_FTYPE_REG, //object type
@@ -158,7 +156,6 @@ main(int argc,
   ret = dpl_delete_id(ctx,       //the context
                       NULL,      //no bucket
                       sysmd.id,  //the key
-                      sysmd.enterprise_number, //enterprise number
                       NULL,      //no subresource
                       NULL,      //no option
                       DPL_FTYPE_UNDEF, //no matter the file type
