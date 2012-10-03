@@ -429,6 +429,19 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
         }
     }
 
+  if (-1 != max_keys)
+    {
+      char tmp[32] = "";
+
+      snprintf(tmp, sizeof tmp, "%d", max_keys);
+      ret2 = dpl_dict_add(query_params, "max-keys", tmp, 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
   ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
