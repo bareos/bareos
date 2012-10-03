@@ -612,7 +612,6 @@ dpl_dir_is_empty(dpl_ctx_t *ctx,
 {
   dpl_status_t ret;
   dpl_status_t ret2;
-  int empty = 0;
   char delim[2] = { ctx->delimiter, 0 };
   dpl_vec_t *objects = NULL;
   dpl_vec_t *common_prefixes = NULL;
