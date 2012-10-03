@@ -127,7 +127,7 @@ dir_lookup(dpl_ctx_t *ctx,
   ret2 = dpl_list_bucket(ctx, bucket, !strcmp(parent_fqn.path, "") ? NULL : parent_fqn.path, delim, &files, &directories);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(0, "list_bucket failed %s:%s", bucket, parent_fqn.path);
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, parent_fqn.path);
       ret = ret2;
       goto end;
     }
@@ -153,7 +153,7 @@ dir_lookup(dpl_ctx_t *ctx,
           path_len = strlen(obj->path);
           if (path_len >= DPL_MAXNAMLEN)
             {
-              DPLERR(0, "path is too long");
+              DPL_TRACE(ctx, DPL_TRACE_ERR, "path is too long");
               ret = DPL_FAILURE;
               goto end;
             }
@@ -216,7 +216,7 @@ dir_lookup(dpl_ctx_t *ctx,
           path_len = strlen(prefix->prefix);
           if (path_len >= DPL_MAXNAMLEN)
             {
-              DPLERR(0, "path is too long");
+              DPL_TRACE(ctx, DPL_TRACE_ERR, "path is too long");
               ret = DPL_FAILURE;
               goto end;
             }
@@ -281,7 +281,7 @@ dir_open(dpl_ctx_t *ctx,
   ret2 = dpl_list_bucket(ctx, bucket, !strcmp(fqn.path, "") ? NULL : fqn.path, delim, &dir->files, &dir->directories);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(0, "list_bucket failed %s:%s", bucket, fqn.path);
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, fqn.path);
       ret = ret2;
       goto end;
     }
@@ -330,7 +330,7 @@ dir_read(void *dir_hdl,
     {
       if (dir->directories_cursor >= dir->directories->n_items)
         {
-          DPLERR(0, "beyond cursors");
+          DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "beyond cursors");
           return DPL_ENOENT;
         }
       else
@@ -345,7 +345,7 @@ dir_read(void *dir_hdl,
 
           if (name_len >= DPL_MAXNAMLEN)
             {
-              DPLERR(0, "name is too long");
+              DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
               return DPL_FAILURE;
             }
           memcpy(dirent->name, name, name_len);
@@ -353,7 +353,7 @@ dir_read(void *dir_hdl,
 
           if (path_len >= DPL_MAXPATHLEN)
             {
-              DPLERR(0, "path is too long");
+              DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "path is too long");
               return DPL_FAILURE;
             }
           memcpy(dirent->fqn.path, prefix->prefix, path_len);
@@ -387,7 +387,7 @@ dir_read(void *dir_hdl,
         {
           if (name_len >= DPL_MAXNAMLEN)
             {
-              DPLERR(0, "name is too long");
+              DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
               return DPL_FAILURE;
             }
           memcpy(dirent->name, name, name_len);
@@ -396,7 +396,7 @@ dir_read(void *dir_hdl,
 
       if (path_len >= DPL_MAXPATHLEN)
         {
-          DPLERR(0, "path is too long");
+          DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "path is too long");
           return DPL_FAILURE;
         }
       memcpy(dirent->fqn.path, obj->path, path_len);
@@ -669,7 +669,7 @@ dpl_opendir(dpl_ctx_t *ctx,
   ret2 = dir_open(ctx, bucket, obj_fqn, dir_hdlp);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(0, "unable to open %s:%s", bucket, obj_fqn.path);
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "unable to open %s:%s", bucket, obj_fqn.path);
       ret = ret2;
       goto end;
     }
@@ -1301,7 +1301,7 @@ dpl_write(dpl_vfile_t *vfile,
       ret = EVP_CipherUpdate(vfile->cipher_ctx, (u_char *) obuf, &olen, (u_char *) buf, len);
       if (0 == ret)
         {
-          DPLERR(0, "CipherUpdate failed\n");
+          DPL_TRACE(vfile->ctx, DPL_TRACE_ERR, "CipherUpdate failed\n");
           ret = DPL_FAILURE;
           goto end;
         }
@@ -1393,7 +1393,7 @@ cb_vfile_buffer(void *cb_arg,
           header_len = magic_len + sizeof (vfile->salt);
           if (len < header_len)
             {
-              DPLERR(0, "not enough bytes for decrypting");
+              DPL_TRACE(vfile->ctx, DPL_TRACE_ERR, "not enough bytes for decrypting");
               ret = DPL_EINVAL;
               goto end;
             }
@@ -1422,7 +1422,7 @@ cb_vfile_buffer(void *cb_arg,
       ret2 = EVP_CipherUpdate(vfile->cipher_ctx, (u_char *) obuf, &olen, (u_char *) buf, len);
       if (0 == ret2)
         {
-          DPLERR(0, "CipherUpdate failed\n");
+          DPL_TRACE(vfile->ctx, DPL_TRACE_ERR, "CipherUpdate failed\n");
           ret = DPL_FAILURE;
           goto end;
         }

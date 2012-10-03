@@ -148,15 +148,6 @@ int linux_gethostbyname_r(const char *name,
 
 /**/
 
-#ifdef DROPLET_DEBUG
-//XXX not atomic
-# define DPLERR(sys, format, ...) do {fprintf(stderr, "dpl error (%s:%d): ",__FILE__,__LINE__);fprintf(stderr, format, ##__VA_ARGS__  ); if (sys) fprintf(stderr, ": %s\n", strerror(errno)); else fprintf(stderr, "\n");} while (0)
-#else
-# define DPLERR(sys, format, ...)
-#endif
-
-/**/
-
 #define DPL_DUMP_LINE_SIZE    16
 
 struct dpl_dump_ctx

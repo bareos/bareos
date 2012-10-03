@@ -402,7 +402,7 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(1, "writev failed");
+      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
       connection_close = 1;
       ret = ret2;
       goto end;
@@ -582,7 +582,7 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(1, "writev failed");
+      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
       connection_close = 1;
       ret = ret2;
       goto end;
@@ -755,7 +755,7 @@ dpl_srws_get(dpl_ctx_t *ctx,
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(1, "writev failed");
+      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
       connection_close = 1;
       ret = ret2;
       goto end;
@@ -1013,7 +1013,7 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(1, "writev failed");
+      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
       gc.connection_close = 1;
       ret = ret2;
       goto end;
@@ -1022,7 +1022,7 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
   ret2 = dpl_read_http_reply_buffered(conn, 1, &http_status, cb_get_header, cb_get_buffer, &gc);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(0, "read http answer failed");
+      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "read http answer failed");
       gc.connection_close = 1;
       ret = ret2;
       goto end;
@@ -1175,7 +1175,7 @@ dpl_srws_head_raw(dpl_ctx_t *ctx,
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(1, "writev failed");
+      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
       connection_close = 1;
       ret = ret2;
       goto end;
@@ -1365,7 +1365,7 @@ dpl_srws_delete(dpl_ctx_t *ctx,
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
   if (DPL_SUCCESS != ret2)
     {
-      DPLERR(1, "writev failed");
+      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
       connection_close = 1;
       ret = ret2;
       goto end;

@@ -222,7 +222,7 @@ do_connect(dpl_ctx_t *ctx,
   fd = socket(AF_INET, SOCK_STREAM, 0);
   if (-1 == fd)
     {
-      DPLERR(1, "socket failed");
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "socket failed");
       fd = -1;
       goto end;
     }
@@ -248,7 +248,7 @@ do_connect(dpl_ctx_t *ctx,
     {
       if (EINPROGRESS != errno)
         {
-          DPLERR(1, "connect failed");
+          DPL_TRACE(ctx, DPL_TRACE_ERR, "connect failed");
           (void) safe_close(fd);
           fd = -1;
           goto end;
@@ -346,7 +346,7 @@ dpl_conn_open(dpl_ctx_t *ctx,
 
   if (ctx->n_conn_fds >= ctx->n_conn_max)
     {
-      DPLERR(0, "reaching limit %d", ctx->n_conn_fds);
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "reaching limit %d", ctx->n_conn_fds);
       conn = NULL;
       goto end;
     }
@@ -356,7 +356,7 @@ dpl_conn_open(dpl_ctx_t *ctx,
   conn = malloc(sizeof (*conn));
   if (NULL == conn)
     {
-      DPLERR(1, "malloc failed");
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "malloc failed");
       conn = NULL;
       goto end;
     }
@@ -448,19 +448,19 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
   if (0 != ret2)
     {
-      DPLERR(0, "gethostbyname failed");
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "gethostbyname failed");
       goto bad;
     }
 
   if (!hresult)
     {
-      DPLERR(0, "Invalid hostname");
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "Invalid hostname");
       goto bad;
     }
 
   if (AF_INET != hresult->h_addrtype)
     {
-      DPLERR(0, "bad addr family");
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "bad addr family");
       goto bad;
     }
 
@@ -469,7 +469,7 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   conn = dpl_conn_open(ctx, addr, ctx->port);
   if (NULL == conn)
     {
-      DPLERR(0, "connect failed");
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "connect failed");
       goto bad;
     }
 
@@ -737,7 +737,7 @@ dpl_conn_open_file(dpl_ctx_t *ctx,
   conn = malloc(sizeof (*conn));
   if (NULL == conn)
     {
-      DPLERR(1, "malloc failed");
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "malloc failed");
       conn = NULL;
       goto end;
     }

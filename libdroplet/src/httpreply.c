@@ -358,20 +358,20 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                     {
                       if (errno == EINTR)
                         goto retry;
-                      DPLERR(1, "poll");
+                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "poll"); 
                       ret = DPL_FAILURE;
                       goto end;
                     }
 
                   if (0 == ret2)
                     {
-                      DPLERR(0, "read timeout");
+                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "read timeout");
                       ret = DPL_FAILURE;
                       goto end;
                     }
                   else if (!(fds.revents & POLLIN))
                     {
-                      DPLERR(0, "socket error");
+                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "socket error");
                       ret = DPL_FAILURE;
                       goto end;
                     }
@@ -381,7 +381,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   conn->cc = recv(conn->fd, conn->read_buf, conn->read_buf_size, recvfl);
                   if (-1 == conn->cc)
                     {
-                      DPLERR(1, "recv");
+                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "recv");
                       ret = DPL_FAILURE;
                       goto end;
                     }
@@ -391,7 +391,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   conn->cc = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
                   if (conn->cc <= 0)
                     {
-                      DPLERR(1, "SSL_read");
+                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "SSL_read");
                       ret = DPL_FAILURE;
                       goto end;
                     }
@@ -412,7 +412,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
               ret2 = buffer_func(cb_arg, conn->read_buf, chunk_remain);
               if (DPL_SUCCESS != ret2)
                 {
-                  DPLERR(0, "buffer_func");
+                  DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "buffer_func");
                   ret = DPL_FAILURE;
                   goto end;
                 }
@@ -440,7 +440,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
           line = read_line(conn);
           if (NULL == line)
             {
-              DPLERR(0, "read line: %s", dpl_status_str(conn->status));
+              DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "read line: %s", dpl_status_str(conn->status));
               ret = DPL_FAILURE;
               goto end;
             }
@@ -451,7 +451,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
 
               if (http_parse_reply(line, &http_reply) != 0)
                 {
-                  DPLERR(0, "bad http reply: %.*s...", 100, line);
+                  DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "bad http reply: %.*s...", 100, line);
                   ret = DPL_FAILURE;
                   goto end;
                 }
@@ -481,7 +481,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                           ret2 = buffer_func(cb_arg, conn->read_buf + conn->read_buf_pos, chunk_remain);
                           if (DPL_SUCCESS != ret2)
                             {
-                              DPLERR(0, "buffer_func");
+                              DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "buffer_func");
                               ret = DPL_FAILURE;
                               goto end;
                             }
@@ -500,7 +500,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                 p = index(line, ':');
                 if (NULL == p)
                   {
-                    DPLERR(0, "bad header: %.*s...", 100, line);
+                    DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "bad header: %.*s...", 100, line);
                     break ;
                   }
                 *p++ = 0;
@@ -534,7 +534,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                     ret2 = header_func(cb_arg, line, p);
                     if (DPL_SUCCESS != ret2)
                       {
-                        DPLERR(0, "header_func");
+                        DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "header_func");
                         ret = DPL_FAILURE;
                         goto end;
                       }
@@ -563,7 +563,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   ret2 = buffer_func(cb_arg, conn->read_buf + conn->read_buf_pos, chunk_remain);
                   if (DPL_SUCCESS != ret2)
                     {
-                      DPLERR(0, "buffer_func");
+                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "buffer_func");
                       ret = DPL_FAILURE;
                       goto end;
                     }
