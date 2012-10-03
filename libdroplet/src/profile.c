@@ -382,13 +382,12 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "delim"))
     {
-      char *ndelim;
-
-      ndelim = strdup(value);
-      if (NULL == ndelim)
-        return -1;
-      free(ctx->delim);
-      ctx->delim = ndelim;
+      if (strlen(value) != 1)
+        {
+          fprintf(stderr, "invalid delimiter length '%s'\n", value);
+          return -1;
+        }
+      ctx->delimiter = value[0];
     }
   else
     {
@@ -489,9 +488,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->encode_slashes = 1;
   ctx->keep_alive = 1;
   ctx->url_encoding = 1;
-  ctx->delim = strdup(DPL_DEFAULT_DELIM);
-  if (NULL == ctx->delim)
-    return DPL_ENOMEM;
+  ctx->delimiter = DPL_DEFAULT_DELIM;
   ctx->max_redirects = DPL_DEFAULT_MAX_REDIRECTS;
 
   return DPL_SUCCESS;
@@ -833,8 +830,6 @@ dpl_profile_free(dpl_ctx_t *ctx)
     free(ctx->droplet_dir);
   if (NULL != ctx->profile_name)
     free(ctx->profile_name);
-  if (NULL != ctx->delim)
-    free(ctx->delim);
 
   if (NULL != ctx->cwds)
     dpl_dict_free(ctx->cwds);

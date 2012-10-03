@@ -66,7 +66,7 @@ extern "C" {
 #define DPL_MAXPATHLEN 1024
 #define DPL_MAXNAMLEN  255
 
-#define DPL_DEFAULT_DELIM "/"
+#define DPL_DEFAULT_DELIM '/'
 
 /*
  * types
@@ -418,7 +418,7 @@ typedef struct dpl_ctx
   char *pricing;              /*!< might be NULL */
   unsigned int read_buf_size;
   char *encrypt_key;
-  char *delim;               /*!< vdir delimiter */
+  char delimiter;            /*!< vdir delimiter */
   int encode_slashes;        /*!< client wants slashes encoded */
   int keep_alive;            /*!< client supports keep-alive */
   int url_encoding;          /*!< some servers does not handle url encoding */
