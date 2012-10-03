@@ -339,6 +339,9 @@ posix_setattr(const char *path,
         case DPL_SYSMD_MASK_ENTERPRISE_NUMBER:
           ret = DPL_ENOTSUPP;
           goto end;
+        case DPL_SYSMD_MASK_PATH:
+          ret = DPL_ENOTSUPP;
+          goto end;
         }
     }
 

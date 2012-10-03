@@ -105,7 +105,7 @@ main(int argc,
           exit(1);
         }
       
-      fprintf(stderr, "id=%s enterprise_number=%u\n", sysmd.id, sysmd.enterprise_number);
+      fprintf(stderr, "id=%s\n", sysmd.id);
     }
 
   /**/

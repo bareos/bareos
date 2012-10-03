@@ -120,7 +120,6 @@ typedef struct
       dpl_dict_t *query_params;
       /* output */
       dpl_sysmd_t sysmd_returned;
-      char *location;
     } post;
     struct
     {

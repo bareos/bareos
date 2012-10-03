@@ -1,4 +1,4 @@
-noinst_PROGRAMS = recurse idtest idrangetest srwskey resttest resttest_async
+noinst_PROGRAMS = recurse idtest idrangetest srwskey resttest resttest_async timo
 
 recurse_CFLAGS = -I$(top_srcdir)/libdroplet/include
 recurse_LDADD = $(top_builddir)/libdroplet/libdroplet.la
@@ -23,3 +23,7 @@ resttest_SOURCES = resttest.c
 resttest_async_CFLAGS = -I$(top_srcdir)/libdroplet/include
 resttest_async_LDADD = $(top_builddir)/libdroplet/libdroplet.la
 resttest_async_SOURCES = resttest_async.c
+
+timo_CFLAGS = -I$(top_srcdir)/libdroplet/include
+timo_LDADD = $(top_builddir)/libdroplet/libdroplet.la
+timo_SOURCES = timo.c

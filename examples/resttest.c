@@ -23,7 +23,6 @@ main(int argc,
   dpl_dict_t *metadata2_returned = NULL;
   dpl_dict_var_t *metadatum = NULL;
   dpl_sysmd_t sysmd;
-  char *resource_path = NULL;
   char new_path[MAXPATHLEN];
   dpl_vec_t *files = NULL;
   dpl_vec_t *sub_directories = NULL;
@@ -147,8 +146,7 @@ main(int argc,
                  data_buf,      //object body
                  data_len,      //object length
                  NULL,          //no query params
-                 &sysmd,        //the returned sysmd
-                 &resource_path); //the resource location
+                 &sysmd);       //the returned sysmd
   if (DPL_SUCCESS != ret)
     {
       fprintf(stderr, "dpl_post failed: %s (%d)\n", dpl_status_str(ret), ret);
@@ -156,13 +154,20 @@ main(int argc,
       goto free_all;
     }
 
-  fprintf(stderr, "resource path %s (key %s)\n", resource_path, sysmd.id);
+  if (!(sysmd.mask & DPL_SYSMD_MASK_PATH))
+    {
+      fprintf(stderr, "path is absent from sysmd\n");
+      ret = 1;
+      goto free_all;
+    }
+
+  fprintf(stderr, "resource path %s\n", sysmd.path);
 
   snprintf(new_path, sizeof (new_path), "%su.1", folder);
 
   ret = dpl_copy(ctx,
                  NULL,          //no src bucket
-                 resource_path, //the src resource
+                 sysmd.path,    //the src resource
                  NULL,          //no src sub resource
                  NULL,          //no dst bucket
                  new_path,      //dst resource
@@ -175,7 +180,7 @@ main(int argc,
                  NULL);         //no server side condition
   if (DPL_SUCCESS != ret)
     {
-      fprintf(stderr, "dpl_move %s to %s failed: %s (%d)\n", resource_path, new_path, dpl_status_str(ret), ret);
+      fprintf(stderr, "dpl_move %s to %s failed: %s (%d)\n", sysmd.path, new_path, dpl_status_str(ret), ret);
       ret = 1;
       goto free_all;
     }
@@ -417,9 +422,6 @@ main(int argc,
 
   if (NULL != files)
     dpl_vec_objects_free(files);
-
-  if (NULL != resource_path)
-    free(resource_path);
 
   if (NULL != metadata2_returned)
     dpl_dict_free(metadata2_returned);

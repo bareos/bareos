@@ -131,7 +131,6 @@ dpl_async_task_free(dpl_async_task_t *task)
       if (NULL != task->u.post.query_params)
         dpl_dict_free(task->u.post.query_params);
       /* output */
-       FREE_IF_NOT_NULL(task->u.post.location);
       break ;
     case DPL_TASK_PUT:
     case DPL_TASK_PUT_ID:
@@ -261,8 +260,7 @@ async_do(void *arg)
                            dpl_buf_ptr(task->u.post.buf),
                            dpl_buf_size(task->u.post.buf),
                            task->u.post.query_params,
-                           &task->u.post.sysmd_returned,
-                           &task->u.post.location);
+                           &task->u.post.sysmd_returned);
       break ;
     case DPL_TASK_PUT:
       task->ret = dpl_put(task->ctx, 

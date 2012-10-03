@@ -479,9 +479,15 @@ cb_create_object(void *handle)
       exit(1);
     }
 
-  fprintf(stderr, "resource path %s (key %s)\n", atask->u.post.location, atask->u.post.sysmd_returned.id);
+  if (!(sysmd.mask & DPL_SYSMD_MASK_PATH))
+    {
+      fprintf(stderr, "path is missing from sysmd\n");
+      exit(1);
+    }
 
-  rename_object(atask->u.post.location);
+  fprintf(stderr, "resource path %s\n", atask->u.post.sysmd_returned.path);
+
+  rename_object(atask->u.post.sysmd_returned.path);
   
   dpl_async_task_free(atask);
 }

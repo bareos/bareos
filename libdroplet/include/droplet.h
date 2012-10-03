@@ -266,6 +266,7 @@ typedef enum
   } dpl_ftype_t;
 
 #define DPL_DEFAULT_ENTERPRISE_NUMBER 37489 /*!< scality */
+
 /**/
 
 typedef enum
@@ -284,7 +285,8 @@ typedef enum
     DPL_SYSMD_MASK_ID            = (1u<<12),
     DPL_SYSMD_MASK_PARENT_ID     = (1u<<13),
     DPL_SYSMD_MASK_FTYPE         = (1u<<14),
-    DPL_SYSMD_MASK_ENTERPRISE_NUMBER  = (1u<<15)
+    DPL_SYSMD_MASK_ENTERPRISE_NUMBER  = (1u<<15),
+    DPL_SYSMD_MASK_PATH          = (1u<<16),
   } dpl_sysmd_mask_t;
 
 typedef struct
@@ -311,6 +313,7 @@ typedef struct
   char parent_id[DPL_SYSMD_ID_SIZE+1];
   dpl_ftype_t ftype;
   uint32_t enterprise_number;
+  char path[DPL_MAXPATHLEN+1];
 } dpl_sysmd_t;
 
 /**/

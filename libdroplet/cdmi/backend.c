@@ -1069,8 +1069,6 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
   u_int data_len_returned;
   dpl_value_t *val = NULL;
   dpl_cdmi_req_mask_t req_mask = 0u;
-  char *location = NULL;
-  dpl_dict_var_t *var;
   
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
@@ -1226,38 +1224,39 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_dict_get_lowered(headers_reply, "location", &var);
-  if (DPL_SUCCESS != ret2)
+  if (NULL != returned_sysmdp)
     {
-      ret = ret2;
-      goto end;
-    }
+      dpl_dict_var_t *var;
+      int base_path_len = strlen(ctx->base_path);
 
-  if (DPL_VALUE_STRING != var->val->type)
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
+      //location contains the path to new location
+      ret2 = dpl_dict_get_lowered(headers_reply, "location", &var);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+      
+      if (DPL_VALUE_STRING != var->val->type)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
 
-  location = strdup(var->val->string);
-  if (NULL == location)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
+      //remove the base_path from the answer
+      if (strncmp(var->val->string, ctx->base_path, base_path_len))
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+
+      returned_sysmdp->mask |= DPL_SYSMD_MASK_PATH;
+      strncpy(returned_sysmdp->path, var->val->string + base_path_len, DPL_MAXPATHLEN);
     }
   
-  if (NULL != locationp)
-    {
-      *locationp = location;
-      location = NULL;
-    }
-
   ret = DPL_SUCCESS;
 
  end:
-
-  if (NULL != location)
-    free(location);
 
   if (NULL != val)
     dpl_value_free(val);
