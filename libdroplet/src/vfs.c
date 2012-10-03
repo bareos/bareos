@@ -606,7 +606,7 @@ dpl_cwd(dpl_ctx_t *ctx,
   return cwd;
 }
 
-dpl_status_t
+static dpl_status_t
 dpl_dir_is_empty(dpl_ctx_t *ctx,
                  const char *locator)
 {
@@ -625,7 +625,7 @@ dpl_dir_is_empty(dpl_ctx_t *ctx,
       goto end;
     }
 
-  if (0 == objects->n_items && 0 == common_prefixes->n_items)
+  if (objects->n_items || common_prefixes->n_items)
     {
       ret = DPL_FAILURE;
       goto end;
@@ -1748,6 +1748,13 @@ dpl_rmdir(dpl_ctx_t *ctx,
   char *path;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "rmdir locator=%s", locator);
+
+  ret2 = dpl_dir_is_empty(ctx, locator);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
 
   nlocator = strdup(locator);
   if (NULL == nlocator)

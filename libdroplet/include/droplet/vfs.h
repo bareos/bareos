@@ -123,7 +123,6 @@ typedef struct
 
 /* PROTO vfs.c */
 dpl_fqn_t dpl_cwd(dpl_ctx_t *ctx, const char *bucket);
-dpl_status_t dpl_dir_is_empty(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_opendir(dpl_ctx_t *ctx, const char *locator, void **dir_hdlp);
 dpl_status_t dpl_readdir(void *dir_hdl, dpl_dirent_t *dirent);
 int dpl_eof(void *dir_hdl);
