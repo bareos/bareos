@@ -1363,7 +1363,7 @@ dpl_write(dpl_vfile_t *vfile,
       if (vfile->flags & DPL_VFILE_FLAG_POST)
         ret2 = dpl_post(vfile->ctx, vfile->bucket, vfile->resource, NULL, NULL,
                         vfile->obj_type, vfile->metadata, vfile->sysmd,
-                        buf, len, vfile->query_params, NULL, NULL); //XXX
+                        buf, len, vfile->query_params, NULL);
       else
         ret2 = dpl_put(vfile->ctx, vfile->bucket, vfile->resource, NULL, NULL,
                        vfile->obj_type, NULL, NULL, vfile->metadata, vfile->sysmd,

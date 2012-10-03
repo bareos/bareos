@@ -4,7 +4,7 @@ usage: restrest folder
 $ ./resttest mbox6/
 creating folder
 atomic creation of an object+MD
-resource path /dewpoint/mbox6/347B1515682A22BACE1FFE2F7368C251 (key 999B0C50646334200002E8000000370200000020)
+resource path /mbox6/347B1515682A22BACE1FFE2F7368C251
 getting object+MD
 checking object
 checking metadata
@@ -13,20 +13,6 @@ getting MD only
 checking metadata
 listing of folder
 file mbox6/u.1: size=10000 mtime=1348749077
-metadata:
-     scal_mtime=1348756277
-     scal_atime=1348756277
-     cdmi_size=10000
-     foo2=qux
-     scal_uid=0
-     scal_perms=420
-     scal_ino=5792864096231621352
-     scal_nlink=1
-     scal_ctime=1348756277
-     scal_gid=0
-     foo=bar2
-     cdmi_mtime=2012-09-27T14:31:17.000000Z
-     cdmi_atime=2012-09-27T14:31:17.000000Z
 delete object+MD
 
 

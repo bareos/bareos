@@ -135,8 +135,18 @@ dpl_req_set_resource(dpl_req_t *req,
                      const char *resource)
 {
   char *nstr;
+  char npath[DPL_MAXPATHLEN];
+  char delim[2];
 
-  nstr = strdup(resource);
+  delim[0] = req->ctx->delimiter;
+  delim[1] = 0;
+
+  if (!strcmp(req->ctx->base_path, delim))
+    snprintf(npath, sizeof (npath), "%s", resource);
+  else
+    snprintf(npath, sizeof (npath), "%s%c%s", req->ctx->base_path, req->ctx->delimiter, resource);
+
+  nstr = strdup(npath);
   if (NULL == nstr)
     return DPL_ENOMEM;
 
@@ -364,8 +374,18 @@ dpl_req_set_src_resource(dpl_req_t *req,
                          const char *src_resource)
 {
   char *nstr;
+  char npath[DPL_MAXPATHLEN];
+  char delim[2];
 
-  nstr = strdup(src_resource);
+  delim[0] = req->ctx->delimiter;
+  delim[1] = 0;
+
+  if (!strcmp(req->ctx->base_path, delim))
+    snprintf(npath, sizeof (npath), "%s", src_resource);
+  else
+    snprintf(npath, sizeof (npath), "%s%c%s", req->ctx->base_path, req->ctx->delimiter, src_resource);
+
+  nstr = strdup(npath);
   if (NULL == nstr)
     return DPL_ENOMEM;
 
@@ -382,7 +402,6 @@ dpl_req_set_src_subresource(dpl_req_t *req,
                             const char *src_subresource)
 {
   char *nstr;
-
   nstr = strdup(src_subresource);
   if (NULL == nstr)
     return DPL_ENOMEM;

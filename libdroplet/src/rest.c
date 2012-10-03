@@ -256,7 +256,6 @@ dpl_delete_bucket(dpl_ctx_t *ctx,
  * @param data_len the data length
  * @param query_params can be NULL
  * @param returned_sysmdp the returned system metadata passed through stack
- * @param locationp the returned path path
  * 
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
@@ -273,8 +272,7 @@ dpl_post(dpl_ctx_t *ctx,
          const char *data_buf,
          unsigned int data_len,
          const dpl_dict_t *query_params,
-         dpl_sysmd_t *returned_sysmdp,
-         char **locationp)
+         dpl_sysmd_t *returned_sysmdp)
 {
   dpl_status_t ret, ret2;
 
@@ -286,7 +284,7 @@ dpl_post(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret2 = ctx->backend->post(ctx, bucket, path, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, locationp);
+  ret2 = ctx->backend->post(ctx, bucket, path, subresource, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
