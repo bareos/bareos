@@ -2918,7 +2918,7 @@ dpl_cdmi_get_id_path(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  id_path = strdup("/cdmi_objectid/");
+  id_path = strdup("cdmi_objectid/");
   if (NULL == id_path)
     return DPL_ENOMEM;
   

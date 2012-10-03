@@ -249,13 +249,6 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
 
   DPL_APPEND_STR(" ");
 
-  if (NULL != req->ctx->base_path)
-    {
-      //dont prepend slash is base path is "/" and resource is "/"
-      if (strcmp(req->ctx->base_path, "/"))
-        DPL_APPEND_STR(req->ctx->base_path);
-    }
-
   if (NULL != req->resource)
     {
       DPL_APPEND_STR(resource_ue);

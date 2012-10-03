@@ -383,8 +383,8 @@ main(int argc,
           goto free_all;
         }
 
-      fprintf(stderr, "file %s: size=%ld mtime=%lu\nmetadata:\n", obj->path, obj_sysmd.size, obj_sysmd.mtime);
-      dpl_dict_print(obj_md, stderr, 5);
+      fprintf(stderr, "file %s: size=%ld mtime=%lu\n", obj->path, obj_sysmd.size, obj_sysmd.mtime);
+      //dpl_dict_print(obj_md, stderr, 5);
       dpl_dict_free(obj_md);
     }
 

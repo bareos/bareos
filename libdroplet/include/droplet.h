@@ -68,6 +68,8 @@ extern "C" {
 
 #define DPL_DEFAULT_DELIM '/'
 
+#define DPL_DEFAULT_BASE_PATH "/"
+
 /*
  * types
  */

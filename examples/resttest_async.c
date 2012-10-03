@@ -14,7 +14,6 @@ dpl_task_pool_t *pool = NULL;
 char *folder = NULL;
 int folder_len;
 dpl_dict_t *metadata = NULL;
-dpl_sysmd_t sysmd;
 char new_path[MAXPATHLEN];
 
 pthread_mutex_t prog_lock;
@@ -94,8 +93,8 @@ cb_head_object(void *handle)
       exit(1);
     }
   
-  fprintf(stderr, "file %s: size=%ld mtime=%lu\nmetadata:\n", atask->u.head.resource, atask->u.head.sysmd.size, atask->u.head.sysmd.mtime);
-  dpl_dict_print(atask->u.head.metadata, stderr, 5);
+  fprintf(stderr, "file %s: size=%ld mtime=%lu\n", atask->u.head.resource, atask->u.head.sysmd.size, atask->u.head.sysmd.mtime);
+  //dpl_dict_print(atask->u.head.metadata, stderr, 5);
 
   dpl_async_task_free(atask);
 
@@ -160,7 +159,7 @@ cb_list_bucket(void *handle)
   
   pthread_cond_wait(&list_cond, &list_lock);
   
-  printf("n_ok=%d\n", n_ok);
+  //printf("n_ok=%d\n", n_ok);
 
   if (n_ok != atask->u.list_bucket.objects->n_items)
     goto again;
@@ -479,7 +478,7 @@ cb_create_object(void *handle)
       exit(1);
     }
 
-  if (!(sysmd.mask & DPL_SYSMD_MASK_PATH))
+  if (!(atask->u.post.sysmd_returned.mask & DPL_SYSMD_MASK_PATH))
     {
       fprintf(stderr, "path is missing from sysmd\n");
       exit(1);

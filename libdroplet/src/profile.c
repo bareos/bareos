@@ -252,11 +252,16 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "base_path"))
     {
-      if (strcmp(value, "/"))
+      char delim[2];
+      int value_len = strlen(value);
+
+      delim[0] = ctx->delimiter;
+      delim[1] = 0;
+      if (strcmp(value, delim))
         {
-          if (value[strlen(value)-1] == '/')
+          if (value_len >= 1 && value[value_len-1] == ctx->delimiter)
             {
-              fprintf(stderr, "base_path must not end by slash\n");
+              fprintf(stderr, "base_path must not end by a delimiter\n");
               return -1;
             }
         }
@@ -495,6 +500,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->delimiter = DPL_DEFAULT_DELIM;
   ctx->max_redirects = DPL_DEFAULT_MAX_REDIRECTS;
   ctx->enterprise_number = DPL_DEFAULT_ENTERPRISE_NUMBER;
+  ctx->base_path = NULL;
 
   return DPL_SUCCESS;
 }
@@ -563,6 +569,21 @@ dpl_profile_post(dpl_ctx_t *ctx)
   int ret, ret2;
 
   //sanity checks
+
+  if (NULL == ctx->base_path)
+    {
+      char delim[2];
+
+      //make a decent default base_path
+      delim[0] = ctx->delimiter;
+      delim[1] = 0;
+      ctx->base_path = strdup(delim);
+      if (NULL == ctx->base_path)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+    }
 
   if (strcmp(ctx->backend->name, "posix"))
     {

@@ -21,12 +21,14 @@
 #include <sys/param.h>
 
 #define FILE1 "u.1"
+#define FILE2 "u.2"
 
 dpl_ctx_t *ctx = NULL;
 dpl_task_pool_t *pool = NULL;
 char *folder = NULL;
 int folder_len;
 char file1_path[MAXPATHLEN];
+char file2_path[MAXPATHLEN];
 
 pthread_mutex_t prog_lock;
 pthread_cond_t prog_cond;
@@ -54,7 +56,7 @@ free_all()
 }
 
 void
-cb_rename_object_with_a_name(void *handle)
+cb_name_nameless_object(void *handle)
 {
   dpl_async_task_t *atask = (dpl_async_task_t *) handle;
 
@@ -68,11 +70,13 @@ cb_rename_object_with_a_name(void *handle)
 }
 
 void
-rename_object_with_a_name(char *id)
+name_nameless_object(char *id)
 {
   dpl_async_task_t *atask = NULL;
   dpl_buf_t *buf = NULL;
   dpl_status_t ret;
+
+  fprintf(stderr, "1bis - bind nameless object with a name\n");
 
   atask = (dpl_async_task_t *) dpl_copy_id_async_prepare(ctx,
                                                          NULL,          //no src bucket
@@ -94,14 +98,14 @@ rename_object_with_a_name(char *id)
       exit(1);
     }
 
-  atask->cb_func = cb_rename_object_with_a_name;
+  atask->cb_func = cb_name_nameless_object;
   atask->cb_arg = atask;
   
   dpl_task_pool_put(pool, (dpl_task_t *) atask);
 }
 
 void
-cb_add_object_without_name(void *handle)
+cb_add_namess_object(void *handle)
 {
   dpl_async_task_t *atask = (dpl_async_task_t *) handle;
 
@@ -113,13 +117,13 @@ cb_add_object_without_name(void *handle)
 
   fprintf(stderr, "id=%s\n", atask->u.post.sysmd_returned.id);
 
-  rename_object_with_a_name(atask->u.post.sysmd_returned.id);
+  name_nameless_object(atask->u.post.sysmd_returned.id);
 
   dpl_async_task_free(atask);
 }
 
 void
-add_object_without_name()
+add_namess_object()
 {
   dpl_async_task_t *atask = NULL;
   dpl_buf_t *buf = NULL;
@@ -139,7 +143,7 @@ add_object_without_name()
 
   memset(buf->ptr, 'z', buf->size);
 
-  fprintf(stderr, "1 - add object without name\n");
+  fprintf(stderr, "1 - add nameless object\n");
 
   atask = (dpl_async_task_t *) dpl_post_id_async_prepare(ctx,           //the context
                                                          NULL,          //no bucket
@@ -156,7 +160,7 @@ add_object_without_name()
       exit(1);
     }
 
-  atask->cb_func = cb_add_object_without_name;
+  atask->cb_func = cb_add_namess_object;
   atask->cb_arg = atask;
   
   dpl_task_pool_put(pool, (dpl_task_t *) atask);
@@ -175,7 +179,7 @@ cb_make_folder(void *handle)
 
   dpl_async_task_free(atask);
 
-  add_object_without_name();
+  add_namess_object();
 }
 
 void
@@ -227,6 +231,12 @@ main(int argc,
     }
 
   folder = argv[1];
+  if (folder[0] == '/')
+    {
+      fprintf(stderr, "folder name must not start with slash");
+      exit(1);
+    }
+
   folder_len = strlen(folder);
   if (folder_len < 1)
     {
@@ -240,6 +250,7 @@ main(int argc,
     }
 
   snprintf(file1_path, sizeof (file1_path), "%s%s", folder, FILE1);
+  snprintf(file2_path, sizeof (file2_path), "%s%s", folder, FILE2);
 
   ret = dpl_init();           //init droplet library
   if (DPL_SUCCESS != ret)
