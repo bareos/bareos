@@ -252,14 +252,11 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "base_path"))
     {
-      char delim[2];
       int value_len = strlen(value);
 
-      delim[0] = ctx->delimiter;
-      delim[1] = 0;
-      if (strcmp(value, delim))
+      if (strcmp(value, "/"))
         {
-          if (value_len >= 1 && value[value_len-1] == ctx->delimiter)
+          if (value_len >= 1 && value[value_len-1] == '/')
             {
               fprintf(stderr, "base_path must not end by a delimiter\n");
               return -1;
@@ -385,15 +382,6 @@ conf_cb_func(void *cb_arg,
           return -1;
         }
     }
-  else if (!strcmp(var, "delim"))
-    {
-      if (strlen(value) != 1)
-        {
-          fprintf(stderr, "invalid delimiter length '%s'\n", value);
-          return -1;
-        }
-      ctx->delimiter = value[0];
-    }
   else if (!strcmp(var, "enterprise_number"))
     {
       ctx->enterprise_number = strtoul(value, NULL, 0);
@@ -497,10 +485,11 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->encode_slashes = 1;
   ctx->keep_alive = 1;
   ctx->url_encoding = 1;
-  ctx->delimiter = DPL_DEFAULT_DELIM;
   ctx->max_redirects = DPL_DEFAULT_MAX_REDIRECTS;
   ctx->enterprise_number = DPL_DEFAULT_ENTERPRISE_NUMBER;
-  ctx->base_path = NULL;
+  ctx->base_path = strdup(DPL_DEFAULT_BASE_PATH);
+  if (NULL == ctx->base_path)
+    return DPL_ENOMEM;
 
   return DPL_SUCCESS;
 }
@@ -569,21 +558,6 @@ dpl_profile_post(dpl_ctx_t *ctx)
   int ret, ret2;
 
   //sanity checks
-
-  if (NULL == ctx->base_path)
-    {
-      char delim[2];
-
-      //make a decent default base_path
-      delim[0] = ctx->delimiter;
-      delim[1] = 0;
-      ctx->base_path = strdup(delim);
-      if (NULL == ctx->base_path)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
-    }
 
   if (strcmp(ctx->backend->name, "posix"))
     {

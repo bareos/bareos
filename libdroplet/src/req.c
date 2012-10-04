@@ -136,15 +136,11 @@ dpl_req_set_resource(dpl_req_t *req,
 {
   char *nstr;
   char npath[DPL_MAXPATHLEN];
-  char delim[2];
 
-  delim[0] = req->ctx->delimiter;
-  delim[1] = 0;
-
-  if (!strcmp(req->ctx->base_path, delim))
+  if (!strcmp(req->ctx->base_path, "/"))
     snprintf(npath, sizeof (npath), "%s", resource);
   else
-    snprintf(npath, sizeof (npath), "%s%c%s", req->ctx->base_path, req->ctx->delimiter, resource);
+    snprintf(npath, sizeof (npath), "%s/%s", req->ctx->base_path, resource);
 
   nstr = strdup(npath);
   if (NULL == nstr)
@@ -375,15 +371,11 @@ dpl_req_set_src_resource(dpl_req_t *req,
 {
   char *nstr;
   char npath[DPL_MAXPATHLEN];
-  char delim[2];
 
-  delim[0] = req->ctx->delimiter;
-  delim[1] = 0;
-
-  if (!strcmp(req->ctx->base_path, delim))
+  if (!strcmp(req->ctx->base_path, "/"))
     snprintf(npath, sizeof (npath), "%s", src_resource);
   else
-    snprintf(npath, sizeof (npath), "%s%c%s", req->ctx->base_path, req->ctx->delimiter, src_resource);
+    snprintf(npath, sizeof (npath), "%s/%s", req->ctx->base_path, src_resource);
 
   nstr = strdup(npath);
   if (NULL == nstr)

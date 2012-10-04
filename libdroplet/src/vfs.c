@@ -52,7 +52,6 @@ dir_lookup(dpl_ctx_t *ctx,
   dpl_fqn_t obj_fqn;
   dpl_ftype_t obj_type;
   int obj_name_len = strlen(obj_name);
-  char delim[2];
 
   memset(&obj_fqn, 0, sizeof (obj_fqn));
 
@@ -88,10 +87,10 @@ dir_lookup(dpl_ctx_t *ctx,
 
       obj_fqn = parent_fqn;
 
-      p = rindex(obj_fqn.path, ctx->delimiter);
+      p = rindex(obj_fqn.path, '/');
       if (NULL == p)
         {
-          fprintf(stderr, "parent path shall contain delim %c\n", ctx->delimiter);
+          fprintf(stderr, "parent path shall contain delimiter\n");
           ret = DPL_FAILURE;
           goto end;
         }
@@ -100,7 +99,7 @@ dir_lookup(dpl_ctx_t *ctx,
 
       for (p2 = p;p2 > obj_fqn.path;p2--)
         {
-          if (*p2 == ctx->delimiter)
+          if (*p2 == '/')
             {
               DPRINTF("found delim\n");
 
@@ -122,9 +121,7 @@ dir_lookup(dpl_ctx_t *ctx,
     }
 
   //AWS do not like "" as a prefix
-  delim[0] = ctx->delimiter;
-  delim[1] = 0;
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(parent_fqn.path, "") ? NULL : parent_fqn.path, delim, -1, &files, &directories);
+  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(parent_fqn.path, "") ? NULL : parent_fqn.path, "/", -1, &files, &directories);
   if (DPL_SUCCESS != ret2)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, parent_fqn.path);
@@ -138,7 +135,7 @@ dir_lookup(dpl_ctx_t *ctx,
       int path_len;
       char *p;
 
-      p = rindex(obj->path, ctx->delimiter);
+      p = rindex(obj->path, '/');
       if (NULL != p)
         p++;
       else
@@ -159,7 +156,7 @@ dir_lookup(dpl_ctx_t *ctx,
             }
           memcpy(obj_fqn.path, obj->path, path_len);
           obj_fqn.path[path_len] = 0;
-          if (path_len >= 1 && *(obj->path + path_len - 1) == ctx->delimiter)
+          if (path_len >= 1 && *(obj->path + path_len - 1) == '/')
             obj_type = DPL_FTYPE_DIR;
           else
             obj_type = DPL_FTYPE_REG;
@@ -181,10 +178,10 @@ dir_lookup(dpl_ctx_t *ctx,
       int path_len;
       char *p, *p2;
 
-      p = rindex(prefix->prefix, ctx->delimiter);
+      p = rindex(prefix->prefix, '/');
       if (NULL == p)
         {
-          fprintf(stderr, "prefix %s shall contain delim %c\n", prefix->prefix, ctx->delimiter);
+          fprintf(stderr, "prefix %s shall contain delimiter\n", prefix->prefix);
           continue ;
         }
 
@@ -196,7 +193,7 @@ dir_lookup(dpl_ctx_t *ctx,
         {
           DPRINTF("p2='%s'\n", p2);
 
-          if (*p2 == ctx->delimiter)
+          if (*p2 == '/')
             {
               DPRINTF("found delim\n");
 
@@ -258,7 +255,6 @@ dir_open(dpl_ctx_t *ctx,
 {
   dpl_dir_t *dir;
   int ret, ret2;
-  char delim[2];
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "opendir bucket=%s fqn=%s", bucket, fqn.path);
 
@@ -276,9 +272,7 @@ dir_open(dpl_ctx_t *ctx,
   dir->fqn = fqn;
 
   //AWS prefers NULL for listing the root dir
-  delim[0] = ctx->delimiter;
-  delim[1] = 0;
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(fqn.path, "") ? NULL : fqn.path, delim, -1, &dir->files, &dir->directories);
+  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(fqn.path, "") ? NULL : fqn.path, "/", -1, &dir->files, &dir->directories);
   if (DPL_SUCCESS != ret2)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, fqn.path);
@@ -402,7 +396,7 @@ dir_read(void *dir_hdl,
       memcpy(dirent->fqn.path, obj->path, path_len);
       dirent->fqn.path[path_len] = 0;
 
-      if (path_len >= 1 && *(obj->path + path_len - 1) == dir->ctx->delimiter)
+      if (path_len >= 1 && *(obj->path + path_len - 1) == '/')
         dirent->type = DPL_FTYPE_DIR;
       else
         dirent->type = DPL_FTYPE_REG;
@@ -449,7 +443,7 @@ is_rel_path(dpl_ctx_t *ctx,
             const char *path)
 {
   //absolute path
-  if (*path == ctx->delimiter)
+  if (*path == '/')
     return 0;
   return 1;
 }
@@ -483,7 +477,7 @@ make_abs_path(dpl_ctx_t *ctx,
 
   while (1)
     {
-      p2 = index(p1, ctx->delimiter);
+      p2 = index(p1, '/');
       if (NULL == p2)
         {
           namelen = strlen(p1);
@@ -515,14 +509,11 @@ make_abs_path(dpl_ctx_t *ctx,
           ret2 = dir_lookup(ctx, bucket, parent_fqn, name, &obj_fqn, &obj_type);
           if (DPL_SUCCESS != ret2)
             {
-              char delim[2];
               //make a fake path
 
               obj_fqn.path[0] = 0;
               strcat(obj_fqn.path, parent_fqn.path); //XXX
-              delim[0] = ctx->delimiter;
-              delim[1] = 0;
-              strcat(obj_fqn.path, delim); //XXX
+              strcat(obj_fqn.path, "/"); //XXX
               strcat(obj_fqn.path, name); //XXX
               
               ret = DPL_SUCCESS;
@@ -612,14 +603,13 @@ dir_is_empty(dpl_ctx_t *ctx,
 {
   dpl_status_t ret;
   dpl_status_t ret2;
-  char delim[2] = { ctx->delimiter, 0 };
   dpl_vec_t *objects = NULL;
   dpl_vec_t *common_prefixes = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "dir_is_empty path=%s", path);
 
   /* since dir_is_empty(<directory>) returns at least 1 common_prefix (itself), ask for two... */
-  ret2 = dpl_list_bucket(ctx, ctx->cur_bucket, path, delim, 10, &objects, &common_prefixes);
+  ret2 = dpl_list_bucket(ctx, ctx->cur_bucket, path, "/", 10, &objects, &common_prefixes);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -822,14 +812,8 @@ dpl_chdir(dpl_ctx_t *ctx,
       int len = strlen(tmp_fqn.path);
       
       //append delim if not present
-      if (len >= 1 && *(tmp_fqn.path + len - 1) != ctx->delimiter)
-        {
-          char delim[2];
-          
-          delim[0] = ctx->delimiter;
-          delim[1] = 0;
-          strcat(tmp_fqn.path, delim);
-        }
+      if (len >= 1 && *(tmp_fqn.path + len - 1) != '/')
+        strcat(tmp_fqn.path, "/");
     }
 
   ret2 = dpl_head(ctx, ctx->cur_bucket, tmp_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL, NULL, &sysmd);
@@ -1781,7 +1765,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  dir_name = rindex(path, ctx->delimiter);
+  dir_name = rindex(path, '/');
   if (NULL != dir_name)
     dir_name++;
   else
@@ -1794,8 +1778,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
  
-  char delim[] = { ctx->delimiter, 0 };
-  char *path_slash = strcat((char *) path, delim);
+  char *path_slash = strcat((char *) path, "/");
   ret2 = dir_is_empty(ctx, path_slash);
   if (DPL_SUCCESS != ret2)
     {
@@ -1964,7 +1947,7 @@ dpl_getattr(dpl_ctx_t *ctx,
           sysmdp->mask |= DPL_SYSMD_MASK_FTYPE;
           size_t path_len = strlen(obj_fqn.path);
 
-          if (path_len > 1 && ctx->delimiter == obj_fqn.path[path_len - 1])
+          if (path_len > 1 && '/' == obj_fqn.path[path_len - 1])
             sysmdp->ftype = DPL_FTYPE_DIR;
           else
             sysmdp->ftype = DPL_FTYPE_REG;
