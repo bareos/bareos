@@ -367,7 +367,137 @@ dpl_cdmi_req_set_resource(dpl_req_t *req,
   return ret;
 }
 
-struct mdparse_data
+dpl_status_t
+dpl_cdmi_req_add_range(dpl_req_t *req,
+                       dpl_cdmi_req_mask_t req_mask,
+                       const dpl_range_t *range)
+{
+  dpl_status_t ret, ret2;
+
+  if (range->start > 0 && range->end > 0)
+    {
+      if (req_mask & DPL_CDMI_REQ_HTTP_COMPAT)
+        {
+          ret2 = dpl_req_add_range(req, range->start, range->end);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
+      else
+        {
+          char buf[256];
+          
+          snprintf(buf, sizeof (buf), "value:%d-%d", range->start, range->end);
+          ret2 = dpl_req_set_subresource(req, buf);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
+}
+
+struct cdmi_req_add_md_arg
+{
+  dpl_sbuf_t *field;
+  int comma;
+};
+
+dpl_status_t 
+cb_cdmi_req_add_metadata(dpl_dict_var_t *var,
+                         void *cb_arg)
+{
+  struct cdmi_req_add_md_arg *arg = (struct cdmi_req_add_md_arg *) cb_arg;
+  dpl_status_t ret, ret2;
+  char buf[256];
+
+  snprintf(buf, sizeof (buf), "%smetadata:%s", arg->comma ? "," : "", var->key);
+
+  ret2 = dpl_sbuf_add(arg->field, buf, strlen(buf));
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  arg->comma = 1;
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
+}
+
+dpl_status_t
+dpl_cdmi_req_add_metadata(dpl_req_t *req,
+                          const dpl_dict_t *metadata,
+                          int append)
+{
+  dpl_status_t ret, ret2;
+  struct cdmi_req_add_md_arg arg;
+
+  memset(&arg, 0, sizeof (arg));
+
+  if (append)
+    {
+      //iterate metadata object
+      arg.field = dpl_sbuf_new(30);
+      if (NULL == arg.field)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
+      ret2 = dpl_dict_iterate(metadata, cb_cdmi_req_add_metadata, &arg);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      ret2 = dpl_sbuf_add(arg.field, "", 1);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      ret2 = dpl_req_set_subresource(req, arg.field->buf);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  ret2 = dpl_req_add_metadata(req, metadata);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != arg.field)
+    dpl_sbuf_free(arg.field);
+
+  return ret;
+}
+
+struct metadata_list_arg
 {
   dpl_dict_t *metadata;
   dpl_metadatum_func_t metadatum_func;
@@ -378,7 +508,7 @@ dpl_status_t
 cb_metadata_list(dpl_dict_var_t *var,
                  void *cb_arg)
 {
-  struct mdparse_data *arg = (struct mdparse_data *) cb_arg;
+  struct metadata_list_arg *arg = (struct metadata_list_arg *) cb_arg;
   dpl_status_t ret, ret2;
 
   if (arg->metadatum_func)
@@ -559,7 +689,7 @@ dpl_cdmi_get_metadatum_from_value(const char *key,
 
       if (metadata)
         {
-          struct mdparse_data arg;
+          struct metadata_list_arg arg;
           
           arg.metadatum_func = metadatum_func;
           arg.metadata = metadata;
@@ -1126,7 +1256,7 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
 
   if (NULL != metadata)
     {
-      ret2 = dpl_req_add_metadata(req, metadata);
+      ret2 = dpl_cdmi_req_add_metadata(req, metadata, option ? option->mask & DPL_OPTION_APPEND_METADATA : 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1388,7 +1518,7 @@ dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
 
   if (NULL != metadata)
     {
-      ret2 = dpl_req_add_metadata(req, metadata);
+      ret2 = dpl_cdmi_req_add_metadata(req, metadata, option ? option->mask & DPL_OPTION_APPEND_METADATA : 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1509,8 +1639,15 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
   dpl_req_t     *req = NULL;
   char          *body_str = NULL;
   int           body_len = 0;
+  dpl_cdmi_req_mask_t req_mask = 0u;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_HTTP_COMPAT)
+        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
+    }
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -1546,6 +1683,16 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
   //contact default host
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
+  if (range)
+    {
+      ret2 = dpl_cdmi_req_add_range(req, req_mask, range);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
   dpl_req_set_object_type(req, object_type);
 
   dpl_req_set_data(req, data_buf, data_len);
@@ -1564,7 +1711,7 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
 
   if (NULL != metadata)
     {
-      ret2 = dpl_req_add_metadata(req, metadata);
+      ret2 = dpl_cdmi_req_add_metadata(req, metadata, option ? option->mask & DPL_OPTION_APPEND_METADATA : 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1766,6 +1913,16 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
+  if (range)
+    {
+      ret2 = dpl_cdmi_req_add_range(req, req_mask, range);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
   dpl_req_set_object_type(req, object_type);
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_EXPECT);
@@ -1782,7 +1939,7 @@ dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
 
   if (NULL != metadata)
     {
-      ret2 = dpl_req_add_metadata(req, metadata);
+      ret2 = dpl_cdmi_req_add_metadata(req, metadata, option ? option->mask & DPL_OPTION_APPEND_METADATA : 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1968,29 +2125,11 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
 
   if (range)
     {
-      if ( range->start > 0 && range->end > 0 )
+      ret2 = dpl_cdmi_req_add_range(req, req_mask, range);
+      if (DPL_SUCCESS != ret2)
         {
-          if (req_mask & DPL_CDMI_REQ_HTTP_COMPAT)
-            {
-              ret2 = dpl_req_add_range(req, range->start, range->end);
-              if (DPL_SUCCESS != ret2)
-                {
-                  ret = ret2;
-                  goto end;
-                }
-            }
-          else
-            {
-              char buf[256];
-
-              snprintf(buf, sizeof (buf), "value:%d-%d", range->start, range->end);
-              ret2 = dpl_req_set_subresource(req, buf);
-              if (DPL_SUCCESS != ret2)
-                {
-                  ret = ret2;
-                  goto end;
-                }
-            }
+          ret = ret2;
+          goto end;
         }
     }
 
@@ -2831,7 +2970,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
 
   if (NULL != metadata)
     {
-      ret2 = dpl_req_add_metadata(req, metadata);
+      ret2 = dpl_cdmi_req_add_metadata(req, metadata, option ? option->mask & DPL_OPTION_APPEND_METADATA : 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;

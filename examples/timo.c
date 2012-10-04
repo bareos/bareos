@@ -20,8 +20,11 @@
 #include <assert.h>
 #include <sys/param.h>
 
+#define DATA_LEN 10000
+
 #define FILE1 "u.1"
 #define FILE2 "u.2"
+#define FILE3 "u.3"
 
 dpl_ctx_t *ctx = NULL;
 dpl_task_pool_t *pool = NULL;
@@ -29,6 +32,7 @@ char *folder = NULL;
 int folder_len;
 char file1_path[MAXPATHLEN];
 char file2_path[MAXPATHLEN];
+char file3_path[MAXPATHLEN];
 
 pthread_mutex_t prog_lock;
 pthread_cond_t prog_cond;
@@ -56,34 +60,102 @@ free_all()
 }
 
 void
-cb_append_to_nonexisting_named_object_precond(void *handle)
+cb_update_metadata_named_object(void *handle)
 {
   dpl_async_task_t *atask = (dpl_async_task_t *) handle;
 
-  if (DPL_EPRECOND != atask->ret)
+  if (DPL_SUCCESS != atask->ret)
     {
       fprintf(stderr, "abnormal answer: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
       exit(1);
     }
 
   dpl_async_task_free(atask);
-
-  //append_data_to_named_object_precond();
+  
+  //
 }
 
 void
-append_to_nonexisting_named_object_precond()
+update_metadata_named_object()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_status_t ret;
+  dpl_option_t option;
+  dpl_dict_t *metadata = NULL;
+
+  fprintf(stderr, "6 - append metadata to existing named object\n");
+
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      exit(1);
+    }
+
+  ret = dpl_dict_add(metadata, "foo", "bar", 0);
+  if (DPL_SUCCESS != ret)
+    {
+      fprintf(stderr, "error updating metadatum: %s (%d)\n", dpl_status_str(ret), ret);
+      exit(1);
+    }
+  
+  option.mask = DPL_OPTION_APPEND_METADATA;
+
+  atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
+                                                     NULL,          //no bucket
+                                                     file3_path,    //the id
+                                                     NULL,          //no subresource
+                                                     &option,       //option
+                                                     DPL_FTYPE_REG, //regular object
+                                                     NULL,          //condition
+                                                     NULL,          //range
+                                                     metadata,      //the metadata
+                                                     NULL,          //no sysmd
+                                                     NULL);         //object body
+
+  dpl_dict_free(metadata);
+
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_update_metadata_named_object;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_append_to_nonexisting_named_object(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+
+  if (DPL_SUCCESS != atask->ret)
+    {
+      fprintf(stderr, "abnormal answer: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  dpl_async_task_free(atask);
+  
+  update_metadata_named_object();
+}
+
+void
+append_to_nonexisting_named_object()
 {
   dpl_async_task_t *atask = NULL;
   dpl_buf_t *buf = NULL;
   dpl_status_t ret;
-  dpl_condition_t condition;
+  dpl_option_t option;
 
   buf = dpl_buf_new();
   if (NULL == buf)
     exit(1);
 
-  buf->size = 10000;
+  buf->size = DATA_LEN;
   buf->ptr = malloc(buf->size);
   if (NULL == buf->ptr)
     {
@@ -93,20 +165,88 @@ append_to_nonexisting_named_object_precond()
 
   memset(buf->ptr, 'z', buf->size);
 
-  fprintf(stderr, "3 - add existing named object with precondition\n");
+  fprintf(stderr, "5 - append data to nonexisting named object\n");
+  
+  option.mask = DPL_OPTION_APPEND_DATA;
+
+  atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
+                                                     NULL,          //no bucket
+                                                     file3_path,    //the id
+                                                     NULL,          //no subresource
+                                                     &option,       //option
+                                                     DPL_FTYPE_REG, //regular object
+                                                     NULL,          //no condition
+                                                     NULL,          //range
+                                                     NULL,          //the metadata
+                                                     NULL,          //no sysmd
+                                                     buf);          //object body
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_append_to_nonexisting_named_object;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_append_to_nonexisting_named_object_precond(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+
+  if (DPL_EPRECOND != atask->ret)
+    {
+      fprintf(stderr, "abnormal answer: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      //exit(1);
+    }
+
+  dpl_async_task_free(atask);
+
+  append_to_nonexisting_named_object();
+}
+
+void
+append_to_nonexisting_named_object_precond()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+  dpl_condition_t condition;
+  dpl_option_t option;
+
+  buf = dpl_buf_new();
+  if (NULL == buf)
+    exit(1);
+
+  buf->size = DATA_LEN;
+  buf->ptr = malloc(buf->size);
+  if (NULL == buf->ptr)
+    {
+      fprintf(stderr, "alloc data failed\n");
+      exit(1);
+    }
+
+  memset(buf->ptr, 'z', buf->size);
+
+  fprintf(stderr, "4 - append data to nonexisting named object with precondition\n");
   
   condition.mask = DPL_CONDITION_IF_MATCH;
   condition.etag[0] = '*';
   condition.etag[1] = 0;
 
+  option.mask = DPL_OPTION_APPEND_DATA;
+
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
                                                      NULL,          //no bucket
-                                                     file2_path,    //the id
+                                                     file3_path,    //the id
                                                      NULL,          //no subresource
-                                                     NULL,          //no option
+                                                     &option,       //no option
                                                      DPL_FTYPE_REG, //regular object
                                                      &condition,    //expect failure if exists
-                                                     NULL,          //no range
+                                                     NULL,          //range
                                                      NULL,          //the metadata
                                                      NULL,          //no sysmd
                                                      buf);          //object body
@@ -150,7 +290,7 @@ add_existing_named_object()
   if (NULL == buf)
     exit(1);
 
-  buf->size = 10000;
+  buf->size = DATA_LEN;
   buf->ptr = malloc(buf->size);
   if (NULL == buf->ptr)
     {
@@ -216,7 +356,7 @@ add_existing_named_object_no_precond()
   if (NULL == buf)
     exit(1);
 
-  buf->size = 10000;
+  buf->size = DATA_LEN;
   buf->ptr = malloc(buf->size);
   if (NULL == buf->ptr)
     {
@@ -278,7 +418,7 @@ add_nonexisting_named_object()
   if (NULL == buf)
     exit(1);
 
-  buf->size = 10000;
+  buf->size = DATA_LEN;
   buf->ptr = malloc(buf->size);
   if (NULL == buf->ptr)
     {
@@ -393,7 +533,7 @@ add_nameless_object()
   if (NULL == buf)
     exit(1);
 
-  buf->size = 10000;
+  buf->size = DATA_LEN;
   buf->ptr = malloc(buf->size);
   if (NULL == buf->ptr)
     {
@@ -511,6 +651,7 @@ main(int argc,
 
   snprintf(file1_path, sizeof (file1_path), "%s%s", folder, FILE1);
   snprintf(file2_path, sizeof (file2_path), "%s%s", folder, FILE2);
+  snprintf(file3_path, sizeof (file3_path), "%s%s", folder, FILE3);
 
   ret = dpl_init();           //init droplet library
   if (DPL_SUCCESS != ret)

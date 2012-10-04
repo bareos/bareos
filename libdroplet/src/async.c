@@ -258,8 +258,8 @@ async_do(void *arg)
                            task->u.post.object_type,
                            task->u.post.metadata,
                            task->u.post.sysmd,
-                           dpl_buf_ptr(task->u.post.buf),
-                           dpl_buf_size(task->u.post.buf),
+                           NULL != task->u.post.buf ? dpl_buf_ptr(task->u.post.buf) : NULL,
+                           NULL != task->u.post.buf ? dpl_buf_size(task->u.post.buf) : 0,
                            task->u.post.query_params,
                            &task->u.post.sysmd_returned);
       break ;
@@ -274,8 +274,8 @@ async_do(void *arg)
                           task->u.put.range,  
                           task->u.put.metadata,
                           task->u.put.sysmd,
-                          dpl_buf_ptr(task->u.put.buf),
-                          dpl_buf_size(task->u.put.buf));
+                          NULL != task->u.put.buf ? dpl_buf_ptr(task->u.put.buf) : NULL,
+                          NULL != task->u.put.buf ? dpl_buf_size(task->u.put.buf) : 0);
       break ;
     case DPL_TASK_GET:
       task->u.get.buf = dpl_buf_new();
@@ -341,8 +341,8 @@ async_do(void *arg)
                               task->u.post.object_type,
                               task->u.post.metadata,
                               task->u.post.sysmd,
-                              dpl_buf_ptr(task->u.post.buf),
-                              dpl_buf_size(task->u.post.buf),
+                              NULL != task->u.post.buf ? dpl_buf_ptr(task->u.post.buf) : NULL,
+                              NULL != task->u.post.buf ? dpl_buf_size(task->u.post.buf) : 0,
                               task->u.post.query_params,
                               &task->u.post.sysmd_returned);
       break ;
@@ -357,8 +357,8 @@ async_do(void *arg)
                              task->u.put.range,  
                              task->u.put.metadata,
                              task->u.put.sysmd,
-                             dpl_buf_ptr(task->u.put.buf),
-                             dpl_buf_size(task->u.put.buf));
+                             NULL != task->u.put.buf ? dpl_buf_ptr(task->u.put.buf) : NULL,
+                             NULL != task->u.put.buf ? dpl_buf_size(task->u.put.buf) : 0);
       break ;
     case DPL_TASK_GET_ID:
       task->u.get.buf = dpl_buf_new();

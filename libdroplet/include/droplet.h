@@ -338,7 +338,9 @@ typedef enum
   {
     DPL_OPTION_LAZY                = (1u<<0), /*!< perform a lazy operation */
     DPL_OPTION_HTTP_COMPAT         = (1u<<1), /*!< use HTTP compat mode */
-    DPL_OPTION_RAW                 = (1u<<2)  /*!< put/get RAW buffer */
+    DPL_OPTION_RAW                 = (1u<<2), /*!< put/get RAW buffer */
+    DPL_OPTION_APPEND_METADATA     = (1u<<3), /*!< append metadata */
+    DPL_OPTION_APPEND_DATA         = (1u<<4), /*!< append data */
   } dpl_option_mask_t;
 
 typedef struct
