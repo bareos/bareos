@@ -119,7 +119,6 @@ dpl_async_task_free(dpl_async_task_t *task)
       /* input */
       FREE_IF_NOT_NULL(task->u.post.bucket);
       FREE_IF_NOT_NULL(task->u.post.resource);
-      FREE_IF_NOT_NULL(task->u.post.subresource);
       if (NULL != task->u.post.option)
         dpl_option_free(task->u.post.option);
       if (NULL != task->u.post.metadata)
@@ -137,7 +136,6 @@ dpl_async_task_free(dpl_async_task_t *task)
       /* input */
       FREE_IF_NOT_NULL(task->u.put.bucket);
       FREE_IF_NOT_NULL(task->u.put.resource);
-      FREE_IF_NOT_NULL(task->u.put.subresource);
       if (NULL != task->u.put.option)
         dpl_option_free(task->u.put.option);
       if (NULL != task->u.put.condition)
@@ -157,7 +155,6 @@ dpl_async_task_free(dpl_async_task_t *task)
       /* inget */
       FREE_IF_NOT_NULL(task->u.get.bucket);
       FREE_IF_NOT_NULL(task->u.get.resource);
-      FREE_IF_NOT_NULL(task->u.get.subresource);
       if (NULL != task->u.get.option)
         dpl_option_free(task->u.get.option);
       if (NULL != task->u.get.condition)
@@ -175,7 +172,6 @@ dpl_async_task_free(dpl_async_task_t *task)
       /* inhead */
       FREE_IF_NOT_NULL(task->u.head.bucket);
       FREE_IF_NOT_NULL(task->u.head.resource);
-      FREE_IF_NOT_NULL(task->u.head.subresource);
       if (NULL != task->u.head.option)
         dpl_option_free(task->u.head.option);
       if (NULL != task->u.head.condition)
@@ -189,7 +185,6 @@ dpl_async_task_free(dpl_async_task_t *task)
       /* indelete */
       FREE_IF_NOT_NULL(task->u.delete.bucket);
       FREE_IF_NOT_NULL(task->u.delete.resource);
-      FREE_IF_NOT_NULL(task->u.delete.subresource);
       if (NULL != task->u.delete.option)
         dpl_option_free(task->u.delete.option);
       if (NULL != task->u.delete.condition)
@@ -201,10 +196,8 @@ dpl_async_task_free(dpl_async_task_t *task)
       /* incopy */
       FREE_IF_NOT_NULL(task->u.copy.src_bucket);
       FREE_IF_NOT_NULL(task->u.copy.src_resource);
-      FREE_IF_NOT_NULL(task->u.copy.src_subresource);
       FREE_IF_NOT_NULL(task->u.copy.dst_bucket);
       FREE_IF_NOT_NULL(task->u.copy.dst_resource);
-      FREE_IF_NOT_NULL(task->u.copy.dst_subresource);
       if (NULL != task->u.copy.option)
         dpl_option_free(task->u.copy.option);
       if (NULL != task->u.copy.metadata)
@@ -253,7 +246,6 @@ async_do(void *arg)
       task->ret = dpl_post(task->ctx, 
                            task->u.post.bucket,
                            task->u.post.resource,
-                           task->u.post.subresource,
                            task->u.post.option,
                            task->u.post.object_type,
                            task->u.post.metadata,
@@ -267,7 +259,6 @@ async_do(void *arg)
       task->ret = dpl_put(task->ctx, 
                           task->u.put.bucket,
                           task->u.put.resource,
-                          task->u.put.subresource,
                           task->u.put.option,
                           task->u.put.object_type,
                           task->u.put.condition,
@@ -288,7 +279,6 @@ async_do(void *arg)
       task->ret = dpl_get(task->ctx, 
                           task->u.get.bucket,
                           task->u.get.resource,
-                          task->u.get.subresource,
                           task->u.get.option,
                           task->u.get.object_type,
                           task->u.get.condition,
@@ -302,7 +292,6 @@ async_do(void *arg)
       task->ret = dpl_head(task->ctx, 
                            task->u.head.bucket,
                            task->u.head.resource,
-                           task->u.head.subresource,
                            task->u.head.option,
                            task->u.head.object_type,
                            task->u.head.condition,
@@ -313,7 +302,6 @@ async_do(void *arg)
       task->ret = dpl_delete(task->ctx, 
                              task->u.delete.bucket,
                              task->u.delete.resource,
-                             task->u.delete.subresource,
                              task->u.delete.option,
                              task->u.delete.object_type,
                              task->u.delete.condition);
@@ -322,10 +310,8 @@ async_do(void *arg)
       task->ret = dpl_copy(task->ctx, 
                            task->u.copy.src_bucket,
                            task->u.copy.src_resource,
-                           task->u.copy.src_subresource,
                            task->u.copy.dst_bucket,
                            task->u.copy.dst_resource,
-                           task->u.copy.dst_subresource,
                            task->u.copy.option,
                            task->u.copy.object_type,
                            task->u.copy.copy_directive,
@@ -336,7 +322,6 @@ async_do(void *arg)
     case DPL_TASK_POST_ID:
       task->ret = dpl_post_id(task->ctx, 
                               task->u.post.bucket,
-                              task->u.post.subresource,
                               task->u.post.option,
                               task->u.post.object_type,
                               task->u.post.metadata,
@@ -350,7 +335,6 @@ async_do(void *arg)
       task->ret = dpl_put_id(task->ctx, 
                              task->u.put.bucket,
                              task->u.put.resource,
-                             task->u.put.subresource,
                              task->u.put.option,
                              task->u.put.object_type,
                              task->u.put.condition,
@@ -371,7 +355,6 @@ async_do(void *arg)
       task->ret = dpl_get_id(task->ctx, 
                              task->u.get.bucket,
                              task->u.get.resource,
-                             task->u.get.subresource,
                              task->u.get.option,
                              task->u.get.object_type,
                              task->u.get.condition,
@@ -385,7 +368,6 @@ async_do(void *arg)
       task->ret = dpl_head_id(task->ctx, 
                               task->u.head.bucket,
                               task->u.head.resource,
-                              task->u.head.subresource,
                               task->u.head.option,
                               task->u.head.object_type,
                               task->u.head.condition,
@@ -396,7 +378,6 @@ async_do(void *arg)
       task->ret = dpl_delete_id(task->ctx, 
                                 task->u.delete.bucket,
                                 task->u.delete.resource,
-                                task->u.delete.subresource,
                                 task->u.delete.option,
                                 task->u.delete.object_type,
                                 task->u.delete.condition);
@@ -405,10 +386,8 @@ async_do(void *arg)
       task->ret = dpl_copy_id(task->ctx, 
                               task->u.copy.src_bucket,
                               task->u.copy.src_resource,
-                              task->u.copy.src_subresource,
                               task->u.copy.dst_bucket,
                               task->u.copy.dst_resource,
-                              task->u.copy.dst_subresource,
                               task->u.copy.option,
                               task->u.copy.object_type,
                               task->u.copy.copy_directive,
@@ -538,8 +517,6 @@ dpl_make_bucket_async_prepare(dpl_ctx_t *ctx,
  *
  * @param ctx the droplet context
  * @param bucket can be NULL
- * @param resource the resource
- * @param subresource can be NULL
  *
  * @return task
  */
@@ -576,7 +553,6 @@ dpl_delete_bucket_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param bucket can be NULL
  * @param resource can be NULL
- * @param subresource can be NULL
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_REG create a file
  * @param metadata the user metadata. optional
@@ -592,7 +568,6 @@ dpl_task_t *
 dpl_post_async_prepare(dpl_ctx_t *ctx,
                        const char *bucket,
                        const char *resource,
-                       const char *subresource,
                        const dpl_option_t *option,
                        dpl_ftype_t object_type,
                        const dpl_dict_t *metadata,
@@ -611,7 +586,6 @@ dpl_post_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.post, bucket);
   DUP_IF_NOT_NULL(task->u.post, resource);
-  DUP_IF_NOT_NULL(task->u.post, subresource);
   if (NULL != option)
     task->u.post.option = dpl_option_dup(option);
   task->u.post.object_type = object_type;
@@ -643,7 +617,6 @@ dpl_post_async_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param bucket optional
  * @param resource mandatory
- * @param subresource can be NULL
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_REG create a file
  * @param object_type DPL_FTYPE_DIR create a directory
@@ -661,7 +634,6 @@ dpl_task_t *
 dpl_put_async_prepare(dpl_ctx_t *ctx,
                       const char *bucket,
                       const char *resource,
-                      const char *subresource,
                       const dpl_option_t *option,
                       dpl_ftype_t object_type,
                       const dpl_condition_t *condition,
@@ -681,7 +653,6 @@ dpl_put_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.put, bucket);
   DUP_IF_NOT_NULL(task->u.put, resource);
-  DUP_IF_NOT_NULL(task->u.put, subresource);
   if (NULL != option)
     task->u.put.option = dpl_option_dup(option);
   task->u.put.object_type = object_type;
@@ -715,7 +686,6 @@ dpl_put_async_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param bucket the optional bucket
  * @param resource the mandat resource
- * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_ANY get any type of resource
  * @param condition the optional condition
@@ -729,7 +699,6 @@ dpl_task_t *
 dpl_get_async_prepare(dpl_ctx_t *ctx,
                       const char *bucket,
                       const char *resource,
-                      const char *subresource,
                       const dpl_option_t *option,
                       dpl_ftype_t object_type,
                       const dpl_condition_t *condition,
@@ -746,7 +715,6 @@ dpl_get_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.get, bucket);
   DUP_IF_NOT_NULL(task->u.get, resource);
-  DUP_IF_NOT_NULL(task->u.get, subresource);
   if (NULL != option)
     task->u.get.option = dpl_option_dup(option);
   task->u.get.object_type = object_type;
@@ -771,7 +739,6 @@ dpl_get_async_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param bucket the optional bucket
  * @param resource the mandat resource
- * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_ANY get any type of resource
  * @param condition the optional condition
@@ -786,7 +753,6 @@ dpl_task_t *
 dpl_head_async_prepare(dpl_ctx_t *ctx,
                        const char *bucket,
                        const char *resource,
-                       const char *subresource,
                        const dpl_option_t *option,
                        dpl_ftype_t object_type,
                        const dpl_condition_t *condition)
@@ -802,7 +768,6 @@ dpl_head_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.head, bucket);
   DUP_IF_NOT_NULL(task->u.head, resource);
-  DUP_IF_NOT_NULL(task->u.head, subresource);
   if (NULL != option)
     task->u.head.option = dpl_option_dup(option);
   task->u.head.object_type = object_type;
@@ -825,7 +790,6 @@ dpl_head_async_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param bucket the optional bucket
  * @param resource the mandat resource
- * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param condition the optional condition
  * 
@@ -837,7 +801,6 @@ dpl_task_t *
 dpl_delete_async_prepare(dpl_ctx_t *ctx,
                          const char *bucket,
                          const char *resource,
-                         const char *subresource,
                          const dpl_option_t *option,
                          dpl_ftype_t object_type,
                          const dpl_condition_t *condition)
@@ -853,7 +816,6 @@ dpl_delete_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.delete, bucket);
   DUP_IF_NOT_NULL(task->u.delete, resource);
-  DUP_IF_NOT_NULL(task->u.delete, subresource);
   if (NULL != option)
     task->u.delete.option = dpl_option_dup(option);
   task->u.delete.object_type = object_type;
@@ -876,10 +838,8 @@ dpl_delete_async_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param src_bucket the optional source bucket
  * @param src_resource the mandat source resource
- * @param src_subresource the optional src subresource
  * @param dst_bucket the optional destination bucket
  * @param dst_resource the optional destination resource (if dst equals src)
- * @param dst_subresource the optional dest subresource
  * @param option unused
  * @param object_type unused
  * @param copy_directive DPL_COPY_DIRECTIVE_COPY server side copy
@@ -899,10 +859,8 @@ dpl_task_t *
 dpl_copy_async_prepare(dpl_ctx_t *ctx,
                        const char *src_bucket,
                        const char *src_resource,
-                       const char *src_subresource,
                        const char *dst_bucket,
                        const char *dst_resource,
-                       const char *dst_subresource,
                        const dpl_option_t *option,
                        dpl_ftype_t object_type,
                        dpl_copy_directive_t copy_directive,
@@ -921,10 +879,8 @@ dpl_copy_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.copy, src_bucket);
   DUP_IF_NOT_NULL(task->u.copy, src_resource);
-  DUP_IF_NOT_NULL(task->u.copy, src_subresource);
   DUP_IF_NOT_NULL(task->u.copy, dst_bucket);
   DUP_IF_NOT_NULL(task->u.copy, dst_resource);
-  DUP_IF_NOT_NULL(task->u.copy, dst_subresource);
   if (NULL != option)
     task->u.copy.option = dpl_option_dup(option);
   task->u.copy.object_type = object_type;
@@ -953,7 +909,6 @@ dpl_copy_async_prepare(dpl_ctx_t *ctx,
  * 
  * @param ctx the droplet context
  * @param bucket can be NULL
- * @param subresource can be NULL
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_REG create a file
  * @param metadata the user metadata. optional
@@ -968,7 +923,6 @@ dpl_copy_async_prepare(dpl_ctx_t *ctx,
 dpl_task_t *
 dpl_post_id_async_prepare(dpl_ctx_t *ctx,
                           const char *bucket,
-                          const char *subresource,
                           const dpl_option_t *option,
                           dpl_ftype_t object_type,
                           const dpl_dict_t *metadata,
@@ -986,7 +940,6 @@ dpl_post_id_async_prepare(dpl_ctx_t *ctx,
   task->type = DPL_TASK_POST_ID;
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.post, bucket);
-  DUP_IF_NOT_NULL(task->u.post, subresource);
   if (NULL != option)
     task->u.post.option = dpl_option_dup(option);
   task->u.post.object_type = object_type;
@@ -1018,7 +971,6 @@ dpl_post_id_async_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param bucket optional
  * @param resource mandatory
- * @param subresource can be NULL
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_REG create a file
  * @param object_type DPL_FTYPE_DIR create a directory
@@ -1036,7 +988,6 @@ dpl_task_t *
 dpl_put_id_async_prepare(dpl_ctx_t *ctx,
                          const char *bucket,
                          const char *resource,
-                         const char *subresource,
                          const dpl_option_t *option,
                          dpl_ftype_t object_type,
                          const dpl_condition_t *condition,
@@ -1056,7 +1007,6 @@ dpl_put_id_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.put, bucket);
   DUP_IF_NOT_NULL(task->u.put, resource);
-  DUP_IF_NOT_NULL(task->u.put, subresource);
   if (NULL != option)
     task->u.put.option = dpl_option_dup(option);
   task->u.put.object_type = object_type;
@@ -1090,7 +1040,6 @@ dpl_put_id_async_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param bucket the optional bucket
  * @param resource the mandat resource
- * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_ANY get any type of resource
  * @param condition the optional condition
@@ -1104,7 +1053,6 @@ dpl_task_t *
 dpl_get_id_async_prepare(dpl_ctx_t *ctx,
                          const char *bucket,
                          const char *resource,
-                         const char *subresource,
                          const dpl_option_t *option,
                          dpl_ftype_t object_type,
                          const dpl_condition_t *condition,
@@ -1121,7 +1069,6 @@ dpl_get_id_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.get, bucket);
   DUP_IF_NOT_NULL(task->u.get, resource);
-  DUP_IF_NOT_NULL(task->u.get, subresource);
   if (NULL != option)
     task->u.get.option = dpl_option_dup(option);
   task->u.get.object_type = object_type;
@@ -1146,7 +1093,6 @@ dpl_get_id_async_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param bucket the optional bucket
  * @param resource the mandat resource
- * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type DPL_FTYPE_ANY get any type of resource
  * @param condition the optional condition
@@ -1161,7 +1107,6 @@ dpl_task_t *
 dpl_head_id_async_prepare(dpl_ctx_t *ctx,
                           const char *bucket,
                           const char *resource,
-                          const char *subresource,
                           const dpl_option_t *option,
                           dpl_ftype_t object_type,
                           const dpl_condition_t *condition)
@@ -1177,7 +1122,6 @@ dpl_head_id_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.head, bucket);
   DUP_IF_NOT_NULL(task->u.head, resource);
-  DUP_IF_NOT_NULL(task->u.head, subresource);
   if (NULL != option)
     task->u.head.option = dpl_option_dup(option);
   task->u.head.object_type = object_type;
@@ -1200,7 +1144,6 @@ dpl_head_id_async_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param bucket the optional bucket
  * @param resource the mandat resource
- * @param subresource the optional subresource
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param condition the optional condition
  * 
@@ -1212,7 +1155,6 @@ dpl_task_t *
 dpl_delete_id_async_prepare(dpl_ctx_t *ctx,
                             const char *bucket,
                             const char *resource,
-                            const char *subresource,
                             const dpl_option_t *option,
                             dpl_ftype_t object_type,
                             const dpl_condition_t *condition)
@@ -1228,7 +1170,6 @@ dpl_delete_id_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.delete, bucket);
   DUP_IF_NOT_NULL(task->u.delete, resource);
-  DUP_IF_NOT_NULL(task->u.delete, subresource);
   if (NULL != option)
     task->u.delete.option = dpl_option_dup(option);
   task->u.delete.object_type = object_type;
@@ -1251,10 +1192,8 @@ dpl_delete_id_async_prepare(dpl_ctx_t *ctx,
  * @param ctx the droplet context
  * @param src_bucket the optional source bucket
  * @param src_resource the mandat source resource
- * @param src_subresource the optional src subresource
  * @param dst_bucket the optional destination bucket
  * @param dst_resource the optional destination resource (if dst equals src)
- * @param dst_subresource the optional dest subresource
  * @param option unused
  * @param object_type unused
  * @param copy_directive DPL_COPY_DIRECTIVE_COPY server side copy
@@ -1274,10 +1213,8 @@ dpl_task_t *
 dpl_copy_id_async_prepare(dpl_ctx_t *ctx,
                           const char *src_bucket,
                           const char *src_resource,
-                          const char *src_subresource,
                           const char *dst_bucket,
                           const char *dst_resource,
-                          const char *dst_subresource,
                           const dpl_option_t *option,
                           dpl_ftype_t object_type,
                           dpl_copy_directive_t copy_directive,
@@ -1296,10 +1233,8 @@ dpl_copy_id_async_prepare(dpl_ctx_t *ctx,
   task->task.func = async_do;
   DUP_IF_NOT_NULL(task->u.copy, src_bucket);
   DUP_IF_NOT_NULL(task->u.copy, src_resource);
-  DUP_IF_NOT_NULL(task->u.copy, src_subresource);
   DUP_IF_NOT_NULL(task->u.copy, dst_bucket);
   DUP_IF_NOT_NULL(task->u.copy, dst_resource);
-  DUP_IF_NOT_NULL(task->u.copy, dst_subresource);
   if (NULL != option)
     task->u.copy.option = dpl_option_dup(option);
   task->u.copy.object_type = object_type;

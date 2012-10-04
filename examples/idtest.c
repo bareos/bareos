@@ -100,7 +100,6 @@ main(int argc,
       ret = dpl_put_id(ctx,           //the context
                        NULL,          //no bucket
                        force_id,      //the id
-                       NULL,          //no subresource
                        NULL,          //no option
                        DPL_FTYPE_REG, //regular object
                        NULL,          //no condition
@@ -124,7 +123,6 @@ main(int argc,
     {
       ret = dpl_post_id(ctx,           //the context
                         NULL,          //no bucket
-                        NULL,          //no subresource
                         NULL,          //no option
                         DPL_FTYPE_REG, //regular object
                         metadata,      //the metadata
@@ -158,7 +156,6 @@ main(int argc,
   ret = dpl_get_id(ctx,           //the context
                    NULL,          //no bucket
                    sysmd.id,      //the key
-                   NULL,          //no subresource
                    &option,       //options
                    DPL_FTYPE_REG, //object type
                    NULL,          //no condition
@@ -239,10 +236,8 @@ main(int argc,
   ret = dpl_copy_id(ctx,           //the context
                     NULL,          //no src bucket
                     sysmd.id,      //the key
-                    NULL,          //no subresource
                     NULL,          //no dst bucket
                     sysmd.id,      //the same key
-                    NULL,          //no subresource
                     NULL,          //no option
                     DPL_FTYPE_REG, //object type
                     DPL_COPY_DIRECTIVE_METADATA_REPLACE,  //tell server to replace metadata
@@ -263,7 +258,6 @@ main(int argc,
   ret = dpl_head_id(ctx,      //the context
                     NULL,     //no bucket,
                     sysmd.id, //the key
-                    NULL,     //no subresource
                     NULL,     //option
                     DPL_FTYPE_UNDEF, //no matter the file type
                     NULL,     //no condition,
@@ -317,7 +311,6 @@ main(int argc,
   ret = dpl_delete_id(ctx,       //the context
                       NULL,      //no bucket
                       sysmd.id,  //the key
-                      NULL,      //no subresource
                       NULL,      //no option
                       DPL_FTYPE_UNDEF, //no matter the file type
                       NULL);     //no condition

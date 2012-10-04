@@ -104,7 +104,6 @@ update_metadata_named_object()
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
                                                      NULL,          //no bucket
                                                      file3_path,    //the id
-                                                     NULL,          //no subresource
                                                      &option,       //option
                                                      DPL_FTYPE_REG, //regular object
                                                      NULL,          //condition
@@ -172,7 +171,6 @@ append_to_nonexisting_named_object()
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
                                                      NULL,          //no bucket
                                                      file3_path,    //the id
-                                                     NULL,          //no subresource
                                                      &option,       //option
                                                      DPL_FTYPE_REG, //regular object
                                                      NULL,          //no condition
@@ -242,7 +240,6 @@ append_to_nonexisting_named_object_precond()
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
                                                      NULL,          //no bucket
                                                      file3_path,    //the id
-                                                     NULL,          //no subresource
                                                      &option,       //no option
                                                      DPL_FTYPE_REG, //regular object
                                                      &condition,    //expect failure if exists
@@ -309,7 +306,6 @@ add_existing_named_object()
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
                                                      NULL,          //no bucket
                                                      file2_path,    //the id
-                                                     NULL,          //no subresource
                                                      NULL,          //no option
                                                      DPL_FTYPE_REG, //regular object
                                                      &condition,    //expect failure if exists
@@ -371,7 +367,6 @@ add_existing_named_object_no_precond()
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
                                                      NULL,          //no bucket
                                                      file2_path,    //the id
-                                                     NULL,          //no subresource
                                                      NULL,          //no option
                                                      DPL_FTYPE_REG, //regular object
                                                      NULL,         //no condition
@@ -433,7 +428,6 @@ add_nonexisting_named_object()
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
                                                      NULL,          //no bucket
                                                      file2_path,    //the id
-                                                     NULL,          //no subresource
                                                      NULL,          //no option
                                                      DPL_FTYPE_REG, //regular object
                                                      NULL,          //no condition
@@ -481,10 +475,8 @@ name_nameless_object(char *id)
   atask = (dpl_async_task_t *) dpl_copy_id_async_prepare(ctx,
                                                          NULL,          //no src bucket
                                                          id,            //the src resource
-                                                         NULL,          //no src sub resource
                                                          NULL,          //no dst bucket
                                                          file1_path,    //dst resource
-                                                         NULL,          //no dst sub resource
                                                          NULL,          //no option
                                                          DPL_FTYPE_REG, //regular file
                                                          DPL_COPY_DIRECTIVE_MOVE, //rename
@@ -547,7 +539,6 @@ add_nameless_object()
 
   atask = (dpl_async_task_t *) dpl_post_id_async_prepare(ctx,           //the context
                                                          NULL,          //no bucket
-                                                         NULL,          //no subresource
                                                          NULL,          //no option
                                                          DPL_FTYPE_REG, //regular object
                                                          NULL,         //the metadata
@@ -598,7 +589,6 @@ make_folder()
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,           //the context
                                                      NULL,          //no bucket
                                                      folder,        //the folder
-                                                     NULL,          //no subresource
                                                      NULL,          //no option
                                                      DPL_FTYPE_DIR, //directory
                                                      NULL,          //no condition

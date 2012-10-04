@@ -820,7 +820,7 @@ dpl_chdir(dpl_ctx_t *ctx,
         strcat(tmp_fqn.path, "/");
     }
 
-  ret2 = dpl_head(ctx, ctx->cur_bucket, tmp_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL, NULL, &sysmd);
+  ret2 = dpl_head(ctx, ctx->cur_bucket, tmp_fqn.path, NULL, DPL_FTYPE_UNDEF, NULL, NULL, &sysmd);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1233,10 +1233,10 @@ dpl_openwrite(dpl_ctx_t *ctx,
   else
     {
       if (flags & DPL_VFILE_FLAG_POST)
-        ret2 = dpl_post_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, obj_type, metadata, sysmd,
+        ret2 = dpl_post_buffered(ctx, bucket, obj_fqn.path, NULL, obj_type, metadata, sysmd,
                                  data_len, query_params, &vfile->conn);
       else
-        ret2 = dpl_put_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, obj_type, NULL, NULL, metadata, sysmd,
+        ret2 = dpl_put_buffered(ctx, bucket, obj_fqn.path, NULL, obj_type, NULL, NULL, metadata, sysmd,
                                 data_len, &vfile->conn);
       if (DPL_SUCCESS != ret2)
         {
@@ -1349,11 +1349,11 @@ dpl_write(dpl_vfile_t *vfile,
   if (vfile->flags & DPL_VFILE_FLAG_ONESHOT)
     {
       if (vfile->flags & DPL_VFILE_FLAG_POST)
-        ret2 = dpl_post(vfile->ctx, vfile->bucket, vfile->resource, NULL, NULL,
+        ret2 = dpl_post(vfile->ctx, vfile->bucket, vfile->resource, NULL,
                         vfile->obj_type, vfile->metadata, vfile->sysmd,
                         buf, len, vfile->query_params, NULL);
       else
-        ret2 = dpl_put(vfile->ctx, vfile->bucket, vfile->resource, NULL, NULL,
+        ret2 = dpl_put(vfile->ctx, vfile->bucket, vfile->resource, NULL,
                        vfile->obj_type, NULL, NULL, vfile->metadata, vfile->sysmd,
                        buf, len);
       if (DPL_SUCCESS != ret2)
@@ -1582,10 +1582,10 @@ dpl_openread(dpl_ctx_t *ctx,
   if (flags & DPL_VFILE_FLAG_ONESHOT)
     {
       if (flags & DPL_VFILE_FLAG_RANGE)
-        ret2 = dpl_get(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
+        ret2 = dpl_get(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
                        condition, range, &data_buf, &data_len, metadatap, sysmdp);
       else
-        ret2 = dpl_get(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
+        ret2 = dpl_get(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
                        condition, NULL, &data_buf, &data_len, metadatap, sysmdp);
 
       if (DPL_SUCCESS != ret2)
@@ -1601,10 +1601,10 @@ dpl_openread(dpl_ctx_t *ctx,
   else
     {
       if (flags & DPL_VFILE_FLAG_RANGE)
-        ret2 = dpl_get_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
+        ret2 = dpl_get_buffered(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
                                 condition, range, cb_vfile_metadatum, metadatap, sysmdp, cb_vfile_buffer, vfile);
       else
-        ret2 = dpl_get_buffered(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_ANY,
+        ret2 = dpl_get_buffered(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_ANY,
                                 condition, NULL, cb_vfile_metadatum, metadatap, sysmdp, cb_vfile_buffer, vfile);
 
       if (DPL_SUCCESS != ret2)
@@ -1691,7 +1691,7 @@ dpl_mkobj(dpl_ctx_t *ctx,
 
   snprintf(resource, sizeof (resource), "%s%s", obj_fqn.path, obj_type_ext(obj_type));
   
-  ret2 = dpl_put(ctx, bucket, resource, NULL, NULL, obj_type, NULL, NULL, metadata, sysmd, NULL, 0);
+  ret2 = dpl_put(ctx, bucket, resource, NULL, obj_type, NULL, NULL, metadata, sysmd, NULL, 0);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1790,7 +1790,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_DIR, NULL);
+  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_DIR, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1862,7 +1862,7 @@ dpl_unlink(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, NULL);
+  ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_REG, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1936,7 +1936,7 @@ dpl_getattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_head(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL, metadatap, sysmdp);
+  ret2 = dpl_head(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_UNDEF, NULL, metadatap, sysmdp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2024,7 +2024,7 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_head_raw(ctx, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_UNDEF, NULL, metadatap);
+  ret2 = dpl_head_raw(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_UNDEF, NULL, metadatap);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2098,7 +2098,7 @@ dpl_setattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, bucket, obj_fqn.path, NULL, bucket, obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_METADATA_REPLACE, metadata, sysmd, NULL);
+  ret2 = dpl_copy(ctx, bucket, obj_fqn.path, bucket, obj_fqn.path, NULL, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_METADATA_REPLACE, metadata, sysmd, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2213,7 +2213,7 @@ copy_path_to_path(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, src_bucket, src_obj_fqn.path, NULL, dst_bucket, dst_obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
+  ret2 = dpl_copy(ctx, src_bucket, src_obj_fqn.path, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2294,7 +2294,7 @@ copy_id_to_path(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy_id(ctx, dst_bucket, src_id, NULL, dst_bucket, dst_obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
+  ret2 = dpl_copy_id(ctx, dst_bucket, src_id, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2361,7 +2361,7 @@ copy_name_to_path(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, dst_bucket, src_name, NULL, dst_bucket, dst_obj_fqn.path, NULL, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
+  ret2 = dpl_copy(ctx, dst_bucket, src_name, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2495,7 +2495,7 @@ dpl_fgenurl(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_genurl(ctx, bucket, obj_fqn.path, NULL, NULL, expires, buf, len, lenp);
+  ret2 = dpl_genurl(ctx, bucket, obj_fqn.path, NULL, expires, buf, len, lenp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

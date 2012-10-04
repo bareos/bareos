@@ -65,7 +65,6 @@ delete_object()
   atask = (dpl_async_task_t *) dpl_delete_async_prepare(ctx,       //the context
                                                         NULL,      //no bucket
                                                         new_path,  //the key
-                                                        NULL,      //no subresource
                                                         NULL,      //no option
                                                         DPL_FTYPE_UNDEF, //no matter the file type
                                                         NULL);     //no condition
@@ -131,7 +130,6 @@ cb_list_bucket(void *handle)
       sub_atask = (dpl_async_task_t *) dpl_head_async_prepare(ctx, 
                                                               NULL, //no bucket
                                                               obj->path, 
-                                                              NULL, //subresource
                                                               NULL, //option
                                                               DPL_FTYPE_UNDEF, //no matter the file type
                                                               NULL); //condition
@@ -253,7 +251,6 @@ get_metadata()
   atask = (dpl_async_task_t *) dpl_head_async_prepare(ctx,      //the context
                                                       NULL,     //no bucket,
                                                       new_path, //the key
-                                                      NULL,     //no subresource
                                                       NULL,     //no option
                                                       DPL_FTYPE_UNDEF, //no matter the file type
                                                       NULL);    //no condition,
@@ -300,10 +297,8 @@ update_metadata()
   atask = (dpl_async_task_t *) dpl_copy_async_prepare(ctx,           //the context
                                                       NULL,          //no src bucket
                                                       new_path,      //the key
-                                                      NULL,          //no subresource
                                                       NULL,          //no dst bucket
                                                       new_path,      //the same key
-                                                      NULL,          //no subresource
                                                       NULL,          //no option
                                                       DPL_FTYPE_REG, //object type
                                                       DPL_COPY_DIRECTIVE_METADATA_REPLACE,  //tell server to replace metadata
@@ -398,7 +393,6 @@ get_object()
   atask = (dpl_async_task_t *) dpl_get_async_prepare(ctx,           //the context
                                                      NULL,          //no bucket
                                                      new_path,      //the key
-                                                     NULL,          //no subresource
                                                      NULL,          //no opion
                                                      DPL_FTYPE_REG, //object type
                                                      NULL,          //no condition
@@ -444,10 +438,8 @@ rename_object(char *resource_path)
   atask = (dpl_async_task_t *) dpl_copy_async_prepare(ctx,
                                                       NULL,          //no src bucket
                                                       resource_path, //the src resource
-                                                      NULL,          //no src sub resource
                                                       NULL,          //no dst bucket
                                                       new_path,      //dst resource
-                                                      NULL,          //no dst sub resource
                                                       NULL,          //no option
                                                       DPL_FTYPE_REG, //regular file
                                                       DPL_COPY_DIRECTIVE_MOVE, //rename
@@ -538,7 +530,6 @@ create_object()
   atask = (dpl_async_task_t *) dpl_post_async_prepare(ctx,           //the context
                                                       NULL,          //no bucket
                                                       folder,        //the folder
-                                                      NULL,          //no subresource
                                                       NULL,          //no option
                                                       DPL_FTYPE_REG, //regular object
                                                       metadata,      //the metadata
@@ -589,7 +580,6 @@ make_folder()
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,           //the context
                                                      NULL,          //no bucket
                                                      folder,        //the folder
-                                                     NULL,          //no subresource
                                                      NULL,          //no option
                                                      DPL_FTYPE_DIR, //directory
                                                      NULL,          //no condition

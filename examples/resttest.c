@@ -78,7 +78,6 @@ main(int argc,
   ret = dpl_put(ctx,           //the context
                 NULL,          //no bucket
                 folder,        //the folder
-                NULL,          //no subresource
                 NULL,          //no option
                 DPL_FTYPE_DIR, //directory
                 NULL,          //no condition
@@ -138,7 +137,6 @@ main(int argc,
   ret = dpl_post(ctx,           //the context
                  NULL,          //no bucket
                  folder,        //the folder
-                 NULL,          //no subresource
                  NULL,          //no option
                  DPL_FTYPE_REG, //regular object
                  metadata,      //the metadata
@@ -168,10 +166,8 @@ main(int argc,
   ret = dpl_copy(ctx,
                  NULL,          //no src bucket
                  sysmd.path,    //the src resource
-                 NULL,          //no src sub resource
                  NULL,          //no dst bucket
                  new_path,      //dst resource
-                 NULL,          //no dst sub resource
                  NULL,          //no option
                  DPL_FTYPE_REG, //regular file
                  DPL_COPY_DIRECTIVE_MOVE, //rename
@@ -192,7 +188,6 @@ main(int argc,
   ret = dpl_get(ctx,           //the context
                 NULL,          //no bucket
                 new_path,      //the key
-                NULL,          //no subresource
                 NULL,          //no opion
                 DPL_FTYPE_REG, //object type
                 NULL,          //no condition
@@ -273,10 +268,8 @@ main(int argc,
   ret = dpl_copy(ctx,           //the context
                  NULL,          //no src bucket
                  new_path,      //the key
-                 NULL,          //no subresource
                  NULL,          //no dst bucket
                  new_path,      //the same key
-                 NULL,          //no subresource
                  NULL,          //no option
                  DPL_FTYPE_REG, //object type
                  DPL_COPY_DIRECTIVE_METADATA_REPLACE,  //tell server to replace metadata
@@ -297,7 +290,6 @@ main(int argc,
   ret = dpl_head(ctx,      //the context
                  NULL,     //no bucket,
                  new_path, //the key
-                 NULL,     //no subresource
                  NULL,     //no option
                  DPL_FTYPE_UNDEF, //no matter the file type
                  NULL,     //no condition,
@@ -371,7 +363,6 @@ main(int argc,
       ret = dpl_head(ctx, 
                      NULL, //no bucket
                      obj->path, 
-                     NULL, //subresource
                      NULL, //option
                      DPL_FTYPE_UNDEF, //no matter the file type
                      NULL, //condition
@@ -403,7 +394,6 @@ main(int argc,
   ret = dpl_delete(ctx,       //the context
                    NULL,      //no bucket
                    new_path,  //the key
-                   NULL,      //no subresource
                    NULL,      //no option
                    DPL_FTYPE_UNDEF, //no matter the file type
                    NULL);     //no condition
