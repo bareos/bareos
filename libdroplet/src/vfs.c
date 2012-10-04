@@ -509,13 +509,17 @@ make_abs_path(dpl_ctx_t *ctx,
           ret2 = dir_lookup(ctx, bucket, parent_fqn, name, &obj_fqn, &obj_type);
           if (DPL_SUCCESS != ret2)
             {
+              size_t plen = strlen(parent_fqn.path);;
               //make a fake path
 
               obj_fqn.path[0] = 0;
               strcat(obj_fqn.path, parent_fqn.path); //XXX
-              strcat(obj_fqn.path, "/"); //XXX
+              if (plen > 1 && '/' != parent_fqn.path[plen - 1])
+                {
+                  strcat(obj_fqn.path, "/"); //XXX
+                }
               strcat(obj_fqn.path, name); //XXX
-              
+
               ret = DPL_SUCCESS;
               goto end;
             }
@@ -618,7 +622,7 @@ dir_is_empty(dpl_ctx_t *ctx,
 
   if (objects->n_items + common_prefixes->n_items >= 2)
     {
-      ret = DPL_ENOTEMPTY;
+      ret = DPL_FAILURE;
       goto end;
     }
 
@@ -1782,7 +1786,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
   ret2 = dir_is_empty(ctx, path_slash);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOTEMPTY;
       goto end;
     }
   
