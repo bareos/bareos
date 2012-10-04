@@ -145,6 +145,9 @@ dpl_ctx_new(const char *droplet_dir,
   if ((str = getenv("DPL_TRACE_BUFFERS")))
     ctx->trace_buffers = atoi(str);
 
+  if ((str = getenv("DPL_TRACE_BINARY")))
+    ctx->trace_binary = atoi(str);
+
   return ctx;
 }
 

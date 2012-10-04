@@ -420,7 +420,8 @@ typedef struct dpl_ctx
   char *ssl_ca_list;
   unsigned int trace_level;
   int trace_buffers;
-  char *pricing;              /*!< might be NULL */
+  int trace_binary;          /*!< default is trace ascii */ 
+  char *pricing;             /*!< might be NULL */
   unsigned int read_buf_size;
   char *encrypt_key;
   int encode_slashes;        /*!< client wants slashes encoded */

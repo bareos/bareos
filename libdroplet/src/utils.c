@@ -131,12 +131,14 @@ linux_gethostbyname_r(const char *name,
  */
 
 void
-dpl_dump_init(struct dpl_dump_ctx *ctx)
+dpl_dump_init(struct dpl_dump_ctx *ctx,
+              int binary)
 {
   ctx->file = stderr;
   ctx->prevb_inited = 0;
   ctx->star_displayed = 0;
   ctx->global_off = 0;
+  ctx->binary = binary;
 }
 
 void
@@ -155,7 +157,10 @@ dpl_dump_line(struct dpl_dump_ctx *ctx,
     {
       if (0 == ctx->star_displayed)
         {
-          fprintf(ctx->file, "*\n");
+          if (ctx->binary)
+            fprintf(ctx->file, "*\n");
+          else
+            fprintf(ctx->file, "...");
           ctx->star_displayed = 1;
         }
 
@@ -166,33 +171,45 @@ dpl_dump_line(struct dpl_dump_ctx *ctx,
       ctx->star_displayed = 0;
     }
 
-  fprintf(ctx->file, "%08d  ", (int) ctx->global_off + off - l);
-
-  i = 0;
-  while (i < DPL_DUMP_LINE_SIZE)
+  if (ctx->binary)
     {
-      if (i < l)
-	fprintf(ctx->file, "%02x", b[i]);
-      else
-	fprintf(ctx->file, "  ");
-      if (i % 2)
-	fprintf(ctx->file, " ");
-      i++;
+      fprintf(ctx->file, "%08d  ", (int) ctx->global_off + off - l);
+      
+      i = 0;
+      while (i < DPL_DUMP_LINE_SIZE)
+        {
+          if (i < l)
+            fprintf(ctx->file, "%02x", b[i]);
+          else
+            fprintf(ctx->file, "  ");
+          if (i % 2)
+            fprintf(ctx->file, " ");
+          i++;
+        }
+      
+      fprintf(ctx->file, "  ");
+      
+      i = 0;
+      while (i < l)
+        {
+          if (isprint(b[i]))
+            fprintf(ctx->file, "%c", b[i]);
+          else
+            fprintf(ctx->file, ".");
+          i++;
+        }
+      
+      fprintf(ctx->file, "\n");
     }
-
-  fprintf(ctx->file, "  ");
-
-  i = 0;
-  while (i < l)
+  else
     {
-      if (isprint(b[i]))
-        fprintf(ctx->file, "%c", b[i]);
-      else
-        fprintf(ctx->file, ".");
-      i++;
+      i = 0;
+      while (i < l)
+        {
+          fprintf(ctx->file, "%c", b[i]);
+          i++;
+        }
     }
-
-  fprintf(ctx->file, "\n");
 }
 
 void
@@ -229,15 +246,22 @@ dpl_dump(struct dpl_dump_ctx *ctx,
     dpl_dump_line(ctx, i, b, l);
 
   ctx->global_off += i;
+
+  if (!ctx->binary)
+    {
+      if (len > 1 && buf[len-1] != '\n')
+        fprintf(ctx->file, "\n");
+    }
 }
 
 void
 dpl_dump_simple(char *buf,
-                int len)
+                int len,
+                int dump_binary)
 {
   struct dpl_dump_ctx ctx;
 
-  dpl_dump_init(&ctx);
+  dpl_dump_init(&ctx, dump_binary);
   dpl_dump(&ctx, buf, len);
 }
 
@@ -283,20 +307,21 @@ dpl_iov_size(struct iovec *iov,
 void
 dpl_iov_dump(struct iovec *iov,
              int n_iov,
-             size_t n_bytes)
+             size_t n_bytes,
+             int binary)
 {
   __attribute__((unused)) size_t total;
   ssize_t dump_size;
   int i;
   struct dpl_dump_ctx dump_ctx;
 
-  dpl_dump_init(&dump_ctx);
+  dpl_dump_init(&dump_ctx, binary);
 
   total = 0;
   for (i = 0;i < n_iov && n_bytes > 0;i++)
     {
-      printf("vec=%d len=%lu\n", i, (long unsigned) iov[i].iov_len);
-
+      if (binary)
+        fprintf(dump_ctx.file, "%d: len=%lu\n", i, (long unsigned) iov[i].iov_len);
       dump_size = MIN(n_bytes, iov[i].iov_len);
       dump_ctx.global_off = 0;
       dpl_dump(&dump_ctx, iov[i].iov_base, dump_size);

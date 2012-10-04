@@ -707,7 +707,7 @@ dpl_conn_writev_all(dpl_conn_t *conn,
   DPL_TRACE(conn->ctx, DPL_TRACE_IO, "writev conn=%p https=%d size=%ld", conn, conn->ctx->use_https, dpl_iov_size(iov, n_iov));
 
   if (conn->ctx->trace_buffers)
-    dpl_iov_dump(iov, n_iov, dpl_iov_size(iov, n_iov));
+    dpl_iov_dump(iov, n_iov, dpl_iov_size(iov, n_iov), conn->ctx->trace_binary);
 
   if (0 == conn->ctx->use_https)
     return writev_all_plaintext(conn, iov, n_iov, timeout);

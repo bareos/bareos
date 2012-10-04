@@ -157,6 +157,7 @@ struct dpl_dump_ctx
   int prevb_inited;
   int star_displayed;
   size_t global_off;
+  int binary;
 };
 
 /**/
@@ -220,13 +221,13 @@ int dpl_base64_init(void);
 /* src/utils.c */
 pid_t gettid(void);
 int linux_gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
-void dpl_dump_init(struct dpl_dump_ctx *ctx);
+void dpl_dump_init(struct dpl_dump_ctx *ctx, int binary);
 void dpl_dump_line(struct dpl_dump_ctx *ctx, unsigned int off, unsigned char *b, unsigned int l);
 void dpl_dump(struct dpl_dump_ctx *ctx, char *buf, int len);
-void dpl_dump_simple(char *buf, int len);
+void dpl_dump_simple(char *buf, int len, int binary);
 void dpl_trace(dpl_ctx_t *ctx, unsigned int level, const char *file, const char *func, int lineno, const char *fmt, ...);
 size_t dpl_iov_size(struct iovec *iov, int n_iov);
-void dpl_iov_dump(struct iovec *iov, int n_iov, size_t n_bytes);
+void dpl_iov_dump(struct iovec *iov, int n_iov, size_t n_bytes, int binary);
 time_t dpl_iso8601totime(const char *str);
 dpl_status_t dpl_timetoiso8601(time_t t, char *buf, int buf_size);
 char *dpl_strrstr(const char *haystack, const char *needle);
