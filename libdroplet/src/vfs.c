@@ -1233,7 +1233,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
   else
     {
       if (flags & DPL_VFILE_FLAG_POST)
-        ret2 = dpl_post_buffered(ctx, bucket, obj_fqn.path, NULL, obj_type, metadata, sysmd,
+        ret2 = dpl_post_buffered(ctx, bucket, obj_fqn.path, NULL, obj_type, NULL, NULL, metadata, sysmd,
                                  data_len, query_params, &vfile->conn);
       else
         ret2 = dpl_put_buffered(ctx, bucket, obj_fqn.path, NULL, obj_type, NULL, NULL, metadata, sysmd,
@@ -1350,7 +1350,7 @@ dpl_write(dpl_vfile_t *vfile,
     {
       if (vfile->flags & DPL_VFILE_FLAG_POST)
         ret2 = dpl_post(vfile->ctx, vfile->bucket, vfile->resource, NULL,
-                        vfile->obj_type, vfile->metadata, vfile->sysmd,
+                        vfile->obj_type, NULL, NULL, vfile->metadata, vfile->sysmd,
                         buf, len, vfile->query_params, NULL);
       else
         ret2 = dpl_put(vfile->ctx, vfile->bucket, vfile->resource, NULL,

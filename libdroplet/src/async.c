@@ -121,6 +121,10 @@ dpl_async_task_free(dpl_async_task_t *task)
       FREE_IF_NOT_NULL(task->u.post.resource);
       if (NULL != task->u.post.option)
         dpl_option_free(task->u.post.option);
+      if (NULL != task->u.post.condition)
+        dpl_condition_free(task->u.post.condition);
+      if (NULL != task->u.put.range)
+        dpl_range_free(task->u.put.range);
       if (NULL != task->u.post.metadata)
         dpl_dict_free(task->u.post.metadata);
       if (NULL != task->u.post.sysmd)
@@ -248,6 +252,8 @@ async_do(void *arg)
                            task->u.post.resource,
                            task->u.post.option,
                            task->u.post.object_type,
+                           task->u.post.condition,
+                           task->u.post.range,
                            task->u.post.metadata,
                            task->u.post.sysmd,
                            NULL != task->u.post.buf ? dpl_buf_ptr(task->u.post.buf) : NULL,
@@ -322,8 +328,11 @@ async_do(void *arg)
     case DPL_TASK_POST_ID:
       task->ret = dpl_post_id(task->ctx, 
                               task->u.post.bucket,
+                              task->u.post.resource,
                               task->u.post.option,
                               task->u.post.object_type,
+                              task->u.post.condition,
+                              task->u.post.range,
                               task->u.post.metadata,
                               task->u.post.sysmd,
                               NULL != task->u.post.buf ? dpl_buf_ptr(task->u.post.buf) : NULL,
@@ -570,6 +579,8 @@ dpl_post_async_prepare(dpl_ctx_t *ctx,
                        const char *resource,
                        const dpl_option_t *option,
                        dpl_ftype_t object_type,
+                       const dpl_condition_t *condition,
+                       const dpl_range_t *range,
                        const dpl_dict_t *metadata,
                        const dpl_sysmd_t *sysmd,
                        dpl_buf_t *buf,
@@ -589,6 +600,10 @@ dpl_post_async_prepare(dpl_ctx_t *ctx,
   if (NULL != option)
     task->u.post.option = dpl_option_dup(option);
   task->u.post.object_type = object_type;
+  if (NULL != condition)
+    task->u.post.condition = dpl_condition_dup(condition);
+  if (NULL != range)
+    task->u.post.range = dpl_range_dup(range);
   if (NULL != metadata)
     task->u.post.metadata = dpl_dict_dup(metadata);
   if (NULL != sysmd)
@@ -923,8 +938,11 @@ dpl_copy_async_prepare(dpl_ctx_t *ctx,
 dpl_task_t *
 dpl_post_id_async_prepare(dpl_ctx_t *ctx,
                           const char *bucket,
+                          const char *id,
                           const dpl_option_t *option,
                           dpl_ftype_t object_type,
+                          const dpl_condition_t *condition,
+                          const dpl_range_t *range,
                           const dpl_dict_t *metadata,
                           const dpl_sysmd_t *sysmd,
                           dpl_buf_t *buf,
@@ -943,6 +961,10 @@ dpl_post_id_async_prepare(dpl_ctx_t *ctx,
   if (NULL != option)
     task->u.post.option = dpl_option_dup(option);
   task->u.post.object_type = object_type;
+  if (NULL != condition)
+    task->u.post.condition = dpl_condition_dup(condition);
+  if (NULL != range)
+    task->u.post.range = dpl_range_dup(range);
   if (NULL != metadata)
     task->u.post.metadata = dpl_dict_dup(metadata);
   if (NULL != sysmd)

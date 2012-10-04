@@ -263,6 +263,8 @@ dpl_post(dpl_ctx_t *ctx,
          const char *path,
          const dpl_option_t *option,
          dpl_ftype_t object_type,
+         const dpl_condition_t *condition,
+         const dpl_range_t *range,
          const dpl_dict_t *metadata,
          const dpl_sysmd_t *sysmd,
          const char *data_buf,
@@ -280,7 +282,7 @@ dpl_post(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret2 = ctx->backend->post(ctx, bucket, path, NULL, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, NULL);
+  ret2 = ctx->backend->post(ctx, bucket, path, NULL, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -322,6 +324,8 @@ dpl_post_buffered(dpl_ctx_t *ctx,
                   const char *path,
                   const dpl_option_t *option,
                   dpl_ftype_t object_type,
+                  const dpl_condition_t *condition,
+                  const dpl_range_t *range,
                   const dpl_dict_t *metadata,
                   const dpl_sysmd_t *sysmd,
                   unsigned int data_len,
@@ -338,7 +342,7 @@ dpl_post_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = ctx->backend->post_buffered(ctx, bucket, path, NULL, option, object_type, metadata, sysmd, data_len, query_params, connp, NULL);
+  ret2 = ctx->backend->post_buffered(ctx, bucket, path, NULL, option, object_type, condition, range, metadata, sysmd, data_len, query_params, connp, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -400,7 +404,7 @@ dpl_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = ctx->backend->put(ctx, bucket, path, NULL, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL);
+  ret2 = ctx->backend->put(ctx, bucket, path, NULL, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -460,7 +464,7 @@ dpl_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = ctx->backend->put_buffered(ctx, bucket, path, NULL, option, object_type, condition, range, metadata, sysmd, data_len, connp, NULL);
+  ret2 = ctx->backend->put_buffered(ctx, bucket, path, NULL, option, object_type, condition, range, metadata, sysmd, data_len, NULL, connp, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -744,7 +748,7 @@ dpl_delete(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret2 = ctx->backend->deletef(ctx, bucket, path, NULL, option, object_type, NULL);
+  ret2 = ctx->backend->deletef(ctx, bucket, path, NULL, option, object_type, condition, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -784,8 +788,11 @@ dpl_delete(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_post_id(dpl_ctx_t *ctx,
             const char *bucket,
+            const char *id,
             const dpl_option_t *option,
             dpl_ftype_t object_type,
+            const dpl_condition_t *condition,
+            const dpl_range_t *range,
             const dpl_dict_t *metadata,
             const dpl_sysmd_t *sysmd,
             const char *data_buf,
@@ -803,7 +810,7 @@ dpl_post_id(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret2 = ctx->backend->post_id(ctx, bucket, NULL, NULL, option, object_type, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, NULL);
+  ret2 = ctx->backend->post_id(ctx, bucket, id, NULL, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, query_params, returned_sysmdp, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -822,8 +829,11 @@ dpl_post_id(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_post_id_buffered(dpl_ctx_t *ctx,
                      const char *bucket,
+                     const char *id,
                      const dpl_option_t *option,
                      dpl_ftype_t object_type,
+                     const dpl_condition_t *condition,
+                     const dpl_range_t *range,
                      const dpl_dict_t *metadata,
                      const dpl_sysmd_t *sysmd,
                      unsigned int data_len,
@@ -840,7 +850,7 @@ dpl_post_id_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = ctx->backend->post_id_buffered(ctx, bucket, NULL, NULL, option, object_type, metadata, sysmd, data_len, query_params, connp, NULL);
+  ret2 = ctx->backend->post_id_buffered(ctx, bucket, id, NULL, option, object_type, condition, range, metadata, sysmd, data_len, query_params, connp, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -879,7 +889,7 @@ dpl_put_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = ctx->backend->put_id(ctx, bucket, id, NULL, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL);
+  ret2 = ctx->backend->put_id(ctx, bucket, id, NULL, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -918,7 +928,7 @@ dpl_put_id_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = ctx->backend->put_id_buffered(ctx, bucket, id, NULL, option, object_type, condition, range, metadata, sysmd, data_len, connp, NULL);
+  ret2 = ctx->backend->put_id_buffered(ctx, bucket, id, NULL, option, object_type, condition, range, metadata, sysmd, data_len, NULL, connp, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1102,7 +1112,7 @@ dpl_delete_id(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = ctx->backend->delete_id(ctx, bucket, id, NULL, option, object_type, NULL);
+  ret2 = ctx->backend->delete_id(ctx, bucket, id, NULL, option, object_type, condition, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

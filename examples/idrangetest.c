@@ -82,11 +82,14 @@ main(int argc,
     {
       ret = dpl_post_id(ctx,           //the context
                         NULL,          //no bucket
+                        NULL,          //no id
                         NULL,          //no option
                         DPL_FTYPE_REG, //regular object
-                        NULL,         //the metadata
+                        NULL,          //condition
+                        NULL,          //range
+                        NULL,          //the metadata
                         NULL,          //no sysmd
-                        DATA_BUF,     //object body
+                        DATA_BUF,      //object body
                         strlen(DATA_BUF), //object length
                         NULL,          //no query params
                         &sysmd);       //the returned sysmd

@@ -39,15 +39,13 @@ typedef dpl_status_t (*dpl_list_all_my_buckets_t)(dpl_ctx_t *ctx, dpl_vec_t **ve
 typedef dpl_status_t (*dpl_list_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
 typedef dpl_status_t (*dpl_make_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const dpl_sysmd_t *sysmd, char **locationp);
 typedef dpl_status_t (*dpl_delete_bucket_t)(dpl_ctx_t *ctx, const char *bucket, char **locationp);
-typedef dpl_status_t (*dpl_post_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, dpl_sysmd_t *returned_sysmdp, char **locationp);
-typedef dpl_status_t (*dpl_post_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, const dpl_dict_t *query_params, dpl_conn_t **connp, char **locationp);
-typedef dpl_status_t (*dpl_put_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, char **locationp);
-typedef dpl_status_t (*dpl_put_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp, char **locationp);
+typedef dpl_status_t (*dpl_put_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, dpl_sysmd_t *returned_sysmdp, char **locationp);
+typedef dpl_status_t (*dpl_put_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, const dpl_dict_t *query_params, dpl_conn_t **connp, char **locationp);
 typedef dpl_status_t (*dpl_get_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, char **locationp);
 typedef dpl_status_t (*dpl_get_buffered_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, dpl_metadatum_func_t metadatum_func, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, dpl_buffer_func_t buffer_func, void *cb_arg, char **locationp);
 typedef dpl_status_t (*dpl_head_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, char **locationp);
 typedef dpl_status_t (*dpl_head_raw_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap, char **locationp);
-typedef dpl_status_t (*dpl_delete_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, char **locationp);
+typedef dpl_status_t (*dpl_delete_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, char **locationp);
 typedef dpl_status_t (*dpl_genurl_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, time_t expires, char *buf, unsigned int len, unsigned int *lenp, char **locationp);
 typedef dpl_status_t (*dpl_copy_t)(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, const dpl_option_t *option, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition, char **locationp);
 
@@ -58,8 +56,8 @@ typedef struct dpl_backend_s
   dpl_list_bucket_t list_bucket;
   dpl_make_bucket_t make_bucket;
   dpl_delete_bucket_t delete_bucket;
-  dpl_post_t post;
-  dpl_post_buffered_t post_buffered;
+  dpl_put_t post;
+  dpl_put_buffered_t post_buffered;
   dpl_put_t put;
   dpl_put_buffered_t put_buffered;
   dpl_get_t get;
@@ -67,8 +65,8 @@ typedef struct dpl_backend_s
   dpl_head_t head;
   dpl_head_raw_t head_raw;
   dpl_delete_t deletef;
-  dpl_post_t post_id;
-  dpl_post_buffered_t post_id_buffered;
+  dpl_put_t post_id;
+  dpl_put_buffered_t post_id_buffered;
   dpl_put_t put_id;
   dpl_put_buffered_t put_id_buffered;
   dpl_get_t get_id;

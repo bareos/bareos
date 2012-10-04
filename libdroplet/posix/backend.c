@@ -539,6 +539,8 @@ dpl_posix_put(dpl_ctx_t *ctx,
               const dpl_sysmd_t *sysmd,
               const char *data_buf,
               unsigned int data_len,
+              const dpl_dict_t *query_params, 
+              dpl_sysmd_t *returned_sysmdp,
               char **locationp)
 {
   dpl_status_t ret, ret2;
@@ -655,6 +657,7 @@ dpl_posix_put_buffered(dpl_ctx_t *ctx,
                        const dpl_dict_t *metadata,
                        const dpl_sysmd_t *sysmd,
                        unsigned int data_len,
+                       const dpl_dict_t *query_params, 
                        dpl_conn_t **connp,
                        char **locationp)
 {
@@ -1329,6 +1332,7 @@ dpl_posix_delete(dpl_ctx_t *ctx,
                  const char *subresource,
                  const dpl_option_t *option, 
                  dpl_ftype_t object_type,
+                 const dpl_condition_t *condition, 
                  char **locationp)
 {
   dpl_status_t ret;

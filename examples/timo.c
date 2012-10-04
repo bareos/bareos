@@ -487,7 +487,6 @@ append_to_nonexisting_named_object()
   dpl_async_task_t *atask = NULL;
   dpl_buf_t *buf = NULL;
   dpl_status_t ret;
-  dpl_option_t option;
 
   buf = dpl_buf_new();
   if (NULL == buf)
@@ -505,18 +504,17 @@ append_to_nonexisting_named_object()
 
   banner("5 - append data to nonexisting named object");
   
-  option.mask = DPL_OPTION_APPEND_DATA;
-
-  atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
-                                                     NULL,          //no bucket
-                                                     file3_path,    //the id
-                                                     &option,       //option
-                                                     DPL_FTYPE_REG, //regular object
-                                                     NULL,          //no condition
-                                                     NULL,          //range
-                                                     NULL,          //the metadata
-                                                     NULL,          //no sysmd
-                                                     buf);          //object body
+  atask = (dpl_async_task_t *) dpl_post_async_prepare(ctx,
+                                                      NULL,          //no bucket
+                                                      file3_path,    //the id
+                                                      NULL,          //option
+                                                      DPL_FTYPE_REG, //regular object
+                                                      NULL,          //no condition
+                                                      NULL,          //range
+                                                      NULL,          //the metadata
+                                                      NULL,          //no sysmd
+                                                      buf,           //object body
+                                                      NULL);         //query params
   if (NULL == atask)
     {
       fprintf(stderr, "error preparing task\n");
@@ -552,7 +550,6 @@ append_to_nonexisting_named_object_precond()
   dpl_buf_t *buf = NULL;
   dpl_status_t ret;
   dpl_condition_t condition;
-  dpl_option_t option;
 
   buf = dpl_buf_new();
   if (NULL == buf)
@@ -565,7 +562,7 @@ append_to_nonexisting_named_object_precond()
       fprintf(stderr, "alloc data failed\n");
       exit(1);
     }
-
+  
   memset(buf->ptr, 'z', buf->size);
 
   banner("4 - append data to nonexisting named object with precondition");
@@ -574,18 +571,17 @@ append_to_nonexisting_named_object_precond()
   condition.etag[0] = '*';
   condition.etag[1] = 0;
 
-  option.mask = DPL_OPTION_APPEND_DATA;
-
-  atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
-                                                     NULL,          //no bucket
-                                                     file3_path,    //the id
-                                                     &option,       //no option
-                                                     DPL_FTYPE_REG, //regular object
-                                                     &condition,    //expect failure if exists
-                                                     NULL,          //range
-                                                     NULL,          //the metadata
-                                                     NULL,          //no sysmd
-                                                     buf);          //object body
+  atask = (dpl_async_task_t *) dpl_post_async_prepare(ctx,
+                                                      NULL,          //no bucket
+                                                      file3_path,    //the id
+                                                      NULL,          //option
+                                                      DPL_FTYPE_REG, //regular object
+                                                      &condition,    //expect failure if exists
+                                                      NULL,          //range
+                                                      NULL,          //the metadata
+                                                      NULL,          //no sysmd
+                                                      buf,           //object body
+                                                      NULL);         //query params
   if (NULL == atask)
     {
       fprintf(stderr, "error preparing task\n");
@@ -831,9 +827,12 @@ add_nameless_object()
 
   atask = (dpl_async_task_t *) dpl_post_id_async_prepare(ctx,           //the context
                                                          NULL,          //no bucket
+                                                         NULL,          //no id
                                                          NULL,          //no option
                                                          DPL_FTYPE_REG, //regular object
-                                                         NULL,         //the metadata
+                                                         NULL,          //condition
+                                                         NULL,          //range
+                                                         NULL,          //the metadata
                                                          NULL,          //no sysmd
                                                          buf,           //object body
                                                          NULL);         //no query params

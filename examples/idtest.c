@@ -123,8 +123,11 @@ main(int argc,
     {
       ret = dpl_post_id(ctx,           //the context
                         NULL,          //no bucket
+                        NULL,          //no id
                         NULL,          //no option
                         DPL_FTYPE_REG, //regular object
+                        NULL,          //condition
+                        NULL,          //range
                         metadata,      //the metadata
                         NULL,          //no sysmd
                         data_buf,      //object body

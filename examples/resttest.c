@@ -139,6 +139,8 @@ main(int argc,
                  folder,        //the folder
                  NULL,          //no option
                  DPL_FTYPE_REG, //regular object
+                 NULL,          //condition
+                 NULL,          //range
                  metadata,      //the metadata
                  NULL,          //no sysmd
                  data_buf,      //object body
