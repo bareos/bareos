@@ -618,7 +618,7 @@ dir_is_empty(dpl_ctx_t *ctx,
 
   if (objects->n_items + common_prefixes->n_items >= 2)
     {
-      ret = DPL_ENOTEMPTY;
+      ret = DPL_FAILURE;
       goto end;
     }
 
@@ -1782,7 +1782,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
   ret2 = dir_is_empty(ctx, path_slash);
   if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOTEMPTY;
       goto end;
     }
   
