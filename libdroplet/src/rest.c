@@ -873,6 +873,12 @@ dpl_put_id(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "put_id bucket=%s id=%s", bucket, id);
 
+  if (NULL == ctx->backend->put_id)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
   ret2 = ctx->backend->put_id(ctx, bucket, id, NULL, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL);
   if (DPL_SUCCESS != ret2)
     {

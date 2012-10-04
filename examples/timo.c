@@ -30,6 +30,7 @@ dpl_ctx_t *ctx = NULL;
 dpl_task_pool_t *pool = NULL;
 char *folder = NULL;
 int folder_len;
+char id1[DPL_SYSMD_ID_SIZE+1];
 char file1_path[MAXPATHLEN];
 char file2_path[MAXPATHLEN];
 char file3_path[MAXPATHLEN];
@@ -42,9 +43,23 @@ pthread_cond_t list_cond;
 int n_ok = 0;
 
 void
+banner(char *str)
+{
+  int i;
+  int len = strlen(str);
+
+  for (i = 0;i < len+4;i++)
+    fprintf(stderr, "*");
+  fprintf(stderr, "\n* %s *\n", str);
+  for (i = 0;i < len+4;i++)
+    fprintf(stderr, "*");
+  fprintf(stderr, "\n");
+}
+
+void
 free_all()
 {
-  fprintf(stderr, "finished\n");
+  banner("finished");
 
   if (NULL != pool)
     {
@@ -60,6 +75,330 @@ free_all()
 }
 
 void
+cb_copy_nameless_object(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+
+  if (DPL_SUCCESS != atask->ret)
+    {
+      fprintf(stderr, "rename object failed: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  dpl_async_task_free(atask);
+
+  //
+}
+
+void
+copy_nameless_object()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+
+  banner("1bis - bind nameless object with a name");
+
+  atask = (dpl_async_task_t *) dpl_copy_id_async_prepare(ctx,
+                                                         NULL,          //no src bucket
+                                                         id1,           //the src resource
+                                                         NULL,          //no dst bucket
+                                                         file1_path,    //dst resource
+                                                         NULL,          //no option
+                                                         DPL_FTYPE_REG, //regular file
+                                                         DPL_COPY_DIRECTIVE_COPY, //rename
+                                                         NULL,          //no metadata
+                                                         NULL,          //no sysmd
+                                                         NULL);         //no server side condition
+  
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_copy_nameless_object;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_get_object_meta(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+  int i;
+  dpl_dict_var_t *metadatum = NULL;
+
+  if (DPL_SUCCESS != atask->ret)
+    {
+      fprintf(stderr, "dpl_get failed: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  printf("metadata:\n");
+  dpl_dict_print(atask->u.head.metadata, stdout, 0);
+
+  dpl_async_task_free(atask);
+
+  //
+}
+
+void
+get_object_meta()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+
+  banner("10 - get object meta");
+  
+  atask = (dpl_async_task_t *) dpl_head_async_prepare(ctx,           //the context
+                                                      NULL,          //no bucket
+                                                      file3_path,    //the key
+                                                      NULL,          //no opion
+                                                      DPL_FTYPE_REG, //object type
+                                                      NULL);         //no condition
+
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_get_object_meta;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_get_named_object_partially(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+  int i;
+  dpl_dict_var_t *metadatum = NULL;
+
+  if (DPL_SUCCESS != atask->ret)
+    {
+      fprintf(stderr, "dpl_get failed: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  printf("data len: %d\n", dpl_buf_size(atask->u.get.buf));
+  printf("metadata:\n");
+  dpl_dict_print(atask->u.get.metadata, stdout, 0);
+
+  dpl_async_task_free(atask);
+
+  get_object_meta();
+}
+
+void
+get_named_object_partially()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+  dpl_range_t range;
+
+  banner("9 - get named object partially");
+  
+  //first 1000 bytes
+  range.start = 0;
+  range.end = 999;
+  atask = (dpl_async_task_t *) dpl_get_async_prepare(ctx,           //the context
+                                                     NULL,          //no bucket
+                                                     file3_path,    //the key
+                                                     NULL,          //no option
+                                                     DPL_FTYPE_REG, //object type
+                                                     NULL,          //no condition
+                                                     &range);       //range
+
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_get_named_object_partially;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_get_named_object(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+  int i;
+  dpl_dict_var_t *metadatum = NULL;
+
+  if (DPL_SUCCESS != atask->ret)
+    {
+      fprintf(stderr, "dpl_get failed: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  printf("data:\n");
+  write(1, dpl_buf_ptr(atask->u.get.buf), MIN(dpl_buf_size(atask->u.get.buf), 10));
+  printf("...\nmetadata:\n");
+  dpl_dict_print(atask->u.get.metadata, stdout, 0);
+
+  dpl_async_task_free(atask);
+
+  get_named_object_partially();
+}
+
+void
+get_named_object()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+
+  banner("8 - get named object data+metadata");
+  
+  atask = (dpl_async_task_t *) dpl_get_async_prepare(ctx,           //the context
+                                                     NULL,          //no bucket
+                                                     file3_path,    //the key
+                                                     NULL,          //no opion
+                                                     DPL_FTYPE_REG, //object type
+                                                     NULL,          //no condition
+                                                     NULL);         //no range
+
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_get_named_object;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_get_nameless_object(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+  int i;
+  dpl_dict_var_t *metadatum = NULL;
+
+  if (DPL_SUCCESS != atask->ret)
+    {
+      fprintf(stderr, "dpl_get failed: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  printf("data:\n");
+  write(1, dpl_buf_ptr(atask->u.get.buf), MIN(dpl_buf_size(atask->u.get.buf), 10));
+  printf("...\nmetadata:\n");
+  dpl_dict_print(atask->u.get.metadata, stdout, 0);
+
+  dpl_async_task_free(atask);
+
+  get_named_object();
+}
+
+void
+get_nameless_object()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+
+  banner("7 - get nameless object data+metadata");
+
+  atask = (dpl_async_task_t *) dpl_get_id_async_prepare(ctx,           //the context
+                                                        NULL,          //no bucket
+                                                        id1,           //the key
+                                                        NULL,          //no opion
+                                                        DPL_FTYPE_REG, //object type
+                                                        NULL,          //no condition
+                                                        NULL);         //no range
+
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_get_nameless_object;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_update_metadata_nameless_object(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+
+  if (DPL_SUCCESS != atask->ret)
+    {
+      fprintf(stderr, "abnormal answer: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  dpl_async_task_free(atask);
+  
+  get_nameless_object();
+}
+
+void
+update_metadata_nameless_object()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_status_t ret;
+  dpl_option_t option;
+  dpl_dict_t *metadata = NULL;
+
+  banner("6bis - append metadata to existing nameless object");
+
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      exit(1);
+    }
+
+  ret = dpl_dict_add(metadata, "foo", "bar", 0);
+  if (DPL_SUCCESS != ret)
+    {
+      fprintf(stderr, "error updating metadatum: %s (%d)\n", dpl_status_str(ret), ret);
+      exit(1);
+    }
+  
+  option.mask = DPL_OPTION_APPEND_METADATA;
+
+  atask = (dpl_async_task_t *) dpl_put_id_async_prepare(ctx,
+                                                        NULL,          //no bucket
+                                                        id1,           //the id
+                                                        &option,       //option
+                                                        DPL_FTYPE_REG, //regular object
+                                                        NULL,          //condition
+                                                        NULL,          //range
+                                                        metadata,      //the metadata
+                                                        NULL,          //no sysmd
+                                                        NULL);         //object body
+
+  dpl_dict_free(metadata);
+
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_update_metadata_nameless_object;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
 cb_update_metadata_named_object(void *handle)
 {
   dpl_async_task_t *atask = (dpl_async_task_t *) handle;
@@ -72,7 +411,7 @@ cb_update_metadata_named_object(void *handle)
 
   dpl_async_task_free(atask);
   
-  //
+  update_metadata_nameless_object();
 }
 
 void
@@ -83,7 +422,7 @@ update_metadata_named_object()
   dpl_option_t option;
   dpl_dict_t *metadata = NULL;
 
-  fprintf(stderr, "6 - append metadata to existing named object\n");
+  banner("6 - append metadata to existing named object");
 
   metadata = dpl_dict_new(13);
   if (NULL == metadata)
@@ -164,7 +503,7 @@ append_to_nonexisting_named_object()
 
   memset(buf->ptr, 'z', buf->size);
 
-  fprintf(stderr, "5 - append data to nonexisting named object\n");
+  banner("5 - append data to nonexisting named object");
   
   option.mask = DPL_OPTION_APPEND_DATA;
 
@@ -229,7 +568,7 @@ append_to_nonexisting_named_object_precond()
 
   memset(buf->ptr, 'z', buf->size);
 
-  fprintf(stderr, "4 - append data to nonexisting named object with precondition\n");
+  banner("4 - append data to nonexisting named object with precondition");
   
   condition.mask = DPL_CONDITION_IF_MATCH;
   condition.etag[0] = '*';
@@ -297,7 +636,7 @@ add_existing_named_object()
 
   memset(buf->ptr, 'y', buf->size);
 
-  fprintf(stderr, "3 - add existing named object with precondition\n");
+  banner("3 - add existing named object with precondition");
   
   condition.mask = DPL_CONDITION_IF_NONE_MATCH;
   condition.etag[0] = '*';
@@ -362,7 +701,7 @@ add_existing_named_object_no_precond()
 
   memset(buf->ptr, 'y', buf->size);
 
-  fprintf(stderr, "2bis - add existing named object\n");
+  banner("2bis - add existing named object");
   
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
                                                      NULL,          //no bucket
@@ -423,7 +762,7 @@ add_nonexisting_named_object()
 
   memset(buf->ptr, 'y', buf->size);
 
-  fprintf(stderr, "2 - add nonexisting named object\n");
+  banner("2 - add nonexisting named object");
   
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
                                                      NULL,          //no bucket
@@ -448,55 +787,6 @@ add_nonexisting_named_object()
 }
 
 void
-cb_name_nameless_object(void *handle)
-{
-  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
-
-  if (DPL_SUCCESS != atask->ret)
-    {
-      fprintf(stderr, "rename object failed: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
-      exit(1);
-    }
-
-  dpl_async_task_free(atask);
-
-  add_nonexisting_named_object();
-}
-
-void
-name_nameless_object(char *id)
-{
-  dpl_async_task_t *atask = NULL;
-  dpl_buf_t *buf = NULL;
-  dpl_status_t ret;
-
-  fprintf(stderr, "1bis - bind nameless object with a name\n");
-
-  atask = (dpl_async_task_t *) dpl_copy_id_async_prepare(ctx,
-                                                         NULL,          //no src bucket
-                                                         id,            //the src resource
-                                                         NULL,          //no dst bucket
-                                                         file1_path,    //dst resource
-                                                         NULL,          //no option
-                                                         DPL_FTYPE_REG, //regular file
-                                                         DPL_COPY_DIRECTIVE_MOVE, //rename
-                                                         NULL,          //no metadata
-                                                         NULL,          //no sysmd
-                                                         NULL);         //no server side condition
-  
-  if (NULL == atask)
-    {
-      fprintf(stderr, "error preparing task\n");
-      exit(1);
-    }
-
-  atask->cb_func = cb_name_nameless_object;
-  atask->cb_arg = atask;
-  
-  dpl_task_pool_put(pool, (dpl_task_t *) atask);
-}
-
-void
 cb_add_nameless_object(void *handle)
 {
   dpl_async_task_t *atask = (dpl_async_task_t *) handle;
@@ -509,9 +799,11 @@ cb_add_nameless_object(void *handle)
 
   fprintf(stderr, "id=%s\n", atask->u.post.sysmd_returned.id);
 
-  name_nameless_object(atask->u.post.sysmd_returned.id);
+  strcpy(id1, atask->u.post.sysmd_returned.id);
 
   dpl_async_task_free(atask);
+
+  add_nonexisting_named_object();
 }
 
 void
@@ -535,7 +827,7 @@ add_nameless_object()
 
   memset(buf->ptr, 'x', buf->size);
 
-  fprintf(stderr, "1 - add nameless object\n");
+  banner("1 - add nameless object");
 
   atask = (dpl_async_task_t *) dpl_post_id_async_prepare(ctx,           //the context
                                                          NULL,          //no bucket
@@ -580,7 +872,7 @@ make_folder()
   dpl_async_task_t *atask = NULL;
   dpl_buf_t *buf = NULL;
 
-  fprintf(stderr, "creating folder\n");
+  banner("creating folder");
 
   buf = dpl_buf_new();
   if (NULL == buf)
