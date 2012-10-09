@@ -25,6 +25,7 @@
 #define FILE1 "u.1"
 #define FILE2 "u.2"
 #define FILE3 "u.3"
+#define FILE4 "u.4"
 
 dpl_ctx_t *ctx = NULL;
 dpl_task_pool_t *pool = NULL;
@@ -34,6 +35,7 @@ char id1[DPL_SYSMD_ID_SIZE+1];
 char file1_path[MAXPATHLEN];
 char file2_path[MAXPATHLEN];
 char file3_path[MAXPATHLEN];
+char file4_path[MAXPATHLEN];
 
 pthread_mutex_t prog_lock;
 pthread_cond_t prog_cond;
@@ -75,7 +77,7 @@ free_all()
 }
 
 void
-cb_copy_nameless_object(void *handle)
+cb_copy_named_object_with_new_md(void *handle)
 {
   dpl_async_task_t *atask = (dpl_async_task_t *) handle;
 
@@ -87,18 +89,101 @@ cb_copy_nameless_object(void *handle)
 
   dpl_async_task_free(atask);
 
-  //
+  free_all();
 }
 
 void
-copy_nameless_object()
+copy_named_object_with_new_md()
 {
   dpl_async_task_t *atask = NULL;
   dpl_buf_t *buf = NULL;
   dpl_status_t ret;
+  dpl_dict_t *metadata = NULL;
 
-  banner("1bis - bind nameless object with a name");
+  banner("12 - copy named object with new metadata");
 
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      exit(1);
+    }
+
+  ret = dpl_dict_add(metadata, "qux", "baz", 0);
+  if (DPL_SUCCESS != ret)
+    {
+      fprintf(stderr, "error updating metadatum: %s (%d)\n", dpl_status_str(ret), ret);
+      exit(1);
+    }
+
+  atask = (dpl_async_task_t *) dpl_copy_async_prepare(ctx,
+                                                      NULL,          //no src bucket
+                                                      file1_path,    //the src resource
+                                                      NULL,          //no dst bucket
+                                                      file4_path,    //dst resource
+                                                      NULL,          //no option
+                                                      DPL_FTYPE_REG, //regular file
+                                                      DPL_COPY_DIRECTIVE_COPY, //rename
+                                                      metadata,      //metadata
+                                                      NULL,          //no sysmd
+                                                      NULL);         //no server side condition
+  
+  if (NULL == atask)
+    {
+      fprintf(stderr, "error preparing task\n");
+      exit(1);
+    }
+
+  atask->cb_func = cb_copy_named_object_with_new_md;
+  atask->cb_arg = atask;
+  
+  dpl_task_pool_put(pool, (dpl_task_t *) atask);
+}
+
+void
+cb_copy_nameless_object_with_new_md(void *handle)
+{
+  dpl_async_task_t *atask = (dpl_async_task_t *) handle;
+
+  if (DPL_SUCCESS != atask->ret)
+    {
+      fprintf(stderr, "rename object failed: %s (%d)\n", dpl_status_str(atask->ret), atask->ret);
+      exit(1);
+    }
+
+  dpl_async_task_free(atask);
+
+  copy_named_object_with_new_md();
+}
+
+void
+copy_nameless_object_with_new_md()
+{
+  dpl_async_task_t *atask = NULL;
+  dpl_buf_t *buf = NULL;
+  dpl_status_t ret;
+  dpl_dict_t *metadata = NULL;
+
+  banner("11 - copy nameless object with new metadata");
+
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      exit(1);
+    }
+
+  ret = dpl_dict_add(metadata, "bar", "qux", 0);
+  if (DPL_SUCCESS != ret)
+    {
+      fprintf(stderr, "error updating metadatum: %s (%d)\n", dpl_status_str(ret), ret);
+      exit(1);
+    }
+
+  /* 
+   * note: With Dewpoint, it would be possible to copy nameless object into another nameless object.
+   * Does it make sense ? for now we copy it into a named object
+   */
   atask = (dpl_async_task_t *) dpl_copy_id_async_prepare(ctx,
                                                          NULL,          //no src bucket
                                                          id1,           //the src resource
@@ -107,7 +192,7 @@ copy_nameless_object()
                                                          NULL,          //no option
                                                          DPL_FTYPE_REG, //regular file
                                                          DPL_COPY_DIRECTIVE_COPY, //rename
-                                                         NULL,          //no metadata
+                                                         metadata,      //metadata
                                                          NULL,          //no sysmd
                                                          NULL);         //no server side condition
   
@@ -117,7 +202,7 @@ copy_nameless_object()
       exit(1);
     }
 
-  atask->cb_func = cb_copy_nameless_object;
+  atask->cb_func = cb_copy_nameless_object_with_new_md;
   atask->cb_arg = atask;
   
   dpl_task_pool_put(pool, (dpl_task_t *) atask);
@@ -140,8 +225,8 @@ cb_get_object_meta(void *handle)
   dpl_dict_print(atask->u.head.metadata, stdout, 0);
 
   dpl_async_task_free(atask);
-
-  //
+  
+  copy_nameless_object_with_new_md();
 }
 
 void
@@ -793,7 +878,7 @@ cb_add_nameless_object(void *handle)
       exit(1);
     }
 
-  fprintf(stderr, "id=%s\n", atask->u.post.sysmd_returned.id);
+  fprintf(stderr, "id=%s path=%s\n", atask->u.post.sysmd_returned.id, atask->u.post.sysmd_returned.path);
 
   strcpy(id1, atask->u.post.sysmd_returned.id);
 
@@ -933,6 +1018,7 @@ main(int argc,
   snprintf(file1_path, sizeof (file1_path), "%s%s", folder, FILE1);
   snprintf(file2_path, sizeof (file2_path), "%s%s", folder, FILE2);
   snprintf(file3_path, sizeof (file3_path), "%s%s", folder, FILE3);
+  snprintf(file4_path, sizeof (file4_path), "%s%s", folder, FILE4);
 
   ret = dpl_init();           //init droplet library
   if (DPL_SUCCESS != ret)

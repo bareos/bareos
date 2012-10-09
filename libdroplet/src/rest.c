@@ -1259,7 +1259,7 @@ dpl_copy_id(dpl_ctx_t *ctx,
 {
   dpl_status_t ret, ret2;
 
-  DPL_TRACE(ctx, DPL_TRACE_REST, "copy_d src_bucket=%s src_id=%s dst_bucket=%s dst_path=%s", src_bucket, src_id, dst_bucket, dst_path);
+  DPL_TRACE(ctx, DPL_TRACE_REST, "copy_id src_bucket=%s src_id=%s dst_bucket=%s dst_path=%s", src_bucket, src_id, dst_bucket, dst_path);
 
   if (NULL == ctx->backend->copy)
     {
