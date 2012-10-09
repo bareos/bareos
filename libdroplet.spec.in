@@ -52,9 +52,9 @@ rm -rf %{buildroot}
 
 %files devel
 %defattr(-,root,root,-)
-%{_includedir}/droplet-1.0
+%{_includedir}/droplet-3.0
 %{_libdir}/libdroplet.so
 %{_libdir}/libdroplet.a
 %{_libdir}/libdroplet.la
-%{_libdir}/pkgconfig/droplet-1.0.pc
+%{_libdir}/pkgconfig/droplet-3.0.pc
 

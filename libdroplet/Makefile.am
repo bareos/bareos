@@ -41,12 +41,12 @@ libdroplet_la_SOURCES = \
 	posix/posix.c \
 	posix/backend.c
 
-libdropletincludedir = $(includedir)/droplet-1.0/
+libdropletincludedir = $(includedir)/droplet-3.0/
 libdropletinclude_HEADERS = \
 	include/droplet.h \
 	include/dropletp.h
 
-libdropletdropletincludedir = $(includedir)/droplet-1.0/droplet
+libdropletdropletincludedir = $(includedir)/droplet-3.0/droplet
 libdropletdropletinclude_HEADERS = \
 	include/droplet/conn.h \
 	include/droplet/converters.h \
@@ -67,14 +67,14 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/vfs.h \
 	include/droplet/task.h
 
-libdropletdroplets3includedir = $(includedir)/droplet-1.0/droplet/s3
+libdropletdroplets3includedir = $(includedir)/droplet-3.0/droplet/s3
 libdropletdroplets3include_HEADERS = \
 	include/droplet/s3/backend.h \
 	include/droplet/s3/replyparser.h \
 	include/droplet/s3/reqbuilder.h \
 	include/droplet/s3/s3.h
 
-libdropletdropletcdmiincludedir = $(includedir)/droplet-1.0/droplet/cdmi
+libdropletdropletcdmiincludedir = $(includedir)/droplet-3.0/droplet/cdmi
 libdropletdropletcdmiinclude_HEADERS = \
 	include/droplet/cdmi/backend.h \
 	include/droplet/cdmi/replyparser.h \
@@ -83,14 +83,14 @@ libdropletdropletcdmiinclude_HEADERS = \
 	include/droplet/cdmi/crcmodel.h \
 	include/droplet/cdmi/cdmi.h
 
-libdropletdropletsrwsincludedir = $(includedir)/droplet-1.0/droplet/srws
+libdropletdropletsrwsincludedir = $(includedir)/droplet-3.0/droplet/srws
 libdropletdropletsrwsinclude_HEADERS = \
 	include/droplet/srws/backend.h \
 	include/droplet/srws/replyparser.h \
 	include/droplet/srws/reqbuilder.h \
 	include/droplet/srws/srws.h
 
-libdropletdropletposixincludedir = $(includedir)/droplet-1.0/droplet/posix
+libdropletdropletposixincludedir = $(includedir)/droplet-3.0/droplet/posix
 libdropletdropletposixinclude_HEADERS = \
 	include/droplet/posix/backend.h \
 	include/droplet/posix/posix.h
