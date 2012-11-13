@@ -2628,6 +2628,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
   dpl_req_t     *req = NULL;
   char          *body_str = NULL;
   int           body_len = 0;
+  int           add_base_path;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
@@ -2665,7 +2666,13 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_req_set_src_resource(req, src_resource);
+  if (copy_directive == DPL_COPY_DIRECTIVE_MKDENT ||
+      copy_directive == DPL_COPY_DIRECTIVE_RMDENT)
+    add_base_path = 0;
+  else
+    add_base_path = 1;
+
+  ret2 = dpl_req_set_src_resource_ext(req, src_resource, add_base_path);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -3419,10 +3426,15 @@ dpl_cdmi_copy_id(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "delete src_bucket=%s src_id=%s src_subresource=%s", src_bucket, src_id, src_subresource);
 
-  ret = dpl_cdmi_get_id_path(ctx, src_bucket, &id_path);
-  if (DPL_SUCCESS != ret)
+  if (DPL_COPY_DIRECTIVE_MKDENT == copy_directive)
+    id_path = NULL;
+  else
     {
-      goto end;
+      ret = dpl_cdmi_get_id_path(ctx, src_bucket, &id_path);
+      if (DPL_SUCCESS != ret)
+        {
+          goto end;
+        }
     }
 
   ret2 = dpl_cdmi_convert_id_to_native(ctx, src_id, ctx->enterprise_number, &src_native_id);

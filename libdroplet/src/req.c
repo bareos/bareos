@@ -366,16 +366,22 @@ dpl_req_set_src_bucket(dpl_req_t *req,
 }
 
 dpl_status_t
-dpl_req_set_src_resource(dpl_req_t *req,
-                         const char *src_resource)
+dpl_req_set_src_resource_ext(dpl_req_t *req,
+                             const char *src_resource,
+                             int add_base_path)
 {
   char *nstr;
   char npath[DPL_MAXPATHLEN];
 
-  if (!strcmp(req->ctx->base_path, "/"))
-    snprintf(npath, sizeof (npath), "%s", src_resource);
+  if (add_base_path)
+    {
+      if (!strcmp(req->ctx->base_path, "/"))
+        snprintf(npath, sizeof (npath), "%s", src_resource);
+      else
+        snprintf(npath, sizeof (npath), "%s/%s", req->ctx->base_path, src_resource);
+    }
   else
-    snprintf(npath, sizeof (npath), "%s/%s", req->ctx->base_path, src_resource);
+    snprintf(npath, sizeof (npath), "%s", src_resource);
 
   nstr = strdup(npath);
   if (NULL == nstr)
@@ -387,6 +393,13 @@ dpl_req_set_src_resource(dpl_req_t *req,
   req->src_resource = nstr;
 
   return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_req_set_src_resource(dpl_req_t *req,
+                         const char *src_resource)
+{
+  return dpl_req_set_src_resource_ext(req, src_resource, 1);
 }
 
 dpl_status_t

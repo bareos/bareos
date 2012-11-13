@@ -2124,7 +2124,9 @@ static dpl_status_t
 copy_path_to_path(dpl_ctx_t *ctx,
                   const char *src_locator,
                   const char *dst_locator,
-                  dpl_copy_directive_t copy_directive)
+                  dpl_copy_directive_t copy_directive,
+                  dpl_dict_t *metadata,
+                  dpl_sysmd_t *sysmd)
 {
   int ret, ret2;
   char *src_nlocator = NULL;
@@ -2213,7 +2215,7 @@ copy_path_to_path(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, src_bucket, src_obj_fqn.path, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
+  ret2 = dpl_copy(ctx, src_bucket, src_obj_fqn.path, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, metadata, sysmd, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2246,7 +2248,9 @@ copy_id_to_path(dpl_ctx_t *ctx,
                 const char *src_id,
                 uint32_t enterprise_number,
                 const char *dst_locator,
-                dpl_copy_directive_t copy_directive)
+                dpl_copy_directive_t copy_directive,
+                dpl_dict_t *metadata,
+                dpl_sysmd_t *sysmd)
 {
   int ret, ret2;
   char *dst_nlocator = NULL;
@@ -2294,7 +2298,7 @@ copy_id_to_path(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy_id(ctx, dst_bucket, src_id, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
+  ret2 = dpl_copy_id(ctx, dst_bucket, src_id, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, metadata, sysmd, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2320,7 +2324,9 @@ static dpl_status_t
 copy_name_to_path(dpl_ctx_t *ctx,
                   const char *src_name,
                   const char *dst_locator,
-                  dpl_copy_directive_t copy_directive)
+                  dpl_copy_directive_t copy_directive,
+                  dpl_dict_t *metadata,
+                  dpl_sysmd_t *sysmd)
 {
   int ret, ret2;
   char *dst_nlocator = NULL;
@@ -2329,6 +2335,13 @@ copy_name_to_path(dpl_ctx_t *ctx,
   dpl_fqn_t dst_obj_fqn;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_name_to_path src_id=%s dst_locator=%s", src_name, dst_locator);
+
+  dst_nlocator = strdup(dst_locator);
+  if (NULL == dst_nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
 
   dst_path = index(dst_nlocator, ':');
   if (NULL != dst_path)
@@ -2361,7 +2374,7 @@ copy_name_to_path(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, dst_bucket, src_name, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_REG, copy_directive, NULL, NULL, NULL);
+  ret2 = dpl_copy(ctx, dst_bucket, src_name, dst_bucket, dst_obj_fqn.path, NULL, DPL_FTYPE_DIR, copy_directive, metadata, sysmd, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2397,7 +2410,7 @@ dpl_fcopy(dpl_ctx_t *ctx,
           const char *src_locator,
           const char *dst_locator)
 {
-  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_COPY);
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_COPY, NULL, NULL);
 }
 
 dpl_status_t
@@ -2405,7 +2418,7 @@ dpl_rename(dpl_ctx_t *ctx,
            const char *src_locator,
            const char *dst_locator)
 {
-  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_MOVE);
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_MOVE, NULL, NULL);
 }
 
 dpl_status_t
@@ -2413,7 +2426,7 @@ dpl_symlink(dpl_ctx_t *ctx,
             const char *src_locator,
             const char *dst_locator)
 {
-  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_SYMLINK);
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_SYMLINK, NULL, NULL);
 }
 
 dpl_status_t
@@ -2421,16 +2434,17 @@ dpl_link(dpl_ctx_t *ctx,
          const char *src_locator,
          const char *dst_locator)
 {
-  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_LINK);
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_COPY_DIRECTIVE_LINK, NULL, NULL);
 }
 
 dpl_status_t
 dpl_mkdent(dpl_ctx_t *ctx,
            const char *src_id,
-           uint32_t enterprise_number,
-           const char *dst_locator)
+           const char *dst_locator,
+           dpl_dict_t *metadata,
+           dpl_sysmd_t *sysmd)
 {
-  return copy_id_to_path(ctx, src_id, enterprise_number, dst_locator, DPL_COPY_DIRECTIVE_MKDENT);
+  return copy_id_to_path(ctx, src_id, ctx->enterprise_number, dst_locator, DPL_COPY_DIRECTIVE_MKDENT, metadata, sysmd);
 }
 
 dpl_status_t
@@ -2438,7 +2452,7 @@ dpl_rmdent(dpl_ctx_t *ctx,
            const char *src_name,
            const char *dst_locator)
 {
-  return copy_name_to_path(ctx, src_name, dst_locator, DPL_COPY_DIRECTIVE_RMDENT);
+  return copy_name_to_path(ctx, src_name, dst_locator, DPL_COPY_DIRECTIVE_RMDENT, NULL, NULL);
 }
 
 dpl_status_t
