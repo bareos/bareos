@@ -445,7 +445,7 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   struct in_addr addr;
   dpl_conn_t    *conn;
 
-  ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
+  ret2 = dpl_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
   if (0 != ret2)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "gethostbyname failed");

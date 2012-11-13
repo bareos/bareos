@@ -118,7 +118,7 @@ int lrand48_r(struct drand48_data *buffer, long int *result);
 /**/
 
 #include <sys/types.h>
-pid_t gettid();
+pid_t dpl_gettid();
 
 /**/
 
@@ -129,7 +129,7 @@ char *canonicalize_file_name(const char *path);
 /**/
 
 //one fits all
-int linux_gethostbyname_r(const char *name,
+int dpl_gethostbyname_r(const char *name,
                           struct hostent *ret,
                           char *buf,
                           size_t buflen,
@@ -219,8 +219,8 @@ int dpl_base64_init(void);
 
 /* PROTO utils.c */
 /* src/utils.c */
-pid_t gettid(void);
-int linux_gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
+pid_t dpl_gettid(void);
+int dpl_gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
 void dpl_dump_init(struct dpl_dump_ctx *ctx, int binary);
 void dpl_dump_line(struct dpl_dump_ctx *ctx, unsigned int off, unsigned char *b, unsigned int l);
 void dpl_dump(struct dpl_dump_ctx *ctx, char *buf, int len);

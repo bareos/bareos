@@ -61,14 +61,14 @@ lrand48_r(struct drand48_data *buffer,
 
 #ifndef HAVE_GETTID
 pid_t
-gettid()
+dpl_gettid()
 {
   return -1; //XXX
 }
 #elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
 #include <sys/syscall.h>
 pid_t
-gettid()
+dpl_gettid()
 {
   return syscall(SYS_gettid);
 }
@@ -76,7 +76,7 @@ gettid()
 #else
 #include <syscall.h>
 pid_t
-gettid()
+dpl_gettid()
 {
   return syscall(SYS_gettid);
 }
@@ -91,7 +91,7 @@ canonicalize_file_name(const char *path)
 #endif
 
 int
-linux_gethostbyname_r(const char *name,
+dpl_gethostbyname_r(const char *name,
                       struct hostent *ret,
   	              char *buf,
                       size_t buflen,
@@ -284,9 +284,9 @@ dpl_trace(dpl_ctx_t *ctx,
   va_end(args);
 
   if (NULL != ctx->trace_func)
-    ctx->trace_func(gettid(), level, file, func, lineno, buf);
+    ctx->trace_func(dpl_gettid(), level, file, func, lineno, buf);
   else
-    fprintf(stderr, "trace: %ld: [%x] %s:%s:%d: %s\n", (long int) gettid(), level, file, func, lineno, buf);
+    fprintf(stderr, "trace: %ld: [%x] %s:%s:%d: %s\n", (long int) dpl_gettid(), level, file, func, lineno, buf);
 }
 
 /**/
