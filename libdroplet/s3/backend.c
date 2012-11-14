@@ -234,9 +234,6 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   //build request
   ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
   if (DPL_SUCCESS != ret2)
@@ -245,17 +242,20 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -449,17 +449,17 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -682,17 +682,17 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -815,17 +815,17 @@ dpl_s3_delete_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -985,17 +985,17 @@ dpl_s3_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1159,17 +1159,17 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ENOMEM;
+      ret = ret2;
       goto end;
     }
 
@@ -1331,17 +1331,17 @@ dpl_s3_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1582,17 +1582,17 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1746,17 +1746,17 @@ dpl_s3_head_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1939,17 +1939,17 @@ dpl_s3_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -2228,17 +2228,17 @@ dpl_s3_copy(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 

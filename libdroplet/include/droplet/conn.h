@@ -37,7 +37,7 @@
 struct dpl_hash_info
 {
   struct in_addr addr;
-  unsigned short port;
+  u_short port;
 };
 
 typedef enum
@@ -56,6 +56,9 @@ typedef struct dpl_conn
   struct dpl_conn *prev;
 
   struct dpl_hash_info hash_info;
+
+  char *host; //string used to resolve ip addr
+  char *port; //string used to resolve port
 
   int fd;
   time_t start_time;
@@ -87,8 +90,9 @@ typedef struct dpl_conn
 
 /* PROTO conn.c */
 /* src/conn.c */
-dpl_conn_t *dpl_conn_open(dpl_ctx_t *ctx, struct in_addr addr, unsigned int port);
-dpl_conn_t *dpl_conn_open_host(dpl_ctx_t *ctx, const char *host, unsigned int port);
+dpl_conn_t *dpl_conn_open_host(dpl_ctx_t *ctx, const char *host, const char *portstr);
+void dpl_blacklist_host(dpl_ctx_t *ctx, const char *host, const char *portstr);
+dpl_status_t dpl_try_connect(dpl_ctx_t *ctx, dpl_req_t *req, dpl_conn_t **connp);
 void dpl_conn_release(dpl_conn_t *conn);
 void dpl_conn_terminate(dpl_conn_t *conn);
 dpl_status_t dpl_conn_pool_init(dpl_ctx_t *ctx);

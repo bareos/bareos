@@ -105,6 +105,42 @@ dpl_req_new(dpl_ctx_t *ctx)
   return NULL;
 }
 
+dpl_status_t
+dpl_req_set_host(dpl_req_t *req,
+                 const char *host)
+{
+  char *nstr;
+
+  nstr = strdup(host);
+  if (NULL == nstr)
+    return DPL_ENOMEM;
+
+  if (NULL != req->host)
+    free(req->host);
+
+  req->host = nstr;
+
+  return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_req_set_port(dpl_req_t *req,
+                 const char *port)
+{
+  char *nstr;
+
+  nstr = strdup(port);
+  if (NULL == nstr)
+    return DPL_ENOMEM;
+
+  if (NULL != req->port)
+    free(req->port);
+
+  req->port = nstr;
+
+  return DPL_SUCCESS;
+}
+
 void
 dpl_req_set_method(dpl_req_t *req,
                    dpl_method_t method)

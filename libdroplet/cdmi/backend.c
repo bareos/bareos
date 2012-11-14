@@ -1038,9 +1038,6 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   dpl_req_set_object_type(req, DPL_FTYPE_DIR);
 
   //build request
@@ -1051,17 +1048,20 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1243,9 +1243,6 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (range)
     {
       ret2 = dpl_cdmi_req_add_range(req, req_mask, range);
@@ -1290,17 +1287,20 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1525,9 +1525,6 @@ dpl_cdmi_put_buffered_internal(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
     {
       ret = DPL_ENOTSUPP;
@@ -1575,17 +1572,20 @@ dpl_cdmi_put_buffered_internal(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1851,9 +1851,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (range)
     {
       ret2 = dpl_cdmi_req_add_range(req, req_mask, range);
@@ -1874,17 +1871,20 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -2224,9 +2224,6 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
     {
       ret = DPL_ENOTSUPP;
@@ -2241,17 +2238,20 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -2516,9 +2516,6 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
     }
 #endif
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   //build request
   ret2 = dpl_cdmi_req_build(req, req_mask, &headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)
@@ -2527,17 +2524,20 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -2691,9 +2691,6 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
 
   dpl_req_set_copy_directive(req, copy_directive);
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   dpl_req_set_object_type(req, object_type);
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
@@ -2726,17 +2723,20 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 

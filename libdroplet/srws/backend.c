@@ -312,9 +312,6 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
         }
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (option)
     {
       if (option->mask & DPL_OPTION_LAZY)
@@ -364,17 +361,20 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -522,9 +522,6 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
 
   dpl_req_set_data(req, NULL, data_len);
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (option)
     {
       if (option->mask & DPL_OPTION_LAZY)
@@ -552,17 +549,20 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -706,9 +706,6 @@ dpl_srws_get(dpl_ctx_t *ctx,
         }
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (option)
     {
       if (option->mask & DPL_OPTION_LAZY)
@@ -725,17 +722,20 @@ dpl_srws_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -966,9 +966,6 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
         }
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (option)
     {
       if (option->mask & DPL_OPTION_LAZY)
@@ -983,17 +980,20 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1128,9 +1128,6 @@ dpl_srws_head_raw(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (option)
     {
       if (option->mask & DPL_OPTION_LAZY)
@@ -1145,17 +1142,27 @@ dpl_srws_head_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
       goto end;
     }
 
@@ -1319,9 +1326,6 @@ dpl_srws_delete(dpl_ctx_t *ctx,
         }
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (option)
     {
       if (option->mask & DPL_OPTION_LAZY)
@@ -1336,17 +1340,20 @@ dpl_srws_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 

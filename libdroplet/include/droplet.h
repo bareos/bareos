@@ -95,6 +95,9 @@ typedef enum
     DPL_EPRECOND             = (-19),/*!< Precondition failed */
   } dpl_status_t;
 
+#include <droplet/queue.h>
+#include <droplet/addrlist.h>
+
 typedef enum
   {
     DPL_TRACE_ERR   = (1u<<0),  /*!< trace errors */
@@ -410,8 +413,9 @@ typedef struct dpl_ctx
   int read_timeout;           /*!< read timeout (sec)        */
   int write_timeout;          /*!< write timeout (sec)       */
   int use_https;
-  char *host;
-  int port;
+  dpl_addrlist_t *addrlist;   /*!< list of addresses to contact */
+  int cur_host;               /*!< current host beeing used in addrlist */
+  int blacklist_expiretime;   /*!< expiration time of blacklisting */
   char *base_path;            /*!< or RootURI */
   char *access_key;
   char *secret_key;
@@ -488,6 +492,8 @@ typedef struct
 {
   dpl_ctx_t *ctx;
 
+  char *host;
+  char *port;
   dpl_behavior_flag_t behavior_flags;
   
   dpl_method_t method;

@@ -199,29 +199,6 @@ dpl_srws_req_build(const dpl_req_t *req,
    * common headers
    */
 
-  if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING)
-    {
-      char host[1024];
-
-      snprintf(host, sizeof (host), "%s.%s", req->bucket, req->ctx->host);
-
-      ret2 = dpl_dict_add(headers, "Host", host, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      ret2 = dpl_dict_add(headers, "Host", req->ctx->host, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-
   if (req->behavior_flags & DPL_BEHAVIOR_KEEP_ALIVE)
     {
       ret2 = dpl_dict_add(headers, "Connection", "keep-alive", 0);
