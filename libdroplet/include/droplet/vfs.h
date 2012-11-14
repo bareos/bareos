@@ -146,7 +146,7 @@ dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, const char *src_locator, const char *dst_
 dpl_status_t dpl_rename(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
 dpl_status_t dpl_symlink(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
 dpl_status_t dpl_link(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
-dpl_status_t dpl_mkdent(dpl_ctx_t *ctx, const char *src_id, const char *dst_locator, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
+dpl_status_t dpl_mkdent(dpl_ctx_t *ctx, const char *src_id, const char *dst_locator, dpl_ftype_t object_type);
 dpl_status_t dpl_rmdent(dpl_ctx_t *ctx, const char *src_name, const char *dst_locator);
 dpl_status_t dpl_mvdent(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
 #endif

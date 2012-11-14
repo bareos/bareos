@@ -2480,11 +2480,9 @@ dpl_status_t
 dpl_mkdent(dpl_ctx_t *ctx,
            const char *src_id,
            const char *dst_locator,
-           dpl_ftype_t object_type,
-           dpl_dict_t *metadata,
-           dpl_sysmd_t *sysmd)
+           dpl_ftype_t object_type)
 {
-  return copy_id_to_path(ctx, src_id, ctx->enterprise_number, dst_locator, object_type, DPL_COPY_DIRECTIVE_MKDENT, metadata, sysmd);
+  return copy_id_to_path(ctx, src_id, ctx->enterprise_number, dst_locator, object_type, DPL_COPY_DIRECTIVE_MKDENT, NULL, NULL);
 }
 
 dpl_status_t
