@@ -2627,7 +2627,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
 
   if (DPL_COPY_DIRECTIVE_METADATA_REPLACE == copy_directive)
     {
-      ret = dpl_cdmi_put(ctx, dst_bucket, dst_resource, "metadata", NULL,
+      ret = dpl_cdmi_put(ctx, dst_bucket, dst_resource, NULL, NULL,
                          object_type, condition, NULL, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, 
                          NULL, NULL, locationp);
       goto end;
@@ -3440,7 +3440,7 @@ dpl_cdmi_copy_id(dpl_ctx_t *ctx,
   snprintf(src_resource, sizeof (src_resource), "%s%s", id_path ? id_path : "", src_native_id);
 
   if (DPL_COPY_DIRECTIVE_METADATA_REPLACE == copy_directive)
-    ret = dpl_cdmi_put(ctx, src_bucket, src_resource, "metadata", NULL,
+    ret = dpl_cdmi_put(ctx, src_bucket, src_resource, NULL, NULL,
                        object_type, condition, NULL, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, 
                        NULL, NULL, locationp);
   else
