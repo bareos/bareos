@@ -37,6 +37,31 @@
 #define DPRINTF(fmt,...)
 
 dpl_status_t
+dpl_add_host_to_headers(dpl_req_t *req,
+                        dpl_dict_t *headers)
+{
+  dpl_status_t ret;
+
+  if (NULL != req->host)
+    {
+      char buf[256];
+
+      if (strcmp("80", req->port))
+        snprintf(buf, sizeof (buf), "%s:%s", req->host, req->port);
+      else
+        snprintf(buf, sizeof (buf), "%s", req->host);
+
+      ret = dpl_dict_add(headers, "Host", buf, 0);
+      if (DPL_SUCCESS != ret)
+        {
+          return ret;
+        }
+    }
+
+  return DPL_SUCCESS;
+}
+
+dpl_status_t
 dpl_add_range_to_headers_internal(const dpl_range_t *range,
                                   const char *field,
                                   dpl_dict_t *headers)

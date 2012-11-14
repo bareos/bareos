@@ -93,7 +93,11 @@ typedef enum
     DPL_ECONNECT             = (-17),/*!< Connect error */
     DPL_EPERM                = (-18),/*!< Permission denied */
     DPL_EPRECOND             = (-19),/*!< Precondition failed */
+    DPL_ECONFLICT            = (-20),/*!< Conflict */
   } dpl_status_t;
+
+#include <droplet/queue.h>
+#include <droplet/addrlist.h>
 
 typedef enum
   {
@@ -258,12 +262,17 @@ typedef enum
 
 typedef enum
   {
-    DPL_FTYPE_UNDEF,
-    DPL_FTYPE_ANY,
-    DPL_FTYPE_REG,
-    DPL_FTYPE_DIR,
-    DPL_FTYPE_CAP,
-    DPL_FTYPE_DOM,
+    DPL_FTYPE_UNDEF,  /*!< undefined object type */
+    DPL_FTYPE_ANY,    /*!< any object type */
+    DPL_FTYPE_REG,    /*!< regular file */
+    DPL_FTYPE_DIR,    /*!< directory */
+    DPL_FTYPE_CAP,    /*!< capability */
+    DPL_FTYPE_DOM,    /*!< domain */
+    DPL_FTYPE_CHRDEV, /*!< character device */
+    DPL_FTYPE_BLKDEV, /*!< block device */
+    DPL_FTYPE_FIFO,   /*!< named pipe */
+    DPL_FTYPE_SOCKET, /*!< named socket */
+    DPL_FTYPE_SYMLINK, /*!< symbolic link */
   } dpl_ftype_t;
 
 #define DPL_DEFAULT_ENTERPRISE_NUMBER 37489 /*!< scality */
@@ -364,6 +373,7 @@ typedef enum
     DPL_COPY_DIRECTIVE_MOVE,
     DPL_COPY_DIRECTIVE_MKDENT,
     DPL_COPY_DIRECTIVE_RMDENT,
+    DPL_COPY_DIRECTIVE_MVDENT,
   } dpl_copy_directive_t;
 
 typedef struct
@@ -410,8 +420,9 @@ typedef struct dpl_ctx
   int read_timeout;           /*!< read timeout (sec)        */
   int write_timeout;          /*!< write timeout (sec)       */
   int use_https;
-  char *host;
-  int port;
+  dpl_addrlist_t *addrlist;   /*!< list of addresses to contact */
+  int cur_host;               /*!< current host beeing used in addrlist */
+  int blacklist_expiretime;   /*!< expiration time of blacklisting */
   char *base_path;            /*!< or RootURI */
   char *access_key;
   char *secret_key;
@@ -488,6 +499,8 @@ typedef struct
 {
   dpl_ctx_t *ctx;
 
+  char *host;
+  char *port;
   dpl_behavior_flag_t behavior_flags;
   
   dpl_method_t method;

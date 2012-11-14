@@ -203,6 +203,8 @@ dpl_copy_directive(char *str)
     return DPL_COPY_DIRECTIVE_MKDENT;
   else if (!strcasecmp(str, "rmdent"))
     return DPL_COPY_DIRECTIVE_RMDENT;
+  else if (!strcasecmp(str, "mvdent"))
+    return DPL_COPY_DIRECTIVE_MVDENT;
 
   return -1;
 }
@@ -228,6 +230,8 @@ dpl_copy_directive_str(dpl_copy_directive_t copy_directive)
       return "MKDENT"; //case is important
     case DPL_COPY_DIRECTIVE_RMDENT:
       return "RMDENT"; //case is important
+    case DPL_COPY_DIRECTIVE_MVDENT:
+      return "MVDENT"; //case is important
     }
 
   return NULL;
@@ -267,6 +271,16 @@ dpl_object_type_str(dpl_ftype_t object_type)
       return "cap";
     case DPL_FTYPE_DOM:
       return "dom";
+    case DPL_FTYPE_CHRDEV:
+      return "chrdev";
+    case DPL_FTYPE_BLKDEV:
+      return "blkdev";
+    case DPL_FTYPE_FIFO:
+      return "fifo";
+    case DPL_FTYPE_SOCKET:
+      return "socket";
+    case DPL_FTYPE_SYMLINK:
+      return "symlink";
     }
 
   return NULL;

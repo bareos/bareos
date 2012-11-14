@@ -735,7 +735,7 @@ dpl_map_http_status(int http_status)
       ret = DPL_ENOENT;
       break;
     case DPL_HTTP_CODE_CONFLICT:
-      ret = DPL_EEXIST;
+      ret = DPL_ECONFLICT;
       break;
     case DPL_HTTP_CODE_PRECOND_FAILED:
       ret = DPL_EPRECOND;
@@ -782,6 +782,10 @@ dpl_read_http_reply(dpl_conn_t *conn,
     {
       //on I/O failure close connection
       connection_close = 1;
+
+      //blacklist host
+      dpl_blacklist_host(conn->ctx, conn->host, conn->port);
+
       ret = ret2;
       goto end;
     }
@@ -793,6 +797,10 @@ dpl_read_http_reply(dpl_conn_t *conn,
   //some servers does not send explicit connection information and does not support keep alive
   if (!conn->ctx->keep_alive)
     connection_close = 1;
+
+  //blacklist host with server errors
+  if (http_status / 100 == 5)
+    dpl_blacklist_host(conn->ctx, conn->host, conn->port);
 
   //map http_status to relevant value
   ret = dpl_map_http_status(http_status);

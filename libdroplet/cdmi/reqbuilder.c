@@ -260,6 +260,9 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
 
   switch (req->copy_directive)
     {
+    case DPL_COPY_DIRECTIVE_UNDEF:
+      ret = DPL_ENOTSUPP;
+      goto end;
     case DPL_COPY_DIRECTIVE_COPY:
       field = "copy";
       break ;
@@ -281,9 +284,9 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
     case DPL_COPY_DIRECTIVE_RMDENT:
       field = "rmdent";
       break ;
-    default:
-      ret = DPL_ENOTSUPP;
-      goto end;
+    case DPL_COPY_DIRECTIVE_MVDENT:
+      field = "mvdent";
+      break ;
     }
 
   src_resource = req->src_resource;
@@ -496,6 +499,46 @@ dpl_cdmi_req_build(const dpl_req_t *req,
               goto end;
             }
           break ;
+        case DPL_FTYPE_CHRDEV:
+          ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_CHARDEVICE, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_FTYPE_BLKDEV:
+          ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_BLOCKDEVICE, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_FTYPE_FIFO:
+          ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_FIFO, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_FTYPE_SOCKET:
+          ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_SOCKET, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_FTYPE_SYMLINK:
+          ret2 = dpl_dict_add(headers, "Accept", DPL_CDMI_CONTENT_TYPE_SYMLINK, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
         }
     }
   else if (DPL_METHOD_PUT == req->method ||
@@ -664,6 +707,46 @@ dpl_cdmi_req_build(const dpl_req_t *req,
               goto end;
             }
           break ;
+        case DPL_FTYPE_CHRDEV:
+          ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_CHARDEVICE, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_FTYPE_BLKDEV:
+          ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_BLOCKDEVICE, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_FTYPE_FIFO:
+          ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_FIFO, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_FTYPE_SOCKET:
+          ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_SOCKET, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
+        case DPL_FTYPE_SYMLINK:
+          ret2 = dpl_dict_add(headers, "Content-Type", DPL_CDMI_CONTENT_TYPE_SYMLINK, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+          break ;
         }
     }
   else if (DPL_METHOD_DELETE == req->method)
@@ -691,29 +774,6 @@ dpl_cdmi_req_build(const dpl_req_t *req,
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
-          goto end;
-        }
-    }
-
-  if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING)
-    {
-      char host[1024];
-
-      snprintf(host, sizeof (host), "%s.%s", req->bucket, req->ctx->host);
-
-      ret2 = dpl_dict_add(headers, "Host", host, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      ret2 = dpl_dict_add(headers, "Host", req->ctx->host, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_ENOMEM;
           goto end;
         }
     }

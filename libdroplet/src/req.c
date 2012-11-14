@@ -39,6 +39,12 @@
 void
 dpl_req_free(dpl_req_t *req)
 {
+  if (NULL != req->host)
+    free(req->host);
+
+  if (NULL != req->port)
+    free(req->port);
+
   if (NULL != req->bucket)
     free(req->bucket);
 
@@ -103,6 +109,42 @@ dpl_req_new(dpl_ctx_t *ctx)
     dpl_req_free(req);
 
   return NULL;
+}
+
+dpl_status_t
+dpl_req_set_host(dpl_req_t *req,
+                 const char *host)
+{
+  char *nstr;
+
+  nstr = strdup(host);
+  if (NULL == nstr)
+    return DPL_ENOMEM;
+
+  if (NULL != req->host)
+    free(req->host);
+
+  req->host = nstr;
+
+  return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_req_set_port(dpl_req_t *req,
+                 const char *port)
+{
+  char *nstr;
+
+  nstr = strdup(port);
+  if (NULL == nstr)
+    return DPL_ENOMEM;
+
+  if (NULL != req->port)
+    free(req->port);
+
+  req->port = nstr;
+
+  return DPL_SUCCESS;
 }
 
 void
@@ -366,16 +408,22 @@ dpl_req_set_src_bucket(dpl_req_t *req,
 }
 
 dpl_status_t
-dpl_req_set_src_resource(dpl_req_t *req,
-                         const char *src_resource)
+dpl_req_set_src_resource_ext(dpl_req_t *req,
+                             const char *src_resource,
+                             int add_base_path)
 {
   char *nstr;
   char npath[DPL_MAXPATHLEN];
 
-  if (!strcmp(req->ctx->base_path, "/"))
-    snprintf(npath, sizeof (npath), "%s", src_resource);
+  if (add_base_path)
+    {
+      if (!strcmp(req->ctx->base_path, "/"))
+        snprintf(npath, sizeof (npath), "%s", src_resource);
+      else
+        snprintf(npath, sizeof (npath), "%s/%s", req->ctx->base_path, src_resource);
+    }
   else
-    snprintf(npath, sizeof (npath), "%s/%s", req->ctx->base_path, src_resource);
+    snprintf(npath, sizeof (npath), "%s", src_resource);
 
   nstr = strdup(npath);
   if (NULL == nstr)
@@ -387,6 +435,13 @@ dpl_req_set_src_resource(dpl_req_t *req,
   req->src_resource = nstr;
 
   return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_req_set_src_resource(dpl_req_t *req,
+                         const char *src_resource)
+{
+  return dpl_req_set_src_resource_ext(req, src_resource, 1);
 }
 
 dpl_status_t

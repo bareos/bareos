@@ -196,6 +196,12 @@ dpl_conn_free(dpl_conn_t *conn)
   if (NULL != conn->read_buf)
     free(conn->read_buf);
 
+  if (NULL != conn->host)
+    free(conn->host);
+
+  if (NULL != conn->port)
+    free(conn->port);
+
   free(conn);
 }
 
@@ -211,7 +217,7 @@ dpl_conn_terminate_nolock(dpl_conn_t *conn)
 static int
 do_connect(dpl_ctx_t *ctx,
            struct in_addr addr,
-           u_int port)
+           u_short port)
 {
   struct sockaddr_in sin;
   int   fd = -1;
@@ -302,10 +308,10 @@ do_connect(dpl_ctx_t *ctx,
  *
  * @return
  */
-dpl_conn_t *
-dpl_conn_open(dpl_ctx_t *ctx,
-              struct in_addr addr,
-              unsigned int port)
+static dpl_conn_t *
+conn_open(dpl_ctx_t *ctx,
+          struct in_addr addr,
+          u_short port)
 {
   dpl_conn_t *conn = NULL;
   time_t now = time(0);
@@ -436,16 +442,18 @@ dpl_conn_open(dpl_ctx_t *ctx,
 dpl_conn_t *
 dpl_conn_open_host(dpl_ctx_t *ctx,
                    const char *host,
-                   unsigned int port)
+                   const char *portstr)
 {
   int           ret2;
   struct hostent hret, *hresult;
   char          hbuf[1024];
   int           herr;
   struct in_addr addr;
-  dpl_conn_t    *conn;
+  u_short       port;
+  dpl_conn_t    *conn = NULL;
+  char          *nstr;
 
-  ret2 = linux_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
+  ret2 = dpl_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
   if (0 != ret2)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "gethostbyname failed");
@@ -466,18 +474,129 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
 
   memcpy(&addr, hresult->h_addr_list[0], hresult->h_length);
 
-  conn = dpl_conn_open(ctx, addr, ctx->port);
+  port = atoi(portstr);
+
+  conn = conn_open(ctx, addr, port);
   if (NULL == conn)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "connect failed");
       goto bad;
     }
 
+  nstr = strdup(host);
+  if (NULL == nstr)
+    goto bad;
+
+  if (NULL != conn->host)
+    free(conn->host);
+  
+  conn->host = nstr;
+
+  nstr = strdup(portstr);
+  if (NULL == nstr)
+    goto bad;
+
+  if (NULL != conn->port)
+    free(conn->port);
+    
+  conn->port = nstr;
+
   return conn;
 
  bad:
 
+  if (NULL != conn)
+    dpl_conn_release(conn);
+
   return NULL;
+}
+
+void 
+dpl_blacklist_host(dpl_ctx_t *ctx,
+                   const char *host,
+                   const char *portstr)
+{
+  DPL_TRACE(ctx, DPL_TRACE_CONN, "blacklisting %s:%s", host, portstr);
+
+  (void) dpl_addrlist_blacklist(ctx->addrlist, host, portstr, ctx->blacklist_expiretime);
+}
+
+dpl_status_t
+dpl_try_connect(dpl_ctx_t *ctx,
+                dpl_req_t *req,
+                dpl_conn_t **connp)
+{
+  int cur_host;
+  char *host;
+  char *portstr;
+  dpl_conn_t *conn = NULL;
+  dpl_status_t ret, ret2;
+  char virtual_host[1024];
+  char *hostp = NULL;
+
+ retry:
+  pthread_mutex_lock(&ctx->lock);
+
+  cur_host = ctx->cur_host;
+  ++ctx->cur_host;
+
+  pthread_mutex_unlock(&ctx->lock);
+
+  ret2 = dpl_addrlist_get_nth(ctx->addrlist, cur_host,
+                              &host, &portstr, NULL, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPL_TRACE(ctx, DPL_TRACE_CONN, "no more host to contact, giving up");
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING)
+    {
+      snprintf(virtual_host, sizeof (virtual_host), "%s.%s", req->bucket, host);
+      hostp = virtual_host;
+      conn = dpl_conn_open_host(ctx, virtual_host, portstr);
+    }
+  else
+    {
+      hostp = host;
+      conn = dpl_conn_open_host(ctx, host, portstr);
+    }
+
+  if (NULL == conn)
+    {
+      dpl_blacklist_host(ctx, host, portstr);
+      goto retry;
+    }
+
+  ret2 = dpl_req_set_host(req, hostp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_set_port(req, portstr);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+  if (NULL != connp)
+    {
+      *connp = conn;
+      conn = NULL; // consumed
+    }
+
+ end:
+
+  if (NULL != conn)
+    dpl_conn_terminate(conn);
+
+  return ret;
 }
 
 /**
@@ -704,15 +823,26 @@ dpl_conn_writev_all(dpl_conn_t *conn,
                     int n_iov,
                     int timeout)
 {
+  dpl_status_t ret;
+
   DPL_TRACE(conn->ctx, DPL_TRACE_IO, "writev conn=%p https=%d size=%ld", conn, conn->ctx->use_https, dpl_iov_size(iov, n_iov));
 
   if (conn->ctx->trace_buffers)
     dpl_iov_dump(iov, n_iov, dpl_iov_size(iov, n_iov), conn->ctx->trace_binary);
 
   if (0 == conn->ctx->use_https)
-    return writev_all_plaintext(conn, iov, n_iov, timeout);
+    ret = writev_all_plaintext(conn, iov, n_iov, timeout);
   else
-    return writev_all_ssl(conn, iov, n_iov, timeout);
+    ret = writev_all_ssl(conn, iov, n_iov, timeout);
+
+  if (DPL_SUCCESS != ret)
+    {
+      //blacklist host
+      if (DPL_CONN_TYPE_HTTP == conn->type)
+        dpl_blacklist_host(conn->ctx, conn->host, conn->port);
+    }
+
+  return ret;
 }
 
 /** 

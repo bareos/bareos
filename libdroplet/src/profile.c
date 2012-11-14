@@ -242,13 +242,34 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "host"))
     {
-      ctx->host = strdup(value);
-      if (NULL == ctx->host)
-        return -1;
+      if (NULL != ctx->addrlist)
+        {
+          fprintf(stderr, "address list already defined\n");
+          return -1;
+        }
+
+      ctx->addrlist = dpl_addrlist_create_from_str(ctx->use_https ? "443" : "80", value);
+      if (NULL == ctx->addrlist)
+        {
+          fprintf(stderr, "error parsing address list\n");
+          return -1;
+        }
     }
   else if (!strcmp(var, "port"))
     {
-      ctx->port = atoi(value);
+      if (NULL == ctx->addrlist)
+        {
+          fprintf(stderr, "please define 'host' before defining port\n");
+          return -1;
+        }
+
+      ctx->addrlist->default_port = strdup(value);
+      if (NULL == ctx->addrlist->default_port)
+        return -1;
+    }
+  else if (!strcmp(var, "blacklist_expiretime"))
+    {
+      ctx->blacklist_expiretime = atoi(value);
     }
   else if (!strcmp(var, "base_path"))
     {
@@ -476,7 +497,8 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->read_timeout = DPL_DEFAULT_READ_TIMEOUT;
   ctx->write_timeout = DPL_DEFAULT_WRITE_TIMEOUT;
   ctx->use_https = 0;
-  ctx->port = -1;
+  ctx->addrlist = NULL;
+  ctx->blacklist_expiretime = 10;
   ctx->pricing = NULL;
   ctx->pricing_dir = NULL;
   ctx->read_buf_size = DPL_DEFAULT_READ_BUF_SIZE;
@@ -561,20 +583,12 @@ dpl_profile_post(dpl_ctx_t *ctx)
 
   if (strcmp(ctx->backend->name, "posix"))
     {
-      if (NULL == ctx->host)
+      if (NULL == ctx->addrlist)
         {
           fprintf(stderr, "missing 'host' in profile\n");
           ret = DPL_FAILURE;
           goto end;
         }
-    }
-
-  if (-1 == ctx->port)
-    {
-      if (0 == ctx->use_https)
-        ctx->port = 80;
-      else
-        ctx->port = 443;
     }
 
   //ssl stuff
@@ -801,8 +815,8 @@ dpl_profile_free(dpl_ctx_t *ctx)
   /*
    * profile
    */
-  if (NULL != ctx->host)
-    free(ctx->host);
+  if (NULL != ctx->addrlist)
+    dpl_addrlist_free(ctx->addrlist);
   if (NULL != ctx->base_path)
     free(ctx->base_path);
   if (NULL != ctx->access_key)

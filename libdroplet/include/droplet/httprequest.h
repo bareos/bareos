@@ -36,6 +36,7 @@
 
 /* PROTO httprequest.c */
 /* src/httprequest.c */
+dpl_status_t dpl_add_host_to_headers(dpl_req_t *req, dpl_dict_t *headers);
 dpl_status_t dpl_add_range_to_headers(const dpl_range_t *range, dpl_dict_t *headers);
 dpl_status_t dpl_add_content_range_to_headers(const dpl_range_t *range, dpl_dict_t *headers);
 dpl_status_t dpl_add_condition_to_headers(const dpl_condition_t *condition, dpl_dict_t *headers);

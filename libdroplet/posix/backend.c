@@ -559,6 +559,11 @@ dpl_posix_put(dpl_ctx_t *ctx,
     case DPL_FTYPE_ANY:
     case DPL_FTYPE_CAP:
     case DPL_FTYPE_DOM:
+    case DPL_FTYPE_CHRDEV:
+    case DPL_FTYPE_BLKDEV:
+    case DPL_FTYPE_FIFO:
+    case DPL_FTYPE_SOCKET:
+    case DPL_FTYPE_SYMLINK:
       ret = DPL_EINVAL;
       goto end;
     case DPL_FTYPE_DIR:
@@ -678,6 +683,11 @@ dpl_posix_put_buffered(dpl_ctx_t *ctx,
     case DPL_FTYPE_CAP:
     case DPL_FTYPE_DOM:
     case DPL_FTYPE_DIR:
+    case DPL_FTYPE_CHRDEV:
+    case DPL_FTYPE_BLKDEV:
+    case DPL_FTYPE_FIFO:
+    case DPL_FTYPE_SOCKET:
+    case DPL_FTYPE_SYMLINK:
       ret = DPL_EINVAL;
       goto end;
     case DPL_FTYPE_REG:
@@ -782,6 +792,11 @@ dpl_posix_get(dpl_ctx_t *ctx,
     case DPL_FTYPE_CAP:
     case DPL_FTYPE_DIR:
     case DPL_FTYPE_DOM:
+    case DPL_FTYPE_CHRDEV:
+    case DPL_FTYPE_BLKDEV:
+    case DPL_FTYPE_FIFO:
+    case DPL_FTYPE_SOCKET:
+    case DPL_FTYPE_SYMLINK:
       ret = DPL_EINVAL;
       goto end;
     case DPL_FTYPE_ANY:
@@ -970,6 +985,11 @@ dpl_posix_get_buffered(dpl_ctx_t *ctx,
     case DPL_FTYPE_CAP:
     case DPL_FTYPE_DOM:
     case DPL_FTYPE_DIR:
+    case DPL_FTYPE_CHRDEV:
+    case DPL_FTYPE_BLKDEV:
+    case DPL_FTYPE_FIFO:
+    case DPL_FTYPE_SOCKET:
+    case DPL_FTYPE_SYMLINK:
       ret = DPL_EINVAL;
       goto end;
     case DPL_FTYPE_ANY:
@@ -1359,6 +1379,7 @@ dpl_posix_delete(dpl_ctx_t *ctx,
           ret = DPL_FAILURE;
           goto end;
         }
+      ret = DPL_SUCCESS;
       goto end;
     case DPL_FTYPE_DIR:
       iret = rmdir(path);
@@ -1368,11 +1389,15 @@ dpl_posix_delete(dpl_ctx_t *ctx,
           ret = DPL_FAILURE;
           goto end;
         }
+      ret = DPL_SUCCESS;
       goto end;
     case DPL_FTYPE_CAP:
-      ret = DPL_ENOTSUPP;
-      goto end;
     case DPL_FTYPE_DOM:
+    case DPL_FTYPE_CHRDEV:
+    case DPL_FTYPE_BLKDEV:
+    case DPL_FTYPE_FIFO:
+    case DPL_FTYPE_SOCKET:
+    case DPL_FTYPE_SYMLINK:
       ret = DPL_ENOTSUPP;
       goto end;
     }
@@ -1463,6 +1488,7 @@ dpl_posix_copy(dpl_ctx_t *ctx,
       break ;
     case DPL_COPY_DIRECTIVE_MKDENT:
     case DPL_COPY_DIRECTIVE_RMDENT:
+    case DPL_COPY_DIRECTIVE_MVDENT:
       ret = DPL_ENOTSUPP;
       goto end;
     }

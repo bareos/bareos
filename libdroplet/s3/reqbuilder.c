@@ -631,6 +631,7 @@ dpl_s3_req_build(const dpl_req_t *req,
                 case DPL_COPY_DIRECTIVE_MOVE:
                 case DPL_COPY_DIRECTIVE_MKDENT:
                 case DPL_COPY_DIRECTIVE_RMDENT:
+                case DPL_COPY_DIRECTIVE_MVDENT:
                   ret = DPL_ENOTSUPP;
                   goto end;
                 case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
@@ -667,29 +668,6 @@ dpl_s3_req_build(const dpl_req_t *req,
   /*
    * common headers
    */
-  if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING)
-    {
-      char host[1024];
-
-      snprintf(host, sizeof (host), "%s.%s", req->bucket, req->ctx->host);
-
-      ret2 = dpl_dict_add(headers, "Host", host, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      ret2 = dpl_dict_add(headers, "Host", req->ctx->host, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-
   if (req->behavior_flags & DPL_BEHAVIOR_KEEP_ALIVE)
     {
       ret2 = dpl_dict_add(headers, "Connection", "keep-alive", 0);
@@ -790,10 +768,10 @@ dpl_s3_req_gen_url(const dpl_req_t *req,
 
   DPL_APPEND_STR(host);
 
-  if (((1 == req->ctx->use_https) && (req->ctx->port != 443)) ||
-      ((0 == req->ctx->use_https) && (req->ctx->port != 80)))
+  if (((1 == req->ctx->use_https) && (strcmp(req->port, "443"))) ||
+      ((0 == req->ctx->use_https) && (strcmp(req->port, "80"))))
     {
-      snprintf(str, sizeof(str), ":%d", req->ctx->port);
+      snprintf(str, sizeof(str), ":%s", req->port);
       DPL_APPEND_STR(str);
     }
   

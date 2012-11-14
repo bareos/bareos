@@ -38,8 +38,11 @@
 /* src/req.c */
 void dpl_req_free(dpl_req_t *req);
 dpl_req_t *dpl_req_new(dpl_ctx_t *ctx);
+dpl_status_t dpl_req_set_host(dpl_req_t *req, const char *host);
+dpl_status_t dpl_req_set_port(dpl_req_t *req, const char *port);
 void dpl_req_set_method(dpl_req_t *req, dpl_method_t method);
 dpl_status_t dpl_req_set_bucket(dpl_req_t *req, const char *bucket);
+dpl_status_t dpl_req_set_src_resource_ext(dpl_req_t *req, const char *src_resource, int add_base_path);
 dpl_status_t dpl_req_set_resource(dpl_req_t *req, const char *resource);
 dpl_status_t dpl_req_set_subresource(dpl_req_t *req, const char *subresource);
 void dpl_req_add_behavior(dpl_req_t *req, unsigned int flags);

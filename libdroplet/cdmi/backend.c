@@ -78,7 +78,7 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
   dpl_dict_t *tmp_dict2 = NULL;
   dpl_vec_t *tmp_vec = NULL;
   int do_acl = 0;
-  uint32_t n_aces;
+  uint32_t n_aces = 0;
   dpl_ace_t aces[DPL_SYSMD_ACE_MAX], *acesp;
   
   tmp_dict = dpl_dict_new(13);
@@ -1004,7 +1004,6 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
                      dpl_vec_t **common_prefixesp,
                      char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1038,9 +1037,6 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   dpl_req_set_object_type(req, DPL_FTYPE_DIR);
 
   //build request
@@ -1051,17 +1047,20 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1183,7 +1182,6 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
                       dpl_sysmd_t *returned_sysmdp,
                       char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1243,9 +1241,6 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (range)
     {
       ret2 = dpl_cdmi_req_add_range(req, req_mask, range);
@@ -1290,17 +1285,20 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1458,7 +1456,6 @@ dpl_cdmi_put_buffered_internal(dpl_ctx_t *ctx,
                                dpl_conn_t **connp,
                                char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
@@ -1525,9 +1522,6 @@ dpl_cdmi_put_buffered_internal(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
     {
       ret = DPL_ENOTSUPP;
@@ -1575,17 +1569,20 @@ dpl_cdmi_put_buffered_internal(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -1778,7 +1775,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
              dpl_sysmd_t *sysmdp,
              char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1851,9 +1847,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (range)
     {
       ret2 = dpl_cdmi_req_add_range(req, req_mask, range);
@@ -1874,17 +1867,20 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -2147,7 +2143,6 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
                       void *cb_arg,
                       char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -2224,9 +2219,6 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
     {
       ret = DPL_ENOTSUPP;
@@ -2241,17 +2233,20 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -2462,7 +2457,6 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
                 const dpl_condition_t *condition,
                 char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -2516,9 +2510,6 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
     }
 #endif
 
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
   //build request
   ret2 = dpl_cdmi_req_build(req, req_mask, &headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)
@@ -2527,17 +2518,20 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -2615,7 +2609,6 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
               const dpl_condition_t *condition,
               char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -2628,12 +2621,13 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
   dpl_req_t     *req = NULL;
   char          *body_str = NULL;
   int           body_len = 0;
+  int           add_base_path;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   if (DPL_COPY_DIRECTIVE_METADATA_REPLACE == copy_directive)
     {
-      ret = dpl_cdmi_put(ctx, dst_bucket, dst_resource, "metadata", NULL,
+      ret = dpl_cdmi_put(ctx, dst_bucket, dst_resource, NULL, NULL,
                          object_type, condition, NULL, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, 
                          NULL, NULL, locationp);
       goto end;
@@ -2665,7 +2659,13 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = dpl_req_set_src_resource(req, src_resource);
+  if (copy_directive == DPL_COPY_DIRECTIVE_MKDENT ||
+      copy_directive == DPL_COPY_DIRECTIVE_RMDENT)
+    add_base_path = 0;
+  else
+    add_base_path = 1;
+
+  ret2 = dpl_req_set_src_resource_ext(req, src_resource, add_base_path);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2683,9 +2683,6 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_copy_directive(req, copy_directive);
-
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
   dpl_req_set_object_type(req, object_type);
 
@@ -2719,17 +2716,20 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
       goto end;
     }
 
-  host = dpl_dict_get_value(headers_request, "Host");
-  if (NULL == host)
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_EINVAL;
+      ret = ret2;
       goto end;
     }
 
-  conn = dpl_conn_open_host(ctx, host, ctx->port);
-  if (NULL == conn)
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_ECONNECT;
+      ret = ret2;
       goto end;
     }
 
@@ -3419,10 +3419,15 @@ dpl_cdmi_copy_id(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "delete src_bucket=%s src_id=%s src_subresource=%s", src_bucket, src_id, src_subresource);
 
-  ret = dpl_cdmi_get_id_path(ctx, src_bucket, &id_path);
-  if (DPL_SUCCESS != ret)
+  if (DPL_COPY_DIRECTIVE_MKDENT == copy_directive)
+    id_path = NULL;
+  else
     {
-      goto end;
+      ret = dpl_cdmi_get_id_path(ctx, src_bucket, &id_path);
+      if (DPL_SUCCESS != ret)
+        {
+          goto end;
+        }
     }
 
   ret2 = dpl_cdmi_convert_id_to_native(ctx, src_id, ctx->enterprise_number, &src_native_id);
@@ -3435,7 +3440,7 @@ dpl_cdmi_copy_id(dpl_ctx_t *ctx,
   snprintf(src_resource, sizeof (src_resource), "%s%s", id_path ? id_path : "", src_native_id);
 
   if (DPL_COPY_DIRECTIVE_METADATA_REPLACE == copy_directive)
-    ret = dpl_cdmi_put(ctx, src_bucket, src_resource, "metadata", NULL,
+    ret = dpl_cdmi_put(ctx, src_bucket, src_resource, NULL, NULL,
                        object_type, condition, NULL, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, 
                        NULL, NULL, locationp);
   else

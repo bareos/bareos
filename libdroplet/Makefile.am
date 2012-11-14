@@ -22,6 +22,7 @@ libdroplet_la_SOURCES = \
 	src/sysmd.c \
 	src/task.c \
 	src/async.c \
+	src/addrlist.c \
 	src/getdate.y \
 	src/vfs.c \
 	s3/backend.c \
@@ -65,7 +66,9 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/rest.h \
 	include/droplet/sysmd.h \
 	include/droplet/vfs.h \
-	include/droplet/task.h
+	include/droplet/task.h \
+	include/droplet/addrlist.h \
+	include/droplet/queue.h
 
 libdropletdroplets3includedir = $(includedir)/droplet-3.0/droplet/s3
 libdropletdroplets3include_HEADERS = \
