@@ -39,6 +39,12 @@
 void
 dpl_req_free(dpl_req_t *req)
 {
+  if (NULL != req->host)
+    free(req->host);
+
+  if (NULL != req->port)
+    free(req->port);
+
   if (NULL != req->bucket)
     free(req->bucket);
 
