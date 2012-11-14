@@ -742,6 +742,41 @@ dpl_closedir(void *dir_hdl)
 }
 
 dpl_status_t
+dpl_iterate(dpl_ctx_t *ctx,
+            const char *locator,
+            int (* cb)(dpl_dirent_t *dirent, void *ctx),
+            void *user_data)
+{
+  dpl_status_t ret, ret2;
+  void *dir_hdl = NULL;
+  dpl_dirent_t dirent;
+
+  ret2 = dpl_opendir(ctx, locator, &dir_hdl);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  while (DPL_SUCCESS == dpl_readdir(dir_hdl, &dirent))
+    {
+      if (-1 == cb(&dirent, user_data))
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+    }
+
+  ret = DPL_SUCCESS;
+ end:
+
+  if (dir_hdl)
+    dpl_closedir(dir_hdl);
+
+  return ret;
+}
+
+dpl_status_t
 dpl_chdir(dpl_ctx_t *ctx,
           const char *locator)
 {

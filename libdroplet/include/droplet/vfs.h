@@ -125,6 +125,7 @@ typedef struct
 dpl_fqn_t dpl_cwd(dpl_ctx_t *ctx, const char *bucket);
 dpl_status_t dpl_opendir(dpl_ctx_t *ctx, const char *locator, void **dir_hdlp);
 dpl_status_t dpl_readdir(void *dir_hdl, dpl_dirent_t *dirent);
+dpl_status_t dpl_iterate(dpl_ctx_t *ctx, const char *locator, int (* cb)(dpl_dirent_t *dirent, void *ctx), void *cb_ctx);
 int dpl_eof(void *dir_hdl);
 void dpl_closedir(void *dir_hdl);
 dpl_status_t dpl_chdir(dpl_ctx_t *ctx, const char *locator);
