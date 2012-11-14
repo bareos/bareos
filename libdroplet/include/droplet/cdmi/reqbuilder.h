@@ -43,6 +43,11 @@ typedef enum
 #define DPL_CDMI_CONTENT_TYPE_OBJECT     "application/cdmi-object"
 #define DPL_CDMI_CONTENT_TYPE_CAPABILITY "application/cdmi-capability"
 #define DPL_CDMI_CONTENT_TYPE_DOMAIN     "application/cdmi-domain"
+#define DPL_CDMI_CONTENT_TYPE_CHARDEVICE     "inode/chardevice"
+#define DPL_CDMI_CONTENT_TYPE_BLOCKDEVICE    "inode/blockdevice"
+#define DPL_CDMI_CONTENT_TYPE_FIFO       "inode/fifo"
+#define DPL_CDMI_CONTENT_TYPE_SOCKET     "inode/socket"
+#define DPL_CDMI_CONTENT_TYPE_SYMLINK    "inode/symlink"
 #define DPL_CDMI_CONTENT_TYPE_ANY        "application/*"
 
 /* PROTO reqbuilder.c */

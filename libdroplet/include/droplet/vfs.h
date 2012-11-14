@@ -130,7 +130,7 @@ int dpl_eof(void *dir_hdl);
 void dpl_closedir(void *dir_hdl);
 dpl_status_t dpl_chdir(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
-dpl_status_t dpl_mknod(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
+dpl_status_t dpl_mknod(dpl_ctx_t *ctx, const char *locator, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
 dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_close_ex(dpl_vfile_t *vfile, dpl_sysmd_t *returned_sysmdp, char **locationp);
 dpl_status_t dpl_close(dpl_vfile_t *vfile);
@@ -146,6 +146,7 @@ dpl_status_t dpl_fcopy(dpl_ctx_t *ctx, const char *src_locator, const char *dst_
 dpl_status_t dpl_rename(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
 dpl_status_t dpl_symlink(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
 dpl_status_t dpl_link(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
-dpl_status_t dpl_mkdent(dpl_ctx_t *ctx, const char *src_id, const char *dst_locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
+dpl_status_t dpl_mkdent(dpl_ctx_t *ctx, const char *src_id, const char *dst_locator, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
 dpl_status_t dpl_rmdent(dpl_ctx_t *ctx, const char *src_name, const char *dst_locator);
+dpl_status_t dpl_mvdent(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
 #endif

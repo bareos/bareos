@@ -271,7 +271,6 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
                       int mdonly,
                       char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -479,7 +478,6 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
                       dpl_conn_t **connp,
                       char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
@@ -645,7 +643,6 @@ dpl_srws_get(dpl_ctx_t *ctx,
              dpl_sysmd_t *sysmdp,
              char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -895,7 +892,6 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
                       void *cb_arg,
                       char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1082,7 +1078,6 @@ dpl_srws_head_raw(dpl_ctx_t *ctx,
                   dpl_dict_t **metadatap,
                   char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1285,7 +1280,6 @@ dpl_srws_delete(dpl_ctx_t *ctx,
                 const dpl_condition_t *condition, 
                 char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1659,6 +1653,7 @@ dpl_srws_copy(dpl_ctx_t *ctx,
     case DPL_COPY_DIRECTIVE_MOVE:
     case DPL_COPY_DIRECTIVE_MKDENT:
     case DPL_COPY_DIRECTIVE_RMDENT:
+    case DPL_COPY_DIRECTIVE_MVDENT:
       ret = DPL_ENOTSUPP;
       goto end;
     }

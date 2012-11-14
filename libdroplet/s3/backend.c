@@ -201,7 +201,6 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
                            char **locationp)
 {
   int           ret, ret2;
-  char          *host = NULL;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
   u_int         header_len;
@@ -353,7 +352,6 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
                    dpl_vec_t **common_prefixesp,
                    char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
@@ -582,7 +580,6 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
                    const dpl_sysmd_t *sysmd,
                    char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
@@ -661,6 +658,11 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
           data_str[0] = 0;
           data_len = 0;
         }
+    }
+  else
+    {
+      data_str[0] = 0;
+      data_len = 0;
     }
 
   dpl_req_set_data(req, data_str, data_len);
@@ -764,7 +766,6 @@ dpl_s3_delete_bucket(dpl_ctx_t *ctx,
                      const char *bucket,
                      char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
@@ -904,7 +905,6 @@ dpl_s3_put(dpl_ctx_t *ctx,
            dpl_sysmd_t *returned_sysmdp,
            char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
@@ -1078,7 +1078,6 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
                     dpl_conn_t **connp,
                     char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
@@ -1252,7 +1251,6 @@ dpl_s3_get(dpl_ctx_t *ctx,
            dpl_sysmd_t *sysmdp,
            char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1503,7 +1501,6 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
                     void *cb_arg,
                     char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1679,7 +1676,6 @@ dpl_s3_head_raw(dpl_ctx_t *ctx,
                 dpl_dict_t **metadatap,
                 char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1878,7 +1874,6 @@ dpl_s3_delete(dpl_ctx_t *ctx,
               const dpl_condition_t *condition, 
               char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
@@ -2119,7 +2114,6 @@ dpl_s3_copy(dpl_ctx_t *ctx,
             const dpl_condition_t *condition,
             char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
   char          header[1024];

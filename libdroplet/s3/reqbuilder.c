@@ -631,6 +631,7 @@ dpl_s3_req_build(const dpl_req_t *req,
                 case DPL_COPY_DIRECTIVE_MOVE:
                 case DPL_COPY_DIRECTIVE_MKDENT:
                 case DPL_COPY_DIRECTIVE_RMDENT:
+                case DPL_COPY_DIRECTIVE_MVDENT:
                   ret = DPL_ENOTSUPP;
                   goto end;
                 case DPL_COPY_DIRECTIVE_METADATA_REPLACE:

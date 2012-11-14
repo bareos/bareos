@@ -78,7 +78,7 @@ add_sysmd_to_req(const dpl_sysmd_t *sysmd,
   dpl_dict_t *tmp_dict2 = NULL;
   dpl_vec_t *tmp_vec = NULL;
   int do_acl = 0;
-  uint32_t n_aces;
+  uint32_t n_aces = 0;
   dpl_ace_t aces[DPL_SYSMD_ACE_MAX], *acesp;
   
   tmp_dict = dpl_dict_new(13);
@@ -1004,7 +1004,6 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
                      dpl_vec_t **common_prefixesp,
                      char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1183,7 +1182,6 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
                       dpl_sysmd_t *returned_sysmdp,
                       char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -1458,7 +1456,6 @@ dpl_cdmi_put_buffered_internal(dpl_ctx_t *ctx,
                                dpl_conn_t **connp,
                                char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
   char          header[1024];
@@ -1778,7 +1775,6 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
              dpl_sysmd_t *sysmdp,
              char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -2147,7 +2143,6 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
                       void *cb_arg,
                       char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -2462,7 +2457,6 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
                 const dpl_condition_t *condition,
                 char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];
@@ -2615,7 +2609,6 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
               const dpl_condition_t *condition,
               char **locationp)
 {
-  char          *host;
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
   char          header[1024];

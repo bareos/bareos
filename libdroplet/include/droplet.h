@@ -261,12 +261,17 @@ typedef enum
 
 typedef enum
   {
-    DPL_FTYPE_UNDEF,
-    DPL_FTYPE_ANY,
-    DPL_FTYPE_REG,
-    DPL_FTYPE_DIR,
-    DPL_FTYPE_CAP,
-    DPL_FTYPE_DOM,
+    DPL_FTYPE_UNDEF,  /*!< undefined object type */
+    DPL_FTYPE_ANY,    /*!< any object type */
+    DPL_FTYPE_REG,    /*!< regular file */
+    DPL_FTYPE_DIR,    /*!< directory */
+    DPL_FTYPE_CAP,    /*!< capability */
+    DPL_FTYPE_DOM,    /*!< domain */
+    DPL_FTYPE_CHRDEV, /*!< character device */
+    DPL_FTYPE_BLKDEV, /*!< block device */
+    DPL_FTYPE_FIFO,   /*!< named pipe */
+    DPL_FTYPE_SOCKET, /*!< named socket */
+    DPL_FTYPE_SYMLINK, /*!< symbolic link */
   } dpl_ftype_t;
 
 #define DPL_DEFAULT_ENTERPRISE_NUMBER 37489 /*!< scality */
@@ -367,6 +372,7 @@ typedef enum
     DPL_COPY_DIRECTIVE_MOVE,
     DPL_COPY_DIRECTIVE_MKDENT,
     DPL_COPY_DIRECTIVE_RMDENT,
+    DPL_COPY_DIRECTIVE_MVDENT,
   } dpl_copy_directive_t;
 
 typedef struct
