@@ -1829,11 +1829,15 @@ dpl_rmdir(dpl_ctx_t *ctx,
   strcpy(npath, path);
   char *path_slash = strcat(npath, "/");
 
-  ret2 = dir_is_empty(ctx, path_slash);
-  if (DPL_SUCCESS != ret2)
+  if (!strcmp((char *) dpl_get_backend_name(ctx), "s3"))
     {
-      ret = ret2;
-      goto end;
+      //AWS does not do it server side
+      ret2 = dir_is_empty(ctx, path_slash);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
   
   ret2 = dpl_delete(ctx, bucket, path_slash, NULL, DPL_FTYPE_DIR, NULL);
