@@ -240,15 +240,6 @@ conf_cb_func(void *cb_arg,
           return -1;
         }
     }
-  else if (!strcmp(var, "hosts"))
-    {
-      ctx->addrlist = dpl_addrlist_create_from_str(ctx->use_https ? "443" : "80", value);
-      if (NULL == ctx->addrlist)
-        {
-          fprintf(stderr, "error parsing address list\n");
-          return -1;
-        }
-    }
   else if (!strcmp(var, "host"))
     {
       if (NULL != ctx->addrlist)
@@ -268,7 +259,7 @@ conf_cb_func(void *cb_arg,
     {
       if (NULL == ctx->addrlist)
         {
-          fprintf(stderr, "please define 'host' or 'hosts' before defining port\n");
+          fprintf(stderr, "please define 'host' before defining port\n");
           return -1;
         }
 
@@ -594,7 +585,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
     {
       if (NULL == ctx->addrlist)
         {
-          fprintf(stderr, "missing 'host' or 'hosts' in profile\n");
+          fprintf(stderr, "missing 'host' in profile\n");
           ret = DPL_FAILURE;
           goto end;
         }
