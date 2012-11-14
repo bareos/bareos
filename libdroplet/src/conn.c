@@ -488,20 +488,18 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
     goto bad;
 
   if (NULL != conn->host)
-    {
-      free(conn->host);
-      conn->host = nstr;
-    }
+    free(conn->host);
+  
+  conn->host = nstr;
 
   nstr = strdup(portstr);
   if (NULL == nstr)
     goto bad;
 
   if (NULL != conn->port)
-    {
-      free(conn->port);
-      conn->port = nstr;
-    }
+    free(conn->port);
+    
+  conn->port = nstr;
 
   return conn;
 
