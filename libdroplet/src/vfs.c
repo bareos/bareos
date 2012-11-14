@@ -1771,6 +1771,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
+  char *npath = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "rmdir locator=%s", locator);
 
@@ -1818,7 +1819,15 @@ dpl_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
  
-  char *path_slash = strcat((char *) path, "/");
+  npath = malloc(strlen(path) + 2);
+  if (NULL == npath)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  strcpy(npath, path);
+  char *path_slash = strcat(npath, "/");
   ret2 = dir_is_empty(ctx, path_slash);
   if (DPL_SUCCESS != ret2)
     {
@@ -1836,6 +1845,9 @@ dpl_rmdir(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (NULL != npath)
+    free(npath);
 
   if (NULL != bucket)
     free(bucket);
