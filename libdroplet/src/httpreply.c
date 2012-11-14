@@ -735,7 +735,7 @@ dpl_map_http_status(int http_status)
       ret = DPL_ENOENT;
       break;
     case DPL_HTTP_CODE_CONFLICT:
-      ret = DPL_EEXIST;
+      ret = DPL_ECONFLICT;
       break;
     case DPL_HTTP_CODE_PRECOND_FAILED:
       ret = DPL_EPRECOND;

@@ -78,6 +78,8 @@ dpl_status_str(dpl_status_t status)
       return "DPL_EPERM";
     case DPL_EPRECOND:
       return "DPL_EPRECOND";
+    case DPL_ECONFLICT:
+      return "DPL_ECONFLICT";
     }
 
   return "Unknown error";

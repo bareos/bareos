@@ -93,6 +93,7 @@ typedef enum
     DPL_ECONNECT             = (-17),/*!< Connect error */
     DPL_EPERM                = (-18),/*!< Permission denied */
     DPL_EPRECOND             = (-19),/*!< Precondition failed */
+    DPL_ECONFLICT            = (-20),/*!< Conflict */
   } dpl_status_t;
 
 #include <droplet/queue.h>
