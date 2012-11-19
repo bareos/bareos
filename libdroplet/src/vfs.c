@@ -675,7 +675,7 @@ dpl_opendir(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -686,7 +686,7 @@ dpl_opendir(dpl_ctx_t *ctx,
       dpl_ctx_unlock(ctx);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
       path = nlocator;
@@ -804,7 +804,7 @@ dpl_chdir(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -1120,7 +1120,7 @@ dpl_openwrite(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -1576,7 +1576,7 @@ dpl_openread(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -1700,7 +1700,7 @@ dpl_mkobj(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -1789,7 +1789,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -1891,7 +1891,7 @@ dpl_unlink(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -1965,7 +1965,7 @@ dpl_getattr(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -2053,7 +2053,7 @@ dpl_getattr_raw(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -2127,7 +2127,7 @@ dpl_setattr(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -2207,7 +2207,7 @@ copy_path_to_path(dpl_ctx_t *ctx,
       src_bucket = strdup(src_nlocator);
       if (NULL == src_bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -2238,7 +2238,7 @@ copy_path_to_path(dpl_ctx_t *ctx,
       dst_bucket = strdup(dst_nlocator);
       if (NULL == dst_bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -2329,7 +2329,7 @@ copy_id_to_path(dpl_ctx_t *ctx,
       dst_bucket = strdup(dst_nlocator);
       if (NULL == dst_bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -2406,7 +2406,7 @@ copy_name_to_path(dpl_ctx_t *ctx,
       dst_bucket = strdup(dst_nlocator);
       if (NULL == dst_bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
@@ -2548,7 +2548,7 @@ dpl_fgenurl(dpl_ctx_t *ctx,
       bucket = strdup(nlocator);
       if (NULL == bucket)
         {
-          ret = ENOMEM;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }
