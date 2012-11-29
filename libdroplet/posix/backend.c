@@ -570,17 +570,31 @@ dpl_posix_put(dpl_ctx_t *ctx,
       iret = mkdir(path, 0700);
       if (-1 == iret)
         {
-          perror("mknod");
-          ret = DPL_FAILURE;
+          if (ENOENT == errno)
+            {
+              ret = DPL_ENOENT;
+            }
+          else
+            {
+              perror("mkdir");
+              ret = DPL_FAILURE;
+            }
           goto end;
         }
       break ;
     case DPL_FTYPE_REG:
-      fd = creat(path, -1);
+      fd = creat(path, 0600);
       if (-1 == fd)
         {
-          perror("creat");
-          ret = DPL_FAILURE;
+          if (ENOENT == errno)
+            {
+              ret = DPL_ENOENT;
+            }
+          else
+            {
+              perror("creat");
+              ret = DPL_FAILURE;
+            }
           goto end;
         }
       break ;
@@ -691,11 +705,18 @@ dpl_posix_put_buffered(dpl_ctx_t *ctx,
       ret = DPL_EINVAL;
       goto end;
     case DPL_FTYPE_REG:
-      fd = creat(path, 0700);
+      fd = creat(path, 0600);
       if (-1 == fd)
         {
-          perror("mknod");
-          ret = DPL_FAILURE;
+          if (ENOENT == errno)
+            {
+              ret = DPL_ENOENT;
+            }
+          else
+            {
+              perror("creat");
+              ret = DPL_FAILURE;
+            }
           goto end;
         }
       break ;
