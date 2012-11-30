@@ -1776,11 +1776,11 @@ dpl_rmdir(dpl_ctx_t *ctx,
           const char *locator)
 {
   int ret, ret2;
-  char *dir_name = NULL;
   dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
+  size_t path_len;
   char *npath = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "rmdir locator=%s", locator);
@@ -1816,12 +1816,6 @@ dpl_rmdir(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  dir_name = rindex(path, '/');
-  if (NULL != dir_name)
-    dir_name++;
-  else
-    dir_name = path;
-
   ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
   if (DPL_SUCCESS != ret2)
     {
@@ -1829,20 +1823,26 @@ dpl_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
  
-  npath = malloc(strlen(path) + 2);
+  path_len = strlen(path);
+  npath = malloc(path_len + 2);
   if (NULL == npath)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  strcpy(npath, path);
-  char *path_slash = strcat(npath, "/");
+  memcpy(npath, path, path_len);
+  if (path_len == 0 || npath[path_len - 1] != '/')
+    {
+      npath[path_len] = '/';
+      ++path_len;
+    }
+  npath[path_len] = '\0';
 
   if (!strcmp((char *) dpl_get_backend_name(ctx), "s3"))
     {
       //AWS does not do it server side
-      ret2 = dir_is_empty(ctx, path_slash);
+      ret2 = dir_is_empty(ctx, npath);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1850,7 +1850,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
         }
     }
   
-  ret2 = dpl_delete(ctx, bucket, path_slash, NULL, DPL_FTYPE_DIR, NULL);
+  ret2 = dpl_delete(ctx, bucket, npath, NULL, DPL_FTYPE_DIR, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
