@@ -790,16 +790,6 @@ dpl_chdir(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "chdir locator=%s", locator);
 
-  /* sanity checks */
-  if (NULL == strchr(locator, ':'))
-    {
-      if (! ctx->cur_bucket || 0 == strlen(ctx->cur_bucket))
-        {
-          ret = DPL_ENOENT;
-          goto end;
-        }
-    }
-
   nlocator = strdup(locator);
   if (NULL == nlocator)
     {
