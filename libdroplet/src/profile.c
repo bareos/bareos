@@ -257,15 +257,9 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "port"))
     {
-      if (NULL == ctx->addrlist)
-        {
-          fprintf(stderr, "please define 'host' before defining port\n");
-          return -1;
-        }
-
-      ctx->addrlist->default_port = strdup(value);
-      if (NULL == ctx->addrlist->default_port)
-        return -1;
+      fprintf(stderr, "Warning: the 'port' option in configuration file is ignored.\n");
+      fprintf(stderr, "The port(s) must be specified in the hostname(s).\n");
+      fprintf(stderr, "If nothing is specified, 80 is used (or 443 for https).\n");
     }
   else if (!strcmp(var, "blacklist_expiretime"))
     {

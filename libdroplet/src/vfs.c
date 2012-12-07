@@ -1813,7 +1813,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
  
-  path_len = strlen(path);
+  path_len = strlen(obj_fqn.path);
   npath = malloc(path_len + 2);
   if (NULL == npath)
     {
@@ -1821,7 +1821,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
 
-  memcpy(npath, path, path_len);
+  memcpy(npath, obj_fqn.path, path_len);
   if (path_len == 0 || npath[path_len - 1] != '/')
     {
       npath[path_len] = '/';
@@ -1839,7 +1839,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
           goto end;
         }
     }
-  
+
   ret2 = dpl_delete(ctx, bucket, npath, NULL, DPL_FTYPE_DIR, NULL);
   if (DPL_SUCCESS != ret2)
     {
