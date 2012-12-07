@@ -565,8 +565,16 @@ dpl_try_connect(dpl_ctx_t *ctx,
 
   if (NULL == conn)
     {
-      dpl_blacklist_host(ctx, host, portstr);
-      goto retry;
+      if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+      else
+        {
+          dpl_blacklist_host(ctx, host, portstr);
+          goto retry;
+        }
     }
 
   ret2 = dpl_req_set_host(req, hostp);
