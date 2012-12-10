@@ -8,6 +8,10 @@ idtest_CFLAGS = -I$(top_srcdir)/libdroplet/include
 idtest_LDADD = $(top_builddir)/libdroplet/libdroplet.la
 idtest_SOURCES = idtest.c
 
+restrangetest_CFLAGS = -I$(top_srcdir)/libdroplet/include
+restrangetest_LDADD = $(top_builddir)/libdroplet/libdroplet.la
+restrangetest_SOURCES = restrangetest.c
+
 idrangetest_CFLAGS = -I$(top_srcdir)/libdroplet/include
 idrangetest_LDADD = $(top_builddir)/libdroplet/libdroplet.la
 idrangetest_SOURCES = idrangetest.c
