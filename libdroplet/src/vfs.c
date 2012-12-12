@@ -1737,6 +1737,12 @@ dpl_mkobj(dpl_ctx_t *ctx,
 
  end:
 
+  if (NULL != bucket)
+    free(bucket);
+
+  if (NULL != nlocator)
+    free(nlocator);
+
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
@@ -2190,6 +2196,7 @@ copy_path_to_path(dpl_ctx_t *ctx,
   char *dst_bucket = NULL;
   char *dst_path;
   dpl_fqn_t dst_obj_fqn, src_obj_fqn;
+  size_t path_len;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_path_to_path src_locator=%s dst_locator=%s", src_locator, dst_locator);
 
@@ -2269,6 +2276,21 @@ copy_path_to_path(dpl_ctx_t *ctx,
       goto end;
     }
 
+  if (DPL_FTYPE_DIR == object_type)
+    {
+      path_len = strlen(src_obj_fqn.path);
+      if (src_obj_fqn.path[path_len - 1] != '/')
+        {
+          src_obj_fqn.path[path_len] = '/';
+          src_obj_fqn.path[path_len + 1] = '\0'; //XXX
+        }
+      path_len = strlen(dst_obj_fqn.path);
+      if (dst_obj_fqn.path[path_len - 1] != '/')
+        {
+          dst_obj_fqn.path[path_len] = '/';
+          dst_obj_fqn.path[path_len + 1] = '\0'; //XXX
+        }
+    }
   ret2 = dpl_copy(ctx, src_bucket, src_obj_fqn.path, dst_bucket, dst_obj_fqn.path, NULL, object_type, copy_directive, metadata, sysmd, NULL);
   if (DPL_SUCCESS != ret2)
     {
@@ -2472,9 +2494,10 @@ dpl_fcopy(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_rename(dpl_ctx_t *ctx,
            const char *src_locator,
-           const char *dst_locator)
+           const char *dst_locator,
+           dpl_ftype_t object_type)
 {
-  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_MOVE, NULL, NULL);
+  return copy_path_to_path(ctx, src_locator, dst_locator, object_type, DPL_COPY_DIRECTIVE_MOVE, NULL, NULL);
 }
 
 dpl_status_t
@@ -2582,6 +2605,9 @@ dpl_fgenurl(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (bucket)
+    free(bucket);
 
   if (nlocator)
     free(nlocator);

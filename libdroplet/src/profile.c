@@ -498,7 +498,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->read_buf_size = DPL_DEFAULT_READ_BUF_SIZE;
   ctx->backend = dpl_backend_find("s3");
   assert(NULL != ctx->backend);
-  ctx->encode_slashes = 1;
+  ctx->encode_slashes = 0;
   ctx->keep_alive = 1;
   ctx->url_encoding = 1;
   ctx->max_redirects = DPL_DEFAULT_MAX_REDIRECTS;
