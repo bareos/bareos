@@ -21,7 +21,7 @@ restrangetest_LDADD = $(top_builddir)/libdroplet/libdroplet.la
 restrangetest_SOURCES = restrangetest.c
 
 srwskey_CFLAGS = -I$(top_srcdir)/libdroplet/include
-srwskey_LDADD = $(top_builddir)/libdroplet/libdroplet.la
+srwskey_LDADD = $(top_builddir)/libdroplet/libdroplet.la -lcrypto
 srwskey_SOURCES = srwskey.c
 
 resttest_CFLAGS = -I$(top_srcdir)/libdroplet/include
