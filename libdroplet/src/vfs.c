@@ -2278,6 +2278,12 @@ copy_path_to_path(dpl_ctx_t *ctx,
 
   if (DPL_FTYPE_DIR == object_type)
     {
+      path_len = strlen(src_obj_fqn.path);
+      if (src_obj_fqn.path[path_len - 1] != '/')
+        {
+          src_obj_fqn.path[path_len] = '/';
+          src_obj_fqn.path[path_len + 1] = '\0'; //XXX
+        }
       path_len = strlen(dst_obj_fqn.path);
       if (dst_obj_fqn.path[path_len - 1] != '/')
         {
