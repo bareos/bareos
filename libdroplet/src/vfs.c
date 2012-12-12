@@ -1737,6 +1737,12 @@ dpl_mkobj(dpl_ctx_t *ctx,
 
  end:
 
+  if (NULL != bucket)
+    free(bucket);
+
+  if (NULL != nlocator)
+    free(nlocator);
+
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
@@ -2582,6 +2588,9 @@ dpl_fgenurl(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
  end:
+
+  if (bucket)
+    free(bucket);
 
   if (nlocator)
     free(nlocator);
