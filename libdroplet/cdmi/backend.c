@@ -357,7 +357,7 @@ dpl_cdmi_req_set_resource(dpl_req_t *req,
   len = strlen(nstr);
 
   //suppress special chars
-  if ('?' == nstr[len - 1])
+  if (len > 0u && '?' == nstr[len - 1])
     nstr[len - 1] = 0;
 
   ret = dpl_req_set_resource(req, nstr);
