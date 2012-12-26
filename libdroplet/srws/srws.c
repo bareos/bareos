@@ -48,5 +48,5 @@ dpl_backend_srws =
     .head_id 		= dpl_srws_head,
     .head_id_raw	= dpl_srws_head_raw,
     .delete_id 		= dpl_srws_delete,
-    .copy_id            = dpl_srws_copy,
+    .copy               = dpl_srws_copy,
   };
