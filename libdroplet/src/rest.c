@@ -50,6 +50,156 @@ dpl_get_backend_name(dpl_ctx_t *ctx)
 }
 
 /**
+ * @brief convert the absolute URI in @a location string to a relative
+ * resource (possibly removing ctx->base_path) and subresource
+ *
+ * @note this function modifies @a location string
+ *
+ * @param ctx droplet context
+ * @param location absolute URI
+ * @param[out] resourcep a pointer to @a location which is the
+ * relative path of the resource.
+ * @param[out] subresourcep a pointer to @a location which is the
+ * query-string without the '?'
+ *
+ */
+static void
+dpl_location_to_resource(dpl_ctx_t *ctx,
+                         char *location,
+                         char **resourcep,
+                         char **subresourcep)
+{
+  char *resource;
+  char *subresource;
+  size_t base_path_len;
+
+  if (0 == strcmp(ctx->base_path, "/"))
+    {
+      resource = location;
+    }
+  else
+    {
+      base_path_len = strlen(ctx->base_path);
+      if (0 == strncmp(location, ctx->base_path, base_path_len))
+        resource = location + base_path_len;
+      else
+        resource = location;
+    }
+
+  subresource = strchr(resource, '?');
+  if (NULL != subresource)
+    {
+      subresource[0] = '\0';
+      ++subresource;
+    }
+
+  if (NULL != resourcep)
+    *resourcep = resource;
+  if (NULL != subresourcep)
+    *subresourcep = subresource;
+}
+
+/**
+ * @brief convert the absolute URI in @a location string to a relative
+ * resource (possibly removing ctx->base_path) and subresource
+ *
+ * @note this function modifies @a location string
+ *
+ * @param ctx droplet context
+ * @param location absolute URI
+ * @param[out] resourcep a pointer to @a location which is the
+ * relative path of the resource.
+ * @param[out] subresourcep a pointer to @a location which is the
+ * query-string without the '?'
+ *
+ */
+static void
+dpl_location_to_resource(dpl_ctx_t *ctx,
+                         char *location,
+                         char **resourcep,
+                         char **subresourcep)
+{
+  char *resource;
+  char *subresource;
+  size_t base_path_len;
+
+  if (0 == strcmp(ctx->base_path, "/"))
+    {
+      resource = location;
+    }
+  else
+    {
+      base_path_len = strlen(ctx->base_path);
+      if (0 == strncmp(location, ctx->base_path, base_path_len))
+        resource = location + base_path_len;
+      else
+        resource = location;
+    }
+
+  subresource = strchr(resource, '?');
+  if (NULL != subresource)
+    {
+      subresource[0] = '\0';
+      ++subresource;
+    }
+
+  if (NULL != resourcep)
+    *resourcep = resource;
+  if (NULL != subresourcep)
+    *subresourcep = subresource;
+}
+
+/**
+ * @brief convert the absolute URI in @a location string to a relative
+ * resource (possibly removing ctx->base_path) and subresource
+ *
+ * @note this function modifies @a location string
+ *
+ * @param ctx droplet context
+ * @param location absolute URI
+ * @param[out] resourcep a pointer to @a location which is the
+ * relative path of the resource.
+ * @param[out] subresourcep a pointer to @a location which is the
+ * query-string without the '?'
+ *
+ */
+static void
+dpl_location_to_resource(dpl_ctx_t *ctx,
+                         char *location,
+                         char **resourcep,
+                         char **subresourcep)
+{
+  char *resource;
+  char *subresource;
+  size_t base_path_len;
+
+  if (0 == strcmp(ctx->base_path, "/"))
+    {
+      resource = location;
+    }
+  else
+    {
+      base_path_len = strlen(ctx->base_path);
+      if (0 == strncmp(location, ctx->base_path, base_path_len))
+        resource = location + base_path_len;
+      else
+        resource = location;
+    }
+
+  subresource = strchr(resource, '?');
+  if (NULL != subresource)
+    {
+      subresource[0] = '\0';
+      ++subresource;
+    }
+
+  if (NULL != resourcep)
+    *resourcep = resource;
+  if (NULL != subresourcep)
+    *subresourcep = subresource;
+}
+
+/**
  * list all buckets
  *
  * @param ctx the droplect context
