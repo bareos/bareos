@@ -339,7 +339,7 @@ conf_cb_func(void *cb_arg,
   else if (!strcmp(var, "pricing_dir"))
     {
       ctx->pricing_dir = strdup(value);
-      if (NULL == ctx->pricing)
+      if (NULL == ctx->pricing_dir)
         return -1;
     }
   else if (!strcmp(var, "read_buf_size"))
