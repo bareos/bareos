@@ -2116,6 +2116,8 @@ dpl_setattr(dpl_ctx_t *ctx,
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
+  size_t path_len;
+  dpl_ftype_t object_type;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "setattr locator=%s", locator);
 
@@ -2157,7 +2159,13 @@ dpl_setattr(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_copy(ctx, bucket, obj_fqn.path, bucket, obj_fqn.path, NULL, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_METADATA_REPLACE, metadata, sysmd, NULL);
+  path_len = strlen(path);
+  if (path_len > 0u && path[path_len - 1] == '/')
+    object_type = DPL_FTYPE_DIR;
+  else
+    object_type = DPL_FTYPE_REG;
+
+  ret2 = dpl_copy(ctx, bucket, obj_fqn.path, bucket, obj_fqn.path, NULL, object_type, DPL_COPY_DIRECTIVE_METADATA_REPLACE, metadata, sysmd, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
