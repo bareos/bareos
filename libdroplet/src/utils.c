@@ -691,7 +691,7 @@ dpl_url_encode(const char *str,
         str_ue[i++] = *str;
       else
         {
-          sprintf(str_ue + i, "%%%02X", *str);
+          sprintf(str_ue + i, "%%%02X", (unsigned char)*str);
           i+=3;
         }
     }
@@ -710,7 +710,7 @@ dpl_url_encode_no_slashes(const char *str,
         str_ue[i++] = *str;
       else
         {
-          sprintf(str_ue + i, "%%%02X", *str);
+          sprintf(str_ue + i, "%%%02X", (unsigned char)*str);
           i+=3;
         }
     }
@@ -749,7 +749,7 @@ dpl_url_decode(char *str)
         case 2:
           buf[1] = *p;
           buf[2] = 0;
-          *str++ = strtoul(buf, NULL, 16);
+          *str++ = (char)strtoul(buf, NULL, 16);
           state = 0;
           break ;
         }

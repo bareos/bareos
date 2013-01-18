@@ -1790,6 +1790,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   int raw = 0;
   dpl_value_t *val = NULL;
   dpl_dict_var_t *var = NULL;
+  dpl_dict_var_t *encoding = NULL;
   int value_len;
   int orig_len;
   char *orig_buf = NULL;
@@ -1967,30 +1968,62 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
               goto end;
             }
           
-          //decode base64
-          value_len = strlen(var->val->string);
-          if (value_len == 0)
+          ret2 = dpl_dict_get_lowered(val->subdict, "valuetransferencoding",
+                                      &encoding);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+
+          if (DPL_VALUE_STRING != encoding->val->type)
             {
               ret = DPL_EINVAL;
               goto end;
             }
-          
-          orig_len = DPL_BASE64_ORIG_LENGTH(value_len);
-          orig_buf = malloc(orig_len);
-          if (NULL == orig_buf)
+
+          value_len = strlen(var->val->string);
+
+          if (0 == strcmp(encoding->val->string, "base64"))
             {
-              ret = DPL_ENOMEM;
+              orig_len = DPL_BASE64_ORIG_LENGTH(value_len);
+              orig_buf = malloc(orig_len);
+              if (NULL == orig_buf)
+                {
+                  ret = DPL_ENOMEM;
+                  goto end;
+                }
+          
+              orig_len = dpl_base64_decode((u_char *) var->val->string, value_len, (u_char *) orig_buf);
+          
+              //swap pointers
+              tmp = data_buf;
+              data_buf = orig_buf;
+              orig_buf = tmp;
+              data_len = orig_len;
+            }
+          else if (0 == strcmp(encoding->val->string, "utf-8"))
+            {
+              orig_buf = data_buf;
+              orig_len = data_len;
+              data_buf = malloc(value_len + 1);
+              if (NULL == data_buf)
+                {
+                  ret = DPL_ENOMEM;
+                  goto end;
+                }
+              memcpy(data_buf, var->val->string, value_len);
+              data_buf[value_len] = '\0';
+              data_len = value_len;
+            }
+          else
+            {
+              DPL_TRACE(conn->ctx, DPL_TRACE_ERR,
+                        "unknown \"valuetransferencoding\" received: \"%s\"",
+                        encoding->val->string);
+              ret = DPL_EINVAL;
               goto end;
             }
-          
-          orig_len = dpl_base64_decode((u_char *) var->val->string, value_len, (u_char *) orig_buf);
-          
-          //swap pointers
-          tmp = data_buf;
-          data_buf = orig_buf;
-          orig_buf = tmp;
-          data_len = orig_len;
-
         }
     }
 
