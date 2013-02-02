@@ -1,0 +1,580 @@
+#
+# A set of useful functions to be sourced in each test
+#
+
+
+check_encoding()
+{
+   ${bin}/bareos-dir -d50 -t -c ${conf}/bareos-dir.conf 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
+   if [ $? = 0 ]; then
+       echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
+       exit 1
+   fi
+}
+
+start_test()
+{
+   check_encoding
+   # Turn off email
+   outf="${tmp}/sed_tmp"
+   echo "s%  mail =%# mail = %g" >${outf}
+   echo "s%  operator =%# operator =%g" >>${outf}
+   cp ${conf}/bareos-dir.conf ${tmp}/1
+   sed -f ${outf} ${tmp}/1 > ${conf}/bareos-dir.conf
+   echo " "
+   echo " "
+   echo " === Starting $TestName at `date +%R:%S` ==="
+   echo " === Starting $TestName at `date +%R:%S` ===" >> ${working}/log
+   echo " "
+   export TestName
+   export zstat
+   export estat
+   estat=0
+   zstat=0
+   bstat=0
+   rstat=0
+   dstat=0
+}
+
+require_root()
+{
+MUID=`/usr/bin/id | awk -F= '{print $2}' | awk -F\( '{print $1}'`
+if [ $MUID != 0 ] ; then
+   echo " "
+   echo "You must be root to run this test."
+   echo "  ===== !!!! $TestName not run at `date +%R:%S` ==="
+   echo "  ===== !!!! $TestName not run at `date +%R:%S` !!!! ===== " >>test.out
+   echo " "
+   exit 1
+fi
+}
+
+require_tape_drive()
+{
+if test x${TAPE_DRIVE} = x/dev/null ; then
+   echo "$TestName test needs a tape drive, but has none."
+   exit 1
+fi
+}
+
+require_second_drive()
+{
+if test x${TAPE_DRIVE1} = x/dev/null ; then
+   echo "$JobName needs second drive, but has none."
+   exit 1
+fi
+}
+
+require_autochanger()
+{
+if test x${AUTOCHANGER} = x/dev/null ; then
+   echo "$TestName needs an autochanger, but has none."
+   exit 1
+fi
+}
+
+require_vtape()
+{
+if test x${USE_VTAPE} = x ; then
+   echo "$TestName test needs the vtape driver."
+   exit 0
+fi
+}
+
+require_linux()
+{
+os=`uname`
+if [ $os != 'Linux' ]; then
+   echo "This test $TestName runs only on Linux"
+   exit 0
+fi
+}
+
+skip_if_no_autochanger()
+{
+if test x${AUTOCHANGER} = x/dev/null ; then
+   echo "$TestName test skipped. No autochanger."
+   exit
+fi
+}
+
+set_debug()
+{
+   debug=$1
+   if test "$debug" -eq 1 ; then
+     out="tee"
+   else
+     out="output"
+   fi
+}
+
+print_debug()
+{
+   echo $* | grep ERROR > /dev/null
+   if test $? -eq 0; then
+     echo $* >> $tmp/err.log
+   fi
+   if test "$debug" -eq 1 ; then
+     echo $*
+   fi
+}
+
+check_files_written()
+{
+    LOG=$1
+    NB=$2
+    FILES=`awk '/FD Files Written:/ { last=$4 } END { print last }' $LOG`
+
+    if [ "$NB" != "$FILES" ]; then
+        print_debug "ERROR: Expect $NB files, get $FILES"
+        bstat=2
+    fi
+}
+
+################################################################
+# Get information from logs
+get_mig_info()
+{
+    # Prev Backup JobId
+    JOBID=$1
+    LOG=$2
+    RET=`awk -F: "BEGIN { jobid=$JOBID } "'/Prev Backup JobId/ { cjid=$2 } /New Backup JobId/  { if (cjid == jobid) { print $2 } }' $LOG`
+}
+
+get_duration()
+{
+   LOG=$1
+   RET=`awk 'BEGIN {t["secs"]=1;t["sec"]=1;t["min"]=60;t["mins"]=60}; /Elapsed time:/ { last=$3*t[$4] } END { print last }' $LOG`
+}
+
+check_duration()
+{
+   LOG=$1
+   TIME=$2
+   OP=${3-gt}
+
+   get_duration $LOG
+   if [ "$RET" -$OP "$TIME" ]; then
+       print_debug "Expect $OP than $TIME sec, get $RET"
+       bstat=2
+   fi
+}
+
+run_bareos()
+{
+   debug_wait
+   zstat=0
+   estat=0
+   if test "$debug" -eq 1 ; then
+     ${scripts}/bareos-ctl-sd start -m
+     ${scripts}/bareos-ctl-fd start -m $1
+     ${scripts}/bareos-ctl-dir start -m
+     cat ${tmp}/bconcmds | ${bin}/bconsole -c ${conf}/bconsole.conf
+     return $?
+   else
+     ${scripts}/bareos start >/dev/null 2>&1
+     cat ${tmp}/bconcmds | ${bin}/bconsole -c ${conf}/bconsole.conf >/dev/null 2>&1
+     return $?
+   fi
+}
+
+run_bconsole()
+{
+   bconsole_file=${1:-${tmp}/bconcmds}
+   if test "$debug" -eq 1 ; then
+     cat $bconsole_file | ${bin}/bconsole -c ${conf}/bconsole.conf
+   else
+     cat $bconsole_file | ${bin}/bconsole -c ${conf}/bconsole.conf  2>&1 >/dev/null
+   fi
+}
+
+run_btape()
+{
+   if test "$debug" -eq 1 ; then
+     cat ${tmp}/bconcmds | ${bin}/btape -c ${conf}/bareos-sd.conf tape | tee ${tmp}/log1.out
+   else
+     cat ${tmp}/bconcmds | ${bin}/btape -c ${conf}/bareos-sd.conf tape >${tmp}/log1.out 2>&1
+   fi
+}
+
+run_bscan()
+{
+   if test "$debug" -eq 1 ; then
+      ${bin}/bscan $* | tee ${tmp}/log.out
+   else
+      ${bin}/bscan $* 2>&1 >/dev/null
+   fi
+}
+
+bscan_libdbi()
+{
+   B=`echo $LIBDBI | sed 's/;//' | sed 's/;//g'`
+   B_D=`echo $B | awk '{print $3}'`
+   B_t=`echo $B | awk '{print $6}'`
+   B_p=`echo $B | awk '{print $9}'`
+
+   BSCANLIBDBI="${LIBDBI:+1}"
+
+   if test "$BSCANLIBDBI" = "1" ; then
+      BSCANLIBDBI="-D $B_D -h $B_t -t $B_p"
+   else
+      BSCANLIBDBI=" "
+   fi
+}
+
+stop_bareos()
+{
+   if test "$debug" -eq 1 ; then
+      ${scripts}/bareos stop
+   else
+      ${scripts}/bareos stop 2>&1 >/dev/null
+   fi
+}
+
+check_for_zombie_jobs()
+{
+   ${rscripts}/check_for_zombie_jobs $*
+}
+
+change_jobname()
+{
+   if test $# -eq 1; then
+      oldname=NightlySave
+      newname=$1
+   else
+      oldname=$1
+      newname=$2
+   fi
+   rm -f $tmp/1 $tmp/2
+   mv ${conf}/bareos-dir.conf $tmp/1
+   echo "s%${oldname}%${newname}%g" >$tmp/2
+   sed -f $tmp/2 $tmp/1 >$conf/bareos-dir.conf
+#  echo "Job ${oldname} changed to ${newname}"
+}
+
+check_two_logs()
+{
+   grep "^  Termination: *Backup OK" ${tmp}/log1.out 2>&1 >/dev/null
+   bstat=${bstat:-$?}
+   grep "^  Termination: .*Backup Error" ${tmp}/log1.out 2>&1 >/dev/null
+   if test $? -eq 0; then
+      bstat=2
+   fi
+   grep "^  Termination: *Restore OK" ${tmp}/log2.out 2>&1 >/dev/null
+   rstat=${rstat:-$?}
+   grep "^  Termination: .*Restore Error" ${tmp}/log2.out 2>&1 >/dev/null
+   if test $? -eq 0; then
+      rstat=2
+   fi
+   grep "^  Termination: *Restore OK -- warning file count mismatch" ${tmp}/log2.out 2>&1 >/dev/null
+   if test $? -eq 0; then
+      rstat=3
+   fi
+   grep "^  Termination: .*Verify Differences" ${tmp}/log2.out 2>&1 >/dev/null
+   if test $? -eq 0; then
+      rstat=4
+   fi
+   grep "Encoding error for database" ${tmp}/log1.out > /dev/null
+   if test $? -eq 0; then
+      print_debug "Found database encoding error"
+      bstat=2
+   fi
+}
+
+check_restore_diff()
+{
+   if test "$debug" -eq 1 ; then
+      $rscripts/diff.pl -s ${src} -d ${tmp}/bareos-restores${src}
+      diff -ur ${src} ${tmp}/bareos-restores${src}
+   else
+      diff -ur ${src} ${tmp}/bareos-restores${src} 2>&1 >/dev/null
+   fi
+   dstat=$?
+}
+
+check_restore_bin_diff()
+{
+   if test "$debug" -eq 1 ; then
+      $rscripts/diff.pl -s ${bin} -d ${tmp}/bareos-restores${bin}
+      diff -ur ${bin} ${tmp}/bareos-restores${bin}
+   else
+      diff -ur ${bin} ${tmp}/bareos-restores${bin} 2>&1 >/dev/null
+   fi
+   dstat=$?
+}
+
+
+check_restore_tmp_build_diff()
+{
+   if test "$debug" -eq 1 ; then
+      $rscripts/diff.pl -s ${tmpsrc} -d ${tmp}/bareos-restores${tmpsrc}
+      diff -ur ${tmpsrc} ${tmp}/bareos-restores${tmpsrc}
+   else
+      diff -ur ${tmpsrc} ${tmp}/bareos-restores${tmpsrc} 2>&1 >/dev/null
+   fi
+   dstat=$?
+}
+
+# bstat is backup error
+# dstat is diff difference
+# estat is special error status (shown by print_debug message)
+# rstat is restore status
+# zstat is zombie job(s)
+#
+end_test()
+{
+   if [ x$notracedump != xyes ]; then
+      cat ${working}/bareos.*.traceback 2>/dev/null
+      cp -f  ${working}/bareos.*.traceback ${dumps} 2>/dev/null
+      cat ${working}/*.bactrace 2>/dev/null
+      cp -f ${working}/*.bactrace ${dumps} 2>/dev/null
+   fi
+   if [ -f $tmp/err.log ]; then
+      cat $tmp/err.log
+   fi
+   if [ $estat != 0 ] ; then
+      echo " "
+      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! "
+      echo "   Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
+      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! " >>test.out
+      echo "   Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
+      echo " "
+      exit 1
+   fi
+   if [ $zstat != 0 ] ; then
+      echo " "
+      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! "
+      echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
+      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! " >>test.out
+      echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
+      echo " "
+      exit 1
+   fi
+   if [ $dstat != 0 -o $bstat != 0 -o $rstat != 0 ] ; then
+      echo " "
+      echo " "
+      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! "
+      echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
+      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! " >>test.out
+      echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
+      if [ $bstat != 0 -o $rstat != 0 ] ; then
+         echo "  !!!!! Bad termination status       !!!!! "
+         echo "  !!!!! Bad termination status       !!!!! " >>test.out
+      else
+         echo "  !!!!! Restored files differ          !!!!! "
+         echo "  !!!!! Restored files differ          !!!!! " >>test.out
+      fi
+      echo "   Status: backup=$bstat restore=$rstat diff=$dstat"
+      echo "   Status: backup=$bstat restore=$rstat diff=$dstat" >>test.out
+      echo "   Test owner of $SITE_NAME is $EMAIL"
+      echo "   Test owner of $SITE_NAME is $EMAIL" >>test.out
+      echo " "
+      exit 1
+   else
+      echo "  ===== $TestName OK `date +%R:%S` ===== "
+      echo "  ===== $TestName OK `date +%R:%S` ===== " >>test.out
+      if test "$debug" -eq 0 ; then
+         ${rscripts}/cleanup
+      fi
+   fi
+}
+
+copy_tape_confs()
+{
+   ${rscripts}/copy-tape-confs
+   ${rscripts}/cleanup-tape
+}
+
+copy_test_confs()
+{
+   ${rscripts}/copy-test-confs
+   ${rscripts}/cleanup
+}
+
+disable_pluguins()
+{
+   for i in ${conf}/bareos-fd.conf; do
+      sed 's/Plugin/#Plugin/' $i > $tmp/1
+      cp -f $tmp/1 $i
+   done
+}
+
+update_win32()
+{
+   if [ -d $cwd/build/src/win32/release32   \
+     -a -d $cwd/build/src/win32/release64 ] \
+   || [ -d $cwd/release32 -a -d $cwd/release64 ]
+   then
+       echo -ne "Try to upgrade the FileDaemon:\t"
+       wget -qO - "$WIN32_ADDR:8091/install"
+   fi
+}
+
+debug_wait()
+{
+  if test "x${REGRESS_WAIT}" = "x1"; then
+     echo "Start Bareos under debugger and enter anything when ready ..."
+     read a
+  fi
+}
+
+init_slot()
+{
+   DRIVE=$1
+   SLOT=$2
+   if test -n "$DRIVE" -a -n "$SLOT"; then
+      if test ! -c $DRIVE -a ! -b $DRIVE -a x$USE_VTAPE != x ; then
+         dir=`dirname $DRIVE`
+         if [ ! -d "$dir" ]; then
+            mkdir -p "$dir"
+         fi
+         touch $dir/slot$SLOT
+      fi
+   fi
+}
+
+init_drive()
+{
+  if test a$USE_VTAPE = a; then
+    mt -f $1 rewind
+    mt -f $1 weof
+  else
+    cp /dev/null $1
+  fi
+}
+
+rewind_drive()
+{
+  if test a$USE_VTAPE = a; then
+    mt -f $1 rewind
+  fi
+}
+
+load_slot1()
+{
+# Get a tape from slot1
+slot=`${scripts}/$MTX ${AUTOCHANGER} loaded 0 ${TAPE_DRIVE} $DRIVE1`
+case $slot in
+ 0)
+    ${scripts}/$MTX ${AUTOCHANGER} load $SLOT1 ${TAPE_DRIVE} $DRIVE1
+    slot=$SLOT1
+    ;;
+ $SLOT1)
+    slot=$SLOT1
+    ;;
+ *)
+    rewind_drive ${TAPE_DRIVE}
+    ${scripts}/$MTX ${AUTOCHANGER} unload $slot  ${TAPE_DRIVE} $DRIVE1
+    ${scripts}/$MTX ${AUTOCHANGER} load   $SLOT1 ${TAPE_DRIVE} $DRIVE1
+    slot=$SLOT1
+    ;;
+esac
+}
+
+#
+# $1 has currently loaded slot, load the other one i.e. if 1, load 2;
+#    if 2, load 1; if 0 load 1
+#
+load_other_slot()
+{
+rewind_drive ${TAPE_DRIVE}
+case $1 in
+ 0)
+    ${scripts}/${AUTOCHANGER_SCRIPT} ${AUTOCHANGER} load $SLOT1 ${TAPE_DRIVE} $DRIVE1
+    slot=1
+    ;;
+ $SLOT1)
+    ${scripts}/${AUTOCHANGER_SCRIPT} ${AUTOCHANGER} unload $1 ${TAPE_DRIVE} $DRIVE1
+    ${scripts}/${AUTOCHANGER_SCRIPT} ${AUTOCHANGER} load $SLOT2 ${TAPE_DRIVE} $DRIVE1
+    slot=2
+    ;;
+ $SLOT2)
+    ${scripts}/${AUTOCHANGER_SCRIPT} ${AUTOCHANGER} unload $1 ${TAPE_DRIVE} $DRIVE1
+    ${scripts}/${AUTOCHANGER_SCRIPT} ${AUTOCHANGER} load $SLOT1 ${TAPE_DRIVE} $DRIVE1
+    slot=1
+    ;;
+ *)
+    echo "Something went wrong. Expected $SLOT1 or $SLOT2, got $1"
+    exit 1
+    ;;
+esac
+}
+
+# Save current directory
+cwd=`pwd`
+if test "x${REGRESS_DEBUG}" = "x1"; then
+   set_debug 1
+else
+   set_debug 0
+fi
+
+# Source the configuration variables
+. ${cwd}/config
+
+db_name=${db_name:-"regress"}
+db_user=${db_user:-"regress"}
+db_password=${db_password:-""}
+working=${working:-"$cwd/working"}
+dumps=${dumps:-"$cwd/dumps"}
+bin=${bin:-"$cwd/bin"}
+
+# Bareos scripts
+scripts=${scripts:-"$cwd/bin"}
+
+# Bareos conf files
+conf=${conf:-"$cwd/bin"}
+
+# Regress scripts
+rscripts=${rscripts:-"$cwd/scripts"}
+
+# Regress configs
+rconfigs=${rconfigs:-"$cwd/configs"}
+
+tmp=${tmp:-"$cwd/tmp"}
+
+# Bareos source directory when copied here
+#  also build directory
+src=${src:-"$cwd/build"}
+
+# Temp source directory so we don't mess up $src
+tmpsrc=${tmpsrc:-"$cwd/tmp/build"}
+
+export bin
+export conf
+export working
+export dumps
+export scripts
+export rscripts
+export tmp
+export src
+export tmpsrc
+
+bperl="perl -Mscripts::functions"
+export bperl
+
+mkdir -p ${tmp}
+touch ${tmp}/dir.out ${tmp}/fd.out ${tmp}/sd.out
+
+CLIENT=${HOST}-fd
+
+if [ x$USE_VTAPE = xyes ]; then
+   mkdir -p $working/ach
+   SLOT1=1
+   SLOT2=2
+   TAPE_DRIVE=$working/ach/drive0
+   TAPE_DRIVE1=$working/ach/drive1
+   AUTOCHANGER=$working/ach/config
+   AUTOCHANGER_SCRIPT=disk-changer
+   DRIVE1=0
+   DRIVE2=1
+   cp /dev/null $working/ach/slot$SLOT1
+   cp /dev/null $working/ach/slot$SLOT2
+   cat > $AUTOCHANGER <<EOF
+maxdrive=8
+maxslot=80
+EOF
+fi
+
+AUTOCHANGER_SCRIPT=${AUTOCHANGER_SCRIPT:-mtx-changer}
+LD_LIBRARY_PATH=$bin:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH

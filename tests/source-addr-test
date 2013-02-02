@@ -1,0 +1,126 @@
+#!/bin/sh
+#
+# Run a simple backup of the Bareos build directory
+#   then restore it.
+#
+TestName="source-addr-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bareos-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
+
+PATH=$PATH:/sbin:/usr/sbin
+#
+# Deduce a primary IP address by examining
+#  the interface defined by INTERFACE=
+#
+os=`uname`
+if [ $os = 'FreeBSD' ]; then
+   INTERFACE=bge0
+   IP=`ifconfig ${INTERFACE} | perl -ne '/inet (.+?) / && print $1'`
+elif [ $os = 'Linux' ]; then
+   INTERFACE=eth0
+   IP=`ifconfig ${INTERFACE} | perl -ne '/inet addr:(.+?) / && print $1'`
+fi
+
+if [ "$IP" = '' ]; then
+    echo "Can't detect ip address"
+    exit 0
+fi
+
+outf="tmp/sed_tmp"
+echo "s/DIRport/DirSourceAddress=$IP; DIRport/g" > $outf
+echo "s/Address =/Address = 127.0.0.1 #/g" >> $outf
+cp $scripts/bareos-dir.conf $tmp/1
+sed -f ${outf} ${cwd}/tmp/1 > $scripts/bareos-dir.conf
+
+# Set source address on the FD as well
+echo "s/FDPort/FDSourceAddress=$IP; FDPort/g" >$outf
+cp $scripts/bareos-fd.conf $tmp/2
+sed -f ${outf} ${cwd}/tmp/2 > $scripts/bareos-fd.conf
+
+DIRPORT=$BASEPORT
+FDPORT=$(($BASEPORT + 1))
+SDPORT=$(($BASEPORT + 2))
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#label volume=TestVolume001 storage=File pool=File
+@#setdebug level=100 storage=File
+run job=$JobName yes
+@sleep 3
+messages
+quit
+END_OF_DATA
+
+run_bareos
+
+sleep 5
+print_debug "Detecting connections to SD sourced from ${IP}"
+netstat -tan | grep -E "127.0.0.1(.|:)$SDPORT .* ${IP}" > $tmp/log3.out
+if [ $? -ne 0 ]; then
+   stat=2
+   print_debug "Couldn't detect a connection to the SD sourced from SourceAddress ${IP}"
+fi
+
+print_debug "and connections to FD sourced from ${IP}"
+netstat -tan | grep -E "127.0.0.1(.|:)$FDPORT .* ${IP}" >> $tmp/log3.out
+if [ $? -ne 0 ]; then
+   stat=2
+   print_debug "Couldn't detect a connection to the FD sourced from SourceAddress ${IP}"
+fi
+
+if [ "$stat" = 2 ] ; then
+   netstat -tan
+fi
+
+if [ "$debug" = 1 ] ; then
+    cat $tmp/log3.out
+fi
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label volume=TestVolume001 storage=File pool=File
+@#setdebug level=100 storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore where=${cwd}/tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+stop_bareos
+check_two_logs
+check_restore_diff
+
+if [ "$stat" = 2 ]; then
+    print_debug `cat $tmp/log3.out`
+    bstat=$stat
+fi
+
+end_test

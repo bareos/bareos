@@ -1,0 +1,118 @@
+#!/bin/sh
+#
+# Run a simple backup of the Bareos build directory then create some
+#   new files, do an Incremental and restore those two files.
+#
+TestName="incremental-test"
+JobName=Incremental
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+echo "${tmpsrc}" >${tmp}/file-list
+mkdir -p ${tmpsrc}
+cp -p ${src}/src/dird/*.c ${tmpsrc}
+cd ${tmp}
+echo "${tmpsrc}/ficheriro1.txt" >restore-list
+echo "${tmpsrc}/ficheriro2.txt" >>restore-list
+cd ${cwd}
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/log1.out
+run comment="This is a comment for $JobName" job=$JobName yes
+status client
+@sleep 5
+status dir
+label storage=File volume=TestVolume001
+mount storage=File
+wait
+messages
+@$out $tmp/log3.out
+sql
+SELECT Comment FROM Job WHERE JobId=1;
+
+quit
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File
+#
+# Now create two new files to be restored later
+#
+sleep 1
+echo "ficheriro1.txt" >${tmpsrc}/ficheriro1.txt
+cp -f ${tmpsrc}/dird.c ${tmpsrc}/ficheriro2.txt
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/log1.out
+@# Force Incremental on the second Volume
+update volume=TestVolume001 VolStatus=Used
+run comment="This is the incremental job" level=Differential job=$JobName yes
+@sleep 5
+status dir
+label storage=File volume=TestVolume002
+mount storage=File
+wait
+messages
+@$out $tmp/log3.out
+sql
+SELECT Comment FROM Job WHERE JobId=2;
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/log2.out
+@#
+@# now do a restore
+@#
+restore comment="Ticket #1220 requested by toto@bareos.org" where=${tmp}/bareos-restores storage=File file=<${tmp}/restore-list
+yes
+status dir
+wait
+messages
+@$out $tmp/log3.out
+sql
+SELECT Comment FROM Job WHERE JobId=3;
+
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+#
+# Delete .c files because we will only restored the txt files
+#
+rm -f ${tmpsrc}/*.c
+check_restore_tmp_build_diff
+
+grep "This is a comment for $JobName" $tmp/log3.out >/dev/null
+if [ $? != 0 ]; then
+    print_debug "ERR: Can't find comment"
+    estat=1
+fi
+grep "Ticket #1220 requested by toto@bareos.org" $tmp/log3.out >/dev/null
+if [ $? != 0 ]; then
+    print_debug "ERR: Can't find comment"
+    estat=1
+fi
+grep "This is the incremental job" $tmp/log3.out >/dev/null
+if [ $? != 0 ]; then
+    print_debug "ERR: Can't find comment"
+    estat=1
+fi
+end_test

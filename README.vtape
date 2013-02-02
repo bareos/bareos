@@ -1,0 +1,34 @@
+HOWTO SETUP A FAKE TAPE ENVIRONMENT
+-----------------------------------
+
+Introduction:
+-------------
+
+The fake tape driver (vtape) attempts to simulate a tape drive from a low level
+aspect. It emulates tape operations like fsf, bsf, weom, variable bloc, etc..
+
+For that the driver implements 5 operations :
+ - read
+ - write
+ - open
+ - close
+ - ioctl
+
+Setup the regress environment for tape tests
+--------------------------------------------
+
+Be sure to add this to your config file :
+
+USE_VTAPE=yes
+
+And type "make setup" (or "make sed" in a existing environment)
+
+That all !
+
+
+Setup a quite big autochanger (5 drives and 80 slots)
+-----------------------------------------------------
+
+Just run "./tests/vtape-test-changer" test to use right configuration files,
+then you can use "./scripts/prepare-fake-autochanger" script to initialize the
+dummy autochanger.

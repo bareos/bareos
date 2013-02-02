@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# Run backups with dummy tape driver
+# This test setups an Autochanger with 80 slots
+# and 5 drives (3 LTO3 and 2 LTO1)
+#
+# TAPE_DRIVE="$cwd/working/ach/drive0"
+# TAPE_DRIVE1="$cwd/working/ach/drive0"
+# AUTOCHANGER="$cwd/working/ach/conf"
+# USE_VTAPE=yes
+# AUTOCHANGER_SCRIPT=disk-changer
+#
+
+TestName="vtape-bug-1288"
+JobName=backup
+. scripts/functions
+
+require_vtape
+
+scripts/cleanup
+scripts/copy-tape-confs
+cp scripts/bareos-dir-vtape.conf bin/bareos-dir.conf
+cp scripts/bareos-sd-vtape.conf bin/bareos-sd.conf
+sed -i 's/Device {/Device { LabelMedia = yes/' bin/bareos-sd.conf
+sed -i 's/Pool {/Pool { LabelFormat = "vol"/' bin/bareos-dir.conf
+sed -i 's/SpoolData = yes/SpoolData = no/' bin/bareos-dir.conf
+sed -i 's/Maximum Volume Size = 30M//'  bin/bareos-sd.conf
+sed -i 's/Maximum File Size = 7M//'  bin/bareos-sd.conf
+sed -i 's!Client Run Before Job = "sleep 2"!!' bin/bareos-dir.conf
+scripts/prepare-fake-autochanger
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+echo "${cwd}/build" >>${cwd}/tmp/file-list
+echo "${cwd}/build" >>${cwd}/tmp/file-list
+echo "${cwd}/build" >>${cwd}/tmp/file-list
+echo "${cwd}/build" >>${cwd}/tmp/file-list
+echo "${cwd}/build" >>${cwd}/tmp/file-list
+echo "${cwd}/build" >>${cwd}/tmp/file-list
+
+start_test
+
+when1=`perl -MPOSIX -e "print strftime('%F %T', localtime(time+5))"`
+
+clientname=`awk '/Name = .*-fd/ { if (!ok) { print $3 ; ok=1 } }' bin/bareos-dir.conf`
+
+# Catalog record for cleaning tape "CLN01" successfully created.
+# CLN01      | Cleaning
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+messages
+@#label barcodes slots=1-10 pool=Scratch storage=LTO3 drive=0
+list volumes
+@$out ${cwd}/tmp/log1.out
+run storage=File when="$when1" job=NightlySave  pool=Inc     yes
+run storage=File when="$when1" job=NightlySave2 pool=Inc     yes
+run storage=File when="$when1" job=NightlySave1 pool=Inc     yes
+#
+#@sleep 6
+messages
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File $clientname
+
+
+stop_bareos
+
+end_test

@@ -1,0 +1,3 @@
+#!/bin/sh
+bin/bareos start
+bin/bconsole -c bin/bconsole.conf

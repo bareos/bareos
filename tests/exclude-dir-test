@@ -1,0 +1,100 @@
+#!/bin/sh
+#
+# Run a simple backup of the Bareos build directory using the compressed option
+#   then backup a second time and finally restore it
+#
+TestName="exclude-dir-test"
+JobName=exclude-dir
+. scripts/functions
+
+cwd=`pwd`
+scripts/cleanup
+scripts/copy-test-confs
+cat >> $conf/bareos-dir.conf <<EOF
+FileSet {
+  Name = "ExcludeDir"
+  Include {
+    Exclude Dir Containing = ".nobkp"
+    Options {
+      signature=MD5
+      compression=GZIP
+    }
+    File = "$cwd/build"
+  }
+  Include {
+    Exclude Dir Containing = "bareos-dir.conf"
+    Options {
+      signature=MD5
+      compression=GZIP
+    }
+    File = "$conf"
+    File = "$rscripts"
+    File = "$cwd/build/po"
+  }
+}
+EOF
+sed 's/FileSet="CompressedSet"/FileSet=ExcludeDir/' $conf/bareos-dir.conf >$tmp/1
+cp -f $tmp/1 $conf/bareos-dir.conf
+change_jobname CompressedTest $JobName
+start_test
+
+mkdir -p ${cwd}/build/src/xxtestdir
+touch ${cwd}/build/src/xxtestdir/.nobkp
+cp ${cwd}/build/src/dird/*.c ${cwd}/build/src/xxtestdir
+
+cat >tmp/bconcmds <<END_OF_DATA
+@$out /dev/null
+messages
+@$out $tmp/log3.out
+estimate job=$JobName listing
+messages
+@$out $tmp/log1.out
+label storage=File volume=TestVolume001
+run job=$JobName yes
+wait
+messages
+@$out $tmp/log2.out
+restore where=${cwd}/tmp/bareos-restores select all storage=File done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+
+# should be ok if we remove the xxtestdir
+rm -rf ${cwd}/build/src/xxtestdir
+check_restore_diff
+
+grep '/xxtestdir' $tmp/log3.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not see xxtestdir in estimate output"
+    bstat=2
+fi
+
+# build/po is included 2 times with a different exclude file
+# we shouldn't see scripts and bin
+nb=`egrep -c 'build/po/fr.po$' $tmp/log3.out`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: Should see fr.po two times"
+    bstat=2
+fi
+
+grep $rscripts $tmp/log3.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not $rscripts in estimate output"
+    bstat=2
+fi
+
+grep $conf $tmp/log3.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not $conf in estimate output"
+    bstat=2
+fi
+
+end_test

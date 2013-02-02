@@ -1,0 +1,8 @@
+#!/bin/sh
+/bin/cp -f scripts/win32-bareos-dir-tape.conf bin/bareos-dir.conf
+/bin/cp -f scripts/win32-bareos-sd-tape.conf bin/bareos-sd.conf
+/bin/cp -f scripts/win32-bareos-fd.conf bin/bareos-fd.conf
+/bin/cp -f scripts/test-console.conf bin/bconsole.conf
+/bin/cp -f scripts/test-console.conf bin/bat.conf
+
+scripts/set_tape_options

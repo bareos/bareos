@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+# Run a simple backup of the Bareos build directory
+#   then restore it.
+#
+TestName="weird-files-test"
+JobName=wierd-files
+. scripts/functions
+
+if test ! -d weird-files ; then
+   echo " "
+   echo "Weird files not configured. Test not run."
+   exit 0
+fi
+
+cwd=`pwd`
+scripts/cleanup
+scripts/copy-test-confs
+change_jobname NightlySave $JobName
+#
+# Note, we save the weird-files directory twice on purpose
+#  because this causes problems with hard linked files
+#  that are only saved once.  In 1.33, Bareos now deals
+#  with this situation.
+#
+echo "${cwd}/weird-files" >${cwd}/tmp/file-list
+echo "${cwd}/weird-files" >>${cwd}/tmp/file-list
+
+# Create a Unix domain socket (sock-file)
+cd weird-files
+perl socket.pl
+cd ..
+
+start_test
+
+cat <<END_OF_DATA >tmp/bconcmds
+@$out /dev/null
+messages
+@$out tmp/log1.out
+label storage=File
+TestVolume001
+run job=$JobName
+yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out tmp/log2.out
+restore where=${cwd}/tmp/bareos-restores select storage=File
+unmark *
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File
+stop_bareos
+
+# Note, the Unix domain socket (sock-file) is not restored
+#  by Bareos so we delete it for the diffs. diff.pl already discards them
+# rm -f weird-files/sock-file
+
+# to have the same mtime after the rm, we need to touch directories
+# touch weird-files tmp/bareos-restores${cwd}/weird-files
+
+
+$rscripts/diff.pl -s weird-files -d tmp/bareos-restores${cwd}/weird-files > tmp/diff.out
+dstat=$?
+
+check_two_logs
+if test "$debug" -eq 1; then
+  cat tmp/diff.out
+fi
+end_test

@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# Cleanup left over files -- both before and after test run
+#
+
+. scripts/functions
+
+scripts/cleanup
+scripts/prepare-two-tapes

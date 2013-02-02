@@ -1,0 +1,88 @@
+#!/bin/sh
+#
+# Run a backup of the build directory but force it to have
+#   a comm error, and check that it restarts correctly.
+#
+TestName="restart-accurate-job-test"
+JobName=RestartJob
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+change_jobname NightlySave $JobName
+
+$bperl -e "add_attribute('$conf/bareos-dir.conf', 'Accurate', 'yes', 'Job', 'RestartJob')"
+start_test
+touch $cwd/build/po/testfile
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=TestVolume001
+setdebug level=0 trace=0 hangup=100 client
+@#setdebug level=20 dir
+run job=$JobName yes
+wait
+messages
+sql
+select * from JobMedia;
+
+quit
+END_OF_DATA
+
+run_bareos
+
+scripts/check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+@$out ${cwd}/tmp/log1.out
+setdebug level=0 trace=0 hangup=50 client
+@exec "sh -c 'touch $cwd/build/po/*'"
+@exec "sh -c 'touch $cwd/build/src/dird/*'"
+@exec "rm $cwd/build/po/testfile"
+run job=$JobName yes
+wait
+messages
+sql
+select * from JobMedia;
+
+@#
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore where=$tmp/bareos-restores storage=File select all done
+yes
+wait
+messages
+@$out ${cwd}/tmp/log3.out
+list jobs
+quit
+END_OF_DATA
+
+run_bconsole
+scripts/check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+check_restore_diff
+
+nb_F=`awk -F '|' '/RestartJob.+F/ { gsub(/,/, ""); print $7}' $tmp/log3.out`
+nb_I=`awk -F '|' '/RestartJob.+I/ { gsub(/,/, ""); print $7}' $tmp/log3.out`
+nb1=`ls $cwd/build/po/* $cwd/build/src/dird/* | wc -l`
+nb1=`expr $nb1 + 50`
+
+if [ "$nb_I" -eq "$nb_F" ]; then
+    print_debug "ERROR: Incremental saves too much files (nb Incr == nb Full)"
+    estat=1
+fi
+
+if [ "$nb_I" -ge "$nb1" ]; then
+    print_debug "ERROR: Incremental saves too much files (more than $nb1)"
+    estat=1
+fi
+
+end_test

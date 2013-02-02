@@ -1,0 +1,202 @@
+#!/bin/sh
+#
+# Run a basejob backup of the Bareos build directory
+#   then restore it.
+#
+
+TestName="base-job-test"
+JobName=backup
+. scripts/functions
+$rscripts/cleanup
+
+copy_test_confs
+echo 's/backup_advance/base_backup/' > $tmp/s
+echo 's/Name = backup/Name = backup; Base = base_backup, backup/' >> $tmp/s
+sed -f $tmp/s $rscripts/bareos-dir.conf.accurate > $conf/bareos-dir.conf
+rm -f $tmp/s
+
+sed s/all,/all,saved,/ $conf/bareos-fd.conf > tmp/1
+cp tmp/1 $conf/bareos-fd.conf
+
+change_jobname BackupClient1 $JobName
+
+p() {
+    echo "##############################################" >> ${cwd}/tmp/log1.out
+    echo "$*" >> ${cwd}/tmp/log1.out
+    echo "##############################################" >> ${cwd}/tmp/log2.out
+    echo "$*" >> ${cwd}/tmp/log2.out
+}
+
+# cleanup
+rm -rf ${cwd}/build/accurate.new
+rm -rf ${cwd}/build/accurate
+
+
+# add extra files
+mkdir ${cwd}/build/accurate
+mkdir ${cwd}/build/accurate/dirtest
+echo "test test" > ${cwd}/build/accurate/dirtest/hello
+echo "test test" > ${cwd}/build/accurate/xxx
+echo "test test" > ${cwd}/build/accurate/yyy
+echo "test test" > ${cwd}/build/accurate/zzz
+echo "test test" > ${cwd}/build/accurate/zzzzzz
+echo "test test" > ${cwd}/build/accurate/xxxxxx
+echo "test test" > ${cwd}/build/accurate/yyyyyy
+echo "test test" > ${cwd}/build/accurate/xxxxxxxxx
+echo "test test" > ${cwd}/build/accurate/yyyyyyyyy
+echo "test test" > ${cwd}/build/accurate/zzzzzzzzz
+echo ${cwd}/build > ${cwd}/tmp/file-list
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+label volume=TestVolume001 storage=File pool=Default
+messages
+END_OF_DATA
+
+run_bareos
+
+################################################################
+p Now do a backup using base backup
+################################################################
+
+echo ${cwd}/bin >> ${cwd}/tmp/file-list
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+run job=base_backup level=base yes
+wait
+messages
+update volume=TestVolume001 volstatus=Used
+END_OF_DATA
+
+run_bconsole
+
+echo ${cwd}/build > ${cwd}/tmp/file-list
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log4.out
+label volume=TestVolume002 storage=File pool=Default
+run job=backup level=full yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore fileset=FS_TESTJOB where=${cwd}/tmp/bareos-restores select all done
+yes
+wait
+messages
+END_OF_DATA
+
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_two_logs
+check_restore_diff
+
+rm -rf ${cwd}/tmp/bareos-restores
+
+grep -e 'FD Bytes Written: *0' ${cwd}/tmp/log4.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: The first full job should have 0 byte in log4.out"
+    bstat=2
+fi
+
+grep -e 'Using BaseJobId(s): 1$'  ${cwd}/tmp/log4.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: The first full job should use only jobid=1 as basejob"
+    bstat=2
+fi
+
+################################################################
+p Now do a backup after making few changes
+################################################################
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+update volume=TestVolume002 volstatus=Used
+label volume=TestVolume003 storage=File pool=Default
+run job=backup level=incremental yes
+wait
+messages
+list files jobid=4
+@#
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore fileset=FS_TESTJOB where=${cwd}/tmp/bareos-restores select all done
+yes
+wait
+messages
+END_OF_DATA
+
+rm ${cwd}/build/accurate/yyyyyy  # delete a file
+rm -rf ${cwd}/build/accurate/dirtest
+
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_two_logs
+check_restore_diff
+check_files_written ${cwd}/tmp/log1.out 4
+
+rm -rf ${cwd}/tmp/bareos-restores
+
+################################################################
+p Test the job purge
+################################################################
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log3.out
+sql
+SELECT count(*) FROM BaseFiles;
+
+purge volume=TestVolume002
+messages
+sql
+SELECT count(*) FROM BaseFiles;
+
+END_OF_DATA
+
+run_bconsole
+
+grep -e ' 0 *|' ${cwd}/tmp/log3.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Can't purge the base job"
+    estat=1
+fi
+
+
+################################################################
+p Test list commands
+################################################################
+
+touch ${cwd}/build/po/fr.po
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+run level=full job=backup yes
+wait
+messages
+@out ${cwd}/tmp/log5.out
+list basefiles jobid=6
+@out ${cwd}/tmp/log6.out
+list files jobid=6
+messages
+END_OF_DATA
+
+run_bconsole
+
+grep "po/fr.po^" ${cwd}/tmp/log5.out > /dev/null
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Should not display fr.po as basefile"
+    estat=2
+fi
+
+export bstat dstat estat
+
+stop_bareos
+end_test

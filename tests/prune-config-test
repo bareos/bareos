@@ -1,0 +1,114 @@
+#!/bin/sh
+#
+# This script will test prune algo
+#
+. scripts/functions
+
+TestName="prune-test"
+JobName=NightlySave
+
+scripts/cleanup
+scripts/copy-test-confs
+
+start_test
+
+echo $PWD/build/po > tmp/file-list
+
+# We want to have pruning only when doing prune command
+$bperl -e 'add_attribute("$conf/bareos-dir.conf", "AutoPrune", "No", "Client")'
+$bperl -e 'add_attribute("$conf/bareos-dir.conf", "Job Retention", "1s", "Client")'
+
+# Add a new job with a different fileset
+$bperl -e 'print get_resource("$conf/bareos-dir.conf", "Job", "NightlySave")' | \
+    sed s/NightlySave/DailySave/ | sed 's/Full Set/CompressedSet/' > $tmp/1
+
+cat $tmp/1 >> $conf/bareos-dir.conf
+
+cat <<EOF > ${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+label storage=File volume=TestVolume001
+run job=$JobName level=full yes
+wait
+messages
+@exec "touch $cwd/build/po/fr.po"
+run job=$JobName level=incremental yes
+wait
+messages
+@exec "touch $cwd/build/po/de.po"
+run job=$JobName level=incremental yes
+wait
+messages
+@# run a second set of backup
+run job=DailySave level=full yes
+wait
+messages
+@exec "touch $cwd/build/po/fr.po"
+run job=DailySave level=incremental yes
+wait
+messages
+@exec "touch $cwd/build/po/de.po"
+run job=DailySave level=incremental yes
+wait
+messages
+@sleep 2
+@$out $tmp/log10.out
+@# should prune nothing
+list jobs
+prune jobs yes
+list jobs
+quit
+EOF
+
+run_bareos
+
+# should find nothing to prune
+$bperl -e "check_prune_list('$tmp/log10.out')"
+
+# rename the job to see if it's pruned
+sed s/DailySave/DisabledBackup/ $conf/bareos-dir.conf > $tmp/1
+mv $tmp/1 $conf/bareos-dir.conf
+
+cat <<EOF > ${cwd}/tmp/bconcmds
+@$out tmp/log11.out
+reload
+messages
+@# should prune jobs using DailySave
+list jobs
+prune jobs yes
+list jobs
+EOF
+
+run_bconsole
+
+$bperl -e "check_prune_list('$tmp/log11.out', 4, 5, 6)"
+estat=$(($estat + $?))
+
+# rename Full Set fileset to see if it will be pruned the next time
+$bperl -e 'add_attribute("$conf/bareos-dir.conf", "FileSet", "CompressedSet", "Job", "NightlySave")'
+sed "s/Full Set/DisFullSet/g" $conf/bareos-dir.conf > $tmp/1
+mv $tmp/1 $conf/bareos-dir.conf
+
+cat <<EOF > ${cwd}/tmp/bconcmds
+@$out tmp/log12.out
+reload
+messages
+@# should prune jobs using Full Set
+list jobs
+prune jobs yes
+list jobs
+EOF
+
+run_bconsole
+
+$bperl -e "check_prune_list('$tmp/log12.out', 1, 2, 3)"
+estat=$(($estat + $?))
+
+check_for_zombie_jobs storage=File
+stop_bareos
+
+touch $tmp/log2.out
+check_two_logs
+
+end_test

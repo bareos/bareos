@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# Run all tests
+#
+rm -f dumps/*
+./all-non-root-tests
+./all-root-tests

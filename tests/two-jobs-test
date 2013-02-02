@@ -1,0 +1,78 @@
+#!/bin/sh
+#
+# Run a simple backup of the Bareos build directory using the compressed option
+#   then backup a second time and finally restore it
+#
+TestName="two-jobs-test"
+JobName=Two-Jobs
+. scripts/functions
+
+cwd=`pwd`
+scripts/cleanup
+scripts/copy-test-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat >tmp/bconcmds <<END_OF_DATA
+setdebug level=150  storage=File
+@$out /dev/null
+messages
+@$out/dev/null
+estimate job=$JobName listing
+estimate job=$JobName
+estimate job=$JobName
+messages
+@$out tmp/log1.out
+label storage=File volume=TestVolume001
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File
+
+echo "Backup 1 done"
+touch ${cwd}/build/src/dird/*.c
+#
+# run a second job
+#
+cat >tmp/bconcmds <<END_OF_DATA
+@$out /dev/null
+messages
+@$out tmp/log1.out
+run job=$JobName
+yes
+wait
+messages
+@#
+@# now do several restores to ensure we cleanup between jobs
+@#
+@$out /dev/null
+restore where=${cwd}/tmp/bareos-restores select all storage=File done
+yes
+wait
+restore where=${cwd}/tmp/bareos-restores select all storage=File done
+yes
+wait
+@$out tmp/log2.out
+restore where=${cwd}/tmp/bareos-restores select storage=File
+unmark *
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+check_restore_diff
+end_test

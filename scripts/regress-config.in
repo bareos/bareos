@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+# This is the configuration script for regression testing
+#
+
+. ${1}/config
+if test "x@db_password@" = "x"; then
+  PASSWD=
+else
+  PASSWD="--with-db-password=@db_password@"
+fi
+
+if [ -z "${CFLAGS}" ]; then
+   CFLAGS="-g -O2 -Wall"
+   export CFLAGS
+fi
+
+./configure \
+    --sbindir=${1}/bin \
+    --libdir=${1}/bin \
+    --sysconfdir=${1}/bin \
+    --mandir=${1}/bin \
+    --docdir=${1}/bin/html \
+    --htmldir=${1}/bin/html \
+    --with-pid-dir=${1}/working \
+    --with-subsys-dir=${1}/working \
+    --with-plugindir=${1}/bin/plugins \
+    --enable-smartalloc \
+    --enable-lockmgr \
+    --disable-readline \
+    --with-working-dir=${1}/working \
+    --with-archivedir=${1}/tmp \
+    --with-dump-email=${EMAIL} \
+    --with-job-email=${EMAIL} \
+    --with-smtp-host=${SMTP_HOST} \
+    --with-db-name=@db_name@ \
+    --with-db-user=@db_user@ \
+    ${PASSWD} \
+    ${OPENSSL} \
+    ${TCPWRAPPERS} \
+    ${WHICHDB} \
+    --with-baseport=${BASEPORT}
+
+LD_LIBRARY_PATH=${1}/bin:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH
+
+exit 0

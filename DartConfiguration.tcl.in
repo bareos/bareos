@@ -1,0 +1,14 @@
+SourceDirectory: @srcdir@
+BuildDirectory: @regressdir@
+Site: @sitename@
+BuildName: @bversion@-@bdate@-@dbengine@-@os@
+DropMethod: http
+DropSite: regress.bareos.org
+DropLocation: /submit.php?project=bareos
+DroptSiteCdash: true
+TriggerSite: http://regress.bareos.org
+NightlyStartTime: 23:00:00 CET
+MakeCommand: @regressdir@/scripts/update-ctest
+ConfigureCommand: true
+UpdateCommand: true
+TimeOut: 1800

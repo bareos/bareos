@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# Run a simple backup with encryption and compression of the Bareos build directory
+#   then verify the signatures.
+#
+TestName="compressed-encrypt-test"
+JobName=CompressedTest
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-crypto-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=TestVolume001
+setdebug level=10 fd
+run job=$JobName yes
+wait
+messages
+list volumes
+@#
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+@# setdebug level=0 fd
+restore where=${cwd}/tmp/bareos-restores storage=File
+5
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+sleep 2
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+check_restore_diff
+end_test

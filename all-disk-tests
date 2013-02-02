@@ -1,0 +1,124 @@
+#!/bin/sh
+#
+# Run all tests
+#
+echo " "
+echo " " >>test.out
+echo "Start non-root disk tests"
+echo "Start non-root disk tests" >>test.out
+rm -f dumps/*
+nice tests/acl-xattr-test
+nice tests/action-on-purge-test
+nice tests/allowcompress-test
+nice tests/accurate-test
+nice tests/auto-label-test
+nice tests/backup-bareos-test
+nice tests/bextract-test
+nice tests/bconsole-test
+nice tests/base-job-test
+nice tests/big-vol-test
+nice tests/bscan-test
+nice tests/bsr-opt-test
+nice tests/comment-test
+nice tests/compressed-test
+nice tests/lzo-test
+nice tests/compress-encrypt-test
+nice tests/lzo-encrypt-test
+nice tests/concurrent-jobs-test
+nice tests/copy-job-test
+nice tests/copy-jobspan-test
+nice tests/copy-uncopied-test
+nice tests/copy-upgrade-test
+nice tests/copy-volume-test
+nice tests/data-encrypt-test
+nice tests/delete-test
+nice tests/encrypt-bug-test
+nice tests/estimate-test
+nice tests/exclude-dir-test
+nice tests/fifo-test
+nice tests/fileregexp-test
+nice tests/backup-to-null
+nice tests/regexwhere-test
+# The following two can uses *lots* of disk space
+#   so they are normally turned off, but if you have
+#   at least two GB free, you can run them
+#nice tests/sparse-encrypt-test
+#nice tests/gigaslam-sparse-test
+nice tests/differential-test
+nice tests/four-concurrent-jobs-test
+nice tests/four-jobs-test
+nice tests/incremental-test
+nice tests/query-test
+nice tests/recycle-test
+nice tests/restore2-by-file-test
+nice tests/restore-by-file-test
+nice tests/restore-disk-seek-test
+nice tests/runscript-test
+nice tests/source-addr-test
+nice tests/stats-test
+nice tests/six-vol-test
+nice tests/span-vol-test
+nice tests/maxbytes-test
+nice tests/maxtime-test
+nice tests/maxuseduration-test
+nice tests/maxvol-test
+nice tests/maxvol2-test
+nice tests/messages-test
+nice tests/next-vol-test
+nice tests/sparse-compressed-test
+nice tests/sparse-lzo-test
+nice tests/sparse-test
+nice tests/strip-test
+nice tests/two-jobs-test
+nice tests/two-vol-test
+nice tests/verify-cat-test
+nice tests/verify-vol-test
+nice tests/verify-voltocat-test
+nice tests/weird-files2-test
+nice tests/weird-files-test
+nice tests/migration-job-test
+nice tests/migration-job-purge-test
+nice tests/migration-jobspan-test
+nice tests/migration-volume-test
+nice tests/migration-time-test
+nice tests/multi-storage-test
+nice tests/prune-test
+nice tests/prune-config-test
+nice tests/prune-migration-test
+nice tests/prune-copy-test
+nice tests/prune-base-job-test
+nice tests/hardlink-test
+nice tests/tls-duplicate-job-test
+nice tests/tls-test
+nice tests/virtual-changer-test
+nice tests/virtual-backup-test
+echo "End non-root disk tests"
+echo "End non-root disk tests" >>test.out
+
+#
+# The following are Virtual Disk Autochanger tests
+echo " "
+echo " " >>test.out
+echo "Start non-root virtual disk autochanger tests"
+echo "Start non-root virtual disk autochanger tests" >>test.out
+#nice tests/three-pool-recycle-test
+nice tests/two-pool-test
+nice tests/fast-two-pool-test
+nice tests/two-volume-test
+nice tests/incremental-2disk
+nice tests/2drive-incremental-2disk
+nice tests/scratch-pool-test
+nice tests/scratchpool-pool-test
+nice tests/2drive-concurrent-test
+nice tests/incremental-2media
+nice tests/three-pool-test
+nice tests/2drive-3pool-test
+nice tests/2drive-swap-test
+nice tests/quota-softquota-test
+nice tests/quota-hardquota-test
+nice tests/quota-includefailed-test
+nice tests/bandwidth-limit-per-client-test
+# Turn back on after next_vol.c bug is fixed
+#  nice tests/next-vol-test
+echo "End non-root virtual disk autochanger tests"
+echo "End non-root virtual disk autochanger tests" >>test.out

@@ -1,0 +1,137 @@
+#!/bin/sh
+#
+# Run backups with dummy tape driver
+# This test setups an Autochanger with 80 slots
+# and 5 drives (5 LTO3)
+#
+#
+
+TestName="maxdev-test"
+JobName=backup
+. scripts/functions
+
+require_vtape
+
+scripts/cleanup
+scripts/copy-tape-confs
+sed 's:Job {:Job { ClientRunBeforeJob = "sleep 5":' \
+    $rscripts/bareos-dir-vtape.conf > $conf/bareos-dir.conf
+sed 's/VTape/VTape; maximum concurrent jobs = 3/' \
+    $rscripts/bareos-sd-vtape.conf | \
+    sed 's/LTO1/LTO3/g' > $conf/bareos-sd.conf
+scripts/prepare-fake-autochanger
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+perl -Mscripts::functions -e "extract_resource('$conf/bareos-dir.conf', 'Job', 'NightlySave')" > $tmp/1
+cat $tmp/1 | sed s/NightlySave/NightlySave4/ >> $conf/bareos-dir.conf
+cat $tmp/1 | sed s/NightlySave/NightlySave5/ >> $conf/bareos-dir.conf
+cat $tmp/1 | sed s/NightlySave/NightlySave6/ >> $conf/bareos-dir.conf
+cat $tmp/1 | sed s/NightlySave/NightlySave7/ >> $conf/bareos-dir.conf
+cat $tmp/1 | sed s/NightlySave/NightlySave8/ >> $conf/bareos-dir.conf
+cat $tmp/1 | sed s/NightlySave/NightlySave9/ >> $conf/bareos-dir.conf
+cat $tmp/1 | sed s/NightlySave/NightlySave10/ >> $conf/bareos-dir.conf
+
+start_test
+
+clientname=`awk '/Name = .*-fd/ { if (!ok) { print $3 ; ok=1 } }' bin/bareos-dir.conf`
+
+when1=`perl -MPOSIX -e "print strftime('%F %T', localtime(time+30))"`
+when2=`perl -MPOSIX -e "print strftime('%F %T', localtime(time+45))"`
+
+# Catalog record for cleaning tape "CLN01" successfully created.
+# CLN01      | Cleaning
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log6.out
+@#setdebug level=200 storage=LTO1
+label barcodes pool=Scratch slots=41-60 storage=LTO3 drive=0
+yes
+messages
+list volumes
+END_OF_DATA
+
+run_bareos
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+setdebug trace=1 level=150 storage=LTO3
+run storage=LTO3 when="$when1" job=NightlySave   pool=Inc     yes
+run storage=LTO3 when="$when1" job=NightlySave2  pool=Inc     yes
+run storage=LTO3 when="$when1" job=NightlySave3  pool=Inc     yes
+run storage=LTO3 when="$when1" job=NightlySave4  pool=Inc     yes
+run storage=LTO3 when="$when1" job=NightlySave5  pool=Inc     yes
+run storage=LTO3 when="$when1" job=NightlySave6  pool=Full    yes
+run storage=LTO3 when="$when1" job=NightlySave7  pool=Full    yes
+run storage=LTO3 when="$when1" job=NightlySave8  pool=Full    yes
+run storage=LTO3 when="$when1" job=NightlySave9  pool=Full    yes
+run storage=LTO3 when="$when1" job=NightlySave10 pool=Full    yes
+wait
+messages
+@$out ${cwd}/tmp/log3.out
+@#run storage=LTO3 when="$when1" job=NightlySave   pool=Inc     yes
+@#run storage=LTO3 when="$when1" job=NightlySave2  pool=Inc     yes
+@#run storage=LTO3 when="$when1" job=NightlySave3  pool=Inc     yes
+@#run storage=LTO3 when="$when1" job=NightlySave4  pool=Inc     yes
+@#run storage=LTO3 when="$when1" job=NightlySave5  pool=Inc     yes
+@#run storage=LTO3 when="$when1" job=NightlySave6  pool=Full    yes
+@#run storage=LTO3 when="$when1" job=NightlySave7  pool=Full    yes
+@#run storage=LTO3 when="$when1" job=NightlySave8  pool=Full    yes
+@#run storage=LTO3 when="$when1" job=NightlySave9  pool=Full    yes
+@#run storage=LTO3 when="$when1" job=NightlySave10 pool=Full    yes
+@#wait
+@#messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=LTO3 client=$clientname
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+setdebug trace=1 level=0 storage=LTO3
+@$out ${cwd}/tmp/log2.out
+@#
+@# now do a restore
+@#
+restore client=$clientname fileset="Full Set" pool=Full where=${cwd}/tmp/bareos-restores select all done
+yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=LTO3 client=$clientname
+
+stop_bareos
+
+check_two_logs
+check_restore_diff
+perl -ne '
+# foreach Job, we store the drive and we count the total
+# job number per drive
+m/(\d+): Using Device "(.+?)"/
+  and $drive_info[$i++]="$1 $2" and $drive{$2}++;
+
+END {
+ $err=0;
+ foreach $k (sort keys %drive) {
+    if ($drive{$k} > 3) {
+       print "ERR $k has more than 3 jobs ($drive{$k})\n";
+       $err++;
+    }
+ }
+ if ($err) {
+    foreach $k (@drive_info) { print "$k\n"}
+    exit 1;
+ }
+}
+' $tmp/log1.out
+
+if [ $? -ne 0 ]; then
+    print_debug "ERR: Problem during log analysis"
+    estat=1
+fi
+end_test

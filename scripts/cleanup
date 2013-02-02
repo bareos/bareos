@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Cleanup left over files -- both before and after test run
+#
+. scripts/functions
+cwd=`pwd`
+rm -rf ${tmp}/FileVolume*
+rm -rf ${tmp}/TestVolume001 ${tmp}bareos-restores ${tmp}/Small*
+rm -rf ${tmp}/sed_tmp ${tmp}/file-list
+rm -rf ${tmp}/*
+rm -rf ${working}/log ${tmp}/TEST-*
+rm -rf ${working}/log ${tmp}/Backup-*
+rm -rf ${working}/*.bsr ${working}/log*.sd
+rm -rf ${working}/*.trace ${working}/*.traceback ${working}/*.bactrace
+rm -rf ${tmp}disk-changer
+rm -f ${cwd}/bin/plugins/test-plugin-fd.so
+find . -name "gigaslam.gif" -exec rm -f {} \;
+
+
+# bin directory does not always exist
+if [ -d ${bin} ] ; then
+  if [ -f ${bin}/bareos ] ; then
+     ${bin}/bareos stop 2>&1 >/dev/null
+  fi
+  cd ${scripts}
+  ./drop_bareos_tables      >/dev/null 2>&1
+  ./make_bareos_tables      >/dev/null 2>&1
+  ./grant_bareos_privileges >/dev/null 2>&1
+  cd ${cwd}
+fi
+
+if [ x$USE_VTAPE = xyes ]; then
+   rm -rf ${working}/ach
+fi

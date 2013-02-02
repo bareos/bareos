@@ -1,0 +1,96 @@
+#!/bin/sh
+#
+# Run a simple backup of the Bareos build directory then create some
+#   new files, do an Incremental and restore those two files.
+#
+# This script uses the virtual disk autochanger
+#
+TestName="incremental-2disk"
+JobName=Inc2disk
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-2disk-confs
+scripts/prepare-disk-changer
+
+echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
+if test ! -d ${cwd}/tmp/build ; then
+   mkdir -p ${cwd}/tmp/build
+fi
+cp -p ${cwd}/build/src/dird/*.c ${cwd}/tmp/build
+cd ${cwd}/tmp
+echo "${cwd}/tmp/build/ficheriro1.txt" >restore-list
+echo "${cwd}/tmp/build/ficheriro2.txt" >>restore-list
+cd ${cwd}
+
+change_jobname $JobName
+start_test
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=tape volume=TestVolume001 slot=1 Pool=Default drive=0
+label storage=tape volume=TestVolume002 slot=2 Pool=Default drive=0
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+
+echo "ficheriro1.txt" >${cwd}/tmp/build/ficheriro1.txt
+echo "ficheriro2.txt" >${cwd}/tmp/build/ficheriro2.txt
+
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@# Force Incremental on the second Volume
+update volume=TestVolume001 VolStatus=Used
+run level=Incremental job=$JobName yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore where=${cwd}/tmp/bareos-restores
+7
+<${cwd}/tmp/restore-list
+
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_for_zombie_jobs storage=File
+stop_bareos
+#
+# Delete .c files because we will only restored the txt files
+#
+rm -f ${cwd}/tmp/build/*.c
+
+check_two_logs
+check_restore_tmp_build_diff
+
+#
+# This script seems to more or less randomly fail, so we
+#  add extra code here to produce a "dump" in the event of
+#  an error.
+#
+if [ $dstat != 0 -o $bstat != 0 -o $rstat != 0 ] ; then
+   cat ${cwd}/tmp/log1.out
+   echo "  "
+   cat ${cwd}/tmp/log2.out
+   echo "  "
+   diff -r ${cwd}/tmp/build ${cwd}/tmp/bareos-restores${cwd}/tmp/build
+fi
+
+end_test

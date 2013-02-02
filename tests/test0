@@ -1,0 +1,3 @@
+#!/bin/sh
+echo " " >test.out
+rm -f bin/working/*

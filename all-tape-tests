@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Run all tape tests
+#
+. ./config
+
+#
+# If we have an autoloader, load the tape in slot1
+if test ! x$AUTOCHANGER = x/dev/null ; then
+   a=`bin/mtx-changer $AUTOCHANGER loaded $SLOT1 $TAPE_DRIVE $DRIVE1`
+   if test $a = 0 ; then
+      bin/mtx-changer $AUTOCHANGER load $SLOT1 $TAPE_DRIVE $DRIVE1
+   fi
+fi
+echo " "
+echo " " >>test.out
+echo "Start all non-root tape tests"
+echo "Start all non-root tape tests" >>test.out
+rm -f dumps/*
+nice tests/ansi-label-tape
+nice tests/backup-bareos-tape
+nice tests/bscan-tape
+nice tests/fixed-block-size-tape
+nice tests/four-concurrent-jobs-tape
+nice tests/four-jobs-tape
+nice tests/incremental-tape
+nice tests/relabel-tape
+nice tests/restore-by-file-tape
+nice tests/small-file-size-tape
+nice tests/truncate-bug-tape
+nice tests/verify-vol-tape
+# nice tests/manual-two-vol-tape
+echo "End all non-root tape tests"
+echo "End all non-root tape tests" >>test.out
