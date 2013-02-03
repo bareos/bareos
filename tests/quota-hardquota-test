@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the Sparse option
-#   then restore it.
+# Run a backup of generated data and check if the hard quota limits are respected
+#
 #
 TestName="quota-hardquota-test"
 JobName=BackupClient1
