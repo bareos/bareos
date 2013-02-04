@@ -64,7 +64,7 @@ extern "C" {
 #define DPL_DEFAULT_READ_BUF_SIZE       8192
 #define DPL_DEFAULT_MAX_REDIRECTS       10
 
-extern int header_size;
+extern int dpl_header_size;
 
 #define DPL_MAXPATHLEN 4096
 #define DPL_MAXNAMLEN  255
