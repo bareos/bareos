@@ -202,7 +202,7 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -354,7 +354,7 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -582,7 +582,7 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -768,7 +768,7 @@ dpl_s3_delete_bucket(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -907,7 +907,7 @@ dpl_s3_put(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -1080,7 +1080,7 @@ dpl_s3_put_buffered(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -1253,7 +1253,7 @@ dpl_s3_get(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -1503,7 +1503,7 @@ dpl_s3_get_buffered(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -1678,7 +1678,7 @@ dpl_s3_head_raw(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -1876,7 +1876,7 @@ dpl_s3_delete(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -2116,7 +2116,7 @@ dpl_s3_copy(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;

@@ -1006,7 +1006,7 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -1184,7 +1184,7 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -1458,7 +1458,7 @@ dpl_cdmi_put_buffered_internal(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -1777,7 +1777,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -2178,7 +2178,7 @@ dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -2492,7 +2492,7 @@ dpl_cdmi_delete(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -2644,7 +2644,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;

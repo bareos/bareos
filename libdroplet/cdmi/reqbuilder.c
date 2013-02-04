@@ -189,7 +189,7 @@ add_metadata_to_headers(const dpl_req_t *req,
 {
   int bucket;
   dpl_dict_var_t *var;
-  char header[1024];
+  char header[dpl_header_size];
   dpl_status_t ret, ret2;
   json_object *obj = NULL;
   

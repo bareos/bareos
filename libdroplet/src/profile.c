@@ -265,6 +265,10 @@ conf_cb_func(void *cb_arg,
     {
       ctx->blacklist_expiretime = atoi(value);
     }
+  else if (! strcmp(var, "header_size"))
+    {
+      ctx->header_size = strtoul(value, NULL, 0);
+    }
   else if (!strcmp(var, "base_path"))
     {
       int value_len = strlen(value);
@@ -483,6 +487,7 @@ dpl_profile_parse(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_profile_default(dpl_ctx_t *ctx)
 {
+  ctx->header_size = DPL_DEFAULT_HEADER_SIZE;
   ctx->n_conn_buckets = DPL_DEFAULT_N_CONN_BUCKETS;
   ctx->n_conn_max = DPL_DEFAULT_N_CONN_MAX;
   ctx->n_conn_max_hits = DPL_DEFAULT_N_CONN_MAX_HITS;

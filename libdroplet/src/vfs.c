@@ -52,6 +52,7 @@ dir_lookup(dpl_ctx_t *ctx,
   dpl_fqn_t obj_fqn;
   dpl_ftype_t obj_type;
   int obj_name_len = strlen(obj_name);
+  char *skip_slashes;
 
   memset(&obj_fqn, 0, sizeof (obj_fqn));
 
@@ -120,11 +121,15 @@ dir_lookup(dpl_ctx_t *ctx,
       goto end;
     }
 
+  skip_slashes = parent_fqn.path;
+  while ('/' == *skip_slashes)
+    ++skip_slashes;
+
   //AWS do not like "" as a prefix
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(parent_fqn.path, "") ? NULL : parent_fqn.path, "/", -1, &files, &directories);
+  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(skip_slashes, "") ? NULL : skip_slashes, "/", -1, &files, &directories);
   if (DPL_SUCCESS != ret2)
     {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, parent_fqn.path);
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, skip_slashes);
       ret = ret2;
       goto end;
     }
@@ -255,6 +260,7 @@ dir_open(dpl_ctx_t *ctx,
 {
   dpl_dir_t *dir;
   int ret, ret2;
+  char *skip_slashes;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "opendir bucket=%s fqn=%s", bucket, fqn.path);
 
@@ -268,19 +274,20 @@ dir_open(dpl_ctx_t *ctx,
   memset(dir, 0, sizeof (*dir));
 
   dir->ctx = ctx;
-
   dir->fqn = fqn;
 
+  skip_slashes = fqn.path;
+  while ('/' == *skip_slashes)
+    ++skip_slashes;
+
   //AWS prefers NULL for listing the root dir
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(fqn.path, "") ? NULL : fqn.path, "/", -1, &dir->files, &dir->directories);
+  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(skip_slashes, "") ? NULL : skip_slashes, "/", -1, &dir->files, &dir->directories);
   if (DPL_SUCCESS != ret2)
     {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, fqn.path);
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, skip_slashes);
       ret = ret2;
       goto end;
     }
-
-  //printf("%s:%s n_files=%d n_dirs=%d\n", bucket, fqn.path, dir->files->n_items, dir->directories->n_items);
 
   if (NULL != dir_hdlp)
     *dir_hdlp = dir;
@@ -315,10 +322,15 @@ dir_read(void *dir_hdl,
   char *name;
   int name_len;
   int path_len;
+  char *skip_slashes;
 
   DPL_TRACE(dir->ctx, DPL_TRACE_VFS, "readdir dir_hdl=%p files_cursor=%d directories_cursor=%d", dir_hdl, dir->files_cursor, dir->directories_cursor);
 
   memset(dirent, 0, sizeof (*dirent));
+
+  skip_slashes = dir->fqn.path;
+  while ('/' == *skip_slashes)
+    ++skip_slashes;
 
   if (dir->files_cursor >= dir->files->n_items)
     {
@@ -334,7 +346,7 @@ dir_read(void *dir_hdl,
           prefix = (dpl_common_prefix_t *) dpl_vec_get(dir->directories, dir->directories_cursor);
 
           path_len = strlen(prefix->prefix);
-          name = prefix->prefix + strlen(dir->fqn.path);
+          name = prefix->prefix + strlen(skip_slashes);
           name_len = strlen(name);
 
           if (name_len >= DPL_MAXNAMLEN)
@@ -369,7 +381,7 @@ dir_read(void *dir_hdl,
       obj = (dpl_object_t *) dpl_vec_get(dir->files, dir->files_cursor);
 
       path_len = strlen(obj->path);
-      name = obj->path + strlen(dir->fqn.path);
+      name = obj->path + strlen(skip_slashes);
       name_len = strlen(name);
 
       if (!strcmp(name, "/") || !strcmp(name, ""))
@@ -396,7 +408,7 @@ dir_read(void *dir_hdl,
       memcpy(dirent->fqn.path, obj->path, path_len);
       dirent->fqn.path[path_len] = 0;
 
-      if (path_len >= 1 && *(obj->path + path_len - 1) == '/')
+      if (path_len >= 1 && obj->path[path_len - 1] == '/')
         dirent->type = DPL_FTYPE_DIR;
       else
         dirent->type = DPL_FTYPE_REG;
@@ -2010,7 +2022,7 @@ dpl_getattr(dpl_ctx_t *ctx,
           sysmdp->mask |= DPL_SYSMD_MASK_FTYPE;
           size_t path_len = strlen(obj_fqn.path);
 
-          if (path_len > 1 && '/' == obj_fqn.path[path_len - 1])
+          if (path_len > 0 && '/' == obj_fqn.path[path_len - 1])
             sysmdp->ftype = DPL_FTYPE_DIR;
           else
             sysmdp->ftype = DPL_FTYPE_REG;

@@ -53,6 +53,7 @@ extern "C" {
 /*
  * default values
  */
+#define DPL_DEFAULT_HEADER_SIZE         8192
 #define DPL_DEFAULT_N_CONN_BUCKETS      1021
 #define DPL_DEFAULT_N_CONN_MAX          900
 #define DPL_DEFAULT_N_CONN_MAX_HITS     50
@@ -63,7 +64,9 @@ extern "C" {
 #define DPL_DEFAULT_READ_BUF_SIZE       8192
 #define DPL_DEFAULT_MAX_REDIRECTS       10
 
-#define DPL_MAXPATHLEN 1024
+extern int dpl_header_size;
+
+#define DPL_MAXPATHLEN 4096
 #define DPL_MAXNAMLEN  255
 
 #define DPL_DEFAULT_BASE_PATH "/"
@@ -442,6 +445,11 @@ typedef struct dpl_ctx
   int max_redirects;         /*!< maximum number of redirects */
   uint32_t enterprise_number; /*!< for generating native IDs */
   struct dpl_backend_s *backend;
+
+  /*
+   * http
+   */
+  int header_size;
 
   /*
    * pricing

@@ -45,7 +45,7 @@ add_metadata_to_headers(dpl_dict_t *metadata,
 {
   int bucket;
   dpl_dict_var_t *var;
-  char header[1024];
+  char header[dpl_header_size];
   int ret;
 
   for (bucket = 0;bucket < metadata->n_buckets;bucket++)
@@ -321,12 +321,11 @@ add_authorization_to_headers(const dpl_req_t *req,
   if ('/' != req->resource[0])
     {
       resource_ue[0] = '/';
-      dpl_url_encode(req->resource, resource_ue + 1);
+      dpl_url_encode_no_slashes(req->resource, resource_ue + 1);
     }
   else
     {
-      resource_ue[0] = '/'; //some servers do not like encoded slash
-      dpl_url_encode(req->resource + 1, resource_ue + 1);
+      dpl_url_encode_no_slashes(req->resource, resource_ue);
     }
 
   ret = make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);

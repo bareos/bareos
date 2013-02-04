@@ -273,7 +273,7 @@ dpl_srws_put_internal(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -480,7 +480,7 @@ dpl_srws_put_buffered(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -645,7 +645,7 @@ dpl_srws_get(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -894,7 +894,7 @@ dpl_srws_get_buffered(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -1080,7 +1080,7 @@ dpl_srws_head_raw(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
@@ -1282,7 +1282,7 @@ dpl_srws_delete(dpl_ctx_t *ctx,
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
-  char          header[1024];
+  char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
   int           n_iov = 0;
