@@ -2010,7 +2010,7 @@ dpl_getattr(dpl_ctx_t *ctx,
           sysmdp->mask |= DPL_SYSMD_MASK_FTYPE;
           size_t path_len = strlen(obj_fqn.path);
 
-          if (path_len > 1 && '/' == obj_fqn.path[path_len - 1])
+          if (path_len > 0 && '/' == obj_fqn.path[path_len - 1])
             sysmdp->ftype = DPL_FTYPE_DIR;
           else
             sysmdp->ftype = DPL_FTYPE_REG;
