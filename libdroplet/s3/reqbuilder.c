@@ -45,7 +45,7 @@ add_metadata_to_headers(dpl_dict_t *metadata,
 {
   int bucket;
   dpl_dict_var_t *var;
-  char header[1024];
+  char header[header_size];
   int ret;
 
   for (bucket = 0;bucket < metadata->n_buckets;bucket++)

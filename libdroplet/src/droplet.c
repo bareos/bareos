@@ -33,6 +33,8 @@
  */
 #include "dropletp.h"
 
+int header_size;
+
 const char *
 dpl_status_str(dpl_status_t status)
 {
@@ -141,6 +143,9 @@ dpl_ctx_new(const char *droplet_dir,
       return NULL;
     }
 
+  if ((str = getenv("DPL_HEADER_SIZE")))
+    ctx->header_size = strtoul(str, NULL, 0);
+
   if ((str = getenv("DPL_TRACE_LEVEL")))
     ctx->trace_level = strtoul(str, NULL, 0);
 
@@ -149,6 +154,8 @@ dpl_ctx_new(const char *droplet_dir,
 
   if ((str = getenv("DPL_TRACE_BINARY")))
     ctx->trace_binary = atoi(str);
+
+  header_size = ctx->header_size;
 
   return ctx;
 }
