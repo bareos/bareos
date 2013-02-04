@@ -274,7 +274,6 @@ dir_open(dpl_ctx_t *ctx,
   memset(dir, 0, sizeof (*dir));
 
   dir->ctx = ctx;
-
   dir->fqn = fqn;
 
   skip_slashes = fqn.path;
@@ -289,8 +288,6 @@ dir_open(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-
-  //printf("%s:%s n_files=%d n_dirs=%d\n", bucket, fqn.path, dir->files->n_items, dir->directories->n_items);
 
   if (NULL != dir_hdlp)
     *dir_hdlp = dir;
@@ -411,7 +408,7 @@ dir_read(void *dir_hdl,
       memcpy(dirent->fqn.path, obj->path, path_len);
       dirent->fqn.path[path_len] = 0;
 
-      if (path_len >= 1 && *(obj->path + path_len - 1) == '/')
+      if (path_len >= 1 && obj->path[path_len - 1] == '/')
         dirent->type = DPL_FTYPE_DIR;
       else
         dirent->type = DPL_FTYPE_REG;
