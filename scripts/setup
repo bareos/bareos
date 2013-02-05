@@ -133,10 +133,10 @@ bin/bareos stop
 mkdir -p working
 cd bin
 echo "Running database creation scripts"
-./create_bareos_database
-./drop_bareos_tables
-./make_bareos_tables
-./grant_bareos_privileges
+./create_bareos_database ${DBTYPE}
+./drop_bareos_tables ${DBTYPE}
+./make_bareos_tables ${DBTYPE}
+./grant_bareos_privileges ${DBTYPE}
 cd ${cwd}
 
 #
