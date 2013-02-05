@@ -82,8 +82,8 @@ rm -f dumps/*
 ./run tests/migration-volume-test
 ./run tests/migration-time-test
 ./run tests/multi-storage-test
-#./run tests/prune-test
-./run tests/prune-config-test
+./run tests/prune-test
+#./run tests/prune-config-test
 ./run tests/prune-migration-test
 ./run tests/prune-copy-test
 ./run tests/prune-base-job-test
