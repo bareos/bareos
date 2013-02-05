@@ -2,8 +2,12 @@
 #
 # Cleanup left over files -- both before and after test run
 #
+
+. ./config
 . scripts/functions
+
 cwd=`pwd`
+
 rm -rf ${tmp}/FileVolume*
 rm -rf ${tmp}/TestVolume001 ${tmp}bareos-restores ${tmp}/Small*
 rm -rf ${tmp}/sed_tmp ${tmp}/file-list
@@ -16,16 +20,15 @@ rm -rf ${tmp}disk-changer
 rm -f ${cwd}/bin/plugins/test-plugin-fd.so
 find . -name "gigaslam.gif" -exec rm -f {} \;
 
-
 # bin directory does not always exist
 if [ -d ${bin} ] ; then
   if [ -f ${bin}/bareos ] ; then
      ${bin}/bareos stop 2>&1 >/dev/null
   fi
   cd ${scripts}
-  ./drop_bareos_tables      >/dev/null 2>&1
-  ./make_bareos_tables      >/dev/null 2>&1
-  ./grant_bareos_privileges >/dev/null 2>&1
+  ./drop_bareos_tables ${DBTYPE} >/dev/null 2>&1
+  ./make_bareos_tables ${DBTYPE} >/dev/null 2>&1
+  ./grant_bareos_privileges ${DBTYPE} >/dev/null 2>&1
   cd ${cwd}
 fi
 
