@@ -15,7 +15,7 @@ scripts/copy-confs
 #
 outf="tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" > $outf
-echo "s% DIRport%Statistics Retention = 1 sec; DIRport%g" >> $outf
+echo "s% QueryFile%Statistics Retention = 1 sec; QueryFile%g" >> $outf
 cp ${cwd}/bin/bareos-dir.conf ${cwd}/tmp/1
 sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bareos-dir.conf
 
