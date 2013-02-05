@@ -22,6 +22,7 @@ fi
     --mandir=${1}/bin \
     --docdir=${1}/bin/html \
     --htmldir=${1}/bin/html \
+    --with-logdir=${1}/working \
     --with-pid-dir=${1}/working \
     --with-subsys-dir=${1}/working \
     --with-plugindir=${1}/bin/plugins \
