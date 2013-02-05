@@ -500,6 +500,7 @@ case $1 in
 esac
 }
 
+
 # Save current directory
 cwd=`pwd`
 if test "x${REGRESS_DEBUG}" = "x1"; then
@@ -578,3 +579,5 @@ fi
 AUTOCHANGER_SCRIPT=${AUTOCHANGER_SCRIPT:-mtx-changer}
 LD_LIBRARY_PATH=$bin:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
+
+trap "{ estat=999; end_test; }" TERM

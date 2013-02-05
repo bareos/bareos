@@ -1,5 +1,3 @@
-
-
 ADD_TEST(disk:acl-xattr-test "@regressdir@/tests/acl-xattr-test")
 ADD_TEST(disk:action-on-purge-test "@regressdir@/tests/action-on-purge-test")
 ADD_TEST(disk:accurate-test "@regressdir@/tests/accurate-test")
@@ -51,7 +49,7 @@ ADD_TEST(disk:migration-job-purge-test "@regressdir@/tests/migration-job-purge-t
 ADD_TEST(disk:migration-time-test "@regressdir@/tests/migration-time-test")
 ADD_TEST(disk:migration-volume-test "@regressdir@/tests/migration-volume-test")
 ADD_TEST(disk:multi-storage-test "@regressdir@/tests/multi-storage-test")
-ADD_TEST(disk:prune-test "@regressdir@/tests/prune-test")
+#ADD_TEST(disk:prune-test "@regressdir@/tests/prune-test")
 ADD_TEST(disk:prune-config-test "@regressdir@/tests/prune-config-test")
 ADD_TEST(disk:prune-migration-test "@regressdir@/tests/prune-migration-test")
 ADD_TEST(disk:prune-copy-test "@regressdir@/tests/prune-copy-test")

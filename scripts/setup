@@ -83,6 +83,13 @@ cp tmp/o$$ build/src/dird/bareos-dir.conf.in
 rm -f tmp/t$$ tmp/o$$
 
 #
+# Now turn on DEVELOPER for regression testing
+#
+echo "s%^.*define DEVELOPER 1.*$%#define DEVELOPER 1%g" >tmp/t$$
+sed -f tmp/t$$ build/src/include/version.h >tmp/o$$
+cp tmp/o$$ build/src/include/version.h
+
+#
 # Remove unneeded directories
 #
 rm -rf build/txt build/src/testprogs

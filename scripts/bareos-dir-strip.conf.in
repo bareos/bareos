@@ -52,7 +52,7 @@ Job {
   Maximum Concurrent Jobs = 4
   SpoolData = yes
 # Prefer Mounted Volumes = no
-  Client Run Before Job = "sleep 10"
+  Client Run Before Job = "sleep 5"
 }
 
 Job {

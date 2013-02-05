@@ -17,18 +17,18 @@ echo " " >>test.out
 echo "Start all non-root tape tests"
 echo "Start all non-root tape tests" >>test.out
 rm -f dumps/*
-nice tests/ansi-label-tape
-nice tests/backup-bareos-tape
-nice tests/bscan-tape
-nice tests/fixed-block-size-tape
-nice tests/four-concurrent-jobs-tape
-nice tests/four-jobs-tape
-nice tests/incremental-tape
-nice tests/relabel-tape
-nice tests/restore-by-file-tape
-nice tests/small-file-size-tape
-nice tests/truncate-bug-tape
-nice tests/verify-vol-tape
-# nice tests/manual-two-vol-tape
+./run tests/ansi-label-tape
+./run tests/backup-bareos-tape
+./run tests/bscan-tape
+./run tests/fixed-block-size-tape
+./run tests/four-concurrent-jobs-tape
+./run tests/four-jobs-tape
+./run tests/incremental-tape
+./run tests/relabel-tape
+./run tests/restore-by-file-tape
+./run tests/small-file-size-tape
+./run tests/truncate-bug-tape
+./run tests/verify-vol-tape
+# ./run tests/manual-two-vol-tape
 echo "End all non-root tape tests"
 echo "End all non-root tape tests" >>test.out
