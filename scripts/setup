@@ -126,8 +126,16 @@ fi
 cd src/tests
 make installall
 check_exit_code
-
 cd ${cwd}
+
+#
+# Get all tools -- especially timelimit
+#
+cd src/tools
+make installall
+check_exit_code
+cd ${cwd}
+
 bin/bareos stop
 
 mkdir -p working
