@@ -39,13 +39,13 @@ if [ "$IP" = '' ]; then
 fi
 
 outf="tmp/sed_tmp"
-echo "s/DIRport/DirSourceAddress=$IP; DIRport/g" > $outf
+echo "s/QueryFile/DirSourceAddress=$IP; QueryFile/g" > $outf
 echo "s/Address =/Address = 127.0.0.1 #/g" >> $outf
 cp $scripts/bareos-dir.conf $tmp/1
 sed -f ${outf} ${cwd}/tmp/1 > $scripts/bareos-dir.conf
 
 # Set source address on the FD as well
-echo "s/FDPort/FDSourceAddress=$IP; FDPort/g" >$outf
+echo "s/Maximum Concurrent Jobs/FDSourceAddress=$IP; Maximum Concurrent Jobs/g" >$outf
 cp $scripts/bareos-fd.conf $tmp/2
 sed -f ${outf} ${cwd}/tmp/2 > $scripts/bareos-fd.conf
 
