@@ -134,49 +134,6 @@ dir_lookup(dpl_ctx_t *ctx,
       goto end;
     }
 
-  for (i = 0;i < files->n_items;i++)
-    {
-      dpl_object_t *obj = (dpl_object_t *) dpl_vec_get(files, i);
-      int path_len;
-      char *p;
-
-      p = rindex(obj->path, '/');
-      if (NULL != p)
-        p++;
-      else
-        p = obj->path;
-
-      DPRINTF("cmp obj_path=%s obj_name=%s\n", p, obj_name);
-
-      if (!strcmp(p, obj_name))
-        {
-          DPRINTF("ok\n");
-
-          path_len = strlen(obj->path);
-          if (path_len >= DPL_MAXNAMLEN)
-            {
-              DPL_TRACE(ctx, DPL_TRACE_ERR, "path is too long");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-          memcpy(obj_fqn.path, obj->path, path_len);
-          obj_fqn.path[path_len] = 0;
-          if (path_len >= 1 && *(obj->path + path_len - 1) == '/')
-            obj_type = DPL_FTYPE_DIR;
-          else
-            obj_type = DPL_FTYPE_REG;
-
-          if (NULL != obj_fqnp)
-            *obj_fqnp = obj_fqn;
-
-          if (NULL != obj_typep)
-            *obj_typep = obj_type;
-
-          ret = DPL_SUCCESS;
-          goto end;
-        }
-    }
-
   for (i = 0;i < directories->n_items;i++)
     {
       dpl_common_prefix_t *prefix = (dpl_common_prefix_t *) dpl_vec_get(directories, i);
@@ -211,7 +168,7 @@ dir_lookup(dpl_ctx_t *ctx,
 
       DPRINTF("cmp (prefix=%s) prefix=%.*s obj_name=%s\n", prefix->prefix, path_len, p2, obj_name);
 
-      if (path_len == obj_name_len && !strncmp(p2, obj_name, obj_name_len))
+      if (path_len == obj_name_len && !memcmp(p2, obj_name, obj_name_len))
         {
           DPRINTF("ok\n");
 
@@ -225,6 +182,49 @@ dir_lookup(dpl_ctx_t *ctx,
           memcpy(obj_fqn.path, prefix->prefix, path_len);
           obj_fqn.path[path_len] = 0;
           obj_type = DPL_FTYPE_DIR;
+
+          if (NULL != obj_fqnp)
+            *obj_fqnp = obj_fqn;
+
+          if (NULL != obj_typep)
+            *obj_typep = obj_type;
+
+          ret = DPL_SUCCESS;
+          goto end;
+        }
+    }
+
+  for (i = 0;i < files->n_items;i++)
+    {
+      dpl_object_t *obj = (dpl_object_t *) dpl_vec_get(files, i);
+      int path_len;
+      char *p;
+
+      p = rindex(obj->path, '/');
+      if (NULL != p)
+        p++;
+      else
+        p = obj->path;
+
+      DPRINTF("cmp obj_path=%s obj_name=%s\n", p, obj_name);
+
+      if (!strcmp(p, obj_name))
+        {
+          DPRINTF("ok\n");
+
+          path_len = strlen(obj->path);
+          if (path_len >= DPL_MAXNAMLEN)
+            {
+              DPL_TRACE(ctx, DPL_TRACE_ERR, "path is too long");
+              ret = DPL_FAILURE;
+              goto end;
+            }
+          memcpy(obj_fqn.path, obj->path, path_len);
+          obj_fqn.path[path_len] = 0;
+          if (path_len >= 1 && *(obj->path + path_len - 1) == '/')
+            obj_type = DPL_FTYPE_DIR;
+          else
+            obj_type = DPL_FTYPE_REG;
 
           if (NULL != obj_fqnp)
             *obj_fqnp = obj_fqn;
@@ -349,13 +349,21 @@ dir_read(void *dir_hdl,
           name = prefix->prefix + strlen(skip_slashes);
           name_len = strlen(name);
 
-          if (name_len >= DPL_MAXNAMLEN)
+          if (!strcmp(name, "/") || !strcmp(name, ""))
             {
-              DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
-              return DPL_FAILURE;
+              memcpy(dirent->name, ".", 1);
+              dirent->name[1] = 0;
             }
-          memcpy(dirent->name, name, name_len);
-          dirent->name[name_len] = 0;
+          else
+            {
+              if (name_len >= DPL_MAXNAMLEN)
+                {
+                  DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
+                  return DPL_FAILURE;
+                }
+              memcpy(dirent->name, name, name_len);
+              dirent->name[name_len] = 0;
+            }
 
           if (path_len >= DPL_MAXPATHLEN)
             {
@@ -384,21 +392,13 @@ dir_read(void *dir_hdl,
       name = obj->path + strlen(skip_slashes);
       name_len = strlen(name);
 
-      if (!strcmp(name, "/") || !strcmp(name, ""))
+      if (name_len >= DPL_MAXNAMLEN)
         {
-          memcpy(dirent->name, ".", 1);
-          dirent->name[1] = 0;
+          DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
+          return DPL_FAILURE;
         }
-      else
-        {
-          if (name_len >= DPL_MAXNAMLEN)
-            {
-              DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
-              return DPL_FAILURE;
-            }
-          memcpy(dirent->name, name, name_len);
-          dirent->name[name_len] = 0;
-        }
+      memcpy(dirent->name, name, name_len);
+      dirent->name[name_len] = 0;
 
       if (path_len >= DPL_MAXPATHLEN)
         {
@@ -408,10 +408,7 @@ dir_read(void *dir_hdl,
       memcpy(dirent->fqn.path, obj->path, path_len);
       dirent->fqn.path[path_len] = 0;
 
-      if (path_len >= 1 && obj->path[path_len - 1] == '/')
-        dirent->type = DPL_FTYPE_DIR;
-      else
-        dirent->type = DPL_FTYPE_REG;
+      dirent->type = DPL_FTYPE_REG;
 
       dirent->last_modified = obj->last_modified;
       dirent->size = obj->size;
@@ -1847,9 +1844,9 @@ dpl_rmdir(dpl_ctx_t *ctx,
     }
   npath[path_len] = '\0';
 
-  if (!strcmp((char *) dpl_get_backend_name(ctx), "s3"))
+  if (0 != strcmp((char *) dpl_get_backend_name(ctx), "posix"))
     {
-      //AWS does not do it server side
+      //posix does it server-side
       ret2 = dir_is_empty(ctx, npath);
       if (DPL_SUCCESS != ret2)
         {

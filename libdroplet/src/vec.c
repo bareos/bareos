@@ -210,7 +210,6 @@ dpl_vec_dup(dpl_vec_t *vec)
   dpl_vec_t *nvec = NULL;
   int i;
   dpl_status_t ret2;
-  dpl_value_t *nval = NULL;
 
   assert(NULL != vec);
 
@@ -220,23 +219,14 @@ dpl_vec_dup(dpl_vec_t *vec)
 
   for (i = 0;i < vec->n_items;i++)
     {
-      nval = dpl_value_dup(vec->items[i]);
-      if (NULL == nval)
-        goto bad;
-
-      ret2 = dpl_vec_add_value(nvec, nval);
+      ret2 = dpl_vec_add_value(nvec, vec->items[i]);
       if (DPL_SUCCESS != ret2)
         goto bad;
-
-      nval = NULL;
     }
   
   return nvec;
 
  bad:
-
-  if (NULL != nval)
-    dpl_value_free(nval);
 
   if (NULL != nvec)
     dpl_vec_free(nvec);

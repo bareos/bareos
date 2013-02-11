@@ -86,19 +86,29 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
 
   n_children = json_object_array_length(children);
 
-  for (i = 0;i < n_children;i++)
+  for (i = -1;i < n_children;i++)
     {
-      json_object *child = json_object_array_get_idx(children, i);
       char name[1024];
       int name_len;
-      
-      if (json_type_string != json_object_get_type(child))
+
+      if (-1 == i)
         {
-          ret = DPL_FAILURE;
-          goto end;
+          // add the directory itself to the list
+          snprintf(name, sizeof (name), "%s", NULL != prefix ? prefix : "");
+        }
+      else
+        {
+          json_object *child = json_object_array_get_idx(children, i);
+      
+          if (json_type_string != json_object_get_type(child))
+            {
+              ret = DPL_FAILURE;
+              goto end;
+            }
+
+          snprintf(name, sizeof (name), "%s%s", NULL != prefix ? prefix : "", json_object_get_string(child));
         }
 
-      snprintf(name, sizeof (name), "%s%s", NULL != prefix ? prefix : "", json_object_get_string(child));
       name_len = strlen(name);
 
       if (name_len > 0 && name[name_len-1] == '/')
