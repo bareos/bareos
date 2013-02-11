@@ -1847,9 +1847,9 @@ dpl_rmdir(dpl_ctx_t *ctx,
     }
   npath[path_len] = '\0';
 
-  if (!strcmp((char *) dpl_get_backend_name(ctx), "s3"))
+  if (0 != strcmp((char *) dpl_get_backend_name(ctx), "posix"))
     {
-      //AWS does not do it server side
+      //posix does it server-side
       ret2 = dir_is_empty(ctx, npath);
       if (DPL_SUCCESS != ret2)
         {

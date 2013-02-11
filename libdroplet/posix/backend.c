@@ -1406,8 +1406,15 @@ dpl_posix_delete(dpl_ctx_t *ctx,
       iret = rmdir(path);
       if (-1 == iret)
         {
-          perror("rmdir");
-          ret = DPL_FAILURE;
+          if (ENOTEMPTY == errno)
+            {
+              ret = DPL_ENOTEMPTY;
+            }
+          else
+            {
+              perror("rmdir");
+              ret = DPL_FAILURE;
+            }
           goto end;
         }
       ret = DPL_SUCCESS;
