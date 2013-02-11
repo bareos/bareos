@@ -349,13 +349,21 @@ dir_read(void *dir_hdl,
           name = prefix->prefix + strlen(skip_slashes);
           name_len = strlen(name);
 
-          if (name_len >= DPL_MAXNAMLEN)
+          if (!strcmp(name, "/") || !strcmp(name, ""))
             {
-              DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
-              return DPL_FAILURE;
+              memcpy(dirent->name, ".", 1);
+              dirent->name[1] = 0;
             }
-          memcpy(dirent->name, name, name_len);
-          dirent->name[name_len] = 0;
+          else
+            {
+              if (name_len >= DPL_MAXNAMLEN)
+                {
+                  DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
+                  return DPL_FAILURE;
+                }
+              memcpy(dirent->name, name, name_len);
+              dirent->name[name_len] = 0;
+            }
 
           if (path_len >= DPL_MAXPATHLEN)
             {
@@ -384,21 +392,13 @@ dir_read(void *dir_hdl,
       name = obj->path + strlen(skip_slashes);
       name_len = strlen(name);
 
-      if (!strcmp(name, "/") || !strcmp(name, ""))
+      if (name_len >= DPL_MAXNAMLEN)
         {
-          memcpy(dirent->name, ".", 1);
-          dirent->name[1] = 0;
+          DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
+          return DPL_FAILURE;
         }
-      else
-        {
-          if (name_len >= DPL_MAXNAMLEN)
-            {
-              DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
-              return DPL_FAILURE;
-            }
-          memcpy(dirent->name, name, name_len);
-          dirent->name[name_len] = 0;
-        }
+      memcpy(dirent->name, name, name_len);
+      dirent->name[name_len] = 0;
 
       if (path_len >= DPL_MAXPATHLEN)
         {
@@ -408,10 +408,7 @@ dir_read(void *dir_hdl,
       memcpy(dirent->fqn.path, obj->path, path_len);
       dirent->fqn.path[path_len] = 0;
 
-      if (path_len >= 1 && obj->path[path_len - 1] == '/')
-        dirent->type = DPL_FTYPE_DIR;
-      else
-        dirent->type = DPL_FTYPE_REG;
+      dirent->type = DPL_FTYPE_REG;
 
       dirent->last_modified = obj->last_modified;
       dirent->size = obj->size;
