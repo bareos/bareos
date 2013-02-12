@@ -862,3 +862,25 @@ dpl_uuid_tostr(dpl_uuid_t *uuid,
                  uuid->node_addr[4],
                  uuid->node_addr[5]);
 }
+
+char *
+dpl_copy_directive_to_str(dpl_copy_directive_t directive)
+{
+  switch (directive)
+    {
+#define MAP(x) case DPL_COPY_DIRECTIVE_##x : return #x
+      MAP(UNDEF);
+      MAP(COPY);
+      MAP(METADATA_REPLACE);
+      MAP(LINK);
+      MAP(SYMLINK);
+      MAP(MOVE);
+      MAP(MKDENT);
+      MAP(RMDENT);
+      MAP(MVDENT);
+#undef MAP
+    }
+
+
+  return "impossible case";
+}
