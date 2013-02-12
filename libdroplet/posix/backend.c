@@ -1460,10 +1460,11 @@ dpl_posix_copy(dpl_ctx_t *ctx,
   char src_path[MAXPATHLEN];
   char dst_path[MAXPATHLEN];
 
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
   snprintf(src_path, sizeof (src_path), "/%s/%s", ctx->base_path ? ctx->base_path : "", src_resource);
-  snprintf(dst_path, sizeof (src_path), "/%s/%s", ctx->base_path ? ctx->base_path : "", src_resource);
+  snprintf(dst_path, sizeof (src_path), "/%s/%s", ctx->base_path ? ctx->base_path : "", dst_resource);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "directive: %s: %s -> %s",
+            dpl_copy_directive_to_str(copy_directive), src_path, dst_path);
 
   switch (copy_directive)
     {
