@@ -17,6 +17,7 @@ echo " " >>test.out
 echo "Start all non-root tape tests"
 echo "Start all non-root tape tests" >>test.out
 rm -f dumps/*
+./run tests/scsi-crypto-test
 ./run tests/ansi-label-tape
 ./run tests/backup-bareos-tape
 ./run tests/bscan-tape

@@ -39,6 +39,7 @@ fi
     ${PASSWD} \
     ${OPENSSL} \
     ${TCPWRAPPERS} \
+    ${SCSICRYPTO} \
     ${WHICHDB} \
     --with-baseport=${BASEPORT}
 

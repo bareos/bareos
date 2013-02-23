@@ -97,6 +97,7 @@ ADD_TEST(disk:quota-hardquota-test "@regressdir@/tests/quota-hardquota-test")
 ADD_TEST(disk:quota-includefailed-test "@regressdir@/tests/quota-includefailed-test")
 ADD_TEST(disk:bandwidth-limit-per-client-test "@regressdir@/tests/bandwidth-limit-per-client-test")
 
+ADD_TEST(tape:scsi-crypto-tape "@regressdir@/tests/scsi-crypto-test")
 ADD_TEST(tape:ansi-label-tape "@regressdir@/tests/ansi-label-tape")
 ADD_TEST(tape:backup-bareos-tape "@regressdir@/tests/backup-bareos-tape")
 ADD_TEST(tape:bscan-tape "@regressdir@/tests/bscan-tape")
