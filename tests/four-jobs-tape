@@ -46,7 +46,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos
+run_bconsole
 
 scripts/check_for_zombie_jobs storage=tape
 echo "Backup 2 done"
@@ -65,7 +65,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos
+run_bconsole
 
 scripts/check_for_zombie_jobs storage=tape
 echo "Backup 3 done"
@@ -83,7 +83,7 @@ wait
 messages
 quit
 END_OF_DATA
-run_bareos
+run_bconsole
 
 scripts/check_for_zombie_jobs storage=tape
 echo "Backup 4 done"
@@ -117,7 +117,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos
+run_bconsole
 check_for_zombie_jobs storage=tape
 stop_bareos
 

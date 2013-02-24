@@ -16,6 +16,7 @@ rm -rf ${working}/log ${tmp}/TEST-*
 rm -rf ${working}/log ${tmp}/Backup-*
 rm -rf ${working}/*.bsr ${working}/log*.sd
 rm -rf ${working}/*.trace ${working}/*.traceback ${working}/*.bactrace
+rm -rf ${working}/*.state
 rm -rf ${tmp}disk-changer
 rm -f ${cwd}/bin/plugins/test-plugin-fd.so
 find . -name "gigaslam.gif" -exec rm -f {} \;

@@ -23,7 +23,7 @@ messages
 label storage=tape volume=TestVolume001 slot=0 pool=Default
 @# do a bunch of saves so we have 12 files on the tape
 @#setdebug level=100 dir
-setdebug level=100 storage=tape
+@#setdebug level=100 storage=tape
 run job=$JobName yes
 run level=Full job=$JobName yes
 run level=Full job=$JobName yes
