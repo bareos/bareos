@@ -52,24 +52,24 @@ fi
 require_tape_drive()
 {
 if test x${TAPE_DRIVE} = x/dev/null ; then
-   echo "$TestName test needs a tape drive, but has none."
-   exit 1
+   echo "This test $TestName needs a tape drive, but has none."
+   exit 0
 fi
 }
 
 require_second_drive()
 {
 if test x${TAPE_DRIVE1} = x/dev/null ; then
-   echo "$JobName needs second drive, but has none."
-   exit 1
+   echo "This test $TestName has a Job $JobName which needs a second drive, but has none."
+   exit 0
 fi
 }
 
 require_autochanger()
 {
 if test x${AUTOCHANGER} = x/dev/null ; then
-   echo "$TestName needs an autochanger, but has none."
-   exit 1
+   echo "This test $TestName needs an autochanger, but has none."
+   exit 0
 fi
 }
 
