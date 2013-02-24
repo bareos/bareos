@@ -22,10 +22,6 @@ change_jobname NightlySave $JobName
 start_test
 
 cat <<END_OF_DATA >tmp/bconcmds
-@$out /dev/null
-estimate job=$JobName listing
-estimate job=$JobName listing
-messages
 @$out tmp/log1.out
 setdebug level=2 storage=tape
 label storage=tape volume=TestVolume001 slot=0 pool=Default

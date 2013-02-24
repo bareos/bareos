@@ -18,11 +18,6 @@ change_jobname $JobName
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
-estimate job=$JobName listing
-estimate job=$JobName
-estimate job=$JobName
-messages
 @$out ${cwd}/tmp/log1.out
 label storage=tape volume=TestVolume001 slot=0 pool=Default
 run job=$JobName yes

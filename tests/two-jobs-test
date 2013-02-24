@@ -19,11 +19,6 @@ cat >tmp/bconcmds <<END_OF_DATA
 setdebug level=150  storage=File
 @$out /dev/null
 messages
-@$out/dev/null
-estimate job=$JobName listing
-estimate job=$JobName
-estimate job=$JobName
-messages
 @$out tmp/log1.out
 label storage=File volume=TestVolume001
 run job=$JobName yes

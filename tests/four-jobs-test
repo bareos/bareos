@@ -16,11 +16,6 @@ change_jobname CompressedTest $JobName
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
-estimate job=$JobName listing
-estimate job=$JobName
-estimate job=$JobName
-messages
 @$out ${cwd}/tmp/log1.out
 label storage=File volume=TestVolume001
 run job=$JobName yes
