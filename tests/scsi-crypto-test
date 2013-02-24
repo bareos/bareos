@@ -104,6 +104,9 @@ run job=$JobName level=Incremental yes
 wait
 messages
 status storage=tape
+sql
+select volumename, encryptionkey from media;
+
 quit
 END_OF_DATA
 run_bconsole
