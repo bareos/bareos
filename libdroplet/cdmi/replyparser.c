@@ -32,7 +32,7 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
-#include <json/json.h>
+#include <json.h>
 #include <droplet/cdmi/reqbuilder.h>
 #include <droplet/cdmi/object_id.h>
 
@@ -94,7 +94,7 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
       if (-1 == i)
         {
           // add the directory itself to the list
-          snprintf(name, sizeof (name), "%s", NULL != prefix ? prefix : "");
+          snprintf(name, sizeof (name), "%s", NULL != prefix ? prefix : "/");
         }
       else
         {
@@ -151,6 +151,13 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
             {
               ret = DPL_ENOMEM;
               goto end;
+            }
+
+          if (name_len > 0 && name[name_len-1] == '?')
+            {
+              //this is a symbolic link: remove final '?'
+
+              object->path[name_len - 1] = '\0';
             }
 
           ret2 = dpl_vec_add(objects, object);

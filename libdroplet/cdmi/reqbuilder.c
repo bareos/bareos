@@ -88,14 +88,14 @@ convert_value_to_obj(dpl_value_t *val,
                 tmp = NULL;
               }
           }
-        
+
         break ;
       }
     case DPL_VALUE_VECTOR:
       {
         int i;
         dpl_vec_t *vec = val->vector;
-        
+
         obj = json_object_new_array();
         if (NULL == obj)
           {
@@ -111,7 +111,7 @@ convert_value_to_obj(dpl_value_t *val,
                 ret = ret2;
                 goto end;
               }
-            
+
             json_object_array_add(obj, tmp);
             tmp = NULL;
           }
@@ -172,7 +172,7 @@ add_metadata_to_json_body(const dpl_req_t *req,
   md_obj = NULL;
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != md_obj)
@@ -192,7 +192,7 @@ add_metadata_to_headers(const dpl_req_t *req,
   char header[dpl_header_size];
   dpl_status_t ret, ret2;
   json_object *obj = NULL;
-  
+
   for (bucket = 0;bucket < req->metadata->n_buckets;bucket++)
     {
       for (var = req->metadata->buckets[bucket];var;var = var->prev)
@@ -256,7 +256,7 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
     {
       ret = DPL_EINVAL;
       goto end;
-    }    
+    }
 
   switch (req->copy_directive)
     {
@@ -304,7 +304,7 @@ add_copy_directive_to_json_body(const dpl_req_t *req,
   tmp = NULL;
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != tmp)
@@ -347,7 +347,6 @@ add_data_to_json_body(const dpl_req_t *req,
   value_obj = NULL;
 
   /**/
-
   valuetransferencoding_obj = json_object_new_string("base64");
   if (NULL == valuetransferencoding_obj)
     {
@@ -360,12 +359,12 @@ add_data_to_json_body(const dpl_req_t *req,
   valuetransferencoding_obj = NULL;
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   if (NULL != base64_str)
     free(base64_str);
-  
+
   if (NULL != valuetransferencoding_obj)
     json_object_put(valuetransferencoding_obj);
 
@@ -453,7 +452,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
               goto end;
             }
         }
-  
+
       switch (req->object_type)
         {
         case DPL_FTYPE_UNDEF:
@@ -606,8 +605,8 @@ dpl_cdmi_req_build(const dpl_req_t *req,
               ret = ret2;
               goto end;
             }
-          
-          if (req->data_enabled)
+
+          if (req->data_enabled && DPL_FTYPE_DIR != req->object_type)
             {
               ret2 = add_data_to_json_body(req, body_obj);
               if (DPL_SUCCESS != ret2)
@@ -616,7 +615,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
                   goto end;
                 }
             }
-          
+
           pthread_mutex_lock(&req->ctx->lock);
           body_str = (char *) json_object_to_json_string(body_obj);
           pthread_mutex_unlock(&req->ctx->lock);
@@ -627,7 +626,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
             }
 
           body_len = strlen(body_str);
-          
+
           snprintf(buf, sizeof (buf), "%u", body_len);
           ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
           if (DPL_SUCCESS != ret2)
