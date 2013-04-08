@@ -153,6 +153,13 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
               goto end;
             }
 
+          if (name_len > 0 && name[name_len-1] == '?')
+            {
+              //this is a symbolic link: remove final '?'
+
+              object->path[name_len - 1] = '\0';
+            }
+
           ret2 = dpl_vec_add(objects, object);
           if (DPL_SUCCESS != ret2)
             {
