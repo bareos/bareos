@@ -32,7 +32,7 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
-#include <json/json.h>
+#include <json.h>
 #include <droplet/cdmi/reqbuilder.h>
 #include <droplet/cdmi/object_id.h>
 
