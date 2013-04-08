@@ -94,7 +94,7 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
       if (-1 == i)
         {
           // add the directory itself to the list
-          snprintf(name, sizeof (name), "%s", NULL != prefix ? prefix : "");
+          snprintf(name, sizeof (name), "%s", NULL != prefix ? prefix : "/");
         }
       else
         {
