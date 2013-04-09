@@ -460,30 +460,38 @@ void stored_free_jcr(JCR *jcr)
       jcr->dir_bsock->signal(BNET_EOD);
       jcr->dir_bsock->signal(BNET_TERMINATE);
    }
+
    if (jcr->file_bsock) {
       jcr->file_bsock->close();
       jcr->file_bsock = NULL;
    }
+
    if (jcr->job_name) {
       free_pool_memory(jcr->job_name);
    }
+
    if (jcr->client_name) {
       free_memory(jcr->client_name);
       jcr->client_name = NULL;
    }
+
    if (jcr->fileset_name) {
       free_memory(jcr->fileset_name);
    }
+
    if (jcr->fileset_md5) {
       free_memory(jcr->fileset_md5);
    }
+
    if (jcr->backup_format) {
       free_memory(jcr->backup_format);
    }
+
    if (jcr->bsr) {
       free_bsr(jcr->bsr);
       jcr->bsr = NULL;
    }
+
    if (jcr->rctx) {
       free_read_context(jcr->rctx);
       jcr->rctx = NULL;
@@ -496,24 +504,29 @@ void stored_free_jcr(JCR *jcr)
       free_pool_memory(jcr->RestoreBootstrap);
       jcr->RestoreBootstrap = NULL;
    }
+
    if (jcr->next_dev || jcr->prev_dev) {
       Emsg0(M_FATAL, 0, _("In free_jcr(), but still attached to device!!!!\n"));
    }
+
    pthread_cond_destroy(&jcr->job_start_wait);
    pthread_cond_destroy(&jcr->job_end_wait);
+
    if (jcr->dcrs) {
       delete jcr->dcrs;
+      jcr->dcrs = NULL;
    }
-   jcr->dcrs = NULL;
 
    /* Avoid a double free */
    if (jcr->dcr == jcr->read_dcr) {
       jcr->read_dcr = NULL;
    }
+
    if (jcr->dcr) {
       free_dcr(jcr->dcr);
       jcr->dcr = NULL;
    }
+
    if (jcr->read_dcr) {
       free_dcr(jcr->read_dcr);
       jcr->read_dcr = NULL;
@@ -528,6 +541,7 @@ void stored_free_jcr(JCR *jcr)
       delete jcr->read_store;
       jcr->read_store = NULL;
    }
+
    if (jcr->write_store) {
       DIRSTORE *store;
       foreach_alist(store, jcr->write_store) {
@@ -546,5 +560,6 @@ void stored_free_jcr(JCR *jcr)
       write_state_file(me->working_directory, "bareos-sd", get_first_port_host_order(me->sdaddrs));
 
    Dmsg0(200, "End stored free_jcr\n");
+
    return;
 }

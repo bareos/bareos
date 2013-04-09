@@ -1289,6 +1289,7 @@ void dird_free_jcr_pointers(JCR *jcr)
       jcr->file_bsock->close();
       jcr->file_bsock = NULL;
    }
+
    if (jcr->store_bsock) {
       Dmsg0(200, "Close Store bsock\n");
       jcr->store_bsock->close();

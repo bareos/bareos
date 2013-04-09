@@ -910,21 +910,26 @@ static void bscan_free_jcr(JCR *jcr)
       Dmsg0(200, "Close File bsock\n");
       jcr->file_bsock->close();
    }
+
    if (jcr->store_bsock) {
       Dmsg0(200, "Close Store bsock\n");
       jcr->store_bsock->close();
    }
+
    if (jcr->RestoreBootstrap) {
       free(jcr->RestoreBootstrap);
    }
+
    if (jcr->dcr) {
       free_dcr(jcr->dcr);
       jcr->dcr = NULL;
    }
+
    if (jcr->read_dcr) {
       free_dcr(jcr->read_dcr);
       jcr->read_dcr = NULL;
    }
+
    Dmsg0(200, "End bscan free_jcr\n");
 }
 

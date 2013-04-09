@@ -473,11 +473,7 @@ static void free_common_jcr(JCR *jcr)
       jcr->msg_queue = NULL;
       pthread_mutex_destroy(&jcr->msg_queue_mutex);
    }
-   close_msg(jcr);                    /* close messages for this job */
 
-   /*
-    * Do this after closing messages
-    */
    if (jcr->client_name) {
       free_pool_memory(jcr->client_name);
       jcr->client_name = NULL;
@@ -492,6 +488,7 @@ static void free_common_jcr(JCR *jcr)
       free(jcr->sd_auth_key);
       jcr->sd_auth_key = NULL;
    }
+
    if (jcr->VolumeName) {
       free_pool_memory(jcr->VolumeName);
       jcr->VolumeName = NULL;
@@ -501,36 +498,44 @@ static void free_common_jcr(JCR *jcr)
       jcr->dir_bsock->close();
       jcr->dir_bsock = NULL;
    }
+
    if (jcr->errmsg) {
       free_pool_memory(jcr->errmsg);
       jcr->errmsg = NULL;
    }
+
    if (jcr->where) {
       free(jcr->where);
       jcr->where = NULL;
    }
+
    if (jcr->RegexWhere) {
       free(jcr->RegexWhere);
       jcr->RegexWhere = NULL;
    }
+
    if (jcr->where_bregexp) {
       free_bregexps(jcr->where_bregexp);
       delete jcr->where_bregexp;
       jcr->where_bregexp = NULL;
    }
+
    if (jcr->cached_path) {
       free_pool_memory(jcr->cached_path);
       jcr->cached_path = NULL;
       jcr->cached_pnl = 0;
    }
+
    if (jcr->id_list) {
       free_guid_list(jcr->id_list);
       jcr->id_list = NULL;
    }
+
    if (jcr->comment) {
       free_pool_memory(jcr->comment);
       jcr->comment = NULL;
    }
+
    free(jcr);
 }
 
@@ -627,6 +632,8 @@ void free_jcr(JCR *jcr)
    default:
       break;
    }
+
+   close_msg(jcr);                    /* close messages for this job */
 
    if (jcr->daemon_free_jcr) {
       jcr->daemon_free_jcr(jcr);      /* call daemon free routine */

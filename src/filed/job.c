@@ -1742,10 +1742,12 @@ static void filed_free_jcr(JCR *jcr)
    if (jcr->store_bsock) {
       jcr->store_bsock->close();
    }
-   free_bootstrap(jcr);
+
    if (jcr->last_fname) {
       free_pool_memory(jcr->last_fname);
    }
+
+   free_bootstrap(jcr);
    free_runscripts(jcr->RunScripts);
    delete jcr->RunScripts;
    free_path_list(jcr);
