@@ -12,12 +12,12 @@
 #   directives in the Messages resource.
 #
 
-Director {                            # define myself
+Director {
   Name = localhost-dir
-  DIRPort = 8101                # where we listen for UA connections
-  QueryFile = "/root/bareos-regress/bin/query.sql"
-  WorkingDirectory = "/root/bareos-regress/working"
-  PidDirectory = "/root/bareos-regress/working"
+  DIRPort = 8101
+  QueryFile = "@sbindir@/query.sql"
+  WorkingDirectory = "@working_dir@"
+  Pid Directory = "@piddir@"
   Maximum Concurrent Jobs = 100
   Password = "pNvX1WiXnwv2C/F7E52LGvw6rKjbbPvu2kyuPa9pVaL3"
   Messages = Daemon
@@ -36,7 +36,7 @@ Job {
   Storage = tape
   Messages = Standard
   Pool = Default
-  Write Bootstrap = "/root/bareos-regress/working/NightlySave.bsr"
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
   Maximum Concurrent Jobs = 100
   SpoolData = yes
 # Prefer Mounted Volumes = no
@@ -52,7 +52,7 @@ Job {
   Storage = tape
   Messages = Standard
   Pool = Default
-  Write Bootstrap = "/root/bareos-regress/working/NightlySave.bsr"
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
   Maximum Concurrent Jobs = 100
   SpoolData = yes
 # Prefer Mounted Volumes = no
@@ -68,7 +68,7 @@ Job {
   Storage = tape
   Messages = Standard
   Pool = Default
-  Write Bootstrap = "/root/bareos-regress/working/NightlySave.bsr"
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
   Maximum Concurrent Jobs = 100
   SpoolData = yes
 # Prefer Mounted Volumes = no
@@ -84,7 +84,7 @@ Job {
   Storage = tape
   Messages = Standard
   Pool = Default
-  Write Bootstrap = "/root/bareos-regress/working/NightlySave.bsr"
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
   Maximum Concurrent Jobs = 100
   SpoolData = yes
 # Prefer Mounted Volumes = no
@@ -99,7 +99,7 @@ Job {
   Storage = Virtual
   Messages = Standard
   Pool = Default
-  Write Bootstrap = "/root/bareos-regress/working/NightlySave.bsr"
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
   Maximum Concurrent Jobs = 100
   SpoolData = yes
 # Prefer Mounted Volumes = no
@@ -259,7 +259,7 @@ Messages {
 #          time to time as it will grow indefinitely. However, it will
 #          also keep all your messages if the scroll off the console.
 #
-  append = "/root/bareos-regress/working/log" = all, !skipped
+  append = "@working_dir@/log" = all, !skipped
   catalog = all, !skipped
 }
 
@@ -270,7 +270,7 @@ Messages {
   mailcommand = "/root/bareos-regress/bin/bsmtp -h localhost -f \"\(Bareos regression\) %r\" -s \"Regression daemon message\" %r"
 # mail = pstorz@dass-it.de = all, !skipped
   console = all, !skipped, !saved
-  append = "/root/bareos-regress/working/log" = all, !skipped
+  append = "@working_dir@/log" = all, !skipped
   catalog = all, !skipped
 }
 

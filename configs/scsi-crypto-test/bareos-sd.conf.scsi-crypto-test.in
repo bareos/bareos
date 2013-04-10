@@ -10,12 +10,13 @@
 #   that dird.conf has corresponding changes.
 #
 
-Storage {                             # definition of myself
+Storage {
   Name = localhost-sd
-  SDPort = 8103                  # Director's port
-  WorkingDirectory = "/root/bareos-regress/working"
-  Pid Directory = "/root/bareos-regress/working"
-  Subsys Directory = "/root/bareos-regress/working"
+  SDPort = 8103
+  WorkingDirectory = "@working_dir@"
+  Pid Directory = "@piddir@"
+  SubSys Directory = "@subsysdir@"
+  Plugin Directory = "@sbindir@/plugins"
   Maximum Concurrent Jobs = 100
 }
 
@@ -34,14 +35,15 @@ Director {
 #
 
 Device {
-  Name = tape                     #
+  Name = tape
   Media Type = tape
   Archive Device = /dev/nst0
-  AutomaticMount = yes;               # when device opened, read it
-  AlwaysOpen = yes;
-  RemovableMedia = yes;
+  AutomaticMount = yes
+  AlwaysOpen = yes
+  RemovableMedia = yes
+  Drive Crypto Enabled = Yes
+  Query Crypto Status = Yes
   @@sbindir@/tape_options
-  @@sbindir@/scsicrypto-sd.conf
 # Maximum File Size = 1000000
 # MaximumVolumeSize = 400M
 }
@@ -53,5 +55,5 @@ Device {
 Messages {
   Name = Standard
   director = localhost-dir = all, !terminate
-  append = "/root/bareos-regress/working/log1.sd" = all
+  append = "@working_dir@/log1.sd" = all
 }

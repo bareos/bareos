@@ -20,14 +20,8 @@ rm -f  ${CRYPTO_CACHE}
 # prepare director
 KEY_ENCRYPTION_KEY=`bin/bscrypto -g -`
 echo "Key Encryption Key = \"$KEY_ENCRYPTION_KEY\"" > bin/scsicrypto-dir.conf
-echo "Plugin Directory = /root/bareos-regress/bin/plugins/" >> bin/scsicrypto-dir.conf
 
 /bin/cp -f  ${rconfigs}/${TestName}/bareos-dir.conf.${TestName}  bin/bareos-dir.conf
-
-# prepare sd
-echo "Drive Crypto Enabled = Yes" > bin/scsicrypto-sd.conf
-echo "Query Crypto Status = Yes" >> bin/scsicrypto-sd.conf
-
 /bin/cp -f ${rconfigs}/${TestName}/bareos-sd.conf.${TestName} bin/bareos-sd.conf
 
 echo "${cwd}/build" >${cwd}/tmp/file-list
