@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# shell script to restore a dump of the bacula Ingres database using
+# a base64 encoded tar of the content.
+#
+
+bindir=@INGRES_BINDIR@
+PATH="$bindir:$PATH"
+db_name=${db_name:-@db_name@}
+db_user=${db_user:-@db_user@}
+working_dir="@working_dir@"
+
+#
+# Source the Ingres settings when they exist.
+#
+[ -f ${bindir}/../../.ingIIsh  ] && . ${bindir}/../../.ingIIsh
+
+#
+# See if the dumpdir exists.
+#
+[ ! -d ${working_dir}/ingres_dump ] && mkdir -p ${working_dir}/ingres_dump
+
+#
+# Decode the tar and restore it.
+#
+cd ${working_dir}/ingres_dump || exit 1
+case `uname -s` in
+   Linux)
+      base64 -d | gzip -dc | tar xf -
+      ;;
+   SunOS)
+      uudecode -p | gzip -dc | tar xf -
+      ;;
+   *)
+      echo "Unsupported OS type encountered, `uname -s`"
+      exit 1
+      ;;
+esac
+
+if [ $? = 0 ]; then
+   #
+   # Restore the data
+   #
+   sql -u${db_user} ${db_name} < copy.in
+   sysmod ${db_name}
+fi
+
+cd /
+
+rm -rf ${working_dir}/ingres_dump
+
+exit 0

@@ -1,0 +1,44 @@
+Each page should have the following in the constructor 
+/* this is the text identifying the page in the tree widget */
+m_name = "Restore";
+
+/* this sets values for the class based on the extern mainWin-> it sets
+   m_parent (the stacked widget),
+   m_console (from current console)
+   creates the page selector tree widget and sets it's name and inserts
+   itself in the double direction hashes */
+pgInitialize(parentwidgetitem); or
+pgInitialize(); which will have the director as parent in page selector
+
+/* is this window always present or can the user remove it */
+m_closeable = true;
+
+/* put the page in the stack widget */
+dockPage();
+/* bring the page to the top of the widget by "selecting" the tree widget 
+   item in the page selector */
+setCurrent();
+
+Watch out for console not being connected yet gotchya's.  The console is not yet
+connected when the first base set of widgets are created on the stack.  Use a
+function like populate() to place objects in the window.  Call populate from
+virtual function void ClassName::currentStackItem().  Embed inside condition
+similar to if(!m_populated) {} so as to populate only the first time the page
+comes to the front.
+
+The major features that the pages class provides:
+dockPage, undockPage and togglePageDocking for docking.
+closeEvent to redock an undocked page when it is closed.
+virtual functions PgSeltreeWidgetClicked() and currentStackItem() to give pages
+the opportunity to have behaviours on events
+closeStackPage() to delete both the page object and it's page selector widget.
+consoleCommand(QString &command) to execute a console command
+setTitle() for setting the title of a window that will display when undocked.
+setCurrent() for making the page and tree widget item of an object selected and
+in the front of the stack.
+
+Closing
+Use the function closeStackPage() to close from within the class.  Otherwise, if
+there are pointers which need to be deleted, use a destructor.  The m_closeable
+page member will determine whether the option to close will appear in context
+menu of page selector.

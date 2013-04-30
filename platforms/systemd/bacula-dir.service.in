@@ -1,0 +1,39 @@
+# This file is part of package Bacula Director Daemon
+#
+# Copyright (c) 2011 Free Software Foundation Europe e.V.
+# Bacula Community
+# Author: Bruno Friedmann
+# Description:
+#    Used to start the bacula director daemon service (bacula-dir)
+#     will be installed as /lib/systemd/system/bacula-dir.service
+#    enable : systemctl enable bacula-dir.service
+#	 start : systemctl start bacula-dir.service
+#
+# Bacula Director Daemon service
+#
+[Unit]
+Description=Bacula Director Daemon service
+Alias=bacula-dir
+Requires=var-run.mount nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
+After=var-run.mount nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
+# Dependency about the database
+# We let administrators decide if they need it (if local db instance)
+# Wants=@DEFAULT_DB_TYPE@.service
+# Check if working dir exist and is a directory
+ConditionPathIsDirectory=@working_dir@
+# Before=
+# Conflicts=
+
+[Service]
+Type=forking
+User=@dir_user@
+Group=@dir_group@
+PIDFile=@piddir@/bacula-dir.@dir_port@.pid
+# EnvironmentFile=-/etc/sysconfig/bacula-dir
+StandardOutput=syslog
+ExecStart=@sbindir@/bacula-dir -c @sysconfdir@/bacula-dir.conf
+# This daemon should be able to reload the conf file
+#ExecReload=/sbin/killproc -p @piddir@/bacula-dir.pid -HUP @sbindir@/bacula-dir
+
+[Install]
+WantedBy=multi-user.target

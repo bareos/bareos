@@ -1,0 +1,56 @@
+#!/bin/sh
+#
+# Shell script to update PostgreSQL tables from version 12 to 14
+#  or Bacula Community version 5.0.x to 5.2.x
+#
+echo " "
+echo "This script will update a Bacula PostgreSQL database from version 12 to 14"
+echo "	which is needed to convert from Bacula Community version 5.0.x to 5.2.x"
+echo " "
+
+bindir=@POSTGRESQL_BINDIR@
+PATH="$bindir:$PATH"
+db_name=@db_name@
+
+DBVERSION=`psql -d ${db_name} -t --pset format=unaligned -c "select VersionId from Version" $*`
+if [ $DBVERSION != 12 ] ; then
+   echo " "
+   echo "The existing database is version $DBVERSION !!"
+   echo "This script can only update an existing version 12 database to version 14."
+   echo "Error. Cannot upgrade this database."
+   echo " "
+   exit 1
+fi
+
+if psql -f - -d ${db_name} $* <<END-OF-DATA
+BEGIN; -- Necessary for Bacula core
+CREATE TABLE RestoreObject (
+   RestoreObjectId SERIAL NOT NULL,
+   ObjectName TEXT NOT NULL,
+   RestoreObject BYTEA NOT NULL,
+   PluginName TEXT NOT NULL,
+   ObjectLength INTEGER DEFAULT 0,
+   ObjectFullLength INTEGER DEFAULT 0,
+   ObjectIndex INTEGER DEFAULT 0,
+   ObjectType INTEGER DEFAULT 0,
+   FileIndex INTEGER DEFAULT 0,
+   JobId INTEGER,
+   ObjectCompression INTEGER DEFAULT 0,
+   PRIMARY KEY(RestoreObjectId)
+   );
+CREATE INDEX restore_jobid_idx on RestoreObject(JobId);
+
+ALTER TABLE File ADD COLUMN DeltaSeq smallint default 0;
+
+UPDATE Version SET VersionId=14;
+COMMIT;
+
+ANALYSE;
+
+END-OF-DATA
+then
+   echo "Update of Bacula PostgreSQL tables succeeded."
+else
+   echo "Update of Bacula PostgreSQL tables failed."
+fi
+exit 0

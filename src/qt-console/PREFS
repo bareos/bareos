@@ -1,0 +1,9 @@
+To create a preference variable
+
+Create member in mainwin.h
+use designer to add the widget to modify in prefs.ui
+modify the following functions in mainwin.cpp
+MainWin::setPreferences()
+prefsDialog::accept()
+MainWin::readPreferences()
+

@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+#  Make the stupid bacula.def file so that we don't have to do it
+#    manually
+#
+#  Kern Sibbald, June 2007
+#
+
+TOPDIR=`(cd ../../..;pwd)`
+TOPDIR=${DEPKGS:-${TOPDIR}}
+NM=${TOPDIR}/cross-tools/mingw-w64/bin/x86_64-pc-mingw32-nm
+ 
+echo "LIBRARY bacula.dll"
+echo "EXPORTS"
+echo " "
+
+cd obj64
+for i in *.o ; do \
+   echo "; $i"; \
+   ${NM} $i | grep "^[0-9a-f]* T _" | cut -c13- ; \
+   echo " "; \
+done
+
+DATA="\
+   console_command \
+   bplugin_list"
+
+for i in ${DATA}; do \
+   echo "$i DATA"; \
+done

@@ -1,0 +1,134 @@
+#!/bin/bash -e
+#
+# Script to help build the mingw cross compile tool chain for Win64
+#  This typically needs a lot of hand tweaking to get everything to
+#  work.  We build this only on Ubuntu Hardy, and it is unlikely
+#  to work on any other Linux version without significant changes
+#  to the patch files...  You are on your own here.
+#
+HST=x86_64-pc-linux
+TGT=x86_64-pc-mingw32
+RT=mingw-w64
+# Directory where cross-tools directory will be placed
+TOPDIR=../../..
+# Cross tools directory name under TOPDIR
+CROSSTOOLS=cross-tools
+cwd=`pwd`
+
+cd ${TOPDIR}
+# Make TOPDIR absolute
+TOPDIR=`pwd`
+TOPDIR=${DEPKGS:-${TOPDIR}}
+
+mkdir -p ${TOPDIR}/cross-tools
+cd ${TOPDIR}/cross-tools
+echo "Buiding in ${TOPDIR}/cross-tools"
+PF=`pwd`/$RT
+BD=`pwd`/build
+SRC=`pwd`/source
+cd -
+DIRS="$SRC $PF $PF/$TGT $BD $BD/binutils $BD/binutils/build-$HST $BD/gcc-svn $BD/gcc-svn/build-$HST $BD/mingw $BD/mingw/build-$HST"
+baseopts="--prefix=$PF --with-sysroot=$PF --target=$TGT"
+j="-j3"
+
+#Option defaults
+build="true"
+update="true"
+out=/dev/null
+
+binutilsver=binutils-2.19
+dlbinutils=http://ftp.gnu.org/gnu/binutils/$binutilsver.tar.bz2
+gccver=gcc-4.3.2
+dlgcc=http://ftp.gnu.org/gnu/gcc/$gccver/$gccver.tar.bz2
+mingwver=mingw-w64-snapshot-20081115
+dlmingw64=http://garr.dl.sourceforge.net/sourceforge/mingw-w64/$mingwver.tar.bz2
+#Third part packages
+gmpver=gmp-4.2.4
+gmp=ftp://ftp.gnu.org/gnu/gmp/${gmpver}.tar.bz2
+mpfrver=mpfr-2.3.2
+mpfr=http://www.mpfr.org/mpfr-current/${mpfrver}.tar.bz2
+url=http://www.bacula.org/cross-tools
+
+echo "Check sources"
+mkdir -p $SRC
+cd $SRC
+
+for i in $binutilsver $gccver $mpfrver $gmpver $mingwver
+do
+    if [ ! -f $i.tar.bz2 ]; then
+        echo "Download $i"
+        wget $url/$i.tar.bz2
+    fi
+done
+
+tar xf $mingwver.tar.bz2
+mv trunk/mingw-* .
+tar cfj mingw-w64-crt.tar.bz2 mingw-w64-crt
+tar cfj mingw-w64-headers.tar.bz2 mingw-w64-headers
+rm -rf mingw-w64-crt mingw-w64-headers trunk
+
+if [ $update = "true" ]; then
+  echo "Creating directory tree:"
+  echo "$PF -- sysroot directory tree"
+  echo "$BD -- build directory tree"
+  echo ""
+
+  for i in $DIRS; do
+    [ -d $i ] && echo "Warning: $i preexisting, skipping directory creation" || mkdir $i
+  done
+  [ -h $PF/mingw ] || ln -s $TGT $PF/mingw
+
+  echo "Downloading binutils.." && cd $BD/binutils
+  rm -rf binutils
+  tar xf $SRC/binutils-2.19.tar.bz2
+  mv binutils-* src
+
+  echo "Downloading gcc.." && cd $BD/gcc-svn
+#  svn -q checkout svn://gcc.gnu.org/svn/gcc/trunk gcc -r $gccrev
+  rm -rf gcc
+  tar xf $SRC/gcc-4.3.2.tar.bz2
+  mv gcc-* gcc
+
+  echo "Downloading additional required libraries for gcc.."
+  cd gcc
+  rm -rf gmp
+  tar xf $SRC/gmp-4.2.4.tar.bz2
+  mv gmp-* gmp
+
+  rm -rf mpfr
+  tar xf $SRC/mpfr-2.3.2.tar.bz2
+  mv mpfr-* mpfr
+  cd ..
+
+  echo "Downloading crt and headers.."
+  cd $BD/mingw
+  tar xf $SRC/mingw-w64-headers.tar.bz2
+  tar xf $SRC/mingw-w64-crt.tar.bz2
+  cp -prf mingw-w64-headers/include $PF/$TGT/include
+
+  echo "Root setup complete."
+fi
+
+if [ $build = "true" ]; then
+  echo "Compiling binutils.." && cd $BD/binutils/build-$HST
+  ../src/configure $baseopts > $out && make -s $j > $out && make install > $out || exit 1
+
+  echo "Compiling bootstrap gcc.." && cd $BD/gcc-svn/build-$HST
+  ../gcc/configure $baseopts > $out && make -s $j all-gcc > $out && make install-gcc > $out || exit 1
+  export PATH=$PF/bin:$PATH
+
+  echo "Compiling crt.." && cd $BD/mingw/build-$HST
+  ../mingw-w64-crt/configure --prefix=$PF --with-sysroot=$PF --host=$TGT > $out && make -s $j > $out && make install > $out || exit 1
+
+  echo "Compiling full gcc.." && cd $BD/gcc-svn/build-$HST
+  make -s $j > $out && make install > $out || exit 1
+
+  cd $PF
+  echo "Done building."
+fi
+
+cd $PF/bin
+for i in x86_64-pc-mingw32-*
+do
+    ln -s $i ${i##x86_64-pc-}
+done

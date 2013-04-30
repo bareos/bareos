@@ -1,0 +1,82 @@
+<ui version="4.0" >
+ <class>ClientForm</class>
+ <widget class="QWidget" name="ClientForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>492</width>
+    <height>428</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Client Tree</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QTableWidget" name="tableWidget" />
+   </item>
+  </layout>
+  <action name="actionRefreshClients" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >
+     <normaloff>:/images/view-refresh.png</normaloff>:/images/view-refresh.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Refresh Client List</string>
+   </property>
+   <property name="statusTip" >
+    <string>Requery the director for the list of clients.</string>
+   </property>
+  </action>
+  <action name="actionListJobsofClient" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >
+     <normaloff>:/images/emblem-system.png</normaloff>:/images/emblem-system.png</iconset>
+   </property>
+   <property name="text" >
+    <string>List Jobs of Client</string>
+   </property>
+   <property name="statusTip" >
+    <string>Open a joblist page selecting this client.</string>
+   </property>
+  </action>
+  <action name="actionPurgeJobs" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >
+     <normaloff>:/images/weather-severe-alert.png</normaloff>:/images/weather-severe-alert.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Purge Jobs</string>
+   </property>
+   <property name="statusTip" >
+    <string>Purge jobs peformed from this client.</string>
+   </property>
+  </action>
+  <action name="actionPrune" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >
+     <normaloff>:/images/edit-cut.png</normaloff>:/images/edit-cut.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Prune Jobs</string>
+   </property>
+   <property name="statusTip" >
+    <string>Open the diaolog to prune for this client.</string>
+   </property>
+  </action>
+  <action name="actionStatusClientWindow" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >
+     <normaloff>:/images/status.png</normaloff>:/images/status.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Status Client</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../main.qrc" />
+ </resources>
+ <connections/>
+</ui>

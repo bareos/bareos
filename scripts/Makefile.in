@@ -1,0 +1,116 @@
+# 
+# 
+@MCOMMON@
+
+working_dir=@working_dir@
+
+srcdir =	@srcdir@
+VPATH = 	@srcdir@
+.PATH:		@srcdir@
+topdir = ..
+thisdir = scripts
+
+
+first_rule: all
+dummy:
+
+MKDIR = $(topdir)/autoconf/mkinstalldirs
+
+#-------------------------------------------------------------------------
+
+all: Makefile
+
+depend:
+	
+
+#-------------------------------------------------------------------------
+
+installdirs:
+	$(MKDIR) $(DESTDIR)$(sysconfdir)
+	$(MKDIR) $(DESTDIR)$(sbindir)
+	$(MKDIR) $(DESTDIR)$(scriptdir)
+	$(MKDIR) $(DESTDIR)$(mandir)
+
+install: installdirs
+	$(INSTALL_SCRIPT) bconsole $(DESTDIR)$(scriptdir)/bconsole
+	$(INSTALL_SCRIPT) bacula $(DESTDIR)$(scriptdir)/bacula
+	$(INSTALL_SCRIPT) bacula_config $(DESTDIR)$(scriptdir)/bacula_config
+	$(INSTALL_SCRIPT) bacula $(DESTDIR)$(sbindir)/bacula
+	$(INSTALL_SCRIPT) bacula-ctl-dir $(DESTDIR)$(scriptdir)/bacula-ctl-dir
+	$(INSTALL_SCRIPT) bacula-ctl-fd $(DESTDIR)$(scriptdir)/bacula-ctl-fd
+	$(INSTALL_SCRIPT) bacula-ctl-sd $(DESTDIR)$(scriptdir)/bacula-ctl-sd
+	@if  test -f ${DESTDIR}${scriptdir}/mtx-changer; then \
+	   echo "  ==> Saving existing mtx-changer to mtx-changer.old"; \
+	   $(MV) -f ${DESTDIR}${scriptdir}/mtx-changer ${DESTDIR}${scriptdir}/mtx-changer.old; \
+	fi
+	$(INSTALL_SCRIPT) mtx-changer $(DESTDIR)$(scriptdir)/mtx-changer
+	@if  test -f ${DESTDIR}${scriptdir}/mtx-changer.conf; then \
+	   echo "  ==> Installing mtx-changer.conf to mtx-changer.conf.new"; \
+	   $(INSTALL_SCRIPT) mtx-changer.conf $(DESTDIR)$(scriptdir)/mtx-changer.conf.new; \
+	else \
+	   $(INSTALL_SCRIPT) mtx-changer.conf $(DESTDIR)$(scriptdir)/mtx-changer.conf; \
+	fi
+	@if  test -f ${DESTDIR}${scriptdir}/disk-changer; then \
+	   echo "  ==> Saving existing disk-changer to disk-changer.old"; \
+	   $(MV) -f ${DESTDIR}${scriptdir}/disk-changer ${DESTDIR}${scriptdir}/disk-changer.old; \
+	fi
+	$(INSTALL_SCRIPT) disk-changer $(DESTDIR)$(scriptdir)/disk-changer
+	@if  test -f ${DESTDIR}${scriptdir}/dvd-handler; then \
+	   echo "  ==> Saving existing dvd-handler to dvd-handler.old"; \
+	   $(MV) -f ${DESTDIR}${scriptdir}/dvd-handler ${DESTDIR}${scriptdir}/dvd-handler.old; \
+	fi
+	$(INSTALL_SCRIPT) dvd-handler $(DESTDIR)$(scriptdir)/dvd-handler
+	$(INSTALL_DATA)   btraceback.gdb $(DESTDIR)$(scriptdir)/btraceback.gdb
+	$(INSTALL_DATA)   btraceback.dbx $(DESTDIR)$(scriptdir)/btraceback.dbx
+	$(INSTALL_DATA)   btraceback.mdb $(DESTDIR)$(scriptdir)/btraceback.mdb
+	chmod 0644 $(DESTDIR)$(scriptdir)/btraceback.gdb \
+		   $(DESTDIR)$(scriptdir)/btraceback.dbx \
+		   $(DESTDIR)$(scriptdir)/btraceback.mdb
+	$(INSTALL_SCRIPT) btraceback $(DESTDIR)$(sbindir)/btraceback
+
+
+uninstall:
+	(cd $(DESTDIR)$(scriptdir); $(RMF) bconsole)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula_config)
+	(cd $(DESTDIR)$(sbindir);   $(RMF) bacula)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula-ctl-dir)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula-ctl-fd)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula-ctl-sd)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) fd)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) mtx-changer)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) disk-changer)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) dvd-handler)  
+	(cd $(DESTDIR)$(scriptdir); $(RMF) btraceback.gdb)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) btraceback.dbx)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) btraceback.mdb)
+	(cd $(DESTDIR)$(sbindir);   $(RMF) btraceback)
+
+Makefile: Makefile.in
+	cd $(topdir) \
+	    && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	chmod 755 bacula btraceback
+	chmod 755 bacula-ctl-dir bacula-ctl-fd bacula-ctl-sd bacula_config
+	chmod 755 disk-changer mtx-changer dvd-handler bconsole
+
+Makefiles:
+	$(SHELL) config.status
+	chmod 755 bacula btraceback
+	chmod 755 bacula-ctl-dir bacula-ctl-fd bacula-ctl-sd
+	chmod 755 mtx-changer dvd-handler bconsole
+
+clean:
+	@$(RMF) *~ 1 2 3
+
+# clean for distribution
+distclean: clean
+	@$(RMF) bacula fd btraceback
+	@$(RMF) bacula-ctl-dir bacula-ctl-fd bacula-ctl-sd bacula_config
+	@$(RMF) bconsole logrotate bacula.desktop 
+	@$(RMF) bacula.desktop.gnome1 bacula.desktop.gnome2 mtx-changer dvd-handler
+	@$(RMF) gnome-console.console_apps bacula.desktop.gnome2.xsu
+	@$(RMF) bgnome-console.console_apps
+	@$(RMF) bacula.desktop.gnome2.consolehelper bacula.desktop.gnome1.xsu
+	@$(RMF) bacula.desktop.gnome1.consolehelper
+
+# ------------------------------------------------------------------------

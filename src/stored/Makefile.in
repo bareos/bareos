@@ -1,0 +1,228 @@
+#
+@MCOMMON@
+
+srcdir =	.
+VPATH = 	.
+.PATH:		.
+
+sd_group=@sd_group@
+
+# one up
+basedir = ..
+# top dir
+topdir = ../..
+# this dir relative to top dir
+thisdir = src/stored
+
+DEBUG=@DEBUG@
+
+GETTEXT_LIBS = @LIBINTL@
+
+DB_LIBS=@DB_LIBS@
+
+first_rule: all
+dummy:
+
+# bacula-sd
+SDOBJS =  stored.o ansi_label.o vtape.o \
+	  autochanger.o acquire.o append.o \
+	  askdir.o authenticate.o \
+	  block.o butil.o dev.o \
+	  device.o dircmd.o dvd.o ebcdic.o fd_cmds.o job.o \
+	  label.o lock.o mac.o match_bsr.o mount.o parse_bsr.o \
+	  pythonsd.o read.o read_record.o record.o \
+	  reserve.o scan.o sd_plugins.o \
+	  spool.o status.o stored_conf.o vol_mgr.o wait.o
+
+# btape
+TAPEOBJS = btape.o block.o butil.o dev.o device.o label.o vtape.o \
+	   lock.o ansi_label.o dvd.o ebcdic.o \
+	   autochanger.o acquire.o mount.o record.o read_record.o \
+	   reserve.o stored_conf.o match_bsr.o parse_bsr.o scan.o \
+	   sd_plugins.o spool.o vol_mgr.o wait.o
+
+# bls
+BLSOBJS = bls.o block.o butil.o device.o dev.o label.o match_bsr.o vtape.o \
+	  ansi_label.o dvd.o ebcdic.o lock.o \
+	  autochanger.o acquire.o mount.o parse_bsr.o record.o	\
+	  read_record.o reserve.o scan.o stored_conf.o spool.o \
+	  sd_plugins.o vol_mgr.o wait.o
+
+# bextract
+BEXTOBJS = bextract.o block.o device.o dev.o label.o record.o vtape.o \
+	   ansi_label.o dvd.o ebcdic.o lock.o \
+	   autochanger.o acquire.o mount.o match_bsr.o parse_bsr.o butil.o \
+	   read_record.o reserve.o scan.o stored_conf.o spool.o \
+	   sd_plugins.o vol_mgr.o wait.o
+
+# bscan
+SCNOBJS = bscan.o block.o device.o dev.o label.o vtape.o \
+	  ansi_label.o dvd.o ebcdic.o lock.o \
+	  autochanger.o acquire.o mount.o record.o match_bsr.o parse_bsr.o \
+	  butil.o read_record.o scan.o reserve.o stored_conf.o spool.o \
+	  sd_plugins.o vol_mgr.o wait.o
+
+# bcopy
+COPYOBJS = bcopy.o block.o device.o dev.o label.o vtape.o \
+	   ansi_label.o dvd.o ebcdic.o lock.o \
+	   autochanger.o acquire.o mount.o record.o match_bsr.o parse_bsr.o \
+	   butil.o read_record.o reserve.o \
+	   sd_plugins.o scan.o stored_conf.o spool.o vol_mgr.o wait.o
+
+
+
+# these are the objects that are changed by the .configure process
+EXTRAOBJS = @OBJLIST@
+
+CAP_LIBS = @CAP_LIBS@
+ZLIBS=@ZLIBS@
+LZOLIBS = @LZOLIBS@
+
+
+.SUFFIXES:	.c .o
+.PHONY:
+.DONTCARE:
+
+# inference rules
+.c.o:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(PYTHON_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+#-------------------------------------------------------------------------
+
+all: Makefile bacula-sd @STATIC_SD@ bls bextract bscan btape bcopy
+	@echo "===== Make of stored is good ===="
+	@echo " "
+
+bacula-sd: Makefile $(SDOBJS) ../lib/libbacpy$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -o $@ $(SDOBJS) $(ZLIBS) \
+	   -lbacpy -lbaccfg -lbac -lm $(PYTHON_LIBS) $(DLIB) $(LIBS) $(WRAPLIBS) \
+	$(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
+
+static-bacula-sd: Makefile $(SDOBJS) ../lib/libbacpy$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -o $@ $(SDOBJS) $(ZLIBS) \
+	   -lbacpy -lbaccfg -lbac -lm $(PYTHON_LIBS) $(DLIB) $(LIBS) $(WRAPLIBS) \
+	$(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
+	strip $@
+
+btape.o: btape.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
+	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+btape: Makefile  $(TAPEOBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(TAPEOBJS) \
+	   -lbaccfg -lbac $(DLIB) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bls.o:	bls.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
+	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+bls:	Makefile $(BLSOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Compiling $<"
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BLSOBJS) $(DLIB) \
+	   -lbacfind -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bextract.o: bextract.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
+	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+bextract: Makefile $(BEXTOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Compiling $<"
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BEXTOBJS) $(DLIB) $(ZLIBS) $(LZOLIBS) \
+	   -lbacfind -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bscan.o: bscan.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
+	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+bscan:	Makefile $(SCNOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
+	../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SCNOBJS) \
+	   -lbacsql -lbaccats $(DB_LIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bcopy.o: bcopy.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
+	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+bcopy:	Makefile $(COPYOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(COPYOBJS) \
+	   -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+install: all
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd $(DESTDIR)$(sbindir)/bacula-sd
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bls $(DESTDIR)$(sbindir)/bls
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bextract $(DESTDIR)$(sbindir)/bextract
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bcopy $(DESTDIR)$(sbindir)/bcopy
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bscan $(DESTDIR)$(sbindir)/bscan
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) btape $(DESTDIR)$(sbindir)/btape
+	@srcconf=bacula-sd.conf; \
+	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
+	   destconf=$$srcconf.new; \
+	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
+	else \
+	   destconf=$$srcconf; \
+	fi; \
+	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
+	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
+	@if test "x${sd_group}" != "x"; then \
+	   chgrp -f ${sd_group} ${DESTDIR}${sysconfdir}/$$destconf; \
+	fi
+	@if test -f static-bacula-sd; then \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bacula-sd $(DESTDIR)$(sbindir)/static-bacula-sd; \
+	fi
+
+uninstall:
+	(cd $(DESTDIR)$(sbindir); $(RMF) bacula-sd)
+	(cd $(DESTDIR)$(sbindir); $(RMF) bls)
+	(cd $(DESTDIR)$(sbindir); $(RMF) bextract)
+	(cd $(DESTDIR)$(sbindir); $(RMF) bcopy)
+	(cd $(DESTDIR)$(sbindir); $(RMF) bscan)
+	(cd $(DESTDIR)$(sbindir); $(RMF) btape)
+	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-sd.conf bacula-sd.conf.new)
+
+libtool-clean:
+	@$(RMF) -r .libs _libs
+
+clean:	libtool-clean
+	@$(RMF) bacula-sd stored bls bextract bpool btape shmfree core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+	@$(RMF) bscan bcopy static-bacula-sd
+
+realclean: clean
+	@$(RMF) tags bacula-sd.conf
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+devclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+# Semi-automatic generation of dependencies:
+# Use cc -M because X11 `makedepend' doesn't work on all systems
+# and it also includes system headers.
+# `semi'-automatic since dependencies are generated at distribution time.
+
+depend:
+	@$(MV) Makefile Makefile.bak
+	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
+	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(PYTHON_INC) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@if test -f Makefile ; then \
+	    $(RMF) Makefile.bak; \
+	else \
+	   $(MV) Makefile.bak Makefile; \
+	   echo " ======= Something went wrong with make depend. ======="; \
+	fi
+
+# -----------------------------------------------------------------------
+# DO NOT DELETE: nice dependency list follows

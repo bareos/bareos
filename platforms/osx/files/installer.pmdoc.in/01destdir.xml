@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<pkgref spec="1.12" uuid="E3A20DCD-888A-4211-8318-BF9CAA10B769">
+  <config>
+    <identifier>@PACKAGE_ID@</identifier>
+    <version>@BACULA_VERSION@</version>
+    <description/>
+    <post-install type="none"/>
+    <requireAuthorization/>
+    <installFrom>destdir</installFrom>
+    <installTo>/</installTo>
+    <flags>
+      <followSymbolicLinks/>
+    </flags>
+    <packageStore type="internal"/>
+    <mod>version</mod>
+    <mod>identifier</mod>
+    <mod>parent</mod>
+  </config>
+  <scripts>
+    <postflight relative="true" mod="true">resources/postflight</postflight>
+    <preupgrade relative="true" mod="true">resources/preupgrade</preupgrade>
+  </scripts>
+  <contents>
+    <file-list>01destdir-contents.xml</file-list>
+    <filter>/\.DS_Store$</filter>
+  </contents>
+</pkgref>

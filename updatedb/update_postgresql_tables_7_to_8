@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# Shell script to update PostgreSQL tables from version 1.34 to 1.35.5
+#
+echo " "
+echo "This script will update a Bacula PostgreSQL database from version 7 to 8"
+echo "Depending on the size of your database,"
+echo "this script may take several minutes to run."
+echo " "
+bindir=/usr/bin
+
+DB_VER="`echo -e '\\c bacula\nselect * from Version;' | $bindir/psql $* bacula -f - | tail -n 1 2>/dev/null`"
+if [ -z "$DB_VER" ]; then
+       echo "Sorry, I can't seem to locate a bacula database."
+       exit 1
+fi
+
+if [ -n "$DB_VER" ]; then
+
+       if [ "$DB_VER" = "8" ]; then
+               echo "The Catalog is already at version 8. Nothing to do!"
+               exit 0
+       elif [ "$DB_VER" -ne "7" ]; then
+               echo "Sorry, this script is designed to update a version 7 database"
+               echo "and you have a version $DB_VER database."
+               exit 1
+       fi
+fi
+
+
+if $bindir/psql $* -f - <<END_OF_DATA
+\c bacula
+
+ALTER TABLE media ADD COLUMN EndFile integer;
+UPDATE media SET EndFile=0;
+ALTER TABLE media ALTER COLUMN EndFile SET NOT NULL;
+ALTER TABLE media ADD COLUMN EndBlock bigint;
+UPDATE media SET EndBlock=0;
+ALTER TABLE media ALTER COLUMN EndBlock SET NOT NULL;
+
+UPDATE Filename SET Name='' WHERE Name=' ';
+
+alter table file alter column filenameid rename to filenameid-old;
+alter table file add column filenameid integer;
+update file set filenameid = filenameid-old;
+alter table file alter column filenameid set not null;
+alter table file drop column filenameid-old;
+
+DELETE FROM Version;
+INSERT INTO Version (VersionId) VALUES (8);
+
+create index file_jobid_idx on file (jobid);
+create index file_pathid_idx on file(pathid);
+create index file_filenameid_idx on file(filenameid);
+create index file_jpfid_idx on file (jobid, pathid, filenameid);
+
+create table CDImages 
+(
+   MediaId integer not null,
+   LastBurn timestamp without time zone not null,
+   primary key (MediaId)
+);
+
+vacuum;
+
+END_OF_DATA
+then
+   echo "Update of Bacula PostgreSQL tables succeeded."
+else
+   echo "Update of Bacula PostgreSQL tables failed."
+fi
+exit 0

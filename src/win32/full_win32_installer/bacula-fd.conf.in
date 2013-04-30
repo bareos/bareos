@@ -1,0 +1,44 @@
+#
+# Default  Bacula File Daemon Configuration file
+#
+#  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
+#
+# There is not much to change here except perhaps the
+# File daemon Name
+#
+
+#
+# "Global" File daemon configuration specifications
+#
+FileDaemon {                            # this is me
+  Name = @client_name@
+  FDport = @client_port@                # where we listen for the director
+  WorkingDirectory = "@working_dir@"
+  Pid Directory = "@working_dir@"
+  #Plugin Directory = "@fdplugins_dir@"
+  Maximum Concurrent Jobs = @client_maxjobs@
+}
+
+#
+# List Directors who are permitted to contact this File daemon
+#
+Director {
+  Name = @director_name@
+  Password = "@client_password@"
+}
+
+#
+# Restricted Director, used by tray-monitor to get the
+#   status of the file daemon
+#
+Director {
+  Name = @monitor_name@
+  Password = "@monitor_password@"
+  Monitor = yes
+}
+
+# Send all messages except skipped files back to Director
+Messages {
+  Name = Standard
+  director = @director_name@ = all, !skipped, !restored
+}

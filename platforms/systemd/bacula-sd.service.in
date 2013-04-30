@@ -1,0 +1,32 @@
+# This file is part of package Bacula Storage Daemon
+#
+# Copyright (c) 2011 Free Software Foundation Europe e.V.
+# for Bacula Community
+# Author: Bruno Friedmann
+# Description:
+#    Used to start the bacula storage daemon service (bacula-sd)
+#    will be installed as /lib/systemd/system/bacula-sd.service
+#    enable : systemctl enable bacula-sd.service
+#    start : systemctl start bacula-sd.service
+#
+# Bacula Storage Daemon service
+#
+[Unit]
+Description=Bacula Storage Daemon service
+Requires=var-run.mount nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
+After=var-run.mount nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
+# Wants=
+# Before=
+# Conflicts=
+
+[Service]
+Type=forking
+User=@sd_user@
+Group=@sd_group@
+PIDFile=@piddir@/bacula-sd.@sd_port@.pid
+# EnvironmentFile=-/etc/sysconfig/bacula-sd
+StandardOutput=syslog
+ExecStart=@sbindir@/bacula-sd -c @sysconfdir@/bacula-sd.conf
+
+[Install]
+WantedBy=multi-user.target

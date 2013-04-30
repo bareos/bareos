@@ -1,0 +1,17 @@
+
+This directory contains example Device resource 
+definitions that are known to work for various
+tape drives.
+
+In general, you can set the Name record
+and the Media Type to anything you want, but
+they must correspond with what you have in your
+Director's config file.
+
+The Archive Device must be changed to agree
+with your physical device depending on the system
+and the drive.
+
+There are many other records that you might want
+to add as well.  
+                

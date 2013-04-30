@@ -1,0 +1,349 @@
+
+Instructions for cross compiling the Win32/64 FD on Linux
+=======================================================
+
+This file documents the tools (scripts) we use for building Bacula for
+Microsoft Windows using the cross-compiler tools on a Linux system.  We
+use Ubuntu 8.04 so building on that system should definitely work.  But there
+shouldn't be any issues on other Linux distributions.
+
+We don't officially support this method, but it is what we use, and it should
+build on any Linux machine if you carefully follow the instructions and have
+all the prerequisite programs loaded on your machine.
+
+We expect that there may be problems on systems other than Linux where you
+are pretty much on your own.  However, we will try to provide responses to
+your questions on the bacula-devel list, but we can't guarantee anything.
+
+Note: the environment variable DEPKGS must point to a directory that
+contains: depkgs-mingw32 depkgs-mingw-w64 and cross-tools
+
+Directory Structure
+=====================
+The new directory structure is:
+
+ xxx  (any directory)
+    bacula                   Top level Bacula source directory -- any name
+      src
+        win32                Main directory where Windows version is built.
+
+    docs                     Top level Bacula documentation directory
+
+ yyy (any directory, but pointed to by the DEPKGS environment variable)
+    depkgs-mingw32 (MinGW32) 3rd Party Dependencies for MinGW32 build
+      bin              --    NOTE!  depkgs-msvc is no longer suppored
+      include            |
+      lib                |
+      man                |   Created by script
+      nsis               |-- .../bacula/src/win32/build-depkgs-mingw32
+      scons              |
+      share              |
+      src                |
+      ssl              --
+      vss
+        inc                  A copy of the Windows VSS/inc directory
+
+
+    depkgs-mingw-w64 (MinGW64) 3rd Party Dependencies for MinGW64 build
+      bin              --
+      include            |
+      lib                |
+      man                |
+      nsis               |
+      scons              |
+      share              |
+      src                |
+      ssl              --
+      vss
+        inc                  A copy of the Windows VSS/inc directory
+
+    cross-tools (MinGW64/32)  Cross compilation tools (gcc, g++, mingw32, ...)
+      binutils-mingw32 --
+      gcc-mingw32        |   Created by script
+      mingw32            |-- .../bacula/src/win32/build-win32-cross-tools
+      mingw-utils        |
+      source           --
+      mingw-w64/x86_64-pc-mingw32  \ Taken from http://sf.net/projects/mingw-w64
+      mingw-w64/bin/               / 
+
+
+
+One-time Setup
+==============
+
+If you're reading this file you've probably already cloned the GIT source tree or
+extracted the contents of the source tar. If not you need to do that first.
+
+You also need to download one of the doc tar balls and extract to your
+top level Bacula directory. For the moment, the 3.0.2 version of the 
+installer requires doc files in the old 2.4.4 format.
+
+The extracted doc directory name will be bacula-docs-version where version
+is the version number.  The directory must be renamed to docs (ie remove
+the leading bacula- and the -version portion of the name).
+
+An alternative to setting up the old documents that are needed by the Win32
+installer, you may comment out the following lines in 
+src/win32/win32_installer/Makefile:
+
+#DOC_FILES := \
+#       manual/bacula.pdf \
+#       manual/bacula/*.html \
+#       manual/bacula/*.png  \
+#       manual/bacula/*.css
+
+Note, a number of packages must be installed to build the cross-tools
+and the depkgs files.  Most are rather standard such as gcc, g++,
+make, ...  However a few that you may not have are:
+
+  wget
+  texinfo
+  flex
+  bison
+  patch (Debian)
+  m4
+  postgresql (at least client)
+  mysql (at least client)
+  SQLite3 (from depkgs or as package)
+  readline (readlineN-dev on Debian)
+  ...
+
+NB: On Debian, I had to remove /usr/bin/lorder for
+postresql to build correctly.
+
+Build the 32 bit cross-tools and mingw32:
+
+Once the source is on your system, change to the win32 directory
+        cd .../bacula/src/win32
+
+Download and build the cross compiler tools
+        ./build-win32-cross-tools
+
+Download and build the 3rd party dependencies
+        ./build-depkgs-mingw32
+
+Note, that during the build process you will see a moderate amount of
+output and some warnings.  If something more serious happens
+and the build fails, it is probably because you don't have one
+of the build dependencies (hopefully all mentioned above) loaded on your  
+system. To find out what is going wrong, do the following:
+
+  cd .../depkgs-mingw32/src/<package-name>
+   
+where <package-name> is where the package is unpacked and built. Normally
+it is relatively obvious when looking at the src directory.             
+
+In that directory, you should find a make.log, which has the full details
+of the compiles, links, and installs done for that package.
+
+===
+Building the 64 bit cross-tools and mingw64:
+
+When building the mingw64 environment and all dependencies
+(cross-tools, and depkgs-mingw64) should be compiled by hand with
+host=x86_64-pc-linux and target=x86_64-pc-mingw32.  
+
+For that, use this configure line :
+./configure --host=x86_64-pc-linux --target=x86_64-pc-mingw32 --prefix=$ROOT/cross-tools
+or
+./configure --host=x86_64-pc-linux --target=x86_64-pc-mingw32 --prefix=$ROOT/depkgs-mingw64
+
+(It can work with other setup). We are using binutils-2.19, gcc-4.3.2,
+gmp-4.2.4, mpfr-2.3.2. The mingw64 project delivers binaries that should do the
+work.
+
+The Win64 internal scripts and patches use the  mingw32-xxx binaries, so you need to
+make links in the gcc bin ($ROOT/cross-tools/mingw-w64/bin) directory.
+
+---8<------8<-------8<--------
+
+for i in x86_64-pc-mingw32-*
+do
+    ln -s $i ${i##x86_64-pc-}
+done
+
+---8<------8<-------8<--------
+
+They provide also a pthread lib but we aren't sure that they will work, you
+can compile it yourself using the pthreads-snap-2004-06-22.tar.gz (same as
+mingw32) + pthread-win64.patch.
+
+The openssl lib version is openssl-0.9.8j.tar.gz + openssl-win64.patch
+
+See External-mingw-w64 for download location (available on www.bacula.org).
+
+You need the header files from the Microsoft VSS SDK.  Unfortunately the SDK
+can only be downloaded and installed on a Windows system.  We do not have
+the right to distribute it, so you must download it yourself.
+You can find it on Microsoft's web-site at:
+
+http://www.microsoft.com/downloads/details.aspx?FamilyID=0b4f56e4-0ccc-4626-826a-ed2c4c95c871&DisplayLang=en
+
+If that link doesn't work then go to http://www.microsoft.com and search for
+
+        "download volume shadow copy service sdk"
+
+we are currently using version 7.2 released 8/3/2005 (a bit old, but it 
+works).
+
+Normally the files will be installed in:
+
+        c:\Program Files\Microsoft\VSSSDK72
+
+You only need to copy everything under the c:\Program Files\Microsoft\VSSSDK72\inc
+directory into .../depkgs-mingw32/vss/inc. and .../depkgs-mingw-w64/vss/inc 
+In doing so, please ensure that
+the case in maintained on the directory and filenames -- some contain uppercase 
+characters !!!
+
+The above only needs to be done once unless we change the cross-tools
+or the dependencies versions.  In general, you can run the script multiple
+times with no problem.  For it to work, you must have at a minimum the
+following:
+
+        gcc
+        g++
+        patch
+        wget
+        texinfo
+        bison
+        flex
+        python
+        unzip
+        tar
+
+and possibly other packages.
+
+
+Building
+========
+
+Finally, to build the Microsoft Windows version of Bacula, do the following:
+
+   cd .../bacula/src/win32
+   make clean
+   ./makeall
+
+or
+  cd .../bacula/src/win32
+  make clean
+  make
+  make WIN64=yes
+
+This builds both the 32 bit version and the 64 bit version.
+The binaries are in the release32 and release64 directories.
+
+
+
+Updating the 3rd party package patches
+======================================
+
+If one of the patches changes in .../bacula/src/win32/patches, you will
+need to update the corresponding dependency.
+
+Adding a new global function or global data
+===========================================
+
+bacula.dll
+----------
+
+The code from the following directories is built into bacula.dll:
+
+   .../bacula/src/lib
+   .../bacula/src/libfind
+   .../bacula/src/win32/compat
+
+A new function or data variable which must be accessed from outside
+of bacula.dll requires special treatment.  It must be specifically
+exported.
+
+New data variables are exported by adding the macro DLL_IMP_EXP to
+the variable declaration in the header file.  All exported variables
+must be declared in a header file and MUST NOT be declared in a
+source file referencing the variable. Example, src/lib/runscript.h:
+
+extern DLL_IMP_EXP bool (*console_command)(JCR *jcr, const char *cmd);
+
+or src/jcr.h
+
+extern int DLL_IMP_EXP num_jobs_run;
+extern DLL_IMP_EXP dlist * last_jobs;
+...
+
+
+Exporting functions is now more or less automated.  If you find that
+a function name has been added, changed, or an argument modified,    
+simply do the following:
+
+   cd .../bacula/src/win32/lib
+   make                  (to build the .o files, note the link will fail)
+   ./make_def >bacula64.def   or >bacula64.def
+
+This should rebuild the bacula.def file, but it uses relative paths
+and assumes you have the directory structure noted above. If you 
+are using something different, you can set the NM variable at the
+top of the make_def file to use an absolute path to the correct
+directory.
+
+===== manual changing of bacula32.def or bacula64.def no longer necessary =====
+If you want to do it manually, please see below:
+Exporting a function requires a bit more work.  You must determine the
+C++ mangled name of the new function.
+
+   strings .../bacula/src/win32/lib/<file>.o | grep <symbol>
+
+Note, strings often will not show the desired symbol. In that case,
+use:
+   
+   nm .../bacula/src/win32/lib/<file>.o
+
+Replace <file> with the base part of the name of the source code file
+which contains the new function.  Replace <symbol> with the name of
+the new function.  Remove the leading underscore and place the result
+in the file
+
+   .../bacula/src/win32/lib/bacula64.def
+=== end manual changing of bacula64.def ==========
+
+If you add a new file, you will need to specify its name in
+
+   .../bacula/src/win32/lib/Makefile
+and
+   .../bacula/src/win32/libbac/Makefile
+
+
+Running gdb on the Win32 files
+==================================================
+You can use the mingw64 gdb to debug Bacula on Win64 by downloading
+it from Source Forge:
+
+http://sourceforge.net/project/showfiles.php?group_id=202880&package_id=311650
+
+
+Download one of their .exe versions, which is an installer that you
+can run on Win32 to install gdb.  This gdb is built with mingw64 so will
+run independently of any cygwin installation.  Note, not all the releases
+come with an installer. I had to go back 3 or 4 versions to find it.  Otherwise
+you can download the source and build it.  Thanks to Eric Bollengier for
+this tip.
+
+
+Structure of the MinGW64/32 build environment
+==========================================
+
+The basic strategy is each Makefile in the various subdirectories includes
+Makefile.inc, defines variables and rules specific to what is being built,
+then includes Makefile.rules which defines all the rules.
+
+Makefile.inc defines the locations of all the dependencies and the compiler
+and linker flags.  It is automatically created from Makefile.inc.in.  Any
+changes must be made to Makefile.inc.in not Makefile.inc or they will be
+overwritten the next time Makefile.inc.in is updated.
+
+Makefile.rules defines a bunch of macros to simplify building.  It also
+includes all the basic rules for building objects, GUI and console
+executables, etc.
+
+Makefile.template is a template for creating new Makefiles, if you are
+creating a new directory, copy Makefile.template to Makefile in that
+directory and edit to suit.

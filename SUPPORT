@@ -1,0 +1,33 @@
+
+   Bacula Support request form. Please fill it out and email it to
+        bacula-users@lists.sourceforge.net
+
+Bacula version: 
+
+OS type and version:
+
+How was Bacula built/installed?  Source, rpms, ... be specific.
+
+Concise description of the problem:
+
+
+Bacula output showing the problem:
+
+
+Steps to reproduce the problem:
+
+
+
+Other information (optional):
+A copy of your config.out file (if built from source) 
+
+Tape drive/autochanger (for tape problems):
+
+Have you run btape "test" command?
+
+Database problems: what database are you using?
+What is the database version?
+
+If the output involves configuration files, consider attaching
+bacula-dir.conf, bacula-fd.conf, and bacula-sd.conf if necessary,
+appropriate.

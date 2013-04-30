@@ -1,0 +1,106 @@
+#
+# This is the makefile template for the platform directory
+# which contains general platform installation.
+#
+#  15 November 2001 -- Kern Sibbald
+# 
+#   for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL = @INSTALL@
+
+SUBDIRS = hurd freebsd redhat solaris unknown openbsd osx irix gentoo \
+	  debian darwin aix bsdi mandrake slackware alpha ubuntu systemd
+
+MAKE = make
+
+DISTNAME=@DISTNAME@
+DISTVER=@DISTVER@
+
+all:
+	@for subdir in ${SUBDIRS}; do \
+	    if [ -f $${subdir}/Makefile ]; then \
+	       (cd $${subdir}; $(MAKE) DESTDIR=$(DESTDIR);) \
+	    fi; \
+	done
+
+
+install: install-autostart
+
+install-autostart:
+	@if test x$(DISTNAME) != x ; then \
+	   (cd $(DISTNAME); \
+	      $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
+	fi
+
+install-autostart-dir:
+	@if test x$(DISTNAME) != x ; then \
+	   (cd $(DISTNAME); \
+	      $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
+	fi
+
+install-autostart-fd:
+	@if test x$(DISTNAME) != x ; then \
+	   (cd $(DISTNAME); \
+	      $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
+	fi
+
+install-autostart-sd:
+	@if test x$(DISTNAME) != x ; then \
+	   (cd $(DISTNAME); \
+	      $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
+	fi
+
+uninstall: uninstall-autostart
+
+uninstall-autostart:
+	@if test x$(DISTNAME) != x ; then \
+	   (cd $(DISTNAME); \
+	     $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
+	fi
+
+uninstall-autostart-dir:
+	@if test x$(DISTNAME) != x ; then \
+	   (cd $(DISTNAME); \
+	     $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
+	fi
+
+uninstall-autostart-fd:
+	@if test x$(DISTNAME) != x ; then \
+	   (cd $(DISTNAME); \
+	     $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
+	fi
+
+uninstall-autostart-sd:
+	@if test x$(DISTNAME) != x ; then \
+	   (cd $(DISTNAME); \
+	     $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
+	fi
+
+depend:
+
+clean:
+	@for subdir in ${SUBDIRS}; do \
+	    if [ -f $${subdir}/Makefile ]; then \
+		    (cd $${subdir}; $(MAKE) clean) \
+	    fi; \
+	done
+	@rm -f 1 2 3
+
+distclean:
+	@rm -f Makefile
+	@for subdir in ${SUBDIRS}; do \
+	    if [ -f $${subdir}/Makefile ]; then \
+		     (cd $${subdir}; $(MAKE) distclean) \
+	    fi; \
+	done
+
+devclean:
+	@rm -f Makefile
+	@for subdir in ${SUBDIRS}; do \
+	    if [ -f $${subdir}/Makefile ]; then \
+		     (cd $${subdir}; $(MAKE) devclean) \
+	    fi; \
+	done

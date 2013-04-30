@@ -1,0 +1,167 @@
+#!/bin/sh
+#
+# Bacula interface to mtx autoloader
+# (By Lars Köller, lars+bacula@koellers.net)
+#
+# Modified by Jesse D. Guardiani (jesse@wingnet.net) in Feb 2004
+# to be more error resistant and compatible with my 4 tape SONY
+# AIT-1 TSL-SA300C autoloader.
+#
+#  If you set in your Device resource
+#
+#  Changer Command = "path-to-this-script/chio-bacula %c %o %S %a"
+#    you will have the following input to this script:
+#
+#  chio-bacula "changer-device" "command" "slot" "archive-device"
+#
+#  for example:
+#
+#  chio-bacula /dev/ch0 load 1 /dev/nst0 (on a FreeBSD system)
+#
+#  If you need to to an offline, refer to the drive as $4
+#    e.g.   mt -f $f offline
+#
+#  Many changers need an offline after the unload. Also many
+#   changers need a sleep 60 after the mtx load.
+#
+#  N.B. If you change the script, take care to return either
+#   the mtx exit code or a 0. If the script exits with a non-zero
+#   exit code, Bacula will assume the request failed.
+#
+
+# This simulates a barcode reader in the changer.
+# The labels of the virtual barcode reader are located in the BARCODE_FILE
+SIMULATE_BARCODE=true
+BARCODE_FILE=/usr/local/etc/bacula-barcodes
+
+TMPDIR=/tmp
+
+make_temp_file() 
+{
+  TMPFILE=`mktemp ${TMPDIR}/mtx$1.XXXXXXXXXX 2> /dev/null`
+  if test $? -ne 0 || test x${TMPFILE} = x; then
+     TMPFILE="${TMPDIR}/mtx$1.$$"
+     if test -f ${TMPFILE}; then
+        echo "ERROR: Temp file security problem on: ${TMPFILE}"
+        exit 1
+     fi
+  fi
+}
+
+
+me=$(basename $0)
+fullpath_me=$0
+
+# Debug
+logger -p user.err "$fullpath_me $@"
+
+if [ -z "$1" ] ; then
+    usage;
+fi
+
+if [ -z "$2" ] ; then
+    usage;
+fi
+
+MTX=/bin/chio
+CHANGER=$1
+COMMAND=$2
+if [ ! -z "$3" ]; then
+    SLOT=$3
+fi
+if [ ! -z "$4" ]; then
+    TAPE=$4
+else
+    TAPE=/dev/nrsa1
+fi
+
+# Time to wait for loading
+SLEEP=20
+# What drive of the autochanger should be used primary
+# At the moment bacula (1.31a) could not deal with more than one drive
+DRIVE=0
+
+usage()
+{
+  echo ""
+  echo "The $me script for bacula"
+  echo "--------------------------------------"
+  echo ""
+  echo "usage: $me <changer-device> <command> [slot] [devicename of tapedrive]"
+  echo ""
+  echo "Valid commands:"
+  echo ""
+  echo "unload          Unloads a tape into the slot"
+  echo "                from where it was loaded."
+  echo "load <slot>     Loads a tape from the slot <slot>"
+  echo "                (slot-base is calculated to 1 as first slot)"
+  echo "list            Lists full storage slots"
+  echo "loaded          Gives slot from where the tape was loaded."
+  echo "                0 means the tape drive is empty."
+  echo "slots           Gives Number of aviable slots."
+  echo ""
+  echo "Example:"
+  echo "  mtx-changer /dev/changer load 1   loads a tape from slot 1"
+  echo ""
+  exit 2
+}
+
+
+case ${COMMAND} in
+    unload)
+        # enable the following line if you need to eject the cartridge
+        #mt -f ${TAPE} off
+        #sleep 2
+        # If the changer is power cycled with a tape loaded in a drive
+        if [ `${fullpath_me} ${CHANGER} loaded` -gt 0 ]; then
+                free_slot=`${fullpath_me} ${CHANGER} loaded`
+                free_slot=`expr $free_slot - 1`
+                ${MTX} -f ${CHANGER} move drive ${DRIVE} slot $free_slot
+        fi
+        ;;
+
+    load)
+        ${MTX} -f ${CHANGER} move slot $((${SLOT}-1)) drive ${DRIVE}
+        rtn=$?
+        # Increase the sleep time if you have a slow device
+        sleep $SLEEP
+        exit $rtn
+        ;;
+
+    list)
+        if [ "${SIMULATE_BARCODE}" = "true" ]; then
+            if [ -f "$BARCODE_FILE" ]; then
+                cat $BARCODE_FILE | grep -v "^#"
+                exit 0
+            else
+                echo "Barcode file $BARCODE_FILE missing ... exiting!"
+                exit 1
+            fi
+        else
+            ${MTX} -f ${CHANGER} status | grep "^slot .*: .*FULL>" | awk '{print $2}' | awk -F: '{print $1+1" "}' | tr -d "[\r\n]"
+        fi
+      ;;
+
+    loaded)
+        # echo "Request loaded"
+        make_temp_file
+        ${MTX} -f ${CHANGER} status -S > ${TMPFILE}
+        rtn=$?
+        cat ${TMPFILE} | grep "^slot .: <ACCESS>" | awk '{print $2+1}' | tr -d ":"
+        drive=`cat ${TMPFILE}| grep "^drive .: <ACCESS>"`
+        if [ -n "$drive" ]; then
+                echo 0
+        fi
+        rm -f ${TMPFILE}
+        exit $rtn
+        ;;
+
+    slots)
+        # echo "Request slots"
+        ${MTX} -f ${CHANGER} status | grep "^slot " | tail -1 | awk '{print $2+1}' | tr -d ":"
+      ;;
+
+    *)
+        usage
+      ;;
+esac

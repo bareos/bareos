@@ -1,0 +1,77 @@
+
+This file is rather out of date, and if you want to avoid a lot
+of pain, you will read the manual, which you can find at www.bacula.org 
+
+
+--------------------------------------------------------------------------
+Using GNU autoconfig
+--------------------------------------------------------------------------
+  1.    Read the Compiling and Installing section of the HTML manual
+        at http://www.bacula.org
+
+  2.    Run   ./configure   to generate config.h and the various Makefiles.
+        ./configure --help   gives a list of possible options.  Note, in
+        configuring Bacula, you cannot get by with a simple ./configure,
+        it is much more complicated than that (unfortunately).
+
+        You might look at the "defaultconfig" file in the examples directory.
+        It is an example of what is probably reasonable for defaults.
+
+        Some systems require unusual options for compilation or linking that
+        the `configure' script does not know about.  You can give `configure'
+        initial values for variables by setting them in the environment.  Using
+        a Bourne-compatible shell, you can do that on the command line like
+        this:
+                CC=c89 CFLAGS=-O2 LIBS=-lposix ./configure
+        Or on systems that have the `env' program, you can do it like this:
+                env CPPFLAGS=-I/usr/local/include LDFLAGS=-s ./configure
+        Or if you're using a non Bourne-compatible shell, you can do:
+                sh -c 'CFLAGS="-O2 -g" ./configure
+
+        A typical Bacula development configuration for Linux is:
+
+        CFLAGS="-g -O2 -Wall" \
+          ./configure \
+            --sbindir=$HOME/bacula/bin \
+            --sysconfdir=$HOME/bacula/bin \
+            --with-pid-dir=$HOME/bacula/bin/working \
+            --with-subsys-dir=$HOME/bacula/bin/working \
+            --enable-smartalloc \
+            --with-mysql \
+            --with-working-dir=$HOME/bacula/bin/working \
+            --with-dump-email=your@address.com \
+            --with-job-email=your@address.com \
+            --with-smtp-host=localhost
+
+
+        See the README for a few additional details and the online manual
+        for all the gory details:  http://www.bacula.org/rel-manual
+
+  3.    Carefully review the output from ./configure.  If it is not
+        what you want, re-run the ./configure.  Often ./configure "caches"
+        things and thus remembers the last ./configure options.  If you
+        want to be sure you are starting fresh after a ./configure,
+        do a:
+
+            make distclean
+
+        before re-running ./configure.  "make distclean" wipes out any
+        knowledge of the ./configure, so don't do it after you have a
+        configuration that suits your needs, otherwise the "make" will
+        not work.
+
+  4.    Set any other main preferences (normally, you don't do this):
+            Edit "config.h"   if you didn't use ./configure options
+            If you're cross-compiling, edit the following in "config.h"
+
+  5.    Build it (repeat step 2 as desired):
+            make
+
+  6.    Install it
+            make install
+
+  7.    Run it
+            cd $HOME/bacula/bin
+            ./bacula start
+            ./console
+            (enter commands)

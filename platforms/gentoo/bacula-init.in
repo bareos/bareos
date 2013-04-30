@@ -1,0 +1,94 @@
+#!/sbin/runscript
+# Copyright 1999-2004 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# Modified for user/group information
+# 24 Oct 2004 D. Scott Barninger <barninger at fairfieldcomputers dot com
+
+depend() {
+	need net
+	use @DEFAULT_DB_TYPE@
+}
+
+opts="test"
+
+DIR_USER=@dir_user@
+DIR_GROUP=@dir_group@
+SD_USER=@sd_user@
+SD_GROUP=@sd_group@
+FD_USER=@fd_user@
+FD_GROUP=@fd_group@
+
+# A client would only need to run the file daemon, so if thats the
+# case for this machine just comment the other two out below here...
+start() {
+	ebegin "Starting bacula storage daemon"
+	OPTIONS=''
+	if [ "${SD_USER}" != '' ]; then
+		OPTIONS="${OPTIONS} -u ${SD_USER}"
+	fi
+										   
+	if [ "${SD_GROUP}" != '' ]; then
+		OPTIONS="${OPTIONS} -g ${SD_GROUP}"
+	fi
+	start-stop-daemon --start --quiet --exec @sbindir@/bacula-sd \
+		-- ${OPTIONS} -c @sysconfdir@/bacula-sd.conf
+	result=$?
+
+	ebegin "Starting bacula file daemon"
+	OPTIONS=''
+	if [ "${FD_USER}" != '' ]; then
+		OPTIONS="${OPTIONS} -u ${FD_USER}"
+	fi
+										   
+	if [ "${FD_GROUP}" != '' ]; then
+		OPTIONS="${OPTIONS} -g ${FD_GROUP}"
+	fi
+	start-stop-daemon --start --quiet --exec @sbindir@/bacula-fd \
+		-- ${OPTIONS} -c @sysconfdir@/bacula-fd.conf
+	result=$(( $result + $? ))
+	sleep 2
+
+	ebegin "Starting bacula director"
+	OPTIONS=''
+	if [ "${DIR_USER}" != '' ]; then
+		OPTIONS="${OPTIONS} -u ${DIR_USER}"
+	fi
+										   
+	if [ "${DIR_GROUP}" != '' ]; then
+		OPTIONS="${OPTIONS} -g ${DIR_GROUP}"
+	fi
+	start-stop-daemon --start --quiet --exec @sbindir@/bacula-dir \
+		-- ${OPTIONS} -c @sysconfdir@/bacula-dir.conf
+	result=$(( $result + $? ))
+
+	eend $result
+}
+
+# The default port numbers appear in the pidfile paths below.
+# Might wanna programmatically grab them from the config files
+# or something...
+stop() {
+	ebegin "Stopping bacula file daemon"
+	start-stop-daemon --stop --quiet --pidfile /var/run/bacula-fd.9102.pid
+	result=$?
+	ebegin "Stopping bacula storage daemon"
+	start-stop-daemon --stop --quiet --pidfile /var/run/bacula-sd.9103.pid
+	result=$(( $result + $? ))
+	ebegin "Stopping bacula director"
+	start-stop-daemon --stop --quiet --pidfile /var/run/bacula-dir.9101.pid
+	result=$(( $result + $? ))
+	eend $result
+}
+
+test() {
+	ebegin "Testing bacula storage daemon configuration"
+	@sbindir@/bacula-sd -t -c @sysconfdir@/bacula-sd.conf
+	result=$?
+	ebegin "Testing bacula file daemon configuration"
+	@sbindir@/bacula-fd -t -c @sysconfdir@/bacula-fd.conf
+	result=$(( $result + $? ))
+	ebegin "Testing bacula director configuration"
+	@sbindir@/bacula-dir -t -c @sysconfdir@/bacula-dir.conf
+	result=$(( $result + $? ))
+	eend $result
+}

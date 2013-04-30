@@ -1,0 +1,1388 @@
+
+               Release Notes for Bacula 5.2.13
+
+  Bacula code: Total files = 1,110 Total lines = 231,439 (Using SLOCCount)
+
+General:
+--------
+This is an important bug fix release.
+
+Version 5.2.13 version has 20 bug fixes since the last 
+release.  Some of the bug fixes are important.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Please note that with this version of Bacula, during the install
+of the shared libraries from the src/cats, src/lib, and src/findlib
+directories, any old Bacula libraries in the installation 
+destination directory will be removed.  This should not cause
+any problems and at least keeps the installation library cleaner.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+For packagers, if you change options, naming, and the way 
+we link our shared object files, as at least one of you does,
+you are creating a situation where the user may not be able
+to run multiple versions of Bacula on the same machine, which
+is often very useful, and in addition, you create a configuration
+that the project cannot properly support.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you are upgrading from a version older than 5.2.10, please
+read all the old ReleaseNotes of all versions released
+after the version you are upgrading from. There area
+many important notices sumarized here, and we do not 
+repeat them each bug fix release.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.13
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+Important changes since last release:
+
+19Feb13
+ - Fix build/configure problems with bpluginfo.c
+ - Refactor lock_volumes so most lock a vol rather than globally
+ - Add virtualfull-extreme test
+ - Apply patch for chio-changer-openbsd from bug #1984 -- Implements listall
+ - Add bat Mac patch from bug #1953
+ - Fix bug #1812 cannot run Copy/Migrate jobs from bat
+ - Fix loading of bat translations. Patch from bug #1890
+ - Fix text input in bat. Fixe bug #1965
+ - Remove Device from show command as it is not used or updated
+ - Fix #1982 update enabled keyword in help command
+ - Fix update_postgresql_tables 10 to 11
+ - Clean after building doc binaries requested by Willem vd Akker for Debian 
+   build
+ - Require Qt version 4.8.4
+ - Fix bug #1955 that OK to run? does not retry on bad response
+ - Backport new lock calls + debug for SD
+ - Fix bug #1975 new label ignored when first is duplicate.
+ - Pull src/lib changes from master
+ - Pull SD files from master
+ - Turn off prune-test
+ - Add logdir and bsrdir to regression config
+ - Add bsrdir and logdir to regress-config
+ - Changed default directories from /var/bacula to /opt/bacula
+ - Make spool size max message more explicit
+ - Display more info when maximum spool size is reached
+ - Fix TERM defs for Solaris 11 in conio.c
+ - Allow group to cd to sysconfdir
+ - Make sysconfdir belong to Bacula user/group and exclude others
+ - Fix Virtual Full file close bug -- race condition
+ - Enhance mount message to include read/append
+ - Improve vol_mgr swap messages
+ - Enhance output of Using Device to include for read/write
+ - Add jobid to Pmsg output
+ - Fix bug #1959 input validation on delete of jobs.
+ - Fix bug #1956 Authorization Errors false
+ - Add workaround for #5507 where autoprune and reload are in deadlock
+ - Allow conf file quoted strings to be used in a list
+ - Make bfgets handle very long lines
+ - Avoid seg fault by checking for NULL client -- reported by Arno
+ - Final fix of bug #1943
+ - Fix bug #1948 MailOnSuccess get executed on error.
+ - Fix missing index on Media table
+ - Fix bug #1943 no message storage on closed database connection.
+ - Fix bug #1946 Fix problem with MySQL with big Base jobs.
+ - Reduce wait time in regression RunScripts
+ - Implement a timeout on regression tests of 15 minutes
+ - Fix #5346 .bvfs_lsfiles and .bvfs_restore to handle deleted files
+ - Fix spooldata, accurate and ingnoreduplicate run argument
+ - Fix messages segfault
+ - Implement feature request #1939
+ - fix #1938 about PATH_MAX on hurd
+ - fix #1938 about MAXPATHLEN on hurd
+ - Fix bug #1937 OpenBSD autochanger example script
+ - Fix #4996 about MaxRunTime canceling the job too early
+ - Fix bug #1934 Wrong values at media list in BAT
+ - Fix race condition in close_msg that causes seg fault
+ - Fix double unlink
+ - More tests for freeing NULL pointers
+ - Add MaximumConcurrentReadJobs directive to Storage resource
+ - Add ujobid to .bvfs_get_jobids
+ - Avoid problem when stripping a relative path
+ - Fix #4513 about HIDDEN attribute set to parent directory during restore
+
+Bugs fixed/closed since last release:
+1812 1890 1934 1937 1938 1939 1943 1946 1948 1953 1955 1956 1959 1965 1975
+1982 1984 4513 4996 5346 5507
+
+
+=================================================================
+
+
+General:
+--------
+Version 5.2.12 version is a bug fix release.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Please note that with this version of Bacula, during the install
+of the shared libraries from the src/cats, src/lib, and src/findlib
+directories, any old Bacula libraries in the installation 
+destination directory will be removed.  This should not cause
+any problems and at least keeps the installation library cleaner.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+For packagers, if you change options, naming, and the way 
+we link our shared object files, as at least one of you does,
+you are creating a situation where the user may not be able
+to run multiple versions of Bacula on the same machine, which
+is often very useful, and in addition, you create a configuration
+that the project cannot properly support.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you are upgrading from a version older than 5.2.10, please
+read all the old ReleaseNotes of all versions released
+after the version you are upgrading from. There area
+many important notices sumarized here, and we do not 
+repeat them each bug fix release.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.12
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+Important changes since last release:
+ - A new bpluginfo utility tool
+ - Make dump_resource respect console ACL's (security fix)
+ - Add chio-changer-openbsd submitted in bug #1903
+ - Important Copy job bug fixed.
+
+12Sep12
+ - Fix accurate option in the estimate command
+  - Fix bug #1932 director crash.
+
+10Sep12
+ - Add JobId to SD debug output
+ - Commit batch session every 800,000 files
+ - Simplify safer delete code using a single regex
+ - Clean up error message generation during update attributes -- should fix bug 
+  #1823
+ - Eliminate heartbeat error messages. Fixes bug #1925
+ - Apply patch from bug #1911 to implement --with-logdir
+ - Add chio-changer-openbsd submitted in bug #1903
+ - mysql database install/update scripts patch. Fixes bug #1901
+ - Delegate uid/gid changing to systemd. Fixes bug #1905
+ - Fix bug #1906
+ - Fix manpage errors, fixes bug #1907
+ - Final fix for #1859 missed one query.
+ - bpluginfo - Utility tool display various information
+ - Backport more master code
+ - Fix Makefile.in so that testfind builds with acl dependency
+ - Make dump_resource respect console ACL's (security fix)
+ - backport code from master
+ - Fix #1923 about MySQL 4 support for BVFS
+ - Fix #1902 about bad status slots output
+ - Fix Sigma Copy bug #4377
+ - Fix bsmtp
+ - Reset bsmtp to only send to IPv4 mailhosts.
+
+Bugs fixed/closed since last release:
+1823 1859 1901 1902 1903 1905 1906 1907 1911 1923 1925 4377
+1932
+
+
+=======================================================
+
+Version 5.2.11 was short lived because of a crash
+
+=======================================================
+
+General:
+--------
+The 5.2.10 version is a significant bug fix release including 
+our first cut at AFS support.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Please note that with this version of Bacula, during the install
+of the shared libraries from the src/cats, src/lib, and src/findlib
+directories, any old Bacula libraries in the installation 
+destination directory will be removed.  This should not cause
+any problems and at least keeps the installation library cleaner.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+For packagers, if you change options, naming, and the way 
+we link our shared object files, as at least one of you does,
+you are creating a situation where the user may not be able
+to run multiple versions of Bacula on the same machine, which
+is often very useful, and in addition, you create a configuration
+that the project cannot properly support.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you are upgrading from a version older than 5.2.9, please
+read all the old ReleaseNotes of all versions released
+after the version you are upgrading from. There area
+many important notices sumarized here, and we do not 
+repeat them each bug fix release.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.9
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+Major changes since 5.2.9:
+- Fix IPv6 networking
+- Fix SQL Counter problems 
+- Fix Bat hanging after running a number of jobs
+- Fix dbcheck rw_writelock problem
+- Fix Windows VSS restore bug
+
+New Feature:
+- Add rudimentary support for backing up AFS
+
+
+28Jun12
+ - Add extra test for unsupported Protocol Families.
+ - Fix inet_pton call.
+ - Real fix of bug #1897 5.2.9 breaks IPv6 connectivity
+ - Fix bug #1891 wrong daemon name printed with -? option
+ - Fix bug #1859 INSERT INTO Counters fails
+ - First try at fixing bug #1897 5.2.9 breaks IPv6 connectivity
+ - Convert write_rec_to_block() to a state machine
+ - Fix bat from eating all Dir connections -- fixes bug #1872
+ - Back port fixes from BEE to fix Windows restore bug #1892
+ - Add block checksum flag to version.h
+ - Add block checksum debug code
+ - Fix bug #1893 dbcheck -B gives rwl_writelock error.
+ - Remove restriction of network buffer size being multiple of a tape block
+ - Add rudimentary support for saving AFS acls.
+ - Send level before the fileset in estimate_cmd() like in backup()
+
+Bugs fixed/closed since last release:
+1859 1872 1891 1892 1893 1897
+
+
+===============================================================
+
+General:
+--------
+The 5.2.9 version is a bug fix release. 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Please note that with this version of Bacula, during the install
+of the shared libraries from the src/cats, src/lib, and src/findlib
+directories, any old Bacula libraries in the installation 
+destination directory will be removed.  This should not cause
+any problems and at least keeps the installation library cleaner.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+For packagers, if you change options, naming, and the way 
+we link our shared object files, as at least one of you does,
+you are creating a situation where the user may not be able
+to run multiple versions of Bacula on the same machine, which
+is often very useful, and in addition, you create a configuration
+that the project cannot properly support.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you are upgrading from a version older than 5.2.7, please
+read all the old ReleaseNotes of all versions released
+after the version you are upgrading from. There area
+many important notices sumarized here, and we do not 
+repeat them each bug fix release.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.8
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+Changes since 5.2.7:
+--------------------
+
+11Jun12
+ - Remove bad TERM_LIB patch from version 5.2.8 
+     "Apply readline without TERM_LIB dependency patch from bug #1871"
+ - Ensure cancel status is set for canceled duplicate jobs -- partial fix for 
+   bug #1851
+ - Enhance Win32 error messages -- fixes bug #1879
+ - Apply patch from bug 1876 to permit dot commands in a runscript
+ - Remove config variables from examples/devices fixes bug #1884
+ - Add more debug code for bug 1885
+ - Add more debug to block.c when read rejected
+ - Fail job that attempts to read from closed device -- reported in bug 1885 but 
+   not fixed
+ - Detect Python 2.7 fixes bug #1888
+ - Apply systemd patch from bug #1886
+ - Rewrite some SD subroutines as class members
+ - New overhaul of xattr code.
+ - Use IPPROTO_TCP for SOL_TCP if SOL_TCP isn't defined.
+ - Fix compiler warning.
+
+Bugs fixed/closed since last release:
+1851 1879 1884 1886 1888
+
+
+====================================================================
+
+General:
+--------
+Version 5.2.8 was a short lived version because it had a TERM_LIB
+patch that broke on Solaris and other machines.  That patch was
+removed in 5.2.9.
+
+General:
+--------
+The 5.2.7 version is a significan bug fix release. (The
+diff file between 5.2.6 and this one is over 25,000 lines).
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Please note that with this version of Bacula, during the install
+of the shared libraries from the src/cats, src/lib, and src/findlib
+directories, any old Bacula libraries in the installation 
+destination directory will be removed.  This should not cause
+any problems and at least keeps the installation library cleaner.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+For packagers, if you change options, naming, and the way 
+we link our shared object files, as at least one of you does,
+you are creating a situation where the user may not be able
+to run multiple versions of Bacula on the same machine, which
+is often very useful, and in addition, you create a configuration
+that the project cannot properly support.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you are upgrading from a version older than 5.2.7, please
+read all the old ReleaseNotes of all versions released
+after the version you are upgrading from. There area
+many important notices sumarized here, and we do not 
+repeat them each bug fix release.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.3
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+Changes since 5.2.6:
+--------------------
+02Jun12
+ - Correct Qt version needed for bat
+ - Turn on SD deadlock detection by default
+ - Fix bug #1880 ltdl.m4 missing for new feature.
+ - Fix bug #1870 GNU binutils-gold build failure.
+ - Add new empty netinet/tcp.h so Windows compile works
+ - Eliminate compiler warning in stored/dircmd.c
+ - Fix TCP Heartbeat code
+ - Align conio.c struct at 8 bytes to fix Sparc bus error.
+ - Fix get_basename() -- rewrite
+ - Apply James' exchange-fd.c regression fix
+ - Add first Dutch translation
+ - Ensure that StorageId is updated after write
+ - Fix updating of cached slots + error message numbering
+ - Remove old shared objects before install
+ - Add missing dummy bVarPrefixLinks variable retrieval.
+ - Fix mysql config for older versions of mysql+config.
+ - Fix problem in BVFS with concurrent queries
+ - Add more checks to bvfs
+ - Try to use multi-row insert statements for mysql.
+ - On some platforms intptr_t is in an other include file.
+ - Add support for fcntl(fd, F_CLOSEM) to close filedescriptors.
+ - Use closefrom if available instead of trying to close fds ourself.
+ - Fix class member shadowing.
+ - Move storages tls initialization to proper place.
+ - Fix Copyright on init scripts suse, add specific daemon user & group
+ - Add support for new POSIX getaddrinfo interface.
+ - Apply MSQL detection fixes from bug #1829
+ - Fix bug #1805 cannot specify hostname in ./configure
+ - Fix restore_job restore keyword
+ - Allow plugin to backup a directory
+ - Print seconds in schedule time as noted in bug #1854
+ - Fix #1857 about restore cd command that blocks on empty directory
+ - Backport new StorageId code
+ - More definitive fix for update slots bug
+ - Fix #4062 on make_catalog_backup.pl script when user/password are empty
+ - Fix bug #1853: bacula-sd dead but pid file exists.
+ - Fix bug #1841 estimate command level=differential goes wrong in accurate 
+   mode.
+ - Fix bug #1842 Incorrect port number reported
+ - Fix bug #1848 bsock.c:335 Socket has errors=1 on call to client
+ - Force the re-initialization of BaseJobOpts, AccurateOpts and VerifyOpts 
+   between two Include{}
+
+Bugs fixed/closed since last release:
+1805 1829 1841 1842 1848 1853 1854 1857 1870 1874 1880 4062
+
+
+
+General:
+--------
+The 5.2.6 version is a bug fix release.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you are upgrading directly from 5.0.3 to this version, please see the
+important notices below for version 5.2.3, particularly
+the database upgrade and the difference in packaging the
+SQL shared libraries.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you store .bsr or .mail files in the Bacula working
+directory, please be aware that they will all be deleted
+each time the Director starts.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.3
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+New Feature:
+ - The restore tree cd command accepts wild cards within each
+   part of a path. Wild cards apply only to a single part at a
+   time: i.e. cd a*/b*/xx* will match abc/bcd/xxfxx
+   but */xx* will not match the above filename.
+
+Changes since 5.2.5:
+
+17Feb12
+ - Fix old exchange-fd plugin Accurate checkFile code.
+ - Insert the slot field as a numeric field.
+ - Fix #1831 by dropping the table before creating it
+ - Make cd accept wildcards
+ - Remove bad optimization from Accurate code
+ - Lock read acquire in SD to prevent to read jobs getting the same thing
+ - Implement more robust check in other drives for tape slot wanted
+ - Fix lost dcr point -- memory loss in Copy/Migration + possible confusion
+ - Ensure that bvfs SQL link is not shared
+ - Fix error printing in acl and xattr code.
+ - Backport better error debug output for sd plugins.
+ - Add wait on bad connection for security
+ - Make mtx-changer more fault tolerant
+ - Fix 32/64 bit problems in SD sscanf commands
+ - Skip certain filesystem types on some platforms.
+ - Allow BVFS to browse and restore Base jobs
+ - Add error message to .bvfs_clear_cache command
+ - Fix plugin bug with multiple simultaneous jobs
+
+Bugs fixed/closed since last release:
+1831
+
+===============================================================
+
+General:
+--------
+The 5.2.5 version is a bug fix release.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you are upgrading directly from 5.0.3 to this version, please see the
+important notices below for version 5.2.3, particularly
+the database upgrade and the difference in packaging the
+SQL shared libraries.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you store .bsr or .mail files in the Bacula working
+directory, please be aware that they will all be deleted
+each time the Director starts.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.3
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+Changes since 5.2.4:
+
+25Jan12
+ - Disable usage of JS_Warning waiting for a more complete implementation
+ - Removed old sd plugins which doesn't work anymore.
+ - Adapt sample-query.sql for Warning job status
+ - Fix location of Qt dlls for Win64 build
+ - Fix MediaView::getSelection
+
+Bugs fixed/closed since last release:
+1824 (1814 1806 1818 non-bugs)
+
+=============================================================
+General:
+--------
+The 5.2.4 version is a bug fix release.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you are upgrading directly from 5.0.3 to this version, please see the
+important notices below for version 5.2.3, particularly
+the database upgrade and the difference in packaging the
+SQL shared libraries.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you store .bsr or .mail files in the Bacula working
+directory, please be aware that they will all be deleted
+each time the Director starts.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.3
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+Most important changes since 5.2.3:
+- Fix LZO detection so that it correctly detects presense of header
+  files.
+- Switch the way we handle shared object versioning.
+- Backport Enterprise spec files to platforms/rpms
+- Switch to using Qt 4.7.4 (you must download new 
+  depkgs-qt-24Dec11.tar.gz
+- Update depkgs to depkgs-24Dec11.tar.gz
+- Enhancements to File daemon and Storage daemon plugins
+- Compiler warning cleanups
+- xattr fixes
+- Cleanup old files in the working directory when the Director starts
+
+Changes since 5.2.3:
+
+18Jan12
+ - Prepare for adding IPv6 to Windows in the future
+ - Fix bug #1822 Schedule run line parsing fails if value is keyword
+ - Revert to 5.0 size computation in accurate elements, may fix #1821
+ - Mark that a file was found in the accurate list in the ff_pkt with a
+   variable
+ - Definitive fix for MySQL MaxValue problem bug #1810
+ - Initialize delta_seq to -1 because 0 means that we have already a version
+ - Adapt bfileview for bvfs tables
+ - Set job status to running when restore job really starts
+ - Remove ifdeffing that turned off JS_Warning status -- must have been missed 
+  test code
+ - Add support for soname setting in libtool.
+ - Fix bug #1815
+ - Fix systemd pid files.
+ - Limit migration/copy jobs to starting 100 at a time
+ - Avoid conflict with PAGE_SIZE define
+ - Send previous Job name during Incremental/Differential to the FD
+ - Fix bug #1811 Filed fails to backup more then one xattr.
+ - system.posix_acl_default is also an acl stored as xattr
+ - Fix bug #1807
+ - Add configure for new redhat spec files
+ - Backport Enterprise spec files
+ - Fix bad memset() reported by clang
+ - Test new plugin function in bpipe and test plugin
+ - Try to fix openssl problem with signal
+ - Add BSOCK::set_killable()
+ - Set directory attributes when using Replace=Never when Bacula creates them
+ - Use RestoreObject type in Catalog
+ - Add new features in plugin
+ - Add helper for ini files
+ - Implement run accurate=yes/no
+ - Add .bvfs_clear_cache
+ - Add Accurate and MaxRunSchedTime in Schedule resource
+ - Fix bug #1802 configure code to detect LZO is broken
+ - Fix bug #1806 failure to save second and more xattr.
+ - Add second xattr to show bug 1806
+ - Fix seg fault in plugin event loop
+ - Fix #3210 about slow restore with bvfs
+
+Bugs fixed/closed since last release:
+1802 1806 1807 1810 1811 1815 1821 1822 3210
+
+
+==============================================================
+
+General:
+--------
+The 5.2.3 version is an bug fix release.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you are upgrading directly from 5.0.3 to this version, please see the
+important notices below for version 5.2.2, particularly
+the database upgrade and the difference in packaging the
+SQL shared libraries.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.3
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+Changes since 5.2.2:
+
+ - Revert patch from Ben to not compress man pages on Solaris fix #1801
+ - Fix bug #3322 don't poll when operator is labeling tapes
+ - bvfs: Fix mysql REGEXP operator
+ - Fix Mysql 5.5.18 symbol lookup
+ - fix utf8/iso8859 problems
+ - Fix #3419, update stats problem
+ - Fix cats_test to use the new method names.
+ - Update accurate code to use 1 byte instead of 3
+ - Fix segfault in accurate code
+ - Fix compilation warning on FreeBSD
+
+Bugs fixed/closed since last release:
+1801 3322 3419
+
+
+================================================================
+Version 5.2.2
+
+General:
+--------
+The 5.2.2 version is an important bug fix release. It contains also some
+additions and performance improvements. 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+If you are upgrading directly from 5.0.3 to this version, please see the
+important notices below for version 5.2.1, particularly
+the database upgrade and the difference in packaging the
+SQL shared libraries.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.2
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+Changes since 5.2.1:
+-----------------
+ - Implement -t option for Bat
+ - Require correct Qt version 4.6.2 or later to build bat
+ - Get new lib/plugins.h
+ - Pull new SD plugin files from Master
+ - Fix script to set mode of cats scripts
+ - Add Systemd configure options
+ - Split messages line by line before sending it to syslog() fix #3325
+ - Fix bvfs_restore on MySQL
+ - Fix #3308 where a SMTP problem can block the director
+ - Change locking scheme of the mountpoint cache.
+ - Enhance mountcache with rescan option after interval.
+ - Add %D option to edit_job_code, simplify callbacks on director side
+ - Move Zdeflate and Zinflate to seperate file.
+ - Put libraries in the correct order for non shared libs.
+ - Remove last traces of @SQL_BINDIR@ and @DB_TYPE@
+ - Fix bug #1774
+ - Move batch insert detection into db.m4
+ - bat: try to fix offset button problem when clicking too much on previous
+ - bvfs: Use single transaction for each job during update
+ - Add missing bwild & bregex man8 pages
+ - Fix compilation issue of wx-console #1778
+ - bvfs: fix filter for pattern= bvfs parameter
+ - Improve speed of BVFS with SQLite, Thanks to J.Starek
+ - bvfs: add clear_cache function
+ - bvfs: Handle windows drive when building path hierarchy
+
+Closed Bugs Since 5.2.1
+-----------------------
+1774 1778 3308 3325
+
+
+================================================================
+
+Version 5.2.1
+
+The 5.2.1 version is a major release since the last version 5.0.3.
+It includes well over 299,387 lines of changes made by 20 contributors,
+lots of bug fixes (see below), 1,851 software commits,and a 
+number of important new features:
+
+Version 5.2.0 was short lived, because Marco (thanks) found
+a number of last minute bugs. So the first official release of 5.2
+is 5.2.1.
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.2.1
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+5.2.1 New Features:
+-----------------
+- LZO Compression
+- New Tray Monitor
+- Purge Migration Job
+- Changes in Bvfs (Bacula Virtual FileSystem)
+- Changes in the Pruning Algorithm
+- Ability to Verify any specified Job
+- Additions to RunScript variables
+- Additions to the Plugin API
+- ACL enhancements
+- XATTR enhancements
+- Class Based Database Backend Drivers
+- Hash List Enhancements
+
+Some of the above are described below; all the above are
+described in more detail in the New Features chapter of the
+manual.
+
+Closed Bugs since 5.0.3:
+---------------------
+1389 1444 1448 1466 1467 1468 1476 1481 1486 1488 1493 1494 1497 1499 1501
+1502 1504 1509 1511 1513 1516 1524 1526 1527 1532 1536 1538 1541 1542 1549
+1551 1553 1554 1558 1559 1560 1564 1567 1568 1569 1571 1574 1577 1581 1582
+1584 1587 1594 1595 1600 1601 1602 1603 1604 1606 1608 1610 1612 1623 1624
+1633 1643 1648 1655 1661 1664 1666 1669 1672 1675 1684 1685 1695 1696 1699
+1700 1703 1735 1741 1749 1751 1761 1762 1764 1768 1770 1771 2710
+
+Note on bug 1612 where Bacula does not save a checksum for hard links during
+full backup, but expects one during accurate differential backups. You need
+a Full backup with the 5.2.x code to have these checksums in the Catalog.
+Doing Incr/Diff over a 5.0.x Full backup will still display lot of errors.
+
+
+
+================== Warning !!!!!! ==========================
+
+ The new pruning algorithm will not allow pruning of jobs that are essential to
+ restore since the last Full backup. This is, of course, correct and desirable,
+ but it is different from older Bacula versions that could inappropriately
+ prune jobs. Pruning of volumes is not affected.
+
+Building Bat:
+-------------
+To build Bat, you need Qt4 version 4.6.2.  If you build with any other
+version it is likely not to work.  If you do not have version 4.6.2, on
+your system, you can download the Bacula depkgs_qt version 16Dec10.
+
+Packaging the SQL backend:
+--------------------------
+The main Bacula Director code is independent of the SQL backend
+in this version. This means that the Bacula Director can be packaged
+by itself, then each of the different SQL backends supported can
+be packaged separately.  It is possible to build all the DB backends
+at the same time.
+
+- configure can be run with multiple database configure options.
+   --with-sqlite3
+   --with-mysql
+   --with-postgresql
+
+Order of testing for database is
+- postgresql
+- mysql
+- sqlite3
+
+Each configured backend generates a libbaccats-<backend_name>-<version>.so
+A dummy catalog library is created named libbaccats-version.so
+
+At configure time the first detected backend is used as the so called default
+backend and at install time the dummy libbaccats-<version>.so is replaced with
+the default backend type.
+
+If you configure all three backends you get three backend libraries and the
+postgresql gets installed as the default.  When you want to switch the default
+you can copy one of the three backend libraries over the
+libbaccats-<version>.so e.g.
+
+cp libbaccats-postgresql-<version>.so libbaccats-<version>.so
+
+And update the default backend in the following files:
+
+create_bacula_database
+drop_bacula_database
+drop_bacula_tables
+grant_bacula_privileges
+make_bacula_tables
+make_catalog_backup
+update_bacula_tables 
+
+New Catalog format in version 5.2.0 and greater
+-----------------------------------------------
+This release of Bacula uses a new catalog format. We provide a set of
+scripts that permit to convert a 5.0.x (version 12) catalog to 5.2.1 (version
+14).  The Bacula project rpm spec files have been modified to
+detect the database change and do the upgrade for you.  We strongly
+recommend that you save a copy of your existing database before upgrading
+using rpms.
+
+The simplest way to upgrade the database assuming you are building from
+source (i.e. manually):
+1. Stop any current version of Bacula from running.
+2. Save a copy of your existing database.
+3. Configure, build, and install the 5.2.1 version of Bacula
+   Note the new ./configure options in the manuals see the link
+   at the bottom of this file.
+4. cd <your-scripts-installation-directory>
+5. ./update_bacula_tables
+6. If you have multiple catalogs, edit the update_bacula_tables
+   script and put the name of another database, and then
+   execute the script again. Repeat this until all Bacula
+   catalogs have been updated.
+7. Start the new Bacula.  If everything worked, it should
+   not print any error messages.
+
+If you start from scratch, you don't need to run the update_bacula_tables
+script because the create_bacula_tables script automatically creates the new
+table format.  However, if you are using a version of Bacula older than 5.0.0
+(e.g.  3.0.3) then you need to run the update_bacula_tables script that will
+be found in the <bacula>/src/cats directory after you run the ./configure
+command.  As mentioned above, before running this script, please backup your
+catalog database, and when you do running it, be sure shutdown Bacula and be
+aware that running the script can take some time depending on your database
+size.
+
+================================================================
+
+Changes:
+
+Speed and Memory Usage Enhancements:
+- Implement LZO compression algorithm (need lzo2 headers to activate this option)
+- New Pruning algoritm -- safer and faster
+- Use of PostgreSQL cursor when doing large queries, should reduce the
+  memory usage during restore and accurate backups.
+- limit command in some list commands
+- Bacula Virtual File System for fast catalog access
+- Faster crc32 algorithm
+
+Security Enhancements:
+- Additional security against injection of illegal characters
+- Fix possible fnmatch problem
+
+Features Enhancements:
+- Improvements in ACL and xattr handling on additional platforms:
+  AIX, Darwind, FreeBSD, HPUX, IRIX, Solaris, Tru64
+- Tray monitor for Windows
+- New SQL backend and ./configure that permits building multiple catalog
+  backends in one build, and has the main Bacula core code totally independent
+  of the SQL backend, which should simplify packaging (only the
+  libbacsql.so/dll needs to be changed to switch from one database backend
+  to another (e.g. MySQL to PostgreSQL).
+- Indent lsmark during restore
+- Disable batch insert config item
+- Director selection option in bconsole
+- restorejob command in bconsole
+- Many additional features for bat such as "brestore" panel
+- The old bat version browser has been turned off since it does not
+  work correctly and the brestore panel provides the same functionality
+- Improved hash table for hard links
+- Additional script variable editing such as %b (JobBytes), %F (JobFiles) 
+  and %h (Client Address)
+
+Other Enhancements:
+- Includes better handling for Windows repares points, mount points, and 
+  junction points.
+- New database format
+- Many new plugin API features
+- Improved memory handling for restores
+- Significant stability enhancements to bat
+- xattr/ACL restore failure are now printed as Warning
+- A few path name length limits in Windows have been removed.
+
+
+===========================================================================
+
+The 5.0.3 version is significant bug fix update to version 5.0.2.
+It includes new code and some new features.
+There is no database change since prior versions of 5.0.
+
+Note, if you are running 5.0.0, read the 5.0.1 and 5.0.2 release notes below in
+  the 5.0.1 release section.
+  Important!!!
+
+Compatibility:
+--------------
+ As always, both the Director and Storage daemon must be upgraded at
+ the same time.
+
+ Older 5.0.x and 3.0.x File Daemons are compatible with the 5.0.3
+ Director and Storage daemons. There should be no need to upgrade older File
+ Daemons.
+
+Changes and New Features:
+- If a VSS (Windows) snapshot fails, the whole Job is failed, previously
+  it printed a warning message and continued.
+- New editing codes %b = Job Bytes and %f = Job Files for runscripts
+- Any non-Bacula project plugins (i.e. third party plugins) 
+  must be upgraded to specify AGPLv3 in place of the GPLv2 used previously 
+  for the PLUGIN_LICENSE.
+- The bat Media page text columns can be sorted by clicking on the column.
+- If possible, the SD will automatically update the catalog Volume size if 
+  it does not match the Volume size. The mismatch between the Volume sizes
+  typically occurs when the FD has a comm line drop or the FD crashes.
+
+
+Bug fixes
+1538 1554 1564 1567 1568 1569 1571 1577 1581 1582 1587 1594 1595 1606 1610
+
+- Change license from GPLv2 to AGPLv3
+- Make Win32 no filesystem change more explicit
+- Backport Branch-4.0 release to Branch-5.0
+- Massive backport from Branch-5.1 to Branch-5.0
+- Fix postgresql catalog creation when version is not on the first line
+- Fix bug #1610 handle empty xattr values on Linux and xBSD.
+- Garbage collect memory pool at end of job and before sm_dump
+- Add xattr seg fault protection suggested by Marco for bug #1610
+- Add archlinux to os.m4
+- More fixes for 32/64 bit problems in smartall
+- Fix 32/64 bit problem in smartalloc dump routine
+- Fix bad copy/paste in commit c88dccb88 prably a seg fault
+- Add .dump and .exit commands for daemons
+- Make SD automatically fix the Volume size in the Catalog when out of sync
+- Use Pmsg in smartall.c rather than printf for tracing Windows
+- Up maximum block size to 20M
+- Fix for TLS bugs #1568 and #1599
+- Improve comm line error handling for TLS, may fix bug #1568 and #1599
+- Fix problem when sending Cancel event to plugin
+- Convert all Jmsg on the watchdog thread to Qmsg
+- Fix SD crash due to mismatched lock/unlock in error condition
+- Fix bug #1587 if you have clients with different catalogs configured, both 
+  catalogs contains all clients after a reload or restart of the dir
+- Fix bug #1577 During migration: ERROR in block.c:950 Failed ASSERT: dev->is_open() 
+  by moving and commenting out the ASSERT()
+- Skip HB kill in FD if HB thread terminated
+- Fix crash from unequal volume_lock/unlock calls
+- New prunning algorithm -- should be more accurate
+- Save any dumps during regression to dumps directory
+- Fix crash from rw_lock/unlock miss match
+- Attempt to fix duplicate job kill seg fault
+- Replace pthread_kill by my_thread_send_signal() in jcr.c
+- fix #1595 about batch mode detection problem for postgresql with non standard 
+  install dir
+- Fix #1594 about prune copy jobs
+- Apply literal string fix in printf submitted by Luca Berra
+- Fix bug #1582 Restore from multiple storage daemons breaks subsequent backups
+- Fix segfault on "cancel jobid=" command
+- Fix bug #1554 Windows installer doesn't honor /S flag
+- Remove pool zap code that breaks 2drive-concurrent-test
+- Fix #1571 and install libraries with 755 perms
+- Fix bug #1581 ASSERTs in src/dird/jobq.c can never trigger
+- Fix problem with BaseJob and Accurate FileSet options on client side
+- Fix for bug #1569 deadlock/crash in Dir
+- Fix segfault when loading Plugins
+- Fix #1567 about display of long volume names truncated during restore
+- Added new bacula-libs package.
+- Fix bug #1538 Start Scripts return incorrect value
+- Fix bug #1564 init scripts not LSB compliant
+
+See ChangeLog for more details.
+
+=============================================================================
+
+
+============= Release 5.0.2 ========================
+
+Changes since 5.0.1
+-------------------
+
+Bug fixes
+1502 1511 1517 1524 1527 1532 1536 1541 1549 1551 1553 1559 1560
+
+- Probable fix for SD crash bug #1553
+- Fix #1559 problem when restoring pruned jobs with a regexp
+- Fix for bug #1560 bcopy cannot find Volume
+- Fix cancel crash bug #1551
+- Check if sql backend is thread-safe
+- Correct Pool display in SD status. Fixes bug #1541
+- Fix cancel crash reported by Stephen Thompson
+- Rewind on close to fix #1549
+- Remove closelog() in bpipe fixes bug #1536
+- Fix #1517 about missing Base level in .level command
+- Replace ASSERT in block.c with fail Job
+- Fix database locking calling db_lock and returning from function without
+  calling db_unlock.
+- Add missing db_unlock to bvfs_update_cache.
+- Fix #1532 about permission on binaries
+- Fix #1527 about deadlock during migration
+- Another fix for OpenSSLv1
+- Add -lrt to Solaris links
+- Fix tls.c for OpenSSLv1
+- Fix #1511 when trying to insert more than 50.000 directories in bvfs
+- Fix plugin load not to stop if one plugin bad -- pointed out by James
+- Remove --without-qwt from configure statement.
+- Second correct fix to bug #1524 verify fails after adding or removing files
+- Fix bug #1524 verify fails after adding or removing files
+- Apply fix suggested by Andreas in bug #1502 for mediaview column sort problem
+- Fix OpenSSL 1.x problem in crypto.c on Fedora 12
+- Display AllowCompress warning message only if compression used in FileSet
+
+=============================================================================
+
+
+============= Release 5.0.1 ========================
+
+!!!!!!!!!!!!!!! NOTE FOR 5.0.0 USERS !!!!!!!!!!!!!!!!!!!!
+The Allow Duplicate Jobs directive has been significantly 
+reworked, and the default value has changed. See below.
+
+Truncate On Purge has been totally rewritten. See the new
+features section of the manual.
+
+When Volume Poll Interval is set in the SD DEVICE configuration,
+(default 5 mins), after a certain number of polling tries (approx
+10) polling will stop and the operator will be asked to
+resolve the problem.  Previously there was no limit, and an
+error message could be produced at each poll attempt.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Changes since 5.0.0
+-------------------
+- We believe that we have resolved most of the problems
+  concerning canceled or failed jobs being "stuck" in the
+  Director.  There is one outstanding problem in the SD when
+  canceling jobs that we will fix in the next major release.
+  If you see jobs that seem to be stuck, in general issuing
+  a cancel command in bconsole should now make them go away.
+
+Directives:
+- The default for "Allow Duplicate Jobs" has been changed from 
+  no to yes.  If you use this directive, please check your
+  conf file, and note the next two items !!!!!!!!!!!!!!!!!!!
+- AllowHigherDuplicates disabled. It did not work as documented   
+    and was confusing.
+- New directive "CancelLowerLevelDuplicates" See New Features
+  section in the manual.
+- Truncate on Purge rewritten.  See New Features section in the manual.
+
+Bug fixes:
+1448 1466 1467 1468 1476 1481 1486 1488 1494 1497 
+1499 1501 1505 1509 1513
+
+- Ensure SD asks for help when looping even if poll set. Fixes bug #1513.
+- Fix three-pool regress bug
+- Modify bacula.spec fixes bug #1505
+- This version fixes an issue where the console window would start out
+  docked. It is fixed by initiating the variables in the Pages class wi
+  constructor.
+- Fix make_catalog_backup.pl fails when catalog db is on other host
+- Apply MacOSX installer patch from bug #1509
+- Apply fix to previous fix of Copy problem. Fix proposed by reporter o
+  #1476
+- Fix bug #1501 -t does not print errors
+- Apply SQLite3 update fix from bug #1497
+- Apply bashism fix for diskchanger.in script from bug #1499
+- Apply rpm fix for Sci Linux from bug #1494
+- Take most recent Ukranian po from bug #1448
+- Probable fix for Copy/Migration bug #1476
+- Fix bug #1488 -- avoid recursion and race conditions in messages.c
+- Upgrade cats library also to 5.0.0
+- Fix missing console page in bat
+- Add bat help files to Window install
+- Improve Windows upgrade to ensure old FD is shutdown
+- Fix bug #1481 -- bat consumes all console file descriptors
+- Backport truncate on purge from 5.1.x
+- Fix bug #1486 -- bat doesn't show any errors on command-line
+- Update the bsock error URL
+- Correct .my.cnf umask in make_catalog_backup.pl
+- Apply fix for dbcheck use by make_catalog_backup.pl
+- Fix seg fault in bscan from new comment field
+- Allow multiple CNs when using TLS
+- Fix seg fault in SQlite driver
+- Make shared libs version the same as the Bacula release version
+- Remove file_index sequential check
+- Fix #1466 about Bogus pruning message
+
+For Packagers:
+1.  The default query.sql file is now, except for some comments, empty.
+The old file, which we no longer support (it is impossible or difficult to
+make it work on every backend, and the queries are mostly contributed) can
+be found in <bacula-source>/examples/sample-query.sql.  The sample file is
+not installed by the Makefiles
+
+2.  When you install the mtx-changer script, you must also install
+mtx-changer.conf if it does not exist.  This new file (mtx-changer.conf) is
+required for mtx-changer to work, but it is a user configurable file, so on
+any update, any existing file should not be overwritten.
+
+3.  Bat should be built on every platform that is capabable of running Qt.
+However, the Qt code is changing rather quickly and is not always
+compatible from version to version.  We have built and verified bat on Qt
+4.3.4.  We strongly recommend that you do not build and distribute bat with
+any other version of Qt unless you personally test it.  To build against Qt
+4.3.4, download the depkgs-qt package from the Bacula Source Forge download
+location, read the README file and follow the instructions.
+
+If you are building for Bacula version 5.0.0, please ensure that you do not
+have qmake-qt4 loaded on your system.  If you do, either remove it or
+rename it before trying to build bat.  If you do not, bat will probably be
+built using the shared objects on your system.  For Bacula 5.0.1 and later,
+this problem (bug) does not exist.
+
+depkgs-qt does not install Qt on your system, nor does it interfere with
+you having any other version of Qt installed on your system.  Once you
+build bat with depkgs-qt, it should *not* use the Qt shared objects, but
+rather they will be linked into the program.  After fully installing bat
+(make install), you can run "ldd bat" to see what shared objects it will
+use.  If any Qt shared objects are referenced, something has gone wrong.
+
+4.  Unless absolutely necessary, we recommend that you do not define any
+special library environment variables that apply to the ./configure -- for
+example: LIBDIR=/...  ./configure <your-options> is strongly discouraged.
+Doing so, could potentially cause Bacula to be linked against the wrong
+shared objects.
+
+5.  The Bacula project strongly recommends that you install Bacula into a
+single directory, with a few minor exceptions such as the MySQL or
+PostgreSQL databases.  Preferrably this should be /opt/bacula.  The full
+recommendation is:
+
+#!/bin/sh
+# Recommended configure script for Bacula
+prefix=/opt/bacula
+email=xxx@yyy.zz
+CFLAGS="-g -O2 -Wall" \
+  ./configure \
+    --sbindir=${prefix}/bin \
+    --sysconfdir=${prefix}/etc \
+    --docdir=${prefix}/html \
+    --htmldir=${prefix}/html \
+    --with-working-dir=${prefix}/working \
+    --with-pid-dir=${prefix}/working \
+    --with-subsys-dir=${prefix}/working \
+    --with-scriptdir=${prefix}/scripts \
+    --with-plugindir=${prefix}/plugins \
+    --libdir=${prefix}/lib \
+    --enable-smartalloc \
+    --enable-tray-monitor \
+    --enable-bat \
+    --with-mysql \
+    --with-dump-email=${email} \
+    --with-job-email=${email} \
+    --with-smtp-host=localhost \
+    --with-baseport=9101
+
+Obviously, the email, and some of the minor options (mysql, postgresql,
+...) can be changed to suit your distribution, but the directory names
+defined above are strongly recommended, and over time the default values in
+the bacula-dir.conf and bacula-sd.conf will reflect these choices.
+
+If you have any questions about this or would like a detailed document
+describing our recommendations including packaging requirements, please
+send an email to the bacula-devel list.
+
+6.  Starting with Bacula version 3.0.0 up to Bacula 5.0.0, the shared
+libraries that Bacula uses by default are named xxx-1.0.0.  Starting with
+Bacula 5.0.1, we are going to name the libraries using the Bacula version.
+So in Bacula 5.0.1, the libraries will be named xxx-5.0.1.  With future
+versions, the last digit may or may not change when we distribute patch
+updates (i.e.  the last digit of the version changes).  This will depend on
+whether or not we have changed something in the library.  Hopefully this
+new procedure will resolve some of the incompatibility problems between
+different versions of the shared objects.
+
+7.  The default build option for bconsole is conio (my own little console
+routines).  I did this because some years ago, readline was very difficult
+to maintain -- it and where it was found seemed to change on every release.
+This generated at the time a number of support problems.  It seems to me
+that since then there have been very few problems with readline.  As a
+consequence, I have no problem if you want to make bconsole with readline
+enabled.  It will actually give some very nice new bconsole command
+completion functionality that Eric has written.  Bottom line: feel free to
+use readline or not as you please.
+
+==========================================================
+
+
+
+Release Notes for Bacula 5.0.0
+
+Release Numbering:
+-----------------------------------------------------------
+You might be wondering why this release jumps from 3.0.x to 
+5.0.0 thus skipping version 4.0.0.  We have done this for 
+several reasons: first, we wanted a way of distinguishing
+the numbering system for the Bacula System Enterprise version
+and the Bacula Project version.  So, to do so, we have decided
+that the first number of the Bacula Project version will always
+be odd, and the first number of the Enterprise version will always
+be even. Thus the Bacula Project now moves from 3.0.x to 5.0.x.
+In addition, we want to keep the Bacula Project version larger
+than the Enterprise version to indicate that the Bacula Project
+version is more advanced or has more features than the 
+Enterprise version. For memory, the current Enterprise version
+is 2.6.1, and the next release (in a few months -- before June 2010)
+will be version 4.0.0.
+
+Warning:
+--------------------------------------------------------------
+Please note the three Warnings below before doing any install or
+upgrade.
+       
+
+Changes since 3.0.3a (the last Bacula Project release):
+-------------------------------------------------------
+
+Bug fixes:
+1337 1351 1352 1354 1357 1361 1367 1369 1370 1373 
+1376 1391 1403 1409 1420 1422 1427 1428 1431 1450 
+1454 1455 1458 1456
+
+Fixed:
+ - Problem that locks the Director when the SMTP server wasn't 
+   responding to the bsmtp program 
+ - Restore's dir command shows incorrect file sizes 
+ - Fix various problems with the reload command   
+ - Fix problems with conio
+ - Eliminate several deadlocks or potential race conditions from SD
+
+Enhancements:
+ - Project 5: Truncate volume after purge
+ - Project 6: File Deduplication using Base Jobs 
+ - Project 10: Restore from Multiple Storage Daemons
+ - Project 11: AllowCompression per Device
+ - Project 23: Add Maximum Concurent Jobs for Devices to balance load 
+   between drives
+ - Add Accurate Fileset Options to configure accurate detection. Can use 
+   checksum verification for example.
+ - Allow FD to keep root read but drop write permission (CAP)
+ - Secure handling of passwords for catalog backup
+ - Add Tab-completion for Bconsole when using Readline
+ - Add Bvfs API to query the catalog without building a memory tree
+ - Add new speed test to btape program
+ - Add new Bat screens (Autochanger content, Job view, Media view, ...)
+ - Windows version of Bat
+ - Added Spanish Bacula translation   
+ - New bconsole -u nnn option to have timeout on commands
+ - Allow Migrate, Copy, and Virtual Full to read and write
+   to the same Pool
+ - show disabled   -- shows disabled Jobs
+ - Add Pool File and Job retention periods (take precedence over Client)
+ - Many ACL improvements
+ - Level added to FD status Job entry
+ - Allow turning on/off Block Checksum per device
+ - Set Device Poll interval to 5 minutes -- previously did not poll
+ - Implement lock manager with bad order protection
+
+Compatibility:
+As always, both the Director and Storage daemon must be upgraded at
+the same time, and on any given machine, you must run only one version
+of Bacula. This means that on the Director and Storage daemon machines,
+you *must* upgrade your File daemon as well.
+
+Older 3.0.x and possibly 2.4.x File Daemons are compatible with the 5.0.0
+Director and Storage daemons. There should be no need to upgrade older File
+Daemons immediately. However, we recommend that you do so as soon
+as is reasonable for your situation.
+
+================== Warning !!!!!! ==========================
+
+New Catalog format in version 5.0.0 (3.1.9 or later)
+-----------------------------------------------------
+
+This release of Bacula uses a new catalog format. We provide a set of
+scripts that permit to convert a 3.0.x (version 11) catalog to 5.0.0 (version
+12).  The Bacula project rpms distributed on Source Forge will automatically
+detect the database change and do the upgrade for you.  We strongly
+recommend that you save a copy of your existing database before upgrading
+using rpms.
+
+The simplest way to upgrade the database assuming you are building from
+source:
+1. Stop any current version of Bacula from running.
+2. Save a copy of your existing database.
+3. Configure, build, and install the 5.0.0 version of Bacula
+   Note the new ./configure options in the manuals see the link
+   at the bottom of this file.
+4. cd <your-scripts-installation-directory>
+5. ./update_bacula_tables
+6. If you have multiple catalogs, edit the update_bacula_tables
+   script and put the name of another database, and then
+   execute the script again. Repeat this until all Bacula
+   catalogs have been updated.
+7. Start the new Bacula.  If everything worked, it should
+   not print any error messages.
+
+If you start from scratch, you don't need to run the update_bacula_tables
+script because the create_bacula_tables script automatically creates the new
+table format.  However, if you are using a version of Bacula older than 3.1.9
+(e.g.  3.0.3) then you need to run the update_bacula_tables script that will
+be found in the <bacula>/src/cats directory after you run the ./configure
+command.  As mentioned above, before running this script, please backup your
+catalog database, and when you do running it, be sure shutdown Bacula and be
+aware that running the script can take some time depending on your database
+size.
+================================================================
+
+
+================== Warning !!!!!! ==========================
+If you upgrade a previous Win32 client installation, you must
+first stop the File daemon, then uninstall it before attempting
+the upgrade. If you do not do so, the upgrade will probably
+fail and you will need to manually find and run the 
+Uninstall.exe file, before you can upgrade to the new version.
+This is because the file locations are different.  If you want
+to save your previous bacula-fd.conf file, please do so before
+uninstalling it.
+================================================================
+
+================== Warning !!!!!! ==========================
+Due to permissions problems on Windows Vista and later systems,
+we no longer require SYSTEM or Administrator permissions to 
+access the binaries and configuation files.  If you wish
+to restrict access to these files, please see the New Features
+section of the manual for how to set access control lists.
+================================================================
+
+Note, the Win32 Installer no longer installs the Bacula Servers
+(Director and Storage daemon). See the New Features section of
+the manual for more details.
+
+============ Documentation improvements needed ==================
+
+Note!!!!! The 5.0.0+ documentation has a number of known problems:
+
+1. We have reduced the number of manuals, which has fixed many
+   of the broken links found in the old 3.0.x version, but there
+   are still some that need fixing.
+
+2. Integration of the 3.0.x features into the main manuals has
+   not yet been done.
+
+The documentation will not be completed in the near future due to lack
+manpower.  If you are unhappy with this situation as we are, we suggest
+you help by submitting patches to the documentation.  Thanks.
+=====
+
+
+This release includes large number of new features and changes.
+It should be more or less compatible with previous xx.conf files
+and File daemons providing that you are not using any of the new
+features.
+
+Please see the New Features chapter of the new manual, which documents
+some but not all the new features (we are still working on it):
+
+http://www.bacula.org/5.0.x-manuals/en/main/main/New_Features_in_5_0_1.html
+  
+The ChangeLog has more details.

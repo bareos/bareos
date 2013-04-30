@@ -1,0 +1,68 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BTRACEBACK 1 "6 December 2009" "Kern Sibbald" "Network backup, recovery and verification"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+ btraceback \- wrapper script around gdb and bsmtp
+
+.SH SYNOPSIS
+.B btraceback 
+.I /path/to/binary 
+.I pid
+
+.SH DESCRIPTION
+\fBbtraceback\fR is a wrapper shell script around the \fBgdb\fR debugger
+(or \fBdbx\fR on Solaris systems) and \fBbsmtp\fR, provided for debugging purposes.
+
+.SH USAGE
+\fBbtraceback\fR is called by the exception handlers of the Bacula
+daemons during a crash.  It can also be called interactively to view
+the current state of the threads belonging to a process, but this is
+not recommended unless you are trying to debug a problem (see below).
+
+.SH NOTES
+In order to work properly, debugging symbols must be available to the
+debugger on the system, and gdb, or dbx (on Solaris systems) must be
+available in the \fB$PATH\fR.
+
+If the Director or Storage daemon runs under a non-root uid, you will
+probably need to be modify the \fBbtraceback\fR script to elevate
+privileges for the call to \fBgdb\fR/\fBdbx\fR, to ensure it has the proper
+permissions to debug when called by the daemon.
+
+Although Bacula's use of \fBbtraceback\fR within its exception handlers is
+always safe, manual or interactive use of \fBbtraceback\fR is subject to the
+same risks than live debugging of any program, which means it could cause
+Bacula to crash under rare and abnormal circumstances.  Consequently we
+do not recommend manual use of \fBbtraceback\fR in production environments
+unless it is required for debugging a problem.
+
+.SH ENVIRONMENT
+\fBbtracback\fR relies on \fB$PATH\fR to find the debugger.
+
+.SH FILES
+.TP
+.I /usr/lib/bacula/btraceback
+.RS
+The script itself.
+.RE
+.TP
+.I /usr/sbin/btraceback
+.RS
+symbolic link to \fI/usr/lib/bacula/btraceback\fR
+.RE
+.TP
+.I /etc/bacula/scripts/btraceback.gdb
+.RS
+the GDB command batch used to output a stack trace
+.RE
+
+.SH AUTHOR
+This manual page was written by Lucas B. Cohen 
+.nh
+<lbc@members.fsf.org>
+.SH SEE ALSO
+.BR "bsmtp" "(1) "

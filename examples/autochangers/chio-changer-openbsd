@@ -1,0 +1,134 @@
+#!/bin/sh
+#
+# Bacula interface to chio(1) autoloader for OpenBSD
+#
+# Adapted from NetBSD pkgsrc and examples/autochangers in bacula source)
+# by Antoine Jacoutot <ajacoutot@openbsd.org> for OpenBSD.
+# Tested on an LTO-4 device with 1 drive and 8 slots.
+# The user Bacula is running as needs rw access to the ch(4) and st(4)
+# devices.
+#
+# If you set in your Device resource:
+#      Changer Command = "/path/to/chio-changer-openbsd %c %o %S %a %d"
+# you will have the following input to this script:
+#      chio-changer-openbsd "changer-device" "command" "slot" "archive-device" "drive-index"
+#                            $1               $2        $3     $4               $5
+#
+# So Bacula will always call with all the following arguments, even though
+#     in come cases, not all are used.
+#
+# N.B. If you change the script, take care to return either 
+#      the chio exit code or a 0. If the script exits with a non-zero
+#      exit code, Bacula will assume the request failed.
+
+# time (in seconds) for the unit to settle after (un)loading a tape
+SLEEP=1
+
+CHIO=/bin/chio
+
+usage() {
+	echo "usage: ${0##*/} ctl-device command [slot archive-device drive-index]"
+}
+
+# check parameters count
+check_parm_count() {
+	pCount=$1
+	pCountNeed=$2
+	if test ${pCount} -lt ${pCountNeed}; then
+		usage
+		echo "!!! insufficient number of arguments given"
+		exit 1
+	if test ${pCount} -lt 2; then
+		usage
+		echo "!!! mimimum usage is the first two arguments"
+		exit 1
+	else
+		usage
+		echo "!!! command expected ${pCountNeed} arguments"
+		exit 1
+	fi
+		usage
+		exit 1
+	fi
+}
+
+# check arguments count for specific actions
+case $2 in
+	list|listall)
+		check_parm_count $# 2
+		;;
+	slots)
+		check_parm_count $# 2
+		;;
+	transfer)
+		check_parm_count $# 4
+		;;
+	*)
+		check_parm_count $# 5
+		;;
+esac
+
+
+# get arguments
+ctl=$1
+cmd="$2"
+slot=$3
+device=$4
+drive=$5
+
+case ${cmd} in 
+	unload)
+		${CHIO} -f ${ctl} move drive ${drive} slot $((${slot} - 1))
+		rtn=$?
+		[ ${rtn} -eq 0 ] && sleep ${SLEEP}
+		exit ${rtn}
+		;;
+	load)
+		${CHIO} -f ${ctl} move slot $((${slot} - 1)) drive ${drive}
+		rtn=$?
+		[ ${rtn} -eq 0 ] && sleep ${SLEEP}
+		exit ${rtn}
+		;;
+	list)
+		${CHIO} -f ${ctl} status -v slot | \
+			sed -ne 's/^slot *\([0-9]*:\).*FULL.*voltag.*<\(.*\):.*/\1\2/p' | \
+			awk -F: '{ print $1 + 1 ":" $2 }'
+		exit $?
+		;;
+	listall)
+		# XXX only one drive is queried
+		_list=$(${0} ${1} list)
+		_loaded_s=$(${0} ${1} loaded ${slot} ${device} ${drive})
+		_loaded_t=$(${CHIO} -f ${ctl} status -v | grep "drive ${drive}" | awk '{ print $NF }' | sed -e 's,<,,' -e 's,:.*,,')
+
+		[ -n "${_list}" -a -n "${_loaded_s}" -a -n "${_loaded_t}" ] || exit 1
+
+		(for i in ${_list}; do
+			echo "S:${i}" | sed 's/\(.*\):/\1:F:/'
+		done
+		echo S:${_loaded_s}:E
+		if [ "${_loaded_s}" -ne 0 ]; then
+			echo D:${drive}:F:${_loaded_s}:${_loaded_t}
+		else
+			echo D:${drive}:E
+		fi) | sort
+		;;
+	loaded)
+		# XXX output the first empty slot if the drive is loaded
+		_slot=$(${CHIO} -f ${ctl} status -v | egrep '^slot.*<ACCESS> voltag: <:[0-9]>$' | awk '{ print $2 }' | awk -F: '{ print $1 + 1 }')
+		rtn=$?
+		_loaded=$(${CHIO} -f ${ctl} status -v | egrep "^drive ${drive}: <ACCESS,FULL> voltag: <.*:[0-9]>")
+		[ -z "${_slot}" -o -z "${_loaded}" ] && _slot=0
+		echo ${_slot} | awk '{ print $1 }'
+		exit ${rtn}
+		;;
+	slots)
+		${CHIO} -f ${ctl} params | awk "/slots/{print \$2}"
+		exit $?
+		;;
+	transfer)
+		slotdest=${device}
+		${CHIO} -f ${ctl} move slot $((${slot} - 1)) slot ${slotdest}
+		exit $?
+		;;
+esac

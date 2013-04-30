@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# Push tags
+#
+
+. ./config
+
+echo "Updating repo and tags for release version: ${ver}"
+
+cd $cwd
+
+fulltag=Release-$ver
+
+for i in $bacula $docs ; do
+  cd $i
+  current=`git branch | awk '/*/ { print $2 }'`
+  git checkout ${branch}
+  git push ${remote} ${branch}
+  git push ${remote} tag ${fulltag}
+  echo "Pushed ${remote} and git push ${remote} tag ${fulltag} in $i"
+  git checkout ${current}
+done

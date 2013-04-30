@@ -1,0 +1,11 @@
+### Old Bacula volume
+12	string		BB01		old Bacula volume data,
+>20	bedate		x		session time %s
+
+### Current Bacula volume
+12	string		BB02		Bacula volume data,
+>20	bedate		x		session time %s,
+>24	belong		-1		PRE_LABEL,
+>24	belong		-2		VOL_LABEL,
+>>57	belong		x		version %d,
+>>93	string		x		name '%s'

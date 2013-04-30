@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Bacula WX Console
+Comment=Bacula Director Console
+Icon=/usr/share/pixmaps/wxwin16x16.xpm
+Exec=gnomesu -t "Query" -c "@sbindir@/bwx-console -c @sysconfdir@/bwx-console.conf" -d -e -m "In order to run the bacula wx console as root, ^additional information is required."
+Terminal=false
+Type=Application
+Encoding=UTF-8
+X-Desktop-File-Install-Version=0.3
+Categories=System;Application;Utility;X-Red-Hat-Base;

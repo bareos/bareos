@@ -1,0 +1,10 @@
+use mysql
+grant all privileges on *.* to kern@localhost with grant option;
+grant all privileges on *.* to kern@"%" with grant option;
+grant all privileges on *.* to kelvin@localhost with grant option;
+grant all privileges on *.* to kelvin@"%" with grant option;
+grant all privileges on *.* to bacula@localhost with grant option;
+grant all privileges on *.* to bacula@"%" with grant option;
+select * from user;
+flush privileges;
+exit

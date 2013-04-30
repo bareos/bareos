@@ -1,0 +1,95 @@
+Index: GNUmakefile
+--- ../tmp/pthreads-snap-2004-06-22/GNUmakefile	2004-05-19 17:56:52.000000000 -0700
++++ ./GNUmakefile	2006-06-27 05:48:10.000000000 -0700
+@@ -408,16 +408,16 @@
+ 	@ $(MAKE) clean GC
+ 
+ GC:
+-		$(MAKE) CC=gcc CLEANUP_FLAGS="$(GC_CFLAGS)" OBJ="$(DLL_OBJS)" $(GC_DLL)
++		$(MAKE) CC=mingw32-gcc CLEANUP_FLAGS="$(GC_CFLAGS)" OBJ="$(DLL_OBJS)" $(GC_DLL)
+ 
+ GCE:
+-		$(MAKE) CC=g++ CLEANUP_FLAGS="$(GCE_CFLAGS)" OBJ="$(DLL_OBJS)" $(GCE_DLL)
++		$(MAKE) CC=mingw32-g++ CLEANUP_FLAGS="$(GCE_CFLAGS)" OBJ="$(DLL_OBJS)" $(GCE_DLL)
+ 
+ GC-inlined:
+-		$(MAKE) CC=gcc CLEANUP_FLAGS="$(GC_CFLAGS)" OBJ="$(DLL_INLINED_OBJS)" $(GC_INLINED_STAMP)
++		$(MAKE) CC=mingw32-gcc CLEANUP_FLAGS="$(GC_CFLAGS)" OBJ="$(DLL_INLINED_OBJS)" $(GC_INLINED_STAMP)
+ 
+ GCE-inlined:
+-		$(MAKE) CC=g++ CLEANUP_FLAGS="$(GCE_CFLAGS)" OBJ="$(DLL_INLINED_OBJS)" $(GCE_INLINED_STAMP)
++		$(MAKE) CC=mingw32-g++ CLEANUP_FLAGS="$(GCE_CFLAGS)" OBJ="$(DLL_INLINED_OBJS)" $(GCE_INLINED_STAMP)
+ 
+ tests:
+ 	@ cd tests
+@@ -436,24 +436,24 @@
+ 
+ $(GC_DLL): $(DLL_OBJS)
+ 	$(CC) $(OPT) -shared -o $(GC_DLL) $(DLL_OBJS) $(LFLAGS)
+-	dlltool -z pthread.def $(DLL_OBJS)
+-	dlltool -k --dllname $@ --output-lib $(GC_LIB) --def $(PTHREAD_DEF)
++	mingw32-dlltool -z pthread.def $(DLL_OBJS)
++	mingw32-dlltool -k --dllname $@ --output-lib $(GC_LIB) --def $(PTHREAD_DEF)
+ 
+ $(GCE_DLL): $(DLL_OBJS)
+ 	$(CC) $(OPT) -mthreads -shared -o $(GCE_DLL) $(DLL_OBJS) $(LFLAGS)
+-	dlltool -z pthread.def $(DLL_OBJS)
+-	dlltool -k --dllname $@ --output-lib $(GCE_LIB) --def $(PTHREAD_DEF)
++	mingw32-dlltool -z pthread.def $(DLL_OBJS)
++	mingw32-dlltool -k --dllname $@ --output-lib $(GCE_LIB) --def $(PTHREAD_DEF)
+ 
+ $(GC_INLINED_STAMP): $(DLL_INLINED_OBJS)
+ 	$(CC) $(OPT) -shared -o $(GC_DLL) $(DLL_INLINED_OBJS) $(LFLAGS)
+-	dlltool -z pthread.def $(DLL_INLINED_OBJS)
+-	dlltool -k --dllname $(GC_DLL) --output-lib $(GC_LIB) --def $(PTHREAD_DEF)
++	mingw32-dlltool -z pthread.def $(DLL_INLINED_OBJS)
++	mingw32-dlltool -k --dllname $(GC_DLL) --output-lib $(GC_LIB) --def $(PTHREAD_DEF)
+ 	echo touched > $(GC_INLINED_STAMP)
+ 
+ $(GCE_INLINED_STAMP): $(DLL_INLINED_OBJS)
+ 	$(CC) $(OPT) -mthreads -shared -o $(GCE_DLL) $(DLL_INLINED_OBJS)  $(LFLAGS)
+-	dlltool -z pthread.def $(DLL_INLINED_OBJS)
+-	dlltool -k --dllname $(GCE_DLL) --output-lib $(GCE_LIB) --def $(PTHREAD_DEF)
++	mingw32-dlltool -z pthread.def $(DLL_INLINED_OBJS)
++	mingw32-dlltool -k --dllname $(GCE_DLL) --output-lib $(GCE_LIB) --def $(PTHREAD_DEF)
+ 	echo touched > $(GCE_INLINED_STAMP)
+ 
+ clean:
+Index: ptw32_semwait.c
+--- ../tmp/pthreads-snap-2004-06-22/ptw32_semwait.c	2004-05-17 00:59:47.000000000 -0700
++++ ./ptw32_semwait.c	2006-06-27 05:52:59.000000000 -0700
+@@ -41,7 +41,7 @@
+ #include "implement.h"
+ 
+ 
+-INLINE int
++int
+ ptw32_semwait (sem_t * sem)
+      /*
+       * ------------------------------------------------------
+--- /tmp/pthread_getspecific.c.bak	2008-07-12 17:26:03.000000000 +0200
++++ pthread_getspecific.c	2008-07-12 17:26:03.000000000 +0200
+@@ -63,13 +63,18 @@
+       * ------------------------------------------------------
+       */
+ {
+-  int lasterror = GetLastError ();
+-  int lastWSAerror = WSAGetLastError ();
++  void *ptr;
+ 
+-  void *ptr = TlsGetValue (key->key);
++  if (key == NULL) {
++     ptr = NULL;
++  } else {
++     int lasterror = GetLastError ();
++     int lastWSAerror = WSAGetLastError ();
+ 
+-  SetLastError (lasterror);
+-  WSASetLastError (lastWSAerror);
++     ptr = TlsGetValue(key->key);
+ 
++     SetLastError(lasterror);
++     WSASetLastError(lastWSAerror);
++  }
+   return ptr;
+ }

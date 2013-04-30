@@ -1,0 +1,50 @@
+#
+#
+@MCOMMON@
+
+.PHONY: dummy
+
+MAN8 = bacula.8 bacula-dir.8 bacula-fd.8 bacula-sd.8 \
+       bconsole.8 bcopy.8 bextract.8 bls.8 bscan.8 btape.8 \
+       btraceback.8 dbcheck.8 bwild.8 bregex.8 
+
+MAN1 = bacula-tray-monitor.1 bacula-bwxconsole.1 bsmtp.1 bat.1
+      
+# bacula-bgnome-console.1
+
+all:
+
+nothing:
+
+depend:
+
+install:
+	$(MKDIR) $(DESTDIR)/$(mandir)/man8
+	for I in ${MAN8}; \
+	  do ($(RMF) $$I.gz; gzip -c $$I >$$I.gz; \
+	     $(INSTALL_DATA) $$I.gz $(DESTDIR)$(mandir)/man8/$$I.gz; \
+	     rm -f $$I.gz); \
+	done
+	$(MKDIR) $(DESTDIR)/$(mandir)/man1
+	for I in ${MAN1}; \
+	  do ($(RMF) $$I.gz; gzip -c $$I >$$I.gz; \
+	     $(INSTALL_DATA) $$I.gz $(DESTDIR)$(mandir)/man1/$$I.gz; \
+	     rm -f $$I.gz); \
+	done
+
+uninstall:
+	for I in ${MAN8}; \
+	  do (rm -f $(DESTDIR)$(mandir)/man8/$$I.gz); \
+	done
+	for I in ${MAN1}; \
+	  do (rm -f $(DESTDIR)$(mandir)/man1/$$I.gz); \
+	done
+
+clean:
+	@$(RMF) *~ 1 2 3 *.bak
+	@find . -name .#* -exec $(RMF) {} \;
+
+depend:      
+
+distclean: clean
+	$(RMF) Makefile

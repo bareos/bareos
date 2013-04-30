@@ -1,0 +1,501 @@
+%define name bacula
+%define version 1.32d
+%define release 1mdk
+
+%define MYSQL 0
+%define GNOME 0
+%define TCPW 1
+
+%{?_with_mysql: %{expand: %%global MYSQL 1}}
+%{?_without_mysql: %{expand: %%global MYSQL 0}}
+%{?_with_gnome: %{expand: %%global GNOME 1}}
+%{?_without_gnome: %{expand: %%global GNOME 0}}
+%{?_with_wrap: %{expand: %%global TCPW 1}}
+%{?_without_wrap: %{expand: %%global TCPW 0}}
+
+%define blurb Bacula - The Leading Open Source Backup Solution.
+
+Summary: Bacula - The Network Backup Solution
+Name: %{name}
+Version: %{version}
+Release: %{release}
+Group: Archiving/Backup
+License: GPL
+Source: http://www.prdownloads.sourceforge.net/bacula/%{name}-%{version}.tar.bz2
+Source1: %{name}-icons.tar.bz2
+BuildRoot: %{_tmppath}/%{name}-root
+URL: http://www.bacula.org/
+BuildRequires: readline-devel, perl-base, zlib-devel
+%if %{TCPW}
+BuildRequires: tcp_wrappers-devel
+%endif
+Patch0: bacula-1.32d-config.diff.bz2
+Patch1: bacula-1.30a-prompt.diff.bz2
+
+%description
+%{blurb}
+Bacula is a set of computer programs that permit you (or the system
+administrator) to manage backup, recovery, and verification of computer
+data across a network of computers of different kinds. In technical terms,
+it is a network client/server based backup program. Bacula is relatively
+easy to use and efficient, while offering many advanced storage management
+features that make it easy to find and recover lost or damaged files.
+
+%package dir
+Summary: Bacula Director and Catalog services
+Group: Archiving/Backup
+Prereq: rpm-helper, perl-base
+%if %{MYSQL}
+Requires: MySQL >= 3.23
+BuildRequires: MySQL-devel >= 3.23
+%else
+Requires: sqlite-tools
+BuildRequires: sqlite-devel
+%endif
+Conflicts: bacula-fd < %{version}
+Conflicts: bacula-sd < %{version}
+
+%description dir
+%{blurb}
+Bacula Director is the program that supervises all the backup, restore, verify
+and archive operations. The system administrator uses the Bacula Director to
+schedule backups and to recover files.
+Catalog services are comprised of the software programs responsible for
+maintaining the file indexes and volume databases for all files backed up.
+The Catalog services permit the System Administrator or user to quickly locate
+and restore any desired file, since it maintains a record of all Volumes used,
+all Jobs run, and all Files saved.
+%if %{MYSQL}
+This build requires MySQL to be installed separately as the catalog database.
+%else
+This build requires sqlite to be installed separately as the catalog database.
+%endif
+
+%package console
+Summary: Bacula Console
+Group: Archiving/Backup
+Prereq: sed
+
+%description console
+%{blurb}
+Bacula Console is the program that allows the administrator or user to
+communicate with the Bacula Director.
+This is the text only console interface.
+
+%if %{GNOME}
+%package console-gnome
+Summary: Bacula Gnome Console
+Group: Archiving/Backup
+#BuildRequires: libgnome32-devel
+BuildRequires: libgnomeui2-devel
+Prereq: sed
+
+%description console-gnome
+%{blurb}
+Bacula Console is the program that allows the administrator or user to
+communicate with the Bacula Director.
+This is the GNOME GUI interface.
+%endif
+
+%package fd
+Summary: Bacula File services (Client)
+Group: Archiving/Backup
+Prereq: rpm-helper
+Prereq: sed
+Conflicts: bacula-dir < %{version}
+
+%description fd
+%{blurb}
+Bacula File services (or Client program) is the software program that is
+installed on the machine to be backed up. It is specific to the operating
+system on which it runs and is responsible for providing the file attributes
+and data when requested by the Director. The File services are also responsible
+for the file system dependent part of restoring the file attributes and data
+during a recovery operation.
+This program runs as a daemon on the machine to be backed up, and in some of
+the documentation, the File daemon is referred to as the Client (for example in
+Bacula configuration file). 
+
+%package sd
+Summary: Bacula Storage services
+Group: Archiving/Backup
+Prereq: rpm-helper
+Prereq: sed
+Conflicts: bacula-dir < %{version}
+
+%description sd
+%{blurb}
+Bacula Storage services consist of the software programs that perform the
+storage and recovery of the file attributes and data to the physical backup
+media or volumes. In other words, the Storage daemon is responsible for reading
+and writing your tapes (or other storage media, e.g. files).
+The Storage services runs as a daemon on the machine that has the backup
+device (usually a tape drive).
+
+%prep
+%setup -q -c
+cd %{name}-%{version}
+%patch0 -p1 -b .config
+%patch1 -p1 -b .prompt
+mkdir doc/manual
+mv doc/html-manual/*.html doc/manual
+mv doc/html-manual/*.css doc/manual
+mv doc/html-manual/*.gif doc/manual
+
+%build
+cd %{name}-%{version}
+%serverbuild
+%configure \
+        --enable-smartalloc \
+%if %{MYSQL}
+        --with-mysql \
+%else
+        --with-sqlite \
+%endif
+%if %{GNOME}
+                --enable-gnome \
+%endif
+%if %{TCPW}
+                --with-tcp-wrappers \
+%endif
+        --sysconfdir=%{_sysconfdir}/%{name} \
+        --with-scriptdir=%{_libexecdir}/%{name} \
+        --with-working-dir=%{_localstatedir}/%{name} \
+        --with-subsys-dir=/var/lock/subsys \
+                --with-dir-password="#FAKE#DIR#PASSWORD#" \
+                --with-fd-password="#FAKE#FD#PASSWORD#" \
+                --with-sd-password="#FAKE#SD#PASSWORD#"
+
+%make
+
+%install
+cd %{name}-%{version}
+rm -rf %{buildroot}
+%makeinstall sysconfdir=%{buildroot}%{_sysconfdir}/%{name} scriptdir=%{buildroot}%{_libexecdir}/%{name} working_dir=%{buildroot}%{_localstatedir}/%{name}
+
+# install the upgrade scripts
+%if %{MYSQL}
+install -m 755 src/cats/alter_mysql_tables %{buildroot}%{_libexecdir}/%{name}
+%else
+install -m 755 src/cats/alter_sqlite_tables %{buildroot}%{_libexecdir}/%{name}
+%endif
+
+# install the init scripts
+mkdir -p %{buildroot}%{_initrddir}
+install -m 755 platforms/mandrake/bacula-dir %{buildroot}%{_initrddir}/bacula-dir
+install -m 755 platforms/mandrake/bacula-fd %{buildroot}%{_initrddir}/bacula-fd
+install -m 755 platforms/mandrake/bacula-sd %{buildroot}%{_initrddir}/bacula-sd
+
+# install the logrotate file
+mkdir -p %{buildroot}%{_sysconfdir}/logrotate.d
+cp scripts/logrotate %{buildroot}%{_sysconfdir}/logrotate.d/bacula-dir
+
+mkdir -p %{buildroot}%{_localstatedir}/%{name}
+
+%if %{GNOME}
+# install the menu stuff
+mkdir -p $RPM_BUILD_ROOT%{_menudir}
+cat << EOF > $RPM_BUILD_ROOT%{_menudir}/%{name}-console-gnome
+?package(%{name}-console-gnome): command="%{_sbindir}/gnome-console" icon="%{name}.png" needs="x11" title="Bacula Console" longtitle="Bacula Director Console" section="Applications/Archiving/Backup"
+EOF
+mkdir -p %{buildroot}%{_iconsdir}
+tar jxvf %{SOURCE1} -C %{buildroot}%{_iconsdir}
+%endif
+
+perl -spi -e 's/"#FAKE#(\w+)#PASSWORD#"/#YOU MUST SET THE $1 PASSWORD#/' %{buildroot}%{_sysconfdir}/%{name}/*.conf
+touch %{buildroot}%{_sysconfdir}/%{name}/.pw.sed
+
+%clean
+rm -rf %{buildroot}
+
+%files dir
+%defattr(644, root, root, 755)
+%doc %{name}-%{version}/ChangeLog %{name}-%{version}/CheckList %{name}-%{version}/ReleaseNotes %{name}-%{version}/kernstodo
+%doc %{name}-%{version}/doc/*.pdf %{name}-%{version}/doc/manual %{name}-%{version}/examples
+%attr(600, root, root) %config(noreplace) %{_sysconfdir}/%{name}/bacula-dir.conf
+%ghost %{_sysconfdir}/%{name}/.pw.sed
+%config(noreplace) %{_sysconfdir}/logrotate.d/bacula-dir
+%defattr (755, root, root)
+%config(noreplace) %{_initrddir}/bacula-dir
+%{_sbindir}/bacula-dir
+%{_sbindir}/btraceback
+%{_sbindir}/dbcheck
+%{_sbindir}/smtp
+%dir %{_libexecdir}/%{name}
+%attr(644, root, root) %{_libexecdir}/%{name}/btraceback.gdb
+%if %{MYSQL}
+%{_libexecdir}/%{name}/create_mysql_database
+%{_libexecdir}/%{name}/drop_mysql_tables
+%{_libexecdir}/%{name}/grant_mysql_privileges
+%{_libexecdir}/%{name}/make_mysql_tables
+%{_libexecdir}/%{name}/alter_mysql_tables
+%else
+%{_libexecdir}/%{name}/create_sqlite_database
+%{_libexecdir}/%{name}/drop_sqlite_tables
+%exclude %{_libexecdir}/%{name}/grant_mysql_privileges
+%{_libexecdir}/%{name}/make_sqlite_tables
+%{_libexecdir}/%{name}/alter_sqlite_tables
+%endif
+%{_libexecdir}/%{name}/delete_catalog_backup
+%{_libexecdir}/%{name}/drop_bacula_tables
+%{_libexecdir}/%{name}/make_bacula_tables
+%{_libexecdir}/%{name}/make_catalog_backup
+%attr(644, root, root) %{_libexecdir}/%{name}/query.sql
+%attr(700, root, root) %dir %{_localstatedir}/%{name}
+
+%pre dir -p /usr/bin/perl
+umask(0077);
+if ( -f "%{_sysconfdir}/%{name}/.pw.sed") {
+        if ( -f "%{_sysconfdir}/%{name}/bacula-dir.conf") {
+        system "sed -e 's/s!\(.*\)!\(.*\)!/s!\2!\1!/' %{_sysconfdir}/%{name}/.pw.sed > %{_sysconfdir}/%{name}/.upw.sed";
+        system "sed -f %{_sysconfdir}/%{name}/.upw.sed %{_sysconfdir}/%{name}/bacula-dir.conf > %{_sysconfdir}/%{name}/bacula-dir.conf.tmp";
+        unlink "%{_sysconfdir}/%{name}/bacula-dir.conf";
+        rename "%{_sysconfdir}/%{name}/bacula-dir.conf.tmp", "%{_sysconfdir}/%{name}/bacula-dir.conf";
+        unlink "%{_sysconfdir}/%{name}/.upw.sed";
+        }
+} else {
+        mkdir("%{_sysconfdir}/%{name}");
+        open(IN, "/dev/random") or die "$!";
+        open(OUT, ">%{_sysconfdir}/%{name}/.pw.sed") or die "$!";
+        foreach $c ("DIR","SD","FD") {
+                read(IN, $buf, 32);
+                my $res = pack("u", $buf);
+                $res =~ s/^.//mg;
+                $res =~ s/\n//g;
+                $res =~ tr|` -_|AA-Za-z0-9+/|;
+                print OUT "s!#YOU MUST SET THE $c PASSWORD#!\"$res\"!\n";
+        }
+        close (IN);
+        close (OUT);
+}
+
+%post dir
+%if %{MYSQL}
+# NOTE: IF THIS FAILS DUE TO MYSQL NEEDING A PASSWORD YOU ARE ON YOUR OWN
+DB_VER=`mysql bacula -e 'select * from Version;'|tail -n 1 2>/dev/null`
+if [ -z "$DB_VER" ]; then
+# grant privileges and create tables
+        echo "Granting privileges for MySQL user bacula..."
+        %{_libexecdir}/%{name}/grant_mysql_privileges > dev/null
+        echo "Creating MySQL bacula database..."
+        %{_libexecdir}/%{name}/create_mysql_database > dev/null
+        echo "Creating bacula tables..."
+        %{_libexecdir}/%{name}/make_mysql_tables > dev/null
+elif [ "$DB_VER" -lt "6" ]; then
+        echo "Backing up bacula tables"
+        mysqldump -f --opt bacula | bzip2 > %{_localstatedir}/%{name}/bacula_backup.sql.bz2
+        echo "Upgrading bacula tables"
+        %{_libexecdir}/%{name}/alter_mysql_tables
+        echo "If bacula works correctly you can remove the backup file %{_localstatedir}/%{name}/bacula_backup.sql.bz2"
+fi
+%else
+if [ -s %{_localstatedir}/%{name}/bacula.db ]; then
+DB_VER=`echo "select * from Version;" | sqlite %{_localstatedir}/%{name}/bacula.db|tail -n 1 2>/dev/null`
+        if [ "$DB_VER" -lt "6" ]; then
+                echo "Backing up bacula tables"
+                echo ".dump" | sqlite %{_localstatedir}/%{name}/bacula.db | bzip2 > %{_localstatedir}/%{name}/bacula_backup.sql.bz2
+                echo "Upgrading bacula tables"
+                %{_libexecdir}/%{name}/alter_sqlite_tables
+                echo "If bacula works correctly you can remove the backup file %{_localstatedir}/%{name}/bacula_backup.sql.bz2"
+        fi
+else
+# create the tables
+        echo "Creating bacula tables..."
+        %{_libexecdir}/%{name}/make_sqlite_tables > dev/null
+fi
+%endif
+chmod -R 600 %{_localstatedir}/%{name}/*
+for i in %{_sysconfdir}/%{name}/*.conf %{_sysconfdir}/%{name}/*.conf.rpmnew %{_sysconfdir}/%{name}/*.conf.rpmsave; do
+        if [ -s $i ]; then
+        sed -f %{_sysconfdir}/%{name}/.pw.sed $i > $i.tmp
+# this is needed if upgrading from 1.30a or lower
+        sed -e '/SubSys[[:space:]]*Directory/I d' $i.tmp > $i
+        rm -f $i.tmp
+        fi
+done
+%_post_service bacula-dir
+
+%preun dir
+%_preun_service bacula-dir
+
+%files fd
+%defattr(755, root, root)
+%attr(600, root, root) %config(noreplace) %{_sysconfdir}/%{name}/bacula-fd.conf
+%config(noreplace) %{_initrddir}/bacula-fd
+%{_sbindir}/bacula-fd
+%{_sbindir}/btraceback
+%{_sbindir}/smtp
+%dir %{_libexecdir}/%{name}
+%attr(644, root, root) %{_libexecdir}/%{name}/btraceback.gdb
+%attr(700, root, root) %dir %{_localstatedir}/%{name}
+
+%pre fd
+umask 077
+i=%{_sysconfdir}/%{name}/bacula-fd.conf
+if [ -s %{_sysconfdir}/%{name}/.pw.sed -a -s $i ]; then
+        sed -e 's/s!\(.*\)!\(.*\)!/s!\2!\1!/' %{_sysconfdir}/%{name}/.pw.sed > %{_sysconfdir}/%{name}/.upw.sed
+        sed -f %{_sysconfdir}/%{name}/.upw.sed $i > $i.tmp
+        mv -f $i.tmp $i
+        rm -f %{_sysconfdir}/%{name}/.upw.sed
+fi
+
+%post fd
+%_post_service bacula-fd
+if [ -s %{_sysconfdir}/%{name}/.pw.sed ]; then
+        for i in %{_sysconfdir}/%{name}/bacula-fd.conf %{_sysconfdir}/%{name}/bacula-fd.conf.rpmnew %{_sysconfdir}/%{name}/bacula-fd.conf.rpmsave; do
+        if [ -s $i ]; then
+                sed -f %{_sysconfdir}/%{name}/.pw.sed $i > $i.tmp
+# this is needed if upgrading from 1.30a or lower
+                sed -e '/SubSys[[:space:]]*Directory/I d' $i.tmp > $i
+                rm -f $i.tmp
+        fi
+        done
+fi
+
+%preun fd
+%_preun_service bacula-fd
+
+%files sd
+%defattr(755, root, root)
+%attr(600, root, root) %config(noreplace) %{_sysconfdir}/%{name}/bacula-sd.conf
+%config(noreplace) %{_initrddir}/bacula-sd
+%{_sbindir}/bacula-sd
+%{_sbindir}/bcopy
+%{_sbindir}/bextract
+%{_sbindir}/bls
+%{_sbindir}/bscan
+%{_sbindir}/btape
+%{_sbindir}/btraceback
+%{_sbindir}/smtp
+%dir %{_libexecdir}/%{name}
+%attr(644, root, root) %{_libexecdir}/%{name}/btraceback.gdb
+%{_libexecdir}/%{name}/mtx-changer
+%attr(700, root, root) %dir %{_localstatedir}/%{name}
+
+%pre sd
+umask 077
+i=%{_sysconfdir}/%{name}/bacula-sd.conf
+if [ -s %{_sysconfdir}/%{name}/.pw.sed -a -s $i ]; then
+        sed -e 's/s!\(.*\)!\(.*\)!/s!\2!\1!/' %{_sysconfdir}/%{name}/.pw.sed > %{_sysconfdir}/%{name}/.upw.sed
+        sed -f %{_sysconfdir}/%{name}/.upw.sed $i > $i.tmp
+        mv -f $i.tmp $i
+        rm -f %{_sysconfdir}/%{name}/.upw.sed
+fi
+
+%post sd
+%_post_service bacula-sd
+if [ -s %{_sysconfdir}/%{name}/.pw.sed ]; then
+        for i in %{_sysconfdir}/%{name}/bacula-sd.conf %{_sysconfdir}/%{name}/bacula-sd.conf.rpmnew %{_sysconfdir}/%{name}/bacula-sd.conf.rpmsave; do
+        if [ -s $i ]; then
+                sed -f %{_sysconfdir}/%{name}/.pw.sed $i > $i.tmp
+# this is needed if upgrading from 1.30a or lower
+                sed -e '/SubSys[[:space:]]*Directory/I d' $i.tmp > $i
+                rm -f $i.tmp
+        fi
+        done
+fi
+
+%preun sd
+%_preun_service bacula-sd
+
+%files console
+%defattr(755, root, root)
+%attr(600, root, root) %config(noreplace) %{_sysconfdir}/%{name}/console.conf
+%{_sbindir}/console
+%{_sbindir}/btraceback
+%{_sbindir}/smtp
+%dir %{_libexecdir}/%{name}
+%attr(644, root, root) %{_libexecdir}/%{name}/btraceback.gdb
+
+%pre console
+umask 077
+i=%{_sysconfdir}/%{name}/console.conf
+if [ -s %{_sysconfdir}/%{name}/.pw.sed -a -s $i ]; then
+        sed -e 's/s!\(.*\)!\(.*\)!/s!\2!\1!/' %{_sysconfdir}/%{name}/.pw.sed > %{_sysconfdir}/%{name}/.upw.sed
+        sed -f %{_sysconfdir}/%{name}/.upw.sed $i > $i.tmp
+        mv -f $i.tmp $i
+        rm -f %{_sysconfdir}/%{name}/.upw.sed
+fi
+
+%post console
+if [ -s %{_sysconfdir}/%{name}/.pw.sed ]; then
+        for i in %{_sysconfdir}/%{name}/console.conf %{_sysconfdir}/%{name}/console.conf.rpmnew %{_sysconfdir}/%{name}/console.conf.rpmsave; do
+        if [ -s $i ]; then
+                sed -f %{_sysconfdir}/%{name}/.pw.sed $i > $i.tmp
+# this is needed if upgrading from 1.30a or lower
+                sed -e '/SubSys[[:space:]]*Directory/I d' $i.tmp > $i
+                rm -f $i.tmp
+        fi
+        done
+fi
+
+%if %{GNOME}
+%files console-gnome
+%defattr(644, root, root, 755)
+%{_iconsdir}/bacula.png
+%{_iconsdir}/mini/bacula.png
+%{_iconsdir}/large/bacula.png
+%{_menudir}/bacula-console-gnome
+%attr(600, root, root) %config(noreplace) %{_sysconfdir}/%{name}/gnome-console.conf
+%attr(755, root, root) %{_sbindir}/gnome-console
+%attr(755, root, root) %{_sbindir}/btraceback
+%attr(755, root, root) %{_sbindir}/smtp
+%dir %{_libexecdir}/%{name}
+%{_libexecdir}/%{name}/btraceback.gdb
+
+%pre console-gnome
+umask 077
+i=%{_sysconfdir}/%{name}/gnome-console.conf
+if [ -s %{_sysconfdir}/%{name}/.pw.sed -a -s $i ]; then
+        sed -e 's/s!\(.*\)!\(.*\)!/s!\2!\1!/' %{_sysconfdir}/%{name}/.pw.sed > %{_sysconfdir}/%{name}/.upw.sed
+        sed -f %{_sysconfdir}/%{name}/.upw.sed $i > $i.tmp
+        mv -f $i.tmp $i
+        rm -f %{_sysconfdir}/%{name}/.upw.sed
+fi
+
+%post console-gnome
+%update_menus
+if [ -s %{_sysconfdir}/%{name}/.pw.sed ]; then
+        for i in %{_sysconfdir}/%{name}/gnome-console.conf %{_sysconfdir}/%{name}/gnome-console.conf.rpmnew %{_sysconfdir}/%{name}/gnome-console.conf.rpmsave; do
+        if [ -s $i ]; then
+                sed -f %{_sysconfdir}/%{name}/.pw.sed $i > $i.tmp
+# this is needed if upgrading from 1.30a or lower
+                sed -e '/SubSys[[:space:]]*Directory/I d' $i.tmp > $i
+                rm -f $i.tmp
+        fi
+        done
+fi
+                
+%postun console-gnome
+%clean_menus
+
+%endif
+
+%changelog
+* Tue Nov 04 2003 Luca Berra <bluca@vodka.it> 1.32d-1mdk
+- 1.32d
+- use gnome2 for console
+- use tcp_wrappers
+- try not to create unneeded .rpmnew in configuration
+
+* Fri Aug 12 2003 Luca Berra <bluca@vodka.it> 1.31a-1mdk
+- 1.31a
+- modified %%post script to upgrade database if needed and do not try to create if it already exists.
+- %%post_service should be last in %%post script
+- changed sql upgrade script to remove multiple Version rows introduced by %%post
+- trying to create the tables multiple times in previous releases.
+- smtp is required by btraceback which is required by every daemon.
+- added conflicts for lower version
+
+* Wed Aug  6 2003 Luca Berra <bluca@vodka.it> 1.30a-3mdk
+- changed sqlite requires to match package in contrib
+- set passwords for single components to produce an error until user changes them
+- try to change passwords automatically if dir package is installed
+
+* Sun Aug  3 2003 Luca Berra <bluca@vodka.it> 1.30a-2mdk
+- many spec changes
+- almost please rpmlint
+- fixed readline eats last message bug in console
+
+* Fri Aug  1 2003 Luca Berra <bluca@vodka.it> 1.30a-1mdk
+- Initial spec file from spec by D. Scott Barninger <barninger at fairfieldcomputers.com>

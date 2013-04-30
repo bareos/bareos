@@ -1,0 +1,76 @@
+#
+# Makefile for win32 bacula executables
+# Using MinGW cross-compiler on GNU/Linux
+#
+#  Written by Robert Nelson, June 2006
+#
+
+define clean_obj
+	$(ECHO_CMD)rm -f $(1) $(patsubst %.o,%.d,$(filter-out %.res,$(1)))
+	$(ECHO_CMD)rm -f $(1) $(addsuffix .d.*,$(basename $(1)))
+endef
+
+define clean_exe
+	$(ECHO_CMD)rm -f $(1) $(addsuffix .dbg,$(basename $(1)))
+endef
+
+define checkdir
+	@if [ ! -e $(dir $(1)) ]; then mkdir -p $(dir $(1)); fi
+endef
+
+define makedep
+	@echo "Generating dependencies for $<"
+	$(call checkdir,$@)
+	$(ECHO_CMD)$(CXX) -MM $(CPPFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+endef
+
+define link_conapp
+	@echo "Linking $@"
+	$(call checkdir,$@)
+	$(ECHO_CMD)$(CXX) $(CFLAGS) $(LDFLAGS) -mconsole $^ $(1) -o $@
+endef
+
+define link_winapp
+	@echo "Linking $@"
+	$(call checkdir,$@)
+	$(ECHO_CMD)$(CXX) $(CFLAGS) $(LDFLAGS) -mwindows $^ $(1) -o $@
+endef
+
+define makedbg
+	@echo "Stripping debug info from $@"
+	$(call checkdir,$@)
+	$(ECHO_CMD)$(OBJCPY) --only-keep-debug $@ $(addsuffix .dbg,$(basename $@)) ; \
+	$(OBJCPY) --strip-debug $@ ; \
+	$(OBJCPY) --add-gnu-debuglink=$(addsuffix .dbg,$(basename $@)) $@
+endef
+
+$(OBJDIR)/%.o: %.c
+	@echo "Compiling $<"
+	$(call checkdir, $@)
+	$(ECHO_CMD)$(CXX) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR)/%.o: %.cpp
+	@echo "Compiling $<"
+	$(call checkdir, $@)
+	$(ECHO_CMD)$(CXX) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR)/%.res: %.rc
+	@echo "Compiling $<"
+	$(call checkdir, $@)
+	$(ECHO_CMD)$(WINDRES) -O coff $< -o $@
+
+$(OBJDIR)/%.d: %.c
+	$(call checkdir, $@)
+	$(makedep)
+
+$(OBJDIR)/%.d: %.cpp
+	$(call checkdir, $@)
+	$(makedep)
+
+ifneq ($(ALL_OBJS),)
+ifneq ($(MAKECMDGOALS),clean)
+include $(patsubst %.o,%.d,$(filter-out %.res,$(ALL_OBJS)))
+endif
+endif

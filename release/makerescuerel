@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+#
+# This script is used to make a Bacula rescue release
+#   rescue
+# It writes in the current directory, so we recommend that you
+#  do not run it in the Bacula source or Git directory, but
+#  in a special release directory.
+#
+# Commit all changes, export the release, make a release tar.
+#
+cwd=`pwd`
+reltype=release
+tagbase=Release-
+base_pkg=bacula-rescue
+base_dir=rescue
+branch=$2
+
+if [ $# != 2 ] ; then
+  echo "Need $0 <rescue-source-directory> <branch>"
+  echo "e.g. $0 rescue-source master"
+  exit 1
+fi
+cd $1
+if [ $? -ne 0 ]; then
+   echo "Directory: $1 does not exist"
+   exit 1
+fi
+cd $base_dir
+if [ $?  -ne 0 ]; then
+   echo "Directory: $1 does not exist"
+   exit 1
+fi
+
+src=`pwd` 
+git checkout ${branch}
+if [ $? -ne 0 ]; then
+   echo "Checkout of branch ${branch} in ${src} failed."
+   exit 1
+fi
+git pull origin ${branch}
+ver=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' version.h`
+fulltag=$tagbase$ver
+echo " "
+echo "Making $reltype for $base_pkg-$ver ..."
+echo " "
+echo "OK?  ctl-c to stop"
+read a
+
+git tag -d ${fulltag}
+echo "Creating new tag -- $fulltag"
+git tag $fulltag
+if [ $? != 0 ] ; then
+  echo " "
+  echo "Non-zero return status from Git"
+  echo " "
+  exit 1
+fi
+echo "Create Tag $fulltag done"
+cd ${cwd}
+rm -rf $base_pkg-$ver $base_pkg-$ver.tar.gz $base_pkg-$ver.tar.gz.sig
+rm -rf $fulltag
+cd ${src}
+git archive --format=tar --prefix=$base_pkg-$ver/ $fulltag | gzip >${cwd}/$base_pkg-$ver.tar.gz
+if [ $? != 0 ] ; then
+  echo " "
+  echo "Non-zero return status from Git"
+  echo " "
+  exit 1
+fi
+echo "Exported release into ${cwd}/$base_pkg-$ver.tar.gz"
+git checkout master
+cd ${cwd}
+./sign $base_pkg-$ver.tar.gz
+ls -l $base_pkg-$ver.tar.*
+
+if [ a$push != ano ]; then
+   cd ${src}
+   git push origin $branch
+   git push origin tag $fulltag
+fi

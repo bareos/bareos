@@ -1,0 +1,66 @@
+
+Notes about Bacula translations.
+--------------------------------
+
+---
+
+To edit .po files, I recommend poedit, downloadable at http://www.poedit.org/ .
+
+---
+
+To refresh bacula.pot and *.po, when some strings have been added, modified or
+removed from the sources files, run:
+
+# make update-po
+
+---
+
+To refresh Bacula source files list (POTFILES.in), when a source file is
+added or removed from the repository, run:
+
+# make gen-potfiles && make update-po
+
+Note, the gen-potfiles pulls in all files found under the top
+directory, so it is much better to do something like:
+
+cd bacula
+rm -rf x
+svn checkout https://bacula.svn.sourceforge.net/svnroot/bacula/trunk/bacula x
+cd x
+./configure <options>
+cd po
+make gen-potfiles
+cp POTFILES.in <real-source-tree/po>
+cd ..
+./configure <options>
+
+This avoids picking up any files that are not in the SVN.
+
+---
+
+To add a new translation language (e.g. German), add a new line to LINGUAS
+containing the language code (e.g. de), then run:
+# msginit -l <full locale> (e.g. "# msginit -l de_DE")
+
+Open the newly created file in an editor (e.g. de.po), and look for this line:
+"Project-Id-Version: ...\n"
+If it still look like this:
+"Project-Id-Version: PACKAGE VERSION\n"
+Correct it to:
+"Project-Id-Version: Bacula 1.38\n"
+
+You may also want to correct the language team to:
+"Language-Team: German <bacula-devel@lists.sourceforge.net>\n"
+
+Finally, add <language code>.mo (e.g. de.mo) to .cvsignore, and don't forget to
+run:
+# svn add <language code>.po <language code>.gmo
+
+---
+
+For more information, see the gettext manual:
+http://www.gnu.org/software/gettext/manual/
+
+---
+
+Nicolas Boichat <nicolas@boichat.ch>, August 2005

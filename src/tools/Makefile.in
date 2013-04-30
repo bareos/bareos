@@ -1,0 +1,208 @@
+#
+# Bacula Tools Makefile
+#
+@MCOMMON@
+
+PYTHON_INC = @PYTHON_INCDIR@
+
+srcdir =	.
+VPATH = 	.
+.PATH:		.
+
+# one up
+basedir = ..
+# top dir
+topdir = ../..
+# this dir relative to top dir
+thisdir = src/tools
+
+DEBUG=@DEBUG@
+
+DB_LIBS=@DB_LIBS@
+
+first_rule: all
+dummy:
+
+#
+
+GETTEXT_LIBS = @LIBINTL@
+
+FINDOBJS = testfind.o ../dird/dird_conf.o ../dird/inc_conf.o ../dird/ua_acl.o ../dird/run_conf.o
+
+# these are the objects that are changed by the .configure process
+EXTRAOBJS = @OBJLIST@
+
+DIRCONFOBJS = ../dird/dird_conf.o ../dird/ua_acl.o ../dird/run_conf.o ../dird/inc_conf.o
+
+NODIRTOOLS = bsmtp
+DIRTOOLS = bsmtp dbcheck drivetype fstype testfind testls bregex bwild bbatch bregtest bvfs_test ing_test bpluginfo timelimit
+TOOLS = $(@DIR_TOOLS@)
+
+INSNODIRTOOLS = bsmtp
+INSDIRTOOLS = bsmtp dbcheck bwild bregex
+INSTOOLS = $(INS@DIR_TOOLS@)
+
+.SUFFIXES:	.c .o
+.PHONY:
+.DONTCARE:
+
+# inference rules
+.c.o:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(PYTHON_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+#-------------------------------------------------------------------------
+all: Makefile $(TOOLS) gigaslam grow
+	@echo "==== Make of tools is good ===="
+	@echo " "
+
+bsmtp: Makefile bsmtp.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)	    
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bsmtp.o -lbac -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bregtest: Makefile bregtest.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)	   
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bregtest.o -lbac -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+dbcheck: Makefile dbcheck.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
+	 ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) $(DIRCONFOBJS)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../cats -o $@ dbcheck.o $(DIRCONFOBJS) \
+	  -lbaccats -lbacsql -lbaccfg -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+fstype: Makefile fstype.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ fstype.o -lbacfind -lbac -lm \
+	  $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+drivetype: Makefile drivetype.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ drivetype.o -lbacfind -lbac -lm \
+	  $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+dird_conf.o: ../dird/dird_conf.c
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(PYTHON_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+ua_acl.o: ../dird/ua_acl.c
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(PYTHON_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+run_conf.o: ../dird/run_conf.c
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(PYTHON_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+inc_conf.o: ../dird/inc_conf.c
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(PYTHON_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+timelimit: timelimit.o
+	${CC} ${DEFS} ${DEBUG} -pipe -DHAVE_ERRNO_H -DHAVE_SETITIMER -DHAVE_SIGACTION -c timelimit.c 
+	${CC} -o timelimit timelimit.o
+
+testfind: Makefile ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
+	  ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) $(FINDOBJS)
+	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -o $@ $(FINDOBJS) -L. -L../lib -L../findlib \
+	  $(DLIB) -lbacfind -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+testls: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) testls.o
+	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L. -L../lib -L../findlib -o $@ testls.o \
+	  $(DLIB) -lbacfind -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bregex: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) bregex.o
+	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L. -L../lib -o $@ bregex.o \
+	  $(DLIB) -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bwild:	Makefile ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) bwild.o
+	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L. -L../lib -o $@ bwild.o \
+	  $(DLIB) -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bbatch: Makefile ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
+	../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) bbatch.o
+	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -o $@ bbatch.o \
+	  -lbaccats -lbacsql -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bvfs_test: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
+	   ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) bvfs_test.o
+	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ bvfs_test.o  \
+	  -lbaccats -lbacsql -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+ing_test: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
+	  ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) ing_test.o
+	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ ing_test.o  \
+	  -lbaccats -lbacsql -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+cats_test.o: cats_test.c
+	echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(PYTHON_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+cats_test: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) cats_test.o
+	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ cats_test.o  \
+	  -lbaccats -lbacsql -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+gigaslam.o: gigaslam.c
+	$(CXX) $(CFLAGS) -c $<	
+
+gigaslam: gigaslam.o
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -o $@ gigaslam.o
+
+grow: Makefile grow.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ grow.o -lbac -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bpluginfo.o: bpluginfo.c
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) -I../filed -I../dird -I../stored $(DINCLUDE) $(CFLAGS) $<
+
+bpluginfo: Makefile bpluginfo.o
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bpluginfo.o -lbac $(GETTEXT_LIBS)
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+libtool-clean:
+	@$(RMF) -r .libs _libs
+
+clean:	libtool-clean
+	@$(RMF) bsmtp core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+	@$(RMF) $(DIRTOOLS)
+
+realclean: clean
+	@$(RMF) tags
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+devclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+installall:  $(TOOLS)
+	@for tool in ${TOOLS} ; do \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$tool $(DESTDIR)$(sbindir)/$$tool ; \
+	done
+	chmod 755 $(DESTDIR)$(sbindir)/bsmtp
+
+# Allow non-root execution of bsmtp for non-root Directors
+install: $(INSTOOLS)
+	@for tool in ${INSTOOLS} ; do \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$tool $(DESTDIR)$(sbindir)/$$tool ; \
+	done
+	chmod 755 $(DESTDIR)$(sbindir)/bsmtp
+
+uninstall:
+	@for tool in ${INSTOOLS} ; do \
+	   $(RMF) $(DESTDIR)$(sbindir)/$$tool ; \
+	done
+
+
+
+# Semi-automatic generation of dependencies:
+# Use gcc -MM because X11 `makedepend' doesn't work on all systems
+# and it also includes system headers.
+# `semi'-automatic since dependencies are generated at distribution time.
+
+depend:
+	@$(MV) Makefile Makefile.bak
+	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
+	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(PYTHON_INC) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@if test -f Makefile ; then \
+	    $(RMF) Makefile.bak; \
+	else \
+	   $(MV) Makefile.bak Makefile; \
+	   echo " ===== Something went wrong in make depend ====="; \
+	fi
+
+# -----------------------------------------------------------------------
+# DO NOT DELETE: nice dependency list follows

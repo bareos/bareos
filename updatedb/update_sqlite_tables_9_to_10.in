@@ -1,0 +1,252 @@
+#!/bin/sh
+#
+# shell script to update SQLite from version 1.38 to 2.0
+#
+echo " "
+echo "This script will update a Bacula SQLite database from version 9 to 10"
+echo " which is needed to convert from Bacula version 1.38.x to 2.0.x or higher"
+echo "Depending on the size of your database,"
+echo "this script may take several minutes to run."
+echo " "
+
+bindir=@SQLITE_BINDIR@
+PATH="$bindir:$PATH"
+cd @working_dir@
+db_name=@db_name@
+
+sqlite3 $* ${db_name}.db <<END-OF-DATA
+BEGIN TRANSACTION;
+
+CREATE TEMPORARY TABLE Media_backup (
+   MediaId INTEGER UNSIGNED AUTOINCREMENT,
+   VolumeName VARCHAR(128) NOT NULL,
+   Slot INTEGER DEFAULT 0,
+   PoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   MediaType VARCHAR(128) NOT NULL,
+   MediaTypeId INTEGER UNSIGNED REFERENCES MediaType DEFAULT 0,
+   LabelType TINYINT DEFAULT 0,
+   FirstWritten DATETIME DEFAULT 0,
+   LastWritten DATETIME DEFAULT 0,
+   LabelDate DATETIME DEFAULT 0,
+   VolJobs INTEGER UNSIGNED DEFAULT 0,
+   VolFiles INTEGER UNSIGNED DEFAULT 0,
+   VolBlocks INTEGER UNSIGNED DEFAULT 0,
+   VolMounts INTEGER UNSIGNED DEFAULT 0,
+   VolBytes BIGINT UNSIGNED DEFAULT 0,
+   VolParts INTEGER UNSIGNED DEFAULT 0,
+   VolErrors INTEGER UNSIGNED DEFAULT 0,
+   VolWrites INTEGER UNSIGNED DEFAULT 0,
+   VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
+   VolStatus VARCHAR(20) NOT NULL,
+   Enabled TINYINT DEFAULT 1,
+   Recycle TINYINT DEFAULT 0,
+   VolRetention BIGINT UNSIGNED DEFAULT 0,
+   VolUseDuration BIGINT UNSIGNED DEFAULT 0,
+   MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
+   MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
+   MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
+   InChanger TINYINT DEFAULT 0,
+   StorageId INTEGER UNSIGNED REFERENCES Storage,
+   DeviceId INTEGER UNSIGNED REFERENCES Device,
+   MediaAddressing TINYINT DEFAULT 0,
+   VolReadTime BIGINT UNSIGNED DEFAULT 0,
+   VolWriteTime BIGINT UNSIGNED DEFAULT 0,
+   EndFile INTEGER UNSIGNED DEFAULT 0,
+   EndBlock INTEGER UNSIGNED DEFAULT 0,
+   LocationId INTEGER UNSIGNED REFERENCES Location,
+   RecycleCount INTEGER UNSIGNED DEFAULT 0,
+   InitialWrite DATETIME DEFAULT 0,
+   ScratchPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   RecyclePoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   PRIMARY KEY(MediaId)
+   );
+
+INSERT INTO Media_backup SELECT 
+   MediaId, VolumeName, Slot, PoolId,
+   MediaType, LabelType, 0, FirstWritten, LastWritten,
+   LabelDate, VolJobs, VolFiles, VolBlocks,
+   VolMounts, VolBytes, VolParts, VolErrors, VolWrites,
+   VolCapacityBytes, VolStatus, 1, Recycle,
+   VolRetention, VolUseDuration, MaxVolJobs,
+   MaxVolFiles, MaxVolBytes, InChanger, 
+   StorageId, 0, MediaAddressing,
+   VolReadTime, VolWriteTime, EndFile, EndBlock, 0, 0, 0, 0, 0
+   FROM Media;
+
+
+DROP TABLE Media;
+
+CREATE TABLE Media (
+   MediaId INTEGER,
+   VolumeName VARCHAR(128) NOT NULL,
+   Slot INTEGER DEFAULT 0,
+   PoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   MediaType VARCHAR(128) NOT NULL,
+   MediaTypeId INTEGER UNSIGNED REFERENCES MediaType DEFAULT 0,
+   LabelType TINYINT DEFAULT 0,
+   FirstWritten DATETIME DEFAULT 0,
+   LastWritten DATETIME DEFAULT 0,
+   LabelDate DATETIME DEFAULT 0,
+   VolJobs INTEGER UNSIGNED DEFAULT 0,
+   VolFiles INTEGER UNSIGNED DEFAULT 0,
+   VolBlocks INTEGER UNSIGNED DEFAULT 0,
+   VolMounts INTEGER UNSIGNED DEFAULT 0,
+   VolBytes BIGINT UNSIGNED DEFAULT 0,
+   VolParts INTEGER UNSIGNED DEFAULT 0,
+   VolErrors INTEGER UNSIGNED DEFAULT 0,
+   VolWrites INTEGER UNSIGNED DEFAULT 0,
+   VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
+   VolStatus VARCHAR(20) NOT NULL,
+   Enabled TINYINT DEFAULT 1,
+   Recycle TINYINT DEFAULT 0,
+   VolRetention BIGINT UNSIGNED DEFAULT 0,
+   VolUseDuration BIGINT UNSIGNED DEFAULT 0,
+   MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
+   MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
+   MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
+   InChanger TINYINT DEFAULT 0,
+   StorageId INTEGER UNSIGNED REFERENCES Storage DEFAULT 0,
+   DeviceId INTEGER UNSIGNED REFERENCES Device DEFAULT 0,
+   MediaAddressing TINYINT DEFAULT 0,
+   VolReadTime BIGINT UNSIGNED DEFAULT 0,
+   VolWriteTime BIGINT UNSIGNED DEFAULT 0,
+   EndFile INTEGER UNSIGNED DEFAULT 0,
+   EndBlock INTEGER UNSIGNED DEFAULT 0,
+   LocationId INTEGER UNSIGNED REFERENCES Location DEFAULT 0,
+   RecycleCount INTEGER UNSIGNED DEFAULT 0,
+   InitialWrite DATETIME DEFAULT 0,
+   ScratchPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   RecyclePoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   Comment TEXT,
+   PRIMARY KEY(MediaId)
+   );
+
+INSERT INTO Media (
+   MediaId, VolumeName, Slot, PoolId,
+   MediaType, MediaTypeId, LabelType, FirstWritten, LastWritten,
+   LabelDate, VolJobs, VolFiles, VolBlocks,
+   VolMounts, VolBytes, VolParts, VolErrors, VolWrites,
+   VolCapacityBytes, VolStatus, Enabled, Recycle,
+   VolRetention, VolUseDuration, MaxVolJobs,
+   MaxVolFiles, MaxVolBytes,
+   InChanger, StorageId, DeviceId, MediaAddressing,
+   VolReadTime, VolWriteTime,	    
+   EndFile, EndBlock, LocationId, RecycleCount, InitialWrite,	  
+   ScratchPoolId, RecyclePoolId)
+   SELECT * FROM Media_backup;
+
+
+DROP TABLE Media_backup;
+CREATE INDEX inx8 ON Media (PoolId);
+
+CREATE TEMPORARY TABLE job_backup
+(
+   JobId INTEGER,
+   Job VARCHAR(128) NOT NULL,
+   Name VARCHAR(128) NOT NULL,
+   Type CHAR NOT NULL,
+   Level CHAR NOT NULL,
+   ClientId INTEGER REFERENCES Client DEFAULT 0,
+   JobStatus CHAR NOT NULL,
+   SchedTime DATETIME NOT NULL,
+   StartTime DATETIME DEFAULT 0,
+   EndTime DATETIME DEFAULT 0,
+   RealEndTime DATETIME DEFAULT 0,
+   JobTDate BIGINT UNSIGNED DEFAULT 0,
+   VolSessionId INTEGER UNSIGNED DEFAULT 0,
+   VolSessionTime INTEGER UNSIGNED DEFAULT 0,
+   JobFiles INTEGER UNSIGNED DEFAULT 0,
+   JobBytes BIGINT UNSIGNED DEFAULT 0,
+   JobErrors INTEGER UNSIGNED DEFAULT 0,
+   JobMissingFiles INTEGER UNSIGNED DEFAULT 0,
+   PoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   FileSetId INTEGER UNSIGNED REFERENCES FileSet DEFAULT 0,
+   PriorJobId INTEGER UNSIGNED REFERENCES Job DEFAULT 0,
+   PurgedFiles TINYINT DEFAULT 0,
+   HasBase TINYINT DEFAULT 0 
+   );
+
+INSERT INTO Job_backup SELECT 
+   JobId, Job, Name, Type, Level, ClientId, JobStatus,
+   SchedTime, StartTime, EndTime, 0,
+   JobTDate, VolSessionId, VolSessionTime, 
+   JobFiles, JobBytes, JobErrors, JobMissingFiles, 
+   PoolId, FileSetId, 0, PurgedFiles, HasBase
+   FROM Job;
+
+DROP TABLE Job;
+
+CREATE TABLE Job
+(
+   JobId INTEGER,
+   Job VARCHAR(128) NOT NULL,
+   Name VARCHAR(128) NOT NULL,
+   Type CHAR NOT NULL,
+   Level CHAR NOT NULL,
+   ClientId INTEGER REFERENCES Client DEFAULT 0,
+   JobStatus CHAR NOT NULL,
+   SchedTime DATETIME NOT NULL,
+   StartTime DATETIME DEFAULT 0,
+   EndTime DATETIME DEFAULT 0,
+   RealEndTime DATETIME DEFAULT 0,
+   JobTDate BIGINT UNSIGNED DEFAULT 0,
+   VolSessionId INTEGER UNSIGNED DEFAULT 0,
+   VolSessionTime INTEGER UNSIGNED DEFAULT 0,
+   JobFiles INTEGER UNSIGNED DEFAULT 0,
+   JobBytes BIGINT UNSIGNED DEFAULT 0,
+   JobErrors INTEGER UNSIGNED DEFAULT 0,
+   JobMissingFiles INTEGER UNSIGNED DEFAULT 0,
+   PoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   FileSetId INTEGER UNSIGNED REFERENCES FileSet DEFAULT 0,
+   PriorJobId INTEGER UNSIGNED REFERENCES Job DEFAULT 0,
+   PurgedFiles TINYINT DEFAULT 0,
+   HasBase TINYINT DEFAULT 0,
+   PRIMARY KEY(JobId)
+   );
+CREATE INDEX inx6 ON Job (Name);
+
+INSERT INTO Job (
+   JobId, Job, Name, Type, Level, ClientId, JobStatus,
+   SchedTime, StartTime, EndTime, RealEndTime,
+   JobTDate, VolSessionId, VolSessionTime, 
+   JobFiles, JobBytes, JobErrors, JobMissingFiles, 
+   PoolId, FileSetId, PriorJobId, PurgedFiles, HasBase)
+   SELECT * FROM Job_backup;
+
+DROP TABLE Job_backup;
+
+CREATE TABLE LocationLog (
+   LocLogId INTEGER,
+   Date DATETIME NOT NULL,
+   Comment TEXT NOT NULL,
+   MediaId INTEGER UNSIGNED REFERENCES Media DEFAULT 0,
+   LocationId INTEGER UNSIGNED REFERENCES LocationId DEFAULT 0,
+   NewVolStatus VARCHAR(20) NOT NULL,
+   NewEnabled TINYINT NOT NULL,
+   PRIMARY KEY(LocLogId)
+);
+
+CREATE TABLE Log (
+   LogId INTEGER,
+   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+   Time DATETIME NOT NULL,
+   LogText TEXT NOT NULL,
+   PRIMARY KEY(LogId) 
+   );
+CREATE INDEX LogInx1 ON File (JobId);
+
+CREATE TABLE Location (
+   LocationId INTEGER,
+   Location TEXT NOT NULL,
+   Cost INTEGER DEFAULT 0,
+   Enabled TINYINT,
+   PRIMARY KEY(LocationId)
+   );
+ 
+
+DELETE FROM Version;
+INSERT INTO Version (VersionId) VALUES (10);
+
+COMMIT;
+
+END-OF-DATA

@@ -1,0 +1,63 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BCOPY 8 "26 November 2009" "Kern Sibbald" "Network backup, recovery and verification"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+ bcopy \- Bacula's 'Copy from tape'
+.SH SYNOPSIS
+.B bcopy 
+.RI [ options ]
+.I input-archive 
+.I output-archive
+.br
+.SH DESCRIPTION
+This manual page documents briefly the
+.B bcopy
+command.
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invoke bold face and italics, 
+.\" respectively.
+.SH OPTIONS
+A summary of options is included below.
+.TP
+.B \-?
+Show version and usage of program.
+.TP
+.BI \-b\  bootstrap
+Specify a bootstrap file.
+.TP
+.BI \-c\  config
+Specify configuration file.
+.TP
+.BI \-d\  nn
+Set debug level to \fInn\fP.
+.TP
+.BI \-dt
+Print timestamp in debug output.
+.TP
+.BI \-i\  input
+Specify input Volume names (separated by '|')
+.TP
+.BI \-o\  output
+Specify output Volume names (separated by '|')
+.TP
+.BI \-p
+Proceed in spite of I/O errors.
+.TP
+.BI \-w\  directory
+Specify working directory (default \fI/tmp\fP).
+.TP
+.B \-v
+Set verbose mode.
+.SH SEE ALSO
+.BR bls (1),
+.BR bextract (1).
+.br
+.SH AUTHOR
+This manual page was written by Jose Luis Tallon
+.nh 
+<jltallon@adv\-solutions.net>.

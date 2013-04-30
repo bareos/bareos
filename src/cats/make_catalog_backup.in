@@ -1,0 +1,107 @@
+#!/bin/sh
+#
+# This script dumps your Bacula catalog in ASCII format
+# It works for MySQL, SQLite, and PostgreSQL
+#
+#  $1 is the name of the database to be backed up and the name
+#     of the output file (default = bacula).
+#  $2 is the user name with which to access the database
+#     (default = bacula).
+#  $3 is the password with which to access the database or "" if no password
+#     (default ""). WARNING!!! Passing the password via the command line is 
+#     insecure and should not be used since any user can display the command 
+#     line arguments and the environment using ps.  Please consult your
+#     MySQL or PostgreSQL manual for secure methods of specifying the
+#     password.
+#  $4 is the host on which the database is located
+#     (default "")
+#  $5 is the type of database
+#
+#
+
+default_db_type=@DEFAULT_DB_TYPE@
+
+#
+# See if the fifth argument is a valid backend name.
+# If so the user overrides the default database backend.
+#
+if [ $# -ge 5 ]; then
+   case $5 in
+     sqlite3)
+       db_type=$5
+       ;;
+     mysql)
+       db_type=$5
+       ;;
+     postgresql)
+       db_type=$5
+       ;;
+     ingres)
+       db_type=$5
+       ;;
+     *)
+       ;;
+   esac
+fi
+
+#
+# If no new db_type is gives use the default db_type.
+#
+if [ -z "${db_type}" ]; then
+   db_type="${default_db_type}"
+fi
+
+cd @working_dir@
+rm -f $1.sql
+
+case ${db_type} in
+  sqlite3)
+    BINDIR=@SQLITE_BINDIR@
+    echo ".dump" | ${BINDIR}/sqlite3 $1.db >$1.sql
+    ;;
+  mysql)
+    BINDIR=@MYSQL_BINDIR@
+    if test $# -gt 2; then
+      MYSQLPASSWORD=" --password=$3"
+    else
+      MYSQLPASSWORD=""
+    fi
+    if test $# -gt 3; then
+      MYSQLHOST=" --host=$4"
+    else
+      MYSQLHOST=""
+    fi
+    ${BINDIR}/mysqldump -u ${2}${MYSQLPASSWORD}${MYSQLHOST} -f --opt $1 >$1.sql
+    ;;
+  postgresql)
+    BINDIR=@POSTGRESQL_BINDIR@
+    if test $# -gt 2; then
+      PGPASSWORD=$3
+      export PGPASSWORD
+    fi
+    if test $# -gt 3; then
+      PGHOST=" --host=$4"
+    else
+      PGHOST=""
+    fi
+    # you could also add --compress for compression.  See man pg_dump
+    exec ${BINDIR}/pg_dump -c $PGHOST -U $2 $1 >$1.sql
+    ;;
+esac
+#
+#  To read back a MySQL database use: 
+#     cd @working_dir@
+#     rm -f ${BINDIR}/../var/bacula/*
+#     mysql <bacula.sql
+#
+#  To read back a SQLite database use:
+#     cd @working_dir@
+#     rm -f bacula.db
+#     sqlite bacula.db <bacula.sql
+#
+#  To read back a PostgreSQL database use:
+#     cd @working_dir@
+#     dropdb bacula
+#     createdb bacula -T template0 -E SQL_ASCII
+#     psql bacula <bacula.sql
+#

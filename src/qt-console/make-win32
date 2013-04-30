@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+#  Used to build the Win32 version of bat
+#
+rm -f debug/bat.exe
+if test -f ../config.h ; then
+   mv -f ../config.h ../config.h.orig
+fi
+qmake -spec win32 -unix -o Makefile.mingw32 bat.pro.mingw32
+echo "Make Windows bat"
+make -j3 -f Makefile.mingw32 $1
+if test -e ../config.h.orig ; then
+   mv -f ../config.h.orig ../config.h
+fi
+if test -d ../win32/release32; then
+   if test -f release/bat.exe; then
+      cp -f release/bat.exe ../win32/release32
+   else
+      cp -f debug/bat.exe ../win32/release32
+   fi 
+   cp -f ${DEPKGS}/depkgs-mingw32/lib/qt/QtGui4.dll ../win32/release32
+   cp -f ${DEPKGS}/depkgs-mingw32/lib/qt/QtCore4.dll ../win32/release32
+   rm -rf ../win32/release32/help
+   mkdir ../win32/release32/help
+   cp -f help/*.html ../win32/release32/help/
+   cp -f images/status.png ../win32/release32/help/
+   cp -f images/mail-message-new.png ../win32/release32/help/
+fi
+
+cd tray-monitor
+rm -f release/bacula-tray-monitor.exe debug/bacula-tray-monitor.exe
+qmake -spec ../win32 -unix -o Makefile.mingw32 tray-monitor.pro
+echo "Make Windows tray-monitor"
+make -j3 -f Makefile.mingw32 $1
+if test -f release/bacula-tray-monitor.exe; then
+   cp -f release/bacula-tray-monitor.exe ../../win32/release32
+else
+   cp -f debug/bacula-tray-monitor.exe ../../win32/release32
+fi 
+cd ..

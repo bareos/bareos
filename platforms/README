@@ -1,0 +1,5 @@
+
+This directory, <bacula-src>/platforms, contains the platform
+specific installation files. Files that are common to all
+platforms are in this directory, and files that are specific
+to a particular platform are contained in subdirectories.

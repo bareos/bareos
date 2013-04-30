@@ -1,0 +1,146 @@
+#!/bin/bash
+
+# Import an SQLite dump of a Bacula catalog into Postgres
+# Designed for v1.63.3 (as found on Debian sarge)
+#
+# v0.5
+# 
+# Copyright (c) 2006 Russell Howe <russell_howe@wreckage.org>
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
+FILE=bacula.sql
+# Tables, in order of size
+TABLES=(File Filename Path Job Media Pool CDImages Counters Version Client FileSet JobMedia NextId UnsavedFiles BaseFiles)
+# Tables, in insert order
+TABLESINSERT=(Pool CDImages Client Counters FileSet Filename Job Media JobMedia NextId Path File UnsavedFiles Version BaseFiles)
+DBNAME=bacula
+LOGFILE="/var/tmp/sqlite2pgsql.$$.log"
+
+importdata() {
+	if [ "x" == "x$1" ]; then
+		echo "Error: importdata() called without an argument. Aborting."
+		exit 1
+	fi
+	
+	SQLFILE="$1"
+
+	if [ ! -r "$SQLFILE" ]; then
+		echo "Error: Cannot read from $SQLFILE. Aborting."
+		exit 1
+	fi
+
+	echo -n "Loading $SQLFILE into database $DBNAME..."
+	psql -d "$DBNAME" -f "$SQLFILE" || (
+		echo "Failed to load $SQLFILE into database $DBNAME. psql exited with return code $?. Aborting."
+		exit 1
+	)
+}
+
+
+# Go through each of the table names, splitting the INSERT statements off
+# into seperate files
+for table in ${TABLES[@]}; do
+	SRC="$FILE.other"
+	if [ ! -f "$FILE.other" ]; then
+		SRC="$FILE"
+	fi
+	PATTERN="^INSERT INTO $table "
+	if [ ! -f "$FILE.data.$table" ]; then
+		echo -n "Separating $table table from database dump..."
+
+		echo "BEGIN;" > "$FILE.data.$table.tmp"
+		grep "$PATTERN" "$SRC" >> "$FILE.data.$table.tmp"
+		echo "COMMIT;" >> "$FILE.data.$table.tmp"
+		
+		mv "$FILE.data.$table.tmp" "$FILE.data.$table"
+		echo "done. ($FILE.data.$table)"
+		echo -n "Stripping matched lines from the source file to speed up the next round..."
+		grep -v "$PATTERN" "$SRC" > "$FILE.other.tmp"
+		mv "$FILE.other.tmp" "$FILE.other"
+		echo "done."
+	else
+		echo "$FILE.data.$table already exists. Assuming this table has already been split"
+		echo "off from the main dump. Not regenerating."
+	fi
+done
+
+echo "Seperating DDL statements from INSERT statements"
+
+grep -v "^INSERT" "$FILE.other" > "$FILE.ddl"
+echo "DDL statements are now in $FILE.ddl"
+
+grep "^INSERT" "$FILE.other" > "$FILE.data.other"
+echo "Any remaining INSERT statements are now in $FILE.data.other"
+
+echo "Fixing up datatypes used in the DDL..."
+
+sed -e 's/TINYINT/SMALLINT/g' \
+    -e 's/DATETIME/TIMESTAMP/g' \
+    -e 's/INTEGER UNSIGNED/INTEGER/g' \
+    -e 's/BIGINT UNSIGNED/BIGINT/g' \
+    -e 's/INTEGER AUTOINCREMENT/SERIAL/g' \
+    -e s/\ DEFAULT\ \"\"/\ DEFAULT\ \'\'/g \
+    -e s#\ TIMESTAMP\ DEFAULT\ 0#\ TIMESTAMP\ DEFAULT\ \'1/1/1970\'#g "$FILE.ddl" > "$FILE.ddl.postgres"
+
+echo "Fixing Pool table..."
+
+sed -e 's/,0,0);$/,NULL,NULL);/' "$FILE.data.Pool" > "$FILE.data.Pool.fixed"
+
+echo "Fixing removing entries from Job table which no longer have a Pool to link to"
+
+# Remove jobs which refer to nonexistent pools, and fix up invalid start and end times to be 1/1/1970
+grep -vE '([2589]|1[0-5]),[0-9]+,[0-9]+,[0-9]+\);' "$FILE.data.Job" \
+	|sed -e s@^\\\(INSERT\ INTO\ Job\ VALUES\(\\\(\[^,\]\\\+,\\\)\\\{8\\\}\\\)0,@\\1NULL,@ \
+	-e s@^\\\(INSERT\ INTO\ Job\ VALUES\(\\\(\[^,\]\\\+,\\\)\\\{9\\\}\\\)0,@\\1\NULL,@ \
+	-e s@^\\\(INSERT\ INTO\ Job\ VALUES\(\\\(\[^,\]\\\+,\\\)\\\{17\\\}\\\)0,@\\1\NULL,@ \
+	-e s@^\\\(INSERT\ INTO\ Job\ VALUES\(\\\(\[^,\]\\\+,\\\)\\\{18\\\}\\\)0,@\\1\NULL,@ \
+	-e s@^\\\(INSERT\ INTO\ Job\ VALUES\(\\\(\[^,\]\\\+,\\\)\\\{5\\\}\\\)0,@\\1NULL,@ > "$FILE.data.Job.fixed"
+
+# Remove JobMedia entries which refer to nonexistent Jobs
+
+echo "Cleaning up the dump of the JobMedia table..."
+
+grep -vE 'INSERT INTO JobMedia VALUES\([0-9]+,([12589]|1[0-4]),' "$FILE.data.JobMedia" > "$FILE.data.JobMedia.fixed"
+
+# Remove File entries which refer to nonexistent Jobs
+
+echo "Cleaning up the dump of the File table..."
+
+grep -vE 'INSERT INTO File VALUES\([0-9]+,[0-9]+,([12589]|1[0-4]),' "$FILE.data.File" > "$FILE.data.File.fixed"
+
+echo "OK, we should be ready to import data into PostgreSQL now. DDL first..."
+echo "This will probably fail the first time. You will have to edit $FILE.other"
+echo "and rearrange the CREATE TABLE statements so that the tables are created"
+echo "in the correct order."
+echo "After editing $FILE.other, simply rerun this script and it will carry on"
+echo "where it left off."
+
+importdata "$FILE.ddl.postgres"
+
+for table in ${TABLESINSERT[@]} other; do
+	IMPORTFILE="$FILE.data.$table"
+	if [ -f "$FILE.data.$table.fixed" ]; then
+		IMPORTFILE="$FILE.data.$table.fixed"
+	fi
+	importdata "$IMPORTFILE" 2>&1 |tee -a "$LOGFILE"
+done
+
+echo "All done! Check $LOGFILE for errors."
+

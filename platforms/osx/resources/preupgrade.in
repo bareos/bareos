@@ -1,0 +1,7 @@
+#!/bin/sh
+# unload bacula file daemon before upgrading
+
+if [ -f "$3/Library/LaunchDaemons/org.bacula.bacula-fd.plist" ]; then
+  /bin/launchctl unload "$3/Library/LaunchDaemons/org.bacula.bacula-fd.plist"
+fi
+

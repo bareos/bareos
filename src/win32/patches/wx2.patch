@@ -1,0 +1,22 @@
+--- ../release/wxWidgets-2.6.3/include/wx/string.h	2005-12-15 11:26:27.000000000 -0800
++++ ./include/wx/string.h	2006-07-31 20:50:32.000000000 -0700
+@@ -229,7 +229,7 @@
+ #endif
+   // VC++ free must take place in same DLL as allocation when using non dll
+   // run-time library (e.g. Multithreaded instead of Multithreaded DLL)
+-#if defined(__VISUALC__) && defined(_MT) && !defined(_DLL)
++#if 1 || defined(__VISUALC__) && defined(_MT) && !defined(_DLL)
+   void  Unlock() { if ( !IsEmpty() && --nRefs == 0) Free();  }
+   // we must not inline deallocation since allocation is not inlined
+   void  Free();
+--- ../release/wxWidgets-2.6.3/src/common/string.cpp	2005-11-30 05:30:08.000000000 -0800
++++ ./src/common/string.cpp	2006-07-31 20:48:53.000000000 -0700
+@@ -172,7 +172,7 @@
+ // wxStringData class deallocation
+ // ===========================================================================
+ 
+-#if defined(__VISUALC__) && defined(_MT) && !defined(_DLL)
++#if 1 || defined(__VISUALC__) && defined(_MT) && !defined(_DLL)
+ #  pragma message (__FILE__ ": building with Multithreaded non DLL runtime has a performance impact on wxString!")
+ void wxStringData::Free()
+ {

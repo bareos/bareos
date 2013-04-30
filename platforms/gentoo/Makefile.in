@@ -1,0 +1,57 @@
+# 
+# This file is used as the template to create the
+# Makefile for the Gentoo specific installation.
+#
+#  22 January 2003 -- Kern Sibbald
+# and corrected for Gentoo by
+#  Patrick Naubert 25 Jan 2003
+#
+#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+
+nothing:
+
+install: install-autostart
+
+install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
+
+	
+install-autostart-fd:
+	@$(INSTALL) -m 744 bacula-fd $(DESTDIR)/etc/init.d/bacula-fd
+
+
+install-autostart-sd:
+	@$(INSTALL) -m 744 bacula-sd $(DESTDIR)/etc/init.d/bacula-sd
+
+
+install-autostart-dir:
+	@$(INSTALL) -m 744 bacula-dir $(DESTDIR)/etc/init.d/bacula-dir
+
+
+uninstall: uninstall-autostart
+
+uninstall-autostart: uninstall-autostart-fd uninstall-autostart-sd uninstall-autostart-dir
+
+uninstall-autostart-fd:
+	@rm -f $(DESTDIR)/etc/init.d/bacula-fd
+
+
+uninstall-autostart-sd:
+	@rm -f $(DESTDIR)/etc/init.d/bacula-sd
+
+uninstall-autostart-dir:
+	@rm -f $(DESTDIR)/etc/init.d/bacula-dir
+
+clean:
+	@rm -f 1 2 3
+
+distclean: clean
+	@rm -f bacula-sd bacula-fd bacula-dir
+	@rm -f Makefile 
+
+devclean: clean
+	@rm -f bacula-sd bacula-fd bacula-dir
+	@rm -f Makefile 

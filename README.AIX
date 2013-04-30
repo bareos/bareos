@@ -1,0 +1,56 @@
+
+Here are a few tips from James MacLean on
+making Bacula work on an AIX system -- 15 Mar 2003:
+
+Hi Folks,
+
+I expect that an AIX with all the latest patches and a proper gcc will
+compile. It is a boring story as Kern knows :), but here are the
+highlights todate.
+
+I have had success with :
+
+/usr/local/bin/gcc -v
+Reading specs from /usr/local/lib/gcc-lib/powerpc-ibm-aix4.1.5.0/egcs-2.91.60/specs
+gcc version egcs-2.91.60 19981201 (egcs-1.1.1 release)
+
+Which was installed from www-frec.bull.com. But with that release, it 
+collides with sys/types.h from AIX and I had to redefine on my own in 
+src/bacula.h :
+
+typedef int            crid_t;
+typedef int            __daddr_t;
+typedef unsigned int class_id_t;
+
+With that I have had all parts of bacula running and did backups and a 
+restore fine. 
+
+So I then went to IBM's own (current) gcc :
+
+/opt/freeware/GNUPro/bin/gcc -v
+Reading specs from /opt/freeware/GNUPro/lib/gcc-lib/powerpc-ibm-aix4.3.3.0/2.9-aix51-020209/specs
+gcc version 2.9-aix51-020209
+
+from http://www-1.ibm.com/servers/aix/products/aixos/linux/download.html
+
+And found that it was not creating libbac.a correctly. Since then I've 
+been trying to compile my own gcc only to find out last night after I 
+broke down and looked at the GCC docs that there was a known bug in the 
+AIX "as" compiler, for which there was a patch, and I have since applied. 
+
+So now I am trying again to compile my own gcc, so that I can then try to 
+compile Bacula and be comfortable that all is well with the latest Bacula 
+and GCC.
+
+We are at AIX oslevel 4.3.3.0, so even though we brought it right up to
+date 150 days ago, there is already 250Megs of patches for it :(. So there 
+may be more to this story :).
+
+Bottom line is, yes it does work :), but because of our intstallation 
+here, your setup might need to be tweaked to compile it... Then again it 
+may not :).
+
+How's that for a confusing Saturday story ;).
+
+take care,
+JES

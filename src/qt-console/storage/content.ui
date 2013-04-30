@@ -1,0 +1,295 @@
+<ui version="4.0" >
+ <class>ContentForm</class>
+ <widget class="QWidget" name="ContentForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>949</width>
+    <height>695</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QHBoxLayout" >
+   <item>
+    <layout class="QVBoxLayout" >
+     <item>
+      <widget class="QGroupBox" name="groupBox" >
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize" >
+        <size>
+         <width>240</width>
+         <height>110</height>
+        </size>
+       </property>
+       <property name="title" >
+        <string>Actions</string>
+       </property>
+       <layout class="QGridLayout" >
+        <item row="0" column="0" >
+         <widget class="QPushButton" name="pbUpdate" >
+          <property name="text" >
+           <string>Update slots</string>
+          </property>
+          <property name="icon" >
+           <iconset resource="../main.qrc" >:/images/view-refresh.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1" >
+         <widget class="QPushButton" name="pbLabel" >
+          <property name="text" >
+           <string>Label</string>
+          </property>
+          <property name="icon" >
+           <iconset resource="../main.qrc" >:/images/label.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" >
+         <widget class="QPushButton" name="pbMoveToTray" >
+          <property name="enabled" >
+           <bool>false</bool>
+          </property>
+          <property name="text" >
+           <string>Move to tray</string>
+          </property>
+          <property name="icon" >
+           <iconset resource="../main.qrc" >:/images/extern.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1" >
+         <widget class="QPushButton" name="pbEmptyTray" >
+          <property name="enabled" >
+           <bool>false</bool>
+          </property>
+          <property name="text" >
+           <string>Empty tray</string>
+          </property>
+          <property name="icon" >
+           <iconset resource="../main.qrc" >:/images/intern.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" >
+         <widget class="QPushButton" name="pbMount" >
+          <property name="text" >
+           <string>Mount</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1" >
+         <widget class="QPushButton" name="pbUnmount" >
+          <property name="text" >
+           <string>Unmount</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0" >
+         <widget class="QPushButton" name="pbStatus" >
+          <property name="text" >
+           <string>Status</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1" >
+         <widget class="QPushButton" name="pbRelease" >
+          <property name="text" >
+           <string>Release</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox_3" >
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Expanding" hsizetype="Fixed" >
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize" >
+        <size>
+         <width>241</width>
+         <height>221</height>
+        </size>
+       </property>
+       <property name="maximumSize" >
+        <size>
+         <width>241</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="title" >
+        <string>Drives</string>
+       </property>
+       <layout class="QVBoxLayout" >
+        <item>
+         <widget class="QTableWidget" name="tableDrive" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Fixed" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize" >
+           <size>
+            <width>220</width>
+            <height>192</height>
+           </size>
+          </property>
+          <property name="selectionBehavior" >
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <column>
+           <property name="text" >
+            <string>Drive</string>
+           </property>
+          </column>
+          <column>
+           <property name="text" >
+            <string>Volume</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox_4" >
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Expanding" hsizetype="Fixed" >
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize" >
+        <size>
+         <width>240</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="title" >
+        <string>Import/Export</string>
+       </property>
+       <layout class="QHBoxLayout" >
+        <item>
+         <widget class="QTableWidget" name="tableTray" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Fixed" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize" >
+           <size>
+            <width>100</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="selectionBehavior" >
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="sortingEnabled" >
+           <bool>false</bool>
+          </property>
+          <column>
+           <property name="text" >
+            <string>Slot</string>
+           </property>
+          </column>
+          <column>
+           <property name="text" >
+            <string>Volume</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2" >
+     <property name="title" >
+      <string>Content</string>
+     </property>
+     <layout class="QHBoxLayout" >
+      <item>
+       <widget class="QTableWidget" name="tableContent" >
+        <property name="alternatingRowColors" >
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode" >
+         <enum>QAbstractItemView::ExtendedSelection</enum>
+        </property>
+        <property name="selectionBehavior" >
+         <enum>QAbstractItemView::SelectRows</enum>
+        </property>
+        <property name="rowCount" >
+         <number>0</number>
+        </property>
+        <column>
+         <property name="text" >
+          <string>  Slot  </string>
+         </property>
+        </column>
+        <column>
+         <property name="text" >
+          <string>  Volume   </string>
+         </property>
+        </column>
+        <column>
+         <property name="text" >
+          <string>   Bytes   </string>
+         </property>
+        </column>
+        <column>
+         <property name="text" >
+          <string>   Status   </string>
+         </property>
+        </column>
+        <column>
+         <property name="text" >
+          <string>   Media Type   </string>
+         </property>
+        </column>
+        <column>
+         <property name="text" >
+          <string>   Pool   </string>
+         </property>
+        </column>
+        <column>
+         <property name="text" >
+          <string>   Last Written   </string>
+         </property>
+        </column>
+        <column>
+         <property name="text" >
+          <string>   When expire?   </string>
+         </property>
+        </column>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../main.qrc" />
+ </resources>
+ <connections/>
+</ui>

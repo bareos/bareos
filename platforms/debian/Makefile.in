@@ -1,0 +1,88 @@
+# 
+# This file is used as the template to create the
+# Makefile for the Debian/Ubuntu/Kubuntu specific installation.
+#
+#  21 March 2008 -- Kern Sibbald
+#
+#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ -m 754
+
+nothing:
+
+install: install-autostart
+
+install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
+
+install_logrotate:
+	@$(INSTALL_PROGRAM) ../../scripts/logrotate $(DESTDIR)/etc/logrotate.d/bacula
+	
+install-autostart-fd: uninstall-autostart-fd
+	@echo "Installing bacula-fd boot script ..."
+	@$(INSTALL_PROGRAM) bacula-fd $(DESTDIR)/etc/init.d/bacula-fd
+	@echo "Installing bacula-fd symlinks ..."
+	@if test x$(DESTDIR) = x ; then \
+	   /usr/sbin/update-rc.d bacula-fd start 91 2 3 4 5 . stop 9 0 1 6 .; \
+	fi
+
+
+install-autostart-sd: uninstall-autostart-sd
+	@echo "Installing bacula-sd boot script ..."
+	@$(INSTALL_PROGRAM) bacula-sd $(DESTDIR)/etc/init.d/bacula-sd
+	@echo "Installing bacula-sd symlinks ..."
+	@if test "x$(DESTDIR)" = "x" ; then \
+	   /usr/sbin/update-rc.d bacula-sd start 91 2 3 4 5 . stop 9 0 1 6 .; \
+	fi
+
+
+install-autostart-dir: uninstall-autostart-dir
+	@echo "Installing bacula-dir boot script ..."
+	@$(INSTALL_PROGRAM) bacula-dir $(DESTDIR)/etc/init.d/bacula-dir
+	@echo "Installing bacula-dir symlinks ..."
+	@if test "x$(DESTDIR)" = "x" ; then \
+	   /usr/sbin/update-rc.d bacula-dir start 90 2 3 4 5 . stop 9 0 1 6 .; \
+	fi
+
+
+uninstall: uninstall-autostart
+
+uninstall-autostart: uninstall-autostart-fd uninstall-autostart-sd uninstall-autostart-dir
+
+uninstall-logrotate:
+	@rm -f $(DESTDIR)/etc/logrotate.d/bacula
+
+uninstall-autostart-fd:
+	@if test "x$(DESTDIR)" = "x" -a  -f /etc/init.d/bacula-fd; then \
+	   /etc/init.d/bacula-fd stop; \
+	   rm -f  $(DESTDIR)/etc/init.d/bacula-fd; \
+	   /usr/sbin/update-rc.d bacula-fd remove; \
+	fi
+
+
+uninstall-autostart-sd:
+	@if test "x$(DESTDIR)" = "x" -a  -f /etc/init.d/bacula-sd; then \
+	   /etc/init.d/bacula-sd stop; \
+	   rm -f  $(DESTDIR)/etc/init.d/bacula-sd; \
+	   /usr/sbin/update-rc.d bacula-sd remove; \
+	fi
+
+uninstall-autostart-dir:
+	@if test "x$(DESTDIR)" = "x" -a  -f /etc/init.d/bacula-dir; then \
+	   /etc/init.d/bacula-dir stop; \
+	   rm -f  $(DESTDIR)/etc/init.d/bacula-dir; \
+	   /usr/sbin/update-rc.d bacula-dir remove; \
+	fi
+	@rm -f	$(DESTDIR)/etc/init.d/bacula-dir
+
+clean:
+	@rm -f 1 2 3
+
+distclean: clean
+	@rm -f Makefile
+	@rm -f bacula-sd bacula-fd bacula-dir
+
+devclean: clean
+	@rm -f Makefile
+	@rm -f bacula-sd bacula-fd bacula-dir

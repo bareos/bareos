@@ -1,0 +1,175 @@
+#!/bin/sh
+#
+# shell script to update SQLite from version 1.29 to 1.30
+#
+echo " "
+echo "This script will update a bacula database from version 5 to 6."
+echo "Depending on the size of your database,"
+echo "this script may take several minutes to run."
+echo " "
+
+# The location of the sqlite program
+bindir=/usr/lib/sqlite
+# The location of your bacula working directory
+cd /var/bacula
+
+if [ -s bacula.db ];then
+	DB_VER=`echo "select * from Version;" | $bindir/sqlite bacula.db | tail -n 1 2>/dev/null`
+	if [ -n "$DB_VER" ] && [ "$DB_VER" -ne "5" ]; then
+		echo "Sorry, this script is designed to update a version 5 database"
+		echo "and you have a version $DB_VER database."
+		exit 1
+	fi
+else
+	echo "Sorry, I can't seem to locate a bacula database."
+	exit 1
+fi
+
+$bindir/sqlite $* bacula.db <<END-OF-DATA
+
+BEGIN TRANSACTION;
+CREATE TEMPORARY TABLE FileSet_backup (
+   FileSetId INTEGER UNSIGNED AUTOINCREMENT,
+   FileSet VARCHAR(128) NOT NULL,
+   MD5 VARCHAR(25) NOT NULL,
+   PRIMARY KEY(FileSetId)
+   );
+INSERT INTO FileSet_backup SELECT * From FileSet;
+
+DROP TABLE FileSet;
+CREATE TABLE FileSet (
+   FileSetId INTEGER UNSIGNED AUTOINCREMENT,
+   FileSet VARCHAR(128) NOT NULL,
+   MD5 VARCHAR(25) NOT NULL,
+   CreateTime DATETIME DEFAULT 0,
+   PRIMARY KEY(FileSetId)
+   );
+INSERT INTO FileSet (
+   FileSetId, FileSet, MD5, CreateTime) 
+   SELECT FileSet_backup.FileSetId,FileSet,MD5,StartTime FROM FileSet_backup,Job
+     WHERE FileSet_backup.FileSetId=Job.FileSetId GROUP by FileSet_backup.FileSetId
+     ORDER BY Job.FileSetId;
+
+DROP TABLE FileSet_backup;
+COMMIT;
+
+
+BEGIN TRANSACTION;
+CREATE TEMPORARY TABLE Job_backup (
+   JobId INTEGER UNSIGNED NOT NULL,
+   Job VARCHAR(128) NOT NULL,
+   Name VARCHAR(128) NOT NULL,
+   PurgedFiles TINYINT DEFAULT 0,
+   Type CHAR NOT NULL,
+   Level CHAR NOT NULL,
+   ClientId INTEGER REFERENCES Client DEFAULT 0,
+   JobStatus CHAR NOT NULL,
+   SchedTime DATETIME NOT NULL,
+   StartTime DATETIME DEFAULT 0,
+   EndTime DATETIME DEFAULT 0,
+   JobTDate BIGINT UNSIGNED DEFAULT 0,
+   VolSessionId INTEGER UNSIGNED DEFAULT 0,
+   VolSessionTime INTEGER UNSIGNED DEFAULT 0,
+   JobFiles INTEGER UNSIGNED DEFAULT 0,
+   JobBytes BIGINT UNSIGNED DEFAULT 0,
+   JobErrors INTEGER UNSIGNED DEFAULT 0,
+   JobMissingFiles INTEGER UNSIGNED DEFAULT 0,
+   PoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   FileSetId INTEGER UNSIGNED REFERENCES FileSet DEFAULT 0 
+   );
+INSERT INTO Job_backup SELECT * From Job;
+
+DROP TABLE Job;
+CREATE TABLE Job (
+   JobId INTEGER UNSIGNED NOT NULL,
+   Job VARCHAR(128) NOT NULL,
+   Name VARCHAR(128) NOT NULL,
+   PurgedFiles TINYINT DEFAULT 0,
+   Type CHAR NOT NULL,
+   Level CHAR NOT NULL,
+   ClientId INTEGER REFERENCES Client DEFAULT 0,
+   JobStatus CHAR NOT NULL,
+   SchedTime DATETIME NOT NULL,
+   StartTime DATETIME DEFAULT 0,
+   EndTime DATETIME DEFAULT 0,
+   JobTDate BIGINT UNSIGNED DEFAULT 0,
+   VolSessionId INTEGER UNSIGNED DEFAULT 0,
+   VolSessionTime INTEGER UNSIGNED DEFAULT 0,
+   JobFiles INTEGER UNSIGNED DEFAULT 0,
+   JobBytes BIGINT UNSIGNED DEFAULT 0,
+   JobErrors INTEGER UNSIGNED DEFAULT 0,
+   JobMissingFiles INTEGER UNSIGNED DEFAULT 0,
+   PoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   FileSetId INTEGER UNSIGNED REFERENCES FileSet DEFAULT 0,
+   HasBase TINYINT DEFAULT 0,
+   PRIMARY KEY(JobId) 
+   );
+INSERT INTO Job (JobId,Job,Name,PurgedFiles,
+   Type,Level,ClientId,JobStatus,SchedTime,
+   StartTime,EndTime,JobTDate,VolSessionId,
+   VolSessionTime,JobFiles,JobBytes,JobErrors,
+   JobMissingFiles,PoolId,FileSetId)						  
+   SELECT * FROM Job_backup;
+DROP TABLE Job_backup;
+COMMIT;
+
+
+BEGIN TRANSACTION;
+CREATE TEMPORARY TABLE JobMedia_backup (
+   JobMediaId INTEGER UNSIGNED AUTOINCREMENT,
+   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+   MediaId INTEGER UNSIGNED REFERENCES Media NOT NULL,
+   FirstIndex INTEGER UNSIGNED NOT NULL,
+   LastIndex INTEGER UNSIGNED NOT NULL,
+   StartFile INTEGER UNSIGNED DEFAULT 0,
+   EndFile INTEGER UNSIGNED DEFAULT 0,
+   StartBlock INTEGER UNSIGNED DEFAULT 0,
+   EndBlock INTEGER UNSIGNED DEFAULT 0,
+   PRIMARY KEY(JobMediaId) 
+   );
+INSERT INTO JobMedia_backup SELECT * From JobMedia;
+
+DROP TABLE JobMedia;
+CREATE TABLE JobMedia (
+   JobMediaId INTEGER UNSIGNED AUTOINCREMENT,
+   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+   MediaId INTEGER UNSIGNED REFERENCES Media NOT NULL,
+   FirstIndex INTEGER UNSIGNED NOT NULL,
+   LastIndex INTEGER UNSIGNED NOT NULL,
+   StartFile INTEGER UNSIGNED DEFAULT 0,
+   EndFile INTEGER UNSIGNED DEFAULT 0,
+   StartBlock INTEGER UNSIGNED DEFAULT 0,
+   EndBlock INTEGER UNSIGNED DEFAULT 0,
+   VolIndex INTEGER UNSIGNED DEFAULT 0,
+   PRIMARY KEY(JobMediaId) 
+   );
+INSERT INTO JobMedia (
+   JobMediaId,JobId,MediaId,FirstIndex,
+   LastIndex,StartFile,EndFile,StartBlock,
+   EndBlock)
+   SELECT * FROM JobMedia_backup;
+DROP TABLE JobMedia_backup;
+COMMIT;
+
+CREATE TABLE BaseFiles (
+   BaseId INTEGER UNSIGNED AUTOINCREMENT,
+   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+   FileId INTEGER UNSIGNED REFERENCES File NOT NULL,
+   FileIndex INTEGER UNSIGNED,
+   PRIMARY KEY(BaseId)
+   );
+
+DROP TABLE Counters;
+
+CREATE TABLE Counters (
+   Counter TEXT NOT NULL,     
+   MinValue INTEGER DEFAULT 0, 
+   MaxValue INTEGER DEFAULT 0,
+   CurrentValue INTEGER DEFAULT 0,
+   WrapCounter TEXT NOT NULL,
+   PRIMARY KEY (Counter)
+   );
+
+UPDATE Version SET VersionId=6;
+
+END-OF-DATA

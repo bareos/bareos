@@ -1,0 +1,67 @@
+#!/bin/sh
+#
+# shell script to make a dump of the bacula Ingres database using copydb and make
+# a base64 encoded tar of the content.
+#
+
+bindir=@INGRES_BINDIR@
+PATH="$bindir:$PATH"
+db_name=${db_name:-@db_name@}
+db_user=${db_user:-@db_user@}
+working_dir="@working_dir@"
+
+#
+# Source the Ingres settings when they exist.
+#
+[ -f ${bindir}/../../.ingIIsh  ] && . ${bindir}/../../.ingIIsh 
+
+#
+# See if the dumpdir exists.
+#
+[ ! -d ${working_dir}/ingres_dump ] && mkdir -p ${working_dir}/ingres_dump
+
+#
+# Generate the copy.in and copy.out file
+#
+copydb \
+${db_name} \
+-u${db_user} \
+-dest=${working_dir}/ingres_dump \
+-d ${working_dir}/ingres_dump \
+> /dev/null 2>&1
+
+#
+# If copydb created a copy.out file run it.
+#
+if [ -f ${working_dir}/ingres_dump/copy.out ]; then
+   #
+   # Run the sql to create the dumps of the tables.
+   #
+   sql \
+   -u${db_user} \
+   ${db_name} \
+   < ${working_dir}/ingres_dump/copy.out \
+   > /dev/null 2>&1 && rm ${working_dir}/ingres_dump/copy.out
+
+   #
+   # Tar up the dump and uuencode it.
+   #
+   cd ${working_dir}/ingres_dump || exit 1
+   case `uname -s` in
+      Linux)
+         tar cf - . | gzip -c | base64 
+         ;;
+      SunOS)
+         tar cf - . | gzip -c | uuencode -m -
+         ;;
+      *)
+         echo "Unsupported OS type encountered, `uname -s`"
+         exit 1
+         ;;
+   esac
+   cd /
+
+   rm -rf ${working_dir}/ingres_dump
+fi
+
+exit 0

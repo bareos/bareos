@@ -1,0 +1,133 @@
+#!/bin/sh
+#
+# Shell script to update PostgreSQL tables from version 1.36 to 1.38
+#
+echo " "
+echo "This script will update a Bacula PostgreSQL database from version 8 to 9"
+echo "Depending on the size of your database,"
+echo "this script may take several minutes to run."
+echo " "
+bindir=/usr/bin
+
+if $bindir/psql -f - -d bacula $* <<END-OF-DATA
+
+ALTER TABLE media ADD COLUMN labeltype integer;
+UPDATE media SET labeltype=0;
+ALTER TABLE media ALTER COLUMN labeltype SET NOT NULL;
+ALTER TABLE media ADD COLUMN StorageId integer;
+UPDATE media SET StorageId=0;
+
+ALTER TABLE pool ADD COLUMN labeltype integer;
+UPDATE pool set labeltype=0;
+ALTER TABLE pool ALTER COLUMN labeltype SET NOT NULL;
+ALTER TABLE pool ADD COLUMN NextPoolId        integer;
+UPDATE pool SET NextPoolId=0;
+ALTER TABLE pool ADD COLUMN MigrationHighBytes BIGINT;
+UPDATE pool SET MigrationHighBytes=0;
+ALTER TABLE pool ADD COLUMN MigrationLowBytes  BIGINT;
+UPDATE pool SET MigrationLowBytes=0;
+ALTER TABLE pool ADD COLUMN MigrationTime      BIGINT;
+UPDATE pool SET MigrationTime=0;
+
+
+ALTER TABLE jobmedia ADD COLUMN Copy integer;
+UPDATE jobmedia SET Copy=0;
+ALTER TABLE jobmedia ADD COLUMN Stripe integer;
+UPDATE jobmedia SET Stripe=0;
+
+
+ALTER TABLE media ADD COLUMN volparts integer;
+UPDATE media SET volparts=0;
+ALTER TABLE media ALTER COLUMN volparts SET NOT NULL;
+
+CREATE TABLE MediaType (
+   MediaTypeId SERIAL,
+   MediaType TEXT NOT NULL,
+   ReadOnly INTEGER DEFAULT 0,
+   PRIMARY KEY(MediaTypeId)
+   );
+
+CREATE TABLE Device (
+   DeviceId SERIAL,
+   Name TEXT NOT NULL,
+   MediaTypeId INTEGER NOT NULL,
+   StorageId INTEGER,
+   DevMounts INTEGER NOT NULL DEFAULT 0,
+   DevReadBytes BIGINT NOT NULL DEFAULT 0,
+   DevWriteBytes BIGINT NOT NULL DEFAULT 0,
+   DevReadBytesSinceCleaning BIGINT NOT NULL DEFAULT 0,
+   DevWriteBytesSinceCleaning BIGINT NOT NULL DEFAULT 0,
+   DevReadTime BIGINT NOT NULL DEFAULT 0,
+   DevWriteTime BIGINT NOT NULL DEFAULT 0,
+   DevReadTimeSinceCleaning BIGINT NOT NULL DEFAULT 0,
+   DevWriteTimeSinceCleaning BIGINT DEFAULT 0,
+   CleaningDate TIMESTAMP WITHOUT TIME ZONE,
+   CleaningPeriod BIGINT NOT NULL DEFAULT 0,
+   PRIMARY KEY(DeviceId)
+   );
+
+CREATE TABLE Storage (
+   StorageId SERIAL,
+   Name TEXT NOT NULL,
+   AutoChanger INTEGER DEFAULT 0,
+   PRIMARY KEY(StorageId)
+   );
+
+CREATE TABLE Status (
+   JobStatus CHAR(1) NOT NULL,
+   JobStatusLong TEXT, 
+   PRIMARY KEY (JobStatus)
+   );
+
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('C', 'Created, not yet running');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('R', 'Running');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('B', 'Blocked');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('T', 'Completed successfully');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('E', 'Terminated with errors');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('e', 'Non-fatal error');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('f', 'Fatal error');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('D', 'Verify found differences');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('A', 'Canceled by user');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('F', 'Waiting for Client');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('S', 'Waiting for Storage daemon');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('m', 'Waiting for new media');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('M', 'Waiting for media mount');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('s', 'Waiting for storage resource');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('j', 'Waiting for job resource');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('c', 'Waiting for client resource');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('d', 'Waiting on maximum jobs');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('t', 'Waiting on start time');
+INSERT INTO Status (JobStatus,JobStatusLong) VALUES
+   ('p', 'Waiting on higher priority jobs');
+
+
+DELETE FROM version;
+INSERT INTO version (versionId) VALUES (9);
+
+vacuum;
+
+END-OF-DATA
+then
+   echo "Update of Bacula PostgreSQL tables succeeded."
+else
+   echo "Update of Bacula PostgreSQL tables failed."
+fi
+exit 0

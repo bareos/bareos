@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Bacula Monitor
+Comment=Notification Tray Monitor
+Icon=/usr/share/pixmaps/bacula-tray-monitor.xpm
+Exec=@sbindir@/bacula-tray-monitor -c @sysconfdir@/tray-monitor.conf
+Terminal=false
+Type=Application
+Encoding=UTF-8
+X-Desktop-File-Install-Version=0.3
+Categories=System;Application;Utility;X-Red-Hat-Base;

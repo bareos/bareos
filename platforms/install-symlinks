@@ -1,0 +1,99 @@
+#!/bin/sh
+#
+# install-symlinks.sh - shell script for installing symbolic lynks
+# for system startup
+#
+# Copyright (C) 1999-2000 Riccardo Facchetti <riccardo@master.oasi.gpa.it>
+#
+#  Modified for use with Bacula  15 November 2001, Kern Sibbald
+#
+#
+# Theory of operation:
+# this script attempts to detect which runlevels are appropriate for
+# apcupsd startup and consequently installs the OS startup symbolic links
+# in the correct locations.
+#
+# For example, suse distribution uses sysvinit so the scripts will do:
+# 1. searches for init scripts directory
+# 2. try to detect on which runlevels is appropriate to run apcupsd
+#    (presumably all the runlevels at which also syslogd runs)
+# 3. installs the symbolic links into the previously detected runlevels
+
+action=$1
+dist=$2
+
+if [ -z "$action" -o -z "$dist" ]
+then
+  echo "Missing parameter on command line."
+  exit 1
+fi
+
+case $action in
+  install)
+    echo "Generic symlinks installation..."
+    case $dist in
+      suse)
+
+        if [ -d /etc/rc.d ]
+        then
+          initrcd="/etc/rc.d"
+        elif [ -d /sbin/init.d ]
+        then
+          initrcd="/sbin/init.d"
+        else
+          echo "Can not find init scripts directory."
+          exit 1
+        fi
+
+        for runlevel in 1 2 3 4 5
+        do
+          if [ -L $initrcd/rc$runlevel.d/S*syslog ]
+          then
+            echo "  Installing runlevel $runlevel..."
+            ln -sf $initrcd/apcupsd $initrcd/rc$runlevel.d/K20apcupsd
+            ln -sf $initrcd/apcupsd $initrcd/rc$runlevel.d/S20apcupsd
+          fi
+        done
+        ;;
+      *)
+        echo "  relying on $dist-specific Makefile for symlink installation"
+        ;;
+    esac
+    ;;
+  uninstall)
+    echo "Genering symlinks uninstallation..."
+    case $dist in
+      suse)
+
+        if [ -d /etc/rc.d ]
+        then
+          initrcd="/etc/rc.d"
+        elif [ -d /sbin/init.d ]
+        then
+          initrcd="/sbin/init.d"
+        else
+          echo "Can not detect init scripts directory."
+          exit 1
+        fi
+
+        for runlevel in 1 2 3 4 5
+        do
+          if [ -L $initrcd/rc$runlevel.d/S20apcupsd ]
+          then
+            echo "  Removing runlevel $runlevel..."
+            rm -f $initrcd/rc$runlevel.d/K20apcupsd
+            rm -f $initrcd/rc$runlevel.d/S20apcupsd
+          fi
+        done
+        ;;
+      *)
+        echo "  relying on $dist-specific Makefile for symlink uninstallation"
+        ;;
+    esac
+    ;;
+  *)
+    echo "Wrong parameter $action."
+    exit 1
+esac
+
+exit 0

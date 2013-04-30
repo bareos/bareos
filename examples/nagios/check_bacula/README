@@ -1,0 +1,15 @@
+# It's more or less untested, though.
+#  Submitted by Arno Lehmann <al@its-lehmann.de>
+#
+
+run ./configure with your usual options at the toplevel. Afterwards, use
+'make' to create your binaries.
+
+If you encounter problems, you'll have to setup the Bacula source manually.
+
+Note that check_bacula does not support TLS and is an unsupported add-on to
+Bacula. Even if it's not part of the core Bacula programs, questions can be
+asked at the bacula-users mailing list.
+
+Bacula is a Trademark of Kern Sibbald. Bacula and the accompanying programs
+are open source. See the LICENSE file for more information.

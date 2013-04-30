@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# bacula       This shell script takes care of starting and stopping
+#	       the bacula File daemon.
+#
+# chkconfig: 2345 90 9
+# description: The Leading Open Source Backup Solution.
+#
+#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@ 
+#
+
+case "$1" in
+    start)
+       echo "Starting the Bacula File daemon: "
+       /sbin/bacula-fd $2 -c /etc/bacula/bacula-fd.conf
+       RETVAL=$?
+       echo
+##	 [ $RETVAL -eq 0 ] && touch @subsysdir@/bacula-fd
+       ;;
+    stop)
+       echo "Stopping the Bacula File daemon: "
+#	killproc @sbindir@/bacula-fd
+       ID=`ps -ef | grep -F bacula-fd | grep -Fv grep | awk '{print $2}'`
+       [ -n "$ID" ] && kill $ID
+       RETVAL=$?
+       echo
+##	 [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bacula-fd
+       ;;
+    restart)
+       $0 stop
+       sleep 5
+       $0 start
+       ;;
+    *)
+       echo "Usage: $0 {start|stop|restart}"
+       exit 1
+       ;;
+esac
+exit 0

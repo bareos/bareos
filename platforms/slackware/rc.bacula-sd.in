@@ -1,0 +1,54 @@
+#! /bin/sh
+#
+# bacula       This shell script takes care of starting and stopping
+#	       the bacula Storage daemon.
+#
+# chkconfig: 2345 90 99
+# description: The Leading Open Source Backup Solution.
+#
+#  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+# Source function library
+. /etc/rc.d/functions.bacula
+
+case "$1" in
+    start)
+	[ -x ${BACSDBIN}/bacula-sd ] && { 
+	    sleep 2
+	    echo -n "Starting the Storage daemon: "
+	    OPTIONS=''
+	    if [ "${SD_USER}" != '' ]; then
+	       OPTIONS="${OPTIONS} -u ${SD_USER}"
+	    fi
+
+	    if [ "${SD_GROUP}" != '' ]; then
+	       OPTIONS="${OPTIONS} -g ${SD_GROUP}"
+	    fi
+
+	    ${BACSDBIN}/bacula-sd $2 ${OPTIONS} -v -c ${BACSDCFG}/bacula-sd.conf
+	    echo Done.
+	}
+	;;
+    stop)
+	[ -x ${BACSDBIN}/bacula-sd ] && {
+	    echo -n "Stopping the Storage daemon: "
+	    killproc ${BACSDBIN}/bacula-sd ${SD_PORT}
+	    echo Done.
+	}
+	;;
+    restart)
+	$0 stop
+	sleep 5
+	$0 start
+	;;
+    status)
+	[ -x ${BACSDBIN}/bacula-sd ] && status ${BACSDBIN}/bacula-sd ${SD_PORT}
+	;;
+    *)
+	echo "Usage: $0 {start|stop|restart|status}"
+	exit 1
+	;;
+esac
+exit 0
+

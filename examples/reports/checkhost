@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+
+use strict;
+use Net::Ping;
+use Net::Telnet ();
+use Getopt::Long;
+use IPC::Open2;
+
+#
+# Check if a Bacula client is alive.  By Phil Stracchino.
+#
+# Return values:
+#       -1  Program error or no host specified
+#        0  Success, FD found and responding
+#        1  Client alive but FD not listening
+#        2  Client not found on network
+
+my $ret = -1;
+my ($host, $p, $ret, $verbose);
+GetOptions('verbose'    => \$verbose,
+           'v'          => \$verbose);
+
+$host = shift || die "No host specified!\n";
+
+$p = Net::Ping->new();
+if ($p->ping($host))
+{
+    print "Host $host is alive\n" if ($verbose);
+    my $t = new Net::Telnet (Timeout => 10,
+                             Port    => 9102,
+                             Prompt  => '/bash\$ $/');
+    if ($t->open($host))
+    {
+        print "Bacula-FD listening on port 9102\n" if ($verbose);
+        $ret = 0;
+    }
+    else
+    {
+        print "Bacula-FD not found\n" if ($verbose);
+        $ret = 1;
+    }
+    $t->close;
+}
+else
+{
+    print "$host is unreachable\n" if ($verbose);
+    $ret = 2;
+}
+$p->close();
+
+print "Returning value $ret\n" if ($verbose);
+
+exit ($ret);

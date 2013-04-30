@@ -1,0 +1,10 @@
+#
+# Bacula User Agent (or Console) Configuration File
+#
+
+Director {
+  Name = rufus-dir
+  DIRport = 8101
+  address = localhost
+  Password = UA_password
+}

@@ -1,0 +1,44 @@
+    /*
+	"bc" implementation of the "Minimal Standard"
+	multiplicative congruential generator of Park and Miller. 
+	[Park, S.K. and K.W. Miller, Communications of the ACM 31,
+	1192-1201 (1988).]
+
+	The generation algorithm is:
+
+            I[j+1] = (I[j] × 16807) & 0x7FFFFFFF
+
+	Note that the intermediate value of the multiplication by 16807
+	(7^5) exceeds that representable in 32 bits; this has
+	deterred use of this generator in most portable languages.
+	Fortunately, bc computes with arbitrary precision so this
+	poses no problem.
+
+	Designed and implemented in September 2002 by John Walker,
+	http://www.fourmilab.ch/.
+    */
+
+    /* Initialise state to default value of 1. */
+    
+    t = 1
+
+    /* Generate and return the next random byte, updating
+       the state t. */
+
+    define r() {
+	t = (t * 16807) % (2^31)
+	return ((t / 2048) % (2^8))
+    }
+    
+    /* Set the seed to the x argument.  The state t is
+       set from the seed, after an initial shuffle.  If
+       you don't want 0 printed when setting the seed,
+       assign s(x) to a junk variable. */
+
+    define s(x) {
+    	auto i, j
+	if (x == 0) { "Seed must be nonzero"; return }
+    	t = x % (2^32)
+	/* Perform initial shuffle of state. */
+	for (i = 0; i < 11; i++) j = r()
+    }

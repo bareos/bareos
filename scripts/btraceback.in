@@ -1,0 +1,47 @@
+#!/bin/sh
+# 
+# Script to do a stackdump of a Bacula daemon/program.
+#
+# We attempt to attach to running program
+#
+# Arguments to this script are
+#  $1 = path to executable
+#  $2 = main pid of running program to be traced back.
+#  $3 = working directory
+#
+PNAME=`basename $1`
+WD="$3"
+case `uname -s` in
+SunOS)
+   #
+   # See what debuggers are available on this platform.
+   # We need to to some tricks to find out as a which on
+   # a non existing binary gives:
+   #
+   # no <debugger> in <PATH>
+   #
+   # So we use the return code which is 0 when it finds
+   # somethings and 1 if not.
+   #
+   which gdb > /dev/null 2>&1 && GDB=`which gdb` || GDB=''
+   which dbx > /dev/null 2>&1 && DBX=`which dbx` || DBX=''
+   which mdb > /dev/null 2>&1 && MDB=`which mdb` || MDB=''
+   gcore -o ${WD}/${PNAME} $2
+   if [ ! -z "${DBX}" ]; then
+      ${DBX} $1 $2 < @scriptdir@/btraceback.dbx > ${WD}/bacula.$2.traceback 2>&1
+   elif [ ! -z "${GDB}" ]; then
+      ${GDB} -quiet -batch -x @scriptdir@/btraceback.gdb $1 $2 > ${WD}/bacula.$2.traceback 2>&1
+   elif [ ! -z "${MDB}" ]; then
+      ${MDB} -u -p $2 < @scriptdir@/btraceback.mdb > ${WD}/bacula.$2.traceback 2>&1
+   fi
+   PNAME="${PNAME} on `hostname`"
+   cat ${WD}/bacula.$2.traceback \
+    | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bacula DBX traceback of ${PNAME}" @dump_email@
+   ;;
+*)
+   gdb -quiet -batch -x @scriptdir@/btraceback.gdb $1 $2 >${WD}/bacula.$2.traceback 2>&1
+   PNAME="${PNAME} on `hostname`"
+   cat ${WD}/bacula.$2.traceback \
+    | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bacula GDB traceback of ${PNAME}" @dump_email@
+   ;;
+esac

@@ -1,0 +1,43 @@
+Installation instructions for bacula logwatch script
+04 Sep 2005
+
+Installation into a standard logwatch configuration is fairly
+straightforward. Run 'make install' as root from this directory.
+
+For manual install copy the files as indicated below:
+
+cp -p scripts/logwatch/bacula /etc/log.d/scripts/services/bacula
+cp -p scripts/logwatch/applybacula /etc/log.d/scripts/shared/applybaculadate
+cp -p scripts/logwatch/logfile.bacula.conf /etc/log.d/conf/logfiles/bacula.conf
+cp -p scripts/logwatch/services.bacula.conf /etc/log.d/conf/services/bacula.conf
+chmod 755 /etc/log.d/scripts/services/bacula
+chmod 755 /etc/log.d/scripts/shared/applybaculadate
+chmod 644 /etc/log.d/conf/logfiles/bacula.conf
+chmod 644 /etc/log.d/conf/services/bacula.conf
+
+To test your installation run logwatch (as root):
+/etc/log.d/logwatch
+
+The following is the kind of output you could expect to be added to the
+standard logwatch listing:
+
+ --------------------- bacula Begin ------------------------ 
+
+Jobs Run:
+2005-09-02 2012 backupNightlySave.2005-09-02_01.05.00
+     BackupOK
+
+2005-09-02 2013 scottNightlySave.2005-09-02_01.05.01
+     BackupOK
+
+2005-09-02 2014 marthaNightlySave.2005-09-02_01.05.02
+     BackupOK
+
+2005-09-02 2015 lyndaNightlySave.2005-09-02_01.05.03
+     BackupOK
+
+2005-09-02 2016 backupBackupCatalog.2005-09-02_01.10.00
+     BackupOK
+
+
+ ---------------------- bacula End ------------------------- 

@@ -1,0 +1,217 @@
+.\" Copyright (c) 2001, 2007 - 2010  Peter Pentchev
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $Ringlet$
+.\"
+.Dd September 29, 2010
+.Dt TIMELIMIT 1
+.Os
+.Sh NAME
+.Nm timelimit
+.Nd effectively limit the absolute execution time of a process
+.Sh SYNOPSIS
+.Nm
+.Op Fl pq
+.Op Fl S Ar killsig
+.Op Fl s Ar warnsig
+.Op Fl T Ar killtime
+.Op Fl t Ar warntime
+.Ar command
+.Op Ar arguments ...
+.Sh DESCRIPTION
+The
+.Nm
+utility executes a given
+.Ar command
+with the supplied
+.Ar arguments
+and terminates the spawned process after a given time with a given signal.
+If the process exits before the time limit has elapsed,
+.Nm
+will silently exit, too.
+.Pp
+Options:
+.Bl -tag -width indent
+.It Fl p
+If the child process is terminated by a signal,
+.Nm
+propagates this condition, i.e. sends the same signal to itself.
+This allows the program executing
+.Nm
+to determine whether the child process was terminated by a signal or
+actually exited with an exit code larger than 128.
+.It Fl q
+Quiet operation -
+.Nm
+does not output diagnostic messages about signals sent to the child process.
+.It Fl S Ar killsig
+Specify the number of the signal to be sent to the process
+.Ar killtime
+seconds after
+.Ar warntime
+has expired.
+Defaults to 9 (SIGKILL).
+.It Fl s Ar warnsig
+Specify the number of the signal to be sent to the process
+.Ar warntime
+seconds after it has been started.
+Defaults to 15 (SIGTERM).
+.It Fl T Ar killtime
+Specify the maximum execution time of the process before sending
+.Ar killsig
+after
+.Ar warnsig
+has been sent.
+Defaults to 120 seconds.
+.It Fl t Ar warntime
+Specify the maximum execution time of the process in seconds before sending
+.Ar warnsig .
+Defaults to 3600 seconds.
+.El
+.Pp
+On systems that support the
+.Xr setitimer 2
+system call, the
+.Ar warntime
+and
+.Ar killtime
+values may be specified in fractional seconds with microsecond precision.
+.Sh ENVIRONMENT
+.Bl -tag -width indent
+.It Ev KILLSIG
+The
+.Ar killsig
+to use if the
+.Fl S
+option was not specified.
+.It Ev KILLTIME
+The
+.Ar killtime
+to use if the
+.Fl T
+option was not specified.
+.It Ev WARNSIG
+The
+.Ar warnsig
+to use if the
+.Fl s
+option was not specified.
+.It Ev WARNTIME
+The
+.Ar warntime
+to use if the
+.Fl t
+option was not specified.
+.El
+.Sh EXIT STATUS
+If the child process exits normally, the
+.Nm
+utility will pass its exit code on up.
+If the child process is terminated by a signal and the
+.Fl p
+flag was not specified, the
+.Nm
+utility's exit status is 128 plus the signal number, similar to
+.Xr sh 1 .
+If the
+.Fl p
+flag was specified, the
+.Nm
+utility will raise the signal itself so that its own parent process
+may in turn reliably distinguish between a signal and a larger than 128
+exit code.
+.Pp
+In rare cases, the
+.Nm
+utility may encounter a system or user error; then, its exit status is one
+of the standard
+.Xr sysexits 3
+values:
+.Bl -tag -width indent
+.It Dv EX_USAGE
+The command-line parameters and options were incorrectly specified.
+.It Dv EX_SOFTWARE
+The
+.Nm
+utility itself received an unexpected signal while waiting for the child
+process to terminate.
+.It Dv EX_OSERR
+The
+.Nm
+utility was unable to execute the child process, wait for it to terminate,
+or examine its exit status.
+.El
+.Sh EXAMPLES
+.Pp
+The following examples are shown as given to the shell:
+.Pp
+.Dl timelimit -p /usr/local/bin/rsync rsync://some.host/dir /opt/mirror
+.Pp
+Run the rsync program to mirror a WWW or FTP site and kill it if it
+runs longer than 1 hour (that is 3600 seconds) with SIGTERM.
+If the rsync process does not exit after receiving the SIGTERM,
+.Nm
+issues a SIGKILL 120 seconds after the SIGTERM.
+If the rsync process is terminated by a signal,
+.Nm
+will itself raise this signal.
+.Pp
+.Dl tcpserver 0 8888 timelimit -t600 -T300 /opt/services/chat/stats
+.Pp
+Start a
+.Xr tcpserver n
+process listening on tcp port 8888; each client connection shall invoke
+an instance of an IRC statistics tool under
+.Pa /opt/services/chat
+and kill it after 600 seconds have elapsed.
+If the stats process is still running after the SIGTERM, it will be
+killed by a SIGKILL sent 300 seconds later.
+.Pp
+.Dl env WARNTIME=4.99 WARNSIG=1 KILLTIME=1.000001 timelimit sh stats.sh
+.Pp
+Start a shell script and kill it with a SIGHUP in a little under 5 seconds.
+If the shell gets stuck and does not respond to the SIGHUP, kill it
+with the default SIGKILL just a bit over a second afterwards.
+.Sh SEE ALSO
+.Xr kill 1 ,
+.Xr rsync 1 ,
+.Xr signal 3 ,
+.Xr tcpserver n
+.Sh STANDARDS
+No standards documentation was harmed in the process of creating
+.Nm .
+.Sh BUGS
+Please report any bugs in
+.Nm
+to the author.
+.Sh AUTHOR
+The
+.Nm
+utility was conceived and written by
+.An Peter Pentchev Aq roam@ringlet.net
+with contributions and suggestions by
+.An Karsten W Rohrbach Aq karsten@rohrbach.de ,
+.An Teddy Hogeborn Aq teddy@fukt.bsnet.se ,
+and
+.An Tomasz Nowak Aq nowak2000@poczta.onet.pl .

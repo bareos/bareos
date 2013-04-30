@@ -1,0 +1,242 @@
+#! /bin/sh
+#
+# bacula-ctl-dir This shell script takes care of starting and stopping
+#		 the bacula Director daemon
+#
+#   This is pretty much watered down version of the RedHat script
+#   that works on Solaris as well as Linux, but it won't work everywhere.
+#
+# description: The Leading Open Source Backup Solution.
+#
+
+PSCMD="@PSCMD@"
+PS="ps"
+
+#
+# On Solaris, you may need to use nawk, or alternatively,
+#  add the GNU binaries to your path, such as /usr/xpg4/bin
+#
+AWK=@AWK@
+
+# All these are not *really* needed but it makes it
+#  easier to "steal" this code for the development 
+#  environment where they are different.
+#  
+BACDIRBIN=@sbindir@
+BACDIRCFG=@sysconfdir@
+PIDDIR=@piddir@
+SUBSYSDIR=@subsysdir@
+
+DIR_PORT=@dir_port@
+
+DIR_USER=@dir_user@
+DIR_GROUP=@dir_group@
+Bacula="@BACULA@"
+PIDOF=@PIDOF@	
+
+# A function to stop a program.
+killproc() {
+   RC=0
+   # Test syntax.
+   if [ $# = 0 ]; then
+      echo "Usage: killproc {program} {port} [signal]"
+      return 1
+   fi
+
+   notset=0
+   # check for third arg to be kill level
+   if [ "$3" != "" ] ; then
+      killlevel=$3
+   else
+      notset=1
+      killlevel="-9"
+   fi
+
+   # Get base program name
+   base=`basename $1`
+
+   # Find pid.
+   pid=`pidofproc $base $2`
+
+   # Kill it.
+   if [ "$pid" != "" ] ; then
+      if [ "$notset" = "1" ] ; then
+	 if ${PS} -p "$pid">/dev/null 2>&1; then
+	     # TERM first, then KILL if not dead
+	     kill -TERM $pid 2>/dev/null
+	     sleep 1
+	     if ${PS} -p "$pid" >/dev/null 2>&1 ; then
+		 sleep 1
+		 if ${PS} -p "$pid" >/dev/null 2>&1 ; then
+		     sleep 3
+		     if ${PS} -p "$pid" >/dev/null 2>&1 ; then
+			 kill -KILL $pid 2>/dev/null
+		     fi
+		 fi
+	     fi
+	  fi
+	  ${PS} -p "$pid" >/dev/null 2>&1
+	  RC=$?
+	  [ $RC -eq 0 ] && failure "$base shutdown" || success "$base shutdown"
+      #    RC=$((! $RC))
+      # use specified level only
+      else
+	 if ${PS} -p "$pid" >/dev/null 2>&1; then
+	    kill $killlevel $pid 2>/dev/null
+	    RC=$?
+	    [ $RC -eq 0 ] && success "$base $killlevel" || failure "$base $killlevel"
+	 fi
+      fi
+   else
+      failure "$base shutdown"
+   fi
+   # Remove pid file if any.
+   if [ "$notset" = "1" ]; then
+      rm -f ${PIDDIR}/$base.$2.pid
+   fi
+   return $RC
+}
+
+# A function to find the pid of a program.
+pidofproc() {
+   pid=""
+   # Test syntax.
+   if [ $# = 0 ] ; then
+      echo "Usage: pidofproc {program}"
+      return 1
+   fi
+
+   # Get base program name
+   base=`basename $1`
+
+   # First try PID file
+   if [ -f ${PIDDIR}/$base.$2.pid ] ; then
+      pid=`head -n 1 ${PIDDIR}/$base.$2.pid`
+      if [ "$pid" != "" ] ; then
+	 echo $pid
+	 return 0
+      fi
+   fi
+
+   # Next try "pidof"
+   if [ -x ${PIDOF} ] ; then
+      pid=`${PIDOF} $1`
+   fi
+   if [ "$pid" != "" ] ; then
+      echo $pid
+      return 0
+   fi
+
+   # Finally try to extract it from ps
+   pid=`${PSCMD} | grep $1 | ${AWK} '{ print $1 }' | tr '\n' ' '`
+   echo $pid
+   return 0
+}
+
+status() {
+   pid=""
+   # Test syntax.
+   if [ $# = 0 ] ; then
+       echo "Usage: status {program} {port}"
+       return 1
+   fi
+
+   # Get base program name
+   base=`basename $1`
+
+   # First try "pidof"
+   if [ -x ${PIDOF} ] ; then
+      pid=`${PIDOF} $1`
+   fi
+   if [ "$pid" != "" ] ; then
+      echo "$base (pid $pid) is running..."
+      return 0
+   else
+      pid=`${PSCMD} | ${AWK} 'BEGIN { prog=ARGV[1]; ARGC=1 } 
+	    { if ((prog == $2) || (("(" prog ")") == $2) ||
+		 (("[" prog "]") == $2) ||
+		 ((prog ":") == $2)) { print $1 ; exit 0 } }' $1`
+      if [ "$pid" != "" ] ; then
+	 echo "$base (pid $pid) is running..."
+	 return 0
+      fi
+   fi
+
+   # Next try the PID files
+   if [ -f ${PIDDIR}/$base.$2.pid ] ; then
+      pid=`head -n 1 ${PIDDIR}/$base.$2.pid`
+      if [ "$pid" != "" ] ; then
+	 echo "$base dead but pid file exists"
+	 return 1
+      fi
+   fi
+   # See if the subsys lock exists
+   if [ -f ${SUBSYSDIR}/$base ] ; then
+      echo "$base dead but subsys locked"
+      return 2
+   fi
+   echo "$base is stopped"
+   return 3
+}
+
+success() {
+   return 0
+}
+
+failure() {
+   rc=$?
+   return $rc
+}
+
+OS=`uname -s`
+
+# if /lib/tls exists, force Bacula to use the glibc pthreads instead
+if [ -d "/lib/tls" -a $OS = "Linux" -a `uname -r | cut -c1-3` = "2.4" ] ; then
+   export LD_ASSUME_KERNEL=2.4.19
+fi
+
+case "$1" in
+   start)
+      [ -x ${BACDIRBIN}/bacula-dir ] && { 
+	  echo "Starting the $Bacula Director daemon"
+	 OPTIONS=''
+	 if [ "${DIR_USER}" != '' ]; then
+	    OPTIONS="${OPTIONS} -u ${DIR_USER}"
+	 fi
+
+	 if [ "${DIR_GROUP}" != '' ]; then
+	    OPTIONS="${OPTIONS} -g ${DIR_GROUP}"
+	 fi
+
+	 if [ "x${VALGRIND_DIR}" = "x1" ]; then
+	    valgrind --leak-check=full ${BACDIRBIN}/bacula-dir $2 $3 ${OPTIONS} -v -c ${BACDIRCFG}/bacula-dir.conf
+	 else
+	    ${BACDIRBIN}/bacula-dir $2 $3 ${OPTIONS} -v -c ${BACDIRCFG}/bacula-dir.conf
+	 fi
+	 sleep 1
+      }
+      ;;
+
+   stop)
+      [ -x ${BACDIRBIN}/bacula-dir ] && {
+	 echo "Stopping the $Bacula Director daemon"
+	 killproc ${BACDIRBIN}/bacula-dir ${DIR_PORT}
+      }
+      ;;
+
+   restart)
+      $0 stop
+      sleep 5
+      $0 start
+      ;;
+
+   status)
+      [ -x ${BACDIRBIN}/bacula-dir ] && status ${BACDIRBIN}/bacula-dir ${DIR_PORT}
+      ;;
+
+   *)
+      echo "Usage: $0 {start|stop|restart|status}"
+      exit 1
+      ;;
+esac
+exit 0

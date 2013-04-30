@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Make full release
+#
+
+# Source config
+. ./config
+
+echo "Creating release version: ${ver}"
+
+cd $cwd
+
+./makebacularel $bacula $remote $branch $ver
+./makedocsrel $bacula $docs $remote $branch $ver
+#./makewinrel $bacula $remote $branch $ver | tee win$$.log
+
+# strip ./configure strerror from Win log file
+sed -i -e 's%strerror%%' win$$.log
+# check for warning and error messages
+grep -i warning win$$.log >/dev/null
+if [ $? -eq 0 ] ; then
+  echo " "
+  echo "Warnings in win$$.log"
+  exit 1
+fi
+grep -i error win$$.log >/dev/null
+if [ $? -eq 0 ] ; then
+  echo " "
+  echo "Errors in win$$.log"
+  exit 1
+fi
+rm -f win$$.log

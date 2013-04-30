@@ -1,0 +1,152 @@
+#!/bin/sh
+#
+# shell script to create Bacula Developer Test tables
+
+bindir=$HOME/mysql/bin
+
+if $bindir/mysql -f <<END-OF-DATA
+USE baculatest;
+CREATE TABLE Filename (
+  FilenameId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  Name VARCHAR(255) NOT NULL,
+  PRIMARY KEY(FilenameId),
+  INDEX (Name(30))
+  );
+
+CREATE TABLE Path (
+   PathId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   Path VARCHAR(255) NOT NULL,
+   PRIMARY KEY(PathId),
+   INDEX (Path(50))
+   );
+
+
+CREATE TABLE File (
+   FileId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   FileIndex INTEGER UNSIGNED NOT NULL,
+   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+   PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
+   FilenameId INTEGER NOT NULL REFERENCES Filename,
+   LStat VARCHAR(255) NOT NULL,
+   MD5 VARCHAR(25) NOT NULL,
+   PRIMARY KEY(FileId),
+   INDEX (FilenameId, PathId)
+   );
+
+
+CREATE TABLE Job (
+   JobId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   Name VARCHAR(127) NOT NULL,
+   Class CHAR NOT NULL,
+   Type CHAR NOT NULL,
+   Level CHAR NOT NULL,
+   ClientId INTEGER NOT NULL REFERENCES Client,
+   JobStatus CHAR NOT NULL,
+   SchedTime DATETIME NOT NULL,
+   StartTime DATETIME NOT NULL,
+   EndTime DATETIME NOT NULL,
+   VolSessionId INTEGER UNSIGNED NOT NULL,
+   VolSessionTime INTEGER UNSIGNED NOT NULL,
+   JobFiles INTEGER UNSIGNED NOT NULL,
+   JobBytes BIGINT UNSIGNED NOT NULL,
+   JobErrors INTEGER UNSIGNED NOT NULL,
+   JobMissingFiles INTEGER UNSIGNED NOT NULL,
+   PoolId INTEGER UNSIGNED NOT NULL REFERENCES Pool,
+   FileSetId INTEGER UNSIGNED NOT NULL REFERENCES FileSet,
+   PRIMARY KEY(JobId),
+   INDEX (Name)
+   );
+
+# 
+CREATE TABLE FileSet (
+   FileSetId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   FileSet VARCHAR(127), 
+   MD5 VARCHAR(25),
+   PRIMARY KEY(FileSetId)
+   );
+
+CREATE TABLE JobMedia (
+   JobMediaId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+   MediaId INTEGER UNSIGNED NOT NULL REFERENCES Media,
+   FirstIndex INTEGER UNSIGNED NOT NULL,
+   LastIndex INTEGER UNSIGNED NOT NULL,
+   StartFile INTEGER UNSIGNED NOT NULL,
+   EndFile INTEGER UNSIGNED NOT NULL,
+   StartBlock INTEGER UNSIGNED NOT NULL,
+   EndBlock INTEGER UNSIGNED NOT NULL,
+   PRIMARY KEY(JobMediaId),
+   INDEX (JobId, MediaId)
+   );
+
+
+CREATE TABLE Media (
+   MediaId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   VolumeName VARCHAR(127) NOT NULL,
+   PoolId INTEGER UNSIGNED NOT NULL REFERENCES Pool,
+   MediaType VARCHAR(127),
+   FirstWritten DATETIME NOT NULL,
+   LastWritten DATETIME NOT NULL,
+   LabelDate DATETIME NOT NULL,
+   VolJobs INTEGER UNSIGNED NOT NULL,
+   VolFiles INTEGER UNSIGNED NOT NULL,
+   VolBlocks INTEGER UNSIGNED NOT NULL,
+   VolMounts INTEGER UNSIGNED NOT NULL,
+   VolBytes BIGINT UNSIGNED NOT NULL,
+   VolErrors INTEGER UNSIGNED NOT NULL,
+   VolWrites INTEGER UNSIGNED NOT NULL,
+   VolMaxBytes BIGINT UNSIGNED NOT NULL,
+   VolCapacityBytes BIGINT UNSIGNED NOT NULL,
+   VolStatus ENUM('Full', 'Archive', 'Append', 'Recycle', 'Read-Only', 'Disabled') NOT NULL,
+   Recycle ENUM('No', 'Yes') Not NULL,
+   PRIMARY KEY(MediaId),
+   INDEX (PoolId)
+   );
+
+CREATE TABLE Pool (
+   PoolId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   Name VARCHAR(127) NOT NULL,
+   NumVols INTEGER UNSIGNED NOT NULL,
+   MaxVols INTEGER UNSIGNED NOT NULL,
+   UseOnce TINYINT NOT NULL,
+   UseCatalog TINYINT NOT NULL,
+   AcceptAnyVolume TINYINT NOT NULL,
+   PoolType ENUM('Backup', 'Copy', 'Cloned', 'Archive', 'Migration') NOT NULL,
+   LabelFormat VARCHAR(127),
+   UNIQUE (Name),
+   PRIMARY KEY (PoolId)
+   );
+
+
+CREATE TABLE Client (
+   ClientId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   Name VARCHAR(127) NOT NULL,
+   Uname VARCHAR(255) NOT NULL,       /* full uname -a of client */
+   UNIQUE (Name),
+   PRIMARY KEY(ClientId)
+   );
+
+## Experimental
+#CREATE TABLE FileSave (
+#   FileSaveId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+#   FileIndex INTEGER UNSIGNED NOT NULL,
+#   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+#   FileId INTEGER UNSIGNED NOT NULL REFERENCES File,
+#   VLStat VARCHAR(255) NOT NULL,
+#   PRIMARY KEY(FileSaveId),
+#   );
+
+#CREATE TABLE LongName (
+#   LongNameId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+#   Name TEXT NOT NULL,
+#   PRIMARY KEY (LongNameId)
+#   );
+
+       
+END-OF-DATA
+then
+   echo "Creation of Baculatest tables succeeded."
+else
+   echo "Creation of Baculatest tables failed."
+fi
+exit 0

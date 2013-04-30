@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Remove old baculas
+rm -f bacula-* win*.log

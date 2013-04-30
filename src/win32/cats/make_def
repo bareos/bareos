@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+#  Make the stupid bacula.def file so that we don't have to do it
+#    manually
+#
+#   Kern Sibbald, June 2007
+#
+ 
+echo "LIBRARY bacula_cats.dll"
+echo "EXPORTS"
+echo " "
+
+TOPDIR=`(cd ../../..;pwd)`
+TOPDIR=${DEPKGS:-${TOPDIR}}
+NM=${TOPDIR}/cross-tools/mingw32/mingw32/bin/nm
+
+OBJS="sql.o sql_create.o sql_delete.o sql_find.o sql_get.o \
+      sql_list.o sql_update.o bvfs.o"
+
+#
+# The data could be automated too        
+#
+DATA="\
+      client_backups \
+      list_pool \
+      drop_deltabs \
+      create_deltabs \
+      insert_delcand \
+      select_backup_del \
+      select_verify_del \
+      select_restore_del \
+      select_admin_del \
+      select_migrate_del \
+      select_job \
+      count_select_job \
+      del_File \
+      cnt_DelCand \
+      del_Job \
+      del_JobMedia \
+      cnt_JobMedia \
+      sel_JobMedia \
+      upd_Purged \
+      uar_list_jobs \
+      uar_file \
+      uar_count_files \
+      uar_sel_files \
+      uar_del_temp \
+      uar_del_temp1 \
+      uar_create_temp \
+      uar_create_temp1 \
+      uar_last_full \
+      uar_full \
+      uar_inc \
+      uar_list_temp \
+      uar_sel_all_temp1 \
+      uar_sel_fileset \
+      uar_mediatype \
+      uar_jobid_fileindex \
+      uar_dif \
+      uar_sel_all_temp \
+      uar_count_files \
+      uar_jobids_fileindex \
+      uar_jobid_fileindex_from_dir \
+      uar_jobid_fileindex_from_table \
+      uar_sel_jobid_temp" 
+
+
+cd obj32/cats_mysql
+for i in ${OBJS}; do \
+   echo "; $i"; \
+   ${NM} $i | grep "^[0-9a-f]* T _" | cut -c13-; \
+   echo " "; \
+done
+
+${NM} mysql.o | grep "^[0-9a-f]* T _" | cut -c13- | grep -v "my_mysql"
+
+for i in ${DATA}; do \
+   echo "$i DATA"; \
+done

@@ -1,0 +1,118 @@
+
+This directory contains the Bacula Admin Tool (bat).
+
+At the current time, the contents of this directory are under
+development.  If you want to help, please contact Kern directly.
+If you want to build it, you need Qt4 loaded and setup as your
+default Qt or with the appropriate Qt Environment variables set.
+
+6/24/07
+There is now one dependency, it is qwt.  It compiles just fine with
+either qwt-5.0.2 or qwt-5.0.1.  You can either install the qwt package
+yourself or if your distro does not have it, we have included the source
+in depkgs-qt, which you can download from the Bacula Source Forge        
+download area.
+
+Building and running bat is done much like bconsole, the gnome console,
+or the wxWidgets console.  You add the appropriate options to your   
+./configure, then simply do a make.  Please see the Installation chapter
+of the manual for more details.
+
+
+Win32 mingw infos for QT4 :
+ - http://silmor.de/29
+ - http://doc.qtfr.org/post/2007/04/10/Cross-Compilation-Native-dapplication-Qt-depuis-Linux
+
+Development status as of 05/06/07
+
+Items not implemented:
+- Nothing on the brestore page
+
+Translations:
+- All translatable strings should be written as tr("string") ...
+- To extract the strings for translation run:
+ 
+   lupdate bat.pro
+
+- To translate the strings, do:
+
+   linguist ts/bat_xx.ts
+
+  where xx is the country code (e.g. fr or de)
+
+- To "compile" the translated strings do:
+
+  lrelease bat.pro
+
+  The necessary binary files will be in ts/bat_xx.qm
+  As far as I can tell, these files must be on your path or
+  in the same directory as bat for them to be used, otherwise
+  it reverts to English. Selecting the translation is based on
+  how your system is setup or the LANG environment variable.
+         
+Design decisions:
+- If possible all code for a particular component will be kept in
+  an appropriate subdirectory.
+- All private class variables are named "m_xxx" this makes it very
+  clear if one is referencing a class variable or a local.
+- All signal/slots are connected by explicit code (most all are
+  done in the MainWin constructor), rather than using designer.      
+- Each page has a separate designer .ui file in a subdirectory.
+- All windows are created with designer and have
+  a name such as xxxForm i.e. the main window is MainForm and kept
+  in main.ui.  
+
+Major projects:
+- Implement other restore interfaces such as brestore ...
+- Implement a database browser
+- Implement a resource (conf file) browser
+- Implement a reports page -- e.g. something similar to bweb
+- Implement Qt plugins to add new functionality to bat
+- Implement a GUI configuration file editor (something like JBacula).
+...
+
+Partially Done:
+===========================
+- Implement graphical commands that allow updating most aspects of
+  the database (i.e. commands for label, update Volume, ...)
+      still need to be able to edit a pool object
+
+- None of the menu items except About, Select Font, and Quit.
+    Print and save don't do anything, does save need to??
+Done:
+============================
+Design/implementation considerations:
+- Need icons in front of the Director.
+- The console page should be in a DockWidget so it can be removed
+  from the main window. It is currently in a dock window, but it
+  does not remove properly -- more research needed.
+- Need to figure out a good implementation of adding pages and even
+  having plugins that load as pages.  Currently the page mechanism
+  is a bit kludged.
+
+- We need to have multiple Directors
+- Each Director should have its own console
+- The Console class needs to be a list or be attached to the
+  currently active Director.
+- Will automatically connect to the first Director in the
+  conf file. Doesn't know about multiple Directors.
+
+- The Label menu bar item, prints on the shell window what you entered.
+- The Run menu bar item, prints on the console window what you entered.
+- The Restore menu bar item, brings up dialog, then when OK is
+  clicked, it goes on to the next dialog, which is meant to be
+  a tree view, but for the moment does nothing ...  It is a bit
+  ugly. Canceling it should get you back to the normal command prompt.
+
+- Implement a restore page that does a directory tree restore selection
+  much like wx-console does.
+
+Not working:
+- The left selection window and the right window (where the console
+  is) are dockable windows so should be movable once they are properly
+  clicked.  Well, they sort of move, but then get stuck.  I haven't figured
+  out what is going on, so for the current time, I am implementing most
+  stuff through dialogs.
+     
+Items implemented:
+  See RELEASEFEATURES

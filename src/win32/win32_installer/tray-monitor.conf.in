@@ -1,0 +1,30 @@
+#
+# Bacula Tray Monitor Configuration File
+#
+
+Monitor {
+  Name = @monitor_name@
+  Password = "@mon_password@"         # password for the Directors   
+  RefreshInterval = 30 seconds
+}
+   
+Client {
+  Name = @client_name@
+  Address = localhost
+  FDPort = @client_port@
+  Password = "@monitor_password@"
+}
+
+#Storage {
+#  Name = @basename@-sd
+#  Address = @hostname@
+#  SDPort = @sd_port@
+#  Password = "@mon_sd_password@"          # password for StorageDaemon
+#}
+#
+#Director {
+#  Name = @basename@-dir
+#  DIRport = @dir_port@
+#  address = @hostname@
+#}
+#

@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# shell script to Delete the SQLite Bacula database (same as deleting 
+#  the tables)
+#
+db_name=@db_name@
+
+rm -f @working_dir@/${db_name}.db

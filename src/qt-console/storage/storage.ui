@@ -1,0 +1,142 @@
+<ui version="4.0" >
+ <class>StorageForm</class>
+ <widget class="QWidget" name="StorageForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>467</width>
+    <height>383</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Storage Tree</string>
+  </property>
+  <layout class="QGridLayout" >
+   <property name="leftMargin" >
+    <number>9</number>
+   </property>
+   <property name="topMargin" >
+    <number>9</number>
+   </property>
+   <property name="rightMargin" >
+    <number>9</number>
+   </property>
+   <property name="bottomMargin" >
+    <number>9</number>
+   </property>
+   <property name="horizontalSpacing" >
+    <number>6</number>
+   </property>
+   <property name="verticalSpacing" >
+    <number>6</number>
+   </property>
+   <item row="0" column="0" >
+    <widget class="QTreeWidget" name="mp_treeWidget" >
+     <column>
+      <property name="text" >
+       <string>1</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+  </layout>
+  <action name="actionRefreshStorage" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/view-refresh.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Refresh Storage List</string>
+   </property>
+   <property name="statusTip" >
+    <string>Requery the director for the list of storage objects.</string>
+   </property>
+  </action>
+  <action name="actionStatusStorageInConsole" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/status-console.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Status Storage In Console</string>
+   </property>
+   <property name="statusTip" >
+    <string>Status Storage In Console</string>
+   </property>
+  </action>
+  <action name="actionLabelStorage" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/label.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Label Storage</string>
+   </property>
+   <property name="statusTip" >
+    <string>Label Storage</string>
+   </property>
+  </action>
+  <action name="actionMountStorage" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/cartridge.png</iconset>
+   </property>
+   <property name="text" >
+    <string>MountStorage</string>
+   </property>
+   <property name="statusTip" >
+    <string>MountStorage</string>
+   </property>
+  </action>
+  <action name="actionUnMountStorage" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/cartridge.png</iconset>
+   </property>
+   <property name="text" >
+    <string>UnMount Storage</string>
+   </property>
+   <property name="statusTip" >
+    <string>UnMount Storage</string>
+   </property>
+  </action>
+  <action name="actionUpdateSlots" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/package-x-generic.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Update Slots</string>
+   </property>
+   <property name="statusTip" >
+    <string>Update Slots</string>
+   </property>
+  </action>
+  <action name="actionUpdateSlotsScan" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/package-x-generic.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Update Slots Scan</string>
+   </property>
+   <property name="statusTip" >
+    <string>Update Slots Scan</string>
+   </property>
+  </action>
+  <action name="actionRelease" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/cartridge.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Release</string>
+   </property>
+  </action>
+  <action name="actionStatusStorageWindow" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/status.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Status Storage Window</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../main.qrc" />
+ </resources>
+ <connections/>
+</ui>

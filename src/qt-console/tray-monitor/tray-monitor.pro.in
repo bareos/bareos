@@ -1,0 +1,46 @@
+######################################################################
+#
+#  !!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+#  Edit only tray-monitor.pro.in  -- tray-monitor.pro is built by the ./configure program
+#
+#  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#    
+# CONFIG options for Windows are pulled from win32/qmake.conf
+CONFIG += qt
+#CONFIG += qt debug 
+
+cross-win32 {
+  LIBS       +=  -mwindows -L../../win32/release32 -lbacula
+  INCLUDEPATH += ../../win32/compat
+}
+!cross-win32 {
+  LIBS        += -L../../lib -lbaccfg -lbac -L../../findlib -lbacfind @OPENSSL_LIBS@
+}
+
+
+bins.path = /$(DESTDIR)@sbindir@
+bins.files = bacula-tray-monitor
+confs.path = /$(DESTDIR)@sysconfdir@
+confs.commands = ./install_conf_file
+
+TEMPLATE     = app
+TARGET       = bacula-tray-monitor
+DEPENDPATH  += .
+INCLUDEPATH += ../.. . 
+LIBTOOL_LINK = @QMAKE_LIBTOOL@ --silent --tag=CXX --mode=link
+LIBTOOL_INSTALL = @QMAKE_LIBTOOL@ --silent --mode=install
+QMAKE_LINK   = $${LIBTOOL_LINK} $(CXX)
+QMAKE_INSTALL_PROGRAM = $${LIBTOOL_INSTALL} install -m @SBINPERM@ -p
+QMAKE_CLEAN += .libs/* bacula-tray-monitor release/bacula-tray-monitor
+
+RESOURCES    = ../main.qrc
+MOC_DIR      = moc
+OBJECTS_DIR  = obj
+UI_DIR       = ui
+
+# Main directory
+HEADERS += tray_conf.h  tray-monitor.h  tray-ui.h 
+SOURCES += authenticate.cpp  tray_conf.cpp  tray-monitor.cpp 
+
+FORMS += ../run/run.ui

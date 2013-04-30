@@ -1,0 +1,120 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH bpluginfo "8" "July 2012" "bpluginfo" "Network backup, recovery and verification"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+bpluginfo \- Bacula Plugin information utility
+.SH SYNOPSIS
+.B bplufinfo
+.RI [ options ]
+.I plugin_filename.so
+.br
+.SH DESCRIPTION
+.LP
+The main purpose of
+.B bpluginfo
+is to display different information about Bacula plugin. You can use it to
+check a plugin name, author, license and short description. You can use 
+'-f' option to display API implemented by the plugin. Some plugins may require
+additional '-a' option for validating a Bacula Daemons API. In most cases it
+is not required.
+.PP
+./ Bacula is a set of programs for performing a
+./ .PP
+./ -
+./ .BR bpluginfo
+
+.PP
+.SH OPTIONS
+A summary of options is included below.
+.TP
+.B \-h
+Show usage of the program.
+.TP
+.BI \-v
+Verbose information printing all available data from the plugin, including 
+plugin header and implemented API.
+.TP
+.BI \-i
+Display short information from plugin header only. This is a default option.
+Option incompatible with 
+.B -f
+option.
+.TP
+.BI \-f
+Display information about implemented API functions. 
+.TP
+.BI \-a\ <api>
+You can supply the plugin initialization function with a particular Bacula
+API number. Without this option a default API number is '1'. Option require
+a numeric argument.
+.SH RETURN CODE
+.BR bpluginfo
+returns 0 on success, and non-zero on error.
+.TP
+You can check return code to find what was a cause of the error.
+ * 0 - success
+ * 1 - cannot load a plugin
+ * 2 - cannot find a loadPlugin function
+ * 3 - cannot find an unloadPlugin function
+ * 10 - not enough memory
+.SH EXAMPLE USAGE
+This is an example of bplufinfo usage with verbose option (-v) and default plugin.
+.LP
+.sp
+.RS
+.nf
+
+\fB$ bpluginfo -v bpipe-fd.so 
+
+Plugin type:            File Daemon plugin
+Plugin magic:           *FDPluginData*
+Plugin version:         1
+Plugin release date:    January 2008
+Plugin author:          Kern Sibbald
+Plugin license:         Bacula AGPLv3
+Plugin description:     Bacula Pipe File Daemon Plugin
+Plugin API version:     6
+
+Plugin functions:
+ newPlugin()
+ freePlugin()
+ getPluginValue()
+ setPluginValue()
+ handlePluginEvent()
+ startBackupFile()
+ endBackupFile()
+ startRestoreFile()
+ endRestoreFile()
+ pluginIO()
+ createFile()
+ setFileAttributes()
+.fi
+.RE
+
+.SH AUTHOR
+Written by Radoslaw Korzeniewski (c) Inteos Sp. z o.o.
+.SH BUGS
+Does not handle all required bacula functions callbacks which can lead to
+utility crash.
+.\".SH TODO"
+
+.PP
+
+.PP
+
+.SH "REPORTING BUGS"
+Report bugs to <support@inteos.pl>.
+.SH COPYRIGHT
+Copyright \(co 2012 Free Software Foundation Europe e.V.
+.br
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH "SEE ALSO"
+.BR bacula-dir,
+.BR bacula-sd,
+.BR bacula-fd,
+.BR "Bacula Plugins API"

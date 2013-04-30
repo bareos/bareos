@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# Bacula interface to mtx autoloader
+#
+#  This mtx-changer script was contributed by Fryderyk Wlostowski.
+#    It works with a Sony TLS-11000 changer, which needs
+#     the slot number to do an unload
+#
+#  mtx-changer "changer-device" "command" "slot"
+#
+#
+MTX=/opt/mtx1.2.17/sbin/mtx
+case "$2" in 
+   unload)
+#     echo "Doing mtx -f $1 $2"
+      NR_KASETY=`$MTX -f $1 status | grep "Empty" | tr " "  "~" | tr ":"  "~" | cut -d "~" -f 9`
+      $MTX -f $1 $2 $NR_KASETY
+      ;;
+
+   load)
+#     echo "Doing mtx -f $1 $2 $3"
+      $MTX -f $1 $2 $3
+      ;;
+
+   list) 
+#     echo "Requested list"
+      $MTX -f $1 status | grep "^[     ]*Storage Element [0-9]*:.*Full" | awk "{print \$3}" | sed "s/:.*$/ /g" | tr -d "[\r\n]"
+      ;;
+
+   loaded)
+#     echo "Request loaded"
+      $MTX -f $1 status | grep "Empty" | tr " " "~" | tr ":" "~" | cut -d "~" -f 9
+      echo 0
+      ;;
+
+   slots)
+#     echo "Request slots"
+      $MTX -f $1 status | grep "[  ]Storage Changer" | awk "{print \$5}"
+      ;;
+esac

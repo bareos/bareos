@@ -1,0 +1,157 @@
+<ui version="4.0" >
+ <class>jobsForm</class>
+ <widget class="QWidget" name="jobsForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>449</width>
+    <height>307</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Client Tree</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QTableWidget" name="tableWidget" />
+   </item>
+  </layout>
+  <action name="actionRefreshJobs" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/view-refresh.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Refresh Jobs List</string>
+   </property>
+   <property name="statusTip" >
+    <string>Requery the director for the list of clients.</string>
+   </property>
+  </action>
+  <action name="actionConsoleListFiles" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/utilities-terminal.png</iconset>
+   </property>
+   <property name="text" >
+    <string>List Files Command</string>
+   </property>
+   <property name="iconText" >
+    <string>List Files Command</string>
+   </property>
+   <property name="toolTip" >
+    <string>List Files Command</string>
+   </property>
+   <property name="statusTip" >
+    <string>List Files Command</string>
+   </property>
+  </action>
+  <action name="actionConsoleListVolumes" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/utilities-terminal.png</iconset>
+   </property>
+   <property name="text" >
+    <string>List Volumes Command</string>
+   </property>
+   <property name="iconText" >
+    <string>List Volumes Command</string>
+   </property>
+   <property name="toolTip" >
+    <string>List Volumes Command</string>
+   </property>
+   <property name="statusTip" >
+    <string>List Volumes Command</string>
+   </property>
+  </action>
+  <action name="actionConsoleListNextVolume" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/utilities-terminal.png</iconset>
+   </property>
+   <property name="text" >
+    <string>List Next Volume Command</string>
+   </property>
+   <property name="iconText" >
+    <string>List Next Volume Command</string>
+   </property>
+   <property name="toolTip" >
+    <string>List Next Volume Command</string>
+   </property>
+   <property name="statusTip" >
+    <string>List Next Volume Command</string>
+   </property>
+  </action>
+  <action name="actionConsoleEnableJob" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/utilities-terminal.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Enable Job Command</string>
+   </property>
+   <property name="iconText" >
+    <string>Enable Job Command</string>
+   </property>
+   <property name="toolTip" >
+    <string>Enable Job Command</string>
+   </property>
+   <property name="statusTip" >
+    <string>Enable Job Command</string>
+   </property>
+  </action>
+  <action name="actionConsoleDisableJob" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/utilities-terminal.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Disable Job Command</string>
+   </property>
+   <property name="iconText" >
+    <string>Disable Job Command</string>
+   </property>
+   <property name="toolTip" >
+    <string>Disable Job Command</string>
+   </property>
+   <property name="statusTip" >
+    <string>Disable Job Command</string>
+   </property>
+  </action>
+  <action name="actionJobListQuery" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/emblem-system.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Open JobList on Job</string>
+   </property>
+   <property name="iconText" >
+    <string>Open JobList on Job</string>
+   </property>
+   <property name="toolTip" >
+    <string>Open JobList on Job</string>
+   </property>
+   <property name="statusTip" >
+    <string>Open JobList on Job</string>
+   </property>
+  </action>
+  <action name="actionConsoleCancel" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/utilities-terminal.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Cancel Job Command</string>
+   </property>
+   <property name="statusTip" >
+    <string>Cancel Job Command</string>
+   </property>
+  </action>
+  <action name="actionRunJob" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/run.png</iconset>
+   </property>
+   <property name="text" >
+    <string>RunJob</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../main.qrc" />
+ </resources>
+ <connections/>
+</ui>

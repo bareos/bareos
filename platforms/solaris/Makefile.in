@@ -1,0 +1,55 @@
+# 
+# This file is used as the template to create the
+# Makefile for the Solaris specific installation.
+#
+#  15 November 2001 -- Kern Sibbald
+#
+#  03 November 2003 corrections to the paths made by
+#      Kenneth ragnor at virtualsd dot net
+#
+#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DIR = $(INSTALL) -d -m 755
+
+nothing:
+
+install: install-autostart
+
+install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
+
+install-autostart-%:
+	@rm -f $(DESTDIR)/etc/rc0.d/K20bacula-$*
+	@rm -f $(DESTDIR)/etc/rc1.d/S99bacula-$*
+	@rm -f $(DESTDIR)/etc/rc2.d/S99bacula-$*
+	@$(INSTALL_DIR) $(DESTDIR)/etc/init.d
+	@$(INSTALL_DIR) $(DESTDIR)/etc/rc0.d $(DESTDIR)/etc/rc1.d \
+		$(DESTDIR)/etc/rc2.d
+	@$(INSTALL_PROGRAM) -m 744 bacula-$* $(DESTDIR)/etc/init.d/bacula-$*
+	# set symlinks for script at startup and shutdown
+	@ln -f -s /etc/init.d/bacula-$* $(DESTDIR)/etc/rc0.d/K20bacula-$*
+	@ln -f -s /etc/init.d/bacula-$* $(DESTDIR)/etc/rc1.d/S99bacula-$*
+	@ln -f -s /etc/init.d/bacula-$* $(DESTDIR)/etc/rc2.d/S99bacula-$*
+
+uninstall: uninstall-autostart
+
+uninstall-autostart: uninstall-autostart-fd uninstall-autostart-sd uninstall-autostart-dir
+
+uninstall-autostart-%:
+	@rm -f $(DESTDIR)/etc/rc0.d/K20bacula-$*
+	@rm -f $(DESTDIR)/etc/rc1.d/S99bacula-$*
+	@rm -f $(DESTDIR)/etc/rc2.d/S99bacula-$*
+	@rm -f $(DESTDIR)/etc/init.d/bacula-$*
+
+clean:
+	@rm -f 1 2 3
+
+distclean: clean
+	@rm -f bacula-sd bacula-fd bacula-dir
+	@rm -f Makefile bacula-*.spec
+
+devclean: clean
+	@rm -f bacula-sd bacula-fd bacula-dir
+	@rm -f Makefile bacula-*.spec

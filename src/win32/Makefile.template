@@ -1,0 +1,74 @@
+#
+# Makefile for win32 bacula executables
+# Using MinGW cross-compiler on GNU/Linux
+#
+#  Written by Robert Nelson, June 2006
+#
+
+include ../Makefile.inc
+
+INCLUDES = \
+	$(INCLUDE_DDK) \
+	$(INCLUDE_PTHREADS) \
+	$(INCLUDE_BACULA) \
+	$(INCLUDE_ZLIB) \
+	$(INCLUDE_VSS) \
+	$(INCLUDE_ICONS) \
+	$(INCLUDE_OPENSSL)
+
+DEFINES = \
+	-DUSING_DLL \
+	$(HAVES)
+
+# Replace MODULE with the directory in the main Bacula tree containing the source
+VPATH = $(MAINDIR)
+
+##########################################################################
+
+MODULE1_OBJS = \
+	$(OBJDIR)/object1.o \
+	$(OBJDIR)/object2.o \
+	$(OBJDIR)/objectN.o
+
+MODULE1_LIBS = \
+	$(LIBS_PTHREADS) \
+	-lwsock32
+
+MODULE2_OBJS = \
+	$(OBJDIR)/object3.o \
+	$(OBJDIR)/object4.o \
+	$(OBJDIR)/objectN.o
+
+MODULE2_LIBS = \
+	$(LIBS_PTHREADS) \
+	-lwsock32
+
+ALL_OBJS = \
+	OBJS_MODULE1 \
+	OBJS_MODULE2
+
+######################################################################
+
+# Targets
+
+.PHONY: all clean
+
+all:	$(BINDIR)/MODULE1.exe $(BINDIR)/MODULE2.exe
+
+clean:
+	@echo "Cleaning `pwd`"
+	$(call clean_obj,$(ALL_OBJS))
+	$(call clean_exe,$(BINDIR)/MODULE1.exe)
+	$(call clean_exe,$(BINDIR)/MODULE2.exe)
+
+#
+# Rules
+#
+
+$(BINDIR)/MODULE1.exe: $(SDOBJS) $(MODULE1_OBJS) $(LIBS_BACULA)
+	$(call link_winapp,$(MODULE1_LIBS))
+
+$(BINDIR)/MODULE2.exe: $(SDOBJS) $(MODULE2_OBJS) $(LIBS_BACULA)
+	$(call link_conapp,$(MODULE1_LIBS))
+
+include ../Makefile.rules

@@ -1,0 +1,59 @@
+# This file provides information about the External dependencies required by
+# Bacula.
+#
+# There are four fields delimited by |.  Only the first two fields are 
+# required.  The other two are used when the top level directory of the
+# archive is not the same as the file name with any suffixes removed.
+#
+# Field 1 is the name of the dependency.  It is used to define the
+# name of the three variables which are assigned the values of fields 2 to 4.
+#
+# Field 2 is the URL of the archive.  It is assigned to the variable
+# URL_[field1].
+#
+# Field 3 is the top directory of the archive or the name of a directory that
+# must be created and the archive extracted into it.  It is assigned to the 
+# variable DIR_[field1].
+#
+# Field 4 indicates if the directory specified in field 3 must be created 
+# first and the archive extracted into it.  It is assigned to the variable
+# MKD_[field1]
+#
+#
+CMD_UTILS|http://www.bacula.org/depkgs-mingw32/cmd-utils-0.1.tar.gz
+DVD_RW_TOOLS|http://www.bacula.org/depkgs-mingw32/dvd+rw-tools-7.0.tar.gz
+MKISOFS|http://www.bacula.org/depkgs-mingw32/mkisofs.exe
+MT|http://www.bacula.org/depkgs-mingw32/mt-st-0.9b.tar.gz
+MTX|http://www.bacula.org/depkgs-mingw32/mtx-1.3.9.tar.gz
+MYSQL|http://www.bacula.org/depkgs-mingw32/mysql-noinstall-5.0.27-win32.zip|mysql-5.0.27-win32
+NSIS_BIN|http://www.bacula.org/depkgs-mingw32/nsis-2.17.zip
+OPENSSL|http://www.bacula.org/depkgs-mingw32/openssl-0.9.8b.tar.gz
+PCRE|http://www.bacula.org/depkgs-mingw32/pcre-6.3.tar.bz2
+POSTGRESQL|http://www.bacula.org/depkgs-mingw32/postgresql-8.1.9-1-binaries-no-installer.zip|pgsql
+POSTGRESQL_SRC|http://www.bacula.org/depkgs-mingw32/postgresql-8.1.9.tar.bz2
+PTHREADS|http://www.bacula.org/depkgs-mingw32/pthreads-2004-06-22x.exe|pthreads-2004-06-22x|true
+SED|http://www.bacula.org/depkgs-mingw32/sed-4.1.5.tar.gz
+SQLITE|http://www.bacula.org/depkgs-mingw32/sqlite-3.3.17.tar.gz
+WX|http://www.bacula.org/depkgs-mingw32/wxWidgets-2.7.0.zip
+ZLIB|http://www.bacula.org/depkgs-mingw32/zlib123.zip|zlib123|true
+#
+#
+# Original locations
+#
+# ZLIB|http://www.zlib.net/zlib123.zip|zlib123|true
+# PCRE|http://superb-west.dl.sourceforge.net/sourceforge/pcre/pcre-6.3.tar.bz2
+# PTHREADS|ftp://sources.redhat.com/pub/pthreads-win32/pthreads-2004-06-22x.exe|pthreads-2004-06-22x|true
+# OPENSSL|http://www.openssl.org/source/openssl-0.9.8b.tar.gz
+# MYSQL|http://mirror.x10.com/mirror/mysql/Downloads/MySQL-5.0/mysql-noinstall-5.0.27-win32.zip|mysql-5.0.27-win32
+# POSTGRESQL|ftp://ftp2.us.postgresql.org/postgresql/binary/v8.1.6/win32/postgresql-8.1.6-1-binaries-no-installer.zip|pgsql
+# POSTGRESQL_SRC|ftp://ftp4.us.postgresql.org/pub/postgresql/source/v8.1.6/postgresql-8.1.6.tar.bz2
+# SQLITE|http://www.sqlite.org/sqlite-3.3.8.tar.gz
+# WX|http://superb-west.dl.sourceforge.net/sourceforge/wxwindows/wxWidgets-2.7.0.zip
+# NSIS_BIN|http://superb-west.dl.sourceforge.net/sourceforge/nsis/nsis-2.17.zip
+# MTX|http://superb-west.dl.sourceforge.net/sourceforge/mtx/mtx-1.3.9.tar.gz
+# MT|ftp://ftp.ibiblio.org/pub/linux/system/backup/mt-st-0.9b.tar.gz
+# SED|ftp://mirrors.kernel.org/gnu/sed/sed-4.1.5.tar.gz
+# CMD_UTILS|http://superb-west.dl.sourceforge.net/sourceforge/cmd-utils/cmd-utils-0.1.tar.gz
+# #CDRTOOLS|ftp://ftp.berlios.de/pub/cdrecord/alpha/cdrtools-2.01.01a22.tar.bz2
+# MKISOFS|http://fy.chalmers.se/~appro/linux/DVD+RW/tools/win32/mkisofs.exe
+# DVD_RW_TOOLS|http://fy.chalmers.se/~appro/linux/DVD+RW/tools/dvd+rw-tools-7.0.tar.gz

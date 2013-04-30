@@ -1,0 +1,63 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BEXTRACT 8 "26 November 2009" "Kern Sibbald" "Network backup, recovery and verification"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+ bextract \- Bacula's 'Extract from tape'
+.SH SYNOPSIS
+.B bextract
+.RI [ options ]
+.I bacula-archive-device-name
+.I output-directory
+.br
+.SH DESCRIPTION
+This manual page documents briefly the
+.B bextract
+command.
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invoke bold face and italics, 
+.\" respectively.
+.SH OPTIONS
+A summary of options is included below.
+.TP
+.B \-?
+Show version and usage of program.
+.TP
+.BI \-b\  bootstrap
+Specify a bootstrap file.
+.TP
+.BI \-c\  config
+Specify configuration file.
+.TP
+.BI \-d\  nn
+Set debug level to \fInn\fP.
+.TP
+.BI \-dt
+Print timestamp in debug output.
+.TP
+.BI \-e\  file
+Specify exclude list.
+.TP
+.BI \-i\  file
+Specify include list.
+.TP
+.BI \-p
+Proceed in spite of I/O errors.
+.TP
+.B \-v
+Set verbose mode.
+.TP
+.BI \-V\  volume-name
+Specify volume names.
+.SH SEE ALSO
+.BR bls (1),
+.BR bextract (1).
+.br
+.SH AUTHOR
+This manual page was written by Jose Luis Tallon
+.nh 
+<jltallon@adv\-solutions.net>.

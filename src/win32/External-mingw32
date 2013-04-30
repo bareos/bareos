@@ -1,0 +1,71 @@
+# 
+# This file provides information about the External dependencies required by
+# Bacula.
+#  
+# There are four fields delimited by |.  Only the first two fields are 
+# required.  The other two are used when the top level directory of the
+# archive is not the same as the file name with any suffixes removed.
+# 
+# Field 1 is the name of the dependency.  It is used to define the
+# name of the three variables which are assigned the values of fields 2 to 4.
+# 
+# Field 2 is the URL of the archive.  It is assigned to the variable
+# URL_[field1].
+#  
+# Field 3 is the top directory of the archive or the name of a directory that
+# must be created and the archive extracted into it.  It is assigned to the 
+# variable DIR_[field1].
+# 
+# Field 4 indicates if the directory specified in field 3 must be created 
+# first and the archive extracted into it.  It is assigned to the variable
+# MKD_[field1]
+# 
+CMD_UTILS|http://www.bacula.org/depkgs-mingw32/cmd-utils-0.1.tar.gz
+DVD_RW_TOOLS|http://www.bacula.org/depkgs-mingw32/dvd+rw-tools-7.0.tar.gz
+MKISOFS|http://www.bacula.org/depkgs-mingw32/mkisofs.exe
+MT|http://www.bacula.org/depkgs-mingw32/mt-st-0.9b.tar.gz
+MTX|http://www.bacula.org/depkgs-mingw32/mtx-1.3.9.tar.gz
+MYSQL|http://www.bacula.org/depkgs-mingw32/mysql-noinstall-5.0.27-win32.zip|mysql-5.0.27-win32
+NSIS_BIN|http://www.bacula.org/depkgs-mingw32/nsis-2.17.zip
+NSIS_SRC|http://www.bacula.org/depkgs-mingw32/nsis-2.17-src.tar.bz2
+OPENSSL|http://www.bacula.org/depkgs-mingw32/openssl-0.9.8b.tar.gz
+PCRE|http://www.bacula.org/depkgs-mingw32/pcre-6.3.tar.bz2
+POSTGRESQL|http://www.bacula.org/depkgs-mingw32/postgresql-base-8.1.4.tar.bz2|postgresql-8.1.4
+PTHREADS|http://www.bacula.org/depkgs-mingw32/pthreads-snap-2004-06-22.tar.gz
+Qt4|http://www.bacula.org/depkgs-mingw32/qt4.3.4-win32-bin.tar.gz|qt4.3.4-win32-bin
+SCONS|http://www.bacula.org/depkgs-mingw32/scons-0.96.92.tar.gz
+SED|http://www.bacula.org/depkgs-mingw32/sed-4.1.5.tar.gz
+SQLITE|http://www.bacula.org/depkgs-mingw32/sqlite-3.3.17.tar.gz
+STAB2CV|http://www.bacula.org/depkgs-mingw32/stab2cv-0.1.tar.bz2
+WX|http://www.bacula.org/depkgs-mingw32/wxWidgets-2.8.7.tar.gz
+ZLIB|http://www.bacula.org/depkgs-mingw32/zlib-1.2.3.tar.gz
+RSYNC|http://www.bacula.org/depkgs-mingw32/librsync-0.9.7.tar.gz
+DB|http://www.bacula.org/depkgs-mingw32/db-4.7.25.tar.gz
+LZO|http://www.bacula.org/depkgs-mingw32/lzo-2.05.tar.gz
+# 
+# 
+# Original file locations
+# 
+# CDRTOOLS|ftp://ftp.berlios.de/pub/cdrecord/alpha/cdrtools-2.01.01a22.tar.bz2
+# CMD_UTILS|http://superb-west.dl.sourceforge.net/sourceforge/cmd-utils/cmd-utils-0.1.tar.gz
+# DVD_RW_TOOLS|http://fy.chalmers.se/~appro/linux/DVD+RW/tools/dvd+rw-tools-7.0.tar.gz
+# MKISOFS|http://fy.chalmers.se/~appro/linux/DVD+RW/tools/win32/mkisofs.exe
+# MT|http://www.ibiblio.org/pub/linux/system/backup/mt-st-0.9b.tar.gz
+# MTX|http://superb-west.dl.sourceforge.net/sourceforge/mtx/mtx-1.3.9.tar.gz
+# MYSQL|http://mirror.x10.com/mirror/mysql/Downloads/MySQL-5.0/mysql-noinstall-5.0.27-win32.zip|mysql-5.0.27-win32
+# NSIS_BIN|http://superb-west.dl.sourceforge.net/sourceforge/nsis/nsis-2.17.zip
+# NSIS_SRC|http://superb-west.dl.sourceforge.net/sourceforge/nsis/nsis-2.17-src.tar.bz2
+# OPENSSL|http://www.openssl.org/source/openssl-0.9.8b.tar.gz
+# PCRE|http://superb-west.dl.sourceforge.net/sourceforge/pcre/pcre-6.3.tar.bz2
+# POSTGRESQL|ftp://ftp2.us.postgresql.org/postgresql/source/v8.1.4/postgresql-base-8.1.4.tar.bz2|postgresql-8.1.4
+# PTHREADS|ftp://sources.redhat.com/pub/pthreads-win32/pthreads-snap-2004-06-22.tar.gz
+# Qt4|ftp://ftp.trolltech.com/qt/source/qt-win-opensource-src-4.3.0.zip
+# SCONS|http://superb-west.dl.sourceforge.net/sourceforge/scons/scons-0.96.92.tar.gz
+# SED|ftp://mirrors.kernel.org/gnu/sed/sed-4.1.5.tar.gz
+# SQLITE|http://www.sqlite.org/sqlite-3.3.8.tar.gz
+# SQLITE|http://www.sqlite.org/sqlite-3.3.17.tar.gz
+# STAB2CV|http://superb-west.dl.sourceforge.net/sourceforge/stab2cv/stab2cv-0.1.tar.bz2
+# WX|http://superb-west.dl.sourceforge.net/sourceforge/wxwindows/wxWidgets-2.7.0.tar.gz
+# ZLIB|http://www.zlib.net/zlib-1.2.3.tar.gz
+# DB|http://download.oracle.com/berkeley-db/db-4.7.25.tar.gz
+# LZO|http://www.oberhumer.com/opensource/lzo/download/lzo-2.05.tar.gz

@@ -1,0 +1,129 @@
+#
+# Makefile for win32 bacula executables
+# Using MinGW cross-compiler on GNU/Linux
+#
+#  Written by Robert Nelson, June 2006
+#
+#  Absolute paths used in place of relative paths
+#      Kern Sibbald, October 2008
+#   Split Win32 and Win64 objects and binaries. However
+#     the clean is a significant kludge -- hard coded.
+#     The object directories are deleted during make clean,
+#     so don't point them to any source directory.
+#
+
+# Global Configuration
+
+ECHO_CMD = @
+
+# Main Bacula source dir
+MAINDIR := @WIN32MAINDIR@
+#
+# Build dir -- i.e. normally  src/win32
+BUILDDIR := @WIN32BUILDDIR@
+#
+# Dir above Bacula where we find depkgs
+TOPDIR := @WIN32TOPDIR@
+#
+# where we find depkgs
+DEPKGS := $(TOPDIR)/@WIN32DEPKGS@
+DEPKGS32 := $(TOPDIR)/@WIN32DEPKGS32@
+
+DOCDIR := $(TOPDIR)/docs
+
+MINGW_BIN := @WIN32BINDIR@
+MINGW_INCLUDE := @WIN32INCDIR@
+MINGW_DLLDIR := @WIN32DLLDIR@
+
+CC = $(MINGW_BIN)/mingw32-g++ $(DEFINES) $(INCLUDES)
+CXX = $(MINGW_BIN)/mingw32-g++ $(DEFINES) $(INCLUDES)
+AR := $(MINGW_BIN)/mingw32-ar
+RANLIB := $(MINGW_BIN)/mingw32-ranlib
+WINDRES := $(MINGW_BIN)/mingw32-windres
+DLLTOOL := $(MINGW_BIN)/mingw32-dlltool
+OBJCPY := $(MINGW_BIN)/mingw32-objcopy
+NSIS_DIR := $(DEPKGS32)/nsis
+STAB2CV := $(DEPKGS32)/tools/bin/stab2cv
+
+WIN64=@WIN64@
+
+ifeq ($(WIN64),yes)
+   CFLAGS := -g -Wall -mno-cygwin -mthreads -O3 -fno-strict-aliasing -DHAVE_VSS64 -Wno-unknown-pragmas
+   LIBS_NETWORK := -lws2_32
+   WIN_VERSION := 64
+   BINDIR := $(BUILDDIR)/release64
+   LIBDIR := $(BUILDDIR)/release64
+   OBJDIR := obj64
+else
+   CFLAGS := -g -Wall -mno-cygwin -m32 -mwin32 -mthreads -O3 -fno-strict-aliasing -Wno-unknown-pragmas
+   LIBS_NETWORK := -lwsock32
+   WIN_VERSION := 32
+   BINDIR := $(BUILDDIR)/release32
+   LIBDIR := $(BUILDDIR)/release32
+   OBJDIR := obj32
+endif
+
+bat=@BAT@
+
+ifeq ($(bat),no)
+   BUILD_BAT=no
+else
+   BUILD_BAT=yes
+endif
+
+OBJDIRS := obj32 obj64
+
+LDFLAGS := -g -Wall -mno-cygwin -Wl,--disable-auto-import
+
+INCLUDE_DDK := -I$(MINGW_INCLUDE)/ddk
+INCLUDE_BACULA := -I$(MAINDIR)/src -I$(BUILDDIR)/compat
+INCLUDE_PTHREADS := -I$(DEPKGS)/include/pthreads
+INCLUDE_ZLIB := -I$(DEPKGS)/include
+INCLUDE_VSS := -I$(DEPKGS)/vss
+INCLUDE_ICONS := -I../libwin32
+INCLUDE_OPENSSL := -I$(DEPKGS)/include
+INCLUDE_WX := -I$(DEPKGS)/lib/wx_dll/msw -I$(DEPKGS)/include
+INCLUDE_MYSQL := -I$(DEPKGS)/include/mysql
+
+LIBS_DB := \
+        $(DEPKGS)/lib/libdb.a
+
+LIBS_PTHREADS := \
+        $(DEPKGS)/lib/libpthreadGCE.a
+
+LIBS_ZLIB := \
+        $(DEPKGS)/lib/libz.a
+
+LIBS_MYSQL := \
+        $(DEPKGS)/lib/libmysql.a
+
+LIBS_POSTGRESQL := \
+        $(DEPKGS)/lib/libpq.a
+
+LIBS_SQLITE := \
+        $(DEPKGS)/lib/libsqlite3.a
+
+LIBS_SSL := \
+        $(DEPKGS)/lib/libssl.dll.a
+
+LIBS_CRYPTO := \
+        $(DEPKGS)/lib/libcrypto.dll.a
+
+LIBS_WX := \
+        $(DEPKGS)/lib/wx_dll/libwxmsw28_core.a \
+        $(DEPKGS)/lib/wx_dll/libwxbase28.a
+
+LIBS_CATS := \
+        $(LIBDIR)/libcats.a
+
+LIBS_BACULA := \
+        $(LIBDIR)/libbacula.a
+
+HAVES := \
+        -DHAVE_WIN32 \
+        -DHAVE_MINGW \
+        -DHAVE_ZLIB_H \
+        -DHAVE_LIBZ \
+        -DHAVE_CRYPTO \
+        -DHAVE_OPENSSL \
+        -DHAVE_TLS

@@ -1,0 +1,66 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BWILD 8 "30 October 2011" "Kern Sibbald" "Network backup, utilities"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+ bwild \- Bacula's 'wildcard' engine
+.SH SYNOPSIS
+.B bwild
+.RI [ options ]
+.I -f <data\-file>
+.br
+.SH DESCRIPTION
+This manual page documents briefly the
+.B bwild
+command.
+.br
+This is a simple program that will allow you to test wild-card expressions against a file of data.
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invoke bold face and italics,
+.\" respectively.
+.SH OPTIONS
+A summary of options is included below.
+.TP
+.B \-?
+Show version and usage of program.
+.TP
+.BI \-d\  nn
+Set debug level to \fInn\fP.
+.TP
+.BI \-dt
+Print timestamp in debug output
+.TP
+.BI \-f\ <data\-file>
+The data-file is a filename that contains lines of data to be matched (or not) against one or more patterns. When the program is run, it will prompt you for a wild-card pattern, then apply it one line at a time against the data in the file. Each line that matches will be printed preceded by its line number. You will then be prompted again for another pattern.
+.br
+Enter an empty line for a pattern to terminate the program. You can print only lines that do not match by using the \-n option, and you can suppress printing of line numbers with the \-l option.
+.TP
+.BI \-n
+Print lines that do not match
+.TP
+.BI \-l
+Suppress lines numbers.
+.TP
+.BI \-i
+use case insensitive match.
+.SH SEE ALSO
+.BR fnmatch(3)
+.br
+.SH AUTHOR
+This manual page was written by Bruno Friedmann
+.nh
+<bruno@ioda\-net.ch>.

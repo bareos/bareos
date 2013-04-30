@@ -1,0 +1,43 @@
+From: Lucas Mingarro <lucas@easytech.com.ar>
+To: <bacula-users@lists.sourceforge.net>
+Subject: [Bacula-users] Sun Desktop 20Gb 4mm autoloader
+Date: Mon, 2 Dec 2002 15:42:43 -0300 (ART)
+
+Hi,
+  If you have an old Sun Desktop 20Gb 4mm autoloader (Archive Python
+29279) and you want to make it work on Linux with Bacula here are my conf
+files.
+
+I'm using Redhat Linux 7.1 with Bacula 1.26a.
+
+First add these lines to your stini.def
+
+manufacturer=ARCHIVE modepl = "Python 29279" {
+scsi2logical=0 can-bsr can-partitions auto-lock
+mode1 blocksize=0    compression=0 density=0x13 # /dev/nst0 DDS (61000 bpi)
+mode2 blocksize=1024 compression=0 density=0x13 # /dev/nst0l DDS (61000 bpi)
+mode3 blocksize=0    compression=1 density=0x24 # /dev/nst0m DDS-2
+mode4 blocksize=1024 compression=1 density=0x24 # /dev/nst0a DDS-2
+}
+
+and Python29279-autoloader.conf
+
+#
+# This is the definition Lucas uses for a
+# Sun Desktop 20Gb 4mm autoloader (Archive Python 29279)
+#
+Device {
+  Name = "Python 29279"
+  Media Type = "4mm"
+  Archive Device = /dev/nst0a
+  Auto Changer = Yes
+  Changer Device = /dev/sg0
+  Changer Command = "/usr/local/etc/mtx-changer %c %o %S %a"
+  AutomaticMount = yes;               # when device opened, read it
+  AlwaysOpen = no;
+}
+
+Thats all
+Good Luck
+
+Lucas Mingarro

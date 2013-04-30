@@ -1,0 +1,61 @@
+README file for bacula third party rpm contributors
+
+Sun Jul 16 2006
+D. Scott Barninger
+
+This document outlines the procedures to create rpm packages for
+bacula for platforms supported in the rpm spec file but not published
+on sourceforge. Contributors wishing to build and supply such rpm
+packages for release on the sourceforge project page should read this 
+documentation. Contributors should contact either Kern Sibbald <kern@sibbald.com>
+or Scott Barninger <barninger@fairfieldcomputers.com>.
+
+The general requirements to have contrib rpm packages published on the project 
+page are:
+
+1. Packages must be created using the current released source rpm and the
+shell script build_rpm.sh in this directory.
+2. The packager must sign all rpm packages with his/her personal gpg key
+and supply a copy of the public key as both a text file and as an rpm
+using the spec file rpmkey.spec in this directory.
+3. No modifications to either the bacula source code or spec file are
+permitted without consulting the project admins.
+4. There will be only one sanctioned packager for a given distribution.
+5. Contributors who submit two or more successful releases may be given
+release permissions to release their files directly to sourceforge. Prior to
+that you will need to coordinate the upload of your files to sourceforge with
+Kern or Scott to get them posted to the project page.
+
+How to create an rpmkey package:
+
+1. Create a plaintext copy of your gpg public key in a file named yourname.asc
+where yourname is in the form first initial and last name, ie. sbarninger.asc
+2. Edit the rpmkey.spec file and edit the line
+	%define pubkeyname yourname
+replacing yourname with your name as in step 1 above.
+3. Edit the rpmkey.spec file and edit the line
+	Packager: Your Name <your-email@site.org>
+inserting your name and email information.
+4. Copy your key file to your SOURCES directory and the spec file to your SPECS
+directory and create an rpm package.
+5. Both the key text file and the rpm will be published on sourceforge in your
+release package rpms-contrib-yourname.
+
+How to build a release:
+1. Copy the file build_rpm.sh to a temporary working directory and open it in a
+text editor. Examine and edit the configuration section of the script to match
+your platform and build options. Set permissions on the script to 755.
+3. Download the srpm you wish to build to the same directory.
+4. Execute the script by ./build_rpm.sh
+
+The script will build all the necessary packages, move them into the current
+working directory, rename them for your platform, and sign them with your key.
+
+Note: you must have a file named .rpmmacros in your home directory containing
+at least the following 2 lines:
+
+%_signature gpg
+%_gpg_name Your Name <your-email@site.org>
+
+The name and email information in the above line must correspond to the information
+in the key used to sign the packages when you generated the key.

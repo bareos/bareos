@@ -1,0 +1,85 @@
+# 
+# This file is used as the template to create the
+# Makefile for the AXI specific installation.
+#
+#  1 March 2003 -- Kern Sibbald
+#
+#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+
+nothing:
+
+install: install-autostart
+
+install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
+
+	
+install-autostart-fd:
+	@rm -f /etc/rc0.d/K20bacula-fd
+	@rm -f /etc/rc1.d/S99bacula-fd
+	@rm -f /etc/rc2.d/S99bacula-fd
+	@$(INSTALL_PROGRAM) -m 744 bacula-fd /etc/init.d/bacula-fd
+	# set symlinks for script at startup and shutdown
+	@ln -f -s /etc/init.d/bacula-fd /etc/rc0.d/K20bacula-fd
+	@ln -f -s /etc/init.d/bacula-fd /etc/rc1.d/S99bacula-fd
+	@ln -f -s /etc/init.d/bacula-fd /etc/rc2.d/S99bacula-fd
+
+
+install-autostart-sd:
+	@rm -f /etc/rc0.d/K20bacula-sd
+	@rm -f /etc/rc1.d/S99bacula-sd
+	@rm -f /etc/rc2.d/S99bacula-sd
+	@$(INSTALL_PROGRAM) -m 744 bacula-sd /etc/rc.d/init.d/bacula-sd
+	# set symlinks for script at startup and shutdown
+	@ln -f -s /etc/init.d/bacula-sd /etc/rc0.d/K20bacula-sd
+	@ln -f -s /etc/init.d/bacula-sd /etc/rc1.d/S99bacula-sd
+	@ln -f -s /etc/init.d/bacula-sd /etc/rc2.d/S99bacula-sd
+
+
+install-autostart-dir:
+	@rm -f /etc/rc0.d/K20bacula-dir
+	@rm -f /etc/rc1.d/S99bacula-dir
+	@rm -f /etc/rc2.d/S99bacula-dir
+	@$(INSTALL_PROGRAM) -m 744 bacula-dir /etc/rc.d/init.d/bacula-dir
+	# set symlinks for script at startup and shutdown
+	@ln -f -s /etc/init.d/bacula-dir /etc/rc0.d/K20bacula-dir
+	@ln -f -s /etc/init.d/bacula-dir /etc/rc1.d/S99bacula-dir
+	@ln -f -s /etc/init.d/bacula-dir /etc/rc2.d/S99bacula-dir
+
+
+uninstall: uninstall-autostart
+
+uninstall-autostart: uninstall-autostart-fd uninstall-autostart-sd uninstall-autostart-dir
+
+uninstall-autostart-fd:
+	@rm -f /etc/rc0.d/K20bacula-fd
+	@rm -f /etc/rc1.d/S99bacula-fd
+	@rm -f /etc/rc2.d/S99bacula-fd
+	@rm -f /etc/rc.d/init.d/bacula-fd
+
+
+uninstall-autostart-sd:
+	@rm -f /etc/rc0.d/K20bacula-sd
+	@rm -f /etc/rc1.d/S99bacula-sd
+	@rm -f /etc/rc2.d/S99bacula-sd
+	@rm -f /etc/rc.d/init.d/bacula-sd
+
+uninstall-autostart-dir:
+	@rm -f /etc/rc0.d/K20bacula-dir
+	@rm -f /etc/rc1.d/S99bacula-dir
+	@rm -f /etc/rc2.d/S99bacula-dir
+	@rm -f /etc/rc.d/init.d/bacula-dir
+
+clean:
+	@rm -f 1 2 3
+
+distclean: clean
+	@rm -f bacula-sd bacula-fd bacula-dir
+	@rm -f Makefile bacula-*.spec
+
+devclean: clean
+	@rm -f bacula-sd bacula-fd bacula-dir
+	@rm -f Makefile bacula-*.spec

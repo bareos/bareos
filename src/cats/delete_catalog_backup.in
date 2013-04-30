@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# This script deletes a catalog dump
+#
+db_name=@db_name@
+
+rm -f @working_dir@/${db_name}.sql

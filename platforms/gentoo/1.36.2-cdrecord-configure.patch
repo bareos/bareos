@@ -1,0 +1,19 @@
+diff -uNr bacula-1.36.2/configure bacula-1.36.2-fixed/configure
+--- bacula-1.36.2/configure	2005-02-25 04:46:49.000000000 -0500
++++ bacula-1.36.2-fixed/configure	2005-03-06 10:11:23.905848861 -0500
+@@ -7301,15 +7301,6 @@
+ # get scsibus,target,lun
+ # -------------------------------------------
+ CDSTL="3,0,0"
+-if test ! x$CDRECORD = x ; then
+-   CDSTL=`${CDRECORD} -scanbus 2>/dev/null | grep CD-RW | ${AWK} '{print $1}'`
+-   if test x${CDSTL} = x ; then
+-      CDSTL=`${CDRECORD} -scanbus 2>/dev/null | grep CD+RW | ${AWK} '{print $1}'`
+-   fi
+-   if test x${CDSTL} = x ; then
+-      CDSTL="3,0,0"
+-   fi
+-fi
+ 
+ 
+ 

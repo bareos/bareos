@@ -1,0 +1,56 @@
+#
+# Kern's Bacula Storage Daemon Configuration file
+#
+#  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
+#
+#
+# "Global" Storage daemon configuration specifications
+#
+Storage {
+  Name = "Storage daemon"
+  Address = @hostname@
+  SDPort = @sd_port@                  # Directors port      
+  WorkingDirectory = "@working_dir@"
+  Pid Directory = "@piddir@"
+  Subsys Directory = "@subsysdir@"
+}
+
+#
+# List Directors who are permitted to contact Storage daemon
+#
+Director {
+  Name = @hostname@-dir
+  Password = local_storage_password
+}
+
+#
+# Devices supported by this Storage daemon
+# To connect, the Director must have the same Name and MediaType,
+#  which are sent to the File daemon
+#
+Device {
+  Name = "HP DLT 80"
+  Media Type = DLT8000
+  Archive Device = /dev/nst0
+# LabelMedia = yes;                   # lets Bacula label unlabelled media
+  AutomaticMount = yes;               # when device opened, read it
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+}
+
+#Device {
+#  Name = "Exabyte 8mm"
+#  Media Type = "8mm"
+#  Archive Device = /dev/nst1
+#  Hardware end of medium = No;
+## LabelMedia = yes;                   # lets Bacula label unlabelled media
+#  AutomaticMount = yes;               # when device opened, read it
+#  AlwaysOpen = Yes;
+#  RemovableMedia = yes;
+#}
+
+Messages {
+  Name = Standard
+  director = @hostname@-dir = all
+  operator = @dump_email@ = mount
+}

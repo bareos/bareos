@@ -1,0 +1,564 @@
+#!/bin/sh
+#
+#  This file is driven by the parameters that are defined in
+#    the file External-mingw32
+#
+
+usage()
+{
+   echo "usage: $0 [-h] [-C] [<dependency 1>] [<dependency 2>] ..."
+   echo "       -h      Displays this usage"
+   echo "       -C      Clobbers (overwrites) the source code by "
+   echo "               reextracting the archive and reapplying the"
+   echo "               patches."
+   echo ""
+   echo "<dependency N> Optional dependency, If none are given then all"
+   echo "               of them will be built."
+   echo ""
+   echo "Valid dependencies are:"
+   grep -v '^#' < External-mingw32 | cut -d'|' -f1 | cut -d'_' -f1 | tr A-Z a-z | sort -u | awk '{ print "        " $1 }'
+}
+
+CLOBBER_SOURCE=
+
+while getopts "hHC" opt; do
+   case ${opt} in
+   H|h|\?) usage;exit 1;;
+   C)      CLOBBER_SOURCE=true;;
+   esac
+done
+
+[ ${OPTIND} -gt 1 ] && shift `expr ${OPTIND} - 1`
+
+cwd=`pwd`
+cd `dirname $0`
+SCRIPT_DIR=`pwd`
+
+cd ../../..
+TOP_DIR=`pwd`
+TOP_DIR=${DEPKGS:-${TOP_DIR}}
+
+if [ -e ${TOP_DIR}/cross-tools/mingw32/bin/mingw32-gcc ]
+then
+   cd ${TOP_DIR}/cross-tools/mingw32/bin
+   BIN_DIR=`pwd`
+elif [ -e /mingw/bin/mingw32-gcc ] 
+then
+   BIN_DIR=/mingw/bin
+else
+   echo "The GCC cross compiler is not installed."
+   echo "You must run build-win32-cross-tools first"
+   exit 1
+fi
+
+[ ! -e ${TOP_DIR}/depkgs-mingw32 ] && mkdir ${TOP_DIR}/depkgs-mingw32
+cd ${TOP_DIR}/depkgs-mingw32
+DEPPKG_DIR=`pwd`
+
+export PATH=${BIN_DIR}:${PATH}
+
+[ ! -e bin ] && mkdir bin
+[ ! -e src ] && mkdir src
+[ ! -e include ] && mkdir include
+[ ! -e lib ] && mkdir lib
+
+OLD_IFS=${IFS};IFS="|";
+while read package url dir mkd; do
+#  echo "Got package ${package}"
+   case ${package} in
+   \#*) ;;
+   *) eval "URL_${package}=${url};DIR_${package}=${dir};MKD_${package}=${mkd}";;
+        esac
+done < ${SCRIPT_DIR}/External-mingw32
+IFS=${OLD_IFS};unset OLD_IFS
+
+get_source()
+{
+   URL=$1
+   SRC_DIR=$2
+   MAKE_DIR=$3
+   echo "Processing ${URL}"
+   ARCHIVE=`basename ${URL}`
+   
+   case ${ARCHIVE} in
+   *.tar.gz)       ARCHIVER="tar xzf";    [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.tar\.gz'`;;
+   *.tar.bz2)      ARCHIVER="tar xjf";    [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.tar\.bz2'`;;
+   *.zip)          ARCHIVER="unzip -q";   [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.zip'`;;
+   *.exe)          ARCHIVER="";           [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.zip'`;;
+   *)              echo Unsupported archive type - $ARCHIVE; exit 1;;
+   esac
+   
+   cd ${DEPPKG_DIR}/src
+   
+   if [ ! -e "${ARCHIVE}" ]
+   then 
+      echo Downloading "${URL}"
+      if wget --passive-ftp "${URL}"
+      then
+         :
+      else
+         echo Unable to download ${ARCHIVE}
+         exit 1
+      fi
+   fi
+
+   [ -z "${ARCHIVER}" ] && return 0
+
+   if [ ! -e "${SRC_DIR}" -o "${CLOBBER_SOURCE}" = "true" ]
+   then
+      rm -rf ${SRC_DIR}
+      echo Extracting ${ARCHIVE}
+      if [ "${MAKE_DIR}" = "true" ]
+      then
+         mkdir ${SRC_DIR}
+         cd ${SRC_DIR}
+         ${ARCHIVER} ../${ARCHIVE} > ../${ARCHIVE}.log 2>&1
+      else
+         ${ARCHIVER} ${ARCHIVE} > ${ARCHIVE}.log 2>&1
+         cd ${SRC_DIR}
+      fi
+      return 0
+   fi
+
+   cd ${SRC_DIR}
+   return 1
+}
+
+parse_output()
+{
+   sed -ne '/\\$/N' -e 's/\\\n//' -e 's/\t\+/ /g' -e 's/ \+/ /g' \
+       -e '/ error: /p' \
+       -e "s%.*Entering directory[ ]\\+.${DEPPKG_DIR}/\\([^ ]\+\).%Entering \\1%p" \
+       -e "s%.*Leaving directory[ ]\\+.${DEPPKG_DIR}/\\([^ ]\+.\).%Leaving \\1%p" \
+       -e '/gcc \|g\+\+ \|ar /!d' \
+       -e 's/ \(\.\.\/\)\+/ /g' \
+       -e 's/.* \([^ ]\+\(\.c\|\.cpp\|\.cc\|\.cxx\)\)\( .*\|\)$/Compiling \1/p' \
+       -e 's/.* \([^ ]\+\.s\)\( .*\|\)$/Assembling \1/p' \
+       -e 's/.*ar [^ ]\+ \([^ ]\+\)\(\( [^ ]\+\.o\)\+\)/Updating \1 -\2/p' \
+       -e 's/.* -o \([^ ]\+\)\( .*\|\)$/Linking \1/p'
+}
+
+do_patch()
+{
+   PATCH_FILE=${SCRIPT_DIR}/patches/$1; shift
+   
+   if patch -f -p0 "$@" >>patch.log < ${PATCH_FILE}
+   then
+      :
+   else
+      echo "Patch failed - Check `pwd`/patch.log" > /dev/tty
+      exit 1
+   fi
+}
+
+do_make()
+{
+   if make -f "$@" 2>&1
+   then
+      :
+   else
+      echo "Make failed - Check `pwd`/make.log" > /dev/tty
+      exit 1
+   fi | tee -a make.log | parse_output
+}
+
+process_zlib()
+{
+   if get_source "${URL_ZLIB}" "${DIR_ZLIB}" "${MKD_ZLIB}"
+   then
+      echo "Patching zlib"
+      >patch.log
+      do_patch zlib.patch
+   fi
+   echo Building zlib
+   > make.log
+   do_make win32/Makefile.mingw32 PREFIX=${DEPPKG_DIR} all
+   echo Installing zlib
+   do_make win32/Makefile.mingw32 PREFIX=${DEPPKG_DIR} install
+}
+
+process_rsync()
+{
+   get_source "${URL_RSYNC}" "${DIR_RSYNC}" "${MKD_RSYNC}"
+   ./configure --host=mingw32
+   echo Building librsync
+   do_make Makefile
+   echo Installing lib and headers
+   cp .libs/librsync.a ${DEPPKG_DIR}/lib
+   cp librsync*h ${DEPPKG_DIR}/include
+}
+
+process_pcre()
+{
+   if get_source "${URL_PCRE}" "${DIR_PCRE}" "${MKD_PCRE}"
+   then
+           echo Patching PCRE
+           >patch.log
+           do_patch pcre.patch
+           echo Configuring PCRE
+           ./configure CC_FOR_BUILD=gcc \
+                       CXX_FOR_BUILD=g++ \
+                       --host=mingw32 \
+                       --prefix=${DEPPKG_DIR} \
+                       --enable-utf8 \
+                       --enable-unicode-properties >make.log 2>&1
+   fi
+   echo Building PCRE
+   do_make Makefile PREFIX=${DEPPKG_DIR} all
+   echo Installing PCRE
+   do_make Makefile PREFIX=${DEPPKG_DIR} install
+}
+
+process_db()
+{
+   if get_source "${URL_DB}" "${DIR_DB}" "${MKD_DB}"
+   then
+          echo No Patch
+   fi
+   cd build_unix
+   ../dist/configure --host=mingw32 --enable-mingw --prefix=${DEPPKG_DIR}
+   > make.log
+   echo Building DB
+   do_make Makefile
+   echo Installing DB
+   do_make Makefile install_setup install_include install_lib
+}
+
+process_pthreads()
+{
+   if get_source "${URL_PTHREADS}" "${DIR_PTHREADS}" "${MKD_PTHREADS}"
+   then
+           echo Patching pthreads
+           >patch.log
+           do_patch pthreads.patch
+   fi
+   echo Building pthreads
+   > make.log
+   do_make GNUmakefile GCE
+   echo Installing pthreads
+   rm -rf ${DEPPKG_DIR}/include/pthreads
+   mkdir ${DEPPKG_DIR}/include/pthreads
+   cp -p *.h ${DEPPKG_DIR}/include/pthreads
+   cp -p *.dll ${DEPPKG_DIR}/bin
+   cp -p *.a ${DEPPKG_DIR}/lib
+}
+
+process_openssl()
+{
+   if get_source "${URL_OPENSSL}" "${DIR_OPENSSL}" "${MKD_OPENSSL}"
+   then
+           echo Patching openssl
+           >patch.log
+           do_patch openssl.patch
+           echo Configuring openssl
+           ./Configure --prefix=${DEPPKG_DIR} \
+                       shared zlib-dynamic \
+                       threads \
+                       --with-zlib-include=${DEPPKG_DIR}/include \
+                       mingw32 > make.log 2>&1
+   fi
+   echo Building openssl
+   perl util/mkdef.pl 32 libeay no-static-engine >ms/libeay32.def
+   perl util/mkdef.pl 32 ssleay >ms/ssleay32.def
+   do_make Makefile all
+   echo Installing openssl
+   do_make Makefile install_sw
+}
+
+process_mysql()
+{
+   get_source "${URL_MYSQL}" "${DIR_MYSQL}" "${DIR_MYSQL}" "${MKD_MYSQL}"
+   echo Converting mysql lib file
+   if [ -e ${BIN_DIR}/reimp ]
+   then
+           reimp --dlltool ${BIN_DIR}/mingw32-dlltool --as ${BIN_DIR}/mingw32-as lib/opt/libmysql.lib
+   else
+           ${BIN_DIR}/../mingw32/bin/reimp --dlltool ${BIN_DIR}/mingw32-dlltool --as ${BIN_DIR}/mingw32-as lib/opt/libmysql.lib
+   fi
+   echo Installing mysql
+   cp -p liblibmysql.a ../../lib/libmysql.a
+   rm -rf ../../include/mysql
+   mkdir ../../include/mysql
+   cp -p include/* ../../include/mysql 2>&1 | grep -v 'omitting directory'
+   cp -p lib/opt/libmysql.dll ../../bin
+}
+
+process_postgresql()
+{
+   if get_source "${URL_POSTGRESQL}" "${DIR_POSTGRESQL}" "${MKD_POSTGRESQL}"
+   then
+           echo Patching postgreSQL
+           >patch.log
+           do_patch postgresql.patch
+
+           # We need a native version of zic to build the timezone tables.
+           echo Configuring postgreSQL to build native zic
+           ./configure > make.log 2>&1
+
+           echo Building native zic
+           cd src/timezone
+           do_make Makefile >> make.log 2>&1
+           cp zic ../..
+           cd ../..
+           do_make GNUmakefile distclean >> make.log 2>&1
+
+           echo Configuring postgreSQL for MinGW32
+
+           ./configure --host=mingw32 \
+                       --enable-shared \
+                       --enable-thread-safety \
+                       --prefix=${DEPPKG_DIR} \
+                       --with-includes=${DEPPKG_DIR}/include:${DEPPKG_DIR}/include/pthreads \
+                       --with-libraries=${DEPPKG_DIR}/lib >> make.log 2>&1
+   fi
+   echo Building postgreSQL
+   ZIC=`pwd`/zic
+   do_make GNUmakefile AR=mingw32-ar DLLTOOL=mingw32-dlltool DLLWRAP=mingw32-dllwrap WINDRES=mingw32-windres PTHREAD_LIBS=-lpthreadGCE ZIC=${ZIC}
+   echo Installing postgreSQL
+   do_make GNUmakefile AR=mingw32-ar DLLTOOL=mingw32-dlltool DLLWRAP=mingw32-dllwrap WINDRES=mingw32-windres PTHREAD_LIBS=-lpthreadGCE ZIC=${ZIC} install
+}
+
+process_sqlite()
+{
+   if get_source "${URL_SQLITE}" "${DIR_SQLITE}" "${MKD_SQLITE}"
+   then
+           echo Patching SQLite
+           >patch.log
+           do_patch sqlite.patch
+   fi
+   echo Building SQLite
+   [ ! -e bld ] && mkdir bld
+   cd bld
+   > make.log
+   do_make ../Makefile.mingw32 CROSSTOOLS=${BIN_DIR} TLIBS="-L${DEPPKG_DIR}/lib" TCL_FLAGS="-I${DEPPKG_DIR}/include"
+   echo Installing SQLite
+   cp -p sqlite3.exe ${DEPPKG_DIR}/bin
+   cp -p libsqlite3.a ${DEPPKG_DIR}/lib
+   cp -p sqlite3.h ${DEPPKG_DIR}/include
+}
+
+process_wx()
+{
+   if get_source "${URL_WX}" "${DIR_WX}" "${MKD_WX}"
+   then
+      echo Patching wxWidgets
+      >patch.log
+      cp build/msw/config.gcc build/msw/config.mingw32
+      do_patch wxWidgets.patch
+      find . -name makefile.gcc -exec sh -c "sed -f ${SCRIPT_DIR}/patches/wx.sed {} > \`echo {} | sed -e 's/\.gcc$/\.mingw32/'\`" \;
+   fi
+   echo Building wxWidgets
+   cd build/msw
+   > make.log
+   do_make makefile.mingw32 SHARED=1 VENDOR=bacula DEBUG_INFO=1
+   echo Installing wxWidgets
+   cd ../..
+   rm -rf ../../include/wx
+   mkdir ../../include/wx
+   cp -p include/wx/* ../../include/wx 2>&1 | grep -v 'omitting directory'
+   mkdir ../../include/wx/generic
+   cp -p include/wx/generic/* ../../include/wx/generic 2>&1 | grep -v 'omitting directory'
+   mkdir ../../include/wx/msw
+   cp -p include/wx/msw/* ../../include/wx/msw 2>&1 | grep -v 'omitting directory'
+   mkdir ../../include/wx/msw/ole
+   cp -p include/wx/msw/ole/* ../../include/wx/msw/ole 2>&1 | grep -v 'omitting directory'
+   cp -p lib/gcc_dll/*.dll ../../bin
+   rm -rf ../../lib/wx_dll
+   mkdir ../../lib/wx_dll
+   cp -p lib/gcc_dll/*.a ../../lib/wx_dll
+   mkdir ../../lib/wx_dll/msw
+   cp -p lib/gcc_dll/msw/* ../../lib/wx_dll/msw 2>&1 | grep -v 'omitting directory'
+   mkdir ../../lib/wx_dll/msw/wx
+   cp -p lib/gcc_dll/msw/wx/* ../../lib/wx_dll/msw/wx 2>&1 | grep -v 'omitting directory'
+   mkdir ../../lib/wx_dll/msw/wx/msw
+   cp -p lib/gcc_dll/msw/wx/msw/* ../../lib/wx_dll/msw/wx/msw 2>&1 | grep -v 'omitting directory'
+}
+
+process_scons()
+{
+   get_source "${URL_SCONS}" "${DIR_SCONS}" "${MKD_SCONS}"
+   echo "Installing scons"
+   if python setup.py install --prefix=${DEPPKG_DIR}/scons > make.log 2>&1
+   then
+           :
+   else
+           echo "Make failed - Check `pwd`/make.log"
+           exit 1
+   fi
+}
+
+process_nsis()
+{
+   get_source "${URL_NSIS_BIN}" "${DIR_NSIS_BIN}" "${MKD_NSIS_BIN}"
+   cd ..
+   rm -rf ../nsis
+   mv nsis-2.17 ../nsis
+   if get_source "${URL_NSIS_SRC}" "${DIR_NSIS_SRC}" "${MKD_NSIS_SRC}"
+   then
+           echo "Patching nsis"
+           >patch.log
+           do_patch nsis.patch
+   fi
+   echo "Building nsis"
+   if ../../scons/bin/scons SKIPSTUBS=all SKIPPLUGINS=all SKIPUTILS=all SKIPMISC=all \
+           PREFIX=${DEPPKG_DIR}/nsis PREFIX_BIN=${DEPPKG_DIR}/nsis/Bin \
+           PREFIX_CONF=${DEPPKG_DIR}/nsis PREFIX_DATA=${DEPPKG_DIR}/nsis \
+           PREFIX_DOC=${DEPPKG_DIR}/nsis/Docs 2>&1 | tee make.log | parse_output
+   then
+           :
+   else
+           echo "Scons failed - Check `pwd`/make.log"
+           exit 1
+   fi
+   echo "Installing nsis"
+   cp -p build/release/makensis/makensis ../../nsis
+}
+
+process_mtx()
+{
+   if get_source "${URL_MTX}" "${DIR_MTX}" "${MKD_MTX}"
+   then
+           echo Patching mtx
+           # We can't run configure in a cross-compile environment so we
+           # patch the files to the correct values
+           cp -f config.h.in config.h
+           cp -f Makefile.in Makefile
+           rm -f configure
+           >patch.log
+           do_patch mtx.patch
+   fi
+   echo Building mtx
+   do_make Makefile prefix=${DEPPKG_DIR} all
+   echo Installing mtx
+   do_make Makefile prefix=${DEPPKG_DIR} install
+}
+
+process_mt()
+{
+   if get_source "${URL_MT}" "${DIR_MT}" "${MKD_MT}"
+   then
+           echo "Patching mt"
+           >patch.log
+           do_patch mt.patch
+   fi
+   echo "Building mt"
+   do_make Makefile PREFIX=${DEPPKG_DIR} all
+   echo Installing mt
+   do_make Makefile PREFIX=${DEPPKG_DIR} install
+}
+
+process_sed()
+{
+   if get_source "${URL_SED}" "${DIR_SED}" "${MKD_SED}"
+   then
+           echo Patching sed
+           >patch.log
+           do_patch sed.patch
+           echo Configuring sed
+           ./configure --host=mingw32 \
+                       --prefix=${DEPPKG_DIR} \
+                       --disable-nls >make.log 2>&1
+   fi
+   echo Building sed
+   do_make Makefile all
+   echo Installing sed
+   do_make Makefile install
+}
+
+process_stab2cv()
+{
+   if get_source "${URL_STAB2CV}" "${DIR_STAB2CV}" "${MKD_STAB2CV}"
+   then
+           # echo Patching stab2cv
+           # >patch.log
+           # do_patch stab2cv.patch
+           echo Configuring stab2cv
+           ./configure --prefix=${DEPPKG_DIR}/tools \
+                       >make.log 2>&1
+   fi
+   echo Building stab2cv
+   do_make Makefile 
+   echo Installing stab2cv
+   do_make Makefile install
+}
+
+process_cmd_utils()
+{
+   if get_source "${URL_CMD_UTILS}" "${DIR_CMD_UTILS}" "${MKD_CMD_UTILS}"
+   then
+           # echo Patching cmd-utils
+           # >patch.log
+           # do_patch cmd-utils.patch
+           echo Configuring cmd-utils
+           ./configure --host=mingw32 \
+                       --prefix=${DEPPKG_DIR} \
+                       >make.log 2>&1
+   fi
+   echo Building cmd-utils
+   do_make Makefile 
+   echo Installing cmd-utils
+   do_make Makefile install
+}
+
+process_mkisofs()
+{
+   get_source "${URL_MKISOFS}" "${DIR_MKISOFS}" "${MKD_MKISOFS}"
+   echo Installing mkisofs
+   cp `basename ${URL_MKISOFS}` ${DEPPKG_DIR}/bin
+}
+
+process_dvd_rw_tools()
+{
+   if get_source "${URL_DVD_RW_TOOLS}" "${DIR_DVD_RW_TOOLS}" "${MKD_DVD_RW_TOOLS}"
+   then
+           echo Patching dvd+rw-tools
+           >patch.log
+           do_patch dvd+rw-tools.patch
+   fi
+   echo "Building dvd+rw-tools"
+   m4 -DOS=XMINGW32 Makefile.m4 | make -f - dvd+rw-tools >make.log 2>&1
+   echo "Installing dvd+rw-tools"
+   m4 -DOS=XMINGW32 Makefile.m4 | make -f - prefix=${DEPPKG_DIR} manprefix=${DEPPKG_DIR} install >>make.log 2>&1
+}
+
+process_qt4()
+{
+   get_source "${URL_Qt4}" "${DIR_Qt4}" "${MKD_Qt4}"
+   echo "Installing Qt4"
+   rm -rf ${DEPPKG_DIR}/include/qt ${DEPPKG_DIR}/include/src
+   cp -a include/* ${DEPPKG_DIR}/include/
+   rm -rf ${DEPPKG_DIR}/lib/qt
+#  cp -a ${DEPPKG_DIR}/src/${DIR_Qt4}/lib/* ${DEPPKG_DIR}/lib/
+   cp -a lib/* ${DEPPKG_DIR}/lib/
+   cp -p lib/qt/*.dll ${DEPPKG_DIR}/bin/
+}
+
+if [ "$#" -eq 0 ]
+then
+   process_zlib
+   process_rsync
+   process_pcre
+   process_pthreads
+   process_openssl
+   process_mysql
+   process_sqlite
+   process_postgresql
+   process_wx
+   process_scons
+   process_nsis
+   process_mtx
+   process_mt
+   process_sed
+   process_stab2cv
+   process_cmd_utils
+   process_mkisofs
+   process_dvd_rw_tools
+   process_qt4
+else
+   for dependency in "$@"
+   do
+      eval "process_${dependency}"
+   done
+fi
+#vss
+#Need to download from Microsoft

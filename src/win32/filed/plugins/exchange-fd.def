@@ -1,0 +1,15 @@
+LIBRARY bacula.dll
+EXPORTS
+ 
+; compat.o
+;_Z10open_bpipePciPKc
+;_Z11close_bpipeP5BPIPE
+;_Z11close_wpipeP5BPIPE
+
+;console_command DATA
+;bplugin_list DATA
+;plugin_bopen DATA
+;plugin_bclose DATA
+;plugin_bwrite DATA
+;plugin_bread DATA
+;plugin_blseek DATA

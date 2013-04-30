@@ -1,0 +1,134 @@
+
+To add a new resource -- as an example, the BAZ resource,
+  which will have foo record which is an integer,    
+  a storage record, which is the name of a storage
+  resource, and a special time field.
+
+ 1. Define the Resource type (R_xxx) in dir_config.h
+    Be sure to update the R_LAST define.
+     #define R_BAZ 1011
+     update R_LAST to be R_BAZ
+
+ 2. Add a new definition of the resource in dir_config.h
+    The first three are mandatory (will soon be changed
+    to a header structure).
+    struct s_res_baz {
+       char * name;
+       int rcode
+       struct s_res_baz *next;
+
+       int foo;
+       struct res_store *storage;
+       int time;
+    };
+
+ 3. In dir_config.c add the new resource to the table
+    of resources (resources[])
+
+    {"baz",     baz_items,  R_BAZ,  NULL},
+
+ 4. Create a baz_items, which defines the records that
+    can appear within the BAZ resource:
+
+    static struct res_items bas_items[] = {
+        name,   store sub,   where to store,   extra info
+       {"name", store_name, ITEM(res_baz.name), 0},    /* manditory */
+       {"foo",  store_int,  ITEM(res_baz.foo), 0}, 
+       {"storage", stor_res, ITEM(res_baz.storage), 0},
+       {"time",  store_time, ITME(res_baz.time), 0},
+    };
+
+ 5. Update the dump_resource() subroutine to handle printing
+    your resource.
+
+ 6. Update the free_resource() subroutine to handle releasing
+    any allocated memory.
+
+ 7. Check for any special initialization in init_resource().
+    Normally, everything is just zeroed.
+
+ 8. Update the new_resource() subroutine to handle the two
+    passes of the configurator to be able to create your
+    resource.  Pass 2 is used only for finding a reference
+    to a resource and stuffing its address. In the above example,
+    you will need to include the storage resource.  See the 
+    example for the Job Resource.
+    
+    Add an entry so that the correct size of your resource is
+    allocated for pass one.
+
+ 9. Write any new store routines that you may need.  In this case,
+    we used the store_int and store_res, which are already defined,
+    but we need to add the new special routine store_time().
+    Note, the store subroutine gets control when the parser has
+    identified the record. Everything after the record name
+    must be scanned in the store routine.
+
+
+To add a new resource record:
+
+  1. Add the new record definition to the resource structure definition.
+     See step 2 above. In this case, however, we only add a new field
+     to the existing structure.
+
+  2. Add the new record to the existing res_items structure.  See
+     step 4 above. In this case, however, we only add a new record
+     definition to the exising structure.
+
+  3. Update the dump_resource() routine to dump the new record.
+   
+  4. Update the free_resource() routine if you allocated any memory.
+
+  5. Update init_resource() if you have any special requirements (not
+     normally the case).
+
+  6. Update the new_resource() routine if necessary (not normally the
+     case).
+
+  7. Write any new store routine that you may have created to store
+     your record.
+     Note, the store subroutine gets control when the parser has
+     identified the record. Everything after the record name
+     must be scanned in the store routine.  See the examples of
+     store routines that exist.
+
+Note, the core parsing code is in lib/parse_config.c and lib/parse_config.h.
+lib/parse_config.c provides the following store routines:
+    
+      store_name   stores a resource name
+      store_str    stores a string
+      store_res    stores a resource
+      store_int    stores an integer
+
+and the following utilities:
+
+      scan_to_eol  causes the lexical scanner to scan to the end of the line
+      scan_error   prints an error message
+      GetResWithName  returns the resource of a specified type and name
+      GetNextRes   returns the next resource of a specified type 
+      parse_config parses the configuration file
+      free_config_resources  frees all the resources allocated.
+
+Note: when your store routine gets control, the parser will have already
+scanned the record name (i.e. "baz =") before calling your routine.
+The lexical scanner is by default in a mode where spaces will be
+compressed out of unquoted strings. Consequently if you want to scan
+ 
+     baz = full backup every sunday
+
+and you do not want to get "full backup every sunday" as a single token
+"fullbackupeverysunday", you must set the no identifier option in the
+lexical scanner options field:
+
+   int options = lc->options;
+
+   lc->options |= LOPT_NO_IDENT;      /* don't eat spaces */
+     
+   get_token(lc) ...
+   ...
+
+   lc->options = options;
+   return;
+
+
+             

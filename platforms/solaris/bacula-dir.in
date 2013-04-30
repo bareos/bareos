@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# bacula       This shell script takes care of starting and stopping
+#	       the bacula Director daemon
+#
+# description: The Leading Open Source Backup Solution.
+#
+# For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+DIR_USER=@dir_user@
+DIR_GROUP=@dir_group@
+DIR_OPTIONS=''
+
+case "$1" in
+    start)
+       if [ ! -z "${DIR_USER}" ]; then
+          [ -z "${DIR_OPTIONS}" ] && DIR_OPTIONS="-u ${DIR_USER}" || \
+                                     DIR_OPTIONS="${DIR_OPTIONS} -u ${DIR_USER}"
+       fi
+       if [ ! -z "${DIR_GROUP}" ]; then
+          [ -z "${DIR_OPTIONS}" ] && DIR_OPTIONS="-g ${DIR_GROUP}" || \
+                                     DIR_OPTIONS="${DIR_OPTIONS} -g ${DIR_GROUP}"
+       fi
+
+       echo "Starting the Bacula Director: "
+       @sbindir@/bacula-dir $2 ${DIR_OPTIONS} -c @sysconfdir@/bacula-dir.conf
+       ;;
+    stop)
+       echo "Stopping the Director daemon: "
+       if [ -x /usr/bin/zonename ]; then
+          case `/usr/bin/zonename` in
+             global)
+                pkill -z global -x bacula-dir
+                ;;
+             *)
+                pkill -x bacula-dir
+                ;;
+          esac
+       else
+          pkill -x bacula-dir
+       fi
+       ;;
+    restart)
+       $0 stop
+       sleep 5
+       $0 start
+       ;;
+    *)
+       echo "Usage: $0 {start|stop|restart}"
+       exit 1
+       ;;
+esac
+exit 0

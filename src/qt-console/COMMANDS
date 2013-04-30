@@ -1,0 +1,125 @@
+cancel ujobid=<unique-jobid>
+
+delete pool=<pool-name>
+   should ask if this would have bad effects if say media existed in the pool
+   the pool existed in the configuration file.
+
+list
+   list ujobid<unique job name> (list job with unique name)
+   list nextvol job=<job-name> days=nnn
+
+unmount [ jobid=<id> | job=<job-name> ]
+Mmmmm
+
+update 
+  /* Attempted, having problems */
+  Volume from Pool All Volumes from Pool
+
+CONFIG FILE
+===========================
+add [pool=<pool-name> storage=<storage>  jobid=<JobId>]
+These are done from config files
+
+create [pool=<pool-name>]
+Done in a config file
+
+CHOOSE NOT TO (for now at least)
+===========================
+autodisplay on/off
+could be done in the context of the console
+   This may interfere with our connection issues
+   Also, there is a configurable qt timer to automatically ask for messages
+
+python
+not needed from bat??
+
+setdebug
+I'd say we could choose not to implement this in bat
+
+quit
+I'd like to have a disconnect graphical option.
+
+exit
+Not really needed
+
+use
+still need to make decisions about how to handle multiple catalogs
+
+version
+could be done in console as long as it is explicite about that it is the version
+of the director
+
+var
+Mmmmmm
+
+wait
+Mmmmmmm
+
+DONE
+===========================
+automount on/off
+Added buttons to the label dialog box to execute automount command
+
+cancel jobid=<number> job=<job-name>
+
+delete [volume=<vol-name> job jobid=<id>]
+
+disable job<job-name>     and     enable job<job-name>
+Could be done in the context of a jobs resource window which is not yet created
+
+estimate
+Could be a dialog in the context of a jobs window.
+
+list
+   list jobid=<id>           (list jobid id)
+   list files jobid=<id>
+   list jobmedia jobid=<id>
+   list volumes jobid=<id>
+   list jobtotals (from page selector on joblist widget)
+   The next few are accomplishable graphically with joblist class
+     list jobs
+     list job=<job-name>   (list all jobs with "job-name")
+     list jobname=<job-name>  (same as above)
+     list jobmedia
+     list jobmedia job=<job-name>
+   The next few are accomplishable graphically with the medialist class
+     list volumes
+     list volumes pool=<pool-name>
+     list volume=<volume-name>  
+     list pools
+   Accomplishable with the clients class graphically
+     list clients
+   list files job=<job-name>
+  do this as a context option on page selector on joblist
+   list volumes job=<job-name>
+   list nextvolume job=<job-name>
+   list nextvol job=<job-name>
+
+help
+  context sensitive from page selector console
+
+label
+Done by kern before I started
+
+prune files|jobs|volume client=<client-name> volume=<volume-name>
+could add as a dialog box from both client and medialist
+
+purge files jobid=<jobid>|job=<job-name>|client=<client-name>
+purge volume|volume=<vol-name> (of all jobs)
+purge jobs client=<client-name> (of all jobs)
+
+relabel
+
+release storage=<storage-name>
+Would need to explain what this does in bat with a dialog
+
+run
+
+reload
+
+status
+
+unmount storage=<storage-name> [ drive=\lt{}num\gt{} ]
+
+update volume (via mediaedit)
+  "update slots" "update slots scan" (context of storage)

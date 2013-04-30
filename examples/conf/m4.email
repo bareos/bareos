@@ -1,0 +1,28 @@
+From: Peter Eriksson <peter@ifm.liu.se>
+Reply-To: Peter Eriksson <peter@ifm.liu.se>
+Subject: Re: [Bacula-users] RE: Feature Request : includes for config-files
+To: bacula-users@lists.sourceforge.net
+
+Marc Schoechlin <ms@LF.net> writes:
+
+> I think that is the 99%-solution for this problem - 
+> but I think many users would be happy with a 90%-solution, which
+> allows to store configuration-data in distributed files.
+
+Or you could do as I just did - generate the configuration
+files using a Makefile and the m4 macro processor... That way you
+don't have to reinvent the wheel again inside Bacula but can delegate
+the tasks to external programs.
+
+[See the attached files for details. They can be expanded
+a lot though, it's just a beginning]
+
+-- 
+Peter Eriksson <peter@ifm.liu.se>            Phone:    +46 13  28 2786
+Computer Systems Manager/BOFH                Cell/GSM: +46 705 18 2786
+Physics Department, Linköping University     Room:     Building F, F203
+SE-581 83 Linköping, Sweden                  http://www.ifm.liu.se/~peter
+
+See the files bacula-defs.m4 m4.bacula-dir.conf m4.bacula-fd.conf and
+m4.bacula-sd.conf in this directory for the attachments to this
+email.

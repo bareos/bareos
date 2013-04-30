@@ -1,0 +1,121 @@
+#!/bin/sh
+#
+#
+# This script is used to make a Bacula docs release
+#   docs
+# It writes in the current directory, so we recommend that you
+#  do not run it in the Bacula source or Git directory, but
+#  in a special release directory.
+#
+# Commit all changes, export the release, make a release tar.
+#
+# source ./config
+. ./config
+
+tagbase=Release-
+base_dir=docs
+base_pkg=bacula-$base_dir
+remote=$3
+branch=$4
+ver=$5
+fulltag=$tagbase$ver
+
+if [ $# != 5 ] ; then
+  echo "Need $0 <bacula-source-directory> <docs-source-directory> <remote-name> <branch> <version>"
+  echo "e.g. $0 bacula-source docs-source bee Branch-4.0 4.0.3"
+  exit 1
+fi
+cd $1
+if [ $? -ne 0 ]; then
+   echo "Directory: $1 does not exist"
+   exit 1
+fi
+cd bacula
+if [ $?  -ne 0 ]; then
+   echo "Directory: $1 does not exist"
+   exit 1
+fi
+bcurrent=`git branch | awk '/*/ { print $2 }'`
+git checkout ${branch}
+if [ $? -ne 0 ]; then
+   echo "Checkout of branch ${branch} in $1/bacula failed."
+   exit 1
+fi
+git pull ${remote} ${branch}
+bsrc=`pwd` 
+cd ${cwd}
+cd $2
+if [ $? -ne 0 ]; then
+   echo "Directory: $2 does not exist"
+   exit 1
+fi
+cd $base_dir
+if [ $?  -ne 0 ]; then
+   echo "Directory: $2 does not exist"
+   exit 1
+fi
+current=`git branch | awk '/*/ { print $2 }'`
+src=`pwd` 
+git checkout ${branch}
+if [ $? -ne 0 ]; then
+   echo "Checkout of branch ${branch} in ${src} failed."
+   exit 1
+fi
+git pull ${remote} ${branch}
+echo " "
+echo "Making $reltype for $base_pkg-$ver ..."
+echo " "
+#echo "OK?  ctl-c to stop"
+#read a
+
+git tag -d ${fulltag}  2>/dev/null 1>/dev/null
+echo "Creating new tag -- $fulltag"
+git tag $fulltag
+if [ $? != 0 ] ; then
+  echo " "
+  echo "Non-zero return status from Git"
+  echo " "
+  exit 1
+fi
+echo "Create Tag $fulltag done"
+cd ${cwd}
+rm -rf $base_pkg-$ver $base_pkg-$ver.tar.gz $base_pkg-$ver.tar.gz.sig
+rm -rf $fulltag
+cd ${src}
+git archive --format=tar --prefix=$base_pkg-$ver/ $fulltag | gzip >${cwd}/$base_pkg-$ver.tar.gz
+if [ $? != 0 ] ; then
+  echo " "
+  echo "Non-zero return status from Git"
+  echo " "
+  exit 1
+fi
+echo "Exported release into ${cwd}/$base_pkg-$ver.tar.gz"
+cd ${cwd}
+tar xfz $base_pkg-$ver.tar.gz 
+cd $base_pkg-$ver/
+mv docs $base_pkg-$ver
+cd $base_pkg-$ver
+./configure --with-bacula=$bsrc
+make en
+make clean
+cd ${cwd}
+echo "Tarring docs ..."
+tar cf $base_pkg-$ver.tar $base_pkg-$ver
+rm -rf $base_pkg-$ver $base_pkg-$ver.tar.*
+echo "bzip2 docs ..."
+bzip2 $base_pkg-$ver.tar
+./sign $base_pkg-$ver.tar.bz2
+ls -l $base_pkg-$ver.tar.*
+
+if [ a$push != ano ]; then
+   cd ${src}
+   git push ${remote} ${branch}
+   git push ${remote} tag ${fulltag}
+   echo "Pushed ${remote} and push tag ${fulltag}"
+fi
+
+cd ${src}
+git checkout ${current}
+
+cd ${bsrc}
+git checkout ${bcurrent}

@@ -1,0 +1,26 @@
+# This file provides information about the External dependencies required by
+# Bacula.
+#
+# There are four fields delimited by |.  Only the first two fields are 
+# required.  The other two are used when the top level directory of the
+# archive is not the same as the file name with any suffixes removed.
+#
+# Field 1 is the name of the dependency.  It is used to define the
+# name of the three variables which are assigned the values of fields 2 to 4.
+#
+# Field 2 is the URL of the archive.  It is assigned to the variable
+# URL_[field1].
+#
+# Field 3 is the top directory of the archive or the name of a directory that
+# must be created and the archive extracted into it.  It is assigned to the 
+# variable DIR_[field1].
+#
+# Field 4 indicates if the directory specified in field 3 must be created 
+# first and the archive extracted into it.  It is assigned to the variable
+# MKD_[field1]
+#
+QWT|http://www.bacula.org/depkgs/qwt-5.0.2.tar.bz2|qwt-5.0.2|1
+#
+# Original location
+#
+#QWT|http://superb-west.dl.sourceforge.net/sourceforge/qwt/qwt-5.0.2.tar.bz2|qwt-5.0.2|1

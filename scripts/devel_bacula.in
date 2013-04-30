@@ -1,0 +1,277 @@
+#! /bin/sh
+#
+# bacula       This shell script takes care of starting and stopping
+#	       the bacula daemons.
+#
+#   It runs with different ports than the production version,
+#   and using the current development enviornment.
+#
+#   This is pretty much watered down version of the RedHat script
+#   that works on Solaris as well as Linux, but it won't work everywhere.
+#
+# description: The Leading Open Source Backup Solution.
+#
+
+PSCMD="@PSCMD@"
+pwd=`pwd`
+
+BACDIRBIN=${pwd}/src/dird
+BACDIRCFG=${pwd}/src/dird
+BACFDBIN=${pwd}/src/filed
+BACFDCFG=${pwd}/src/filed
+BACSDBIN=${pwd}/src/stored
+BACSDCFG=${pwd}/src/stored
+PIDDIR=@piddir@
+SUBSYSDIR=@subsysdir@
+
+# Use non-production ports
+DIR_PORT=8101
+FD_PORT=8102
+SD_PORT=8103
+
+DIR_USER=@dir_user@
+DIR_GROUP=@dir_group@
+FD_USER=@fd_user@
+FD_GROUP=@fd_group@
+SD_USER=@sd_user@
+SD_GROUP=@sd_group@
+
+# A function to stop a program.
+killproc() {
+    RC=0
+    # Test syntax.
+    if [ $# = 0 ]; then
+	echo "Usage: killproc {program} [signal]"
+	return 1
+    fi
+
+    notset=0
+    # check for third arg to be kill level
+    if [ "$3" != "" ] ; then
+	killlevel=$3
+    else
+	notset=1
+	killlevel="-9"
+    fi
+
+    # Get base program name
+    base=`basename $1`
+
+    # Find pid.
+    pid=`pidofproc $base $2`
+
+    # Kill it.
+    if [ "$pid" != "" ] ; then
+	if [ "$notset" = "1" ] ; then
+	    if ps -p $pid>/dev/null 2>&1; then
+		# TERM first, then KILL if not dead
+		kill -TERM $pid 2>/dev/null
+		sleep 1
+		if ps -p $pid >/dev/null 2>&1 ; then
+		    sleep 1
+		    if ps -p $pid >/dev/null 2>&1 ; then
+			sleep 3
+			if ps -p $pid >/dev/null 2>&1 ; then
+			    kill -KILL $pid 2>/dev/null
+			fi
+		    fi
+		fi
+	     fi
+	     ps -p $pid >/dev/null 2>&1
+	     RC=$?
+	     [ $RC -eq 0 ] && failure "$base shutdown" || success "$base shutdown"
+	#    RC=$((! $RC))
+	# use specified level only
+	else
+	    if ps -p $pid >/dev/null 2>&1; then
+		kill $killlevel $pid 2>/dev/null
+		RC=$?
+		[ $RC -eq 0 ] && success "$base $killlevel" || failure "$base $killlevel"
+	    fi
+	fi
+    else
+	failure "$base shutdown"
+    fi
+    # Remove pid file if any.
+    if [ "$notset" = "1" ]; then
+	rm -f ${PIDDIR}/$base.$2.pid
+    fi
+    return $RC
+}
+
+# A function to find the pid of a program.
+pidofproc() {
+    pid=""
+    # Test syntax.
+    if [ $# = 0 ] ; then
+	echo "Usage: pidofproc {program}"
+	return 1
+    fi
+
+    # Get base program name
+    base=`basename $1`
+
+    # First try PID file
+    if [ -f ${PIDDIR}/$base.$2.pid ] ; then
+	pid=`head -1 ${PIDDIR}/$base.$2.pid`
+	if [ "$pid" != "" ] ; then
+	    echo $pid
+	    return 0
+	fi
+    fi
+
+    # Next try "pidof"
+   if [ -x /sbin/pidof ] ; then
+       pid=`/sbin/pidof $1`
+   fi
+   if [ "$pid" != "" ] ; then
+       echo $pid
+       return 0
+   fi
+
+    # Finally try to extract it from ps
+    ${PSCMD} | grep $1 | awk '{ print $1 }' | tr '\n' ' '
+    return 0
+}
+
+status() {
+    # Test syntax.
+    if [ $# = 0 ] ; then
+	echo "Usage: status {program}"
+	return 1
+    fi
+
+    # Get base program name
+    base=`basename $1`
+
+   # First try "pidof"
+   if [ -x /sbin/pidof ] ; then
+       pid=`/sbin/pidof $1`
+   fi
+   if [ "$pid" != "" ] ; then
+       echo "$base (pid $pid) is running..."
+       return 0
+   else
+       pid=`${PSCMD} | awk 'BEGIN { prog=ARGV[1]; ARGC=1 } 
+	     { if ((prog == $2) || (("(" prog ")") == $2) ||
+		  (("[" prog "]") == $2) ||
+		  ((prog ":") == $2)) { print $1 ; exit 0 } }' $1`
+       if [ "$pid" != "" ] ; then
+	   echo "$base (pid $pid) is running..."
+	   return 0
+       fi
+   fi
+
+    # Next try the PID files
+    if [ -f ${PIDDIR}/$base.$2.pid ] ; then
+	pid=`head -1 ${PIDDIR}/$base.$2.pid`
+	if [ "$pid" != "" ] ; then
+	    echo "$base dead but pid file exists"
+	    return 1
+	fi
+    fi
+    # See if the subsys lock exists
+    if [ -f ${SUBSYSDIR}/$base ] ; then
+	echo "$base dead but subsys locked"
+	return 2
+    fi
+    echo "$base is stopped"
+    return 3
+}
+
+success() {
+  return 0
+}
+
+failure() {
+  rc=$?
+  return $rc
+}
+
+case "$1" in
+    start)
+       [ -x ${BACSDBIN}/bacula-sd ] && {
+	  echo "Starting the Storage daemon"
+	  OPTIONS=''
+	  if [ "${SD_USER}" != '' ]; then
+	     OPTIONS="${OPTIONS} -u ${SD_USER}"
+	  fi
+
+	  if [ "${SD_GROUP}" != '' ]; then
+	     OPTIONS="${OPTIONS} -g ${SD_GROUP}"
+	  fi
+
+	  ${BACSDBIN}/bacula-sd $2 ${OPTIONS} -v -c ${BACSDCFG}/stored.conf
+       }
+
+       [ -x ${BACFDBIN}/bacula-fd ] && {
+	  echo "Starting the File daemon"
+	  OPTIONS=''
+	  if [ "${FD_USER}" != '' ]; then
+	     OPTIONS="${OPTIONS} -u ${FD_USER}"
+	  fi
+
+	  if [ "${FD_GROUP}" != '' ]; then
+	     OPTIONS="${OPTIONS} -g ${FD_GROUP}"
+	  fi
+
+	  ${BACFDBIN}/bacula-fd $2 ${OPTIONS} -v -c ${BACFDCFG}/filed.conf
+       }
+
+       [ -x ${BACDIRBIN}/bacula-dir ] && { 
+	   sleep 2
+	   echo "Starting the Director daemon"
+	  OPTIONS=''
+	  if [ "${DIR_USER}" != '' ]; then
+	     OPTIONS="${OPTIONS} -u ${DIR_USER}"
+	  fi
+
+	  if [ "${DIR_GROUP}" != '' ]; then
+	     OPTIONS="${OPTIONS} -g ${DIR_GROUP}"
+	  fi
+
+	  if [ "${VALGRIND}" != '' ]; then
+	     valgrind --leak-check=full ${BACDIRBIN}/bacula-dir $2 ${OPTIONS} -v -c ${BACDIRCFG}/dird.conf
+	  else
+	     ${BACDIRBIN}/bacula-dir $2 ${OPTIONS} -v -c ${BACDIRCFG}/dird.conf
+	  fi
+       }
+       ;;
+
+    stop)
+       # Stop the FD first so that SD will fail jobs and update catalog
+       [ -x ${BACFDBIN}/bacula-fd ] && {
+	  echo "Stopping the File daemon"
+	  killproc ${BACFDBIN}/bacula-fd ${FD_PORT}
+       }
+
+       [ -x ${BACSDBIN}/bacula-sd ] && {
+	  echo "Stopping the Storage daemon"
+	  killproc ${BACSDBIN}/bacula-sd ${SD_PORT}
+       }
+
+       [ -x ${BACDIRBIN}/bacula-dir ] && {
+	  echo "Stopping the Director daemon"
+	  killproc ${BACDIRBIN}/bacula-dir ${DIR_PORT}
+       }
+       echo
+       ;;
+
+    restart)
+       $0 stop
+       sleep 5
+       $0 start
+       ;;
+
+    status)
+       [ -x ${BACSDBIN}/bacula-sd   ] && status ${BACSDBIN}/bacula-sd  ${SD_PORT}
+       [ -x ${BACFDBIN}/bacula-fd   ] && status ${BACFDBIN}/bacula-fd  ${FD_PORT}
+       [ -x ${BACDIRBIN}/bacula-dir ] && status ${BACDIRBIN}/bacula-dir ${DIR_PORT}
+       ;;
+
+    *)
+       echo "Usage: $0 {start|stop|restart|status}"
+       exit 1
+       ;;
+esac
+exit 0

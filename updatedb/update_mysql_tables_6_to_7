@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+# Shell script to update MySQL tables from version 1.32 to 1.33
+#
+echo " "
+echo "This script will update a bacula database from version 6 to 7."
+echo "Depending on the size of your database,"
+echo "this script may take several minutes to run."
+echo " "
+
+# the location of the mysql program
+bindir=/usr/bin
+
+DB_VER=`$bindir/mysql bacula -e 'select * from Version;'|tail -n 1 2>/dev/null`
+if [ -z "$DB_VER" ]; then
+	echo "Sorry, I can't seem to locate a bacula database."
+	exit 1
+fi
+
+if [ -n "$DB_VER" ] && [ "$DB_VER" -ne "6" ]; then
+	echo "Sorry, this script is designed to update a version 6 database"
+	echo "and you have a version $DB_VER database."
+	exit 1
+fi
+
+if $bindir/mysql $* -f <<END-OF-DATA
+USE bacula;
+
+ALTER TABLE Media ADD COLUMN InChanger TINYINT NOT NULL DEFAULT 0;
+ALTER TABLE Media ADD COLUMN MediaAddressing TINYINT NOT NULL DEFAULT 0;
+ALTER TABLE Media ADD COLUMN VolReadTime BIGINT UNSIGNED NOT NULL DEFAULT 0;
+ALTER TABLE Media ADD COLUMN VolWriteTime BIGINT UNSIGNED NOT NULL DEFAULT 0;
+
+ALTER TABLE Pool ADD COLUMN Enabled TINYINT DEFAULT 1;
+ALTER TABLE Pool ADD COLUMN ScratchPoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool;
+ALTER TABLE Pool ADD COLUMN RecyclePoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool;
+
+DROP TABLE BaseFiles;
+
+
+CREATE TABLE BaseFiles (
+   BaseId INTEGER UNSIGNED AUTO_INCREMENT,
+   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+   FileId INTEGER UNSIGNED NOT NULL REFERENCES File,
+   FileIndex INTEGER UNSIGNED,
+   PRIMARY KEY(BaseId)
+   );
+
+DROP TABLE UnsavedFiles;
+
+CREATE TABLE UnsavedFiles (
+   UnsavedId INTEGER UNSIGNED AUTO_INCREMENT,
+   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+   PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
+   FilenameId INTEGER UNSIGNED NOT NULL REFERENCES Filename,
+   PRIMARY KEY (UnsavedId)
+   );
+
+DROP TABLE BaseFiles;
+
+CREATE TABLE BaseFiles (
+   BaseId INTEGER UNSIGNED AUTO_INCREMENT,
+   BaseJobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+   FileId INTEGER UNSIGNED NOT NULL REFERENCES File,
+   FileIndex INTEGER UNSIGNED,
+   PRIMARY KEY(BaseId)
+   );
+
+DELETE FROM Version;
+INSERT INTO Version (VersionId) VALUES (7);
+
+END-OF-DATA
+then
+   echo "Update of Bacula MySQL tables succeeded."
+else
+   echo "Update of Bacula MySQL tables failed."
+fi
+exit 0

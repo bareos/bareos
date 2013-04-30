@@ -1,0 +1,122 @@
+#!/bin/sh
+#
+#
+# This script is used to make a Bacula release
+#   bacula
+#   regress
+#   gui
+# It writes in the current directory, so we recommend that you
+#  do not run it in the Bacula source or Git directory, but
+#  in a special release directory.
+#
+# Commit all changes, update the language files, 
+#    export the release, make a release tar.
+#
+# source config
+. ./config
+
+tagbase=Release-
+base_dir=bacula
+base_pkg=bacula
+
+remote=$2
+branch=$3
+ver=$4
+
+if [ $# != 4 ] ; then
+  echo "Need $0 <source-directory> <remote-name> <branch> <version>"
+  echo "e.g. $0 release-source bee Branch-4.0 4.0.3"
+  exit 1
+fi
+cd $1
+if [ $? -ne 0 ]; then
+   echo "Directory: $1 does not exist"
+   exit 1
+fi
+src=`pwd` 
+current=`git branch | awk '/*/ { print $2 }'`
+cd $base_dir 
+if [ $?  -ne 0 ]; then
+   echo "Directory: $1 does not exist"
+   exit 1
+fi
+git checkout ${branch}
+git pull ${remote} ${branch}
+if [ $? -ne 0 ]; then
+   echo "Checkout of branch ${branch} failed."
+   exit 1
+fi
+fulltag=$tagbase$ver
+echo " "
+echo "Making $reltype for $base_pkg-$ver ..."
+echo " "
+#echo "OK?  ctl-c to stop"
+#read a
+rm -rf Release-$ver
+if [ $reltype != "beta" ] ; then
+   cd src
+   cp -fp version.h 1
+   sed 's%^#define DEVELOPER 1%/* #define DEVELOPER 1 */%g' 1 >version.h
+   rm -f 1
+   cd ..
+fi
+if [ a$updatepo != ano ]; then
+   ./configure --enable-client-only
+   cd po
+   make update-po
+   cd ${src}   
+fi
+
+git tag -d ${fulltag}
+echo "Creating new tag -- $fulltag"
+git tag $fulltag
+if [ $? != 0 ] ; then
+  echo " "
+  echo "Non-zero return status from Git"
+  echo " "
+  exit 1
+fi
+echo "Create Tag $fulltag done"
+cd ${cwd}
+rm -rf $base_pkg-$ver $base_pkg-$ver.tar.gz $base_pkg-$ver.tar.gz.sig
+rm -rf $fulltag
+cd ${src}
+git archive --format=tar --prefix=$base_pkg-$ver/ $fulltag | gzip >${cwd}/$base_pkg-$ver.tar.gz
+
+if [ $? != 0 ] ; then
+  echo " "
+  echo "Non-zero return status from Git"
+  echo " "
+  exit 1
+fi
+echo "Exported release into ${cwd}/$base_pkg-$ver.tar.gz"
+cd ${cwd}
+tar xfz $base_pkg-$ver.tar.gz 
+# First remove Enterprise Win32 plugin source
+cd $base_pkg-$ver/bacula
+cp -fp ReleaseNotes ${cwd}/ReleaseNotes
+
+cd ${cwd}/$base_pkg-$ver
+# Move directories to release names including version
+mv bacula $base_pkg-$ver
+mv gui $base_pkg-gui-$ver
+mv regress $base_pkg-regress-$ver
+# Tar each component individually
+tar cvfz ../$base_pkg-$ver.tar.gz $base_pkg-$ver
+tar cvfz ../$base_pkg-gui-$ver.tar.gz $base_pkg-gui-$ver
+tar cvfz ../$base_pkg-regress-$ver.tar.gz $base_pkg-regress-$ver
+cd ..
+rm -rf $base_pkg-$ver
+./sign $base_pkg-$ver.tar.gz
+./sign $base_pkg-gui-$ver.tar.gz
+./sign $base_pkg-regress-$ver.tar.gz
+
+if [ a$push != ano ]; then
+   cd ${src}
+   git push ${remote} ${branch}
+   git push ${remote} tag ${fulltag}
+   echo "Pushed ${remote} and push tag ${fulltag}"
+fi
+
+cd ${src}
+git checkout ${current}

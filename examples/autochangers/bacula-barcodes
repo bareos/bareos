@@ -1,0 +1,53 @@
+#
+# Bacula barcode simulation file
+# used by ${PREFIX}/sbin/chio-bacula (FreeBSD)
+#
+#   Contributed by Lars Koeller 
+#
+# The volumenames are returned by the "changer list" command
+# labeling in the console is done by "label barcodes"
+# (then all volumes belog to the default pool).
+# All Lines with an "#" at the bedinning are ignored
+#
+# !!!! If you export an tape and reinsert another one,
+# !!!! don't forget to change the volume name in this file!
+#
+1:Volume1-100
+2:Volume1-101
+3:Volume1-102
+4:Volume1-103
+5:Volume1-104
+6:Volume1-105
+7:Volume1-106
+8:Volume1-107
+9:Volume1-108
+10:Volume1-109
+11:Volume1-110
+12:Volume1-111
+#
+# Further volumes exported from the changer
+#
+# 36GB AIT2 tapes
+#Volume1-100
+#Volume1-101
+#Volume1-102
+#Volume1-103
+#Volume1-104
+#Volume1-105
+#Volume1-106
+#Volume1-107
+#Volume1-108
+#Volume1-109
+#Volume1-110
+#Volume1-111
+#Volume1-112
+#Volume1-113
+#Volume1-114
+#Volume1-115
+#
+# 50GB AIT2 tapes
+#Volume2-200
+#Volume2-201
+#Volume2-202
+#Volume2-203
+#Volume2-204

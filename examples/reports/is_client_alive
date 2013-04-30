@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# Test if Bacula Client is alive
+#   exit 0 if specified client (arg1) is alive
+#   exit 1 if specified client (arg1) is NOT alive
+#   exit 2 if console could NOT connect to Director
+#
+OUTF=/tmp/client-${1}-alive
+rm -f ${OUTF}
+./console >/dev/null <<__EOD
+@output /dev/null
+messages
+@output ${OUTF}
+status client=${1}
+messages
+quit
+__EOD
+grep -s "Daemon started" ${OUTF} 2>&1 >/dev/null
+rtn=$?
+rm -f ${OUTF}
+exit ${rtn}

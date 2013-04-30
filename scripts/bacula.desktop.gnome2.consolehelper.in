@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Bacula Console
+Comment=Bacula Director Console
+Icon=/usr/share/pixmaps/bacula.png
+Exec=/usr/bin/bgnome-console -c @sysconfdir@/bgnome-console.conf
+Terminal=false
+Type=Application
+Encoding=UTF-8
+X-Desktop-File-Install-Version=0.3
+Categories=System;Application;Utility;X-Red-Hat-Base;

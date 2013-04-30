@@ -1,0 +1,46 @@
+# 
+# This file is used as the template to create the
+# Makefile for the Darwin specific installation.
+#
+#  22 Februrary 2003 -- Kern Sibbald
+#
+#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+
+nothing:
+
+install:
+
+install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
+
+	
+install-autostart-fd:
+
+
+install-autostart-sd:
+
+
+install-autostart-dir:
+
+
+uninstall: uninstall-autostart
+
+uninstall-autostart: uninstall-autostart-fd uninstall-autostart-sd uninstall-autostart-dir
+
+uninstall-autostart-fd:
+
+
+uninstall-autostart-sd:
+
+uninstall-autostart-dir:
+
+clean:
+
+distclean: clean
+	@rm -f Makefile
+
+devclean: clean
+	@rm -f Makefile

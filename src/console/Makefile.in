@@ -1,0 +1,134 @@
+#
+#  Version $Id$
+#
+@MCOMMON@
+
+srcdir =	.
+VPATH = 	.
+.PATH:		.
+
+# one up
+basedir = ..
+# top dir
+topdir = ../..
+# this dir relative to top dir
+thisdir = src/console
+
+DEBUG=@DEBUG@
+
+first_rule: all
+dummy:
+
+#
+CONSSRCS = console.c console_conf.c authenticate.c @CONS_SRC@ 
+CONSOBJS = console.o console_conf.o authenticate.o @CONS_OBJ@
+
+# these are the objects that are changed by the .configure process
+EXTRAOBJS = @OBJLIST@
+
+GETTEXT_LIBS = @LIBINTL@
+
+CONS_INC=@CONS_INC@
+CONS_LIBS=@CONS_LIBS@
+CONS_LDFLAGS=@CONS_LDFLAGS@
+
+.SUFFIXES:	.c .o
+.PHONY:
+.DONTCARE:
+
+# inference rules
+.c.o:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(CONS_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+#-------------------------------------------------------------------------
+all: Makefile bconsole @STATIC_CONS@
+	@echo "==== Make of console is good ===="
+	@echo " "
+
+
+bconsole: Makefile $(CONSOBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) $(CONS_LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
+	      $(DLIB) $(CONS_LIBS) -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) \
+	      $(OPENSSL_LIBS)
+
+static-bconsole: Makefile $(CONSOBJS) ../lib/libbac.a ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) -static $(LDFLAGS) $(CONS_LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
+	      $(DLIB) $(CONS_LIBS) -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) \
+	      $(OPENSSL_LIBS)
+	strip $@
+
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+libtool-clean:
+	@$(RMF) -r .libs _libs
+
+clean:	libtool-clean
+	@$(RMF) console bconsole core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+	@$(RMF) static-console static-bconsole gmon.out
+
+realclean: clean
+	@$(RMF) tags console.conf bconsole.conf
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+devclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+install: all
+	@if test -f ${DESTDIR}${sbindir}/console; then \
+	   echo " "; \
+	   echo "Warning!!!  ${DESTDIR}${sbindir}/console found."; \
+	   echo " console has been renamed bconsole, so console"; \
+	   echo " is no longer used, and you might want to delete it."; \
+	   echo " "; \
+	fi
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bconsole $(DESTDIR)$(sbindir)/bconsole
+	@srcconf=bconsole.conf; \
+	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
+	   destconf=$$srcconf.new; \
+	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
+	else \
+	   destconf=$$srcconf; \
+	   if  test -f ${DESTDIR}${sysconfdir}/console.conf; then \
+	      echo "Existing console.conf moved to bconsole.conf"; \
+	      @$(MV) ${DESTDIR}${sysconfdir}/console.conf ${DESTDIR}${sysconfdir}/bconsole.conf; \
+	      destconf=$$srcconf.new; \
+	   fi; \
+	fi; \
+	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
+	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
+	if test -f static-bconsole; then \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bconsole $(DESTDIR)$(sbindir)/static-bconsole; \
+	fi
+
+uninstall:
+	(cd $(DESTDIR)$(sbindir); $(RMF) bconsole static-bconsole)
+	(cd $(DESTDIR)$(sysconfdir); $(RMF) console.conf bconsole.conf bconsole.conf.new)
+
+
+
+# Semi-automatic generation of dependencies:
+# Use gcc -MM because X11 `makedepend' doesn't work on all systems
+# and it also includes system headers.
+# `semi'-automatic since dependencies are generated at distribution time.
+
+depend:
+	@$(MV) Makefile Makefile.bak
+	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
+	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(CONS_INC) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@if test -f Makefile ; then \
+	    $(RMF) Makefile.bak; \
+	else \
+	   $(MV) Makefile.bak Makefile; \
+	   echo " ===== Something went wrong in make depend ====="; \
+	fi
+
+# -----------------------------------------------------------------------
+# DO NOT DELETE: nice dependency list follows

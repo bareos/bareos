@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Bacula File Daemon @BACULA_VERSION@</title>
+  <meta name="author" content="Lorenz Schori">
+  <style type="text/css" media="screen">
+    body {font-family: Helvetica, sans-serif}
+  </style>
+  <!-- Date: 2009-08-12 -->
+</head>
+<body>
+  <h1>Bacula File Daemon @BACULA_VERSION@</h1>
+  <p>
+    Bacula is on Open Source, enterprise ready, network based backup program.
+    This installer package contains the bacula file daemon for Mac OS X 10.4
+    or later built as an universal binary for PPC and Intel processors.
+  </p>
+  <h2>Requirements</h2>
+  <p>
+    The bacula file daemon is only the client component of the backup system.
+    For proper operation the file daemon needs to have access to a bacula
+    director and storage daemon, typically installed on a server machine in
+    the local network.
+  </p>
+  <h2>Installation</h2>
+  <p>
+    Open the Bacula File Daemon @BACULA_VERSION@ installer package and follow
+    the directions given to you.
+  </p>
+  <h2>Configuration</h2>
+  <p>
+    After the installation is complete you have to adapt the configuration
+    file to your needs. The file is located in system-wide Preferences folder:
+    <pre>/Library/Preferences/bacula/bacula-fd.conf</pre>
+  </p>
+  <p>
+    <strong>Note:</strong> The configuration file contains passwords and
+    therefore must not be accessible for any users except root. Use the
+    following command line to edit the file as root-user:
+    <pre>sudo /Applications/TextEdit.app/Contents/MacOS/TextEdit /Library/Preferences/bacula/bacula-fd.conf</pre>
+  </p>
+  <h2>Operating the File Daemon</h2>
+  <p>
+    Use launchctl to enable and disable the bacula file daemon.
+    <pre>sudo launchctl load -w /Library/LaunchDaemons/org.bacula.bacula-fd.plist</pre></br>
+    <pre>sudo launchctl unload -w /Library/LaunchDaemons/org.bacula.bacula-fd.plist</pre></br>
+  </p>
+  <h2>Uninstalling the File Daemon</h2>
+  <p>
+    Doubleclick the script uninstaller.command to remove the bacula file
+    daemon completely from your system.
+  </p>
+  <h2>Resources</h2>
+  <p>
+    Refer to the bacula website for more information.
+  </p>
+  <a href="http://bacula.org/">http://bacula.org</a>
+</body>
+</html>

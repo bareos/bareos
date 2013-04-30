@@ -1,0 +1,71 @@
+#! /bin/sh
+#
+# bacula       This shell script takes care of starting and stopping
+#	       the bacula Director daemon
+#
+# chkconfig: 2345 92 9
+# description: The Leading Open Source Backup Solution.
+#
+#  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+DIR_USER=@dir_user@
+DIR_GROUP=@dir_group@
+DIR_OPTIONS=''
+OS=`uname -s`
+
+# if /lib/tls exists, force Bacula to use the glibc pthreads instead
+if [ -d "/lib/tls" -a $OS = "Linux" -a `uname -r | cut -c1-3` = "2.4" ] ; then
+     export LD_ASSUME_KERNEL=2.4.19
+fi
+
+# pull in any user defined DIR_DIR_OPTIONS, DIR_USER, or DIR_GROUP
+[ -f /etc/sysconfig/bacula ] && . /etc/sysconfig/bacula
+
+#
+# Disable Glibc malloc checks, it doesn't help and it keeps from getting
+#   good dumps
+MALLOC_CHECK_=0
+export MALLOC_CHECK_
+
+RETVAL=0
+case "$1" in
+    start)
+       if [ "${DIR_USER}" != '' ]; then
+	  DIR_OPTIONS="${DIR_OPTIONS} -u ${DIR_USER}"
+       fi
+										   
+       if [ "${DIR_GROUP}" != '' ]; then
+	  DIR_OPTIONS="${DIR_OPTIONS} -g ${DIR_GROUP}"
+       fi
+       echo -n "Starting Bacula Director services: "
+       daemon @sbindir@/bacula-dir $2 ${DIR_OPTIONS} -c @sysconfdir@/bacula-dir.conf
+       RETVAL=$?
+       echo
+       [ $RETVAL -eq 0 ] && touch @subsysdir@/bacula-dir
+       ;;
+    stop)
+       echo -n "Stopping Bacula Director services: "
+       killproc @sbindir@/bacula-dir
+       RETVAL=$?
+       echo
+       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bacula-dir
+       ;;
+    restart)
+       $0 stop
+       sleep 5
+       $0 start
+       ;;
+    status)
+       status @sbindir@/bacula-dir
+       RETVAL=$?
+       ;;
+    *)
+       echo "Usage: $0 {start|stop|restart|status}"
+       exit 1
+       ;;
+esac
+exit $RETVAL

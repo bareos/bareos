@@ -1,0 +1,970 @@
+diff -Naur ../pthreads-snap-2004-06-22/GNUmakefile ./GNUmakefile
+--- ../pthreads-snap-2004-06-22/GNUmakefile	2004-05-20 02:56:52.000000000 +0200
++++ ./GNUmakefile	2009-01-07 15:57:36.000000000 +0100
+@@ -48,9 +48,9 @@
+ 
+ #OPT	= -g
+ #OPT	= -O3 -DTEST_ICE
+-OPT	= -O3 -finline-functions
++OPT	= $(CLEANUP) -O3  -DHAVE_STRUCT_TIMESPEC -D__MINGW32__ -finline-functions
+ 
+-LFLAGS		= -lwsock32
++LFLAGS		= -lws2_32
+ 
+ GC_CFLAGS	= -D__CLEANUP_C
+ GCE_CFLAGS	= -D__CLEANUP_CXX -mthreads
+@@ -408,16 +408,16 @@
+ 	@ $(MAKE) clean GC
+ 
+ GC:
+-		$(MAKE) CC=gcc CLEANUP_FLAGS="$(GC_CFLAGS)" OBJ="$(DLL_OBJS)" $(GC_DLL)
++		$(MAKE) CC=mingw32-gcc CLEANUP_FLAGS="$(GC_CFLAGS)" OBJ="$(DLL_OBJS)" $(GC_DLL)
+ 
+ GCE:
+-		$(MAKE) CC=g++ CLEANUP_FLAGS="$(GCE_CFLAGS)" OBJ="$(DLL_OBJS)" $(GCE_DLL)
++		$(MAKE) CC=mingw32-g++ CLEANUP_FLAGS="$(GCE_CFLAGS)" OBJ="$(DLL_OBJS)" $(GCE_DLL)
+ 
+ GC-inlined:
+-		$(MAKE) CC=gcc CLEANUP_FLAGS="$(GC_CFLAGS)" OBJ="$(DLL_INLINED_OBJS)" $(GC_INLINED_STAMP)
++		$(MAKE) CC=mingw32-gcc CLEANUP_FLAGS="$(GC_CFLAGS)" OBJ="$(DLL_INLINED_OBJS)" $(GC_INLINED_STAMP)
+ 
+ GCE-inlined:
+-		$(MAKE) CC=g++ CLEANUP_FLAGS="$(GCE_CFLAGS)" OBJ="$(DLL_INLINED_OBJS)" $(GCE_INLINED_STAMP)
++		$(MAKE) CC=mingw32-g++ CLEANUP_FLAGS="$(GCE_CFLAGS)" OBJ="$(DLL_INLINED_OBJS)" $(GCE_INLINED_STAMP)
+ 
+ tests:
+ 	@ cd tests
+@@ -436,24 +436,24 @@
+ 
+ $(GC_DLL): $(DLL_OBJS)
+ 	$(CC) $(OPT) -shared -o $(GC_DLL) $(DLL_OBJS) $(LFLAGS)
+-	dlltool -z pthread.def $(DLL_OBJS)
+-	dlltool -k --dllname $@ --output-lib $(GC_LIB) --def $(PTHREAD_DEF)
++	mingw32-dlltool -z pthread.def $(DLL_OBJS)
++	mingw32-dlltool -k --dllname $@ --output-lib $(GC_LIB) --def $(PTHREAD_DEF)
+ 
+ $(GCE_DLL): $(DLL_OBJS)
+ 	$(CC) $(OPT) -mthreads -shared -o $(GCE_DLL) $(DLL_OBJS) $(LFLAGS)
+-	dlltool -z pthread.def $(DLL_OBJS)
+-	dlltool -k --dllname $@ --output-lib $(GCE_LIB) --def $(PTHREAD_DEF)
++	mingw32-dlltool -z pthread.def $(DLL_OBJS)
++	mingw32-dlltool -k --dllname $@ --output-lib $(GCE_LIB) --def $(PTHREAD_DEF)
+ 
+ $(GC_INLINED_STAMP): $(DLL_INLINED_OBJS)
+ 	$(CC) $(OPT) -shared -o $(GC_DLL) $(DLL_INLINED_OBJS) $(LFLAGS)
+-	dlltool -z pthread.def $(DLL_INLINED_OBJS)
+-	dlltool -k --dllname $(GC_DLL) --output-lib $(GC_LIB) --def $(PTHREAD_DEF)
++	mingw32-dlltool -z pthread.def $(DLL_INLINED_OBJS)
++	mingw32-dlltool -k --dllname $(GC_DLL) --output-lib $(GC_LIB) --def $(PTHREAD_DEF)
+ 	echo touched > $(GC_INLINED_STAMP)
+ 
+ $(GCE_INLINED_STAMP): $(DLL_INLINED_OBJS)
+ 	$(CC) $(OPT) -mthreads -shared -o $(GCE_DLL) $(DLL_INLINED_OBJS)  $(LFLAGS)
+-	dlltool -z pthread.def $(DLL_INLINED_OBJS)
+-	dlltool -k --dllname $(GCE_DLL) --output-lib $(GCE_LIB) --def $(PTHREAD_DEF)
++	mingw32-dlltool -z pthread.def $(DLL_INLINED_OBJS)
++	mingw32-dlltool -k --dllname $(GCE_DLL) --output-lib $(GCE_LIB) --def $(PTHREAD_DEF)
+ 	echo touched > $(GCE_INLINED_STAMP)
+ 
+ clean:
+diff -Naur ../pthreads-snap-2004-06-22/implement.h ./implement.h
+--- ../pthreads-snap-2004-06-22/implement.h	2004-06-22 08:12:54.000000000 +0200
++++ ./implement.h	2009-01-07 15:57:36.000000000 +0100
+@@ -38,7 +38,9 @@
+ #ifndef _IMPLEMENT_H
+ #define _IMPLEMENT_H
+ 
++#ifndef _WIN32_WINNT
+ #define _WIN32_WINNT 0x400
++#endif
+ 
+ #include <windows.h>
+ 
+diff -Naur ../pthreads-snap-2004-06-22/pthread_cancel.c ./pthread_cancel.c
+--- ../pthreads-snap-2004-06-22/pthread_cancel.c	2004-05-17 03:38:02.000000000 +0200
++++ ./pthread_cancel.c	2009-01-07 15:57:36.000000000 +0100
+@@ -70,7 +70,7 @@
+ }
+ 
+ static void CALLBACK
+-ptw32_cancel_callback (DWORD unused)
++ptw32_cancel_callback (ULONG_PTR unused)
+ {
+   ptw32_throw (PTW32_EPS_CANCEL);
+ 
+diff -Naur ../pthreads-snap-2004-06-22/pthread_exit.c ./pthread_exit.c
+--- ../pthreads-snap-2004-06-22/pthread_exit.c	2004-05-17 03:38:03.000000000 +0200
++++ ./pthread_exit.c	2009-01-07 15:57:36.000000000 +0100
+@@ -89,7 +89,7 @@
+        */
+ 
+ #if ! defined (__MINGW32__) || defined (__MSVCRT__)
+-      _endthreadex ((unsigned) value_ptr);
++      _endthreadex ((unsigned) ((ULONG_PTR)value_ptr));
+ #else
+       _endthread ();
+ #endif
+diff -Naur ../pthreads-snap-2004-06-22/pthread_getspecific.c ./pthread_getspecific.c
+--- ../pthreads-snap-2004-06-22/pthread_getspecific.c	2004-05-17 03:38:03.000000000 +0200
++++ ./pthread_getspecific.c	2009-01-07 15:57:36.000000000 +0100
+@@ -63,13 +63,18 @@
+       * ------------------------------------------------------
+       */
+ {
+-  int lasterror = GetLastError ();
+-  int lastWSAerror = WSAGetLastError ();
++  void *ptr;
+ 
+-  void *ptr = TlsGetValue (key->key);
++  if (key == NULL) {
++     ptr = NULL;
++  } else {
++     int lasterror = GetLastError ();
++     int lastWSAerror = WSAGetLastError ();
+ 
+-  SetLastError (lasterror);
+-  WSASetLastError (lastWSAerror);
++     ptr = TlsGetValue(key->key);
+ 
++     SetLastError(lasterror);
++     WSASetLastError(lastWSAerror);
++  }
+   return ptr;
+ }
+diff -Naur ../pthreads-snap-2004-06-22/pthread.h ./pthread.h
+--- ../pthreads-snap-2004-06-22/pthread.h	2004-06-22 08:12:54.000000000 +0200
++++ ./pthread.h	2009-01-07 15:57:36.000000000 +0100
+@@ -274,10 +274,6 @@
+ #endif /* PTW32_LEVEL >= PTW32_LEVEL_MAX */
+ 
+ #ifndef HAVE_STRUCT_TIMESPEC
+-struct timespec {
+-        long tv_sec;
+-        long tv_nsec;
+-};
+ #endif /* HAVE_STRUCT_TIMESPEC */
+ 
+ #ifndef SIG_BLOCK
+diff -Naur ../pthreads-snap-2004-06-22/ptw32_InterlockedCompareExchange.c ./ptw32_InterlockedCompareExchange.c
+--- ../pthreads-snap-2004-06-22/ptw32_InterlockedCompareExchange.c	2004-05-17 03:38:03.000000000 +0200
++++ ./ptw32_InterlockedCompareExchange.c	2009-01-07 15:57:36.000000000 +0100
+@@ -101,6 +101,19 @@
+ #endif
+ 
+ #else
++#if defined(_WIN64)
++   /*
++    * Microsoft Visual C++ 7.1 and newer have _Interlocked intrinsics
++    */
++       {
++               result = InterlockedCompareExchange(LONG volatile *Destination,LONG ExChange,LONG Comperand);
++       }
++       else
++       {
++               result = InterlockedCompareExchange(LONG volatile *Destination,LONG ExChange,LONG Comperand);
++       }
++ #else
++
+ 
+   /*
+    * If execution gets to here then we should be running on a Win95 system
+@@ -110,7 +123,8 @@
+    */
+ 
+   result = 0;
+-
++#error Unsupported platform or compiler!
++#endif
+ #endif
+ 
+ /* *INDENT-ON* */
+diff -Naur ../pthreads-snap-2004-06-22/ptw32_semwait.c ./ptw32_semwait.c
+--- ../pthreads-snap-2004-06-22/ptw32_semwait.c	2004-05-17 09:59:47.000000000 +0200
++++ ./ptw32_semwait.c	2009-01-07 15:57:36.000000000 +0100
+@@ -41,7 +41,7 @@
+ #include "implement.h"
+ 
+ 
+-INLINE int
++int
+ ptw32_semwait (sem_t * sem)
+      /*
+       * ------------------------------------------------------
+diff -Naur ../pthreads-snap-2004-06-22/ptw32_threadStart.c ./ptw32_threadStart.c
+--- ../pthreads-snap-2004-06-22/ptw32_threadStart.c	2004-05-17 03:38:03.000000000 +0200
++++ ./ptw32_threadStart.c	2009-01-07 15:57:36.000000000 +0100
+@@ -356,7 +356,7 @@
+     }
+ 
+ #if ! defined (__MINGW32__) || defined (__MSVCRT__)
+-  _endthreadex ((unsigned) status);
++  _endthreadex ((unsigned) ((ULONG_PTR)status));
+ #else
+   _endthread ();
+ #endif
+@@ -366,7 +366,7 @@
+    */
+ 
+ #if ! defined (__MINGW32__) || defined (__MSVCRT__)
+-  return (unsigned) status;
++  return (unsigned) ((ULONG_PTR)status);
+ #endif
+ 
+ }				/* ptw32_threadStart */
+diff -Naur ../pthreads-snap-2004-06-22/ptw32_throw.c ./ptw32_throw.c
+--- ../pthreads-snap-2004-06-22/ptw32_throw.c	2004-05-17 03:38:03.000000000 +0200
++++ ./ptw32_throw.c	2009-01-07 15:57:36.000000000 +0100
+@@ -78,10 +78,10 @@
+       switch (exception)
+ 	{
+ 	case PTW32_EPS_CANCEL:
+-	  exitCode = (unsigned) PTHREAD_CANCELED;
++	  exitCode = (unsigned) ((ULONG_PTR)PTHREAD_CANCELED);
+ 	  break;
+ 	case PTW32_EPS_EXIT:
+-	  exitCode = (unsigned) self->exitStatus;;
++	  exitCode = (unsigned) ((ULONG_PTR)self->exitStatus);;
+ 	  break;
+ 	}
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/barrier3.c ./tests/barrier3.c
+--- ../pthreads-snap-2004-06-22/tests/barrier3.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/barrier3.c	2009-01-07 15:57:36.000000000 +0100
+@@ -41,7 +41,7 @@
+ #include "test.h"
+  
+ pthread_barrier_t barrier = NULL;
+-static int result = 1;
++static DWORD_PTR result = 1;
+ 
+ void * func(void * arg)
+ {
+diff -Naur ../pthreads-snap-2004-06-22/tests/barrier5.c ./tests/barrier5.c
+--- ../pthreads-snap-2004-06-22/tests/barrier5.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/barrier5.c	2009-01-07 15:57:36.000000000 +0100
+@@ -90,7 +90,7 @@
+ main()
+ {
+   int i, j;
+-  int result;
++  DWORD_PTR result;
+   int serialThreadsTotal;
+   pthread_t t[NUMTHREADS + 1];
+ 
+@@ -112,7 +112,7 @@
+       for (i = 1; i <= j; i++)
+         {
+           assert(pthread_join(t[i], (void **) &result) == 0);
+-          serialThreadsTotal += result;
++           serialThreadsTotal += (int)result;
+         }
+ 
+       assert(serialThreadsTotal == BARRIERS - 1);
+diff -Naur ../pthreads-snap-2004-06-22/tests/cancel2.c ./tests/cancel2.c
+--- ../pthreads-snap-2004-06-22/tests/cancel2.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/cancel2.c	2009-01-07 15:57:36.000000000 +0100
+@@ -217,7 +217,7 @@
+   for (i = 1; i <= NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+       assert(pthread_join(t[i], (void **) &result) == 0);
+       fail = (result != (int) PTHREAD_CANCELED);
+diff -Naur ../pthreads-snap-2004-06-22/tests/cancel3.c ./tests/cancel3.c
+--- ../pthreads-snap-2004-06-22/tests/cancel3.c	2004-05-17 03:38:03.000000000 +0200
++++ ./tests/cancel3.c	2009-01-07 15:57:36.000000000 +0100
+@@ -173,7 +173,7 @@
+   for (i = 1; i <= NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+       /*
+        * The thread does not contain any cancelation points, so
+diff -Naur ../pthreads-snap-2004-06-22/tests/cancel4.c ./tests/cancel4.c
+--- ../pthreads-snap-2004-06-22/tests/cancel4.c	2004-05-17 03:38:03.000000000 +0200
++++ ./tests/cancel4.c	2009-01-07 15:57:36.000000000 +0100
+@@ -173,7 +173,7 @@
+   for (i = 1; i <= NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+       /*
+        * The thread does not contain any cancelation points, so
+diff -Naur ../pthreads-snap-2004-06-22/tests/cancel5.c ./tests/cancel5.c
+--- ../pthreads-snap-2004-06-22/tests/cancel5.c	2004-05-17 03:38:03.000000000 +0200
++++ ./tests/cancel5.c	2009-01-07 15:57:36.000000000 +0100
+@@ -171,7 +171,7 @@
+   for (i = 1; i <= NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+       /*
+        * The thread does not contain any cancelation points, so
+diff -Naur ../pthreads-snap-2004-06-22/tests/cancel6a.c ./tests/cancel6a.c
+--- ../pthreads-snap-2004-06-22/tests/cancel6a.c	2004-05-17 03:38:03.000000000 +0200
++++ ./tests/cancel6a.c	2009-01-07 15:57:36.000000000 +0100
+@@ -161,7 +161,7 @@
+   for (i = 1; i <= NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+       /*
+        * The thread does not contain any cancelation points, so
+diff -Naur ../pthreads-snap-2004-06-22/tests/cancel6d.c ./tests/cancel6d.c
+--- ../pthreads-snap-2004-06-22/tests/cancel6d.c	2004-05-17 03:38:03.000000000 +0200
++++ ./tests/cancel6d.c	2009-01-07 15:57:36.000000000 +0100
+@@ -165,7 +165,7 @@
+   for (i = 1; i <= NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+       /*
+        * The thread does not contain any cancelation points, so
+diff -Naur ../pthreads-snap-2004-06-22/tests/cleanup0.c ./tests/cleanup0.c
+--- ../pthreads-snap-2004-06-22/tests/cleanup0.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/cleanup0.c	2009-01-07 15:57:36.000000000 +0100
+@@ -180,7 +180,7 @@
+   for (i = 1; i <= NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+       assert(pthread_join(t[i], (void **) &result) == 0);
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/cleanup1.c ./tests/cleanup1.c
+--- ../pthreads-snap-2004-06-22/tests/cleanup1.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/cleanup1.c	2009-01-07 15:57:36.000000000 +0100
+@@ -195,7 +195,7 @@
+   for (i = 1; i <= NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+       assert(pthread_join(t[i], (void **) &result) == 0);
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/cleanup2.c ./tests/cleanup2.c
+--- ../pthreads-snap-2004-06-22/tests/cleanup2.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/cleanup2.c	2009-01-07 15:57:36.000000000 +0100
+@@ -169,7 +169,7 @@
+   for (i = 1; i <= NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+       assert(pthread_join(t[i], (void **) &result) == 0);
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/cleanup3.c ./tests/cleanup3.c
+--- ../pthreads-snap-2004-06-22/tests/cleanup3.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/cleanup3.c	2009-01-07 15:57:36.000000000 +0100
+@@ -172,7 +172,7 @@
+   for (i = 1; i <= NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+       assert(pthread_join(t[i], (void **) &result) == 0);
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar1_2.c ./tests/condvar1_2.c
+--- ../pthreads-snap-2004-06-22/tests/condvar1_2.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/condvar1_2.c	2009-01-07 15:57:36.000000000 +0100
+@@ -89,7 +89,7 @@
+ main()
+ {
+   int i, j, k;
+-  int result = -1;
++  DWORD_PTR result = -1;
+   pthread_t t;
+ 
+   for (k = 0; k < NUM_LOOPS; k++)
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar2_1.c ./tests/condvar2_1.c
+--- ../pthreads-snap-2004-06-22/tests/condvar2_1.c	2004-05-20 02:56:52.000000000 +0200
++++ ./tests/condvar2_1.c	2009-01-07 15:57:36.000000000 +0100
+@@ -105,7 +105,7 @@
+ {
+   int i;
+   pthread_t t[NUMTHREADS + 1];
+-  int result = 0;
++  DWORD_PTR result = 0;
+   struct _timeb currSysTime;
+   const DWORD NANOSEC_PER_MILLISEC = 1000000;
+ 
+@@ -116,7 +116,7 @@
+   /* get current system time */
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 5;
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar2.c ./tests/condvar2.c
+--- ../pthreads-snap-2004-06-22/tests/condvar2.c	2004-05-20 02:56:52.000000000 +0200
++++ ./tests/condvar2.c	2009-01-07 15:57:36.000000000 +0100
+@@ -99,7 +99,7 @@
+   /* get current system time */
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 5;
+@@ -109,7 +109,7 @@
+   assert(pthread_mutex_unlock(&mutex) == 0);
+ 
+   {
+-  int result = pthread_cond_destroy(&cv);
++  DWORD_PTR result = pthread_cond_destroy(&cv);
+   if (result != 0)
+     {
+       fprintf(stderr, "Result = %s\n", error_string[result]);
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar3_1.c ./tests/condvar3_1.c
+--- ../pthreads-snap-2004-06-22/tests/condvar3_1.c	2004-05-20 02:56:52.000000000 +0200
++++ ./tests/condvar3_1.c	2009-01-07 15:57:36.000000000 +0100
+@@ -125,7 +125,7 @@
+ {
+   int i;
+   pthread_t t[NUMTHREADS + 1];
+-  int result = 0;
++  DWORD_PTR result = 0;
+   struct _timeb currSysTime;
+   const DWORD NANOSEC_PER_MILLISEC = 1000000;
+ 
+@@ -137,7 +137,7 @@
+   /* get current system time */
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 5;
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar3_2.c ./tests/condvar3_2.c
+--- ../pthreads-snap-2004-06-22/tests/condvar3_2.c	2004-05-20 02:56:52.000000000 +0200
++++ ./tests/condvar3_2.c	2009-01-07 15:57:36.000000000 +0100
+@@ -127,7 +127,7 @@
+ {
+   int i;
+   pthread_t t[NUMTHREADS + 1];
+-  int result = 0;
++  DWORD_PTR result = 0;
+   struct _timeb currSysTime;
+   const DWORD NANOSEC_PER_MILLISEC = 1000000;
+ 
+@@ -138,7 +138,7 @@
+   /* get current system time */
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = abstime.tv_sec = currSysTime.time + 5;
++  abstime.tv_sec = abstime.tv_sec = (long)currSysTime.time + 5;
+   abstime.tv_nsec = abstime2.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   assert(pthread_mutex_lock(&mutex) == 0);
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar3_3.c ./tests/condvar3_3.c
+--- ../pthreads-snap-2004-06-22/tests/condvar3_3.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/condvar3_3.c	2009-01-07 15:57:36.000000000 +0100
+@@ -96,7 +96,7 @@
+    /* get current system time */
+    _ftime(&currSysTime);
+ 
+-   abstime.tv_sec = currSysTime.time;
++   abstime.tv_sec = (long)currSysTime.time;
+    abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+    abstime.tv_sec += 1;
+ 
+@@ -120,7 +120,7 @@
+ 
+    assert(pthread_mutex_lock(&mtx) == 0);
+ 
+-   abstime.tv_sec = currSysTime.time;
++   abstime.tv_sec = (long)currSysTime.time;
+    abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+    abstime.tv_sec += 1;
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar3.c ./tests/condvar3.c
+--- ../pthreads-snap-2004-06-22/tests/condvar3.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/condvar3.c	2009-01-07 15:57:36.000000000 +0100
+@@ -127,7 +127,7 @@
+   /* get current system time */
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   assert(pthread_create(&t[1], NULL, mythread, (void *) 1) == 0);
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar4.c ./tests/condvar4.c
+--- ../pthreads-snap-2004-06-22/tests/condvar4.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/condvar4.c	2009-01-07 15:57:36.000000000 +0100
+@@ -132,7 +132,7 @@
+   /* get current system time */
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 5;
+@@ -145,7 +145,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 5;
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar5.c ./tests/condvar5.c
+--- ../pthreads-snap-2004-06-22/tests/condvar5.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/condvar5.c	2009-01-07 15:57:36.000000000 +0100
+@@ -131,7 +131,7 @@
+   /* get current system time */
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 5;
+@@ -144,7 +144,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 5;
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar6.c ./tests/condvar6.c
+--- ../pthreads-snap-2004-06-22/tests/condvar6.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/condvar6.c	2009-01-07 15:57:36.000000000 +0100
+@@ -159,7 +159,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 5;
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar7.c ./tests/condvar7.c
+--- ../pthreads-snap-2004-06-22/tests/condvar7.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/condvar7.c	2009-01-07 15:57:36.000000000 +0100
+@@ -169,7 +169,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 10;
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar8.c ./tests/condvar8.c
+--- ../pthreads-snap-2004-06-22/tests/condvar8.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/condvar8.c	2009-01-07 15:57:36.000000000 +0100
+@@ -166,7 +166,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 10;
+diff -Naur ../pthreads-snap-2004-06-22/tests/condvar9.c ./tests/condvar9.c
+--- ../pthreads-snap-2004-06-22/tests/condvar9.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/condvar9.c	2009-01-07 15:57:36.000000000 +0100
+@@ -172,7 +172,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 5;
+diff -Naur ../pthreads-snap-2004-06-22/tests/context1.c ./tests/context1.c
+--- ../pthreads-snap-2004-06-22/tests/context1.c	2004-05-20 02:56:52.000000000 +0200
++++ ./tests/context1.c	2009-01-07 15:57:36.000000000 +0100
+@@ -125,7 +125,11 @@
+       /*
+        *_x86 only!!!
+        */
++#if defined(_M_IX86)
+       context.Eip = (DWORD) anotherEnding;
++#else
++      context.Rip = (DWORD64) anotherEnding;
++#endif
+       SetThreadContext(hThread, &context);
+       ResumeThread(hThread);
+     }
+diff -Naur ../pthreads-snap-2004-06-22/tests/delay2.c ./tests/delay2.c
+--- ../pthreads-snap-2004-06-22/tests/delay2.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/delay2.c	2009-01-07 15:57:36.000000000 +0100
+@@ -65,7 +65,7 @@
+ main(int argc, char * argv[])
+ {
+   pthread_t t;
+-  int result = 0;
++  DWORD_PTR result = 0;
+ 
+   assert(pthread_mutex_lock(&mx) == 0);
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/exception1.c ./tests/exception1.c
+--- ../pthreads-snap-2004-06-22/tests/exception1.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/exception1.c	2009-01-07 15:57:36.000000000 +0100
+@@ -226,7 +226,7 @@
+   for (i = 0; i < NUMTHREADS; i++)
+     {
+       int fail = 0;
+-      int result = 0;
++      DWORD_PTR result = 0;
+ 
+ 	/* Canceled thread */
+       assert(pthread_join(ct[i], (void **) &result) == 0);
+diff -Naur ../pthreads-snap-2004-06-22/tests/GNUmakefile ./tests/GNUmakefile
+--- ../pthreads-snap-2004-06-22/tests/GNUmakefile	2004-06-22 08:12:55.000000000 +0200
++++ ./tests/GNUmakefile	2009-01-07 15:57:36.000000000 +0100
+@@ -64,7 +64,7 @@
+ DLL	= pthread$(GCX).dll
+ QAPC	= ../QueueUserAPCEx/User/quserex.dll
+ 
+-COPYFILES	= $(HDR) $(LIB) $(DLL) $(QAPC)
++COPYFILES	= $(HDR) $(LIB) $(DLL)
+ 
+ # If a test case returns a non-zero exit code to the shell, make will
+ # stop.
+diff -Naur ../pthreads-snap-2004-06-22/tests/join0.c ./tests/join0.c
+--- ../pthreads-snap-2004-06-22/tests/join0.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/join0.c	2009-01-07 15:57:36.000000000 +0100
+@@ -53,7 +53,7 @@
+ main(int argc, char * argv[])
+ {
+   pthread_t id;
+-  int result;
++  DWORD_PTR result;
+ 
+   /* Create a single thread and wait for it to exit. */
+   assert(pthread_create(&id, NULL, func, (void *) 123) == 0);
+diff -Naur ../pthreads-snap-2004-06-22/tests/join1.c ./tests/join1.c
+--- ../pthreads-snap-2004-06-22/tests/join1.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/join1.c	2009-01-07 15:57:36.000000000 +0100
+@@ -56,7 +56,7 @@
+ {
+ 	pthread_t id[4];
+ 	int i;
+-	int result;
++	DWORD_PTR result;
+ 
+ 	/* Create a few threads and then exit. */
+ 	for (i = 0; i < 4; i++)
+diff -Naur ../pthreads-snap-2004-06-22/tests/join2.c ./tests/join2.c
+--- ../pthreads-snap-2004-06-22/tests/join2.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/join2.c	2009-01-07 15:57:36.000000000 +0100
+@@ -50,7 +50,7 @@
+ {
+ 	pthread_t id[4];
+ 	int i;
+-	int result;
++	DWORD_PTR result;
+ 
+ 	/* Create a few threads and then exit. */
+ 	for (i = 0; i < 4; i++)
+diff -Naur ../pthreads-snap-2004-06-22/tests/join3.c ./tests/join3.c
+--- ../pthreads-snap-2004-06-22/tests/join3.c	2004-05-22 03:17:58.000000000 +0200
++++ ./tests/join3.c	2009-01-07 15:57:36.000000000 +0100
+@@ -50,7 +50,7 @@
+ {
+ 	pthread_t id[4];
+ 	int i;
+-	int result;
++	DWORD_PTR result;
+ 
+ 	/* Create a few threads and then exit. */
+ 	for (i = 0; i < 4; i++)
+diff -Naur ../pthreads-snap-2004-06-22/tests/mutex6e.c ./tests/mutex6e.c
+--- ../pthreads-snap-2004-06-22/tests/mutex6e.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/mutex6e.c	2009-01-07 15:57:36.000000000 +0100
+@@ -74,7 +74,7 @@
+ main()
+ {
+   pthread_t t;
+-  int result = 0;
++  DWORD_PTR result = 0;
+   int mxType = -1;
+ 
+   assert(pthread_mutexattr_init(&mxAttr) == 0);
+diff -Naur ../pthreads-snap-2004-06-22/tests/mutex6es.c ./tests/mutex6es.c
+--- ../pthreads-snap-2004-06-22/tests/mutex6es.c	2004-06-22 08:12:55.000000000 +0200
++++ ./tests/mutex6es.c	2009-01-07 15:57:36.000000000 +0100
+@@ -73,7 +73,7 @@
+ main()
+ {
+   pthread_t t;
+-  int result = 0;
++  DWORD_PTR result = 0;
+ 
+   assert(mutex == PTHREAD_ERRORCHECK_MUTEX_INITIALIZER);
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/mutex6r.c ./tests/mutex6r.c
+--- ../pthreads-snap-2004-06-22/tests/mutex6r.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/mutex6r.c	2009-01-07 15:57:36.000000000 +0100
+@@ -73,7 +73,7 @@
+ main()
+ {
+   pthread_t t;
+-  int result = 0;
++  DWORD_PTR result = 0;
+   int mxType = -1;
+ 
+   assert(pthread_mutexattr_init(&mxAttr) == 0);
+diff -Naur ../pthreads-snap-2004-06-22/tests/mutex6rs.c ./tests/mutex6rs.c
+--- ../pthreads-snap-2004-06-22/tests/mutex6rs.c	2004-06-22 08:12:55.000000000 +0200
++++ ./tests/mutex6rs.c	2009-01-07 15:57:36.000000000 +0100
+@@ -72,7 +72,7 @@
+ main()
+ {
+   pthread_t t;
+-  int result = 0;
++  DWORD_PTR result = 0;
+ 
+   assert(mutex == PTHREAD_RECURSIVE_MUTEX_INITIALIZER);
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/mutex7e.c ./tests/mutex7e.c
+--- ../pthreads-snap-2004-06-22/tests/mutex7e.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/mutex7e.c	2009-01-07 15:57:36.000000000 +0100
+@@ -74,7 +74,7 @@
+ main()
+ {
+   pthread_t t;
+-  int result = 0;
++  DWORD_PTR result = 0;
+   int mxType = -1;
+ 
+   assert(pthread_mutexattr_init(&mxAttr) == 0);
+diff -Naur ../pthreads-snap-2004-06-22/tests/mutex7r.c ./tests/mutex7r.c
+--- ../pthreads-snap-2004-06-22/tests/mutex7r.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/mutex7r.c	2009-01-07 15:57:36.000000000 +0100
+@@ -73,7 +73,7 @@
+ main()
+ {
+   pthread_t t;
+-  int result = 0;
++  DWORD_PTR result = 0;
+   int mxType = -1;
+ 
+   assert(pthread_mutexattr_init(&mxAttr) == 0);
+diff -Naur ../pthreads-snap-2004-06-22/tests/mutex8.c ./tests/mutex8.c
+--- ../pthreads-snap-2004-06-22/tests/mutex8.c	2002-02-20 05:39:56.000000000 +0100
++++ ./tests/mutex8.c	2009-01-07 15:57:36.000000000 +0100
+@@ -49,7 +49,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 1;
+diff -Naur ../pthreads-snap-2004-06-22/tests/mutex8e.c ./tests/mutex8e.c
+--- ../pthreads-snap-2004-06-22/tests/mutex8e.c	2002-02-20 05:39:56.000000000 +0100
++++ ./tests/mutex8e.c	2009-01-07 15:57:36.000000000 +0100
+@@ -57,7 +57,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 1;
+diff -Naur ../pthreads-snap-2004-06-22/tests/mutex8n.c ./tests/mutex8n.c
+--- ../pthreads-snap-2004-06-22/tests/mutex8n.c	2002-02-20 05:39:56.000000000 +0100
++++ ./tests/mutex8n.c	2009-01-07 15:57:36.000000000 +0100
+@@ -57,7 +57,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 1;
+diff -Naur ../pthreads-snap-2004-06-22/tests/mutex8r.c ./tests/mutex8r.c
+--- ../pthreads-snap-2004-06-22/tests/mutex8r.c	2002-02-20 05:39:56.000000000 +0100
++++ ./tests/mutex8r.c	2009-01-07 15:57:36.000000000 +0100
+@@ -57,7 +57,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 1;
+diff -Naur ../pthreads-snap-2004-06-22/tests/rwlock2_t.c ./tests/rwlock2_t.c
+--- ../pthreads-snap-2004-06-22/tests/rwlock2_t.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/rwlock2_t.c	2009-01-07 15:57:36.000000000 +0100
+@@ -55,7 +55,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 1;
+diff -Naur ../pthreads-snap-2004-06-22/tests/rwlock3_t.c ./tests/rwlock3_t.c
+--- ../pthreads-snap-2004-06-22/tests/rwlock3_t.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/rwlock3_t.c	2009-01-07 15:57:36.000000000 +0100
+@@ -68,7 +68,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 1;
+diff -Naur ../pthreads-snap-2004-06-22/tests/rwlock4_t.c ./tests/rwlock4_t.c
+--- ../pthreads-snap-2004-06-22/tests/rwlock4_t.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/rwlock4_t.c	2009-01-07 15:57:36.000000000 +0100
+@@ -68,7 +68,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 1;
+diff -Naur ../pthreads-snap-2004-06-22/tests/rwlock5_t.c ./tests/rwlock5_t.c
+--- ../pthreads-snap-2004-06-22/tests/rwlock5_t.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/rwlock5_t.c	2009-01-07 15:57:36.000000000 +0100
+@@ -70,7 +70,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 1;
+diff -Naur ../pthreads-snap-2004-06-22/tests/rwlock6.c ./tests/rwlock6.c
+--- ../pthreads-snap-2004-06-22/tests/rwlock6.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/rwlock6.c	2009-01-07 15:57:36.000000000 +0100
+@@ -77,9 +77,9 @@
+   pthread_t wrt1;
+   pthread_t wrt2;
+   pthread_t rdt;
+-  int wr1Result = 0;
+-  int wr2Result = 0;
+-  int rdResult = 0;
++  DWORD_PTR wr1Result = 0;
++  DWORD_PTR wr2Result = 0;
++  DWORD_PTR rdResult = 0;
+ 
+   bankAccount = 0;
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/rwlock6_t2.c ./tests/rwlock6_t2.c
+--- ../pthreads-snap-2004-06-22/tests/rwlock6_t2.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/rwlock6_t2.c	2009-01-07 15:57:36.000000000 +0100
+@@ -86,15 +86,15 @@
+   pthread_t wrt1;
+   pthread_t wrt2;
+   pthread_t rdt;
+-  int wr1Result = 0;
+-  int wr2Result = 0;
+-  int rdResult = 0;
++  DWORD_PTR wr1Result = 0;
++  DWORD_PTR wr2Result = 0;
++  DWORD_PTR rdResult = 0;
+   struct _timeb currSysTime;
+   const DWORD NANOSEC_PER_MILLISEC = 1000000;
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+   abstime.tv_sec += 1;
+diff -Naur ../pthreads-snap-2004-06-22/tests/rwlock6_t.c ./tests/rwlock6_t.c
+--- ../pthreads-snap-2004-06-22/tests/rwlock6_t.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/rwlock6_t.c	2009-01-07 15:57:36.000000000 +0100
+@@ -67,7 +67,7 @@
+ 
+   _ftime(&currSysTime);
+ 
+-  abstime.tv_sec = currSysTime.time;
++  abstime.tv_sec = (long)currSysTime.time;
+   abstime.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+ 
+ 
+@@ -95,10 +95,10 @@
+   pthread_t wrt2;
+   pthread_t rdt1;
+   pthread_t rdt2;
+-  int wr1Result = 0;
+-  int wr2Result = 0;
+-  int rd1Result = 0;
+-  int rd2Result = 0;
++  DWORD_PTR wr1Result = 0;
++  DWORD_PTR wr2Result = 0;
++  DWORD_PTR rd1Result = 0;
++  DWORD_PTR rd2Result = 0;
+ 
+   bankAccount = 0;
+ 
+diff -Naur ../pthreads-snap-2004-06-22/tests/semaphore1.c ./tests/semaphore1.c
+--- ../pthreads-snap-2004-06-22/tests/semaphore1.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/semaphore1.c	2009-01-07 15:57:36.000000000 +0100
+@@ -117,7 +117,7 @@
+ {
+   pthread_t t;
+   sem_t s;
+-  int result;
++  DWORD_PTR result;
+ 
+   assert(pthread_create(&t, NULL, thr, NULL) == 0);
+   assert(pthread_join(t, (void **)&result) == 0);
+diff -Naur ../pthreads-snap-2004-06-22/tests/spin4.c ./tests/spin4.c
+--- ../pthreads-snap-2004-06-22/tests/spin4.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/spin4.c	2009-01-07 15:57:36.000000000 +0100
+@@ -63,7 +63,7 @@
+ int
+ main()
+ {
+-  long result = 0;
++  DWORD_PTR result = 0;
+   pthread_t t;
+   int CPUs;
+   struct _timeb sysTime;
+diff -Naur ../pthreads-snap-2004-06-22/tests/tsd1.c ./tests/tsd1.c
+--- ../pthreads-snap-2004-06-22/tests/tsd1.c	2003-08-19 05:31:51.000000000 +0200
++++ ./tests/tsd1.c	2009-01-07 15:57:36.000000000 +0100
+@@ -171,7 +171,7 @@
+    */
+   for (i = 1; i < 10; i++)
+     {
+-	int result = 0;
++	DWORD_PTR result = 0;
+ 
+ 	assert(pthread_join(thread[i], (void **) &result) == 0);
+     }

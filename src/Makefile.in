@@ -1,0 +1,65 @@
+#
+# Version $Id$
+#
+@MCOMMON@
+
+srcdir =	.
+VPATH = 	.
+.PATH:		.
+
+# one up
+basedir = ..
+# top dir
+topdir = ..
+# this dir relative to top dir
+thisdir = src
+
+
+first_rule: all
+dummy:
+
+
+.SUFFIXES:	.c .o
+.PHONY:
+.DONTCARE:
+
+# inference rules
+.c.o:
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I. -I$(basedir) -I$(srcdir) $(DINCLUDE) $(CFLAGS) $<
+
+.cc.o:
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I. -I$(basedir) -I$(srcdir) $(DINCLUDE) $(CFLAGS) $<
+#-------------------------------------------------------------------------
+all: Makefile 
+
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+clean:
+	@$(RMF) core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+	@$(RMF) AUTHORS ChangeLog Makefile.am NEWS README acconfig.h autogen.sh 
+	@$(RMF) configure.in stamp.h stamp-h.in
+	@$(RMF) -r po
+
+realclean: clean
+	@$(RMF) tags
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	@(cd $(srcdir) && $(RMF) Makefile)
+	@$(RMF) config.h host.h
+
+devclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	@(cd $(srcdir) && $(RMF) Makefile)
+	@$(RMF) config.h host.h
+
+install:
+
+
+uninstall:
+
+
+depend:

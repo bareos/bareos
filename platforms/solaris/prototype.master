@@ -1,0 +1,24 @@
+#
+# Information files
+#
+i pkginfo=./pkginfo
+i copyright=./copyright
+i postinstall=./postinstall
+i postremove=./postremove
+#
+# Stuff that goes into the system areas
+#
+d none /etc ? ? ?
+d none /etc/init.d ? ? ?
+f none /etc/init.d/bacula=__PKGSOURCE__/bacula-fd 0754 root bin
+d none /etc/rc2.d ? ? ?
+s none /etc/rc2.d/S99bacula=/etc/init.d/bacula
+d none /etc/rc0.d ? ? ?
+s none /etc/rc0.d/K01bacula=/etc/init.d/bacula
+#
+d none /var ? ? ?
+d none /var/bacula 0755 root root
+#
+#
+# Dynamically added entries (by pkgproto)
+#

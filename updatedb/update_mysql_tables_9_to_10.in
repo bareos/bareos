@@ -1,0 +1,78 @@
+#!/bin/sh
+#
+# Shell script to update MySQL tables from version 1.38 to 2.0	
+#
+echo " "
+echo "This script will update a Bacula MySQL database from version 9 to 10"
+echo " which is needed to convert from Bacula version 1.38.x to 2.0.x or higher"
+echo "Depending on the size of your database,"
+echo "this script may take several minutes to run."
+echo " "
+bindir=@MYSQL_BINDIR@
+PATH="$bindir:$PATH"
+db_name=${db_name:-@db_name@}
+
+if mysql $* -f <<END-OF-DATA
+USE ${db_name};
+
+DROP TABLE IF EXISTS MAC;
+DROP TABLE IF EXISTS Log;
+DROP TABLE IF EXISTS Location;
+DROP TABLE IF EXISTS LocationLog;
+
+CREATE TABLE Log (
+   LogId INTEGER UNSIGNED AUTO_INCREMENT,
+   JobId INTEGER UNSIGNED DEFAULT 0 REFERENCES Job,
+   Time DATETIME DEFAULT 0,
+   LogText BLOB NOT NULL,
+   PRIMARY KEY(LogId),
+   INDEX (JobId)
+   );
+
+CREATE TABLE Location (
+   LocationId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   Location TINYBLOB NOT NULL,
+   Cost INTEGER DEFAULT 0,
+   Enabled TINYINT,
+   PRIMARY KEY(LocationId)
+   );
+
+CREATE TABLE LocationLog (
+   LocLogId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   Date DATETIME DEFAULT 0,
+   Comment BLOB,
+   MediaId INTEGER UNSIGNED DEFAULT 0 REFERENCES Media,
+   LocationId INTEGER UNSIGNED DEFAULT 0 REFERENCES Location,
+   NewVolStatus ENUM('Full', 'Archive', 'Append', 'Recycle', 'Purged',
+    'Read-Only', 'Disabled', 'Error', 'Busy', 'Used', 'Cleaning') NOT NULL,
+   NewEnabled TINYINT,
+   PRIMARY KEY(LocLogId)
+);
+
+ALTER TABLE Media ADD COLUMN MediaTypeId INTEGER UNSIGNED DEFAULT 0 REFERENCES MediaType;
+ALTER TABLE Media ADD COLUMN DeviceId INTEGER UNSIGNED DEFAULT 0 REFERENCES Device;
+ALTER TABLE Media ADD COLUMN LocationId INTEGER UNSIGNED DEFAULT 0 REFERENCES Location;
+ALTER TABLE Media ADD COLUMN RecycleCount INTEGER UNSIGNED DEFAULT 0;
+ALTER TABLE Media ADD COLUMN InitialWrite DATETIME DEFAULT 0;
+ALTER TABLE Media ADD COLUMN ScratchPoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool;
+ALTER TABLE Media ADD COLUMN RecyclePoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool;
+ALTER TABLE Media ADD COLUMN Enabled TINYINT DEFAULT 1;
+ALTER TABLE Media ADD COLUMN Comment BLOB;
+
+ALTER TABLE JobMedia DROP COLUMN Stripe;
+
+ALTER TABLE Job ADD COLUMN PriorJobId INTEGER UNSIGNED DEFAULT 0 REFERENCES Job;
+ALTER TABLE Job ADD COLUMN RealEndTime DATETIME DEFAULT 0;
+
+
+
+DELETE FROM Version;
+INSERT INTO Version (VersionId) VALUES (10);
+
+END-OF-DATA
+then
+   echo "Update of Bacula MySQL tables succeeded."
+else
+   echo "Update of Bacula MySQL tables failed."
+fi
+exit 0

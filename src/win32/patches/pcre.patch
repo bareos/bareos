@@ -1,0 +1,130 @@
+Index: /Makefile.in
+--- ../orig/pcre-6.3/Makefile.in	2005-08-18 06:08:28.000000000 -0700
++++ ./Makefile.in	2006-06-30 09:11:02.000000000 -0700
+@@ -103,12 +103,10 @@
+ LIBTOOL = @LIBTOOL@
+ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) -I. -I$(top_srcdir) $(NEWLINE) $(LINK_SIZE) $(MATCH_LIMIT) $(NO_RECURSE) $(EBCDIC)
+ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) -c $(CXXFLAGS) -I. -I$(top_srcdir) $(NEWLINE) $(LINK_SIZE) $(MATCH_LIMIT) $(NO_RECURSE) $(EBCDIC)
+-@ON_WINDOWS@LINK = $(CC) $(LDFLAGS) -I. -I$(top_srcdir) -L.libs
+-@NOT_ON_WINDOWS@LINK = $(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -I. -I$(top_srcdir)
++LINK = $(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -I. -I$(top_srcdir)
+ LINKLIB = $(LIBTOOL) --mode=link $(CC) -export-symbols-regex '^[^_]|__?pcre_.*utf8|__?pcre_printint' $(LDFLAGS) -I. -I$(top_srcdir)
+ LINK_FOR_BUILD = $(LIBTOOL) --mode=link $(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -I. -I$(top_srcdir)
+-@ON_WINDOWS@CXXLINK = $(CXX) $(LDFLAGS) -I. -I$(top_srcdir) -L.libs
+-@NOT_ON_WINDOWS@CXXLINK = $(LIBTOOL) --mode=link $(CXX) $(LDFLAGS) -I. -I$(top_srcdir)
++CXXLINK = $(LIBTOOL) --mode=link $(CXX) $(LDFLAGS) -I. -I$(top_srcdir)
+ CXXLINKLIB = $(LIBTOOL) --mode=link $(CXX) $(LDFLAGS) -I. -I$(top_srcdir)
+ 
+ # These are the version numbers for the shared libraries
+@@ -355,54 +353,54 @@
+ 
+ # Some Windows-specific targets for MinGW. Do not use for Cygwin.
+ 
+-winshared : .libs/@WIN_PREFIX@pcre.dll .libs/@WIN_PREFIX@pcreposix.dll \
+-		.libs/@WIN_PREFIX@pcrecpp.dll
++winshared : .libs/pcre.dll .libs/pcreposix.dll \
++		.libs/pcrecpp.dll
+ 
+-.libs/@WIN_PREFIX@pcre.dll : libpcre.la
++.libs/pcre.dll : libpcre.la
+ 	$(CC) $(CFLAGS) -shared -o $@ \
+ 	-Wl,--whole-archive .libs/libpcre.a \
+ 	-Wl,--out-implib,.libs/libpcre.dll.a \
+-	-Wl,--output-def,.libs/@WIN_PREFIX@pcre.dll-def \
++	-Wl,--output-def,.libs/pcre.dll-def \
+ 	-Wl,--export-all-symbols \
+ 	-Wl,--no-whole-archive
+-	sed -e "s#dlname=''#dlname='../bin/@WIN_PREFIX@pcre.dll'#" \
++	sed -e "s#dlname=''#dlname='../bin/pcre.dll'#" \
+ 	-e "s#library_names=''#library_names='libpcre.dll.a'#" \
+ 	< .libs/libpcre.lai > .libs/libpcre.lai.tmp && \
+ 	mv -f .libs/libpcre.lai.tmp .libs/libpcre.lai
+-	sed -e "s#dlname=''#dlname='../bin/@WIN_PREFIX@pcre.dll'#" \
++	sed -e "s#dlname=''#dlname='../bin/pcre.dll'#" \
+ 	-e "s#library_names=''#library_names='libpcre.dll.a'#" \
+ 	< libpcre.la > libpcre.la.tmp && \
+ 	mv -f libpcre.la.tmp libpcre.la
+ 
+ 
+-.libs/@WIN_PREFIX@pcreposix.dll: libpcreposix.la libpcre.la
++.libs/pcreposix.dll: libpcreposix.la libpcre.la
+ 	$(CC) $(CFLAGS) -shared -o $@ \
+ 	-Wl,--whole-archive .libs/libpcreposix.a \
+-	-Wl,--out-implib,.libs/@WIN_PREFIX@pcreposix.dll.a \
+-	-Wl,--output-def,.libs/@WIN_PREFIX@libpcreposix.dll-def \
++	-Wl,--out-implib,.libs/libpcreposix.dll.a \
++	-Wl,--output-def,.libs/libpcreposix.dll-def \
+ 	-Wl,--export-all-symbols \
+ 	-Wl,--no-whole-archive .libs/libpcre.a
+-	sed -e "s#dlname=''#dlname='../bin/@WIN_PREFIX@pcreposix.dll'#" \
++	sed -e "s#dlname=''#dlname='../bin/pcreposix.dll'#" \
+ 	-e "s#library_names=''#library_names='libpcreposix.dll.a'#"\
+ 	< .libs/libpcreposix.lai > .libs/libpcreposix.lai.tmp && \
+ 	mv -f .libs/libpcreposix.lai.tmp .libs/libpcreposix.lai
+-	sed -e "s#dlname=''#dlname='../bin/@WIN_PREFIX@pcreposix.dll'#" \
++	sed -e "s#dlname=''#dlname='../bin/pcreposix.dll'#" \
+ 	-e "s#library_names=''#library_names='libpcreposix.dll.a'#"\
+ 	< libpcreposix.la > libpcreposix.la.tmp && \
+ 	mv -f libpcreposix.la.tmp libpcreposix.la
+ 
+-.libs/@WIN_PREFIX@pcrecpp.dll: libpcrecpp.la libpcre.la
++.libs/pcrecpp.dll: libpcrecpp.la libpcre.la
+ 	$(CXX) $(CXXFLAGS) -shared -o $@ \
+ 	-Wl,--whole-archive .libs/libpcrecpp.a \
+-	-Wl,--out-implib,.libs/@WIN_PREFIX@pcrecpp.dll.a \
+-	-Wl,--output-def,.libs/@WIN_PREFIX@libpcrecpp.dll-def \
++	-Wl,--out-implib,.libs/libpcrecpp.dll.a \
++	-Wl,--output-def,.libs/libpcrecpp.dll-def \
+ 	-Wl,--export-all-symbols \
+ 	-Wl,--no-whole-archive .libs/libpcre.a
+-	sed -e "s#dlname=''#dlname='../bin/@WIN_PREFIX@pcrecpp.dll'#" \
++	sed -e "s#dlname=''#dlname='../bin/pcrecpp.dll'#" \
+ 	-e "s#library_names=''#library_names='libpcrecpp.dll.a'#"\
+ 	< .libs/libpcrecpp.lai > .libs/libpcrecpp.lai.tmp && \
+ 	mv -f .libs/libpcrecpp.lai.tmp .libs/libpcrecpp.lai
+-	sed -e "s#dlname=''#dlname='../bin/@WIN_PREFIX@pcrecpp.dll'#" \
++	sed -e "s#dlname=''#dlname='../bin/pcrecpp.dll'#" \
+ 	-e "s#library_names=''#library_names='libpcrecpp.dll.a'#"\
+ 	< libpcrecpp.la > libpcrecpp.la.tmp && \
+ 	mv -f libpcrecpp.la.tmp libpcrecpp.la
+@@ -411,15 +409,15 @@
+ wininstall : winshared
+ 	$(mkinstalldirs) $(DESTDIR)$(LIBDIR)
+ 	$(mkinstalldirs) $(DESTDIR)$(BINDIR)
+-	$(INSTALL) .libs/@WIN_PREFIX@pcre.dll $(DESTDIR)$(BINDIR)/@WIN_PREFIX@pcre.dll
+-	$(INSTALL) .libs/@WIN_PREFIX@pcreposix.dll $(DESTDIR)$(BINDIR)/@WIN_PREFIX@pcreposix.dll
+-	$(INSTALL) .libs/@WIN_PREFIX@libpcreposix.dll.a $(DESTDIR)$(LIBDIR)/@WIN_PREFIX@libpcreposix.dll.a
+-	$(INSTALL) .libs/@WIN_PREFIX@libpcre.dll.a $(DESTDIR)$(LIBDIR)/@WIN_PREFIX@libpcre.dll.a
+-@HAVE_CPP@	 $(INSTALL) .libs/@WIN_PREFIX@pcrecpp.dll $(DESTDIR)$(BINDIR)/@WIN_PREFIX@pcrecpp.dll
+-@HAVE_CPP@	 $(INSTALL) .libs/@WIN_PREFIX@libpcrecpp.dll.a $(DESTDIR)$(LIBDIR)/@WIN_PREFIX@libpcrecpp.dll.a
+-	-strip -g $(DESTDIR)$(BINDIR)/@WIN_PREFIX@pcre.dll
+-	-strip -g $(DESTDIR)$(BINDIR)/@WIN_PREFIX@pcreposix.dll
+-@HAVE_CPP@	 -strip -g $(DESTDIR)$(BINDIR)/@WIN_PREFIX@pcrecpp.dll
++	$(INSTALL) .libs/pcre.dll $(DESTDIR)$(BINDIR)/pcre.dll
++	$(INSTALL) .libs/pcreposix.dll $(DESTDIR)$(BINDIR)/pcreposix.dll
++	$(INSTALL) .libs/libpcreposix.dll.a $(DESTDIR)$(LIBDIR)/libpcreposix.dll.a
++	$(INSTALL) .libs/libpcre.dll.a $(DESTDIR)$(LIBDIR)/libpcre.dll.a
++@HAVE_CPP@	 $(INSTALL) .libs/pcrecpp.dll $(DESTDIR)$(BINDIR)/pcrecpp.dll
++@HAVE_CPP@	 $(INSTALL) .libs/libpcrecpp.dll.a $(DESTDIR)$(LIBDIR)/libpcrecpp.dll.a
++	-strip -g $(DESTDIR)$(BINDIR)/pcre.dll
++	-strip -g $(DESTDIR)$(BINDIR)/pcreposix.dll
++@HAVE_CPP@	 -strip -g $(DESTDIR)$(BINDIR)/pcrecpp.dll
+ 	-strip $(DESTDIR)$(BINDIR)/pcregrep@EXEEXT@
+ 	-strip $(DESTDIR)$(BINDIR)/pcretest@EXEEXT@
+ 
+@@ -555,12 +553,12 @@
+ 
+ check:          runtest
+ 
+-@WIN_PREFIX@pcre.dll : winshared
+-	cp .libs/@WIN_PREFIX@pcre.dll .
++pcre.dll : winshared
++	cp .libs/pcre.dll .
+ 
+ test:           runtest
+ 
+-runtest:        all @ON_WINDOWS@ @WIN_PREFIX@pcre.dll
++runtest:        all @ON_WINDOWS@ pcre.dll
+ 		@./RunTest
+ 		@./RunGrepTest
+ @HAVE_CPP@		 @echo ""

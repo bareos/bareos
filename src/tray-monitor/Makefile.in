@@ -1,0 +1,107 @@
+#
+#  Version $Id$
+#
+@MCOMMON@
+
+srcdir =	.
+VPATH = 	.
+.PATH:		.
+
+# one up
+basedir = ..
+# top dir
+topdir = ../..
+# this dir relative to top dir
+thisdir = src/tray-monitor
+
+DEBUG=@DEBUG@
+
+first_rule: all
+dummy:
+
+#
+MONITORSRCS = tray-monitor.c tray_conf.c authenticate.c
+MONITOROBJS = tray-monitor.o tray_conf.o authenticate.o
+
+# these are the objects that are changed by the .configure process
+EXTRAOBJS = @OBJLIST@
+
+MONITOR_CPPFLAGS=@TRAY_MONITOR_CPPFLAGS@
+MONITOR_LDFLAGS=@TRAY_MONITOR_LDFLAGS@ @X_LIBS@ -lX11
+
+.SUFFIXES:	.c .o
+.PHONY:
+.DONTCARE:
+
+# inference rules
+.c.o:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(MONITOR_CPPFLAGS) \
+ -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+#-------------------------------------------------------------------------
+all: Makefile bacula-tray-monitor
+	@echo "==== Make of bacula-tray-monitor is good ===="
+	@echo " "
+
+bacula-tray-monitor: Makefile $(MONITOROBJS) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) $(MONITOR_LDFLAGS) -L../lib -o $@ \
+	  $(MONITOROBJS) $(DLIB) -lbaccfg -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+libtool-clean:
+	$(RMF) -r .libs _libs
+
+clean: @LIBTOOL_CLEAN_TARGET@
+	@$(RMF) bacula-tray-monitor core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+
+realclean: clean
+	@$(RMF) tags tray-monitor.conf
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+devclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+install: all
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-tray-monitor $(DESTDIR)$(sbindir)/bacula-tray-monitor
+	@srcconf=tray-monitor.conf; \
+	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
+	   destconf=$$srcconf.new; \
+	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
+	else \
+	   destconf=$$srcconf; \
+	fi; \
+	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
+	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
+
+uninstall:
+	(cd $(DESTDIR)$(sbindir); $(RMF) bacula-tray-monitor)
+	(cd $(DESTDIR)$(sysconfdir); $(RMF) tray-monitor.conf)
+
+
+
+# Semi-automatic generation of dependencies:
+# Use gcc -MM because X11 `makedepend' doesn't work on all systems
+# and it also includes system headers.
+# `semi'-automatic since dependencies are generated at distribution time.
+
+depend:
+	@$(MV) Makefile Makefile.bak
+	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
+	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(MONITOR_CPPFLAGS) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@if test -f Makefile ; then \
+	    $(RMF) Makefile.bak; \
+	else \
+	   $(MV) Makefile.bak Makefile; \
+	   echo -e "Something went wrong\n\a"; \
+	fi
+
+# -----------------------------------------------------------------------
+# DO NOT DELETE: nice dependency list follows

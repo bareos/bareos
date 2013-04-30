@@ -1,0 +1,127 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BSMTP 1 "3 July 2012" "Kern Sibbald" "Network backup, recovery and verification"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+ bsmtp \- Bacula's SMTP client (mail submission program)
+
+.SH SYNOPSIS
+.B bsmtp
+.RI [ options ]
+.I <recipient> <...>
+
+.SH DESCRIPTION
+.B bsmtp
+is a simple mail user agent designed to permit more flexibility
+than the standard mail programs typically found on Unix systems, and to
+ease portability. It can even run on Windows machines. It is used
+by the Director daemon to send notifications and requests to the
+operator.
+
+.SH OPTIONS
+.TP
+.B \-4
+Forces bsmtp to use IPv4 addresses only.
+.TP
+.B \-6
+Forces bsmtp to use IPv6 addresses only.
+.TP
+.B \-8
+Encode the mail in UTF-8.
+.TP
+.B \-a
+Use any ip protocol for address resolution.
+.TP
+.B \-c
+Set the \fBCc:\fR header.
+.TP
+.BI \-d\  nn
+Set debug level to \fInn\fP.
+.TP
+.BI \-dt
+Print timestamp in debug output.
+.TP
+.B \-f
+Set the \fBFrom:\fR header. If not specified,
+.B bsmtp
+will try to use your username.
+.TP
+.BI \-h\  mailhost:port
+Use mailhost:port as the SMTP server. (default port: 25)
+.TP
+.B \-s
+Set the \fBSubject:\fR header.
+.TP
+.B \-r
+Set the \fBReply-To:\fR: header.
+.TP
+.B \-l
+Set the maximum number of lines to be sent. (default: unlimited)
+.TP
+.B \-?
+Show version and usage of program.
+
+.SH USAGE
+\fIrecipients\fR is a space separated list of email addresses.
+
+The body of the email message is read from standard input. Message is
+ended by sending the EOF character (Ctrl-D on many systems) on the
+start of a new line, much like many 'mail' commands.
+
+The actual, automated behavior of \fBbsmtp\fR will depend on the
+mail-related configuration of the Director in the \fIMessages\fR resource
+of \fIbacula-dir.conf\fR.
+
+Interactive use of \fBbsmtp\fR is pertinent to manually test and ensure these
+configuration bits are valid. This is highly recommended.
+
+.SH CONFIGURATION
+These commands should each appear on a single line in the configuration
+file.
+
+Messages {
+  Name = Standard
+  mailcommand = "/home/bacula/bin/bsmtp \-h mail.domain.com \-f \\"\\(Bacula\\) \\<%r\\>\\"
+                           \-s \\"Bacula: %t %e of %c %l\\" %r"
+  operatorcommand = "/home/bacula/bin/bsmtp \-h mail.domain.com \-f \\"\\(Bacula\\) \\<%r\\>\\"
+                                 \-s \\"Bacula: Intervention needed for %j\\" %r"
+  mail = sysadmin@site.domain.com = all, !skipped
+  operator = sysop@site.domain.com = mount
+  console = all, !skipped, !saved
+ }
+
+\fIhome/bacula/bin\fR is replaced with the path to the Bacula
+binary directory, and mail.domain.com is replaced with the fully
+qualified name of an SMTP server, which usually listen on port 25.
+
+.SH ENVIRONMENT
+If the \fB-h\fR option is not specified, \fBbsmtp\fR will use environment variable \fBSMTPSERVER\fR, or 'localhost' if not set.
+
+.SH NOTES
+Since \fBbsmtp\fR always uses a TCP connection rather than writing to a
+spool file, you may find that your \fBFrom:\fR address is being rejected
+because it does not contain a valid domain, or because your
+message has gotten caught in spam filtering rules. Generally, you
+should specify a fully qualified domain name in the from field, and
+depending on whether your SMTP gateway is Exim or Sendmail, you may
+need to modify the syntax of the from part of the message.
+
+If \fBbsmtp\fR cannot connect to the specified mail host, it will retry
+to connect to \fBlocalhost\fR.
+
+.SH BUGS
+If you are getting incorrect dates (e.g. 1970) and you are
+running with a non-English locale, you might try setting the
+\fBLANG="en_US"\fR environment variable.
+
+.SH AUTHOR
+This manual page was written by Jose Luis Tallon
+.nh
+<jltallon@adv\-solutions.net>, revised and edited by Lucas B. Cohen
+.nh
+<lbc@members.fsf.org>.
+.SH SEE ALSO
+.BR "bacula-dir" "(8) "

@@ -1,0 +1,128 @@
+#
+#  Find files library Makefile
+#
+@MCOMMON@
+
+srcdir =	.
+VPATH = 	.
+.PATH:		.
+
+# one up
+basedir = ..
+# top dir
+topdir = ../..
+# this dir relative to top dir
+thisdir = src/findlib
+
+DEBUG=@DEBUG@
+
+first_rule: all
+dummy:
+
+#
+# include files installed when using libtool
+#
+INCLUDE_FILES = bfile.h find.h protos.h 
+
+#
+LIBBACFIND_SRCS = find.c match.c find_one.c attribs.c create_file.c \
+		  bfile.c drivetype.c enable_priv.c fstype.c mkpath.c \
+		  savecwd.c
+LIBBACFIND_OBJS = $(LIBBACFIND_SRCS:.c=.o)
+LIBBACFIND_LOBJS = $(LIBBACFIND_SRCS:.c=.lo)
+
+LIBBACFIND_LT_RELEASE = @LIBBACFIND_LT_RELEASE@
+
+.SUFFIXES:	.c .o .lo
+.PHONY:
+.DONTCARE:
+
+# inference rules
+.c.o:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+.c.lo:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+#-------------------------------------------------------------------------
+all: Makefile libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	@echo "==== Make of findlib is good ===="
+	@echo " "
+
+libbacfind.a: $(LIBBACFIND_OBJS) 
+	@echo "Making $@ ..."
+	$(AR) rc  $@ $(LIBBACFIND_OBJS)
+	$(RANLIB) $@
+
+libbacfind.la: Makefile $(LIBBACFIND_LOBJS) 
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBACFIND_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACFIND_LT_RELEASE)
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+install-includes:
+	$(MKDIR) $(DESTDIR)/$(includedir)/bacula/findlib
+	for I in $(INCLUDE_FILES); do \
+	   $(INSTALL_DATA) $$I $(DESTDIR)$(includedir)/bacula/findlib/`basename $$I`; \
+	done
+
+uninstall-includes:
+	for I in $(INCLUDE_FILES); do \
+	   $(RMF) $(DESTDIR)$(includedir)/bacula/findlib/`basename $$I`; \
+	done
+
+libtool-install: all
+	$(MKDIR) $(DESTDIR)$(libdir)
+	$(RMF) $(DESTDIR)$(libdir)/libbacfind-*.so $(DESTDIR)$(libdir)/libbacfind.la
+	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbacfind$(DEFAULT_ARCHIVE_TYPE) $(DESTDIR)$(libdir)
+
+libtool-uninstall:
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/libbacfind.la
+
+install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@
+
+uninstall: @LIBTOOL_UNINSTALL_TARGET@ @INCLUDE_UNINSTALL_TARGET@
+
+libtool-clean:
+	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
+	@$(RMF) *.la
+	@$(RMF) -r .libs _libs
+
+clean:	libtool-clean
+	@$(RMF) find core a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+
+realclean: clean
+	@$(RMF) tags
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+devclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+# Semi-automatic generation of dependencies:
+# Use gcc -M  because X11 `makedepend' doesn't work on all systems
+# and it also includes system headers.
+# `semi'-automatic since dependencies are generated at distribution time.
+
+depend:
+	@$(MV) Makefile Makefile.bak
+	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
+	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@for src in $(LIBBACFIND_SRCS); do \
+	    $(CXX) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) -I$(srcdir) -I$(basedir) $$src >> Makefile; \
+	done
+	@if test -f Makefile ; then \
+	    $(RMF) Makefile.bak; \
+	else \
+	   $(MV) Makefile.bak Makefile; \
+	   echo " ===== Something went wrong in make depend ====="; \
+	fi
+
+# -----------------------------------------------------------------------
+# DO NOT DELETE: nice dependency list follows

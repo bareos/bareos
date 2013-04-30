@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# shell script to invoke SQLite on Bacula database
+
+bindir=@SQLITE_BINDIR@
+db_name=@db_name@
+$bindir/sqlite @working_dir@/${db_name}.db

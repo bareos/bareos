@@ -1,0 +1,23 @@
+#!/bin/sh
+which dirname >/dev/null 
+# does dirname exit?
+if [ $? = 0 ] ; then
+  cwd=`dirname $0`
+  if [ x$cwd = x. ]; then
+     cwd=`pwd`
+  fi
+  if [ x$cwd = x@sbindir@ ] ; then
+     echo "bconsole not properly installed."  
+     exit 1
+  fi
+fi
+if [ x@sbindir@ = x@sysconfdir@ ]; then
+   echo "bconsole not properly installed."
+   exit 1
+fi
+if [ $# = 1 ] ; then
+   echo "doing bconsole $1.conf"
+   @sbindir@/bconsole -c $1.conf
+else
+   @sbindir@/bconsole -c @sysconfdir@/bconsole.conf
+fi

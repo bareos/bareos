@@ -1,0 +1,149 @@
+
+/*
+ * Generic version of Bacula resource 
+ * 
+ */
+
+#include <winuser.h>
+#include <winver.h>
+#include "res.h"
+#include "../../version.h"
+
+/********************************************************************
+ *
+ * Icons
+ *
+ * Icon with lowest ID value placed first to ensure application icon
+ * remains consistent on all systems.
+ */
+IDI_BACULA          ICON    "../libwin32/bacula.ico"
+IDI_IDLE            ICON    "../libwin32/idle.ico"
+IDI_RUNNING         ICON    "../libwin32/running.ico"
+IDI_JOB_ERROR       ICON    "../libwin32/error.ico"
+IDI_JOB_WARNING     ICON    "../libwin32/warn.ico"
+
+/********************************************************************        
+ *
+ * Menu
+ *
+ */
+IDR_TRAYMENU MENU
+BEGIN
+    POPUP "tray"
+    BEGIN
+        MENUITEM "&Status",            ID_STATUS
+        MENUITEM SEPARATOR
+        MENUITEM "&About Bacula",      ID_ABOUT
+//      MENUITEM SEPARATOR
+//      MENUITEM "&Close Bacula",      ID_CLOSE
+    END
+END
+
+
+/********************************************************************
+ *
+ * Version
+ *
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,1,0,0
+ PRODUCTVERSION 1,1,0,0
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0
+#endif
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_APP
+ FILESUBTYPE 0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E0" // Lang=US English, CharSet=Windows Multiligual
+        BEGIN
+            VALUE "Comments", "by Kern Sibbald\0"
+            VALUE "CompanyName", "Bacula Project\0"
+            VALUE "FileDescription", "Bacula File daemon for Win32\0"
+            VALUE "FileVersion", VERSION "\0"
+            VALUE "InternalName", "Bacula\0"
+            VALUE "LegalCopyright", "Copyright 2012 Free Software Foundation Europe e.V., 1999-2009\0"
+            VALUE "LegalTrademarks", "Licensed under GNU AGPLv3\0"
+            VALUE "OriginalFilename", "bacula-fd.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "Bacula - Windows Version\0"
+            VALUE "ProductVersion", VERSION
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252 // US English, Multilingual
+    END
+END
+
+
+/***********************************************************************
+ *
+ * Bitmap
+ *
+ */
+IDB_BACULABMP           BITMAP  DISCARDABLE     "../libwin32/bacula.bmp"
+
+/***********************************************************************
+ *
+ * String Table
+ */
+STRINGTABLE 
+BEGIN
+    IDI_BACULA              "Bacula"
+END
+
+/***********************************************************************
+ *
+ * About Dialog
+ */
+IDD_ABOUT DIALOG  0, 0, 250, 145
+#ifndef MINGW64
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+#endif
+CAPTION "About Bacula"
+FONT 8, "MS Sans Serif"
+BEGIN
+#ifndef MINGW64
+    DEFPUSHBUTTON   "OK",IDOK,190,120,50,15
+#endif
+//  CONTROL         "\3", IDC_BACULABMP,"Static",SS_ICON | SS_CENTERIMAGE |
+//                  SS_SUNKEN,7,5,73,65
+#if !defined(HAVE_MINGW) && !defined(MINGW64)
+    CONTROL         IDB_BACULABMP,IDB_BACULABMP,"Static",SS_BITMAP|SS_SUNKEN,7,5,32,32
+#endif
+
+    LTEXT           "      by Kern Sibbald",-1,134,38,78,10
+    LTEXT           "For more information, see:",-1,115,60,100,10
+    LTEXT           "         www.bacula.org",-1,115,70,100,10
+    LTEXT           "Copyright (C) 1999-2012, Free Software Foundation Europe e.V.",-1,7,120,175,10
+    LTEXT           "Licensed under GNU AGPLv3",-1,7,130,175,10
+    RTEXT           "Build Date:",-1,108,24,42,8
+    RTEXT           "Bacula Version:",-1,100,9,50,8
+    LTEXT           VERSION,-1,159,10,65,8
+    LTEXT           BDATE,-1,159,24,65,10
+
+END
+
+/************************************************************************
+ *
+ * Status Dialog
+ */
+IDD_STATUS DIALOGEX 0, 0, 411, 244
+#ifndef MINGW64
+STYLE DS_SETFONT | DS_3DLOOK | DS_CENTER | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+#endif
+CAPTION "Bacula Status"
+FONT 8, "Courier New"
+BEGIN
+#ifndef MINGW64
+    DEFPUSHBUTTON   "&OK",IDOK,355,5,51,15
+    EDITTEXT        IDC_TEXTDISPLAY, 2, 2, 350, 240, WS_VSCROLL | WS_HSCROLL | WS_BORDER | ES_READONLY | ES_MULTILINE
+#endif
+END

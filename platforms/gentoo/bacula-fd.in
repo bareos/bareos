@@ -1,0 +1,28 @@
+#!/sbin/runscript
+#
+# bacula       This shell script takes care of starting and stopping
+#	       the bacula File daemon for the Gentoo release.
+#
+# chkconfig: 2345 90 9
+# description: The Leading Open Source Backup Solution.
+#
+#  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+start() {
+       ebegin "Starting the Bacula File daemon"
+       start-stop-daemon --start --quiet --exec @sbindir@/bacula-fd -- $2 -c @sysconfdir@/bacula-fd.conf
+       eend $?
+}
+
+stop() {
+       ebegin "Stopping the Bacula File daemon"
+       start-stop-daemon --stop --quiet --exec @sbindir@/bacula-fd
+       eend $?
+}
+
+restart() {
+       stop
+       sleep 5
+       start
+}

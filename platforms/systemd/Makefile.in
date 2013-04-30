@@ -1,0 +1,107 @@
+#
+# This file is used as the template to create the
+# Makefile for the systemd specific installation.
+#
+#
+#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+# should be /lib/systemd/system and get be get with
+# systemctl show | grep UnitPath | cut -d " " -f2
+SYSTEMD_UNITDIR = @SYSTEMD_UNITDIR@
+SYSTEMD_TMPFILES = /etc/tmpfiles.d
+
+nothing:
+
+install: install-dir install-conf install-autostart
+
+install-dir: $(DESTDIR)/$(SYSTEMD_UNITDIR)
+	mkdir -p $(DESTDIR)/$(SYSTEMD_UNITDIR) $(DESTDIR)/$(SYSTEMD_TMPFILES)
+
+install-conf:
+	@$(INSTALL_PROGRAM) -m 644 bacula.conf $(DESTDIR)/$(SYSTEMD_TMPFILES)/bacula.conf
+
+install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
+
+
+install-autostart-fd:
+	@if test x$(DESTDIR) = x -a  -f $(SYSTEMD_UNITDIR)/bacula-fd.service; then \
+	   /bin/systemctl stop bacula-fd.service; \
+	   /bin/systemctl disable bacula-fd.service; \
+	fi
+	@$(INSTALL_PROGRAM) -m 644 bacula-fd.service $(DESTDIR)/$(SYSTEMD_UNITDIR)/bacula-fd.service
+	# set symlinks for script at startup and shutdown
+	@if test x$(DESTDIR) = x ; then \
+	   /bin/systemctl enable bacula-fd.service; \
+	   /bin/systemctl start bacula-fd.service; \
+	fi
+
+
+install-autostart-sd:
+	@if test x$(DESTDIR) = x -a  -f $(SYSTEMD_UNITDIR)/bacula-sd.service; then \
+	   /bin/systemctl stop bacula-sd.service; \
+	   /bin/systemctl disable bacula-sd.service; \
+	fi
+	@$(INSTALL_PROGRAM) -m 644 bacula-sd.service $(DESTDIR)/$(SYSTEMD_UNITDIR)/bacula-sd.service
+	# set symlinks for script at startup and shutdown
+	@if test x$(DESTDIR) = x ; then \
+	   /bin/systemctl enable bacula-sd.service; \
+	   /bin/systemctl start bacula-sd.service; \
+	fi
+
+
+install-autostart-dir:
+	@if test x$(DESTDIR) = x -a  -f $(SYSTEMD_UNITDIR)/bacula-dir.service; then \
+	   /bin/systemctl stop bacula-dir.service; \
+	   /bin/systemctl disable bacula-dir.service; \
+	fi
+	@$(INSTALL_PROGRAM) -m 644 bacula-dir.service $(DESTDIR)/$(SYSTEMD_UNITDIR)/bacula-dir.service
+	# set symlinks for script at startup and shutdown
+	@if test x$(DESTDIR) = x ; then \
+	   /bin/systemctl enable bacula-dir.service; \
+	   /bin/systemctl start bacula-dir.service; \
+	fi
+
+
+uninstall: uninstall-autostart uninstall-conf
+
+uninstall-autostart: uninstall-autostart-fd uninstall-autostart-sd uninstall-autostart-dir
+
+uninstall-autostart-fd:
+	@if test x$(DESTDIR) = x -a  -f $(SYSTEMD_UNITDIR)/bacula-fd.service; then \
+	   /bin/systemctl stop bacula-fd.service; \
+	   /bin/systemctl disable bacula-fd.service; \
+	fi
+	@rm -f	$(DESTDIR)$(SYSTEMD_UNITDIR)/bacula-fd.service
+
+
+uninstall-autostart-sd:
+	@if test x$(DESTDIR) = x -a  -f $(SYSTEMD_UNITDIR)/bacula-sd.service; then \
+	   /bin/systemctl stop bacula-fd.service; \
+	   /bin/systemctl disable bacula-fd.service; \
+	fi
+	@rm -f	$(DESTDIR)$(SYSTEMD_UNITDIR)/bacula-sd.service
+
+uninstall-autostart-dir:
+	@if test x$(DESTDIR) = x -a  -f $(SYSTEMD)/bacula-dir.service; then \
+	   /bin/systemctl stop bacula-dir.service; \
+	   /bin/systemctl disable bacula-dir.service; \
+	fi
+	@rm -f	$(DESTDIR)$(SYSTEMD_UNITDIR)/bacula-dir.service
+
+uninstall-conf:
+	@rm -f	$(DESTDIR)/$(SYSTEMD_TMPFILES)/bacula.conf
+
+clean:
+	@rm -f 1 2 3
+
+distclean: clean
+	@rm -f Makefile bacula-*.spec bacula.*.spec bacula.spec
+	@rm -f bacula.conf bacula-sd.service bacula-fd.service bacula-dir.service
+
+devclean: clean
+	@rm -f Makefile bacula-*.spec bacula.*.spec bacula.spec
+	@rm -f bacula.conf bacula-sd.service bacula-fd.service bacula-dir.service
+

@@ -1,0 +1,157 @@
+#!/bin/sh
+#
+# Bacula interface to mtx autoloader
+#
+#   Created  JAN/23/02 by Ludwig Jaffe
+#
+#  Works with the HP A4853 DLT Library
+#         and the Storagetek Timberwolf 9730 DLT Library
+#
+#TAPEDRIVE0 holds the device/name of your 1st and only DLT drive (Bacula supports only 1 drive currently)
+#
+#Read TAPEDRIVE from command line parameters
+
+TMPDIR=/tmp
+
+make_temp_file() 
+{
+  TMPFILE=`mktemp ${TMPDIR}/mtx$1.XXXXXXXXXX 2> /dev/null`
+  if test $? -ne 0 || test x${TMPFILE} = x; then
+     TMPFILE="${TMPDIR}/mtx$1.$$"
+     if test -f ${TMPFILE}; then
+        echo "ERROR: Temp file security problem on: ${TMPFILE}"
+        exit 1
+     fi
+  fi
+}
+
+
+
+if [ -z "$4" ] ; then
+  TAPEDRIVE0=/dev/st0 
+else
+  TAPEDRIVE0=$4 
+fi
+
+#Delay in seconds the tape needs to load the tape. Needed to stop bacula from using the tape too early.
+TAPEDELAY=65   #The StorageTek Timberwolf 9730 with DLT7000 needs approx. 50 seconds to load. 65 sec gives safety
+MTXCHVERBOSE=1
+if [ -z "$1" ] ; then
+  echo ""
+  echo "The mtx-changer script for bacula"
+  echo "---------------------------------"
+  echo ""
+  echo "usage: mtx-changer <changer-device> <command> [slot] [devicename of tapedrive]"
+  echo "       mtx-changer"
+  echo ""
+  echo "Valid commands:"
+  echo ""
+  echo "unload          Unloads a tape into the slot"
+  echo "                from where it was loaded."
+  echo "load <slot>     Loads a tape from the slot <slot>"
+  echo "list            Lists full storage slots"
+  echo "loaded          Gives slot from where the tape was loaded."
+  echo "                0 means the tape drive is empty."
+  echo "slots           Gives Number of aviable slots." 
+  echo ""
+  echo "Example:"
+  echo "  mtx-changer /dev/changer load 1   loads a tape from slot1"
+  echo ""
+  exit
+fi
+
+
+case "$2" in 
+   unload)
+#     At first do mt -f /dev/st0 offline to unload the tape because HP A4853 aka Timberwolf9730
+#     refuses to unload the tape from the drive if the DLT streamer did not unloaded it!!!
+#
+      #Check if you want to fool me
+      if [ $MTXCHVERBOSE -eq 1 ] ; then echo "mtx-changer: Checking if drive is loaded before we unload. I Request loaded" ; fi
+      make_temp_file
+      mtx -f $1 status >${TMPFILE}
+      rm -f /tmp/mtxloaded
+      cat ${TMPFILE} | grep "^Data Transfer Element 0:Full" | awk "{print \$7}" > /tmp/mtxloaded
+      rm -f ${TMPFILE}
+      read LOADEDVOL </tmp/mtxloaded
+      if [ -z "$LOADEDVOL" ] ; then
+         LOADEDVOL=0
+         echo "mtx-changer:  *** Don't fool me! *** The Drive $TAPEDRIVE0 is empty."
+         echo ""
+      else
+        if [ $MTXCHVERBOSE -eq 1 ] ; then echo "mtx-changer: Doing mt -f $TAPEDRIVE0 offline to rewind and unload the tape!" ; fi
+        mt -f $TAPEDRIVE0 offline
+        if [ $MTXCHVERBOSE -eq 1 ] ; then echo "mtx-changer: Doing mtx -f $1 $2"  ; fi
+        mtx -f $1 $2
+      fi
+      ;;
+
+   load)
+      #Let's check if drive is loaded before we load it
+      if [ $MTXCHVERBOSE -eq 1 ] ; then echo "mtx-changer: Checking if drive is loaded before we load. I Request loaded" ; fi
+      make_temp_file
+      mtx -f $1 status >${TMPFILE}
+      rm -f /tmp/mtxloaded
+      cat ${TMPFILE}| grep "^Data Transfer Element 0:Full" | awk "{print \$7}" > /tmp/mtxloaded
+      rm -f ${TMPFILE}
+      read LOADEDVOL </tmp/mtxloaded 
+      if [ -z "$LOADEDVOL" ] ; then 
+         LOADEDVOL=0
+         echo "mtx-changer: The Drive $TAPEDRIVE0 is empty." 
+      else
+         #Check if you want to fool me
+         if [ $LOADEDVOL -eq $3 ] ; then 
+           echo "mtx-changer: *** Don't fool me! *** Tape $LOADEDVOL is already in drive $TAPEDRIVE0!"
+           echo "" 
+           exit
+         fi
+         echo "mtx-changer: The Drive $TAPEDRIVE0 is loaded with the tape from slot $LOADEDVOL"
+         echo "mtx-changer: Unloading..."
+         if [ $MTXCHVERBOSE -eq 1 ] ; then echo "mtx-changer: Doing mt -f $TAPEDRIVE0 offline to rewind and unload the tape!" ; fi
+         mt -f $TAPEDRIVE0 offline
+         if [ $MTXCHVERBOSE -eq 1 ] ; then echo "mtx-changer: Doing mtx -f $1 unload"  ; fi
+         mtx -f $1 unload
+      fi
+      #rm -f /tmp/mtxloaded
+      #It is now insured that the drive is empty
+      #
+      #Now we can load the drive as desired 
+      if [ $MTXCHVERBOSE -eq 1 ] ; then echo "mtx-changer: Doing mtx -f $1 $2 $3" ; fi
+      mtx -f $1 $2 $3
+      if [ $? -eq 0 ] ; then
+        #Wait until the tape is fully loaded in the dlt drive. It takes about 50 seconds. For safety wait 65 seconds
+        echo "Successfully loaded tape $3 into drive $TAPEDRIVE0."
+        echo "Waiting $TAPEDELAY seconds for the drive to fully load the tape ..."
+        sleep $TAPEDELAY
+        echo "$TAPEDELAY seconds are gone. The tape should be fully loaded now."
+        echo "Loading finished." ;
+        exit 0
+      else
+        echo "ERROR loading tape $3 into drive $TAPEDRIVE0. Maybe, slot $3 is empty!"
+        exit $?
+      fi
+      ;;
+
+   list) 
+      if [ $MTXCHVERBOSE -eq 1 ] ; then echo "mtx-changer: Requested list"; fi
+#old      mtx -f $1 status | grep "^[     ]*Storage Element [0-9]*:.*Full" | awk "{print \$3}" | sed "s/:.*$/ /g" | tr -d "[\r\n]"
+#from mtx bacula 1.29:
+#     mtx -f $1 status | grep " *Storage Element [0-9]*:.*Full" | awk "{print \$3}" | sed "s/:.*$/ /g" | tr -d "[\r\n]"
+      mtx -f $1 status | grep " *Storage Element [0-9]*:.*Full" | awk "{print \$3 \$4}" | sed "s/Full *\(:VolumeTag=\)*//"
+
+      ;;
+
+   loaded)
+      if [ $MTXCHVERBOSE -eq 1 ] ; then echo "mtx-changer: Request loaded" ; fi
+      make_temp_file
+      mtx -f $1 status >${TMPFILE}
+      cat ${TMPFILE} | grep "^Data Transfer Element 0:Full" | awk "{print \$7}" 
+      cat ${TMPFILE} | grep "^Data Transfer Element 0:Empty" | awk "{print 0}"  
+      rm -f ${TMPFILE}
+      ;;
+
+   slots)
+      if [ $MTXCHVERBOSE -eq 1 ] ; then echo "mtx-changer: Request slots" ; fi
+      mtx -f $1 status | grep "[  ]Storage Changer" | awk "{print \$5}"
+      ;;
+esac

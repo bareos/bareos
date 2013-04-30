@@ -1,0 +1,1196 @@
+From bacula-users-admin@lists.sourceforge.net Wed Dec 10 15:04:47 2003
+Return-Path: <bacula-users-admin@lists.sourceforge.net>
+Received: from sc8-sf-mx1.sourceforge.net (lists.sourceforge.net
+	[66.35.250.206]) by matou.sibbald.com (8.11.6/8.11.6) with ESMTP id
+	hBAE4lY32735 for <kern@sibbald.com>; Wed, 10 Dec 2003 15:04:47 +0100
+Received: from sc8-sf-list2-b.sourceforge.net ([10.3.1.8]
+	helo=sc8-sf-list2.sourceforge.net) by sc8-sf-mx1.sourceforge.net with esmtp
+	(TLSv1:AES256-SHA:256) (Exim 4.24) id 1AU4wc-0007gs-Ls; Wed, 10 Dec 2003
+	06:04:02 -0800
+Received: from localhost.localdomain ([127.0.0.1]
+	helo=projects.sourceforge.net) by sc8-sf-list2.sourceforge.net with esmtp
+	(Exim 4.24) id 1AU4wc-0006AC-FQ; Wed, 10 Dec 2003 06:04:02 -0800
+Received: from sc8-sf-mx2-b.sourceforge.net ([10.3.1.12]
+	helo=sc8-sf-mx2.sourceforge.net) by sc8-sf-list2.sourceforge.net with esmtp
+	(Exim 4.24) id 1AU4vz-00068m-GL for bacula-users@lists.sourceforge.net;
+	Wed, 10 Dec 2003 06:03:23 -0800
+Received: from mta2.navair.navy.mil ([192.58.199.164]) by
+	sc8-sf-mx2.sourceforge.net with esmtp (Exim 4.24) id 1AU4vy-0006U5-2Q for
+	bacula-users@lists.sourceforge.net; Wed, 10 Dec 2003 06:03:22 -0800
+Received: by mta2.navair.navy.mil (Postfix, from userid 0) id EEB0B16C1FD;
+	Wed, 10 Dec 2003 09:03:10 -0500 (EST)
+Received: from neim02.nawcad.navy.mil (neim02.nawcad.navy.mil
+	[140.229.37.205]) by mta2.navair.navy.mil (Postfix) with ESMTP id
+	64D5116C2A9; Wed, 10 Dec 2003 09:03:10 -0500 (EST)
+Received: by neim02.nawcad.navy.mil with Internet Mail Service
+	(5.5.2657.72) id <YQB85LRX>; Wed, 10 Dec 2003 09:02:18 -0500
+Message-ID: <B9500E218FB4D2119DE30000F810BBBF0486F1B9@nems13.nawcad.navy.mil>
+From: "Kirkpatrick, Drew  (ARINC)" <KirkpatricDA@navair.navy.mil>
+To: "'terry@mrtux.co.uk'" <terry@mrtux.co.uk>, bacula-users@lists.sourceforge.net
+Subject: RE: [Bacula-users] Re: Autochanger setup
+MIME-Version: 1.0
+X-Mailer: Internet Mail Service (5.5.2657.72)
+Content-Type: text/plain; charset="ISO-8859-1"
+X-Spam-Score: 0.0 (/)
+X-Spam-Report: Spam Filtering performed by sourceforge.net. See
+	http://spamassassin.org/tag/ for more details. Report problems to
+	https://sf.net/tracker/?func=add&group_id=1&atid=200001 0.0 CLICK_BELOW    
+	       Asks you to click below
+Sender: bacula-users-admin@lists.sourceforge.net
+Errors-To: bacula-users-admin@lists.sourceforge.net
+X-BeenThere: bacula-users@lists.sourceforge.net
+X-Mailman-Version: 2.0.9-sf.net
+Precedence: bulk
+List-Unsubscribe:
+	<https://lists.sourceforge.net/lists/listinfo/bacula-users>,
+	<mailto:bacula-users-request@lists.sourceforge.net?subject=unsubscribe>
+List-Id: Bacula user's email list for support and discussions
+	<bacula-users.lists.sourceforge.net>
+List-Post: <mailto:bacula-users@lists.sourceforge.net>
+List-Help: <mailto:bacula-users-request@lists.sourceforge.net?subject=help>
+List-Subscribe:
+	<https://lists.sourceforge.net/lists/listinfo/bacula-users>,
+	<mailto:bacula-users-request@lists.sourceforge.net?subject=subscribe>
+List-Archive:
+	<http://sourceforge.net/mailarchive/forum.php?forum=bacula-users>
+Date: Wed, 10 Dec 2003 09:02:14 -0500
+X-Spam-Score: 0.0 (/)
+X-Spam-Report: Spam Filtering performed by sourceforge.net. See
+	http://spamassassin.org/tag/ for more details. Report problems to
+	https://sf.net/tracker/?func=add&group_id=1&atid=200001 0.0 CLICK_BELOW    
+	       Asks you to click below
+Status: RO
+X-Status: F
+X-Keywords:                
+X-UID: 76
+Content-Transfer-Encoding: 8bit
+
+So far this seems to be working for me, but it's not all quite finished :)
+
+Device {
+        Name = "firstTapeDrive"
+        Media Type = AIT3
+        Archive Device = /dev/nst0
+        Changer Device = /dev/sg3
+        Changer Command = "/etc/bacula/mtx-changer %c %o %S %a"
+        AutoChanger = yes
+        Backward Space Record = no
+        RemovableMedia = yes
+        AlwaysOpen = yes
+        AutomaticMount = yes
+        LabelMedia = no
+#       HardwareEndOfMedium = no
+}
+
+
+
+And here's the current version of my mtx-changer script (which changes
+frequently as I figure out more of this stuff)
+
+****************************************************************************
+**********************
+
+#!/bin/bash
+
+# mtx-changer script modded to work with a Adic Scalar 100 better
+# Drew Kirkpatrick, kirkpatricda@navair.navy.mil
+
+
+echo "mtx-change called with: "$@
+
+
+AUTOLOADERDEV=$1
+DRIVE=0
+DRIVE_0_SEARCH="Data Transfer Element 0"
+DRIVE_1_SEARCH="Data Transfer Element 1"
+MTX=/usr/local/sbin/mtx
+
+
+
+
+######################### Functions
+
+TMPDIR=/tmp
+
+make_temp_file() 
+{
+  TMPFILE=`mktemp ${TMPDIR}/mtx$1.XXXXXXXXXX 2> /dev/null`
+  if test $? -ne 0 || test x${TMPFILE} = x; then
+     TMPFILE="${TMPDIR}/mtx$1.$$"
+     if test -f ${TMPFILE}; then
+        echo "ERROR: Temp file security problem on: ${TMPFILE}"
+        exit 1
+     fi
+  fi
+}
+
+
+
+
+
+# Take a single argument, a barcode number
+# and returns the slot in which said tape
+# should reside according to the 
+# tapeSlotMap file. That file is
+# created using the setTapeSlotMap
+# script
+getSlotNum()
+{
+    if [ -z "$1" ]
+	then
+	    echo getSlotNum"() called" \
+	    "without a parameter, error!!!"
+	    exit 1
+    fi
+    
+# makes sure there is an entry in .tapeSlotMap file
+# for that barcode number
+    found=`grep "$1" /etc/bacula/.tapeSlotMap | wc -l | awk '{print $1}'`
+
+    if [ "$found" -ne 1 ]
+    then
+	echo "FATAL ERROR, in getSlotNum($1), error looking up" 
+	echo "that barcode number. Found ($found) instances in the" 
+	echo "tapeSlotMap file. There should be 1 instance. Do you" 
+	echo "need to update this file with setTapeSlotMap script???"
+	exit 1
+    fi
+
+    slotNum=`grep "$1" /etc/bacula/.tapeSlotMap | awk '{print $1}'`
+    return $slotNum
+}
+
+
+
+
+
+
+# Take 1 arg, a 0 or 1 (or, how about the DRIVE var: )
+# for the drive it is interested in
+# returns 1 if that drive has a tape loaded, and 0 if not
+doesDriveGottaTape() 
+{
+    if [ -z "$1" ]
+	then
+	    echo "doesDriveGottaTape() called" \
+	    "without a parameter, error fool!!!"
+	    exit 1
+	else
+	    case "$1" in
+		0 )
+		    ANSWER=`${MTX} -f $AUTOLOADERDEV status | grep
+"$DRIVE_0_SEARCH" \
+			| awk '{sub("0:",""); print $4}'`
+		;;
+		1 )
+		    ANSWER=`${MTX} -f $AUTOLOADERDEV status | grep
+"$DRIVE_1_SEARCH" \
+			| awk '{sub("1:",""); print $4}'`
+		;;
+		* )
+		    echo "Invalid drive num passed to
+doesDriveGottaTape($1)"
+		    exit 1
+		;;
+	    esac
+    fi
+    
+    case "$ANSWER" in
+	Full )
+	    return 1
+	;;
+	Empty )
+	    return 0
+	;;
+	* )
+	    echo "Fatal error, invalid answer in doesDriveGottaTape(),
+$ANSWER"
+	    exit 1
+	;;
+    esac	
+}
+
+
+
+
+
+
+# This handles 'correctly' unloading a drive to make sure it ends up 
+# in the slot it originaly came from. If you're moving/adding tapes
+# please check the setTapeSlotMap script, and use accordingly 
+# to update the barcode->slot mappings.
+# This function is needed because the Adic Scalar 100 
+# doesn't seem to like returning a tape to it's original slot
+# everytime. It seems to pick the first available, and I can't
+# seem to figure out how to make it stop doing this. 
+# oh, and it takes 1 arg, the drive to unload
+unloadDrive()
+{
+    if [ -z "$1" ]
+	then
+	    echo "unloadDrive() called " \
+	    "without a parameter, error!!!"
+	    exit 1
+    fi
+
+
+# double check to see if that drive does actually have a tape in it
+    doesDriveGottaTape "$1"
+    rtn=$?
+    if [ "$rtn" == 0 ]
+    then
+	echo "errrm, in unloadDrive($1), that drive " \
+	    "doesn't have a tape in it!!!"
+	return 0
+    fi
+
+    
+# Get the barcode of the tape in the drive
+    case "$1" in
+	0 )
+	    barcode=`${MTX} -f $AUTOLOADERDEV status | grep
+"$DRIVE_0_SEARCH" | awk '{print $10}'`
+	;;
+	1 )
+	    barcode=`${MTX} -f $AUTOLOADERDEV status | grep
+"$DRIVE_1_SEARCH" | awk '{print $10}'`
+	;;
+	* )
+	    echo "ERROR, invalid drive num in unloadDrive($1)"
+	    exit 1
+	;;
+    esac
+
+# return tape with barcode to which slot???
+    getSlotNum "$barcode"
+    returnTo=$?
+
+
+# unloading the tape now
+    ${MTX} -f $AUTOLOADERDEV unload $returnTo $1
+    rtn=$?
+    if [ "$rtn" -ne 0 ]
+    then
+	echo "MTX came back with code ($rtn)"
+	echo "ERROR, in unloadDrive($1), mtx unload failed"
+	exit 1
+    fi
+    return $rtn
+}
+
+
+
+
+# This handles loading tapes into drives
+# It checks if there is currently a tape
+# in the target drive, and if there is 
+# it unloads it prior to loading the new tape
+# just in case bacula doesn't explicitly 
+# request this. 
+# This function take two args, the drive
+# to load, and the tape slot to load from
+loadDrive()
+{
+    if [ -z "$1" ] || [ -z "$2" ]
+    then
+	echo "loadDrive() not called " \
+	    "with the correct params, error!!!"
+	    exit 1
+    fi
+    
+# Check to see if it already has a tape in it...
+    doesDriveGottaTape "$1"
+    rtn=$?
+    if [ "$rtn" == 1 ]
+    then
+	echo "Oops, in loadDrive() that drive"
+	echo "already has a tape. Unloading it now"
+	unloadDrive "$1"
+    fi
+
+
+# You're now ready to load the drive
+    echo "Now loading tape in slot $2 into drive $1"
+
+    ${MTX} -f $AUTOLOADERDEV load $2 $1
+    rtn=$?
+    if [ "$rtn" -ne 0 ]
+    then
+	echo "MTX came back with code ($rtn)"
+	echo "ERROR, in loadDrive($1, $2), mtx load failed"
+	exit 1
+    fi
+    return $rtn
+}
+
+
+
+
+
+#######################    End Functions
+
+
+
+
+#######################    Start Script
+
+# Changes the nst* device bacula passes to a number that mtx likes
+if [ "$2" == load ] || [ "$2" == unload ]
+then
+    echo "In mtx-changer drive selection code...."
+    case "$4" in
+	/dev/nst0 )
+	    DRIVE="0"
+	;;
+
+	/dev/nst1 )
+	    DRIVE="1"
+	;;
+
+	* )
+	    echo "Error, invalid drive for autoloader."
+	    echo "Maybe you mispelled the drive name, or tried to"
+	    echo "use a drive that doesn't exist"
+	    echo "Only two drives handled in /etc/bacula/mtx-changer script"
+	    exit 1
+	;;
+    esac
+fi
+
+
+
+
+case "$2" in 
+   unload)
+	unloadDrive "$DRIVE"
+	rtn=$?
+	
+	sleep 35
+	exit $rtn
+      ;;
+
+   load)
+	loadDrive "$DRIVE" "$3"
+	rtn=$?
+	sleep 55
+	exit $rtn
+      ;;
+
+   list) 
+      echo "Requested list, DREW YOU HAVEN'T IMPLEMENTED YET!!!!"
+      ${MTX} -f $1 status | grep " *Storage Element [0-9]*:.*Full" |  \
+	awk "{print \$3 \$4}" | sed "s/Full *\(:VolumeTag=\)*//"
+
+      rtn=$?
+      echo "mtx-changer returning value: $rtn"
+      ;;
+
+   loaded)
+      echo "Request loaded, DREW YOU HAVEN'T IMPLEMENTED YET!!!!"
+      make_temp_file
+      ${MTX} -f $1 status >${TMPFILE}
+      rtn=$?
+      cat ${TMPFILE} | grep "^Data Transfer Element 0:Full" | awk "{print
+\$7}"
+      cat ${TMPFILE} | grep "^Data Transfer Element 0:Empty" | awk "{print
+0}"
+#       cat ${TMPFILE} | grep "^Data Transfer Element 1:Full" | awk "{print
+\$7}"
+#       cat ${TMPFILE} | grep "^Data Transfer Element 1:Empty" | awk
+"{print 0}"
+      rm -f ${TMPFILE}
+
+      echo "mtx-changer returning value: $rtn"
+      exit $rtn
+      ;;
+
+   slots)
+     echo "Request slots, DREW YOU HAVEN'T IMPLEMENTED YET!!!!"
+      ${MTX} -f $1 status | grep " *Storage Changer" | awk "{print \$5}"
+      rtn=$?
+      echo "mtx-changer returning value: $rtn"
+      ;;
+esac
+
+
+****************************************************************************
+**
+
+
+
+
+
+Hope that helps. Sorry, it's kinda setup for our Adic, and for two drives. 
+
+
+
+-Drew
+
+
+-----Original Message-----
+From: Terry [mailto:terry@mrtux.co.uk]
+Sent: Wednesday, December 10, 2003 8:23 AM
+To: bacula-users@lists.sourceforge.net
+Subject: [Bacula-users] Re: Autochanger setup
+
+
+bacula-users-request@lists.sourceforge.net wrote:
+
+>Send Bacula-users mailing list submissions to
+>	bacula-users@lists.sourceforge.net
+>
+>To subscribe or unsubscribe via the World Wide Web, visit
+>	https://lists.sourceforge.net/lists/listinfo/bacula-users
+>or, via email, send a message with subject or body 'help' to
+>	bacula-users-request@lists.sourceforge.net
+>
+>You can reach the person managing the list at
+>	bacula-users-admin@lists.sourceforge.net
+>
+>When replying, please edit your Subject line so it is more specific
+>than "Re: Contents of Bacula-users digest..."
+>
+>
+>Today's Topics:
+>
+>   1. Two beta releases (Kern Sibbald)
+>   2. Re: Current Volume "Cinta-0006" not acceptable
+>       because (Kern Sibbald)
+>   3. Re: Jobs awaiting execution? (Kern Sibbald)
+>   4. Re: Mount need for every job... me too (Gregory Brauer)
+>   5. Importtant: BIG Problems with schedule / bacula doesn't do
+Differnetial
+>       backups (Volker Sauer)
+>   6. Re: Mount need for every job... me too (fixed!) (Gregory Brauer)
+>
+>--__--__--
+>
+>Message: 1
+>From: Kern Sibbald <kern@sibbald.com>
+>To: bacula-announce <bacula-announce@lists.sourceforge.net>
+>Cc: bacula-users <bacula-users@lists.sourceforge.net>
+>Organization: 
+>Date: 09 Dec 2003 22:11:47 +0100
+>Subject: [Bacula-users] Two beta releases
+>
+>Hello,
+>
+>I have just made two Beta releases. Unfortunately, I mistakenly put the
+>1.32e-08Dec03 Windows binaries in main win-binaries section rather than
+>win-binaries-beta. At this point, I won't change it because it would
+>require a new upload, ...
+>
+>The 1.33-08Dec03 release is definitely a Beta release in the sense that
+>version 1.33 is still under very active development.  The main features
+>of this release are: 
+>- all features in 1.32e-08Dec03
+>- update slots (marks any other Volumes in the same pool with the same
+>  Slot number as "not InChanger"). This permits retaining the Slot on
+>  Volumes not currently in the magazine.
+>- update slots=<slot1>,<slot2>,<slot-range>, ...
+>  where slot1, slot2 are slot numbers you want updated from barcode
+>  information and slot-range is a slot-number1-slot-number2 (e.g. 3-5).
+>- update slots[=...] scan
+>  causes the Storage daemon to read the volume label for each slot 
+>  listed, or in the absence of a slot list, all slots occupied.
+>- Automatic synchronization of clocks between DIR and FD so that there
+>  is no missed files due to timezone differences or shewed clocks.
+>- A database upgrade is mandatory.
+>- None of the daemons are compatible with version 1.32x, which means
+>  you must upgrade all or nothing.
+>- NOTE! FreeBSD users must add:
+>   Two EOF = yes
+>  to each of their tape Device resources in the SD. I forgot to document
+>  this elsewhere!!!!!
+>
+>Release 1.32e-08Dec03 was meant to be an official 1.32e release with all
+>the current patches and a few strategic updates from 1.33. In the end, I
+>threw in *all* the updates from 1.33 except those that require a
+>database upgrade or force a daemon incompatibility, or other operating
+>incompatibility. 
+>
+>I haven't made 1.32-08Dec03 an official release for three reasons:
+>- I cannot test it in production because my production system is on
+>  release 1.33.
+>- There is still a bit more documentation to do.
+>- I added more of the 1.33 code than I originally planned, but some of
+>  it such as the new 10 job history for each daemon is so neat that I
+>  wanted to put it in your hands (one of the features not yet
+>  documented).
+>
+>That said, I think this is a very good release. I have HEAVILY tested it
+>with my regression testing, and 95% of the code has been running in my
+>production 1.33 system since 24 November.  I encourage all of you to
+>test it. Note, all of the daemons should be totally compatible with any
+>other 1.32x release -- please send feedback.
+>
+>Once I finish the documentation and get some feedback on how it runs,
+>I'll "officially" release it.
+>
+>As most of you know, from tomorrow morning, I will be out for one week
+>and then a bit slow responding for a week or two. Thanks for all the
+>well wishes I have received.
+>
+>Regards, Kern
+>
+>
+>
+>
+>
+>
+>--__--__--
+>
+>Message: 2
+>Subject: Re: [Bacula-users] Current Volume "Cinta-0006" not acceptable
+>	because
+>From: Kern Sibbald <kern@sibbald.com>
+>To: Carlos Molina Molina <carlos_linux@hotmail.com>
+>Cc: Phil Stracchino <alaric@caerllewys.net>,
+>   bacula-users <bacula-users@lists.sourceforge.net>
+>Organization: 
+>Date: 09 Dec 2003 22:30:07 +0100
+>
+>
+>--=-HANNTFvbGW9Q5KQ00dee
+>Content-Type: text/plain; charset=ISO-8859-1
+>Content-Transfer-Encoding: quoted-printable
+>
+>On Tue, 2003-12-09 at 19:03, Carlos Molina Molina wrote:
+>  
+>
+>>no, I haven't the volume.... but the only thing that I need from bacula i=
+>>    
+>>
+>t's=20
+>  
+>
+>>that write in any volume
+>>other thing it's that when finish it send this part of messages. I put "u=
+>>    
+>>
+>se=20
+>  
+>
+>>any volume"
+>>=20
+>>AZOG: Naboo-Backup.2003-12-09_14.12.07 Warning: Unexpected Client Job=20
+>>message: 2801 End Backup Job TermCode=3D84 JobFiles=3D56064 ReadBytes=3D1=
+>>    
+>>
+>501707569=20
+>  
+>
+>>JobBytes=3D621946654
+>>=20
+>>AZOG: Naboo-Backup.2003-12-09_14.12.07 Fatal error: No Job status returne=
+>>    
+>>
+>d=20
+>  
+>
+>>from FD.
+>>=20
+>>What means???
+>>    
+>>
+>
+>I cannot comment on the tape Volume error messages, but the message
+>listed above "Unexpected Client Job message ..." seems to me to come
+>from the fact that you have upgraded that client (File daemon) to a more
+>recent version of Bacula than you are running on your Director. Please
+>check your version numbers. If they are both the same number they should
+>work together. If not, you need to get them both on the same version.
+>
+>Be sure to read the ReleaseNotes on any upgrade to ensure you do any
+>required database upgrading.
+>
+>Regards, Kern
+>
+>
+>  
+>
+>>Thank
+>>=20
+>>    
+>>
+>>>From: Phil Stracchino <alaric@caerllewys.net>
+>>>To: bacula-users@lists.sourceforge.net
+>>>Subject: Re: [Bacula-users] Current Volume "Cinta-0006" not acceptable=20
+>>>because
+>>>Date: Tue, 9 Dec 2003 12:56:43 -0500
+>>>
+>>>On Tue, Dec 09, 2003 at 03:47:29PM +0000, Carlos Molina Molina wrote:
+>>>      
+>>>
+>>>>How I avoid this message???, The only solution it's that I erase the=20
+>>>>        
+>>>>
+>>>tape
+>>>      
+>>>
+>>>>manually...
+>>>>
+>>>>
+>>>>SDT-10000: Naboo-Backup.2003-12-09_12.38.04 Warning: mount.c:232=20
+>>>>        
+>>>>
+>>>Director
+>>>      
+>>>
+>>>>wanted Volume "Cinta-0001".
+>>>>   Current Volume "Cinta-0006" not acceptable because:
+>>>>   1997 Volume "Cinta-0006" not in catalog.
+>>>>SDT-10000: Please mount Volume "Cinta-0001" on Storage Device=20
+>>>>        
+>>>>
+>>>"SDT-10000"
+>>>      
+>>>
+>>>>for Job Naboo-Backup.2003-12-09_12.38.04
+>>>>Use "mount" command to release Job.
+>>>>        
+>>>>
+>>>Don't you have the volume it's asking for?
+>>>
+>>>
+>>>--
+>>> .*********  Fight Back!  It may not be just YOUR life at risk. =20
+>>>*********.
+>>> : phil stracchino : unix ronin : renaissance man : mystic zen biker ge=
+>>>      
+>>>
+>ek=20
+>  
+>
+>>>:
+>>> :  alaric@caerllewys.net : alaric-ruthven@earthlink.net : phil@latt.ne=
+>>>      
+>>>
+>t =20
+>  
+>
+>>>:
+>>> :   2000 CBR929RR, 1991 VFR750F3 (foully murdered), 1986 VF500F (sold)=
+>>>      
+>>>
+>  =20
+>  
+>
+>>>:
+>>> :    Linux Now!   ...Because friends don't let friends use Microsoft. =
+>>>      
+>>>
+>  =20
+>  
+>
+>>>:
+>>>
+>>>
+>>>-------------------------------------------------------
+>>>This SF.net email is sponsored by: SF.net Giveback Program.
+>>>Does SourceForge.net help you be more productive?  Does it
+>>>help you create better code?  SHARE THE LOVE, and help us help
+>>>YOU!  Click Here: http://sourceforge.net/donate/
+>>>_______________________________________________
+>>>Bacula-users mailing list
+>>>Bacula-users@lists.sourceforge.net
+>>>https://lists.sourceforge.net/lists/listinfo/bacula-users
+>>>      
+>>>
+>>=20
+>>_________________________________________________________________
+>>MSN Amor: busca tu =BD naranja http://latam.msn.com/amor/
+>>=20
+>>=20
+>>=20
+>>-------------------------------------------------------
+>>This SF.net email is sponsored by: SF.net Giveback Program.
+>>Does SourceForge.net help you be more productive?  Does it
+>>help you create better code?  SHARE THE LOVE, and help us help
+>>YOU!  Click Here: http://sourceforge.net/donate/
+>>_______________________________________________
+>>Bacula-users mailing list
+>>Bacula-users@lists.sourceforge.net
+>>https://lists.sourceforge.net/lists/listinfo/bacula-users
+>>    
+>>
+>
+>--=-HANNTFvbGW9Q5KQ00dee
+>Content-Type: application/pgp-signature; name=signature.asc
+>Content-Description: This is a digitally signed message part
+>
+>-----BEGIN PGP SIGNATURE-----
+>Version: GnuPG v1.2.1 (GNU/Linux)
+>
+>iD8DBQA/1j7fNgfoSvWqwEgRAsEDAJ0aF6qvQVHiH0X4DCTwXQh3wux1gACfQLxl
+>wKgzEjDQMg3v1vh4yS6kUys=
+>=6xcc
+>-----END PGP SIGNATURE-----
+>
+>--=-HANNTFvbGW9Q5KQ00dee--
+>
+>
+>
+>--__--__--
+>
+>Message: 3
+>Subject: Re: [Bacula-users] Jobs awaiting execution?
+>From: Kern Sibbald <kern@sibbald.com>
+>To: Danie Theron <itsupport@raps.co.za>
+>Cc: bacula-users <bacula-users@lists.sourceforge.net>
+>Organization: 
+>Date: 09 Dec 2003 22:39:39 +0100
+>
+>Hello,
+>
+>Move up to version 1.32d or 1.32e.  The job scheduler was totally
+>rewritten between 1.31 and 1.32 and a number of bizarre little problems
+>that some people (not me) were having totally went away. I suspect that
+>they were pthreads related on non-Linux systems, but who knows ...
+>
+>Regards, Kern
+>
+>On Tue, 2003-12-09 at 12:09, Danie Theron wrote:
+>  
+>
+>>Hi
+>>
+>>I have recently split my backups into more manageable sets , and now it
+>>seems they are not running automatically. Here is an output when I do a
+>>"status" command :
+>>
+>>Last Job BackupCatalog.2003-12-09_01.10.00 finished at 09-Dec-2003 01:10
+>>  Files=1 Bytes=43,308,017 Termination Status=OK
+>>Console connected at 09-Dec-2003 19:06
+>>JobId 132 Job prometheus-rapstech.2003-12-09_19.00.03 is waiting
+>>execution.
+>>JobId 131 Job prometheus-consult-gis.2003-12-09_19.00.02 is waiting
+>>execution.
+>>JobId 130 Job prometheus-consult-documents.2003-12-09_19.00.01 is
+>>waiting on max
+>> Client jobs.
+>>JobId 129 Job prometheus-system.2003-12-09_19.00.00 is running.
+>>Level          Type     Scheduled          Name
+>>=================================================================
+>>Incremental    Backup   10-Dec-2003 19:00  prometheus-system
+>>Incremental    Backup   10-Dec-2003 19:00  prometheus-consult-documents
+>>Incremental    Backup   10-Dec-2003 19:00  prometheus-consult-gis
+>>Incremental    Backup   10-Dec-2003 19:00  prometheus-rapstech
+>>Full           Backup   10-Dec-2003 01:10  BackupCatalog
+>>====
+>>Connecting to Storage daemon File at localhost:9103
+>>
+>>prometheus-sd Version: 1.31a (02 Aug 2003)
+>>Daemon started 08-Dec-2003 19:30, 3 Jobs run.
+>>Last Job BackupCatalog.2003-12-09_01.10.00 finished at 09-Dec-2003 01:10
+>>  Files=1 Bytes=43,308,119 Termination Status=OK
+>>Device /data/server is mounted with Volume "backup"
+>>    Total Bytes=791,751,921 Blocks=12,274 Bytes/block=64,506
+>>    Positioned at File=0 Block=9,351
+>>Device /data/server is not open.
+>>Device /data/server is not open.
+>>Device /data/server is not open.
+>>Device /data/server is not open.
+>>Full Backup job backup using Volume
+>>"prometheus-system.2003-12-09_19.00.00" on d
+>>evice /data/server
+>>    Files=15,341 Bytes=602,255,638 Bytes/sec=1,517,016
+>>    FDReadSeqNo=134,036 in_msg=96746 out_msg=5 fd=6
+>>
+>>
+>>When I manually run a job it backups fine.
+>>
+>>Ta in advance
+>>Daniel
+>>
+>>
+>>
+>>-------------------------------------------------------
+>>This SF.net email is sponsored by: SF.net Giveback Program.
+>>Does SourceForge.net help you be more productive?  Does it
+>>help you create better code?  SHARE THE LOVE, and help us help
+>>YOU!  Click Here: http://sourceforge.net/donate/
+>>_______________________________________________
+>>Bacula-users mailing list
+>>Bacula-users@lists.sourceforge.net
+>>https://lists.sourceforge.net/lists/listinfo/bacula-users
+>>    
+>>
+>
+>
+>
+>--__--__--
+>
+>Message: 4
+>Date: Tue, 09 Dec 2003 14:57:32 -0800
+>From: Gregory Brauer <greg@wildbrain.com>
+>To: bacula-users <bacula-users@lists.sourceforge.net>
+>Subject: Re: [Bacula-users] Mount need for every job... me too
+>
+>
+>I have looked at all of the comments in this thread, but I
+>am also having this problem and cannot seem to fix it.
+>I am using an autochanger that blocks waiting for me to type
+>the "mount" command every time it autoloads a tape.  It
+>worked fine for me with 1.31, but has been doing this
+>since I upgraded to 1.32d.  Here are some excerpts from my
+>configuration:
+>
+>
+> From bacula-dir.conf:
+>
+>Storage {
+>   Autochanger = yes
+>   Name = "kiev AIT2 Autoloader"
+>   Address = kiev
+>   SDPort = 9103
+>   Password = "yV3C5gZXhF/RrYadlwKWnwAbTV1oUCXVqUIrAaUjMov+"
+>   Device = "AIT2 Autoloader"
+>   MediaType = "AIT2"
+>}
+>
+>
+> From bacula-sd.conf:
+>
+>Device {
+>   Autochanger = yes
+>   Changer Device = /dev/sg0
+>   Changer Command = "/etc/bacula/mtx-changer %c %o %S %a"
+>   Name = "AIT2 Autoloader"
+>   Media Type = "AIT2"
+>   Archive Device = /dev/nst0
+>   Hardware end of medium = No;
+>   Automatic Mount = yes;
+>   Always Open = yes;
+>   Removable Media = yes;
+>}
+>
+>I had tried this with both Always Open = yes, and no... it worked fine
+>with "no" under 1.31.
+>
+>
+>I have also noticed that every time bacula issues a "load slot" command,
+>I get an error message saying mtx-changer exited 1.
+>
+>
+>09-Dec-2003 14:42 kiev-sd: 3303 Issuing autochanger "load slot 15" command.
+>09-Dec-2003 14:44 kiev-sd: 3992 Bad autochanger "load slot" status=1.
+>
+>
+>But if I run mtx-changer manually from the command line, it always
+>seems to exit 0, so I'm not sure where bacula is seeing this error.
+>
+>
+>basic [root@kiev bacula]$ ./mtx-changer /dev/sg0 load 15 /dev/nst0
+>basic [root@kiev bacula]$ echo $status
+>0
+>
+>
+>I have tried increasing my sleep time on load to arbitrarily high
+>values, but that hasn't helped.
+>
+>
+>    load)
+>#     echo "Doing mtx -f $1 load $3"
+>       ${MTX} -f $1 load $3
+>       rtn=$?
+>#
+># Increase the sleep time if you have a slow device
+>       #sleep 15
+>       sleep 120
+>       exit $rtn
+>       ;;
+>
+>
+>What else can I check?
+>
+>Greg
+>
+>
+>
+>--__--__--
+>
+>Message: 5
+>Date: Wed, 10 Dec 2003 00:48:19 +0100
+>From: Volker Sauer <volker@volker-sauer.de>
+>To: Kern Sibbald <kern@sibbald.com>,
+>   bacula-users <bacula-users@lists.sourceforge.net>
+>Subject: [Bacula-users] Importtant: BIG Problems with schedule / bacula
+doesn't do Differnetial
+> backups
+>
+>This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+>--------------enig1AEBD91EBCB59C2EB43FEF98
+>Content-Type: text/plain; charset=us-ascii; format=flowed
+>Content-Transfer-Encoding: 7bit
+>
+>Hallo Kern,
+>
+>as I already worried about in 2 other mails is now proven:
+>
+>Bacula doesn't do a diffential backup!
+>
+>My schedule is this:
+>
+>Schedule {
+>         Name = "WeeklyCycle"
+>         Run = Level=Full Pool=Full 1st tue at 2:00pm
+>         Run = Level=Differential Pool=Full 2nd-5th tue at 7:00pm
+>         Run = Level=Incremental Pool=Inc wed-mon at 7:00pm
+>}
+>
+>
+>and this is what list jobs says (I hope you can read that):
+>
+>
+>|    55 | Zaphod                | 2003-12-02 14:00:04 | B    | F     | 
+>504,634 | 20,669,282,940 | T         |
+>|    56 | Arthur                | 2003-12-02 16:31:30 | B    | F     | 
+>380,719 | 15,498,385,751 | T         |
+>|    57 | Alexis                | 2003-12-02 18:23:45 | B    | F     | 
+>167,710 |  5,157,651,432 | T         |
+>|    58 | BackupCatalog         | 2003-12-02 19:23:13 | B    | F     | 
+>       1 |    404,663,640 | T         |
+>|    59 | ReminderIncCartridge  | 2003-12-03 08:00:05 | D    | F     | 
+>       0 |              0 | T         |
+>|    60 | Zaphod                | 2003-12-03 19:00:04 | B    | I     | 
+>     693 |    262,166,208 | T         |
+>|    61 | Arthur                | 2003-12-03 19:12:57 | B    | I     | 
+>     314 |    889,290,521 | T         |
+>|    62 | Alexis                | 2003-12-03 19:24:46 | B    | I     | 
+>     748 |     56,013,471 | T         |
+>|    63 | BackupCatalog         | 2003-12-03 22:00:04 | B    | F     | 
+>       1 |    404,846,132 | T         |
+>|    64 | Zaphod                | 2003-12-04 19:00:05 | B    | I     | 
+>     740 |    385,140,941 | T         |
+>|    65 | Arthur                | 2003-12-04 19:16:03 | B    | I     | 
+>     441 |    904,698,439 | T         |
+>|    66 | Alexis                | 2003-12-04 19:28:09 | B    | I     | 
+>     669 |     68,876,161 | T         |
+>|    67 | BackupCatalog         | 2003-12-04 22:00:04 | B    | F     | 
+>       1 |    253,231,104 | E         |
+>|    68 | BackupCatalog         | 0000-00-00 00:00:00 | B    | I     | 
+>       0 |              0 | C         |
+>|    69 | BackupCatalog         | 0000-00-00 00:00:00 | B    | I     | 
+>       0 |              0 | C         |
+>|    70 | BackupCatalog         | 2003-12-05 01:25:19 | B    | I     | 
+>       1 |    405,045,253 | T         |
+>|    71 | Zaphod                | 2003-12-05 19:00:04 | B    | I     | 
+>   8,389 |    373,643,708 | T         |
+>|    72 | Arthur                | 2003-12-05 19:13:59 | B    | I     | 
+>   6,904 |  1,007,785,097 | T         |
+>|    73 | Alexis                | 2003-12-05 19:28:23 | B    | I     | 
+>   4,085 |    114,727,583 | T         |
+>|    74 | BackupCatalog         | 2003-12-05 22:00:04 | B    | F     | 
+>       1 |    407,222,289 | T         |
+>|    75 | Zaphod                | 2003-12-06 19:00:05 | B    | I     | 
+>     923 |    175,466,045 | T         |
+>|    76 | Arthur                | 2003-12-06 19:14:01 | B    | I     | 
+>   1,872 |    516,372,637 | T         |
+>|    77 | Alexis                | 2003-12-06 19:25:01 | B    | I     | 
+>   5,422 |    190,847,977 | T         |
+>|    78 | BackupCatalog         | 2003-12-06 22:00:04 | B    | F     | 
+>       1 |    408,121,544 | T         |
+>|    79 | Zaphod                | 2003-12-07 19:00:04 | B    | I     | 
+>   1,347 |     93,787,356 | T         |
+>|    80 | Arthur                | 2003-12-07 19:12:06 | B    | I     | 
+>     705 |    496,647,729 | T         |
+>|    81 | Alexis                | 2003-12-07 19:25:08 | B    | I     | 
+>   1,414 |    102,756,100 | T         |
+>|    82 | BackupCatalog         | 2003-12-07 22:00:04 | B    | F     | 
+>       1 |    408,519,580 | T         |
+>|    83 | Zaphod                | 2003-12-08 19:00:05 | B    | I     | 
+>   4,428 |    461,132,237 | T         |
+>|    84 | Arthur                | 2003-12-08 19:15:59 | B    | I     | 
+>     307 |    384,713,540 | T         |
+>|    85 | Alexis                | 2003-12-08 19:25:56 | B    | I     | 
+>     708 |     78,420,311 | T         |
+>|    86 | BackupCatalog         | 2003-12-08 22:00:04 | B    | F     | 
+>       1 |    409,139,688 | T         |
+>|    87 | ReminderFullCartridge | 2003-12-09 06:00:05 | D    | F     | 
+>       0 |              0 | T         |
+>|    88 | Zaphod                | 2003-12-09 19:00:05 | B    | F     | 
+>507,058 | 21,050,750,780 | T         |
+>|    89 | Arthur                | 2003-12-09 21:27:07 | B    | F     | 
+>382,397 | 15,246,847,324 | T         |
+>|    90 | Alexis                | 2003-12-09 23:18:30 | B    | F     | 
+>167,868 |  4,595,334,742 | T         |
+>|    91 | BackupCatalog         | 2003-12-10 00:10:05 | B    | F     | 
+>       1 |    528,055,685 | T         |
+>+-------+-----------------------+---------------------+------+-------+-----
+-----+----------------+-----------+
+>*
+>
+>Bacula did a FullBackup on December 2nd, which was the first Tuesday in 
+>this month. Correct. Then it did Incremenatial backups from 3rd until 
+>8th. Also correct.
+>Yesterday, on December 9th - according to my schedule there should have 
+>been a differential backup!! But as you can see above, bacula did a Full 
+>backup - without reason, I think!!
+>(This brings real big problems to my storage managment, because I don't 
+>have enough space for 4 Full-Backups a month. I urgently need diffential 
+>backups in the conecept)
+>Could the cause be, that there's a pool change! Should the diffential 
+>backup better go to the inc-pool??
+>
+>Please help!!
+>
+>Regards
+>Volker
+>
+>P.S.: this is the job output of the jobs from Tue 9th, which should have 
+>been differential:
+>
+>
+>z217-dir: Start Backup JobId 88, Job=Zaphod.2003-12-09_19.00.00
+>z217-sd: 3301 Issuing autochanger "loaded" command.
+>z217-sd: Volume "F-6" previously written, moving to end of data.
+>z217-sd: Ready to append to end of Volume at file=6.
+>z217-sd: block.c:480 End of medium on device /dev/tape. Write of 64512 
+>bytes got 32768.
+>z217-sd: End of medium on Volume "F-6" Bytes=23,935,131,136 
+>Blocks=371,020 at 09-Dec-2003 21:06.
+>z217-sd: 3301 Issuing autochanger "loaded" command.
+>z217-sd: 3302 Issuing autochanger "unload" command.
+>z217-sd: 3303 Issuing autochanger "load slot 7" command.
+>z217-sd: 3304 Autochanger "load slot 7" status is OK.
+>z217-sd: Wrote label to prelabeled Volume "F-7" on device /dev/tape
+>z217-sd: New volume "F-7" mounted on device /dev/tape at 09-Dec-2003 21:08.
+>z217-dir: Bacula 1.32d (02Nov03): 09-Dec-2003 21:27
+>JobId:                  88
+>Job:                    Zaphod.2003-12-09_19.00.00
+>Backup Level:           Full
+>Client:                 zaphod-fd
+>FileSet:                "Set Zaphod" 2003-11-21 16:32:26
+>Start time:             09-Dec-2003 19:00
+>End time:               09-Dec-2003 21:27
+>FD Files Written:       507,058
+>SD Files Written:       507,058
+>FD Bytes Written:       21,050,750,780
+>SD Bytes Written:       21,121,287,812
+>Rate:                   2387.2 KB/s
+>Software Compression:   None
+>Volume name(s):         F-6|F-7
+>Volume Session Id:      14
+>Volume Session Time:    1070650983
+>Last Volume Bytes:      2,327,668,804
+>Non-fatal FD errors:    0
+>SD Errors:              0
+>FD termination status:  OK
+>SD termination status:  OK
+>Termination:            Backup OK
+>
+>z217-dir: Begin pruning Jobs.
+>z217-dir: No Jobs found to prune.
+>z217-dir: Begin pruning Files.
+>z217-dir: No Files found to prune.
+>z217-dir: End auto prune.
+>
+>
+>
+>z217-dir: Start Backup JobId 89, Job=Arthur.2003-12-09_19.00.01
+>z217-dir: Bacula 1.32d (02Nov03): 09-Dec-2003 23:18
+>JobId:                  89
+>Job:                    Arthur.2003-12-09_19.00.01
+>Backup Level:           Full
+>Client:                 z217-fd
+>FileSet:                "Set Arthur" 2003-11-21 18:47:14
+>Start time:             09-Dec-2003 21:27
+>End time:               09-Dec-2003 23:18
+>FD Files Written:       382,397
+>SD Files Written:       382,397
+>FD Bytes Written:       15,246,847,324
+>SD Bytes Written:       15,300,937,041
+>Rate:                   2283.1 KB/s
+>Software Compression:   None
+>Volume name(s):         F-7
+>Volume Session Id:      15
+>Volume Session Time:    1070650983
+>Last Volume Bytes:      17,654,556,715
+>Non-fatal FD errors:    0
+>SD Errors:              0
+>FD termination status:  OK
+>SD termination status:  OK
+>Termination:            Backup OK
+>
+>z217-dir: Begin pruning Jobs.
+>z217-dir: No Jobs found to prune.
+>z217-dir: Begin pruning Files.
+>z217-dir: No Files found to prune.
+>z217-dir: End auto prune.
+>
+>
+>
+>z217-dir: Start Backup JobId 90, Job=Alexis.2003-12-09_19.00.02
+>z217-dir: Bacula 1.32d (02Nov03): 10-Dec-2003 00:10
+>JobId:                  90
+>Job:                    Alexis.2003-12-09_19.00.02
+>Backup Level:           Full
+>Client:                 alexis-fd
+>FileSet:                "Set Alexis" 2003-11-21 20:58:58
+>Start time:             09-Dec-2003 23:18
+>End time:               10-Dec-2003 00:10
+>FD Files Written:       167,868
+>SD Files Written:       167,868
+>FD Bytes Written:       4,595,334,742
+>SD Bytes Written:       4,616,435,343
+>Rate:                   1487.2 KB/s
+>Software Compression:   None
+>Volume name(s):         F-7
+>Volume Session Id:      16
+>Volume Session Time:    1070650983
+>Last Volume Bytes:      22,280,313,500
+>Non-fatal FD errors:    0
+>SD Errors:              0
+>FD termination status:  OK
+>SD termination status:  OK
+>Termination:            Backup OK
+>
+>z217-dir: Begin pruning Jobs.
+>z217-dir: No Jobs found to prune.
+>z217-dir: Begin pruning Files.
+>z217-dir: No Files found to prune.
+>z217-dir: End auto prune.
+>  
+>
+I'm trying to setup a surestore 12000e autochanger so far in my 
+bacula-sd.conf  i have added this
+Device {
+  Name = autochanger                     #
+  Media Type = DDS-2
+  Archive Device = /dev/sa1
+  AutomaticMount = yes;               # when device opened, read it
+  AlwaysOpen = yes;
+  LabelMedia = yes;
+  RemovableMedia = yes;
+  Autochanger = yes;
+  Changer Device = /dev/pass0 #changer device
+}
+But i need to make an entry for the Changer Command =   .I have 
+installed mtx but there are no sample files to be found or any
+bacula samples for autochangers
+Cheers Terry
+
+
+
+
+-------------------------------------------------------
+This SF.net email is sponsored by: SF.net Giveback Program.
+Does SourceForge.net help you be more productive?  Does it
+help you create better code?  SHARE THE LOVE, and help us help
+YOU!  Click Here: http://sourceforge.net/donate/
+_______________________________________________
+Bacula-users mailing list
+Bacula-users@lists.sourceforge.net
+https://lists.sourceforge.net/lists/listinfo/bacula-users
+
+
+-------------------------------------------------------
+This SF.net email is sponsored by: SF.net Giveback Program.
+Does SourceForge.net help you be more productive?  Does it
+help you create better code?  SHARE THE LOVE, and help us help
+YOU!  Click Here: http://sourceforge.net/donate/
+_______________________________________________
+Bacula-users mailing list
+Bacula-users@lists.sourceforge.net
+https://lists.sourceforge.net/lists/listinfo/bacula-users

@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# Shell script to fix PostgreSQL tables in version 8
+#
+echo " "
+echo "This script will fix a Bacula PostgreSQL database version 8"
+echo "Depending on the size of your database,"
+echo "this script may take several minutes to run."
+echo " "
+#
+# Set the following to the path to psql.
+bindir=****EDIT-ME to be the path to psql****
+
+if $bindir/psql $* -f - <<END-OF-DATA
+\c bacula
+
+begin;
+
+alter table media rename column endblock to endblock_old;
+alter table media add column endblock bigint;
+update media set endblock = endblock_old;
+alter table media alter column endblock set not null;
+alter table media drop column endblock_old;
+
+commit;
+
+vacuum;
+
+END-OF-DATA
+then
+   echo "Update of Bacula PostgreSQL tables succeeded."
+else
+   echo "Update of Bacula PostgreSQL tables failed."
+fi
+exit 0

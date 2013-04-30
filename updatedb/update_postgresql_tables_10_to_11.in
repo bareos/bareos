@@ -1,0 +1,42 @@
+#!/bin/sh
+#
+# Shell script to update PostgreSQL tables from version 2.0.0 to 3.0.0 or higher
+#
+echo " "
+echo "This script will update a Bacula PostgreSQL database from version 10 to 11"
+echo " which is needed to convert from Bacula version 2.0.0 to 3.0.x or higher"
+echo " "
+bindir=@POSTGRESQL_BINDIR@
+PATH="$bindir:$PATH"
+db_name=${db_name:-@db_name@}
+
+if psql -f - -d ${db_name} $* <<END-OF-DATA
+-- The alter table operation can be faster with a big maintenance_work_mem
+-- Uncomment and adapt this value to your environment
+-- SET maintenance_work_mem = '1GB';
+
+BEGIN;
+ALTER TABLE file ALTER fileid TYPE bigint ;
+ALTER TABLE basefiles ALTER fileid TYPE bigint;
+ALTER TABLE job ADD COLUMN readbytes bigint default 0;
+ALTER TABLE media ADD COLUMN ActionOnPurge smallint default 0;
+ALTER TABLE pool ADD COLUMN ActionOnPurge smallint default 0;
+
+-- Create a table like Job for long term statistics
+CREATE TABLE JobHisto (LIKE Job);
+CREATE INDEX jobhisto_idx ON JobHisto ( starttime );
+
+UPDATE Version SET VersionId=11;
+COMMIT;
+
+-- If you have already this table, you can remove it with:
+-- DROP TABLE JobHistory;
+
+-- vacuum analyse;
+END-OF-DATA
+then
+   echo "Update of Bacula PostgreSQL tables succeeded."
+else
+   echo "Update of Bacula PostgreSQL tables failed."
+fi
+exit 0

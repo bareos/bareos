@@ -1,0 +1,48 @@
+# 
+# This file is used as the template to create the
+# Makefile for the Tru64 specific installation.
+#
+#  28 May 2004 -- Kern Sibbald
+#
+#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+
+nothing:
+
+install: install-autostart
+
+install-autostart: install-autostart-fd 
+
+	
+install-autostart-fd:
+	@rm -f /sbin/rc0.d/K20bacula-fd
+	@rm -f /sbin/rc3.d/S99bacula-fd
+	@$(INSTALL_PROGRAM) -m 744 bacula-fd /sbin/init.d/bacula-fd
+	# set symlinks for script at startup and shutdown
+	@ln -f -s /sbin/init.d/bacula-fd /sbin/rc0.d/K20bacula-fd
+	@ln -f -s /sbin/init.d/bacula-fd /sbin/rc3.d/S99bacula-fd
+
+
+uninstall: uninstall-autostart
+
+uninstall-autostart: uninstall-autostart-fd
+
+uninstall-autostart-fd:
+	@rm -f /sbin/rc0.d/K20bacula-fd
+	@rm -f /sbin/rc3.d/S99bacula-fd
+	@rm -f /sbin/init.d/bacula-fd
+
+
+clean:
+	@rm -f 1 2 3
+
+distclean: clean
+	@rm -f bacula-fd
+	@rm -f Makefile
+
+devclean: clean
+	@rm -f bacula-fd
+	@rm -f Makefile

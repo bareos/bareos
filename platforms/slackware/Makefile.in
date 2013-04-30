@@ -1,0 +1,66 @@
+# 
+# This file is used as the template to create the
+# Makefile for the Slackware specific installation.
+#
+#  22 January 2003 -- Kern Sibbald
+# and corrected for Gentoo by
+#  Patrick Naubert 25 Jan 2003
+# and reworked for Slackware by
+#  Matt Howard 09 Mar 2004
+# further reworked for Slackware without Perl dependency by
+#  Phil Stracchino 13 Mar 2004
+#
+#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+
+nothing:
+
+install: install-autostart
+
+install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
+
+install-autostart-fd: install-autostart-rc
+	@$(INSTALL) -m 744 rc.bacula-fd $(DESTDIR)/etc/rc.d/rc.bacula-fd
+
+install-autostart-sd: install-autostart-rc
+	@$(INSTALL) -m 744 rc.bacula-sd $(DESTDIR)/etc/rc.d/rc.bacula-sd
+
+install-autostart-dir: install-autostart-rc
+	@$(INSTALL) -m 744 rc.bacula-dir $(DESTDIR)/etc/rc.d/rc.bacula-dir
+
+install-autostart-rc:
+	@$(INSTALL) -m 744 functions.bacula $(DESTDIR)/etc/rc.d
+	sh ./local-install.sh install $(DESTDIR)
+
+
+uninstall: uninstall-autostart
+
+uninstall-autostart: uninstall-autostart-fd uninstall-autostart-sd uninstall-autostart-dir
+   
+uninstall-autostart-fd: uninstall-autostart-rc
+	@rm -f $(DESTDIR)/etc/rc.d/rc.bacula-fd
+
+uninstall-autostart-sd: uninstall-autostart-rc
+	@rm -f $(DESTDIR)/etc/rc.d/rc.bacula-sd
+
+uninstall-autostart-dir: uninstall-autostart-rc
+	@rm -f $(DESTDIR)/etc/rc.d/rc.bacula-dir
+
+uninstall-autostart-rc:
+	@rm -f $(DESTDIR)/etc/rc.d/functions.bacula
+	sh ./local-install.sh remove $(DESTDIR)
+
+
+clean:
+	@rm -f 1 2 3
+
+distclean: clean
+	@rm -f rc.bacula-sd rc.bacula-fd rc.bacula-dir
+	@rm -f Makefile 
+
+devclean: clean
+	@rm -f rc.bacula-sd rc.bacula-fd rc.bacula-dir
+	@rm -f Makefile 

@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# Shell script to update MySQL tables from version 1.22 to 1.23
+#
+echo " "
+echo "This script will update a bacula database from version 4 to 5."
+echo "Depending on the size of your database,"
+echo "this script may take several minutes to run."
+echo " "
+
+# the location of the mysql program
+bindir=/usr/bin
+
+DB_VER=`$bindir/mysql bacula -e 'select * from Version;'|tail -n 1 2>/dev/null`
+if [ -z "$DB_VER" ]; then
+	echo "Sorry, I can't seem to locate a bacula database."
+	exit 1
+fi
+
+if [ -n "$DB_VER" ] && [ "$DB_VER" -ne "4" ]; then
+	echo "Sorry, this script is designed to update a version 4 database"
+	echo "and you have a version $DB_VER database."
+	exit 1
+fi
+
+if $bindir/mysql -f <<END-OF-DATA
+USE bacula;
+ALTER TABLE Media ADD COLUMN VolUseDuration BIGINT UNSIGNED NOT NULL;
+ALTER TABLE Media ADD COLUMN MaxVolJobs INTEGER UNSIGNED NOT NULL;
+ALTER TABLE Media ADD COLUMN MaxVolFiles INTEGER UNSIGNED NOT NULL;
+ALTER TABLE Pool ADD COLUMN VolUseDuration BIGINT UNSIGNED NOT NULL;
+ALTER TABLE Pool ADD COLUMN MaxVolJobs INTEGER UNSIGNED NOT NULL;
+ALTER TABLE Pool ADD COLUMN MaxVolFiles INTEGER UNSIGNED NOT NULL;
+ALTER TABLE Pool ADD COLUMN MaxVolBytes BIGINT UNSIGNED NOT NULL;
+ALTER TABLE Media MODIFY VolStatus  ENUM('Full', 'Archive', 'Append', 
+	    'Recycle', 'Purged', 'Read-Only', 'Disabled', 'Error', 
+	    'Busy', 'Used') NOT NULL;
+ALTER TABLE Media CHANGE VolMaxBytes MaxVolBytes BIGINT UNSIGNED NOT NULL;
+
+UPDATE Version SET VersionId=5;
+
+END-OF-DATA
+then
+   echo "Update of Bacula tables succeeded."
+else
+   echo "Update of Bacula tables failed."
+fi
+exit 0

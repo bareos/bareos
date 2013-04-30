@@ -1,0 +1,296 @@
+#!/usr/afsws/bin/pagsh
+#
+#   Get a Kerbos authentication ticket for AFS for Bacula, then run
+#      the Bacula client.  See AFS-README for documentation.
+#
+# NAME          afs_bacula
+# AUTHOR        Lucas Mingarro <lucas@easytech.com.ar>
+# PURPOSE       Run an AFS authenticated program.
+#               Get a PAG, get the user's token,
+#               then exec user's command
+#
+TEXTDOMAIN=initscripts
+TEXTDOMAINDIR=/etc/locale
+
+# Make sure umask is sane
+umask 022
+
+# First set up a default search path.
+export PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/X11R6/bin"
+
+# Get a sane screen width
+[ -z "$COLUMNS" ] && COLUMNS=80
+
+if [ -f /etc/sysconfig/i18n -a -z "$NOLOCALE" ] ; then
+   . /etc/sysconfig/i18n
+   if [ "$LANG" = "ja_JP.eucJP" -a "`/sbin/consoletype`" != "pty" ]; then
+     unset LANG
+   else
+     export LANG
+   fi
+fi
+
+# Read in our configuration
+if [ -z "$BOOTUP" ]; then
+   if [ -f /etc/sysconfig/init ]; then
+       . /etc/sysconfig/init
+   else
+     # This all seem confusing? Look in /etc/sysconfig/init,
+     # or in /usr/doc/initscripts-*/sysconfig.txt
+     BOOTUP=color
+     RES_COL=60
+     MOVE_TO_COL="echo -en \\033[${RES_COL}G"
+     SETCOLOR_SUCCESS="echo -en \\033[1;32m"
+     SETCOLOR_FAILURE="echo -en \\033[1;31m"
+     SETCOLOR_WARNING="echo -en \\033[1;33m"
+     SETCOLOR_NORMAL="echo -en \\033[0;39m"
+     LOGLEVEL=1
+   fi
+   if [ -x /sbin/consoletype ]; then
+     if [ "`consoletype`" = "serial" ]; then
+       BOOTUP=serial
+       MOVE_TO_COL=
+       SETCOLOR_SUCCESS=
+       SETCOLOR_FAILURE=
+       SETCOLOR_WARNING=
+       SETCOLOR_NORMAL=
+     fi
+   fi
+fi
+
+if [ "$BOOTUP" != "verbose" ]; then
+    INITLOG_ARGS="-q"
+else
+    INITLOG_ARGS=
+fi
+
+# Check if $pid (could be plural) are running
+checkpid() {
+         while [ "$1" ]; do
+            [ -d /proc/$1 ] && return 0
+            shift
+         done
+         return 1
+}
+
+
+# A function to start a program.
+daemon() {
+         # Test syntax.
+         local gotbase=
+         local base= user= nice= bg= pid
+         nicelevel=0
+         while [ "$1" != "${1##[-+]}" ]; do
+           case $1 in
+             '')    echo $"$0: Usage: daemon [+/-nicelevel] {program}"
+                    return 1;;
+             --check)
+                    base=$2
+                    gotbase="yes"
+                    shift 2
+                    ;;
+             --check=?*)
+                    base=${1#--user=}
+                    shift
+                    ;;
+             --user)
+                    user=$2
+                    shift 2
+                    ;;
+             --user=?*)
+                    user=${1#--user=}
+                    shift
+                    ;;
+             [-+][0-9]*)
+                    nice="nice -n $1"
+                    shift
+                    ;;
+             *)     echo $"$0: Usage: daemon [+/-nicelevel] {program}"
+                    return 1;;
+           esac
+         done
+
+         # Save basename.
+         [ -z $gotbase ] && base=${1##*/}
+
+         # See if it's already running. Look *only* at the pid file.
+         pidlist=`pidfileofproc $base`
+
+         [ -n "$pid" ] && return
+
+         # make sure it doesn't core dump anywhere; while this could mask
+         # problems with the daemon, it also closes some security problems
+         ulimit -S -c 0 >/dev/null 2>&1
+
+         # Echo daemon
+         [ "$BOOTUP" = "verbose" ] && echo -n " $base"
+
+         # And start it up.
+         if [ -z "$user" ]; then
+            $nice initlog $INITLOG_ARGS -c "$*"
+         else
+            $nice initlog $INITLOG_ARGS -c "su - $user -c \"$*\"" && 
+success $"$base startup" || failure $"$base startup"
+         fi
+         [ $? = 0 ] && success $"$base startup" || failure $"$base startup"
+}
+
+
+# A function to find the pid of a program. Looks *only* at the pidfile
+pidfileofproc() {
+         local base=${1##*/}
+         local pid
+
+         # Test syntax.
+         if [ $# = 0 ] ; then
+                 echo $"Usage: pidfileofproc {program}"
+                 return 1
+         fi
+
+         # First try "/var/run/*.pid" files
+         if [ -f /var/run/${base}.pid ] ; then
+                 read pid < /var/run/${base}.pid
+                 for p in $line ; do
+                        [ -z "${p//[0-9]/}" -a -d /proc/$p ] && 
+pid="$pid $p"
+                 done
+                 if [ -n "$pid" ] ; then
+                         echo $pid
+                         return 0
+                 fi
+         fi
+}
+
+echo_success() {
+   [ "$BOOTUP" = "color" ] && $MOVE_TO_COL
+   echo -n "[  "
+   [ "$BOOTUP" = "color" ] && $SETCOLOR_SUCCESS
+   echo -n $"OK"
+   [ "$BOOTUP" = "color" ] && $SETCOLOR_NORMAL
+   echo -n "  ]"
+   echo -ne "\r"
+   return 0
+}
+
+echo_failure() {
+   [ "$BOOTUP" = "color" ] && $MOVE_TO_COL
+   echo -n "["
+   [ "$BOOTUP" = "color" ] && $SETCOLOR_FAILURE
+   echo -n $"FAILED"
+   [ "$BOOTUP" = "color" ] && $SETCOLOR_NORMAL
+   echo -n "]"
+   echo -ne "\r"
+   return 1
+}
+
+echo_passed() {
+   [ "$BOOTUP" = "color" ] && $MOVE_TO_COL
+   echo -n "["
+   [ "$BOOTUP" = "color" ] && $SETCOLOR_WARNING
+   echo -n $"PASSED"
+   [ "$BOOTUP" = "color" ] && $SETCOLOR_NORMAL
+   echo -n "]"
+   echo -ne "\r"
+   return 1
+}
+
+# Log that something succeeded
+success() {
+   if [ -z "$IN_INITLOG" ]; then
+      initlog $INITLOG_ARGS -n $0 -s "$1" -e 1
+   else
+      # silly hack to avoid EPIPE killing rc.sysinit
+      trap "" SIGPIPE
+      echo "$INITLOG_ARGS -n $0 -s \"$1\" -e 1" >&21
+      trap - SIGPIPE
+   fi
+   [ "$BOOTUP" != "verbose" ] && echo_success
+   return 0
+}
+
+# Log that something failed
+failure() {
+   rc=$?
+   if [ -z "$IN_INITLOG" ]; then
+      initlog $INITLOG_ARGS -n $0 -s "$1" -e 2
+   else
+      trap "" SIGPIPE
+      echo "$INITLOG_ARGS -n $0 -s \"$1\" -e 2" >&21
+      trap - SIGPIPE
+   fi
+   [ "$BOOTUP" != "verbose" ] && echo_failure
+   return $rc
+}
+
+# Log that something passed, but may have had errors. Useful for fsck
+passed() {
+   rc=$?
+   if [ -z "$IN_INITLOG" ]; then
+      initlog $INITLOG_ARGS -n $0 -s "$1" -e 1
+   else
+      trap "" SIGPIPE
+      echo "$INITLOG_ARGS -n $0 -s \"$1\" -e 1" >&21
+      trap - SIGPIPE
+   fi
+   [ "$BOOTUP" != "verbose" ] && echo_passed
+   return $rc
+}
+
+# Run some action. Log its output.
+action() {
+   STRING=$1
+   echo -n "$STRING "
+   shift
+   initlog $INITLOG_ARGS -c "$*" && success $"$STRING" || failure $"$STRING"
+   rc=$?
+   echo
+   return $rc
+}
+
+# returns OK if $1 contains $2
+strstr() {
+   [ "$1" = "$2" ] && return 0
+   slice=${1#*$2*}
+   [ "$slice" = "$1" ] && return 1
+   return 0
+}
+
+# Confirm whether we really want to run this service
+confirm() {
+   local YES=$"yY"
+   local NO=$"nN"
+   local CONT=$"cC"
+
+   while : ; do
+       echo -n $"Start service $1 (Y)es/(N)o/(C)ontinue? [Y] "
+       read answer
+       if strstr "$YES" "$answer" || [ "$answer" = "" ] ; then
+          return 0
+       elif strstr "$CONT" "$answer" ; then
+          return 2
+       elif strstr "$NO" "$answer" ; then
+          return 1
+       fi
+   done
+}
+
+# Here is the authentication with the kas server
+
+CMD=`basename ${0}`
+PRINCIPAL='bacula'
+passwordfile='/etc/security/afs_bacula.pw'
+klog $PRINCIPAL -pipe < ${passwordfile}
+command_line="$*"
+command=`echo ${command_line} | awk '{print $1}'`
+# Check if we can run the command.
+# If we got this far, it is likely that the command name is correct
+# but there may be a problem in accessing the command file.
+# If there is an error, log it via syslog (logger) rather than ">&2"
+
+   #if [ ! -x "${command}" ]; then
+     #M="error: unable to execute command ${command}"
+     #logger -i -t "${CMD}" "${M}"
+     #exit 1
+   #fi
+#fi
+$command_line

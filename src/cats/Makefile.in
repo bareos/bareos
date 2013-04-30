@@ -1,0 +1,350 @@
+# 
+@MCOMMON@
+
+srcdir =	.
+.PATH:		.
+
+# one up
+basedir = ..
+# top dir
+topdir = ../..
+# this dir relative to top dir
+thisdir = src/cats
+
+DEFS += -D_BDB_PRIV_INTERFACE_
+#CPPFLAGS += @DBI_DBD_DRIVERDIR@
+
+DEBUG=@DEBUG@
+MKDIR=$(topdir)/autoconf/mkinstalldirs
+
+first_rule: all
+dummy:
+
+#
+# include files installed when using libtool
+#
+INCLUDE_FILES = cats.h protos.h sql_cmds.h
+
+MYSQL_INCLUDE = @MYSQL_INCLUDE@
+MYSQL_LIBS = @MYSQL_LIBS@
+MYSQL_SRCS = mysql.c
+MYSQL_OBJS = $(MYSQL_SRCS:.c=.o)
+MYSQL_LOBJS = $(MYSQL_SRCS:.c=.lo)
+
+POSTGRESQL_INCLUDE = @POSTGRESQL_INCLUDE@
+POSTGRESQL_LIBS = @POSTGRESQL_LIBS@
+POSTGRESQL_SRCS = postgresql.c
+POSTGRESQL_OBJS = $(POSTGRESQL_SRCS:.c=.o)
+POSTGRESQL_LOBJS = $(POSTGRESQL_SRCS:.c=.lo)
+
+SQLITE_INCLUDE = @SQLITE_INCLUDE@
+SQLITE_LIBS = @SQLITE_LIBS@
+SQLITE_SRCS = sqlite.c
+SQLITE_OBJS = $(SQLITE_SRCS:.c=.o)
+SQLITE_LOBJS = $(SQLITE_SRCS:.c=.lo)
+
+#INGRES_INCLUDE = @INGRES_INCLUDE@
+#INGRES_LIBS = @INGRES_LIBS@
+#INGRES_SRCS = ingres.c myingres.c
+#INGRES_OBJS = $(INGRES_SRCS:.c=.o)
+#INGRES_LOBJS = $(INGRES_SRCS:.c=.lo)
+
+#DBI_INCLUDE = @DBI_INCLUDE@
+#DBI_LIBS = @DBI_LIBS@
+#DBI_SRCS = dbi.c
+#DBI_OBJS = $(DBI_SRCS:.c=.o)
+#DBI_LOBJS = $(DBI_SRCS:.c=.lo)
+
+DB_LIBS=@DB_LIBS@
+
+CATS_SRCS  = mysql.c postgresql.c sqlite.c
+LIBBACSQL_SRCS = bvfs.c cats.c sql.c sql_cmds.c sql_create.c sql_delete.c \
+		 sql_find.c sql_get.c sql_glue.c sql_list.c sql_update.c
+LIBBACSQL_OBJS = $(LIBBACSQL_SRCS:.c=.o)
+LIBBACCATS_OBJS = $(CATS_SRCS:.c=.o)
+LIBBACSQL_LOBJS = $(LIBBACSQL_SRCS:.c=.lo)
+
+LIBBACSQL_LT_RELEASE = @LIBBACSQL_LT_RELEASE@
+LIBBACCATS_LT_RELEASE = @LIBBACCATS_LT_RELEASE@
+
+.SUFFIXES:	.c .o .lo
+.PHONY:
+.DONTCARE:
+
+# inference rules
+.c.o:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+.c.lo:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+$(MYSQL_LOBJS):
+	@echo "Compiling $(@:.lo=.c)"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(MYSQL_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.lo=.c)
+
+$(POSTGRESQL_LOBJS):
+	@echo "Compiling $(@:.lo=.c)"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(POSTGRESQL_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.lo=.c)
+
+$(SQLITE_LOBJS):
+	@echo "Compiling $(@:.lo=.c)"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(SQLITE_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.lo=.c)
+
+#$(DBI_LOBJS):
+#	 @echo "Compiling $(@:.lo=.c)"
+#	 $(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DBI_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.lo=.c)
+
+#$(INGRES_LOBJS):
+#	 @echo "Compiling $(@:.lo=.c)"
+#	 $(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(INGRES_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.lo=.c)
+
+$(MYSQL_OBJS):
+	@echo "Compiling $(@:.o=.c)"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(MYSQL_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.o=.c)
+
+$(POSTGRESQL_OBJS):
+	@echo "Compiling $(@:.o=.c)"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(POSTGRESQL_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.o=.c)
+
+$(SQLITE_OBJS):
+	@echo "Compiling $(@:.o=.c)"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(SQLITE_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.o=.c)
+
+#$(INGRES_OBJS):
+#	 @echo "Compiling $(@:.o=.c)"
+#	 $(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(INGRES_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.o=.c)
+
+#$(DBI_OBJS):
+#	 @echo "Compiling $(@:.o=.c)"
+#	 $(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DBI_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.o=.c)
+#-------------------------------------------------------------------------
+all: Makefile libbacsql$(DEFAULT_ARCHIVE_TYPE) libbaccats$(DEFAULT_ARCHIVE_TYPE) @SHARED_CATALOG_TARGETS@
+	@echo "==== Make of sqllibs is good ===="
+	@echo " "
+
+#esql:
+#	 @echo "Generating myingres.c from myingres.sc"
+#	 $(NO_ECHO)$(II_SYSTEM)/ingres/bin/esqlcc -multi -extension=c myingres.sc
+#	 @echo "Generating myingres.h from myingres.sh"
+#	 $(NO_ECHO)$(II_SYSTEM)/ingres/bin/esqlcc -extension=h myingres.sh
+
+libbacsql.a: $(LIBBACSQL_OBJS)
+	@echo "Making $@ ..."
+	$(AR) rc  $@ $(LIBBACSQL_OBJS)
+	$(RANLIB) $@
+
+libbaccats.a: $(LIBBACCATS_OBJS)
+	@echo "Making $@ ..."
+	$(AR) rc  $@ $(LIBBACCATS_OBJS)
+	$(RANLIB) $@
+
+libbacsql.la: Makefile $(LIBBACSQL_LOBJS)
+	@echo "Making $@ ..."	  
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBACSQL_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACSQL_LT_RELEASE) $(DB_LIBS)
+
+libbaccats.la: Makefile cats_dummy.lo
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ cats_dummy.lo -export-dynamic -rpath $(libdir) -release $(LIBBACCATS_LT_RELEASE)
+
+libbaccats-mysql.la: Makefile $(MYSQL_LOBJS)
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(MYSQL_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACCATS_LT_RELEASE) \
+							   -soname libbaccats-$(LIBBACCATS_LT_RELEASE).so $(MYSQL_LIBS)
+
+libbaccats-postgresql.la: Makefile $(POSTGRESQL_LOBJS)
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(POSTGRESQL_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACCATS_LT_RELEASE) \
+							   -soname libbaccats-$(LIBBACCATS_LT_RELEASE).so $(POSTGRESQL_LIBS)
+
+libbaccats-sqlite3.la: Makefile $(SQLITE_LOBJS)
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(SQLITE_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACCATS_LT_RELEASE) \
+							   -soname libbaccats-$(LIBBACCATS_LT_RELEASE).so $(SQLITE_LIBS)
+
+#libbaccats-ingres.la: Makefile $(INGRES_LOBJS)
+#	 @echo "Making $@ ..."
+#	 $(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(INGRES_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACCATS_LT_RELEASE) \
+#							    -soname libbaccats-$(LIBBACCATS_LT_RELEASE).so $(INGRES_LIBS)
+
+#libbaccats-dbi.la: Makefile $(DBI_LOBJS)
+#	 @echo "Making $@ ..."
+#	 $(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(DBI_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACCATS_LT_RELEASE) \
+#							    -soname libbaccats-$(LIBBACCATS_LT_RELEASE).so $(DBI_LIBS)
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+libtool-clean:
+	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
+	@$(RMF) *.la
+	@$(RMF) -r .libs _libs
+
+clean:	libtool-clean
+	@$(RMF) core a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+
+realclean: clean
+	$(RMF) tags
+
+	$(RMF) create_bacula_database	   update_bacula_tables     make_bacula_tables
+	$(RMF) grant_bacula_privileges	   drop_bacula_tables	    drop_bacula_database
+
+	$(RMF) create_mysql_database	   update_mysql_tables	    make_mysql_tables
+	$(RMF) grant_mysql_privileges	   drop_mysql_tables	    drop_mysql_database
+
+	$(RMF) create_postgresql_database  update_postgresql_tables make_postgresql_tables
+	$(RMF) grant_postgresql_privileges drop_postgresql_tables   drop_postgresql_database
+
+	$(RMF) create_ingres_database update_ingres_tables make_ingres_tables
+	$(RMF) grant_ingres_privileges drop_ingres_tables   drop_ingres_database
+
+	$(RMF) create_sqlite_database	   update_sqlite_tables     make_sqlite_tables
+	$(RMF) grant_sqlite_privileges	   drop_sqlite_tables	    drop_sqlite_database
+
+	$(RMF) create_sqlite3_database	   update_sqlite3_tables     make_sqlite3_tables
+	$(RMF) grant_sqlite3_privileges    drop_sqlite3_tables	    drop_sqlite3_database
+
+	$(RMF) mysql sqlite postgresql ingres
+	$(RMF) make_catalog_backup make_catalog_backup.pl delete_catalog_backup
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+devclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+install-includes:
+	$(MKDIR) $(DESTDIR)/$(includedir)/bacula/sql
+	for I in $(INCLUDE_FILES); do \
+	   $(INSTALL_DATA) $$I $(DESTDIR)$(includedir)/bacula/sql/`basename $$I`; \
+	done
+
+uninstall-includes:
+	for I in $(INCLUDE_FILES); do \
+	   $(RMF) $(DESTDIR)$(includedir)/bacula/sql/`basename $$I`; \
+	done
+
+libtool-install: all
+	$(MKDIR) $(DESTDIR)$(libdir)
+	$(RMF) $(DESTDIR)$(libdir)/libbacsql-*.so $(DESTDIR)$(libdir)/libbacsql.la
+	$(RMF) $(DESTDIR)$(libdir)/libbaccats-*.so $(DESTDIR)$(libdir)/libbaccats.la
+	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbacsql.la $(DESTDIR)$(libdir)
+	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbaccats.la $(DESTDIR)$(libdir)
+	for db_type in @DB_BACKENDS@; do \
+	    $(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbaccats-$${db_type}.la $(DESTDIR)$(libdir); \
+	done
+	./install-default-backend @DEFAULT_DB_TYPE@ $(LIBBACCATS_LT_RELEASE) $(DESTDIR)$(libdir)
+
+libtool-uninstall:
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/libbacsql.la
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/libbaccats.la
+	for db_type in @DB_BACKENDS@; do \
+	    $(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/libbacsql-$${db_type}.la; \
+	done
+
+install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@
+	for db_type in @DB_BACKENDS@; do \
+	    if [ -f create_$${db_type}_database ]; then \
+	    $(INSTALL_SCRIPT) create_$${db_type}_database $(DESTDIR)$(scriptdir)/create_$${db_type}_database; \
+	    $(INSTALL_SCRIPT) update_$${db_type}_tables $(DESTDIR)$(scriptdir)/update_$${db_type}_tables; \
+	    $(INSTALL_SCRIPT) make_$${db_type}_tables $(DESTDIR)$(scriptdir)/make_$${db_type}_tables; \
+	    $(INSTALL_SCRIPT) grant_$${db_type}_privileges $(DESTDIR)$(scriptdir)/grant_$${db_type}_privileges; \
+	    $(INSTALL_SCRIPT) drop_$${db_type}_tables $(DESTDIR)$(scriptdir)/drop_$${db_type}_tables; \
+	    $(INSTALL_SCRIPT) drop_$${db_type}_database $(DESTDIR)$(scriptdir)/drop_$${db_type}_database; \
+	    fi; \
+	done
+
+	$(INSTALL_SCRIPT) create_bacula_database $(DESTDIR)$(scriptdir)/create_bacula_database
+	$(INSTALL_SCRIPT) update_bacula_tables $(DESTDIR)$(scriptdir)/update_bacula_tables
+	$(INSTALL_SCRIPT) make_bacula_tables $(DESTDIR)$(scriptdir)/make_bacula_tables
+	$(INSTALL_SCRIPT) grant_bacula_privileges $(DESTDIR)$(scriptdir)/grant_bacula_privileges
+	$(INSTALL_SCRIPT) drop_bacula_tables $(DESTDIR)$(scriptdir)/drop_bacula_tables
+	$(INSTALL_SCRIPT) drop_bacula_database $(DESTDIR)$(scriptdir)/drop_bacula_database
+
+	@filename=make_catalog_backup.pl; \
+	   if  test -f $(DESTDIR)$(scriptdir)/$$filename; then \
+	      destname=$$filename.new; \
+	      echo "  ==> Found existing $$filename, installing new file as $$destname"; \
+	   else \
+	      destname=$$filename; \
+	   fi; \
+	   echo "$(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname"; \
+	   $(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname
+	@filename=make_catalog_backup; \
+	   if  test -f $(DESTDIR)$(scriptdir)/$$filename; then \
+	      destname=$$filename.new; \
+	      echo "  ==> Found existing $$filename, installing new file as $$destname"; \
+	   else \
+	      destname=$$filename; \
+	   fi; \
+	   echo "$(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname"; \
+	   $(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname
+	@filename=delete_catalog_backup; \
+	   if  test -f $(DESTDIR)$(scriptdir)/$$filename; then \
+	      destname=$$filename.new; \
+	      echo "  ==> Found existing $$filename, installing new file as $$destname"; \
+	   else \
+	      destname=$$filename; \
+	   fi; \
+	   echo "$(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname"; \
+	   $(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname
+
+uninstall: @LIBTOOL_UNINSTALL_TARGET@ @INCLUDE_UNINSTALL_TARGET@
+	@for db_type in @DB_BACKENDS@; do \
+	    (cd $(DESTDIR)$(scriptdir); $(RMF) create_$${db_type}_database); \
+	    (cd $(DESTDIR)$(scriptdir); $(RMF) update_$${db_type}_tables); \
+	    (cd $(DESTDIR)$(scriptdir); $(RMF) make_$${db_type}_tables); \
+	    (cd $(DESTDIR)$(scriptdir); $(RMF) grant_$${db_type}_privileges); \
+	    (cd $(DESTDIR)$(scriptdir); $(RMF) drop_$${db_type}_tables); \
+	    (cd $(DESTDIR)$(scriptdir); $(RMF) drop_$${db_type}_database); \
+	done
+
+	(cd $(DESTDIR)$(scriptdir); $(RMF) create_bacula_database)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) update_bacula_tables)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) make_bacula_tables)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) grant_bacula_privileges)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) drop_bacula_tables)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) drop_bacula_database)
+
+	(cd $(DESTDIR)$(scriptdir); $(RMF) make_catalog_backup)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) make_catalog_backup.pl)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) delete_catalog_backup)
+
+# Semi-automatic generation of dependencies:
+# Use gcc -M because X11 `makedepend' doesn't work on all systems
+# and it also includes system headers.
+# `semi'-automatic since dependencies are generated at distribution time.
+
+#depend: esql  <-  SRE: if generating from 'real' ingres source
+depend: 
+	@$(MV) Makefile Makefile.bak
+	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
+	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@for src in $(LIBBACSQL_SRCS); do \
+	    $(CXX) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) $(DEFS) -I$(srcdir) -I$(basedir) $$src >> Makefile; \
+	done
+	@for src in $(MYSQL_SRCS); do \
+	    $(CXX) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) $(DEFS) -I$(srcdir) -I$(basedir) $(MYSQL_INCLUDE) $$src >> Makefile; \
+	done
+	@for src in $(POSTGRESQL_SRCS); do \
+	    $(CXX) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) $(DEFS) -I$(srcdir) -I$(basedir) $(POSTGRESQL_INCLUDE) $$src >> Makefile; \
+	done
+	@for src in $(SQLITE_SRCS); do \
+	    $(CXX) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) $(DEFS) -I$(srcdir) -I$(basedir) $(SQLITE_INCLUDE) $$src >> Makefile; \
+	done
+#	 @for src in $(DBI_SRCS); do \
+#	     $(CXX) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) $(DEFS) -I$(srcdir) -I$(basedir) $(DBI_INCLUDE) $$src >> Makefile; \
+#	 done
+	@if test -f Makefile ; then \
+	    $(RMF) Makefile.bak; \
+	else \
+	   $(MV) Makefile.bak Makefile; \
+	   echo " ===== Something went wrong in make depend ====="; \
+	fi
+
+# -----------------------------------------------------------------------
+# DO NOT DELETE: nice dependency list follows

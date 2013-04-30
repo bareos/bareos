@@ -1,0 +1,55 @@
+#
+# Makefile to build the BartPE plugin
+# 
+#
+#     D. Scott Barninger, Nov 2004
+#
+
+srcdir =	.
+VPATH = 	.
+.PATH:		.
+
+# one up
+basedir = ..
+# top dir
+topdir = ../../..
+# this dir relative to top dir
+thisdir = src/win32/pebuilder
+
+first_rule: all
+
+dummy:
+
+all: pebuilder zip
+
+pebuilder:
+	mkdir -p bacula/files
+	cp -f ../baculafd/bacula-fd.conf bacula/files/
+	cp -f ../console/bconsole.conf bacula/files/
+	cp -f ../wx-console/wx-console.conf bacula/files/
+	cp -f ../baculafd/Release/bacula-fd.exe bacula/files/
+	cp -f ../console/Release/bconsole.exe bacula/files/
+	cp -f ../wx-console/Release/wx-console.exe bacula/files/
+	cp -f ../../../../depkgs-win32/pthreads/pthreadVCE.dll bacula/files/
+	cp -f c:/windows/system32/msvcr71.dll bacula/files
+	cp -f ../../../LICENSE bacula/files/
+
+zip: pebuilder
+	zip -r ../winbacula-bartpe-@VERSION@.zip bacula README
+
+depend:
+	
+
+#-------------------------------------------------------------------------
+
+
+install:
+
+uninstall:
+
+
+clean:
+	rm -rf bacula/files
+
+# clean for distribution
+distclean: clean

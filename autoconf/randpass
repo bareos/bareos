@@ -1,0 +1,27 @@
+#! /bin/sh
+#
+#   Generate a random password, written to standard output
+#   By John Walker
+#
+LANG=C
+if test "x$1" = "x" ; then
+   PWL=48      # Password length in characters
+else
+   PWL=$1
+fi 
+tmp=`mktemp randpass.XXXXXXXXXX`
+if test x$tmp = x; then
+   tmp=/tmp/p.tmp.$$    
+   if test -f $tmp; then
+      echo "Temp file security problem on: $tmp"
+      exit 1
+   fi
+fi
+cp autoconf/randpass.bc $tmp
+ps | sum | tr -d ':[:alpha:] ' | sed 's/^/k=/' >>$tmp
+date | tr -d ':[:alpha:] ' | sed 's/^/k=k*/' >>$tmp
+ls -l /tmp | sum | tr -d ':[:alpha:] ' | sed 's/^/k=k*/' >>$tmp
+echo "j=s(k); for (i = 0; i < $PWL; i++) r()" >>$tmp
+echo "quit" >>$tmp
+bc $tmp | awk -f autoconf/randpass.awk
+rm $tmp

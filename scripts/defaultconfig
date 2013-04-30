@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# This is a default configuration file for Bacula that
+# sets reasonable defaults, and assumes that you do not
+# have MySQL running.  It will "install" Bacula into 
+# bin and etc in the current directory.
+#
+
+CFLAGS="-g -Wall" \
+  ./configure \
+    --sbindir=$HOME/bacula/bin \
+    --sysconfdir=$HOME/bacula/bin \
+    --with-pid-dir=$HOME/bacula/bin \
+    --with-subsys-dir=$HOME/bacula/bin \
+    --enable-smartalloc \
+    --enable-gnome \
+    --with-mysql=$HOME/mysql \
+    --with-working-dir=$HOME/bacula/bin/working \
+    --with-dump-email=root@localhost \
+    --with-job-email=root@localhost \
+    --with-smtp-host=localhost \
+    --with-baseport=9101
+
+exit 0

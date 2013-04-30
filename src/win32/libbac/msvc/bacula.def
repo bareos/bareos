@@ -1,0 +1,510 @@
+LIBRARY bacula.dll
+EXPORTS
+
+; address_conf.obj 
+?get_port_net_order@IPADDR@@QBEGXZ
+?get_address@IPADDR@@QAEPBDPADH@Z
+?get_first_address@@YAPBDPAVdlist@@PADH@Z
+?get_first_port_host_order@@YAHPAVdlist@@@Z
+?init_default_addresses@@YAXPAPAVdlist@@H@Z
+?store_addresses@@YAXPAUs_lex_context@@PAURES_ITEM@@HH@Z
+?store_addresses_address@@YAXPAUs_lex_context@@PAURES_ITEM@@HH@Z
+?store_addresses_port@@YAXPAUs_lex_context@@PAURES_ITEM@@HH@Z
+?free_addresses@@YAXPAVdlist@@@Z
+?sockaddr_get_port_net_order@@YAHPBUsockaddr@@@Z
+?sockaddr_to_ascii@@YAPADPBUsockaddr@@PADH@Z
+ 
+; alist.obj 
+?first@alist@@QAEPAXXZ
+?next@alist@@QAEPAXXZ
+?prepend@alist@@QAEXPAX@Z
+?append@alist@@QAEXPAX@Z
+?remove@alist@@QAEPAXH@Z
+?get@alist@@QAEPAXH@Z
+?destroy@alist@@QAEXXZ
+ 
+; attr.obj 
+?new_attr@@YAPAUATTR@@XZ
+?free_attr@@YAXPAUATTR@@@Z
+?unpack_attributes_record@@YAHPAVJCR@@JPADPAUATTR@@@Z
+?build_attr_output_fnames@@YAXPAVJCR@@PAUATTR@@@Z
+?print_ls_output@@YAXPAVJCR@@PAUATTR@@@Z
+ 
+; attribs.obj 
+?select_data_stream@@YAHPAUFF_PKT@@@Z
+?encode_stat@@YAXPADPAUFF_PKT@@H@Z
+?decode_stat@@YAHPADPAUstat@@PAJ@Z
+?decode_LinkFI@@YAJPADPAUstat@@@Z
+?set_attributes@@YA_NPAVJCR@@PAUATTR@@PAUBFILE@@@Z
+?encode_attribsEx@@YAHPAVJCR@@PADPAUFF_PKT@@@Z
+ 
+; base64.obj 
+?bin_to_base64@@YAHPADH0HH@Z
+ 
+; berrno.obj 
+?strerror@berrno@@QAEPBDXZ
+?format_win32_message@berrno@@AAEXXZ
+ 
+; bfile.obj 
+?is_win32_stream@@YA_NH@Z
+?stream_to_ascii@@YAPBDH@Z
+?processWin32BackupAPIBlock@@YA_NPAUBFILE@@PAXH@Z
+?binit@@YAXPAUBFILE@@@Z
+?set_portable_backup@@YA_NPAUBFILE@@@Z
+?set_prog@@YA_NPAUBFILE@@PADPAVJCR@@@Z
+?is_portable_backup@@YA_NPAUBFILE@@@Z
+?have_win32_api@@YA_NXZ
+?is_restore_stream_supported@@YA_NH@Z
+?bopen@@YAHPAUBFILE@@PBDHI@Z
+?bclose@@YAHPAUBFILE@@@Z
+?bread@@YAHPAUBFILE@@PAXI@Z
+?bwrite@@YAHPAUBFILE@@PAXI@Z
+?is_bopen@@YA_NPAUBFILE@@@Z
+?blseek@@YA_JPAUBFILE@@_JH@Z
+ 
+; bget_msg.obj 
+?bget_msg@@YAHPAVBSOCK@@@Z
+ 
+; bnet.obj 
+?bnet_recv@@YAJPAVBSOCK@@@Z
+?is_bnet_stop@@YA_NPAVBSOCK@@@Z
+?is_bnet_error@@YAHPAVBSOCK@@@Z
+?bnet_suppress_error_messages@@YAXPAVBSOCK@@_N@Z
+?bnet_despool_to_bsock@@YAHPAVBSOCK@@P6AXH@ZH@Z
+?bnet_send@@YA_NPAVBSOCK@@@Z
+?bnet_tls_server@@YA_NPAUTLS_Context@@PAVBSOCK@@PAValist@@@Z
+?bnet_tls_client@@YA_NPAUTLS_Context@@PAVBSOCK@@@Z
+?bnet_wait_data@@YAHPAVBSOCK@@H@Z
+?bnet_wait_data_intr@@YAHPAVBSOCK@@H@Z
+?bnet_connect@@YAPAVBSOCK@@PAVJCR@@HHPBDPAD2HH@Z
+?bnet_strerror@@YAPBDPAVBSOCK@@@Z
+?bnet_fsend@@YA_NPAVBSOCK@@PBDZZ
+?bnet_get_peer@@YAHPAVBSOCK@@PADH@Z
+?bnet_set_buffer_size@@YA_NPAVBSOCK@@IH@Z
+?bnet_sig@@YA_NPAVBSOCK@@H@Z
+?bnet_sig_to_ascii@@YAPBDPAVBSOCK@@@Z
+?bnet_close@@YAXPAVBSOCK@@@Z
+?term_bsock@@YAXPAVBSOCK@@@Z
+
+; bnet_server.obj
+?bnet_stop_thread_server@@YAXPAUpthread_t_@@@Z
+?bnet_thread_server@@YAXPAVdlist@@HPAUworkq_tag@@P6APAXPAX@Z@Z
+
+; bpipe.obj
+?run_program@@YAHPADH0@Z
+?run_program_full_output@@YAHPADH0@Z
+
+; bregex.obj
+b_regcomp
+b_regexec
+b_regerror
+b_regfree
+
+; bsnprintf.obj
+?bsnprintf@@YAHPADJPBDZZ
+?bvsnprintf@@YAHPADJPBD0@Z
+
+; bsock.obj
+?close@BSOCK@@QAEXXZ
+?dup_bsock@@YAPAVBSOCK@@PAV1@@Z
+?fsend@BSOCK@@QAA_NPBDZZ
+?init_bsock@@YAPAVBSOCK@@PAVJCR@@HPBD1HPAUsockaddr@@@Z
+?recv@BSOCK@@QAEJXZ
+?send@BSOCK@@QAE_NXZ
+?signal@BSOCK@@QAE_NH@Z
+
+; bsys.obj
+?bmicrosleep@@YAHJJ@Z
+?bstrncpy@@YAPADPADPBDH@Z
+?bstrncpy@@YAPADPADAAVPOOL_MEM@@H@Z
+?bstrncat@@YAPADPADPBDH@Z
+?bstrcmp@@YA_NPBD0@Z
+?cstrlen@@YAHPBD@Z
+?bfree@@YAXPAX@Z
+?b_malloc@@YAPAXPBDHI@Z
+?brealloc@@YAPAXPAXI@Z
+?_p@@YAXPAPAUpthread_mutex_t_@@@Z
+?_v@@YAXPAPAUpthread_mutex_t_@@@Z
+?create_pid_file@@YAXPADPBDH@Z
+?delete_pid_file@@YAHPADPBDH@Z
+?read_state_file@@YAXPADPBDH@Z
+?write_state_file@@YAXPADPBDH@Z
+?drop@@YAXPAD0@Z
+?bfgets@@YAPADPADHPAU_iobuf@@@Z
+?escape_filename@@YAPADPBD@Z
+ 
+; btime.obj 
+?bstrftime@@YAPADPADH_J@Z
+?bstrftimes@@YAPADPADH_J@Z
+?bstrftime_nc@@YAPADPADH_J@Z
+?bstrutime@@YAPADPADH_J@Z
+?str_to_utime@@YA_JPAD@Z
+?get_current_btime@@YA_JXZ
+?btime_to_unix@@YAJ_J@Z
+?btime_to_utime@@YA_J_J@Z
+?tm_woy@@YAHJ@Z
+?get_current_time@@YAXPAUdate_time@@@Z
+?tm_decode@@YAXPAUdate_time@@PAUtm@@@Z
+ 
+; btimers.obj 
+?start_thread_timer@@YAPAUs_btimer_t@@PAUpthread_t_@@I@Z
+?start_bsock_timer@@YAPAUs_btimer_t@@PAVBSOCK@@I@Z
+?stop_bsock_timer@@YAXPAUs_btimer_t@@@Z
+?stop_thread_timer@@YAXPAUs_btimer_t@@@Z
+ 
+; compat.obj 
+?SetVSSPathConvert@@YAXP6AHPBDPADH@ZP6AHPB_WPA_WH@Z@Z
+?wchar_2_UTF8@@YAHPADPB_WH@Z
+?random@@YAJXZ
+?srandom@@YAXI@Z
+?fstat@@YAHHPAUstat@@@Z
+?stat@@YAHPBDPAU0@@Z
+?fcntl@@YAHHHJ@Z
+?lstat@@YAHPBDPAUstat@@@Z
+?sleep@@YAXH@Z
+?strcasecmp@@YAHPBD0@Z
+?gettimeofday@@YAHPAUtimeval@@PAUtimezone@@@Z
+?opendir@@YAPAXPBD@Z
+?closedir@@YAHPAX@Z
+?readdir_r@@YAHPAXPAUdirent@@PAPAU1@@Z
+?init_signals@@YAXP6AXH@Z@Z
+?init_stack_dump@@YAXXZ
+?pathconf@@YAJPBDH@Z
+?WSA_Init@@YAHXZ
+?win32_fputs@@YAHPBDPAU_iobuf@@@Z
+?win32_cgets@@YAPADPADH@Z
+?win32_unlink@@YAHPBD@Z
+?open_bpipe@@YAPAVBPIPE@@PADHPBD@Z
+?kill@@YAHHH@Z
+?close_bpipe@@YAHPAVBPIPE@@@Z
+?utime@@YAHPBDPAUutimbuf@@@Z
+ 
+; cram-md5.obj 
+?cram_md5_challenge@@YA_NPAVBSOCK@@PADHH@Z
+?cram_md5_respond@@YA_NPAVBSOCK@@PADPAH2@Z
+ 
+; crc32.obj 
+?bcrc32@@YAIPAEH@Z
+ 
+;create_file.obj 
+?create_file@@YAHPAVJCR@@PAUATTR@@PAUBFILE@@H@Z
+ 
+; crypto.obj 
+?crypto_digest_new@@YAPAUDigest@@W4crypto_digest_t@@@Z
+?crypto_digest_update@@YA_NPAUDigest@@PBEI@Z
+?crypto_digest_finalize@@YA_NPAUDigest@@PAEPAI@Z
+?crypto_digest_free@@YAXPAUDigest@@@Z
+?init_crypto@@YAHXZ
+?cleanup_crypto@@YAHXZ
+?crypto_sign_new@@YAPAUSignature@@XZ
+?crypto_sign_get_digest@@YA?AW4crypto_error_t@@PAUSignature@@PAUX509_Keypair@@PAPAUDigest@@@Z
+?crypto_sign_verify@@YA?AW4crypto_error_t@@PAUSignature@@PAUX509_Keypair@@PAUDigest@@@Z
+?crypto_sign_add_signer@@YAHPAUSignature@@PAUDigest@@PAUX509_Keypair@@@Z
+?crypto_sign_encode@@YAHPAUSignature@@PAEPAI@Z
+?crypto_sign_decode@@YAPAUSignature@@PBEI@Z
+?crypto_sign_free@@YAXPAUSignature@@@Z
+?crypto_keypair_new@@YAPAUX509_Keypair@@XZ
+?crypto_keypair_dup@@YAPAUX509_Keypair@@PAU1@@Z
+?crypto_keypair_load_cert@@YAHPAUX509_Keypair@@PBD@Z
+?crypto_keypair_has_key@@YA_NPBD@Z
+?crypto_keypair_load_key@@YAHPAUX509_Keypair@@PBDP6AHPADHPBX@Z3@Z
+?crypto_keypair_free@@YAXPAUX509_Keypair@@@Z
+?crypto_session_new@@YAPAUCrypto_Session@@W4crypto_cipher_t@@PAValist@@@Z
+?crypto_session_free@@YAXPAUCrypto_Session@@@Z
+?crypto_session_encode@@YA_NPAUCrypto_Session@@PAEPAI@Z
+?crypto_session_decode@@YA?AW4crypto_error_t@@PBEIPAValist@@PAPAUCrypto_Session@@@Z
+?crypto_cipher_new@@YAPAUCipher_Context@@PAUCrypto_Session@@_NPAI@Z
+?crypto_cipher_update@@YA_NPAUCipher_Context@@PBEI1PAI@Z
+?crypto_cipher_finalize@@YA_NPAUCipher_Context@@PAEPAI@Z
+?crypto_cipher_free@@YAXPAUCipher_Context@@@Z
+?crypto_default_pem_callback@@YAHPADHPBX@Z
+?crypto_digest_name@@YAPBDPAUDigest@@@Z
+?crypto_digest_stream_type@@YA?AW4crypto_digest_t@@H@Z
+?crypto_strerror@@YAPBDW4crypto_error_t@@@Z
+ 
+; daemon.obj 
+?daemon_start@@YAXXZ
+ 
+; dlist.obj 
+?append@dlist@@QAEXPAX@Z
+?prepend@dlist@@QAEXPAX@Z
+?insert_before@dlist@@QAEXPAX0@Z
+?binary_insert@dlist@@QAEPAXPAXP6AH00@Z@Z
+?first@dlist@@QBEPAXXZ
+?last@dlist@@QBEPAXXZ
+?binary_insert_multiple@dlist@@QAEXPAXP6AH00@Z@Z
+?binary_search@dlist@@QAEPAXPAXP6AH00@Z@Z
+?remove@dlist@@QAEXPAX@Z
+?next@dlist@@QAEPAXPAX@Z
+?destroy@dlist@@QAEXXZ
+?new_dlistString@@YAPAVdlistString@@PBD@Z
+
+; drivetype.obj
+?drivetype@@YA_NPBDPADH@Z
+
+; edit.obj
+?str_to_uint64@@YA_KPAD@Z
+?str_to_int64@@YA_JPAD@Z
+?edit_uint64_with_commas@@YAPAD_KPAD@Z
+?edit_uint64_with_suffix@@YAPAD_KPAD@Z
+?edit_uint64@@YAPAD_KPAD@Z
+?edit_int64@@YAPAD_JPAD@Z
+?duration_to_utime@@YA_NPADPA_J@Z
+?edit_utime@@YAPAD_JPADH@Z
+?size_to_uint64@@YA_NPADHPA_K@Z
+?is_a_number@@YA_NPBD@Z
+?is_an_integer@@YA_NPBD@Z
+?is_name_valid@@YA_NPADPAPAD@Z
+?add_commas@@YAPADPAD0@Z
+ 
+; enable_priv.obj 
+?enable_backup_privileges@@YAHPAVJCR@@H@Z
+ 
+; enh_fnmatch.obj 
+ 
+; find.obj 
+?init_find_files@@YAPAUFF_PKT@@XZ
+?set_find_options@@YAXPAUFF_PKT@@HJ@Z
+?get_win32_driveletters@@YAHPAUFF_PKT@@PAD@Z
+?find_files@@YAHPAVJCR@@PAUFF_PKT@@P6AH1PAX_N@Z2@Z
+?term_find_files@@YAHPAUFF_PKT@@@Z
+ 
+; find_one.obj 
+?find_one_file@@YAHPAVJCR@@PAUFF_PKT@@P6AH1PAX_N@Z2PADI3@Z
+ 
+; fnmatch.obj 
+fnmatch
+ 
+; fstype.obj 
+?fstype@@YA_NPBDPADH@Z
+ 
+; hmac.obj 
+?hmac_md5@@YAXPAEH0H0@Z
+ 
+; htable.obj 
+ 
+; idcache.obj 
+?getuser@@YAPADIPADH@Z
+?getgroup@@YAPADIPADH@Z
+ 
+; jcr.obj 
+?lock_jobs@@YAXXZ
+?unlock_jobs@@YAXXZ
+?term_last_jobs_list@@YAXXZ
+?lock_last_jobs_list@@YAXXZ
+?unlock_last_jobs_list@@YAXXZ
+?job_end_push@@YAXPAVJCR@@P6AX0PAX@Z1@Z
+?new_jcr@@YAPAVJCR@@HP6AXPAV1@@Z@Z
+?inc_use_count@JCR@@QAEXXZ
+?lock@JCR@@QAEXXZ
+?unlock@JCR@@QAEXXZ
+?init_mutex@JCR@@QAEXXZ
+?b_free_jcr@@YAXPBDHPAVJCR@@@Z
+?dec_use_count@JCR@@QAEXXZ
+?use_count@JCR@@QAEHXZ
+?destroy_mutex@JCR@@QAEXXZ
+?get_jcr_by_id@@YAPAVJCR@@I@Z
+?get_jcr_by_session@@YAPAVJCR@@II@Z
+?get_jcr_by_partial_name@@YAPAVJCR@@PAD@Z
+?get_jcr_by_full_name@@YAPAVJCR@@PAD@Z
+?set_jcr_job_status@@YAXPAVJCR@@H@Z
+?jcr_walk_start@@YAPAVJCR@@XZ
+?jcr_walk_next@@YAPAVJCR@@PAV1@@Z
+?jcr_walk_end@@YAXPAVJCR@@@Z
+?init_jcr_subsystem@@YA_NXZ
+ 
+; lex.obj 
+?scan_to_eol@@YAXPAUs_lex_context@@@Z
+?lex_set_default_error_handler@@YAXPAUs_lex_context@@@Z
+?lex_set_error_handler_error_type@@YAHPAUs_lex_context@@H@Z
+?lex_close_file@@YAPAUs_lex_context@@PAU1@@Z
+?lex_open_file@@YAPAUs_lex_context@@PAU1@PBDP6AX1H01ZZ@Z
+?lex_tok_to_str@@YAPBDH@Z
+?lex_get_token@@YAHPAUs_lex_context@@H@Z
+ 
+; makepath.obj 
+ 
+; match.obj 
+?match_files@@YAHPAVJCR@@PAUFF_PKT@@P6AH1PAX_N@Z2@Z
+?term_include_exclude_files@@YAXPAUFF_PKT@@@Z
+?add_fname_to_include_list@@YAXPAUFF_PKT@@HPBD@Z
+?add_fname_to_exclude_list@@YAXPAUFF_PKT@@PBD@Z
+?file_is_included@@YAHPAUFF_PKT@@PBD@Z
+?file_is_excluded@@YAHPAUFF_PKT@@PBD@Z
+ 
+; md5.obj 
+?MD5Init@@YAXPAUMD5Context@@@Z
+?MD5Update@@YAXPAUMD5Context@@PAEI@Z
+?MD5Final@@YAXQAEPAUMD5Context@@@Z
+ 
+; mem_pool.obj 
+?sm_get_pool_memory@@YAPADPBDHH@Z
+?sm_get_memory@@YAPADPBDHJ@Z
+?sm_sizeof_pool_memory@@YAJPBDHPAD@Z
+?sm_realloc_pool_memory@@YAPADPBDHPADJ@Z
+?sm_check_pool_memory_size@@YAPADPBDHPADJ@Z
+?sm_free_pool_memory@@YAXPBDHPAD@Z
+?close_memory_pool@@YAXXZ
+?print_memory_pool_stats@@YAXXZ
+?pm_strcat@@YAHPAPADPBD@Z
+?pm_strcat@@YAHAAPADPBD@Z
+?c_str@POOL_MEM@@QBEPADXZ
+?pm_strcat@@YAHAAVPOOL_MEM@@PBD@Z
+?check_size@POOL_MEM@@QAEPADJ@Z
+?pm_strcpy@@YAHPAPADPBD@Z
+?pm_strcpy@@YAHAAPADPBD@Z
+?pm_strcpy@@YAHAAPADAAVPOOL_MEM@@@Z
+?pm_strcpy@@YAHAAVPOOL_MEM@@PBD@Z
+?max_size@POOL_MEM@@QAEJXZ
+ 
+; message.obj 
+?my_name_is@@YAXHQAPADPBD@Z
+?init_msg@@YAXPAVJCR@@PAVMSGS@@@Z
+?init_console_msg@@YAXPBD@Z
+?add_msg_dest@@YAXPAVMSGS@@HHPAD1@Z
+?rem_msg_dest@@YAXPAVMSGS@@HHPAD@Z
+?close_msg@@YAXPAVJCR@@@Z
+?set_errno@berrno@@QAEXH@Z
+?free_msgs_res@@YAXPAVMSGS@@@Z
+?term_msg@@YAXXZ
+?dispatch_message@@YAXPAVJCR@@HJPAD@Z
+?c_str@POOL_MEM@@QBEPADXZ
+?d_msg@@YAXPBDHH0ZZ
+?get_basename@@YAPBDPBD@Z
+?set_trace@@YAXH@Z
+?get_trace@@YA_NXZ
+?p_msg@@YAXPBDHH0ZZ
+?e_msg@@YAXPBDHHH0ZZ
+?Jmsg@@YAXPAVJCR@@HJPBDZZ
+?j_msg@@YAXPBDHPAVJCR@@HJ0ZZ
+?m_msg@@YAHPBDHPAPAD0ZZ
+?m_msg@@YAHPBDHAAPAD0ZZ
+?Mmsg@@YAHPAPADPBDZZ
+?Mmsg@@YAHAAPADPBDZZ
+?Mmsg@@YAHAAVPOOL_MEM@@PBDZZ
+?Qmsg@@YAXPAVJCR@@HJPBDZZ
+?dequeue_messages@@YAXPAVJCR@@@Z
+?q_msg@@YAXPBDHPAVJCR@@HJ0ZZ
+ 
+; print.obj 
+ 
+; pythonlib.obj 
+?generate_daemon_event@@YAHPAVJCR@@PBD@Z
+?init_python_interpreter@@YAXPBD00@Z
+?term_python_interpreter@@YAXXZ
+ 
+; queue.obj 
+?qinsert@@YAXPAUb_queue@@0@Z
+?qnext@@YAPAUb_queue@@PAU1@0@Z
+?qdchain@@YAPAUb_queue@@PAU1@@Z
+
+; runscript.obj 
+?new_runscript@@YAPAVRUNSCRIPT@@XZ
+?reset_default@RUNSCRIPT@@QAEX_N@Z
+?copy_runscript@@YAPAVRUNSCRIPT@@PAV1@@Z
+?free_runscript@@YAXPAVRUNSCRIPT@@@Z
+?run_scripts@@YAHPAVJCR@@PAValist@@PBD@Z
+?set_command@RUNSCRIPT@@QAEXPBD@Z
+?set_target@RUNSCRIPT@@QAEXPBD@Z
+?run@RUNSCRIPT@@QAEHPAVJCR@@PBD@Z
+?free_runscripts@@YAXPAValist@@@Z
+?debug@RUNSCRIPT@@QAEXXZ
+ 
+; rwlock.obj 
+?rwl_init@@YAHPAUs_rwlock_tag@@@Z
+?rwl_destroy@@YAHPAUs_rwlock_tag@@@Z
+?rwl_writelock@@YAHPAUs_rwlock_tag@@@Z
+?rwl_writeunlock@@YAHPAUs_rwlock_tag@@@Z
+ 
+; save-cwd.obj 
+ 
+; scan.obj 
+?strip_leading_space@@YAXPAD@Z
+?strip_trailing_junk@@YAXPAD@Z
+?strip_trailing_newline@@YAXPAD@Z
+?skip_spaces@@YA_NPAPAD@Z
+?skip_nonspaces@@YA_NPAPAD@Z
+?fstrsch@@YAHPBD0@Z
+?next_arg@@YAPADPAPAD@Z
+?parse_args@@YAHPADPAPADPAH11H@Z
+?parse_args_only@@YAHPADPAPADPAH11H@Z
+?bsscanf@@YAHPBD0ZZ
+ 
+; serial.obj 
+?serial_int32@@YAXQAPAEJ@Z
+?serial_uint32@@YAXQAPAEI@Z
+?serial_uint64@@YAXQAPAE_K@Z
+?serial_btime@@YAXQAPAE_J@Z
+?serial_float64@@YAXQAPAEN@Z
+?serial_string@@YAXQAPAEQBD@Z
+?unserial_int32@@YAJQAPAE@Z
+?unserial_uint32@@YAIQAPAE@Z
+?unserial_uint64@@YA_KQAPAE@Z
+?unserial_btime@@YA_JQAPAE@Z
+?unserial_float64@@YANQAPAE@Z
+?unserial_string@@YAXQAPAEQAD@Z
+ 
+; sha1.obj 
+ 
+; signal.obj 
+ 
+; smartall.obj 
+?sm_free@@YAXPBDHPAX@Z
+?sm_malloc@@YAPAXPBDHI@Z
+?sm_calloc@@YAPAXPBDHII@Z
+?sm_realloc@@YAPAXPBDHPAXI@Z
+?sm_dump@@YAX_N@Z
+?sm_check@@YAXPBDH_N@Z
+?sm_static@@YAXH@Z
+
+; tls.obj
+?new_tls_context@@YAPAUTLS_Context@@PBD000P6AHPADHPBX@Z20_N@Z
+?free_tls_context@@YAXPAUTLS_Context@@@Z
+
+; tree.obj
+?new_tree@@YAPAUs_tree_root@@H@Z
+?free_tree@@YAXPAUs_tree_root@@@Z
+?insert_tree_node@@YAPAUs_tree_node@@PAD0HPAUs_tree_root@@PAU1@@Z
+?strrchr@@YAPADPADH@Z
+?tree_getpath@@YAHPAUs_tree_node@@PADH@Z
+?tree_cwd@@YAPAUs_tree_node@@PADPAUs_tree_root@@PAU1@@Z
+; rblist
+?insert@rblist@@QAEPAXPAXP6AH00@Z@Z
+?next@rblist@@QAEPAXPAX@Z
+
+; util.obj 
+?is_buf_zero@@YA_NPADH@Z
+?lcase@@YAXPAD@Z
+?bash_spaces@@YAXPAD@Z
+?bash_spaces@@YAXAAVPOOL_MEM@@@Z
+?unbash_spaces@@YAXPAD@Z
+?unbash_spaces@@YAXAAVPOOL_MEM@@@Z
+?encode_time@@YAPADJPAD@Z
+?jobstatus_to_ascii@@YAXHPADH@Z
+?job_status_to_str@@YAPBDH@Z
+?job_type_to_str@@YAPBDH@Z
+?job_level_to_str@@YAPBDH@Z
+?encode_mode@@YAPADIPAD@Z
+?do_shell_expansion@@YAHPADH@Z
+?make_session_key@@YAXPAD0H@Z
+?edit_job_codes@@YAPADPAVJCR@@PAD1PBD@Z
+?set_working_directory@@YAXPAD@Z
+ 
+; var.obj 
+?var_create@@YA?AW4var_rc_t@@PAPAUvar_st@@@Z
+?var_destroy@@YA?AW4var_rc_t@@PAUvar_st@@@Z
+?var_config@@YA?AW4var_rc_t@@PAUvar_st@@W4var_config_t@@ZZ
+?var_unescape@@YA?AW4var_rc_t@@PAUvar_st@@PBDHPADHH@Z
+?var_expand@@YA?AW4var_rc_t@@PAUvar_st@@PBDHPAPADPAHH@Z
+?var_strerror@@YAPBDPAUvar_st@@W4var_rc_t@@@Z
+ 
+; watchdog.obj 
+?start_watchdog@@YAHXZ
+?stop_watchdog@@YAHXZ
+?new_watchdog@@YAPAUs_watchdog_t@@XZ
+?register_watchdog@@YA_NPAUs_watchdog_t@@@Z
+ 
+; winapi.obj 
+?InitWinAPIWrapper@@YAXXZ
+ 
+; workq.obj 

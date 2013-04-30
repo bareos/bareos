@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+#  A small script to start a Backup job from any Client machine
+#
+# You may need to add a full path and possibly the console.conf location
+#
+# Assume we are in the binary directory
+#
+JOB="NightlySave"
+#
+./console -c console.conf <<END_OF_DATA
+run ${JOB}
+y
+quit
+END_OF_DATA

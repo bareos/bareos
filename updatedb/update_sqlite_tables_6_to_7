@@ -1,0 +1,229 @@
+#!/bin/sh
+#
+# shell script to update SQLite from version 1.32 to 1.33
+#
+echo " "
+echo "This script will update a bacula database from version 6 to 7."
+echo "Depending on the size of your database,"
+echo "this script may take several minutes to run."
+echo " "
+
+# The location of the sqlite program
+bindir=/usr/lib/sqlite
+# The location of your bacula working directory
+cd /var/bacula
+
+if [ -s bacula.db ];then
+        DB_VER=`echo "select * from Version;" | $bindir/sqlite bacula.db | tail -n 1 2>/dev/null`
+        if [ -n "$DB_VER" ] && [ "$DB_VER" -ne "6" ]; then
+                echo "Sorry, this script is designed to update a version 6 database"
+                echo "and you have a version $DB_VER database."
+                exit 1
+        fi
+else
+        echo "Sorry, I can't seem to locate a bacula database."
+        exit 1
+fi
+
+$bindir/sqlite $* bacula.db <<END-OF-DATA
+
+BEGIN TRANSACTION;
+CREATE TEMPORARY TABLE Media_backup (
+   MediaId INTEGER UNSIGNED AUTOINCREMENT,
+   VolumeName VARCHAR(128) NOT NULL,
+   Slot INTEGER DEFAULT 0,
+   PoolId INTEGER UNSIGNED REFERENCES Pool NOT NULL,
+   MediaType VARCHAR(128) NOT NULL,
+   FirstWritten DATETIME DEFAULT 0,
+   LastWritten DATETIME DEFAULT 0,
+   LabelDate DATETIME DEFAULT 0,
+   VolJobs INTEGER UNSIGNED DEFAULT 0,
+   VolFiles INTEGER UNSIGNED DEFAULT 0,
+   VolBlocks INTEGER UNSIGNED DEFAULT 0,
+   VolMounts INTEGER UNSIGNED DEFAULT 0,
+   VolBytes BIGINT UNSIGNED DEFAULT 0,
+   VolErrors INTEGER UNSIGNED DEFAULT 0,
+   VolWrites INTEGER UNSIGNED DEFAULT 0,
+   VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
+   VolStatus VARCHAR(20) NOT NULL,
+   Recycle TINYINT DEFAULT 0,
+   VolRetention BIGINT UNSIGNED DEFAULT 0,
+   VolUseDuration BIGINT UNSIGNED DEFAULT 0,
+   MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
+   MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
+   MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
+   InChanger TINYINT DEFAULT 0,
+   MediaAddressing TINYINT DEFAULT 0,
+   VolReadTime BIGINT UNSIGNED DEFAULT 0,
+   VolWriteTime BIGINT UNSIGNED DEFAULT 0,
+   PRIMARY KEY(MediaId)
+   );
+
+INSERT INTO Media_backup SELECT 
+   MediaId, VolumeName, Slot, PoolId,
+   MediaType, FirstWritten, LastWritten,
+   LabelDate, VolJobs, VolFiles, VolBlocks,
+   VolMounts, VolBytes, VolErrors, VolWrites,
+   VolCapacityBytes, VolStatus, Recycle,
+   VolRetention, VolUseDuration, MaxVolJobs,
+   MaxVolFiles, MaxVolBytes, 0, 0, 0, 0
+   FROM Media;
+
+
+DROP TABLE Media;
+
+CREATE TABLE Media (
+   MediaId INTEGER UNSIGNED AUTOINCREMENT,
+   VolumeName VARCHAR(128) NOT NULL,
+   Slot INTEGER DEFAULT 0,
+   PoolId INTEGER UNSIGNED REFERENCES Pool NOT NULL,
+   MediaType VARCHAR(128) NOT NULL,
+   FirstWritten DATETIME DEFAULT 0,
+   LastWritten DATETIME DEFAULT 0,
+   LabelDate DATETIME DEFAULT 0,
+   VolJobs INTEGER UNSIGNED DEFAULT 0,
+   VolFiles INTEGER UNSIGNED DEFAULT 0,
+   VolBlocks INTEGER UNSIGNED DEFAULT 0,
+   VolMounts INTEGER UNSIGNED DEFAULT 0,
+   VolBytes BIGINT UNSIGNED DEFAULT 0,
+   VolErrors INTEGER UNSIGNED DEFAULT 0,
+   VolWrites INTEGER UNSIGNED DEFAULT 0,
+   VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
+   VolStatus VARCHAR(20) NOT NULL,
+   Recycle TINYINT DEFAULT 0,
+   VolRetention BIGINT UNSIGNED DEFAULT 0,
+   VolUseDuration BIGINT UNSIGNED DEFAULT 0,
+   MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
+   MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
+   MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
+   InChanger TINYINT DEFAULT 0,
+   MediaAddressing TINYINT DEFAULT 0,
+   VolReadTime BIGINT UNSIGNED DEFAULT 0,
+   VolWriteTime BIGINT UNSIGNED DEFAULT 0,
+   PRIMARY KEY(MediaId)
+   );
+
+INSERT INTO Media (
+   MediaId, VolumeName, Slot, PoolId,
+   MediaType, FirstWritten, LastWritten,
+   LabelDate, VolJobs, VolFiles, VolBlocks,
+   VolMounts, VolBytes, VolErrors, VolWrites,
+   VolCapacityBytes, VolStatus, Recycle,
+   VolRetention, VolUseDuration, MaxVolJobs,
+   MaxVolFiles, MaxVolBytes,
+   InChanger, MediaAddressing,
+   VolReadTime, VolWriteTime)
+   SELECT * FROM Media_backup;
+
+DROP TABLE Media_backup;
+
+CREATE INDEX inx8 ON Media (PoolId);
+
+CREATE TABLE Pool_backup (
+   PoolId INTEGER UNSIGNED AUTOINCREMENT,
+   Name VARCHAR(128) NOT NULL,
+   NumVols INTEGER UNSIGNED DEFAULT 0,
+   MaxVols INTEGER UNSIGNED DEFAULT 0,
+   UseOnce TINYINT DEFAULT 0,
+   UseCatalog TINYINT DEFAULT 1,
+   AcceptAnyVolume TINYINT DEFAULT 0,
+   VolRetention BIGINT UNSIGNED DEFAULT 0,
+   VolUseDuration BIGINT UNSIGNED DEFAULT 0,
+   MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
+   MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
+   MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
+   AutoPrune TINYINT DEFAULT 0,
+   Recycle TINYINT DEFAULT 0,
+   PoolType VARCHAR(20) NOT NULL,
+   LabelFormat VARCHAR(128) NOT NULL,
+   Enabled TINYINT DEFAULT 1,
+   ScratchPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   RecyclePoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   UNIQUE (Name),
+   PRIMARY KEY (PoolId)
+   );
+
+INSERT INTO Pool_backup SELECT
+   PoolId,
+   Name,
+   NumVols,
+   MaxVols,
+   UseOnce,
+   UseCatalog,
+   AcceptAnyVolume,
+   VolRetention,
+   VolUseDuration,
+   MaxVolJobs,
+   MaxVolFiles,
+   MaxVolBytes,
+   AutoPrune,
+   Recycle,
+   PoolType,
+   LabelFormat, 1, 0, 0
+   FROM Pool;
+
+DROP TABLE Pool;
+
+CREATE TABLE Pool (
+   PoolId INTEGER UNSIGNED AUTOINCREMENT,
+   Name VARCHAR(128) NOT NULL,
+   NumVols INTEGER UNSIGNED DEFAULT 0,
+   MaxVols INTEGER UNSIGNED DEFAULT 0,
+   UseOnce TINYINT DEFAULT 0,
+   UseCatalog TINYINT DEFAULT 1,
+   AcceptAnyVolume TINYINT DEFAULT 0,
+   VolRetention BIGINT UNSIGNED DEFAULT 0,
+   VolUseDuration BIGINT UNSIGNED DEFAULT 0,
+   MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
+   MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
+   MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
+   AutoPrune TINYINT DEFAULT 0,
+   Recycle TINYINT DEFAULT 0,
+   PoolType VARCHAR(20) NOT NULL,
+   LabelFormat VARCHAR(128) NOT NULL,
+   Enabled TINYINT DEFAULT 1,
+   ScratchPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   RecyclePoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   UNIQUE (Name),
+   PRIMARY KEY (PoolId)
+   );
+
+INSERT INTO Pool (
+   PoolId,
+   Name,
+   NumVols,
+   MaxVols,
+   UseOnce,
+   UseCatalog,
+   AcceptAnyVolume,
+   VolRetention,
+   VolUseDuration,
+   MaxVolJobs,
+   MaxVolFiles,
+   MaxVolBytes,
+   AutoPrune,
+   Recycle,
+   PoolType,
+   LabelFormat, Enabled, ScratchPoolId, RecyclePoolId)
+   SELECT * FROM Pool_backup;
+
+DROP TABLE Pool_backup;
+
+
+DROP TABLE BaseFiles;
+
+CREATE TABLE BaseFiles (
+   BaseId INTEGER UNSIGNED AUTOINCREMENT,
+   BaseJobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+   FileId INTEGER UNSIGNED REFERENCES File NOT NULL,
+   FileIndex INTEGER UNSIGNED,
+   PRIMARY KEY(BaseId)
+   );
+
+COMMIT;
+
+DELETE FROM Version;
+INSERT INTO Version (VersionId) VALUES (7);
+
+END-OF-DATA

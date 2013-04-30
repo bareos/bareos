@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <author>Kern Sibbald</author>
+ <class>MainForm</class>
+ <widget class="QMainWindow" name="MainForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>785</width>
+    <height>660</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>bat - Bacula Admin Tool</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="main.qrc">
+    <normaloff>:/images/bat.png</normaloff>:/images/bat.png</iconset>
+  </property>
+  <property name="toolTip">
+   <string/>
+  </property>
+  <property name="statusTip">
+   <string>Bacula Administration Tool</string>
+  </property>
+  <property name="whatsThis">
+   <string>It's a Dock widget to allow page selection</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout">
+    <property name="margin">
+     <number>9</number>
+    </property>
+    <property name="spacing">
+     <number>6</number>
+    </property>
+    <item row="0" column="0">
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>-1</number>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>785</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="actionPreferences"/>
+    <addaction name="actionSelectFont"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="actionBat_Help"/>
+    <addaction name="actionAbout_bat"/>
+   </widget>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionRepopLists"/>
+    <addaction name="actionReloadRepop"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuSettings"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="toolTip">
+    <string>Current Status</string>
+   </property>
+   <property name="statusTip">
+    <string>Current Status</string>
+   </property>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="minimumSize">
+    <size>
+     <width>51</width>
+     <height>39</height>
+    </size>
+   </property>
+   <property name="toolTip">
+    <string>Tool Bar</string>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionConnect"/>
+   <addaction name="actionStatusDirPage"/>
+   <addaction name="actionJobPlot"/>
+   <addaction name="actionMessages"/>
+   <addaction name="separator"/>
+   <addaction name="actionLabel"/>
+   <addaction name="separator"/>
+   <addaction name="actionEstimate"/>
+   <addaction name="actionRun"/>
+   <addaction name="actionRestore"/>
+   <addaction name="actionBrowse"/>
+   <addaction name="separator"/>
+   <addaction name="actionUndock"/>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>1</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>112</width>
+     <height>179</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>524287</width>
+     <height>524287</height>
+    </size>
+   </property>
+   <property name="focusPolicy">
+    <enum>Qt::StrongFocus</enum>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="statusTip">
+    <string/>
+   </property>
+   <property name="floating">
+    <bool>false</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::AllDockWidgetAreas</set>
+   </property>
+   <property name="windowTitle">
+    <string/>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QTreeWidget" name="treeWidget">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+         <horstretch>1</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="sizeIncrement">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::StrongFocus</enum>
+       </property>
+       <property name="toolTip">
+        <string>Selects panel window</string>
+       </property>
+       <property name="statusTip">
+        <string>Use items in this tree to select what window is in panel</string>
+       </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
+       <column>
+        <property name="text">
+         <string>1</string>
+        </property>
+       </column>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Command:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEdit">
+       <property name="statusTip">
+        <string>Click here to enter command</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="actionQuit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionAbout_bat">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/bat.png</normaloff>:/images/bat.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;About bat</string>
+   </property>
+  </action>
+  <action name="actionCopy">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/copy.png</normaloff>:/images/copy.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Copy</string>
+   </property>
+  </action>
+  <action name="actionCut">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/cut.png</normaloff>:/images/cut.png</iconset>
+   </property>
+   <property name="text">
+    <string>Cu&amp;t</string>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/new.png</normaloff>:/images/new.png</iconset>
+   </property>
+   <property name="text">
+    <string>new</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/open.png</normaloff>:/images/open.png</iconset>
+   </property>
+   <property name="text">
+    <string>open</string>
+   </property>
+  </action>
+  <action name="actionPaste">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/paste.png</normaloff>:/images/paste.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Paste</string>
+   </property>
+  </action>
+  <action name="actionPrint">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/print.png</normaloff>:/images/print.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Print</string>
+   </property>
+   <property name="statusTip">
+    <string>Print</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/save.png</normaloff>:/images/save.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+   <property name="statusTip">
+    <string>Save (not implemented)</string>
+   </property>
+  </action>
+  <action name="actionConnect">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/disconnected.png</normaloff>:/images/disconnected.png</iconset>
+   </property>
+   <property name="text">
+    <string>Connect</string>
+   </property>
+   <property name="statusTip">
+    <string>Connect/disconnect</string>
+   </property>
+  </action>
+  <action name="actionLabel">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/label.png</normaloff>:/images/label.png</iconset>
+   </property>
+   <property name="text">
+    <string>Label</string>
+   </property>
+   <property name="toolTip">
+    <string>Label a Volume</string>
+   </property>
+   <property name="statusTip">
+    <string>Label a Volume</string>
+   </property>
+  </action>
+  <action name="actionRestore">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/restore.png</normaloff>:/images/restore.png</iconset>
+   </property>
+   <property name="text">
+    <string>Restore</string>
+   </property>
+   <property name="statusTip">
+    <string>Restore Files</string>
+   </property>
+  </action>
+  <action name="actionRun">
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/run.png</normaloff>:/images/run.png</iconset>
+   </property>
+   <property name="text">
+    <string>Run Job</string>
+   </property>
+   <property name="iconText">
+    <string>Run Job</string>
+   </property>
+   <property name="toolTip">
+    <string>Run Job</string>
+   </property>
+   <property name="statusTip">
+    <string>Run a Job</string>
+   </property>
+  </action>
+  <action name="actionEstimate">
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/estimate-job.png</normaloff>:/images/estimate-job.png</iconset>
+   </property>
+   <property name="text">
+    <string>Estimate Job</string>
+   </property>
+   <property name="iconText">
+    <string>Estimate Job</string>
+   </property>
+   <property name="toolTip">
+    <string>Estimate Job</string>
+   </property>
+   <property name="statusTip">
+    <string>Estimate a Job</string>
+   </property>
+  </action>
+  <action name="actionStatusDir">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/status-console.png</normaloff>:/images/status-console.png</iconset>
+   </property>
+   <property name="text">
+    <string comment="Query status of director">Status Dir</string>
+   </property>
+   <property name="iconText">
+    <string>Status Dir</string>
+   </property>
+   <property name="toolTip">
+    <string>Query status of director in console</string>
+   </property>
+   <property name="statusTip">
+    <string>Query status of director in console</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSelectFont">
+   <property name="text">
+    <string>&amp;Select Font ...</string>
+   </property>
+  </action>
+  <action name="actionUndock">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/up.png</normaloff>:/images/up.png</iconset>
+   </property>
+   <property name="text">
+    <string>Undock Window</string>
+   </property>
+   <property name="statusTip">
+    <string>Undock Current Window</string>
+   </property>
+  </action>
+  <action name="actionToggleDock">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/up.png</normaloff>:/images/up.png</iconset>
+   </property>
+   <property name="text">
+    <string>ToggleDock</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle Dock Status</string>
+   </property>
+   <property name="statusTip">
+    <string>Toggle Dock Status</string>
+   </property>
+  </action>
+  <action name="actionClosePage">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/unmark.png</normaloff>:/images/unmark.png</iconset>
+   </property>
+   <property name="text">
+    <string>Close Page</string>
+   </property>
+   <property name="statusTip">
+    <string>Close The Current Page</string>
+   </property>
+  </action>
+  <action name="actionMessages">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/mail-message-new.png</normaloff>:/images/mail-message-new.png</iconset>
+   </property>
+   <property name="text">
+    <string>Messages</string>
+   </property>
+   <property name="statusTip">
+    <string>Display any messages queued at the director</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>&amp;Preferences ...</string>
+   </property>
+   <property name="iconText">
+    <string>Set Preferences</string>
+   </property>
+   <property name="toolTip">
+    <string>Set Preferences</string>
+   </property>
+  </action>
+  <action name="actionBat_Help">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/help-browser.png</normaloff>:/images/help-browser.png</iconset>
+   </property>
+   <property name="text">
+    <string>bat &amp;Help</string>
+   </property>
+  </action>
+  <action name="actionBrowse">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/browse.png</normaloff>:/images/browse.png</iconset>
+   </property>
+   <property name="text">
+    <string>Browse</string>
+   </property>
+   <property name="toolTip">
+    <string>Browse Cataloged Files</string>
+   </property>
+   <property name="statusTip">
+    <string>Browse Cataloged Files</string>
+   </property>
+  </action>
+  <action name="actionJobPlot">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/applications-graphics.png</normaloff>:/images/applications-graphics.png</iconset>
+   </property>
+   <property name="text">
+    <string>JobPlot</string>
+   </property>
+   <property name="toolTip">
+    <string>Plot Job Files and Bytes</string>
+   </property>
+   <property name="statusTip">
+    <string>Plot Job Files and Bytes</string>
+   </property>
+  </action>
+  <action name="actionStatusDirPage">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/status.png</normaloff>:/images/status.png</iconset>
+   </property>
+   <property name="text">
+    <string>Status Dir Page</string>
+   </property>
+   <property name="toolTip">
+    <string>Director Status Page</string>
+   </property>
+  </action>
+  <action name="actionRepopLists">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/mark.png</normaloff>:/images/mark.png</iconset>
+   </property>
+   <property name="text">
+    <string>Repop Lists</string>
+   </property>
+  </action>
+  <action name="actionReloadRepop">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/mark.png</normaloff>:/images/mark.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reload and Repop</string>
+   </property>
+  </action>
+  <action name="actionBack">
+   <property name="icon">
+    <iconset resource="main.qrc">
+     <normaloff>:/images/go-jump.png</normaloff>:/images/go-jump.png</iconset>
+   </property>
+   <property name="text">
+    <string>back</string>
+   </property>
+   <property name="toolTip">
+    <string>Previous Page</string>
+   </property>
+   <property name="statusTip">
+    <string>Previous Page</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="main.qrc"/>
+ </resources>
+ <connections/>
+</ui>

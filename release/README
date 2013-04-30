@@ -1,0 +1,49 @@
+
+This directory contains the scripts that we use to create a new
+set of release files.
+
+In general, you do the following:
+
+1. Copy the entire contents of this directory out of the 
+   Bacula source tree (this may not be required, but is cleaner).
+
+2. Edit the config file, and update the following enviroment variables
+   to point to the correct directories on your system.  They should
+   point to directories that contain git repos:
+
+   bacula
+   docs
+   rescue
+
+   Also ensure that you have set repo to the name of your repository.
+   Normally, it is origin, but some developers (Kern) use bee.
+
+3. Ensure that "branch" is properly set to the right version in
+   the config file.
+
+4. Note, the release version is obtained from bacula/src/version.h and
+   put into a number of files in the release by the release scripts.
+
+5. Run the makeall script.  
+
+   ./makeall
+
+6. There should be no errors.  If 
+   there are, fix them, and re-run the script or re-run the scripts
+   that makeall calls:
+
+7. All the output files should be put in this directory.
+
+8. Before releasing, detar the main Bacula source into some
+   directory and run all the regression tests using the files
+   in the bacula-xx.xx.xx.tar.gz file.  This ensures that there
+   are no missing files.          
+
+9. Also before releasing, run at least one backup using the 
+   Win32 and/or Win64 file daemon.
+
+10 When you are sure, run:
+
+   pushtags
+
+   which will push each repo and push the tags.

@@ -1,0 +1,20 @@
+# Makefile to install logwatch script
+# 08 Jan 2005 D. Scott Barninger
+
+SYSCONFDIR=/etc/log.d
+INSTALL=@INSTALL@
+
+all:	install
+
+install:
+
+	$(INSTALL) -m 755 bacula $(DESTDIR)$(SYSCONFDIR)/scripts/services/bacula
+	$(INSTALL) -m 755 applybaculadate $(DESTDIR)$(SYSCONFDIR)/scripts/shared/applybaculadate
+	$(INSTALL) -m 644 logfile.bacula.conf $(DESTDIR)$(SYSCONFDIR)/conf/logfiles/bacula.conf
+	$(INSTALL) -m 644 services.bacula.conf $(DESTDIR)$(SYSCONFDIR)/conf/services/bacula.conf
+
+uninstall:
+	rm -f $(DESTDIR)$(SYSCONFDIR)/scripts/services/bacula
+	rm -f $(DESTDIR)$(SYSCONFDIR)/scripts/shared/applybaculadate
+	rm -f $(DESTDIR)$(SYSCONFDIR)/conf/logfiles/bacula.conf
+	rm -f $(DESTDIR)$(SYSCONFDIR)/conf/services/bacula.conf

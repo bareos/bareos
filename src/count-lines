@@ -1,0 +1,9 @@
+#!/bin/sh
+rm -f 1
+touch 1
+find . -type d >2
+for i in `cat 2` ; do
+  ls -1 $i/*.c $i/*.cpp $i/*.h $i/*.in 2>/dev/null >>1
+done
+cat 1 | $HOME/bin/lines
+# rm -f 1 2

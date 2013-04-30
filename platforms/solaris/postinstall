@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# postinstall for Bacula
+#
+if [ ! -d /var/bacula ]; then
+    mkdir /var/bacula
+fi
+
+exit 0

@@ -1,0 +1,31 @@
+# This file is part of package Bacula File Daemon
+#
+# Copyright (c) 2011 Free Software Foundation Europe e.V.
+# Bacula Community
+# Author: Bruno Friedmann
+# Description:
+#    Used to start the bacula file daemon service (bacula-fd)
+#    will be installed as /lib/systemd/system/bacula-fd.service
+#    enable : systemctl enable bacula-fd.service
+#	 start : systemctl start bacula-fd.service
+#
+# Bacula File Daemon service
+#
+[Unit]
+Description=Bacula File Daemon service
+Requires=var-run.mount nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
+After=var-run.mount nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
+# Wants=
+# Before=
+# Conflicts=
+
+[Service]
+Type=forking
+User=@fd_user@
+Group=@fd_group@
+PIDFile=@piddir@/bacula-fd.@fd_port@.pid
+StandardOutput=syslog
+ExecStart=@sbindir@/bacula-fd -c @sysconfdir@/bacula-fd.conf
+
+[Install]
+WantedBy=multi-user.target

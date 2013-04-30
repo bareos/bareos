@@ -1,0 +1,45 @@
+From: Lucas Mingarro <lucas@easytech.com.ar>
+To: bacula-users@lists.sourceforge.net
+Subject: [Bacula-users] OpenAFS with bacula
+
+Hi,
+    I'm using Bacula for backing up an AFS file set. I don't know if 
+anyone else is doing it, but here is my explaination about how Bacula 
+works with it.
+
+I'm using Bacula 1.26a on a RedHat Linux 7.1 on the Bacula Director 
+machine and RedHat Linux 7.1 and OpenAFS 1.26 on the Bacula client machine.
+
+First make a user bacula in your kas server an give him rl permission on 
+all volumes that you want to backup with Bacula.
+
+In order for bacula-fd to reads the files on your
+AFS server you have to give the client a kerberos ticket with 
+the right privileges to read the volumes. Here my script to 
+obtain the ticket.
+
+I made a script that obtains the tiket and then runs bacula-fd,
+
+I put this script in /sbin/afs-bacula with permissions 700.
+(See current directory for a copy)
+
+Then you have to change the bacula-fd start/stop script.
+Replace the line
+
+daemon /usr/local/sbin/bacula-fd $2 -c /usr/local/etc/bacula-fd.conf
+
+with
+
+/sbin/afs_bacula daemon /usr/local/sbin/bacula-fd $2 -c \
+    /usr/local/etc/bacula-fd.conf
+
+
+Ok that's all. You've got a bacula-fd validated with the kerberos server.
+
+Lucas Mingarro
+lucas@easytech.com.ar
+
+Note: Don't forget that kerberos tickets have a life time :)
+
+See: http://www.angelfire.com/hi/plutonic/afs-faq.html for FAQ on AFS.
+

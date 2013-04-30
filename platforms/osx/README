@@ -1,0 +1,55 @@
+Bacula file daemon package builder for Mac OS X
+===============================================
+
+This package build script lets you download, compile and package the bacula
+file daemon easily with a single command line. Beside the bacula file daemon
+the resulting installer package contains a short ReadMe file with instructions
+on how to install and use the software. Also a basic launchd property list is
+included along with preugrade and postflight installer scripts to stop and
+restart the daemon while upgrading. To ensure the security of the users the
+passwords in the configuration files are generated during a first time
+installation and file permissions are checked and corrected on upgrades.
+
+Requirements:
+* Mac OS X 10.5 or later (building/packaging), 10.4 or later (deployment)
+* Mac OS X developer tools installed
+
+Example (compile and create package from within bacula source tree):
+$ ./configure --enable-client-only
+$ make -C platforms/osx
+
+By moving the contents of platforms/osx to some other directory (e.g.
+~/bacula-standalone-bulder), it is possible to create installer packages from
+older bacula versions and for specific platforms.
+
+Examples (standalone mode):
+ 1. Create an installer package from the newest supported bacula source
+    containing the bacula file daemon as a PPC/Intel universal binary.
+    $ make dmg
+
+ 2. Create an installer package from a specified version of the bacula source
+    containing the bacula file daemon as a PPC/Intel universal binary.
+    $ make dmg BACULA_VERSION=3.0.0
+
+ 3. Create an installer package from the newest supported bacula source
+    containing the bacula file daemon for PPC architecture only.
+    $ make dmg ARCHFLAGS="-arch ppc" PACKAGE_TITLE="Bacula File Daemon PPC x.y.z"
+
+ 4. Create an installer package from a specified version of the bacula source
+    containing the bacula file daemon for the current architecture.
+    $ make dmg BACULA_VERSION=2.4.4 ARCHFLAGS=""
+
+You find the built disk images in the products folder.
+
+Misc commands:
+  1. Cleanup the build directory
+     $ make clean
+  2. Additionally remove the downloads and products:
+     $ make distclean
+
+Additional notes on the build-script:
+  * The following *FLAGS are used tu build universal binary with 10.4 SDK:
+    CPPFLAGS=-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4
+    CFLAGS=-O -g -arch i386 -arch ppc
+    CXXFLAGS=${CFLAGS}
+    LDFLAGS=-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc

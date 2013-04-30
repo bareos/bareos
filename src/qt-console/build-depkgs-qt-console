@@ -1,0 +1,165 @@
+#!/bin/sh
+#
+#  This file is driven by the parameters that are defined in
+#    the file External-qt-console
+#
+
+usage()
+{
+   echo "usage: $0 [-h] [-C] [<dependency 1>] [<dependency 2>] ..."
+   echo "       -h      Displays this usage"
+   echo "       -C      Clobbers (overwrites) the source code by "
+   echo "               reextracting the archive and reapplying the"
+   echo "               patches."
+   echo ""
+   echo "<dependency N> Optional dependency, If none are given then all"
+   echo "               of them will be built."
+   echo ""
+   echo "Valid dependencies are:"
+   grep -v '^#' < External-qt-console | cut -d'|' -f1 | cut -d'_' -f1 | tr A-Z a-z | sort -u | awk '{ print "        " $1 }'
+}
+
+CLOBBER_SOURCE=
+
+while getopts "hHC" opt; do
+   case ${opt} in
+   H|h|\?) usage;exit 1;;
+   C)      CLOBBER_SOURCE=true;;
+   esac
+done
+
+[ ${OPTIND} -gt 1 ] && shift `expr ${OPTIND} - 1`
+
+cwd=`pwd`
+cd `dirname $0`
+SCRIPT_DIR=`pwd`
+
+TOP_DIR=`pwd`
+
+[ ! -e ${TOP_DIR}/depkgs ] && mkdir ${TOP_DIR}/depkgs
+cd ${TOP_DIR}/depkgs
+DEPPKG_DIR=`pwd`
+
+OLD_IFS=${IFS};IFS="|";
+while read package url dir mkd; do
+   case ${package} in
+   \#*) ;;
+   *) eval "URL_${package}=${url};DIR_${package}=${dir};MKD_${package}=${mkd}";;
+   esac
+done < ${SCRIPT_DIR}/External-qt-console
+IFS=${OLD_IFS};unset OLD_IFS
+
+get_source()
+{
+   URL=$1
+   SRC_DIR=$2
+   MAKE_DIR=$3
+   ARCHIVE=`basename ${URL}`
+echo "in get_source URL is $URL SRC_DIR is $SRC_DIR MAKE_DIR is $MAKE_DIR ARCHIVE is $ARCHIVE"
+        
+   case ${ARCHIVE} in
+   *.tar.gz)       ARCHIVER="tar xzf";    [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.tar\.gz'`;;
+   *.tar.bz2)      ARCHIVER="tar xjf";    [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.tar\.bz2'`;;
+   *.zip)          ARCHIVER="unzip -q";   [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.zip'`;;
+   *.exe)          ARCHIVER="";           [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.zip'`;;
+   *)              echo "Unsupported archive type - $ARCHIVE"; exit 1;;
+   esac
+   
+#  cd ${DEPPKG_DIR}/src
+   
+   if [ ! -e "${ARCHIVE}" ]
+   then 
+      echo "Downloading ${URL}"
+      if wget --passive-ftp "${URL}"
+      then
+          :
+      else
+         echo "Unable to download ${ARCHIVE}"
+         exit 1
+      fi
+   fi
+
+   [ -z "${ARCHIVER}" ] && return 0
+
+   if [ ! -e "${SRC_DIR}" -o "${CLOBBER_SOURCE}" = "true" ]
+   then
+      rm -rf ${SRC_DIR}
+      echo "Extracting ${ARCHIVE}"
+      if [ "${MAKE_DIR}" = "true" ]
+      then
+         mkdir ${SRC_DIR}
+         cd ${SRC_DIR}
+         ${ARCHIVER} ../${ARCHIVE} > ../${ARCHIVE}.log 2>&1
+      else
+         ${ARCHIVER} ${ARCHIVE} > ${ARCHIVE}.log 2>&1
+         cd ${SRC_DIR}
+      fi
+      return 0
+   fi
+
+   cd ${SRC_DIR}
+   return 1
+}
+
+parse_output()
+{
+   sed -ne '/\\$/N' -e 's/\\\n//' -e 's/\t\+/ /g' -e 's/ \+/ /g' \
+       -e '/ error: /p' \
+       -e "s%.*Entering directory[ ]\\+.${DEPPKG_DIR}/\\([^ ]\+\).%Entering \\1%p" \
+       -e "s%.*Leaving directory[ ]\\+.${DEPPKG_DIR}/\\([^ ]\+.\).%Leaving \\1%p" \
+       -e '/gcc \|g\+\+ \|ar /!d' \
+       -e 's/ \(\.\.\/\)\+/ /g' \
+       -e 's/.* \([^ ]\+\(\.c\|\.cpp\|\.cc\|\.cxx\)\)\( .*\|\)$/Compiling \1/p' \
+       -e 's/.* \([^ ]\+\.s\)\( .*\|\)$/Assembling \1/p' \
+       -e 's/.*ar [^ ]\+ \([^ ]\+\)\(\( [^ ]\+\.o\)\+\)/Updating \1 -\2/p' \
+       -e 's/.* -o \([^ ]\+\)\( .*\|\)$/Linking \1/p'
+}
+
+do_patch()
+{
+   PATCH_FILE=${SCRIPT_DIR}/patches/$1; shift
+   
+   if patch -f -p0 "$@" >>patch.log < ${PATCH_FILE}
+   then
+     :
+   else
+      echo "Patch failed - Check `pwd`/patch.log" > /dev/tty
+      exit 1
+   fi
+}
+
+do_make()
+{
+   if make -f "$@" 2>&1
+   then
+       :
+   else
+      echo "Make failed - Check `pwd`/make.log" > /dev/tty
+      exit 1
+   fi | tee -a make.log #| parse_output
+}
+
+process_qwt()
+{
+   get_source "${URL_QWT}" "${DIR_QWT}" "${MKD_QWT}"
+   echo "Building qwt graphics library. This takes some time ..."
+   echo "unix {" >${TOP_DIR}/depkgs/qwt-5.0.2/qwtconfig.pri                    
+   echo " INSTALLBASE = ${TOP_DIR}/qwt" >>${TOP_DIR}/depkgs/qwt-5.0.2/qwtconfig.pri
+   echo "}" >>${TOP_DIR}/depkgs/qwt-5.0.2/qwtconfig.pri
+   cat ${TOP_DIR}/qwtconfig.pri >>${TOP_DIR}/depkgs/qwt-5.0.2/qwtconfig.pri
+   qmake >make.log
+   do_make Makefile >>make.log
+   do_make Makefile install >>make.log
+   echo "In case of problems see: `pwd`/make.log"
+}
+
+if [ "$#" -eq 0 ]
+then
+   process_qwt
+else
+   for dependency in "$@"
+   do
+      eval "process_${dependency}"
+   done
+
+fi

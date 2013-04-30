@@ -1,0 +1,105 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BSCAN 8 "26 November 2009" "Kern Sibbald" "Network backup, recovery and verification"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+ bscan \- Bacula's 'Scan tape'
+.SH SYNOPSIS
+.B bscan
+.RI [ options ]
+.I bacula-archive
+.br
+.SH DESCRIPTION
+.LP
+The purpose of bscan is to read (scan) a Bacula Volume and to recreate
+or update the database contents with the information found on the Volume.
+This is done in a non-destructive way. This permits restoring database
+entries that have been lost by pruning, purging, deleting, or a database
+corruption problem.        
+ 
+.LP
+Normally, it should not be necessary to run the bscan command because
+the database is self maintaining, and most corrupted databases can be
+repaired by the tools provided by the database vendors.
+In addition, if you have maintained bootstrap files during backups, you
+should be able to recover all your data from the bootstrap file    
+without needed an up to date catalog.
+
+.B bscan
+command.
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invoke bold face and italics, 
+.\" respectively.
+.SH OPTIONS
+A summary of options is included below.
+.TP
+.B \-?
+Show version and usage of program.
+.TP
+.BI \-b\  bootstrap
+Specify a bootstrap file.
+.TP
+.BI \-c\  config
+Specify configuration file.
+.TP
+.BI \-d\  nn
+Set debug level to \fInn\fP.
+.TP
+.BI \-dt
+Print timestamp in debug output.
+.TP
+.B \-m
+Update media info in database.
+.TP
+.B \-D
+Specify the driver database name (default: \fINULL\fP)
+.TP
+.BI \-n\  name
+Specify the database name (default: \fIbacula\fP)
+.TP
+.BI \-u\  username
+Specify database username (default: \fIbacula\fP)
+.TP
+.BI \-P\  password
+Specify database password (default: \fInone\fP)
+.TP
+.BI \-h\  host
+Specify database host (default: \fINULL\fP)
+.TP
+.BI \-t\  port
+Specify database port (default: 0)
+.TP
+.B \-p
+Proceed in spite of I/O errors.
+.TP
+.B \-r
+List records.
+.TP
+.B \-s
+Synchronize or store in Database.
+.TP
+.B \-S
+Show scan progress periodically.
+.TP
+.B \-v
+Verbose output mode.
+.TP
+.BI \-V\  volume
+Specify volume names (separated by '|')
+.TP
+.BI \-w\  dir
+Specify working directory (default from conf file)
+.SH SEE ALSO
+.BR bls (8),
+.BR bextract (8).
+.br
+.SH AUTHOR
+This manual page was written by Jose Luis Tallon
+.nh 
+<jltallon@adv\-solutions.net>,
+for the Debian GNU/Linux system (but may be used by others).
+ 

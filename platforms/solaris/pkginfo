@@ -1,0 +1,12 @@
+PKG=Bacula
+NAME=Bacula Client
+ARCH=sparc
+VERSION=2.2.5
+MAXINST=1
+CATEGORY=application
+DESC=Bacula - The Leading Open Source Backup Solution.
+VENDOR=http://www.bacula.org
+HOTLINE=none
+EMAIL=christian.masopust@siemens.com
+CLASSES=none
+BASEDIR=/opt/bacula

@@ -1,0 +1,143 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BTAPE 8 "26 November 2009" "Kern Sibbald" "Network backup, recovery and verification"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+ btape \- Bacula's Tape interface test program
+.SH SYNOPSIS
+.B btape
+.RI [ options ]
+.I device-name
+.br
+.SH DESCRIPTION
+This manual page documents briefly the
+.B btape
+command.
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invoke bold face and italics, 
+.\" respectively.
+.SH OPTIONS
+A summary of options is included below.
+.TP
+.B \-?
+Show summary of options and commands.
+.TP
+.BI \-b\  bootstrap
+Specify a bootstrap file.
+.TP
+.BI \-c\  config
+Specify configuration file.
+.TP
+.BI \-d\  nn
+Set debug level to \fInn\fP.
+.TP
+.BI \-p
+Proceed inspite of I/O errors.
+.TP
+.B \-t
+Open the default tape device.
+.TP
+.B \-s
+No signals (for debugging).
+.TP
+.B \-v
+Set verbose mode.
+.sp 3
+.SH COMMANDS
+.TP
+.B autochanger
+test autochanger
+.TP
+.B bsf
+backspace file
+.TP
+.B bsr
+backspace record
+.TP 
+.B cap
+list device capabilities
+.TP
+.B clear
+clear tape errors
+.TP
+.B eod
+go to end of Bacula data for append
+.TP
+.B eom
+go to the physical end of medium
+.TP
+.B fill
+fill tape, write onto second volume
+.TP
+.B unfill
+read filled tape
+.TP
+.B fsf
+forward space a file
+.TP
+.B fsr
+forward space a record
+.TP
+.B help
+print this reference
+.TP
+.B label
+write a Bacula label to the tape
+.TP
+.B load
+load a tape
+.TP
+.B quit
+quit btape
+.TP
+.B rawfill
+use write() to fill tape
+.TP
+.B readlabel
+read and print the Bacula tape label
+.TP
+.B rectest
+test record handling functions
+.TP
+.B rewind
+rewind the tape
+.TP
+.B scan
+read() tape block by block to EOT and report
+.TP
+.B scanblocks
+Bacula read block by block to EOT and report
+.TP
+.B status
+print tape status
+.TP
+.B test
+General test Bacula tape functions
+.TP
+.B weof
+write an EOF on the tape
+.TP
+.B wr
+write a single Bacula block
+.TP
+.B rr
+read a single record
+.TP
+.B rb
+read a single bacula block
+.TP
+.B qfill
+quick fill command
+.br
+.SH SEE ALSO
+.BR bscan (1),
+.BR bextract (1).
+.br
+.SH AUTHOR
+This manual page was written by Jose Luis Tallon
+.nh 
+<jltallon@adv\-solutions.net>.

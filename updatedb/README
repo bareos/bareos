@@ -1,0 +1,22 @@
+updatedb scripts
+13 Feb 2004
+
+These scripts may be used to update older versions of bacula
+databases. The scripts are designed using the standard install
+locations for mysql, sqlite and the bacula working directory
+as configured in the rpm builds. If you have different locations
+you will need to edit the $bindir variable and the working
+directory location before running them.
+
+01 Nov 2005
+Please note normally the scripts in this directory are needed only
+if you want to update multiple versions of the database.  If if
+you are upgrading from an older database one version before the
+current database version, (e.g.  version 8 to 9) the normal
+procedure is to use the:
+
+   ./update_bacula_tables
+
+script which will be installed in your scripts directory (default
+/etc/bacula).  It can also be found in the
+<bacula-source>/src/cats directory.

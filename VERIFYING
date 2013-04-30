@@ -1,0 +1,38 @@
+
+All Bacula packages released on Source Forge after 8 June 2003
+will be signed with the Bacula Distribution Verification Key.  By
+obtaining a copy of the Bacula Distribution Verification Public
+key from either the home site (www.bacula.org) or from the Source
+Forge project page, (www.sourceforge.net/projects/bacula).  you
+can verify that the code you have is complete, unaltered, and
+packaged by myself (Kern Sibbald) or D. Scott Barninger.
+
+Putting the Bacula Key in your Keyring:
+
+Once you download the Bacula public key, you must insert it in
+your keyring.  The procedure will differ depending on whether you
+are using PGP or GPG.  For GPG, assuming you have put the key
+in bacula.key, the procedure is:
+
+  gpg --import bacula.key
+
+Verifying an RPM:
+
+The procedure for verification differs slightly if you are using
+rpms or tar.gz files. For rpms, the signature becomes part of the
+rpm package, and once the Bacula public key is in your keyring
+you check the package with:
+
+  rpm --checksig bacula-1.xx.rpm
+
+Verifying tar files:
+
+Tar files are distributed as they always have been in the past,
+unchanged. However, for each xxxx.tar.gz file that is released there
+will be a second file released with the same name but with .sig
+appended, for example xxxx.tar.gz.sig.  To verify the Bacula distribution,
+you download both the files and put them in the same directory, then
+for GPG, you use the following command to do the verification:
+
+  gpg --verify xxxx.tar.gz.sig
+

@@ -1,0 +1,67 @@
+diff -ur wxWidgets-2.8.7-rel/build/msw/config.gcc wxWidgets-2.8.7/build/msw/config.gcc
+--- build/msw/config.mingw32	2007-11-21 13:42:45.000000000 +0100
++++ build/msw/config.mingw32	2008-03-11 15:45:30.000000000 +0100
+@@ -11,10 +11,10 @@
+ # -------------------------------------------------------------------------
+ 
+ # C compiler 
+-CC := gcc
++CC := mingw32-gcc
+ 
+ # C++ compiler 
+-CXX := g++
++CXX := mingw32-g++
+ 
+ # Standard flags for CC 
+ CFLAGS := 
+@@ -23,10 +23,10 @@
+ CXXFLAGS := 
+ 
+ # Standard preprocessor flags (common for CC and CXX) 
+-CPPFLAGS := 
++CPPFLAGS := -I../../../zlib
+ 
+ # Standard linker flags 
+-LDFLAGS := 
++LDFLAGS := -L../../../zlib
+ 
+ # The C preprocessor 
+ CPP := $(CC) -E
+@@ -44,7 +44,7 @@
+ MSLU := 0
+ 
+ # Type of compiled binaries [debug,release]
+-BUILD := debug
++BUILD := release
+ 
+ # Should debugging info be included in the executables? The default value
+ # "default" means that debug info will be included if BUILD=debug
+@@ -131,4 +131,3 @@
+ #     "3" ...... this is for Mingw 2.0 or newer (comes with gcc3)
+ #     "2.95" ... for Mingw 1.1 or any of the older versions [3,2.95]
+ GCC_VERSION := 3
+-
+diff -ur wxWidgets-2.8.7-rel/include/wx/string.h wxWidgets-2.8.7/include/wx/string.h
+--- include/wx/string.h	2007-11-21 13:41:54.000000000 +0100
++++ include/wx/string.h	2008-03-11 15:50:58.000000000 +0100
+@@ -235,7 +235,7 @@
+ #endif
+   // VC++ free must take place in same DLL as allocation when using non dll
+   // run-time library (e.g. Multithreaded instead of Multithreaded DLL)
+-#if defined(__VISUALC__) && defined(_MT) && !defined(_DLL)
++#if 1 || defined(__VISUALC__) && defined(_MT) && !defined(_DLL)
+   void  Unlock() { if ( !IsEmpty() && --nRefs == 0) Free();  }
+   // we must not inline deallocation since allocation is not inlined
+   void  Free();
+diff -ur wxWidgets-2.8.7-rel/src/common/string.cpp wxWidgets-2.8.7/src/common/string.cpp
+--- src/common/string.cpp	2007-11-21 13:41:57.000000000 +0100
++++ src/common/string.cpp	2008-03-11 15:53:17.000000000 +0100
+@@ -140,7 +140,7 @@
+ // wxStringData class deallocation
+ // ===========================================================================
+ 
+-#if defined(__VISUALC__) && defined(_MT) && !defined(_DLL)
++#if 1 || defined(__VISUALC__) && defined(_MT) && !defined(_DLL)
+ #  pragma message (__FILE__ ": building with Multithreaded non DLL runtime has a performance impact on wxString!")
+ void wxStringData::Free()
+ {

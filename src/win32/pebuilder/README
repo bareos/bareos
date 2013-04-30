@@ -1,0 +1,13 @@
+Bacula plugin for BartPE
+http://www.nu2.nu/pebuilder/
+Wed Nov 10 2004
+Copyright 2004 D. Scott Barninger <barninger at fairfieldcomputers.com>
+Licensed under the GNU GPL v2
+
+Copy the bacula plugin folder to the plugins directory of your 
+BartPE build directory. Edit the config files in the files directory 
+to suit your bacula installation.
+
+Build your BartPE disk according to the  instructions at 
+http://www.nu2.nu/pebuilder/#build along with whatever other plugins 
+you want. Be sure that 'Bacula Client' is enabled on the plugin selection screen.

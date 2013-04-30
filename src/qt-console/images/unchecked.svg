@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://inkscape.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="800pt"
+   height="800pt"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.43"
+   sodipodi:docbase="/home/dbartley/src/bacula/src/qt-console/images"
+   sodipodi:docname="unchecked.svg"
+   version="1.0"
+   inkscape:export-filename="/home/dbartley/src/bacula/src/qt-console/images/unchecked.png"
+   inkscape:export-xdpi="1.4449884"
+   inkscape:export-ydpi="1.4449884">
+  <defs
+     id="defs4">
+    <linearGradient
+       id="linearGradient2207">
+      <stop
+         style="stop-color:#00ff00;stop-opacity:1;"
+         offset="0"
+         id="stop2225" />
+      <stop
+         id="stop2227"
+         offset="0"
+         style="stop-color:#000700;stop-opacity:0.02745098;" />
+      <stop
+         style="stop-color:#000300;stop-opacity:0.01176471;"
+         offset="0"
+         id="stop2229" />
+      <stop
+         id="stop2231"
+         offset="0"
+         style="stop-color:#000100;stop-opacity:0.00392157;" />
+      <stop
+         style="stop-color:#000000;stop-opacity:0;"
+         offset="1"
+         id="stop2211" />
+    </linearGradient>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#e2e2e2"
+     bordercolor="#010101"
+     borderopacity="1"
+     inkscape:pageopacity="1"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.753"
+     inkscape:cx="500"
+     inkscape:cy="495.71315"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer2"
+     inkscape:window-width="1280"
+     inkscape:window-height="932"
+     inkscape:window-x="0"
+     inkscape:window-y="35"
+     inkscape:showpageshadow="false" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="bottom" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="top">
+    <path
+       style="opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#545454;stroke-width:7.88;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;marker-start:none"
+       d="M 994.41249,4.9545532 C 672.90536,4.1558286 413.38841,626.48951 413.38841,626.48951 C 413.38841,626.48951 126.31369,426.95495 3.7150412,410.07172 C -37.117913,404.44855 356.5329,885.93325 356.5329,885.93325 C 356.5329,885.93325 485.24171,1019.6825 467.84626,991.68579 C 462.68126,983.37309 757.16849,447.92512 994.41249,4.9545532 z "
+       id="path1323"
+       sodipodi:nodetypes="ccscsc"
+       inkscape:export-filename="/home/dbartley/src/bacula/src/qt-console/images/check.png"
+       inkscape:export-xdpi="1.4449884"
+       inkscape:export-ydpi="1.4449884" />
+  </g>
+</svg>

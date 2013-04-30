@@ -1,0 +1,202 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH DBCHECK 8 "26 September 2009" "Kern Sibbald" "Network backup, recovery and verification"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+ dbcheck \- Bacula's Catalog Database Check/Clean program
+.SH SYNOPSIS
+.B dbcheck
+.RI [ options ]
+.I working-directory
+.I bacula-database
+.I user
+.I password
+.RI [ dbhost ]
+.RI [ dbport ]
+.br
+.SH DESCRIPTION
+This manual page documents briefly the
+.B dbcheck
+command.
+.PP
+dbcheck will not repair your database if it is broken. Please see your
+vendor's instructions for fixing broken database.
+
+dbcheck is a simple program that will search for logical
+inconsistencies in the Bacula tables in your database, and optionally fix them.
+It is a database maintenance routine, in the sense that it can
+detect and remove unused rows, but it is not a database repair
+routine. To repair a database, see the tools furnished by the
+database vendor.  Normally dbcheck should never need to be run,
+but if Bacula has crashed or you have a lot of Clients, Pools, or
+Jobs that you have removed, it could be useful.
+.SH OPTIONS
+A summary of options is included below.
+.TP
+.B \-?
+Show version and usage of program.
+.TP
+.BI \-b
+If specified, dbcheck will run in batch mode, and it will proceed to examine
+and fix (if \-f is set) all programmed inconsistency checks. By default,
+dbcheck will enter interactive mode (see below).
+.TP
+.BI \-C\  catalog
+catalog name in the director conf file.
+.TP
+.BI \-c\  config
+If the \-c option is given with the Director's conf file, there is no need to
+enter any of the command line arguments, in particular the working directory
+as dbcheck will read them from the file.
+.TP
+.BI \-B
+print catalog configuration and exit.
+.TP
+.BI -d\  nn
+set debug level to \fInn\fP.
+.TP
+.BI \-dt
+print timestamp in debug output.
+.TP
+.BI \-f
+If specified, dbcheck will repair (fix) the inconsistencies it finds.
+Otherwise, it will report only.
+.TP
+.BI \-v
+Set verbose mode.
+.SH INTERACTIVE MODE
+In interactive mode dbcheck will prompt with the following:
+.PP
+Hello, this is the database check/correct program.
+Please select the function you want to perform.
+     1) Toggle modify database flag
+     2) Toggle verbose flag
+     3) Repair bad Filename records
+     4) Repair bad Path records
+     5) Eliminate duplicate Filename records
+     6) Eliminate duplicate Path records
+     7) Eliminate orphaned Jobmedia records
+     8) Eliminate orphaned File records
+     9) Eliminate orphaned Path records
+    10) Eliminate orphaned Filename records
+    11) Eliminate orphaned FileSet records
+    12) Eliminate orphaned Client records
+    13) Eliminate orphaned Job records
+    14) Eliminate all Admin records
+    15) Eliminate all Restore records
+    16) All (3-15)
+    17) Quit
+Select function number:
+
+By entering 1 or 2, you can toggle the modify database flag (\-f option) and
+the verbose flag (\-v).  It can be helpful and reassuring to turn off the
+modify database flag, then select one or more of the consistency checks
+(items 3 through 9) to see what will be done, then toggle the modify flag
+on and re-run the check.
+
+The inconsistencies examined are the following:
+
+.BR
+Duplicate filename records.  This can happen if you accidentally run two
+   copies of Bacula at the same time, and they are both adding filenames
+   simultaneously.  It is a rare occurrence, but will create an
+   inconsistent database.  If this is the case, you will receive error
+   messages during Jobs warning of duplicate database records.  If you are
+   not getting these error messages, there is no reason to run this check.
+
+.BR
+Repair bad Filename records.  This checks and corrects filenames that have
+   a trailing slash.  They should not.
+
+.BR
+Repair bad Path records.  This checks and corrects path names that do not
+   have a trailing slash.  They should.
+
+.BR
+Duplicate path records.  This can happen if you accidentally run two copies
+   of Bacula at the same time, and they are both adding filenames
+   simultaneously.  It is a rare occurrence, but will create an
+   inconsistent database.  See the item above for why this occurs and how
+   you know it is happening.
+
+.BR
+Orphaned JobMedia records.  This happens when a Job record is deleted
+   (perhaps by a user issued SQL statement), but the corresponding JobMedia
+   record (one for each Volume used in the Job) was not deleted.  Normally,
+   this should not happen, and even if it does, these records generally do
+   not take much space in your database.  However, by running this check,
+   you can eliminate any such orphans.
+
+.BR
+Orphaned File records.  This happens when a Job record is deleted (perhaps
+   by a user issued SQL statement), but the corresponding File record (one
+   for each Volume used in the Job) was not deleted.  Note, searching for
+   these records can be very time consuming (i.e.  it may take hours) for a
+   large database.  Normally this should not happen as Bacula takes care to
+   prevent it.  Just the same, this check can remove any orphaned File
+   records.  It is recommended that you run this once a year since orphaned
+   File records can take a large amount of space in your database.  You
+   might want to ensure that you have indexes on JobId, FilenameId, and
+   PathId for the File table in your catalog before running this command.
+
+.BR
+Orphaned Path records.  This condition happens any time a directory is
+   deleted from your system and all associated Job records have been
+   purged.  During standard purging (or pruning) of Job records, Bacula
+   does not check for orphaned Path records.  As a consequence, over a
+   period of time, old unused Path records will tend to accumulate and use
+   space in your database.  This check will eliminate them.  It is
+   recommended that you run this check at least once a year.
+
+.BR
+Orphaned Filename records.  This condition happens any time a file is
+   deleted from your system and all associated Job records have been
+   purged.  This can happen quite frequently as there are quite a large
+   number of files that are created and then deleted.  In addition, if you
+   do a system update or delete an entire directory, there can be a very
+   large number of Filename records that remain in the catalog but are no
+   longer used.
+
+   During standard purging (or pruning) of Job records, Bacula does not
+   check for orphaned Filename records.  As a consequence, over a period of
+   time, old unused Filename records will accumulate and use space in your
+   database.  This check will eliminate them.  It is strongly recommended
+   that you run this check at least once a year, and for large database
+   (more than 200 Megabytes), it is probably better to run this once every
+   6 months.
+
+.BR
+Orphaned Client records.  These records can remain in the database long
+   after you have removed a client.
+
+.BR
+Orphaned Job records.  If no client is defined for a job or you do not run
+   a job for a long time, you can accumulate old job records.  This option
+   allow you to remove jobs that are not attached to any client (and thus
+   useless).
+
+.BR
+All Admin records. This command will remove all Admin records,
+   regardless of their age.
+
+.BR
+All Restore records. This command will remove all Restore records,
+   regardless of their age.
+
+By the way, I personally run dbcheck only where I have messed up
+my database due to a bug in developing Bacula code, so normally
+you should never need to run dbcheck inspite of the
+recommendations given above, which are given so that users don't
+waste their time running dbcheck too often.
+
+.SH SEE ALSO
+.BR bls (1),
+.BR bextract (1).
+.br
+.SH AUTHOR
+This manual page was written by Jose Luis Tallon
+.nh
+<jltallon@adv\-solutions.net>.

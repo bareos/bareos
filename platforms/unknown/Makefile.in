@@ -1,0 +1,46 @@
+# 
+# This file is used as the template to create the
+# Makefile for the unknown specific installation.
+#
+#  15 November 2001 -- Kern Sibbald
+#
+#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+
+install: install-autostart
+
+all: install-autostart
+
+install-autostart: install-autostart-FD install-autostart-SD install-autostart-DIR
+
+	
+install-autostart-FD:
+
+
+install-autostart-SD:
+
+
+install-autostart-DIR:
+
+
+uninstall: uninstall-autostart
+
+uninstall-autostart: uninstall-autostart-FD uninstall-autostart-SD uninstall-autostart-DIR
+
+uninstall-autostart-FD:
+
+
+uninstall-autostart-SD:
+
+uninstall-autostart-DIR:
+
+clean:
+
+distclean:
+	@rm -f bacula-SD bacula-FD bacula-DIR Makefile bacula-*.spec
+
+devclean:
+	@rm -f bacula-SD bacula-FD bacula-DIR Makefile bacula-*.spec

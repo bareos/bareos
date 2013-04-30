@@ -1,0 +1,43 @@
+From: Marc Schoechlin <ms@LF.net>
+To: Peter Eriksson <peter@ifm.liu.se>
+Cc: bacula-users@lists.sourceforge.net
+Subject: Re: [Bacula-users] RE: Feature Request : includes for config-files
+
+Hi !
+
+On Fri, May 21, 2004 at 11:24:13AM +0200, Peter Eriksson wrote:
+
+> > I think that is the 99%-solution for this problem - 
+> > but I think many users would be happy with a 90%-solution, which
+> > allows to store configuration-data in distributed files.
+> 
+> Or you could do as I just did - generate the configuration
+> files using a Makefile and the m4 macro processor... That way you
+> don't have to reinvent the wheel again inside Bacula but can delegate
+> the tasks to external programs.
+> 
+> [See the attached files for details. They can be expanded
+> a lot though, it's just a beginning]
+
+Many thanks for the files!  
+
+I adopted this way now - and it works with good results :-)
+
+The different client-definitions can now be placed on distributed
+locations.
+
+Look at the make-target below :
+--
+$(ETCDIR)/bacula-dir.conf: bacula-dir.conf bacula-defs.m4
+        cat bacula-dir.conf > $(ETCDIR)/bacula-dir.conf.tmp  && \
+        $(FIND) $(CUSTOMERS) -name "*.cfg" -exec cat {} >> $(ETCDIR)/bacula-dir.conf.tmp \; && \
+        $(M4) $(ETCDIR)/bacula-dir.conf.tmp >$(ETCDIR)/bacula-dir.tmp && \
+        $(DIR) -t -c $(ETCDIR)/bacula-dir.tmp && \
+        mv $(ETCDIR)/bacula-dir.tmp $(ETCDIR)/bacula-dir.conf
+--
+
+
+Best regards
+
+Marc Schoechlin
+

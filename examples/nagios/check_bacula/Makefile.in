@@ -1,0 +1,98 @@
+#
+#  Version $Id: Makefile.in,v 1.4 2004/09/25 10:19:59 nboichat Exp $
+#
+@MCOMMON@
+
+srcdir =	.
+VPATH = 	.
+.PATH:		.
+
+# one up
+basedir = ../../../src
+# top dir
+topdir = ../../..
+# this dir relative to top dir
+thisdir = ../examples/nagios/check_bacula
+
+DEBUG=@DEBUG@
+
+first_rule: all
+dummy:
+
+#
+CHECKSRCS = check_bacula.c authenticate.c
+CHECKOBJS = check_bacula.o authenticate.o
+
+# these are the objects that are changed by the .configure process
+EXTRAOBJS = @OBJLIST@
+
+CHECK_CPPFLAGS=
+CHECK_LDFLAGS=
+
+.SUFFIXES:	.c .o
+.PHONY:
+.DONTCARE:
+
+# inference rules
+.c.o:
+	@echo "Compiling $<"
+	$(NO_ECHO) $(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(CHECK_CPPFLAGS) \
+ -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+#-------------------------------------------------------------------------
+all: Makefile check_bacula
+	@echo "==== Make of check_bacula is good ===="
+	@echo " "
+
+check_bacula: Makefile $(CHECKOBJS) $(basedir)/lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) $(CHECK_LDFLAGS) -L$(basedir)/lib -o $@ \
+	  $(CHECKOBJS) $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+libtool-clean:
+	$(RMF) -r .libs _libs
+
+clean:
+	@$(RMF) check_bacula core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+
+realclean: clean
+	@$(RMF) tags 
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+devclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+install: all
+	$(INSTALL_PROGRAM) check_bacula $(DESTDIR)$(sbindir)/check_bacula
+
+uninstall:
+	(cd $(DESTDIR)$(sbindir); $(RMF) check_bacula)
+
+
+
+# Semi-automatic generation of dependencies:
+# Use gcc -MM because X11 `makedepend' doesn't work on all systems
+# and it also includes system headers.
+# `semi'-automatic since dependencies are generated at distribution time.
+
+depend:
+	@$(MV) Makefile Makefile.bak
+	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
+	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(CHECK_CPPFLAGS) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@if test -f Makefile ; then \
+	    $(RMF) Makefile.bak; \
+	else \
+	   $(MV) Makefile.bak Makefile; \
+	   echo -e "Something went wrong\n\a"; \
+	fi
+
+# -----------------------------------------------------------------------
+# DO NOT DELETE: nice dependency list follows

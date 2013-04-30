@@ -1,0 +1,13 @@
+10,13d9
+< grant all privileges on *.* to kern@localhost with grant option;
+< grant all privileges on *.* to kern@"%" with grant option;
+< grant all privileges on *.* to kelvin@localhost with grant option;
+< grant all privileges on *.* to kelvin@"%" with grant option;
+20c16
+<    echo "Privileges for kern, kelvin, and bacula granted."
+---
+>    echo "MySQL privileges for bacula granted."
+23c19
+<    echo "Error creating privileges."
+---
+>    echo "Error creating MySQL privileges."

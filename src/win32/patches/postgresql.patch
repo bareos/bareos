@@ -1,0 +1,123 @@
+Index: doc/Makefile
+--- ../original/postgresql-8.1.4/doc/Makefile	2003-11-29 11:51:36.000000000 -0800
++++ ./doc/Makefile	2006-06-29 03:44:10.000000000 -0700
+@@ -101,4 +101,4 @@
+ 
+ clean distclean maintainer-clean:
+ 	rm -rf man1/ man$(sqlmansectnum)/ man$(sqlmansect_dummy)/
+-	$(MAKE) -C src $@
++	-$(MAKE) -C src $@
+Index: src/bin/pgevent/Makefile
+--- ../original/postgresql-8.1.4/src/bin/pgevent/Makefile	2004-12-31 14:03:14.000000000 -0800
++++ ./src/bin/pgevent/Makefile	2006-06-29 01:19:18.000000000 -0700
+@@ -14,16 +14,18 @@
+ 
+ OBJS=pgevent.o pgmsgevent.o
+ NAME=pgevent.dll
++DLLWRAP=dllwrap
++WINDRES=windres
+ 
+ all: $(NAME)
+ 
+ install: all install-lib
+ 
+ pgevent.dll: $(OBJS) pgevent.def
+-	dllwrap --def pgevent.def -o $(NAME) $(OBJS)
++	$(DLLWRAP) --def pgevent.def -o $(NAME) $(OBJS)
+ 	
+ pgmsgevent.o: pgmsgevent.rc win32ver.rc
+-	windres pgmsgevent.rc -o pgmsgevent.o --include-dir=$(top_builddir)/src/include
++	$(WINDRES) pgmsgevent.rc -o pgmsgevent.o --include-dir=$(top_builddir)/src/include
+ 
+ all-lib: $(NAME)
+ 
+Index: src/interfaces/libpq/Makefile
+--- ../original/postgresql-8.1.4/src/interfaces/libpq/Makefile	2005-08-28 17:47:35.000000000 -0700
++++ ./src/interfaces/libpq/Makefile	2006-06-29 01:15:35.000000000 -0700
+@@ -13,6 +13,7 @@
+ top_builddir = ../../..
+ include $(top_builddir)/src/Makefile.global
+ 
++WINDRES=windres
+ 
+ # shared library parameters
+ NAME= pq
+@@ -42,7 +43,7 @@
+ DLL_DEFFILE=libpqdll.def
+ 
+ libpqrc.o: libpq.rc
+-	windres -i libpq.rc -o libpqrc.o
++	$(WINDRES) -i libpq.rc -o libpqrc.o
+ 
+ ifeq ($(enable_thread_safety), yes)
+ OBJS += pthread-win32.o
+Index: src/Makefile
+--- ../original/postgresql-8.1.4/src/Makefile	2005-01-13 10:23:21.000000000 -0800
++++ ./src/Makefile	2006-06-29 04:07:54.000000000 -0700
+@@ -52,10 +52,10 @@
+ 	$(MAKE) -C bin $@
+ 	$(MAKE) -C pl $@
+ 	$(MAKE) -C makefiles $@
+-	$(MAKE) -C test $@
+-	$(MAKE) -C tutorial NO_PGXS=1 $@
++	-$(MAKE) -C test $@
++	-$(MAKE) -C tutorial NO_PGXS=1 $@
+ 	$(MAKE) -C utils $@
+-	$(MAKE) -C tools/thread $@
++	-$(MAKE) -C tools/thread $@
+ 
+ distclean maintainer-clean:
+ 	-$(MAKE) -C port $@
+Index: src/Makefile.global.in
+--- ../original/postgresql-8.1.4/src/Makefile.global.in	2005-09-27 10:39:32.000000000 -0700
++++ ./src/Makefile.global.in	2006-06-29 01:11:44.000000000 -0700
+@@ -31,6 +31,7 @@
+ # PostgreSQL version number
+ VERSION = @PACKAGE_VERSION@
+ 
++WINDRES=windres
+ # Support for VPATH builds
+ vpath_build = @vpath_build@
+ abs_top_srcdir = @abs_top_srcdir@
+@@ -456,7 +457,7 @@
+ 	sed -e 's;FILEDESC;$(PGFILEDESC);' -e 's;VFT_APP;$(PGFTYPE);' -e 's;_ICO_;$(PGICOSTR);' -e 's;\(VERSION.*\),0 *$$;\1,'`date '+%y%j' | sed 's/^0*//'`';' $(top_builddir)/src/port/win32ver.rc > win32ver.rc
+ win32ver.o: $(top_builddir)/src/port/win32ver.rc
+ 	sed -e 's;FILEDESC;$(PGFILEDESC);' -e 's;VFT_APP;$(PGFTYPE);' -e 's;_ICO_;$(PGICOSTR);' -e 's;\(VERSION.*\),0 *$$;\1,'`date '+%y%j' | sed 's/^0*//'`';' $(top_builddir)/src/port/win32ver.rc > win32ver.rc
+-	windres -i win32ver.rc -o win32ver.o --include-dir=$(top_builddir)/src/include
++	$(WINDRES) -i win32ver.rc -o win32ver.o --include-dir=$(top_builddir)/src/include
+ 	rm -f win32ver.rc
+ endif
+ 
+Index: src/timezone/Makefile
+--- ../original/postgresql-8.1.4/src/timezone/Makefile	2005-07-06 14:40:09.000000000 -0700
++++ ./src/timezone/Makefile	2006-06-29 03:22:26.000000000 -0700
+@@ -12,6 +12,8 @@
+ top_builddir = ../..
+ include $(top_builddir)/src/Makefile.global
+ 
++ZIC=./zic
++
+ override CPPFLAGS := $(CPPFLAGS)
+ 
+ # files to build into backend
+@@ -25,16 +27,16 @@
+ 	pacificnew etcetera factory backward systemv solar87 solar88 solar89
+ TZDATAFILES := $(TZDATA:%=$(srcdir)/data/%)
+ 
+-all: SUBSYS.o submake-libpgport zic
++all: SUBSYS.o submake-libpgport zic$(X)
+ 
+ SUBSYS.o: $(OBJS)
+ 	$(LD) $(LDREL) $(LDOUT) SUBSYS.o $(OBJS)
+ 
+-zic: $(ZICOBJS)
+-	$(CC) $(CFLAGS) $(ZICOBJS) $(LDFLAGS) $(LIBS) -o $@$(X)
++zic$(X): $(ZICOBJS)
++	$(CC) $(CFLAGS) $(ZICOBJS) $(LDFLAGS) $(LIBS) -o $@
+ 
+ install: all installdirs
+-	./zic -d $(DESTDIR)$(datadir)/timezone $(TZDATAFILES)
++	$(ZIC) -d $(DESTDIR)$(datadir)/timezone $(TZDATAFILES)
+ 
+ installdirs:
+ 	$(mkinstalldirs) $(DESTDIR)$(datadir)

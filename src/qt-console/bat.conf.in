@@ -1,0 +1,10 @@
+#
+# Bacula Administration Tool (bat) configuration file
+#
+
+Director {
+  Name = @basename@-dir
+  DIRport = @dir_port@
+  address = @hostname@
+  Password = "@dir_password@"
+}

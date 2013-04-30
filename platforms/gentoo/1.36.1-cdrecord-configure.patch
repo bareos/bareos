@@ -1,0 +1,18 @@
+--- configure.old	2005-02-06 07:44:05.221997769 -0500
++++ configure	2005-02-06 07:45:18.300994158 -0500
+@@ -7478,15 +7478,6 @@
+ # get scsibus,target,lun
+ # -------------------------------------------
+ CDSTL="3,0,0"
+-if test ! x$CDRECORD = x ; then
+-   CDSTL=`${CDRECORD} -scanbus 2>/dev/null | grep CD-RW | ${AWK} '{print $1}'`
+-   if test x${CDSTL} = x ; then
+-      CDSTL=`${CDRECORD} -scanbus 2>/dev/null | grep CD+RW | ${AWK} '{print $1}'`
+-   fi
+-   if test x${CDSTL} = x ; then
+-      CDSTL="3,0,0"
+-   fi
+-fi
+ 
+ 
+ 

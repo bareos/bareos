@@ -1,0 +1,40 @@
+#!/bin/sh
+# gcc -Wall plus other important warnings not included in -Wall
+
+for arg
+do
+    case $arg in
+	-O*) Wuninitialized=-Wuninitialized;;  # only makes sense with `-O'
+    esac
+done
+
+exec gcc \
+	-Wall $Wuninitialized \
+	-Wwrite-strings \
+	-Wcast-qual \
+	-Wbad-function-cast \
+	-Wpointer-arith \
+	-Wstrict-prototypes \
+	-Wmissing-prototypes \
+	-Wmissing-declarations \
+	-Wnested-externs \
+	-Wtraditional \
+	-Wconversion \
+	-Wcomment \
+	-Wcast-align \
+	-Winline \
+	-Wshadow \
+	-Wredundant-decls \
+	-Wid-clash-31 \
+	"$@"
+
+#    -Wall implies:
+#	-Wimplicit
+#	-Wreturn-type
+#	-Wunused
+#	-Wswitch
+#	-Wformat
+#	-Wchar-subscripts
+#	-Wparentheses
+#	-Wmissing-braces
+------------------------------------------------------------------------------

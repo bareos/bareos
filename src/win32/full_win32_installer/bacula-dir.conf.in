@@ -1,0 +1,380 @@
+#
+# Default Bacula Director Configuration file
+#
+#  The only thing that MUST be changed is to add one or more
+#   file or directory names in the Include directive of the
+#   FileSet resource.
+#
+#  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
+#
+#  You might also want to change the default email address
+#   from root to your address.  See the "mail" and "operator"
+#   directives in the Messages resource.
+#
+
+Director {                            # define myself
+  Name = @director_name@
+  DIRport = @director_port@                # where we listen for UA connections
+  QueryFile = "@bin_dir@\\query.sql"
+  WorkingDirectory = "@working_dir@"
+  PidDirectory = "@working_dir@"
+  Maximum Concurrent Jobs = @director_maxjobs@
+  Password = "@director_password@"         # Console password
+  Messages = Daemon
+}
+
+JobDefs {
+  Name = "DefaultJob"
+  Type = Backup
+  Level = Incremental
+  Client = @client_name@
+  FileSet = "Test Set"
+  Schedule = "WeeklyCycle"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Priority = 10
+}
+
+
+#
+# Define the main nightly save backup job
+#   By default, this job will back up to disk in C:/tmp
+Job {
+  Name = "Client1"
+  JobDefs = "DefaultJob"
+  Write Bootstrap = "@working_dir@\\Client1.bsr"
+}
+
+#Job {
+#  Name = "Client2"
+#  Client = @client_name@2
+#  JobDefs = "DefaultJob"
+#  Write Bootstrap = "@working_dir@\\Client2.bsr"
+#}
+
+# Backup the catalog database (after the nightly save)
+Job {
+  Name = "BackupCatalog"
+  JobDefs = "DefaultJob"
+  Level = Full
+  FileSet="Catalog"
+  Schedule = "WeeklyCycleAfterBackup"
+  # This creates an ASCII copy of the catalog
+  RunBeforeJob = "\"@bin_dir@\\make_catalog_backup\" bacula bacula"
+  # This deletes the copy of the catalog
+  RunAfterJob  = "\"@bin_dir@\\delete_catalog_backup\""
+  Write Bootstrap = "@working_dir@\\BackupCatalog.bsr"
+  Priority = 11                   # run after main backup
+}
+
+#
+# Standard Restore template, to be changed by Console program
+#  Only one such job is needed for all Jobs/Clients/Storage ...
+#
+Job {
+  Name = "RestoreFiles"
+  Type = Restore
+  Client=@client_name@
+  FileSet="Test Set"
+  Storage = File
+  Pool = Default
+  Messages = Standard
+  Where = "C:\\tmp\\bacula-restores"
+}
+
+#
+# Note: Windows path separators do NOT work correctly in FileSets.
+#
+# List of files to be backed up
+FileSet {
+  Name = "Test Set"
+  Include {
+    Options {
+      signature = MD5
+      ignore case = yes
+    }
+#    
+#  Put your list of files here, preceded by 'File =', one per line
+#    or include an external list with:
+#
+#    File = <file-name
+#
+#  Note: C:/ backs up everything on drive C.
+#    if you have other drives such as D:/
+#    you will probably want to add them too.
+#
+#  By default this is defined to point to the Bacula 
+#    directory to give a reasonable FileSet to backup to
+#    disk storage during initial testing.
+#
+    File = "@BUILD_DIR@"
+  }
+
+#
+# If you backup the root directory, the following excluded
+#   files can be useful
+#
+  Exclude {
+    File = C:/Temp
+    File = C:/tmp
+  }
+}
+
+#
+# This is an example which will backup all the hard drives of a Windows System.
+#
+FileSet {
+  Name = "Windows Full Set"
+  Enable VSS = yes
+  Include {
+    Options {
+      Signature = MD5
+      Exclude = yes
+      IgnoreCase = yes
+      EnhancedWild = yes
+      DriveType = fixed
+
+      # Exclude directories full of lots and lots of useless little files
+      WildDir = "[A-Z]:/Documents and Settings/*/Cookies"
+      WildDir = "[A-Z]:/Documents and Settings/*/Recent"
+      WildDir = "[A-Z]:/Documents and Settings/*/{Local Settings,LOCALS~1}/History"
+      WildDir = "[A-Z]:/Documents and Settings/*/{Local Settings,LOCALS~1}/Temp"
+      WildDir = "[A-Z]:/Documents and Settings/*/{Local Settings,LOCALS~1}/Temporary Internet Files"
+
+      # Exclude directories full of lots and lots of useless little files
+      WildDir = "[A-Z]:/{WINNT,Windows}/Profiles/*/Cookies"
+      WildDir = "[A-Z]:/{WINNT,Windows}/Profiles/*/Recent"
+      WildDir = "[A-Z]:/{WINNT,Windows}/Profiles/*/{Local Settings,LOCALS~1}/History"
+      WildDir = "[A-Z]:/{WINNT,Windows}/Profiles/*/{Local Settings,LOCALS~1}/Temp"
+      WildDir = "[A-Z]:/{WINNT,Windows}/Profiles/*/{Local Settings,LOCALS~1}/Temporary Internet Files"
+
+      # Exclude directories full of lots and lots of useless little files
+      WildDir = "[A-Z]:/{WINNT,Windows}/system32/config/systemprofile/Cookies"
+      WildDir = "[A-Z]:/{WINNT,Windows}/system32/config/systemprofile/Recent"
+      WildDir = "[A-Z]:/{WINNT,Windows}/system32/config/systemprofile/{Local Settings,LOCALS~1}/History"
+      WildDir = "[A-Z]:/{WINNT,Windows}/system32/config/systemprofile/{Local Settings,LOCALS~1}/Temp"
+      WildDir = "[A-Z]:/{WINNT,Windows}/system32/config/systemprofile/{Local Settings,LOCALS~1}/Temporary Internet Files"
+
+      # Some random bits of Windows we want to ignore
+      WildDir = "[A-Z]:/{WINNT,Windows}/Prefetch"
+      WildDir = "[A-Z]:/{WINNT,Windows}/msdownld.tmp"
+      WildDir = "[A-Z]:/{WINNT,Windows}/Internet Logs"
+      WildDir = "[A-Z]:/{WINNT,Windows}/$Nt*Uninstall*"
+      WildDir = "[A-Z]:/{WINNT,Windows}/Downloaded Installations"
+
+      # Temporary directories & files
+      WildDir = "[A-Z]:/{WINNT,Windows}/Temp"
+      WildDir = "[A-Z]:/Temp"
+      WildFile = "*.tmp"
+      WildDir = "[A-Z]:/tmp"
+
+      # Fast Find
+      WildFile = "[A-Z]:/ffastun*"
+
+      # System Restore
+      WildDir = "[A-Z]:/System Volume Information"
+
+      # Windows Update
+      WildDir = "[A-Z]:/WUTemp"
+
+      # Recycle bins
+      WildDir = "[A-Z]:/RECYCLE[DR]"
+
+      # Swap files
+      WildFile = "[A-Z]:/pagefile.sys"
+      WildFile = "[A-Z]:/hiberfil.sys"
+
+      # These are programs and are easier to reinstall than restore from
+      # backup
+      WildDir = "[A-Z]:/cygwin"
+      WildDir = "[A-Z]:/{Program Files,PROGRA~1}/Java"
+      WildDir = "[A-Z]:/{Program Files,PROGRA~1}/Java Web Start"
+      WildDir = "[A-Z]:/{Program Files,PROGRA~1}/JavaSoft"
+      WildDir = "[A-Z]:/{Program Files,PROGRA~1}/Microsoft Office"
+    }
+
+    File = "C:/"
+    File = "D:/"
+    File = "E:/"
+    File = "F:/"
+    File = "G:/"
+    File = "H:/"
+    File = "I:/"
+    File = "J:/"
+    File = "K:/"
+    File = "L:/"
+    File = "M:/"
+    File = "N:/"
+    File = "O:/"
+    File = "P:/"
+    File = "Q:/"
+    File = "R:/"
+    File = "S:/"
+    File = "T:/"
+    File = "U:/"
+    File = "V:/"
+    File = "W:/"
+    File = "X:/"
+    File = "Y:/"
+    File = "Z:/"
+  }
+}
+
+#
+# When to do the backups, full backup on first sunday of the month,
+#  differential (i.e. incremental since full) every other sunday,
+#  and incremental backups other days
+Schedule {
+  Name = "WeeklyCycle"
+  Run = Full 1st sun at 23:05
+  Run = Differential 2nd-5th sun at 23:05
+  Run = Incremental mon-sat at 23:05
+}
+
+# This schedule does the catalog. It starts after the WeeklyCycle
+Schedule {
+  Name = "WeeklyCycleAfterBackup"
+  Run = Full sun-sat at 23:10
+}
+
+# This is the backup of the catalog
+FileSet {
+  Name = "Catalog"
+  Include {
+    Options {
+      signature = MD5
+    }
+    File = "@working_dir@\\bacula.sql"
+  }
+}
+
+# Client (File Services) to backup
+Client {
+  Name = @client_name@
+  Address = @client_address@
+  FDPort = @client_port@
+  Catalog = MyCatalog
+  Password = "@client_password@"      # password for FileDaemon
+  File Retention = 30 days            # 30 days
+  Job Retention = 6 months            # six months
+  AutoPrune = yes                     # Prune expired Jobs/Files
+}
+
+#
+# Second Client (File Services) to backup
+#  You should change Name, Address, and Password before using
+#
+#Client {
+#  Name = @client_name@2
+#  Address = @client_address@2
+#  FDPort = @client_port@
+#  Catalog = MyCatalog
+#  Password = "@client_password@2"     # password for FileDaemon 2
+#  File Retention = 30 days            # 30 days
+#  Job Retention = 6 months            # six months
+#  AutoPrune = yes                     # Prune expired Jobs/Files
+#}
+
+
+# Definition of file storage device
+Storage {
+  Name = File
+# Do not use "localhost" here
+  Address = @storage_address@                # N.B. Use a fully qualified name here
+  SDPort = @storage_port@
+  Password = "@storage_password@"
+  Device = FileStorage
+  Media Type = File
+}
+
+
+
+# Definition of DDS tape storage device
+#Storage {
+#  Name = DDS-4    
+#  Do not use "localhost" here
+#  Address = @storage_address@                # N.B. Use a fully qualified name here
+#  SDPort = @storage_port@
+#  Password = "@storage_password@"          # password for Storage daemon
+#  Device = DDS-4                      # must be same as Device in Storage daemon
+#  Media Type = DDS-4                  # must be same as MediaType in Storage daemon
+#  Autochanger = yes                   # enable for autochanger device
+#}
+
+# Definition of 8mm tape storage device
+#Storage {
+#  Name = "8mmDrive"
+#  Do not use "localhost" here
+#  Address = @storage_address@                # N.B. Use a fully qualified name here
+#  SDPort = @storage_port@
+#  Password = "@storage_password@"
+#  Device = "Exabyte 8mm"
+#  MediaType = "8mm"
+#}
+
+
+# Generic catalog service
+Catalog {
+  Name = MyCatalog
+  dbname = bacula; user = bacula; password = ""
+}
+
+# Reasonable message delivery -- send most everything to email address
+#  and to the console
+Messages {
+  Name = Standard
+#
+# NOTE! If you send to two email or more email addresses, you will need
+#  to replace the %r in the from field (-f part) with a single valid
+#  email address in both the mailcommand and the operatorcommand.
+#
+  mailcommand = "\"@bin_dir@\\bsmtp\" -h @smtp_host@ -f \"\(Bacula\) %r\" -s \"Bacula: %t %e of %c %l\" %r"
+  operatorcommand = "\"@bin_dir@\\bsmtp\" -h @smtp_host@ -f \"\(Bacula\) %r\" -s \"Bacula: Intervention needed for %j\" %r"
+  mail = @job_email@ = all, !skipped            
+  operator = @job_email@ = mount
+  console = all, !skipped, !saved
+#
+# WARNING! the following will create a file that you must cycle from
+#          time to time as it will grow indefinitely. However, it will
+#          also keep all your messages if they scroll off the console.
+#
+  append = "@working_dir@\\log" = all, !skipped
+}
+
+
+#
+# Message delivery for daemon messages (no job).
+Messages {
+  Name = Daemon
+  mailcommand = "\"@bin_dir@\\bsmtp\" -h @smtp_host@ -f \"\(Bacula\) %r\" -s \"Bacula daemon message\" %r"
+  mail = @job_email@ = all, !skipped            
+  console = all, !skipped, !saved
+  append = "@working_dir@\\log" = all, !skipped
+}
+
+
+
+# Default pool definition
+Pool {
+  Name = Default
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365 days         # one year
+}
+
+# Scratch pool definition
+Pool {
+  Name = Scratch
+  Pool Type = Backup
+}
+
+#
+# Restricted console used by tray-monitor to get the status of the director
+#
+Console {
+  Name = @monitor_name@
+  Password = "@monitor_password@"
+  CommandACL = status, .status
+}

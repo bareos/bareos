@@ -1,0 +1,120 @@
+
+BUILD SYSTEM: Ubuntu gutsy
+STATUS: Works
+
+REQUIRE: 
+ - Bacula cross compilation tool (must be able to compile bacula-fd.exe)
+ - wine (apt-get install wine)
+ - qt mingw32 distribution
+
+ORIGINAL HOWTO (french):
+http://doc.qtfr.org/post/2007/04/10/Cross-Compilation-Native-dapplication-Qt-depuis-Linux
+
+Legend:
+# comment
+$ shell command
+* tips
+
+Directory setup
+---------------
+$ cd bacula/src/win32
+$ ./build-win32-cross-tools
+$ ./build-depkgs-mingw32
+
+It will result something like :
+
+./
+|-- depkgs-mingw32
+|-- cross-tools
+`-- bacula
+
+Linux bacula setup -- Note: I believe that this is *required* before trying
+                      to build the Win32 bat.
+------------
+$ cd bacula
+$ ./configure <your-options-for Linux>
+$ cd bacula/src/win32
+$ make
+
+Make sure that bacula/src/win32/release/bacula.dll is built
+
+QT4 setup
+----------
+
+Install QT for mingw
+
+Get the mingw installation from http://trolltech.com/developer/downloads/qt/windows
+(Try to get the same version than your linux installation)
+ftp://ftp.qtsoftware.com/qt/source
+
+
+$ wine qt-win-opensource-4.3.5-mingw.exe
+ * Install under c:\Qt (no space)
+ * no worry about mingw installation
+
+$ cp -r ~/.wine/drive_c/Qt/4.3.5/src/    depkgs-mingw32/include
+$ cp -r ~/.wine/drive_c/Qt/4.3.5/include depkgs-mingw32/include/qt
+$ cp -r ~/.wine/drive_c/Qt/4.3.5/lib     depkgs-mingw32/lib/qt
+# cp ~/.wine/drive_c/Qt/4.3.5/bin/QtCore4.dll src/win32/release32
+# cp ~/.wine/drive_c/Qt/4.3.5/bin/QtGui4.dll src/win32/release32
+
+MINGW setup
+-----------
+I think this only needs to be done once ...
+
+--- cross-tools/mingw32/mingw32/include/wchar.h.org     2008-07-13 15:18:52.000000000 +0200
++++ cross-tools/mingw32/mingw32/include/wchar.h 2008-07-12 14:47:10.000000000 +0200
+@@ -394,7 +394,7 @@
+        time_t  st_ctime;       /* Creation time */
+ };
+
+-#ifndef _NO_OLDNAMES
++#ifdef _NO_OLDNAMES_DISABLE
+ /* NOTE: Must be the same as _stat above. */
+ struct stat
+ {
+
+Compile bat
+-----------
+
+$ cd bacula/src/qt-console
+$ export DEPKGS="directory above cross-tools and depkgs"
+$ ./make-win32 clean
+$ ./make-win32
+
+Cleanup
+-------
+$ cd bacula/src/qt-console
+$ ./make-win32 clean
+
+The bat.exe will be in src/qt-console/debug/bat.exe
+
+
+
+Run Bat on Windows
+------------------
+
+You'll need
+   zlib1.dll
+   ssleay32.dll
+   libeay32.dll
+   QtCore4.dll
+   QtGui4.dll
+   bacula.dll
+   pthreadGCE.dll
+   mingwm10.dll
+   bat.conf
+
+You can find the Qt dlls in ~/.wine/drive_c/Qt/4.3.5/bin
+
+Run Bat with wine
+-----------------
+$ cd bacula/src/qt-console/debug
+
+# configure a bat.conf
+# copy all dlls to this directory
+
+$ wine bat 
+
+
+That all, easy isn't it ?

@@ -1,0 +1,154 @@
+#
+#  Bacula Director Makefile
+#
+#  
+@MCOMMON@
+
+srcdir =	.
+VPATH = 	.
+.PATH:		.
+
+dir_group=@dir_group@
+
+# one up
+basedir = ..
+# top dir
+topdir = ../..
+# this dir relative to top dir
+thisdir = src/dird
+
+DEBUG=@DEBUG@
+
+GETTEXT_LIBS = @LIBINTL@
+CAP_LIBS = @CAP_LIBS@
+
+PYTHON_LIBS = @PYTHON_LIBS@
+PYTHON_INC = @PYTHON_INCDIR@
+
+DB_LIBS=@DB_LIBS@
+
+first_rule: all
+dummy:
+
+#
+SVRSRCS = dird.c admin.c authenticate.c \
+	  autoprune.c backup.c bsr.c \
+	  catreq.c dir_plugins.c dird_conf.c expand.c \
+	  fd_cmds.c getmsg.c inc_conf.c job.c \
+	  jobq.c migrate.c \
+	  mountreq.c msgchan.c next_vol.c newvol.c \
+	  pythondir.c \
+	  recycle.c restore.c run_conf.c \
+	  scheduler.c \
+	  ua_acl.c ua_cmds.c ua_dotcmds.c \
+	  ua_query.c \
+	  ua_input.c ua_label.c ua_output.c ua_prune.c \
+	  ua_purge.c ua_restore.c ua_run.c \
+	  ua_select.c ua_server.c \
+	  ua_status.c ua_tree.c ua_update.c vbackup.c verify.c
+SVROBJS = $(SVRSRCS:.c=.o)
+
+# these are the objects that are changed by the .configure process
+EXTRAOBJS = @OBJLIST@
+
+.SUFFIXES:	.c .o
+.PHONY:
+.DONTCARE:
+
+# inference rules
+.c.o:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(PYTHON_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+#-------------------------------------------------------------------------
+all: Makefile bacula-dir @STATIC_DIR@
+	@echo "==== Make of dird is good ===="
+	@echo " "
+
+bacula-dir: Makefile $(SVROBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
+	    ../lib/libbacpy$(DEFAULT_ARCHIVE_TYPE) ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
+	    ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
+	      -lbacfind -lbacsql -lbaccats -lbacpy -lbaccfg -lbac -lm $(PYTHON_LIBS) $(DLIB) $(DB_LIBS) $(LIBS) \
+	      $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
+
+static-bacula-dir:  Makefile $(SVROBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
+		   ../lib/libbacpy$(DEFAULT_ARCHIVE_TYPE) ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
+		   ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
+	      -lbacfind -lbacsql -lbaccats -lbacpy -lbaccfg -lbac -lm $(PYTHON_LIBS) $(DLIB) $(DB_LIBS) $(LIBS) \
+	      $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
+	strip $@
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+libtool-clean:
+	@$(RMF) -r .libs _libs
+
+clean:	libtool-clean
+	@$(RMF) dird bacula-dir core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+	@$(RMF) static-bacula-dir
+
+realclean: clean
+	@$(RMF) tags bacula-dir.conf
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+devclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+install: all
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-dir $(DESTDIR)$(sbindir)/bacula-dir
+	@srcconf=bacula-dir.conf; \
+	   if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
+	      destconf=$$srcconf.new; \
+	      echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
+	   else \
+	      destconf=$$srcconf; \
+	   fi; \
+	   echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
+	   ${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
+	   @if test "x${dir_group}" != "x"; then \
+	      chgrp -f ${dir_group} ${DESTDIR}${sysconfdir}/$$destconf ; \
+	   fi
+	@if  test -f ${DESTDIR}${scriptdir}/query.sql; then \
+	   echo "  ==> Saving existing query.sql to query.sql.old"; \
+	   $(MV) -f ${DESTDIR}${scriptdir}/query.sql ${DESTDIR}${scriptdir}/query.sql.old; \
+	fi 
+	${INSTALL_DATA} query.sql ${DESTDIR}${scriptdir}/query.sql
+	@if test -f static-bacula-dir; then \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bacula-dir $(DESTDIR)$(sbindir)/static-bacula-dir; \
+	fi
+
+
+uninstall:
+	(cd $(DESTDIR)$(sbindir); $(RMF) bacula-dir)
+	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-dir.conf bacula-dir.conf.new)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) query.sql)
+
+
+
+# Semi-automatic generation of dependencies:
+# Use gcc -MM because X11 `makedepend' doesn't work on all systems
+# and it also includes system headers.
+# `semi'-automatic since dependencies are generated at distribution time.
+
+depend:
+	@$(MV) Makefile Makefile.bak
+	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
+	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(PYTHON_INC) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@if test -f Makefile ; then \
+	    $(RMF) Makefile.bak; \
+	else \
+	   $(MV) Makefile.bak Makefile; \
+	   echo " ===== Something went wrong in make depend ====="; \
+	fi
+
+# -----------------------------------------------------------------------
+# DO NOT DELETE: nice dependency list follows

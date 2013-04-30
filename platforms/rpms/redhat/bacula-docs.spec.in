@@ -1,0 +1,91 @@
+#
+# Bacula RPM spec file
+#
+# Copyright (C) 2000-2012 Bacula Systems SA
+
+# Platform Build Configuration
+
+# basic defines for every build
+%define _release           1
+%define _version           @VERSION@
+%define product            bacula
+%define _packager Kern Sibbald <kern@sibbald.com>
+
+%define _prefix        /usr
+%define _sbindir       %_prefix/sbin
+%define _mandir        %_prefix/share/man
+
+
+#--------------------------------------------------------------------------
+# it should not be necessary to change anything below here for a release
+# except for patch macros in the setup section
+#--------------------------------------------------------------------------
+
+%{?contrib_packager:%define _packager %{contrib_packager}}
+
+Summary: Bacula - The Network Backup Solution
+Name: %{product}-docs
+Version: %{_version}
+Release: %{_release}
+Group: System Environment/Daemons
+License: AGPLv3
+BuildRoot: %{_tmppath}/%{name}-root
+URL: http://www.bacula.org/
+Vendor: The Bacula Team
+Packager: %{_packager}
+BuildArchitectures: noarch
+Prefix: %{_prefix}
+Distribution: Bacula Documentation
+
+Source: %{name}-%{_version}.tar.bz2
+
+# Source directory locations
+%define _docsrc .
+
+# define the basic package description
+%define blurb Bacula - The Leading Open Source Backup Solution.
+%define blurb2 Bacula is a set of computer programs that permit you (or the system
+%define blurb3 administrator) to manage backup, recovery, and verification of computer
+%define blurb4 data across a network of computers of different kinds. In technical terms,
+%define blurb5 it is a network client/server based backup program. Bacula is relatively
+%define blurb6 easy to use and efficient, while offering many advanced storage management
+%define blurb7 features that make it easy to find and recover lost or damaged files.
+%define blurb8 Bacula source code has been released under the AGPL version 3 license.
+
+Summary: Bacula - The Network Backup Solution
+Group: System Environment/Daemons
+
+%description
+%{blurb}
+
+%{blurb2}
+%{blurb3}
+%{blurb4}
+%{blurb5}
+%{blurb6}
+%{blurb7}
+%{blurb8}
+
+This package installs the Bacula pdf and html documentation.
+
+%prep
+%setup
+
+
+%clean
+[ "$RPM_BUILD_ROOT" != "/" ] && rm -rf "$RPM_BUILD_ROOT"
+rm -rf $RPM_BUILD_DIR/%{name}-%{_version}
+
+%files
+%doc %{_docsrc}/manuals/en/console/console %{_docsrc}/manuals/en/console/console.pdf
+%doc %{_docsrc}/manuals/en/developers/developers %{_docsrc}/manuals/en/developers/developers.pdf
+%doc %{_docsrc}/manuals/en/main/main %{_docsrc}/manuals/en/main/main.pdf
+%doc %{_docsrc}/manuals/en/misc/misc %{_docsrc}/manuals/en/misc/misc.pdf
+%doc %{_docsrc}/manuals/en/problems/problems %{_docsrc}/manuals/en/problems/problems.pdf
+%doc %{_docsrc}/manuals/en/utility/utility %{_docsrc}/manuals/en/utility/utility.pdf
+
+%changelog
+* Sat Jan 30 2010 D. Scott Barninger <barninger@fairfieldcomputers.com>
+- change source file to bz2, update for new doc structure
+* Sat Aug 1 2009 Kern Sibbald <kern@sibbald.com>
+- Split docs into separate bacula-docs.spec

@@ -1,0 +1,52 @@
+<ui version="4.0" >
+ <class>FileSetForm</class>
+ <widget class="QWidget" name="FileSetForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>341</width>
+    <height>277</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>FileSet Tree</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QTableWidget" name="tableWidget" />
+   </item>
+  </layout>
+  <action name="actionRefreshFileSet" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/view-refresh.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Refresh FileSet List</string>
+   </property>
+   <property name="statusTip" >
+    <string>Requery the director for the list of storage objects.</string>
+   </property>
+  </action>
+  <action name="actionStatusFileSetInConsole" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/status-console.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Show FileSet In Console</string>
+   </property>
+  </action>
+  <action name="actionShowJobs" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/emblem-system.png</iconset>
+   </property>
+   <property name="text" >
+    <string>ShowJobs</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../main.qrc" />
+ </resources>
+ <connections/>
+</ui>

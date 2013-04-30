@@ -1,0 +1,83 @@
+/* REXX ****************************************************/
+/* BLABELA EXEC -- Example VM procedure for labeling tapes */
+/*                 to be used with Bacula in ANSI label    */
+/*                 mode.                                   */
+/*                                                         */
+/* Author:         David Boyes <dboyes@sinenomine.net>     */
+/*                                                         */
+/* Prereq:         Tape drive attached at virtual addr     */
+/*                 181 (TAP1).                             */
+/*                                                         */
+/*                 Blank tape inserted in drive.           */
+/*                                                         */
+/*                 External file BACULA DATA (used as a    */
+/*                 dummy input file for MOVEFILE, since    */
+/*                 MOVEFILE insists on having a real file  */
+/*                 for input if we want actual output      */
+/*                 by the CMS OS sim routines).            */
+/*                                                         */
+/* Usage:          BLABELA volumeid ownerid                */
+/*                                                         */
+/*                 where:                                  */
+/*                                                         */
+/*                 volumeid = ANSI volume id to be         */
+/*                     written in VOL1 label and made      */
+/*                     visible to the library automation   */
+/*                     and other OSes.                     */
+/*                                                         */
+/*                 ownerid  = local userid to "own" the    */
+/*                     tape from the TMS viewpoint. Used   */
+/*                     to validate mount requests and for  */
+/*                     TMS housekeeping purposes.          */
+/*                                                         */
+/* Maintenance Log:                                        */
+/*                                                         */
+/* 16 Feb 2005 --  DB: Created procedure and released to   */
+/*                     Bacula development list.            */
+/*                                                         */
+/*                                                         */
+/*                                                         */
+/*                                                         */
+/*                                                         */
+/*                                                         */
+/***********************************************************/
+ 
+/***********************************************************/
+/* Parse command line arguments                            */
+/***********************************************************/
+ 
+arg volser owner
+ 
+/***********************************************************/
+/* Rewind tape and write ANSI VOL1 label and logical EOT   */
+/***********************************************************/
+ 
+'TAPE REW (TAP1'
+'TAPE WVOL1' volser owner '( TAP1 AL'
+'TAPE WTM 2'
+ 
+/***********************************************************/
+/* Rewind tape and write Bacula ANSI label signature file  */
+/* (HDR1 file containing BACULA.DATA FID as 1st file on    */
+/* tape). Note that for some reason the LABELDEF command   */
+/* requires FIDs longer than 8 chars to be passed via the  */
+/* program stack, even if it would not cause the resulting */
+/* command to exceed the 255 char maximum. This is (IMHO)  */
+/* an APARable bug, but c'est la vie.                      */
+/***********************************************************/
+ 
+'TAPE REW ( TAP1'
+'SET CMSTYPE HT'  /* supress output to hide prompt for FID */
+'FILEDEF INMOVE DISK BACULA DATA A'
+'FILEDEF OUTMOVE TAP1 AL ( RECFM F LRECL 80'
+queue "BACULA.DATA"
+'LABELDEF OUTMOVE FID ? VOLID' volser 'VOLSEQ 1 FSEQ 1'
+'MOVEFILE'
+'SET CMSTYPE RT'  /* resume normal console output          */
+ 
+/***********************************************************/
+/* Print nice exit message and exit                        */
+/***********************************************************/
+ 
+say "Labeled ANSI" volser "for use with Bacula."
+exit

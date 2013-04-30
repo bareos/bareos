@@ -1,0 +1,313 @@
+dhb
+====================================================
+can "schedule" be a member of job_defs and populated??
+
+========LOW priority items:
+Human readable in joblist for purged, joblevel and job type.
+
+Possibly a stack of past screens so that when you open a window from another,
+closing would bring the previous one back.
+
+========================================================
+This release or next:
+
+A page showing a list of schedule resources. 
+
+A page list of message resources??
+
+Kern discussed windows showing statistics like web based interfaces.
+
+    I think the above is very important.
+
+========================================================
+Future Releases :
+
+The ablility to modify configuration files to create jobs, schedules, filesets
+and any other director resources.
+
+The ablility to modify configuration files to create storage resources.
+
+Add a status dir graphical interface.  It would auto update every ?? seconds
+and have a list of scheduled jobs, and in the que to run jobs that could be
+cancelled graphically.
+
+Add a status client window.  Keep updating showing what file is being
+processed.
+
+Documentation, Documentation, Documentaion.  Help.  Add help documentation.
+Have context sensitve help.
+
+bRestore add code to get working.
+
+May be in brestore, find a file by name, find a directory by name
+
+Interfaces to commands like bextract, bscan, bcopy, btape?????
+
+Is there a way to query the director/database for whether a storage is currently
+mounted so I am not presenting both mount and unmount to the user??
+   Yes, but it requires being able to directly connect to the SD (at least
+   for the moment).
+
+Is there a way to identify a slot as having a cleaning tape???
+(Kern says more work needs to be done in bacula with autochangers)
+    Yes, there is a cleaning prefix for Volume labels defined in 
+    the DIR (not currently available to bat). Typically it is CLNxxx
+    and by looking at the database, you can see these cleaning
+    volumes.
+
+Migration Jobs??
+===========================================================
+NOT SURE
+===========================================================
+
+I'm not sure about this one??  Things seem to work and I did not do a
+thing to make it happen:  the "dir" is a member of Console
+
+- We also must somehow make the low level I/O routines know which
+director/console to use.  Currently they always use the single
+global one defined in the mainWin class (if I remember right).
+
+   I'm working on this (kes).  It is not so simple, but moving forward
+   gradually ...
+
+Create edit pool interface.
+   This is done from config file
+
+============================================================
+CALLING GOOD:
+============================================================
+See if there is a solution to images fun with designer other than:
+%s/<iconset>[\.\/]*:images/<iconset>images/g
+%s/<iconset>images/<iconset>..\/images/g
+    Images that are in the binary are referenced with :/images/... 
+    This is a Qt convention.  If the image is in a file, it
+    can be referenced directly, but for the most part, I prefer
+    images in the binary (not lost, not accidently deleted, no 
+    installation problems, ...
+        Utilizing designer to select the main.qrc resource file seems to do the
+        job.  Designer then puts the : in front of images and work.
+
+Think about good ways to clean up the Console creation part of the
+loop creating pages.
+    I don't think it is bad as it is.   There is, however, a construct
+    called a Factory that could more or less automate this in one
+    big for loop.
+        Probably not neccesary for the time being.
+============================================================
+DONE:
+============================================================
+Use settings object to size the restore window.  Similar to the saving of the
+state of the main window.
+
+Add context sensitive options for most commands
+see COMMANDS file
+
+A window showing a list of jobs and defaults.  Defaults can be gotten in manner
+similar to what the first restore window does.
+
+status dir on page select director item
+All items with jobid= that I thought could work from joblist are done.
+As well as many more
+update slots scan
+Preferences for the messages timer.
+
+Get the 5 second bring to bottom of console to stop
+
+joblist cancel a running job.
+
+Fixes to final restore widgets.
+
+Set default for replace in run restore job to "always"??????
+
+Option in joblist like with restore from jobid but restore populating timestamp
+of the selected job.
+
+User preferences.  With log to stdout options.
+Have settings for defaults of limits on joblist
+
+Resolve issue of connection during restore selection.  Could go with preempt of
+connections.  Temporary resolution is in.  (Kern is to work on)
+
+Further testing of restore with .mod
+   Tested a few things, not all.
+
+Add fileset to joblist.
+
+Test left pane of restore with 2 windows drives in one backup job.
+   Yup, id didn't work, now it does.
+
+Purging not working from console or from context sensitive.
+   This was a confusion with the restore command.  Now resolved.
+
+Can produce a segfault by attempting to restore from a restore job.  In
+pre-restore, prevent a job in the list from being a restore job.
+
+Need to figure out the functionality and inteligence that the last restore
+window should have and give it to it.  Right now it shows drop downs with no
+options.
+
+Allow for selecting multiple jobs to restore from in joblist.  Right click
+restore from job works, but not with multiple selected jobs.
+
+See if it would be possible to have user provided console text show up in a
+color
+
+Get status codes in dropdown for joblist select.
+
+Create class to display messages from a specific job.  Want the ability to
+create an instance of that class from joblist.
+
+Color code termination code in joblist.  I also want a table to convert
+termination code into human readable text.
+
+show purged flag in joblist.  Don't have purge option show if already purged.
+
+move behavior of:
+  MainWin::setContextMenuDockText
+  MainWin::setTreeWidgetItemDockColor
+to the pages class
+
+preempt all connections to console with 
+if (!is_connectedGui())
+or some other mechanism.  May find more as users start finding them.
+
+Create documentation for any other developers interested in creating
+new classes to add more pages.  Explain how to use the pages class
+and about not populating until the tree widget is clicked etc...
+
+Add numerous are you sure dialog boxes.  Like are you sure you want to
+delete/purge that volume.  Show a little of the documentation about what
+the consequences of delete or purging are.
+
+A Tree widget context sensitive menu option and class to jump from known job
+to surf the filestructure on the job.
+  This was future, but it is kind of done with restore from jobid
+
+Get rid of "Warning: name layoutWidget is already used" when make uic's restore.ui
+
+Create the ability to start a restore from joblist.  Right click, select
+"restore from Jobid=xx" create an instance of restore defaulting in the jobid
+or a list of selected jobs.
+
+Update README  describe bat.conf.example to bat.conf
+
+Test restore and get anything not working, working.
+Add inteligence to prerestore.
+
+Color code Media Red->Error Append->green Full/Used->Yellow
+
+Get restore into stack.
+  Should the jobs dialog be turned into a page as well??
+Possilbe: Turn run and label into docked pages. (remove button bar buttons??)
+
+Where and bootstrap are confused in runjobs of restore.
+   This was just the labels.
+
+Create list of what does not work.
+From what I can tell, just the restore window on the left.
+
+Add option to LIMIT the number of jobs shown in all jobs page for users with
+multiple hundreds to thousands of jobs.
+
+Play with includes to Make these compiles shorter.
+  moved includes of of includes and into files only console.h should be long
+
+relabel storage=DDS3 oldvolume=ddsvol003 volume=dds3vol003 slot=3 pool=dds3_hope
+in label slot spinner, limit the upper to the value of slots for that storage.
+
+Fix bug in myth box not working with .sql query="" command.
+This was a fix in mysql
+
+Figure out how to get tables like Joblist to do the equivalent of double clicking
+on the separating lines between each of the headings.
+Tried the hard way first.  Oops.
+
+If the console command line entry docked widget gets the focus, make 
+m_currentConsole the top widget by setting the treewidgetitem selected.
+Did this in MainWin::input_line almost better to let the person see
+whatever they want until they hit enter.
+
+Set Window titles to reflect what director it is.
+
+Must:: get page selector to follow undocked windows.  Otherwise
+current console won't be current.
+
+Re-add class for storage, I accidentally reverted because I left
+it on my laptop.  This is why I like committing often.
+
+Add class for FileSets
+
+Another idea for what you have implemented:
+- I think that the dynamic pages that you create on the fly
+should be nested under the item that creates them more like a
+directory tree.
+
+For example: Jobs on Volume xxx, probably should be shown under
+"All Jobs" (or Media if that is what created it) and "Jobs of
+Client Rufus" probably should be shown under "Clients".  I base
+this on looking at the Select page list after I have brought up 3
+or 4 dynamic pages.  Once there are a good number, I get a bit
+confused where they came from.  This would also permit selecting
+multipe Volumes then displaying multiple pages, one for each
+Volume selected.  If they are nested, then that nested level can
+be expanded or collapsed, which would be pretty cool at keeping
+information, but getting it out of the way, sort of like what
+happens for a directory tree.
+
+dhb: ref above
+My original concept was to put these in a tabbed widget.  Your Idea may
+make for a cleaner user experience.  I like it.  It could save the
+effort of getting a tabbed widget to work.
+
+
+- I think we need to make the current Director more explicit, by
+perhaps highlighting it in the page selector when it is current
+and unhighlighting it when it is not (we could use color as we do
+for the console, though some color blind people may have
+problems.
+
+- When any director is clicked, we need to set it as the current
+director and set the current console as well.
+
+Remove DoubleClicking, From pages class not needed any more.
+
+Broken with multiple directors:
+- If you click on the second director, it will probably open, but
+none of the pages that are defined below it will be able to talk
+to it.  They will most likely talk to the first director.
+
+- When any console is clicked we need to set it as the current
+console (m_console) and also set its director as the current
+director (m_topItem).  These are in the mainwin class.
+
+- When any page is selected, we must set both the current
+director (m_topItem) and current console (m_console) that this
+page is connected to.
+
+dhb:
+m_topItem has been changed to Console::directorTreeItem()
+m_currentConsole->directorTreeItem(); returns disired treeWidgetItem
+
+- We also need a concept of a "local" director/console for each
+page, so the page knows who it is talking to -- this doesn't
+currently exist, so I think we must pass the director and console
+to each page widget constructor.
+ 
+dhb:
+m_currentConsole is saved in each page subclass's m_console.  This value
+is set by all but the console class calling Pages::pgInitialie() in it's
+constructor
+
+In short, there is a lot of work to be done to make multiple
+simultaneous directors work.
+
+dhb:
+this may be moot:
+
+If the above prooves to be too much, we might consider to only
+have a single director at a time, and simply let the user select
+which director he wants to connect to (one at a time, but
+dynamically).  In the end, this may be the best thing to do, so
+any user who wishes to connect to multiple directors would run
+two instances of bat.  I am a bit unsure now, but the above list
+of things to do is much bigger than I thought it was going to be.

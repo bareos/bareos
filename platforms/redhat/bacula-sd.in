@@ -1,0 +1,72 @@
+#! /bin/sh
+#
+# bacula       This shell script takes care of starting and stopping
+#	       the bacula Storage daemon.
+#
+# chkconfig: 2345 90 9
+# description: The Leading Open Source Backup Solution.
+#
+#  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+SD_USER=@sd_user@
+SD_GROUP=@sd_group@
+SD_OPTIONS=''
+OS=`uname -s`
+
+# if /lib/tls exists, force Bacula to use the glibc pthreads instead
+if [ -d "/lib/tls" -a $OS = "Linux" -a `uname -r | cut -c1-3` = "2.4" ] ; then
+     export LD_ASSUME_KERNEL=2.4.19
+fi
+
+# pull in any user defined SD_OPTIONS, SD_USER, or SD_GROUP
+[ -f /etc/sysconfig/bacula ] && . /etc/sysconfig/bacula
+
+#
+# Disable Glibc malloc checks, it doesn't help and it keeps from getting
+#   good dumps
+MALLOC_CHECK_=0
+export MALLOC_CHECK_
+
+RETVAL=0
+case "$1" in
+    start)
+       if [ "${SD_USER}" != '' ]; then
+	  SD_OPTIONS="${SD_OPTIONS} -u ${SD_USER}"
+       fi
+										   
+       if [ "${SD_GROUP}" != '' ]; then
+	  SD_OPTIONS="${SD_OPTIONS} -g ${SD_GROUP}"
+       fi
+										      
+       echo -n "Starting Bacula Storage services: "
+       daemon @sbindir@/bacula-sd $2 ${SD_OPTIONS} -c @sysconfdir@/bacula-sd.conf
+       RETVAL=$?
+       echo
+       [ $RETVAL -eq 0 ] && touch @subsysdir@/bacula-sd
+       ;;
+    stop)
+       echo -n "Stopping Bacula Storage services: "
+       killproc @sbindir@/bacula-sd
+       RETVAL=$?
+       echo
+       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bacula-sd
+       ;;
+    restart)
+       $0 stop
+       sleep 5
+       $0 start
+       ;;
+    status)
+       status @sbindir@/bacula-sd
+       RETVAL=$?
+       ;;
+    *)
+       echo "Usage: $0 {start|stop|restart|status}"
+       exit 1
+       ;;
+esac
+exit $RETVAL

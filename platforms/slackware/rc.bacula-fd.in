@@ -1,0 +1,53 @@
+#! /bin/sh
+#
+# bacula       This shell script takes care of starting and stopping
+#	       the bacula File daemon.
+#
+# chkconfig: 2345 91 99
+# description: The Leading Open Source Backup Solution.
+#
+#  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+# Source function library
+. /etc/rc.d/functions.bacula
+
+case "$1" in
+    start)
+	[ -x ${BACFDBIN}/bacula-fd ] && { 
+	    sleep 2
+	    echo -n "Starting the File daemon: "
+	    OPTIONS=''
+	    if [ "${FD_USER}" != '' ]; then
+	       OPTIONS="${OPTIONS} -u ${FD_USER}"
+	    fi
+
+	    if [ "${FD_GROUP}" != '' ]; then
+	       OPTIONS="${OPTIONS} -g ${FD_GROUP}"
+	    fi
+
+	    ${BACFDBIN}/bacula-fd $2 ${OPTIONS} -v -c ${BACFDCFG}/bacula-fd.conf
+	    echo Done.
+	}
+	;;
+    stop)
+	[ -x ${BACFDBIN}/bacula-fd ] && {
+	    echo -n "Stopping the File daemon: "
+	    killproc ${BACFDBIN}/bacula-fd ${FD_PORT}
+	    echo Done.
+	}
+	;;
+    restart)
+	$0 stop
+	sleep 5
+	$0 start
+	;;
+    status)
+	[ -x ${BACFDBIN}/bacula-fd ] && status ${BACFDBIN}/bacula-fd ${FD_PORT}
+	;;
+    *)
+	echo "Usage: $0 {start|stop|restart|status}"
+	exit 1
+	;;
+esac
+exit 0

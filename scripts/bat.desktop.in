@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Bacula Administration Tool
+Comment=Bacula Director Console
+Icon=/usr/share/pixmaps/bat_icon.png
+Exec=@sbindir@/bat -c @sysconfdir@/bat.conf
+Terminal=false
+Type=Application
+Encoding=UTF-8
+StartupNotify=true
+X-Desktop-File-Install-Version=0.3
+Categories=System;Application;Utility;X-Red-Hat-Base;

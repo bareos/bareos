@@ -1,0 +1,16 @@
+#!/bin/bash
+#
+# shell script to create Bacula database(s)
+#
+
+bindir=~kern/mysql/bin
+
+if $bindir/mysql -f <<END-OF-DATA
+CREATE DATABASE baculatest;
+END-OF-DATA
+then
+   echo "Creation of baculatest database succeeded."
+else
+   echo "Creation of baculatest database failed."
+fi
+exit 0

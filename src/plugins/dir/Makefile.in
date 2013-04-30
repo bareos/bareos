@@ -1,0 +1,49 @@
+#
+# Simple Makefile for building test FD plugins for Bacula
+#
+# Version $Id: Makefile.in 7841 2008-10-19 10:34:03Z kerns $
+#
+@MCOMMON@
+
+
+# No optimization for now for easy debugging
+
+DIRDIR=../../dird
+SRCDIR=../..
+LIBDIR=../../lib
+
+.SUFFIXES:    .c .o .lo
+
+.c.lo:
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) -I${SRCDIR} -I${DIRDIR} -DTEST_PROGRAM -c $<
+
+all: example-plugin-dir.la
+
+example-plugin-dir.lo: example-plugin-dir.c ${DIRDIR}/dir_plugins.h
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CFLAGS) -I../.. -I${DIRDIR} -c example-plugin-dir.c
+
+example-plugin-dir.la: Makefile example-plugin-dir.lo
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared example-plugin-dir.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
+
+install: all
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) example-plugin-dir.la $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/example-plugin-dir.la
+
+libtool-clean:
+	find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
+	$(RMF) *.la
+	$(RMF) -r .libs _libs
+
+clean: @LIBTOOL_CLEAN_TARGET@
+	rm -f main *.so *.o 1 2 3
+
+distclean: clean
+	rm -f Makefile
+
+libtool-uninstall:
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/example-plugin-dir.la
+
+uninstall: @LIBTOOL_UNINSTALL_TARGET@
+
+depend:

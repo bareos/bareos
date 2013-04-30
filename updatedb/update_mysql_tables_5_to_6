@@ -1,0 +1,97 @@
+#!/bin/sh
+#
+# Shell script to update MySQL tables from version 1.29 to 1.30
+#
+echo " "
+echo "This script will update a bacula database from version 5 to 6."
+echo "Depending on the size of your database,"
+echo "this script may take several minutes to run."
+echo " "
+
+# the location of the mysql program
+bindir=/usr/bin
+
+DB_VER=`$bindir/mysql bacula -e 'select * from Version;'|tail -n 1 2>/dev/null`
+if [ -z "$DB_VER" ]; then
+	echo "Sorry, I can't seem to locate a bacula database."
+	exit 1
+fi
+
+if [ -n "$DB_VER" ] && [ "$DB_VER" -ne "5" ]; then
+	echo "Sorry, this script is designed to update a version 5 database"
+	echo "and you have a version $DB_VER database."
+	exit 1
+fi
+
+if $bindir/mysql $* -f <<END-OF-DATA
+USE bacula;
+
+ALTER TABLE JobMedia ADD COLUMN VolIndex INTEGER UNSIGNED NOT NULL;
+
+ALTER TABLE Job ADD COLUMN HasBase TINYINT DEFAULT 0;
+
+CREATE TABLE FileSet_backup (
+   FileSetId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   FileSet TINYBLOB NOT NULL,
+   MD5 TINYBLOB NOT NULL,
+   PRIMARY KEY(FileSetId)
+   );
+INSERT INTO FileSet_backup SELECT * From FileSet;
+
+DROP TABLE FileSet;
+
+CREATE TABLE FileSet (
+   FileSetId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+   FileSet TINYBLOB NOT NULL,
+   MD5 TINYBLOB NOT NULL,
+   CreateTime DATETIME NOT NULL,
+   PRIMARY KEY(FileSetId)
+   );
+
+INSERT INTO FileSet (
+   FileSetId, FileSet, MD5, CreateTime) 
+   SELECT FileSet_backup.FileSetId,FileSet,MD5,StartTime as CreateTime
+     FROM FileSet_backup,Job
+     WHERE FileSet_backup.FileSetId=Job.FileSetId 
+     GROUP by FileSet_backup.FileSetId
+     ORDER BY Job.FileSetId;
+
+DROP TABLE FileSet_backup;
+
+
+CREATE TABLE BaseFiles (
+   BaseId INTEGER UNSIGNED AUTO_INCREMENT,
+   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+   FileId INTEGER UNSIGNED NOT NULL REFERENCES File,
+   FileIndex INTEGER UNSIGNED,
+   PRIMARY KEY(BaseId)
+   );
+
+CREATE TABLE UnsavedFiles (
+   UnsavedId INTEGER UNSIGNED AUTO_INCREMENT,
+   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+   PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
+   FilenameId INTEGER UNSIGNED NOT NULL REFERENCES Filename,
+   PRIMARY KEY (UnsavedId)
+   );
+
+DROP TABLE Counters;
+
+CREATE TABLE Counters (
+   Counter TINYBLOB NOT NULL,
+   MinValue INTEGER,
+   MaxValue INTEGER,
+   CurrentValue INTEGER,
+   WrapCounter TINYBLOB NOT NULL,
+   PRIMARY KEY (Counter(128))
+   );
+
+UPDATE Version SET VersionId=6;
+
+END-OF-DATA
+then
+   echo "Update of Bacula MySQL tables succeeded."
+else
+   echo "Update of Bacula MySQL tables failed."
+fi
+exit 0

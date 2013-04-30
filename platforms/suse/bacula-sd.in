@@ -1,0 +1,62 @@
+#! /bin/sh
+#
+# bacula       This shell script takes care of starting and stopping
+#	       the bacula Storage daemon.
+#
+# chkconfig: 2345 90 9
+# description: The Leading Open Source Backup Solution.
+#
+#  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+# Copyright (C) 2011 Free Software Foundation Europe e.V.
+# Modified to work on SuSE 1/31/2004 D. Scott Barninger <barninger at fairfieldcomputers.com>
+# Added rc.status functions 3/13/2004 D. Scott Barninger <barninger at fairfieldcomputers.com>
+# Added LSB init info 10/14/2004 D. Scott Barninger <barninger at fairfieldcomputers.com>
+# Added $remote_fs, add bacula specific daemon user & group Bruno Friedmann <bruno@ioda-net.ch>
+#
+### BEGIN INIT INFO
+# Provides:			bacula-sd
+# Required-Start:		$local_fs $remote_fs $network
+# Required-Stop:		$local_fs $remote_fs $network
+# Default-Start:		3 5
+# Default-Stop: 	0 1 2 6
+# Short-Description:	bacula storage daemon
+# Description:			Bacula network backup system storage daemon
+### END INIT INFO
+
+# source process status functions
+# this gives us funtion rc_status -v to tell us if we succeed or fail
+. /etc/rc.status
+
+case "$1" in
+    start)
+       echo -n "Starting the Bacula Storage daemon: "
+       /sbin/startproc @sbindir@/bacula-sd $2 -u @sd_user@ -g @sd_group@ -c @sysconfdir@/bacula-sd.conf
+       RETVAL=$?
+       rc_status -v
+       echo
+       [ $RETVAL -eq 0 ] && touch @subsysdir@/bacula-sd
+       ;;
+    stop)
+       echo -n "Stopping the Bacula Storage daemon: "
+       /sbin/killproc @sbindir@/bacula-sd
+       RETVAL=$?
+       rc_status -v
+       echo
+       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bacula-sd
+       ;;
+    restart)
+       $0 stop
+       sleep 5
+       $0 start
+       ;;
+    status)
+       /sbin/checkproc @sbindir@/bacula-sd
+       RETVAL=$?
+       rc_status -v
+       ;;
+    *)
+       echo "Usage: $0 {start|stop|restart|status}"
+       exit 1
+       ;;
+esac
+exit $RETVAL

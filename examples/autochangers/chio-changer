@@ -1,0 +1,125 @@
+#!/bin/sh
+#
+# Bacula interface to autoloader
+#
+#  By Pascal Pederiva <freebsd@paped.com>
+#
+#  Known to work on FreeBSD 5.2 with a TZ875 changer.
+#
+#  This script mimics mtx-changer with the following differences
+# - it automatically stows the cartridge to the slot it came from when
+#   unloading.
+# - a load will automatically unload the drive if there is a
+#   different cartridge loaded.
+# - it uses chio instead of mtx (which is
+#   available as a package) 
+#
+#  If you set in your Device resource
+#
+#  Changer Command = "path-to-this-script/chio-changer %c %o %S %a"
+#    you will have the following input to this script:
+#
+#  chio-changer "changer-device" "command" "slot" "archive-device"
+#
+#  for example:
+#
+#  chio-changer /dev/sg0 load 1 /dev/nst0 (on a Linux system)
+#
+#  If you need to to an offline, refer to the drive as $4
+#    e.g.   mt -f $4 offline
+#
+#  Many changers need an offline after the unload. Also many
+#   changers need a sleep 60 after the chio load.
+#
+#  N.B. If you change the script, take care to return either 
+#   the chio exit code or a 0. If the script exits with a non-zero
+#   exit code, Bacula will assume the request failed.
+#
+# Examples:
+# chio-changer load 1                      ; load slot 1 into drive 0 (and unload old cartridge if necessary)
+# chio-changer unload N                    ; unload drive into source slot (slot number is ignored)
+# chio-changer loaded N                    ; Return loaded slot #
+# chio-changer /dev/ch0 loaded N /dev/nsa0 ; has the same effect
+
+
+#echo `date` "chio:  $*" >>/tmp/changer
+
+# If the first parameter is not a device, assume it is a command
+# and you want to use the default changer
+
+if [ -c $1 ]; then
+   CHANGER=$1
+   shift
+else
+   CHANGER=/dev/ch0
+fi
+
+COMMAND=$1
+ELEMENT=$2
+DRIVE=$3
+
+MTX=chio
+
+##############################################################################
+
+case "$COMMAND" in 
+   unload)
+
+# enable the following line if you need to eject the cartridge
+#     mt -f $DRIVE offline
+      SOURCE=`${MTX} status -S | grep drive | grep FULL | cut -d: -f 3 | tr -d '<>a-z '`
+      if [ ! -z "$SOURCE" ]; then
+        echo -n "Unloading Data Transfer Element into Storage Element $ELEMENT..."
+        ${MTX} -f $CHANGER move drive 0 slot $SOURCE
+        rtn=$?
+        echo "done"
+        else
+        echo "Storage Element $ELEMENT is Already Full"
+      fi
+      exit $rtn
+      ;;
+
+   load)
+      if [ -z "$ELEMENT" ]; then
+         echo "ERROR: load <element> reguired"
+         return 1
+      fi
+      TARGET=$ELEMENT
+      if [ $TARGET -le 0 ]; then
+         TARGET=1
+      fi
+      TARGET=`expr $TARGET - 1`
+
+      SOURCE=`${MTX} status -S | grep drive | grep FULL | cut -d: -f 3 | tr -d '<>a-z '`
+      if [ ! -z "$SOURCE" ]; then
+        if [ "$SOURCE" != "$TARGET" ]; then
+           # Only unload if there is something different in the drive
+           ${MTX} -f $CHANGER move drive 0 slot $SOURCE
+        fi
+      fi
+
+      if [ "$SOURCE" != "$TARGET" ]; then
+        ${MTX} -f $CHANGER move slot $TARGET drive 0
+        rtn=$? 
+      fi
+      exit $rtn
+      ;;
+
+   list) 
+      ${MTX} -f $CHANGER status slot | grep "FULL" | awk '{print $2+1":"}'
+      ;;
+
+   loaded)
+      SOURCE=`${MTX} status -S | grep drive | grep FULL | cut -d: -f 3 | tr -d '<>a-z '`
+      rtn=$?
+      if [ -z "$SOURCE" ]; then
+         SOURCE=-1
+      fi
+      echo `expr 1 + ${SOURCE}`
+      exit $rtn
+      ;;
+
+   slots)
+      ${MTX} -f $CHANGER status slot  | wc -l
+      ;;
+esac

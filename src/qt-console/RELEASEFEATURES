@@ -1,0 +1,73 @@
+Original release, August 2007.
+
+Graphical features:
+  Undockable (floating) windows of all interfaces.
+  Page selector for deciding and finding interfaces to view
+  Console command window for entering standard text console commands.
+  A preferences interface for listing limits and debugging.
+
+Graphical console
+  A console to perform all the commands available from bconsole.
+
+Graphical restoring
+  High performance restore of backup with GUI tree browsing and file and
+    directory selecting.  Pre-restore Interface to assist in selecting jobs for
+    this restore method.
+  Restore by browsing and selecting from all cataloged versions of files.  This
+    method allows for Multiple simultaneous views of catalog data.  The only
+    selection limitation for this browsing method is one client at a time.
+
+Graphical listing Interfaces:
+  List the backup jobs that have run. ** see details below
+  List the clients and perform 4 commands on the client within context.
+  List the Filesets 
+  List the Job resources and perform 8 commands on the job within context.
+  List the Pools and the volumes in each pool.  Pefrom 7 possible commands on
+    each media.
+  List the storage resources and perform any of 5 commands on the storage
+    resource.
+
+Graphical Media Management
+   Modify Volume parameters
+   Label a new volume
+   Relabel an existing volume
+   Select jobs on a volume in Job List directly from media interface
+   Delete a Volume
+   Purge Jobs on volume
+   Update Volume Parameters from Pool Parameters
+
+Graphical Graphing
+  Interface to plot the files and bytes of backup jobs.
+
+Other Graphical interfaces:
+   Open the cataloged Log messages of a job that has run
+   Run a job manually and modify job defaults before running.
+   Estimate a job.  Determine the files and bytes that would be backed up if
+     the job were run now.
+
+** JobList features
+  As many joblist windows at a time as desired.
+  9 different selection criterion: client, volume, job, Fileset, level, status,
+     purged or not, record limit and days limit
+  Lists the 11 most commonly desired job attributes.
+  Run the following console commands by issuing the command within the context
+    of the know job number: List job, list files on job, list jobmedia, list
+    volumes, delete job and purge files.
+  Open other interfaces knowing the jobid: show the cataloged log of the running
+    of the job, restore from that job only browsing the filestructure, restore
+    from the job end time to get the most recent version of a restore after the
+    job completed running and browse the combined filestucture, jump directly
+    to view a plot of the selected jobs files and bytes backed up.
+
+There is even a button to perform status dir at any time.  What more can you
+  ask for.  ;-)  An are you sure dialog box will even attempt to prevent the
+  user from deleting important stuff.
+
+Almost all console commands can be run graphically without touching a keyboard.
+Help me out by letting me know what still cannot be done.  I know of the
+following: show, run a migration job, and editing resources in configuration
+files.  The last is not a console command, so it does not count.
+
+See the TODO file for future plans.  The bacula develompment team is interested
+in your feedback and your assistance.  If you would like to get involved, join
+the users and/or the developers mailing list.
