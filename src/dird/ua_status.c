@@ -389,14 +389,16 @@ void list_dir_status_header(UAContext *ua)
    }
 }
 
-static void show_scheduled_preview(UAContext *ua, SCHEDRES *sched, struct tm tm, time_t time_to_check)
+static void show_scheduled_preview(UAContext *ua, SCHEDRES *sched,
+                                   POOL_MEM &overview, int *max_date_len,
+                                   struct tm tm, time_t time_to_check)
 {
-   int hour, mday, wday, month, wom, woy, yday;
+   int date_len, hour, mday, wday, month, wom, woy, yday;
    bool is_last_week = false;                      /* Are we in the last week of a month? */
-   char level[15];
    char dt[MAX_TIME_LENGTH];
    time_t runtime;
    RUNRES *run;
+   POOL_MEM temp(PM_NAME);
 
    hour = tm.tm_hour;
    mday = tm.tm_mday - 1;
@@ -408,8 +410,10 @@ static void show_scheduled_preview(UAContext *ua, SCHEDRES *sched, struct tm tm,
 
    is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , yday);
 
+start_over:
    for (run = sched->run; run; run = run->next) {
       bool run_now;
+      int cnt = 0;
 
       run_now = bit_is_set(hour, run->hour) &&
                 bit_is_set(mday, run->mday) &&
@@ -426,42 +430,85 @@ static void show_scheduled_preview(UAContext *ua, SCHEDRES *sched, struct tm tm,
          (void)localtime_r(&time_to_check, &tm); /* Reset tm structure */
          tm.tm_min = run->minute;                /* Set run minute */
          tm.tm_sec = 0;                          /* Zero secs */
+
+         /*
+          * Convert the time into a user parsable string.
+          * As we use locale specific strings for weekday and month we
+          * need to keep track of the longest data string used.
+          */
          runtime = mktime(&tm);
          bstrftime_wd(dt, sizeof(dt), runtime);
+         date_len = strlen(dt);
+         if (date_len > *max_date_len) {
+            *max_date_len = date_len;
 
-         ua->send_msg(dt);
-         ua->send_msg("  %-22.22s  ", sched->hdr.name);
+            /*
+             * When the datelen changed restart the loop.
+             */
+            pm_strcpy(overview, "");
+            goto start_over;
+         }
+
+         Mmsg(temp, "%.*s  %-22.22s  ", *max_date_len, dt, sched->hdr.name);
+         pm_strcat(overview, temp.c_str());
 
          if (run->level) {
-            bstrncpy(level, level_to_str(run->level), sizeof(level));
-            ua->send_msg("Level=%s ", level);
+            if (cnt++ > 0) {
+               pm_strcat(overview, " ");
+            }
+            Mmsg(temp, "Level=%s", level_to_str(run->level));
+            pm_strcat(overview, temp.c_str());
          }
 
          if (run->Priority) {
-            ua->send_msg("Priority=%d ", run->Priority);
+            if (cnt++ > 0) {
+               pm_strcat(overview, " ");
+            }
+            Mmsg(temp, "Priority=%d", run->Priority);
+            pm_strcat(overview, temp.c_str());
          }
 
          if (run->spool_data_set) {
-            ua->send_msg("Spool Data=%d ", run->spool_data);
+            if (cnt++ > 0) {
+               pm_strcat(overview, " ");
+            }
+            Mmsg(temp, "Spool Data=%d", run->spool_data);
+            pm_strcat(overview, temp.c_str());
          }
 
          if (run->accurate_set) {
-            ua->send_msg("Accurate=%d ", run->accurate);
+            if (cnt++ > 0) {
+               pm_strcat(overview, " ");
+            }
+            Mmsg(temp, "Accurate=%d", run->accurate);
+            pm_strcat(overview, temp.c_str());
          }
 
          if (run->pool) {
-            ua->send_msg("Pool=%s ", run->pool->name());
+            if (cnt++ > 0) {
+               pm_strcat(overview, " ");
+            }
+            Mmsg(temp, "Pool=%s", run->pool->name());
+            pm_strcat(overview, temp.c_str());
          }
 
          if (run->storage) {
-            ua->send_msg("Storage=%s ", run->storage->name());
+            if (cnt++ > 0) {
+               pm_strcat(overview, " ");
+            }
+            Mmsg(temp, "Storage=%s", run->storage->name());
+            pm_strcat(overview, temp.c_str());
          }
 
          if (run->msgs) {
-            ua->send_msg("Messages=%s ", run->msgs->name());
+            if (cnt++ > 0) {
+               pm_strcat(overview, " ");
+            }
+            Mmsg(temp, "Messages=%s", run->msgs->name());
+            pm_strcat(overview, temp.c_str());
          }
 
-         ua->send_msg("\n");
+         pm_strcat(overview, "\n");
       }
    }
 }
@@ -469,6 +516,7 @@ static void show_scheduled_preview(UAContext *ua, SCHEDRES *sched, struct tm tm,
 static void do_scheduler_status(UAContext *ua)
 {
    int i;
+   int max_date_len = 0;
    int days = 14;                                /* Default days for preview */
    bool schedulegiven = false;
    time_t time_to_check, now;
@@ -479,6 +527,7 @@ static void do_scheduler_status(UAContext *ua)
    CLIENTRES *client = NULL;
    JOBRES *job = NULL;
    SCHEDRES *sched;
+   POOL_MEM overview(PM_MESSAGE);
 
    now = time(NULL);                             /* Initialize to now */
    time_to_check = now;
@@ -540,11 +589,10 @@ static void do_scheduler_status(UAContext *ua)
 
       if (job) {
          if (job->schedule && bstrcmp(sched->hdr.name, job->schedule->hdr.name)) {
-            if (cnt == 0) {
+            if (cnt++ == 0) {
                ua->send_msg("%s\n", sched->hdr.name);
             }
             ua->send_msg("                       %s\n", job->name());
-            cnt++;
          }
       } else {
          foreach_res(job, R_JOB) {
@@ -553,7 +601,7 @@ static void do_scheduler_status(UAContext *ua)
             }
 
             if (job->schedule && bstrcmp(sched->hdr.name, job->schedule->hdr.name)) {
-               if (cnt == 0) {
+               if (cnt++ == 0) {
                   ua->send_msg("%s\n", sched->hdr.name);
                }
                if (job->enabled) {
@@ -561,7 +609,6 @@ static void do_scheduler_status(UAContext *ua)
                } else {
                   ua->send_msg("                       %s (disabled)\n", job->name());
                }
-               cnt++;
             }
          }
       }
@@ -572,11 +619,9 @@ static void do_scheduler_status(UAContext *ua)
    }
    UnlockRes();
 
-   ua->send_msg("====\n\n");
-   ua->send_msg("Scheduler Preview for %d days:\n\n", days);
-   ua->send_msg("Date                  Schedule                Overrides\n");
-   ua->send_msg("==============================================================\n");
-
+   /*
+    * Build an overview.
+    */
    while (time_to_check < (now + (days * seconds_per_day))) {
       (void)localtime_r(&time_to_check, &tm);
 
@@ -586,13 +631,13 @@ static void do_scheduler_status(UAContext *ua)
           */
          if (job) {
             if (job->schedule) {
-               show_scheduled_preview(ua, job->schedule, tm, time_to_check);
+               show_scheduled_preview(ua, job->schedule, overview, &max_date_len, tm, time_to_check);
             }
          } else {
             LockRes();
             foreach_res(job, R_JOB) {
                if (job->schedule && job->client == client) {
-                  show_scheduled_preview(ua, job->schedule, tm, time_to_check);
+                  show_scheduled_preview(ua, job->schedule, overview, &max_date_len, tm, time_to_check);
                }
             }
             UnlockRes();
@@ -610,7 +655,7 @@ static void do_scheduler_status(UAContext *ua)
                }
             }
 
-            show_scheduled_preview(ua, sched, tm, time_to_check);
+            show_scheduled_preview(ua, sched, overview, &max_date_len, tm, time_to_check);
          }
          UnlockRes();
       }
@@ -618,6 +663,11 @@ static void do_scheduler_status(UAContext *ua)
       time_to_check += seconds_per_hour; /* next hour */
    }
 
+   ua->send_msg("====\n\n");
+   ua->send_msg("Scheduler Preview for %d days:\n\n", days);
+   ua->send_msg("%-*s  %-22s  %s\n", max_date_len, _("Date"), _("Schedule"), _("Overrides"));
+   ua->send_msg("==============================================================\n");
+   ua->send_msg(overview.c_str());
    ua->send_msg("====\n");
 }
 
