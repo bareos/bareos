@@ -1,13 +1,9 @@
 /etc/bareos/bareos-sd.conf
-/etc/bareos/mtx-changer.conf
 /etc/init.d/bareos-sd
 /usr/sbin/bscrypto
 /usr/lib/bareos/plugins/python-sd.so
 /usr/lib/bareos/plugins/scsicrypto-sd.so
 /usr/lib/bareos/scripts/disk-changer
-/usr/lib/bareos/scripts/mtx-changer
 /usr/sbin/bareos-sd
 /usr/share/man/man8/bscrypto.8.gz
 /usr/share/man/man8/bareos-sd.8.gz
-/usr/share/man/man8/btape.8.gz
-/usr/sbin/btape
