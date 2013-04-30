@@ -72,12 +72,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pbLoad" >
-       <property name="enabled" >
-        <bool>false</bool>
-       </property>
+      <widget class="QPushButton" name="pbImport" >
        <property name="text" >
-        <string>Load</string>
+        <string>Import</string>
        </property>
        <property name="icon" >
         <iconset resource="../main.qrc" >
@@ -89,12 +86,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pbUnload" >
-       <property name="enabled" >
-        <bool>false</bool>
-       </property>
+      <widget class="QPushButton" name="pbExport" >
        <property name="text" >
-        <string>Unload</string>
+        <string>Export</string>
        </property>
        <property name="icon" >
         <iconset resource="../main.qrc" >

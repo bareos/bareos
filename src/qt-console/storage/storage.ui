@@ -118,6 +118,17 @@
     <string>Update Slots Scan</string>
    </property>
   </action>
+  <action name="actionImportStorage" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/intern.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Import volumes</string>
+   </property>
+   <property name="statusTip" >
+    <string>Import volumes</string>
+   </property>
+  </action>
   <action name="actionRelease" >
    <property name="icon" >
     <iconset resource="../main.qrc" >:/images/cartridge.png</iconset>

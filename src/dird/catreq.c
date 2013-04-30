@@ -48,41 +48,41 @@
  *  For now, we simply return next Volume to be used
  */
 
-/* Requests from the Storage daemon */
+/*
+ * Requests from the Storage daemon
+ */
 static char Find_media[] = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s\n";
 static char Get_Vol_Info[] = "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
-
 static char Update_media[] = "CatReq Job=%127s UpdateMedia VolName=%s"
-   " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
-   " VolErrors=%u VolWrites=%u MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
-   " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
-   " VolFirstWritten=%lld VolParts=%u\n";
-
+                             " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
+                             " VolErrors=%u VolWrites=%u MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
+                             " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
+                             " VolFirstWritten=%lld\n";
 static char Create_job_media[] = "CatReq Job=%127s CreateJobMedia "
-   " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
-   " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%" lld "\n";
+                                 " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
+                                 " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%" lld "\n";
 
-
-/* Responses  sent to Storage daemon */
+/*
+ * Responses  sent to Storage daemon
+ */
 static char OK_media[] = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
-   " VolBlocks=%u VolBytes=%s VolMounts=%u VolErrors=%u VolWrites=%u"
-   " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
-   " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
-   " VolWriteTime=%s EndFile=%u EndBlock=%u VolParts=%u LabelType=%d"
-   " MediaId=%s\n";
-
+                         " VolBlocks=%u VolBytes=%s VolMounts=%u VolErrors=%u VolWrites=%u"
+                         " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
+                         " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
+                         " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
+                         " MediaId=%s EncryptionKey=%s\n";
 static char OK_create[] = "1000 OK CreateJobMedia\n";
 
 
 static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr)
 {
-   int stat;
+   int status;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
 
    jcr->MediaId = mr->MediaId;
    pm_strcpy(jcr->VolumeName, mr->VolumeName);
    bash_spaces(mr->VolumeName);
-   stat = sd->fsend(OK_media, mr->VolumeName, mr->VolJobs,
+   status = sd->fsend(OK_media, mr->VolumeName, mr->VolJobs,
       mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
       mr->VolMounts, mr->VolErrors, mr->VolWrites,
       edit_uint64(mr->MaxVolBytes, ed2),
@@ -92,12 +92,12 @@ static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr
       edit_int64(mr->VolReadTime, ed4),
       edit_int64(mr->VolWriteTime, ed5),
       mr->EndFile, mr->EndBlock,
-      mr->VolParts,
       mr->LabelType,
-      edit_uint64(mr->MediaId, ed6));
+      edit_uint64(mr->MediaId, ed6),
+      mr->EncrKey);
    unbash_spaces(mr->VolumeName);
    Dmsg2(100, "Vol Info for %s: %s", jcr->Job, sd->msg);
-   return stat;
+   return status;
 }
 
 void catalog_request(JCR *jcr, BSOCK *bs)
@@ -140,7 +140,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       ok = db_get_pool_record(jcr, jcr->db, &pr);
       if (ok) {
          mr.PoolId = pr.PoolId;
-         set_storageid_in_mr(jcr->wstore, &mr);
+         set_storageid_in_mr(jcr->res.wstore, &mr);
          mr.ScratchPoolId = pr.ScratchPoolId;
          ok = find_next_volume_for_append(jcr, &mr, index, fnv_create_vol, fnv_prune);
          Dmsg3(050, "find_media ok=%d idx=%d vol=%s\n", ok, index, mr.VolumeName);
@@ -180,7 +180,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
              */
             if (mr.PoolId != jcr->jr.PoolId) {
                reason = _("not in Pool");
-            } else if (strcmp(mr.MediaType, jcr->wstore->media_type) != 0) {
+            } else if (!bstrcmp(mr.MediaType, jcr->res.wstore->media_type)) {
                reason = _("not correct MediaType");
             } else {
                /*
@@ -215,12 +215,10 @@ void catalog_request(JCR *jcr, BSOCK *bs)
     *  Volume, or when an EOF mark is written.
     */
    } else if (sscanf(bs->msg, Update_media, &Job, &sdmr.VolumeName,
-      &sdmr.VolJobs, &sdmr.VolFiles, &sdmr.VolBlocks, &sdmr.VolBytes,
-      &sdmr.VolMounts, &sdmr.VolErrors, &sdmr.VolWrites, &sdmr.MaxVolBytes,
-      &VolLastWritten, &sdmr.VolStatus, &sdmr.Slot, &label, &sdmr.InChanger,
-      &sdmr.VolReadTime, &sdmr.VolWriteTime, &VolFirstWritten,
-      &sdmr.VolParts) == 19) {
-
+                     &sdmr.VolJobs, &sdmr.VolFiles, &sdmr.VolBlocks, &sdmr.VolBytes,
+                     &sdmr.VolMounts, &sdmr.VolErrors, &sdmr.VolWrites, &sdmr.MaxVolBytes,
+                     &VolLastWritten, &sdmr.VolStatus, &sdmr.Slot, &label, &sdmr.InChanger,
+                     &sdmr.VolReadTime, &sdmr.VolWriteTime, &VolFirstWritten) == 18) {
       db_lock(jcr->db);
       Dmsg3(400, "Update media %s oldStat=%s newStat=%s\n", sdmr.VolumeName,
          mr.VolStatus, sdmr.VolStatus);
@@ -231,8 +229,8 @@ void catalog_request(JCR *jcr, BSOCK *bs)
               mr.VolumeName, db_strerror(jcr->db));
          bs->fsend(_("1991 Catalog Request for vol=%s failed: %s"),
             mr.VolumeName, db_strerror(jcr->db));
-         db_unlock(jcr->db);
-         return;
+         goto bail_out;
+
       }
       /* Set first written time if this is first job */
       if (mr.FirstWritten == 0) {
@@ -261,8 +259,8 @@ void catalog_request(JCR *jcr, BSOCK *bs)
                mr.VolFiles, sdmr.VolFiles, mr.VolumeName);
             bs->fsend(_("1992 Update Media error. VolFiles=%u, CatFiles=%u\n"),
                sdmr.VolFiles, mr.VolFiles);
-            db_unlock(jcr->db);
-            return;
+            goto bail_out;
+
          }
       }
       Dmsg2(400, "Update media: BefVolJobs=%u After=%u\n", mr.VolJobs, sdmr.VolJobs);
@@ -280,11 +278,11 @@ void catalog_request(JCR *jcr, BSOCK *bs)
        *   However, do so only if we are writing the tape, i.e.
        *   the number of VolWrites has increased.
        */
-      if (jcr->wstore && sdmr.VolWrites > mr.VolWrites) {
+      if (jcr->res.wstore && sdmr.VolWrites > mr.VolWrites) {
          Dmsg2(050, "Update StorageId old=%d new=%d\n",
-               mr.StorageId, jcr->wstore->StorageId);
+               mr.StorageId, jcr->res.wstore->StorageId);
          /* Update StorageId after write */
-         set_storageid_in_mr(jcr->wstore, &mr);
+         set_storageid_in_mr(jcr->res.wstore, &mr);
       } else {
          /* Nothing written, reset same StorageId */
          set_storageid_in_mr(NULL, &mr);
@@ -300,7 +298,6 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       mr.VolWrites    = sdmr.VolWrites;
       mr.Slot         = sdmr.Slot;
       mr.InChanger    = sdmr.InChanger;
-      mr.VolParts     = sdmr.VolParts;
       bstrncpy(mr.VolStatus, sdmr.VolStatus, sizeof(mr.VolStatus));
       if (sdmr.VolReadTime >= 0) { 
          mr.VolReadTime  = sdmr.VolReadTime;
@@ -323,8 +320,13 @@ void catalog_request(JCR *jcr, BSOCK *bs)
          (void)has_volume_expired(jcr, &mr);
          send_volume_info_to_storage_daemon(jcr, bs, &mr);
       }
+
+bail_out:
       db_unlock(jcr->db);
 
+      Dmsg1(400, ">CatReq response: %s", bs->msg);
+      Dmsg1(400, "Leave catreq jcr 0x%x\n", jcr);
+      return;
    /*
     * Request to create a JobMedia record
     */
@@ -435,6 +437,8 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    Dmsg1(400, "UpdCat msg=%s\n", msg);
    Dmsg5(400, "UpdCat VolSessId=%d VolSessT=%d FI=%d Strm=%d reclen=%d\n",
       VolSessionId, VolSessionTime, FileIndex, Stream, reclen);
+
+   jcr->SDJobBytes += reclen; /* update number of bytes transferred for quotas */
 
    if (Stream == STREAM_UNIX_ATTRIBUTES || Stream == STREAM_UNIX_ATTRIBUTES_EX) {
       if (jcr->cached_attribute) {
@@ -603,7 +607,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
  */
 void catalog_update(JCR *jcr, BSOCK *bs)
 {
-   if (!jcr->pool->catalog_files) {
+   if (!jcr->res.pool->catalog_files) {
       return;                         /* user disabled cataloging */
    }
    if (jcr->is_job_canceled()) {
@@ -632,17 +636,17 @@ bail_out:
  */
 bool despool_attributes_from_file(JCR *jcr, const char *file)
 {
-   bool ret=false;
+   bool retval = false;
    int32_t pktsiz;
    size_t nbytes;
    ssize_t size = 0;
    int32_t msglen;                    /* message length */
+   FILE *spool_fd = NULL;
    POOLMEM *msg = get_pool_memory(PM_MESSAGE);
-   FILE *spool_fd=NULL;
 
    Dmsg0(100, "Begin despool_attributes_from_file\n");
 
-   if (jcr->is_job_canceled() || !jcr->pool->catalog_files || !jcr->db) {
+   if (jcr->is_job_canceled() || !jcr->res.pool->catalog_files || !jcr->db) {
       goto bail_out;                  /* user disabled cataloging */
    }
 
@@ -687,7 +691,7 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
             be.bstrerror());
       goto bail_out;
    }
-   ret = true;
+   retval = true;
 
 bail_out:
    if (spool_fd) {
@@ -699,6 +703,6 @@ bail_out:
    }
 
    free_pool_memory(msg);
-   Dmsg1(100, "End despool_attributes_from_file ret=%i\n", ret);
-   return ret;
+   Dmsg1(100, "End despool_attributes_from_file retval=%i\n", retval);
+   return retval;
 }

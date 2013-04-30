@@ -91,7 +91,8 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
                 _("Problem probably begins at line %d.\n"), lc->begin_line_no);
    } else {
       more[0] = 0;
-   }  
+   }
+
    if (lc->line_no > 0) {
       e_msg(file, line, lc->err_type, 0, _("Config error: %s\n"
 "            : line %d, col %d of file %s\n%s\n%s"),
@@ -101,9 +102,43 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
    }
 }
 
+/*
+ * Format a scanner warning message
+ */
+static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
+{
+   va_list arg_ptr;
+   char buf[MAXSTRING];
+   char more[MAXSTRING];
+
+   va_start(arg_ptr, msg);
+   bvsnprintf(buf, sizeof(buf), msg, arg_ptr);
+   va_end(arg_ptr);
+
+   if (lc->line_no > lc->begin_line_no) {
+      bsnprintf(more, sizeof(more),
+                _("Problem probably begins at line %d.\n"), lc->begin_line_no);
+   } else {
+      more[0] = 0;
+   }
+
+   if (lc->line_no > 0) {
+      p_msg(file, line, 0, _("Config warning: %s\n"
+"            : line %d, col %d of file %s\n%s\n%s"),
+         buf, lc->line_no, lc->col_no, lc->fname, lc->line, more);
+   } else {
+      p_msg(file, line, 0, _("Config warning: %s\n"), buf);
+   }
+}
+
 void lex_set_default_error_handler(LEX *lf)
 {
    lf->scan_error = s_err;
+}
+
+void lex_set_default_warning_handler(LEX *lf)
+{
+   lf->scan_warning = s_warn;
 }
 
 /*
@@ -139,8 +174,6 @@ LEX *lex_close_file(LEX *lf)
    }
    Dmsg1(dbglvl, "Close cfg file %s\n", lf->fname);
    free(lf->fname);
-   free_memory(lf->line);
-   lf->line = NULL;
    if (of) {
       of->options = lf->options;      /* preserve options */
       memcpy(lf, of, sizeof(LEX));
@@ -164,13 +197,17 @@ LEX *lex_close_file(LEX *lf)
  * the next field.
  *
  */
-LEX *lex_open_file(LEX *lf, const char *filename, LEX_ERROR_HANDLER *scan_error)
+LEX *lex_open_file(LEX *lf,
+                   const char *filename,
+                   LEX_ERROR_HANDLER *scan_error,
+                   LEX_WARNING_HANDLER *scan_warning)
 
 {
    LEX *nf;
    FILE *fd;
    BPIPE *bpipe = NULL;
    char *fname = bstrdup(filename);
+
 
    if (fname[0] == '|') {
       if ((bpipe = open_bpipe(fname+1, 0, "rb")) == NULL) {
@@ -190,24 +227,31 @@ LEX *lex_open_file(LEX *lf, const char *filename, LEX_ERROR_HANDLER *scan_error)
       lf->next = nf;                  /* if have lf, push it behind new one */
       lf->options = nf->options;      /* preserve user options */
       /*
-       * preserve err_type to prevent bacula exiting on 'reload' 
-       * if config is invalid. Fixes bug #877         
+       * preserve err_type to prevent bacula exiting on 'reload'
+       * if config is invalid. Fixes bug #877
        */
-      lf->err_type = nf->err_type;    
+      lf->err_type = nf->err_type;
    } else {
       lf = nf;                        /* start new packet */
       memset(lf, 0, sizeof(LEX));
       lex_set_error_handler_error_type(lf, M_ERROR_TERM);
    }
+
    if (scan_error) {
       lf->scan_error = scan_error;
    } else {
       lex_set_default_error_handler(lf);
    }
+
+   if (scan_warning) {
+      lf->scan_warning = scan_warning;
+   } else {
+      lex_set_default_warning_handler(lf);
+   }
+
    lf->fd = fd;
    lf->bpipe = bpipe;
    lf->fname = fname;
-   lf->line = get_memory(5000);
    lf->state = lex_none;
    lf->ch = L_EOL;
    Dmsg1(dbglvl, "Return lex=%x\n", lf);
@@ -227,7 +271,7 @@ int lex_get_char(LEX *lf)
          " You may have a open double quote without the closing double quote.\n"));
    }
    if (lf->ch == L_EOL) {
-      if (bfgets(lf->line, lf->fd) == NULL) {
+      if (bfgets(lf->line, MAXSTRING, lf->fd) == NULL) {
          lf->ch = L_EOF;
          if (lf->next) {
             lex_close_file(lf);
@@ -255,6 +299,7 @@ void lex_unget_char(LEX *lf)
    } else {
       lf->col_no--;                   /* Backup to re-read char */
    }
+
 }
 
 
@@ -586,13 +631,6 @@ lex_get_token(LEX *lf, int expect)
          }
          if (ch == '"') {
             token = T_QUOTED_STRING;
-            /*
-             * Since we may be scanning a quoted list of names,
-             *  we get the next character (a comma indicates another
-             *  one), then we put it back for rescanning.
-             */
-            lex_get_char(lf);
-            lex_unget_char(lf);
             lf->state = lex_none;
             break;
          }
@@ -619,7 +657,7 @@ lex_get_token(LEX *lf, int expect)
             lex_get_char(lf);
 
             lf->state = lex_none;
-            lf = lex_open_file(lf, lf->str, lf->scan_error);
+            lf = lex_open_file(lf, lf->str, lf->scan_error, lf->scan_warning);
             if (lf == NULL) {
                berrno be;
                scan_err2(lfori, _("Cannot open included config file %s: %s\n"),
@@ -647,7 +685,7 @@ lex_get_token(LEX *lf, int expect)
             LEX* lfori = lf;
 
             lf->state = lex_none;
-            lf = lex_open_file(lf, lf->str, lf->scan_error);
+            lf = lex_open_file(lf, lf->str, lf->scan_error, lf->scan_warning);
             if (lf == NULL) {
                berrno be;
                scan_err2(lfori, _("Cannot open included config file %s: %s\n"),
@@ -659,7 +697,7 @@ lex_get_token(LEX *lf, int expect)
          add_str(lf, ch);
          break;
       case lex_utf8_bom:
-         /* we only end up in this state if we have read an 0xEF 
+         /* we only end up in this state if we have read an 0xEF
             as the first byte of the file, indicating we are probably
             reading a UTF-8 file */
          if (ch == 0xBB && bom_bytes_seen == 1) {
@@ -672,7 +710,7 @@ lex_get_token(LEX *lf, int expect)
          }
          break;
       case lex_utf16_le_bom:
-         /* we only end up in this state if we have read an 0xFF 
+         /* we only end up in this state if we have read an 0xFF
             as the first byte of the file -- indicating that we are
             probably dealing with an Intel based (little endian) UTF-16 file*/
          if (ch == 0xFE) {

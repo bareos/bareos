@@ -69,23 +69,23 @@ extern "C" void *workq_server(void *arg);
  */
 int workq_init(workq_t *wq, int threads, void *(*engine)(void *arg))
 {
-   int stat;
+   int status;
 
-   if ((stat = pthread_attr_init(&wq->attr)) != 0) {
-      return stat;
+   if ((status = pthread_attr_init(&wq->attr)) != 0) {
+      return status;
    }
-   if ((stat = pthread_attr_setdetachstate(&wq->attr, PTHREAD_CREATE_DETACHED)) != 0) {
+   if ((status = pthread_attr_setdetachstate(&wq->attr, PTHREAD_CREATE_DETACHED)) != 0) {
       pthread_attr_destroy(&wq->attr);
-      return stat;
+      return status;
    }
-   if ((stat = pthread_mutex_init(&wq->mutex, NULL)) != 0) {
+   if ((status = pthread_mutex_init(&wq->mutex, NULL)) != 0) {
       pthread_attr_destroy(&wq->attr);
-      return stat;
+      return status;
    }
-   if ((stat = pthread_cond_init(&wq->work, NULL)) != 0) {
+   if ((status = pthread_cond_init(&wq->work, NULL)) != 0) {
       pthread_mutex_destroy(&wq->mutex);
       pthread_attr_destroy(&wq->attr);
-      return stat;
+      return status;
    }
    wq->quit = 0;
    wq->first = wq->last = NULL;
@@ -105,7 +105,7 @@ int workq_init(workq_t *wq, int threads, void *(*engine)(void *arg))
  */
 int workq_destroy(workq_t *wq)
 {
-   int stat, stat1, stat2;
+   int status, status1, status2;
 
   if (wq->valid != WORKQ_VALID) {
      return EINVAL;
@@ -119,23 +119,23 @@ int workq_destroy(workq_t *wq)
   if (wq->num_workers > 0) {
      wq->quit = 1;
      if (wq->idle_workers) {
-        if ((stat = pthread_cond_broadcast(&wq->work)) != 0) {
+        if ((status = pthread_cond_broadcast(&wq->work)) != 0) {
            V(wq->mutex);
-           return stat;
+           return status;
         }
      }
      while (wq->num_workers > 0) {
-        if ((stat = pthread_cond_wait(&wq->work, &wq->mutex)) != 0) {
+        if ((status = pthread_cond_wait(&wq->work, &wq->mutex)) != 0) {
            V(wq->mutex);
-           return stat;
+           return status;
         }
      }
   }
   V(wq->mutex);
-  stat  = pthread_mutex_destroy(&wq->mutex);
-  stat1 = pthread_cond_destroy(&wq->work);
-  stat2 = pthread_attr_destroy(&wq->attr);
-  return (stat != 0 ? stat : (stat1 != 0 ? stat1 : stat2));
+  status = pthread_mutex_destroy(&wq->mutex);
+  status1 = pthread_cond_destroy(&wq->work);
+  status2 = pthread_attr_destroy(&wq->attr);
+  return (status != 0 ? status : (status1 != 0 ? status1 : status2));
 }
 
 
@@ -150,7 +150,7 @@ int workq_destroy(workq_t *wq)
  */
 int workq_add(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
 {
-   int stat=0;
+   int status = 0;
    workq_ele_t *item;
    pthread_t id;
 
@@ -189,17 +189,17 @@ int workq_add(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
    /* if any threads are idle, wake one */
    if (wq->idle_workers > 0) {
       Dmsg0(1400, "Signal worker\n");
-      if ((stat = pthread_cond_broadcast(&wq->work)) != 0) {
+      if ((status = pthread_cond_broadcast(&wq->work)) != 0) {
          V(wq->mutex);
-         return stat;
+         return status;
       }
    } else if (wq->num_workers < wq->max_workers) {
       Dmsg0(1400, "Create worker thread\n");
       /* No idle threads so create a new one */
       set_thread_concurrency(wq->max_workers + 1);
-      if ((stat = pthread_create(&id, &wq->attr, workq_server, (void *)wq)) != 0) {
+      if ((status = pthread_create(&id, &wq->attr, workq_server, (void *)wq)) != 0) {
          V(wq->mutex);
-         return stat;
+         return status;
       }
       wq->num_workers++;
    }
@@ -209,7 +209,7 @@ int workq_add(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
    if (work_item) {
       *work_item = item;
    }
-   return stat;
+   return status;
 }
 
 /*
@@ -223,7 +223,7 @@ int workq_add(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
  */
 int workq_remove(workq_t *wq, workq_ele_t *work_item)
 {
-   int stat, found = 0;
+   int status, found = 0;
    pthread_t id;
    workq_ele_t *item, *prev;
 
@@ -258,23 +258,23 @@ int workq_remove(workq_t *wq, workq_ele_t *work_item)
    /* if any threads are idle, wake one */
    if (wq->idle_workers > 0) {
       Dmsg0(1400, "Signal worker\n");
-      if ((stat = pthread_cond_broadcast(&wq->work)) != 0) {
+      if ((status = pthread_cond_broadcast(&wq->work)) != 0) {
          V(wq->mutex);
-         return stat;
+         return status;
       }
    } else {
       Dmsg0(1400, "Create worker thread\n");
       /* No idle threads so create a new one */
       set_thread_concurrency(wq->max_workers + 1);
-      if ((stat = pthread_create(&id, &wq->attr, workq_server, (void *)wq)) != 0) {
+      if ((status = pthread_create(&id, &wq->attr, workq_server, (void *)wq)) != 0) {
          V(wq->mutex);
-         return stat;
+         return status;
       }
       wq->num_workers++;
    }
    V(wq->mutex);
    Dmsg0(1400, "Return workq_remove\n");
-   return stat;
+   return status;
 }
 
 
@@ -288,7 +288,7 @@ void *workq_server(void *arg)
    struct timespec timeout;
    workq_t *wq = (workq_t *)arg;
    workq_ele_t *we;
-   int stat, timedout;
+   int status, timedout;
 
    Dmsg0(1400, "Start workq_server\n");
    P(wq->mutex);
@@ -316,15 +316,15 @@ void *workq_server(void *arg)
           * so fake it out.
           */
          P(wq->mutex);
-         stat = ETIMEDOUT;
+         status = ETIMEDOUT;
 #else
-         stat = pthread_cond_timedwait(&wq->work, &wq->mutex, &timeout);
+         status = pthread_cond_timedwait(&wq->work, &wq->mutex, &timeout);
 #endif
-         Dmsg1(1400, "timedwait=%d\n", stat);
-         if (stat == ETIMEDOUT) {
+         Dmsg1(1400, "timedwait=%d\n", status);
+         if (status == ETIMEDOUT) {
             timedout = 1;
             break;
-         } else if (stat != 0) {
+         } else if (status != 0) {
             /* This shouldn't happen */
             Dmsg0(1400, "This shouldn't happen\n");
             wq->num_workers--;

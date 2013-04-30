@@ -496,9 +496,6 @@
    </property>
   </action>
   <action name="actionBrowse">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="main.qrc">
      <normaloff>:/images/browse.png</normaloff>:/images/browse.png</iconset>

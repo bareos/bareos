@@ -257,7 +257,7 @@ public:
         director = NULL;
         if (TrayMonitor->objectName().isEmpty())
             TrayMonitor->setObjectName(QString::fromUtf8("TrayMonitor"));
-        TrayMonitor->setWindowIcon(QIcon(":/images/cartridge1.png")); 
+        TrayMonitor->setWindowIcon(QIcon(":/images/cartridge.png")); 
         TrayMonitor->resize(789, 595);
         centralwidget = new QWidget(TrayMonitor);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
@@ -329,7 +329,7 @@ public:
                 this, SLOT(cb_trayIconActivated(QSystemTrayIcon::ActivationReason)));
 
 	tray->setContextMenu(stmenu);
-	QIcon icon(":/images/cartridge1.png");
+	QIcon icon(":/images/cartridge.png");
 	tray->setIcon(icon);
         tray->setToolTip(QString("Bacula Tray Monitor"));
 	tray->show();

@@ -141,9 +141,7 @@ private:
    hlink *nodes;
    int nb_node;
    int max_node;
-
    alist *table_node;
-
    htable *cache_ppathid;
 
 public:
@@ -168,8 +166,7 @@ public:
    }
 
    bool lookup(char *pathid) {
-      bool ret = cache_ppathid->lookup(pathid) != NULL;
-      return ret;
+      return (cache_ppathid->lookup(pathid) != NULL);
    }
    
    void insert(char *pathid) {
@@ -255,7 +252,7 @@ static void build_path_hierarchy(JCR *jcr, B_DB *mdb,
    char pathid[50];
    ATTR_DBR parent;
    char *bkp = mdb->path;
-   strncpy(pathid, org_pathid, sizeof(pathid));
+   bstrncpy(pathid, org_pathid, sizeof(pathid));
 
    /* Does the ppathid exist for this ? we use a memory cache...  In order to
     * avoid the full loop, we consider that if a dir is allready in the
@@ -321,13 +318,13 @@ bail_out:
  * return Error 0
  *        OK    1
  */
-static int update_path_hierarchy_cache(JCR *jcr,
+static bool update_path_hierarchy_cache(JCR *jcr,
                                         B_DB *mdb,
                                         pathid_cache &ppathid_cache,
                                         JobId_t JobId)
 {
    Dmsg0(dbglevel, "update_path_hierarchy_cache()\n");
-   int ret=0;
+   bool retval = false;
    uint32_t num;
    char jobid[50];
    edit_uint64(JobId, jobid);
@@ -339,7 +336,7 @@ static int update_path_hierarchy_cache(JCR *jcr,
    
    if (!QUERY_DB(jcr, mdb, mdb->cmd) || sql_num_rows(mdb) > 0) {
       Dmsg1(dbglevel, "already computed %d\n", (uint32_t)JobId );
-      ret = 1;
+      retval = true;
       goto bail_out;
    }
 
@@ -428,8 +425,8 @@ static int update_path_hierarchy_cache(JCR *jcr,
    }
 
    do {
-      ret = QUERY_DB(jcr, mdb, mdb->cmd);
-   } while (ret && sql_affected_rows(mdb) > 0);
+      retval = QUERY_DB(jcr, mdb, mdb->cmd);
+   } while (retval && sql_affected_rows(mdb) > 0);
    
    Mmsg(mdb->cmd, "UPDATE Job SET HasCache=1 WHERE JobId=%s", jobid);
    UPDATE_DB(jcr, mdb, mdb->cmd);
@@ -437,7 +434,7 @@ static int update_path_hierarchy_cache(JCR *jcr,
 bail_out:
    db_end_transaction(jcr, mdb);
    db_unlock(mdb);
-   return ret;
+   return retval;
 }
 
 /* 
@@ -528,28 +525,28 @@ void bvfs_update_cache(JCR *jcr, B_DB *mdb)
 /*
  * Update the bvfs cache for given jobids (1,2,3,4)
  */
-int
-bvfs_update_path_hierarchy_cache(JCR *jcr, B_DB *mdb, char *jobids)
+int bvfs_update_path_hierarchy_cache(JCR *jcr, B_DB *mdb, char *jobids)
 {
-   pathid_cache ppathid_cache;
-   JobId_t JobId;
    char *p;
-   int ret=1;
+   int retval;
+   JobId_t JobId;
+   pathid_cache ppathid_cache;
 
-   for (p=jobids; ; ) {
-      int stat = get_next_jobid_from_list(&p, &JobId);
-      if (stat < 0) {
+   p = jobids;
+   while (1) {
+      retval = get_next_jobid_from_list(&p, &JobId);
+      if (retval < 0) {
          return 0;
       }
-      if (stat == 0) {
+      if (retval == 0) {
          break;
       }
       Dmsg1(dbglevel, "Updating cache for %lld\n", (uint64_t)JobId);
       if (!update_path_hierarchy_cache(jcr, mdb, ppathid_cache, JobId)) {
-         ret = 0;
+         retval = 0;
       }
    }
-   return ret;
+   return retval;
 }
 
 /* 
@@ -632,7 +629,7 @@ int Bvfs::_handle_path(void *ctx, int fields, char **row)
 {
    if (bvfs_is_dir(row)) {
       /* can have the same path 2 times */
-      if (strcmp(row[BVFS_Name], prev_dir)) {
+      if (!bstrcmp(row[BVFS_Name], prev_dir)) {
          pm_strcpy(prev_dir, row[BVFS_Name]);
          return list_entries(user_data, fields, row);
       }
@@ -863,11 +860,11 @@ static bool check_temp(char *output_table)
 
 void Bvfs::clear_cache()
 {
-   db_sql_query(db, "BEGIN",                     NULL, NULL);
-   db_sql_query(db, "UPDATE Job SET HasCache=0", NULL, NULL);
-   db_sql_query(db, "TRUNCATE PathHierarchy",    NULL, NULL);
-   db_sql_query(db, "TRUNCATE PathVisibility",   NULL, NULL);
-   db_sql_query(db, "COMMIT",                    NULL, NULL);
+   db_sql_query(db, "BEGIN");
+   db_sql_query(db, "UPDATE Job SET HasCache=0");
+   db_sql_query(db, "TRUNCATE PathHierarchy");
+   db_sql_query(db, "TRUNCATE PathVisibility");
+   db_sql_query(db, "COMMIT");
 }
 
 bool Bvfs::drop_restore_list(char *output_table)
@@ -875,7 +872,7 @@ bool Bvfs::drop_restore_list(char *output_table)
    POOL_MEM query;
    if (check_temp(output_table)) {
       Mmsg(query, "DROP TABLE %s", output_table);
-      db_sql_query(db, query.c_str(), NULL, NULL);
+      db_sql_query(db, query.c_str());
       return true;
    }
    return false;
@@ -887,8 +884,9 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
    POOL_MEM query;
    POOL_MEM tmp, tmp2;
    int64_t id, jobid, prev_jobid;
-   bool init=false;
-   bool ret=false;
+   bool init = false;
+   bool retval = false;
+
    /* check args */
    if ((*fileid   && !is_a_number_list(fileid))  ||
        (*dirid    && !is_a_number_list(dirid))   ||
@@ -930,7 +928,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
          /* print error */
          goto bail_out;
       }
-      if (!strcmp(tmp2.c_str(), "")) { /* path not found */
+      if (bstrcmp(tmp2.c_str(), "")) { /* path not found */
          Dmsg3(dbglevel, "Path not found %lld q=%s s=%s\n",
                id, tmp.c_str(), tmp2.c_str());
          break;
@@ -1015,7 +1013,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
 
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
 
-   if (!db_sql_query(db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(db, query.c_str())) {
       Dmsg0(dbglevel, "Can't execute q\n");
       goto bail_out;
    }
@@ -1025,7 +1023,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
 
    /* TODO: handle jobid filter */
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
-   if (!db_sql_query(db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(db, query.c_str())) {
       Dmsg0(dbglevel, "Can't execute q\n");
       goto bail_out;
    }
@@ -1035,19 +1033,19 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
       Mmsg(query, "CREATE INDEX idx_%s ON %s (JobId)", 
            output_table, output_table);
       Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
-      if (!db_sql_query(db, query.c_str(), NULL, NULL)) {
+      if (!db_sql_query(db, query.c_str())) {
          Dmsg0(dbglevel, "Can't execute q\n");
          goto bail_out;
       }
    }
 
-   ret = true;
+   retval = true;
 
 bail_out:
    Mmsg(query, "DROP TABLE btemp%s", output_table);
-   db_sql_query(db, query.c_str(), NULL, NULL);
+   db_sql_query(db, query.c_str());
    db_unlock(db);
-   return ret;
+   return retval;
 }
 
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI */

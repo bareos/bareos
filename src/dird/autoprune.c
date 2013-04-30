@@ -36,10 +36,8 @@
 
 #include "bacula.h"
 #include "dird.h"
-#include "ua.h"
 
 /* Forward referenced functions */
-
 
 /*
  * Auto Prune Jobs and Files. This is called at the end of every
@@ -48,26 +46,28 @@
 void do_autoprune(JCR *jcr)
 {
    UAContext *ua;
-   CLIENT *client;
-   POOL *pool;
+   JOBRES *job;
+   CLIENTRES *client;
+   POOLRES *pool;
    bool pruned;
 
-   if (!jcr->client) {                /* temp -- remove me */
+   if (!jcr->res.client) {            /* temp -- remove me */
       return;
    }
 
    ua = new_ua_context(jcr);
-   client = jcr->client;
-   pool = jcr->pool;
+   job = jcr->res.job;
+   client = jcr->res.client;
+   pool = jcr->res.pool;
 
-   if (jcr->job->PruneJobs || jcr->client->AutoPrune) {
+   if (job->PruneJobs || client->AutoPrune) {
       prune_jobs(ua, client, pool, jcr->getJobType());
       pruned = true;
    } else {
       pruned = false;
    }
 
-   if (jcr->job->PruneFiles || jcr->client->AutoPrune) {
+   if (job->PruneFiles || client->AutoPrune) {
       prune_files(ua, client, pool);
       pruned = true;
    }
@@ -84,20 +84,20 @@ void do_autoprune(JCR *jcr)
  *   volume and no appendable volumes are available.
  *
  */
-void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
-        STORE *store)
+void prune_volumes(JCR *jcr, bool InChanger,
+                   MEDIA_DBR *mr, STORERES *store)
 {
-   int count;
    int i;
+   int count;
+   POOL_DBR spr;
+   UAContext *ua;
    dbid_list ids;
    struct del_ctx prune_list;
    POOL_MEM query(PM_MESSAGE);
-   UAContext *ua;
    char ed1[50], ed2[100], ed3[50];
-   POOL_DBR spr;
 
    Dmsg1(100, "Prune volumes PoolId=%d\n", jcr->jr.PoolId);
-   if (!jcr->job->PruneVolumes && !jcr->pool->AutoPrune) {
+   if (!jcr->res.job->PruneVolumes && !jcr->res.pool->AutoPrune) {
       Dmsg0(100, "AutoPrune not set in Pool.\n");
       return;
    }
@@ -178,8 +178,8 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
          continue;
       }
       /* Prune only Volumes with status "Full", or "Used" */
-      if (strcmp(lmr.VolStatus, "Full")   == 0 ||
-          strcmp(lmr.VolStatus, "Used")   == 0) {
+      if (bstrcmp(lmr.VolStatus, "Full") ||
+          bstrcmp(lmr.VolStatus, "Used")) {
          Dmsg2(100, "Add prune list MediaId=%d Volume %s\n", (int)lmr.MediaId, lmr.VolumeName);
          count = get_prune_list_for_volume(ua, &lmr, &prune_list);
          Dmsg1(100, "Num pruned = %d\n", count);

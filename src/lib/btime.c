@@ -121,7 +121,7 @@ char *bstrutime(char *dt, int maxlen, utime_t utime)
 }
 
 /* Convert standard time string yyyy-mm-dd hh:mm:ss to Unix time */
-utime_t str_to_utime(char *str)
+utime_t str_to_utime(const char *str)
 {
    struct tm tm;
    time_t time;

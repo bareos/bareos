@@ -250,7 +250,7 @@ bool Console::dir_cmd(int conn, const char *cmd, QStringList &results)
    dircomm->write(cmd);
    while ((stat = dircomm->read()) > 0 && dircomm->is_in_command()) {
       if (mainWin->m_displayAll) display_text(dircomm->msg());
-      strip_trailing_junk(dircomm->msg());
+      strip_trailing_newline(dircomm->msg());
       results << dircomm->msg();
    }
    if (stat > 0 && mainWin->m_displayAll) display_text(dircomm->msg());
@@ -289,7 +289,7 @@ bool Console::sql_cmd(const char *query, QStringList &results)
 }
 
 /*
- * Send an sql query to the Director, and return the
+ * Send a sql query to the Director, and return the
  *  results in a QStringList.  
  */
 bool Console::sql_cmd(int &conn, const char *query, QStringList &results, bool donotify)
@@ -319,7 +319,7 @@ bool Console::sql_cmd(int &conn, const char *query, QStringList &results, bool d
          display_text(dircomm->msg());
          display_text("\n");
       }
-      strip_trailing_junk(dircomm->msg());
+      strip_trailing_newline(dircomm->msg());
       bool doappend = true;
       if (first) {
          QString dum = dircomm->msg();
@@ -440,7 +440,7 @@ bool Console::get_job_defaults(int &conn, struct job_defaults &job_defs, bool do
       }
       /* Pointer to default value */
       *def++ = 0;
-      strip_trailing_junk(def);
+      strip_trailing_newline(def);
 
       if (strcmp(dircomm->msg(), "job") == 0) {
          if (strcmp(def, job_defs.job_name.toUtf8().data()) != 0) {

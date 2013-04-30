@@ -755,7 +755,8 @@ int vtape::bsf()
  */
 int vtape::offline()
 {
-   close();
+   ::close(fd);
+   fd = -1;
    
    atEOF = false;               /* End of file */
    atEOT = false;               /* End of tape */

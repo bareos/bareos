@@ -49,37 +49,24 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
 
-#ifdef HAVE_PYTHON
-
-#undef _POSIX_C_SOURCE
-#include <Python.h>
-
-#include "lib/pythonlib.h"
-
-/* Imported Functions */
-extern PyObject *job_getattr(PyObject *self, char *attrname);
-extern int job_setattr(PyObject *self, char *attrname, PyObject *value);
-
-#endif /* HAVE_PYTHON */
-
 /* Forward referenced subroutines */
 void terminate_dird(int sig);
 static bool check_resources();
+static bool initialize_sql_pooling(void);
 static void cleanup_old_files();
-  
+
 /* Exported subroutines */
 extern "C" void reload_config(int sig);
 extern void invalidate_schedules();
 extern bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Imported subroutines */
-JCR *wait_for_next_job(char *runjob);
-void term_scheduler();
 void term_ua_server();
 void start_UA_server(dlist *addrs);
 void init_job_server(int max_workers);
 void term_job_server();
 void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_level(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_replace(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass);
@@ -89,7 +76,7 @@ static char *runjob = NULL;
 static bool background = true;
 static void init_reload(void);
 static CONFIG *config;
- 
+
 /* Globals Exported */
 DIRRES *director;                     /* Director resource */
 int FDConnectTimeout;
@@ -118,29 +105,41 @@ static bool check_catalog(cat_op mode);
 
 /*
  * This allows the message handler to operate on the database
- *   by using a pointer to this function. The pointer is
- *   needed because the other daemons do not have access
- *   to the database.  If the pointer is
- *   not defined (other daemons), then writing the database
- *   is disabled.
+ * by using a pointer to this function. The pointer is
+ * needed because the other daemons do not have access
+ * to the database. If the pointer is not defined (other daemons),
+ * then writing the database is disabled.
  */
-static bool dir_sql_query(JCR *jcr, const char *cmd)
+static bool dir_db_log_insert(JCR *jcr, utime_t mtime, char *msg)
 {
+   int length;
+   bool retval;
+   char ed1[50];
+   char dt[MAX_TIME_LENGTH];
+   POOLMEM *cmd, *esc_msg;
+
    if (!jcr || !jcr->db || !jcr->db->is_connected()) {
       return false;
    }
 
-   return db_sql_query(jcr->db, cmd);
-}
+   cmd = get_pool_memory(PM_MESSAGE);
+   esc_msg = get_pool_memory(PM_MESSAGE);
 
-static bool dir_sql_escape(JCR *jcr, B_DB *mdb, char *snew, char *old, int len)
-{
-   if (!jcr || !jcr->db || !jcr->db->is_connected()) {
-      return false;
-   }
+   length = strlen(msg) + 1;
 
-   db_escape_string(jcr, mdb, snew, old, len);
-   return true;
+   esc_msg = check_pool_memory_size(esc_msg, length * 2 + 1);
+   db_escape_string(jcr, jcr->db, esc_msg, msg, length);
+
+   bstrutime(dt, sizeof(dt), mtime);
+   Mmsg(cmd, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
+        edit_int64(jcr->JobId, ed1), dt, esc_msg);
+
+   retval = db_sql_query(jcr->db, cmd);
+
+   free_pool_memory(cmd);
+   free_pool_memory(esc_msg);
+
+   return retval;
 }
 
 static void usage()
@@ -185,9 +184,6 @@ int main (int argc, char *argv[])
    bool test_config = false;
    char *uid = NULL;
    char *gid = NULL;
-#ifdef HAVE_PYTHON
-   init_python_interpreter_args python_args;
-#endif /* HAVE_PYTHON */
 
    start_heap = sbrk(0);
    setlocale(LC_ALL, "");
@@ -304,9 +300,9 @@ int main (int argc, char *argv[])
       if (background) {
          daemon_start();
          init_stack_dump();              /* grab new pid */
-      }   
+      }
       /* Create pid must come after we are a daemon -- so we have our final pid */
-      create_pid_file(director->pid_directory, "bacula-dir", 
+      create_pid_file(director->pid_directory, "bacula-dir",
                       get_first_port_host_order(director->DIRaddrs));
       read_state_file(director->working_directory, "bacula-dir",
                       get_first_port_host_order(director->DIRaddrs));
@@ -327,18 +323,20 @@ int main (int argc, char *argv[])
    if (!check_catalog(mode)) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
-   
-   if (test_config) {      
+
+   if (test_config) {
       terminate_dird(0);
+   }
+
+   if (!initialize_sql_pooling()) {
+      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
 
    my_name_is(0, NULL, director->name());    /* set user defined name */
 
    cleanup_old_files();
 
-   /* Plug database interface for library routines */
-   p_sql_query = (sql_query_func)dir_sql_query;
-   p_sql_escape = (sql_escape_func)dir_sql_escape;
+   p_db_log_insert = (db_log_insert_func)dir_db_log_insert;
 
    FDConnectTimeout = (int)director->FDConnectTimeout;
    SDConnectTimeout = (int)director->SDConnectTimeout;
@@ -348,18 +346,6 @@ int main (int argc, char *argv[])
 #endif
 
    init_console_msg(working_directory);
-
-#ifdef HAVE_PYTHON
-   python_args.progname = director->name();
-   python_args.scriptdir = director->scripts_directory;
-   python_args.modulename = "DirStartUp";
-   python_args.configfile = configfile;
-   python_args.workingdir = director->working_directory;
-   python_args.job_getattr = job_getattr;
-   python_args.job_setattr = job_setattr;
-
-   init_python_interpreter(&python_args);
-#endif /* HAVE_PYTHON */
 
    Dmsg0(200, "Start UA server\n");
    start_UA_server(director->DIRaddrs);
@@ -402,8 +388,9 @@ void terminate_dird(int sig)
    already_here = true;
    debug_level = 0;                   /* turn off debug */
    stop_watchdog();
-   generate_daemon_event(NULL, "Exit");
-   unload_plugins();
+   db_sql_pool_destroy();
+   db_flush_backends();
+   unload_dir_plugins();
    write_state_file(director->working_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
    delete_pid_file(director->pid_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
    term_scheduler();
@@ -525,7 +512,7 @@ void reload_config(int sig)
    JCR *jcr;
    int njobs = 0;                     /* number of running jobs */
    int table, rtable;
-   bool ok;       
+   bool ok;
 
    if (already_here) {
       abort();                        /* Oops, recursion -> die */
@@ -546,6 +533,11 @@ void reload_config(int sig)
       Jmsg(NULL, M_ERROR, 0, _("Too many open reload requests. Request ignored.\n"));
       goto bail_out;
    }
+
+   /**
+    * Flush the sql connection pools.
+    */
+   db_sql_pool_flush();
 
    Dmsg1(100, "Reload_config njobs=%d\n", njobs);
    reload_table[table].res_table = config->save_resources();
@@ -617,32 +609,41 @@ bail_out:
 static bool check_resources()
 {
    bool OK = true;
-   JOB *job;
+   JOBRES *job;
    bool need_tls;
 
    LockRes();
 
-   job = (JOB *)GetNextRes(R_JOB, NULL);
+   job = (JOBRES *)GetNextRes(R_JOB, NULL);
    director = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
    if (!director) {
       Jmsg(NULL, M_FATAL, 0, _("No Director resource defined in %s\n"
-"Without that I don't know who I am :-(\n"), configfile);
+                               "Without that I don't know who I am :-(\n"), configfile);
       OK = false;
    } else {
       set_working_directory(director->working_directory);
       if (!director->messages) {       /* If message resource not specified */
-         director->messages = (MSGS *)GetNextRes(R_MSGS, NULL);
+         director->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
          if (!director->messages) {
             Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
             OK = false;
          }
       }
+
+      if (director->optimize_for_size && director->optimize_for_speed) {
+         Jmsg(NULL, M_FATAL, 0, _("Cannot optimize for speed and size define only one in %s\n"), configfile);
+         OK = false;
+      }
+
       if (GetNextRes(R_DIRECTOR, (RES *)director) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
             configfile);
          OK = false;
       }
-      /* tls_require implies tls_enable */
+
+      /*
+       * tls_require implies tls_enable
+       */
       if (director->tls_require) {
          if (have_tls) {
             director->tls_enable = true;
@@ -666,7 +667,7 @@ static bool check_resources()
          OK = false;
       }
 
-      if ((!director->tls_ca_certfile && !director->tls_ca_certdir) && 
+      if ((!director->tls_ca_certfile && !director->tls_ca_certdir) &&
            need_tls && director->tls_verify_peer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\" or \"TLS CA"
               " Certificate Dir\" are defined for Director \"%s\" in %s."
@@ -676,16 +677,20 @@ static bool check_resources()
          OK = false;
       }
 
-      /* If everything is well, attempt to initialize our per-resource TLS context */
+      /*
+       * If everything is well, attempt to initialize our per-resource TLS context
+       */
       if (OK && (need_tls || director->tls_require)) {
-         /* Initialize TLS context:
+         /*
+          * Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
-          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
+          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+          */
          director->tls_ctx = new_tls_context(director->tls_ca_certfile,
             director->tls_ca_certdir, director->tls_certfile,
             director->tls_keyfile, NULL, NULL, director->tls_dhfile,
             director->tls_verify_peer);
-         
+
          if (!director->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
                  director->name(), configfile);
@@ -698,39 +703,47 @@ static bool check_resources()
       Jmsg(NULL, M_FATAL, 0, _("No Job records defined in %s\n"), configfile);
       OK = false;
    }
+
    foreach_res(job, R_JOB) {
       int i;
 
       if (job->jobdefs) {
-         /* Handle Storage alists specifically */
-         JOB *jobdefs = job->jobdefs;
+         /*
+          * Handle Storage alists specifically
+          */
+         JOBRES *jobdefs = job->jobdefs;
          if (jobdefs->storage && !job->storage) {
-            STORE *st;
+            STORERES *store;
             job->storage = New(alist(10, not_owned_by_alist));
-            foreach_alist(st, jobdefs->storage) {
-               job->storage->append(st);
+            foreach_alist(store, jobdefs->storage) {
+               job->storage->append(store);
             }
          }
-         /* Handle RunScripts alists specifically */
+
+         /*
+          * Handle RunScripts alists specifically
+          */
          if (jobdefs->RunScripts) {
             RUNSCRIPT *rs, *elt;
-            
+
             if (!job->RunScripts) {
                job->RunScripts = New(alist(10, not_owned_by_alist));
             }
-           
+
             foreach_alist(rs, jobdefs->RunScripts) {
                elt = copy_runscript(rs);
                job->RunScripts->append(elt); /* we have to free it */
             }
          }
 
-         /* Transfer default items from JobDefs Resource */
+         /*
+          * Transfer default items from JobDefs Resource
+          */
          for (i=0; job_items[i].name; i++) {
-            char **def_svalue, **svalue;  /* string value */
-            uint32_t *def_ivalue, *ivalue;     /* integer value */
-            bool *def_bvalue, *bvalue;    /* bool value */
-            int64_t *def_lvalue, *lvalue; /* 64 bit values */
+            char **def_svalue, **svalue;   /* string value */
+            uint32_t *def_ivalue, *ivalue; /* integer value */
+            bool *def_bvalue, *bvalue;     /* bool value */
+            int64_t *def_lvalue, *lvalue;  /* 64 bit values */
             uint32_t offset;
 
             Dmsg4(1400, "Job \"%s\", field \"%s\" bit=%d def=%d\n",
@@ -743,24 +756,24 @@ static bool check_resources()
                Dmsg2(400, "Job \"%s\", field \"%s\": getting default.\n",
                  job->name(), job_items[i].name);
                offset = (char *)(job_items[i].value) - (char *)&res_all;
-               /*
-                * Handle strings and directory strings
-                */
                if (job_items[i].handler == store_str ||
                    job_items[i].handler == store_dir) {
+                  /*
+                   * Handle strings and directory strings
+                   */
                   def_svalue = (char **)((char *)(job->jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_svalue=%s item %d offset=%u\n",
                        job->name(), job_items[i].name, *def_svalue, i, offset);
                   svalue = (char **)((char *)job + offset);
                   if (*svalue) {
-                     Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
+                     free(*svalue);
                   }
                   *svalue = bstrdup(*def_svalue);
                   set_bit(i, job->hdr.item_present);
-               /*
-                * Handle resources
-                */
                } else if (job_items[i].handler == store_res) {
+                  /*
+                   * Handle resources
+                   */
                   def_svalue = (char **)((char *)(job->jobdefs) + offset);
                   Dmsg4(400, "Job \"%s\", field \"%s\" item %d offset=%u\n",
                        job->name(), job_items[i].name, i, offset);
@@ -770,47 +783,48 @@ static bool check_resources()
                   }
                   *svalue = *def_svalue;
                   set_bit(i, job->hdr.item_present);
-               /*
-                * Handle alist resources
-                */
                } else if (job_items[i].handler == store_alist_res) {
+                  /*
+                   * Handle alist resources
+                   */
                   if (bit_is_set(i, job->jobdefs->hdr.item_present)) {
                      set_bit(i, job->hdr.item_present);
                   }
-               /*
-                * Handle integer fields
-                *    Note, our store_bit does not handle bitmaped fields
-                */
-               } else if (job_items[i].handler == store_bit     ||
-                          job_items[i].handler == store_pint32  ||
+               } else if (job_items[i].handler == store_bit ||
+                          job_items[i].handler == store_pint32 ||
                           job_items[i].handler == store_jobtype ||
-                          job_items[i].handler == store_level   ||
-                          job_items[i].handler == store_int32   ||
-                          job_items[i].handler == store_size32  ||
+                          job_items[i].handler == store_protocoltype ||
+                          job_items[i].handler == store_level ||
+                          job_items[i].handler == store_int32 ||
+                          job_items[i].handler == store_size32 ||
                           job_items[i].handler == store_migtype ||
                           job_items[i].handler == store_replace) {
+                  /*
+                   * Handle integer fields
+                   *    Note, our store_bit does not handle bitmaped fields
+                   */
                   def_ivalue = (uint32_t *)((char *)(job->jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_ivalue=%d item %d offset=%u\n",
                        job->name(), job_items[i].name, *def_ivalue, i, offset);
                   ivalue = (uint32_t *)((char *)job + offset);
                   *ivalue = *def_ivalue;
                   set_bit(i, job->hdr.item_present);
-               /*
-                * Handle 64 bit integer fields
-                */
                } else if (job_items[i].handler == store_time   ||
                           job_items[i].handler == store_size64 ||
                           job_items[i].handler == store_int64) {
+                  /*
+                   * Handle 64 bit integer fields
+                   */
                   def_lvalue = (int64_t *)((char *)(job->jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_lvalue=%" lld " item %d offset=%u\n",
                        job->name(), job_items[i].name, *def_lvalue, i, offset);
                   lvalue = (int64_t *)((char *)job + offset);
                   *lvalue = *def_lvalue;
                   set_bit(i, job->hdr.item_present);
-               /*
-                * Handle bool fields
-                */
                } else if (job_items[i].handler == store_bool) {
+                  /*
+                   * Handle bool fields
+                   */
                   def_bvalue = (bool *)((char *)(job->jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_bvalue=%d item %d offset=%u\n",
                        job->name(), job_items[i].name, *def_bvalue, i, offset);
@@ -821,6 +835,7 @@ static bool check_resources()
             }
          }
       }
+
       /*
        * Ensure that all required items are present
        */
@@ -832,11 +847,15 @@ static bool check_resources()
                   OK = false;
                 }
          }
-         /* If this triggers, take a look at lib/parse_conf.h */
+
+         /*
+          * If this triggers, take a look at lib/parse_conf.h
+          */
          if (i >= MAX_RES_ITEMS) {
             Emsg0(M_ERROR_TERM, 0, _("Too many items in Job resource\n"));
          }
       }
+
       if (!job->storage && !job->pool->storage) {
          Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"),
             job->name());
@@ -845,10 +864,14 @@ static bool check_resources()
    } /* End loop over Job res */
 
 
-   /* Loop over Consoles */
+   /*
+    * Loop over Consoles
+    */
    CONRES *cons;
    foreach_res(cons, R_CONSOLE) {
-      /* tls_require implies tls_enable */
+      /*
+       * tls_require implies tls_enable
+       */
       if (cons->tls_require) {
          if (have_tls) {
             cons->tls_enable = true;
@@ -860,7 +883,7 @@ static bool check_resources()
       }
 
       need_tls = cons->tls_enable || cons->tls_authenticate;
-      
+
       if (!cons->tls_certfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
             cons->name(), configfile);
@@ -873,7 +896,7 @@ static bool check_resources()
          OK = false;
       }
 
-      if ((!cons->tls_ca_certfile && !cons->tls_ca_certdir) 
+      if ((!cons->tls_ca_certfile && !cons->tls_ca_certdir)
             && need_tls && cons->tls_verify_peer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\" or \"TLS CA"
             " Certificate Dir\" are defined for Console \"%s\" in %s."
@@ -882,15 +905,20 @@ static bool check_resources()
             cons->name(), configfile);
          OK = false;
       }
-      /* If everything is well, attempt to initialize our per-resource TLS context */
+
+      /*
+       * If everything is well, attempt to initialize our per-resource TLS context
+       */
       if (OK && (need_tls || cons->tls_require)) {
-         /* Initialize TLS context:
+         /*
+          * Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
-          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
+          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+          */
          cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
-            cons->tls_ca_certdir, cons->tls_certfile,
-            cons->tls_keyfile, NULL, NULL, cons->tls_dhfile, cons->tls_verify_peer);
-         
+                                         cons->tls_ca_certdir, cons->tls_certfile,
+                                         cons->tls_keyfile, NULL, NULL,
+                                         cons->tls_dhfile, cons->tls_verify_peer);
          if (!cons->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                cons->name(), configfile);
@@ -900,10 +928,14 @@ static bool check_resources()
 
    }
 
-   /* Loop over Clients */
-   CLIENT *client;
+   /*
+    * Loop over Clients
+    */
+   CLIENTRES *client;
    foreach_res(client, R_CLIENT) {
-      /* tls_require implies tls_enable */
+      /*
+       * tls_require implies tls_enable
+       */
       if (client->tls_require) {
          if (have_tls) {
             client->tls_enable = true;
@@ -921,16 +953,19 @@ static bool check_resources()
          OK = false;
       }
 
-      /* If everything is well, attempt to initialize our per-resource TLS context */
+      /*
+       * If everything is well, attempt to initialize our per-resource TLS context
+       */
       if (OK && (need_tls || client->tls_require)) {
-         /* Initialize TLS context:
+         /*
+          * Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
-          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
+          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+          */
          client->tls_ctx = new_tls_context(client->tls_ca_certfile,
-            client->tls_ca_certdir, client->tls_certfile,
-            client->tls_keyfile, NULL, NULL, NULL,
-            true);
-         
+                                           client->tls_ca_certdir, client->tls_certfile,
+                                           client->tls_keyfile, NULL, NULL, NULL,
+                                           true);
          if (!client->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                client->name(), configfile);
@@ -939,10 +974,14 @@ static bool check_resources()
       }
    }
 
-   /* Loop over Storages */
-   STORE *store;
+   /*
+    * Loop over Storages
+    */
+   STORERES *store;
    foreach_res(store, R_STORAGE) {
-      /* tls_require implies tls_enable */
+      /*
+       * tls_require implies tls_enable
+       */
       if (store->tls_require) {
          if (have_tls) {
             store->tls_enable = true;
@@ -962,15 +1001,18 @@ static bool check_resources()
          OK = false;
       }
 
-      /* If everything is well, attempt to initialize our per-resource TLS context */
+      /*
+       * If everything is well, attempt to initialize our per-resource TLS context
+       */
       if (OK && (need_tls || store->tls_require)) {
-        /* Initialize TLS context:
+        /*
+         * Initialize TLS context:
          * Args: CA certfile, CA certdir, Certfile, Keyfile,
-         * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
+         * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+         */
          store->tls_ctx = new_tls_context(store->tls_ca_certfile,
-            store->tls_ca_certdir, store->tls_certfile,
-            store->tls_keyfile, NULL, NULL, NULL, true);
-
+                                          store->tls_ca_certdir, store->tls_certfile,
+                                          store->tls_keyfile, NULL, NULL, NULL, true);
          if (!store->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
                  store->name(), configfile);
@@ -981,14 +1023,42 @@ static bool check_resources()
 
    UnlockRes();
    if (OK) {
-      close_msg(NULL);                /* close temp message handler */
+      close_msg(NULL);                    /* close temp message handler */
       init_msg(NULL, director->messages); /* open daemon message handler */
    }
    return OK;
 }
 
-/* 
- * In this routine, 
+/*
+ * Initialize the sql pooling.
+ */
+static bool initialize_sql_pooling(void)
+{
+   bool retval = true;
+   CATRES *catalog;
+
+   foreach_res(catalog, R_CATALOG) {
+      if (!db_sql_pool_initialize(catalog->db_driver, catalog->db_name, catalog->db_user,
+                                  catalog->db_password, catalog->db_address,
+                                  catalog->db_port, catalog->db_socket,
+                                  catalog->disable_batch_insert,
+                                  catalog->pooling_min_connections,
+                                  catalog->pooling_max_connections,
+                                  catalog->pooling_increment_connections,
+                                  catalog->pooling_idle_timeout,
+                                  catalog->pooling_validate_timeout)) {
+         Jmsg(NULL, M_FATAL, 0, _("Could not setup sql pooling for Catalog \"%s\", database \"%s\".\n"),
+              catalog->name(), catalog->db_name);
+         retval = false;
+         continue;
+      }
+   }
+
+   return retval;
+}
+
+/*
+ * In this routine,
  *  - we can check the connection (mode=CHECK_CONNECTION)
  *  - we can synchronize the catalog with the configuration (mode=UPDATE_CATALOG)
  *  - we can synchronize, and fix old job records (mode=UPDATE_AND_FIX)
@@ -998,16 +1068,21 @@ static bool check_catalog(cat_op mode)
    bool OK = true;
 
    /* Loop over databases */
-   CAT *catalog;
+   CATRES *catalog;
    foreach_res(catalog, R_CATALOG) {
       B_DB *db;
       /*
        * Make sure we can open catalog, otherwise print a warning
        * message because the server is probably not running.
        */
-      db = db_init_database(NULL, catalog->db_driver, catalog->db_name, catalog->db_user,
-                            catalog->db_password, catalog->db_address,
-                            catalog->db_port, catalog->db_socket,
+      db = db_init_database(NULL,
+                            catalog->db_driver,
+                            catalog->db_name,
+                            catalog->db_user,
+                            catalog->db_password,
+                            catalog->db_address,
+                            catalog->db_port,
+                            catalog->db_socket,
                             catalog->mult_db_connections,
                             catalog->disable_batch_insert);
       if (!db || !db_open_database(NULL, db)) {
@@ -1037,7 +1112,7 @@ static bool check_catalog(cat_op mode)
       }
 
       /* Loop over all pools, defining/updating them in each database */
-      POOL *pool;
+      POOLRES *pool;
       foreach_res(pool, R_POOL) {
          /*
           * If the Pool has a catalog resource create the pool only
@@ -1062,7 +1137,7 @@ static bool check_catalog(cat_op mode)
       }
 
       /* Ensure basic client record is in DB */
-      CLIENT *client;
+      CLIENTRES *client;
       foreach_res(client, R_CLIENT) {
          CLIENT_DBR cr;
          /* Create clients only if they use the current catalog */
@@ -1071,7 +1146,7 @@ static bool check_catalog(cat_op mode)
                   client->name(), client->catalog->name(), catalog->name());
             continue;
          }
-         Dmsg2(500, "create cat=%s for client=%s\n", 
+         Dmsg2(500, "create cat=%s for client=%s\n",
                client->catalog->name(), client->name());
          memset(&cr, 0, sizeof(cr));
          bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
@@ -1079,7 +1154,7 @@ static bool check_catalog(cat_op mode)
       }
 
       /* Ensure basic storage record is in DB */
-      STORE *store;
+      STORERES *store;
       foreach_res(store, R_STORAGE) {
          STORAGE_DBR sr;
          MEDIATYPE_DBR mtr;
@@ -1095,7 +1170,7 @@ static bool check_catalog(cat_op mode)
          bstrncpy(sr.Name, store->name(), sizeof(sr.Name));
          sr.AutoChanger = store->autochanger;
          if (!db_create_storage_record(NULL, db, &sr)) {
-            Jmsg(NULL, M_FATAL, 0, _("Could not create storage record for %s\n"), 
+            Jmsg(NULL, M_FATAL, 0, _("Could not create storage record for %s\n"),
                  store->name());
             OK = false;
          }
@@ -1112,7 +1187,7 @@ static bool check_catalog(cat_op mode)
 
       /* Loop over all counters, defining them in each database */
       /* Set default value in all counters */
-      COUNTER *counter;
+      COUNTERRES *counter;
       foreach_res(counter, R_COUNTER) {
          /* Write to catalog? */
          if (!counter->created && counter->Catalog == catalog) {
@@ -1138,8 +1213,8 @@ static bool check_catalog(cat_op mode)
       }
       /* cleanup old job records */
       if (mode == UPDATE_AND_FIX) {
-         db_sql_query(db, cleanup_created_job, NULL, NULL);
-         db_sql_query(db, cleanup_running_job, NULL, NULL);
+         db_sql_query(db, cleanup_created_job);
+         db_sql_query(db, cleanup_running_job);
       }
 
       /* Set type in global for debugging */
@@ -1187,10 +1262,10 @@ static void cleanup_old_files()
    if (name_max < 1024) {
       name_max = 1024;
    }
-      
+
    if (!(dp = opendir(director->working_directory))) {
       berrno be;
-      Pmsg2(000, "Failed to open working dir %s for cleanup: ERR=%s\n", 
+      Pmsg2(000, "Failed to open working dir %s for cleanup: ERR=%s\n",
             director->working_directory, be.bstrerror());
       goto get_out1;
       return;
@@ -1205,7 +1280,7 @@ static void cleanup_old_files()
       if (strcmp(result->d_name, ".") == 0 || strcmp(result->d_name, "..") == 0 ||
           strncmp(result->d_name, my_name, my_name_len) != 0) {
          Dmsg1(500, "Skipped: %s\n", result->d_name);
-         continue;    
+         continue;
       }
 
       /* Unlink files that match regexes */

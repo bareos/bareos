@@ -330,14 +330,14 @@ bool BSOCK::open(JCR *jcr, const char *name, char *host, char *service,
  */
 bool BSOCK::set_locking()
 {
-   int stat;
+   int status;
    if (m_use_locking) {
       return true;                      /* already set */
    }
-   if ((stat = pthread_mutex_init(&m_mutex, NULL)) != 0) {
+   if ((status = pthread_mutex_init(&m_mutex, NULL)) != 0) {
       berrno be;
       Qmsg(m_jcr, M_FATAL, 0, _("Could not init bsock mutex. ERR=%s\n"),
-         be.bstrerror(stat));
+         be.bstrerror(status));
       return false;
    }
    m_use_locking = true;
@@ -878,28 +878,23 @@ void BSOCK::restore_blocking (int flags)
  */
 int BSOCK::wait_data(int sec, int usec)
 {
-   fd_set fdset;
-   struct timeval tv;
+   int msec;
 
-   FD_ZERO(&fdset);
-   FD_SET((unsigned)m_fd, &fdset);
-   for (;;) {
-      tv.tv_sec = sec;
-      tv.tv_usec = usec;
-      switch (select(m_fd + 1, &fdset, NULL, NULL, &tv)) {
-      case 0:                      /* timeout */
-         b_errno = 0;
-         return 0;
-      case -1:
-         b_errno = errno;
-         if (errno == EINTR) {
-            continue;
-         }
-         return -1;                /* error return */
-      default:
-         b_errno = 0;
-         return 1;
-      }
+   if (this == NULL) {
+      return -1;
+   }
+
+   msec = (sec * 1000) + (usec / 1000);
+   switch (wait_for_readable_fd(m_fd, msec, true)) {
+   case 0:
+      b_errno = 0;
+      return 0;
+   case -1:
+      b_errno = errno;
+      return -1;                /* error return */
+   default:
+      b_errno = 0;
+      return 1;
    }
 }
 
@@ -908,18 +903,15 @@ int BSOCK::wait_data(int sec, int usec)
  */
 int BSOCK::wait_data_intr(int sec, int usec)
 {
-   fd_set fdset;
-   struct timeval tv;
+   int msec;
 
    if (this == NULL) {
       return -1;
    }
-   FD_ZERO(&fdset);
-   FD_SET((unsigned)m_fd, &fdset);
-   tv.tv_sec = sec;
-   tv.tv_usec = usec;
-   switch (select(m_fd + 1, &fdset, NULL, NULL, &tv)) {
-   case 0:                      /* timeout */
+
+   msec = (sec * 1000) + (usec / 1000);
+   switch (wait_for_readable_fd(m_fd, msec, false)) {
+   case 0:
       b_errno = 0;
       return 0;
    case -1:
@@ -927,9 +919,8 @@ int BSOCK::wait_data_intr(int sec, int usec)
       return -1;                /* error return */
    default:
       b_errno = 0;
-      break;
+      return 1;
    }
-   return 1;
 }
 
 /*
@@ -1074,7 +1065,7 @@ bool BSOCK::authenticate_director(const char *name, const char *password,
 
    dir->stop_timer();
    Dmsg1(10, "<dird: %s", dir->msg);
-   if (strncmp(dir->msg, OKhello, sizeof(OKhello)-1) != 0) {
+   if (!bstrncmp(dir->msg, OKhello, sizeof(OKhello)-1)) {
       bsnprintf(response, response_len, _("Director at \"%s:%d\" rejected Hello command\n"),
          dir->host(), dir->port());
       return false;
@@ -1091,4 +1082,47 @@ bail_out:
              "Please see " MANUAL_AUTH_URL " for help.\n"),
              dir->host(), dir->port());
    return false;
+}
+
+/* Try to limit the bandwidth of a network connection
+ */
+void BSOCK::control_bwlimit(int bytes)
+{
+   btime_t now, temp;
+   if (bytes == 0) {
+      return;
+   }
+
+   now = get_current_btime();          /* microseconds */
+   temp = now - m_last_tick;           /* microseconds */
+
+   m_nb_bytes += bytes;
+
+   /* Less than 0.1ms since the last call, see the next time */
+   if (temp < 100) {
+      return;
+   }
+
+   if (temp > 10000000) { /* Take care of clock problems (>10s) */
+      m_nb_bytes = bytes;
+      m_last_tick = now;
+      return;
+   }
+
+   /* Remove what was authorised to be written in temp us */
+   m_nb_bytes -= (int64_t)(temp * ((double)m_bwlimit / 1000000.0));
+
+   if (m_nb_bytes < 0) {
+      m_nb_bytes = 0;
+   }
+
+   /* What exceed should be converted in sleep time */
+   int64_t usec_sleep = (int64_t)(m_nb_bytes /((double)m_bwlimit / 1000000.0));
+   if (usec_sleep > 100) {
+      bmicrosleep(0, usec_sleep);
+      m_last_tick = get_current_btime();
+      m_nb_bytes = 0;
+   } else {
+      m_last_tick = now;
+   }
 }

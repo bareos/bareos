@@ -39,36 +39,30 @@
  *                                                                          *
  ****************************************************************************/
 
-#ifndef BUILD_PLUGIN
-extern DLL_IMP_EXP alist *bplugin_list;
-#endif
-
 /* Universal return codes from all plugin functions */
 typedef enum {
-  bRC_OK     = 0,                        /* OK */
-  bRC_Stop   = 1,                        /* Stop calling other plugins */
-  bRC_Error  = 2,                        /* Some kind of error */
-  bRC_More   = 3,                        /* More files to backup */
-  bRC_Term   = 4,                        /* Unload me */
-  bRC_Seen   = 5,                        /* Return code from checkFiles */
-  bRC_Core   = 6,                        /* Let Bacula core handles this file */
-  bRC_Skip   = 7,                        /* Skip the proposed file */
-  bRC_Cancel = 8,                        /* Job cancelled */
+   bRC_OK     = 0,                       /* OK */
+   bRC_Stop   = 1,                       /* Stop calling other plugins */
+   bRC_Error  = 2,                       /* Some kind of error */
+   bRC_More   = 3,                       /* More files to backup */
+   bRC_Term   = 4,                       /* Unload me */
+   bRC_Seen   = 5,                       /* Return code from checkFiles */
+   bRC_Core   = 6,                       /* Let Bacula core handles this file */
+   bRC_Skip   = 7,                       /* Skip the proposed file */
+   bRC_Cancel = 8,                       /* Job cancelled */
 
-  bRC_Max    = 9999                      /* Max code Bacula can use */
+   bRC_Max    = 9999                     /* Max code Bacula can use */
 } bRC;
-
-
 
 /* Context packet as first argument of all functions */
 struct bpContext {
-  void *bContext;                        /* Bacula private context */
-  void *pContext;                        /* Plugin private context */
+   void *bContext;                       /* Bacula private context */
+   void *pContext;                       /* Plugin private context */
 };
 
 extern "C" {
-typedef bRC (*t_loadPlugin)(void *binfo, void *bfuncs, void **pinfo, void **pfuncs);
-typedef bRC (*t_unloadPlugin)(void);
+   typedef bRC (*t_loadPlugin)(void *binfo, void *bfuncs, void **pinfo, void **pfuncs);
+   typedef bRC (*t_unloadPlugin)(void);
 }
 
 class Plugin {
@@ -84,16 +78,31 @@ public:
    bool createFileCalled;
 };
 
+typedef struct gen_pluginInfo {
+   uint32_t size;
+   uint32_t version;
+   const char *plugin_magic;
+   const char *plugin_license;
+   const char *plugin_author;
+   const char *plugin_date;
+   const char *plugin_version;
+   const char *plugin_description;
+} genpInfo;
+
 /* Functions */
-extern Plugin *new_plugin();
-extern bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir, 
-        const char *type, bool is_plugin_compatible(Plugin *plugin));
-extern void unload_plugins();
+extern bool load_plugins(void *binfo, void *bfuncs, alist *plugin_list,
+                         const char *plugin_dir, const char *type,
+                         bool is_plugin_compatible(Plugin *plugin));
+extern void unload_plugins(alist *plugin_list);
+extern int list_plugins(alist *plugin_list, POOL_MEM &msg);
 
 /* Each daemon can register a debug hook that will be called
  * after a fatal signal
  */
 typedef void (dbg_plugin_hook_t)(Plugin *plug, FILE *fp);
 extern void dbg_plugin_add_hook(dbg_plugin_hook_t *fct);
+typedef void(dbg_print_plugin_hook_t)(FILE *fp);
+extern void dbg_print_plugin_add_hook(dbg_print_plugin_hook_t *fct);
+extern void dump_plugins(alist *plugin_list, FILE *fp);
 
 #endif /* __PLUGINS_H */

@@ -90,7 +90,6 @@ enum {
 enum {
    B_FILE_DEV = 1,
    B_TAPE_DEV,
-   B_DVD_DEV,
    B_FIFO_DEV,
    B_VTAPE_DEV,                       /* change to B_TAPE_DEV after init */
    B_FTP_DEV,
@@ -98,70 +97,66 @@ enum {
 };
 
 /* Generic status bits returned from status_dev() */
-#define BMT_TAPE           (1<<0)     /* is tape device */
-#define BMT_EOF            (1<<1)     /* just read EOF */
-#define BMT_BOT            (1<<2)     /* at beginning of tape */
-#define BMT_EOT            (1<<3)     /* end of tape reached */
-#define BMT_SM             (1<<4)     /* DDS setmark */
-#define BMT_EOD            (1<<5)     /* DDS at end of data */
-#define BMT_WR_PROT        (1<<6)     /* tape write protected */
-#define BMT_ONLINE         (1<<7)     /* tape online */
-#define BMT_DR_OPEN        (1<<8)     /* tape door open */
-#define BMT_IM_REP_EN      (1<<9)     /* immediate report enabled */
+#define BMT_TAPE           (1 << 0)   /* is tape device */
+#define BMT_EOF            (1 << 1)   /* just read EOF */
+#define BMT_BOT            (1 << 2)   /* at beginning of tape */
+#define BMT_EOT            (1 << 3)   /* end of tape reached */
+#define BMT_SM             (1 << 4)   /* DDS setmark */
+#define BMT_EOD            (1 << 5)   /* DDS at end of data */
+#define BMT_WR_PROT        (1 << 6)   /* tape write protected */
+#define BMT_ONLINE         (1 << 7)   /* tape online */
+#define BMT_DR_OPEN        (1 << 8)   /* tape door open */
+#define BMT_IM_REP_EN      (1 << 9)   /* immediate report enabled */
 
 
 /* Bits for device capabilities */
-#define CAP_EOF            (1<<0)     /* has MTWEOF */
-#define CAP_BSR            (1<<1)     /* has MTBSR */
-#define CAP_BSF            (1<<2)     /* has MTBSF */
-#define CAP_FSR            (1<<3)     /* has MTFSR */
-#define CAP_FSF            (1<<4)     /* has MTFSF */
-#define CAP_EOM            (1<<5)     /* has MTEOM */
-#define CAP_REM            (1<<6)     /* is removable media */
-#define CAP_RACCESS        (1<<7)     /* is random access device */
-#define CAP_AUTOMOUNT      (1<<8)     /* Read device at start to see what is there */
-#define CAP_LABEL          (1<<9)     /* Label blank tapes */
-#define CAP_ANONVOLS       (1<<10)    /* Mount without knowing volume name */
-#define CAP_ALWAYSOPEN     (1<<11)    /* always keep device open */
-#define CAP_AUTOCHANGER    (1<<12)    /* AutoChanger */
-#define CAP_OFFLINEUNMOUNT (1<<13)    /* Offline before unmount */
-#define CAP_STREAM         (1<<14)    /* Stream device */
-#define CAP_BSFATEOM       (1<<15)    /* Backspace file at EOM */
-#define CAP_FASTFSF        (1<<16)    /* Fast forward space file */
-#define CAP_TWOEOF         (1<<17)    /* Write two eofs for EOM */
-#define CAP_CLOSEONPOLL    (1<<18)    /* Close device on polling */
-#define CAP_POSITIONBLOCKS (1<<19)    /* Use block positioning */
-#define CAP_MTIOCGET       (1<<20)    /* Basic support for fileno and blkno */
-#define CAP_REQMOUNT       (1<<21)    /* Require mount/unmount */
-#define CAP_CHECKLABELS    (1<<22)    /* Check for ANSI/IBM labels */
-#define CAP_BLOCKCHECKSUM  (1<<23)    /* Create/test block checksum */
-
-/* Test state */
-#define dev_state(dev, st_state) ((dev)->state & (st_state))
+#define CAP_EOF            (1 << 0)   /* has MTWEOF */
+#define CAP_BSR            (1 << 1)   /* has MTBSR */
+#define CAP_BSF            (1 << 2)   /* has MTBSF */
+#define CAP_FSR            (1 << 3)   /* has MTFSR */
+#define CAP_FSF            (1 << 4)   /* has MTFSF */
+#define CAP_EOM            (1 << 5)   /* has MTEOM */
+#define CAP_REM            (1 << 6)   /* is removable media */
+#define CAP_RACCESS        (1 << 7)   /* is random access device */
+#define CAP_AUTOMOUNT      (1 << 8)   /* Read device at start to see what is there */
+#define CAP_LABEL          (1 << 9)   /* Label blank tapes */
+#define CAP_ANONVOLS       (1 << 10)  /* Mount without knowing volume name */
+#define CAP_ALWAYSOPEN     (1 << 11)  /* always keep device open */
+#define CAP_AUTOCHANGER    (1 << 12)  /* AutoChanger */
+#define CAP_OFFLINEUNMOUNT (1 << 13)  /* Offline before unmount */
+#define CAP_STREAM         (1 << 14)  /* Stream device */
+#define CAP_BSFATEOM       (1 << 15)  /* Backspace file at EOM */
+#define CAP_FASTFSF        (1 << 16)  /* Fast forward space file */
+#define CAP_TWOEOF         (1 << 17)  /* Write two eofs for EOM */
+#define CAP_CLOSEONPOLL    (1 << 18)  /* Close device on polling */
+#define CAP_POSITIONBLOCKS (1 << 19)  /* Use block positioning */
+#define CAP_MTIOCGET       (1 << 20)  /* Basic support for fileno and blkno */
+#define CAP_REQMOUNT       (1 << 21)  /* Require mount/unmount */
+#define CAP_CHECKLABELS    (1 << 22)  /* Check for ANSI/IBM labels */
+#define CAP_BLOCKCHECKSUM  (1 << 23)  /* Create/test block checksum */
 
 /* Device state bits */
-#define ST_XXXXXX          (1<<0)     /* was ST_OPENED */
-#define ST_XXXXX           (1<<1)     /* was ST_TAPE */
-#define ST_XXXX            (1<<2)     /* was ST_FILE */
-#define ST_XXX             (1<<3)     /* was ST_FIFO */
-#define ST_XX              (1<<4)     /* was ST_DVD */
-#define ST_X               (1<<5)     /* was ST_PROG */
+#define ST_XXXXXX          (1 << 0)   /* was ST_OPENED */
+#define ST_XXXXX           (1 << 1)   /* was ST_TAPE */
+#define ST_XXXX            (1 << 2)   /* was ST_FILE */
+#define ST_XXX             (1 << 3)   /* was ST_FIFO */
+#define ST_XX              (1 << 4)   /* was ST_DVD */
+#define ST_X               (1 << 5)   /* was ST_PROG */
 
-#define ST_LABEL           (1<<6)     /* label found */
-#define ST_MALLOC          (1<<7)     /* dev packet malloc'ed in init_dev() */
-#define ST_APPEND          (1<<8)     /* ready for Bacula append */
-#define ST_READ            (1<<9)     /* ready for Bacula read */
-#define ST_EOT             (1<<10)    /* at end of tape */
-#define ST_WEOT            (1<<11)    /* Got EOT on write */
-#define ST_EOF             (1<<12)    /* Read EOF i.e. zero bytes */
-#define ST_NEXTVOL         (1<<13)    /* Start writing on next volume */
-#define ST_SHORT           (1<<14)    /* Short block read */
-#define ST_MOUNTED         (1<<15)    /* the device is mounted to the mount point */
-#define ST_MEDIA           (1<<16)    /* Media found in mounted device */
-#define ST_OFFLINE         (1<<17)    /* set offline by operator */
-#define ST_PART_SPOOLED    (1<<18)    /* spooling part */
-#define ST_FREESPACE_OK    (1<<19)    /* Have valid freespace for DVD */
-
+#define ST_LABEL           (1 << 6)   /* label found */
+#define ST_MALLOC          (1 << 7)   /* dev packet malloc'ed in init_dev() */
+#define ST_APPEND          (1 << 8)   /* ready for Bacula append */
+#define ST_READ            (1 << 9)   /* ready for Bacula read */
+#define ST_EOT             (1 << 10)  /* at end of tape */
+#define ST_WEOT            (1 << 11)  /* Got EOT on write */
+#define ST_EOF             (1 << 12)  /* Read EOF i.e. zero bytes */
+#define ST_NEXTVOL         (1 << 13)  /* Start writing on next volume */
+#define ST_SHORT           (1 << 14)  /* Short block read */
+#define ST_MOUNTED         (1 << 15)  /* the device is mounted to the mount point */
+#define ST_MEDIA           (1 << 16)  /* Media found in mounted device */
+#define ST_OFFLINE         (1 << 17)  /* set offline by operator */
+#define ST_PART_SPOOLED    (1 << 18)  /* spooling part */
+#define ST_CRYPTOKEY       (1 << 19)  /* The device has a crypto key loaded */
 
 /* Volume Catalog Information structure definition */
 struct VOLUME_CAT_INFO {
@@ -170,7 +165,6 @@ struct VOLUME_CAT_INFO {
    uint32_t VolCatFiles;              /* Number of files */
    uint32_t VolCatBlocks;             /* Number of blocks */
    uint64_t VolCatBytes;              /* Number of bytes written */
-   uint32_t VolCatParts;              /* Number of parts written */
    uint32_t VolCatMounts;             /* Number of mounts this volume */
    uint32_t VolCatErrors;             /* Number of errors this volume */
    uint32_t VolCatWrites;             /* Number of writes this volume */
@@ -179,24 +173,25 @@ struct VOLUME_CAT_INFO {
    uint32_t VolCatRecycles;           /* Number of recycles this volume */
    uint32_t EndFile;                  /* Last file number */
    uint32_t EndBlock;                 /* Last block number */
-   int32_t  LabelType;                /* Bacula/ANSI/IBM */
-   int32_t  Slot;                     /* >0=Slot loaded, 0=nothing, -1=unknown */
+   int32_t LabelType;                 /* Bacula/ANSI/IBM */
+   int32_t Slot;                      /* >0=Slot loaded, 0=nothing, -1=unknown */
    uint32_t VolCatMaxJobs;            /* Maximum Jobs to write to volume */
    uint32_t VolCatMaxFiles;           /* Maximum files to write to volume */
    uint64_t VolCatMaxBytes;           /* Max bytes to write to volume */
    uint64_t VolCatCapacityBytes;      /* capacity estimate */
-   btime_t  VolReadTime;              /* time spent reading */
-   btime_t  VolWriteTime;             /* time spent writing this Volume */
-   int64_t  VolMediaId;               /* MediaId */
-   utime_t  VolFirstWritten;          /* Time of first write */
-   utime_t  VolLastWritten;           /* Time of last write */
-   bool     InChanger;                /* Set if vol in current magazine */
-   bool     is_valid;                 /* set if this data is valid */
+   btime_t VolReadTime;               /* time spent reading */
+   btime_t VolWriteTime;              /* time spent writing this Volume */
+   int64_t VolMediaId;                /* MediaId */
+   utime_t VolFirstWritten;           /* Time of first write */
+   utime_t VolLastWritten;            /* Time of last write */
+   bool InChanger;                    /* Set if vol in current magazine */
+   bool is_valid;                     /* set if this data is valid */
    char VolCatStatus[20];             /* Volume status */
    char VolCatName[MAX_NAME_LENGTH];  /* Desired volume to mount */
+   char VolEncrKey[MAX_NAME_LENGTH];  /* Encryption Key needed to read the media */
 };
 
-class DEVRES;                        /* Device resource defined in stored_conf.h */
+class DEVRES; /* Device resource defined in stored_conf.h */
 class DCR; /* forward reference */
 class VOLRES; /* forward reference */
 
@@ -239,6 +234,7 @@ public:
    int openmode;                      /* parameter passed to open_dev (useful to reopen the device) */
    int dev_type;                      /* device type */
    bool autoselect;                   /* Autoselect in autochanger */
+   bool norewindonclose;              /* Don't rewind tape drive on close */
    bool initiated;                    /* set when init_dev() called */
    int label_type;                    /* Bacula/ANSI/IBM label types */
    uint32_t drive_index;              /* Autochanger drive index (base 0) */
@@ -264,19 +260,7 @@ public:
    uint32_t max_open_wait;            /* max secs to allow for open */
    uint32_t max_open_vols;            /* max simultaneous open volumes */
    
-   uint64_t max_part_size;            /* max part size */
-   uint64_t part_size;                /* current part size */
-   uint32_t part;                     /* current part number (starts at 0) */
-   uint64_t part_start;               /* current part start address (relative to the whole volume) */
-   uint32_t num_dvd_parts;            /* number of parts WRITTEN on the DVD */
-   /* state ST_FREESPACE_OK is set if free_space is valid */
-   uint64_t free_space;               /* current free space on medium (without the current part) */
-   int free_space_errno;              /* indicates errno getting freespace */
-   bool truncating;                   /* if set, we are currently truncating the DVD */
-   bool blank_dvd;                    /* if set, we have a blank DVD in the drive */
-   
-   
-   utime_t  vol_poll_interval;        /* interval between polling Vol mount */
+   utime_t vol_poll_interval;         /* interval between polling Vol mount */
    DEVRES *device;                    /* pointer to Device Resource */
    VOLRES *vol;                       /* Pointer to Volume reservation item */
    btimer_t *tid;                     /* timer id */
@@ -319,14 +303,13 @@ public:
    int is_ftp() const { return dev_type == B_FTP_DEV; }
    int is_file() const { return (dev_type == B_FILE_DEV); }
    int is_fifo() const { return dev_type == B_FIFO_DEV; }
-   int is_dvd() const  { return dev_type == B_DVD_DEV; }
    int is_vtl() const  { return dev_type == B_VTL_DEV; }
    int is_vtape() const  { return dev_type == B_VTAPE_DEV; }
    int is_open() const { return m_fd >= 0; }
    int is_offline() const { return state & ST_OFFLINE; }
    int is_labeled() const { return state & ST_LABEL; }
    int is_mounted() const { return state & ST_MOUNTED; }
-   int is_unmountable() const { return (is_dvd() || (is_file() && is_removable())); }
+   int is_unmountable() const { return ((is_file() && is_removable())); }
    int num_reserved() const { return m_num_reserved; };
    int is_part_spooled() const { return state & ST_PART_SPOOLED; }
    int have_media() const { return state & ST_MEDIA; }
@@ -336,7 +319,7 @@ public:
    int at_eot() const { return state & ST_EOT; }
    int at_weot() const { return state & ST_WEOT; }
    int can_append() const { return state & ST_APPEND; }
-   int is_freespace_ok() const { return state & ST_FREESPACE_OK; }
+   int is_crypto_enabled() const { return state & ST_CRYPTOKEY; }
    /*
     * can_write() is meant for checking at the end of a job to see
     * if we still have a tape (perhaps not if at end of tape
@@ -370,7 +353,7 @@ public:
    void set_mounted() { state |= ST_MOUNTED; };
    void set_media() { state |= ST_MEDIA; };
    void set_short_block() { state |= ST_SHORT; };
-   void set_freespace_ok() { state |= ST_FREESPACE_OK; }
+   void set_crypto_enabled() { state |= ST_CRYPTOKEY; };
    void set_part_spooled(int val) { if (val) state |= ST_PART_SPOOLED; \
           else state &= ~ST_PART_SPOOLED;
    };
@@ -378,8 +361,6 @@ public:
       return m_unload && strcmp(VolHdr.VolumeName, UnloadVolName) == 0; };
    void set_load() { m_load = true; };
    void inc_reserved() { m_num_reserved++; }
-   void set_mounted(int val) { if (val) state |= ST_MOUNTED; \
-          else state &= ~ST_MOUNTED; };
    void dec_reserved() { m_num_reserved--; ASSERT(m_num_reserved>=0); };
    void clear_append() { state &= ~ST_APPEND; };
    void clear_read() { state &= ~ST_READ; };
@@ -391,7 +372,7 @@ public:
    void clear_mounted() { state &= ~ST_MOUNTED; };
    void clear_media() { state &= ~ST_MEDIA; };
    void clear_short_block() { state &= ~ST_SHORT; };
-   void clear_freespace_ok() { state &= ~ST_FREESPACE_OK; };
+   void clear_crypto_enabled() { state &= ~ST_CRYPTOKEY; };
    void clear_unload() { m_unload = false; UnloadVolName[0] = 0; };
    void clear_load() { m_load = false; };
    char *bstrerror(void) { return errmsg; };
@@ -407,14 +388,13 @@ public:
 
    void set_unload();            /* in dev.c */
    void clear_volhdr();          /* in dev.c */
-   void close();                 /* in dev.c */
-   void close_part(DCR *dcr);    /* in dev.c */
+   void close(DCR *dcr);         /* in dev.c */
    bool open(DCR *dcr, int mode); /* in dev.c */
-   void term(void);              /* in dev.c */
+   void term();                  /* in dev.c */
    ssize_t read(void *buf, size_t len); /* in dev.c */
-   ssize_t write(const void *buf, size_t len);  /* in dev.c */
-   bool mount(int timeout);      /* in dev.c */
-   bool unmount(int timeout);    /* in dev.c */
+   ssize_t write(const void *buf, size_t len); /* in dev.c */
+   bool mount(DCR *dcr, int timeout); /* in dev.c */
+   bool unmount(DCR *dcr, int timeout); /* in dev.c */
    void edit_mount_codes(POOL_MEM &omsg, const char *imsg); /* in dev.c */
    bool offline_or_rewind();     /* in dev.c */
    bool offline();               /* in dev.c */
@@ -432,9 +412,6 @@ public:
    void clrerror(int func);      /* in dev.c */
    void set_slot(int32_t slot);  /* in dev.c */
    void clear_slot();            /* in dev.c */
-
-
-   bool update_freespace();      /* in dvd.c */
 
    uint32_t get_file() const { return file; };
    uint32_t get_block_num() const { return block_num; };
@@ -490,8 +467,8 @@ public:
    const char *print_blocked() const;     /* in dev.c */
 
 private:
-   bool do_tape_mount(int mount, int dotimeout);  /* in dev.c */
-   bool do_file_mount(int mount, int dotimeout);  /* in dev.c */
+   bool do_tape_mount(DCR *dcr, int mount, int dotimeout); /* in dev.c */
+   bool do_file_mount(DCR *dcr, int mount, int dotimeout); /* in dev.c */
    void set_mode(int omode);                      /* in dev.c */
    void open_tape_device(DCR *dcr, int omode);    /* in dev.c */
    void open_file_device(DCR *dcr, int omode);    /* in dev.c */

@@ -43,9 +43,9 @@
 #define TRAY_DEBUG_MEMORY 0
 
 /* Imported functions */
-int authenticate_director(JCR *jcr, MONITOR *monitor, DIRRES *director);
-int authenticate_file_daemon(JCR *jcr, MONITOR *monitor, CLIENT* client);
-int authenticate_storage_daemon(JCR *jcr, MONITOR *monitor, STORE* store);
+int authenticate_director(JCR *jcr, MONITORRES *monitor, DIRRES *director);
+int authenticate_file_daemon(JCR *jcr, MONITORRES *monitor, CLIENTRES* client);
+int authenticate_storage_daemon(JCR *jcr, MONITORRES *monitor, STORERES* store);
 extern bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Dummy functions */
@@ -58,7 +58,7 @@ void getstatus(monitoritem* item, int current, GString** str);
 
 /* Static variables */
 static char *configfile = NULL;
-static MONITOR *monitor;
+static MONITORRES *monitor;
 static JCR jcr;
 static int nitems = 0;
 static int fullitem = 0; //Item to be display in detailled status window
@@ -192,8 +192,8 @@ int main(int argc, char *argv[])
    int ch, i;
    bool test_config = false;
    DIRRES* dird;
-   CLIENT* filed;
-   STORE* stored;
+   CLIENTRES* filed;
+   STORERES* stored;
    CONFONTRES *con_font;
 
    setlocale(LC_ALL, "");
@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
    (void)WSA_Init();                /* Initialize Windows sockets */
 
    LockRes();
-   monitor = (MONITOR*)GetNextRes(R_MONITOR, (RES *)NULL);
+   monitor = (MONITORRES*)GetNextRes(R_MONITOR, (RES *)NULL);
    UnlockRes();
 
    if ((monitor->RefreshInterval < 1) || (monitor->RefreshInterval > 600)) {
@@ -382,11 +382,11 @@ int main(int argc, char *argv[])
          g_string_append(str, _(" (DIR)"));
          break;
       case R_CLIENT:
-         str = g_string_new(((CLIENT*)(items[i].resource))->hdr.name);
+         str = g_string_new(((CLIENTRES*)(items[i].resource))->hdr.name);
          g_string_append(str, _(" (FD)"));
          break;
       case R_STORAGE:
-         str = g_string_new(((STORE*)(items[i].resource))->hdr.name);
+         str = g_string_new(((STORERES*)(items[i].resource))->hdr.name);
          g_string_append(str, _(" (SD)"));
          break;
       default:
@@ -513,10 +513,10 @@ int main(int argc, char *argv[])
             trayMessage(_("Disconnecting from Director %s:%d\n"), ((DIRRES*)items[i].resource)->address, ((DIRRES*)items[i].resource)->DIRport);
             break;
          case R_CLIENT:
-            trayMessage(_("Disconnecting from Client %s:%d\n"), ((CLIENT*)items[i].resource)->address, ((CLIENT*)items[i].resource)->FDport);
+            trayMessage(_("Disconnecting from Client %s:%d\n"), ((CLIENTRES*)items[i].resource)->address, ((CLIENTRES*)items[i].resource)->FDport);
             break;
          case R_STORAGE:
-            trayMessage(_("Disconnecting from Storage %s:%d\n"), ((STORE*)items[i].resource)->address, ((STORE*)items[i].resource)->SDport);
+            trayMessage(_("Disconnecting from Storage %s:%d\n"), ((STORERES*)items[i].resource)->address, ((STORERES*)items[i].resource)->SDport);
             break;          
          default:
             break;
@@ -649,9 +649,9 @@ static int authenticate_daemon(monitoritem* item, JCR *jcr) {
    case R_DIRECTOR:
       return authenticate_director(jcr, monitor, (DIRRES*)item->resource);
    case R_CLIENT:
-      return authenticate_file_daemon(jcr, monitor, (CLIENT*)item->resource);
+      return authenticate_file_daemon(jcr, monitor, (CLIENTRES*)item->resource);
    case R_STORAGE:
-      return authenticate_storage_daemon(jcr, monitor, (STORE*)item->resource);
+      return authenticate_storage_daemon(jcr, monitor, (STORERES*)item->resource);
    default:
       printf(_("Error, currentitem is not a Client or a Storage..\n"));
       gtk_main_quit();
@@ -916,7 +916,7 @@ void getstatus(monitoritem* item, int current, GString** str)
 
 int docmd(monitoritem* item, const char* command, GSList** list) 
 {
-   int stat;
+   int status;
    GString* str = NULL;
 
    *list = g_slist_alloc();
@@ -927,8 +927,8 @@ int docmd(monitoritem* item, const char* command, GSList** list)
       memset(&jcr, 0, sizeof(jcr));
 
       DIRRES* dird;
-      CLIENT* filed;
-      STORE* stored;
+      CLIENTRES* filed;
+      STORERES* stored;
 
       switch (item->type) {
       case R_DIRECTOR:
@@ -939,14 +939,14 @@ int docmd(monitoritem* item, const char* command, GSList** list)
          jcr.dir_bsock = item->D_sock;
          break;
       case R_CLIENT:
-         filed = (CLIENT*)item->resource;
+         filed = (CLIENTRES*)item->resource;
          trayMessage(_("Connecting to Client %s:%d\n"), filed->address, filed->FDport);
          changeStatusMessage(item, _("Connecting to Client %s:%d"), filed->address, filed->FDport);
          item->D_sock = bnet_connect(NULL, 0, 0, 0, _("File daemon"), filed->address, NULL, filed->FDport, 0);
          jcr.file_bsock = item->D_sock;
          break;
       case R_STORAGE:
-         stored = (STORE*)item->resource;
+         stored = (STORERES*)item->resource;
          trayMessage(_("Connecting to Storage %s:%d\n"), stored->address, stored->SDport);
          changeStatusMessage(item, _("Connecting to Storage %s:%d"), stored->address, stored->SDport);
          item->D_sock = bnet_connect(NULL, 0, 0, 0, _("Storage daemon"), stored->address, NULL, stored->SDport, 0);
@@ -1015,10 +1015,10 @@ int docmd(monitoritem* item, const char* command, GSList** list)
       writecmd(item, command);
 
    while(1) {
-      if ((stat = item->D_sock->recv()) >= 0) {
+      if ((status = item->D_sock->recv()) >= 0) {
          *list = g_slist_append(*list, g_string_new(item->D_sock->msg));
       }
-      else if (stat == BNET_SIGNAL) {
+      else if (status == BNET_SIGNAL) {
          if (item->D_sock->msglen == BNET_EOD) {
             //fprintf(stderr, "<< EOD >>\n");
             return 1;

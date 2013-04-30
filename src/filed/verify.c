@@ -80,7 +80,7 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    char attribs[MAXSTRING];
    char attribsEx[MAXSTRING];
    int digest_stream = STREAM_NONE;
-   int stat;
+   int status;
    DIGEST *digest = NULL;
    BSOCK *dir;
 
@@ -195,22 +195,22 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    /* Send file attributes to Director (note different format than for Storage) */
    Dmsg2(400, "send ATTR inx=%d fname=%s\n", jcr->JobFiles, ff_pkt->fname);
    if (ff_pkt->type == FT_LNK || ff_pkt->type == FT_LNKSAVED) {
-      stat = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
-                        STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
-                        0, attribs, 0, ff_pkt->link, 0);
+      status = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
+                          STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
+                          0, attribs, 0, ff_pkt->link, 0);
    } else if (ff_pkt->type == FT_DIREND || ff_pkt->type == FT_REPARSE ||
               ff_pkt->type == FT_JUNCTION) {
       /* Here link is the canonical filename (i.e. with trailing slash) */
-      stat = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
-                        STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->link,
-                        0, attribs, 0, 0);
+      status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
+                          STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->link,
+                          0, attribs, 0, 0);
    } else {
-      stat = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
-                        STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
-                        0, attribs, 0, 0);
+      status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
+                          STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
+                          0, attribs, 0, 0);
    }
    Dmsg2(20, "bfiled>bdird: attribs len=%d: msg=%s\n", dir->msglen, dir->msg);
-   if (!stat) {
+   if (!status) {
       Jmsg(jcr, M_FATAL, 0, _("Network error in send to Director: ERR=%s\n"), bnet_strerror(dir));
       return 0;
    }

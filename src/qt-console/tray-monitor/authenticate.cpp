@@ -64,7 +64,7 @@ static char FDOKhello[] = "2000 OK Hello";
 /*
  * Authenticate Director
  */
-int authenticate_director(JCR *jcr, MONITOR *mon, DIRRES *director)
+int authenticate_director(JCR *jcr, MONITORRES *mon, DIRRES *director)
 {
    BSOCK *dir = jcr->dir_bsock;
    int tls_local_need = BNET_TLS_NONE;
@@ -111,7 +111,7 @@ int authenticate_director(JCR *jcr, MONITOR *mon, DIRRES *director)
 /*
  * Authenticate Storage daemon connection
  */
-int authenticate_storage_daemon(JCR *jcr, MONITOR *monitor, STORE* store)
+int authenticate_storage_daemon(JCR *jcr, MONITORRES *monitor, STORERES* store)
 {
    BSOCK *sd = jcr->store_bsock;
    char dirname[MAX_NAME_LENGTH];
@@ -157,7 +157,7 @@ int authenticate_storage_daemon(JCR *jcr, MONITOR *monitor, STORE* store)
 /*
  * Authenticate File daemon connection
  */
-int authenticate_file_daemon(JCR *jcr, MONITOR *monitor, CLIENT* client)
+int authenticate_file_daemon(JCR *jcr, MONITORRES *monitor, CLIENTRES* client)
 {
    BSOCK *fd = jcr->file_bsock;
    char dirname[MAX_NAME_LENGTH];

@@ -50,6 +50,8 @@ private slots:
    void editPushed();
    void purgePushed();
    void prunePushed();
+   void importPushed();
+   void exportPushed();
    void deletePushed();
    bool getSelection(QStringList &ret);
    void showInfoForMedia(QTableWidgetItem * item);
@@ -61,6 +63,7 @@ private slots:
 
 private:
    bool m_populated;
+   bool m_needs_repopulate;
    bool m_checkcurwidget;
    QTreeWidgetItem *m_topItem;
 };

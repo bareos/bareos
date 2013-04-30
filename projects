@@ -19,7 +19,7 @@ Item 10: Concurrent spooling and despooling within a single job.
 Item 11: Start spooling even when waiting on tape
 Item*12: Add ability to Verify any specified Job.
 Item 13: Data encryption on storage daemon
-Item 14: Possibilty to schedule Jobs on last Friday of the month
+Item*14: Possibilty to schedule Jobs on last Friday of the month
 Item 15: Scheduling syntax that permits more flexibility and options
 Item 16: Ability to defer Batch Insert to a later time
 Item 17: Add MaxVolumeSize/MaxVolumeBytes to Storage resource
@@ -40,7 +40,7 @@ Item 30: Automatic disabling of devices
 Item 31: Enable persistent naming/number of SQL queries
 Item 32: Bacula Dir, FD and SD to support proxies
 Item 33: Add Minumum Spool Size directive
-Item 34: Command that releases all drives in an autochanger
+Item*34: Command that releases all drives in an autochanger
 Item 35: Run bscan on a remote storage daemon from within bconsole.
 Item 36: Implement a Migration job type that will create a reverse
 Item 37: Separate "Storage" and "Device" in the bacula-dir.conf
@@ -334,7 +334,7 @@ Item 13: Data encryption on storage daemon
 Item 14: Possibilty to schedule Jobs on last Friday of the month
 Origin: Carsten Menke <bootsy52 at gmx dot net>
 Date:   02 March 2008
-Status:
+Status: Done
 
    What: Currently if you want to run your monthly Backups on the last
            Friday of each month this is only possible with workarounds (e.g
@@ -1038,7 +1038,7 @@ Origin: Frank Sweetser <fs@wpi.edu>
 Item 34: Command that releases all drives in an autochanger
   Origin: Blake Dunlap (blake@nxs.net)
   Date:   10/07/2009
-  Status: Request
+  Status: Done
 
   What:  It would be nice if there was a release command that
          would release all drives in an autochanger instead of having to

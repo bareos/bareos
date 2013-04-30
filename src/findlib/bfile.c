@@ -668,7 +668,7 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
  */
 int bclose(BFILE *bfd)
 {
-   int stat = 0;
+   int status = 0;
 
    if (bfd->mode == BF_CLOSED) {
       Dmsg0(50, "=== BFD already closed.\n");
@@ -676,7 +676,7 @@ int bclose(BFILE *bfd)
    }
 
    if (bfd->cmd_plugin && plugin_bclose) {
-      stat = plugin_bclose(bfd);
+      status = plugin_bclose(bfd);
       Dmsg0(50, "==== BFD closed!!!\n");
       goto all_done;
    }
@@ -696,7 +696,7 @@ int bclose(BFILE *bfd)
               1,                      /* ProcessSecurity */
               &bfd->lpContext)) {     /* Read context */
          errno = b_errno_win32;
-         stat = -1;
+         status = -1;
       }
    } else if (bfd->use_backup_api && bfd->mode == BF_WRITE) {
       BYTE buf[10];
@@ -708,11 +708,11 @@ int bclose(BFILE *bfd)
               1,                      /* ProcessSecurity */
               &bfd->lpContext)) {     /* Write context */
          errno = b_errno_win32;
-         stat = -1;
+         status = -1;
       }
    }
    if (!CloseHandle(bfd->fh)) {
-      stat = -1;
+      status = -1;
       errno = b_errno_win32;
    }
 
@@ -724,7 +724,7 @@ all_done:
    bfd->mode = BF_CLOSED;
    bfd->lpContext = NULL;
    bfd->cmd_plugin = false;
-   return stat;
+   return status;
 }
 
 /* Returns: bytes read on success
@@ -998,8 +998,8 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
 
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
    if (bfd->fid != -1 && flags & O_RDONLY) {
-      int stat = posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_WILLNEED);
-      Dmsg2(400, "Did posix_fadvise on %s stat=%d\n", fname, stat);
+      int status = posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_WILLNEED);
+      Dmsg2(400, "Did posix_fadvise on %s status=%d\n", fname, status);
    }
 #endif
 
@@ -1029,12 +1029,12 @@ int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode)
 
 int bclose(BFILE *bfd)
 {
-   int stat;
+   int status;
 
    Dmsg1(400, "Close file %d\n", bfd->fid);
 
    if (bfd->cmd_plugin && plugin_bclose) {
-      stat = plugin_bclose(bfd);
+      status = plugin_bclose(bfd);
       bfd->fid = -1;
       bfd->cmd_plugin = false;
    }
@@ -1051,36 +1051,36 @@ int bclose(BFILE *bfd)
 #endif
 
    /* Close normal file */
-   stat = close(bfd->fid);
+   status = close(bfd->fid);
    bfd->berrno = errno;
    bfd->fid = -1;
    bfd->cmd_plugin = false;
-   return stat;
+   return status;
 }
 
 ssize_t bread(BFILE *bfd, void *buf, size_t count)
 {
-   ssize_t stat;
+   ssize_t status;
 
    if (bfd->cmd_plugin && plugin_bread) {
       return plugin_bread(bfd, buf, count);
    }
 
-   stat = read(bfd->fid, buf, count);
+   status = read(bfd->fid, buf, count);
    bfd->berrno = errno;
-   return stat;
+   return status;
 }
 
 ssize_t bwrite(BFILE *bfd, void *buf, size_t count)
 {
-   ssize_t stat;
+   ssize_t status;
 
    if (bfd->cmd_plugin && plugin_bwrite) {
       return plugin_bwrite(bfd, buf, count);
    }
-   stat = write(bfd->fid, buf, count);
+   status = write(bfd->fid, buf, count);
    bfd->berrno = errno;
-   return stat;
+   return status;
 }
 
 bool is_bopen(BFILE *bfd)

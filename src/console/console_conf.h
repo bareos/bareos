@@ -38,29 +38,29 @@
  */
 
 enum {
-   R_CONSOLE   = 1001,
+   R_CONSOLE = 1001,
    R_DIRECTOR,
-   R_FIRST     = R_CONSOLE,
-   R_LAST      = R_DIRECTOR           /* Keep this updated */
+   R_FIRST = R_CONSOLE,
+   R_LAST = R_DIRECTOR                /* Keep this updated */
 };
 
 /*
  * Some resource attributes
  */
 enum {
-   R_NAME     = 1020,
+   R_NAME = 1020,
    R_ADDRESS,
    R_PASSWORD,
    R_TYPE,
    R_BACKUP
 };
 
-
 /* Definition of the contents of each Resource */
 
 /* Console "globals" */
 struct CONRES {
-   RES   hdr;
+   RES hdr;
+
    char *rc_file;                     /* startup file */
    char *hist_file;                   /* command history file */
    char *password;                    /* UA server password */
@@ -79,7 +79,8 @@ struct CONRES {
 
 /* Director */
 struct DIRRES {
-   RES   hdr;
+   RES hdr;
+
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
    char *password;                    /* UA server password */
@@ -94,7 +95,6 @@ struct DIRRES {
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
 };
-
 
 /* Define the Union of all the above
  * resource structure definitions.

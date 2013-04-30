@@ -30,8 +30,6 @@
  *
  * Author: Landon Fuller <landonf@opendarwin.org>
  *
- * Version $Id$
- *
  * This file was contributed to the Bacula project by Landon Fuller.
  *
  * Landon Fuller has been granted a perpetual, worldwide, non-exclusive,
@@ -113,13 +111,13 @@ static unsigned long get_openssl_thread_id(void)
 static struct CRYPTO_dynlock_value *openssl_create_dynamic_mutex (const char *file, int line)
 {
    struct CRYPTO_dynlock_value *dynlock;
-   int stat;
+   int status;
 
    dynlock = (struct CRYPTO_dynlock_value *)malloc(sizeof(struct CRYPTO_dynlock_value));
 
-   if ((stat = pthread_mutex_init(&dynlock->mutex, NULL)) != 0) {
+   if ((status = pthread_mutex_init(&dynlock->mutex, NULL)) != 0) {
       berrno be;
-      Jmsg1(NULL, M_ABORT, 0, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(stat));
+      Jmsg1(NULL, M_ABORT, 0, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(status));
    }
 
    return dynlock;
@@ -136,11 +134,11 @@ static void openssl_update_dynamic_mutex(int mode, struct CRYPTO_dynlock_value *
 
 static void openssl_destroy_dynamic_mutex(struct CRYPTO_dynlock_value *dynlock, const char *file, int line)
 {
-   int stat;
+   int status;
 
-   if ((stat = pthread_mutex_destroy(&dynlock->mutex)) != 0) {
+   if ((status = pthread_mutex_destroy(&dynlock->mutex)) != 0) {
       berrno be;
-      Jmsg1(NULL, M_ABORT, 0, _("Unable to destroy mutex: ERR=%s\n"), be.bstrerror(stat));
+      Jmsg1(NULL, M_ABORT, 0, _("Unable to destroy mutex: ERR=%s\n"), be.bstrerror(status));
    }
 
    free(dynlock);
@@ -166,7 +164,7 @@ static void openssl_update_static_mutex (int mode, int i, const char *file, int 
 int openssl_init_threads (void)
 {
    int i, numlocks;
-   int stat;
+   int status;
 
 
    /* Set thread ID callback */
@@ -176,10 +174,10 @@ int openssl_init_threads (void)
    numlocks = CRYPTO_num_locks();
    mutexes = (pthread_mutex_t *) malloc(numlocks * sizeof(pthread_mutex_t));
    for (i = 0; i < numlocks; i++) {
-      if ((stat = pthread_mutex_init(&mutexes[i], NULL)) != 0) {
+      if ((status = pthread_mutex_init(&mutexes[i], NULL)) != 0) {
          berrno be;
-         Jmsg1(NULL, M_FATAL, 0, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(stat));
-         return stat;
+         Jmsg1(NULL, M_FATAL, 0, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(status));
+         return status;
       }
    }
 
@@ -200,7 +198,7 @@ int openssl_init_threads (void)
 void openssl_cleanup_threads(void)
 {
    int i, numlocks;
-   int stat;
+   int status;
 
    /* Unset thread ID callback */
    CRYPTO_set_id_callback(NULL);
@@ -208,11 +206,19 @@ void openssl_cleanup_threads(void)
    /* Deallocate static lock mutexes */
    numlocks = CRYPTO_num_locks();
    for (i = 0; i < numlocks; i++) {
-      if ((stat = pthread_mutex_destroy(&mutexes[i])) != 0) {
+      if ((status = pthread_mutex_destroy(&mutexes[i])) != 0) {
          berrno be;
-         /* We don't halt execution, reporting the error should be sufficient */
-         Jmsg1(NULL, M_ERROR, 0, _("Unable to destroy mutex: ERR=%s\n"), 
-               be.bstrerror(stat));
+
+         switch (errno) {
+         case EPERM:
+            /* No need to report errors when we get an EPERM */
+            break;
+         default:
+            /* We don't halt execution, reporting the error should be sufficient */
+            Jmsg1(NULL, M_ERROR, 0, _("Unable to destroy mutex: ERR=%s\n"),
+                  be.bstrerror(status));
+            break;
+         }
       }
    }
 

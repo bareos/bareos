@@ -26,138 +26,151 @@
    Switzerland, email:ftf@fsfeurope.org.
 */
 /*
-*   Main configuration file parser for Bacula Tray Monitor.
-*
-*   Adapted from dird_conf.c
-*
-*   Note, the configuration file parser consists of three parts
-*
-*   1. The generic lexical scanner in lib/lex.c and lib/lex.h
-*
-*   2. The generic config  scanner in lib/parse_config.c and
-*       lib/parse_config.h.
-*       These files contain the parser code, some utility
-*       routines, and the common store routines (name, int,
-*       string).
-*
-*   3. The daemon specific file, which contains the Resource
-*       definitions as well as any specific store routines
-*       for the resource records.
-*
-*     Nicolas Boichat, August MMIV
-*
-*/
+ *   Main configuration file parser for Bacula Tray Monitor.
+ *
+ *   Adapted from dird_conf.c
+ *
+ *   Note, the configuration file parser consists of three parts
+ *
+ *   1. The generic lexical scanner in lib/lex.c and lib/lex.h
+ *
+ *   2. The generic config  scanner in lib/parse_config.c and
+ *       lib/parse_config.h.
+ *       These files contain the parser code, some utility
+ *       routines, and the common store routines (name, int,
+ *       string).
+ *
+ *   3. The daemon specific file, which contains the Resource
+ *       definitions as well as any specific store routines
+ *       for the resource records.
+ *
+ *     Nicolas Boichat, August MMIV
+ *
+ */
 
 #include "bacula.h"
 #include "tray_conf.h"
 
-/* Define the first and last resource ID record
-* types. Note, these should be unique for each
-* daemon though not a requirement.
-*/
+/*
+ * Define the first and last resource ID record
+ * types. Note, these should be unique for each
+ * daemon though not a requirement.
+ */
 int32_t r_first = R_FIRST;
 int32_t r_last  = R_LAST;
 static RES *sres_head[R_LAST - R_FIRST + 1];
 RES **res_head = sres_head;
 
-/* We build the current resource here as we are
-* scanning the resource configuration definition,
-* then move it to allocated memory when the resource
-* scan is complete.
-*/
+/*
+ * We build the current resource here as we are
+ * scanning the resource configuration definition,
+ * then move it to allocated memory when the resource
+ * scan is complete.
+ */
 URES res_all;
 int32_t res_all_size = sizeof(res_all);
 
-
-/* Definition of records permitted within each
-* resource with the routine to process the record
-* information.  NOTE! quoted names must be in lower case.
-*/
 /*
-*    Monitor Resource
-*
-*   name           handler     value                 code flags    default_value
-*/
+ * Definition of records permitted within each
+ * resource with the routine to process the record
+ * information.  NOTE! quoted names must be in lower case.
+ */
+/*
+ * Monitor Resource
+ *
+ * name handler value code flags default_value
+ */
 static RES_ITEM mon_items[] = {
-   {"name",        store_name,     ITEM(res_monitor.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(res_monitor.hdr.desc), 0, 0, 0},
-   {"requiressl",  store_bool,     ITEM(res_monitor.require_ssl), 1, ITEM_DEFAULT, 0},
-   {"password",    store_password, ITEM(res_monitor.password), 0, ITEM_REQUIRED, 0},
-   {"refreshinterval",  store_time,ITEM(res_monitor.RefreshInterval),    0, ITEM_DEFAULT, 60},
-   {"fdconnecttimeout", store_time,ITEM(res_monitor.FDConnectTimeout),   0, ITEM_DEFAULT, 10},
-   {"sdconnecttimeout", store_time,ITEM(res_monitor.SDConnectTimeout),   0, ITEM_DEFAULT, 10},
-   {"dirconnecttimeout", store_time,ITEM(res_monitor.DIRConnectTimeout), 0, ITEM_DEFAULT, 10},
-   {NULL, NULL, {0}, 0, 0, 0}
+   { "name", store_name, ITEM(res_monitor.hdr.name), 0, ITEM_REQUIRED, 0 },
+   { "description", store_str, ITEM(res_monitor.hdr.desc), 0, 0, 0 },
+   { "requiressl", store_bool, ITEM(res_monitor.require_ssl), 1, ITEM_DEFAULT, "false" },
+   { "password", store_password, ITEM(res_monitor.password), 0, ITEM_REQUIRED, NULL },
+   { "refreshinterval", store_time, ITEM(res_monitor.RefreshInterval), 0, ITEM_DEFAULT, "60" },
+   { "fdconnecttimeout", store_time, ITEM(res_monitor.FDConnectTimeout), 0, ITEM_DEFAULT, "10" },
+   { "sdconnecttimeout", store_time, ITEM(res_monitor.SDConnectTimeout), 0, ITEM_DEFAULT, "10" },
+   { "dirconnecttimeout", store_time, ITEM(res_monitor.DIRConnectTimeout), 0, ITEM_DEFAULT, "10" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
-/*  Director's that we can contact */
+/*
+ * Director's that we can contact
+ *
+ * name handler value code flags default_value
+ */
 static RES_ITEM dir_items[] = {
-   {"name",        store_name,     ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(res_dir.hdr.desc), 0, 0, 0},
-   {"dirport",     store_pint32,   ITEM(res_dir.DIRport),  0, ITEM_DEFAULT, 9101},
-   {"address",     store_str,      ITEM(res_dir.address),  0, ITEM_REQUIRED, 0},
-   {"enablessl",   store_bool,     ITEM(res_dir.enable_ssl), 1, ITEM_DEFAULT, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
+   { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
+   { "dirport", store_pint32, ITEM(res_dir.DIRport), 0, ITEM_DEFAULT, "9101" },
+   { "address", store_str, ITEM(res_dir.address), 0, ITEM_REQUIRED, NULL },
+   { "enablessl", store_bool, ITEM(res_dir.enable_ssl), 1, ITEM_DEFAULT, "false" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 /*
-*    Client or File daemon resource
-*
-*   name           handler     value                 code flags    default_value
-*/
-
+ * Client or File daemon resource
+ *
+ * name handler value code flags default_value
+ */
 static RES_ITEM cli_items[] = {
-   {"name",     store_name,       ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,     ITEM(res_client.hdr.desc), 0, 0, 0},
-   {"address",  store_str,        ITEM(res_client.address),  0, ITEM_REQUIRED, 0},
-   {"fdport",   store_pint32,     ITEM(res_client.FDport),   0, ITEM_DEFAULT, 9102},
-   {"password", store_password,   ITEM(res_client.password), 0, ITEM_REQUIRED, 0},
-   {"enablessl", store_bool,      ITEM(res_client.enable_ssl), 1, ITEM_DEFAULT, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
-};
-
-/* Storage daemon resource
-*
-*   name           handler     value                 code flags    default_value
-*/
-static RES_ITEM store_items[] = {
-   {"name",        store_name,     ITEM(res_store.hdr.name),   0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(res_store.hdr.desc),   0, 0, 0},
-   {"sdport",      store_pint32,   ITEM(res_store.SDport),     0, ITEM_DEFAULT, 9103},
-   {"address",     store_str,      ITEM(res_store.address),    0, ITEM_REQUIRED, 0},
-   {"sdaddress",   store_str,      ITEM(res_store.address),    0, 0, 0},
-   {"password",    store_password, ITEM(res_store.password),   0, ITEM_REQUIRED, 0},
-   {"sdpassword",  store_password, ITEM(res_store.password),   0, 0, 0},
-   {"enablessl",   store_bool,     ITEM(res_store.enable_ssl),  1, ITEM_DEFAULT, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
-};
-
-static RES_ITEM con_font_items[] = {
-   {"name",        store_name,     ITEM(con_font.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(con_font.hdr.desc), 0, 0, 0},
-   {"font",        store_str,      ITEM(con_font.fontface), 0, 0, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
+   { "name", store_name, ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(res_client.hdr.desc), 0, 0, NULL },
+   { "address", store_str, ITEM(res_client.address), 0, ITEM_REQUIRED, NULL },
+   { "fdport", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, "9102" },
+   { "password", store_password, ITEM(res_client.password), 0, ITEM_REQUIRED, NULL },
+   { "enablessl", store_bool, ITEM(res_client.enable_ssl), 1, ITEM_DEFAULT, "false" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 /*
-* This is the master resource definition.
-* It must have one item for each of the resources.
-*
-*  NOTE!!! keep it in the same order as the R_codes
-*    or eliminate all resources[rindex].name
-*
-*  name      items        rcode        res_head
-*/
-RES_TABLE resources[] = {
-   {"monitor",      mon_items,    R_MONITOR},
-   {"director",     dir_items,    R_DIRECTOR},
-   {"client",       cli_items,    R_CLIENT},
-   {"storage",      store_items,  R_STORAGE},
-   {"consolefont",   con_font_items, R_CONSOLE_FONT},
-   {NULL,           NULL,         0}
+ * Storage daemon resource
+ *
+ * name handler value code flags default_value
+ */
+static RES_ITEM store_items[] = {
+   { "name", store_name, ITEM(res_store.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(res_store.hdr.desc), 0, 0, NULL },
+   { "sdport", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, "9103" },
+   { "address", store_str, ITEM(res_store.address), 0, ITEM_REQUIRED, NULL },
+   { "sdaddress", store_str, ITEM(res_store.address), 0, 0, NULL },
+   { "password", store_password, ITEM(res_store.password), 0, ITEM_REQUIRED, NULL },
+   { "sdpassword", store_password, ITEM(res_store.password), 0, 0, NULL },
+   { "enablessl", store_bool, ITEM(res_store.enable_ssl), 1, ITEM_DEFAULT, "false" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
-/* Dump contents of resource */
+/*
+ * Font resource
+ *
+ * name handler value code flags default_value
+ */
+static RES_ITEM con_font_items[] = {
+   { "name", store_name, ITEM(con_font.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(con_font.hdr.desc), 0, 0, NULL },
+   { "font", store_str, ITEM(con_font.fontface), 0, 0, NULL },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
+};
+
+/*
+ * This is the master resource definition.
+ * It must have one item for each of the resources.
+ *
+ * NOTE!!! keep it in the same order as the R_codes
+ *   or eliminate all resources[rindex].name
+ *
+ *  name items rcode res_head
+ */
+RES_TABLE resources[] = {
+   { "monitor", mon_items, R_MONITOR },
+   { "director", dir_items, R_DIRECTOR },
+   { "client", cli_items, R_CLIENT },
+   { "storage", store_items, R_STORAGE },
+   { "consolefont", con_font_items, R_CONSOLE_FONT },
+   { NULL, NULL, 0 }
+};
+
+/*
+ * Dump contents of resource
+ */
 void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
    URES *res = (URES *)reshdr;
@@ -168,7 +181,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
       sendit(sock, _("No %s resource defined\n"), res_to_str(type));
       return;
    }
-   if (type < 0) {                    /* no recursion */
+   if (type < 0) { /* no recursion */
       type = - type;
       recurse = false;
    }
@@ -204,23 +217,24 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    }
 }
 
-
 /*
-* Free memory of resource -- called when daemon terminates.
-* NB, we don't need to worry about freeing any references
-* to other resources as they will be freed when that
-* resource chain is traversed.  Mainly we worry about freeing
-* allocated strings (names).
-*/
+ * Free memory of resource -- called when daemon terminates.
+ * NB, we don't need to worry about freeing any references
+ * to other resources as they will be freed when that
+ * resource chain is traversed.  Mainly we worry about freeing
+ * allocated strings (names).
+ */
 void free_resource(RES *sres, int type)
 {
-   RES *nres;                         /* next resource if linked */
+   RES *nres; /* next resource if linked */
    URES *res = (URES *)sres;
 
    if (res == NULL)
       return;
 
-   /* common stuff -- free the resource name and description */
+   /*
+    * Common stuff -- free the resource name and description
+    */
    nres = (RES *)res->res_monitor.hdr.next;
    if (res->res_monitor.hdr.name) {
       free(res->res_monitor.hdr.name);
@@ -257,7 +271,9 @@ void free_resource(RES *sres, int type)
       printf(_("Unknown resource type %d in free_resource.\n"), type);
    }
 
-   /* Common stuff again -- free the resource, recurse to next one */
+   /*
+    * Common stuff again -- free the resource, recurse to next one
+    */
    if (res) {
       free(res);
    }
@@ -267,11 +283,11 @@ void free_resource(RES *sres, int type)
 }
 
 /*
-* Save the new resource by chaining it into the head list for
-* the resource. If this is pass 2, we update any resource
-* pointers because they may not have been defined until
-* later in pass 1.
-*/
+ * Save the new resource by chaining it into the head list for
+ * the resource. If this is pass 2, we update any resource
+ * pointers because they may not have been defined until
+ * later in pass 1.
+ */
 void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
@@ -280,8 +296,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
    int error = 0;
 
    /*
-   * Ensure that all required items are present
-   */
+    * Ensure that all required items are present
+    */
    for (i=0; items[i].name; i++) {
       if (items[i].flags & ITEM_REQUIRED) {
          if (!bit_is_set(i, res_all.res_monitor.hdr.item_present)) {
@@ -296,14 +312,16 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 
    /*
-   * During pass 2 in each "store" routine, we looked up pointers
-   * to all the resources referrenced in the current resource, now we
-   * must copy their addresses from the static record to the allocated
-   * record.
-   */
+    * During pass 2 in each "store" routine, we looked up pointers
+    * to all the resources referrenced in the current resource, now we
+    * must copy their addresses from the static record to the allocated
+    * record.
+    */
    if (pass == 2) {
       switch (type) {
-      /* Resources not containing a resource */
+      /*
+       * Resources not containing a resource
+       */
       case R_MONITOR:
       case R_CLIENT:
       case R_STORAGE:
@@ -315,9 +333,10 @@ void save_resource(int type, RES_ITEM *items, int pass)
          error = 1;
          break;
       }
-      /* Note, the resource name was already saved during pass 1,
-      * so here, we can just release it.
-      */
+      /*
+       * Note, the resource name was already saved during pass 1,
+       * so here, we can just release it.
+       */
       if (res_all.res_monitor.hdr.name) {
          free(res_all.res_monitor.hdr.name);
          res_all.res_monitor.hdr.name = NULL;
@@ -330,20 +349,20 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 
    /*
-   * The following code is only executed during pass 1
-   */
+    * The following code is only executed during pass 1
+    */
    switch (type) {
    case R_MONITOR:
-      size = sizeof(MONITOR);
+      size = sizeof(MONITORRES);
       break;
    case R_DIRECTOR:
       size = sizeof(DIRRES);
       break;
    case R_CLIENT:
-      size = sizeof(CLIENT);
+      size = sizeof(CLIENTRES);
       break;
    case R_STORAGE:
-      size = sizeof(STORE);
+      size = sizeof(STORERES);
       break;
    case R_CONSOLE_FONT:
       size = sizeof(CONFONTRES);
@@ -354,7 +373,9 @@ void save_resource(int type, RES_ITEM *items, int pass)
       size = 1;
       break;
    }
-   /* Common */
+   /*
+    * Common
+    */
    if (!error) {
       res = (URES *)malloc(size);
       memcpy(res, &res_all, size);
@@ -364,12 +385,14 @@ void save_resource(int type, RES_ITEM *items, int pass)
          res->res_monitor.hdr.name, rindex);
       } else {
          RES *next, *last;
-         /* Add new res to end of chain */
+         /*
+          * Add new res to end of chain
+          */
          for (last=next=res_head[rindex]; next; next=next->next) {
             last = next;
             if (strcmp(next->name, res->res_monitor.hdr.name) == 0) {
                Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
+                     _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
                resources[rindex].name, res->res_monitor.hdr.name);
             }
          }
@@ -382,7 +405,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
 
 bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, exit_code, (void *)&res_all, res_all_size,
-      r_first, r_last, resources, res_head);
+   config->init(configfile, NULL, NULL, NULL, exit_code,
+                (void *)&res_all, res_all_size, r_first,
+                r_last, resources, res_head);
    return config->parse_config();
 }

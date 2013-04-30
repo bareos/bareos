@@ -50,18 +50,7 @@
 
 #include <sys/types.h>
 
-#if defined(HAVE_WIN32)
-#if defined(HAVE_MINGW)
-#include "mingwconfig.h"
-#else
-#include "winconfig.h"
-#endif
-#else  /* !HAVE_WIN32 */
-#ifndef __CONFIG_H
-#include "config.h"
-#define __CONFIG_H
-#endif
-#endif
+#include "hostconfig.h"
 
 #include "../src/version.h"
 #include "bc_types.h"
@@ -93,7 +82,7 @@ struct restore_object_pkt {
 
 /*
  * This packet is used for file save info transfer.
-*/
+ */
 struct save_pkt {
    int32_t pkt_size;                  /* size of this packet */
    char *fname;                       /* Full path and filename */
@@ -115,7 +104,7 @@ struct save_pkt {
 
 /*
  * This packet is used for file restore info transfer.
-*/
+ */
 struct restore_pkt {
    int32_t pkt_size;                  /* size of this packet */
    int32_t stream;                    /* attribute stream id */
@@ -167,64 +156,71 @@ struct io_pkt {
  *                                                                          *
  ****************************************************************************/
 
-/* Bacula Variable Ids */
+/*
+ * Bacula Variable Ids
+ */
 typedef enum {
-  bVarJobId     = 1,
-  bVarFDName    = 2,
-  bVarLevel     = 3,
-  bVarType      = 4,
-  bVarClient    = 5,
-  bVarJobName   = 6,
+  bVarJobId = 1,
+  bVarFDName = 2,
+  bVarLevel = 3,
+  bVarType = 4,
+  bVarClient = 5,
+  bVarJobName = 6,
   bVarJobStatus = 7,
   bVarSinceTime = 8,
-  bVarAccurate  = 9,
-  bVarFileSeen  = 10,
+  bVarAccurate = 9,
+  bVarFileSeen = 10,
   bVarVssObject = 11,
   bVarVssDllHandle = 12,
   bVarWorkingDir = 13,
-  bVarWhere      = 14,
+  bVarWhere = 14,
   bVarRegexWhere = 15,
-  bVarExePath    = 16,
-  bVarVersion    = 17,
-  bVarDistName   = 18,
-  bVarBEEF       = 19,
+  bVarExePath = 16,
+  bVarVersion = 17,
+  bVarDistName = 18,
+  bVarBEEF = 19,
   bVarPrevJobName = 20,
   bVarPrefixLinks = 21
 } bVariable;
 
-/* Events that are passed to plugin */
+/*
+ * Events that are passed to plugin
+ */
 typedef enum {
-  bEventJobStart                        = 1,
-  bEventJobEnd                          = 2,
-  bEventStartBackupJob                  = 3,
-  bEventEndBackupJob                    = 4,
-  bEventStartRestoreJob                 = 5,
-  bEventEndRestoreJob                   = 6,
-  bEventStartVerifyJob                  = 7,
-  bEventEndVerifyJob                    = 8,
-  bEventBackupCommand                   = 9,
-  bEventRestoreCommand                  = 10,
-  bEventEstimateCommand                 = 11,
-  bEventLevel                           = 12,
-  bEventSince                           = 13,
-  bEventCancelCommand                   = 14, /* Executed by another thread */
-  bEventVssBackupAddComponents          = 15, /* Just before bEventVssPrepareSnapshot */
+  bEventJobStart = 1,
+  bEventJobEnd = 2,
+  bEventStartBackupJob = 3,
+  bEventEndBackupJob = 4,
+  bEventStartRestoreJob = 5,
+  bEventEndRestoreJob = 6,
+  bEventStartVerifyJob = 7,
+  bEventEndVerifyJob = 8,
+  bEventBackupCommand = 9,
+  bEventRestoreCommand = 10,
+  bEventEstimateCommand = 11,
+  bEventLevel = 12,
+  bEventSince = 13,
+  bEventCancelCommand = 14,                    /* Executed by another thread */
+  bEventVssBackupAddComponents = 15,           /* Just before bEventVssPrepareSnapshot */
   bEventVssRestoreLoadComponentMetadata = 16,
   bEventVssRestoreSetComponentsSelected = 17,
-  bEventRestoreObject                   = 18,
-  bEventEndFileSet                      = 19,
-  bEventPluginCommand                   = 20, /* Sent during FileSet creation */
-  bEventVssBeforeCloseRestore           = 21,
+  bEventRestoreObject = 18,
+  bEventEndFileSet = 19,
+  bEventPluginCommand = 20,                    /* Sent during FileSet creation */
+  bEventVssBeforeCloseRestore = 21,
+
   /* Add drives to VSS snapshot 
    *  argument: char[27] drivelist
    * You need to add them without duplicates, 
    * see fd_common.h add_drive() copy_drives() to get help
    */
-  bEventVssPrepareSnapshot              = 22,
-  bEventOptionPlugin                    = 23,
-  bEventHandleBackupFile                = 24, /* Used with Options Plugin */
-  bEventComponentInfo                   = 25  /* Plugin component */
+  bEventVssPrepareSnapshot = 22,
+  bEventOptionPlugin = 23,
+  bEventHandleBackupFile = 24,                 /* Used with Options Plugin */
+  bEventComponentInfo = 25                     /* Plugin component */
 } bEventType;
+
+#define FD_NR_EVENTS bEventHandleBackupFile /* keep this updated ! */
 
 typedef struct s_bEvent {
    uint32_t eventType;
@@ -235,11 +231,15 @@ typedef struct s_baculaInfo {
    uint32_t version;
 } bInfo;
 
-/* Bacula Core Routines -- not used within a plugin */
+/*
+ * Bacula Core Routines -- not used within a plugin
+ */
 #ifdef FILE_DAEMON
 struct BFILE;                   /* forward referenced */
 struct FF_PKT;
 void load_fd_plugins(const char *plugin_dir);
+void unload_fd_plugins(void);
+int list_fd_plugins(POOL_MEM &msg);
 void new_plugins(JCR *jcr);
 void free_plugins(JCR *jcr);
 void generate_plugin_event(JCR *jcr, bEventType event, void *value=NULL);
@@ -264,7 +264,7 @@ extern "C" {
 typedef struct s_baculaFuncs {  
    uint32_t size;
    uint32_t version;
-   bRC (*registerBaculaEvents)(bpContext *ctx, ...);
+   bRC (*registerBaculaEvents)(bpContext *ctx, int nr_events, ...);
    bRC (*getBaculaValue)(bpContext *ctx, bVariable var, void *value);
    bRC (*setBaculaValue)(bpContext *ctx, bVariable var, void *value);
    bRC (*JobMessage)(bpContext *ctx, const char *file, int line, 
@@ -286,9 +286,6 @@ typedef struct s_baculaFuncs {
    bRC (*AcceptFile)(bpContext *ctx, struct save_pkt *sp); /* Need fname and statp */
 } bFuncs;
 
-
-
-
 /****************************************************************************
  *                                                                          *
  *                Plugin definitions                                        *
@@ -300,20 +297,9 @@ typedef enum {
   pVarDescription = 2
 } pVariable;
 
-# define FD_PLUGIN_MAGIC  "*FDPluginData*" 
+#define FD_PLUGIN_MAGIC  "*FDPluginData*"
 
 #define FD_PLUGIN_INTERFACE_VERSION  7
-
-typedef struct s_pluginInfo {
-   uint32_t size;
-   uint32_t version;
-   const char *plugin_magic;
-   const char *plugin_license;
-   const char *plugin_author;
-   const char *plugin_date;
-   const char *plugin_version;
-   const char *plugin_description;
-} pInfo;
 
 /*
  * This is a set of function pointers that Bacula can call
@@ -338,7 +324,7 @@ typedef struct s_pluginFuncs {
 } pFuncs;
 
 #define plug_func(plugin) ((pFuncs *)(plugin->pfuncs))
-#define plug_info(plugin) ((pInfo *)(plugin->pinfo))
+#define plug_info(plugin) ((genpInfo *)(plugin->pinfo))
 
 #ifdef __cplusplus
 }

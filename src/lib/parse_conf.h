@@ -31,13 +31,13 @@
  *
  */
 
-struct RES_ITEM;                    /* Declare forward referenced structure */
-struct RES_ITEM2;                  /* Declare forward referenced structure */
-class RES;                         /* Declare forware referenced structure */
+struct RES_ITEM;                      /* Declare forward referenced structure */
+struct RES_ITEM2;                     /* Declare forward referenced structure */
+class RES;                            /* Declare forware referenced structure */
+
 typedef void (MSG_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);
 typedef void (INC_RES_HANDLER)(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
-
-
+typedef void (INIT_RES_HANDLER)(RES_ITEM *item);
 
 /* This is the structure that defines
  * the record types (items) permitted within each
@@ -59,9 +59,9 @@ struct RES_ITEM {
       RES *resvalue;
       RES **presvalue;
    };
-   int32_t  code;                     /* item code/additional info */
-   uint32_t  flags;                   /* flags: default, required, ... */
-   int32_t  default_value;            /* default value */
+   int32_t code;                      /* item code/additional info */
+   uint32_t flags;                    /* flags: default, required, ... */
+   const char *default_value;         /* default value */
 };
 
 struct RES_ITEM2 {
@@ -79,11 +79,10 @@ struct RES_ITEM2 {
       RES *resvalue;
       RES **presvalue;
    };
-   int32_t  code;                     /* item code/additional info */
-   uint32_t  flags;                   /* flags: default, required, ... */
-   int32_t  default_value;            /* default value */
+   int32_t code;                      /* item code/additional info */
+   uint32_t flags;                    /* flags: default, required, ... */
+   const char *default_value;         /* default value */
 };
-
 
 /* For storing name_addr items in res_items table */
 #define ITEM(x) {(char **)&res_all.x}
@@ -104,7 +103,6 @@ public:
    char  item_present[MAX_RES_ITEMS]; /* set if item is present in conf file */
 };
 
-
 /*
  * Master Resource configuration structure definition
  * This is the structure that defines the
@@ -116,8 +114,6 @@ struct RES_TABLE {
    uint32_t rcode;                    /* code if needed */
 };
 
-
-
 /* Common Resource definitions */
 
 #define MAX_RES_NAME_LENGTH MAX_NAME_LENGTH-1       /* maximum resource name length */
@@ -125,9 +121,10 @@ struct RES_TABLE {
 #define ITEM_REQUIRED    0x1          /* item required */
 #define ITEM_DEFAULT     0x2          /* default supplied */
 #define ITEM_NO_EQUALS   0x4          /* Don't scan = after name */
+#define ITEM_DEPRECATED  0x8          /* Deprecated config option */
 
 /* Message Resource */
-class MSGS {
+class MSGSRES {
 public:
    RES   hdr;
    char *mail_cmd;                    /* mail command */
@@ -154,39 +151,34 @@ public:
    void unlock();                     /* in message.c */
 };
 
-inline char *MSGS::name() const { return hdr.name; }
-
-/* 
- * Old C style configuration routines -- deprecated do not use.
- */
-//int   parse_config(const char *cf, LEX_ERROR_HANDLER *scan_error = NULL, int err_type=M_ERROR_TERM);
-void    free_config_resources(void);
-RES   **save_config_resources(void);
-RES   **new_res_head();
+inline char *MSGSRES::name() const { return hdr.name; }
 
 /*
  * New C++ configuration routines
  */
-
 class CONFIG {
 public:
-   const char *m_cf;                   /* config file */
-   LEX_ERROR_HANDLER *m_scan_error;    /* error handler if non-null */
-   int32_t m_err_type;                 /* the way to terminate on failure */
-   void *m_res_all;                    /* pointer to res_all buffer */
-   int32_t m_res_all_size;             /* length of buffer */
+   const char *m_cf;                    /* config file */
+   LEX_ERROR_HANDLER *m_scan_error;     /* error handler if non-null */
+   LEX_WARNING_HANDLER *m_scan_warning; /* warning handler if non-null */
+   INIT_RES_HANDLER *m_init_res;        /* init resource handler for non default types if non-null */
+   int32_t m_err_type;                  /* the way to terminate on failure */
+   void *m_res_all;                     /* pointer to res_all buffer */
+   int32_t m_res_all_size;              /* length of buffer */
 
    /* The below are not yet implemented */
-   int32_t m_r_first;                  /* first daemon resource type */
-   int32_t m_r_last;                   /* last daemon resource type */
-   RES_TABLE *m_resources;             /* pointer to table of permitted resources */      
-   RES **m_res_head;                   /* pointer to defined resources */
-   brwlock_t m_res_lock;               /* resource lock */
+   int32_t m_r_first;                   /* first daemon resource type */
+   int32_t m_r_last;                    /* last daemon resource type */
+   RES_TABLE *m_resources;              /* pointer to table of permitted resources */
+   RES **m_res_head;                    /* pointer to defined resources */
+   brwlock_t m_res_lock;                /* resource lock */
 
    /* functions */
    void init(
       const char *cf,
       LEX_ERROR_HANDLER *scan_error,
+      LEX_WARNING_HANDLER *scan_warning,
+      INIT_RES_HANDLER *init_res,
       int32_t err_type,
       void *vres_all,
       int32_t res_all_size,
@@ -200,9 +192,8 @@ public:
    RES **save_resources();
    RES **new_res_head();
 };
- 
-CONFIG *new_config_parser();
 
+CONFIG *new_config_parser();
 
 /* Resource routines */
 RES *GetResWithName(int rcode, const char *name);
@@ -219,11 +210,10 @@ const char *res_to_str(int rcode);
 #ifdef HAVE_TYPEOF
 #define foreach_res(var, type) \
         for((var)=NULL; ((var)=(typeof(var))GetNextRes((type), (RES *)var));)
-#else 
+#else
 #define foreach_res(var, type) \
     for(var=NULL; (*((void **)&(var))=(void *)GetNextRes((type), (RES *)var));)
 #endif
-
 
 /*
  * Standard global parsers defined in parse_config.c
@@ -248,6 +238,9 @@ void store_size32(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_speed(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_defs(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_label(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass);
+void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pass);
+void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass);
 
 /* ***FIXME*** eliminate these globals */
 extern int32_t r_first;

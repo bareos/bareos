@@ -232,7 +232,6 @@ CREATE TABLE Media
     VolBlocks		INTEGER 	DEFAULT 0,
     VolMounts		INTEGER 	DEFAULT 0,
     VolBytes		BIGINT		DEFAULT 0,
-    VolParts		INTEGER 	DEFAULT 0,
     VolErrors		INTEGER 	DEFAULT 0,
     VolWrites		INTEGER 	DEFAULT 0,
     VolCapacitybytes	BIGINT		DEFAULT 0,
@@ -261,6 +260,7 @@ CREATE TABLE Media
     InitialWrite	TIMESTAMP WITHOUT TIME ZONE,
     ScratchPoolId	INTEGER 	DEFAULT 0,
     RecyclePoolId	INTEGER 	DEFAULT 0,
+    EncryptionKey	VARBYTE(128),
     Comment		VARBYTE(4096),
     PRIMARY KEY (mediaid)
 );
@@ -447,6 +447,22 @@ CREATE TABLE Status (
    PRIMARY KEY (JobStatus)
 );
 
+CREATE TABLE Quota
+(
+   ClientId		INTEGER 	NOT NULL,
+   GraceTime		INTEGER		DEFAULT 0,
+   QuotaLimit		BIGINT		DEFAULT 0,
+   PRIMARY KEY (ClientId)
+);
+
+CREATE TABLE NDMPLevelMap
+(
+   ClientId		INTEGER 	NOT NULL,
+   FilesetId		INTEGER 	DEFAULT 0,
+   FileSystem 		VARBYTE(256)	NOT NULL,
+   DumpLevel		INTEGER 	DEFAULT 0,
+   CONSTRAINT NDMPLevelMap_pkey PRIMARY KEY (ClientId, FilesetId, FileSystem)
+);
 \g
 
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES

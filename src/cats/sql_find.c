@@ -61,9 +61,9 @@
  * Returns: 0 on failure
  *          1 on success, jr is unchanged, but stime and job are set
  */
-bool
-db_find_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM **stime, char *job)
+bool db_find_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM **stime, char *job)
 {
+   bool retval = false;
    SQL_ROW row;
    char ed1[50], ed2[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
@@ -140,13 +140,11 @@ db_find_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM **stime, char *
    bstrncpy(job, row[1], MAX_NAME_LENGTH);
 
    sql_free_result(mdb);
-
-   db_unlock(mdb);
-   return true;
+   retval = true;
 
 bail_out:
    db_unlock(mdb);
-   return false;
+   return retval;
 }
 
 
@@ -159,10 +157,10 @@ bail_out:
  * Returns: false on failure
  *          true  on success, jr is unchanged, but stime and job are set
  */
-bool
-db_find_last_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr, 
-                            POOLMEM **stime, char *job, int JobLevel)
+bool db_find_last_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr,
+                                 POOLMEM **stime, char *job, int JobLevel)
 {
+   bool retval = false;
    SQL_ROW row;
    char ed1[50], ed2[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
@@ -193,12 +191,11 @@ db_find_last_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr,
    bstrncpy(job, row[1], MAX_NAME_LENGTH);
 
    sql_free_result(mdb);
-   db_unlock(mdb);
-   return true;
+   retval = true;
 
 bail_out:
    db_unlock(mdb);
-   return false;
+   return retval;
 }
 
 /*
@@ -209,9 +206,9 @@ bail_out:
  *          true  on success, jr is unchanged and stime unchanged
  *                level returned in JobLevel
  */
-bool
-db_find_failed_job_since(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM *stime, int &JobLevel)
+bool db_find_failed_job_since(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM *stime, int &JobLevel)
 {
+   bool retval = false;
    SQL_ROW row;
    char ed1[50], ed2[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
@@ -229,20 +226,20 @@ db_find_failed_job_since(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM *stime, int &
          edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2),
          stime);
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-      db_unlock(mdb);
-      return false;
+      goto bail_out;
    }
 
    if ((row = sql_fetch_row(mdb)) == NULL) {
       sql_free_result(mdb);
-      db_unlock(mdb);
-      return false;
+      goto bail_out;
    }
    JobLevel = (int)*row[0];
    sql_free_result(mdb);
+   retval = true;
 
+bail_out:
    db_unlock(mdb);
-   return true;
+   return retval;
 }
 
 
@@ -254,9 +251,9 @@ db_find_failed_job_since(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM *stime, int &
  * Returns: true  on success
  *          false on failure
  */
-bool
-db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
+bool db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
 {
+   bool retval = false;
    SQL_ROW row;
    char ed1[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
@@ -289,19 +286,16 @@ db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
       }
    } else {
       Mmsg1(&mdb->errmsg, _("Unknown Job level=%d\n"), jr->JobLevel);
-      db_unlock(mdb);
-      return false;
+      goto bail_out;
    }
    Dmsg1(100, "Query: %s\n", mdb->cmd);
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-      db_unlock(mdb);
-      return false;
+      goto bail_out;
    }
    if ((row = sql_fetch_row(mdb)) == NULL) {
       Mmsg1(&mdb->errmsg, _("No Job found for: %s.\n"), mdb->cmd);
       sql_free_result(mdb);
-      db_unlock(mdb);
-      return false;
+      goto bail_out;
    }
 
    jr->JobId = str_to_int64(row[0]);
@@ -310,12 +304,13 @@ db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
    Dmsg1(100, "db_get_last_jobid: got JobId=%d\n", jr->JobId);
    if (jr->JobId <= 0) {
       Mmsg1(&mdb->errmsg, _("No Job found for: %s\n"), mdb->cmd);
-      db_unlock(mdb);
-      return false;
+      goto bail_out;
    }
+   retval = true;
 
+bail_out:
    db_unlock(mdb);
-   return true;
+   return retval;
 }
 
 /*
@@ -326,11 +321,10 @@ db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
  * Returns: 0 on failure
  *          numrows on success
  */
-int
-db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr)
+int db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr)
 {
    SQL_ROW row = NULL;
-   int numrows;
+   int num_rows = 0;
    const char *order;
    char esc_type[MAX_ESCAPE_NAME_LENGTH];
    char esc_status[MAX_ESCAPE_NAME_LENGTH];
@@ -346,9 +340,10 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
          "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,VolParts,LabelType,LabelDate,StorageId,"
+         "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
-         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge "
+         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
+         "ActionOnPurge,EncryptionKey "
          "FROM Media WHERE PoolId=%s AND MediaType='%s' AND VolStatus IN ('Full',"
          "'Recycle','Purged','Used','Append') AND Enabled=1 "
          "ORDER BY LastWritten LIMIT 1", 
@@ -361,8 +356,8 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
          Mmsg(changer, "AND InChanger=1 AND StorageId=%s",
               edit_int64(mr->StorageId, ed1));
       }
-      if (strcmp(mr->VolStatus, "Recycle") == 0 ||
-          strcmp(mr->VolStatus, "Purged") == 0) {
+      if (bstrcmp(mr->VolStatus, "Recycle") ||
+          bstrcmp(mr->VolStatus, "Purged")) {
          order = "AND Recycle=1 ORDER BY LastWritten ASC,MediaId";  /* take oldest that can be recycled */
       } else {
          order = sql_media_order_most_recently_written[db_get_type_index(mdb)];    /* take most recently written */
@@ -371,9 +366,10 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
          "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,VolParts,LabelType,LabelDate,StorageId,"
+         "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
-         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge "
+         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
+         "ActionOnPurge,EncryptionKey "
          "FROM Media WHERE PoolId=%s AND MediaType='%s' AND Enabled=1 "
          "AND VolStatus='%s' "
          "%s "
@@ -383,38 +379,36 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
    }
    Dmsg1(100, "fnextvol=%s\n", mdb->cmd);
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-      db_unlock(mdb);
-      return 0;
+      goto bail_out;
    }
 
-   numrows = sql_num_rows(mdb);
-   if (item > numrows || item < 1) {
-      Dmsg2(050, "item=%d got=%d\n", item, numrows);
+   num_rows = sql_num_rows(mdb);
+   if (item > num_rows || item < 1) {
+      Dmsg2(050, "item=%d got=%d\n", item, num_rows);
       Mmsg2(&mdb->errmsg, _("Request for Volume item %d greater than max %d or less than 1\n"),
-         item, numrows);
-      db_unlock(mdb);
-      return 0;
+         item, num_rows);
+      num_rows = 0;
+      goto bail_out;
    }
 
-   /* Note, we previously seeked to the row using:
-    *  sql_data_seek(mdb, item-1);
-    * but this failed on PostgreSQL, so now we loop
-    * over all the records.  This should not be too horrible since
-    * the maximum Volumes we look at in any case is 20.
+   /* Note, we previously seeked to the row using: sql_data_seek(mdb, item-1);
+    * but this failed on PostgreSQL, so now we loop over all the records.
+    * This should not be too horrible since the maximum Volumes we look at
+    * in any case is 20.
     */
    while (item-- > 0) {
       if ((row = sql_fetch_row(mdb)) == NULL) {
          Dmsg1(050, "Fail fetch item=%d\n", item+1);
          Mmsg1(&mdb->errmsg, _("No Volume record found for item %d.\n"), item);
          sql_free_result(mdb);
-         db_unlock(mdb);
-         return 0;
+         num_rows = 0;
+         goto bail_out;
       }
    }
 
    /* Return fields in Media Record */
    mr->MediaId = str_to_int64(row[0]);
-   bstrncpy(mr->VolumeName, row[1]!=NULL?row[1]:"", sizeof(mr->VolumeName));
+   bstrncpy(mr->VolumeName, (row[1] != NULL) ? row[1] : "", sizeof(mr->VolumeName));
    mr->VolJobs = str_to_int64(row[2]);
    mr->VolFiles = str_to_int64(row[3]);
    mr->VolBlocks = str_to_int64(row[4]);
@@ -424,8 +418,8 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
    mr->VolWrites = str_to_int64(row[8]);
    mr->MaxVolBytes = str_to_uint64(row[9]);
    mr->VolCapacityBytes = str_to_uint64(row[10]);
-   bstrncpy(mr->MediaType, row[11]!=NULL?row[11]:"", sizeof(mr->MediaType));
-   bstrncpy(mr->VolStatus, row[12]!=NULL?row[12]:"", sizeof(mr->VolStatus));
+   bstrncpy(mr->MediaType, (row[11] != NULL) ? row[11] : "", sizeof(mr->MediaType));
+   bstrncpy(mr->VolStatus, (row[12] != NULL) ? row[12] : "", sizeof(mr->VolStatus));
    mr->PoolId = str_to_int64(row[13]);
    mr->VolRetention = str_to_uint64(row[14]);
    mr->VolUseDuration = str_to_uint64(row[15]);
@@ -433,34 +427,35 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
    mr->MaxVolFiles = str_to_int64(row[17]);
    mr->Recycle = str_to_int64(row[18]);
    mr->Slot = str_to_int64(row[19]);
-   bstrncpy(mr->cFirstWritten, row[20]!=NULL?row[20]:"", sizeof(mr->cFirstWritten));
+   bstrncpy(mr->cFirstWritten, (row[20] != NULL) ? row[20] : "", sizeof(mr->cFirstWritten));
    mr->FirstWritten = (time_t)str_to_utime(mr->cFirstWritten);
-   bstrncpy(mr->cLastWritten, row[21]!=NULL?row[21]:"", sizeof(mr->cLastWritten));
+   bstrncpy(mr->cLastWritten, (row[21] != NULL) ? row[21] : "", sizeof(mr->cLastWritten));
    mr->LastWritten = (time_t)str_to_utime(mr->cLastWritten);
    mr->InChanger = str_to_uint64(row[22]);
    mr->EndFile = str_to_uint64(row[23]);
    mr->EndBlock = str_to_uint64(row[24]);
-   mr->VolParts = str_to_int64(row[25]);
-   mr->LabelType = str_to_int64(row[26]);
-   bstrncpy(mr->cLabelDate, row[27]!=NULL?row[27]:"", sizeof(mr->cLabelDate));
+   mr->LabelType = str_to_int64(row[25]);
+   bstrncpy(mr->cLabelDate, (row[26] != NULL) ? row[26] : "", sizeof(mr->cLabelDate));
    mr->LabelDate = (time_t)str_to_utime(mr->cLabelDate);
-   mr->StorageId = str_to_int64(row[28]);
-   mr->Enabled = str_to_int64(row[29]);
-   mr->LocationId = str_to_int64(row[30]);
-   mr->RecycleCount = str_to_int64(row[31]);
-   bstrncpy(mr->cInitialWrite, row[32]!=NULL?row[32]:"", sizeof(mr->cInitialWrite));
+   mr->StorageId = str_to_int64(row[27]);
+   mr->Enabled = str_to_int64(row[28]);
+   mr->LocationId = str_to_int64(row[29]);
+   mr->RecycleCount = str_to_int64(row[30]);
+   bstrncpy(mr->cInitialWrite, (row[31] != NULL) ? row[31] : "", sizeof(mr->cInitialWrite));
    mr->InitialWrite = (time_t)str_to_utime(mr->cInitialWrite);
-   mr->ScratchPoolId = str_to_int64(row[33]);
-   mr->RecyclePoolId = str_to_int64(row[34]);
-   mr->VolReadTime = str_to_int64(row[35]);
-   mr->VolWriteTime = str_to_int64(row[36]);
-   mr->ActionOnPurge = str_to_int64(row[37]);
+   mr->ScratchPoolId = str_to_int64(row[32]);
+   mr->RecyclePoolId = str_to_int64(row[33]);
+   mr->VolReadTime = str_to_int64(row[34]);
+   mr->VolWriteTime = str_to_int64(row[35]);
+   mr->ActionOnPurge = str_to_int64(row[36]);
+   bstrncpy(mr->EncrKey, (row[37] != NULL) ? row[37] : "", sizeof(mr->EncrKey));
 
    sql_free_result(mdb);
 
+bail_out:
    db_unlock(mdb);
-   Dmsg1(050, "Rtn numrows=%d\n", numrows);
-   return numrows;
+   Dmsg1(050, "Rtn numrows=%d\n", num_rows);
+   return num_rows;
 }
 
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI */

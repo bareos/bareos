@@ -220,6 +220,11 @@ fi_checked:
             break;
          }
          jcr->JobBytes += rec.data_len;   /* increment bytes this job */
+         if (jcr->RemainingQuota && jcr->JobBytes > jcr->RemainingQuota) {
+            Jmsg0(jcr, M_FATAL, 0, _("Quota Exceeded. Job Terminated.\n"));
+            ok = false;
+            break;
+         }
          Dmsg4(850, "write_record FI=%s SessId=%d Strm=%s len=%d\n",
             FI_to_ascii(buf1, rec.FileIndex), rec.VolSessionId,
             stream_to_ascii(buf2, rec.Stream, rec.FileIndex), rec.data_len);
@@ -289,10 +294,6 @@ fi_checked:
    } else {
       /* Note: if commit is OK, the device will remain blocked */
       commit_data_spool(dcr);
-   }
-
-   if (ok) {
-      ok = dvd_close_job(dcr);  /* do DVD cleanup if any */
    }
 
    /*

@@ -127,11 +127,11 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    if (!dcr->mount_next_write_volume()) {
       free_block(label_blk);
       dcr->block = block;
-      dev->Lock();  
+      dev->Lock();
       goto bail_out;
    }
    Dmsg2(050, "must_unload=%d dev=%s\n", dev->must_unload(), dev->print_name());
-   dev->Lock();                    /* lock again */
+   dev->Lock();
 
    dev->VolCatInfo.VolCatJobs++;              /* increment number of jobs on vol */
    dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
@@ -253,8 +253,6 @@ void set_new_file_parameters(DCR *dcr)
    dcr->WroteVol = false;
 }
 
-
-
 /*
  *   First Open of the device. Expect dev to already be initialized.
  *
@@ -321,9 +319,7 @@ bool open_device(DCR *dcr)
    }
    if (!dev->open(dcr, mode)) {
       /* If polling, ignore the error */
-      /* If DVD, also ignore the error, very often you cannot open the device
-       * (when there is no DVD, or when the one inserted is a wrong one) */
-      if (!dev->poll && !dev->is_dvd() && !dev->is_removable()) {
+      if (!dev->poll && !dev->is_removable()) {
          Jmsg2(dcr->jcr, M_FATAL, 0, _("Unable to open device %s: ERR=%s\n"),
             dev->print_name(), dev->bstrerror());
          Pmsg2(000, _("Unable to open archive %s: ERR=%s\n"), 
@@ -332,4 +328,75 @@ bool open_device(DCR *dcr)
       return false;
    }
    return true;
+}
+
+/*
+ * Position to the first file on this volume
+ */
+BSR *position_device_to_first_file(JCR *jcr, DCR *dcr)
+{
+   BSR *bsr = NULL;
+   DEVICE *dev = dcr->dev;
+   uint32_t file, block;
+   /*
+    * Now find and position to first file and block
+    *   on this tape.
+    */
+   if (jcr->bsr) {
+      jcr->bsr->reposition = true;    /* force repositioning */
+      bsr = find_next_bsr(jcr->bsr, dev);
+      if (get_bsr_start_addr(bsr, &file, &block) > 0) {
+         Jmsg(jcr, M_INFO, 0, _("Forward spacing Volume \"%s\" to file:block %u:%u.\n"),
+              dev->VolHdr.VolumeName, file, block);
+         dev->reposition(dcr, file, block);
+      }
+   }
+   return bsr;
+}
+
+/*
+ * See if we can reposition.
+ *
+ * Returns: true  if at end of volume
+ *          false otherwise
+ */
+bool try_device_repositioning(JCR *jcr, DEV_RECORD *rec, DCR *dcr)
+{
+   BSR *bsr;
+   DEVICE *dev = dcr->dev;
+
+   bsr = find_next_bsr(jcr->bsr, dev);
+   if (bsr == NULL && jcr->bsr->mount_next_volume) {
+      Dmsg0(500, "Would mount next volume here\n");
+      Dmsg2(500, "Current postion (file:block) %u:%u\n",
+         dev->file, dev->block_num);
+      jcr->bsr->mount_next_volume = false;
+      if (!dev->at_eot()) {
+         /* Set EOT flag to force mount of next Volume */
+         jcr->mount_next_volume = true;
+         dev->set_eot();
+      }
+      rec->Block = 0;
+      return true;
+   }
+   if (bsr) {
+      /*
+       * ***FIXME*** gross kludge to make disk seeking work.  Remove
+       *   when find_next_bsr() is fixed not to return a bsr already
+       *   completed.
+       */
+      uint32_t block, file;
+      /* TODO: use dev->file_addr ? */
+      uint64_t dev_addr = (((uint64_t) dev->file)<<32) | dev->block_num;
+      uint64_t bsr_addr = get_bsr_start_addr(bsr, &file, &block);
+
+      if (dev_addr > bsr_addr) {
+         return false;
+      }
+      Dmsg4(500, "Try_Reposition from (file:block) %u:%u to %u:%u\n",
+            dev->file, dev->block_num, file, block);
+      dev->reposition(dcr, file, block);
+      rec->Block = 0;
+   }
+   return false;
 }

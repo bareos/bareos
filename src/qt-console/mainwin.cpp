@@ -186,9 +186,9 @@ void MainWin::createPages()
       new MediaList();
       new MediaView();
       new Storage();
-//    if (m_openBrowser) {
-//       new restoreTree();
-//    }
+      if (m_openBrowser) {
+         new restoreTree();
+      }
       if (m_openDirStat) {
          new DirStat();
       }
@@ -573,7 +573,7 @@ void MainWin::estimateButtonClicked()
 
 void MainWin::browseButtonClicked() 
 {
-//   new restoreTree();
+   new restoreTree();
 }
 
 void MainWin::statusPageButtonClicked()

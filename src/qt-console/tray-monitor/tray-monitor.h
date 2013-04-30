@@ -87,7 +87,7 @@ void get_list(monitoritem* item, const char *cmd, QStringList &lst);
 class  monitoritem {
 public:
    rescode type; /* R_DIRECTOR, R_CLIENT or R_STORAGE */
-   void* resource; /* DIRRES*, CLIENT* or STORE* */
+   void* resource; /* DIRRES*, CLIENTRES* or STORERES* */
    BSOCK *D_sock;
    stateenum state;
    stateenum oldstate;
@@ -128,7 +128,7 @@ public:
          }
          /* Pointer to default value */
          *def++ = 0;
-         strip_trailing_junk(def);
+         strip_trailing_newline(def);
          
          if (strcmp(dircomm->msg, "job") == 0) {
             if (strcmp(def, job_defs.job_name.toUtf8().data()) != 0) {

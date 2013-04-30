@@ -97,7 +97,6 @@ mv docs $base_pkg-$ver
 cd $base_pkg-$ver
 ./configure --with-bacula=$bsrc
 make en
-make clean
 cd ${cwd}
 echo "Tarring docs ..."
 tar cf $base_pkg-$ver.tar $base_pkg-$ver

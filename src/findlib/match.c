@@ -57,13 +57,10 @@ static const int fnmode = FNM_CASEFOLD;
 static const int fnmode = 0;
 #endif
 
-
 #undef bmalloc
 #define bmalloc(x) sm_malloc(__FILE__, __LINE__, x)
 
-
-int
-match_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *, FF_PKT *ff_pkt, bool))
+bool match_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *, FF_PKT *ff_pkt, bool))
 {
    ff->file_save = file_save;
 
@@ -76,13 +73,12 @@ match_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *, FF_PKT *ff_pkt, bool))
       Dmsg1(100, "find_files: file=%s\n", inc->fname);
       if (!file_is_excluded(ff, inc->fname)) {
          if (find_one_file(jcr, ff, file_save, inc->fname, (dev_t)-1, 1) ==0) {
-            return 0;                  /* error return */
+            return false;                  /* error return */
          }
       }
    }
-   return 1;
+   return true;
 }
-
 
 /*
  * Done doing filename matching, release all
@@ -95,6 +91,9 @@ void term_include_exclude_files(FF_PKT *ff)
 
    for (inc=ff->included_files_list; inc; ) {
       next_inc = inc->next;
+      if (inc->size_match) {
+         free(inc->size_match);
+      }
       free(inc);
       inc = next_inc;
    }
@@ -124,11 +123,12 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
    struct s_included_file *inc;
    char *p;
    const char *rp;
+   char size[50];
 
    len = strlen(fname);
 
    inc =(struct s_included_file *)bmalloc(sizeof(struct s_included_file) + len + 1);
-   inc->options = 0;
+   memset(inc, 0, sizeof(struct s_included_file) + len + 1);
    inc->VerifyOpts[0] = 'V';
    inc->VerifyOpts[1] = ':';
    inc->VerifyOpts[2] = 0;
@@ -137,17 +137,60 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
    if (prefixed) {
       for (rp=fname; *rp && *rp != ' '; rp++) {
          switch (*rp) {
+         case 'A':
+            inc->options |= FO_ACL;
+            break;
          case 'a':                 /* alway replace */
          case '0':                 /* no option */
+            break;
+         case 'c':
+            inc->options |= FO_CHKCHANGES;
+            break;
+         case 'd':
+            switch(*(rp + 1)) {
+            case '1':
+               inc->shadow_type = check_shadow_local_warn;
+               break;
+            case '2':
+               inc->shadow_type = check_shadow_local_remove;
+               break;
+            case '3':
+               inc->shadow_type = check_shadow_global_warn;
+               break;
+            case '4':
+               inc->shadow_type = check_shadow_global_remove;
+               break;
+            }
+            break;
+         case 'e':
+            inc->options |= FO_EXCLUDE;
             break;
          case 'f':
             inc->options |= FO_MULTIFS;
             break;
+         case 'H':                 /* no hard link handling */
+            inc->options |= FO_NO_HARDLINK;
+            break;
          case 'h':                 /* no recursion */
             inc->options |= FO_NO_RECURSION;
             break;
+         case 'i':
+            inc->options |= FO_IGNORECASE;
+            break;
+         case 'K':
+            inc->options |= FO_NOATIME;
+            break;
+         case 'k':
+            inc->options |= FO_KEEPATIME;
+            break;
          case 'M':                 /* MD5 */
             inc->options |= FO_MD5;
+            break;
+         case 'm':
+            inc->options |= FO_MTIMEONLY;
+            break;
+         case 'N':
+            inc->options |= FO_HONOR_NODUMP;
             break;
          case 'n':
             inc->options |= FO_NOREPLACE;
@@ -155,20 +198,42 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
          case 'p':                 /* use portable data format */
             inc->options |= FO_PORTABLE;
             break;
+         case 'R':                 /* Resource forks and Finder Info */
+            inc->options |= FO_HFSPLUS;
+            break;
          case 'r':                 /* read fifo */
             inc->options |= FO_READFIFO;
             break;
          case 'S':
-            inc->options |= FO_SHA1;
+            switch(*(rp + 1)) {
+            case '1':
+               inc->options |= FO_SHA1;
+               rp++;
+               break;
+#ifdef HAVE_SHA2
+            case '2':
+               inc->options |= FO_SHA256;
+               rp++;
+               break;
+            case '3':
+               inc->options |= FO_SHA512;
+               rp++;
+               break;
+#endif
+            default:
+               /*
+                * If 2 or 3 is seen here, SHA2 is not configured, so
+                *  eat the option, and drop back to SHA-1.
+                */
+               if (rp[1] == '2' || rp[1] == '3') {
+                  rp++;
+               }
+               inc->options |= FO_SHA1;
+               break;
+            }
             break;
          case 's':
             inc->options |= FO_SPARSE;
-            break;
-         case 'm':
-            inc->options |= FO_MTIMEONLY;
-            break;
-         case 'k':
-            inc->options |= FO_KEEPATIME;
             break;
          case 'V':                  /* verify options */
             /* Copy Verify Options */
@@ -180,11 +245,14 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
             }
             inc->VerifyOpts[j] = 0;
             break;
+         case 'W':
+            inc->options |= FO_ENHANCEDWILD;
+            break;
          case 'w':
             inc->options |= FO_IF_NEWER;
             break;
-         case 'A':
-            inc->options |= FO_ACL;
+         case 'X':
+            inc->options |= FO_XATTR;
             break;
          case 'Z':                 /* compression */
             rp++;                   /* skip Z */
@@ -200,11 +268,21 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
             }
             Dmsg2(200, "Compression alg=%d level=%d\n", inc->algo, inc->level);
             break;
-         case 'K':
-            inc->options |= FO_NOATIME;
-            break;
-         case 'X':
-            inc->options |= FO_XATTR;
+         case 'z':                 /* min, max or approx size or size range */
+            rp++;                   /* skip z */
+            for (j=0; *rp && *rp != ':'; rp++) {
+               size[j] = *rp;
+               if (j < (int)sizeof(size) - 1) {
+                  j++;
+               }
+            }
+            size[j] = 0;
+            if (!inc->size_match) {
+               inc->size_match = (struct s_sz_matching *)bmalloc(sizeof(struct s_sz_matching));
+            }
+            if (!parse_size_match(size, inc->size_match)) {
+               Emsg1(M_ERROR, 0, _("Unparseable size option: %s\n"), size);
+            }
             break;
          default:
             Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *rp);
@@ -280,6 +358,7 @@ void add_fname_to_exclude_list(FF_PKT *ff, const char *fname)
    len = strlen(fname);
 
    exc = (struct s_excluded_file *)bmalloc(sizeof(struct s_excluded_file) + len + 1);
+   memset(exc, 0, sizeof(struct s_excluded_file) + len + 1);
    exc->next = *list;
    exc->len = len;
    strcpy(exc->fname, fname);
@@ -322,8 +401,7 @@ struct s_included_file *get_next_included_file(FF_PKT *ff, struct s_included_fil
  * Walk through the included list to see if this
  *  file is included possibly with wild-cards.
  */
-
-int file_is_included(FF_PKT *ff, const char *file)
+bool file_is_included(FF_PKT *ff, const char *file)
 {
    struct s_included_file *inc = ff->included_files_list;
    int len;
@@ -331,7 +409,7 @@ int file_is_included(FF_PKT *ff, const char *file)
    for ( ; inc; inc=inc->next ) {
       if (inc->pattern) {
          if (fnmatch(inc->fname, file, fnmode|FNM_LEADING_DIR) == 0) {
-            return 1;
+            return true;
          }
          continue;
       }
@@ -341,27 +419,25 @@ int file_is_included(FF_PKT *ff, const char *file)
        */
       Dmsg2(900, "pat=%s file=%s\n", inc->fname, file);
       len = strlen(file);
-      if (inc->len == len && strcmp(inc->fname, file) == 0) {
-         return 1;
+      if (inc->len == len && bstrcmp(inc->fname, file)) {
+         return true;
       }
       if (inc->len < len && IsPathSeparator(file[inc->len]) &&
-          strncmp(inc->fname, file, inc->len) == 0) {
-         return 1;
+          bstrncmp(inc->fname, file, inc->len)) {
+         return true;
       }
       if (inc->len == 1 && IsPathSeparator(inc->fname[0])) {
-         return 1;
+         return true;
       }
    }
-   return 0;
+   return false;
 }
-
 
 /*
  * This is the workhorse of excluded_file().
  * Determine if the file is excluded or not.
  */
-static int
-file_in_excluded_list(struct s_excluded_file *exc, const char *file)
+static bool file_in_excluded_list(struct s_excluded_file *exc, const char *file)
 {
    if (exc == NULL) {
       Dmsg0(900, "exc is NULL\n");
@@ -369,21 +445,19 @@ file_in_excluded_list(struct s_excluded_file *exc, const char *file)
    for ( ; exc; exc=exc->next ) {
       if (fnmatch(exc->fname, file, fnmode|FNM_PATHNAME) == 0) {
          Dmsg2(900, "Match exc pat=%s: file=%s:\n", exc->fname, file);
-         return 1;
+         return true;
       }
       Dmsg2(900, "No match exc pat=%s: file=%s:\n", exc->fname, file);
    }
-   return 0;
+   return false;
 }
-
 
 /*
  * Walk through the excluded lists to see if this
  *  file is excluded, or if it matches a component
  *  of an excluded directory.
  */
-
-int file_is_excluded(FF_PKT *ff, const char *file)
+bool file_is_excluded(FF_PKT *ff, const char *file)
 {
    const char *p;
 
@@ -398,7 +472,7 @@ int file_is_excluded(FF_PKT *ff, const char *file)
 #endif
 
    if (file_in_excluded_list(ff->excluded_paths_list, file)) {
-      return 1;
+      return true;
    }
 
    /* Try each component */
@@ -406,8 +480,73 @@ int file_is_excluded(FF_PKT *ff, const char *file)
       /* Match from the beginning of a component only */
       if ((p == file || (!IsPathSeparator(*p) && IsPathSeparator(p[-1])))
            && file_in_excluded_list(ff->excluded_files_list, p)) {
-         return 1;
+         return true;
       }
    }
-   return 0;
+   return false;
+}
+
+/*
+ * Parse a size matching fileset option.
+ */
+bool parse_size_match(const char *size_match_pattern,
+                      struct s_sz_matching *size_matching)
+{
+  bool retval = false;
+  char *private_copy, *bp;
+
+   /*
+    * Make a private copy of the input string.
+    * As we manipulate the input and size_to_uint64
+    * eats its input.
+    */
+   private_copy = bstrdup(size_match_pattern);
+
+   /*
+    * Empty the matching arguments.
+    */
+   memset(size_matching, 0, sizeof(struct s_sz_matching));
+
+   /*
+    * See if the size is a range e.g. there is a - in the
+    * match pattern. As a size of a file can never be negative
+    * this is a workable solution.
+    */
+   if ((bp = strchr(private_copy, '-')) != NULL) {
+      *bp++ = '\0';
+      size_matching->type = size_match_range;
+      if (!size_to_uint64(private_copy, &size_matching->begin_size)) {
+         goto bail_out;
+      }
+      if (!size_to_uint64(bp, &size_matching->end_size)) {
+         goto bail_out;
+      }
+   } else {
+      switch (*private_copy) {
+      case '<':
+         size_matching->type = size_match_smaller;
+         if (!size_to_uint64(private_copy + 1, &size_matching->begin_size)) {
+            goto bail_out;
+         }
+         break;
+      case '>':
+         size_matching->type = size_match_greater;
+         if (!size_to_uint64(private_copy + 1, &size_matching->begin_size)) {
+            goto bail_out;
+         }
+         break;
+      default:
+         size_matching->type = size_match_approx;
+         if (!size_to_uint64(private_copy, &size_matching->begin_size)) {
+            goto bail_out;
+         }
+         break;
+      }
+   }
+
+   retval = true;
+
+bail_out:
+   free(private_copy);
+   return retval;
 }

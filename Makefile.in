@@ -3,27 +3,26 @@
 #
 @MCOMMON@
 
-working_dir=@working_dir@
-dir_group=@dir_group@
-dir_user=@dir_user@
+working_dir = @working_dir@
+dir_group = @dir_group@
+dir_user = @dir_user@
 
-srcdir =	@srcdir@
-VPATH = 	@srcdir@
-.PATH:		@srcdir@
+srcdir = @srcdir@
+VPATH = @srcdir@
+.PATH: @srcdir@
 topdir = .
 thisdir = .
-
 
 first_rule: all
 dummy:
 
 # --client-only directories
 fd_subdirs = src scripts src/lib src/findlib src/filed \
-       @READLINE_SRC@ @BAT_DIR@ @TRAY_MONITOR_DIR@ @WX_DIR@ \
+       @READLINE_SRC@ @BAT_DIR@ @TRAY_MONITOR_DIR@ \
        src/console @FD_PLUGIN_DIR@
 
 # Non-client-only directores
-subdirs =    src/cats @DIRD_DIR@ @STORED_DIR@ src/tools
+subdirs =    src/cats @NDMP_DIR@ @DIRD_DIR@ @STORED_DIR@ @SD_PLUGIN_DIR@ @DIR_PLUGIN_DIR@ src/tools
 
 all_subdirs = ${fd_subdirs} ${@ALL_DIRS@} manpages
 

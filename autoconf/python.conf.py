@@ -2,7 +2,7 @@ import sys
 import os
 from distutils import sysconfig
 
-print 'PYTHON_INCDIR="-I%s"' % \
+print 'PYTHON_INC="-I%s"' % \
       ( sysconfig.get_config_var('INCLUDEPY'), )
 
 libdir=sysconfig.get_config_var('LIBPL')

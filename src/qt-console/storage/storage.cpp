@@ -53,6 +53,7 @@ Storage::Storage() : Pages()
 
    /* mp_treeWidget, Storage Tree Tree Widget inherited from ui_storage.h */
    m_populated = false;
+   m_needs_repopulate = false;
    m_firstpopulation = true;
    m_checkcurwidget = true;
    m_closeable = false;
@@ -64,8 +65,9 @@ Storage::Storage() : Pages()
 
 Storage::~Storage()
 {
-   if (m_populated)
+   if (m_populated) {
       writeExpandedSettings();
+   }
 }
 
 /*
@@ -74,8 +76,9 @@ Storage::~Storage()
  */
 void Storage::populateTree()
 {
-   if (m_populated)
+   if (m_populated) {
       writeExpandedSettings();
+   }
    m_populated = true;
 
    Freeze frz(*mp_treeWidget); /* disable updating */
@@ -152,8 +155,9 @@ void Storage::populateTree()
             QString changer = fld.next();
             storageItem.setBoolFld(index++, changer);
 
-            if (changer == "1")
+            if (changer == "1") {
                mediaList(storageItem.widget(), fieldlist.first());
+            }
          }
       }
    }
@@ -190,8 +194,10 @@ void Storage::mediaList(QTreeWidgetItem *parent, const QString &storageID)
  
       foreach (resultline, results) {
          fieldlist = resultline.split("\t");
-         if (fieldlist.size() < 6)
+         if (fieldlist.size() < 6) {
+             Pmsg1(0, "Discarding %s\n", resultline.data());
              continue; 
+         }
 
          /* Iterate through fields in the record */
          QStringListIterator fld(fieldlist);
@@ -218,7 +224,6 @@ void Storage::mediaList(QTreeWidgetItem *parent, const QString &storageID)
 
          /* media type */
          fmt.setTextFld(index++, fld.next()); 
-
       }
    }
 }
@@ -258,6 +263,7 @@ void Storage::treeItemChanged(QTreeWidgetItem *currentwidgetitem, QTreeWidgetIte
             mp_treeWidget->removeAction(actionUpdateSlots);
             mp_treeWidget->removeAction(actionUpdateSlotsScan);
             mp_treeWidget->removeAction(actionRelease);
+            mp_treeWidget->removeAction(actionImportStorage);
          }
       }
 
@@ -283,15 +289,19 @@ void Storage::treeItemChanged(QTreeWidgetItem *currentwidgetitem, QTreeWidgetIte
          text = tr("Mount media in Storage \"%1\"").arg(m_currentStorage);
          actionMountStorage->setText(text);
          text = tr("\"UN\" Mount media in Storage \"%1\"").arg(m_currentStorage);
+         actionUnMountStorage->setText(text);
          text = tr("Release media in Storage \"%1\"").arg(m_currentStorage);
          actionRelease->setText(text);
          if (m_currentAutoChanger) {
             mp_treeWidget->addAction(actionUpdateSlots);
             mp_treeWidget->addAction(actionUpdateSlotsScan);
+            mp_treeWidget->addAction(actionImportStorage);
             text = tr("Barcode Scan media in Storage \"%1\"").arg(m_currentStorage);
             actionUpdateSlots->setText(text);
             text = tr("Read scan media in Storage \"%1\"").arg( m_currentStorage);
             actionUpdateSlotsScan->setText(text);
+            text = tr("Import volumes in Storage \"%1\"").arg(m_currentStorage);
+            actionImportStorage->setText(text);
          }
       }
    }
@@ -324,13 +334,14 @@ void Storage::createContextMenu()
                 SLOT(consoleUpdateSlots()));
    connect(actionUpdateSlotsScan, SIGNAL(triggered()), this,
                 SLOT(consoleUpdateSlotsScan()));
+   connect(actionImportStorage, SIGNAL(triggered()), this,
+                SLOT(consoleImportStorage()));
    connect(actionRelease, SIGNAL(triggered()), this,
                 SLOT(consoleRelease()));
    connect(actionStatusStorageWindow, SIGNAL(triggered()), this,
                 SLOT(statusStorageWindow()));
    connect(mp_treeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
            this, SLOT(contentWindow()));
-
 }
 
 void Storage::contentWindow()
@@ -346,10 +357,19 @@ void Storage::contentWindow()
  */
 void Storage::currentStackItem()
 {
-   if(!m_populated) {
-      populateTree();
-      /* Create the context menu for the storage tree */
-      createContextMenu();
+   if (!m_populated || m_needs_repopulate) {
+      /*
+       * If things are not populated yet we do both
+       * the populate and create the context menu for the
+       * storage tree. When its a (Re)populate we only do
+       * a populateTree.
+       */
+      if (!m_populated) {
+         populateTree();
+         createContextMenu();
+      } else {
+         populateTree();
+      }
    }
 }
 
@@ -359,8 +379,11 @@ void Storage::currentStackItem()
  */
 void Storage::consoleStatusStorage()
 {
-   QString cmd("status storage=");
-   cmd += m_currentStorage;
+   QString cmd;
+
+   cmd = QString("status storage=\"%1\"")
+                 .arg(m_currentStorage);
+
    consoleCommand(cmd);
 }
 
@@ -373,10 +396,13 @@ void Storage::consoleLabelStorage()
 /* Mount currently selected storage */
 void Storage::consoleMountStorage()
 {
-   if (m_currentAutoChanger == 0){
+   if (m_currentAutoChanger == 0) {
       /* no autochanger, just execute the command in the console */
-      QString cmd("mount storage=");
-      cmd += m_currentStorage;
+      QString cmd;
+
+      cmd = QString("mount storage=\"%1\"")
+                    .arg(m_currentStorage);
+
       consoleCommand(cmd);
    } else {
       setConsoleCurrent();
@@ -388,32 +414,70 @@ void Storage::consoleMountStorage()
 /* Unmount Currently selected storage */
 void Storage::consoleUnMountStorage()
 {
-   QString cmd("umount storage=");
-   cmd += m_currentStorage;
+   QString cmd;
+
+   cmd = QString("umount storage=\"%1\"")
+                 .arg(m_currentStorage);
+
    consoleCommand(cmd);
 }
 
 /* Update Slots */
 void Storage::consoleUpdateSlots()
 {
-   QString cmd("update slots storage=");
-   cmd += m_currentStorage;
+   QString cmd;
+
+   cmd = QString("update slots storage=\"%1\"")
+                 .arg(m_currentStorage);
+
    consoleCommand(cmd);
+
+   /*
+    * Database is updated so (re)populate the view.
+    */
+   m_needs_repopulate = true;
 }
 
-/* Update Slots Scan*/
+/* Update Slots Scan */
 void Storage::consoleUpdateSlotsScan()
 {
-   QString cmd("update slots scan storage=");
-   cmd += m_currentStorage;
+   QString cmd;
+
+   cmd = QString("update slots scan storage=\"%1\"")
+                 .arg(m_currentStorage);
+
    consoleCommand(cmd);
+
+   /*
+    * Database is updated so (re)populate the view.
+    */
+   m_needs_repopulate = true;
+}
+
+/* Import volumes loaded in current import/export slots */
+void Storage::consoleImportStorage()
+{
+   QString cmd;
+
+   cmd = QString("import storage=\"%1\"")
+                 .arg(m_currentStorage);
+
+   consoleCommand(cmd);
+
+   /*
+    * Volumes have moved so (re)populate the view.
+    */
+   m_needs_repopulate = true;
 }
 
 /* Release a tape in the drive */
 void Storage::consoleRelease()
 {
-   QString cmd("release storage=");
-   cmd += m_currentStorage;
+   QString cmd;
+
+   cmd = QString("release storage=\"%1\"")
+                 .arg(m_currentStorage);
+
    consoleCommand(cmd);
 }
 

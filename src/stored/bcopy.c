@@ -35,9 +35,9 @@
 
 #include "bacula.h"
 #include "stored.h"
+#include "lib/crypto_cache.h"
 
 /* Dummy functions */
-int generate_daemon_event(JCR *jcr, const char *event) { return 1; }
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
@@ -73,26 +73,30 @@ static void usage()
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
 "Usage: bcopy [-d debug_level] <input-archive> <output-archive>\n"
-"       -b bootstrap      specify a bootstrap file\n"
-"       -c <file>         specify a Storage configuration file\n"
-"       -d <nn>           set debug level to <nn>\n"
-"       -dt               print timestamp in debug output\n"
-"       -i                specify input Volume names (separated by |)\n"
-"       -o                specify output Volume names (separated by |)\n"
-"       -p                proceed inspite of errors\n"
-"       -v                verbose\n"
-"       -w <dir>          specify working directory (default /tmp)\n"
-"       -?                print this message\n\n"), 2002, VERSION, BDATE);
+"       -b bootstrap    specify a bootstrap file\n"
+"       -c <file>       specify a Storage configuration file\n"
+"       -D <director>   specify a director name specified in the Storage\n"
+"                       configuration file for the Key Encryption Key selection\n"
+"       -d <nn>         set debug level to <nn>\n"
+"       -dt             print timestamp in debug output\n"
+"       -i              specify input Volume names (separated by |)\n"
+"       -o              specify output Volume names (separated by |)\n"
+"       -p              proceed inspite of errors\n"
+"       -v              verbose\n"
+"       -w <dir>        specify working directory (default /tmp)\n"
+"       -?              print this message\n\n"), 2002, VERSION, BDATE);
    exit(1);
 }
 
 int main (int argc, char *argv[])
 {
    int ch;
+   bool ok;
    char *iVolumeName = NULL;
    char *oVolumeName = NULL;
+   char *DirectorName = NULL;
+   DIRRES *director = NULL;
    bool ignore_label_errors = false;
-   bool ok;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
@@ -103,7 +107,7 @@ int main (int argc, char *argv[])
    lmgr_init_thread();
    init_msg(NULL, NULL);
 
-   while ((ch = getopt(argc, argv, "b:c:d:i:o:pvw:?")) != -1) {
+   while ((ch = getopt(argc, argv, "b:c:D:d:i:o:pvw:?")) != -1) {
       switch (ch) {
       case 'b':
          bsr = parse_bsr(NULL, optarg);
@@ -114,6 +118,13 @@ int main (int argc, char *argv[])
             free(configfile);
          }
          configfile = bstrdup(optarg);
+         break;
+
+      case 'D':                    /* specify director name */
+         if (DirectorName != NULL) {
+            free(DirectorName);
+         }
+         DirectorName = bstrdup(optarg);
          break;
 
       case 'd':                    /* debug level */
@@ -173,9 +184,35 @@ int main (int argc, char *argv[])
    config = new_config_parser();
    parse_sd_config(config, configfile, M_ERROR_TERM);
 
+   LockRes();
+   me = (STORES *)GetNextRes(R_STORAGE, NULL);
+   if (!me) {
+      UnlockRes();
+      Emsg1(M_ERROR_TERM, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
+         configfile);
+   }
+   UnlockRes();
+
+   if (DirectorName) {
+      foreach_res(director, R_DIRECTOR) {
+         if (bstrcmp(director->hdr.name, DirectorName)) {
+            break;
+         }
+      }
+      if (!director) {
+         Emsg2(M_ERROR_TERM, 0, _("No Director resource named %s defined in %s. Cannot continue.\n"),
+               DirectorName, configfile);
+      }
+   }
+
+   load_sd_plugins(me->plugin_directory);
+
+   read_crypto_cache(me->working_directory, "bacula-sd",
+                     get_first_port_host_order(me->sdaddrs));
+
    /* Setup and acquire input device for reading */
    Dmsg0(100, "About to setup input jcr\n");
-   in_jcr = setup_jcr("bcopy", argv[0], bsr, iVolumeName, 1); /* read device */
+   in_jcr = setup_jcr("bcopy", argv[0], bsr, director, iVolumeName, 1); /* read device */
    if (!in_jcr) {
       exit(1);
    }
@@ -187,7 +224,7 @@ int main (int argc, char *argv[])
 
    /* Setup output device for writing */
    Dmsg0(100, "About to setup output jcr\n");
-   out_jcr = setup_jcr("bcopy", argv[1], bsr, oVolumeName, 0); /* no acquire */
+   out_jcr = setup_jcr("bcopy", argv[1], bsr, director, oVolumeName, 0); /* no acquire */
    if (!out_jcr) {
       exit(1);
    }
@@ -220,11 +257,12 @@ int main (int argc, char *argv[])
 
    Pmsg2(000, _("%u Jobs copied. %u records copied.\n"), jobs, records);
 
+   in_dev->term();
+   out_dev->term();
+
    free_jcr(in_jcr);
    free_jcr(out_jcr);
 
-   in_dev->term();
-   out_dev->term();
    return 0;
 }
 
@@ -357,22 +395,19 @@ static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sess
    }
 }
 
-
 /* Dummies to replace askdir.c */
-bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
-bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
-bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
-bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-bool    dir_send_job_status(JCR *jcr) {return 1;}
-
+bool dir_find_next_appendable_volume(DCR *dcr) { return 1;}
+bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
+bool dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
+bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
+bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
 
 bool dir_ask_sysop_to_mount_volume(DCR *dcr, int /*mode*/)
 {
    DEVICE *dev = dcr->dev;
    fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
       dcr->VolumeName, dev->print_name());
-   dev->close();
+   dev->close(dcr);
    getchar();
    return true;
 }
@@ -381,7 +416,6 @@ bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
 {
    Dmsg0(100, "Fake dir_get_volume_info\n");
    dcr->setVolCatName(dcr->VolumeName);
-   dcr->VolCatInfo.VolCatParts = find_num_dvd_parts(dcr);
-   Dmsg2(500, "Vol=%s num_parts=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatParts);
+   Dmsg1(500, "Vol=%s\n", dcr->getVolCatName());
    return 1;
 }

@@ -1,9 +1,9 @@
 #
 @MCOMMON@
 
-srcdir =	.
-VPATH = 	.
-.PATH:		.
+srcdir = @srcdir@
+VPATH = @srcdir@
+.PATH: @srcdir@
 
 sd_group=@sd_group@
 
@@ -14,70 +14,72 @@ topdir = ../..
 # this dir relative to top dir
 thisdir = src/stored
 
-DEBUG=@DEBUG@
-
+DEBUG = @DEBUG@
 GETTEXT_LIBS = @LIBINTL@
-
-DB_LIBS=@DB_LIBS@
+DB_LIBS = @DB_LIBS@
+AFS_LIBS = @AFS_LIBS_NONSHARED@
+ACL_LIBS = @ACL_LIBS_NONSHARED@
+XATTR_LIBS = @XATTR_LIBS_NONSHARED@
 
 first_rule: all
 dummy:
 
 # bacula-sd
-SDOBJS =  stored.o ansi_label.o vtape.o \
-	  autochanger.o acquire.o append.o \
-	  askdir.o authenticate.o \
-	  block.o butil.o dev.o \
-	  device.o dircmd.o dvd.o ebcdic.o fd_cmds.o job.o \
-	  label.o lock.o mac.o match_bsr.o mount.o parse_bsr.o \
-	  pythonsd.o read.o read_record.o record.o \
-	  reserve.o scan.o sd_plugins.o \
-	  spool.o status.o stored_conf.o vol_mgr.o wait.o
+SDSRCS = acquire.c ansi_label.c append.c askdir.c authenticate.c \
+         autochanger.c block.c bsr.c butil.c crc32.c dev.c device.c \
+	 dircmd.c ebcdic.c fd_cmds.c job.c label.c lock.c mac.c \
+	 mount.c ndmp_tape.c read_record.c read.c record.c reserve.c \
+	 scan.c sd_plugins.c spool.c status.c stored_conf.c stored.c \
+	 vol_mgr.c vtape.c wait.c
+SDOBJS = $(SDSRCS:.c=.o)
 
 # btape
-TAPEOBJS = btape.o block.o butil.o dev.o device.o label.o vtape.o \
-	   lock.o ansi_label.o dvd.o ebcdic.o \
-	   autochanger.o acquire.o mount.o record.o read_record.o \
-	   reserve.o stored_conf.o match_bsr.o parse_bsr.o scan.o \
-	   sd_plugins.o spool.o vol_mgr.o wait.o
+TAPESRCS = acquire.c ansi_label.c autochanger.c block.c btape.c bsr.c \
+           butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c \
+           mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
+	   spool.c stored_conf.c vol_mgr.c vtape.c wait.c
+TAPEOBJS = $(TAPESRCS:.c=.o)
 
 # bls
-BLSOBJS = bls.o block.o butil.o device.o dev.o label.o match_bsr.o vtape.o \
-	  ansi_label.o dvd.o ebcdic.o lock.o \
-	  autochanger.o acquire.o mount.o parse_bsr.o record.o	\
-	  read_record.o reserve.o scan.o stored_conf.o spool.o \
-	  sd_plugins.o vol_mgr.o wait.o
+BLSSRCS = acquire.c ansi_label.c autochanger.c block.c bls.c bsr.c \
+	  butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c \
+          mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
+	  spool.c stored_conf.c vol_mgr.c vtape.c wait.c
+BLSOBJS = $(BLSSRCS:.c=.o)
 
 # bextract
-BEXTOBJS = bextract.o block.o device.o dev.o label.o record.o vtape.o \
-	   ansi_label.o dvd.o ebcdic.o lock.o \
-	   autochanger.o acquire.o mount.o match_bsr.o parse_bsr.o butil.o \
-	   read_record.o reserve.o scan.o stored_conf.o spool.o \
-	   sd_plugins.o vol_mgr.o wait.o
+BEXTSRCS = acquire.c ansi_label.c autochanger.c bextract.c block.c \
+           bsr.c butil.c crc32.c dev.c device.c ebcdic.c label.c \
+	   lock.c mount.c read_record.c record.c reserve.c scan.c \
+	   sd_plugins.c spool.c stored_conf.c vol_mgr.c vtape.c wait.c
+BEXTOBJS = $(BEXTSRCS:.c=.o)
 
 # bscan
-SCNOBJS = bscan.o block.o device.o dev.o label.o vtape.o \
-	  ansi_label.o dvd.o ebcdic.o lock.o \
-	  autochanger.o acquire.o mount.o record.o match_bsr.o parse_bsr.o \
-	  butil.o read_record.o scan.o reserve.o stored_conf.o spool.o \
-	  sd_plugins.o vol_mgr.o wait.o
+SCNSRCS = acquire.c ansi_label.c autochanger.c block.c bscan.c bsr.c \
+	  butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c \
+          mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
+	  spool.c stored_conf.c vol_mgr.c vtape.c wait.c
+SCNOBJS = $(SCNSRCS:.c=.o)
 
 # bcopy
-COPYOBJS = bcopy.o block.o device.o dev.o label.o vtape.o \
-	   ansi_label.o dvd.o ebcdic.o lock.o \
-	   autochanger.o acquire.o mount.o record.o match_bsr.o parse_bsr.o \
-	   butil.o read_record.o reserve.o \
-	   sd_plugins.o scan.o stored_conf.o spool.o vol_mgr.o wait.o
+COPYSRCS = acquire.c ansi_label.c autochanger.c bcopy.c block.c bsr.c \
+	   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c \
+           mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
+	   spool.c stored_conf.c vol_mgr.c vtape.c wait.c
+COPYOBJS = $(COPYSRCS:.c=.o)
 
+CPPFLAGS += @ZLIB_INC@ @LZO_INC@
 
+SD_LIBS += @CAP_LIBS@
+BEXTRACT_LIBS += @ZLIB_LIBS@
+BEXTRACT_LIBS += @LZO_LIBS@
 
-# these are the objects that are changed by the .configure process
-EXTRAOBJS = @OBJLIST@
-
-CAP_LIBS = @CAP_LIBS@
-ZLIBS=@ZLIBS@
-LZOLIBS = @LZOLIBS@
-
+DEBUG = @DEBUG@
+GETTEXT_LIBS = @LIBINTL@
+DB_LIBS = @DB_LIBS@
+ACL_LIBS = @ACL_LIBS@
+XATTR_LIBS = @XATTR_LIBS@
+NDMP_LIBS = @NDMP_LIBS@
 
 .SUFFIXES:	.c .o
 .PHONY:
@@ -86,29 +88,36 @@ LZOLIBS = @LZOLIBS@
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(PYTHON_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
 
 all: Makefile bacula-sd @STATIC_SD@ bls bextract bscan btape bcopy
 	@echo "===== Make of stored is good ===="
 	@echo " "
 
-bacula-sd: Makefile $(SDOBJS) ../lib/libbacpy$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+bacula-sd: Makefile $(SDOBJS) \
+	   ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
+	   ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
+	   @NDMP_DEPS@
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -o $@ $(SDOBJS) $(ZLIBS) \
-	   -lbacpy -lbaccfg -lbac -lm $(PYTHON_LIBS) $(DLIB) $(LIBS) $(WRAPLIBS) \
-	$(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -o $@ $(SDOBJS) \
+	   $(NDMP_LIBS) -lbaccfg -lbac -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
+	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-static-bacula-sd: Makefile $(SDOBJS) ../lib/libbacpy$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -o $@ $(SDOBJS) $(ZLIBS) \
-	   -lbacpy -lbaccfg -lbac -lm $(PYTHON_LIBS) $(DLIB) $(LIBS) $(WRAPLIBS) \
-	$(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
+static-bacula-sd: Makefile $(SDOBJS) \
+	          ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
+	          ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
+	          @NDMP_DEPS@
+	@echo "Linking $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -o $@ $(SDOBJS) \
+	   $(NDMP_LIBS) -lbaccfg -lbac -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
+	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 	strip $@
 
 btape.o: btape.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	   -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 
 btape: Makefile  $(TAPEOBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(TAPEOBJS) \
@@ -117,7 +126,7 @@ btape: Makefile  $(TAPEOBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbacc
 bls.o:	bls.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	   -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 
 bls:	Makefile $(BLSOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Compiling $<"
@@ -127,31 +136,38 @@ bls:	Makefile $(BLSOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/lib
 bextract.o: bextract.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	   -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 
 bextract: Makefile $(BEXTOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Compiling $<"
-	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BEXTOBJS) $(DLIB) $(ZLIBS) $(LZOLIBS) \
-	   -lbacfind -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BEXTOBJS) $(DLIB) \
+	   -lbacfind -lbaccfg -lbac -lm $(LIBS) $(SD_LIBS) $(BEXTRACT_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(AFS_LIBS) $(ACL_LIBS) $(XATTR_LIBS)
 
 bscan.o: bscan.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	   -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 
 bscan:	Makefile $(SCNOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
 	../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SCNOBJS) \
-	   -lbacsql -lbaccats $(DB_LIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   -lbacsql -lbaccats $(DB_LIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 bcopy.o: bcopy.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	   -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 
-bcopy:	Makefile $(COPYOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+bcopy:	Makefile $(COPYOBJS) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(COPYOBJS) \
 	   -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+crc32sum: Makefile crc32.o
+	$(RMF) crc32.o
+	$(CXX) -DCRC32_SUM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CXXFLAGS) crc32.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ crc32.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(RMF) crc32.o
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) crc32.c
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
@@ -216,7 +232,7 @@ depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
 	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(PYTHON_INC) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(XINC) -I$(srcdir) -I$(basedir) *.c >> Makefile
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \

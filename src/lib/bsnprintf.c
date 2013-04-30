@@ -981,7 +981,7 @@ int main(int argc, char *argv[])
       for (y = 0; fp_nums[y] != 0; y++) {
          bsnprintf(buf1, sizeof(buf1), fp_fmt[x], fp_nums[y]);
          sprintf(buf2, fp_fmt[x], fp_nums[y]);
-         if (strcmp(buf1, buf2)) {
+         if (!bstrcmp(buf1, buf2)) {
             printf
                ("snprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
                 fp_fmt[x], buf1, buf2);
@@ -1001,7 +1001,7 @@ int main(int argc, char *argv[])
             printf("bsnprintf count %d doesn't match sprintf count %d\n",
                bcount, pcount);
          }
-         if (strcmp(buf1, buf2)) {
+         if (!bstrcmp(buf1, buf2)) {
             printf
                ("bsnprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
                 int_fmt[x], buf1, buf2);
@@ -1020,7 +1020,7 @@ int main(int argc, char *argv[])
             printf("bsnprintf count %d doesn't match sprintf count %d\n",
                bcount, pcount);
          }
-         if (strcmp(buf1, buf2)) {
+         if (!bstrcmp(buf1, buf2)) {
             printf
                ("bsnprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
                 ll_fmt[x], buf1, buf2);
@@ -1040,7 +1040,7 @@ int main(int argc, char *argv[])
             printf("bsnprintf count %d doesn't match sprintf count %d\n",
                bcount, pcount);
          }
-         if (strcmp(buf1, buf2)) {
+         if (!bstrcmp(buf1, buf2)) {
             printf
                ("bsnprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
                 s_fmt[x], buf1, buf2);
@@ -1060,7 +1060,7 @@ int main(int argc, char *argv[])
             printf("bsnprintf count %d doesn't match sprintf count %d\n",
                bcount, pcount);
          }
-         if (strcmp(buf1, buf2)) {
+         if (!bstrcmp(buf1, buf2)) {
             printf
                ("bsnprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
                 ls_fmt[x], buf1, buf2);

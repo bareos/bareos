@@ -12,7 +12,7 @@ cd $cwd
 
 ./makebacularel $bacula $remote $branch $ver
 ./makedocsrel $bacula $docs $remote $branch $ver
-#./makewinrel $bacula $remote $branch $ver | tee win$$.log
+./makewinrel $bacula $remote $branch $ver | tee win$$.log
 
 # strip ./configure strerror from Win log file
 sed -i -e 's%strerror%%' win$$.log

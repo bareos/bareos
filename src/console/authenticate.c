@@ -155,7 +155,7 @@ int authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons)
    }
 
    Dmsg1(10, "<dird: %s", dir->msg);
-   if (strncmp(dir->msg, OKhello, sizeof(OKhello)-1) != 0) {
+   if (!bstrncmp(dir->msg, OKhello, sizeof(OKhello)-1)) {
       sendit(_("Director rejected Hello command\n"));
       goto bail_out;
    } else {

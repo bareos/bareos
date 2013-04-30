@@ -28,6 +28,7 @@ ConditionPathIsDirectory=@working_dir@
 Type=forking
 User=@dir_user@
 Group=@dir_group@
+WorkingDirectory=@working_dir@
 PIDFile=@piddir@/bacula-dir.@dir_port@.pid
 # EnvironmentFile=-/etc/sysconfig/bacula-dir
 StandardOutput=syslog

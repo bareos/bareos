@@ -24,7 +24,7 @@
  *  Rewound /dev/nsa0
  *  *Begin writing blocks of 64512 bytes.
  *  ++++++++++++++++++++ ...
- *  Write failed.  Last block written=17294. stat=0 ERR=Unknown error: 0
+ *  Write failed.  Last block written=17294. status=0 ERR=Unknown error: 0
  *  weof_dev
  *  Wrote EOF to /dev/nsa0
  *  *Rewound /dev/nsa0
@@ -62,7 +62,7 @@
  *    Rewound /dev/nsa0
  *    *Begin writing blocks of 64512 bytes.
  *    +++++++++++++++++++++++++++++ ...
- *    Write failed.  Last block written=17926. stat=-1 ERR=No space left on device
+ *    Write failed.  Last block written=17926. status=-1 ERR=No space left on device
  *    weof_dev
  *    Wrote EOF to /dev/nsa0
  *    *Rewound /dev/nsa0
@@ -77,7 +77,7 @@
  * which is incroorect because it wrote 17,926 blocks but read
  * back only 17,913 blocks, AND because the return status on 
  * the last block written was -1 when it should have been
- * 0 (ie. stat=0 above).
+ * 0 (ie. status=0 above).
  *
  *
  */
@@ -253,7 +253,7 @@ int
 weof_dev(DEVICE *dev, int num)
 { 
    struct mtop mt_com;
-   int stat;
+   int status;
 
    if (dev->fd < 0) {
       dev->dev_errno = EBADF;
@@ -266,8 +266,8 @@ weof_dev(DEVICE *dev, int num)
    printf("weof_dev\n");
    mt_com.mt_op = MTWEOF;
    mt_com.mt_count = num;
-   stat = ioctl(dev->fd, MTIOCTOP, (char *)&mt_com);
-   if (stat == 0) {
+   status = ioctl(dev->fd, MTIOCTOP, (char *)&mt_com);
+   if (status == 0) {
       dev->file++;
       dev->file_addr = 0;
    } else {
@@ -275,7 +275,7 @@ weof_dev(DEVICE *dev, int num)
       printf("ioctl MTWEOF error on %s. ERR=%s.\n",
 	 dev->dev_name, strerror(dev->dev_errno));
    }
-   return stat;
+   return status;
 }
 
 
@@ -305,10 +305,10 @@ static void rewindcmd()
  */
 static void weofcmd()
 {
-   int stat;
+   int status;
 
-   if ((stat = weof_dev(dev, 1)) < 0) {
-      printf("Bad status from weof %d. ERR=%s\n", stat, strerror(dev->dev_errno));
+   if ((status = weof_dev(dev, 1)) < 0) {
+      printf("Bad status from weof %d. ERR=%s\n", status, strerror(dev->dev_errno));
       return;
    } else {
       printf("Wrote EOF to %s\n", dev->dev_name);
@@ -322,7 +322,7 @@ static void weofcmd()
 static void rrcmd()
 {
    char *buf;
-   int stat, len;
+   int status, len;
 
    if (!get_cmd("Enter length to read: ")) {
       return;
@@ -333,12 +333,12 @@ static void rrcmd()
       len = 1024;
    }
    buf = (char *)malloc(len);
-   stat = read(fd, buf, len);
-   if (stat > 0 && stat <= len) {
+   status = read(fd, buf, len);
+   if (status > 0 && status <= len) {
       errno = 0;
    }
-   printf("Read of %d bytes gives stat=%d. ERR=%s\n",
-      len, stat, strerror(errno));
+   printf("Read of %d bytes gives status=%d. ERR=%s\n",
+      len, status, strerror(errno));
    free(buf);
 }
 
@@ -347,7 +347,7 @@ static void rrcmd()
  */
 static void wrcmd()
 {
-   int stat;
+   int status;
    int rfd;
 
    rfd = open("/dev/urandom", O_RDONLY);
@@ -358,13 +358,13 @@ static void wrcmd()
       return;
    }
    printf("Write one block of %u bytes.\n", dev->buf_len);
-   stat = write(dev->fd, dev->buf, dev->buf_len);
-   if (stat != (int)dev->buf_len) {
-      if (stat == -1) {
+   status = write(dev->fd, dev->buf, dev->buf_len);
+   if (status != (int)dev->buf_len) {
+      if (status == -1) {
          printf("Bad status from write. ERR=%s\n", strerror(errno));
       } else {
          printf("Expected to write %d bytes but wrote only %d.\n",
-	    dev->buf_len, stat);
+	    dev->buf_len, status);
       }
    }
 }
@@ -378,7 +378,7 @@ static void wrcmd()
  */
 static void scancmd()
 {
-   int stat;
+   int status;
    int blocks, tot_blocks, tot_files;
    int block_size;
    uint64_t bytes;
@@ -393,23 +393,23 @@ static void scancmd()
    tot_files = dev->file;
    printf("Starting scan at file %u\n", dev->file);
    for (;;) {
-      if ((stat = read(dev->fd, buf, sizeof(buf))) < 0) {
+      if ((status = read(dev->fd, buf, sizeof(buf))) < 0) {
 	 dev->dev_errno = errno;
-         printf("Bad status from read %d. ERR=%s\n", stat, strerror(dev->dev_errno));
+         printf("Bad status from read %d. ERR=%s\n", status, strerror(dev->dev_errno));
 	 if (blocks > 0)
             printf("%d block%s of %d bytes in file %d\n",        
                     blocks, blocks>1?"s":"", block_size, dev->file);
 	 return;
       }
-      if (stat != block_size) {
+      if (status != block_size) {
 	 if (blocks > 0) {
             printf("%d block%s of %d bytes in file %d\n", 
                  blocks, blocks>1?"s":"", block_size, dev->file);
 	    blocks = 0;
 	 }
-	 block_size = stat;
+	 block_size = status;
       }
-      if (stat == 0) {		      /* EOF */
+      if (status == 0) {		      /* EOF */
          printf("End of File mark.\n");
 	 /* Two reads of zero means end of tape */
 	 if (dev->state & ST_EOF)
@@ -426,7 +426,7 @@ static void scancmd()
 	 dev->state &= ~ST_EOF;
 	 blocks++;
 	 tot_blocks++;
-	 bytes += stat;
+	 bytes += status;
       }
    }
    tot_files = dev->file - tot_files;
@@ -437,7 +437,7 @@ static void scancmd()
 
 static void rawfill_cmd()
 {
-   int stat;
+   int status;
    int rfd;
    uint32_t block_num = 0;
    uint32_t *p;
@@ -454,8 +454,8 @@ static void rawfill_cmd()
    printf("Begin writing blocks of %u bytes.\n", dev->buf_len);
    for ( ;; ) {
       *p = block_num;
-      stat = write(dev->fd, dev->buf, dev->buf_len);
-      if (stat == (int)dev->buf_len) {
+      status = write(dev->fd, dev->buf, dev->buf_len);
+      if (status == (int)dev->buf_len) {
 	 if ((block_num++ % 100) == 0) {
             printf("+");
 	    fflush(stdout);
@@ -467,7 +467,7 @@ static void rawfill_cmd()
    my_errno = errno;
    printf("\n");
    weofcmd();
-   printf("Write failed.  Last block written=%d. stat=%d ERR=%s\n", (int)block_num, stat,
+   printf("Write failed.  Last block written=%d. status=%d ERR=%s\n", (int)block_num, status,
       strerror(my_errno));
 
 }

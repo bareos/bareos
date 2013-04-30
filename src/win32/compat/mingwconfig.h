@@ -397,4 +397,10 @@
 /* Define for large files, on AIX-style hosts. */
 #define _LARGE_FILES 1
 
+/* Directory for PID files */
+#define _PATH_BACULA_PIDDIR "%TEMP%"
+
+/* Directory for daemon files */
+#define _PATH_BACULA_WORKINGDIR "%TEMP%"
+
 #endif /* __MINGWNCONFIG_H */

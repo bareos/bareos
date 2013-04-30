@@ -32,7 +32,6 @@
  *
  */
 
-
 #include "bacula.h"
 #ifdef HAVE_ARPA_NAMESER_H
 #include <arpa/nameser.h>
@@ -40,10 +39,6 @@
 #ifdef HAVE_RESOLV_H
 //#include <resolv.h>
 #endif
-
-static int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
-                const char *hostname_str, const char *port_str, char *buf, int buflen);
-
 
 IPADDR::IPADDR(const IPADDR &src) : type(src.type)
 {
@@ -255,16 +250,7 @@ int get_first_port_host_order(dlist *addrs)
    }
 }
 
-void init_default_addresses(dlist **out, int port)
-{
-   char buf[1024];
-   unsigned short sport = port;
-   if (!add_address(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf, sizeof(buf))) {
-      Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
-   }
-}
-
-static int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
+int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
                 const char *hostname_str, const char *port_str, char *buf, int buflen)
 {
    IPADDR *iaddr;
@@ -365,174 +351,13 @@ static int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultp
    return 1;
 }
 
-/*
- *   my tests
- *   positiv
- *   = { ip = { addr = 1.2.3.4; port = 1205; } ipv4 = { addr = 1.2.3.4; port = http; } }
- *   = { ip = {
- *         addr = 1.2.3.4; port = 1205; }
- *     ipv4 = {
- *         addr = 1.2.3.4; port = http; }
- *     ipv6 = {
- *       addr = 1.2.3.4;
- *       port = 1205;
- *     }
- *     ip = {
- *       addr = 1.2.3.4
- *       port = 1205
- *     }
- *     ip = {
- *       addr = 1.2.3.4
- *     }
- *     ip = {
- *       addr = 2001:220:222::2
- *     }
- *     ip = {
- *       addr = bluedot.thun.net
- (     }
- *   }
- *   negativ
- *   = { ip = { } }
- *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
- *   = { ipv4 { port = 4711 } }
- */
-void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
+void init_default_addresses(dlist **out, const char *port)
 {
-   int token;
-   enum { EMPTYLINE = 0, PORTLINE = 0x1, ADDRLINE = 0x2 } next_line = EMPTYLINE;
-   int exist;
-   char hostname_str[1024];
-   char port_str[128];
-   int family = 0;
-   char errmsg[1024];
+   char buf[1024];
+   unsigned short sport = str_to_int32(port);
 
-
-   token = lex_get_token(lc, T_SKIP_EOL);
-   if (token != T_BOB) {
-      scan_err1(lc, _("Expected a block begin { , got: %s"), lc->str);
-   }
-
-   token = lex_get_token(lc, T_SKIP_EOL);
-   if (token == T_EOB) {
-      scan_err0(lc, _("Empty addr block is not allowed"));
-   }
-   do {
-      if (!(token == T_UNQUOTED_STRING || token == T_IDENTIFIER)) {
-         scan_err1(lc, _("Expected a string, got: %s"), lc->str);
-      }
-      if (strcasecmp("ip", lc->str) == 0 || strcasecmp("ipv4", lc->str) == 0) {
-         family = AF_INET;
-      }
-#ifdef HAVE_IPV6
-      else if (strcasecmp("ipv6", lc->str) == 0) {
-         family = AF_INET6;
-      } else {
-         scan_err1(lc, _("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str);
-      }
-#else
-      else {
-         scan_err1(lc, _("Expected a string [ip|ipv4], got: %s"), lc->str);
-      }
-#endif
-      token = lex_get_token(lc, T_SKIP_EOL);
-      if (token != T_EQUALS) {
-         scan_err1(lc, _("Expected a equal =, got: %s"), lc->str);
-      }
-      token = lex_get_token(lc, T_SKIP_EOL);
-      if (token != T_BOB) {
-         scan_err1(lc, _("Expected a block begin { , got: %s"), lc->str);
-      }
-      token = lex_get_token(lc, T_SKIP_EOL);
-      exist = EMPTYLINE;
-      port_str[0] = hostname_str[0] = '\0';
-      do {
-         if (token != T_IDENTIFIER) {
-            scan_err1(lc, _("Expected a identifier [addr|port], got: %s"), lc->str);
-         }
-         if (strcasecmp("port", lc->str) == 0) {
-            next_line = PORTLINE;
-            if (exist & PORTLINE) {
-               scan_err0(lc, _("Only one port per address block"));
-            }
-            exist |= PORTLINE;
-         } else if (strcasecmp("addr", lc->str) == 0) {
-            next_line = ADDRLINE;
-            if (exist & ADDRLINE) {
-               scan_err0(lc, _("Only one addr per address block"));
-            }
-            exist |= ADDRLINE;
-         } else {
-            scan_err1(lc, _("Expected a identifier [addr|port], got: %s"), lc->str);
-         }
-         token = lex_get_token(lc, T_SKIP_EOL);
-         if (token != T_EQUALS) {
-            scan_err1(lc, _("Expected a equal =, got: %s"), lc->str);
-         }
-         token = lex_get_token(lc, T_SKIP_EOL);
-         switch (next_line) {
-         case PORTLINE:
-            if (!
-                (token == T_UNQUOTED_STRING || token == T_NUMBER
-                 || token == T_IDENTIFIER)) {
-               scan_err1(lc, _("Expected a number or a string, got: %s"), lc->str);
-            }
-            bstrncpy(port_str, lc->str, sizeof(port_str));
-            break;
-         case ADDRLINE:
-            if (!(token == T_UNQUOTED_STRING || token == T_IDENTIFIER)) {
-               scan_err1(lc, _("Expected an IP number or a hostname, got: %s"),
-                         lc->str);
-            }
-            bstrncpy(hostname_str, lc->str, sizeof(hostname_str));
-            break;
-         case EMPTYLINE:
-            scan_err0(lc, _("State machine missmatch"));
-            break;
-         }
-         token = lex_get_token(lc, T_SKIP_EOL);
-      } while (token == T_IDENTIFIER);
-      if (token != T_EOB) {
-         scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
-      }
-
-      if (pass == 1 && !add_address((dlist **)(item->value), IPADDR::R_MULTIPLE,
-               htons(item->default_value), family, hostname_str, port_str, 
-               errmsg, sizeof(errmsg))) {
-           scan_err3(lc, _("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
-                   hostname_str, port_str, errmsg);
-        }
-      token = scan_to_next_not_eol(lc);
-   } while ((token == T_IDENTIFIER || token == T_UNQUOTED_STRING));
-   if (token != T_EOB) {
-      scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
-   }
-}
-
-void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pass)
-{
-   char errmsg[1024];
-   int token = lex_get_token(lc, T_SKIP_EOL);
-   if (!(token == T_UNQUOTED_STRING || token == T_NUMBER || token == T_IDENTIFIER)) {
-      scan_err1(lc, _("Expected an IP number or a hostname, got: %s"), lc->str);
-   }
-   if (pass == 1 && !add_address((dlist **)(item->value), IPADDR::R_SINGLE_ADDR,
-                    htons(item->default_value), AF_INET, lc->str, 0, 
-                    errmsg, sizeof(errmsg))) {
-      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
-   }
-}
-
-void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass)
-{
-   char errmsg[1024];
-   int token = lex_get_token(lc, T_SKIP_EOL);
-   if (!(token == T_UNQUOTED_STRING || token == T_NUMBER || token == T_IDENTIFIER)) {
-      scan_err1(lc, _("Expected a port number or string, got: %s"), lc->str);
-   }
-   if (pass == 1 && !add_address((dlist **)(item->value), IPADDR::R_SINGLE_PORT,
-                    htons(item->default_value), AF_INET, 0, lc->str, 
-                    errmsg, sizeof(errmsg))) {
-      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+   if (!add_address(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf, sizeof(buf))) {
+      Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
    }
 }
 
@@ -571,7 +396,6 @@ int sockaddr_get_port(const struct sockaddr *client_addr)
 #endif
    return -1;
 }
-
 
 char *sockaddr_to_ascii(const struct sockaddr *sa, char *buf, int len)
 {

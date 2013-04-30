@@ -94,7 +94,7 @@ GetResWithName(int rcode, const char *name)
    LockRes();
    res = res_head[rindex];
    while (res) {
-      if (strcmp(res->name, name) == 0) {
+      if (bstrcmp(res->name, name)) {
          break;
       }
       res = res->next;

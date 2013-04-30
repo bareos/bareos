@@ -1,13 +1,4 @@
 /*
- *
- *   Bacula Director -- expand.c -- does variable expansion
- *    in particular for the LabelFormat specification.
- *
- *     Kern Sibbald, June MMIII
- *
- *   Version $Id$
- */
-/*
    Bacula® - The Network Backup Solution
 
    Copyright (C) 2003-2006 Free Software Foundation Europe e.V.
@@ -34,11 +25,15 @@
    (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
    Switzerland, email:ftf@fsfeurope.org.
 */
+/*
+ *   Bacula Director -- expand.c -- does variable expansion
+ *    in particular for the LabelFormat specification.
+ *
+ *     Kern Sibbald, June MMIII
+ */
 
 #include "bacula.h"
 #include "dird.h"
-
-
 
 static int date_item(JCR *jcr, int code,
               const char **val_ptr, int *val_len, int *val_size)
@@ -87,7 +82,7 @@ static int job_item(JCR *jcr, int code,
 
    switch (code) {
    case 1:                            /* Job */
-      str = jcr->job->name();
+      str = jcr->res.job->name();
       break;
    case 2:                            /* Director's name */
       str = my_name;
@@ -103,7 +98,7 @@ static int job_item(JCR *jcr, int code,
       str = buf;
       break;
    case 6:                            /* Client */
-      str = jcr->client->name();
+      str = jcr->res.client->name();
       if (!str) {
          str = " ";
       }
@@ -113,23 +108,23 @@ static int job_item(JCR *jcr, int code,
       str = buf;
       break;
    case 8:                            /* Pool */
-      str = jcr->pool->name();
+      str = jcr->res.pool->name();
       break;
    case 9:                            /* Storage */
-      if (jcr->wstore) {
-         str = jcr->wstore->name();
+      if (jcr->res.wstore) {
+         str = jcr->res.wstore->name();
       } else {
-         str = jcr->rstore->name();
+         str = jcr->res.rstore->name();
       }
       break;
    case 10:                           /* Catalog */
-      str = jcr->catalog->name();
+      str = jcr->res.catalog->name();
       break;
    case 11:                           /* MediaType */
-      if (jcr->wstore) {
-         str = jcr->wstore->media_type;
+      if (jcr->res.wstore) {
+         str = jcr->res.wstore->media_type;
       } else {
-         str = jcr->rstore->media_type;
+         str = jcr->res.rstore->media_type;
       }
       break;
    case 12:                           /* JobName */
@@ -179,17 +174,19 @@ static struct s_built_in_vars built_in_vars[] = {
  *   call the appropriate subroutine to do the work.
  */
 static var_rc_t lookup_built_in_var(var_t *ctx, void *my_ctx,
-          const char *var_ptr, int var_len, int var_index,
-          const char **val_ptr, int *val_len, int *val_size)
+                                    const char *var_ptr,
+                                    int var_len, int var_index,
+                                    const char **val_ptr,
+                                    int *val_len, int *val_size)
 {
    JCR *jcr = (JCR *)my_ctx;
-   int stat;
+   int status;
 
    for (int i=0; _(built_in_vars[i].var_name); i++) {
-      if (strncmp(_(built_in_vars[i].var_name), var_ptr, var_len) == 0) {
-         stat = (*built_in_vars[i].func)(jcr, built_in_vars[i].code,
-            val_ptr, val_len, val_size);
-         if (stat) {
+      if (bstrncmp(_(built_in_vars[i].var_name), var_ptr, var_len)) {
+         status = (*built_in_vars[i].func)(jcr, built_in_vars[i].code,
+                                           val_ptr, val_len, val_size);
+         if (status) {
             return VAR_OK;
          }
          break;
@@ -207,7 +204,7 @@ static var_rc_t lookup_counter_var(var_t *ctx, void *my_ctx,
           const char **val_ptr, int *val_len, int *val_size)
 {
    char buf[MAXSTRING];
-   var_rc_t stat = VAR_ERR_UNDEFINED_VARIABLE;
+   var_rc_t status = VAR_ERR_UNDEFINED_VARIABLE;
 
    if (var_len > (int)sizeof(buf) - 1) {
        return VAR_ERR_OUT_OF_MEMORY;
@@ -215,8 +212,8 @@ static var_rc_t lookup_counter_var(var_t *ctx, void *my_ctx,
    memcpy(buf, var_ptr, var_len);
    buf[var_len] = 0;
    LockRes();
-   for (COUNTER *counter=NULL; (counter = (COUNTER *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
-      if (strcmp(counter->name(), buf) == 0) {
+   for (COUNTERRES *counter=NULL; (counter = (COUNTERRES *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
+      if (bstrcmp(counter->name(), buf)) {
          Dmsg2(100, "Counter=%s val=%d\n", buf, counter->CurrentValue);
          /* -1 => return size of array */
         if (var_index == -1) {
@@ -257,12 +254,12 @@ static var_rc_t lookup_counter_var(var_t *ctx, void *my_ctx,
                }
             }
          }
-         stat = VAR_OK;
+         status = VAR_OK;
          break;
       }
    }
    UnlockRes();
-   return stat;
+   return status;
 }
 
 
@@ -274,16 +271,16 @@ static var_rc_t lookup_var(var_t *ctx, void *my_ctx,
           const char **val_ptr, int *val_len, int *val_size)
 {
    char buf[MAXSTRING], *val, *p, *v;
-   var_rc_t stat;
+   var_rc_t status;
    int count;
 
    /* Note, if val_size > 0 and val_ptr!=NULL, the core code will free() it */
-   if ((stat = lookup_built_in_var(ctx, my_ctx, var_ptr, var_len, var_index,
+   if ((status = lookup_built_in_var(ctx, my_ctx, var_ptr, var_len, var_index,
         val_ptr, val_len, val_size)) == VAR_OK) {
       return VAR_OK;
    }
 
-   if ((stat = lookup_counter_var(ctx, my_ctx, var_ptr, var_len, var_inc, var_index,
+   if ((status = lookup_counter_var(ctx, my_ctx, var_ptr, var_len, var_inc, var_index,
         val_ptr, val_len, val_size)) == VAR_OK) {
       return VAR_OK;
    }
@@ -372,13 +369,13 @@ static var_rc_t operate_var(var_t *var, void *my_ctx,
           const char *val_ptr, int val_len,
           char **out_ptr, int *out_len, int *out_size)
 {
-   var_rc_t stat = VAR_ERR_UNDEFINED_OPERATION;
+   var_rc_t status = VAR_ERR_UNDEFINED_OPERATION;
    Dmsg0(100, "Enter operate_var\n");
    if (!val_ptr) {
       *out_size = 0;
-      return stat;
+      return status;
    }
-   if (op_len == 3 && strncmp(op_ptr, "inc", 3) == 0) {
+   if (op_len == 3 && bstrncmp(op_ptr, "inc", 3)) {
       char buf[MAXSTRING];
       if (val_len > (int)sizeof(buf) - 1) {
           return VAR_ERR_OUT_OF_MEMORY;
@@ -390,17 +387,17 @@ static var_rc_t operate_var(var_t *var, void *my_ctx,
       buf[val_len] = 0;
       Dmsg1(100, "Val=%s\n", buf);
       LockRes();
-      for (COUNTER *counter=NULL; (counter = (COUNTER *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
-         if (strcmp(counter->name(), buf) == 0) {
+      for (COUNTERRES *counter=NULL; (counter = (COUNTERRES *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
+         if (bstrcmp(counter->name(), buf)) {
             Dmsg2(100, "counter=%s val=%s\n", counter->name(), buf);
             break;
          }
       }
       UnlockRes();
-      return stat;
+      return status;
    }
    *out_size = 0;
-   return stat;
+   return status;
 }
 
 
@@ -413,7 +410,7 @@ static var_rc_t operate_var(var_t *var, void *my_ctx,
 int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp)
 {
    var_t *var_ctx;
-   var_rc_t stat;
+   var_rc_t status;
    char *outp;
    int in_len, out_len;
    int rtn_stat = 0;
@@ -423,40 +420,40 @@ int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp)
    out_len = 0;
 
    /* create context */
-   if ((stat = var_create(&var_ctx)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot create var context: ERR=%s\n"), var_strerror(var_ctx, stat));
+   if ((status = var_create(&var_ctx)) != VAR_OK) {
+       Jmsg(jcr, M_ERROR, 0, _("Cannot create var context: ERR=%s\n"), var_strerror(var_ctx, status));
        goto bail_out;
    }
    /* define callback */
-   if ((stat = var_config(var_ctx, VAR_CONFIG_CB_VALUE, lookup_var, (void *)jcr)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot set var callback: ERR=%s\n"), var_strerror(var_ctx, stat));
+   if ((status = var_config(var_ctx, VAR_CONFIG_CB_VALUE, lookup_var, (void *)jcr)) != VAR_OK) {
+       Jmsg(jcr, M_ERROR, 0, _("Cannot set var callback: ERR=%s\n"), var_strerror(var_ctx, status));
        goto bail_out;
    }
 
    /* define special operations */
-   if ((stat = var_config(var_ctx, VAR_CONFIG_CB_OPERATION, operate_var, (void *)jcr)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot set var operate: ERR=%s\n"), var_strerror(var_ctx, stat));
+   if ((status = var_config(var_ctx, VAR_CONFIG_CB_OPERATION, operate_var, (void *)jcr)) != VAR_OK) {
+       Jmsg(jcr, M_ERROR, 0, _("Cannot set var operate: ERR=%s\n"), var_strerror(var_ctx, status));
        goto bail_out;
    }
 
    /* unescape in place */
-   if ((stat = var_unescape(var_ctx, inp, in_len, inp, in_len+1, 0)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"), var_strerror(var_ctx, stat));
+   if ((status = var_unescape(var_ctx, inp, in_len, inp, in_len+1, 0)) != VAR_OK) {
+       Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"), var_strerror(var_ctx, status));
        goto bail_out;
    }
 
    in_len = strlen(inp);
 
    /* expand variables */
-   if ((stat = var_expand(var_ctx, inp, in_len, &outp, &out_len, 0)) != VAR_OK) {
+   if ((status = var_expand(var_ctx, inp, in_len, &outp, &out_len, 0)) != VAR_OK) {
        Jmsg(jcr, M_ERROR, 0, _("Cannot expand expression \"%s\": ERR=%s\n"),
-          inp, var_strerror(var_ctx, stat));
+          inp, var_strerror(var_ctx, status));
        goto bail_out;
    }
 
    /* unescape once more in place */
-   if ((stat = var_unescape(var_ctx, outp, out_len, outp, out_len+1, 1)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"), var_strerror(var_ctx, stat));
+   if ((status = var_unescape(var_ctx, outp, out_len, outp, out_len+1, 1)) != VAR_OK) {
+       Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"), var_strerror(var_ctx, status));
        goto bail_out;
    }
 
@@ -466,8 +463,8 @@ int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp)
 
 bail_out:
    /* destroy expansion context */
-   if ((stat = var_destroy(var_ctx)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot destroy var context: ERR=%s\n"), var_strerror(var_ctx, stat));
+   if ((status = var_destroy(var_ctx)) != VAR_OK) {
+       Jmsg(jcr, M_ERROR, 0, _("Cannot destroy var context: ERR=%s\n"), var_strerror(var_ctx, status));
    }
    if (outp) {
       free(outp);

@@ -161,6 +161,8 @@ void bRestore::displayFiles(int64_t pathid, QString path)
    FileList->clearContents();
    FileRevisions->clearContents();
    FileRevisions->setRowCount(0);
+   bool foundFilter = false;
+   QString FileFilter, FileName;
 
    // If we provide pathid, use it (path can be altered by encoding conversion)
    if (pathid > 0) {
@@ -189,22 +191,46 @@ void bRestore::displayFiles(int64_t pathid, QString path)
    if (FilterEntry->text() != "") {
       QString tmp = FilterEntry->text();
       tmp.replace("\"", ".");   // basic escape of "
+      FileFilter = tmp;
+      foundFilter = true;
       arg += " pattern=\"" + tmp + "\"";
+      FilterEntry->setText("");   // The filter is only used once
    }
 
    LocationEntry->setText(m_path);
    QString offset = QString().setNum(Offset1Spin->value());
    QString limit=QString().setNum(Offset2Spin->value() - Offset1Spin->value());
-   QString q = ".bvfs_lsdir jobid=" + m_jobids + arg 
-      + " limit=" + limit + " offset=" + offset ;
+   QString q = ".bvfs_lsdir jobid=" + m_jobids + arg + " limit=" + limit + " offset=" + offset ;
    if (mainWin->m_miscDebug) qDebug() << q;
+   int minCnt=0;
    if (m_console->dir_cmd(q, results)) {
       nb = results.size();
+      // Lets get the DIR filelist
+      foreach (QString resultline, results) {
+         // PathId, FilenameId, fileid, jobid, lstat, path
+         fieldlist = resultline.split("\t");
+         FileName=fieldlist.at(5);
+         minCnt++;
+         if (foundFilter && minCnt > 2) {
+            if (FileName.indexOf(FileFilter, 0, Qt::CaseInsensitive) < 0) {
+               nb--;
+               continue;
+            }
+         }
+      }
       FileList->setRowCount(nb);
+      minCnt=0;
       foreach (QString resultline, results) {
          int col=0;
-         //PathId, FilenameId, fileid, jobid, lstat, path
+         // PathId, FilenameId, fileid, jobid, lstat, path
          fieldlist = resultline.split("\t");
+         FileName=fieldlist.at(5);
+         minCnt++;
+         if (foundFilter && minCnt > 2) {
+            if (FileName.indexOf(FileFilter, 0, Qt::CaseInsensitive) < 0) {
+               continue;
+            }
+         }
          /*
           * Note, the next line zaps variable "item", probably
           *   because the input data in fieldlist is bad.
@@ -222,8 +248,7 @@ void bRestore::displayFiles(int64_t pathid, QString path)
    }
 
    results.clear();
-   q = ".bvfs_lsfiles jobid=" + m_jobids + arg
-      + " limit=" + limit + " offset=" + offset ;
+   q = ".bvfs_lsfiles jobid=" + m_jobids + arg + " limit=" + limit + " offset=" + offset ;
    if (m_console->dir_cmd(q, results)) {
       FileList->setRowCount(results.size() + nb);
       foreach (QString resultline, results) {

@@ -3,9 +3,9 @@
 #
 @MCOMMON@
 
-srcdir =	.
-VPATH = 	.
-.PATH:		.
+srcdir = @srcdir@
+VPATH = @srcdir@
+.PATH: @srcdir@
 
 # one up
 basedir = ../../../src
@@ -23,9 +23,6 @@ dummy:
 CHECKSRCS = check_bacula.c authenticate.c
 CHECKOBJS = check_bacula.o authenticate.o
 
-# these are the objects that are changed by the .configure process
-EXTRAOBJS = @OBJLIST@
-
 CHECK_CPPFLAGS=
 CHECK_LDFLAGS=
 
@@ -37,7 +34,7 @@ CHECK_LDFLAGS=
 .c.o:
 	@echo "Compiling $<"
 	$(NO_ECHO) $(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(CHECK_CPPFLAGS) \
- -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+ -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
 all: Makefile check_bacula
 	@echo "==== Make of check_bacula is good ===="

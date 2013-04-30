@@ -28,6 +28,7 @@
 /*
  * Storage daemon specific defines and includes
  *
+ *  Version $Id$
  */
 
 #ifndef __STORED_H_
@@ -57,12 +58,12 @@ const int sd_dbglvl = 300;
 #   endif
 # endif
 #endif
+#include "lib/bsr.h"
 #include "lock.h"
 #include "block.h"
 #include "record.h"
 #include "dev.h"
 #include "stored_conf.h"
-#include "bsr.h"
 #include "jcr.h"
 #include "vol_mgr.h"
 #include "reserve.h"
@@ -71,10 +72,6 @@ const int sd_dbglvl = 300;
 #include <zlib.h>                     /* compression headers */
 #else
 #define uLongf uint32_t
-#endif
-#ifdef HAVE_LZO
-#include <lzo/lzoconf.h>
-#include <lzo/lzo1x.h>
 #endif
 #ifdef HAVE_FNMATCH
 #include <fnmatch.h>

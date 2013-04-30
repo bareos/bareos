@@ -59,7 +59,7 @@ int confirm_retention(UAContext *ua, utime_t *ret, const char *msg)
        if (!get_cmd(ua, _("Continue? (yes/mod/no): "))) {
           return 0;
        }
-       if (strcasecmp(ua->cmd, _("mod")) == 0) {
+       if (bstrcasecmp(ua->cmd, _("mod"))) {
           if (!get_cmd(ua, _("Enter new retention period: "))) {
              return 0;
           }
@@ -84,9 +84,9 @@ int confirm_retention(UAContext *ua, utime_t *ret, const char *msg)
  */
 int find_arg_keyword(UAContext *ua, const char **list)
 {
-   for (int i=1; i<ua->argc; i++) {
+   for (int i = 1; i < ua->argc; i++) {
       for(int j=0; list[j]; j++) {
-         if (strcasecmp(list[j], ua->argk[i]) == 0) {
+         if (bstrcasecmp(list[j], ua->argk[i])) {
             return j;
          }
       }
@@ -102,8 +102,8 @@ int find_arg_keyword(UAContext *ua, const char **list)
  */
 int find_arg(UAContext *ua, const char *keyword)
 {
-   for (int i=1; i<ua->argc; i++) {
-      if (strcasecmp(keyword, ua->argk[i]) == 0) {
+   for (int i = 1; i < ua->argc; i++) {
+      if (bstrcasecmp(keyword, ua->argk[i])) {
          return i;
       }
    }
@@ -118,8 +118,8 @@ int find_arg(UAContext *ua, const char *keyword)
  */
 int find_arg_with_value(UAContext *ua, const char *keyword)
 {
-   for (int i=1; i<ua->argc; i++) {
-      if (strcasecmp(keyword, ua->argk[i]) == 0) {
+   for (int i = 1; i < ua->argc; i++) {
+      if (bstrcasecmp(keyword, ua->argk[i])) {
          if (ua->argv[i]) {
             return i;
          } else {
@@ -141,7 +141,7 @@ int do_keyword_prompt(UAContext *ua, const char *msg, const char **list)
 {
    int i;
    start_prompt(ua, _("You have the following choices:\n"));
-   for (i=0; list[i]; i++) {
+   for (i = 0; list[i]; i++) {
       add_prompt(ua, list[i]);
    }
    return do_prompt(ua, "", msg, NULL, 0);
@@ -151,10 +151,10 @@ int do_keyword_prompt(UAContext *ua, const char *msg, const char **list)
 /*
  * Select a Storage resource from prompt list
  */
-STORE *select_storage_resource(UAContext *ua)
+STORERES *select_storage_resource(UAContext *ua)
 {
    char name[MAX_NAME_LENGTH];
-   STORE *store;
+   STORERES *store;
 
    start_prompt(ua, _("The defined Storage resources are:\n"));
    LockRes();
@@ -167,17 +167,17 @@ STORE *select_storage_resource(UAContext *ua)
    if (do_prompt(ua, _("Storage"),  _("Select Storage resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   store = (STORE *)GetResWithName(R_STORAGE, name);
+   store = (STORERES *)GetResWithName(R_STORAGE, name);
    return store;
 }
 
 /*
  * Select a FileSet resource from prompt list
  */
-FILESET *select_fileset_resource(UAContext *ua)
+FILESETRES *select_fileset_resource(UAContext *ua)
 {
    char name[MAX_NAME_LENGTH];
-   FILESET *fs;
+   FILESETRES *fs;
 
    start_prompt(ua, _("The defined FileSet resources are:\n"));
    LockRes();
@@ -190,31 +190,30 @@ FILESET *select_fileset_resource(UAContext *ua)
    if (do_prompt(ua, _("FileSet"), _("Select FileSet resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   fs = (FILESET *)GetResWithName(R_FILESET, name);
+   fs = (FILESETRES *)GetResWithName(R_FILESET, name);
    return fs;
 }
-
 
 /*
  * Get a catalog resource from prompt list
  */
-CAT *get_catalog_resource(UAContext *ua)
+CATRES *get_catalog_resource(UAContext *ua)
 {
    char name[MAX_NAME_LENGTH];
-   CAT *catalog = NULL;
+   CATRES *catalog = NULL;
    int i;
 
-   for (i=1; i<ua->argc; i++) {
-      if (strcasecmp(ua->argk[i], NT_("catalog")) == 0 && ua->argv[i]) {
+   for (i = 1; i < ua->argc; i++) {
+      if (bstrcasecmp(ua->argk[i], NT_("catalog")) && ua->argv[i]) {
          if (acl_access_ok(ua, Catalog_ACL, ua->argv[i])) {
-            catalog = (CAT *)GetResWithName(R_CATALOG, ua->argv[i]);
+            catalog = (CATRES *)GetResWithName(R_CATALOG, ua->argv[i]);
             break;
          }
       }
    }
    if (ua->gui && !catalog) {
       LockRes();
-      catalog = (CAT *)GetNextRes(R_CATALOG, NULL);
+      catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
       UnlockRes();
       if (!catalog) {
          ua->error_msg(_("Could not find a Catalog resource\n"));
@@ -237,7 +236,7 @@ CAT *get_catalog_resource(UAContext *ua)
       if (do_prompt(ua, _("Catalog"),  _("Select Catalog resource"), name, sizeof(name)) < 0) {
          return NULL;
       }
-      catalog = (CAT *)GetResWithName(R_CATALOG, name);
+      catalog = (CATRES *)GetResWithName(R_CATALOG, name);
    }
    return catalog;
 }
@@ -246,10 +245,10 @@ CAT *get_catalog_resource(UAContext *ua)
 /*
  * Select a job to enable or disable   
  */
-JOB *select_enable_disable_job_resource(UAContext *ua, bool enable)
+JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable)
 {
    char name[MAX_NAME_LENGTH];
-   JOB *job;
+   JOBRES *job;
 
    LockRes();
    start_prompt(ua, _("The defined Job resources are:\n"));
@@ -266,17 +265,17 @@ JOB *select_enable_disable_job_resource(UAContext *ua, bool enable)
    if (do_prompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   job = (JOB *)GetResWithName(R_JOB, name);
+   job = (JOBRES *)GetResWithName(R_JOB, name);
    return job;
 }
 
 /*
  * Select a Job resource from prompt list
  */
-JOB *select_job_resource(UAContext *ua)
+JOBRES *select_job_resource(UAContext *ua)
 {
    char name[MAX_NAME_LENGTH];
-   JOB *job;
+   JOBRES *job;
 
    start_prompt(ua, _("The defined Job resources are:\n"));
    LockRes();
@@ -289,19 +288,19 @@ JOB *select_job_resource(UAContext *ua)
    if (do_prompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   job = (JOB *)GetResWithName(R_JOB, name);
+   job = (JOBRES *)GetResWithName(R_JOB, name);
    return job;
 }
 
 /* 
  * Select a Restore Job resource from argument or prompt
  */
-JOB *get_restore_job(UAContext *ua)
+JOBRES *get_restore_job(UAContext *ua)
 {
-   JOB *job;
+   JOBRES *job;
    int i = find_arg_with_value(ua, "restorejob");
    if (i >= 0 && acl_access_ok(ua, Job_ACL, ua->argv[i])) {
-      job = (JOB *)GetResWithName(R_JOB, ua->argv[i]);
+      job = (JOBRES *)GetResWithName(R_JOB, ua->argv[i]);
       if (job && job->JobType == JT_RESTORE) {
          return job;
       }
@@ -314,10 +313,10 @@ JOB *get_restore_job(UAContext *ua)
 /*
  * Select a Restore Job resource from prompt list
  */
-JOB *select_restore_job_resource(UAContext *ua)
+JOBRES *select_restore_job_resource(UAContext *ua)
 {
    char name[MAX_NAME_LENGTH];
-   JOB *job;
+   JOBRES *job;
 
    start_prompt(ua, _("The defined Restore Job resources are:\n"));
    LockRes();
@@ -330,19 +329,17 @@ JOB *select_restore_job_resource(UAContext *ua)
    if (do_prompt(ua, _("Job"), _("Select Restore Job"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   job = (JOB *)GetResWithName(R_JOB, name);
+   job = (JOBRES *)GetResWithName(R_JOB, name);
    return job;
 }
-
-
 
 /*
  * Select a client resource from prompt list
  */
-CLIENT *select_client_resource(UAContext *ua)
+CLIENTRES *select_client_resource(UAContext *ua)
 {
    char name[MAX_NAME_LENGTH];
-   CLIENT *client;
+   CLIENTRES *client;
 
    start_prompt(ua, _("The defined Client resources are:\n"));
    LockRes();
@@ -355,7 +352,7 @@ CLIENT *select_client_resource(UAContext *ua)
    if (do_prompt(ua, _("Client"),  _("Select Client (File daemon) resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   client = (CLIENT *)GetResWithName(R_CLIENT, name);
+   client = (CLIENTRES *)GetResWithName(R_CLIENT, name);
    return client;
 }
 
@@ -364,18 +361,18 @@ CLIENT *select_client_resource(UAContext *ua)
  *   client=<client-name>
  *  if we don't find the keyword, we prompt the user.
  */
-CLIENT *get_client_resource(UAContext *ua)
+CLIENTRES *get_client_resource(UAContext *ua)
 {
-   CLIENT *client = NULL;
+   CLIENTRES *client = NULL;
    int i;
 
-   for (i=1; i<ua->argc; i++) {
-      if ((strcasecmp(ua->argk[i], NT_("client")) == 0 ||
-           strcasecmp(ua->argk[i], NT_("fd")) == 0) && ua->argv[i]) {
+   for (i = 1; i < ua->argc; i++) {
+      if ((bstrcasecmp(ua->argk[i], NT_("client")) ||
+           bstrcasecmp(ua->argk[i], NT_("fd"))) && ua->argv[i]) {
          if (!acl_access_ok(ua, Client_ACL, ua->argv[i])) {
             break;
          }
-         client = (CLIENT *)GetResWithName(R_CLIENT, ua->argv[i]);
+         client = (CLIENTRES *)GetResWithName(R_CLIENT, ua->argv[i]);
          if (client) {
             return client;
          }
@@ -406,9 +403,9 @@ bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
       }
       ua->error_msg(_("Could not find Client %s: ERR=%s"), cr->Name, db_strerror(ua->db));
    }
-   for (i=1; i<ua->argc; i++) {
-      if ((strcasecmp(ua->argk[i], NT_("client")) == 0 ||
-           strcasecmp(ua->argk[i], NT_("fd")) == 0) && ua->argv[i]) {
+   for (i = 1; i < ua->argc; i++) {
+      if ((bstrcasecmp(ua->argk[i], NT_("client")) ||
+           bstrcasecmp(ua->argk[i], NT_("fd"))) && ua->argv[i]) {
          if (!acl_access_ok(ua, Client_ACL, ua->argv[i])) {
             break;
          }
@@ -452,7 +449,7 @@ bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
    }
 
    start_prompt(ua, _("Defined Clients:\n"));
-   for (i=0; i < num_clients; i++) {
+   for (i = 0; i < num_clients; i++) {
       ocr.ClientId = ids[i];
       if (!db_get_client_record(ua->jcr, ua->db, &ocr) ||
           !acl_access_ok(ua, Client_ACL, ocr.Name)) {
@@ -513,8 +510,8 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
    int num_pools, i;
    uint32_t *ids;
 
-   for (i=1; i<ua->argc; i++) {
-      if (strcasecmp(ua->argk[i], argk) == 0 && ua->argv[i] &&
+   for (i = 1; i < ua->argc; i++) {
+      if (bstrcasecmp(ua->argk[i], argk) && ua->argv[i] &&
           acl_access_ok(ua, Pool_ACL, ua->argv[i])) {
          bstrncpy(pr->Name, ua->argv[i], sizeof(pr->Name));
          if (!db_get_pool_record(ua->jcr, ua->db, pr)) {
@@ -541,7 +538,7 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
    if (bstrcmp(argk, NT_("recyclepool"))) {
       add_prompt(ua, _("*None*"));
    }
-   for (i=0; i < num_pools; i++) {
+   for (i = 0; i < num_pools; i++) {
       opr.PoolId = ids[i];
       if (!db_get_pool_record(ua->jcr, ua->db, &opr) ||
           !acl_access_ok(ua, Pool_ACL, opr.Name)) {
@@ -650,10 +647,10 @@ bail_out:
 /*
  * Select a pool resource from prompt list
  */
-POOL *select_pool_resource(UAContext *ua)
+POOLRES *select_pool_resource(UAContext *ua)
 {
    char name[MAX_NAME_LENGTH];
-   POOL *pool;
+   POOLRES *pool;
 
    start_prompt(ua, _("The defined Pool resources are:\n"));
    LockRes();
@@ -666,7 +663,7 @@ POOL *select_pool_resource(UAContext *ua)
    if (do_prompt(ua, _("Pool"), _("Select Pool resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   pool = (POOL *)GetResWithName(R_POOL, name);
+   pool = (POOLRES *)GetResWithName(R_POOL, name);
    return pool;
 }
 
@@ -676,14 +673,14 @@ POOL *select_pool_resource(UAContext *ua)
  *  probably want to use select_pool_dbr()
  *  or get_pool_dbr() above.
  */
-POOL *get_pool_resource(UAContext *ua)
+POOLRES *get_pool_resource(UAContext *ua)
 {
-   POOL *pool = NULL;
+   POOLRES *pool = NULL;
    int i;
 
    i = find_arg_with_value(ua, "pool");
    if (i >= 0 && acl_access_ok(ua, Pool_ACL, ua->argv[i])) {
-      pool = (POOL *)GetResWithName(R_POOL, ua->argv[i]);
+      pool = (POOLRES *)GetResWithName(R_POOL, ua->argv[i]);
       if (pool) {
          return pool;
       }
@@ -725,11 +722,11 @@ int get_job_dbr(UAContext *ua, JOB_DBR *jr)
 {
    int i;
 
-   for (i=1; i<ua->argc; i++) {
-      if (strcasecmp(ua->argk[i], NT_("ujobid")) == 0 && ua->argv[i]) {
+   for (i = 1; i < ua->argc; i++) {
+      if (bstrcasecmp(ua->argk[i], NT_("ujobid")) && ua->argv[i]) {
          jr->JobId = 0;
          bstrncpy(jr->Job, ua->argv[i], sizeof(jr->Job));
-      } else if (strcasecmp(ua->argk[i], NT_("jobid")) == 0 && ua->argv[i]) {
+      } else if (bstrcasecmp(ua->argk[i], NT_("jobid")) && ua->argv[i]) {
          jr->JobId = str_to_int64(ua->argv[i]);
          jr->Job[0] = 0;
       } else {
@@ -747,9 +744,9 @@ int get_job_dbr(UAContext *ua, JOB_DBR *jr)
    jr->JobId = 0;
    jr->Job[0] = 0;
 
-   for (i=1; i<ua->argc; i++) {
-      if ((strcasecmp(ua->argk[i], NT_("jobname")) == 0 ||
-           strcasecmp(ua->argk[i], NT_("job")) == 0) && ua->argv[i]) {
+   for (i = 1; i < ua->argc; i++) {
+      if ((bstrcasecmp(ua->argk[i], NT_("jobname")) ||
+           bstrcasecmp(ua->argk[i], NT_("job"))) && ua->argv[i]) {
          jr->JobId = 0;
          bstrncpy(jr->Name, ua->argv[i], sizeof(jr->Name));
          break;
@@ -785,8 +782,8 @@ void add_prompt(UAContext *ua, const char *prompt)
       ua->prompt = (char **)brealloc(ua->prompt, sizeof(char *) *
          ua->max_prompts);
     }
-    for (i=1; i < ua->num_prompts; i++) {
-       if (strcmp(ua->prompt[i], prompt) == 0) {
+    for (i = 1; i < ua->num_prompts; i++) {
+       if (bstrcmp(ua->prompt[i], prompt)) {
           return;
        }
     }
@@ -823,7 +820,7 @@ int do_prompt(UAContext *ua, const char *automsg, const char *msg,
    if (ua->batch) {
       /* First print the choices he wanted to make */
       ua->send_msg(ua->prompt[0]);
-      for (i=1; i < ua->num_prompts; i++) {
+      for (i = 1; i < ua->num_prompts; i++) {
          ua->send_msg("%6d: %s\n", i, ua->prompt[i]);
       }
       /* Now print error message */
@@ -833,7 +830,7 @@ int do_prompt(UAContext *ua, const char *automsg, const char *msg,
    }
    if (ua->api) user->signal(BNET_START_SELECT);
    ua->send_msg(ua->prompt[0]);
-   for (i=1; i < ua->num_prompts; i++) {
+   for (i = 1; i < ua->num_prompts; i++) {
       if (ua->api) {
          ua->send_msg("%s", ua->prompt[i]);
       } else {
@@ -878,7 +875,7 @@ int do_prompt(UAContext *ua, const char *automsg, const char *msg,
    }
 
 done:
-   for (i=0; i < ua->num_prompts; i++) {
+   for (i = 0; i < ua->num_prompts; i++) {
       free(ua->prompt[i]);
    }
    ua->num_prompts = 0;
@@ -897,25 +894,36 @@ done:
  * If use_default is set, we assume that any keyword without a value
  *   is the name of the Storage resource wanted.
  */
-STORE *get_storage_resource(UAContext *ua, bool use_default)
+STORERES *get_storage_resource(UAContext *ua, bool use_default)
 {
    char *store_name = NULL;
-   STORE *store = NULL;
+   STORERES *store = NULL;
    int jobid;
    JCR *jcr;
    int i;
    char ed1[50];
 
-   for (i=1; i<ua->argc; i++) {
+   for (i = 1; i < ua->argc; i++) {
+      /*
+       * Ignore any zapped keyword.
+       */
+      if (*ua->argk[i] == 0) {
+         continue;
+      }
       if (use_default && !ua->argv[i]) {
-         /* Ignore slots, scan and barcode(s) keywords */
-         if (strcasecmp("scan", ua->argk[i]) == 0 ||
-             strcasecmp("barcode", ua->argk[i]) == 0 ||
-             strcasecmp("barcodes", ua->argk[i]) == 0 ||
-             strcasecmp("slots", ua->argk[i]) == 0) {
+         /*
+          * Ignore barcode, barcodes, encrypt. scan and slots keywords.
+          */
+         if (bstrcasecmp("barcode", ua->argk[i]) ||
+             bstrcasecmp("barcodes", ua->argk[i]) ||
+             bstrcasecmp("encrypt", ua->argk[i]) ||
+             bstrcasecmp("scan", ua->argk[i]) ||
+             bstrcasecmp("slots", ua->argk[i])) {
             continue;
          }
-         /* Default argument is storage */
+         /*
+          * Default argument is storage
+          */
          if (store_name) {
             ua->error_msg(_("Storage name given twice.\n"));
             return NULL;
@@ -926,12 +934,12 @@ STORE *get_storage_resource(UAContext *ua, bool use_default)
             break;
          }
       } else {
-         if (strcasecmp(ua->argk[i], NT_("storage")) == 0 ||
-             strcasecmp(ua->argk[i], NT_("sd")) == 0) {
+         if (bstrcasecmp(ua->argk[i], NT_("storage")) ||
+             bstrcasecmp(ua->argk[i], NT_("sd"))) {
             store_name = ua->argv[i];
             break;
 
-         } else if (strcasecmp(ua->argk[i], NT_("jobid")) == 0) {
+         } else if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
             jobid = str_to_int64(ua->argv[i]);
             if (jobid <= 0) {
                ua->error_msg(_("Expecting jobid=nn command, got: %s\n"), ua->argk[i]);
@@ -941,12 +949,12 @@ STORE *get_storage_resource(UAContext *ua, bool use_default)
                ua->error_msg(_("JobId %s is not running.\n"), edit_int64(jobid, ed1));
                return NULL;
             }
-            store = jcr->wstore;
+            store = jcr->res.wstore;
             free_jcr(jcr);
             break;
 
-         } else if (strcasecmp(ua->argk[i], NT_("job")) == 0 ||
-                    strcasecmp(ua->argk[i], NT_("jobname")) == 0) {
+         } else if (bstrcasecmp(ua->argk[i], NT_("job")) ||
+                    bstrcasecmp(ua->argk[i], NT_("jobname"))) {
             if (!ua->argv[i]) {
                ua->error_msg(_("Expecting job=xxx, got: %s.\n"), ua->argk[i]);
                return NULL;
@@ -955,10 +963,10 @@ STORE *get_storage_resource(UAContext *ua, bool use_default)
                ua->error_msg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
                return NULL;
             }
-            store = jcr->wstore;
+            store = jcr->res.wstore;
             free_jcr(jcr);
             break;
-         } else if (strcasecmp(ua->argk[i], NT_("ujobid")) == 0) {
+         } else if (bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
             if (!ua->argv[i]) {
                ua->error_msg(_("Expecting ujobid=xxx, got: %s.\n"), ua->argk[i]);
                return NULL;
@@ -967,7 +975,7 @@ STORE *get_storage_resource(UAContext *ua, bool use_default)
                ua->error_msg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
                return NULL;
             }
-            store = jcr->wstore;
+            store = jcr->res.wstore;
             free_jcr(jcr);
             break;
         }
@@ -978,7 +986,7 @@ STORE *get_storage_resource(UAContext *ua, bool use_default)
    }
 
    if (!store && store_name && store_name[0] != 0) {
-      store = (STORE *)GetResWithName(R_STORAGE, store_name);
+      store = (STORERES *)GetResWithName(R_STORAGE, store_name);
       if (!store) {
          ua->error_msg(_("Storage resource \"%s\": not found\n"), store_name);
       }
@@ -994,12 +1002,15 @@ STORE *get_storage_resource(UAContext *ua, bool use_default)
 }
 
 /* Get drive that we are working with for this storage */
-int get_storage_drive(UAContext *ua, STORE *store)
+int get_storage_drive(UAContext *ua, STORERES *store)
 {
    int i, drive = -1;
+   unsigned int cnt;
+   char drivename[10];
+
    /* Get drive for autochanger if possible */
    i = find_arg_with_value(ua, "drive");
-   if (i >=0) {
+   if (i >= 0) {
       drive = atoi(ua->argv[i]);
    } else if (store && store->autochanger) {
       /* If our structure is not set ask SD for # drives */
@@ -1011,19 +1022,23 @@ int get_storage_drive(UAContext *ua, STORE *store)
          drive = 0;
       } else {
          /* Ask user to enter drive number */
-         ua->cmd[0] = 0;
-         if (!get_cmd(ua, _("Enter autochanger drive[0]: "))) {
+         start_prompt(ua, _("Select Drive:\n"));
+         for (cnt = 0; cnt < store->drives; cnt++) {
+            bsnprintf(drivename, sizeof(drivename), "Drive %d", cnt);
+            add_prompt(ua, drivename);
+         }
+         if (do_prompt(ua, _("Drive"), _("Select drive"), drivename, sizeof(drivename)) < 0) {
             drive = -1;  /* None */
          } else {
-            drive = atoi(ua->cmd);
+            sscanf(drivename, "Drive %d", &drive);
          }
-     }
+      }
    }
    return drive;
 }
 
 /* Get slot that we are working with for this storage */
-int get_storage_slot(UAContext *ua, STORE *store)
+int get_storage_slot(UAContext *ua, STORERES *store)
 {
    int i, slot = -1;
    /* Get slot for autochanger if possible */
@@ -1042,8 +1057,6 @@ int get_storage_slot(UAContext *ua, STORE *store)
    return slot;
 }
 
-
-
 /*
  * Scan looking for mediatype=
  *
@@ -1054,7 +1067,7 @@ int get_storage_slot(UAContext *ua, STORE *store)
  */
 int get_media_type(UAContext *ua, char *MediaType, int max_media)
 {
-   STORE *store;
+   STORERES *store;
    int i;
 
    i = find_arg_with_value(ua, "mediatype");
@@ -1076,8 +1089,8 @@ bool get_level_from_name(JCR *jcr, const char *level_name)
 {
    /* Look up level name and pull code */
    bool found = false;
-   for (int i=0; joblevels[i].level_name; i++) {
-      if (strcasecmp(level_name, joblevels[i].level_name) == 0) {
+   for (int i = 0; joblevels[i].level_name; i++) {
+      if (bstrcasecmp(level_name, joblevels[i].level_name)) {
          jcr->setJobLevel(joblevels[i].level);
          found = true;
          break;
@@ -1100,8 +1113,8 @@ JCR *select_running_job(UAContext *ua, const char *reason)
    char JobName[MAX_NAME_LENGTH];
    char temp[256];
 
-   for (i=1; i<ua->argc; i++) {
-      if (strcasecmp(ua->argk[i], NT_("jobid")) == 0) {
+   for (i = 1; i < ua->argc; i++) {
+      if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
          uint32_t JobId;
          JobId = str_to_int64(ua->argv[i]);
          if (!JobId) {
@@ -1112,7 +1125,7 @@ JCR *select_running_job(UAContext *ua, const char *reason)
             return NULL;
          }
          break;
-      } else if (strcasecmp(ua->argk[i], NT_("job")) == 0) {
+      } else if (bstrcasecmp(ua->argk[i], NT_("job"))) {
          if (!ua->argv[i]) {
             break;
          }
@@ -1122,7 +1135,7 @@ JCR *select_running_job(UAContext *ua, const char *reason)
             bstrncpy(jcr->Job, ua->argv[i], sizeof(jcr->Job));
          }
          break;
-      } else if (strcasecmp(ua->argk[i], NT_("ujobid")) == 0) {
+      } else if (bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
          if (!ua->argv[i]) {
             break;
          }
@@ -1136,7 +1149,7 @@ JCR *select_running_job(UAContext *ua, const char *reason)
 
    }
    if (jcr) {
-      if (jcr->job && !acl_access_ok(ua, Job_ACL, jcr->job->name())) {
+      if (jcr->res.job && !acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return NULL;
       }
@@ -1153,7 +1166,7 @@ JCR *select_running_job(UAContext *ua, const char *reason)
             continue;
          }
          tjobs++;                    /* count of all jobs */
-         if (!acl_access_ok(ua, Job_ACL, jcr->job->name())) {
+         if (!acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
             continue;               /* skip not authorized */
          }
          njobs++;                   /* count of authorized jobs */
@@ -1175,7 +1188,7 @@ JCR *select_running_job(UAContext *ua, const char *reason)
          if (jcr->JobId == 0) {      /* this is us */
             continue;
          }
-         if (!acl_access_ok(ua, Job_ACL, jcr->job->name())) {
+         if (!acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
             continue;               /* skip not authorized */
          }
          bsnprintf(buf, sizeof(buf), _("JobId=%s Job=%s"), edit_int64(jcr->JobId, ed1), jcr->Job);
@@ -1186,7 +1199,7 @@ JCR *select_running_job(UAContext *ua, const char *reason)
       if (do_prompt(ua, _("Job"),  temp, buf, sizeof(buf)) < 0) {
          return NULL;
       }
-      if (!strcmp(reason, "cancel")) {
+      if (bstrcmp(reason, "cancel")) {
          if (ua->api && njobs == 1) {
             char nbuf[1000];
             bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf,  
@@ -1210,4 +1223,111 @@ JCR *select_running_job(UAContext *ua, const char *reason)
       }
    }
    return jcr;
+}
+
+bool get_user_slot_list(UAContext *ua, char *slot_list, const char *argument, int num_slots)
+{
+   int i, len, beg, end;
+   const char *msg;
+   char search_argument[20];
+   char *p, *e, *h;
+
+   /*
+    * See if the argument given is found on the cmdline.
+    */
+   bstrncpy(search_argument, argument, sizeof(search_argument));
+   i = find_arg_with_value(ua, search_argument);
+   if (i == -1) {  /* not found */
+      /*
+       * See if the last letter of search_argument is a 's'
+       * When it is strip it and try if that argument is given.
+       */
+      len = strlen(search_argument);
+      if (len > 0 && search_argument[len - 1] == 's') {
+         search_argument[len - 1] = '\0';
+         i = find_arg_with_value(ua, search_argument);
+      }
+   }
+
+   if (i > 0) {
+      /*
+       * Scan slot list in ua->argv[i]
+       */
+      strip_trailing_junk(ua->argv[i]);
+      for (p = ua->argv[i]; p && *p; p = e) {
+         /*
+          * Check for list
+          */
+         e = strchr(p, ',');
+         if (e) {
+            *e++ = 0;
+         }
+         /*
+          * Check for range
+          */
+         h = strchr(p, '-');             /* range? */
+         if (h == p) {
+            msg = _("Negative numbers not permitted\n");
+            goto bail_out;
+         }
+         if (h) {
+            *h++ = 0;
+            if (!is_an_integer(h)) {
+               msg = _("Range end is not integer.\n");
+               goto bail_out;
+            }
+            skip_spaces(&p);
+            if (!is_an_integer(p)) {
+               msg = _("Range start is not an integer.\n");
+               goto bail_out;
+            }
+            beg = atoi(p);
+            end = atoi(h);
+            if (end < beg) {
+               msg = _("Range end not bigger than start.\n");
+               goto bail_out;
+            }
+         } else {
+            skip_spaces(&p);
+            if (!is_an_integer(p)) {
+               msg = _("Input value is not an integer.\n");
+               goto bail_out;
+            }
+            beg = end = atoi(p);
+         }
+         if (beg <= 0 || end <= 0) {
+            msg = _("Values must be be greater than zero.\n");
+            goto bail_out;
+         }
+         if (end > num_slots) {
+            msg = _("Slot too large.\n");
+            goto bail_out;
+         }
+
+         /*
+          * Turn on specified range
+          */
+         for (i = beg; i <= end; i++) {
+            set_bit(i - 1, slot_list);
+         }
+      }
+   } else {
+      /*
+       * Turn everything on
+       */
+      for (i = 1; i <= num_slots; i++) {
+         set_bit(i - 1, slot_list);
+      }
+   }
+   Dmsg0(100, "Slots turned on:\n");
+   for (i = 1; i <= num_slots; i++) {
+      if (bit_is_set(i - 1, slot_list)) {
+         Dmsg1(100, "%d\n", i);
+      }
+   }
+   return true;
+
+bail_out:
+   Dmsg1(100, "Problem with user selection ERR=%s\n", msg);
+   return false;
 }

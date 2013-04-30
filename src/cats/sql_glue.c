@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2009-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -42,7 +42,8 @@
 
 /* -----------------------------------------------------------------------
  *
- *   Generic Glue Routines
+ * Generic Glue Routines
+ * Wrappers around class methods.
  *
  * -----------------------------------------------------------------------
  */
@@ -52,9 +53,15 @@ bool db_match_database(B_DB *mdb, const char *db_driver, const char *db_name,
    return mdb->db_match_database(db_driver, db_name, db_address, db_port);
 }
 
-B_DB *db_clone_database_connection(B_DB *mdb, JCR *jcr, bool mult_db_connections)
+B_DB *db_clone_database_connection(B_DB *mdb, JCR *jcr,
+                                   bool mult_db_connections,
+                                   bool get_pooled_connection,
+                                   bool need_private)
 {
-   return mdb->db_clone_database_connection(jcr, mult_db_connections);
+   return mdb->db_clone_database_connection(jcr,
+                                            mult_db_connections,
+                                            get_pooled_connection,
+                                            need_private);
 }
 
 const char *db_get_type(B_DB *mdb)
@@ -77,6 +84,11 @@ void db_close_database(JCR *jcr, B_DB *mdb)
    if (mdb) {
       mdb->db_close_database(jcr);
    }
+}
+
+bool db_validate_connection(B_DB *mdb)
+{
+   return mdb->db_validate_connection();
 }
 
 void db_thread_cleanup(B_DB *mdb)

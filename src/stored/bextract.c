@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -36,11 +36,17 @@
 #include "bacula.h"
 #include "stored.h"
 #include "ch.h"
+#include "lib/crypto_cache.h"
 #include "findlib/find.h"
+
+#ifdef HAVE_LZO
+#include <lzo/lzoconf.h>
+#include <lzo/lzo1x.h>
+#endif
 
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
-static void do_extract(char *fname);
+static void do_extract(char *devname);
 static bool record_cb(DCR *dcr, DEV_RECORD *rec);
 
 static DEVICE *dev = NULL;
@@ -60,6 +66,11 @@ static POOLMEM *compress_buf;
 static int prog_name_msg = 0;
 static int win32_data_msg = 0;
 static char *VolumeName = NULL;
+static char *DirectorName = NULL;
+static DIRRES *director = NULL;
+
+static struct acl_data_t acl_data;
+static struct xattr_data_t xattr_data;
 
 static char *wbuf;                    /* write buffer address */
 static uint32_t wsize;                /* write size */
@@ -81,6 +92,8 @@ PROG_COPYRIGHT
 "Usage: bextract <options> <bacula-archive-device-name> <directory-to-store-files>\n"
 "       -b <file>       specify a bootstrap file\n"
 "       -c <file>       specify a Storage configuration file\n"
+"       -D <director>   specify a director name specified in the Storage\n"
+"                       configuration file for the Key Encryption Key selection\n"
 "       -d <nn>         set debug level to <nn>\n"
 "       -dt             print timestamp in debug output\n"
 "       -e <file>       exclude list\n"
@@ -115,7 +128,7 @@ int main (int argc, char *argv[])
    ff = init_find_files();
    binit(&bfd);
 
-   while ((ch = getopt(argc, argv, "b:c:d:e:i:pvV:?")) != -1) {
+   while ((ch = getopt(argc, argv, "b:c:D:d:e:i:pvV:?")) != -1) {
       switch (ch) {
       case 'b':                    /* bootstrap file */
          bsr = parse_bsr(NULL, optarg);
@@ -127,6 +140,13 @@ int main (int argc, char *argv[])
             free(configfile);
          }
          configfile = bstrdup(optarg);
+         break;
+
+      case 'D':                    /* specify director name */
+         if (DirectorName != NULL) {
+            free(DirectorName);
+         }
+         DirectorName = bstrdup(optarg);
          break;
 
       case 'd':                    /* debug level */
@@ -204,6 +224,32 @@ int main (int argc, char *argv[])
    config = new_config_parser();
    parse_sd_config(config, configfile, M_ERROR_TERM);
 
+   LockRes();
+   me = (STORES *)GetNextRes(R_STORAGE, NULL);
+   if (!me) {
+      UnlockRes();
+      Emsg1(M_ERROR_TERM, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
+         configfile);
+   }
+   UnlockRes();
+
+  if (DirectorName) {
+      foreach_res(director, R_DIRECTOR) {
+         if (bstrcmp(director->hdr.name, DirectorName)) {
+            break;
+         }
+      }
+      if (!director) {
+         Emsg2(M_ERROR_TERM, 0, _("No Director resource named %s defined in %s. Cannot continue.\n"),
+               DirectorName, configfile);
+      }
+   }
+
+   load_sd_plugins(me->plugin_directory);
+
+   read_crypto_cache(me->working_directory, "bacula-sd",
+                     get_first_port_host_order(me->sdaddrs));
+
    if (!got_inc) {                            /* If no include file, */
       add_fname_to_include_list(ff, 0, "/");  /*   include everything */
    }
@@ -233,7 +279,7 @@ static void do_extract(char *devname)
 
    enable_backup_privileges(NULL, 1);
 
-   jcr = setup_jcr("bextract", devname, bsr, VolumeName, 1); /* acquire for read */
+   jcr = setup_jcr("bextract", devname, bsr, director, VolumeName, 1); /* acquire for read */
    if (!jcr) {
       exit(1);
    }
@@ -259,6 +305,9 @@ static void do_extract(char *devname)
 
    compress_buf = get_memory(compress_buf_size);
 
+   acl_data.last_fname = get_pool_memory(PM_FNAME);
+   xattr_data.last_fname = get_pool_memory(PM_FNAME);
+
    read_records(dcr, record_cb, mount_next_read_volume);
    /* If output file is still open, it was the last one in the
     * archive since we just hit an end of file, so close the file.
@@ -266,10 +315,15 @@ static void do_extract(char *devname)
    if (is_bopen(&bfd)) {
       set_attributes(jcr, attr, &bfd);
    }
-   release_device(dcr);
    free_attr(attr);
-   free_jcr(jcr);
+
+   free_pool_memory(acl_data.last_fname);
+   free_pool_memory(xattr_data.last_fname);
+
+   clean_device(jcr->dcr);
    dev->term();
+   free_dcr(dcr);
+   free_jcr(jcr);
 
    printf(_("%u files restored.\n"), num_files);
    return;
@@ -300,7 +354,7 @@ static bool store_data(BFILE *bfd, char *data, const int32_t length)
  */
 static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 {
-   int stat;
+   int status;
    JCR *jcr = dcr->jcr;
 
    if (rec->FileIndex < 0) {
@@ -348,8 +402,8 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          }
 
          extract = false;
-         stat = create_file(jcr, attr, &bfd, REPLACE_ALWAYS);
-         switch (stat) {
+         status = create_file(jcr, attr, &bfd, REPLACE_ALWAYS);
+         switch (status) {
          case CF_ERROR:
          case CF_SKIP:
             break;
@@ -412,7 +466,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 #ifdef HAVE_LIBZ
       if (extract) {
          uLong compress_len = compress_buf_size;
-         int stat = Z_BUF_ERROR;
+         int status = Z_BUF_ERROR;
 
          if (rec->maskedStream == STREAM_SPARSE_GZIP_DATA) {
             ser_declare;
@@ -437,15 +491,15 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             wsize = rec->data_len;
          }
 
-         while (compress_len < 10000000 && (stat=uncompress((Byte *)compress_buf, &compress_len,
+         while (compress_len < 10000000 && (status = uncompress((Byte *)compress_buf, &compress_len,
                                  (const Byte *)wbuf, (uLong)wsize)) == Z_BUF_ERROR) {
             /* The buffer size is too small, try with a bigger one */
             compress_len = 2 * compress_len;
             compress_buf = check_pool_memory_size(compress_buf,
                                                   compress_len);
          }
-         if (stat != Z_OK) {
-            Emsg1(M_ERROR, 0, _("Uncompression error. ERR=%d\n"), stat);
+         if (status != Z_OK) {
+            Emsg1(M_ERROR, 0, _("Uncompression error. ERR=%d\n"), status);
             extract = false;
             return true;
          }
@@ -580,6 +634,60 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       }
       break;
 
+   case STREAM_UNIX_ACCESS_ACL:          /* Deprecated Standard ACL attributes on UNIX */
+   case STREAM_UNIX_DEFAULT_ACL:         /* Deprecated Default ACL attributes on UNIX */
+   case STREAM_ACL_AIX_TEXT:
+   case STREAM_ACL_DARWIN_ACCESS_ACL:
+   case STREAM_ACL_FREEBSD_DEFAULT_ACL:
+   case STREAM_ACL_FREEBSD_ACCESS_ACL:
+   case STREAM_ACL_HPUX_ACL_ENTRY:
+   case STREAM_ACL_IRIX_DEFAULT_ACL:
+   case STREAM_ACL_IRIX_ACCESS_ACL:
+   case STREAM_ACL_LINUX_DEFAULT_ACL:
+   case STREAM_ACL_LINUX_ACCESS_ACL:
+   case STREAM_ACL_TRU64_DEFAULT_ACL:
+   case STREAM_ACL_TRU64_DEFAULT_DIR_ACL:
+   case STREAM_ACL_TRU64_ACCESS_ACL:
+   case STREAM_ACL_SOLARIS_ACLENT:
+   case STREAM_ACL_SOLARIS_ACE:
+   case STREAM_ACL_AFS_TEXT:
+   case STREAM_ACL_AIX_AIXC:
+   case STREAM_ACL_AIX_NFS4:
+   case STREAM_ACL_FREEBSD_NFS4_ACL:
+   case STREAM_ACL_HURD_DEFAULT_ACL:
+   case STREAM_ACL_HURD_ACCESS_ACL:
+      if (extract) {
+         wbuf = rec->data;
+         wsize = rec->data_len;
+         pm_strcpy(acl_data.last_fname, attr->fname);
+
+         parse_acl_streams(jcr, &acl_data, rec->maskedStream, wbuf, wsize);
+      }
+      break;
+
+   case STREAM_XATTR_HURD:
+   case STREAM_XATTR_IRIX:
+   case STREAM_XATTR_TRU64:
+   case STREAM_XATTR_AIX:
+   case STREAM_XATTR_OPENBSD:
+   case STREAM_XATTR_SOLARIS_SYS:
+   case STREAM_XATTR_SOLARIS:
+   case STREAM_XATTR_DARWIN:
+   case STREAM_XATTR_FREEBSD:
+   case STREAM_XATTR_LINUX:
+   case STREAM_XATTR_NETBSD:
+      if (extract) {
+         wbuf = rec->data;
+         wsize = rec->data_len;
+         pm_strcpy(xattr_data.last_fname, attr->fname);
+
+         parse_xattr_streams(jcr, &xattr_data, rec->maskedStream, wbuf, wsize);
+      }
+      break;
+
+   case STREAM_NDMP_SEPERATOR:
+      break;
+
    default:
       /* If extracting, weird stream (not 1 or 2), close output file anyway */
       if (extract) {
@@ -598,20 +706,18 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 }
 
 /* Dummies to replace askdir.c */
-bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
-bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
-bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
-bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-bool    dir_send_job_status(JCR *jcr) {return 1;}
-
+bool dir_find_next_appendable_volume(DCR *dcr) { return 1;}
+bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
+bool dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
+bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
+bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
 
 bool dir_ask_sysop_to_mount_volume(DCR *dcr, int /*mode*/)
 {
    DEVICE *dev = dcr->dev;
    fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
       dcr->VolumeName, dev->print_name());
-   dev->close();
+   dev->close(dcr);
    getchar();
    return true;
 }
@@ -620,7 +726,6 @@ bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
 {
    Dmsg0(100, "Fake dir_get_volume_info\n");
    dcr->setVolCatName(dcr->VolumeName);
-   dcr->VolCatInfo.VolCatParts = find_num_dvd_parts(dcr);
-   Dmsg2(500, "Vol=%s num_parts=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatParts);
+   Dmsg1(500, "Vol=%s\n", dcr->getVolCatName());
    return 1;
 }

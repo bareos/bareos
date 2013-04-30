@@ -1,0 +1,68 @@
+/*
+   Bacula® - The Network Backup Solution
+
+   Copyright (C) 2012 Free Software Foundation Europe e.V.
+
+   The main author of Bacula is Kern Sibbald, with contributions from
+   many others, a complete list can be found in the file AUTHORS.
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+
+   Bacula® is a registered trademark of Kern Sibbald.
+   The licensor of Bacula is the Free Software Foundation Europe
+   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
+   Switzerland, email:ftf@fsfeurope.org.
+*/
+
+#ifndef __BACKUP_H
+#define __BACKUP_H
+
+struct bs_ctx {
+   JCR *jcr;                    /* Current Job Control Record */
+   FF_PKT *ff_pkt;              /* File being processed */
+   DIGEST *digest;              /* Encryption Digest */
+   DIGEST *signing_digest;      /* Signing Digest */
+   int digest_stream;           /* Type of Signing Digest */
+};
+
+struct b_ctx {
+   JCR *jcr;                    /* Current Job Control Record */
+   FF_PKT *ff_pkt;              /* File being processed */
+   POOLMEM *msgsave;            /* Saved sd->msg */
+   char *rbuf;                  /* Read buffer */
+   char *wbuf;                  /* Write buffer */
+   int32_t rsize;               /* Read size */
+   uint64_t fileAddr;           /* File address */
+
+   /*
+    * Compression data.
+    */
+   const Bytef *cbuf;           /* Compression buffer */
+   Bytef *cbuf2;                /* Compression buffer when using generic comp_stream_header */
+   uint32_t compress_len;       /* Actual length after compression */
+   uLong max_compress_len;      /* Maximum size that will fit into compression buffer */
+   comp_stream_header ch;       /* Compression Stream Header with info about compression used */
+
+   /*
+    * Encryption data.
+    */
+   uint32_t cipher_input_len;   /* Actual length of the data to encrypt */
+   const uint8_t *cipher_input; /* Data to encrypt */
+   uint32_t encrypted_len;      /* Actual length after encryption */
+   DIGEST *digest;              /* Encryption Digest */
+   DIGEST *signing_digest;      /* Signing Digest */
+   CIPHER_CONTEXT *cipher_ctx;  /* Cipher context */
+};
+#endif

@@ -400,7 +400,7 @@ void *htable::lookup(char *key)
    for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) {
       ASSERT(hp->key_type == KEY_TYPE_CHAR);
 //    Dmsg2(100, "hp=%p key=%s\n", hp, hp->key.char_key);
-      if (hash == hp->hash && strcmp(key, hp->key.char_key) == 0) {
+      if (hash == hp->hash && bstrcmp(key, hp->key.char_key)) {
          Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset);
          return ((char *)hp)-loffset;
       }

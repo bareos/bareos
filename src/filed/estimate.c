@@ -45,7 +45,7 @@ static int tally_file(JCR *jcr, FF_PKT *ff_pkt, bool);
  */
 int make_estimate(JCR *jcr)
 {
-   int stat;
+   int status;
 
    jcr->setJobStatus(JS_Running);
 
@@ -55,9 +55,9 @@ int make_estimate(JCR *jcr)
       set_find_changed_function((FF_PKT *)jcr->ff, accurate_check_file);
    } 
 
-   stat = find_files(jcr, (FF_PKT *)jcr->ff, tally_file, plugin_estimate);
+   status = find_files(jcr, (FF_PKT *)jcr->ff, tally_file, plugin_estimate);
    accurate_free(jcr);
-   return stat;
+   return status;
 }
 
 /*

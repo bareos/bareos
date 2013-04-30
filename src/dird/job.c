@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -45,7 +45,6 @@ static bool job_check_maxruntime(JCR *jcr);
 static bool job_check_maxrunschedtime(JCR *jcr);
 
 /* Imported subroutines */
-extern void term_scheduler();
 extern void term_ua_server();
 
 /* Imported variables */
@@ -54,12 +53,12 @@ jobq_t job_queue;
 
 void init_job_server(int max_workers)
 {
-   int stat;
+   int status;
    watchdog_t *wd;
 
-   if ((stat = jobq_init(&job_queue, max_workers, job_thread)) != 0) {
+   if ((status = jobq_init(&job_queue, max_workers, job_thread)) != 0) {
       berrno be;
-      Emsg1(M_ABORT, 0, _("Could not init job queue: ERR=%s\n"), be.bstrerror(stat));
+      Emsg1(M_ABORT, 0, _("Could not init job queue: ERR=%s\n"), be.bstrerror(status));
    }
    wd = new_watchdog();
    wd->callback = job_monitor_watchdog;
@@ -85,29 +84,31 @@ void term_job_server()
  */
 JobId_t run_job(JCR *jcr)
 {
-   int stat;
+   int status;
    if (setup_job(jcr)) {
       Dmsg0(200, "Add jrc to work queue\n");
       /* Queue the job to be run */
-      if ((stat = jobq_add(&job_queue, jcr)) != 0) {
+      if ((status = jobq_add(&job_queue, jcr)) != 0) {
          berrno be;
-         Jmsg(jcr, M_FATAL, 0, _("Could not add job queue: ERR=%s\n"), be.bstrerror(stat));
+         Jmsg(jcr, M_FATAL, 0, _("Could not add job queue: ERR=%s\n"), be.bstrerror(status));
          return 0;
       }
       return jcr->JobId;
    }
    return 0;
-}            
+}
 
-bool setup_job(JCR *jcr) 
+bool setup_job(JCR *jcr)
 {
    int errstat;
 
    jcr->lock();
    Dsm_check(100);
-   init_msg(jcr, jcr->messages);
+   init_msg(jcr, jcr->res.messages, job_code_callback_director);
 
-   /* Initialize termination condition variable */
+   /*
+    * Initialize termination condition variable
+    */
    if ((errstat = pthread_cond_init(&jcr->term_wait, NULL)) != 0) {
       berrno be;
       Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"), be.bstrerror(errstat));
@@ -116,7 +117,18 @@ bool setup_job(JCR *jcr)
    }
    jcr->term_wait_inited = true;
 
-   create_unique_job_name(jcr, jcr->job->name());
+   /*
+    * Initialize nextrun ready condition variable
+    */
+   if ((errstat = pthread_cond_init(&jcr->nextrun_ready, NULL)) != 0) {
+      berrno be;
+      Jmsg1(jcr, M_FATAL, 0, _("Unable to init job nextrun cond variable: ERR=%s\n"), be.bstrerror(errstat));
+      jcr->unlock();
+      goto bail_out;
+   }
+   jcr->nextrun_ready_inited = true;
+
+   create_unique_job_name(jcr, jcr->res.job->name());
    jcr->setJobStatus(JS_Created);
    jcr->unlock();
 
@@ -124,33 +136,40 @@ bool setup_job(JCR *jcr)
     * Open database
     */
    Dmsg0(100, "Open database\n");
-   jcr->db = db_init_database(jcr, jcr->catalog->db_driver, jcr->catalog->db_name, 
-                              jcr->catalog->db_user, jcr->catalog->db_password,
-                              jcr->catalog->db_address, jcr->catalog->db_port,
-                              jcr->catalog->db_socket, jcr->catalog->mult_db_connections,
-                              jcr->catalog->disable_batch_insert);
-   if (!jcr->db || !db_open_database(jcr, jcr->db)) {
+   jcr->db = db_sql_get_pooled_connection(jcr,
+                                          jcr->res.catalog->db_driver,
+                                          jcr->res.catalog->db_name,
+                                          jcr->res.catalog->db_user,
+                                          jcr->res.catalog->db_password,
+                                          jcr->res.catalog->db_address,
+                                          jcr->res.catalog->db_port,
+                                          jcr->res.catalog->db_socket,
+                                          jcr->res.catalog->mult_db_connections,
+                                          jcr->res.catalog->disable_batch_insert);
+   if (jcr->db == NULL) {
       Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
-                 jcr->catalog->db_name);
-      if (jcr->db) {
-         Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
-         db_close_database(jcr, jcr->db);
-      }
+                 jcr->res.catalog->db_name);
       goto bail_out;
    }
    Dmsg0(150, "DB opened\n");
    if (!jcr->fname) {
       jcr->fname = get_pool_memory(PM_FNAME);
    }
-   if (!jcr->pool_source) {
-      jcr->pool_source = get_pool_memory(PM_MESSAGE);
-      pm_strcpy(jcr->pool_source, _("unknown source"));
+
+   if (!jcr->res.pool_source) {
+      jcr->res.pool_source = get_pool_memory(PM_MESSAGE);
+      pm_strcpy(jcr->res.pool_source, _("unknown source"));
+   }
+
+   if (!jcr->res.npool_source) {
+      jcr->res.npool_source = get_pool_memory(PM_MESSAGE);
+      pm_strcpy(jcr->res.npool_source, _("unknown source"));
    }
 
    if (jcr->JobReads()) {
-      if (!jcr->rpool_source) {
-         jcr->rpool_source = get_pool_memory(PM_MESSAGE);
-         pm_strcpy(jcr->rpool_source, _("unknown source"));
+      if (!jcr->res.rpool_source) {
+         jcr->res.rpool_source = get_pool_memory(PM_MESSAGE);
+         pm_strcpy(jcr->res.rpool_source, _("unknown source"));
       }
    }
 
@@ -170,7 +189,6 @@ bool setup_job(JCR *jcr)
    Dmsg4(100, "Created job record JobId=%d Name=%s Type=%c Level=%c\n",
        jcr->JobId, jcr->Job, jcr->jr.JobType, jcr->jr.JobLevel);
 
-   generate_daemon_event(jcr, "JobStart");
    new_plugins(jcr);                  /* instantiate plugins for this jcr */
    generate_plugin_event(jcr, bDirEventJobStart);
 
@@ -179,10 +197,10 @@ bool setup_job(JCR *jcr)
    }
 
    if (jcr->JobReads() && !jcr->rstorage) {
-      if (jcr->job->storage) {
-         copy_rwstorage(jcr, jcr->job->storage, _("Job resource"));
+      if (jcr->res.job->storage) {
+         copy_rwstorage(jcr, jcr->res.job->storage, _("Job resource"));
       } else {
-         copy_rwstorage(jcr, jcr->job->pool->storage, _("Pool resource"));
+         copy_rwstorage(jcr, jcr->res.job->pool->storage, _("Pool resource"));
       }
    }
    if (!jcr->JobReads()) {
@@ -196,9 +214,26 @@ bool setup_job(JCR *jcr)
     */
    switch (jcr->getJobType()) {
    case JT_BACKUP:
-      if (!do_backup_init(jcr)) {
-         backup_cleanup(jcr, JS_ErrorTerminated);
-         goto bail_out;
+      switch (jcr->getJobProtocol()) {
+      case PT_NDMP:
+         if (!do_ndmp_backup_init(jcr)) {
+            ndmp_backup_cleanup(jcr, JS_ErrorTerminated);
+            goto bail_out;
+         }
+         break;
+      default:
+         if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+            if (!do_native_vbackup_init(jcr)) {
+               native_vbackup_cleanup(jcr, JS_ErrorTerminated);
+               goto bail_out;
+            }
+         } else {
+            if (!do_native_backup_init(jcr)) {
+               native_backup_cleanup(jcr, JS_ErrorTerminated);
+               goto bail_out;
+            }
+         }
+         break;
       }
       break;
    case JT_VERIFY:
@@ -208,9 +243,27 @@ bool setup_job(JCR *jcr)
       }
       break;
    case JT_RESTORE:
-      if (!do_restore_init(jcr)) {
-         restore_cleanup(jcr, JS_ErrorTerminated);
-         goto bail_out;
+      switch (jcr->getJobProtocol()) {
+      case PT_NDMP:
+         if (!do_ndmp_restore_init(jcr)) {
+            ndmp_restore_cleanup(jcr, JS_ErrorTerminated);
+            goto bail_out;
+         }
+         break;
+      default:
+         /*
+          * Any non NDMP restore is not interested at the items
+          * that were selected for restore so drop them now.
+          */
+         if (jcr->restore_tree_root) {
+            free_tree(jcr->restore_tree_root);
+            jcr->restore_tree_root = NULL;
+         }
+         if (!do_native_restore_init(jcr)) {
+            native_restore_cleanup(jcr, JS_ErrorTerminated);
+            goto bail_out;
+         }
+         break;
       }
       break;
    case JT_ADMIN:
@@ -221,7 +274,7 @@ bool setup_job(JCR *jcr)
       break;
    case JT_COPY:
    case JT_MIGRATE:
-      if (!do_migration_init(jcr)) { 
+      if (!do_migration_init(jcr)) {
          migration_cleanup(jcr, JS_ErrorTerminated);
          goto bail_out;
       }
@@ -232,7 +285,6 @@ bool setup_job(JCR *jcr)
       goto bail_out;
    }
 
-   generate_job_event(jcr, "JobInit");
    generate_plugin_event(jcr, bDirEventJobInit);
    Dsm_check(100);
    return true;
@@ -266,7 +318,7 @@ static void *job_thread(void *arg)
    jcr->start_time = time(NULL);      /* set the real start time */
    jcr->jr.StartTime = jcr->start_time;
 
-   if (jcr->job->MaxStartDelay != 0 && jcr->job->MaxStartDelay <
+   if (jcr->res.job->MaxStartDelay != 0 && jcr->res.job->MaxStartDelay <
        (utime_t)(jcr->start_time - jcr->sched_time)) {
       jcr->setJobStatus(JS_Canceled);
       Jmsg(jcr, M_FATAL, 0, _("Job canceled because max start delay time exceeded.\n"));
@@ -278,9 +330,9 @@ static void *job_thread(void *arg)
    }
 
    /* TODO : check if it is used somewhere */
-   if (jcr->job->RunScripts == NULL) {
+   if (jcr->res.job->RunScripts == NULL) {
       Dmsg0(200, "Warning, job->RunScripts is empty\n");
-      jcr->job->RunScripts = New(alist(10, not_owned_by_alist));
+      jcr->res.job->RunScripts = New(alist(10, not_owned_by_alist));
    }
 
    if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
@@ -288,7 +340,7 @@ static void *job_thread(void *arg)
    }
 
    /* Run any script BeforeJob on dird */
-   run_scripts(jcr, jcr->job->RunScripts, "BeforeJob");
+   run_scripts(jcr, jcr->res.job->RunScripts, "BeforeJob");
 
    /*
     * We re-update the job start record so that the start
@@ -305,44 +357,105 @@ static void *job_thread(void *arg)
    if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
    }
-   generate_job_event(jcr, "JobRun");
    generate_plugin_event(jcr, bDirEventJobRun);
 
    switch (jcr->getJobType()) {
    case JT_BACKUP:
-      if (!job_canceled(jcr) && do_backup(jcr)) {
-         do_autoprune(jcr);
-      } else {
-         backup_cleanup(jcr, JS_ErrorTerminated);
+      switch (jcr->getJobProtocol()) {
+      case PT_NDMP:
+         if (!job_canceled(jcr)) {
+            if (do_ndmp_backup(jcr)) {
+               do_autoprune(jcr);
+            } else {
+               ndmp_backup_cleanup(jcr, JS_ErrorTerminated);
+            }
+         } else {
+            ndmp_backup_cleanup(jcr, JS_Canceled);
+         }
+         break;
+      default:
+         if (!job_canceled(jcr)) {
+            if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+               if (do_native_vbackup(jcr)) {
+                  do_autoprune(jcr);
+               } else {
+                  native_vbackup_cleanup(jcr, JS_ErrorTerminated);
+               }
+            } else {
+               if (do_native_backup(jcr)) {
+                  do_autoprune(jcr);
+               } else {
+                  native_backup_cleanup(jcr, JS_ErrorTerminated);
+               }
+            }
+         } else {
+            if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+               native_vbackup_cleanup(jcr, JS_Canceled);
+            } else {
+               native_backup_cleanup(jcr, JS_Canceled);
+            }
+         }
+         break;
       }
       break;
    case JT_VERIFY:
-      if (!job_canceled(jcr) && do_verify(jcr)) {
-         do_autoprune(jcr);
+      if (!job_canceled(jcr)) {
+         if (do_verify(jcr)) {
+            do_autoprune(jcr);
+         } else {
+            verify_cleanup(jcr, JS_ErrorTerminated);
+         }
       } else {
-         verify_cleanup(jcr, JS_ErrorTerminated);
+         verify_cleanup(jcr, JS_Canceled);
       }
       break;
    case JT_RESTORE:
-      if (!job_canceled(jcr) && do_restore(jcr)) {
-         do_autoprune(jcr);
-      } else {
-         restore_cleanup(jcr, JS_ErrorTerminated);
+      switch (jcr->getJobProtocol()) {
+      case PT_NDMP:
+         if (!job_canceled(jcr)) {
+            if (do_ndmp_restore(jcr)) {
+               do_autoprune(jcr);
+            } else {
+               ndmp_restore_cleanup(jcr, JS_ErrorTerminated);
+            }
+         } else {
+            ndmp_restore_cleanup(jcr, JS_Canceled);
+         }
+         break;
+      default:
+         if (!job_canceled(jcr)) {
+            if (do_native_restore(jcr)) {
+               do_autoprune(jcr);
+            } else {
+               native_restore_cleanup(jcr, JS_ErrorTerminated);
+            }
+         } else {
+            native_restore_cleanup(jcr, JS_Canceled);
+         }
+         break;
       }
       break;
    case JT_ADMIN:
-      if (!job_canceled(jcr) && do_admin(jcr)) {
-         do_autoprune(jcr);
+      if (!job_canceled(jcr)) {
+         if (do_admin(jcr)) {
+            do_autoprune(jcr);
+         } else {
+            admin_cleanup(jcr, JS_ErrorTerminated);
+         }
       } else {
-         admin_cleanup(jcr, JS_ErrorTerminated);
+         admin_cleanup(jcr, JS_Canceled);
       }
       break;
    case JT_COPY:
    case JT_MIGRATE:
-      if (!job_canceled(jcr) && do_migration(jcr)) {
-         do_autoprune(jcr);
+      if (!job_canceled(jcr)) {
+         if (do_migration(jcr)) {
+            do_autoprune(jcr);
+         } else {
+            migration_cleanup(jcr, JS_ErrorTerminated);
+         }
       } else {
-         migration_cleanup(jcr, JS_ErrorTerminated);
+         migration_cleanup(jcr, JS_Canceled);
       }
       break;
    default:
@@ -350,14 +463,13 @@ static void *job_thread(void *arg)
       break;
    }
 
-   run_scripts(jcr, jcr->job->RunScripts, "AfterJob");
+   run_scripts(jcr, jcr->res.job->RunScripts, "AfterJob");
 
    /* Send off any queued messages */
    if (jcr->msg_queue && jcr->msg_queue->size() > 0) {
       dequeue_messages(jcr);
    }
 
-   generate_daemon_event(jcr, "JobEnd");
    generate_plugin_event(jcr, bDirEventJobEnd);
    Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->JobStatus);
    Dsm_check(100);
@@ -367,10 +479,9 @@ static void *job_thread(void *arg)
 void sd_msg_thread_send_signal(JCR *jcr, int sig)
 {
    jcr->lock();
-   if (  !jcr->sd_msg_thread_done
-       && jcr->SD_msg_chan 
-       && !pthread_equal(jcr->SD_msg_chan, pthread_self()))
-   {
+   if (!jcr->sd_msg_thread_done &&
+       jcr->SD_msg_chan &&
+       !pthread_equal(jcr->SD_msg_chan, pthread_self())) {
       Dmsg1(800, "Send kill to SD msg chan jid=%d\n", jcr->JobId);
       pthread_kill(jcr->SD_msg_chan, sig);
    }
@@ -386,7 +497,6 @@ void sd_msg_thread_send_signal(JCR *jcr, int sig)
  */
 bool cancel_job(UAContext *ua, JCR *jcr)
 {
-   BSOCK *sd, *fd;
    char ed1[50];
    int32_t old_status = jcr->JobStatus;
 
@@ -406,116 +516,27 @@ bool cancel_job(UAContext *ua, JCR *jcr)
       break;
 
    default:
-      /* Cancel File daemon */
+      /*
+       * Cancel File daemon
+       */
       if (jcr->file_bsock) {
-         ua->jcr->client = jcr->client;
-         if (!connect_to_file_daemon(ua->jcr, 10, FDConnectTimeout, 1)) {
-            ua->error_msg(_("Failed to connect to File daemon.\n"));
-            return 0;
-         }
-         Dmsg0(200, "Connected to file daemon\n");
-         fd = ua->jcr->file_bsock;
-         fd->fsend("cancel Job=%s\n", jcr->Job);
-         while (fd->recv() >= 0) {
-            ua->send_msg("%s", fd->msg);
-         }
-         fd->signal(BNET_TERMINATE);
-         fd->close();
-         ua->jcr->file_bsock = NULL;
-         jcr->file_bsock->set_terminated();
-         jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
-      }
-
-      /* Cancel Storage daemon */
-      if (jcr->store_bsock) {
-         if (!ua->jcr->wstorage) {
-            if (jcr->rstorage) {
-               copy_wstorage(ua->jcr, jcr->rstorage, _("Job resource")); 
-            } else {
-               copy_wstorage(ua->jcr, jcr->wstorage, _("Job resource")); 
-            }
-         } else {
-            USTORE store;
-            if (jcr->rstorage) {
-               store.store = jcr->rstore;
-            } else {
-               store.store = jcr->wstore;
-            }
-            set_wstorage(ua->jcr, &store);
-         }
-
-         if (!connect_to_storage_daemon(ua->jcr, 10, SDConnectTimeout, 1)) {
-            ua->error_msg(_("Failed to connect to Storage daemon.\n"));
+         if (!cancel_file_daemon_job(ua, jcr)) {
             return false;
          }
-         Dmsg0(200, "Connected to storage daemon\n");
-         sd = ua->jcr->store_bsock;
-         sd->fsend("cancel Job=%s\n", jcr->Job);
-         while (sd->recv() >= 0) {
-            ua->send_msg("%s", sd->msg);
+      }
+
+      /*
+       * Cancel Storage daemon
+       */
+      if (jcr->store_bsock) {
+         if (!cancel_storage_daemon_job(ua, jcr)) {
+            return false;
          }
-         sd->signal(BNET_TERMINATE);
-         sd->close();
-         ua->jcr->store_bsock = NULL;
-         jcr->store_bsock->set_timed_out();
-         jcr->store_bsock->set_terminated();
-         sd_msg_thread_send_signal(jcr, TIMEOUT_SIGNAL);
-         jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
       }
       break;
    }
 
    return true;
-}
-
-void cancel_storage_daemon_job(JCR *jcr)
-{
-   if (jcr->sd_canceled) { 
-      return;                   /* cancel only once */
-   }
-
-   UAContext *ua = new_ua_context(jcr);
-   JCR *control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
-   BSOCK *sd;
-
-   ua->jcr = control_jcr;
-   if (jcr->store_bsock) {
-      if (!ua->jcr->wstorage) {
-         if (jcr->rstorage) {
-            copy_wstorage(ua->jcr, jcr->rstorage, _("Job resource")); 
-         } else {
-            copy_wstorage(ua->jcr, jcr->wstorage, _("Job resource")); 
-         }
-      } else {
-         USTORE store;
-         if (jcr->rstorage) {
-            store.store = jcr->rstore;
-         } else {
-            store.store = jcr->wstore;
-         }
-         set_wstorage(ua->jcr, &store);
-      }
-
-      if (!connect_to_storage_daemon(ua->jcr, 10, SDConnectTimeout, 1)) {
-         goto bail_out;
-      }
-      Dmsg0(200, "Connected to storage daemon\n");
-      sd = ua->jcr->store_bsock;
-      sd->fsend("cancel Job=%s\n", jcr->Job);
-      while (sd->recv() >= 0) {
-      }
-      sd->signal(BNET_TERMINATE);
-      sd->close();
-      ua->jcr->store_bsock = NULL;
-      jcr->sd_canceled = true;
-      jcr->store_bsock->set_timed_out();
-      jcr->store_bsock->set_terminated();
-      sd_msg_thread_send_signal(jcr, TIMEOUT_SIGNAL);
-      jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
-   }
-bail_out:
-   free_jcr(control_jcr);
-   free_ua_context(ua);
 }
 
 static void job_monitor_destructor(watchdog_t *self)
@@ -552,7 +573,7 @@ static void job_monitor_watchdog(watchdog_t *self)
          jcr->setJobStatus(JS_Canceled);
          Qmsg(jcr, M_FATAL, 0, _("Max run time exceeded. Job canceled.\n"));
          cancel = true;
-      /* check MaxRunSchedTime */ 
+      /* check MaxRunSchedTime */
       } else if (job_check_maxrunschedtime(jcr)) {
          jcr->setJobStatus(JS_Canceled);
          Qmsg(jcr, M_FATAL, 0, _("Max run sched time exceeded. Job canceled.\n"));
@@ -580,7 +601,7 @@ static void job_monitor_watchdog(watchdog_t *self)
 static bool job_check_maxwaittime(JCR *jcr)
 {
    bool cancel = false;
-   JOB *job = jcr->job;
+   JOBRES *job = jcr->res.job;
    utime_t current=0;
 
    if (!job_waiting(jcr)) {
@@ -591,7 +612,7 @@ static bool job_check_maxwaittime(JCR *jcr)
       current = watchdog_time - jcr->wait_time;
    }
 
-   Dmsg2(200, "check maxwaittime %u >= %u\n", 
+   Dmsg2(200, "check maxwaittime %u >= %u\n",
          current + jcr->wait_time_sum, job->MaxWaitTime);
    if (job->MaxWaitTime != 0 &&
        (current + jcr->wait_time_sum) >= job->MaxWaitTime) {
@@ -608,19 +629,19 @@ static bool job_check_maxwaittime(JCR *jcr)
 static bool job_check_maxruntime(JCR *jcr)
 {
    bool cancel = false;
-   JOB *job = jcr->job;
+   JOBRES *job = jcr->res.job;
    utime_t run_time;
 
    if (job_canceled(jcr) || !jcr->job_started) {
       return false;
    }
-   if (jcr->job->MaxRunTime == 0 && job->FullMaxRunTime == 0 &&
+   if (job->MaxRunTime == 0 && job->FullMaxRunTime == 0 &&
        job->IncMaxRunTime == 0 && job->DiffMaxRunTime == 0) {
       return false;
    }
    run_time = watchdog_time - jcr->start_time;
    Dmsg7(200, "check_maxruntime %llu-%u=%llu >= %llu|%llu|%llu|%llu\n",
-         watchdog_time, jcr->start_time, run_time, job->MaxRunTime, job->FullMaxRunTime, 
+         watchdog_time, jcr->start_time, run_time, job->MaxRunTime, job->FullMaxRunTime,
          job->IncMaxRunTime, job->DiffMaxRunTime);
 
    if (jcr->getJobLevel() == L_FULL && job->FullMaxRunTime != 0 &&
@@ -639,7 +660,7 @@ static bool job_check_maxruntime(JCR *jcr)
       Dmsg0(200, "check_maxwaittime: Maxcancel\n");
       cancel = true;
    }
- 
+
    return cancel;
 }
 
@@ -676,7 +697,7 @@ DBId_t get_or_create_pool_record(JCR *jcr, char *pool_name)
 
    while (!db_get_pool_record(jcr, jcr->db, &pr)) { /* get by Name */
       /* Try to create the pool */
-      if (create_pool(jcr, jcr->db, jcr->pool, POOL_OP_CREATE) < 0) {
+      if (create_pool(jcr, jcr->db, jcr->res.pool, POOL_OP_CREATE) < 0) {
          Jmsg(jcr, M_FATAL, 0, _("Pool \"%s\" not in database. ERR=%s"), pr.Name,
             db_strerror(jcr->db));
          return 0;
@@ -694,8 +715,8 @@ DBId_t get_or_create_pool_record(JCR *jcr, char *pool_name)
  */
 bool allow_duplicate_job(JCR *jcr)
 {
-   JOB *job = jcr->job;
    JCR *djcr;                /* possible duplicate job */
+   JOBRES *job = jcr->res.job;
    bool cancel_dup = false;
    bool cancel_me = false;
 
@@ -727,14 +748,14 @@ bool allow_duplicate_job(JCR *jcr)
          continue;
       }
 
-      if (strcmp(job->name(), djcr->job->name()) == 0) {
+      if (bstrcmp(job->name(), djcr->res.job->name())) {
          if (job->DuplicateJobProximity > 0) {
             utime_t now = (utime_t)time(NULL);
             if ((now - djcr->start_time) > job->DuplicateJobProximity) {
                continue;               /* not really a duplicate */
             }
          }
-         if (job->CancelLowerLevelDuplicates &&                         
+         if (job->CancelLowerLevelDuplicates &&
              djcr->getJobType() == 'B' && jcr->getJobType() == 'B') {
             switch (jcr->getJobLevel()) {
             case L_FULL:
@@ -758,7 +779,7 @@ bool allow_duplicate_job(JCR *jcr)
                }
             }
             /*
-             * cancel_dup will be done below   
+             * cancel_dup will be done below
              */
             if (cancel_me) {
               /* Zap current job */
@@ -817,58 +838,69 @@ bool allow_duplicate_job(JCR *jcr)
    }
    endeach_jcr(djcr);
 
-   return true;   
+   return true;
 }
 
 void apply_pool_overrides(JCR *jcr)
 {
    bool pool_override = false;
 
-   if (jcr->run_pool_override) {
-      pm_strcpy(jcr->pool_source, _("Run pool override"));
+   /*
+    * If a cmdline pool override is given ignore any level pool overrides.
+    */
+   if (jcr->IgnoreLevelPoolOverides) {
+      return;
    }
+
+   if (jcr->res.run_pool_override) {
+      pm_strcpy(jcr->res.pool_source, _("Run pool override"));
+   }
+
    /*
     * Apply any level related Pool selections
     */
    switch (jcr->getJobLevel()) {
    case L_FULL:
-      if (jcr->full_pool) {
-         jcr->pool = jcr->full_pool;
+      if (jcr->res.full_pool) {
+         jcr->res.pool = jcr->res.full_pool;
          pool_override = true;
-         if (jcr->run_full_pool_override) {
-            pm_strcpy(jcr->pool_source, _("Run FullPool override"));
+         if (jcr->res.run_full_pool_override) {
+            pm_strcpy(jcr->res.pool_source, _("Run FullPool override"));
          } else {
-            pm_strcpy(jcr->pool_source, _("Job FullPool override"));
+            pm_strcpy(jcr->res.pool_source, _("Job FullPool override"));
          }
       }
       break;
    case L_INCREMENTAL:
-      if (jcr->inc_pool) {
-         jcr->pool = jcr->inc_pool;
+      if (jcr->res.inc_pool) {
+         jcr->res.pool = jcr->res.inc_pool;
          pool_override = true;
-         if (jcr->run_inc_pool_override) {
-            pm_strcpy(jcr->pool_source, _("Run IncPool override"));
+         if (jcr->res.run_inc_pool_override) {
+            pm_strcpy(jcr->res.pool_source, _("Run IncPool override"));
          } else {
-            pm_strcpy(jcr->pool_source, _("Job IncPool override"));
+            pm_strcpy(jcr->res.pool_source, _("Job IncPool override"));
          }
       }
       break;
    case L_DIFFERENTIAL:
-      if (jcr->diff_pool) {
-         jcr->pool = jcr->diff_pool;
+      if (jcr->res.diff_pool) {
+         jcr->res.pool = jcr->res.diff_pool;
          pool_override = true;
-         if (jcr->run_diff_pool_override) {
-            pm_strcpy(jcr->pool_source, _("Run DiffPool override"));
+         if (jcr->res.run_diff_pool_override) {
+            pm_strcpy(jcr->res.pool_source, _("Run DiffPool override"));
          } else {
-            pm_strcpy(jcr->pool_source, _("Job DiffPool override"));
+            pm_strcpy(jcr->res.pool_source, _("Job DiffPool override"));
          }
       }
       break;
    }
-   /* Update catalog if pool overridden */
-   if (pool_override && jcr->pool->catalog) {
-      jcr->catalog = jcr->pool->catalog;
-      pm_strcpy(jcr->catalog_source, _("Pool resource"));
+
+   /*
+    * Update catalog if pool overridden
+    */
+   if (pool_override && jcr->res.pool->catalog) {
+      jcr->res.catalog = jcr->res.pool->catalog;
+      pm_strcpy(jcr->res.catalog_source, _("Pool resource"));
    }
 }
 
@@ -881,27 +913,43 @@ bool get_or_create_client_record(JCR *jcr)
    CLIENT_DBR cr;
 
    memset(&cr, 0, sizeof(cr));
-   bstrncpy(cr.Name, jcr->client->hdr.name, sizeof(cr.Name));
-   cr.AutoPrune = jcr->client->AutoPrune;
-   cr.FileRetention = jcr->client->FileRetention;
-   cr.JobRetention = jcr->client->JobRetention;
+   bstrncpy(cr.Name, jcr->res.client->hdr.name, sizeof(cr.Name));
+   cr.AutoPrune = jcr->res.client->AutoPrune;
+   cr.FileRetention = jcr->res.client->FileRetention;
+   cr.JobRetention = jcr->res.client->JobRetention;
    if (!jcr->client_name) {
       jcr->client_name = get_pool_memory(PM_NAME);
    }
-   pm_strcpy(jcr->client_name, jcr->client->hdr.name);
+   pm_strcpy(jcr->client_name, jcr->res.client->hdr.name);
    if (!db_create_client_record(jcr, jcr->db, &cr)) {
       Jmsg(jcr, M_FATAL, 0, _("Could not create Client record. ERR=%s\n"),
          db_strerror(jcr->db));
       return false;
    }
+   /*
+    * Only initialize quota when a Soft or Hard Limit is set.
+    */
+   if (jcr->res.client->HardQuota != 0 ||
+       jcr->res.client->SoftQuota != 0) {
+      if (!db_get_quota_record(jcr, jcr->db, &cr)) {
+         if (!db_create_quota_record(jcr, jcr->db, &cr)) {
+            Jmsg(jcr, M_FATAL, 0, _("Could not create Quota record. ERR=%s\n"),
+               db_strerror(jcr->db));
+         }
+         jcr->res.client->QuotaLimit = 0;
+         jcr->res.client->GraceTime = 0;
+      }
+   }
    jcr->jr.ClientId = cr.ClientId;
+   jcr->res.client->QuotaLimit = cr.QuotaLimit;
+   jcr->res.client->GraceTime = cr.GraceTime;
    if (cr.Uname[0]) {
       if (!jcr->client_uname) {
          jcr->client_uname = get_pool_memory(PM_NAME);
       }
       pm_strcpy(jcr->client_uname, cr.Uname);
    }
-   Dmsg2(100, "Created Client %s record %d\n", jcr->client->hdr.name,
+   Dmsg2(100, "Created Client %s record %d\n", jcr->res.client->hdr.name,
       jcr->jr.ClientId);
    return true;
 }
@@ -913,22 +961,22 @@ bool get_or_create_fileset_record(JCR *jcr)
     * Get or Create FileSet record
     */
    memset(&fsr, 0, sizeof(FILESET_DBR));
-   bstrncpy(fsr.FileSet, jcr->fileset->hdr.name, sizeof(fsr.FileSet));
-   if (jcr->fileset->have_MD5) {
+   bstrncpy(fsr.FileSet, jcr->res.fileset->hdr.name, sizeof(fsr.FileSet));
+   if (jcr->res.fileset->have_MD5) {
       struct MD5Context md5c;
       unsigned char digest[MD5HashSize];
-      memcpy(&md5c, &jcr->fileset->md5c, sizeof(md5c));
+      memcpy(&md5c, &jcr->res.fileset->md5c, sizeof(md5c));
       MD5Final(digest, &md5c);
       /*
        * Keep the flag (last arg) set to false otherwise old FileSets will
        * get new MD5 sums and the user will get Full backups on everything
        */
       bin_to_base64(fsr.MD5, sizeof(fsr.MD5), (char *)digest, MD5HashSize, false);
-      bstrncpy(jcr->fileset->MD5, fsr.MD5, sizeof(jcr->fileset->MD5));
+      bstrncpy(jcr->res.fileset->MD5, fsr.MD5, sizeof(jcr->res.fileset->MD5));
    } else {
       Jmsg(jcr, M_WARNING, 0, _("FileSet MD5 digest not found.\n"));
    }
-   if (!jcr->fileset->ignore_fs_changes ||
+   if (!jcr->res.fileset->ignore_fs_changes ||
        !db_get_fileset_record(jcr, jcr->db, &fsr)) {
       if (!db_create_fileset_record(jcr, jcr->db, &fsr)) {
          Jmsg(jcr, M_ERROR, 0, _("Could not create FileSet \"%s\" record. ERR=%s\n"),
@@ -938,7 +986,7 @@ bool get_or_create_fileset_record(JCR *jcr)
    }
    jcr->jr.FileSetId = fsr.FileSetId;
    bstrncpy(jcr->FSCreateTime, fsr.cCreateTime, sizeof(jcr->FSCreateTime));
-   Dmsg2(119, "Created FileSet %s record %u\n", jcr->fileset->hdr.name,
+   Dmsg2(119, "Created FileSet %s record %u\n", jcr->res.fileset->hdr.name,
       jcr->jr.FileSetId);
    return true;
 }
@@ -952,7 +1000,8 @@ void init_jcr_job_record(JCR *jcr)
    jcr->jr.JobLevel = jcr->getJobLevel();
    jcr->jr.JobStatus = jcr->JobStatus;
    jcr->jr.JobId = jcr->JobId;
-   bstrncpy(jcr->jr.Name, jcr->job->name(), sizeof(jcr->jr.Name));
+   jcr->jr.JobSumTotalBytes = 18446744073709551615LLU;
+   bstrncpy(jcr->jr.Name, jcr->res.job->name(), sizeof(jcr->jr.Name));
    bstrncpy(jcr->jr.Job, jcr->Job, sizeof(jcr->jr.Job));
 }
 
@@ -1039,17 +1088,18 @@ void dird_free_jcr_pointers(JCR *jcr)
 {
    if (jcr->file_bsock) {
       Dmsg0(200, "Close File bsock\n");
-      bnet_close(jcr->file_bsock);
+      jcr->file_bsock->close();
       jcr->file_bsock = NULL;
    }
    if (jcr->store_bsock) {
       Dmsg0(200, "Close Store bsock\n");
-      bnet_close(jcr->store_bsock);
+      jcr->store_bsock->close();
       jcr->store_bsock = NULL;
    }
 
    bfree_and_null(jcr->sd_auth_key);
    bfree_and_null(jcr->where);
+   bfree_and_null(jcr->backup_format);
    bfree_and_null(jcr->RestoreBootstrap);
    bfree_and_null(jcr->ar);
 
@@ -1073,46 +1123,66 @@ void dird_free_jcr(JCR *jcr)
       pthread_cond_destroy(&jcr->term_wait);
       jcr->term_wait_inited = false;
    }
+
+   if (jcr->nextrun_ready_inited) {
+      pthread_cond_destroy(&jcr->nextrun_ready);
+      jcr->nextrun_ready_inited = false;
+   }
+
    if (jcr->db_batch) {
-      db_close_database(jcr, jcr->db_batch);
+      db_sql_close_pooled_connection(jcr, jcr->db_batch);
       jcr->db_batch = NULL;
       jcr->batch_started = false;
    }
+
    if (jcr->db) {
-      db_close_database(jcr, jcr->db);
+      db_sql_close_pooled_connection(jcr, jcr->db);
       jcr->db = NULL;
+   }
+
+   if (jcr->restore_tree_root) {
+      free_tree(jcr->restore_tree_root);
+   }
+
+   if (jcr->bsr) {
+      free_bsr(jcr->bsr);
+      jcr->bsr = NULL;
    }
 
    free_and_null_pool_memory(jcr->stime);
    free_and_null_pool_memory(jcr->fname);
-   free_and_null_pool_memory(jcr->pool_source);
-   free_and_null_pool_memory(jcr->catalog_source);
-   free_and_null_pool_memory(jcr->rpool_source);
-   free_and_null_pool_memory(jcr->wstore_source);
-   free_and_null_pool_memory(jcr->rstore_source);
+   free_and_null_pool_memory(jcr->res.pool_source);
+   free_and_null_pool_memory(jcr->res.npool_source);
+   free_and_null_pool_memory(jcr->res.rpool_source);
+   free_and_null_pool_memory(jcr->res.wstore_source);
+   free_and_null_pool_memory(jcr->res.rstore_source);
+   free_and_null_pool_memory(jcr->res.catalog_source);
 
-   /* Delete lists setup to hold storage pointers */
+   /*
+    * Delete lists setup to hold storage pointers
+    */
    free_rwstorage(jcr);
 
    jcr->job_end_push.destroy();
 
-   if (jcr->JobId != 0)
+   if (jcr->JobId != 0) {
       write_state_file(director->working_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
+   }
 
    free_plugins(jcr);                 /* release instantiated plugins */
 
    Dmsg0(200, "End dird free_jcr\n");
 }
 
-/* 
+/*
  * The Job storage definition must be either in the Job record
- *  or in the Pool record.  The Pool record overrides the Job 
+ *  or in the Pool record.  The Pool record overrides the Job
  *  record.
  */
-void get_job_storage(USTORE *store, JOB *job, RUN *run) 
+void get_job_storage(USTORERES *store, JOBRES *job, RUNRES *run)
 {
    if (run && run->pool && run->pool->storage) {
-      store->store = (STORE *)run->pool->storage->first();
+      store->store = (STORERES *)run->pool->storage->first();
       pm_strcpy(store->store_source, _("Run pool override"));
       return;
    }
@@ -1122,10 +1192,10 @@ void get_job_storage(USTORE *store, JOB *job, RUN *run)
       return;
    }
    if (job->pool->storage) {
-      store->store = (STORE *)job->pool->storage->first();
+      store->store = (STORERES *)job->pool->storage->first();
       pm_strcpy(store->store_source, _("Pool resource"));
    } else {
-      store->store = (STORE *)job->storage->first();
+      store->store = (STORERES *)job->storage->first();
       pm_strcpy(store->store_source, _("Job resource"));
    }
 }
@@ -1137,10 +1207,11 @@ void get_job_storage(USTORE *store, JOB *job, RUN *run)
  * later either by the Run record in the Schedule resource,
  * or by the Console program.
  */
-void set_jcr_defaults(JCR *jcr, JOB *job)
+void set_jcr_defaults(JCR *jcr, JOBRES *job)
 {
-   jcr->job = job;
+   jcr->res.job = job;
    jcr->setJobType(job->JobType);
+   jcr->setJobProtocol(job->Protocol);
    jcr->JobStatus = JS_Created;
 
    switch (jcr->getJobType()) {
@@ -1155,58 +1226,75 @@ void set_jcr_defaults(JCR *jcr, JOB *job)
    if (!jcr->fname) {
       jcr->fname = get_pool_memory(PM_FNAME);
    }
-   if (!jcr->pool_source) {
-      jcr->pool_source = get_pool_memory(PM_MESSAGE);
-      pm_strcpy(jcr->pool_source, _("unknown source"));
+   if (!jcr->res.pool_source) {
+      jcr->res.pool_source = get_pool_memory(PM_MESSAGE);
+      pm_strcpy(jcr->res.pool_source, _("unknown source"));
    }
-   if (!jcr->catalog_source) {
-      jcr->catalog_source = get_pool_memory(PM_MESSAGE);
-      pm_strcpy(jcr->catalog_source, _("unknown source"));
+   if (!jcr->res.npool_source) {
+      jcr->res.npool_source = get_pool_memory(PM_MESSAGE);
+      pm_strcpy(jcr->res.npool_source, _("unknown source"));
+   }
+   if (!jcr->res.catalog_source) {
+      jcr->res.catalog_source = get_pool_memory(PM_MESSAGE);
+      pm_strcpy(jcr->res.catalog_source, _("unknown source"));
    }
 
    jcr->JobPriority = job->Priority;
-   /* Copy storage definitions -- deleted in dir_free_jcr above */
+
+   /*
+    * Copy storage definitions -- deleted in dir_free_jcr above
+    */
    if (job->storage) {
       copy_rwstorage(jcr, job->storage, _("Job resource"));
    } else {
       copy_rwstorage(jcr, job->pool->storage, _("Pool resource"));
    }
-   jcr->client = job->client;
+   jcr->res.client = job->client;
    if (!jcr->client_name) {
       jcr->client_name = get_pool_memory(PM_NAME);
    }
-   pm_strcpy(jcr->client_name, jcr->client->hdr.name);
-   pm_strcpy(jcr->pool_source, _("Job resource"));
-   jcr->pool = job->pool;
-   jcr->full_pool = job->full_pool;
-   jcr->inc_pool = job->inc_pool;
-   jcr->diff_pool = job->diff_pool;
+   pm_strcpy(jcr->client_name, jcr->res.client->hdr.name);
+   pm_strcpy(jcr->res.pool_source, _("Job resource"));
+   jcr->res.pool = job->pool;
+   jcr->res.full_pool = job->full_pool;
+   jcr->res.inc_pool = job->inc_pool;
+   jcr->res.diff_pool = job->diff_pool;
    if (job->pool->catalog) {
-      jcr->catalog = job->pool->catalog;
-      pm_strcpy(jcr->catalog_source, _("Pool resource"));
+      jcr->res.catalog = job->pool->catalog;
+      pm_strcpy(jcr->res.catalog_source, _("Pool resource"));
    } else {
-      jcr->catalog = job->client->catalog;
-      pm_strcpy(jcr->catalog_source, _("Client resource"));
+      jcr->res.catalog = job->client->catalog;
+      pm_strcpy(jcr->res.catalog_source, _("Client resource"));
    }
-   jcr->fileset = job->fileset;
+   jcr->res.fileset = job->fileset;
    jcr->accurate = job->accurate;
-   jcr->messages = job->messages;
+   jcr->res.messages = job->messages;
    jcr->spool_data = job->spool_data;
    jcr->spool_size = job->spool_size;
-   jcr->write_part_after_job = job->write_part_after_job;
    jcr->IgnoreDuplicateJobChecking = job->IgnoreDuplicateJobChecking;
    jcr->MaxRunSchedTime = job->MaxRunSchedTime;
+   jcr->backup_format = bstrdup(job->backup_format);
+
    if (jcr->RestoreBootstrap) {
       free(jcr->RestoreBootstrap);
       jcr->RestoreBootstrap = NULL;
    }
-   /* This can be overridden by Console program */
+
+   /*
+    * This can be overridden by Console program
+    */
    if (job->RestoreBootstrap) {
       jcr->RestoreBootstrap = bstrdup(job->RestoreBootstrap);
    }
-   /* This can be overridden by Console program */
-   jcr->verify_job = job->verify_job;
-   /* If no default level given, set one */
+
+   /*
+    * This can be overridden by Console program
+    */
+   jcr->res.verify_job = job->verify_job;
+
+   /*
+    * If no default level given, set one
+    */
    if (jcr->getJobLevel() == 0) {
       switch (jcr->getJobType()) {
       case JT_VERIFY:
@@ -1226,7 +1314,7 @@ void set_jcr_defaults(JCR *jcr, JOB *job)
    }
 }
 
-/* 
+/*
  * Copy the storage definitions from an alist to the JCR
  */
 void copy_rwstorage(JCR *jcr, alist *storage, const char *where)
@@ -1239,7 +1327,7 @@ void copy_rwstorage(JCR *jcr, alist *storage, const char *where)
 
 
 /* Set storage override.  Releases any previous storage definition */
-void set_rwstorage(JCR *jcr, USTORE *store)
+void set_rwstorage(JCR *jcr, USTORERES *store)
 {
    if (!store) {
       Jmsg(jcr, M_FATAL, 0, _("No storage specified.\n"));
@@ -1257,35 +1345,34 @@ void free_rwstorage(JCR *jcr)
    free_wstorage(jcr);
 }
 
-/* 
+/*
  * Copy the storage definitions from an alist to the JCR
  */
 void copy_rstorage(JCR *jcr, alist *storage, const char *where)
 {
    if (storage) {
-      STORE *st;
+      STORERES *store;
       if (jcr->rstorage) {
          delete jcr->rstorage;
       }
       jcr->rstorage = New(alist(10, not_owned_by_alist));
-      foreach_alist(st, storage) {
-         jcr->rstorage->append(st);
+      foreach_alist(store, storage) {
+         jcr->rstorage->append(store);
       }
-      if (!jcr->rstore_source) {
-         jcr->rstore_source = get_pool_memory(PM_MESSAGE);
+      if (!jcr->res.rstore_source) {
+         jcr->res.rstore_source = get_pool_memory(PM_MESSAGE);
       }
-      pm_strcpy(jcr->rstore_source, where);
+      pm_strcpy(jcr->res.rstore_source, where);
       if (jcr->rstorage) {
-         jcr->rstore = (STORE *)jcr->rstorage->first();
+         jcr->res.rstore = (STORERES *)jcr->rstorage->first();
       }
    }
 }
 
-
 /* Set storage override.  Remove all previous storage */
-void set_rstorage(JCR *jcr, USTORE *store)
+void set_rstorage(JCR *jcr, USTORERES *store)
 {
-   STORE *storage;
+   STORERES *storage;
 
    if (!store->store) {
       return;
@@ -1296,11 +1383,11 @@ void set_rstorage(JCR *jcr, USTORE *store)
    if (!jcr->rstorage) {
       jcr->rstorage = New(alist(10, not_owned_by_alist));
    }
-   jcr->rstore = store->store;
-   if (!jcr->rstore_source) {
-      jcr->rstore_source = get_pool_memory(PM_MESSAGE);
+   jcr->res.rstore = store->store;
+   if (!jcr->res.rstore_source) {
+      jcr->res.rstore_source = get_pool_memory(PM_MESSAGE);
    }
-   pm_strcpy(jcr->rstore_source, store->store_source);
+   pm_strcpy(jcr->res.rstore_source, store->store_source);
    foreach_alist(storage, jcr->rstorage) {
       if (store->store == storage) {
          return;
@@ -1316,16 +1403,16 @@ void free_rstorage(JCR *jcr)
       delete jcr->rstorage;
       jcr->rstorage = NULL;
    }
-   jcr->rstore = NULL;
+   jcr->res.rstore = NULL;
 }
 
-/* 
+/*
  * Copy the storage definitions from an alist to the JCR
  */
 void copy_wstorage(JCR *jcr, alist *storage, const char *where)
 {
    if (storage) {
-      STORE *st;
+      STORERES *st;
       if (jcr->wstorage) {
          delete jcr->wstorage;
       }
@@ -1334,22 +1421,21 @@ void copy_wstorage(JCR *jcr, alist *storage, const char *where)
          Dmsg1(100, "wstorage=%s\n", st->name());
          jcr->wstorage->append(st);
       }
-      if (!jcr->wstore_source) {
-         jcr->wstore_source = get_pool_memory(PM_MESSAGE);
+      if (!jcr->res.wstore_source) {
+         jcr->res.wstore_source = get_pool_memory(PM_MESSAGE);
       }
-      pm_strcpy(jcr->wstore_source, where);
+      pm_strcpy(jcr->res.wstore_source, where);
       if (jcr->wstorage) {
-         jcr->wstore = (STORE *)jcr->wstorage->first();
-         Dmsg2(100, "wstore=%s where=%s\n", jcr->wstore->name(), jcr->wstore_source);
+         jcr->res.wstore = (STORERES *)jcr->wstorage->first();
+         Dmsg2(100, "wstore=%s where=%s\n", jcr->res.wstore->name(), jcr->res.wstore_source);
       }
    }
 }
 
-
 /* Set storage override. Remove all previous storage */
-void set_wstorage(JCR *jcr, USTORE *store)
+void set_wstorage(JCR *jcr, USTORERES *store)
 {
-   STORE *storage;
+   STORERES *storage;
 
    if (!store->store) {
       return;
@@ -1360,12 +1446,12 @@ void set_wstorage(JCR *jcr, USTORE *store)
    if (!jcr->wstorage) {
       jcr->wstorage = New(alist(10, not_owned_by_alist));
    }
-   jcr->wstore = store->store;
-   if (!jcr->wstore_source) {
-      jcr->wstore_source = get_pool_memory(PM_MESSAGE);
+   jcr->res.wstore = store->store;
+   if (!jcr->res.wstore_source) {
+      jcr->res.wstore_source = get_pool_memory(PM_MESSAGE);
    }
-   pm_strcpy(jcr->wstore_source, store->store_source);
-   Dmsg2(50, "wstore=%s where=%s\n", jcr->wstore->name(), jcr->wstore_source);
+   pm_strcpy(jcr->res.wstore_source, store->store_source);
+   Dmsg2(50, "wstore=%s where=%s\n", jcr->res.wstore->name(), jcr->res.wstore_source);
    foreach_alist(storage, jcr->wstorage) {
       if (store->store == storage) {
          return;
@@ -1381,7 +1467,198 @@ void free_wstorage(JCR *jcr)
       delete jcr->wstorage;
       jcr->wstorage = NULL;
    }
-   jcr->wstore = NULL;
+   jcr->res.wstore = NULL;
+}
+
+/*
+ * For NDMP backup we can setup the backup to run to a NDMP instance
+ * of the same Storage Daemon that also does native native backups.
+ * This way a Normal Storage Daemon can perform NDMP protocol based
+ * saves and restores.
+ */
+void set_paired_storage(JCR *jcr)
+{
+   STORERES *store, *pstore;
+
+   if (jcr->wstorage) {
+      /*
+       * Setup the jcr->wstorage to point to all paired_storage
+       * entries of all the storage currently in the jcr->wstorage.
+       * Save the original list under jcr->pstorage.
+       */
+      jcr->pstorage = jcr->wstorage;
+      jcr->wstorage = New(alist(10, not_owned_by_alist));
+      foreach_alist(store, jcr->pstorage) {
+         if (store->paired_storage) {
+            Dmsg1(100, "wstorage=%s\n", store->paired_storage->name());
+            jcr->wstorage->append(store->paired_storage);
+         }
+      }
+
+      /*
+       * Swap the actual jcr->res.wstore to point to the paired storage entry.
+       * We save the actual storage entry in pstore which is for restore
+       * in the free_paired_storage() function.
+       */
+      store = jcr->res.wstore;
+      if (store->paired_storage) {
+         jcr->res.wstore = store->paired_storage;
+         jcr->res.pstore = store;
+      }
+   } else {
+      /*
+       * Setup the jcr->pstorage to point to all paired_storage
+       * entries of all the storage currently in the jcr->rstorage.
+       */
+      jcr->pstorage = New(alist(10, not_owned_by_alist));
+      foreach_alist(pstore, jcr->rstorage) {
+         store = (STORERES *)GetNextRes(R_STORAGE, NULL);
+         while (store) {
+            if (store->paired_storage == pstore) {
+               break;
+            }
+
+            store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store);
+         }
+
+         /*
+          * See if we found a store that has the current pstore as
+          * its paired storage.
+          */
+         if (store) {
+            jcr->pstorage->append(store);
+
+            /*
+             * If the current processed pstore is also the current
+             * entry in jcr->res.rstore update the jcr->pstore to point
+             * to this storage entry.
+             */
+            if (pstore == jcr->res.rstore) {
+               jcr->res.pstore = store;
+            }
+         }
+      }
+   }
+}
+
+/*
+ * This performs an undo of the actions the set_paired_storage() function
+ * performed. We reset the storage write storage back to its original
+ * and remove the paired storage override if any.
+ */
+void free_paired_storage(JCR *jcr)
+{
+   if (jcr->pstorage) {
+      if (jcr->wstorage) {
+         /*
+          * The jcr->wstorage contain a set of paired storages.
+          * We just delete it content and swap back to the real master storage.
+          */
+         delete jcr->wstorage;
+         jcr->wstorage = jcr->pstorage;
+         jcr->pstorage = NULL;
+         jcr->res.wstore = jcr->res.pstore;
+         jcr->res.pstore = NULL;
+      } else {
+         /*
+          * The jcr->rstorage contain a set of paired storages.
+          * For the read we created a list of alternative storage which we
+          * can just drop now.
+          */
+         delete jcr->pstorage;
+         jcr->pstorage = NULL;
+         jcr->res.pstore = NULL;
+      }
+   }
+}
+
+/*
+ * Check if every possible storage has paired storage associated.
+ */
+bool has_paired_storage(JCR *jcr)
+{
+   STORERES *store;
+
+   if (jcr->wstorage) {
+      foreach_alist(store, jcr->wstorage) {
+         if (!store->paired_storage) {
+            return false;
+         }
+      }
+   } else {
+      foreach_alist(store, jcr->rstorage) {
+         if (!store->paired_storage) {
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+#define MAX_TRIES 6 * 360   /* 6 hours (10 sec intervals) */
+
+/*
+ * Change the read storage resource for the current job.
+ */
+bool select_next_rstore(JCR *jcr, bootstrap_info &info)
+{
+   USTORERES ustore;
+   int i;
+
+   if (bstrcmp(jcr->res.rstore->name(), info.storage)) {
+      return true;                 /* Same SD nothing to change */
+   }
+
+   if (!(ustore.store = (STORERES *)GetResWithName(R_STORAGE,info.storage))) {
+      Jmsg(jcr, M_FATAL, 0,
+           _("Could not get storage resource '%s'.\n"), info.storage);
+      jcr->setJobStatus(JS_ErrorTerminated);
+      return false;
+   }
+
+   /*
+    * We start communicating with a new storage daemon so close the
+    * old connection when it is still open.
+    */
+   if (jcr->store_bsock) {
+      jcr->store_bsock->close();
+      jcr->store_bsock = NULL;
+   }
+
+   /*
+    * Release current read storage and get a new one
+    */
+   dec_read_store(jcr);
+   free_rstorage(jcr);
+   set_rstorage(jcr, &ustore);
+   jcr->setJobStatus(JS_WaitSD);
+
+   /*
+    * Wait for up to 6 hours to increment read stoage counter
+    */
+   for (i=0; i < MAX_TRIES; i++) {
+      /*
+       * Try to get read storage counter incremented
+       */
+      if (inc_read_store(jcr)) {
+         jcr->setJobStatus(JS_Running);
+         return true;
+      }
+      bmicrosleep(10, 0);          /* Sleep 10 secs */
+      if (job_canceled(jcr)) {
+         free_rstorage(jcr);
+         return false;
+      }
+   }
+
+   /*
+    * Failed to inc_read_store()
+    */
+   free_rstorage(jcr);
+   Jmsg(jcr, M_FATAL, 0,
+      _("Could not acquire read storage lock for \"%s\""), info.storage);
+   return false;
 }
 
 void create_clones(JCR *jcr)
@@ -1389,10 +1666,10 @@ void create_clones(JCR *jcr)
    /*
     * Fire off any clone jobs (run directives)
     */
-   Dmsg2(900, "cloned=%d run_cmds=%p\n", jcr->cloned, jcr->job->run_cmds);
-   if (!jcr->cloned && jcr->job->run_cmds) {
+   Dmsg2(900, "cloned=%d run_cmds=%p\n", jcr->cloned, jcr->res.job->run_cmds);
+   if (!jcr->cloned && jcr->res.job->run_cmds) {
       char *runcmd;
-      JOB *job = jcr->job;
+      JOBRES *job = jcr->res.job;
       POOLMEM *cmd = get_pool_memory(PM_FNAME);
       UAContext *ua = new_ua_context(jcr);
       ua->batch = true;
@@ -1401,12 +1678,12 @@ void create_clones(JCR *jcr)
          Mmsg(ua->cmd, "run %s cloned=yes", cmd);
          Dmsg1(900, "=============== Clone cmd=%s\n", ua->cmd);
          parse_ua_args(ua);                 /* parse command */
-         int stat = run_cmd(ua, ua->cmd);
-         if (stat == 0) {
+         int status = run_cmd(ua, ua->cmd);
+         if (status == 0) {
             Jmsg(jcr, M_ERROR, 0, _("Could not start clone job: \"%s\".\n"),
                  ua->cmd);
          } else {
-            Jmsg(jcr, M_INFO, 0, _("Clone JobId %d started.\n"), stat);
+            Jmsg(jcr, M_INFO, 0, _("Clone JobId %d started.\n"), status);
          }
       }
       free_ua_context(ua);
@@ -1428,7 +1705,7 @@ int create_restore_bootstrap_file(JCR *jcr)
 
    memset(&rx, 0, sizeof(rx));
    rx.bsr = new_bsr();
-   rx.JobIds = (char *)"";                       
+   rx.JobIds = (char *)"";
    rx.bsr->JobId = jcr->previous_jr.JobId;
    ua = new_ua_context(jcr);
    if (!complete_bsr(ua, rx.bsr)) {

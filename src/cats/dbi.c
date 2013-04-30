@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -93,7 +93,8 @@ B_DB_DBI::B_DB_DBI(JCR *jcr,
                    int db_port,
                    const char *db_socket,
                    bool mult_db_connections,
-                   bool disable_batch_insert)
+                   bool disable_batch_insert,
+                   bool need_private)
 {
    char *p;
    char new_db_driver[10];
@@ -101,16 +102,16 @@ B_DB_DBI::B_DB_DBI(JCR *jcr,
    DBI_FIELD_GET *field;
 
    p = (char *)(db_driver + 4);
-   if (strcasecmp(p, "mysql") == 0) {
+   if (bstrcasecmp(p, "mysql")) {
       m_db_type = SQL_TYPE_MYSQL;
       bstrncpy(new_db_driver, "mysql", sizeof(new_db_driver));
-   } else if (strcasecmp(p, "postgresql") == 0) {
+   } else if (bstrcasecmp(p, "postgresql")) {
       m_db_type = SQL_TYPE_POSTGRESQL;
       bstrncpy(new_db_driver, "pgsql", sizeof(new_db_driver));
-   } else if (strcasecmp(p, "sqlite3") == 0) {
+   } else if (bstrcasecmp(p, "sqlite3")) {
       m_db_type = SQL_TYPE_SQLITE3;
       bstrncpy(new_db_driver, "sqlite3", sizeof(new_db_driver));
-   } else if (strcasecmp(p, "ingres") == 0) {
+   } else if (bstrcasecmp(p, "ingres")) {
       m_db_type = SQL_TYPE_INGRES;
       bstrncpy(new_db_driver, "ingres", sizeof(new_db_driver));
    } else {
@@ -170,13 +171,7 @@ B_DB_DBI::B_DB_DBI(JCR *jcr,
    esc_path = get_pool_memory(PM_FNAME);
    esc_obj = get_pool_memory(PM_FNAME);
    m_allow_transactions = mult_db_connections;
-
-   /* At this time, when mult_db_connections == true, this is for 
-    * specific console command such as bvfs or batch mode, and we don't
-    * want to share a batch mode or bvfs. In the future, we can change
-    * the creation function to add this parameter.
-    */
-   m_dedicated = mult_db_connections; 
+   m_is_private = need_private;
 
    /*
     * Initialize the private members.
@@ -397,8 +392,22 @@ void B_DB_DBI::db_close_database(JCR *jcr)
    V(mutex);
 }
 
-void B_DB_DBI::db_thread_cleanup(void)
+bool B_DB_DBI::db_validate_connection(void)
 {
+   bool retval;
+
+   db_lock(this);
+   if (dbi_conn_ping(m_db_handle) == 1) {
+      retval = true;
+      goto bail_out;
+   } else {
+      retval = false;
+      goto bail_out;
+   }
+
+bail_out:
+   db_unlock(this);
+   return retval;
 }
 
 /*
@@ -738,7 +747,7 @@ void B_DB_DBI::sql_free_result(void)
       free(m_rows);
       m_rows = NULL;
    }
-   /* 
+   /*
     * Now is time to free all value return by dbi_get_value
     * this is necessary because libdbi don't free memory return by yours results
     * and Bacula has some routine wich call more than once time sql_fetch_row
@@ -1002,7 +1011,7 @@ uint64_t B_DB_DBI::sql_insert_autokey_record(const char *query, const char *tabl
     * everything else can use the PostgreSQL formula.
     */
    if (m_db_type == SQL_TYPE_POSTGRESQL) {
-      if (strcasecmp(table_name, "basefiles") == 0) {
+      if (bstrcasecmp(table_name, "basefiles")) {
          bstrncpy(sequence, "basefiles_baseid", sizeof(sequence));
       } else {
          bstrncpy(sequence, table_name, sizeof(sequence));
@@ -1089,7 +1098,7 @@ SQL_FIELD *B_DB_DBI::sql_fetch_field(void)
                 */
                free(cbuf);
             }
-         
+
             if (max_length < this_length) {
                max_length = this_length;
             }
@@ -1362,7 +1371,7 @@ bool B_DB_DBI::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
       db_escape_string(jcr, esc_path, path, pnl);
       len = Mmsg(cmd, "INSERT INTO batch VALUES "
                       "(%u,%s,'%s','%s','%s','%s',%u)",
-                      ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path, 
+                      ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
                       esc_name, ar->attr, digest, ar->DeltaSeq);
 
       if (!sql_query(cmd))
@@ -1420,7 +1429,7 @@ bool B_DB_DBI::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
       db_escape_string(jcr, esc_path, path, pnl);
       len = Mmsg(cmd, "INSERT INTO batch VALUES "
                       "(%u,%s,'%s','%s','%s','%s',%u)",
-                      ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path, 
+                      ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
                       esc_name, ar->attr, digest, ar->DeltaSeq);
 
       if (!sql_query(cmd))
@@ -1446,9 +1455,31 @@ bail_out:
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user,
-                       const char *db_password, const char *db_address, int db_port,
-                       const char *db_socket, bool mult_db_connections, bool disable_batch_insert)
+#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+extern "C" B_DB *backend_instantiate(JCR *jcr,
+                                     const char *db_driver,
+                                     const char *db_name,
+                                     const char *db_user,
+                                     const char *db_password,
+                                     const char *db_address,
+                                     int db_port,
+                                     const char *db_socket,
+                                     bool mult_db_connections,
+                                     bool disable_batch_insert,
+                                     bool need_private)
+#else
+B_DB *db_init_database(JCR *jcr,
+                       const char *db_driver,
+                       const char *db_name,
+                       const char *db_user,
+                       const char *db_password,
+                       const char *db_address,
+                       int db_port,
+                       const char *db_socket,
+                       bool mult_db_connections,
+                       bool disable_batch_insert,
+                       bool need_private)
+#endif
 {
    B_DB_DBI *mdb = NULL;
 
@@ -1456,7 +1487,7 @@ B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, con
       Jmsg(jcr, M_ABORT, 0, _("Driver type not specified in Catalog resource.\n"));
    }
 
-   if (strlen(db_driver) < 5 || db_driver[3] != ':' || strncasecmp(db_driver, "dbi", 3) != 0) {
+   if (strlen(db_driver) < 5 || db_driver[3] != ':' || !bstrncasecmp(db_driver, "dbi", 3)) {
       Jmsg(jcr, M_ABORT, 0, _("Invalid driver type, must be \"dbi:<type>\"\n"));
    }
 
@@ -1466,11 +1497,16 @@ B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, con
    }
 
    P(mutex);                          /* lock DB queue */
-   if (db_list && !mult_db_connections) {
-      /*
-       * Look to see if DB already open
-       */
+
+   /*
+    * Look to see if DB already open
+    */
+   if (db_list && !mult_db_connections && !need_private) {
       foreach_dlist(mdb, db_list) {
+         if (mdb->is_private()) {
+            continue;
+         }
+
          if (mdb->db_match_database(db_driver, db_name, db_address, db_port)) {
             Dmsg1(100, "DB REopen %s\n", db_name);
             mdb->increment_refcount();
@@ -1479,12 +1515,29 @@ B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, con
       }
    }
    Dmsg0(100, "db_init_database first time\n");
-   mdb = New(B_DB_DBI(jcr, db_driver, db_name, db_user, db_password, db_address,
-                      db_port, db_socket, mult_db_connections, disable_batch_insert));
+   mdb = New(B_DB_DBI(jcr,
+                      db_driver,
+                      db_name,
+                      db_user,
+                      db_password,
+                      db_address,
+                      db_port,
+                      db_socket,
+                      mult_db_connections,
+                      disable_batch_insert,
+                      need_private));
 
 bail_out:
    V(mutex);
    return mdb;
+}
+
+#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+extern "C" void flush_backend(void)
+#else
+void db_flush_backends(void)
+#endif
+{
 }
 
 #endif /* HAVE_DBI */

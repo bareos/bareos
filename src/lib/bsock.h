@@ -93,6 +93,10 @@ private:
    bool m_spool: 1;                   /* set for spooling */
    bool m_use_locking: 1;             /* set to use locking */
 
+   int64_t m_bwlimit;                 /* set to limit bandwidth */
+   int64_t m_nb_bytes;                /* bytes sent/recv since the last tick */
+   btime_t m_last_tick;               /* last tick used by bwlimit */
+
    void fin_init(JCR * jcr, int sockfd, const char *who, const char *host, int port,
                struct sockaddr *lclient_addr);
    bool open(JCR *jcr, const char *name, char *host, char *service,
@@ -127,6 +131,7 @@ public:
    bool set_locking();                /* in bsock.c */
    void clear_locking();              /* in bsock.c */
    void set_source_address(dlist *src_addr_list);
+   void control_bwlimit(int bytes);   /* in bsock.c */
 
    /* Inline functions */
    void set_jcr(JCR *jcr) { m_jcr = jcr; };
@@ -152,6 +157,8 @@ public:
         };
    boffset_t get_data_end() { return m_data_end; };
    int32_t get_FileIndex() { return m_FileIndex; };
+   void set_bwlimit(int64_t maxspeed) { m_bwlimit = maxspeed; };
+   bool use_bwlimit() { return m_bwlimit > 0;};
    void set_spooling() { m_spool = true; };
    void clear_spooling() { m_spool = false; };
    void set_duped() { m_duped = true; };

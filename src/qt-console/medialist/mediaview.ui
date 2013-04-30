@@ -73,6 +73,34 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="m_pbImport">
+       <property name="text">
+        <string>Import</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../main.qrc">
+         <normaloff>:/images/intern.png</normaloff>:/images/intern.png</iconset>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="m_pbExport">
+       <property name="text">
+        <string>Export</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../main.qrc">
+         <normaloff>:/images/extern.png</normaloff>:/images/extern.png</iconset>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>

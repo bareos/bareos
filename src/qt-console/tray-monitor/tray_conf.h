@@ -46,9 +46,8 @@ enum rescode {
    R_STORAGE,
    R_CONSOLE_FONT,
    R_FIRST = R_MONITOR,
-   R_LAST  = R_CONSOLE_FONT                /* keep this updated */
+   R_LAST = R_CONSOLE_FONT                 /* keep this updated */
 };
-
 
 /*
  * Some resource attributes
@@ -61,9 +60,13 @@ enum {
    R_BACKUP
 };
 
-/* Director */
+/*
+ *   Director Resource
+ *
+ */
 struct DIRRES {
-   RES   hdr;
+   RES hdr;
+
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
    bool enable_ssl;                   /* Use SSL */
@@ -73,10 +76,11 @@ struct DIRRES {
  *   Tray Monitor Resource
  *
  */
-struct MONITOR {
-   RES   hdr;
+struct MONITORRES {
+   RES hdr;
+
    bool require_ssl;                  /* Require SSL for all connections */
-   MSGS *messages;                    /* Daemon message handler */
+   MSGSRES *messages;                 /* Daemon message handler */
    char *password;                    /* UA server password */
    utime_t RefreshInterval;           /* Status refresh interval */
    utime_t FDConnectTimeout;          /* timeout for connect in seconds */
@@ -84,13 +88,12 @@ struct MONITOR {
    utime_t DIRConnectTimeout;         /* timeout in seconds */
 };
 
-
 /*
  *   Client Resource
  *
  */
-struct CLIENT {
-   RES   hdr;
+struct CLIENTRES {
+   RES hdr;
 
    uint32_t FDport;                   /* Where File daemon listens */
    char *address;
@@ -102,8 +105,8 @@ struct CLIENT {
  *   Store Resource
  *
  */
-struct STORE {
-   RES   hdr;
+struct STORERES {
+   RES hdr;
 
    uint32_t SDport;                   /* port where Directors connect */
    char *address;
@@ -112,7 +115,8 @@ struct STORE {
 };
 
 struct CONFONTRES {
-   RES   hdr;
+   RES hdr;
+
    char *fontface;                    /* Console Font specification */
 };
 
@@ -120,10 +124,10 @@ struct CONFONTRES {
  * resource structure definitions.
  */
 union URES {
-   MONITOR    res_monitor;
-   DIRRES     res_dir;
-   CLIENT     res_client;
-   STORE      res_store;
+   MONITORRES res_monitor;
+   DIRRES res_dir;
+   CLIENTRES res_client;
+   STORERES res_store;
    CONFONTRES con_font;
-   RES        hdr;
+   RES hdr;
 };

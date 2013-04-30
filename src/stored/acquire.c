@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2002-2013 Free Software Foundation Europe e.V.
+   Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -110,16 +110,16 @@ bool acquire_device_for_read(DCR *dcr)
     *    not release the dcr.
     */
    Dmsg2(rdbglvl, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
-   if (dcr->media_type[0] && strcmp(dcr->media_type, dev->device->media_type) != 0) {
+   if (dcr->media_type[0] && !bstrcmp(dcr->media_type, dev->device->media_type)) {
       RCTX rctx;
       DIRSTORE *store;
-      int stat;
+      int status;
 
       Jmsg3(jcr, M_INFO, 0, _("Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
                               "  device=%s\n"), 
             dcr->media_type, dev->device->media_type, dev->print_name());
       Dmsg3(rdbglvl, "Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
-                              "  device=%s\n", 
+                     "  device=%s\n",
             dcr->media_type, dev->device->media_type, dev->print_name());
 
       dev->dunblock(DEV_UNLOCKED);
@@ -144,11 +144,11 @@ bool acquire_device_for_read(DCR *dcr)
       /*
        * Search for a new device
        */
-      stat = search_res_for_device(rctx);
+      status = search_res_for_device(rctx);
       release_reserve_messages(jcr);         /* release queued messages */
       unlock_reservations();
 
-      if (stat == 1) { /* found new device to use */
+      if (status == 1) { /* found new device to use */
          /*
           * Switching devices, so acquire lock on new device,
           *   then release the old one.
@@ -196,8 +196,8 @@ bool acquire_device_for_read(DCR *dcr)
    /* Volume info is always needed because of VolParts */
    Dmsg1(rdbglvl, "dir_get_volume_info vol=%s\n", dcr->VolumeName);
    if (!dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ)) {
-      Dmsg2(rdbglvl, "dir_get_vol_info failed for vol=%s: %s\n", 
-         dcr->VolumeName, jcr->errmsg);
+      Dmsg2(rdbglvl, "dir_get_vol_info failed for vol=%s: %s\n",
+            dcr->VolumeName, jcr->errmsg);
       Jmsg1(jcr, M_WARNING, 0, "Read acquire: %s", jcr->errmsg);
    }
    dev->set_load();                /* set to load volume */
@@ -256,7 +256,7 @@ bool acquire_device_for_read(DCR *dcr)
          }
          goto default_path;
       case VOL_NAME_ERROR:
-         Dmsg3(rdbglvl, "Vol name=%s want=%s drv=%s.\n", dev->VolHdr.VolumeName, 
+         Dmsg3(rdbglvl, "Vol name=%s want=%s drv=%s.\n", dev->VolHdr.VolumeName,
                dcr->VolumeName, dev->print_name());
          if (dev->is_volume_to_unload()) {
             goto default_path;
@@ -264,7 +264,7 @@ bool acquire_device_for_read(DCR *dcr)
          dev->set_unload();              /* force unload of unwanted tape */
          if (!unload_autochanger(dcr, -1)) {
             /* at least free the device so we can re-open with correct volume */
-            dev->close();                                                          
+            dev->close(dcr);
             free_volume(dev);
          }
          dev->set_load();
@@ -279,17 +279,17 @@ default_path:
           * If the device requires mount, close it, so the device can be ejected.
           */
          if (dev->requires_mount()) {
-            dev->close();
+            dev->close(dcr);
             free_volume(dev);
          }
          
          /* Call autochanger only once unless ask_sysop called */
          if (try_autochanger) {
-            int stat;
+            int status;
             Dmsg2(rdbglvl, "calling autoload Vol=%s Slot=%d\n",
-               dcr->VolumeName, dcr->VolCatInfo.Slot);
-            stat = autoload_device(dcr, 0, NULL);
-            if (stat > 0) {
+                  dcr->VolumeName, dcr->VolCatInfo.Slot);
+            status = autoload_device(dcr, 0, NULL);
+            if (status > 0) {
                try_autochanger = false;
                continue;              /* try reading volume mounted */
             }
@@ -370,9 +370,7 @@ DCR *acquire_device_for_append(DCR *dcr)
 
    dev->Lock_acquire();             /* only one job at a time */
    dev->Lock();
-   Dmsg1(100, "acquire_append device is %s\n", dev->is_tape()?"tape":
-        (dev->is_dvd()?"DVD":"disk"));
-
+   Dmsg1(100, "acquire_append device is %s\n", dev->is_tape() ? "tape" : "disk");
 
    /*
     * With the reservation system, this should not happen
@@ -390,7 +388,7 @@ DCR *acquire_device_for_append(DCR *dcr)
     *   ask the Director again about what Volume to use.
     */
    if (dev->can_append() && dcr->is_suitable_volume_mounted() &&
-       strcmp(dcr->VolCatInfo.VolCatStatus, "Recycle") != 0) {
+       !bstrcmp(dcr->VolCatInfo.VolCatStatus, "Recycle")) {
       Dmsg0(190, "device already in append.\n");
       /*
        * At this point, the correct tape is already mounted, so
@@ -531,8 +529,7 @@ bool release_device(DCR *dcr)
 
    /* If no writers, close if file or !CAP_ALWAYS_OPEN */
    if (dev->num_writers == 0 && (!dev->is_tape() || !dev->has_cap(CAP_ALWAYSOPEN))) {
-      dvd_remove_empty_part(dcr);        /* get rid of any empty spool part */
-      dev->close();
+      dev->close(dcr);
       free_volume(dev);
    }
    unlock_volumes();
@@ -704,7 +701,7 @@ static void attach_dcr_to_dev(DCR *dcr)
    /* ***FIXME*** return error if dev not initiated */
    if (!dcr->attached_to_dev && dev->initiated && jcr && jcr->getJobType() != JT_SYSTEM) {
       dev->Lock();
-      Dmsg4(200, "Attach Jid=%d dcr=%p size=%d dev=%s\n", (uint32_t)jcr->JobId, 
+      Dmsg4(200, "Attach Jid=%d dcr=%p size=%d dev=%s\n", (uint32_t)jcr->JobId,
          dcr, dev->attached_dcrs->size(), dev->print_name());
       dev->attached_dcrs->append(dcr);  /* attach dcr to device */
       dev->Unlock();
@@ -725,7 +722,7 @@ static void locked_detach_dcr_from_dev(DCR *dcr)
    if (dcr->attached_to_dev && dev) {
       dcr->unreserve_device();
       dev->Lock();
-      Dmsg4(200, "Detach Jid=%d dcr=%p size=%d to dev=%s\n", (uint32_t)dcr->jcr->JobId, 
+      Dmsg4(200, "Detach Jid=%d dcr=%p size=%d to dev=%s\n", (uint32_t)dcr->jcr->JobId,
          dcr, dev->attached_dcrs->size(), dev->print_name());
       dcr->attached_to_dev = false;
       if (dev->attached_dcrs->size()) {

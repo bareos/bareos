@@ -63,23 +63,24 @@ typedef struct s_rwsteal_tag {
 #define RWLOCK_VALID  0xfacade
 
 #define RWL_INIIALIZER \
-   {PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, \
-    PTHREAD_COND_INITIALIZER, RWLOCK_VALID, 0, 0, 0, 0}
+   { PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, \
+     PTHREAD_COND_INITIALIZER, RWLOCK_VALID, 0, 0, 0, 0 }
 
 #define rwl_writelock(x)     rwl_writelock_p((x), __FILE__, __LINE__)
 
 /*
  * read/write lock prototypes
  */
-extern int rwl_init(brwlock_t *wrlock, int priority=0);
-extern int rwl_destroy(brwlock_t *rwlock);
+extern int rwl_init(brwlock_t *rwl, int priority = 0);
+extern int rwl_destroy(brwlock_t *rwl);
 extern bool rwl_is_init(brwlock_t *rwl);
-extern int rwl_readlock(brwlock_t *rwlock);
-extern int rwl_readtrylock(brwlock_t *rwlock);
-extern int rwl_readunlock(brwlock_t *rwlock);
-extern int rwl_writelock_p(brwlock_t *rwlock,
-                           const char *file="*unknown*", int line=0);
-extern int rwl_writetrylock(brwlock_t *rwlock);
-extern int rwl_writeunlock(brwlock_t *rwlock);
+extern int rwl_readlock(brwlock_t *rwl);
+extern int rwl_readtrylock(brwlock_t *rwl);
+extern int rwl_readunlock(brwlock_t *rwl);
+extern int rwl_writelock_p(brwlock_t *rwl,
+                           const char *file = "*unknown*",
+                           int line = 0);
+extern int rwl_writetrylock(brwlock_t *rwl);
+extern int rwl_writeunlock(brwlock_t *rwl);
 
 #endif /* __RWLOCK_H */

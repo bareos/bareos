@@ -54,7 +54,7 @@ enum rec_state {
    st_none,                               /* No state */
    st_header,                             /* Write header */
    st_header_cont,
-   st_data,
+   st_data
 };
 
 
@@ -232,6 +232,20 @@ struct Session_Label {
 };
 typedef struct Session_Label SESSION_LABEL;
 
-#define SERIAL_BUFSIZE  1024          /* volume serialisation buffer size */
+#define SERIAL_BUFSIZE 1024           /* Volume serialisation buffer size */
+
+/*
+ * Read context used to keep track of what is processed or not.
+ */
+struct Read_Context {
+   DEV_RECORD *rec;                   /* Record currently being processed */
+   dlist *recs;                       /* Linked list of record packets open */
+   SESSION_LABEL sessrec;             /* Start Of Session record info */
+   uint32_t records_processed;        /* Number of records processed from this block */
+   int32_t lastFileIndex;             /* Last File Index processed */
+};
+typedef struct Read_Context READ_CTX;
+
+#define READ_NO_FILEINDEX -999999
 
 #endif

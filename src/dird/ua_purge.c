@@ -41,8 +41,9 @@
 #include "dird.h"
 
 /* Forward referenced functions */
-static int purge_files_from_client(UAContext *ua, CLIENT *client);
-static int purge_jobs_from_client(UAContext *ua, CLIENT *client);
+static int purge_files_from_client(UAContext *ua, CLIENTRES *client);
+static int purge_jobs_from_client(UAContext *ua, CLIENTRES *client);
+static int purge_quota_from_client(UAContext *ua, CLIENTRES *client);
 static int action_on_purge_cmd(UAContext *ua, const char *cmd);
 
 static const char *select_jobsfiles_from_client =
@@ -65,26 +66,35 @@ static const char *select_jobs_from_client =
 int purgecmd(UAContext *ua, const char *cmd)
 {
    int i;
-   CLIENT *client;
+   CLIENTRES *client;
    MEDIA_DBR mr;
    JOB_DBR  jr;
    static const char *keywords[] = {
       NT_("files"),
       NT_("jobs"),
       NT_("volume"),
-      NULL};
+      NT_("quota"),
+      NULL
+   };
 
    static const char *files_keywords[] = {
       NT_("Job"),
       NT_("JobId"),
       NT_("Client"),
       NT_("Volume"),
-      NULL};
+      NULL
+   };
+
+   static const char *quota_keywords[] = {
+      NT_("Client"),
+      NULL
+   };
 
    static const char *jobs_keywords[] = {
       NT_("Client"),
       NT_("Volume"),
-      NULL};
+      NULL
+   };
 
    ua->warning_msg(_(
       "\nThis command can be DANGEROUS!!!\n\n"
@@ -151,6 +161,16 @@ int purgecmd(UAContext *ua, const char *cmd)
          ua->send_msg("\n");
       }
       return 1;
+   /* Quota */
+   case 3:
+      switch(find_arg_keyword(ua, quota_keywords)) {
+      case 0:                         /* client */
+         client = get_client_resource(ua);
+         if (client) {
+            purge_quota_from_client(ua, client);
+         }
+         return 1;
+      }
    default:
       break;
    }
@@ -172,6 +192,11 @@ int purgecmd(UAContext *ua, const char *cmd)
          purge_jobs_from_volume(ua, &mr, /*force*/true);
       }
       break;
+   case 3:
+      client = get_client_resource(ua); /* Quota */
+      if (client) {
+         purge_quota_from_client(ua, client);
+      }
    }
    return 1;
 }
@@ -184,7 +209,7 @@ int purgecmd(UAContext *ua, const char *cmd)
  * the JobIds meeting the prune conditions, then delete all File records
  * pointing to each of those JobIds.
  */
-static int purge_files_from_client(UAContext *ua, CLIENT *client)
+static int purge_files_from_client(UAContext *ua, CLIENTRES *client)
 {
    struct del_ctx del;
    POOL_MEM query(PM_MESSAGE);
@@ -232,7 +257,7 @@ static int purge_files_from_client(UAContext *ua, CLIENT *client)
  * temporary tables are needed. We simply make an in memory list of
  * the JobIds then delete the Job, Files, and JobMedia records in that list.
  */
-static int purge_jobs_from_client(UAContext *ua, CLIENT *client)
+static int purge_jobs_from_client(UAContext *ua, CLIENTRES *client)
 {
    struct del_ctx del;
    POOL_MEM query(PM_MESSAGE);
@@ -285,11 +310,11 @@ void purge_files_from_jobs(UAContext *ua, char *jobs)
    POOL_MEM query(PM_MESSAGE);
 
    Mmsg(query, "DELETE FROM File WHERE JobId IN (%s)", jobs);
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
    Dmsg1(050, "Delete File sql=%s\n", query.c_str());
 
    Mmsg(query, "DELETE FROM BaseFiles WHERE JobId IN (%s)", jobs);
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
    Dmsg1(050, "Delete BaseFiles sql=%s\n", query.c_str());
 
    /*
@@ -299,7 +324,7 @@ void purge_files_from_jobs(UAContext *ua, char *jobs)
     * could grow very large.
     */
    Mmsg(query, "UPDATE Job SET PurgedFiles=1 WHERE JobId IN (%s)", jobs);
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
    Dmsg1(050, "Mark purged sql=%s\n", query.c_str());
 }
 
@@ -367,6 +392,36 @@ void purge_files_from_job_list(UAContext *ua, del_ctx &del)
 }
 
 /*
+ * This resets quotas in the database table Quota for the matching client
+ * It is necessary to purge this if you want to reset the quota and let it count
+ * from scratch.
+ *
+ * This function does not actually delete records, rather it updates them to nil
+ * It should also be noted that if a quota record does not exist it will actually
+ * end up creating it!
+ */
+
+static int purge_quota_from_client(UAContext *ua, CLIENTRES *client)
+{
+   CLIENT_DBR cr;
+
+   memset(&cr, 0, sizeof(cr));
+   bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
+   if (!db_create_client_record(ua->jcr, ua->db, &cr)) {
+      return 0;
+   }
+   if (!db_create_quota_record(ua->jcr, ua->db, &cr)) {
+      return 0;
+   }
+   if (!db_reset_quota_record(ua->jcr, ua->db, &cr)) {
+      return 0;
+   }
+   ua->info_msg(_("Purged quota for Client \"%s\"\n"), cr.Name);
+
+   return 1;
+}
+
+/*
  * Change the type of the next copy job to backup.
  * We need to upgrade the next copy of a normal job,
  * and also upgrade the next copy when the normal job
@@ -390,17 +445,17 @@ void upgrade_copies(UAContext *ua, char *jobs)
 
    /* Do it in two times for mysql */
    Mmsg(query, uap_upgrade_copies_oldest_job[db_get_type_index(ua->db)], JT_JOB_COPY, jobs, jobs);
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
    Dmsg1(050, "Upgrade copies Log sql=%s\n", query.c_str());
 
    /* Now upgrade first copy to Backup */
    Mmsg(query, "UPDATE Job SET Type='B' "      /* JT_JOB_COPY => JT_BACKUP  */
                 "WHERE JobId IN ( SELECT JobId FROM cpy_tmp )");
 
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
 
    Mmsg(query, "DROP TABLE cpy_tmp");
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
 
    db_unlock(ua->db);
 }
@@ -416,26 +471,26 @@ void purge_jobs_from_catalog(UAContext *ua, char *jobs)
    purge_files_from_jobs(ua, jobs);
 
    Mmsg(query, "DELETE FROM JobMedia WHERE JobId IN (%s)", jobs);
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
    Dmsg1(050, "Delete JobMedia sql=%s\n", query.c_str());
 
    Mmsg(query, "DELETE FROM Log WHERE JobId IN (%s)", jobs);
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
    Dmsg1(050, "Delete Log sql=%s\n", query.c_str());
 
    Mmsg(query, "DELETE FROM RestoreObject WHERE JobId IN (%s)", jobs);
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
    Dmsg1(050, "Delete RestoreObject sql=%s\n", query.c_str());
 
    Mmsg(query, "DELETE FROM PathVisibility WHERE JobId IN (%s)", jobs);
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
    Dmsg1(050, "Delete PathVisibility sql=%s\n", query.c_str());
 
    upgrade_copies(ua, jobs);
 
    /* Now remove the Job record itself */
    Mmsg(query, "DELETE FROM Job WHERE JobId IN (%s)", jobs);
-   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   db_sql_query(ua->db, query.c_str());
 
    Dmsg1(050, "Delete Job sql=%s\n", query.c_str());
 }
@@ -454,13 +509,13 @@ bool purge_jobs_from_volume(UAContext *ua, MEDIA_DBR *mr, bool force)
    char *jobids=NULL;
    int i;
    bool purged = false;
-   bool stat;
+   bool status;
 
-   stat = strcmp(mr->VolStatus, "Append") == 0 ||
-          strcmp(mr->VolStatus, "Full")   == 0 ||
-          strcmp(mr->VolStatus, "Used")   == 0 ||
-          strcmp(mr->VolStatus, "Error")  == 0;
-   if (!stat) {
+   status = bstrcmp(mr->VolStatus, "Append") ||
+            bstrcmp(mr->VolStatus, "Full") ||
+            bstrcmp(mr->VolStatus, "Used") ||
+            bstrcmp(mr->VolStatus, "Error");
+   if (!status) {
       ua->error_msg(_("\nVolume \"%s\" has VolStatus \"%s\" and cannot be purged.\n"
                      "The VolStatus must be: Append, Full, Used, or Error to be purged.\n"),
                      mr->VolumeName, mr->VolStatus);
@@ -522,7 +577,7 @@ bool is_volume_purged(UAContext *ua, MEDIA_DBR *mr, bool force)
       goto bail_out;               /* not written cannot purge */
    }
 
-   if (strcmp(mr->VolStatus, "Purged") == 0) {
+   if (bstrcmp(mr->VolStatus, "Purged")) {
       purged = true;
       goto bail_out;
    }
@@ -548,21 +603,6 @@ bail_out:
    return purged;
 }
 
-static BSOCK *open_sd_bsock(UAContext *ua)
-{
-   STORE *store = ua->jcr->wstore;
-
-   if (!ua->jcr->store_bsock) {
-      ua->send_msg(_("Connecting to Storage daemon %s at %s:%d ...\n"),
-         store->name(), store->address, store->SDport);
-      if (!connect_to_storage_daemon(ua->jcr, 10, SDConnectTimeout, 1)) {
-         ua->error_msg(_("Failed to connect to Storage daemon.\n"));
-         return NULL;
-      }
-   }
-   return ua->jcr->store_bsock;
-}
-
 /* 
  * Called here to send the appropriate commands to the SD
  *  to do truncate on purge.
@@ -571,7 +611,6 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
                                  char *pool, char *storage,
                                  int drive, BSOCK *sd)
 {
-   int dvd;
    bool ok=false;
    uint64_t VolBytes = 0;
    
@@ -610,7 +649,7 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
    /* Send relabel command, and check for valid response */
    while (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
-      if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu DVD=%d ", &VolBytes, &dvd) == 2) {
+      if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
          ok = true;
       }
    }
@@ -639,8 +678,8 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
    int nb = 0;
    uint32_t *results = NULL;
    const char *action = "all";
-   STORE *store = NULL;
-   POOL *pool = NULL;
+   STORERES *store = NULL;
+   POOLRES *pool = NULL;
    MEDIA_DBR mr;
    POOL_DBR pr;
    BSOCK *sd = NULL;
@@ -649,30 +688,40 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
 
    /* Look at arguments */
    for (int i=1; i<ua->argc; i++) {
-      if (strcasecmp(ua->argk[i], NT_("allpools")) == 0) {
+      if (bstrcasecmp(ua->argk[i], NT_("allpools"))) {
          allpools = true;
             
-      } else if (strcasecmp(ua->argk[i], NT_("volume")) == 0 
-                 && is_name_valid(ua->argv[i], NULL)) {
+      } else if (bstrcasecmp(ua->argk[i], NT_("volume")) &&
+                 is_name_valid(ua->argv[i], NULL)) {
          bstrncpy(mr.VolumeName, ua->argv[i], sizeof(mr.VolumeName));
 
-      } else if (strcasecmp(ua->argk[i], NT_("devicetype")) == 0 
-                 && ua->argv[i]) {
+      } else if (bstrcasecmp(ua->argk[i], NT_("devicetype")) &&
+                 ua->argv[i]) {
          bstrncpy(mr.MediaType, ua->argv[i], sizeof(mr.MediaType));
          
-      } else if (strcasecmp(ua->argk[i], NT_("drive")) == 0 && ua->argv[i]) {
+      } else if (bstrcasecmp(ua->argk[i], NT_("drive")) && ua->argv[i]) {
          drive = atoi(ua->argv[i]);
 
-      } else if (strcasecmp(ua->argk[i], NT_("action")) == 0 
-                 && is_name_valid(ua->argv[i], NULL)) {
+      } else if (bstrcasecmp(ua->argk[i], NT_("action")) &&
+                 is_name_valid(ua->argv[i], NULL)) {
          action=ua->argv[i];
       }
    }
 
    /* Choose storage */
-   ua->jcr->wstore = store =  get_storage_resource(ua, false);
+   ua->jcr->res.wstore = store = get_storage_resource(ua, false);
    if (!store) {
       goto bail_out;
+   }
+
+   switch (store->Protocol) {
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      ua->warning_msg(_("Storage has non-native protocol.\n"));
+      goto bail_out;
+   default:
+      break;
    }
 
    if (!open_db(ua)) {
@@ -714,7 +763,7 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
       goto bail_out;
    }
 
-   if ((sd=open_sd_bsock(ua)) == NULL) {
+   if ((sd = open_sd_bsock(ua)) == NULL) {
       Dmsg0(100, "Can't open connection to sd\n");
       goto bail_out;
    }
@@ -727,7 +776,7 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
       mr.MediaId = results[i];
       if (db_get_media_record(ua->jcr, ua->db, &mr)) {         
          /* TODO: ask for drive and change Pool */
-         if (!strcasecmp("truncate", action) || !strcasecmp("all", action)) {
+         if (bstrcasecmp("truncate", action) || bstrcasecmp("all", action)) {
             do_truncate_on_purge(ua, &mr, pr.Name, store->dev_name(), drive, sd);
          }
       } else {
@@ -742,7 +791,7 @@ bail_out:
       sd->close();
       ua->jcr->store_bsock = NULL;
    }
-   ua->jcr->wstore = NULL;
+   ua->jcr->res.wstore = NULL;
    if (results) {
       free(results);
    }
@@ -757,17 +806,19 @@ bail_out:
 bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
 {
    JCR *jcr = ua->jcr;
-   if (strcmp(mr->VolStatus, "Append") == 0 ||
-       strcmp(mr->VolStatus, "Full")   == 0 ||
-       strcmp(mr->VolStatus, "Used")   == 0 ||
-       strcmp(mr->VolStatus, "Error")  == 0) {
+   bool status;
+
+   status = bstrcmp(mr->VolStatus, "Append") ||
+            bstrcmp(mr->VolStatus, "Full") ||
+            bstrcmp(mr->VolStatus, "Used") ||
+            bstrcmp(mr->VolStatus, "Error");
+   if (status) {
       bstrncpy(mr->VolStatus, "Purged", sizeof(mr->VolStatus));
       set_storageid_in_mr(NULL, mr);
       if (!db_update_media_record(jcr, ua->db, mr)) {
          return false;
       }
       pm_strcpy(jcr->VolumeName, mr->VolumeName);
-      generate_job_event(jcr, "VolumePurged");
       generate_plugin_event(jcr, bDirEventVolumePurged);
       /*
        * If the RecyclePool is defined, move the volume there
@@ -804,5 +855,5 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
    } else {
       ua->error_msg(_("Cannot purge Volume with VolStatus=%s\n"), mr->VolStatus);
    }
-   return strcmp(mr->VolStatus, "Purged") == 0;
+   return bstrcmp(mr->VolStatus, "Purged");
 }

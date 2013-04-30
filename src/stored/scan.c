@@ -90,8 +90,8 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
                mount_point, print_name());
          break;
       }
-      if (strcmp(result->d_name, ".") == 0 || 
-          strcmp(result->d_name, "..") == 0) {
+      if (bstrcmp(result->d_name, ".") || 
+          bstrcmp(result->d_name, "..")) {
          continue;
       }
        

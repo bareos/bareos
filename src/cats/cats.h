@@ -65,6 +65,16 @@
 #define faddr_t long
 
 /*
+ * Generic definitions of list types, list handlers and result handlers.
+ */
+enum e_list_type {
+   NF_LIST,
+   RAW_LIST,
+   HORZ_LIST,
+   VERT_LIST
+};
+
+/*
  * Structure used when calling db_get_query_ids()
  *  allows the subroutine to return a list of ids.
  */
@@ -110,6 +120,7 @@ struct JOB_DBR {
    uint32_t JobMissingFiles;
    uint64_t JobBytes;
    uint64_t ReadBytes;
+   uint64_t JobSumTotalBytes;         /* Total sum in bytes of all jobs but this one */
    int PurgedFiles;
    int HasBase;
 
@@ -292,6 +303,7 @@ public:
    DBId_t MediaId;                    /* Unique volume id */
    char VolumeName[MAX_NAME_LENGTH];  /* Volume name */
    char MediaType[MAX_NAME_LENGTH];   /* Media type */
+   char EncrKey[MAX_NAME_LENGTH];     /* Encryption Key */
    DBId_t PoolId;                     /* Pool id */
    time_t   FirstWritten;             /* Time Volume first written this usage */
    time_t   LastWritten;              /* Time Volume last written */
@@ -306,7 +318,6 @@ public:
    uint32_t VolWrites;                /* Number of writes */
    uint32_t VolReads;                 /* Number of reads */
    uint64_t VolBytes;                 /* Number of bytes written */
-   uint32_t VolParts;                 /* Number of parts written */
    uint64_t MaxVolBytes;              /* Max bytes to write to Volume */
    uint64_t VolCapacityBytes;         /* capacity estimate */
    uint64_t VolReadTime;              /* time spent reading volume */
@@ -346,6 +357,8 @@ public:
 struct CLIENT_DBR {
    DBId_t ClientId;                   /* Unique Client id */
    int AutoPrune;
+   utime_t GraceTime;                 /* Time remaining on gracetime */
+   uint32_t QuotaLimit;               /* The total softquota supplied if over grace */
    utime_t FileRetention;
    utime_t JobRetention;
    char Name[MAX_NAME_LENGTH];        /* Client name */
@@ -444,7 +457,7 @@ typedef int (DB_RESULT_HANDLER)(void *, int, char **);
 #define db_unlock(mdb) mdb->_db_unlock(__FILE__, __LINE__)
 
 /* Current database version number for all drivers */
-#define BDB_VERSION 14
+#define BDB_VERSION 15
 
 class B_DB: public SMARTALLOC {
 protected:
@@ -464,7 +477,7 @@ protected:
    char *m_db_password;                   /* database password */
    int m_db_port;                         /* port for host name address */
    bool m_disabled_batch_insert;          /* explicitly disabled batch insert mode ? */
-   bool m_dedicated;                      /* is this connection dedicated? */
+   bool m_is_private;                     /* private connection ? */
 
 public:
    POOLMEM *errmsg;                       /* nicely edited error message */
@@ -488,12 +501,17 @@ public:
    const char *get_db_user(void) { return m_db_user; };
    bool is_connected(void) { return m_connected; };
    bool batch_insert_available(void) { return m_have_batch_insert; };
+   bool is_private(void) { return m_is_private; };
+   void set_private(bool is_private) { m_is_private = is_private; };
    void increment_refcount(void) { m_ref_count++; };
 
    /* low level methods */
    bool db_match_database(const char *db_driver, const char *db_name,
                           const char *db_address, int db_port);
-   B_DB *db_clone_database_connection(JCR *jcr, bool mult_db_connections);
+   B_DB *db_clone_database_connection(JCR *jcr,
+                                      bool mult_db_connections,
+                                      bool get_pooled_connection = true,
+                                      bool need_private = false);
    int db_get_type_index(void) { return m_db_type; };
    const char *db_get_type(void);
    void _db_lock(const char *file, int line);
@@ -501,14 +519,17 @@ public:
    bool db_sql_query(const char *query, int flags=0);
    void print_lock_info(FILE *fp);
 
+   /* Virtual low level methods */
+   virtual void db_thread_cleanup(void) {};
+   virtual void db_escape_string(JCR *jcr, char *snew, char *old, int len);
+   virtual char *db_escape_object(JCR *jcr, char *old, int len);
+   virtual void db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
+                                   POOLMEM **dest, int32_t *len);
+
    /* Pure virtual low level methods */
    virtual bool db_open_database(JCR *jcr) = 0;
    virtual void db_close_database(JCR *jcr) = 0;
-   virtual void db_thread_cleanup(void) = 0;
-   virtual void db_escape_string(JCR *jcr, char *snew, char *old, int len) = 0;
-   virtual char *db_escape_object(JCR *jcr, char *old, int len) = 0;
-   virtual void db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                   POOLMEM **dest, int32_t *len) = 0;
+   virtual bool db_validate_connection(void) = 0;
    virtual void db_start_transaction(JCR *jcr) = 0;
    virtual void db_end_transaction(JCR *jcr) = 0;
    virtual bool db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
@@ -523,11 +544,41 @@ public:
 /* sql_query Query Flags */
 #define QF_STORE_RESULT 0x01
 
+/* flush the batch insert connection every x changes */
+#define BATCH_FLUSH 800000
+
 /* Use for better error location printing */
 #define UPDATE_DB(jcr, db, cmd) UpdateDB(__FILE__, __LINE__, jcr, db, cmd)
 #define INSERT_DB(jcr, db, cmd) InsertDB(__FILE__, __LINE__, jcr, db, cmd)
 #define QUERY_DB(jcr, db, cmd) QueryDB(__FILE__, __LINE__, jcr, db, cmd)
 #define DELETE_DB(jcr, db, cmd) DeleteDB(__FILE__, __LINE__, jcr, db, cmd)
+
+/*
+ * Pooled backend connection.
+ */
+struct SQL_POOL_ENTRY {
+   int id;                                /* Unique ID, connection numbering can have holes and the pool is not sorted on it */
+   int reference_count;                   /* Reference count for this entry */
+   time_t last_update;                    /* When was this connection last updated either used or put back on the pool */
+   B_DB *db_handle;                       /* Connection handle to the database */
+   dlink link;                            /* list management */
+};
+
+/*
+ * Pooled backend list descriptor (one defined per backend defined in config)
+ */
+struct SQL_POOL_DESCRIPTOR {
+   dlist *pool_entries;                   /* Linked list of all pool entries */
+   bool active;                           /* Is this an active pool, after a config reload an pool is made inactive */
+   time_t last_update;                    /* When was this pool last updated */
+   int min_connections;                   /* Minimum number of connections in the connection pool */
+   int max_connections;                   /* Maximum number of connections in the connection pool */
+   int increment_connections;             /* Increase/Decrease the number of connection in the pool with this value */
+   int idle_timeout;                      /* Number of seconds to wait before tearing down a connection */
+   int validate_timeout;                  /* Number of seconds after which an idle connection should be validated */
+   int nr_connections;                    /* Number of active connections in the pool */
+   dlink link;                            /* list management */
+};
 
 #include "protos.h"
 #include "jcr.h"
@@ -581,9 +632,9 @@ bool db_check_max_connections(JCR *jcr, B_DB *mdb, uint32_t nb);
 
 void print_dashes(B_DB *mdb);
 void print_result(B_DB *mdb);
-int QueryDB(const char *file, int line, JCR *jcr, B_DB *db, char *select_cmd);
-int InsertDB(const char *file, int line, JCR *jcr, B_DB *db, char *select_cmd);
+bool QueryDB(const char *file, int line, JCR *jcr, B_DB *db, char *select_cmd);
+bool InsertDB(const char *file, int line, JCR *jcr, B_DB *db, char *select_cmd);
 int DeleteDB(const char *file, int line, JCR *jcr, B_DB *db, char *delete_cmd);
-int UpdateDB(const char *file, int line, JCR *jcr, B_DB *db, char *update_cmd);
+bool UpdateDB(const char *file, int line, JCR *jcr, B_DB *db, char *update_cmd);
 void split_path_and_file(JCR *jcr, B_DB *mdb, const char *fname);
 #endif /* __CATS_H_ */

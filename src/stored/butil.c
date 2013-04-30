@@ -81,12 +81,14 @@ char *rec_state_bits_to_str(DEV_RECORD *rec)
  * Setup a "daemon" JCR for the various standalone
  *  tools (e.g. bls, bextract, bscan, ...)
  */
-JCR *setup_jcr(const char *name, char *dev_name, BSR *bsr,
+JCR *setup_jcr(const char *name, char *dev_name,
+               BSR *bsr, DIRRES *director,
                const char *VolumeName, int mode)
 {
    DCR *dcr;
    JCR *jcr = new_jcr(sizeof(JCR), my_free_jcr);
    jcr->bsr = bsr;
+   jcr->director = director;
    jcr->VolSessionId = 1;
    jcr->VolSessionTime = (uint32_t)time(NULL);
    jcr->NumReadVolumes = 0;
@@ -107,6 +109,9 @@ JCR *setup_jcr(const char *name, char *dev_name, BSR *bsr,
    pm_strcpy(jcr->fileset_md5, "Dummy.fileset.md5");
    jcr->comment = get_pool_memory(PM_MESSAGE);
    *jcr->comment = '\0';
+
+   new_plugins(jcr);  /* instantiate plugins */
+
    init_autochangers();
    create_volume_lists();
 
@@ -151,7 +156,7 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name,
       VolName[0] = 0;
    }
    if (!jcr->bsr && VolName[0] == 0) {
-      if (strncmp(dev_name, "/dev/", 5) != 0) {
+      if (!bstrncmp(dev_name, "/dev/", 5)) {
          /* Try stripping file part */
          p = dev_name + strlen(dev_name);
 
@@ -254,7 +259,7 @@ static DEVRES *find_device_res(char *device_name, int read_access)
    LockRes();
    foreach_res(device, R_DEVICE) {
       Dmsg2(900, "Compare %s and %s\n", device->device_name, device_name);
-      if (strcmp(device->device_name, device_name) == 0) {
+      if (bstrcmp(device->device_name, device_name)) {
          found = true;
          break;
       }
@@ -271,7 +276,7 @@ static DEVRES *find_device_res(char *device_name, int read_access)
       }
       foreach_res(device, R_DEVICE) {
          Dmsg2(900, "Compare %s and %s\n", device->hdr.name, device_name);
-         if (strcmp(device->hdr.name, device_name) == 0) {
+         if (bstrcmp(device->hdr.name, device_name)) {
             found = true;
             break;
          }

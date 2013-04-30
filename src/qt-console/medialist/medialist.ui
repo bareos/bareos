@@ -74,6 +74,22 @@
     <string>Purge Volume</string>
    </property>
   </action>
+  <action name="actionImportVolume" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/intern.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Import Volume</string>
+   </property>
+  </action>
+  <action name="actionExportVolume" >
+   <property name="icon" >
+    <iconset resource="../main.qrc" >:/images/extern.png</iconset>
+   </property>
+   <property name="text" >
+    <string>Export Volume</string>
+   </property>
+  </action>
   <action name="actionRelabelVolume" >
    <property name="icon" >
     <iconset resource="../main.qrc" >:/images/label.png</iconset>

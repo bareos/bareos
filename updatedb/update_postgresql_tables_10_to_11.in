@@ -10,7 +10,7 @@ bindir=@POSTGRESQL_BINDIR@
 PATH="$bindir:$PATH"
 db_name=${db_name:-@db_name@}
 
-if psql -f - -d ${db_name} $* <<END-OF-DATA
+psql -f - -d ${db_name} $* <<END-OF-DATA
 -- The alter table operation can be faster with a big maintenance_work_mem
 -- Uncomment and adapt this value to your environment
 -- SET maintenance_work_mem = '1GB';

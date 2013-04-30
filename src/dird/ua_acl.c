@@ -56,7 +56,7 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, int len)
    }
 
    /* If no console resource => default console and all is permitted */
-   if (!ua || !ua->cons) {
+   if (!ua->cons) {
       Dmsg0(1400, "Root cons access OK.\n");
       return true;                    /* No cons resource -> root console OK for everything */
    }
@@ -70,13 +70,13 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, int len)
    }
 
    /* Special case *all* gives full access */
-   if (list->size() == 1 && strcasecmp("*all*", (char *)list->get(0)) == 0) {
+   if (list->size() == 1 && bstrcasecmp("*all*", (char *)list->get(0))) {
       return true;
    }
 
    /* Search list for item */
    for (int i=0; i<list->size(); i++) {
-      if (strcasecmp(item, (char *)list->get(i)) == 0) {
+      if (bstrcasecmp(item, (char *)list->get(i))) {
          Dmsg3(1400, "ACL found %s in %d %s\n", item, acl, (char *)list->get(i));
          return true;
       }

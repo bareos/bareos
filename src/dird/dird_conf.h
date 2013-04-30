@@ -52,9 +52,8 @@ enum {
    R_JOBDEFS,
    R_DEVICE,
    R_FIRST = R_DIRECTOR,
-   R_LAST  = R_DEVICE                 /* keep this updated */
+   R_LAST = R_DEVICE                  /* keep this updated */
 };
-
 
 /*
  * Some resource attributes
@@ -66,7 +65,6 @@ enum {
    R_TYPE,
    R_BACKUP
 };
-
 
 /* Used for certain KeyWord tables */
 struct s_kw {
@@ -89,13 +87,13 @@ struct s_jt {
 
 /* Definition of the contents of each Resource */
 /* Needed for forward references */
-class SCHED;
-class CLIENT;
-class FILESET;
-class POOL;
-class RUN;
-class DEVICE;
-class RUNSCRIPT;
+class SCHEDRES;
+class CLIENTRES;
+class FILESETRES;
+class POOLRES;
+class RUNRES;
+class DEVICERES;
+class RUNSCRIPTRES;
 
 /*
  *   Director Resource
@@ -103,7 +101,8 @@ class RUNSCRIPT;
  */
 class DIRRES {
 public:
-   RES   hdr;
+   RES hdr;
+
    dlist *DIRaddrs;
    dlist *DIRsrc_addr;                /* address to source connections from */
    char *password;                    /* Password for UA access */
@@ -113,7 +112,7 @@ public:
    const char *plugin_directory;      /* Plugin Directory */
    char *pid_directory;               /* PidDirectory */
    char *subsys_directory;            /* SubsysDirectory */
-   MSGS *messages;                    /* Daemon message handler */
+   MSGSRES *messages;                 /* Daemon message handler */
    uint32_t MaxConcurrentJobs;        /* Max concurrent jobs for whole director */
    uint32_t MaxConsoleConnect;        /* Max concurrent console session */
    utime_t FDConnectTimeout;          /* timeout for connect in seconds */
@@ -131,7 +130,13 @@ public:
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
    bool tls_verify_peer;              /* TLS Verify Client Certificate */
+   bool optimize_for_size;            /* Optimize daemon for minimum memory size */
+   bool optimize_for_speed;           /* Optimize daemon for speed which may need more memory */
+   bool ndmp_snooping;                /* NDMP Protocol specific snooping enabled */
+   uint32_t ndmp_loglevel;            /* NDMP Protocol specific loglevel to use */
    char *verid;                       /* Custom Id to print in version command */
+   char *keyencrkey;                  /* Key Encryption Key */
+
    /* Methods */
    char *name() const;
 };
@@ -141,12 +146,12 @@ inline char *DIRRES::name() const { return hdr.name; }
 /*
  * Device Resource
  *  This resource is a bit different from the other resources
- *  because it is not defined in the Director 
+ *  because it is not defined in the Director
  *  by DEVICE { ... }, but rather by a "reference" such as
  *  DEVICE = xxx; Then when the Director connects to the
  *  SD, it requests the information about the device.
  */
-class DEVICE {
+class DEVICERES {
 public:
    RES hdr;
 
@@ -171,7 +176,7 @@ public:
    char *name() const;
 };
 
-inline char *DEVICE::name() const { return hdr.name; }
+inline char *DEVICERES::name() const { return hdr.name; }
 
 /*
  * Console ACL positions
@@ -196,7 +201,7 @@ enum {
  */
 class CONRES {
 public:
-   RES   hdr;
+   RES hdr;
    char *password;                    /* UA server password */
    alist *ACL_lists[Num_ACL];         /* pointers to ACLs */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
@@ -217,17 +222,16 @@ public:
 
 inline char *CONRES::name() const { return hdr.name; }
 
-
 /*
  *   Catalog Resource
  *
  */
-class CAT {
+class CATRES {
 public:
-   RES   hdr;
+   RES hdr;
 
    uint32_t db_port;                  /* Port */
-   char *db_address;                  /* host name for remote access */
+   char *db_address;                  /* Hostname for remote access */
    char *db_socket;                   /* Socket for local access */
    char *db_password;
    char *db_user;
@@ -235,30 +239,44 @@ public:
    char *db_driver;                   /* Select appropriate driver */
    uint32_t mult_db_connections;      /* set if multiple connections wanted */
    bool disable_batch_insert;         /* set if batch inserts should be disabled */
+   uint32_t pooling_min_connections;  /* When using sql pooling start with this number of connections to the database */
+   uint32_t pooling_max_connections;  /* When using sql pooling maximum number of connections to the database */
+   uint32_t pooling_increment_connections; /* When using sql pooling increment the pool with this amount when its to small */
+   uint32_t pooling_idle_timeout;     /* When using sql pooling set this to the number of seconds to keep an idle connection */
+   uint32_t pooling_validate_timeout; /* When using sql pooling set this to the number of seconds after a idle connection should be validated */
 
    /* Methods */
    char *name() const;
    char *display(POOLMEM *dst);       /* Get catalog information */
 };
 
-inline char *CAT::name() const { return hdr.name; }
-
+inline char *CATRES::name() const { return hdr.name; }
 
 /*
  *   Client Resource
  *
  */
-class CLIENT {
+class CLIENTRES {
 public:
-   RES   hdr;
+   RES hdr;
 
+   uint32_t Protocol;                 /* Protocol to use to connect */
+   uint32_t AuthType;                 /* Authentication Type to use for protocol */
+   uint32_t ndmp_loglevel;            /* NDMP Protocol specific loglevel to use */
+   uint32_t ndmp_blocksize;           /* NDMP Protocol specific blocksize to use */
    uint32_t FDport;                   /* Where File daemon listens */
+   uint64_t SoftQuota;                /* Soft Quota permitted in bytes */
+   uint64_t HardQuota;                /* Maximum permitted quota in bytes */
+   uint64_t GraceTime;                /* Time remaining on gracetime */
+   uint64_t QuotaLimit;               /* The total softquota supplied if over grace */
+   utime_t SoftQuotaGracePeriod;      /* Grace time for softquota */
    utime_t FileRetention;             /* file retention period in seconds */
    utime_t JobRetention;              /* job retention period in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
-   char *address;
+   char *address;                     /* Hostname for remote access to Client */
+   char *username;                    /* Username to use for authentication if protocol supports it */
    char *password;
-   CAT *catalog;                      /* Catalog resource */
+   CATRES *catalog;                   /* Catalog resource */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
@@ -271,32 +289,37 @@ public:
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
    bool AutoPrune;                    /* Do automatic pruning? */
+   int64_t max_bandwidth;             /* Limit speed on this client */
+   bool StrictQuotas;                 /* Enable strict quotas? */
+   bool QuotaIncludeFailedJobs;       /* Ignore failed jobs when calculating quota */
 
    /* Methods */
    char *name() const;
 };
 
-inline char *CLIENT::name() const { return hdr.name; }
-
+inline char *CLIENTRES::name() const { return hdr.name; }
 
 /*
  *   Store Resource
  *
  */
-class STORE {
+class STORERES {
 public:
-   RES   hdr;
+   RES hdr;
 
-   uint32_t SDport;                   /* port where Directors connect */
-   uint32_t SDDport;                  /* data port for File daemon */
-   char *address;
+   uint32_t Protocol;                 /* Protocol to use to connect */
+   uint32_t AuthType;                 /* Authentication Type to use for protocol */
+   uint32_t SDport;                   /* Port where Directors connect */
+   uint32_t SDDport;                  /* Data port for File daemon */
+   char *address;                     /* Hostname for remote access to Storage */
+   char *username;                    /* Username to use for authentication if protocol supports it */
    char *password;
-   char *media_type;
+   char *media_type;                  /* Media Type provided by this Storage */
    alist *device;                     /* Alternate devices for this Storage */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    int32_t MaxConcurrentReadJobs;     /* Maximum concurrent jobs reading */
-   int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
-   int32_t NumConcurrentReadJobs;     /* number of jobs reading */
+   int32_t NumConcurrentJobs;         /* Number of concurrent jobs running */
+   int32_t NumConcurrentReadJobs;     /* Number of jobs reading */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
    char *tls_certfile;                /* TLS Client Certificate File */
@@ -306,44 +329,45 @@ public:
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
    bool enabled;                      /* Set if device is enabled */
-   bool  autochanger;                 /* set if autochanger */
-   bool AllowCompress;                /* set if this Storage should allow jobs to enable compression */
+   bool autochanger;                  /* Set if autochanger */
+   bool AllowCompress;                /* Set if this Storage should allow jobs to enable compression */
    int64_t StorageId;                 /* Set from Storage DB record */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
-   uint32_t drives;                   /* number of drives in autochanger */
+   uint32_t drives;                   /* Number of drives in autochanger */
+   STORERES *paired_storage;          /* Paired storage configuration item for protocols like NDMP */
 
    /* Methods */
    char *dev_name() const;
    char *name() const;
 };
 
-inline char *STORE::dev_name() const
-{ 
-   DEVICE *dev = (DEVICE *)device->first();
+inline char *STORERES::dev_name() const
+{
+   DEVICERES *dev = (DEVICERES *)device->first();
    return dev->name();
 }
 
-inline char *STORE::name() const { return hdr.name; }
+inline char *STORERES::name() const { return hdr.name; }
 
 /*
  * This is a sort of "unified" store that has both the
  *  storage pointer and the text of where the pointer was
  *  found.
  */
-class USTORE {
+class USTORERES {
 public:
-   STORE *store;
+   STORERES *store;
    POOLMEM *store_source;
 
    /* Methods */
-   USTORE() { store = NULL; store_source = get_pool_memory(PM_MESSAGE); 
+   USTORERES() { store = NULL; store_source = get_pool_memory(PM_MESSAGE);
               *store_source = 0; };
-   ~USTORE() { destroy(); }   
+   ~USTORERES() { destroy(); }
    void set_source(const char *where);
    void destroy();
 };
 
-inline void USTORE::destroy()
+inline void USTORERES::destroy()
 {
    if (store_source) {
       free_pool_memory(store_source);
@@ -351,8 +375,7 @@ inline void USTORE::destroy()
    }
 }
 
-
-inline void USTORE::set_source(const char *where)
+inline void USTORERES::set_source(const char *where)
 {
    if (!store_source) {
       store_source = get_pool_memory(PM_MESSAGE);
@@ -360,27 +383,28 @@ inline void USTORE::set_source(const char *where)
    pm_strcpy(store_source, where);
 }
 
-
 /*
  *   Job Resource
  */
-class JOB {
+class JOBRES {
 public:
-   RES   hdr;
+   RES hdr;
 
-   uint32_t   JobType;                /* job type (backup, verify, restore */
-   uint32_t   JobLevel;               /* default backup/verify level */
-   int32_t   Priority;                /* Job priority */
-   uint32_t   RestoreJobId;           /* What -- JobId to restore */
-   int32_t   RescheduleTimes;         /* Number of times to reschedule job */
-   uint32_t   replace;                /* How (overwrite, ..) */
-   uint32_t   selection_type;
+   uint32_t Protocol;                 /* Protocol to use to connect */
+   uint32_t JobType;                  /* job type (backup, verify, restore */
+   uint32_t JobLevel;                 /* default backup/verify level */
+   int32_t Priority;                  /* Job priority */
+   uint32_t RestoreJobId;             /* What -- JobId to restore */
+   int32_t RescheduleTimes;           /* Number of times to reschedule job */
+   uint32_t replace;                  /* How (overwrite, ..) */
+   uint32_t selection_type;
 
    char *RestoreWhere;                /* Where on disk to restore -- directory */
    char *RegexWhere;                  /* RegexWhere option */
    char *strip_prefix;                /* remove prefix from filename  */
    char *add_prefix;                  /* add prefix to filename  */
    char *add_suffix;                  /* add suffix to filename -- .old */
+   char *backup_format;               /* Format of backup to use for protocols supporting multiple backup formats */
    char *RestoreBootstrap;            /* Bootstrap file */
    char *PluginOptions;               /* Options to pass to plugin */
    union {
@@ -403,21 +427,22 @@ public:
    int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
    bool allow_mixed_priority;         /* Allow jobs with higher priority concurrently with this */
 
-   MSGS      *messages;               /* How and where to send messages */
-   SCHED     *schedule;               /* When -- Automatic schedule */
-   CLIENT    *client;                 /* Who to backup */
-   FILESET   *fileset;                /* What to backup -- Fileset */
-   alist     *storage;                /* Where is device -- list of Storage to be used */
-   POOL      *pool;                   /* Where is media -- Media Pool */
-   POOL      *full_pool;              /* Pool for Full backups */
-   POOL      *inc_pool;               /* Pool for Incremental backups */
-   POOL      *diff_pool;              /* Pool for Differental backups */
-   char      *selection_pattern;
+   MSGSRES *messages;                 /* How and where to send messages */
+   SCHEDRES *schedule;                /* When -- Automatic schedule */
+   CLIENTRES *client;                 /* Who to backup */
+   FILESETRES *fileset;               /* What to backup -- Fileset */
+   alist *storage;                    /* Where is device -- list of Storage to be used */
+   POOLRES *pool;                     /* Where is media -- Media Pool */
+   POOLRES *full_pool;                /* Pool for Full backups */
+   POOLRES *inc_pool;                 /* Pool for Incremental backups */
+   POOLRES *diff_pool;                /* Pool for Differental backups */
+   POOLRES *next_pool;                /* Next Pool for Copy/Migration Jobs and Virtual backups */
+   char *selection_pattern;
    union {
-      JOB    *verify_job;             /* Job name to verify */
+      JOBRES *verify_job;             /* Job name to verify */
    };
-   JOB       *jobdefs;                /* Job defaults */
-   alist     *run_cmds;               /* Run commands */
+   JOBRES *jobdefs;                   /* Job defaults */
+   alist *run_cmds;                   /* Run commands */
    alist *RunScripts;                 /* Run {client} program {after|before} Job */
 
    bool where_use_regexp;             /* true if RestoreWhere is a BREGEXP */
@@ -443,12 +468,13 @@ public:
    bool IgnoreDuplicateJobChecking;   /* Ignore Duplicate Job Checking */
 
    alist *base;                       /* Base jobs */   
+   int64_t max_bandwidth;             /* Speed limit on this job */
 
    /* Methods */
    char *name() const;
 };
 
-inline char *JOB::name() const { return hdr.name; }
+inline char *JOBRES::name() const { return hdr.name; }
 
 #undef  MAX_FOPTS
 #define MAX_FOPTS 40
@@ -466,11 +492,11 @@ struct FOPTS {
    alist base;                        /* list of base names */
    alist fstype;                      /* file system type limitation */
    alist drivetype;                   /* drive type limitation */
+   alist meta;                        /* backup meta information */
    char *reader;                      /* reader program */
    char *writer;                      /* writer program */
    char *plugin;                      /* plugin program */
 };
-
 
 /* This is either an include item or an exclude item */
 struct INCEXE {
@@ -486,9 +512,9 @@ struct INCEXE {
  *   FileSet Resource
  *
  */
-class FILESET {
+class FILESETRES {
 public:
-   RES   hdr;
+   RES hdr;
 
    bool new_include;                  /* Set if new include used */
    INCEXE **include_items;            /* array of incexe structures */
@@ -505,45 +531,46 @@ public:
    char *name() const;
 };
 
-inline char *FILESET::name() const { return hdr.name; }
+inline char *FILESETRES::name() const { return hdr.name; }
 
 /*
  *   Schedule Resource
  *
  */
-class SCHED {
+class SCHEDRES {
 public:
-   RES   hdr;
+   RES hdr;
 
-   RUN *run;
+   RUNRES *run;
 };
 
 /*
  *   Counter Resource
  */
-class COUNTER {
+class COUNTERRES {
 public:
-   RES   hdr;
+   RES hdr;
 
-   int32_t  MinValue;                 /* Minimum value */
-   int32_t  MaxValue;                 /* Maximum value */
-   int32_t  CurrentValue;             /* Current value */
-   COUNTER *WrapCounter;              /* Wrap counter name */
-   CAT     *Catalog;                  /* Where to store */
-   bool     created;                  /* Created in DB */
+   int32_t MinValue;                  /* Minimum value */
+   int32_t MaxValue;                  /* Maximum value */
+   int32_t CurrentValue ;             /* Current value */
+   COUNTERRES *WrapCounter;           /* Wrap counter name */
+   CATRES *Catalog;                   /* Where to store */
+   bool created;                      /* Created in DB */
+
    /* Methods */
    char *name() const;
 };
 
-inline char *COUNTER::name() const { return hdr.name; }
+inline char *COUNTERRES::name() const { return hdr.name; }
 
 /*
  *   Pool Resource
  *
  */
-class POOL {
+class POOLRES {
 public:
-   RES   hdr;
+   RES hdr;
 
    char *pool_type;                   /* Pool type */
    char *label_format;                /* Label format string */
@@ -558,21 +585,21 @@ public:
    utime_t MigrationTime;             /* Time to migrate to next pool */
    uint64_t MigrationHighBytes;       /* When migration starts */
    uint64_t MigrationLowBytes;        /* When migration stops */
-   POOL  *NextPool;                   /* Next pool for migration */
+   POOLRES *NextPool;                 /* Next pool for migration */
    alist *storage;                    /* Where is device -- list of Storage to be used */
-   bool  use_catalog;                 /* maintain catalog for media */
-   bool  catalog_files;               /* maintain file entries in catalog */
-   bool  use_volume_once;             /* write on volume only once */
-   bool  purge_oldest_volume;         /* purge oldest volume */
-   bool  recycle_oldest_volume;       /* attempt to recycle oldest volume */
-   bool  recycle_current_volume;      /* attempt recycle of current volume */
-   bool  AutoPrune;                   /* default for pool auto prune */
-   bool  Recycle;                     /* default for media recycle yes/no */
+   bool use_catalog;                  /* maintain catalog for media */
+   bool catalog_files;                /* maintain file entries in catalog */
+   bool use_volume_once;              /* write on volume only once */
+   bool purge_oldest_volume;          /* purge oldest volume */
+   bool recycle_oldest_volume;        /* attempt to recycle oldest volume */
+   bool recycle_current_volume;       /* attempt recycle of current volume */
+   bool AutoPrune;                    /* default for pool auto prune */
+   bool Recycle;                      /* default for media recycle yes/no */
    uint32_t action_on_purge;          /* action on purge, e.g. truncate the disk volume */
-   POOL  *RecyclePool;                /* RecyclePool destination when media is purged */
-   POOL  *ScratchPool;                /* ScratchPool source when requesting media */
+   POOLRES *RecyclePool;              /* RecyclePool destination when media is purged */
+   POOLRES *ScratchPool;              /* ScratchPool source when requesting media */
    alist *CopyPool;                   /* List of copy pools */
-   CAT *catalog;                      /* Catalog to be used */
+   CATRES *catalog;                   /* Catalog to be used */
    utime_t FileRetention;             /* file retention period in seconds */
    utime_t JobRetention;              /* job retention period in seconds */
 
@@ -580,37 +607,31 @@ public:
    char *name() const;
 };
 
-inline char *POOL::name() const { return hdr.name; }
-
-
-
+inline char *POOLRES::name() const { return hdr.name; }
 
 /* Define the Union of all the above
  * resource structure definitions.
  */
 union URES {
-   DIRRES     res_dir;
-   CONRES     res_con;
-   CLIENT     res_client;
-   STORE      res_store;
-   CAT        res_cat;
-   JOB        res_job;
-   FILESET    res_fs;
-   SCHED      res_sch;
-   POOL       res_pool;
-   MSGS       res_msgs;
-   COUNTER    res_counter;
-   DEVICE     res_dev;
-   RES        hdr;
-   RUNSCRIPT  res_runscript;
+   DIRRES res_dir;
+   CONRES res_con;
+   CLIENTRES res_client;
+   STORERES res_store;
+   CATRES res_cat;
+   JOBRES res_job;
+   FILESETRES res_fs;
+   SCHEDRES res_sch;
+   POOLRES res_pool;
+   MSGSRES res_msgs;
+   COUNTERRES res_counter;
+   DEVICERES res_dev;
+   RES hdr;
 };
 
-
-
 /* Run structure contained in Schedule Resource */
-class RUN {
+class RUNRES {
 public:
-   RUN *next;                         /* points to next run record */
+   RUNRES *next;                      /* points to next run record */
    uint32_t level;                    /* level override */
    int32_t Priority;                  /* priority override */
    uint32_t job_type;
@@ -620,15 +641,14 @@ public:
    bool spool_data_set;               /* Data spooling override given */
    bool accurate;                     /* accurate */
    bool accurate_set;                 /* accurate given */
-   bool write_part_after_job;         /* Write part after job override */
-   bool write_part_after_job_set;     /* Write part after job override given */
-   
-   POOL *pool;                        /* Pool override */
-   POOL *full_pool;                   /* Pool override */
-   POOL *inc_pool;                    /* Pool override */
-   POOL *diff_pool;                   /* Pool override */
-   STORE *storage;                    /* Storage override */
-   MSGS *msgs;                        /* Messages override */
+
+   POOLRES *pool;                     /* Pool override */
+   POOLRES *full_pool;                /* Full Pool override */
+   POOLRES *inc_pool;                 /* Incr Pool override */
+   POOLRES *diff_pool;                /* Diff Pool override */
+   POOLRES *next_pool;                /* Next Pool override */
+   STORERES *storage;                 /* Storage override */
+   MSGSRES *msgs;                     /* Messages override */
    char *since;
    uint32_t level_no;
    uint32_t minute;                   /* minute to run job */
@@ -640,11 +660,12 @@ public:
    char wday[nbytes_for_bits(7)];     /* bit set for each day of the week */
    char wom[nbytes_for_bits(5)];      /* week of month */
    char woy[nbytes_for_bits(54)];     /* week of year */
+   bool last_set;                     /* last week of month */
 };
 
-#define GetPoolResWithName(x) ((POOL *)GetResWithName(R_POOL, (x)))
-#define GetStoreResWithName(x) ((STORE *)GetResWithName(R_STORAGE, (x)))
-#define GetClientResWithName(x) ((CLIENT *)GetResWithName(R_CLIENT, (x)))
-#define GetJobResWithName(x) ((JOB *)GetResWithName(R_JOB, (x)))
-#define GetFileSetResWithName(x) ((FILESET *)GetResWithName(R_FILESET, (x)))
-#define GetCatalogResWithName(x) ((CAT *)GetResWithName(R_CATALOG, (x)))
+#define GetPoolResWithName(x) ((POOLRES *)GetResWithName(R_POOL, (x)))
+#define GetStoreResWithName(x) ((STORERES *)GetResWithName(R_STORAGE, (x)))
+#define GetClientResWithName(x) ((CLIENTRES *)GetResWithName(R_CLIENT, (x)))
+#define GetJobResWithName(x) ((JOBRES *)GetResWithName(R_JOB, (x)))
+#define GetFileSetResWithName(x) ((FILESETRES *)GetResWithName(R_FILESET, (x)))
+#define GetCatalogResWithName(x) ((CATRES *)GetResWithName(R_CATALOG, (x)))

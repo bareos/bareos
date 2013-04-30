@@ -62,7 +62,7 @@ static char Dir_sorry[]  = "1999 You are not authorized.\n";
 /*
  * Authenticate Storage daemon connection
  */
-bool authenticate_storage_daemon(JCR *jcr, STORE *store)
+bool authenticate_storage_daemon(JCR *jcr, STORERES *store)
 {
    BSOCK *sd = jcr->store_bsock;
    char dirname[MAX_NAME_LENGTH];
@@ -158,7 +158,7 @@ bool authenticate_storage_daemon(JCR *jcr, STORE *store)
    }
    Dmsg1(110, "<stored: %s", sd->msg);
    stop_bsock_timer(tid);
-   if (strncmp(sd->msg, OKhello, sizeof(OKhello)) != 0) {
+   if (!bstrncmp(sd->msg, OKhello, sizeof(OKhello))) {
       Dmsg0(dbglvl, _("Storage daemon rejected Hello command\n"));
       Jmsg2(jcr, M_FATAL, 0, _("Storage daemon at \"%s:%d\" rejected Hello command\n"),
          sd->host(), sd->port());
@@ -173,7 +173,7 @@ bool authenticate_storage_daemon(JCR *jcr, STORE *store)
 int authenticate_file_daemon(JCR *jcr)
 {
    BSOCK *fd = jcr->file_bsock;
-   CLIENT *client = jcr->client;
+   CLIENTRES *client = jcr->res.client;
    char dirname[MAX_NAME_LENGTH];
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
@@ -272,7 +272,7 @@ int authenticate_file_daemon(JCR *jcr)
    Dmsg1(110, "<filed: %s", fd->msg);
    stop_bsock_timer(tid);
    jcr->FDVersion = 0;
-   if (strncmp(fd->msg, FDOKhello, sizeof(FDOKhello)) != 0 &&
+   if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello)) &&
        sscanf(fd->msg, FDOKnewHello, &jcr->FDVersion) != 1) {
       Dmsg0(dbglvl, _("File daemon rejected Hello command\n"));
       Jmsg(jcr, M_FATAL, 0, _("File daemon at \"%s:%d\" rejected Hello command\n"),
@@ -312,7 +312,7 @@ int authenticate_user_agent(UAContext *uac)
    }
 
    name[sizeof(name)-1] = 0;             /* terminate name */
-   if (strcmp(name, "*UserAgent*") == 0) {  /* default console */
+   if (bstrcmp(name, "*UserAgent*")) {  /* default console */
       /* TLS Requirement */
       if (director->tls_enable) {
          if (director->tls_require) {

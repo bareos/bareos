@@ -1,10 +1,12 @@
 #!/bin/sh
 #
+# $OpenBSD: chio-changer-openbsd,v 1.1 2012/07/04 12:02:56 ajacoutot Exp $
+#
 # Bacula interface to chio(1) autoloader for OpenBSD
 #
 # Adapted from NetBSD pkgsrc and examples/autochangers in bacula source)
 # by Antoine Jacoutot <ajacoutot@openbsd.org> for OpenBSD.
-# Tested on an LTO-4 device with 1 drive and 8 slots.
+# Tested on an LTO-4 device with 8 slots.
 # The user Bacula is running as needs rw access to the ch(4) and st(4)
 # devices.
 #
@@ -21,10 +23,10 @@
 #      the chio exit code or a 0. If the script exits with a non-zero
 #      exit code, Bacula will assume the request failed.
 
+CHIO=/bin/chio
+
 # time (in seconds) for the unit to settle after (un)loading a tape
 SLEEP=1
-
-CHIO=/bin/chio
 
 usage() {
 	echo "usage: ${0##*/} ctl-device command [slot archive-device drive-index]"
@@ -83,6 +85,7 @@ case ${cmd} in
 		[ ${rtn} -eq 0 ] && sleep ${SLEEP}
 		exit ${rtn}
 		;;
+
 	load)
 		${CHIO} -f ${ctl} move slot $((${slot} - 1)) drive ${drive}
 		rtn=$?
@@ -95,29 +98,17 @@ case ${cmd} in
 			awk -F: '{ print $1 + 1 ":" $2 }'
 		exit $?
 		;;
+
 	listall)
-		# XXX only one drive is queried
-		_list=$(${0} ${1} list)
-		_loaded_s=$(${0} ${1} loaded ${slot} ${device} ${drive})
-		_loaded_t=$(${CHIO} -f ${ctl} status -v | grep "drive ${drive}" | awk '{ print $NF }' | sed -e 's,<,,' -e 's,:.*,,')
-
-		[ -n "${_list}" -a -n "${_loaded_s}" -a -n "${_loaded_t}" ] || exit 1
-
-		(for i in ${_list}; do
-			echo "S:${i}" | sed 's/\(.*\):/\1:F:/'
-		done
-		echo S:${_loaded_s}:E
-		if [ "${_loaded_s}" -ne 0 ]; then
-			echo D:${drive}:F:${_loaded_s}:${_loaded_t}
-		else
-			echo D:${drive}:E
-		fi) | sort
+		echo "The listall command is not implemented on OpenBSD."
+		exit 1
 		;;
+
 	loaded)
 		# XXX output the first empty slot if the drive is loaded
-		_slot=$(${CHIO} -f ${ctl} status -v | egrep '^slot.*<ACCESS> voltag: <:[0-9]>$' | awk '{ print $2 }' | awk -F: '{ print $1 + 1 }')
+		_slot=`${CHIO} -f ${ctl} status -v | egrep '^slot.*<ACCESS> voltag: <:[0-9]>$' | awk '{ print $2 }' | awk -F: '{ print $1 + 1 }'`
 		rtn=$?
-		_loaded=$(${CHIO} -f ${ctl} status -v | egrep "^drive ${drive}: <ACCESS,FULL> voltag: <.*:[0-9]>")
+		_loaded=`${CHIO} -f ${ctl} status -v | egrep "^drive ${drive}: <ACCESS,FULL> voltag: <.*:[0-9]>"`
 		[ -z "${_slot}" -o -z "${_loaded}" ] && _slot=0
 		echo ${_slot} | awk '{ print $1 }'
 		exit ${rtn}

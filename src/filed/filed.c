@@ -36,19 +36,6 @@
 #include "filed.h"
 #include "lib/mntent_cache.h"
 
-#ifdef HAVE_PYTHON
-
-#undef _POSIX_C_SOURCE
-#include <Python.h>
-
-#include "lib/pythonlib.h"
-
-/* Imported Functions */
-extern PyObject *job_getattr(PyObject *self, char *attrname);
-extern int job_setattr(PyObject *self, char *attrname, PyObject *value);
-
-#endif /* HAVE_PYTHON */
-
 /* Imported Functions */
 extern void *handle_client_request(void *dir_sock);
 extern bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code);
@@ -57,11 +44,13 @@ extern bool parse_fd_config(CONFIG *config, const char *configfile, int exit_cod
 static bool check_resources();
 
 /* Exported variables */
-CLIENT *me;                           /* my resource */
+CLIENTRES *me;                        /* my resource */
 bool no_signals = false;
+bool backup_only_mode = false;
+bool restore_only_mode = false;
 void *start_heap;
 
-#define CONFIG_FILE "bacula-fd.conf" /* default config file */
+#define CONFIG_FILE "bacula-fd.conf"  /* default config file */
 
 char *configfile = NULL;
 static bool foreground = false;
@@ -75,6 +64,7 @@ static void usage()
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
 "Usage: bacula-fd [-f -s] [-c config_file] [-d debug_level]\n"
+"        -b          backup only mode\n"
 "        -c <file>   use <file> as configuration file\n"
 "        -d <nn>     set debug level to <nn>\n"
 "        -dt         print a timestamp in debug output\n"
@@ -82,6 +72,7 @@ PROG_COPYRIGHT
 "        -g          groupid\n"
 "        -k          keep readall capabilities\n"
 "        -m          print kaboom output (for debugging)\n"
+"        -r          restore only mode\n"
 "        -s          no signals (for debugging)\n"
 "        -t          test configuration file and exit\n"
 "        -u          userid\n"
@@ -109,9 +100,6 @@ int main (int argc, char *argv[])
    bool keep_readall_caps = false;
    char *uid = NULL;
    char *gid = NULL;
-#ifdef HAVE_PYTHON
-   init_python_interpreter_args python_args;
-#endif /* HAVE_PYTHON */
 
    start_heap = sbrk(0);
    setlocale(LC_ALL, "");
@@ -123,8 +111,12 @@ int main (int argc, char *argv[])
    init_msg(NULL, NULL);
    daemon_start_time = time(NULL);
 
-   while ((ch = getopt(argc, argv, "c:d:fg:kmstu:v?")) != -1) {
+   while ((ch = getopt(argc, argv, "bc:d:fg:kmrstu:v?")) != -1) {
       switch (ch) {
+      case 'b':
+         backup_only_mode = true;
+         break;
+
       case 'c':                    /* configuration file */
          if (configfile != NULL) {
             free(configfile);
@@ -157,6 +149,10 @@ int main (int argc, char *argv[])
 
       case 'm':                    /* print kaboom output */
          prt_kaboom = true;
+         break;
+
+      case 'r':
+         restore_only_mode = true;
          break;
 
       case 's':
@@ -252,18 +248,6 @@ int main (int argc, char *argv[])
    me += 1000000;
 #endif
 
-#ifdef HAVE_PYTHON
-   python_args.progname = me->hdr.name;
-   python_args.scriptdir = me->scripts_directory;
-   python_args.modulename = "FDStartUp";
-   python_args.configfile = configfile;
-   python_args.workingdir = me->working_directory;
-   python_args.job_getattr = job_getattr;
-   python_args.job_setattr = job_setattr;
-
-   init_python_interpreter(&python_args);
-#endif /* HAVE_PYTHON */
-
    if (!no_signals) {
       start_watchdog();               /* start watchdog thread */
       init_jcr_subsystem();           /* start JCR watchdogs etc. */
@@ -294,8 +278,7 @@ void terminate_filed(int sig)
    stop_watchdog();
 
    bnet_stop_thread_server(server_tid);
-   generate_daemon_event(NULL, "Exit");
-   unload_plugins();
+   unload_fd_plugins();
    flush_mntent_cache();
    write_state_file(me->working_directory, "bacula-fd", get_first_port_host_order(me->FDaddrs));
    delete_pid_file(me->pid_directory, "bacula-fd", get_first_port_host_order(me->FDaddrs));
@@ -332,7 +315,7 @@ static bool check_resources()
 
    LockRes();
 
-   me = (CLIENT *)GetNextRes(R_CLIENT, NULL);
+   me = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
    if (!me) {
       Emsg1(M_FATAL, 0, _("No File daemon resource defined in %s\n"
             "Without that I don't know who I am :-(\n"), configfile);
@@ -345,7 +328,7 @@ static bool check_resources()
       }
       my_name_is(0, NULL, me->hdr.name);
       if (!me->messages) {
-         me->messages = (MSGS *)GetNextRes(R_MSGS, NULL);
+         me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
              Emsg1(M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
              OK = false;

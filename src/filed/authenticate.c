@@ -91,7 +91,7 @@ static bool authenticate(int rcode, BSOCK *bs, JCR* jcr)
    }
    unbash_spaces(dirname);
    foreach_res(director, R_DIRECTOR) {
-      if (strcmp(director->hdr.name, dirname) == 0)
+      if (bstrcmp(director->hdr.name, dirname))
          break;
    }
    if (!director) {

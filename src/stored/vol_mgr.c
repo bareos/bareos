@@ -100,7 +100,7 @@ void term_vol_list_lock()
    rwl_destroy(&vol_list_lock);
 }
 
-/*
+/* 
  * This allows a given thread to recursively call to lock_volumes()
  */
 void _lock_volumes(const char *file, int line)
@@ -226,12 +226,12 @@ void list_volumes(void sendit(const char *msg, int len, void *sarg), void *arg)
          len = Mmsg(msg, "%s on device %s\n", vol->vol_name, dev->print_name());
          sendit(msg.c_str(), len, arg);
          len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d\n",
-            dev->can_read()?1:0, dev->num_writers, dev->num_reserved(),
-            vol->is_in_use());
+                    dev->can_read() ? 1 : 0, dev->num_writers, dev->num_reserved(),
+                    vol->is_in_use());
          sendit(msg.c_str(), len, arg);
       } else {
-         len = Mmsg(msg, "Volume %s no device. volinuse= %d\n", vol->vol_name,
-            vol->is_in_use());
+         len = Mmsg(msg, "Volume %s no device. volinuse= %d\n",
+                    vol->vol_name, vol->is_in_use());
          sendit(msg.c_str(), len, arg);
       }
    }
@@ -244,12 +244,12 @@ void list_volumes(void sendit(const char *msg, int len, void *sarg), void *arg)
          len = Mmsg(msg, "Read volume: %s on device %s\n", vol->vol_name, dev->print_name());
          sendit(msg.c_str(), len, arg);
          len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d JobId=%d\n",
-            dev->can_read()?1:0, dev->num_writers, dev->num_reserved(),
-            vol->is_in_use(), vol->get_jobid());
+                    dev->can_read() ? 1 : 0, dev->num_writers, dev->num_reserved(),
+                    vol->is_in_use(), vol->get_jobid());
          sendit(msg.c_str(), len, arg);
       } else {
-         len = Mmsg(msg, "Volume: %s no device. volinuse= %d\n", vol->vol_name,
-            vol->is_in_use());
+         len = Mmsg(msg, "Volume: %s no device. volinuse= %d\n",
+                    vol->vol_name, vol->is_in_use());
          sendit(msg.c_str(), len, arg);
       }
    }
@@ -300,50 +300,51 @@ static void free_vol_item(VOLRES *vol)
 
 /*
  * Put a new Volume entry in the Volume list. This
- *  effectively reserves the volume so that it will
- *  not be mounted again.
+ * effectively reserves the volume so that it will
+ * not be mounted again.
  *
  * If the device has any current volume associated with it,
- *  and it is a different Volume, and the device is not busy,
- *  we release the old Volume item and insert the new one.
+ * and it is a different Volume, and the device is not busy,
+ * we release the old Volume item and insert the new one.
  * 
  * It is assumed that the device is free and locked so that
- *  we can change the device structure.
+ * we can change the device structure.
  *
  * Some details of the Volume list handling:
  *
  *  1. The Volume list entry is attached to the drive (rather than
- *       attached to a job as it was previously. I.e. the drive that "owns"
- *       the volume (in use, mounted)
- *       must point to the volume (still to be maintained in a list).
+ *     attached to a job as it was previously. I.e. the drive that "owns"
+ *     the volume (in use, mounted)
+ *     must point to the volume (still to be maintained in a list).
  *
- *  2. The Volume is entered in the list when a drive is reserved.
+ *  2. The Volume is entered in the list when a drive is reserved.  
  *
  *  3. When a drive is in use, the device code must appropriately update the
- *       volume name as it changes.
-  *      This code keeps the same list entry as long as the drive
- *       has any volume associated with it but the volume name in the list
- *       must be updated when the drive has a different volume mounted.
+ *     volume name as it changes.
  *
- *  4. A job that has reserved a volume, can un-reserve the volume, and if the
- *      volume is not mounted, and not reserved, and not in use, it will be
- *      removed from the list.
+ *     This code keeps the same list entry as long as the drive
+ *     has any volume associated with it but the volume name in the list
+ *     must be updated when the drive has a different volume mounted.
+ *
+ *  4. A job that has reserved a volume, can un-reserve the volume, and if the 
+ *     volume is not mounted, and not reserved, and not in use, it will be
+ *     removed from the list.
  *
  *  5. If a job wants to reserve a drive with a different Volume from the one on
- *      the drive, it can re-use the drive for the new Volume.
-
- *  6. If a job wants a Volume that is in a different drive, it can either use the
- *      other drive or take the volume, only if the other drive is not in use or
- *      not reserved.
+ *     the drive, it can re-use the drive for the new Volume.
  *
- *  One nice aspect of this is that the reserve use count and the writer use count
- *  already exist and are correctly programmed and will need no changes -- use
+ *  6. If a job wants a Volume that is in a different drive, it can either use the
+ *     other drive or take the volume, only if the other drive is not in use or
+ *     not reserved.
+ *
+ *  One nice aspect of this is that the reserve use count and the writer use count 
+ *  already exist and are correctly programmed and will need no changes -- use 
  *  counts are always very tricky.
  *
- *  The old code had a concept of "reserving" a Volume, but was changed
- *  to reserving and using a drive.  A volume is must be attached to (owned by) a
- *  drive and can move from drive to drive or be unused given certain specific
- *  conditions of the drive.  The key is that the drive must "own" the Volume.
+ *  The old code had a concept of "reserving" a Volume, but was changed 
+ *  to reserving and using a drive.  A volume is must be attached to (owned by) a 
+ *  drive and can move from drive to drive or be unused given certain specific 
+ *  conditions of the drive.  The key is that the drive must "own" the Volume.  
  *
  *  Return: VOLRES entry on success
  *          NULL volume busy on another drive
@@ -358,17 +359,16 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
    }
    ASSERT(dev != NULL);
 
-   Dmsg2(dbglvl, "enter reserve_volume=%s drive=%s\n", VolumeName,
+   Dmsg2(dbglvl, "enter reserve_volume=%s drive=%s\n", VolumeName, 
       dcr->dev->print_name());
-
-   /*
+   /* 
     * We lock the reservations system here to ensure
     *  when adding a new volume that no newly scheduled
     *  job can reserve it.
     */
    lock_volumes();
    debug_list_volumes("begin reserve_volume");
-   /*
+   /* 
     * First, remove any old volume attached to this device as it
     *  is no longer used.
     */
@@ -381,7 +381,7 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
        *  because it was probably inserted by another job, or it
        *  is not being used and is marked as not reserved.
        */
-      if (strcmp(vol->vol_name, VolumeName) == 0) {
+      if (bstrcmp(vol->vol_name, VolumeName)) {
          Dmsg2(dbglvl, "=== set reserved vol=%s dev=%s\n", VolumeName,
                vol->dev->print_name());
          goto get_out;                  /* Volume already on this device */
@@ -394,7 +394,7 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
          }
          Dmsg2(dbglvl, "reserve_vol free vol=%s at %p\n", vol->vol_name, vol->vol_name);
          /* If old Volume is still mounted, must unload it */
-         if (strcmp(vol->vol_name, dev->VolHdr.VolumeName) == 0) {
+         if (bstrcmp(vol->vol_name, dev->VolHdr.VolumeName)) {
             Dmsg0(50, "set_unload\n");
             dev->set_unload();          /* have to unload current volume */
          }
@@ -429,10 +429,10 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
       if (vol->dev) {
          Dmsg2(dbglvl, "dev=%s vol->dev=%s\n", dev->print_name(), vol->dev->print_name());
       }
-
+         
       /*
        * Check if we are trying to use the Volume on a different drive
-       *  dev      is our device
+       *  dev is our device
        *  vol->dev is where the Volume we want is
        */
       if (dev != vol->dev) {
@@ -440,7 +440,7 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
          if (!vol->dev->is_busy() && !vol->is_swapping()) {
             int32_t slot;
             Dmsg3(dbglvl, "==== Swap vol=%s from dev=%s to %s\n", 
-               VolumeName, vol->dev->print_name(), dev->print_name());
+                  VolumeName, vol->dev->print_name(), dev->print_name());
             free_volume(dev);            /* free any volume attached to our drive */
             Dmsg1(50, "set_unload dev=%s\n", dev->print_name());
             dev->set_unload();           /* Unload any volume that is on our drive */
@@ -456,18 +456,19 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
             vol->dev = dev;              /* point the Volume at our drive */
             dev->vol = vol;              /* point our drive at the Volume */
          } else {
-            Jmsg7(dcr->jcr, M_WARNING, 0, "Need volume from other drive, "
-               "but swap not possible. Status: read=%d num_writers=%d "
-               "num_reserve=%d swap=%d vol=%s from dev=%s to %s\n", 
-               vol->dev->can_read(), vol->dev->num_writers,
-               vol->dev->num_reserved(), vol->is_swapping(),
-               VolumeName, vol->dev->print_name(), dev->print_name());
+            Jmsg7(dcr->jcr, M_WARNING, 0,
+                  "Need volume from other drive, but swap not possible. "
+                  "Status: read=%d num_writers=%d num_reserve=%d swap=%d "
+                  "vol=%s from dev=%s to %s\n",
+                  vol->dev->can_read(), vol->dev->num_writers,
+                  vol->dev->num_reserved(), vol->is_swapping(),
+                  VolumeName, vol->dev->print_name(), dev->print_name());
             if (vol->is_swapping() && dev->swap_dev) {
                Dmsg3(dbglvl, "Swap failed vol=%s from=%s to dev=%s\n", 
-                 vol->vol_name, dev->swap_dev->print_name(), dev->print_name());
+                     vol->vol_name, dev->swap_dev->print_name(), dev->print_name());
             } else {
                Dmsg3(dbglvl, "Swap failed vol=%s from=%p to dev=%s\n", 
-                  vol->vol_name, dev->swap_dev, dev->print_name());
+                     vol->vol_name, dev->swap_dev, dev->print_name());
             }
             debug_list_volumes("failed swap");
             vol = NULL;                  /* device busy */
@@ -606,7 +607,7 @@ static VOLRES *find_read_volume(const char *VolumeName)
 }
 
 
-/*
+/*  
  * Free a Volume from the Volume list if it is no longer used
  *   Note, for tape drives we want to remember where the Volume
  *   was when last used, so rather than free the volume entry,
@@ -635,7 +636,7 @@ bool volume_unused(DCR *dcr)
       return false;
    }
 
-   /*
+   /*  
     * If this is a tape, we do not free the volume, rather we wait
     *  until the autoloader unloads it, or until another tape is
     *  explicitly read in this drive. This allows the SD to remember
@@ -647,7 +648,7 @@ bool volume_unused(DCR *dcr)
       return true;
    } else {
       /*
-       * Note, this frees the volume reservation entry, but the
+       * Note, this frees the volume reservation entry, but the 
        *   file descriptor remains open with the OS.
        */
       return free_volume(dev);
@@ -803,13 +804,13 @@ get_out:
 
 }
 
-/*
+/*  
  * Create a temporary copy of the volume list.  We do this,
  *   to avoid having the volume list locked during the
  *   call to reserve_device(), which would cause a deadlock.
  * Note, we may want to add an update counter on the vol_list
  *   so that if it is modified while we are traversing the copy
- *   we can take note and act accordingly (probably redo the
+ *   we can take note and act accordingly (probably redo the 
  *   search at least a few times).
  */
 dlist *dup_vol_list(JCR *jcr)
@@ -817,7 +818,7 @@ dlist *dup_vol_list(JCR *jcr)
    dlist *temp_vol_list;
    VOLRES *vol = NULL;
 
-   Dmsg0(dbglvl, "lock volumes\n");
+   Dmsg0(dbglvl, "lock volumes\n");                           
 
    Dmsg0(dbglvl, "duplicate vol list\n");
    temp_vol_list = New(dlist(vol, &vol->link));
@@ -846,7 +847,7 @@ dlist *dup_vol_list(JCR *jcr)
 void free_temp_vol_list(dlist *temp_vol_list)
 {
    dlist *save_vol_list;
-
+   
    lock_volumes();
    save_vol_list = vol_list;
    vol_list = temp_vol_list;

@@ -82,7 +82,7 @@ static int authenticate(int rcode, BSOCK *bs, JCR* jcr)
    director = NULL;
    unbash_spaces(dirname);
    foreach_res(director, rcode) {
-      if (strcmp(director->hdr.name, dirname) == 0) {
+      if (bstrcmp(director->hdr.name, dirname)) {
          break;
       }
    }

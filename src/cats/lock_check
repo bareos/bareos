@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# This is a small script which counts the number of db_lock and db_unlocks are
+# used in the code. With the current coding standard you should have exactly
+# the same number of db_lock and db_unlock calls.
+#
+if [ $# -gt 0 ]; then
+   files="$*"
+else
+   files=`ls -1 *.c`
+fi
+
+for file in ${files}
+do
+   nr_locks=`grep -c ' db_lock(' ${file}`
+   nr_unlocks=`grep -c ' db_unlock(' ${file}`
+   if [ ${nr_locks} -gt 0 ]; then
+      if [ ${nr_locks} != ${nr_unlocks} ]; then
+         echo "${file} ==> ${nr_locks} db_locks and ${nr_unlocks} db_unlocks !!!"
+      fi
+   fi
+done

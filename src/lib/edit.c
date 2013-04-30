@@ -36,10 +36,10 @@
 #include <math.h>
 
 /* We assume ASCII input and don't worry about overflow */
-uint64_t str_to_uint64(char *str)
+uint64_t str_to_uint64(const char *str)
 {
-   register char *p = str;
-   register uint64_t value = 0;
+   const char *p = str;
+   uint64_t value = 0;
 
    if (!p) {
       return 0;
@@ -57,10 +57,10 @@ uint64_t str_to_uint64(char *str)
    return value;
 }
 
-int64_t str_to_int64(char *str)
+int64_t str_to_int64(const char *str)
 {
-   register char *p = str;
-   register int64_t value;
+   const char *p = str;
+   int64_t value;
    bool negative = false;
 
    if (!p) {
@@ -81,7 +81,6 @@ int64_t str_to_int64(char *str)
    }
    return value;
 }
-
 
 /*
  * Edit an integer number with commas, the supplied buffer
@@ -282,7 +281,7 @@ bool duration_to_utime(char *str, utime_t *value)
          i = 1;                          /* default to seconds */
       } else {
          for (i=0; mod[i]; i++) {
-            if (strncasecmp(mod_str, mod[i], mod_len) == 0) {
+            if (bstrncasecmp(mod_str, mod[i], mod_len)) {
                break;
             }
          }
@@ -331,8 +330,7 @@ char *edit_utime(utime_t val, char *buf, int buf_len)
    return buf;
 }
 
-static bool strunit_to_uint64(char *str, int str_len, uint64_t *value, 
-                              const char **mod)
+static bool strunit_to_uint64(char *str, uint64_t *value, const char **mod)
 {
    int i, mod_len;
    double val;
@@ -355,7 +353,7 @@ static bool strunit_to_uint64(char *str, int str_len, uint64_t *value,
       i = 0;                          /* default with no modifier = 1 */
    } else {
       for (i=0; mod[i]; i++) {
-         if (strncasecmp(mod_str, mod[i], mod_len) == 0) {
+         if (bstrncasecmp(mod_str, mod[i], mod_len)) {
             break;
          }
       }
@@ -378,11 +376,11 @@ static bool strunit_to_uint64(char *str, int str_len, uint64_t *value,
  * Returns false: if error
            true:  if OK, and value stored in value
  */
-bool size_to_uint64(char *str, int str_len, uint64_t *value)
+bool size_to_uint64(char *str, uint64_t *value)
 {
    /* first item * not used */
    static const char *mod[]  = {"*", "k", "kb", "m", "mb",  "g", "gb",  NULL};
-   return strunit_to_uint64(str, str_len, value, mod);
+   return strunit_to_uint64(str, value, mod);
 }
 
 /*
@@ -390,11 +388,11 @@ bool size_to_uint64(char *str, int str_len, uint64_t *value)
  * Returns false: if error
            true:  if OK, and value stored in value
  */
-bool speed_to_uint64(char *str, int str_len, uint64_t *value)
+bool speed_to_uint64(char *str, uint64_t *value)
 {
    /* first item * not used */
    static const char *mod[]  = {"*", "k/s", "kb/s", "m/s", "mb/s",  NULL}; 
-   return strunit_to_uint64(str, str_len, value, mod);
+   return strunit_to_uint64(str, value, mod);
 }
 
 /*

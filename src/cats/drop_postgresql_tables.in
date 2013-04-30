@@ -6,32 +6,34 @@ bindir=@POSTGRESQL_BINDIR@
 db_name=@db_name@
 
 $bindir/psql -f - -d ${db_name} $* <<END-OF-DATA
-drop table unsavedfiles;
-drop table basefiles;
-drop table jobmedia;
-drop table file;
-drop table job;
-drop table jobhisto;
-drop table media;
-drop table client;
-drop table pool;
-drop table fileset;
-drop table path;
-drop table filename;
-drop table counters;
-drop table version;
-drop table CDImages;
-drop table Device;
-drop table Storage;
-drop table MediaType;
-drop table Status;
-drop table MAC;
-drop table log;
-drop table Location;
-drop table locationlog;
-drop table PathVisibility;
-drop table PathHierarchy;
-drop table RestoreObject;
+DROP TABLE unsavedfiles;
+DROP TABLE basefiles;
+DROP TABLE jobmedia;
+DROP TABLE file;
+DROP TABLE job;
+DROP TABLE jobhisto;
+DROP TABLE media;
+DROP TABLE client;
+DROP TABLE pool;
+DROP TABLE fileset;
+DROP TABLE path;
+DROP TABLE filename;
+DROP TABLE counters;
+DROP TABLE version;
+DROP TABLE CDImages;
+DROP TABLE Device;
+DROP TABLE Storage;
+DROP TABLE MediaType;
+DROP TABLE Status;
+DROP TABLE Quota;
+DROP TABLE NDMPLevelMap;
+DROP TABLE MAC;
+DROP TABLE log;
+DROP TABLE Location;
+DROP TABLE locationlog;
+DROP TABLE PathVisibility;
+DROP TABLE PathHierarchy;
+DROP TABLE RestoreObject;
 END-OF-DATA
 pstat=$?
 if test $pstat = 0; 

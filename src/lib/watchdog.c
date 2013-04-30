@@ -52,7 +52,7 @@ static void wd_lock();
 static void wd_unlock();
 
 /* Static globals */
-static bool quit = false;;
+static bool quit = false;
 static bool wd_is_init = false;
 static brwlock_t lock;                /* watchdog lock */
 
@@ -81,7 +81,7 @@ bool is_watchdog()
  */
 int start_watchdog(void)
 {
-   int stat;
+   int status;
    watchdog_t *dummy = NULL;
    int errstat;
 
@@ -100,8 +100,8 @@ int start_watchdog(void)
    wd_inactive = New(dlist(dummy, &dummy->link));
    wd_is_init = true;
 
-   if ((stat = pthread_create(&wd_tid, NULL, watchdog_thread, NULL)) != 0) {
-      return stat;
+   if ((status = pthread_create(&wd_tid, NULL, watchdog_thread, NULL)) != 0) {
+      return status;
    }
    return 0;
 }
@@ -126,7 +126,7 @@ static void ping_watchdog()
  */
 int stop_watchdog(void)
 {
-   int stat;
+   int status;
    watchdog_t *p;
 
    if (!wd_is_init) {
@@ -136,7 +136,7 @@ int stop_watchdog(void)
    quit = true;                       /* notify watchdog thread to stop */
    ping_watchdog();
 
-   stat = pthread_join(wd_tid, NULL);
+   status = pthread_join(wd_tid, NULL);
 
    while (!wd_queue->empty()) {
       void *item = wd_queue->first();
@@ -164,7 +164,7 @@ int stop_watchdog(void)
    rwl_destroy(&lock);
    wd_is_init = false;
 
-   return stat;
+   return status;
 }
 
 watchdog_t *new_watchdog(void)

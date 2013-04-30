@@ -32,9 +32,9 @@ int doconnect(monitoritem* item);
 int docmd(monitoritem* item, const char* command);
 static int authenticate_daemon(monitoritem* item, JCR *jcr);
 /* Imported functions */
-int authenticate_director(JCR *jcr, MONITOR *monitor, DIRRES *director);
-int authenticate_file_daemon(JCR *jcr, MONITOR *monitor, CLIENT* client);
-int authenticate_storage_daemon(JCR *jcr, MONITOR *monitor, STORE* store);
+int authenticate_director(JCR *jcr, MONITORRES *monitor, DIRRES *director);
+int authenticate_file_daemon(JCR *jcr, MONITORRES *monitor, CLIENTRES* client);
+int authenticate_storage_daemon(JCR *jcr, MONITORRES *monitor, STORERES* store);
 extern bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code);
 void get_list(monitoritem* item, const char *cmd, QStringList &lst);
 
@@ -43,7 +43,7 @@ int generate_daemon_event(JCR *, const char *) { return 1; }
 
 /* Static variables */
 static char *configfile = NULL;
-static MONITOR *monitor;
+static MONITORRES *monitor;
 static JCR jcr;
 static int nitems = 0;
 static monitoritem items[32];
@@ -100,7 +100,7 @@ void get_list(monitoritem *item, const char *cmd, QStringList &lst)
    doconnect(item);
    item->writecmd(cmd);
    while((stat = bnet_recv(item->D_sock)) >= 0) {
-      strip_trailing_junk(item->D_sock->msg);
+      strip_trailing_newline(item->D_sock->msg);
       if (*(item->D_sock->msg)) {
          lst << QString(item->D_sock->msg);
       }
@@ -140,8 +140,8 @@ int main(int argc, char *argv[])
    int ch, i, dir_index=-1;
    bool test_config = false;
    DIRRES* dird;
-   CLIENT* filed;
-   STORE* stored;
+   CLIENTRES* filed;
+   STORERES* stored;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
    (void)WSA_Init();                /* Initialize Windows sockets */
 
    LockRes();
-   monitor = (MONITOR*)GetNextRes(R_MONITOR, (RES *)NULL);
+   monitor = (MONITORRES*)GetNextRes(R_MONITOR, (RES *)NULL);
    UnlockRes();
 
    if ((monitor->RefreshInterval < 1) || (monitor->RefreshInterval > 600)) {
@@ -303,8 +303,9 @@ int main(int argc, char *argv[])
       if (items[i].D_sock) {
          items[i].writecmd("quit");
          if (items[i].D_sock) {
-            bnet_sig(items[i].D_sock, BNET_TERMINATE); /* send EOF */
-            bnet_close(items[i].D_sock);
+            items[i].D_sock->signal(BNET_TERMINATE); /* send EOF */
+            items[i].D_sock->close();
+            items[i].D_sock = NULL;
          }
       }
    }
@@ -324,9 +325,9 @@ static int authenticate_daemon(monitoritem* item, JCR *jcr) {
    case R_DIRECTOR:
       return authenticate_director(jcr, monitor, (DIRRES*)item->resource);
    case R_CLIENT:
-      return authenticate_file_daemon(jcr, monitor, (CLIENT*)item->resource);
+      return authenticate_file_daemon(jcr, monitor, (CLIENTRES*)item->resource);
    case R_STORAGE:
-      return authenticate_storage_daemon(jcr, monitor, (STORE*)item->resource);
+      return authenticate_storage_daemon(jcr, monitor, (STORERES*)item->resource);
    default:
       printf(_("Error, currentitem is not a Client or a Storage..\n"));
       return FALSE;
@@ -350,8 +351,8 @@ int doconnect(monitoritem* item)
       memset(&jcr, 0, sizeof(jcr));
 
       DIRRES* dird;
-      CLIENT* filed;
-      STORE* stored;
+      CLIENTRES* filed;
+      STORERES* stored;
 
       switch (item->type) {
       case R_DIRECTOR:
@@ -362,14 +363,14 @@ int doconnect(monitoritem* item)
          jcr.dir_bsock = item->D_sock;
          break;
       case R_CLIENT:
-         filed = (CLIENT*)item->resource;
+         filed = (CLIENTRES*)item->resource;
          changeStatusMessage(item, _("Connecting to Client %s:%d"), filed->address, filed->FDport);
          item->D_sock = bnet_connect(NULL, monitor->FDConnectTimeout, 
                                      0, 0, _("File daemon"), filed->address, NULL, filed->FDport, 0);
          jcr.file_bsock = item->D_sock;
          break;
       case R_STORAGE:
-         stored = (STORE*)item->resource;
+         stored = (STORERES*)item->resource;
          changeStatusMessage(item, _("Connecting to Storage %s:%d"), stored->address, stored->SDport);
          item->D_sock = bnet_connect(NULL, monitor->SDConnectTimeout, 
                                      0, 0, _("Storage daemon"), stored->address, NULL, stored->SDport, 0);

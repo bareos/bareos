@@ -26,20 +26,17 @@
    Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Bootstrap Record header file
  *
- *   Bootstrap Record header file
+ * BSR (bootstrap record) handling routines split from ua_restore.c July 2003
+ * Bootstrap send handling routines split from restore.c July 2012
  *
- *      BSR (bootstrap record) handling routines split from
- *        ua_restore.c July MMIII
- *
- *     Kern Sibbald, July MMII
- *
- *   Version $Id$
+ * Kern Sibbald, July 2002
  */
 
-
-
-/* FileIndex entry in restore bootstrap record */
+/*
+ * FileIndex entry in restore bootstrap record
+ */
 struct RBSR_FINDEX {
    RBSR_FINDEX *next;
    int32_t findex;
@@ -65,3 +62,14 @@ struct RBSR {
    char *fileregex;                   /* Only restore files matching regex */
 };
 
+class UAContext;
+
+/*
+ * Open bootstrap file.
+ */
+struct bootstrap_info
+{
+   FILE *bs;
+   UAContext *ua;
+   char storage[MAX_NAME_LENGTH + 1];
+};

@@ -42,12 +42,10 @@ extern void *start_heap;
 static void list_scheduled_jobs(UAContext *ua);
 static void list_running_jobs(UAContext *ua);
 static void list_terminated_jobs(UAContext *ua);
-static void do_storage_status(UAContext *ua, STORE *store, char *cmd);
-static void do_client_status(UAContext *ua, CLIENT *client, char *cmd);
 static void do_director_status(UAContext *ua);
 static void do_all_status(UAContext *ua);
-void status_slots(UAContext *ua, STORE *store);
-void status_content(UAContext *ua, STORE *store);
+static void status_slots(UAContext *ua, STORERES *store);
+static void status_content(UAContext *ua, STORERES *store);
 
 static char OKqstatus[]   = "1000 OK .status\n";
 static char DotStatusJob[] = "JobId=%s JobStatus=%c JobErrors=%d\n";
@@ -55,11 +53,10 @@ static char DotStatusJob[] = "JobId=%s JobStatus=%c JobErrors=%d\n";
 /*
  * .status command
  */
-
 bool dot_status_cmd(UAContext *ua, const char *cmd)
 {
-   STORE *store;
-   CLIENT *client;
+   STORERES *store;
+   CLIENTRES *client;
    JCR* njcr = NULL;
    s_last_job* job;
    char ed1[50];
@@ -71,47 +68,65 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
       return false;
    }
 
-   if (strcasecmp(ua->argk[1], "dir") == 0) {
-      if (strcasecmp(ua->argk[2], "current") == 0) {
+   if (bstrcasecmp(ua->argk[1], "dir")) {
+      if (bstrcasecmp(ua->argk[2], "current")) {
          ua->send_msg(OKqstatus, ua->argk[2]);
          foreach_jcr(njcr) {
-            if (njcr->JobId != 0 && acl_access_ok(ua, Job_ACL, njcr->job->name())) {
-               ua->send_msg(DotStatusJob, edit_int64(njcr->JobId, ed1), 
+            if (njcr->JobId != 0 && acl_access_ok(ua, Job_ACL, njcr->res.job->name())) {
+               ua->send_msg(DotStatusJob, edit_int64(njcr->JobId, ed1),
                         njcr->JobStatus, njcr->JobErrors);
             }
          }
          endeach_jcr(njcr);
-      } else if (strcasecmp(ua->argk[2], "last") == 0) {
+      } else if (bstrcasecmp(ua->argk[2], "last")) {
          ua->send_msg(OKqstatus, ua->argk[2]);
          if ((last_jobs) && (last_jobs->size() > 0)) {
             job = (s_last_job*)last_jobs->last();
             if (acl_access_ok(ua, Job_ACL, job->Job)) {
-               ua->send_msg(DotStatusJob, edit_int64(job->JobId, ed1), 
+               ua->send_msg(DotStatusJob, edit_int64(job->JobId, ed1),
                      job->JobStatus, job->Errors);
             }
          }
-      } else if (strcasecmp(ua->argk[2], "header") == 0) {
+      } else if (bstrcasecmp(ua->argk[2], "header")) {
           list_dir_status_header(ua);
-      } else if (strcasecmp(ua->argk[2], "scheduled") == 0) {
+      } else if (bstrcasecmp(ua->argk[2], "scheduled")) {
           list_scheduled_jobs(ua);
-      } else if (strcasecmp(ua->argk[2], "running") == 0) {
+      } else if (bstrcasecmp(ua->argk[2], "running")) {
           list_running_jobs(ua);
-      } else if (strcasecmp(ua->argk[2], "terminated") == 0) {
+      } else if (bstrcasecmp(ua->argk[2], "terminated")) {
           list_terminated_jobs(ua);
       } else {
          ua->send_msg("1900 Bad .status command, wrong argument.\n");
          return false;
       }
-   } else if (strcasecmp(ua->argk[1], "client") == 0) {
+   } else if (bstrcasecmp(ua->argk[1], "client")) {
       client = get_client_resource(ua);
       if (client) {
          Dmsg2(200, "Client=%s arg=%s\n", client->name(), NPRT(ua->argk[2]));
-         do_client_status(ua, client, ua->argk[2]);
+         switch (client->Protocol) {
+         case APT_NDMPV2:
+         case APT_NDMPV3:
+         case APT_NDMPV4:
+            do_ndmp_client_status(ua, client, ua->argk[2]);
+            break;
+         default:
+            do_native_client_status(ua, client, ua->argk[2]);
+            break;
+         }
       }
-   } else if (strcasecmp(ua->argk[1], "storage") == 0) {
+   } else if (bstrcasecmp(ua->argk[1], "storage")) {
       store = get_storage_resource(ua, false /*no default*/);
       if (store) {
-         do_storage_status(ua, store, ua->argk[2]);
+         switch (store->Protocol) {
+         case APT_NDMPV2:
+         case APT_NDMPV3:
+         case APT_NDMPV4:
+            do_ndmp_storage_status(ua, store, ua->argk[2]);
+            break;
+         default:
+            do_native_storage_status(ua, store, ua->argk[2]);
+            break;
+         }
       }
    } else {
       ua->send_msg("1900 Bad .status command, wrong argument.\n");
@@ -135,33 +150,59 @@ int qstatus_cmd(UAContext *ua, const char *cmd)
  */
 int status_cmd(UAContext *ua, const char *cmd)
 {
-   STORE *store;
-   CLIENT *client;
+   STORERES *store;
+   CLIENTRES *client;
    int item, i;
 
    Dmsg1(20, "status:%s:\n", cmd);
 
    for (i=1; i<ua->argc; i++) {
-      if (strcasecmp(ua->argk[i], NT_("all")) == 0) {
+      if (bstrcasecmp(ua->argk[i], NT_("all"))) {
          do_all_status(ua);
          return 1;
-      } else if (strcasecmp(ua->argk[i], NT_("dir")) == 0 ||
-                 strcasecmp(ua->argk[i], NT_("director")) == 0) {
+      } else if (bstrcasecmp(ua->argk[i], NT_("dir")) ||
+                 bstrcasecmp(ua->argk[i], NT_("director"))) {
          do_director_status(ua);
          return 1;
-      } else if (strcasecmp(ua->argk[i], NT_("client")) == 0) {
+      } else if (bstrcasecmp(ua->argk[i], NT_("client"))) {
          client = get_client_resource(ua);
          if (client) {
-            do_client_status(ua, client, NULL);
+            switch (client->Protocol) {
+            case APT_NDMPV2:
+            case APT_NDMPV3:
+            case APT_NDMPV4:
+               do_ndmp_client_status(ua, client, NULL);
+               break;
+            default:
+               do_native_client_status(ua, client, NULL);
+               break;
+            }
          }
          return 1;
       } else {
          store = get_storage_resource(ua, false/*no default*/);
          if (store) {
             if (find_arg(ua, NT_("slots")) > 0) {
-               status_slots(ua, store);
+               switch (store->Protocol) {
+               case APT_NDMPV2:
+               case APT_NDMPV3:
+               case APT_NDMPV4:
+                  break;
+               default:
+                  status_slots(ua, store);
+                  break;
+               }
             } else {
-               do_storage_status(ua, store, NULL);
+               switch (store->Protocol) {
+               case APT_NDMPV2:
+               case APT_NDMPV3:
+               case APT_NDMPV4:
+                  do_ndmp_storage_status(ua, store, NULL);
+                  break;
+               default:
+                  do_native_storage_status(ua, store, NULL);
+                  break;
+               }
             }
          }
          return 1;
@@ -188,13 +229,31 @@ int status_cmd(UAContext *ua, const char *cmd)
       case 1:
          store = select_storage_resource(ua);
          if (store) {
-            do_storage_status(ua, store, NULL);
+            switch (store->Protocol) {
+            case APT_NDMPV2:
+            case APT_NDMPV3:
+            case APT_NDMPV4:
+               do_ndmp_storage_status(ua, store, NULL);
+               break;
+            default:
+               do_native_storage_status(ua, store, NULL);
+               break;
+            }
          }
          break;
       case 2:
          client = select_client_resource(ua);
          if (client) {
-            do_client_status(ua, client, NULL);
+            switch (client->Protocol) {
+            case APT_NDMPV2:
+            case APT_NDMPV3:
+            case APT_NDMPV4:
+               do_ndmp_client_status(ua, client, NULL);
+               break;
+            default:
+               do_native_client_status(ua, client, NULL);
+               break;
+            }
          }
          break;
       case 3:
@@ -209,8 +268,8 @@ int status_cmd(UAContext *ua, const char *cmd)
 
 static void do_all_status(UAContext *ua)
 {
-   STORE *store, **unique_store;
-   CLIENT *client, **unique_client;
+   STORERES *store, **unique_store;
+   CLIENTRES *client, **unique_client;
    int i, j;
    bool found;
 
@@ -222,7 +281,7 @@ static void do_all_status(UAContext *ua)
    foreach_res(store, R_STORAGE) {
       i++;
    }
-   unique_store = (STORE **) malloc(i * sizeof(STORE));
+   unique_store = (STORERES **) malloc(i * sizeof(STORERES));
    /* Find Unique Storage address/port */
    i = 0;
    foreach_res(store, R_STORAGE) {
@@ -230,8 +289,8 @@ static void do_all_status(UAContext *ua)
       if (!acl_access_ok(ua, Storage_ACL, store->name())) {
          continue;
       }
-      for (j=0; j<i; j++) {
-         if (strcmp(unique_store[j]->address, store->address) == 0 &&
+      for (j = 0; j < i; j++) {
+         if (bstrcmp(unique_store[j]->address, store->address) &&
              unique_store[j]->SDport == store->SDport) {
             found = true;
             break;
@@ -245,8 +304,17 @@ static void do_all_status(UAContext *ua)
    UnlockRes();
 
    /* Call each unique Storage daemon */
-   for (j=0; j<i; j++) {
-      do_storage_status(ua, unique_store[j], NULL);
+   for (j = 0; j < i; j++) {
+      switch (unique_store[j]->Protocol) {
+      case APT_NDMPV2:
+      case APT_NDMPV3:
+      case APT_NDMPV4:
+         do_ndmp_storage_status(ua, unique_store[j], NULL);
+         break;
+      default:
+         do_native_storage_status(ua, unique_store[j], NULL);
+         break;
+      }
    }
    free(unique_store);
 
@@ -256,7 +324,7 @@ static void do_all_status(UAContext *ua)
    foreach_res(client, R_CLIENT) {
       i++;
    }
-   unique_client = (CLIENT **)malloc(i * sizeof(CLIENT));
+   unique_client = (CLIENTRES **)malloc(i * sizeof(CLIENTRES));
    /* Find Unique Client address/port */
    i = 0;
    foreach_res(client, R_CLIENT) {
@@ -264,8 +332,8 @@ static void do_all_status(UAContext *ua)
       if (!acl_access_ok(ua, Client_ACL, client->name())) {
          continue;
       }
-      for (j=0; j<i; j++) {
-         if (strcmp(unique_client[j]->address, client->address) == 0 &&
+      for (j = 0; j < i; j++) {
+         if (bstrcmp(unique_client[j]->address, client->address) &&
              unique_client[j]->FDport == client->FDport) {
             found = true;
             break;
@@ -279,8 +347,17 @@ static void do_all_status(UAContext *ua)
    UnlockRes();
 
    /* Call each unique File daemon */
-   for (j=0; j<i; j++) {
-      do_client_status(ua, unique_client[j], NULL);
+   for (j = 0; j < i; j++) {
+      switch (unique_client[j]->Protocol) {
+      case APT_NDMPV2:
+      case APT_NDMPV3:
+      case APT_NDMPV4:
+         do_ndmp_client_status(ua, unique_client[j], NULL);
+         break;
+      default:
+         do_native_client_status(ua, unique_client[j], NULL);
+         break;
+      }
    }
    free(unique_client);
 
@@ -290,35 +367,27 @@ void list_dir_status_header(UAContext *ua)
 {
    char dt[MAX_TIME_LENGTH];
    char b1[35], b2[35], b3[35], b4[35], b5[35];
+   POOL_MEM msg(PM_FNAME);
 
    ua->send_msg(_("%s Version: %s (%s) %s %s %s\n"), my_name, VERSION, BDATE,
-            HOST_OS, DISTNAME, DISTVER);
+                HOST_OS, DISTNAME, DISTVER);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
    ua->send_msg(_("Daemon started %s. Jobs: run=%d, running=%d "
                   "mode=%d,%d\n"), dt,
                 num_jobs_run, job_count(), (int)DEVELOPER_MODE, (int)BEEF);
    ua->send_msg(_(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
-            edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
-            edit_uint64_with_commas(sm_bytes, b2),
-            edit_uint64_with_commas(sm_max_bytes, b3),
-            edit_uint64_with_commas(sm_buffers, b4),
-            edit_uint64_with_commas(sm_max_buffers, b5));
-
-   /* TODO: use this function once for all daemons */
-   if (debug_level > 0 && bplugin_list->size() > 0) {
+                edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
+                edit_uint64_with_commas(sm_bytes, b2),
+                edit_uint64_with_commas(sm_max_bytes, b3),
+                edit_uint64_with_commas(sm_buffers, b4),
+                edit_uint64_with_commas(sm_max_buffers, b5));
+   if (debug_level > 0) {
       int len;
-      Plugin *plugin;
-      POOL_MEM msg(PM_FNAME);
-      pm_strcpy(msg, " Plugin: ");
-      foreach_alist(plugin, bplugin_list) {
-         len = pm_strcat(msg, plugin->file);
-         if (len > 80) {
-            pm_strcat(msg, "\n   ");
-         } else {
-            pm_strcat(msg, " ");
-         }
+
+      len = list_dir_plugins(msg);
+      if (len > 0) {
+         ua->send_msg("%s\n", msg.c_str());
       }
-      ua->send_msg("%s\n", msg.c_str());
    }
 }
 
@@ -343,85 +412,6 @@ static void do_director_status(UAContext *ua)
    ua->send_msg("====\n");
 }
 
-static void do_storage_status(UAContext *ua, STORE *store, char *cmd)
-{
-   BSOCK *sd;
-   USTORE lstore;
-
-   lstore.store = store;
-   pm_strcpy(lstore.store_source, _("unknown source"));
-   set_wstorage(ua->jcr, &lstore);
-   /* Try connecting for up to 15 seconds */
-   if (!ua->api) ua->send_msg(_("Connecting to Storage daemon %s at %s:%d\n"),
-      store->name(), store->address, store->SDport);
-   if (!connect_to_storage_daemon(ua->jcr, 1, 15, 0)) {
-      ua->send_msg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
-         store->name());
-      if (ua->jcr->store_bsock) {
-         bnet_close(ua->jcr->store_bsock);
-         ua->jcr->store_bsock = NULL;
-      }
-      return;
-   }
-   Dmsg0(20, _("Connected to storage daemon\n"));
-   sd = ua->jcr->store_bsock;
-   if (cmd) {
-      sd->fsend(".status %s", cmd);
-   } else {
-      sd->fsend("status");
-   }
-   while (sd->recv() >= 0) {
-      ua->send_msg("%s", sd->msg);
-   }
-   sd->signal( BNET_TERMINATE);
-   sd->close();
-   ua->jcr->store_bsock = NULL;
-   return;
-}
-
-static void do_client_status(UAContext *ua, CLIENT *client, char *cmd)
-{
-   BSOCK *fd;
-
-   /* Connect to File daemon */
-
-   ua->jcr->client = client;
-   /* Release any old dummy key */
-   if (ua->jcr->sd_auth_key) {
-      free(ua->jcr->sd_auth_key);
-   }
-   /* Create a new dummy SD auth key */
-   ua->jcr->sd_auth_key = bstrdup("dummy");
-
-   /* Try to connect for 15 seconds */
-   if (!ua->api) ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address, client->FDport);
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
-      ua->send_msg(_("Failed to connect to Client %s.\n====\n"),
-         client->name());
-      if (ua->jcr->file_bsock) {
-         bnet_close(ua->jcr->file_bsock);
-         ua->jcr->file_bsock = NULL;
-      }
-      return;
-   }
-   Dmsg0(20, _("Connected to file daemon\n"));
-   fd = ua->jcr->file_bsock;
-   if (cmd) {
-      fd->fsend(".status %s", cmd);
-   } else {
-      fd->fsend("status");
-   }
-   while (fd->recv() >= 0) {
-      ua->send_msg("%s", fd->msg);
-   }
-   fd->signal(BNET_TERMINATE);
-   fd->close();
-   ua->jcr->file_bsock = NULL;
-
-   return;
-}
-
 static void prt_runhdr(UAContext *ua)
 {
    if (!ua->api) {
@@ -434,12 +424,12 @@ static void prt_runhdr(UAContext *ua)
 /* Scheduling packet */
 struct sched_pkt {
    dlink link;                        /* keep this as first item!!! */
-   JOB *job;
+   JOBRES *job;
    int level;
    int priority;
    utime_t runtime;
-   POOL *pool;
-   STORE *store;
+   POOLRES *pool;
+   STORERES *store;
 };
 
 static void prt_runtime(UAContext *ua, sched_pkt *sp)
@@ -456,14 +446,14 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp)
    if (sp->job->JobType == JT_BACKUP) {
       jcr->db = NULL;
       ok = complete_jcr_for_job(jcr, sp->job, sp->pool);
-      Dmsg1(250, "Using pool=%s\n", jcr->pool->name());
+      Dmsg1(250, "Using pool=%s\n", jcr->res.pool->name());
       if (jcr->db) {
          close_db = true;             /* new db opened, remember to close it */
       }
       if (ok) {
          mr.PoolId = jcr->jr.PoolId;
-         jcr->wstore = sp->store;
-         set_storageid_in_mr(jcr->wstore, &mr);
+         jcr->res.wstore = sp->store;
+         set_storageid_in_mr(jcr->res.wstore, &mr);
          Dmsg0(250, "call find_next_volume_for_append\n");
          /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
          ok = find_next_volume_for_append(jcr, &mr, 1, fnv_no_create_vol, fnv_no_prune);
@@ -492,7 +482,7 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp)
          sp->job->name(), mr.VolumeName);
    }
    if (close_db) {
-      db_close_database(jcr, jcr->db);
+      db_sql_close_pooled_connection(jcr, jcr->db);
    }
    jcr->db = ua->db;                  /* restore ua db to jcr */
    jcr->setJobType(orig_jobtype);
@@ -525,8 +515,8 @@ static int my_compare(void *item1, void *item2)
 static void list_scheduled_jobs(UAContext *ua)
 {
    utime_t runtime;
-   RUN *run;
-   JOB *job;
+   RUNRES *run;
+   JOBRES *job;
    int level, num_jobs = 0;
    int priority;
    bool hdr_printed = false;
@@ -553,7 +543,7 @@ static void list_scheduled_jobs(UAContext *ua)
          continue;
       }
       for (run=NULL; (run = find_next_run(run, job, runtime, days)); ) {
-         USTORE store;
+         USTORERES store;
          level = job->JobLevel;
          if (run->level) {
             level = run->level;
@@ -612,7 +602,7 @@ static void list_running_jobs(UAContext *ua)
             ua->send_msg(_("Console connected at %s\n"), dt);
          }
          continue;
-      }       
+      }
       njobs++;
    }
    endeach_jcr(jcr);
@@ -629,7 +619,7 @@ static void list_running_jobs(UAContext *ua)
       ua->send_msg(_("======================================================================\n"));
    }
    foreach_jcr(jcr) {
-      if (jcr->JobId == 0 || !acl_access_ok(ua, Job_ACL, jcr->job->name())) {
+      if (jcr->JobId == 0 || !acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
          continue;
       }
       njobs++;
@@ -666,20 +656,20 @@ static void list_running_jobs(UAContext *ua)
          break;
       case JS_WaitFD:
          emsg = (char *) get_pool_memory(PM_FNAME);
-         if (!jcr->client) {
+         if (!jcr->res.client) {
             Mmsg(emsg, _("is waiting on Client"));
          } else {
-            Mmsg(emsg, _("is waiting on Client %s"), jcr->client->name());
+            Mmsg(emsg, _("is waiting on Client %s"), jcr->res.client->name());
          }
          pool_mem = true;
          msg = emsg;
          break;
       case JS_WaitSD:
          emsg = (char *) get_pool_memory(PM_FNAME);
-         if (jcr->wstore) {
-            Mmsg(emsg, _("is waiting on Storage \"%s\""), jcr->wstore->name());
-         } else if (jcr->rstore) {
-            Mmsg(emsg, _("is waiting on Storage \"%s\""), jcr->rstore->name());
+         if (jcr->res.wstore) {
+            Mmsg(emsg, _("is waiting on Storage \"%s\""), jcr->res.wstore->name());
+         } else if (jcr->res.rstore) {
+            Mmsg(emsg, _("is waiting on Storage \"%s\""), jcr->res.rstore->name());
          } else {
             Mmsg(emsg, _("is waiting on Storage"));
          }
@@ -747,11 +737,11 @@ static void list_running_jobs(UAContext *ua)
             emsg = (char *)get_pool_memory(PM_FNAME);
             pool_mem = true;
          }
-         if (!jcr->client || !jcr->wstore) {
+         if (!jcr->res.client || !jcr->res.wstore) {
             Mmsg(emsg, _("is waiting for Client to connect to Storage daemon"));
          } else {
             Mmsg(emsg, _("is waiting for Client %s to connect to Storage %s"),
-                 jcr->client->name(), jcr->wstore->name());
+                 jcr->res.client->name(), jcr->res.wstore->name());
         }
         msg = emsg;
         break;
@@ -826,7 +816,7 @@ static void list_terminated_jobs(UAContext *ua)
       bstrncpy(JobName, je->Job, sizeof(JobName));
       /* There are three periods after the Job name */
       char *p;
-      for (int i=0; i<3; i++) {
+      for (int i = 0; i < 3; i++) {
          if ((p=strrchr(JobName, '.')) != NULL) {
             *p = 0;
          }
@@ -891,4 +881,377 @@ static void list_terminated_jobs(UAContext *ua)
    }
    if (!ua->api) ua->send_msg(_("\n"));
    unlock_last_jobs_list();
+}
+
+static void content_send_info(UAContext *ua, char type, int Slot, char *vol_name)
+{
+   char ed1[50], ed2[50], ed3[50];
+   POOL_DBR pr;
+   MEDIA_DBR mr;
+   /* Type|Slot|RealSlot|Volume|Bytes|Status|MediaType|Pool|LastW|Expire */
+   const char *slot_api_full_format="%c|%d|%d|%s|%s|%s|%s|%s|%s|%s\n";
+
+   bstrncpy(mr.VolumeName, vol_name, sizeof(mr.VolumeName));
+   if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+      memset(&pr, 0, sizeof(POOL_DBR));
+      pr.PoolId = mr.PoolId;
+      if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
+         strcpy(pr.Name, "?");
+      }
+      ua->send_msg(slot_api_full_format, type,
+                   Slot, mr.Slot, mr.VolumeName,
+                   edit_uint64(mr.VolBytes, ed1),
+                   mr.VolStatus, mr.MediaType, pr.Name,
+                   edit_uint64(mr.LastWritten, ed2),
+                   edit_uint64(mr.LastWritten+mr.VolRetention, ed3));
+
+   } else {                  /* Media unknown */
+      ua->send_msg(slot_api_full_format,
+                   type, Slot, 0, mr.VolumeName, "?", "?", "?", "?",
+                   "0", "0");
+
+   }
+}
+
+/*
+ * Input (output of mxt-changer listall):
+ *
+ * Drive content:         D:Drive num:F:Slot loaded:Volume Name
+ * D:0:F:2:vol2        or D:Drive num:E
+ * D:1:F:42:vol42
+ * D:3:E
+ *
+ * Slot content:
+ * S:1:F:vol1             S:Slot num:F:Volume Name
+ * S:2:E               or S:Slot num:E
+ * S:3:F:vol4
+ *
+ * Import/Export tray slots:
+ * I:10:F:vol10           I:Slot num:F:Volume Name
+ * I:11:E              or I:Slot num:E
+ * I:12:F:vol40
+ *
+ * If a drive is loaded, the slot *should* be empty
+ *
+ * Output:
+ *
+ * Drive list:       D|Drive num|Slot loaded|Volume Name
+ * D|0|45|vol45
+ * D|1|42|vol42
+ * D|3||
+ *
+ * Slot list: Type|Slot|RealSlot|Volume|Bytes|Status|MediaType|Pool|LastW|Expire
+ *
+ * S|1|1|vol1|31417344|Full|LTO1-ANSI|Inc|1250858902|1282394902
+ * S|2||||||||
+ * S|3|3|vol4|15869952|Append|LTO1-ANSI|Inc|1250858907|1282394907
+ *
+ */
+static void status_content(UAContext *ua, STORERES *store)
+{
+   bool found;
+   vol_list_t *vl1, *vl2;
+   dlist *vol_list = NULL;
+   const char *slot_api_drive_full_format="%c|%d|%d|%s\n";
+   const char *slot_api_drive_empty_format="%c|%d||\n";
+   const char *slot_api_slot_empty_format="%c|%d||||||||\n";
+
+   if (!open_client_db(ua)) {
+      return;
+   }
+
+   vol_list = get_vol_list_from_SD(ua, store, true /* listall */ , true /* want to see all slots */);
+   if (!vol_list) {
+      ua->warning_msg(_("No Volumes found, or no barcodes.\n"));
+      goto bail_out;
+   }
+
+   foreach_dlist(vl1, vol_list) {
+      switch (vl1->Type) {
+      case slot_type_drive:
+         switch (vl1->Content) {
+         case slot_content_full:
+            ua->send_msg(slot_api_drive_full_format, 'D', vl1->Slot, vl1->Loaded, vl1->VolName);
+            break;
+         case slot_content_empty:
+            ua->send_msg(slot_api_drive_empty_format, 'D', vl1->Slot);
+            break;
+         default:
+            break;
+         }
+         break;
+      case slot_type_normal:
+      case slot_type_import:
+         switch (vl1->Content) {
+         case slot_content_full:
+            switch (vl1->Type) {
+            case slot_type_normal:
+               content_send_info(ua, 'S', vl1->Slot, vl1->VolName);
+               break;
+            case slot_type_import:
+               content_send_info(ua, 'I', vl1->Slot, vl1->VolName);
+               break;
+            default:
+               break;
+            }
+            break;
+         case slot_content_empty:
+            /*
+             * See if this empty slot is empty because the volume is loaded
+             * in one of the drives.
+             */
+            found = false;
+            vl2 = (vol_list_t *)vol_list->first();
+            while (!found && vl2) {
+               switch (vl2->Type) {
+               case slot_type_drive:
+                  if (vl1->Slot == vl2->Loaded) {
+                     switch (vl1->Type) {
+                     case slot_type_normal:
+                        content_send_info(ua, 'S', vl1->Slot, vl2->VolName);
+                        break;
+                     case slot_type_import:
+                        content_send_info(ua, 'I', vl1->Slot, vl2->VolName);
+                        break;
+                     default:
+                        break;
+                     }
+                     found = true;
+
+                     /*
+                      * When we used this entry we can remove it from
+                      * the list so we limit the search time next round.
+                      */
+                     vol_list->remove(vl2);
+                     if (vl2->VolName) {
+                        free(vl2->VolName);
+                     }
+                     free(vl2);
+                     continue;
+                  }
+                  break;
+               default:
+                  break;
+               }
+               vl2 = (vol_list_t *)vol_list->next((void *)vl2);
+            }
+            if (!found) {
+               switch (vl1->Type) {
+               case slot_type_normal:
+                  ua->send_msg(slot_api_slot_empty_format, 'S', vl1->Slot);
+                  break;
+               case slot_type_import:
+                  ua->send_msg(slot_api_slot_empty_format, 'I', vl1->Slot);
+                  break;
+               default:
+                  break;
+               }
+            }
+            break;
+         default:
+            break;
+         }
+      default:
+         break;
+      }
+   }
+
+bail_out:
+   if (vol_list) {
+      free_vol_list(vol_list);
+   }
+   close_sd_bsock(ua);
+
+   return;
+}
+
+/*
+ * Print slots from AutoChanger
+ */
+static void status_slots(UAContext *ua, STORERES *store_r)
+{
+   USTORERES store;
+   POOL_DBR pr;
+   vol_list_t *vl1, *vl2;
+   dlist *vol_list = NULL;
+   MEDIA_DBR mr;
+   char *slot_list;
+   int max_slots;
+   bool found;
+   /*
+    * Slot | Volume | Status | MediaType | Pool
+    */
+   const char *slot_hformat=" %4i%c| %16s | %9s | %14s | %24s |\n";
+
+   if (ua->api) {
+      status_content(ua, store_r);
+      return;
+   }
+
+   if (!open_client_db(ua)) {
+      return;
+   }
+
+   store.store = store_r;
+   pm_strcpy(store.store_source, _("command line"));
+   set_wstorage(ua->jcr, &store);
+
+   max_slots = get_num_slots_from_SD(ua);
+   if (max_slots <= 0) {
+      ua->warning_msg(_("No slots in changer to scan.\n"));
+      return;
+   }
+
+   slot_list = (char *)malloc(nbytes_for_bits(max_slots));
+   clear_all_bits(max_slots, slot_list);
+   if (!get_user_slot_list(ua, slot_list, "slots", max_slots)) {
+      free(slot_list);
+      return;
+   }
+
+   vol_list = get_vol_list_from_SD(ua, store.store, true /* listall */ , true /* want to see all slots */);
+   if (!vol_list) {
+      ua->warning_msg(_("No Volumes found, or no barcodes.\n"));
+      goto bail_out;
+   }
+   ua->send_msg(_(" Slot |   Volume Name    |   Status  |  Media Type    |         Pool             |\n"));
+   ua->send_msg(_("------+------------------+-----------+----------------+--------------------------|\n"));
+
+   /*
+    * Walk through the list getting the media records
+    * Slots start numbering at 1.
+    */
+   foreach_dlist(vl1, vol_list) {
+      switch (vl1->Type) {
+      case slot_type_drive:
+         /*
+          * We are not interested in drive slots.
+          */
+         continue;
+      case slot_type_normal:
+      case slot_type_import:
+         if (vl1->Slot > max_slots) {
+            ua->warning_msg(_("Slot %d greater than max %d ignored.\n"),
+                            vl1->Slot, max_slots);
+            continue;
+         }
+         /*
+          * Check if user wants us to look at this slot
+          */
+         if (!bit_is_set(vl1->Slot - 1, slot_list)) {
+            Dmsg1(100, "Skipping slot=%d\n", vl1->Slot);
+            continue;
+         }
+
+         vl2 = NULL;
+         switch (vl1->Content) {
+         case slot_content_empty:
+            if (vl1->Type == slot_type_normal) {
+               /*
+                * See if this empty slot is empty because the volume is loaded
+                * in one of the drives.
+                */
+               found = false;
+               vl2 = (vol_list_t *)vol_list->first();
+               while (!found && vl2) {
+                  switch (vl2->Type) {
+                  case slot_type_drive:
+                     if (vl1->Slot == vl2->Loaded) {
+                        found = true;
+                     }
+                     break;
+                  default:
+                     break;
+                  }
+                  vl2 = (vol_list_t *)vol_list->next((void *)vl2);
+               }
+               if (!found) {
+                  ua->send_msg(slot_hformat,
+                               vl1->Slot, '*',
+                               "?", "?", "?", "?");
+                  continue;
+               }
+            } else {
+               ua->send_msg(slot_hformat,
+                            vl1->Slot, '@',
+                            "?", "?", "?", "?");
+               continue;
+            }
+            /*
+             * Note, fall through wanted
+             */
+         case slot_content_full:
+            /*
+             * We get here for all slots with content and for empty
+             * slots with their volume loaded in a drive.
+             */
+            if (vl1->Content == slot_content_full) {
+               if (!vl1->VolName) {
+                  Dmsg1(100, "No VolName for Slot=%d.\n", vl1->Slot);
+                  ua->send_msg(slot_hformat,
+                               vl1->Slot,
+                              (vl1->Type == slot_type_import) ? '@' : '*',
+                               "?", "?", "?", "?");
+                  continue;
+               }
+
+               mr.clear();
+               bstrncpy(mr.VolumeName, vl1->VolName, sizeof(mr.VolumeName));
+            } else {
+               if (!vl2 || !vl2->VolName) {
+                  Dmsg1(100, "No VolName for Slot=%d.\n", vl1->Slot);
+                  ua->send_msg(slot_hformat,
+                               vl1->Slot,
+                              (vl1->Type == slot_type_import) ? '@' : '*',
+                               "?", "?", "?", "?");
+                  continue;
+               }
+
+               mr.clear();
+               bstrncpy(mr.VolumeName, vl2->VolName, sizeof(mr.VolumeName));
+            }
+
+            if (mr.VolumeName[0] && db_get_media_record(ua->jcr, ua->db, &mr)) {
+               memset(&pr, 0, sizeof(POOL_DBR));
+               pr.PoolId = mr.PoolId;
+               if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
+                  strcpy(pr.Name, "?");
+               }
+
+               /*
+                * Print information
+                */
+               if (vl1->Type == slot_type_import) {
+                  ua->send_msg(slot_hformat,
+                               vl1->Slot, '@',
+                               mr.VolumeName, mr.VolStatus, mr.MediaType, pr.Name);
+               } else {
+                  ua->send_msg(slot_hformat,
+                               vl1->Slot, ((vl1->Slot == mr.Slot) ? ' ' : '*'),
+                               mr.VolumeName, mr.VolStatus, mr.MediaType, pr.Name);
+               }
+            } else {
+               ua->send_msg(slot_hformat,
+                            vl1->Slot,
+                           (vl1->Type == slot_type_import) ? '@' : '*',
+                            mr.VolumeName, "?", "?", "?");
+            }
+            break;
+         default:
+            break;
+         }
+         break;
+      default:
+         break;
+      }
+   }
+
+bail_out:
+   if (vol_list) {
+      free_vol_list(vol_list);
+   }
+   free(slot_list);
+   close_sd_bsock(ua);
+
+   return;
 }

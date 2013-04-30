@@ -12,7 +12,7 @@ CREATE TABLE Filename (
   FilenameId INTEGER,
   Name TEXT DEFAULT '',
   PRIMARY KEY(FilenameId) 
-  );
+);
 
 CREATE INDEX inx1 ON Filename (Name);
 
@@ -20,7 +20,7 @@ CREATE TABLE Path (
    PathId INTEGER,
    Path TEXT DEFAULT '',
    PRIMARY KEY(PathId) 
-   );
+);
 
 CREATE INDEX inx2 ON Path (Path);
 
@@ -38,7 +38,7 @@ CREATE TABLE File (
    LStat VARCHAR(255) NOT NULL,
    MD5 VARCHAR(255) NOT NULL,
    PRIMARY KEY(FileId) 
-   );
+);
 CREATE INDEX inx3 ON File (JobId);
 CREATE INDEX file_jpf_idx ON File (JobId, PathId, FilenameId);
 --
@@ -62,9 +62,8 @@ CREATE TABLE RestoreObject (
    ObjectCompression INTEGER DEFAULT 0,
    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
    PRIMARY KEY(RestoreObjectId)
-   );
+);
 CREATE INDEX restore_jobid_idx ON RestoreObject (JobId);
-
 
 CREATE TABLE Job (
    JobId INTEGER,
@@ -95,7 +94,7 @@ CREATE TABLE Job (
    Reviewed TINYINT DEFAULT 0,
    Comment TEXT,
    PRIMARY KEY(JobId) 
-   );
+);
 CREATE INDEX inx6 ON Job (Name);
 
 -- Create a table like Job for long term statistics 
@@ -127,7 +126,7 @@ CREATE TABLE JobHisto (
    HasCache TINYINT DEFAULT 0,
    Reviewed TINYINT DEFAULT 0,
    Comment TEXT
-   );
+);
 CREATE INDEX inx61 ON JobHisto (StartTime);
 
 CREATE TABLE Location (
@@ -136,7 +135,7 @@ CREATE TABLE Location (
    Cost INTEGER DEFAULT 0,
    Enabled TINYINT,
    PRIMARY KEY(LocationId)
-   );
+);
 
 CREATE TABLE LocationLog (
    LocLogId INTEGER,
@@ -149,16 +148,14 @@ CREATE TABLE LocationLog (
    PRIMARY KEY(LocLogId)
 );
 
-
 CREATE TABLE Log (
    LogId INTEGER,
    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
    Time DATETIME NOT NULL,
    LogText TEXT NOT NULL,
    PRIMARY KEY(LogId) 
-   );
+);
 CREATE INDEX LogInx1 ON Log (JobId);
-
 
 CREATE TABLE FileSet (
    FileSetId INTEGER,
@@ -166,7 +163,7 @@ CREATE TABLE FileSet (
    MD5 VARCHAR(25) NOT NULL,
    CreateTime DATETIME DEFAULT 0,
    PRIMARY KEY(FileSetId)
-   );
+);
 
 CREATE TABLE JobMedia (
    JobMediaId INTEGER,
@@ -180,8 +177,7 @@ CREATE TABLE JobMedia (
    EndBlock INTEGER UNSIGNED DEFAULT 0,
    VolIndex INTEGER UNSIGNED DEFAULT 0,
    PRIMARY KEY(JobMediaId) 
-   );
-
+);
 CREATE INDEX inx7 ON JobMedia (JobId, MediaId);
 
 
@@ -201,7 +197,6 @@ CREATE TABLE Media (
    VolBlocks INTEGER UNSIGNED DEFAULT 0,
    VolMounts INTEGER UNSIGNED DEFAULT 0,
    VolBytes BIGINT UNSIGNED DEFAULT 0,
-   VolParts INTEGER UNSIGNED DEFAULT 0,
    VolErrors INTEGER UNSIGNED DEFAULT 0,
    VolWrites INTEGER UNSIGNED DEFAULT 0,
    VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
@@ -227,10 +222,10 @@ CREATE TABLE Media (
    InitialWrite DATETIME DEFAULT 0,
    ScratchPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
    RecyclePoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   EncryptionKey VARCHAR(128),
    Comment TEXT,
    PRIMARY KEY(MediaId)
-   );
-
+);
 CREATE INDEX inx8 ON Media (PoolId);
 
 CREATE TABLE MediaType (
@@ -238,14 +233,14 @@ CREATE TABLE MediaType (
    MediaType VARCHAR(128) NOT NULL,
    ReadOnly TINYINT DEFAULT 0,
    PRIMARY KEY(MediaTypeId)
-   );
+);
 
 CREATE TABLE Storage (
    StorageId INTEGER,
    Name VARCHAR(128) NOT NULL,
    AutoChanger TINYINT DEFAULT 0,
    PRIMARY KEY(StorageId)
-   );
+);
 
 CREATE TABLE Device (
    DeviceId INTEGER,
@@ -264,8 +259,7 @@ CREATE TABLE Device (
    CleaningDate DATETIME DEFAULT 0,
    CleaningPeriod BIGINT UNSIGNED DEFAULT 0,
    PRIMARY KEY(DeviceId)
-   );
-
+);
 
 CREATE TABLE Pool (
    PoolId INTEGER,
@@ -295,8 +289,7 @@ CREATE TABLE Pool (
    MigrationTime BIGINT UNSIGNED DEFAULT 0,
    UNIQUE (Name),
    PRIMARY KEY (PoolId)
-   );
-
+);
 
 CREATE TABLE Client (
    ClientId INTEGER,
@@ -307,7 +300,7 @@ CREATE TABLE Client (
    JobRetention  BIGINT UNSIGNED DEFAULT 0,
    UNIQUE (Name),
    PRIMARY KEY(ClientId)
-   );
+);
 
 CREATE TABLE BaseFiles (
    BaseId INTEGER,
@@ -316,7 +309,7 @@ CREATE TABLE BaseFiles (
    FileId INTEGER UNSIGNED REFERENCES File NOT NULL,
    FileIndex INTEGER UNSIGNED,
    PRIMARY KEY(BaseId)
-   );
+);
 
 CREATE INDEX basefiles_jobid_idx ON BaseFiles ( JobId );
 
@@ -326,24 +319,20 @@ CREATE TABLE UnsavedFiles (
    PathId INTEGER UNSIGNED REFERENCES Path NOT NULL,
    FilenameId INTEGER UNSIGNED REFERENCES Filename NOT NULL,
    PRIMARY KEY (UnsavedId)
-   );
-
+);
 
 CREATE TABLE NextId (
    id INTEGER UNSIGNED DEFAULT 0,
    TableName TEXT NOT NULL,
    PRIMARY KEY (TableName)
-   );
-
-
+);
 
 -- Initialize JobId to start at 1
 INSERT INTO NextId (id, TableName) VALUES (1, 'Job');
 
 CREATE TABLE Version (
    VersionId INTEGER UNSIGNED NOT NULL 
-   );
-
+);
 
 CREATE TABLE Counters (
    Counter TEXT NOT NULL,     
@@ -352,19 +341,19 @@ CREATE TABLE Counters (
    CurrentValue INTEGER DEFAULT 0,
    WrapCounter TEXT NOT NULL,
    PRIMARY KEY (Counter)
-   );
+);
 
 CREATE TABLE CDImages (
    MediaId INTEGER UNSIGNED NOT NULL,
    LastBurn DATETIME NOT NULL,
    PRIMARY KEY (MediaId)
-   );
+);
 
 CREATE TABLE PathHierarchy
 (
-     PathId integer NOT NULL,
-     PPathId integer NOT NULL,
-     CONSTRAINT pathhierarchy_pkey PRIMARY KEY (PathId)
+   PathId integer NOT NULL,
+   PPathId integer NOT NULL,
+   CONSTRAINT pathhierarchy_pkey PRIMARY KEY (PathId)
 );
 
 CREATE INDEX pathhierarchy_ppathid 
@@ -372,11 +361,11 @@ CREATE INDEX pathhierarchy_ppathid
 
 CREATE TABLE PathVisibility
 (
-      PathId integer NOT NULL,
-      JobId integer NOT NULL,
-      Size int8 DEFAULT 0,
-      Files int4 DEFAULT 0,
-      CONSTRAINT pathvisibility_pkey PRIMARY KEY (JobId, PathId)
+   PathId integer NOT NULL,
+   JobId integer NOT NULL,
+   Size int8 DEFAULT 0,
+   Files int4 DEFAULT 0,
+   CONSTRAINT pathvisibility_pkey PRIMARY KEY (JobId, PathId)
 );
 
 CREATE INDEX pathvisibility_jobid
@@ -387,7 +376,22 @@ CREATE TABLE Status (
    JobStatusLong BLOB, 
    Severity INT,
    PRIMARY KEY (JobStatus)
-   );
+);
+
+CREATE TABLE Quota (
+   ClientId INTEGER REFERENCES Client DEFAULT 0,
+   GraceTime INTEGER UNSIGNED DEFAULT 0,
+   QuotaLimit BIGINT UNSIGNED DEFAULT 0,
+   PRIMARY KEY (ClientId)
+);
+
+CREATE TABLE NDMPLevelMap (
+   ClientId INTEGER REFERENCES Client DEFAULT 0,
+   FileSetId INTEGER UNSIGNED REFERENCES FileSet DEFAULT 0,
+   FileSystem TEXT DEFAULT '',
+   DumpLevel INTEGER UNSIGNED DEFAULT 0,
+   CONSTRAINT NDMPLevelMap_pkey PRIMARY KEY (ClientId, FilesetId, FileSystem)
+);
 
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('C', 'Created, not yet running',15);

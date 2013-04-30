@@ -7,7 +7,7 @@
    many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation, which is 
+   License as published by the Free Software Foundation, which is
    listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
@@ -34,23 +34,25 @@
 #include "bacula.h"
 #include "stored.h"
 #include "sd_plugins.h"
+#include "lib/crypto_cache.h"
 
 const int dbglvl = 250;
 const char *plugin_type = "-sd.so";
-
+static alist *sd_plugin_list = NULL;
 
 /* Forward referenced functions */
 static bRC baculaGetValue(bpContext *ctx, bsdrVariable var, void *value);
 static bRC baculaSetValue(bpContext *ctx, bsdwVariable var, void *value);
-static bRC baculaRegisterEvents(bpContext *ctx, ...);
+static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...);
 static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
-  int type, utime_t mtime, const char *fmt, ...);
+                        int type, utime_t mtime, const char *fmt, ...);
 static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
-  int level, const char *fmt, ...);
-static char *baculaEditDeviceCodes(DCR *dcr, char *omsg, 
-  const char *imsg, const char *cmd);
+                          int level, const char *fmt, ...);
+static char *baculaEditDeviceCodes(DCR *dcr, char *omsg,
+                                   const char *imsg, const char *cmd);
+static char *baculaLookupCryptoKey(const char *VolumeName);
+static bool baculaUpdateVolumeInfo(DCR *dcr);
 static bool is_plugin_compatible(Plugin *plugin);
-
 
 /* Bacula info */
 static bsdInfo binfo = {
@@ -67,47 +69,150 @@ static bsdFuncs bfuncs = {
    baculaSetValue,
    baculaJobMsg,
    baculaDebugMsg,
-   baculaEditDeviceCodes
+   baculaEditDeviceCodes,
+   baculaLookupCryptoKey,
+   baculaUpdateVolumeInfo
 };
 
-/* 
+/*
  * Bacula private context
  */
 struct bacula_ctx {
-   JCR *jcr;                             /* jcr for plugin */
-   bRC  rc;                              /* last return code */
-   bool disabled;                        /* set if plugin disabled */
+   JCR *jcr;                                       /* jcr for plugin */
+   bRC  rc;                                        /* last return code */
+   bool disabled;                                  /* set if plugin disabled */
+   char events[nbytes_for_bits(SD_NR_EVENTS + 1)]; /* enabled events bitmask */
 };
 
-static bool is_plugin_disabled(bpContext *plugin_ctx)
+static inline bool is_event_enabled(bpContext *ctx, bsdEventType eventType)
 {
    bacula_ctx *b_ctx;
-   if (!plugin_ctx) {
+   if (!ctx) {
       return true;
    }
-   b_ctx = (bacula_ctx *)plugin_ctx->bContext;
+   b_ctx = (bacula_ctx *)ctx->bContext;
+   if (!b_ctx) {
+      return true;
+   }
+   return bit_is_set(eventType, b_ctx->events);
+}
+
+static inline bool is_plugin_disabled(bpContext *ctx)
+{
+   bacula_ctx *b_ctx;
+   if (!ctx) {
+      return true;
+   }
+   b_ctx = (bacula_ctx *)ctx->bContext;
    return b_ctx->disabled;
 }
 
 #ifdef needed
-static bool is_plugin_disabled(JCR *jcr)
+static inline bool is_plugin_disabled(JCR *jcr)
 {
    return is_plugin_disabled(jcr->plugin_ctx);
 }
 #endif
 
 /*
- * Create a plugin event 
+ * Edit codes into ChangerCommand
+ *  %% = %
+ *  %a = archive device name
+ *  %c = changer device name
+ *  %d = changer drive index
+ *  %f = Client's name
+ *  %j = Job name
+ *  %o = command
+ *  %s = Slot base 0
+ *  %S = Slot base 1
+ *  %v = Volume name
+ *
+ *
+ *  omsg = edited output message
+ *  imsg = input string containing edit codes (%x)
+ *  cmd = command string (load, unload, ...)
+ *
+ */
+char *edit_device_codes(DCR *dcr, char *omsg, const char *imsg, const char *cmd)
+{
+   const char *p;
+   const char *str;
+   char ed1[50];
+
+   *omsg = 0;
+   Dmsg1(1800, "edit_device_codes: %s\n", imsg);
+   for (p=imsg; *p; p++) {
+      if (*p == '%') {
+         switch (*++p) {
+         case '%':
+            str = "%";
+            break;
+         case 'a':
+            str = dcr->dev->archive_name();
+            break;
+         case 'c':
+            str = NPRT(dcr->device->changer_name);
+            break;
+         case 'd':
+            str = edit_int64(dcr->dev->drive_index, ed1);
+            break;
+         case 'o':
+            str = NPRT(cmd);
+            break;
+         case 's':
+            str = edit_int64(dcr->VolCatInfo.Slot - 1, ed1);
+            break;
+         case 'S':
+            str = edit_int64(dcr->VolCatInfo.Slot, ed1);
+            break;
+         case 'j':                    /* Job name */
+            str = dcr->jcr->Job;
+            break;
+         case 'v':
+            if (dcr->VolCatInfo.VolCatName[0]) {
+               str = dcr->VolCatInfo.VolCatName;
+            } else if (dcr->VolumeName[0]) {
+               str = dcr->VolumeName;
+            } else if (dcr->dev->vol && dcr->dev->vol->vol_name) {
+               str = dcr->dev->vol->vol_name;
+            } else {
+               str = dcr->dev->VolHdr.VolumeName;
+            }
+            break;
+         case 'f':
+            str = NPRT(dcr->jcr->client_name);
+            break;
+         default:
+            ed1[0] = '%';
+            ed1[1] = *p;
+            ed1[2] = 0;
+            str = ed1;
+            break;
+         }
+      } else {
+         ed1[0] = *p;
+         ed1[1] = 0;
+         str = ed1;
+      }
+      Dmsg1(1900, "add_str %s\n", str);
+      pm_strcat(&omsg, (char *)str);
+      Dmsg1(1800, "omsg=%s\n", omsg);
+   }
+   Dmsg1(800, "omsg=%s\n", omsg);
+   return omsg;
+}
+/*
+ * Create a plugin event
  */
 int generate_plugin_event(JCR *jcr, bsdEventType eventType, void *value)
 {
-   bpContext *plugin_ctx;
+   bpContext *ctx;
    bsdEvent event;
    Plugin *plugin;
    int i;
    bRC rc = bRC_OK;
 
-   if (!bplugin_list) {
+   if (!sd_plugin_list) {
       Dmsg0(dbglvl, "No bplugin_list: generate_plugin_event ignored.\n");
       return bRC_OK;
    }
@@ -129,12 +234,17 @@ int generate_plugin_event(JCR *jcr, bsdEventType eventType, void *value)
 
    Dmsg2(dbglvl, "sd-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
 
-   foreach_alist_index(i, plugin, bplugin_list) {
-      plugin_ctx = &plugin_ctx_list[i];
-      if (is_plugin_disabled(plugin_ctx)) {
+   foreach_alist_index(i, plugin, sd_plugin_list) {
+      ctx = &plugin_ctx_list[i];
+      if (!is_event_enabled(ctx, eventType)) {
+         Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
          continue;
       }
-      rc = sdplug_func(plugin)->handlePluginEvent(plugin_ctx, &event, value);
+      if (is_plugin_disabled(ctx)) {
+         Dmsg0(dbglvl, "Plugin disabled.\n");
+         continue;
+      }
+      rc = sdplug_func(plugin)->handlePluginEvent(ctx, &event, value);
       if (rc != bRC_OK) {
          break;
       }
@@ -151,7 +261,7 @@ void dump_sd_plugin(Plugin *plugin, FILE *fp)
    if (!plugin) {
       return ;
    }
-   psdInfo *info = (psdInfo *) plugin->pinfo;
+   genpInfo *info = (genpInfo *) plugin->pinfo;
    fprintf(fp, "\tversion=%d\n", info->version);
    fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
    fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));
@@ -159,6 +269,11 @@ void dump_sd_plugin(Plugin *plugin, FILE *fp)
    fprintf(fp, "\tlicence=%s\n", NPRTB(info->plugin_license));
    fprintf(fp, "\tversion=%s\n", NPRTB(info->plugin_version));
    fprintf(fp, "\tdescription=%s\n", NPRTB(info->plugin_description));
+}
+
+static void dump_sd_plugins(FILE *fp)
+{
+   dump_plugins(sd_plugin_list, fp);
 }
 
 /**
@@ -175,28 +290,42 @@ void load_sd_plugins(const char *plugin_dir)
       Dmsg0(dbglvl, "No sd plugin dir!\n");
       return;
    }
-   bplugin_list = New(alist(10, not_owned_by_alist));
-   if (!load_plugins((void *)&binfo, (void *)&bfuncs, plugin_dir, plugin_type, 
-                is_plugin_compatible)) {
-      /* Either none found, or some error */
-      if (bplugin_list->size() == 0) {
-         delete bplugin_list;
-         bplugin_list = NULL;
+   sd_plugin_list = New(alist(10, not_owned_by_alist));
+   if (!load_plugins((void *)&binfo, (void *)&bfuncs, sd_plugin_list,
+                     plugin_dir, plugin_type, is_plugin_compatible)) {
+      /*
+       * Either none found, or some error
+       */
+      if (sd_plugin_list->size() == 0) {
+         delete sd_plugin_list;
+         sd_plugin_list = NULL;
          Dmsg0(dbglvl, "No plugins loaded\n");
          return;
       }
    }
-   /* 
-    * Verify that the plugin is acceptable, and print information
-    *  about it.
+   /*
+    * Verify that the plugin is acceptable, and print information about it.
     */
-   foreach_alist_index(i, plugin, bplugin_list) {
+   foreach_alist_index(i, plugin, sd_plugin_list) {
       Jmsg(NULL, M_INFO, 0, _("Loaded plugin: %s\n"), plugin->file);
       Dmsg1(dbglvl, "Loaded plugin: %s\n", plugin->file);
    }
 
-   Dmsg1(dbglvl, "num plugins=%d\n", bplugin_list->size());
+   Dmsg1(dbglvl, "num plugins=%d\n", sd_plugin_list->size());
    dbg_plugin_add_hook(dump_sd_plugin);
+   dbg_print_plugin_add_hook(dump_sd_plugins);
+}
+
+void unload_sd_plugins(void)
+{
+   unload_plugins(sd_plugin_list);
+   delete sd_plugin_list;
+   sd_plugin_list = NULL;
+}
+
+int list_sd_plugins(POOL_MEM &msg)
+{
+   return list_plugins(sd_plugin_list, msg);
 }
 
 /**
@@ -205,12 +334,12 @@ void load_sd_plugins(const char *plugin_dir)
  */
 static bool is_plugin_compatible(Plugin *plugin)
 {
-   psdInfo *info = (psdInfo *)plugin->pinfo;
+   genpInfo *info = (genpInfo *)plugin->pinfo;
    Dmsg0(50, "is_plugin_compatible called\n");
    if (debug_level >= 50) {
       dump_sd_plugin(plugin, stdin);
    }
-   if (strcmp(info->plugin_magic, SD_PLUGIN_MAGIC) != 0) {
+   if (!bstrcmp(info->plugin_magic, SD_PLUGIN_MAGIC)) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin magic wrong. Plugin=%s wanted=%s got=%s\n"),
            plugin->file, SD_PLUGIN_MAGIC, info->plugin_magic);
       Dmsg3(50, "Plugin magic wrong. Plugin=%s wanted=%s got=%s\n",
@@ -225,25 +354,24 @@ static bool is_plugin_compatible(Plugin *plugin)
            plugin->file, SD_PLUGIN_INTERFACE_VERSION, info->version);
       return false;
    }
-   if (strcmp(info->plugin_license, "Bacula AGPLv3") != 0 &&
-       strcmp(info->plugin_license, "AGPLv3") != 0 &&
-       strcmp(info->plugin_license, "Bacula Systems(R) SA") != 0) {
+   if (!bstrcmp(info->plugin_license, "Bacula AGPLv3") &&
+       !bstrcmp(info->plugin_license, "AGPLv3") &&
+       !bstrcmp(info->plugin_license, "Bacula Systems(R) SA")) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin license incompatible. Plugin=%s license=%s\n"),
            plugin->file, info->plugin_license);
       Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
            plugin->file, info->plugin_license);
       return false;
    }
-   if (info->size != sizeof(psdInfo)) {
+   if (info->size != sizeof(genpInfo)) {
       Jmsg(NULL, M_ERROR, 0,
            _("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"),
-           plugin->file, sizeof(psdInfo), info->size);
+           plugin->file, sizeof(genpInfo), info->size);
       return false;
    }
-      
+
    return true;
 }
-
 
 /*
  * Create a new instance of each plugin for this Job
@@ -251,10 +379,10 @@ static bool is_plugin_compatible(Plugin *plugin)
 void new_plugins(JCR *jcr)
 {
    Plugin *plugin;
-   int i;
+   int i, num;
 
    Dmsg0(dbglvl, "=== enter new_plugins ===\n");
-   if (!bplugin_list) {
+   if (!sd_plugin_list) {
       Dmsg0(dbglvl, "No sd plugin list!\n");
       return;
    }
@@ -268,8 +396,7 @@ void new_plugins(JCR *jcr)
       return;
    }
 
-   int num = bplugin_list->size();
-
+   num = sd_plugin_list->size();
    Dmsg1(dbglvl, "sd-plugin-list size=%d\n", num);
    if (num == 0) {
       return;
@@ -279,7 +406,7 @@ void new_plugins(JCR *jcr)
 
    bpContext *plugin_ctx_list = jcr->plugin_ctx_list;
    Dmsg2(dbglvl, "Instantiate sd-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
-   foreach_alist_index(i, plugin, bplugin_list) {
+   foreach_alist_index(i, plugin, sd_plugin_list) {
       /* Start a new instance of each plugin */
       bacula_ctx *b_ctx = (bacula_ctx *)malloc(sizeof(bacula_ctx));
       memset(b_ctx, 0, sizeof(bacula_ctx));
@@ -300,13 +427,13 @@ void free_plugins(JCR *jcr)
    Plugin *plugin;
    int i;
 
-   if (!bplugin_list || !jcr->plugin_ctx_list) {
+   if (!sd_plugin_list || !jcr->plugin_ctx_list) {
       return;
    }
 
    bpContext *plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
    Dmsg2(dbglvl, "Free instance sd-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
-   foreach_alist_index(i, plugin, bplugin_list) {
+   foreach_alist_index(i, plugin, sd_plugin_list) {
       /* Free the plugin instance */
       sdplug_func(plugin)->freePlugin(&plugin_ctx_list[i]);
       free(plugin_ctx_list[i].bContext);     /* free Bacula private context */
@@ -352,7 +479,7 @@ static bRC baculaGetValue(bpContext *ctx, bsdrVariable var, void *value)
 
 static bRC baculaSetValue(bpContext *ctx, bsdwVariable var, void *value)
 {
-   JCR *jcr;   
+   JCR *jcr;
    if (!value || !ctx) {
       return bRC_Error;
    }
@@ -361,27 +488,35 @@ static bRC baculaSetValue(bpContext *ctx, bsdwVariable var, void *value)
    if (!jcr) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "Bacula: jcr=%p\n", jcr); 
+// Dmsg1(dbglvl, "Bacula: jcr=%p\n", jcr);
    /* Nothing implemented yet */
    Dmsg1(dbglvl, "sd-plugin: baculaSetValue var=%d\n", var);
    return bRC_OK;
 }
 
-static bRC baculaRegisterEvents(bpContext *ctx, ...)
+static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...)
 {
+   int i;
    va_list args;
    uint32_t event;
+   bacula_ctx *b_ctx;
 
-   va_start(args, ctx);
-   while ((event = va_arg(args, uint32_t))) {
+   if (!ctx) {
+      return bRC_Error;
+   }
+   b_ctx = (bacula_ctx *)ctx->bContext;
+   va_start(args, nr_events);
+   for (i = 0; i < nr_events; i++) {
+      event = va_arg(args, uint32_t);
       Dmsg1(dbglvl, "sd-Plugin wants event=%u\n", event);
+      set_bit(event, b_ctx->events);
    }
    va_end(args);
    return bRC_OK;
 }
 
 static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
-  int type, utime_t mtime, const char *fmt, ...)
+                        int type, utime_t mtime, const char *fmt, ...)
 {
    va_list arg_ptr;
    char buf[2000];
@@ -401,7 +536,7 @@ static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
 }
 
 static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
-  int level, const char *fmt, ...)
+                          int level, const char *fmt, ...)
 {
    va_list arg_ptr;
    char buf[2000];
@@ -413,10 +548,20 @@ static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
    return bRC_OK;
 }
 
-static char *baculaEditDeviceCodes(DCR *dcr, char *omsg, 
-  const char *imsg, const char *cmd)
+static char *baculaEditDeviceCodes(DCR *dcr, char *omsg,
+                                   const char *imsg, const char *cmd)
 {
    return edit_device_codes(dcr, omsg, imsg, cmd);
+}
+
+static char *baculaLookupCryptoKey(const char *VolumeName)
+{
+   return lookup_crypto_cache_entry(VolumeName);
+}
+
+static bool baculaUpdateVolumeInfo(DCR *dcr)
+{
+   return dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ);
 }
 
 #ifdef TEST_PROGRAM
@@ -428,9 +573,16 @@ int main(int argc, char *argv[])
    JCR *jcr1 = &mjcr1;
    JCR *jcr2 = &mjcr2;
 
-   strcpy(my_name, "test-dir");
-    
-   getcwd(plugin_dir, sizeof(plugin_dir)-1);
+   my_name_is(argc, argv, "plugtest");
+   init_msg(NULL, NULL);
+
+   OSDependentInit();
+
+   if (argc != 1) {
+      bstrncpy(plugin_dir, argv[1], sizeof(plugin_dir));
+   } else {
+      getcwd(plugin_dir, sizeof(plugin_dir)-1);
+   }
    load_sd_plugins(plugin_dir);
 
    jcr1->JobId = 111;
@@ -446,12 +598,13 @@ int main(int argc, char *argv[])
    generate_plugin_event(jcr2, bsdEventJobEnd);
    free_plugins(jcr2);
 
-   unload_plugins();
+   unload_sd_plugins();
 
-   Dmsg0(dbglvl, "sd-plugin: OK ...\n");
+   term_msg();
    close_memory_pool();
+   lmgr_cleanup_main();
    sm_dump(false);
-   return 0;
+   exit(0);
 }
 
 #endif /* TEST_PROGRAM */

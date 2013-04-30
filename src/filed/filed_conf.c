@@ -52,7 +52,8 @@
 #include "bacula.h"
 #include "filed.h"
 
-/* Define the first and last resource ID record
+/*
+ * Define the first and last resource ID record
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
@@ -61,11 +62,12 @@ int32_t r_last  = R_LAST;
 static RES *sres_head[R_LAST - R_FIRST + 1];
 RES **res_head = sres_head;
 
+/*
+ * Forward referenced subroutines
+ */
 
-/* Forward referenced subroutines */
-
-
-/* We build the current resource here as we are
+/*
+ * We build the current resource here as we are
  * scanning the resource configuration definition,
  * then move it to allocated memory when the resource
  * scan is complete.
@@ -79,69 +81,77 @@ URES res_all;
 #endif
 int32_t res_all_size = sizeof(res_all);
 
-/* Definition of records permitted within each
+/*
+ * Definition of records permitted within each
  * resource with the routine to process the record
  * information.
  */
 
-/* Client or File daemon "Global" resources */
+/*
+ * Client or File daemon "Global" resources
+ */
 static RES_ITEM cli_items[] = {
-   {"name",        store_name,  ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,   ITEM(res_client.hdr.desc), 0, 0, 0},
-   {"fdport",      store_addresses_port,    ITEM(res_client.FDaddrs),  0, ITEM_DEFAULT, 9102},
-   {"fdaddress",   store_addresses_address, ITEM(res_client.FDaddrs),  0, ITEM_DEFAULT, 9102},
-   {"fdaddresses", store_addresses,         ITEM(res_client.FDaddrs),  0, ITEM_DEFAULT, 9102},
-   {"fdsourceaddress", store_addresses_address, ITEM(res_client.FDsrc_addr),  0, ITEM_DEFAULT, 0},
-
-   {"workingdirectory",  store_dir, ITEM(res_client.working_directory), 0, ITEM_REQUIRED, 0},
-   {"piddirectory",  store_dir,     ITEM(res_client.pid_directory),     0, ITEM_REQUIRED, 0},
-   {"subsysdirectory",  store_dir,  ITEM(res_client.subsys_directory),  0, 0, 0},
-   {"plugindirectory",  store_dir,  ITEM(res_client.plugin_directory),  0, 0, 0},
-   {"scriptsdirectory", store_dir,  ITEM(res_client.scripts_directory),  0, 0, 0},
-   {"maximumconcurrentjobs", store_pint32,  ITEM(res_client.MaxConcurrentJobs), 0, ITEM_DEFAULT, 20},
-   {"messages",      store_res, ITEM(res_client.messages), R_MSGS, 0, 0},
-   {"sdconnecttimeout", store_time,ITEM(res_client.SDConnectTimeout), 0, ITEM_DEFAULT, 60 * 30},
-   {"heartbeatinterval", store_time, ITEM(res_client.heartbeat_interval), 0, ITEM_DEFAULT, 0},
-   {"maximumnetworkbuffersize", store_pint32, ITEM(res_client.max_network_buffer_size), 0, 0, 0},
+   { "name", store_name, ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(res_client.hdr.desc), 0, 0, NULL },
+   { "fdport", store_addresses_port, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, "9102" },
+   { "fdaddress", store_addresses_address, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, "9102" },
+   { "fdaddresses", store_addresses, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, "9102" },
+   { "fdsourceaddress", store_addresses_address, ITEM(res_client.FDsrc_addr), 0, ITEM_DEFAULT, "0" },
+   { "workingdirectory", store_dir, ITEM(res_client.working_directory), 0, ITEM_DEFAULT, _PATH_BACULA_WORKINGDIR },
+   { "piddirectory", store_dir, ITEM(res_client.pid_directory), 0, ITEM_DEFAULT, _PATH_BACULA_PIDDIR },
+   { "subsysdirectory", store_dir, ITEM(res_client.subsys_directory), 0, 0, NULL },
+   { "plugindirectory", store_dir, ITEM(res_client.plugin_directory), 0, 0, NULL },
+   { "scriptsdirectory", store_dir, ITEM(res_client.scripts_directory), 0, 0, NULL },
+   { "maximumconcurrentjobs", store_pint32, ITEM(res_client.MaxConcurrentJobs), 0, ITEM_DEFAULT, "20" },
+   { "messages", store_res, ITEM(res_client.messages), R_MSGS, 0, NULL },
+   { "sdconnecttimeout", store_time,ITEM(res_client.SDConnectTimeout), 0, ITEM_DEFAULT, "180" /* 60 * 30 */ },
+   { "heartbeatinterval", store_time, ITEM(res_client.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
+   { "maximumnetworkbuffersize", store_pint32, ITEM(res_client.max_network_buffer_size), 0, 0, NULL },
 #ifdef DATA_ENCRYPTION
-   {"pkisignatures",         store_bool,    ITEM(res_client.pki_sign), 0, ITEM_DEFAULT, 0},
-   {"pkiencryption",         store_bool,    ITEM(res_client.pki_encrypt), 0, ITEM_DEFAULT, 0},
-   {"pkikeypair",            store_dir,       ITEM(res_client.pki_keypair_file), 0, 0, 0},
-   {"pkisigner",             store_alist_str, ITEM(res_client.pki_signing_key_files), 0, 0, 0},
-   {"pkimasterkey",          store_alist_str, ITEM(res_client.pki_master_key_files), 0, 0, 0},
+   { "pkisignatures", store_bool, ITEM(res_client.pki_sign), 0, ITEM_DEFAULT, "false" },
+   { "pkiencryption", store_bool, ITEM(res_client.pki_encrypt), 0, ITEM_DEFAULT, "false" },
+   { "pkikeypair", store_dir, ITEM(res_client.pki_keypair_file), 0, 0, NULL },
+   { "pkisigner", store_alist_str, ITEM(res_client.pki_signing_key_files), 0, 0, NULL },
+   { "pkimasterkey", store_alist_str, ITEM(res_client.pki_master_key_files), 0, 0, NULL },
 #endif
-   {"tlsauthenticate",       store_bool,    ITEM(res_client.tls_authenticate),  0, 0, 0},
-   {"tlsenable",             store_bool,    ITEM(res_client.tls_enable),  0, 0, 0},
-   {"tlsrequire",            store_bool,    ITEM(res_client.tls_require), 0, 0, 0},
-   {"tlscacertificatefile",  store_dir,       ITEM(res_client.tls_ca_certfile), 0, 0, 0},
-   {"tlscacertificatedir",   store_dir,       ITEM(res_client.tls_ca_certdir), 0, 0, 0},
-   {"tlscertificate",        store_dir,       ITEM(res_client.tls_certfile), 0, 0, 0},
-   {"tlskey",                store_dir,       ITEM(res_client.tls_keyfile), 0, 0, 0},
-   {"verid",                 store_str,       ITEM(res_client.verid), 0, 0, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
+   { "tlsauthenticate", store_bool, ITEM(res_client.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", store_bool, ITEM(res_client.tls_enable), 0, 0, NULL },
+   { "tlsrequire", store_bool, ITEM(res_client.tls_require), 0, 0, NULL },
+   { "tlscacertificatefile", store_dir, ITEM(res_client.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", store_dir, ITEM(res_client.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificate", store_dir, ITEM(res_client.tls_certfile), 0, 0, NULL },
+   { "tlskey", store_dir, ITEM(res_client.tls_keyfile), 0, 0, NULL },
+   { "verid", store_str, ITEM(res_client.verid), 0, 0, NULL },
+   { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
-/* Directors that can use our services */
+/*
+ * Directors that can use our services
+ */
 static RES_ITEM dir_items[] = {
-   {"name",        store_name,     ITEM(res_dir.hdr.name),  0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(res_dir.hdr.desc),  0, 0, 0},
-   {"password",    store_password, ITEM(res_dir.password),  0, ITEM_REQUIRED, 0},
-   {"address",     store_str,      ITEM(res_dir.address),   0, 0, 0},
-   {"monitor",     store_bool,   ITEM(res_dir.monitor),   0, ITEM_DEFAULT, 0},
-   {"tlsauthenticate",      store_bool,    ITEM(res_dir.tls_authenticate), 0, 0, 0},
-   {"tlsenable",            store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
-   {"tlsrequire",           store_bool,    ITEM(res_dir.tls_require), 0, 0, 0},
-   {"tlsverifypeer",        store_bool,    ITEM(res_dir.tls_verify_peer), 0, ITEM_DEFAULT, 1},
-   {"tlscacertificatefile", store_dir,       ITEM(res_dir.tls_ca_certfile), 0, 0, 0},
-   {"tlscacertificatedir",  store_dir,       ITEM(res_dir.tls_ca_certdir), 0, 0, 0},
-   {"tlscertificate",       store_dir,       ITEM(res_dir.tls_certfile), 0, 0, 0},
-   {"tlskey",               store_dir,       ITEM(res_dir.tls_keyfile), 0, 0, 0},
-   {"tlsdhfile",            store_dir,       ITEM(res_dir.tls_dhfile), 0, 0, 0},
-   {"tlsallowedcn",         store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
+   { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
+   { "password", store_password, ITEM(res_dir.password), 0, ITEM_REQUIRED, NULL },
+   { "address", store_str, ITEM(res_dir.address), 0, 0, NULL },
+   { "monitor", store_bool, ITEM(res_dir.monitor), 0, ITEM_DEFAULT, "false" },
+   { "tlsauthenticate", store_bool, ITEM(res_dir.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", store_bool, ITEM(res_dir.tls_enable), 0, 0, NULL },
+   { "tlsrequire", store_bool, ITEM(res_dir.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", store_bool, ITEM(res_dir.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", store_dir, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificate", store_dir, ITEM(res_dir.tls_certfile), 0, 0, NULL },
+   { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
+   { "tlsdhfile", store_dir, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
+   { "tlsallowedcn", store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
+   { "maximumbandwidthperjob", store_speed, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
-/* Message resource */
+/*
+ * Message resource
+ */
 extern RES_ITEM msgs_items[];
 
 /*
@@ -149,15 +159,16 @@ extern RES_ITEM msgs_items[];
  * It must have one item for each of the resources.
  */
 RES_TABLE resources[] = {
-   {"director",      dir_items,   R_DIRECTOR},
-   {"filedaemon",    cli_items,   R_CLIENT},
-   {"client",        cli_items,   R_CLIENT},     /* alias for filedaemon */
-   {"messages",      msgs_items,  R_MSGS},
-   {NULL,            NULL,        0}
+   { "director", dir_items, R_DIRECTOR },
+   { "filedaemon", cli_items, R_CLIENT },
+   { "client", cli_items, R_CLIENT }, /* alias for filedaemon */
+   { "messages", msgs_items, R_MSGS },
+   { NULL, NULL, 0}
 };
 
-
-/* Dump contents of resource */
+/*
+ * Dump contents of resource
+ */
 void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
    URES *res = (URES *)reshdr;
@@ -167,18 +178,18 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
       sendit(sock, "No record for %d %s\n", type, res_to_str(type));
       return;
    }
-   if (type < 0) {                    /* no recursion */
+   if (type < 0) { /* no recursion */
       type = - type;
       recurse = 0;
    }
    switch (type) {
    case R_DIRECTOR:
       sendit(sock, "Director: name=%s password=%s\n", reshdr->name,
-              res->res_dir.password);
+             res->res_dir.password);
       break;
    case R_CLIENT:
       sendit(sock, "Client: name=%s FDport=%d\n", reshdr->name,
-              get_first_port_host_order(res->res_client.FDaddrs));
+             get_first_port_host_order(res->res_client.FDaddrs));
       break;
    case R_MSGS:
       sendit(sock, "Messages: name=%s\n", res->res_msgs.hdr.name);
@@ -211,7 +222,9 @@ void free_resource(RES *sres, int type)
       return;
    }
 
-   /* common stuff -- free the resource name */
+   /*
+    * Common stuff -- free the resource name
+    */
    nres = (RES *)res->res_dir.hdr.next;
    if (res->res_dir.hdr.name) {
       free(res->res_dir.hdr.name);
@@ -326,7 +339,7 @@ void free_resource(RES *sres, int type)
          free(res->res_msgs.mail_cmd);
       if (res->res_msgs.operator_cmd)
          free(res->res_msgs.operator_cmd);
-      free_msgs_res((MSGS *)res);  /* free message resource */
+      free_msgs_res((MSGSRES *)res);  /* free message resource */
       res = NULL;
       break;
    default:
@@ -341,7 +354,8 @@ void free_resource(RES *sres, int type)
    }
 }
 
-/* Save the new resource by chaining it into the head list for
+/*
+ * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
@@ -355,7 +369,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
    /*
     * Ensure that all required items are present
     */
-   for (i=0; items[i].name; i++) {
+   for (i = 0; items[i].name; i++) {
       if (items[i].flags & ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
                Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
@@ -364,18 +378,23 @@ void save_resource(int type, RES_ITEM *items, int pass)
       }
    }
 
-   /* During pass 2, we looked up pointers to all the resources
+   /*
+    * During pass 2, we looked up pointers to all the resources
     * referrenced in the current resource, , now we
     * must copy their address from the static record to the allocated
     * record.
     */
    if (pass == 2) {
       switch (type) {
-         /* Resources not containing a resource */
+         /*
+          * Resources not containing a resource
+          */
          case R_MSGS:
             break;
 
-         /* Resources containing another resource */
+         /*
+          * Resources containing another resource
+          */
          case R_DIRECTOR:
             if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name)) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
@@ -399,7 +418,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
             error = 1;
             break;
       }
-      /* Note, the resoure name was already saved during pass 1,
+      /*
+       * Note, the resoure name was already saved during pass 1,
        * so here, we can just release it.
        */
       if (res_all.res_dir.hdr.name) {
@@ -413,16 +433,18 @@ void save_resource(int type, RES_ITEM *items, int pass)
       return;
    }
 
-   /* The following code is only executed on pass 1 */
+   /*
+    * The following code is only executed on pass 1
+    */
    switch (type) {
       case R_DIRECTOR:
          size = sizeof(DIRRES);
          break;
       case R_CLIENT:
-         size = sizeof(CLIENT);
+         size = sizeof(CLIENTRES);
          break;
       case R_MSGS:
-         size = sizeof(MSGS);
+         size = sizeof(MSGSRES);
          break;
       default:
          printf(_("Unknown resource type %d\n"), type);
@@ -430,7 +452,9 @@ void save_resource(int type, RES_ITEM *items, int pass)
          size = 1;
          break;
    }
-   /* Common */
+   /*
+    * Common
+    */
    if (!error) {
       res = (URES *)malloc(size);
       memcpy(res, &res_all, size);
@@ -438,10 +462,12 @@ void save_resource(int type, RES_ITEM *items, int pass)
          res_head[rindex] = (RES *)res; /* store first entry */
       } else {
          RES *next, *last;
-         /* Add new res to end of chain */
-         for (last=next=res_head[rindex]; next; next=next->next) {
+         /*
+          * Add new res to end of chain
+          */
+         for (last = next = res_head[rindex]; next; next = next->next) {
             last = next;
-            if (strcmp(next->name, res->res_dir.hdr.name) == 0) {
+            if (bstrcmp(next->name, res->res_dir.hdr.name)) {
                Emsg2(M_ERROR_TERM, 0,
                   _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
                   resources[rindex].name, res->res_dir.hdr.name);
@@ -456,7 +482,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
 
 bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, exit_code, (void *)&res_all, res_all_size,
-      r_first, r_last, resources, res_head);
+   config->init(configfile, NULL, NULL, NULL, exit_code,
+                (void *)&res_all, res_all_size, r_first,
+                r_last, resources, res_head);
    return config->parse_config();
 }

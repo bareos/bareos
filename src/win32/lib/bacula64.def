@@ -770,7 +770,6 @@ _Z6lmgr_pPP16pthread_mutex_t_
 _Z6lmgr_vPP16pthread_mutex_t_
 
 console_command DATA
-bplugin_list DATA
 plugin_bopen DATA
 plugin_bclose DATA
 plugin_bwrite DATA

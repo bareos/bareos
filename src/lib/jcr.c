@@ -178,7 +178,7 @@ uint64_t write_last_jobs_list(int fd, uint64_t addr)
 {
    struct s_last_job *je;
    uint32_t num;
-   ssize_t stat;
+   ssize_t status;
 
    Dmsg1(100, "write_last_jobs seek to %d\n", (int)addr);
    if (lseek(fd, (boffset_t)addr, SEEK_SET) < 0) {
@@ -203,11 +203,11 @@ uint64_t write_last_jobs_list(int fd, uint64_t addr)
       unlock_last_jobs_list();
    }
    /* Return current address */
-   stat = lseek(fd, 0, SEEK_CUR);
-   if (stat < 0) {
-      stat = 0;
+   status = lseek(fd, 0, SEEK_CUR);
+   if (status < 0) {
+      status = 0;
    }
-   return stat;
+   return status;
 
 bail_out:
    unlock_last_jobs_list();
@@ -446,7 +446,7 @@ static void free_common_jcr(JCR *jcr)
    }
 
    if (jcr->dir_bsock) {
-      bnet_close(jcr->dir_bsock);
+      jcr->dir_bsock->close();
       jcr->dir_bsock = NULL;
    }
    if (jcr->errmsg) {
@@ -751,7 +751,7 @@ JCR *get_jcr_by_partial_name(char *Job)
    }
    len = strlen(Job);
    foreach_jcr(jcr) {
-      if (strncmp(Job, jcr->Job, len) == 0) {
+      if (bstrncmp(Job, jcr->Job, len)) {
          jcr->inc_use_count();
          Dmsg3(dbglvl, "Inc get_jcr jid=%u use_count=%d Job=%s\n", 
             jcr->JobId, jcr->use_count(), jcr->Job);
@@ -777,7 +777,7 @@ JCR *get_jcr_by_full_name(char *Job)
       return NULL;
    }
    foreach_jcr(jcr) {
-      if (strcmp(jcr->Job, Job) == 0) {
+      if (bstrcmp(jcr->Job, Job)) {
          jcr->inc_use_count();
          Dmsg3(dbglvl, "Inc get_jcr jid=%u use_count=%d Job=%s\n", 
             jcr->JobId, jcr->use_count(), jcr->Job);
@@ -1208,10 +1208,10 @@ void dbg_print_jcr(FILE *fp)
 
    for (JCR *jcr = (JCR *)jcrs->first(); jcr ; jcr = (JCR *)jcrs->next(jcr)) {
       fprintf(fp, "threadid=%p JobId=%d JobStatus=%c jcr=%p name=%s\n", 
-              (void *)jcr->my_thread_id, (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
+              jcr->my_thread_id, (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
       fprintf(fp, "threadid=%p killable=%d JobId=%d JobStatus=%c "
                   "jcr=%p name=%s\n",
-              (void *)jcr->my_thread_id, jcr->is_killable(),
+              jcr->my_thread_id, jcr->is_killable(),
               (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
       fprintf(fp, "\tuse_count=%i\n", jcr->use_count());
       fprintf(fp, "\tJobType=%c JobLevel=%c\n",

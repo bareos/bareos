@@ -577,7 +577,7 @@ void *check_deadlock(void *)
          lmgr_dump();
          ASSERT(0);
       }
-      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old);
+      pthread_setcancelstate(old, NULL);
       pthread_testcancel();
    }
    Dmsg0(100, "Exit check_deadlock.\n");

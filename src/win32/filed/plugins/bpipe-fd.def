@@ -7,7 +7,6 @@ EXPORTS
 ;_Z11close_wpipeP5BPIPE
 
 ;console_command DATA
-;bplugin_list DATA
 ;plugin_bopen DATA
 ;plugin_bclose DATA
 ;plugin_bwrite DATA

@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -45,14 +45,13 @@
  *      for the resource records.
  *
  *     Kern Sibbald, January MM, September MM
- *
- *     Version $Id$
  */
 
 #include "bacula.h"
 #include "bat_conf.h"
 
-/* Define the first and last resource ID record
+/*
+ * Define the first and last resource ID record
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
@@ -64,7 +63,8 @@ RES **res_head = sres_head;
 /* Forward referenced subroutines */
 
 
-/* We build the current resource here as we are
+/*
+ * We build the current resource here as we are
  * scanning the resource configuration definition,
  * then move it to allocated memory when the resource
  * scan is complete.
@@ -75,63 +75,64 @@ extern "C" URES res_all; /* declare as C to avoid name mangling by visual c */
 URES res_all;
 int32_t res_all_size = sizeof(res_all);
 
-/* Definition of records permitted within each
+/*
+ * Definition of records permitted within each
  * resource with the routine to process the record
  * information.
  */
 static RES_ITEM dir_items[] = {
-   {"name",        store_name,     ITEM(dir_res.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(dir_res.hdr.desc), 0, 0, 0},
-   {"dirport",     store_pint32,   ITEM(dir_res.DIRport),  0, ITEM_DEFAULT, 9101},
-   {"address",     store_str,      ITEM(dir_res.address),  0, ITEM_REQUIRED, 0},
-   {"password",    store_password, ITEM(dir_res.password), 0, 0, 0},
-   {"tlsauthenticate",store_bool,    ITEM(dir_res.tls_authenticate), 0, 0, 0},
-   {"tlsenable",      store_bool,    ITEM(dir_res.tls_enable), 0, 0, 0},
-   {"tlsrequire",     store_bool,    ITEM(dir_res.tls_require), 0, 0, 0},
-   {"tlscacertificatefile", store_dir, ITEM(dir_res.tls_ca_certfile), 0, 0, 0},
-   {"tlscacertificatedir", store_dir,  ITEM(dir_res.tls_ca_certdir), 0, 0, 0},
-   {"tlscertificate", store_dir,       ITEM(dir_res.tls_certfile), 0, 0, 0},
-   {"tlskey",         store_dir,       ITEM(dir_res.tls_keyfile), 0, 0, 0},
-   {"heartbeatinterval", store_time, ITEM(dir_res.heartbeat_interval), 0, ITEM_DEFAULT, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
+   { "name", store_name, ITEM(dir_res.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(dir_res.hdr.desc), 0, 0, NULL },
+   { "dirport", store_pint32, ITEM(dir_res.DIRport), 0, ITEM_DEFAULT, "9101" },
+   { "address", store_str, ITEM(dir_res.address), 0, ITEM_REQUIRED, NULL },
+   { "password", store_password, ITEM(dir_res.password), 0, 0, NULL },
+   { "tlsauthenticate",store_bool, ITEM(dir_res.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", store_bool, ITEM(dir_res.tls_enable), 0, 0, NULL },
+   { "tlsrequire", store_bool, ITEM(dir_res.tls_require), 0, 0, NULL },
+   { "tlscacertificatefile", store_dir, ITEM(dir_res.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", store_dir, ITEM(dir_res.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificate", store_dir, ITEM(dir_res.tls_certfile), 0, 0, NULL },
+   { "tlskey", store_dir, ITEM(dir_res.tls_keyfile), 0, 0, NULL },
+   { "heartbeatinterval", store_time, ITEM(dir_res.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 static RES_ITEM con_items[] = {
-   {"name",        store_name,     ITEM(con_res.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(con_res.hdr.desc), 0, 0, 0},
-   {"password",    store_password, ITEM(con_res.password), 0, ITEM_REQUIRED, 0},
-   {"tlsauthenticate",store_bool,    ITEM(con_res.tls_authenticate), 0, 0, 0},
-   {"tlsenable",      store_bool,    ITEM(con_res.tls_enable), 0, 0, 0},
-   {"tlsrequire",     store_bool,    ITEM(con_res.tls_require), 0, 0, 0},
-   {"tlscacertificatefile", store_dir, ITEM(con_res.tls_ca_certfile), 0, 0, 0},
-   {"tlscacertificatedir", store_dir,  ITEM(con_res.tls_ca_certdir), 0, 0, 0},
-   {"tlscertificate", store_dir,       ITEM(con_res.tls_certfile), 0, 0, 0},
-   {"tlskey",         store_dir,       ITEM(con_res.tls_keyfile), 0, 0, 0},
-   {"heartbeatinterval", store_time, ITEM(con_res.heartbeat_interval), 0, ITEM_DEFAULT, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
+   { "name", store_name, ITEM(con_res.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(con_res.hdr.desc), 0, 0, NULL },
+   { "password", store_password, ITEM(con_res.password), 0, ITEM_REQUIRED, NULL },
+   { "tlsauthenticate",store_bool, ITEM(con_res.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", store_bool, ITEM(con_res.tls_enable), 0, 0, NULL },
+   { "tlsrequire", store_bool, ITEM(con_res.tls_require), 0, 0, NULL },
+   { "tlscacertificatefile", store_dir, ITEM(con_res.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", store_dir, ITEM(con_res.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificate", store_dir, ITEM(con_res.tls_certfile), 0, 0, NULL },
+   { "tlskey", store_dir, ITEM(con_res.tls_keyfile), 0, 0, NULL },
+   { "heartbeatinterval", store_time, ITEM(con_res.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 static RES_ITEM con_font_items[] = {
-   {"name",        store_name,     ITEM(con_font.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(con_font.hdr.desc), 0, 0, 0},
-   {"font",        store_str,      ITEM(con_font.fontface), 0, 0, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
+   { "name", store_name, ITEM(con_font.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(con_font.hdr.desc), 0, 0, NULL },
+   { "font", store_str, ITEM(con_font.fontface), 0, 0, NULL },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
-
 
 /*
  * This is the master resource definition.
  * It must have one item for each of the resources.
  */
 RES_TABLE resources[] = {
-   {"director",      dir_items,   R_DIRECTOR},
-   {"console",       con_items,   R_CONSOLE},
-   {"consolefont",   con_font_items, R_CONSOLE_FONT},
-   {NULL,            NULL,        0}
+   { "director", dir_items, R_DIRECTOR },
+   { "console", con_items, R_CONSOLE },
+   { "consolefont", con_font_items, R_CONSOLE_FONT },
+   { NULL, NULL, 0 }
 };
 
-
-/* Dump contents of resource */
+/*
+ * Dump contents of resource
+ */
 void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
    URES *res = (URES *)reshdr;
@@ -141,7 +142,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
       printf(_("No record for %d %s\n"), type, res_to_str(type));
       return;
    }
-   if (type < 0) {                    /* no recursion */
+   if (type < 0) { /* no recursion */
       type = - type;
       recurse = false;
    }
@@ -180,7 +181,9 @@ void free_resource(RES *sres, int type)
    if (res == NULL)
       return;
 
-   /* common stuff -- free the resource name */
+   /*
+    * Common stuff -- free the resource name
+    */
    nres = (RES *)res->dir_res.hdr.next;
    if (res->dir_res.hdr.name) {
       free(res->dir_res.hdr.name);
@@ -238,14 +241,17 @@ void free_resource(RES *sres, int type)
    default:
       printf(_("Unknown resource type %d\n"), type);
    }
-   /* Common stuff again -- free the resource, recurse to next one */
+   /*
+    * Common stuff again -- free the resource, recurse to next one
+    */
    free(res);
    if (nres) {
       free_resource(nres, type);
    }
 }
 
-/* Save the new resource by chaining it into the head list for
+/*
+ * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
@@ -268,14 +274,17 @@ void save_resource(int type, RES_ITEM *items, int pass)
       }
    }
 
-   /* During pass 2, we looked up pointers to all the resources
+   /*
+    * During pass 2, we looked up pointers to all the resources
     * referrenced in the current resource, , now we
     * must copy their address from the static record to the allocated
     * record.
     */
    if (pass == 2) {
       switch (type) {
-      /* Resources not containing a resource */
+      /*
+       * Resources not containing a resource
+       */
       case R_DIRECTOR:
          break;
 
@@ -288,7 +297,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
          error = 1;
          break;
       }
-      /* Note, the resoure name was already saved during pass 1,
+      /*
+       * Note, the resoure name was already saved during pass 1,
        * so here, we can just release it.
        */
       if (res_all.dir_res.hdr.name) {
@@ -302,7 +312,9 @@ void save_resource(int type, RES_ITEM *items, int pass)
       return;
    }
 
-   /* The following code is only executed during pass 1 */
+   /*
+    * The following code is only executed during pass 1
+    */
    switch (type) {
    case R_DIRECTOR:
       size = sizeof(DIRRES);
@@ -318,7 +330,9 @@ void save_resource(int type, RES_ITEM *items, int pass)
       error = 1;
       break;
    }
-   /* Common */
+   /*
+    * Common
+    */
    if (!error) {
       res = (URES *)malloc(size);
       memcpy(res, &res_all, size);
@@ -326,7 +340,9 @@ void save_resource(int type, RES_ITEM *items, int pass)
          res_head[rindex] = (RES *)res; /* store first entry */
       } else {
          RES *next, *last;
-         /* Add new res to end of chain */
+         /*
+          * Add new res to end of chain
+          */
          for (last=next=res_head[rindex]; next; next=next->next) {
             last = next;
             if (strcmp(next->name, res->dir_res.hdr.name) == 0) {
@@ -344,7 +360,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
 
 bool parse_bat_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, exit_code, (void *)&res_all, res_all_size,
-      r_first, r_last, resources, res_head);
+   config->init(configfile, NULL, NULL, NULL, exit_code,
+                (void *)&res_all, res_all_size, r_first,
+                r_last, resources, res_head);
    return config->parse_config();
 }

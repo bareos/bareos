@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
    int32_t j;
    time_t t = 1028712799;
 
-   if (argc > 1 && strcmp(argv[1], "-v") == 0)
+   if (argc > 1 && bstrcmp(argv[1], "-v"))
       debug_level++;
 
    base64_init();

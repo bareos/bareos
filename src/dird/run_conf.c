@@ -26,12 +26,10 @@
    Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Configuration parser for Director Run Configuration
+ * directives, which are part of the Schedule Resource
  *
- *  Configuration parser for Director Run Configuration
- *   directives, which are part of the Schedule Resource
- *
- *     Kern Sibbald, May MM
- *
+ * Kern Sibbald, May MM
  */
 
 #include "bacula.h"
@@ -46,8 +44,9 @@ extern URES res_all;
 #endif
 extern struct s_jl joblevels[];
 
-/* Forward referenced subroutines */
-
+/*
+ * Forward referenced subroutines
+ */
 enum e_state {
    s_none = 0,
    s_range,
@@ -60,8 +59,10 @@ enum e_state {
    s_weekly,
    s_monthly,
    s_hourly,
-   s_wom,                           /* 1st, 2nd, ...*/
-   s_woy                            /* week of year w00 - w53 */
+   s_wom,                             /* 1st, 2nd, ...*/
+   s_woy,                             /* week of year w00 - w53 */
+   s_last,                            /* last week of month */
+   s_modulo                           /* every nth monthday/week */
 };
 
 struct s_keyw {
@@ -70,72 +71,70 @@ struct s_keyw {
   int code;                           /* state value */
 };
 
-/* Keywords understood by parser */
+/*
+ * Keywords understood by parser
+ */
 static struct s_keyw keyw[] = {
-  {NT_("on"),         s_none,    0},
-  {NT_("at"),         s_at,      0},
-
-  {NT_("sun"),        s_wday,    0},
-  {NT_("mon"),        s_wday,    1},
-  {NT_("tue"),        s_wday,    2},
-  {NT_("wed"),        s_wday,    3},
-  {NT_("thu"),        s_wday,    4},
-  {NT_("fri"),        s_wday,    5},
-  {NT_("sat"),        s_wday,    6},
-  {NT_("jan"),        s_month,   0},
-  {NT_("feb"),        s_month,   1},
-  {NT_("mar"),        s_month,   2},
-  {NT_("apr"),        s_month,   3},
-  {NT_("may"),        s_month,   4},
-  {NT_("jun"),        s_month,   5},
-  {NT_("jul"),        s_month,   6},
-  {NT_("aug"),        s_month,   7},
-  {NT_("sep"),        s_month,   8},
-  {NT_("oct"),        s_month,   9},
-  {NT_("nov"),        s_month,  10},
-  {NT_("dec"),        s_month,  11},
-
-  {NT_("sunday"),     s_wday,    0},
-  {NT_("monday"),     s_wday,    1},
-  {NT_("tuesday"),    s_wday,    2},
-  {NT_("wednesday"),  s_wday,    3},
-  {NT_("thursday"),   s_wday,    4},
-  {NT_("friday"),     s_wday,    5},
-  {NT_("saturday"),   s_wday,    6},
-  {NT_("january"),    s_month,   0},
-  {NT_("february"),   s_month,   1},
-  {NT_("march"),      s_month,   2},
-  {NT_("april"),      s_month,   3},
-  {NT_("june"),       s_month,   5},
-  {NT_("july"),       s_month,   6},
-  {NT_("august"),     s_month,   7},
-  {NT_("september"),  s_month,   8},
-  {NT_("october"),    s_month,   9},
-  {NT_("november"),   s_month,  10},
-  {NT_("december"),   s_month,  11},
-
-  {NT_("daily"),      s_daily,   0},
-  {NT_("weekly"),     s_weekly,  0},
-  {NT_("monthly"),    s_monthly, 0},
-  {NT_("hourly"),     s_hourly,  0},
-
-  {NT_("1st"),        s_wom,     0},
-  {NT_("2nd"),        s_wom,     1},
-  {NT_("3rd"),        s_wom,     2},
-  {NT_("4th"),        s_wom,     3},
-  {NT_("5th"),        s_wom,     4},
-
-  {NT_("first"),      s_wom,     0},
-  {NT_("second"),     s_wom,     1},
-  {NT_("third"),      s_wom,     2},
-  {NT_("fourth"),     s_wom,     3},
-  {NT_("fifth"),      s_wom,     4},
-  {NULL,         s_none,    0}
+   { NT_("on"), s_none, 0 },
+   { NT_("at"), s_at, 0 },
+   { NT_("last"), s_last, 0 },
+   { NT_("sun"), s_wday, 0 },
+   { NT_("mon"), s_wday, 1 },
+   { NT_("tue"), s_wday, 2 },
+   { NT_("wed"), s_wday, 3 },
+   { NT_("thu"), s_wday, 4 },
+   { NT_("fri"), s_wday, 5 },
+   { NT_("sat"), s_wday, 6 },
+   { NT_("jan"), s_month, 0 },
+   { NT_("feb"), s_month, 1 },
+   { NT_("mar"), s_month, 2 },
+   { NT_("apr"), s_month, 3 },
+   { NT_("may"), s_month, 4 },
+   { NT_("jun"), s_month, 5 },
+   { NT_("jul"), s_month, 6 },
+   { NT_("aug"), s_month, 7 },
+   { NT_("sep"), s_month, 8 },
+   { NT_("oct"), s_month, 9 },
+   { NT_("nov"), s_month, 10 },
+   { NT_("dec"), s_month, 11 },
+   { NT_("sunday"), s_wday, 0 },
+   { NT_("monday"), s_wday, 1 },
+   { NT_("tuesday"), s_wday, 2 },
+   { NT_("wednesday"), s_wday, 3 },
+   { NT_("thursday"), s_wday, 4 },
+   { NT_("friday"), s_wday, 5 },
+   { NT_("saturday"), s_wday, 6 },
+   { NT_("january"), s_month, 0 },
+   { NT_("february"), s_month, 1 },
+   { NT_("march"), s_month, 2 },
+   { NT_("april"), s_month, 3 },
+   { NT_("june"), s_month, 5 },
+   { NT_("july"), s_month, 6 },
+   { NT_("august"), s_month, 7 },
+   { NT_("september"), s_month, 8 },
+   { NT_("october"), s_month, 9 },
+   { NT_("november"), s_month, 10 },
+   { NT_("december"), s_month, 11 },
+   { NT_("daily"), s_daily, 0 },
+   { NT_("weekly"), s_weekly, 0 },
+   { NT_("monthly"), s_monthly, 0 },
+   { NT_("hourly"), s_hourly, 0 },
+   { NT_("1st"), s_wom, 0 },
+   { NT_("2nd"), s_wom, 1 },
+   { NT_("3rd"), s_wom, 2 },
+   { NT_("4th"), s_wom, 3 },
+   { NT_("5th"), s_wom, 4 },
+   { NT_("first"), s_wom, 0 },
+   { NT_("second"), s_wom, 1 },
+   { NT_("third"), s_wom, 2 },
+   { NT_("fourth"), s_wom, 3 },
+   { NT_("fifth"), s_wom, 4 },
+   { NULL, s_none, 0 }
 };
 
 static bool have_hour, have_mday, have_wday, have_month, have_wom;
 static bool have_at, have_woy;
-static RUN lrun;
+static RUNRES lrun;
 
 static void set_defaults()
 {
@@ -149,22 +148,23 @@ static void set_defaults()
    set_bits(0, 53, lrun.woy);
 }
 
-
-/* Keywords (RHS) permitted in Run records */
+/*
+ * Keywords (RHS) permitted in Run records
+ */
 static struct s_kw RunFields[] = {
-   {"pool",              'P'},
-   {"fullpool",          'f'},
-   {"incrementalpool",   'i'},
-   {"differentialpool",  'd'},
-   {"level",             'L'},
-   {"storage",           'S'},
-   {"messages",          'M'},
-   {"priority",          'p'},
-   {"spooldata",         's'},
-   {"writepartafterjob", 'W'},
-   {"maxrunschedtime",   'm'},
-   {"accurate",          'a'},
-   {NULL,                 0}
+   { "pool", 'P' },
+   { "fullpool", 'f' },
+   { "incrementalpool", 'i' },
+   { "differentialpool", 'd' },
+   { "nextpool", 'n' },
+   { "level", 'L' },
+   { "storage", 'S' },
+   { "messages", 'M' },
+   { "priority", 'p' },
+   { "spooldata", 's' },
+   { "maxrunschedtime", 'm' },
+   { "accurate", 'a' },
+   { NULL, 0 }
 };
 
 /*
@@ -187,22 +187,25 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
    utime_t utime;
    int token, state, state2 = 0, code = 0, code2 = 0;
    int options = lc->options;
-   RUN **run = (RUN **)(item->value);
+   RUNRES **run = (RUNRES **)(item->value);
    char *p;
    RES *res;
 
+   lc->options |= LOPT_NO_IDENT;      /* Want only "strings" */
 
-   lc->options |= LOPT_NO_IDENT;      /* want only "strings" */
+   /*
+    * Clear local copy of run record
+    */
+   memset(&lrun, 0, sizeof(RUNRES));
 
-   /* clear local copy of run record */
-   memset(&lrun, 0, sizeof(RUN));
-
-   /* scan for Job level "full", "incremental", ... */
-   for (found=true; found; ) {
+   /*
+    * Scan for Job level "full", "incremental", ...
+    */
+   for (found = true; found; ) {
       found = false;
       token = lex_get_token(lc, T_NAME);
-      for (i=0; !found && RunFields[i].name; i++) {
-         if (strcasecmp(lc->str, RunFields[i].name) == 0) {
+      for (i = 0; !found && RunFields[i].name; i++) {
+         if (bstrcasecmp(lc->str, RunFields[i].name)) {
             found = true;
             if (lex_get_token(lc, T_ALL) != T_EQUALS) {
                scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
@@ -211,32 +214,20 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
             switch (RunFields[i].token) {
             case 's':                 /* Data spooling */
                token = lex_get_token(lc, T_NAME);
-               if (strcasecmp(lc->str, "yes") == 0 || strcasecmp(lc->str, "true") == 0) {
+               if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
                   lrun.spool_data = true;
                   lrun.spool_data_set = true;
-               } else if (strcasecmp(lc->str, "no") == 0 || strcasecmp(lc->str, "false") == 0) {
+               } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
                   lrun.spool_data = false;
                   lrun.spool_data_set = true;
                } else {
                   scan_err1(lc, _("Expect a YES or NO, got: %s"), lc->str);
                }
                break;
-            case 'W':                 /* Write part after job */
+            case 'L':                 /* Level */
                token = lex_get_token(lc, T_NAME);
-               if (strcasecmp(lc->str, "yes") == 0 || strcasecmp(lc->str, "true") == 0) {
-                  lrun.write_part_after_job = true;
-                  lrun.write_part_after_job_set = true;
-               } else if (strcasecmp(lc->str, "no") == 0 || strcasecmp(lc->str, "false") == 0) {
-                  lrun.write_part_after_job = false;
-                  lrun.write_part_after_job_set = true;
-               } else {
-                  scan_err1(lc, _("Expect a YES or NO, got: %s"), lc->str);
-               }
-               break;
-            case 'L':                 /* level */
-               token = lex_get_token(lc, T_NAME);
-               for (j=0; joblevels[j].level_name; j++) {
-                  if (strcasecmp(lc->str, joblevels[j].level_name) == 0) {
+               for (j = 0; joblevels[j].level_name; j++) {
+                  if (bstrcasecmp(lc->str, joblevels[j].level_name)) {
                      lrun.level = joblevels[j].level;
                      lrun.job_type = joblevels[j].job_type;
                      j = 0;
@@ -257,7 +248,8 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
             case 'P':                 /* Pool */
             case 'f':                 /* FullPool */
             case 'i':                 /* IncPool */
-            case 'd':                 /* DifPool */
+            case 'd':                 /* DiffPool */
+            case 'n':                 /* NextPool */
                token = lex_get_token(lc, T_NAME);
                if (pass == 2) {
                   res = GetResWithName(R_POOL, lc->str);
@@ -268,21 +260,24 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                   }
                   switch(RunFields[i].token) {
                   case 'P':
-                     lrun.pool = (POOL *)res;
+                     lrun.pool = (POOLRES *)res;
                      break;
                   case 'f':
-                     lrun.full_pool = (POOL *)res;
+                     lrun.full_pool = (POOLRES *)res;
                      break;
                   case 'i':
-                     lrun.inc_pool = (POOL *)res;
+                     lrun.inc_pool = (POOLRES *)res;
                      break;
                   case 'd':
-                     lrun.diff_pool = (POOL *)res;
+                     lrun.diff_pool = (POOLRES *)res;
+                     break;
+                  case 'n':
+                     lrun.next_pool = (POOLRES *)res;
                      break;
                   }
                }
                break;
-            case 'S':                 /* storage */
+            case 'S':                 /* Storage */
                token = lex_get_token(lc, T_NAME);
                if (pass == 2) {
                   res = GetResWithName(R_STORAGE, lc->str);
@@ -291,10 +286,10 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                                 lc->str);
                      /* NOT REACHED */
                   }
-                  lrun.storage = (STORE *)res;
+                  lrun.storage = (STORERES *)res;
                }
                break;
-            case 'M':                 /* messages */
+            case 'M':                 /* Messages */
                token = lex_get_token(lc, T_NAME);
                if (pass == 2) {
                   res = GetResWithName(R_MSGS, lc->str);
@@ -303,10 +298,10 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                                 lc->str);
                      /* NOT REACHED */
                   }
-                  lrun.msgs = (MSGS *)res;
+                  lrun.msgs = (MSGSRES *)res;
                }
                break;
-            case 'm':           /* max run sched time */
+            case 'm':                 /* Max run sched time */
                token = lex_get_token(lc, T_QUOTED_STRING); 
                if (!duration_to_utime(lc->str, &utime)) {
                   scan_err1(lc, _("expected a time period, got: %s"), lc->str);
@@ -315,7 +310,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                lrun.MaxRunSchedTime = utime;
                lrun.MaxRunSchedTime_set = true;
                break;
-            case 'a':           /* accurate */
+            case 'a':                 /* Accurate */
                token = lex_get_token(lc, T_NAME);
                if (strcasecmp(lc->str, "yes") == 0 || strcasecmp(lc->str, "true") == 0) {
                   lrun.accurate = true;
@@ -332,15 +327,16 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                /* NOT REACHED */
                break;
             } /* end switch */
-         } /* end if strcasecmp */
+         } /* end if bstrcasecmp */
       } /* end for RunFields */
 
-      /* At this point, it is not a keyword. Check for old syle
+      /*
+       * At this point, it is not a keyword. Check for old syle
        * Job Levels without keyword. This form is depreciated!!!
        */
       if (!found) {
-         for (j=0; joblevels[j].level_name; j++) {
-            if (strcasecmp(lc->str, joblevels[j].level_name) == 0) {
+         for (j = 0; joblevels[j].level_name; j++) {
+            if (bstrcasecmp(lc->str, joblevels[j].level_name)) {
                lrun.level = joblevels[j].level;
                lrun.job_type = joblevels[j].job_type;
                found = true;
@@ -350,7 +346,6 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
       }
    } /* end for found */
 
-
    /*
     * Scan schedule times.
     * Default is: daily at 0:0
@@ -358,7 +353,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
    state = s_none;
    set_defaults();
 
-   for ( ; token != T_EOL; (token = lex_get_token(lc, T_ALL))) {
+   for (; token != T_EOL; (token = lex_get_token(lc, T_ALL))) {
       int len; 
       bool pm = false;
       bool am = false;
@@ -370,7 +365,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
             scan_err0(lc, _("Day number out of range (1-31)"));
          }
          break;
-      case T_NAME:                 /* this handles drop through from keyword */
+      case T_NAME:                    /* This handles drop through from keyword */
       case T_UNQUOTED_STRING:
          if (strchr(lc->str, (int)'-')) {
             state = s_range;
@@ -380,6 +375,10 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
             state = s_time;
             break;
          }
+         if (strchr(lc->str, (int)'/')) {
+            state = s_modulo;
+            break;
+         }
          if (lc->str_len == 3 && (lc->str[0] == 'w' || lc->str[0] == 'W') &&
              is_an_integer(lc->str+1)) {
             code = atoi(lc->str+1);
@@ -387,12 +386,14 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                scan_err0(lc, _("Week number out of range (0-53)"));
               /* NOT REACHED */
             }
-            state = s_woy;            /* week of year */
+            state = s_woy;            /* Week of year */
             break;
          }
-         /* everything else must be a keyword */
-         for (i=0; keyw[i].name; i++) {
-            if (strcasecmp(lc->str, keyw[i].name) == 0) {
+         /*
+          * Everything else must be a keyword
+          */
+         for (i = 0; keyw[i].name; i++) {
+            if (bstrcasecmp(lc->str, keyw[i].name)) {
                state = keyw[i].state;
                code   = keyw[i].code;
                i = 0;
@@ -414,28 +415,28 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
       switch (state) {
       case s_none:
          continue;
-      case s_mday:                 /* day of month */
+      case s_mday:                    /* Day of month */
          if (!have_mday) {
             clear_bits(0, 30, lrun.mday);
             have_mday = true;
          }
          set_bit(code, lrun.mday);
          break;
-      case s_month:                /* month of year */
+      case s_month:                   /* Month of year */
          if (!have_month) {
             clear_bits(0, 11, lrun.month);
             have_month = true;
          }
          set_bit(code, lrun.month);
          break;
-      case s_wday:                 /* week day */
+      case s_wday:                    /* Week day */
          if (!have_wday) {
             clear_bits(0, 6, lrun.wday);
             have_wday = true;
          }
          set_bit(code, lrun.wday);
          break;
-      case s_wom:                  /* Week of month 1st, ... */
+      case s_wom:                     /* Week of month 1st, ... */
          if (!have_wom) {
             clear_bits(0, 4, lrun.wom);
             have_wom = true;
@@ -449,7 +450,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
          }
          set_bit(code, lrun.woy);
          break;
-      case s_time:                 /* time */
+      case s_time:                    /* Time */
          if (!have_at) {
             scan_err0(lc, _("Time must be preceded by keyword AT."));
             /* NOT REACHED */
@@ -463,16 +464,16 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
             scan_err0(lc, _("Time logic error.\n"));
             /* NOT REACHED */
          }
-         *p++ = 0;                 /* separate two halves */
-         code = atoi(lc->str);     /* pick up hour */
-         code2 = atoi(p);          /* pick up minutes */
+         *p++ = 0;                    /* Separate two halves */
+         code = atoi(lc->str);        /* Pick up hour */
+         code2 = atoi(p);             /* Pick up minutes */
          len = strlen(p);
          if (len >= 2) {
             p += 2;
          }
-         if (strcasecmp(p, "pm") == 0) {
+         if (bstrcasecmp(p, "pm")) {
             pm = true;
-         } else if (strcasecmp(p, "am") == 0) {
+         } else if (bstrcasecmp(p, "am")) {
             am = true;
          } else if (len != 2) {
             scan_err0(lc, _("Bad time specification."));
@@ -485,19 +486,22 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
           *  12am as 00:00 and 12pm as 12:00.
           */
          if (pm) {
-            /* Convert to 24 hour time */
+            /*
+             * Convert to 24 hour time
+             */
             if (code != 12) {
                code += 12;
             }
-         /* am */
          } else if (am && code == 12) {
+            /*
+             * AM
+             */
             code -= 12;
          }
          if (code < 0 || code > 23 || code2 < 0 || code2 > 59) {
             scan_err0(lc, _("Bad time specification."));
             /* NOT REACHED */
          }
-//       Dmsg2(000, "hour=%d min=%d\n", code, code2);
          set_bit(code, lrun.hour);
          lrun.minute = code2;
          have_hour = true;
@@ -505,15 +509,81 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
       case s_at:
          have_at = true;
          break;
+      case s_last:
+         lrun.last_set = true;
+         break;
+      case s_modulo:
+         p = strchr(lc->str, '/');
+         if (!p) {
+            scan_err0(lc, _("Modulo logic error.\n"));
+         }
+         *p++ = 0;                 /* Separate two halves */
+
+         if (is_an_integer(lc->str) && is_an_integer(p)) {
+            /*
+             * Check for day modulo specification.
+             */
+            code = atoi(lc->str) - 1;
+            code2 = atoi(p) - 1;
+            if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
+               scan_err0(lc, _("Bad day specification in modulo."));
+            }
+            if (code > code2) {
+               scan_err0(lc, _("Bad day specification, offset must always be <= than modulo."));
+            }
+            if (!have_mday) {
+               clear_bits(0, 30, lrun.mday);
+               have_mday = true;
+            }
+            /*
+             * Set the bits according to the modulo specification.
+             */
+            for (i = 0; i < 31; i++) {
+               if (i % code2 == 0) {
+                  set_bit(i + code, lrun.mday);
+               }
+            }
+         } else if (strlen(lc->str) == 3 && strlen(p) == 3 &&
+                   (lc->str[0] == 'w' || lc->str[0] == 'W') &&
+                   (p[0] == 'w' || p[0] == 'W') &&
+                    is_an_integer(lc->str + 1) &&
+                    is_an_integer(p + 1)) {
+            /*
+             * Check for week modulo specification.
+             */
+            code = atoi(lc->str + 1);
+            code2 = atoi(p + 1);
+            if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
+               scan_err0(lc, _("Week number out of range (0-53) in modulo"));
+            }
+            if (code > code2) {
+               scan_err0(lc, _("Bad week number specification in modulo, offset must always be <= than modulo."));
+            }
+            if (!have_woy) {
+               clear_bits(0, 53, lrun.woy);
+               have_woy = true;
+            }
+            /*
+             * Set the bits according to the modulo specification.
+             */
+            for (i = 0; i < 54; i++) {
+               if (i % code2 == 0) {
+                  set_bit(i + code - 1, lrun.woy);
+               }
+            }
+         }
+         break;
       case s_range:
          p = strchr(lc->str, '-');
          if (!p) {
             scan_err0(lc, _("Range logic error.\n"));
          }
-         *p++ = 0;                 /* separate two halves */
+         *p++ = 0;                    /* Separate two halves */
 
-         /* Check for day range */
          if (is_an_integer(lc->str) && is_an_integer(p)) {
+            /*
+             * Check for day range.
+             */
             code = atoi(lc->str) - 1;
             code2 = atoi(p) - 1;
             if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
@@ -529,15 +599,16 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                set_bits(code, 30, lrun.mday);
                set_bits(0, code2, lrun.mday);
             }
-            break;
-         }
-         /* Check for week of year range */
-         if (strlen(lc->str) == 3 && strlen(p) == 3 &&
-             (lc->str[0] == 'w' || lc->str[0] == 'W') &&
-             (p[0] == 'w' || p[0] == 'W') &&
-             is_an_integer(lc->str+1) && is_an_integer(p+1)) {
-            code = atoi(lc->str+1);
-            code2 = atoi(p+1);
+         } else if (strlen(lc->str) == 3 && strlen(p) == 3 &&
+                   (lc->str[0] == 'w' || lc->str[0] == 'W') &&
+                   (p[0] == 'w' || p[0] == 'W') &&
+                    is_an_integer(lc->str + 1) &&
+                    is_an_integer(p + 1)) {
+            /*
+             * Check for week of year range.
+             */
+            code = atoi(lc->str + 1);
+            code2 = atoi(p + 1);
             if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
                scan_err0(lc, _("Week number out of range (0-53)"));
             }
@@ -551,71 +622,79 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                set_bits(code, 53, lrun.woy);
                set_bits(0, code2, lrun.woy);
             }
-            break;
-         }
-         /* lookup first half of keyword range (week days or months) */
-         lcase(lc->str);
-         for (i=0; keyw[i].name; i++) {
-            if (strcmp(lc->str, keyw[i].name) == 0) {
-               state = keyw[i].state;
-               code   = keyw[i].code;
-               i = 0;
-               break;
-            }
-         }
-         if (i != 0 || (state != s_month && state != s_wday && state != s_wom)) {
-            scan_err0(lc, _("Invalid month, week or position day range"));
-            /* NOT REACHED */
-         }
-
-         /* Lookup end of range */
-         lcase(p);
-         for (i=0; keyw[i].name; i++) {
-            if (strcmp(p, keyw[i].name) == 0) {
-               state2  = keyw[i].state;
-               code2   = keyw[i].code;
-               i = 0;
-               break;
-            }
-         }
-         if (i != 0 || state != state2 || code == code2) {
-            scan_err0(lc, _("Invalid month, weekday or position range"));
-            /* NOT REACHED */
-         }
-         if (state == s_wday) {
-            if (!have_wday) {
-               clear_bits(0, 6, lrun.wday);
-               have_wday = true;
-            }
-            if (code < code2) {
-               set_bits(code, code2, lrun.wday);
-            } else {
-               set_bits(code, 6, lrun.wday);
-               set_bits(0, code2, lrun.wday);
-            }
-         } else if (state == s_month) {
-            if (!have_month) {
-               clear_bits(0, 11, lrun.month);
-               have_month = true;
-            }
-            if (code < code2) {
-               set_bits(code, code2, lrun.month);
-            } else {
-               /* this is a bit odd, but we accept it anyway */
-               set_bits(code, 11, lrun.month);
-               set_bits(0, code2, lrun.month);
-            }
          } else {
-            /* Must be position */
-            if (!have_wom) {
-               clear_bits(0, 4, lrun.wom);
-               have_wom = true;
+            /*
+             * lookup first half of keyword range (week days or months).
+             */
+            lcase(lc->str);
+            for (i = 0; keyw[i].name; i++) {
+               if (bstrcmp(lc->str, keyw[i].name)) {
+                  state = keyw[i].state;
+                  code = keyw[i].code;
+                  i = 0;
+                  break;
+               }
             }
-            if (code < code2) {
-               set_bits(code, code2, lrun.wom);
+            if (i != 0 || (state != s_month && state != s_wday && state != s_wom)) {
+               scan_err0(lc, _("Invalid month, week or position day range"));
+               /* NOT REACHED */
+            }
+
+            /*
+             * Lookup end of range.
+             */
+            lcase(p);
+            for (i = 0; keyw[i].name; i++) {
+               if (bstrcmp(p, keyw[i].name)) {
+                  state2 = keyw[i].state;
+                  code2 = keyw[i].code;
+                  i = 0;
+                  break;
+               }
+            }
+            if (i != 0 || state != state2 || code == code2) {
+               scan_err0(lc, _("Invalid month, weekday or position range"));
+               /* NOT REACHED */
+            }
+            if (state == s_wday) {
+               if (!have_wday) {
+                  clear_bits(0, 6, lrun.wday);
+                  have_wday = true;
+               }
+               if (code < code2) {
+                  set_bits(code, code2, lrun.wday);
+               } else {
+                  set_bits(code, 6, lrun.wday);
+                  set_bits(0, code2, lrun.wday);
+               }
+            } else if (state == s_month) {
+               if (!have_month) {
+                  clear_bits(0, 11, lrun.month);
+                  have_month = true;
+               }
+               if (code < code2) {
+                  set_bits(code, code2, lrun.month);
+               } else {
+                  /*
+                   * This is a bit odd, but we accept it anyway
+                   */
+                  set_bits(code, 11, lrun.month);
+                  set_bits(0, code2, lrun.month);
+               }
             } else {
-               set_bits(code, 4, lrun.wom);
-               set_bits(0, code2, lrun.wom);
+               /*
+                * Must be position
+                */
+               if (!have_wom) {
+                  clear_bits(0, 4, lrun.wom);
+                  have_wom = true;
+               }
+               if (code < code2) {
+                  set_bits(code, code2, lrun.wom);
+               } else {
+                  set_bits(code, 4, lrun.wom);
+                  set_bits(0, code2, lrun.wom);
+               }
             }
          }
          break;
@@ -649,15 +728,15 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
     * in the schedule resource.
     */
    if (pass == 2) {
-      RUN *tail;
+      RUNRES *tail;
 
       /* Create new run record */
-      RUN *nrun = (RUN *)malloc(sizeof(RUN));
-      memcpy(nrun, &lrun, sizeof(RUN));
+      RUNRES *nrun = (RUNRES *)malloc(sizeof(RUNRES));
+      memcpy(nrun, &lrun, sizeof(RUNRES));
       nrun ->next = NULL;
 
-      if (!*run) {                    /* if empty list */
-         *run = nrun;                 /* add new record */
+      if (!*run) {                       /* If empty list */
+         *run = nrun;                    /* Add new record */
       } else {
          for (tail = *run; tail->next; tail=tail->next)
             {  }
@@ -665,6 +744,6 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
       }
    }
 
-   lc->options = options;             /* restore scanner options */
+   lc->options = options;                /* Restore scanner options */
    set_bit(index, res_all.res_sch.hdr.item_present);
 }

@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2009-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -34,14 +34,21 @@ private:
    struct sqlite3 *m_db_handle;
    char **m_result;             /* sql_store_results() and sql_query() */
    char **m_col_names;          /* used to access fields when using db_sql_query() */
-   char *m_sqlite_errmsg;
+   char *m_lowlevel_errmsg;
    SQL_FIELD m_sql_field;       /* used when using db_sql_query() and sql_fetch_field() */
 
 public:
-   B_DB_SQLITE(JCR *jcr, const char *db_driver, const char *db_name,
-               const char *db_user, const char *db_password,
-               const char *db_address, int db_port, const char *db_socket,
-               bool mult_db_connections, bool disable_batch_insert);
+   B_DB_SQLITE(JCR *jcr,
+               const char *db_driver,
+               const char *db_name,
+               const char *db_user,
+               const char *db_password,
+               const char *db_address,
+               int db_port,
+               const char *db_socket,
+               bool mult_db_connections,
+               bool disable_batch_insert,
+               bool is_private);
    ~B_DB_SQLITE();
 
    /* Used internaly by sqlite.c to access fields in db_sql_query() */
@@ -54,11 +61,8 @@ public:
    /* low level operations */
    bool db_open_database(JCR *jcr);
    void db_close_database(JCR *jcr);
+   bool db_validate_connection(void);
    void db_thread_cleanup(void);
-   void db_escape_string(JCR *jcr, char *snew, char *old, int len);
-   char *db_escape_object(JCR *jcr, char *old, int len);
-   void db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                           POOLMEM **dest, int32_t *len);
    void db_start_transaction(JCR *jcr);
    void db_end_transaction(JCR *jcr);
    bool db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);

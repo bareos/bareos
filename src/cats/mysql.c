@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -67,7 +67,8 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
                        int db_port,
                        const char *db_socket,
                        bool mult_db_connections,
-                       bool disable_batch_insert)
+                       bool disable_batch_insert,
+                       bool need_private)
 {
    /*
     * Initialize the parent class members.
@@ -115,13 +116,7 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
    esc_path = get_pool_memory(PM_FNAME);
    esc_obj = get_pool_memory(PM_FNAME);
    m_allow_transactions = mult_db_connections;
-
-   /* At this time, when mult_db_connections == true, this is for 
-    * specific console command such as bvfs or batch mode, and we don't
-    * want to share a batch mode or bvfs. In the future, we can change
-    * the creation function to add this parameter.
-    */
-   m_dedicated = mult_db_connections; 
+   m_is_private = need_private;
 
    /*
     * Initialize the private members.
@@ -298,6 +293,34 @@ void B_DB_MYSQL::db_close_database(JCR *jcr)
    V(mutex);
 }
 
+bool B_DB_MYSQL::db_validate_connection(void)
+{
+   bool retval;
+   unsigned long mysql_threadid;
+
+   /*
+    * See if the connection is still valid by using a ping to
+    * the server. We also catch a changing threadid which means
+    * a reconnect has taken place.
+    */
+   db_lock(this);
+   mysql_threadid = mysql_thread_id(m_db_handle);
+   if (mysql_ping(m_db_handle) == 0) {
+      Dmsg2(500, "db_validate_connection connection valid previous threadid %ld new threadid %ld\n",
+            mysql_threadid, mysql_thread_id(m_db_handle));
+      retval = true;
+      goto bail_out;
+   } else {
+      Dmsg0(500, "db_validate_connection connection invalid unable to ping server\n");
+      retval = false;
+      goto bail_out;
+   }
+
+bail_out:
+   db_unlock(this);
+   return retval;
+}
+
 /*
  * This call is needed because the message channel thread
  *  opens a database on behalf of a jcr that was created in
@@ -307,7 +330,7 @@ void B_DB_MYSQL::db_close_database(JCR *jcr)
  *  to cleanup any thread specific data that it created.
  */
 void B_DB_MYSQL::db_thread_cleanup(void)
-{ 
+{
 #ifndef HAVE_WIN32
    mysql_thread_end();
 #endif
@@ -380,7 +403,7 @@ void B_DB_MYSQL::db_end_transaction(JCR *jcr)
  */
 bool B_DB_MYSQL::db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
-   int ret;
+   int status;
    SQL_ROW row;
    bool send = true;
    bool retval = false;
@@ -388,8 +411,8 @@ bool B_DB_MYSQL::db_sql_query(const char *query, DB_RESULT_HANDLER *result_handl
    Dmsg1(500, "db_sql_query starts with %s\n", query);
 
    db_lock(this);
-   ret = mysql_query(m_db_handle, query);
-   if (ret != 0) {
+   status = mysql_query(m_db_handle, query);
+   if (status != 0) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
       Dmsg0(500, "db_sql_query failed\n");
       goto bail_out;
@@ -429,7 +452,7 @@ bail_out:
 
 bool B_DB_MYSQL::sql_query(const char *query, int flags)
 {
-   int ret;
+   int status;
    bool retval = true;
 
    Dmsg1(500, "sql_query starts with '%s'\n", query);
@@ -445,8 +468,8 @@ bool B_DB_MYSQL::sql_query(const char *query, int flags)
       m_result = NULL;
    }
 
-   ret = mysql_query(m_db_handle, query);
-   if (ret == 0) {
+   status = mysql_query(m_db_handle, query);
+   if (status == 0) {
       Dmsg0(500, "we have a result\n");
       if (flags & QF_STORE_RESULT) {
          m_result = mysql_store_result(m_db_handle);
@@ -575,7 +598,7 @@ bool B_DB_MYSQL::sql_field_is_numeric(int field_type)
    return IS_NUM(field_type);
 }
 
-/* 
+/*
  * Returns true if OK
  *         false if failed
  */
@@ -603,7 +626,7 @@ bool B_DB_MYSQL::sql_batch_start(JCR *jcr)
 }
 
 /* set error to something to abort operation */
-/* 
+/*
  * Returns true if OK
  *         false if failed
  */
@@ -621,7 +644,7 @@ bool B_DB_MYSQL::sql_batch_end(JCR *jcr, const char *error)
    return true;
 }
 
-/* 
+/*
  * Returns true if OK
  *         false if failed
  */
@@ -682,9 +705,31 @@ bool B_DB_MYSQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user,
-                       const char *db_password, const char *db_address, int db_port, const char *db_socket,
-                       bool mult_db_connections, bool disable_batch_insert)
+#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+extern "C" B_DB *backend_instantiate(JCR *jcr,
+                                     const char *db_driver,
+                                     const char *db_name,
+                                     const char *db_user,
+                                     const char *db_password,
+                                     const char *db_address,
+                                     int db_port,
+                                     const char *db_socket,
+                                     bool mult_db_connections,
+                                     bool disable_batch_insert,
+                                     bool need_private)
+#else
+B_DB *db_init_database(JCR *jcr,
+                       const char *db_driver,
+                       const char *db_name,
+                       const char *db_user,
+                       const char *db_password,
+                       const char *db_address,
+                       int db_port,
+                       const char *db_socket,
+                       bool mult_db_connections,
+                       bool disable_batch_insert,
+                       bool need_private)
+#endif
 {
    B_DB_MYSQL *mdb = NULL;
 
@@ -697,8 +742,12 @@ B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, con
    /*
     * Look to see if DB already open
     */
-   if (db_list && !mult_db_connections) {
+   if (db_list && !mult_db_connections && !need_private) {
       foreach_dlist(mdb, db_list) {
+         if (mdb->is_private()) {
+            continue;
+         }
+
          if (mdb->db_match_database(db_driver, db_name, db_address, db_port)) {
             Dmsg1(100, "DB REopen %s\n", db_name);
             mdb->increment_refcount();
@@ -707,12 +756,29 @@ B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, con
       }
    }
    Dmsg0(100, "db_init_database first time\n");
-   mdb = New(B_DB_MYSQL(jcr, db_driver, db_name, db_user, db_password, db_address,
-                        db_port, db_socket, mult_db_connections, disable_batch_insert));
+   mdb = New(B_DB_MYSQL(jcr,
+                        db_driver,
+                        db_name,
+                        db_user,
+                        db_password,
+                        db_address,
+                        db_port,
+                        db_socket,
+                        mult_db_connections,
+                        disable_batch_insert,
+                        need_private));
 
 bail_out:
    V(mutex);
    return mdb;
+}
+
+#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+extern "C" void flush_backend(void)
+#else
+void db_flush_backends(void)
+#endif
+{
 }
 
 #endif /* HAVE_MYSQL */

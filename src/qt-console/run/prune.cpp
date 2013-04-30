@@ -101,10 +101,12 @@ void prunePage::okButtonPushed()
       cmd += " volume";
    }
    if (volumeCombo->currentText() != tr("Any")) {
-      cmd += " volume=\"" + volumeCombo->currentText() + "\"";
+      cmd += QString(" volume=\"%1\"")
+                     .arg(volumeCombo->currentText());
    }
    if (clientCombo->currentText() != tr("Any")) {
-      cmd += " client=\"" + clientCombo->currentText() + "\"";
+      cmd += QString(" client=\"%1\"")
+                     .arg(clientCombo->currentText());
    }
    cmd += " yes";
 

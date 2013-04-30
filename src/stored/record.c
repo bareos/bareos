@@ -34,7 +34,6 @@
  *
  */
 
-
 #include "bacula.h"
 #include "stored.h"
 
@@ -76,7 +75,6 @@ const char *FI_to_ascii(char *buf, int fi)
      return buf;
    }
 }
-
 
 /*
  * Convert a Stream ID into a printable
@@ -161,7 +159,6 @@ const char *stream_to_ascii(char *buf, int stream, int fi)
          return "contENCRYPTED-MACOS-RSRC";
       case STREAM_PLUGIN_NAME:
          return "contPLUGIN-NAME";
-
       default:
          sprintf(buf, "%d", -stream);
          return buf;
@@ -229,11 +226,10 @@ const char *stream_to_ascii(char *buf, int stream, int fi)
       return "ENCRYPTED-WIN32-COMPRESSED";
    case STREAM_ENCRYPTED_MACOS_FORK_DATA:
       return "ENCRYPTED-MACOS-RSRC";
-
-      default:
-         sprintf(buf, "%d", stream);
-         return buf;
-      }
+   default:
+      sprintf(buf, "%d", stream);
+      return buf;
+   }
 }
 
 /*
@@ -275,7 +271,7 @@ void free_record(DEV_RECORD *rec)
    Dmsg0(950, "Leave free_record.\n");
 }
 
-static bool write_header_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
+static inline bool write_header_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
 {
    ser_declare;
 
@@ -312,7 +308,7 @@ static bool write_header_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
    return true;
 }
 
-static void write_continue_header_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
+static inline void write_continue_header_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
 {
    ser_declare;
 
@@ -364,7 +360,7 @@ static void write_continue_header_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
    }
 }
 
-static bool write_data_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
+static inline bool write_data_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
 {
    rec->remlen = block->buf_len - block->binbuf;
    /* Write as much of data as possible */
@@ -407,11 +403,11 @@ static bool write_data_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
  *  Returns: false means the block could not be written to tape/disk.
  *           true  on success (all bytes written to the block).
  */
-bool DCR::write_record(DEV_RECORD *rec)
+bool DCR::write_record(DEV_RECORD *nrec)
 {
-   while (!write_record_to_block(this, rec)) {
-      Dmsg2(850, "!write_record_to_block data_len=%d rem=%d\n", rec->data_len,
-                 rec->remainder);
+   while (!write_record_to_block(this, nrec)) {
+      Dmsg2(850, "!write_record_to_block data_len=%d rem=%d\n", nrec->data_len,
+                 nrec->remainder);
       if (!write_block_to_device()) {
          Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",
             dev->print_name(), dev->bstrerror());

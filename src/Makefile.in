@@ -3,9 +3,9 @@
 #
 @MCOMMON@
 
-srcdir =	.
-VPATH = 	.
-.PATH:		.
+srcdir = @srcdir@
+VPATH = @srcdir@
+.PATH: @srcdir@
 
 # one up
 basedir = ..
@@ -14,10 +14,8 @@ topdir = ..
 # this dir relative to top dir
 thisdir = src
 
-
 first_rule: all
 dummy:
-
 
 .SUFFIXES:	.c .o
 .PHONY:
@@ -25,10 +23,10 @@ dummy:
 
 # inference rules
 .c.o:
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I. -I$(basedir) -I$(srcdir) $(DINCLUDE) $(CFLAGS) $<
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I. -I$(basedir) -I$(srcdir) $(DINCLUDE) $(CXXFLAGS) $<
 
 .cc.o:
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I. -I$(basedir) -I$(srcdir) $(DINCLUDE) $(CFLAGS) $<
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I. -I$(basedir) -I$(srcdir) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
 all: Makefile 
 

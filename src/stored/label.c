@@ -70,7 +70,7 @@ int read_dev_volume_label(DCR *dcr)
    DEV_RECORD *record;
    bool ok = false;
    DEV_BLOCK *block = dcr->block;
-   int stat;
+   int status;
    bool want_ansi_label;
    bool have_ansi_label = false;
 
@@ -97,16 +97,29 @@ int read_dev_volume_label(DCR *dcr)
    }
    bstrncpy(dev->VolHdr.Id, "**error**", sizeof(dev->VolHdr.Id));
 
-  /* Read ANSI/IBM label if so requested */
-  want_ansi_label = dcr->VolCatInfo.LabelType != B_BACULA_LABEL ||
-                    dcr->device->label_type != B_BACULA_LABEL;
-  if (want_ansi_label || dev->has_cap(CAP_CHECKLABELS)) {
-      stat = read_ansi_ibm_label(dcr);            
-      /* If we want a label and didn't find it, return error */
-      if (want_ansi_label && stat != VOL_OK) {
+   /*
+    * The stored plugin handling the bsdEventLabelRead event can abort
+    * the reading of the label by returning a non bRC_OK.
+    */
+   if (generate_plugin_event(jcr, bsdEventLabelRead, dcr) != bRC_OK) {
+      Dmsg0(200, "Error from bsdEventLabelRead plugin event.\n");
+      return VOL_NO_MEDIA;
+   }
+
+   /*
+    * Read ANSI/IBM label if so requested
+    */
+   want_ansi_label = dcr->VolCatInfo.LabelType != B_BACULA_LABEL ||
+                     dcr->device->label_type != B_BACULA_LABEL;
+   if (want_ansi_label || dev->has_cap(CAP_CHECKLABELS)) {
+      status = read_ansi_ibm_label(dcr);
+      /*
+       * If we want a label and didn't find it, return error
+       */
+      if (want_ansi_label && status != VOL_OK) {
          goto bail_out;
       }
-      if (stat == VOL_NAME_ERROR || stat == VOL_LABEL_ERROR) {
+      if (status == VOL_NAME_ERROR || status == VOL_LABEL_ERROR) {
          Mmsg(jcr->errmsg, _("Wrong Volume mounted on device %s: Wanted %s have %s\n"),
               dev->print_name(), VolName, dev->VolHdr.VolumeName);
          if (!dev->poll && jcr->label_errors++ > 100) {
@@ -114,14 +127,16 @@ int read_dev_volume_label(DCR *dcr)
          }
          goto bail_out;
       }
-      if (stat != VOL_OK) {           /* Not an ANSI/IBM label, so re-read */
+      if (status != VOL_OK) {        /* Not an ANSI/IBM label, so re-read */
          dev->rewind(dcr);
       } else {
          have_ansi_label = true;
       }
    }
   
-   /* Read the Bacula Volume label block */
+   /*
+    * Read the Bacula Volume label block
+    */
    record = new_record();
    empty_block(block);
 
@@ -138,14 +153,14 @@ int read_dev_volume_label(DCR *dcr)
       Mmsg(jcr->errmsg, _("Could not unserialize Volume label: ERR=%s\n"),
          dev->print_errmsg());
       Dmsg1(130, "%s", jcr->errmsg);
-   } else if (strcmp(dev->VolHdr.Id, BaculaId) != 0 &&
-              strcmp(dev->VolHdr.Id, OldBaculaId) != 0) {
+   } else if (!bstrcmp(dev->VolHdr.Id, BaculaId) &&
+              !bstrcmp(dev->VolHdr.Id, OldBaculaId)) {
       Mmsg(jcr->errmsg, _("Volume Header Id bad: %s\n"), dev->VolHdr.Id);
       Dmsg1(130, "%s", jcr->errmsg);
    } else {
       ok = true;
    }
-   free_record(record);               /* finished reading Volume record */
+   free_record(record);              /* finished reading Volume record */
 
    if (!dev->is_volume_to_unload()) {
       dev->clear_unload();
@@ -155,31 +170,30 @@ int read_dev_volume_label(DCR *dcr)
       if (forge_on || jcr->ignore_label_errors) {
          dev->set_labeled();         /* set has Bacula label */
          Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-         empty_block(block);
-         return VOL_OK;
+         goto ok_out;
       }
       Dmsg0(100, "No volume label - bailing out\n");
-      stat = VOL_NO_LABEL;
+      status = VOL_NO_LABEL;
       goto bail_out;
    }
 
-   /* At this point, we have read the first Bacula block, and
+   /*
+    * At this point, we have read the first Bacula block, and
     * then read the Bacula Volume label. Now we need to
     * make sure we have the right Volume.
     */
-
-
    if (dev->VolHdr.VerNum != BaculaTapeVersion &&
        dev->VolHdr.VerNum != OldCompatibleBaculaTapeVersion1 &&
        dev->VolHdr.VerNum != OldCompatibleBaculaTapeVersion2) {
       Mmsg(jcr->errmsg, _("Volume on %s has wrong Bacula version. Wanted %d got %d\n"),
          dev->print_name(), BaculaTapeVersion, dev->VolHdr.VerNum);
       Dmsg1(130, "VOL_VERSION_ERROR: %s", jcr->errmsg);
-      stat = VOL_VERSION_ERROR;
+      status = VOL_VERSION_ERROR;
       goto bail_out;
    }
 
-   /* We are looking for either an unused Bacula tape (PRE_LABEL) or
+   /*
+    * We are looking for either an unused Bacula tape (PRE_LABEL) or
     * a Bacula volume label (VOL_LABEL)
     */
    if (dev->VolHdr.LabelType != PRE_LABEL && dev->VolHdr.LabelType != VOL_LABEL) {
@@ -190,7 +204,7 @@ int read_dev_volume_label(DCR *dcr)
          Jmsg(jcr, M_FATAL, 0, _("Too many tries: %s"), jcr->errmsg);
       }
       Dmsg0(150, "return VOL_LABEL_ERROR\n");
-      stat = VOL_LABEL_ERROR;
+      status = VOL_LABEL_ERROR;
       goto bail_out;
    }
 
@@ -198,7 +212,7 @@ int read_dev_volume_label(DCR *dcr)
 
    /* Compare Volume Names */
    Dmsg2(130, "Compare Vol names: VolName=%s hdr=%s\n", VolName?VolName:"*", dev->VolHdr.VolumeName);
-   if (VolName && *VolName && *VolName != '*' && strcmp(dev->VolHdr.VolumeName, VolName) != 0) {
+   if (VolName && *VolName && *VolName != '*' && !bstrcmp(dev->VolHdr.VolumeName, VolName)) {
       Mmsg(jcr->errmsg, _("Wrong Volume mounted on device %s: Wanted %s have %s\n"),
            dev->print_name(), VolName, dev->VolHdr.VolumeName);
       Dmsg1(130, "%s", jcr->errmsg);
@@ -210,22 +224,26 @@ int read_dev_volume_label(DCR *dcr)
          Jmsg(jcr, M_FATAL, 0, "Too many tries: %s", jcr->errmsg);
       }
       Dmsg0(150, "return VOL_NAME_ERROR\n");
-      stat = VOL_NAME_ERROR;
+      status = VOL_NAME_ERROR;
       goto bail_out;
    }
-
 
    if (debug_level >= 200) {
       dump_volume_label(dev);
    }
+
    Dmsg0(130, "Leave read_volume_label() VOL_OK\n");
-   /* If we are a streaming device, we only get one chance to read */
+   /*
+    * If we are a streaming device, we only get one chance to read
+    */
    if (!dev->has_cap(CAP_STREAM)) {
       dev->rewind(dcr);
       if (have_ansi_label) {
-         stat = read_ansi_ibm_label(dcr);            
-         /* If we want a label and didn't find it, return error */
-         if (stat != VOL_OK) {
+         status = read_ansi_ibm_label(dcr);
+         /*
+          * If we want a label and didn't find it, return error
+          */
+         if (status != VOL_OK) {
             goto bail_out;
          }
       }
@@ -236,18 +254,32 @@ int read_dev_volume_label(DCR *dcr)
       Mmsg2(jcr->errmsg, _("Could not reserve volume %s on %s\n"),
            dev->VolHdr.VolumeName, dev->print_name());
       Dmsg2(150, "Could not reserve volume %s on %s\n", dev->VolHdr.VolumeName, dev->print_name());
-      stat = VOL_NAME_ERROR;
+      status = VOL_NAME_ERROR;
       goto bail_out;
    }
 
+ok_out:
+   /*
+    * The stored plugin handling the bsdEventLabelVerified event can override
+    * the return value e.g. although we think the volume label is ok the plugin
+    * has reasons to override that. So when the plugin returns something else
+    * then bRC_OK it want to tell us the volume is not OK to use and as
+    * such we return VOL_NAME_ERROR as error although it might not be te
+    * best error it should be sufficient.
+    */
+   if (generate_plugin_event(jcr, bsdEventLabelVerified, dcr) != bRC_OK) {
+      Dmsg0(200, "Error from bsdEventLabelVerified plugin event.\n");
+      status = VOL_NAME_ERROR;
+      goto bail_out;
+   }
    empty_block(block);
    return VOL_OK;
 
 bail_out:
    empty_block(block);
    dev->rewind(dcr);
-   Dmsg1(150, "return %d\n", stat);
-   return stat;
+   Dmsg1(150, "return %d\n", status);
+   return status;
 }
 
 /*
@@ -285,7 +317,6 @@ static bool write_volume_label_to_block(DCR *dcr)
    return true;
 }
 
-
 /*
  * Write a Volume Label
  *  !!! Note, this is ONLY used for writing
@@ -296,8 +327,9 @@ static bool write_volume_label_to_block(DCR *dcr)
  *  This routine should be used only when labeling a blank tape.
  */
 bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName, 
-              const char *PoolName, bool relabel, bool dvdnow)
+                                   const char *PoolName, bool relabel)
 {
+   JCR *jcr = dcr->jcr;
    DEVICE *dev = dcr->dev;
    DEV_BLOCK *block = dcr->block;
 
@@ -314,7 +346,7 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
          goto bail_out;
       }
       if (!dev->is_tape()) {
-         dev->close_part(dcr);        /* make sure DVD/file closed for rename */
+         dev->close(dcr);             /* make sure file closed for rename */
       }
    }
 
@@ -325,12 +357,20 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
    if (!dev->open(dcr, OPEN_READ_WRITE)) {
       /* If device is not tape, attempt to create it */
       if (dev->is_tape() || !dev->open(dcr, CREATE_READ_WRITE)) {
-         Jmsg3(dcr->jcr, M_WARNING, 0, _("Open device %s Volume \"%s\" failed: ERR=%s\n"),
+         Jmsg3(jcr, M_WARNING, 0, _("Open device %s Volume \"%s\" failed: ERR=%s\n"),
                dev->print_name(), dcr->VolumeName, dev->bstrerror());
          goto bail_out;
       }
    }
    Dmsg1(150, "Label type=%d\n", dev->label_type);
+
+   /*
+    * Let any stored plugin know that we are about to write a new label to the volume.
+    */
+   if (generate_plugin_event(jcr, bsdEventLabelWrite, dcr) != bRC_OK) {
+      Dmsg0(200, "Error from bsdEventLabelWrite plugin event.\n");
+      goto bail_out;
+   }
 
    for ( ;; ) {
       empty_block(block);
@@ -344,8 +384,8 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
       /* Temporarily mark in append state to enable writing */
       dev->set_append();
 
-      /* Create PRE_LABEL or VOL_LABEL if DVD */
-      create_volume_label(dev, VolName, PoolName, dvdnow);
+      /* Create PRE_LABEL */
+      create_volume_label(dev, VolName, PoolName);
 
       /*
        * If we have already detected an ANSI label, re-read it
@@ -381,7 +421,6 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
    }
    dev = dcr->dev;
 
-
    Dmsg0(130, " Wrote block to device\n");
 
    if (dev->weof(1)) {
@@ -394,9 +433,9 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
    }
    Dmsg0(100, "Call reserve_volume\n");
    if (reserve_volume(dcr, VolName) == NULL) {
-      Mmsg2(dcr->jcr->errmsg, _("Could not reserve volume %s on %s\n"),
+      Mmsg2(jcr->errmsg, _("Could not reserve volume %s on %s\n"),
            dev->VolHdr.VolumeName, dev->print_name());
-      Dmsg1(100, "%s", dcr->jcr->errmsg);
+      Dmsg1(100, "%s", jcr->errmsg);
       goto bail_out;
    }
    dev = dcr->dev;                    /* may have changed in reserve_volume */
@@ -423,17 +462,28 @@ bool DCR::rewrite_volume_label(bool recycle)
    DCR *dcr = this;
 
    if (!dev->open(dcr, OPEN_READ_WRITE)) {
-       Jmsg3(jcr, M_WARNING, 0, _("Open device %s Volume \"%s\" failed: ERR=%s\n"),
-             dev->print_name(), dcr->VolumeName, dev->bstrerror());
+      Jmsg3(jcr, M_WARNING, 0, _("Open device %s Volume \"%s\" failed: ERR=%s\n"),
+            dev->print_name(), dcr->VolumeName, dev->bstrerror());
       return false;
    }
+
    Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%x\n", dev->fd(), dev);
+
+   /*
+    * Let any stored plugin know that we are (re)writing the label.
+    */
+   if (generate_plugin_event(jcr, bsdEventLabelWrite, dcr) != bRC_OK) {
+      Dmsg0(200, "Error from bsdEventLabelWrite plugin event.\n");
+      return false;
+   }
+
    dev->VolHdr.LabelType = VOL_LABEL; /* set Volume label */
    dev->set_append();
    if (!write_volume_label_to_block(dcr)) {
       Dmsg0(200, "Error from write volume label.\n");
       return false;
    }
+
    Dmsg1(150, "wrote vol label to block. Vol=%s\n", dcr->VolumeName);
 
    dev->setVolCatInfo(false);
@@ -461,7 +511,7 @@ bool DCR::rewrite_volume_label(bool recycle)
          }
          if (!dev->open(dcr, OPEN_READ_WRITE)) {
             Jmsg2(jcr, M_FATAL, 0,
-               _("Failed to re-open DVD after truncate on device %s: ERR=%s\n"),
+               _("Failed to re-open after truncate on device %s: ERR=%s\n"),
                dev->print_name(), dev->print_errmsg());
             return false;
          }
@@ -526,9 +576,17 @@ bool DCR::rewrite_volume_label(bool recycle)
     *  the volume.
     */
    Dmsg1(150, "OK from rewrite vol label. Vol=%s\n", dcr->VolumeName);
+
+   /*
+    * Let any stored plugin know the label was rewritten and as such is verified .
+    */
+   if (generate_plugin_event(jcr, bsdEventLabelVerified, dcr) != bRC_OK) {
+      Dmsg0(200, "Error from bsdEventLabelVerified plugin event.\n");
+      return false;
+   }
+
    return true;
 }
-
 
 /*
  *  create_volume_label_record
@@ -591,12 +649,10 @@ static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec)
       rec->data_len);
 }
 
-
 /*
  * Create a volume label in memory
  */
-void create_volume_label(DEVICE *dev, const char *VolName, 
-                         const char *PoolName, bool dvdnow)
+void create_volume_label(DEVICE *dev, const char *VolName, const char *PoolName)
 {
    DEVRES *device = (DEVRES *)dev->device;
 
@@ -608,12 +664,7 @@ void create_volume_label(DEVICE *dev, const char *VolName,
 
    bstrncpy(dev->VolHdr.Id, BaculaId, sizeof(dev->VolHdr.Id));
    dev->VolHdr.VerNum = BaculaTapeVersion;
-   if (dev->is_dvd() && dvdnow) {
-      /* We do not want to re-label a DVD so write VOL_LABEL now */
-      dev->VolHdr.LabelType = VOL_LABEL;
-   } else {
-      dev->VolHdr.LabelType = PRE_LABEL;  /* Mark tape as unused */
-   }
+   dev->VolHdr.LabelType = PRE_LABEL;  /* Mark tape as unused */
    bstrncpy(dev->VolHdr.VolumeName, VolName, sizeof(dev->VolHdr.VolumeName));
    bstrncpy(dev->VolHdr.PoolName, PoolName, sizeof(dev->VolHdr.PoolName));
    bstrncpy(dev->VolHdr.MediaType, device->media_type, sizeof(dev->VolHdr.MediaType));
@@ -766,7 +817,6 @@ bool write_session_label(DCR *dcr, int label)
  * Returns: false on error
  *          true  on success
 */
-
 bool unser_volume_label(DEVICE *dev, DEV_RECORD *rec)
 {
    ser_declare;
@@ -820,7 +870,6 @@ bool unser_volume_label(DEVICE *dev, DEV_RECORD *rec)
    }
    return true;
 }
-
 
 bool unser_session_label(SESSION_LABEL *label, DEV_RECORD *rec)
 {
@@ -939,7 +988,6 @@ void dump_volume_label(DEVICE *dev)
 bail_out:
    debug_level = dbl;
 }
-
 
 static void dump_session_label(DEV_RECORD *rec, const char *type)
 {

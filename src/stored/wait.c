@@ -53,13 +53,13 @@ int wait_for_sysop(DCR *dcr)
    struct timespec timeout;
    time_t last_heartbeat = 0;
    time_t first_start = time(NULL);
-   int stat = 0;
+   int status = 0;
    int add_wait;
    bool unmounted;
    DEVICE *dev = dcr->dev;
    JCR *jcr = dcr->jcr;
 
-   dev->Lock();  
+   dev->Lock();
    Dmsg1(dbglvl, "Enter blocked=%s\n", dev->print_blocked());
 
    /*
@@ -105,9 +105,9 @@ int wait_for_sysop(DCR *dcr)
       start = time(NULL);
 
       /* Wait required time */
-      stat = pthread_cond_timedwait(&dev->wait_next_vol, &dev->m_mutex, &timeout);
+      status = pthread_cond_timedwait(&dev->wait_next_vol, &dev->m_mutex, &timeout);
 
-      Dmsg2(dbglvl, "Wokeup from sleep on device stat=%d blocked=%s\n", stat,
+      Dmsg2(dbglvl, "Wokeup from sleep on device status=%d blocked=%s\n", status,
          dev->print_blocked());
       now = time(NULL);
       total_waited = now - first_start;
@@ -128,10 +128,10 @@ int wait_for_sysop(DCR *dcr)
          }
       }
 
-      if (stat == EINVAL) {
+      if (status == EINVAL) {
          berrno be;
-         Jmsg1(jcr, M_FATAL, 0, _("pthread timedwait error. ERR=%s\n"), be.bstrerror(stat));
-         stat = W_ERROR;               /* error */
+         Jmsg1(jcr, M_FATAL, 0, _("pthread timedwait error. ERR=%s\n"), be.bstrerror(status));
+         status = W_ERROR;             /* error */
          break;
       }
 
@@ -144,7 +144,7 @@ int wait_for_sysop(DCR *dcr)
 
       if (dev->rem_wait_sec <= 0) {  /* on exceeding wait time return */
          Dmsg0(dbglvl, "Exceed wait time.\n");
-         stat = W_TIMEOUT;
+         status = W_TIMEOUT;
          break;
       }
 
@@ -157,7 +157,7 @@ int wait_for_sysop(DCR *dcr)
           (total_waited >= dev->vol_poll_interval)) {
          Dmsg1(dbglvl, "poll return in wait blocked=%s\n", dev->print_blocked());
          dev->poll = true;            /* returning a poll event */
-         stat = W_POLL;
+         status = W_POLL;
          break;
       }
       /*
@@ -165,7 +165,7 @@ int wait_for_sysop(DCR *dcr)
        */
       if (dev->blocked() == BST_MOUNT) {   /* mount request ? */
          Dmsg0(dbglvl, "Mounted return.\n");
-         stat = W_MOUNT;
+         status = W_MOUNT;
          break;
       }
 
@@ -173,10 +173,10 @@ int wait_for_sysop(DCR *dcr)
        * If we did not timeout, then some event happened, so
        *   return to check if state changed.   
        */
-      if (stat != ETIMEDOUT) {
+      if (status != ETIMEDOUT) {
          berrno be;
-         Dmsg2(dbglvl, "Wake return. stat=%d. ERR=%s\n", stat, be.bstrerror(stat));
-         stat = W_WAKE;          /* someone woke us */
+         Dmsg2(dbglvl, "Wake return. status=%d. ERR=%s\n", status, be.bstrerror(status));
+         status = W_WAKE;          /* someone woke us */
          break;
       }
 
@@ -207,7 +207,7 @@ int wait_for_sysop(DCR *dcr)
    }
    Dmsg1(dbglvl, "Exit blocked=%s\n", dev->print_blocked());
    dev->Unlock();
-   return stat;
+   return status;
 }
 
 
@@ -226,7 +226,7 @@ bool wait_for_device(JCR *jcr, int &retries)
    struct timeval tv;
    struct timezone tz;
    struct timespec timeout;
-   int stat = 0;
+   int status = 0;
    bool ok = true;
    const int max_wait_time = 1 * 60;       /* wait 1 minute */
    char ed1[50];
@@ -247,8 +247,8 @@ bool wait_for_device(JCR *jcr, int &retries)
    Dmsg0(dbglvl, "Going to wait for a device.\n");
 
    /* Wait required time */
-   stat = pthread_cond_timedwait(&wait_device_release, &device_release_mutex, &timeout);
-   Dmsg1(dbglvl, "Wokeup from sleep on device stat=%d\n", stat);
+   status = pthread_cond_timedwait(&wait_device_release, &device_release_mutex, &timeout);
+   Dmsg1(dbglvl, "Wokeup from sleep on device status=%d\n", status);
 
    V(device_release_mutex);
    Dmsg1(dbglvl, "Return from wait_device ok=%d\n", ok);

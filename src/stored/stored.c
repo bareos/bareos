@@ -39,6 +39,7 @@
 
 #include "bacula.h"
 #include "stored.h"
+#include "lib/crypto_cache.h"
 
 /* TODO: fix problem with bls, bextract
  * that use findlib and already declare
@@ -77,6 +78,9 @@ bool init_done = false;
 static bool foreground = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static workq_t dird_workq;            /* queue for processing connections */
+#if HAVE_NDMP
+static workq_t ndmp_workq;            /* queue for processing NDMP connections */
+#endif
 static CONFIG *config;
 
 
@@ -246,8 +250,10 @@ int main (int argc, char *argv[])
 
    create_pid_file(me->pid_directory, "bacula-sd",
                    get_first_port_host_order(me->sdaddrs));
-   read_state_file(me->working_directory, "bacula-sd", 
+   read_state_file(me->working_directory, "bacula-sd",
                    get_first_port_host_order(me->sdaddrs));
+   read_crypto_cache(me->working_directory, "bacula-sd",
+                     get_first_port_host_order(me->sdaddrs));
 
    set_jcr_in_tsd(INVALID_JCR);
    /* Make sure on Solaris we can run concurrent, watch dog + servers + misc */
@@ -280,9 +286,20 @@ int main (int argc, char *argv[])
    start_watchdog();                  /* start watchdog thread */
    init_jcr_subsystem();              /* start JCR watchdogs etc. */
 
+#if HAVE_NDMP
+   /* Seperate thread that handles NDMP connections */
+   if (me->ndmp_enable) {
+      start_ndmp_thread_server(me->ndmpaddrs,
+                               me->max_concurrent_jobs * 2 + 1,
+                               &ndmp_workq);
+   }
+#endif
+
    /* Single server used for Director and File daemon */
-   bnet_thread_server(me->sdaddrs, me->max_concurrent_jobs * 2 + 1,
-                      &dird_workq, handle_connection_request);
+   bnet_thread_server(me->sdaddrs,
+                      me->max_concurrent_jobs * 2 + 1,
+                      &dird_workq,
+                      handle_connection_request);
    exit(1);                           /* to keep compiler quiet */
 }
 
@@ -303,7 +320,6 @@ static int check_resources()
 {
    bool OK = true;
    bool tls_needed;
-
 
    me = (STORES *)GetNextRes(R_STORAGE, NULL);
    if (!me) {
@@ -329,7 +345,7 @@ static int check_resources()
    }
 
    if (!me->messages) {
-      me->messages = (MSGS *)GetNextRes(R_MSGS, NULL);
+      me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
       if (!me->messages) {
          Jmsg1(NULL, M_ERROR, 0, _("No Messages resource defined in %s. Cannot continue.\n"),
             configfile);
@@ -343,7 +359,6 @@ static int check_resources()
       OK = false;
    }
 
-   DIRRES *director;
    STORES *store;
    foreach_res(store, R_STORAGE) { 
       /* tls_require implies tls_enable */
@@ -398,6 +413,7 @@ static int check_resources()
       }
    }
 
+   DIRRES *director;
    foreach_res(director, R_DIRECTOR) { 
       /* tls_require implies tls_enable */
       if (director->tls_require) {
@@ -445,9 +461,19 @@ static int check_resources()
       }
    }
 
-   OK = init_autochangers();
+   DEVRES *device;
+   foreach_res(device, R_DEVICE) {
+      if (device->drive_crypto_enabled && device->cap_bits & CAP_LABEL) {
+         Jmsg(NULL, M_FATAL, 0, _("LabelMedia enabled is incompatible with tape crypto on Device \"%s\" in %s.\n"),
+              device->hdr.name, configfile);
+         OK = false;
+      }
+   }
 
-   
+   if (OK) {
+      OK = init_autochangers();
+   }
+
    if (OK) {
       close_msg(NULL);                   /* close temp message handler */
       init_msg(NULL, me->messages);      /* open daemon message handler */
@@ -547,17 +573,31 @@ void *device_initialization(void *arg)
    DCR *dcr;
    JCR *jcr;
    DEVICE *dev;
+   int errstat;
 
    LockRes();
 
    pthread_detach(pthread_self());
    jcr = new_jcr(sizeof(JCR), stored_free_jcr);
+   new_plugins(jcr);  /* instantiate plugins */
    jcr->setJobType(JT_SYSTEM);
-   /* Initialize FD start condition variable */
-   int errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
+
+   /*
+    * Initialize job start condition variable
+    */
+   errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
    if (errstat != 0) {
       berrno be;
-      Jmsg1(jcr, M_ABORT, 0, _("Unable to init job cond variable: ERR=%s\n"), be.bstrerror(errstat));
+      Jmsg1(jcr, M_ABORT, 0, _("Unable to init job start cond variable: ERR=%s\n"), be.bstrerror(errstat));
+   }
+
+   /*
+    * Initialize job end condition variable
+    */
+   errstat = pthread_cond_init(&jcr->job_end_wait, NULL);
+   if (errstat != 0) {
+      berrno be;
+      Jmsg1(jcr, M_ABORT, 0, _("Unable to init job endstart cond variable: ERR=%s\n"), be.bstrerror(errstat));
    }
 
    foreach_res(device, R_DEVICE) {
@@ -572,7 +612,7 @@ void *device_initialization(void *arg)
       jcr->dcr = dcr = new_dcr(jcr, NULL, dev);
       generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
       if (dev->is_autochanger()) {
-         /* If autochanger set slot in dev sturcture */
+         /* If autochanger set slot in dev structure */
          get_autochanger_loaded_slot(dcr);
       }
 
@@ -586,6 +626,7 @@ void *device_initialization(void *arg)
             continue;
          }
       }
+
       if (device->cap_bits & CAP_AUTOMOUNT && dev->is_open()) {
          switch (read_dev_volume_label(dcr)) {
          case VOL_OK:
@@ -627,6 +668,9 @@ void terminate_stored(int sig)
    }
    in_here = true;
    debug_level = 0;                   /* turn off any debug */
+#if HAVE_NDMP
+   stop_ndmp_thread_server();
+#endif
    stop_watchdog();
 
    if (sig == SIGTERM) {              /* normal shutdown request? */
@@ -670,7 +714,8 @@ void terminate_stored(int sig)
 
    Dmsg1(200, "In terminate_stored() sig=%d\n", sig);
 
-   unload_plugins();
+   unload_sd_plugins();
+   flush_crypto_cache();
    free_volume_lists();
 
    foreach_res(device, R_DEVICE) {

@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -34,8 +34,6 @@
  *       sqlite.c, ...
  *
  *    Kern Sibbald, March 2000
- *
- *    Version $Id: sql.c 8034 2008-11-11 14:33:46Z ricozz $
  */
 
 #include "bacula.h"
@@ -202,7 +200,6 @@ bool check_tables_version(JCR *jcr, B_DB *mdb)
    uint32_t bacula_db_version = 0;
    const char *query = "SELECT VersionId FROM Version";
 
-   bacula_db_version = 0;
    if (!db_sql_query(mdb, query, db_int_handler, (void *)&bacula_db_version)) {
       Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
       return false;
@@ -218,11 +215,10 @@ bool check_tables_version(JCR *jcr, B_DB *mdb)
 
 /*
  * Utility routine for queries. The database MUST be locked before calling here.
- * Returns: 0 on failure
- *          1 on success
+ * Returns: false on failure
+ *          true on success
  */
-int
-QueryDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
+bool QueryDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
 {
    sql_free_result(mdb);
    if (!sql_query(mdb, cmd, QF_STORE_RESULT)) {
@@ -231,19 +227,18 @@ QueryDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
       }
-      return 0;
+      return false;
    }
 
-   return 1;
+   return true;
 }
 
 /*
  * Utility routine to do inserts
- * Returns: 0 on failure
- *          1 on success
+ * Returns: false on failure
+ *          true on success
  */
-int
-InsertDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
+bool InsertDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
 {
    int num_rows;
 
@@ -253,7 +248,7 @@ InsertDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
       }
-      return 0;
+      return false;
    }
    num_rows = sql_affected_rows(mdb);
    if (num_rows != 1) {
@@ -263,18 +258,17 @@ InsertDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
       }
-      return 0;
+      return false;
    }
    mdb->changes++;
-   return 1;
+   return true;
 }
 
 /* Utility routine for updates.
- *  Returns: 0 on failure
- *           1 on success
+ * Returns: false on failure
+ *          true on success
  */
-int
-UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
+bool UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
 {
    int num_rows;
 
@@ -284,7 +278,7 @@ UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
       }
-      return 0;
+      return false;
    }
    num_rows = sql_affected_rows(mdb);
    if (num_rows < 1) {
@@ -294,10 +288,10 @@ UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
       if (verbose) {
 //       j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
       }
-      return 0;
+      return false;
    }
    mdb->changes++;
-   return 1;
+   return true;
 }
 
 /*
@@ -306,8 +300,7 @@ UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
  * Returns: -1 on error
  *           n number of rows affected
  */
-int
-DeleteDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
+int DeleteDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
 {
 
    if (!sql_query(mdb, cmd)) {
@@ -333,21 +326,21 @@ DeleteDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
 int get_sql_record_max(JCR *jcr, B_DB *mdb)
 {
    SQL_ROW row;
-   int stat = 0;
+   int retval = 0;
 
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       if ((row = sql_fetch_row(mdb)) == NULL) {
          Mmsg1(&mdb->errmsg, _("error fetching row: %s\n"), sql_strerror(mdb));
-         stat = -1;
+         retval = -1;
       } else {
-         stat = str_to_int64(row[0]);
+         retval = str_to_int64(row[0]);
       }
       sql_free_result(mdb);
    } else {
       Mmsg1(&mdb->errmsg, _("error fetching row: %s\n"), sql_strerror(mdb));
-      stat = -1;
+      retval = -1;
    }
-   return stat;
+   return retval;
 }
 
 /*
@@ -378,10 +371,10 @@ void split_path_and_file(JCR *jcr, B_DB *mdb, const char *fname)
          f = p;                       /* set pos of last slash */
       }
    }
-   if (IsPathSeparator(*f)) {                   /* did we find a slash? */
+   if (IsPathSeparator(*f)) {         /* did we find a slash? */
       f++;                            /* yes, point to filename */
-   } else {                           /* no, whole thing must be path name */
-      f = p;
+   } else {
+      f = p;                          /* no, whole thing must be path name */
    }
 
    /* If filename doesn't exist (i.e. root directory), we
@@ -434,7 +427,7 @@ static int max_length(int max_length)
  */
 void list_dashes(B_DB *mdb, DB_LIST_HANDLER *send, void *ctx)
 {
-   SQL_FIELD  *field;
+   SQL_FIELD *field;
    int i, j;
    int len;
    int num_fields;
@@ -478,110 +471,150 @@ int list_result(void *vctx, int nb_col, char **row)
    JCR *jcr = pctx->jcr;
 
    num_fields = sql_num_fields(mdb);
-   if (!pctx->once) {
-      pctx->once = true;
+   switch (type) {
+   case NF_LIST:
+   case RAW_LIST:
+      /*
+       * No need to calculate things like maximum field lenght for
+       * unformated or raw output.
+       */
+      break;
+   case HORZ_LIST:
+   case VERT_LIST:
+      if (!pctx->once) {
+         pctx->once = true;
 
-      Dmsg1(800, "list_result starts looking at %d fields\n", num_fields);
-      /* determine column display widths */
+         Dmsg1(800, "list_result starts looking at %d fields\n", num_fields);
+         /*
+          * Determine column display widths
+          */
+         sql_field_seek(mdb, 0);
+         for (i = 0; i < num_fields; i++) {
+            Dmsg1(800, "list_result processing field %d\n", i);
+            field = sql_fetch_field(mdb);
+            if (!field) {
+               break;
+            }
+            col_len = cstrlen(field->name);
+            if (type == VERT_LIST) {
+               if (col_len > max_len) {
+                  max_len = col_len;
+               }
+            } else {
+               if (sql_field_is_numeric(mdb, field->type) && (int)field->max_length > 0) { /* fixup for commas */
+                  field->max_length += (field->max_length - 1) / 3;
+               }
+               if (col_len < (int)field->max_length) {
+                  col_len = field->max_length;
+               }
+               if (col_len < 4 && !sql_field_is_not_null(mdb, field->flags)) {
+                  col_len = 4;                 /* 4 = length of the word "NULL" */
+               }
+               field->max_length = col_len;    /* reset column info */
+            }
+         }
+
+         pctx->num_rows++;
+
+         Dmsg0(800, "list_result finished first loop\n");
+         if (type == VERT_LIST) {
+            break;
+         }
+
+         Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
+
+         /*
+          * Keep the result to display the same line at the end of the table
+          */
+         list_dashes(mdb, last_line_handler, pctx);
+         send(ctx, pctx->line);
+
+         send(ctx, "|");
+         sql_field_seek(mdb, 0);
+         for (i = 0; i < num_fields; i++) {
+            Dmsg1(800, "list_result looking at field %d\n", i);
+            field = sql_fetch_field(mdb);
+            if (!field) {
+               break;
+            }
+            max_len = max_length(field->max_length);
+            bsnprintf(buf, sizeof(buf), " %-*s |", max_len, field->name);
+            send(ctx, buf);
+         }
+         send(ctx, "\n");
+         list_dashes(mdb, send, ctx);
+      }
+      break;
+   default:
+      break;
+   }
+
+   switch (type) {
+   case NF_LIST:
+   case RAW_LIST:
+      Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
       sql_field_seek(mdb, 0);
       for (i = 0; i < num_fields; i++) {
-         Dmsg1(800, "list_result processing field %d\n", i);
          field = sql_fetch_field(mdb);
          if (!field) {
             break;
          }
-         col_len = cstrlen(field->name);
-         if (type == VERT_LIST) {
-            if (col_len > max_len) {
-               max_len = col_len;
-            }
+         if (row[i] == NULL) {
+            bsnprintf(buf, sizeof(buf), " %s", "NULL");
          } else {
-            if (sql_field_is_numeric(mdb, field->type) && (int)field->max_length > 0) { /* fixup for commas */
-               field->max_length += (field->max_length - 1) / 3;
-            }  
-            if (col_len < (int)field->max_length) {
-               col_len = field->max_length;
-            }  
-            if (col_len < 4 && !sql_field_is_not_null(mdb, field->flags)) {
-               col_len = 4;                 /* 4 = length of the word "NULL" */
-            }
-            field->max_length = col_len;    /* reset column info */
+            bsnprintf(buf, sizeof(buf), " %s", row[i]);
          }
+         send(ctx, buf);
       }
-
-      pctx->num_rows++;
-
-      Dmsg0(800, "list_result finished first loop\n");
-      if (type == VERT_LIST) {
-         goto vertical_list;
+      if (type != RAW_LIST) {
+         send(ctx, "\n");
       }
-
-      Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
-
-      /* Keep the result to display the same line at the end of the table */
-      list_dashes(mdb, last_line_handler, pctx);
-      send(ctx, pctx->line);
-
-      send(ctx, "|");
+      break;
+   case HORZ_LIST:
+      Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
       sql_field_seek(mdb, 0);
+      send(ctx, "|");
       for (i = 0; i < num_fields; i++) {
-         Dmsg1(800, "list_result looking at field %d\n", i);
          field = sql_fetch_field(mdb);
          if (!field) {
             break;
          }
          max_len = max_length(field->max_length);
-         bsnprintf(buf, sizeof(buf), " %-*s |", max_len, field->name);
+         if (row[i] == NULL) {
+            bsnprintf(buf, sizeof(buf), " %-*s |", max_len, "NULL");
+         } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
+            bsnprintf(buf, sizeof(buf), " %*s |", max_len,
+                      add_commas(row[i], ewc));
+         } else {
+            bsnprintf(buf, sizeof(buf), " %-*s |", max_len, row[i]);
+         }
          send(ctx, buf);
       }
       send(ctx, "\n");
-      list_dashes(mdb, send, ctx);      
+      break;
+   case VERT_LIST:
+      Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
+      sql_field_seek(mdb, 0);
+      for (i = 0; i < num_fields; i++) {
+         field = sql_fetch_field(mdb);
+         if (!field) {
+            break;
+         }
+         if (row[i] == NULL) {
+            bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, "NULL");
+         } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
+            bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name,
+                      add_commas(row[i], ewc));
+         } else {
+            bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, row[i]);
+         }
+         send(ctx, buf);
+      }
+      send(ctx, "\n");
+      break;
+   default:
+      break;
    }
-   
-   Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
-
-   sql_field_seek(mdb, 0);
-   send(ctx, "|");
-   for (i = 0; i < num_fields; i++) {
-      field = sql_fetch_field(mdb);
-      if (!field) {
-         break;
-      }
-      max_len = max_length(field->max_length);
-      if (row[i] == NULL) {
-         bsnprintf(buf, sizeof(buf), " %-*s |", max_len, "NULL");
-      } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
-         bsnprintf(buf, sizeof(buf), " %*s |", max_len,
-                   add_commas(row[i], ewc));
-      } else {
-         bsnprintf(buf, sizeof(buf), " %-*s |", max_len, row[i]);
-      }
-      send(ctx, buf);
-   }
-   send(ctx, "\n");
-   return 0;
-
-vertical_list:
-
-   Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
-
-   sql_field_seek(mdb, 0);
-   for (i = 0; i < num_fields; i++) {
-      field = sql_fetch_field(mdb);
-      if (!field) {
-         break;
-      }
-      if (row[i] == NULL) {
-         bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, "NULL");
-      } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
-         bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name,
-                   add_commas(row[i], ewc));
-      } else {
-         bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, row[i]);
-      }
-      send(ctx, buf);
-   }
-   send(ctx, "\n");
    return 0;
 }
 
@@ -605,130 +638,157 @@ int list_result(JCR *jcr, B_DB *mdb, DB_LIST_HANDLER *send, void *ctx, e_list_ty
    }
 
    num_fields = sql_num_fields(mdb);
-   Dmsg1(800, "list_result starts looking at %d fields\n", num_fields);
-   /* determine column display widths */
-   sql_field_seek(mdb, 0);
-   for (i = 0; i < num_fields; i++) {
-      Dmsg1(800, "list_result processing field %d\n", i);
-      field = sql_fetch_field(mdb);
-      if (!field) {
-         break;
-      }
-      col_len = cstrlen(field->name);
-      if (type == VERT_LIST) {
-         if (col_len > max_len) {
-            max_len = col_len;
+   switch (type) {
+   case NF_LIST:
+   case RAW_LIST:
+      /*
+       * No need to calculate things like column widths for
+       * unformated or raw output.
+       */
+      break;
+   case HORZ_LIST:
+   case VERT_LIST:
+      Dmsg1(800, "list_result starts looking at %d fields\n", num_fields);
+      /*
+       * Determine column display widths
+       */
+      sql_field_seek(mdb, 0);
+      for (i = 0; i < num_fields; i++) {
+         Dmsg1(800, "list_result processing field %d\n", i);
+         field = sql_fetch_field(mdb);
+         if (!field) {
+            break;
          }
-      } else {
-         if (sql_field_is_numeric(mdb, field->type) && (int)field->max_length > 0) { /* fixup for commas */
-            field->max_length += (field->max_length - 1) / 3;
-         }  
-         if (col_len < (int)field->max_length) {
-            col_len = field->max_length;
-         }  
-         if (col_len < 4 && !sql_field_is_not_null(mdb, field->flags)) {
-            col_len = 4;                 /* 4 = length of the word "NULL" */
+         col_len = cstrlen(field->name);
+         if (type == VERT_LIST) {
+            if (col_len > max_len) {
+               max_len = col_len;
+            }
+         } else {
+            if (sql_field_is_numeric(mdb, field->type) && (int)field->max_length > 0) { /* fixup for commas */
+               field->max_length += (field->max_length - 1) / 3;
+            }
+            if (col_len < (int)field->max_length) {
+               col_len = field->max_length;
+            }
+            if (col_len < 4 && !sql_field_is_not_null(mdb, field->flags)) {
+               col_len = 4;                 /* 4 = length of the word "NULL" */
+            }
+            field->max_length = col_len;    /* reset column info */
          }
-         field->max_length = col_len;    /* reset column info */
       }
+      break;
    }
 
    Dmsg0(800, "list_result finished first loop\n");
-   if (type == VERT_LIST) {
-      goto vertical_list;
-   }
 
-   Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
-   list_dashes(mdb, send, ctx);
-   send(ctx, "|");
-   sql_field_seek(mdb, 0);
-   for (i = 0; i < num_fields; i++) {
-      Dmsg1(800, "list_result looking at field %d\n", i);
-      field = sql_fetch_field(mdb);
-      if (!field) {
-         break;
+   switch (type) {
+   case NF_LIST:
+   case RAW_LIST:
+      Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
+      while ((row = sql_fetch_row(mdb)) != NULL) {
+         sql_field_seek(mdb, 0);
+         for (i = 0; i < num_fields; i++) {
+            field = sql_fetch_field(mdb);
+            if (!field) {
+               break;
+            }
+            if (row[i] == NULL) {
+               bsnprintf(buf, sizeof(buf), " %s", "NULL");
+            } else {
+               bsnprintf(buf, sizeof(buf), " %s", row[i]);
+            }
+            send(ctx, buf);
+         }
+         if (type != RAW_LIST) {
+            send(ctx, "\n");
+         }
       }
-      max_len = max_length(field->max_length);
-      bsnprintf(buf, sizeof(buf), " %-*s |", max_len, field->name);
-      send(ctx, buf);
-   }
-   send(ctx, "\n");
-   list_dashes(mdb, send, ctx);
-
-   Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
-   while ((row = sql_fetch_row(mdb)) != NULL) {
-      sql_field_seek(mdb, 0);
+      break;
+   case HORZ_LIST:
+      Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
+      list_dashes(mdb, send, ctx);
       send(ctx, "|");
+      sql_field_seek(mdb, 0);
       for (i = 0; i < num_fields; i++) {
+         Dmsg1(800, "list_result looking at field %d\n", i);
          field = sql_fetch_field(mdb);
          if (!field) {
             break;
          }
          max_len = max_length(field->max_length);
-         if (row[i] == NULL) {
-            bsnprintf(buf, sizeof(buf), " %-*s |", max_len, "NULL");
-         } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
-            bsnprintf(buf, sizeof(buf), " %*s |", max_len,
-                      add_commas(row[i], ewc));
-         } else {
-            bsnprintf(buf, sizeof(buf), " %-*s |", max_len, row[i]);
-         }
+         bsnprintf(buf, sizeof(buf), " %-*s |", max_len, field->name);
          send(ctx, buf);
       }
       send(ctx, "\n");
-   }
-   list_dashes(mdb, send, ctx);
-   return sql_num_rows(mdb);
+      list_dashes(mdb, send, ctx);
 
-vertical_list:
-
-   Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
-   while ((row = sql_fetch_row(mdb)) != NULL) {
-      sql_field_seek(mdb, 0);
-      for (i = 0; i < num_fields; i++) {
-         field = sql_fetch_field(mdb);
-         if (!field) {
-            break;
+      Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
+      while ((row = sql_fetch_row(mdb)) != NULL) {
+         sql_field_seek(mdb, 0);
+         send(ctx, "|");
+         for (i = 0; i < num_fields; i++) {
+            field = sql_fetch_field(mdb);
+            if (!field) {
+               break;
+            }
+            max_len = max_length(field->max_length);
+            if (row[i] == NULL) {
+               bsnprintf(buf, sizeof(buf), " %-*s |", max_len, "NULL");
+            } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
+               bsnprintf(buf, sizeof(buf), " %*s |", max_len,
+                         add_commas(row[i], ewc));
+            } else {
+               bsnprintf(buf, sizeof(buf), " %-*s |", max_len, row[i]);
+            }
+            send(ctx, buf);
          }
-         if (row[i] == NULL) {
-            bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, "NULL");
-         } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
-            bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name,
-                add_commas(row[i], ewc));
-         } else {
-            bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, row[i]);
-         }
-         send(ctx, buf);
+         send(ctx, "\n");
       }
-      send(ctx, "\n");
+      list_dashes(mdb, send, ctx);
+      break;
+   case VERT_LIST:
+      Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
+      while ((row = sql_fetch_row(mdb)) != NULL) {
+         sql_field_seek(mdb, 0);
+         for (i = 0; i < num_fields; i++) {
+            field = sql_fetch_field(mdb);
+            if (!field) {
+               break;
+            }
+            if (row[i] == NULL) {
+               bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, "NULL");
+            } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
+               bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name,
+                   add_commas(row[i], ewc));
+            } else {
+               bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, row[i]);
+            }
+            send(ctx, buf);
+         }
+         send(ctx, "\n");
+      }
+      break;
    }
    return sql_num_rows(mdb);
 }
 
-/* 
+/*
  * Open a new connexion to mdb catalog. This function is used
  * by batch and accurate mode.
  */
-bool db_open_batch_connexion(JCR *jcr, B_DB *mdb)
+bool db_open_batch_connection(JCR *jcr, B_DB *mdb)
 {
    bool multi_db;
 
    multi_db = mdb->batch_insert_available();
-
    if (!jcr->db_batch) {
-      jcr->db_batch = db_clone_database_connection(mdb, jcr, multi_db);
+      jcr->db_batch = db_clone_database_connection(mdb, jcr, multi_db, multi_db);
       if (!jcr->db_batch) {
          Mmsg0(&mdb->errmsg, _("Could not init database batch connection\n"));
          Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
          return false;
       }
-
-      if (!db_open_database(jcr, jcr->db_batch)) {
-         Mmsg2(&mdb->errmsg,  _("Could not open database \"%s\": ERR=%s\n"),
-              jcr->db_batch->get_db_name(), db_strerror(jcr->db_batch));
-         Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
-         return false;
-      }      
    }
    return true;
 }

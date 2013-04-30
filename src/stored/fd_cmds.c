@@ -73,31 +73,93 @@ struct s_cmds {
  * The following are the recognized commands from the File daemon
  */
 static struct s_cmds fd_cmds[] = {
-   {"append open",  append_open_session},
-   {"append data",  append_data_cmd},
-   {"append end",   append_end_session},
-   {"append close", append_close_session},
-   {"read open",    read_open_session},
-   {"read data",    read_data_cmd},
-   {"read close",   read_close_session},
-   {NULL,           NULL}                  /* list terminator */
+   { "append open", append_open_session },
+   { "append data", append_data_cmd },
+   { "append end", append_end_session },
+   { "append close", append_close_session },
+   { "read open", read_open_session },
+   { "read data", read_data_cmd },
+   { "read close", read_close_session },
+   { NULL, NULL} /* list terminator */
 };
 
 /* Commands from the File daemon that require additional scanning */
-static char read_open[]       = "read open session = %127s %ld %ld %ld %ld %ld %ld\n";
+static char read_open[] =
+   "read open session = %127s %ld %ld %ld %ld %ld %ld\n";
 
 /* Responses sent to the File daemon */
-static char NO_open[]         = "3901 Error session already open\n";
-static char NOT_opened[]      = "3902 Error session not opened\n";
-static char OK_end[]          = "3000 OK end\n";
-static char OK_close[]        = "3000 OK close Status = %d\n";
-static char OK_open[]         = "3000 OK open ticket = %d\n";
-static char ERROR_append[]    = "3903 Error append data\n";
+static char NO_open[] =
+   "3901 Error session already open\n";
+static char NOT_opened[] =
+   "3902 Error session not opened\n";
+static char OK_end[] =
+   "3000 OK end\n";
+static char OK_close[] =
+   "3000 OK close Status = %d\n";
+static char OK_open[] =
+   "3000 OK open ticket = %d\n";
+static char ERROR_append[] =
+   "3903 Error append data\n";
 
-/* Information sent to the Director */
-static char Job_start[] = "3010 Job %s start\n";
-char Job_end[]   =
+/* Responses sent to the Director */
+static char Job_start[] =
+   "3010 Job %s start\n";
+static char Job_end[] =
    "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+
+/*
+ * After receiving a connection (in dircmd.c) if it is
+ *   from the File daemon, this routine is called.
+ */
+void handle_filed_connection(BSOCK *fd, char *job_name)
+{
+   JCR *jcr;
+
+/*
+ * With the following bmicrosleep on, running the
+ * SD under the debugger fails.
+ */
+// bmicrosleep(0, 50000);             /* wait 50 millisecs */
+   if (!(jcr=get_jcr_by_full_name(job_name))) {
+      Jmsg1(NULL, M_FATAL, 0, _("FD connect failed: Job name not found: %s\n"), job_name);
+      Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
+      fd->close();
+      return;
+   }
+
+   Dmsg1(50, "Found Job %s\n", job_name);
+
+   if (jcr->authenticated) {
+      Jmsg2(jcr, M_FATAL, 0, _("Hey!!!! JobId %u Job %s already authenticated.\n"),
+         (uint32_t)jcr->JobId, jcr->Job);
+      Dmsg2(50, "Hey!!!! JobId %u Job %s already authenticated.\n",
+         (uint32_t)jcr->JobId, jcr->Job);
+      fd->close();
+      free_jcr(jcr);
+      return;
+   }
+
+   jcr->file_bsock = fd;
+   jcr->file_bsock->set_jcr(jcr);
+
+   /*
+    * Authenticate the File daemon
+    */
+   if (jcr->authenticated || !authenticate_filed(jcr)) {
+      Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
+      Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
+   } else {
+      jcr->authenticated = true;
+      Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId, jcr->Job);
+   }
+
+   if (!jcr->authenticated) {
+      jcr->setJobStatus(JS_ErrorTerminated);
+   }
+   pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
+   free_jcr(jcr);
+   return;
+}
 
 /*
  * Run a File daemon Job -- File daemon already authorized
@@ -119,17 +181,20 @@ void run_job(JCR *jcr)
    jcr->start_time = time(NULL);
    jcr->run_time = jcr->start_time;
    jcr->sendJobStatus(JS_Running);
+
    do_fd_commands(jcr);
+
    jcr->end_time = time(NULL);
    dequeue_messages(jcr);             /* send any queued messages */
    jcr->setJobStatus(JS_Terminated);
-   generate_daemon_event(jcr, "JobEnd");
+
    generate_plugin_event(jcr, bsdEventJobEnd);
+
    dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
-      edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
+              edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
    dir->signal(BNET_EOD);             /* send EOD to Director daemon */
+
    free_plugins(jcr);                 /* release instantiated plugins */
-   return;
 }
 
 /*
@@ -143,20 +208,20 @@ void do_fd_commands(JCR *jcr)
 
    fd->set_jcr(jcr);
    for (quit=false; !quit;) {
-      int stat;
+      int status;
 
       /* Read command coming from the File daemon */
-      stat = fd->recv();
+      status = fd->recv();
       if (is_bnet_stop(fd)) {         /* hardeof or error */
          break;                       /* connection terminated */
       }
-      if (stat <= 0) {
+      if (status <= 0) {
          continue;                    /* ignore signals and zero length msgs */
       }
       Dmsg1(110, "<filed: %s", fd->msg);
       found = false;
       for (i=0; fd_cmds[i].cmd; i++) {
-         if (strncmp(fd_cmds[i].cmd, fd->msg, strlen(fd_cmds[i].cmd)) == 0) {
+         if (bstrncmp(fd_cmds[i].cmd, fd->msg, strlen(fd_cmds[i].cmd))) {
             found = true;               /* indicate command found */
             jcr->errmsg[0] = 0;
             if (!fd_cmds[i].func(jcr)) {    /* do command */

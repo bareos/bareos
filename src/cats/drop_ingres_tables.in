@@ -33,6 +33,8 @@ DROP TABLE PathHierarchy;
 DROP TABLE PathVisibility;
 DROP TABLE Version;
 DROP TABLE Status;
+DROP TABLE Quota;
+DROP TABLE NDMPLevelMap;
 DROP SEQUENCE Filename_Seq;
 DROP SEQUENCE Path_Seq;
 DROP SEQUENCE File_Seq;

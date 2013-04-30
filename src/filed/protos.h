@@ -26,54 +26,78 @@
    Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Written by Kern Sibbald, MM 
- *
+ * Written by Kern Sibbald, MM
  */
 
-extern bool blast_data_to_storage_daemon(JCR *jcr, char *addr);
-extern void do_verify_volume(JCR *jcr);
-extern void do_restore(JCR *jcr);
-extern int authenticate_director(JCR *jcr);
-extern int authenticate_storagedaemon(JCR *jcr);
-extern int make_estimate(JCR *jcr);
-
-/* From verify.c */
-int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest);
-void do_verify(JCR *jcr);
-
-/* From heartbeat.c */
-void start_heartbeat_monitor(JCR *jcr);
-void stop_heartbeat_monitor(JCR *jcr);
-void start_dir_heartbeat(JCR *jcr);
-void stop_dir_heartbeat(JCR *jcr);
-
-/* From acl.c */
-bacl_exit_code build_acl_streams(JCR *jcr, FF_PKT *ff_pkt);
-bacl_exit_code parse_acl_streams(JCR *jcr, int stream, char *content, uint32_t content_length);
-
-/* from accurate.c */
+/* accurate.c */
 bool accurate_finish(JCR *jcr);
 bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt);
 bool accurate_mark_file_as_seen(JCR *jcr, char *fname);
 void accurate_free(JCR *jcr);
 
-/* from backup.c */
+/* authenicate.c */
+int authenticate_director(JCR *jcr);
+int authenticate_storagedaemon(JCR *jcr);
+
+/* backup.c */
+bool blast_data_to_storage_daemon(JCR *jcr, char *addr);
 bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream);
 void strip_path(FF_PKT *ff_pkt);
 void unstrip_path(FF_PKT *ff_pkt);
 
-/* from xattr.c */
-bxattr_exit_code build_xattr_streams(JCR *jcr, FF_PKT *ff_pkt);
-bxattr_exit_code parse_xattr_streams(JCR *jcr, int stream, char *content, uint32_t content_length);
+/* compression.c */
+void adjust_compression_buffers(JCR *jcr);
+bool adjust_decompression_buffers(JCR *jcr);
+bool setup_compression_context(b_ctx &bctx);
+bool compress_data(b_ctx &bctx);
+bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length);
 
-/* from job.c */
-findINCEXE *new_exclude(JCR *jcr);
-findINCEXE *new_preinclude(JCR *jcr);
+/* crypto.c */
+bool crypto_session_start(JCR *jcr);
+void crypto_session_end(JCR *jcr);
+bool crypto_session_send(JCR *jcr, BSOCK *sd);
+bool verify_signature(JCR *jcr, r_ctx &rctx);
+bool flush_cipher(JCR *jcr, BFILE *bfd, uint64_t *addr, int flags, int32_t stream,
+                  RESTORE_CIPHER_CTX *cipher_ctx);
+void deallocate_cipher(r_ctx &rctx);
+void deallocate_fork_cipher(r_ctx &rctx);
+bool setup_encryption_context(b_ctx &bctx);
+bool setup_decryption_context(r_ctx &rctx, RESTORE_CIPHER_CTX &rcctx);
+bool encrypt_data(b_ctx &bctx, bool *need_more_data);
+bool decrypt_data(JCR *jcr, char **data, uint32_t *length, RESTORE_CIPHER_CTX *cipher_ctx);
+
+/* estimate.c */
+int make_estimate(JCR *jcr);
+
+/* fileset.c */
+bool init_fileset(JCR *jcr);
+void add_file_to_fileset(JCR *jcr, const char *fname, bool is_file);
 findINCEXE *get_incexe(JCR *jcr);
 void set_incexe(JCR *jcr, findINCEXE *incexe);
-void new_options(JCR *jcr, findINCEXE *incexe);
-void add_file_to_fileset(JCR *jcr, const char *fname, bool is_file); 
-int add_options_to_fileset(JCR *jcr, const char *item);
-int add_wild_to_fileset(JCR *jcr, const char *item, int type);
-int add_regex_to_fileset(JCR *jcr, const char *item, int type);
+findINCEXE *new_exclude(JCR *jcr);
 findINCEXE *new_include(JCR *jcr);
+findINCEXE *new_preinclude(JCR *jcr);
+void new_options(JCR *jcr, findINCEXE *incexe);
+int add_regex_to_fileset(JCR *jcr, const char *item, int type);
+int add_wild_to_fileset(JCR *jcr, const char *item, int type);
+int add_options_to_fileset(JCR *jcr, const char *item);
+void add_fileset(JCR *jcr, const char *item);
+bool term_fileset(JCR *jcr);
+
+/* heartbeat.c */
+void start_heartbeat_monitor(JCR *jcr);
+void stop_heartbeat_monitor(JCR *jcr);
+void start_dir_heartbeat(JCR *jcr);
+void stop_dir_heartbeat(JCR *jcr);
+
+/* restore.c */
+void do_restore(JCR *jcr);
+void free_session(r_ctx &rctx);
+int do_file_digest(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
+bool sparse_data(JCR *jcr, BFILE *bfd, uint64_t *addr, char **data, uint32_t *length);
+bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win32_decomp);
+
+/* verify.c */
+int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest);
+void do_verify(JCR *jcr);
+void do_verify_volume(JCR *jcr);

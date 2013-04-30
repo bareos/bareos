@@ -39,7 +39,6 @@
 /*
  * Resource codes -- they must be sequential for indexing
  */
-
 enum {
    R_DIRECTOR = 1001,
    R_CONSOLE,

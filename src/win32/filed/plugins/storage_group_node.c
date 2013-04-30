@@ -311,9 +311,9 @@ storage_group_node_t::createFile(exchange_fd_context_t *context, struct restore_
 
    _DebugMessage(100, "createFile_STORAGE_GROUP state = %d\n", state);
 
-   if (strcmp(context->path_bits[level], name) != 0)
+   if (!bstrcmp(context->path_bits[level], name))
    {
-      _DebugMessage(100, "Different storage group - switching back to parent\n", state);
+      _DebugMessage(0, "Different storage group - switching back to parent\n", state);
       saved_log_path = new WCHAR[wcslen(restore_environment->m_wszRestoreLogPath) + 1];
       wcscpy(saved_log_path, restore_environment->m_wszRestoreLogPath);
       _DebugMessage(100, "Calling HrESERestoreSaveEnvironment\n");

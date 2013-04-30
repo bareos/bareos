@@ -3,9 +3,9 @@
 #
 @MCOMMON@
 
-srcdir =	.
-VPATH = 	.
-.PATH:		.
+srcdir = @srcdir@
+VPATH = @srcdir@
+.PATH: @srcdir@
 
 # one up
 basedir = ..
@@ -21,10 +21,7 @@ dummy:
 
 #
 MONITORSRCS = tray-monitor.c tray_conf.c authenticate.c
-MONITOROBJS = tray-monitor.o tray_conf.o authenticate.o
-
-# these are the objects that are changed by the .configure process
-EXTRAOBJS = @OBJLIST@
+MONITOROBJS = $(MONITORSRCS:.c=.o)
 
 MONITOR_CPPFLAGS=@TRAY_MONITOR_CPPFLAGS@
 MONITOR_LDFLAGS=@TRAY_MONITOR_LDFLAGS@ @X_LIBS@ -lX11
@@ -37,7 +34,7 @@ MONITOR_LDFLAGS=@TRAY_MONITOR_LDFLAGS@ @X_LIBS@ -lX11
 .c.o:
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(MONITOR_CPPFLAGS) \
- -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+ -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
 all: Makefile bacula-tray-monitor
 	@echo "==== Make of bacula-tray-monitor is good ===="

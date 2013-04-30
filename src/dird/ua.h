@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -35,37 +35,38 @@
 #ifndef __UA_H_
 #define __UA_H_ 1
 
+#define MAX_ID_LIST_LEN 2000000
+
 class UAContext {
 public:
    BSOCK *UA_sock;
    BSOCK *sd;
    JCR *jcr;
    B_DB *db;
-   CAT *catalog;
-   CONRES *cons;                      /* console resource */
-   POOLMEM *cmd;                      /* return command/name buffer */
-   POOLMEM *args;                     /* command line arguments */
-   POOLMEM *errmsg;                   /* store error message */
-   char *argk[MAX_CMD_ARGS];          /* argument keywords */
-   char *argv[MAX_CMD_ARGS];          /* argument values */
-   int argc;                          /* number of arguments */
-   char **prompt;                     /* list of prompts */
-   int max_prompts;                   /* max size of list */
-   int num_prompts;                   /* current number in list */
+   CATRES *catalog;
+   CONRES *cons;                      /* Console resource */
+   POOLMEM *cmd;                      /* Return command/name buffer */
+   POOLMEM *args;                     /* Command line arguments */
+   POOLMEM *errmsg;                   /* Store error message */
+   char *argk[MAX_CMD_ARGS];          /* Argument keywords */
+   char *argv[MAX_CMD_ARGS];          /* Argument values */
+   int argc;                          /* Number of arguments */
+   char **prompt;                     /* List of prompts */
+   int max_prompts;                   /* Max size of list */
+   int num_prompts;                   /* Current number in list */
    int api;                           /* For programs want an API */
    int cmd_index;                     /* Index in command table */
-   bool force_mult_db_connections;    /* overwrite cat.mult_db_connections */
-   bool auto_display_messages;        /* if set, display messages */
-   bool user_notified_msg_pending;    /* set when user notified */
-   bool automount;                    /* if set, mount after label */
-   bool quit;                         /* if set, quit */
-   bool verbose;                      /* set for normal UA verbosity */
-   bool batch;                        /* set for non-interactive mode */
-   bool gui;                          /* set if talking to GUI program */
-   bool runscript;                    /* set if we are in runscript */
-   uint32_t pint32_val;               /* positive integer */
-   int32_t  int32_val;                /* positive/negative */
-   int64_t  int64_val;                /* big int */
+   bool auto_display_messages;        /* If set, display messages */
+   bool user_notified_msg_pending;    /* Set when user notified */
+   bool automount;                    /* If set, mount after label */
+   bool quit;                         /* If set, quit */
+   bool verbose;                      /* Set for normal UA verbosity */
+   bool batch;                        /* Set for non-interactive mode */
+   bool gui;                          /* Set if talking to GUI program */
+   bool runscript;                    /* Set if we are in runscript */
+   uint32_t pint32_val;               /* Positive integer */
+   int32_t  int32_val;                /* Positive/negative */
+   int64_t  int64_val;                /* Big int */
 
    void signal(int sig) { UA_sock->signal(sig); };
 
@@ -76,42 +77,46 @@ public:
    void info_msg(const char *fmt, ...);
 };
 
-/* Context for insert_tree_handler() */
+/*
+ * Context for insert_tree_handler()
+ */
 struct TREE_CTX {
-   TREE_ROOT *root;                   /* root */
-   TREE_NODE *node;                   /* current node */
-   TREE_NODE *avail_node;             /* unused node last insert */
-   int cnt;                           /* count for user feedback */
-   bool all;                          /* if set mark all as default */
+   TREE_ROOT *root;                   /* Root */
+   TREE_NODE *node;                   /* Current node */
+   TREE_NODE *avail_node;             /* Unused node last insert */
+   int cnt;                           /* Count for user feedback */
+   bool all;                          /* If set mark all as default */
    UAContext *ua;
-   uint32_t FileEstimate;             /* estimate of number of files */
-   uint32_t FileCount;                /* current count of files */
-   uint32_t LastCount;                /* last count of files */
-   uint32_t DeltaCount;               /* trigger for printing */
+   uint32_t FileEstimate;             /* Estimate of number of files */
+   uint32_t FileCount;                /* Current count of files */
+   uint32_t LastCount;                /* Last count of files */
+   uint32_t DeltaCount;               /* Trigger for printing */
 };
 
 struct NAME_LIST {
-   char **name;                       /* list of names */
-   int num_ids;                       /* ids stored */
-   int max_ids;                       /* size of array */
-   int num_del;                       /* number deleted */
-   int tot_ids;                       /* total to process */
+   char **name;                       /* List of names */
+   int num_ids;                       /* Ids stored */
+   int max_ids;                       /* Size of array */
+   int num_del;                       /* Number deleted */
+   int tot_ids;                       /* Total to process */
 };
 
-
-/* Main structure for obtaining JobIds or Files to be restored */
+/*
+ * Context for restore job.
+ */
 struct RESTORE_CTX {
    utime_t JobTDate;
    uint32_t TotalFiles;
    JobId_t JobId;
-   char ClientName[MAX_NAME_LENGTH];  /* backup client */
-   char RestoreClientName[MAX_NAME_LENGTH];  /* restore client */
+   char *backup_format;
+   char *ClientName;                  /* Backup client */
+   char *RestoreClientName;           /* Restore client */
    char last_jobid[20];
    POOLMEM *JobIds;                   /* User entered string of JobIds */
    POOLMEM *BaseJobIds;               /* Base jobids */
-   STORE  *store;
-   JOB *restore_job;
-   POOL *pool;
+   STORERES *store;
+   JOBRES *restore_job;
+   POOLRES *pool;
    int restore_jobs;
    uint32_t selected_files;
    char *comment;
@@ -119,16 +124,69 @@ struct RESTORE_CTX {
    char *RegexWhere;
    char *replace;
    RBSR *bsr;
-   POOLMEM *fname;                    /* filename only */
-   POOLMEM *path;                     /* path only */
+   POOLMEM *fname;                    /* Filename only */
+   POOLMEM *path;                     /* Path only */
    POOLMEM *query;
-   int fnl;                           /* filename length */
-   int pnl;                           /* path length */
+   int fnl;                           /* Filename length */
+   int pnl;                           /* Path length */
    bool found;
-   bool all;                          /* mark all as default */
+   bool all;                          /* Mark all as default */
    NAME_LIST name_list;
 };
 
-#define MAX_ID_LIST_LEN 2000000
+/*
+ * Context for run job.
+ */
+class RUN_CTX {
+public:
+   char *backup_format;
+   char *bootstrap;
+   char *catalog_name;
+   char *client_name;
+   char *comment;
+   char *fileset_name;
+   char *jid;
+   char *job_name;
+   char *level_name;
+   char *next_pool_name;
+   char *plugin_options;
+   char *pool_name;
+   char *previous_job_name;
+   char *regexwhere;
+   char *restore_client_name;
+   char *since;
+   char *store_name;
+   char *verify_job_name;
+   char *when;
+   char *where;
+   const char *replace;
+   const char *verify_list;
+   JOBRES *job;
+   JOBRES *verify_job;
+   JOBRES *previous_job;
+   USTORERES *store;
+   CLIENTRES *client;
+   FILESETRES *fileset;
+   POOLRES *pool;
+   POOLRES *next_pool;
+   CATRES *catalog;
+   int Priority;
+   int files;
+   int spool_data;
+   int accurate;
+   int ignoreduplicatecheck;
+   bool cloned;
+   bool mod;
+   bool spool_data_set;
+   bool nextpool_set;
+   bool accurate_set;
+   bool ignoreduplicatecheck_set;
 
+   /*
+    * Methods
+    */
+   RUN_CTX() { memset(this, 0, sizeof(RUN_CTX));
+               store = new USTORERES; };
+   ~RUN_CTX() { delete store; };
+};
 #endif

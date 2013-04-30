@@ -49,6 +49,8 @@ private slots:
    void purgeVol();
    void deleteVol();
    void editVol();
+   void importVol();
+   void exportVol();
    void showInfoForJob(QTableWidgetItem * item);
 
 private:

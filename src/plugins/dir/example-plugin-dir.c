@@ -34,10 +34,6 @@
 #include "bacula.h"
 #include "dir_plugins.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define PLUGIN_LICENSE      "Bacula AGPLv3"
 #define PLUGIN_AUTHOR       "Kern Sibbald"
 #define PLUGIN_DATE         "January 2008"
@@ -56,7 +52,7 @@ static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value);
 static bDirFuncs *bfuncs = NULL;
 static bDirInfo  *binfo = NULL;
 
-static pDirInfo pluginInfo = {
+static genpInfo pluginInfo = {
    sizeof(pluginInfo),
    DIR_PLUGIN_INTERFACE_VERSION,
    DIR_PLUGIN_MAGIC,
@@ -79,7 +75,18 @@ static pDirFuncs pluginFuncs = {
    handlePluginEvent
 };
 
-bRC loadPlugin(bDirInfo *lbinfo, bDirFuncs *lbfuncs, pDirInfo **pinfo, pDirFuncs **pfuncs)
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * loadPlugin() and unloadPlugin() are entry points that are
+ *  exported, so Bacula can directly call these two entry points
+ *  they are common to all Bacula plugins.
+ *
+ * External entry point called by Bacula to "load" the plugin
+ */
+bRC loadPlugin(bDirInfo *lbinfo, bDirFuncs *lbfuncs, genpInfo **pinfo, pDirFuncs **pfuncs)
 {
    bfuncs = lbfuncs;                  /* set Bacula funct pointers */
    binfo  = lbinfo;
@@ -91,18 +98,28 @@ bRC loadPlugin(bDirInfo *lbinfo, bDirFuncs *lbfuncs, pDirInfo **pinfo, pDirFuncs
    return bRC_OK;
 }
 
+/*
+ * External entry point to unload the plugin
+ */
 bRC unloadPlugin() 
 {
    printf("plugin: Unloaded\n");
    return bRC_OK;
 }
 
+#ifdef __cplusplus
+}
+#endif
+
 static bRC newPlugin(bpContext *ctx)
 {
    int JobId = 0;
    bfuncs->getBaculaValue(ctx, bDirVarJobId, (void *)&JobId);
    printf("plugin: newPlugin JobId=%d\n", JobId);
-   bfuncs->registerBaculaEvents(ctx, 1, 2, 0);
+   bfuncs->registerBaculaEvents(ctx,
+                                2,
+                                bDirEventJobStart,
+                                bDirEventJobEnd);
    return bRC_OK;
 }
 
@@ -158,7 +175,6 @@ static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value)
       printf("plugin: bDirVarJobFiles=%d\n", val);
       bfuncs->getBaculaValue(ctx, bDirVarNumVols, (void *)&val);
       printf("plugin: bDirVarNumVols=%d\n", val);
-
       break;
    }
    bfuncs->getBaculaValue(ctx, bDirVarJobName, (void *)&name);
@@ -167,7 +183,3 @@ static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value)
    bfuncs->DebugMessage(ctx, __FILE__, __LINE__, 1, "DebugMesssage message");
    return bRC_OK;
 }
-
-#ifdef __cplusplus
-}
-#endif

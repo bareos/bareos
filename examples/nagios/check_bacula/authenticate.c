@@ -91,7 +91,7 @@ int authenticate_director(BSOCK *dir, char *dirname, char *password)
    }
    Dmsg1(10, "<dird: %s", dir->msg);
    stop_bsock_timer(tid);
-   if (strncmp(dir->msg, DIROKhello, sizeof(DIROKhello)-1) != 0) {
+   if (!bstrncmp(dir->msg, DIROKhello, sizeof(DIROKhello)-1)) {
       return 0;
    }
    return 1;
@@ -130,7 +130,7 @@ int authenticate_storage_daemon(BSOCK *sd, char *sdname, char* password)
    }
    Dmsg1(110, "<stored: %s", sd->msg);
    stop_bsock_timer(tid);
-   if (strncmp(sd->msg, SDOKhello, sizeof(SDOKhello)) != 0) {
+   if (!bstrncmp(sd->msg, SDOKhello, sizeof(SDOKhello))) {
       return 0;
    }
    return 1;
@@ -169,7 +169,7 @@ int authenticate_file_daemon(BSOCK *fd, char *fdname, char *password)
    }
    Dmsg1(110, "<stored: %s", fd->msg);
    stop_bsock_timer(tid);
-   if ((strncmp(fd->msg, FDOKhello, strlen(FDOKhello)) != 0)) {
+   if (!bstrncmp(fd->msg, FDOKhello, strlen(FDOKhello))) {
       return 0;
    }
    return 1;

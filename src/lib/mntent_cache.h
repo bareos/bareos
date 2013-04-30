@@ -51,15 +51,19 @@
 #define NR_MNTENT_HTABLE_PAGES		32
 
 struct mntent_cache_entry_t {
-   hlink link;
+   dlink link;
    uint32_t dev;
    char *special;
    char *mountpoint;
    char *fstype;
    char *mntopts;
+   int reference_count;
+   bool validated;
+   bool destroyed;
 };
 
 mntent_cache_entry_t *find_mntent_mapping(uint32_t dev);
+void release_mntent_mapping(mntent_cache_entry_t *mce);
 void flush_mntent_cache(void);
 
 #endif /* _MNTENT_CACHE_H */

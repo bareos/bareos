@@ -196,13 +196,13 @@ static struct cmdstruct commands[] = {
 static int do_a_command(FILE *input, BSOCK *UA_sock)
 {
    unsigned int i;
-   int stat;
+   int status;
    int found;
    int len;
    char *cmd;
 
    found = 0;
-   stat = 1;
+   status = 1;
 
    Dmsg1(120, "Command: %s\n", UA_sock->msg);
    if (argc == 0) {
@@ -215,8 +215,8 @@ static int do_a_command(FILE *input, BSOCK *UA_sock)
    }
    len = strlen(cmd);
    for (i=0; i<comsize; i++) {     /* search for command */
-      if (strncasecmp(cmd,  _(commands[i].key), len) == 0) {
-         stat = (*commands[i].func)(input, UA_sock);   /* go execute command */
+      if (bstrncasecmp(cmd,  _(commands[i].key), len)) {
+         status = (*commands[i].func)(input, UA_sock);   /* go execute command */
          found = 1;
          break;
       }
@@ -226,7 +226,7 @@ static int do_a_command(FILE *input, BSOCK *UA_sock)
       UA_sock->msglen = strlen(UA_sock->msg);
       sendit(UA_sock->msg);
    }
-   return stat;
+   return status;
 }
 
 
@@ -235,7 +235,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
    const char *prompt = "*";
    bool at_prompt = false;
    int tty_input = isatty(fileno(input));
-   int stat;
+   int status;
    btimer_t *tid=NULL;
 
    for ( ;; ) {
@@ -246,7 +246,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
          at_prompt = true;
       }
       if (tty_input) {
-         stat = get_cmd(input, prompt, UA_sock, 30);
+         status = get_cmd(input, prompt, UA_sock, 30);
          if (usrbrk() == 1) {
             clrbrk();
          }
@@ -260,18 +260,18 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
             break;
          }
          if (fgets(UA_sock->msg, len, input) == NULL) {
-            stat = -1;
+            status = -1;
          } else {
             sendit(UA_sock->msg);  /* echo to terminal */
             strip_trailing_junk(UA_sock->msg);
             UA_sock->msglen = strlen(UA_sock->msg);
-            stat = 1;
+            status = 1;
          }
       }
-      if (stat < 0) {
+      if (status < 0) {
          break;                       /* error or interrupt */
-      } else if (stat == 0) {         /* timeout */
-         if (strcmp(prompt, "*") == 0) {
+      } else if (status == 0) {         /* timeout */
+         if (bstrcmp(prompt, "*")) {
             tid = start_bsock_timer(UA_sock, timeout);
             UA_sock->fsend(".messages");
             stop_bsock_timer(tid);
@@ -295,11 +295,11 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
          }
          stop_bsock_timer(tid);
       }
-      if (strcmp(UA_sock->msg, ".quit") == 0 || strcmp(UA_sock->msg, ".exit") == 0) {
+      if (bstrcmp(UA_sock->msg, ".quit") || bstrcmp(UA_sock->msg, ".exit")) {
          break;
       }
       tid = start_bsock_timer(UA_sock, timeout);
-      while ((stat = UA_sock->recv()) >= 0) {
+      while ((status = UA_sock->recv()) >= 0) {
          if (at_prompt) {
             if (!stop) {
                sendit("\n");
@@ -322,7 +322,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
       }
       if (is_bnet_stop(UA_sock)) {
          break;                       /* error or term */
-      } else if (stat == BNET_SIGNAL) {
+      } else if (status == BNET_SIGNAL) {
          if (UA_sock->msglen == BNET_SUB_PROMPT) {
             at_prompt = true;
          }
@@ -363,8 +363,8 @@ static int tls_pem_callback(char *buf, int size, const void *userdata)
 
 #ifdef HAVE_READLINE
 #define READLINE_LIBRARY 1
-#include "readline.h"
-#include "history.h"
+#include "readline/readline.h"
+#include "readline/history.h"
 
 /* Get the first keyword of the line */
 static char *
@@ -560,7 +560,7 @@ static char *item_generator(const char *text, int state,
      name = (char *)items->list[list_index];
      list_index++;
      
-     if (strncmp(name, text, len) == 0) {
+     if (bstrncmp(name, text, len)) {
         char *ret = (char *) actuallymalloc(strlen(name)+1);
         strcpy(ret, name);
         return ret;
@@ -636,7 +636,7 @@ static char **readline_completion(const char *text, int start, int end)
    cmd = get_first_keyword();
    if (s) {
       for (int i=0; i < key_size; i++) {
-         if (!strcasecmp(s, cpl_keywords[i].key)) {
+         if (bstrcasecmp(s, cpl_keywords[i].key)) {
             cpl_item = cpl_keywords[i].cmd;
             cpl_type = ITEM_ARG;
             matches = rl_completion_matches(text, cpl_generator);
@@ -754,40 +754,58 @@ static bool bisatty(int fd)
 }
 #endif
 
+#ifdef HAVE_WIN32 /* use special console for input on win32 */
 /*
- *   Returns: 1 if data available
- *            0 if timeout
- *           -1 if error
+ * Get next input command from terminal.
+ *
+ *   Returns: 1 if got input
+ *           -1 if EOF or error
  */
-static int
-wait_for_data(int fd, int sec)
+int
+get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
 {
-#if defined(HAVE_WIN32)
-   return 1;
-#else
-   fd_set fdset;
-   struct timeval tv;
+   int len;
 
-   tv.tv_sec = sec;
-   tv.tv_usec = 0;
-   for ( ;; ) {
-      FD_ZERO(&fdset);
-      FD_SET((unsigned)fd, &fdset);
-      switch(select(fd + 1, &fdset, NULL, NULL, &tv)) {
-      case 0:                         /* timeout */
-         return 0;
-      case -1:
-         if (errno == EINTR || errno == EAGAIN) {
-            continue;
-         }
-         return -1;                  /* error return */
-      default:
-         return 1;
+   if (!stop) {
+      if (output == stdout || teeout) {
+         sendit(prompt);
       }
    }
-#endif
-}
 
+again:
+   len = sizeof_pool_memory(sock->msg) - 1;
+   if (stop) {
+      sleep(1);
+      goto again;
+   }
+
+#ifdef HAVE_CONIO
+   if (bisatty(fileno(input))) {
+      input_line(sock->msg, len);
+      goto ok_out;
+   }
+#endif
+
+   if (input == stdin) {
+      if (win32_cgets(sock->msg, len) == NULL) {
+         return -1;
+      }
+   } else {
+      if (fgets(sock->msg, len, input) == NULL) {
+         return -1;
+      }
+   }
+
+   if (usrbrk()) {
+      clrbrk();
+   }
+
+   strip_trailing_junk(sock->msg);
+   sock->msglen = strlen(sock->msg);
+
+   return 1;
+}
+#else
 /*
  * Get next input command from terminal.
  *
@@ -799,13 +817,15 @@ int
 get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
 {
    int len;
+
    if (!stop) {
       if (output == stdout || teeout) {
          sendit(prompt);
       }
    }
+
 again:
-   switch (wait_for_data(fileno(input), sec)) {
+   switch (wait_for_readable_fd(fileno(input), sec, true)) {
    case 0:
       return 0;                    /* timeout */
    case -1:
@@ -822,30 +842,23 @@ again:
          break;
       }
 #endif
-#ifdef HAVE_WIN32 /* use special console for input on win32 */
-      if (input == stdin) {
-         if (win32_cgets(sock->msg, len) == NULL) {
-            return -1;
-         }
-      }
-      else
-#endif
       if (fgets(sock->msg, len, input) == NULL) {
          return -1;
-
       }
       break;
    }
+
    if (usrbrk()) {
       clrbrk();
    }
+
    strip_trailing_junk(sock->msg);
    sock->msglen = strlen(sock->msg);
+
    return 1;
 }
-
+#endif /* HAVE_WIN32 */
 #endif /* ! HAVE_READLINE */
-
 
 static int console_update_history(const char *histfile)
 {
@@ -966,7 +979,7 @@ try_again:
    /* Look for a console linked to this director */
    for (i=0; i<numcon; i++) {
       cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)cons);
-      if (cons->director && strcmp(cons->director, dir->hdr.name) == 0) {
+      if (cons->director && bstrcmp(cons->director, dir->hdr.name)) {
          break;
       }
       cons = NULL;
@@ -1430,7 +1443,7 @@ static int execcmd(FILE *input, BSOCK *UA_sock)
 {
    BPIPE *bpipe;
    char line[5000];
-   int stat;
+   int status;
    int wait = 0;
 
    if (argc > 3) {
@@ -1451,10 +1464,10 @@ static int execcmd(FILE *input, BSOCK *UA_sock)
    while (fgets(line, sizeof(line), bpipe->rfd)) {
       senditf("%s", line);
    }
-   stat = close_bpipe(bpipe);
-   if (stat != 0) {
+   status = close_bpipe(bpipe);
+   if (status != 0) {
       berrno be;
-      be.set_errno(stat);
+      be.set_errno(status);
      senditf(_("Autochanger error: ERR=%s\n"), be.bstrerror());
    }
    return 1;

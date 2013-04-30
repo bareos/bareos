@@ -42,9 +42,9 @@ extern bool GetWindowsVersionString(char *buf, int maxsiz);
 
 
 /* Forward referenced functions */
-static void  list_terminated_jobs(STATUS_PKT *sp);
-static void  list_running_jobs(STATUS_PKT *sp);
-static void  list_status_header(STATUS_PKT *sp);
+static void list_terminated_jobs(STATUS_PKT *sp);
+static void list_running_jobs(STATUS_PKT *sp);
+static void list_status_header(STATUS_PKT *sp);
 static void sendit(const char *msg, int len, STATUS_PKT *sp);
 static const char *level_to_str(int level);
 
@@ -68,7 +68,7 @@ extern VSSClient *g_pVSSClient;
 /*
  * General status generator
  */
-void output_status(STATUS_PKT *sp)
+static void output_status(STATUS_PKT *sp)
 {
    list_status_header(sp);
    list_running_jobs(sp);
@@ -146,24 +146,17 @@ static void  list_status_header(STATUS_PKT *sp)
          edit_uint64_with_commas(sm_buffers, b4),
          edit_uint64_with_commas(sm_max_buffers, b5));
    sendit(msg.c_str(), len, sp);
-   len = Mmsg(msg, _(" Sizeof: boffset_t=%d size_t=%d debug=%d trace=%d "),
-                   sizeof(boffset_t), sizeof(size_t),
-              debug_level, get_trace());
+   len = Mmsg(msg, _(" Sizeof: boffset_t=%d size_t=%d debug=%d trace=%d "
+                     "bwlimit=%skB/s\n"), sizeof(boffset_t), sizeof(size_t),
+              debug_level, get_trace(), edit_uint64_with_commas(me->max_bandwidth_per_job/1024, b1));
    sendit(msg.c_str(), len, sp);
-   if (debug_level > 0 && bplugin_list->size() > 0) {
-      Plugin *plugin;
+   if (debug_level > 0) {
       int len;
-      pm_strcpy(msg, "Plugin: ");
-      foreach_alist(plugin, bplugin_list) {
-         len = pm_strcat(msg, plugin->file);
-         if (len > 80) {
-            pm_strcat(msg, "\n   ");
-         } else {
-            pm_strcat(msg, " ");
-         }
+
+      len = list_fd_plugins(msg);
+      if (len > 0) {
+         sendit(msg.c_str(), len, sp);
       }
-      len = pm_strcat(msg, "\n");
-      sendit(msg.c_str(), len, sp);
    }
 }
 
@@ -171,7 +164,7 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
 {
    int sec, bps;
    POOL_MEM msg(PM_MESSAGE);
-   char b1[32], b2[32], b3[32];
+   char b1[32], b2[32], b3[32], b4[32];
    int len;
    bool found = false;
    JCR *njcr;
@@ -209,11 +202,12 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
          sec = 1;
       }
       bps = (int)(njcr->JobBytes / sec);
-      len = Mmsg(msg,  _("    Files=%s Bytes=%s Bytes/sec=%s Errors=%d\n"),
+      len = Mmsg(msg,  _("    Files=%s Bytes=%s Bytes/sec=%s Errors=%d\n"
+                         "    Bwlimit=%s\n"),
            edit_uint64_with_commas(njcr->JobFiles, b1),
            edit_uint64_with_commas(njcr->JobBytes, b2),
            edit_uint64_with_commas(bps, b3),
-           njcr->JobErrors);
+           njcr->JobErrors, edit_uint64_with_commas(njcr->max_bandwidth, b4));
       sendit(msg.c_str(), len, sp);
       len = Mmsg(msg, _("    Files Examined=%s\n"),
            edit_uint64_with_commas(njcr->num_files_examined, b1));
@@ -248,7 +242,7 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
 {
    int sec, bps;
    POOL_MEM msg(PM_MESSAGE);
-   char b1[32], b2[32], b3[32];
+   char b1[32], b2[32], b3[32], b4[32];
    int len;
    JCR *njcr;
    char dt[MAX_TIME_LENGTH];
@@ -282,11 +276,12 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
          sec = 1;
       }
       bps = (int)(njcr->JobBytes / sec);
-      len = Mmsg(msg, " Files=%s\n Bytes=%s\n Bytes/sec=%s\n Errors=%d\n",
+      len = Mmsg(msg, " Files=%s\n Bytes=%s\n Bytes/sec=%s\n Errors=%d\n"
+                      " Bwlimit=%s\n",
                  edit_uint64(njcr->JobFiles, b1),
                  edit_uint64(njcr->JobBytes, b2),
                  edit_uint64(bps, b3),
-                 njcr->JobErrors);
+                 njcr->JobErrors, edit_int64(njcr->max_bandwidth, b4));
       sendit(msg.c_str(), len, sp);
       len = Mmsg(msg, " Files Examined=%s\n",
            edit_uint64(njcr->num_files_examined, b1));
@@ -468,7 +463,7 @@ int qstatus_cmd(JCR *jcr)
    }
    unbash_spaces(cmd);
 
-   if (strcmp(cmd, "current") == 0) {
+   if (bstrcmp(cmd, "current")) {
       dir->fsend(OKqstatus, cmd);
       foreach_jcr(njcr) {
          if (njcr->JobId != 0) {
@@ -476,19 +471,19 @@ int qstatus_cmd(JCR *jcr)
          }
       }
       endeach_jcr(njcr);
-   } else if (strcmp(cmd, "last") == 0) {
+   } else if (bstrcmp(cmd, "last")) {
       dir->fsend(OKqstatus, cmd);
       if ((last_jobs) && (last_jobs->size() > 0)) {
          job = (s_last_job*)last_jobs->last();
          dir->fsend(DotStatusJob, job->JobId, job->JobStatus, job->Errors);
       }
-   } else if (strcasecmp(cmd, "header") == 0) {
+   } else if (bstrcasecmp(cmd, "header")) {
        sp.api = true;
        list_status_header(&sp);
-   } else if (strcasecmp(cmd, "running") == 0) {
+   } else if (bstrcasecmp(cmd, "running")) {
        sp.api = true;
        list_running_jobs(&sp);
-   } else if (strcasecmp(cmd, "terminated") == 0) {
+   } else if (bstrcasecmp(cmd, "terminated")) {
        sp.api = true;
        list_terminated_jobs(&sp);
    } else {
@@ -564,7 +559,7 @@ char *bac_status(char *buf, int buf_len)
    JCR *njcr;
    const char *termstat = _("Bacula Client: Idle");
    struct s_last_job *job;
-   int stat = 0;                      /* Idle */
+   int status = 0;                      /* Idle */
 
    if (!last_jobs) {
       goto done;
@@ -572,19 +567,19 @@ char *bac_status(char *buf, int buf_len)
    Dmsg0(1000, "Begin bac_status jcr loop.\n");
    foreach_jcr(njcr) {
       if (njcr->JobId != 0) {
-         stat = JS_Running;
+         status = JS_Running;
          termstat = _("Bacula Client: Running");
          break;
       }
    }
    endeach_jcr(njcr);
 
-   if (stat != 0) {
+   if (status != 0) {
       goto done;
    }
    if (last_jobs->size() > 0) {
       job = (struct s_last_job *)last_jobs->last();
-      stat = job->JobStatus;
+      status = job->JobStatus;
       switch (job->JobStatus) {
       case JS_Canceled:
          termstat = _("Bacula Client: Last Job Canceled");
@@ -602,7 +597,7 @@ char *bac_status(char *buf, int buf_len)
    }
    Dmsg0(1000, "End bac_status jcr loop.\n");
 done:
-   bacstat = stat;
+   bacstat = status;
    if (buf) {
       bstrncpy(buf, termstat, buf_len);
    }

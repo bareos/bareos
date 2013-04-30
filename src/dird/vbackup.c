@@ -35,29 +35,26 @@
  *
  *  Basic tasks done here:
  *     Open DB and create records for this job.
- *     Figure out what Jobs to copy.
- *     Open Message Channel with Storage daemon to tell him a job will be starting.
- *     Open connection with File daemon and pass him commands
- *       to do the backup.
- *     When the File daemon finishes the job, update the DB.
- *
+ *     Figure out what Jobs to consolidate.
+ *     Open Message Channel with Write Storage daemon to tell him a backup job will be starting.
+ *     Open Message Channel with Read Storage daemon to tell him a restore job will be starting.
+ *     When the Storage daemons finishes the job, update the DB.
  */
 
 #include "bacula.h"
 #include "dird.h"
-#include "ua.h"
 
 static const int dbglevel = 10;
 
 static bool create_bootstrap_file(JCR *jcr, char *jobids);
-void vbackup_cleanup(JCR *jcr, int TermCode);
 
 /* 
  * Called here before the job is run to do the job
  *   specific setup.
  */
-bool do_vbackup_init(JCR *jcr)
+bool do_native_vbackup_init(JCR *jcr)
 {
+   const char *storage_source;
 
    if (!get_or_create_fileset_record(jcr)) {
       Dmsg1(dbglevel, "JobId=%d no FileSet\n", (int)jcr->JobId);
@@ -70,7 +67,7 @@ bool do_vbackup_init(JCR *jcr)
       return false;
    }
 
-   jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->pool->name());
+   jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->res.pool->name());
    if (jcr->jr.PoolId == 0) {
       Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
       Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
@@ -82,13 +79,13 @@ bool do_vbackup_init(JCR *jcr)
     *  pool will be changed to point to the write pool, 
     *  which comes from pool->NextPool.
     */
-   jcr->rpool = jcr->pool;            /* save read pool */
-   pm_strcpy(jcr->rpool_source, jcr->pool_source);
+   jcr->res.rpool = jcr->res.pool;    /* save read pool */
+   pm_strcpy(jcr->res.rpool_source, jcr->res.pool_source);
 
    /* If pool storage specified, use it for restore */
-   copy_rstorage(jcr, jcr->pool->storage, _("Pool resource"));
+   copy_rstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
 
-   Dmsg2(dbglevel, "Read pool=%s (From %s)\n", jcr->rpool->name(), jcr->rpool_source);
+   Dmsg2(dbglevel, "Read pool=%s (From %s)\n", jcr->res.rpool->name(), jcr->res.rpool_source);
 
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
@@ -97,25 +94,52 @@ bool do_vbackup_init(JCR *jcr)
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
    }
 
+   /*
+    * See if there is a next pool override.
+    */
+   if (jcr->res.run_next_pool_override) {
+      pm_strcpy(jcr->res.npool_source, _("Run NextPool override"));
+      pm_strcpy(jcr->res.pool_source, _("Run NextPool override"));
+      storage_source = _("Storage from Run NextPool override");
+   } else {
+      /*
+       * See if there is a next pool override in the Job definition.
+       */
+      if (jcr->res.job->next_pool) {
+         jcr->res.next_pool = jcr->res.job->next_pool;
+         pm_strcpy(jcr->res.npool_source, _("Job's NextPool resource"));
+         pm_strcpy(jcr->res.pool_source, _("Job's NextPool resource"));
+         storage_source = _("Storage from Job's NextPool resource");
+      } else {
+         /*
+          * Fall back to the pool's NextPool definition.
+          */
+         jcr->res.next_pool = jcr->res.pool->NextPool;
+         pm_strcpy(jcr->res.npool_source, _("Job Pool's NextPool resource"));
+         pm_strcpy(jcr->res.pool_source, _("Job Pool's NextPool resource"));
+         storage_source = _("Storage from Pool's NextPool resource");
+      }
+   }
 
    /*
-    * If the original backup pool has a NextPool, make sure a 
+    * If the original backup pool has a NextPool, make sure a
     *  record exists in the database. Note, in this case, we
-    *  will be backing up from pool to pool->NextPool.
+    *  will be migrating from pool to pool->NextPool.
     */
-   if (jcr->pool->NextPool) {
-      jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->pool->NextPool->name());
+   if (jcr->res.next_pool) {
+      jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->res.next_pool->name());
       if (jcr->jr.PoolId == 0) {
          return false;
       }
    }
-   if (!set_migration_wstorage(jcr, jcr->pool)) {
+
+   if (!set_migration_wstorage(jcr, jcr->res.pool, jcr->res.next_pool, storage_source)) {
       return false;
    }
-   jcr->pool = jcr->pool->NextPool;
-   pm_strcpy(jcr->pool_source, _("Job Pool's NextPool resource"));
 
-   Dmsg2(dbglevel, "Write pool=%s read rpool=%s\n", jcr->pool->name(), jcr->rpool->name());
+   jcr->res.pool = jcr->res.next_pool;
+
+   Dmsg2(dbglevel, "Write pool=%s read rpool=%s\n", jcr->res.pool->name(), jcr->res.rpool->name());
 
 // create_clones(jcr);
 
@@ -129,7 +153,7 @@ bool do_vbackup_init(JCR *jcr)
  *  Returns:  false on failure
  *            true  on success
  */
-bool do_vbackup(JCR *jcr)
+bool do_native_vbackup(JCR *jcr)
 {
    char ed1[100];
    BSOCK *sd;
@@ -138,8 +162,8 @@ bool do_vbackup(JCR *jcr)
 
    Dmsg2(100, "rstorage=%p wstorage=%p\n", jcr->rstorage, jcr->wstorage);
    Dmsg2(100, "Read store=%s, write store=%s\n", 
-      ((STORE *)jcr->rstorage->first())->name(),
-      ((STORE *)jcr->wstorage->first())->name());
+      ((STORERES *)jcr->rstorage->first())->name(),
+      ((STORERES *)jcr->wstorage->first())->name());
 
    jcr->wasVirtualFull = true;        /* remember where we came from */
 
@@ -262,7 +286,7 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
       return false;
    }
 
-   vbackup_cleanup(jcr, jcr->JobStatus);
+   native_vbackup_cleanup(jcr, jcr->JobStatus);
    return true;
 }
 
@@ -270,18 +294,14 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
 /*
  * Release resources allocated during backup.
  */
-void vbackup_cleanup(JCR *jcr, int TermCode)
+void native_vbackup_cleanup(JCR *jcr, int TermCode)
 {
-   char sdt[50], edt[50], schedt[50];
-   char ec1[30], ec3[30], ec4[30], compress[50];
-   char ec7[30], ec8[30], elapsed[50];
-   char term_code[100], sd_term_msg[100];
+   char ec1[30], ec2[30];
+   char term_code[100];
    const char *term_msg;
    int msg_type = M_INFO;
    MEDIA_DBR mr;
    CLIENT_DBR cr;
-   double kbps, compression;
-   utime_t RunTime;
    POOL_MEM query(PM_MESSAGE);
 
    Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
@@ -298,8 +318,8 @@ void vbackup_cleanup(JCR *jcr, int TermCode)
                "JobTDate=%s WHERE JobId=%s", 
       jcr->previous_jr.cStartTime, jcr->previous_jr.cEndTime, 
       edit_uint64(jcr->previous_jr.JobTDate, ec1),
-      edit_uint64(jcr->JobId, ec3));
-   db_sql_query(jcr->db, query.c_str(), NULL, NULL);
+      edit_uint64(jcr->JobId, ec2));
+   db_sql_query(jcr->db, query.c_str());
 
    /* Get the fully updated job record */
    if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
@@ -308,7 +328,7 @@ void vbackup_cleanup(JCR *jcr, int TermCode)
       jcr->setJobStatus(JS_ErrorTerminated);
    }
 
-   bstrncpy(cr.Name, jcr->client->name(), sizeof(cr.Name));
+   bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
    if (!db_get_client_record(jcr, jcr->db, &cr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"),
          db_strerror(jcr->db));
@@ -356,91 +376,8 @@ void vbackup_cleanup(JCR *jcr, int TermCode)
          sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
          break;
    }
-   bstrftimes(schedt, sizeof(schedt), jcr->jr.SchedTime);
-   bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
-   bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
-   RunTime = jcr->jr.EndTime - jcr->jr.StartTime;
-   if (RunTime <= 0) {
-      kbps = 0;
-   } else {
-      kbps = ((double)jcr->jr.JobBytes) / (1000.0 * (double)RunTime);
-   }
-   if (!db_get_job_volume_names(jcr, jcr->db, jcr->jr.JobId, &jcr->VolumeName)) {
-      /*
-       * Note, if the job has erred, most likely it did not write any
-       *  tape, so suppress this "error" message since in that case
-       *  it is normal.  Or look at it the other way, only for a
-       *  normal exit should we complain about this error.
-       */
-      if (jcr->JobStatus == JS_Terminated && jcr->jr.JobBytes) {
-         Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
-      }
-      jcr->VolumeName[0] = 0;         /* none */
-   }
 
-   if (jcr->ReadBytes == 0) {
-      bstrncpy(compress, "None", sizeof(compress));
-   } else {
-      compression = (double)100 - 100.0 * ((double)jcr->JobBytes / (double)jcr->ReadBytes);
-      if (compression < 0.5) {
-         bstrncpy(compress, "None", sizeof(compress));
-      } else {
-         bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
-      }
-   }
-   jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
-
-   Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
-"  Build OS:               %s %s %s\n"
-"  JobId:                  %d\n"
-"  Job:                    %s\n"
-"  Backup Level:           Virtual Full\n"
-"  Client:                 \"%s\" %s\n"
-"  FileSet:                \"%s\" %s\n"
-"  Pool:                   \"%s\" (From %s)\n"
-"  Catalog:                \"%s\" (From %s)\n"
-"  Storage:                \"%s\" (From %s)\n"
-"  Scheduled time:         %s\n"
-"  Start time:             %s\n"
-"  End time:               %s\n"
-"  Elapsed time:           %s\n"
-"  Priority:               %d\n"
-"  SD Files Written:       %s\n"
-"  SD Bytes Written:       %s (%sB)\n"
-"  Rate:                   %.1f KB/s\n"
-"  Volume name(s):         %s\n"
-"  Volume Session Id:      %d\n"
-"  Volume Session Time:    %d\n"
-"  Last Volume Bytes:      %s (%sB)\n"
-"  SD Errors:              %d\n"
-"  SD termination status:  %s\n"
-"  Termination:            %s\n\n"),
-        BACULA, my_name, VERSION, LSMDATE,
-        HOST_OS, DISTNAME, DISTVER,
-        jcr->jr.JobId,
-        jcr->jr.Job,
-        jcr->client->name(), cr.Uname,
-        jcr->fileset->name(), jcr->FSCreateTime,
-        jcr->pool->name(), jcr->pool_source,
-        jcr->catalog->name(), jcr->catalog_source,
-        jcr->wstore->name(), jcr->wstore_source,
-        schedt,
-        sdt,
-        edt,
-        edit_utime(RunTime, elapsed, sizeof(elapsed)),
-        jcr->JobPriority,
-        edit_uint64_with_commas(jcr->jr.JobFiles, ec1),
-        edit_uint64_with_commas(jcr->jr.JobBytes, ec3),
-        edit_uint64_with_suffix(jcr->jr.JobBytes, ec4),
-        kbps,
-        jcr->VolumeName,
-        jcr->VolSessionId,
-        jcr->VolSessionTime,
-        edit_uint64_with_commas(mr.VolBytes, ec7),
-        edit_uint64_with_suffix(mr.VolBytes, ec8),
-        jcr->SDErrors,
-        sd_term_msg,
-        term_msg);
+   generate_backup_summary(jcr, &mr, &cr, msg_type, term_msg);
 
    Dmsg0(100, "Leave vbackup_cleanup()\n");
 }
@@ -456,7 +393,7 @@ void vbackup_cleanup(JCR *jcr, int TermCode)
  *      row[0]=Path, row[1]=Filename, row[2]=FileIndex
  *      row[3]=JobId row[4]=LStat
  */
-int insert_bootstrap_handler(void *ctx, int num_fields, char **row)
+static int insert_bootstrap_handler(void *ctx, int num_fields, char **row)
 {
    JobId_t JobId;
    int FileIndex;
@@ -468,7 +405,6 @@ int insert_bootstrap_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-
 static bool create_bootstrap_file(JCR *jcr, char *jobids)
 {
    RESTORE_CTX rx;
@@ -479,42 +415,16 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
    ua = new_ua_context(jcr);
    rx.JobIds = jobids;
 
-#define new_get_file_list
-#ifdef new_get_file_list
-   if (!db_open_batch_connexion(jcr, jcr->db)) {
+   if (!db_open_batch_connection(jcr, jcr->db)) {
       Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connexion");
       return false;
    }
 
    if (!db_get_file_list(jcr, jcr->db_batch, jobids, false /* don't use md5 */,
                          true /* use delta */,
-                         insert_bootstrap_handler, (void *)rx.bsr))
-   {
+                         insert_bootstrap_handler, (void *)rx.bsr)) {
       Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db_batch));
    }
-#else
-   char *p;
-   JobId_t JobId, last_JobId = 0;
-   rx.query = get_pool_memory(PM_MESSAGE);
-   for (p=rx.JobIds; get_next_jobid_from_list(&p, &JobId) > 0; ) {
-      char ed1[50];
-
-      if (JobId == last_JobId) {
-         continue;                    /* eliminate duplicate JobIds */
-      }
-      last_JobId = JobId;
-      /*
-       * Find files for this JobId and insert them in the tree
-       */
-      Mmsg(rx.query, uar_sel_files, edit_int64(JobId, ed1));
-      Dmsg1(100, "uar_sel_files=%s\n", rx.query);
-      if (!db_sql_query(ua->db, rx.query, insert_bootstrap_handler, (void *)rx.bsr)) {
-         Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(ua->db));
-      }
-      free_pool_memory(rx.query);
-      rx.query = NULL;
-   }
-#endif
 
    complete_bsr(ua, rx.bsr);
    jcr->ExpectedFiles = write_bsr_file(ua, rx);

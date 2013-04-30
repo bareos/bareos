@@ -97,8 +97,8 @@ JCR *new_control_jcr(const char *base_name, int job_type)
     *  initialized.
     */
    LockRes();
-   jcr->job = (JOB *)GetNextRes(R_JOB, NULL);
-   set_jcr_defaults(jcr, jcr->job);
+   jcr->res.job = (JOBRES *)GetNextRes(R_JOB, NULL);
+   set_jcr_defaults(jcr, jcr->res.job);
    UnlockRes();
    jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
    create_unique_job_name(jcr, base_name);
@@ -116,7 +116,7 @@ JCR *new_control_jcr(const char *base_name, int job_type)
  */
 static void *handle_UA_client_request(void *arg)
 {
-   int stat;
+   int status;
    UAContext *ua;
    JCR *jcr;
    BSOCK *user = (BSOCK *)arg;
@@ -136,8 +136,8 @@ static void *handle_UA_client_request(void *arg)
 
    while (!ua->quit) {
       if (ua->api) user->signal(BNET_MAIN_PROMPT);
-      stat = user->recv();
-      if (stat >= 0) {
+      status = user->recv();
+      if (status >= 0) {
          pm_strcpy(ua->cmd, ua->UA_sock->msg);
          parse_ua_args(ua);
          if (ua->argc > 0 && ua->argk[0][0] == '.') {
@@ -216,7 +216,7 @@ void free_ua_context(UAContext *ua)
       free(ua->prompt);
    }
    if (ua->UA_sock) {
-      bnet_close(ua->UA_sock);
+      ua->UA_sock->close();
       ua->UA_sock = NULL;
    }
    free(ua);

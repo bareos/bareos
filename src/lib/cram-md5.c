@@ -93,12 +93,12 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, int
    /* Attempt to duplicate hash with our password */
    hmac_md5((uint8_t *)chal, strlen(chal), (uint8_t *)password, strlen(password), hmac);
    bin_to_base64(host, sizeof(host), (char *)hmac, 16, compatible);
-   ok = strcmp(bs->msg, host) == 0;
+   ok = bstrcmp(bs->msg, host);
    if (ok) {
       Dmsg1(dbglvl, "Authenticate OK %s\n", host);
    } else {
       bin_to_base64(host, sizeof(host), (char *)hmac, 16, false);     
-      ok = strcmp(bs->msg, host) == 0;
+      ok = bstrcmp(bs->msg, host);
       if (!ok) {
          Dmsg2(dbglvl, "Authenticate NOT OK: wanted %s, got %s\n", host, bs->msg);
       }
@@ -153,7 +153,7 @@ bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, int
       bmicrosleep(5, 0);
       return false;
    }
-   if (strcmp(bs->msg, "1000 OK auth\n") == 0) {
+   if (bstrcmp(bs->msg, "1000 OK auth\n")) {
       return true;
    }
    Dmsg1(dbglvl, "Received bad response: %s\n", bs->msg);

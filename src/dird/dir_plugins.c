@@ -38,17 +38,17 @@
 const int dbglvl = 50;
 const char *plugin_type = "-dir.so";
 
+static alist *dird_plugin_list;
 
 /* Forward referenced functions */
 static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value);
 static bRC baculaSetValue(bpContext *ctx, bwDirVariable var, void *value);
-static bRC baculaRegisterEvents(bpContext *ctx, ...);
+static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...);
 static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
-  int type, utime_t mtime, const char *fmt, ...);
+                        int type, utime_t mtime, const char *fmt, ...);
 static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
-  int level, const char *fmt, ...);
+                          int level, const char *fmt, ...);
 static bool is_plugin_compatible(Plugin *plugin);
-
 
 /* Bacula info */
 static bDirInfo binfo = {
@@ -71,25 +71,39 @@ static bDirFuncs bfuncs = {
  * Bacula private context
  */
 struct bacula_ctx {
-   JCR *jcr;                             /* jcr for plugin */
-   bRC  rc;                              /* last return code */
-   bool disabled;                        /* set if plugin disabled */
+   JCR *jcr;                                        /* jcr for plugin */
+   bRC  rc;                                         /* last return code */
+   bool disabled;                                   /* set if plugin disabled */
+   char events[nbytes_for_bits(DIR_NR_EVENTS + 1)]; /* enabled events bitmask */
 };
 
-static bool is_plugin_disabled(bpContext *plugin_ctx)
+static inline bool is_event_enabled(bpContext *ctx, bDirEventType eventType)
 {
    bacula_ctx *b_ctx;
-   if (!plugin_ctx) {
+   if (!ctx) {
       return true;
    }
-   b_ctx = (bacula_ctx *)plugin_ctx->bContext;
+   b_ctx = (bacula_ctx *)ctx->bContext;
+   if (!b_ctx) {
+      return true;
+   }
+   return bit_is_set(eventType, b_ctx->events);
+}
+
+static inline bool is_plugin_disabled(bpContext *ctx)
+{
+   bacula_ctx *b_ctx;
+   if (!ctx) {
+      return true;
+   }
+   b_ctx = (bacula_ctx *)ctx->bContext;
    return b_ctx->disabled;
 }
 
 #ifdef needed
-static bool is_plugin_disabled(JCR *jcr)
+static inline bool is_plugin_disabled(JCR *jcr)
 {
-   return is_plugin_disabled(jcr->plugin_ctx);
+   return is_plugin_disabled(jcr->ctx);
 }
 #endif
 
@@ -98,13 +112,13 @@ static bool is_plugin_disabled(JCR *jcr)
  */
 int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value)
 {
-   bpContext *plugin_ctx;
+   bpContext *ctx;
    bDirEvent event;
    Plugin *plugin;
    int i;
    bRC rc = bRC_OK;
 
-   if (!bplugin_list || !jcr || !jcr->plugin_ctx_list) {
+   if (!dird_plugin_list || !jcr || !jcr->plugin_ctx_list) {
       return bRC_OK;                  /* Return if no plugins loaded */
    }
    if (jcr->is_job_canceled()) {
@@ -116,12 +130,17 @@ int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value)
 
    Dmsg2(dbglvl, "dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
 
-   foreach_alist_index(i, plugin, bplugin_list) {
-      plugin_ctx = &plugin_ctx_list[i];
-      if (is_plugin_disabled(plugin_ctx)) {
+   foreach_alist_index(i, plugin, dird_plugin_list) {
+      ctx = &plugin_ctx_list[i];
+      if (!is_event_enabled(ctx, eventType)) {
+         Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
          continue;
       }
-      rc = dirplug_func(plugin)->handlePluginEvent(plugin_ctx, &event, value);
+      if (is_plugin_disabled(ctx)) {
+         Dmsg0(dbglvl, "Plugin disabled.\n");
+         continue;
+      }
+      rc = dirplug_func(plugin)->handlePluginEvent(ctx, &event, value);
       if (rc != bRC_OK) {
          break;
       }
@@ -138,7 +157,7 @@ void dump_dir_plugin(Plugin *plugin, FILE *fp)
    if (!plugin) {
       return ;
    }
-   pDirInfo *info = (pDirInfo *) plugin->pinfo;
+   genpInfo *info = (genpInfo *) plugin->pinfo;
    fprintf(fp, "\tversion=%d\n", info->version);
    fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
    fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));
@@ -146,6 +165,11 @@ void dump_dir_plugin(Plugin *plugin, FILE *fp)
    fprintf(fp, "\tlicence=%s\n", NPRTB(info->plugin_license));
    fprintf(fp, "\tversion=%s\n", NPRTB(info->plugin_version));
    fprintf(fp, "\tdescription=%s\n", NPRTB(info->plugin_description));
+}
+
+static void dump_dir_plugins(FILE *fp)
+{
+   dump_plugins(dird_plugin_list, fp);
 }
 
 /**
@@ -162,13 +186,14 @@ void load_dir_plugins(const char *plugin_dir)
       Dmsg0(dbglvl, "No dir plugin dir!\n");
       return;
    }
-   bplugin_list = New(alist(10, not_owned_by_alist));
-   if (!load_plugins((void *)&binfo, (void *)&bfuncs, plugin_dir, plugin_type, 
+
+   dird_plugin_list = New(alist(10, not_owned_by_alist));
+   if (!load_plugins((void *)&binfo, (void *)&bfuncs, dird_plugin_list, plugin_dir, plugin_type,
                 is_plugin_compatible)) {
       /* Either none found, or some error */
-      if (bplugin_list->size() == 0) {
-         delete bplugin_list;
-         bplugin_list = NULL;
+      if (dird_plugin_list->size() == 0) {
+         delete dird_plugin_list;
+         dird_plugin_list = NULL;
          Dmsg0(dbglvl, "No plugins loaded\n");
          return;
       }
@@ -177,13 +202,26 @@ void load_dir_plugins(const char *plugin_dir)
     * Verify that the plugin is acceptable, and print information
     *  about it.
     */
-   foreach_alist_index(i, plugin, bplugin_list) {
+   foreach_alist_index(i, plugin, dird_plugin_list) {
       Jmsg(NULL, M_INFO, 0, _("Loaded plugin: %s\n"), plugin->file);
       Dmsg1(dbglvl, "Loaded plugin: %s\n", plugin->file);
    }
 
-   Dmsg1(dbglvl, "num plugins=%d\n", bplugin_list->size());
+   Dmsg1(dbglvl, "num plugins=%d\n", dird_plugin_list->size());
    dbg_plugin_add_hook(dump_dir_plugin);
+   dbg_print_plugin_add_hook(dump_dir_plugins);
+}
+
+void unload_dir_plugins(void)
+{
+   unload_plugins(dird_plugin_list);
+   delete dird_plugin_list;
+   dird_plugin_list = NULL;
+}
+
+int list_dir_plugins(POOL_MEM &msg)
+{
+   return list_plugins(dird_plugin_list, msg);
 }
 
 /**
@@ -192,12 +230,13 @@ void load_dir_plugins(const char *plugin_dir)
  */
 static bool is_plugin_compatible(Plugin *plugin)
 {
-   pDirInfo *info = (pDirInfo *)plugin->pinfo;
+   genpInfo *info = (genpInfo *)plugin->pinfo;
+
    Dmsg0(50, "is_plugin_compatible called\n");
    if (debug_level >= 50) {
       dump_dir_plugin(plugin, stdin);
    }
-   if (strcmp(info->plugin_magic, DIR_PLUGIN_MAGIC) != 0) {
+   if (!bstrcmp(info->plugin_magic, DIR_PLUGIN_MAGIC)) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin magic wrong. Plugin=%s wanted=%s got=%s\n"),
            plugin->file, DIR_PLUGIN_MAGIC, info->plugin_magic);
       Dmsg3(50, "Plugin magic wrong. Plugin=%s wanted=%s got=%s\n",
@@ -212,25 +251,24 @@ static bool is_plugin_compatible(Plugin *plugin)
            plugin->file, DIR_PLUGIN_INTERFACE_VERSION, info->version);
       return false;
    }
-   if (strcmp(info->plugin_license, "Bacula AGPLv3") != 0 &&
-       strcmp(info->plugin_license, "AGPLv3") != 0 &&
-       strcmp(info->plugin_license, "Bacula Systems(R) SA") != 0) {
+   if (!bstrcmp(info->plugin_license, "Bacula AGPLv3") &&
+       !bstrcmp(info->plugin_license, "AGPLv3") &&
+       !bstrcmp(info->plugin_license, "Bacula Systems(R) SA")) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin license incompatible. Plugin=%s license=%s\n"),
            plugin->file, info->plugin_license);
       Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
            plugin->file, info->plugin_license);
       return false;
    }
-   if (info->size != sizeof(pDirInfo)) {
+   if (info->size != sizeof(genpInfo)) {
       Jmsg(NULL, M_ERROR, 0,
            _("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"),
-           plugin->file, sizeof(pDirInfo), info->size);
+           plugin->file, sizeof(genpInfo), info->size);
       return false;
    }
-      
+
    return true;
 }
-
 
 /*
  * Create a new instance of each plugin for this Job
@@ -241,7 +279,7 @@ void new_plugins(JCR *jcr)
    int i;
 
    Dmsg0(dbglvl, "=== enter new_plugins ===\n");
-   if (!bplugin_list) {
+   if (!dird_plugin_list) {
       Dmsg0(dbglvl, "No dir plugin list!\n");
       return;
    }
@@ -249,7 +287,7 @@ void new_plugins(JCR *jcr)
       return;
    }
 
-   int num = bplugin_list->size();
+   int num = dird_plugin_list->size();
 
    Dmsg1(dbglvl, "dir-plugin-list size=%d\n", num);
    if (num == 0) {
@@ -260,7 +298,7 @@ void new_plugins(JCR *jcr)
 
    bpContext *plugin_ctx_list = jcr->plugin_ctx_list;
    Dmsg2(dbglvl, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
-   foreach_alist_index(i, plugin, bplugin_list) {
+   foreach_alist_index(i, plugin, dird_plugin_list) {
       /* Start a new instance of each plugin */
       bacula_ctx *b_ctx = (bacula_ctx *)malloc(sizeof(bacula_ctx));
       memset(b_ctx, 0, sizeof(bacula_ctx));
@@ -281,13 +319,13 @@ void free_plugins(JCR *jcr)
    Plugin *plugin;
    int i;
 
-   if (!bplugin_list || !jcr->plugin_ctx_list) {
+   if (!dird_plugin_list || !jcr->plugin_ctx_list) {
       return;
    }
 
    bpContext *plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
    Dmsg2(dbglvl, "Free instance dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
-   foreach_alist_index(i, plugin, bplugin_list) {
+   foreach_alist_index(i, plugin, dird_plugin_list) {
       /* Free the plugin instance */
       dirplug_func(plugin)->freePlugin(&plugin_ctx_list[i]);
       free(plugin_ctx_list[i].bContext);     /* free Bacula private context */
@@ -295,7 +333,6 @@ void free_plugins(JCR *jcr)
    free(plugin_ctx_list);
    jcr->plugin_ctx_list = NULL;
 }
-
 
 /* ==============================================================
  *
@@ -328,8 +365,8 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
       Dmsg1(dbglvl, "Bacula: return Job name=%s\n", jcr->Job);
       break;
    case bDirVarJob:
-      *((char **)value) = jcr->job->hdr.name;
-      Dmsg1(dbglvl, "Bacula: return bDirVarJob=%s\n", jcr->job->hdr.name);
+      *((char **)value) = jcr->res.job->hdr.name;
+      Dmsg1(dbglvl, "Bacula: return bDirVarJob=%s\n", jcr->res.job->hdr.name);
       break;
    case bDirVarLevel:
       *((int *)value) = jcr->getJobLevel();
@@ -340,13 +377,13 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
       Dmsg1(dbglvl, "Bacula: return bDirVarType=%c\n", jcr->getJobType());
       break;
    case bDirVarClient:
-      *((char **)value) = jcr->client->hdr.name;
-      Dmsg1(dbglvl, "Bacula: return bDirVarClient=%s\n", jcr->client->hdr.name);
+      *((char **)value) = jcr->res.client->hdr.name;
+      Dmsg1(dbglvl, "Bacula: return bDirVarClient=%s\n", jcr->res.client->hdr.name);
       break;
    case bDirVarNumVols:
       POOL_DBR pr;
       memset(&pr, 0, sizeof(pr));
-      bstrncpy(pr.Name, jcr->pool->hdr.name, sizeof(pr.Name));
+      bstrncpy(pr.Name, jcr->res.pool->hdr.name, sizeof(pr.Name));
       if (!db_get_pool_record(jcr, jcr->db, &pr)) {
          ret=bRC_Error;
       }
@@ -354,14 +391,14 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
       Dmsg1(dbglvl, "Bacula: return bDirVarNumVols=%d\n", pr.NumVols);
       break;
    case bDirVarPool:
-      *((char **)value) = jcr->pool->hdr.name;
-      Dmsg1(dbglvl, "Bacula: return bDirVarPool=%s\n", jcr->pool->hdr.name);
+      *((char **)value) = jcr->res.pool->hdr.name;
+      Dmsg1(dbglvl, "Bacula: return bDirVarPool=%s\n", jcr->res.pool->hdr.name);
       break;
    case bDirVarStorage:
-      if (jcr->wstore) {
-         *((char **)value) = jcr->wstore->hdr.name;
-      } else if (jcr->rstore) {
-         *((char **)value) = jcr->rstore->hdr.name;
+      if (jcr->res.wstore) {
+         *((char **)value) = jcr->res.wstore->hdr.name;
+      } else if (jcr->res.rstore) {
+         *((char **)value) = jcr->res.rstore->hdr.name;
       } else {
          *((char **)value) = NULL;
          ret=bRC_Error;
@@ -369,8 +406,8 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
       Dmsg1(dbglvl, "Bacula: return bDirVarStorage=%s\n", NPRT(*((char **)value)));
       break;
    case bDirVarWriteStorage:
-      if (jcr->wstore) {
-         *((char **)value) = jcr->wstore->hdr.name;
+      if (jcr->res.wstore) {
+         *((char **)value) = jcr->res.wstore->hdr.name;
       } else {
          *((char **)value) = NULL;
          ret=bRC_Error;
@@ -378,8 +415,8 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
       Dmsg1(dbglvl, "Bacula: return bDirVarWriteStorage=%s\n", NPRT(*((char **)value)));
       break;
    case bDirVarReadStorage:
-      if (jcr->rstore) {
-         *((char **)value) = jcr->rstore->hdr.name;
+      if (jcr->res.rstore) {
+         *((char **)value) = jcr->res.rstore->hdr.name;
       } else {
          *((char **)value) = NULL;
          ret=bRC_Error;
@@ -387,14 +424,14 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
       Dmsg1(dbglvl, "Bacula: return bDirVarReadStorage=%s\n", NPRT(*((char **)value)));
       break;
    case bDirVarCatalog:
-      *((char **)value) = jcr->catalog->hdr.name;
-      Dmsg1(dbglvl, "Bacula: return bDirVarCatalog=%s\n", jcr->catalog->hdr.name);
+      *((char **)value) = jcr->res.catalog->hdr.name;
+      Dmsg1(dbglvl, "Bacula: return bDirVarCatalog=%s\n", jcr->res.catalog->hdr.name);
       break;
    case bDirVarMediaType:
-      if (jcr->wstore) {
-         *((char **)value) = jcr->wstore->media_type;
-      } else if (jcr->rstore) {
-         *((char **)value) = jcr->rstore->media_type;
+      if (jcr->res.wstore) {
+         *((char **)value) = jcr->res.wstore->media_type;
+      } else if (jcr->res.rstore) {
+         *((char **)value) = jcr->res.rstore->media_type;
       } else {
          *((char **)value) = NULL;
          ret=bRC_Error;
@@ -435,11 +472,11 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
    case bDirVarFDJobStatus:
       *((int *)value) = jcr->FDJobStatus;
       Dmsg1(dbglvl, "Bacula: return bDirVarFDJobStatus=%c\n", jcr->FDJobStatus);
-      break;      
+      break;
    case bDirVarSDJobStatus:
       *((int *)value) = jcr->SDJobStatus;
       Dmsg1(dbglvl, "Bacula: return bDirVarSDJobStatus=%c\n", jcr->SDJobStatus);
-      break;      
+      break;
    default:
       break;
    }
@@ -448,7 +485,7 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
 
 static bRC baculaSetValue(bpContext *ctx, bwDirVariable var, void *value)
 {
-   JCR *jcr;   
+   JCR *jcr;
    if (!value || !ctx) {
       return bRC_Error;
    }
@@ -463,21 +500,29 @@ static bRC baculaSetValue(bpContext *ctx, bwDirVariable var, void *value)
    return bRC_OK;
 }
 
-static bRC baculaRegisterEvents(bpContext *ctx, ...)
+static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...)
 {
+   int i;
    va_list args;
    uint32_t event;
+   bacula_ctx *b_ctx;
 
-   va_start(args, ctx);
-   while ((event = va_arg(args, uint32_t))) {
+   if (!ctx) {
+      return bRC_Error;
+   }
+   b_ctx = (bacula_ctx *)ctx->bContext;
+   va_start(args, nr_events);
+   for (i = 0; i < nr_events; i++) {
+      event = va_arg(args, uint32_t);
       Dmsg1(dbglvl, "dir-Plugin wants event=%u\n", event);
+      set_bit(event, b_ctx->events);
    }
    va_end(args);
    return bRC_OK;
 }
 
 static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
-  int type, utime_t mtime, const char *fmt, ...)
+                        int type, utime_t mtime, const char *fmt, ...)
 {
    va_list arg_ptr;
    char buf[2000];
@@ -497,7 +542,7 @@ static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
 }
 
 static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
-  int level, const char *fmt, ...)
+                          int level, const char *fmt, ...)
 {
    va_list arg_ptr;
    char buf[2000];
@@ -511,6 +556,11 @@ static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
 
 #ifdef TEST_PROGRAM
 
+bool db_get_pool_record(JCR *jcr, B_DB *db, POOL_DBR *pdbr)
+{
+   return true;
+}
+
 int main(int argc, char *argv[])
 {
    char plugin_dir[1000];
@@ -518,9 +568,16 @@ int main(int argc, char *argv[])
    JCR *jcr1 = &mjcr1;
    JCR *jcr2 = &mjcr2;
 
-   strcpy(my_name, "test-dir");
-    
-   getcwd(plugin_dir, sizeof(plugin_dir)-1);
+   my_name_is(argc, argv, "plugtest");
+   init_msg(NULL, NULL);
+
+   OSDependentInit();
+
+   if (argc != 1) {
+      bstrncpy(plugin_dir, argv[1], sizeof(plugin_dir));
+   } else {
+      getcwd(plugin_dir, sizeof(plugin_dir)-1);
+   }
    load_dir_plugins(plugin_dir);
 
    jcr1->JobId = 111;
@@ -536,12 +593,13 @@ int main(int argc, char *argv[])
    generate_plugin_event(jcr2, bDirEventJobEnd);
    free_plugins(jcr2);
 
-   unload_plugins();
+   unload_dir_plugins();
 
-   Dmsg0(dbglvl, "dir-plugin: OK ...\n");
+   term_msg();
    close_memory_pool();
+   lmgr_cleanup_main();
    sm_dump(false);
-   return 0;
+   exit(0);
 }
 
 #endif /* TEST_PROGRAM */

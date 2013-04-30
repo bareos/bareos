@@ -967,7 +967,7 @@ op_search_and_replace(
     int multiline = 0;
     int global = 0;
     int no_regex = 0;
-    int rc;
+    bool rc;
 
     if (search->begin == search->end)
         return VAR_ERR_EMPTY_SEARCH_STRING;
@@ -996,10 +996,10 @@ op_search_and_replace(
         tokenbuf_init(&tmp);
         for (p = data->begin; p != data->end;) {
             if (case_insensitive)
-                rc = strncasecmp(p, search->begin, search->end - search->begin);
+                rc = bstrncasecmp(p, search->begin, search->end - search->begin);
             else
-                rc = strncmp(p, search->begin, search->end - search->begin);
-            if (rc != 0) {
+                rc = bstrncmp(p, search->begin, search->end - search->begin);
+            if (!rc) {
                 /* not matched, copy character */
                 if (!tokenbuf_append(&tmp, p, 1)) {
                     tokenbuf_free(&tmp);

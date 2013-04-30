@@ -1,11 +1,4 @@
 /*
- * Includes specific to the tray monitor
- *
- *     Nicolas Boichat, August MMIV
- *
- *    Version $Id: tray-monitor.h,v 1.6 2004/08/25 12:20:01 nboichat Exp $
- */
-/*
    Copyright (C) 2004 Kern Sibbald and John Walker
 
    This program is free software; you can redistribute it and/or
@@ -24,6 +17,11 @@
    MA 02111-1307, USA.
 
  */
+/*
+ * Includes specific to the tray monitor
+ *
+ *     Nicolas Boichat, August MMIV
+ */
 
 /*
  * Resource codes -- they must be sequential for indexing
@@ -36,7 +34,6 @@ enum rescode {
    R_FIRST = R_MONITOR,
    R_LAST  = R_STORAGE                /* keep this updated */
 };
-
 
 /*
  * Some resource attributes
@@ -51,8 +48,9 @@ enum {
 
 /* Director */
 struct DIRRES {
-   RES   hdr;
-   int   DIRport;                     /* UA server port */
+   RES hdr;
+
+   int DIRport;                       /* UA server port */
    char *address;                     /* UA server address */
    char *password;                    /* UA server password */
    int enable_ssl;                    /* Use SSL */
@@ -62,25 +60,25 @@ struct DIRRES {
  *   Tray Monitor Resource
  *
  */
-struct MONITOR {
-   RES   hdr;
+struct MONITORRES {
+   RES hdr;
+
    int require_ssl;                   /* Require SSL for all connections */
-   MSGS *messages;                    /* Daemon message handler */
+   MSGSRES *messages;                 /* Daemon message handler */
    char *password;                    /* UA server password */
    utime_t RefreshInterval;           /* Status refresh interval */
    utime_t FDConnectTimeout;          /* timeout for connect in seconds */
    utime_t SDConnectTimeout;          /* timeout in seconds */
 };
 
-
 /*
  *   Client Resource
  *
  */
-struct CLIENT {
-   RES   hdr;
+struct CLIENTRES {
+   RES hdr;
 
-   int   FDport;                      /* Where File daemon listens */
+   int FDport;                        /* Where File daemon listens */
    char *address;
    char *password;
    int enable_ssl;                    /* Use SSL */
@@ -90,29 +88,25 @@ struct CLIENT {
  *   Store Resource
  *
  */
-struct STORE {
-   RES   hdr;
+struct STORERES {
+   RES hdr;
 
-   int   SDport;                      /* port where Directors connect */
+   int SDport;                        /* port where Directors connect */
    char *address;
    char *password;
    int enable_ssl;                    /* Use SSL */
 };
 
-
-
 /* Define the Union of all the above
  * resource structure definitions.
  */
 union URES {
-   MONITOR    res_monitor;
-   DIRRES     res_dir;
-   CLIENT     res_client;
-   STORE      res_store;
-   RES        hdr;
+   MONITOR res_monitor;
+   DIRRES res_dir;
+   CLIENT res_client;
+   STORE res_store;
+   RES hdr;
 };
-
-
 
 struct monitoritem {
    rescode type; /* R_DIRECTOR, R_CLIENT or R_STORAGE */

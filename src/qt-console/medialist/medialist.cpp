@@ -55,6 +55,7 @@ MediaList::MediaList() : Pages()
 
    /* mp_treeWidget, Storage Tree Tree Widget inherited from ui_medialist.h */
    m_populated = false;
+   m_needs_repopulate = false;
    m_checkcurwidget = true;
    m_closeable = false;
    /* add context sensitive menu items specific to this classto the page
@@ -64,8 +65,9 @@ MediaList::MediaList() : Pages()
 
 MediaList::~MediaList()
 {
-   if (m_populated)
+   if (m_populated) {
       writeExpandedSettings();
+   }
 }
 
 /*
@@ -167,8 +169,10 @@ void MediaList::populateTree()
                pooltreeitem->setExpanded(true);
             }
 
-            if (fieldlist.size() < 18)
-               continue; // some fields missing, ignore row
+            if (fieldlist.size() < 18) {
+               Pmsg1(0, "Discarding %s\n", resultline.data());
+               continue; /* Some fields missing, ignore row */
+            }
 
             int index = 0;
             TreeItemFormatter mediaitem(*pooltreeitem, 2);
@@ -305,7 +309,7 @@ void MediaList::PgSeltreeWidgetClicked()
  * Added to set the context menu policy based on currently active treeWidgetItem
  * signaled by currentItemChanged
  */
-void MediaList::treeItemChanged(QTreeWidgetItem *currentwidgetitem, QTreeWidgetItem *previouswidgetitem )
+void MediaList::treeItemChanged(QTreeWidgetItem *currentwidgetitem, QTreeWidgetItem *previouswidgetitem)
 {
    /* m_checkcurwidget checks to see if this is during a refresh, which will segfault */
    if (m_checkcurwidget) {
@@ -326,6 +330,8 @@ void MediaList::treeItemChanged(QTreeWidgetItem *currentwidgetitem, QTreeWidgetI
          mp_treeWidget->addAction(actionDeleteVolume);
          mp_treeWidget->addAction(actionPruneVolume);
          mp_treeWidget->addAction(actionPurgeVolume);
+         mp_treeWidget->addAction(actionImportVolume);
+         mp_treeWidget->addAction(actionExportVolume);
          mp_treeWidget->addAction(actionRelabelVolume);
          mp_treeWidget->addAction(actionVolumeFromPool);
       } else if (treedepth == 1) {
@@ -348,6 +354,8 @@ void MediaList::createContextMenu()
    connect(actionDeleteVolume, SIGNAL(triggered()), this, SLOT(deleteVolume()));
    connect(actionPurgeVolume, SIGNAL(triggered()), this, SLOT(purgeVolume()));
    connect(actionPruneVolume, SIGNAL(triggered()), this, SLOT(pruneVolume()));
+   connect(actionImportVolume, SIGNAL(triggered()), this, SLOT(importVolume()));
+   connect(actionExportVolume, SIGNAL(triggered()), this, SLOT(exportVolume()));
    connect(actionRelabelVolume, SIGNAL(triggered()), this, SLOT(relabelVolume()));
    connect(mp_treeWidget, SIGNAL(
            currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
@@ -365,9 +373,14 @@ void MediaList::createContextMenu()
  */
 void MediaList::currentStackItem()
 {
-   if(!m_populated) {
+   if (!m_populated || m_needs_repopulate) {
       populateTree();
-      /* Create the context menu for the medialist tree */
+   }
+
+   /*
+    * Create the context menu for the medialist tree
+    */
+   if (!m_populated) {
       createContextMenu();
    }
 }
@@ -389,9 +402,17 @@ void MediaList::deleteVolume()
       QMessageBox::Ok | QMessageBox::Cancel)
       == QMessageBox::Cancel) { return; }
 
-   QString cmd("delete volume=");
-   cmd += m_currentVolumeName;
-   consoleCommand(cmd);
+   QString scmd;
+
+   scmd = QString("delete volume=\"%1\"")
+                  .arg(m_currentVolumeName);
+
+   consoleCommand(scmd);
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
 }
 
 /*
@@ -411,10 +432,17 @@ void MediaList::purgeVolume()
       QMessageBox::Ok | QMessageBox::Cancel)
       == QMessageBox::Cancel) { return; }
 
-   QString cmd("purge volume=");
-   cmd += m_currentVolumeName;
-   consoleCommand(cmd);
-   populateTree();
+   QString scmd;
+
+   scmd = QString("purge volume=\"%1\"")
+                  .arg(m_currentVolumeName);
+
+   consoleCommand(scmd);
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
 }
 
 /*
@@ -423,6 +451,36 @@ void MediaList::purgeVolume()
 void MediaList::pruneVolume()
 {
    new prunePage(m_currentVolumeName, "");
+}
+
+void MediaList::importVolume()
+{
+   QString scmd;
+
+   scmd = QString("import volume=\"%1\"")
+                  .arg(m_currentVolumeName);
+
+   consoleCommand(scmd);
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
+}
+
+void MediaList::exportVolume()
+{
+   QString scmd;
+
+   scmd = QString("export volume=\"%1\"")
+                  .arg(m_currentVolumeName);
+
+   consoleCommand(scmd);
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
 }
 
 /*
@@ -441,14 +499,22 @@ void MediaList::allVolumesFromPool()
 {
    QString cmd = "update volume AllFromPool=" + m_currentVolumeName;
    consoleCommand(cmd);
-   populateTree();
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
 }
 
 void MediaList::allVolumes()
 {
    QString cmd = "update volume allfrompools";
    consoleCommand(cmd);
-   populateTree();
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
 }
 
 /*
@@ -459,10 +525,18 @@ void MediaList::volumeFromPool()
    QTreeWidgetItem *currentItem = mp_treeWidget->currentItem();
    QTreeWidgetItem *parent = currentItem->parent();
    QString pool = parent->text(0);
-   QString cmd;
-   cmd = "update volume=" + m_currentVolumeName + " frompool=" + pool;
-   consoleCommand(cmd);
-   populateTree();
+   QString scmd;
+
+   scmd = QString("update volume=\"%1\" frompool=\"%2\"")
+                  .arg(m_currentVolumeName)
+                  .arg(pool);
+
+   consoleCommand(scmd);
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
 }
 
 /*

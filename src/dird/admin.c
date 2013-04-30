@@ -38,8 +38,6 @@
 
 #include "bacula.h"
 #include "dird.h"
-#include "ua.h"
-
 
 bool do_admin_init(JCR *jcr)
 {

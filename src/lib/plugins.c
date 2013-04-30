@@ -49,20 +49,12 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 static const int dbglvl = 50;
 
-/* 
- * List of all loaded plugins.
- *
- * NOTE!!! This is a global do not try walking it with
- *   foreach_alist, you must use foreach_alist_index !!!!!!
- */
-alist *bplugin_list = NULL;
-
 /*
  * Create a new plugin "class" entry and enter it in the
  *  list of plugins.  Note, this is not the same as
  *  an instance of the plugin. 
  */
-Plugin *new_plugin()
+static Plugin *new_plugin()
 {
    Plugin *plugin;
 
@@ -91,8 +83,9 @@ static void close_plugin(Plugin *plugin)
 /*
  * Load all the plugins in the specified directory.
  */
-bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir, 
-        const char *type, bool is_plugin_compatible(Plugin *plugin))
+bool load_plugins(void *binfo, void *bfuncs, alist *plugin_list,
+                  const char *plugin_dir, const char *type,
+                  bool is_plugin_compatible(Plugin *plugin))
 {
    bool found = false;
    t_loadPlugin loadPlugin;
@@ -137,14 +130,14 @@ bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir,
          }
          break;
       }
-      if (strcmp(result->d_name, ".") == 0 || 
-          strcmp(result->d_name, "..") == 0) {
+      if (bstrcmp(result->d_name, ".") || 
+          bstrcmp(result->d_name, "..")) {
          continue;
       }
 
       len = strlen(result->d_name);
       type_len = strlen(type);
-      if (len < type_len+1 || strcmp(&result->d_name[len-type_len], type) != 0) {
+      if (len < type_len+1 || !bstrcmp(&result->d_name[len-type_len], type)) {
          Dmsg3(dbglvl, "Rejected plugin: want=%s name=%s len=%d\n", type, result->d_name, len);
          continue;
       }
@@ -206,7 +199,7 @@ bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir,
       }
 
       found = true;                /* found a plugin */
-      bplugin_list->append(plugin);
+      plugin_list->append(plugin);
    }
 
 get_out:
@@ -225,14 +218,14 @@ get_out:
 /*
  * Unload all the loaded plugins 
  */
-void unload_plugins()
+void unload_plugins(alist *plugin_list)
 {
    Plugin *plugin;
 
-   if (!bplugin_list) {
+   if (!plugin_list) {
       return;
    }
-   foreach_alist(plugin, bplugin_list) {
+   foreach_alist(plugin, plugin_list) {
       /* Shut it down and unload it */
       plugin->unloadPlugin();
       dlclose(plugin->pHandle);
@@ -241,8 +234,36 @@ void unload_plugins()
       }
       free(plugin);
    }
-   delete bplugin_list;
-   bplugin_list = NULL;
+}
+
+int list_plugins(alist *plugin_list, POOL_MEM &msg)
+{
+   int len = 0;
+   Plugin *plugin;
+
+   if (plugin_list->size() > 0) {
+      pm_strcpy(msg, "Plugin: ");
+      foreach_alist(plugin, plugin_list) {
+         len = pm_strcat(msg, plugin->file);
+         /*
+          * Print plugin version when debug activated
+          */
+         if (debug_level > 0 && plugin->pinfo) {
+            genpInfo *info = (genpInfo *)plugin->pinfo;
+            pm_strcat(msg, "(");
+            pm_strcat(msg, NPRT(info->plugin_version));
+            len = pm_strcat(msg, ")");
+         }
+         if (len > 80) {
+            pm_strcat(msg, "\n   ");
+         } else {
+            pm_strcat(msg, " ");
+         }
+      }
+      len = pm_strcat(msg, "\n");
+   }
+
+  return len;
 }
 
 /*
@@ -252,7 +273,8 @@ void unload_plugins()
  */
 #define DBG_MAX_HOOK 10
 static dbg_plugin_hook_t *dbg_plugin_hooks[DBG_MAX_HOOK];
-static int dbg_plugin_hook_count=0;
+static dbg_print_plugin_hook_t *dbg_print_plugin_hook = NULL;
+static int dbg_plugin_hook_count = 0;
 
 void dbg_plugin_add_hook(dbg_plugin_hook_t *fct)
 {
@@ -260,20 +282,38 @@ void dbg_plugin_add_hook(dbg_plugin_hook_t *fct)
    dbg_plugin_hooks[dbg_plugin_hook_count++] = fct;
 }
 
-void dbg_print_plugin(FILE *fp)
+void dbg_print_plugin_add_hook(dbg_print_plugin_hook_t *fct)
+{
+   dbg_print_plugin_hook = fct;
+}
+
+void dump_plugins(alist *plugin_list, FILE *fp)
 {
    Plugin *plugin;
    fprintf(fp, "Attempt to dump plugins. Hook count=%d\n", dbg_plugin_hook_count);
 
-   if (!bplugin_list) {
+   if (!plugin_list) {
       return;
    }
-   foreach_alist(plugin, bplugin_list) {
+   foreach_alist(plugin, plugin_list) {
       for(int i=0; i < dbg_plugin_hook_count; i++) {
 //       dbg_plugin_hook_t *fct = dbg_plugin_hooks[i];
          fprintf(fp, "Plugin %p name=\"%s\" disabled=%d\n",
                  plugin, plugin->file, plugin->disabled);
 //       fct(plugin, fp);
       }
+   }
+}
+
+/*
+ * Bounce from library to daemon and back to get the proper plugin_list.
+ * As the function is called from the signal context we don't have the
+ * plugin_list as argument and we don't want to expose it as global variable.
+ * If the daemon didn't register a dump plugin function this is a NOP.
+ */
+void dbg_print_plugin(FILE *fp)
+{
+   if (dbg_print_plugin_hook) {
+      dbg_print_plugin_hook(fp);
    }
 }

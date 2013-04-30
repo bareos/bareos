@@ -137,7 +137,7 @@ void runPage::okButtonPushed()
       " when=\"" << dateTimeEdit->dateTime().toString(mainWin->m_dtformat) << "\"";
 #ifdef xxx
       " messages=\"" << messagesCombo->currentText() << "\"";
-     /* FIXME when there is an option to modify the messages resoruce associated
+     /* FIXME when there is an option to modify the messages resource associated
       * with a  job */
 #endif
    if (bootstrap->text() != "") {
@@ -154,7 +154,6 @@ void runPage::okButtonPushed()
    closeStackPage();
    mainWin->resetFocus();
 }
-
 
 void runPage::cancelButtonPushed()
 {

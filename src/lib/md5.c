@@ -47,15 +47,13 @@
    prototypes) to maintain the tradition that Netfone will compile
    with Sun's original "cc". */
 
-
-
 #include "bacula.h"
 
 /*
  * Note: this code is harmless on little-endian machines. We'll swap the bytes
  * on big-endian machines.
  */
-void byteReverse(unsigned char *buf, unsigned longs)
+static void byteReverse(unsigned char *buf, unsigned longs)
 {
     uint32_t t;
     if (bigendian()) {
@@ -196,7 +194,7 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
  */
 void MD5Transform(uint32_t buf[4], uint32_t in[16])
 {
-    register uint32_t a, b, c, d;
+    uint32_t a, b, c, d;
 
     a = buf[0];
     b = buf[1];

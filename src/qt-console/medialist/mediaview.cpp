@@ -50,11 +50,15 @@ MediaView::MediaView() : Pages()
    connect(m_pbPurge, SIGNAL(pressed()), this, SLOT(purgePushed()));
    connect(m_pbDelete, SIGNAL(pressed()), this, SLOT(deletePushed()));
    connect(m_pbPrune, SIGNAL(pressed()), this, SLOT(prunePushed()));
+   connect(m_pbImport, SIGNAL(pressed()), this, SLOT(importPushed()));
+   connect(m_pbExport, SIGNAL(pressed()), this, SLOT(exportPushed()));
+
    connect(m_tableMedia, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), 
            this, SLOT(showInfoForMedia(QTableWidgetItem *)));
 
    /* mp_treeWidget, Storage Tree Tree Widget inherited from ui_medialist.h */
    m_populated = false;
+   m_needs_repopulate = false;
    m_checkcurwidget = true;
    m_closeable = false;
 }
@@ -70,6 +74,42 @@ void MediaView::showInfoForMedia(QTableWidgetItem * item)
 
 MediaView::~MediaView()
 {
+}
+
+bool MediaView::getSelection(QStringList &list)
+{
+   int i, nb, nr_rows, row;
+   bool *tab;
+   QTableWidgetItem *it;
+   QList<QTableWidgetItem*> items = m_tableMedia->selectedItems();
+
+   /*
+    * See if anything is selected.
+    */
+   nb = items.count();
+   if (!nb) {
+      return false;
+   }
+
+   /*
+    * Create a nibble map for each row so we can see if its
+    * selected or not.
+    */
+   nr_rows = m_tableMedia->rowCount();
+   tab = (bool *)malloc (nr_rows * sizeof(bool));
+   memset(tab, 0, sizeof(bool) * nr_rows);
+
+   for (i = 0; i < nb; i++) {
+      row = items[i]->row();
+      if (!tab[row]) {
+         tab[row] = true;
+         it = m_tableMedia->item(row, 0);
+         list.append(it->text());
+      }
+   }
+   free(tab);
+
+   return list.count() > 0;
 }
 
 void MediaView::applyPushed()
@@ -103,64 +143,105 @@ void MediaView::purgePushed()
       QMessageBox::Ok | QMessageBox::Cancel)
       == QMessageBox::Cancel) { return; }
 
-   QStringList lst;
-   QString cmd;
-   getSelection(lst);
-   for(int i=0; i<lst.count(); i++) {
-      cmd = "purge volume=" + lst.at(i);
-      consoleCommand(cmd);
-   }
-   populateTable();
-}
+   QStringList sel;
+   QString scmd;
+   int i;
 
-bool MediaView::getSelection(QStringList &list)
-{
-   int i, nb, nr_rows, row;
-   bool *tab;
-   QTableWidgetItem *it;
-   QList<QTableWidgetItem*> items = m_tableMedia->selectedItems();
-
-   /*
-    * See if anything is selected.
-    */
-   nb = items.count();
-   if (!nb) {
-      return false;
+   getSelection(sel);
+   for (i = 0; i < sel.count(); i++) {
+      scmd = QString("purge volume=\"%1\"")
+                     .arg(sel.at(i));
+      consoleCommand(scmd);
    }
 
    /*
-    * Create a nibble map for each row so we can see if its
-    * selected or not.
+    * Volume list needs (re)populate.
     */
-   nr_rows = m_tableMedia->rowCount();
-   tab = (bool *)malloc (nr_rows * sizeof(bool));
-   memset(tab, 0, sizeof(bool) * nr_rows);
-
-   for (i = 0; i < nb; ++i) {
-      row = items[i]->row();
-      if (!tab[row]) {
-         tab[row] = true;
-         it = m_tableMedia->item(row, 0);
-         list.append(it->text());
-      }
-   }
-   free(tab);
-
-   return list.count() > 0;
+   m_needs_repopulate = true;
 }
 
 void MediaView::prunePushed()
 {
    QStringList sel;
-   QString cmd;
-   getSelection(sel);
+   QString scmd;
+   int i;
 
-   for(int i=0; i<sel.count(); i++) {
-      cmd = "prune volume=" + sel.at(i);
-      consoleCommand(cmd);
+   getSelection(sel);
+   for (i = 0; i < sel.count(); i++) {
+      scmd = QString("prune volume=\"%1\"")
+                     .arg(sel.at(i));
+      consoleCommand(scmd);
    }
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
 }
 
+void MediaView::importPushed()
+{
+   QStringList sel;
+   QString scmd;
+   int i;
+
+   getSelection(sel);
+   if (sel.count() == 0) {
+      return;
+   }
+
+   scmd = "import ";
+   for (i = 0; i < sel.count(); i++) {
+      scmd += QString("volume=\"%1\" ")
+                      .arg(sel.at(i));
+   }
+
+   /*
+    * Strip the trailing space.
+    */
+   if (i > 0) {
+      scmd.chop(1);
+   }
+
+   consoleCommand(scmd);
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
+}
+
+void MediaView::exportPushed()
+{
+   QStringList sel;
+   QString scmd;
+   int i;
+
+   getSelection(sel);
+   if (sel.count() == 0) {
+      return;
+   }
+
+   scmd = "export ";
+   for (i = 0; i < sel.count(); i++) {
+      scmd += QString("volume=\"%1\" ")
+                      .arg(sel.at(i));
+   }
+
+   /*
+    * Strip the trailing space.
+    */
+   if (i > 0) {
+      scmd.chop(1);
+   }
+
+   consoleCommand(scmd);
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
+}
 
 void MediaView::deletePushed()
 {
@@ -176,14 +257,21 @@ void MediaView::deletePushed()
       QMessageBox::Ok | QMessageBox::Cancel)
       == QMessageBox::Cancel) { return; }
 
-   QStringList lst;
-   QString cmd;
-   getSelection(lst);
-   for(int i=0; i<lst.count(); i++) {
-      cmd = "delete volume=" + lst.at(i);
-      consoleCommand(cmd);
+   QStringList sel;
+   QString scmd;
+   int i;
+
+   getSelection(sel);
+   for (i = 0; i < sel.count(); i++) {
+      scmd = QString("delete volume=\"%1\"")
+                     .arg(sel.at(i));
+      consoleCommand(scmd);
    }
-   populateTable();
+
+   /*
+    * Volume list needs (re)populate.
+    */
+   m_needs_repopulate = true;
 }
 
 void MediaView::populateForm()
@@ -339,6 +427,7 @@ void MediaView::populateTable()
          QString VolBytes, MediaType, LastWritten, VolStatus;
          fieldlist = resultline.split("\t");
          if (fieldlist.size() != 10) {
+            Pmsg1(0, "Discarding %s\n", resultline.data());
             continue;
          }
          QStringListIterator fld(fieldlist);
@@ -425,8 +514,10 @@ void MediaView::PgSeltreeWidgetClicked()
  */
 void MediaView::currentStackItem()
 {
-   if(!m_populated) {
+   if (!m_populated) {
       populateForm();
+   }
+   if (!m_populated || m_needs_repopulate) {
       populateTable();
    }
 }
@@ -447,14 +538,22 @@ void MediaView::currentStackItem()
 // {
 //    QString cmd = "update volume AllFromPool=" + m_currentVolumeName;
 //    consoleCommand(cmd);
-//    populateTable();
+//
+//    /*
+//     * Volume list needs (re)populate.
+//     */
+//    m_needs_repopulate = true;
 // }
 // 
 // void MediaView::allVolumes()
 // {
 //    QString cmd = "update volume allfrompools";
 //    consoleCommand(cmd);
-//    populateTable();
+//
+//    /*
+//     * Volume list needs (re)populate.
+//     */
+//    m_needs_repopulate = true;
 // }
 // 
 //  /*
@@ -465,9 +564,16 @@ void MediaView::currentStackItem()
 //     QTreeWidgetItem *currentItem = mp_treeWidget->currentItem();
 //     QTreeWidgetItem *parent = currentItem->parent();
 //     QString pool = parent->text(0);
-//     QString cmd;
-//     cmd = "update volume=" + m_currentVolumeName + " frompool=" + pool;
-//     consoleCommand(cmd);
-//     populateTable();
+//     QString scmd;
+//
+//     scmd = QString("update volume=\"%1\" frompool=\"%2\"")
+//                    .arg(m_currentVolumeName)
+//                    .arg(pool);
+//     consoleCommand(scmd);
+//
+//    /*
+//     * Volume list needs (re)populate.
+//     */
+//    m_needs_repopulate = true;
 //  }
 //  

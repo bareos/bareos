@@ -34,10 +34,6 @@
 #include "bacula.h"
 #include "stored.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define PLUGIN_LICENSE      "Bacula AGPLv3"
 #define PLUGIN_AUTHOR       "Kern Sibbald"
 #define PLUGIN_DATE         "November 2011"
@@ -56,7 +52,7 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value);
 static bsdFuncs *bfuncs = NULL;
 static bsdInfo  *binfo = NULL;
 
-static psdInfo pluginInfo = {
+static genpInfo pluginInfo = {
    sizeof(pluginInfo),
    SD_PLUGIN_INTERFACE_VERSION,
    SD_PLUGIN_MAGIC,
@@ -79,15 +75,19 @@ static psdFuncs pluginFuncs = {
    handlePluginEvent
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * loadPlugin() and unloadPlugin() are entry points that are
  *  exported, so Bacula can directly call these two entry points
  *  they are common to all Bacula plugins.
  *
- * External entry point called by Bacula to "load the plugin
+ * External entry point called by Bacula to "load" the plugin
  */
 bRC DLL_IMP_EXP
-loadPlugin(bsdInfo *lbinfo, bsdFuncs *lbfuncs, psdInfo **pinfo, psdFuncs **pfuncs)
+loadPlugin(bsdInfo *lbinfo, bsdFuncs *lbfuncs, genpInfo **pinfo, psdFuncs **pfuncs)
 {
    bfuncs = lbfuncs;                /* set Bacula funct pointers */
    binfo  = lbinfo;
@@ -108,6 +108,10 @@ unloadPlugin()
    return bRC_OK;
 }
 
+#ifdef __cplusplus
+}
+#endif
+
 /*
  * The following entry points are accessed through the function 
  *   pointers we supplied to Bacula. Each plugin type (dir, fd, sd)
@@ -121,7 +125,10 @@ static bRC newPlugin(bpContext *ctx)
    int JobId = 0;
    bfuncs->getBaculaValue(ctx, bsdVarJobId, (void *)&JobId);
    printf("example-plugin-sd: newPlugin JobId=%d\n", JobId);
-   bfuncs->registerBaculaEvents(ctx, 1, 2, 0);
+   bfuncs->registerBaculaEvents(ctx,
+                                2,
+                                bsdEventJobStart,
+                                bsdEventJobEnd);
    return bRC_OK;
 }
 
@@ -174,7 +181,3 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
    bfuncs->DebugMessage(ctx, __FILE__, __LINE__, 1, "DebugMesssage message");
    return bRC_OK;
 }
-
-#ifdef __cplusplus
-}
-#endif

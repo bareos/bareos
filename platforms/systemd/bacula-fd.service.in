@@ -23,6 +23,7 @@ After=var-run.mount nss-lookup.target network.target remote-fs.target syslog.tar
 Type=forking
 User=@fd_user@
 Group=@fd_group@
+WorkingDirectory=@working_dir@
 PIDFile=@piddir@/bacula-fd.@fd_port@.pid
 StandardOutput=syslog
 ExecStart=@sbindir@/bacula-fd -c @sysconfdir@/bacula-fd.conf

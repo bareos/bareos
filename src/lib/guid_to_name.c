@@ -106,7 +106,7 @@ static void get_uidname(uid_t uid, guitem *item)
    struct passwd *pwbuf;
    P(mutex);
    pwbuf = getpwuid(uid);
-   if (pwbuf != NULL && strcmp(pwbuf->pw_name, "????????") != 0) {
+   if (pwbuf != NULL && !bstrcmp(pwbuf->pw_name, "????????")) {
       item->name = bstrdup(pwbuf->pw_name);
    }
    V(mutex);
@@ -119,7 +119,7 @@ static void get_gidname(gid_t gid, guitem *item)
    struct group *grbuf;
    P(mutex);
    grbuf = getgrgid(gid);
-   if (grbuf != NULL && strcmp(grbuf->gr_name, "????????") != 0) {
+   if (grbuf != NULL && !bstrcmp(grbuf->gr_name, "????????")) {
       item->name = bstrdup(grbuf->gr_name);
    }
    V(mutex);

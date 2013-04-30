@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -66,10 +66,11 @@ B_DB_POSTGRESQL::B_DB_POSTGRESQL(JCR *jcr,
                                  const char *db_user,
                                  const char *db_password,
                                  const char *db_address,
-                                 int db_port, 
+                                 int db_port,
                                  const char *db_socket,
                                  bool mult_db_connections,
-                                 bool disable_batch_insert)
+                                 bool disable_batch_insert,
+                                 bool need_private)
 {
    /*
     * Initialize the parent class members.
@@ -121,13 +122,7 @@ B_DB_POSTGRESQL::B_DB_POSTGRESQL(JCR *jcr,
    esc_obj = get_pool_memory(PM_FNAME);
    m_buf =  get_pool_memory(PM_FNAME);
    m_allow_transactions = mult_db_connections;
-
-   /* At this time, when mult_db_connections == true, this is for 
-    * specific console command such as bvfs or batch mode, and we don't
-    * want to share a batch mode or bvfs. In the future, we can change
-    * the creation function to add this parameter.
-    */
-   m_dedicated = mult_db_connections; 
+   m_is_private = need_private;
 
    /*
     * Initialize the private members.
@@ -154,7 +149,7 @@ B_DB_POSTGRESQL::~B_DB_POSTGRESQL()
 static bool pgsql_check_database_encoding(JCR *jcr, B_DB_POSTGRESQL *mdb)
 {
    SQL_ROW row;
-   int ret = false;
+   bool retval = false;
 
    if (!mdb->sql_query("SELECT getdatabaseencoding()", QF_STORE_RESULT)) {
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
@@ -165,9 +160,9 @@ static bool pgsql_check_database_encoding(JCR *jcr, B_DB_POSTGRESQL *mdb)
       Mmsg1(mdb->errmsg, _("error fetching row: %s\n"), mdb->sql_strerror());
       Jmsg(jcr, M_ERROR, 0, "Can't check database encoding %s", mdb->errmsg);
    } else {
-      ret = bstrcmp(row[0], "SQL_ASCII");
+      retval = bstrcmp(row[0], "SQL_ASCII");
 
-      if (ret) {
+      if (retval) {
          /*
           * If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII too
           */
@@ -177,14 +172,14 @@ static bool pgsql_check_database_encoding(JCR *jcr, B_DB_POSTGRESQL *mdb)
          /*
           * Something is wrong with database encoding
           */
-         Mmsg(mdb->errmsg, 
+         Mmsg(mdb->errmsg,
               _("Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n"),
               mdb->get_db_name(), row[0]);
          Jmsg(jcr, M_WARNING, 0, "%s", mdb->errmsg);
          Dmsg1(50, "%s", mdb->errmsg);
-      } 
+      }
    }
-   return ret;
+   return retval;
 }
 
 /*
@@ -256,7 +251,7 @@ bool B_DB_POSTGRESQL::db_open_database(JCR *jcr)
 
    sql_query("SET datestyle TO 'ISO, YMD'");
    sql_query("SET cursor_tuple_fraction=1");
-   
+
    /*
     * Tell PostgreSQL we are using standard conforming strings
     * and avoid warnings such as:
@@ -330,8 +325,37 @@ void B_DB_POSTGRESQL::db_close_database(JCR *jcr)
    V(mutex);
 }
 
-void B_DB_POSTGRESQL::db_thread_cleanup(void)
+bool B_DB_POSTGRESQL::db_validate_connection(void)
 {
+   bool retval = false;
+
+   /*
+    * Perform a null query to see if the connection is still valid.
+    */
+   db_lock(this);
+   if (!sql_query("SELECT 1", true)) {
+      /*
+       * Try resetting the connection.
+       */
+      PQreset(m_db_handle);
+      if (PQstatus(m_db_handle) != CONNECTION_OK) {
+         goto bail_out;
+      }
+
+      /*
+       * Retry the null query.
+       */
+      if (!sql_query("SELECT 1", true)) {
+         goto bail_out;
+      }
+   }
+
+   sql_free_result();
+   retval = true;
+
+bail_out:
+   db_unlock(this);
+   return retval;
 }
 
 /*
@@ -344,7 +368,7 @@ void B_DB_POSTGRESQL::db_thread_cleanup(void)
 void B_DB_POSTGRESQL::db_escape_string(JCR *jcr, char *snew, char *old, int len)
 {
    int error;
-  
+
    PQescapeStringConn(m_db_handle, snew, old, len, &error);
    if (error) {
       Jmsg(jcr, M_FATAL, 0, _("PQescapeStringConn returned non-zero.\n"));
@@ -403,7 +427,7 @@ void B_DB_POSTGRESQL::db_unescape_object(JCR *jcr, char *from, int32_t expected_
    *dest = check_pool_memory_size(*dest, new_len+1);
    memcpy(*dest, obj, new_len);
    (*dest)[new_len]=0;
-   
+
    PQfreemem(obj);
 
    Dmsg1(010, "obj size: %d\n", *dest_len);
@@ -475,18 +499,18 @@ void B_DB_POSTGRESQL::db_end_transaction(JCR *jcr)
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool B_DB_POSTGRESQL::db_big_sql_query(const char *query, 
-                                       DB_RESULT_HANDLER *result_handler, 
+bool B_DB_POSTGRESQL::db_big_sql_query(const char *query,
+                                       DB_RESULT_HANDLER *result_handler,
                                        void *ctx)
 {
    SQL_ROW row;
    bool retval = false;
    bool in_transaction = m_transaction;
-   
+
    Dmsg1(500, "db_sql_query starts with '%s'\n", query);
 
    /* This code handles only SELECT queries */
-   if (strncasecmp(query, "SELECT", 6) != 0) {
+   if (!bstrncasecmp(query, "SELECT", 6)) {
       return db_sql_query(query, result_handler, ctx);
    }
 
@@ -519,8 +543,8 @@ bool B_DB_POSTGRESQL::db_big_sql_query(const char *query,
       }
       PQclear(m_result);
       m_result = NULL;
-      
-   } while (m_num_rows > 0);    /* TODO: Can probably test against 100 */
+
+   } while (m_num_rows > 0);
 
    sql_query("CLOSE _bac_cursor");
 
@@ -777,7 +801,7 @@ uint64_t B_DB_POSTGRESQL::sql_insert_autokey_record(const char *query, const cha
     *
     * everything else can use the PostgreSQL formula.
     */
-   if (strcasecmp(table_name, "basefiles") == 0) {
+   if (bstrcasecmp(table_name, "basefiles")) {
       bstrncpy(sequence, "basefiles_baseid", sizeof(sequence));
    } else {
       bstrncpy(sequence, table_name, sizeof(sequence));
@@ -852,7 +876,7 @@ SQL_FIELD *B_DB_POSTGRESQL::sql_fetch_field(void)
             } else {
                 this_length = cstrlen(PQgetvalue(m_result, j, i));
             }
-         
+
             if (max_length < this_length) {
                max_length = this_length;
             }
@@ -961,7 +985,7 @@ bool B_DB_POSTGRESQL::sql_batch_start(JCR *jcr)
       Dmsg0(500, "sql_batch_start failed\n");
       return false;
    }
-   
+
    /*
     * We are starting a new query.  reset everything.
     */
@@ -1019,7 +1043,7 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
 
    Dmsg0(500, "sql_batch_end started\n");
 
-   do { 
+   do {
       res = PQputCopyEnd(m_db_handle, error);
    } while (res == 0 && --count > 0);
 
@@ -1027,7 +1051,7 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
       Dmsg0(500, "ok\n");
       m_status = 1;
    }
-   
+
    if (res <= 0) {
       Dmsg0(500, "we failed\n");
       m_status = 0;
@@ -1041,7 +1065,7 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
       Mmsg1(&errmsg, _("error ending batch mode: %s"), PQerrorMessage(m_db_handle));
       m_status = 0;
    }
-   PQclear(pg_result); 
+   PQclear(pg_result);
 
    Dmsg0(500, "sql_batch_end finishing\n");
 
@@ -1068,11 +1092,11 @@ bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
       digest = ar->Digest;
    }
 
-   len = Mmsg(cmd, "%u\t%s\t%s\t%s\t%s\t%s\t%u\n", 
-              ar->FileIndex, edit_int64(ar->JobId, ed1), esc_path, 
+   len = Mmsg(cmd, "%u\t%s\t%s\t%s\t%s\t%s\t%u\n",
+              ar->FileIndex, edit_int64(ar->JobId, ed1), esc_path,
               esc_name, ar->attr, digest, ar->DeltaSeq);
 
-   do { 
+   do {
       res = PQputCopyData(m_db_handle, cmd, len);
    } while (res == 0 && --count > 0);
 
@@ -1098,11 +1122,31 @@ bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, 
-                       const char *db_user, const char *db_password, 
-                       const char *db_address, int db_port, 
-                       const char *db_socket, bool mult_db_connections, 
-                       bool disable_batch_insert)
+#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+extern "C" B_DB *backend_instantiate(JCR *jcr,
+                                     const char *db_driver,
+                                     const char *db_name,
+                                     const char *db_user,
+                                     const char *db_password,
+                                     const char *db_address,
+                                     int db_port,
+                                     const char *db_socket,
+                                     bool mult_db_connections,
+                                     bool disable_batch_insert,
+                                     bool need_private)
+#else
+B_DB *db_init_database(JCR *jcr,
+                       const char *db_driver,
+                       const char *db_name,
+                       const char *db_user,
+                       const char *db_password,
+                       const char *db_address,
+                       int db_port,
+                       const char *db_socket,
+                       bool mult_db_connections,
+                       bool disable_batch_insert,
+                       bool need_private)
+#endif
 {
    B_DB_POSTGRESQL *mdb = NULL;
 
@@ -1111,11 +1155,16 @@ B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
       return NULL;
    }
    P(mutex);                          /* lock DB queue */
-   if (db_list && !mult_db_connections) {
-      /*
-       * Look to see if DB already open
-       */
+
+   /*
+    * Look to see if DB already open
+    */
+   if (db_list && !mult_db_connections && !need_private) {
       foreach_dlist(mdb, db_list) {
+         if (mdb->is_private()) {
+            continue;
+         }
+
          if (mdb->db_match_database(db_driver, db_name, db_address, db_port)) {
             Dmsg1(100, "DB REopen %s\n", db_name);
             mdb->increment_refcount();
@@ -1124,13 +1173,29 @@ B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
       }
    }
    Dmsg0(100, "db_init_database first time\n");
-   mdb = New(B_DB_POSTGRESQL(jcr, db_driver, db_name, db_user, db_password, 
-                             db_address, db_port, db_socket, 
-                             mult_db_connections, disable_batch_insert));
+   mdb = New(B_DB_POSTGRESQL(jcr,
+                             db_driver,
+                             db_name,
+                             db_user,
+                             db_password,
+                             db_address,
+                             db_port,
+                             db_socket,
+                             mult_db_connections,
+                             disable_batch_insert,
+                             need_private));
 
 bail_out:
    V(mutex);
    return mdb;
+}
+
+#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+extern "C" void flush_backend(void)
+#else
+void db_flush_backends(void)
+#endif
+{
 }
 
 #endif /* HAVE_POSTGRESQL */

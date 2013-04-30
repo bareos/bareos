@@ -485,7 +485,7 @@ lookup_host:
    if ((res = getaddrinfo(mailhost, mail_port, &hints, &ai)) != 0) {
       Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"),
             mailhost, gai_strerror(res));
-      if (strcasecmp(mailhost, "localhost")) {
+      if (!bstrcasecmp(mailhost, "localhost")) {
          Pmsg0(0, _("Retrying connection using \"localhost\".\n"));
          mailhost = "localhost";
          goto lookup_host;
@@ -518,9 +518,9 @@ lookup_host:
    freeaddrinfo(ai);
 #else
    if ((hp = gethostbyname(mailhost)) == NULL) {
-      Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"), mailhost,
-         strerror(errno));
-      if (strcasecmp(mailhost, "localhost") != 0) {
+      Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"),
+            mailhost, strerror(errno));
+      if (!bstrcasecmp(mailhost, "localhost")) {
          Pmsg0(0, _("Retrying connection using \"localhost\".\n"));
          mailhost = "localhost";
          goto lookup_host;

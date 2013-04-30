@@ -28,10 +28,7 @@
 /*
  * Define Message Types for Bacula
  *    Kern Sibbald, 2000
- *
  */
-
-
 #include "bits.h"
 
 #undef  M_DEBUG
@@ -100,7 +97,8 @@ enum {
    M_VOLMGMT                          /* Volume management messages */
 };
 
-#define M_MAX      M_VOLMGMT          /* keep this updated ! */
+#define M_MAX M_VOLMGMT               /* keep this updated ! */
+#define NR_MSG_TYPES nbytes_for_bits(M_MAX + 1)
 
 /* Define message destination structure */
 /* *** FIXME **** where should be extended to handle multiple values */
@@ -109,7 +107,7 @@ typedef struct s_dest {
    int dest_code;                     /* destination (one of the MD_ codes) */
    int max_len;                       /* max mail line length */
    FILE *fd;                          /* file descriptor */
-   char msg_types[nbytes_for_bits(M_MAX+1)]; /* message type mask */
+   char msg_types[NR_MSG_TYPES];      /* message type mask */
    char *where;                       /* filename/program name */
    char *mail_cmd;                    /* mail command */
    POOLMEM *mail_filename;            /* unique mail filename */
@@ -139,7 +137,10 @@ struct MQUEUE_ITEM {
    char msg[1];
 };
 
- 
+extern "C" {
+   typedef char *(*job_code_callback_t)(JCR *, const char *);
+}
+
 void d_msg(const char *file, int line, int level, const char *fmt,...);
 void e_msg(const char *file, int line, int type, int level, const char *fmt,...);
 void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
@@ -147,22 +148,18 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
 bool get_trace(void);
 const char *get_basename(const char *pathname);
 
-class B_DB;
-typedef bool (*sql_query_func)(JCR *jcr, const char *cmd);
-typedef bool (*sql_escape_func)(JCR *jcr, B_DB *db, char *snew, char *old, int len);
+typedef bool (*db_log_insert_func)(JCR *jcr, utime_t mtime, char *msg);
+extern DLL_IMP_EXP db_log_insert_func p_db_log_insert;
 
-extern DLL_IMP_EXP sql_query_func     p_sql_query;
-extern DLL_IMP_EXP sql_escape_func    p_sql_escape;
+extern DLL_IMP_EXP int debug_level;
+extern DLL_IMP_EXP bool dbg_timestamp; /* print timestamp in debug output */
+extern DLL_IMP_EXP bool prt_kaboom;    /* Print kaboom output */
+extern DLL_IMP_EXP int verbose;
+extern DLL_IMP_EXP char my_name[];
+extern DLL_IMP_EXP const char *assert_msg; /* Assert error message */
+extern DLL_IMP_EXP const char *working_directory;
+extern DLL_IMP_EXP utime_t daemon_start_time;
 
-extern DLL_IMP_EXP int           debug_level;
-extern DLL_IMP_EXP bool          dbg_timestamp;          /* print timestamp in debug output */
-extern DLL_IMP_EXP bool          prt_kaboom;             /* Print kaboom output */
-extern DLL_IMP_EXP int           verbose;
-extern DLL_IMP_EXP char          my_name[];
-extern DLL_IMP_EXP const char   *assert_msg;             /* Assert error message */
-extern DLL_IMP_EXP const char *  working_directory;
-extern DLL_IMP_EXP utime_t       daemon_start_time;
-
-extern DLL_IMP_EXP int           console_msg_pending;
-extern DLL_IMP_EXP FILE *        con_fd;                 /* Console file descriptor */
-extern DLL_IMP_EXP brwlock_t     con_lock;               /* Console lock structure */
+extern DLL_IMP_EXP int console_msg_pending;
+extern DLL_IMP_EXP FILE *con_fd;       /* Console file descriptor */
+extern DLL_IMP_EXP brwlock_t con_lock; /* Console lock structure */

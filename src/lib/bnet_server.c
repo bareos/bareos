@@ -44,6 +44,11 @@
 //#include <resolv.h>
 #endif
 
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#elif HAVE_SYS_POLL_H
+#include <sys/poll.h>
+#endif
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -70,12 +75,13 @@ void bnet_stop_thread_server(pthread_t tid)
  * ipv4 and ipv6 style. The Addresse are give in a comma
  * seperated string in bind_addr
  *
- * At the moment it is inpossible to bind different ports.
+ * At the moment it is impossible to bind to different ports.
  */
-void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
-                        void *handle_client_request(void *bsock))
+void
+bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
+                   void *handle_client_request(void *bsock))
 {
-   int newsockfd, stat;
+   int newsockfd, status;
    socklen_t clilen;
    struct sockaddr cli_addr;       /* client's address */
    int tlog;
@@ -91,6 +97,10 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
    } *fd_ptr = NULL;
    char buf[128];
    dlist sockfds;
+#ifdef HAVE_POLL
+   nfds_t nfds;
+   struct pollfd *pfds;
+#endif
 
    char allbuf[256 * 10];
 
@@ -111,8 +121,13 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
 
    Dmsg1(100, "Addresses %s\n", build_addresses_str(addr_list, allbuf, sizeof(allbuf)));
 
+#ifdef HAVE_POLL
+   nfds = 0;
+#endif
    foreach_dlist(ipaddr, addr_list) {
-      /* Allocate on stack from -- no need to free */
+      /*
+       * Allocate on stack from -- no need to free
+       */
       fd_ptr = (s_sockfd *)alloca(sizeof(s_sockfd));
       fd_ptr->port = ipaddr->get_port_net_order();
       /*
@@ -155,26 +170,52 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
       }
       listen(fd_ptr->fd, 50);      /* tell system we are ready */
       sockfds.append(fd_ptr);
+#ifdef HAVE_POLL
+      nfds++;
+#endif
    }
-   /* Start work queue thread */
-   if ((stat = workq_init(client_wq, max_clients, handle_client_request)) != 0) {
+   /*
+    * Start work queue thread
+    */
+   if ((status = workq_init(client_wq, max_clients, handle_client_request)) != 0) {
       berrno be;
-      be.set_errno(stat);
+      be.set_errno(status);
       Emsg1(M_ABORT, 0, _("Could not init client queue: ERR=%s\n"), be.bstrerror());
    }
+
+#ifdef HAVE_POLL
+   /*
+    * Allocate on stack from -- no need to free
+    */
+   pfds = (struct pollfd *)alloca(sizeof(struct pollfd) * nfds);
+   memset(pfds, 0, sizeof(struct pollfd) * nfds);
+
+   nfds = 0;
+   foreach_dlist(fd_ptr, &sockfds) {
+      pfds[nfds].fd = fd_ptr->fd;
+      pfds[nfds].events |= POLL_IN;
+      nfds++;
+   }
+#endif
+
    /*
     * Wait for a connection from the client process.
     */
    for (; !quit;) {
+#ifndef HAVE_POLL
       unsigned int maxfd = 0;
       fd_set sockset;
       FD_ZERO(&sockset);
+
       foreach_dlist(fd_ptr, &sockfds) {
          FD_SET((unsigned)fd_ptr->fd, &sockset);
-         maxfd = maxfd > (unsigned)fd_ptr->fd ? maxfd : fd_ptr->fd;
+         if ((unsigned)fd_ptr->fd > maxfd) {
+            maxfd = fd_ptr->fd;
+         }
       }
+
       errno = 0;
-      if ((stat = select(maxfd + 1, &sockset, NULL, NULL, NULL)) < 0) {
+      if ((status = select(maxfd + 1, &sockset, NULL, NULL, NULL)) < 0) {
          berrno be;                   /* capture errno */
          if (errno == EINTR) {
             continue;
@@ -185,7 +226,26 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
 
       foreach_dlist(fd_ptr, &sockfds) {
          if (FD_ISSET(fd_ptr->fd, &sockset)) {
-            /* Got a connection, now accept it. */
+#else
+      int cnt;
+
+      errno = 0;
+      if ((status = poll(pfds, nfds, -1)) < 0) {
+         berrno be;                   /* capture errno */
+         if (errno == EINTR) {
+            continue;
+         }
+         Emsg1(M_FATAL, 0, _("Error in poll: %s\n"), be.bstrerror());
+         break;
+      }
+
+      cnt = 0;
+      foreach_dlist(fd_ptr, &sockfds) {
+         if (pfds[cnt++].revents & POLLIN) {
+#endif
+            /*
+             * Got a connection, now accept it.
+             */
             do {
                clilen = sizeof(cli_addr);
                newsockfd = accept(fd_ptr->fd, &cli_addr, &clilen);
@@ -219,7 +279,9 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
                      be.bstrerror());
             }
 
-            /* see who client is. i.e. who connected to us. */
+            /*
+             * See who client is. i.e. who connected to us.
+             */
             P(mutex);
             sockaddr_to_ascii(&cli_addr, buf, sizeof(buf));
             V(mutex);
@@ -229,10 +291,12 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
                Jmsg0(NULL, M_ABORT, 0, _("Could not create client BSOCK.\n"));
             }
 
-            /* Queue client to be served */
-            if ((stat = workq_add(client_wq, (void *)bs, NULL, 0)) != 0) {
+            /*
+             * Queue client to be served
+             */
+            if ((status = workq_add(client_wq, (void *)bs, NULL, 0)) != 0) {
                berrno be;
-               be.set_errno(stat);
+               be.set_errno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to client queue: ERR=%s\n"),
                      be.bstrerror());
             }
@@ -240,16 +304,20 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
       }
    }
 
-   /* Cleanup open files and pointers to them */
+   /*
+    * Cleanup open files and pointers to them
+    */
    while ((fd_ptr = (s_sockfd *)sockfds.first())) {
       close(fd_ptr->fd);
       sockfds.remove(fd_ptr);     /* don't free() item it is on stack */
    }
 
-   /* Stop work queue thread */
-   if ((stat = workq_destroy(client_wq)) != 0) {
+   /*
+    * Stop work queue thread
+    */
+   if ((status = workq_destroy(client_wq)) != 0) {
       berrno be;
-      be.set_errno(stat);
+      be.set_errno(status);
       Emsg1(M_FATAL, 0, _("Could not destroy client queue: ERR=%s\n"),
             be.bstrerror());
    }

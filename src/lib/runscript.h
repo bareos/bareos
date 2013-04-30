@@ -28,7 +28,6 @@
 /*
  * Bacula RUNSCRIPT Structure definition for FileDaemon and Director
  * Eric Bollengier May 2006
- * Version $Id$
  */
  
 
@@ -80,8 +79,6 @@ public:
    bool on_success;             /* execute command on job success (After) */
    bool on_failure;             /* execute command on job failure (After) */
    bool fail_on_error;         /* abort job on error (Before) */
-   /* TODO : drop this with bacula 1.42 */
-   bool old_proto;              /* used by old 1.3X protocol */
    job_code_callback_t job_code_callback;
                                 /* Optional callback function passed to edit_job_code */
    alist *commands;             /* Use during parsing */

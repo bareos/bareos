@@ -76,7 +76,7 @@ public:
    enum BYTES_CONVERSION {
       BYTES_CONVERSION_NONE,
       BYTES_CONVERSION_IEC,
-      BYTES_CONVERSION_SI,
+      BYTES_CONVERSION_SI
    };
 
 public:

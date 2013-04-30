@@ -66,7 +66,7 @@ int display_drive(char *drive, bool display_local, int verbose)
 
    if (drivetype(drive, dt, sizeof(dt))) {
       if (display_local) {      /* in local mode, display only harddrive */
-         if (strcmp(dt, "fixed") == 0) {
+         if (bstrcmp(dt, "fixed")) {
             printf("%s\n", drive);
          }
       } else if (verbose) {

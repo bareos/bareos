@@ -56,7 +56,7 @@ void do_verify_volume(JCR *jcr)
    uint32_t VolSessionId, VolSessionTime, file_index;
    uint32_t record_file_index;
    char digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
-   int type, stat;
+   int type, status;
 
    sd = jcr->store_bsock;
    if (!sd) {
@@ -68,7 +68,7 @@ void do_verify_volume(JCR *jcr)
    jcr->setJobStatus(JS_Running);
 
    LockRes();
-   CLIENT *client = (CLIENT *)GetNextRes(R_CLIENT, NULL);
+   CLIENTRES *client = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
    UnlockRes();
    uint32_t buf_size;
    if (client) {
@@ -188,21 +188,21 @@ void do_verify_volume(JCR *jcr)
          /* Send file attributes to Director */
          Dmsg2(200, "send ATTR inx=%d fname=%s\n", jcr->JobFiles, fname);
          if (type == FT_LNK || type == FT_LNKSAVED) {
-            stat = bnet_fsend(dir, "%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
-                          STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
-                          0, ap, 0, lname, 0);
+            status = bnet_fsend(dir, "%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
+                                STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
+                                0, ap, 0, lname, 0);
          /* for a deleted record, we set fileindex=0 */
          } else if (type == FT_DELETED)  {
-            stat = bnet_fsend(dir,"%d %d %s %s%c%s%c%c", 0,
-                          STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
-                          0, ap, 0, 0);
+            status = bnet_fsend(dir,"%d %d %s %s%c%s%c%c", 0,
+                                STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
+                                0, ap, 0, 0);
          } else {
-            stat = bnet_fsend(dir,"%d %d %s %s%c%s%c%c", jcr->JobFiles,
-                          STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
-                          0, ap, 0, 0);
+            status = bnet_fsend(dir,"%d %d %s %s%c%s%c%c", jcr->JobFiles,
+                                STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
+                                0, ap, 0, 0);
          }
          Dmsg2(200, "bfiled>bdird: attribs len=%d: msg=%s\n", dir->msglen, dir->msg);
-         if (!stat) {
+         if (!status) {
             Jmsg(jcr, M_FATAL, 0, _("Network error in send to Director: ERR=%s\n"), bnet_strerror(dir));
             goto bail_out;
          }

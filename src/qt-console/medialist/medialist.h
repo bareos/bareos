@@ -57,6 +57,8 @@ private slots:
    void deleteVolume();
    void purgeVolume();
    void pruneVolume();
+   void importVolume();
+   void exportVolume();
    void relabelVolume();
    void allVolumesFromPool();
    void allVolumes();
@@ -68,6 +70,7 @@ private:
    QString m_currentVolumeName;
    QString m_currentVolumeId;
    bool m_populated;
+   bool m_needs_repopulate;
    bool m_checkcurwidget;
    QTreeWidgetItem *m_topItem;
 };

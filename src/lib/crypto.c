@@ -517,10 +517,10 @@ bool crypto_keypair_has_key(const char *file) {
        * Due to OpenSSL limitations, we must specifically
        * list supported PEM private key encodings.
        */
-      if (strcmp(name, PEM_STRING_RSA) == 0
-            || strcmp(name, PEM_STRING_DSA) == 0
-            || strcmp(name, PEM_STRING_PKCS8) == 0
-            || strcmp(name, PEM_STRING_PKCS8INF) == 0) {
+      if (bstrcmp(name, PEM_STRING_RSA) ||
+          bstrcmp(name, PEM_STRING_DSA) ||
+          bstrcmp(name, PEM_STRING_PKCS8) ||
+          bstrcmp(name, PEM_STRING_PKCS8INF)) {
          retval = true;
          OPENSSL_free(name);
          break;
@@ -1384,12 +1384,12 @@ void crypto_cipher_free (CIPHER_CONTEXT *cipher_ctx)
  */
 int init_crypto (void)
 {
-   int stat;
+   int status;
 
-   if ((stat = openssl_init_threads()) != 0) {
+   if ((status = openssl_init_threads()) != 0) {
       berrno be;
       Jmsg1(NULL, M_ABORT, 0, 
-        _("Unable to init OpenSSL threading: ERR=%s\n"), be.bstrerror(stat));
+        _("Unable to init OpenSSL threading: ERR=%s\n"), be.bstrerror(status));
    }
 
    /* Load libssl and libcrypto human-readable error strings */
@@ -1405,9 +1405,19 @@ int init_crypto (void)
       Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to seed OpenSSL PRNG\n"));
    }
 
+#ifndef HAVE_SUN_OS /* FIXME: Until https://www.illumos.org/issues/1667 is solved. */
+   /*
+    * Load all the builtin engines.
+    */
+   ENGINE_load_builtin_engines();
+   ENGINE_register_all_complete();
+#else
+   ENGINE_load_pk11();
+#endif
+
    crypto_initialized = true;
 
-   return stat;
+   return status;
 }
 
 /*
@@ -1426,6 +1436,13 @@ int cleanup_crypto (void)
    if (!crypto_initialized) {
       return 0;
    }
+
+#ifndef HAVE_SUN_OS /* FIXME: Until https://www.illumos.org/issues/1667 is solved. */
+   /*
+    * Cleanup the builtin engines.
+    */
+   ENGINE_cleanup();
+#endif
 
    if (!openssl_save_prng()) {
       Jmsg0(NULL, M_ERROR, 0, _("Failed to save OpenSSL PRNG\n"));

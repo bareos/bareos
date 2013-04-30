@@ -45,22 +45,11 @@
 #define _LANGUAGE_C_PLUS_PLUS 1
 #endif
 
-#if defined(HAVE_WIN32)
-#if defined(HAVE_MINGW)
-#include "mingwconfig.h"
-#else
-#include "winconfig.h"
-#endif
-#else
-#include "config.h"
-#endif
-#define __CONFIG_H
-
+#include "hostconfig.h"
 
 #define _REENTRANT    1
 #define _THREAD_SAFE  1
 #define _POSIX_PTHREAD_SEMANTICS 1
-
 
 /* System includes */
 #if HAVE_STDINT_H
@@ -80,6 +69,9 @@
 #  undef _INCLUDE_POSIX1C_SOURCE
 #  endif
 #include <unistd.h>
+#endif
+#if HAVE_UMEM_H
+#include <umem.h>
 #endif
 #if HAVE_ALLOCA_H
 #include <alloca.h>
@@ -156,6 +148,7 @@ extern "C" {
 #include <openssl/err.h>
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
+#include <openssl/engine.h>
 #undef STORE
 #endif
 

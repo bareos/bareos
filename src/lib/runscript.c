@@ -70,7 +70,6 @@ void RUNSCRIPT::reset_default(bool free_strings)
    on_failure = false;
    fail_on_error = true;
    when = SCRIPT_Never;
-   old_proto = false;        /* TODO: drop this with bacula 1.42 */
    job_code_callback = NULL;
 }
 
@@ -183,7 +182,7 @@ int run_scripts(JCR *jcr, alist *runscripts, const char *label)
 
 bool RUNSCRIPT::is_local()
 {
-   if (!target || (strcmp(target, "") == 0)) {
+   if (!target || bstrcmp(target, "")) {
       return true;
    } else {
       return false;

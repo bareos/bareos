@@ -44,9 +44,7 @@
 #endif
 #include "findlib/find.h"
 
-
 /* Forward referenced commands */
-
 static int markcmd(UAContext *ua, TREE_CTX *tree);
 static int markdircmd(UAContext *ua, TREE_CTX *tree);
 static int countcmd(UAContext *ua, TREE_CTX *tree);
@@ -69,34 +67,38 @@ static int dot_lscmd(UAContext *ua, TREE_CTX *tree);
 static int dot_helpcmd(UAContext *ua, TREE_CTX *tree);
 static int dot_lsmarkcmd(UAContext *ua, TREE_CTX *tree);
 
-struct cmdstruct { const char *key; int (*func)(UAContext *ua, TREE_CTX *tree); const char *help; };
+struct cmdstruct {
+   const char *key;
+   int (*func)(UAContext *ua, TREE_CTX *tree);
+   const char *help;
+};
 static struct cmdstruct commands[] = {
- { NT_("add"),        markcmd,      _("add dir/file to be restored recursively, wildcards allowed")},
- { NT_("cd"),         cdcmd,        _("change current directory")},
- { NT_("count"),      countcmd,     _("count marked files in and below the cd")},
- { NT_("delete"),     unmarkcmd,    _("delete dir/file to be restored recursively in dir")},
- { NT_("dir"),        dircmd,       _("long list current directory, wildcards allowed")},
- { NT_(".dir"),       dot_dircmd,   _("long list current directory, wildcards allowed")},
- { NT_("done"),       donecmd,      _("leave file selection mode")},
- { NT_("estimate"),   estimatecmd,  _("estimate restore size")},
- { NT_("exit"),       donecmd,      _("same as done command")},
- { NT_("find"),       findcmd,      _("find files, wildcards allowed")},
- { NT_("help"),       helpcmd,      _("print help")},
- { NT_("ls"),         lscmd,        _("list current directory, wildcards allowed")},
- { NT_(".ls"),        dot_lscmd,    _("list current directory, wildcards allowed")},
- { NT_(".lsdir"),     dot_lsdircmd, _("list subdir in current directory, wildcards allowed")},
- { NT_("lsmark"),     lsmarkcmd,    _("list the marked files in and below the cd")},
- { NT_(".lsmark"),    dot_lsmarkcmd,_("list the marked files in")},
- { NT_("mark"),       markcmd,      _("mark dir/file to be restored recursively, wildcards allowed")},
- { NT_("markdir"),    markdircmd,   _("mark directory name to be restored (no files)")},
- { NT_("pwd"),        pwdcmd,       _("print current working directory")},
- { NT_(".pwd"),       dot_pwdcmd,   _("print current working directory")},
- { NT_("unmark"),     unmarkcmd,    _("unmark dir/file to be restored recursively in dir")},
- { NT_("unmarkdir"),  unmarkdircmd, _("unmark directory name only no recursion")},
- { NT_("quit"),       quitcmd,      _("quit and do not do restore")},
- { NT_(".help"),      dot_helpcmd,  _("print help")},
- { NT_("?"),          helpcmd,      _("print help")},
-             };
+   { NT_("add"), markcmd, _("add dir/file to be restored recursively, wildcards allowed") },
+   { NT_("cd"), cdcmd, _("change current directory") },
+   { NT_("count"), countcmd, _("count marked files in and below the cd") },
+   { NT_("delete"), unmarkcmd, _("delete dir/file to be restored recursively in dir") },
+   { NT_("dir"), dircmd, _("long list current directory, wildcards allowed") },
+   { NT_(".dir"), dot_dircmd, _("long list current directory, wildcards allowed") },
+   { NT_("done"), donecmd, _("leave file selection mode") },
+   { NT_("estimate"), estimatecmd, _("estimate restore size") },
+   { NT_("exit"), donecmd, _("same as done command") },
+   { NT_("find"), findcmd, _("find files, wildcards allowed") },
+   { NT_("help"), helpcmd, _("print help") },
+   { NT_("ls"), lscmd, _("list current directory, wildcards allowed") },
+   { NT_(".ls"), dot_lscmd, _("list current directory, wildcards allowed") },
+   { NT_(".lsdir"), dot_lsdircmd, _("list subdir in current directory, wildcards allowed") },
+   { NT_("lsmark"), lsmarkcmd, _("list the marked files in and below the cd") },
+   { NT_(".lsmark"), dot_lsmarkcmd,_("list the marked files in") },
+   { NT_("mark"), markcmd, _("mark dir/file to be restored recursively, wildcards allowed") },
+   { NT_("markdir"), markdircmd, _("mark directory name to be restored (no files)") },
+   { NT_("pwd"), pwdcmd, _("print current working directory") },
+   { NT_(".pwd"), dot_pwdcmd, _("print current working directory") },
+   { NT_("unmark"), unmarkcmd, _("unmark dir/file to be restored recursively in dir") },
+   { NT_("unmarkdir"), unmarkdircmd, _("unmark directory name only no recursion") },
+   { NT_("quit"), quitcmd, _("quit and do not do restore") },
+   { NT_(".help"), dot_helpcmd, _("print help") },
+   { NT_("?"), helpcmd, _("print help") },
+};
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
 
 /*
@@ -107,7 +109,8 @@ static struct cmdstruct commands[] = {
 bool user_select_files_from_tree(TREE_CTX *tree)
 {
    char cwd[2000];
-   bool stat;
+   bool status;
+
    /* Get a new context so we don't destroy restore command args */
    UAContext *ua = new_ua_context(tree->ua->jcr);
    ua->UA_sock = tree->ua->UA_sock;   /* patch in UA socket */
@@ -142,10 +145,10 @@ bool user_select_files_from_tree(TREE_CTX *tree)
 
       len = strlen(ua->argk[0]);
       found = 0;
-      stat = false;
+      status = false;
       for (i=0; i<comsize; i++)       /* search for command */
-         if (strncasecmp(ua->argk[0],  commands[i].key, len) == 0) {
-            stat = (*commands[i].func)(ua, tree);   /* go execute command */
+         if (bstrncasecmp(ua->argk[0],  commands[i].key, len)) {
+            status = (*commands[i].func)(ua, tree);   /* go execute command */
             found = 1;
             break;
          }
@@ -159,18 +162,17 @@ bool user_select_files_from_tree(TREE_CTX *tree)
          continue;
       }
       if (ua->api) user->signal(BNET_CMD_OK);
-      if (!stat) {
+      if (!status) {
          break;
       }
    }
    if (ua->api) user->signal(BNET_END_RTREE);
    ua->UA_sock = NULL;                /* don't release restore socket */
-   stat = !ua->quit;
+   status = !ua->quit;
    ua->quit = false;
    free_ua_context(ua);               /* get rid of temp UA context */
-   return stat;
+   return status;
 }
-
 
 /*
  * This callback routine is responsible for inserting the
@@ -193,6 +195,8 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
    int FileIndex;
    int32_t delta_seq;
    JobId_t JobId;
+   HL_ENTRY *entry = NULL;
+   int32_t LinkFI;
 
    Dmsg4(150, "Path=%s%s FI=%s JobId=%s\n", row[0], row[1],
          row[2], row[3]);
@@ -205,13 +209,14 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
    } else {
       type = TN_FILE;
    }
-   hard_link = (decode_LinkFI(row[4], &statp, sizeof(statp)) != 0);
+   decode_stat(row[4], &statp, sizeof(statp), &LinkFI);
+   hard_link = (LinkFI != 0);
    node = insert_tree_node(row[0], row[1], type, tree->root, NULL);
    JobId = str_to_int64(row[3]);
    FileIndex = str_to_int64(row[2]);
    delta_seq = str_to_int64(row[5]);
-   Dmsg5(150, "node=0x%p JobId=%s FileIndex=%s Delta=%s node.delta=%d\n",
-         node, row[3], row[2], row[5], node->delta_seq);
+   Dmsg6(150, "node=0x%p JobId=%s FileIndex=%s Delta=%s node.delta=%d LinkFI=%d\n",
+         node, row[3], row[2], row[5], node->delta_seq, LinkFI);
 
    /* TODO: check with hardlinks */
    if (delta_seq > 0) {
@@ -227,7 +232,7 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
             tree->ua->warning_msg(_("Something is wrong with the Delta sequence of %s, "
                                     "skiping new parts. Current sequence is %d\n"),
                                   row[1], node->delta_seq);
-            
+
             Dmsg3(0, "Something is wrong with Delta, skip it "
                   "fname=%s d1=%d d2=%d\n", row[1], node->delta_seq, delta_seq);
          }
@@ -265,7 +270,44 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
             node->extract_dir = true;   /* if dir, extract it */
          }
       }
+
+      /*
+       * Insert file having hardlinks into hardlink hashtable.
+       */
+      if (statp.st_nlink > 1 && type != TN_DIR && type != TN_DIR_NLS) {
+         if (!LinkFI) {
+            /*
+             * First occurence - file hardlinked to
+             */
+            entry = (HL_ENTRY *)tree->root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+            entry->key = (((uint64_t) JobId) << 32) + FileIndex;
+            entry->node = node;
+            tree->root->hardlinks.insert(entry->key, entry);
+         } else {
+            /*
+             * See if we are optimizing for speed or size.
+             */
+            if (!director->optimize_for_size && director->optimize_for_speed) {
+               /*
+                * Hardlink to known file index: lookup original file
+                */
+               uint64_t file_key = (((uint64_t) JobId) << 32) + LinkFI;
+               HL_ENTRY *first_hl = (HL_ENTRY *) tree->root->hardlinks.lookup(file_key);
+
+               if (first_hl && first_hl->node) {
+                  /*
+                   * Then add hardlink entry to linked node.
+                   */
+                  entry = (HL_ENTRY *)tree->root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+                  entry->key = (((uint64_t) JobId) << 32) + FileIndex;
+                  entry->node = first_hl->node;
+                  tree->root->hardlinks.insert(entry->key, entry);
+               }
+            }
+         }
+      }
    }
+
    if (node->inserted) {
       tree->FileCount++;
       if (tree->DeltaCount > 0 && (tree->FileCount-tree->LastCount) > tree->DeltaCount) {
@@ -273,10 +315,10 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
          tree->LastCount = tree->FileCount;
       }
    }
+
    tree->cnt++;
    return 0;
 }
-
 
 /*
  * Set extract to value passed. We recursively walk
@@ -286,23 +328,28 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
 static int set_extract(UAContext *ua, TREE_NODE *node, TREE_CTX *tree, bool extract)
 {
    TREE_NODE *n;
-   FILE_DBR fdbr;
-   struct stat statp;
    int count = 0;
 
    node->extract = extract;
    if (node->type == TN_DIR || node->type == TN_DIR_NLS) {
       node->extract_dir = extract;    /* set/clear dir too */
    }
+
    if (node->type != TN_NEWDIR) {
       count++;
    }
-   /* For a non-file (i.e. directory), we see all the children */
+
+   /*
+    * For a non-file (i.e. directory), we see all the children
+    */
    if (node->type != TN_FILE || (node->soft_link && tree_node_has_child(node))) {
-      /* Recursive set children within directory */
+      /*
+       * Recursive set children within directory
+       */
       foreach_child(n, node) {
          count += set_extract(ua, n, tree, extract);
       }
+
       /*
        * Walk up tree marking any unextracted parent to be
        * extracted.
@@ -313,37 +360,56 @@ static int set_extract(UAContext *ua, TREE_NODE *node, TREE_CTX *tree, bool extr
             node->extract_dir = true;
          }
       }
-   } else if (extract) {
-      char cwd[2000];
-      /*
-       * Ordinary file, we get the full path, look up the
-       * attributes, decode them, and if we are hard linked to
-       * a file that was saved, we must load that file too.
-       */
-      tree_getpath(node, cwd, sizeof(cwd));
-      fdbr.FileId = 0;
-      fdbr.JobId = node->JobId;
-      if (node->hard_link && db_get_file_attributes_record(ua->jcr, ua->db, cwd, NULL, &fdbr)) {
-         int32_t LinkFI;
-         decode_stat(fdbr.LStat, &statp, sizeof(statp), &LinkFI); /* decode stat pkt */
+   } else {
+      if (extract) {
+         uint64_t key = 0;
+         bool is_hardlinked = false;
+
          /*
-          * If we point to a hard linked file, traverse the tree to
-          * find that file, and mark it to be restored as well. It
-          * must have the Link we just obtained and the same JobId.
+          * See if we are optimizing for speed or size.
           */
-         if (LinkFI) {
-            for (n=first_tree_node(tree->root); n; n=next_tree_node(n)) {
-               if (n->FileIndex == LinkFI && n->JobId == node->JobId) {
-                  n->extract = true;
-                  if (n->type == TN_DIR || n->type == TN_DIR_NLS) {
-                     n->extract_dir = true;
-                  }
-                  break;
-               }
+         if (!director->optimize_for_size && director->optimize_for_speed) {
+            if (node->hard_link) {
+               key = (((uint64_t) node->JobId) << 32) + node->FileIndex;  /* every hardlink is in hashtable, and it points to linked file */
+               is_hardlinked = true;
+            }
+         } else {
+            FILE_DBR fdbr;
+            char cwd[2000];
+            /*
+             * Ordinary file, we get the full path, look up the
+             * attributes, decode them, and if we are hard linked to
+             * a file that was saved, we must load that file too.
+             */
+            tree_getpath(node, cwd, sizeof(cwd));
+            fdbr.FileId = 0;
+            fdbr.JobId = node->JobId;
+
+            if (node->hard_link && db_get_file_attributes_record(ua->jcr, ua->db, cwd, NULL, &fdbr)) {
+               int32_t LinkFI;
+               struct stat statp;
+
+               decode_stat(fdbr.LStat, &statp, sizeof(statp), &LinkFI); /* decode stat pkt */
+               key = (((uint64_t) node->JobId) << 32) + LinkFI;  /* lookup by linked file's fileindex */
+               is_hardlinked = true;
+            }
+         }
+
+         if (is_hardlinked) {
+            /*
+             * If we point to a hard linked file, find that file in hardlinks hashmap,
+             * and mark it to be restored as well.
+             */
+            HL_ENTRY *entry = (HL_ENTRY *) tree->root->hardlinks.lookup(key);
+            if (entry && entry->node) {
+               n = entry->node;
+               n->extract = true;
+               n->extract_dir = (n->type == TN_DIR || n->type == TN_DIR_NLS);
             }
          }
       }
    }
+
    return count;
 }
 
@@ -488,7 +554,7 @@ static int dot_lsdircmd(UAContext *ua, TREE_CTX *tree)
          }
       }
    }
- 
+
    return 1;
 }
 
@@ -516,7 +582,7 @@ static int dot_lscmd(UAContext *ua, TREE_CTX *tree)
          ua->send_msg("%s%s\n", node->fname, tree_node_has_child(node)?"/":"");
       }
    }
- 
+
    return 1;
 }
 
@@ -608,8 +674,8 @@ static int lsmarkcmd(UAContext *ua, TREE_CTX *tree)
 /*
  * This is actually the long form used for "dir"
  */
-static void ls_output(guid_list *guid, char *buf, const char *fname, const char *tag, 
-                      struct stat *statp, bool dot_cmd) 
+static void ls_output(guid_list *guid, char *buf, const char *fname, const char *tag,
+                      struct stat *statp, bool dot_cmd)
 {
    char *p;
    const char *f;
@@ -623,7 +689,7 @@ static void ls_output(guid_list *guid, char *buf, const char *fname, const char 
       *p++ = ',';
       n = sprintf(p, "%d,", (uint32_t)statp->st_nlink);
       p += n;
-      n = sprintf(p, "%s,%s,", 
+      n = sprintf(p, "%s,%s,",
                   guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
                   guid->gid_to_name(statp->st_gid, en2, sizeof(en2)));
       p += n;
@@ -636,7 +702,7 @@ static void ls_output(guid_list *guid, char *buf, const char *fname, const char 
    } else {
       n = sprintf(p, "  %2d ", (uint32_t)statp->st_nlink);
       p += n;
-      n = sprintf(p, "%-8.8s %-8.8s", 
+      n = sprintf(p, "%-8.8s %-8.8s",
                   guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
                   guid->gid_to_name(statp->st_gid, en2, sizeof(en2)));
       p += n;

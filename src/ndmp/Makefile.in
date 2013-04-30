@@ -1,0 +1,209 @@
+#
+
+@MCOMMON@
+
+LIBTOOL_TAG = CC
+
+# Define library versions
+LIBBACNDMP_LT_RELEASE = @LIBBACNDMP_LT_RELEASE@
+
+srcdir =	.
+VPATH = 	.
+.PATH:		.
+
+# one up
+basedir = ..
+# top dir
+topdir = ../..
+# this dir relative to top dir
+thisdir = src/ndmp
+
+DEBUG = @DEBUG@
+SOCKLIBS = @SOCKLIBS@
+RPCGEN = rpcgen -C -M
+
+first_rule: all
+dummy:
+
+RPC_GEN_FILES = ndmp0.h ndmp0_xdr.c \
+                ndmp2.h ndmp2_xdr.c \
+                ndmp3.h ndmp3_xdr.c \
+                ndmp4.h ndmp4_xdr.c \
+                ndmp9.h ndmp9_xdr.c
+
+#
+# include files installed when using libtool
+#
+INCLUDE_FILES = ndmagents.h ndmlib.h ndmp_ammend.h ndmp_msg_buf.h ndmp_translate.h \
+		ndmp0_enum_strs.h ndmp0.h ndmp2_enum_strs.h ndmp2_translate.h ndmp2.h \
+		ndmp3_enum_strs.h ndmp3_translate.h ndmp3.h ndmp4_enum_strs.h \
+		ndmp4_translate.h ndmp4.h ndmp9_enum_strs.h ndmp9.h ndmprotocol.h \
+		scsiconst.h smc_priv.h smc_raw.h smc.h wraplib.h
+
+NDMP_PROTO_SRCS = ndmp_translate.c ndmp0_enum_strs.c ndmp0_pp.c ndmp0_xdr.c \
+                  ndmp0_xmt.c ndmp2_enum_strs.c ndmp2_pp.c ndmp2_translate.c \
+                  ndmp2_xdr.c ndmp2_xmt.c ndmp3_enum_strs.c ndmp3_pp.c ndmp3_translate.c \
+                  ndmp3_xdr.c ndmp3_xmt.c ndmp4_enum_strs.c ndmp4_pp.c ndmp4_translate.c \
+                  ndmp4_xdr.c ndmp4_xmt.c ndmp9_enum_strs.c ndmp9_xdr.c ndmp9_xmt.c ndmprotocol.c
+
+NDMP_LIB_SRCS = ndml_agent.c ndml_bstf.c ndml_chan.c ndml_config.c ndml_conn.c ndml_cstr.c \
+                ndml_fhdb.c ndml_fhh.c ndml_log.c ndml_md5.c ndml_media.c ndml_nmb.c \
+                ndml_scsi.c ndml_stzf.c ndml_util.c
+
+NDMP_AGENT_SRCS = ndma_comm_dispatch.c ndma_comm_job.c ndma_comm_session.c ndma_comm_subr.c \
+		  ndma_control.c ndma_cops_backreco.c ndma_cops_labels.c ndma_cops_query.c \
+		  ndma_cops_robot.c ndma_ctrl_calls.c ndma_ctrl_conn.c ndma_ctrl_media.c \
+		  ndma_ctrl_robot.c ndma_ctst_data.c ndma_ctst_mover.c ndma_ctst_subr.c \
+		  ndma_ctst_tape.c ndma_data_fh.c ndma_data_pfe.c ndma_data.c \
+		  ndma_image_stream.c ndma_listmgmt.c ndma_noti_calls.c \
+		  ndma_robot.c ndma_robot_simulator.c \
+		  ndma_tape.c ndma_tape_simulator.c
+
+NDMP_HELPER_SRCS = md5c.c ndmos.c smc_api.c smc_parse.c smc_pp.c wraplib.c
+
+NDMJOB_SRCS = ndmjob_args.c ndmjob_fhdb.c ndmjob_job.c ndmjob_main.c \
+	      ndmjob_main_util.c ndmjob_rules.c ndmjob_simulator.c ndmjr_none.c
+
+#
+# libbacndmp
+#
+LIBBACNDMP_SRCS = $(NDMP_PROTO_SRCS) $(NDMP_LIB_SRCS) $(NDMP_AGENT_SRCS) $(NDMP_HELPER_SRCS)
+LIBBACNDMP_OBJS = $(LIBBACNDMP_SRCS:.c=.o)
+LIBBACNDMP_LOBJS = $(LIBBACNDMP_SRCS:.c=.lo)
+
+NDMJOB_OBJS = $(NDMJOB_SRCS:.c=.lo)
+
+CFLAGS += -I. -I../lib -DNDMOS_OPTION_NO_TEST_AGENTS
+
+.SUFFIXES:	.c .cc .o .lo .ch .dvi .pdf .tex .view .w .1
+.PHONY:
+.DONTCARE:
+
+# inference rules
+.c.o:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CC) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+.c.lo:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CC) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+.cc.o:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+
+.cc.lo:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+
+#-------------------------------------------------------------------------
+all: Makefile libbacndmp$(DEFAULT_ARCHIVE_TYPE)
+	@echo "==== Make of lib is good ===="
+	@echo " "
+
+libbacndmp.a: $(RPC_GEN_FILES) $(LIBBACNDMP_OBJS)
+	@echo "Making $@ ..."
+	$(AR) rc  $@ $(LIBBACNDMP_OBJS)
+	$(RANLIB) $@
+
+libbacndmp.la: $(RPC_GEN_FILES) Makefile $(LIBBACNDMP_LOBJS)
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CC) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBACNDMP_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACNDMP_LT_RELEASE) $(SOCKLIBS)
+
+ndmjob: libbacndmp$(DEFAULT_ARCHIVE_TYPE) $(NDMJOB_OBJS)
+	@echo "Linking $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -o $@ $(NDMJOB_OBJS) -lbacndmp
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+install-ndmjob: ndmjob
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) ndmjob $(DESTDIR)$(sbindir)/ndmjob
+
+uninstall-ndmjob:
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/ndmjob
+
+install-includes:
+	$(MKDIR) $(DESTDIR)/$(includedir)/bacula/ndmp
+	for I in $(INCLUDE_FILES); do \
+	   $(INSTALL_DATA) $$I $(DESTDIR)$(includedir)/bacula/ndmp/`basename $$I`; \
+	done
+
+uninstall-includes:
+	for I in $(INCLUDE_FILES); do \
+	   $(RMF) $(DESTDIR)$(includedir)/bacula/ndmp/`basename $$I`; \
+	done
+
+libtool-install: all
+	$(MKDIR) $(DESTDIR)$(libdir)
+	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbacndmp.la $(DESTDIR)$(libdir)
+
+libtool-uninstall:
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/libbacndmp.la
+
+install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@
+
+uninstall: @LIBTOOL_UNINSTALL_TARGET@ @INCLUDE_UNINSTALL_TARGET@
+
+libtool-clean:
+	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
+	@$(RMF) *.la
+	@$(RMF) -r .libs _libs
+
+clean:	libtool-clean
+	@$(RMF) core a.out *.o *.bak *.tex *.pdf *~ *.intpro *.extpro 1 2 3
+	@$(RMF) $(RPC_GEN_FILES)
+	@$(RMF) ndmjob
+
+realclean: clean
+	@$(RMF) tags
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+ndmp0.h ndmp0_xdr.c: ndmp0.x
+	$(RPCGEN) ndmp0.x
+
+ndmp2.h ndmp2_xdr.c: ndmp2.x
+	$(RPCGEN) ndmp2.x
+
+ndmp3.h ndmp3_xdr.c: ndmp3.x
+	$(RPCGEN) ndmp3.x
+
+ndmp4.h ndmp4_xdr.c: ndmp4.x
+	$(RPCGEN) ndmp4.x
+
+ndmp9.h ndmp9_xdr.c: ndmp9.x
+	$(RPCGEN) ndmp9.x
+
+ndmos.lo: ndmos.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) \
+		-DNDMOS_CONST_PRODUCT_NAME='"Bacula NDMP"' \
+		-DNDMOS_CONST_VENDOR_NAME='"Planets Communications B.V."' \
+		-DNDMOS_CONST_NDMJOBLIB_REVISION='"bacula-$(LIBBACNDMP_LT_RELEASE)"' \
+		ndmos.c
+
+# Semi-automatic generation of dependencies:
+# # Use cc -M because X11 `makedepend' doesn't work on all systems
+# # and it also includes system headers.
+# # `semi'-automatic since dependencies are generated at distribution time.
+
+depend: $(RPC_GEN_FILES)
+	@$(MV) Makefile Makefile.bak
+	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
+	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@for src in $(LIBBACNDMP_SRCS) ; do \
+	   $(CC) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) -I$(srcdir) -I$(basedir) $$src >> Makefile; \
+        done
+	@if test -f Makefile ; then \
+	   $(RMF) Makefile.bak; \
+	else \
+	   $(MV) Makefile.bak Makefile; \
+	   echo " ======= Something went wrong with make depend. ======="; \
+	fi
+
+# -----------------------------------------------------------------------
+#  # DO NOT DELETE: nice dependency list follows

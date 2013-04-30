@@ -74,6 +74,35 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 /* For options FO_xxx values see src/fileopts.h */
 
+enum {
+   state_none,
+   state_options,
+   state_include,
+   state_error
+};
+
+typedef enum {
+   check_shadow_none,
+   check_shadow_local_warn,
+   check_shadow_local_remove,
+   check_shadow_global_warn,
+   check_shadow_global_remove
+} b_fileset_shadow_type;
+
+typedef enum {
+   size_match_none,
+   size_match_approx,
+   size_match_smaller,
+   size_match_greater,
+   size_match_range
+} b_sz_match_type;
+
+struct s_sz_matching {
+   b_sz_match_type type;
+   uint64_t begin_size;
+   uint64_t end_size;
+};
+
 struct s_included_file {
    struct s_included_file *next;
    uint32_t options;                  /* backup options */
@@ -81,6 +110,8 @@ struct s_included_file {
    int level;                         /* compression level */
    int len;                           /* length of fname */
    int pattern;                       /* set if wild card pattern */
+   struct s_sz_matching *size_match;  /* Perform size matching ? */
+   b_fileset_shadow_type shadow_type; /* Perform fileset shadowing check ? */
    char VerifyOpts[20];               /* Options for verify */
    char fname[1];
 };
@@ -99,19 +130,14 @@ struct s_excluded_file {
 #undef  MAX_FOPTS
 #define MAX_FOPTS 30
 
-enum {
-   state_none,
-   state_options,
-   state_include,
-   state_error
-};
-
 /* File options structure */
 struct findFOPTS {
    uint32_t flags;                    /* options in bits */
    uint32_t Compress_algo;            /* compression algorithm. 4 letters stored as an interger */
    int Compress_level;                /* compression level */
    int strip_path;                    /* strip path count */
+   struct s_sz_matching *size_match;  /* Perform size matching ? */
+   b_fileset_shadow_type shadow_type; /* Perform fileset shadowing check ? */
    char VerifyOpts[MAX_FOPTS];        /* verify options */
    char AccurateOpts[MAX_FOPTS];      /* accurate mode options */
    char BaseJobOpts[MAX_FOPTS];       /* basejob mode options */
@@ -206,6 +232,7 @@ struct FF_PKT {
    uint32_t Compress_algo;            /* compression algorithm. 4 letters stored as an interger */
    int Compress_level;                /* compression level */
    int strip_path;                    /* strip path count */
+   struct s_sz_matching *size_match;  /* Perform size matching ? */
    bool cmd_plugin;                   /* set if we have a command plugin */
    bool opt_plugin;                   /* set if we have an option plugin */
    alist fstypes;                     /* allowed file system types */
@@ -221,7 +248,8 @@ struct FF_PKT {
    struct HFSPLUS_INFO hfsinfo;       /* Finder Info and resource fork size */
 };
 
-
+#include "acl.h"
+#include "xattr.h"
 #include "protos.h"
 
 #endif /* __FILES_H */

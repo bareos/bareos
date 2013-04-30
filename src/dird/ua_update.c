@@ -42,6 +42,7 @@ static int update_volume(UAContext *ua);
 static bool update_pool(UAContext *ua);
 static bool update_job(UAContext *ua);
 static bool update_stats(UAContext *ua);
+static void update_slots(UAContext *ua);
 
 /*
  * Update a Pool Record in the database.
@@ -51,7 +52,7 @@ static bool update_stats(UAContext *ua);
  *         updates pool from Pool resource
  *    update media pool=<pool-name> volume=<volume-name>
  *         changes pool info for volume
- *    update slots [scan=...]
+ *    update slots[=..] [scan]
  *         updates autochanger slots
  *    update stats [days=...]
  *         updates long term statistics
@@ -66,7 +67,8 @@ int update_cmd(UAContext *ua, const char *cmd)
       NT_("slot"),   /* 4 */
       NT_("jobid"),  /* 5 */
       NT_("stats"),  /* 6 */
-      NULL};
+      NULL
+   };
 
    if (!open_client_db(ua)) {
       return 1;
@@ -131,12 +133,13 @@ static void update_volstatus(UAContext *ua, const char *val, MEDIA_DBR *mr)
       NT_("Recycle"),
       NT_("Read-Only"),
       NT_("Error"),
-      NULL};
+      NULL
+   };
    bool found = false;
    int i;
 
-   for (i=0; kw[i]; i++) {
-      if (strcasecmp(val, kw[i]) == 0) {
+   for (i = 0; kw[i]; i++) {
+      if (bstrcasecmp(val, kw[i])) {
          found = true;
          break;
       }
@@ -148,7 +151,7 @@ static void update_volstatus(UAContext *ua, const char *val, MEDIA_DBR *mr)
       bstrncpy(mr->VolStatus, kw[i], sizeof(mr->VolStatus));
       Mmsg(query, "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s",
          mr->VolStatus, edit_int64(mr->MediaId,ed1));
-      if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+      if (!db_sql_query(ua->db, query.c_str())) {
          ua->error_msg("%s", db_strerror(ua->db));
       } else {
          ua->info_msg(_("New Volume status is: %s\n"), mr->VolStatus);
@@ -160,13 +163,14 @@ static void update_volretention(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    char ed1[150], ed2[50];
    POOL_MEM query(PM_MESSAGE);
+
    if (!duration_to_utime(val, &mr->VolRetention)) {
       ua->error_msg(_("Invalid retention period specified: %s\n"), val);
       return;
    }
    Mmsg(query, "UPDATE Media SET VolRetention=%s WHERE MediaId=%s",
       edit_uint64(mr->VolRetention, ed1), edit_int64(mr->MediaId,ed2));
-   if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New retention period is: %s\n"),
@@ -185,7 +189,7 @@ static void update_voluseduration(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
    Mmsg(query, "UPDATE Media SET VolUseDuration=%s WHERE MediaId=%s",
       edit_uint64(mr->VolUseDuration, ed1), edit_int64(mr->MediaId,ed2));
-   if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New use duration is: %s\n"),
@@ -197,9 +201,10 @@ static void update_volmaxjobs(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    POOL_MEM query(PM_MESSAGE);
    char ed1[50];
+
    Mmsg(query, "UPDATE Media SET MaxVolJobs=%s WHERE MediaId=%s",
       val, edit_int64(mr->MediaId,ed1));
-   if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New max jobs is: %s\n"), val);
@@ -210,9 +215,10 @@ static void update_volmaxfiles(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    POOL_MEM query(PM_MESSAGE);
    char ed1[50];
+
    Mmsg(query, "UPDATE Media SET MaxVolFiles=%s WHERE MediaId=%s",
       val, edit_int64(mr->MediaId, ed1));
-   if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New max files is: %s\n"), val);
@@ -225,13 +231,13 @@ static void update_volmaxbytes(UAContext *ua, char *val, MEDIA_DBR *mr)
    char ed1[50], ed2[50];
    POOL_MEM query(PM_MESSAGE);
 
-   if (!size_to_uint64(val, strlen(val), &maxbytes)) {
+   if (!size_to_uint64(val, &maxbytes)) {
       ua->error_msg(_("Invalid max. bytes specification: %s\n"), val);
       return;
    }
    Mmsg(query, "UPDATE Media SET MaxVolBytes=%s WHERE MediaId=%s",
       edit_uint64(maxbytes, ed1), edit_int64(mr->MediaId, ed2));
-   if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New Max bytes is: %s\n"), edit_uint64(maxbytes, ed1));
@@ -250,7 +256,7 @@ static void update_volrecycle(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
    Mmsg(query, "UPDATE Media SET Recycle=%d WHERE MediaId=%s",
       recycle, edit_int64(mr->MediaId, ed1));
-   if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New Recycle flag is: %s\n"),
@@ -270,7 +276,7 @@ static void update_volinchanger(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
    Mmsg(query, "UPDATE Media SET InChanger=%d WHERE MediaId=%s",
       InChanger, edit_int64(mr->MediaId, ed1));
-   if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New InChanger flag is: %s\n"),
@@ -325,7 +331,7 @@ void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr)
    db_lock(ua->db);
    Mmsg(query, "UPDATE Media SET PoolId=%s WHERE MediaId=%s",
       edit_int64(mr->PoolId, ed1), edit_int64(mr->MediaId, ed2));
-   if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New Pool is: %s\n"), pr.Name);
@@ -348,7 +354,7 @@ void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
    POOL_MEM query(PM_MESSAGE);
    char ed1[50], ed2[50], *poolname;
 
-   if(val && *val) { /* update volume recyclepool="Scratch" */
+   if (val && *val) { /* update volume recyclepool="Scratch" */
      /* If a pool name is given, look up the PoolId */
      memset(&pr, 0, sizeof(pr));
      bstrncpy(pr.Name, val, sizeof(pr.Name));
@@ -368,7 +374,7 @@ void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
    db_lock(ua->db);
    Mmsg(query, "UPDATE Media SET RecyclePoolId=%s WHERE MediaId=%s",
       edit_int64(mr->RecyclePoolId, ed1), edit_int64(mr->MediaId, ed2));
-   if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+   if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New RecyclePool is: %s\n"), poolname);
@@ -437,7 +443,7 @@ static void update_all_vols(UAContext *ua)
       return;
    }
 
-   for (i=0; i<num_pools; i++) {
+   for (i = 0; i<num_pools; i++) {
       pr.PoolId = ids[i];
       if (!db_get_pool_record(ua->jcr, ua->db, &pr)) { /* ***FIXME*** use acl? */
          ua->warning_msg(_("Updating all pools, but skipped PoolId=%d. ERR=%s\n"), db_strerror(ua->db));
@@ -476,7 +482,7 @@ static void update_volenabled(UAContext *ua, char *val, MEDIA_DBR *mr)
 static void update_vol_actiononpurge(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    POOL_MEM ret;
-   if (strcasecmp(val, "truncate") == 0) {
+   if (bstrcasecmp(val, "truncate")) {
       mr->ActionOnPurge = ON_PURGE_TRUNCATE;
    } else {
       mr->ActionOnPurge = 0;
@@ -501,7 +507,7 @@ static void update_vol_actiononpurge(UAContext *ua, char *val, MEDIA_DBR *mr)
 static int update_volume(UAContext *ua)
 {
    MEDIA_DBR mr;
-   POOL *pool;
+   POOLRES *pool;
    POOL_DBR pr;
    POOLMEM *query;
    POOL_MEM ret;
@@ -510,26 +516,27 @@ static int update_volume(UAContext *ua)
    bool done = false;
    int i;
    const char *kw[] = {
-      NT_("VolStatus"),                /* 0 */
-      NT_("VolRetention"),             /* 1 */
-      NT_("VolUse"),                   /* 2 */
-      NT_("MaxVolJobs"),               /* 3 */
-      NT_("MaxVolFiles"),              /* 4 */
-      NT_("MaxVolBytes"),              /* 5 */
-      NT_("Recycle"),                  /* 6 */
-      NT_("InChanger"),                /* 7 */
-      NT_("Slot"),                     /* 8 */
-      NT_("Pool"),                     /* 9 */
-      NT_("FromPool"),                 /* 10 */
-      NT_("AllFromPool"),              /* 11 !!! see below !!! */
-      NT_("Enabled"),                  /* 12 */
-      NT_("RecyclePool"),              /* 13 */
-      NT_("ActionOnPurge"),            /* 14 */
-      NULL };
+      NT_("VolStatus"),     /* 0 */
+      NT_("VolRetention"),  /* 1 */
+      NT_("VolUse"),        /* 2 */
+      NT_("MaxVolJobs"),    /* 3 */
+      NT_("MaxVolFiles"),   /* 4 */
+      NT_("MaxVolBytes"),   /* 5 */
+      NT_("Recycle"),       /* 6 */
+      NT_("InChanger"),     /* 7 */
+      NT_("Slot"),          /* 8 */
+      NT_("Pool"),          /* 9 */
+      NT_("FromPool"),      /* 10 */
+      NT_("AllFromPool"),   /* 11 !!! see below !!! */
+      NT_("Enabled"),       /* 12 */
+      NT_("RecyclePool"),   /* 13 */
+      NT_("ActionOnPurge"), /* 14 */
+      NULL
+   };
 
-#define AllFromPool 11               /* keep this updated with above */
+#define AllFromPool 11 /* keep this updated with above */
 
-   for (i=0; kw[i]; i++) {
+   for (i = 0; kw[i]; i++) {
       int j;
       POOL_DBR pr;
 
@@ -642,7 +649,7 @@ static int update_volume(UAContext *ua)
          add_prompt(ua, NT_("Full"));
          add_prompt(ua, NT_("Used"));
          add_prompt(ua, NT_("Cleaning"));
-         if (strcmp(mr.VolStatus, NT_("Purged")) == 0) {
+         if (bstrcmp(mr.VolStatus, NT_("Purged"))) {
             add_prompt(ua, NT_("Recycle"));
          }
          add_prompt(ua, NT_("Read-Only"));
@@ -750,7 +757,7 @@ static int update_volume(UAContext *ua)
          query = get_pool_memory(PM_MESSAGE);
          Mmsg(query, "UPDATE Media SET VolFiles=%u WHERE MediaId=%s",
             VolFiles, edit_int64(mr.MediaId, ed1));
-         if (!db_sql_query(ua->db, query, NULL, NULL)) {
+         if (!db_sql_query(ua->db, query)) {
             ua->error_msg("%s", db_strerror(ua->db));
          } else {
             ua->info_msg(_("New Volume Files is: %u\n"), VolFiles);
@@ -791,11 +798,11 @@ static int update_volume(UAContext *ua)
          if (!get_cmd(ua, _("Enter new Enabled: "))) {
             return 0;
          }
-         if (strcasecmp(ua->cmd, "yes") == 0 || strcasecmp(ua->cmd, "true") == 0) {
+         if (bstrcasecmp(ua->cmd, "yes") || bstrcasecmp(ua->cmd, "true")) {
             mr.Enabled = 1;
-         } else if (strcasecmp(ua->cmd, "no") == 0 || strcasecmp(ua->cmd, "false") == 0) {
+         } else if (bstrcasecmp(ua->cmd, "no") || bstrcasecmp(ua->cmd, "false")) {
             mr.Enabled = 0;
-         } else if (strcasecmp(ua->cmd, "archived") == 0) { 
+         } else if (bstrcasecmp(ua->cmd, "archived")) { 
             mr.Enabled = 2;
          } else {
             mr.Enabled = atoi(ua->cmd);
@@ -861,7 +868,7 @@ static bool update_pool(UAContext *ua)
 {
    POOL_DBR  pr;
    int id;
-   POOL *pool;
+   POOLRES *pool;
    POOLMEM *query;
    char ed1[50];
 
@@ -926,7 +933,7 @@ static bool update_job(UAContext *ua)
       return false;
    }
 
-   for (i=0; kw[i]; i++) {
+   for (i = 0; kw[i]; i++) {
       int j;
       if ((j=find_arg_with_value(ua, kw[i])) >= 0) {
          switch (i) {
@@ -977,9 +984,366 @@ static bool update_job(UAContext *ua)
              jr.cEndTime,
              edit_uint64(jr.JobTDate, ed1), 
              edit_int64(jr.JobId, ed2));
-   if (!db_sql_query(ua->db, cmd.c_str(), NULL, NULL)) {
+   if (!db_sql_query(ua->db, cmd.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
       return false;
    }
    return true;
+}
+
+/*
+ * Update Slots corresponding to Volumes in autochanger
+ */
+static void update_slots(UAContext *ua)
+{
+   USTORERES store;
+   vol_list_t *vl;
+   dlist *vol_list = NULL;
+   MEDIA_DBR mr;
+   char *slot_list;
+   bool scan;
+   int max_slots;
+   int drive = -1;
+   int Enabled = 1;
+   bool have_enabled;
+   int i;
+
+   if (!open_client_db(ua)) {
+      return;
+   }
+   store.store = get_storage_resource(ua, true/*arg is storage*/);
+   if (!store.store) {
+      return;
+   }
+   pm_strcpy(store.store_source, _("command line"));
+   set_wstorage(ua->jcr, &store);
+
+   scan = find_arg(ua, NT_("scan")) >= 0;
+   if (scan) {
+      drive = get_storage_drive(ua, store.store);
+   }
+   if ((i=find_arg_with_value(ua, NT_("Enabled"))) >= 0) {
+      Enabled = get_enabled(ua, ua->argv[i]);
+      if (Enabled < 0) {
+         return;
+      }
+      have_enabled = true;
+   } else {
+      have_enabled = false;
+   }
+
+   max_slots = get_num_slots_from_SD(ua);
+   Dmsg1(100, "max_slots=%d\n", max_slots);
+   if (max_slots <= 0) {
+      ua->warning_msg(_("No slots in changer to scan.\n"));
+      return;
+   }
+
+   slot_list = (char *)malloc(nbytes_for_bits(max_slots));
+   clear_all_bits(max_slots, slot_list);
+   if (!get_user_slot_list(ua, slot_list, "slots", max_slots)) {
+      free(slot_list);
+      return;
+   }
+
+   vol_list = get_vol_list_from_SD(ua, store.store, false, scan);
+   if (!vol_list) {
+      ua->warning_msg(_("No Volumes found to update, or no barcodes.\n"));
+      goto bail_out;
+   }
+
+   /*
+    * First zap out any InChanger with StorageId=0
+    */
+   db_sql_query(ua->db, "UPDATE Media SET InChanger=0 WHERE StorageId=0");
+
+   /*
+    * Walk through the list updating the media records
+    */
+   foreach_dlist(vl, vol_list) {
+      if (vl->Slot > max_slots) {
+         ua->warning_msg(_("Slot %d greater than max %d ignored.\n"),
+            vl->Slot, max_slots);
+         continue;
+      }
+      /*
+       * Check if user wants us to look at this slot
+       */
+      if (!bit_is_set(vl->Slot - 1, slot_list)) {
+         Dmsg1(100, "Skipping slot=%d\n", vl->Slot);
+         continue;
+      }
+      /*
+       * If scanning, we read the label rather than the barcode
+       */
+      if (scan) {
+         if (vl->VolName) {
+            free(vl->VolName);
+            vl->VolName = NULL;
+         }
+         vl->VolName = get_volume_name_from_SD(ua, vl->Slot, drive);
+         Dmsg2(100, "Got Vol=%s from SD for Slot=%d\n", vl->VolName, vl->Slot);
+      }
+      clear_bit(vl->Slot - 1, slot_list); /* clear Slot */
+      set_storageid_in_mr(store.store, &mr);
+      mr.Slot = vl->Slot;
+      mr.InChanger = 1;
+      mr.MediaId = 0;                 /* Get by VolumeName */
+      if (vl->VolName) {
+         bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
+      } else {
+         mr.VolumeName[0] = 0;
+      }
+      set_storageid_in_mr(store.store, &mr);
+
+      Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+      db_lock(ua->db);
+      /*
+       * Set InChanger to zero for this Slot
+       */
+      db_make_inchanger_unique(ua->jcr, ua->db, &mr);
+      db_unlock(ua->db);
+      Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+
+      if (!vl->VolName) {
+         Dmsg1(100, "No VolName for Slot=%d setting InChanger to zero.\n", vl->Slot);
+         ua->info_msg(_("No VolName for Slot=%d InChanger set to zero.\n"), vl->Slot);
+         continue;
+      }
+
+      db_lock(ua->db);
+      Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+      if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+         Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+         /* If Slot, Inchanger, and StorageId have changed, update the Media record */
+         if (mr.Slot != vl->Slot || !mr.InChanger || mr.StorageId != store.store->StorageId) {
+            mr.Slot = vl->Slot;
+            mr.InChanger = 1;
+            if (have_enabled) {
+               mr.Enabled = Enabled;
+            }
+            set_storageid_in_mr(store.store, &mr);
+            if (!db_update_media_record(ua->jcr, ua->db, &mr)) {
+               ua->error_msg("%s", db_strerror(ua->db));
+            } else {
+               ua->info_msg(_(
+                 "Catalog record for Volume \"%s\" updated to reference slot %d.\n"),
+                 mr.VolumeName, mr.Slot);
+            }
+         } else {
+            ua->info_msg(_("Catalog record for Volume \"%s\" is up to date.\n"),
+               mr.VolumeName);
+         }
+      } else {
+         ua->warning_msg(_("Volume \"%s\" not found in catalog. Slot=%d InChanger set to zero.\n"),
+             mr.VolumeName, vl->Slot);
+      }
+      db_unlock(ua->db);
+   }
+
+   mr.clear();
+   mr.InChanger = 1;
+   set_storageid_in_mr(store.store, &mr);
+
+   /*
+    * Any slot not visited gets it Inchanger flag reset.
+    */
+   db_lock(ua->db);
+   for (i = 1; i <= max_slots; i++) {
+      if (bit_is_set(i - 1, slot_list)) {
+         /*
+          * Set InChanger to zero for this Slot
+          */
+         mr.Slot = i;
+         db_make_inchanger_unique(ua->jcr, ua->db, &mr);
+      }
+   }
+   db_unlock(ua->db);
+
+bail_out:
+   free_vol_list(vol_list);
+   free(slot_list);
+   close_sd_bsock(ua);
+
+   return;
+}
+
+/*
+ * Update Slots corresponding to Volumes in autochanger.
+ * We only update any new volume location of slots marked in
+ * the given slot_list. If you want to do funky stuff
+ * run an "update slots" with the options you want. This
+ * is a simple function which syncs the info from the
+ * vol_list to the database for each slot marked in
+ * the slot_list.
+ *
+ * The vol_list passed here needs to be from an "autochanger listall" cmd.
+ */
+void update_slots_from_vol_list(UAContext *ua, STORERES *store, dlist *vol_list, char *slot_list)
+{
+   vol_list_t *vl;
+   MEDIA_DBR mr;
+
+   if (!open_client_db(ua)) {
+      return;
+   }
+
+   /*
+    * Walk through the list updating the media records
+    */
+   foreach_dlist(vl, vol_list) {
+      /*
+       * We are only interested in normal slots.
+       */
+      switch (vl->Type) {
+      case slot_type_normal:
+         break;
+      default:
+         continue;
+      }
+
+      /*
+       * Only update entries of slots marked in the slot_list.
+       */
+      if (!bit_is_set(vl->Slot - 1, slot_list)) {
+         continue;
+      }
+
+      /*
+       * Set InChanger to zero for this Slot
+       */
+      mr.clear();
+      mr.Slot = vl->Slot;
+      mr.InChanger = 1;
+      mr.MediaId = 0;                 /* Get by VolumeName */
+      if (vl->VolName) {
+         bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
+      } else {
+         mr.VolumeName[0] = 0;
+      }
+      set_storageid_in_mr(store, &mr);
+
+      Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+      db_lock(ua->db);
+
+      /*
+       * Set InChanger to zero for this Slot
+       */
+      db_make_inchanger_unique(ua->jcr, ua->db, &mr);
+
+      db_unlock(ua->db);
+      Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+
+      /*
+       * See if there is anything in the slot.
+       */
+      switch (vl->Content) {
+      case slot_content_full:
+         if (!vl->VolName) {
+            Dmsg1(100, "No VolName for Slot=%d setting InChanger to zero.\n", vl->Slot);
+            continue;
+         }
+         break;
+      default:
+         continue;
+      }
+
+      /*
+       * There is something in the slot and it has a VolumeName so we can check
+       * the database and perform an update if needed.
+       */
+      db_lock(ua->db);
+      Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+      if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+         Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+         /* If Slot, Inchanger, and StorageId have changed, update the Media record */
+         if (mr.Slot != vl->Slot || !mr.InChanger || mr.StorageId != store->StorageId) {
+            mr.Slot = vl->Slot;
+            mr.InChanger = 1;
+            set_storageid_in_mr(store, &mr);
+            if (!db_update_media_record(ua->jcr, ua->db, &mr)) {
+               ua->error_msg("%s", db_strerror(ua->db));
+            }
+         }
+      } else {
+         ua->warning_msg(_("Volume \"%s\" not found in catalog. Slot=%d InChanger set to zero.\n"),
+                         mr.VolumeName, vl->Slot);
+      }
+      db_unlock(ua->db);
+   }
+   return;
+}
+
+/*
+ * Set the inchanger flag to zero for each slot marked in
+ * the given slot_list.
+ *
+ * The vol_list passed here needs to be from an "autochanger listall" cmd.
+ */
+void update_inchanger_for_export(UAContext *ua, STORERES *store, dlist *vol_list, char *slot_list)
+{
+   vol_list_t *vl;
+   MEDIA_DBR mr;
+
+   if (!open_client_db(ua)) {
+      return;
+   }
+
+   /*
+    * Walk through the list updating the media records
+    */
+   foreach_dlist(vl, vol_list) {
+      /*
+       * We are only interested in normal slots.
+       */
+      switch (vl->Type) {
+      case slot_type_normal:
+         break;
+      default:
+         continue;
+      }
+
+      /*
+       * Only update entries of slots marked in the slot_list.
+       */
+      if (!bit_is_set(vl->Slot - 1, slot_list)) {
+         continue;
+      }
+
+      /*
+       * Set InChanger to zero for this Slot
+       */
+      mr.clear();
+      mr.Slot = vl->Slot;
+      mr.InChanger = 1;
+      mr.MediaId = 0;                 /* Get by VolumeName */
+      if (vl->VolName) {
+         bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
+      } else {
+         mr.VolumeName[0] = 0;
+      }
+      set_storageid_in_mr(store, &mr);
+
+      Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+      db_lock(ua->db);
+
+      /*
+       * Set InChanger to zero for this Slot
+       */
+      db_make_inchanger_unique(ua->jcr, ua->db, &mr);
+
+      db_unlock(ua->db);
+      Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+   }
+   return;
 }

@@ -1088,3 +1088,55 @@ const char *update_counter_values[] = {
    /* Ingres */
    update_counter_values_default
 };
+
+static const char *get_quota_jobbytes_default =
+   "SELECT SUM(JobBytes) "
+   "FROM Job "
+   "WHERE ClientId = %s "
+   "AND JobId != %s "
+   "AND SchedTime > '%s'";
+
+const char *get_quota_jobbytes[] = {
+   /* Mysql */
+   get_quota_jobbytes_default,
+
+   /* Postgresql */
+   "SELECT SUM(JobBytes) "
+   "FROM Job "
+   "WHERE ClientId = %s "
+   "AND JobId != %s "
+   "AND SchedTime > TIMESTAMP '%s'",
+
+   /* SQLite3 */
+   get_quota_jobbytes_default,
+
+   /* Ingres */
+   get_quota_jobbytes_default
+};
+
+static const char *get_quota_jobbytes_nofailed_default =
+   "SELECT SUM(JobBytes) "
+   "FROM Job "
+   "WHERE ClientId = %s "
+   "AND Job.JobId != %s "
+   "AND SchedTime > '%s' "
+   "AND JobStatus NOT IN ('E','f','A')";
+
+const char *get_quota_jobbytes_nofailed[] = {
+   /* Mysql */
+   get_quota_jobbytes_nofailed_default,
+
+   /* Postgresql */
+   "SELECT SUM(JobBytes) "
+   "FROM Job "
+   "WHERE ClientId = %s "
+   "AND Job.JobId != %s "
+   "AND SchedTime > TIMESTAMP '%s' "
+   "AND JobStatus NOT IN ('E','f','A')",
+
+   /* SQLite3 */
+   get_quota_jobbytes_nofailed_default,
+
+   /* Ingres */
+   get_quota_jobbytes_nofailed_default
+};

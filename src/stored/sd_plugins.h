@@ -7,7 +7,7 @@
    many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation, which is 
+   License as published by the Free Software Foundation, which is
    listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
@@ -31,8 +31,8 @@
  * Kern Sibbald, October 2007
  *
  */
- 
-#ifndef __SD_PLUGINS_H 
+
+#ifndef __SD_PLUGINS_H
 #define __SD_PLUGINS_H
 
 #ifndef _BACULA_H
@@ -49,19 +49,9 @@
 #endif
 
 #include <sys/types.h>
-#ifndef __CONFIG_H
-#define __CONFIG_H
-#include "config.h"
-#endif
+#include "hostconfig.h"
 #include "bc_types.h"
 #include "lib/plugins.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-
 
 /****************************************************************************
  *                                                                          *
@@ -69,47 +59,67 @@ extern "C" {
  *                                                                          *
  ****************************************************************************/
 
-/* Bacula Variable Ids */
+/*
+ * Bacula Variable Ids (Read)
+ */
 typedef enum {
-  bsdVarJob       = 1,
-  bsdVarLevel     = 2,
-  bsdVarType      = 3,
-  bsdVarJobId     = 4,
-  bsdVarClient    = 5,
-  bsdVarNumVols   = 6,
-  bsdVarPool      = 7,
-  bsdVarStorage   = 8,
-  bsdVarCatalog   = 9,
+  bsdVarJob = 1,
+  bsdVarLevel = 2,
+  bsdVarType = 3,
+  bsdVarJobId = 4,
+  bsdVarClient = 5,
+  bsdVarNumVols = 6,
+  bsdVarPool = 7,
+  bsdVarStorage = 8,
+  bsdVarCatalog = 9,
   bsdVarMediaType = 10,
-  bsdVarJobName   = 11,
+  bsdVarJobName = 11,
   bsdVarJobStatus = 12,
-  bsdVarPriority  = 13,
+  bsdVarPriority = 13,
   bsdVarVolumeName = 14,
   bsdVarCatalogRes = 15,
-  bsdVarJobErrors  = 16,
-  bsdVarJobFiles   = 17,
+  bsdVarJobErrors = 16,
+  bsdVarJobFiles  = 17,
   bsdVarSDJobFiles = 18,
-  bsdVarSDErrors   = 19,
+  bsdVarSDErrors = 19,
   bsdVarFDJobStatus = 20,
   bsdVarSDJobStatus = 21
 } bsdrVariable;
 
+/*
+ * Bacula Variable Ids (Write)
+ */
 typedef enum {
-  bsdwVarJobReport  = 1,
+  bsdwVarJobReport = 1,
   bsdwVarVolumeName = 2,
-  bsdwVarPriority   = 3,
-  bsdwVarJobLevel   = 4
+  bsdwVarPriority = 3,
+  bsdwVarJobLevel = 4
 } bsdwVariable;
 
-
+/*
+ * Events that are passed to plugin
+ */
 typedef enum {
-  bsdEventJobStart       = 1,
-  bsdEventJobEnd         = 2,
-  bsdEventDeviceInit     = 3,
-  bsdEventDeviceOpen     = 4,
-  bsdEventDeviceTryOpen  = 5,
-  bsdEventDeviceClose    = 6
+  bsdEventJobStart = 1,
+  bsdEventJobEnd = 2,
+  bsdEventDeviceInit = 3,
+  bsdEventDeviceMount = 4,
+  bsdEventVolumeLoad = 5,
+  bsdEventDeviceTryOpen = 6,
+  bsdEventDeviceOpen = 7,
+  bsdEventLabelRead = 8,
+  bsdEventLabelVerified = 9,
+  bsdEventLabelWrite = 10,
+  bsdEventDeviceClose = 11,
+  bsdEventVolumeUnload = 12,
+  bsdEventDeviceUnmount = 13,
+  bsdEventReadError = 14,
+  bsdEventWriteError = 15,
+  bsdEventDriveStatus = 16,
+  bsdEventVolumeStatus = 17
 } bsdEventType;
+
+#define SD_NR_EVENTS bsdEventVolumeStatus /* keep this updated ! */
 
 typedef struct s_bsdEvent {
    uint32_t eventType;
@@ -117,31 +127,43 @@ typedef struct s_bsdEvent {
 
 typedef struct s_sdbaculaInfo {
    uint32_t size;
-   uint32_t version;  
+   uint32_t version;
 } bsdInfo;
 
-/* Bacula interface version and function pointers */
-typedef struct s_sdbaculaFuncs {  
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * Bacula interface version and function pointers
+ */
+typedef struct s_sdbaculaFuncs {
    uint32_t size;
    uint32_t version;
-   bRC (*registerBaculaEvents)(bpContext *ctx, ...);
+   bRC (*registerBaculaEvents)(bpContext *ctx, int nr_events, ...);
    bRC (*getBaculaValue)(bpContext *ctx, bsdrVariable var, void *value);
    bRC (*setBaculaValue)(bpContext *ctx, bsdwVariable var, void *value);
-   bRC (*JobMessage)(bpContext *ctx, const char *file, int line, 
-       int type, utime_t mtime, const char *fmt, ...);
+   bRC (*JobMessage)(bpContext *ctx, const char *file, int line,
+                     int type, utime_t mtime, const char *fmt, ...);
    bRC (*DebugMessage)(bpContext *ctx, const char *file, int line,
-       int level, const char *fmt, ...);
+                       int level, const char *fmt, ...);
    char *(*EditDeviceCodes)(DCR *dcr, char *omsg,
-       const char *imsg, const char *cmd);
+                            const char *imsg, const char *cmd);
+   char *(*LookupCryptoKey)(const char *VolumeName);
+   bool (*UpdateVolumeInfo)(DCR *dcr);
 } bsdFuncs;
 
-/* Bacula Subroutines */
+/*
+ * Bacula Core Routines -- not used within a plugin
+ */
+#ifdef STORAGE_DAEMON
 void load_sd_plugins(const char *plugin_dir);
+void unload_sd_plugins(void);
+int list_sd_plugins(POOL_MEM &msg);
 void new_plugins(JCR *jcr);
 void free_plugins(JCR *jcr);
 int generate_plugin_event(JCR *jcr, bsdEventType event, void *value=NULL);
-
-
+#endif
 
 /****************************************************************************
  *                                                                          *
@@ -154,25 +176,13 @@ typedef enum {
   psdVarDescription = 2
 } psdVariable;
 
-
-#define SD_PLUGIN_MAGIC     "*SDPluginData*" 
+#define SD_PLUGIN_MAGIC     "*SDPluginData*"
 #define SD_PLUGIN_INTERFACE_VERSION  1
 
-typedef struct s_sdpluginInfo {
-   uint32_t size;
-   uint32_t version;
-   const char *plugin_magic;
-   const char *plugin_license;
-   const char *plugin_author;
-   const char *plugin_date;
-   const char *plugin_version;
-   const char *plugin_description;
-} psdInfo;
-
-/* 
+/*
  * Functions that must be defined in every plugin
  */
-typedef struct s_sdpluginFuncs {  
+typedef struct s_sdpluginFuncs {
    uint32_t size;
    uint32_t version;
    bRC (*newPlugin)(bpContext *ctx);
@@ -183,7 +193,13 @@ typedef struct s_sdpluginFuncs {
 } psdFuncs;
 
 #define sdplug_func(plugin) ((psdFuncs *)(plugin->pfuncs))
-#define sdplug_info(plugin) ((psdInfo *)(plugin->pinfo))
+#define sdplug_info(plugin) ((genpInfo *)(plugin->pinfo))
+
+typedef struct s_sdbaculaDevStatTrigger {
+   DEVRES *device;
+   POOLMEM *status;
+   int status_length;
+} bsdDevStatTrig;
 
 #ifdef __cplusplus
 }

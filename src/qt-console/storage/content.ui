@@ -54,12 +54,9 @@
          </widget>
         </item>
         <item row="1" column="0" >
-         <widget class="QPushButton" name="pbMoveToTray" >
-          <property name="enabled" >
-           <bool>false</bool>
-          </property>
+         <widget class="QPushButton" name="pbExport" >
           <property name="text" >
-           <string>Move to tray</string>
+           <string>Export</string>
           </property>
           <property name="icon" >
            <iconset resource="../main.qrc" >:/images/extern.png</iconset>
@@ -67,12 +64,9 @@
          </widget>
         </item>
         <item row="1" column="1" >
-         <widget class="QPushButton" name="pbEmptyTray" >
-          <property name="enabled" >
-           <bool>false</bool>
-          </property>
+         <widget class="QPushButton" name="pbImport" >
           <property name="text" >
-           <string>Empty tray</string>
+           <string>Import</string>
           </property>
           <property name="icon" >
            <iconset resource="../main.qrc" >:/images/intern.png</iconset>
@@ -80,30 +74,62 @@
          </widget>
         </item>
         <item row="2" column="0" >
-         <widget class="QPushButton" name="pbMount" >
+         <widget class="QPushButton" name="pbMoveUp" >
           <property name="text" >
-           <string>Mount</string>
+           <string>Move Up</string>
+          </property>
+          <property name="icon" >
+           <iconset resource="../main.qrc" >:/images/go-up.png</iconset>
           </property>
          </widget>
         </item>
         <item row="2" column="1" >
-         <widget class="QPushButton" name="pbUnmount" >
+         <widget class="QPushButton" name="pbMoveDown" >
           <property name="text" >
-           <string>Unmount</string>
+           <string>Move Down</string>
+          </property>
+          <property name="icon" >
+           <iconset resource="../main.qrc" >:/images/go-down.png</iconset>
           </property>
          </widget>
         </item>
         <item row="3" column="0" >
-         <widget class="QPushButton" name="pbStatus" >
+         <widget class="QPushButton" name="pbMount" >
           <property name="text" >
-           <string>Status</string>
+           <string>Mount</string>
+          </property>
+          <property name="icon" >
+           <iconset resource="../main.qrc" >:/images/cartridge.png</iconset>
           </property>
          </widget>
         </item>
         <item row="3" column="1" >
+         <widget class="QPushButton" name="pbUnmount" >
+          <property name="text" >
+           <string>Unmount</string>
+          </property>
+          <property name="icon" >
+           <iconset resource="../main.qrc" >:/images/cartridge.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0" >
+         <widget class="QPushButton" name="pbStatus" >
+          <property name="text" >
+           <string>Status</string>
+          </property>
+          <property name="icon" >
+           <iconset resource="../main.qrc" >:/images/status-console.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1" >
          <widget class="QPushButton" name="pbRelease" >
           <property name="text" >
            <string>Release</string>
+          </property>
+          <property name="icon" >
+           <iconset resource="../main.qrc" >:/images/cartridge.png</iconset>
           </property>
          </widget>
         </item>

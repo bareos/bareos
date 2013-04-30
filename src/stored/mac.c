@@ -37,18 +37,18 @@
 #include "stored.h"
 
 /* Import functions */
-extern char Job_end[];   
 
 /* Forward referenced subroutines */
 static bool record_cb(DCR *dcr, DEV_RECORD *rec);
 
+/* Responses sent to the Director */
+static char Job_end[] =
+   "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /*
- *  Read Data and send to File Daemon
- *   Returns: false on failure
- *            true  on success
+ * Read Data and commit to new job.
  */
-bool do_mac(JCR *jcr)
+bool do_mac_run(JCR *jcr)
 {
    bool ok = true;
    BSOCK *dir = jcr->dir_bsock;
@@ -73,7 +73,6 @@ bool do_mac(JCR *jcr)
       Type = "Unknown";
       break;
    }
-
 
    Dmsg0(20, "Start read data.\n");
 
@@ -152,9 +151,6 @@ ok_out:
             job_elapsed / 3600, job_elapsed % 3600 / 60, job_elapsed % 60,
             edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec1));
 
-      if (ok && dev->is_dvd()) {
-         ok = dvd_close_job(jcr->dcr);   /* do DVD cleanup if any */
-      }
       /* Release the device -- and send final Vol info to DIR */
       release_device(jcr->dcr);
 
@@ -179,7 +175,6 @@ ok_out:
    if (ok) {
       jcr->setJobStatus(JS_Terminated);
    }
-   generate_daemon_event(jcr, "JobEnd");
    generate_plugin_event(jcr, bsdEventJobEnd);
    dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
       edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
@@ -188,7 +183,7 @@ ok_out:
    dir->signal(BNET_EOD);             /* send EOD to Director daemon */
    free_plugins(jcr);                 /* release instantiated plugins */
 
-   return ok;
+   return false;                      /* Continue DIR session ? */
 }
 
 /*
@@ -270,7 +265,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    if (rec->FileIndex < 0) {
       return true;                    /* don't send LABELs to Dir */
    }
-   jcr->JobBytes += rec->data_len;   /* increment bytes this job */
+   jcr->JobBytes += rec->data_len;   /* increment bytes of this job */
    Dmsg5(500, "wrote_record JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
       jcr->JobId,
       FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,

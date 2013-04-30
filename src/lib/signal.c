@@ -133,7 +133,7 @@ static void dbg_print_bacula()
 extern "C" void signal_handler(int sig)
 {
    static int already_dead = 0;
-   int chld_status=-1;
+   int chld_status = -1;
 
    /* If we come back more than once, get out fast! */
    if (already_dead) {
@@ -197,9 +197,8 @@ extern "C" void signal_handler(int sig)
 
 #ifdef DEVELOPER /* When DEVELOPER not set, this is done below */
       /* print information about the current state into working/<file>.bactrace */
-      dbg_print_bacula();
+      dbg_print_bareos();
 #endif
-
 
       sprintf(pid_buf, "%d", (int)main_pid);
       Dmsg1(300, "Working=%s\n", working_directory);
@@ -243,9 +242,10 @@ extern "C" void signal_handler(int sig)
       if (WEXITSTATUS(chld_status) == 0) {
          fprintf(stderr, _("It looks like the traceback worked...\n"));
       } else {
-         fprintf(stderr, _("The btraceback call returned %d\n"), 
+         fprintf(stderr, _("The btraceback call returned %d\n"),
                            WEXITSTATUS(chld_status));
       }
+
       /* If we want it printed, do so */
 #ifdef direct_print
       if (prt_kaboom) {
@@ -272,7 +272,7 @@ extern "C" void signal_handler(int sig)
 
 #ifndef DEVELOPER /* When DEVELOPER set, this is done above */
       /* print information about the current state into working/<file>.bactrace */
-      dbg_print_bacula();
+      dbg_print_bareos();
 #endif
 
    }
@@ -313,7 +313,7 @@ void init_signals(void terminate(int sig))
    sig_names[SIGHUP]    = _("Hangup");
    sig_names[SIGINT]    = _("Interrupt");
    sig_names[SIGQUIT]   = _("Quit");
-   sig_names[SIGILL]    = _("Illegal instruction");;
+   sig_names[SIGILL]    = _("Illegal instruction");
    sig_names[SIGTRAP]   = _("Trace/Breakpoint trap");
    sig_names[SIGABRT]   = _("Abort");
 #ifdef SIGEMT

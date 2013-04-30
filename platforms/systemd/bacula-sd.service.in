@@ -23,6 +23,7 @@ After=var-run.mount nss-lookup.target network.target remote-fs.target syslog.tar
 Type=forking
 User=@sd_user@
 Group=@sd_group@
+WorkingDirectory=@working_dir@
 PIDFile=@piddir@/bacula-sd.@sd_port@.pid
 # EnvironmentFile=-/etc/sysconfig/bacula-sd
 StandardOutput=syslog

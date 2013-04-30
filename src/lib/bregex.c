@@ -60,8 +60,10 @@
    Switzerland, email:ftf@fsfeurope.org.
 */
 
-
 #include "bacula.h"
+
+#ifndef HAVE_REGEX_H
+
 #include "bregex.h"
 
 #define set_error(x) bufp->errmsg=((char *)(x))
@@ -1496,17 +1498,17 @@ void re_registers_to_regmatch(regexp_registers_t old_regs,
 int regexec(regex_t * preg, const char *string, size_t nmatch,
             regmatch_t pmatch[], int eflags)
 {
-   int stat;
+   int status;
    int len = strlen(string);
    struct re_registers regs;
-   stat = re_search(preg, (unsigned char *)string, len, 0, len, &regs);
-   if (stat >= 0) {
+   status = re_search(preg, (unsigned char *)string, len, 0, len, &regs);
+   if (status >= 0) {
       re_registers_to_regmatch(&regs, pmatch, nmatch);
    }
-   /* stat is the start position in the string base 0 where       
+   /* status is the start position in the string base 0 where
     *  the pattern was found or negative if not found.
     */
-   return stat < 0 ? -1 : 0;
+   return status < 0 ? -1 : 0;
 }
 
 size_t regerror(int errcode, regex_t * preg, char *errbuf, size_t errbuf_size)
@@ -2031,3 +2033,4 @@ int re_search(regex_t * bufp, unsigned char *str, int size, int pos,
 ** c-file-style: "python"
 ** End:
 */
+#endif /* HAVE_REGEX_H */

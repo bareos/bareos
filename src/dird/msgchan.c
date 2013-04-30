@@ -48,87 +48,42 @@
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Commands sent to Storage daemon */
-static char jobcmd[]     = "JobId=%s job=%s job_name=%s client_name=%s "
+static char jobcmd[] =
+   "JobId=%s job=%s job_name=%s client_name=%s "
    "type=%d level=%d FileSet=%s NoAttr=%d SpoolAttr=%d FileSetMD5=%s "
-   "SpoolData=%d WritePartAfterJob=%d PreferMountedVols=%d SpoolSize=%s "
-   "rerunning=%d VolSessionId=%d VolSessionTime=%d\n";
-static char use_storage[] = "use storage=%s media_type=%s pool_name=%s "
+   "SpoolData=%d PreferMountedVols=%d SpoolSize=%s "
+   "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%llu "
+   "Protocol=%d BackupFormat=%s DumpLevel=%d\n";
+static char use_storage[] =
+   "use storage=%s media_type=%s pool_name=%s "
    "pool_type=%s append=%d copy=%d stripe=%d\n";
-static char use_device[] = "use device=%s\n";
+static char use_device[] =
+   "use device=%s\n";
 //static char query_device[] = _("query device=%s");
 
 /* Response from Storage daemon */
-static char OKjob[]      = "3000 OK Job SDid=%d SDtime=%d Authorization=%100s\n";
-static char OK_device[]  = "3000 OK use device device=%s\n";
+static char OK_job[] =
+   "3000 OK Job SDid=%d SDtime=%d Authorization=%100s\n";
+static char OK_nextrun[] =
+   "3000 OK Job Authorization=%100s\n";
+static char OK_device[] =
+   "3000 OK use device device=%s\n";
 
 /* Storage Daemon requests */
-static char Job_start[]  = "3010 Job %127s start\n";
-static char Job_end[]    =
+static char Job_start[] =
+   "3010 Job %127s start\n";
+static char Job_end[] =
    "3099 Job %127s end JobStatus=%d JobFiles=%d JobBytes=%lld JobErrors=%u\n";
 
 /* Forward referenced functions */
 extern "C" void *msg_thread(void *arg);
 
 /*
- * Establish a message channel connection with the Storage daemon
- * and perform authentication.
- */
-bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
-                              int max_retry_time, int verbose)
-{
-   BSOCK *sd = new_bsock();
-   STORE *store;
-   utime_t heart_beat;    
-
-   if (jcr->store_bsock) {
-      return true;                    /* already connected */
-   }
-
-   /* If there is a write storage use it */
-   if (jcr->wstore) {
-      store = jcr->wstore;
-   } else {
-      store = jcr->rstore;
-   }
-
-   if (store->heartbeat_interval) {
-      heart_beat = store->heartbeat_interval;
-   } else {           
-      heart_beat = director->heartbeat_interval;
-   }
-
-   /*
-    *  Open message channel with the Storage daemon
-    */
-   Dmsg2(100, "bnet_connect to Storage daemon %s:%d\n", store->address,
-      store->SDport);
-   sd->set_source_address(director->DIRsrc_addr);
-   if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat, _("Storage daemon"),
-         store->address, NULL, store->SDport, verbose)) {
-      sd->destroy();
-      sd = NULL;
-   }
-
-   if (sd == NULL) {
-      return false;
-   }
-   sd->res = (RES *)store;        /* save pointer to other end */
-   jcr->store_bsock = sd;
-
-   if (!authenticate_storage_daemon(jcr, store)) {
-      sd->close();
-      jcr->store_bsock = NULL;
-      return false;
-   }
-   return true;
-}
-
-/*
  * Here we ask the SD to send us the info for a 
  *  particular device resource.
  */
 #ifdef xxx
-bool update_device_res(JCR *jcr, DEVICE *dev)
+bool update_device_res(JCR *jcr, DEVICERES *dev)
 {
    POOL_MEM device_name; 
    BSOCK *sd;
@@ -151,71 +106,121 @@ bool update_device_res(JCR *jcr, DEVICE *dev)
 static char OKbootstrap[] = "3000 OK bootstrap\n";
 
 /*
+ * Send bootstrap file to Storage daemon.
+ *  This is used for restore, verify VolumeToCatalog, migration,
+ *    and copy Jobs.
+ */
+static inline bool send_bootstrap_file_to_sd(JCR *jcr, BSOCK *sd)
+{
+   FILE *bs;
+   char buf[1000];
+   const char *bootstrap = "bootstrap\n";
+
+   Dmsg1(400, "send_bootstrap_file_to_sd: %s\n", jcr->RestoreBootstrap);
+   if (!jcr->RestoreBootstrap) {
+      return true;
+   }
+   bs = fopen(jcr->RestoreBootstrap, "rb");
+   if (!bs) {
+      berrno be;
+      Jmsg(jcr, M_FATAL, 0, _("Could not open bootstrap file %s: ERR=%s\n"),
+         jcr->RestoreBootstrap, be.bstrerror());
+      jcr->setJobStatus(JS_ErrorTerminated);
+      return false;
+   }
+   sd->fsend(bootstrap);
+   while (fgets(buf, sizeof(buf), bs)) {
+      sd->fsend("%s", buf);
+   }
+   sd->signal(BNET_EOD);
+   fclose(bs);
+   if (jcr->unlink_bsr) {
+      unlink(jcr->RestoreBootstrap);
+      jcr->unlink_bsr = false;
+   }
+   return true;
+}
+
+/*
  * Start a job with the Storage daemon
  */
 bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_bsr)
 {
    bool ok = true;
-   STORE *storage;
-   BSOCK *sd;
+   STORERES *storage;
    char auth_key[100];
-   POOL_MEM store_name, device_name, pool_name, pool_type, media_type;
+   POOL_MEM store_name, device_name, pool_name, pool_type, media_type, backup_format;
    POOL_MEM job_name, client_name, fileset_name;
    int copy = 0;
    int stripe = 0;
+   uint64_t remainingquota = 0;
    char ed1[30], ed2[30];
+   BSOCK *sd = jcr->store_bsock;
 
-   sd = jcr->store_bsock;
    /*
     * Now send JobId and permissions, and get back the authorization key.
     */
-   pm_strcpy(job_name, jcr->job->name());
+   pm_strcpy(job_name, jcr->res.job->name());
    bash_spaces(job_name);
-   pm_strcpy(client_name, jcr->client->name());
+   pm_strcpy(client_name, jcr->res.client->name());
    bash_spaces(client_name);
-   pm_strcpy(fileset_name, jcr->fileset->name());
+   pm_strcpy(fileset_name, jcr->res.fileset->name());
    bash_spaces(fileset_name);
-   if (jcr->fileset->MD5[0] == 0) {
-      bstrncpy(jcr->fileset->MD5, "**Dummy**", sizeof(jcr->fileset->MD5));
+   pm_strcpy(backup_format, jcr->backup_format);
+   bash_spaces(backup_format);
+
+   if (jcr->res.fileset->MD5[0] == 0) {
+      bstrncpy(jcr->res.fileset->MD5, "**Dummy**", sizeof(jcr->res.fileset->MD5));
    }
-   /* If rescheduling, cancel the previous incarnation of this job
-    *  with the SD, which might be waiting on the FD connection.
-    *  If we do not cancel it the SD will not accept a new connection
-    *  for the same jobid.
+
+   /*
+    * If rescheduling, cancel the previous incarnation of this job
+    * with the SD, which might be waiting on the FD connection.
+    * If we do not cancel it the SD will not accept a new connection
+    * for the same jobid.
     */
    if (jcr->reschedule_count) {
       sd->fsend("cancel Job=%s\n", jcr->Job);
-      while (sd->recv() >= 0)
-         { }
-   } 
+      while (sd->recv() >= 0) {
+         continue;
+      }
+   }
+
+   /*
+    * Retrieve available quota 0 bytes means dont perform the check
+    */
+   remainingquota = quota_fetch_remaining_quota(jcr);
+   Dmsg1(50,"Remainingquota: %llu\n", remainingquota);
+
    sd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, 
              job_name.c_str(), client_name.c_str(), 
              jcr->getJobType(), jcr->getJobLevel(),
-             fileset_name.c_str(), !jcr->pool->catalog_files,
-             jcr->job->SpoolAttributes, jcr->fileset->MD5, jcr->spool_data, 
-             jcr->write_part_after_job, jcr->job->PreferMountedVolumes,
-             edit_int64(jcr->spool_size, ed2), jcr->rerunning,
-             jcr->VolSessionId, jcr->VolSessionTime);
+             fileset_name.c_str(), !jcr->res.pool->catalog_files,
+             jcr->res.job->SpoolAttributes, jcr->res.fileset->MD5, jcr->spool_data, 
+             jcr->res.job->PreferMountedVolumes, edit_int64(jcr->spool_size, ed2),
+             jcr->rerunning, jcr->VolSessionId, jcr->VolSessionTime,
+             remainingquota, jcr->getJobProtocol(), backup_format.c_str(),
+             jcr->DumpLevel);
    Dmsg1(100, ">stored: %s", sd->msg);
    if (bget_dirmsg(sd) > 0) {
-       Dmsg1(100, "<stored: %s", sd->msg);
-       if (sscanf(sd->msg, OKjob, &jcr->VolSessionId,
-                  &jcr->VolSessionTime, &auth_key) != 3) {
-          Dmsg1(100, "BadJob=%s\n", sd->msg);
-          Jmsg(jcr, M_FATAL, 0, _("Storage daemon rejected Job command: %s\n"), sd->msg);
-          return false;
-       } else {
-          bfree_and_null(jcr->sd_auth_key);
-          jcr->sd_auth_key = bstrdup(auth_key);
-          Dmsg1(150, "sd_auth_key=%s\n", jcr->sd_auth_key);
-       }
+      Dmsg1(100, "<stored: %s", sd->msg);
+      if (sscanf(sd->msg, OK_job, &jcr->VolSessionId,
+                 &jcr->VolSessionTime, &auth_key) != 3) {
+         Dmsg1(100, "BadJob=%s\n", sd->msg);
+         Jmsg(jcr, M_FATAL, 0, _("Storage daemon rejected Job command: %s\n"), sd->msg);
+         return false;
+      } else {
+         bfree_and_null(jcr->sd_auth_key);
+         jcr->sd_auth_key = bstrdup(auth_key);
+         Dmsg1(150, "sd_auth_key=%s\n", jcr->sd_auth_key);
+      }
    } else {
       Jmsg(jcr, M_FATAL, 0, _("<stored: bad response to Job command: %s\n"),
          sd->bstrerror());
       return false;
    }
 
-   if (send_bsr && (!send_bootstrap_file(jcr, sd) ||
+   if (send_bsr && (!send_bootstrap_file_to_sd(jcr, sd) ||
        !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR))) {
       return false;
    }
@@ -233,12 +238,12 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
    if (ok && rstore) {
       /* For the moment, only migrate, copy and vbackup have rpool */
       if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY) ||
-           (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
-         pm_strcpy(pool_type, jcr->rpool->pool_type);
-         pm_strcpy(pool_name, jcr->rpool->name());
+         (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
+         pm_strcpy(pool_type, jcr->res.rpool->pool_type);
+         pm_strcpy(pool_name, jcr->res.rpool->name());
       } else {
-         pm_strcpy(pool_type, jcr->pool->pool_type);
-         pm_strcpy(pool_name, jcr->pool->name());
+         pm_strcpy(pool_type, jcr->res.pool->pool_type);
+         pm_strcpy(pool_name, jcr->res.pool->name());
       }
       bash_spaces(pool_type);
       bash_spaces(pool_name);
@@ -251,7 +256,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
          sd->fsend(use_storage, store_name.c_str(), media_type.c_str(), 
                    pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
          Dmsg1(100, "rstore >stored: %s", sd->msg);
-         DEVICE *dev;
+         DEVICERES *dev;
          /* Loop over alternative storage Devices until one is OK */
          foreach_alist(dev, storage->device) {
             pm_strcpy(device_name, dev->name());
@@ -276,8 +281,8 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
 
    /* Do write side of storage daemon */
    if (ok && wstore) {
-      pm_strcpy(pool_type, jcr->pool->pool_type);
-      pm_strcpy(pool_name, jcr->pool->name());
+      pm_strcpy(pool_type, jcr->res.pool->pool_type);
+      pm_strcpy(pool_name, jcr->res.pool->name());
       bash_spaces(pool_type);
       bash_spaces(pool_name);
       foreach_alist(storage, wstore) {
@@ -289,7 +294,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
                    pool_name.c_str(), pool_type.c_str(), 1, copy, stripe);
 
          Dmsg1(100, "wstore >stored: %s", sd->msg);
-         DEVICE *dev;
+         DEVICERES *dev;
          /* Loop over alternative storage Devices until one is OK */
          foreach_alist(dev, storage->device) {
             pm_strcpy(device_name, dev->name());
@@ -340,7 +345,7 @@ bool start_storage_daemon_message_thread(JCR *jcr)
    jcr->sd_msg_thread_done = false;
    jcr->SD_msg_chan = 0;
    Dmsg0(100, "Start SD msg_thread.\n");
-   if ((status=pthread_create(&thid, NULL, msg_thread, (void *)jcr)) != 0) {
+   if ((status = pthread_create(&thid, NULL, msg_thread, (void *)jcr)) != 0) {
       berrno be;
       Jmsg1(jcr, M_ABORT, 0, _("Cannot create message thread: %s\n"), be.bstrerror(status));
    }
@@ -358,11 +363,13 @@ bool start_storage_daemon_message_thread(JCR *jcr)
 extern "C" void msg_thread_cleanup(void *arg)
 {
    JCR *jcr = (JCR *)arg;
+
    db_end_transaction(jcr, jcr->db);        /* terminate any open transaction */
    jcr->lock();
    jcr->sd_msg_thread_done = true;
    jcr->SD_msg_chan = 0;
    jcr->unlock();
+   pthread_cond_broadcast(&jcr->nextrun_ready); /* wakeup any waiting threads */
    pthread_cond_broadcast(&jcr->term_wait); /* wakeup any waiting threads */
    Dmsg2(100, "=== End msg_thread. JobId=%d usecnt=%d\n", jcr->JobId, jcr->use_count());
    db_thread_cleanup(jcr->db);              /* remove thread specific data */
@@ -380,6 +387,7 @@ extern "C" void *msg_thread(void *arg)
    BSOCK *sd;
    int JobStatus;
    int n;
+   char auth_key[100];
    char Job[MAX_NAME_LENGTH];
    uint32_t JobFiles, JobErrors;
    uint64_t JobBytes;
@@ -390,15 +398,36 @@ extern "C" void *msg_thread(void *arg)
    pthread_cleanup_push(msg_thread_cleanup, arg);
    sd = jcr->store_bsock;
 
-   /* Read the Storage daemon's output.
+   /*
+    * Read the Storage daemon's output.
     */
    Dmsg0(100, "Start msg_thread loop\n");
    n = 0;
    while (!job_canceled(jcr) && (n=bget_dirmsg(sd)) >= 0) {
       Dmsg1(400, "<stored: %s", sd->msg);
+      /*
+       * Check for "3000 OK Job Authorization="
+       * Returned by a rerun cmd.
+       */
+      if (sscanf(sd->msg, OK_nextrun, &auth_key) == 1) {
+         if (jcr->sd_auth_key) {
+            free(jcr->sd_auth_key);
+         }
+         jcr->sd_auth_key = bstrdup(auth_key);
+         pthread_cond_broadcast(&jcr->nextrun_ready); /* wakeup any waiting threads */
+         continue;
+      }
+
+      /*
+       * Check for "3010 Job <jobid> start"
+       */
       if (sscanf(sd->msg, Job_start, Job) == 1) {
          continue;
       }
+
+      /*
+       * Check for "3099 Job <JobId> end JobStatus= JobFiles= JobBytes= JobErrors="
+       */
       if (sscanf(sd->msg, Job_end, Job, &JobStatus, &JobFiles,
                  &JobBytes, &JobErrors) == 5) {
          jcr->SDJobStatus = JobStatus; /* termination status */
@@ -455,43 +484,6 @@ void wait_for_storage_daemon_termination(JCR *jcr)
    jcr->setJobStatus(JS_Terminated);
 }
 
-/*
- * Send bootstrap file to Storage daemon.
- *  This is used for restore, verify VolumeToCatalog, migration,
- *    and copy Jobs.
- */
-bool send_bootstrap_file(JCR *jcr, BSOCK *sd)
-{
-   FILE *bs;
-   char buf[1000];
-   const char *bootstrap = "bootstrap\n";
-
-   Dmsg1(400, "send_bootstrap_file: %s\n", jcr->RestoreBootstrap);
-   if (!jcr->RestoreBootstrap) {
-      return true;
-   }
-   bs = fopen(jcr->RestoreBootstrap, "rb");
-   if (!bs) {
-      berrno be;
-      Jmsg(jcr, M_FATAL, 0, _("Could not open bootstrap file %s: ERR=%s\n"),
-         jcr->RestoreBootstrap, be.bstrerror());
-      jcr->setJobStatus(JS_ErrorTerminated);
-      return false;
-   }
-   sd->fsend(bootstrap);
-   while (fgets(buf, sizeof(buf), bs)) {
-      sd->fsend("%s", buf);
-   }
-   sd->signal(BNET_EOD);
-   fclose(bs);
-   if (jcr->unlink_bsr) {
-      unlink(jcr->RestoreBootstrap);
-      jcr->unlink_bsr = false;
-   }                         
-   return true;
-}
-
-
 #ifdef needed
 #define MAX_TRIES 30
 #define WAIT_TIME 2
@@ -499,8 +491,7 @@ extern "C" void *device_thread(void *arg)
 {
    int i;
    JCR *jcr;
-   DEVICE *dev;
-
+   DEVICERES *dev;
 
    pthread_detach(pthread_self());
    jcr = new_control_jcr("*DeviceInit*", JT_SYSTEM);
@@ -518,7 +509,7 @@ extern "C" void *device_thread(void *arg)
          }
       }
       UnlockRes();
-      bnet_close(jcr->store_bsock);
+      jcr->store_bsock->close();
       jcr->store_bsock = NULL;
       break;
 
@@ -537,7 +528,7 @@ void init_device_resources()
    pthread_t thid;
 
    Dmsg0(100, "Start Device thread.\n");
-   if ((status=pthread_create(&thid, NULL, device_thread, NULL)) != 0) {
+   if ((status = pthread_create(&thid, NULL, device_thread, NULL)) != 0) {
       berrno be;
       Jmsg1(NULL, M_ABORT, 0, _("Cannot create message thread: %s\n"), be.bstrerror(status));
    }

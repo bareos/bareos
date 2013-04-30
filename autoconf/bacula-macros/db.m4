@@ -21,7 +21,7 @@ AC_HELP_STRING([--with-dbi@<:@=DIR@:>@], [Include DBI support. DIR is the DBD ba
            else
               DBI_LIBDIR=/usr/lib
            fi
-           DBI_BINDIR=/usr/bin      
+           DBI_BINDIR=/usr/bin
         elif test -f $prefix/include/dbi/dbi.h; then
            DBI_INCDIR=$prefix/include
            if test -d $prefix/lib64; then
@@ -29,7 +29,7 @@ AC_HELP_STRING([--with-dbi@<:@=DIR@:>@], [Include DBI support. DIR is the DBD ba
            else
               DBI_LIBDIR=$prefix/lib
            fi
-           DBI_BINDIR=$prefix/bin      
+           DBI_BINDIR=$prefix/bin
         else
            AC_MSG_RESULT(no)
            AC_MSG_ERROR(Unable to find dbi.h in standard locations)
@@ -131,12 +131,12 @@ AC_HELP_STRING([--with-dbi@<:@=DIR@:>@], [Include DBI support. DIR is the DBD ba
      dnl -------------------------------------------
      if test "x$support_batch_insert" = "xyes"; then
          if test $DB_PROG = postgresql; then
-             AC_CHECK_LIB(pq, PQisthreadsafe, AC_DEFINE(HAVE_PQISTHREADSAFE))
-             AC_CHECK_LIB(pq, PQputCopyData, AC_DEFINE(HAVE_PQ_COPY))
+             AC_CHECK_LIB(pq, PQisthreadsafe, AC_DEFINE(HAVE_PQISTHREADSAFE, 1, [Define to 1 if you have the `PQisthreadsafe' function.]))
+             AC_CHECK_LIB(pq, PQputCopyData, AC_DEFINE(HAVE_PQ_COPY, 1, [Define to 1 if you have the `PQputCopyData' function.]))
              test "x$ac_cv_lib_pq_PQputCopyData" = "xyes"
              pkg=$?
              if test $pkg = 0; then
-                 AC_DEFINE(HAVE_DBI_BATCH_FILE_INSERT, 1, [Set if DBI DB batch insert code enabled])
+                 AC_DEFINE(HAVE_POSTGRESQL_BATCH_FILE_INSERT, 1, [Define to 1 if PostgreSQL DB batch insert code enabled])
              fi
          fi
      fi
@@ -150,7 +150,7 @@ AC_HELP_STRING([--with-dbi@<:@=DIR@:>@], [Include DBI support. DIR is the DBD ba
 AC_SUBST(DBI_LIBS)
 AC_SUBST(DBI_INCLUDE)
 AC_SUBST(DBI_BINDIR)
-AC_SUBST(DBI_DBD_DRIVERDIR)  
+AC_SUBST(DBI_DBD_DRIVERDIR)
 
 ])
 
@@ -176,7 +176,7 @@ AC_HELP_STRING([--with-dbi-driver@<:@=DRIVER@:>@], [Suport for DBI driver. DRIVE
            elif test -f /usr/bin/mysql; then
               MYSQL_BINDIR=/usr/bin
               if test -f /usr/lib64/mysql/libmysqlclient_r.a \
-                  -o -f /usr/lib64/mysql/libmysqlclient_r.so; then  
+                  -o -f /usr/lib64/mysql/libmysqlclient_r.so; then
                   MYSQL_LIBDIR=/usr/lib64/mysql
               elif test -f /usr/lib/mysql/libmysqlclient_r.a \
                   -o -f /usr/lib/mysql/libmysqlclient_r.so; then
@@ -187,7 +187,7 @@ AC_HELP_STRING([--with-dbi-driver@<:@=DRIVER@:>@], [Suport for DBI driver. DRIVE
            elif test -f /usr/local/bin/mysql; then
               MYSQL_BINDIR=/usr/local/bin
               if test -f /usr/local/lib64/mysql/libmysqlclient_r.a \
-                  -o -f /usr/local/lib64/mysql/libmysqlclient_r.so; then  
+                  -o -f /usr/local/lib64/mysql/libmysqlclient_r.so; then
                   MYSQL_LIBDIR=/usr/local/lib64/mysql
               elif test -f /usr/local/lib/mysql/libmysqlclient_r.a \
                   -o -f /usr/local/lib/mysql/libmysqlclient_r.so; then
@@ -275,14 +275,14 @@ AC_HELP_STRING([--with-dbi-driver@<:@=DRIVER@:>@], [Suport for DBI driver. DRIVE
                  SQLITE_LIBDIR=/usr/lib64
               else
                  SQLITE_LIBDIR=/usr/lib
-              fi                 
+              fi
            elif test -f $withval/bin/sqlite3; then
               SQLITE_BINDIR=$withval/bin
               if test -d $withval/lib64; then
                  SQLITE_LIBDIR=$withval/lib64
               else
                  SQLITE_LIBDIR=$withval/lib
-              fi                 
+              fi
            else
               AC_MSG_RESULT(no)
               AC_MSG_ERROR(Unable to find sqlite in standard locations)
@@ -292,7 +292,7 @@ AC_HELP_STRING([--with-dbi-driver@<:@=DRIVER@:>@], [Suport for DBI driver. DRIVE
            else
               DB_PROG_LIB=$SQLITE_LIBDIR/libsqlite3.a
            fi
-        ;;                
+        ;;
         *)
            AC_MSG_RESULT(no)
            AC_MSG_ERROR(Unable to set DBI driver. $withval is not supported)
@@ -352,7 +352,7 @@ AC_HELP_STRING([--with-mysql@<:@=DIR@:>@], [Include MySQL support. DIR is the My
            elif test -f /usr/include/mysql/mysql.h; then
               MYSQL_INCDIR=/usr/include/mysql
               if test -f /usr/lib64/mysql/libmysqlclient_r.a \
-                      -o -f /usr/lib64/mysql/libmysqlclient_r.so; then  
+                      -o -f /usr/lib64/mysql/libmysqlclient_r.so; then
                  MYSQL_LIBDIR=/usr/lib64/mysql
               elif test -f /usr/lib64/libmysqlclient_r.a \
                         -o -f /usr/lib64/libmysqlclient_r.so; then
@@ -464,7 +464,7 @@ AC_HELP_STRING([--with-mysql@<:@=DIR@:>@], [Include MySQL support. DIR is the My
          saved_LIBS="${LIBS}"
          LIBS="${saved_LIBS} -lz"
 
-         AC_CHECK_LIB(mysqlclient_r, mysql_thread_safe, AC_DEFINE(HAVE_MYSQL_THREAD_SAFE, 1, [Set if have mysql_thread_safe]))
+         AC_CHECK_LIB(mysqlclient_r, mysql_thread_safe, AC_DEFINE(HAVE_MYSQL_THREAD_SAFE, 1, [Define to 1 if you have the `mysql_thread_safe' function.]))
          if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
              if test -z "${batch_insert_db_backends}"; then
                  batch_insert_db_backends="MySQL"
@@ -613,7 +613,7 @@ AC_HELP_STRING([--with-embedded-mysql@<:@=DIR@:>@], [Include MySQL support. DIR 
 AC_SUBST(MYSQL_LIBS)
 AC_SUBST(MYSQL_INCLUDE)
 AC_SUBST(MYSQL_BINDIR)
-  
+
 ])
 
 AC_DEFUN([BA_CHECK_INGRES_DB],
@@ -631,7 +631,7 @@ AC_HELP_STRING([--with-ingres@<:@=DIR@:>@], [Include Ingres support. DIR is the 
         elif test -f ${II_SYSTEM}/ingres/files/eqdefc.h; then
            INGRES_INCDIR=${II_SYSTEM}/ingres/files
            INGRES_LIBDIR=${II_SYSTEM}/ingres/lib
-           INGRES_BINDIR=${II_SYSTEM}/ingres/bin      
+           INGRES_BINDIR=${II_SYSTEM}/ingres/bin
         else
            AC_MSG_RESULT(no)
            AC_MSG_ERROR(Unable to find eqdefc.h in standard locations)
@@ -701,7 +701,7 @@ AC_HELP_STRING([--with-sqlite3@<:@=DIR@:>@], [Include SQLite3 support. DIR is th
            else
               SQLITE_LIBDIR=/usr/lib
            fi
-           SQLITE_BINDIR=/usr/bin      
+           SQLITE_BINDIR=/usr/bin
         elif test -f $prefix/include/sqlite3.h; then
            SQLITE_INCDIR=$prefix/include
            if test -d $prefix/lib64; then
@@ -709,7 +709,7 @@ AC_HELP_STRING([--with-sqlite3@<:@=DIR@:>@], [Include SQLite3 support. DIR is th
            else
               SQLITE_LIBDIR=$prefix/lib
            fi
-           SQLITE_BINDIR=$prefix/bin      
+           SQLITE_BINDIR=$prefix/bin
         else
            AC_MSG_RESULT(no)
            AC_MSG_ERROR(Unable to find sqlite3.h in standard locations)
@@ -763,7 +763,7 @@ AC_HELP_STRING([--with-sqlite3@<:@=DIR@:>@], [Include SQLite3 support. DIR is th
          saved_LDFLAGS="${LDFLAGS}"
          LDFLAGS="${saved_LDFLAGS} -L$SQLITE_LIBDIR"
 
-         AC_CHECK_LIB(sqlite3, sqlite3_threadsafe, AC_DEFINE(HAVE_SQLITE3_THREADSAFE, 1, [Set if have sqlite3_threadsafe]))
+         AC_CHECK_LIB(sqlite3, sqlite3_threadsafe, AC_DEFINE(HAVE_SQLITE3_THREADSAFE, 1, [Define to 1 if you have the `sqlite3_threadsafe' function.]))
          if test "x$ac_cv_lib_sqlite3_sqlite3_threadsafe" = "xyes"; then
              if test -z "${batch_insert_db_backends}"; then
                  batch_insert_db_backends="SQLite3"
@@ -784,7 +784,7 @@ AC_HELP_STRING([--with-sqlite3@<:@=DIR@:>@], [Include SQLite3 support. DIR is th
 AC_SUBST(SQLITE_LIBS)
 AC_SUBST(SQLITE_INCLUDE)
 AC_SUBST(SQLITE_BINDIR)
-  
+
 ])
 
 

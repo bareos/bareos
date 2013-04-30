@@ -107,7 +107,6 @@ and the following utilities:
       GetResWithName  returns the resource of a specified type and name
       GetNextRes   returns the next resource of a specified type 
       parse_config parses the configuration file
-      free_config_resources  frees all the resources allocated.
 
 Note: when your store routine gets control, the parser will have already
 scanned the record name (i.e. "baz =") before calling your routine.

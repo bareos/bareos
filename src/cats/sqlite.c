@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -57,7 +57,7 @@ static dlist *db_list = NULL;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
- * When using mult_db_connections = true, 
+ * When using mult_db_connections = true,
  * sqlite can be BUSY. We just need sleep a little in this case.
  */
 static int sqlite_busy_handler(void *arg, int calls)
@@ -75,7 +75,8 @@ B_DB_SQLITE::B_DB_SQLITE(JCR *jcr,
                          int db_port,
                          const char *db_socket,
                          bool mult_db_connections,
-                         bool disable_batch_insert)
+                         bool disable_batch_insert,
+                         bool need_private)
 {
    /*
     * Initialize the parent class members.
@@ -111,20 +112,14 @@ B_DB_SQLITE::B_DB_SQLITE(JCR *jcr,
    esc_path = get_pool_memory(PM_FNAME);
    esc_obj  = get_pool_memory(PM_FNAME);
    m_allow_transactions = mult_db_connections;
-
-   /* At this time, when mult_db_connections == true, this is for 
-    * specific console command such as bvfs or batch mode, and we don't
-    * want to share a batch mode or bvfs. In the future, we can change
-    * the creation function to add this parameter.
-    */
-   m_dedicated = mult_db_connections; 
+   m_is_private = need_private;
 
    /*
     * Initialize the private members.
     */
    m_db_handle = NULL;
    m_result = NULL;
-   m_sqlite_errmsg = NULL;
+   m_lowlevel_errmsg = NULL;
 
    /*
     * Put the db in the list.
@@ -151,7 +146,7 @@ bool B_DB_SQLITE::db_open_database(JCR *jcr)
    char *db_path;
    int len;
    struct stat statbuf;
-   int ret;
+   int status;
    int errstat;
    int retry = 0;
 
@@ -185,13 +180,13 @@ bool B_DB_SQLITE::db_open_database(JCR *jcr)
    }
 
    for (m_db_handle = NULL; !m_db_handle && retry++ < 10; ) {
-      ret = sqlite3_open(db_path, &m_db_handle);
-      if (ret != SQLITE_OK) {
-         m_sqlite_errmsg = (char *)sqlite3_errmsg(m_db_handle); 
+      status = sqlite3_open(db_path, &m_db_handle);
+      if (status != SQLITE_OK) {
+         m_lowlevel_errmsg = (char *)sqlite3_errmsg(m_db_handle);
          sqlite3_close(m_db_handle);
          m_db_handle = NULL;
       } else {
-         m_sqlite_errmsg = NULL;
+         m_lowlevel_errmsg = NULL;
       }
 
       Dmsg0(300, "sqlite_open\n");
@@ -201,10 +196,10 @@ bool B_DB_SQLITE::db_open_database(JCR *jcr)
    }
    if (m_db_handle == NULL) {
       Mmsg2(&errmsg, _("Unable to open Database=%s. ERR=%s\n"),
-         db_path, m_sqlite_errmsg ? m_sqlite_errmsg : _("unknown"));
+         db_path, m_lowlevel_errmsg ? m_lowlevel_errmsg : _("unknown"));
       free(db_path);
       goto bail_out;
-   }       
+   }
    m_connected = true;
    free(db_path);
 
@@ -269,81 +264,28 @@ void B_DB_SQLITE::db_close_database(JCR *jcr)
    V(mutex);
 }
 
+bool B_DB_SQLITE::db_validate_connection(void)
+{
+   bool retval;
+
+   db_lock(this);
+   if (sql_query("SELECT 1", true)) {
+      sql_free_result();
+      retval = true;
+      goto bail_out;
+   } else {
+      retval = false;
+      goto bail_out;
+   }
+
+bail_out:
+   db_unlock(this);
+   return retval;
+}
+
 void B_DB_SQLITE::db_thread_cleanup(void)
 {
    sqlite3_thread_cleanup();
-}
-
-/*
- * Escape strings so that SQLite is happy
- *
- *   NOTE! len is the length of the old string. Your new
- *         string must be long enough (max 2*old+1) to hold
- *         the escaped output.
- */
-void B_DB_SQLITE::db_escape_string(JCR *jcr, char *snew, char *old, int len)
-{
-   char *n, *o;
-
-   n = snew;
-   o = old;
-   while (len--) {
-      switch (*o) {
-      case '\'':
-         *n++ = '\'';
-         *n++ = '\'';
-         o++;
-         break;
-      case 0:
-         *n++ = '\\';
-         *n++ = 0;
-         o++;
-         break;
-      default:
-         *n++ = *o++;
-         break;
-      }
-   }
-   *n = 0;
-}
-
-/*
- * Escape binary object so that SQLite is happy
- * Memory is stored in B_DB struct, no need to free it
- *
- * TODO: this should be implemented  (escape \0)
- */
-char *B_DB_SQLITE::db_escape_object(JCR *jcr, char *old, int len)
-{
-   int l;
-   int max = len*2;           /* TODO: too big, should be *4/3 */
-
-   esc_obj = check_pool_memory_size(esc_obj, max);
-   l = bin_to_base64(esc_obj, max, old, len, true);
-   esc_obj[l] = 0;
-   ASSERT(l < max);    /* TODO: add check for l */
-
-   return esc_obj;
-}
-
-/*
- * Unescape binary object so that SQLIte is happy
- *
- * TODO: need to be implemented (escape \0)
- */
-
-void B_DB_SQLITE::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                     POOLMEM **dest, int32_t *dest_len)
-{
-   if (!from) {
-      *dest[0] = 0;
-      *dest_len = 0;
-      return;
-   }
-   *dest = check_pool_memory_size(*dest, expected_len+1);
-   base64_to_bin(*dest, expected_len+1, from, strlen(from));
-   *dest_len = expected_len;
-   (*dest)[expected_len]=0;
 }
 
 /*
@@ -427,7 +369,7 @@ static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, ch
    if (rh_data->result_handler) {
       (*(rh_data->result_handler))(rh_data->ctx, num_fields, rows);
    }
-   
+
    return 0;
 }
 
@@ -438,15 +380,15 @@ static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, ch
 bool B_DB_SQLITE::db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    bool retval = false;
-   int stat;
+   int status;
    struct rh_data rh_data;
 
    Dmsg1(500, "db_sql_query starts with '%s'\n", query);
 
    db_lock(this);
-   if (m_sqlite_errmsg) {
-      sqlite3_free(m_sqlite_errmsg);
-      m_sqlite_errmsg = NULL;
+   if (m_lowlevel_errmsg) {
+      sqlite3_free(m_lowlevel_errmsg);
+      m_lowlevel_errmsg = NULL;
    }
    sql_free_result();
 
@@ -455,10 +397,10 @@ bool B_DB_SQLITE::db_sql_query(const char *query, DB_RESULT_HANDLER *result_hand
    rh_data.initialized = false;
    rh_data.result_handler = result_handler;
 
-   stat = sqlite3_exec(m_db_handle, query, sqlite_result_handler,
-                       (void *)&rh_data, &m_sqlite_errmsg);
+   status = sqlite3_exec(m_db_handle, query, sqlite_result_handler,
+                         (void *)&rh_data, &m_lowlevel_errmsg);
    
-   if (stat != SQLITE_OK) {
+   if (status != SQLITE_OK) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
       Dmsg0(500, "db_sql_query finished\n");
       goto bail_out;
@@ -477,22 +419,22 @@ bail_out:
  */
 bool B_DB_SQLITE::sql_query(const char *query, int flags)
 {
-   int stat;
+   int status;
    bool retval = false;
 
    Dmsg1(500, "sql_query starts with '%s'\n", query);
 
    sql_free_result();
-   if (m_sqlite_errmsg) {
-      sqlite3_free(m_sqlite_errmsg);
-      m_sqlite_errmsg = NULL;
+   if (m_lowlevel_errmsg) {
+      sqlite3_free(m_lowlevel_errmsg);
+      m_lowlevel_errmsg = NULL;
    }
 
-   stat = sqlite3_get_table(m_db_handle, (char *)query, &m_result,
-                            &m_num_rows, &m_num_fields, &m_sqlite_errmsg);
+   status = sqlite3_get_table(m_db_handle, (char *)query, &m_result,
+                              &m_num_rows, &m_num_fields, &m_lowlevel_errmsg);
 
    m_row_number = 0;               /* no row fetched */
-   if (stat != 0) {                   /* something went wrong */
+   if (status != 0) {                   /* something went wrong */
       m_num_rows = m_num_fields = 0;
       Dmsg0(500, "sql_query finished\n");
    } else {
@@ -532,7 +474,7 @@ SQL_ROW B_DB_SQLITE::sql_fetch_row(void)
 
 const char *B_DB_SQLITE::sql_strerror(void)
 {
-   return m_sqlite_errmsg ? m_sqlite_errmsg : "unknown";
+   return m_lowlevel_errmsg ? m_lowlevel_errmsg : "unknown";
 }
 
 void B_DB_SQLITE::sql_data_seek(int row)
@@ -648,7 +590,7 @@ bool B_DB_SQLITE::sql_field_is_numeric(int field_type)
    }
 }
 
-/* 
+/*
  * Returns true if OK
  *         false if failed
  */
@@ -671,7 +613,7 @@ bool B_DB_SQLITE::sql_batch_start(JCR *jcr)
 }
 
 /* set error to something to abort operation */
-/* 
+/*
  * Returns true if OK
  *         false if failed
  */
@@ -682,7 +624,7 @@ bool B_DB_SQLITE::sql_batch_end(JCR *jcr, const char *error)
    return true;
 }
 
-/* 
+/*
  * Returns true if OK
  *         false if failed
  */
@@ -715,20 +657,45 @@ bool B_DB_SQLITE::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
-                       const char *db_user, const char *db_password, 
-                       const char *db_address, int db_port, 
-                       const char *db_socket, bool mult_db_connections, 
-                       bool disable_batch_insert)
+#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+extern "C" B_DB *backend_instantiate(JCR *jcr,
+                                     const char *db_driver,
+                                     const char *db_name,
+                                     const char *db_user,
+                                     const char *db_password,
+                                     const char *db_address,
+                                     int db_port,
+                                     const char *db_socket,
+                                     bool mult_db_connections,
+                                     bool disable_batch_insert,
+                                     bool need_private)
+#else
+B_DB *db_init_database(JCR *jcr,
+                       const char *db_driver,
+                       const char *db_name,
+                       const char *db_user,
+                       const char *db_password,
+                       const char *db_address,
+                       int db_port,
+                       const char *db_socket,
+                       bool mult_db_connections,
+                       bool disable_batch_insert,
+                       bool need_private)
+#endif
 {
    B_DB *mdb = NULL;
 
    P(mutex);                          /* lock DB queue */
+
    /*
     * Look to see if DB already open
     */
-   if (db_list && !mult_db_connections) {
+   if (db_list && !mult_db_connections && !need_private) {
       foreach_dlist(mdb, db_list) {
+         if (mdb->is_private()) {
+            continue;
+         }
+
          if (mdb->db_match_database(db_driver, db_name, db_address, db_port)) {
             Dmsg1(300, "DB REopen %s\n", db_name);
             mdb->increment_refcount();
@@ -737,13 +704,29 @@ B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
       }
    }
    Dmsg0(300, "db_init_database first time\n");
-   mdb = New(B_DB_SQLITE(jcr, db_driver, db_name, db_user, db_password,
-                         db_address, db_port, db_socket, mult_db_connections,
-                         disable_batch_insert));
+   mdb = New(B_DB_SQLITE(jcr,
+                         db_driver,
+                         db_name,
+                         db_user,
+                         db_password,
+                         db_address,
+                         db_port,
+                         db_socket,
+                         mult_db_connections,
+                         disable_batch_insert,
+                         need_private));
 
 bail_out:
    V(mutex);
    return mdb;
+}
+
+#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+extern "C" void flush_backend(void)
+#else
+void db_flush_backends(void)
+#endif
+{
 }
 
 #endif /* HAVE_SQLITE3 */

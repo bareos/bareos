@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-# Shell script to update sqlite3 tables from Bacula Community version 5.0.x to 5.2.x
+# Shell script to update SQLite3 tables from Bacula Community version 5.2.x to 5.4.x
 #
 echo " "
-echo "This script will update a Bacula sqlite3 database from version 12 to 14"
-echo "	which is needed to convert from Bacula Community version 5.0.x to 5.2.x"
+echo "This script will update a Bacula PostgreSQL database from version 14 to 15"
+echo "  which is needed to convert from Bacula Community version 5.2.x to 5.4.x"
 echo " "
 
 bindir=@SQLITE_BINDIR@
@@ -16,10 +16,10 @@ DBVERSION=`sqlite3 ${db_name}.db <<END
 select VersionId from Version;
 END
 `
-if [ $DBVERSION != 12 ] ; then
+if [ $DBVERSION != 14 ] ; then
    echo " "
    echo "The existing database is version $DBVERSION !!"
-   echo "This script can only update an existing version 12 database to version 14."
+   echo "This script can only update an existing version 14 database to version 15."
    echo "Error. Cannot upgrade this database."
    echo " "
    exit 1
@@ -28,25 +28,24 @@ fi
 sqlite3 $* ${db_name}.db <<END-OF-DATA
 BEGIN;
 
-CREATE TABLE RestoreObject (
-   RestoreObjectId INTEGER,
-   ObjectName TEXT DEFAULT '',
-   RestoreObject TEXT DEFAULT '',
-   PluginName TEXT DEFAULT '',
-   ObjectLength INTEGER DEFAULT 0,
-   ObjectFullLength INTEGER DEFAULT 0,
-   ObjectIndex INTEGER DEFAULT 0,
-   ObjectType INTEGER DEFAULT 0,
-   FileIndex INTEGER UNSIGNED DEFAULT 0,
-   ObjectCompression INTEGER DEFAULT 0,
-   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
-   PRIMARY KEY(RestoreObjectId)
-   );
-CREATE INDEX restore_jobid_idx ON RestoreObject (JobId);
+CREATE TABLE Quota (
+   ClientId INTEGER REFERENCES Client DEFAULT 0,
+   GraceTime INTEGER UNSIGNED DEFAULT 0,
+   QuotaLimit BIGINT UNSIGNED DEFAULT 0,
+   PRIMARY KEY (ClientId)
+);
 
-ALTER TABLE File ADD COLUMN DeltaSeq smallint default 0;
+CREATE TABLE NDMPLevelMap (
+   ClientId INTEGER REFERENCES Client DEFAULT 0,
+   FileSetId INTEGER UNSIGNED REFERENCES FileSet DEFAULT 0,
+   FileSystem TEXT DEFAULT '',
+   DumpLevel INTEGER UNSIGNED DEFAULT 0,
+   CONSTRAINT NDMPLevelMap_pkey PRIMARY KEY (ClientId, FilesetId, FileSystem)
+);
 
-UPDATE Version SET VersionId=14;
+ALTER TABLE Media ADD COLUMN EncryptionKey VARCHAR(128);
+
+UPDATE Version SET VersionId=15;
 COMMIT;
 
 END-OF-DATA

@@ -37,11 +37,11 @@ bInfo  *binfo = NULL;
 
 #define PLUGIN_LICENSE      "Bacula AGPLv3"
 #define PLUGIN_AUTHOR       "James Harper"
-#define PLUGIN_DATE    "September 2008"
+#define PLUGIN_DATE         "September 2008"
 #define PLUGIN_VERSION      "1"
 #define PLUGIN_DESCRIPTION  "Exchange Plugin"
 
-static pInfo pluginInfo = {
+static genpInfo pluginInfo = {
    sizeof(pluginInfo),
    FD_PLUGIN_INTERFACE_VERSION,
    FD_PLUGIN_MAGIC,
@@ -87,8 +87,6 @@ static pFuncs pluginFuncs = {
    checkFile,
 };
 
-extern "C" {
-
 static char **
 splitString(char *string, char split, int maxParts, int *count)
 {
@@ -119,8 +117,19 @@ splitString(char *string, char split, int maxParts, int *count)
   return RetVal;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * loadPlugin() and unloadPlugin() are entry points that are
+ *  exported, so Bacula can directly call these two entry points
+ *  they are common to all Bacula plugins.
+ *
+ * External entry point called by Bacula to "load" the plugin
+ */
 bRC DLL_IMP_EXP
-loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, pInfo **pinfo, pFuncs **pfuncs)
+loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, genpInfo **pinfo, pFuncs **pfuncs)
 {
    bRC retval;
    bfuncs = lbfuncs;        /* set Bacula funct pointers */
@@ -135,26 +144,18 @@ loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, pInfo **pinfo, pFuncs **pfuncs)
    return retval;
 }
 
+/*
+ * External entry point to unload the plugin
+ */
 bRC DLL_IMP_EXP
 unloadPlugin()
 {
    return bRC_OK;
 }
 
+#ifdef __cplusplus
 }
-/*
-void *
-b_malloc(const char *file, int lone, size_t size)
-{
-   return NULL;
-}
-
-void *
-sm_malloc(const char *file, int lone, size_t size)
-{
-   return NULL;
-}
-*/
+#endif
 
 static bRC newPlugin(bpContext *ctx)
 {
@@ -171,7 +172,6 @@ static bRC newPlugin(bpContext *ctx)
    context->plugin_active = false;
    bfuncs->getBaculaValue(ctx, bVarJobId, (void *)&JobId);
    _DebugMessage(100, "newPlugin JobId=%d\n", JobId);
-   bfuncs->registerBaculaEvents(ctx, 1, 2, 0);
    size = MAX_COMPUTERNAME_LENGTH + 1;
    context->computer_name = new WCHAR[size];
    /*
@@ -180,6 +180,20 @@ static bRC newPlugin(bpContext *ctx)
    GetComputerNameExW(ComputerNameNetBIOS, context->computer_name, &size);
    context->current_node = NULL;
    context->root_node = NULL;
+
+   bfuncs->registerBaculaEvents(ctx,
+                                10,
+                                bEventJobStart,
+                                bEventPluginCommand,
+                                bEventStartBackupJob,
+                                bEventEndBackupJob,
+                                bEventLevel,
+                                bEventSince,
+                                bEventStartRestoreJob,
+                                bEventEndRestoreJob,
+                                bEventRestoreCommand,
+                                bEventBackupCommand);
+
    return retval;
 }
 
@@ -221,15 +235,12 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       _DebugMessage(100, "JobStart=%s\n", (char *)value);
       context->plugin_active = false;
       break;
-   case bEventJobEnd:
-      _DebugMessage(100, "JobEnd\n");
-      break;
    case bEventPluginCommand:
       _DebugMessage(100, "bEventPluginCommand %s\n", value);
       command = bstrdup((char *)value);
       /* this isn't really unused */
       plugin_name = strtok((char *)command, ":");
-      if (strcmp(plugin_name, "exchange") != 0) {
+      if (!bstrcmp(plugin_name, "exchange")) {
          context->plugin_active = false;
       } else {
          context->plugin_active = true;
@@ -295,7 +306,6 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       _DebugMessage(100, "EndRestoreJob\n");
       context->plugin_active = false;
       break;
-   
    /* Plugin command e.g. plugin = <plugin-name>:<name-space>:command */
    case bEventRestoreCommand:
       _DebugMessage(100, "restore\n"); // command=%s\n", (char *)value);
@@ -303,7 +313,6 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          break;
       }
       break;
-
    case bEventBackupCommand:
       if (!context->plugin_active) {
          break;
@@ -350,7 +359,6 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 
       }
       break;
-
    default:
       _DebugMessage(100, "Ignored event=%d\n", event->eventType);
       break;

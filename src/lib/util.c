@@ -35,7 +35,6 @@
 
 #include "bacula.h"
 #include "jcr.h"
-#include "findlib/find.h"
 
 /*
  * Various Bacula Utility subroutines
@@ -480,7 +479,7 @@ const char *volume_status_to_str(const char *status)
 
    if (status) {
      for (pos = 0 ; vs[pos] ; pos += 2) {
-       if ( !strcmp(vs[pos],status) ) {
+       if (bstrcmp(vs[pos], status)) {
          return vs[pos+1];
        }
      }
@@ -535,7 +534,7 @@ int do_shell_expansion(char *name, int name_len)
 {
    static char meta[] = "~\\$[]*?`'<>\"";
    bool found = false;
-   int len, i, stat;
+   int len, i, status;
    POOLMEM *cmd;
    BPIPE *bpipe;
    char line[MAXSTRING];
@@ -564,13 +563,13 @@ int do_shell_expansion(char *name, int name_len)
          *line = 0;
          fgets(line, sizeof(line), bpipe->rfd);
          strip_trailing_junk(line);
-         stat = close_bpipe(bpipe);
-         Dmsg2(400, "stat=%d got: %s\n", stat, line);
+         status = close_bpipe(bpipe);
+         Dmsg2(400, "status=%d got: %s\n", status, line);
       } else {
-         stat = 1;                    /* error */
+         status = 1;                    /* error */
       }
       free_pool_memory(cmd);
-      if (stat == 0) {
+      if (status == 0) {
          bstrncpy(name, line, name_len);
       }
    }
@@ -612,9 +611,7 @@ void make_session_key(char *key, char *seed, int mode)
       LARGE_INTEGER     li;
       DWORD             length;
       FILETIME          ft;
-      char             *p;
 
-      p = s;
       bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetCurrentProcessId());
       (void)getcwd(s + strlen(s), 256);
       bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetTickCount());

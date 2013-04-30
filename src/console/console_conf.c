@@ -83,40 +83,39 @@ int32_t res_all_size = sizeof(res_all);
 
 /*  Console "globals" */
 static RES_ITEM cons_items[] = {
-   {"name",           store_name,     ITEM(res_cons.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description",    store_str,      ITEM(res_cons.hdr.desc), 0, 0, 0},
-   {"rcfile",         store_dir,      ITEM(res_cons.rc_file), 0, 0, 0},
-   {"historyfile",    store_dir,      ITEM(res_cons.hist_file), 0, 0, 0},
-   {"password",       store_password, ITEM(res_cons.password), 0, ITEM_REQUIRED, 0},
-   {"tlsauthenticate",store_bool,    ITEM(res_cons.tls_authenticate), 0, 0, 0},
-   {"tlsenable",      store_bool,    ITEM(res_cons.tls_enable), 0, 0, 0},
-   {"tlsrequire",     store_bool,    ITEM(res_cons.tls_require), 0, 0, 0},
-   {"tlscacertificatefile", store_dir, ITEM(res_cons.tls_ca_certfile), 0, 0, 0},
-   {"tlscacertificatedir", store_dir,  ITEM(res_cons.tls_ca_certdir), 0, 0, 0},
-   {"tlscertificate", store_dir,       ITEM(res_cons.tls_certfile), 0, 0, 0},
-   {"tlskey",         store_dir,       ITEM(res_cons.tls_keyfile), 0, 0, 0},
-   {"director",       store_str,       ITEM(res_cons.director), 0, 0, 0},
-   {"heartbeatinterval", store_time, ITEM(res_cons.heartbeat_interval), 0, ITEM_DEFAULT, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
+   { "name", store_name, ITEM(res_cons.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(res_cons.hdr.desc), 0, 0, NULL },
+   { "rcfile", store_dir, ITEM(res_cons.rc_file), 0, 0, NULL },
+   { "historyfile", store_dir, ITEM(res_cons.hist_file), 0, 0, NULL },
+   { "password", store_password, ITEM(res_cons.password), 0, ITEM_REQUIRED, NULL },
+   { "tlsauthenticate",store_bool, ITEM(res_cons.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", store_bool, ITEM(res_cons.tls_enable), 0, 0, NULL },
+   { "tlsrequire", store_bool, ITEM(res_cons.tls_require), 0, 0, NULL },
+   { "tlscacertificatefile", store_dir, ITEM(res_cons.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", store_dir, ITEM(res_cons.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificate", store_dir, ITEM(res_cons.tls_certfile), 0, 0, NULL },
+   { "tlskey", store_dir, ITEM(res_cons.tls_keyfile), 0, 0, NULL },
+   { "director", store_str, ITEM(res_cons.director), 0, 0, NULL },
+   { "heartbeatinterval", store_time, ITEM(res_cons.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
-
 
 /*  Director's that we can contact */
 static RES_ITEM dir_items[] = {
-   {"name",           store_name,      ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description",    store_str,       ITEM(res_dir.hdr.desc), 0, 0, 0},
-   {"dirport",        store_pint32,    ITEM(res_dir.DIRport),  0, ITEM_DEFAULT, 9101},
-   {"address",        store_str,       ITEM(res_dir.address),  0, 0, 0},
-   {"password",       store_password,  ITEM(res_dir.password), 0, ITEM_REQUIRED, 0},
-   {"tlsauthenticate",store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
-   {"tlsenable",      store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
-   {"tlsrequire",     store_bool,    ITEM(res_dir.tls_require), 0, 0, 0},
-   {"tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, 0},
-   {"tlscacertificatedir", store_dir,  ITEM(res_dir.tls_ca_certdir), 0, 0, 0},
-   {"tlscertificate", store_dir,       ITEM(res_dir.tls_certfile), 0, 0, 0},
-   {"tlskey",         store_dir,       ITEM(res_dir.tls_keyfile), 0, 0, 0},
-   {"heartbeatinterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
+   { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
+   { "dirport", store_pint32, ITEM(res_dir.DIRport), 0, ITEM_DEFAULT, "9101" },
+   { "address", store_str, ITEM(res_dir.address), 0, 0, NULL },
+   { "password", store_password, ITEM(res_dir.password), 0, ITEM_REQUIRED, NULL },
+   { "tlsauthenticate",store_bool, ITEM(res_dir.tls_enable), 0, 0, NULL },
+   { "tlsenable", store_bool, ITEM(res_dir.tls_enable), 0, 0, NULL },
+   { "tlsrequire", store_bool, ITEM(res_dir.tls_require), 0, 0, NULL },
+   { "tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", store_dir, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificate", store_dir, ITEM(res_dir.tls_certfile), 0, 0, NULL },
+   { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
+   { "heartbeatinterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -124,11 +123,10 @@ static RES_ITEM dir_items[] = {
  * It must have one item for each of the resources.
  */
 RES_TABLE resources[] = {
-   {"console",       cons_items,  R_CONSOLE},
-   {"director",      dir_items,   R_DIRECTOR},
-   {NULL,            NULL,        0}
+   { "console", cons_items, R_CONSOLE },
+   { "director", dir_items, R_DIRECTOR },
+   { NULL, NULL, 0 }
 };
-
 
 /* Dump contents of resource */
 void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
@@ -317,7 +315,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          RES *next, *last;
          for (last=next=res_head[rindex]; next; next=next->next) {
             last = next;
-            if (strcmp(next->name, res->res_dir.hdr.name) == 0) {
+            if (bstrcmp(next->name, res->res_dir.hdr.name)) {
                Emsg2(M_ERROR_TERM, 0,
                   _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
                   resources[rindex].name, res->res_dir.hdr.name);
@@ -332,7 +330,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
 
 bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, exit_code, (void *)&res_all, res_all_size,
-      r_first, r_last, resources, res_head);
+   config->init(configfile, NULL, NULL, NULL, exit_code,
+                (void *)&res_all, res_all_size, r_first,
+                r_last, resources, res_head);
    return config->parse_config();
 }

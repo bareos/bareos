@@ -35,6 +35,7 @@
 
 #include "lib/runscript.h"
 #include "lib/breg.h"
+#include "lib/bsr.h"
 #include "dird_conf.h"
 
 #define DIRECTOR_DAEMON 1
@@ -78,6 +79,48 @@ enum {
   fnv_no_prune      = false
 };
 
-     
+enum e_prtmsg {
+   DISPLAY_ERROR,
+   NO_DISPLAY
+};
+
+enum e_pool_op {
+   POOL_OP_UPDATE,
+   POOL_OP_CREATE
+};
+
+enum e_move_op {
+   VOLUME_IMPORT,
+   VOLUME_EXPORT,
+   VOLUME_MOVE
+};
+
+typedef enum {
+   slot_type_unknown,     /* unknown slot type */
+   slot_type_drive,       /* drive slot */
+   slot_type_normal,      /* normal slot */
+   slot_type_import       /* import/export slot */
+} slot_type;
+
+typedef enum {
+   slot_content_unknown,  /* slot content is unknown */
+   slot_content_empty,    /* slot is empty */
+   slot_content_full      /* slot is full */
+} slot_content;
+
+/* Slot list definition */
+typedef struct s_vol_list {
+   dlink link;            /* link for list */
+   int Index;             /* Unique index */
+   slot_type Type;        /* See slot_type_* */
+   slot_content Content;  /* See slot_content_* */
+   int Slot;              /* Drive number when slot_type_drive or actual slot number */
+   int Loaded;            /* Volume loaded in drive when slot_type_drive */
+   char *VolName;         /* Actual Volume Name */
+} vol_list_t;
+
+#define INDEX_DRIVE_OFFSET 0
+#define INDEX_MAX_DRIVES 100
+#define INDEX_SLOT_OFFSET 100
 
 #include "protos.h"

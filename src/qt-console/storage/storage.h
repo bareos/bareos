@@ -59,6 +59,7 @@ private slots:
    void consoleUnMountStorage();
    void consoleUpdateSlots();
    void consoleUpdateSlotsScan();
+   void consoleImportStorage();
    void consoleRelease();
    void statusStorageWindow();
    void contentWindow();
@@ -70,6 +71,7 @@ private:
    QString m_currentStorage;
    bool m_currentAutoChanger;
    bool m_populated;
+   bool m_needs_repopulate;
    bool m_firstpopulation;
    bool m_checkcurwidget;
    void writeExpandedSettings();

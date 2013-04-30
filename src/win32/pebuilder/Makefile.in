@@ -5,9 +5,9 @@
 #     D. Scott Barninger, Nov 2004
 #
 
-srcdir =	.
-VPATH = 	.
-.PATH:		.
+srcdir = @srcdir@
+VPATH = @srcdir@
+.PATH: @srcdir@
 
 # one up
 basedir = ..

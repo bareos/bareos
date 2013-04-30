@@ -6,28 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1011</width>
-    <height>650</height>
+    <width>994</width>
+    <height>739</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>brestore</string>
   </property>
   <layout class="QGridLayout">
-   <property name="margin">
-    <number>9</number>
-   </property>
-   <property name="spacing">
-    <number>6</number>
-   </property>
-   <item row="2" column="0">
+   <item row="4" column="0">
     <layout class="QHBoxLayout">
-     <property name="spacing">
-      <number>6</number>
-     </property>
-     <property name="margin">
-      <number>0</number>
-     </property>
      <item>
       <widget class="QComboBox" name="ClientList">
        <property name="sizePolicy">
@@ -75,14 +63,11 @@
      </item>
      <item>
       <widget class="QCheckBox" name="MergeChk">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
        <property name="text">
         <string>Merge Jobs</string>
        </property>
        <property name="checked">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -93,32 +78,9 @@
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QPushButton" name="LocationBp">
-       <property name="text">
-        <string>Current Directory</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="LocationEntry">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-         <horstretch>150</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>0</height>
-        </size>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
-   <item row="3" column="0">
+   <item row="5" column="0">
     <widget class="QSplitter" name="splitter_2">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -133,6 +95,12 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>352</height>
+        </size>
        </property>
        <property name="title">
         <string>File list -- drag below for restore</string>
@@ -167,9 +135,6 @@
           <property name="sortingEnabled">
            <bool>false</bool>
           </property>
-          <attribute name="verticalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
           <attribute name="verticalHeaderVisible">
            <bool>false</bool>
           </attribute>
@@ -378,12 +343,6 @@
         <string>File revisions -- drag below for restore</string>
        </property>
        <layout class="QVBoxLayout">
-        <property name="spacing">
-         <number>6</number>
-        </property>
-        <property name="margin">
-         <number>9</number>
-        </property>
         <item>
          <widget class="bRestoreTable" name="FileRevisions">
           <property name="sizePolicy">
@@ -447,20 +406,8 @@
      </widget>
      <widget class="QWidget" name="layoutWidget_2">
       <layout class="QVBoxLayout">
-       <property name="spacing">
-        <number>6</number>
-       </property>
-       <property name="margin">
-        <number>0</number>
-       </property>
        <item>
         <layout class="QHBoxLayout">
-         <property name="spacing">
-          <number>6</number>
-         </property>
-         <property name="margin">
-          <number>0</number>
-         </property>
          <item>
           <widget class="QLabel" name="label">
            <property name="text">
@@ -534,9 +481,6 @@ p, li { white-space: pre-wrap; }
          <attribute name="verticalHeaderVisible">
           <bool>false</bool>
          </attribute>
-         <attribute name="verticalHeaderVisible">
-          <bool>false</bool>
-         </attribute>
          <column>
           <property name="text">
            <string>Type</string>
@@ -579,9 +523,31 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item row="1" column="0">
-    <widget class="QLabel" name="label_3">
+    <widget class="QLineEdit" name="LocationEntry">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+       <horstretch>150</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>150</width>
+       <height>0</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QPushButton" name="LocationBp">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="text">
-      <string>Select from Client list drop down then select from Job list drop down</string>
+      <string>Current Directory</string>
      </property>
     </widget>
    </item>

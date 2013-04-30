@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -37,12 +37,12 @@
 
 #include "bacula.h"
 #include "stored.h"
+#include "lib/crypto_cache.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
 #include "cats/sql_glue.h"
  
 /* Dummy functions */
-int generate_daemon_event(JCR *jcr, const char *event) { return 1; }
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
@@ -62,7 +62,6 @@ static int  create_fileset_record(B_DB *db, FILESET_DBR *fsr);
 static int  create_jobmedia_record(B_DB *db, JCR *jcr);
 static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId);
 static int update_digest_record(B_DB *db, char *digest, DEV_RECORD *rec, int type);
-
 
 /* Local variables */
 static DEVICE *dev = NULL;
@@ -110,19 +109,20 @@ bool forge_on = false;                /* proceed inspite of I/O errors */
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
-
 static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
 "Usage: bscan [ options ] <bacula-archive>\n"
+"       -B <driver name>  specify the database driver name (default NULL)\n"
 "       -b bootstrap      specify a bootstrap file\n"
 "       -c <file>         specify configuration file\n"
 "       -d <nn>           set debug level to <nn>\n"
 "       -dt               print timestamp in debug output\n"
 "       -m                update media info in database\n"
-"       -D <driver name>  specify the driver database name (default NULL)\n"
+"       -D <director>     specify a director name specified in the Storage\n"
+"                         configuration file for the Key Encryption Key selection\n"
 "       -n <name>         specify the database name (default bacula)\n"
 "       -u <user>         specify database user name (default bacula)\n"
 "       -P <password>     specify database password (default none)\n"
@@ -144,6 +144,8 @@ int main (int argc, char *argv[])
    int ch;
    struct stat stat_buf;
    char *VolumeName = NULL;
+   char *DirectorName = NULL;
+   DIRRES *director = NULL;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
@@ -156,11 +158,12 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(argc, argv, "b:c:d:D:h:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
+   while ((ch = getopt(argc, argv, "B:b:c:d:D:h:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
       switch (ch) {
-      case 'S' :
-         showProgress = true;
+      case 'B':
+         db_driver = optarg;
          break;
+
       case 'b':
          bsr = parse_bsr(NULL, optarg);
          break;
@@ -172,8 +175,11 @@ int main (int argc, char *argv[])
          configfile = bstrdup(optarg);
          break;
 
-      case 'D':
-         db_driver = optarg;
+      case 'D':                    /* specify director name */
+         if (DirectorName != NULL) {
+            free(DirectorName);
+         }
+         DirectorName = bstrdup(optarg);
          break;
 
       case 'd':                    /* debug level */
@@ -219,16 +225,20 @@ int main (int argc, char *argv[])
          list_records = true;
          break;
 
+      case 'S' :
+         showProgress = true;
+         break;
+
       case 's':
          update_db = true;
          break;
 
-      case 'v':
-         verbose++;
-         break;
-
       case 'V':                    /* Volume name */
          VolumeName = optarg;
+         break;
+
+      case 'v':
+         verbose++;
          break;
 
       case 'w':
@@ -255,6 +265,7 @@ int main (int argc, char *argv[])
 
    config = new_config_parser();
    parse_sd_config(config, configfile, M_ERROR_TERM);
+
    LockRes();
    me = (STORES *)GetNextRes(R_STORAGE, NULL);
    if (!me) {
@@ -263,6 +274,24 @@ int main (int argc, char *argv[])
          configfile);
    }
    UnlockRes();
+
+   if (DirectorName) {
+      foreach_res(director, R_DIRECTOR) {
+         if (bstrcmp(director->hdr.name, DirectorName)) {
+            break;
+         }
+      }
+      if (!director) {
+         Emsg2(M_ERROR_TERM, 0, _("No Director resource named %s defined in %s. Cannot continue.\n"),
+               DirectorName, configfile);
+      }
+   }
+
+   load_sd_plugins(me->plugin_directory);
+
+   read_crypto_cache(me->working_directory, "bacula-sd",
+                     get_first_port_host_order(me->sdaddrs));
+
    /* Check if -w option given, otherwise use resource for working directory */
    if (wd) {
       working_directory = wd;
@@ -283,7 +312,7 @@ int main (int argc, char *argv[])
          working_directory);
    }
 
-   bjcr = setup_jcr("bscan", argv[0], bsr, VolumeName, 1); /* read device */
+   bjcr = setup_jcr("bscan", argv[0], bsr, director, VolumeName, 1); /* read device */
    if (!bjcr) {
       exit(1);
    }
@@ -297,8 +326,7 @@ int main (int argc, char *argv[])
          edit_uint64(currentVolumeSize, ed1));
    }
 
-   if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
-                              db_host, db_port, NULL, false, false)) == NULL) {
+   if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password, db_host, db_port, NULL)) == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
    }
    if (!db_open_database(NULL, db)) {
@@ -317,9 +345,13 @@ int main (int argc, char *argv[])
       printf("Records would have been added or updated in the catalog:\n%7d Media\n%7d Pool\n%7d Job\n%7d File\n",
          num_media, num_pools, num_jobs, num_files);
    }
+   db_flush_backends();
 
-   free_jcr(bjcr);
+   clean_device(bjcr->dcr);
    dev->term();
+   free_dcr(bjcr->dcr);
+   free_jcr(bjcr);
+
    return 0;
 }
 
@@ -330,8 +362,10 @@ int main (int argc, char *argv[])
  */
 static bool bscan_mount_next_read_volume(DCR *dcr)
 {
+   bool status;
    DEVICE *dev = dcr->dev;
    DCR *mdcr;
+
    Dmsg1(100, "Walk attached jcrs. Volume=%s\n", dev->getVolCatName());
    foreach_dlist(mdcr, dev->attached_dcrs) {
       JCR *mjcr = mdcr->jcr;
@@ -348,7 +382,7 @@ static bool bscan_mount_next_read_volume(DCR *dcr)
       mdcr->EndFile = dcr->EndFile;
       mdcr->VolMediaId = dcr->VolMediaId;
       mjcr->read_dcr->VolLastIndex = dcr->VolLastIndex;
-      if( mjcr->bscan_insert_jobmedia_records ) {
+      if( mjcr->insert_jobmedia_records ) {
          if (!create_jobmedia_record(db, mjcr)) {
             Pmsg2(000, _("Could not create JobMedia record for Volume=%s Job=%s\n"),
                dev->getVolCatName(), mjcr->Job);
@@ -362,8 +396,7 @@ static bool bscan_mount_next_read_volume(DCR *dcr)
     * we call mount_next... with bscan's jcr because that is where we
     * have the Volume list, but we get attached.
     */
-   bool stat = mount_next_read_volume(dcr);
-
+   status = mount_next_read_volume(dcr);
    if (showProgress) {
       char ed1[50];
       struct stat sb;
@@ -372,7 +405,7 @@ static bool bscan_mount_next_read_volume(DCR *dcr)
       Pmsg1(000, _("First Volume Size = %s\n"), 
          edit_uint64(currentVolumeSize, ed1));
    }
-   return stat;
+   return status;
 }
 
 static void do_scan()
@@ -462,7 +495,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             }
             create_pool_record(db, &pr);
          }
-         if (strcmp(pr.PoolType, dev->VolHdr.PoolType) != 0) {
+         if (!bstrcmp(pr.PoolType, dev->VolHdr.PoolType)) {
             Pmsg2(000, _("VOL_LABEL: PoolType mismatch. DB=%s Vol=%s\n"),
                pr.PoolType, dev->VolHdr.PoolType);
             return true;
@@ -490,7 +523,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             bstrncpy(mr.MediaType, dev->VolHdr.MediaType, sizeof(mr.MediaType));
             create_media_record(db, &mr, &dev->VolHdr);
          }
-         if (strcmp(mr.MediaType, dev->VolHdr.MediaType) != 0) {
+         if (!bstrcmp(mr.MediaType, dev->VolHdr.MediaType)) {
             Pmsg2(000, _("VOL_LABEL: MediaType mismatch. DB=%s Vol=%s\n"),
                mr.MediaType, dev->VolHdr.MediaType);
             return true;              /* ignore error */
@@ -562,9 +595,9 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          db_sql_query(db, sql_buffer.c_str(), db_int64_handler, &jmr_count); 
          if( jmr_count.value > 0 ) {
             //FIELD NAME TO BE DEFINED/CONFIRMED (maybe a struct?)
-            mjcr->bscan_insert_jobmedia_records = false; 
+            mjcr->insert_jobmedia_records = false;
          } else {
-            mjcr->bscan_insert_jobmedia_records = true;
+            mjcr->insert_jobmedia_records = true;
          }
 
          if (rec->VolSessionId != jr.VolSessionId) {
@@ -611,12 +644,11 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 
          /* Create JobMedia record */
          mjcr->read_dcr->VolLastIndex = dcr->VolLastIndex;
-         if( mjcr->bscan_insert_jobmedia_records ) {
+         if( mjcr->insert_jobmedia_records ) {
             create_jobmedia_record(db, mjcr); 
          }
          free_dcr(mjcr->read_dcr);
          free_jcr(mjcr);
-
          break;
 
       case EOM_LABEL:
@@ -818,9 +850,12 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       }
       break;
 
+   case STREAM_HFSPLUS_ATTRIBUTES:
+      /* Ignore OSX attributes */
+      break;
+
    case STREAM_UNIX_ACCESS_ACL:          /* Deprecated Standard ACL attributes on UNIX */
    case STREAM_UNIX_DEFAULT_ACL:         /* Deprecated Default ACL attributes on UNIX */
-   case STREAM_HFSPLUS_ATTRIBUTES:
    case STREAM_ACL_AIX_TEXT:
    case STREAM_ACL_DARWIN_ACCESS_ACL:
    case STREAM_ACL_FREEBSD_DEFAULT_ACL:
@@ -856,6 +891,10 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case STREAM_XATTR_LINUX:
    case STREAM_XATTR_NETBSD:
       /* Ignore Unix Extended attributes */
+      break;
+
+   case STREAM_NDMP_SEPERATOR:
+      /* Ignore NDMP seperators */
       break;
 
    default:
@@ -1004,7 +1043,7 @@ static bool update_media_record(B_DB *db, MEDIA_DBR *mr)
    mr->LastWritten = lasttime;
    if (!db_update_media_record(bjcr, db, mr)) {
       Pmsg1(0, _("Could not update media record. ERR=%s\n"), db_strerror(db));
-      return false;;
+      return false;
    }
    if (verbose) {
       Pmsg1(000, _("Updated Media record at end of Volume: %s\n"), mr->VolumeName);
@@ -1033,7 +1072,6 @@ static int create_pool_record(B_DB *db, POOL_DBR *pr)
    return 1;
 
 }
-
 
 /*
  * Called from SOS to create a client for the current Job
@@ -1330,7 +1368,6 @@ static int update_digest_record(B_DB *db, char *digest, DEV_RECORD *rec, int typ
    return 1;
 }
 
-
 /*
  * Create a JCR as if we are really starting the job
  */
@@ -1358,13 +1395,12 @@ static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId)
 }
 
 /* Dummies to replace askdir.c */
-bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
-bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
-bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
-bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-bool    dir_send_job_status(JCR *jcr) {return 1;}
-int     generate_job_event(JCR *jcr, const char *event) { return 1; }
+bool dir_find_next_appendable_volume(DCR *dcr) { return 1;}
+bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
+bool dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
+bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
+bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
+bool dir_send_job_status(JCR *jcr) {return 1;}
 
 bool dir_ask_sysop_to_mount_volume(DCR *dcr, int /*mode*/)
 {
@@ -1373,7 +1409,7 @@ bool dir_ask_sysop_to_mount_volume(DCR *dcr, int /*mode*/)
    /* Close device so user can use autochanger if desired */
    fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
          dcr->VolumeName, dev->print_name());
-   dev->close();
+   dev->close(dcr);
    getchar();
    return true;
 }
@@ -1382,7 +1418,6 @@ bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
 {
    Dmsg0(100, "Fake dir_get_volume_info\n");
    dcr->setVolCatName(dcr->VolumeName);
-   dcr->VolCatInfo.VolCatParts = find_num_dvd_parts(dcr);
-   Dmsg2(500, "Vol=%s num_parts=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatParts);
+   Dmsg1(500, "Vol=%s\n", dcr->getVolCatName());
    return 1;
 }

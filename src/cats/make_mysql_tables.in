@@ -22,14 +22,14 @@ CREATE TABLE Filename (
   Name BLOB NOT NULL,
   PRIMARY KEY(FilenameId),
   INDEX (Name(255))
-  );
+);
 
 CREATE TABLE Path (
    PathId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
    Path BLOB NOT NULL,
    PRIMARY KEY(PathId),
    INDEX (Path(255))
-   );
+);
 
 -- We strongly recommend to avoid the temptation to add new indexes.
 -- In general, these will cause very significant performance
@@ -58,7 +58,7 @@ CREATE TABLE File (
    PRIMARY KEY(FileId),
    INDEX (JobId),
    INDEX (JobId, PathId, FilenameId)
-   );
+);
 
 CREATE TABLE RestoreObject (
    RestoreObjectId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -74,31 +74,29 @@ CREATE TABLE RestoreObject (
    ObjectCompression INTEGER DEFAULT 0,
    PRIMARY KEY(RestoreObjectId),
    INDEX (JobId)
-   );
+);
 
-
-#
-# Possibly add one or more of the following indexes
-#  to the above File table if your Verifies are
-#  too slow, but they can slow down backups.
-#
-#  INDEX (PathId),
-#  INDEX (FilenameId),
-#
-
+--
+-- Possibly add one or more of the following indexes
+--  to the above File table if your Verifies are
+--  too slow, but they can slow down backups.
+--
+--  INDEX (PathId),
+--  INDEX (FilenameId),
+--
 CREATE TABLE MediaType (
    MediaTypeId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
    MediaType TINYBLOB NOT NULL,
    ReadOnly TINYINT DEFAULT 0,
    PRIMARY KEY(MediaTypeId)
-   );
+);
 
 CREATE TABLE Storage (
    StorageId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
    Name TINYBLOB NOT NULL,
    AutoChanger TINYINT DEFAULT 0,
    PRIMARY KEY(StorageId)
-   );
+);
 
 CREATE TABLE Device (
    DeviceId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -117,8 +115,7 @@ CREATE TABLE Device (
    CleaningDate DATETIME DEFAULT 0,
    CleaningPeriod BIGINT UNSIGNED DEFAULT 0,
    PRIMARY KEY(DeviceId)
-   );
-
+);
 
 CREATE TABLE Job (
    JobId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -150,7 +147,7 @@ CREATE TABLE Job (
    Comment BLOB,
    PRIMARY KEY(JobId),
    INDEX (Name(128))
-   );
+);
 
 -- Create a table like Job for long term statistics 
 CREATE TABLE JobHisto (
@@ -183,7 +180,7 @@ CREATE TABLE JobHisto (
    Comment BLOB,
    INDEX (JobId),
    INDEX (StartTime)
-   );
+);
 
 CREATE TABLE Location (
    LocationId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -191,7 +188,7 @@ CREATE TABLE Location (
    Cost INTEGER DEFAULT 0,
    Enabled TINYINT,
    PRIMARY KEY(LocationId)
-   );
+);
 
 CREATE TABLE LocationLog (
    LocLogId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -205,15 +202,13 @@ CREATE TABLE LocationLog (
    PRIMARY KEY(LocLogId)
 );
 
-
-# 
 CREATE TABLE FileSet (
    FileSetId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
    FileSet TINYBLOB NOT NULL,
    MD5 TINYBLOB,
    CreateTime DATETIME DEFAULT 0,
    PRIMARY KEY(FileSetId)
-   );
+);
 
 CREATE TABLE JobMedia (
    JobMediaId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -228,8 +223,7 @@ CREATE TABLE JobMedia (
    VolIndex INTEGER UNSIGNED DEFAULT 0,
    PRIMARY KEY(JobMediaId),
    INDEX (JobId, MediaId)
-   );
-
+);
 
 CREATE TABLE Media (
    MediaId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -247,12 +241,12 @@ CREATE TABLE Media (
    VolBlocks INTEGER UNSIGNED DEFAULT 0,
    VolMounts INTEGER UNSIGNED DEFAULT 0,
    VolBytes BIGINT UNSIGNED DEFAULT 0,
-   VolParts INTEGER UNSIGNED DEFAULT 0,
    VolErrors INTEGER UNSIGNED DEFAULT 0,
    VolWrites INTEGER UNSIGNED DEFAULT 0,
    VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
    VolStatus ENUM('Full', 'Archive', 'Append', 'Recycle', 'Purged',
-    'Read-Only', 'Disabled', 'Error', 'Busy', 'Used', 'Cleaning') NOT NULL,
+                  'Read-Only', 'Disabled', 'Error', 'Busy', 'Used',
+                  'Cleaning') NOT NULL,
    Enabled TINYINT DEFAULT 1,
    Recycle TINYINT DEFAULT 0,
    ActionOnPurge     TINYINT	DEFAULT 0,
@@ -274,11 +268,12 @@ CREATE TABLE Media (
    InitialWrite DATETIME DEFAULT 0,
    ScratchPoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
    RecyclePoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
+   EncryptionKey TINYBLOB,
    Comment BLOB,
    PRIMARY KEY(MediaId),
    UNIQUE (VolumeName(128)),
    INDEX (PoolId)
-   );
+);
 
 CREATE TABLE Pool (
    PoolId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -308,8 +303,7 @@ CREATE TABLE Pool (
    MigrationTime BIGINT UNSIGNED DEFAULT 0,
    UNIQUE (Name(128)),
    PRIMARY KEY (PoolId)
-   );
-
+);
 
 CREATE TABLE Client (
    ClientId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -320,7 +314,7 @@ CREATE TABLE Client (
    JobRetention  BIGINT UNSIGNED DEFAULT 0,
    UNIQUE (Name(128)),
    PRIMARY KEY(ClientId)
-   );
+);
 
 CREATE TABLE Log (
    LogId INTEGER UNSIGNED AUTO_INCREMENT,
@@ -329,8 +323,7 @@ CREATE TABLE Log (
    LogText BLOB NOT NULL,
    PRIMARY KEY(LogId),
    INDEX (JobId)
-   );
-
+);
 
 CREATE TABLE BaseFiles (
    BaseId INTEGER UNSIGNED AUTO_INCREMENT,
@@ -339,7 +332,7 @@ CREATE TABLE BaseFiles (
    FileId BIGINT UNSIGNED NOT NULL REFERENCES File,
    FileIndex INTEGER UNSIGNED,
    PRIMARY KEY(BaseId)
-   );
+);
 
 CREATE INDEX basefiles_jobid_idx ON BaseFiles ( JobId );
 
@@ -349,9 +342,7 @@ CREATE TABLE UnsavedFiles (
    PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
    FilenameId INTEGER UNSIGNED NOT NULL REFERENCES Filename,
    PRIMARY KEY (UnsavedId)
-   );
-
-
+);
 
 CREATE TABLE Counters (
    Counter TINYBLOB NOT NULL,
@@ -360,49 +351,26 @@ CREATE TABLE Counters (
    CurrentValue INTEGER DEFAULT 0,
    WrapCounter TINYBLOB NOT NULL,
    PRIMARY KEY (Counter(128))
-   );
+);
 
 CREATE TABLE CDImages (
    MediaId INTEGER UNSIGNED NOT NULL,
    LastBurn DATETIME NOT NULL,
    PRIMARY KEY (MediaId)
-   );
+);
 
 CREATE TABLE Status (
    JobStatus CHAR(1) BINARY NOT NULL,
    JobStatusLong BLOB,
    Severity INT,
    PRIMARY KEY (JobStatus)
-   );
-
-INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
-   ('C', 'Created, not yet running',15),
-   ('R', 'Running',15),
-   ('B', 'Blocked',15),
-   ('T', 'Completed successfully',10),
-   ('E', 'Terminated with errors',25),
-   ('e', 'Non-fatal error',20),
-   ('f', 'Fatal error',100),
-   ('D', 'Verify found differences',15),
-   ('A', 'Canceled by user',90),
-   ('F', 'Waiting for Client',15),
-   ('S', 'Waiting for Storage daemon',15),
-   ('m', 'Waiting for new media',15),
-   ('M', 'Waiting for media mount',15),
-   ('s', 'Waiting for storage resource',15),
-   ('j', 'Waiting for job resource',15),
-   ('c', 'Waiting for client resource',15),
-   ('d', 'Waiting on maximum jobs',15),
-   ('t', 'Waiting on start time',15),
-   ('p', 'Waiting on higher priority jobs',15),
-   ('i', 'Doing batch insert file records',15),
-   ('a', 'SD despooling attributes',15);
+);
 
 CREATE TABLE PathHierarchy
 (
-     PathId integer NOT NULL,
-     PPathId integer NOT NULL,
-     CONSTRAINT pathhierarchy_pkey PRIMARY KEY (PathId)
+   PathId integer NOT NULL,
+   PPathId integer NOT NULL,
+   CONSTRAINT pathhierarchy_pkey PRIMARY KEY (PathId)
 );
 
 CREATE INDEX pathhierarchy_ppathid 
@@ -410,18 +378,56 @@ CREATE INDEX pathhierarchy_ppathid
 
 CREATE TABLE PathVisibility
 (
-      PathId integer NOT NULL,
-      JobId integer NOT NULL,
-      Size int8 DEFAULT 0,
-      Files int4 DEFAULT 0,
-      CONSTRAINT pathvisibility_pkey PRIMARY KEY (JobId, PathId)
+   PathId integer NOT NULL,
+   JobId integer NOT NULL,
+   Size int8 DEFAULT 0,
+   Files int4 DEFAULT 0,
+   CONSTRAINT pathvisibility_pkey PRIMARY KEY (JobId, PathId)
 );
 CREATE INDEX pathvisibility_jobid
 	     ON PathVisibility (JobId);
 
 CREATE TABLE Version (
    VersionId INTEGER UNSIGNED NOT NULL 
-   );
+);
+
+CREATE TABLE Quota (
+   ClientId INT UNSIGNED DEFAULT NULL,
+   GraceTime BIGINT DEFAULT 0,
+   QuotaLimit BIGINT UNSIGNED DEFAULT 0,
+   PRIMARY KEY (ClientId)
+);
+
+CREATE TABLE NDMPLevelMap (
+   ClientId INTEGER DEFAULT 0 REFERENCES Client,
+   FileSetId INTEGER UNSIGNED DEFAULT 0 REFERENCES FileSet,
+   FileSystem TINYBLOB NOT NULL,
+   PathId integer NOT NULL,
+   CONSTRAINT NDMPLevelMap_pkey PRIMARY KEY (ClientId, FilesetId, FileSystem(256))
+);
+
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('C', 'Created, not yet running', 15),
+   ('R', 'Running', 15),
+   ('B', 'Blocked', 15),
+   ('T', 'Completed successfully', 10),
+   ('E', 'Terminated with errors', 25),
+   ('e', 'Non-fatal error', 20),
+   ('f', 'Fatal error', 100),
+   ('D', 'Verify found differences', 15),
+   ('A', 'Canceled by user', 90),
+   ('F', 'Waiting for Client', 15),
+   ('S', 'Waiting for Storage daemon', 15),
+   ('m', 'Waiting for new media', 15),
+   ('M', 'Waiting for media mount', 15),
+   ('s', 'Waiting for storage resource', 15),
+   ('j', 'Waiting for job resource', 15),
+   ('c', 'Waiting for client resource', 15),
+   ('d', 'Waiting on maximum jobs', 15),
+   ('t', 'Waiting on start time', 15),
+   ('p', 'Waiting on higher priority jobs', 15),
+   ('i', 'Doing batch insert file records', 15),
+   ('a', 'SD despooling attributes', 15);
 
 -- Initialize Version		 
 INSERT INTO Version (VersionId) VALUES (@BDB_VERSION@);

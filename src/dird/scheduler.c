@@ -51,8 +51,8 @@ const int dbglvl = DBGLVL;
 
 /* Local variables */
 struct job_item {
-   RUN *run;
-   JOB *job;
+   RUNRES *run;
+   JOBRES *job;
    time_t runtime;
    int Priority;
    dlink link;                        /* link for list */
@@ -66,7 +66,7 @@ static int const next_check_secs = 60;
 
 /* Forward referenced subroutines */
 static void find_runs();
-static void add_job(JOB *job, RUN *run, time_t now, time_t runtime);
+static void add_job(JOBRES *job, RUNRES *run, time_t now, time_t runtime);
 static void dump_job(job_item *ji, const char *msg);
 
 /* Imported subroutines */
@@ -95,8 +95,8 @@ void invalidate_schedules(void) {
 JCR *wait_for_next_job(char *one_shot_job_to_run)
 {
    JCR *jcr;
-   JOB *job;
-   RUN *run;
+   JOBRES *job;
+   RUNRES *run;
    time_t now, prev;
    static bool first = true;
    job_item *next_job = NULL;
@@ -107,7 +107,7 @@ JCR *wait_for_next_job(char *one_shot_job_to_run)
       /* Create scheduled jobs list */
       jobs_to_run = New(dlist(next_job, &next_job->link));
       if (one_shot_job_to_run) {            /* one shot */
-         job = (JOB *)GetResWithName(R_JOB, one_shot_job_to_run);
+         job = (JOBRES *)GetResWithName(R_JOB, one_shot_job_to_run);
          if (!job) {
             Emsg1(M_ABORT, 0, _("Job %s not found\n"), one_shot_job_to_run);
          }
@@ -202,29 +202,33 @@ again:
       jcr->setJobLevel(run->level);  /* override run level */
    }
    if (run->pool) {
-      jcr->pool = run->pool;          /* override pool */
-      jcr->run_pool_override = true;
+      jcr->res.pool = run->pool; /* override pool */
+      jcr->res.run_pool_override = true;
    }
    if (run->full_pool) {
-      jcr->full_pool = run->full_pool; /* override full pool */
-      jcr->run_full_pool_override = true;
+      jcr->res.full_pool = run->full_pool; /* override full pool */
+      jcr->res.run_full_pool_override = true;
    }
    if (run->inc_pool) {
-      jcr->inc_pool = run->inc_pool;  /* override inc pool */
-      jcr->run_inc_pool_override = true;
+      jcr->res.inc_pool = run->inc_pool; /* override inc pool */
+      jcr->res.run_inc_pool_override = true;
    }
    if (run->diff_pool) {
-      jcr->diff_pool = run->diff_pool;  /* override dif pool */
-      jcr->run_diff_pool_override = true;
+      jcr->res.diff_pool = run->diff_pool; /* override diff pool */
+      jcr->res.run_diff_pool_override = true;
+   }
+   if (run->next_pool) {
+      jcr->res.next_pool = run->next_pool; /* override next pool */
+      jcr->res.run_next_pool_override = true;
    }
    if (run->storage) {
-      USTORE store;
+      USTORERES store;
       store.store = run->storage;
       pm_strcpy(store.store_source, _("run override"));
-      set_rwstorage(jcr, &store);     /* override storage */
+      set_rwstorage(jcr, &store); /* override storage */
    }
    if (run->msgs) {
-      jcr->messages = run->msgs;      /* override messages */
+      jcr->res.messages = run->msgs; /* override messages */
    }
    if (run->Priority) {
       jcr->JobPriority = run->Priority;
@@ -232,11 +236,8 @@ again:
    if (run->spool_data_set) {
       jcr->spool_data = run->spool_data;
    }
-   if (run->accurate_set) {     /* overwrite accurate mode */
-      jcr->accurate = run->accurate;
-   }
-   if (run->write_part_after_job_set) {
-      jcr->write_part_after_job = run->write_part_after_job;
+   if (run->accurate_set) {
+      jcr->accurate = run->accurate; /* overwrite accurate mode */
    }
    if (run->MaxRunSchedTime_set) {
       jcr->MaxRunSchedTime = run->MaxRunSchedTime;
@@ -244,7 +245,6 @@ again:
    Dmsg0(dbglvl, "Leave wait_for_next_job()\n");
    return jcr;
 }
-
 
 /*
  * Shutdown the scheduler
@@ -257,22 +257,56 @@ void term_scheduler()
 }
 
 /*
+ * check if given day of year is in last week of the month in the current year
+ * depending if the year is leap year or not, the doy of the last day of the month
+ * is varying one day.
+ */
+static bool is_doy_in_last_week(int year, int doy)
+{
+   int i;
+   int *last_dom;
+   int last_day_of_month[] = { 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
+   int last_day_of_month_leap[] = { 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 };
+
+   /*
+    * Determine if this is a leap year.
+    */
+   if (year % 400 == 0 || (year % 100 != 0 && year % 4 == 0)) {
+      last_dom = last_day_of_month_leap;
+   } else {
+      last_dom = last_day_of_month;
+   }
+
+   for (i = 0; i < 12; i++) {
+      if (doy > (last_dom[i] - 7) && doy <= last_dom[i]) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
+/*
  * Find all jobs to be run this hour and the next hour.
  */
 static void find_runs()
 {
    time_t now, next_hour, runtime;
-   RUN *run;
-   JOB *job;
-   SCHED *sched;
+   RUNRES *run;
+   JOBRES *job;
+   SCHEDRES *sched;
    struct tm tm;
-   int hour, mday, wday, month, wom, woy;
+   bool is_last_week = false;         /* are we in the last week of a month? */
+   bool nh_is_last_week = false;      /* are we in the last week of a month? */
+   int hour, mday, wday, month, wom, woy, yday;
    /* Items corresponding to above at the next hour */
-   int nh_hour, nh_mday, nh_wday, nh_month, nh_wom, nh_woy;
+   int nh_hour, nh_mday, nh_wday, nh_month, nh_wom, nh_woy, nh_yday;
 
    Dmsg0(dbglvl, "enter find_runs()\n");
 
-   /* compute values for time now */
+   /*
+    * Compute values for time now
+    */
    now = time(NULL);
    (void)localtime_r(&now, &tm);
    hour = tm.tm_hour;
@@ -280,10 +314,13 @@ static void find_runs()
    wday = tm.tm_wday;
    month = tm.tm_mon;
    wom = mday / 7;
-   woy = tm_woy(now);                     /* get week of year */
+   woy = tm_woy(now);                 /* get week of year */
+   yday = tm.tm_yday;                 /* get day of year */
 
-   Dmsg7(dbglvl, "now = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d\n",
-         now, hour, month, mday, wday, wom, woy);
+   Dmsg8(dbglvl, "now = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
+         now, hour, month, mday, wday, wom, woy, yday);
+
+   is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , yday);
 
    /*
     * Compute values for next hour from now.
@@ -297,12 +334,17 @@ static void find_runs()
    nh_wday = tm.tm_wday;
    nh_month = tm.tm_mon;
    nh_wom = nh_mday / 7;
-   nh_woy = tm_woy(next_hour);              /* get week of year */
+   nh_woy = tm_woy(next_hour);        /* get week of year */
+   nh_yday = tm.tm_yday;              /* get day of year */
 
-   Dmsg7(dbglvl, "nh = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d\n",
-         next_hour, nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy);
+   Dmsg8(dbglvl, "nh = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n\n",
+         next_hour, nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy, nh_yday);
 
-   /* Loop through all jobs */
+   nh_is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , yday);
+
+   /*
+    * Loop through all jobs
+    */
    LockRes();
    foreach_res(job, R_JOB) {
       sched = job->schedule;
@@ -336,20 +378,22 @@ static void find_runs()
             bit_is_set(nh_wday, run->wday),
             bit_is_set(nh_wom, run->wom),
             bit_is_set(nh_woy, run->woy));
+         Dmsg2(000, "run->last_set:%d, is_last_week:%d\n", run->last_set, is_last_week);
+         Dmsg2(000, "run->last_set:%d, nh_is_last_week:%d\n", run->last_set, nh_is_last_week);
 #endif
 
          run_now = bit_is_set(hour, run->hour) &&
             bit_is_set(mday, run->mday) &&
             bit_is_set(wday, run->wday) &&
             bit_is_set(month, run->month) &&
-            bit_is_set(wom, run->wom) &&
+           (bit_is_set(wom, run->wom) || (run->last_set && is_last_week)) &&
             bit_is_set(woy, run->woy);
 
          run_nh = bit_is_set(nh_hour, run->hour) &&
             bit_is_set(nh_mday, run->mday) &&
             bit_is_set(nh_wday, run->wday) &&
             bit_is_set(nh_month, run->month) &&
-            bit_is_set(nh_wom, run->wom) &&
+           (bit_is_set(wom, run->wom) || (run->last_set && nh_is_last_week)) &&
             bit_is_set(nh_woy, run->woy);
 
          Dmsg3(dbglvl, "run@%p: run_now=%d run_nh=%d\n", run, run_now, run_nh);
@@ -374,7 +418,7 @@ static void find_runs()
    Dmsg0(dbglvl, "Leave find_runs()\n");
 }
 
-static void add_job(JOB *job, RUN *run, time_t now, time_t runtime)
+static void add_job(JOBRES *job, RUNRES *run, time_t now, time_t runtime)
 {
    job_item *ji;
    bool inserted = false;

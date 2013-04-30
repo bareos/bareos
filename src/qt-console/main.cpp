@@ -38,11 +38,11 @@
 #include <QTranslator>
 
 /*
- * We need Qt version 4.8.4 or later to be able to comple correctly
+ * We need Qt version 4.7.4 or later to be able to comple correctly
  */
-#if QT_VERSION < 0x040804
+#if QT_VERSION < 0x040602
 #error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-#error "You need Qt version 4.8.4 or later to build Bat"
+#error "You need Qt version 4.6.2 or later to build Bat"
 #error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 #endif
 

@@ -87,3 +87,5 @@ extern const char CATS_IMP_EXP *match_query[];
 extern const char CATS_IMP_EXP *insert_counter_values[];
 extern const char CATS_IMP_EXP *select_counter_values[];
 extern const char CATS_IMP_EXP *update_counter_values[];
+extern const char CATS_IMP_EXP *get_quota_jobbytes[];
+extern const char CATS_IMP_EXP *get_quota_jobbytes_nofailed[];

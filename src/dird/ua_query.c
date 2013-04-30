@@ -62,7 +62,7 @@ int querycmd(UAContext *ua, const char *cmd)
    char line[1000];
    int i, item, len;
    char *prompt[9];
-   int nprompt = 0;;
+   int nprompt = 0;
    char *query_file = director->query_file;
 
    if (!open_client_db(ua)) {

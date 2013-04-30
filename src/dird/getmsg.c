@@ -126,7 +126,7 @@ static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
  *    is a *rare* case where a jcr is not really needed.
  *
  */
-int bget_dirmsg(BSOCK *bs)
+int bget_dirmsg(BSOCK *bs, bool allow_any_message)
 {
    int32_t n = BNET_TERMINATE;
    char Job[MAX_NAME_LENGTH];
@@ -179,8 +179,9 @@ int bget_dirmsg(BSOCK *bs)
          continue;
       }
 
-      /* Handle normal data */
-
+      /*
+       * Handle normal data
+       */
       if (n > 0 && B_ISDIGIT(bs->msg[0])) {      /* response? */
          return n;                    /* yes, return it */
       }
@@ -191,11 +192,21 @@ int bget_dirmsg(BSOCK *bs)
        *  Try to fulfill it.
        */
       if (sscanf(bs->msg, "%020s Job=%127s ", MsgType, Job) != 2) {
-         Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
-         continue;
+         /*
+          * If the special flag allow_any_message is given ignore
+          * the error and just return it as normal data.
+          */
+         if (allow_any_message) {
+            return n;
+         } else {
+            Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
+            continue;
+         }
       }
 
-      /* Skip past "Jmsg Job=nnn" */
+      /*
+       * Skip past "Jmsg Job=nnn"
+       */
       if (!(msg=find_msg_start(bs->msg))) {
          Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
          continue;
@@ -360,7 +371,7 @@ bool response(JCR *jcr, BSOCK *bs, char *resp, const char *cmd, e_prtmsg prtmsg)
       return false;
    }
    if ((n = bget_dirmsg(bs)) >= 0) {
-      if (strcmp(bs->msg, resp) == 0) {
+      if (bstrcmp(bs->msg, resp)) {
          return true;
       }
       if (prtmsg == DISPLAY_ERROR) {

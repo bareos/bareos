@@ -43,6 +43,9 @@ static pthread_mutex_t vss_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int enable_vss = 0;
 #endif
 
+extern bool backup_only_mode;
+extern bool restore_only_mode;
+
 /**
  * As Windows saves ACLs as part of the standard backup stream
  * we just pretend here that is has implicit acl support.
@@ -59,18 +62,20 @@ const bool have_xattr = true;
 const bool have_xattr = false;
 #endif
 
-extern CLIENT *me;                    /* our client resource */
+extern CLIENTRES *me;                 /* our client resource */
 
 /* Imported functions */
 extern int status_cmd(JCR *jcr);
 extern int qstatus_cmd(JCR *jcr);
 extern int accurate_cmd(JCR *jcr);
+extern "C" char *job_code_callback_filed(JCR *jcr, const char* param);
 
 /* Forward referenced functions */
 static int backup_cmd(JCR *jcr);
 static int bootstrap_cmd(JCR *jcr);
 static int cancel_cmd(JCR *jcr);
 static int setdebug_cmd(JCR *jcr);
+static int setbandwidth_cmd(JCR *jcr);
 static int estimate_cmd(JCR *jcr);
 static int hello_cmd(JCR *jcr);
 static int job_cmd(JCR *jcr);
@@ -85,11 +90,8 @@ static int response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd);
 static void filed_free_jcr(JCR *jcr);
 static int open_sd_read_session(JCR *jcr);
 static int runscript_cmd(JCR *jcr);
-static int runbefore_cmd(JCR *jcr);
-static int runafter_cmd(JCR *jcr);
 static int runbeforenow_cmd(JCR *jcr);
 static int restore_object_cmd(JCR *jcr);
-static int set_options(findFOPTS *fo, const char *opts);
 static void set_storage_auth_key(JCR *jcr, char *key);
 static int sm_dump_cmd(JCR *jcr);
 #ifdef DEVELOPER
@@ -108,95 +110,91 @@ struct s_cmds {
  * The following are the recognized commands from the Director.
  */
 static struct s_cmds cmds[] = {
-   {"backup",       backup_cmd,    0},
-   {"cancel",       cancel_cmd,    0},
-   {"setdebug=",    setdebug_cmd,  0},
-   {"estimate",     estimate_cmd,  0},
-   {"Hello",        hello_cmd,     1},
-   {"fileset",      fileset_cmd,   0},
-   {"JobId=",       job_cmd,       0},
-   {"level = ",     level_cmd,     0},
-   {"restore ",     restore_cmd,   0},
-   {"endrestore",   end_restore_cmd, 0},
-   {"session",      session_cmd,   0},
-   {"status",       status_cmd,    1},
-   {".status",      qstatus_cmd,   1},
-   {"storage ",     storage_cmd,   0},
-   {"verify",       verify_cmd,    0},
-   {"bootstrap",    bootstrap_cmd, 0},
-   {"RunBeforeNow", runbeforenow_cmd, 0},
-   {"RunBeforeJob", runbefore_cmd, 0},
-   {"RunAfterJob",  runafter_cmd,  0},
-   {"Run",          runscript_cmd, 0},
-   {"accurate",     accurate_cmd,  0},
-   {"restoreobject", restore_object_cmd, 0},
-   {"sm_dump",      sm_dump_cmd, 0},
+   { "backup", backup_cmd, 0 },
+   { "cancel", cancel_cmd, 0 },
+   { "setdebug=", setdebug_cmd, 0 },
+   { "setbandwidth=", setbandwidth_cmd, 0 },
+   { "estimate", estimate_cmd, 0 },
+   { "Hello", hello_cmd, 1 },
+   { "fileset", fileset_cmd, 0 },
+   { "JobId=", job_cmd, 0 },
+   { "level = ", level_cmd, 0 },
+   { "restore ", restore_cmd, 0 },
+   { "endrestore", end_restore_cmd, 0 },
+   { "session", session_cmd, 0 },
+   { "status", status_cmd, 1 },
+   { ".status", qstatus_cmd, 1 },
+   { "storage ", storage_cmd, 0 },
+   { "verify", verify_cmd, 0 },
+   { "bootstrap", bootstrap_cmd, 0 },
+   { "RunBeforeNow", runbeforenow_cmd, 0 },
+   { "Run", runscript_cmd, 0 },
+   { "accurate", accurate_cmd, 0 },
+   { "restoreobject", restore_object_cmd, 0 },
+   { "sm_dump", sm_dump_cmd, 0 },
 #ifdef DEVELOPER
-   {"exit",         exit_cmd, 0},
+   { "exit", exit_cmd, 0 },
 #endif
-   {NULL,       NULL}                  /* list terminator */
+   { NULL, NULL } /* list terminator */
 };
 
 /* Commands received from director that need scanning */
-static char jobcmd[]      = "JobId=%d Job=%127s SDid=%d SDtime=%d Authorization=%100s";
-static char storaddr[]    = "storage address=%s port=%d ssl=%d Authorization=%100s";
+static char jobcmd[] = "JobId=%d Job=%127s SDid=%d SDtime=%d Authorization=%100s";
+static char storaddr[] = "storage address=%s port=%d ssl=%d Authorization=%100s";
 static char storaddr_v1[] = "storage address=%s port=%d ssl=%d";
-static char sessioncmd[]  = "session %127s %ld %ld %ld %ld %ld %ld\n";
-static char restorecmd[]  = "restore replace=%c prelinks=%d where=%s\n";
+static char sessioncmd[] = "session %127s %ld %ld %ld %ld %ld %ld\n";
+static char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
 static char restorecmd1[] = "restore replace=%c prelinks=%d where=\n";
 static char restorecmdR[] = "restore replace=%c prelinks=%d regexwhere=%s\n";
 static char restoreobjcmd[]  = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d,%s";
 static char restoreobjcmd1[] = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d\n";
 static char endrestoreobjectcmd[] = "restoreobject end\n";
-static char verifycmd[]   = "verify level=%30s";
+static char verifycmd[] = "verify level=%30s";
 static char estimatecmd[] = "estimate listing=%d";
-static char runbefore[]   = "RunBeforeJob %s";
-static char runafter[]    = "RunAfterJob %s";
-static char runscript[]   = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
+static char runscript[] = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
+static char setbandwidth[] = "setbandwidth=%lld Job=%127s";
 
 /* Responses sent to Director */
-static char errmsg[]      = "2999 Invalid command\n";
-static char no_auth[]     = "2998 No Authorization\n";
+static char errmsg[] = "2999 Invalid command\n";
+static char no_auth[] = "2998 No Authorization\n";
 static char invalid_cmd[] = "2997 Invalid command for a Director with Monitor directive enabled.\n";
-static char OKinc[]       = "2000 OK include\n";
-static char OKest[]       = "2000 OK estimate files=%s bytes=%s\n";
-static char OKlevel[]     = "2000 OK level\n";
-static char OKbackup[]    = "2000 OK backup\n";
+static char OKBandwidth[] = "2000 OK Bandwidth\n";
+static char OKinc[] = "2000 OK include\n";
+static char OKest[] = "2000 OK estimate files=%s bytes=%s\n";
+static char OKlevel[] = "2000 OK level\n";
+static char OKbackup[] = "2000 OK backup\n";
 static char OKbootstrap[] = "2000 OK bootstrap\n";
-static char OKverify[]    = "2000 OK verify\n";
-static char OKrestore[]   = "2000 OK restore\n";
-static char OKsession[]   = "2000 OK session\n";
-static char OKstore[]     = "2000 OK storage\n";
+static char OKverify[] = "2000 OK verify\n";
+static char OKrestore[] = "2000 OK restore\n";
+static char OKsession[] = "2000 OK session\n";
+static char OKstore[] = "2000 OK storage\n";
 static char OKstoreend[]  = "2000 OK storage end\n";
-static char OKjob[]       = "2000 OK Job %s (%s) %s,%s,%s";
-static char OKsetdebug[]  = "2000 OK setdebug=%d trace=%d hangup=%d\n";
-static char BADjob[]      = "2901 Bad Job\n";
-static char EndJob[]      = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
-                            " JobBytes=%s Errors=%u VSS=%d Encrypt=%d\n";
-static char OKRunBefore[] = "2000 OK RunBefore\n";
+static char OKjob[] = "2000 OK Job %s (%s) %s,%s,%s";
+static char OKsetdebug[] = "2000 OK setdebug=%d trace=%d hangup=%d\n";
+static char BADjob[] = "2901 Bad Job\n";
+static char EndJob[] = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
+                       " JobBytes=%s Errors=%u VSS=%d Encrypt=%d\n";
 static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
-static char OKRunAfter[]  = "2000 OK RunAfter\n";
 static char OKRunScript[] = "2000 OK RunScript\n";
-static char BADcmd[]      = "2902 Bad %s\n";
+static char FailedRunScript[] = "2905 Failed RunScript\n";
+static char BADcmd[] = "2902 Bad %s\n";
 static char OKRestoreObject[] = "2000 OK ObjectRestored\n";
 
-
 /* Responses received from Storage Daemon */
-static char OK_end[]       = "3000 OK end\n";
-static char OK_close[]     = "3000 OK close Status = %d\n";
-static char OK_open[]      = "3000 OK open ticket = %d\n";
-static char OK_data[]      = "3000 OK data\n";
-static char OK_append[]    = "3000 OK append data\n";
-
+static char OK_end[] = "3000 OK end\n";
+static char OK_close[] = "3000 OK close Status = %d\n";
+static char OK_open[] = "3000 OK open ticket = %d\n";
+static char OK_data[] = "3000 OK data\n";
+static char OK_append[] = "3000 OK append data\n";
 
 /* Commands sent to Storage Daemon */
-static char append_open[]  = "append open session\n";
-static char append_data[]  = "append data %d\n";
-static char append_end[]   = "append end session %d\n";
+static char append_open[] = "append open session\n";
+static char append_data[] = "append data %d\n";
+static char append_end[] = "append end session %d\n";
 static char append_close[] = "append close session %d\n";
-static char read_open[]    = "read open session = %s %ld %ld %ld %ld %ld %ld\n";
-static char read_data[]    = "read data %d\n";
-static char read_close[]   = "read close session %d\n";
+static char read_open[] = "read open session = %s %ld %ld %ld %ld %ld %ld\n";
+static char read_data[] = "read data %d\n";
+static char read_close[] = "read close session %d\n";
 
 /**
  * Accept requests from a Director
@@ -316,7 +314,6 @@ void *handle_client_request(void *dirp)
       Dmsg1(110, "End FD msg: %s\n", dir->msg);
    }
 
-   generate_daemon_event(jcr, "JobEnd");
    generate_plugin_event(jcr, bEventJobEnd);
 
    dequeue_messages(jcr);             /* send any queued messages */
@@ -349,6 +346,9 @@ void *handle_client_request(void *dirp)
             for (k=0; k<fo->regexfile.size(); k++) {
                regfree((regex_t *)fo->regexfile.get(k));
             }
+            if (fo->size_match) {
+               free(fo->size_match);
+            }
             fo->regex.destroy();
             fo->regexdir.destroy();
             fo->regexfile.destroy();
@@ -374,6 +374,9 @@ void *handle_client_request(void *dirp)
          findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
          for (j=0; j<incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+            if (fo->size_match) {
+               free(fo->size_match);
+            }
             fo->regex.destroy();
             fo->regexdir.destroy();
             fo->regexfile.destroy();
@@ -426,7 +429,6 @@ static int exit_cmd(JCR *jcr)
 }
 #endif
 
-
 /**
  * Hello from Director he must identify himself and provide his
  *  password.
@@ -470,6 +472,42 @@ static int cancel_cmd(JCR *jcr)
    }
    dir->signal(BNET_EOD);
    return 1;
+}
+
+/**
+ * Set bandwidth limit as requested by the Director
+ *
+ */
+static int setbandwidth_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   int64_t bw=0;
+   JCR *cjcr;
+   char Job[MAX_NAME_LENGTH];
+   *Job=0;
+
+   if (sscanf(dir->msg, setbandwidth, &bw, Job) != 2 || bw < 0) {
+      pm_strcpy(jcr->errmsg, dir->msg);
+      dir->fsend(_("2991 Bad setbandwidth command: %s\n"), jcr->errmsg);
+      return 0;
+   }
+
+   if (*Job) {
+      if(!(cjcr=get_jcr_by_full_name(Job))) {
+         dir->fsend(_("2901 Job %s not found.\n"), Job);
+      } else {
+         cjcr->max_bandwidth = bw;
+         if (cjcr->store_bsock) {
+            cjcr->store_bsock->set_bwlimit(bw);
+         }
+         free_jcr(cjcr);
+      }
+
+   } else {                           /* No job requested, apply globally */
+      me->max_bandwidth_per_job = bw; /* Overwrite directive */
+   }
+
+   return dir->fsend(OKBandwidth);
 }
 
 /**
@@ -552,61 +590,13 @@ static int job_cmd(JCR *jcr)
 #endif
 }
 
-extern "C" char *job_code_callback_filed(JCR *jcr, const char* param)
-{
-   switch (param[0]) {
-      case 'D':
-         if (jcr->director) { 
-            return jcr->director->hdr.name;
-         }
-         break;
-   }
-   return NULL;
-
-}
-
-static int runbefore_cmd(JCR *jcr)
-{
-   bool ok;
-   BSOCK *dir = jcr->dir_bsock;
-   POOLMEM *cmd = get_memory(dir->msglen+1);
-   RUNSCRIPT *script;
-
-   Dmsg1(100, "runbefore_cmd: %s", dir->msg);
-   if (sscanf(dir->msg, runbefore, cmd) != 1) {
-      pm_strcpy(jcr->errmsg, dir->msg);
-      Jmsg1(jcr, M_FATAL, 0, _("Bad RunBeforeJob command: %s\n"), jcr->errmsg);
-      dir->fsend(_("2905 Bad RunBeforeJob command.\n"));
-      free_memory(cmd);
-      return 0;
-   }
-   unbash_spaces(cmd);
-
-   /* Run the command now */
-   script = new_runscript();
-   script->set_job_code_callback(job_code_callback_filed);
-   script->set_command(cmd);
-   script->when = SCRIPT_Before;
-   ok = script->run(jcr, "ClientRunBeforeJob");
-   free_runscript(script);
-
-   free_memory(cmd);
-   if (ok) {
-      dir->fsend(OKRunBefore);
-      return 1;
-   } else {
-      dir->fsend(_("2905 Bad RunBeforeJob command.\n"));
-      return 0;
-   }
-}
-
 static int runbeforenow_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
 
    run_scripts(jcr, jcr->RunScripts, "ClientBeforeJob");
    if (job_canceled(jcr)) {
-      dir->fsend(_("2905 Bad RunBeforeNow command.\n"));
+      dir->fsend(FailedRunScript);
       Dmsg0(100, "Back from run_scripts ClientBeforeJob now: FAILED\n");
       return 0;
    } else {
@@ -614,35 +604,6 @@ static int runbeforenow_cmd(JCR *jcr)
       Dmsg0(100, "Back from run_scripts ClientBeforeJob now: OK\n");
       return 1;
    }
-}
-
-static int runafter_cmd(JCR *jcr)
-{
-   BSOCK *dir = jcr->dir_bsock;
-   POOLMEM *msg = get_memory(dir->msglen+1);
-   RUNSCRIPT *cmd;
-
-   Dmsg1(100, "runafter_cmd: %s", dir->msg);
-   if (sscanf(dir->msg, runafter, msg) != 1) {
-      pm_strcpy(jcr->errmsg, dir->msg);
-      Jmsg1(jcr, M_FATAL, 0, _("Bad RunAfter command: %s\n"), jcr->errmsg);
-      dir->fsend(_("2905 Bad RunAfterJob command.\n"));
-      free_memory(msg);
-      return 0;
-   }
-   unbash_spaces(msg);
-
-   cmd = new_runscript();
-   cmd->set_job_code_callback(job_code_callback_filed);
-   cmd->set_command(msg);
-   cmd->on_success = true;
-   cmd->on_failure = false;
-   cmd->when = SCRIPT_After;
-
-   jcr->RunScripts->append(cmd);
-
-   free_pool_memory(msg);
-   return dir->fsend(OKRunAfter);
 }
 
 static int runscript_cmd(JCR *jcr)
@@ -698,7 +659,7 @@ static int restore_object_cmd(JCR *jcr)
    rop.pkt_end = sizeof(rop);
 
    Dmsg1(100, "Enter restoreobject_cmd: %s", dir->msg);
-   if (strcmp(dir->msg, endrestoreobjectcmd) == 0) {
+   if (bstrcmp(dir->msg, endrestoreobjectcmd)) {
       generate_plugin_event(jcr, bEventRestoreObject, NULL);
       return dir->fsend(OKRestoreObject);
    }
@@ -745,12 +706,12 @@ static int restore_object_cmd(JCR *jcr)
 
    /* If object is compressed, uncompress it */
    if (rop.object_compression == 1) {   /* zlib level 9 */
-      int stat;
+      int status;
       int out_len = rop.object_full_len + 100;
       POOLMEM *obj = get_memory(out_len);
       Dmsg2(100, "Inflating from %d to %d\n", rop.object_len, rop.object_full_len);
-      stat = Zinflate(rop.object, rop.object_len, obj, out_len);
-      Dmsg1(100, "Zinflate stat=%d\n", stat);
+      status = Zinflate(rop.object, rop.object_len, obj, out_len);
+      Dmsg1(100, "Zinflate status=%d\n", status);
       if (out_len != rop.object_full_len) {
          Jmsg3(jcr, M_ERROR, 0, ("Decompression failed. Len wanted=%d got=%d. Object=%s\n"),
             rop.object_full_len, out_len, rop.object_name);
@@ -761,7 +722,7 @@ static int restore_object_cmd(JCR *jcr)
    }
    Dmsg2(100, "Recv Object: len=%d Object=%s\n", rop.object_len, rop.object);
    /* we still need to do this to detect a vss restore */
-   if (strcmp(rop.object_name, "job_metadata.xml") == 0) {
+   if (bstrcmp(rop.object_name, "job_metadata.xml")) {
       Dmsg0(100, "got job metadata\n");
       jcr->got_metadata = true;
    }
@@ -786,684 +747,6 @@ bail_out:
    return 0;
 
 }
-
-
-static bool init_fileset(JCR *jcr)
-{
-   FF_PKT *ff;
-   findFILESET *fileset;
-
-   if (!jcr->ff) {
-      return false;
-   }
-   ff = jcr->ff;
-   if (ff->fileset) {
-      return false;
-   }
-   fileset = (findFILESET *)malloc(sizeof(findFILESET));
-   memset(fileset, 0, sizeof(findFILESET));
-   ff->fileset = fileset;
-   fileset->state = state_none;
-   fileset->include_list.init(1, true);
-   fileset->exclude_list.init(1, true);
-   return true;
-}
-
-static void append_file(JCR *jcr, findINCEXE *incexe, 
-                        const char *buf, bool is_file)
-{
-   if (is_file) {
-      incexe->name_list.append(new_dlistString(buf));
-
-   } else if (me->plugin_directory) {
-      generate_plugin_event(jcr, bEventPluginCommand, (void *)buf);
-      incexe->plugin_list.append(new_dlistString(buf));
-
-   } else {
-      Jmsg(jcr, M_FATAL, 0, 
-           _("Plugin Directory not defined. Cannot use plugin: \"%s\"\n"),
-           buf);
-   }
-}
-
-/**
- * Add fname to include/exclude fileset list. First check for
- * | and < and if necessary perform command.
- */
-void add_file_to_fileset(JCR *jcr, const char *fname, bool is_file)
-{
-   findFILESET *fileset = jcr->ff->fileset;
-   char *p;
-   BPIPE *bpipe;
-   POOLMEM *fn;
-   FILE *ffd;
-   char buf[1000];
-   int ch;
-   int stat;
-
-   p = (char *)fname;
-   ch = (uint8_t)*p;
-   switch (ch) {
-   case '|':
-      p++;                            /* skip over | */
-      fn = get_pool_memory(PM_FNAME);
-      fn = edit_job_codes(jcr, fn, p, "", job_code_callback_filed);
-      bpipe = open_bpipe(fn, 0, "r");
-      if (!bpipe) {
-         berrno be;
-         Jmsg(jcr, M_FATAL, 0, _("Cannot run program: %s. ERR=%s\n"),
-            p, be.bstrerror());
-         free_pool_memory(fn);
-         return;
-      }
-      free_pool_memory(fn);
-      while (fgets(buf, sizeof(buf), bpipe->rfd)) {
-         strip_trailing_junk(buf);
-         append_file(jcr, fileset->incexe, buf, is_file);
-      }
-      if ((stat=close_bpipe(bpipe)) != 0) {
-         berrno be;
-         Jmsg(jcr, M_FATAL, 0, _("Error running program: %s. stat=%d: ERR=%s\n"),
-            p, be.code(stat), be.bstrerror(stat));
-         return;
-      }
-      break;
-   case '<':
-      Dmsg1(100, "Doing < of '%s' include on client.\n", p + 1);
-      p++;                      /* skip over < */
-      if ((ffd = fopen(p, "rb")) == NULL) {
-         berrno be;
-         Jmsg(jcr, M_FATAL, 0, 
-              _("Cannot open FileSet input file: %s. ERR=%s\n"),
-            p, be.bstrerror());
-         return;
-      }
-      while (fgets(buf, sizeof(buf), ffd)) {
-         strip_trailing_junk(buf);
-         append_file(jcr, fileset->incexe, buf, is_file);
-      }
-      fclose(ffd);
-      break;
-   default:
-      append_file(jcr, fileset->incexe, fname, is_file);
-      break;
-   }
-}
-
-findINCEXE *get_incexe(JCR *jcr)
-{
-   if (jcr->ff && jcr->ff->fileset) {
-      return jcr->ff->fileset->incexe;
-   }
-   return NULL;
-}
-
-void set_incexe(JCR *jcr, findINCEXE *incexe)
-{
-   findFILESET *fileset = jcr->ff->fileset;
-   fileset->incexe = incexe;
-}
-
-
-/**
- * Define a new Exclude block in the FileSet
- */
-findINCEXE *new_exclude(JCR *jcr)
-{
-   findFILESET *fileset = jcr->ff->fileset;
-
-   /* New exclude */
-   fileset->incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-   memset(fileset->incexe, 0, sizeof(findINCEXE));
-   fileset->incexe->opts_list.init(1, true);
-   fileset->incexe->name_list.init();
-   fileset->incexe->plugin_list.init();
-   fileset->exclude_list.append(fileset->incexe);
-   return fileset->incexe;
-}
-
-/**
- * Define a new Include block in the FileSet
- */
-findINCEXE *new_include(JCR *jcr)
-{
-   findFILESET *fileset = jcr->ff->fileset;
-
-   /* New include */
-   fileset->incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-   memset(fileset->incexe, 0, sizeof(findINCEXE));
-   fileset->incexe->opts_list.init(1, true);
-   fileset->incexe->name_list.init(); /* for dlist;  was 1,true for alist */
-   fileset->incexe->plugin_list.init();
-   fileset->include_list.append(fileset->incexe);
-   return fileset->incexe;
-}
-
-/**
- * Define a new preInclude block in the FileSet
- *   That is the include is prepended to the other
- *   Includes.  This is used for plugin exclusions.
- */
-findINCEXE *new_preinclude(JCR *jcr)
-{
-   findFILESET *fileset = jcr->ff->fileset;
-
-   /* New pre-include */
-   fileset->incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-   memset(fileset->incexe, 0, sizeof(findINCEXE));
-   fileset->incexe->opts_list.init(1, true);
-   fileset->incexe->name_list.init(); /* for dlist;  was 1,true for alist */
-   fileset->incexe->plugin_list.init();
-   fileset->include_list.prepend(fileset->incexe);
-   return fileset->incexe;
-}
-
-static findFOPTS *start_options(FF_PKT *ff)
-{
-   int state = ff->fileset->state;
-   findINCEXE *incexe = ff->fileset->incexe;
-
-   if (state != state_options) {
-      ff->fileset->state = state_options;
-      findFOPTS *fo = (findFOPTS *)malloc(sizeof(findFOPTS));
-      memset(fo, 0, sizeof(findFOPTS));
-      fo->regex.init(1, true);
-      fo->regexdir.init(1, true);
-      fo->regexfile.init(1, true);
-      fo->wild.init(1, true);
-      fo->wilddir.init(1, true);
-      fo->wildfile.init(1, true);
-      fo->wildbase.init(1, true);
-      fo->base.init(1, true);
-      fo->fstype.init(1, true);
-      fo->drivetype.init(1, true);
-      incexe->current_opts = fo;
-      incexe->opts_list.append(fo);
-   }
-   return incexe->current_opts;
-}
-
-/*
- * Used by plugins to define a new options block
- */
-void new_options(JCR *jcr, findINCEXE *incexe)
-{
-   if (!incexe) {
-      incexe = jcr->ff->fileset->incexe;
-   }
-   findFOPTS *fo = (findFOPTS *)malloc(sizeof(findFOPTS));
-   memset(fo, 0, sizeof(findFOPTS));
-   fo->regex.init(1, true);
-   fo->regexdir.init(1, true);
-   fo->regexfile.init(1, true);
-   fo->wild.init(1, true);
-   fo->wilddir.init(1, true);
-   fo->wildfile.init(1, true);
-   fo->wildbase.init(1, true);
-   fo->base.init(1, true);
-   fo->fstype.init(1, true);
-   fo->drivetype.init(1, true);
-   incexe->current_opts = fo;
-   incexe->opts_list.prepend(fo);
-   jcr->ff->fileset->state = state_options;
-}
-
-/**
- * Add a regex to the current fileset
- */
-int add_regex_to_fileset(JCR *jcr, const char *item, int type)
-{
-   findFOPTS *current_opts = start_options(jcr->ff);
-   regex_t *preg;
-   int rc;
-   char prbuf[500];
-
-   preg = (regex_t *)malloc(sizeof(regex_t));
-   if (current_opts->flags & FO_IGNORECASE) {
-      rc = regcomp(preg, item, REG_EXTENDED|REG_ICASE);
-   } else {
-      rc = regcomp(preg, item, REG_EXTENDED);
-   }
-   if (rc != 0) {
-      regerror(rc, preg, prbuf, sizeof(prbuf));
-      regfree(preg);
-      free(preg);
-      Jmsg(jcr, M_FATAL, 0, _("REGEX %s compile error. ERR=%s\n"), item, prbuf);
-      return state_error;
-   }
-   if (type == ' ') {
-      current_opts->regex.append(preg);
-   } else if (type == 'D') {
-      current_opts->regexdir.append(preg);
-   } else if (type == 'F') {
-      current_opts->regexfile.append(preg);
-   } else {
-      return state_error;
-   }
-   return state_options;
-}
-
-/**
- * Add a wild card to the current fileset
- */
-int add_wild_to_fileset(JCR *jcr, const char *item, int type)
-{
-   findFOPTS *current_opts = start_options(jcr->ff);
-
-   if (type == ' ') {
-      current_opts->wild.append(bstrdup(item));
-   } else if (type == 'D') {
-      current_opts->wilddir.append(bstrdup(item));
-   } else if (type == 'F') {
-      current_opts->wildfile.append(bstrdup(item));
-   } else if (type == 'B') {
-      current_opts->wildbase.append(bstrdup(item));
-   } else {
-      return state_error;
-   }
-   return state_options;
-}
-
-
-/**
- * Add options to the current fileset
- */
-int add_options_to_fileset(JCR *jcr, const char *item)
-{
-   findFOPTS *current_opts = start_options(jcr->ff);
-
-   set_options(current_opts, item);
-   return state_options;
-}
-
-static void add_fileset(JCR *jcr, const char *item)
-{
-   FF_PKT *ff = jcr->ff;
-   findFILESET *fileset = ff->fileset;
-   int state = fileset->state;
-   findFOPTS *current_opts;
-
-   /* Get code, optional subcode, and position item past the dividing space */
-   Dmsg1(100, "%s\n", item);
-   int code = item[0];
-   if (code != '\0') {
-      ++item;
-   }
-   int subcode = ' ';               /* A space is always a valid subcode */
-   if (item[0] != '\0' && item[0] != ' ') {
-      subcode = item[0];
-      ++item;
-   }
-   if (*item == ' ') {
-      ++item;
-   }
-
-   /* Skip all lines we receive after an error */
-   if (state == state_error) {
-      Dmsg0(100, "State=error return\n");
-      return;
-   }
-
-   /**
-    * The switch tests the code for validity.
-    * The subcode is always good if it is a space, otherwise we must confirm.
-    * We set state to state_error first assuming the subcode is invalid,
-    * requiring state to be set in cases below that handle subcodes.
-    */
-   if (subcode != ' ') {
-      state = state_error;
-      Dmsg0(100, "Set state=error or double code.\n");
-   }
-   switch (code) {
-   case 'I':
-      (void)new_include(jcr);
-      break;
-   case 'E':
-      (void)new_exclude(jcr);
-      break;
-   case 'N':                             /* null */
-      state = state_none;
-      break;
-   case 'F':                             /* file = */
-      /* File item to include or exclude list */
-      state = state_include;
-      add_file_to_fileset(jcr, item, true);
-      break;
-   case 'P':                              /* plugin */
-      /* Plugin item to include list */
-      state = state_include;
-      add_file_to_fileset(jcr, item, false);
-      break;
-   case 'R':                              /* regex */
-      state = add_regex_to_fileset(jcr, item, subcode);
-      break;
-   case 'B':
-      current_opts = start_options(ff);
-      current_opts->base.append(bstrdup(item));
-      state = state_options;
-      break;
-   case 'X':                             /* Filetype or Drive type */
-      current_opts = start_options(ff);
-      state = state_options;
-      if (subcode == ' ') {
-         current_opts->fstype.append(bstrdup(item));
-      } else if (subcode == 'D') {
-         current_opts->drivetype.append(bstrdup(item));
-      } else {
-         state = state_error;
-      }
-      break;
-   case 'W':                               /* wild cards */
-      state = add_wild_to_fileset(jcr, item, subcode);
-      break;
-   case 'O':                                /* Options */
-      state = add_options_to_fileset(jcr, item);
-      break;
-   case 'Z':                                /* ignore dir */
-      state = state_include;
-      fileset->incexe->ignoredir = bstrdup(item);
-      break;
-   case 'D':
-      current_opts = start_options(ff);
-//    current_opts->reader = bstrdup(item); /* deprecated */
-      state = state_options;
-      break;
-   case 'T':
-      current_opts = start_options(ff);
-//    current_opts->writer = bstrdup(item); /* deprecated */
-      state = state_options;
-      break;
-   case 'G':                    /* Plugin command for this Option block */
-      current_opts = start_options(ff);
-      current_opts->plugin = bstrdup(item);
-      state = state_options;
-      break;
-   default:
-      Jmsg(jcr, M_FATAL, 0, _("Invalid FileSet command: %s\n"), item);
-      state = state_error;
-      break;
-   }
-   ff->fileset->state = state;
-}
-
-static bool term_fileset(JCR *jcr)
-{
-   FF_PKT *ff = jcr->ff;
-
-#ifdef xxx_DEBUG_CODE
-   findFILESET *fileset = ff->fileset;
-   int i, j, k;
-
-   for (i=0; i<fileset->include_list.size(); i++) {
-      findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
-      Dmsg0(400, "I\n");
-      for (j=0; j<incexe->opts_list.size(); j++) {
-         findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
-         for (k=0; k<fo->regex.size(); k++) {
-            Dmsg1(400, "R %s\n", (char *)fo->regex.get(k));
-         }
-         for (k=0; k<fo->regexdir.size(); k++) {
-            Dmsg1(400, "RD %s\n", (char *)fo->regexdir.get(k));
-         }
-         for (k=0; k<fo->regexfile.size(); k++) {
-            Dmsg1(400, "RF %s\n", (char *)fo->regexfile.get(k));
-         }
-         for (k=0; k<fo->wild.size(); k++) {
-            Dmsg1(400, "W %s\n", (char *)fo->wild.get(k));
-         }
-         for (k=0; k<fo->wilddir.size(); k++) {
-            Dmsg1(400, "WD %s\n", (char *)fo->wilddir.get(k));
-         }
-         for (k=0; k<fo->wildfile.size(); k++) {
-            Dmsg1(400, "WF %s\n", (char *)fo->wildfile.get(k));
-         }
-         for (k=0; k<fo->wildbase.size(); k++) {
-            Dmsg1(400, "WB %s\n", (char *)fo->wildbase.get(k));
-         }
-         for (k=0; k<fo->base.size(); k++) {
-            Dmsg1(400, "B %s\n", (char *)fo->base.get(k));
-         }
-         for (k=0; k<fo->fstype.size(); k++) {
-            Dmsg1(400, "X %s\n", (char *)fo->fstype.get(k));
-         }
-         for (k=0; k<fo->drivetype.size(); k++) {
-            Dmsg1(400, "XD %s\n", (char *)fo->drivetype.get(k));
-         }
-      }
-      if (incexe->ignoredir) {
-         Dmsg1(400, "Z %s\n", incexe->ignoredir);
-      }
-      dlistString *node;
-      foreach_dlist(node, &incexe->name_list) {
-         Dmsg1(400, "F %s\n", node->c_str());
-      }
-      foreach_dlist(node, &incexe->plugin_list) {
-         Dmsg1(400, "P %s\n", node->c_str());
-      }
-   }
-   for (i=0; i<fileset->exclude_list.size(); i++) {
-      findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
-      Dmsg0(400, "E\n");
-      for (j=0; j<incexe->opts_list.size(); j++) {
-         findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
-         for (k=0; k<fo->regex.size(); k++) {
-            Dmsg1(400, "R %s\n", (char *)fo->regex.get(k));
-         }
-         for (k=0; k<fo->regexdir.size(); k++) {
-            Dmsg1(400, "RD %s\n", (char *)fo->regexdir.get(k));
-         }
-         for (k=0; k<fo->regexfile.size(); k++) {
-            Dmsg1(400, "RF %s\n", (char *)fo->regexfile.get(k));
-         }
-         for (k=0; k<fo->wild.size(); k++) {
-            Dmsg1(400, "W %s\n", (char *)fo->wild.get(k));
-         }
-         for (k=0; k<fo->wilddir.size(); k++) {
-            Dmsg1(400, "WD %s\n", (char *)fo->wilddir.get(k));
-         }
-         for (k=0; k<fo->wildfile.size(); k++) {
-            Dmsg1(400, "WF %s\n", (char *)fo->wildfile.get(k));
-         }
-         for (k=0; k<fo->wildbase.size(); k++) {
-            Dmsg1(400, "WB %s\n", (char *)fo->wildbase.get(k));
-         }
-         for (k=0; k<fo->base.size(); k++) {
-            Dmsg1(400, "B %s\n", (char *)fo->base.get(k));
-         }
-         for (k=0; k<fo->fstype.size(); k++) {
-            Dmsg1(400, "X %s\n", (char *)fo->fstype.get(k));
-         }
-         for (k=0; k<fo->drivetype.size(); k++) {
-            Dmsg1(400, "XD %s\n", (char *)fo->drivetype.get(k));
-         }
-      }
-      dlistString *node;
-      foreach_dlist(node, &incexe->name_list) {
-         Dmsg1(400, "F %s\n", node->c_str());
-      }
-      foreach_dlist(node, &incexe->plugin_list) {
-         Dmsg1(400, "P %s\n", node->c_str());
-      }
-   }
-#endif
-   return ff->fileset->state != state_error;
-}
-
-
-/**
- * As an optimization, we should do this during
- *  "compile" time in filed/job.c, and keep only a bit mask
- *  and the Verify options.
- */
-static int set_options(findFOPTS *fo, const char *opts)
-{
-   int j;
-   const char *p;
-   char strip[100];
-
-// Commented out as it is not backward compatible - KES
-#ifdef HAVE_WIN32
-//   fo->flags |= FO_IGNORECASE; /* always ignorecase under windows */
-#endif
-
-   for (p=opts; *p; p++) {
-      switch (*p) {
-      case 'a':                 /* alway replace */
-      case '0':                 /* no option */
-         break;
-      case 'e':
-         fo->flags |= FO_EXCLUDE;
-         break;
-      case 'f':
-         fo->flags |= FO_MULTIFS;
-         break;
-      case 'h':                 /* no recursion */
-         fo->flags |= FO_NO_RECURSION;
-         break;
-      case 'H':                 /* no hard link handling */
-         fo->flags |= FO_NO_HARDLINK;
-         break;
-      case 'i':
-         fo->flags |= FO_IGNORECASE;
-         break;
-      case 'M':                 /* MD5 */
-         fo->flags |= FO_MD5;
-         break;
-      case 'n':
-         fo->flags |= FO_NOREPLACE;
-         break;
-      case 'p':                 /* use portable data format */
-         fo->flags |= FO_PORTABLE;
-         break;
-      case 'R':                 /* Resource forks and Finder Info */
-         fo->flags |= FO_HFSPLUS;
-         break;
-      case 'r':                 /* read fifo */
-         fo->flags |= FO_READFIFO;
-         break;
-      case 'S':
-         switch(*(p + 1)) {
-         case '1':
-            fo->flags |= FO_SHA1;
-            p++;
-            break;
-#ifdef HAVE_SHA2
-         case '2':
-            fo->flags |= FO_SHA256;
-            p++;
-            break;
-         case '3':
-            fo->flags |= FO_SHA512;
-            p++;
-            break;
-#endif
-         default:
-            /*
-             * If 2 or 3 is seen here, SHA2 is not configured, so
-             *  eat the option, and drop back to SHA-1.
-             */
-            if (p[1] == '2' || p[1] == '3') {
-               p++;
-            }
-            fo->flags |= FO_SHA1;
-            break;
-         }
-         break;
-      case 's':
-         fo->flags |= FO_SPARSE;
-         break;
-      case 'm':
-         fo->flags |= FO_MTIMEONLY;
-         break;
-      case 'k':
-         fo->flags |= FO_KEEPATIME;
-         break;
-      case 'A':
-         fo->flags |= FO_ACL;
-         break;
-      case 'V':                  /* verify options */
-         /* Copy Verify Options */
-         for (j=0; *p && *p != ':'; p++) {
-            fo->VerifyOpts[j] = *p;
-            if (j < (int)sizeof(fo->VerifyOpts) - 1) {
-               j++;
-            }
-         }
-         fo->VerifyOpts[j] = 0;
-         break;
-      case 'C':                  /* accurate options */
-         /* Copy Accurate Options */
-         for (j=0; *p && *p != ':'; p++) {
-            fo->AccurateOpts[j] = *p;
-            if (j < (int)sizeof(fo->AccurateOpts) - 1) {
-               j++;
-            }
-         }
-         fo->AccurateOpts[j] = 0;
-         break;
-      case 'J':                  /* Basejob options */
-         /* Copy BaseJob Options */
-         for (j=0; *p && *p != ':'; p++) {
-            fo->BaseJobOpts[j] = *p;
-            if (j < (int)sizeof(fo->BaseJobOpts) - 1) {
-               j++;
-            }
-         }
-         fo->BaseJobOpts[j] = 0;
-         break;
-      case 'P':                  /* strip path */
-         /* Get integer */
-         p++;                    /* skip P */
-         for (j=0; *p && *p != ':'; p++) {
-            strip[j] = *p;
-            if (j < (int)sizeof(strip) - 1) {
-               j++;
-            }
-         }
-         strip[j] = 0;
-         fo->strip_path = atoi(strip);
-         fo->flags |= FO_STRIPPATH;
-         Dmsg2(100, "strip=%s strip_path=%d\n", strip, fo->strip_path);
-         break;
-      case 'w':
-         fo->flags |= FO_IF_NEWER;
-         break;
-      case 'W':
-         fo->flags |= FO_ENHANCEDWILD;
-         break;
-      case 'Z':                 /* compression */
-         p++;                   /* skip Z */
-         if (*p >= '0' && *p <= '9') {
-            fo->flags |= FO_COMPRESS;
-            fo->Compress_algo = COMPRESS_GZIP;
-            fo->Compress_level = *p - '0';
-         }
-         else if (*p == 'o') {
-            fo->flags |= FO_COMPRESS;
-            fo->Compress_algo = COMPRESS_LZO1X;
-            fo->Compress_level = 1; /* not used with LZO */
-         }
-         break;
-      case 'K':
-         fo->flags |= FO_NOATIME;
-         break;
-      case 'c':
-         fo->flags |= FO_CHKCHANGES;
-         break;
-      case 'N':
-         fo->flags |= FO_HONOR_NODUMP;
-         break;
-      case 'X':
-         fo->flags |= FO_XATTR;
-         break;
-      default:
-         Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
-         break;
-      }
-   }
-   return state_options;
-}
-
 
 /**
  * Director is passing his Fileset
@@ -1493,6 +776,7 @@ static int fileset_cmd(JCR *jcr)
    }
    rtnstat = dir->fsend(OKinc);
    generate_plugin_event(jcr, bEventEndFileSet);
+   check_include_list_shadowing(jcr, jcr->ff->fileset);
    return rtnstat;
 }
 
@@ -1504,7 +788,6 @@ static void free_bootstrap(JCR *jcr)
       jcr->RestoreBootstrap = NULL;
    }
 }
-
 
 static pthread_mutex_t bsr_mutex = PTHREAD_MUTEX_INITIALIZER;
 static uint32_t bsr_uniq = 0;
@@ -1557,7 +840,6 @@ static int bootstrap_cmd(JCR *jcr)
    return dir->fsend(OKbootstrap);
 }
 
-
 /**
  * Get backup level from Director
  *
@@ -1582,10 +864,10 @@ static int level_cmd(JCR *jcr)
       goto bail_out;
    }
    /* Base backup requested? */
-   if (strcmp(level, "base") == 0) {
+   if (bstrcmp(level, "base")) {
       jcr->setJobLevel(L_BASE);
    /* Full backup requested? */
-   } else if (strcmp(level, "full") == 0) {
+   } else if (bstrcmp(level, "full")) {
       jcr->setJobLevel(L_FULL);
    } else if (strstr(level, "differential")) {
       jcr->setJobLevel(L_DIFFERENTIAL);
@@ -1599,7 +881,7 @@ static int level_cmd(JCR *jcr)
     * We get his UTC since time, then sync the clocks and correct it
     *   to agree with our clock.
     */
-   } else if (strcmp(level, "since_utime") == 0) {
+   } else if (bstrcmp(level, "since_utime")) {
       buf = get_memory(dir->msglen+1);
       utime_t since_time, adj;
       btime_t his_time, bt_start, rt=0, bt_adj=0;
@@ -1771,6 +1053,17 @@ static int storage_cmd(JCR *jcr)
 
    sd->set_source_address(me->FDsrc_addr);
 
+   /* TODO: see if we put limit on restore and backup... */
+   if (!jcr->max_bandwidth) {
+      if (jcr->director->max_bandwidth_per_job) {
+         jcr->max_bandwidth = jcr->director->max_bandwidth_per_job;
+
+      } else if (me->max_bandwidth_per_job) {
+         jcr->max_bandwidth = me->max_bandwidth_per_job;
+      }
+   }
+   sd->set_bwlimit(jcr->max_bandwidth);
+
    if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
                 _("Storage daemon"), jcr->stored_addr, NULL, stored_port, 1)) {
      sd->destroy();
@@ -1804,7 +1097,6 @@ bail_out:
 
 }
 
-
 /**
  * Do a backup.
  */
@@ -1815,6 +1107,14 @@ static int backup_cmd(JCR *jcr)
    int ok = 0;
    int SDJobStatus;
    int32_t FileIndex;
+
+   /*
+    * See if we are in restore only mode then we don't allow a backup to be initiated.
+    */
+   if (restore_only_mode) {
+      Jmsg(jcr, M_FATAL, 0, _("Filed in restore only mode, backups are not allowed, aborting...\n"));
+      goto cleanup;
+   }
 
 #if defined(WIN32_VSS)
    // capture state here, if client is backed up by multiple directors
@@ -1892,7 +1192,6 @@ static int backup_cmd(JCR *jcr)
       goto cleanup;
    }
    
-   generate_daemon_event(jcr, "JobStart");
    generate_plugin_event(jcr, bEventStartBackupJob);
 
 #if defined(WIN32_VSS)
@@ -2020,15 +1319,15 @@ static int verify_cmd(JCR *jcr)
       return 0;
    }
 
-   if (strcasecmp(level, "init") == 0) {
+   if (bstrcasecmp(level, "init")) {
       jcr->setJobLevel(L_VERIFY_INIT);
-   } else if (strcasecmp(level, "catalog") == 0){
+   } else if (bstrcasecmp(level, "catalog")){
       jcr->setJobLevel(L_VERIFY_CATALOG);
-   } else if (strcasecmp(level, "volume") == 0){
+   } else if (bstrcasecmp(level, "volume")){
       jcr->setJobLevel(L_VERIFY_VOLUME_TO_CATALOG);
-   } else if (strcasecmp(level, "data") == 0){
+   } else if (bstrcasecmp(level, "data")){
       jcr->setJobLevel(L_VERIFY_DATA);
-   } else if (strcasecmp(level, "disk_to_catalog") == 0) {
+   } else if (bstrcasecmp(level, "disk_to_catalog")) {
       jcr->setJobLevel(L_VERIFY_DISK_TO_CATALOG);
    } else {
       dir->fsend(_("2994 Bad verify level: %s\n"), dir->msg);
@@ -2037,7 +1336,6 @@ static int verify_cmd(JCR *jcr)
 
    dir->fsend(OKverify);
 
-   generate_daemon_event(jcr, "JobStart");
    generate_plugin_event(jcr, bEventLevel,(void *)(intptr_t)jcr->getJobLevel());
    generate_plugin_event(jcr, bEventStartVerifyJob);
 
@@ -2112,6 +1410,14 @@ static int restore_cmd(JCR *jcr)
    bool use_regexwhere=false;
    int prefix_links;
    char replace;
+
+   /*
+    * See if we are in backup only mode then we don't allow a restore to be initiated.
+    */
+   if (backup_only_mode) {
+      Jmsg(jcr, M_FATAL, 0, _("Filed in backup only mode, restores are not allowed, aborting...\n"));
+      return 0;
+   }
 
    /**
     * Scan WHERE (base directory for restore) from command
@@ -2196,7 +1502,6 @@ static int restore_cmd(JCR *jcr)
     * Do restore of files and data
     */
    start_dir_heartbeat(jcr);
-   generate_daemon_event(jcr, "JobStart");
    generate_plugin_event(jcr, bEventStartRestoreJob);
 
 #if defined(WIN32_VSS)
@@ -2380,7 +1685,7 @@ int response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
    }
    if (bget_msg(sd) > 0) {
       Dmsg0(110, sd->msg);
-      if (strcmp(sd->msg, resp) == 0) {
+      if (bstrcmp(sd->msg, resp)) {
          return 1;
       }
    }

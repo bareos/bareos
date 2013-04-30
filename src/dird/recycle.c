@@ -37,12 +37,10 @@
 
 #include "bacula.h"
 #include "dird.h"
-#include "ua.h"
 
 /* Forward referenced functions */
 
-bool find_recycled_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
-                          STORE *store)
+bool find_recycled_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store)
 {
    bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
    set_storageid_in_mr(store, mr);
@@ -60,7 +58,7 @@ bool find_recycled_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
  *   Look for oldest Purged volume
  */
 bool recycle_oldest_purged_volume(JCR *jcr, bool InChanger,
-        MEDIA_DBR *mr, STORE *store)
+                                  MEDIA_DBR *mr, STORERES *store)
 {
    bstrncpy(mr->VolStatus, "Purged", sizeof(mr->VolStatus));
    if (db_find_next_volume(jcr, jcr->db, 1, InChanger, mr)) {

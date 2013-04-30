@@ -268,7 +268,7 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
 
          /* Try all the CNs in the list */
          foreach_alist(cn, verify_list) {
-            if (strcasecmp(data, cn) == 0) {
+            if (bstrcasecmp(data, cn)) {
                auth_success = true;
             }
          }
@@ -314,7 +314,7 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
          ext = X509_get_ext(cert, i);
          extname = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
 
-         if (strcmp(extname, "subjectAltName") == 0) {
+         if (bstrcmp(extname, "subjectAltName")) {
 #ifdef HAVE_OPENSSLv1
             const X509V3_EXT_METHOD *method;
 #else
@@ -360,8 +360,8 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
             /* dNSName shortname is "DNS" */
             for (j = 0; j < sk_CONF_VALUE_num(val); j++) {
                nval = sk_CONF_VALUE_value(val, j);
-               if (strcmp(nval->name, "DNS") == 0) {
-                  if (strcasecmp(nval->value, host) == 0) {
+               if (bstrcmp(nval->name, "DNS")) {
+                  if (bstrcasecmp(nval->value, host)) {
                      auth_success = true;
                      goto success;
                   }
@@ -382,7 +382,7 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
             }
             neCN = X509_NAME_get_entry(subject, cnLastPos);
             asn1CN = X509_NAME_ENTRY_get_data(neCN);
-            if (strcasecmp((const char*)asn1CN->data, host) == 0) {
+            if (bstrcasecmp((const char*)asn1CN->data, host)) {
                auth_success = true;
                break;
             }
@@ -457,14 +457,8 @@ static inline bool openssl_bsock_session_start(BSOCK *bsock, bool server)
 {
    TLS_CONNECTION *tls = bsock->tls;
    int err;
-   int fdmax, flags;
-   int stat = true;
-   fd_set fdset;
-   struct timeval tv;
-
-   /* Zero the fdset, we'll set our fd prior to each invocation of select() */
-   FD_ZERO(&fdset);
-   fdmax = bsock->m_fd + 1;
+   int flags;
+   bool status = true;
 
    /* Ensure that socket is non-blocking */
    flags = bsock->set_nonblocking();
@@ -484,35 +478,23 @@ static inline bool openssl_bsock_session_start(BSOCK *bsock, bool server)
       /* Handle errors */
       switch (SSL_get_error(tls->openssl, err)) {
       case SSL_ERROR_NONE:
-         stat = true;
+         status = true;
          goto cleanup;
       case SSL_ERROR_ZERO_RETURN:
          /* TLS connection was cleanly shut down */
          openssl_post_errors(bsock->get_jcr(), M_FATAL, _("Connect failure"));
-         stat = false;
+         status = false;
          goto cleanup;
       case SSL_ERROR_WANT_READ:
-         /* If we timeout of a select, this will be unset */
-         FD_SET((unsigned) bsock->m_fd, &fdset);
-         /* Set our timeout */
-         tv.tv_sec = 10;
-         tv.tv_usec = 0;
-         /* Block until we can read */
-         select(fdmax, &fdset, NULL, NULL, &tv);
+         wait_for_readable_fd(bsock->m_fd, 10000, false);
          break;
       case SSL_ERROR_WANT_WRITE:
-         /* If we timeout of a select, this will be unset */
-         FD_SET((unsigned) bsock->m_fd, &fdset);
-         /* Set our timeout */
-         tv.tv_sec = 10;
-         tv.tv_usec = 0;
-         /* Block until we can write */
-         select(fdmax, NULL, &fdset, NULL, &tv);
+         wait_for_writable_fd(bsock->m_fd, 10000, false);
          break;
       default:
          /* Socket Error Occurred */
          openssl_post_errors(bsock->get_jcr(), M_FATAL, _("Connect failure"));
-         stat = false;
+         status = false;
          goto cleanup;
       }
 
@@ -528,7 +510,7 @@ cleanup:
    bsock->timer_start = 0;
    bsock->set_killable(true);
 
-   return stat;
+   return status;
 }
 
 /*
@@ -604,15 +586,9 @@ void tls_bsock_shutdown(BSOCK *bsock)
 static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bool write)
 {
    TLS_CONNECTION *tls = bsock->tls;
-   int fdmax, flags;
-   fd_set fdset;
-   struct timeval tv;
+   int flags;
    int nleft = 0;
    int nwritten = 0;
-
-   /* Zero the fdset, we'll set our fd prior to each invocation of select() */
-   FD_ZERO(&fdset);
-   fdmax = bsock->m_fd + 1;
 
    /* Ensure that socket is non-blocking */
    flags = bsock->set_nonblocking();
@@ -639,7 +615,6 @@ static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, b
             ptr += nwritten;
          }
          break;
-
       case SSL_ERROR_SYSCALL:
          if (nwritten == -1) {
             if (errno == EINTR) {
@@ -652,25 +627,12 @@ static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, b
          }
          openssl_post_errors(bsock->get_jcr(), M_FATAL, _("TLS read/write failure."));
          goto cleanup;
-
       case SSL_ERROR_WANT_READ:
-         /* If we timeout on a select, this will be unset */
-         FD_SET((unsigned)bsock->m_fd, &fdset);
-         tv.tv_sec = 10;
-         tv.tv_usec = 0;
-         /* Block until we can read */
-         select(fdmax, &fdset, NULL, NULL, &tv);
+         wait_for_readable_fd(bsock->m_fd, 10000, false);
          break;
-
       case SSL_ERROR_WANT_WRITE:
-         /* If we timeout on a select, this will be unset */
-         FD_SET((unsigned)bsock->m_fd, &fdset);
-         tv.tv_sec = 10;
-         tv.tv_usec = 0;
-         /* Block until we can write */
-         select(fdmax, NULL, &fdset, NULL, &tv);
+         wait_for_writable_fd(bsock->m_fd, 10000, false);
          break;
-
       case SSL_ERROR_ZERO_RETURN:
          /* TLS connection was cleanly shut down */
          /* Fall through wanted */

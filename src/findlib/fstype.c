@@ -144,6 +144,7 @@ bool fstype(const char *fname, char *fs, int fslen)
    if (lstat(fname, &st) == 0) {
       if ((mce = find_mntent_mapping(st.st_dev)) != NULL) {
          bstrncpy(fs, mce->fstype, fslen);
+         release_mntent_mapping(mce);
          return true;
       }
       return false;

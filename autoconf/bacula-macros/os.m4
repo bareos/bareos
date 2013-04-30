@@ -31,11 +31,11 @@ AC_DEFUN([SIGNAL_CHECK],
   ])
   AC_MSG_RESULT($bash_cv_signal_vintage)
   if test "$bash_cv_signal_vintage" = "posix"; then
-    AC_DEFINE(HAVE_POSIX_SIGNALS)
+    AC_DEFINE(HAVE_POSIX_SIGNALS, 1, [Define to 1 if you have POSIX signals])
   elif test "$bash_cv_signal_vintage" = "4.2bsd"; then
-    AC_DEFINE(HAVE_BSD_SIGNALS)
+    AC_DEFINE(HAVE_BSD_SIGNALS, 1, [Define to 1 if you have 4.2BSD signals])
   elif test "$bash_cv_signal_vintage" = "svr3"; then
-    AC_DEFINE(HAVE_USG_SIGHOLD)
+    AC_DEFINE(HAVE_USG_SIGHOLD, 1, [Define to 1 if you have SVR3 signals])
   fi
 ])
 
@@ -57,7 +57,7 @@ AC_CYGWIN
 if test $HAVE_UNAME=yes -a x`uname -s` = xSunOS
 then
         BA_CONDITIONAL(HAVE_SUN_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_SUN_OS)
+        AC_DEFINE(HAVE_SUN_OS, 1, [Define to 1 if you are running Solaris])
 else
         BA_CONDITIONAL(HAVE_SUN_OS, $FALSEPRG)
 fi
@@ -65,7 +65,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xGNU
 then
         BA_CONDITIONAL(HAVE_HURD_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_HURD_OS)
+        AC_DEFINE(HAVE_HURD_OS, 1, [Define to 1 if you are running GNU Hurd])
 else
         BA_CONDITIONAL(HAVE_HURD_OS, $FALSEPRG)
 fi
@@ -73,7 +73,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xOSF1
 then
         BA_CONDITIONAL(HAVE_OSF1_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_OSF1_OS)
+        AC_DEFINE(HAVE_OSF1_OS, 1, [Define to 1 if you are running Tru64])
 else
         BA_CONDITIONAL(HAVE_OSF1_OS, $FALSEPRG)
 fi
@@ -81,7 +81,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xAIX
 then
         BA_CONDITIONAL(HAVE_AIX_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_AIX_OS)
+        AC_DEFINE(HAVE_AIX_OS, 1, [Define to 1 if you are running AIX])
 else
         BA_CONDITIONAL(HAVE_AIX_OS, $FALSEPRG)
 fi
@@ -89,7 +89,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xHP-UX
 then
         BA_CONDITIONAL(HAVE_HPUX_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_HPUX_OS)
+        AC_DEFINE(HAVE_HPUX_OS, 1, [Define to 1 if you are running HPUX])
 else
         BA_CONDITIONAL(HAVE_HPUX_OS, $FALSEPRG)
 fi
@@ -97,7 +97,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xLinux
 then
         BA_CONDITIONAL(HAVE_LINUX_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_LINUX_OS)
+        AC_DEFINE(HAVE_LINUX_OS, 1, [Define to 1 if you are running Linux])
 else
         BA_CONDITIONAL(HAVE_LINUX_OS, $FALSEPRG)
 fi
@@ -105,7 +105,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xFreeBSD
 then
         BA_CONDITIONAL(HAVE_FREEBSD_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_FREEBSD_OS)
+        AC_DEFINE(HAVE_FREEBSD_OS, 1, [Define to 1 if you are running FreeBSD])
 else
         BA_CONDITIONAL(HAVE_FREEBSD_OS, $FALSEPRG)
 fi
@@ -113,7 +113,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xNetBSD
 then
         BA_CONDITIONAL(HAVE_NETBSD_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_NETBSD_OS)
+        AC_DEFINE(HAVE_NETBSD_OS, 1, [Define to 1 if you are running NetBSD])
 else
         BA_CONDITIONAL(HAVE_NETBSD_OS, $FALSEPRG)
 fi
@@ -121,7 +121,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xOpenBSD
 then
         BA_CONDITIONAL(HAVE_OPENBSD_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_OPENBSD_OS)
+        AC_DEFINE(HAVE_OPENBSD_OS, 1, [Define to 1 if you are running OpenBSD])
 else
         BA_CONDITIONAL(HAVE_OPENBSD_OS, $FALSEPRG)
 fi
@@ -129,7 +129,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xBSD/OS
 then
         BA_CONDITIONAL(HAVE_BSDI_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_BSDI_OS)
+        AC_DEFINE(HAVE_BSDI_OS, 1, [Define to 1 if you are running BSDI])
 else
         BA_CONDITIONAL(HAVE_BSDI_OS, $FALSEPRG)
 fi
@@ -137,7 +137,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xSGI
 then
         BA_CONDITIONAL(HAVE_SGI_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_SGI_OS)
+        AC_DEFINE(HAVE_SGI_OS, 1, [Define to 1 if you are running SGI OS])
 else
         BA_CONDITIONAL(HAVE_SGI_OS, $FALSEPRG)
 fi
@@ -145,7 +145,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xIRIX -o x`uname -s` = xIRIX64
 then
         BA_CONDITIONAL(HAVE_IRIX_OS, $TRUEPRG)
-        AC_DEFINE(HAVE_IRIX_OS)
+        AC_DEFINE(HAVE_IRIX_OS, 1, [Define to 1 if you are running IRIX])
 else
         BA_CONDITIONAL(HAVE_IRIX_OS, $FALSEPRG)
 fi
@@ -153,7 +153,7 @@ fi
 if test $HAVE_UNAME=yes -a x`uname -s` = xDarwin
 then
     AM_CONDITIONAL(HAVE_DARWIN_OS, $TRUEPRG)
-    AC_DEFINE(HAVE_DARWIN_OS)
+    AC_DEFINE(HAVE_DARWIN_OS, 1, [Define to 1 if you are running OSX])
 else
     AM_CONDITIONAL(HAVE_DARWIN_OS, $FALSEPRG)
 fi
@@ -233,7 +233,7 @@ then
 elif test "$CYGWIN" = yes
 then
         DISTNAME=cygwin
-        AC_DEFINE(HAVE_CYGWIN)
+        AC_DEFINE(HAVE_CYGWIN, 1, [Define to 1 if you use CYGWIN])
 else
         DISTNAME=unknown
 fi

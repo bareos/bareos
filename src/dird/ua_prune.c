@@ -42,6 +42,9 @@
 /* Forward referenced functions */
 static bool grow_del_list(struct del_ctx *del);
 
+/* External functions */
+extern DIRRES *director;
+
 /*
  * Called here to count entries to be deleted
  */
@@ -101,9 +104,8 @@ int file_delete_handler(void *ctx, int num_fields, char **row)
  */
 int prunecmd(UAContext *ua, const char *cmd)
 {
-   DIRRES *dir;
-   CLIENT *client;
-   POOL *pool;
+   CLIENTRES *client;
+   POOLRES *pool;
    POOL_DBR pr;
    MEDIA_DBR mr;
    utime_t retention;
@@ -129,9 +131,7 @@ int prunecmd(UAContext *ua, const char *cmd)
 
    switch (kw) {
    case 0:  /* prune files */
-      if (!(client = get_client_resource(ua))) {
-         return false;
-      }
+      client = get_client_resource(ua);
       if (find_arg_with_value(ua, "pool") >= 0) {
          pool = get_pool_resource(ua);
       } else {
@@ -142,15 +142,13 @@ int prunecmd(UAContext *ua, const char *cmd)
          if (!confirm_retention(ua, &pool->FileRetention, "File")) {
             return false;
          }
-      } else if (!confirm_retention(ua, &client->FileRetention, "File")) {
+      } else if (!client || !confirm_retention(ua, &client->FileRetention, "File")) {
          return false;
       }
       prune_files(ua, client, pool);
       return true;
    case 1:  /* prune jobs */
-      if (!(client = get_client_resource(ua))) {
-         return false;
-      }
+      client = get_client_resource(ua);
       if (find_arg_with_value(ua, "pool") >= 0) {
          pool = get_pool_resource(ua);
       } else {
@@ -161,7 +159,7 @@ int prunecmd(UAContext *ua, const char *cmd)
          if (!confirm_retention(ua, &pool->JobRetention, "Job")) {
             return false;
          }
-      } else if (!confirm_retention(ua, &client->JobRetention, "Job")) {
+      } else if (!client || !confirm_retention(ua, &client->JobRetention, "Job")) {
          return false;
       }
       /* ****FIXME**** allow user to select JobType */
@@ -182,11 +180,10 @@ int prunecmd(UAContext *ua, const char *cmd)
       prune_volume(ua, &mr);
       return true;
    case 3:  /* prune stats */
-      dir = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
-      if (!dir->stats_retention) {
+      if (!director->stats_retention) {
          return false;
       }
-      retention = dir->stats_retention;
+      retention = director->stats_retention;
       if (!confirm_retention(ua, &retention, "Statistics")) {
          return false;
       }
@@ -211,7 +208,7 @@ int prune_stats(UAContext *ua, utime_t retention)
    db_lock(ua->db);
    Mmsg(query, "DELETE FROM JobHisto WHERE JobTDate < %s", 
         edit_int64(now - retention, ed1));
-   db_sql_query(ua->db, query.c_str(), NULL, NULL);
+   db_sql_query(ua->db, query.c_str());
    db_unlock(ua->db);
 
    ua->info_msg(_("Pruned Jobs from JobHisto catalog.\n"));
@@ -224,7 +221,7 @@ int prune_stats(UAContext *ua, utime_t retention)
  * returns add_from string to add in FROM clause
  *         add_where string to add in WHERE clause
  */
-bool prune_set_filter(UAContext *ua, CLIENT *client, POOL *pool, utime_t period,
+bool prune_set_filter(UAContext *ua, CLIENTRES *client, POOLRES *pool, utime_t period,
                       POOL_MEM *add_from, POOL_MEM *add_where)
 {
    utime_t now;
@@ -272,7 +269,7 @@ bool prune_set_filter(UAContext *ua, CLIENT *client, POOL *pool, utime_t period,
  *
  * Note: client or pool can possibly be NULL (not both).
  */
-int prune_files(UAContext *ua, CLIENT *client, POOL *pool)
+int prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool)
 {
    struct del_ctx del;
    struct s_count_ctx cnt;
@@ -356,19 +353,19 @@ static void drop_temp_tables(UAContext *ua)
 {
    int i;
    for (i=0; drop_deltabs[i]; i++) {
-      db_sql_query(ua->db, drop_deltabs[i], NULL, (void *)NULL);
+      db_sql_query(ua->db, drop_deltabs[i]);
    }
 }
 
 static bool create_temp_tables(UAContext *ua)
 {
    /* Create temp tables and indicies */
-   if (!db_sql_query(ua->db, create_deltabs[db_get_type_index(ua->db)], NULL, (void *)NULL)) {
+   if (!db_sql_query(ua->db, create_deltabs[db_get_type_index(ua->db)])) {
       ua->error_msg("%s", db_strerror(ua->db));
       Dmsg0(050, "create DelTables table failed\n");
       return false;
    }
-   if (!db_sql_query(ua->db, create_delindex, NULL, (void *)NULL)) {
+   if (!db_sql_query(ua->db, create_delindex)) {
        ua->error_msg("%s", db_strerror(ua->db));
        Dmsg0(050, "create DelInx1 index failed\n");
        return false;
@@ -448,7 +445,7 @@ static int job_select_handler(void *ctx, int num_fields, char **row)
  *
  * For Restore Jobs there are no restrictions.
  */
-int prune_jobs(UAContext *ua, CLIENT *client, POOL *pool, int JobType)
+int prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
 {
    POOL_MEM query(PM_MESSAGE);
    POOL_MEM sql_where(PM_MESSAGE);
@@ -505,7 +502,7 @@ int prune_jobs(UAContext *ua, CLIENT *client, POOL *pool, int JobType)
         sql_from.c_str(), sql_where.c_str());
 
    Dmsg1(050, "select sql=%s\n", query.c_str());
-   if (!db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL)) {
+   if (!db_sql_query(ua->db, query.c_str())) {
       if (ua->verbose) {
          ua->error_msg("%s", db_strerror(ua->db));
       }
@@ -579,7 +576,7 @@ int prune_jobs(UAContext *ua, CLIENT *client, POOL *pool, int JobType)
                      "AND JobFiles!=0",          /* Discard when JobFiles=0 */
            jobids.list);
 
-      if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+      if (!db_sql_query(ua->db, query.c_str())) {
          ua->error_msg("%s", db_strerror(ua->db));
          goto bail_out;         /* Don't continue if the list isn't clean */
       }
@@ -639,8 +636,8 @@ bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
    db_lock(ua->db);
 
    /* Prune only Volumes with status "Full", or "Used" */
-   if (strcmp(mr->VolStatus, "Full")   == 0 ||
-       strcmp(mr->VolStatus, "Used")   == 0) {
+   if (bstrcmp(mr->VolStatus, "Full") ||
+       bstrcmp(mr->VolStatus, "Used")) {
       Dmsg2(050, "get prune list MediaId=%d Volume %s\n", (int)mr->MediaId, mr->VolumeName);
       count = get_prune_list_for_volume(ua, mr, &del);
       Dmsg1(050, "Num pruned = %d\n", count);

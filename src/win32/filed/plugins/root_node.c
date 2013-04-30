@@ -50,7 +50,7 @@ root_node_t::startBackupFile(exchange_fd_context_t *context, struct save_pkt *sp
    switch(state)
    {
    case 0:
-      if (strcmp(PLUGIN_PATH_PREFIX_BASE, name) != 0)
+      if (!bstrcmp(PLUGIN_PATH_PREFIX_BASE, name))
       {
          _JobMessage(M_FATAL, "Invalid backup path specified, must start with '/" PLUGIN_PATH_PREFIX_BASE "/'\n");
          state = 999;
@@ -115,7 +115,7 @@ root_node_t::createFile(exchange_fd_context_t *context, struct restore_pkt *rp)
    _DebugMessage(100, "createFile_ROOT state = %d\n", state);
    switch (state) {
    case 0:
-      if (strcmp(name, PLUGIN_PATH_PREFIX_BASE) != 0) {
+      if (!bstrcmp(name, PLUGIN_PATH_PREFIX_BASE)) {
          _JobMessage(M_FATAL, "Invalid restore path specified, must start with '/" PLUGIN_PATH_PREFIX_BASE "/'\n");
          state = 999;
          return bRC_Error;

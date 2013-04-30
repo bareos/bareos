@@ -57,25 +57,25 @@ devlock *new_devlock()
    return lock;
 }
 
-int devlock::init(int priority)                            
+int devlock::init(int initial_priority)
 {
-   int stat;
+   int status;
    devlock *rwl = this;
 
    rwl->r_active = rwl->w_active = 0;
    rwl->r_wait = rwl->w_wait = 0;
-   rwl->priority = priority;
-   if ((stat = pthread_mutex_init(&rwl->mutex, NULL)) != 0) {
-      return stat;
+   rwl->priority = initial_priority;
+   if ((status = pthread_mutex_init(&rwl->mutex, NULL)) != 0) {
+      return status;
    }
-   if ((stat = pthread_cond_init(&rwl->read, NULL)) != 0) {
+   if ((status = pthread_cond_init(&rwl->read, NULL)) != 0) {
       pthread_mutex_destroy(&rwl->mutex);
-      return stat;
+      return status;
    }
-   if ((stat = pthread_cond_init(&rwl->write, NULL)) != 0) {
+   if ((status = pthread_cond_init(&rwl->write, NULL)) != 0) {
       pthread_cond_destroy(&rwl->read);
       pthread_mutex_destroy(&rwl->mutex);
-      return stat;
+      return status;
    }
    rwl->valid = DEVLOCK_VALID;
    return 0;
@@ -90,13 +90,13 @@ int devlock::init(int priority)
 int devlock::destroy()
 {
    devlock *rwl = this;
-   int stat, stat1, stat2;
+   int status, status1, status2;
 
    if (rwl->valid != DEVLOCK_VALID) {
       return EINVAL;
    }
-   if ((stat = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return stat;
+   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
+      return status;
    }
 
    /*
@@ -116,13 +116,13 @@ int devlock::destroy()
    }
 
    rwl->valid = 0;
-   if ((stat = pthread_mutex_unlock(&rwl->mutex)) != 0) {
-      return stat;
+   if ((status = pthread_mutex_unlock(&rwl->mutex)) != 0) {
+      return status;
    }
-   stat  = pthread_mutex_destroy(&rwl->mutex);
-   stat1 = pthread_cond_destroy(&rwl->read);
-   stat2 = pthread_cond_destroy(&rwl->write);
-   return (stat != 0 ? stat : (stat1 != 0 ? stat1 : stat2));
+   status = pthread_mutex_destroy(&rwl->mutex);
+   status1 = pthread_cond_destroy(&rwl->read);
+   status2 = pthread_cond_destroy(&rwl->write);
+   return (status != 0 ? status : (status1 != 0 ? status1 : status2));
 }
 
 /*
@@ -163,31 +163,31 @@ void devlock::write_release()
 int devlock::readlock()
 {
    devlock *rwl = this;
-   int stat;
+   int status;
 
    if (rwl->valid != DEVLOCK_VALID) {
       return EINVAL;
    }
-   if ((stat = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return stat;
+   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
+      return status;
    }
    if (rwl->w_active) {
       rwl->r_wait++;                  /* indicate that we are waiting */
       pthread_cleanup_push(devlock_read_release, (void *)rwl);
       while (rwl->w_active) {
-         stat = pthread_cond_wait(&rwl->read, &rwl->mutex);
-         if (stat != 0) {
+         status = pthread_cond_wait(&rwl->read, &rwl->mutex);
+         if (status != 0) {
             break;                    /* error, bail out */
          }
       }
       pthread_cleanup_pop(0);
       rwl->r_wait--;                  /* we are no longer waiting */
    }
-   if (stat == 0) {
+   if (status == 0) {
       rwl->r_active++;                /* we are running */
    }
    pthread_mutex_unlock(&rwl->mutex);
-   return stat;
+   return status;
 }
 
 /*
@@ -196,21 +196,21 @@ int devlock::readlock()
 int devlock::readtrylock()
 {
    devlock *rwl = this;
-   int stat, stat2;
+   int status, status2;
 
    if (rwl->valid != DEVLOCK_VALID) {
       return EINVAL;
    }
-   if ((stat = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return stat;
+   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
+      return status;
    }
    if (rwl->w_active) {
-      stat = EBUSY;
+      status = EBUSY;
    } else {
       rwl->r_active++;                /* we are running */
    }
-   stat2 = pthread_mutex_unlock(&rwl->mutex);
-   return (stat == 0 ? stat2 : stat);
+   status2 = pthread_mutex_unlock(&rwl->mutex);
+   return (status == 0 ? status2 : status);
 }
 
 /*
@@ -219,20 +219,20 @@ int devlock::readtrylock()
 int devlock::readunlock()
 {
    devlock *rwl = this;
-   int stat, stat2;
+   int status, status2;
 
    if (rwl->valid != DEVLOCK_VALID) {
       return EINVAL;
    }
-   if ((stat = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return stat;
+   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
+      return status;
    }
    rwl->r_active--;
    if (rwl->r_active == 0 && rwl->w_wait > 0) { /* if writers waiting */
-      stat = pthread_cond_broadcast(&rwl->write);
+      status = pthread_cond_broadcast(&rwl->write);
    }
-   stat2 = pthread_mutex_unlock(&rwl->mutex);
-   return (stat == 0 ? stat2 : stat);
+   status2 = pthread_mutex_unlock(&rwl->mutex);
+   return (status == 0 ? status2 : status);
 }
 
 
@@ -243,13 +243,13 @@ int devlock::readunlock()
 int devlock::writelock(int areason, bool acan_take)
 {
    devlock *rwl = this;
-   int stat;
+   int status;
 
    if (rwl->valid != DEVLOCK_VALID) {
       return EINVAL;
    }
-   if ((stat = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return stat;
+   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
+      return status;
    }
    if (rwl->w_active && pthread_equal(rwl->writer_id, pthread_self())) {
       rwl->w_active++;
@@ -261,7 +261,7 @@ int devlock::writelock(int areason, bool acan_take)
       rwl->w_wait++;                  /* indicate that we are waiting */
       pthread_cleanup_push(devlock_write_release, (void *)rwl);
       while (rwl->w_active || rwl->r_active > 0) {
-         if ((stat = pthread_cond_wait(&rwl->write, &rwl->mutex)) != 0) {
+         if ((status = pthread_cond_wait(&rwl->write, &rwl->mutex)) != 0) {
             lmgr_do_unlock(rwl);
             break;                    /* error, bail out */
          }
@@ -269,7 +269,7 @@ int devlock::writelock(int areason, bool acan_take)
       pthread_cleanup_pop(0);
       rwl->w_wait--;                  /* we are no longer waiting */
    }
-   if (stat == 0) {
+   if (status == 0) {
       rwl->w_active++;                /* we are running */
       rwl->writer_id = pthread_self(); /* save writer thread's id */
       lmgr_post_lock();
@@ -277,7 +277,7 @@ int devlock::writelock(int areason, bool acan_take)
    rwl->reason = areason;
    rwl->can_take = acan_take;
    pthread_mutex_unlock(&rwl->mutex);
-   return stat;
+   return status;
 }
 
 /*
@@ -286,13 +286,13 @@ int devlock::writelock(int areason, bool acan_take)
 int devlock::writetrylock()
 {
    devlock *rwl = this;
-   int stat, stat2;
+   int status, status2;
 
    if (rwl->valid != DEVLOCK_VALID) {
       return EINVAL;
    }
-   if ((stat = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return stat;
+   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
+      return status;
    }
    if (rwl->w_active && pthread_equal(rwl->writer_id, pthread_self())) {
       rwl->w_active++;
@@ -300,14 +300,14 @@ int devlock::writetrylock()
       return 0;
    }
    if (rwl->w_active || rwl->r_active > 0) {
-      stat = EBUSY;
+      status = EBUSY;
    } else {
       rwl->w_active = 1;              /* we are running */
       rwl->writer_id = pthread_self(); /* save writer thread's id */
       lmgr_do_lock(rwl, rwl->priority, __FILE__, __LINE__);
    }
-   stat2 = pthread_mutex_unlock(&rwl->mutex);
-   return (stat == 0 ? stat2 : stat);
+   status2 = pthread_mutex_unlock(&rwl->mutex);
+   return (status == 0 ? status2 : status);
 }
 
 /*
@@ -317,13 +317,13 @@ int devlock::writetrylock()
 int devlock::writeunlock()
 {
    devlock *rwl = this;
-   int stat, stat2;
+   int status, status2;
 
    if (rwl->valid != DEVLOCK_VALID) {
       return EINVAL;
    }
-   if ((stat = pthread_mutex_lock(&rwl->mutex)) != 0) {
-      return stat;
+   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) {
+      return status;
    }
    if (rwl->w_active <= 0) {
       pthread_mutex_unlock(&rwl->mutex);
@@ -335,58 +335,58 @@ int devlock::writeunlock()
       Jmsg0(NULL, M_ABORT, 0, _("writeunlock by non-owner.\n"));
    }
    if (rwl->w_active > 0) {
-      stat = 0;                       /* writers still active */
+      status = 0;                       /* writers still active */
    } else {
       lmgr_do_unlock(rwl);
       /* No more writers, awaken someone */
       if (rwl->r_wait > 0) {         /* if readers waiting */
-         stat = pthread_cond_broadcast(&rwl->read);
+         status = pthread_cond_broadcast(&rwl->read);
       } else if (rwl->w_wait > 0) {
-         stat = pthread_cond_broadcast(&rwl->write);
+         status = pthread_cond_broadcast(&rwl->write);
       }
    }
-   stat2 = pthread_mutex_unlock(&rwl->mutex);
-   return (stat == 0 ? stat2 : stat);
+   status2 = pthread_mutex_unlock(&rwl->mutex);
+   return (status == 0 ? status2 : status);
 }
 
 int devlock::take_lock(take_lock_t *hold, int areason)
 {
-   int stat;
+   int status;
 
    if (valid != DEVLOCK_VALID) {
       return EINVAL;
    }
-   if ((stat = pthread_mutex_lock(&mutex)) != 0) {
-      return stat;
+   if ((status = pthread_mutex_lock(&mutex)) != 0) {
+      return status;
    }
    hold->reason = reason;
    hold->prev_reason = prev_reason;
    hold->writer_id = writer_id;
    reason = areason;
    writer_id = pthread_self();
-   stat = pthread_mutex_unlock(&mutex);
-   return stat;
+   status = pthread_mutex_unlock(&mutex);
+   return status;
 }
 
 int devlock::return_lock(take_lock_t *hold)
 {
-   int stat, stat2;
+   int status, status2;
 
    if (valid != DEVLOCK_VALID) {
       return EINVAL;
    }
-   if ((stat = pthread_mutex_lock(&mutex)) != 0) {
-      return stat;
+   if ((status = pthread_mutex_lock(&mutex)) != 0) {
+      return status;
    }
    reason = hold->reason;
    prev_reason = hold->prev_reason;
    writer_id = hold->writer_id;
    writer_id = pthread_self();
-   stat2 = pthread_mutex_unlock(&mutex);
+   status2 = pthread_mutex_unlock(&mutex);
    if (w_active || w_wait) {
-      stat = pthread_cond_broadcast(&write);
+      status = pthread_cond_broadcast(&write);
    }
-   return (stat == 0 ? stat2 : stat);
+   return (status == 0 ? status2 : status);
 
 }
 

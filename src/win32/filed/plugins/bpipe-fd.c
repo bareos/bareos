@@ -42,10 +42,6 @@
 #define fi __FILE__
 #define li __LINE__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 static const int dbglvl = 150;
 
 #define PLUGIN_LICENSE      "Bacula AGPLv3"
@@ -75,7 +71,7 @@ static bFuncs *bfuncs = NULL;
 static bInfo  *binfo = NULL;
 
 /* Plugin Information block */
-static pInfo pluginInfo = {
+static genpInfo pluginInfo = {
    sizeof(pluginInfo),
    FD_PLUGIN_INTERFACE_VERSION,
    FD_PLUGIN_MAGIC,
@@ -122,15 +118,19 @@ struct plugin_ctx {
    int replace;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * loadPlugin() and unloadPlugin() are entry points that are
  *  exported, so Bacula can directly call these two entry points
  *  they are common to all Bacula plugins.
  */
 /*
- * External entry point called by Bacula to "load the plugin
+ * External entry point called by Bacula to "load" the plugin
  */
-bRC loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, pInfo **pinfo, pFuncs **pfuncs)
+bRC loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, genpInfo **pinfo, pFuncs **pfuncs)
 {
    bfuncs = lbfuncs;                  /* set Bacula funct pointers */
    binfo  = lbinfo;
@@ -149,6 +149,10 @@ bRC unloadPlugin()
    return bRC_OK;
 }
 
+#ifdef __cplusplus
+}
+#endif
+
 /*
  * The following entry points are accessed through the function 
  *   pointers we supplied to Bacula. Each plugin type (dir, fd, sd)
@@ -165,6 +169,15 @@ static bRC newPlugin(bpContext *ctx)
    }
    memset(p_ctx, 0, sizeof(struct plugin_ctx));
    ctx->pContext = (void *)p_ctx;        /* set our context pointer */
+
+   bfuncs->registerBaculaEvents(ctx,
+                                5,
+                                bEventPluginCommand,
+                                bEventJobStart,
+                                bEventRestoreCommand,
+                                bEventEstimateCommand,
+                                bEventBackupCommand);
+
    return bRC_OK;
 }
 
@@ -213,39 +226,10 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 
 // char *name;
 
-   /*
-    * Most events don't interest us so we ignore them.
-    *   the printfs are so that plugin writers can enable them to see
-    *   what is really going on.
-    */
    switch (event->eventType) {
    case bEventJobStart:
       bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: JobStart=%s\n", (char *)value);
       break;
-   case bEventJobEnd:
-//    printf("bpipe-fd: JobEnd\n");
-      break;
-   case bEventStartBackupJob:
-//    printf("bpipe-fd: StartBackupJob\n");
-      break;
-   case bEventEndBackupJob:
-//    printf("bpipe-fd: EndBackupJob\n");
-      break;
-   case bEventLevel:
-//    printf("bpipe-fd: JobLevel=%c %d\n", (int)value, (int)value);
-      break;
-   case bEventSince:
-//    printf("bpipe-fd: since=%d\n", (int)value);
-      break;
-
-   case bEventStartRestoreJob:
-//    printf("bpipe-fd: StartRestoreJob\n");
-      break;
-
-   case bEventEndRestoreJob:
-//    printf("bpipe-fd: EndRestoreJob\n");
-      break;
-
    /* Plugin command e.g. plugin = <plugin-name>:<name-space>:read command:write command */
    case bEventRestoreCommand:
 //    printf("bpipe-fd: EventRestoreCommand cmd=%s\n", (char *)value);
@@ -278,7 +262,6 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 //    printf("bpipe-fd: plugin=%s fname=%s reader=%s writer=%s\n", 
 //         p_ctx->cmd, p_ctx->fname, p_ctx->reader, p_ctx->writer);
       break;
-
    default:
 //    printf("bpipe-fd: unknown event=%d\n", event->eventType);
       break;
@@ -454,7 +437,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
    if (strlen(rp->where) > 512) {
       printf("Restore target dir too long. Restricting to first 512 bytes.\n");
    }
-   strncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where, 513);
+   bstrncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where, 513);
    ((struct plugin_ctx *)ctx->pContext)->replace = rp->replace;
    rp->create_status = CF_EXTRACT;
    return bRC_OK;
@@ -557,8 +540,3 @@ static char *apply_rp_codes(struct plugin_ctx * p_ctx)
    }
    return omsg;
 }
-
-
-#ifdef __cplusplus
-}
-#endif

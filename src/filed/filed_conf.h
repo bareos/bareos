@@ -29,33 +29,33 @@
  * Bacula File Daemon specific configuration
  *
  *     Kern Sibbald, Sep MM
- *
- *   Version $Id$
  */
 
 /*
  * Resource codes -- they must be sequential for indexing
  */
-#define R_FIRST                       1001
-
-#define R_DIRECTOR                    1001
-#define R_CLIENT                      1002
-#define R_MSGS                        1003
-
-#define R_LAST                        R_MSGS
+enum {
+   R_DIRECTOR = 1001,
+   R_CLIENT,
+   R_MSGS,
+   R_FIRST = R_DIRECTOR,
+   R_LAST = R_MSGS                    /* keep this updated */
+};
 
 /*
  * Some resource attributes
  */
-#define R_NAME                        1020
-#define R_ADDRESS                     1021
-#define R_PASSWORD                    1022
-#define R_TYPE                        1023
-
+enum {
+   R_NAME = 1020,
+   R_ADDRESS,
+   R_PASSWORD,
+   R_TYPE
+};
 
 /* Definition of the contents of each Resource */
 struct DIRRES {
-   RES   hdr;
+   RES hdr;
+
    char *password;                    /* Director password */
    char *address;                     /* Director address or zero */
    bool monitor;                      /* Have only access to status and .status functions */
@@ -69,11 +69,13 @@ struct DIRRES {
    char *tls_keyfile;                 /* TLS Server Key File */
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
+   uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (per director) */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
 };
 
-struct CLIENT {
-   RES   hdr;
+struct CLIENTRES {
+   RES hdr;
+
    dlist *FDaddrs;
    dlist *FDsrc_addr;                 /* address to source connections from */
    char *working_directory;
@@ -81,7 +83,7 @@ struct CLIENT {
    char *subsys_directory;
    char *plugin_directory;            /* Plugin directory */
    char *scripts_directory;
-   MSGS *messages;                    /* daemon message handler */
+   MSGSRES *messages;                 /* daemon message handler */
    uint32_t MaxConcurrentJobs;
    utime_t SDConnectTimeout;          /* timeout in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
@@ -104,16 +106,15 @@ struct CLIENT {
    alist *pki_recipients;             /* Shared PKI Recipients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    char *verid;                       /* Custom Id to print in version command */
+   uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */
 };
-
-
 
 /* Define the Union of all the above
  * resource structure definitions.
  */
 union URES {
    DIRRES res_dir;
-   CLIENT res_client;
-   MSGS   res_msgs;
-   RES    hdr;
+   CLIENTRES res_client;
+   MSGSRES res_msgs;
+   RES hdr;
 };

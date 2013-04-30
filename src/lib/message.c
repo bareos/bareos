@@ -40,8 +40,7 @@
 #include "bacula.h"
 #include "jcr.h"
 
-sql_query_func p_sql_query = NULL;
-sql_escape_func p_sql_escape = NULL;
+db_log_insert_func p_db_log_insert = NULL;
 
 #define FULL_LOCATION 1               /* set for file:line in Debug messages */
 
@@ -59,14 +58,15 @@ utime_t daemon_start_time = 0;        /* Daemon start time */
 const char *version = VERSION " (" BDATE ")";
 const char *dist_name = DISTNAME " " DISTVER;
 int beef = BEEF;
-char my_name[30] = {0};               /* daemon name is stored here */
-char host_name[50] = {0};             /* host machine name */
+char my_name[128] = {0};              /* daemon name is stored here */
+char host_name[256] = {0};            /* host machine name */
 char *exepath = (char *)NULL;
 char *exename = (char *)NULL;
 int console_msg_pending = false;
 char con_fname[500];                  /* Console filename */
 FILE *con_fd = NULL;                  /* Console file descriptor */
 brwlock_t con_lock;                   /* Console lock structure */
+job_code_callback_t message_job_code_callback = NULL; /* Job code callback. Only used by director. */
 
 /* Forward referenced functions */
 
@@ -80,7 +80,7 @@ void create_jcr_key();
 
 /* Allow only one thread to tweak d->fd at a time */
 static pthread_mutex_t fides_mutex = PTHREAD_MUTEX_INITIALIZER;
-static MSGS *daemon_msgs;              /* global messages */
+static MSGSRES *daemon_msgs;          /* global messages */
 static char *catalog_db = NULL;       /* database type */
 static void (*message_callback)(int type, char *msg) = NULL;
 static FILE *trace_fd = NULL;
@@ -115,12 +115,12 @@ static const char *bstrrpath(const char *start, const char *end)
 }
 
 /* Some message class methods */
-void MSGS::lock()
+void MSGSRES::lock()
 {
    P(fides_mutex);
 }
 
-void MSGS::unlock()
+void MSGSRES::unlock()
 {
    V(fides_mutex);
 }
@@ -128,7 +128,7 @@ void MSGS::unlock()
 /*
  * Wait for not in use variable to be clear
  */
-void MSGS::wait_not_in_use()     /* leaves fides_mutex set */
+void MSGSRES::wait_not_in_use()     /* leaves fides_mutex set */
 {
    lock();
    while (m_in_use || m_closing) {
@@ -257,14 +257,14 @@ set_db_type(const char *name)
 
 /*
  * Initialize message handler for a daemon or a Job
- *   We make a copy of the MSGS resource passed, so it belows
+ *   We make a copy of the MSGSRES resource passed, so it belows
  *   to the job or daemon and thus can be modified.
  *
  *   NULL for jcr -> initialize global messages for daemon
  *   non-NULL     -> initialize jcr using Message resource
  */
 void
-init_msg(JCR *jcr, MSGS *msg)
+init_msg(JCR *jcr, MSGSRES *msg, job_code_callback_t job_code_callback)
 {
    DEST *d, *dnew, *temp_chain = NULL;
    int i;
@@ -276,6 +276,8 @@ init_msg(JCR *jcr, MSGS *msg)
       create_jcr_key();
       set_jcr_in_tsd(INVALID_JCR);
    }
+
+   message_job_code_callback = job_code_callback;
 
 #if !defined(HAVE_WIN32)
    /*
@@ -300,8 +302,8 @@ init_msg(JCR *jcr, MSGS *msg)
     * If msg is NULL, initialize global chain for STDOUT and syslog
     */
    if (msg == NULL) {
-      daemon_msgs = (MSGS *)malloc(sizeof(MSGS));
-      memset(daemon_msgs, 0, sizeof(MSGS));
+      daemon_msgs = (MSGSRES *)malloc(sizeof(MSGSRES));
+      memset(daemon_msgs, 0, sizeof(MSGSRES));
       for (i=1; i<=M_MAX; i++) {
          add_msg_dest(daemon_msgs, MD_STDOUT, i, NULL, NULL);
       }
@@ -329,8 +331,8 @@ init_msg(JCR *jcr, MSGS *msg)
    }
 
    if (jcr) {
-      jcr->jcr_msgs = (MSGS *)malloc(sizeof(MSGS));
-      memset(jcr->jcr_msgs, 0, sizeof(MSGS));
+      jcr->jcr_msgs = (MSGSRES *)malloc(sizeof(MSGSRES));
+      memset(jcr->jcr_msgs, 0, sizeof(MSGSRES));
       jcr->jcr_msgs->dest_chain = temp_chain;
       memcpy(jcr->jcr_msgs->send_msg, msg->send_msg, sizeof(msg->send_msg));
    } else {
@@ -338,8 +340,8 @@ init_msg(JCR *jcr, MSGS *msg)
       if (daemon_msgs) {
          free_msgs_res(daemon_msgs);
       }
-      daemon_msgs = (MSGS *)malloc(sizeof(MSGS));
-      memset(daemon_msgs, 0, sizeof(MSGS));
+      daemon_msgs = (MSGSRES *)malloc(sizeof(MSGSRES));
+      memset(daemon_msgs, 0, sizeof(MSGSRES));
       daemon_msgs->dest_chain = temp_chain;
       memcpy(daemon_msgs->send_msg, msg->send_msg, sizeof(msg->send_msg));
    }
@@ -388,7 +390,7 @@ void init_console_msg(const char *wd)
  *  but in the case of MAIL is a space separated list of
  *  email addresses, ...
  */
-void add_msg_dest(MSGS *msg, int dest_code, int msg_type, char *where, char *mail_cmd)
+void add_msg_dest(MSGSRES *msg, int dest_code, int msg_type, char *where, char *mail_cmd)
 {
    DEST *d;
    /*
@@ -397,7 +399,7 @@ void add_msg_dest(MSGS *msg, int dest_code, int msg_type, char *where, char *mai
     */
    for (d=msg->dest_chain; d; d=d->next) {
       if (dest_code == d->dest_code && ((where == NULL && d->where == NULL) ||
-                     (strcmp(where, d->where) == 0))) {
+          bstrcmp(where, d->where))) {
          Dmsg4(850, "Add to existing d=%p msgtype=%d destcode=%d where=%s\n",
              d, msg_type, dest_code, NPRT(where));
          set_bit(msg_type, d->msg_types);
@@ -428,7 +430,7 @@ void add_msg_dest(MSGS *msg, int dest_code, int msg_type, char *where, char *mai
  *
  * Remove a message destination
  */
-void rem_msg_dest(MSGS *msg, int dest_code, int msg_type, char *where)
+void rem_msg_dest(MSGSRES *msg, int dest_code, int msg_type, char *where)
 {
    DEST *d;
 
@@ -436,7 +438,7 @@ void rem_msg_dest(MSGS *msg, int dest_code, int msg_type, char *where)
       Dmsg2(850, "Remove_msg_dest d=%p where=%s\n", d, NPRT(d->where));
       if (bit_is_set(msg_type, d->msg_types) && (dest_code == d->dest_code) &&
           ((where == NULL && d->where == NULL) ||
-                     (strcmp(where, d->where) == 0))) {
+          bstrcmp(where, d->where))) {
          Dmsg3(850, "Found for remove d=%p msgtype=%d destcode=%d\n",
                d, msg_type, dest_code);
          clear_bit(msg_type, d->msg_types);
@@ -470,7 +472,7 @@ static BPIPE *open_mail_pipe(JCR *jcr, POOLMEM *&cmd, DEST *d)
    BPIPE *bpipe;
 
    if (d->mail_cmd) {
-      cmd = edit_job_codes(jcr, cmd, d->mail_cmd, d->where);
+      cmd = edit_job_codes(jcr, cmd, d->mail_cmd, d->where, message_job_code_callback);
    } else {
       Mmsg(cmd, "/usr/lib/sendmail -F Bacula %s", d->where);
    }
@@ -495,11 +497,11 @@ static BPIPE *open_mail_pipe(JCR *jcr, POOLMEM *&cmd, DEST *d)
  */
 void close_msg(JCR *jcr)
 {
-   MSGS *msgs;
+   MSGSRES *msgs;
    DEST *d;
    BPIPE *bpipe;
    POOLMEM *cmd, *line;
-   int len, stat;
+   int len, status;
 
    Dmsg1(580, "Close_msg jcr=%p\n", jcr);
 
@@ -602,10 +604,10 @@ void close_msg(JCR *jcr)
                }
             }
 
-            stat = close_bpipe(bpipe);
-            if (stat != 0 && msgs != daemon_msgs) {
+            status = close_bpipe(bpipe);
+            if (status != 0 && msgs != daemon_msgs) {
                berrno be;
-               be.set_errno(stat);
+               be.set_errno(status);
                Dmsg1(850, "Calling emsg. CMD=%s\n", cmd);
                delivery_error(_("Mail program terminated in error.\n"
                                  "CMD=%s\n"
@@ -647,7 +649,7 @@ rem_temp_file:
 /*
  * Free memory associated with Messages resource
  */
-void free_msgs_res(MSGS *msgs)
+void free_msgs_res(MSGSRES *msgs)
 {
    DEST *d, *old;
 
@@ -747,7 +749,7 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
     char dt[MAX_TIME_LENGTH];
     POOLMEM *mcmd;
     int len, dtlen;
-    MSGS *msgs;
+    MSGSRES *msgs;
     BPIPE *bpipe;
     const char *mode;
 
@@ -789,7 +791,6 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
        }
     }
 
-
     /* Now figure out where to send the message */
     msgs = NULL;
     if (!jcr) {
@@ -817,29 +818,14 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
        if (bit_is_set(type, d->msg_types)) {
           switch (d->dest_code) {
              case MD_CATALOG:
-                char ed1[50];
                 if (!jcr || !jcr->db) {
                    break;
                 }
-                if (p_sql_query && p_sql_escape) {
-                   POOLMEM *cmd = get_pool_memory(PM_MESSAGE);
-                   POOLMEM *esc_msg = get_pool_memory(PM_MESSAGE);
-                   
-                   int len = strlen(msg) + 1;
-                   esc_msg = check_pool_memory_size(esc_msg, len * 2 + 1);
-                   if (p_sql_escape(jcr, jcr->db, esc_msg, msg, len)) {
-                      bstrutime(dt, sizeof(dt), mtime);
-                      Mmsg(cmd, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
-                            edit_int64(jcr->JobId, ed1), dt, esc_msg);
-                      if (!p_sql_query(jcr, cmd)) {
-                         delivery_error(_("Msg delivery error: Unable to store data in database.\n"));
-                      }
-                   } else {
+
+                if (p_db_log_insert) {
+                   if (!p_db_log_insert(jcr, mtime, msg)) {
                       delivery_error(_("Msg delivery error: Unable to store data in database.\n"));
                    }
-                   
-                   free_pool_memory(cmd);
-                   free_pool_memory(esc_msg);
                 }
                 break;
              case MD_CONSOLE:
@@ -879,14 +865,14 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
                 Dmsg1(850, "OPERATOR for following msg: %s\n", msg);
                 mcmd = get_pool_memory(PM_MESSAGE);
                 if ((bpipe=open_mail_pipe(jcr, mcmd, d))) {
-                   int stat;
+                   int status;
                    fputs(dt, bpipe->wfd);
                    fputs(msg, bpipe->wfd);
                    /* Messages to the operator go one at a time */
-                   stat = close_bpipe(bpipe);
-                   if (stat != 0) {
+                   status = close_bpipe(bpipe);
+                   if (status != 0) {
                       berrno be;
-                      be.set_errno(stat);
+                      be.set_errno(status);
                       delivery_error(_("Msg delivery error: Operator mail program terminated in error.\n"
                             "CMD=%s\n"
                             "ERR=%s\n"), mcmd, be.bstrerror());
@@ -917,7 +903,7 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
                    d->mail_filename = name;
                 }
                 fputs(dt, d->fd);
-                len = strlen(msg) + dtlen;;
+                len = strlen(msg) + dtlen;
                 if (len > d->max_len) {
                    d->max_len = len;      /* keep max line length */
                 }
@@ -1140,13 +1126,14 @@ p_msg(const char *file, int line, int level, const char *fmt,...)
 
 #ifdef FULL_LOCATION
     if (level >= 0) {
-       len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ", 
-             my_name, get_basename(file), line, get_jobid_from_tsd());
+       len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ",
+                       my_name, get_basename(file), line,
+                       get_jobid_from_tsd());
     } else {
        len = 0;
     }
 #else
-       len = 0;
+    len = 0;
 #endif
 
     va_start(arg_ptr, fmt);
@@ -1283,7 +1270,7 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
     char     rbuf[5000];
     va_list   arg_ptr;
     int len;
-    MSGS *msgs;
+    MSGSRES *msgs;
     uint32_t JobId = 0;
 
 

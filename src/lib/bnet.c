@@ -177,18 +177,11 @@ int32_t write_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes)
       } while (nwritten == -1 && errno == EINTR);
       /*
        * If connection is non-blocking, we will get EAGAIN, so
-       * use select() to keep from consuming all the CPU
-       * and try again.
+       * use select()/poll() to keep from consuming all
+       * the CPU and try again.
        */
       if (nwritten == -1 && errno == EAGAIN) {
-         fd_set fdset;
-         struct timeval tv;
-
-         FD_ZERO(&fdset);
-         FD_SET((unsigned)bsock->m_fd, &fdset);
-         tv.tv_sec = 1;
-         tv.tv_usec = 0;
-         select(bsock->m_fd + 1, NULL, &fdset, NULL, &tv);
+         wait_for_writable_fd(bsock->m_fd, 1, false);
          continue;
       }
       if (nwritten <= 0) {

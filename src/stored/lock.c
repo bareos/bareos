@@ -28,8 +28,7 @@
 /*
  * Collection of Bacula Storage daemon locking software
  *
- *  Kern Sibbald, June 2007
- *
+ * Kern Sibbald, June 2007
  */
 
 #include "bacula.h"                   /* pull in global headers */
@@ -42,6 +41,7 @@ const int dbglvl = 500;
 #endif
 
 
+
 /*
  *
  * The Storage daemon has three locking concepts that must be
@@ -49,8 +49,8 @@ const int dbglvl = 500;
  *
  *  1. dblock    blocking the device, which means that the device
  *               is "marked" in use.  When setting and removing the
-                 block, the device is locked, but after dblock is
-                 called the device is unlocked.
+ *               block, the device is locked, but after dblock is
+ *               called the device is unlocked.
  *  2. Lock()    simple mutex that locks the device structure. A Lock
  *               can be acquired while a device is blocked if it is not
  *               locked.      
@@ -137,7 +137,6 @@ const int dbglvl = 500;
  *                       pthread_cond_broadcast
  *
  */
-
 void DEVICE::dblock(int why)
 {
    rLock(false);              /* need recursive lock to block */
@@ -154,9 +153,7 @@ void DEVICE::dunblock(bool locked)
    Unlock();
 }
 
-
 #ifdef SD_DEBUG_LOCK
-
 /*
  * Debug DCR locks  N.B.
  *
@@ -199,9 +196,9 @@ void DCR::dbg_mUnlock(const char *file, int line)
  */
 void DEVICE::dbg_Lock(const char *file, int line)
 {
-   Dmsg3(sd_dbglvl, "Lock from %s:%d precnt=%d\n", file, line, m_count); 
+   Dmsg3(sd_dbglvl, "Lock from %s:%d precnt=%d\n", file, line, m_count);
    /* Note, this *really* should be protected by a mutex, but
-    *  since it is only debug code we don't worry too much.  
+    *  since it is only debug code we don't worry too much.
     */
    if (m_count > 0 && pthread_equal(m_pid, pthread_self())) {
       Dmsg4(sd_dbglvl, "Possible DEADLOCK!! lock held by JobId=%u from %s:%d m_count=%d\n", 
@@ -216,40 +213,39 @@ void DEVICE::dbg_Lock(const char *file, int line)
 void DEVICE::dbg_Unlock(const char *file, int line)
 {
    m_count--; 
-   Dmsg3(sd_dbglvl, "Unlock from %s:%d postcnt=%d\n", file, line, m_count); 
+   Dmsg3(sd_dbglvl, "Unlock from %s:%d postcnt=%d\n", file, line, m_count);
    bthread_mutex_unlock_p(&m_mutex, file, line);
 }
 
 void DEVICE::dbg_rUnlock(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "rUnlock from %s:%d\n", file, line); 
+   Dmsg2(sd_dbglvl, "rUnlock from %s:%d\n", file, line);
    dbg_Unlock(file, line);
 }
 
 void DEVICE::dbg_Lock_acquire(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "Lock_acquire from %s:%d\n", file, line); 
+   Dmsg2(sd_dbglvl, "Lock_acquire from %s:%d\n", file, line);
    bthread_mutex_lock_p(&acquire_mutex, file, line);
 }
 
 void DEVICE::dbg_Unlock_acquire(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "Unlock_acquire from %s:%d\n", file, line); 
+   Dmsg2(sd_dbglvl, "Unlock_acquire from %s:%d\n", file, line);
    bthread_mutex_unlock_p(&acquire_mutex, file, line);
 }
 
 void DEVICE::dbg_Lock_read_acquire(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "Lock_read_acquire from %s:%d\n", file, line); 
+   Dmsg2(sd_dbglvl, "Lock_read_acquire from %s:%d\n", file, line);
    bthread_mutex_lock_p(&read_acquire_mutex, file, line);
 }
 
 void DEVICE::dbg_Unlock_read_acquire(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "Unlock_read_acquire from %s:%d\n", file, line); 
+   Dmsg2(sd_dbglvl, "Unlock_read_acquire from %s:%d\n", file, line);
    bthread_mutex_unlock_p(&read_acquire_mutex, file, line);
 }
-
 
 #else
 
@@ -291,9 +287,7 @@ void DCR::mUnlock()
 
 /*
  * DEVICE locks  N.B.
- *
  */
-
 void DEVICE::rUnlock()
 {
    Unlock();
@@ -306,7 +300,7 @@ void DEVICE::Lock()
 
 void DEVICE::Unlock()
 {
-   V(m_mutex);
+   V(m_mutex);   
 }
 
 void DEVICE::Lock_acquire()
@@ -353,8 +347,8 @@ int DEVICE::init_read_acquire_mutex()
 void DEVICE::set_mutex_priorities()
 {
    /* Ensure that we respect this order in P/V operations */
-   bthread_mutex_set_priority(&m_mutex,       PRIO_SD_DEV_ACCESS);
-   bthread_mutex_set_priority(&spool_mutex,   PRIO_SD_DEV_SPOOL);
+   bthread_mutex_set_priority(&m_mutex, PRIO_SD_DEV_ACCESS);
+   bthread_mutex_set_priority(&spool_mutex, PRIO_SD_DEV_SPOOL);
    bthread_mutex_set_priority(&acquire_mutex, PRIO_SD_DEV_ACQUIRE);
 }
 
@@ -362,7 +356,6 @@ int DEVICE::next_vol_timedwait(const struct timespec *timeout)
 {
    return pthread_cond_timedwait(&wait_next_vol, &m_mutex, timeout);
 }
-
 
 /*
  * This is a recursive lock that checks if the device is blocked.
@@ -393,17 +386,17 @@ void DEVICE::rLock(bool locked)
    if (blocked() && !pthread_equal(no_wait_id, pthread_self())) {
       num_waiting++;             /* indicate that I am waiting */
       while (blocked()) {
-         int stat;
+         int status;
 #ifndef HAVE_WIN32
          /* thread id on Win32 may be a struct */
          Dmsg3(sd_dbglvl, "rLock blked=%s no_wait=%p me=%p\n", print_blocked(),
                no_wait_id, pthread_self());
 #endif
-         if ((stat = pthread_cond_wait(&this->wait, &m_mutex)) != 0) {
+         if ((status = pthread_cond_wait(&this->wait, &m_mutex)) != 0) {
             berrno be;
             this->Unlock();
             Emsg1(M_ABORT, 0, _("pthread_cond_wait failure. ERR=%s\n"),
-               be.bstrerror(stat));
+                  be.bstrerror(status));
          }
       }
       num_waiting--;             /* no longer waiting */
@@ -505,16 +498,16 @@ const char *DEVICE::print_blocked() const
    }
 }
 
-
 /*
  * Check if the device is blocked or not
  */
 bool DEVICE::is_device_unmounted()
 {
-   bool stat;
-
+   bool status;
    int blk = blocked();
-   stat = (blk == BST_UNMOUNTED) ||
-          (blk == BST_UNMOUNTED_WAITING_FOR_SYSOP);
-   return stat;
+
+   status = (blk == BST_UNMOUNTED) ||
+            (blk == BST_UNMOUNTED_WAITING_FOR_SYSOP);
+
+   return status;
 }

@@ -30,8 +30,6 @@
  *
  * Author: Landon Fuller <landonf@opendarwin.org>
  *
- * Version $Id$
- *
  * This file was contributed to the Bacula project by Landon Fuller.
  *
  * Landon Fuller has been granted a perpetual, worldwide, non-exclusive,

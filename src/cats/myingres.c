@@ -896,7 +896,7 @@ char *INGerrorMessage(const INGconn *dbconn)
     IILQisInqSqlio((short *)0,1,32,255,errbuf,63);
   }
 /* # line 843 "myingres.sc" */	/* host code */
-      strncpy(dbconn->msg, errbuf, sizeof(dbconn->msg));
+      bstrncpy(dbconn->msg, errbuf, sizeof(dbconn->msg));
       /*
        * Switch to no default session for this thread.
        */

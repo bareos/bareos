@@ -87,8 +87,7 @@ FF_PKT *init_find_files()
  * provide for full/incremental saves, and setting
  * of save_time. For additional options, see above
  */
-void
-set_find_options(FF_PKT *ff, int incremental, time_t save_time)
+void set_find_options(FF_PKT *ff, int incremental, time_t save_time)
 {
   Dmsg0(dbglvl, "Enter set_find_options()\n");
   ff->incremental = incremental;
@@ -96,13 +95,13 @@ set_find_options(FF_PKT *ff, int incremental, time_t save_time)
   Dmsg0(dbglvl, "Leave set_find_options()\n");
 }
 
-void
-set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff))
+void set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff))
 {
    Dmsg0(dbglvl, "Enter set_find_changed_function()\n");
    ff->check_fct = check_fct;
 }
 
+#if defined(HAVE_WIN32)
 /*
  * For VSS we need to know which windows drives
  * are used, because we create a snapshot of all used
@@ -112,53 +111,98 @@ set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff))
  * fills "drives" with up to 26 (A..Z) drive names
  *
  */
-int
-get_win32_driveletters(FF_PKT *ff, char* szDrives)
+int get_win32_driveletters(FF_PKT *ff, char* szDrives)
 {
-   /* szDrives must be at least 27 bytes long */
-
-#if !defined(HAVE_WIN32)
-   return 0;
-#endif
+   int i;
    int nCount;
+   char *fname, ch;
+   char drive[4], dt[16];
+   dlistString *node;
+   findINCEXE *incexe;
+   findFILESET *fileset;
+
    /*
+    * szDrives must be at least 27 bytes long
     * Can be already filled by plugin, so check that all
     *   letters are in upper case. There should be no duplicates.
     */
-   for (nCount = 0; nCount < 27 && szDrives[nCount] ; nCount++) {
+   for (nCount = 0; nCount < 27 && szDrives[nCount]; nCount++) {
       szDrives[nCount] = toupper(szDrives[nCount]);
    }
 
-   findFILESET *fileset = ff->fileset;
+   /*
+    * First check if there are any non fixed drives in the list
+    * filled by the plugin. VSS can only snapshot fixed drives.
+    */
+   for (nCount = 0; nCount < 27 && szDrives[nCount]; nCount++) {
+      bsnprintf(drive, sizeof(drive), "%c:\\", szDrives[nCount]);
+      if (drivetype(drive, dt, sizeof(dt))) {
+         if (bstrcmp(dt, "fixed")) {
+            continue;
+         }
+
+         /*
+          * Inline copy the rest of the string over the current
+          * drive letter.
+          */
+         bstrinlinecpy(szDrives + nCount, szDrives + nCount + 1);
+      }
+   }
+
+   fileset = ff->fileset;
    if (fileset) {
-      int i;
-      dlistString *node;
-      
-      for (i=0; i<fileset->include_list.size(); i++) {
-         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
-         
-         /* look through all files and check */
+      for (i = 0; i < fileset->include_list.size(); i++) {
+         incexe = (findINCEXE *)fileset->include_list.get(i);
+
+         /*
+          * Look through all files and check
+          */
          foreach_dlist(node, &incexe->name_list) {
-            char *fname = node->c_str();
-            /* fname should match x:/ */
-            if (strlen(fname) >= 2 && B_ISALPHA(fname[0]) 
-               && fname[1] == ':') {
-               
-               /* always add in uppercase */
-               char ch = toupper(fname[0]);
-               /* if not found in string, add drive letter */
-               if (!strchr(szDrives,ch)) {
-                  szDrives[nCount] = ch;
-                  szDrives[nCount+1] = 0;
-                  nCount++;
-               }                                
-            }            
+            fname = node->c_str();
+            /*
+             * fname should match x:/
+             */
+            if (strlen(fname) >= 2 && B_ISALPHA(fname[0]) && fname[1] == ':') {
+               /*
+                * VSS can only snapshot fixed drives.
+                */
+               bstrncpy(drive, fname, sizeof(drive));
+               drive[2] = '\\';
+               drive[3] = '\0';
+
+               /*
+                * Lookup the drive type.
+                */
+               if (drivetype(drive, dt, sizeof(dt))) {
+                  if (bstrcmp(dt, "fixed")) {
+                     /*
+                      * Always add in uppercase
+                      */
+                     ch = toupper(fname[0]);
+
+                     /*
+                      * If not found in string, add drive letter
+                      */
+                     if (!strchr(szDrives, ch)) {
+                        szDrives[nCount] = ch;
+                        szDrives[nCount + 1] = 0;
+                        nCount++;
+                     }
+                  }
+               }
+            }
          }
       }
    }
+
    return nCount;
 }
-
+#else
+int get_win32_driveletters(FF_PKT *ff, char* szDrives)
+{
+   return 0;
+}
+#endif
 /*
  * Call this subroutine with a callback subroutine as the first
  * argument and a packet as the second argument, this packet
@@ -166,9 +210,8 @@ get_win32_driveletters(FF_PKT *ff, char* szDrives)
  * argument.
  *
  */
-int
-find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level),
-           int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)) 
+int find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level),
+               int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level))
 {
    ff->file_save = file_save;
    ff->plugin_save = plugin_save;
@@ -182,7 +225,7 @@ find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool to
        * (not only Options{} blocks inside a Include{})
        */
       ff->flags = 0;
-      for (i=0; i<fileset->include_list.size(); i++) {
+      for (i = 0; i < fileset->include_list.size(); i++) {
          findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
          fileset->incexe = incexe;
 
@@ -197,12 +240,13 @@ find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool to
           * By setting all options, we in effect OR the global options
           *   which is what we want.
           */
-         for (j=0; j<incexe->opts_list.size(); j++) {
+         for (j = 0; j < incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
             ff->flags |= fo->flags;
             ff->Compress_algo = fo->Compress_algo;
             ff->Compress_level = fo->Compress_level;
             ff->strip_path = fo->strip_path;
+            ff->size_match = fo->size_match;
             ff->fstypes = fo->fstype;
             ff->drivetypes = fo->drivetype;
             if (fo->plugin != NULL) {
@@ -253,7 +297,7 @@ find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool to
 
 /*
  * Test if the currently selected directory (in ff->fname) is
- *  explicitly in the Include list or explicitly in the Exclude 
+ *  explicitly in the Include list or explicitly in the Exclude
  *  list.
  */
 bool is_in_fileset(FF_PKT *ff)
@@ -264,22 +308,22 @@ bool is_in_fileset(FF_PKT *ff)
    findINCEXE *incexe;
    findFILESET *fileset = ff->fileset;
    if (fileset) {
-      for (i=0; i<fileset->include_list.size(); i++) {
+      for (i = 0; i < fileset->include_list.size(); i++) {
          incexe = (findINCEXE *)fileset->include_list.get(i);
          foreach_dlist(node, &incexe->name_list) {
             fname = node->c_str();
             Dmsg2(dbglvl, "Inc fname=%s ff->fname=%s\n", fname, ff->fname);
-            if (strcmp(fname, ff->fname) == 0) {
+            if (bstrcmp(fname, ff->fname)) {
                return true;
             }
          }
       }
-      for (i=0; i<fileset->exclude_list.size(); i++) {
+      for (i = 0; i < fileset->exclude_list.size(); i++) {
          incexe = (findINCEXE *)fileset->exclude_list.get(i);
          foreach_dlist(node, &incexe->name_list) {
             fname = node->c_str();
             Dmsg2(dbglvl, "Exc fname=%s ff->fname=%s\n", fname, ff->fname);
-            if (strcmp(fname, ff->fname) == 0) {
+            if (bstrcmp(fname, ff->fname)) {
                return true;
             }
          }
@@ -287,7 +331,6 @@ bool is_in_fileset(FF_PKT *ff)
    }
    return false;
 }
-
 
 bool accept_file(FF_PKT *ff)
 {
@@ -323,7 +366,7 @@ bool accept_file(FF_PKT *ff)
       fnm_flags |= (ff->flags & FO_ENHANCEDWILD) ? FNM_PATHNAME : 0;
 
       if (S_ISDIR(ff->statp.st_mode)) {
-         for (k=0; k<fo->wilddir.size(); k++) {
+         for (k = 0; k < fo->wilddir.size(); k++) {
             if (match_func((char *)fo->wilddir.get(k), ff->fname, fnmode|fnm_flags) == 0) {
                if (ff->flags & FO_EXCLUDE) {
                   Dmsg2(dbglvl, "Exclude wilddir: %s file=%s\n", (char *)fo->wilddir.get(k),
@@ -334,7 +377,7 @@ bool accept_file(FF_PKT *ff)
             }
          }
       } else {
-         for (k=0; k<fo->wildfile.size(); k++) {
+         for (k = 0; k < fo->wildfile.size(); k++) {
             if (match_func((char *)fo->wildfile.get(k), ff->fname, fnmode|fnm_flags) == 0) {
                if (ff->flags & FO_EXCLUDE) {
                   Dmsg2(dbglvl, "Exclude wildfile: %s file=%s\n", (char *)fo->wildfile.get(k),
@@ -345,7 +388,7 @@ bool accept_file(FF_PKT *ff)
             }
          }
 
-         for (k=0; k<fo->wildbase.size(); k++) {
+         for (k = 0; k < fo->wildbase.size(); k++) {
             if (match_func((char *)fo->wildbase.get(k), basename, fnmode|fnm_flags) == 0) {
                if (ff->flags & FO_EXCLUDE) {
                   Dmsg2(dbglvl, "Exclude wildbase: %s file=%s\n", (char *)fo->wildbase.get(k),
@@ -356,7 +399,7 @@ bool accept_file(FF_PKT *ff)
             }
          }
       }
-      for (k=0; k<fo->wild.size(); k++) {
+      for (k = 0; k < fo->wild.size(); k++) {
          if (match_func((char *)fo->wild.get(k), ff->fname, fnmode|fnm_flags) == 0) {
             if (ff->flags & FO_EXCLUDE) {
                Dmsg2(dbglvl, "Exclude wild: %s file=%s\n", (char *)fo->wild.get(k),
@@ -367,7 +410,7 @@ bool accept_file(FF_PKT *ff)
          }
       }
       if (S_ISDIR(ff->statp.st_mode)) {
-         for (k=0; k<fo->regexdir.size(); k++) {
+         for (k = 0; k < fo->regexdir.size(); k++) {
             const int nmatch = 30;
             regmatch_t pmatch[nmatch];
             if (regexec((regex_t *)fo->regexdir.get(k), ff->fname, nmatch, pmatch,  0) == 0) {
@@ -378,7 +421,7 @@ bool accept_file(FF_PKT *ff)
             }
          }
       } else {
-         for (k=0; k<fo->regexfile.size(); k++) {
+         for (k = 0; k < fo->regexfile.size(); k++) {
             const int nmatch = 30;
             regmatch_t pmatch[nmatch];
             if (regexec((regex_t *)fo->regexfile.get(k), ff->fname, nmatch, pmatch,  0) == 0) {
@@ -389,7 +432,7 @@ bool accept_file(FF_PKT *ff)
             }
          }
       }
-      for (k=0; k<fo->regex.size(); k++) {
+      for (k = 0; k < fo->regex.size(); k++) {
          const int nmatch = 30;
          regmatch_t pmatch[nmatch];
          if (regexec((regex_t *)fo->regex.get(k), ff->fname, nmatch, pmatch,  0) == 0) {
@@ -412,21 +455,23 @@ bool accept_file(FF_PKT *ff)
       }
    }
 
-   /* Now apply the Exclude { } directive */
-   for (i=0; i<fileset->exclude_list.size(); i++) {
+   /*
+    * Now apply the Exclude { } directive
+    */
+   for (i = 0; i < fileset->exclude_list.size(); i++) {
       findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
-      for (j=0; j<incexe->opts_list.size(); j++) {
+      for (j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
          fnm_flags = (fo->flags & FO_IGNORECASE) ? FNM_CASEFOLD : 0;
-         for (k=0; k<fo->wild.size(); k++) {
+         for (k = 0; k < fo->wild.size(); k++) {
             if (fnmatch((char *)fo->wild.get(k), ff->fname, fnmode|fnm_flags) == 0) {
                Dmsg1(dbglvl, "Reject wild1: %s\n", ff->fname);
                return false;          /* reject file */
             }
          }
       }
-      fnm_flags = (incexe->current_opts != NULL && incexe->current_opts->flags & FO_IGNORECASE)
-             ? FNM_CASEFOLD : 0;
+      fnm_flags = (incexe->current_opts != NULL &&
+                   incexe->current_opts->flags & FO_IGNORECASE) ? FNM_CASEFOLD : 0;
       dlistString *node;
       foreach_dlist(node, &incexe->name_list) {
          char *fname = node->c_str();
@@ -436,6 +481,7 @@ bool accept_file(FF_PKT *ff)
          }
       }
    }
+
    return true;
 }
 
@@ -488,13 +534,11 @@ static int our_callback(JCR *jcr, FF_PKT *ff, bool top_level)
    }
 }
 
-
 /*
  * Terminate find_files() and release
  * all allocated memory
  */
-int
-term_find_files(FF_PKT *ff)
+int term_find_files(FF_PKT *ff)
 {
    int hard_links;
 

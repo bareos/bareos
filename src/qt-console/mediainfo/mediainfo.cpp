@@ -52,6 +52,8 @@ MediaInfo::MediaInfo(QTreeWidgetItem *parentWidget, QString &mediaName)
    connect(pbPurge, SIGNAL(clicked()), this, SLOT(purgeVol()));
    connect(pbDelete, SIGNAL(clicked()), this, SLOT(deleteVol()));
    connect(pbEdit, SIGNAL(clicked()), this, SLOT(editVol()));
+   connect(pbImport, SIGNAL(clicked()), this, SLOT(importVol()));
+   connect(pbExport, SIGNAL(clicked()), this, SLOT(exportVol()));
    connect(tableJob, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(showInfoForJob(QTableWidgetItem *)));
    
    dockPage();
@@ -92,9 +94,12 @@ void MediaInfo::purgeVol()
       QMessageBox::Ok | QMessageBox::Cancel)
       == QMessageBox::Cancel) { return; }
 
-   QString cmd("purge volume=");
-   cmd += m_mediaName;
-   consoleCommand(cmd);
+   QString scmd;
+
+   scmd = QString("purge volume=\"%1\"")
+                  .arg(m_mediaName);
+
+   consoleCommand(scmd);
 }
 
 void MediaInfo::deleteVol()
@@ -111,15 +116,38 @@ void MediaInfo::deleteVol()
       QMessageBox::Ok | QMessageBox::Cancel)
       == QMessageBox::Cancel) { return; }
 
-   QString cmd("delete volume=");
-   cmd += m_mediaName;
-   consoleCommand(cmd);
+   QString scmd;
+
+   scmd = QString("delete volume=\"%1\"")
+                  .arg(m_mediaName);
+
+   consoleCommand(scmd);
 }
 
 void MediaInfo::editVol()
 {
    new MediaEdit(mainWin->getFromHash(this), m_mediaId);
 //   connect(edit, SIGNAL(destroyed()), this, SLOT(populateTree()));
+}
+
+void MediaInfo::importVol()
+{
+   QString scmd;
+
+   scmd = QString("import volume=\"%1\"")
+                    .arg(m_mediaName);
+
+   consoleCommand(scmd);
+}
+
+void MediaInfo::exportVol()
+{
+   QString scmd;
+
+   scmd = QString("export volume=\"%1\"")
+                    .arg(m_mediaName);
+
+   consoleCommand(scmd);
 }
 
 /*

@@ -46,20 +46,22 @@
 const int dbglvl = 400;
 
 /* Commands sent to File daemon */
-static char filesetcmd[]  = "fileset%s\n"; /* set full fileset */
-static char jobcmd[]      = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
+static char filesetcmd[] = "fileset%s\n"; /* set full fileset */
+static char jobcmd[] = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
 /* Note, mtime_only is not used here -- implemented as file option */
-static char levelcmd[]    = "level = %s%s%s mtime_only=%d %s%s\n";
-static char runscript[]   = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
+static char levelcmd[] = "level = %s%s%s mtime_only=%d %s%s\n";
+static char runscript[] = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
 static char runbeforenow[]= "RunBeforeNow\n";
+static char bandwidthcmd[] = "setbandwidth=%lld Job=%s\n";
 
 /* Responses received from File daemon */
-static char OKinc[]          = "2000 OK include\n";
-static char OKjob[]          = "2000 OK Job";
-static char OKlevel[]        = "2000 OK level\n";
-static char OKRunScript[]    = "2000 OK RunScript\n";
+static char OKinc[] = "2000 OK include\n";
+static char OKjob[] = "2000 OK Job";
+static char OKlevel[] = "2000 OK level\n";
+static char OKRunScript[] = "2000 OK RunScript\n";
 static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
 static char OKRestoreObject[] = "2000 OK ObjectRestored\n";
+static char OKBandwidth[] = "2000 OK Bandwidth\n";
 
 /* Forward referenced functions */
 static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd);
@@ -84,8 +86,8 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
    char ed1[30];
    utime_t heart_beat;
 
-   if (jcr->client->heartbeat_interval) {
-      heart_beat = jcr->client->heartbeat_interval;
+   if (jcr->res.client->heartbeat_interval) {
+      heart_beat = jcr->res.client->heartbeat_interval;
    } else {           
       heart_beat = director->heartbeat_interval;
    }
@@ -93,11 +95,11 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
    if (!jcr->file_bsock) {
       char name[MAX_NAME_LENGTH + 100];
       bstrncpy(name, _("Client: "), sizeof(name));
-      bstrncat(name, jcr->client->name(), sizeof(name));
+      bstrncat(name, jcr->res.client->name(), sizeof(name));
 
       fd->set_source_address(director->DIRsrc_addr);
-      if (!fd->connect(jcr,retry_interval,max_retry_time, heart_beat, name, jcr->client->address,
-           NULL, jcr->client->FDport, verbose)) {
+      if (!fd->connect(jcr,retry_interval,max_retry_time, heart_beat, name, jcr->res.client->address,
+           NULL, jcr->res.client->FDport, verbose)) {
         fd->destroy();
         fd = NULL;
       }
@@ -110,7 +112,7 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
    } else {
       fd = jcr->file_bsock;           /* use existing connection */
    }
-   fd->res = (RES *)jcr->client;      /* save resource in BSOCK */
+   fd->res = (RES *)jcr->res.client;  /* save resource in BSOCK */
    jcr->file_bsock = fd;
    jcr->setJobStatus(JS_Running);
 
@@ -127,24 +129,24 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
    }
    fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
              jcr->VolSessionTime, jcr->sd_auth_key);
-   if (!jcr->keep_sd_auth_key && strcmp(jcr->sd_auth_key, "dummy")) {
+   if (!jcr->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
       memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
    }
    Dmsg1(100, ">filed: %s", fd->msg);
    if (bget_dirmsg(fd) > 0) {
        Dmsg1(110, "<filed: %s", fd->msg);
-       if (strncmp(fd->msg, OKjob, strlen(OKjob)) != 0) {
+       if (!bstrncmp(fd->msg, OKjob, strlen(OKjob))) {
           Jmsg(jcr, M_FATAL, 0, _("File daemon \"%s\" rejected Job command: %s\n"),
-             jcr->client->hdr.name, fd->msg);
+             jcr->res.client->hdr.name, fd->msg);
           jcr->setJobStatus(JS_ErrorTerminated);
           return 0;
        } else if (jcr->db) {
           CLIENT_DBR cr;
           memset(&cr, 0, sizeof(cr));
-          bstrncpy(cr.Name, jcr->client->hdr.name, sizeof(cr.Name));
-          cr.AutoPrune = jcr->client->AutoPrune;
-          cr.FileRetention = jcr->client->FileRetention;
-          cr.JobRetention = jcr->client->JobRetention;
+          bstrncpy(cr.Name, jcr->res.client->hdr.name, sizeof(cr.Name));
+          cr.AutoPrune = jcr->res.client->AutoPrune;
+          cr.FileRetention = jcr->res.client->FileRetention;
+          cr.JobRetention = jcr->res.client->JobRetention;
           bstrncpy(cr.Uname, fd->msg+strlen(OKjob)+1, sizeof(cr.Uname));
           if (!db_update_client_record(jcr, jcr->db, &cr)) {
              Jmsg(jcr, M_WARNING, 0, _("Error updating Client record. ERR=%s\n"),
@@ -194,7 +196,8 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
     * Lookup the last FULL backup job to get the time/date for a
     * differential or incremental save.
     */
-   switch (jcr->getJobLevel()) {
+   JobLevel = jcr->getJobLevel();
+   switch (JobLevel) {
    case L_DIFFERENTIAL:
    case L_INCREMENTAL:
       POOLMEM *stime = get_pool_memory(PM_MESSAGE);
@@ -208,7 +211,7 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
       if (!db_find_job_start_time(jcr,jcr->db, &jcr->jr, &jcr->stime, jcr->PrevJob)) {
          do_full = true;
       }
-      have_full = db_find_last_job_start_time(jcr, jcr->db, &jcr->jr, 
+      have_full = db_find_last_job_start_time(jcr, jcr->db, &jcr->jr,
                                               &stime, prev_job, L_FULL);
       if (have_full) {
          last_full_time = str_to_utime(stime);
@@ -218,9 +221,9 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
       Dmsg4(50, "have_full=%d do_full=%d now=%lld full_time=%lld\n", have_full, 
             do_full, now, last_full_time);
       /* Make sure the last diff is recent enough */
-      if (have_full && jcr->getJobLevel() == L_INCREMENTAL && jcr->job->MaxDiffInterval > 0) {
+      if (have_full && JobLevel == L_INCREMENTAL && jcr->res.job->MaxDiffInterval > 0) {
          /* Lookup last diff job */
-         if (db_find_last_job_start_time(jcr, jcr->db, &jcr->jr, 
+         if (db_find_last_job_start_time(jcr, jcr->db, &jcr->jr,
                                          &stime, prev_job, L_DIFFERENTIAL)) {
             last_diff_time = str_to_utime(stime);
             /* If no Diff since Full, use Full time */
@@ -234,12 +237,12 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
             last_diff_time = last_full_time;
             Dmsg1(50, "No last_diff_time setting to full_time=%lld\n", last_full_time);
          }
-         do_diff = ((now - last_diff_time) >= jcr->job->MaxDiffInterval);
-         Dmsg2(50, "do_diff=%d diffInter=%lld\n", do_diff, jcr->job->MaxDiffInterval);
+         do_diff = ((now - last_diff_time) >= jcr->res.job->MaxDiffInterval);
+         Dmsg2(50, "do_diff=%d diffInter=%lld\n", do_diff, jcr->res.job->MaxDiffInterval);
       }
       /* Note, do_full takes precedence over do_diff */
-      if (have_full && jcr->job->MaxFullInterval > 0) {
-         do_full = ((now - last_full_time) >= jcr->job->MaxFullInterval);
+      if (have_full && jcr->res.job->MaxFullInterval > 0) {
+         do_full = ((now - last_full_time) >= jcr->res.job->MaxFullInterval);
       }
       free_pool_memory(stime);
 
@@ -248,22 +251,21 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
          Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing FULL backup.\n"));
          bsnprintf(since, since_len, _(" (upgraded from %s)"),
-            level_to_str(jcr->getJobLevel()));
+            level_to_str(JobLevel));
          jcr->setJobLevel(jcr->jr.JobLevel = L_FULL);
        } else if (do_diff) {
          /* No recent diff job found, so upgrade this one to Diff */
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Differential backup found in catalog. Doing Differential backup.\n"));
-         bsnprintf(since, since_len, _(" (upgraded from %s)"),
-            level_to_str(jcr->getJobLevel()));
+         bsnprintf(since, since_len, _(" (upgraded from %s)"), level_to_str(JobLevel));
          jcr->setJobLevel(jcr->jr.JobLevel = L_DIFFERENTIAL);
       } else {
-         if (jcr->job->rerun_failed_levels) {
+         if (jcr->res.job->rerun_failed_levels) {
             if (db_find_failed_job_since(jcr, jcr->db, &jcr->jr,
                                          jcr->stime, JobLevel)) {
                Jmsg(jcr, M_INFO, 0, _("Prior failed job found in catalog. Upgrading to %s.\n"),
                   level_to_str(JobLevel));
                bsnprintf(since, since_len, _(" (upgraded from %s)"),
-                  level_to_str(jcr->getJobLevel()));
+                  level_to_str(JobLevel));
                jcr->setJobLevel(jcr->jr.JobLevel = JobLevel);
                jcr->jr.JobId = jcr->JobId;
                break;
@@ -275,8 +277,8 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
       jcr->jr.JobId = jcr->JobId;
       break;
    }
-   Dmsg3(100, "Level=%c last start time=%s job=%s\n", 
-         jcr->getJobLevel(), jcr->stime, jcr->PrevJob);
+   Dmsg3(100, "Level=%c last start time=%s job=%s\n",
+         JobLevel, jcr->stime, jcr->PrevJob);
 }
 
 static void send_since_time(JCR *jcr)
@@ -293,20 +295,35 @@ static void send_since_time(JCR *jcr)
    }
 }
 
+bool send_bwlimit(JCR *jcr, const char *Job)
+{
+   BSOCK *fd = jcr->file_bsock;
+   if (jcr->FDVersion >= 4) {
+      fd->fsend(bandwidthcmd, jcr->max_bandwidth, Job);
+      if (!response(jcr, fd, OKBandwidth, "Bandwidth", DISPLAY_ERROR)) {
+         jcr->max_bandwidth = 0;      /* can't set bandwidth limit */
+         return false;
+      }
+   }
+   return true;
+}
+
 /*
  * Send level command to FD.
  * Used for backup jobs and estimate command.
  */
 bool send_level_command(JCR *jcr)
 {
-   BSOCK   *fd = jcr->file_bsock;
+   int JobLevel;
+   BSOCK *fd = jcr->file_bsock;
    const char *accurate = jcr->accurate?"accurate_":"";
    const char *not_accurate = "";
    const char *rerunning = jcr->rerunning?" rerunning ":" ";
    /*
     * Send Level command to File daemon
     */
-   switch (jcr->getJobLevel()) {
+   JobLevel = jcr->getJobLevel();
+   switch (JobLevel) {
    case L_BASE:
       fd->fsend(levelcmd, not_accurate, "base", rerunning, 0, "", "");
       break;
@@ -325,8 +342,7 @@ bool send_level_command(JCR *jcr)
       break;
    case L_SINCE:
    default:
-      Jmsg2(jcr, M_FATAL, 0, _("Unimplemented backup level %d %c\n"),
-         jcr->getJobLevel(), jcr->getJobLevel());
+      Jmsg2(jcr, M_FATAL, 0, _("Unimplemented backup level %d %c\n"), JobLevel, JobLevel);
       return 0;
    }
    Dmsg1(120, ">filed: %s", fd->msg);
@@ -341,9 +357,9 @@ bool send_level_command(JCR *jcr)
  */
 static bool send_fileset(JCR *jcr)
 {
-   FILESET *fileset = jcr->fileset;
-   BSOCK   *fd = jcr->file_bsock;
-   STORE   *store = jcr->wstore;
+   FILESETRES *fileset = jcr->res.fileset;
+   BSOCK *fd = jcr->file_bsock;
+   STORERES *store = jcr->res.wstore;
    int num;
    bool include = true;
 
@@ -487,7 +503,7 @@ static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd)
    BPIPE *bpipe;
    FILE *ffd;
    char buf[2000];
-   int optlen, stat;
+   int optlen, status;
    char *p = item;
 
    switch (*p) {
@@ -512,10 +528,10 @@ static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd)
             return false;
          }
       }
-      if ((stat=close_bpipe(bpipe)) != 0) {
+      if ((status = close_bpipe(bpipe)) != 0) {
          berrno be;
          Jmsg(jcr, M_FATAL, 0, _("Error running program: %s. ERR=%s\n"),
-            p, be.bstrerror(stat));
+            p, be.bstrerror(status));
          return false;
       }
       break;
@@ -555,20 +571,18 @@ static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd)
    return true;
 }            
 
-
 /*
  * Send include list to File daemon
  */
 bool send_include_list(JCR *jcr)
 {
    BSOCK *fd = jcr->file_bsock;
-   if (jcr->fileset->new_include) {
-      fd->fsend(filesetcmd, jcr->fileset->enable_vss ? " vss=1" : "");
+   if (jcr->res.fileset->new_include) {
+      fd->fsend(filesetcmd, jcr->res.fileset->enable_vss ? " vss=1" : "");
       return send_fileset(jcr);
    }
    return true;
 }
-
 
 /*
  * Send exclude list to File daemon
@@ -581,26 +595,6 @@ bool send_exclude_list(JCR *jcr)
    return true;
 }
 
-/* TODO: drop this with runscript.old_proto in bacula 1.42 */
-static char runbefore[]   = "RunBeforeJob %s\n";
-static char runafter[]    = "RunAfterJob %s\n";
-static char OKRunBefore[] = "2000 OK RunBefore\n";
-static char OKRunAfter[]  = "2000 OK RunAfter\n";
-
-int send_runscript_with_old_proto(JCR *jcr, int when, POOLMEM *msg)
-{
-   int ret;
-   Dmsg1(120, "bdird: sending old runcommand to fd '%s'\n",msg);
-   if (when & SCRIPT_Before) {
-      bnet_fsend(jcr->file_bsock, runbefore, msg);
-      ret = response(jcr, jcr->file_bsock, OKRunBefore, "ClientRunBeforeJob", DISPLAY_ERROR);
-   } else {
-      bnet_fsend(jcr->file_bsock, runafter, msg);
-      ret = response(jcr, jcr->file_bsock, OKRunAfter, "ClientRunAfterJob", DISPLAY_ERROR);
-   }
-   return ret;
-} /* END OF TODO */
-
 /*
  * Send RunScripts to File daemon
  * 1) We send all runscript to FD, they can be executed Before, After, or twice
@@ -612,37 +606,29 @@ int send_runscripts_commands(JCR *jcr)
    POOLMEM *msg = get_pool_memory(PM_FNAME);
    BSOCK *fd = jcr->file_bsock;
    RUNSCRIPT *cmd;
-   bool launch_before_cmd = false;
    POOLMEM *ehost = get_pool_memory(PM_FNAME);
    int result;
 
    Dmsg0(120, "bdird: sending runscripts to fd\n");
    
-   foreach_alist(cmd, jcr->job->RunScripts) {
+   foreach_alist(cmd, jcr->res.job->RunScripts) {
       if (cmd->can_run_at_level(jcr->getJobLevel()) && cmd->target) {
          ehost = edit_job_codes(jcr, ehost, cmd->target, "");
          Dmsg2(200, "bdird: runscript %s -> %s\n", cmd->target, ehost);
 
-         if (strcmp(ehost, jcr->client->name()) == 0) {
+         if (bstrcmp(ehost, jcr->res.client->name())) {
             pm_strcpy(msg, cmd->command);
             bash_spaces(msg);
 
             Dmsg1(120, "bdird: sending runscripts to fd '%s'\n", cmd->command);
             
-            /* TODO: remove this with bacula 1.42 */
-            if (cmd->old_proto) {
-               result = send_runscript_with_old_proto(jcr, cmd->when, msg);
+            fd->fsend(runscript, cmd->on_success,
+                                 cmd->on_failure,
+                                 cmd->fail_on_error,
+                                 cmd->when,
+                                 msg);
 
-            } else {
-               fd->fsend(runscript, cmd->on_success, 
-                                    cmd->on_failure,
-                                    cmd->fail_on_error,
-                                    cmd->when,
-                                    msg);
-
-               result = response(jcr, fd, OKRunScript, "RunScript", DISPLAY_ERROR);
-               launch_before_cmd = true;
-            }
+            result = response(jcr, fd, OKRunScript, "RunScript", DISPLAY_ERROR);
             
             if (!result) {
                goto bail_out;
@@ -657,13 +643,14 @@ int send_runscripts_commands(JCR *jcr)
       }        
    } 
 
-   /* Tell the FD to execute the ClientRunBeforeJob */
-   if (launch_before_cmd) {
-      fd->fsend(runbeforenow);
-      if (!response(jcr, fd, OKRunBeforeNow, "RunBeforeNow", DISPLAY_ERROR)) {
-        goto bail_out;
-      }
+   /*
+    * Tell the FD to execute the ClientRunBeforeJob
+    */
+   fd->fsend(runbeforenow);
+   if (!response(jcr, fd, OKRunBeforeNow, "RunBeforeNow", DISPLAY_ERROR)) {
+     goto bail_out;
    }
+
    free_pool_memory(msg);
    free_pool_memory(ehost);
    return 1;
@@ -694,7 +681,7 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
    if (jcr->FDVersion < 3) {
       Jmsg(jcr, M_WARNING, 0, _("Client \"%s\" may not be used to restore "
                                 "this job. Please upgrade your client.\n"), 
-           jcr->client->name());
+           jcr->res.client->name());
       return 1;
    }
 
@@ -773,8 +760,6 @@ bool send_restore_objects(JCR *jcr)
    }
    return true;
 }
-
-
 
 /*
  * Read the attributes from the File daemon for
@@ -887,4 +872,85 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
    }
    jcr->setJobStatus(JS_Terminated);
    return 1;
+}
+
+/*
+ * Cancel a job running in the File daemon
+ */
+bool cancel_file_daemon_job(UAContext *ua, JCR *jcr)
+{
+   BSOCK *fd;
+
+   ua->jcr->res.client = jcr->res.client;
+   if (!connect_to_file_daemon(ua->jcr, 10, FDConnectTimeout, 1)) {
+      ua->error_msg(_("Failed to connect to File daemon.\n"));
+      return false;
+   }
+   Dmsg0(200, "Connected to file daemon\n");
+   fd = ua->jcr->file_bsock;
+   fd->fsend("cancel Job=%s\n", jcr->Job);
+   while (fd->recv() >= 0) {
+      ua->send_msg("%s", fd->msg);
+   }
+   fd->signal(BNET_TERMINATE);
+   fd->close();
+   ua->jcr->file_bsock = NULL;
+   jcr->file_bsock->set_terminated();
+   jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
+   return true;
+}
+
+/*
+ * Get the status of a remote File Daemon.
+ */
+void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
+{
+   BSOCK *fd;
+
+   /*
+    * Connect to File daemon
+    */
+   ua->jcr->res.client = client;
+
+   /*
+    * Release any old dummy key
+    */
+   if (ua->jcr->sd_auth_key) {
+      free(ua->jcr->sd_auth_key);
+   }
+
+   /*
+    * Create a new dummy SD auth key
+    */
+   ua->jcr->sd_auth_key = bstrdup("dummy");
+
+   /*
+    * Try to connect for 15 seconds
+    */
+   if (!ua->api) ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
+      client->name(), client->address, client->FDport);
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
+      ua->send_msg(_("Failed to connect to Client %s.\n====\n"),
+         client->name());
+      if (ua->jcr->file_bsock) {
+         ua->jcr->file_bsock->close();
+         ua->jcr->file_bsock = NULL;
+      }
+      return;
+   }
+   Dmsg0(20, _("Connected to file daemon\n"));
+   fd = ua->jcr->file_bsock;
+   if (cmd) {
+      fd->fsend(".status %s", cmd);
+   } else {
+      fd->fsend("status");
+   }
+   while (fd->recv() >= 0) {
+      ua->send_msg("%s", fd->msg);
+   }
+   fd->signal(BNET_TERMINATE);
+   fd->close();
+   ua->jcr->file_bsock = NULL;
+
+   return;
 }

@@ -212,10 +212,11 @@ static bool accurate_add_file(JCR *jcr, uint32_t len,
    bool ret = true;
    CurFile *item;
 
-   /* we store CurFile, fname and ctime/mtime in the same chunk 
-    * we need one extra byte to handle an empty chksum
+   /*
+    * We store CurFile, fname and ctime/mtime in the same chunk
+    * and need one extra bytes to handle an empty chksum.
     */
-   item = (CurFile *)jcr->file_list->hash_malloc(sizeof(CurFile)+len+3);
+   item = (CurFile *)jcr->file_list->hash_malloc(sizeof(CurFile) + len + 3);
    item->seen = 0;
 
    /* TODO: see if we can optimize this part with memcpy instead of strcpy */
@@ -253,7 +254,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
 
    struct stat statc;
    int32_t LinkFIc;
-   bool stat = false;
+   bool status = false;
    char *opts;
    char *fname;
    CurFile elt;
@@ -279,7 +280,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
 
    if (!accurate_lookup(jcr, fname, &elt)) {
       Dmsg1(dbglvl, "accurate %s (not found)\n", fname);
-      stat = true;
+      status = true;
       goto bail_out;
    }
 
@@ -298,7 +299,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
     * Loop over options supplied by user and verify the
     * fields he requests.
     */
-   for (char *p=opts; !stat && *p; p++) {
+   for (char *p=opts; !status && *p; p++) {
       char ed1[30], ed2[30];
       switch (*p) {
       case 'i':                /* compare INODEs */
@@ -307,7 +308,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
                   fname,
                   edit_uint64((uint64_t)statc.st_ino, ed1),
                   edit_uint64((uint64_t)ff_pkt->statp.st_ino, ed2));
-            stat = true;
+            status = true;
          }
          break;
       case 'p':                /* permissions bits */
@@ -318,7 +319,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             Dmsg3(dbglvl-1, "%s     st_mode  differ. Cat: %x File: %x\n",
                   fname,
                   (uint32_t)statc.st_mode, (uint32_t)ff_pkt->statp.st_mode);
-            stat = true;
+            status = true;
          }
          break;
       case 'n':                /* number of links */
@@ -326,7 +327,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             Dmsg3(dbglvl-1, "%s      st_nlink differ. Cat: %d File: %d\n",
                   fname,
                   (uint32_t)statc.st_nlink, (uint32_t)ff_pkt->statp.st_nlink);
-            stat = true;
+            status = true;
          }
          break;
       case 'u':                /* user id */
@@ -334,7 +335,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             Dmsg3(dbglvl-1, "%s      st_uid   differ. Cat: %u File: %u\n",
                   fname,
                   (uint32_t)statc.st_uid, (uint32_t)ff_pkt->statp.st_uid);
-            stat = true;
+            status = true;
          }
          break;
       case 'g':                /* group id */
@@ -342,7 +343,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             Dmsg3(dbglvl-1, "%s      st_gid   differ. Cat: %u File: %u\n",
                   fname,
                   (uint32_t)statc.st_gid, (uint32_t)ff_pkt->statp.st_gid);
-            stat = true;
+            status = true;
          }
          break;
       case 's':                /* size */
@@ -351,25 +352,25 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
                   fname,
                   edit_uint64((uint64_t)statc.st_size, ed1),
                   edit_uint64((uint64_t)ff_pkt->statp.st_size, ed2));
-            stat = true;
+            status = true;
          }
          break;
       case 'a':                /* access time */
          if (statc.st_atime != ff_pkt->statp.st_atime) {
             Dmsg1(dbglvl-1, "%s      st_atime differs\n", fname);
-            stat = true;
+            status = true;
          }
          break;
       case 'm':                 /* modification time */
          if (statc.st_mtime != ff_pkt->statp.st_mtime) {
             Dmsg1(dbglvl-1, "%s      st_mtime differs\n", fname);
-            stat = true;
+            status = true;
          }
          break;
       case 'c':                /* ctime */
          if (statc.st_ctime != ff_pkt->statp.st_ctime) {
             Dmsg1(dbglvl-1, "%s      st_ctime differs\n", fname);
-            stat = true;
+            status = true;
          }
          break;
       case 'd':                /* file size decrease */
@@ -378,11 +379,11 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
                   fname,
                   edit_uint64((uint64_t)statc.st_size, ed1),
                   edit_uint64((uint64_t)ff_pkt->statp.st_size, ed2));
-            stat = true;
+            status = true;
          }
          break;
       case 'A':                 /* Always backup a file */
-         stat = true;
+         status = true;
          break;
       /* TODO: cleanup and factorise this function with verify.c */
       case '5':                /* compare MD5 */
@@ -391,15 +392,15 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
           * The remainder of the function is all about getting the checksum.
           * First we initialise, then we read files, other streams and Finder Info.
           */
-         if (!stat && ff_pkt->type != FT_LNKSAVED && 
-             (S_ISREG(ff_pkt->statp.st_mode) && 
+         if (!status && ff_pkt->type != FT_LNKSAVED &&
+             (S_ISREG(ff_pkt->statp.st_mode) &&
               ff_pkt->flags & (FO_MD5|FO_SHA1|FO_SHA256|FO_SHA512))) 
          {
 
             if (!*elt.chksum && !jcr->rerunning) {
                Jmsg(jcr, M_WARNING, 0, _("Cannot verify checksum for %s\n"),
                     ff_pkt->fname);
-               stat = true;
+               status = true;
                break;
             }
 
@@ -449,13 +450,13 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
                   
                   bin_to_base64(digest_buf, BASE64_SIZE(size), md, size, true);
 
-                  if (strcmp(digest_buf, elt.chksum)) {
+                  if (!bstrcmp(digest_buf, elt.chksum)) {
                      Dmsg4(dbglvl,"%s      %s chksum  diff. Cat: %s File: %s\n",
                            fname,
                            digest_name,
                            elt.chksum,
                            digest_buf);
-                     stat = true;
+                     status = true;
                   }
                   
                   free(digest_buf);
@@ -477,7 +478,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
     * When in Full+Base mode, we mark only if the file match exactly
     */
    if (jcr->getJobLevel() == L_FULL) {
-      if (!stat) {               
+      if (!status) {
          /* compute space saved with basefile */
          jcr->base_size += ff_pkt->statp.st_size;
          accurate_mark_file_as_seen(jcr, &elt);
@@ -488,7 +489,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
 
 bail_out:
    unstrip_path(ff_pkt);
-   return stat;
+   return status;
 }
 
 /* 

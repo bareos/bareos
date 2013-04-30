@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -31,6 +31,8 @@
  *    Lexical scanning of configuration files, used by parsers.
  *
  *   Kern Sibbald, MM
+ *
+ *   Version $Id$
  *
  */
 
@@ -104,7 +106,7 @@ typedef struct s_lex_context {
    int options;                       /* scan options */
    char *fname;                       /* filename */
    FILE *fd;                          /* file descriptor */
-   POOLMEM *line;                     /* input line */
+   char line[MAXSTRING];              /* input line */
    char str[MAXSTRING];               /* string being scanned */
    int str_len;                       /* length of string */
    int line_no;                       /* file line number */
@@ -120,21 +122,50 @@ typedef struct s_lex_context {
    uint64_t pint64_val;
    uint64_t pint64_val2;
    void (*scan_error)(const char *file, int line, struct s_lex_context *lc, const char *msg, ...);
+   void (*scan_warning)(const char *file, int line, struct s_lex_context *lc, const char *msg, ...);
    int err_type;                      /* message level for scan_error (M_..) */
    void *caller_ctx;                  /* caller private data */
    BPIPE *bpipe;                      /* set if we are piping */
 } LEX;
 
 typedef void (LEX_ERROR_HANDLER)(const char *file, int line, LEX *lc, const char *msg, ...);
+typedef void (LEX_WARNING_HANDLER)(const char *file, int line, LEX *lc, const char *msg, ...);
 
-/* Lexical scanning errors in parsing conf files */
-#define scan_err0(lc, msg) lc->scan_error(__FILE__, __LINE__, lc, msg)
-#define scan_err1(lc, msg, a1) lc->scan_error(__FILE__, __LINE__, lc, msg, a1)
-#define scan_err2(lc, msg, a1, a2) lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2)
-#define scan_err3(lc, msg, a1, a2, a3) lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3)
-#define scan_err4(lc, msg, a1, a2, a3, a4) lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4)
-#define scan_err5(lc, msg, a1, a2, a3, a4, a5) lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5)
-#define scan_err6(lc, msg, a1, a2, a3, a4, a5, a6) lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5, a6)
+/*
+ * Lexical scanning errors in parsing conf files
+ */
+#define scan_err0(lc, msg) \
+lc->scan_error(__FILE__, __LINE__, lc, msg)
+#define scan_err1(lc, msg, a1) \
+lc->scan_error(__FILE__, __LINE__, lc, msg, a1)
+#define scan_err2(lc, msg, a1, a2) \
+lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2)
+#define scan_err3(lc, msg, a1, a2, a3) \
+lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3)
+#define scan_err4(lc, msg, a1, a2, a3, a4) \
+lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4)
+#define scan_err5(lc, msg, a1, a2, a3, a4, a5) \
+lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5)
+#define scan_err6(lc, msg, a1, a2, a3, a4, a5, a6) \
+lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5, a6)
+
+/*
+ * Lexical scanning warnings in parsing conf files
+ */
+#define scan_warn0(lc, msg) \
+lc->scan_warning(__FILE__, __LINE__, lc, msg)
+#define scan_warn1(lc, msg, a1) \
+lc->scan_warning(__FILE__, __LINE__, lc, msg, a1)
+#define scan_warn2(lc, msg, a1, a2) \
+lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2)
+#define scan_warn3(lc, msg, a1, a2, a3) \
+lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3)
+#define scan_warn4(lc, msg, a1, a2, a3, a4) \
+lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4)
+#define scan_warn5(lc, msg, a1, a2, a3, a4, a5) \
+lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5)
+#define scan_warn6(lc, msg, a1, a2, a3, a4, a5, a6) \
+lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5, a6)
 
 void scan_to_eol(LEX *lc);
 int scan_to_next_not_eol(LEX * lc);

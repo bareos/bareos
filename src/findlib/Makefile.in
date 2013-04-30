@@ -3,9 +3,9 @@
 #
 @MCOMMON@
 
-srcdir =	.
-VPATH = 	.
-.PATH:		.
+srcdir = @srcdir@
+VPATH = @srcdir@
+.PATH: @srcdir@
 
 # one up
 basedir = ..
@@ -25,13 +25,20 @@ dummy:
 INCLUDE_FILES = bfile.h find.h protos.h 
 
 #
-LIBBACFIND_SRCS = find.c match.c find_one.c attribs.c create_file.c \
-		  bfile.c drivetype.c enable_priv.c fstype.c mkpath.c \
-		  savecwd.c
+LIBBACFIND_SRCS = acl.c attribs.c bfile.c create_file.c \
+                  drivetype.c enable_priv.c find_one.c \
+                  find.c fstype.c match.c mkpath.c \
+                  savecwd.c shadowing.c xattr.c
+
 LIBBACFIND_OBJS = $(LIBBACFIND_SRCS:.c=.o)
 LIBBACFIND_LOBJS = $(LIBBACFIND_SRCS:.c=.lo)
 
 LIBBACFIND_LT_RELEASE = @LIBBACFIND_LT_RELEASE@
+
+AFS_CFLAGS = @AFS_CFLAGS@
+ACL_LIBS = @ACL_LIBS@
+XATTR_LIBS = @XATTR_LIBS@
+AFS_LIBS = @AFS_LIBS@
 
 .SUFFIXES:	.c .o .lo
 .PHONY:
@@ -40,15 +47,23 @@ LIBBACFIND_LT_RELEASE = @LIBBACFIND_LT_RELEASE@
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 
 .c.lo:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
 all: Makefile libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
 	@echo "==== Make of findlib is good ===="
 	@echo " "
+
+acl.o: acl.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $(AFS_CFLAGS) $<
+
+acl.lo: acl.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $(AFS_CFLAGS) $<
 
 libbacfind.a: $(LIBBACFIND_OBJS) 
 	@echo "Making $@ ..."
@@ -57,7 +72,7 @@ libbacfind.a: $(LIBBACFIND_OBJS)
 
 libbacfind.la: Makefile $(LIBBACFIND_LOBJS) 
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBACFIND_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACFIND_LT_RELEASE)
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBACFIND_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACFIND_LT_RELEASE) $(ACL_LIBS) $(XATTR_LIBS) $(AFS_LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
@@ -115,7 +130,7 @@ depend:
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
 	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
 	@for src in $(LIBBACFIND_SRCS); do \
-	    $(CXX) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) -I$(srcdir) -I$(basedir) $$src >> Makefile; \
+	    $(CXX) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(AFS_CFLAGS) $(XINC) -I$(srcdir) -I$(basedir) $$src >> Makefile; \
 	done
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \

@@ -56,7 +56,7 @@ AC_DEFUN([AM_ICONV_LINK],
     fi
   ])
   if test "$am_cv_func_iconv" = yes; then
-    AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
+    AC_DEFINE(HAVE_ICONV, 1, [Define to 1 if you have the `iconv()' function.])
   fi
   if test "$am_cv_lib_iconv" = yes; then
     AC_MSG_CHECKING([how to link with libiconv])

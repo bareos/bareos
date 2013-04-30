@@ -68,7 +68,7 @@ int read_ansi_ibm_label(DCR *dcr)
    DEVICE * volatile dev = dcr->dev;
    JCR *jcr = dcr->jcr;
    char label[80];                    /* tape label */
-   int stat, i;
+   int status, i;
    char *VolName = dcr->VolumeName;
    bool ok = false;
 
@@ -87,9 +87,9 @@ int read_ansi_ibm_label(DCR *dcr)
    /* Read a maximum of 5 records VOL1, HDR1, ... HDR4 */
    for (i=0; i < 6; i++) {
       do {
-         stat = dev->read(label, sizeof(label));
-      } while (stat == -1 && errno == EINTR);
-      if (stat < 0) {
+         status = dev->read(label, sizeof(label));
+      } while (status == -1 && errno == EINTR);
+      if (status < 0) {
          berrno be;
          dev->clrerror(-1);
          Dmsg1(100, "Read device got: ERR=%s\n", be.bstrerror());
@@ -99,7 +99,7 @@ int read_ansi_ibm_label(DCR *dcr)
          dev->VolCatInfo.VolCatErrors++;
          return VOL_IO_ERROR;
       }
-      if (stat == 0) {
+      if (status == 0) {
          if (dev->at_eof()) {
             dev->set_eot();           /* second eof, set eot bit */
             Dmsg0(100, "EOM on ANSI label\n");
@@ -111,15 +111,15 @@ int read_ansi_ibm_label(DCR *dcr)
       }
       switch (i) {
       case 0:                         /* Want VOL1 label */
-         if (stat == 80) {
-            if (strncmp("VOL1", label, 4) == 0) {
+         if (status == 80) {
+            if (bstrncmp("VOL1", label, 4)) {
                ok = true;
                dev->label_type = B_ANSI_LABEL;
                Dmsg0(100, "Got ANSI VOL1 label\n");
             } else {
                /* Try EBCDIC */
                ebcdic_to_ascii(label, label, sizeof(label));
-               if (strncmp("VOL1", label, 4) == 0) {
+               if (bstrncmp("VOL1", label, 4)) {
                   ok = true;;
                   dev->label_type = B_IBM_LABEL;
                   Dmsg0(100, "Found IBM label.\n");
@@ -161,12 +161,12 @@ int read_ansi_ibm_label(DCR *dcr)
          if (dev->label_type == B_IBM_LABEL) {
             ebcdic_to_ascii(label, label, sizeof(label));
          }
-         if (stat != 80 || strncmp("HDR1", label, 4) != 0) {
+         if (status != 80 || !bstrncmp("HDR1", label, 4)) {
             Dmsg0(100, "No HDR1 label\n");
             Mmsg0(jcr->errmsg, _("No HDR1 label while reading ANSI label.\n"));
             return VOL_LABEL_ERROR;
          }
-         if (strncmp("BACULA.DATA", &label[4], 11) != 0) {
+         if (!bstrncmp("BACULA.DATA", &label[4], 11)) {
             Dmsg1(100, "HD1 not Bacula label. Wanted  BACULA.DATA got %11s\n",
                &label[4]);
             Mmsg1(jcr->errmsg, _("ANSI/IBM Volume \"%s\" does not belong to Bacula.\n"),
@@ -179,7 +179,7 @@ int read_ansi_ibm_label(DCR *dcr)
          if (dev->label_type == B_IBM_LABEL) {
             ebcdic_to_ascii(label, label, sizeof(label));
          }
-         if (stat != 80 || strncmp("HDR2", label, 4) != 0) {
+         if (status != 80 || !bstrncmp("HDR2", label, 4)) {
             Dmsg0(100, "No HDR2 label\n");
             Mmsg0(jcr->errmsg, _("No HDR2 label while reading ANSI/IBM label.\n"));
             return VOL_LABEL_ERROR;
@@ -187,14 +187,14 @@ int read_ansi_ibm_label(DCR *dcr)
          Dmsg0(100, "Got ANSI HDR2 label\n");
          break;
       default:
-         if (stat == 0) {
+         if (status == 0) {
             Dmsg0(100, "ANSI label OK\n");
             return VOL_OK;
          }
          if (dev->label_type == B_IBM_LABEL) {
             ebcdic_to_ascii(label, label, sizeof(label));
          }
-         if (stat != 80 || strncmp("HDR", label, 3) != 0) {
+         if (status != 80 || !bstrncmp("HDR", label, 3)) {
             Dmsg0(100, "Unknown or bad ANSI/IBM label record.\n");
             Mmsg0(jcr->errmsg, _("Unknown or bad ANSI/IBM label record.\n"));
             return VOL_LABEL_ERROR;
@@ -283,7 +283,7 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
    char label[80];                    /* tape label */
    char date[20];                     /* ansi date buffer */
    time_t now;
-   int len, stat, label_type;
+   int len, status, label_type;
 
    /*
     * If the Device requires a specific label type use it,
@@ -327,11 +327,11 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
          } else {
             label[79] = '3';                /* ANSI label flag */
          }
-         stat = dev->write(label, sizeof(label));
-         if (stat != sizeof(label)) {
+         status = dev->write(label, sizeof(label));
+         if (status != sizeof(label)) {
             berrno be;
             Jmsg3(jcr, M_FATAL, 0,  _("Could not write ANSI VOL1 label. Wanted size=%d got=%d ERR=%s\n"),
-               sizeof(label), stat, be.bstrerror());
+               sizeof(label), status, be.bstrerror());
             return false;
          }
       }
@@ -359,10 +359,10 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
        * This could come at the end of a tape, ignore
        *  EOT errors.
        */
-      stat = dev->write(label, sizeof(label));
-      if (stat != sizeof(label)) {
+      status = dev->write(label, sizeof(label));
+      if (status != sizeof(label)) {
          berrno be;
-         if (stat == -1) {
+         if (status == -1) {
             dev->clrerror(-1);
             if (dev->dev_errno == 0) {
                dev->dev_errno = ENOSPC; /* out of space */
@@ -388,10 +388,10 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
          label[4] = 'V';
          ascii_to_ebcdic(label, label, sizeof(label));
       }
-      stat = dev->write(label, sizeof(label));
-      if (stat != sizeof(label)) {
+      status = dev->write(label, sizeof(label));
+      if (status != sizeof(label)) {
          berrno be;
-         if (stat == -1) {
+         if (status == -1) {
             dev->clrerror(-1);
             if (dev->dev_errno == 0) {
                dev->dev_errno = ENOSPC; /* out of space */

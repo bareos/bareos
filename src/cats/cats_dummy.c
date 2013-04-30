@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2010-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2010-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -32,12 +32,27 @@
 #include "bacula.h"
 #include "cats.h"
 
-B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user,
-                       const char *db_password, const char *db_address, int db_port, const char *db_socket,
-                       bool mult_db_connections, bool disable_batch_insert)
+#ifndef HAVE_DYNAMIC_CATS_BACKENDS
+
+B_DB *db_init_database(JCR *jcr,
+                       const char *db_driver,
+                       const char *db_name,
+                       const char *db_user,
+                       const char *db_password,
+                       const char *db_address,
+                       int db_port,
+                       const char *db_socket,
+                       bool mult_db_connections,
+                       bool disable_batch_insert,
+                       bool need_private)
 {
    Jmsg(jcr, M_FATAL, 0, _("Please replace this dummy libbaccats library with a proper one.\n"));
 
    return NULL;
 }
 
+void db_flush_backends(void)
+{
+}
+
+#endif /* HAVE_DYNAMIC_CATS_BACKENDS */

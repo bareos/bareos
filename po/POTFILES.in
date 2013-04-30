@@ -104,6 +104,7 @@
 ./src/lib/message.c
 ./src/lib/bnet_server.c
 ./src/lib/tree.c
+./src/lib/new-bnet.c
 ./src/lib/btime.c
 ./src/lib/bpipe.c
 ./src/lib/lockmgr.c

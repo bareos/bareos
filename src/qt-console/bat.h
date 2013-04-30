@@ -39,16 +39,7 @@
 #endif
 #endif
 
-#if defined(HAVE_WIN32)
-#if defined(HAVE_MINGW)
-#include "mingwconfig.h"
-#else
-#include "winconfig.h"
-#endif
-#else
-#include "config.h"
-#endif
-#define __CONFIG_H
+#include "hostconfig.h"
 
 #include <QtGui>
 #include <QtCore>

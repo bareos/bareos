@@ -1,15 +1,4 @@
 /*
- * Bacula job queue routines.
- *
- *  Kern Sibbald, July MMIII
- *
- *  This code adapted from Bacula work queue code, which was
- *    adapted from "Programming with POSIX Threads", by
- *    David R. Butenhof
- *
- *   Version $Id$
- */
-/*
    Bacula® - The Network Backup Solution
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
@@ -36,6 +25,16 @@
    (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
    Switzerland, email:ftf@fsfeurope.org.
 */
+/*
+ * Bacula job queue routines.
+ *
+ *  Kern Sibbald, July MMIII
+ *
+ *  This code adapted from Bacula work queue code, which was
+ *    adapted from "Programming with POSIX Threads", by
+ *    David R. Butenhof
+ *
+ */
 
 #ifndef __JOBQ_H
 #define __JOBQ_H 1

@@ -1,31 +1,55 @@
 #
-# Simple Makefile for building test FD plugins for Bacula
-#
-# Version $Id: Makefile.in 7841 2008-10-19 10:34:03Z kerns $
+# Simple Makefile for building test DIR plugins for Bacula
 #
 @MCOMMON@
 
+CPPFLAGS += @PYTHON_INC@ @ZLIB_INC@ @LZO_INC@
 
-# No optimization for now for easy debugging
+srcdir = @srcdir@
+VPATH = @srcdir@:../../dird
+.PATH: @srcdir@
 
-DIRDIR=../../dird
-SRCDIR=../..
-LIBDIR=../../lib
+basedir = ../..
+# top dir
+topdir = ../../..
+# this dir relative to top dir
+thisdir = src/plugins/dir
 
-.SUFFIXES:    .c .o .lo
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/dird
 
+.SUFFIXES:    .c .lo
+
+# inference rules
 .c.lo:
-	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) -I${SRCDIR} -I${DIRDIR} -DTEST_PROGRAM -c $<
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) -c $<
 
-all: example-plugin-dir.la
+all: Makefile python-dir.la
 
-example-plugin-dir.lo: example-plugin-dir.c ${DIRDIR}/dir_plugins.h
-	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CFLAGS) -I../.. -I${DIRDIR} -c example-plugin-dir.c
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+		&& CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-example-plugin-dir.la: Makefile example-plugin-dir.lo
+example-plugin-dir.la: Makefile \
+		       example-plugin-dir$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared example-plugin-dir.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
 
+python-dir.la: Makefile \
+	       python-dir$(DEFAULT_OBJECT_TYPE) \
+	       ../../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared python-dir.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
+	-L../../lib -lbac @PYTHON_LIBS@
+
+plugtest: Makefile dir_plugins.c \
+	  ../../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) ../../dird/dir_plugins.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -L../../findlib -o $@ dir_plugins.o -lbac $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
+
 install: all
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) python-dir.la $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/python-dir.la
+
+install-test-plugin: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) example-plugin-dir.la $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/example-plugin-dir.la
@@ -36,13 +60,13 @@ libtool-clean:
 	$(RMF) -r .libs _libs
 
 clean: @LIBTOOL_CLEAN_TARGET@
-	rm -f main *.so *.o 1 2 3
+	@$(RMF) plugtest *.so *.o 1 2 3
 
 distclean: clean
-	rm -f Makefile
+	@$(RMF) Makefile
 
 libtool-uninstall:
-	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/example-plugin-dir.la
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/python-dir.so
 
 uninstall: @LIBTOOL_UNINSTALL_TARGET@
 

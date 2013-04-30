@@ -291,7 +291,7 @@ init(int argc, char *argv[]) {
         int optset;
         unsigned i;
         char *s;
-        
+
         /* defaults */
         quiet = 0;
         warnsig = SIGTERM;
@@ -302,7 +302,7 @@ init(int argc, char *argv[]) {
         killmsec = 0;
 
         optset = 0;
-        
+
         /* process environment variables first */
         for (i = 0; envopts[i].name != NULL; i++)
                 if ((s = getenv(envopts[i].name)) != NULL) {
@@ -386,7 +386,7 @@ sighandler(int sig) {
 
 static void
 setsig_fatal(int sig, void (*handler)(int)) {
-        
+
         setsig_fatal_gen(sig, handler, 1, "setting");
 }
 
@@ -425,7 +425,7 @@ settimer(const char *name, unsigned long sec, unsigned long msec)
         alarm(sec);
 #endif
 }
-    
+
 static pid_t
 doit(char *argv[]) {
         pid_t pid;

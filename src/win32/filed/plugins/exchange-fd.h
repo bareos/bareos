@@ -35,23 +35,14 @@
 #define BUILD_PLUGIN
 
 #if defined(BUILDING_DLL)
-#  define DLL_IMP_EXP   __declspec(dllexport)
+#define DLL_IMP_EXP   __declspec(dllexport)
 #elif defined(USING_DLL)
-#  define DLL_IMP_EXP   __declspec(dllimport)
+#define DLL_IMP_EXP   __declspec(dllimport)
 #else
-#  define DLL_IMP_EXP
+#define DLL_IMP_EXP
 #endif
 
-#if defined(HAVE_WIN32)
-#if defined(HAVE_MINGW)
-#include "mingwconfig.h"
-#else
-#include "winconfig.h"
-#endif
-#else
-#include "config.h"
-#endif
-#define __CONFIG_H
+#include "hostconfig.h"
 
 enum {
    /* Keep M_ABORT=1 for dlist.h */

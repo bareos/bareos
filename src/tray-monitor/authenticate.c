@@ -65,7 +65,7 @@ static char FDOKhello[] = "2000 OK Hello";
 /*
  * Authenticate Director
  */
-int authenticate_director(JCR *jcr, MONITOR *mon, DIRRES *director)
+int authenticate_director(JCR *jcr, MONITORRES *mon, DIRRES *director)
 {
    BSOCK *dir = jcr->dir_bsock;
    int tls_local_need = BNET_TLS_NONE;
@@ -100,7 +100,7 @@ int authenticate_director(JCR *jcr, MONITOR *mon, DIRRES *director)
    }
    Dmsg1(10, "<dird: %s", dir->msg);
    stop_bsock_timer(tid);
-   if (strncmp(dir->msg, DIROKhello, sizeof(DIROKhello)-1) != 0) {
+   if (!bstrncmp(dir->msg, DIROKhello, sizeof(DIROKhello)-1)) {
       Jmsg0(jcr, M_FATAL, 0, _("Director rejected Hello command\n"));
       return 0;
    } else {
@@ -112,7 +112,7 @@ int authenticate_director(JCR *jcr, MONITOR *mon, DIRRES *director)
 /*
  * Authenticate Storage daemon connection
  */
-int authenticate_storage_daemon(JCR *jcr, MONITOR *monitor, STORE* store)
+int authenticate_storage_daemon(JCR *jcr, MONITORRES *monitor, STORERES* store)
 {
    BSOCK *sd = jcr->store_bsock;
    char dirname[MAX_NAME_LENGTH];
@@ -148,7 +148,7 @@ int authenticate_storage_daemon(JCR *jcr, MONITOR *monitor, STORE* store)
    }
    Dmsg1(110, "<stored: %s", sd->msg);
    stop_bsock_timer(tid);
-   if (strncmp(sd->msg, SDOKhello, sizeof(SDOKhello)) != 0) {
+   if (!bstrncmp(sd->msg, SDOKhello, sizeof(SDOKhello))) {
       Jmsg0(jcr, M_FATAL, 0, _("Storage daemon rejected Hello command\n"));
       return 0;
    }
@@ -158,7 +158,7 @@ int authenticate_storage_daemon(JCR *jcr, MONITOR *monitor, STORE* store)
 /*
  * Authenticate File daemon connection
  */
-int authenticate_file_daemon(JCR *jcr, MONITOR *monitor, CLIENT* client)
+int authenticate_file_daemon(JCR *jcr, MONITORRES *monitor, CLIENTRES* client)
 {
    BSOCK *fd = jcr->file_bsock;
    char dirname[MAX_NAME_LENGTH];
@@ -194,7 +194,7 @@ int authenticate_file_daemon(JCR *jcr, MONITOR *monitor, CLIENT* client)
    }
    Dmsg1(110, "<stored: %s", fd->msg);
    stop_bsock_timer(tid);
-   if (strncmp(fd->msg, FDOKhello, sizeof(FDOKhello)-1) != 0) {
+   if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello)-1)) {
       Jmsg(jcr, M_FATAL, 0, _("File daemon rejected Hello command\n"));
       return 0;
    }

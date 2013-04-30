@@ -123,6 +123,24 @@ FileSet {
   }
 }
 
+FileSet {
+  Name = "Windows All Drives"
+  Enable VSS = yes
+  Include {
+    Options {
+      Signature = MD5
+      Drive Type = fixed
+      IgnoreCase = yes
+      WildFile = "[A-Z]:/pagefile.sys"
+      WildDir = "[A-Z]:/RECYCLER"
+      WildDir = "[A-Z]:/$RECYCLE.BIN"
+      WildDir = "[A-Z]:/System Volume Information"
+      Exclude = yes
+    }
+    File = /
+  }
+}
+
 #
 # When to do the backups, full backup on first sunday of the month,
 #  differential (i.e. incremental since full) every other sunday,
@@ -160,7 +178,7 @@ Client {
   Password = "@fd_password@"          # password for FileDaemon
   File Retention = 30 days            # 30 days
   Job Retention = 6 months            # six months
-  AutoPrune = yes                     # Prune expired Jobs/Files
+  AutoPrune = no                      # Prune expired Jobs/Files
 }
 
 #
@@ -175,7 +193,7 @@ Client {
 #  Password = "@fd_password@2"         # password for FileDaemon 2
 #  File Retention = 30 days            # 30 days
 #  Job Retention = 6 months            # six months
-#  AutoPrune = yes                     # Prune expired Jobs/Files
+#  AutoPrune = no                      # Prune expired Jobs/Files
 #}
 
 

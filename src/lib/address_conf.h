@@ -81,24 +81,23 @@ class IPADDR : public SMARTALLOC {
    dlink link;
 };
 
-extern void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass);
-extern void free_addresses(dlist * addrs);
-extern void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pass);
-extern void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass);
-extern void init_default_addresses(dlist ** addr, int port);
+void init_default_addresses(dlist ** addr, const char *port);
+void free_addresses(dlist * addrs);
 
-extern const char *get_first_address(dlist * addrs, char *outputbuf, int outlen);
-extern int get_first_port_net_order(dlist * addrs);
-extern int get_first_port_host_order(dlist * addrs);
+const char *get_first_address(dlist * addrs, char *outputbuf, int outlen);
+int get_first_port_net_order(dlist * addrs);
+int get_first_port_host_order(dlist * addrs);
 
-extern const char *build_addresses_str(dlist *addrs, char *buf, int blen);
+int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
+                const char *hostname_str, const char *port_str, char *buf, int buflen);
+const char *build_addresses_str(dlist *addrs, char *buf, int blen);
 
-extern int sockaddr_get_port_net_order(const struct sockaddr *sa);
-extern int sockaddr_get_port(const struct sockaddr *sa);
-extern char *sockaddr_to_ascii(const struct sockaddr *sa, char *buf, int len);
+int sockaddr_get_port_net_order(const struct sockaddr *sa);
+int sockaddr_get_port(const struct sockaddr *sa);
+char *sockaddr_to_ascii(const struct sockaddr *sa, char *buf, int len);
 #ifdef WIN32
 #undef HAVE_OLD_SOCKOPT
 #endif
 #ifdef HAVE_OLD_SOCKOPT
-extern int inet_aton(const char *cp, struct in_addr *inp);
+int inet_aton(const char *cp, struct in_addr *inp);
 #endif

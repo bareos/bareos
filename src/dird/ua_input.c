@@ -49,7 +49,7 @@
 int get_cmd(UAContext *ua, const char *prompt, bool subprompt)
 {
    BSOCK *sock = ua->UA_sock;
-   int stat;
+   int status;
 
    ua->cmd[0] = 0;
    if (!sock || ua->batch) {          /* No UA or batch mode */
@@ -63,8 +63,8 @@ int get_cmd(UAContext *ua, const char *prompt, bool subprompt)
       sock->signal(BNET_SUB_PROMPT);
    }
    for ( ;; ) {
-      stat = sock->recv();
-      if (stat == BNET_SIGNAL) {
+      status = sock->recv();
+      if (status == BNET_SIGNAL) {
          continue;                    /* ignore signals */
       }
       if (is_bnet_stop(sock)) {
@@ -72,7 +72,7 @@ int get_cmd(UAContext *ua, const char *prompt, bool subprompt)
       }
       pm_strcpy(ua->cmd, sock->msg);
       strip_trailing_junk(ua->cmd);
-      if (strcmp(ua->cmd, ".messages") == 0) {
+      if (bstrcmp(ua->cmd, ".messages")) {
          qmessagescmd(ua, ua->cmd);
       }
       /* Lone dot => break */
@@ -100,7 +100,7 @@ bool get_pint(UAContext *ua, const char *prompt)
          return false;
       }
       /* Kludge for slots blank line => 0 */
-      if (ua->cmd[0] == 0 && strncmp(prompt, _("Enter slot"), strlen(_("Enter slot"))) == 0) {
+      if (ua->cmd[0] == 0 && bstrncmp(prompt, _("Enter slot"), strlen(_("Enter slot")))) {
          return true;
       }
       if (!is_a_number(ua->cmd)) {
@@ -128,12 +128,12 @@ bool get_pint(UAContext *ua, const char *prompt)
 bool is_yesno(char *val, int *ret)
 {
    *ret = 0;
-   if ((strcasecmp(val,   _("yes")) == 0) ||
-       (strcasecmp(val, NT_("yes")) == 0))
+   if (bstrcasecmp(val,   _("yes")) ||
+       bstrcasecmp(val, NT_("yes")))
    {
       *ret = 1;
-   } else if ((strcasecmp(val,   _("no")) == 0) ||
-              (strcasecmp(val, NT_("no")) == 0))
+   } else if (bstrcasecmp(val,   _("no")) ||
+              bstrcasecmp(val, NT_("no")))
    {
       *ret = 0;
    } else {
@@ -180,11 +180,11 @@ int get_enabled(UAContext *ua, const char *val)
 {
    int Enabled = -1;
 
-   if (strcasecmp(val, "yes") == 0 || strcasecmp(val, "true") == 0) {
+   if (bstrcasecmp(val, "yes") || bstrcasecmp(val, "true")) {
      Enabled = 1;
-   } else if (strcasecmp(val, "no") == 0 || strcasecmp(val, "false") == 0) {
+   } else if (bstrcasecmp(val, "no") || bstrcasecmp(val, "false")) {
       Enabled = 0;
-   } else if (strcasecmp(val, "archived") == 0) { 
+   } else if (bstrcasecmp(val, "archived")) { 
       Enabled = 2;
    } else {
       Enabled = atoi(val);

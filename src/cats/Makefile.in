@@ -57,14 +57,17 @@ SQLITE_LOBJS = $(SQLITE_SRCS:.c=.lo)
 
 DB_LIBS=@DB_LIBS@
 
-CATS_SRCS  = mysql.c postgresql.c sqlite.c
 LIBBACSQL_SRCS = bvfs.c cats.c sql.c sql_cmds.c sql_create.c sql_delete.c \
-		 sql_find.c sql_get.c sql_glue.c sql_list.c sql_update.c
+                 sql_find.c sql_get.c sql_glue.c sql_list.c sql_pooling.c \
+                 sql_update.c
 LIBBACSQL_OBJS = $(LIBBACSQL_SRCS:.c=.o)
-LIBBACCATS_OBJS = $(CATS_SRCS:.c=.o)
 LIBBACSQL_LOBJS = $(LIBBACSQL_SRCS:.c=.lo)
-
 LIBBACSQL_LT_RELEASE = @LIBBACSQL_LT_RELEASE@
+
+LIBBACCATS_SRCS = mysql.c postgresql.c sqlite.c
+LIBBACCATS_DYN_SRCS = cats_dummy.c cats_dynamic.c
+LIBBACCATS_OBJS = $(LIBBACCATS_SRCS:.c=.o)
+LIBBACCATS_LOBJS = $(LIBBACCATS_DYN_SRCS:.c=.lo)
 LIBBACCATS_LT_RELEASE = @LIBBACCATS_LT_RELEASE@
 
 .SUFFIXES:	.c .o .lo
@@ -74,51 +77,51 @@ LIBBACCATS_LT_RELEASE = @LIBBACCATS_LT_RELEASE@
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 
 .c.lo:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 
 $(MYSQL_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(MYSQL_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.lo=.c)
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(MYSQL_INCLUDE) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 
 $(POSTGRESQL_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(POSTGRESQL_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.lo=.c)
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(POSTGRESQL_INCLUDE) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 
 $(SQLITE_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(SQLITE_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.lo=.c)
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(SQLITE_INCLUDE) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 
 #$(DBI_LOBJS):
 #	 @echo "Compiling $(@:.lo=.c)"
-#	 $(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DBI_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.lo=.c)
+#	 $(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DBI_INCLUDE) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 
 #$(INGRES_LOBJS):
 #	 @echo "Compiling $(@:.lo=.c)"
-#	 $(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(INGRES_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.lo=.c)
+#	 $(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(INGRES_INCLUDE) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 
 $(MYSQL_OBJS):
 	@echo "Compiling $(@:.o=.c)"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(MYSQL_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.o=.c)
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(MYSQL_INCLUDE) $(DINCLUDE) $(CXXFLAGS) $(@:.o=.c)
 
 $(POSTGRESQL_OBJS):
 	@echo "Compiling $(@:.o=.c)"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(POSTGRESQL_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.o=.c)
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(POSTGRESQL_INCLUDE) $(DINCLUDE) $(CXXFLAGS) $(@:.o=.c)
 
 $(SQLITE_OBJS):
 	@echo "Compiling $(@:.o=.c)"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(SQLITE_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.o=.c)
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(SQLITE_INCLUDE) $(DINCLUDE) $(CXXFLAGS) $(@:.o=.c)
 
 #$(INGRES_OBJS):
 #	 @echo "Compiling $(@:.o=.c)"
-#	 $(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(INGRES_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.o=.c)
+#	 $(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(INGRES_INCLUDE) $(DINCLUDE) $(CXXFLAGS) $(@:.o=.c)
 
 #$(DBI_OBJS):
 #	 @echo "Compiling $(@:.o=.c)"
-#	 $(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DBI_INCLUDE) $(DINCLUDE) $(CFLAGS) $(@:.o=.c)
+#	 $(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DBI_INCLUDE) $(DINCLUDE) $(CXXFLAGS) $(@:.o=.c)
 #-------------------------------------------------------------------------
 all: Makefile libbacsql$(DEFAULT_ARCHIVE_TYPE) libbaccats$(DEFAULT_ARCHIVE_TYPE) @SHARED_CATALOG_TARGETS@
 	@echo "==== Make of sqllibs is good ===="
@@ -144,9 +147,9 @@ libbacsql.la: Makefile $(LIBBACSQL_LOBJS)
 	@echo "Making $@ ..."	  
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBACSQL_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACSQL_LT_RELEASE) $(DB_LIBS)
 
-libbaccats.la: Makefile cats_dummy.lo
+libbaccats.la: Makefile $(LIBBACCATS_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ cats_dummy.lo -export-dynamic -rpath $(libdir) -release $(LIBBACCATS_LT_RELEASE)
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBACCATS_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACCATS_LT_RELEASE)
 
 libbaccats-mysql.la: Makefile $(MYSQL_LOBJS)
 	@echo "Making $@ ..."
@@ -228,6 +231,9 @@ uninstall-includes:
 	   $(RMF) $(DESTDIR)$(includedir)/bacula/sql/`basename $$I`; \
 	done
 
+libtool-install-default-backend:
+	./install-default-backend @DEFAULT_DB_TYPE@ $(LIBBACCATS_LT_RELEASE) $(DESTDIR)$(libdir)
+
 libtool-install: all
 	$(MKDIR) $(DESTDIR)$(libdir)
 	$(RMF) $(DESTDIR)$(libdir)/libbacsql-*.so $(DESTDIR)$(libdir)/libbacsql.la
@@ -237,7 +243,6 @@ libtool-install: all
 	for db_type in @DB_BACKENDS@; do \
 	    $(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbaccats-$${db_type}.la $(DESTDIR)$(libdir); \
 	done
-	./install-default-backend @DEFAULT_DB_TYPE@ $(LIBBACCATS_LT_RELEASE) $(DESTDIR)$(libdir)
 
 libtool-uninstall:
 	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/libbacsql.la
@@ -246,7 +251,7 @@ libtool-uninstall:
 	    $(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/libbacsql-$${db_type}.la; \
 	done
 
-install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@
+install: @LIBTOOL_INSTALL_TARGET@ @LIBTOOL_INSTALL_DEFAULT_BACKEND_TARGET@ @INCLUDE_INSTALL_TARGET@
 	for db_type in @DB_BACKENDS@; do \
 	    if [ -f create_$${db_type}_database ]; then \
 	    $(INSTALL_SCRIPT) create_$${db_type}_database $(DESTDIR)$(scriptdir)/create_$${db_type}_database; \

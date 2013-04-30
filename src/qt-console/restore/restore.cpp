@@ -115,7 +115,7 @@ void restorePage::fillDirectory()
    while (m_console->read(m_conn) > 0) {
       char *p = m_console->msg(m_conn);
       char *l;
-      strip_trailing_junk(p);
+      strip_trailing_newline(p);
       if (*p == '$' || !*p) { continue; }
       if (first) {
          if (m_rx.indexIn(QString(p)) != -1) { continue; }
@@ -331,7 +331,7 @@ void restorePage::fileDoubleClicked(QTreeWidgetItem *item, int column)
       }
       m_console->write_dir(m_conn, cmd, false);
       if (m_console->read(m_conn) > 0) {
-         strip_trailing_junk(m_console->msg(m_conn));
+         strip_trailing_newline(m_console->msg(m_conn));
          statusLine->setText(m_console->msg(m_conn));
       }
       m_console->displayToPrompt(m_conn);
@@ -390,7 +390,7 @@ void restorePage::markButtonPushed()
       item->setIcon(0, QIcon(QString::fromUtf8(":images/check.png")));
       m_console->write_dir(m_conn, cmd, false);
       if (m_console->read(m_conn) > 0) {
-         strip_trailing_junk(m_console->msg(m_conn));
+         strip_trailing_newline(m_console->msg(m_conn));
          statusLine->setText(m_console->msg(m_conn));
       }
       Dmsg1(dbglvl, "cmd=%s\n", cmd);
@@ -420,7 +420,7 @@ void restorePage::unmarkButtonPushed()
       item->setIcon(0, QIcon(QString::fromUtf8(":images/unchecked.png")));
       m_console->write_dir(m_conn, cmd, false);
       if (m_console->read(m_conn) > 0) {
-         strip_trailing_junk(m_console->msg(m_conn));
+         strip_trailing_newline(m_console->msg(m_conn));
          statusLine->setText(m_console->msg(m_conn));
       }
       Dmsg1(dbglvl, "cmd=%s\n", cmd);

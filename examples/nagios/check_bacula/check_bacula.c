@@ -80,8 +80,8 @@ int main(int argc, char *argv[])
 {
    int ch;
    DIRRES s_dird;
-   CLIENT s_filed;
-   STORE s_stored;
+   CLIENTRES s_filed;
+   STORERES s_stored;
 
    char host[250];
    char daemon[20];
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 
 
    /* director ?  */
-   if (strcmp (daemon, "dir") == 0) {
+   if (bstrcmp(daemon, "dir")) {
 
 	   if (port != 0)
 	   	 s_dird.DIRport = port;
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 	   mitem.resource = &s_dird;
 	   mitem.D_sock = NULL;
 
-   } else if (strcmp (daemon, "sd") == 0) {
+   } else if (bstrcmp(daemon, "sd")) {
 
 	   if (port != 0)
 	   	 s_stored.SDport = port;
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 	   mitem.resource = &s_stored;
 	   mitem.D_sock = NULL;
 
-   } else if (strcmp (daemon, "fd") == 0) {
+   } else if (bstrcmp(daemon, "fd")) {
 
 	   if (port != 0)
 	   	 s_filed.FDport = port;
@@ -228,8 +228,9 @@ int main(int argc, char *argv[])
 
 
    if (mitem.D_sock) {
-	 bnet_sig(mitem.D_sock, BNET_TERMINATE); /* send EOF */
-	 bnet_close(mitem.D_sock);
+        mitem.D_sock->signal(BNET_TERMINATE); /* send EOF */
+        mitem.D_sock->close();
+        mitem.D_sock = NULL;
    }
 
    printf ("%s\n", answer);
@@ -240,8 +241,8 @@ int main(int argc, char *argv[])
 static int authenticate_daemon(monitoritem* item) {
 
    DIRRES *d;
-   CLIENT *f;
-   STORE *s;
+   CLIENTRES *f;
+   STORERES *s;
 
    switch (item->type) {
    case R_DIRECTOR:
@@ -249,11 +250,11 @@ static int authenticate_daemon(monitoritem* item) {
       return authenticate_director(item->D_sock, d->hdr.name, d->password);
       break;
    case R_CLIENT:
-      f = (CLIENT *)item->resource;
+      f = (CLIENTRES *)item->resource;
       return authenticate_file_daemon(item->D_sock, f->hdr.name, f->password);
       break;
    case R_STORAGE:
-      s = (STORE *)item->resource;
+      s = (STORERES *)item->resource;
       return authenticate_storage_daemon(item->D_sock, s->hdr.name, s->password);
       break;
    default:
@@ -275,8 +276,8 @@ int docmd(monitoritem* item, const char* command, char *answer) {
    if (!item->D_sock) {
 
       DIRRES* dird;
-      CLIENT* filed;
-      STORE* stored;
+      CLIENTRES* filed;
+      STORERES* stored;
 
       switch (item->type) {
       case R_DIRECTOR:
@@ -285,12 +286,12 @@ int docmd(monitoritem* item, const char* command, char *answer) {
 		 dname = "Director";
 		 break;
       case R_CLIENT:
-		 filed = (CLIENT*)item->resource;
+		 filed = (CLIENTRES*)item->resource;
 		 item->D_sock = bnet_connect(NULL, 0, 0, 0, "File daemon", filed->address, NULL, filed->FDport, 0);
 		 dname = "FileDaemon";
 		 break;
       case R_STORAGE:
-		 stored = (STORE*)item->resource;
+		 stored = (STORERES*)item->resource;
 		 item->D_sock = bnet_connect(NULL, 0, 0, 0, "Storage daemon", stored->address, NULL, stored->SDport, 0);
 		 dname = "StorageDaemon";
 		 break;
@@ -319,7 +320,7 @@ int docmd(monitoritem* item, const char* command, char *answer) {
       if ((stat = bnet_recv(item->D_sock)) >= 0) {
 
 	/* welcome message of director */
-	if ((item->type == R_DIRECTOR) && (strncmp(item->D_sock->msg, "Using ", 6) == 0))
+	if ((item->type == R_DIRECTOR) && bstrncmp(item->D_sock->msg, "Using ", 6))
 		continue;
 
 	if (sscanf(item->D_sock->msg, OKqstatus, &num) != 1) {

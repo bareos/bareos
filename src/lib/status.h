@@ -33,8 +33,6 @@
  *
  *     Kern Sibbald, March MMVII
  *
- *   Version $Id: $
- *
  */
 
 #ifndef __STATUS_H_
@@ -54,8 +52,4 @@ public:
   STATUS_PKT() { memset(this, 0, sizeof(STATUS_PKT)); };
   ~STATUS_PKT() { };
 };
-
-extern void output_status(STATUS_PKT *sp);
-
-
 #endif

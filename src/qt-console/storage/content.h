@@ -51,6 +51,10 @@ public slots:
    void consoleMountStorage();
    void statusStorageWindow();
    void consoleUnMountStorage();
+   void consoleImportStorage();
+   void consoleExportStorage();
+   void consoleMoveUpStorage();
+   void consoleMoveDownStorage();
    void showMediaInfo(QTableWidgetItem * item);
 
 private slots:
@@ -59,6 +63,7 @@ private slots:
 private:
    bool m_currentAutoChanger;
    bool m_populated;
+   bool m_needs_repopulate;
    bool m_firstpopulation;
    bool m_checkcurwidget;
    QString m_currentStorage;

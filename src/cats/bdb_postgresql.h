@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2009-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -36,16 +36,23 @@ private:
    POOLMEM *m_buf;                        /* Buffer to manipulate queries */
 
 public:
-   B_DB_POSTGRESQL(JCR *jcr, const char *db_driver, const char *db_name,
-                   const char *db_user, const char *db_password,
-                   const char *db_address, int db_port, const char *db_socket,
-                   bool mult_db_connections, bool disable_batch_insert);
+   B_DB_POSTGRESQL(JCR *jcr,
+                   const char *db_driver,
+                   const char *db_name,
+                   const char *db_user,
+                   const char *db_password,
+                   const char *db_address,
+                   int db_port,
+                   const char *db_socket,
+                   bool mult_db_connections,
+                   bool disable_batch_insert,
+                   bool is_private);
    ~B_DB_POSTGRESQL();
 
    /* low level operations */
    bool db_open_database(JCR *jcr);
    void db_close_database(JCR *jcr);
-   void db_thread_cleanup(void);
+   bool db_validate_connection(void);
    void db_escape_string(JCR *jcr, char *snew, char *old, int len);
    char *db_escape_object(JCR *jcr, char *old, int len);
    void db_unescape_object(JCR *jcr, char *from, int32_t expected_len,

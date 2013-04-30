@@ -1,31 +1,63 @@
 #
-# Simple Makefile for building test FD plugins for Bacula
-#
-# Version $Id: Makefile.in 7841 2008-10-19 10:34:03Z kerns $
+# Simple Makefile for building test SD plugins for Bacula
 #
 @MCOMMON@
 
+CPPFLAGS += @PYTHON_INC@ @ZLIB_INC@ @LZO_INC@
 
 # No optimization for now for easy debugging
 
-SDDIR=../../stored
-SRCDIR=../..
-LIBDIR=../../lib
+srcdir = @srcdir@
+VPATH = @srcdir@:../../stored
+.PATH: @srcdir@
 
-.SUFFIXES:    .c .o .lo
+basedir = ../..
+# top dir
+topdir = ../../..
+# this dir relative to top dir
+thisdir = src/plugins/sd
+  
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/stored
 
+.SUFFIXES:    .c .lo
+
+# inference rules
 .c.lo:
-	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) -I${SRCDIR} -I${SDDIR} -DTEST_PROGRAM -c $<
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) -c $<
 
-all: example-plugin-sd.la
+all: Makefile python-sd.la scsicrypto-sd.la
 
-example-plugin-sd.lo: example-plugin-sd.c ${SDDIR}/sd_plugins.h
-	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CFLAGS) -I../.. -I${SDDIR} -c example-plugin-sd.c
-
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+		&& CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+  
 example-plugin-sd.la: Makefile example-plugin-sd$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared example-plugin-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
 
+python-sd.la: Makefile \
+	      python-sd$(DEFAULT_OBJECT_TYPE) \
+       ../../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared python-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
+	-L../../lib -lbac @PYTHON_LIBS@
+
+scsicrypto-sd.la: Makefile \
+		  scsicrypto-sd$(DEFAULT_OBJECT_TYPE) \
+		  ../../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared scsicrypto-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version -L../../lib -lbac
+
+plugtest: Makefile sd_plugins.c \
+	  ../../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) ../../stored/sd_plugins.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -o $@ sd_plugins.o -lbac $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
+
 install: all
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) python-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/python-sd.la
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) scsicrypto-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/scsicrypto-sd.la
+
+install-test-plugin:
 	$(MKDIR) $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) example-plugin-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/example-plugin-sd.la
@@ -36,13 +68,14 @@ libtool-clean:
 	$(RMF) -r .libs _libs
 
 clean: @LIBTOOL_CLEAN_TARGET@
-	rm -f main *.so *.o 1 2 3
+	@$(RMF) plugtest *.so *.o 1 2 3
 
 distclean: clean
-	rm -f Makefile
+	@$(RMF) Makefile
 
 libtool-uninstall:
-	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/example-plugin-sd.so
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/python-sd.so
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/scsicrypto-sd.so
 
 uninstall: @LIBTOOL_UNINSTALL_TARGET@
 

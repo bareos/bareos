@@ -34,7 +34,6 @@
 
 #include "bacula.h"
 #include "jcr.h"
-#include "findlib/find.h"
 
 /*
  * Strip leading space from command line arguments
@@ -47,7 +46,7 @@ void strip_leading_space(char *str)
       p++;
    }
    if (p != str) {
-      strcpy(str, p);
+      bstrinlinecpy(str, p);
    }
 }
 

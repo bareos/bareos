@@ -171,16 +171,16 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
 /* Close the write pipe only */
 int close_wpipe(BPIPE *bpipe)
 {
-   int stat = 1;
+   int status = 1;
 
    if (bpipe->wfd) {
       fflush(bpipe->wfd);
       if (fclose(bpipe->wfd) != 0) {
-         stat = 0;
+         status = 0;
       }
       bpipe->wfd = NULL;
    }
-   return stat;
+   return status;
 }
 
 /*
@@ -192,7 +192,7 @@ int close_wpipe(BPIPE *bpipe)
 int close_bpipe(BPIPE *bpipe)
 {
    int chldstatus = 0;
-   int stat = 0;
+   int status = 0;
    int wait_option;
    int remaining_wait;
    pid_t wpid = 0;
@@ -223,7 +223,7 @@ int close_bpipe(BPIPE *bpipe)
       } while (wpid == -1 && (errno == EINTR || errno == EAGAIN));
       if (wpid == bpipe->worker_pid || wpid == -1) {
          berrno be;
-         stat = errno;
+         status = errno;
          Dmsg3(800, "Got break wpid=%d status=%d ERR=%s\n", wpid, chldstatus,
             wpid==-1?be.bstrerror():"none");
          break;
@@ -234,35 +234,35 @@ int close_bpipe(BPIPE *bpipe)
          bmicrosleep(1, 0);           /* wait one second */
          remaining_wait--;
       } else {
-         stat = ETIME;                /* set error status */
+         status = ETIME;              /* set error status */
          wpid = -1;
          break;                       /* don't wait any longer */
       }
    }
    if (wpid > 0) {
       if (WIFEXITED(chldstatus)) {    /* process exit()ed */
-         stat = WEXITSTATUS(chldstatus);
-         if (stat != 0) {
-            Dmsg1(800, "Non-zero status %d returned from child.\n", stat);
-            stat |= b_errno_exit;        /* exit status returned */
+         status = WEXITSTATUS(chldstatus);
+         if (status != 0) {
+            Dmsg1(800, "Non-zero status %d returned from child.\n", status);
+            status |= b_errno_exit;   /* exit status returned */
          }
-         Dmsg1(800, "child status=%d\n", stat & ~b_errno_exit);
+         Dmsg1(800, "child status=%d\n", status & ~b_errno_exit);
       } else if (WIFSIGNALED(chldstatus)) {  /* process died */
 #ifndef HAVE_WIN32
-         stat = WTERMSIG(chldstatus);
+         status = WTERMSIG(chldstatus);
 #else
-         stat = 1;                    /* fake child status */
+         status = 1;                  /* fake child status */
 #endif
-         Dmsg1(800, "Child died from signal %d\n", stat);
-         stat |= b_errno_signal;      /* exit signal returned */
+         Dmsg1(800, "Child died from signal %d\n", status);
+         status |= b_errno_signal;    /* exit signal returned */
       }
    }
    if (bpipe->timer_id) {
       stop_child_timer(bpipe->timer_id);
    }
    free(bpipe);
-   Dmsg2(800, "returning stat=%d,%d\n", stat & ~(b_errno_exit|b_errno_signal), stat);
-   return stat;
+   Dmsg2(800, "returning status=%d,%d\n", status & ~(b_errno_exit|b_errno_signal), status);
+   return status;
 }
 
 /*

@@ -21,10 +21,7 @@ for i in *.o ; do \
    echo " "; \
 done
 
-DATA="\
-   console_command \
-   bplugin_list"
-
+DATA="console_command"
 for i in ${DATA}; do \
    echo "$i DATA"; \
 done

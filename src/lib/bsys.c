@@ -46,8 +46,8 @@ static pthread_cond_t timer = PTHREAD_COND_INITIALIZER;
 
 /*
  * This routine is a somewhat safer unlink in that it
- *   allows you to run a regex on the filename before 
- *   excepting it. It also requires the file to be in 
+ *   allows you to run a regex on the filename before
+ *   excepting it. It also requires the file to be in
  *   the working directory.
  */
 int safer_unlink(const char *pathname, const char *regx)
@@ -97,15 +97,15 @@ int bmicrosleep(int32_t sec, int32_t usec)
    struct timespec timeout;
    struct timeval tv;
    struct timezone tz;
-   int stat;
+   int status;
 
    timeout.tv_sec = sec;
    timeout.tv_nsec = usec * 1000;
 
 #ifdef HAVE_NANOSLEEP
-   stat = nanosleep(&timeout, NULL);
-   if (!(stat < 0 && errno == ENOSYS)) {
-      return stat;
+   status = nanosleep(&timeout, NULL);
+   if (!(status < 0 && errno == ENOSYS)) {
+      return status;
    }
    /* If we reach here it is because nanosleep is not supported by the OS */
 #endif
@@ -122,18 +122,57 @@ int bmicrosleep(int32_t sec, int32_t usec)
    Dmsg2(200, "pthread_cond_timedwait sec=%lld usec=%d\n", sec, usec);
    /* Note, this unlocks mutex during the sleep */
    P(timer_mutex);
-   stat = pthread_cond_timedwait(&timer, &timer_mutex, &timeout);
-   if (stat != 0) {
+   status = pthread_cond_timedwait(&timer, &timer_mutex, &timeout);
+   if (status != 0) {
       berrno be;
-      Dmsg2(200, "pthread_cond_timedwait stat=%d ERR=%s\n", stat,
-         be.bstrerror(stat));
+      Dmsg2(200, "pthread_cond_timedwait status=%d ERR=%s\n", status,
+         be.bstrerror(status));
    }
    V(timer_mutex);
-   return stat;
+   return status;
 }
 
 /*
- * Guarantee that the string is properly terminated */
+ * Copy a string inline from one point in the same string
+ * to an other.
+ */
+char *bstrinlinecpy(char *dest, const char *src)
+{
+   int len;
+
+   /*
+    * Sanity check. We can only inline copy if the src > dest
+    * otherwise the resulting copy will overwrite the end of
+    * the string.
+    */
+   if (src <= dest) {
+      return NULL;
+   }
+
+   len = strlen(src);
+#if HAVE_BCOPY
+   /*
+    * Cannot use strcpy or memcpy as those functions are not
+    * allowed on overlapping data and this is inline replacement
+    * for sure is. So we use bcopy which is allowed on overlapping
+    * data.
+    */
+   bcopy(src, dest, len + 1);
+#else
+   /*
+    * Cannot use strcpy or memcpy as those functions are not
+    * allowed on overlapping data and this is inline replacement
+    * for sure is. So we use memmove which is allowed on
+    * overlapping data.
+    */
+   memmove(dest, src, len + 1);
+#endif
+   return dest;
+}
+
+/*
+ * Guarantee that the string is properly terminated
+ */
 char *bstrncpy(char *dest, const char *src, int maxlen)
 {
    strncpy(dest, src, maxlen-1);
@@ -142,7 +181,8 @@ char *bstrncpy(char *dest, const char *src, int maxlen)
 }
 
 /*
- * Guarantee that the string is properly terminated */
+ * Guarantee that the string is properly terminated
+ */
 char *bstrncpy(char *dest, POOL_MEM &src, int maxlen)
 {
    strncpy(dest, src.c_str(), maxlen-1);
@@ -190,15 +230,36 @@ bool bstrcmp(const char *s1, const char *s2)
    return strcmp(s1, s2) == 0;
 }
 
+bool bstrncmp(const char *s1, const char *s2, int n)
+{
+   if (s1 == s2) return true;
+   if (s1 == NULL || s2 == NULL) return false;
+   return strncmp(s1, s2, n) == 0;
+}
+
+bool bstrcasecmp(const char *s1, const char *s2)
+{
+   if (s1 == s2) return true;
+   if (s1 == NULL || s2 == NULL) return false;
+   return strcasecmp(s1, s2) == 0;
+}
+
+bool bstrncasecmp(const char *s1, const char *s2, int n)
+{
+   if (s1 == s2) return true;
+   if (s1 == NULL || s2 == NULL) return false;
+   return strncasecmp(s1, s2, n) == 0;
+}
+
 /*
  * Get character length of UTF-8 string
  *
  * Valid UTF-8 codes
- * U-00000000 - U-0000007F: 0xxxxxxx 
- * U-00000080 - U-000007FF: 110xxxxx 10xxxxxx 
- * U-00000800 - U-0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx 
- * U-00010000 - U-001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx 
- * U-00200000 - U-03FFFFFF: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 
+ * U-00000000 - U-0000007F: 0xxxxxxx
+ * U-00000080 - U-000007FF: 110xxxxx 10xxxxxx
+ * U-00000800 - U-0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx
+ * U-00010000 - U-001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+ * U-00200000 - U-03FFFFFF: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
  * U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
  */
 int cstrlen(const char *str)
@@ -243,8 +304,6 @@ int cstrlen(const char *str)
    }
    return len;
 }
-
-
 
 #ifndef bmalloc
 void *bmalloc(size_t size)
@@ -303,7 +362,6 @@ void *brealloc (void *buf, size_t size)
    }
    return buf;
 }
-
 
 void *bcalloc(size_t size1, size_t size2)
 {
@@ -389,12 +447,12 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
 {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     struct dirent *ndir;
-    int stat;
+    int status;
 
     P(mutex);
     errno = 0;
     ndir = readdir(dirp);
-    stat = errno;
+    status = errno;
     if (ndir) {
        memcpy(entry, ndir, sizeof(struct dirent));
        strcpy(entry->d_name, ndir->d_name);
@@ -403,17 +461,16 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
        *result = NULL;
     }
     V(mutex);
-    return stat;
+    return status;
 
 }
 #endif
 #endif /* HAVE_READDIR_R */
 
-
 int b_strerror(int errnum, char *buf, size_t bufsiz)
 {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    int stat = 0;
+    int status = 0;
     const char *msg;
 
     P(mutex);
@@ -421,11 +478,11 @@ int b_strerror(int errnum, char *buf, size_t bufsiz)
     msg = strerror(errnum);
     if (!msg) {
        msg = _("Bad errno");
-       stat = -1;
+       status = -1;
     }
     bstrncpy(buf, msg, bufsiz);
     V(mutex);
-    return stat;
+    return status;
 }
 
 #ifdef DEBUG_MEMSET
@@ -465,7 +522,7 @@ void create_pid_file(char *dir, const char *progname, int port)
            read(pidfd, &pidbuf, sizeof(pidbuf)) < 0 ||
            sscanf(pidbuf, "%d", &oldpid) != 1) {
          berrno be;
-         Emsg2(M_ERROR_TERM, 0, _("Cannot open pid file. %s ERR=%s\n"), fname, 
+         Emsg2(M_ERROR_TERM, 0, _("Cannot open pid file. %s ERR=%s\n"), fname,
                be.bstrerror());
       }
       /* Some OSes (IRIX) don't bother to clean out the old pid files after a crash, and
@@ -494,13 +551,12 @@ void create_pid_file(char *dir, const char *progname, int port)
       del_pid_file_ok = TRUE;         /* we created it so we can delete it */
    } else {
       berrno be;
-      Emsg2(M_ERROR_TERM, 0, _("Could not open pid file. %s ERR=%s\n"), fname, 
+      Emsg2(M_ERROR_TERM, 0, _("Could not open pid file. %s ERR=%s\n"), fname,
             be.bstrerror());
    }
    free_pool_memory(fname);
 #endif
 }
-
 
 /*
  * Delete the pid file if we created it
@@ -541,7 +597,7 @@ static struct s_state_hdr state_hdr = {
 void read_state_file(char *dir, const char *progname, int port)
 {
    int sfd;
-   ssize_t stat;
+   ssize_t status;
    bool ok = false;
    POOLMEM *fname = get_pool_memory(PM_FNAME);
    struct s_state_hdr hdr;
@@ -556,10 +612,10 @@ void read_state_file(char *dir, const char *progname, int port)
                     sfd, sizeof(hdr), be.bstrerror());
       goto bail_out;
    }
-   if ((stat=read(sfd, &hdr, hdr_size)) != hdr_size) {
+   if ((status = read(sfd, &hdr, hdr_size)) != hdr_size) {
       berrno be;
-      Dmsg4(010, "Could not read state file. sfd=%d stat=%d size=%d: ERR=%s\n",
-                    sfd, (int)stat, hdr_size, be.bstrerror());
+      Dmsg4(010, "Could not read state file. sfd=%d status=%d size=%d: ERR=%s\n",
+                    sfd, (int)status, hdr_size, be.bstrerror());
       goto bail_out;
    }
    if (hdr.version != state_hdr.version) {
@@ -568,7 +624,7 @@ void read_state_file(char *dir, const char *progname, int port)
       goto bail_out;
    }
    hdr.id[13] = 0;
-   if (strcmp(hdr.id, state_hdr.id) != 0) {
+   if (!bstrcmp(hdr.id, state_hdr.id)) {
       Dmsg0(000, "State file header id invalid.\n");
       goto bail_out;
    }
@@ -597,7 +653,7 @@ void write_state_file(char *dir, const char *progname, int port)
    int sfd;
    bool ok = false;
    POOLMEM *fname = get_pool_memory(PM_FNAME);
-   
+
    P(state_mutex);                    /* Only one job at a time can call here */
    Mmsg(&fname, "%s/%s.%d.state", dir, progname, port);
    /* Create new state file */
@@ -639,7 +695,6 @@ bail_out:
    V(state_mutex);
    free_pool_memory(fname);
 }
-
 
 /* BSDI does not have this.  This is a *poor* simulation */
 #ifndef HAVE_STRTOLL
@@ -690,57 +745,6 @@ char *bfgets(char *s, int size, FILE *fd)
 }
 
 /*
- * Bacula's implementation of fgets(). The difference is that it handles
- *   being interrupted by a signal (e.g. a SIGCHLD) and it has a
- *   different calling sequence which implements input lines of
- *   up to a million characters.
- */
-char *bfgets(POOLMEM *&s, FILE *fd)
-{
-   int ch;
-   int soft_max;
-   int i = 0;
-
-   s[0] = 0;
-   soft_max = sizeof_pool_memory(s) - 10;
-   for ( ;; ) {
-      do {
-         errno = 0;
-         ch = fgetc(fd);
-      } while (ch == EOF && ferror(fd) && (errno == EINTR || errno == EAGAIN));
-      if (ch == EOF) {
-         if (i == 0) {
-            return NULL;
-         } else {
-            return s;
-         }
-      }
-      if (i > soft_max) {
-         /* Insanity check */
-         if (soft_max > 1000000) {
-            return s;
-         }
-         s = check_pool_memory_size(s, soft_max+10000);
-         soft_max = sizeof_pool_memory(s) - 10;
-      }
-      s[i++] = ch;
-      s[i] = 0;
-      if (ch == '\r') { /* Support for Mac/Windows file format */
-         ch = fgetc(fd);
-         if (ch != '\n') { /* Mac (\r only) */
-            (void)ungetc(ch, fd); /* Push next character back to fd */
-         }
-         s[i-1] = '\n';
-         break;
-      }
-      if (ch == '\n') {
-         break;
-      }
-   }
-   return s;
-}
-
-/*
  * Make a "unique" filename.  It is important that if
  *   called again with the same "what" that the result
  *   will be identical. This allows us to use the file
@@ -774,25 +778,180 @@ char *escape_filename(const char *file_path)
    return escaped_path;
 }
 
-#if HAVE_BACKTRACE && HAVE_GCC
+/*
+ * Some Solaris specific support needed for Solaris 10 and lower.
+ */
+#if defined(HAVE_SUN_OS)
+
+/*
+ * If libc doesn't have addrtosymstr emulate it.
+ * Solaris 11 has addrtosymstr in libc older
+ * Solaris versions don't have this.
+ */
+#ifndef HAVE_ADDRTOSYMSTR
+
+#include <dlfcn.h>
+
+#ifdef _LP64
+#define _ELF64
+#endif
+#include <sys/machelf.h>
+
+static int addrtosymstr(void *pc, char *buffer, int size)
+{
+   Dl_info info;
+   Sym *sym;
+
+   if (dladdr1(pc, &info, (void **)&sym, RTLD_DL_SYMENT) == 0) {
+      return (bsnprintf(buffer, size, "[0x%p]", pc));
+   }
+
+   if ((info.dli_fname != NULL && info.dli_sname != NULL) &&
+      ((uintptr_t)pc - (uintptr_t)info.dli_saddr < sym->st_size)) {
+      return (bsnprintf(buffer, size, "%s'%s+0x%x [0x%p]",
+                        info.dli_fname,
+                        info.dli_sname,
+                        (unsigned long)pc - (unsigned long)info.dli_saddr,
+                        pc));
+   } else {
+      return (bsnprintf(buffer, size, "%s'0x%p [0x%p]",
+                        info.dli_fname,
+                        (unsigned long)pc - (unsigned long)info.dli_fbase,
+                        pc));
+   }
+}
+#endif /* HAVE_ADDRTOSYMSTR */
+
+/*
+ * If libc doesn't have backtrace_symbols emulate it.
+ * Solaris 11 has backtrace_symbols in libc older
+ * Solaris versions don't have this.
+ */
+#ifndef HAVE_BACKTRACE_SYMBOLS
+static char **backtrace_symbols(void *const *array, int size)
+{
+   int bufferlen, len;
+   char **ret_buffer;
+   char **ret = NULL;
+   char linebuffer[512];
+   int i;
+
+   bufferlen = size * sizeof(char *);
+   ret_buffer = (char **)actuallymalloc(bufferlen);
+   if (ret_buffer) {
+      for (i = 0; i < size; i++) {
+         (void) addrtosymstr(array[i], linebuffer, sizeof(linebuffer));
+         ret_buffer[i] = actuallymalloc(len = strlen(linebuffer) + 1);
+         strcpy(ret_buffer[i], linebuffer);
+         bufferlen += len;
+      }
+      ret = (char **)actuallymalloc(bufferlen);
+      if (ret) {
+         for (len = i = 0; i < size; i++) {
+            ret[i] = (char *)ret + size * sizeof(char *) + len;
+            (void) strcpy(ret[i], ret_buffer[i]);
+            len += strlen(ret_buffer[i]) + 1;
+         }
+      }
+   }
+
+   return (ret);
+}
+
+/*
+ * Define that we now know backtrace_symbols()
+ */
+#define HAVE_BACKTRACE_SYMBOLS 1
+
+#endif /* HAVE_BACKTRACE_SYMBOLS */
+
+/*
+ * If libc doesn't have backtrace call emulate it using getcontext(3)
+ * Solaris 11 has backtrace in libc older Solaris versions don't have this.
+ */
+#ifndef HAVE_BACKTRACE
+
+#ifdef HAVE_UCONTEXT_H
+#include <ucontext.h>
+#endif
+
+typedef struct backtrace {
+   void **bt_buffer;
+   int bt_maxcount;
+   int bt_actcount;
+} backtrace_t;
+
+static int callback(uintptr_t pc, int signo, void *arg)
+{
+   backtrace_t *bt = (backtrace_t *)arg;
+
+   if (bt->bt_actcount >= bt->bt_maxcount)
+      return (-1);
+
+   bt->bt_buffer[bt->bt_actcount++] = (void *)pc;
+
+   return (0);
+}
+
+static int backtrace(void **buffer, int count)
+{
+   backtrace_t bt;
+   ucontext_t u;
+
+   bt.bt_buffer = buffer;
+   bt.bt_maxcount = count;
+   bt.bt_actcount = 0;
+
+   if (getcontext(&u) < 0)
+      return (0);
+
+   (void) walkcontext(&u, callback, &bt);
+
+   return (bt.bt_actcount);
+}
+
+/*
+ * Define that we now know backtrace()
+ */
+#define HAVE_BACKTRACE 1
+
+#endif /* HAVE_BACKTRACE */
+#endif /* HAVE_SUN_OS */
+
+/*
+ * Support strack_trace support on platforms that use GCC as compiler.
+ */
+#if defined(HAVE_BACKTRACE) && \
+    defined(HAVE_BACKTRACE_SYMBOLS) && \
+    defined(HAVE_GCC)
+
+#ifdef HAVE_CXXABI_H
 #include <cxxabi.h>
+#endif
+
+#ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
+#endif
+
 void stack_trace()
 {
+   int status;
+   size_t stack_depth, sz, i;
    const size_t max_depth = 100;
-   size_t stack_depth;
    void *stack_addrs[max_depth];
-   char **stack_strings;
-   
+   char **stack_strings, *begin, *end, *j, *function, *ret;
+
    stack_depth = backtrace(stack_addrs, max_depth);
    stack_strings = backtrace_symbols(stack_addrs, stack_depth);
-   
-   for (size_t i = 3; i < stack_depth; i++) {
-      size_t sz = 200; /* just a guess, template names will go much wider */
-      char *function = (char *)actuallymalloc(sz);
-      char *begin = 0, *end = 0;
-      /* find the parentheses and address offset surrounding the mangled name */
-      for (char *j = stack_strings[i]; *j; ++j) {
+
+   for (i = 3; i < stack_depth; i++) {
+      sz = 200; /* Just a guess, template names will go much wider */
+      function = (char *)actuallymalloc(sz);
+      begin = end = 0;
+      /*
+       * Find the parentheses and address offset surrounding the mangled name
+       */
+      for (j = stack_strings[i]; *j; ++j) {
          if (*j == '(') {
             begin = j;
          } else if (*j == '+') {
@@ -802,18 +961,22 @@ void stack_trace()
       if (begin && end) {
          *begin++ = '\0';
          *end = '\0';
-         /* found our mangled name, now in [begin, end] */
-         
-         int status;
-         char *ret = abi::__cxa_demangle(begin, function, &sz, &status);
+         /*
+          * Found our mangled name, now in [begin, end]
+          */
+         ret = abi::__cxa_demangle(begin, function, &sz, &status);
          if (ret) {
-            /* return value may be a realloc() of the input */
+            /*
+             * Return value may be a realloc() of the input
+             */
             function = ret;
          } else {
-            /* demangling failed, just pretend it's a C function with no args */
-            strncpy(function, begin, sz);
-            strncat(function, "()", sz);
-            function[sz-1] = '\0';
+            /*
+             * Demangling failed, just pretend it's a C function with no args
+             */
+            strncpy(function, begin, sz - 3);
+            strcat(function, "()");
+            function[sz - 1] = '\0';
          }
          Pmsg2(000, "    %s:%s\n", stack_strings[i], function);
 
@@ -825,6 +988,99 @@ void stack_trace()
    }
    actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
 }
-#else /* HAVE_BACKTRACE && HAVE_GCC */
-void stack_trace() {}
-#endif /* HAVE_BACKTRACE && HAVE_GCC */
+
+/*
+ * Support strack_trace support on Solaris when using the SUNPRO_CC compiler.
+ */
+#elif defined(HAVE_SUN_OS) && \
+      defined(HAVE_UCONTEXT_H) && \
+      defined(HAVE_DEMANGLE_H) && \
+      defined(HAVE_CPLUS_DEMANGLE) && \
+      defined(__SUNPRO_CC)
+
+#ifdef HAVE_UCONTEXT_H
+#include <ucontext.h>
+#endif
+
+#if defined(HAVE_EXECINFO_H)
+#include <execinfo.h>
+#endif
+
+#include <demangle.h>
+
+void stack_trace()
+{
+   int ret, i;
+   bool demangled_symbol;
+   size_t stack_depth;
+   size_t sz = 200; /* Just a guess, template names will go much wider */
+   const size_t max_depth = 100;
+   void *stack_addrs[100];
+   char **stack_strings, *begin, *end, *j, *function;
+
+   stack_depth = backtrace(stack_addrs, max_depth);
+   stack_strings = backtrace_symbols(stack_addrs, stack_depth);
+
+   for (i = 1; i < stack_depth; i++) {
+      function = (char *)actuallymalloc(sz);
+      begin = end = 0;
+      /*
+       * Find the single quote and address offset surrounding the mangled name
+       */
+      for (j = stack_strings[i]; *j; ++j) {
+         if (*j == '\'') {
+            begin = j;
+         } else if (*j == '+') {
+            end = j;
+         }
+      }
+      if (begin && end) {
+         *begin++ = '\0';
+         *end = '\0';
+         /*
+          * Found our mangled name, now in [begin, end)
+          */
+         demangled_symbol = false;
+         while (!demangled_symbol) {
+            ret = cplus_demangle(begin, function, sz);
+            switch (ret) {
+            case DEMANGLE_ENAME:
+               /*
+                * Demangling failed, just pretend it's a C function with no args
+                */
+               strcat(function, "()");
+               function[sz - 1] = '\0';
+               demangled_symbol = true;
+               break;
+            case DEMANGLE_ESPACE:
+               /*
+                * Need more space for demangled function name.
+                */
+               actuallyfree(function);
+               sz = sz * 2;
+               function = (char *)actuallymalloc(sz);
+               continue;
+            default:
+               demangled_symbol = true;
+               break;
+            }
+         }
+         Pmsg2(000, "    %s:%s\n", stack_strings[i], function);
+      } else {
+         /*
+          * Didn't find the mangled name, just print the whole line
+          */
+         Pmsg1(000, "    %s\n", stack_strings[i]);
+      }
+      actuallyfree(function);
+   }
+   actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
+}
+
+#else
+
+void stack_trace()
+{
+}
+
+#endif

@@ -34,7 +34,6 @@
 
 
 #include "bacula.h"
-#include "findlib/find.h"
 
 #define B_PAGE_SIZE 4096
 #define MAX_PAGES 2400
@@ -102,6 +101,8 @@ TREE_ROOT *new_tree(int count)
    root->cached_path = get_pool_memory(PM_FNAME);
    root->type = TN_ROOT;
    root->fname = "";
+   HL_ENTRY* entry = NULL;
+   root->hardlinks.init(entry, &entry->link, 0, 1);
    return root;
 }
 
@@ -172,6 +173,7 @@ void free_tree(TREE_ROOT *root)
    struct s_mem *mem, *rel;
    uint32_t freed_blocks = 0;
 
+   root->hardlinks.destroy();
    for (mem=root->mem; mem; ) {
       rel = mem;
       mem = mem->next;
@@ -192,7 +194,7 @@ void free_tree(TREE_ROOT *root)
 void tree_add_delta_part(TREE_ROOT *root, TREE_NODE *node,
                          JobId_t JobId, int32_t FileIndex)
 {
-   struct delta_list *elt = 
+   struct delta_list *elt =
       (struct delta_list*) tree_alloc(root, sizeof(struct delta_list));
 
    elt->next = node->delta_list;
@@ -242,7 +244,7 @@ TREE_NODE *insert_tree_node(char *path, char *fname, int type,
          Dmsg1(100, "make_tree_path for %s\n", path);
          path_len = strlen(path);     /* get new length */
          if (path_len == root->cached_path_len &&
-             strcmp(path, root->cached_path) == 0) {
+             bstrcmp(path, root->cached_path)) {
             parent = root->cached_parent;
          } else {
             root->cached_path_len = path_len;
@@ -386,7 +388,7 @@ TREE_NODE *tree_cwd(char *path, TREE_ROOT *root, TREE_NODE *node)
    /* Handle relative path */
    if (path[0] == '.' && path[1] == '.' && (IsPathSeparator(path[2]) || path[2] == '\0')) {
       TREE_NODE *parent = node->parent ? node->parent : node;
-      if (path[2] == 0) { 
+      if (path[2] == 0) {
          return parent;
       } else {
          return tree_cwd(path+3, root, parent);
@@ -425,7 +427,7 @@ TREE_NODE *tree_relcwd(char *path, TREE_ROOT *root, TREE_NODE *node)
    foreach_child(cd, node) {
       Dmsg1(100, "tree_relcwd: test cd=%s\n", cd->fname);
       if (cd->fname[0] == path[0] && len == (int)strlen(cd->fname)
-          && strncmp(cd->fname, path, len) == 0) {
+          && bstrncmp(cd->fname, path, len)) {
          break;
       }
       /* fnmatch has no len in call so we truncate the string */

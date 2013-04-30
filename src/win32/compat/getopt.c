@@ -132,8 +132,8 @@ int getopt(int argc, char *const argv[], const char *opstring)
 #endif
 
       /* check for special end-of-flags markers */
-      if ((strcmp(pArgString, "-") == 0) ||
-          (strcmp(pArgString, "--") == 0)) {
+      if (bstrcmp(pArgString, "-") ||
+          bstrcmp(pArgString, "--")) {
          optarg = NULL;         /* no argument follows the option */
          pIndexPosition = NULL; /* not in the middle of anything */
          return EOF;            /* encountered the special flag */

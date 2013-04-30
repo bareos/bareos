@@ -36,7 +36,6 @@
 
 #include <stdarg.h>
 #include <stddef.h>
-#include "bacula.h"
 
 void vtape_debug(int level);
 
@@ -96,8 +95,10 @@ public:
    int d_close(int);
    int d_open(const char *pathname, int flags);
    int d_ioctl(int fd, ioctl_req_t request, char *mt=NULL);
-   ssize_t d_read(int, void *buffer, size_t count);
-   ssize_t d_write(int, const void *buffer, size_t count);
+   using DEVICE::d_read;
+   virtual ssize_t d_read(int fd, void *buffer, size_t count);
+   using DEVICE::d_write;
+   virtual ssize_t d_write(int fd, const void *buffer, size_t count);
 
    boffset_t lseek(DCR *dcr, off_t offset, int whence) { return -1; }
    boffset_t lseek(int fd, off_t offset, int whence);
@@ -113,8 +114,10 @@ public:
 class vtape: public DEVICE {
 public:
    int d_open(const char *pathname, int flags) { return -1; }
-   ssize_t d_read(void *buffer, size_t count) { return -1; }
-   ssize_t d_write(const void *buffer, size_t count) { return -1; }
+   using DEVICE::d_read;
+   virtual ssize_t d_read(void *buffer, size_t count) { return -1; }
+   using DEVICE::d_write;
+   virtual ssize_t d_write(const void *buffer, size_t count) { return -1; }
    int d_close(int) { return -1; }
    int d_ioctl(int fd, ioctl_req_t request, char *mt=NULL) { return -1; }
    boffset_t lseek(DCR *dcr, off_t offset, int whence) { return -1; }

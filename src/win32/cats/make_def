@@ -14,8 +14,8 @@ TOPDIR=`(cd ../../..;pwd)`
 TOPDIR=${DEPKGS:-${TOPDIR}}
 NM=${TOPDIR}/cross-tools/mingw32/mingw32/bin/nm
 
-OBJS="sql.o sql_create.o sql_delete.o sql_find.o sql_get.o \
-      sql_list.o sql_update.o bvfs.o"
+OBJS="bvfs.o sql.o sql_create.o sql_delete.o sql_find.o sql_get.o \
+      sql_list.o sql_pooling.o sql_query.c sql_update.o"
 
 #
 # The data could be automated too        

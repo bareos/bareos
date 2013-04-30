@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2009-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -32,17 +32,36 @@
 /*
  * Prototypes for entry points into the different backends.
  */
-bool db_match_database(B_DB *mdb, const char *db_driver, const char *db_name,
-                       const char *db_address, int db_port);
-B_DB *db_clone_database_connection(B_DB *mdb, JCR *jcr, bool mult_db_connections);
+B_DB *db_init_database(JCR *jcr,
+                       const char *db_driver,
+                       const char *db_name,
+                       const char *db_user,
+                       const char *db_password,
+                       const char *db_address,
+                       int db_port,
+                       const char *db_socket,
+                       bool mult_db_connections = false,
+                       bool disable_batch_insert = false,
+                       bool is_private = false);
+
+/*
+ * Glue functions from sql_glue.c
+ */
+bool db_match_database(B_DB *mdb,
+                       const char *db_driver,
+                       const char *db_name,
+                       const char *db_address,
+                       int db_port);
+B_DB *db_clone_database_connection(B_DB *mdb,
+                                   JCR *jcr,
+                                   bool mult_db_connections,
+                                   bool get_pooled_connection = true,
+                                   bool need_private = false);
 int db_get_type_index(B_DB *mdb);
 const char *db_get_type(B_DB *mdb);
-B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
-              const char *db_user, const char *db_password,
-              const char *db_address, int db_port,
-              const char *db_socket, bool mult_db_connections, bool disable_batch_insert);
 bool db_open_database(JCR *jcr, B_DB *mdb);
 void db_close_database(JCR *jcr, B_DB *mdb);
+bool db_validate_connection(B_DB *mdb);
 void db_thread_cleanup(B_DB *mdb);
 void db_escape_string(JCR *jcr, B_DB *mdb, char *snew, char *old, int len);
 char *db_escape_object(JCR *jcr, B_DB *mdb, char *old, int len);

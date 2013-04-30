@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
 
    The main author of Bacula is Kern Sibbald, with contributions from
    many others, a complete list can be found in the file AUTHORS.
@@ -30,7 +30,7 @@
  * These are Ingres specific routines
  *
  *    Stefan Reddig, June 2009 with help of Marco van Wieringen April 2010
- *    based uopn work done 
+ *    based upon work done
  *    by Dan Langille, December 2003 and
  *    by Kern Sibbald, March 2000
  *
@@ -144,7 +144,8 @@ B_DB_INGRES::B_DB_INGRES(JCR *jcr,
                          int db_port,
                          const char *db_socket,
                          bool mult_db_connections,
-                         bool disable_batch_insert)
+                         bool disable_batch_insert,
+                         bool need_private)
 {
    B_DB_INGRES *mdb;
    int next_session_id = 0;
@@ -203,13 +204,7 @@ B_DB_INGRES::B_DB_INGRES(JCR *jcr,
    esc_path = get_pool_memory(PM_FNAME);
    esc_obj = get_pool_memory(PM_FNAME);
    m_allow_transactions = mult_db_connections;
-
-   /* At this time, when mult_db_connections == true, this is for 
-    * specific console command such as bvfs or batch mode, and we don't
-    * want to share a batch mode or bvfs. In the future, we can change
-    * the creation function to add this parameter.
-    */
-   m_dedicated = mult_db_connections; 
+   m_is_private = need_private;
 
    /*
     * Initialize the private members.
@@ -336,93 +331,25 @@ void B_DB_INGRES::db_close_database(JCR *jcr)
    V(mutex);
 }
 
-void B_DB_INGRES::db_thread_cleanup(void)
+bool B_DB_INGRES::db_validate_connection(void)
 {
-}
+   bool retval;
 
-/*
- * Escape strings so that Ingres is happy
- *
- *   NOTE! len is the length of the old string. Your new
- *         string must be long enough (max 2*old+1) to hold
- *         the escaped output.
- */
-void B_DB_INGRES::db_escape_string(JCR *jcr, char *snew, char *old, int len)
-{
-   char *n, *o;
-
-   n = snew;
-   o = old;
-   while (len--) {
-      switch (*o) {
-      case '\'':
-         *n++ = '\'';
-         *n++ = '\'';
-         o++;
-         break;
-      case 0:
-         *n++ = '\\';
-         *n++ = 0;
-         o++;
-         break;
-      default:
-         *n++ = *o++;
-         break;
-      }
+   /*
+    * Perform a null query to see if the connection is still valid.
+    */
+   db_lock(this);
+   if (!sql_query("SELECT 1", true)) {
+      retval = false;
+      goto bail_out;
    }
-   *n = 0;
-}
 
-/*
- * Escape binary so that Ingres is happy
- *
- *   NOTE! Need to be implemented (escape \0)
- *
- */
-char *B_DB_INGRES::db_escape_object(JCR *jcr, char *old, int len)
-{
-   char *n, *o;
+   sql_free_result();
+   retval = true;
 
-   n = esc_obj = check_pool_memory_size(esc_obj, len*2+1);
-   o = old;
-   while (len--) {
-      switch (*o) {
-      case '\'':
-         *n++ = '\'';
-         *n++ = '\'';
-         o++;
-         break;
-      case 0:
-         *n++ = '\\';
-         *n++ = 0;
-         o++;
-         break;
-      default:
-         *n++ = *o++;
-         break;
-      }
-   }
-   *n = 0;
-   return esc_obj;
-}
-
-/*
- * Unescape binary object so that Ingres is happy
- *
- * TODO: need to be implemented (escape \0)
- */
-void B_DB_INGRES::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                     POOLMEM **dest, int32_t *dest_len)
-{
-   if (!from) {
-      *dest[0] = 0;
-      *dest_len = 0;
-      return;
-   }
-   *dest = check_pool_memory_size(*dest, expected_len+1);
-   *dest_len = expected_len;
-   memcpy(*dest, from, expected_len);
-   (*dest)[expected_len]=0;
+bail_out:
+   db_unlock(this);
+   return retval;
 }
 
 /*
@@ -556,18 +483,18 @@ bool B_DB_INGRES::sql_query(const char *query, int flags)
          *cp++;
       }
 
-      if (!strncasecmp(bp, "BEGIN", 5)) {
+      if (bstrncasecmp(bp, "BEGIN", 5)) {
          /*
           * This is the start of a transaction.
           * Inline copy the rest of the query over the BEGIN keyword.
           */
          if (cp) {
-            strcpy(bp, cp);
+            bstrinlinecpy(bp, cp);
          } else {
             *bp = '\0';
          }
          start_of_transaction = true;
-      } else if (!strncasecmp(bp, "COMMIT", 6) && (cp == NULL || strncasecmp(cp, "PRESERVE", 8))) {
+      } else if (bstrncasecmp(bp, "COMMIT", 6) && (cp == NULL || !bstrncasecmp(cp, "PRESERVE", 8))) {
          /*
           * This is the end of a transaction. We cannot check for just the COMMIT
           * keyword as a DECLARE of an tempory table also has the word COMMIT in it
@@ -575,7 +502,7 @@ bool B_DB_INGRES::sql_query(const char *query, int flags)
           * Inline copy the rest of the query over the COMMIT keyword.
           */
          if (cp) {
-            strcpy(bp, cp);
+            bstrinlinecpy(bp, cp);
          } else {
             *bp = '\0';
          }
@@ -586,7 +513,7 @@ bool B_DB_INGRES::sql_query(const char *query, int flags)
        * See what query filter might match.
        */
       foreach_alist(rewrite_rule, m_query_filters) {
-         if (!strncasecmp(bp, rewrite_rule->search_pattern, rewrite_rule->pattern_length)) {
+         if (bstrncasecmp(bp, rewrite_rule->search_pattern, rewrite_rule->pattern_length)) {
             rewrite_rule->trigger = true;
          }
       }
@@ -710,7 +637,7 @@ bail_out:
    Dmsg0(500, "sql_query finishing\n");
 
    return retval;
-}  
+}
 
 void B_DB_INGRES::sql_free_result(void)
 {
@@ -1011,7 +938,7 @@ static char *ingres_copy_escape(char *dest, char *src, size_t len)
    return dest;
 }
 
-/* 
+/*
  * Returns true if OK
  *         false if failed
  */
@@ -1033,7 +960,7 @@ bool B_DB_INGRES::sql_batch_start(JCR *jcr)
    return ok;
 }
 
-/* 
+/*
  * Returns true if OK
  *         false if failed
  */
@@ -1043,7 +970,7 @@ bool B_DB_INGRES::sql_batch_end(JCR *jcr, const char *error)
    return true;
 }
 
-/* 
+/*
  * Returns true if OK
  *         false if failed
  */
@@ -1067,7 +994,7 @@ bool B_DB_INGRES::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
 
    len = Mmsg(cmd, "INSERT INTO batch VALUES "
                    "(%u,%s,'%s','%s','%s','%s',%u)",
-                   ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path, 
+                   ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
                    esc_name, ar->attr, digest, ar->DeltaSeq);
 
    return sql_query(cmd);
@@ -1077,9 +1004,31 @@ bool B_DB_INGRES::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user,
-                       const char *db_password, const char *db_address, int db_port,
-                       const char *db_socket, bool mult_db_connections, bool disable_batch_insert)
+#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+extern "C" B_DB *backend_instantiate(JCR *jcr,
+                                     const char *db_driver,
+                                     const char *db_name,
+                                     const char *db_user,
+                                     const char *db_password,
+                                     const char *db_address,
+                                     int db_port,
+                                     const char *db_socket,
+                                     bool mult_db_connections,
+                                     bool disable_batch_insert,
+                                     bool need_private)
+#else
+B_DB *db_init_database(JCR *jcr,
+                       const char *db_driver,
+                       const char *db_name,
+                       const char *db_user,
+                       const char *db_password,
+                       const char *db_address,
+                       int db_port,
+                       const char *db_socket,
+                       bool mult_db_connections,
+                       bool disable_batch_insert,
+                       bool need_private)
+#endif
 {
    B_DB_INGRES *mdb = NULL;
 
@@ -1089,11 +1038,16 @@ B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, con
    }
 
    P(mutex);                          /* lock DB queue */
-   if (db_list && !mult_db_connections) {
-      /*
-       * Look to see if DB already open
-       */
+
+   /*
+    * Look to see if DB already open
+    */
+   if (db_list && !mult_db_connections && !need_private) {
       foreach_dlist(mdb, db_list) {
+         if (mdb->is_private()) {
+            continue;
+         }
+
          if (mdb->db_match_database(db_driver, db_name, db_address, db_port)) {
             Dmsg1(100, "DB REopen %s\n", db_name);
             mdb->increment_refcount();
@@ -1103,11 +1057,29 @@ B_DB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, con
    }
 
    Dmsg0(100, "db_init_database first time\n");
-   mdb = New(B_DB_INGRES(jcr, db_driver, db_name, db_user, db_password, db_address,
-                         db_port, db_socket, mult_db_connections, disable_batch_insert));
+   mdb = New(B_DB_INGRES(jcr,
+                         db_driver,
+                         db_name,
+                         db_user,
+                         db_password,
+                         db_address,
+                         db_port,
+                         db_socket,
+                         mult_db_connections,
+                         disable_batch_insert,
+                         need_private));
 
 bail_out:
    V(mutex);
    return mdb;
 }
+
+#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+extern "C" void flush_backend(void)
+#else
+void db_flush_backends(void)
+#endif
+{
+}
+
 #endif /* HAVE_INGRES */

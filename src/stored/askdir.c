@@ -35,6 +35,7 @@
 
 #include "bacula.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
+#include "lib/crypto_cache.h"
 
 static const int dbglvl = 200;
 
@@ -45,7 +46,7 @@ static char Update_media[] = "CatReq Job=%s UpdateMedia VolName=%s"
    " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%s VolMounts=%u"
    " VolErrors=%u VolWrites=%u MaxVolBytes=%s EndTime=%s VolStatus=%s"
    " Slot=%d relabel=%d InChanger=%d VolReadTime=%s VolWriteTime=%s"
-   " VolFirstWritten=%s VolParts=%u\n";
+   " VolFirstWritten=%s\n";
 static char Create_job_media[] = "CatReq Job=%s CreateJobMedia"
    " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u"
    " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%s\n";
@@ -57,9 +58,7 @@ static char OK_media[] = "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
    " MaxVolBytes=%lld VolCapacityBytes=%lld VolStatus=%20s"
    " Slot=%ld MaxVolJobs=%lu MaxVolFiles=%lu InChanger=%ld"
    " VolReadTime=%lld VolWriteTime=%lld EndFile=%lu EndBlock=%lu"
-   " VolParts=%lu LabelType=%ld MediaId=%lld\n";
-
-
+   " LabelType=%ld MediaId=%lld EncryptionKey=%127s\n";
 static char OK_create[] = "1000 OK CreateJobMedia\n";
 
 static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -142,15 +141,6 @@ bool dir_update_changer(JCR *jcr, AUTOCHANGER *changer)
 }
 #endif
 
-
-/**
- * Send current JobStatus to Director
- */
-bool dir_send_job_status(JCR *jcr)
-{
-   return jcr->sendJobStatus();
-}
-
 /**
  * Common routine for:
  *   dir_get_volume_info()
@@ -189,8 +179,8 @@ static bool do_get_volume_info(DCR *dcr)
                &vol.VolCatCapacityBytes, vol.VolCatStatus,
                &vol.Slot, &vol.VolCatMaxJobs, &vol.VolCatMaxFiles,
                &InChanger, &vol.VolReadTime, &vol.VolWriteTime,
-               &vol.EndFile, &vol.EndBlock, &vol.VolCatParts,
-               &vol.LabelType, &vol.VolMediaId);
+               &vol.EndFile, &vol.EndBlock, &vol.LabelType,
+               &vol.VolMediaId, vol.VolEncrKey);
     if (n != 22) {
        Dmsg3(dbglvl, "Bad response from Dir fields=%d, len=%d: %s", 
              n, dir->msglen, dir->msg);
@@ -202,6 +192,17 @@ static bool do_get_volume_info(DCR *dcr)
     unbash_spaces(vol.VolCatName);
     bstrncpy(dcr->VolumeName, vol.VolCatName, sizeof(dcr->VolumeName));
     dcr->VolCatInfo = vol;            /* structure assignment */
+
+    /*
+     * If we received a new crypto key update the cache and write
+     * out the new cache on a change.
+     */
+    if (*vol.VolEncrKey) {
+       if (update_crypto_cache(vol.VolCatName, vol.VolEncrKey)) {
+          write_crypto_cache(me->working_directory, "bacula-sd",
+                             get_first_port_host_order(me->sdaddrs));
+       }
+    }
 
     Dmsg2(dbglvl, "do_reqest_vol_info return true slot=%d Volume=%s\n",
           vol.Slot, vol.VolCatName);
@@ -257,7 +258,7 @@ bool dir_find_next_appendable_volume(DCR *dcr)
     bool rtn;
     char lastVolume[MAX_NAME_LENGTH];
 
-    Dmsg2(dbglvl, "dir_find_next_appendable_volume: reserved=%d Vol=%s\n", 
+    Dmsg2(dbglvl, "dir_find_next_appendable_volume: reserved=%d Vol=%s\n",
        dcr->is_reserved(), dcr->VolumeName);
 
     /*
@@ -278,7 +279,7 @@ bool dir_find_next_appendable_volume(DCR *dcr)
        Dmsg1(dbglvl, ">dird %s", dir->msg);
        if (do_get_volume_info(dcr)) {
           /* Give up if we get the same volume name twice */
-          if (lastVolume[0] && strcmp(lastVolume, dcr->VolumeName) == 0) {
+          if (lastVolume[0] && bstrcmp(lastVolume, dcr->VolumeName)) {
              Dmsg1(dbglvl, "Got same vol = %s\n", lastVolume);
              break;
           }
@@ -365,9 +366,8 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten)
       InChanger,                      /* bool in structure */
       edit_int64(vol->VolReadTime, ed3),
       edit_int64(vol->VolWriteTime, ed4),
-      edit_uint64(vol->VolFirstWritten, ed5),
-      vol->VolCatParts);
-    Dmsg1(dbglvl, ">dird %s", dir->msg);
+      edit_uint64(vol->VolFirstWritten, ed5));
+   Dmsg1(dbglvl, ">dird %s", dir->msg);
 
    /* Do not lock device here because it may be locked from label */
    if (!jcr->is_canceled()) {
@@ -434,7 +434,7 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
       return false;
    }
    Dmsg1(dbglvl, "<dird %s", dir->msg);
-   if (strcmp(dir->msg, OK_create) != 0) {
+   if (!bstrcmp(dir->msg, OK_create)) {
       Dmsg1(dbglvl, "Bad response from Dir: %s\n", dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Error creating JobMedia record: %s\n"), dir->msg);
       return false;
@@ -506,7 +506,7 @@ bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec)
  */
 bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
 {
-   int stat = W_TIMEOUT;
+   int status = W_TIMEOUT;
    DEVICE *dev = dcr->dev;
    JCR *jcr = dcr->jcr;
    bool got_vol = false;
@@ -528,7 +528,7 @@ bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
       if (got_vol) {
          goto get_out;
       } else {
-         if (stat == W_TIMEOUT || stat == W_MOUNT) {
+         if (status == W_TIMEOUT || status == W_MOUNT) {
             Mmsg(dev->errmsg, _(
 "Job %s is waiting. Cannot find any appendable volumes.\n"
 "Please use the \"label\" command to create a new Volume for:\n"
@@ -546,14 +546,14 @@ bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
 
       jcr->sendJobStatus(JS_WaitMedia);
 
-      stat = wait_for_sysop(dcr);
-      Dmsg1(dbglvl, "Back from wait_for_sysop stat=%d\n", stat);
+      status = wait_for_sysop(dcr);
+      Dmsg1(dbglvl, "Back from wait_for_sysop status=%d\n", status);
       if (dev->poll) {
          Dmsg1(dbglvl, "Poll timeout in create append vol on device %s\n", dev->print_name());
          continue;
       }
 
-      if (stat == W_TIMEOUT) {
+      if (status == W_TIMEOUT) {
          if (!double_dev_wait_time(dev)) {
             Mmsg(dev->errmsg, _("Max time exceeded waiting to mount Storage Device %s for Job %s\n"),
                dev->print_name(), jcr->Job);
@@ -563,7 +563,7 @@ bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
          }
          continue;
       }
-      if (stat == W_ERROR) {
+      if (status == W_ERROR) {
          berrno be;
          Mmsg0(dev->errmsg, _("pthread error in mount_next_volume.\n"));
          Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
@@ -592,7 +592,7 @@ get_out:
  */
 bool dir_ask_sysop_to_mount_volume(DCR *dcr, int mode)
 {
-   int stat = W_TIMEOUT;
+   int status = W_TIMEOUT;
    DEVICE *dev = dcr->dev;
    JCR *jcr = dcr->jcr;
 
@@ -609,51 +609,44 @@ bool dir_ask_sysop_to_mount_volume(DCR *dcr, int mode)
          return false;
       }
 
-      if (dev->is_dvd()) {   
-         dev->unmount(0);
-      }
-      
       /*
        * If we are not polling, and the wait timeout or the
        *   user explicitly did a mount, send him the message.
        *   Otherwise skip it.
        */
-      if (!dev->poll && (stat == W_TIMEOUT || stat == W_MOUNT)) {
-         char *msg;
+      if (!dev->poll && (status == W_TIMEOUT || status == W_MOUNT)) {
+         const char *msg;
+
          if (mode == ST_APPEND) {
             msg = _("Please mount append Volume \"%s\" or label a new one for:\n"
-              "    Job:          %s\n"
-              "    Storage:      %s\n"
-              "    Pool:         %s\n"
-              "    Media type:   %s\n");
+                    "    Job:          %s\n"
+                    "    Storage:      %s\n"
+                    "    Pool:         %s\n"
+                    "    Media type:   %s\n");
          } else {
             msg = _("Please mount read Volume \"%s\" for:\n"
-              "    Job:          %s\n"
-              "    Storage:      %s\n"
-              "    Pool:         %s\n"
-              "    Media type:   %s\n");
+                    "    Job:          %s\n"
+                    "    Storage:      %s\n"
+                    "    Pool:         %s\n"
+                    "    Media type:   %s\n");
          }
-         Jmsg(jcr, M_MOUNT, 0, msg, 
-              dcr->VolumeName,
-              jcr->Job,
-              dev->print_name(),
-              dcr->pool_name,
-              dcr->media_type);
+         Jmsg(jcr, M_MOUNT, 0, msg, dcr->VolumeName, jcr->Job,
+              dev->print_name(), dcr->pool_name, dcr->media_type);
          Dmsg3(dbglvl, "Mount \"%s\" on device \"%s\" for Job %s\n",
                dcr->VolumeName, dev->print_name(), jcr->Job);
       }
 
       jcr->sendJobStatus(JS_WaitMount);
 
-      stat = wait_for_sysop(dcr);          /* wait on device */
-      Dmsg1(dbglvl, "Back from wait_for_sysop stat=%d\n", stat);
+      status = wait_for_sysop(dcr);          /* wait on device */
+      Dmsg1(dbglvl, "Back from wait_for_sysop status=%d\n", status);
       if (dev->poll) {
          Dmsg1(dbglvl, "Poll timeout in mount vol on device %s\n", dev->print_name());
          Dmsg1(dbglvl, "Blocked=%s\n", dev->print_blocked());
          goto get_out;
       }
 
-      if (stat == W_TIMEOUT) {
+      if (status == W_TIMEOUT) {
          if (!double_dev_wait_time(dev)) {
             Mmsg(dev->errmsg, _("Max time exceeded waiting to mount Storage Device %s for Job %s\n"),
                dev->print_name(), jcr->Job);
@@ -663,7 +656,7 @@ bool dir_ask_sysop_to_mount_volume(DCR *dcr, int mode)
          }
          continue;
       }
-      if (stat == W_ERROR) {
+      if (status == W_ERROR) {
          berrno be;
          Mmsg(dev->errmsg, _("pthread error in mount_volume\n"));
          Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);

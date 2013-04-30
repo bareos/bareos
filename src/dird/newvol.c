@@ -26,40 +26,43 @@
    Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Bacula Director -- newvol.c -- creates new Volumes in
+ *                                catalog Media table from the
+ *                                LabelFormat specification.
  *
- *   Bacula Director -- newvol.c -- creates new Volumes in
- *    catalog Media table from the LabelFormat specification.
+ * Kern Sibbald, May MMI
  *
- *     Kern Sibbald, May MMI
+ * This routine runs as a thread and must be thread reentrant.
  *
- *    This routine runs as a thread and must be thread reentrant.
- *
- *  Basic tasks done here:
- *      If possible create a new Media entry
- *
+ * Basic tasks done here:
+ *    If possible create a new Media entry
  */
 
 #include "bacula.h"
 #include "dird.h"
 
-/* Forward referenced functions */
+/*
+ * Forward referenced functions
+ */
 static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr);
 static bool perform_full_name_substitution(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr);
-
 
 /*
  * Automatic Volume name creation using the LabelFormat
  *
- *  The media record must have the PoolId filled in when
- *   calling this routine.
+ * The media record must have the PoolId filled in when
+ * calling this routine.
  */
-bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORE *store)
+bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORERES *store)
 {
+   bool retval = false;
    POOL_DBR pr;
 
    memset(&pr, 0, sizeof(pr));
 
-   /* See if we can create a new Volume */
+   /*
+    * See if we can create a new Volume
+    */
    db_lock(jcr->db);
    pr.PoolId = mr->PoolId;
    if (!db_get_pool_record(jcr, jcr->db, &pr)) {
@@ -69,20 +72,25 @@ bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORE *store)
       mr->clear();
       set_pool_dbr_defaults_in_media_dbr(mr, &pr);
       jcr->VolumeName[0] = 0;
-      bstrncpy(mr->MediaType, jcr->wstore->media_type, sizeof(mr->MediaType));
-      generate_job_event(jcr, "NewVolume"); /* return bool */
+      bstrncpy(mr->MediaType, jcr->res.wstore->media_type, sizeof(mr->MediaType));
       generate_plugin_event(jcr, bDirEventNewVolume); /* return void... */
       if (jcr->VolumeName[0] && is_volume_name_legal(NULL, jcr->VolumeName)) {
          bstrncpy(mr->VolumeName, jcr->VolumeName, sizeof(mr->VolumeName));
-      /* Check for special characters */
       } else if (pr.LabelFormat[0] && pr.LabelFormat[0] != '*') {
+         /*
+          * Check for special characters
+          */
          if (is_volume_name_legal(NULL, pr.LabelFormat)) {
-            /* No special characters, so apply simple algorithm */
+            /*
+             * No special characters, so apply simple algorithm
+             */
             if (!create_simple_name(jcr, mr, &pr)) {
                goto bail_out;
             }
-         } else {  /* try full substitution */
-            /* Found special characters, so try substitution */
+         } else {
+            /*
+             * Found special characters, so try full substitution
+             */
             if (!perform_full_name_substitution(jcr, mr, &pr)) {
                goto bail_out;
             }
@@ -100,17 +108,18 @@ bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORE *store)
       set_storageid_in_mr(store, mr);
       if (db_create_media_record(jcr, jcr->db, mr) &&
          db_update_pool_record(jcr, jcr->db, &pr)) {
-         db_unlock(jcr->db);
          Jmsg(jcr, M_INFO, 0, _("Created new Volume \"%s\" in catalog.\n"), mr->VolumeName);
          Dmsg1(90, "Created new Volume=%s\n", mr->VolumeName);
-         return true;
+         retval = true;
+         goto bail_out;
       } else {
          Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
       }
    }
+
 bail_out:
    db_unlock(jcr->db);
-   return false;
+   return retval;
 }
 
 static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)

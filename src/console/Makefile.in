@@ -3,9 +3,9 @@
 #
 @MCOMMON@
 
-srcdir =	.
-VPATH = 	.
-.PATH:		.
+srcdir = @srcdir@
+VPATH = @srcdir@
+.PATH: @srcdir@
 
 # one up
 basedir = ..
@@ -21,16 +21,13 @@ dummy:
 
 #
 CONSSRCS = console.c console_conf.c authenticate.c @CONS_SRC@ 
-CONSOBJS = console.o console_conf.o authenticate.o @CONS_OBJ@
-
-# these are the objects that are changed by the .configure process
-EXTRAOBJS = @OBJLIST@
+CONSOBJS = $(CONSSRCS:.c=.o)
 
 GETTEXT_LIBS = @LIBINTL@
 
-CONS_INC=@CONS_INC@
-CONS_LIBS=@CONS_LIBS@
-CONS_LDFLAGS=@CONS_LDFLAGS@
+CONS_INC = @CONS_INC@
+CONS_LIBS = @CONS_LIBS@
+CONS_LDFLAGS = @CONS_LDFLAGS@
 
 .SUFFIXES:	.c .o
 .PHONY:
@@ -39,7 +36,7 @@ CONS_LDFLAGS=@CONS_LDFLAGS@
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(CONS_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(CONS_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
 all: Makefile bconsole @STATIC_CONS@
 	@echo "==== Make of console is good ===="

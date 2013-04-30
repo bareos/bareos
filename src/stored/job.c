@@ -42,18 +42,24 @@ extern uint32_t VolSessionTime;
 
 /* Imported functions */
 extern uint32_t newVolSessionId();
-extern bool do_mac(JCR *jcr);
 
 /* Requests from the Director daemon */
-/* Added in 3.1.4 14Sep09 KES */
-static char jobcmd[] = "JobId=%d job=%127s job_name=%127s client_name=%127s "
-      "type=%d level=%d FileSet=%127s NoAttr=%d SpoolAttr=%d FileSetMD5=%127s "
-      "SpoolData=%d WritePartAfterJob=%d PreferMountedVols=%d SpoolSize=%s "
-      "rerunning=%d VolSessionId=%d VolSessionTime=%d\n";
+static char jobcmd[] =
+   "JobId=%d job=%127s job_name=%127s client_name=%127s "
+   "type=%d level=%d FileSet=%127s NoAttr=%d SpoolAttr=%d FileSetMD5=%127s "
+   "SpoolData=%d PreferMountedVols=%d SpoolSize=%127s "
+   "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%llu "
+   "Protocol=%d BackupFormat=%127s DumpLevel=%d\n";
 
 /* Responses sent to Director daemon */
-static char OKjob[]     = "3000 OK Job SDid=%u SDtime=%u Authorization=%s\n";
-static char BAD_job[]   = "3915 Bad Job command. stat=%d CMD: %s\n";
+static char OK_job[] =
+   "3000 OK Job SDid=%u SDtime=%u Authorization=%s\n";
+static char OK_nextrun[] =
+   "3000 OK Job Authorization=%s\n";
+static char BAD_job[] =
+   "3915 Bad Job command. stat=%d CMD: %s\n";
+static char Job_end[] =
+   "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /*
  * Director requests us to start a job
@@ -68,14 +74,15 @@ static char BAD_job[]   = "3915 Bad Job command. stat=%d CMD: %s\n";
 bool job_cmd(JCR *jcr)
 {
    int32_t JobId;
-   char auth_key[100];
-   char spool_size[30];
-   char seed[100];
+   char auth_key[MAX_NAME_LENGTH];
+   char seed[MAX_NAME_LENGTH];
+   char spool_size[MAX_NAME_LENGTH];
    BSOCK *dir = jcr->dir_bsock;
-   POOL_MEM job_name, client_name, job, fileset_name, fileset_md5;
+   POOL_MEM job_name, client_name, job, fileset_name, fileset_md5, backup_format;
    int32_t JobType, level, spool_attributes, no_attributes, spool_data;
-   int32_t write_part_after_job, PreferMountedVols, rerunning;
-   int stat;
+   int32_t PreferMountedVols, rerunning, protocol, dumplevel;
+   int status;
+   uint64_t quota = 0;
    JCR *ojcr;
 
    /*
@@ -83,22 +90,25 @@ bool job_cmd(JCR *jcr)
     */
    Dmsg1(100, "<dird: %s", dir->msg);
    bstrncpy(spool_size, "0", sizeof(spool_size));
-   stat = sscanf(dir->msg, jobcmd, &JobId, job.c_str(), job_name.c_str(),
-              client_name.c_str(),
-              &JobType, &level, fileset_name.c_str(), &no_attributes,
-              &spool_attributes, fileset_md5.c_str(), &spool_data,
-              &write_part_after_job, &PreferMountedVols, spool_size,
-              &rerunning, &jcr->VolSessionId, &jcr->VolSessionTime);
-   if (stat != 17) {
+   status = sscanf(dir->msg, jobcmd, &JobId, job.c_str(), job_name.c_str(),
+                   client_name.c_str(), &JobType, &level, fileset_name.c_str(),
+                   &no_attributes, &spool_attributes, fileset_md5.c_str(),
+                   &spool_data, &PreferMountedVols, spool_size, &rerunning,
+                   &jcr->VolSessionId, &jcr->VolSessionTime, &quota, &protocol,
+                   backup_format.c_str(), &dumplevel);
+   if (status != 20) {
       pm_strcpy(jcr->errmsg, dir->msg);
-      dir->fsend(BAD_job, stat, jcr->errmsg);
+      dir->fsend(BAD_job, status, jcr->errmsg);
       Dmsg1(100, ">dird: %s", dir->msg);
       jcr->setJobStatus(JS_ErrorTerminated);
       return false;
    }
+
    jcr->rerunning = (rerunning) ? true : false;
-   Dmsg3(100, "rerunning=%d VolSesId=%d VolSesTime=%d\n", jcr->rerunning,
-         jcr->VolSessionId, jcr->VolSessionTime);
+   jcr->setJobProtocol(protocol);
+
+   Dmsg4(100, "rerunning=%d VolSesId=%d VolSesTime=%d Protocol=%d\n",
+         jcr->rerunning, jcr->VolSessionId, jcr->VolSessionTime, jcr->getJobProtocol());
    /*
     * Since this job could be rescheduled, we
     *  check to see if we have it already. If so
@@ -138,46 +148,38 @@ bool job_cmd(JCR *jcr)
    jcr->spool_attributes = spool_attributes;
    jcr->spool_data = spool_data;
    jcr->spool_size = str_to_int64(spool_size);
-   jcr->write_part_after_job = write_part_after_job;
    jcr->fileset_md5 = get_pool_memory(PM_NAME);
    pm_strcpy(jcr->fileset_md5, fileset_md5);
    jcr->PreferMountedVols = PreferMountedVols;
-
-
+   jcr->RemainingQuota = quota;
+   unbash_spaces(backup_format);
+   jcr->backup_format = get_pool_memory(PM_NAME);
+   pm_strcpy(jcr->backup_format, backup_format);
+   jcr->DumpLevel = dumplevel;
    jcr->authenticated = false;
+
+   Dmsg1(50, "Quota set as %llu\n", quota);
 
    /*
     * Pass back an authorization key for the File daemon
     */
    bsnprintf(seed, sizeof(seed), "%p%d", jcr, JobId);
    make_session_key(auth_key, seed, 1);
-   dir->fsend(OKjob, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
+   dir->fsend(OK_job, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
    Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
    jcr->sd_auth_key = bstrdup(auth_key);
    memset(auth_key, 0, sizeof(auth_key));
    new_plugins(jcr);            /* instantiate the plugins */
-   generate_daemon_event(jcr, "JobStart");
    generate_plugin_event(jcr, bsdEventJobStart, (void *)"JobStart");
    return true;
 }
 
-bool run_cmd(JCR *jcr)
+bool do_job_run(JCR *jcr)
 {
    struct timeval tv;
    struct timezone tz;
    struct timespec timeout;
    int errstat = 0;
-
-   Dsm_check(200);
-   Dmsg1(200, "Run_cmd: %s\n", jcr->dir_bsock->msg);
-
-   /* If we do not need the FD, we are doing a migrate, copy, or virtual
-    *   backup.
-    */
-   if (jcr->no_client_used()) {
-      do_mac(jcr);
-      return false;
-   }
 
    jcr->sendJobStatus(JS_WaitFD);          /* wait for FD to connect */
 
@@ -191,11 +193,11 @@ bool run_cmd(JCR *jcr)
 
    /*
     * Wait for the File daemon to contact us to start the Job,
-    *  when he does, we will be released, unless the 30 minutes
-    *  expires.
+    * when he does, we will be released, unless the 30 minutes
+    * expires.
     */
    P(mutex);
-   while ( !jcr->authenticated && !job_canceled(jcr) ) {
+   while (!jcr->authenticated && !job_canceled(jcr)) {
       errstat = pthread_cond_timedwait(&jcr->job_start_wait, &mutex, &timeout);
       if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
          break;
@@ -203,75 +205,183 @@ bool run_cmd(JCR *jcr)
       Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
    }
    Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
-      job_canceled(jcr), errstat);
+         job_canceled(jcr), errstat);
    V(mutex);
    Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
 
    memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
+   switch (jcr->getJobProtocol()) {
+   case PT_NDMP:
+      if (jcr->authenticated && !job_canceled(jcr)) {
+         Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
 
-   if (jcr->authenticated && !job_canceled(jcr)) {
-      Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
-      run_job(jcr);                   /* Run the job */
+         /*
+          * Wait for the Job to finish. As we want exclusive access to
+          * things like the connection to the director we suspend this
+          * thread and let the actual NDMP connection wake us after it
+          * has performed the backup. E.g. instead of doing a busy wait
+          * we just hang on a conditional variable.
+          */
+         Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
+         P(mutex);
+         pthread_cond_wait(&jcr->job_end_wait, &mutex);
+         V(mutex);
+      }
+      Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
+
+      /*
+       * For a NDMP backup we expect the protocol to send us either a nextrun cmd
+       * or a finish cmd to let us know they are finished.
+       */
+      return true;
+   default:
+      /*
+       * Handle the file daemon session.
+       */
+      if (jcr->authenticated && !job_canceled(jcr)) {
+         Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
+         run_job(jcr);                   /* Run the job */
+      }
+      Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
+
+      /*
+       * After a run cmd of a native backup we are done e.g.
+       * return false.
+       */
+      return false;
    }
-   Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
-   return false;
 }
 
-/*
- * After receiving a connection (in dircmd.c) if it is
- *   from the File daemon, this routine is called.
- */
-void handle_filed_connection(BSOCK *fd, char *job_name)
+bool nextrun_cmd(JCR *jcr)
 {
-   JCR *jcr;
+   char auth_key[MAX_NAME_LENGTH];
+   char seed[MAX_NAME_LENGTH];
+   BSOCK *dir = jcr->dir_bsock;
+   struct timeval tv;
+   struct timezone tz;
+   struct timespec timeout;
+   int errstat = 0;
 
-/*
- * With the following bmicrosleep on, running the 
- * SD under the debugger fails.   
- */ 
-// bmicrosleep(0, 50000);             /* wait 50 millisecs */
-   if (!(jcr=get_jcr_by_full_name(job_name))) {
-      Jmsg1(NULL, M_FATAL, 0, _("FD connect failed: Job name not found: %s\n"), job_name);
-      Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
-      fd->close();
-      return;
+   switch (jcr->getJobProtocol()) {
+   case PT_NDMP:
+      /*
+       * We expect a next NDMP backup stream so clear the authenticated flag
+       * and start waiting for the Next backup to Start.
+       */
+      jcr->authenticated = false;
+
+      /*
+       * Pass back a new authorization key for the File daemon
+       */
+      bsnprintf(seed, sizeof(seed), "%p%d", jcr, jcr->JobId);
+      make_session_key(auth_key, seed, 1);
+      dir->fsend(OK_nextrun, auth_key);
+      Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
+      if (jcr->sd_auth_key) {
+         free(jcr->sd_auth_key);
+      }
+      jcr->sd_auth_key = bstrdup(auth_key);
+      memset(auth_key, 0, sizeof(auth_key));
+
+      jcr->sendJobStatus(JS_WaitFD);          /* wait for FD to connect */
+
+      gettimeofday(&tv, &tz);
+      timeout.tv_nsec = tv.tv_usec * 1000;
+      timeout.tv_sec = tv.tv_sec + me->client_wait;
+
+      Dmsg3(50, "%s waiting %d sec for FD to contact SD key=%s\n",
+            jcr->Job, (int)(timeout.tv_sec-time(NULL)), jcr->sd_auth_key);
+      Dmsg2(800, "Wait FD for jid=%d %p\n", jcr->JobId, jcr);
+
+      P(mutex);
+      while (!jcr->authenticated && !job_canceled(jcr)) {
+         errstat = pthread_cond_timedwait(&jcr->job_start_wait, &mutex, &timeout);
+         if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
+            break;
+         }
+         Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
+      }
+      Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
+            job_canceled(jcr), errstat);
+      V(mutex);
+      Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
+
+      if (jcr->authenticated && !job_canceled(jcr)) {
+         Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
+
+         /*
+          * Wait for the Job to finish. As we want exclusive access to
+          * things like the connection to the director we suspend this
+          * thread and let the actual NDMP connection wake us after it
+          * has performed the backup. E.g. instead of doing a busy wait
+          * we just hang on a conditional variable.
+          */
+         Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
+         P(mutex);
+         pthread_cond_wait(&jcr->job_end_wait, &mutex);
+         V(mutex);
+      }
+      Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
+
+      /*
+       * For a NDMP backup we expect the protocol to send us either a nextrun cmd
+       * or a finish cmd to let us know they are finished.
+       */
+      return true;
+   default:
+      Dmsg1(200, "Nextrun_cmd: %s\n", jcr->dir_bsock->msg);
+      Jmsg2(jcr, M_FATAL, 0, _("Hey!!!! JobId %u Job %s tries to use nextrun cmd while not part of protocol.\n"),
+            (uint32_t)jcr->JobId, jcr->Job);
+      return false;
    }
+}
 
-
-   Dmsg1(50, "Found Job %s\n", job_name);
-
-   if (jcr->authenticated) {
-      Jmsg2(jcr, M_FATAL, 0, _("Hey!!!! JobId %u Job %s already authenticated.\n"),
-         (uint32_t)jcr->JobId, jcr->Job);
-      Dmsg2(50, "Hey!!!! JobId %u Job %s already authenticated.\n",
-         (uint32_t)jcr->JobId, jcr->Job);
-      fd->close();
-      free_jcr(jcr);
-      return;
-   }
-
-   jcr->file_bsock = fd;
-   jcr->file_bsock->set_jcr(jcr);
+bool finish_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   char ec1[30];
 
    /*
-    * Authenticate the File daemon
+    * See if the Job has a certain protocol. Some protocols allow the
+    * finish cmd some do not (Native backup for example does NOT)
     */
-   if (jcr->authenticated || !authenticate_filed(jcr)) {
-      Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
-      Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
-   } else {
-      jcr->authenticated = true;
-      Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId, jcr->Job);
-   }
+   switch (jcr->getJobProtocol()) {
+   case PT_NDMP:
+      Dmsg1(200, "Finish_cmd: %s\n", jcr->dir_bsock->msg);
 
-   if (!jcr->authenticated) {
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->end_time = time(NULL);
+      dequeue_messages(jcr);             /* send any queued messages */
+      jcr->setJobStatus(JS_Terminated);
+
+      switch (jcr->getJobType()) {
+      case JT_BACKUP:
+         end_of_ndmp_backup(jcr);
+         break;
+      case JT_RESTORE:
+         end_of_ndmp_restore(jcr);
+         break;
+      default:
+         break;
+      }
+
+      generate_plugin_event(jcr, bsdEventJobEnd);
+
+      dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
+                 edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
+      dir->signal(BNET_EOD);             /* send EOD to Director daemon */
+
+      free_plugins(jcr);                 /* release instantiated plugins */
+
+      Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
+
+      return false;                      /* Continue DIR session ? */
+   default:
+      Dmsg1(200, "Finish_cmd: %s\n", jcr->dir_bsock->msg);
+      Jmsg2(jcr, M_FATAL, 0, _("Hey!!!! JobId %u Job %s tries to use finish cmd while not part of protocol.\n"),
+            (uint32_t)jcr->JobId, jcr->Job);
+      return false;                      /* Continue DIR session ? */
    }
-   pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
-   free_jcr(jcr);
-   return;
 }
-
 
 #ifdef needed
 /*
@@ -297,7 +407,7 @@ bool query_cmd(JCR *jcr)
       unbash_spaces(dev_name);
       foreach_res(device, R_DEVICE) {
          /* Find resource, and make sure we were able to open it */
-         if (strcmp(dev_name.c_str(), device->hdr.name) == 0) {
+         if (bstrcmp(dev_name.c_str(), device->hdr.name)) {
             if (!device->dev) {
                device->dev = init_dev(jcr, device);
             }
@@ -315,7 +425,7 @@ bool query_cmd(JCR *jcr)
       }
       foreach_res(changer, R_AUTOCHANGER) {
          /* Find resource, and make sure we were able to open it */
-         if (strcmp(dev_name.c_str(), changer->hdr.name) == 0) {
+         if (bstrcmp(dev_name.c_str(), changer->hdr.name)) {
             if (!changer->device || changer->device->size() == 0) {
                continue;              /* no devices */
             }
@@ -342,9 +452,7 @@ bool query_cmd(JCR *jcr)
 
    return true;
 }
-
 #endif
-
 
 /*
  * Destroy the Job Control Record and associated
@@ -352,7 +460,9 @@ bool query_cmd(JCR *jcr)
  */
 void stored_free_jcr(JCR *jcr)
 {
+   Dmsg0(200, "Start stored free_jcr\n");
    Dmsg2(800, "End Job JobId=%u %p\n", jcr->JobId, jcr);
+
    if (jcr->dir_bsock) {
       Dmsg2(800, "Send terminate jid=%d %p\n", jcr->JobId, jcr);
       jcr->dir_bsock->signal(BNET_EOD);
@@ -375,10 +485,18 @@ void stored_free_jcr(JCR *jcr)
    if (jcr->fileset_md5) {
       free_memory(jcr->fileset_md5);
    }
+   if (jcr->backup_format) {
+      free_memory(jcr->backup_format);
+   }
    if (jcr->bsr) {
       free_bsr(jcr->bsr);
       jcr->bsr = NULL;
    }
+   if (jcr->rctx) {
+      free_read_context(jcr->rctx);
+      jcr->rctx = NULL;
+   }
+
    /* Free any restore volume list created */
    free_restore_volume_list(jcr);
    if (jcr->RestoreBootstrap) {
@@ -390,6 +508,7 @@ void stored_free_jcr(JCR *jcr)
       Emsg0(M_FATAL, 0, _("In free_jcr(), but still attached to device!!!!\n"));
    }
    pthread_cond_destroy(&jcr->job_start_wait);
+   pthread_cond_destroy(&jcr->job_end_wait);
    if (jcr->dcrs) {
       delete jcr->dcrs;
    }
@@ -426,10 +545,14 @@ void stored_free_jcr(JCR *jcr)
       delete jcr->write_store;
       jcr->write_store = NULL;
    }
+
+   free_plugins(jcr);                 /* release instantiated plugins */
+
    Dsm_check(200);
 
    if (jcr->JobId != 0)
       write_state_file(me->working_directory, "bacula-sd", get_first_port_host_order(me->sdaddrs));
 
+   Dmsg0(200, "End stored free_jcr\n");
    return;
 }

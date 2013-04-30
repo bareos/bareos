@@ -6,13 +6,13 @@
 #
 #   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #    
-CONFIG += qt debug @QWT@
+CONFIG += qt release @QWT@
 
 bins.path = /$(DESTDIR)@sbindir@
 bins.files = bat
 confs.path = /$(DESTDIR)@sysconfdir@
 confs.commands = ./install_conf_file
-help.path = /$(DESTDIR)@docdir@
+help.path = /$(DESTDIR)@htmldir@
 help.files = help/*.html images/status.png images/mail-message-new.png
 
 TEMPLATE     = app

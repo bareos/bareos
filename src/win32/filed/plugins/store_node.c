@@ -133,9 +133,9 @@ store_node_t::createFile(exchange_fd_context_t *context, struct restore_pkt *rp)
 {
    _DebugMessage(100, "createFile_STORE state = %d\n", state);
 
-   if (strcmp(context->path_bits[level - 1], parent->name) != 0)
+   if (!bstrcmp(context->path_bits[level - 1], parent->name))
    {
-      _DebugMessage(100, "Different storage group - switching back to parent\n", state);
+      _DebugMessage(0, "Different storage group - switching back to parent\n", state);
       context->current_node = parent;
       return bRC_OK;
    }
@@ -144,7 +144,7 @@ store_node_t::createFile(exchange_fd_context_t *context, struct restore_pkt *rp)
       switch (state)
       {
       case 0:
-         if (strcmp("DatabaseBackupInfo", context->path_bits[level + 1]) != 0)
+         if (!bstrcmp("DatabaseBackupInfo", context->path_bits[level + 1]))
          {
             _JobMessage(M_FATAL, "DatabaseBackupInfo file must exist and must be first in directory\n");
             state = 999;
@@ -154,7 +154,7 @@ store_node_t::createFile(exchange_fd_context_t *context, struct restore_pkt *rp)
          context->current_node = dbi_node;
          return bRC_OK;
       case 1:
-         if (strcmp(context->path_bits[level - 1], parent->name) != 0)
+         if (!bstrcmp(context->path_bits[level - 1], parent->name))
          {
             _JobMessage(M_ERROR, "Unexpected Storage Group Change\n");
             state = 999;
@@ -188,7 +188,7 @@ store_node_t::createFile(exchange_fd_context_t *context, struct restore_pkt *rp)
          rp->create_status = CF_CREATED;
          return bRC_OK;
       case 999:
-         if (strcmp(context->path_bits[level], name) != 0)
+         if (!bstrcmp(context->path_bits[level], name))
          {
             _DebugMessage(100, "End of Store when in error state - switching back to parent\n", state);
             context->current_node = parent;

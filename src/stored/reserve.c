@@ -389,10 +389,10 @@ static bool use_device_cmd(JCR *jcr)
  */
 static bool is_vol_in_autochanger(RCTX &rctx, VOLRES *vol)
 {
-   AUTOCHANGER *changer = vol->dev->device->changer_res;
+   AUTOCHANGERRES *changer = vol->dev->device->changer_res;
 
    /* Find resource, and make sure we were able to open it */
-   if (strcmp(rctx.device_name, changer->hdr.name) == 0) {
+   if (bstrcmp(rctx.device_name, changer->hdr.name)) {
       Dmsg1(dbglvl, "Found changer device %s\n", vol->dev->device->hdr.name);
       return true;
    }  
@@ -450,7 +450,7 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
 
          Dmsg1(dbglvl, "vol=%s OK for this job\n", vol->vol_name);
          foreach_alist(store, dirstore) {
-            int stat;
+            int status;
             rctx.store = store;
             foreach_alist(device_name, store->device) {
                /* Found a device, try to use it */
@@ -462,7 +462,7 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
                   if (!is_vol_in_autochanger(rctx, vol) || !vol->dev->autoselect) {
                      continue;
                   }
-               } else if (strcmp(device_name, vol->dev->device->hdr.name) != 0) {
+               } else if (!bstrcmp(device_name, vol->dev->device->hdr.name)) {
                   Dmsg2(dbglvl, "device=%s not suitable want %s\n",
                         vol->dev->device->hdr.name, device_name);
                   continue;
@@ -472,12 +472,12 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
                rctx.have_volume = true;
                /* Try reserving this device and volume */
                Dmsg2(dbglvl, "try vol=%s on device=%s\n", rctx.VolumeName, device_name);
-               stat = reserve_device(rctx);
-               if (stat == 1) {             /* found available device */
+               status = reserve_device(rctx);
+               if (status == 1) {             /* found available device */
                   Dmsg1(dbglvl, "Suitable device found=%s\n", device_name);
                   ok = true;
                   break;
-               } else if (stat == 0) {      /* device busy */
+               } else if (status == 0) {      /* device busy */
                   Dmsg1(dbglvl, "Suitable device=%s, busy: not use\n", device_name);
                } else {
                   /* otherwise error */
@@ -512,14 +512,14 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
    foreach_alist(store, dirstore) {
       rctx.store = store;
       foreach_alist(device_name, store->device) {
-         int stat;
+         int status;
          rctx.device_name = device_name;
-         stat = search_res_for_device(rctx); 
-         if (stat == 1) {             /* found available device */
+         status = search_res_for_device(rctx);
+         if (status == 1) {             /* found available device */
             Dmsg1(dbglvl, "available device found=%s\n", device_name);
             ok = true;
             break;
-         } else if (stat == 0) {      /* device busy */
+         } else if (status == 0) {      /* device busy */
             Dmsg1(dbglvl, "No usable device=%s, busy: not use\n", device_name);
          } else {
             /* otherwise error */
@@ -544,15 +544,15 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
  */
 int search_res_for_device(RCTX &rctx) 
 {
-   AUTOCHANGER *changer;
-   int stat;
+   AUTOCHANGERRES *changer;
+   int status;
 
    Dmsg1(dbglvl, "search res for %s\n", rctx.device_name);
    /* Look through Autochangers first */
    foreach_res(changer, R_AUTOCHANGER) {
       Dmsg1(dbglvl, "Try match changer res=%s\n", changer->hdr.name);
       /* Find resource, and make sure we were able to open it */
-      if (strcmp(rctx.device_name, changer->hdr.name) == 0) {
+      if (bstrcmp(rctx.device_name, changer->hdr.name)) {
          /* Try each device in this AutoChanger */
          foreach_alist(rctx.device, changer->device) {
             Dmsg1(dbglvl, "Try changer device %s\n", rctx.device->hdr.name);
@@ -561,8 +561,8 @@ int search_res_for_device(RCTX &rctx)
                rctx.device->hdr.name);
                continue;              /* device is not available */
             }
-            stat = reserve_device(rctx);
-            if (stat != 1) {             /* try another device */
+            status = reserve_device(rctx);
+            if (status != 1) {             /* try another device */
                continue;
             }
             /* Debug code */
@@ -573,7 +573,7 @@ int search_res_for_device(RCTX &rctx)
                Dmsg2(dbglvl, "Device %s reserved=%d for read.\n", 
                   rctx.device->hdr.name, rctx.jcr->read_dcr->dev->num_reserved());
             }
-            return stat;
+            return status;
          }
       }
    }
@@ -583,9 +583,9 @@ int search_res_for_device(RCTX &rctx)
       foreach_res(rctx.device, R_DEVICE) {
          Dmsg1(dbglvl, "Try match res=%s\n", rctx.device->hdr.name);
          /* Find resource, and make sure we were able to open it */
-         if (strcmp(rctx.device_name, rctx.device->hdr.name) == 0) {
-            stat = reserve_device(rctx);
-            if (stat != 1) {             /* try another device */
+         if (bstrcmp(rctx.device_name, rctx.device->hdr.name)) {
+            status = reserve_device(rctx);
+            if (status != 1) {             /* try another device */
                continue;
             }
             /* Debug code */
@@ -596,7 +596,7 @@ int search_res_for_device(RCTX &rctx)
                Dmsg2(dbglvl, "Device %s reserved=%d for read.\n", 
                   rctx.device->hdr.name, rctx.jcr->read_dcr->dev->num_reserved());
             }
-            return stat;
+            return status;
          }
       }
    }
@@ -619,7 +619,7 @@ static int reserve_device(RCTX &rctx)
    /* Make sure MediaType is OK */
    Dmsg2(dbglvl, "chk MediaType device=%s request=%s\n",
          rctx.device->media_type, rctx.store->media_type);
-   if (strcmp(rctx.device->media_type, rctx.store->media_type) != 0) {
+   if (!bstrcmp(rctx.device->media_type, rctx.store->media_type)) {
       return -1;
    }
 
@@ -771,7 +771,7 @@ static bool reserve_device_for_read(DCR *dcr)
       return false;
    }
 
-   dev->Lock();  
+   dev->Lock();
 
    if (dev->is_device_unmounted()) {             
       Dmsg1(dbglvl, "Device %s is BLOCKED due to user unmount.\n", dev->print_name());
@@ -880,8 +880,8 @@ static int is_pool_ok(DCR *dcr)
    JCR *jcr = dcr->jcr;
 
    /* Now check if we want the same Pool and pool type */
-   if (strcmp(dev->pool_name, dcr->pool_name) == 0 &&
-       strcmp(dev->pool_type, dcr->pool_type) == 0) {
+   if (bstrcmp(dev->pool_name, dcr->pool_name) &&
+       bstrcmp(dev->pool_type, dcr->pool_type)) {
       /* OK, compatible device */
       Dmsg1(dbglvl, "OK dev: %s num_writers=0, reserved, pool matches\n", dev->print_name());
       return 1;
@@ -917,7 +917,7 @@ static bool is_max_jobs_ok(DCR *dcr)
       queue_reserve_message(jcr);
       return false;
    }
-   if (strcmp(dcr->VolCatInfo.VolCatStatus, "Recycle") == 0) {
+   if (bstrcmp(dcr->VolCatInfo.VolCatStatus, "Recycle")) {
       return true;
    }
    if (dcr->VolCatInfo.VolCatMaxJobs > 0 && dcr->VolCatInfo.VolCatMaxJobs <=
@@ -1003,8 +1003,8 @@ static int can_reserve_drive(DCR *dcr, RCTX &rctx)
          Dmsg4(dbglvl, "have_vol=%d have=%s resvol=%s want=%s\n",
                   rctx.have_volume, dev->VolHdr.VolumeName, 
                   dev->vol?dev->vol->vol_name:"*none*", rctx.VolumeName);
-         ok = strcmp(dev->VolHdr.VolumeName, rctx.VolumeName) == 0 ||
-                 (dev->vol && strcmp(dev->vol->vol_name, rctx.VolumeName) == 0);
+         ok = bstrcmp(dev->VolHdr.VolumeName, rctx.VolumeName) ||
+                 (dev->vol && bstrcmp(dev->vol->vol_name, rctx.VolumeName));
          if (!ok) {
             Mmsg(jcr->errmsg, _("3607 JobId=%u wants Vol=\"%s\" drive has Vol=\"%s\" on drive %s.\n"), 
                jcr->JobId, rctx.VolumeName, dev->VolHdr.VolumeName, 
@@ -1103,7 +1103,7 @@ static void queue_reserve_message(JCR *jcr)
          goto bail_out;
       }
       /* Comparison based on 4 digit message number */
-      if (strncmp(msg, jcr->errmsg, 4) == 0) {
+      if (bstrncmp(msg, jcr->errmsg, 4)) {
          goto bail_out;
       }
    }      

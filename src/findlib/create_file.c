@@ -78,6 +78,9 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    int pnl;
    bool exists = false;
    struct stat mstatp;
+#ifndef HAVE_WIN32
+   bool isOnRoot;
+#endif
 
    bfd->reparse_point = false;
    if (is_win32_stream(attr->data_stream)) {
@@ -234,6 +237,9 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
       case FT_RAW:                    /* Bacula raw device e.g. /dev/sda1 */
       case FT_FIFO:                   /* Bacula fifo to save data */
       case FT_SPEC:
+         flags = O_WRONLY | O_BINARY;
+
+         isOnRoot = bstrcmp(attr->fname, attr->ofname) ? 1 : 0;
          if (S_ISFIFO(attr->statp.st_mode)) {
             Dmsg1(400, "Restore fifo: %s\n", attr->ofname);
             if (mkfifo(attr->ofname, attr->statp.st_mode) != 0 && errno != EEXIST) {
@@ -252,6 +258,16 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
          } else if (S_ISPORT(attr->statp.st_mode)) {
              Dmsg1(200, "Skipping restore of event port file: %s\n", attr->ofname);
 #endif
+         } else if ((S_ISBLK(attr->statp.st_mode) || S_ISCHR(attr->statp.st_mode)) && !exists && isOnRoot) {
+             /*
+              * Fatal: Restoring a device on root-file system, but device node does not exist.
+              * Should not create a dump file.
+              */
+             Qmsg1(jcr, M_ERROR, 0, _("Device restore on root failed, device %s missing.\n"), attr->fname);
+             return CF_ERROR;
+         } else if (S_ISBLK(attr->statp.st_mode) || S_ISCHR(attr->statp.st_mode)) {
+             Dmsg1(400, "Restoring a device as a file: %s\n", attr->ofname);
+             flags = O_WRONLY | O_CREAT | O_TRUNC | O_BINARY;
          } else {
             Dmsg1(400, "Restore node: %s\n", attr->ofname);
             if (mknod(attr->ofname, attr->statp.st_mode, attr->statp.st_rdev) != 0 && errno != EEXIST) {
@@ -270,7 +286,6 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
          if (attr->type == FT_RAW || attr->type == FT_FIFO) {
             btimer_t *tid;
             Dmsg1(400, "FT_RAW|FT_FIFO %s\n", attr->ofname);
-            flags =  O_WRONLY | O_BINARY;
             /* Timeout open() in 60 seconds */
             if (attr->type == FT_FIFO) {
                Dmsg0(400, "Set FIFO timer\n");
@@ -473,7 +488,7 @@ static int path_already_seen(JCR *jcr, char *path, int pnl)
    if (!jcr->cached_path) {
       jcr->cached_path = get_pool_memory(PM_FNAME);
    }
-   if (jcr->cached_pnl == pnl && strcmp(path, jcr->cached_path) == 0) {
+   if (jcr->cached_pnl == pnl && bstrcmp(path, jcr->cached_path)) {
       return 1;
    }
    pm_strcpy(jcr->cached_path, path);

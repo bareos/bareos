@@ -1,15 +1,4 @@
 /*
- * Contributed in 2012 by Inteos sp. z o.o.
- * 
- * Utility tool display various information about Bacula plugin,
- * including but not limited to:
- * - Name and Author of the plugin
- * - Plugin License
- * - Description
- * - API version
- * - Enabled functions, etc.
- */
-/*
    Bacula® - The Network Backup Solution
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
@@ -37,6 +26,18 @@
    Switzerland, email:ftf@fsfeurope.org.
 */
 
+/*
+ * Contributed in 2012 by Inteos sp. z o.o.
+ *
+ * Utility tool display various information about Bacula plugin,
+ * including but not limited to:
+ * - Name and Author of the plugin
+ * - Plugin License
+ * - Description
+ * - API version
+ * - Enabled functions, etc.
+ */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <limits.h>
@@ -47,10 +48,10 @@
 #include <dlfcn.h>
 #endif
 #include "bacula.h"
-#include "../filed/fd_plugins.h"
-#include "../dird/dir_plugins.h"
+#include "fd_plugins.h"
+#include "dir_plugins.h"
 // I can't include sd_plugins.h here ...
-#include "../stored/stored.h"
+#include "stored.h"
 #include "assert_macro.h"
 
 extern "C" {
@@ -63,19 +64,7 @@ enum plugintype {
    DIRPLUGIN,
    FDPLUGIN,
    SDPLUGIN,
-   ERRORPLUGIN,
-};
-
-/*
- * pDirInfo
- * pInfo
- * psdInfo
- */
-typedef union _pluginfo pluginfo;
-union _pluginfo {
-   pDirInfo pdirinfo;
-   pInfo pfdinfo;
-   psdInfo psdinfo;
+   ERRORPLUGIN
 };
 
 /*
@@ -97,7 +86,7 @@ union _plugfuncs {
  */
 /*
  * TODO: change to union
- * 
+ *
 typedef union _baculafuncs baculafuncs;
 union _baculafuncs {
    bDirFuncs bdirfuncs;
@@ -120,7 +109,7 @@ struct _baculafuncs {
    void (*baculaFree) (void *ctx, const char *file, int line, void *mem);
 };
 
-/* 
+/*
  * bDirInfo
  * bInfo
  * bsdInfo
@@ -149,7 +138,7 @@ struct _progdata {
    void *pluginhandle;
    int bapiversion;
    int bplugtype;
-   pluginfo *pinfo;
+   gen_pluginInfo *pinfo;
    plugfuncs *pfuncs;
 };
 
@@ -240,7 +229,7 @@ progdata *allocpdata(void)
 }
 
 /* releases all allocated program data resources */
-void freepdata(progdata * pdata)
+void freepdata(progdata *pdata)
 {
 
    if (pdata->pluginfile) {
@@ -251,13 +240,13 @@ void freepdata(progdata * pdata)
 
 /*
  * parse execution arguments and fills required pdata structure fields
- * 
+ *
  * input:
  *    pdata - pointer to program data structure
  *    argc, argv - execution envinroment variables
  * output:
  *    pdata - required structure fields
- * 
+ *
  * supported options:
  * -v    verbose flag
  * -i    list plugin header info only (default)
@@ -265,138 +254,121 @@ void freepdata(progdata * pdata)
  * -a    bacula api version (default 1)
  * -h    help screen
  */
-void parse_args(progdata * pdata, int argc, char *argv[])
+void parse_args(progdata *pdata, int argc, char *argv[])
 {
 
-   int i;
+   int ch;
    char *dirtmp;
    char *progdir;
-   int api;
-   int s;
 
-   if (argc < 2) {
-      /* TODO - add a real help screen */
-      printf("\nNot enough parameters!\n");
-      print_help(argc, argv);
-      exit(1);
-   }
+   while ((ch = getopt(argc, argv, "a:fiv")) != -1) {
+      switch (ch) {
+      case 'a':
+         pdata->bapiversion = atoi(optarg);
+         break;
 
-   if (argc > 5) {
-      /* TODO - add a real help screen */
-      printf("\nToo many parameters!\n");
-      print_help(argc, argv);
-      exit(1);
-   }
+      case 'f':
+         pdata->listfunc = 1;
+         break;
 
-   for (i = 1; i < argc; i++) {
-      if (strcmp(argv[i], "-h") == 0) {
-         /* help screen */
+      case 'i':
+         pdata->listinfo = 1;
+         break;
+
+      case 'v':
+         pdata->verbose = 1;
+         break;
+
+      case '?':
+      default:
          print_help(argc, argv);
          exit(0);
       }
-      if (strcmp(argv[i], "-v") == 0) {
-          /* verbose option */
-          pdata->verbose = 1;
-          continue;
-      }
-      if (strcmp(argv[i], "-f") == 0) {
-         /* functions list */
-         pdata->listfunc = 1;
-         continue;
-      }
-      if (strcmp(argv[i], "-i") == 0) {
-         /* header list */
-         pdata->listinfo = 1;
-         continue;
-      }
-      if (strcmp(argv[i], "-a") == 0) {
-         /* bacula api version */
-         if (i < argc - 1) {
-            s = sscanf(argv[i + 1], "%d", &api);
-            if (s == 1) {
-               pdata->bapiversion = api;
-               i++;
-               continue;
-            }
+   }
+   argc -= optind;
+   argv += optind;
+
+   if (argc < 1) {
+      print_help(argc, argv);
+      exit(0);
+   }
+
+   if (!pdata->pluginfile) {
+      if (argv[0][0] != '/') {
+         dirtmp = MALLOC(PATH_MAX);
+         ASSERT_MEMORY(dirtmp);
+         progdir = MALLOC(PATH_MAX);
+         ASSERT_MEMORY(progdir);
+         dirtmp = getcwd(dirtmp, PATH_MAX);
+
+         strcat(dirtmp, "/");
+         strcat(dirtmp, argv[0]);
+
+         if (realpath(dirtmp, progdir) == NULL) {
+            /*
+             * Error in resolving path
+             */
+            FREE(progdir);
+            progdir = bstrdup(argv[0]);
          }
-         printf("\nAPI version number required!\n");
-         print_help(argc, argv);
-         exit(1);
-      }
-      if (!pdata->pluginfile) {
-          if (argv[i][0] != '/') {
-             dirtmp = MALLOC(PATH_MAX);
-             ASSERT_MEMORY(dirtmp);
-             progdir = MALLOC(PATH_MAX);
-             ASSERT_MEMORY(progdir);
-             dirtmp = getcwd(dirtmp, PATH_MAX);
-      
-             strcat(dirtmp, "/");
-             strcat(dirtmp, argv[i]);
-      
-             if (realpath(dirtmp, progdir) == NULL) {
-                /* error in resolving path */
-                FREE(progdir);
-                progdir = bstrdup(argv[i]);
-             }
-             pdata->pluginfile = bstrdup(progdir);
-             FREE(dirtmp);
-             FREE(progdir);
-          } else {
-             pdata->pluginfile = bstrdup(argv[i]);
-          }
-    continue;
+         pdata->pluginfile = bstrdup(progdir);
+         FREE(dirtmp);
+         FREE(progdir);
+      } else {
+         pdata->pluginfile = bstrdup(argv[0]);
       }
    }
 }
 
 /*
  * checks a plugin type based on a plugin magic string
- * 
+ *
  * input:
  *    pdata - program data with plugin info structure
  * output:
  *    int - enum plugintype
  */
-int getplugintype(progdata * pdata)
+int getplugintype(progdata *pdata)
 {
 
    ASSERT_NVAL_RET_V(pdata, ERRORPLUGIN);
 
-   pluginfo *pinfo = pdata->pinfo;
+   gen_pluginInfo *pinfo = pdata->pinfo;
 
    ASSERT_NVAL_RET_V(pinfo, ERRORPLUGIN);
 
-   if (pinfo->pdirinfo.plugin_magic &&
-       strcmp(pinfo->pdirinfo.plugin_magic, DIR_PLUGIN_MAGIC) == 0) {
+   if (pinfo->plugin_magic &&
+       bstrcmp(pinfo->plugin_magic, DIR_PLUGIN_MAGIC)) {
       return DIRPLUGIN;
-   } else
-      if (pinfo->pfdinfo.plugin_magic &&
-     strcmp(pinfo->pfdinfo.plugin_magic, FD_PLUGIN_MAGIC) == 0) {
-      return FDPLUGIN;
-   } else
-      if (pinfo->psdinfo.plugin_magic &&
-     strcmp(pinfo->psdinfo.plugin_magic, SD_PLUGIN_MAGIC) == 0) {
-      return SDPLUGIN;
    } else {
-      return ERRORPLUGIN;
+      if (pinfo->plugin_magic &&
+          bstrcmp(pinfo->plugin_magic, FD_PLUGIN_MAGIC)) {
+      return FDPLUGIN;
+      } else {
+         if (pinfo->plugin_magic &&
+             bstrcmp(pinfo->plugin_magic, SD_PLUGIN_MAGIC)) {
+         return SDPLUGIN;
+         } else {
+            return ERRORPLUGIN;
+         }
+      }
    }
 }
 
 /*
  * prints any available information about a plugin
- * 
+ *
  * input:
  *    pdata - program data with plugin info structure
  * output:
  *    printed info
  */
-void dump_pluginfo(progdata * pdata)
+void dump_pluginfo(progdata *pdata)
 {
 
    ASSERT_NVAL_RET(pdata);
 
-   pluginfo *pinfo = pdata->pinfo;
+   gen_pluginInfo *pinfo = pdata->pinfo;
 
    ASSERT_NVAL_RET(pinfo);
 
@@ -408,38 +380,38 @@ void dump_pluginfo(progdata * pdata)
    case DIRPLUGIN:
       printf("\nPlugin type:\t\tBacula Director plugin\n");
       if (pdata->verbose) {
-         printf("Plugin magic:\t\t%s\n", NPRT(pinfo->pdirinfo.plugin_magic));
+         printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
       }
-      printf("Plugin version:\t\t%s\n", pinfo->pdirinfo.plugin_version);
-      printf("Plugin release date:\t%s\n", NPRT(pinfo->pdirinfo.plugin_date));
-      printf("Plugin author:\t\t%s\n", NPRT(pinfo->pdirinfo.plugin_author));
-      printf("Plugin licence:\t\t%s\n", NPRT(pinfo->pdirinfo.plugin_license));
-      printf("Plugin description:\t%s\n", NPRT(pinfo->pdirinfo.plugin_description));
-      printf("Plugin API version:\t%d\n", pinfo->pdirinfo.version);
+      printf("Plugin version:\t\t%s\n", pinfo->plugin_version);
+      printf("Plugin release date:\t%s\n", NPRT(pinfo->plugin_date));
+      printf("Plugin author:\t\t%s\n", NPRT(pinfo->plugin_author));
+      printf("Plugin licence:\t\t%s\n", NPRT(pinfo->plugin_license));
+      printf("Plugin description:\t%s\n", NPRT(pinfo->plugin_description));
+      printf("Plugin API version:\t%d\n", pinfo->version);
       break;
    case FDPLUGIN:
       printf("\nPlugin type:\t\tFile Daemon plugin\n");
       if (pdata->verbose) {
-         printf("Plugin magic:\t\t%s\n", NPRT(pinfo->pfdinfo.plugin_magic));
+         printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
       }
-      printf("Plugin version:\t\t%s\n", pinfo->pfdinfo.plugin_version);
-      printf("Plugin release date:\t%s\n", NPRT(pinfo->pfdinfo.plugin_date));
-      printf("Plugin author:\t\t%s\n", NPRT(pinfo->pfdinfo.plugin_author));
-      printf("Plugin licence:\t\t%s\n", NPRT(pinfo->pfdinfo.plugin_license));
-      printf("Plugin description:\t%s\n", NPRT(pinfo->pfdinfo.plugin_description));
-      printf("Plugin API version:\t%d\n", pinfo->pfdinfo.version);
+      printf("Plugin version:\t\t%s\n", pinfo->plugin_version);
+      printf("Plugin release date:\t%s\n", NPRT(pinfo->plugin_date));
+      printf("Plugin author:\t\t%s\n", NPRT(pinfo->plugin_author));
+      printf("Plugin licence:\t\t%s\n", NPRT(pinfo->plugin_license));
+      printf("Plugin description:\t%s\n", NPRT(pinfo->plugin_description));
+      printf("Plugin API version:\t%d\n", pinfo->version);
       break;
    case SDPLUGIN:
       printf("\nPlugin type:\t\tBacula Storage plugin\n");
       if (pdata->verbose) {
-         printf("Plugin magic:\t\t%s\n", NPRT(pinfo->psdinfo.plugin_magic));
+         printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
       }
-      printf("Plugin version:\t\t%s\n", pinfo->psdinfo.plugin_version);
-      printf("Plugin release date:\t%s\n", NPRT(pinfo->psdinfo.plugin_date));
-      printf("Plugin author:\t\t%s\n", NPRT(pinfo->psdinfo.plugin_author));
-      printf("Plugin licence:\t\t%s\n", NPRT(pinfo->psdinfo.plugin_license));
-      printf("Plugin description:\t%s\n", NPRT(pinfo->psdinfo.plugin_description));
-      printf("Plugin API version:\t%d\n", pinfo->psdinfo.version);
+      printf("Plugin version:\t\t%s\n", pinfo->plugin_version);
+      printf("Plugin release date:\t%s\n", NPRT(pinfo->plugin_date));
+      printf("Plugin author:\t\t%s\n", NPRT(pinfo->plugin_author));
+      printf("Plugin licence:\t\t%s\n", NPRT(pinfo->plugin_license));
+      printf("Plugin description:\t%s\n", NPRT(pinfo->plugin_description));
+      printf("Plugin API version:\t%d\n", pinfo->version);
       break;
    default:
       printf("\nUnknown plugin type or other Error\n\n");
@@ -448,13 +420,13 @@ void dump_pluginfo(progdata * pdata)
 
 /*
  * prints any available information about plugin' functions
- * 
+ *
  * input:
  *    pdata - program data with plugin info structure
  * output:
  *    printed info
  */
-void dump_plugfuncs(progdata * pdata)
+void dump_plugfuncs(progdata *pdata)
 {
 
    ASSERT_NVAL_RET(pdata);
@@ -555,7 +527,7 @@ void dump_plugfuncs(progdata * pdata)
 /*
  * input parameters:
  *    argv[0] [options] <plugin_filename.so>
- * 
+ *
  * exit codes:
  *    0 - success
  *    1 - cannot load a plugin

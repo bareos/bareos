@@ -1,7 +1,7 @@
 /*
    Bacula® - The Network Backup Solution
 
-   Copyright (C) 1981-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 1981-2010 Free Software Foundation Europe e.V.
              Yes, that is 1981 no error.
 
    The main author of Bacula is Kern Sibbald, with contributions from
@@ -72,7 +72,7 @@
 extern "C" int tgetent(void *, const char *);
 extern "C" int tgetnum(const char *);
 extern "C" char *tgetstr (const char*, char**);
-# Note: the following on older (Solaris 10) systems 
+# Note: the following on older (Solaris 10) systems
 #  may need to be moved to after the #endif
 extern "C" char *tgoto (const char *, int, int);
 #endif
@@ -362,7 +362,7 @@ static unsigned do_smap(unsigned c)
        found = 0;
        for (i=len-1; i<MAX_STAB; i++) {
           for (tstab=stab[i]; tstab; tstab=tstab->next) {
-             if (strncmp(str, tstab->str, len) == 0) {
+             if (bstrncmp(str, tstab->str, len)) {
                 if (len == tstab->len) {
                    return tstab->func;
                 }

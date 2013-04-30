@@ -32,6 +32,8 @@
  *
 */
 
+#include "htable.h"
+
 struct s_mem {
    struct s_mem *next;                /* next buffer */
    int rem;                           /* remaining bytes */
@@ -112,9 +114,17 @@ struct s_tree_root {
    int cached_path_len;               /* length of cached path */
    char *cached_path;                 /* cached current path */
    TREE_NODE *cached_parent;          /* cached parent for above path */
+   htable hardlinks;                  /* references to first occurence of hardlinks */
 };
 typedef struct s_tree_root TREE_ROOT;
 
+/* hardlink hashtable entry */
+struct s_hl_entry {
+   uint64_t key;
+   hlink link;
+   TREE_NODE *node;
+};
+typedef struct s_hl_entry HL_ENTRY;
 
 /* type values */
 #define TN_ROOT    1                  /* root node */
@@ -130,7 +140,7 @@ TREE_NODE *insert_tree_node(char *path, char *fname, int type,
 TREE_NODE *make_tree_path(char *path, TREE_ROOT *root);
 TREE_NODE *tree_cwd(char *path, TREE_ROOT *root, TREE_NODE *node);
 TREE_NODE *tree_relcwd(char *path, TREE_ROOT *root, TREE_NODE *node);
-void tree_add_delta_part(TREE_ROOT *root, TREE_NODE *node, 
+void tree_add_delta_part(TREE_ROOT *root, TREE_NODE *node,
                          JobId_t JobId, int32_t FileIndex);
 void free_tree(TREE_ROOT *root);
 int tree_getpath(TREE_NODE *node, char *buf, int buf_size);
