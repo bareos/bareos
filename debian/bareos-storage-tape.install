@@ -1,0 +1,4 @@
+/etc/bareos/mtx-changer.conf
+/usr/lib/bareos/scripts/mtx-changer
+/usr/share/man/man8/btape.8.gz
+/usr/sbin/btape

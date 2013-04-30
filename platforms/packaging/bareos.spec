@@ -229,8 +229,15 @@ Provides: %{name}-dir
 Summary:  Provide bareos storage daemon
 Group:    Productivity/Archiving/Backup
 Requires: %{name}-common = %{version}
-Requires: mtx
 Provides: %{name}-sd
+
+%package storage-tape
+Summary:  Provide bareos storage daemon tape support
+Group:    Productivity/Archiving/Backup
+Requires: mtx
+%if !0%{?suse_version}
+Requires: mt-st
+%endif
 
 %package filedaemon
 Summary:  Provide bareos file daemon service
@@ -346,6 +353,12 @@ This package contains the Director Service (Bareos main service daemon)
 
 This package contains the Storage Daemon
 (Bareos service to read and write data from/to media)
+
+%description storage-tape
+%{dscr}
+
+This package contains the Storage Daemon tape support
+(Bareos service to read and write data from/to tape media)
 
 %description filedaemon
 %{dscr}
@@ -605,7 +618,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # a rpmlint rule is add to filter the warning
 #%config(noreplace) %{script_dir}/query.sql
 
-
 %files storage
 # sd package (bareos-sd, bls, btape, bcopy, bextract)
 %defattr(-, root, root)
@@ -623,17 +635,21 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_sbindir}/bscrypto
 %{plugin_dir}/*-sd.so
 %{script_dir}/disk-changer
-%{script_dir}/mtx-changer
-%config(noreplace) %{_sysconfdir}/bareos/mtx-changer.conf
 %{_sbindir}/bareos-sd
 %{_mandir}/man8/bscrypto.8.gz
 %{_mandir}/man8/bareos-sd.8.gz
-%{_mandir}/man8/btape.8.gz
-%{_sbindir}/btape
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-sd.service
 %endif
 %attr(0775, %{storage_daemon_user}, %{daemon_group}) %dir /var/lib/bareos/storage
+
+%files storage-tape
+# tape specific files
+%defattr(-, root, root)
+%{script_dir}/mtx-changer
+%config(noreplace) %{_sysconfdir}/bareos/mtx-changer.conf
+%{_mandir}/man8/btape.8.gz
+%{_sbindir}/btape
 
 %files filedaemon
 # fd package (bareos-fd, plugins)

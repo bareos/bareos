@@ -238,9 +238,7 @@ Description: Backup Archiving Recovery Open Sourced - file daemon
 Package:        bareos-storage
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        bareos-common (= ${binary:Version}), lsb-base (>= 3.2-13), mtx, python, ${shlibs:Depends}, ${misc:Depends}
-Recommends:     mt-st
-Suggests:       dds2tar, scsitools, sg3-utils
+Depends:        bareos-common (= ${binary:Version}), lsb-base (>= 3.2-13), lsof, python, ${shlibs:Depends}, ${misc:Depends}
 Conflicts:      bacula-sd
 Replaces:       bacula-sd
 Description: Backup Archiving Recovery Open Sourced - storage daemon
@@ -253,6 +251,26 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon
  .
  It runs on the machine which has access to the backup device(s) - usually
  a tape drive, but alternatively other storage media, such as files.
+
+
+Package:        bareos-storage-tape
+Architecture:   any
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
+Depends:        bareos-common (= ${binary:Version}), bareos-storage (= ${binary:Version}), lsb-base (>= 3.2-13), mtx, ${shlibs:Depends}, ${misc:Depends}
+Recommends:     mt-st
+Suggests:       dds2tar, scsitools, sg3-utils
+Description: Backup Archiving Recovery Open Sourced - storage daemon tape support
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ The storage daemon performs the storage and recovery of the file
+ attributes and data to the physical media; in other words, it is
+ responsible for reading and writing the backups.
+ .
+ It runs on the machine which has access to the backup device(s) - usually
+ a tape drive, but alternatively other storage media, such as files.
+ .
+ This adds the tape specific support files for the storage daemon.
 
 
 Package:        bareos-tools
