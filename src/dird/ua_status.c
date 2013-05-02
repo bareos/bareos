@@ -391,7 +391,7 @@ void list_dir_status_header(UAContext *ua)
    }
 }
 
-static void show_scheduled_preview(UAContext *ua, SCHEDRES *sched,
+static bool show_scheduled_preview(UAContext *ua, SCHEDRES *sched,
                                    POOL_MEM &overview, int *max_date_len,
                                    struct tm tm, time_t time_to_check)
 {
@@ -412,7 +412,6 @@ static void show_scheduled_preview(UAContext *ua, SCHEDRES *sched,
 
    is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , yday);
 
-start_over:
    for (run = sched->run; run; run = run->next) {
       bool run_now;
       int cnt = 0;
@@ -442,16 +441,24 @@ start_over:
          bstrftime_wd(dt, sizeof(dt), runtime);
          date_len = strlen(dt);
          if (date_len > *max_date_len) {
-            *max_date_len = date_len;
-
-            /*
-             * When the datelen changed restart the loop.
-             */
-            pm_strcpy(overview, "");
-            goto start_over;
+            if (*max_date_len == 0) {
+               /*
+                * When the datelen changes during the loop the locale generates a date string that
+                * is variable. Only thing we can do about that is start from scratch again.
+                * We invoke this by return false from this function.
+                */
+               *max_date_len = date_len;
+               pm_strcpy(overview, "");
+               return false;
+            } else {
+               /*
+                * This is the first determined length we use this until we are proven wrong.
+                */
+               *max_date_len = date_len;
+            }
          }
 
-         Mmsg(temp, "%.*s  %-22.22s  ", *max_date_len, dt, sched->hdr.name);
+         Mmsg(temp, "%-*s  %-22.22s  ", *max_date_len, dt, sched->hdr.name);
          pm_strcat(overview, temp.c_str());
 
          if (run->level) {
@@ -513,6 +520,11 @@ start_over:
          pm_strcat(overview, "\n");
       }
    }
+
+   /*
+    * If we make it till here the length of the datefield is constant or didn't change.
+    */
+   return true;
 }
 
 static void do_scheduler_status(UAContext *ua)
@@ -521,7 +533,7 @@ static void do_scheduler_status(UAContext *ua)
    int max_date_len = 0;
    int days = 14;                                /* Default days for preview */
    bool schedulegiven = false;
-   time_t time_to_check, now;
+   time_t time_to_check, now, start, stop;
    char schedulename[MAX_NAME_LENGTH];
    const int seconds_per_day = 86400;            /* Number of seconds in one day */
    const int seconds_per_hour = 3600;            /* Number of seconds in one hour */
@@ -537,8 +549,8 @@ static void do_scheduler_status(UAContext *ua)
    i = find_arg_with_value(ua, NT_("days"));
    if (i >= 0) {
       days = atoi(ua->argv[i]);
-      if (((days < 0) || (days > 366)) && !ua->api) {
-         ua->send_msg(_("Ignoring invalid value for days. Max is 366.\n"));
+      if (((days < -366) || (days > 366)) && !ua->api) {
+         ua->send_msg(_("Ignoring invalid value for days. Allowed is -366 < days < 366.\n"));
          days = 14;
       }
    }
@@ -624,7 +636,17 @@ static void do_scheduler_status(UAContext *ua)
    /*
     * Build an overview.
     */
-   while (time_to_check < (now + (days * seconds_per_day))) {
+   if ( days > 0 ) {                            /* future */
+      start = now;
+      stop = now + (days * seconds_per_day);
+   } else {                                     /* past */
+      start = now + (days * seconds_per_day);
+      stop = now;
+   }
+
+start_again:
+   time_to_check = start;
+   while (time_to_check < stop) {
       (void)localtime_r(&time_to_check, &tm);
 
       if (client || job) {
@@ -633,13 +655,21 @@ static void do_scheduler_status(UAContext *ua)
           */
          if (job) {
             if (job->schedule) {
-               show_scheduled_preview(ua, job->schedule, overview, &max_date_len, tm, time_to_check);
+               if (!show_scheduled_preview(ua, job->schedule, overview,
+                                           &max_date_len, tm, time_to_check)) {
+                  goto start_again;
+               }
             }
          } else {
             LockRes();
             foreach_res(job, R_JOB) {
                if (job->schedule && job->client == client) {
-                  show_scheduled_preview(ua, job->schedule, overview, &max_date_len, tm, time_to_check);
+                  if (!show_scheduled_preview(ua, job->schedule, overview,
+                                              &max_date_len, tm, time_to_check)) {
+                     job = NULL;
+                     UnlockRes();
+                     goto start_again;
+                  }
                }
             }
             UnlockRes();
@@ -657,7 +687,11 @@ static void do_scheduler_status(UAContext *ua)
                }
             }
 
-            show_scheduled_preview(ua, sched, overview, &max_date_len, tm, time_to_check);
+            if (!show_scheduled_preview(ua, sched, overview,
+                                        &max_date_len, tm, time_to_check)) {
+               UnlockRes();
+               goto start_again;
+            }
          }
          UnlockRes();
       }
