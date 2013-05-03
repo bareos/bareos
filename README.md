@@ -123,7 +123,7 @@ Release 12.4.x
 * Possibilty to schedule Jobs on last Sunday-Saturday of the month.
 * Deprecated old embeded python support in all daemons to be
   replaced with daemon plugins which interface with python.
-* Increase name lengths so director/stored/filed names of more then
+* Increase name lengths so director/stored/filed names of more than
   30 characters can be used.
 * Allow users to test plugins from a plugtest binary when developing.
 * Deprecated wxwindows console.
@@ -146,6 +146,7 @@ Release 12.4.x
   and NDMP Tape Server support int the storage daemon. Currently all or
   nothing restore for NDMP.
 * Automatic sending of BSR (at least of the Catalog DB) vie email (#24)
+* Tray-monitor shows backup activity by blinking icon
 
 Long standing bugs fixed (bug numbers are from the bacula bug database):
 * Implement feature request #1698
@@ -179,7 +180,9 @@ Build System
       * OpenSuse 11.4
       * OpenSuse 12.1
       * OpenSuse 12.2
+      * OpenSuse 12.3
       * OpenSuse factory
+      * Ubuntu 10.04
       * Ubuntu 12.04
   * Fully automatic generation of new packages within one hour after new
     release of software or bugfix.
@@ -189,6 +192,6 @@ Build System
           * Use native libraries available in OBS for MINGW32 and MINGW64 (no more deppkgs)
           * No longer based on archaic build system but state of the art and maintained OBS crosscompiling
       * Automatic creation of NSI installer packages
-          * Supports of silient installs
+          * Supports of silent installs
   * OBS uses source services to checkout current software directly from git
       * see http://en.opensuse.org/openSUSE:Build_Service_private_instance_software_live_cycle
