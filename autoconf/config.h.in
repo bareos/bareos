@@ -246,6 +246,12 @@
 /* Define to 1 if you want Extended acl support */
 #undef HAVE_EXTENDED_ACL
 
+/* Define to 1 if you have fastlz lib */
+#undef HAVE_FASTLZ
+
+/* Define to 1 if you have the <fastlzlib.h> header file. */
+#undef HAVE_FASTLZLIB_H
+
 /* Define to 1 if you have the `fchdir' function. */
 #undef HAVE_FCHDIR
 
