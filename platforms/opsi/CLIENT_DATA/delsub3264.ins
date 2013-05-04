@@ -4,10 +4,7 @@
 ; credits: http://www.opsi.org/en/credits/
 
 
-;Set $MsiId32$ = 'Bareos'
 Set $UninstallProgram32$ = $InstallDir32$ + "\uninst.exe"
-
-;Set $MsiId64$ = 'Bareos'
 Set $UninstallProgram64$ = $InstallDir64$ + "\uninst.exe"
 
 if (($INST_SystemType$ = "x86 System") and ($INST_architecture$ = "system specific")) or ($INST_architecture$ = "both") or ($INST_architecture$ = "32 only")
@@ -18,12 +15,6 @@ if (($INST_SystemType$ = "x86 System") and ($INST_architecture$ = "system specif
 		Winbatch_uninstall_32
 		sub_check_exitcode
 	endif
-
-	;if not (GetRegistryStringValue32("[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" + $MsiId32$ + "] DisplayName") = "")
-	;	comment "MSI id " + $MsiId32$ + " found in registry, starting msiexec to uninstall"
-	;	Winbatch_uninstall_msi_32
-	;	sub_check_exitcode
-	;endif
 
 	;comment "Delete files"
 	;Files_uninstall_32 /32Bit
@@ -39,12 +30,6 @@ if ($INST_SystemType$ = "64 Bit System") and (($INST_architecture$ = "system spe
 		Winbatch_uninstall_64
 		sub_check_exitcode
 	endif
-
-	;if not (GetRegistryStringValue64("[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" + $MsiId64$ + "] DisplayName") = "")
-	;	comment "MSI id " + $MsiId64$ + " found in registry, starting msiexec to uninstall"
-	;	Winbatch_uninstall_msi_64
-	;	sub_check_exitcode
-	;endif
 
 	;comment "Delete files"
 	;Files_uninstall_64 /64Bit
@@ -63,18 +48,11 @@ endif
 "$UninstallProgram64$" /S
 
 
-[Winbatch_uninstall_msi_32]
-msiexec /x $MsiId32$ /qb! REBOOT=ReallySuppress
-
 [Files_uninstall_32]
 ; Example for recursively deleting the installation directory (don't forget the trailing backslash):
 ;
 ; delete -sf "$InstallDir32$\"
 
-
-
-[Winbatch_uninstall_msi_64]
-msiexec /x $MsiId64$ /qb! REBOOT=ReallySuppress
 
 [Files_uninstall_64]
 ; Example for recursively deleting the installation directory (don't forget the trailing backslash):
