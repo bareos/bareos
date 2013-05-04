@@ -139,8 +139,11 @@ static bool is_volume_name_legal(char *name)
 {
    int len;
    const char *p;
-   const char *accept = ":.-_";
+   const char *accept = ":.-_/";
 
+   if (name[0] == '/') {
+      return false;
+   }
    /* Restrict the characters permitted in the Volume name */
    for (p=name; *p; p++) {
       if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
