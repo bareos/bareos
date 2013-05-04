@@ -47,6 +47,12 @@ enum {
    R_TYPE
 };
 
+/* Used for certain KeyWord tables */
+struct s_kw {
+   const char *name;
+   uint32_t token;
+};
+
 /* Definition of the contents of each Resource */
 struct DIRRES {
    RES hdr;
@@ -92,6 +98,7 @@ struct CLIENTRES {
    char *pki_keypair_file;            /* PKI Key Pair File */
    alist *pki_signing_key_files;      /* PKI Signing Key Files */
    alist *pki_master_key_files;       /* PKI Master Key Files */
+   crypto_cipher_t pki_cipher;        /* PKI Cipher to use */
    bool tls_authenticate;             /* Authenticate with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */

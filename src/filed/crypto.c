@@ -47,7 +47,16 @@ static void unser_crypto_packet_len(RESTORE_CIPHER_CTX *ctx)
 
 bool crypto_session_start(JCR *jcr)
 {
-   crypto_cipher_t cipher = CRYPTO_CIPHER_AES_128_CBC;
+   crypto_cipher_t cipher;
+
+   /*
+    * See if we are in compatible mode then we are hardcoded to CRYPTO_CIPHER_AES_128_CBC.
+    */
+   if (me->compatible) {
+      cipher = CRYPTO_CIPHER_AES_128_CBC;
+   } else {
+      cipher = me->pki_cipher;
+   }
 
    /**
     * Create encryption session data and a cached, DER-encoded session data

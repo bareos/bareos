@@ -57,6 +57,7 @@ RES **res_head = sres_head;
 /*
  * Forward referenced subroutines
  */
+static void store_cipher(LEX *lc, RES_ITEM *item, int index, int pass);
 
 /*
  * We build the current resource here as we are
@@ -105,6 +106,7 @@ static RES_ITEM cli_items[] = {
    { "pkikeypair", store_dir, ITEM(res_client.pki_keypair_file), 0, 0, NULL },
    { "pkisigner", store_alist_str, ITEM(res_client.pki_signing_key_files), 0, 0, NULL },
    { "pkimasterkey", store_alist_str, ITEM(res_client.pki_master_key_files), 0, 0, NULL },
+   { "pkicipher", store_cipher, ITEM(res_client.pki_cipher), 0, 0, "aes128" },
 #endif
    { "tlsauthenticate", store_bool, ITEM(res_client.tls_authenticate), 0, 0, NULL },
    { "tlsenable", store_bool, ITEM(res_client.tls_enable), 0, 0, NULL },
@@ -489,9 +491,61 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 }
 
+static struct s_kw CryptoCiphers[] = {
+   { "aes128", CRYPTO_CIPHER_AES_128_CBC },
+   { "aes192", CRYPTO_CIPHER_AES_192_CBC },
+   { "aes256", CRYPTO_CIPHER_AES_256_CBC },
+   { "camellia128", CRYPTO_CIPHER_CAMELLIA_128_CBC },
+   { "camellia192", CRYPTO_CIPHER_CAMELLIA_192_CBC },
+   { "camellia256", CRYPTO_CIPHER_CAMELLIA_256_CBC },
+   { "aes128hmacsha1", CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1 },
+   { "aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1 },
+   { "blowfish", CRYPTO_CIPHER_BLOWFISH_CBC },
+   { NULL, 0 }
+};
+
+static void store_cipher(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int i;
+   lex_get_token(lc, T_NAME);
+
+   /*
+    * Scan Crypto Ciphers name.
+    */
+   for (i = 0; CryptoCiphers[i].name; i++) {
+      if (bstrcasecmp(lc->str, CryptoCiphers[i].name)) {
+         *(uint32_t *)(item->value) = CryptoCiphers[i].token;
+         i = 0;
+         break;
+      }
+   }
+   if (i != 0) {
+      scan_err1(lc, _("Expected a Crypto Cipher option, got: %s"), lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all.hdr.item_present);
+}
+
+/*
+ * callback function for init_resource
+ * See ../lib/parse_conf.c, function init_resource, for more generic handling.
+ */
+static void init_resource_cb(RES_ITEM *item)
+{
+   int i;
+
+   if (item->handler == store_cipher) {
+      for (i = 0; CryptoCiphers[i].name; i++) {
+         if (bstrcasecmp(item->default_value, CryptoCiphers[i].name)) {
+            *(uint32_t *)(item->value) = CryptoCiphers[i].token;
+         }
+      }
+   }
+}
+
 bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, NULL, exit_code,
+   config->init(configfile, NULL, NULL, init_resource_cb, exit_code,
                 (void *)&res_all, res_all_size, r_first,
                 r_last, resources, res_head);
    return config->parse_config();

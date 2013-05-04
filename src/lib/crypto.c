@@ -1019,23 +1019,67 @@ CRYPTO_SESSION *crypto_session_new (crypto_cipher_t cipher, alist *pubkeys)
     * Acquire a cipher instance and set the ASN.1 cipher NID
     */
    switch (cipher) {
+#ifndef OPENSSL_NO_AES
    case CRYPTO_CIPHER_AES_128_CBC:
       /* AES 128 bit CBC */
       cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_aes_128_cbc);
       ec = EVP_aes_128_cbc();
       break;
 #ifndef HAVE_OPENSSL_EXPORT_LIBRARY
+#ifdef NID_aes_192_cbc
    case CRYPTO_CIPHER_AES_192_CBC:
       /* AES 192 bit CBC */
       cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_aes_192_cbc);
       ec = EVP_aes_192_cbc();
       break;
+#endif
+#ifdef NID_aes_256_cbc
    case CRYPTO_CIPHER_AES_256_CBC:
       /* AES 256 bit CBC */
       cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_aes_256_cbc);
       ec = EVP_aes_256_cbc();
       break;
 #endif
+#endif /* HAVE_OPENSSL_EXPORT_LIBRARY */
+#endif /* OPENSSL_NO_AES */
+#ifndef OPENSSL_NO_CAMELLIA
+#ifdef NID_camellia_128_cbc
+   case CRYPTO_CIPHER_CAMELLIA_128_CBC:
+      /* Camellia 128 bit CBC */
+      cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_camellia_128_cbc);
+      ec = EVP_camellia_128_cbc();
+#endif
+#ifndef HAVE_OPENSSL_EXPORT_LIBRARY
+#ifdef NID_camellia_192_cbc
+   case CRYPTO_CIPHER_CAMELLIA_192_CBC:
+      /* Camellia 192 bit CBC */
+      cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_camellia_192_cbc);
+      ec = EVP_camellia_192_cbc();
+#endif
+#ifdef NID_camellia_256_cbc
+   case CRYPTO_CIPHER_CAMELLIA_256_CBC:
+      /* Camellia 256 bit CBC */
+      cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_camellia_256_cbc);
+      ec = EVP_camellia_256_cbc();
+#endif
+#endif /* OPENSSL_NO_CAMELLIA */
+#endif /* HAVE_OPENSSL_EXPORT_LIBRARY */
+#if !defined(OPENSSL_NO_SHA) && !defined(OPENSSL_NO_SHA1)
+#ifdef NID_aes_128_cbc_hmac_sha1
+   case CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1:
+      /* AES 128 bit CBC HMAC SHA1 */
+      cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_aes_128_cbc_hmac_sha1);
+      ec = EVP_aes_128_cbc_hmac_sha1();
+      break;
+#endif
+#ifdef NID_aes_256_cbc_hmac_sha1
+   case CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1:
+      /* AES 256 bit CBC HMAC SHA1 */
+      cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_aes_256_cbc_hmac_sha1);
+      ec = EVP_aes_256_cbc_hmac_sha1();
+      break;
+#endif
+#endif /* !OPENSSL_NO_SHA && !OPENSSL_NO_SHA1 */
    case CRYPTO_CIPHER_BLOWFISH_CBC:
       /* Blowfish CBC */
       cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_bf_cbc);
