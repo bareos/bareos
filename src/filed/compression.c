@@ -78,6 +78,11 @@ void adjust_compression_buffers(JCR *jcr)
          for (j = 0; j < incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
             switch (fo->Compress_algo) {
+            case 0:
+               /*
+                * No compression requested.
+                */
+               break;
 #ifdef HAVE_LIBZ
             case COMPRESS_GZIP: {
                /**
