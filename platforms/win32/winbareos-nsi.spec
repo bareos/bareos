@@ -89,8 +89,8 @@ cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4  %_sourcedir/LICENSE $RPM_BUILD_ROOT/rele
 cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4  %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
 
 
-makensis -DPRODUCT_VERSION=%version-%release $RPM_BUILD_ROOT/release32/winbareos.nsi
-makensis -DPRODUCT_VERSION=%version-%release $RPM_BUILD_ROOT/release64/winbareos.nsi
+makensis -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=32 $RPM_BUILD_ROOT/release32/winbareos.nsi
+makensis -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=64 $RPM_BUILD_ROOT/release64/winbareos.nsi
 
 %install
 mkdir -p $RPM_BUILD_ROOT%{_mingw32_bindir}

@@ -75,6 +75,7 @@ Var hwnd
 !include "StrFunc.nsh"
 !include "WinMessages.nsh"
 !include "nsDialogs.nsh"
+!include "x64.nsh"
 
 # call functions once to have them included
 ${StrCase}
@@ -448,15 +449,31 @@ FunctionEnd
 
 
 Function .onInit
+# check if we are installing on 64Bit, then do some settings
+  ${If} ${RunningX64} # 64Bit OS
+    ${If} ${BIT_WIDTH} == '32'
+      MessageBox MB_OK|MB_ICONQUESTION "You are running a 32 Bit Installer on a 64Bit OS.$\r$\n Please use the 64Bit installer."
+      Abort
+    ${EndIf}
+    StrCpy $INSTDIR "$PROGRAMFILES64\${PRODUCT_NAME}"
+    SetRegView 64
+    ${EnableX64FSRedirection}
+  ${Else} # 32Bit OS
+    ${If} ${BIT_WIDTH} == '64'
+      MessageBox MB_OK|MB_ICONQUESTION "You are running a 64 Bit Installer on a 32Bit OS.$\r$\n Please use the 32Bit installer."
+      Abort
+    ${EndIf}
+  ${EndIf}
 
+
+
+# check if software is already installed
   ClearErrors
   ReadRegStr $2 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"
   ReadRegStr $0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion"
   StrCmp $2 "" +3
   MessageBox MB_OK|MB_ICONQUESTION "${PRODUCT_NAME} version $0 seems to be already installed on your system.$\r$\n Please uninstall first."
   Abort
-
-
 
 
 # Parameters:
