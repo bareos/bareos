@@ -1249,13 +1249,12 @@ alist *select_jobs(UAContext *ua, const char *reason)
          /*
           * Set selection criterium.
           */
+         selection_criterium = none;
          if (select_all) {
             selection_criterium = all_jobs;
          } else {
             i = find_arg_with_value(ua, NT_("state"));
             if (i > 0) {
-               selection_criterium = none;
-
                if (bstrcasecmp(ua->argv[i], NT_("created"))) {
                   selection_criterium = created_jobs;
                }
