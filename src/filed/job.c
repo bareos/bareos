@@ -397,10 +397,12 @@ void *handle_client_request(void *dirp)
    }
 
    /* Run the after job */
-   run_scripts(jcr, jcr->RunScripts, "ClientAfterJob",
-              (jcr->director->allowed_script_dirs) ?
-               jcr->director->allowed_script_dirs :
-               me->allowed_script_dirs);
+   if (jcr->RunScripts) {
+      run_scripts(jcr, jcr->RunScripts, "ClientAfterJob",
+                 (jcr->director && jcr->director->allowed_script_dirs) ?
+                  jcr->director->allowed_script_dirs :
+                  me->allowed_script_dirs);
+   }
 
    if (jcr->JobId) {            /* send EndJob if running a job */
       char ed1[50], ed2[50];
@@ -647,7 +649,7 @@ static bool estimate_cmd(JCR *jcr)
     * See if we are allowed to run estimate cmds.
     */
    if (!validate_command(jcr, "estimate",
-                        (jcr->director->allowed_job_cmds) ?
+                        (jcr->director && jcr->director->allowed_job_cmds) ?
                          jcr->director->allowed_job_cmds :
                          me->allowed_job_cmds)) {
       dir->fsend(_("2992 Bad estimate command.\n"));
@@ -748,7 +750,7 @@ static bool runbeforenow_cmd(JCR *jcr)
    BSOCK *dir = jcr->dir_bsock;
 
    run_scripts(jcr, jcr->RunScripts, "ClientBeforeJob",
-              (jcr->director->allowed_script_dirs) ?
+              (jcr->director && jcr->director->allowed_script_dirs) ?
                jcr->director->allowed_script_dirs :
                me->allowed_script_dirs);
 
@@ -809,7 +811,7 @@ static bool runscript_cmd(JCR *jcr)
     * See if we are allowed to run runscript cmds.
     */
    if (!validate_command(jcr, "runscript",
-                        (jcr->director->allowed_job_cmds) ?
+                        (jcr->director && jcr->director->allowed_job_cmds) ?
                          jcr->director->allowed_job_cmds :
                          me->allowed_job_cmds)) {
       dir->fsend(FailedRunScript);
@@ -1326,7 +1328,7 @@ static bool backup_cmd(JCR *jcr)
     * See if we are allowed to run backup cmds.
     */
    if (!validate_command(jcr, "backup",
-                        (jcr->director->allowed_job_cmds) ?
+                        (jcr->director && jcr->director->allowed_job_cmds) ?
                          jcr->director->allowed_job_cmds :
                          me->allowed_job_cmds)) {
       goto cleanup;
@@ -1450,7 +1452,7 @@ static bool backup_cmd(JCR *jcr)
       }
 
       run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS",
-                 (jcr->director->allowed_script_dirs) ?
+                 (jcr->director && jcr->director->allowed_script_dirs) ?
                   jcr->director->allowed_script_dirs :
                   me->allowed_script_dirs);
    }
@@ -1536,7 +1538,7 @@ static bool verify_cmd(JCR *jcr)
     * See if we are allowed to run verify cmds.
     */
    if (!validate_command(jcr, "verify",
-                        (jcr->director->allowed_job_cmds) ?
+                        (jcr->director && jcr->director->allowed_job_cmds) ?
                          jcr->director->allowed_job_cmds :
                          me->allowed_job_cmds)) {
       dir->fsend(_("2994 Bad verify command: %s\n"), dir->msg);
@@ -1654,7 +1656,7 @@ static bool restore_cmd(JCR *jcr)
     * See if we are allowed to run restore cmds.
     */
    if (!validate_command(jcr, "restore",
-                        (jcr->director->allowed_job_cmds) ?
+                        (jcr->director && jcr->director->allowed_job_cmds) ?
                          jcr->director->allowed_job_cmds :
                          me->allowed_job_cmds)) {
       return 0;
@@ -1754,7 +1756,7 @@ static bool restore_cmd(JCR *jcr)
       }
       //free_and_null_pool_memory(jcr->job_metadata);
       run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS",
-                 (jcr->director->allowed_script_dirs) ?
+                 (jcr->director && jcr->director->allowed_script_dirs) ?
                   jcr->director->allowed_script_dirs :
                   me->allowed_script_dirs);
    }
