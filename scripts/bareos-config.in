@@ -1,8 +1,8 @@
 #!/bin/sh
 
-DIR_CFG=/etc/bareos
+DIR_CFG=@sysconfdir@
 CFG_DIR=${DIR_CFG}/bareos-dir.conf
-DIR_SCRIPTS=/usr/lib/bareos/scripts
+DIR_SCRIPTS=@scriptdir@
 
 PASSWORD_SUBST="\
 XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX \
@@ -17,10 +17,7 @@ usage()
 {
 cat <<-EOT
 usage: $0 <function>
-
-available functions:
 EOT
-    list_functions
     exit 1
 }
 
@@ -36,46 +33,47 @@ is_function()
     return $?
 }
 
-list_functions()
-{
-    if type typeset >/dev/null 2>&1; then
-        # show available shell functions,
-        # but exclude internal functions (name starts with "_" ...)
-        typeset -F | cut -d " " -f 3 | grep "^[a-z]"
-    else
-        echo "function list not available"
-    fi
-}
+# does not work on all shells (only bash), 
+# therefore removed until a better solution is found
+# list_functions()
+# {
+#     if type typeset >/dev/null 2>&1; then
+#         # show available shell functions,
+#         # but exclude internal functions (name starts with "_" ...)
+#         typeset -F | cut -d " " -f 3 | grep "^[a-z]"
+#     else
+#         echo "function list not available"
+#     fi
+# }
 
-# TODO: use defines
 get_user_fd()
 {
-    printf "root"
+    echo "@fd_user@"
 }
 
 get_group_fd()
 {
-    printf "bareos"
+    echo "@fd_group@"
 }
 
 get_user_sd()
 {
-    printf "bareos"
+    echo "@sd_user@"
 }
 
 get_group_sd()
 {
-    printf "bareos"
+    echo "@sd_group@"
 }
 
 get_user_dir()
 {
-    printf "bareos"
+    echo "@dir_user@"
 }
 
 get_group_dir()
 {
-    printf "bareos"
+    echo "@dir_group@"
 }
 
 get_database_driver()
@@ -88,7 +86,7 @@ get_database_driver()
     # If string is still set to default, return nothing
     DBDRIVER=`sed -r -n 's/^\s*dbdriver\s*=\s*["]?([^"]*)["]?/\1/ip' "${CFG_DIR}" | grep -v "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"`
 
-    printf "$DBDRIVER"
+    echo "$DBDRIVER"
 }
 
 get_databases_installed()
