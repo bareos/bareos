@@ -127,9 +127,23 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
       }
 /* Note, the close log cause problems, see bug #1536 */
 /*    closelog();                        close syslog if open */
-      for (i=3; i<=32; i++) {         /* close any open file descriptors */
+
+#if defined(HAVE_FCNTL_F_CLOSEM)
+      /*
+       * fcntl(fd, F_CLOSEM) needs the lowest filedescriptor to close.
+       */
+      fcntl(3, F_CLOSEM);
+#elif defined(HAVE_CLOSEFROM)
+      /*
+       * closefrom needs the lowest filedescriptor to close.
+       */
+      closefrom(3);
+#else
+      for (i = 3; i <= 32; i++) {         /* close any open file descriptors */
          close(i);
       }
+#endif
+
       execvp(bargv[0], bargv);        /* call the program */
       /* Convert errno into an exit code for later analysis */
       for (i=0; i< num_execvp_errors; i++) {
