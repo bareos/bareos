@@ -312,6 +312,44 @@ char *lookup_crypto_cache_entry(const char *VolumeName)
 }
 
 /*
+ * Dump the content of the crypto cache to a filedescriptor.
+ */
+void dump_crypto_cache(int fd)
+{
+   int len;
+   const char *header;
+   crypto_cache_entry_t *cce;
+   char dt1[MAX_TIME_LENGTH],
+        dt2[MAX_TIME_LENGTH];
+   POOL_MEM msg(PM_MESSAGE);
+
+   if (!cached_crypto_keys) {
+      return;
+   }
+
+   /*
+    * Default header
+    */
+   header = _("Volumename       EncryptionKey                    Added                Expires\n");
+
+   /*
+    * Lock the cache.
+    */
+   P(crypto_cache_lock);
+
+   write(fd, header, strlen(header));
+   foreach_dlist(cce, cached_crypto_keys) {
+      bstrutime(dt1, sizeof(dt1), cce->added);
+      bstrutime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
+      len = Mmsg(msg, "%-16s %-32s %-20s %-20s\n", cce->VolumeName, cce->EncryptionKey, dt1, dt2);
+
+      write(fd, msg.c_str(), len);
+   }
+
+   V(crypto_cache_lock);
+}
+
+/*
  * Flush the date from the internal cache.
  */
 void flush_crypto_cache(void)
