@@ -365,9 +365,15 @@ static bool check_resources()
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         me->tls_ctx = new_tls_context(me->tls_ca_certfile, me->tls_ca_certdir,
-                                       me->tls_certfile, me->tls_keyfile,
-                                       NULL, NULL, NULL, true);
+         me->tls_ctx = new_tls_context(me->tls_ca_certfile,
+                                       me->tls_ca_certdir,
+                                       me->tls_crlfile,
+                                       me->tls_certfile,
+                                       me->tls_keyfile,
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       true);
 
          if (!me->tls_ctx) {
             Emsg2(M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
@@ -542,9 +548,15 @@ static bool check_resources()
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         director->tls_ctx = new_tls_context(director->tls_ca_certfile, director->tls_ca_certdir,
-                                             director->tls_certfile, director->tls_keyfile,
-                                             NULL, NULL, director->tls_dhfile, director->tls_verify_peer);
+         director->tls_ctx = new_tls_context(director->tls_ca_certfile,
+                                             director->tls_ca_certdir,
+                                             director->tls_crlfile,
+                                             director->tls_certfile,
+                                             director->tls_keyfile,
+                                             NULL,
+                                             NULL,
+                                             director->tls_dhfile,
+                                             director->tls_verify_peer);
 
          if (!director->tls_ctx) {
             Emsg2(M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),

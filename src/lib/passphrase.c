@@ -27,11 +27,17 @@
 
 #include "bareos.h"
 
-#ifdef HAVE_CRYPTO /* Is encryption enabled? */
-#ifdef HAVE_OPENSSL /* How about OpenSSL? */
+#if defined(HAVE_OPENSSL) || defined(HAVE_GNUTLS)
 
+#ifdef HAVE_OPENSSL
 #include <openssl/err.h>
 #include <openssl/rand.h>
+#endif
+
+#ifdef HAVE_GNUTLS
+#include <gnutls/gnutls.h>
+#include <gnutls/crypto.h>
+#endif
 
 /*
  * Generate a semi random passphrase using normal ASCII chars
@@ -41,6 +47,9 @@
  */
 char *generate_crypto_passphrase(int length)
 {
+#ifdef HAVE_GNUTLS
+   int error;
+#endif
    int c;
    int vc_len, cnt;
    char *passphrase;
@@ -52,6 +61,8 @@ char *generate_crypto_passphrase(int length)
 
    rand_bytes = (unsigned char *)malloc(length);
    passphrase = (char *)malloc(length);
+
+#ifdef HAVE_OPENSSL
    if (RAND_bytes(rand_bytes, length) != 1) {
       unsigned long error;
 
@@ -65,6 +76,21 @@ char *generate_crypto_passphrase(int length)
 
       return NULL;
    }
+#endif
+
+#ifdef HAVE_GNUTLS
+   error = gnutls_rnd(GNUTLS_RND_RANDOM, rand_bytes, length);
+   if (error != GNUTLS_E_SUCCESS) {
+      Emsg1(M_ERROR, 0,
+            _("Failed to get random bytes from gnutls_rnd for passphrase: ERR=%s\n"),
+            gnutls_strerror(error));
+
+      free(rand_bytes);
+      free(passphrase);
+
+      return NULL;
+   }
+#endif
 
    /*
     * Convert the random bytes into a readable string.
@@ -82,13 +108,7 @@ char *generate_crypto_passphrase(int length)
 
    return passphrase;
 }
-
-#else /* HAVE_OPENSSL */
-#error No encryption library available
-#endif /* HAVE_OPENSSL */
-
-#else /* HAVE_CRYPTO */
-
+#else
 /*
  * Generate a semi random passphrase using normal ASCII chars
  * using the srand and rand libc functions of the length given
@@ -129,4 +149,4 @@ char *generate_crypto_passphrase(int length)
 
    return passphrase;
 }
-#endif /* HAVE_CRYPTO */
+#endif /* HAVE_OPENSSL || HAVE_GNUTLS*/

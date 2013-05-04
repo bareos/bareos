@@ -2,8 +2,6 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,7 +19,7 @@
    02110-1301, USA.
 */
 /*
- * tls.c TLS support functions
+ * tls_openssl.c TLS support functions when using OPENSSL backend.
  *
  * Author: Landon Fuller <landonf@threerings.net>
  */
@@ -29,9 +27,7 @@
 #include "bareos.h"
 #include <assert.h>
 
-#ifdef HAVE_TLS /* Is TLS enabled? */
-
-#ifdef HAVE_OPENSSL /* How about OpenSSL? */
+#if defined(HAVE_TLS) && defined(HAVE_OPENSSL)
 
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
@@ -90,13 +86,18 @@ static int tls_pem_callback_dispatch (char *buf, int size, int rwflag, void *use
 
 /*
  * Create a new TLS_CONTEXT instance.
- *  Returns: Pointer to TLS_CONTEXT instance on success
- *           NULL on failure;
+ *
+ * Returns: Pointer to TLS_CONTEXT instance on success
+ *          NULL on failure;
  */
-TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
-                             const char *certfile, const char *keyfile,
+TLS_CONTEXT *new_tls_context(const char *ca_certfile,
+                             const char *ca_certdir,
+                             const char *crlfile,
+                             const char *certfile,
+                             const char *keyfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
-                             const void *pem_userdata, const char *dhfile,
+                             const void *pem_userdata,
+                             const char *dhfile,
                              bool verify_peer)
 {
    TLS_CONTEXT *ctx;
@@ -105,7 +106,9 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
 
    ctx = (TLS_CONTEXT *)malloc(sizeof(TLS_CONTEXT));
 
-   /* Allocate our OpenSSL TLSv1 Context */
+   /*
+    * Allocate our OpenSSL TLSv1 Context
+    */
    ctx->openssl = SSL_CTX_new(TLSv1_method());
 
    if (!ctx->openssl) {
@@ -113,7 +116,9 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
       goto err;
    }
 
-   /* Set up pem encryption callback */
+   /*
+    * Set up pem encryption callback
+    */
    if (pem_callback) {
       ctx->pem_callback = pem_callback;
       ctx->pem_userdata = pem_userdata;
@@ -121,12 +126,12 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
       ctx->pem_callback = crypto_default_pem_callback;
       ctx->pem_userdata = NULL;
    }
+
    SSL_CTX_set_default_passwd_cb(ctx->openssl, tls_pem_callback_dispatch);
    SSL_CTX_set_default_passwd_cb_userdata(ctx->openssl, (void *) ctx);
 
    /*
-    * Set certificate verification paths. This requires that at least one
-    * value be non-NULL
+    * Set certificate verification paths. This requires that at least one value be non-NULL
     */
    if (ca_certfile || ca_certdir) {
       if (!SSL_CTX_load_verify_locations(ctx->openssl, ca_certfile, ca_certdir)) {
@@ -141,6 +146,33 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
    }
 
    /*
+    * Set certificate revocation list.
+    */
+   if (crlfile) {
+      X509_STORE *store;
+      X509_LOOKUP *lookup;
+
+      store = SSL_CTX_get_cert_store(ctx->openssl);
+      if (!store) {
+         openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
+         goto err;
+      }
+
+      lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
+      if (!lookup) {
+         openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
+         goto err;
+      }
+
+      if (!X509_LOOKUP_load_file(lookup, (char *)crlfile, X509_FILETYPE_PEM)) {
+         openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
+         goto err;
+      }
+
+      X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+   }
+
+   /*
     * Load our certificate file, if available. This file may also contain a
     * private key, though this usage is somewhat unusual.
     */
@@ -151,7 +183,9 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
       }
    }
 
-   /* Load our private key. */
+   /*
+    * Load our private key.
+    */
    if (keyfile) {
       if (!SSL_CTX_use_PrivateKey_file(ctx->openssl, keyfile, SSL_FILETYPE_PEM)) {
          openssl_post_errors(M_FATAL, _("Error loading private key"));
@@ -159,7 +193,9 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
       }
    }
 
-   /* Load Diffie-Hellman Parameters. */
+   /*
+    * Load Diffie-Hellman Parameters.
+    */
    if (dhfile) {
       if (!(bio = BIO_new_file(dhfile, "r"))) {
          openssl_post_errors(M_FATAL, _("Unable to open DH parameters file"));
@@ -176,7 +212,10 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
          DH_free(dh);
          goto err;
       }
-      /* Enable Single-Use DH for Ephemeral Keying */
+
+      /*
+       * Enable Single-Use DH for Ephemeral Keying
+       */
       SSL_CTX_set_options(ctx->openssl, SSL_OP_SINGLE_DH_USE);
    }
 
@@ -186,9 +225,13 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
       goto err;
    }
 
-   /* Verify Peer Certificate */
+   /*
+    * Verify Peer Certificate
+    */
    if (verify_peer) {
-      /* SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode */
+      /*
+       * SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
+       */
       SSL_CTX_set_verify(ctx->openssl,
                          SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
                          openssl_verify_peer);
@@ -197,8 +240,10 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
    return ctx;
 
 err:
-   /* Clean up after ourselves */
-   if(ctx->openssl) {
+   /*
+    * Clean up after ourselves
+    */
+   if (ctx->openssl) {
       SSL_CTX_free(ctx->openssl);
    }
    free(ctx);
@@ -239,10 +284,10 @@ void set_tls_enable(TLS_CONTEXT *ctx, bool value)
 }
 
 /*
- * Verifies a list of common names against the certificate
- * commonName attribute.
- *  Returns: true on success
- *           false on failure
+ * Verifies a list of common names against the certificate commonName attribute.
+ *
+ * Returns: true on success
+ *          false on failure
  */
 bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list)
 {
@@ -278,10 +323,10 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
 }
 
 /*
- * Verifies a peer's hostname against the subjectAltName and commonName
- * attributes.
- *  Returns: true on success
- *           false on failure
+ * Verifies a peer's hostname against the subjectAltName and commonName attributes.
+ *
+ * Returns: true on success
+ *          false on failure
  */
 bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host)
 {
@@ -400,7 +445,7 @@ success:
  * Returns: Pointer to TLS_CONNECTION instance on success
  *          NULL on failure;
  */
-TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd)
+TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
 {
    BIO *bio;
 
@@ -518,7 +563,6 @@ cleanup:
  */
 bool tls_bsock_connect(BSOCK *bsock)
 {
-   /* SSL_connect(bsock->tls) */
    return openssl_bsock_session_start(bsock, false);
 }
 
@@ -529,7 +573,6 @@ bool tls_bsock_connect(BSOCK *bsock)
  */
 bool tls_bsock_accept(BSOCK *bsock)
 {
-   /* SSL_accept(bsock->tls) */
    return openssl_bsock_session_start(bsock, true);
 }
 
@@ -564,7 +607,6 @@ void tls_bsock_shutdown(BSOCK *bsock)
       err = SSL_shutdown(bsock->tls->openssl);
       stop_bsock_timer(tid);
    }
-
 
    switch (SSL_get_error(bsock->tls->openssl, err)) {
    case SSL_ERROR_NONE:
@@ -658,60 +700,17 @@ cleanup:
    /* Clear timer */
    bsock->timer_start = 0;
    bsock->set_killable(true);
+
    return nbytes - nleft;
 }
 
-
 int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes)
 {
-   /* SSL_write(bsock->tls->openssl, ptr, nbytes) */
    return openssl_bsock_readwrite(bsock, ptr, nbytes, true);
 }
 
 int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes)
 {
-   /* SSL_read(bsock->tls->openssl, ptr, nbytes) */
    return openssl_bsock_readwrite(bsock, ptr, nbytes, false);
 }
-
-#else /* HAVE_OPENSSL */
-# error No TLS implementation available.
-#endif /* !HAVE_OPENSSL */
-
-
-#else     /* TLS NOT enabled, dummy routines substituted */
-
-
-/* Dummy routines */
-TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
-                             const char *certfile, const char *keyfile,
-                             CRYPTO_PEM_PASSWD_CB *pem_callback,
-                             const void *pem_userdata, const char *dhfile,
-                             bool verify_peer)
-{
-   return NULL;
-}
-void free_tls_context(TLS_CONTEXT *ctx) { }
-
-void tls_bsock_shutdown(BSOCK *bsock) { }
-
-void free_tls_connection(TLS_CONNECTION *tls) { }
-
-bool get_tls_require(TLS_CONTEXT *ctx)
-{
-   return false;
-}
-
-void set_tls_require(TLS_CONTEXT *ctx, bool value)
-{
-}
-
-bool get_tls_enable(TLS_CONTEXT *ctx)
-{
-   return false;
-}
-
-void set_tls_enable(TLS_CONTEXT *ctx, bool value)
-{
-}
-#endif /* HAVE_TLS */
+#endif /* HAVE_TLS  && HAVE_OPENSSL */

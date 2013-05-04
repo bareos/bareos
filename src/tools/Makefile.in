@@ -42,33 +42,33 @@ all: Makefile $(TOOLS)
 	@echo " "
 
 bsmtp: Makefile bsmtp.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bsmtp.o -lbareos -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bsmtp.o -lbareos -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS)
 
 fstype: Makefile fstype.o \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ fstype.o -lbareosfind -lbareos -lm \
-	  $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  $(DLIB) $(LIBS) $(GETTEXT_LIBS)
 
 drivetype: Makefile drivetype.o \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ drivetype.o -lbareosfind -lbareos -lm \
-	  $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  $(DLIB) $(LIBS) $(GETTEXT_LIBS)
 
 bregex: Makefile bregex.o \
 	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bregex.o \
-	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
 
 bwild:	Makefile bwild.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bwild.o \
-	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
 
 bscrypto: Makefile bscrypto.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bscrypto.o \
-	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
 
 bpluginfo.o: bpluginfo.c
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) -I../filed -I../dird -I../stored $(DINCLUDE) $(CFLAGS) $<

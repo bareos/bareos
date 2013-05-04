@@ -68,7 +68,7 @@ bareos-dir: Makefile $(SVROBJS) \
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
 	      $(NDMP_LIBS) -lbareosfind -lbareossql -lbareoscats -lbareoscfg -lbareos -lm $(DLIB) \
-	      $(DB_LIBS) $(LIBS) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
+	      $(DB_LIBS) $(LIBS) $(WRAPLIBS) $(GETTEXT_LIBS) $(CAP_LIBS)
 
 bareos-dbcheck: Makefile $(DBCHKOBJS) \
 	 ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
@@ -77,7 +77,7 @@ bareos-dbcheck: Makefile $(DBCHKOBJS) \
 	 ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
 	 ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -L../cats -o $@ $(DBCHKOBJS) \
-	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
 
 testfind: Makefile $(TSTFNDOBJS) \
 	 ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
@@ -86,7 +86,7 @@ testfind: Makefile $(TSTFNDOBJS) \
 	 ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
 	 ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -L../cats -o $@ $(TSTFNDOBJS) \
-	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
 
 static-bareos-dir:  Makefile $(SVROBJS) \
 	            ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
@@ -98,7 +98,7 @@ static-bareos-dir:  Makefile $(SVROBJS) \
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
 	      $(NDMP_LIBS) -lbareosfind -lbareossql -lbareoscats -lbareoscfg -lbareos -lm $(DLIB) $(DB_LIBS) $(LIBS) \
-	      $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
+	      $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS) $(CAP_LIBS)
 	strip $@
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status

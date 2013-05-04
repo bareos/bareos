@@ -172,9 +172,20 @@ bool crypto_keypair_has_key(const char *file);
 int crypto_keypair_load_key(X509_KEYPAIR *keypair, const char *file, CRYPTO_PEM_PASSWD_CB *pem_callback, const void *pem_userdata);
 void crypto_keypair_free(X509_KEYPAIR *keypair);
 int crypto_default_pem_callback(char *buf, int size, const void *userdata);
+const char *crypto_digest_name(crypto_digest_t type);
 const char *crypto_digest_name(DIGEST *digest);
 crypto_digest_t crypto_digest_stream_type(int stream);
 const char *crypto_strerror(crypto_error_t error);
+
+/* crypto_openssl.c */
+#ifdef HAVE_OPENSSL
+void openssl_post_errors(int code, const char *errstring);
+void openssl_post_errors(JCR *jcr, int code, const char *errstring);
+int openssl_init_threads(void);
+void openssl_cleanup_threads(void);
+int openssl_seed_prng(void);
+int openssl_save_prng(void);
+#endif /* HAVE_OPENSSL */
 
 /* crypto_wrap.c */
 void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher);
@@ -316,6 +327,7 @@ void stop_bsock_timer(btimer_t *wid);
 /* tls.c */
 TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                              const char *ca_certdir,
+                             const char *crlfile,
                              const char *certfile,
                              const char *keyfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
@@ -328,7 +340,7 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls,
                                  const char *host);
 bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls,
                                alist *verify_list);
-TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd);
+TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server);
 bool tls_bsock_accept(BSOCK *bsock);
 int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes);
 int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes);

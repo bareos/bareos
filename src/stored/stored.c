@@ -403,9 +403,15 @@ static int check_resources()
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         store->tls_ctx = new_tls_context(store->tls_ca_certfile, store->tls_ca_certdir,
-                                          store->tls_certfile, store->tls_keyfile,
-                                          NULL, NULL, store->tls_dhfile, store->tls_verify_peer);
+         store->tls_ctx = new_tls_context(store->tls_ca_certfile,
+                                          store->tls_ca_certdir,
+                                          store->tls_crlfile,
+                                          store->tls_certfile,
+                                          store->tls_keyfile,
+                                          NULL,
+                                          NULL,
+                                          store->tls_dhfile,
+                                          store->tls_verify_peer);
 
          if (!store->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
@@ -453,9 +459,15 @@ static int check_resources()
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         director->tls_ctx = new_tls_context(director->tls_ca_certfile, director->tls_ca_certdir,
-                                             director->tls_certfile, director->tls_keyfile,
-                                             NULL, NULL, director->tls_dhfile, director->tls_verify_peer);
+         director->tls_ctx = new_tls_context(director->tls_ca_certfile,
+                                             director->tls_ca_certdir,
+                                             director->tls_crlfile,
+                                             director->tls_certfile,
+                                             director->tls_keyfile,
+                                             NULL,
+                                             NULL,
+                                             director->tls_dhfile,
+                                             director->tls_verify_peer);
 
          if (!director->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),

@@ -267,7 +267,7 @@ bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
    TLS_CONNECTION *tls;
    JCR *jcr = bsock->jcr();
 
-   tls = new_tls_connection(ctx, bsock->m_fd);
+   tls = new_tls_connection(ctx, bsock->m_fd, true);
    if (!tls) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
@@ -308,7 +308,7 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
    TLS_CONNECTION *tls;
    JCR *jcr = bsock->jcr();
 
-   tls  = new_tls_connection(ctx, bsock->m_fd);
+   tls  = new_tls_connection(ctx, bsock->m_fd, false);
    if (!tls) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;

@@ -48,7 +48,7 @@ scsicrypto-sd.la: Makefile \
 plugtest: Makefile sd_plugins.c \
 	  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../stored/sd_plugins.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -o $@ sd_plugins.o -lbareos $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -o $@ sd_plugins.o -lbareos $(DLIB) -lm $(LIBS)
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)

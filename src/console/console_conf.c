@@ -87,6 +87,7 @@ static RES_ITEM cons_items[] = {
    { "tlsrequire", store_bool, ITEM(res_cons.tls_require), 0, 0, NULL },
    { "tlscacertificatefile", store_dir, ITEM(res_cons.tls_ca_certfile), 0, 0, NULL },
    { "tlscacertificatedir", store_dir, ITEM(res_cons.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", store_dir, ITEM(res_cons.tls_crlfile), 0, 0, NULL },
    { "tlscertificate", store_dir, ITEM(res_cons.tls_certfile), 0, 0, NULL },
    { "tlskey", store_dir, ITEM(res_cons.tls_keyfile), 0, 0, NULL },
    { "director", store_str, ITEM(res_cons.director), 0, 0, NULL },
@@ -106,6 +107,7 @@ static RES_ITEM dir_items[] = {
    { "tlsrequire", store_bool, ITEM(res_dir.tls_require), 0, 0, NULL },
    { "tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
    { "tlscacertificatedir", store_dir, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", store_dir, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
    { "tlscertificate", store_dir, ITEM(res_dir.tls_certfile), 0, 0, NULL },
    { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
    { "heartbeatinterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
@@ -194,6 +196,9 @@ void free_resource(RES *sres, int type)
       if (res->res_cons.tls_ca_certdir) {
          free(res->res_cons.tls_ca_certdir);
       }
+      if (res->res_cons.tls_crlfile) {
+         free(res->res_cons.tls_crlfile);
+      }
       if (res->res_cons.tls_certfile) {
          free(res->res_cons.tls_certfile);
       }
@@ -213,6 +218,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_dir.tls_ca_certdir) {
          free(res->res_dir.tls_ca_certdir);
+      }
+      if (res->res_dir.tls_crlfile) {
+         free(res->res_dir.tls_crlfile);
       }
       if (res->res_dir.tls_certfile) {
          free(res->res_dir.tls_certfile);
