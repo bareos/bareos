@@ -304,7 +304,10 @@ void *handle_client_request(void *dirp)
    }
 
    /* Run the after job */
-   run_scripts(jcr, jcr->RunScripts, "ClientAfterJob");
+   run_scripts(jcr, jcr->RunScripts, "ClientAfterJob",
+              (jcr->director->allowed_script_dirs) ?
+               jcr->director->allowed_script_dirs :
+               me->allowed_script_dirs);
 
    if (jcr->JobId) {            /* send EndJob if running a job */
       char ed1[50], ed2[50];
@@ -643,7 +646,11 @@ static int runbeforenow_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
 
-   run_scripts(jcr, jcr->RunScripts, "ClientBeforeJob");
+   run_scripts(jcr, jcr->RunScripts, "ClientBeforeJob",
+              (jcr->director->allowed_script_dirs) ?
+               jcr->director->allowed_script_dirs :
+               me->allowed_script_dirs);
+
    if (job_canceled(jcr)) {
       dir->fsend(FailedRunScript);
       Dmsg0(100, "Back from run_scripts ClientBeforeJob now: FAILED\n");
@@ -1318,7 +1325,11 @@ static int backup_cmd(JCR *jcr)
          Jmsg(jcr, M_FATAL, 0, _("VSS was not initialized properly. ERR=%s\n"),
             be.bstrerror());
       }
-      run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS");
+
+      run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS",
+                 (jcr->director->allowed_script_dirs) ?
+                  jcr->director->allowed_script_dirs :
+                  me->allowed_script_dirs);
    }
 #endif
 
@@ -1597,7 +1608,10 @@ static int restore_cmd(JCR *jcr)
          Jmsg(jcr, M_WARNING, 0, _("VSS was not initialized properly. VSS support is disabled. ERR=%s\n"), be.bstrerror());
       }
       //free_and_null_pool_memory(jcr->job_metadata);
-      run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS");
+      run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS",
+                 (jcr->director->allowed_script_dirs) ?
+                  jcr->director->allowed_script_dirs :
+                  me->allowed_script_dirs);
    }
 #endif
 

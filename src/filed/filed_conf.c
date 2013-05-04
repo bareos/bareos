@@ -117,6 +117,7 @@ static RES_ITEM cli_items[] = {
    { "compatible", store_bool, ITEM(res_client.compatible), 0, 0, "true" },
    { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
    { "allowbandwidthbursting", store_bool, ITEM(res_client.allow_bw_bursting), 0, 0, "false" },
+   { "allowedscriptdir", store_alist_str, ITEM(res_client.allowed_script_dirs), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -140,6 +141,7 @@ static RES_ITEM dir_items[] = {
    { "tlsdhfile", store_dir, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
    { "tlsallowedcn", store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
    { "maximumbandwidthperjob", store_speed, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL },
+   { "allowedscriptdir", store_alist_str, ITEM(res_dir.allowed_script_dirs), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -255,6 +257,9 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.tls_allowed_cns) {
          delete res->res_dir.tls_allowed_cns;
       }
+      if (res->res_dir.allowed_script_dirs) {
+         delete res->res_dir.allowed_script_dirs;
+      }
       break;
    case R_CLIENT:
       if (res->res_client.working_directory) {
@@ -278,14 +283,12 @@ void free_resource(RES *sres, int type)
       if (res->res_client.FDsrc_addr) {
          free_addresses(res->res_client.FDsrc_addr);
       }
-
       if (res->res_client.pki_keypair_file) {
          free(res->res_client.pki_keypair_file);
       }
       if (res->res_client.pki_keypair) {
          crypto_keypair_free(res->res_client.pki_keypair);
       }
-
       if (res->res_client.pki_signing_key_files) {
          delete res->res_client.pki_signing_key_files;
       }
@@ -296,11 +299,9 @@ void free_resource(RES *sres, int type)
          }
          delete res->res_client.pki_signers;
       }
-
       if (res->res_client.pki_master_key_files) {
          delete res->res_client.pki_master_key_files;
       }
-
       if (res->res_client.pki_recipients) {
          X509_KEYPAIR *keypair;
          foreach_alist(keypair, res->res_client.pki_recipients) {
@@ -308,7 +309,6 @@ void free_resource(RES *sres, int type)
          }
          delete res->res_client.pki_recipients;
       }
-
       if (res->res_client.tls_ctx) {
          free_tls_context(res->res_client.tls_ctx);
       }
@@ -327,12 +327,17 @@ void free_resource(RES *sres, int type)
       if (res->res_client.verid) {
          free(res->res_client.verid);
       }
+      if (res->res_client.allowed_script_dirs) {
+         delete res->res_client.allowed_script_dirs;
+      }
       break;
    case R_MSGS:
-      if (res->res_msgs.mail_cmd)
+      if (res->res_msgs.mail_cmd) {
          free(res->res_msgs.mail_cmd);
-      if (res->res_msgs.operator_cmd)
+      }
+      if (res->res_msgs.operator_cmd) {
          free(res->res_msgs.operator_cmd);
+      }
       free_msgs_res((MSGSRES *)res);  /* free message resource */
       res = NULL;
       break;
@@ -394,6 +399,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
             }
             res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
+            res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
             break;
          case R_CLIENT:
             if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_dir.hdr.name)) == NULL) {
@@ -401,11 +407,10 @@ void save_resource(int type, RES_ITEM *items, int pass)
             }
             res->res_client.pki_signing_key_files = res_all.res_client.pki_signing_key_files;
             res->res_client.pki_master_key_files = res_all.res_client.pki_master_key_files;
-
             res->res_client.pki_signers = res_all.res_client.pki_signers;
             res->res_client.pki_recipients = res_all.res_client.pki_recipients;
-
             res->res_client.messages = res_all.res_client.messages;
+            res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
             break;
          default:
             Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);

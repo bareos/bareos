@@ -95,14 +95,47 @@ void free_runscript(RUNSCRIPT *script)
    free(script);
 }
 
-int run_scripts(JCR *jcr, alist *runscripts, const char *label)
+static inline bool script_dir_allowed(JCR *jcr, RUNSCRIPT *script, alist *allowed_script_dirs)
 {
-   Dmsg2(200, "runscript: running all RUNSCRIPT object (%s) JobStatus=%c\n", label, jcr->JobStatus);
+   char *bp, *allowed_script_dir;
+   bool allowed = false;
+   POOL_MEM script_dir(PM_FNAME);
 
+   /*
+    * If there is no explicit list of allowed dirs allow any dir.
+    */
+   if (!allowed_script_dirs) {
+      return true;
+   }
+
+   /*
+    * Determine the dir the script is in.
+    */
+   pm_strcpy(script_dir, script->command);
+   if ((bp = strrchr(script_dir.c_str(), '/'))) {
+      *bp = '\0';
+   }
+
+   /*
+    * Match the path the script is in against the list of allowed script directories.
+    */
+   foreach_alist(allowed_script_dir, allowed_script_dirs) {
+      if (bstrcasecmp(script_dir.c_str(), allowed_script_dir)) {
+         allowed = true;
+         break;
+      }
+   }
+
+   return allowed;
+}
+
+int run_scripts(JCR *jcr, alist *runscripts, const char *label, alist *allowed_script_dirs)
+{
    RUNSCRIPT *script;
    bool runit;
-
    int when;
+
+   Dmsg2(200, "runscript: running all RUNSCRIPT object (%s) JobStatus=%c\n", label, jcr->JobStatus);
 
    if (strstr(label, NT_("Before"))) {
       when = SCRIPT_Before;
@@ -120,6 +153,15 @@ int run_scripts(JCR *jcr, alist *runscripts, const char *label)
    foreach_alist(script, runscripts) {
       Dmsg2(200, "runscript: try to run %s:%s\n", NPRT(script->target), NPRT(script->command));
       runit = false;
+
+      if (!script_dir_allowed(jcr, script, allowed_script_dirs)) {
+         Dmsg1(200, "runscript: Not running script %s because its not in one of the allowed scripts dirs\n",
+               script->command);
+         Jmsg(jcr, M_ERROR, 0, _("Runscript: run %s \"%s\" could not execute, "
+                                 "not in one of the allowed scripts dirs\n"), label, script->command);
+         jcr->setJobStatus(JS_ErrorTerminated);
+         goto bail_out;
+      }
 
       if ((script->when & SCRIPT_Before) && (when & SCRIPT_Before)) {
          if ((script->on_success && (jcr->JobStatus == JS_Running || jcr->JobStatus == JS_Created)) ||
@@ -157,6 +199,8 @@ int run_scripts(JCR *jcr, alist *runscripts, const char *label)
          script->run(jcr, label);
       }
    }
+
+bail_out:
    return 1;
 }
 
