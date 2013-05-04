@@ -4,6 +4,16 @@ DIR_CFG=@sysconfdir@
 CFG_DIR=${DIR_CFG}/bareos-dir.conf
 DIR_SCRIPTS=@scriptdir@
 
+SEC_GROUPS="tape disk"
+
+WORKING_DIR="@working_dir@"
+FILE_DAEMON_USER="@fd_user@"
+FILE_DAEMON_GROUP="@fd_group@"
+STORAGE_DAEMON_USER="@sd_user@"
+STORAGE_DAEMON_GROUP="@sd_group@"
+DIRECTOR_DAEMON_USER="@dir_user@"
+DIRECTOR_DAEMON_GROUP="@dir_group@"
+
 PASSWORD_SUBST="\
 XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX \
 XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX \
@@ -12,6 +22,8 @@ XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX \
 XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX \
 XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX \
 "
+
+os_type=`uname -s`
 
 usage()
 {
@@ -48,32 +60,84 @@ is_function()
 
 get_user_fd()
 {
-    echo "@fd_user@"
+    echo "${FILE_DAEMON_USER}"
 }
 
 get_group_fd()
 {
-    echo "@fd_group@"
+    echo "${FILE_DAEMON_GROUP}"
 }
 
 get_user_sd()
 {
-    echo "@sd_user@"
+    echo "${STORAGE_DAEMON_USER}"
 }
 
 get_group_sd()
 {
-    echo "@sd_group@"
+    echo "${STORAGE_DAEMON_GROUP}"
 }
 
 get_user_dir()
 {
-    echo "@dir_user@"
+    echo "${DIRECTOR_DAEMON_USER}"
 }
 
 get_group_dir()
 {
-    echo "@dir_group@"
+    echo "${DIRECTOR_DAEMON_GROUP}"
+}
+
+[ ${os_type} = Linux ] && \
+setup_sd_user()
+{
+    #
+    # guaranties that storage-daemon user and group exists
+    # and storage-daemon user belongs to the required groups.
+    #
+    # normally, storage-daemon user
+    # is already installed by the package preinstall script.
+    #
+
+    #
+    # See what secondary groups exist for the sd user to be added to.
+    #
+    ADD_GROUPS=""
+    for sec_group in ${SEC_GROUPS}; do
+        cnt=`getent group ${sec_group} | wc -l`
+        if [ ${cnt} -gt 0 ]; then
+            [ -z "${ADD_GROUPS}" ] && ADD_GROUPS="-G ${sec_group}" || ADD_GROUPS="${ADD_GROUPS},${sec_group}"
+        fi
+    done
+
+    getent group ${STORAGE_DAEMON_GROUP} > /dev/null || groupadd -r ${STORAGE_DAEMON_GROUP}
+
+    #
+    # If the user doesn't exist create a new one otherwise modify it to have the wanted secondary groups.
+    #
+    if [ "${STORAGE_DAEMON_USER}" != "root" ]; then
+        getent passwd ${STORAGE_DAEMON_USER} > /dev/null
+        if [ $? -ne 0 ]; then
+            # create a new storage_daemon_user
+            useradd -r --comment "bareos" --home ${WORKING_DIR} -g ${STORAGE_DAEMON_GROUP} ${ADD_GROUPS} --shell /bin/false ${STORAGE_DAEMON_USER}
+        fi
+
+        # if the user has already created before,
+        # make sure the correct primary group is set otherwise fix it.
+        if [ "`id -gn ${STORAGE_DAEMON_USER}`" != "${STORAGE_DAEMON_GROUP}" ]; then
+            usermod -g ${STORAGE_DAEMON_GROUP} ${STORAGE_DAEMON_USER}
+        fi
+
+        # add the storage_daemon_user to additional groups (if defined)
+        [ "${ADD_GROUPS}" ] && usermod ${ADD_GROUPS} ${STORAGE_DAEMON_USER}
+    fi
+}
+
+[ ${os_type} != Linux ] && \
+setup_sd_user()
+{
+   echo "setup_sd_user() is not supported on this platform"
+   exit 1
 }
 
 get_database_driver()

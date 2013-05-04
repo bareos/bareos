@@ -40,6 +40,7 @@ enable_rc_scripts()
 case "$1" in
     configure)
         permissions
+        /usr/lib/bareos/scripts/bareos-config setup_sd_user
         /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
         /usr/lib/bareos/scripts/bareos-config initialize_passwords
         enable_rc_scripts
