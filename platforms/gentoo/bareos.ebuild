@@ -120,7 +120,7 @@ src_compile() {
 
 	if use gnome
 	then
-	myconf="${myconf} --enable-tray-monitor"
+	myconf="${myconf} --enable-traymonitor"
 	fi
 
 	./configure \

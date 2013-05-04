@@ -1,6 +1,6 @@
-#/etc/bareos/tray-monitor.conf
-#/usr/sbin/bareos-tray-monitor-qt
-#/usr/share/man/man1/bareos-tray-monitor.1.gz
-#/etc/xdg/autostart/bareos-tray-monitor.desktop
-#/usr/share/applications/bareos-tray-monitor.desktop
-#/usr/share/pixmaps/bareos-tray-monitor.xpm
+/etc/bareos/tray-monitor.conf
+/etc/xdg/autostart/bareos-tray-monitor.desktop
+/usr/sbin/bareos-tray-monitor
+/usr/share/man/man1/bareos-tray-monitor.1.gz
+/usr/share/applications/bareos-tray-monitor.desktop
+/usr/share/pixmaps/bareos-tray-monitor.xpm
