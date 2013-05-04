@@ -317,12 +317,12 @@ char *lookup_crypto_cache_entry(const char *VolumeName)
 void dump_crypto_cache(int fd)
 {
    int len;
-   int max_vol_length = strlen(_("Volumename"));
-   int max_key_length = strlen(_("EncryptionKey"));
+   POOL_MEM msg(PM_MESSAGE);
    crypto_cache_entry_t *cce;
    char dt1[MAX_TIME_LENGTH],
         dt2[MAX_TIME_LENGTH];
-   POOL_MEM msg(PM_MESSAGE);
+   unsigned int max_vol_length,
+                max_key_length;
 
    if (!cached_crypto_keys) {
       return;
@@ -336,6 +336,8 @@ void dump_crypto_cache(int fd)
    /*
     * See how long the biggest volumename and key are.
     */
+   max_vol_length = strlen(_("Volumename"));
+   max_key_length = strlen(_("EncryptionKey"));
    foreach_dlist(cce, cached_crypto_keys) {
       if (strlen(cce->VolumeName) > max_vol_length) {
          max_vol_length = strlen(cce->VolumeName);
