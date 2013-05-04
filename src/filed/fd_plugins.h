@@ -172,9 +172,8 @@ typedef enum {
   bVarExePath = 16,
   bVarVersion = 17,
   bVarDistName = 18,
-  bVarBEEF = 19,
-  bVarPrevJobName = 20,
-  bVarPrefixLinks = 21
+  bVarPrevJobName = 19,
+  bVarPrefixLinks = 20
 } bVariable;
 
 /*

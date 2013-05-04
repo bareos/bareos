@@ -261,9 +261,9 @@ static void list_status_header(STATUS_PKT *sp)
          edit_uint64_with_commas(sm_max_buffers, b5));
    sendit(msg, len, sp);
    len = Mmsg(msg, " Sizes: boffset_t=%d size_t=%d int32_t=%d int64_t=%d "
-                   "mode=%d,%d bwlimit=%skB/s\n",
+                   "mode=%d bwlimit=%skB/s\n",
               (int)sizeof(boffset_t), (int)sizeof(size_t), (int)sizeof(int32_t),
-              (int)sizeof(int64_t), (int)DEVELOPER_MODE, (int)BEEF,
+              (int)sizeof(int64_t), (int)DEVELOPER_MODE,
               edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
    sendit(msg, len, sp);
 

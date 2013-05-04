@@ -8,7 +8,6 @@ print distname
 print distver
 print host_name
 print dist_name
-print beef
 show env TestName
 bt
 thread apply all bt
