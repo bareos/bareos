@@ -182,8 +182,6 @@ static char runscriptcmd[] =
  */
 static char errmsg[] =
    "2999 Invalid command\n";
-static char no_auth[] =
-   "2998 No Authorization\n";
 static char invalid_cmd[] =
    "2997 Invalid command for a Director with Monitor directive enabled.\n";
 static char OkAuthorization[] =
