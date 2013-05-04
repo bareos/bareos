@@ -27,7 +27,7 @@ Release 12.4.0
 * Do not check for backend when --enable-client-only is given.
 * Backported quota support.
 * Import/Export of volumes from bconsole and BAT with full support in
-  bacula-dir and bacula-sd
+  bareos-dir and bareos-sd
   * Cleanup of dird
   * Add an autochanger transfer option.
   * Add extra function to update database with new data.
@@ -143,6 +143,7 @@ Long standing bugs fixed (bug numbers are from the bacula bug database):
     * More to come like Ubuntu etc.
   * Fully automatic generation of new packages within one hour after new
     release of software or bugfix.
+  * Fully automatic continuos integration tests of new packages with most major linux distribution
   * Deprecated old windows build system
   * New clean MINGW based windows Makefile set based on integration into OBS.
     * No more deppkgs but use native libraries available in OBS for MINGW32 and MINGW64
