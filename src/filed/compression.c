@@ -64,6 +64,21 @@ static const char *zlib_strerror(int stat)
 }
 #endif
 
+static inline void unknown_compression_algoritm(JCR *jcr, uint32_t compression_algoritm)
+{
+   switch (compression_algoritm) {
+   case COMPRESS_GZIP:
+      Jmsg(jcr, M_FATAL, 0, _("GZIP compression not supported on this platform\n"));
+      break;
+   case COMPRESS_LZO1X:
+      Jmsg(jcr, M_FATAL, 0, _("LZ02 compression not supported on this platform\n"));
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Unknown compression algoritm specified %d\n"), compression_algoritm);
+      break;
+   }
+}
+
 void adjust_compression_buffers(JCR *jcr)
 {
    uint32_t wanted_compress_buf_size;
@@ -145,7 +160,7 @@ void adjust_compression_buffers(JCR *jcr)
             }
 #endif
             default:
-               Jmsg(jcr, M_FATAL, 0, _("Unknown compression algoritm specified %d\n"), fo->Compress_algo);
+               unknown_compression_algoritm(jcr, fo->Compress_algo);
                break;
             }
          }
