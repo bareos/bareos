@@ -165,7 +165,18 @@ AC_HELP_STRING([--with-dbi-driver@<:@=DRIVER@:>@], [Suport for DBI driver. DRIVE
      case $withval in
         "mysql")
            db_prog="mysql"
-           if test -f /usr/local/mysql/bin/mysql; then
+           MYSQL_CONFIG=`which mysql_config 2>/dev/null`
+           if test "x${MYSQL_CONFIG}" != x; then
+              MYSQL_BINDIR="${MYSQL_CONFIG%/*}"
+              ${MYSQL_CONFIG} --variable=pkglibdir > /dev/null 2>&1
+              if test $? = 0 ; then
+                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --variable=pkglibdir`
+                 MYSQL_INCDIR=`${MYSQL_CONFIG} --variable=pkgincludedir`
+              else
+                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --libs | sed -e 's/.*-L//' -e 's/ .*//'`
+                 MYSQL_INCDIR=`${MYSQL_CONFIG} --include | sed -e 's/-I//'`
+              fi
+           elif test -f /usr/local/mysql/bin/mysql; then
               MYSQL_BINDIR=/usr/local/mysql/bin
               if test -f /usr/local/mysql/lib64/mysql/libmysqlclient_r.a \
                  -o -f /usr/local/mysql/lib64/mysql/libmysqlclient_r.so; then
@@ -325,22 +336,18 @@ AC_HELP_STRING([--with-mysql@<:@=DIR@:>@], [Include MySQL support. DIR is the My
 [
   if test "$withval" != "no"; then
         if test "$withval" = "yes"; then
-#
-# This code is very broken on older systems
-#
-#           MYSQL_CONFIG=`which mysql_config 2>/dev/null`
-#           if test "x${MYSQL_CONFIG}" != x; then
-#              MYSQL_BINDIR="${MYSQL_CONFIG%/*}"
-#              ${MYSQL_CONFIG} --variable=pkglibdir > /dev/null 2>&1
-#              if test $? = 0 ; then
-#                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --variable=pkglibdir`
-#                 MYSQL_INCDIR=`${MYSQL_CONFIG} --variable=pkgincludedir`
-#              else
-#                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --libs | sed -e 's/.*-L//' -e 's/ .*//'`
-#                 MYSQL_INCDIR=`${MYSQL_CONFIG} --include | sed -e 's/-I//'`
-#              fi
-#           elif test -f /usr/local/mysql/include/mysql/mysql.h; then
-           if test -f /usr/local/mysql/include/mysql/mysql.h; then
+           MYSQL_CONFIG=`which mysql_config 2>/dev/null`
+           if test "x${MYSQL_CONFIG}" != x; then
+              MYSQL_BINDIR="${MYSQL_CONFIG%/*}"
+              ${MYSQL_CONFIG} --variable=pkglibdir > /dev/null 2>&1
+              if test $? = 0 ; then
+                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --variable=pkglibdir`
+                 MYSQL_INCDIR=`${MYSQL_CONFIG} --variable=pkgincludedir`
+              else
+                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --libs | sed -e 's/.*-L//' -e 's/ .*//'`
+                 MYSQL_INCDIR=`${MYSQL_CONFIG} --include | sed -e 's/-I//'`
+              fi
+           elif test -f /usr/local/mysql/include/mysql/mysql.h; then
               MYSQL_INCDIR=/usr/local/mysql/include/mysql
               if test -f /usr/local/mysql/lib64/mysql/libmysqlclient_r.a \
                       -o -f /usr/local/mysql/lib64/mysql/libmysqlclient_r.so; then
