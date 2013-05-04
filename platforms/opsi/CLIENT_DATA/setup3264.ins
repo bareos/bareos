@@ -12,16 +12,13 @@ DefVar $MsiId64$
 DefVar $UninstallProgram64$
 DefVar $LogDir$
 DefVar $ProductId$
-DefVar $ProductVer$
-DefVar $ReleaseVer$
+DefVar $ProductExe32$
+DefVar $ProductExe64$
 DefVar $MinimumSpace$
 DefVar $InstallDir$
 DefVar $InstallDir32$
 DefVar $InstallDir64$
 DefVar $ExitCode$
-DefVar $LicenseRequired$
-DefVar $LicenseKey$
-DefVar $LicensePool$
 DefVar $INST_SystemType$
 DefVar $INST_architecture$
 
@@ -55,16 +52,14 @@ Set $LogDir$ = "%SystemDrive%\tmp"
 ;$ProductId$ should be the name of the product in opsi
 ; therefore please: only lower letters, no umlauts,
 ; no white space use '-' as a seperator
-Set $ProductId$       = "bareos"
-Set $ProductVer$      = "12.4.1"
-Set $ReleaseVer$      = "r1.1.exe"
-Set $MinimumSpace$    = "30 MB"
+Set $ProductId$         = "winbareos"
+Set $ProductExe32$      = "winbareos32.exe"
+Set $ProductExe64$      = "winbareos64.exe"
+Set $MinimumSpace$      = "30 MB"
 ; the path were we find the product after the installation
 Set $InstallDir$        = "%ProgramFilesDir%\Bareos"
 Set $InstallDir32$      = "%ProgramFiles32Dir%\Bareos"
 Set $InstallDir64$      = "%ProgramFiles64Dir%\Bareos"
-Set $LicenseRequired$ = "false"
-Set $LicensePool$     = "p_" + $ProductId$
 ; ----------------------------------------------------------------
 
 if not(HasMinimumSpace ("%SystemDrive%", $MinimumSpace$))
@@ -74,17 +69,12 @@ if not(HasMinimumSpace ("%SystemDrive%", $MinimumSpace$))
 endif
 
 comment "Show product picture"
-ShowBitmap "%ScriptPath%\logo.png" $ProductId$
+ShowBitmap "%ScriptPath%\logo.png" "Bareos"
 
 if FileExists("%ScriptPath%\delsub3264.ins")
     comment "Start uninstall sub section"
     Sub "%ScriptPath%\delsub3264.ins"
 endif
-
-;if $LicenseRequired$ = "true"
-;	comment "Licensing required, reserve license and get license key"
-;	Sub_get_licensekey
-;endif
 
 comment "installing"
 
@@ -131,9 +121,6 @@ if ($INST_SystemType$ = "64 Bit System") and (($INST_architecture$ = "system spe
     ;LinkFolder_install
 endif
 
-;Patches_bareos_conf $InstallDir$+"\bareos-fd.conf"
-;DosBatch_bareos-fd.conf
-
 ;
 ; end
 ;
@@ -147,52 +134,12 @@ endif
 ;       don't use " around argument, otherwise argument is ignored
 
 [Winbatch_install_32]
-"%ScriptPath%\data\winbareos-$ProductVer$-32-bit-$ReleaseVer$" /S /CLIENTNAME=$filedaemon_full_name$ /CLIENTPASSWORD=$filedaemon_full_password$ /DIRECTORNAME=$director_name$ /CLIENTADDRESS=$filedaemon_client_address$ /CLIENTMONITORPASSWORD=$filedaemon_monitor_password$ /DIRECTORADDRESS=$director_address$ /DIRECTORPASSWORD=$director_password$ /D=$InstallDir32$
+"%ScriptPath%\$ProductExe32$" /S /CLIENTNAME=$filedaemon_full_name$ /CLIENTPASSWORD=$filedaemon_full_password$ /DIRECTORNAME=$director_name$ /CLIENTADDRESS=$filedaemon_client_address$ /CLIENTMONITORPASSWORD=$filedaemon_monitor_password$ /DIRECTORADDRESS=$director_address$ /DIRECTORPASSWORD=$director_password$ /D=$InstallDir32$
 
 
 [Winbatch_install_64]
-"%ScriptPath%\data\winbareos-$ProductVer$-64-bit-$ReleaseVer$" /S /CLIENTNAME=$filedaemon_full_name$ /CLIENTPASSWORD=$filedaemon_full_password$ /DIRECTORNAME=$director_name$ /CLIENTADDRESS=$filedaemon_client_address$ /CLIENTMONITORPASSWORD=$filedaemon_monitor_password$ /DIRECTORADDRESS=$director_address$ /DIRECTORPASSWORD=$director_password$ /D=$InstallDir64$
+"%ScriptPath%\$ProductExe64$" /S /CLIENTNAME=$filedaemon_full_name$ /CLIENTPASSWORD=$filedaemon_full_password$ /DIRECTORNAME=$director_name$ /CLIENTADDRESS=$filedaemon_client_address$ /CLIENTMONITORPASSWORD=$filedaemon_monitor_password$ /DIRECTORADDRESS=$director_address$ /DIRECTORPASSWORD=$director_password$ /D=$InstallDir64$
 
-
-;[DosBatch_bareos-fd.conf]
-;(
-;echo # managed by opsi
-;echo #
-;echo # "Global" File daemon configuration specifications
-;echo #
-;echo FileDaemon {                            # this is me
-;echo   Name = $filedaemon_full_name$
-;echo   FDport = 9102                # where we listen for the director
-;echo   WorkingDirectory = "$InstallDir32$\\working"
-;echo   Pid Directory = "$InstallDir32$\\working"
-;echo   Plugin Directory = "$InstallDir32$\\plugins"
-;echo   Maximum Concurrent Jobs = 10
-;echo }
-;echo
-;echo #
-;echo # List Directors who are permitted to contact this File daemon
-;echo #
-;echo Director {
-;echo   Name     = $director_name$
-;echo   Password = "$filedaemon_full_password$"
-;echo }
-;echo
-;echo #
-;echo # Restricted Director, used by tray-monitor to get the
-;echo #   status of the file daemon
-;echo #
-;echo Director {
-;echo   Name     = $filedaemon_monitor_name$
-;echo   Password = "$filedaemon_monitor_password$"
-;echo   Monitor  = yes
-;echo }
-;echo
-;echo # Send all messages except skipped files back to Director
-;echo Messages {
-;echo   Name = Standard
-;echo   director = $director_name$ = all, !skipped, !restored
-;echo }
-;) >> $InstallDir$/bareos-fd.conf
 
 [opsiservicecall_set_product_property_filedaemon_full_name]
 "method": "setProductProperty",
@@ -273,38 +220,6 @@ endif
 ; 	icon_file: <path to icon file>
 ; 	icon_index: 2
 ; end_link
-
-[Sub_get_licensekey]
-comment "License management is enabled and will be used"
-
-comment "Trying to get a license key"
-Set $LicenseKey$ = demandLicenseKey ($LicensePool$)
-; If there is an assignment of exactly one licensepool to the product the following call is possible:
-; Set $LicenseKey$ = demandLicenseKey ("", $ProductId$)
-;
-; If there is an assignment of a license pool to a windows software id, it is possible to use:
-; DefVar $WindowsSoftwareId$
-; $WindowsSoftwareId$ = "..."
-; Set $LicenseKey$ = demandLicenseKey ("", "", $WindowsSoftwareId$)
-
-DefVar $ServiceErrorClass$
-set $ServiceErrorClass$ = getLastServiceErrorClass
-comment "Error class: " + $ServiceErrorClass$
-
-if $ServiceErrorClass$ = "None"
-	comment "Everything fine, we got the license key '" + $LicenseKey$ + "'"
-else
-	if $ServiceErrorClass$ = "LicenseConfigurationError"
-		LogError "Fatal: license configuration must be corrected"
-		LogError getLastServiceErrorMessage
-		isFatalError
-	else
-		if $ServiceErrorClass$ = "LicenseMissingError"
-			LogError "Fatal: required license is not supplied"
-			isFatalError
-		endif
-	endif
-endif
 
 [Sub_check_exitcode]
 comment "Test for installation success via exit code"
