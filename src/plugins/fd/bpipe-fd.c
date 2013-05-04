@@ -101,7 +101,7 @@ static pFuncs pluginFuncs = {
  */
 struct plugin_ctx {
    boffset_t offset;
-   FILE *fd;                          /* pipe file descriptor */
+   BPIPE *pfd;                        /* bpipe() descriptor */
    bool backup;                       /* set for backup (not needed) */
    char *cmd;                         /* plugin command line */
    char *fname;                       /* filename to "backup/restore" */
@@ -324,10 +324,11 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       if (io->flags & (O_CREAT | O_WRONLY)) {
          char *writer_codes = apply_rp_codes(p_ctx);
 
-         p_ctx->fd = popen(writer_codes, "w");
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_OPEN fd=%d writer=%s\n",
-             p_ctx->fd, writer_codes);
-         if (!p_ctx->fd) {
+         p_ctx->pfd = open_bpipe(writer_codes, 0, "w");
+         bfuncs->DebugMessage(ctx, fi, li, dbglvl,
+                              "bpipe-fd: IO_OPEN fd=%p writer=%s\n",
+                              p_ctx->pfd, writer_codes);
+         if (!p_ctx->pfd) {
             io->io_errno = errno;
             bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
                "Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(errno));
@@ -340,10 +341,11 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
             free(writer_codes);
          }
       } else {
-         p_ctx->fd = popen(p_ctx->reader, "r");
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_OPEN fd=%p reader=%s\n",
-            p_ctx->fd, p_ctx->reader);
-         if (!p_ctx->fd) {
+         p_ctx->pfd = open_bpipe(p_ctx->reader, 0, "r");
+         bfuncs->DebugMessage(ctx, fi, li, dbglvl,
+                              "bpipe-fd: IO_OPEN fd=%p reader=%s\n",
+                              p_ctx->pfd, p_ctx->reader);
+         if (!p_ctx->pfd) {
             io->io_errno = errno;
             bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
                "Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(errno));
@@ -354,13 +356,13 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       break;
 
    case IO_READ:
-      if (!p_ctx->fd) {
+      if (!p_ctx->pfd) {
          bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Logic error: NULL read FD\n");
          return bRC_Error;
       }
-      io->status = fread(io->buf, 1, io->count, p_ctx->fd);
+      io->status = fread(io->buf, 1, io->count, p_ctx->pfd->rfd);
 //    bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_READ buf=%p len=%d\n", io->buf, io->status);
-      if (io->status == 0 && ferror(p_ctx->fd)) {
+      if (io->status == 0 && ferror(p_ctx->pfd->rfd)) {
          bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
             "Pipe read error: ERR=%s\n", strerror(errno));
          bfuncs->DebugMessage(ctx, fi, li, dbglvl,
@@ -370,14 +372,14 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       break;
 
    case IO_WRITE:
-      if (!p_ctx->fd) {
+      if (!p_ctx->pfd) {
          bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Logic error: NULL write FD\n");
          return bRC_Error;
       }
 //    printf("bpipe-fd: IO_WRITE fd=%p buf=%p len=%d\n", p_ctx->fd, io->buf, io->count);
-      io->status = fwrite(io->buf, 1, io->count, p_ctx->fd);
+      io->status = fwrite(io->buf, 1, io->count, p_ctx->pfd->wfd);
 //    printf("bpipe-fd: IO_WRITE buf=%p len=%d\n", io->buf, io->status);
-      if (io->status == 0 && ferror(p_ctx->fd)) {
+      if (io->status == 0 && ferror(p_ctx->pfd->wfd)) {
          bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
             "Pipe write error\n");
          bfuncs->DebugMessage(ctx, fi, li, dbglvl,
@@ -387,11 +389,11 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       break;
 
    case IO_CLOSE:
-      if (!p_ctx->fd) {
+      if (!p_ctx->pfd) {
          bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Logic error: NULL FD on bpipe close\n");
          return bRC_Error;
       }
-      io->status = pclose(p_ctx->fd);
+      io->status = close_bpipe(p_ctx->pfd);
       if (io->status) {
          bfuncs->JobMessage(ctx, fi, li, M_ERROR, 0,
                             "bpipe plugin: Error closing stream for pseudo file %s: %d\n",
