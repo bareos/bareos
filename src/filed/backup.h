@@ -44,8 +44,8 @@ struct b_ctx {
    /*
     * Compression data.
     */
-   const char *cbuf;            /* Compression buffer */
-   char *cbuf2;                 /* Compression buffer when using generic comp_stream_header */
+   const unsigned char *cbuf;   /* Compression buffer */
+   unsigned char *cbuf2;        /* Compression buffer when using generic comp_stream_header */
    uint32_t compress_len;       /* Actual length after compression */
    uint32_t max_compress_len;   /* Maximum size that will fit into compression buffer */
    comp_stream_header ch;       /* Compression Stream Header with info about compression used */
