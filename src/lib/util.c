@@ -711,12 +711,11 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
  *  %s = Since time
  *  %t = Job type (Backup, ...)
  *  %r = Recipients
- *  %v = Volume name
+ *  %v = Volume name(s)
  *
  *  omsg = edited output message
  *  imsg = input string containing edit codes (%x)
  *  to = recepients list
- *
  */
 POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t callback)
 {
@@ -818,10 +817,10 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
             break;
          case 'v':
             if (jcr) {
-               if (jcr->VolumeName && jcr->VolumeName[0]) {
+               if (jcr->VolumeName) {
                   str = jcr->VolumeName;
                } else {
-                  str = "";
+                  str = _("*none*");
                }
             } else {
                str = _("*none*");
