@@ -31,11 +31,17 @@ permissions()
   chown ${file_daemon_user}:${daemon_group} /etc/bareos/bareos-fd.conf
 }
 
+enable_rc_scripts()
+{
+  update-rc.d bareos-fd defaults
+}
+
 case "$1" in
     configure)
         permissions
         /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
         /usr/lib/bareos/scripts/bareos-config initialize_passwords
+        enable_rc_scripts
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
