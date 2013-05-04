@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +11,21 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Append code for Storage daemon
- *  Kern Sibbald, May MM
  *
+ * Kern Sibbald, May MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
-
 
 /* Responses sent to the File daemon */
 static char OK_data[]    = "3000 OK data\n";
@@ -41,8 +33,7 @@ static char OK_append[]  = "3000 OK append data\n";
 
 /* Forward referenced functions */
 
-
-/* 
+/*
  */
 void possible_incomplete_job(JCR *jcr, int32_t last_file_index)
 {
@@ -64,15 +55,15 @@ bool do_append_data(JCR *jcr)
    char ec[50];
 
 
-   if (!dcr) { 
+   if (!dcr) {
       Jmsg0(jcr, M_FATAL, 0, _("DCR is NULL!!!\n"));
       return false;
-   }                                              
+   }
    dev = dcr->dev;
-   if (!dev) { 
+   if (!dev) {
       Jmsg0(jcr, M_FATAL, 0, _("DEVICE is NULL!!!\n"));
       return false;
-   }                                              
+   }
 
    Dmsg1(100, "Start append data. res=%d\n", dev->num_reserved());
 
@@ -147,8 +138,8 @@ bool do_append_data(JCR *jcr)
 
       /* Read Stream header from the File daemon.
        *  The stream header consists of the following:
-       *    file_index (sequential Bacula file index, base 1)
-       *    stream     (Bacula number to distinguish parts of data)
+       *    file_index (sequential Bareos file index, base 1)
+       *    stream     (Bareos number to distinguish parts of data)
        *    info       (Info for Storage daemon -- compressed, encrypted, ...)
        *       info is not currently used, so is read, but ignored!
        */
@@ -209,7 +200,7 @@ fi_checked:
          rec.data = fd->msg;            /* use message buffer */
 
          Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
-            rec.FileIndex, rec.VolSessionId, 
+            rec.FileIndex, rec.VolSessionId,
             stream_to_ascii(buf1, rec.Stream,rec.FileIndex),
             rec.data_len);
 
@@ -309,7 +300,7 @@ fi_checked:
    Jmsg(dcr->jcr, M_INFO, 0, _("Elapsed time=%02d:%02d:%02d, Transfer rate=%s Bytes/second\n"),
          job_elapsed / 3600, job_elapsed % 3600 / 60, job_elapsed % 60,
          edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec));
-   
+
    /*
     * Release the device -- and send final Vol info to DIR
     *  and unlock it.
@@ -332,7 +323,7 @@ fi_checked:
 /* Send attributes and digest to Director for Catalog */
 bool send_attrs_to_dir(JCR *jcr, DEV_RECORD *rec)
 {
-   if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES    || 
+   if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES    ||
        rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX ||
        rec->maskedStream == STREAM_RESTORE_OBJECT     ||
        crypto_digest_stream_type(rec->maskedStream) != CRYPTO_DIGEST_NONE) {

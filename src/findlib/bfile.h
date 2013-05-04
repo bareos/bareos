@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,29 +13,23 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Bacula low level File I/O routines.  This routine simulates
- *    open(), read(), write(), and close(), but using native routines.
- *    I.e. on Windows, we use Windows APIs.
+ * Bareos low level File I/O routines.  This routine simulates
+ * open(), read(), write(), and close(), but using native routines.
+ * I.e. on Windows, we use Windows APIs.
  *
- *     Kern Sibbald May MMIII
+ * Kern Sibbald May MMIII
  */
 
 #ifndef __BFILE_H
 #define __BFILE_H
-
 
 /* this should physically correspond to WIN32_STREAM_ID
  * from winbase.h on Win32. We didn't inlcude cStreamName
@@ -48,14 +42,14 @@ typedef struct _BWIN32_STREAM_ID {
         int32_t        dwStreamId;
         int32_t        dwStreamAttributes;
         int64_t        Size;
-        int32_t        dwStreamNameSize;        
+        int32_t        dwStreamNameSize;
 } BWIN32_STREAM_ID, *LPBWIN32_STREAM_ID ;
 
 
 typedef struct _PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT {
         int64_t          liNextHeader;
         bool             bIsInData;
-        BWIN32_STREAM_ID header_stream;        
+        BWIN32_STREAM_ID header_stream;
 } PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT;
 
 /*  =======================================================
@@ -81,6 +75,7 @@ struct BFILE {
    HANDLE fh;                         /* Win32 file handle */
    int fid;                           /* fd if doing Unix style */
    LPVOID lpContext;                  /* BackupRead/Write context */
+   PVOID pvContext;                   /* Encryption context */
    POOLMEM *errmsg;                   /* error message buffer */
    DWORD rw_bytes;                    /* Bytes read or written */
    DWORD lerror;                      /* Last error code */
@@ -89,7 +84,7 @@ struct BFILE {
    JCR *jcr;                          /* jcr for editing job codes */
    PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32DecompContext; /* context for decomposition of win32 backup streams */
    int use_backup_decomp;             /* set if using BackupRead Stream Decomposition */
-   bool reparse_point;                /* set if reparse point */ 
+   bool reparse_point;                /* set if reparse point */
    bool cmd_plugin;                   /* set if we have a command plugin */
 };
 
@@ -120,23 +115,25 @@ struct BFILE {
 
 #endif
 
-void    binit(BFILE *bfd);
-bool    is_bopen(BFILE *bfd);
-bool    set_win32_backup(BFILE *bfd);
-bool    set_portable_backup(BFILE *bfd);
-bool    set_cmd_plugin(BFILE *bfd, JCR *jcr);
-bool    have_win32_api();
-bool    is_portable_backup(BFILE *bfd);
-bool    is_restore_stream_supported(int stream);
-bool    is_win32_stream(int stream);
-char   *xberror(BFILE *bfd);          /* DO NOT USE  -- use berrno class */
-int     bopen(BFILE *bfd, const char *fname, int flags, mode_t mode);
-int     bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode);
-int     bclose(BFILE *bfd);
+void binit(BFILE *bfd);
+bool is_bopen(BFILE *bfd);
+bool set_win32_backup(BFILE *bfd);
+bool set_portable_backup(BFILE *bfd);
+bool set_cmd_plugin(BFILE *bfd, JCR *jcr);
+bool have_win32_api();
+bool is_portable_backup(BFILE *bfd);
+bool is_restore_stream_supported(int stream);
+bool is_win32_stream(int stream);
+char *xberror(BFILE *bfd);          /* DO NOT USE  -- use berrno class */
+int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode);
+int bopen_encrypted(BFILE *bfd, const char *fname, int flags, mode_t mode, bool is_dir);
+int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode);
+int bclose(BFILE *bfd);
+int bclose_encrypted(BFILE *bfd);
 ssize_t bread(BFILE *bfd, void *buf, size_t count);
 ssize_t bwrite(BFILE *bfd, void *buf, size_t count);
 boffset_t blseek(BFILE *bfd, boffset_t offset, int whence);
-const char   *stream_to_ascii(int stream);
+const char *stream_to_ascii(int stream);
 
 bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize);
 

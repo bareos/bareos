@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,42 +13,37 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   Main configuration file parser for Bacula Directors,
- *    some parts may be split into separate files such as
- *    the schedule configuration (run_config.c).
+ * Main configuration file parser for BAREOS Directors,
+ * some parts may be split into separate files such as
+ * the schedule configuration (run_config.c).
  *
- *   Note, the configuration file parser consists of three parts
+ * Note, the configuration file parser consists of three parts
  *
- *   1. The generic lexical scanner in lib/lex.c and lib/lex.h
+ * 1. The generic lexical scanner in lib/lex.c and lib/lex.h
  *
- *   2. The generic config  scanner in lib/parse_config.c and
- *      lib/parse_config.h.
- *      These files contain the parser code, some utility
- *      routines, and the common store routines (name, int,
- *      string).
+ * 2. The generic config  scanner in lib/parse_config.c and
+ *    lib/parse_config.h.
  *
- *   3. The daemon specific file, which contains the Resource
- *      definitions as well as any specific store routines
- *      for the resource records.
+ *    These files contain the parser code, some utility
+ *    routines, and the common store routines (name, int,
+ *    string).
  *
- *     Kern Sibbald, January MM
+ * 3. The daemon specific file, which contains the Resource
+ *    definitions as well as any specific store routines
+ *    for the resource records.
  *
+ * Kern Sibbald, January MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /*
@@ -117,13 +112,13 @@ static RES_ITEM dir_items[] = {
    { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
    { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
    { "messages", store_res, ITEM(res_dir.messages), R_MSGS, 0, NULL },
-   { "dirport", store_addresses_port, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, "9101" },
-   { "diraddress", store_addresses_address, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, "9101" },
-   { "diraddresses", store_addresses, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, "9101" },
+   { "dirport", store_addresses_port, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "diraddress", store_addresses_address, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "diraddresses", store_addresses, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
    { "dirsourceaddress", store_addresses_address, ITEM(res_dir.DIRsrc_addr), 0, ITEM_DEFAULT, "0" },
    { "queryfile", store_dir, ITEM(res_dir.query_file), 0, ITEM_REQUIRED, NULL },
-   { "workingdirectory", store_dir, ITEM(res_dir.working_directory), 0, ITEM_DEFAULT, _PATH_BACULA_WORKINGDIR },
-   { "piddirectory", store_dir, ITEM(res_dir.pid_directory), 0, ITEM_DEFAULT, _PATH_BACULA_PIDDIR },
+   { "workingdirectory", store_dir, ITEM(res_dir.working_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
+   { "piddirectory", store_dir, ITEM(res_dir.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "plugindirectory", store_dir, ITEM(res_dir.plugin_directory), 0, 0, NULL },
    { "scriptsdirectory", store_dir, ITEM(res_dir.scripts_directory), 0, 0, NULL },
    { "subsysdirectory", store_dir, ITEM(res_dir.subsys_directory), 0, 0, NULL },
@@ -183,7 +178,6 @@ static RES_ITEM con_items[] = {
    { "tlskey", store_dir, ITEM(res_con.tls_keyfile), 0, 0, NULL },
    { "tlsdhfile", store_dir, ITEM(res_con.tls_dhfile), 0, 0, NULL },
    { "tlsallowedcn", store_alist_str, ITEM(res_con.tls_allowed_cns), 0, 0, NULL },
-   { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -199,12 +193,12 @@ static RES_ITEM cli_items[] = {
    { "authtype", store_authtype, ITEM(res_client.AuthType), 0, ITEM_DEFAULT, "None" },
    { "address", store_str, ITEM(res_client.address), 0, ITEM_REQUIRED, NULL },
    { "fdaddress", store_str, ITEM(res_client.address), 0, 0, NULL },
-   { "port", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, "9102" },
-   { "fdport", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, "9102" },
+   { "port", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "fdport", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
    { "username", store_str, ITEM(res_client.username), 0, 0, NULL },
    { "password", store_clearpassword, ITEM(res_client.password), 0, ITEM_REQUIRED, NULL },
    { "fdpassword", store_clearpassword, ITEM(res_client.password), 0, 0, NULL },
-   { "catalog", store_res, ITEM(res_client.catalog), R_CATALOG, ITEM_REQUIRED, NULL },
+   { "catalog", store_res, ITEM(res_client.catalog), R_CATALOG, 0, NULL },
    { "hardquota", store_size64, ITEM(res_client.HardQuota), 0, ITEM_DEFAULT, "0" },
    { "softquota", store_size64, ITEM(res_client.SoftQuota), 0, ITEM_DEFAULT, "0" },
    { "softquotagraceperiod", store_time, ITEM(res_client.SoftQuotaGracePeriod), 0, ITEM_DEFAULT, "0" },
@@ -223,6 +217,7 @@ static RES_ITEM cli_items[] = {
    { "tlscertificate", store_dir, ITEM(res_client.tls_certfile), 0, 0, NULL },
    { "tlskey", store_dir, ITEM(res_client.tls_keyfile), 0, 0, NULL },
    { "tlsallowedcn", store_alist_str, ITEM(res_client.tls_allowed_cns), 0, 0, NULL },
+   { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth), 0, 0, NULL },
    { "ndmploglevel", store_pint32, ITEM(res_client.ndmp_loglevel), 0, ITEM_DEFAULT, "4" },
    { "ndmpblocksize", store_pint32, ITEM(res_client.ndmp_blocksize), 0, ITEM_DEFAULT, "64512" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
@@ -239,8 +234,8 @@ static RES_ITEM store_items[] = {
    { "authtype", store_authtype, ITEM(res_store.AuthType), 0, ITEM_DEFAULT, "None" },
    { "address", store_str, ITEM(res_store.address), 0, ITEM_REQUIRED, NULL },
    { "sdaddress", store_str, ITEM(res_store.address), 0, 0, NULL },
-   { "port", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, "9103" },
-   { "sdport", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, "9103" },
+   { "port", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "sdport", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
    { "username", store_str, ITEM(res_store.username), 0, 0, NULL },
    { "password", store_clearpassword, ITEM(res_store.password), 0, ITEM_REQUIRED, NULL },
    { "sdpassword", store_clearpassword, ITEM(res_store.password), 0, 0, NULL },
@@ -1622,7 +1617,14 @@ void save_resource(int type, RES_ITEM *items, int pass)
          res->res_pool.RecyclePool = res_all.res_pool.RecyclePool;
          res->res_pool.ScratchPool = res_all.res_pool.ScratchPool;
          res->res_pool.storage = res_all.res_pool.storage;
-         res->res_pool.catalog = res_all.res_pool.catalog;
+         if (res_all.res_pool.catalog || !res->res_pool.use_catalog) {
+            res->res_pool.catalog = res_all.res_pool.catalog;
+         } else {
+            /*
+             * No catalog overwrite given use the first catalog definition.
+             */
+            res->res_pool.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+         }
          break;
       case R_CONSOLE:
          if ((res = (URES *)GetResWithName(R_CONSOLE, res_all.res_con.hdr.name)) == NULL) {
@@ -1711,7 +1713,14 @@ void save_resource(int type, RES_ITEM *items, int pass)
          if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_client.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Client resource %s\n"), res_all.res_client.hdr.name);
          }
-         res->res_client.catalog = res_all.res_client.catalog;
+         if (res_all.res_client.catalog) {
+            res->res_client.catalog = res_all.res_client.catalog;
+         } else {
+            /*
+             * No catalog overwrite given use the first catalog definition.
+             */
+            res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+         }
          res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
          break;
       case R_SCHEDULE:

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,31 +13,24 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- User Agent Database Purge Command
  *
- *   Bacula Director -- User Agent Database Purge Command
- *
- *      Purges Files from specific JobIds
+ * Purges Files from specific JobIds
  * or
- *      Purges Jobs from Volumes
+ * Purges Jobs from Volumes
  *
- *     Kern Sibbald, February MMII
- *
+ * Kern Sibbald, February MMII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /* Forward referenced functions */
@@ -275,7 +268,7 @@ static int purge_jobs_from_client(UAContext *ua, CLIENTRES *client)
    del.max_ids = 1000;
    del.JobId = (JobId_t *)malloc(sizeof(JobId_t) * del.max_ids);
    del.PurgedFiles = (char *)malloc(del.max_ids);
-   
+
    ua->info_msg(_("Begin purging jobs from Client \"%s\"\n"), cr.Name);
 
    Mmsg(query, select_jobs_from_client, edit_int64(cr.ClientId, ed1));
@@ -440,7 +433,7 @@ static int purge_quota_from_client(UAContext *ua, CLIENTRES *client)
 void upgrade_copies(UAContext *ua, char *jobs)
 {
    POOL_MEM query(PM_MESSAGE);
-   
+
    db_lock(ua->db);
 
    /* Do it in two times for mysql */
@@ -544,10 +537,10 @@ bool purge_jobs_from_volume(UAContext *ua, MEDIA_DBR *mr, bool force)
       purge_jobs_from_catalog(ua, jobids);
    }
 
-   ua->info_msg(_("%d File%s on Volume \"%s\" purged from catalog.\n"), 
+   ua->info_msg(_("%d File%s on Volume \"%s\" purged from catalog.\n"),
                 lst.count, lst.count<=1?"":"s", mr->VolumeName);
 
-   purged = is_volume_purged(ua, mr, force); 
+   purged = is_volume_purged(ua, mr, force);
 
 bail_out:
    return purged;
@@ -584,7 +577,7 @@ bool is_volume_purged(UAContext *ua, MEDIA_DBR *mr, bool force)
 
    /* If purged, mark it so */
    cnt.count = 0;
-   Mmsg(query, "SELECT 1 FROM JobMedia WHERE MediaId=%s LIMIT 1", 
+   Mmsg(query, "SELECT 1 FROM JobMedia WHERE MediaId=%s LIMIT 1",
         edit_int64(mr->MediaId, ed1));
    if (!db_sql_query(ua->db, query.c_str(), del_count_handler, (void *)&cnt)) {
       ua->error_msg("%s", db_strerror(ua->db));
@@ -603,17 +596,17 @@ bail_out:
    return purged;
 }
 
-/* 
+/*
  * Called here to send the appropriate commands to the SD
  *  to do truncate on purge.
  */
-static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr, 
+static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
                                  char *pool, char *storage,
                                  int drive, BSOCK *sd)
 {
    bool ok=false;
    uint64_t VolBytes = 0;
-   
+
    /* TODO: Return if not mr->Recyle ? */
    if (!mr->Recycle) {
       return;
@@ -633,14 +626,14 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
    bash_spaces(mr->MediaType);
    bash_spaces(pool);
    bash_spaces(storage);
-      
+
    /* Do it by relabeling the Volume, which truncates it */
    sd->fsend("relabel %s OldName=%s NewName=%s PoolName=%s "
              "MediaType=%s Slot=%d drive=%d\n",
                 storage,
                 mr->VolumeName, mr->VolumeName,
                 pool, mr->MediaType, mr->Slot, drive);
-      
+
    unbash_spaces(mr->VolumeName);
    unbash_spaces(mr->MediaType);
    unbash_spaces(pool);
@@ -667,9 +660,9 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
    }
 }
 
-/* 
- * Implement Bacula bconsole command  purge action
- *     purge action= pool= volume= storage= devicetype= 
+/*
+ * Implement Bareos bconsole command  purge action
+ *     purge action= pool= volume= storage= devicetype=
  */
 static int action_on_purge_cmd(UAContext *ua, const char *cmd)
 {
@@ -683,14 +676,14 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
    MEDIA_DBR mr;
    POOL_DBR pr;
    BSOCK *sd = NULL;
-   
+
    memset(&pr, 0, sizeof(pr));
 
    /* Look at arguments */
    for (int i=1; i<ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("allpools"))) {
          allpools = true;
-            
+
       } else if (bstrcasecmp(ua->argk[i], NT_("volume")) &&
                  is_name_valid(ua->argv[i], NULL)) {
          bstrncpy(mr.VolumeName, ua->argv[i], sizeof(mr.VolumeName));
@@ -698,7 +691,7 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
       } else if (bstrcasecmp(ua->argk[i], NT_("devicetype")) &&
                  ua->argv[i]) {
          bstrncpy(mr.MediaType, ua->argv[i], sizeof(mr.MediaType));
-         
+
       } else if (bstrcasecmp(ua->argk[i], NT_("drive")) && ua->argv[i]) {
          drive = atoi(ua->argv[i]);
 
@@ -744,7 +737,7 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
       mr.PoolId = pr.PoolId;
    }
 
-   /* 
+   /*
     * Look for all Purged volumes that can be recycled, are enabled and
     *  have more the 10,000 bytes.
     */
@@ -757,7 +750,7 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
       Dmsg0(100, "No results from db_get_media_ids\n");
       goto bail_out;
    }
-   
+
    if (!nb) {
       ua->send_msg(_("No Volumes found to perform %s action.\n"), action);
       goto bail_out;
@@ -774,7 +767,7 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
    for (int i=0; i < nb; i++) {
       mr.clear();
       mr.MediaId = results[i];
-      if (db_get_media_record(ua->jcr, ua->db, &mr)) {         
+      if (db_get_media_record(ua->jcr, ua->db, &mr)) {
          /* TODO: ask for drive and change Pool */
          if (bstrcasecmp("truncate", action) || bstrcasecmp("all", action)) {
             do_truncate_on_purge(ua, &mr, pr.Name, store->dev_name(), drive, sd);
@@ -829,12 +822,12 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
          memset(&newpr, 0, sizeof(POOL_DBR));
          newpr.PoolId = mr->RecyclePoolId;
          oldpr.PoolId = mr->PoolId;
-         if (   db_get_pool_record(jcr, ua->db, &oldpr) 
-             && db_get_pool_record(jcr, ua->db, &newpr)) 
+         if (   db_get_pool_record(jcr, ua->db, &oldpr)
+             && db_get_pool_record(jcr, ua->db, &newpr))
          {
             /* check if destination pool size is ok */
             if (newpr.MaxVols > 0 && newpr.NumVols >= newpr.MaxVols) {
-               ua->error_msg(_("Unable move recycled Volume in full " 
+               ua->error_msg(_("Unable move recycled Volume in full "
                               "Pool \"%s\" MaxVols=%d\n"),
                         newpr.Name, newpr.MaxVols);
 
@@ -846,10 +839,10 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
          }
       }
 
-      /* Send message to Job report, if it is a *real* job */           
+      /* Send message to Job report, if it is a *real* job */
       if (jcr && jcr->JobId > 0) {
          Jmsg(jcr, M_INFO, 0, _("All records pruned from Volume \"%s\"; marking it \"Purged\"\n"),
-            mr->VolumeName); 
+            mr->VolumeName);
       }
       return true;
    } else {

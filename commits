@@ -1,2 +1,0 @@
-#!/bin/sh
-git log --pretty=oneline Release-5.0.3..Branch-5.2 | wc -l

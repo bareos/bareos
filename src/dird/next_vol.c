@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,29 +13,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- next_vol -- handles finding the next volume for append.
  *
- *   Bacula Director -- next_vol -- handles finding the next
- *    volume for append.  Split out of catreq.c August MMIII
- *    catalog request from the Storage daemon.
-
- *     Kern Sibbald, March MMI
+ * Split out of catreq.c August MMIII catalog request from the Storage daemon.
  *
+ * Kern Sibbald, March MMI
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 static int const dbglvl = 50;   /* debug level */
@@ -58,7 +51,7 @@ void set_storageid_in_mr(STORERES *store, MEDIA_DBR *mr)
  *   MEDIA_DBR mr with PoolId set
  *   create -- whether or not to create a new volume
  */
-int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,             
+int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
                                 bool create, bool prune)
 {
    int retry = 0;
@@ -67,7 +60,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
    STORERES *store = jcr->res.wstore;
 
    bstrncpy(mr->MediaType, store->media_type, sizeof(mr->MediaType));
-   Dmsg3(dbglvl, "find_next_vol_for_append: JobId=%u PoolId=%d, MediaType=%s\n", 
+   Dmsg3(dbglvl, "find_next_vol_for_append: JobId=%u PoolId=%d, MediaType=%s\n",
          (uint32_t)jcr->JobId, (int)mr->PoolId, mr->MediaType);
    /*
     * If we are using an Autochanger, restrict Volume
@@ -119,7 +112,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
                         ok, index, InChanger, mr->VolStatus);
                   /*
                    * 5. Try pulling a volume from the Scratch pool
-                   */ 
+                   */
                   ok = get_scratch_volume(jcr, InChanger, mr, store);
                   set_storageid_in_mr(store, mr);  /* put StorageId in new record */
                   Dmsg4(dbglvl, "after get scratch volume ok=%d index=%d InChanger=%d Vstat=%s\n",
@@ -127,7 +120,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
                }
                /*
                 * If we are using an Autochanger and have not found
-                * a volume, retry looking for any volume. 
+                * a volume, retry looking for any volume.
                 */
                if (!ok && InChanger) {
                   InChanger = false;
@@ -216,7 +209,7 @@ bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr)
       /* First handle Max Volume Bytes */
       if ((mr->MaxVolBytes > 0 && mr->VolBytes >= mr->MaxVolBytes)) {
          Jmsg(jcr, M_INFO, 0, _("Max Volume bytes=%s exceeded. "
-             "Marking Volume \"%s\" as Full.\n"), 
+             "Marking Volume \"%s\" as Full.\n"),
              edit_uint64_with_commas(mr->MaxVolBytes, ed1), mr->VolumeName);
          bstrncpy(mr->VolStatus, "Full", sizeof(mr->VolStatus));
          expired = true;
@@ -231,7 +224,7 @@ bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr)
       /* Now see if Max Jobs written to volume */
       } else if (mr->MaxVolJobs > 0 && mr->MaxVolJobs <= mr->VolJobs) {
          Jmsg(jcr, M_INFO, 0, _("Max Volume jobs=%s exceeded. "
-             "Marking Volume \"%s\" as Used.\n"), 
+             "Marking Volume \"%s\" as Used.\n"),
              edit_uint64_with_commas(mr->MaxVolJobs, ed1), mr->VolumeName);
          Dmsg3(dbglvl, "MaxVolJobs=%d JobId=%d Vol=%s\n", mr->MaxVolJobs,
                (uint32_t)jcr->JobId, mr->VolumeName);
@@ -241,7 +234,7 @@ bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr)
       /* Now see if Max Files written to volume */
       } else if (mr->MaxVolFiles > 0 && mr->MaxVolFiles <= mr->VolFiles) {
          Jmsg(jcr, M_INFO, 0, _("Max Volume files=%s exceeded. "
-             "Marking Volume \"%s\" as Used.\n"), 
+             "Marking Volume \"%s\" as Used.\n"),
              edit_uint64_with_commas(mr->MaxVolFiles, ed1), mr->VolumeName);
          bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
          expired = true;
@@ -252,7 +245,7 @@ bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr)
          /* See if Vol Use has expired */
          if (mr->VolUseDuration <= (now - mr->FirstWritten)) {
             Jmsg(jcr, M_INFO, 0, _("Max configured use duration=%s sec. exceeded. "
-               "Marking Volume \"%s\" as Used.\n"), 
+               "Marking Volume \"%s\" as Used.\n"),
                edit_uint64_with_commas(mr->VolUseDuration, ed1), mr->VolumeName);
             bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
             expired = true;
@@ -373,10 +366,10 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
 
    /* Only one thread at a time can pull from the scratch pool */
    P(mutex);
-   /* 
+   /*
     * Get Pool record for Scratch Pool
     * choose between ScratchPoolId and Scratch
-    * db_get_pool_record will first try ScratchPoolId, 
+    * db_get_pool_record will first try ScratchPoolId,
     * and then try the pool named Scratch
     */
    memset(&spr, 0, sizeof(spr));
@@ -384,7 +377,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
    spr.PoolId = mr->ScratchPoolId;
    if (db_get_pool_record(jcr, jcr->db, &spr)) {
       smr.PoolId = spr.PoolId;
-      if (InChanger) {       
+      if (InChanger) {
          smr.StorageId = mr->StorageId;  /* want only Scratch Volumes in changer */
       }
       bstrncpy(smr.VolStatus, "Append", sizeof(smr.VolStatus));  /* want only appendable volumes */
@@ -409,7 +402,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
       if (found) {
          POOL_MEM query(PM_MESSAGE);
 
-         /*   
+         /*
           * Get pool record where the Scratch Volume will go to ensure
           * that we can add a Volume.
           */
@@ -417,11 +410,11 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
          bstrncpy(pr.Name, jcr->res.pool->name(), sizeof(pr.Name));
 
          if (!db_get_pool_record(jcr, jcr->db, &pr)) {
-            Jmsg(jcr, M_WARNING, 0, _("Unable to get Pool record: ERR=%s"), 
+            Jmsg(jcr, M_WARNING, 0, _("Unable to get Pool record: ERR=%s"),
                  db_strerror(jcr->db));
             goto bail_out;
          }
-         
+
          /* Make sure there is room for another volume */
          if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
             Jmsg(jcr, M_WARNING, 0, _("Unable add Scratch Volume, Pool \"%s\" full MaxVols=%d\n"),
@@ -449,9 +442,9 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
             goto bail_out;
          }
 
-         Jmsg(jcr, M_INFO, 0, _("Using Volume \"%s\" from 'Scratch' pool.\n"), 
+         Jmsg(jcr, M_INFO, 0, _("Using Volume \"%s\" from 'Scratch' pool.\n"),
               mr->VolumeName);
-         
+
          ok = true;
       }
    }

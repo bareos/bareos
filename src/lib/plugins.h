@@ -1,29 +1,24 @@
 /*
-   Bacula(R) - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation, which is 
+   License as published by the Free Software Foundation, which is
    listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula(R) is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Common plugin definitions
@@ -47,16 +42,16 @@ typedef enum {
    bRC_More   = 3,                       /* More files to backup */
    bRC_Term   = 4,                       /* Unload me */
    bRC_Seen   = 5,                       /* Return code from checkFiles */
-   bRC_Core   = 6,                       /* Let Bacula core handles this file */
+   bRC_Core   = 6,                       /* Let BAREOS core handles this file */
    bRC_Skip   = 7,                       /* Skip the proposed file */
    bRC_Cancel = 8,                       /* Job cancelled */
 
-   bRC_Max    = 9999                     /* Max code Bacula can use */
+   bRC_Max    = 9999                     /* Max code BAREOS can use */
 } bRC;
 
 /* Context packet as first argument of all functions */
 struct bpContext {
-   void *bContext;                       /* Bacula private context */
+   void *bContext;                       /* BAREOS private context */
    void *pContext;                       /* Plugin private context */
 };
 

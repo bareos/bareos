@@ -22,19 +22,19 @@ if [ -z "${SHLIB_EXT}" ]; then
    exit 1
 fi
 
-if [ -f ${install_dir}/libbaccats-${default_backend}-${library_version}${SHLIB_EXT} ]; then
+if [ -f ${install_dir}/libbareoscats-${default_backend}-${library_version}${SHLIB_EXT} ]; then
    #
    # Create a default catalog library pointing to one of the shared libs.
    #
-   rm -f ${install_dir}/libbaccats-${library_version}${SHLIB_EXT}
+   rm -f ${install_dir}/libbareoscats-${library_version}${SHLIB_EXT}
 
    #
    # Create a relative symlink to the default backend
    # As all backends are in the same directory anyhow this should
    # always work.
    #
-   ln -s libbaccats-${default_backend}${SHLIB_EXT} \
-         ${install_dir}/libbaccats-${library_version}${SHLIB_EXT}
+   ln -s libbareoscats-${default_backend}${SHLIB_EXT} \
+         ${install_dir}/libbareoscats-${library_version}${SHLIB_EXT}
 fi
 
 exit 0

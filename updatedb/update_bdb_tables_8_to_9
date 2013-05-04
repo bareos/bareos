@@ -1,9 +1,0 @@
-#!/bin/sh
-#
-# Shell script to update bdb tables
-# Nothing to do here.
-#
-echo " "
-bindir=/usr/bin
-
-exit 0

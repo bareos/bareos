@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOSÂ® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,35 +11,30 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 
-#include "bacula.h"
+#include "bareos.h"
 
 #undef ENABLE_KEEP_READALL_CAPS_SUPPORT
 #if defined(HAVE_SYS_PRCTL_H) && defined(HAVE_SYS_CAPABILITY_H) && \
    defined(HAVE_PRCTL) && defined(HAVE_SETREUID) && defined(HAVE_LIBCAP)
-# include <sys/prctl.h>
-# include <sys/capability.h>
-# if defined(PR_SET_KEEPCAPS)
-#  define ENABLE_KEEP_READALL_CAPS_SUPPORT
-# endif
+#include <sys/prctl.h>
+#include <sys/capability.h>
+#if defined(PR_SET_KEEPCAPS)
+#define ENABLE_KEEP_READALL_CAPS_SUPPORT
+#endif
 #endif
 
 #ifdef HAVE_AIX_OS
-# ifndef _AIX51
+#ifndef _AIX51
 extern "C" int initgroups(const char *,int);
-# endif
+#endif
 #endif
 
 /*
@@ -50,7 +43,7 @@ extern "C" int initgroups(const char *,int);
  */
 void drop(char *uname, char *gname, bool keep_readall_caps)
 {
-#if   defined(HAVE_PWD_H) && defined(HAVE_GRP_H)
+#if defined(HAVE_PWD_H) && defined(HAVE_GRP_H)
    struct passwd *passw = NULL;
    struct group *group = NULL;
    gid_t gid;

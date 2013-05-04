@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,31 +11,24 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   util.c  miscellaneous utility subroutines for Bacula
+ * util.c  miscellaneous utility subroutines for BAREOS
  *
- *    Kern Sibbald, MM
- *
- *   Version $Id$
+ * Kern Sibbald, MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "jcr.h"
 
 /*
- * Various Bacula Utility subroutines
+ * Various BAREOS Utility subroutines
  *
  */
 
@@ -393,7 +384,7 @@ const char *job_type_to_str(int type)
    }
    if (!str) {
       str = _("Unknown Type");
-   }   
+   }
    return str;
 }
 
@@ -673,7 +664,8 @@ void make_session_key(char *key, char *seed, int mode)
 void encode_session_key(char *encode, char *session, char *key, int maxlen)
 {
    int i;
-   for (i=0; (i < maxlen-1) && session[i]; i++) {
+
+   for (i = 0; (i < maxlen - 1) && session[i]; i++) {
       if (session[i] == '-') {
          encode[i] = '-';
       } else {
@@ -688,7 +680,7 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
 {
    int i, x;
 
-   for (i=0; (i < maxlen-1) && session[i]; i++) {
+   for (i = 0; (i < maxlen - 1) && session[i]; i++) {
       if (session[i] == '-') {
          decode[i] = '-';
       } else {
@@ -703,11 +695,12 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
    Dmsg3(000, "Session=%s key=%s decode=%s\n", session, key, decode);
 }
 
-
-
 /*
  * Edit job codes into main command line
  *  %% = %
+ *  %F = Job Files
+ *  %P = Pid of daemon
+ *  %b = Job Bytes
  *  %c = Client's name
  *  %d = Director's name
  *  %e = Job Exit code
@@ -719,8 +712,6 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
  *  %t = Job type (Backup, ...)
  *  %r = Recipients
  *  %v = Volume name
- *  %b = Job Bytes
- *  %F = Job Files
  *
  *  omsg = edited output message
  *  imsg = input string containing edit codes (%x)
@@ -742,6 +733,16 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
          switch (*++p) {
          case '%':
             str = "%";
+            break;
+         case 'F':                    /* Job Files */
+            str = edit_uint64(jcr->JobFiles, add);
+            break;
+         case 'P':
+            bsnprintf(add, sizeof(add), "%lu", (uint32_t)getpid());
+            str = add;
+            break;
+         case 'b':                    /* Job Bytes */
+            str = edit_uint64(jcr->JobBytes, add);
             break;
          case 'c':
             if (jcr) {
@@ -785,10 +786,12 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
          case 'n':
              if (jcr) {
                 bstrncpy(name, jcr->Job, sizeof(name));
-                /* There are three periods after the Job name */
-                for (i=0; i<3; i++) {
+                /*
+                 * There are three periods after the Job name
+                 */
+                for (i = 0; i < 3; i++) {
                    if ((q=strrchr(name, '.')) != NULL) {
-                       *q = 0;
+                      *q = 0;
                    }
                 }
                 str = name;
@@ -799,18 +802,12 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
          case 'r':
             str = to;
             break;
-         case 's':                    /* since time */
+         case 's':                    /* Since time */
             if (jcr && jcr->stime) {
                str = jcr->stime;
             } else {
                str = _("*none*");
             }
-            break;
-         case 'F':                    /* Job Files */
-            str = edit_uint64(jcr->JobFiles, add);
-            break;
-         case 'b':                    /* Job Bytes */
-            str = edit_uint64(jcr->JobBytes, add);
             break;
          case 't':
             if (jcr) {

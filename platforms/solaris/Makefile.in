@@ -1,4 +1,4 @@
-# 
+#
 # This file is used as the template to create the
 # Makefile for the Solaris specific installation.
 #
@@ -7,12 +7,9 @@
 #  03 November 2003 corrections to the paths made by
 #      Kenneth ragnor at virtualsd dot net
 #
-#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#  for Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
-
-INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@
-INSTALL_DIR = $(INSTALL) -d -m 755
+@MCOMMON@
 
 nothing:
 
@@ -21,35 +18,26 @@ install: install-autostart
 install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
 
 install-autostart-%:
-	@rm -f $(DESTDIR)/etc/rc0.d/K20bacula-$*
-	@rm -f $(DESTDIR)/etc/rc1.d/S99bacula-$*
-	@rm -f $(DESTDIR)/etc/rc2.d/S99bacula-$*
-	@$(INSTALL_DIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_DIR) $(DESTDIR)/etc/rc0.d $(DESTDIR)/etc/rc1.d \
-		$(DESTDIR)/etc/rc2.d
-	@$(INSTALL_PROGRAM) -m 744 bacula-$* $(DESTDIR)/etc/init.d/bacula-$*
+	@$(RMF) $(DESTDIR)/etc/rc0.d/K20bareos-$*
+	@$(RMF) $(DESTDIR)/etc/rc1.d/S99bareos-$*
+	@$(RMF) $(DESTDIR)/etc/rc2.d/S99bareos-$*
+	@$(MKDIR) $(DESTDIR)/etc/init.d
+	@$(MKDIR) $(DESTDIR)/etc/rc0.d
+	@$(MKDIR) $(DESTDIR)/etc/rc1.d
+	@$(MKDIR) $(DESTDIR)/etc/rc2.d
+	@$(INSTALL_PROGRAM) bareos-$* $(DESTDIR)/etc/init.d/bareos-$*
 	# set symlinks for script at startup and shutdown
-	@ln -f -s /etc/init.d/bacula-$* $(DESTDIR)/etc/rc0.d/K20bacula-$*
-	@ln -f -s /etc/init.d/bacula-$* $(DESTDIR)/etc/rc1.d/S99bacula-$*
-	@ln -f -s /etc/init.d/bacula-$* $(DESTDIR)/etc/rc2.d/S99bacula-$*
-
-uninstall: uninstall-autostart
-
-uninstall-autostart: uninstall-autostart-fd uninstall-autostart-sd uninstall-autostart-dir
-
-uninstall-autostart-%:
-	@rm -f $(DESTDIR)/etc/rc0.d/K20bacula-$*
-	@rm -f $(DESTDIR)/etc/rc1.d/S99bacula-$*
-	@rm -f $(DESTDIR)/etc/rc2.d/S99bacula-$*
-	@rm -f $(DESTDIR)/etc/init.d/bacula-$*
+	@ln -f -s /etc/init.d/bareos-$* $(DESTDIR)/etc/rc0.d/K20bareos-$*
+	@ln -f -s /etc/init.d/bareos-$* $(DESTDIR)/etc/rc1.d/S99bareos-$*
+	@ln -f -s /etc/init.d/bareos-$* $(DESTDIR)/etc/rc2.d/S99bareos-$*
 
 clean:
-	@rm -f 1 2 3
+	@$(RMF) 1 2 3
 
 distclean: clean
-	@rm -f bacula-sd bacula-fd bacula-dir
-	@rm -f Makefile bacula-*.spec
+	@$(RMF) bareos-sd bareos-fd bareos-dir
+	@$(RMF) Makefile bareos-*.spec
 
 devclean: clean
-	@rm -f bacula-sd bacula-fd bacula-dir
-	@rm -f Makefile bacula-*.spec
+	@$(RMF) bareos-sd bareos-fd bareos-dir
+	@$(RMF) Makefile bareos-*.spec

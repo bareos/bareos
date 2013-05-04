@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Bacula Catalog Database routines specific to SQLite
+ * BAREOS Catalog Database routines specific to SQLite
  *
- *    Kern Sibbald, January 2002
+ * Kern Sibbald, January 2002
  *
  * Major rewrite by Marco van Wieringen, January 2010 for catalog refactoring.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 #if HAVE_SQLITE3
 
@@ -353,7 +348,7 @@ struct rh_data {
 };
 
 /*
- * Convert SQLite's callback into Bacula DB callback
+ * Convert SQLite's callback into BAREOS DB callback
  */
 static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, char **col_names)
 {
@@ -399,7 +394,7 @@ bool B_DB_SQLITE::db_sql_query(const char *query, DB_RESULT_HANDLER *result_hand
 
    status = sqlite3_exec(m_db_handle, query, sqlite_result_handler,
                          (void *)&rh_data, &m_lowlevel_errmsg);
-   
+
    if (status != SQLITE_OK) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
       Dmsg0(500, "db_sql_query finished\n");

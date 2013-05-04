@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,30 +13,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Bareos Console interface to the Director
  *
- *   Bacula Console interface to the Director
- *
- *     Kern Sibbald, September MM
- *
+ * Kern Sibbald, September MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "console_conf.h"
 #include "jcr.h"
-
 
 #ifdef HAVE_CONIO
 #include "conio.h"
@@ -333,7 +325,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
 
 /*
  * Call-back for reading a passphrase for an encrypted PEM file
- * This function uses getpass(), 
+ * This function uses getpass(),
  *  which uses a static buffer and is NOT thread-safe.
  */
 static int tls_pem_callback(char *buf, int size, const void *userdata)
@@ -399,7 +391,7 @@ get_previous_keyword(int current_point, int nb)
             break;
          }
       }
-      
+
       /* find the end of the command */
       for (; i >= 0; i--) {
          if (rl_line_buffer[i] != ' ') {
@@ -407,12 +399,12 @@ get_previous_keyword(int current_point, int nb)
             break;
          }
       }
-      
+
       /* no end of string */
       if (end == -1) {
          return NULL;
       }
-      
+
       /* look for the start of the command */
       for (start = end; start > 0; start--) {
          if (rl_line_buffer[start] == '"') {
@@ -520,7 +512,7 @@ void get_items(const char *what)
    }
 }
 
-typedef enum 
+typedef enum
 {
    ITEM_ARG,       /* item with simple list like .jobs */
    ITEM_HELP       /* use help item=xxx and detect all arguments */
@@ -528,9 +520,9 @@ typedef enum
 
 /* Generator function for command completion.  STATE lets us know whether
  * to start from scratch; without any state (i.e. STATE == 0), then we
- * start at the top of the list. 
+ * start at the top of the list.
  */
-static char *item_generator(const char *text, int state, 
+static char *item_generator(const char *text, int state,
                             const char *item, cpl_item_t type)
 {
   static int list_index, len;
@@ -538,7 +530,7 @@ static char *item_generator(const char *text, int state,
 
   /* If this is a new word to complete, initialize now.  This includes
    * saving the length of TEXT for efficiency, and initializing the index
-   *  variable to 0. 
+   *  variable to 0.
    */
   if (!state)
   {
@@ -559,7 +551,7 @@ static char *item_generator(const char *text, int state,
   {
      name = (char *)items->list[list_index];
      list_index++;
-     
+
      if (bstrncmp(name, text, len)) {
         char *ret = (char *) actuallymalloc(strlen(name)+1);
         strcpy(ret, name);
@@ -568,10 +560,10 @@ static char *item_generator(const char *text, int state,
   }
 
   /* If no names matched, then return NULL. */
-  return ((char *)NULL);   
+  return ((char *)NULL);
 }
 
-/* gobal variables for the type and the item to search 
+/* gobal variables for the type and the item to search
  * the readline API doesn' permit to pass user data.
  */
 static const char *cpl_item;
@@ -619,7 +611,7 @@ static struct cpl_keywords_t cpl_keywords[] = {
  * region of rl_line_buffer that contains the word to complete.  TEXT is
  * the word to complete.  We can use the entire contents of rl_line_buffer
  * in case we want to do some simple parsing.  Return the array of matches,
- * or NULL if there aren't any. 
+ * or NULL if there aren't any.
  */
 static char **readline_completion(const char *text, int start, int end)
 {
@@ -630,7 +622,7 @@ static char **readline_completion(const char *text, int start, int end)
 
    /* If this word is at the start of the line, then it is a command
     * to complete.  Otherwise it is the name of a file in the current
-    * directory. 
+    * directory.
     */
    s = get_previous_keyword(start, 0);
    cmd = get_first_keyword();
@@ -644,14 +636,14 @@ static char **readline_completion(const char *text, int start, int end)
             break;
          }
       }
-      
+
       if (!found) {             /* we try to get help with the first command */
          cpl_item = cmd;
          cpl_type = ITEM_HELP;
          /* we don't want to append " " at the end */
-         rl_completion_suppress_append=true; 
+         rl_completion_suppress_append=true;
          matches = rl_completion_matches(text, cpl_generator);
-      } 
+      }
       free(s);
    } else {                     /* nothing on the line, display all commands */
       cpl_item = ".help all";
@@ -898,7 +890,7 @@ static int console_init_history(const char *histfile)
    return ret;
 }
 
-bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret_cons)
+static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret_cons)
 {
    int numcon=0, numdir=0;
    int i=0, item=0;
@@ -924,8 +916,8 @@ bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret_cons)
 
    if (numdir == 1) {           /* No choose */
       dir = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
-   } 
- 
+   }
+
    if (director) {    /* Command line choice overwrite the no choose option */
       LockRes();
       foreach_res(dir, R_DIRECTOR) {
@@ -947,19 +939,19 @@ try_again:
       LockRes();
       numdir = 0;
       foreach_res(dir, R_DIRECTOR) {
-         senditf( _("%2d:  %s at %s:%d\n"), 1+numdir++, dir->hdr.name, 
+         senditf( _("%2d:  %s at %s:%d\n"), 1+numdir++, dir->hdr.name,
                   dir->address, dir->DIRport);
       }
       UnlockRes();
-      if (get_cmd(stdin, _("Select Director by entering a number: "), 
-                  UA_sock, 600) < 0) 
+      if (get_cmd(stdin, _("Select Director by entering a number: "),
+                  UA_sock, 600) < 0)
       {
          (void)WSACleanup();               /* Cleanup Windows sockets */
          return 0;
       }
       if (!is_a_number(UA_sock->msg)) {
          senditf(_("%s is not a number. You must enter a number between "
-                   "1 and %d\n"), 
+                   "1 and %d\n"),
                  UA_sock->msg, numdir);
          goto try_again;
       }
@@ -1002,13 +994,13 @@ try_again:
 
    *ret_dir = dir;
    *ret_cons = cons;
-   
+
    return 1;
 }
 
 /*********************************************************************
  *
- *         Main Bacula Console -- User Interface Program
+ *         Main Bareos Console -- User Interface Program
  *
  */
 int main(int argc, char *argv[])
@@ -1022,8 +1014,8 @@ int main(int argc, char *argv[])
    utime_t heart_beat;
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
 
    init_stack_dump();
    lmgr_init_thread();
@@ -1095,7 +1087,7 @@ int main(int argc, char *argv[])
 
 
 #if !defined(HAVE_WIN32)
-   /* Override Bacula default signals */
+   /* Override Bareos default signals */
    signal(SIGQUIT, SIG_IGN);
    signal(SIGTSTP, got_sigstop);
    signal(SIGCONT, got_sigcontinue);
@@ -1149,7 +1141,7 @@ int main(int argc, char *argv[])
 
    start_watchdog();                        /* Start socket watchdog */
 
-   if(!select_director(director, &dir, &cons)) {
+   if (!select_director(director, &dir, &cons)) {
       return 1;
    }
 
@@ -1163,7 +1155,7 @@ int main(int argc, char *argv[])
 
       /* Initialize TLS context:
        * Args: CA certfile, CA certdir, Certfile, Keyfile,
-       * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer   
+       * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
        */
       cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
          cons->tls_ca_certdir, cons->tls_certfile,
@@ -1306,7 +1298,7 @@ static int check_resources()
          if (have_tls) {
             director->tls_enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
             OK = false;
             continue;
          }
@@ -1321,7 +1313,7 @@ static int check_resources()
          OK = false;
       }
    }
-   
+
    if (numdir == 0) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"
                           "Without that I don't how to speak to the Director :-(\n"), configfile);
@@ -1336,7 +1328,7 @@ static int check_resources()
          if (have_tls) {
             cons->tls_enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
             OK = false;
             continue;
          }
@@ -1460,7 +1452,7 @@ static int execcmd(FILE *input, BSOCK *UA_sock)
          argk[1], be.bstrerror(errno));
       return 1;
    }
-  
+
    while (fgets(line, sizeof(line), bpipe->rfd)) {
       senditf("%s", line);
    }
@@ -1494,10 +1486,10 @@ static int quitcmd(FILE *input, BSOCK *UA_sock)
 static int helpcmd(FILE *input, BSOCK *UA_sock)
 {
    int i;
-   for (i=0; i<comsize; i++) { 
+   for (i=0; i<comsize; i++) {
       senditf("  %-10s %s\n", commands[i].key, commands[i].help);
    }
-   return 1;   
+   return 1;
 }
 
 

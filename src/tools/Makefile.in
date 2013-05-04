@@ -1,5 +1,5 @@
 #
-# Bacula Tools Makefile
+# Bareos Tools Makefile
 #
 @MCOMMON@
 
@@ -14,6 +14,10 @@ topdir = ../..
 # this dir relative to top dir
 thisdir = src/tools
 
+DEBUG=@DEBUG@
+ZLIB_INC=@ZLIB_INC@
+LZO_INC=@LZO_INC@
+
 first_rule: all
 dummy:
 
@@ -22,7 +26,7 @@ GETTEXT_LIBS = @LIBINTL@
 TOOLS = bsmtp drivetype fstype bregex bwild bpluginfo bscrypto timelimit
 INSTOOLS = bsmtp bwild bregex bpluginfo bscrypto
 
-CPPFLAGS += @ZLIB_INC@ @LZO_INC@
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 
 .SUFFIXES:	.c .o
 .PHONY:
@@ -31,40 +35,46 @@ CPPFLAGS += @ZLIB_INC@ @LZO_INC@
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
 all: Makefile $(TOOLS)
 	@echo "==== Make of tools is good ===="
 	@echo " "
 
-bsmtp: Makefile bsmtp.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)	    
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bsmtp.o -lbac -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+bsmtp: Makefile bsmtp.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bsmtp.o -lbareos -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-fstype: Makefile fstype.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ fstype.o -lbacfind -lbac -lm \
+fstype: Makefile fstype.o \
+	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ fstype.o -lbareosfind -lbareos -lm \
 	  $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-drivetype: Makefile drivetype.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ drivetype.o -lbacfind -lbac -lm \
+drivetype: Makefile drivetype.o \
+	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ drivetype.o -lbareosfind -lbareos -lm \
 	  $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-bregex: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) bregex.o
+bregex: Makefile bregex.o \
+	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bregex.o \
-	  $(DLIB) -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-bwild:	Makefile ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) bwild.o
+bwild:	Makefile bwild.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bwild.o \
-	  $(DLIB) -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-bscrypto: Makefile ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) bscrypto.o
+bscrypto: Makefile bscrypto.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bscrypto.o \
-	  $(DLIB) -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 bpluginfo.o: bpluginfo.c
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) -I../filed -I../dird -I../stored $(DINCLUDE) $(CFLAGS) $<
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) -I../filed -I../dird -I../stored $(DINCLUDE) $(CFLAGS) $<
 
-bpluginfo: Makefile bpluginfo.o
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bpluginfo.o -lbac $(GETTEXT_LIBS)
+bpluginfo: Makefile bpluginfo.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bpluginfo.o -lbareos $(GETTEXT_LIBS)
 
 timelimit.o: timelimit.c
 	${CC} ${DEFS} ${DEBUG} -DHAVE_ERRNO_H -DHAVE_SETITIMER -DHAVE_SIGACTION -c timelimit.c
@@ -107,11 +117,6 @@ install: $(INSTOOLS)
 	done
 	chmod 755 $(DESTDIR)$(sbindir)/bsmtp
 
-uninstall:
-	@for tool in ${INSTOOLS} ; do \
-	   $(RMF) $(DESTDIR)$(sbindir)/$$tool ; \
-	done
-
 # Semi-automatic generation of dependencies:
 # Use gcc -MM because X11 `makedepend' doesn't work on all systems
 # and it also includes system headers.
@@ -120,8 +125,8 @@ uninstall:
 depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
-	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) -I$(srcdir) -I$(basedir) -I$(srcdir)/filed *.c >> Makefile
+	@$(ECHOCMD) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(INCLUDES) -I../filed -I../dird -I../stored *.c >> Makefile
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \

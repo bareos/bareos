@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,31 +13,25 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Bacula message handling routines
+ * BAREOS message handling routines
  *
  * NOTE: don't use any Jmsg or Qmsg calls within this file,
- *   except in q_msg or j_msg (setup routines), 
- *   otherwise you may get into recursive calls if there are
- *   errors, and that can lead to looping or deadlocks.
+ * except in q_msg or j_msg (setup routines),
+ * otherwise you may get into recursive calls if there are
+ * errors, and that can lead to looping or deadlocks.
  *
- *   Kern Sibbald, April 2000
- *
+ * Kern Sibbald, April 2000
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "jcr.h"
 
 db_log_insert_func p_db_log_insert = NULL;
@@ -98,7 +92,7 @@ const char *distver = DISTVER;
 
 /*
  * Walk back in a string from end looking for a
- *  path separator.  
+ *  path separator.
  *  This routine is passed the start of the string and
  *  the end of the string, it returns either the beginning
  *  of the string or where it found a path separator.
@@ -106,7 +100,7 @@ const char *distver = DISTVER;
 static const char *bstrrpath(const char *start, const char *end)
 {
    while ( end > start ) {
-      end--;   
+      end--;
       if (IsPathSeparator(*end)) {
          break;
       }
@@ -174,7 +168,7 @@ static void delivery_error(const char *fmt,...)
    fflush(stdout);
    syslog(LOG_DAEMON|LOG_ERR, "%s", pool_buf);
    free_memory(pool_buf);
-}                 
+}
 
 void register_message_callback(void msg_callback(int type, char *msg))
 {
@@ -474,14 +468,14 @@ static BPIPE *open_mail_pipe(JCR *jcr, POOLMEM *&cmd, DEST *d)
    if (d->mail_cmd) {
       cmd = edit_job_codes(jcr, cmd, d->mail_cmd, d->where, message_job_code_callback);
    } else {
-      Mmsg(cmd, "/usr/lib/sendmail -F Bacula %s", d->where);
+      Mmsg(cmd, "/usr/lib/sendmail -F BAREOS %s", d->where);
    }
    fflush(stdout);
 
    if ((bpipe = open_bpipe(cmd, 120, "rw"))) {
       /* If we had to use sendmail, add subject */
       if (!d->mail_cmd) {
-         fprintf(bpipe->wfd, "Subject: %s\r\n\r\n", _("Bacula Message"));
+         fprintf(bpipe->wfd, "Subject: %s\r\n\r\n", _("BAREOS Message"));
       }
    } else {
       berrno be;
@@ -707,7 +701,7 @@ void term_msg()
    term_last_jobs_list();
 }
 
-static bool open_dest_file(JCR *jcr, DEST *d, const char *mode) 
+static bool open_dest_file(JCR *jcr, DEST *d, const char *mode)
 {
    d->fd = fopen(d->where, mode);
    if (!d->fd) {
@@ -971,15 +965,15 @@ send_to_file:
 
 /*********************************************************************
  *
- *  This subroutine returns the filename portion of a path.  
- *  It is used because some compilers set __FILE__ 
+ *  This subroutine returns the filename portion of a path.
+ *  It is used because some compilers set __FILE__
  *  to the full path.  Try to return base + next higher path.
  */
 
 const char *get_basename(const char *pathname)
 {
    const char *basename;
-   
+
    if ((basename = bstrrpath(pathname, pathname+strlen(pathname))) == pathname) {
       /* empty */
    } else if ((basename = bstrrpath(pathname, basename-1)) == pathname) {
@@ -991,7 +985,7 @@ const char *get_basename(const char *pathname)
 }
 
 /*
- * print or write output to trace file 
+ * print or write output to trace file
  */
 static void pt_out(char *buf)
 {
@@ -1052,10 +1046,10 @@ d_msg(const char *file, int line, int level, const char *fmt,...)
           buf[len] = 0;
           pt_out(buf);
        }
-    
+
 #ifdef FULL_LOCATION
        if (details) {
-          len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ", 
+          len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ",
                 my_name, get_basename(file), line, get_jobid_from_tsd());
        } else {
           len = 0;
@@ -1140,7 +1134,7 @@ p_msg(const char *file, int line, int level, const char *fmt,...)
     bvsnprintf(buf+len, sizeof(buf)-len, (char *)fmt, arg_ptr);
     va_end(arg_ptr);
 
-    pt_out(buf);     
+    pt_out(buf);
 }
 
 
@@ -1306,7 +1300,7 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
     if (jcr) {
        if (!jcr->dequeuing_msgs) { /* Avoid recursion */
           /* Dequeue messages to keep the original order  */
-          dequeue_messages(jcr); 
+          dequeue_messages(jcr);
        }
        msgs = jcr->jcr_msgs;
        JobId = jcr->JobId;
@@ -1352,7 +1346,7 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
        }
        break;
     case M_SECURITY:
-       len = bsnprintf(rbuf, sizeof(rbuf), _("%s JobId %u: Security violation: "), 
+       len = bsnprintf(rbuf, sizeof(rbuf), _("%s JobId %u: Security violation: "),
                my_name, JobId);
        break;
     default:
@@ -1368,8 +1362,8 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
 
     if (type == M_ABORT){
        char *p = 0;
-       printf("Bacula forced SEG FAULT to obtain traceback.\n");
-       syslog(LOG_DAEMON|LOG_ERR, "Bacula forced SEG FAULT to obtain traceback.\n");
+       printf("BAREOS forced SEG FAULT to obtain traceback.\n");
+       syslog(LOG_DAEMON|LOG_ERR, "BAREOS forced SEG FAULT to obtain traceback.\n");
        p[0] = 0;                      /* generate segmentation violation */
     }
     if (type == M_ERROR_TERM) {

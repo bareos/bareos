@@ -1,5 +1,5 @@
 
-This directory contains the Bacula Admin Tool (bat).
+This directory contains the Bareos Admin Tool (bat).
 
 At the current time, the contents of this directory are under
 development.  If you want to help, please contact Kern directly.
@@ -10,11 +10,11 @@ default Qt or with the appropriate Qt Environment variables set.
 There is now one dependency, it is qwt.  It compiles just fine with
 either qwt-5.0.2 or qwt-5.0.1.  You can either install the qwt package
 yourself or if your distro does not have it, we have included the source
-in depkgs-qt, which you can download from the Bacula Source Forge        
+in depkgs-qt, which you can download from the Bareos Source Forge
 download area.
 
 Building and running bat is done much like bconsole, the gnome console,
-or the wxWidgets console.  You add the appropriate options to your   
+or the wxWidgets console.  You add the appropriate options to your
 ./configure, then simply do a make.  Please see the Installation chapter
 of the manual for more details.
 
@@ -31,7 +31,7 @@ Items not implemented:
 Translations:
 - All translatable strings should be written as tr("string") ...
 - To extract the strings for translation run:
- 
+
    lupdate bat.pro
 
 - To translate the strings, do:
@@ -49,18 +49,18 @@ Translations:
   in the same directory as bat for them to be used, otherwise
   it reverts to English. Selecting the translation is based on
   how your system is setup or the LANG environment variable.
-         
+
 Design decisions:
 - If possible all code for a particular component will be kept in
   an appropriate subdirectory.
 - All private class variables are named "m_xxx" this makes it very
   clear if one is referencing a class variable or a local.
 - All signal/slots are connected by explicit code (most all are
-  done in the MainWin constructor), rather than using designer.      
+  done in the MainWin constructor), rather than using designer.
 - Each page has a separate designer .ui file in a subdirectory.
 - All windows are created with designer and have
   a name such as xxxForm i.e. the main window is MainForm and kept
-  in main.ui.  
+  in main.ui.
 
 Major projects:
 - Implement other restore interfaces such as brestore ...
@@ -68,7 +68,7 @@ Major projects:
 - Implement a resource (conf file) browser
 - Implement a reports page -- e.g. something similar to bweb
 - Implement Qt plugins to add new functionality to bat
-- Implement a GUI configuration file editor (something like JBacula).
+- Implement a GUI configuration file editor (something like JBareos).
 ...
 
 Partially Done:
@@ -113,6 +113,6 @@ Not working:
   clicked.  Well, they sort of move, but then get stuck.  I haven't figured
   out what is going on, so for the current time, I am implementing most
   stuff through dialogs.
-     
+
 Items implemented:
   See RELEASEFEATURES

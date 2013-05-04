@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,17 +11,12 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 
 #include "tray-ui.h"
@@ -58,7 +51,7 @@ static TrayUI *tray;
 void updateStatusIcon(monitoritem* item);
 void changeStatusMessage(monitoritem* item, const char *fmt,...);
 
-#define CONFIG_FILE "./tray-monitor.conf"   /* default configuration file */
+#define CONFIG_FILE "tray-monitor.conf"   /* default configuration file */
 
 static void usage()
 {
@@ -96,7 +89,7 @@ void dotest()
 void get_list(monitoritem *item, const char *cmd, QStringList &lst)
 {
    int stat;
-   
+
    doconnect(item);
    item->writecmd(cmd);
    while((stat = bnet_recv(item->D_sock)) >= 0) {
@@ -121,7 +114,7 @@ void refresh_item()
          break;
       case R_STORAGE:
          cmd = "status";
-         break;          
+         break;
       default:
          exit(1);
          break;
@@ -132,11 +125,11 @@ void refresh_item()
 
 /*********************************************************************
  *
- *         Main Bacula Tray Monitor -- User Interface Program
+ *         Main Bareos Tray Monitor -- User Interface Program
  *
  */
 int main(int argc, char *argv[])
-{   
+{
    int ch, i, dir_index=-1;
    bool test_config = false;
    DIRRES* dird;
@@ -144,8 +137,8 @@ int main(int argc, char *argv[])
    STORERES* stored;
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
 
    init_stack_dump();
    my_name_is(argc, argv, "tray-monitor");
@@ -287,7 +280,7 @@ int main(int argc, char *argv[])
          break;
       case R_STORAGE:
          cmd = "status";
-         break;          
+         break;
       default:
          exit(1);
          break;
@@ -312,7 +305,7 @@ int main(int argc, char *argv[])
 
 
    (void)WSACleanup();               /* Cleanup Windows sockets */
-   
+
    config->free_resources();
    free(config);
    config = NULL;
@@ -345,7 +338,7 @@ void changeStatusMessage(monitoritem*, const char *fmt,...) {
    tray->statusbar->showMessage(QString(buf));
 }
 
-int doconnect(monitoritem* item) 
+int doconnect(monitoritem* item)
 {
    if (!item->D_sock) {
       memset(&jcr, 0, sizeof(jcr));
@@ -358,21 +351,21 @@ int doconnect(monitoritem* item)
       case R_DIRECTOR:
          dird = (DIRRES*)item->resource;
          changeStatusMessage(item, _("Connecting to Director %s:%d"), dird->address, dird->DIRport);
-         item->D_sock = bnet_connect(NULL, monitor->DIRConnectTimeout, 
+         item->D_sock = bnet_connect(NULL, monitor->DIRConnectTimeout,
                                      0, 0, _("Director daemon"), dird->address, NULL, dird->DIRport, 0);
          jcr.dir_bsock = item->D_sock;
          break;
       case R_CLIENT:
          filed = (CLIENTRES*)item->resource;
          changeStatusMessage(item, _("Connecting to Client %s:%d"), filed->address, filed->FDport);
-         item->D_sock = bnet_connect(NULL, monitor->FDConnectTimeout, 
+         item->D_sock = bnet_connect(NULL, monitor->FDConnectTimeout,
                                      0, 0, _("File daemon"), filed->address, NULL, filed->FDport, 0);
          jcr.file_bsock = item->D_sock;
          break;
       case R_STORAGE:
          stored = (STORERES*)item->resource;
          changeStatusMessage(item, _("Connecting to Storage %s:%d"), stored->address, stored->SDport);
-         item->D_sock = bnet_connect(NULL, monitor->SDConnectTimeout, 
+         item->D_sock = bnet_connect(NULL, monitor->SDConnectTimeout,
                                      0, 0, _("Storage daemon"), stored->address, NULL, stored->SDport, 0);
          jcr.store_bsock = item->D_sock;
          break;
@@ -419,7 +412,7 @@ int doconnect(monitoritem* item)
    return 1;
 }
 
-int docmd(monitoritem* item, const char* command) 
+int docmd(monitoritem* item, const char* command)
 {
    int stat;
    //qDebug() << "docmd(" << item->get_name() << "," << command << ")";

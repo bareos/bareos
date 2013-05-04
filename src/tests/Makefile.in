@@ -1,5 +1,5 @@
 #
-# Bacula Tests Makefile
+# Bareos Tests Makefile
 #
 @MCOMMON@
 
@@ -25,6 +25,8 @@ GETTEXT_LIBS = @LIBINTL@
 
 TESTS = testls bbatch bregtest bvfs_test ing_test gigaslam grow
 
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
+
 .SUFFIXES:	.c .o
 .PHONY:
 .DONTCARE:
@@ -32,45 +34,56 @@ TESTS = testls bbatch bregtest bvfs_test ing_test gigaslam grow
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
 #-------------------------------------------------------------------------
 all: Makefile $(TESTS) gigaslam grow
 	@echo "==== Make of tools is good ===="
 	@echo " "
 
-bregtest: Makefile bregtest.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)	   
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bregtest.o -lbac -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+bregtest: Makefile bregtest.o \
+	  ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bregtest.o -lbareos -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-testls: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) testls.o
+testls: Makefile testls.o \
+	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L. -L../lib -L../findlib -o $@ testls.o \
-	  $(DLIB) -lbacfind -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  $(DLIB) -lbareosfind -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 bbatch.o: bbatch.c
 	echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(ZLIB_INC) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(ZLIB_INC) $(LZO_INC) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
-bbatch: Makefile ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
-	../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) bbatch.o
+bbatch: Makefile bbatch.o \
+	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+	../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
+	../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -o $@ bbatch.o \
-	  -lbaccats -lbacsql -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  -lbareoscats -lbareossql -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-bvfs_test: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
-	   ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) bvfs_test.o
+bvfs_test: Makefile bvfs_test.o \
+	   ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	   ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+	   ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
+	   ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ bvfs_test.o  \
-	  -lbaccats -lbacsql -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  -lbareoscats -lbareossql -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-ing_test: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
-	  ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) ing_test.o
+ing_test: Makefile ing_test.o \
+	  ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	  ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+	  ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
+	  ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ ing_test.o  \
-	  -lbaccats -lbacsql -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  -lbareoscats -lbareossql -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-cats_test.o: cats_test.c
-	echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
-
-cats_test: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) cats_test.o
+cats_test: Makefile cats_test.o \
+	   ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	   ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+	   ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ cats_test.o  \
-	  -lbaccats -lbacsql -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  -lbareoscats -lbareossql -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 gigaslam.o: gigaslam.c
 	$(CXX) $(CXXFLAGS) -c $<
@@ -78,8 +91,8 @@ gigaslam.o: gigaslam.c
 gigaslam: gigaslam.o
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -o $@ gigaslam.o
 
-grow: Makefile grow.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ grow.o -lbac -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+grow: Makefile grow.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ grow.o -lbareos -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
@@ -110,8 +123,6 @@ installall: $(TESTS)
 
 install:
 
-uninstall:
-
 # Semi-automatic generation of dependencies:
 # Use gcc -MM because X11 `makedepend' doesn't work on all systems
 # and it also includes system headers.
@@ -120,8 +131,8 @@ uninstall:
 depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
-	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@$(ECHOCMD) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(INCLUDES) *.c >> Makefile
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \

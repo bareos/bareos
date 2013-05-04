@@ -8,13 +8,13 @@ all:	install
 
 install:
 
-	$(INSTALL) -m 755 bacula $(DESTDIR)$(SYSCONFDIR)/scripts/services/bacula
-	$(INSTALL) -m 755 applybaculadate $(DESTDIR)$(SYSCONFDIR)/scripts/shared/applybaculadate
-	$(INSTALL) -m 644 logfile.bacula.conf $(DESTDIR)$(SYSCONFDIR)/conf/logfiles/bacula.conf
-	$(INSTALL) -m 644 services.bacula.conf $(DESTDIR)$(SYSCONFDIR)/conf/services/bacula.conf
+	$(INSTALL) -m 755 bareos $(DESTDIR)$(SYSCONFDIR)/scripts/services/bareos
+	$(INSTALL) -m 755 applybareosdate $(DESTDIR)$(SYSCONFDIR)/scripts/shared/applybareosdate
+	$(INSTALL) -m 644 logfile.bareos.conf $(DESTDIR)$(SYSCONFDIR)/conf/logfiles/bareos.conf
+	$(INSTALL) -m 644 services.bareos.conf $(DESTDIR)$(SYSCONFDIR)/conf/services/bareos.conf
 
 uninstall:
-	rm -f $(DESTDIR)$(SYSCONFDIR)/scripts/services/bacula
-	rm -f $(DESTDIR)$(SYSCONFDIR)/scripts/shared/applybaculadate
-	rm -f $(DESTDIR)$(SYSCONFDIR)/conf/logfiles/bacula.conf
-	rm -f $(DESTDIR)$(SYSCONFDIR)/conf/services/bacula.conf
+	rm -f $(DESTDIR)$(SYSCONFDIR)/scripts/services/bareos
+	rm -f $(DESTDIR)$(SYSCONFDIR)/scripts/shared/applybareosdate
+	rm -f $(DESTDIR)$(SYSCONFDIR)/conf/logfiles/bareos.conf
+	rm -f $(DESTDIR)$(SYSCONFDIR)/conf/services/bareos.conf

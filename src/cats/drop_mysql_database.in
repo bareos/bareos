@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to drop Bacula database(s)
+# shell script to drop Bareos database(s)
 #
 
 bindir=@MYSQL_BINDIR@

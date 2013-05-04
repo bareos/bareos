@@ -3,5 +3,5 @@ if exists("have_load_filetypes")
       finish
 endif
 augroup filetypedetect
-      au! BufRead,BufNewFile bacula-dir.conf	setfiletype bacula
+      au! BufRead,BufNewFile bareos-dir.conf	setfiletype bareos
 augroup END

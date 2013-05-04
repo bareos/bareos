@@ -8,10 +8,10 @@ if test "x$1" = "x" ; then
    PWL=48      # Password length in characters
 else
    PWL=$1
-fi 
+fi
 tmp=`mktemp randpass.XXXXXXXXXX`
 if test x$tmp = x; then
-   tmp=/tmp/p.tmp.$$    
+   tmp=/tmp/p.tmp.$$
    if test -f $tmp; then
       echo "Temp file security problem on: $tmp"
       exit 1

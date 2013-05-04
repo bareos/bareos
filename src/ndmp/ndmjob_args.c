@@ -689,6 +689,7 @@ handle_long_option (char *str)
 		d_agent[size] = '\0';
 		if (size > 0 && d_agent[size-1] == '\n')
 		    d_agent[size-1] = '\0';
+		close(fd);
 		if (ndmagent_from_str (&D_data_agent, d_agent)) {
 			error_byebye ("bad -D-agent-fd argument");
 		}

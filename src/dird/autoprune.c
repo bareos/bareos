@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- Automatic Pruning Applies retention periods
  *
- *   Bacula Director -- Automatic Pruning
- *      Applies retention periods
- *
- *     Kern Sibbald, May MMII
- *
+ * Kern Sibbald, May MMII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /* Forward referenced functions */
@@ -132,7 +124,7 @@ void prune_volumes(JCR *jcr, bool InChanger,
    Dmsg1(100, "Scratch pool(s)=%s\n", ed2);
    /*
     * ed2 ends up with scratch poolid and current poolid or
-    *   just current poolid if there is no scratch pool 
+    *   just current poolid if there is no scratch pool
     */
    bstrncat(ed2, ed1, sizeof(ed2));
 
@@ -215,7 +207,7 @@ void prune_volumes(JCR *jcr, bool InChanger,
          }
 
          /*
-          * If purged and not moved to another Pool, 
+          * If purged and not moved to another Pool,
           *   then we stop pruning and take this volume.
           */
          if (lmr.PoolId == mr->PoolId) {

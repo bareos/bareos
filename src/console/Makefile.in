@@ -1,6 +1,3 @@
-#
-#  Version $Id$
-#
 @MCOMMON@
 
 srcdir = @srcdir@
@@ -20,7 +17,7 @@ first_rule: all
 dummy:
 
 #
-CONSSRCS = console.c console_conf.c authenticate.c @CONS_SRC@ 
+CONSSRCS = console.c console_conf.c authenticate.c @CONS_SRC@
 CONSOBJS = $(CONSSRCS:.c=.o)
 
 GETTEXT_LIBS = @LIBINTL@
@@ -29,6 +26,8 @@ CONS_INC = @CONS_INC@
 CONS_LIBS = @CONS_LIBS@
 CONS_LDFLAGS = @CONS_LDFLAGS@
 
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
+
 .SUFFIXES:	.c .o
 .PHONY:
 .DONTCARE:
@@ -36,21 +35,21 @@ CONS_LDFLAGS = @CONS_LDFLAGS@
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(CONS_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(CONS_INC) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
 all: Makefile bconsole @STATIC_CONS@
 	@echo "==== Make of console is good ===="
 	@echo " "
 
 
-bconsole: Makefile $(CONSOBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE)
+bconsole: Makefile $(CONSOBJS) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) $(CONS_LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
-	      $(DLIB) $(CONS_LIBS) -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) \
+	      $(DLIB) $(CONS_LIBS) -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) \
 	      $(OPENSSL_LIBS)
 
-static-bconsole: Makefile $(CONSOBJS) ../lib/libbac.a ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE)
+static-bconsole: Makefile $(CONSOBJS) ../lib/libbareos.a ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) -static $(LDFLAGS) $(CONS_LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
-	      $(DLIB) $(CONS_LIBS) -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) \
+	      $(DLIB) $(CONS_LIBS) -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) \
 	      $(OPENSSL_LIBS)
 	strip $@
 
@@ -104,12 +103,6 @@ install: all
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bconsole $(DESTDIR)$(sbindir)/static-bconsole; \
 	fi
 
-uninstall:
-	(cd $(DESTDIR)$(sbindir); $(RMF) bconsole static-bconsole)
-	(cd $(DESTDIR)$(sysconfdir); $(RMF) console.conf bconsole.conf bconsole.conf.new)
-
-
-
 # Semi-automatic generation of dependencies:
 # Use gcc -MM because X11 `makedepend' doesn't work on all systems
 # and it also includes system headers.
@@ -118,8 +111,8 @@ uninstall:
 depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
-	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) $(CONS_INC) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@$(ECHOCMD) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(CONS_INC) $(INCLUDES) *.c >> Makefile
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \

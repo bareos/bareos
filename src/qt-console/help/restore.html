@@ -3,7 +3,7 @@
 <HEAD>
 <TITLE>Bat User's Guide</TITLE>
 <META NAME="description" CONTENT="Bat User's Guide">
-<META NAME="keywords" CONTENT="bacula">
+<META NAME="keywords" CONTENT="bareos">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
 <META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
@@ -24,7 +24,7 @@ the host and path to restore to and trigger the job to run.
 <h2>The Standard Restore Interface</h2>
 
 <p>Start the standard restore procedure by pressing the restore button
-in the task bar.  There are also two options in the joblist context sensitive 
+in the task bar.  There are also two options in the joblist context sensitive
 menu to start a restore.  They are Restore From Time or Restore From Job.
 
 <p>This restore method is intended as a high performance option.
@@ -51,7 +51,7 @@ item which is a directory on a part of the table which is not the check icon
 opens that directory.  Clicking 'OK' completes the selection process.
 
 <p>The third step is the Restore Run interface.  It's purpose is to allow the
-user to inform the bacula server details of the host and path to restore to, the
+user to inform the bareos server details of the host and path to restore to, the
 replacement rules, when to restore and what priority to give the restore job.
 
 <h2>The Version Browser Restore Interface</h2>
@@ -60,13 +60,13 @@ replacement rules, when to restore and what priority to give the restore job.
 structures with large numbers of directories and files.  It should work, however
 it is a chatty interface.  This is due to the number of sql queries made of the server
 which is proportional to the number of files and directories selected plus the number of
-exceptions to defaults selected.  It <b>IS</b> intended to allow the user to browse for 
+exceptions to defaults selected.  It <b>IS</b> intended to allow the user to browse for
 specific files and choose between the different versions of those files that
 are available in the catalog to restore.
 
 <p>The interface contains a horizontal splitter.  The bottom pane contains
 some controls for the interface.
-The top portion contains a vertical splitter with 4 panes for viewing the 
+The top portion contains a vertical splitter with 4 panes for viewing the
 cataloged information.  The left pane is for viewing and further sub selecting
 of jobs.  The second pane is for viewing the directory tree.  The third is for
 viewing a list of files in a directory that has been selected.  Then
@@ -81,10 +81,10 @@ dropdowns and the two limits are used as the filtering criterion for
 populating the job table the first time the refresh button is pushed.
 After the refresh button has been pushed, the job table has check marks that
 can selects and unselects jobs.  Re-pressing the refresh button does one of two
-things.  What occurs is dependent on if the controls in the bottom pane 
+things.  What occurs is dependent on if the controls in the bottom pane
 display the same data as the previous time the refresh button was pressed.  If
 changed the jobs table is repopulated from the selection criterion.  If
-unchanged any jobs that have been unchecked are excluded from the 
+unchanged any jobs that have been unchecked are excluded from the
 process of selecting directories, files and versions.  The directory tree does get
 repopulated when the refresh button is pushed.  There is a text label underneath the
 refresh button to inform the user as to which occurs when refresh is pressed.
@@ -96,18 +96,18 @@ unselect all files and all directories in the tree hierarchy beneath it.  If
 there are any exceptions already selected beneath that directory, those
 exceptions do get deleted.
 
-<p>With the file table populated, the user can unselect a file in a selected 
+<p>With the file table populated, the user can unselect a file in a selected
 directory and also select a file in an unselected directory.
 
 <p>With a file selected the version table populates with all the instances
 a file has been written to tape.  The user can choose a specific version of a
 file for restore and override the default which is to restore the most recent
-version. 
+version.
 
 <p>Pressing the restore button initiates a procedure preparing to
 perform the restore of the requested files.  The same Restore Run interface
 that was the third step in the standard restore is then displayed.  It
-allows the user to instruct the bacula server of the details of what host
+allows the user to instruct the bareos server of the details of what host
 and what path to restore the files to.  This part of the restore does take control
 of the connection to the server and does not allow any other communication
 to the server by the other interfaces.
@@ -129,7 +129,7 @@ It by default points directly to one file created in a databse dump.
 
 <p>If you have used the version browser with a large database, you may have
 noticed that the performance can begin to be quite slow.  A way to improve the
-response time of the database server is to add indexes that will assist a 
+response time of the database server is to add indexes that will assist a
 couple of the specific queries that are made.
 
 <p>For postgresql add 2 indexes with the following commands in psql:
@@ -141,8 +141,8 @@ jobid);
 <br>CREATE INDEX file_filenameid_jobid ON File (FilenameId, JobId);
 <br>CREATE INDEX file_pathid_idx ON File (PathId);
 
-<p>There is one way to make the first of those two indexes perform just a 
-little better.  It is to create a partial index.  First, at least one backup 
+<p>There is one way to make the first of those two indexes perform just a
+little better.  It is to create a partial index.  First, at least one backup
 must be in the database that has at least one directory.  Then in psql or mysql
 perform the command:
 <br>SELECT FilenameId FROM Filename WHERE name='';

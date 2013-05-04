@@ -1,0 +1,6 @@
+/etc/bareos/bareos-fd.conf
+/usr/sbin/bareos-fd
+/usr/lib/bareos/plugins/bpipe-fd.so
+/usr/lib/bareos/plugins/python-fd.so
+/usr/share/man/man8/bareos-fd.8.gz
+platforms/debian/bareos-fd /etc/init.d/

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,17 +13,12 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Catalog header file
@@ -236,7 +231,7 @@ struct POOL_DBR {
    char Name[MAX_NAME_LENGTH];        /* Pool name */
    uint32_t NumVols;                  /* total number of volumes */
    uint32_t MaxVols;                  /* max allowed volumes */
-   int32_t LabelType;                 /* Bacula/ANSI/IBM */
+   int32_t LabelType;                 /* BAREOS/ANSI/IBM */
    int32_t UseOnce;                   /* set to use once only */
    int32_t UseCatalog;                /* set to use catalog */
    int32_t AcceptAnyVolume;           /* set to accept any volume sequence */
@@ -309,7 +304,7 @@ public:
    time_t   LastWritten;              /* Time Volume last written */
    time_t   LabelDate;                /* Date/Time Volume labeled */
    time_t   InitialWrite;             /* Date/Time Volume first written */
-   int32_t  LabelType;                /* Label (Bacula/ANSI/IBM) */
+   int32_t  LabelType;                /* Label (BAREOS/ANSI/IBM) */
    uint32_t VolJobs;                  /* number of jobs on this medium */
    uint32_t VolFiles;                 /* Number of files */
    uint32_t VolBlocks;                /* Number of blocks */
@@ -403,7 +398,7 @@ private:
 };
 
 /* Call back context for getting a list of comma separated strings from the
- * database 
+ * database
  */
 class db_list_ctx {
 public:
@@ -457,7 +452,7 @@ typedef int (DB_RESULT_HANDLER)(void *, int, char **);
 #define db_unlock(mdb) mdb->_db_unlock(__FILE__, __LINE__)
 
 /* Current database version number for all drivers */
-#define BDB_VERSION 15
+#define BDB_VERSION 2001
 
 class B_DB: public SMARTALLOC {
 protected:
@@ -535,7 +530,7 @@ public:
    virtual bool db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
 
    /* By default, we use db_sql_query */
-   virtual bool db_big_sql_query(const char *query, 
+   virtual bool db_big_sql_query(const char *query,
                                  DB_RESULT_HANDLER *result_handler, void *ctx) {
       return db_sql_query(query, result_handler, ctx);
    };

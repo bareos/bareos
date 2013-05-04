@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2006 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,33 +13,32 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   Bacula Director -- expand.c -- does variable expansion
- *    in particular for the LabelFormat specification.
+ * BAREOS Director -- expand.c -- does variable expansion
+ * in particular for the LabelFormat specification.
  *
- *     Kern Sibbald, June MMIII
+ * Kern Sibbald, June MMIII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
-static int date_item(JCR *jcr, int code,
-              const char **val_ptr, int *val_len, int *val_size)
+static int date_item(JCR *jcr,
+                     int code,
+                     const char **val_ptr,
+                     int *val_len,
+                     int *val_size)
 {
    struct tm tm;
    time_t now = time(NULL);
+
    (void)localtime_r(&now, &tm);
    int val = 0;
    char buf[10];
@@ -71,11 +70,15 @@ static int date_item(JCR *jcr, int code,
    *val_ptr = bstrdup(buf);
    *val_len = strlen(buf);
    *val_size = *val_len + 1;
+
    return 1;
 }
 
-static int job_item(JCR *jcr, int code,
-              const char **val_ptr, int *val_len, int *val_size)
+static int job_item(JCR *jcr,
+                    int code,
+                    const char **val_ptr,
+                    int *val_len,
+                    int *val_size)
 {
    const char *str = " ";
    char buf[20];
@@ -131,58 +134,63 @@ static int job_item(JCR *jcr, int code,
       str = jcr->Job;
       break;
    }
+
    *val_ptr = bstrdup(str);
    *val_len = strlen(str);
    *val_size = *val_len + 1;
+
    return 1;
 }
 
-struct s_built_in_vars {const char *var_name; int code; int (*func)(JCR *jcr, int code,
-                         const char **val_ptr, int *val_len, int *val_size);};
+struct s_built_in_vars {
+   const char *var_name;
+   int code;
+   int (*func)(JCR *jcr, int code, const char **val_ptr, int *val_len, int *val_size);
+};
 
 /*
  * Table of build in variables
  */
 static struct s_built_in_vars built_in_vars[] = {
-   { NT_("Year"),       1, date_item},
-   { NT_("Month"),      2, date_item},
-   { NT_("Day"),        3, date_item},
-   { NT_("Hour"),       4, date_item},
-   { NT_("Minute"),     5, date_item},
-   { NT_("Second"),     6, date_item},
-   { NT_("WeekDay"),    7, date_item},
-
-   { NT_("Job"),        1, job_item},
-   { NT_("Dir"),        2, job_item},
-   { NT_("Level"),      3, job_item},
-   { NT_("Type"),       4, job_item},
-   { NT_("JobId"),      5, job_item},
-   { NT_("Client"),     6, job_item},
-   { NT_("NumVols"),    7, job_item},
-   { NT_("Pool"),       8, job_item},
-   { NT_("Storage"),    9, job_item},
-   { NT_("Catalog"),   10, job_item},
-   { NT_("MediaType"), 11, job_item},
-   { NT_("JobName"),   12, job_item},
-
-   { NULL, 0, NULL}
+   { NT_("Year"), 1, date_item },
+   { NT_("Month"), 2, date_item },
+   { NT_("Day"), 3, date_item },
+   { NT_("Hour"), 4, date_item },
+   { NT_("Minute"), 5, date_item },
+   { NT_("Second"), 6, date_item },
+   { NT_("WeekDay"), 7, date_item },
+   { NT_("Job"), 1, job_item },
+   { NT_("Dir"), 2, job_item },
+   { NT_("Level"), 3, job_item },
+   { NT_("Type"), 4, job_item },
+   { NT_("JobId"), 5, job_item },
+   { NT_("Client"), 6, job_item },
+   { NT_("NumVols"), 7, job_item },
+   { NT_("Pool"), 8, job_item },
+   { NT_("Storage"), 9, job_item },
+   { NT_("Catalog"), 10, job_item },
+   { NT_("MediaType"), 11, job_item },
+   { NT_("JobName"), 12, job_item },
+   { NULL, 0, NULL }
 };
-
 
 /*
  * Search the table of built-in variables, and if found,
- *   call the appropriate subroutine to do the work.
+ * call the appropriate subroutine to do the work.
  */
-static var_rc_t lookup_built_in_var(var_t *ctx, void *my_ctx,
+static var_rc_t lookup_built_in_var(var_t *ctx,
+                                    void *my_ctx,
                                     const char *var_ptr,
-                                    int var_len, int var_index,
+                                    int var_len,
+                                    int var_index,
                                     const char **val_ptr,
-                                    int *val_len, int *val_size)
+                                    int *val_len,
+                                    int *val_size)
 {
    JCR *jcr = (JCR *)my_ctx;
-   int status;
+   int status, i;
 
-   for (int i=0; _(built_in_vars[i].var_name); i++) {
+   for (i = 0; _(built_in_vars[i].var_name); i++) {
       if (bstrncmp(_(built_in_vars[i].var_name), var_ptr, var_len)) {
          status = (*built_in_vars[i].func)(jcr, built_in_vars[i].code,
                                            val_ptr, val_len, val_size);
@@ -192,31 +200,42 @@ static var_rc_t lookup_built_in_var(var_t *ctx, void *my_ctx,
          break;
       }
    }
+
    return VAR_ERR_UNDEFINED_VARIABLE;
 }
-
 
 /*
  * Search counter variables
  */
-static var_rc_t lookup_counter_var(var_t *ctx, void *my_ctx,
-          const char *var_ptr, int var_len, int var_inc, int var_index,
-          const char **val_ptr, int *val_len, int *val_size)
+static var_rc_t lookup_counter_var(var_t *ctx,
+                                   void *my_ctx,
+                                   const char *var_ptr,
+                                   int var_len,
+                                   int var_inc,
+                                   int var_index,
+                                   const char **val_ptr,
+                                   int *val_len,
+                                   int *val_size)
 {
+   COUNTERRES *counter;
    char buf[MAXSTRING];
    var_rc_t status = VAR_ERR_UNDEFINED_VARIABLE;
 
    if (var_len > (int)sizeof(buf) - 1) {
        return VAR_ERR_OUT_OF_MEMORY;
    }
+
    memcpy(buf, var_ptr, var_len);
    buf[var_len] = 0;
+
    LockRes();
-   for (COUNTERRES *counter=NULL; (counter = (COUNTERRES *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
+   for (counter = NULL; (counter = (COUNTERRES *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
       if (bstrcmp(counter->name(), buf)) {
          Dmsg2(100, "Counter=%s val=%d\n", buf, counter->CurrentValue);
-         /* -1 => return size of array */
-        if (var_index == -1) {
+         /*
+          * -1 => return size of array
+          */
+         if (var_index == -1) {
             bsnprintf(buf, sizeof(buf), "%d", counter->CurrentValue);
             *val_len = bsnprintf(buf, sizeof(buf), "%d", strlen(buf));
             *val_ptr = buf;
@@ -259,36 +278,47 @@ static var_rc_t lookup_counter_var(var_t *ctx, void *my_ctx,
       }
    }
    UnlockRes();
+
    return status;
 }
-
 
 /*
  * Called here from "core" expand code to look up a variable
  */
-static var_rc_t lookup_var(var_t *ctx, void *my_ctx,
-          const char *var_ptr, int var_len, int var_inc, int var_index,
-          const char **val_ptr, int *val_len, int *val_size)
+static var_rc_t lookup_var(var_t *ctx,
+                           void *my_ctx,
+                           const char *var_ptr,
+                           int var_len,
+                           int var_inc,
+                           int var_index,
+                           const char **val_ptr,
+                           int *val_len,
+                           int *val_size)
 {
    char buf[MAXSTRING], *val, *p, *v;
    var_rc_t status;
    int count;
 
-   /* Note, if val_size > 0 and val_ptr!=NULL, the core code will free() it */
+   /*
+    * Note, if val_size > 0 and val_ptr!=NULL, the core code will free() it
+    */
    if ((status = lookup_built_in_var(ctx, my_ctx, var_ptr, var_len, var_index,
-        val_ptr, val_len, val_size)) == VAR_OK) {
+                                     val_ptr, val_len, val_size)) == VAR_OK) {
       return VAR_OK;
    }
 
    if ((status = lookup_counter_var(ctx, my_ctx, var_ptr, var_len, var_inc, var_index,
-        val_ptr, val_len, val_size)) == VAR_OK) {
+                                    val_ptr, val_len, val_size)) == VAR_OK) {
       return VAR_OK;
    }
 
-   /* Look in environment */
+   /*
+    * Look in environment
+    */
    if (var_len > (int)sizeof(buf) - 1) {
        return VAR_ERR_OUT_OF_MEMORY;
    }
+
    memcpy(buf, var_ptr, var_len + 1);
    buf[var_len] = 0;
    Dmsg1(100, "Var=%s\n", buf);
@@ -296,20 +326,26 @@ static var_rc_t lookup_var(var_t *ctx, void *my_ctx,
    if ((val = getenv(buf)) == NULL) {
        return VAR_ERR_UNDEFINED_VARIABLE;
    }
-   /* He wants to index the "array" */
+
+   /*
+    * He wants to index the "array"
+    */
    count = 1;
-   /* Find the size of the "array"
-    *   each element is separated by a |
+
+   /*
+    * Find the size of the "array" each element is separated by a |
     */
    for (p = val; *p; p++) {
       if (*p == '|') {
          count++;
       }
    }
-   Dmsg3(100, "For %s, reqest index=%d have=%d\n",
-      buf, var_index, count);
 
-   /* -1 => return size of array */
+   Dmsg3(100, "For %s, reqest index=%d have=%d\n", buf, var_index, count);
+
+   /*
+    * -1 => return size of array
+    */
    if (var_index == -1) {
       int len;
       if (count == 1) {               /* if not array */
@@ -328,9 +364,12 @@ static var_rc_t lookup_var(var_t *ctx, void *my_ctx,
 //    return VAR_ERR_SUBMATCH_OUT_OF_RANGE;
       return VAR_ERR_UNDEFINED_VARIABLE;
    }
-   /* Now find the particular item (var_index) he wants */
+
+   /*
+    * Now find the particular item (var_index) he wants
+    */
    count = 0;
-   for (p=val; *p; ) {
+   for (p = val; *p; ) {
       if (*p == '|') {
          if (count < var_index) {
             val = ++p;
@@ -341,11 +380,16 @@ static var_rc_t lookup_var(var_t *ctx, void *my_ctx,
       }
       p++;
    }
+
    if (p-val > (int)sizeof(buf) - 1) {
        return VAR_ERR_OUT_OF_MEMORY;
    }
+
    Dmsg2(100, "val=%s len=%d\n", val, p-val);
-   /* Make a copy of item, and pass it back */
+
+   /*
+    * Make a copy of item, and pass it back
+    */
    v = (char *)malloc(p-val+1);
    memcpy(v, val, p-val);
    v[p-val] = 0;
@@ -353,6 +397,7 @@ static var_rc_t lookup_var(var_t *ctx, void *my_ctx,
    *val_len = p-val;
    *val_size = p-val+1;
    Dmsg1(100, "v=%s\n", v);
+
    return VAR_OK;
 }
 
@@ -363,20 +408,29 @@ static var_rc_t lookup_var(var_t *ctx, void *my_ctx,
  *   val_ptr points to the value string
  *   out_ptr points to string to be returned
  */
-static var_rc_t operate_var(var_t *var, void *my_ctx,
-          const char *op_ptr, int op_len,
-          const char *arg_ptr, int arg_len,
-          const char *val_ptr, int val_len,
-          char **out_ptr, int *out_len, int *out_size)
+static var_rc_t operate_var(var_t *var,
+                            void *my_ctx,
+                            const char *op_ptr,
+                            int op_len,
+                            const char *arg_ptr,
+                            int arg_len,
+                            const char *val_ptr,
+                            int val_len,
+                            char **out_ptr,
+                            int *out_len,
+                            int *out_size)
 {
+   COUNTERRES *counter;
+   char buf[MAXSTRING];
    var_rc_t status = VAR_ERR_UNDEFINED_OPERATION;
+
    Dmsg0(100, "Enter operate_var\n");
    if (!val_ptr) {
       *out_size = 0;
       return status;
    }
+
    if (op_len == 3 && bstrncmp(op_ptr, "inc", 3)) {
-      char buf[MAXSTRING];
       if (val_len > (int)sizeof(buf) - 1) {
           return VAR_ERR_OUT_OF_MEMORY;
       }
@@ -387,7 +441,7 @@ static var_rc_t operate_var(var_t *var, void *my_ctx,
       buf[val_len] = 0;
       Dmsg1(100, "Val=%s\n", buf);
       LockRes();
-      for (COUNTERRES *counter=NULL; (counter = (COUNTERRES *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
+      for (counter = NULL; (counter = (COUNTERRES *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
          if (bstrcmp(counter->name(), buf)) {
             Dmsg2(100, "counter=%s val=%s\n", counter->name(), buf);
             break;
@@ -397,15 +451,15 @@ static var_rc_t operate_var(var_t *var, void *my_ctx,
       return status;
    }
    *out_size = 0;
+
    return status;
 }
-
 
 /*
  * Expand an input line and return it.
  *
- *  Returns: 0 on failure
- *           1 on success and exp has expanded input
+ * Returns: 0 on failure
+ *          1 on success and exp has expanded input
  */
 int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp)
 {
@@ -419,24 +473,33 @@ int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp)
    outp = NULL;
    out_len = 0;
 
-   /* create context */
+   /*
+    * Create context
+    */
    if ((status = var_create(&var_ctx)) != VAR_OK) {
        Jmsg(jcr, M_ERROR, 0, _("Cannot create var context: ERR=%s\n"), var_strerror(var_ctx, status));
        goto bail_out;
    }
-   /* define callback */
+
+   /*
+    * Define callback
+    */
    if ((status = var_config(var_ctx, VAR_CONFIG_CB_VALUE, lookup_var, (void *)jcr)) != VAR_OK) {
        Jmsg(jcr, M_ERROR, 0, _("Cannot set var callback: ERR=%s\n"), var_strerror(var_ctx, status));
        goto bail_out;
    }
 
-   /* define special operations */
+   /*
+    * Define special operations
+    */
    if ((status = var_config(var_ctx, VAR_CONFIG_CB_OPERATION, operate_var, (void *)jcr)) != VAR_OK) {
        Jmsg(jcr, M_ERROR, 0, _("Cannot set var operate: ERR=%s\n"), var_strerror(var_ctx, status));
        goto bail_out;
    }
 
-   /* unescape in place */
+   /*
+    * Unescape in place
+    */
    if ((status = var_unescape(var_ctx, inp, in_len, inp, in_len+1, 0)) != VAR_OK) {
        Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"), var_strerror(var_ctx, status));
        goto bail_out;
@@ -444,14 +507,17 @@ int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp)
 
    in_len = strlen(inp);
 
-   /* expand variables */
+   /*
+    * Expand variables
+    */
    if ((status = var_expand(var_ctx, inp, in_len, &outp, &out_len, 0)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot expand expression \"%s\": ERR=%s\n"),
-          inp, var_strerror(var_ctx, status));
+       Jmsg(jcr, M_ERROR, 0, _("Cannot expand expression \"%s\": ERR=%s\n"), inp, var_strerror(var_ctx, status));
        goto bail_out;
    }
 
-   /* unescape once more in place */
+   /*
+    * Unescape once more in place
+    */
    if ((status = var_unescape(var_ctx, outp, out_len, outp, out_len+1, 1)) != VAR_OK) {
        Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"), var_strerror(var_ctx, status));
        goto bail_out;
@@ -462,12 +528,16 @@ int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp)
    rtn_stat = 1;
 
 bail_out:
-   /* destroy expansion context */
+   /*
+    * Destroy expansion context
+    */
    if ((status = var_destroy(var_ctx)) != VAR_OK) {
        Jmsg(jcr, M_ERROR, 0, _("Cannot destroy var context: ERR=%s\n"), var_strerror(var_ctx, status));
    }
+
    if (outp) {
       free(outp);
    }
+
    return rtn_stat;
 }

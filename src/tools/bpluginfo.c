@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,23 +13,18 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 
 /*
  * Contributed in 2012 by Inteos sp. z o.o.
  *
- * Utility tool display various information about Bacula plugin,
+ * Utility tool display various information about Bareos plugin,
  * including but not limited to:
  * - Name and Author of the plugin
  * - Plugin License
@@ -38,21 +33,14 @@
  * - Enabled functions, etc.
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
+#include "bareos.h"
+#include "fd_plugins.h"
+#include "dir_plugins.h"
+#include "sd_plugins.h"
+#include "assert_macro.h"
 #ifndef __WIN32__
 #include <dlfcn.h>
 #endif
-#include "bacula.h"
-#include "fd_plugins.h"
-#include "dir_plugins.h"
-// I can't include sd_plugins.h here ...
-#include "stored.h"
-#include "assert_macro.h"
 
 extern "C" {
    typedef int (*loadPlugin) (void *binfo, void *bfuncs, void **pinfo,
@@ -60,6 +48,7 @@ extern "C" {
    typedef int (*unloadPlugin) (void);
 }
 #define DEFAULT_API_VERSION   1
+
 enum plugintype {
    DIRPLUGIN,
    FDPLUGIN,
@@ -84,29 +73,19 @@ union _plugfuncs {
  * bFuncs
  * bsdFuncs
  */
-/*
- * TODO: change to union
- *
-typedef union _baculafuncs baculafuncs;
-union _baculafuncs {
-   bDirFuncs bdirfuncs;
-   bFuncs bfdfuncs;
-   bsdFuncs bsdfuncs;
-};
-*/
-typedef struct _baculafuncs baculafuncs;
-struct _baculafuncs {
+typedef struct _bareosfuncs bareosfuncs;
+struct _bareosfuncs {
    uint32_t size;
    uint32_t version;
-   int (*registerBaculaEvents) (void *ctx, ...);
-   int (*getBaculaValue) (void *ctx, int var, void *value);
-   int (*setBaculaValue) (void *ctx, int var, void *value);
+   int (*registerBareosEvents) (void *ctx, ...);
+   int (*getBareosValue) (void *ctx, int var, void *value);
+   int (*setBareosValue) (void *ctx, int var, void *value);
    int (*JobMessage) (void *ctx, const char *file, int line, int type, int64_t mtime,
             const char *fmt, ...);
    int (*DebugMessage) (void *ctx, const char *file, int line, int level,
          const char *fmt, ...);
-   void *(*baculaMalloc) (void *ctx, const char *file, int line, size_t size);
-   void (*baculaFree) (void *ctx, const char *file, int line, void *mem);
+   void *(*bareosMalloc) (void *ctx, const char *file, int line, size_t size);
+   void (*bareosFree) (void *ctx, const char *file, int line, void *mem);
 };
 
 /*
@@ -114,20 +93,12 @@ struct _baculafuncs {
  * bInfo
  * bsdInfo
  */
-typedef union _baculainfos baculainfos;
-union _baculainfos {
+typedef union _bareosinfos bareosinfos;
+union _bareosinfos {
    bDirInfo bdirinfo;
    bInfo bfdinfo;
    bsdInfo bsdinfo;
 };
-
-/*
-typedef struct _baculainfos baculainfos;
-struct _baculainfos {
-   uint32_t size;
-   uint32_t version;
-};
-*/
 
 typedef struct _progdata progdata;
 struct _progdata {
@@ -158,17 +129,17 @@ struct _progdata {
       ptr = NULL; \
    }
 
-int registerBaculaEvents(void *ctx, ...)
+int registerBareosEvents(void *ctx, ...)
 {
    return 0;
 };
 
-int getBaculaValue(void *ctx, int var, void *value)
+int getBareosValue(void *ctx, int var, void *value)
 {
    return 0;
 };
 
-int setBaculaValue(void *ctx, int var, void *value)
+int setBareosValue(void *ctx, int var, void *value)
 {
    return 0;
 };
@@ -190,12 +161,12 @@ int JobMessage(void *ctx, const char *file, int line, int type, int64_t mtime,
    return 0;
 };
 
-void *baculaMalloc(void *ctx, const char *file, int line, size_t size)
+void *bareosMalloc(void *ctx, const char *file, int line, size_t size)
 {
    return MALLOC(size);
 };
 
-void baculaFree(void *ctx, const char *file, int line, void *mem)
+void bareosFree(void *ctx, const char *file, int line, void *mem)
 {
    FREE(mem);
 };
@@ -211,7 +182,7 @@ void print_help(int argc, char *argv[])
      "       -v          verbose\n"
      "       -i          list plugin header information only (default)\n"
      "       -f          list plugin functions information only\n"
-     "       -a <api>    bacula api version (default %d)\n"
+     "       -a <api>    bareos api version (default %d)\n"
      "       -h          help screen\n" "\n", DEFAULT_API_VERSION);
 }
 
@@ -251,7 +222,7 @@ void freepdata(progdata *pdata)
  * -v    verbose flag
  * -i    list plugin header info only (default)
  * -f    list implemented functions only
- * -a    bacula api version (default 1)
+ * -a    bareos api version (default 1)
  * -h    help screen
  */
 void parse_args(progdata *pdata, int argc, char *argv[])
@@ -378,7 +349,7 @@ void dump_pluginfo(progdata *pdata)
 
    switch (pdata->bplugtype) {
    case DIRPLUGIN:
-      printf("\nPlugin type:\t\tBacula Director plugin\n");
+      printf("\nPlugin type:\t\tBareos Director plugin\n");
       if (pdata->verbose) {
          printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
       }
@@ -390,7 +361,7 @@ void dump_pluginfo(progdata *pdata)
       printf("Plugin API version:\t%d\n", pinfo->version);
       break;
    case FDPLUGIN:
-      printf("\nPlugin type:\t\tFile Daemon plugin\n");
+      printf("\nPlugin type:\t\tBareos File Daemon plugin\n");
       if (pdata->verbose) {
          printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
       }
@@ -402,7 +373,7 @@ void dump_pluginfo(progdata *pdata)
       printf("Plugin API version:\t%d\n", pinfo->version);
       break;
    case SDPLUGIN:
-      printf("\nPlugin type:\t\tBacula Storage plugin\n");
+      printf("\nPlugin type:\t\tBareos Storage plugin\n");
       if (pdata->verbose) {
          printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
       }
@@ -541,18 +512,18 @@ int main(int argc, char *argv[])
    progdata *pdata;
    loadPlugin loadplugfunc;
    unloadPlugin unloadplugfunc;
-   baculafuncs bfuncs = {
+   bareosfuncs bfuncs = {
       sizeof(bfuncs),
       1,
-      registerBaculaEvents,
-      getBaculaValue,
-      setBaculaValue,
+      registerBareosEvents,
+      getBareosValue,
+      setBareosValue,
       JobMessage,
       DebugMessage,
-      baculaMalloc,
-      baculaFree,
+      bareosMalloc,
+      bareosFree,
    };
-   baculainfos binfos;
+   bareosinfos binfos;
 
    pdata = allocpdata();
    parse_args(pdata, argc, argv);
@@ -570,7 +541,7 @@ int main(int argc, char *argv[])
    loadplugfunc = (loadPlugin) dlsym(pdata->pluginhandle, "loadPlugin");
    if (loadplugfunc == NULL) {
       printf("\nCannot find loadPlugin function: %s\n", dlerror());
-      printf("\nWhether the file is a really Bacula plugin?\n\n");
+      printf("\nWhether the file is a really Bareos plugin?\n\n");
       freepdata(pdata);
       exit(2);
    }
@@ -578,7 +549,7 @@ int main(int argc, char *argv[])
    unloadplugfunc = (unloadPlugin) dlsym(pdata->pluginhandle, "unloadPlugin");
    if (unloadplugfunc == NULL) {
       printf("\nCannot find unloadPlugin function: %s\n", dlerror());
-      printf("\nWhether the file is a really Bacula plugin?\n\n");
+      printf("\nWhether the file is a really Bareos plugin?\n\n");
       freepdata(pdata);
       exit(3);
    }

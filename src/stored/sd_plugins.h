@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation, which is
@@ -13,29 +13,23 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Interface definition for Bacula Plugins
+ * Interface definition for Bareos SD Plugins
  *
  * Kern Sibbald, October 2007
- *
  */
 
 #ifndef __SD_PLUGINS_H
 #define __SD_PLUGINS_H
 
-#ifndef _BACULA_H
+#ifndef _BAREOS_H
 #ifdef __cplusplus
 /* Workaround for SGI IRIX 6.5 */
 #define _LANGUAGE_C_PLUS_PLUS 1
@@ -55,12 +49,12 @@
 
 /****************************************************************************
  *                                                                          *
- *                Bacula definitions                                        *
+ *                Bareos definitions                                        *
  *                                                                          *
  ****************************************************************************/
 
 /*
- * Bacula Variable Ids (Read)
+ * Bareos Variable Ids (Read)
  */
 typedef enum {
   bsdVarJob = 1,
@@ -87,7 +81,7 @@ typedef enum {
 } bsdrVariable;
 
 /*
- * Bacula Variable Ids (Write)
+ * Bareos Variable Ids (Write)
  */
 typedef enum {
   bsdwVarJobReport = 1,
@@ -125,7 +119,7 @@ typedef struct s_bsdEvent {
    uint32_t eventType;
 } bsdEvent;
 
-typedef struct s_sdbaculaInfo {
+typedef struct s_sdbareosInfo {
    uint32_t size;
    uint32_t version;
 } bsdInfo;
@@ -135,14 +129,15 @@ extern "C" {
 #endif
 
 /*
- * Bacula interface version and function pointers
+ * Bareos interface version and function pointers
  */
-typedef struct s_sdbaculaFuncs {
+class DCR;
+typedef struct s_sdbareosFuncs {
    uint32_t size;
    uint32_t version;
-   bRC (*registerBaculaEvents)(bpContext *ctx, int nr_events, ...);
-   bRC (*getBaculaValue)(bpContext *ctx, bsdrVariable var, void *value);
-   bRC (*setBaculaValue)(bpContext *ctx, bsdwVariable var, void *value);
+   bRC (*registerBareosEvents)(bpContext *ctx, int nr_events, ...);
+   bRC (*getBareosValue)(bpContext *ctx, bsdrVariable var, void *value);
+   bRC (*setBareosValue)(bpContext *ctx, bsdwVariable var, void *value);
    bRC (*JobMessage)(bpContext *ctx, const char *file, int line,
                      int type, utime_t mtime, const char *fmt, ...);
    bRC (*DebugMessage)(bpContext *ctx, const char *file, int line,
@@ -154,7 +149,7 @@ typedef struct s_sdbaculaFuncs {
 } bsdFuncs;
 
 /*
- * Bacula Core Routines -- not used within a plugin
+ * Bareos Core Routines -- not used within a plugin
  */
 #ifdef STORAGE_DAEMON
 void load_sd_plugins(const char *plugin_dir);
@@ -195,7 +190,8 @@ typedef struct s_sdpluginFuncs {
 #define sdplug_func(plugin) ((psdFuncs *)(plugin->pfuncs))
 #define sdplug_info(plugin) ((genpInfo *)(plugin->pinfo))
 
-typedef struct s_sdbaculaDevStatTrigger {
+class DEVRES;
+typedef struct s_sdbareosDevStatTrigger {
    DEVRES *device;
    POOLMEM *status;
    int status_length;

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Bacula File Daemon  restore.c Restorefiles.
+ * Bareos File Daemon restore.c Restorefiles.
  *
- *    Kern Sibbald, November MM
- *
+ * Kern Sibbald, November MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "filed.h"
 #include "ch.h"
 
@@ -75,7 +69,7 @@ static char rec_header[] = "rechdr %ld %ld %ld %ld %ld";
 /*
  * Forward referenced functions
  */
-#if   defined(HAVE_LIBZ)
+#if defined(HAVE_LIBZ)
 const bool have_libz = true;
 #else
 const bool have_libz = false;
@@ -360,7 +354,7 @@ void do_restore(JCR *jcr)
    r_ctx rctx;
    ATTR *attr;
    /* ***FIXME*** make configurable */
-   crypto_digest_t signing_algorithm = have_sha2 ? 
+   crypto_digest_t signing_algorithm = have_sha2 ?
                                        CRYPTO_DIGEST_SHA256 : CRYPTO_DIGEST_SHA1;
    /*
     * The following variables keep track of "known unknowns"
@@ -406,7 +400,7 @@ void do_restore(JCR *jcr)
          rctx.fork_cipher_ctx.buf = get_memory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
       }
    }
-   
+
    /*
     * Get a record from the Storage daemon. We are guaranteed to
     *   receive records in the following order:
@@ -423,7 +417,7 @@ void do_restore(JCR *jcr)
     *        i. Possibly MD5 or SHA1 record
     *   3. Repeat step 1
     *
-    * NOTE: We keep track of two bacula file descriptors:
+    * NOTE: We keep track of two bareos file descriptors:
     *   1. bfd for file data.
     *      This fd is opened for non empty files when an attribute stream is
     *      encountered and closed when we find the next attribute stream.
@@ -468,7 +462,7 @@ void do_restore(JCR *jcr)
       }
       /* Strip off new stream high bits */
       rctx.stream = rctx.full_stream & STREAMMASK_TYPE;
-      Dmsg5(150, "Got hdr: Files=%d FilInx=%d size=%d Stream=%d, %s.\n", 
+      Dmsg5(150, "Got hdr: Files=%d FilInx=%d size=%d Stream=%d, %s.\n",
             jcr->JobFiles, file_index, rctx.size, rctx.stream, stream_to_ascii(rctx.stream));
 
       /*
@@ -479,13 +473,13 @@ void do_restore(JCR *jcr)
          goto bail_out;
       }
       if (rctx.size != (uint32_t)sd->msglen) {
-         Jmsg2(jcr, M_FATAL, 0, _("Actual data size %d not same as header %d\n"), 
+         Jmsg2(jcr, M_FATAL, 0, _("Actual data size %d not same as header %d\n"),
                sd->msglen, rctx.size);
          Dmsg2(50, "Actual data size %d not same as header %d\n",
                sd->msglen, rctx.size);
          goto bail_out;
       }
-      Dmsg3(130, "Got stream: %s len=%d extract=%d\n", stream_to_ascii(rctx.stream), 
+      Dmsg3(130, "Got stream: %s len=%d extract=%d\n", stream_to_ascii(rctx.stream),
             sd->msglen, rctx.extract);
 
       /*
@@ -524,7 +518,7 @@ void do_restore(JCR *jcr)
          }
          /*
           * Restore objects should be ignored here -- they are
-          * returned at the beginning of the restore. 
+          * returned at the beginning of the restore.
           */
          if (IS_FT_OBJECT(rctx.type)) {
             continue;
@@ -560,16 +554,16 @@ void do_restore(JCR *jcr)
           */
          jcr->num_files_examined++;
          rctx.extract = false;
-         status = CF_CORE;        /* By default, let Bacula's core handle it */
+         status = CF_CORE;        /* By default, let Bareos's core handle it */
 
          if (jcr->plugin) {
             status = plugin_create_file(jcr, attr, &rctx.bfd, jcr->replace);
-         } 
-         
+         }
+
          if (status == CF_CORE) {
             status = create_file(jcr, attr, &rctx.bfd, jcr->replace);
          }
-         jcr->lock();  
+         jcr->lock();
          pm_strcpy(jcr->last_fname, attr->ofname);
          jcr->last_type = attr->type;
          jcr->unlock();
@@ -655,7 +649,7 @@ void do_restore(JCR *jcr)
 
          if (jcr->crypto.digest) {
             crypto_digest_free(jcr->crypto.digest);
-         }  
+         }
          jcr->crypto.digest = crypto_digest_new(jcr, signing_algorithm);
          if (!jcr->crypto.digest) {
             Jmsg0(jcr, M_FATAL, 0, _("Could not create digest.\n"));
@@ -667,7 +661,7 @@ void do_restore(JCR *jcr)
          /*
           * Decode and save session keys.
           */
-         cryptoerr = crypto_session_decode((uint8_t *)sd->msg, (uint32_t)sd->msglen, 
+         cryptoerr = crypto_session_decode((uint8_t *)sd->msg, (uint32_t)sd->msglen,
                         jcr->crypto.pki_recipients, &rctx.cs);
          switch(cryptoerr) {
          case CRYPTO_ERROR_NONE:
@@ -1141,7 +1135,7 @@ ok_out:
    free_attr(rctx.attr);
 }
 
-int do_file_digest(JCR *jcr, FF_PKT *ff_pkt, bool top_level) 
+int do_file_digest(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 {
    Dmsg1(50, "do_file_digest jcr=%p\n", jcr);
    return (digest_file(jcr, ff_pkt, jcr->crypto.digest));
@@ -1159,7 +1153,7 @@ bool sparse_data(JCR *jcr, BFILE *bfd, uint64_t *addr, char **data, uint32_t *le
          if (blseek(bfd, (boffset_t)*addr, SEEK_SET) < 0) {
             berrno be;
             Jmsg3(jcr, M_ERROR, 0, _("Seek to %s error on %s: ERR=%s\n"),
-                  edit_uint64(*addr, ec1), jcr->last_fname, 
+                  edit_uint64(*addr, ec1), jcr->last_fname,
                   be.bstrerror(bfd->berrno));
             return false;
          }
@@ -1177,13 +1171,13 @@ bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win
    if (win32_decomp) {
       if (!processWin32BackupAPIBlock(bfd, data, length)) {
          berrno be;
-         Jmsg2(jcr, M_ERROR, 0, _("Write error in Win32 Block Decomposition on %s: %s\n"), 
+         Jmsg2(jcr, M_ERROR, 0, _("Write error in Win32 Block Decomposition on %s: %s\n"),
                jcr->last_fname, be.bstrerror(bfd->berrno));
          return false;
       }
    } else if (bwrite(bfd, data, length) != (ssize_t)length) {
       berrno be;
-      Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"), 
+      Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
             jcr->last_fname, be.bstrerror(bfd->berrno));
       return false;
    }
@@ -1247,7 +1241,7 @@ int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
        */
       if (cipher_ctx->buf_len > 0) {
          Dmsg1(130, "Moving %u buffered bytes to start of buffer\n", cipher_ctx->buf_len);
-         memmove(cipher_ctx->buf, &cipher_ctx->buf[cipher_ctx->packet_len], 
+         memmove(cipher_ctx->buf, &cipher_ctx->buf[cipher_ctx->packet_len],
             cipher_ctx->buf_len);
       }
       /*
@@ -1274,7 +1268,7 @@ static bool close_previous_stream(JCR *jcr, r_ctx &rctx)
    if (rctx.extract) {
       if (rctx.size > 0 && !is_bopen(&rctx.bfd)) {
          Jmsg0(rctx.jcr, M_ERROR, 0, _("Logic error: output file should be open\n"));
-         Dmsg2(000, "=== logic error size=%d bopen=%d\n", rctx.size, 
+         Dmsg2(000, "=== logic error size=%d bopen=%d\n", rctx.size,
             is_bopen(&rctx.bfd));
       }
 

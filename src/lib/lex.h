@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +11,19 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   lex.h
+ * lex.h
  *
- *    Lexical scanning of configuration files, used by parsers.
+ * Lexical scanning of configuration files, used by parsers.
  *
- *   Kern Sibbald, MM
- *
- *   Version $Id$
- *
+ * Kern Sibbald, MM
  */
 
 #ifndef _LEX_H
@@ -89,7 +79,7 @@ enum lex_state {
    lex_quoted_string,
    lex_include_quoted_string,
    lex_include,
-   lex_utf8_bom,      /* we are parsing out a utf8 byte order mark */ 
+   lex_utf8_bom,      /* we are parsing out a utf8 byte order mark */
    lex_utf16_le_bom   /* we are parsing out a utf-16 (little endian) byte order mark */
 };
 
@@ -99,14 +89,14 @@ enum lex_state {
 #define LOPT_NO_EXTERN           0x4  /* Don't follow @ command */
 
 class BPIPE;                          /* forward reference */
-  
+
 /* Lexical context */
 typedef struct s_lex_context {
    struct s_lex_context *next;        /* pointer to next lexical context */
    int options;                       /* scan options */
    char *fname;                       /* filename */
    FILE *fd;                          /* file descriptor */
-   char line[MAXSTRING];              /* input line */
+   POOLMEM *line;                     /* input line */
    char str[MAXSTRING];               /* string being scanned */
    int str_len;                       /* length of string */
    int line_no;                       /* file line number */

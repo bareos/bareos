@@ -1,7 +1,7 @@
 #
-# Kern's Bacula Storage Daemon Configuration file
+# Kern's Bareos Storage Daemon Configuration file
 #
-#  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
+#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
 #
 #
 # "Global" Storage daemon configuration specifications
@@ -9,7 +9,7 @@
 Storage {
   Name = "Storage daemon"
   Address = @hostname@
-  SDPort = @sd_port@                  # Directors port      
+  SDPort = @sd_port@                  # Directors port
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
   Subsys Directory = "@subsysdir@"
@@ -32,7 +32,7 @@ Device {
   Name = "HP DLT 80"
   Media Type = DLT8000
   Archive Device = /dev/nst0
-# LabelMedia = yes;                   # lets Bacula label unlabelled media
+# LabelMedia = yes;                   # lets Bareos label unlabelled media
   AutomaticMount = yes;               # when device opened, read it
   AlwaysOpen = yes;
   RemovableMedia = yes;
@@ -43,7 +43,7 @@ Device {
 #  Media Type = "8mm"
 #  Archive Device = /dev/nst1
 #  Hardware end of medium = No;
-## LabelMedia = yes;                   # lets Bacula label unlabelled media
+## LabelMedia = yes;                   # lets Bareos label unlabelled media
 #  AutomaticMount = yes;               # when device opened, read it
 #  AlwaysOpen = Yes;
 #  RemovableMedia = yes;

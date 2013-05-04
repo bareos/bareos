@@ -1,0 +1,33 @@
+# This file is part of package Bareos Storage Daemon
+#
+# Copyright (c) 2011 Free Software Foundation Europe e.V.
+# for Bareos Community
+# Author: Bruno Friedmann
+# Description:
+#    Used to start the bareos storage daemon service (bareos-sd)
+#    will be installed as /lib/systemd/system/bareos-sd.service
+#    enable : systemctl enable bareos-sd.service
+#    start : systemctl start bareos-sd.service
+#
+# Bareos Storage Daemon service
+#
+[Unit]
+Description=Bareos Storage Daemon service
+Requires=nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
+After=nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
+# Wants=
+# Before=
+# Conflicts=
+
+[Service]
+Type=forking
+User=@sd_user@
+Group=@sd_group@
+WorkingDirectory=@working_dir@
+PIDFile=@piddir@/bareos-sd.@sd_port@.pid
+# EnvironmentFile=-/etc/sysconfig/bareos-sd
+StandardOutput=syslog
+ExecStart=@sbindir@/bareos-sd -c @sysconfdir@/bareos-sd.conf
+
+[Install]
+WantedBy=multi-user.target

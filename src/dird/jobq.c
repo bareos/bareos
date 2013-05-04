@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,38 +13,32 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Bacula job queue routines.
+ * BAREOS job queue routines.
  *
- *  This code consists of three queues, the waiting_jobs
- *  queue, where jobs are initially queued, the ready_jobs
- *  queue, where jobs are placed when all the resources are
- *  allocated and they can immediately be run, and the
- *  running queue where jobs are placed when they are
- *  running.
+ * This code consists of three queues, the waiting_jobs
+ * queue, where jobs are initially queued, the ready_jobs
+ * queue, where jobs are placed when all the resources are
+ * allocated and they can immediately be run, and the
+ * running queue where jobs are placed when they are
+ * running.
  *
- *  Kern Sibbald, July MMIII
+ * Kern Sibbald, July MMIII
  *
  *
- *  This code was adapted from the Bacula workq, which was
- *    adapted from "Programming with POSIX Threads", by
- *    David R. Butenhof
- *
+ * This code was adapted from the Bareos workq, which was
+ * adapted from "Programming with POSIX Threads", by
+ * David R. Butenhof
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 extern JCR *jobs;
@@ -120,8 +114,8 @@ int jobq_destroy(jobq_t *jq)
    P(jq->mutex);
    jq->valid = 0;                      /* prevent any more operations */
 
-   /* 
-    * If any threads are active, wake them 
+   /*
+    * If any threads are active, wake them
     */
    if (jq->num_workers > 0) {
       jq->quit = true;
@@ -182,7 +176,7 @@ void *sched_wait(void *arg)
    }
    /* Check every 30 seconds if canceled */
    while (wtime > 0) {
-      Dmsg3(2300, "Waiting on sched time, jobid=%d secs=%d use=%d\n", 
+      Dmsg3(2300, "Waiting on sched time, jobid=%d secs=%d use=%d\n",
          jcr->JobId, wtime, jcr->use_count());
       if (wtime > 30) {
          wtime = 30;
@@ -213,7 +207,7 @@ int jobq_add(jobq_t *jq, JCR *jcr)
    pthread_t id;
    wait_pkt *sched_pkt;
 
-   if (!jcr->term_wait_inited) { 
+   if (!jcr->term_wait_inited) {
       /* Initialize termination condition variable */
       if ((status = pthread_cond_init(&jcr->term_wait, NULL)) != 0) {
          berrno be;
@@ -342,7 +336,7 @@ static int start_server(jobq_t *jq)
 
    /*
     * if any threads are idle, wake one.
-    *   Actually we do a broadcast because on /lib/tls 
+    *   Actually we do a broadcast because on /lib/tls
     *   these signals seem to get lost from time to time.
     */
    if (jq->idle_workers > 0) {
@@ -502,7 +496,7 @@ void *jobq_server(void *arg)
             running_allow_mix = true;
             for ( ; re; ) {
                Dmsg2(2300, "JobId %d is also running with %s\n",
-                     re->jcr->JobId, 
+                     re->jcr->JobId,
                      re->jcr->res.job->allow_mixed_priority ? "mix" : "no mix");
                if (!re->jcr->res.job->allow_mixed_priority) {
                   running_allow_mix = false;
@@ -619,9 +613,9 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
    /* Basic condition is that more reschedule times remain */
    if (jcr->res.job->RescheduleTimes == 0 ||
        jcr->reschedule_count < jcr->res.job->RescheduleTimes) {
-      resched = 
+      resched =
          /* Check for incomplete jobs */
-         (jcr->res.job->RescheduleIncompleteJobs && 
+         (jcr->res.job->RescheduleIncompleteJobs &&
           jcr->is_incomplete() && jcr->is_JobType(JT_BACKUP) &&
           !jcr->is_JobLevel(L_BASE)) ||
          /* Check for failed jobs */
@@ -745,7 +739,7 @@ static bool acquire_resources(JCR *jcr)
 #ifdef xxx
    if (jcr->res.rstore && jcr->res.rstore == jcr->res.wstore) { /* possible deadlock */
       Jmsg(jcr, M_FATAL, 0, _("Job canceled. Attempt to read and write same device.\n"
-         "    Read storage \"%s\" (From %s) -- Write storage \"%s\" (From %s)\n"), 
+         "    Read storage \"%s\" (From %s) -- Write storage \"%s\" (From %s)\n"),
          jcr->res.rstore->name(), jcr->res.rstore_source, jcr->res.wstore->name(), jcr->res.wstore_source);
       jcr->setJobStatus(JS_Canceled);
       return false;
@@ -759,7 +753,7 @@ static bool acquire_resources(JCR *jcr)
          return false;
       }
    }
-   
+
    if (jcr->res.wstore) {
       Dmsg1(200, "Wstore=%s\n", jcr->res.wstore->name());
       if (jcr->res.wstore->NumConcurrentJobs < jcr->res.wstore->MaxConcurrentJobs) {
@@ -804,17 +798,14 @@ static bool acquire_resources(JCR *jcr)
 
 static pthread_mutex_t rstore_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-/* 
+/*
  * Note: inc_read_store() and dec_read_store() are
  *   called from select_rstore() in src/dird/restore.c
  */
 bool inc_read_store(JCR *jcr)
 {
    P(rstore_mutex);
-   if (jcr->res.rstore->NumConcurrentJobs < jcr->res.rstore->MaxConcurrentJobs &&
-       (jcr->getJobType() == JT_RESTORE ||
-        jcr->res.rstore->MaxConcurrentReadJobs == 0 ||
-        jcr->res.rstore->NumConcurrentReadJobs < jcr->res.rstore->MaxConcurrentReadJobs)) {
+   if (jcr->res.rstore->NumConcurrentJobs < jcr->res.rstore->MaxConcurrentJobs) {
       jcr->res.rstore->NumConcurrentReadJobs++;
       jcr->res.rstore->NumConcurrentJobs++;
       Dmsg1(200, "Inc rncj=%d\n", jcr->res.rstore->NumConcurrentJobs);

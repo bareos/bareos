@@ -1,6 +1,6 @@
 #!/bin/sh
-# 
-# Script to do a stackdump of a Bacula daemon/program.
+#
+# Script to do a stackdump of a Bareos daemon/program.
 #
 # We attempt to attach to running program
 #
@@ -28,20 +28,20 @@ SunOS)
    which mdb > /dev/null 2>&1 && MDB=`which mdb` || MDB=''
    gcore -o ${WD}/${PNAME} $2
    if [ ! -z "${DBX}" ]; then
-      ${DBX} $1 $2 < @scriptdir@/btraceback.dbx > ${WD}/bacula.$2.traceback 2>&1
+      ${DBX} $1 $2 < @scriptdir@/btraceback.dbx > ${WD}/bareos.$2.traceback 2>&1
    elif [ ! -z "${GDB}" ]; then
-      ${GDB} -quiet -batch -x @scriptdir@/btraceback.gdb $1 $2 > ${WD}/bacula.$2.traceback 2>&1
+      ${GDB} -quiet -batch -x @scriptdir@/btraceback.gdb $1 $2 > ${WD}/bareos.$2.traceback 2>&1
    elif [ ! -z "${MDB}" ]; then
-      ${MDB} -u -p $2 < @scriptdir@/btraceback.mdb > ${WD}/bacula.$2.traceback 2>&1
+      ${MDB} -u -p $2 < @scriptdir@/btraceback.mdb > ${WD}/bareos.$2.traceback 2>&1
    fi
    PNAME="${PNAME} on `hostname`"
-   cat ${WD}/bacula.$2.traceback \
-    | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bacula DBX traceback of ${PNAME}" @dump_email@
+   cat ${WD}/bareos.$2.traceback \
+    | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bareos DBX traceback of ${PNAME}" @dump_email@
    ;;
 *)
-   gdb -quiet -batch -x @scriptdir@/btraceback.gdb $1 $2 >${WD}/bacula.$2.traceback 2>&1
+   gdb -quiet -batch -x @scriptdir@/btraceback.gdb $1 $2 >${WD}/bareos.$2.traceback 2>&1
    PNAME="${PNAME} on `hostname`"
-   cat ${WD}/bacula.$2.traceback \
-    | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bacula GDB traceback of ${PNAME}" @dump_email@
+   cat ${WD}/bareos.$2.traceback \
+    | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bareos GDB traceback of ${PNAME}" @dump_email@
    ;;
 esac

@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,17 +11,12 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Collection of Bacula Storage daemon locking software
@@ -31,7 +24,7 @@
  * Kern Sibbald, June 2007
  */
 
-#include "bacula.h"                   /* pull in global headers */
+#include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
 #ifdef SD_DEBUG_LOCK
@@ -39,7 +32,6 @@ const int dbglvl = 0;
 #else
 const int dbglvl = 500;
 #endif
-
 
 
 /*
@@ -53,7 +45,7 @@ const int dbglvl = 500;
  *               called the device is unlocked.
  *  2. Lock()    simple mutex that locks the device structure. A Lock
  *               can be acquired while a device is blocked if it is not
- *               locked.      
+ *               locked.
  *  3. rLock(locked)  "recursive" Lock, when means that a Lock (mutex)
  *               will be acquired on the device if it is not blocked
  *               by some other thread. If the device was blocked by
@@ -68,18 +60,18 @@ const int dbglvl = 500;
  *    i.e. it will wait until the device is not blocked.
  *  A block is normally set during long operations like writing to
  *    the device.
- *  If you are writing the device, you will normally block and 
+ *  If you are writing the device, you will normally block and
  *    lock it.
  *  A lock cannot be violated. No other thread can touch the
- *    device while a lock is set.  
+ *    device while a lock is set.
  *  When a block is set, every thread accept the thread that set
  *    the block will block if rLock is called.
  *  A device can be blocked for multiple reasons, labeling, writing,
  *    acquiring (opening) the device, waiting for the operator, unmounted,
  *    ...
- *  Under certain conditions the block that is set on a device can be    
+ *  Under certain conditions the block that is set on a device can be
  *    stolen and the device can be used by another thread. For example,
- *    a device is blocked because it is waiting for the operator to  
+ *    a device is blocked because it is waiting for the operator to
  *    mount a tape.  The operator can then unmount the device, and label
  *    a tape, re-mount it, give back the block, and the job will continue.
  *
@@ -95,14 +87,14 @@ const int dbglvl = 500;
  *                       Lock()
  *                    if blocked and not same thread that locked
  *                       pthread_cond_wait
- *                    leaves device locked 
+ *                    leaves device locked
  *
  *   DEVICE::rUnlock() unlocks but does not unblock
  *                    same as Unlock();
  *
- *   DEVICE::dblock(why)  does 
+ *   DEVICE::dblock(why)  does
  *                    rLock();         (recursive device lock)
- *                    block_device(this, why) 
+ *                    block_device(this, why)
  *                    rUnlock()
  *
  *   DEVICE::dunblock does
@@ -110,7 +102,7 @@ const int dbglvl = 500;
  *                    unblock_device()
  *                    Unlock()
  *
- *   block_device() does  (must be locked and not blocked at entry)  
+ *   block_device() does  (must be locked and not blocked at entry)
  *                    set blocked status
  *                    set our pid
  *
@@ -201,18 +193,18 @@ void DEVICE::dbg_Lock(const char *file, int line)
     *  since it is only debug code we don't worry too much.
     */
    if (m_count > 0 && pthread_equal(m_pid, pthread_self())) {
-      Dmsg4(sd_dbglvl, "Possible DEADLOCK!! lock held by JobId=%u from %s:%d m_count=%d\n", 
+      Dmsg4(sd_dbglvl, "Possible DEADLOCK!! lock held by JobId=%u from %s:%d m_count=%d\n",
             get_jobid_from_tid(m_pid),
             file, line, m_count);
    }
    bthread_mutex_lock_p(&m_mutex, file, line);
    m_pid = pthread_self();
-   m_count++; 
+   m_count++;
 }
 
 void DEVICE::dbg_Unlock(const char *file, int line)
 {
-   m_count--; 
+   m_count--;
    Dmsg3(sd_dbglvl, "Unlock from %s:%d postcnt=%d\n", file, line, m_count);
    bthread_mutex_unlock_p(&m_mutex, file, line);
 }
@@ -300,7 +292,7 @@ void DEVICE::Lock()
 
 void DEVICE::Unlock()
 {
-   V(m_mutex);   
+   V(m_mutex);
 }
 
 void DEVICE::Lock_acquire()
@@ -472,7 +464,7 @@ void _give_back_device_lock(const char *file, int line, DEVICE *dev, bsteal_lock
    }
 }
 
-const char *DEVICE::print_blocked() const 
+const char *DEVICE::print_blocked() const
 {
    switch (m_blocked) {
    case BST_NOT_BLOCKED:

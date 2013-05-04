@@ -14,9 +14,9 @@
    id="svg97"
    sodipodi:version="0.32"
    inkscape:version="0.43"
-   sodipodi:docbase="/home/dbartley/src/bacula/src/qt-console/images"
+   sodipodi:docbase="/home/dbartley/src/bareos/src/qt-console/images"
    sodipodi:docname="folderunchecked.svg"
-   inkscape:export-filename="/home/dbartley/src/bacula/src/qt-console/images/folderunchecked.png"
+   inkscape:export-filename="/home/dbartley/src/bareos/src/qt-console/images/folderunchecked.png"
    inkscape:export-xdpi="30"
    inkscape:export-ydpi="30">
   <defs
@@ -419,7 +419,7 @@
        d="M 41.549373,10.026887 C 31.152686,10.00257 22.760603,28.952074 22.760603,28.952074 C 22.760603,28.952074 13.477367,22.876424 9.5128466,22.362349 C 8.1924183,22.191126 20.922041,36.851909 20.922041,36.851909 C 20.922041,36.851909 25.084143,40.924454 24.52162,40.071982 C 24.354601,39.818869 33.877534,23.514947 41.549373,10.026887 z "
        id="path1323"
        sodipodi:nodetypes="ccscsc"
-       inkscape:export-filename="/home/dbartley/src/bacula/src/qt-console/images/check.png"
+       inkscape:export-filename="/home/dbartley/src/bareos/src/qt-console/images/check.png"
        inkscape:export-xdpi="1.4449884"
        inkscape:export-ydpi="1.4449884" />
   </g>

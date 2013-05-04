@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,41 +13,30 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Bacula red-black binary tree routines.
+ * BAREOS red-black binary tree routines.
  *
- *    rblist is a binary tree with the links being in the data item.
+ * rblist is a binary tree with the links being in the data item.
  *
- *   Developped in part from ideas obtained from several online University
- *    courses. 
+ * Developped in part from ideas obtained from several online University courses.
  *
- *   Kern Sibbald, November MMV
- *
+ * Kern Sibbald, November MMV
  */
 
-#include "bacula.h"
-
-/* ===================================================================
- *    rblist
- */
+#include "bareos.h"
 
 /*
  *  Insert an item in the tree, but only if it is unique
  *   otherwise, the item is returned non inserted
- *  The big trick is keeping the tree balanced after the 
- *   insert. We use a parent pointer to make it simpler and 
+ *  The big trick is keeping the tree balanced after the
+ *   insert. We use a parent pointer to make it simpler and
  *   to avoid recursion.
  *
  * Returns: item         if item inserted
@@ -169,8 +158,8 @@ void *rblist::search(void *item, int compare(void *item1, void *item2))
    return found;
 }
 
-/* 
- * Get first item (i.e. lowest value) 
+/*
+ * Get first item (i.e. lowest value)
  */
 void *rblist::first(void)
 {
@@ -199,9 +188,9 @@ void *rblist::first(void)
  *  was called once before calling this routine.
  *  We always go down as far as we can to the left, then up, and
  *  down one to the right, and again down as far as we can to the
- *  left.  etc. 
+ *  left.  etc.
  *
- * Returns: pointer to next larger item 
+ * Returns: pointer to next larger item
  *          NULL when no more items in tree
  */
 void *rblist::next(void *item)
@@ -216,7 +205,7 @@ void *rblist::next(void *item)
    if ((down && !left(x) && right(x)) || (!down && right(x))) {
       /* Move down to right one */
       down = true;
-      x = right(x);                       
+      x = right(x);
       /* Then all the way down left */
       while (left(x))  {
          x = left(x);
@@ -258,7 +247,7 @@ void *rblist::any(void *item)
    if ((down && !left(x) && right(x)) || (!down && right(x))) {
       /* Move down to right one */
       down = true;
-      x = right(x);                       
+      x = right(x);
       /* Then all the way down left */
       while (left(x))  {
          x = left(x);
@@ -349,12 +338,12 @@ void rblist::destroy()
          }
       }
       if (!left(x) && !right(x)) {
-         if (head == x) {  
+         if (head == x) {
             head = NULL;
          }
 //          if (num_items<30) {
 //             printf("free nitems=%d item=%p left=%p right=%p\n", num_items, x, left(x), right(x));
-//          }   
+//          }
          free((void *)x);      /* free previous node */
          num_items--;
       }
@@ -460,7 +449,7 @@ int main()
    if ((jcr1=(MYJCR *)jcr_chain->search((void *)jcr, my_compare))) {
       printf("Search for AAA got %s\n", jcr1->buf);
    } else {
-      printf("Search for AAA not found\n"); 
+      printf("Search for AAA not found\n");
    }
    free(jcr->buf);
 
@@ -468,7 +457,7 @@ int main()
    if ((jcr1 = (MYJCR *)jcr_chain->search((void *)jcr, my_compare))) {
       printf("Search for ZZZ got %s\n", jcr1->buf);
    } else {
-      printf("Search for ZZZ not found\n"); 
+      printf("Search for ZZZ not found\n");
    }
    free(jcr->buf);
    free(jcr);

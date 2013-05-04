@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,17 +13,12 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /**
  * Functions to handle compression/decompression of data.
@@ -31,7 +26,7 @@
  * Extracted from other source files by Marco van Wieringen, June 2011
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "filed.h"
 
 #if defined(HAVE_LZO) || defined(HAVE_LIBZ)
@@ -389,7 +384,7 @@ bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length)
       /*
        * NOTE! We only use uLong and Byte because they are
        * needed by the zlib routines, they should not otherwise
-       * be used in Bacula.
+       * be used in Bareos.
        */
       compress_len = jcr->compress_buf_size;
       Dmsg2(200, "Comp_len=%d msglen=%d\n", compress_len, *length);
@@ -433,7 +428,7 @@ bool compress_data(b_ctx &bctx)
 
 bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length)
 {
-   Qmsg(jcr, M_ERROR, 0, _("GZIP data stream found, but GZIP not configured!\n"));
+   Qmsg(jcr, M_ERROR, 0, _("Compressed data stream found, but compression not configured!\n"));
    return false;
 }
 #endif /* defined(HAVE_LZO) || defined(HAVE_LIBZ) */

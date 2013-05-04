@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,22 +11,17 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
    Derived from a SMTPclient:
 
-  ======== Original copyrights ==========  
+  ======== Original copyrights ==========
 
        SMTPclient -- simple SMTP client
 
@@ -42,7 +35,7 @@
        This program is distributed in the hope that it will be useful, but
        WITHOUT ANY WARRANTY; without even the implied warranty of
        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
+       GNU Affero General Public License for more details.
 
        ======================================================================
 
@@ -64,7 +57,7 @@
         http://archives.neohapsis.com/archives/postfix/2000-05/1520.html
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "jcr.h"
 #define MY_NAME "bsmtp"
 
@@ -75,7 +68,7 @@
 /*
  * Dummy functions
  */
-int generate_daemon_event(JCR *jcr, const char *event) 
+int generate_daemon_event(JCR *jcr, const char *event)
 {
    return 1;
 }
@@ -104,7 +97,7 @@ static char my_hostname[MAXSTRING];
 static bool content_utf8 = false;
 static resolv_type default_resolv_type = RESOLV_PROTO_IPV4;
 
-/* 
+/*
  * Take input that may have names and other stuff and strip
  *  it down to the mail box address ... i.e. what is enclosed
  *  in < >.  Otherwise add < >.
@@ -126,7 +119,7 @@ static char *cleanup_addr(char *addr, char *buf, int buf_len)
       *q = 0;
   }
   Dmsg2(100, "cleanup in=%s out=%s\n", addr, buf);
-  return buf;    
+  return buf;
 }
 
 /*
@@ -293,10 +286,10 @@ int main (int argc, char *argv[])
 #else
    const char *options = "48ac:d:f:h:r:s:l:?";
 #endif
-    
+
    setlocale(LC_ALL, "en_US");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
 
    my_name_is(argc, argv, "bsmtp");
    maxlines = 0;
@@ -594,7 +587,7 @@ lookup_host:
    get_response(); /* banner */
    chat("HELO %s\r\n", my_hostname);
    chat("MAIL FROM:%s\r\n", cleanup_addr(from_addr, buf, sizeof(buf)));
-   
+
    for (i = 0; i < argc; i++) {
       Dmsg1(20, "rcpt to: %s\n", argv[i]);
       chat("RCPT TO:%s\r\n", cleanup_addr(argv[i], buf, sizeof(buf)));

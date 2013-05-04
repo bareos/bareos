@@ -1,0 +1,16 @@
+The file magic.bareos can be added to your system files so that the
+file command will recognize Bareos Volumes as such.
+
+If I understand this correctly, you add that to the database of
+"magic" that the command file uses.
+
+See 'man 1 file' and 'man 5 magic'.  On my system, there are
+many ways to add to the magic.  For testing, you'd add it to
+/etc/magic, usually.
+
+This is an interesting contribution that might also be
+relevant to the maintainers of magic, IMO.
+
+Explanation by: Arno
+
+magic.bareos submitted in bug #715 by "shattered".

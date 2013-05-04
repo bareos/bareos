@@ -98,7 +98,6 @@ ndmp9_error
 ndmos_scsi_open (struct ndm_session *sess, char *name)
 {
 	ndmp9_error		err;
-	struct ndm_robot_agent *	ra = sess->robot_acb;
 
 	if (!name || strlen(name) > NDMOS_CONST_PATH_MAX - 1)
 		return NDMP9_NO_DEVICE_ERR;

@@ -111,12 +111,12 @@
 
 /*
  * Only explicitly include config.h when we are doing standalone
- * compiling of the lib when included from Bacula there is no need
+ * compiling of the lib when included from Bareos there is no need
  * to re-include config.h as that config file is not protected against
- * multiple including. So we just test to see if bacula.h is not
+ * multiple including. So we just test to see if bareos.h is not
  * already included as that leaves a nice fingerprint.
  */
-#ifndef _BACULA_H
+#ifndef _BAREOS_H
 #include "config.h"
 #endif
 

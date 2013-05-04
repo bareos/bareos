@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2009-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,40 +11,32 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Program to test Ingres DB routines
  *
- *  Program to test Ingres DB routines
+ * Stefan Reddig, February 2010
  *
- *   Stefan Reddig, February 2010
- *
- *   reusing code by
- *   Eric Bollengier, August 2009
- *
- *
+ * reusing code by
+ * Eric Bollengier, August 2009
  */
 #ifdef needed
-#include "bacula.h"
+#include "bareos.h"
 #include "cats/cats.h"
 #include "cats/sql_glue.h"
- 
+
 /* Local variables */
 static B_DB *db;
 static const char *file = "COPYRIGHT";
 //static DBId_t fnid=0;
-static const char *db_name = "bacula";
-static const char *db_user = "bacula";
+static const char *db_name = "bareos";
+static const char *db_user = "bareos";
 static const char *db_password = "";
 static const char *db_host = NULL;
 
@@ -57,8 +47,8 @@ PROG_COPYRIGHT
 "\nVersion: %s (%s)\n"
 "       -d <nn>           set debug level to <nn>\n"
 "       -dt               print timestamp in debug output\n"
-"       -n <name>         specify the database name (default bacula)\n"
-"       -u <user>         specify database user name (default bacula)\n"
+"       -n <name>         specify the database name (default bareos)\n"
+"       -u <user>         specify database user name (default bareos)\n"
 "       -P <password      specify database password (default none)\n"
 "       -h <host>         specify database host (default NULL)\n"
 "       -w <working>      specify working directory\n"
@@ -101,12 +91,12 @@ int main (int argc, char *argv[])
    uint64_t limit=0;
    bool clean=false;
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    init_stack_dump();
 
    Dmsg0(0, "Starting ing_test tool\n");
-   
+
    my_name_is(argc, argv, "ing_test");
    init_msg(NULL, NULL);
 
@@ -187,7 +177,7 @@ int main (int argc, char *argv[])
    }
 
    if ((db = db_init_database(NULL, "ingres", db_name, db_user, db_password, db_host, 0, NULL)) == NULL) {
-      Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
+      Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
    }
    Dmsg1(0, "db_type=%s\n", db_get_type(db));
 
@@ -303,7 +293,7 @@ int main (int argc, char *argv[])
    }
 
 
-   /* 
+   /*
     * datatypes test
     */
    Pmsg0(0, "\ndatatypes test... (TODO)\n\n");

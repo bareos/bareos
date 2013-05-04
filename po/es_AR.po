@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: branch 1.38\n"
-"Report-Msgid-Bugs-To: bacula-devel@lists.sourceforge.net\n"
+"Report-Msgid-Bugs-To: bareos-devel@lists.sourceforge.net\n"
 "POT-Creation-Date: 2006-02-26 13:10+0100\n"
 "PO-Revision-Date: 2006-04-13 08:15+0200\n"
 "Last-Translator:  <kern@sibbald.com>\n"
@@ -591,7 +591,7 @@ msgid ""
 "Most likely the passwords do not agree.\n"
 "If you are using TLS, there may have been a certificate validation error "
 "during the TLS handshake.\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors for "
 "help.\n"
 msgstr ""
 
@@ -719,7 +719,7 @@ msgstr ""
 #: src/gnome2-console/console.c:140 src/gnome2-console/console.c:169
 #: src/stored/stored.c:309 src/wx-console/console_thread.cpp:94
 #: src/wx-console/console_thread.cpp:120
-msgid "TLS required but not configured in Bacula.\n"
+msgid "TLS required but not configured in Bareos.\n"
 msgstr ""
 
 #: src/console/console.c:589 src/gnome2-console/console.c:147
@@ -839,7 +839,7 @@ msgid "Inappropriate term code: %c\n"
 msgstr ""
 
 #: src/dird/admin.c:108
-msgid "Bacula "
+msgid "Bareos "
 msgstr ""
 
 #: src/dird/admin.c:108
@@ -870,7 +870,7 @@ msgid ""
 "Passwords or names not the same or\n"
 "Maximum Concurrent Jobs exceeded on the SD or\n"
 "SD networking messed up (restart daemon).\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors for "
 "help.\n"
 msgstr ""
 
@@ -906,7 +906,7 @@ msgid ""
 "Passwords or names not the same or\n"
 "Maximum Concurrent Jobs exceeded on the FD or\n"
 "FD networking messed up (restart daemon).\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors for "
 "help.\n"
 msgstr ""
 
@@ -1045,7 +1045,7 @@ msgstr ""
 #: src/dird/backup.c:495
 #, c-format
 msgid ""
-"Bacula %s (%s): %s\n"
+"Bareos %s (%s): %s\n"
 "  JobId:                  %d\n"
 "  Job:                    %s\n"
 "  Backup Level:           %s%s\n"
@@ -2040,7 +2040,7 @@ msgstr ""
 #: src/dird/mac.c:428
 #, c-format
 msgid ""
-"Bacula %s (%s): %s\n"
+"Bareos %s (%s): %s\n"
 "  JobId:                  %d\n"
 "  Job:                    %s\n"
 "  Backup Level:           %s%s\n"
@@ -2264,7 +2264,7 @@ msgstr ""
 #: src/dird/restore.c:263
 #, c-format
 msgid ""
-"Bacula %s (%s): %s\n"
+"Bareos %s (%s): %s\n"
 "  JobId:                  %d\n"
 "  Job:                    %s\n"
 "  Client:                 %s\n"
@@ -3325,7 +3325,7 @@ msgstr ""
 
 #: src/dird/ua_restore.c:115
 msgid ""
-"No Restore Job Resource found in bacula-dir.conf.\n"
+"No Restore Job Resource found in bareos-dir.conf.\n"
 "You must create at least one before running this command.\n"
 msgstr ""
 
@@ -5172,7 +5172,7 @@ msgstr ""
 #: src/dird/verify.c:419
 #, c-format
 msgid ""
-"Bacula %s (%s): %s\n"
+"Bareos %s (%s): %s\n"
 "  JobId:                  %d\n"
 "  Job:                    %s\n"
 "  FileSet:                %s\n"
@@ -5194,7 +5194,7 @@ msgstr ""
 #: src/dird/verify.c:454
 #, c-format
 msgid ""
-"Bacula %s (%s): %s\n"
+"Bareos %s (%s): %s\n"
 "  JobId:                  %d\n"
 "  Job:                    %s\n"
 "  FileSet:                %s\n"
@@ -5318,7 +5318,7 @@ msgstr ""
 #, c-format
 msgid ""
 "Connection from unknown Director %s at %s rejected.\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors for "
 "help.\n"
 msgstr ""
 
@@ -5326,7 +5326,7 @@ msgstr ""
 #, c-format
 msgid ""
 "Incorrect password given by Director at %s.\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors for "
 "help.\n"
 msgstr ""
 
@@ -5337,7 +5337,7 @@ msgstr ""
 #: src/filed/authenticate.c:208
 msgid ""
 "Authorization key rejected by Storage daemon.\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors for "
 "help.\n"
 msgstr ""
 
@@ -5448,7 +5448,7 @@ msgid ""
 "\n"
 "Version: %s (%s)\n"
 "\n"
-"Usage: bacula-fd [-f -s] [-c config_file] [-d debug_level]\n"
+"Usage: bareos-fd [-f -s] [-c config_file] [-d debug_level]\n"
 "        -c <file>   use <file> as configuration file\n"
 "        -dnn        set debug level to nn\n"
 "        -f          run in foreground (for debugging)\n"
@@ -5953,11 +5953,11 @@ msgid "Unknown Job Level"
 msgstr ""
 
 #: src/filed/status.c:451
-msgid "Bacula Idle"
+msgid "Bareos Idle"
 msgstr ""
 
 #: src/filed/status.c:462
-msgid "Bacula Running"
+msgid "Bareos Running"
 msgstr ""
 
 #: src/filed/status.c:476
@@ -6264,7 +6264,7 @@ msgstr ""
 
 #: src/gnome2-console/authenticate.c:77
 msgid ""
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors for "
 "help.\n"
 msgstr ""
 
@@ -6404,7 +6404,7 @@ msgid "_Help"
 msgstr ""
 
 #: src/gnome2-console/interface.c:197
-msgid "Bacula Console"
+msgid "Bareos Console"
 msgstr ""
 
 #: src/gnome2-console/interface.c:231 src/wx-console/wxbmainframe.cpp:229
@@ -6452,11 +6452,11 @@ msgid "  "
 msgstr ""
 
 #: src/gnome2-console/interface.c:422
-msgid "About Bacula Console"
+msgid "About Bareos Console"
 msgstr ""
 
 #: src/gnome2-console/interface.c:436
-msgid "Bacula Console\n"
+msgid "Bareos Console\n"
 msgstr ""
 
 #: src/gnome2-console/interface.c:444
@@ -7100,7 +7100,7 @@ msgid "Socket accept error for %s. ERR=%s\n"
 msgstr ""
 
 #: src/lib/bpipe.c:282 src/lib/bpipe.c:361
-msgid "Program killed by Bacula watchdog (timeout)\n"
+msgid "Program killed by Bareos watchdog (timeout)\n"
 msgstr ""
 
 #: src/lib/bshm.c:69
@@ -7398,7 +7398,7 @@ msgid "open mail pipe %s failed: ERR=%s\n"
 msgstr ""
 
 #: src/lib/message.c:378
-msgid "Bacula Message"
+msgid "Bareos Message"
 msgstr ""
 
 #: src/lib/message.c:431
@@ -7839,7 +7839,7 @@ msgstr ""
 
 #: src/lib/signal.c:87
 #, c-format
-msgid "Bacula interrupted by signal %d: %s\n"
+msgid "Bareos interrupted by signal %d: %s\n"
 msgstr ""
 
 #: src/lib/signal.c:100
@@ -8557,7 +8557,7 @@ msgstr ""
 
 #: src/stored/ansi_label.c:154
 #, c-format
-msgid "ANSI/IBM Volume \"%s\" does not belong to Bacula.\n"
+msgid "ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"
 msgstr ""
 
 #: src/stored/ansi_label.c:165
@@ -8744,7 +8744,7 @@ msgstr ""
 #: src/stored/authenticate.c:120
 msgid ""
 "Incorrect password given by Director.\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors for "
 "help.\n"
 msgstr ""
 
@@ -8757,7 +8757,7 @@ msgstr ""
 #, c-format
 msgid ""
 "Incorrect authorization key from File daemon at %s rejected.\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors for "
 "help.\n"
 msgstr ""
 
@@ -8928,7 +8928,7 @@ msgid ""
 "\n"
 "Version: %s (%s)\n"
 "\n"
-"Usage: bextract <options> <bacula-archive-device-name> <directory-to-store-"
+"Usage: bextract <options> <bareos-archive-device-name> <directory-to-store-"
 "files>\n"
 "       -b <file>       specify a bootstrap file\n"
 "       -c <file>       specify a configuration file\n"
@@ -9271,13 +9271,13 @@ msgid ""
 "\n"
 "Version: %s (%s)\n"
 "\n"
-"Usage: bscan [ options ] <bacula-archive>\n"
+"Usage: bscan [ options ] <bareos-archive>\n"
 "       -b bootstrap      specify a bootstrap file\n"
 "       -c <file>         specify configuration file\n"
 "       -d <nn>           set debug level to nn\n"
 "       -m                update media info in database\n"
-"       -n <name>         specify the database name (default bacula)\n"
-"       -u <user>         specify database user name (default bacula)\n"
+"       -n <name>         specify the database name (default bareos)\n"
+"       -u <user>         specify database user name (default bareos)\n"
 "       -P <password      specify database password (default none)\n"
 "       -h <host>         specify database host (default NULL)\n"
 "       -p                proceed inspite of I/O errors\n"
@@ -9317,7 +9317,7 @@ msgid "First Volume Size = %sn"
 msgstr ""
 
 #: src/stored/bscan.c:274
-msgid "Could not init Bacula database\n"
+msgid "Could not init Bareos database\n"
 msgstr ""
 
 #: src/stored/bscan.c:281
@@ -9811,7 +9811,7 @@ msgid ""
 "\n"
 "I'm going to write three records and an EOF\n"
 "then backup over the EOF and re-read the last record.\n"
-"Bacula does this after writing the last block on the\n"
+"Bareos does this after writing the last block on the\n"
 "tape to verify that the block was written correctly.\n"
 "\n"
 "This is not an *essential* feature ...\n"
@@ -9886,9 +9886,9 @@ msgstr ""
 
 #: src/stored/btape.c:743
 msgid ""
-"This is not terribly serious since Bacula only uses\n"
+"This is not terribly serious since Bareos only uses\n"
 "this function to verify the last block written to the\n"
-"tape. Bacula will skip the last block verification\n"
+"tape. Bareos will skip the last block verification\n"
 "if you add:\n"
 "\n"
 "Backward Space Record = No\n"
@@ -9980,7 +9980,7 @@ msgstr ""
 #: src/stored/btape.c:989
 msgid ""
 "This may be because the tape drive block size is not\n"
-" set to variable blocking as normally used by Bacula.\n"
+" set to variable blocking as normally used by Bareos.\n"
 " Please see the Tape Testing chapter in the manual and \n"
 " look for using mt with defblksize and setoptions\n"
 "If your tape drive block size is correct, then perhaps\n"
@@ -10007,7 +10007,7 @@ msgid ""
 "\n"
 "=== Append files test ===\n"
 "\n"
-"This test is essential to Bacula.\n"
+"This test is essential to Bareos.\n"
 "\n"
 "I'm going to write one record  in file 0,\n"
 "                   two records in file 1,\n"
@@ -10048,7 +10048,7 @@ msgid ""
 msgstr ""
 
 #: src/stored/btape.c:1078
-msgid "Doing Bacula scan of blocks:\n"
+msgid "Doing Bareos scan of blocks:\n"
 msgstr ""
 
 #: src/stored/btape.c:1080
@@ -10197,7 +10197,7 @@ msgid ""
 "\n"
 "=== Forward space files test ===\n"
 "\n"
-"This test is essential to Bacula.\n"
+"This test is essential to Bareos.\n"
 "\n"
 "I'm going to write five files then test forward spacing\n"
 "\n"
@@ -10265,7 +10265,7 @@ msgstr ""
 
 #: src/stored/btape.c:1340
 msgid ""
-"You must correct this error or Bacula will not work.\n"
+"You must correct this error or Bareos will not work.\n"
 "Some systems, e.g. OpenBSD, require you to set\n"
 "   Use MTIOCGET= no\n"
 "in your device resource. Use with caution.\n"
@@ -10329,9 +10329,9 @@ msgid ""
 "\n"
 "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
 "Unable to correct the problem. You MUST fix this\n"
-"problem before Bacula can use your tape drive correctly\n"
+"problem before Bareos can use your tape drive correctly\n"
 "\n"
-"Perhaps running Bacula in fixed block mode will work.\n"
+"Perhaps running Bareos in fixed block mode will work.\n"
 "Do so by setting:\n"
 "\n"
 "Minimum Block Size = nnn\n"
@@ -10351,7 +10351,7 @@ msgstr ""
 #: src/stored/btape.c:1429
 msgid ""
 "\n"
-"The above Bacula scan should have output identical to what follows.\n"
+"The above Bareos scan should have output identical to what follows.\n"
 "Please double check it ...\n"
 "=== Sample correct output ===\n"
 "1 block of 64448 bytes in file 1\n"
@@ -10367,7 +10367,7 @@ msgid ""
 "\n"
 "If the above scan output is not identical to the\n"
 "sample output, you MUST correct the problem\n"
-"or Bacula will not be able to write multiple Jobs to \n"
+"or Bareos will not be able to write multiple Jobs to \n"
 "the tape.\n"
 "\n"
 msgstr ""
@@ -10484,7 +10484,7 @@ msgstr ""
 #: src/stored/btape.c:1789
 msgid ""
 "\n"
-"This command simulates Bacula writing to a tape.\n"
+"This command simulates Bareos writing to a tape.\n"
 "It requires either one or two blank tapes, which it\n"
 "will label and write.\n"
 "\n"
@@ -10534,12 +10534,12 @@ msgstr ""
 
 #: src/stored/btape.c:1889
 #, c-format
-msgid "%s Begin writing Bacula records to tape ...\n"
+msgid "%s Begin writing Bareos records to tape ...\n"
 msgstr ""
 
 #: src/stored/btape.c:1891
 #, c-format
-msgid "%s Begin writing Bacula records to first tape ...\n"
+msgid "%s Begin writing Bareos records to first tape ...\n"
 msgstr ""
 
 #: src/stored/btape.c:1932
@@ -10707,7 +10707,7 @@ msgid ""
 "\n"
 "!!!! The last block written and the block\n"
 "that was read back differ. The test FAILED !!!!\n"
-"This must be corrected before you use Bacula\n"
+"This must be corrected before you use Bareos\n"
 "to write multi-tape Volumes.!!!!\n"
 msgstr ""
 
@@ -10740,7 +10740,7 @@ msgstr ""
 
 #: src/stored/btape.c:2400
 #, c-format
-msgid "Begin writing %d Bacula blocks to tape ...\n"
+msgid "Begin writing %d Bareos blocks to tape ...\n"
 msgstr ""
 
 #: src/stored/btape.c:2452
@@ -10755,7 +10755,7 @@ msgstr ""
 
 #: src/stored/btape.c:2502
 #, c-format
-msgid "Begin writing Bacula blocks of %u bytes.\n"
+msgid "Begin writing Bareos blocks of %u bytes.\n"
 msgstr ""
 
 #: src/stored/btape.c:2521
@@ -10776,7 +10776,7 @@ msgid "backspace record"
 msgstr ""
 
 #: src/stored/btape.c:2531
-msgid "fill tape using Bacula writes"
+msgid "fill tape using Bareos writes"
 msgstr ""
 
 #: src/stored/btape.c:2532
@@ -10788,7 +10788,7 @@ msgid "clear tape errors"
 msgstr ""
 
 #: src/stored/btape.c:2534
-msgid "go to end of Bacula data for append"
+msgid "go to end of Bareos data for append"
 msgstr ""
 
 #: src/stored/btape.c:2535
@@ -10812,7 +10812,7 @@ msgid "forward space a record"
 msgstr ""
 
 #: src/stored/btape.c:2541
-msgid "write a Bacula label to the tape"
+msgid "write a Bareos label to the tape"
 msgstr ""
 
 #: src/stored/btape.c:2542
@@ -10828,7 +10828,7 @@ msgid "use write() to fill tape"
 msgstr ""
 
 #: src/stored/btape.c:2545
-msgid "read and print the Bacula tape label"
+msgid "read and print the Bareos tape label"
 msgstr ""
 
 #: src/stored/btape.c:2546
@@ -10844,7 +10844,7 @@ msgid "read() tape block by block to EOT and report"
 msgstr ""
 
 #: src/stored/btape.c:2549
-msgid "Bacula read block by block to EOT and report"
+msgid "Bareos read block by block to EOT and report"
 msgstr ""
 
 #: src/stored/btape.c:2550
@@ -10852,7 +10852,7 @@ msgid "print tape status"
 msgstr ""
 
 #: src/stored/btape.c:2551
-msgid "General test Bacula tape functions"
+msgid "General test Bareos tape functions"
 msgstr ""
 
 #: src/stored/btape.c:2552
@@ -10860,7 +10860,7 @@ msgid "write an EOF on the tape"
 msgstr ""
 
 #: src/stored/btape.c:2553
-msgid "write a single Bacula block"
+msgid "write a single Bareos block"
 msgstr ""
 
 #: src/stored/btape.c:2554
@@ -11125,7 +11125,7 @@ msgid "Seek error: ERR=%s\n"
 msgstr ""
 
 #: src/stored/dev.c:973
-msgid " Bacula status:"
+msgid " Bareos status:"
 msgstr ""
 
 #: src/stored/dev.c:974 src/stored/dev.c:1023 src/stored/dev.c:1025
@@ -11389,7 +11389,7 @@ msgstr ""
 #: src/stored/dircmd.c:616 src/stored/dircmd.c:640 src/stored/dircmd.c:655
 #, c-format
 msgid ""
-"3905 Device %s open but no Bacula volume is mounted.\n"
+"3905 Device %s open but no Bareos volume is mounted.\n"
 "If this is not a blank tape, try unmounting and remounting the Volume.\n"
 msgstr ""
 
@@ -11638,7 +11638,7 @@ msgstr ""
 #: src/stored/label.c:140
 #, c-format
 msgid ""
-"Requested Volume \"%s\" on %s is not a Bacula labeled Volume, because: ERR=%s"
+"Requested Volume \"%s\" on %s is not a Bareos labeled Volume, because: ERR=%s"
 msgstr ""
 
 #: src/stored/label.c:145
@@ -11657,12 +11657,12 @@ msgstr ""
 
 #: src/stored/label.c:180
 #, c-format
-msgid "Volume on %s has wrong Bacula version. Wanted %d got %d\n"
+msgid "Volume on %s has wrong Bareos version. Wanted %d got %d\n"
 msgstr ""
 
 #: src/stored/label.c:191
 #, c-format
-msgid "Volume on %s has bad Bacula label type: %x\n"
+msgid "Volume on %s has bad Bareos label type: %x\n"
 msgstr ""
 
 #: src/stored/label.c:272
@@ -12335,7 +12335,7 @@ msgstr ""
 
 #: src/stored/status.c:123
 #, c-format
-msgid "Device %s open but no Bacula volume is mounted.\n"
+msgid "Device %s open but no Bareos volume is mounted.\n"
 msgstr ""
 
 #: src/stored/status.c:133
@@ -13200,21 +13200,21 @@ msgstr ""
 msgid ""
 "Director authorization problem.\n"
 "Most likely the passwords do not agree.\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors "
 "for help.\n"
 msgstr ""
 
 #: src/tray-monitor/authenticate.c:127
 msgid ""
 "Director and Storage daemon passwords or names not the same.\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors "
 "for help.\n"
 msgstr ""
 
 #: src/tray-monitor/authenticate.c:172
 msgid ""
 "Director and File daemon passwords or names not the same.\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors "
+"Please see http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors "
 "for help.\n"
 msgstr ""
 
@@ -13266,7 +13266,7 @@ msgid "Exit"
 msgstr ""
 
 #: src/tray-monitor/tray-monitor.c:337
-msgid "Bacula tray monitor"
+msgid "Bareos tray monitor"
 msgstr ""
 
 #: src/tray-monitor/tray-monitor.c:362
@@ -13317,7 +13317,7 @@ msgid "Disconnecting from Storage %s:%d\n"
 msgstr ""
 
 #: src/tray-monitor/tray-monitor.c:502 src/tray-monitor/tray-monitor.c:512
-msgid "Bacula Tray Monitor"
+msgid "Bareos Tray Monitor"
 msgstr ""
 
 #: src/tray-monitor/tray-monitor.c:503 src/tray-monitor/tray-monitor.c:513
@@ -13581,7 +13581,7 @@ msgid "*None*"
 msgstr ""
 
 #: src/filed/win32/winmain.cpp:228 src/filed/win32/winmain.cpp:236
-msgid "Bacula Usage"
+msgid "Bareos Usage"
 msgstr ""
 
 #: src/filed/win32/winmain.cpp:233
@@ -13589,19 +13589,19 @@ msgid "Bad Command Line Options"
 msgstr ""
 
 #: src/filed/win32/winmain.cpp:326
-msgid "Another instance of Bacula is already running"
+msgid "Another instance of Bareos is already running"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:131 src/filed/win32/winservice.cpp:145
-msgid "No existing instance of Bacula could be contacted"
+msgid "No existing instance of Bareos could be contacted"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:218
-msgid "KERNEL32.DLL not found: Bacula service not started"
+msgid "KERNEL32.DLL not found: Bareos service not started"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:228
-msgid "Registry service not found: Bacula service not started"
+msgid "Registry service not found: Bareos service not started"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:230
@@ -13629,7 +13629,7 @@ msgid "Report Service failure"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:355
-msgid "Unable to install Bacula service"
+msgid "Unable to install Bareos service"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:373
@@ -13646,41 +13646,41 @@ msgstr ""
 
 #: src/filed/win32/winservice.cpp:390
 msgid ""
-"The System Registry could not be updated - the Bacula service was not "
+"The System Registry could not be updated - the Bareos service was not "
 "installed"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:397
-msgid "Cannot add Bacula key to System Registry"
+msgid "Cannot add Bareos key to System Registry"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:398 src/filed/win32/winservice.cpp:449
-msgid "The Bacula service could not be installed"
+msgid "The Bareos service could not be installed"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:406
 msgid ""
-"The Bacula File service was successfully installed.\n"
+"The Bareos File service was successfully installed.\n"
 "The service may be started by double clicking on the\n"
-"Bacula \"Start\" icon and will be automatically\n"
+"Bareos \"Start\" icon and will be automatically\n"
 "be run the next time this machine is rebooted. "
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:424
 msgid ""
-"The Service Control Manager could not be contacted - the Bacula service was "
+"The Service Control Manager could not be contacted - the Bareos service was "
 "not installed"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:455
 msgid ""
-"Provides file backup and restore services. Bacula -- the network backup "
+"Provides file backup and restore services. Bareos -- the network backup "
 "solution."
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:462
 msgid ""
-"The Bacula File service was successfully installed.\n"
+"The Bareos File service was successfully installed.\n"
 "The service may be started from the Control Panel and will\n"
 "automatically be run the next time this machine is rebooted."
 msgstr ""
@@ -13688,43 +13688,43 @@ msgstr ""
 #: src/filed/win32/winservice.cpp:471
 msgid ""
 "Unknown Windows operating system.\n"
-"Cannot install Bacula service.\n"
+"Cannot install Bareos service.\n"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:496
 msgid ""
 "Could not find registry entry.\n"
-"Service probably not registerd - the Bacula service was not removed"
+"Service probably not registerd - the Bareos service was not removed"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:501
 msgid ""
 "Could not delete Registry key.\n"
-"The Bacula service could not be removed"
+"The Bareos service could not be removed"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:511
-msgid "Bacula could not be contacted, probably not running"
+msgid "Bareos could not be contacted, probably not running"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:517 src/filed/win32/winservice.cpp:553
-msgid "The Bacula service has been removed"
+msgid "The Bareos service has been removed"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:547
-msgid "The Bacula service could not be stopped"
+msgid "The Bareos service could not be stopped"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:555
-msgid "The Bacula service could not be removed"
+msgid "The Bareos service could not be removed"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:560
-msgid "The Bacula service could not be found"
+msgid "The Bareos service could not be found"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:565
-msgid "The SCM could not be contacted - the Bacula service was not removed"
+msgid "The SCM could not be contacted - the Bareos service was not removed"
 msgstr ""
 
 #: src/filed/win32/winservice.cpp:629
@@ -13836,12 +13836,12 @@ msgid "Connection terminated\n"
 msgstr ""
 
 #: src/wx-console/main.cpp:101
-msgid "Bacula wx-console"
+msgid "Bareos wx-console"
 msgstr ""
 
 #: src/wx-console/main.cpp:106 src/wx-console/wxbmainframe.cpp:248
 #, c-format
-msgid "Welcome to bacula wx-console %s (%s)!\n"
+msgid "Welcome to bareos wx-console %s (%s)!\n"
 msgstr ""
 
 #: src/wx-console/wxbconfigfileeditor.cpp:44
@@ -13849,7 +13849,7 @@ msgid "Config file editor"
 msgstr ""
 
 #: src/wx-console/wxbconfigfileeditor.cpp:54
-msgid "# Bacula wx-console Configuration File\n"
+msgid "# Bareos wx-console Configuration File\n"
 msgstr ""
 
 #: src/wx-console/wxbconfigfileeditor.cpp:90
@@ -14022,13 +14022,13 @@ msgstr ""
 
 #: src/wx-console/wxbmainframe.cpp:497
 msgid ""
-"Welcome to Bacula wx-console.\n"
+"Welcome to Bareos wx-console.\n"
 "Written by Nicolas Boichat <nicolas@boichat.ch>\n"
 "(C) 2005 Kern Sibbald\n"
 msgstr ""
 
 #: src/wx-console/wxbmainframe.cpp:499
-msgid "About Bacula wx-console"
+msgid "About Bareos wx-console"
 msgstr ""
 
 #: src/wx-console/wxbmainframe.cpp:505

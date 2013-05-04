@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +13,18 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Record, and label definitions for Bacula
- *  media data format.
+ * Record, and label definitions for Bareos media data format.
  *
- *   Kern Sibbald, MM
- *
+ * Kern Sibbald, MM
  */
-
 
 #ifndef __RECORD_H
 #define __RECORD_H 1
@@ -45,7 +37,7 @@ enum {
    VOL_IO_ERROR,                          /* volume I/O error */
    VOL_NAME_ERROR,                        /* Volume name mismatch */
    VOL_CREATE_ERROR,                      /* Error creating label */
-   VOL_VERSION_ERROR,                     /* Bacula version error */
+   VOL_VERSION_ERROR,                     /* Bareos version error */
    VOL_LABEL_ERROR,                       /* Bad label type */
    VOL_NO_MEDIA                           /* Hard error -- no media present */
 };
@@ -155,7 +147,7 @@ struct Volume_Label {
    * The items below this line are stored on
    * the tape
    */
-  char Id[32];                        /* Bacula Immortal ... */
+  char Id[32];                        /* Bareos Immortal ... */
 
   uint32_t VerNum;                    /* Label version number */
 
@@ -194,7 +186,7 @@ typedef struct Volume_Label VOLUME_LABEL;
  *  This record is at the beginning and end of each session
  */
 struct Session_Label {
-  char Id[32];                        /* Bacula Immortal ... */
+  char Id[32];                        /* Bareos Immortal ... */
 
   uint32_t VerNum;                    /* Label version number */
 

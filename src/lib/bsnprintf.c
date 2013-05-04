@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2012 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,17 +11,12 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Copyright Patrick Powell 1995
@@ -32,27 +25,24 @@
  * (papowell@astart.com) It may be used for any purpose as long
  * as this notice remains intact on all source code distributions.
  *
- * Adapted for Bacula -- note there were lots of bugs in
- *     the original code: %lld and %s were seriously broken, and
- *     with FP turned off %f seg faulted.
+ * Adapted for BAREOS -- note there were lots of bugs in
+ * the original code: %lld and %s were seriously broken, and
+ * with FP turned off %f seg faulted.
  *
- *   Kern Sibbald, November MMV
- *
+ * Kern Sibbald, November MMV
  */
 
-
-
-#include "bacula.h"
+#include "bareos.h"
 #include <wchar.h>
 
-#define FP_OUTPUT 1 /* Bacula uses floating point */
+#define FP_OUTPUT 1 /* BAREOS uses floating point */
 
 /* Define the following if you want all the features of
  *  normal printf, but with all the security problems.
- *  For Bacula we turn this off, and it silently ignores
+ *  For BAREOS we turn this off, and it silently ignores
  *  formats that could pose a security problem.
  */
-#undef SECURITY_PROBLEM 
+#undef SECURITY_PROBLEM
 
 #ifdef USE_BSNPRINTF
 
@@ -83,7 +73,7 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
 /*
  *  NOTE!!!! do not use this #define with a construct such
  *    as outch(--place);.  It just will NOT work, because the
- *    decrement of place is done ONLY if there is room in the 
+ *    decrement of place is done ONLY if there is room in the
  *    output buffer.
  */
 #define outch(c) {int len=currlen; if (currlen < maxlen) \
@@ -122,10 +112,10 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
 #define MAX(p,q) (((p) >= (q)) ? (p) : (q))
 
 /*
-  You might ask why does Bacula have it's own printf routine? Well,
+  You might ask why does BAREOS have it's own printf routine? Well,
   There are two reasons: 1. Here (as opposed to library routines), we
-  define %d and %ld to be 32 bit; %lld and %q to be 64 bit.  2. We 
-  disable %n for security reasons.                
+  define %d and %ld to be 32 bit; %lld and %q to be 64 bit.  2. We
+  disable %n for security reasons.
  */
 
 int bsnprintf(char *str, int32_t size, const char *fmt,  ...)
@@ -342,7 +332,7 @@ int bvsnprintf(char *buffer, int32_t maxlen, const char *format, va_list args)
             currlen = fmtfp(buffer, currlen, maxlen, fvalue, min, max, flags);
             break;
          case 'c':
-            ch = va_arg(args, int); 
+            ch = va_arg(args, int);
             outch(ch);
             break;
          case 's':
@@ -496,7 +486,7 @@ static int32_t fmtwstr(char *buffer, int32_t currlen, int32_t maxlen,
       --padlen;
    }
    while (*value && (cnt < max)) {
-      
+
       ch = (*value++) & 0xff;
       outch(ch);
       ++cnt;
@@ -666,7 +656,7 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
    int64_t fracpart;
    const char *cvt_str;
 
-   /* 
+   /*
     * AIX manpage says the default is 0, but Solaris says the default
     * is 6, and sprintf on AIX defaults to 6
     */
@@ -690,8 +680,8 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
 #ifndef HAVE_FCVT
    intpart = (int64_t)ufvalue;
 
-   /* 
-    * Sorry, we only support 9 digits past the decimal because of our 
+   /*
+    * Sorry, we only support 9 digits past the decimal because of our
     * conversion method
     */
    if (max > 9)

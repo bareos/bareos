@@ -1,3 +1,98 @@
+BAREOS is a fork of the Bacula source code.
+Please find below (1) our license information, (2) the preexisting license information
+of Bacula (from 06/05/2013, i.e. the date the source was forked into BAREOS), and
+(3) the license text of the AGPLv3. Our license information (1) is applicable to all
+changes to the preexisting code of Bacula.
+
+1.
+
+BAREOS LICENSE SPECIFICS
+
+The following license terms apply to the BAREOS code:
+
+Trademark:
+
+The name BAREOS is a registered trademark of Bareos GmbH & Co. KG
+
+Bareos is licensed under the AGPL version 3 (see 3. below). Some parts of the code
+are licensed under permissive licenses:
+
+a)
+For the native NDMP support we imported some BSD 2 clause code which has the
+following copyright:
+
+/*
+ * Copyright (c) 1998,1999,2000
+ * Traakan, Inc., Los Altos, CA
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice unmodified, this list of conditions, and the following
+ *    disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+b)
+Furthermore we included code from src/lib/bmtio.h which has the following copyright:
+
+/*-
+ * Copyright (c) 1982, 1986, 1993
+ * The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * @(#)mtio.h  8.1 (Berkeley) 6/2/93
+ * $FreeBSD: stable/7/sys/sys/mtio.h 139825 2005-01-07 02:29:27Z imp $
+ */
+
+The new source header doesn't include a reference to the AUTHORS file
+in each source file but we still maintain the AUTHORS file with all
+authors of the orignal project ("Bacula") and any new authors for code
+submitted to the BAREOS project.The AUTHORS file can be found in the main
+directory.
+
+===========================================
+
+2.
 
 History:
 The original Bacula code was Copyright Kern Sibbald and John Walker.
@@ -18,7 +113,7 @@ What follows is the addition(s) to the AGPL version 3 license, that
 applies to code that is copyrighted by the Free Software Foundation
 Europe e.V.
 
-Linking: 
+Linking:
 As a special exception to the AGPLv3, the Bacula Project gives
 permission to link the code of its release of Bacula with the OpenSSL
 project's "OpenSSL" library (or with modified versions of it that use
@@ -35,21 +130,21 @@ the Microsoft VSS code, where you must obey their license terms.
 
 The Bacula Project gives permission for plugins with AGPLv3 compatible
 licenses to be loaded and distributed with the Bacula executables as
-long as the combined work is distributed under the terms listed in the 
+long as the combined work is distributed under the terms listed in the
 Bacula LICENSE file.  A full list of AGPLv3 compatible licenses can be
 found at: http://www.fsf.org/licensing/licenses/.  If you wish to load
 or distribute plugins with different licensing terms please contact
 the Bacula Project at: license@bacula.org
-             
+
 ===================================
 
 
 What follows is information from the authors of the code:
 
 License:
-To the best of our knowledge, all code used in Bacula, which is 
+To the best of our knowledge, all code used in Bacula, which is
 copyrighted by a third party, has licenses that are compatible
-with the OpenSSL license, and so given the exception that we have 
+with the OpenSSL license, and so given the exception that we have
 made to the AGPLv3 above, Bacula can be freely linked and distributed
 with the OpenSSL libraries.
 
@@ -128,7 +223,7 @@ GPLv2 or later license:
   (note, bsmtp.c does not use OpenSSL, nor is it used with the code
    of any other part of Bacula)
 
-3 clause BSD License notice for inclusion with the binary:              
+3 clause BSD License notice for inclusion with the binary:
  src/lib/fnmatch.c
    * Copyright (c) 1989, 1993, 1994
    *      The Regents of the University of California.  All rights reserved.
@@ -153,12 +248,12 @@ Permissive licenses:
    Copyright (C) The Internet Society (2001).  All Rights Reserved.
 
  src/win32/compat/getopt.c
-   "... licensed under IBM copyrights to use the IBM-provided source code 
+   "... licensed under IBM copyrights to use the IBM-provided source code
    in any way he or she deems fit ..."
 
  src/win32/compat/sys/mtio.h (LGPL)
    Copyright (C) 1996, 1997 Free Software Foundation, Inc.
-   
+
 
 Bacula can be enabled with data encryption and/or communications
 encryption. If this is the case, you will be including OpenSSL code that
@@ -171,7 +266,7 @@ that those files may be used in proprietary code to interface with
 Bacula.
 
 Finally there are parts of Bacula that are in the public domain.
-             
+
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
 IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
 TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -184,15 +279,7 @@ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-=====================================
-
-
-The entire AGPL is reproduced below, in the manuals distributed with the
-Bacula documentation and can also be found online on the GNU web site
-as well as at www.bacula.org. You may also obtain a copy of the
-AGPL (or LGPL) by writing to: Free Software Foundation, Inc.,
-51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-
+3.
 
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
@@ -855,6 +942,5 @@ specific requirements.
 if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
 <http://www.gnu.org/licenses/>.
-
 
 ===========================================

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,33 +13,25 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Bacula File Daemon Status routines
+ * Bareos File Daemon Status routines
  *
- *    Kern Sibbald, August MMI
- *
+ * Kern Sibbald, August MMI
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "filed.h"
 #include "lib/status.h"
 
 extern void *start_heap;
-
 extern bool GetWindowsVersionString(char *buf, int maxsiz);
-
 
 /* Forward referenced functions */
 static void list_terminated_jobs(STATUS_PKT *sp);
@@ -82,7 +74,7 @@ static void  list_status_header(STATUS_PKT *sp)
    int len;
    char dt[MAX_TIME_LENGTH];
 
-   len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s %s\n"), 
+   len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s %s\n"),
               my_name, VERSION, BDATE, VSS, HOST_OS, DISTNAME, DISTVER);
    sendit(msg.c_str(), len, sp);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
@@ -131,7 +123,7 @@ static void  list_status_header(STATUS_PKT *sp)
                  p_SetCurrentDirectoryA?"":"!",
                  p_SetCurrentDirectoryW?"":"!");
       sendit(msg.c_str(), len, sp);
-      len = Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW\n",  
+      len = Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW\n",
                  p_GetCurrentDirectoryA?"":"!",
                  p_GetCurrentDirectoryW?"":"!",
                  p_GetVolumePathNameW?"":"!",
@@ -190,7 +182,7 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
                     njcr->JobId, njcr->Job);
          sendit(msg.c_str(), len, sp);
          len = Mmsg(msg, _("    %s%s %s Job started: %s\n"),
-                    vss, level_to_str(njcr->getJobLevel()), 
+                    vss, level_to_str(njcr->getJobLevel()),
                     job_type_to_str(njcr->getJobType()), dt);
       }
       sendit(msg.c_str(), len, sp);
@@ -264,7 +256,7 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
                     njcr->JobId, njcr->Job);
          sendit(msg.c_str(), len, sp);
          len = Mmsg(msg," VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
-                    vss, njcr->getJobLevel(), 
+                    vss, njcr->getJobLevel(),
                     njcr->getJobType(), dt);
       }
       sendit(msg.c_str(), len, sp);
@@ -312,7 +304,7 @@ static void  list_running_jobs(STATUS_PKT *sp)
    } else {
       list_running_jobs_plain(sp);
    }
-}  
+}
 
 static void list_terminated_jobs(STATUS_PKT *sp)
 {
@@ -409,7 +401,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
 /*
  * Send to bsock (Director or Console)
  */
-static void sendit(const char *msg, int len, STATUS_PKT *sp)          
+static void sendit(const char *msg, int len, STATUS_PKT *sp)
 {
    if (sp->bs) {
       BSOCK *user = sp->bs;
@@ -557,7 +549,7 @@ int bacstat = 0;
 char *bac_status(char *buf, int buf_len)
 {
    JCR *njcr;
-   const char *termstat = _("Bacula Client: Idle");
+   const char *termstat = _("Bareos Client: Idle");
    struct s_last_job *job;
    int status = 0;                      /* Idle */
 
@@ -568,7 +560,7 @@ char *bac_status(char *buf, int buf_len)
    foreach_jcr(njcr) {
       if (njcr->JobId != 0) {
          status = JS_Running;
-         termstat = _("Bacula Client: Running");
+         termstat = _("Bareos Client: Running");
          break;
       }
    }
@@ -582,15 +574,15 @@ char *bac_status(char *buf, int buf_len)
       status = job->JobStatus;
       switch (job->JobStatus) {
       case JS_Canceled:
-         termstat = _("Bacula Client: Last Job Canceled");
+         termstat = _("Bareos Client: Last Job Canceled");
          break;
       case JS_ErrorTerminated:
       case JS_FatalError:
-         termstat = _("Bacula Client: Last Job Failed");
+         termstat = _("Bareos Client: Last Job Failed");
          break;
       default:
          if (job->Errors) {
-            termstat = _("Bacula Client: Last Job had Warnings");
+            termstat = _("Bareos Client: Last Job had Warnings");
          }
          break;
       }

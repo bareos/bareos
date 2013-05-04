@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- Run Command
  *
- *   Bacula Director -- Run Command
- *
- *     Kern Sibbald, December MMI
- *
+ * Kern Sibbald, December MMI
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /* Forward referenced subroutines */
@@ -157,7 +150,8 @@ int run_cmd(UAContext *ua, const char *cmd)
 {
    JCR *jcr = NULL;
    RUN_CTX rc;
-   int status;
+   int status, length;
+   bool valid_response;
 
    if (!open_client_db(ua)) {
       return 1;
@@ -227,10 +221,41 @@ try_again:
       goto bail_out;
    }
 
-   if (!get_cmd(ua, _("OK to run? (yes/mod/no): "))) {
-      goto bail_out;
-   }
+   /*
+    * Prompt User until we have a valid response.
+    */
+   do {
+      if (!get_cmd(ua, _("OK to run? (yes/mod/no): "))) {
+         goto bail_out;
+      }
 
+      /*
+       * Empty line equals yes, anything other we compare
+       * the cmdline for the length of the given input unless
+       * its mod or .mod where we compare only the keyword
+       * and a space as it can be followed by a full cmdline
+       * with new cmdline arguments that need to be parsed.
+       */
+      valid_response = false;
+      length = strlen(ua->cmd);
+      if (ua->cmd[0] == 0 ||
+          bstrncasecmp(ua->cmd, ".mod ", MIN(length, 5)) ||
+          bstrncasecmp(ua->cmd, "mod ", MIN(length, 4)) ||
+          bstrncasecmp(ua->cmd, NT_("yes"), length) ||
+          bstrncasecmp(ua->cmd, _("yes"), length) ||
+          bstrncasecmp(ua->cmd, NT_("no"), length) ||
+          bstrncasecmp(ua->cmd, _("no"), length)) {
+         valid_response = true;
+      }
+
+      if (!valid_response) {
+         ua->warning_msg(_("Illegal response %s\n"), ua->cmd);
+      }
+   } while (!valid_response);
+
+   /*
+    * See if the .mod or mod has arguments.
+    */
    if (bstrncasecmp(ua->cmd, ".mod ", 5) ||
       (bstrncasecmp(ua->cmd, "mod ", 4) && strlen(ua->cmd) > 6)) {
       parse_ua_args(ua);
@@ -260,7 +285,9 @@ try_again:
     */
    jcr->IgnoreLevelPoolOverides = true;
 
-   if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, _("yes"), strlen(ua->cmd))) {
+   if (ua->cmd[0] == 0 ||
+       bstrncasecmp(ua->cmd, NT_("yes"), strlen(ua->cmd)) ||
+       bstrncasecmp(ua->cmd, _("yes"), strlen(ua->cmd))) {
       JobId_t JobId;
       Dmsg1(800, "Calling run_job job=%x\n", jcr->res.job);
 
@@ -268,16 +295,21 @@ start_job:
       Dmsg3(100, "JobId=%u using pool %s priority=%d\n", (int)jcr->JobId,
             jcr->res.pool->name(), jcr->JobPriority);
       Dmsg1(900, "Running a job; its spool_data = %d\n", jcr->spool_data);
+
       JobId = run_job(jcr);
+
       Dmsg4(100, "JobId=%u NewJobId=%d using pool %s priority=%d\n", (int)jcr->JobId,
             JobId, jcr->res.pool->name(), jcr->JobPriority);
+
       free_jcr(jcr);                  /* release jcr */
+
       if (JobId == 0) {
          ua->error_msg(_("Job failed.\n"));
       } else {
          char ed1[50];
          ua->send_msg(_("Job queued. JobId=%s\n"), edit_int64(JobId, ed1));
       }
+
       return JobId;
    }
 
@@ -296,6 +328,7 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
     */
    if (ua->cmd[0] != 0 && bstrncasecmp(ua->cmd, _("mod"), strlen(ua->cmd))) {
       start_prompt(ua, _("Parameters to modify:\n"));
+
       add_prompt(ua, _("Level"));                   /* 0 */
       add_prompt(ua, _("Storage"));                 /* 1 */
       add_prompt(ua, _("Job"));                     /* 2 */
@@ -315,7 +348,8 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          add_prompt(ua, _("Pool"));                 /* 8 */
          if (jcr->is_JobType(JT_MIGRATE) ||
              jcr->is_JobType(JT_COPY) ||
-            (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
+            (jcr->is_JobType(JT_BACKUP) &&
+             jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
             add_prompt(ua, _("NextPool"));          /* 9 */
             if (jcr->getJobType() == JT_BACKUP) {
                add_prompt(ua, _("Plugin Options")); /* 10 */
@@ -333,8 +367,7 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          add_prompt(ua, _("JobId"));                /* 12 */
          add_prompt(ua, _("Plugin Options"));       /* 13 */
       }
-      if (jcr->getJobType() == JT_BACKUP || jcr->getJobType() == JT_RESTORE) {
-      }
+
       switch (do_prompt(ua, "", _("Select parameter to modify"), NULL, 0)) {
       case 0:
          /* Level */
@@ -968,7 +1001,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
                  job->name(),
                  jcr->res.fileset->name(),
                  NPRT(jcr->res.client->name()),
-                 jcr->res.wstore ? jcr->res.wstore->name() : "*None*",
+                 jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
                  bstrutime(dt, sizeof(dt), jcr->sched_time),
                  jcr->JobPriority);
       } else {
@@ -982,7 +1015,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
                  job->name(),
                  jcr->res.fileset->name(),
                  NPRT(jcr->res.client->name()),
-                 jcr->res.wstore ? jcr->res.wstore->name() : "*None*",
+                 jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
                  bstrutime(dt, sizeof(dt), jcr->sched_time),
                  jcr->JobPriority);
       }
@@ -1012,8 +1045,8 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
                  jcr->backup_format,
                  jcr->res.fileset->name(),
                  NPRT(jcr->res.pool->name()),
-                 jcr->res.next_pool ? jcr->res.next_pool->name() : "*None*",
-                 jcr->res.wstore ? jcr->res.wstore->name() : "*None*",
+                 jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
+                 jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
                  bstrutime(dt, sizeof(dt), jcr->sched_time),
                  jcr->JobPriority,
                  jcr->plugin_options ? "Plugin Options: " : "",
@@ -1038,8 +1071,10 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
                  jcr->backup_format,
                  jcr->res.fileset->name(),
                  NPRT(jcr->res.pool->name()), jcr->res.pool_source,
-                 jcr->res.next_pool ? jcr->res.next_pool->name() : "*None*", jcr->res.npool_source,
-                 jcr->res.wstore ? jcr->res.wstore->name() : "*None*", jcr->res.wstore_source,
+                 jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
+                 jcr->res.npool_source,
+                 jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
+                 jcr->res.wstore_source,
                  bstrutime(dt, sizeof(dt), jcr->sched_time),
                  jcr->JobPriority,
                  jcr->plugin_options ? "Plugin Options: " : "",
@@ -1286,7 +1321,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
               jcr->res.client->name(),
               jcr->backup_format,
               jcr->res.rstore->name(),
-              jcr->RestoreJobId==0 ? "*None*" : edit_uint64(jcr->RestoreJobId, ec1),
+              (jcr->RestoreJobId == 0) ? _("*None*") : edit_uint64(jcr->RestoreJobId, ec1),
               bstrutime(dt, sizeof(dt), jcr->sched_time),
               jcr->res.catalog->name(),
               jcr->JobPriority,
@@ -1295,16 +1330,17 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
       break;
    case JT_COPY:
    case JT_MIGRATE:
-      char *prt_type;
+      const char *prt_type;
+
       jcr->setJobLevel(L_FULL);      /* default level */
       if (ua->api) {
          ua->signal(BNET_RUN_CMD);
          if (jcr->getJobType() == JT_COPY) {
-            prt_type = (char *)"Type: Copy\nTitle: Run Copy Job\n";
+            prt_type = _("Type: Copy\nTitle: Run Copy Job\n");
          } else {
-            prt_type = (char *)"Type: Migration\nTitle: Run Migration Job\n";
+            prt_type = _("Type: Migration\nTitle: Run Migration Job\n");
          }
-         ua->send_msg("%s"
+         ua->send_msg(_("%s"
                      "JobName:       %s\n"
                      "Bootstrap:     %s\n"
                      "Client:        %s\n"
@@ -1316,17 +1352,17 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
                      "JobId:         %s\n"
                      "When:          %s\n"
                      "Catalog:       %s\n"
-                     "Priority:      %d\n",
+                     "Priority:      %d\n"),
            prt_type,
            job->name(),
            NPRT(jcr->RestoreBootstrap),
            jcr->res.client->name(),
            jcr->res.fileset->name(),
            NPRT(jcr->res.pool->name()),
-           jcr->res.next_pool ? jcr->res.next_pool->name() : "*None*",
+           jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
            jcr->res.rstore->name(),
-           jcr->res.wstore ? jcr->res.wstore->name() : "*None*",
-           jcr->MigrateJobId==0 ? "*None*" : edit_uint64(jcr->MigrateJobId, ec1),
+           jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
+           (jcr->MigrateJobId == 0) ? _("*None*") : edit_uint64(jcr->MigrateJobId, ec1),
            bstrutime(dt, sizeof(dt), jcr->sched_time),
            jcr->res.catalog->name(),
            jcr->JobPriority);
@@ -1336,7 +1372,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          } else {
             prt_type = _("Run Migration job\n");
          }
-         ua->send_msg("%s"
+         ua->send_msg(_("%s"
                      "JobName:       %s\n"
                      "Bootstrap:     %s\n"
                      "Client:        %s\n"
@@ -1348,18 +1384,19 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
                      "JobId:         %s\n"
                      "When:          %s\n"
                      "Catalog:       %s\n"
-                     "Priority:      %d\n",
+                     "Priority:      %d\n"),
            prt_type,
            job->name(),
            NPRT(jcr->RestoreBootstrap),
            jcr->res.client->name(),
            jcr->res.fileset->name(),
            NPRT(jcr->res.pool->name()), jcr->res.pool_source,
-           jcr->res.next_pool ? jcr->res.next_pool->name() : "*None*",
+           jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
            NPRT(jcr->res.npool_source),
            jcr->res.rstore->name(), jcr->res.rstore_source,
-           jcr->res.wstore ? jcr->res.wstore->name() : "*None*", jcr->res.wstore_source,
-           jcr->MigrateJobId == 0 ? "*None*" : edit_uint64(jcr->MigrateJobId, ec1),
+           jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
+           jcr->res.wstore_source,
+           jcr->MigrateJobId == 0 ? _("*None*") : edit_uint64(jcr->MigrateJobId, ec1),
            bstrutime(dt, sizeof(dt), jcr->sched_time),
            jcr->res.catalog->name(),
            jcr->JobPriority);

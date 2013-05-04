@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# bareos       This shell script takes care of starting and stopping
+#	       the bareos File daemon.
+#
+# description: Backup Archiving REcovery Open Sourced.
+#
+# For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+FD_USER=@fd_user@
+FD_GROUP=@fd_group@
+FD_OPTIONS=''
+
+case "$1" in
+    start)
+       if [ ! -z "${DIR_USER}" ]; then
+          [ -z "${DIR_OPTIONS}" ] && DIR_OPTIONS="-u ${DIR_USER}" || \
+                                     DIR_OPTIONS="${DIR_OPTIONS} -u ${DIR_USER}"
+       fi
+       if [ ! -z "${DIR_GROUP}" ]; then
+          [ -z "${DIR_OPTIONS}" ] && DIR_OPTIONS="-g ${DIR_GROUP}" || \
+                                     DIR_OPTIONS="${DIR_OPTIONS} -g ${DIR_GROUP}"
+       fi
+
+       echo "Starting the Bareos File daemon: "
+       @sbindir@/bareos-fd $2 ${FD_OPTIONS} -c @sysconfdir@/bareos-fd.conf
+       ;;
+    stop)
+       echo "Stopping the Bareos File daemon: "
+       if [ -x /usr/bin/zonename ]; then
+          case `/usr/bin/zonename` in
+             global)
+                pkill -z global -x bareos-fd
+                ;;
+             *)
+                pkill -x bareos-fd
+                ;;
+          esac
+       else
+          pkill -x bareos-fd
+       fi
+       ;;
+    restart)
+       $0 stop
+       sleep 5
+       $0 start
+       ;;
+    *)
+       echo "Usage: $0 {start|stop|restart}"
+       exit 1
+       ;;
+esac
+exit 0

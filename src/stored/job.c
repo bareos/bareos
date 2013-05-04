@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   Job control and execution for Storage Daemon
+ * Job control and execution for Storage Daemon
  *
- *   Kern Sibbald, MM
- *
+ * Kern Sibbald, MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -121,8 +115,6 @@ bool job_cmd(JCR *jcr)
    }
    jcr->JobId = JobId;
    Dmsg2(800, "Start JobId=%d %p\n", JobId, jcr);
-   set_jcr_in_tsd(jcr);
-
    /*
     * If job rescheduled because previous was incomplete,
     * the Resched flag is set and VolSessionId and VolSessionTime
@@ -413,7 +405,7 @@ bool query_cmd(JCR *jcr)
             }
             if (!device->dev) {
                break;
-            }  
+            }
             ok = dir_update_device(jcr, device->dev);
             if (ok) {
                ok = dir->fsend(OK_query);
@@ -551,7 +543,7 @@ void stored_free_jcr(JCR *jcr)
    Dsm_check(200);
 
    if (jcr->JobId != 0)
-      write_state_file(me->working_directory, "bacula-sd", get_first_port_host_order(me->sdaddrs));
+      write_state_file(me->working_directory, "bareos-sd", get_first_port_host_order(me->sdaddrs));
 
    Dmsg0(200, "End stored free_jcr\n");
    return;

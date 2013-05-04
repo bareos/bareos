@@ -1,12 +1,12 @@
 #
 # If you are appending to a log file (default), to
 #   have your log file compressed, rotated, and after a time
-#   deleted, after possibly editing the values below,	  
+#   deleted, after possibly editing the values below,
 #   copy this file to:
 #
-#      /etc/logrotate.d/bacula
+#      /etc/logrotate.d/bareos
 #
-@logdir@/bacula.log {
+@logdir@/bareos.log {
     monthly
     rotate 5
     notifempty

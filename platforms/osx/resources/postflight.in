@@ -23,14 +23,14 @@ if [ ! -f $3@FD_CONF@ ]; then
     -e "s,@MON_SD_PW@,$MON_SD_PW,g" \
     -e "s,@BASENAME@,$HOSTNAME,g" \
     -e "s,@HOSTNAME@,$HOSTNAME,g" \
-    "$3@PREFIX@/etc/bacula-fd.conf.example" > "$3@FD_CONF@"
+    "$3@PREFIX@/etc/bareos-fd.conf.example" > "$3@FD_CONF@"
 fi
 chmod 0600 "$3@FD_CONF@"
 
 # install startup item
 mkdir -p -m 0755 "$3/Library/LaunchDaemons"
-chmod 0644 "$3@PREFIX@/Library/LaunchDaemons/org.bacula.bacula-fd.plist"
-ln -fs "$3@PREFIX@/Library/LaunchDaemons/org.bacula.bacula-fd.plist" "$3/Library/LaunchDaemons/org.bacula.bacula-fd.plist"
+chmod 0644 "$3@PREFIX@/Library/LaunchDaemons/org.bareos.bareos-fd.plist"
+ln -fs "$3@PREFIX@/Library/LaunchDaemons/org.bareos.bareos-fd.plist" "$3/Library/LaunchDaemons/org.bareos.bareos-fd.plist"
 
 # Load startup item
-/bin/launchctl load "$3/Library/LaunchDaemons/org.bacula.bacula-fd.plist"
+/bin/launchctl load "$3/Library/LaunchDaemons/org.bareos.bareos-fd.plist"

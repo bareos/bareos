@@ -2,11 +2,11 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH BTAPE 8 "26 November 2009" "Kern Sibbald" "Network backup, recovery and verification"
+.TH BTAPE 8 "26 November 2009" "Kern Sibbald" "Backup Archiving REcovery Open Sourced"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
- btape \- Bacula's Tape interface test program
+ btape \- Bareos's Tape interface test program
 .SH SYNOPSIS
 .B btape
 .RI [ options ]
@@ -18,7 +18,7 @@ This manual page documents briefly the
 command.
 .PP
 .\" TeX users may be more comfortable with the \fB<whatever>\fP and
-.\" \fI<whatever>\fP escape sequences to invoke bold face and italics, 
+.\" \fI<whatever>\fP escape sequences to invoke bold face and italics,
 .\" respectively.
 .SH OPTIONS
 A summary of options is included below.
@@ -57,7 +57,7 @@ backspace file
 .TP
 .B bsr
 backspace record
-.TP 
+.TP
 .B cap
 list device capabilities
 .TP
@@ -65,7 +65,7 @@ list device capabilities
 clear tape errors
 .TP
 .B eod
-go to end of Bacula data for append
+go to end of Bareos data for append
 .TP
 .B eom
 go to the physical end of medium
@@ -86,7 +86,7 @@ forward space a record
 print this reference
 .TP
 .B label
-write a Bacula label to the tape
+write a Bareos label to the tape
 .TP
 .B load
 load a tape
@@ -98,7 +98,7 @@ quit btape
 use write() to fill tape
 .TP
 .B readlabel
-read and print the Bacula tape label
+read and print the Bareos tape label
 .TP
 .B rectest
 test record handling functions
@@ -110,25 +110,25 @@ rewind the tape
 read() tape block by block to EOT and report
 .TP
 .B scanblocks
-Bacula read block by block to EOT and report
+Bareos read block by block to EOT and report
 .TP
 .B status
 print tape status
 .TP
 .B test
-General test Bacula tape functions
+General test Bareos tape functions
 .TP
 .B weof
 write an EOF on the tape
 .TP
 .B wr
-write a single Bacula block
+write a single Bareos block
 .TP
 .B rr
 read a single record
 .TP
 .B rb
-read a single bacula block
+read a single bareos block
 .TP
 .B qfill
 quick fill command
@@ -139,5 +139,5 @@ quick fill command
 .br
 .SH AUTHOR
 This manual page was written by Jose Luis Tallon
-.nh 
+.nh
 <jltallon@adv\-solutions.net>.

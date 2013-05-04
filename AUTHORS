@@ -1,10 +1,4 @@
-
-This file contains a list of the people who have contributed code, programs or
-documentation to the Bacula project.  Thanks to all of you.  Without your 
-participation, Bacula would not be the success it is today.
-
-If you have made a contribution and do not find your
-name on this list, please send a note to me: kern@sibbald.com
+This file contains a list of the people who have contributed code, programs or documentation.
 
 Contributors:
 
@@ -22,22 +16,23 @@ Andreas Piesk
 Andrew Ford
 Arno Lehmann
 Attila Fülöp
+Bastian Friedrich
 Ben Walton
 Bernd Frick
 Bill Moran
-Bastian Friedrich                               
+Bruno Friedmann
 Carlos A. Molina G
 Carsten Paeth
 Chris Lee
 Christian Masopust
 Christopher Hull
 Craig Miskell
-Dan Langille   
+D. Scott Barninger
+Dan Langille
 Daniele Eccher
 David Boyes
 David Duchscher
 Davide Franco
-D. Scott Barninger
 Devin Reade
 Dirk Bartley
 Eamon Brosnan
@@ -51,41 +46,43 @@ Frank Sweetser
 Graham Keeling
 Grzegorz Grabowski
 Howard Thomson
-Jaime Ventura                      
+Jaime Ventura
 James Harper
 Jan Kesten
-jgorig
+Jan Görig
+Jo Simoens
 Joakim Tjernlund
 Joao Henrique Freitas
+Joerg Steffens
 John Goerzen
 John Kodis
 John Walker
 Jorj Bauer
 Jose Herrera
-Jose Luis Tallon 
-Jo Simoens   
-Juan Luis Frances    
-Juergen Lock                                    
+Jose Luis Tallon
+Juan Luis Frances
+Juergen Lock
 Karl Cunningham
 Kern Sibbald
 Kjetil Torgrim Homme
-Landon Fuller   
+Landon Fuller
 Laurent Papier
-Lukas Nykryn
 Lorenz Schori
 Luca Berra
 Lucas B. Cohen
 Lucas Di Pentima
 Ludovic Strappazon
-Marc Cousin                       
+Lukas Nykryn
+Maik Aussendorf
+Marc Cousin
 Marc Schiffbauer
 Marco van Wieringen
 Martin Schmid
-Martin Simmons                       
+Martin Simmons
 Meno Abels
-Michael Renner
 Michael -buk- Scherer
-Michael Stapelberg                        
+Michael Renner
+Michael Stapelberg
 Michel Meyers
 Morgan
 Nic Bellamy
@@ -94,25 +91,26 @@ Olivier Lehmann
 Peter Buschmann
 Peter Eriksson
 Peter Much
-Philippe Chauvat
 Phil Stracchino
+Philipp Storz
+Philippe Chauvat
 Preben Guldberg
 Riccardo Ghetta
-Richard Mortimer                        
+Richard Mortimer
 Robert Nelson
 Rudolf Cejka
 Russel Howe
 Scott Bailey
 Sergey Svishchev
 Stefan Reddig
-Thomas Glatthor                          
+Thomas Glatthor
 Thorsten Enge
-Tim Oberfoell   
+Tim Oberfoell
 Tomas Cameron
 Tullio Andreatta
 Ulrich Leodolter
-Vitaliy Kosharskiy
 Victor Hugo dos Santos
+Vitaliy Kosharskiy
 Wolfgang Denk
 Yuri Timofeev
 Yves Orton

@@ -1,0 +1,2 @@
+/usr/lib/libb*-mysql*.so
+/usr/lib/bareos/scripts/*_mysql_*

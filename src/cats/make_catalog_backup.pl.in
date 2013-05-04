@@ -3,7 +3,7 @@ use strict;
 
 =head1 SCRIPT
 
-  This script dumps your Bacula catalog in ASCII format
+  This script dumps your Bareos catalog in ASCII format
   It works for MySQL, SQLite, and PostgreSQL
 
 =head1 USAGE
@@ -12,12 +12,9 @@ use strict;
 
 =head1 LICENSE
 
-   Bacula® - The Network Backup Solution
+   BAREOSÂ® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,22 +24,19 @@ use strict;
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zurich,
-   Switzerland, email:ftf@fsfeurope.org.
+   BAREOSÂ® is a registered trademark of Bareos GmbH & Co. KG
 
 =cut
 
 my $cat = shift or die "Usage: $0 catalogname";
-my $dir_conf='@sbindir@/dbcheck -B -c @sysconfdir@/bacula-dir.conf';
+my $dir_conf='@sbindir@/bareos_dbcheck -B -c @sysconfdir@/bareos-dir.conf';
 my $wd = "@working_dir@";
 
 sub dump_sqlite3
@@ -86,7 +80,7 @@ sub dump_mysql
     my %args = @_;
     umask(0077);
     unlink("$wd/.my.cnf");
-    open(MY, ">$wd/.my.cnf") 
+    open(MY, ">$wd/.my.cnf")
         or die "Can't open $wd/.my.cnf for writing $@";
 
     $args{db_address} = $args{db_address} || "localhost";
@@ -103,7 +97,7 @@ password=$args{db_password}
     if ($args{db_port}) {
         print MY "port=$args{db_port}\n";
     }
-    
+
     close(MY);
 
     exec("HOME='$wd' mysqldump -f --opt $args{db_name} > '$wd/$args{db_name}.sql'");

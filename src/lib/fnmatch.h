@@ -30,7 +30,6 @@
  *
  *      @(#)fnmatch.h   8.1 (Berkeley) 6/2/93
  */
-/* Version: $Id$ */
 
 #ifndef _FNMATCH_H_
 #define _FNMATCH_H_

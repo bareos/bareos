@@ -1,5 +1,5 @@
 #
-# Simple Makefile for building test SD plugins for Bacula
+# Simple Makefile for building test SD plugins for Bareos
 #
 @MCOMMON@
 
@@ -16,7 +16,7 @@ basedir = ../..
 topdir = ../../..
 # this dir relative to top dir
 thisdir = src/plugins/sd
-  
+
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/stored
 
 .SUFFIXES:    .c .lo
@@ -30,25 +30,25 @@ all: Makefile python-sd.la scsicrypto-sd.la
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
 		&& CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
-  
+
 example-plugin-sd.la: Makefile example-plugin-sd$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared example-plugin-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
 
 python-sd.la: Makefile \
 	      python-sd$(DEFAULT_OBJECT_TYPE) \
-       ../../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+       ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared python-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
-	-L../../lib -lbac @PYTHON_LIBS@
+	-L../../lib -lbareos @PYTHON_LIBS@
 
 scsicrypto-sd.la: Makefile \
 		  scsicrypto-sd$(DEFAULT_OBJECT_TYPE) \
-		  ../../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared scsicrypto-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version -L../../lib -lbac
+		  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared scsicrypto-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version -L../../lib -lbareos
 
 plugtest: Makefile sd_plugins.c \
-	  ../../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
-	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) ../../stored/sd_plugins.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -o $@ sd_plugins.o -lbac $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
+	  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../stored/sd_plugins.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -o $@ sd_plugins.o -lbareos $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
@@ -72,11 +72,5 @@ clean: @LIBTOOL_CLEAN_TARGET@
 
 distclean: clean
 	@$(RMF) Makefile
-
-libtool-uninstall:
-	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/python-sd.so
-	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/scsicrypto-sd.so
-
-uninstall: @LIBTOOL_UNINSTALL_TARGET@
 
 depend:

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director daemon -- this is the main program
  *
- *   Bacula Director daemon -- this is the main program
- *
- *     Kern Sibbald, March MM
- *
+ * Kern Sibbald, March MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
@@ -47,7 +40,6 @@
 #ifndef HAVE_READDIR_R
 int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
-
 
 /* Forward referenced subroutines */
 void terminate_dird(int sig);
@@ -101,7 +93,7 @@ typedef enum {
 } cat_op;
 static bool check_catalog(cat_op mode);
 
-#define CONFIG_FILE "bacula-dir.conf" /* default configuration file */
+#define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
 
 /*
  * This allows the message handler to operate on the database
@@ -147,7 +139,7 @@ static void usage()
    fprintf(stderr, _(
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
-"Usage: bacula-dir [-f -s] [-c config_file] [-d debug_level] [config_file]\n"
+"Usage: bareos-dir [-f -s] [-c config_file] [-d debug_level] [config_file]\n"
 "       -c <file>   set configuration file to file\n"
 "       -d <nn>     set debug level to <nn>\n"
 "       -dt         print timestamp in debug output\n"
@@ -168,12 +160,12 @@ PROG_COPYRIGHT
 
 /*********************************************************************
  *
- *         Main Bacula Director Server program
+ *         Main BAREOS Director Server program
  *
  */
 #if defined(HAVE_WIN32)
 /* For Win32 main() is in src/win32 code ... */
-#define main BaculaMain
+#define main BAREOSMain
 #endif
 
 int main (int argc, char *argv[])
@@ -187,11 +179,11 @@ int main (int argc, char *argv[])
 
    start_heap = sbrk(0);
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
 
    init_stack_dump();
-   my_name_is(argc, argv, "bacula-dir");
+   my_name_is(argc, argv, "bareos-dir");
    init_msg(NULL, NULL);              /* initialize message handler */
    init_reload();
    daemon_start_time = time(NULL);
@@ -285,6 +277,13 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
+   /*
+    * See if we want to drop privs.
+    */
+   if (geteuid() == 0) {
+      drop(uid, gid, false);                    /* reduce privileges if requested */
+   }
+
    config = new_config_parser();
    parse_dir_config(config, configfile, M_ERROR_TERM);
 
@@ -302,9 +301,9 @@ int main (int argc, char *argv[])
          init_stack_dump();              /* grab new pid */
       }
       /* Create pid must come after we are a daemon -- so we have our final pid */
-      create_pid_file(director->pid_directory, "bacula-dir",
+      create_pid_file(director->pid_directory, "bareos-dir",
                       get_first_port_host_order(director->DIRaddrs));
-      read_state_file(director->working_directory, "bacula-dir",
+      read_state_file(director->working_directory, "bareos-dir",
                       get_first_port_host_order(director->DIRaddrs));
    }
 
@@ -314,8 +313,6 @@ int main (int argc, char *argv[])
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
    load_dir_plugins(director->plugin_directory);
-
-   drop(uid, gid, false);                    /* reduce privileges if requested */
 
    /* If we are in testing mode, we don't try to fix the catalog */
    cat_op mode=(test_config)?CHECK_CONNECTION:UPDATE_AND_FIX;
@@ -391,8 +388,8 @@ void terminate_dird(int sig)
    db_sql_pool_destroy();
    db_flush_backends();
    unload_dir_plugins();
-   write_state_file(director->working_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
-   delete_pid_file(director->pid_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
+   write_state_file(director->working_directory, "bareos-dir", get_first_port_host_order(director->DIRaddrs));
+   delete_pid_file(director->pid_directory, "bareos-dir", get_first_port_host_order(director->DIRaddrs));
    term_scheduler();
    term_job_server();
    if (runjob) {
@@ -648,7 +645,7 @@ static bool check_resources()
          if (have_tls) {
             director->tls_enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
          }
       }
@@ -763,7 +760,7 @@ static bool check_resources()
                    */
                   def_svalue = (char **)((char *)(job->jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_svalue=%s item %d offset=%u\n",
-                       job->name(), job_items[i].name, *def_svalue, i, offset);
+                        job->name(), job_items[i].name, *def_svalue, i, offset);
                   svalue = (char **)((char *)job + offset);
                   if (*svalue) {
                      free(*svalue);
@@ -776,7 +773,7 @@ static bool check_resources()
                    */
                   def_svalue = (char **)((char *)(job->jobdefs) + offset);
                   Dmsg4(400, "Job \"%s\", field \"%s\" item %d offset=%u\n",
-                       job->name(), job_items[i].name, i, offset);
+                        job->name(), job_items[i].name, i, offset);
                   svalue = (char **)((char *)job + offset);
                   if (*svalue) {
                      Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
@@ -809,9 +806,10 @@ static bool check_resources()
                   ivalue = (uint32_t *)((char *)job + offset);
                   *ivalue = *def_ivalue;
                   set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_time   ||
+               } else if (job_items[i].handler == store_time ||
                           job_items[i].handler == store_size64 ||
-                          job_items[i].handler == store_int64) {
+                          job_items[i].handler == store_int64 ||
+                          job_items[i].handler == store_speed) {
                   /*
                    * Handle 64 bit integer fields
                    */
@@ -876,7 +874,7 @@ static bool check_resources()
          if (have_tls) {
             cons->tls_enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
             continue;
          }
@@ -940,7 +938,7 @@ static bool check_resources()
          if (have_tls) {
             client->tls_enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
             continue;
          }
@@ -986,7 +984,7 @@ static bool check_resources()
          if (have_tls) {
             store->tls_enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
             continue;
          }

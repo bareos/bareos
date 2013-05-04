@@ -1,8 +1,8 @@
-Bacula file daemon package builder for Mac OS X
+Bareos file daemon package builder for Mac OS X
 ===============================================
 
-This package build script lets you download, compile and package the bacula
-file daemon easily with a single command line. Beside the bacula file daemon
+This package build script lets you download, compile and package the bareos
+file daemon easily with a single command line. Beside the bareos file daemon
 the resulting installer package contains a short ReadMe file with instructions
 on how to install and use the software. Also a basic launchd property list is
 included along with preugrade and postflight installer scripts to stop and
@@ -14,30 +14,30 @@ Requirements:
 * Mac OS X 10.5 or later (building/packaging), 10.4 or later (deployment)
 * Mac OS X developer tools installed
 
-Example (compile and create package from within bacula source tree):
+Example (compile and create package from within bareos source tree):
 $ ./configure --enable-client-only
 $ make -C platforms/osx
 
 By moving the contents of platforms/osx to some other directory (e.g.
-~/bacula-standalone-bulder), it is possible to create installer packages from
-older bacula versions and for specific platforms.
+~/bareos-standalone-bulder), it is possible to create installer packages from
+older bareos versions and for specific platforms.
 
 Examples (standalone mode):
- 1. Create an installer package from the newest supported bacula source
-    containing the bacula file daemon as a PPC/Intel universal binary.
+ 1. Create an installer package from the newest supported bareos source
+    containing the bareos file daemon as a PPC/Intel universal binary.
     $ make dmg
 
- 2. Create an installer package from a specified version of the bacula source
-    containing the bacula file daemon as a PPC/Intel universal binary.
-    $ make dmg BACULA_VERSION=3.0.0
+ 2. Create an installer package from a specified version of the bareos source
+    containing the bareos file daemon as a PPC/Intel universal binary.
+    $ make dmg BAREOS_VERSION=3.0.0
 
- 3. Create an installer package from the newest supported bacula source
-    containing the bacula file daemon for PPC architecture only.
-    $ make dmg ARCHFLAGS="-arch ppc" PACKAGE_TITLE="Bacula File Daemon PPC x.y.z"
+ 3. Create an installer package from the newest supported bareos source
+    containing the bareos file daemon for PPC architecture only.
+    $ make dmg ARCHFLAGS="-arch ppc" PACKAGE_TITLE="Bareos File Daemon PPC x.y.z"
 
- 4. Create an installer package from a specified version of the bacula source
-    containing the bacula file daemon for the current architecture.
-    $ make dmg BACULA_VERSION=2.4.4 ARCHFLAGS=""
+ 4. Create an installer package from a specified version of the bareos source
+    containing the bareos file daemon for the current architecture.
+    $ make dmg BAREOS_VERSION=2.4.4 ARCHFLAGS=""
 
 You find the built disk images in the products folder.
 

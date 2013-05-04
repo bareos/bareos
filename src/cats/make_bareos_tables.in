@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# This routine makes the appropriately configured
+# Bareos tables for PostgreSQL, Ingres, MySQL, or SQLite.
+#
+
+default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
+
+
+#
+# See if the first argument is a valid backend name.
+# If so the user overrides the default database backend.
+#
+if [ $# -gt 0 ]; then
+   case $1 in
+     sqlite3)
+       db_type=$1
+       shift
+       ;;
+     mysql)
+       db_type=$1
+       shift
+       ;;
+     postgresql)
+       db_type=$1
+       shift
+       ;;
+     ingres)
+       db_type=$1
+       shift
+       ;;
+     *)
+       ;;
+   esac
+fi
+
+#
+# If no new db_type is gives use the default db_type.
+#
+if [ -z "${db_type}" ]; then
+   db_type="${default_db_type}"
+fi
+
+echo "Making ${db_type} tables"
+@scriptdir@/make_${db_type}_tables $*

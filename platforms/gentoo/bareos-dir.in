@@ -1,0 +1,28 @@
+#!/sbin/runscript
+#
+# bareos       This shell script takes care of starting and stopping
+#	       the bareos Director daemon for the Gentoo release
+#
+# chkconfig: 2345 90 9
+# description: Backup Archiving REcovery Open Sourced.
+#
+#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+start() {
+       ebegin "Starting the Bareos Director"
+       start-stop-daemon --start --quiet --exec @sbindir@/bareos-dir -- $2 -c @sysconfdir@/bareos-dir.conf
+       eend $?
+}
+
+stop() {
+       ebegin "Stopping the Director daemon"
+       start-stop-daemon --stop --quiet --exec @sbindir@/bareos-dir
+       eend $?
+}
+
+restart() {
+       stop
+       sleep 5
+       start
+}

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation, which is
@@ -13,29 +13,23 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Interface definition for Bacula Plugins
+ * Interface definition for Bareos DIR Plugins
  *
  * Kern Sibbald, October 2007
- *
  */
 
 #ifndef __DIR_PLUGINS_H
 #define __DIR_PLUGINS_H
 
-#ifndef _BACULA_H
+#ifndef _BAREOS_H
 #ifdef __cplusplus
 /* Workaround for SGI IRIX 6.5 */
 #define _LANGUAGE_C_PLUS_PLUS 1
@@ -55,12 +49,12 @@
 
 /****************************************************************************
  *                                                                          *
- *                Bacula definitions                                        *
+ *                Bareos definitions                                        *
  *                                                                          *
  ****************************************************************************/
 
 /*
- * Bacula Variable Ids (Read)
+ * Bareos Variable Ids (Read)
  */
 typedef enum {
   bDirVarJob = 1,
@@ -89,7 +83,7 @@ typedef enum {
 } brDirVariable;
 
 /*
- * Bacula Variable Ids (Write)
+ * Bareos Variable Ids (Write)
  */
 typedef enum {
   bwDirVarJobReport = 1,
@@ -120,7 +114,7 @@ typedef struct s_bDirEvent {
    uint32_t eventType;
 } bDirEvent;
 
-typedef struct s_dirbaculaInfo {
+typedef struct s_dirbareosInfo {
    uint32_t size;
    uint32_t version;
 } bDirInfo;
@@ -130,14 +124,14 @@ extern "C" {
 #endif
 
 /*
- * Bacula interface version and function pointers
+ * Bareos interface version and function pointers
  */
-typedef struct s_dirbaculaFuncs {
+typedef struct s_dirbareosFuncs {
    uint32_t size;
    uint32_t version;
-   bRC (*registerBaculaEvents)(bpContext *ctx, int nr_events, ...);
-   bRC (*getBaculaValue)(bpContext *ctx, brDirVariable var, void *value);
-   bRC (*setBaculaValue)(bpContext *ctx, bwDirVariable var, void *value);
+   bRC (*registerBareosEvents)(bpContext *ctx, int nr_events, ...);
+   bRC (*getBareosValue)(bpContext *ctx, brDirVariable var, void *value);
+   bRC (*setBareosValue)(bpContext *ctx, bwDirVariable var, void *value);
    bRC (*JobMessage)(bpContext *ctx, const char *file, int line,
                      int type, utime_t mtime, const char *fmt, ...);
    bRC (*DebugMessage)(bpContext *ctx, const char *file, int line,
@@ -145,7 +139,7 @@ typedef struct s_dirbaculaFuncs {
 } bDirFuncs;
 
 /*
- * Bacula Core Routines -- not used within a plugin
+ * Bareos Core Routines -- not used within a plugin
  */
 #ifdef DIRECTOR_DAEMON
 void load_dir_plugins(const char *plugin_dir);

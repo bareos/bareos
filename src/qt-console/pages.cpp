@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +11,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   Dirk Bartley, March 2007
+ * Dirk Bartley, March 2007
  */
 
 #include "bat.h"
 #include "pages.h"
 
 /* A global function */
-bool isWin32Path(QString &fullPath) 
+bool isWin32Path(QString &fullPath)
 {
    if (fullPath.size()<2) {
       return false;
@@ -133,8 +126,8 @@ void Pages::undockPage()
 }
 
 /*
- * This function is intended to be called with the subclasses.  When it is 
- * called the specific sublclass does not have to be known to Pages.  When it 
+ * This function is intended to be called with the subclasses.  When it is
+ * called the specific sublclass does not have to be known to Pages.  When it
  * is called this function will change the page from it's current state of being
  * docked or undocked and change it to the other.
  */
@@ -149,7 +142,7 @@ void Pages::togglePageDocking()
 }
 
 /*
- * This function is because I wanted for some reason to keep it protected but still 
+ * This function is because I wanted for some reason to keep it protected but still
  * give any subclasses the ability to find out if it is currently stacked or not.
  */
 bool Pages::isDocked()
@@ -206,8 +199,8 @@ void Pages::closeEvent(QCloseEvent* event)
    /* this fixes my woes of getting the widget to show up on top when closed */
    event->ignore();
 
-   /* Set the current tree widget item in the Page Selector window to the item 
-    * which represents "this" 
+   /* Set the current tree widget item in the Page Selector window to the item
+    * which represents "this"
     * Which will also bring "this" to the top of the stacked widget */
    setCurrent();
 }
@@ -277,7 +270,7 @@ void Pages::pgInitialize(const QString &tname, QTreeWidgetItem *parentTreeWidget
    }
 
    QTreeWidgetItem *item = new QTreeWidgetItem(parentTreeWidgetItem);
-   QString name; 
+   QString name;
    treeWidgetName(name);
    item->setText(0, name);
    mainWin->hashInsert(item, this);
@@ -379,7 +372,7 @@ void Pages::setCurrent()
 
 /*
  * Function to set the text of the toggle dock context menu when page and
- * widget item are NOT known.  
+ * widget item are NOT known.
  */
 void Pages::setContextMenuDockText()
 {
@@ -390,7 +383,7 @@ void Pages::setContextMenuDockText()
    } else {
       docktext = tr("ReDock %1 Window").arg(item->text(0));
    }
-      
+
    mainWin->actionToggleDock->setText(docktext);
    setTreeWidgetItemDockColor();
 }

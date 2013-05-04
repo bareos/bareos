@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,42 +13,36 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- vbackup.c -- responsible for doing virtual
+ *                    backup jobs or in other words, consolidation or synthetic
+ *                    backups.
  *
- *   Bacula Director -- vbackup.c -- responsible for doing virtual
- *     backup jobs or in other words, consolidation or synthetic
- *     backups.
+ * Kern Sibbald, July MMVIII
  *
- *     Kern Sibbald, July MMVIII
- *
- *  Basic tasks done here:
- *     Open DB and create records for this job.
- *     Figure out what Jobs to consolidate.
- *     Open Message Channel with Write Storage daemon to tell him a backup job will be starting.
- *     Open Message Channel with Read Storage daemon to tell him a restore job will be starting.
- *     When the Storage daemons finishes the job, update the DB.
+ * Basic tasks done here:
+ *    Open DB and create records for this job.
+ *    Figure out what Jobs to copy.
+ *    Open Message Channel with Storage daemon to tell him a job will be starting.
+ *    Open connection with File daemon and pass him commands to do the backup.
+ *    When the File daemon finishes the job, update the DB.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 static const int dbglevel = 10;
 
 static bool create_bootstrap_file(JCR *jcr, char *jobids);
 
-/* 
+/*
  * Called here before the job is run to do the job
  *   specific setup.
  */
@@ -76,7 +70,7 @@ bool do_native_vbackup_init(JCR *jcr)
    /*
     * Note, at this point, pool is the pool for this job.  We
     *  transfer it to rpool (read pool), and a bit later,
-    *  pool will be changed to point to the write pool, 
+    *  pool will be changed to point to the write pool,
     *  which comes from pool->NextPool.
     */
    jcr->res.rpool = jcr->res.pool;    /* save read pool */
@@ -161,7 +155,7 @@ bool do_native_vbackup(JCR *jcr)
    db_list_ctx jobids;
 
    Dmsg2(100, "rstorage=%p wstorage=%p\n", jcr->rstorage, jcr->wstorage);
-   Dmsg2(100, "Read store=%s, write store=%s\n", 
+   Dmsg2(100, "Read store=%s, write store=%s\n",
       ((STORERES *)jcr->rstorage->first())->name(),
       ((STORERES *)jcr->wstorage->first())->name());
 
@@ -171,7 +165,7 @@ bool do_native_vbackup(JCR *jcr)
    Jmsg(jcr, M_INFO, 0, _("Start Virtual Backup JobId %s, Job=%s\n"),
         edit_uint64(jcr->JobId, ed1), jcr->Job);
    if (!jcr->accurate) {
-      Jmsg(jcr, M_WARNING, 0, 
+      Jmsg(jcr, M_WARNING, 0,
 _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n"));
    }
 
@@ -235,14 +229,14 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
    }
    Dmsg0(100, "Storage daemon connection OK\n");
 
-   /*    
+   /*
     * We re-update the job start record so that the start
-    *  time is set after the run before job.  This avoids 
+    *  time is set after the run before job.  This avoids
     *  that any files created by the run before job will
     *  be saved twice.  They will be backed up in the current
     *  job, but not in the next one unless they are changed.
     *  Without this, they will be backed up in this job and
-    *  in the next job run because in that case, their date 
+    *  in the next job run because in that case, their date
     *   is after the start of this run.
     */
    jcr->start_time = time(NULL);
@@ -315,8 +309,8 @@ void native_vbackup_cleanup(JCR *jcr, int TermCode)
 
    /* Update final items to set them to the previous job's values */
    Mmsg(query, "UPDATE Job SET StartTime='%s',EndTime='%s',"
-               "JobTDate=%s WHERE JobId=%s", 
-      jcr->previous_jr.cStartTime, jcr->previous_jr.cEndTime, 
+               "JobTDate=%s WHERE JobId=%s",
+      jcr->previous_jr.cStartTime, jcr->previous_jr.cEndTime,
       edit_uint64(jcr->previous_jr.JobTDate, ec1),
       edit_uint64(jcr->JobId, ec2));
    db_sql_query(jcr->db, query.c_str());

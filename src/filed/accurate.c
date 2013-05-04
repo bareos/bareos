@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,24 +11,15 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
-/*
- *  Version $Id $
- *
- */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "filed.h"
 
 static int dbglvl=100;
@@ -116,7 +105,7 @@ static bool accurate_send_base_file_list(JCR *jcr)
       if (elt->seen) {
          Dmsg2(dbglvl, "base file fname=%s seen=%i\n", elt->fname, elt->seen);
          /* TODO: skip the decode and use directly the lstat field */
-         decode_stat(elt->lstat, &statc, sizeof(statc), &LinkFIc); /* decode catalog stat */  
+         decode_stat(elt->lstat, &statc, sizeof(statc), &LinkFIc); /* decode catalog stat */
          ff_pkt->fname = elt->fname;
          ff_pkt->statp = statc;
          encode_and_send_attributes(jcr, ff_pkt, stream);
@@ -198,14 +187,14 @@ bool accurate_finish(JCR *jcr)
       }
       accurate_free(jcr);
       if (jcr->is_JobLevel(L_FULL)) {
-         Jmsg(jcr, M_INFO, 0, _("Space saved with Base jobs: %lld MB\n"), 
+         Jmsg(jcr, M_INFO, 0, _("Space saved with Base jobs: %lld MB\n"),
               jcr->base_size/(1024*1024));
       }
    }
    return ret;
 }
 
-static bool accurate_add_file(JCR *jcr, uint32_t len, 
+static bool accurate_add_file(JCR *jcr, uint32_t len,
                               char *fname, char *lstat, char *chksum,
                               int32_t delta)
 {
@@ -231,9 +220,9 @@ static bool accurate_add_file(JCR *jcr, uint32_t len,
 
    item->delta_seq = delta;
 
-   jcr->file_list->insert(item->fname, item); 
+   jcr->file_list->insert(item->fname, item);
 
-   Dmsg4(dbglvl, "add fname=<%s> lstat=%s  delta_seq=%i chksum=%s\n", 
+   Dmsg4(dbglvl, "add fname=<%s> lstat=%s  delta_seq=%i chksum=%s\n",
          fname, lstat, delta, chksum);
    return ret;
 }
@@ -241,8 +230,8 @@ static bool accurate_add_file(JCR *jcr, uint32_t len,
 /*
  * This function is called for each file seen in fileset.
  * We check in file_list hash if fname have been backuped
- * the last time. After we can compare Lstat field. 
- * Full Lstat usage have been removed on 6612 
+ * the last time. After we can compare Lstat field.
+ * Full Lstat usage have been removed on 6612
  *
  * Returns: true   if file has changed (must be backed up)
  *          false  file not changed
@@ -271,12 +260,12 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
    }
 
    strip_path(ff_pkt);
- 
+
    if (S_ISDIR(ff_pkt->statp.st_mode)) {
       fname = ff_pkt->link;
    } else {
       fname = ff_pkt->fname;
-   } 
+   }
 
    if (!accurate_lookup(jcr, fname, &elt)) {
       Dmsg1(dbglvl, "accurate %s (not found)\n", fname);
@@ -394,7 +383,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
           */
          if (!status && ff_pkt->type != FT_LNKSAVED &&
              (S_ISREG(ff_pkt->statp.st_mode) &&
-              ff_pkt->flags & (FO_MD5|FO_SHA1|FO_SHA256|FO_SHA512))) 
+              ff_pkt->flags & (FO_MD5|FO_SHA1|FO_SHA256|FO_SHA512)))
          {
 
             if (!*elt.chksum && !jcr->rerunning) {
@@ -411,20 +400,20 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             if (ff_pkt->flags & FO_MD5) {
                digest = crypto_digest_new(jcr, CRYPTO_DIGEST_MD5);
                digest_stream = STREAM_MD5_DIGEST;
-               
+
             } else if (ff_pkt->flags & FO_SHA1) {
                digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA1);
                digest_stream = STREAM_SHA1_DIGEST;
-               
+
             } else if (ff_pkt->flags & FO_SHA256) {
                digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA256);
                digest_stream = STREAM_SHA256_DIGEST;
-               
+
             } else if (ff_pkt->flags & FO_SHA512) {
                digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA512);
                digest_stream = STREAM_SHA512_DIGEST;
             }
-            
+
             /* Did digest initialization fail? */
             if (digest_stream != STREAM_NONE && digest == NULL) {
                Jmsg(jcr, M_WARNING, 0, _("%s digest initialization failed\n"),
@@ -435,19 +424,19 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             if (digest) {
                char md[CRYPTO_DIGEST_MAX_SIZE];
                uint32_t size;
-               
+
                size = sizeof(md);
-               
+
                if (digest_file(jcr, ff_pkt, digest) != 0) {
                   jcr->JobErrors++;
 
                } else if (crypto_digest_finalize(digest, (uint8_t *)md, &size)) {
                   char *digest_buf;
                   const char *digest_name;
-                  
+
                   digest_buf = (char *)malloc(BASE64_SIZE(size));
                   digest_name = crypto_digest_name(digest);
-                  
+
                   bin_to_base64(digest_buf, BASE64_SIZE(size), md, size, true);
 
                   if (!bstrcmp(digest_buf, elt.chksum)) {
@@ -458,7 +447,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
                            digest_buf);
                      status = true;
                   }
-                  
+
                   free(digest_buf);
                }
                crypto_digest_free(digest);
@@ -492,7 +481,7 @@ bail_out:
    return status;
 }
 
-/* 
+/*
  * TODO: use big buffer from htable
  */
 int accurate_cmd(JCR *jcr)
@@ -528,12 +517,12 @@ int accurate_cmd(JCR *jcr)
             chksum_pos = lstat_pos - 1;    /* tweak: no checksum, point to the last \0 */
             delta_seq = 0;
          } else {
-            delta_seq = str_to_int32(dir->msg + 
-                                     chksum_pos + 
+            delta_seq = str_to_int32(dir->msg +
+                                     chksum_pos +
                                      strlen(dir->msg + chksum_pos) + 1);
          }
 
-         accurate_add_file(jcr, dir->msglen, 
+         accurate_add_file(jcr, dir->msglen,
                            dir->msg,               /* Path */
                            dir->msg + lstat_pos,   /* LStat */
                            dir->msg + chksum_pos,  /* CheckSum */

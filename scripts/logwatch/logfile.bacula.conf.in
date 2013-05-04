@@ -1,3 +1,0 @@
-# What actual file?  Defaults to LogPath if not absolute path....
-LogFile = @logdir@/bacula.log
-

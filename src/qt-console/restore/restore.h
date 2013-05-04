@@ -1,13 +1,10 @@
-#ifndef _RESTORE_H_
-#define _RESTORE_H_
-
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -16,32 +13,27 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *
- *  Kern Sibbald, February 2007
+ * Kern Sibbald, February 2007
  */
+#ifndef _RESTORE_H_
+#define _RESTORE_H_
 
-#include <sys/types.h>
-
+#include <bat.h>
 #include <QtGui>
 #include "pages.h"
 #include "ui_runrestore.h"
 
 class bRestoreTable : public QTableWidget
 {
-   Q_OBJECT 
+   Q_OBJECT
 private:
    QPoint dragStartPosition;
 public:
@@ -73,7 +65,7 @@ enum {
  */
 class prerestorePage : public Pages, public Ui::prerestoreForm
 {
-   Q_OBJECT 
+   Q_OBJECT
 
 public:
    prerestorePage();
@@ -97,14 +89,14 @@ private:
    unsigned int m_dataInType;
 };
 
-/*  
- * The restore dialog is brought up once we are in the Bacula
+/*
+ * The restore dialog is brought up once we are in the Bareos
  * restore tree routines.  It handles putting up a GUI tree
  * representation of the files to be restored.
  */
 class restorePage : public Pages, public Ui::restoreForm
 {
-   Q_OBJECT 
+   Q_OBJECT
 
 public:
    restorePage(int conn);
@@ -136,7 +128,7 @@ private:
 
 class bRestore : public Pages, public Ui::bRestoreForm
 {
-   Q_OBJECT 
+   Q_OBJECT
 
 public:
    bRestore();
@@ -163,13 +155,13 @@ private:
    void setupPage();
    bool m_populated;
    void displayFiles(int64_t pathid, QString path);
-   void displayFileVersion(QString pathid, QString fnid, 
+   void displayFileVersion(QString pathid, QString fnid,
                            QString client, QString filename);
 };
 
 class bRunRestore : public QDialog, public Ui::bRunRestoreForm
 {
-   Q_OBJECT 
+   Q_OBJECT
 private:
    bRestore *brestore;
    QStringList m_fileids, m_jobids, m_dirids, m_findexes;

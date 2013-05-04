@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to create Bacula database(s)
+# shell script to create Bareos database(s)
 #
 
 bindir=@MYSQL_BINDIR@

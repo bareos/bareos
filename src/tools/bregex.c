@@ -1,16 +1,8 @@
 /*
- * Test program for testing regular expressions.
- *
- *  Kern Sibbald, MMVI
- *
- */
-/*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -19,31 +11,31 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
+/*
+ * Test program for testing regular expressions.
+ *
+ * Kern Sibbald, MMVI
+ */
 
-#include "bacula.h"
+#include "bareos.h"
 
 /*
- *  If you define BACULA_REGEX, bregex will be built with the
- *  Bacula bregex library, which is the same code that we
+ *  If you define BAREOS_REGEX, bregex will be built with the
+ *  Bareos bregex library, which is the same code that we
  *  use on Win32, thus using Linux, you can test your Win32
  *  expressions. Otherwise, this program will link with the
  *  system library routines.
  */
-//#define BACULA_REGEX
+//#define BAREOS_REGEX
 
-#ifdef BACULA_REGEX
+#ifdef BAREOS_REGEX
 
 #include "lib/bregex.h"
 
@@ -86,11 +78,11 @@ int main(int argc, char *const *argv)
    bool match_only = true;
    int lineno;
    bool no_linenos = false;
-   
+
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
 
    while ((ch = getopt(argc, argv, "d:f:n?")) != -1) {
       switch (ch) {

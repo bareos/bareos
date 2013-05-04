@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to delete Bacula tables for MySQL
+# shell script to delete Bareos tables for MySQL
 
 bindir=@MYSQL_BINDIR@
 db_name=@db_name@
@@ -21,8 +21,8 @@ DROP TABLE IF EXISTS Media;
 DROP TABLE IF EXISTS JobMedia;
 DROP TABLE IF EXISTS Pool;
 DROP TABLE IF EXISTS MultiVolume;
-DROP TABLE IF EXISTS FileSave;	 
-DROP TABLE IF EXISTS FileSet;	
+DROP TABLE IF EXISTS FileSave;
+DROP TABLE IF EXISTS FileSet;
 DROP TABLE IF EXISTS Version;
 DROP TABLE IF EXISTS Counters;
 DROP TABLE IF EXISTS BaseFiles;

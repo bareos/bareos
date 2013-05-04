@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Dumb program to extract files from a Bareos backup.
  *
- *  Dumb program to extract files from a Bacula backup.
- *
- *   Kern E. Sibbald, MM
- *
+ * Kern E. Sibbald, MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 #include "ch.h"
 #include "lib/crypto_cache.h"
@@ -77,7 +70,7 @@ static uint32_t wsize;                /* write size */
 static uint64_t fileAddr = 0;         /* file write address */
 
 static CONFIG *config;
-#define CONFIG_FILE "bacula-sd.conf"
+#define CONFIG_FILE "bareos-sd.conf"
 char *configfile = NULL;
 STORES *me = NULL;                    /* our Global resource */
 bool forge_on = false;
@@ -89,7 +82,7 @@ static void usage()
    fprintf(stderr, _(
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
-"Usage: bextract <options> <bacula-archive-device-name> <directory-to-store-files>\n"
+"Usage: bextract <options> <bareos-archive-device-name> <directory-to-store-files>\n"
 "       -b <file>       specify a bootstrap file\n"
 "       -c <file>       specify a Storage configuration file\n"
 "       -D <director>   specify a director name specified in the Storage\n"
@@ -114,8 +107,8 @@ int main (int argc, char *argv[])
    bool got_inc = false;
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    init_stack_dump();
    lmgr_init_thread();
 
@@ -247,7 +240,7 @@ int main (int argc, char *argv[])
 
    load_sd_plugins(me->plugin_directory);
 
-   read_crypto_cache(me->working_directory, "bacula-sd",
+   read_crypto_cache(me->working_directory, "bareos-sd",
                      get_first_port_host_order(me->sdaddrs));
 
    if (!got_inc) {                            /* If no include file, */

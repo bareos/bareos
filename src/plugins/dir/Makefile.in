@@ -1,5 +1,5 @@
 #
-# Simple Makefile for building test DIR plugins for Bacula
+# Simple Makefile for building test DIR plugins for Bareos
 #
 @MCOMMON@
 
@@ -15,7 +15,7 @@ topdir = ../../..
 # this dir relative to top dir
 thisdir = src/plugins/dir
 
-INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/dird
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/dird
 
 .SUFFIXES:    .c .lo
 
@@ -35,14 +35,14 @@ example-plugin-dir.la: Makefile \
 
 python-dir.la: Makefile \
 	       python-dir$(DEFAULT_OBJECT_TYPE) \
-	       ../../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	       ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared python-dir.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
-	-L../../lib -lbac @PYTHON_LIBS@
+	-L../../lib -lbareos @PYTHON_LIBS@
 
 plugtest: Makefile dir_plugins.c \
-	  ../../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
-	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) ../../dird/dir_plugins.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -L../../findlib -o $@ dir_plugins.o -lbac $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
+	  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../dird/dir_plugins.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -L../../findlib -o $@ dir_plugins.o -lbareos $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
@@ -64,10 +64,5 @@ clean: @LIBTOOL_CLEAN_TARGET@
 
 distclean: clean
 	@$(RMF) Makefile
-
-libtool-uninstall:
-	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/python-dir.so
-
-uninstall: @LIBTOOL_UNINSTALL_TARGET@
 
 depend:

@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +11,19 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
- 
+
 /*
+ * bRestore Class  (Eric's brestore)
  *
- *  bRestore Class  (Eric's brestore)
- *
- *   Kern Sibbald, January MMVII
- *
- */ 
+ * Kern Sibbald, January MMVII
+ */
 
 #include "bat.h"
 #include "restore.h"
@@ -257,7 +248,7 @@ void bRestore::displayFiles(int64_t pathid, QString path)
          fieldlist = resultline.split("\t");
          TableItemFormatter item(*FileList, row++);
          item.setTextFld(col++, fieldlist.at(5)); // name
-         decode_stat(fieldlist.at(4).toLocal8Bit().data(), 
+         decode_stat(fieldlist.at(4).toLocal8Bit().data(),
                      &statp, sizeof(statp), &LinkFI);
          item.setBytesFld(col++, QString().setNum(statp.st_size));
          item.setDateFld(col++, statp.st_mtime);
@@ -282,7 +273,7 @@ void bRestore::PgSeltreeWidgetClicked()
 }
 
 // Display all versions of a file for this client
-void bRestore::displayFileVersion(QString pathid, QString fnid, 
+void bRestore::displayFileVersion(QString pathid, QString fnid,
                                   QString client, QString filename)
 {
    int row=0;
@@ -290,10 +281,10 @@ void bRestore::displayFileVersion(QString pathid, QString fnid,
    int32_t LinkFI;
    Freeze frz_rev(*FileRevisions); /* disable updating*/
    FileRevisions->clearContents();
-   
+
    QString q = ".bvfs_versions jobid=" + m_jobids +
-      " pathid=" + pathid + 
-      " fnid=" + fnid + 
+      " pathid=" + pathid +
+      " fnid=" + fnid +
       " client=" + client;
 
    if (VersionsChk->checkState() == Qt::Checked) {
@@ -314,7 +305,7 @@ void bRestore::displayFileVersion(QString pathid, QString fnid,
          item.setInChanger(col++, fieldlist.at(7)); // inchanger
          item.setTextFld(col++, fieldlist.at(6)); // Volume
          item.setNumericFld(col++, fieldlist.at(3)); // JobId
-         decode_stat(fieldlist.at(4).toLocal8Bit().data(), 
+         decode_stat(fieldlist.at(4).toLocal8Bit().data(),
                      &statp, sizeof(statp), &LinkFI);
          item.setBytesFld(col++, QString().setNum(statp.st_size)); // size
          item.setDateFld(col++, statp.st_mtime); // date
@@ -380,9 +371,9 @@ void bRestore::setupPage()
    ClientList->addItems(m_console->client_list);
    connect(ClientList, SIGNAL(currentIndexChanged(int)), this, SLOT(setClient()));
    connect(JobList, SIGNAL(currentIndexChanged(int)), this, SLOT(setJob()));
-   connect(FileList, SIGNAL(itemClicked(QTableWidgetItem*)), 
+   connect(FileList, SIGNAL(itemClicked(QTableWidgetItem*)),
            this, SLOT(clearVersions(QTableWidgetItem *)));
-   connect(FileList, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), 
+   connect(FileList, SIGNAL(itemDoubleClicked(QTableWidgetItem*)),
            this, SLOT(showInfoForFile(QTableWidgetItem *)));
    connect(LocationBp, SIGNAL(pressed()), this, SLOT(applyLocation()));
    connect(MergeChk, SIGNAL(clicked()), this, SLOT(setJob()));
@@ -487,7 +478,7 @@ void bRestoreTable::dropEvent(QDropEvent *event)
          item.setFileType(0, "folder");
       }
       item.setTextFld(col++, fields.at(5)); // filename
-      decode_stat(fields.at(4).toLocal8Bit().data(), 
+      decode_stat(fields.at(4).toLocal8Bit().data(),
                   &statp, sizeof(statp), &LinkFI);
       item.setBytesFld(col++, QString().setNum(statp.st_size)); // size
       item.setDateFld(col++, statp.st_mtime); // date
@@ -571,7 +562,7 @@ bRunRestore::bRunRestore(bRestore *parent)
    computeVolumeList();
 }
 
-void bRestore::get_info_from_selection(QStringList &fileids, 
+void bRestore::get_info_from_selection(QStringList &fileids,
                                        QStringList &jobids,
                                        QStringList &dirids,
                                        QStringList &findexes)
@@ -585,7 +576,7 @@ void bRestore::get_info_from_selection(QStringList &fileids,
       if (lst.at(1) != "0") {   // skip path
          fileids << lst.at(2);
          jobids << lst.at(3);
-         decode_stat(lst.at(4).toLocal8Bit().data(), 
+         decode_stat(lst.at(4).toLocal8Bit().data(),
                      &statp, sizeof(statp), &LinkFI);
          if (LinkFI) {
             findexes << lst.at(3) + "," + QString().setNum(LinkFI);
@@ -613,7 +604,7 @@ void bRunRestore::computeVolumeList()
    QString q =
 " SELECT DISTINCT VolumeName, Enabled, InChanger "
  " FROM File, "
-  " ( " // -- Get all media from this job 
+  " ( " // -- Get all media from this job
      " SELECT MIN(FirstIndex) AS FirstIndex, MAX(LastIndex) AS LastIndex, "
             " VolumeName, Enabled, Inchanger "
        " FROM JobMedia JOIN Media USING (MediaId) "
@@ -630,7 +621,7 @@ void bRunRestore::computeVolumeList()
       TableMedia->setRowCount(results.size());
       /* Iterate through the record returned from the query */
       foreach (QString resultline, results) {
-         // 0        1          2 
+         // 0        1          2
          //volname, enabled, inchanger
          fieldlist = resultline.split("\t");
          int col=0;
@@ -708,7 +699,7 @@ int64_t bRunRestore::runRestore(QString tablename)
    q += " file=\"?" + tablename + "\"";
    q += " when=\"" + WhenEditor->dateTime().toString("yyyy-MM-dd hh:mm:ss") + "\"";
    q += " done yes";
-   
+
    if (mainWin->m_miscDebug) qDebug() << q;
    QStringList results;
    if (brestore->console()->dir_cmd(q, results)) {
@@ -744,5 +735,5 @@ void bRunRestore::computeRestore()
          q = ".bvfs_cleanup path=b2123";
          brestore->console()->dir_cmd(q, results);
       }
-   }   
+   }
 }

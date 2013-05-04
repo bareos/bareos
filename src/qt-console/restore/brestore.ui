@@ -557,7 +557,7 @@ p, li { white-space: pre-wrap; }
   <customwidget>
    <class>bRestoreTable</class>
    <extends>QTableWidget</extends>
-   <header>restore.h</header>
+   <header>restore/restore.h</header>
   </customwidget>
  </customwidgets>
  <resources>

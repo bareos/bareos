@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,29 +11,23 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Console Class
+ * Console Class
  *
- *   Kern Sibbald, January MMVII
- *
- */ 
+ * Kern Sibbald, January MMVII
+ */
 
 #include "bat.h"
 #include "console.h"
-#include "restore.h"
-#include "select.h"
+#include "restore/restore.h"
+#include "select/select.h"
 #include "run/run.h"
 
 Console::Console(QTabWidget *parent) : Pages()
@@ -49,7 +41,7 @@ Console::Console(QTabWidget *parent) : Pages()
    m_warningPrevent = false;
    m_dircommCounter = 0;
 
-   /* 
+   /*
     * Create a connection to the Director and put it in a hash table
     */
    m_dircommHash.insert(m_dircommCounter, new DirComm(this, m_dircommCounter));
@@ -140,7 +132,7 @@ void Console::connect_dir()
       beginNewCommand(0);
    }
    mainWin->set_status(_("Connected"));
-   
+
    startTimer();                      /* start message timer */
 }
 
@@ -178,7 +170,7 @@ void Console::populateLists(int conn)
    dir_cmd(conn, ".jobs", job_list);
    dir_cmd(conn, ".jobs type=R", restore_list);
    dir_cmd(conn, ".clients", client_list);
-   dir_cmd(conn, ".filesets", fileset_list);  
+   dir_cmd(conn, ".filesets", fileset_list);
    dir_cmd(conn, ".msgs", messages_list);
    dir_cmd(conn, ".pools", pool_list);
    dir_cmd(conn, ".storage", storage_list);
@@ -231,7 +223,7 @@ bool Console::dir_cmd(const char *cmd, QStringList &results)
 
 /*
  * Send a command to the Director, and return the
- *  results in a QStringList.  
+ *  results in a QStringList.
  */
 bool Console::dir_cmd(int conn, const char *cmd, QStringList &results)
 {
@@ -290,7 +282,7 @@ bool Console::sql_cmd(const char *query, QStringList &results)
 
 /*
  * Send a sql query to the Director, and return the
- *  results in a QStringList.  
+ *  results in a QStringList.
  */
 bool Console::sql_cmd(int &conn, const char *query, QStringList &results, bool donotify)
 {
@@ -308,7 +300,7 @@ bool Console::sql_cmd(int &conn, const char *query, QStringList &results, bool d
       dircomm->notify(false);
    }
    mainWin->waitEnter();
-   
+
    pm_strcpy(cmd, ".sql query=\"");
    pm_strcat(cmd, query);
    pm_strcat(cmd, "\"");
@@ -341,7 +333,7 @@ bool Console::sql_cmd(int &conn, const char *query, QStringList &results, bool d
    return !mainWin->isClosing();      /* return false if closing */
 }
 
-/* 
+/*
  * Overloads for
  * Sending a command to the Director
  */
@@ -408,9 +400,9 @@ bool Console::get_job_defaults(int &conn, struct job_defaults &job_defs)
    return get_job_defaults(conn, job_defs, true);
 }
 
-/*  
+/*
  * Send a job name to the director, and read all the resulting
- *  defaults. 
+ *  defaults.
  */
 bool Console::get_job_defaults(int &conn, struct job_defaults &job_defs, bool donotify)
 {
@@ -521,7 +513,7 @@ void Console::writeSettings()
  * Read and restore user settings associated with this console
  */
 void Console::readSettings()
-{ 
+{
    QFont font = get_font();
 
    QSettings settings(m_dir->name(), "bat");
@@ -636,7 +628,7 @@ void Console::beginNewCommand(int conn)
 }
 
 void Console::displayToPrompt(int conn)
-{ 
+{
    DirComm *dircomm = m_dircommHash.value(conn);
 
    int stat = 0;
@@ -678,7 +670,7 @@ void Console::discardToPrompt(int conn)
 }
 
 QString Console::returnFromPrompt(int conn)
-{ 
+{
    DirComm *dircomm = m_dircommHash.value(conn);
    QString text("");
 
@@ -698,7 +690,7 @@ QString Console::returnFromPrompt(int conn)
 
 /*
  * When the notifier is enabled, read_dir() will automatically be
- * called by the Qt event loop when ever there is any output 
+ * called by the Qt event loop when ever there is any output
  * from the Director, and read_dir() will then display it on
  * the console.
  *
@@ -709,7 +701,7 @@ QString Console::returnFromPrompt(int conn)
 
 /* dual purpose function to turn notify off and return a connection */
 int Console::notifyOff()
-{ 
+{
    int conn = 0;
    if (getDirComm(conn)) {
       notify(conn, false);
@@ -719,7 +711,7 @@ int Console::notifyOff()
 
 /* knowing a connection, turn notify off or on */
 bool Console::notify(int conn, bool enable)
-{ 
+{
    DirComm *dircomm = m_dircommHash.value(conn);
    if (dircomm) {
       return dircomm->notify(enable);
@@ -744,8 +736,8 @@ void Console::setDirectorTreeItem(QTreeWidgetItem *item)
    m_directorTreeItem = item;
 }
 
-void Console::setDirRes(DIRRES *dir) 
-{ 
+void Console::setDirRes(DIRRES *dir)
+{
    m_dir = dir;
 }
 
@@ -764,7 +756,7 @@ void Console::consoleHelp()
    consoleCommand(cmd);
 }
 
-/* Slot for responding to page selectors reload bacula-dir.conf */
+/* Slot for responding to page selectors reload bareos-dir.conf */
 void Console::consoleReload()
 {
    QString cmd("reload");
@@ -781,7 +773,7 @@ bool Console::hasFocus()
       return false;
 }
 
-/* For adding feature to have the gui's messages button change when 
+/* For adding feature to have the gui's messages button change when
  * messages are pending */
 bool Console::messagesPending(bool pend)
 {
@@ -876,13 +868,13 @@ bool Console::getDirComm(int &conn)
 /*
  * Try to find a free (unused but established) connection
  * KES: Note, I think there is a problem here because for
- *   some reason, the notifier is often turned off on file  
+ *   some reason, the notifier is often turned off on file
  *   descriptors that seem to me to be available.  That means
  *   that we do not use a free descriptor and thus we will create
  *   a new connection that is maybe not necessary.  Someone needs
  *   to look into whether or not notify() is correctly turned on
  *   when we are back at the command prompt and idle.
- *                         
+ *
  */
 bool Console::findDirComm(int &conn)
 {
@@ -894,7 +886,7 @@ bool Console::findDirComm(int &conn)
          return true;
       }
       if (mainWin->m_connDebug) {
-         Pmsg4(000, "currentDirComm=%d at_prompt=%d at_main=%d && notify=%d\n",                                      
+         Pmsg4(000, "currentDirComm=%d at_prompt=%d at_main=%d && notify=%d\n",
             dircomm->m_conn, dircomm->m_at_prompt, dircomm->m_at_main_prompt, dircomm->is_notify_enabled());
       }
       ++iter;

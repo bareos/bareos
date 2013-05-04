@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +13,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Miscellaneous Bacula memory and thread safe routines
- *   Generally, these are interfaces to system or standard
- *   library routines.
+ * Miscellaneous BAREOS memory and thread safe routines
+ * Generally, these are interfaces to system or standard
+ * library routines.
  *
- *  Bacula utility functions are in util.c
- *
+ * BAREOS utility functions are in util.c
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
 #else
@@ -533,7 +527,7 @@ void create_pid_file(char *dir, const char *progname, int port)
        * and if oldpid == getpid(), skip the attempt to
        * kill(oldpid,0), since the attempt is guaranteed to succeed,
        * but the success won't actually mean that there is an
-       * another Bacula process already running.
+       * another BAREOS process already running.
        * For more details see bug #797.
        */
        if ((oldpid != (int)getpid()) && (kill(oldpid, 0) != -1 || errno != ESRCH)) {
@@ -586,7 +580,7 @@ struct s_state_hdr {
 };
 
 static struct s_state_hdr state_hdr = {
-   "Bacula State\n",
+   "Bareos State\n",
    4,
    0
 };
@@ -706,7 +700,7 @@ strtoll(const char *ptr, char **endptr, int base)
 #endif
 
 /*
- * Bacula's implementation of fgets(). The difference is that it handles
+ * BAREOS's implementation of fgets(). The difference is that it handles
  *   being interrupted by a signal (e.g. a SIGCHLD).
  */
 #undef fgetc
@@ -735,6 +729,57 @@ char *bfgets(char *s, int size, FILE *fd)
             (void)ungetc(ch, fd); /* Push next character back to fd */
          }
          p[-1] = '\n';
+         break;
+      }
+      if (ch == '\n') {
+         break;
+      }
+   }
+   return s;
+}
+
+/*
+ * BAREOS's implementation of fgets(). The difference is that it handles
+ *   being interrupted by a signal (e.g. a SIGCHLD) and it has a
+ *   different calling sequence which implements input lines of
+ *   up to a million characters.
+ */
+char *bfgets(POOLMEM *&s, FILE *fd)
+{
+   int ch;
+   int soft_max;
+   int i = 0;
+
+   s[0] = 0;
+   soft_max = sizeof_pool_memory(s) - 10;
+   for ( ;; ) {
+      do {
+         errno = 0;
+         ch = fgetc(fd);
+      } while (ch == EOF && ferror(fd) && (errno == EINTR || errno == EAGAIN));
+      if (ch == EOF) {
+         if (i == 0) {
+            return NULL;
+         } else {
+            return s;
+         }
+      }
+      if (i > soft_max) {
+         /* Insanity check */
+         if (soft_max > 1000000) {
+            return s;
+         }
+         s = check_pool_memory_size(s, soft_max+10000);
+         soft_max = sizeof_pool_memory(s) - 10;
+      }
+      s[i++] = ch;
+      s[i] = 0;
+      if (ch == '\r') { /* Support for Mac/Windows file format */
+         ch = fgetc(fd);
+         if (ch != '\n') { /* Mac (\r only) */
+            (void)ungetc(ch, fd); /* Push next character back to fd */
+         }
+         s[i-1] = '\n';
          break;
       }
       if (ch == '\n') {

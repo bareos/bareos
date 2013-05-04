@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +11,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   bpipe.c bi-directional pipe
+ * bpipe.c bi-directional pipe
  *
- *    Kern Sibbald, November MMII
- *
+ * Kern Sibbald, November MMII
  */
 
-
-#include "bacula.h"
+#include "bareos.h"
 #include "jcr.h"
 
 int execvp_errors[] = {
@@ -358,7 +349,7 @@ int run_program(char *prog, int wait, POOLMEM *&results)
           * by the watchdog. */
          if (bpipe->timer_id->killed) {
             stat1 = ETIME;
-            pm_strcpy(results, _("Program killed by Bacula (timeout)\n"));
+            pm_strcpy(results, _("Program killed by BAREOS (timeout)\n"));
          }
       }
    }
@@ -370,7 +361,7 @@ int run_program(char *prog, int wait, POOLMEM *&results)
 
 /*
  * Run an external program. Optionally wait a specified number
- *   of seconds. Program killed if wait exceeded (it is done by the 
+ *   of seconds. Program killed if wait exceeded (it is done by the
  *   watchdog, as fgets is a blocking function).
  *
  *   If the watchdog kills the program, fgets returns, and ferror is set
@@ -393,12 +384,12 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results)
    char *buf;
    const int bufsize = 32000;
 
-   
+
    Dsm_check(200);
 
    tmp = get_pool_memory(PM_MESSAGE);
    buf = (char *)malloc(bufsize+1);
-   
+
    results[0] = 0;
    mode = (char *)"r";
    bpipe = open_bpipe(prog, wait, mode);
@@ -406,7 +397,7 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results)
       stat1 = ENOENT;
       goto bail_out;
    }
-   
+
    Dsm_check(200);
    tmp[0] = 0;
    while (1) {
@@ -441,14 +432,14 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results)
     */
    if (bpipe->timer_id && bpipe->timer_id->killed) {
       Dmsg1(150, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
-      pm_strcpy(tmp, _("Program killed by Bacula (timeout)\n"));
+      pm_strcpy(tmp, _("Program killed by BAREOS (timeout)\n"));
       stat1 = ETIME;
    }
    pm_strcpy(results, tmp);
    Dmsg3(1900, "resadr=0x%x reslen=%d res=%s\n", results, strlen(results), results);
    stat2 = close_bpipe(bpipe);
    stat1 = stat2 != 0 ? stat2 : stat1;
-   
+
    Dmsg1(900, "Run program returning %d\n", stat1);
 bail_out:
    free_pool_memory(tmp);

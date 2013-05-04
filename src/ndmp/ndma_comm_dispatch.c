@@ -2629,13 +2629,6 @@ ndmp_sxa_mover_set_record_size (struct ndm_session *sess,
 
 
 #ifndef NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4	/* Surrounds NDMPv[34] MOVER intfs */
-
-static int		mover_connect_common34 (struct ndm_session *sess,
-				struct ndmp_xa_buf *xa,
-				struct ndmconn *ref_conn,
-				ndmp9_addr *addr,
-				ndmp9_mover_mode mover_mode);
-
 /*
  * NDMP[34]_MOVER_CONNECT
  */

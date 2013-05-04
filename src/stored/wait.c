@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,30 +11,23 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Subroutines to handle waiting for operator intervention
- *   or waiting for a Device to be released
+ * Subroutines to handle waiting for operator intervention
+ * or waiting for a Device to be released
  *
- *  Code for wait_for_sysop() pulled from askdir.c
+ * Code for wait_for_sysop() pulled from askdir.c
  *
- *   Kern Sibbald, March 2005
- *
+ * Kern Sibbald, March 2005
  */
 
-
-#include "bacula.h"                   /* pull in global headers */
+#include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
 const int dbglvl = 400;
@@ -44,7 +35,7 @@ const int dbglvl = 400;
 /*
  * Wait for SysOp to mount a tape on a specific device
  *
- *   Returns: W_ERROR, W_TIMEOUT, W_POLL, W_MOUNT, or W_WAKE 
+ *   Returns: W_ERROR, W_TIMEOUT, W_POLL, W_MOUNT, or W_WAKE
  */
 int wait_for_sysop(DCR *dcr)
 {
@@ -100,7 +91,7 @@ int wait_for_sysop(DCR *dcr)
       timeout.tv_nsec = tv.tv_usec * 1000;
       timeout.tv_sec = tv.tv_sec + add_wait;
 
-      Dmsg4(dbglvl, "I'm going to sleep on device %s. HB=%d rem_wait=%d add_wait=%d\n", 
+      Dmsg4(dbglvl, "I'm going to sleep on device %s. HB=%d rem_wait=%d add_wait=%d\n",
          dev->print_name(), (int)me->heartbeat_interval, dev->rem_wait_sec, add_wait);
       start = time(NULL);
 
@@ -136,7 +127,7 @@ int wait_for_sysop(DCR *dcr)
       }
 
       /*
-       * Continue waiting if operator is labeling volumes 
+       * Continue waiting if operator is labeling volumes
        */
       if (dev->blocked() == BST_WRITING_LABEL) {
          continue;
@@ -171,7 +162,7 @@ int wait_for_sysop(DCR *dcr)
 
       /*
        * If we did not timeout, then some event happened, so
-       *   return to check if state changed.   
+       *   return to check if state changed.
        */
       if (status != ETIMEDOUT) {
          berrno be;
@@ -180,7 +171,7 @@ int wait_for_sysop(DCR *dcr)
          break;
       }
 
-      /* 
+      /*
        * At this point, we know we woke up because of a timeout,
        *   that was due to a heartbeat, because any other reason would
        *   have caused us to return, so update the wait counters and continue.
@@ -192,7 +183,7 @@ int wait_for_sysop(DCR *dcr)
       /* If the user did not unmount the tape and we are polling, ensure
        *  that we poll at the correct interval.
        */
-      if (!unmounted && dev->vol_poll_interval && 
+      if (!unmounted && dev->vol_poll_interval &&
            add_wait > dev->vol_poll_interval - total_waited) {
          add_wait = dev->vol_poll_interval - total_waited;
       }
@@ -212,12 +203,12 @@ int wait_for_sysop(DCR *dcr)
 
 
 /*
- * Wait for any device to be released, then we return, so 
+ * Wait for any device to be released, then we return, so
  *  higher level code can rescan possible devices.  Since there
  *  could be a job waiting for a drive to free up, we wait a maximum
- *  of 1 minute then retry just in case a broadcast was lost, and 
+ *  of 1 minute then retry just in case a broadcast was lost, and
  *  we return to rescan the devices.
- * 
+ *
  * Returns: true  if a device has changed state
  *          false if the total wait time has expired.
  */
@@ -236,7 +227,7 @@ bool wait_for_device(JCR *jcr, int &retries)
 
    if (++retries % 5 == 0) {
       /* Print message every 5 minutes */
-      Jmsg(jcr, M_MOUNT, 0, _("JobId=%s, Job %s waiting to reserve a device.\n"), 
+      Jmsg(jcr, M_MOUNT, 0, _("JobId=%s, Job %s waiting to reserve a device.\n"),
          edit_uint64(jcr->JobId, ed1), jcr->Job);
    }
 

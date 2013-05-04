@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,40 +11,34 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Bacula memory pool routines.
+ * BAREOS memory pool routines.
  *
- *  The idea behind these routines is that there will be
- *  pools of memory that are pre-allocated for quick
- *  access. The pools will have a fixed memory size on allocation
- *  but if need be, the size can be increased. This is
- *  particularly useful for filename
- *  buffers where 256 bytes should be sufficient in 99.99%
- *  of the cases, but when it isn't we want to be able to
- *  increase the size.
+ * The idea behind these routines is that there will be
+ * pools of memory that are pre-allocated for quick
+ * access. The pools will have a fixed memory size on allocation
+ * but if need be, the size can be increased. This is
+ * particularly useful for filename
+ * buffers where 256 bytes should be sufficient in 99.99%
+ * of the cases, but when it isn't we want to be able to
+ * increase the size.
  *
- *  A major advantage of the pool memory aside from the speed
- *  is that the buffer carrys around its size, so to ensure that
- *  there is enough memory, simply call the check_pool_memory_size()
- *  with the desired size and it will adjust only if necessary.
+ * A major advantage of the pool memory aside from the speed
+ * is that the buffer carrys around its size, so to ensure that
+ * there is enough memory, simply call the check_pool_memory_size()
+ * with the desired size and it will adjust only if necessary.
  *
- *           Kern E. Sibbald
- *
+ * Kern E. Sibbald
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 #ifdef HAVE_MALLOC_TRIM
 extern "C" int malloc_trim (size_t pad);
@@ -60,7 +52,7 @@ struct s_pool_ctl {
    struct abufhead *free_buf;         /* pointer to free buffers */
 };
 
-/* Bacula Name length plus extra */
+/* Bareos Name length plus extra */
 #define NLEN (MAX_NAME_LENGTH+2)
 
 /* #define STRESS_TEST_POOL */
@@ -70,7 +62,7 @@ struct s_pool_ctl {
  */
 static struct s_pool_ctl pool_ctl[] = {
    {  256,  256, 0, 0, NULL },        /* PM_NOPOOL no pooling */
-   {  NLEN, NLEN,0, 0, NULL },        /* PM_NAME Bacula name */
+   {  NLEN, NLEN,0, 0, NULL },        /* PM_NAME Bareos name */
    {  256,  256, 0, 0, NULL },        /* PM_FNAME filename buffers */
    {  512,  512, 0, 0, NULL },        /* PM_MESSAGE message buffer */
    { 1024, 1024, 0, 0, NULL },        /* PM_EMSG error message buffer */
@@ -81,7 +73,7 @@ static struct s_pool_ctl pool_ctl[] = {
 /* This is used ONLY when stress testing the code */
 static struct s_pool_ctl pool_ctl[] = {
    {   20,   20, 0, 0, NULL },        /* PM_NOPOOL no pooling */
-   {  NLEN, NLEN,0, 0, NULL },        /* PM_NAME Bacula name */
+   {  NLEN, NLEN,0, 0, NULL },        /* PM_NAME Bareos name */
    {   20,   20, 0, 0, NULL },        /* PM_FNAME filename buffers */
    {   20,   20, 0, 0, NULL },        /* PM_MESSAGE message buffer */
    {   20,   20, 0, 0, NULL },        /* PM_EMSG error message buffer */

@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,25 +11,19 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
- 
+
 /*
- *  Restore Class 
+ * Restore Class
  *
- *   Kern Sibbald, February MMVII
- *
- */ 
+ * Kern Sibbald, February MMVII
+ */
 
 #include "bat.h"
 #include "restore.h"
@@ -52,7 +44,7 @@ restorePage::restorePage(int conn) : Pages()
 
    m_console->notify(m_conn, false);          /* this should already be off */
 
-   connect(fileWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)), 
+   connect(fileWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
            this, SLOT(fileDoubleClicked(QTreeWidgetItem *, int)));
    connect(directoryWidget, SIGNAL(
            currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
@@ -72,14 +64,14 @@ restorePage::restorePage(int conn) : Pages()
    setFont(m_console->get_font());
    m_console->displayToPrompt(m_conn);
 
-   titles << tr("Mark") << tr("File") << tr("Mode") << tr("User") 
+   titles << tr("Mark") << tr("File") << tr("Mode") << tr("User")
           << tr("Group") << tr("Size") << tr("Date");
    fileWidget->setHeaderLabels(titles);
 
    get_cwd();
 
    readSettings();
-   /* wait was entered from pre-restore 
+   /* wait was entered from pre-restore
     * will exit, but will reenter in fillDirectory */
    mainWin->waitExit();
    fillDirectory();
@@ -221,11 +213,11 @@ void restorePage::addDirectory(QString &newdirr)
          directoryWidget->setCurrentItem(NULL);
       }
    } else {
-      // Unix add / first if not already there 
+      // Unix add / first if not already there
       if (m_dirPaths.empty()) {
          QTreeWidgetItem *item = new QTreeWidgetItem(directoryWidget);
          item->setIcon(0,QIcon(QString::fromUtf8(":images/folder.png")));
-            
+
          QString text("/");
          item->setText(0, text.toUtf8().data());
          if (mainWin->m_miscDebug) {
@@ -235,7 +227,7 @@ void restorePage::addDirectory(QString &newdirr)
          m_dirTreeItems.insert(item, text);
       }
    }
- 
+
    /* Does it already exist ?? */
    if (!m_dirPaths.contains(fullpath)) {
       QTreeWidgetItem *item = NULL;
@@ -337,8 +329,8 @@ void restorePage::fileDoubleClicked(QTreeWidgetItem *item, int column)
       m_console->displayToPrompt(m_conn);
       mainWin->waitExit();
       return;
-   }    
-   /* 
+   }
+   /*
     * Double clicking other than column 0 means to decend into
     *  the directory -- or nothing if it is not a directory.
     */
@@ -434,7 +426,7 @@ void restorePage::unmarkButtonPushed()
 }
 
 /*
- * Change current working directory 
+ * Change current working directory
  */
 bool restorePage::cwd(const char *dir)
 {
@@ -461,7 +453,7 @@ bool restorePage::cwd(const char *dir)
 }
 
 /*
- * Return cwd when in tree restore mode 
+ * Return cwd when in tree restore mode
  */
 char *restorePage::get_cwd()
 {
@@ -476,7 +468,7 @@ char *restorePage::get_cwd()
       Dmsg1(dbglvl, "Something went wrong read stat=%d\n", stat);
       QMessageBox::critical(this, "Error", tr(".pwd command failed"), QMessageBox::Ok);
    }
-   m_console->discardToPrompt(m_conn); 
+   m_console->discardToPrompt(m_conn);
    mainWin->waitExit();
    return m_cwd.toUtf8().data();
 }
@@ -500,7 +492,7 @@ void restorePage::readSettings()
    m_splitText = "splitterSizes_2";
    QSettings settings(m_console->m_dir->name(), "bat");
    settings.beginGroup("RestorePage");
-   if (settings.contains(m_splitText)) { 
+   if (settings.contains(m_splitText)) {
       splitter->restoreState(settings.value(m_splitText).toByteArray());
    }
    settings.endGroup();

@@ -1,0 +1,93 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BSCRYPTO 8 "03 January 2013" "Marco van Wieringen" "Backup Archiving REcovery Open Sourced"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+ bscrypto \- Bareos's 'SCSI Crypto'
+.SH SYNOPSIS
+.B bscrypto
+.RI [ options ]
+.I device_name
+.br
+.SH DESCRIPTION
+.LP
+The purpose of bscrypto is to be a standalone tool for manipulating the
+SCSI Crypto framework using the SCSI SPIN/SPOUT security pages. This tool
+allows you to perform standalone crypto operations that are normally
+performed by the
+.B scsicrypto-sd.so
+plugin in the storage daemon.
+
+.LP
+You also need bscrypto tool to to the initial setup of things like
+.B Key Encryption Keys
+in the
+.B bareos-sd.conf
+and
+.B bareos-dir.conf
+
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invoke bold face and italics,
+.\" respectively.
+.SH OPTIONS
+A summary of options is included below.
+.TP
+.B \-?
+Show version and usage of program.
+.TP
+.B \-b
+Perform base64 encoding of keydata. Any binary data is base64 encoded
+and as such converted to normal ASCII.
+.TP
+.B \-c
+Clear encryption key. Clear the encryption key currently loaded on the
+drive by issueing a SCSI SPOUT clear key page.
+.TP
+.B \-d <nn>
+Set debug level to <nn>
+.TP
+.B \-e
+Show drive encryption status. Request the current drive encryption status
+by issueing a SCSI SPIN cmd requesting the SPIN_DATA_ENCR_STATUS_PAGE.
+.TP
+.B \-g <keyfile>
+Generate new encryption passphrase in keyfile. A passphrase is generated
+from random data and is ASCII only.
+.TP
+.B \-k <keyfile>
+Show content of keyfile. If the data is wrapped using a so called
+.B Key Encryption Key
+you also need the
+.B \-b
+flag to base64 decode the data that is wrapped using the algoritm described
+in RFC3394 which gives binary output.
+.TP
+.B \-p <cachefile>
+Populate given cachefile with crypto keys
+.TP
+.B \-s <keyfile>
+Set encryption key loaded from keyfile. Load the new key from the keyfile
+and load it into the drives crypto buffer using a SCSI SPOUT command.
+.TP
+.B \-v
+Show volume encryption status. Request the current volume encryption status
+by issueing a SCSI SPIN cmd requesting the SPIN_NEXT_BLOCK_ENCR_STATUS_PAGE.
+.TP
+.B \-w <keyfile>
+Wrap/Unwrap the key using RFC3394 aes-(un)wrap using the key in keyfile as a
+.B Key Encryption Key
+After wrapping the data using this option the output is binary so you may want
+to use the
+.B \-b
+flag to base64 encode this data.
+.SH SEE ALSO
+.BR bareos-sd (8),
+.br
+.SH AUTHOR
+This manual page was written by Marco van Wieringen
+.nh
+<mvw@planets.elm.net>

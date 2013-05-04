@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,39 +13,33 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Second generation Storage daemon.
  *
- *  Kern Sibbald, MM
+ * Kern Sibbald, MM
  *
  * It accepts a number of simple commands from the File daemon
  * and acts on them. When a request to append data is made,
  * it opens a data channel and accepts data from the
  * File daemon.
- *
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 #include "lib/crypto_cache.h"
 
 /* TODO: fix problem with bls, bextract
  * that use findlib and already declare
- * filed plugins 
+ * filed plugins
  */
-#include "sd_plugins.h"         
+#include "sd_plugins.h"
 
 /* Imported functions */
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
@@ -57,7 +51,7 @@ static void cleanup_old_files();
 
 extern "C" void *device_initialization(void *arg);
 
-#define CONFIG_FILE "bacula-sd.conf"  /* Default config file */
+#define CONFIG_FILE "bareos-sd.conf"  /* Default config file */
 
 /* Global variables exported */
 char OK_msg[]   = "3000 OK\n";
@@ -89,7 +83,7 @@ static void usage()
    fprintf(stderr, _(
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
-"Usage: bacula-sd [options] [-c config_file] [config_file]\n"
+"Usage: bareos-sd [options] [-c config_file] [config_file]\n"
 "        -c <file>   use <file> as configuration file\n"
 "        -d <nn>     set debug level to <nn>\n"
 "        -dt         print timestamp in debug output\n"
@@ -109,11 +103,11 @@ PROG_COPYRIGHT
 
 /*********************************************************************
  *
- *  Main Bacula Unix Storage Daemon
+ *  Main Bareos Unix Storage Daemon
  *
  */
 #if defined(HAVE_WIN32)
-#define main BaculaMain
+#define main BareosMain
 #endif
 
 int main (int argc, char *argv[])
@@ -127,11 +121,11 @@ int main (int argc, char *argv[])
 
    start_heap = sbrk(0);
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
 
    init_stack_dump();
-   my_name_is(argc, argv, "bacula-sd");
+   my_name_is(argc, argv, "bareos-sd");
    init_msg(NULL, NULL);
    daemon_start_time = time(NULL);
 
@@ -216,6 +210,13 @@ int main (int argc, char *argv[])
    if (argc)
       usage();
 
+   /*
+    * See if we want to drop privs.
+    */
+   if (geteuid() == 0) {
+      drop(uid, gid, false);
+   }
+
    if (!no_signals) {
       init_signals(terminate_stored);
    }
@@ -248,21 +249,22 @@ int main (int argc, char *argv[])
       init_stack_dump();              /* pick up new pid */
    }
 
-   create_pid_file(me->pid_directory, "bacula-sd",
+   create_pid_file(me->pid_directory, "bareos-sd",
                    get_first_port_host_order(me->sdaddrs));
-   read_state_file(me->working_directory, "bacula-sd",
+   read_state_file(me->working_directory, "bareos-sd",
                    get_first_port_host_order(me->sdaddrs));
-   read_crypto_cache(me->working_directory, "bacula-sd",
+   read_crypto_cache(me->working_directory, "bareos-sd",
                      get_first_port_host_order(me->sdaddrs));
 
    set_jcr_in_tsd(INVALID_JCR);
-   /* Make sure on Solaris we can run concurrent, watch dog + servers + misc */
+
+   /*
+    * Make sure on Solaris we can run concurrent, watch dog + servers + misc
+    */
    set_thread_concurrency(me->max_concurrent_jobs * 2 + 4);
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
    load_sd_plugins(me->plugin_directory);
-
-   drop(uid, gid, false);
 
    cleanup_old_files();
 
@@ -360,13 +362,13 @@ static int check_resources()
    }
 
    STORES *store;
-   foreach_res(store, R_STORAGE) { 
+   foreach_res(store, R_STORAGE) {
       /* tls_require implies tls_enable */
       if (store->tls_require) {
          if (have_tls) {
             store->tls_enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
             OK = false;
             continue;
          }
@@ -405,7 +407,7 @@ static int check_resources()
             store->tls_keyfile, NULL, NULL, store->tls_dhfile,
             store->tls_verify_peer);
 
-         if (!store->tls_ctx) { 
+         if (!store->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
                  store->hdr.name, configfile);
             OK = false;
@@ -414,7 +416,7 @@ static int check_resources()
    }
 
    DIRRES *director;
-   foreach_res(director, R_DIRECTOR) { 
+   foreach_res(director, R_DIRECTOR) {
       /* tls_require implies tls_enable */
       if (director->tls_require) {
          director->tls_enable = true;
@@ -453,7 +455,7 @@ static int check_resources()
             director->tls_keyfile, NULL, NULL, director->tls_dhfile,
             director->tls_verify_peer);
 
-         if (!director->tls_ctx) { 
+         if (!director->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
                  director->hdr.name, configfile);
             OK = false;
@@ -523,10 +525,10 @@ static void cleanup_old_files()
    if (name_max < 1024) {
       name_max = 1024;
    }
-      
+
    if (!(dp = opendir(me->working_directory))) {
       berrno be;
-      Pmsg2(000, "Failed to open working dir %s for cleanup: ERR=%s\n", 
+      Pmsg2(000, "Failed to open working dir %s for cleanup: ERR=%s\n",
             me->working_directory, be.bstrerror());
       goto get_out1;
    }
@@ -540,7 +542,7 @@ static void cleanup_old_files()
       if (strcmp(result->d_name, ".") == 0 || strcmp(result->d_name, "..") == 0 ||
           strncmp(result->d_name, my_name, my_name_len) != 0) {
          Dmsg1(500, "Skipped: %s\n", result->d_name);
-         continue;    
+         continue;
       }
 
       /* Unlink files that match regex */
@@ -648,7 +650,7 @@ void *device_initialization(void *arg)
       jcr->dcr = NULL;
    }
 #endif
-   free_jcr(jcr); 
+   free_jcr(jcr);
    init_done = true;
    UnlockRes();
    return NULL;
@@ -669,7 +671,9 @@ void terminate_stored(int sig)
    in_here = true;
    debug_level = 0;                   /* turn off any debug */
 #if HAVE_NDMP
-   stop_ndmp_thread_server();
+   if (me->ndmp_enable) {
+      stop_ndmp_thread_server();
+   }
 #endif
    stop_watchdog();
 
@@ -709,8 +713,8 @@ void terminate_stored(int sig)
       bmicrosleep(0, 500000);         /* give them 1/2 sec to clean up */
    }
 
-   write_state_file(me->working_directory, "bacula-sd", get_first_port_host_order(me->sdaddrs));
-   delete_pid_file(me->pid_directory, "bacula-sd", get_first_port_host_order(me->sdaddrs));
+   write_state_file(me->working_directory, "bareos-sd", get_first_port_host_order(me->sdaddrs));
+   delete_pid_file(me->pid_directory, "bareos-sd", get_first_port_host_order(me->sdaddrs));
 
    Dmsg1(200, "In terminate_stored() sig=%d\n", sig);
 

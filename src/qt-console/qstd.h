@@ -6,12 +6,12 @@
 #include <QString>
 
 /** @short helper objects and functions which help reduce the
-       need for char[] and the standard library.  
+       need for char[] and the standard library.
 
     defines three @ref QTextStream instances
     which behave like the c++ standard iostreams, bound to the
-    standard in/out/error. 
-    
+    standard in/out/error.
+
     Also provided, some helper functions for writing
     interactive stdin/stdout applications.
 */
@@ -31,7 +31,7 @@ namespace qstd {
         interactive stdin UI - prompts user with
         a yes/no question. Repeatedly-asks
         until user supplies a valid answer.
- 
+
         @param yesNoQuestion the yes/no question
         @return true/false depending on what the
         user responded.
@@ -70,10 +70,9 @@ namespace qstd {
 
     /** @short Dialog for input file prompt */
     void promptInputFile(QFile& infile);
-    
-    
+
+
 //end
 }
 
 #endif
-

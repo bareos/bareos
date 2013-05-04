@@ -37,12 +37,10 @@
  * Compares a filename or pathname to a pattern.
  */
 
-/* Version: $Id$ */
-
 /* Define SYS to use the system fnmatch() rather than ours */
 /* #define SYS 1 */
 
-#include "bacula.h"
+#include "bareos.h"
 #ifdef SYS
 #include <fnmatch.h>
 #else
@@ -65,7 +63,7 @@
 static int rangematch(const char *, char, int, char **);
 static int r_fnmatch(const char *, const char *, int, int);
 
-#ifdef SYS 
+#ifdef SYS
 int xfnmatch(const char *pattern, const char *string, int flags)
 #else
 int fnmatch(const char *pattern, const char *string, int flags)
@@ -80,7 +78,7 @@ int fnmatch(const char *pattern, const char *string, int flags)
    return (e);
 }
 
-static 
+static
 int r_fnmatch(const char *pattern, const char *string, int flags, int recur)
 {
    const char *stringstart;
@@ -247,7 +245,7 @@ struct test {
    const char *pattern;
    const char *string;
    const int options;
-   const int result; 
+   const int result;
 };
 
 /*
@@ -329,7 +327,7 @@ int main()
    for (int i=0; i<ntests; i++) {
       if (fnmatch(tests[i].pattern, tests[i].string, tests[i].options) != tests[i].result) {
          printf("Test %d failed: pat=%s str=%s expect=%s got=%s\n",
-            i+1, tests[i].pattern, tests[i].string, 
+            i+1, tests[i].pattern, tests[i].string,
             tests[i].result==0?"matches":"no match",
             tests[i].result==0?"no match":"matches");
          fail = true;

@@ -106,7 +106,7 @@
     <iconset resource="../main.qrc" >:/images/utilities-terminal.png</iconset>
    </property>
    <property name="text" >
-    <string>Reload bacula-dir.conf</string>
+    <string>Reload bareos-dir.conf</string>
    </property>
   </action>
  </widget>

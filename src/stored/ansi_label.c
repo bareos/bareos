@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,31 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * ansi_label.c routines to handle ANSI (and perhaps one day IBM) tape labels.
  *
- *  ansi_label.c routines to handle ANSI (and perhaps one day IBM)
- *   tape labels.
- *
- *   Kern Sibbald, MMV
- *
- *
- *
- *   Version $Id$
+ * Kern Sibbald, MMV
  */
 
-#include "bacula.h"                   /* pull in global headers */
+#include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
 /* Imported functions */
@@ -46,12 +35,12 @@ void ebcdic_to_ascii(char *dst, char *src, int count);
 
 /* Forward referenced functions */
 static char *ansi_date(time_t td, char *buf);
-static bool same_label_names(char *bacula_name, char *ansi_name);
+static bool same_label_names(char *bareos_name, char *ansi_name);
 
 /*
  * We read an ANSI label and compare the Volume name. We require
  * a VOL1 record of 80 characters followed by a HDR1 record containing
- * BACULA.DATA in the filename field. We then read up to 3 more 
+ * BAREOS.DATA in the filename field. We then read up to 3 more
  * header records (they are not required) and an EOF, at which
  * point, all is good.
  *
@@ -61,9 +50,9 @@ static bool same_label_names(char *bacula_name, char *ansi_name);
  *    VOL_IO_ERROR      I/O error on read
  *    VOL_NAME_ERROR    Wrong name in VOL1 record
  *    VOL_LABEL_ERROR   Probably an ANSI label, but something wrong
- *      
- */ 
-int read_ansi_ibm_label(DCR *dcr) 
+ *
+ */
+int read_ansi_ibm_label(DCR *dcr)
 {
    DEVICE * volatile dev = dcr->dev;
    JCR *jcr = dcr->jcr;
@@ -82,7 +71,7 @@ int read_ansi_ibm_label(DCR *dcr)
       return VOL_OK;
    }
 
-   dev->label_type = B_BACULA_LABEL;  /* assume Bacula label */
+   dev->label_type = B_BAREOS_LABEL;  /* assume Bareos label */
 
    /* Read a maximum of 5 records VOL1, HDR1, ... HDR4 */
    for (i=0; i < 6; i++) {
@@ -125,7 +114,7 @@ int read_ansi_ibm_label(DCR *dcr)
                   Dmsg0(100, "Found IBM label.\n");
                   Dmsg0(100, "Got IBM VOL1 label\n");
                }
-            }       
+            }
          }
          if (!ok) {
             Dmsg0(100, "No VOL1 label\n");
@@ -135,10 +124,10 @@ int read_ansi_ibm_label(DCR *dcr)
 
 
          /* Compare Volume Names allow special wild card */
-         if (VolName && *VolName && *VolName != '*') { 
+         if (VolName && *VolName && *VolName != '*') {
             if (!same_label_names(VolName, &label[4])) {
                char *p = &label[4];
-               char *q;  
+               char *q;
 
                free_volume(dev);
                /* Store new Volume name */
@@ -166,12 +155,12 @@ int read_ansi_ibm_label(DCR *dcr)
             Mmsg0(jcr->errmsg, _("No HDR1 label while reading ANSI label.\n"));
             return VOL_LABEL_ERROR;
          }
-         if (!bstrncmp("BACULA.DATA", &label[4], 11)) {
-            Dmsg1(100, "HD1 not Bacula label. Wanted  BACULA.DATA got %11s\n",
+         if (!bstrncmp("BAREOS.DATA", &label[4], 11)) {
+            Dmsg1(100, "HD1 not Bareos label. Wanted  BAREOS.DATA got %11s\n",
                &label[4]);
-            Mmsg1(jcr->errmsg, _("ANSI/IBM Volume \"%s\" does not belong to Bacula.\n"),
+            Mmsg1(jcr->errmsg, _("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"),
                dev->VolHdr.VolumeName);
-            return VOL_NAME_ERROR;     /* Not a Bacula label */
+            return VOL_NAME_ERROR;     /* Not a Bareos label */
          }
          Dmsg0(100, "Got HDR1 label\n");
          break;
@@ -206,15 +195,15 @@ int read_ansi_ibm_label(DCR *dcr)
    Dmsg0(100, "Too many records in ANSI/IBM label.\n");
    Mmsg0(jcr->errmsg, _("Too many records in while reading ANSI/IBM label.\n"));
    return VOL_LABEL_ERROR;
-}  
+}
 
 /*
  * ANSI/IBM VOL1 label
  *  80 characters blank filled
- * Pos   count   Function      What Bacula puts
+ * Pos   count   Function      What Bareos puts
  * 0-3     4     "VOL1"          VOL1
  * 4-9     6     Volume name     Volume name
- * 10-10   1     Access code 
+ * 10-10   1     Access code
  * 11-36   26    Unused
  *
  * ANSI
@@ -231,9 +220,9 @@ int read_ansi_ibm_label(DCR *dcr)
  *
  * ANSI/IBM HDR1 label
  *  80 characters blank filled
- * Pos   count   Function          What Bacula puts
+ * Pos   count   Function          What Bareos puts
  * 0-3     4     "HDR1"               HDR1
- * 4-20    17    File name           BACULA.DATA
+ * 4-20    17    File name           BAREOS.DATA
  * 21-26   6     Volume name          Volume name
  * 27-30   4     Vol seq num           0001
  * 31-34   4     file num              0001
@@ -243,18 +232,18 @@ int read_ansi_ibm_label(DCR *dcr)
  * 47-52   6     Expire date bYYDDD    today
  * 53-53   1     Access
  * 54-59   6     Block count           000000
- * 60-72   13    Software name         Bacula
+ * 60-72   13    Software name         Bareos
  * 73-79   7     Reserved
 
  * ANSI/IBM HDR2 label
  *  80 characters blank filled
- * Pos   count   Function          What Bacula puts
+ * Pos   count   Function          What Bareos puts
  * 0-3     4     "HDR2"               HDR2
  * 4-4     1     Record format        D   (V if IBM) => variable
  * 5-9     5     Block length         32000
  * 10-14   5     Rec length           32000
  * 15-15   1     Density
- * 16-16   1     Continued 
+ * 16-16   1     Continued
  * 17-33   17    Job
  * 34-35   2     Recording
  * 36-36   1     cr/lf ctl
@@ -264,7 +253,7 @@ int read_ansi_ibm_label(DCR *dcr)
  * 50-51   2     offset
  * 52-79   28    reserved
 
- */ 
+ */
 
 static const char *labels[] = {"HDR", "EOF", "EOV"};
 
@@ -289,14 +278,14 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
     * If the Device requires a specific label type use it,
     * otherwise, use the type requested by the Director
     */
-   if (dcr->device->label_type != B_BACULA_LABEL) {
+   if (dcr->device->label_type != B_BAREOS_LABEL) {
       label_type = dcr->device->label_type;   /* force label type */
    } else {
       label_type = dcr->VolCatInfo.LabelType; /* accept Dir type */
    }
 
    switch (label_type) {
-   case B_BACULA_LABEL:
+   case B_BAREOS_LABEL:
       return true;
    case B_ANSI_LABEL:
    case B_IBM_LABEL:
@@ -341,7 +330,7 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
       ser_begin(label, sizeof(label));
       ser_bytes(labels[type], 3);
       ser_bytes("1", 1);
-      ser_bytes("BACULA.DATA", 11);            /* Filename field */
+      ser_bytes("BAREOS.DATA", 11);            /* Filename field */
       ser_begin(&label[21], sizeof(label)-21); /* fileset field */
       ser_bytes(ansi_volname, 6);              /* write Vol Ser No. */
       ser_begin(&label[27], sizeof(label)-27);
@@ -349,7 +338,7 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
       now = time(NULL);
       ser_bytes(ansi_date(now, date), 6); /* current date */
       ser_bytes(ansi_date(now - 24 * 3600, date), 6); /* created yesterday */
-      ser_bytes(" 000000Bacula              ", 27);
+      ser_bytes(" 000000Bareos              ", 27);
       /* Write HDR1 label */
       if (label_type == B_IBM_LABEL) {
          ascii_to_ebcdic(label, label, sizeof(label));
@@ -419,11 +408,11 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
    }
 }
 
-/* Check a Bacula Volume name against an ANSI Volume name */
-static bool same_label_names(char *bacula_name, char *ansi_name)
+/* Check a Bareos Volume name against an ANSI Volume name */
+static bool same_label_names(char *bareos_name, char *ansi_name)
 {
    char *a = ansi_name;
-   char *b = bacula_name;
+   char *b = bareos_name;
    /* Six characters max */
    for (int i=0; i < 6; i++) {
       if (*a == *b) {
@@ -431,7 +420,7 @@ static bool same_label_names(char *bacula_name, char *ansi_name)
          b++;
          continue;
       }
-      /* ANSI labels are blank filled, Bacula's are zero terminated */
+      /* ANSI labels are blank filled, Bareos's are zero terminated */
       if (*a == ' ' && *b == 0) {
          return true;
       }

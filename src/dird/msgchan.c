@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,36 +13,29 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- msgchan.c -- handles the message channel
+ *                                 to the Storage daemon and the File daemon.
  *
- *   Bacula Director -- msgchan.c -- handles the message channel
- *    to the Storage daemon and the File daemon.
+ * Kern Sibbald, August MM
  *
- *     Kern Sibbald, August MM
+ * This routine runs as a thread and must be thread reentrant.
  *
- *    This routine runs as a thread and must be thread reentrant.
- *
- *  Basic tasks done here:
+ * Basic tasks done here:
  *    Open a message channel with the Storage daemon
  *      to authenticate ourself and to pass the JobId.
  *    Create a thread to interact with the Storage daemon
  *      who returns a job status and requests Catalog services, etc.
- *
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -79,13 +72,13 @@ static char Job_end[] =
 extern "C" void *msg_thread(void *arg);
 
 /*
- * Here we ask the SD to send us the info for a 
+ * Here we ask the SD to send us the info for a
  *  particular device resource.
  */
 #ifdef xxx
 bool update_device_res(JCR *jcr, DEVICERES *dev)
 {
-   POOL_MEM device_name; 
+   POOL_MEM device_name;
    BSOCK *sd;
    if (!connect_to_storage_daemon(jcr, 5, 30, 0)) {
       return false;
@@ -192,15 +185,15 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
    remainingquota = quota_fetch_remaining_quota(jcr);
    Dmsg1(50,"Remainingquota: %llu\n", remainingquota);
 
-   sd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, 
-             job_name.c_str(), client_name.c_str(), 
+   sd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job,
+             job_name.c_str(), client_name.c_str(),
              jcr->getJobType(), jcr->getJobLevel(),
              fileset_name.c_str(), !jcr->res.pool->catalog_files,
-             jcr->res.job->SpoolAttributes, jcr->res.fileset->MD5, jcr->spool_data, 
+             jcr->res.job->SpoolAttributes, jcr->res.fileset->MD5, jcr->spool_data,
              jcr->res.job->PreferMountedVolumes, edit_int64(jcr->spool_size, ed2),
-             jcr->rerunning, jcr->VolSessionId, jcr->VolSessionTime,
-             remainingquota, jcr->getJobProtocol(), backup_format.c_str(),
-             jcr->DumpLevel);
+             jcr->rerunning, jcr->VolSessionId, jcr->VolSessionTime, remainingquota,
+             jcr->getJobProtocol(), backup_format.c_str(), jcr->DumpLevel);
+
    Dmsg1(100, ">stored: %s", sd->msg);
    if (bget_dirmsg(sd) > 0) {
       Dmsg1(100, "<stored: %s", sd->msg);
@@ -226,8 +219,8 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
    }
 
    /*
-    * We have two loops here. The first comes from the 
-    *  Storage = associated with the Job, and we need 
+    * We have two loops here. The first comes from the
+    *  Storage = associated with the Job, and we need
     *  to attach to each one.
     * The inner loop loops over all the alternative devices
     *  associated with each Storage. It selects the first
@@ -253,7 +246,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
          bash_spaces(store_name);
          pm_strcpy(media_type, storage->media_type);
          bash_spaces(media_type);
-         sd->fsend(use_storage, store_name.c_str(), media_type.c_str(), 
+         sd->fsend(use_storage, store_name.c_str(), media_type.c_str(),
                    pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
          Dmsg1(100, "rstore >stored: %s", sd->msg);
          DEVICERES *dev;
@@ -290,7 +283,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
          bash_spaces(store_name);
          pm_strcpy(media_type, storage->media_type);
          bash_spaces(media_type);
-         sd->fsend(use_storage, store_name.c_str(), media_type.c_str(), 
+         sd->fsend(use_storage, store_name.c_str(), media_type.c_str(),
                    pool_name.c_str(), pool_type.c_str(), 1, copy, stripe);
 
          Dmsg1(100, "wstore >stored: %s", sd->msg);
@@ -323,9 +316,9 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
          Jmsg(jcr, M_FATAL, 0, _("\n"
               "     Storage daemon didn't accept Device \"%s\" because:\n     %s"),
               device_name.c_str(), err_msg.c_str()/* sd->msg */);
-      } else { 
+      } else {
          Jmsg(jcr, M_FATAL, 0, _("\n"
-              "     Storage daemon didn't accept Device \"%s\" command.\n"), 
+              "     Storage daemon didn't accept Device \"%s\" command.\n"),
               device_name.c_str());
       }
    }

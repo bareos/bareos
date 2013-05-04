@@ -1,2 +1,0 @@
-#!/bin/sh
-git diff Release-5.0.3..Branch-5.2  -- | grep '[+-]' | wc -l

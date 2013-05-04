@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +11,21 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * scan.c scan a directory (on a removable file) for a valid
+ * Volume name. If found, open the file for append.
  *
- *   scan.c scan a directory (on a removable file) for a valid
- *      Volume name. If found, open the file for append.
- *
- *    Kern Sibbald, MMVI
- *
+ * Kern Sibbald, MMVI
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
 /* Forward referenced functions */
@@ -69,15 +60,15 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
    } else {
       mount_point = device->device_name;
    }
-      
+
    if (!(dp = opendir(mount_point))) {
       berrno be;
       dev_errno = errno;
-      Dmsg3(29, "scan_dir_for_vol: failed to open dir %s (dev=%s), ERR=%s\n", 
+      Dmsg3(29, "scan_dir_for_vol: failed to open dir %s (dev=%s), ERR=%s\n",
             mount_point, print_name(), be.bstrerror());
       goto get_out;
    }
-   
+
    len = strlen(mount_point);
    if (len > 0) {
       need_slash = !IsPathSeparator(mount_point[len - 1]);
@@ -86,15 +77,15 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
    for ( ;; ) {
       if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
          dev_errno = EIO;
-         Dmsg2(129, "scan_dir_for_vol: failed to find suitable file in dir %s (dev=%s)\n", 
+         Dmsg2(129, "scan_dir_for_vol: failed to find suitable file in dir %s (dev=%s)\n",
                mount_point, print_name());
          break;
       }
-      if (bstrcmp(result->d_name, ".") || 
+      if (bstrcmp(result->d_name, ".") ||
           bstrcmp(result->d_name, "..")) {
          continue;
       }
-       
+
       if (!is_volume_name_legal(result->d_name)) {
          continue;
       }
@@ -128,7 +119,7 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
    }
    free(entry);
    closedir(dp);
-   
+
 get_out:
    if (!found) {
       /* Restore VolumeName we really wanted */

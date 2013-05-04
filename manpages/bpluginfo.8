@@ -2,11 +2,11 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH bpluginfo "8" "July 2012" "bpluginfo" "Network backup, recovery and verification"
+.TH bpluginfo "8" "July 2012" "bpluginfo" "Backup Archiving REcovery Open Sourced"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
-bpluginfo \- Bacula Plugin information utility
+bpluginfo \- Bareos Plugin information utility
 .SH SYNOPSIS
 .B bplufinfo
 .RI [ options ]
@@ -17,16 +17,11 @@ bpluginfo \- Bacula Plugin information utility
 The main purpose of
 .B bpluginfo
 is to display different information about Bacula plugin. You can use it to
-check a plugin name, author, license and short description. You can use 
-'-f' option to display API implemented by the plugin. Some plugins may require
+check a plugin name, author, license and short description. You can use
+.B \-f
+option to display API implemented by the plugin. Some plugins may require
 additional '-a' option for validating a Bacula Daemons API. In most cases it
 is not required.
-.PP
-./ Bacula is a set of programs for performing a
-./ .PP
-./ -
-./ .BR bpluginfo
-
 .PP
 .SH OPTIONS
 A summary of options is included below.
@@ -35,17 +30,17 @@ A summary of options is included below.
 Show usage of the program.
 .TP
 .BI \-v
-Verbose information printing all available data from the plugin, including 
+Verbose information printing all available data from the plugin, including
 plugin header and implemented API.
 .TP
 .BI \-i
 Display short information from plugin header only. This is a default option.
-Option incompatible with 
-.B -f
+Option incompatible with
+.B \-f
 option.
 .TP
 .BI \-f
-Display information about implemented API functions. 
+Display information about implemented API functions.
 .TP
 .BI \-a\ <api>
 You can supply the plugin initialization function with a particular Bacula
@@ -68,7 +63,7 @@ This is an example of bplufinfo usage with verbose option (-v) and default plugi
 .RS
 .nf
 
-\fB$ bpluginfo -v bpipe-fd.so 
+\fB$ bpluginfo -v bpipe-fd.so
 
 Plugin type:            File Daemon plugin
 Plugin magic:           *FDPluginData*

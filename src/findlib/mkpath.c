@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,33 +11,27 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 
 /*
- *  Kern Sibbald, September MMVII
- * 
- *  This is tricky code, especially when writing from scratch. Fortunately,
- *    a non-copyrighted version of mkdir was available to consult.
+ * Kern Sibbald, September MMVII
+ *
+ * This is tricky code, especially when writing from scratch. Fortunately,
+ * a non-copyrighted version of mkdir was available to consult.
  *
  * ***FIXME*** the mkpath code could be significantly optimized by
- *   walking up the path chain from the bottom until it either gets
- *   to the top or finds an existing directory then walk back down
- *   creating the path components.  Currently, it always starts at
- *   the top, which can be rather inefficient for long path names.
- *
+ * walking up the path chain from the bottom until it either gets
+ * to the top or finds an existing directory then walk back down
+ * creating the path components.  Currently, it always starts at
+ * the top, which can be rather inefficient for long path names.
  */
-#include "bacula.h"
+#include "bareos.h"
 #include "jcr.h"
 
 #define dbglvl 50
@@ -76,11 +68,11 @@ bool path_list_add(JCR *jcr, uint32_t len, char *fname)
 
    /* we store CurDir, fname in the same chunk */
    item = (CurDir *)jcr->path_list->hash_malloc(sizeof(CurDir)+len+1);
-   
+
    memset(item, 0, sizeof(CurDir));
    memcpy(item->fname, fname, len+1);
 
-   jcr->path_list->insert(item->fname, item); 
+   jcr->path_list->insert(item->fname, item);
 
    Dmsg1(dbglvl, "add fname=<%s>\n", fname);
    return ret;
@@ -174,7 +166,7 @@ static void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t
 /*
  * mode is the mode bits to use in creating a new directory
  *
- * parent_mode are the parent's modes if we need to create parent 
+ * parent_mode are the parent's modes if we need to create parent
  *    directories.
  *
  * owner and group are to set on any created dirs

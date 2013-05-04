@@ -50,7 +50,7 @@
 #ifndef _SHA1_H_
 #define _SHA1_H_
 
-#include "bacula.h"
+#include "bareos.h"
 
 /*
  * If you do not have the ISO standard stdint.h header file, then you

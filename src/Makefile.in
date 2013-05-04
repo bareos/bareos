@@ -1,6 +1,3 @@
-#
-# Version $Id$
-#
 @MCOMMON@
 
 srcdir = @srcdir@
@@ -17,19 +14,10 @@ thisdir = src
 first_rule: all
 dummy:
 
-.SUFFIXES:	.c .o
 .PHONY:
 .DONTCARE:
 
-# inference rules
-.c.o:
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I. -I$(basedir) -I$(srcdir) $(DINCLUDE) $(CXXFLAGS) $<
-
-.cc.o:
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I. -I$(basedir) -I$(srcdir) $(DINCLUDE) $(CXXFLAGS) $<
-#-------------------------------------------------------------------------
-all: Makefile 
-
+all: Makefile
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
@@ -37,7 +25,7 @@ Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 
 clean:
 	@$(RMF) core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
-	@$(RMF) AUTHORS ChangeLog Makefile.am NEWS README acconfig.h autogen.sh 
+	@$(RMF) AUTHORS ChangeLog Makefile.am NEWS README acconfig.h autogen.sh
 	@$(RMF) configure.in stamp.h stamp-h.in
 	@$(RMF) -r po
 
@@ -55,9 +43,5 @@ devclean: realclean
 	@$(RMF) config.h host.h
 
 install:
-
-
-uninstall:
-
 
 depend:

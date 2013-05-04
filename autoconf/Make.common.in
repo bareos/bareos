@@ -1,12 +1,12 @@
 #
-# This file is pulled in by all the Unix Bacula Makefiles
+# This file is pulled in by all the Unix Bareos Makefiles
 #   so it has all the "common" definitions
 #
 
 DATE="@DATE@"
 LSMDATE=@LSMDATE@
 VERSION=@VERSION@
-VERNAME=bacula-$(VERSION)#
+VERNAME=bareos-$(VERSION)#
 MAINT=Kern Sibbald#
 MAINTEMAIL=<kern@sibbald.com>#
 WEBMAINT=#
@@ -47,7 +47,7 @@ RMF = $(RM) -f
 CP = @CP@
 SED = @SED@
 AWK = @AWK@
-ECHO = @ECHO@
+ECHOCMD = @ECHOCMD@
 CMP = @CMP@
 TBL = @TBL@
 AR = @AR@
@@ -93,7 +93,7 @@ OPENSSL_LIBS = @OPENSSL_LIBS@
 DLLIBS = @LIBADD_DLOPEN@
 
 
-# Windows (cygwin) flags 
+# Windows (cygwin) flags
 WCFLAGS = @WCFLAGS@
 WLDFLAGS = @WLDFLAGS@
 

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,37 +13,31 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- User Agent Database restore Command
+ *                    Creates a bootstrap file for restoring files and
+ *                    starts the restore job.
  *
- *   Bacula Director -- User Agent Database restore Command
- *      Creates a bootstrap file for restoring files and
- *      starts the restore job.
+ * Tree handling routines split into ua_tree.c July MMIII.
+ * BSR (bootstrap record) handling routines split into
+ * bsr.c July MMIII
  *
- *      Tree handling routines split into ua_tree.c July MMIII.
- *      BSR (bootstrap record) handling routines split into
- *        bsr.c July MMIII
- *
- *     Kern Sibbald, July MMII
+ * Kern Sibbald, July MMII
  */
 
-
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /* Imported functions */
 extern void print_bsr(UAContext *ua, RBSR *bsr);
+
 
 /* Forward referenced functions */
 static int last_full_handler(void *ctx, int num_fields, char **row);
@@ -176,7 +170,7 @@ int restore_cmd(UAContext *ua, const char *cmd)
    UnlockRes();
    if (!rx.restore_jobs) {
       ua->error_msg(_(
-         "No Restore Job Resource found in bacula-dir.conf.\n"
+         "No Restore Job Resource found in bareos-dir.conf.\n"
          "You must create at least one before running this command.\n"));
       goto bail_out;
    }
@@ -216,7 +210,7 @@ int restore_cmd(UAContext *ua, const char *cmd)
       if (rx.selected_files==1) {
          ua->info_msg(_("\n1 file selected to be restored.\n\n"));
       } else {
-         ua->info_msg(_("\n%s files selected to be restored.\n\n"), 
+         ua->info_msg(_("\n%s files selected to be restored.\n\n"),
             edit_uint64_with_commas(rx.selected_files, ed1));
       }
    } else {
@@ -261,12 +255,12 @@ int restore_cmd(UAContext *ua, const char *cmd)
    pm_strcpy(buf, "");
    if (rx.RegexWhere) {
       escaped_where_name = escape_filename(rx.RegexWhere);
-      Mmsg(buf, " regexwhere=\"%s\"", 
+      Mmsg(buf, " regexwhere=\"%s\"",
            escaped_where_name ? escaped_where_name : rx.RegexWhere);
 
    } else if (rx.where) {
       escaped_where_name = escape_filename(rx.where);
-      Mmsg(buf," where=\"%s\"", 
+      Mmsg(buf," where=\"%s\"",
            escaped_where_name ? escaped_where_name : rx.where);
    }
    pm_strcat(ua->cmd, buf);
@@ -288,7 +282,7 @@ int restore_cmd(UAContext *ua, const char *cmd)
    if (escaped_where_name != NULL) {
       bfree(escaped_where_name);
    }
-   
+
    if (regexp) {
       bfree(regexp);
    }
@@ -328,7 +322,7 @@ bail_out:
    return 0;
 }
 
-/* 
+/*
  * Fill the rx->BaseJobIds and display the list
  */
 static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
@@ -338,7 +332,7 @@ static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
    if (!db_get_used_base_jobids(ua->jcr, ua->db, rx->JobIds, &jobids)) {
       ua->warning_msg("%s", db_strerror(ua->db));
    }
-   
+
    if (jobids.count) {
       POOL_MEM q;
 
@@ -807,7 +801,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
 
       case 11:                        /* Choose a jobid and select jobs */
          if (!get_cmd(ua, _("Enter JobId to get the state to restore: ")) ||
-             !is_an_integer(ua->cmd)) 
+             !is_an_integer(ua->cmd))
          {
             return 0;
          }
@@ -837,7 +831,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
    POOLMEM *JobIds = get_pool_memory(PM_FNAME);
    *JobIds = 0;
    rx->TotalFiles = 0;
-   /*        
+   /*
     * Find total number of files to be restored, and filter the JobId
     *  list to contain only ones permitted by the ACL conditions.
     */
@@ -967,7 +961,7 @@ static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *f
    strip_trailing_newline(file);
    split_path_and_filename(ua, rx, file);
    if (*rx->JobIds == 0) {
-      Mmsg(rx->query, uar_jobid_fileindex, date, rx->path, rx->fname, 
+      Mmsg(rx->query, uar_jobid_fileindex, date, rx->path, rx->fname,
            rx->ClientName);
    } else {
       Mmsg(rx->query, uar_jobids_fileindex, rx->JobIds, date,
@@ -993,7 +987,7 @@ static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *f
  */
 static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *dir,
                                         char *date)
-{  
+{
    strip_trailing_junk(dir);
    if (*rx->JobIds == 0) {
       ua->error_msg(_("No JobId specified cannot continue.\n"));
@@ -1196,7 +1190,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
                 rx->JobIds);
 
    if (!db_get_file_list(ua->jcr, batch_db,
-                         rx->JobIds, false /* do not use md5 */, 
+                         rx->JobIds, false /* do not use md5 */,
                          true /* get delta */,
                          insert_tree_handler, (void *)&tree)) {
       ua->error_msg("%s", db_strerror(batch_db));
@@ -1207,10 +1201,10 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
       pm_strcat(rx->JobIds, rx->BaseJobIds);
    }
 
-   /* 
+   /*
     * At this point, the tree is built, so we can garbage collect
-    * any memory released by the SQL engine that RedHat has 
-    * not returned to the OS :-( 
+    * any memory released by the SQL engine that RedHat has
+    * not returned to the OS :-(
     */
    garbage_collect_memory();
 
@@ -1377,7 +1371,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, rx->pool->name(), sizeof(pr.Name));
       if (db_get_pool_record(ua->jcr, ua->db, &pr)) {
-         bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ", 
+         bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ",
             edit_int64(pr.PoolId, ed1));
       } else {
          ua->warning_msg(_("Pool \"%s\" not found, using any pool.\n"), pr.Name);
@@ -1444,7 +1438,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    if (rx->JobIds[0] != 0) {
       if (find_arg(ua, NT_("copies")) > 0) {
          /* Display a list of all copies */
-         db_list_copies_records(ua->jcr, ua->db, 0, rx->JobIds, 
+         db_list_copies_records(ua->jcr, ua->db, 0, rx->JobIds,
                                 prtit, ua, HORZ_LIST);
       }
       /* Display a list of Jobs selected for this restore */
@@ -1541,7 +1535,7 @@ static void free_name_list(NAME_LIST *name_list)
    name_list->num_ids = 0;
 }
 
-void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *MediaType) 
+void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *MediaType)
 {
    STORERES *store;
 

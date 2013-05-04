@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +13,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- User Agent Database prune Command
  *
- *   Bacula Director -- User Agent Database prune Command
- *      Applies retention periods
+ * Applies retention periods
  *
- *     Kern Sibbald, February MMII
- *
+ * Kern Sibbald, February MMII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /* Imported functions */
@@ -131,7 +125,9 @@ int prunecmd(UAContext *ua, const char *cmd)
 
    switch (kw) {
    case 0:  /* prune files */
-      client = get_client_resource(ua);
+      if (!(client = get_client_resource(ua))) {
+         return false;
+      }
       if (find_arg_with_value(ua, "pool") >= 0) {
          pool = get_pool_resource(ua);
       } else {
@@ -142,13 +138,15 @@ int prunecmd(UAContext *ua, const char *cmd)
          if (!confirm_retention(ua, &pool->FileRetention, "File")) {
             return false;
          }
-      } else if (!client || !confirm_retention(ua, &client->FileRetention, "File")) {
+      } else if (!confirm_retention(ua, &client->FileRetention, "File")) {
          return false;
       }
       prune_files(ua, client, pool);
       return true;
    case 1:  /* prune jobs */
-      client = get_client_resource(ua);
+      if (!(client = get_client_resource(ua))) {
+         return false;
+      }
       if (find_arg_with_value(ua, "pool") >= 0) {
          pool = get_pool_resource(ua);
       } else {
@@ -159,7 +157,7 @@ int prunecmd(UAContext *ua, const char *cmd)
          if (!confirm_retention(ua, &pool->JobRetention, "Job")) {
             return false;
          }
-      } else if (!client || !confirm_retention(ua, &client->JobRetention, "Job")) {
+      } else if (!confirm_retention(ua, &client->JobRetention, "Job")) {
          return false;
       }
       /* ****FIXME**** allow user to select JobType */
@@ -196,7 +194,7 @@ int prunecmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/* Prune Job stat records from the database. 
+/* Prune Job stat records from the database.
  *
  */
 int prune_stats(UAContext *ua, utime_t retention)
@@ -206,7 +204,7 @@ int prune_stats(UAContext *ua, utime_t retention)
    utime_t now = (utime_t)time(NULL);
 
    db_lock(ua->db);
-   Mmsg(query, "DELETE FROM JobHisto WHERE JobTDate < %s", 
+   Mmsg(query, "DELETE FROM JobHisto WHERE JobTDate < %s",
         edit_int64(now - retention, ed1));
    db_sql_query(ua->db, query.c_str());
    db_unlock(ua->db);
@@ -216,8 +214,8 @@ int prune_stats(UAContext *ua, utime_t retention)
    return true;
 }
 
-/* 
- * Use pool and client specified by user to select jobs to prune 
+/*
+ * Use pool and client specified by user to select jobs to prune
  * returns add_from string to add in FROM clause
  *         add_where string to add in WHERE clause
  */
@@ -225,7 +223,7 @@ bool prune_set_filter(UAContext *ua, CLIENTRES *client, POOLRES *pool, utime_t p
                       POOL_MEM *add_from, POOL_MEM *add_where)
 {
    utime_t now;
-   char ed1[50], ed2[MAX_ESCAPE_NAME_LENGTH]; 
+   char ed1[50], ed2[MAX_ESCAPE_NAME_LENGTH];
    POOL_MEM tmp(PM_MESSAGE);
 
    now = (utime_t)time(NULL);
@@ -235,16 +233,16 @@ bool prune_set_filter(UAContext *ua, CLIENTRES *client, POOLRES *pool, utime_t p
    pm_strcat(*add_where, tmp.c_str());
 
    db_lock(ua->db);
-   if (client) { 
-      db_escape_string(ua->jcr, ua->db, ed2, 
+   if (client) {
+      db_escape_string(ua->jcr, ua->db, ed2,
                        client->name(), strlen(client->name()));
       Mmsg(tmp, " AND Client.Name = '%s' ", ed2);
       pm_strcat(*add_where, tmp.c_str());
       pm_strcat(*add_from, " JOIN Client USING (ClientId) ");
    }
 
-   if (pool) { 
-      db_escape_string(ua->jcr, ua->db, ed2, 
+   if (pool) {
+      db_escape_string(ua->jcr, ua->db, ed2,
                        pool->name(), strlen(pool->name()));
       Mmsg(tmp, " AND Pool.Name = '%s' ", ed2);
       pm_strcat(*add_where, tmp.c_str());
@@ -278,7 +276,7 @@ int prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool)
    POOL_MEM sql_from(PM_MESSAGE);
    utime_t period;
    char ed1[50];
-   
+
    memset(&del, 0, sizeof(del));
 
    if (pool && pool->FileRetention > 0) {
@@ -300,9 +298,9 @@ int prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool)
 //   edit_utime(now-period, ed1, sizeof(ed1));
 //   Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Jobs older than %s secs.\n"), ed1);
    Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Files.\n"));
-   /* Select Jobs -- for counting */ 
-   Mmsg(query, 
-        "SELECT COUNT(1) FROM Job %s WHERE PurgedFiles=0 %s", 
+   /* Select Jobs -- for counting */
+   Mmsg(query,
+        "SELECT COUNT(1) FROM Job %s WHERE PurgedFiles=0 %s",
         sql_from.c_str(), sql_where.c_str());
    Dmsg1(050, "select sql=%s\n", query.c_str());
    cnt.count = 0;
@@ -329,7 +327,7 @@ int prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool)
    del.JobId = (JobId_t *)malloc(sizeof(JobId_t) * del.max_ids);
 
    /* Now process same set but making a delete list */
-   Mmsg(query, "SELECT JobId FROM Job %s WHERE PurgedFiles=0 %s", 
+   Mmsg(query, "SELECT JobId FROM Job %s WHERE PurgedFiles=0 %s",
         sql_from.c_str(), sql_where.c_str());
    Dmsg1(050, "select sql=%s\n", query.c_str());
    db_sql_query(ua->db, query.c_str(), file_delete_handler, (void *)&del);
@@ -390,7 +388,7 @@ static bool grow_del_list(struct del_ctx *del)
 
 struct accurate_check_ctx {
    DBId_t ClientId;                   /* Id of client */
-   DBId_t FileSetId;                  /* Id of FileSet */ 
+   DBId_t FileSetId;                  /* Id of FileSet */
 };
 
 /* row: Job.Name, FileSet, Client.Name, FileSetId, ClientId, Type */
@@ -493,7 +491,7 @@ int prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
     * Select all files that are older than the JobRetention period
     *  and add them into the "DeletionCandidates" table.
     */
-   Mmsg(query, 
+   Mmsg(query,
         "INSERT INTO DelCandidates "
           "SELECT JobId,PurgedFiles,FileSetId,JobFiles,JobStatus "
             "FROM Job %s "      /* JOIN Pool/Client */
@@ -514,7 +512,7 @@ int prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
     * Note: The DISTINCT could be more useful if we don't get FileSetId
     */
    jobids_check = New(alist(10, owned_by_alist));
-   Mmsg(query, 
+   Mmsg(query,
 "SELECT DISTINCT Job.Name, FileSet, Client.Name, Job.FileSetId, "
                 "Job.ClientId, Job.Type "
   "FROM DelCandidates "
@@ -539,7 +537,7 @@ int prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
     */
    memset(&jr, 0, sizeof(jr));
    /* To find useful jobs, we do like an incremental */
-   jr.JobLevel = L_INCREMENTAL; 
+   jr.JobLevel = L_INCREMENTAL;
    foreach_alist(elt, jobids_check) {
       jr.ClientId = elt->ClientId;   /* should be always the same */
       jr.FileSetId = elt->FileSetId;
@@ -547,15 +545,15 @@ int prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
       jobids.add(tempids);
    }
 
-   /* Discard latest Verify level=InitCatalog job 
+   /* Discard latest Verify level=InitCatalog job
     * TODO: can have multiple fileset
     */
-   Mmsg(query, 
+   Mmsg(query,
         "SELECT JobId, JobTDate "
           "FROM Job %s "                         /* JOIN Client/Pool */
          "WHERE Type='V'    AND Level='V' "
               " %s "                             /* Pool, JobTDate, Client */
-         "ORDER BY JobTDate DESC LIMIT 1", 
+         "ORDER BY JobTDate DESC LIMIT 1",
         sql_from.c_str(), sql_where.c_str());
 
    if (!db_sql_query(ua->db, query.c_str(), db_list_handler, &jobids)) {
@@ -584,7 +582,7 @@ int prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
    }
 
    /* We use DISTINCT because we can have two times the same job */
-   Mmsg(query, 
+   Mmsg(query,
         "SELECT DISTINCT DelCandidates.JobId,DelCandidates.PurgedFiles "
           "FROM DelCandidates");
    if (!db_sql_query(ua->db, query.c_str(), job_delete_handler, (void *)&del)) {
@@ -671,7 +669,7 @@ int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
    /*
     * Now add to the  list of JobIds for Jobs written to this Volume
     */
-   edit_int64(mr->MediaId, ed1); 
+   edit_int64(mr->MediaId, ed1);
    period = mr->VolRetention;
    now = (utime_t)time(NULL);
    edit_int64(now-period, ed2);
@@ -688,7 +686,7 @@ int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
       goto bail_out;
    }
    count = exclude_running_jobs_from_list(del);
-   
+
 bail_out:
    return count;
 }
@@ -706,7 +704,7 @@ int exclude_running_jobs_from_list(del_ctx *prune_list)
    int count = 0;
    JCR *jcr;
    bool skip;
-   int i;          
+   int i;
 
    /* Do not prune any job currently running */
    for (i=0; i < prune_list->num_ids; i++) {

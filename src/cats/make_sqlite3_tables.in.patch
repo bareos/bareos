@@ -1,12 +1,11 @@
 --- ./make_sqlite3_tables.in	2010-01-25 02:56:28.000000000 -0500
-+++ ../../../bacula-5.0.0-fixed/src/cats/make_sqlite3_tables.in	2010-01-31 10:09:50.000000000 -0500
++++ ../../../bareos-5.0.0-fixed/src/cats/make_sqlite3_tables.in	2010-01-31 10:09:50.000000000 -0500
 @@ -2,7 +2,7 @@
  #
- # shell script to create Bacula SQLite tables
- 
+ # shell script to create Bareos SQLite tables
+
 -bindir=@SQLITE_BINDIR@
-+bindir=/usr/lib/bacula/sqlite
++bindir=/usr/lib/bareos/sqlite
  PATH="$bindir:$PATH"
  cd @working_dir@
  db_name=@db_name@
-

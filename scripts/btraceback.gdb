@@ -22,7 +22,7 @@ f 3
 info locals
 f 4
 info locals
-f 5 
+f 5
 info locals
 f 6
 info locals

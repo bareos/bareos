@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,35 +13,28 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Program to scan a Bareos Volume and compare it with
+ * the catalog and optionally synchronize the catalog
+ * with the tape.
  *
- *  Program to scan a Bacula Volume and compare it with
- *    the catalog and optionally synchronize the catalog
- *    with the tape.
- *
- *   Kern E. Sibbald, December 2001
- *
+ * Kern E. Sibbald, December 2001
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
 #include "cats/sql_glue.h"
- 
+
 /* Dummy functions */
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
@@ -82,8 +75,8 @@ static ATTR *attr;
 static time_t lasttime = 0;
 
 static const char *db_driver = "NULL";
-static const char *db_name = "bacula";
-static const char *db_user = "bacula";
+static const char *db_name = "bareos";
+static const char *db_user = "bareos";
 static const char *db_password = "";
 static const char *db_host = NULL;
 static int db_port = 0;
@@ -102,7 +95,7 @@ static int num_media = 0;
 static int num_files = 0;
 
 static CONFIG *config;
-#define CONFIG_FILE "bacula-sd.conf"
+#define CONFIG_FILE "bareos-sd.conf"
 char *configfile = NULL;
 STORES *me = NULL;                    /* our Global resource */
 bool forge_on = false;                /* proceed inspite of I/O errors */
@@ -114,8 +107,8 @@ static void usage()
    fprintf(stderr, _(
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
-"Usage: bscan [ options ] <bacula-archive>\n"
-"       -B <driver name>  specify the database driver name (default NULL)\n"
+"Usage: bscan [ options ] <bareos-archive>\n"
+"       -B <driver name>  specify the database driver name (default NULL) <postgresql|mysql|sqlite>\n"
 "       -b bootstrap      specify a bootstrap file\n"
 "       -c <file>         specify configuration file\n"
 "       -d <nn>           set debug level to <nn>\n"
@@ -123,8 +116,8 @@ PROG_COPYRIGHT
 "       -m                update media info in database\n"
 "       -D <director>     specify a director name specified in the Storage\n"
 "                         configuration file for the Key Encryption Key selection\n"
-"       -n <name>         specify the database name (default bacula)\n"
-"       -u <user>         specify database user name (default bacula)\n"
+"       -n <name>         specify the database name (default bareos)\n"
+"       -u <user>         specify database user name (default bareos)\n"
 "       -P <password>     specify database password (default none)\n"
 "       -h <host>         specify database host (default NULL)\n"
 "       -t <port>         specify database port (default 0)\n"
@@ -148,8 +141,8 @@ int main (int argc, char *argv[])
    DIRRES *director = NULL;
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    init_stack_dump();
    lmgr_init_thread();
 
@@ -196,7 +189,7 @@ int main (int argc, char *argv[])
       case 'h':
          db_host = optarg;
          break;
-         
+
       case 't':
          db_port = atoi(optarg);
          break;
@@ -289,7 +282,7 @@ int main (int argc, char *argv[])
 
    load_sd_plugins(me->plugin_directory);
 
-   read_crypto_cache(me->working_directory, "bacula-sd",
+   read_crypto_cache(me->working_directory, "bareos-sd",
                      get_first_port_host_order(me->sdaddrs));
 
    /* Check if -w option given, otherwise use resource for working directory */
@@ -322,12 +315,12 @@ int main (int argc, char *argv[])
       struct stat sb;
       fstat(dev->fd(), &sb);
       currentVolumeSize = sb.st_size;
-      Pmsg1(000, _("First Volume Size = %s\n"), 
+      Pmsg1(000, _("First Volume Size = %s\n"),
          edit_uint64(currentVolumeSize, ed1));
    }
 
    if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password, db_host, db_port, NULL)) == NULL) {
-      Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
+      Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
    }
    if (!db_open_database(NULL, db)) {
       Emsg0(M_ERROR_TERM, 0, db_strerror(db));
@@ -402,7 +395,7 @@ static bool bscan_mount_next_read_volume(DCR *dcr)
       struct stat sb;
       fstat(dev->fd(), &sb);
       currentVolumeSize = sb.st_size;
-      Pmsg1(000, _("First Volume Size = %s\n"), 
+      Pmsg1(000, _("First Volume Size = %s\n"),
          edit_uint64(currentVolumeSize, ed1));
    }
    return status;
@@ -587,12 +580,12 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          bstrncpy(dcr->pool_type, label.PoolType, sizeof(dcr->pool_type));
          bstrncpy(dcr->pool_name, label.PoolName, sizeof(dcr->pool_name));
 
-         /* Look for existing Job Media records for this job.  If there are 
-            any, no new ones need be created.  This may occur if File 
+         /* Look for existing Job Media records for this job.  If there are
+            any, no new ones need be created.  This may occur if File
             Retention has expired before Job Retention, or if the volume
             has already been bscan'd */
          Mmsg(sql_buffer, "SELECT count(*) from JobMedia where JobId=%d", jr.JobId);
-         db_sql_query(db, sql_buffer.c_str(), db_int64_handler, &jmr_count); 
+         db_sql_query(db, sql_buffer.c_str(), db_int64_handler, &jmr_count);
          if( jmr_count.value > 0 ) {
             //FIELD NAME TO BE DEFINED/CONFIRMED (maybe a struct?)
             mjcr->insert_jobmedia_records = false;
@@ -645,7 +638,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          /* Create JobMedia record */
          mjcr->read_dcr->VolLastIndex = dcr->VolLastIndex;
          if( mjcr->insert_jobmedia_records ) {
-            create_jobmedia_record(db, mjcr); 
+            create_jobmedia_record(db, mjcr);
          }
          free_dcr(mjcr->read_dcr);
          free_jcr(mjcr);
@@ -772,11 +765,11 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
    case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
    case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
-      /* No correct, we should (decrypt and) expand it 
-         done using JCR 
+      /* No correct, we should (decrypt and) expand it
+         done using JCR
       */
       mjcr->JobBytes += rec->data_len;
-      free_jcr(mjcr);                 
+      free_jcr(mjcr);
       break;
 
    case STREAM_SPARSE_GZIP_DATA:
@@ -1079,7 +1072,7 @@ static int create_pool_record(B_DB *db, POOL_DBR *pr)
 static int create_client_record(B_DB *db, CLIENT_DBR *cr)
 {
    /*
-    * Note, update_db can temporarily be set false while 
+    * Note, update_db can temporarily be set false while
     * updating the database, so we must ensure that ClientId is non-zero.
     */
    if (!update_db) {
@@ -1235,7 +1228,7 @@ static int update_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *elabel,
       return 0;
    }
    if (verbose) {
-      Pmsg3(000, _("Updated Job termination record for JobId=%u Level=%s TermStat=%c\n"), 
+      Pmsg3(000, _("Updated Job termination record for JobId=%u Level=%s TermStat=%c\n"),
          jr->JobId, job_level_to_str(mjcr->getJobLevel()), jr->JobStatus);
    }
    if (verbose > 1) {

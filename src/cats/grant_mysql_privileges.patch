@@ -4,9 +4,9 @@
 < grant all privileges on *.* to kelvin@localhost with grant option;
 < grant all privileges on *.* to kelvin@"%" with grant option;
 20c16
-<    echo "Privileges for kern, kelvin, and bacula granted."
+<    echo "Privileges for kern, kelvin, and bareos granted."
 ---
->    echo "MySQL privileges for bacula granted."
+>    echo "MySQL privileges for bareos granted."
 23c19
 <    echo "Error creating privileges."
 ---

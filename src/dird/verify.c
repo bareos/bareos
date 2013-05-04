@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,34 +13,25 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- verify.c -- responsible for running file verification
  *
- *   Bacula Director -- verify.c -- responsible for running file verification
+ * Kern Sibbald, October MM
  *
- *     Kern Sibbald, October MM
- *
- *  Basic tasks done here:
- *     Open DB
- *     Open connection with File daemon and pass him commands
- *       to do the verify.
- *     When the File daemon sends the attributes, compare them to
- *       what is in the DB.
- *
+ * Basic tasks done here:
+ *    Open DB
+ *    Open connection with File daemon and pass him commands to do the verify.
+ *    When the File daemon sends the attributes, compare them to what is in the DB.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 #include "findlib/find.h"
 
@@ -56,11 +47,11 @@ static char OKstore[] = "2000 OK storage\n";
 static void prt_fname(JCR *jcr);
 static int missing_handler(void *ctx, int num_fields, char **row);
 
-/* 
+/*
  * Called here before the job is run to do the job
  *   specific setup.
  */
-bool do_verify_init(JCR *jcr) 
+bool do_verify_init(JCR *jcr)
 {
    int JobLevel;
 
@@ -296,7 +287,7 @@ bool do_verify(JCR *jcr)
       if (jcr->res.rstore->SDDport == 0) {
          jcr->res.rstore->SDDport = jcr->res.rstore->SDport;
       }
-      bnet_fsend(fd, storaddr, jcr->res.rstore->address, 
+      bnet_fsend(fd, storaddr, jcr->res.rstore->address,
                  jcr->res.rstore->SDDport, jcr->sd_auth_key);
       if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
          goto bail_out;
@@ -464,7 +455,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
 "  FD termination status:  %s\n"
 "  SD termination status:  %s\n"
 "  Termination:            %s\n\n"),
-           BACULA, my_name, VERSION, LSMDATE,
+           BAREOS, my_name, VERSION, LSMDATE,
            HOST_OS, DISTNAME, DISTVER,
            jcr->jr.JobId,
            jcr->jr.Job,
@@ -497,7 +488,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
 "  Non-fatal FD errors:    %d\n"
 "  FD termination status:  %s\n"
 "  Termination:            %s\n\n"),
-           BACULA, my_name, VERSION, LSMDATE,
+           BAREOS, my_name, VERSION, LSMDATE,
            HOST_OS, DISTNAME, DISTVER,
            jcr->jr.JobId,
            jcr->jr.Job,

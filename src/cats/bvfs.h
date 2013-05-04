@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,25 +11,18 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
-
 
 #ifndef __BVFS_H_
 #define __BVFS_H_ 1
 
-
-/* 
+/*
  * This object can be use to browse the catalog
  *
  * Bvfs fs;
@@ -51,7 +42,7 @@ typedef enum {
 
 typedef enum {
    BVFS_Type    = 0,            /* Could be D, F, V */
-   BVFS_PathId  = 1, 
+   BVFS_PathId  = 1,
    BVFS_FilenameId = 2,
 
    BVFS_Name    = 3,
@@ -100,7 +91,7 @@ public:
       pwd_id = pathid;
    }
 
-   /* 
+   /*
     * Returns true if the directory exists
     */
    bool ch_dir(const char *path);
@@ -157,15 +148,15 @@ public:
    void clear_cache();
 
    /* Compute restore list */
-   bool compute_restore_list(char *fileid, char *dirid, char *hardlink, 
+   bool compute_restore_list(char *fileid, char *dirid, char *hardlink,
                              char *output_table);
-   
+
    /* Drop previous restore list */
    bool drop_restore_list(char *output_table);
 
    /* for internal use */
    int _handle_path(void *, int, char **);
-   
+
 private:
    Bvfs(const Bvfs &);               /* prohibit pass by value */
    Bvfs & operator = (const Bvfs &); /* prohibit class assignment */
@@ -202,7 +193,7 @@ void bvfs_update_cache(JCR *jcr, B_DB *mdb);
 char *bvfs_parent_dir(char *path);
 
 /* Return the basename of the with the trailing /  (update the given string)
- * TODO: see in the rest of bacula if we don't have
+ * TODO: see in the rest of bareos if we don't have
  * this function already
  */
 char *bvfs_basename_dir(char *path);

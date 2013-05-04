@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,29 +13,24 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
-/** 
- * Bacula Catalog Database Get record interface routines
- *  Note, these routines generally get a record by id or
- *        by name.  If more logic is involved, the routine
- *        should be in find.c
+/**
+ * BAREOS Catalog Database Get record interface routines
  *
- *    Kern Sibbald, March 2000
+ * Note, these routines generally get a record by id or
+ * by name.  If more logic is involved, the routine
+ * should be in find.c
  *
+ * Kern Sibbald, March 2000
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
@@ -91,14 +86,14 @@ bool db_get_file_attributes_record(JCR *jcr, B_DB *mdb, char *fname, JOB_DBR *jr
  *    called to get attributes of a non-existent file, which is
  *    "normal" if a new file is found during Verify.
  *
- *  The following is a bit of a kludge: because we always backup a 
- *    directory entry, we can end up with two copies of the directory 
- *    in the backup. One is when we encounter the directory and find 
- *    we cannot recurse into it, and the other is when we find an 
- *    explicit mention of the directory. This can also happen if the 
- *    use includes the directory twice.  In this case, Verify 
- *    VolumeToCatalog fails because we have two copies in the catalog, 
- *    and only the first one is marked (twice).  So, when calling from Verify, 
+ *  The following is a bit of a kludge: because we always backup a
+ *    directory entry, we can end up with two copies of the directory
+ *    in the backup. One is when we encounter the directory and find
+ *    we cannot recurse into it, and the other is when we find an
+ *    explicit mention of the directory. This can also happen if the
+ *    use includes the directory twice.  In this case, Verify
+ *    VolumeToCatalog fails because we have two copies in the catalog,
+ *    and only the first one is marked (twice).  So, when calling from Verify,
  *    VolumeToCatalog jr is not NULL and we know jr->FileIndex is the fileindex
  *    of the version of the directory/file we actually want and do
  *    a more explicit SQL search.
@@ -116,23 +111,23 @@ static bool db_get_file_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr, FILE_DBR *fdbr)
 "File.JobId=Job.JobId AND File.PathId=%s AND "
 "File.FilenameId=%s AND Job.Type='B' AND Job.JobStatus IN ('T','W') AND "
 "ClientId=%s ORDER BY StartTime DESC LIMIT 1",
-      edit_int64(fdbr->PathId, ed1), 
-      edit_int64(fdbr->FilenameId, ed2), 
+      edit_int64(fdbr->PathId, ed1),
+      edit_int64(fdbr->FilenameId, ed2),
       edit_int64(jr->ClientId,ed3));
    } else if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
       Mmsg(mdb->cmd,
            "SELECT FileId, LStat, MD5 FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
-           "File.FilenameId=%s AND File.FileIndex=%u", 
-           edit_int64(fdbr->JobId, ed1), 
-           edit_int64(fdbr->PathId, ed2), 
+           "File.FilenameId=%s AND File.FileIndex=%u",
+           edit_int64(fdbr->JobId, ed1),
+           edit_int64(fdbr->PathId, ed2),
            edit_int64(fdbr->FilenameId,ed3),
            jr->FileIndex);
    } else {
       Mmsg(mdb->cmd,
 "SELECT FileId, LStat, MD5 FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
-"File.FilenameId=%s", 
-      edit_int64(fdbr->JobId, ed1), 
-      edit_int64(fdbr->PathId, ed2), 
+"File.FilenameId=%s",
+      edit_int64(fdbr->JobId, ed1),
+      edit_int64(fdbr->PathId, ed2),
       edit_int64(fdbr->FilenameId,ed3));
    }
    Dmsg3(450, "Get_file_record JobId=%u FilenameId=%u PathId=%u\n",
@@ -153,15 +148,15 @@ static bool db_get_file_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr, FILE_DBR *fdbr)
             retval = true;
             if (num_rows > 1) {
                Mmsg3(mdb->errmsg, _("get_file_record want 1 got rows=%d PathId=%s FilenameId=%s\n"),
-                  num_rows, 
-                  edit_int64(fdbr->PathId, ed1), 
+                  num_rows,
+                  edit_int64(fdbr->PathId, ed1),
                   edit_int64(fdbr->FilenameId, ed2));
                Dmsg1(000, "=== Problem!  %s", mdb->errmsg);
             }
          }
       } else {
          Mmsg2(mdb->errmsg, _("File record for PathId=%s FilenameId=%s not found.\n"),
-            edit_int64(fdbr->PathId, ed1), 
+            edit_int64(fdbr->PathId, ed1),
             edit_int64(fdbr->FilenameId, ed2));
       }
       sql_free_result(mdb);
@@ -303,7 +298,7 @@ bool db_get_job_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
 "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
 "Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,FileSetId,"
 "SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
-"FROM Job WHERE JobId=%s", 
+"FROM Job WHERE JobId=%s",
           edit_int64(jr->JobId, ed1));
     }
 
@@ -613,7 +608,7 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
 "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,AcceptAnyVolume,"
 "AutoPrune,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
 "MaxVolBytes,PoolType,LabelType,LabelFormat,RecyclePoolId,ScratchPoolId,"
-"ActionOnPurge FROM Pool WHERE Pool.PoolId=%s", 
+"ActionOnPurge FROM Pool WHERE Pool.PoolId=%s",
          edit_int64(pdbr->PoolId, ed1));
    } else {                           /* find by name */
       mdb->db_escape_string(jcr, esc, pdbr->Name, strlen(pdbr->Name));
@@ -697,7 +692,7 @@ bool db_get_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cdbr)
    if (cdbr->ClientId != 0) {               /* find by id */
       Mmsg(mdb->cmd,
 "SELECT ClientId,Name,Uname,AutoPrune,FileRetention,JobRetention "
-"FROM Client WHERE Client.ClientId=%s", 
+"FROM Client WHERE Client.ClientId=%s",
         edit_int64(cdbr->ClientId, ed1));
    } else {                           /* find by name */
       mdb->db_escape_string(jcr, esc, cdbr->Name, strlen(cdbr->Name));
@@ -811,7 +806,7 @@ int db_get_fileset_record(JCR *jcr, B_DB *mdb, FILESET_DBR *fsr)
    if (fsr->FileSetId != 0) {               /* find by id */
       Mmsg(mdb->cmd,
            "SELECT FileSetId,FileSet,MD5,CreateTime FROM FileSet "
-           "WHERE FileSetId=%s", 
+           "WHERE FileSetId=%s",
            edit_int64(fsr->FileSetId, ed1));
    } else {                           /* find by name */
       mdb->db_escape_string(jcr, esc, fsr->FileSet, strlen(fsr->FileSet));
@@ -1010,7 +1005,7 @@ bool db_get_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
          "ActionOnPurge,EncryptionKey "
-         "FROM Media WHERE MediaId=%s", 
+         "FROM Media WHERE MediaId=%s",
          edit_int64(mr->MediaId, ed1));
    } else {                           /* find by name */
       mdb->db_escape_string(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
@@ -1080,12 +1075,12 @@ bool db_get_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
             mr->VolWriteTime = str_to_int64(row[35]);
             mr->ActionOnPurge = str_to_int32(row[36]);
             bstrncpy(mr->EncrKey, (row[37] != NULL) ? row[37] : "", sizeof(mr->EncrKey));
-            
+
             retval = true;
          }
       } else {
          if (mr->MediaId != 0) {
-            Mmsg1(mdb->errmsg, _("Media record MediaId=%s not found.\n"), 
+            Mmsg1(mdb->errmsg, _("Media record MediaId=%s not found.\n"),
                edit_int64(mr->MediaId, ed1));
          } else {
             Mmsg1(mdb->errmsg, _("Media record for Volume \"%s\" not found.\n"),
@@ -1141,11 +1136,11 @@ bool db_get_file_list(JCR *jcr, B_DB *mdb, char *jobids,
    POOL_MEM buf(PM_MESSAGE);
    POOL_MEM buf2(PM_MESSAGE);
    if (use_delta) {
-      Mmsg(buf2, select_recent_version_with_basejob_and_delta[db_get_type_index(mdb)], 
+      Mmsg(buf2, select_recent_version_with_basejob_and_delta[db_get_type_index(mdb)],
            jobids, jobids, jobids, jobids);
 
    } else {
-      Mmsg(buf2, select_recent_version_with_basejob[db_get_type_index(mdb)], 
+      Mmsg(buf2, select_recent_version_with_basejob[db_get_type_index(mdb)],
            jobids, jobids, jobids, jobids);
    }
 
@@ -1160,7 +1155,7 @@ bool db_get_file_list(JCR *jcr, B_DB *mdb, char *jobids,
  "JOIN Path ON (Path.PathId = T1.PathId) "
 "WHERE FileIndex > 0 "
 "ORDER BY T1.JobTDate, FileIndex ASC",/* Return sorted by JobTDate */
-                                      /* FileIndex for restore code */ 
+                                      /* FileIndex for restore code */
         buf2.c_str());
 
    if (!use_md5) {
@@ -1175,7 +1170,7 @@ bool db_get_file_list(JCR *jcr, B_DB *mdb, char *jobids,
 /**
  * This procedure gets the base jobid list used by jobids,
  */
-bool db_get_used_base_jobids(JCR *jcr, B_DB *mdb, 
+bool db_get_used_base_jobids(JCR *jcr, B_DB *mdb,
                              POOLMEM *jobids, db_list_ctx *result)
 {
    POOL_MEM buf;
@@ -1194,18 +1189,18 @@ bool db_get_used_base_jobids(JCR *jcr, B_DB *mdb,
  * Incremental : get the last full + last diff + last incr(s) ids
  *
  * If you specify jr->StartTime, it will be used to limit the search
- * in the time. (usually now) 
+ * in the time. (usually now)
  *
  * TODO: look and merge from ua_restore.c
  */
-bool db_accurate_get_jobids(JCR *jcr, B_DB *mdb, 
+bool db_accurate_get_jobids(JCR *jcr, B_DB *mdb,
                             JOB_DBR *jr, db_list_ctx *jobids)
 {
    bool retval = false;
    char clientid[50], jobid[50], filesetid[50];
    char date[MAX_TIME_LENGTH];
    POOL_MEM query(PM_FNAME);
-   
+
    /* Take the current time as upper limit if nothing else specified */
    utime_t StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
 
@@ -1213,7 +1208,7 @@ bool db_accurate_get_jobids(JCR *jcr, B_DB *mdb,
    jobids->reset();
 
    /* First, find the last good Full backup for this job/client/fileset */
-   Mmsg(query, create_temp_accurate_jobids[db_get_type_index(mdb)], 
+   Mmsg(query, create_temp_accurate_jobids[db_get_type_index(mdb)],
         edit_uint64(jcr->JobId, jobid),
         edit_uint64(jr->ClientId, clientid),
         date,
@@ -1225,7 +1220,7 @@ bool db_accurate_get_jobids(JCR *jcr, B_DB *mdb,
 
    if (jr->JobLevel == L_INCREMENTAL || jr->JobLevel == L_VIRTUAL_FULL) {
       /* Now, find the last differential backup after the last full */
-      Mmsg(query, 
+      Mmsg(query,
 "INSERT INTO btemp3%s (JobId, StartTime, EndTime, JobTDate, PurgedFiles) "
  "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
    "FROM Job JOIN FileSet USING (FileSetId) "
@@ -1246,7 +1241,7 @@ bool db_accurate_get_jobids(JCR *jcr, B_DB *mdb,
       }
 
       /* We just have to take all incremental after the last Full/Diff */
-      Mmsg(query, 
+      Mmsg(query,
 "INSERT INTO btemp3%s (JobId, StartTime, EndTime, JobTDate, PurgedFiles) "
  "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
    "FROM Job JOIN FileSet USING (FileSetId) "
@@ -1283,12 +1278,12 @@ bool db_get_base_file_list(JCR *jcr, B_DB *mdb, bool use_md5,
                            DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    POOL_MEM buf(PM_MESSAGE);
-         
+
    Mmsg(buf,
  "SELECT Path, Name, FileIndex, JobId, LStat, 0 As DeltaSeq, MD5 "
    "FROM new_basefile%lld ORDER BY JobId, FileIndex ASC",
         (uint64_t) jcr->JobId);
-   
+
    if (!use_md5) {
       strip_md5(buf.c_str());
    }
@@ -1311,7 +1306,7 @@ bool db_get_base_jobid(JCR *jcr, B_DB *mdb, JOB_DBR *jr, JobId_t *jobid)
    StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
    bstrutime(date, sizeof(date),  StartTime + 1);
    mdb->db_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
-   
+
    /* we can take also client name, fileset, etc... */
 
    Mmsg(query,
@@ -1345,14 +1340,14 @@ bail_out:
 /*
  * Get JobIds associated with a volume
  */
-bool db_get_volume_jobids(JCR *jcr, B_DB *mdb, 
+bool db_get_volume_jobids(JCR *jcr, B_DB *mdb,
                          MEDIA_DBR *mr, db_list_ctx *lst)
 {
    char ed1[50];
    bool retval;
 
    db_lock(mdb);
-   Mmsg(mdb->cmd, "SELECT DISTINCT JobId FROM JobMedia WHERE MediaId=%s", 
+   Mmsg(mdb->cmd, "SELECT DISTINCT JobId FROM JobMedia WHERE MediaId=%s",
         edit_int64(mr->MediaId, ed1));
    retval = db_sql_query(mdb, mdb->cmd, db_list_handler, lst);
    db_unlock(mdb);

@@ -1,18 +1,8 @@
-
 /*
-
-  See btime.c for defintions.
-
-     Version $Id$
-
- */
-/*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -21,27 +11,21 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
-
 
 #ifndef __btime_INCLUDED
 #define __btime_INCLUDED
 
 /* New btime definition -- use this */
 btime_t get_current_btime(void);
-time_t btime_to_unix(btime_t bt);   /* bacula time to epoch time */
-utime_t btime_to_utime(btime_t bt); /* bacula time to utime_t */
+time_t btime_to_unix(btime_t bt);   /* bareos time to epoch time */
+utime_t btime_to_utime(btime_t bt); /* bareos time to utime_t */
 
 int tm_wom(int mday, int wday);
 int tm_woy(time_t stime);

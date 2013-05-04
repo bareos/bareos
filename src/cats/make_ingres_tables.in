@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to create Bacula Ingres tables
+# shell script to create Bareos Ingres tables
 #
 bindir=@INGRES_BINDIR@
 PATH="$bindir:$PATH"
@@ -139,7 +139,7 @@ CREATE TABLE Job
 
 CREATE INDEX job_name_idx ON Job (Name);
 
--- Create a table like Job for long term statistics 
+-- Create a table like Job for long term statistics
 CREATE SEQUENCE JobHisto_Seq;
 CREATE TABLE JobHisto
 (
@@ -266,6 +266,8 @@ CREATE TABLE Media
 );
 
 CREATE UNIQUE INDEX media_volumename_id ON Media (VolumeName);
+CREATE INDEX media_poolid_idx ON Media (PoolId);
+CREATE INDEX media_storageid_idx ON Media (StorageId);
 
 CREATE SEQUENCE MediaType_Seq;
 CREATE TABLE MediaType (
@@ -409,7 +411,7 @@ CREATE TABLE unsavedfiles
    PRIMARY KEY (UnsavedId)
 );
 
-CREATE TABLE CDImages 
+CREATE TABLE CDImages
 (
    MediaId		INTEGER 	NOT NULL,
    LastBurn		TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -515,10 +517,10 @@ INSERT INTO Version (VersionId) VALUES (@BDB_VERSION@);
 
 END-OF-DATA
 pstat=$?
-if test $pstat = 0; 
+if test $pstat = 0;
 then
-   echo "Creation of Bacula Ingres tables succeeded."
+   echo "Creation of Bareos Ingres tables succeeded."
 else
-   echo "Creation of Bacula Ingres tables failed."
+   echo "Creation of Bareos Ingres tables failed."
 fi
 exit $pstat

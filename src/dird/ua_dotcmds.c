@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,31 +13,25 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- User Agent Commands
  *
- *   Bacula Director -- User Agent Commands
- *     These are "dot" commands, i.e. commands preceded
- *        by a period. These commands are meant to be used
- *        by a program, so there is no prompting, and the
- *        returned results are (supposed to be) predictable.
+ * These are "dot" commands, i.e. commands preceded
+ * by a period. These commands are meant to be used
+ * by a program, so there is no prompting, and the
+ * returned results are (supposed to be) predictable.
  *
- *     Kern Sibbald, April MMII
- *
+ * Kern Sibbald, April MMII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 #include "cats/bvfs.h"
 #include "findlib/find.h"
@@ -135,7 +129,7 @@ static struct cmdstruct commands[] = {
 /*
  * Execute a command from the UA
  */
-bool do_a_dot_command(UAContext *ua) 
+bool do_a_dot_command(UAContext *ua)
 {
    int i;
    int len;
@@ -193,14 +187,14 @@ static bool dot_bvfs_update(UAContext *ua, const char *cmd)
    int pos = find_arg_with_value(ua, "jobid");
    if (pos != -1 && is_a_number_list(ua->argv[pos])) {
       if (!bvfs_update_path_hierarchy_cache(ua->jcr, ua->db, ua->argv[pos])) {
-         ua->error_msg("ERROR: BVFS reported a problem for %s\n", 
+         ua->error_msg("ERROR: BVFS reported a problem for %s\n",
                        ua->argv[pos]);
       }
    } else {
       /* update cache for all jobids */
       bvfs_update_cache(ua->jcr, ua->db);
    }
-   
+
    close_db(ua);
    return true;
 }
@@ -232,7 +226,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    char *fileid=row[BVFS_FileId];
    char *lstat=row[BVFS_LStat];
    char *jobid=row[BVFS_JobId];
-   
+
    char empty[] = "A A A A A A A A A A A A A A";
    char zero[] = "0";
 
@@ -255,7 +249,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    } else if (bvfs_is_version(row)) {
       ua->send_msg("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", row[BVFS_PathId],
                    row[BVFS_FilenameId], fileid, jobid,
-                   lstat, row[BVFS_Md5], row[BVFS_VolName], 
+                   lstat, row[BVFS_Md5], row[BVFS_VolName],
                    row[BVFS_VolInchanger]);
 
    } else if (bvfs_is_file(row)) {
@@ -269,8 +263,8 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
 
 static bool bvfs_parse_arg_version(UAContext *ua,
                                    char **client,
-                                   DBId_t *fnid, 
-                                   bool *versions, 
+                                   DBId_t *fnid,
+                                   bool *versions,
                                    bool *copies)
 {
    *fnid=0;
@@ -300,7 +294,7 @@ static bool bvfs_parse_arg_version(UAContext *ua,
    return (*client && *fnid > 0);
 }
 
-static bool bvfs_parse_arg(UAContext *ua, 
+static bool bvfs_parse_arg(UAContext *ua,
                            DBId_t *pathid,
                            char **path,
                            char **jobid,
@@ -329,7 +323,7 @@ static bool bvfs_parse_arg(UAContext *ua,
       if (bstrcasecmp(ua->argk[i], NT_("username"))) {
          *username = ua->argv[i];
       }
-      
+
       if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
          if (is_a_number_list(ua->argv[i])) {
             *jobid = ua->argv[i];
@@ -413,7 +407,7 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
    return true;
 }
 
-/* 
+/*
  * .bvfs_lsfiles jobid=1,2,3,4 pathid=10
  * .bvfs_lsfiles jobid=1,2,3,4 path=/
  */
@@ -437,7 +431,7 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
 
    Bvfs fs(ua->jcr, ua->db);
    fs.set_username(username);
-   fs.set_jobids(jobid);   
+   fs.set_jobids(jobid);
    fs.set_handler(bvfs_result_handler, ua);
    fs.set_limit(limit);
    if (pattern) {
@@ -448,7 +442,7 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
    } else {
       fs.ch_dir(path);
    }
-   
+
    fs.set_offset(offset);
 
    fs.ls_files();
@@ -456,7 +450,7 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
    return true;
 }
 
-/* 
+/*
  * .bvfs_lsdirs jobid=1,2,3,4 pathid=10
  * .bvfs_lsdirs jobid=1,2,3,4 path=/
  * .bvfs_lsdirs jobid=1,2,3,4 path=
@@ -476,7 +470,7 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
 
    Bvfs fs(ua->jcr, ua->db);
    fs.set_username(username);
-   fs.set_jobids(jobid);   
+   fs.set_jobids(jobid);
    fs.set_limit(limit);
    fs.set_handler(bvfs_result_handler, ua);
 
@@ -494,7 +488,7 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
    return true;
 }
 
-/* 
+/*
  * .bvfs_versions jobid=x fnid=10 pathid=10 copies versions
  * (jobid isn't used)
  */
@@ -623,7 +617,7 @@ static void do_storage_cmd(UAContext *ua, STORERES *store, const char *cmd)
    BSOCK *sd;
    JCR *jcr = ua->jcr;
    USTORERES lstore;
-   
+
    lstore.store = store;
    pm_strcpy(lstore.store_source, _("unknown source"));
    set_wstorage(jcr, &lstore);
@@ -717,7 +711,7 @@ static bool admin_cmds(UAContext *ua, const char *cmd)
             client = select_client_resource(ua);
          }
       }
-   
+
       if (bstrcasecmp(ua->argk[i], NT_("store")) ||
           bstrcasecmp(ua->argk[i], NT_("storage")) ||
           bstrcasecmp(ua->argk[i], NT_("sd"))) {
@@ -776,7 +770,7 @@ static bool admin_cmds(UAContext *ua, const char *cmd)
       if (strncmp(remote_cmd, ".die", 4) == 0) {
          if (do_deadlock) {
             ua->send_msg(_("The Director will generate a deadlock.\n"));
-            P(mutex); 
+            P(mutex);
             P(mutex);
          }
          ua->send_msg(_("The Director will segment fault.\n"));
@@ -804,7 +798,7 @@ static bool admin_cmds(UAContext *ua, const char *cmd)
 }
 #endif
 
-/* 
+/*
  * Can use an argument to filter on JobType
  * .jobs [type=B]
  */
@@ -951,7 +945,7 @@ static int client_backups_handler(void *ctx, int num_field, char **row)
 }
 
 /*
- * Return the backups for this client 
+ * Return the backups for this client
  *
  *  .backups client=xxx fileset=yyy
  *
@@ -962,7 +956,7 @@ static bool backupscmd(UAContext *ua, const char *cmd)
       return true;
    }
    if (ua->argc != 3 ||
-       !bstrcmp(ua->argk[1], "client") || 
+       !bstrcmp(ua->argk[1], "client") ||
        !bstrcmp(ua->argk[2], "fileset")) {
       return true;
    }
@@ -1022,7 +1016,7 @@ static bool sql_cmd(UAContext *ua, const char *cmd)
    }
    return true;
 }
-      
+
 static int one_handler(void *ctx, int num_field, char **row)
 {
    UAContext *ua = (UAContext *)ctx;
@@ -1035,9 +1029,9 @@ static bool mediatypescmd(UAContext *ua, const char *cmd)
    if (!open_client_db(ua)) {
       return true;
    }
-   if (!db_sql_query(ua->db, 
+   if (!db_sql_query(ua->db,
                   "SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType",
-                  one_handler, (void *)ua)) 
+                  one_handler, (void *)ua))
    {
       ua->error_msg(_("List MediaType failed: ERR=%s\n"), db_strerror(ua->db));
    }
@@ -1049,9 +1043,9 @@ static bool mediacmd(UAContext *ua, const char *cmd)
    if (!open_client_db(ua)) {
       return true;
    }
-   if (!db_sql_query(ua->db, 
+   if (!db_sql_query(ua->db,
                   "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName",
-                  one_handler, (void *)ua)) 
+                  one_handler, (void *)ua))
    {
       ua->error_msg(_("List Media failed: ERR=%s\n"), db_strerror(ua->db));
    }
@@ -1063,9 +1057,9 @@ static bool locationscmd(UAContext *ua, const char *cmd)
    if (!open_client_db(ua)) {
       return true;
    }
-   if (!db_sql_query(ua->db, 
+   if (!db_sql_query(ua->db,
                   "SELECT DISTINCT Location FROM Location ORDER BY Location",
-                  one_handler, (void *)ua)) 
+                  one_handler, (void *)ua))
    {
       ua->error_msg(_("List Location failed: ERR=%s\n"), db_strerror(ua->db));
    }
@@ -1127,7 +1121,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
    }
 
    if (bstrcmp(ua->argk[1], "job")) {
-      /* Job defaults */   
+      /* Job defaults */
       if (!acl_access_ok(ua, Job_ACL, ua->argv[1])) {
          return true;
       }
@@ -1150,7 +1144,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
    } else if (bstrcmp(ua->argk[1], "client")) {
       /* Client defaults */
       if (!acl_access_ok(ua, Client_ACL, ua->argv[1])) {
-         return true;   
+         return true;
       }
       client = (CLIENTRES *)GetResWithName(R_CLIENT, ua->argv[1]);
       if (client) {

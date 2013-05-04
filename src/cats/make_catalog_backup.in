@@ -1,15 +1,15 @@
 #!/bin/sh
 #
-# This script dumps your Bacula catalog in ASCII format
+# This script dumps your Bareos catalog in ASCII format
 # It works for MySQL, SQLite, and PostgreSQL
 #
 #  $1 is the name of the database to be backed up and the name
-#     of the output file (default = bacula).
+#     of the output file (default = bareos).
 #  $2 is the user name with which to access the database
-#     (default = bacula).
+#     (default = bareos).
 #  $3 is the password with which to access the database or "" if no password
-#     (default ""). WARNING!!! Passing the password via the command line is 
-#     insecure and should not be used since any user can display the command 
+#     (default ""). WARNING!!! Passing the password via the command line is
+#     insecure and should not be used since any user can display the command
 #     line arguments and the environment using ps.  Please consult your
 #     MySQL or PostgreSQL manual for secure methods of specifying the
 #     password.
@@ -19,7 +19,8 @@
 #
 #
 
-default_db_type=@DEFAULT_DB_TYPE@
+default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
+
 
 #
 # See if the fifth argument is a valid backend name.
@@ -89,19 +90,19 @@ case ${db_type} in
     ;;
 esac
 #
-#  To read back a MySQL database use: 
+#  To read back a MySQL database use:
 #     cd @working_dir@
-#     rm -f ${BINDIR}/../var/bacula/*
-#     mysql <bacula.sql
+#     rm -f ${BINDIR}/../var/bareos/*
+#     mysql <bareos.sql
 #
 #  To read back a SQLite database use:
 #     cd @working_dir@
-#     rm -f bacula.db
-#     sqlite bacula.db <bacula.sql
+#     rm -f bareos.db
+#     sqlite bareos.db <bareos.sql
 #
 #  To read back a PostgreSQL database use:
 #     cd @working_dir@
-#     dropdb bacula
-#     createdb bacula -T template0 -E SQL_ASCII
-#     psql bacula <bacula.sql
+#     dropdb bareos
+#     createdb bareos -T template0 -E SQL_ASCII
+#     psql bareos <bareos.sql
 #

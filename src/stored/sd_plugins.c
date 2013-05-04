@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation, which is
@@ -13,25 +13,19 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Main program to test loading and running Bacula plugins.
- *   Destined to become Bacula pluginloader, ...
+ * Bareos pluginloader
  *
  * Kern Sibbald, October 2007
  */
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
@@ -41,43 +35,43 @@ const char *plugin_type = "-sd.so";
 static alist *sd_plugin_list = NULL;
 
 /* Forward referenced functions */
-static bRC baculaGetValue(bpContext *ctx, bsdrVariable var, void *value);
-static bRC baculaSetValue(bpContext *ctx, bsdwVariable var, void *value);
-static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...);
-static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value);
+static bRC bareosSetValue(bpContext *ctx, bsdwVariable var, void *value);
+static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...);
+static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...);
-static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...);
-static char *baculaEditDeviceCodes(DCR *dcr, char *omsg,
+static char *bareosEditDeviceCodes(DCR *dcr, char *omsg,
                                    const char *imsg, const char *cmd);
-static char *baculaLookupCryptoKey(const char *VolumeName);
-static bool baculaUpdateVolumeInfo(DCR *dcr);
+static char *bareosLookupCryptoKey(const char *VolumeName);
+static bool bareosUpdateVolumeInfo(DCR *dcr);
 static bool is_plugin_compatible(Plugin *plugin);
 
-/* Bacula info */
+/* Bareos info */
 static bsdInfo binfo = {
    sizeof(bsdFuncs),
    SD_PLUGIN_INTERFACE_VERSION
 };
 
-/* Bacula entry points */
+/* Bareos entry points */
 static bsdFuncs bfuncs = {
    sizeof(bsdFuncs),
    SD_PLUGIN_INTERFACE_VERSION,
-   baculaRegisterEvents,
-   baculaGetValue,
-   baculaSetValue,
-   baculaJobMsg,
-   baculaDebugMsg,
-   baculaEditDeviceCodes,
-   baculaLookupCryptoKey,
-   baculaUpdateVolumeInfo
+   bareosRegisterEvents,
+   bareosGetValue,
+   bareosSetValue,
+   bareosJobMsg,
+   bareosDebugMsg,
+   bareosEditDeviceCodes,
+   bareosLookupCryptoKey,
+   bareosUpdateVolumeInfo
 };
 
 /*
- * Bacula private context
+ * Bareos private context
  */
-struct bacula_ctx {
+struct b_plugin_ctx {
    JCR *jcr;                                       /* jcr for plugin */
    bRC  rc;                                        /* last return code */
    bool disabled;                                  /* set if plugin disabled */
@@ -86,11 +80,11 @@ struct bacula_ctx {
 
 static inline bool is_event_enabled(bpContext *ctx, bsdEventType eventType)
 {
-   bacula_ctx *b_ctx;
+   b_plugin_ctx *b_ctx;
    if (!ctx) {
       return true;
    }
-   b_ctx = (bacula_ctx *)ctx->bContext;
+   b_ctx = (b_plugin_ctx *)ctx->bContext;
    if (!b_ctx) {
       return true;
    }
@@ -99,11 +93,11 @@ static inline bool is_event_enabled(bpContext *ctx, bsdEventType eventType)
 
 static inline bool is_plugin_disabled(bpContext *ctx)
 {
-   bacula_ctx *b_ctx;
+   b_plugin_ctx *b_ctx;
    if (!ctx) {
       return true;
    }
-   b_ctx = (bacula_ctx *)ctx->bContext;
+   b_ctx = (b_plugin_ctx *)ctx->bContext;
    return b_ctx->disabled;
 }
 
@@ -277,7 +271,7 @@ static void dump_sd_plugins(FILE *fp)
 }
 
 /**
- * This entry point is called internally by Bacula to ensure
+ * This entry point is called internally by Bareos to ensure
  *  that the plugin IO calls come into this code.
  */
 void load_sd_plugins(const char *plugin_dir)
@@ -354,9 +348,9 @@ static bool is_plugin_compatible(Plugin *plugin)
            plugin->file, SD_PLUGIN_INTERFACE_VERSION, info->version);
       return false;
    }
-   if (!bstrcmp(info->plugin_license, "Bacula AGPLv3") &&
-       !bstrcmp(info->plugin_license, "AGPLv3") &&
-       !bstrcmp(info->plugin_license, "Bacula Systems(R) SA")) {
+   if (!bstrcasecmp(info->plugin_license, "Bareos AGPLv3") &&
+       !bstrcasecmp(info->plugin_license, "Bacula AGPLv3") &&
+       !bstrcasecmp(info->plugin_license, "AGPLv3")) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin license incompatible. Plugin=%s license=%s\n"),
            plugin->file, info->plugin_license);
       Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
@@ -389,7 +383,7 @@ void new_plugins(JCR *jcr)
    if (jcr->is_job_canceled()) {
       return;
    }
-   /* 
+   /*
     * If plugins already loaded, just return
     */
    if (jcr->plugin_ctx_list) {
@@ -408,8 +402,8 @@ void new_plugins(JCR *jcr)
    Dmsg2(dbglvl, "Instantiate sd-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
    foreach_alist_index(i, plugin, sd_plugin_list) {
       /* Start a new instance of each plugin */
-      bacula_ctx *b_ctx = (bacula_ctx *)malloc(sizeof(bacula_ctx));
-      memset(b_ctx, 0, sizeof(bacula_ctx));
+      b_plugin_ctx *b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
+      memset(b_ctx, 0, sizeof(b_plugin_ctx));
       b_ctx->jcr = jcr;
       plugin_ctx_list[i].bContext = (void *)b_ctx;
       plugin_ctx_list[i].pContext = NULL;
@@ -436,7 +430,7 @@ void free_plugins(JCR *jcr)
    foreach_alist_index(i, plugin, sd_plugin_list) {
       /* Free the plugin instance */
       sdplug_func(plugin)->freePlugin(&plugin_ctx_list[i]);
-      free(plugin_ctx_list[i].bContext);     /* free Bacula private context */
+      free(plugin_ctx_list[i].bContext);     /* free Bareos private context */
    }
    free(plugin_ctx_list);
    jcr->plugin_ctx_list = NULL;
@@ -449,13 +443,13 @@ void free_plugins(JCR *jcr)
  *
  * ==============================================================
  */
-static bRC baculaGetValue(bpContext *ctx, bsdrVariable var, void *value)
+static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
 {
    JCR *jcr;
    if (!ctx) {
       return bRC_Error;
    }
-   jcr = ((bacula_ctx *)ctx->bContext)->jcr;
+   jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    if (!jcr) {
       return bRC_Error;
    }
@@ -469,7 +463,7 @@ static bRC baculaGetValue(bpContext *ctx, bsdrVariable var, void *value)
       break;
    case bsdVarJobName:
       *((char **)value) = jcr->Job;
-      Dmsg1(dbglvl, "Bacula: return Job name=%s\n", jcr->Job);
+      Dmsg1(dbglvl, "Bareos: return Job name=%s\n", jcr->Job);
       break;
    default:
       break;
@@ -477,34 +471,34 @@ static bRC baculaGetValue(bpContext *ctx, bsdrVariable var, void *value)
    return bRC_OK;
 }
 
-static bRC baculaSetValue(bpContext *ctx, bsdwVariable var, void *value)
+static bRC bareosSetValue(bpContext *ctx, bsdwVariable var, void *value)
 {
    JCR *jcr;
    if (!value || !ctx) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "bacula: baculaGetValue var=%d\n", var);
-   jcr = ((bacula_ctx *)ctx->bContext)->jcr;
+// Dmsg1(dbglvl, "bareos: bareosGetValue var=%d\n", var);
+   jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    if (!jcr) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "Bacula: jcr=%p\n", jcr);
+// Dmsg1(dbglvl, "Bareos: jcr=%p\n", jcr);
    /* Nothing implemented yet */
-   Dmsg1(dbglvl, "sd-plugin: baculaSetValue var=%d\n", var);
+   Dmsg1(dbglvl, "sd-plugin: bareosSetValue var=%d\n", var);
    return bRC_OK;
 }
 
-static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...)
+static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
 {
    int i;
    va_list args;
    uint32_t event;
-   bacula_ctx *b_ctx;
+   b_plugin_ctx *b_ctx;
 
    if (!ctx) {
       return bRC_Error;
    }
-   b_ctx = (bacula_ctx *)ctx->bContext;
+   b_ctx = (b_plugin_ctx *)ctx->bContext;
    va_start(args, nr_events);
    for (i = 0; i < nr_events; i++) {
       event = va_arg(args, uint32_t);
@@ -515,7 +509,7 @@ static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...)
    return bRC_OK;
 }
 
-static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...)
 {
    va_list arg_ptr;
@@ -523,7 +517,7 @@ static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
    JCR *jcr;
 
    if (ctx) {
-      jcr = ((bacula_ctx *)ctx->bContext)->jcr;
+      jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    } else {
       jcr = NULL;
    }
@@ -535,7 +529,7 @@ static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
    return bRC_OK;
 }
 
-static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...)
 {
    va_list arg_ptr;
@@ -548,18 +542,18 @@ static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
    return bRC_OK;
 }
 
-static char *baculaEditDeviceCodes(DCR *dcr, char *omsg,
+static char *bareosEditDeviceCodes(DCR *dcr, char *omsg,
                                    const char *imsg, const char *cmd)
 {
    return edit_device_codes(dcr, omsg, imsg, cmd);
 }
 
-static char *baculaLookupCryptoKey(const char *VolumeName)
+static char *bareosLookupCryptoKey(const char *VolumeName)
 {
    return lookup_crypto_cache_entry(VolumeName);
 }
 
-static bool baculaUpdateVolumeInfo(DCR *dcr)
+static bool bareosUpdateVolumeInfo(DCR *dcr)
 {
    return dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ);
 }

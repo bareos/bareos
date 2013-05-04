@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Program to check a BAREOS database for consistency and to make repairs
  *
- *  Program to check a Bacula database for consistency and to
- *   make repairs
- *
- *   Kern E. Sibbald, August 2002
- *
+ * Kern E. Sibbald, August 2002
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "cats/cats.h"
 #include "cats/sql_glue.h"
 #include "lib/runscript.h"
@@ -107,14 +99,14 @@ static int check_idx_handler(void *ctx, int num_fields, char **row);
 static void usage()
 {
    fprintf(stderr,
-"Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug_level] <working-directory> <bacula-database> <user> <password> [<dbhost>] [<dbport>]\n"
+"Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug level] [-D driver name] <working-directory> <bareos-database> <user> <password> [<dbhost>] [<dbport>]\n"
 "       -b                batch mode\n"
 "       -C                catalog name in the director conf file\n"
 "       -c                Director conf filename\n"
 "       -B                print catalog configuration and exit\n"
 "       -d <nn>           set debug level to <nn>\n"
 "       -dt               print a timestamp in debug output\n"
-"       -D <driver name>  specify the driver database name (default NULL)\n"
+"       -D <driver name>  specify the database driver name (default NULL) <postgresql|mysql|sqlite>\n"
 "       -f                fix inconsistencies\n"
 "       -v                verbose\n"
 "       -?                print this message\n\n");
@@ -133,8 +125,8 @@ int main (int argc, char *argv[])
    char *endptr;
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    lmgr_init_thread();
 
    my_name_is(argc, argv, "dbcheck");
@@ -257,7 +249,7 @@ int main (int argc, char *argv[])
        * This is needed by SQLite to find the db
        */
       working_directory = argv[0];
-      db_name = "bacula";
+      db_name = "bareos";
       user = db_name;
       password = "";
       dbhost = NULL;
@@ -897,9 +889,9 @@ static void eliminate_orphaned_path_records()
 {
    db_int64_ctx lctx;
    lctx.count=0;
-   db_sql_query(db, "SELECT 1 FROM Job WHERE HasCache=1 LIMIT 1", 
+   db_sql_query(db, "SELECT 1 FROM Job WHERE HasCache=1 LIMIT 1",
                 db_int64_handler, &lctx);
-   
+
    if (lctx.count == 1) {
       printf(_("Pruning orphaned Path entries isn't possible when using BVFS.\n"));
       return;

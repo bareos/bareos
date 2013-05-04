@@ -3,16 +3,16 @@
 # which contains general platform installation.
 #
 #  17 August 2009 -- Lorenz Schori
-# 
-#   for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+#   for Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
 
 
-# bacula version and download site
-BACULA_VERSION:=@VERSION@
-BACULA_DL_URL:=http://downloads.sourceforge.net/project/bacula/bacula/${BACULA_VERSION}/bacula-${BACULA_VERSION}.tar.gz
+# bareos version and download site
+BAREOS_VERSION:=@VERSION@
+BAREOS_DL_URL:=http://downloads.sourceforge.net/project/bareos/bareos/${BAREOS_VERSION}/bareos-${BAREOS_VERSION}.tar.gz
 
-# Build universal binary. Comment out when building versions of bacula < 3.0.0
+# Build universal binary. Comment out when building versions of bareos < 3.0.0
 ARCHFLAGS:=-arch i386 -arch ppc
 MACOSX_SDK_SYSROOT:=/Developer/SDKs/MacOSX10.4u.sdk
 MACOSX_VERSION_FLAGS:=-mmacosx-version-min=10.4
@@ -30,27 +30,27 @@ DL_DIR:=dl
 BUILD_DIR:=build
 PRODUCTS_DIR:=products
 
-WORKING_DIR:=${BUILD_DIR}/${BACULA_VERSION}
-BACULA_TAR:=${DL_DIR}/bacula-${BACULA_VERSION}.tar.gz
-BACULA_SOURCE:=${WORKING_DIR}/bacula-${BACULA_VERSION}
-BACULA_DESTDIR:=${WORKING_DIR}/destdir
-BACULA_PREFIX:=/usr/local/bacula-${BACULA_VERSION}
-BACULA_FD_CONF:=/Library/Preferences/bacula/bacula-fd.conf
-BACULA_WORKING_DIR:=/private/var/bacula/working
-BACULA_PMDOC:=${WORKING_DIR}/installer.pmdoc
+WORKING_DIR:=${BUILD_DIR}/${BAREOS_VERSION}
+BAREOS_TAR:=${DL_DIR}/bareos-${BAREOS_VERSION}.tar.gz
+BAREOS_SOURCE:=${WORKING_DIR}/bareos-${BAREOS_VERSION}
+BAREOS_DESTDIR:=${WORKING_DIR}/destdir
+BAREOS_PREFIX:=/usr/local/bareos-${BAREOS_VERSION}
+BAREOS_FD_CONF:=/Library/Preferences/bareos/bareos-fd.conf
+BAREOS_WORKING_DIR:=/private/var/bareos/working
+BAREOS_PMDOC:=${WORKING_DIR}/installer.pmdoc
 
-# Detect whether we sit inside the bacula source tree. In this case we won't
+# Detect whether we sit inside the bareos source tree. In this case we won't
 # download the tar from sourceforge but instead work with what its there
 # already
 CURSUB:=$(CURDIR:%/platforms/osx=%)
 ifneq ($(CURDIR),$(CURSUB))
-	BACULA_TAR:=
-	BACULA_SOURCE:=../../
-#	BACULA_VERSION:=$(shell sed -n 's,^VERSION=,,p' $(CURSUB)/autoconf/Make.common)
+	BAREOS_TAR:=
+	BAREOS_SOURCE:=../../
+#	BAREOS_VERSION:=$(shell sed -n 's,^VERSION=,,p' $(CURSUB)/autoconf/Make.common)
 endif
 
-PACKAGE_TITLE:=Bacula File Daemon ${BACULA_VERSION}
-PACKAGE_ID:=org.bacula.bacula-fd.pkg
+PACKAGE_TITLE:=Bareos File Daemon ${BAREOS_VERSION}
+PACKAGE_ID:=org.bareos.bareos-fd.pkg
 PACKAGE_DIR:=${PRODUCTS_DIR}/${PACKAGE_TITLE}
 PACKAGE_BUNDLE:=${PACKAGE_DIR}/${PACKAGE_TITLE}.pkg
 PACKAGE_DMG:=${PRODUCTS_DIR}/${PACKAGE_TITLE}.dmg
@@ -58,12 +58,12 @@ PACKAGE_RESOURCES:=ReadMe.html postflight preupgrade
 PACKAGE_XRESOURCES:=postflight preupgrade
 
 # Flags for the toolchain
-CONFIGFLAGS:=--enable-client-only --prefix=${BACULA_PREFIX} \
+CONFIGFLAGS:=--enable-client-only --prefix=${BAREOS_PREFIX} \
     --with-dir-password=@DIR_PW@ --with-fd-password=@FD_PW@ \
     --with-sd-password=@SD_PW@ --with-mon-dir-password=@MON_DIR_PW@ \
     --with-mon-fd-password=@MON_FD_PW@ --with-mon-sd-password=@MON_SD_PW@ \
     --with-basename=@BASENAME@ --with-hostname=@HOSTNAME@ \
-    --with-working-dir=${BACULA_WORKING_DIR}
+    --with-working-dir=${BAREOS_WORKING_DIR}
 CPPFLAGS:=-isysroot ${MACOSX_SDK_SYSROOT} ${MACOSX_VERSION_FLAGS}
 CFLAGS:=-O -g ${ARCHFLAGS}
 CXXFLAGS:=${CFLAGS}
@@ -78,19 +78,19 @@ CXXPP:=cpp-4.0
 
 # Placeholders for *.in files
 INFILE_SUBST=\
-  -e "s,@PREFIX@,${BACULA_PREFIX},g" \
-  -e "s,@BACULA_VERSION@,${BACULA_VERSION},g" \
-  -e "s,@FD_CONF@,${BACULA_FD_CONF},g" \
-  -e "s,@BACULA_DESTDIR@,${BACULA_DESTDIR},g" \
+  -e "s,@PREFIX@,${BAREOS_PREFIX},g" \
+  -e "s,@BAREOS_VERSION@,${BAREOS_VERSION},g" \
+  -e "s,@FD_CONF@,${BAREOS_FD_CONF},g" \
+  -e "s,@BAREOS_DESTDIR@,${BAREOS_DESTDIR},g" \
   -e "s,@PACKAGE_ID@,${PACKAGE_ID},g"
 
 dmg: pkg
 	hdiutil create -srcfolder "${PACKAGE_DIR}" "${PACKAGE_DMG}"
 
-pkg: ${BACULA_DESTDIR} ${BACULA_PMDOC} ${WORKING_DIR}/resources
+pkg: ${BAREOS_DESTDIR} ${BAREOS_PMDOC} ${WORKING_DIR}/resources
 	mkdir -p "${PACKAGE_DIR}"
 
-	${PM} --doc "${BACULA_PMDOC}" --id "${PACKAGE_ID}" --no-recommend --out "${PACKAGE_BUNDLE}"
+	${PM} --doc "${BAREOS_PMDOC}" --id "${PACKAGE_ID}" --no-recommend --out "${PACKAGE_BUNDLE}"
 
 	cp ${WORKING_DIR}/resources/ReadMe.html "${PACKAGE_DIR}/ReadMe.html"
 
@@ -98,17 +98,17 @@ pkg: ${BACULA_DESTDIR} ${BACULA_PMDOC} ${WORKING_DIR}/resources
 		files/uninstall.command.in > "${PACKAGE_DIR}/uninstall.command";
 	chmod 0775 "${PACKAGE_DIR}/uninstall.command"
 
-${BACULA_PMDOC}: ${BACULA_DESTDIR} ${WORKING_DIR}/resources
-	mkdir -p "${BACULA_PMDOC}"
+${BAREOS_PMDOC}: ${BAREOS_DESTDIR} ${WORKING_DIR}/resources
+	mkdir -p "${BAREOS_PMDOC}"
 
 	for f in index.xml 01destdir.xml; do \
 		sed ${INFILE_SUBST} \
-			files/installer.pmdoc.in/$$f > "${BACULA_PMDOC}/$$f"; \
+			files/installer.pmdoc.in/$$f > "${BAREOS_PMDOC}/$$f"; \
 	done
 
-	python installer-gencontents.py ${BACULA_DESTDIR} > ${BACULA_PMDOC}/01destdir-contents.xml
+	python installer-gencontents.py ${BAREOS_DESTDIR} > ${BAREOS_PMDOC}/01destdir-contents.xml
 
-${WORKING_DIR}/resources: ${BACULA_DESTDIR}
+${WORKING_DIR}/resources: ${BAREOS_DESTDIR}
 	mkdir -p "${WORKING_DIR}/resources"
 
 	for res in ${PACKAGE_RESOURCES}; do \
@@ -120,30 +120,30 @@ ${WORKING_DIR}/resources: ${BACULA_DESTDIR}
 		chmod +x "${WORKING_DIR}/resources/$$xres"; \
 	done
 
-	cp "${BACULA_SOURCE}/LICENSE" "${WORKING_DIR}/resources/License.txt"
+	cp "${BAREOS_SOURCE}/LICENSE" "${WORKING_DIR}/resources/License.txt"
 
-${BACULA_DESTDIR}: ${BACULA_SOURCE}
-	(cd ${BACULA_SOURCE} && ./configure ${CONFIGFLAGS} CPPFLAGS="${CPPFLAGS}" CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" CC="${CC}" CPP="${CPP}" CXX="${CXX}" CXXPP="${CXXPP}")
-	${MAKE} -C ${BACULA_SOURCE}
-	${MAKE} -C ${BACULA_SOURCE} install DESTDIR="${CURDIR}/${BACULA_DESTDIR}"
+${BAREOS_DESTDIR}: ${BAREOS_SOURCE}
+	(cd ${BAREOS_SOURCE} && ./configure ${CONFIGFLAGS} CPPFLAGS="${CPPFLAGS}" CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" CC="${CC}" CPP="${CPP}" CXX="${CXX}" CXXPP="${CXXPP}")
+	${MAKE} -C ${BAREOS_SOURCE}
+	${MAKE} -C ${BAREOS_SOURCE} install DESTDIR="${CURDIR}/${BAREOS_DESTDIR}"
 
-	rm -rf "${BACULA_DESTDIR}/tmp"
+	rm -rf "${BAREOS_DESTDIR}/tmp"
 
-	for conffile in ${BACULA_DESTDIR}${BACULA_PREFIX}/etc/*.conf; do \
+	for conffile in ${BAREOS_DESTDIR}${BAREOS_PREFIX}/etc/*.conf; do \
 		mv $$conffile $$conffile.example; \
 	done
 
-	mkdir -p "${BACULA_DESTDIR}${BACULA_PREFIX}/Library/LaunchDaemons"
-	sed ${INFILE_SUBST} files/org.bacula.bacula-fd.plist.in \
-		> "${BACULA_DESTDIR}${BACULA_PREFIX}/Library/LaunchDaemons/org.bacula.bacula-fd.plist"
+	mkdir -p "${BAREOS_DESTDIR}${BAREOS_PREFIX}/Library/LaunchDaemons"
+	sed ${INFILE_SUBST} files/org.bareos.bareos-fd.plist.in \
+		> "${BAREOS_DESTDIR}${BAREOS_PREFIX}/Library/LaunchDaemons/org.bareos.bareos-fd.plist"
 
-${BACULA_SOURCE}: ${BACULA_TAR}
+${BAREOS_SOURCE}: ${BAREOS_TAR}
 	mkdir -p "${WORKING_DIR}"
-	${TAR} -xzf "${BACULA_TAR}" -C "${WORKING_DIR}"
+	${TAR} -xzf "${BAREOS_TAR}" -C "${WORKING_DIR}"
 
-${BACULA_TAR}:
+${BAREOS_TAR}:
 	mkdir -p "${DL_DIR}"
-	${CURL} -L -o "${BACULA_TAR}" "${BACULA_DL_URL}"
+	${CURL} -L -o "${BAREOS_TAR}" "${BAREOS_DL_URL}"
 
 .PHONY: distclean
 distclean: clean
@@ -152,4 +152,3 @@ distclean: clean
 .PHONY: clean
 clean:
 	rm -rf "${BUILD_DIR}" "${PACKAGE_DIR}" "${PACKAGE_DMG}"
-

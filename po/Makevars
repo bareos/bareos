@@ -1,7 +1,7 @@
 # Makefile variables for PO directory in any package using GNU gettext.
 
 # Usually the message domain is the same as the package name.
-DOMAIN = bacula
+DOMAIN = bareos
 
 # These two variables depend on the location of this directory.
 subdir = po
@@ -18,7 +18,7 @@ XGETTEXT_OPTIONS = --keyword=_
 # or entity, or to disclaim their copyright.  The empty string stands for
 # the public domain; in this case the translators are expected to disclaim
 # their copyright.
-COPYRIGHT_HOLDER = Kern Sibbald
+COPYRIGHT_HOLDER = Bareos GmbH & Co. KG
 
 # This is the email address or URL to which the translators shall report
 # bugs in the untranslated strings:
@@ -34,7 +34,7 @@ COPYRIGHT_HOLDER = Kern Sibbald
 # It can be your email address, or a mailing list address where translators
 # can write to without being subscribed, or the URL of a web page through
 # which the translators can contact you.
-MSGID_BUGS_ADDRESS = bacula-devel@lists.sourceforge.net
+MSGID_BUGS_ADDRESS = info@bareos.org
 
 # This is the list of locale categories, beyond LC_MESSAGES, for which the
 # message catalogs shall be used.  It is usually empty.

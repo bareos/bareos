@@ -1,4 +1,4 @@
- 
+
 #include <QAbstractEventDispatcher>
 #include <QApplication>
 

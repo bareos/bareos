@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU General Public
    License as published by the Free Software Foundation and included
@@ -13,17 +11,14 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
+   BAREOS® is a registered trademark of Bareos GmbH & Co. KG
 */
 #ifndef _MYINGRES_SH
 #define _MYINGRES_SH
@@ -69,7 +64,7 @@ typedef struct ing_varchar {
    char* value;
 } ING_VARCHAR;
 
-/* It seems, Bacula needs the complete query result stored in one data structure */
+/* It seems, Bareos needs the complete query result stored in one data structure */
 typedef struct ing_result {
    IISQLDA *sqlda;		/* descriptor */
    INGRES_FIELD *fields;

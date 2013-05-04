@@ -5,8 +5,15 @@
 #      Edit only bat.pro.in  -- bat.pro is built by the ./configure program
 #
 #   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#    
-CONFIG += qt release @QWT@
+#
+CONFIG += qt
+CONFIG -= debug_and_release
+CONFIG( debug, debug|release )  {
+   CONFIG -= release
+} else {
+   CONFIG -= debug
+   CONFIG += release
+}
 
 bins.path = /$(DESTDIR)@sbindir@
 bins.files = bat
@@ -18,18 +25,13 @@ help.files = help/*.html images/status.png images/mail-message-new.png
 TEMPLATE     = app
 TARGET       = bat
 DEPENDPATH  += .
-INCLUDEPATH += .. . ./console ./restore ./select
-LIBS        += -L../lib -lbaccfg -lbac -L../findlib -lbacfind @OPENSSL_LIBS@
+INCLUDEPATH += .. ../include .
+LIBS        += -L../lib -lbareoscfg -lbareos -L../findlib -lbareosfind @OPENSSL_LIBS@
 LIBTOOL_LINK = @QMAKE_LIBTOOL@ --silent --tag=CXX --mode=link
 LIBTOOL_INSTALL = @QMAKE_LIBTOOL@ --silent --mode=install
 QMAKE_LINK   = $${LIBTOOL_LINK} $(CXX)
 QMAKE_INSTALL_PROGRAM = $${LIBTOOL_INSTALL} install -m @SBINPERM@ -p
 QMAKE_CLEAN += .libs/* bat
-
-qwt {
-  INCLUDEPATH += @QWT_INC@ 
-  LIBS        += @QWT_LDFLAGS@ @QWT_LIB@
-}
 
 macx {
   ICON = images/bat_icon.icns
@@ -41,10 +43,10 @@ OBJECTS_DIR  = obj
 UI_DIR       = ui
 
 # Main window
-FORMS += main.ui 
+FORMS += main.ui
 FORMS += prefs.ui
-FORMS += label/label.ui 
-FORMS += relabel/relabel.ui 
+FORMS += label/label.ui
+FORMS += relabel/relabel.ui
 FORMS += mount/mount.ui
 FORMS += console/console.ui
 FORMS += restore/restore.ui restore/prerestore.ui restore/brestore.ui
@@ -60,9 +62,6 @@ FORMS += help/help.ui mediainfo/mediainfo.ui
 FORMS += status/dirstat.ui storage/content.ui
 FORMS += status/clientstat.ui
 FORMS += status/storstat.ui
-qwt {
-  FORMS += jobgraphs/jobplotcontrols.ui
-}
 
 # Main directory
 HEADERS += mainwin.h bat.h bat_conf.h qstd.h pages.h
@@ -147,12 +146,6 @@ SOURCES += jobs/jobs.cpp
 ## RestoreTree
 HEADERS += restore/restoretree.h
 SOURCES += restore/restoretree.cpp
-
-## Job Step Graphs
-qwt {
-  HEADERS += jobgraphs/jobplot.h
-  SOURCES += jobgraphs/jobplot.cpp
-}
 
 # Help dialog
 HEADERS += help/help.h

@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +11,21 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Challenge Response Authentication Method using MD5 (CRAM-MD5)
- *
+ * Challenge Response Authentication Method using MD5 (CRAM-MD5)
  * cram-md5 is based on RFC2104.
  *
- * Written for Bacula by Kern E. Sibbald, May MMI.
- *
+ * Kern E. Sibbald, May MMI.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 const int dbglvl = 50;
 
@@ -97,7 +88,7 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, int
    if (ok) {
       Dmsg1(dbglvl, "Authenticate OK %s\n", host);
    } else {
-      bin_to_base64(host, sizeof(host), (char *)hmac, 16, false);     
+      bin_to_base64(host, sizeof(host), (char *)hmac, 16, false);
       ok = bstrcmp(bs->msg, host);
       if (!ok) {
          Dmsg2(dbglvl, "Authenticate NOT OK: wanted %s, got %s\n", host, bs->msg);

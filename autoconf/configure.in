@@ -3,8 +3,8 @@ dnl Process this file with autoconf to produce a configure script.
 dnl
 dnl require a recent autoconf
 AC_PREREQ(2.61)
-AC_INIT([bacula], m4_esyscmd([sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ../src/version.h src/version.h 2> /dev/null | tr -d '\n']))
-AC_CONFIG_SRCDIR(src/version.h)
+AC_INIT([bareos], m4_esyscmd([sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ../src/include/version.h src/include/version.h 2> /dev/null | tr -d '\n']))
+AC_CONFIG_SRCDIR(src/include/version.h)
 
 BUILD_DIR=`pwd`
 cd ..
@@ -13,78 +13,60 @@ cd ${BUILD_DIR}
 AC_SUBST(BUILD_DIR)
 AC_SUBST(TOP_DIR)
 AC_CONFIG_AUX_DIR(${BUILD_DIR}/autoconf)
-AC_CONFIG_HEADERS(src/config.h:autoconf/config.h.in)
-
-dnl minimal Win32 stuff for "make clean"
-WIN32BUILDDIR=${BUILD_DIR}/src/win32
-WIN32MAINDIR=${BUILD_DIR}
-WIN32TOPDIR=${TOP_DIR}
-AC_SUBST(WIN32BUILDDIR)
-AC_SUBST(WIN32MAINDIR)
-AC_SUBST(WIN32TOPDIR)
+AC_CONFIG_HEADERS(src/include/config.h:autoconf/config.h.in)
 
 dnl search for true and false programs.
 AC_PATH_PROGS(TRUEPRG, true, :)
 AC_PATH_PROGS(FALSEPRG, false, :)
 
-
-dnl bacula version
+dnl bareos version
 post_host=
-if test "x$BACULA" != x; then
-   post_host=`echo -${BACULA} | tr 'A-Z ' 'a-z-'`
+if test "x$BAREOS" != x; then
+   post_host=`echo -${BAREOS} | tr 'A-Z ' 'a-z-'`
 fi
-BACULA=${BACULA:-Bacula}
-VERSION=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-DATE=`sed -n -e 's/^.*[ \t]*BDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-LSMDATE=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+BAREOS=${BAREOS:-Bareos}
+VERSION=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+DATE=`sed -n -e 's/^.*[ \t]*BDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LSMDATE=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
 BDB_VERSION=`sed -n -e 's/^.*BDB_VERSION \(.*\)$/\1/p' ${srcdir}/src/cats/cats.h`
 AC_SUBST(VERSION)dnl
 AC_SUBST(DATE)dnl
 AC_SUBST(LSMDATE)dnl
-AC_SUBST(BACULA)dnl
+AC_SUBST(BAREOS)dnl
 AC_SUBST(post_host)dnl
 AC_SUBST(BDB_VERSION)dnl
 
 dnl src/lib
 dnl can be overwritten by specific values from version.h
-LIBBAC_LT_RELEASE=`sed -n -e 's/^#.*LIBBAC_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-LIBBACCFG_LT_RELEASE=`sed -n -e 's/^#.*LIBBACCFG_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-
-LIBBAC_LT_RELEASE=${LIBBAC_LT_RELEASE:-$VERSION}
-LIBBACCFG_LT_RELEASE=${LIBBACCFG_LT_RELEASE:-$VERSION}
-
-AC_SUBST(LIBBAC_LT_RELEASE)dnl
-AC_SUBST(LIBBACCFG_LT_RELEASE)dnl
+LIBBAREOS_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOS_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LIBBAREOSCFG_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSCFG_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LIBBAREOS_LT_RELEASE=${LIBBAREOS_LT_RELEASE:-$VERSION}
+LIBBAREOSCFG_LT_RELEASE=${LIBBAREOSCFG_LT_RELEASE:-$VERSION}
+AC_SUBST(LIBBAREOS_LT_RELEASE)dnl
+AC_SUBST(LIBBAREOSCFG_LT_RELEASE)dnl
 
 dnl src/cats
 dnl can be overwritten by specific values from version.h
-LIBBACSQL_LT_RELEASE=`sed -n -e 's/^#.*LIBBACSQL_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-LIBBACCATS_LT_RELEASE=`sed -n -e 's/^#.*LIBBACCATS_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-
-LIBBACSQL_LT_RELEASE=${LIBBACSQL_LT_RELEASE:-$VERSION}
-LIBBACCATS_LT_RELEASE=${LIBBACCATS_LT_RELEASE:-$VERSION}
-
-AC_SUBST(LIBBACSQL_LT_RELEASE)dnl
-AC_SUBST(LIBBACCATS_LT_RELEASE)dnl
+LIBBAREOSSQL_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSSQL_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LIBBAREOSCATS_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSCATS_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LIBBAREOSSQL_LT_RELEASE=${LIBBAREOSSQL_LT_RELEASE:-$VERSION}
+LIBBAREOSCATS_LT_RELEASE=${LIBBAREOSCATS_LT_RELEASE:-$VERSION}
+AC_SUBST(LIBBAREOSSQL_LT_RELEASE)dnl
+AC_SUBST(LIBBAREOSCATS_LT_RELEASE)dnl
 
 dnl src/findlib
 dnl can be overwritten by specific values from version.h
-LIBBACFIND_LT_RELEASE=`sed -n -e 's/^#.*LIBBACFIND_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-
-LIBBACFIND_LT_RELEASE=${LIBBACFIND_LT_RELEASE:-$VERSION}
-
-AC_SUBST(LIBBACFIND_LT_RELEASE)dnl
+LIBBAREOSFIND_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSFIND_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LIBBAREOSFIND_LT_RELEASE=${LIBBAREOSFIND_LT_RELEASE:-$VERSION}
+AC_SUBST(LIBBAREOSFIND_LT_RELEASE)dnl
 
 dnl src/ndmp
 dnl can be overwritten by specific values from version.h
-LIBBACNDMP_LT_RELEASE=`sed -n -e 's/^#.*LIBBACFIND_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+LIBBAREOSNDMP_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSNDMP_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LIBBAREOSNDMP_LT_RELEASE=${LIBBAREOSNDMP_LT_RELEASE:-$VERSION}
+AC_SUBST(LIBBAREOSNDMP_LT_RELEASE)dnl
 
-LIBBACNDMP_LT_RELEASE=${LIBBACNDMP_LT_RELEASE:-$VERSION}
-
-AC_SUBST(LIBBACNDMP_LT_RELEASE)dnl
-
-echo "configuring for ${BACULA} $VERSION ($DATE)"
-
+echo "configuring for ${BAREOS} $VERSION ($DATE)"
 
 dnl -------------------------------------------------------
 dnl Check for compiler.
@@ -117,9 +99,13 @@ dnl value with the name of the rm command and not rm -f which is its normal cont
 dnl of strange output of the configure script (like things don't exist etc.).
 dnl So we name it REMOVE (more software has run into this problem)
 AC_PATH_PROG(REMOVE, rm, rm)
+dnl Alert !!!
+dnl If we name the variable ECHO it will shadow the ECHO variable in the configure script
+dnl This gives all kind of strange output in the make depend on some platforms
+dnl So we name it ECHOCMD (more software has run into this problem)
+AC_PATH_PROG(ECHOCMD, echo, echo)
 AC_PATH_PROG(CP, cp, cp)
 AC_PATH_PROG(SED, sed, sed)
-AC_PATH_PROG(ECHO, echo, echo)
 AC_PATH_PROG(CMP, cmp, cmp)
 AC_PATH_PROG(TBL, tbl, tbl)
 AC_PATH_PROG(AR, ar, ar)
@@ -180,7 +166,6 @@ if test x$use_libtool != xno; then
    DEFAULT_SHARED_OBJECT_TYPE=".la"
    LIBTOOL="\$(LIBTOOL)"
    LIBTOOL_INSTALL_TARGET="libtool-install"
-   LIBTOOL_UNINSTALL_TARGET="libtool-uninstall"
    LIBTOOL_CLEAN_TARGET="libtool-clean"
    QMAKE_LIBTOOL="${BUILD_DIR}/libtool"
    FD_PLUGIN_DIR="src/plugins/fd"
@@ -193,7 +178,6 @@ else
    DEFAULT_SHARED_OBJECT_TYPE=".so"
    LIBTOOL="# \$(LIBTOOL)"
    LIBTOOL_INSTALL_TARGET=""
-   LIBTOOL_UNINSTALL_TARGET=""
    LIBTOOL_CLEAN_TARGET=""
    QMAKE_LIBTOOL="# ${BUILD_DIR}/libtool"
    FD_PLUGIN_DIR=""
@@ -207,7 +191,6 @@ AC_SUBST(DEFAULT_ARCHIVE_TYPE)
 AC_SUBST(DEFAULT_SHARED_OBJECT_TYPE)
 AC_SUBST(LIBTOOL)
 AC_SUBST(LIBTOOL_INSTALL_TARGET)
-AC_SUBST(LIBTOOL_UNINSTALL_TARGET)
 AC_SUBST(LIBTOOL_CLEAN_TARGET)
 AC_SUBST(QMAKE_LIBTOOL)
 AC_SUBST(FD_PLUGIN_DIR)
@@ -229,21 +212,18 @@ dnl libtool is enabled
 
 if test x$use_libtool != xno -a x$install_includes = xyes; then
    INCLUDE_INSTALL_TARGET="install-includes"
-   INCLUDE_UNINSTALL_TARGET="uninstall-includes"
 else
    INCLUDE_INSTALL_TARGET=""
-   INCLUDE_UNINSTALL_TARGET=""
 fi
 AC_SUBST(INCLUDE_INSTALL_TARGET)
-AC_SUBST(INCLUDE_UNINSTALL_TARGET)
 
 dnl --------------------------------------------------
-dnl Bacula OP Sys determination (see aclocal.m4)
+dnl Bareos OP Sys determination (see aclocal.m4)
 dnl --------------------------------------------------
 BA_CHECK_OPSYS
 
 dnl -----------------------------------------------------------
-dnl Bacula OPSys Distribution determination (see aclocal.m4)
+dnl Bareos OPSys Distribution determination (see aclocal.m4)
 dnl ----------------------------------------------------------
 BA_CHECK_OPSYS_DISTNAME
 
@@ -256,7 +236,7 @@ AM_GNU_GETTEXT([external])
 dnl ------------------------------------------------------------------
 dnl If the user has not set --prefix, we set our default to nothing.
 dnl In this case, if the user has not set --sysconfdir, we set it
-dnl to the package default of /etc/bacula.  If either --prefix or
+dnl to the package default of /etc/bareos.  If either --prefix or
 dnl --sysconfdir is set, we leave sysconfdir alone except to eval it.
 dnl If the user has not set --libdir, we set it to the package
 dnl default of /usr/lib. If either --prefix or --libdir is set,
@@ -268,7 +248,7 @@ dnl ------------------------------------------------------------------
 os_name=`uname -s 2>/dev/null`
 if test x${prefix} = xNONE ; then
    if test `eval echo ${sysconfdir}` = NONE/etc ; then
-      sysconfdir=/etc/bacula
+      sysconfdir=/etc/bareos
    fi
 
    if test `eval echo ${libdir}` = NONE/lib ; then
@@ -334,7 +314,7 @@ if test x$mandir = x'${prefix}/man' ; then
 fi
 
 dnl -------------------------------------------------------------------------
-dnl  If the user has not set --htmldir, we default to /usr/share/doc/bacula/html
+dnl  If the user has not set --htmldir, we default to /usr/share/doc/bareos/html
 dnl -------------------------------------------------------------------------
 if test x$htmldir = x${docdir} ; then
    htmldir=`eval echo ${docdir}/html`
@@ -344,7 +324,7 @@ dnl -------------------------------------------------------------------------
 dnl  If the user has not set --docdir, we default to /usr/share/doc/
 dnl -------------------------------------------------------------------------
 if test x$docdir = x'/usr/share/doc/' ; then
-   docdir=`eval echo ${docdir}bacula`
+   docdir=`eval echo ${docdir}bareos`
 fi
 
 
@@ -361,12 +341,10 @@ fi
 support_smartalloc=yes
 support_readline=yes
 support_conio=yes
-support_gnome=no
 support_bat=no
 support_tray_monitor=no
 support_tls=no
 support_crypto=no
-gnome_version=
 support_static_tools=no
 support_static_fd=no
 support_static_sd=no
@@ -386,25 +364,6 @@ dnl CHECKING COMMAND LINE OPTIONS
 dnl --------------------------------------------------------------------------
 
 dnl -------------------------------------------
-dnl gnome -- no longer supported
-dnl -------------------------------------------
-AC_ARG_ENABLE(gnome,
-   AC_HELP_STRING([--enable-gnome], [enable build of bgnome-console GUI @<:@default=no@:>@]),
-   [
-       if test x$enableval = xyes; then
-	  support_gnome=yes
-       fi
-   ]
-)
-
-GNOME_DIR=
-if test x$support_gnome = xyes; then
-   AC_MSG_ERROR(bgnome-console no longer supported)
-   AC_MSG_ERROR(--enable-gnome option no longer supported)
-fi
-# AC_SUBST(GNOME_DIR)
-
-dnl -------------------------------------------
 dnl bat (default off)
 dnl -------------------------------------------
 AC_ARG_ENABLE(bat,
@@ -419,51 +378,16 @@ AC_ARG_ENABLE(bat,
 
 BAT_DIR=
 if test x$support_bat = xyes; then
-   abc=`$PKGCONFIG --atleast-version=4.2 QtGui`
+   abc=`$PKGCONFIG --atleast-version=4.6 QtGui`
    pkg=$?
    if test $pkg = 0; then
       BAT_DIR=src/qt-console
    else
-      AC_MSG_ERROR(Unable to find Qt4 installation needed by bat)
+      AC_MSG_ERROR(Unable to find suitable Qt4 installation needed by bat)
    fi
 fi
 
 AC_SUBST(BAT_DIR)
-AC_SUBST(QWT_INC)
-AC_SUBST(QWT_LDFLAGS)
-AC_SUBST(QWT_LIB)
-AC_SUBST(QWT)
-
-dnl -------------------------------------------
-dnl tray-monitor (default off)
-dnl -------------------------------------------
-AC_ARG_ENABLE(tray-monitor,
-   AC_HELP_STRING([--enable-tray-monitor], [enable build of Gnome tray monitor (compatible with KDE @<:@default=no@:>@]),
-   [
-       if test x$enableval = xyes; then
-	  support_tray_monitor=yes
-       fi
-   ]
-)
-
-TRAY_MONITOR_DIR=
-if test x$support_tray_monitor = xyes; then
-   abc=`$PKGCONFIG --exists gtk+-2.0`
-   pkg=$?
-   if test $pkg = 0; then
-      TRAY_MONITOR_CPPFLAGS=`$PKGCONFIG --cflags gtk+-2.0`
-      TRAY_MONITOR_LDFLAGS=`$PKGCONFIG --libs gtk+-2.0`
-      AC_SUBST(TRAY_MONITOR_CPPFLAGS)
-      AC_SUBST(TRAY_MONITOR_LDFLAGS)
-      TRAY_MONITOR_DIR=src/tray-monitor
-      abc=`$PKGCONFIG --atleast-version=2.4 gtk+-2.0`
-      pkg=$?
-      if test $pkg = 0; then
-	 AC_DEFINE(HAVE_GTK_2_4, 1, [Define to 1 if you have GTK 4.2 or greater loaded])
-      fi
-   fi
-fi
-AC_SUBST(TRAY_MONITOR_DIR)
 
 dnl -------------------------------------------
 dnl smartalloc (default off)
@@ -538,7 +462,7 @@ AC_ARG_ENABLE(static-fd,
 
 STATIC_FD=
 if test x$support_static_fd = xyes; then
-   STATIC_FD="static-bacula-fd"
+   STATIC_FD="static-bareos-fd"
 fi
 AC_SUBST(STATIC_FD)
 
@@ -560,7 +484,7 @@ AC_ARG_ENABLE(static-sd,
 
 STATIC_SD=
 if test x$support_static_sd = xyes; then
-   STATIC_SD="static-bacula-sd"
+   STATIC_SD="static-bareos-sd"
 fi
 AC_SUBST(STATIC_SD)
 
@@ -582,7 +506,7 @@ AC_ARG_ENABLE(static-dir,
 
 STATIC_DIR=
 if test x$support_static_dir = xyes; then
-   STATIC_DIR="static-bacula-dir"
+   STATIC_DIR="static-bareos-dir"
 fi
 AC_SUBST(STATIC_DIR)
 
@@ -603,13 +527,10 @@ AC_ARG_ENABLE(static-cons,
 )
 
 STATIC_CONS=
-STATIC_GNOME_CONS=
 if test x$support_static_cons = xyes; then
    STATIC_CONS="static-bconsole"
-   STATIC_GNOME_CONS="static-bgnome-console"
 fi
 AC_SUBST(STATIC_CONS)
-AC_SUBST(STATIC_GNOME_CONS)
 
 dnl -------------------------------------------
 dnl client_only  (default off)
@@ -672,7 +593,7 @@ AC_SUBST(STORED_DIR)
 AC_SUBST(SD_PLUGIN_DIR)
 
 dnl ---------------------------------------------------
-dnl Check for conio (Bacula readline substitute)(
+dnl Check for conio (Bareos readline substitute)(
 dnl ---------------------------------------------------
 dnl this allows you to turn it completely off
 AC_ARG_ENABLE(conio,
@@ -733,7 +654,7 @@ if test x$support_conio = xyes; then
       CONS_SRC="conio.c"
       got_conio="yes"
       support_readline=no
-      AC_DEFINE(HAVE_CONIO, 1, [Define to 1 if Bacula conio support enabled])
+      AC_DEFINE(HAVE_CONIO, 1, [Define to 1 if Bareos conio support enabled])
    else
       echo " "; echo "Required libraries not found. CONIO turned off ..."; echo " "
    fi
@@ -801,7 +722,7 @@ if test x$support_readline = xyes; then
 		CONS_INC="-I/usr/include/readline"
 		CONS_LIBS="-lreadline $TERM_LIB"
 	    ], [
-		dnl Did not find standard library, so try Bacula's default
+		dnl Did not find standard library, so try Bareos's default
 		AC_CHECK_HEADER(${TOP_DIR}/depkgs/readline/readline.h,
 		    [
 		        AC_DEFINE(HAVE_READLINE, 1, [Define to 1 if readline support should be enabled])
@@ -1139,9 +1060,9 @@ AC_SEARCH_LIBS(dlopen, [dl])
 dnl ------------------------------------------
 dnl Where to place working dir
 dnl ------------------------------------------
-working_dir=`eval echo ${prefix}/opt/bacula/working`
+working_dir=`eval echo ${prefix}/opt/bareos/working`
 AC_ARG_WITH(working-dir,
-   AC_HELP_STRING([--with-working-dir=PATH], [specify path of Bacula working directory]),
+   AC_HELP_STRING([--with-working-dir=PATH], [specify path of Bareos working directory]),
    [
        if test "x$withval" != "xno" ; then
 	 working_dir=$withval
@@ -1149,7 +1070,7 @@ AC_ARG_WITH(working-dir,
    ]
 )
 
-AC_DEFINE_UNQUOTED(_PATH_BACULA_WORKINGDIR, "$working_dir", [Directory for daemon files])
+AC_DEFINE_UNQUOTED(_PATH_BAREOS_WORKINGDIR, "$working_dir", [Directory for daemon files])
 AC_SUBST(working_dir)
 
 dnl ------------------------------------------------------------------
@@ -1211,7 +1132,7 @@ dnl Where to place scriptdir (script files)
 dnl ------------------------------------------
 scriptdir=`eval echo ${sysconfdir}`
 AC_ARG_WITH(scriptdir,
-   AC_HELP_STRING([--with-scriptdir=PATH], [specify path of Bacula scripts directory]),
+   AC_HELP_STRING([--with-scriptdir=PATH], [specify path of Bareos scripts directory]),
    [
        if test "x$withval" != "xno" ; then
 	  scriptdir=$withval
@@ -1225,9 +1146,9 @@ AC_SUBST(scriptdir)
 dnl ------------------------------------------
 dnl Where to place bsrdir (bsr files)
 dnl ------------------------------------------
-bsrdir=`eval echo ${prefix}/opt/bacula/bsr`
+bsrdir=`eval echo ${prefix}/opt/bareos/bsr`
 AC_ARG_WITH(bsrdir,
-   AC_HELP_STRING([--with-bsrdir=PATH], [specify path of Bacula bsrs directory]),
+   AC_HELP_STRING([--with-bsrdir=PATH], [specify path of Bareos bsrs directory]),
    [
        if test "x$withval" != "xno" ; then
 	  bsrdir=$withval
@@ -1240,9 +1161,9 @@ AC_SUBST(bsrdir)
 dnl ------------------------------------------
 dnl Where to place logdir (bsr files)
 dnl ------------------------------------------
-logdir=`eval echo ${prefix}/opt/bacula/log`
+logdir=`eval echo ${prefix}/opt/bareos/log`
 AC_ARG_WITH(logdir,
-   AC_HELP_STRING([--with-logdir=PATH], [specify path of Bacula logs directory]),
+   AC_HELP_STRING([--with-logdir=PATH], [specify path of Bareos logs directory]),
    [
        if test "x$withval" != "xno" ; then
 	  logdir=$withval
@@ -1258,7 +1179,7 @@ AC_SUBST(logdir)
 # ------------------------------------------
 plugindir=`eval echo ${libdir}`
 AC_ARG_WITH(plugindir,
-   AC_HELP_STRING([--with-plugindir=PATH], [specify path of Bacula plugins directory]),
+   AC_HELP_STRING([--with-plugindir=PATH], [specify path of Bareos plugins directory]),
    [
        if test "x$withval" != "xno" ; then
 	  plugindir=$withval
@@ -1318,7 +1239,7 @@ dnl Where to place pid files
 dnl ------------------------------------
 piddir=/var/run
 AC_ARG_WITH(pid-dir,
-   AC_HELP_STRING([--with-pid-dir=PATH], [specify location of Bacula pid files]),
+   AC_HELP_STRING([--with-pid-dir=PATH], [specify location of Bareos pid files]),
    [
        if test "x$withval" != "xno" ; then
 	  piddir=$withval
@@ -1326,7 +1247,7 @@ AC_ARG_WITH(pid-dir,
    ]
 )
 
-AC_DEFINE_UNQUOTED(_PATH_BACULA_PIDDIR, "$piddir", [Directory for PID files])
+AC_DEFINE_UNQUOTED(_PATH_BAREOS_PIDDIR, "$piddir", [Directory for PID files])
 AC_SUBST(piddir)
 
 dnl ------------------------------------
@@ -1341,7 +1262,7 @@ else
    subsysdir=/var/run/subsys
 fi
 AC_ARG_WITH(subsys-dir,
-   AC_HELP_STRING([--with-subsys-dir=PATH], [specify location of Bacula subsys file]),
+   AC_HELP_STRING([--with-subsys-dir=PATH], [specify location of Bareos subsys file]),
    [
        if test "x$withval" != "xno" ; then
 	  subsysdir=$withval
@@ -1500,9 +1421,9 @@ AC_SUBST(mon_sd_password)
 dnl
 dnl Pickup any database name
 dnl
-db_name=bacula
+db_name=bareos
 AC_ARG_WITH(db_name,
-   AC_HELP_STRING([--with-db-name=DBNAME], [specify database name @<:@default=bacula@:>@]),
+   AC_HELP_STRING([--with-db-name=DBNAME], [specify database name @<:@default=bareos@:>@]),
    [
        if test "x$withval" != "x" ; then
 	  db_name=$withval
@@ -1511,9 +1432,9 @@ AC_ARG_WITH(db_name,
 )
 AC_SUBST(db_name)
 
-db_user=bacula
+db_user=bareos
 AC_ARG_WITH(db_user,
-   AC_HELP_STRING([--with-db-user=UNAME], [specify database user @<:@default=bacula@:>@]),
+   AC_HELP_STRING([--with-db-user=UNAME], [specify database user @<:@default=bareos@:>@]),
    [
        if test "x$withval" != "x" ; then
 	  db_user=$withval
@@ -1647,8 +1568,8 @@ AC_ARG_ENABLE(ndmp,
 
 if test x$support_ndmp = xyes; then
    NDMP_DIR="src/ndmp"
-   NDMP_LIBS="-L../ndmp -lbacndmp"
-   NDMP_DEPS="../ndmp/libbacndmp\$(DEFAULT_ARCHIVE_TYPE)"
+   NDMP_LIBS="-L../ndmp -lbareosndmp"
+   NDMP_DEPS="../ndmp/libbareosndmp\$(DEFAULT_ARCHIVE_TYPE)"
 else
    NDMP_DIR=""
    NDMP_LIBS=""
@@ -1715,7 +1636,7 @@ AC_ARG_ENABLE(sql-pooling,
 )
 
 dnl ------------------------------------------------
-dnl Bacula check for various SQL database engines
+dnl Bareos check for various SQL database engines
 dnl ------------------------------------------------
 
 dnl
@@ -1773,7 +1694,7 @@ if test x$build_client_only != xyes; then
          if test x$use_libtool = xno; then
 	    SHARED_CATALOG_TARGETS=""
          else
-	    SHARED_CATALOG_TARGETS="libbaccats-${DEFAULT_DB_TYPE}.la"
+	    SHARED_CATALOG_TARGETS="libbareoscats-${DEFAULT_DB_TYPE}.la"
          fi
          ;;
       *)
@@ -1802,9 +1723,9 @@ if test x$build_client_only != xyes; then
          for db_type in ${DB_BACKENDS}
          do
 	    if test -z "${SHARED_CATALOG_TARGETS}"; then
-	       SHARED_CATALOG_TARGETS="libbaccats-${db_type}.la"
+	       SHARED_CATALOG_TARGETS="libbareoscats-${db_type}.la"
 	    else
-	       SHARED_CATALOG_TARGETS="${SHARED_CATALOG_TARGETS} libbaccats-${db_type}.la"
+	       SHARED_CATALOG_TARGETS="${SHARED_CATALOG_TARGETS} libbareoscats-${db_type}.la"
 	    fi
          done
          ;;
@@ -1855,7 +1776,7 @@ AC_EXEEXT
 
 dnl See if we can use 64 bit file addresses
 largefile_support="no"
-AC_BAC_LARGEFILE
+AC_BRS_LARGEFILE
 
 AC_PATH_XTRA
 
@@ -2365,7 +2286,7 @@ AC_CHECK_FUNC(malloc_trim, [AC_DEFINE(HAVE_MALLOC_TRIM, 1, [Define to 1 if you h
 
 dnl --------------------------------------------------------------------------
 dnl On Solaris check for availability of libumem a very suitable memory
-dnl allocator for multithreaded programs (e.g. Bacula)
+dnl allocator for multithreaded programs (e.g. Bareos)
 dnl --------------------------------------------------------------------------
 if test x${HAVE_SUN_OS_TRUE} = x; then
     AC_CHECK_HEADER(umem.h, [AC_DEFINE(HAVE_UMEM_H, 1, [Define to 1 if you have the <umem.h> header file.])] , )
@@ -2715,7 +2636,7 @@ if test x$support_afs = xyes -o x$support_afs = xauto; then
       AFS_CFLAGS="-I${with_afsdir}/include"
    else
       if test -d ${with_afsdir}/include/openafs/afs/ ; then
-	 AFS_CFLAGS="-I${with_afsdir}/include/openafs"
+         AFS_CFLAGS="-I${with_afsdir}/include/openafs"
       fi
    fi
 
@@ -2727,8 +2648,8 @@ if test x$support_afs = xyes -o x$support_afs = xauto; then
    AC_CHECK_HEADERS(afs/afsint.h)
    AC_TRY_CPP(
        [
-	  #include <afs/afsint.h>
-	  #include <afs/venus.h>
+          #include <afs/afsint.h>
+          #include <afs/venus.h>
        ],
        AC_DEFINE(HAVE_AFS_VENUS_H,1,[Define to 1 if you have the <afs/venus.h> header file.])
    )
@@ -2741,11 +2662,11 @@ if test x$support_afs = xyes -o x$support_afs = xauto; then
    dnl
    AC_MSG_CHECKING(for pioctl in AFS libsys)
    for dir in ${with_afsdir}/lib \
-	      ${with_afsdir}/lib/afs \
-	      ${with_afsdir}/lib/openafs \
-	      ${with_afsdir}/lib64 \
-	      ${with_afsdir}/lib64/afs \
-	      ${with_afsdir}/lib64/openafs
+              ${with_afsdir}/lib/afs \
+              ${with_afsdir}/lib/openafs \
+              ${with_afsdir}/lib64 \
+              ${with_afsdir}/lib64/afs \
+              ${with_afsdir}/lib64/openafs
    do
       for arch_type in .a .so
       do
@@ -3289,20 +3210,17 @@ dnl
 dnl PFILES are platform specific files
 PFILES="platforms/Makefile"
 PSCMD="ps -e"
-WIN32=
 MACOSX=
 COMPRESS_MANPAGES=yes
 
 case "$DISTNAME" in
 aix)
-   DISTVER=`uname -r`
    PSCMD="ps -e -o pid,comm"
    PFILES="${PFILES} \
       platforms/aix/Makefile"
    TAPEDRIVE="/dev/rmt0.1"
   ;;
 alpha)
-   DISTVER=`uname -r`
    PTHREAD_LIB="-lpthread -lexc"
    if test "${CC}" = "gcc" ; then
       lld="lld"
@@ -3314,7 +3232,6 @@ alpha)
    TAPEDRIVE="/dev/nrmt0"
   ;;
 bsdi)
-   DISTVER=`uname -a |awk '{print $3}'`
    TAPEDRIVE="/dev/nrmt0"
    PTHREAD_LIB="-pthread"
    CFLAGS="${CFLAGS} -pthread"
@@ -3323,20 +3240,12 @@ bsdi)
    llu="qu"
    PFILES="${PFILES} \
        platforms/bsdi/Makefile \
-       platforms/bsdi/bacula-fd \
-       platforms/bsdi/bacula-sd \
-       platforms/bsdi/bacula-dir"
+       platforms/bsdi/bareos-fd \
+       platforms/bsdi/bareos-sd \
+       platforms/bsdi/bareos-dir"
    largefile_support="yes"
   ;;
-cygwin)
-   DISTVER=`uname -a |awk '{print $3}'`
-   TAPEDRIVE="/dev/nrst0"
-   WIN32=win32
-   WCFLAGS="-mwindows"
-   WLDFLAGS="-mwindows"
-  ;;
 darwin)
-   DISTVER=`uname -r`
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    MACOSX=macosx
@@ -3344,7 +3253,6 @@ darwin)
       platforms/darwin/Makefile"
   ;;
 osx)
-   DISTVER=`uname -r`
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    MACOSX=macosx
@@ -3352,40 +3260,23 @@ osx)
       platforms/osx/Makefile"
   ;;
 debian)
-   if `test -f /etc/apt/sources.list && grep -q ubuntu /etc/apt/sources.list`; then
-      DISTNAME="ubuntu"
-   fi
-   DISTVER=`cat /etc/debian_version`
-   if test -f /etc/lsb-release ; then
-      . /etc/lsb-release
-      if test "x$DISTRIB_ID" != "x" ; then
-	 DISTNAME=$DISTRIB_ID
-      fi
-      if test "x$DISTRIB_RELEASE" != "x" ; then
-	 DISTVER=$DISTRIB_RELEASE
-      fi
-   fi
-   if test "$DISTNAME" = "Ubuntu" ; then
-      DISTNAME="ubuntu"
-   fi
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    if test "$DISTNAME" = "ubuntu" ; then
       PFILES="${PFILES} \
 	 platforms/ubuntu/Makefile \
-	 platforms/ubuntu/bacula-fd \
-	 platforms/ubuntu/bacula-sd \
-	 platforms/ubuntu/bacula-dir"
+	 platforms/ubuntu/bareos-fd \
+	 platforms/ubuntu/bareos-sd \
+	 platforms/ubuntu/bareos-dir"
    else
       PFILES="${PFILES} \
 	 platforms/debian/Makefile \
-	 platforms/debian/bacula-fd \
-	 platforms/debian/bacula-sd \
-	 platforms/debian/bacula-dir"
+	 platforms/debian/bareos-fd \
+	 platforms/debian/bareos-sd \
+	 platforms/debian/bareos-dir"
    fi
   ;;
 freebsd)
-   DISTVER=`uname -a |awk '{print $3}'`
    VER=`echo $DISTVER | cut -c 1`
    if test x$VER = x4 ; then
       PTHREAD_LIB="${PTHREAD_LIBS:--pthread}"
@@ -3397,41 +3288,37 @@ freebsd)
    PSCMD="ps -ax -o pid,command"
    PFILES="${PFILES} \
        platforms/freebsd/Makefile \
-       platforms/freebsd/bacula-fd \
-       platforms/freebsd/bacula-sd \
-       platforms/freebsd/bacula-dir"
+       platforms/freebsd/bareos-fd \
+       platforms/freebsd/bareos-sd \
+       platforms/freebsd/bareos-dir"
    largefile_support="yes"
   ;;
 hurd)
-   DISTVER=`uname -r`
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
        platforms/hurd/Makefile \
-       platforms/hurd/bacula-fd \
-       platforms/hurd/bacula-sd \
-       platforms/hurd/bacula-dir"
+       platforms/hurd/bareos-fd \
+       platforms/hurd/bareos-sd \
+       platforms/hurd/bareos-dir"
   ;;
 hpux)
    PSCMD="UNIX95=1; ps -e -o pid,comm"
    CFLAGS="${CFLAGS} -D_XOPEN_SOURCE_EXTENDED=1"
-   DISTVER=`uname -r`
    TAPEDRIVE="/dev/rmt/0hnb"
    PTHREAD_LIB="-lpthread"
    AC_DEFINE(_INCLUDE_LONGLONG, 1, [Needed on HP-UX/g++ systems to support long long ints (int64)])
   ;;
 irix)
-   DISTVER=`uname -r`
    TAPEDRIVE="/dev/rmt/0cbn"
    PSCMD="ps -e -o pid,comm"
    PFILES="${PFILES} \
        platforms/irix/Makefile \
-       platforms/irix/bacula-fd \
-       platforms/irix/bacula-sd \
-       platforms/irix/bacula-dir"
+       platforms/irix/bareos-fd \
+       platforms/irix/bareos-sd \
+       platforms/irix/bareos-dir"
   ;;
 netbsd)
-   DISTVER=`uname -a |awk '{print $3}'`
    lld="qd"
    llu="qu"
    TAPEDRIVE="/dev/nrst0"
@@ -3440,7 +3327,6 @@ netbsd)
    CFLAGS="${CFLAGS} -pthread"
   ;;
 openbsd)
-   DISTVER=`uname -a |awk '{print $3}'`
    lld="qd"
    llu="qu"
    TAPEDRIVE="/dev/nrst0"
@@ -3449,76 +3335,58 @@ openbsd)
    CFLAGS="${CFLAGS} -pthread"
    PFILES="${PFILES} \
        platforms/openbsd/Makefile \
-       platforms/openbsd/bacula-fd \
-       platforms/openbsd/bacula-sd \
-       platforms/openbsd/bacula-dir"
+       platforms/openbsd/bareos-fd \
+       platforms/openbsd/bareos-sd \
+       platforms/openbsd/bareos-dir"
   ;;
 redhat)
-   if test -f /etc/whitebox-release ; then
-      f=/etc/whitebox-release
-   else
-      f=/etc/redhat-release
-   fi
-   if test `cat $f | grep release |\
-	 cut -f 3 -d ' '`x = "Enterprise"x ; then
-      DISTVER="Enterprise "`cat $f | grep release |\
-	  cut -f 6 -d ' '`
-   else
-       DISTVER=`cat /etc/redhat-release | grep release |\
-	   cut -f 5 -d ' '`
-   fi
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
        platforms/redhat/Makefile \
-       platforms/redhat/bacula-fd \
-       platforms/redhat/bacula-sd \
-       platforms/redhat/bacula-dir
+       platforms/redhat/bareos-fd \
+       platforms/redhat/bareos-sd \
+       platforms/redhat/bareos-dir
        "
   ;;
 mandrake)
-   DISTVER=`cat /etc/mandrake-release | grep release |\
-      cut -f 5 -d ' '`
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
        platforms/mandrake/Makefile \
-       platforms/mandrake/bacula-fd \
-       platforms/mandrake/bacula-sd \
-       platforms/mandrake/bacula-dir \
+       platforms/mandrake/bareos-fd \
+       platforms/mandrake/bareos-sd \
+       platforms/mandrake/bareos-dir \
        "
   ;;
 gentoo)
-   DISTVER=`awk '/version / {print $5}' < /etc/gentoo-release`
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
        platforms/gentoo/Makefile \
-    platforms/gentoo/bacula-init \
-       platforms/gentoo/bacula-fd \
-       platforms/gentoo/bacula-sd \
-       platforms/gentoo/bacula-dir"
+    platforms/gentoo/bareos-init \
+       platforms/gentoo/bareos-fd \
+       platforms/gentoo/bareos-sd \
+       platforms/gentoo/bareos-dir"
   ;;
 slackware)
-   DISTVER=`cat /etc/slackware-version`
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
        platforms/slackware/Makefile \
-       platforms/slackware/rc.bacula-fd \
-       platforms/slackware/rc.bacula-sd \
-       platforms/slackware/rc.bacula-dir\
-       platforms/slackware/functions.bacula"
+       platforms/slackware/rc.bareos-fd \
+       platforms/slackware/rc.bareos-sd \
+       platforms/slackware/rc.bareos-dir\
+       platforms/slackware/functions.bareos"
   ;;
 solaris)
-   DISTVER=`uname -r`
    TAPEDRIVE="/dev/rmt/0cbn"
    PSCMD="ps -e -o pid,comm"
    PFILES="${PFILES} \
        platforms/solaris/Makefile \
-       platforms/solaris/bacula-fd \
-       platforms/solaris/bacula-sd \
-       platforms/solaris/bacula-dir"
+       platforms/solaris/bareos-fd \
+       platforms/solaris/bareos-sd \
+       platforms/solaris/bareos-dir"
    COMPRESS_MANPAGES=
    case ${DISTVER} in
    5.5|5.6)
@@ -3534,30 +3402,16 @@ solaris)
    LIBS="$LIBS -lresolv -lrt"
   ;;
 suse)
-   DISTVER=`cat /etc/SuSE-release |grep VERSION|\
-       cut -f 3 -d ' '`
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
        platforms/suse/Makefile \
-       platforms/suse/bacula-fd \
-       platforms/suse/bacula-sd \
-       platforms/suse/bacula-dir \
-       platforms/suse/bacula"
-  ;;
-suse5)
-   DISTNAME=suse
-   DISTVER=5.x
-   TAPEDRIVE="/dev/nst0"
-   PSCMD="ps -e -o pid,command"
-   PFILES="${PFILES} \
-       platforms/suse/Makefile \
-       platforms/suse/bacula-fd \
-       platforms/suse/bacula-sd \
-       platforms/suse/bacula-dir"
+       platforms/suse/bareos-fd \
+       platforms/suse/bareos-sd \
+       platforms/suse/bareos-dir \
+       platforms/suse/bareos"
   ;;
 unknown)
-   DISTVER=unknown
    TAPEDRIVE="/dev/nst0"
   ;;
 *)
@@ -3581,10 +3435,10 @@ AC_ARG_WITH(systemd,
 
 	   PFILES="${PFILES} \
 		   platforms/systemd/Makefile \
-		   platforms/systemd/bacula.conf \
-		   platforms/systemd/bacula-dir.service \
-		   platforms/systemd/bacula-fd.service \
-		   platforms/systemd/bacula-sd.service"
+		   platforms/systemd/bareos.conf \
+		   platforms/systemd/bareos-dir.service \
+		   platforms/systemd/bareos-fd.service \
+		   platforms/systemd/bareos-sd.service"
 	   AC_DEFINE(HAVE_SYSTEMD, 1, [Define to 1 if systemd support should be enabled])
 	   AC_MSG_RESULT(yes)
 	   support_systemd="yes"
@@ -3607,7 +3461,6 @@ AC_DEFINE_UNQUOTED(lld, "$lld", [Set to correct scanf value for long long int])
 AC_DEFINE_UNQUOTED(llu, "$llu", [Set to correct scanf value for long long unsigned int])
 AC_SUBST(TAPEDRIVE)
 AC_SUBST(PSCMD)
-AC_SUBST(WIN32)
 AC_SUBST(MACOSX)
 AC_SUBST(DISTNAME)
 AC_SUBST(DISTVER)
@@ -3636,47 +3489,38 @@ AC_OUTPUT([autoconf/Make.common \
 	   manpages/Makefile \
 	   scripts/btraceback \
 	   scripts/bconsole \
-	   scripts/bacula \
-	   scripts/bacula-ctl-dir \
-	   scripts/bacula-ctl-fd \
-	   scripts/bacula-ctl-sd \
-	   scripts/devel_bacula \
+	   scripts/bareos \
+	   scripts/bareos-ctl-dir \
+	   scripts/bareos-ctl-fd \
+	   scripts/bareos-ctl-sd \
+	   scripts/devel_bareos \
 	   scripts/Makefile \
 	   scripts/logrotate \
-	   scripts/bacula.desktop.gnome1 \
-	   scripts/bacula.desktop.gnome2 \
-	   scripts/bacula.desktop.gnome1.consolehelper \
-	   scripts/bacula.desktop.gnome2.consolehelper \
-	   scripts/bacula.desktop.gnome1.xsu \
-	   scripts/bacula.desktop.gnome2.xsu \
 	   scripts/mtx-changer \
 	   scripts/disk-changer \
-	   scripts/bacula-tray-monitor.desktop \
+	   scripts/bareos-tray-monitor.desktop \
 	   scripts/logwatch/Makefile \
-	   scripts/logwatch/logfile.bacula.conf \
+	   scripts/logwatch/logfile.bareos.conf \
 	   scripts/bat.desktop \
 	   scripts/bat.desktop.xsu \
 	   scripts/bat.desktop.consolehelper \
 	   scripts/bat.console_apps \
 	   src/Makefile \
-	   src/host.h \
+	   src/include/host.h \
 	   src/console/Makefile \
 	   src/console/bconsole.conf \
 	   src/qt-console/tray-monitor/tray-monitor.pro \
 	   src/qt-console/tray-monitor/tray-monitor.conf \
 	   src/qt-console/bat.conf \
 	   src/qt-console/bat.pro \
-	   src/qt-console/bat.pro.mingw32 \
 	   src/qt-console/install_conf_file \
-	   src/tray-monitor/Makefile \
-	   src/tray-monitor/tray-monitor.conf \
 	   src/dird/Makefile \
-	   src/dird/bacula-dir.conf \
+	   src/dird/bareos-dir.conf \
 	   src/lib/Makefile \
 	   src/stored/Makefile \
-	   src/stored/bacula-sd.conf \
+	   src/stored/bareos-sd.conf \
 	   src/filed/Makefile \
-	   src/filed/bacula-fd.conf \
+	   src/filed/bareos-fd.conf \
 	   src/cats/Makefile \
 	   src/cats/make_catalog_backup.pl \
 	   src/cats/make_catalog_backup \
@@ -3701,12 +3545,12 @@ AC_OUTPUT([autoconf/Make.common \
 	   src/cats/drop_sqlite3_database \
 	   src/cats/sqlite \
 	   src/cats/mysql \
-	   src/cats/create_bacula_database \
-	   src/cats/update_bacula_tables \
-	   src/cats/grant_bacula_privileges \
-	   src/cats/make_bacula_tables \
-	   src/cats/drop_bacula_tables \
-	   src/cats/drop_bacula_database \
+	   src/cats/create_bareos_database \
+	   src/cats/update_bareos_tables \
+	   src/cats/grant_bareos_privileges \
+	   src/cats/make_bareos_tables \
+	   src/cats/drop_bareos_tables \
+	   src/cats/drop_bareos_database \
 	   src/cats/install-default-backend \
 	   src/findlib/Makefile \
 	   src/ndmp/Makefile \
@@ -3715,26 +3559,8 @@ AC_OUTPUT([autoconf/Make.common \
 	   src/plugins/fd/Makefile \
 	   src/plugins/sd/Makefile \
 	   src/plugins/dir/Makefile \
-	   src/win32/Makefile.inc \
 	   po/Makefile.in \
-	   updatedb/update_mysql_tables_9_to_10 \
-	   updatedb/update_sqlite3_tables_9_to_10 \
-	   updatedb/update_postgresql_tables_9_to_10 \
-	   updatedb/update_mysql_tables_10_to_11 \
-	   updatedb/update_sqlite3_tables_10_to_11 \
-	   updatedb/update_postgresql_tables_10_to_11 \
-	   updatedb/update_mysql_tables_11_to_12 \
-	   updatedb/update_sqlite3_tables_11_to_12 \
-	   updatedb/update_postgresql_tables_11_to_12 \
-	   updatedb/update_mysql_tables_12_to_14 \
-	   updatedb/update_sqlite3_tables_12_to_14 \
-	   updatedb/update_postgresql_tables_12_to_14 \
-	   examples/nagios/check_bacula/Makefile \
-	   platforms/rpms/redhat/bacula.spec \
-	   platforms/rpms/redhat/bacula-bat.spec \
-	   platforms/rpms/redhat/bacula-docs.spec \
-	   platforms/rpms/redhat/bacula-mtx.spec \
-	   $PFILES ],  
+	   $PFILES ],
      [ ]
 )
 
@@ -3763,25 +3589,18 @@ if test X"$GCC" = "Xyes" ; then
 fi
 
 cd src/qt-console
-chmod 755 install_conf_file build-depkgs-qt-console
+chmod 755 install_conf_file
 cd ${BUILD_DIR}
 
 cd scripts
-chmod 755 bacula btraceback mtx-changer
-chmod 755 bconsole mtx-changer devel_bacula logrotate
+chmod 755 bareos btraceback mtx-changer
+chmod 755 bconsole mtx-changer devel_bareos logrotate
 cd ..
-
-c=updatedb
-chmod 755 $c/update_mysql_tables_10_to_11   $c/update_sqlite3_tables_10_to_11
-chmod 755 $c/update_postgresql_tables_10_to_11
-chmod 755 $c/update_mysql_tables_11_to_12   $c/update_sqlite3_tables_11_to_12
-chmod 755 $c/update_postgresql_tables_11_to_12
-
 
 c=src/cats
 
-chmod 755 $c/create_bacula_database   $c/update_bacula_tables  $c/make_bacula_tables
-chmod 755 $c/grant_bacula_privileges  $c/drop_bacula_tables    $c/drop_bacula_database
+chmod 755 $c/create_bareos_database   $c/update_bareos_tables  $c/make_bareos_tables
+chmod 755 $c/grant_bareos_privileges  $c/drop_bareos_tables    $c/drop_bareos_database
 
 chmod 755 $c/create_mysql_database    $c/update_mysql_tables   $c/make_mysql_tables
 chmod 755 $c/grant_mysql_privileges   $c/drop_mysql_tables     $c/drop_mysql_database
@@ -3801,8 +3620,6 @@ chmod 755 $c/sqlite
 chmod 755 $c/mysql
 
 chmod 755 $c/install-default-backend
-
-chmod 755 src/win32/build-depkgs-mingw32
 
 if test "x$ac_cv_sys_largefile_CFLAGS" != "xno" ; then
    largefile_support="yes"
@@ -3834,7 +3651,7 @@ echo "
 Configuration on `date`:
 
    Host:		     ${host}${post_host} -- ${DISTNAME} ${DISTVER}
-   Bacula version:	     ${BACULA} ${VERSION} (${DATE})
+   Bareos version:	     ${BAREOS} ${VERSION} (${DATE})
    Source code location:     ${srcdir}
    Install binaries:	     ${sbindir}
    Install libraries:	     ${libdir}
@@ -3861,6 +3678,7 @@ Configuration on `date`:
    Database port:	     ${db_port}
    Database name:	     ${db_name}
    Database user:	     ${db_user}
+   Database version:	     ${BDB_VERSION}
 
    Job Output Email:	     ${job_email}
    Traceback Email:	     ${dump_email}
@@ -3878,7 +3696,7 @@ Configuration on `date`:
    File Daemon Group:	     ${fd_group}
 
    Large file support:	     $largefile_support
-   Bacula conio support:     ${got_conio} ${CONS_LIBS}
+   Bareos conio support:     ${got_conio} ${CONS_LIBS}
    readline support:	     ${got_readline} ${PRTREADLINE_SRC}
    TCP Wrappers support:     ${TCPW_MSG} ${WRAPLIBS}
    TLS support: 	     ${support_tls}
@@ -3889,8 +3707,6 @@ Configuration on `date`:
    enable-smartalloc:	     ${support_smartalloc}
    enable-lockmgr:	     ${support_lockmgr}
    bat support: 	     ${support_bat}
-   enable-gnome:	     ${support_gnome} ${gnome_version}
-   enable-tray-monitor:      ${support_tray_monitor}
    client-only: 	     ${build_client_only}
    build-dird:		     ${build_dird}
    build-stored:	     ${build_stored}
@@ -3907,13 +3723,13 @@ Configuration on `date`:
 
 # create a small shell script useful for support with
 # configure options and config.out info
-cat > scripts/bacula_config << EOF
+cat > scripts/bareos_config << EOF
 #!/bin/sh
 cat << __EOC__
 $ $0 $ac_configure_args
 EOF
-cat config.out >> scripts/bacula_config
-echo __EOC__ >> scripts/bacula_config
-chmod 755 scripts/bacula_config
+cat config.out >> scripts/bareos_config
+echo __EOC__ >> scripts/bareos_config
+chmod 755 scripts/bareos_config
 
 cat config.out

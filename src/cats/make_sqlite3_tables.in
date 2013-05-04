@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to create Bacula SQLite tables
+# shell script to create Bareos SQLite tables
 
 bindir=@SQLITE_BINDIR@
 PATH="$bindir:$PATH"
@@ -11,7 +11,7 @@ sqlite3 $* ${db_name}.db <<END-OF-DATA
 CREATE TABLE Filename (
   FilenameId INTEGER,
   Name TEXT DEFAULT '',
-  PRIMARY KEY(FilenameId) 
+  PRIMARY KEY(FilenameId)
 );
 
 CREATE INDEX inx1 ON Filename (Name);
@@ -19,7 +19,7 @@ CREATE INDEX inx1 ON Filename (Name);
 CREATE TABLE Path (
    PathId INTEGER,
    Path TEXT DEFAULT '',
-   PRIMARY KEY(PathId) 
+   PRIMARY KEY(PathId)
 );
 
 CREATE INDEX inx2 ON Path (Path);
@@ -37,7 +37,7 @@ CREATE TABLE File (
    MarkId INTEGER UNSIGNED DEFAULT 0,
    LStat VARCHAR(255) NOT NULL,
    MD5 VARCHAR(255) NOT NULL,
-   PRIMARY KEY(FileId) 
+   PRIMARY KEY(FileId)
 );
 CREATE INDEX inx3 ON File (JobId);
 CREATE INDEX file_jpf_idx ON File (JobId, PathId, FilenameId);
@@ -93,11 +93,11 @@ CREATE TABLE Job (
    HasCache TINYINT DEFAULT 0,
    Reviewed TINYINT DEFAULT 0,
    Comment TEXT,
-   PRIMARY KEY(JobId) 
+   PRIMARY KEY(JobId)
 );
 CREATE INDEX inx6 ON Job (Name);
 
--- Create a table like Job for long term statistics 
+-- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (
    JobId INTEGER,
    Job VARCHAR(128) NOT NULL,
@@ -153,7 +153,7 @@ CREATE TABLE Log (
    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
    Time DATETIME NOT NULL,
    LogText TEXT NOT NULL,
-   PRIMARY KEY(LogId) 
+   PRIMARY KEY(LogId)
 );
 CREATE INDEX LogInx1 ON Log (JobId);
 
@@ -176,7 +176,7 @@ CREATE TABLE JobMedia (
    StartBlock INTEGER UNSIGNED DEFAULT 0,
    EndBlock INTEGER UNSIGNED DEFAULT 0,
    VolIndex INTEGER UNSIGNED DEFAULT 0,
-   PRIMARY KEY(JobMediaId) 
+   PRIMARY KEY(JobMediaId)
 );
 CREATE INDEX inx7 ON JobMedia (JobId, MediaId);
 
@@ -227,6 +227,7 @@ CREATE TABLE Media (
    PRIMARY KEY(MediaId)
 );
 CREATE INDEX inx8 ON Media (PoolId);
+CREATE INDEX inx9 ON Media (StorageId);
 
 CREATE TABLE MediaType (
    MediaTypeId INTEGER,
@@ -331,12 +332,12 @@ CREATE TABLE NextId (
 INSERT INTO NextId (id, TableName) VALUES (1, 'Job');
 
 CREATE TABLE Version (
-   VersionId INTEGER UNSIGNED NOT NULL 
+   VersionId INTEGER UNSIGNED NOT NULL
 );
 
 CREATE TABLE Counters (
-   Counter TEXT NOT NULL,     
-   MinValue INTEGER DEFAULT 0, 
+   Counter TEXT NOT NULL,
+   MinValue INTEGER DEFAULT 0,
    MaxValue INTEGER DEFAULT 0,
    CurrentValue INTEGER DEFAULT 0,
    WrapCounter TEXT NOT NULL,
@@ -356,7 +357,7 @@ CREATE TABLE PathHierarchy
    CONSTRAINT pathhierarchy_pkey PRIMARY KEY (PathId)
 );
 
-CREATE INDEX pathhierarchy_ppathid 
+CREATE INDEX pathhierarchy_ppathid
 	  ON PathHierarchy (PPathId);
 
 CREATE TABLE PathVisibility
@@ -373,7 +374,7 @@ CREATE INDEX pathvisibility_jobid
 
 CREATE TABLE Status (
    JobStatus CHAR(1) NOT NULL,
-   JobStatusLong BLOB, 
+   JobStatusLong BLOB,
    Severity INT,
    PRIMARY KEY (JobStatus)
 );
@@ -437,7 +438,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
 
 
--- Initialize Version		 
+-- Initialize Version
 INSERT INTO Version (VersionId) VALUES (@BDB_VERSION@);
 
 

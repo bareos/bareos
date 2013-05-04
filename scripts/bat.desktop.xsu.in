@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=Bacula Administration Tool
-Comment=Bacula Director Console
+Name=Bareos Administration Tool
+Comment=Bareos Director Console
 Icon=/usr/share/pixmaps/bat_icon.png
 Exec=kdesu -t -c "@sbindir@/bat -c @sysconfdir@/bat.conf" -f @sysconfdir@/bat.kdesu
 Terminal=false

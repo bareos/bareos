@@ -1,29 +1,22 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2008-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation, which is 
+   License as published by the Free Software Foundation, which is
    listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 
 #ifndef _LOCKMGR_H
@@ -46,7 +39,7 @@ typedef struct bthread_mutex_t
    int priority;
 } bthread_mutex_t;
 
-/* 
+/*
  * We decide that a thread won't lock more than LMGR_MAX_LOCK at the same time
  */
 #define LMGR_MAX_LOCK 32
@@ -71,7 +64,7 @@ int bthread_cond_timedwait_p(pthread_cond_t *cond,
                              const char *file="*unknown*", int line=0);
 
 /* Replacement of pthread_mutex_lock()  but with real pthread_mutex_t */
-int bthread_mutex_lock_p(pthread_mutex_t *m, 
+int bthread_mutex_lock_p(pthread_mutex_t *m,
                          const char *file="*unknown*", int line=0);
 
 /* Replacement for pthread_mutex_unlock() but with real pthread_mutex_t */
@@ -79,11 +72,11 @@ int bthread_mutex_unlock_p(pthread_mutex_t *m,
                            const char *file="*unknown*", int line=0);
 
 /* Replacement of pthread_mutex_lock() */
-int bthread_mutex_lock_p(bthread_mutex_t *m, 
+int bthread_mutex_lock_p(bthread_mutex_t *m,
                          const char *file="*unknown*", int line=0);
 
 /* Replacement of pthread_mutex_unlock() */
-int bthread_mutex_unlock_p(bthread_mutex_t *m, 
+int bthread_mutex_unlock_p(bthread_mutex_t *m,
                            const char *file="*unknown*", int line=0);
 
 /*  Test if this mutex is locked by the current thread
@@ -91,8 +84,8 @@ int bthread_mutex_unlock_p(bthread_mutex_t *m,
  *     1 - locked by the current thread
  */
 int lmgr_mutex_is_locked(void *m);
-                   
-/* 
+
+/*
  * Use them when you want use your lock yourself (ie rwlock)
  */
 
@@ -100,15 +93,15 @@ int lmgr_mutex_is_locked(void *m);
 void lmgr_pre_lock(void *m, int prio=0,
                    const char *file="*unknown*", int line=0);
 
-/* Call after getting it */ 
+/* Call after getting it */
 void lmgr_post_lock();
 
 /* Same as pre+post lock */
-void lmgr_do_lock(void *m, int prio=0, 
+void lmgr_do_lock(void *m, int prio=0,
                   const char *file="*unknown*", int line=0);
 
 /* Call just before releasing the lock */
-void lmgr_do_unlock(void *m); 
+void lmgr_do_unlock(void *m);
 
 /* We use C++ mangling to make integration eaysier */
 int pthread_mutex_init(bthread_mutex_t *m, const pthread_mutexattr_t *attr);
@@ -128,7 +121,7 @@ void lmgr_init_thread();
 void lmgr_cleanup_thread();
 
 /*
- * Call this at the end of the program, it will release the 
+ * Call this at the end of the program, it will release the
  * global lock manager
  */
 void lmgr_cleanup_main();
@@ -158,10 +151,10 @@ int lmgr_thread_create(pthread_t *thread,
                        const pthread_attr_t *attr,
                        void *(*start_routine)(void*), void *arg);
 
-/* 
+/*
  * Can use SAFEKILL to check if the argument is a valid threadid
  */
-int bthread_kill(pthread_t thread, int sig, 
+int bthread_kill(pthread_t thread, int sig,
                  const char *file="*unknown*", int line=0);
 
 #define BTHREAD_MUTEX_NO_PRIORITY      {PTHREAD_MUTEX_INITIALIZER, 0}
@@ -179,7 +172,7 @@ int bthread_kill(pthread_t thread, int sig,
 #define bthread_cond_wait(x,y)     bthread_cond_wait_p(x,y, __FILE__, __LINE__)
 #define bthread_cond_timedwait(x,y,z) bthread_cond_timedwait_p(x,y,z, __FILE__, __LINE__)
 
-/* 
+/*
  * Define _LOCKMGR_COMPLIANT to use real pthread functions
  */
 

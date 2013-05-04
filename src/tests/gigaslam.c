@@ -7,16 +7,16 @@
     them to download a HOW_BIG pseudo GIF file which is actually
     a holey file occupying trivial space on our server.
 
-    Make:  make gigaslam            
+    Make:  make gigaslam
     Run:   ./gigaslam
     Output: a file named gigaslam.gif that contains something like
-            16K bytes (i.e. 2-8K blocks), but appears to be 1GB in 
-            length because the second block is written at a 1GB 
+            16K bytes (i.e. 2-8K blocks), but appears to be 1GB in
+            length because the second block is written at a 1GB
             address.
 
     Be careful what you do with this file as not all programs know
     how to deal with sparse files.
-    
+
 */
 
 #define HOW_BIG   1000000000ll
@@ -40,11 +40,11 @@ int main(int argc, char *const *argv)
     char header[] = "<html>\n<table>\n<tr><td>\n";
     char trailer[] = "</html>\n";
     off_t howBig = HOW_BIG;
-    
+
     fwrite(header, sizeof header, 1, fp);
     fseeko(fp, howBig - strlen(trailer), 0);
     fwrite(trailer, strlen(trailer), 1, fp);
     fclose(fp);
     return 0;
-    
+
 }

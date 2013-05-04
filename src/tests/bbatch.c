@@ -1,19 +1,10 @@
 /*
- *
- *  Program to test batch mode
- *
- *   Eric Bollengier, March 2007
- *
- *
- *   Version $Id$
- */
-/*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2006 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -22,27 +13,27 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
+/*
+ * Program to test batch mode
+ *
+ * Eric Bollengier, March 2007
+ */
 
 /*
   to create datafile
- 
+
   for i in $(seq 10000 99999) ; do
      j=$((($i % 1000) + 555))
      echo "$i;/tmp/totabofds$j/fiddddle${j}$i;xxxLSTATxxxx;xxxxxxxMD5xxxxxx"
   done  > dat1
- 
+
   or
 
   j=0
@@ -52,12 +43,12 @@
   done > dat1
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored/stored.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
 #include "cats/sql_glue.h"
- 
+
 /* Forward referenced functions */
 static void *do_batch(void *);
 
@@ -65,8 +56,8 @@ static void *do_batch(void *);
 /* Local variables */
 static B_DB *db;
 
-static const char *db_name = "bacula";
-static const char *db_user = "bacula";
+static const char *db_name = "bareos";
+static const char *db_user = "bareos";
 static const char *db_password = "";
 static const char *db_host = NULL;
 static const char *db_driver = NULL;
@@ -87,8 +78,8 @@ PROG_COPYRIGHT
 "       -d <nn>           set debug level to <nn>\n"
 "       -dt               print timestamp in debug output\n"
 "       -D <driver name>  specify the driver database name (default NULL)\n"
-"       -n <name>         specify the database name (default bacula)\n"
-"       -u <user>         specify database user name (default bacula)\n"
+"       -n <name>         specify the database name (default bareos)\n"
+"       -u <user>         specify database user name (default bareos)\n"
 "       -P <password      specify database password (default none)\n"
 "       -h <host>         specify database host (default NULL)\n"
 "       -w <working>      specify working directory\n"
@@ -115,11 +106,11 @@ int main (int argc, char *argv[])
    bool disable_batch = false;
    char *restore_list=NULL;
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    init_stack_dump();
    lmgr_init_thread();
-   
+
    char **files = (char **) malloc (10 * sizeof(char *));
    int i;
    my_name_is(argc, argv, "bbatch");
@@ -204,10 +195,10 @@ int main (int argc, char *argv[])
       uint64_t nb_file=0;
       btime_t start, end;
       /* To use the -r option, the catalog should already contains records */
-      
+
       if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
                                  db_host, 0, NULL, false, disable_batch)) == NULL) {
-         Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
+         Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
       }
       if (!db_open_database(NULL, db)) {
          Emsg0(M_ERROR_TERM, 0, db_strerror(db));
@@ -217,9 +208,9 @@ int main (int argc, char *argv[])
       db_get_file_list(NULL, db, restore_list, false, false, list_handler, &nb_file);
       end = get_current_btime();
 
-      Pmsg3(0, _("Computing file list for jobid=%s files=%lld secs=%d\n"), 
+      Pmsg3(0, _("Computing file list for jobid=%s files=%lld secs=%d\n"),
             restore_list, nb_file, (uint32_t)btime_to_unix(end-start));
-      
+
       free(restore_list);
       return 0;
    }
@@ -253,10 +244,10 @@ int main (int argc, char *argv[])
       pm_strcpy(bjcr->fileset_name, "Dummy.fileset.name");
       bjcr->fileset_md5 = get_pool_memory(PM_FNAME);
       pm_strcpy(bjcr->fileset_md5, "Dummy.fileset.md5");
-      
+
       if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
                                  db_host, 0, NULL, false, false)) == NULL) {
-         Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
+         Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
       }
       if (!db_open_database(NULL, db)) {
          Emsg0(M_ERROR_TERM, 0, db_strerror(db));
@@ -265,7 +256,7 @@ int main (int argc, char *argv[])
       if (verbose) {
          Pmsg2(000, _("Using Database: %s, User: %s\n"), db_name, db_user);
       }
-      
+
       bjcr->db = db;
 
       pthread_create(&thid, NULL, do_batch, bjcr);
@@ -337,12 +328,12 @@ static void *do_batch(void *jcr)
    fclose(fd);
    db_write_batch_file_records(bjcr);
    btime_t end = get_current_btime();
-   
+
    P(mutex);
    char ed1[200], ed2[200];
    printf("\rbegin = %s, end = %s\n", edit_int64(begin, ed1),edit_int64(end, ed2));
    printf("Insert time = %sms\n", edit_int64((end - begin) / 10000, ed1));
-   printf("Create %u files at %.2f/s\n", lineno, 
+   printf("Create %u files at %.2f/s\n", lineno,
           (lineno / ((float)((end - begin) / 1000000))));
    nb--;
    V(mutex);

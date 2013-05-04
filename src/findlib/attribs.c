@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,34 +11,27 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /**
- *  Encode and decode Extended attributes for Win32 and
- *   other non-Unix systems, or Unix systems with ACLs, ...
+ * Encode and decode Extended attributes for Win32 and
+ * other non-Unix systems, or Unix systems with ACLs, ...
  *
- *    Kern Sibbald, October MMII
- *
+ * Kern Sibbald, October MMII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "find.h"
 #include "ch.h"
 
 static uid_t my_uid = 1;
-static gid_t my_gid = 1;                        
+static gid_t my_gid = 1;
 static bool uid_set = false;
-
 
 #if defined(HAVE_WIN32)
 /* Forward referenced subroutines */
@@ -111,7 +102,7 @@ int select_data_stream(FF_PKT *ff_pkt)
     */
 #if defined(HAVE_LIBZ) || defined(HAVE_LZO)
    if (ff_pkt->flags & FO_COMPRESS) {
-      #ifdef HAVE_LIBZ
+#ifdef HAVE_LIBZ
          if(ff_pkt->Compress_algo == COMPRESS_GZIP) {
             switch (stream) {
             case STREAM_WIN32_DATA:
@@ -132,8 +123,8 @@ int select_data_stream(FF_PKT *ff_pkt)
                return STREAM_NONE;
             }
          }
-      #endif
-      #ifdef HAVE_LZO
+#endif
+#ifdef HAVE_LZO
          if(ff_pkt->Compress_algo == COMPRESS_LZO1X) {
             switch (stream) {
             case STREAM_WIN32_DATA:
@@ -154,7 +145,7 @@ int select_data_stream(FF_PKT *ff_pkt)
                return STREAM_NONE;
             }
          }
-      #endif
+#endif
    }
 #endif
 #ifdef HAVE_CRYPTO
@@ -205,7 +196,7 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    mode_t old_mask;
    bool ok = true;
    boffset_t fsize;
- 
+
    if (uid_set) {
       my_uid = getuid();
       my_gid = getgid();
@@ -244,7 +235,7 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
       char ec1[50], ec2[50];
       fsize = blseek(ofd, 0, SEEK_END);
       bclose(ofd);                    /* first close file */
-      if (attr->type == FT_REG && fsize > 0 && attr->statp.st_size > 0 && 
+      if (attr->type == FT_REG && fsize > 0 && attr->statp.st_size > 0 &&
                         fsize != (boffset_t)attr->statp.st_size) {
          Jmsg3(jcr, M_ERROR, 0, _("File size of restored file %s not correct. Original %s, restored %s.\n"),
             attr->ofname, edit_uint64(attr->statp.st_size, ec1),
@@ -322,14 +313,12 @@ bail_out:
    return ok;
 }
 
-
+#if !defined(HAVE_WIN32)
 /*=============================================================*/
 /*                                                             */
 /*                 * * *  U n i x * * * *                      */
 /*                                                             */
 /*=============================================================*/
-
-#if !defined(HAVE_WIN32)
 
 /**
  * It is possible to piggyback additional data e.g. ACLs on
@@ -363,19 +352,12 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
 #endif
    return STREAM_UNIX_ATTRIBUTES;
 }
-
-#endif
-
-
-
+#else
 /*=============================================================*/
 /*                                                             */
 /*                 * * *  W i n 3 2 * * * *                    */
 /*                                                             */
 /*=============================================================*/
-
-#if defined(HAVE_WIN32)
-
 int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
 {
    char *p = attribsEx;
@@ -392,10 +374,10 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
 
    /** try unicode version */
    if (p_GetFileAttributesExW)  {
-      POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);   
+      POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
       make_win32_path_UTF8_2_wchar(&pwszBuf, ff_pkt->fname);
 
-      BOOL b=p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard, 
+      BOOL b=p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard,
                                     (LPVOID)&atts);
       free_pool_memory(pwszBuf);
 
@@ -406,7 +388,7 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
    }
    else {
       if (!p_GetFileAttributesExA)
-         return STREAM_UNIX_ATTRIBUTES;      
+         return STREAM_UNIX_ATTRIBUTES;
 
       if (!p_GetFileAttributesExA(ff_pkt->sys_fname, GetFileExInfoStandard,
                               (LPVOID)&atts)) {
@@ -537,14 +519,14 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    Dmsg1(100, "SetFileAtts %s\n", attr->ofname);
    if (!(atts.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
       if (p_SetFileAttributesW) {
-         POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);   
+         POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
          make_win32_path_UTF8_2_wchar(&pwszBuf, attr->ofname);
 
          BOOL b=p_SetFileAttributesW((LPCWSTR)pwszBuf, atts.dwFileAttributes & SET_ATTRS);
          free_pool_memory(pwszBuf);
-      
-         if (!b) 
-            win_error(jcr, "SetFileAttributesW:", win32_ofile); 
+
+         if (!b)
+            win_error(jcr, "SetFileAttributesW:", win32_ofile);
       }
       else {
          if (!p_SetFileAttributesA(win32_ofile, atts.dwFileAttributes & SET_ATTRS)) {

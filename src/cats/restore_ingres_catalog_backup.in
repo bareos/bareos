@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to restore a dump of the bacula Ingres database using
+# shell script to restore a dump of the bareos Ingres database using
 # a base64 encoded tar of the content.
 #
 

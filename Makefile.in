@@ -1,4 +1,4 @@
-# 
+#
 # Master Makefile
 #
 @MCOMMON@
@@ -18,11 +18,10 @@ dummy:
 
 # --client-only directories
 fd_subdirs = src scripts src/lib src/findlib src/filed \
-       @READLINE_SRC@ @BAT_DIR@ @TRAY_MONITOR_DIR@ \
-       src/console @FD_PLUGIN_DIR@
+       @READLINE_SRC@ @BAT_DIR@ src/console @FD_PLUGIN_DIR@
 
 # Non-client-only directores
-subdirs =    src/cats @NDMP_DIR@ @DIRD_DIR@ @STORED_DIR@ @SD_PLUGIN_DIR@ @DIR_PLUGIN_DIR@ src/tools
+subdirs = src/cats @NDMP_DIR@ @DIRD_DIR@ @STORED_DIR@ @SD_PLUGIN_DIR@ @DIR_PLUGIN_DIR@ src/tools
 
 all_subdirs = ${fd_subdirs} ${@ALL_DIRS@} manpages
 
@@ -31,9 +30,6 @@ DIST =	INSTALL README.configure configure Makefile Makefile.in ChangeLog
 DIST_CFG = autoconf/aclocal.m4 autoconf/configure.in \
 	autoconf/config.h.in  autoconf/acconfig.h  autoconf/Make.common.in \
 	autoconf/install-sh autoconf/mkinstalldirs
-
-doc_files = VERIFYING technotes ChangeLog README ReleaseNotes LICENSE \
-	    INSTALL
 
 MKDIR = $(srcdir)/autoconf/mkinstalldirs
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
@@ -50,8 +46,8 @@ all: Makefile
 depend:
 	@for I in ${all_subdirs}; \
 	  do (cd $$I; echo "==>Entering directory `pwd`"; $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1); done
-	
-bacula-fd: Makefile	   
+
+bareos-fd: Makefile
 	@for I in ${fd_subdirs}; \
 	  do (cd $$I; echo "==>Entering directory `pwd`"; \
 	      $(MAKE) DESTDIR=$(DESTDIR) all || (echo ""; echo ""; echo "   ====== Error in `pwd` ======"; \
@@ -60,12 +56,12 @@ bacula-fd: Makefile
 
 #-------------------------------------------------------------------------
 
-autoconf/aclocal.m4: autoconf/configure.in autoconf/bacula-macros/* autoconf/gettext-macros/* autoconf/libtool/*
+autoconf/aclocal.m4: autoconf/configure.in autoconf/bareos-macros/* autoconf/gettext-macros/* autoconf/libtool/*
 
 #  Note, the following is needed in the above if ever any new macro is added.
 #   However, at the current time, the -I libtool causes the autoconf/aclocal.m4
 #   get messed up, so this is commented out
-#	cd autoconf && aclocal -I bacula-macros -I gettext-macros -I libtool
+#	cd autoconf && aclocal -I bareos-macros -I gettext-macros -I libtool
 
 configure: autoconf/configure.in autoconf/aclocal.m4 autoconf/acconfig.h autoconf/config.h.in
 	cd $(srcdir);
@@ -101,7 +97,6 @@ installdirs:
 	   chgrp $(dir_group) $(DESTDIR)$(sysconfdir); \
 	fi
 	$(MKDIR) $(DESTDIR)$(scriptdir)
-	$(MKDIR) $(DESTDIR)$(docdir)
 	$(MKDIR) $(DESTDIR)$(archivedir)
 	-if test ! -d $(DESTDIR)$(working_dir) ; then \
 	   $(MKDIR) $(DESTDIR)$(working_dir); \
@@ -122,41 +117,41 @@ gnomedirs:
 	$(MKDIR) $(DESTDIR)/etc/pam.d
 
 install-menu: gnomedirs
-	${INSTALL_DATA} scripts/bacula.png $(DESTDIR)/usr/share/pixmaps/bacula.png
-	${INSTALL_DATA} scripts/bacula.desktop.gnome1 $(DESTDIR)/usr/share/gnome/apps/System/bacula.desktop
-	${INSTALL_DATA} scripts/bacula.desktop.gnome2 $(DESTDIR)/usr/share/applications/bacula.desktop
+	${INSTALL_DATA} scripts/bareos.png $(DESTDIR)/usr/share/pixmaps/bareos.png
+	${INSTALL_DATA} scripts/bareos.desktop.gnome1 $(DESTDIR)/usr/share/gnome/apps/System/bareos.desktop
+	${INSTALL_DATA} scripts/bareos.desktop.gnome2 $(DESTDIR)/usr/share/applications/bareos.desktop
 
 install-menu-xsu: gnomedirs
-	${INSTALL_DATA} scripts/bacula.png $(DESTDIR)/usr/share/pixmaps/bacula.png
-	${INSTALL_DATA} scripts/bacula.desktop.gnome1.xsu $(DESTDIR)/usr/share/gnome/apps/System/bacula.desktop
-	${INSTALL_DATA} scripts/bacula.desktop.gnome2.xsu $(DESTDIR)/usr/share/applications/bacula.desktop
+	${INSTALL_DATA} scripts/bareos.png $(DESTDIR)/usr/share/pixmaps/bareos.png
+	${INSTALL_DATA} scripts/bareos.desktop.gnome1.xsu $(DESTDIR)/usr/share/gnome/apps/System/bareos.desktop
+	${INSTALL_DATA} scripts/bareos.desktop.gnome2.xsu $(DESTDIR)/usr/share/applications/bareos.desktop
 
 install-menu-consolehelper: gnomedirs
-	${INSTALL_DATA} scripts/bacula.png $(DESTDIR)/usr/share/pixmaps/bacula.png
-	${INSTALL_DATA} scripts/bacula.desktop.gnome1.consolehelper $(DESTDIR)/usr/share/gnome/apps/System/bacula.desktop
-	${INSTALL_DATA} scripts/bacula.desktop.gnome2.consolehelper $(DESTDIR)/usr/share/applications/bacula.desktop
+	${INSTALL_DATA} scripts/bareos.png $(DESTDIR)/usr/share/pixmaps/bareos.png
+	${INSTALL_DATA} scripts/bareos.desktop.gnome1.consolehelper $(DESTDIR)/usr/share/gnome/apps/System/bareos.desktop
+	${INSTALL_DATA} scripts/bareos.desktop.gnome2.consolehelper $(DESTDIR)/usr/share/applications/bareos.desktop
 	${INSTALL_DATA} scripts/gnome-console.console_apps $(DESTDIR)/etc/security/console.apps/gnome-console
 	${INSTALL_DATA} scripts/gnome-console.pamd $(DESTDIR)/etc/pam.d/gnome-console
 	ln -s $(DESTDIR)/usr/bin/consolehelper $(DESTDIR)/usr/bin/gnome-console
 
 install: installdirs
-	@for I in $(doc_files) ; do $(INSTALL_DATA) $$I $(DESTDIR)${docdir}; done
 	@for I in $(all_subdirs); do (cd $$I && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1); done
+	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
 
 uninstall:
 	@for I in $(all_subdirs); do (cd $$I && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1); done
 
 install-autostart:
-	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1) 
+	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
 
 install-autostart-dir:
-	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1) 
+	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
 
 install-autostart-fd:
-	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1) 
+	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
 
 install-autostart-sd:
-	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1) 
+	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
 
 uninstall-autostart:
 	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
@@ -171,14 +166,14 @@ uninstall-autostart-sd:
 	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
 
 uninstall-menu:
-	$(RMF) $(DESTDIR)/usr/share/pixmaps/bacula.png
-	$(RMF) $(DESTDIR)/usr/share/gnome/apps/System/bacula.desktop
-	$(RMF) $(DESTDIR)/usr/share/applications/bacula.desktop
+	$(RMF) $(DESTDIR)/usr/share/pixmaps/bareos.png
+	$(RMF) $(DESTDIR)/usr/share/gnome/apps/System/bareos.desktop
+	$(RMF) $(DESTDIR)/usr/share/applications/bareos.desktop
 
 uninstall-menu-consolehelper:
-	$(RMF) $(DESTDIR)/usr/share/pixmaps/bacula.png
-	$(RMF) $(DESTDIR)/usr/share/gnome/apps/System/bacula.desktop
-	$(RMF) $(DESTDIR)/usr/share/applications/bacula.desktop
+	$(RMF) $(DESTDIR)/usr/share/pixmaps/bareos.png
+	$(RMF) $(DESTDIR)/usr/share/gnome/apps/System/bareos.desktop
+	$(RMF) $(DESTDIR)/usr/share/applications/bareos.desktop
 	$(RMF) $(DESTDIR)/etc/security/console.apps/gnome-console
 	$(RMF) $(DESTDIR)/etc/pam.d/gnome-console
 	$(RMF) $(DESTDIR)/usr/bin/gnome-console
@@ -190,13 +185,13 @@ Makefile: Makefile.in
 Makefiles:
 	$(SHELL) config.status
 	(cd scripts; \
-	 chmod 755 startmysql stopmysql bacula startit stopit btraceback; \
-	 chmod 755 mtx-changer bconsole gconsole devel_bacula; \
+	 chmod 755 startmysql stopmysql bareos startit stopit btraceback; \
+	 chmod 755 mtx-changer bconsole gconsole devel_bareos; \
 	 chmod 755 dvd-handler)
 
 	(cd src/cats; \
-	 chmod 755 create_bacula_database update_bacula_tables make_bacula_tables; \
-	 chmod 755 grant_bacula_privileges drop_bacula_tables drop_bacula_database; \
+	 chmod 755 create_bareos_database update_bareos_tables make_bareos_tables; \
+	 chmod 755 grant_bareos_privileges drop_bareos_tables drop_bareos_database; \
 	 chmod 755 make_catalog_backup delete_catalog_backup)
 
 	@for I in @DB_BACKENDS@ ; do \
@@ -225,10 +220,10 @@ distclean:
 	@(cd $(srcdir) && $(RMF) *~ config.cache config.h config.log config.status config.out)
 	@(cd $(srcdir) && $(RMF) Makefile autoconf/Make.common)
 	@(cd platforms; echo "==>Entering directory `pwd`"; ${MAKE} $@ || exit 1)
-	@$(RMF) bacula fd Makefile startmysql stopmysql startit stopit btraceback
+	@$(RMF) bareos fd Makefile startmysql stopmysql startit stopit btraceback
 	@$(RMF) bconsole gconsole
 	@$(RMF) *~ 1 2 3 core core.* config.guess console.log console.sum
-	@$(RMF) working/* kerns-* 
+	@$(RMF) working/* kerns-*
 	@$(RMF) -rf txt diff src/python src/testprogs
 	@$(RMF) libtool
 
@@ -238,7 +233,7 @@ devclean:
 	@(cd $(srcdir) && $(RMF) *~ config.cache config.h config.log config.status config.out)
 	@(cd $(srcdir) && $(RMF) Makefile autoconf/Make.common)
 	@(cd platforms; echo "==>Entering directory `pwd`"; ${MAKE} $@ || exit 1)
-	@$(RMF) bacula fd Makefile startmysql stopmysql startit stopit btraceback
+	@$(RMF) bareos fd Makefile startmysql stopmysql startit stopit btraceback
 	@$(RMF) bconsole gconsole
 	@$(RMF) *~ 1 2 3 core core.* config.guess console.log console.sum
 	@$(RMF) working/*

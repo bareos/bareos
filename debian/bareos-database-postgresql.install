@@ -1,0 +1,2 @@
+/usr/lib/libb*-postgresql*.so
+/usr/lib/bareos/scripts/*_postgresql_*

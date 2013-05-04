@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Network Utility Routines
  *
- *  by Kern Sibbald
- *
+ * by Kern Sibbald
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "jcr.h"
 #include <netdb.h>
 #include <netinet/tcp.h>
@@ -56,8 +50,8 @@
 #endif
 
 /*
- * This is a non-class BSOCK "constructor"  because we want to 
- *   call the Bacula smartalloc routines instead of new.
+ * This is a non-class BSOCK "constructor"  because we want to
+ *   call the BAREOS smartalloc routines instead of new.
  */
 BSOCK *new_bsock()
 {
@@ -92,7 +86,7 @@ void BSOCK::free_tls()
 {
    free_tls_connection(this->tls);
    this->tls = NULL;
-}   
+}
 
 /*
  * Try to connect to host for max_retry_time at retry_time intervals.
@@ -115,7 +109,7 @@ bool BSOCK::connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
    if (max_retry_time) {
       tid = start_thread_timer(jcr, pthread_self(), (uint32_t)max_retry_time);
    }
-   
+
    for (i = 0; !open(jcr, name, host, service, port, heart_beat, &fatal);
         i -= retry_interval) {
       berrno be;
@@ -148,7 +142,7 @@ bail_out:
    return ok;
 }
 
-/*       
+/*
  * Finish initialization of the pocket structure.
  */
 void BSOCK::fin_init(JCR * jcr, int sockfd, const char *who, const char *host, int port,
@@ -168,9 +162,15 @@ void BSOCK::fin_init(JCR * jcr, int sockfd, const char *who, const char *host, i
  */
 void BSOCK::set_source_address(dlist *src_addr_list)
 {
+   char allbuf[256 * 10];
    IPADDR *addr = NULL;
 
-   // delete the object we already have, if it's allocated
+   Dmsg1(100, "All source addresses %s\n",
+         build_addresses_str(src_addr_list, allbuf, sizeof(allbuf)));
+
+   /*
+    * Delete the object we already have, if it's allocated
+    */
    if (src_addr) {
      free( src_addr);
      src_addr = NULL;
@@ -231,7 +231,7 @@ bool BSOCK::open(JCR *jcr, const char *name, char *host, char *service,
       ipaddr->set_port_net(htons(port));
       char allbuf[256 * 10];
       char curbuf[256];
-      Dmsg2(100, "Current %sAll %s\n",
+      Dmsg2(100, "Current %s All %s\n",
                    ipaddr->build_address_str(curbuf, sizeof(curbuf)),
                    build_addresses_str(addr_list, allbuf, sizeof(allbuf)));
       /* Open a TCP socket */
@@ -401,7 +401,7 @@ bool BSOCK::send()
    }
    /* Store packet length at head of message -- note, we
     *  have reserved an int32_t just before msg, so we can
-    *  store there 
+    *  store there
     */
    hdr = (int32_t *)(msg - (int)sizeof(pktsiz));
    *hdr = htonl(msglen);                     /* store signal/length */
@@ -424,7 +424,7 @@ bool BSOCK::send()
       if (rc < 0) {
          if (!m_suppress_error_msgs) {
             Qmsg5(m_jcr, M_ERROR, 0,
-                  _("Write error sending %d bytes to %s:%s:%d: ERR=%s\n"), 
+                  _("Write error sending %d bytes to %s:%s:%d: ERR=%s\n"),
                   msglen, m_who,
                   m_host, m_port, this->bstrerror());
          }
@@ -591,7 +591,7 @@ int32_t BSOCK::recv()
     */
    msg[nbytes] = 0; /* terminate in case it is a string */
    /*
-    * The following uses *lots* of resources so turn it on only for 
+    * The following uses *lots* of resources so turn it on only for
     * serious debugging.
     */
    Dsm_check(300);
@@ -613,7 +613,7 @@ bool BSOCK::signal(int signal)
    return send();
 }
 
-/* 
+/*
  * Despool spooled attributes
  */
 bool BSOCK::despool(void update_attr_spool_size(ssize_t size), ssize_t tsize)
@@ -680,7 +680,7 @@ const char *BSOCK::bstrerror()
    return errmsg;
 }
 
-int BSOCK::get_peer(char *buf, socklen_t buflen) 
+int BSOCK::get_peer(char *buf, socklen_t buflen)
 {
 #if !defined(HAVE_WIN32)
     if (peer_addr.sin_family == 0) {
@@ -728,7 +728,7 @@ bool BSOCK::set_buffer_size(uint32_t size, int rw)
    /*
     * If user has not set the size, use the OS default -- i.e. do not
     *   try to set it.  This allows sys admins to set the size they
-    *   want in the OS, and Bacula will comply. See bug #1493
+    *   want in the OS, and BAREOS will comply. See bug #1493
     */
    if (size == 0) {
       msglen = dbuf_size;
@@ -851,7 +851,7 @@ void BSOCK::set_killable(bool killable)
 /*
  * Restores socket flags
  */
-void BSOCK::restore_blocking (int flags) 
+void BSOCK::restore_blocking (int flags)
 {
 #ifndef HAVE_WIN32
    if ((fcntl(m_fd, F_SETFL, flags)) < 0) {
@@ -981,7 +981,7 @@ void BSOCK::destroy()
    if (src_addr) {
       free(src_addr);
       src_addr = NULL;
-   } 
+   }
    free(this);
 }
 
@@ -1084,45 +1084,99 @@ bail_out:
    return false;
 }
 
-/* Try to limit the bandwidth of a network connection
+/*
+ * Try to limit the bandwidth of a network connection
  */
 void BSOCK::control_bwlimit(int bytes)
 {
    btime_t now, temp;
+   int64_t usec_sleep;
+
+   /*
+    * If nothing written or read nothing todo.
+    */
    if (bytes == 0) {
       return;
    }
 
-   now = get_current_btime();          /* microseconds */
-   temp = now - m_last_tick;           /* microseconds */
-
-   m_nb_bytes += bytes;
-
-   /* Less than 0.1ms since the last call, see the next time */
-   if (temp < 100) {
-      return;
-   }
-
-   if (temp > 10000000) { /* Take care of clock problems (>10s) */
+   /*
+    * See if this is the first time we enter here.
+    */
+   now = get_current_btime();
+   if (m_last_tick == 0) {
       m_nb_bytes = bytes;
       m_last_tick = now;
       return;
    }
 
-   /* Remove what was authorised to be written in temp us */
-   m_nb_bytes -= (int64_t)(temp * ((double)m_bwlimit / 1000000.0));
+   /*
+    * Calculate the number of microseconds since the last check.
+    */
+   temp = now - m_last_tick;
 
-   if (m_nb_bytes < 0) {
-      m_nb_bytes = 0;
+   /*
+    * Less than 0.1ms since the last call, see the next time
+    */
+   if (temp < 100) {
+      m_nb_bytes += bytes;
+      return;
    }
 
-   /* What exceed should be converted in sleep time */
-   int64_t usec_sleep = (int64_t)(m_nb_bytes /((double)m_bwlimit / 1000000.0));
+   /*
+    * Keep track of how many bytes are written in this timeslice.
+    */
+   m_nb_bytes += bytes;
+   m_last_tick = now;
+   if (debug_level >= 400) {
+      Dmsg3(400, "control_bwlimit: now = %lld, since = %lld, nb_bytes = %d\n", now, temp, m_nb_bytes);
+   }
+
+   /*
+    * Take care of clock problems (>10s)
+    */
+   if (temp > 10000000) {
+      return;
+   }
+
+   /*
+    * Remove what was authorised to be written in temp usecs.
+    */
+   m_nb_bytes -= (int64_t)(temp * ((double)m_bwlimit / 1000000.0));
+   if (m_nb_bytes < 0) {
+      /*
+       * If more was authorized then used but bursting is not enabled
+       * reset the counter as these bytes cannot be used later on when
+       * we are exceeding our bandwidth.
+       */
+      if (!m_use_bursting) {
+         m_nb_bytes = 0;
+      }
+      return;
+   }
+
+   /*
+    * What exceed should be converted in sleep time
+    */
+   usec_sleep = (int64_t)(m_nb_bytes /((double)m_bwlimit / 1000000.0));
    if (usec_sleep > 100) {
+      if (debug_level >= 400) {
+         Dmsg1(400, "control_bwlimit: sleeping for %lld usecs\n", usec_sleep);
+      }
       bmicrosleep(0, usec_sleep);
       m_last_tick = get_current_btime();
-      m_nb_bytes = 0;
-   } else {
-      m_last_tick = now;
+
+      /*
+       * Subtract the number of bytes we could have sent during the sleep
+       * time given the bandwidth limit set. We only do this when we are
+       * allowed to burst e.g. use unused bytes from previous timeslices
+       * to get an overall bandwidth limiting which may sometimes be below
+       * the bandwidth and sometimes above it but the average will be near
+       * the set bandwidth.
+       */
+      if (m_use_bursting) {
+         m_nb_bytes -= (int64_t)(usec_sleep * ((double)m_bwlimit / 1000000.0));
+      } else {
+         m_nb_bytes = 0;
+      }
    }
 }

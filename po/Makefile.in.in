@@ -10,7 +10,7 @@
 #
 # Origin: gettext-0.14.4
 
-PACKAGE = bacula
+PACKAGE = bareos
 VERSION = @VERSION@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 
@@ -382,13 +382,13 @@ Makefile: Makefile.in.in Makevars $(top_builddir)/config.status @POMAKEFILEDEPS@
 force:
 
 depend:
-	
+
 gen-potfiles:
 	echo "# List of source files containing translatable strings." > POTFILES.in
 	echo "# To generate this file, type 'make gen-potfiles'" >> POTFILES.in
-	cd .. && find -name "*.c" >> po/POTFILES.in
-	cd .. && find -name "*.h" >> po/POTFILES.in
-	cd .. && find -name "*.cpp" >> po/POTFILES.in
+	cd .. && find . -name "*.c" >> po/POTFILES.in
+	cd .. && find . -name "*.h" >> po/POTFILES.in
+	cd .. && find . -name "*.cpp" >> po/POTFILES.in
 
 # Tell versions [3.59,3.63) of GNU make not to export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

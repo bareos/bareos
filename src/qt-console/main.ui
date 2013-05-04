@@ -12,7 +12,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>bat - Bacula Admin Tool</string>
+   <string>bat - Bareos Admin Tool</string>
   </property>
   <property name="windowIcon">
    <iconset resource="main.qrc">
@@ -22,7 +22,7 @@
    <string/>
   </property>
   <property name="statusTip">
-   <string>Bacula Administration Tool</string>
+   <string>Bareos Administration Tool</string>
   </property>
   <property name="whatsThis">
    <string>It's a Dock widget to allow page selection</string>

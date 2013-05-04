@@ -1,29 +1,22 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2008-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation, which is 
+   License as published by the Free Software Foundation, which is
    listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 
 /*
@@ -57,7 +50,7 @@ Device {
 
  */
 
-#include "bacula.h"             /* define 64bit file usage */
+#include "bareos.h"             /* define 64bit file usage */
 #include "stored.h"
 
 #include "vtape.h"
@@ -100,7 +93,7 @@ int vtape::tape_op(struct mtop *mt_com)
       errno = ENOMEDIUM;
       return -1;
    }
-   
+
    switch (mt_com->mt_op)
    {
    case MTRESET:
@@ -133,12 +126,12 @@ int vtape::tape_op(struct mtop *mt_com)
 /*
     file number = 1
     block number = 0
-   
+
     file number = 1
     block number = 1
-   
+
     mt: /dev/lto2: Erreur d'entree/sortie
-   
+
     file number = 2
     block number = 0
 */
@@ -175,12 +168,12 @@ int vtape::tape_op(struct mtop *mt_com)
       result = 0;
       break;
 
-   case MTBSFM:                 /* not used by bacula */
+   case MTBSFM:                 /* not used by bareos */
       errno = EIO;
       result = -1;
       break;
 
-   case MTFSFM:                 /* not used by bacula */
+   case MTFSFM:                 /* not used by bareos */
       errno = EIO;
       result = -1;
       break;
@@ -212,7 +205,7 @@ int vtape::tape_op(struct mtop *mt_com)
       /* Can be at EOM */
       break;
 
-   case MTERASE:                /* not used by bacula */
+   case MTERASE:                /* not used by bareos */
       atEOD = true;
       atEOF = false;
       atEOT = false;
@@ -280,7 +273,7 @@ int vtape::tape_get(struct mtget *mt_get)
 //   pos_info.PartitionBlockValid ? pos_info.Partition : (ULONG)-1;
 
    /* TODO */
-   mt_get->mt_dsreg = 
+   mt_get->mt_dsreg =
       ((density << MT_ST_DENSITY_SHIFT) & MT_ST_DENSITY_MASK) |
       ((block_size << MT_ST_BLKSIZE_SHIFT) & MT_ST_BLKSIZE_MASK);
 
@@ -332,7 +325,7 @@ int vtape::tape_pos(struct mtpos *mt_pos)
  * current position are discarded.
  */
 int vtape::truncate_file()
-{  
+{
    Dmsg2(dbglevel, "truncate %i:%i\n", current_file, current_block);
    ftruncate(fd, lseek(fd, 0, SEEK_CUR));
    last_file = current_file;
@@ -383,7 +376,7 @@ ssize_t vtape::d_write(int, const void *buffer, size_t count)
    ASSERT(buffer);
 
    ssize_t nb;
-   Dmsg3(dbglevel*2, "write len=%i %i:%i\n", 
+   Dmsg3(dbglevel*2, "write len=%i %i:%i\n",
          count, current_file,current_block);
 
    if (atEOT) {
@@ -395,7 +388,7 @@ ssize_t vtape::d_write(int, const void *buffer, size_t count)
    if (!atEOD) {                /* if not at the end of the data */
       truncate_file();
    }
- 
+
    if (current_block != -1) {
       current_block++;
    }
@@ -409,11 +402,11 @@ ssize_t vtape::d_write(int, const void *buffer, size_t count)
    uint32_t size = count;
    ::write(fd, &size, sizeof(uint32_t));
    nb = ::write(fd, buffer, count);
-   
+
    if (nb != (ssize_t)count) {
       atEOT = true;
-      Dmsg2(dbglevel, 
-            "Not enough space writing only %i of %i requested\n", 
+      Dmsg2(dbglevel,
+            "Not enough space writing only %i of %i requested\n",
             nb, count);
    }
 
@@ -449,7 +442,7 @@ int vtape::weof()
 
    last_FM = cur_FM;
    cur_FM = lseek(fd, 0, SEEK_CUR); // current position
-   
+
    /* update previous next_FM  */
    lseek(fd, last_FM + sizeof(uint32_t)+sizeof(boffset_t), SEEK_SET);
    ::write(fd, &cur_FM, sizeof(boffset_t));
@@ -472,7 +465,7 @@ int vtape::weof()
 
    last_file = MAX(current_file, last_file);
 
-   Dmsg4(dbglevel, "Writing EOF %i:%i last=%lli cur=%lli next=0\n", 
+   Dmsg4(dbglevel, "Writing EOF %i:%i last=%lli cur=%lli next=0\n",
          current_file, current_block, last_FM, cur_FM);
 
    return 0;
@@ -482,7 +475,7 @@ int vtape::weof()
  * Go to next FM
  */
 int vtape::fsf()
-{   
+{
    ASSERT(online);
    ASSERT(current_file >= 0);
    ASSERT(fd >= 0);
@@ -550,8 +543,8 @@ bool vtape::read_fm(VT_READ_FM_MODE read_all)
    ret = ::read(fd, &next_FM, sizeof(next_FM));
 
    current_block=0;
-   
-   Dmsg3(dbglevel, "Read FM cur=%lli last=%lli next=%lli\n", 
+
+   Dmsg3(dbglevel, "Read FM cur=%lli last=%lli next=%lli\n",
          cur_FM, last_FM, next_FM);
 
    return (ret == sizeof(next_FM));
@@ -565,11 +558,11 @@ int vtape::fsr(int count)
    ASSERT(online);
    ASSERT(current_file >= 0);
    ASSERT(fd >= 0);
-   
+
    int i,nb, ret=0;
 // boffset_t where=0;
    uint32_t s;
-   Dmsg4(dbglevel, "fsr %i:%i EOF=%i c=%i\n", 
+   Dmsg4(dbglevel, "fsr %i:%i EOF=%i c=%i\n",
          current_file,current_block,atEOF,count);
 
    check_eof();
@@ -585,7 +578,7 @@ int vtape::fsr(int count)
       return -1;
    }
 
-   atBOT = atEOF = false;   
+   atBOT = atEOF = false;
 
    /* check all block record */
    for(i=0; (i < count) && !atEOF ; i++) {
@@ -636,7 +629,7 @@ int vtape::bsr(int count)
    int orig_f = current_file;
    int orig_b = current_block;
 
-   Dmsg4(dbglevel, "bsr(%i) cur_blk=%i orig=%lli cur_FM=%lli\n", 
+   Dmsg4(dbglevel, "bsr(%i) cur_blk=%i orig=%lli cur_FM=%lli\n",
          count, current_block, orig, cur_FM);
 
    /* begin of tape, do nothing */
@@ -675,7 +668,7 @@ int vtape::bsr(int count)
          last = lseek(fd, 0, SEEK_CUR);
          last_f = current_file;
          last_b = current_block;
-         Dmsg6(dbglevel, "EOF=%i last2=%lli last=%lli < orig=%lli %i:%i\n", 
+         Dmsg6(dbglevel, "EOF=%i last2=%lli last=%lli < orig=%lli %i:%i\n",
                atEOF, last2, last, orig, current_file, current_block);
       }
       ret = fsr(1);
@@ -685,14 +678,14 @@ int vtape::bsr(int count)
       lseek(fd, last2, SEEK_SET);
       current_file = last_f;
       current_block = last_b - 1;
-      Dmsg3(dbglevel, "1 set offset2=%lli %i:%i\n", 
+      Dmsg3(dbglevel, "1 set offset2=%lli %i:%i\n",
             last, current_file, current_block);
 
    } else if (last > 0) {
       lseek(fd, last, SEEK_SET);
       current_file = last_f;
       current_block = last_b;
-      Dmsg3(dbglevel, "2 set offset=%lli %i:%i\n", 
+      Dmsg3(dbglevel, "2 set offset=%lli %i:%i\n",
             last, current_file, current_block);
    } else {
       lseek(fd, orig, SEEK_SET);
@@ -733,7 +726,7 @@ int vtape::bsf()
 
    atBOT = atEOF = atEOT = atEOD = false;
 
-   if (current_file == 0) {/* BOT + errno */      
+   if (current_file == 0) {/* BOT + errno */
       lseek(fd, 0, SEEK_SET);
       read_fm(VT_READ_EOF);
       current_file = 0;
@@ -750,14 +743,14 @@ int vtape::bsf()
    return ret;
 }
 
-/* 
+/*
  * Put vtape in offline mode
  */
 int vtape::offline()
 {
    ::close(fd);
    fd = -1;
-   
+
    atEOF = false;               /* End of file */
    atEOT = false;               /* End of tape */
    atEOD = false;               /* End of data */
@@ -796,7 +789,7 @@ ssize_t vtape::d_read(int, void *buffer, size_t count)
    ASSERT(current_file >= 0);
    ssize_t nb;
    uint32_t s;
-   
+
    Dmsg2(dbglevel*2, "read %i:%i\n", current_file, current_block);
 
    if (atEOT || atEOD) {
@@ -864,7 +857,7 @@ int vtape::d_open(const char *pathname, int uflags)
 
    online = true;               /* assume that drive contains a tape */
 
-   struct stat statp;   
+   struct stat statp;
    if (stat(pathname, &statp) != 0) {
       fd = -1;
       Dmsg1(dbglevel, "Can't stat on %s\n", pathname);
@@ -907,7 +900,7 @@ void vtape::update_pos()
    struct stat statp;
    if (fstat(fd, &statp) == 0) {
       file_block = statp.st_blocks;
-   } 
+   }
 
    Dmsg1(dbglevel*2, "update_pos=%i\n", file_block);
 
@@ -923,9 +916,9 @@ void vtape::dump()
    Dmsg0(dbglevel+1, "===================\n");
    Dmsg2(dbglevel, "file:block = %i:%i\n", current_file, current_block);
    Dmsg1(dbglevel+1, "last_file=%i\n", last_file);
-   Dmsg1(dbglevel+1, "file_block=%i\n", file_block);  
-   Dmsg4(dbglevel+1, "EOF=%i EOT=%i EOD=%i BOT=%i\n", 
-         atEOF, atEOT, atEOD, atBOT);  
+   Dmsg1(dbglevel+1, "file_block=%i\n", file_block);
+   Dmsg4(dbglevel+1, "EOF=%i EOT=%i EOD=%i BOT=%i\n",
+         atEOF, atEOT, atEOD, atBOT);
 }
 
 #endif  /* ! USE_VTAPE */

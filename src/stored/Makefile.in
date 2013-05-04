@@ -24,7 +24,7 @@ XATTR_LIBS = @XATTR_LIBS_NONSHARED@
 first_rule: all
 dummy:
 
-# bacula-sd
+# bareos-sd
 SDSRCS = acquire.c ansi_label.c append.c askdir.c authenticate.c \
          autochanger.c block.c bsr.c butil.c crc32.c dev.c device.c \
 	 dircmd.c ebcdic.c fd_cmds.c job.c label.c lock.c mac.c \
@@ -74,6 +74,8 @@ SD_LIBS += @CAP_LIBS@
 BEXTRACT_LIBS += @ZLIB_LIBS@
 BEXTRACT_LIBS += @LZO_LIBS@
 
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
+
 DEBUG = @DEBUG@
 GETTEXT_LIBS = @LIBINTL@
 DB_LIBS = @DB_LIBS@
@@ -88,99 +90,71 @@ NDMP_LIBS = @NDMP_LIBS@
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
 
-all: Makefile bacula-sd @STATIC_SD@ bls bextract bscan btape bcopy
+all: Makefile bareos-sd @STATIC_SD@ bls bextract bscan btape bcopy
 	@echo "===== Make of stored is good ===="
 	@echo " "
 
-bacula-sd: Makefile $(SDOBJS) \
-	   ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-	   ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
+bareos-sd: Makefile $(SDOBJS) \
+	   ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+	   ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	   @NDMP_DEPS@
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -o $@ $(SDOBJS) \
-	   $(NDMP_LIBS) -lbaccfg -lbac -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
+	   $(NDMP_LIBS) -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
 	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-static-bacula-sd: Makefile $(SDOBJS) \
-	          ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-	          ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
+static-bareos-sd: Makefile $(SDOBJS) \
+	          ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+	          ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	          @NDMP_DEPS@
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -o $@ $(SDOBJS) \
-	   $(NDMP_LIBS) -lbaccfg -lbac -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
+	   $(NDMP_LIBS) -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
 	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 	strip $@
 
-btape.o: btape.c
+ndmp_tape.o: ndmp_tape.c
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I../lib $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
-btape: Makefile  $(TAPEOBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE)
+btape: Makefile  $(TAPEOBJS) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(TAPEOBJS) \
-	   -lbaccfg -lbac $(DLIB) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   -lbareoscfg -lbareos $(DLIB) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-bls.o:	bls.c
-	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
-
-bls:	Makefile $(BLSOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+bls:	Makefile $(BLSOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Compiling $<"
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BLSOBJS) $(DLIB) \
-	   -lbacfind -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-bextract.o: bextract.c
-	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
-
-bextract: Makefile $(BEXTOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+bextract: Makefile $(BEXTOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Compiling $<"
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BEXTOBJS) $(DLIB) \
-	   -lbacfind -lbaccfg -lbac -lm $(LIBS) $(SD_LIBS) $(BEXTRACT_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(AFS_LIBS) $(ACL_LIBS) $(XATTR_LIBS)
+	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(BEXTRACT_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(AFS_LIBS) $(ACL_LIBS) $(XATTR_LIBS)
 
-bscan.o: bscan.c
-	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
-
-bscan:	Makefile $(SCNOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-	../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE)
+bscan:	Makefile $(SCNOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+	../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SCNOBJS) \
-	   -lbacsql -lbaccats $(DB_LIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   -lbareossql -lbareoscats $(DB_LIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-bcopy.o: bcopy.c
-	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
-
-bcopy:	Makefile $(COPYOBJS) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+bcopy:	Makefile $(COPYOBJS) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(COPYOBJS) \
-	   -lbaccfg -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
-
-crc32sum: Makefile crc32.o
-	$(RMF) crc32.o
-	$(CXX) -DCRC32_SUM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CXXFLAGS) crc32.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ crc32.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
-	$(RMF) crc32.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) crc32.c
+	   -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
 	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 install: all
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd $(DESTDIR)$(sbindir)/bacula-sd
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-sd $(DESTDIR)$(sbindir)/bareos-sd
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bls $(DESTDIR)$(sbindir)/bls
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bextract $(DESTDIR)$(sbindir)/bextract
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bcopy $(DESTDIR)$(sbindir)/bcopy
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bscan $(DESTDIR)$(sbindir)/bscan
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) btape $(DESTDIR)$(sbindir)/btape
-	@srcconf=bacula-sd.conf; \
+	@srcconf=bareos-sd.conf; \
 	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
 	   destconf=$$srcconf.new; \
 	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
@@ -192,28 +166,19 @@ install: all
 	@if test "x${sd_group}" != "x"; then \
 	   chgrp -f ${sd_group} ${DESTDIR}${sysconfdir}/$$destconf; \
 	fi
-	@if test -f static-bacula-sd; then \
-	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bacula-sd $(DESTDIR)$(sbindir)/static-bacula-sd; \
+	@if test -f static-bareos-sd; then \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bareos-sd $(DESTDIR)$(sbindir)/static-bareos-sd; \
 	fi
-
-uninstall:
-	(cd $(DESTDIR)$(sbindir); $(RMF) bacula-sd)
-	(cd $(DESTDIR)$(sbindir); $(RMF) bls)
-	(cd $(DESTDIR)$(sbindir); $(RMF) bextract)
-	(cd $(DESTDIR)$(sbindir); $(RMF) bcopy)
-	(cd $(DESTDIR)$(sbindir); $(RMF) bscan)
-	(cd $(DESTDIR)$(sbindir); $(RMF) btape)
-	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-sd.conf bacula-sd.conf.new)
 
 libtool-clean:
 	@$(RMF) -r .libs _libs
 
 clean:	libtool-clean
-	@$(RMF) bacula-sd stored bls bextract bpool btape shmfree core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
-	@$(RMF) bscan bcopy static-bacula-sd
+	@$(RMF) bareos-sd stored bls bextract bpool btape shmfree core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+	@$(RMF) bscan bcopy static-bareos-sd
 
 realclean: clean
-	@$(RMF) tags bacula-sd.conf
+	@$(RMF) tags bareos-sd.conf
 
 distclean: realclean
 	if test $(srcdir) = .; then $(MAKE) realclean; fi
@@ -231,8 +196,8 @@ devclean: realclean
 depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
-	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) $(XINC) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@$(ECHOCMD) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(INCLUDES) *.c >> Makefile
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \

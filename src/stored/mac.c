@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,21 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * SD -- mac.c --  responsible for doing
- *     migration, archive, copy, and virtual backup jobs.
+ * migration, archive, copy, and virtual backup jobs.
  *
- *     Kern Sibbald, January MMVI
- *
+ * Kern Sibbald, January MMVI
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
 /* Import functions */
@@ -98,7 +92,7 @@ bool do_mac_run(JCR *jcr)
    }
 
    Dmsg2(200, "===== After acquire pos %u:%u\n", jcr->dcr->dev->file, jcr->dcr->dev->block_num);
-     
+
    jcr->sendJobStatus(JS_Running);
 
    begin_data_spool(jcr->dcr);
@@ -128,7 +122,7 @@ ok_out:
             ok = false;
          }
          Dmsg2(200, "Flush block to device pos %u:%u\n", dev->file, dev->block_num);
-      }  
+      }
 
       if (!ok) {
          discard_data_spool(jcr->dcr);
@@ -178,8 +172,8 @@ ok_out:
    generate_plugin_event(jcr, bsdEventJobEnd);
    dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
       edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
-   Dmsg4(100, Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles, ec1); 
-       
+   Dmsg4(100, Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles, ec1);
+
    dir->signal(BNET_EOD);             /* send EOD to Director daemon */
    free_plugins(jcr);                 /* release instantiated plugins */
 
@@ -196,7 +190,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    JCR *jcr = dcr->jcr;
    DEVICE *dev = jcr->dcr->dev;
    char buf1[100], buf2[100];
-   
+
 #ifdef xxx
    Dmsg5(000, "on entry     JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
       jcr->JobId,
@@ -208,7 +202,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       return true;
    }
    /* We want to write SOS_LABEL and EOS_LABEL discard all others */
-   switch (rec->FileIndex) {                        
+   switch (rec->FileIndex) {
    case PRE_LABEL:
    case VOL_LABEL:
    case EOT_LABEL:
@@ -224,9 +218,9 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
        *  We do so by detecting a FileIndex change and incrementing the
        *  JobFiles, which we then use as the output FileIndex.
        */
-      if (rec->FileIndex >= 0) { 
+      if (rec->FileIndex >= 0) {
          /* If something changed, increment FileIndex */
-         if (rec->VolSessionId != rec->last_VolSessionId || 
+         if (rec->VolSessionId != rec->last_VolSessionId ||
              rec->VolSessionTime != rec->last_VolSessionTime ||
              rec->FileIndex != rec->last_FileIndex) {
             jcr->JobFiles++;
@@ -248,7 +242,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
       stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
    while (!write_record_to_block(jcr->dcr, rec)) {
-      Dmsg4(200, "!write_record_to_block blkpos=%u:%u len=%d rem=%d\n", 
+      Dmsg4(200, "!write_record_to_block blkpos=%u:%u len=%d rem=%d\n",
             dev->file, dev->block_num, rec->data_len, rec->remainder);
       if (!jcr->dcr->write_block_to_device()) {
          Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",

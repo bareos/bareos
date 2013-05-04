@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,34 +13,26 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- backup.c -- responsible for doing backup jobs
  *
- *   Bacula Director -- backup.c -- responsible for doing backup jobs
+ * Kern Sibbald, March MM
  *
- *     Kern Sibbald, March MM
- *
- *  Basic tasks done here:
- *     Open DB and create records for this job.
- *     Open Message Channel with Storage daemon to tell him a job will be starting.
- *     Open connection with File daemon and pass him commands
- *       to do the backup.
- *     When the File daemon finishes the job, update the DB.
- *
+ * Basic tasks done here:
+ *    Open DB and create records for this job.
+ *    Open Message Channel with Storage daemon to tell him a job will be starting.
+ *    Open connection with File daemon and pass him commands to do the backup.
+ *    When the File daemon finishes the job, update the DB.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /* Commands sent to File daemon */
@@ -51,12 +43,12 @@ static char storaddr[]  = "storage address=%s port=%d ssl=%d\n";
 static char OKbackup[]   = "2000 OK backup\n";
 static char OKstore[]    = "2000 OK storage\n";
 static char EndJob[]     = "2800 End Job TermCode=%d JobFiles=%u "
-                           "ReadBytes=%llu JobBytes=%llu Errors=%u "  
+                           "ReadBytes=%llu JobBytes=%llu Errors=%u "
                            "VSS=%d Encrypt=%d\n";
 /* Pre 1.39.29 (04Dec06) EndJob */
 static char OldEndJob[]  = "2800 End Job TermCode=%d JobFiles=%u "
                            "ReadBytes=%llu JobBytes=%llu Errors=%u\n";
-/* 
+/*
  * Called here before the job is run to do the job
  *   specific setup.
  */
@@ -68,7 +60,7 @@ bool do_native_backup_init(JCR *jcr)
       return false;
    }
 
-   /* 
+   /*
     * Get definitive Job level and since time
     */
    get_level_since_time(jcr, jcr->since, sizeof(jcr->since));
@@ -142,22 +134,22 @@ static int accurate_list_handler(void *ctx, int num_fields, char **row)
    if (job_canceled(jcr)) {
       return 1;
    }
-   
+
    if (row[2][0] == '0') {           /* discard when file_index == 0 */
       return 0;
    }
 
    /* sending with checksum */
-   if (jcr->use_accurate_chksum 
-       && num_fields == 7 
+   if (jcr->use_accurate_chksum
+       && num_fields == 7
        && row[6][0] /* skip checksum = '0' */
        && row[6][1])
-   { 
-      jcr->file_bsock->fsend("%s%s%c%s%c%s%c%s", 
-                             row[0], row[1], 0, row[4], 0, row[6], 0, row[5]); 
+   {
+      jcr->file_bsock->fsend("%s%s%c%s%c%s%c%s",
+                             row[0], row[1], 0, row[4], 0, row[6], 0, row[5]);
    } else {
-      jcr->file_bsock->fsend("%s%s%c%s%c%c%s", 
-                             row[0], row[1], 0, row[4], 0, 0, row[5]); 
+      jcr->file_bsock->fsend("%s%s%c%s%c%c%s",
+                             row[0], row[1], 0, row[4], 0, 0, row[5]);
    }
    return 0;
 }
@@ -181,10 +173,10 @@ static bool is_checksum_needed_by_fileset(JCR *jcr)
    fs = jcr->res.job->fileset;
    for (int i = 0; i < fs->num_includes; i++) { /* Parse all Include {} */
       inc = fs->include_items[i];
-      
+
       for (int j = 0; j < inc->num_opts; j++) { /* Parse all Options {} */
          fopts = inc->opts_list[j];
-         
+
          for (char *k = fopts->opts; *k; k++) { /* Try to find one request */
             switch (*k) {
             case 'V':           /* verify */
@@ -217,7 +209,7 @@ static bool is_checksum_needed_by_fileset(JCR *jcr)
    if (!have_basejob_option && jcr->HasBase) {
       return true;
    }
-   
+
    Dmsg0(50, "Checksum will be sent to FD\n");
    return false;
 }
@@ -286,7 +278,7 @@ bool send_accurate_current_files(JCR *jcr)
    Mmsg(buf, "SELECT sum(JobFiles) FROM Job WHERE JobId IN (%s)", jobids.list);
    db_sql_query(jcr->db, buf.c_str(), db_list_handler, &nb);
    Dmsg2(200, "jobids=%s nb=%s\n", jobids.list, nb.list);
-   jcr->file_bsock->fsend("accurate files=%s\n", nb.list); 
+   jcr->file_bsock->fsend("accurate files=%s\n", nb.list);
 
    if (jcr->HasBase) {
       jcr->nb_base_files = str_to_int64(nb.list);
@@ -302,7 +294,7 @@ bool send_accurate_current_files(JCR *jcr)
       db_get_file_list(jcr, jcr->db_batch,
                        jobids.list, jcr->use_accurate_chksum, false /* no delta */,
                        accurate_list_handler, (void *)jcr);
-   } 
+   }
 
    jcr->file_bsock->signal(BNET_EOD);
    return true;
@@ -450,14 +442,14 @@ bool do_native_backup(JCR *jcr)
       goto bail_out;
    }
 
-   /*    
+   /*
     * We re-update the job start record so that the start
-    *  time is set after the run before job.  This avoids 
+    *  time is set after the run before job.  This avoids
     *  that any files created by the run before job will
     *  be saved twice.  They will be backed up in the current
     *  job, but not in the next one unless they are changed.
     *  Without this, they will be backed up in this job and
-    *  in the next job run because in that case, their date 
+    *  in the next job run because in that case, their date
     *   is after the start of this run.
     */
    jcr->start_time = time(NULL);
@@ -492,7 +484,7 @@ bool do_native_backup(JCR *jcr)
    if (status == JS_Terminated) {
       native_backup_cleanup(jcr, status);
       return true;
-   }     
+   }
    return false;
 
 /* Come here only after starting SD thread */
@@ -532,7 +524,7 @@ int wait_for_job_termination(JCR *jcr, int timeout)
       }
       /* Wait for Client to terminate */
       while ((n = bget_dirmsg(fd)) >= 0) {
-         if (!fd_ok && 
+         if (!fd_ok &&
              (sscanf(fd->msg, EndJob, &jcr->FDJobStatus, &JobFiles,
                      &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt) == 7 ||
               sscanf(fd->msg, OldEndJob, &jcr->FDJobStatus, &JobFiles,
@@ -559,7 +551,7 @@ int wait_for_job_termination(JCR *jcr, int timeout)
          while (i++ < 10 && jcr->res.job->RescheduleIncompleteJobs && jcr->is_canceled()) {
             bmicrosleep(3, 0);
          }
-            
+
       }
       fd->signal(BNET_TERMINATE);   /* tell Client we are terminating */
    }
@@ -628,12 +620,12 @@ void native_backup_cleanup(JCR *jcr, int TermCode)
     * JS_Terminated almost everywhere instead of (JS_Terminated || JS_Warning)
     * as we do with is_canceled()
     */
-   if (jcr->getJobStatus() == JS_Terminated && 
+   if (jcr->getJobStatus() == JS_Terminated &&
         (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
       TermCode = JS_Warnings;
    }
 #endif
-         
+
    update_job_end(jcr, TermCode);
 
    if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
@@ -749,7 +741,7 @@ void update_bootstrap_file(JCR *jcr)
             }
             fprintf(fd, "VolSessionId=%u\n", jcr->VolSessionId);
             fprintf(fd, "VolSessionTime=%u\n", jcr->VolSessionTime);
-            fprintf(fd, "VolAddr=%s-%s\n", 
+            fprintf(fd, "VolAddr=%s-%s\n",
                     edit_uint64(VolParams[i].StartAddr, ed1),
                     edit_uint64(VolParams[i].EndAddr, ed2));
             fprintf(fd, "FileIndex=%d-%d\n", VolParams[i].FirstIndex,
@@ -983,7 +975,7 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
         "  Last Volume Bytes:      %s (%sB)\n"
         "%s"                                        /* Daemon status info */
         "  Termination:            %s\n\n"),
-        BACULA, my_name, VERSION, LSMDATE,
+        BAREOS, my_name, VERSION, LSMDATE,
         HOST_OS, DISTNAME, DISTVER,
         jcr->jr.JobId,
         jcr->jr.Job,

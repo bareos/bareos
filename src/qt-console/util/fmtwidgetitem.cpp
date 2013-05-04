@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +11,19 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
- 
+
 /*
+ * Helper functions for tree widget formatting
  *
- *  Helper functions for tree widget formatting
- *
- *   Riccardo Ghetta, May 2008
- *
- */ 
+ * Riccardo Ghetta, May 2008
+ */
 
 #include "bat.h"
 #include <QTreeWidgetItem>
@@ -68,13 +59,13 @@ QString convertJobStatus(const QString &sts)
 Freeze::Freeze(QWidget &q):
 qw(&q)
 {
-   qw->setUpdatesEnabled(false); 
+   qw->setUpdatesEnabled(false);
 }
 
 Freeze::~Freeze()
 {
    if (qw) {
-      qw->setUpdatesEnabled(true); 
+      qw->setUpdatesEnabled(true);
       qw->update();
    }
 }
@@ -101,15 +92,15 @@ QString convertBytesIEC(qint64 qfld)
       smaller unit (e.g. GB for a TB number and so on) */
    char suffix;
    if (qfld >= EB) {
-      qfld /= PB; 
+      qfld /= PB;
       suffix = 'E';
    }
    else if (qfld >= PB) {
-      qfld /= TB; 
+      qfld /= TB;
       suffix = 'P';
    }
    else if (qfld >= TB) {
-      qfld /= GB; 
+      qfld /= GB;
       suffix = 'T';
    }
    else if (qfld >= GB) {
@@ -125,12 +116,12 @@ QString convertBytesIEC(qint64 qfld)
    }
    else  {
       /* plain bytes, no need to reformat */
-      return QString("%1 B").arg(qfld); 
+      return QString("%1 B").arg(qfld);
    }
 
    /* having divided for a smaller unit, now we can safely convert to double and
       use the extra room for decimals */
-   return QString("%1 %2iB").arg(qfld / 1024.0, 0, 'f', 2).arg(suffix);
+   return QString("%1 %2iB").arg(qfld / 1000.0, 0, 'f', 2).arg(suffix);
 }
 
 /* String to human value based on k=1000 */
@@ -147,15 +138,15 @@ QString convertBytesSI(qint64 qfld)
       smaller unit (e.g. GB for a TB number and so on) */
    char suffix;
    if (qfld >= EB) {
-      qfld /= PB; 
+      qfld /= PB;
       suffix = 'E';
    }
    else if (qfld >= PB) {
-      qfld /= TB; 
+      qfld /= TB;
       suffix = 'P';
    }
    else if (qfld >= TB) {
-      qfld /= GB; 
+      qfld /= GB;
       suffix = 'T';
    }
    else if (qfld >= GB) {
@@ -171,7 +162,7 @@ QString convertBytesSI(qint64 qfld)
    }
    else  {
       /* plain bytes, no need to reformat */
-      return QString("%1 B").arg(qfld); 
+      return QString("%1 B").arg(qfld);
    }
 
    /* having divided for a smaller unit, now we can safely convert to double and
@@ -222,7 +213,7 @@ void ItemFormatterBase::setPercent(int index, float value)
 /* By default, the setPixmap implementation with tooltip don't implement
  * the tooltip stuff
  */
-void ItemFormatterBase::setPixmap(int index, const QPixmap &pix, 
+void ItemFormatterBase::setPixmap(int index, const QPixmap &pix,
                                   const QString & /* tip */)
 {
    setPixmap(index, pix);
@@ -387,7 +378,7 @@ void ItemFormatterBase::setJobStatusFld(int index, const QString &status, bool c
       setBackground(index, Qt::green);
    } else if (redchars.contains(st, Qt::CaseSensitive)) {
       setBackground(index, Qt::red);
-   } else if (yellowchars.contains(st, Qt::CaseSensitive)){ 
+   } else if (yellowchars.contains(st, Qt::CaseSensitive)){
       setBackground(index, Qt::yellow);
    }
 }
@@ -467,7 +458,7 @@ void TableItemFormatter::BatSortingTableItem::setSortData(const QVariant &d)
    setData(SORTDATA_ROLE, d);
 }
 
-bool TableItemFormatter::BatSortingTableItem::operator< ( const QTableWidgetItem & o ) const 
+bool TableItemFormatter::BatSortingTableItem::operator< ( const QTableWidgetItem & o ) const
 {
    QVariant my = data(SORTDATA_ROLE);
    QVariant other = o.data(SORTDATA_ROLE);
@@ -476,11 +467,11 @@ bool TableItemFormatter::BatSortingTableItem::operator< ( const QTableWidgetItem
 
    /* 64bit integers must be handled separately, others can be converted to double */
    if (QVariant::ULongLong == my.type()) {
-      return my.toULongLong() < other.toULongLong(); 
+      return my.toULongLong() < other.toULongLong();
    } else if (QVariant::LongLong == my.type()) {
-      return my.toLongLong() < other.toLongLong(); 
+      return my.toLongLong() < other.toLongLong();
    } else if (my.canConvert(QVariant::Double)) {
-      return my.toDouble() < other.toDouble(); 
+      return my.toDouble() < other.toDouble();
    } else {
       return QTableWidgetItem::operator< (o); /* invalid combination, revert to default sorting */
    }
@@ -508,7 +499,7 @@ void TableItemFormatter::setPixmap(int index, const QPixmap &pix)
    parent->setCellWidget(row, index, lbl);
 }
 
-void TableItemFormatter::setPixmap(int index, const QPixmap &pix, 
+void TableItemFormatter::setPixmap(int index, const QPixmap &pix,
                                    const QString &tips)
 {
 // Centered, but not sortable !
