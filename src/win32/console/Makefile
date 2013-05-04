@@ -34,11 +34,14 @@ LDLIBS = ../lib/libbareos.a \
 CONSSRCS = console.c console_conf.c authenticate.c
 CONSOBJS = $(CONSSRCS:.c=.o)
 
+WINDRESSRCS = consoleres.rc
+WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
+
 all: bconsole.exe
 
 bconsole.exe: DLL_USAGE = -DUSING_DLL
-bconsole.exe: $(CONSOBJS)
-	$(CXX) $(LDFLAGS_CONS) $(CONSOBJS) $(LDLIBS) -o $@
+bconsole.exe: $(CONSOBJS) $(WINDRESOBJS)
+	$(CXX) $(LDFLAGS_CONS) $(CONSOBJS) $(LDLIBS) $(WINDRESOBJS) -o $@
 
 clean:
 	rm -f *.o
@@ -50,3 +53,8 @@ distclean:: clean
 .c.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
+
+%.o : %.rc
+	@echo "Ressource Compiling $^"
+	$(WINDRES) $^ -o $@
+
