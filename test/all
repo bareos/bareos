@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# stop on first error
+set -e
+
+echo "start testing ... "
+echo "TRAVIS_BRANCH: $TRAVIS_BRANCH"
+echo "USER: $USER"
+echo "DB: $DB"
+
+chown ${daemon_user}:${daemon_group} /etc/bareos/*.conf
+chmod ug=rw,o+r /etc/bareos/*.conf
+chmod a+rx /etc/bareos/
+
+ls -la /etc/bareos/
+
+case "$DB" in
+    postgres*)
+        su postgres -c /usr/lib/bareos/scripts/create_bareos_database
+        su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
+        su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
+        ;;
+    *)
+        /usr/lib/bareos/scripts/create_bareos_database
+        /usr/lib/bareos/scripts/make_bareos_tables
+        /usr/lib/bareos/scripts/grant_bareos_privileges
+        ;;
+esac
+
+echo "--------- starting services ----------- "
+service bareos-dir start
+service bareos-sd start
+service bareos-fd start
+sleep 10
+
+echo "--------- checking services ----------- "
+service bareos-dir status
+service bareos-sd status
+service bareos-fd status
+
+
+# enable bash debug
+set -v
+
+BACKUP_TEST_FILE=/usr/sbin/bareos.test
+
+echo -e "status dir" | bconsole
+echo
+echo "---- label a volume ----"
+echo -e "label\rtestvol\r2" | bconsole
+echo
+echo "----- create some file to test backup / restore ----"
+echo "bareos restore test" > ${BACKUP_TEST_FILE}
+echo
+echo "------ trigger backup job -----"
+echo -e "run\r1\ryes\rwait" | bconsole | grep "Job queued. JobId="
+echo "status dir" | bconsole
+echo
+echo "------ trigger restore job -----"
+echo -e "rest\r5\rls\rmark usr\rdone\ryes\rwait" | bconsole
+echo "status dir" | bconsole
+grep "bareos restore test" /tmp/bareos-restores/${BACKUP_TEST_FILE}
