@@ -653,6 +653,8 @@ ACL_LIBS
 AFS_LIBS_NONSHARED
 AFS_LIBS
 AFS_CFLAGS
+FASTLZ_LIBS
+FASTLZ_INC
 LZO_LIBS
 LZO_INC
 ZLIB_LIBS
@@ -1016,6 +1018,7 @@ enable_largefile
 with_x
 with_zlib
 with_lzo
+with_fastlz
 enable_afs
 with_afsdir
 enable_acl
@@ -1768,6 +1771,7 @@ Optional Packages:
   --with-x                use the X Window System
   --with-zlib[=DIR]       Directory holding zlib includes/libs
   --with-lzo[=DIR]        Directory holding lzo includes/libs
+  --with-fastlz[=DIR]     Directory holding fastlz includes/libs
   --with-afsdir[=DIR]     Directory holding AFS includes/libs
   --with-systemd[=UNITDIR]
                           Include systemd support. UNITDIR is where systemd
@@ -29872,6 +29876,8 @@ fi
 done
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for deflate in zlib library" >&5
+$as_echo_n "checking for deflate in zlib library... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -29889,10 +29895,14 @@ main ()
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
        have_zlib="yes"
 
 else
 
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
        have_zlib="no"
 
 
@@ -29969,6 +29979,8 @@ fi
 done
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzo1x_1_compress in lzo library" >&5
+$as_echo_n "checking for lzo1x_1_compress in lzo library... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -29987,10 +29999,14 @@ main ()
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
        have_lzo="yes"
 
 else
 
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
        have_lzo="no"
 
 
@@ -30009,6 +30025,97 @@ $as_echo "#define HAVE_LZO 1" >>confdefs.h
 else
    LZO_LIBS=""
    LZO_INC=""
+fi
+
+
+
+
+FASTLZ_LIBS="-lfastlz"
+FASTLZ_INC=""
+have_fastlz=no
+
+# Check whether --with-fastlz was given.
+if test "${with_fastlz+set}" = set; then :
+  withval=$with_fastlz; with_fastlz_directory=${withval}
+
+fi
+
+
+if test "x${with_fastlz_directory}" != "xyes" && test x"${with_fastlz_directory}" != "x"; then
+   #
+   # Make sure the $with_fastlz_directory also makes sense
+   #
+   if test -d "${with_fastlz_directory}/lib" -a -d "${with_fastlz_directory}/include"; then
+      FASTLZ_LIBS="-L${with_fastlz_directory}/lib ${FASTLZ_LIBS}"
+      FASTLZ_INC="-I${with_fastlz_directory}/include ${FASTLZ_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${FASTLZ_LIBS}"
+CFLAGS="${saved_CFLAGS} ${FASTLZ_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${FASTLZ_INC}"
+
+for ac_header in fastlzlib.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "fastlzlib.h" "ac_cv_header_fastlzlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_fastlzlib_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_FASTLZLIB_H 1
+_ACEOF
+
+fi
+
+done
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fastlzlibCompress in fastlz library" >&5
+$as_echo_n "checking for fastlzlibCompress in fastlz library... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+       #include <fastlzlib.h>
+
+int
+main ()
+{
+
+       fastlzlibCompress(Z_NULL, 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+       have_fastlz="yes"
+
+else
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+       have_fastlz="no"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_fastlz}" = "xyes"; then
+
+$as_echo "#define HAVE_FASTLZ 1" >>confdefs.h
+
+else
+   FASTLZ_LIBS=""
+   FASTLZ_INC=""
 fi
 
 
@@ -34472,6 +34579,7 @@ Configuration on `date`:
    GNUTLS support:          ${have_gnutls}
    ZLIB support:            ${have_zlib}
    LZO support:             ${have_lzo}
+   FASTLZ support:          ${have_fastlz}
    NDMP support:            ${support_ndmp}
    enable-smartalloc:       ${support_smartalloc}
    enable-lockmgr:          ${support_lockmgr}
