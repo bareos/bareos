@@ -314,7 +314,8 @@ void MonitorItem::get_status()
            docmd("status dir");
            break;
         case R_CLIENT:
-           docmd("status");
+           if (!docmd("status"))
+              emit jobIsRunning(false);
            break;
         case R_STORAGE:
            docmd("status");
