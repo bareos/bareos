@@ -452,7 +452,7 @@ Function .onInit
 # check if we are installing on 64Bit, then do some settings
   ${If} ${RunningX64} # 64Bit OS
     ${If} ${BIT_WIDTH} == '32'
-      MessageBox MB_OK|MB_ICONQUESTION "You are running a 32 Bit Installer on a 64Bit OS.$\r$\n Please use the 64Bit installer."
+      MessageBox MB_OK|MB_ICONSTOP "You are running a 32 Bit installer on a 64Bit OS.$\r$\nPlease use the 64Bit installer."
       Abort
     ${EndIf}
     StrCpy $INSTDIR "$PROGRAMFILES64\${PRODUCT_NAME}"
@@ -460,7 +460,7 @@ Function .onInit
     ${EnableX64FSRedirection}
   ${Else} # 32Bit OS
     ${If} ${BIT_WIDTH} == '64'
-      MessageBox MB_OK|MB_ICONQUESTION "You are running a 64 Bit Installer on a 32Bit OS.$\r$\n Please use the 32Bit installer."
+      MessageBox MB_OK|MB_ICONSTOP "You are running a 64 Bit installer on a 32Bit OS.$\r$\nPlease use the 32Bit installer."
       Abort
     ${EndIf}
   ${EndIf}
@@ -472,7 +472,7 @@ Function .onInit
   ReadRegStr $2 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"
   ReadRegStr $0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion"
   StrCmp $2 "" +3
-  MessageBox MB_OK|MB_ICONQUESTION "${PRODUCT_NAME} version $0 seems to be already installed on your system.$\r$\n Please uninstall first."
+  MessageBox MB_OK|MB_ICONSTOP "${PRODUCT_NAME} version $0 $\r$\nseems to be already installed on your system.$\r$\nPlease uninstall first."
   Abort
 
 
@@ -504,14 +504,18 @@ Function .onInit
   ClearErrors
   ${GetOptions} $cmdLineParams '/?' $R0
   IfErrors +3 0
-  MessageBox MB_OK "[/CLIENTNAME=Name of the client ressource] $\r$\n\
+  MessageBox MB_OK|MB_ICONINFORMATION "[/CLIENTNAME=Name of the client ressource] $\r$\n\
                     [/CLIENTPASSWORD=Password to access the client]  $\r$\n\
                     [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole/BAT]  $\r$\n\
                     [/CLIENTADDRESS=Network Address of the client] $\r$\n\
                     [/CLIENTMONITORPASSWORD=Password for monitor access] $\r$\n\
                     $\r$\n\
                     [/DIRECTORADDRESS=Network Address of the Director (for bconsole or BAT)] $\r$\n\
-                    [/DIRECTORPASSWORD=Password to access Director]"
+                    [/DIRECTORPASSWORD=Password to access Director]$\r$\n\
+                    $\r$\n\
+                    [/S (silent install without user interaction)]$\r$\n\
+                    [/D=C:\specify\installation\directory (! HAS TO BE THE LAST OPTION !)$\r$\n\
+                    [/? (this help dialog)"
 #                   [/DIRECTORNAME=Name of the Director to be accessed from bconsole/BAT]"
   Abort
 
@@ -706,7 +710,8 @@ Function displayDirconfSnippet
                               Name = $ClientName$\r$\n  \
                               Address = $ClientAddress$\r$\n  \
                               Password = $\"$ClientPassword$\"$\r$\n  \
-                              Catalog = $\"MyCatalog$\"$\r$\n  \
+                              # uncomment the following if using bacula $\r$\n  \
+                              # Catalog = $\"MyCatalog$\"$\r$\n  \
                            }$\r$\n"
 
 
@@ -740,6 +745,13 @@ Function un.onInit
 FunctionEnd
 
 Section Uninstall
+  # on 64Bit Systems, change the INSTDIR and Registry view to remove the right entries
+  ${If} ${RunningX64} # 64Bit OS
+    StrCpy $INSTDIR "$PROGRAMFILES64\${PRODUCT_NAME}"
+    SetRegView 64
+    ${EnableX64FSRedirection}
+  ${EndIf}
+
   SetShellVarContext all
 # uninstall service
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /kill'
