@@ -597,15 +597,16 @@ void MainWin::input_line()
 
 void MainWin::about()
 {
-   QMessageBox::about(this, tr("About Bareos Administration Tool"),
-      tr("<br><h2>Bareos Administration Tool %1</h2>"
-         "<p>Original by Dirk H Bartley and Kern Sibbald</p>"
-         "<p>For more information, see: www.bareos.com</p>"
-         "<p>Copyright &copy; 2007-%2 Free Software Foundation Europe e.V.</p>"
-         "<p>Copyright &copy; 2011-2012 Planets Communications B.V.</p>"
-         "<p>Copyright &copy; 2013-%2 Bareos GmbH & Co. KG</p>"
-         "<p>BAREOS® is a registered trademark of Bareos GmbH & Co. KG</p>"
-         "<p>Licensed under GNU AGPLv3.</p>").arg(VERSION).arg(BYEAR));
+   QString fmt = QString("<br><h2>Bareos Administration Tool %1</h2>"
+                         "<p>Original by Dirk H Bartley and Kern Sibbald</p>"
+                         "<p>For more information, see: www.bareos.com"
+                         "<p>Copyright &copy; 2007-2010 Free Software Foundation Europe e.V."
+                         "<p>Copyright &copy; 2011-2012 Planets Communications B.V."
+                         "<p>Copyright &copy; 2013-%2 Bareos GmbH & Co. KG"
+                         "<p>BAREOS &reg; is a registered trademark of Bareos GmbH & Co. KG"
+                         "<p>Licensed under GNU AGPLv3.").arg(VERSION).arg(BYEAR);
+
+   QMessageBox::about(this, tr("About Bareos Administration Tool"), fmt);
 }
 
 void MainWin::help()

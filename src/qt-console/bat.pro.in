@@ -20,9 +20,9 @@ bins.files = bat
 confs.path = /$(DESTDIR)@sysconfdir@
 confs.commands = ./install_conf_file
 help.path = /$(DESTDIR)@htmldir@
-help.files = help/*.html images/status.png images/mail-message-new.png
+help.files = help/*.html ../images/status.png ../images/mail-message-new.png
 icons.path  = /$(DESTDIR)@datarootdir@/pixmaps/
-icons.files = images/bat.png images/bat.svg
+icons.files = ../images/bat.png ../images/bat.svg
 desktopentries.path  = /$(DESTDIR)@datarootdir@/applications/
 desktopentries.files = bat.desktop
 
@@ -31,7 +31,7 @@ TEMPLATE     = app
 TARGET       = bat
 DEPENDPATH  += .
 INCLUDEPATH += .. ../include .
-LIBS        += -L../lib -lbareoscfg -lbareos -L../findlib -lbareosfind @OPENSSL_LIBS@
+LIBS        += -L../lib -lbareoscfg -lbareos
 LIBTOOL_LINK = @QMAKE_LIBTOOL@ --silent --tag=CXX --mode=link
 LIBTOOL_INSTALL = @QMAKE_LIBTOOL@ --silent --mode=install
 QMAKE_LINK   = $${LIBTOOL_LINK} $(CXX)
@@ -39,7 +39,7 @@ QMAKE_INSTALL_PROGRAM = $${LIBTOOL_INSTALL} install -m @SBINPERM@ -p
 QMAKE_CLEAN += .libs/* bat
 
 macx {
-  ICON = images/bat.icns
+  ICON = ../images/bat.icns
 }
 
 RESOURCES    = main.qrc

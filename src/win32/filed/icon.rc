@@ -1,0 +1,25 @@
+id ICON "../../../platforms/win32/bareos.ico"
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName", "Bareos GmbH & Co. KG"
+      VALUE "FileDescription", "Bareos File Daemon"
+      VALUE "FileVersion", "12.4.2"
+      VALUE "InternalName", "bareos-fd.exe"
+      VALUE "LegalCopyright", "See LICENSE File"
+      VALUE "OriginalFilename", "bareos-fd.exe"
+      VALUE "ProductName", "Bareos File Daemon"
+      VALUE "ProductVersion", "12.4.2"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END
