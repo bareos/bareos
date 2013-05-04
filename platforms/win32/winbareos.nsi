@@ -295,30 +295,30 @@ SectionIn 2
 
 SectionEnd
 
-Section /o "Tray-Monitor" SEC_TRAYMON
-SectionIn 1 2
-
-
-  SetShellVarContext all
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe" '-c "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"'
-
-  File "bareos-tray-monitor.exe"
-#  File "libbareos.dll"
-#  File "libcrypto-8.dll"
-#  File "libgcc_s_sjlj-1.dll"
-  File "libpng15-15.dll"
-#  File "libssl-8.dll"
-#  File "libstdc++-6.dll"
-#  File "pthreadGCE2.dll"
-  File "QtCore4.dll"
-  File "QtGui4.dll"
-#  File "zlib1.dll"
-
-
-  !insertmacro InstallConfFile "tray-monitor.conf"
-#  File "tray-monitor.conf"
-
-SectionEnd
+#Section /o "Tray-Monitor" SEC_TRAYMON
+#SectionIn 1 2
+#
+#
+#  SetShellVarContext all
+#  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe" '-c "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"'
+#
+#  File "bareos-tray-monitor.exe"
+##  File "libbareos.dll"
+##  File "libcrypto-8.dll"
+##  File "libgcc_s_sjlj-1.dll"
+#  File "libpng15-15.dll"
+##  File "libssl-8.dll"
+##  File "libstdc++-6.dll"
+##  File "pthreadGCE2.dll"
+#  File "QtCore4.dll"
+#  File "QtGui4.dll"
+##  File "zlib1.dll"
+#
+#
+#  !insertmacro InstallConfFile "tray-monitor.conf"
+##  File "tray-monitor.conf"
+#
+#SectionEnd
 
 
 Section /o "Qt Console (BAT)" SEC_BAT
@@ -349,7 +349,7 @@ SectionEnd
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CLIENT} "Installs the Bareos File Daemon and required Files"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BCONSOLE} "Installs the CLI client console (bconsole)"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the tray Icon to monitor the Bareos client"
+#  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the tray Icon to monitor the Bareos client"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BAT} "Installs the Qt Console (BAT)"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
@@ -524,7 +524,7 @@ Function .onInit
 # make first section mandatory
   SectionSetFlags ${SEC_CLIENT}  17 # SF_SELECTED & SF_RO
 #  SectionSetFlags ${SEC_BCONSOLE}  ${SF_SELECTED} # SF_SELECTED
-  SectionSetFlags ${SEC_TRAYMON}  ${SF_SELECTED} # SF_SELECTED
+#SectionSetFlags ${SEC_TRAYMON}  ${SF_SELECTED} # SF_SELECTED
 
 # find out the computer name
   Call GetComputerName
