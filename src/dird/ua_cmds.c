@@ -106,7 +106,7 @@ static struct cmdstruct commands[] = {
    { NT_("automount"), automount_cmd, _("Automount after label"),
      NT_("on | off"), false },
    { NT_("cancel"), cancel_cmd, _("Cancel a job"),
-     NT_("jobid=<jobid> job=<job-name> ujobid=<unique-jobid>"), false },
+     NT_("storage=<storage-name> jobid=<jobid> job=<job-name> ujobid=<unique-jobid>"), false },
    { NT_("create"), create_cmd, _("Create DB Pool from resource"),
      NT_("pool=<pool-name>"), false },
    { NT_("delete"), delete_cmd, _("Delete volume, pool or job"),
@@ -312,10 +312,9 @@ static int add_cmd(UAContext *ua, const char *cmd)
    STORERES *store;
    int Slot = 0, InChanger = 0;
 
-   ua->send_msg(_(
-"You probably don't want to be using this command since it\n"
-"creates database records without labeling the Volumes.\n"
-"You probably want to use the \"label\" command.\n\n"));
+   ua->send_msg(_("You probably don't want to be using this command since it\n"
+                  "creates database records without labeling the Volumes.\n"
+                  "You probably want to use the \"label\" command.\n\n"));
 
    if (!open_client_db(ua)) {
       return 1;
@@ -339,7 +338,7 @@ static int add_cmd(UAContext *ua, const char *cmd)
    }
 
    /* Get media type */
-   if ((store = get_storage_resource(ua, false/*no default*/)) != NULL) {
+   if ((store = get_storage_resource(ua, false /* no default */)) != NULL) {
       bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
    } else if (!get_media_type(ua, mr.MediaType, sizeof(mr.MediaType))) {
       return 1;
@@ -472,13 +471,42 @@ int automount_cmd(UAContext *ua, const char *cmd)
  */
 static int cancel_cmd(UAContext *ua, const char *cmd)
 {
-   JCR *jcr = select_running_job(ua, "cancel");
-   if (!jcr) {
-      return 1;
+   int i, ret;
+   JCR *jcr;
+   STORERES *store;
+
+   /*
+    * See if we need to explicitly cancel a storage daemon Job.
+    */
+   i = find_arg_with_value(ua, "storage");
+   if (i >= 0) {
+      store = get_storage_resource(ua, false /* no default */);
+      if (store) {
+         /*
+          * See what JobId to cancel on the storage daemon.
+          */
+         i = find_arg_with_value(ua, "jobid");
+         if (i >= 0) {
+            if (!is_a_number(ua->argv[i])) {
+               ua->warning_msg(_("JobId %s not a number\n"), ua->argv[i]);
+            }
+
+            cancel_storage_daemon_job(ua, store, ua->argv[i]);
+         } else {
+            ua->warning_msg(_("Missing jobid=JobId specification\n"));
+         }
+      }
+   } else {
+      jcr = select_running_job(ua, "cancel");
+      if (!jcr) {
+         return 1;
+      }
+      ret = cancel_job(ua, jcr);
+      free_jcr(jcr);
+      return ret;
    }
-   int ret = cancel_job(ua, jcr);
-   free_jcr(jcr);
-   return ret;
+
+   return 1;
 }
 
 /*
@@ -490,7 +518,6 @@ static int cancel_cmd(UAContext *ua, const char *cmd)
  *
  * Caution : RecyclePoolId isn't setup in this function.
  *           You can use set_pooldbr_recyclepoolid();
- *
  */
 void set_pooldbr_from_poolres(POOL_DBR *pr, POOLRES *pool, e_pool_op op)
 {
@@ -1004,7 +1031,6 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
       hangup = atoi(ua->argv[i]);
    }
 
-
    /* General debug? */
    for (i=1; i<ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], "all")) {
@@ -1045,7 +1071,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
                return 1;
             }
          }
-         store = get_storage_resource(ua, false/*no default*/);
+         store = get_storage_resource(ua, false /* no default */);
          if (store) {
             switch (store->Protocol) {
             case APT_NDMPV2:
@@ -1062,9 +1088,9 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
          }
       }
    }
+
    /*
-    * We didn't find an appropriate keyword above, so
-    * prompt the user.
+    * We didn't find an appropriate keyword above, so prompt the user.
     */
    start_prompt(ua, _("Available daemons are: \n"));
    add_prompt(ua, _("Director"));
@@ -1077,7 +1103,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
       set_trace(trace_flag);
       break;
    case 1:
-      store = get_storage_resource(ua, false/*no default*/);
+      store = get_storage_resource(ua, false /* no default */);
       if (store) {
          switch (store->Protocol) {
          case APT_NDMPV2:
@@ -1648,7 +1674,7 @@ static void do_mount_cmd(UAContext *ua, const char *cmd)
    }
    Dmsg2(120, "%s: %s\n", cmd, ua->UA_sock->msg);
 
-   store.store = get_storage_resource(ua, true/*arg is storage*/);
+   store.store = get_storage_resource(ua, true /* arg is storage */);
    if (!store.store) {
       return;
    }

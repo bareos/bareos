@@ -59,13 +59,12 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
    }
 
    /*
-    *  Open message channel with the Storage daemon
+    * Open message channel with the Storage daemon
     */
-   Dmsg2(100, "bnet_connect to Storage daemon %s:%d\n", store->address,
-      store->SDport);
+   Dmsg2(100, "bnet_connect to Storage daemon %s:%d\n", store->address, store->SDport);
    sd->set_source_address(director->DIRsrc_addr);
    if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat, _("Storage daemon"),
-         store->address, NULL, store->SDport, verbose)) {
+                    store->address, NULL, store->SDport, verbose)) {
       sd->destroy();
       sd = NULL;
    }
@@ -81,6 +80,7 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
       jcr->store_bsock = NULL;
       return false;
    }
+
    return true;
 }
 
@@ -93,7 +93,7 @@ BSOCK *open_sd_bsock(UAContext *ua)
 
    if (!ua->jcr->store_bsock) {
       ua->send_msg(_("Connecting to Storage daemon %s at %s:%d ...\n"),
-         store->name(), store->address, store->SDport);
+                   store->name(), store->address, store->SDport);
       if (!connect_to_storage_daemon(ua->jcr, 10, SDConnectTimeout, 1)) {
          ua->error_msg(_("Failed to connect to Storage daemon.\n"));
          return NULL;
@@ -562,6 +562,39 @@ int get_num_drives_from_SD(UAContext *ua)
 }
 
 /*
+ * Cancel a running job on a storage daemon. Used by the interactive cancel
+ * command to cancel a JobId on a Storage Daemon this can be used when the
+ * Director already removed the Job and thinks it finished but the Storage
+ * Daemon still thinks its active.
+ */
+bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId)
+{
+   BSOCK *sd;
+   JCR *control_jcr;
+
+   control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
+
+   control_jcr->res.wstore = store;
+   if (!connect_to_storage_daemon(control_jcr, 10, SDConnectTimeout, 1)) {
+      ua->error_msg(_("Failed to connect to Storage daemon.\n"));
+   }
+
+   Dmsg0(200, "Connected to storage daemon\n");
+   sd = control_jcr->store_bsock;
+   sd->fsend("cancel Job=%s\n", JobId);
+   while (sd->recv() >= 0) {
+      ua->send_msg("%s", sd->msg);
+   }
+   sd->signal(BNET_TERMINATE);
+   sd->close();
+   control_jcr->store_bsock = NULL;
+
+   free_jcr(control_jcr);
+
+   return true;
+}
+
+/*
  * Cancel a running job on a storage daemon. The silent flag sets
  * if we need to be silent or not e.g. when doing an interactive cancel
  * or a system invoked one.
@@ -621,12 +654,15 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent)
  */
 void cancel_storage_daemon_job(JCR *jcr)
 {
+   UAContext *ua;
+   JCR *control_jcr;
+
    if (jcr->sd_canceled) {
       return;                   /* cancel only once */
    }
 
-   UAContext *ua = new_ua_context(jcr);
-   JCR *control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
+   ua = new_ua_context(jcr);
+   control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
 
    ua->jcr = control_jcr;
    if (jcr->store_bsock) {
@@ -634,6 +670,7 @@ void cancel_storage_daemon_job(JCR *jcr)
          goto bail_out;
       }
    }
+
 bail_out:
    free_jcr(control_jcr);
    free_ua_context(ua);
@@ -654,11 +691,14 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
    /*
     * Try connecting for up to 15 seconds
     */
-   if (!ua->api) ua->send_msg(_("Connecting to Storage daemon %s at %s:%d\n"),
-      store->name(), store->address, store->SDport);
-   if (!connect_to_storage_daemon(ua->jcr, 1, 15, 0)) {
+   if (!ua->api) {
+      ua->send_msg(_("Connecting to Storage daemon %s at %s:%d\n"),
+                   store->name(), store->address, store->SDport);
+   }
+
+   if (!connect_to_storage_daemon(ua->jcr, 10, SDConnectTimeout, 0)) {
       ua->send_msg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
-         store->name());
+                   store->name());
       if (ua->jcr->store_bsock) {
          ua->jcr->store_bsock->close();
          ua->jcr->store_bsock = NULL;
@@ -687,9 +727,9 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
  */
 bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
 {
+   BSOCK *sd = NULL;
    bool retval = true;
    char dev_name[MAX_NAME_LENGTH];
-   BSOCK *sd = NULL;
 
    if (!(sd = open_sd_bsock(ua))) {
       return false;
@@ -733,9 +773,9 @@ bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
 bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
                                      const char *operation, int drive, int slot)
 {
+   BSOCK *sd = NULL;
    bool retval = true;
    char dev_name[MAX_NAME_LENGTH];
-   BSOCK *sd = NULL;
 
    if (!(sd = open_sd_bsock(ua))) {
       return false;
