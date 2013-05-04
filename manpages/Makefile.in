@@ -31,14 +31,6 @@ install:
 	     rm -f $$I.gz); \
 	done
 
-uninstall:
-	for I in ${MAN8}; \
-	  do (rm -f $(DESTDIR)$(mandir)/man8/$$I.gz); \
-	done
-	for I in ${MAN1}; \
-	  do (rm -f $(DESTDIR)$(mandir)/man1/$$I.gz); \
-	done
-
 clean:
 	@$(RMF) *~ 1 2 3 *.bak
 	@find . -name .#* -exec $(RMF) {} \;

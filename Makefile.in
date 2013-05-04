@@ -114,37 +114,9 @@ installdirs:
 	   chgrp $(dir_group) $(DESTDIR)$(working_dir); \
 	fi
 
-gnomedirs:
-	$(MKDIR) $(DESTDIR)/usr/share/pixmaps
-	$(MKDIR) $(DESTDIR)/usr/share/gnome/apps/System
-	$(MKDIR) $(DESTDIR)/usr/share/applications
-	$(MKDIR) $(DESTDIR)/etc/security/console.apps
-	$(MKDIR) $(DESTDIR)/etc/pam.d
-
-install-menu: gnomedirs
-	${INSTALL_DATA} scripts/bareos.png $(DESTDIR)/usr/share/pixmaps/bareos.png
-	${INSTALL_DATA} scripts/bareos.desktop.gnome1 $(DESTDIR)/usr/share/gnome/apps/System/bareos.desktop
-	${INSTALL_DATA} scripts/bareos.desktop.gnome2 $(DESTDIR)/usr/share/applications/bareos.desktop
-
-install-menu-xsu: gnomedirs
-	${INSTALL_DATA} scripts/bareos.png $(DESTDIR)/usr/share/pixmaps/bareos.png
-	${INSTALL_DATA} scripts/bareos.desktop.gnome1.xsu $(DESTDIR)/usr/share/gnome/apps/System/bareos.desktop
-	${INSTALL_DATA} scripts/bareos.desktop.gnome2.xsu $(DESTDIR)/usr/share/applications/bareos.desktop
-
-install-menu-consolehelper: gnomedirs
-	${INSTALL_DATA} scripts/bareos.png $(DESTDIR)/usr/share/pixmaps/bareos.png
-	${INSTALL_DATA} scripts/bareos.desktop.gnome1.consolehelper $(DESTDIR)/usr/share/gnome/apps/System/bareos.desktop
-	${INSTALL_DATA} scripts/bareos.desktop.gnome2.consolehelper $(DESTDIR)/usr/share/applications/bareos.desktop
-	${INSTALL_DATA} scripts/gnome-console.console_apps $(DESTDIR)/etc/security/console.apps/gnome-console
-	${INSTALL_DATA} scripts/gnome-console.pamd $(DESTDIR)/etc/pam.d/gnome-console
-	ln -s $(DESTDIR)/usr/bin/consolehelper $(DESTDIR)/usr/bin/gnome-console
-
 install: installdirs
 	@for I in $(all_subdirs); do (cd $$I && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1); done
 	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
-
-uninstall:
-	@for I in $(all_subdirs); do (cd $$I && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1); done
 
 install-autostart:
 	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
@@ -157,31 +129,6 @@ install-autostart-fd:
 
 install-autostart-sd:
 	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
-
-uninstall-autostart:
-	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
-
-uninstall-autostart-dir:
-	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
-
-uninstall-autostart-fd:
-	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
-
-uninstall-autostart-sd:
-	(cd platforms && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1)
-
-uninstall-menu:
-	$(RMF) $(DESTDIR)/usr/share/pixmaps/bareos.png
-	$(RMF) $(DESTDIR)/usr/share/gnome/apps/System/bareos.desktop
-	$(RMF) $(DESTDIR)/usr/share/applications/bareos.desktop
-
-uninstall-menu-consolehelper:
-	$(RMF) $(DESTDIR)/usr/share/pixmaps/bareos.png
-	$(RMF) $(DESTDIR)/usr/share/gnome/apps/System/bareos.desktop
-	$(RMF) $(DESTDIR)/usr/share/applications/bareos.desktop
-	$(RMF) $(DESTDIR)/etc/security/console.apps/gnome-console
-	$(RMF) $(DESTDIR)/etc/pam.d/gnome-console
-	$(RMF) $(DESTDIR)/usr/bin/gnome-console
 
 Makefile: Makefile.in
 	cd $(topdir) \
