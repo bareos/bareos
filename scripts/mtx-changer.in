@@ -56,7 +56,7 @@ fi
 . @sysconfdir@/mtx-changer.conf
 
 MTX=@MTX@
-if test ! -e "$MTX" ; then
+if test ! -x "$MTX" ; then
   echo "ERROR: mtx program not found ($MTX)"
   exit 1
 fi
