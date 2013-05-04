@@ -401,7 +401,8 @@ static bool decompress_with_lzo(DEV_RECORD *rec)
 {
    lzo_uint compress_len;
    const unsigned char *cbuf;
-   int status, real_compress_len;
+   int real_compress_len;
+   int status = LZO_E_ERROR;
 
    compress_len = compress_buf_size;
    cbuf = (const unsigned char*) wbuf + sizeof(comp_stream_header);
