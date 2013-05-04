@@ -46,39 +46,39 @@
 #define STREAMMASK_TYPE                         (~((~0)<< STREAMBITS_TYPE) << STREAMBASE_TYPE)
 /*
  * Note additional base, bits, and masks can be defined for new
- *  ranges or subranges of stream attributes.
+ * ranges or subranges of stream attributes.
  */
 
 /**
  * Old, but currently used Stream definitions. Once defined these must NEVER
- *   change as they go on the storage media.
+ * change as they go on the storage media.
  *
  * Note, the following streams are passed from the SD to the DIR
- *   so that they may be put into the catalog (actually only the
- *   stat packet part of the attr record is put in the catalog.
+ * so that they may be put into the catalog (actually only the
+ * stat packet part of the attr record is put in the catalog.
  *
- *   STREAM_UNIX_ATTRIBUTES
- *   STREAM_UNIX_ATTRIBUTES_EX
- *   STREAM_MD5_DIGEST
- *   STREAM_SHA1_DIGEST
- *   STREAM_SHA256_DIGEST
- *   STREAM_SHA512_DIGEST
+ * STREAM_UNIX_ATTRIBUTES
+ * STREAM_UNIX_ATTRIBUTES_EX
+ * STREAM_MD5_DIGEST
+ * STREAM_SHA1_DIGEST
+ * STREAM_SHA256_DIGEST
+ * STREAM_SHA512_DIGEST
  */
 #define STREAM_NONE                             0       /* Reserved Non-Stream */
 #define STREAM_UNIX_ATTRIBUTES                  1       /* Generic Unix attributes */
 #define STREAM_FILE_DATA                        2       /* Standard uncompressed data */
-#define STREAM_MD5_SIGNATURE                    3       /* deprecated */
+#define STREAM_MD5_SIGNATURE                    3       /* MD5 signature - Deprecated */
 #define STREAM_MD5_DIGEST                       3       /* MD5 digest for the file */
-#define STREAM_GZIP_DATA                        4       /* GZip compressed file data */
+#define STREAM_GZIP_DATA                        4       /* GZip compressed file data - Deprecated */
 #define STREAM_UNIX_ATTRIBUTES_EX               5       /* Extended Unix attr for Win32 EX - Deprecated */
 #define STREAM_SPARSE_DATA                      6       /* Sparse data stream */
-#define STREAM_SPARSE_GZIP_DATA                 7       /* Sparse gzipped data stream */
-#define STREAM_PROGRAM_NAMES                    8       /* program names for program data */
+#define STREAM_SPARSE_GZIP_DATA                 7       /* Sparse gzipped data stream - Deprecated */
+#define STREAM_PROGRAM_NAMES                    8       /* Program names for program data */
 #define STREAM_PROGRAM_DATA                     9       /* Data needing program */
-#define STREAM_SHA1_SIGNATURE                  10       /* deprecated */
+#define STREAM_SHA1_SIGNATURE                  10       /* SHA1 signature - Deprecated */
 #define STREAM_SHA1_DIGEST                     10       /* SHA1 digest for the file */
 #define STREAM_WIN32_DATA                      11       /* Win32 BackupRead data */
-#define STREAM_WIN32_GZIP_DATA                 12       /* Gzipped Win32 BackupRead data */
+#define STREAM_WIN32_GZIP_DATA                 12       /* Gzipped Win32 BackupRead data - Deprecated */
 #define STREAM_MACOS_FORK_DATA                 13       /* Mac resource fork */
 #define STREAM_HFSPLUS_ATTRIBUTES              14       /* Mac OS extra attributes */
 #define STREAM_UNIX_ACCESS_ACL                 15       /* Standard ACL attributes on UNIX - Deprecated */
@@ -88,18 +88,18 @@
 #define STREAM_SIGNED_DIGEST                   19       /* Signed File Digest, ASN.1, DER Encoded */
 #define STREAM_ENCRYPTED_FILE_DATA             20       /* Encrypted, uncompressed data */
 #define STREAM_ENCRYPTED_WIN32_DATA            21       /* Encrypted, uncompressed Win32 BackupRead data */
-#define STREAM_ENCRYPTED_SESSION_DATA          22       /* Encrypted Session Data, ASN.1, DER Encoded */
-#define STREAM_ENCRYPTED_FILE_GZIP_DATA        23       /* Encrypted, compressed data */
-#define STREAM_ENCRYPTED_WIN32_GZIP_DATA       24       /* Encrypted, compressed Win32 BackupRead data */
+#define STREAM_ENCRYPTED_SESSION_DATA          22       /* Encrypted, Session Data, ASN.1, DER Encoded */
+#define STREAM_ENCRYPTED_FILE_GZIP_DATA        23       /* Encrypted, compressed data - Deprecated */
+#define STREAM_ENCRYPTED_WIN32_GZIP_DATA       24       /* Encrypted, compressed Win32 BackupRead data - Deprecated */
 #define STREAM_ENCRYPTED_MACOS_FORK_DATA       25       /* Encrypted, uncompressed Mac resource fork */
 #define STREAM_PLUGIN_NAME                     26       /* Plugin "file" string */
 #define STREAM_PLUGIN_DATA                     27       /* Plugin specific data */
 #define STREAM_RESTORE_OBJECT                  28       /* Plugin restore object */
 
 /**
- * Non GZip compressed streams. Those streams can handle arbitrary compression algorithm data
+ * Compressed streams. These streams can handle arbitrary compression algorithm data
  * as an additional header is stored at the beginning of the stream.
- * see stream_compressed_header definition for more details.
+ * See stream_compressed_header definition for more details.
  */
 #define STREAM_COMPRESSED_DATA                 29       /* Compressed file data */
 #define STREAM_SPARSE_COMPRESSED_DATA          30       /* Sparse compressed data stream */
@@ -110,9 +110,6 @@
 #define STREAM_NDMP_SEPERATOR                 999       /* NDMP seperator between multiple data streams of one job */
 
 /**
- * Additional Stream definitions. Once defined these must NEVER
- *   change as they go on the storage media.
- *
  * The Stream numbers from 1000-1999 are reserved for ACL and extended attribute streams.
  * Each different platform has its own stream id(s), if a platform supports multiple stream types
  * it should supply different handlers for each type it supports and this should be called

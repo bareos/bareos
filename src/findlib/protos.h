@@ -32,7 +32,7 @@ bacl_exit_code parse_acl_streams(JCR *jcr, acl_data_t *acl_data,
 /* attribs.c */
 int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt);
 bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd);
-int select_data_stream(FF_PKT *ff_pkt);
+int select_data_stream(FF_PKT *ff_pkt, bool compatible);
 
 /* create_file.c */
 int create_file(JCR *jcr, ATTR *attr, BFILE *ofd, int replace);

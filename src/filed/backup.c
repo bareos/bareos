@@ -1145,7 +1145,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
 
    Dmsg1(300, "encode_and_send_attrs fname=%s\n", ff_pkt->fname);
    /** Find what data stream we will use, then encode the attributes */
-   if ((data_stream = select_data_stream(ff_pkt)) == STREAM_NONE) {
+   if ((data_stream = select_data_stream(ff_pkt, me->compatible)) == STREAM_NONE) {
       /* This should not happen */
       Jmsg0(jcr, M_FATAL, 0, _("Invalid file flags, no supported data stream type.\n"));
       return false;

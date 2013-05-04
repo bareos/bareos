@@ -459,8 +459,12 @@ public:
    char *big_buf;                         /* I/O buffer */
    POOLMEM *compress_buf;                 /* Compression buffer */
    int32_t compress_buf_size;             /* Length of compression buffer */
-   void *pZLIB_compress_workset;          /* Zlib compression session data */
-   void *LZO_compress_workset;            /* Lzo compression session data */
+#ifdef HAVE_LIBZ
+   void *pZLIB_compress_workset;          /* ZLIB compression session data */
+#endif
+#ifdef HAVE_LZO
+   void *LZO_compress_workset;            /* LZO compression session data */
+#endif
    int32_t replace;                       /* Replace options */
    int32_t buf_size;                      /* Length of buffer */
    FF_PKT *ff;                            /* Find Files packet */

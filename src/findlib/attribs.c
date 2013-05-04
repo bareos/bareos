@@ -55,7 +55,7 @@ HANDLE bget_handle(BFILE *bfd);
 /**
  * Return the data stream that will be used
  */
-int select_data_stream(FF_PKT *ff_pkt)
+int select_data_stream(FF_PKT *ff_pkt, bool compatible)
 {
    int stream;
 
@@ -65,15 +65,20 @@ int select_data_stream(FF_PKT *ff_pkt)
       return STREAM_FILE_DATA;
    }
 
-   /**
-    *  Fix all incompatible options
+   /*
+    * Fix all incompatible options
     */
-   /** No sparse option for encrypted data */
+
+   /**
+    * No sparse option for encrypted data
+    */
    if (ff_pkt->flags & FO_ENCRYPT) {
       ff_pkt->flags &= ~FO_SPARSE;
    }
 
-   /** Note, no sparse option for win32_data */
+   /*
+    * Note, no sparse option for win32_data
+    */
    if (!is_portable_backup(&ff_pkt->bfd)) {
       stream = STREAM_WIN32_DATA;
       ff_pkt->flags &= ~FO_SPARSE;
@@ -86,68 +91,67 @@ int select_data_stream(FF_PKT *ff_pkt)
       stream = STREAM_SPARSE_DATA;
    }
 
-   /** Encryption is only supported for file data */
-   if (stream != STREAM_FILE_DATA && stream != STREAM_WIN32_DATA &&
-         stream != STREAM_MACOS_FORK_DATA) {
+   /*
+    * Encryption is only supported for file data
+    */
+   if (stream != STREAM_FILE_DATA &&
+       stream != STREAM_WIN32_DATA &&
+       stream != STREAM_MACOS_FORK_DATA) {
       ff_pkt->flags &= ~FO_ENCRYPT;
    }
 
-   /** Compression is not supported for Mac fork data */
+   /*
+    * Compression is not supported for Mac fork data
+    */
    if (stream == STREAM_MACOS_FORK_DATA) {
       ff_pkt->flags &= ~FO_COMPRESS;
    }
 
-   /**
+   /*
     * Handle compression and encryption options
     */
-#if defined(HAVE_LIBZ) || defined(HAVE_LZO)
    if (ff_pkt->flags & FO_COMPRESS) {
-#ifdef HAVE_LIBZ
-         if(ff_pkt->Compress_algo == COMPRESS_GZIP) {
-            switch (stream) {
-            case STREAM_WIN32_DATA:
-                  stream = STREAM_WIN32_GZIP_DATA;
-               break;
-            case STREAM_SPARSE_DATA:
-                  stream = STREAM_SPARSE_GZIP_DATA;
-               break;
-            case STREAM_FILE_DATA:
-                  stream = STREAM_GZIP_DATA;
-               break;
-            default:
-               /**
-                * All stream types that do not support compression should clear out
-                * FO_COMPRESS above, and this code block should be unreachable.
-                */
-               ASSERT(!(ff_pkt->flags & FO_COMPRESS));
-               return STREAM_NONE;
-            }
+      if (compatible && ff_pkt->Compress_algo == COMPRESS_GZIP) {
+         switch (stream) {
+         case STREAM_WIN32_DATA:
+               stream = STREAM_WIN32_GZIP_DATA;
+            break;
+         case STREAM_SPARSE_DATA:
+               stream = STREAM_SPARSE_GZIP_DATA;
+            break;
+         case STREAM_FILE_DATA:
+               stream = STREAM_GZIP_DATA;
+            break;
+         default:
+            /**
+             * All stream types that do not support compression should clear out
+             * FO_COMPRESS above, and this code block should be unreachable.
+             */
+            ASSERT(!(ff_pkt->flags & FO_COMPRESS));
+            return STREAM_NONE;
          }
-#endif
-#ifdef HAVE_LZO
-         if(ff_pkt->Compress_algo == COMPRESS_LZO1X) {
-            switch (stream) {
-            case STREAM_WIN32_DATA:
-                  stream = STREAM_WIN32_COMPRESSED_DATA;
-               break;
-            case STREAM_SPARSE_DATA:
-                  stream = STREAM_SPARSE_COMPRESSED_DATA;
-               break;
-            case STREAM_FILE_DATA:
-                  stream = STREAM_COMPRESSED_DATA;
-               break;
-            default:
-               /**
-                * All stream types that do not support compression should clear out
-                * FO_COMPRESS above, and this code block should be unreachable.
-                */
-               ASSERT(!(ff_pkt->flags & FO_COMPRESS));
-               return STREAM_NONE;
-            }
+      } else {
+         switch (stream) {
+         case STREAM_WIN32_DATA:
+            stream = STREAM_WIN32_COMPRESSED_DATA;
+            break;
+         case STREAM_SPARSE_DATA:
+            stream = STREAM_SPARSE_COMPRESSED_DATA;
+            break;
+         case STREAM_FILE_DATA:
+            stream = STREAM_COMPRESSED_DATA;
+            break;
+         default:
+            /*
+             * All stream types that do not support compression should clear out
+             * FO_COMPRESS above, and this code block should be unreachable.
+             */
+            ASSERT(!(ff_pkt->flags & FO_COMPRESS));
+            return STREAM_NONE;
          }
-#endif
+      }
    }
-#endif
+
 #ifdef HAVE_CRYPTO
    if (ff_pkt->flags & FO_ENCRYPT) {
       switch (stream) {
@@ -170,8 +174,10 @@ int select_data_stream(FF_PKT *ff_pkt)
          stream = STREAM_ENCRYPTED_FILE_COMPRESSED_DATA;
          break;
       default:
-         /* All stream types that do not support encryption should clear out
-          * FO_ENCRYPT above, and this code block should be unreachable. */
+         /*
+          * All stream types that do not support encryption should clear out
+          * FO_ENCRYPT above, and this code block should be unreachable.
+          */
          ASSERT(!(ff_pkt->flags & FO_ENCRYPT));
          return STREAM_NONE;
       }
@@ -221,7 +227,6 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
       pm_strcpy(attr->ofname, "*none*");
       return true;
    }
-
 
    /**
     * If Windows stuff failed, e.g. attempt to restore Unix file

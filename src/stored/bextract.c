@@ -37,6 +37,11 @@
 #include <lzo/lzo1x.h>
 #endif
 
+/*
+ * Don't allow the uncompressed data buffer to grow larger then this amount of bytes.
+ */
+#define MAX_UNCOMPRESSED_SIZE 10000000
+
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
 static void do_extract(char *devname);
@@ -342,6 +347,94 @@ static bool store_data(BFILE *bfd, char *data, const int32_t length)
    return true;
 }
 
+#ifdef HAVE_LIBZ
+static bool decompress_with_zlib(DEV_RECORD *rec, bool with_header)
+{
+   uLong compress_len = compress_buf_size;
+   const unsigned char *cbuf;
+   int real_compress_len;
+   int status = Z_BUF_ERROR;
+
+   compress_len = compress_buf_size;
+
+   /*
+    * See if this is a compressed stream with the new compression header or an old one.
+    */
+   if (with_header) {
+      cbuf = (const unsigned char*) wbuf + sizeof(comp_stream_header);
+      real_compress_len = wsize - sizeof(comp_stream_header);
+   } else {
+      cbuf = (const unsigned char*) wbuf;
+      real_compress_len = wsize;
+   }
+
+   Dmsg2(200, "Comp_len=%d msglen=%d\n", compress_len, wsize);
+
+   while (compress_len < MAX_UNCOMPRESSED_SIZE &&
+         (status = uncompress((Byte *)compress_buf, &compress_len,
+                              (const Byte *)cbuf, (uLong)real_compress_len)) == Z_BUF_ERROR) {
+      /*
+       * The buffer size is too small, try with a bigger one
+       */
+      compress_len = 2 * compress_len;
+      compress_buf = check_pool_memory_size(compress_buf, compress_len);
+   }
+
+   if (status != Z_OK) {
+      Emsg1(M_ERROR, 0, _("Uncompression error. ERR=%d\n"), status);
+      extract = false;
+      return false;
+   }
+
+   Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n", compress_len, total);
+   store_data(&bfd, compress_buf, compress_len);
+   total += compress_len;
+   fileAddr += compress_len;
+   Dmsg2(100, "Compress len=%d uncompressed=%d\n", rec->data_len, compress_len);
+
+   return true;
+}
+#endif
+
+#ifdef HAVE_LZO
+static bool decompress_with_lzo(DEV_RECORD *rec)
+{
+   lzo_uint compress_len;
+   const unsigned char *cbuf;
+   int status, real_compress_len;
+
+   compress_len = compress_buf_size;
+   cbuf = (const unsigned char*) wbuf + sizeof(comp_stream_header);
+   real_compress_len = wsize - sizeof(comp_stream_header);
+   Dmsg2(200, "Comp_len=%d msglen=%d\n", compress_len, wsize);
+
+   while (compress_len < MAX_UNCOMPRESSED_SIZE &&
+         (status = lzo1x_decompress_safe(cbuf, real_compress_len,
+                                         (unsigned char *)compress_buf,
+                                         &compress_len, NULL)) == LZO_E_OUTPUT_OVERRUN) {
+      /*
+       * The buffer size is too small, try with a bigger one
+       */
+      compress_len = 2 * compress_len;
+      compress_buf = check_pool_memory_size(compress_buf, compress_len);
+   }
+
+   if (status != LZO_E_OK) {
+      Emsg1(M_ERROR, 0, _("LZO uncompression error. ERR=%d\n"), status);
+      extract = false;
+      return false;
+   }
+
+   Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n", compress_len, total);
+   store_data(&bfd, compress_buf, compress_len);
+   total += compress_len;
+   fileAddr += compress_len;
+   Dmsg2(100, "Compress len=%d uncompressed=%d\n", rec->data_len, compress_len);
+
+   return true;
+}
+#endif
+
 /*
  * Called here for each record from read_records()
  */
@@ -458,17 +551,19 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case STREAM_WIN32_GZIP_DATA:
 #ifdef HAVE_LIBZ
       if (extract) {
-         uLong compress_len = compress_buf_size;
-         int status = Z_BUF_ERROR;
 
          if (rec->maskedStream == STREAM_SPARSE_GZIP_DATA) {
             ser_declare;
             uint64_t faddr;
             char ec1[50];
+
             wbuf = rec->data + OFFSET_FADDR_SIZE;
             wsize = rec->data_len - OFFSET_FADDR_SIZE;
+
             ser_begin(rec->data, OFFSET_FADDR_SIZE);
             unser_uint64(faddr);
+            ser_end(rec->data, OFFSET_FADDR_SIZE);
+
             if (fileAddr != faddr) {
                fileAddr = faddr;
                if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
@@ -484,25 +579,9 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             wsize = rec->data_len;
          }
 
-         while (compress_len < 10000000 && (status = uncompress((Byte *)compress_buf, &compress_len,
-                                 (const Byte *)wbuf, (uLong)wsize)) == Z_BUF_ERROR) {
-            /* The buffer size is too small, try with a bigger one */
-            compress_len = 2 * compress_len;
-            compress_buf = check_pool_memory_size(compress_buf,
-                                                  compress_len);
-         }
-         if (status != Z_OK) {
-            Emsg1(M_ERROR, 0, _("Uncompression error. ERR=%d\n"), status);
-            extract = false;
+         if (!decompress_with_zlib(rec, false)) {
             return true;
          }
-
-         Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n", compress_len, total);
-         store_data(&bfd, compress_buf, compress_len);
-         total += compress_len;
-         fileAddr += compress_len;
-         Dmsg2(100, "Compress len=%d uncompressed=%d\n", rec->data_len,
-            compress_len);
       }
 #else
       if (extract) {
@@ -520,20 +599,19 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       if (extract) {
          uint32_t comp_magic, comp_len;
          uint16_t comp_level, comp_version;
-#ifdef HAVE_LZO
-         lzo_uint compress_len;
-         const unsigned char *cbuf;
-         int r, real_compress_len;
-#endif
 
          if (rec->maskedStream == STREAM_SPARSE_COMPRESSED_DATA) {
             ser_declare;
             uint64_t faddr;
             char ec1[50];
+
             wbuf = rec->data + OFFSET_FADDR_SIZE;
             wsize = rec->data_len - OFFSET_FADDR_SIZE;
+
             ser_begin(rec->data, OFFSET_FADDR_SIZE);
             unser_uint64(faddr);
+            ser_end(rec->data, OFFSET_FADDR_SIZE);
+
             if (fileAddr != faddr) {
                fileAddr = faddr;
                if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
@@ -549,22 +627,30 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             wsize = rec->data_len;
          }
 
-         /* read compress header */
+         /*
+          * Read compress header
+          */
          unser_declare;
          unser_begin(wbuf, sizeof(comp_stream_header));
          unser_uint32(comp_magic);
          unser_uint32(comp_len);
          unser_uint16(comp_level);
          unser_uint16(comp_version);
-         Dmsg4(200, "Compressed data stream found: magic=0x%x, len=%d, level=%d, ver=0x%x\n", comp_magic, comp_len,
-                                 comp_level, comp_version);
+         unser_end(wbuf, sizeof(comp_stream_header));
 
-         /* version check */
+         Dmsg4(200, "Compressed data stream found: magic=0x%x, len=%d, level=%d, ver=0x%x\n",
+               comp_magic, comp_len, comp_level, comp_version);
+
+         /*
+          * Version check
+          */
          if (comp_version != COMP_HEAD_VERSION) {
             Emsg1(M_ERROR, 0, _("Compressed header version error. version=0x%x\n"), comp_version);
             return false;
          }
-         /* size check */
+         /*
+          * Size check
+          */
          if (comp_len + sizeof(comp_stream_header) != wsize) {
             Emsg2(M_ERROR, 0, _("Compressed header size error. comp_len=%d, msglen=%d\n"),
                  comp_len, wsize);
@@ -572,31 +658,18 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          }
 
           switch(comp_magic) {
-#ifdef HAVE_LZO
-            case COMPRESS_LZO1X:
-               compress_len = compress_buf_size;
-               cbuf = (const unsigned char*) wbuf + sizeof(comp_stream_header);
-               real_compress_len = wsize - sizeof(comp_stream_header);
-               Dmsg2(200, "Comp_len=%d msglen=%d\n", compress_len, wsize);
-               while ((r=lzo1x_decompress_safe(cbuf, real_compress_len,
-                                               (unsigned char *)compress_buf, &compress_len, NULL)) == LZO_E_OUTPUT_OVERRUN)
-               {
-
-                  /* The buffer size is too small, try with a bigger one */
-                  compress_len = 2 * compress_len;
-                  compress_buf = check_pool_memory_size(compress_buf,
-                                                  compress_len);
-               }
-               if (r != LZO_E_OK) {
-                  Emsg1(M_ERROR, 0, _("LZO uncompression error. ERR=%d\n"), r);
-                  extract = false;
+#ifdef HAVE_LIBZ
+            case COMPRESS_GZIP:
+               if (!decompress_with_zlib(rec, true)) {
                   return true;
                }
-               Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n", compress_len, total);
-               store_data(&bfd, compress_buf, compress_len);
-               total += compress_len;
-               fileAddr += compress_len;
-               Dmsg2(100, "Compress len=%d uncompressed=%d\n", rec->data_len, compress_len);
+               break;
+#endif
+#ifdef HAVE_LZO
+            case COMPRESS_LZO1X:
+               if (!decompress_with_lzo(rec)) {
+                  return true;
+               }
                break;
 #endif
             default:
