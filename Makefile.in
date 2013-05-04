@@ -77,7 +77,7 @@ config.status:
 	if test -x config.status; then config.status --recheck; \
 	else $(SHELL) configure; fi
 
-autoconf/config.h.in: autoconf/configure.in autoconf/acconfig.h
+autoconf/config.h.in: autoconf/configure.in
 	cd $(srcdir);
 	${RMF} config.cache config.log config.out config.status src/config.h
 	autoheader --prepend-include=$(srcdir)/autoconf \
