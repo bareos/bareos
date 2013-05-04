@@ -10,8 +10,8 @@ env:
         - DB=sqlite     CONFIGURE_DB="--with-sqlite3"
 
 before_install:
-    - sudo apt-get update -qq
-    - sudo apt-get install -qq acl-dev autotools-dev bc debhelper dpkg-dev hostname libacl1-dev libcap-dev liblzo2-dev libqt4-dev libreadline-dev libssl-dev libwrap0-dev libx11-dev libsqlite3-dev libmysqlclient-dev libpq-dev lsb-release mtx ncurses-dev pkg-config po-debconf python-dev zlib1g-dev
+    - sudo apt-get -qq update
+    - yes "" | sudo apt-get -q --assume-no install acl-dev autotools-dev bc debhelper dpkg-dev hostname libacl1-dev libcap-dev liblzo2-dev libqt4-dev libreadline-dev libssl-dev libwrap0-dev libx11-dev libsqlite3-dev libmysqlclient-dev libpq-dev lsb-release mtx ncurses-dev pkg-config po-debconf python-dev zlib1g-dev
 
 before_script:
     - for script in $PWD/debian/*.preinst; do echo "$script"; sudo /bin/sh $script install; done
