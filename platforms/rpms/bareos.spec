@@ -448,6 +448,9 @@ export MTX=/usr/sbin/mtx
 %if 0%{?build_bat}
   --enable-bat \
 %endif
+%if 0%{?build_qt_monitor}
+  --enable-traymonitor \
+%endif
   --with-postgresql \
   --with-mysql \
 %if 0%{?build_sqlite3}
@@ -477,13 +480,7 @@ export MTX=/usr/sbin/mtx
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
 
-%if 0%{?build_qt_monitor}
-# build and tray-monitor manually, as this is not build and installed by make
-cd src/qt-console/tray-monitor
-qmake tray-monitor.pro
-%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags}
-cd -
-%endif
+
 
 %install
 %if 0%{?suse_version}
@@ -515,40 +512,20 @@ do
 rm -f "%{buildroot}/$F"
 done
 
-# install tray monitor
-%if 0%{?build_qt_monitor}
-install -m 755 src/qt-console/tray-monitor/.libs/bareos-tray-monitor %{buildroot}%{_sbindir}/bareos-tray-monitor-qt
-install -m 644 src/qt-console/tray-monitor/tray-monitor.conf %{buildroot}%{_sysconfdir}/bareos/
-%endif
-
 %if 0%{?build_bat}
-# install bat
-install -m 755 src/qt-console/.libs/bat %{buildroot}%{_sbindir}
-install -m 640 src/qt-console/bat.conf %{buildroot}%{_sysconfdir}/bareos/bat.conf
-install -m 644 src/qt-console/images/bat_icon.png %{buildroot}/usr/share/pixmaps/bat_icon.png
 %if 0%{?suse_version} > 1010
-%suse_update_desktop_file -c bat bat "bareos the network backup solution - BAT Bareos Admin Tool" bat bat_icon System Backup
-%suse_update_desktop_file -i bat System Backup
-%else
-install -m 644 scripts/bat.desktop %{buildroot}/usr/share/applications/
+%suse_update_desktop_file -i bat System Utility Archiving
+%endif
 %endif
 
-%endif
-# end build_bat
-
-%if 0%{build_qt_monitor}
-# tray monitor desktop file
-install -d 755 %{buildroot}/etc/xdg/autostart
-install -m 644 scripts/bareos-tray-monitor.desktop %{buildroot}/usr/share/applications/
-
-%if 0%{?suse_version} > 1010
-%suse_update_desktop_file -i -r bareos-tray-monitor System Backup
-%endif
-# copy to autostart directory
-install -m 644 %{buildroot}/usr/share/applications/bareos-tray-monitor.desktop %{buildroot}/etc/xdg/autostart
-# tray monitor icon
-install -m 644 scripts/tray-monitor.xpm %{buildroot}/usr/share/pixmaps/bareos-tray-monitor.xpm
-%endif
+# install tray monitor
+# %if 0%{?build_qt_monitor}
+# %if 0%{?suse_version} > 1010
+# disables, because suse_update_desktop_file complains
+# that there are two desktop file (applications and autostart)
+# ##suse_update_desktop_file bareos-tray-monitor System Backup
+# %endif
+# %endif
 
 # install the sample-query.sql file as default query file
 #install -m 644 examples/sample-query.sql %{buildroot}%{script_dir}/query.sql
@@ -771,9 +748,9 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files traymonitor
 %defattr(-,root, root)
 %attr(-, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/tray-monitor.conf
-%{_sbindir}/bareos-tray-monitor-qt
-%{_mandir}/man1/bareos-tray-monitor.1.gz
 %config %{_sysconfdir}/xdg/autostart/bareos-tray-monitor.desktop
+%{_sbindir}/bareos-tray-monitor
+%{_mandir}/man1/bareos-tray-monitor.1.gz
 /usr/share/applications/bareos-tray-monitor.desktop
 /usr/share/pixmaps/bareos-tray-monitor.xpm
 %endif
@@ -783,7 +760,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %attr(-, root, %{daemon_group}) %{_sbindir}/bat
 %attr(640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bat.conf
-%{_prefix}/share/pixmaps/bat_icon.png
+%{_prefix}/share/pixmaps/bat.png
+%{_prefix}/share/pixmaps/bat.svg
 %{_prefix}/share/applications/bat.desktop
 %{_mandir}/man1/bat.1.gz
 %dir %{_docdir}/%{name}
@@ -898,12 +876,9 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %endif
 
 %if 0%{?build_qt_monitor}
-# TODO: only provide bareos-traymonitor
 %post traymonitor
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
-echo "linking %{_sbindir}/bareos-tray-monitor-qt %{_sbindir}/bareos-traymonitor"
-ln -sf %{_sbindir}/bareos-tray-monitor-qt %{_sbindir}/bareos-traymonitor
 %endif
 
 %if 0%{?build_bat}

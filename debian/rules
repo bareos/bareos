@@ -43,6 +43,8 @@ override_dh_auto_configure:
   --enable-batch-insert \
   --enable-dynamic-cats-backends \
   --enable-acl \
+  --enable-bat \
+  --enable-traymonitor \
   --enable-xattr \
   --enable-scsi-crypto \
   --enable-ndmp \

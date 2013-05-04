@@ -1,0 +1,9 @@
+#%attr(-, root, %{daemon_group}) %{_sbindir}/bat
+#%attr(640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bat.conf
+/usr/sbin/bat
+/etc/bareos/bat.conf
+/usr/share/pixmaps/bat.png
+/usr/share/pixmaps/bat.svg
+/usr/share/applications/bat.desktop
+/usr/share/man/man1/bat.1.gz
+/usr/share/doc/bareos/html/

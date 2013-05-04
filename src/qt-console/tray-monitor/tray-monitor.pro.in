@@ -17,10 +17,16 @@ CONFIG( debug, debug|release )  {
 
 LIBS        += -L../../lib -lbareoscfg -lbareos -L../../findlib -lbareosfind @OPENSSL_LIBS@
 
-bins.path = /$(DESTDIR)@sbindir@
-bins.files = bareos-tray-monitor
-confs.path = /$(DESTDIR)@sysconfdir@
-confs.commands = ./install_conf_file
+bins.path            = /$(DESTDIR)@sbindir@
+bins.files           = bareos-tray-monitor
+confs.path           = /$(DESTDIR)@sysconfdir@
+confs.files          = tray-monitor.conf
+icons.path           = /$(DESTDIR)@datarootdir@/pixmaps/
+icons.files          = bareos-tray-monitor.xpm
+desktopentries.path  = /$(DESTDIR)@datarootdir@/applications/
+desktopentries.files = bareos-tray-monitor.desktop
+autostarts.path      = /$(DESTDIR)/etc/xdg/autostart/
+autostarts.files     = bareos-tray-monitor.desktop
 
 TEMPLATE     = app
 TARGET       = bareos-tray-monitor
@@ -43,3 +49,7 @@ HEADERS += tray_conf.h  tray-monitor.h  tray-ui.h
 SOURCES += authenticate.cpp  tray_conf.cpp  tray-monitor.cpp
 
 FORMS += ../run/run.ui
+
+INSTALLS += bins confs icons desktopentries autostarts
+
+QMAKE_EXTRA_TARGETS += depend
