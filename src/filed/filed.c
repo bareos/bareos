@@ -49,6 +49,7 @@ void *start_heap;
 char *configfile = NULL;
 static bool foreground = false;
 static workq_t dir_workq;             /* queue of work from Director */
+static alist *sock_fds;
 static pthread_t server_tid;
 static CONFIG *config;
 
@@ -258,9 +259,12 @@ int main (int argc, char *argv[])
    foreach_dlist(p, me->FDaddrs) {
       Dmsg1(10, "filed: listening on port %d\n", p->get_port_host_order());
    }
-   bnet_thread_server(me->FDaddrs, me->MaxConcurrentJobs, &dir_workq, handle_client_request);
+
+   sock_fds = New(alist(10, not_owned_by_alist));
+   bnet_thread_server(me->FDaddrs, me->MaxConcurrentJobs, sock_fds, &dir_workq, handle_client_request);
 
    terminate_filed(0);
+
    exit(0);                           /* should never get here */
 }
 
@@ -277,6 +281,11 @@ void terminate_filed(int sig)
    stop_watchdog();
 
    bnet_stop_thread_server(server_tid);
+
+   cleanup_bnet_thread_server(sock_fds, &dir_workq);
+   delete sock_fds;
+   sock_fds = NULL;
+
    unload_fd_plugins();
    flush_mntent_cache();
    write_state_file(me->working_directory, "bareos-fd", get_first_port_host_order(me->FDaddrs));

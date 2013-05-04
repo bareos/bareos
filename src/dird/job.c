@@ -38,7 +38,6 @@ static bool job_check_maxruntime(JCR *jcr);
 static bool job_check_maxrunschedtime(JCR *jcr);
 
 /* Imported subroutines */
-extern void term_ua_server();
 
 /* Imported variables */
 
