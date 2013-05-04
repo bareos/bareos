@@ -12,9 +12,3 @@ install:
 	$(INSTALL) -m 755 applybareosdate $(DESTDIR)$(SYSCONFDIR)/scripts/shared/applybareosdate
 	$(INSTALL) -m 644 logfile.bareos.conf $(DESTDIR)$(SYSCONFDIR)/conf/logfiles/bareos.conf
 	$(INSTALL) -m 644 services.bareos.conf $(DESTDIR)$(SYSCONFDIR)/conf/services/bareos.conf
-
-uninstall:
-	rm -f $(DESTDIR)$(SYSCONFDIR)/scripts/services/bareos
-	rm -f $(DESTDIR)$(SYSCONFDIR)/scripts/shared/applybareosdate
-	rm -f $(DESTDIR)$(SYSCONFDIR)/conf/logfiles/bareos.conf
-	rm -f $(DESTDIR)$(SYSCONFDIR)/conf/services/bareos.conf

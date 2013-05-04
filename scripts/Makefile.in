@@ -64,22 +64,6 @@ install: installdirs
 	$(INSTALL_SCRIPT) btraceback $(DESTDIR)$(sbindir)/btraceback
 	#$(INSTALL_SCRIPT) logrotate $(DESTDIR)/etc/logrotate.d/bareos-dir
 
-uninstall:
-	(cd $(DESTDIR)$(scriptdir); $(RMF) bconsole)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) bareos)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) bareos_config)
-	(cd $(DESTDIR)$(sbindir);   $(RMF) bareos)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) bareos-ctl-dir)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) bareos-ctl-fd)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) bareos-ctl-sd)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) fd)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) mtx-changer)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) disk-changer)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) btraceback.gdb)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) btraceback.dbx)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) btraceback.mdb)
-	(cd $(DESTDIR)$(sbindir);   $(RMF) btraceback)
-
 Makefile: Makefile.in
 	cd $(topdir) \
 	    && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
