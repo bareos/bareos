@@ -87,7 +87,7 @@ char *bstrftime_wd(char *dt, int maxlen, utime_t utime)
 
    /* ***FIXME**** the format and localtime_r() should be user configurable */
    (void)localtime_r(&time, &tm);
-   strftime(dt, maxlen, "%a %d-%b %H:%M", &tm);
+   strftime(dt, maxlen, "%a %d-%b-%Y %H:%M", &tm);
    return dt;
 }
 
