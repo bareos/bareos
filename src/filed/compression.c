@@ -237,6 +237,7 @@ bool setup_compression_context(b_ctx &bctx)
             bctx.max_compress_len = bctx.jcr->compress_buf_size;
          }
          bctx.wbuf = bctx.jcr->compress_buf; /* compressed output here */
+         bctx.cipher_input = (uint8_t *)bctx.jcr->compress_buf; /* encrypt compressed data */
       }
 
       /*
