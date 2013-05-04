@@ -138,7 +138,7 @@ static RES_ITEM dir_items[] = {
    { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
    { "tlsdhfile", store_dir, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
    { "tlsallowedcn", store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
-   { "statisticsretention", store_time, ITEM(res_dir.stats_retention), 0, ITEM_DEFAULT, "160704000" /* 5 years */ },
+   { "statisticsretention", store_time, ITEM(res_dir.stats_retention), 0, ITEM_DEFAULT, "157680000" /* 5 years */ },
    { "verid", store_str, ITEM(res_dir.verid), 0, 0, NULL },
    { "optimizeforsize", store_bool, ITEM(res_dir.optimize_for_size), 0, ITEM_DEFAULT, "true" },
    { "optimizeforspeed", store_bool, ITEM(res_dir.optimize_for_speed), 0, ITEM_DEFAULT, "false" },
