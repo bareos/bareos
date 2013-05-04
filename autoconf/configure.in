@@ -3513,7 +3513,7 @@ fi
 AC_OUTPUT([autoconf/Make.common \
 	   Makefile \
 	   manpages/Makefile \
-       scripts/bareos-config \
+	   scripts/bareos-config \
 	   scripts/btraceback \
 	   scripts/bconsole \
 	   scripts/bareos \
@@ -3532,11 +3532,11 @@ AC_OUTPUT([autoconf/Make.common \
 	   src/include/host.h \
 	   src/console/Makefile \
 	   src/console/bconsole.conf \
-       src/qt-console/tray-monitor/bareos-tray-monitor.desktop \
-       src/qt-console/tray-monitor/tray-monitor.conf \
+	   src/qt-console/tray-monitor/bareos-tray-monitor.desktop \
+	   src/qt-console/tray-monitor/tray-monitor.conf \
 	   src/qt-console/tray-monitor/tray-monitor.pro \
 	   src/qt-console/bat.conf \
-       src/qt-console/bat.desktop \
+	   src/qt-console/bat.desktop \
 	   src/qt-console/bat.pro \
 	   src/qt-console/install_conf_file \
 	   src/dird/Makefile \
