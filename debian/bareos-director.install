@@ -1,5 +1,6 @@
 /etc/bareos/bareos-dir.conf
 /etc/logrotate.d/bareos-dir
+/etc/init.d/bareos-dir
 /usr/lib/bareos/scripts/delete_catalog_backup
 /usr/lib/bareos/scripts/make_catalog_backup
 /usr/lib/bareos/scripts/make_catalog_backup.pl
@@ -9,4 +10,3 @@
 /usr/share/man/man1/bsmtp.1.gz
 /usr/share/man/man8/bareos-dir.8.gz
 /usr/share/man/man8/bareos.8.gz
-platforms/debian/bareos-dir /etc/init.d/

@@ -56,6 +56,9 @@ if [ "x${BUSER}" != "x" ]; then
    fi
 fi
 
+# define LSB functions.
+. /lib/lsb/init-functions
+
 case "$1" in
    start)
       echo -n "Starting ${DESC}: "
@@ -74,6 +77,9 @@ case "$1" in
       sleep 5
       $0 start
       ;;
+    status)
+        status_of_proc -p ${PIDFILE} ${DAEMON} ${NAME} && exit 0 || exit $?
+        ;;
    *)
       echo "Usage: /etc/init.d/${NAME} {start|stop|restart|force-reload}" >&2
       exit 1

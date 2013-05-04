@@ -197,7 +197,7 @@ replace()
 init()
 {
     initialize_local_hostname
-    initialize_director_hostname
+    #initialize_director_hostname
     initialize_passwords
     initialize_database_driver
 }
@@ -206,7 +206,7 @@ init()
 args=$#
 
 # without parameter, nothing is done.
-# this allows thsi script to be sourced
+# this allows this script to be sourced
 # to use its functions
 if [ $args -ge 1 ]; then
     # executes given arguments
