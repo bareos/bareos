@@ -124,7 +124,7 @@ void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
 #ifdef HAVE_LIBWRAP
    struct request_info request;
 #endif
-   IPADDR *ipaddr, *next;
+   IPADDR *ipaddr, *next, *to_free;
    s_sockfd *fd_ptr = NULL;
    char buf[128];
 #ifdef HAVE_POLL
@@ -137,14 +137,23 @@ void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
    /*
     * Remove any duplicate addresses.
     */
-   for (ipaddr = (IPADDR *)addr_list->first(); ipaddr;
+   for (ipaddr = (IPADDR *)addr_list->first();
+        ipaddr;
         ipaddr = (IPADDR *)addr_list->next(ipaddr)) {
-      for (next = (IPADDR *)addr_list->next(ipaddr); next;
-           next = (IPADDR *)addr_list->next(next)) {
+      next = (IPADDR *)addr_list->next(ipaddr);
+      while (next) {
+         /*
+          * See if the addresses match.
+          */
          if (ipaddr->get_sockaddr_len() == next->get_sockaddr_len() &&
              memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
                     ipaddr->get_sockaddr_len()) == 0) {
-            addr_list->remove(next);
+            to_free = next;
+            next = (IPADDR *)addr_list->next(next);
+            addr_list->remove(to_free);
+            delete to_free;
+         } else {
+            next = (IPADDR *)addr_list->next(next);
          }
       }
    }
