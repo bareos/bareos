@@ -1,7 +1,8 @@
-BAREOS is a fork of the Bacula source code with the following
+[BAREOS](http://www.bareos.org/) is a fork of the Bacula source code with the following
 changes (highlevel):
 
 Release 12.4.x
+==============
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=Branch-12.4)](https://travis-ci.org/bareos/bareos)
 
@@ -125,30 +126,36 @@ Long standing bugs fixed (bug numbers are from the bacula bug database):
 * Fix bug #1966 bconsole does not show completions for some commands
 * Fix bug #1960 qformlayout.h requires qt 4.4
 
-* Fully new building system used for packaging the software.
-  * Based on Open Build System used by SUSE (See https://build.opensuse.org/)
-  * Packages can be build for:
-    * CentOS 5
-    * CentOS 6
-    * Debian 6.0
-    * Fedora 16
-    * Fedora 17
-    * Fedora 18
-    * RedHat Enterprise Linux 5 (RHEL5)
-    * RedHat Enterprise Linux 6 (RHEL6)
-    * Suse Linux Enterprise 11 SP1 (SLE_11_SP1)
-    * Suse Linux Enterprise 11 SP2 (SLE_11_SP2)
-    * OpenSuse 11.4
-    * OpenSuse 12.1
-    * OpenSuse 12.2
-    * OpenSuse factory
-    * Ubuntu 12.04
+
+Build System
+============
+
+* Fully new building system used for compiling and packaging the software
+  * Based on [Open Build System](https://build.opensuse.org/)
+  * Packages are build for:
+      * CentOS 5
+      * CentOS 6
+      * Debian 6.0
+      * Fedora 16
+      * Fedora 17
+      * Fedora 18
+      * RedHat Enterprise Linux 5 (RHEL5)
+      * RedHat Enterprise Linux 6 (RHEL6)
+      * Suse Linux Enterprise 11 SP1 (SLE_11_SP1)
+      * Suse Linux Enterprise 11 SP2 (SLE_11_SP2)
+      * OpenSuse 11.4
+      * OpenSuse 12.1
+      * OpenSuse 12.2
+      * OpenSuse factory
+      * Ubuntu 12.04
   * Fully automatic generation of new packages within one hour after new
     release of software or bugfix.
-  * Fully automatic continuos integration tests of new packages with most major linux distribution
-  * Deprecated old windows build system
-  * New clean MINGW based windows Makefile set based on integration into OBS.
-    * No more deppkgs but use native libraries available in OBS for MINGW32 and MINGW64
-    * No longer based on archaic build system but state of the art and maintained OBS crosscompiling.
+  * Fully automatic continuos integration tests of new packages with all supported Linux distributions
+  * Windows
+      * New clean MINGW based windows Makefile set based on integration into OBS
+          * Use native libraries available in OBS for MINGW32 and MINGW64 (no more deppkgs)
+          * No longer based on archaic build system but state of the art and maintained OBS crosscompiling
+      * Automatic creation of NSI installer packages
+          * Supports of silient installs
   * OBS uses source services to checkout current software directly from git
-    * See http://en.opensuse.org/openSUSE:Build_Service_private_instance_software_live_cycle
+      * see http://en.opensuse.org/openSUSE:Build_Service_private_instance_software_live_cycle
