@@ -47,7 +47,7 @@
 #
 
 # source our conf file
-if test ! -f @sysconfdir@/mtx-changer.conf ; then
+if test ! -r @sysconfdir@/mtx-changer.conf ; then
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   echo "ERROR: @sysconfdir@/mtx-changer.conf file not found!!!!"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -56,6 +56,10 @@ fi
 . @sysconfdir@/mtx-changer.conf
 
 MTX=@MTX@
+if test ! -e "$MTX" ; then
+  echo "ERROR: mtx program not found ($MTX)"
+  exit 1
+fi
 
 dbgfile="@logdir@/mtx.log"
 if test ${debug_log} -ne 0 ; then
