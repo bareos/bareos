@@ -290,7 +290,7 @@ JOBRES *select_job_resource(UAContext *ua)
 JOBRES *get_restore_job(UAContext *ua)
 {
    JOBRES *job;
-   int i = find_arg_with_value(ua, "restorejob");
+   int i = find_arg_with_value(ua, NT_("restorejob"));
    if (i >= 0 && acl_access_ok(ua, Job_ACL, ua->argv[i])) {
       job = (JOBRES *)GetResWithName(R_JOB, ua->argv[i]);
       if (job && job->JobType == JT_RESTORE) {
@@ -592,7 +592,7 @@ int select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
    *err=0;
 
    mr->clear();
-   i = find_arg_with_value(ua, "volume");
+   i = find_arg_with_value(ua, NT_("volume"));
    if (i >= 0) {
       if (is_name_valid(ua->argv[i], &err)) {
          bstrncpy(mr->VolumeName, ua->argv[i], sizeof(mr->VolumeName));
@@ -670,7 +670,7 @@ POOLRES *get_pool_resource(UAContext *ua)
    POOLRES *pool = NULL;
    int i;
 
-   i = find_arg_with_value(ua, "pool");
+   i = find_arg_with_value(ua, NT_("pool"));
    if (i >= 0 && acl_access_ok(ua, Pool_ACL, ua->argv[i])) {
       pool = (POOLRES *)GetResWithName(R_POOL, ua->argv[i]);
       if (pool) {
@@ -1001,7 +1001,7 @@ int get_storage_drive(UAContext *ua, STORERES *store)
    char drivename[10];
 
    /* Get drive for autochanger if possible */
-   i = find_arg_with_value(ua, "drive");
+   i = find_arg_with_value(ua, NT_("drive"));
    if (i >= 0) {
       drive = atoi(ua->argv[i]);
    } else if (store && store->autochanger) {
@@ -1034,7 +1034,7 @@ int get_storage_slot(UAContext *ua, STORERES *store)
 {
    int i, slot = -1;
    /* Get slot for autochanger if possible */
-   i = find_arg_with_value(ua, "slot");
+   i = find_arg_with_value(ua, NT_("slot"));
    if (i >=0) {
       slot = atoi(ua->argv[i]);
    } else if (store && store->autochanger) {
@@ -1062,7 +1062,7 @@ int get_media_type(UAContext *ua, char *MediaType, int max_media)
    STORERES *store;
    int i;
 
-   i = find_arg_with_value(ua, "mediatype");
+   i = find_arg_with_value(ua, NT_("mediatype"));
    if (i >= 0) {
       bstrncpy(MediaType, ua->argv[i], max_media);
       return 1;
@@ -1129,8 +1129,8 @@ alist *select_jobs(UAContext *ua, const char *reason)
    int cnt = 0;
    int njobs = 0;
    JCR *jcr = NULL;
-   char JobName[MAX_NAME_LENGTH];
-   char temp[256];
+   bool select_all = false;
+   bool select_by_state = false;
    alist *selected_jobids;
    const char *lst[] = {
       "job",
@@ -1138,8 +1138,33 @@ alist *select_jobs(UAContext *ua, const char *reason)
       "ujobid",
       NULL
    };
+   enum {
+      none,
+      all_jobs,
+      created_jobs,
+      blocked_jobs,
+      waiting_jobs,
+      running_jobs
+   } selection_criterium;
 
+   /*
+    * Allocate a list for holding the selected JobIds.
+    */
    selected_jobids = New(alist(10, owned_by_alist));
+
+   /*
+    * See if "all" is given.
+    */
+   if (find_arg(ua, NT_("all")) > 0) {
+      select_all = true;
+   }
+
+   /*
+    * See if "state=" is given.
+    */
+   if (find_arg_with_value(ua, NT_("state")) > 0) {
+      select_by_state = true;
+   }
 
    /*
     * See if there are any jobid, job or ujobid keywords.
@@ -1189,23 +1214,29 @@ alist *select_jobs(UAContext *ua, const char *reason)
       }
    }
 
+   /*
+    * If we didn't select any Jobs using jobid, job or ujobid keywords try other selections.
+    */
    if (cnt == 0) {
       char buf[1000];
-      int tjobs = 0;                  /* total # number jobs */
-      /* Count Jobs running */
+      int tjobs = 0;                   /* Total # number jobs */
+
+      /*
+       * Count Jobs running
+       */
       foreach_jcr(jcr) {
-         if (jcr->JobId == 0) {      /* this is us */
+         if (jcr->JobId == 0) {        /* This is us */
             continue;
          }
-         tjobs++;                    /* count of all jobs */
+         tjobs++;                      /* Count of all jobs */
          if (!acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
-            continue;               /* skip not authorized */
+            continue;                  /* Skip not authorized */
          }
-         njobs++;                   /* count of authorized jobs */
+         njobs++;                      /* Count of authorized jobs */
       }
       endeach_jcr(jcr);
 
-      if (njobs == 0) {            /* no authorized */
+      if (njobs == 0) {                /* No authorized */
          if (tjobs == 0) {
             ua->send_msg(_("No Jobs running.\n"));
          } else {
@@ -1214,49 +1245,152 @@ alist *select_jobs(UAContext *ua, const char *reason)
          goto bail_out;
       }
 
-      start_prompt(ua, _("Select Job:\n"));
-      foreach_jcr(jcr) {
-         char ed1[50];
-         if (jcr->JobId == 0) {      /* this is us */
-            continue;
-         }
-         if (!acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
-            continue;               /* skip not authorized */
-         }
-         bsnprintf(buf, sizeof(buf), _("JobId=%s Job=%s"), edit_int64(jcr->JobId, ed1), jcr->Job);
-         add_prompt(ua, buf);
-      }
-      endeach_jcr(jcr);
-      bsnprintf(temp, sizeof(temp), _("Choose Job to %s"), _(reason));
-      if (do_prompt(ua, _("Job"),  temp, buf, sizeof(buf)) < 0) {
-         goto bail_out;
-      }
-      if (bstrcmp(reason, "cancel")) {
-         if (ua->api && njobs == 1) {
-            char nbuf[1000];
-            bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf,
-                      _("Confirm cancel?"));
-            if (!get_yesno(ua, nbuf) || ua->pint32_val == 0) {
-               goto bail_out;
-            }
+      if (select_all || select_by_state) {
+         /*
+          * Set selection criterium.
+          */
+         if (select_all) {
+            selection_criterium = all_jobs;
          } else {
-            if (njobs == 1) {
-               if (!get_yesno(ua, _("Confirm cancel (yes/no): ")) || ua->pint32_val == 0) {
+            i = find_arg_with_value(ua, NT_("state"));
+            if (i > 0) {
+               selection_criterium = none;
+
+               if (bstrcasecmp(ua->argv[i], NT_("created"))) {
+                  selection_criterium = created_jobs;
+               }
+
+               if (bstrcasecmp(ua->argv[i], NT_("blocked"))) {
+                  selection_criterium = blocked_jobs;
+               }
+
+               if (bstrcasecmp(ua->argv[i], NT_("waiting"))) {
+                  selection_criterium = waiting_jobs;
+               }
+
+               if (bstrcasecmp(ua->argv[i], NT_("running"))) {
+                  selection_criterium = running_jobs;
+               }
+
+               if (selection_criterium == none) {
+                  ua->error_msg(_("Illegal state either created, blocked, waiting or running\n"));
                   goto bail_out;
                }
             }
          }
-      }
-      sscanf(buf, "JobId=%d Job=%127s", &njobs, JobName);
-      jcr = get_jcr_by_full_name(JobName);
-      if (!jcr) {
-         ua->warning_msg(_("Job \"%s\" not found.\n"), JobName);
-         goto bail_out;
-      }
 
-      insert_selected_jobid(selected_jobids, jcr->JobId);
+         /*
+          * Select from all available Jobs the Jobs matching the selection criterium.
+          */
+         foreach_jcr(jcr) {
+            if (jcr->JobId == 0) {  /* This is us */
+               continue;
+            }
 
-      free_jcr(jcr);
+            if (!acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
+               continue;            /* Skip not authorized */
+            }
+
+            /*
+             * See if we need to select this JobId.
+             */
+            switch (selection_criterium) {
+            case all_jobs:
+               break;
+            case created_jobs:
+               if (jcr->JobStatus != JS_Created) {
+                  continue;
+               }
+               break;
+            case blocked_jobs:
+               if (!jcr->job_started || jcr->JobStatus != JS_Blocked) {
+                  continue;
+               }
+               break;
+            case waiting_jobs:
+               if (!job_waiting(jcr)) {
+                  continue;
+               }
+               break;
+            case running_jobs:
+               if (!jcr->job_started || jcr->JobStatus != JS_Running) {
+                  continue;
+               }
+               break;
+            default:
+               break;
+            }
+
+            insert_selected_jobid(selected_jobids, jcr->JobId);
+            ua->send_msg(_("Selected Job %d for cancelling\n") , jcr->JobId);
+         }
+
+         if (selected_jobids->empty()) {
+            ua->send_msg(_("No Jobs selected.\n"));
+            goto bail_out;
+         }
+
+         /*
+          * Only ask for confirmation when not in batch mode and there is no yes on the cmdline.
+          */
+         if (!ua->batch && find_arg(ua, NT_("yes")) == -1) {
+            if (!get_yesno(ua, _("Confirm cancel (yes/no): ")) || ua->pint32_val == 0) {
+               goto bail_out;
+            }
+         }
+      } else {
+         char temp[256];
+         char JobName[MAX_NAME_LENGTH];
+
+         /*
+          * Interactivly select a Job.
+          */
+         start_prompt(ua, _("Select Job:\n"));
+         foreach_jcr(jcr) {
+            char ed1[50];
+            if (jcr->JobId == 0) {    /* This is us */
+               continue;
+            }
+            if (!acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
+               continue;              /* Skip not authorized */
+            }
+            bsnprintf(buf, sizeof(buf), _("JobId=%s Job=%s"), edit_int64(jcr->JobId, ed1), jcr->Job);
+            add_prompt(ua, buf);
+         }
+         endeach_jcr(jcr);
+
+         bsnprintf(temp, sizeof(temp), _("Choose Job to %s"), _(reason));
+         if (do_prompt(ua, _("Job"),  temp, buf, sizeof(buf)) < 0) {
+            goto bail_out;
+         }
+
+         if (bstrcmp(reason, "cancel")) {
+            if (ua->api && njobs == 1) {
+               char nbuf[1000];
+
+               bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf, _("Confirm cancel?"));
+               if (!get_yesno(ua, nbuf) || ua->pint32_val == 0) {
+                  goto bail_out;
+               }
+            } else {
+               if (njobs == 1) {
+                  if (!get_yesno(ua, _("Confirm cancel (yes/no): ")) || ua->pint32_val == 0) {
+                     goto bail_out;
+                  }
+               }
+            }
+         }
+
+         sscanf(buf, "JobId=%d Job=%127s", &njobs, JobName);
+         jcr = get_jcr_by_full_name(JobName);
+         if (!jcr) {
+            ua->warning_msg(_("Job \"%s\" not found.\n"), JobName);
+            goto bail_out;
+         }
+
+         insert_selected_jobid(selected_jobids, jcr->JobId);
+         free_jcr(jcr);
+      }
    }
 
    return selected_jobids;

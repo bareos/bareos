@@ -106,7 +106,7 @@ static struct cmdstruct commands[] = {
    { NT_("automount"), automount_cmd, _("Automount after label"),
      NT_("on | off"), false },
    { NT_("cancel"), cancel_cmd, _("Cancel a job"),
-     NT_("storage=<storage-name> jobid=<jobid> job=<job-name> ujobid=<unique-jobid>"), false },
+     NT_("storage=<storage-name> | jobid=<jobid> | job=<job-name> | ujobid=<unique-jobid> | state=<job_state> | all yes"), false },
    { NT_("create"), create_cmd, _("Create DB Pool from resource"),
      NT_("pool=<pool-name>"), false },
    { NT_("delete"), delete_cmd, _("Delete volume, pool or job"),
@@ -189,7 +189,9 @@ static struct cmdstruct commands[] = {
    { NT_("status"), status_cmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | client=<client-name> | storage=<storage-name> slots | days=nnn"), true },
    { NT_("setbandwidth"), setbwlimit_cmd,  _("Sets bandwidth"),
-     NT_("storage=<storage-name> limit=<nn-kbs> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true },
+     NT_("client=<client-name> | storage=<storage-name> | jobid=<jobid> |\n"
+         "\tjob=<job-name> | ujobid=<unique-jobid> state=<job_state> | all\n"
+         "\tlimit=<nn-kbs> yes"), true },
    { NT_("setdebug"), setdebug_cmd, _("Sets debug level"),
      NT_("level=<nn> trace=0/1 client=<client-name> | dir | storage=<storage-name> | all"), true },
    { NT_("setip"), setip_cmd, _("Sets new client address -- if authorized"),
@@ -476,7 +478,7 @@ static inline int cancel_storage_daemon_job(UAContext *ua, const char *cmd)
       /*
        * See what JobId to cancel on the storage daemon.
        */
-      i = find_arg_with_value(ua, "jobid");
+      i = find_arg_with_value(ua, NT_("jobid"));
       if (i >= 0) {
          if (!is_a_number(ua->argv[i])) {
             ua->warning_msg(_("JobId %s not a number\n"), ua->argv[i]);
@@ -529,7 +531,7 @@ static int cancel_cmd(UAContext *ua, const char *cmd)
    /*
     * See if we need to explicitly cancel a storage daemon Job.
     */
-   i = find_arg_with_value(ua, "storage");
+   i = find_arg_with_value(ua, NT_("storage"));
    if (i >= 0) {
       return cancel_storage_daemon_job(ua, cmd);
    } else {
@@ -820,11 +822,13 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
       "job",
       "jobid",
       "ujobid",
+      "all",
+      "state",
       NULL
    };
 
    memset(Job, 0, sizeof(Job));
-   i = find_arg_with_value(ua, "limit");
+   i = find_arg_with_value(ua, NT_("limit"));
    if (i >= 0) {
       limit = atoi(ua->argv[i]) * 1024;
    }
@@ -869,7 +873,7 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
       }
 
       delete selection;
-   } else if (find_arg(ua, "storage") >= 0) {
+   } else if (find_arg(ua, NT_("storage")) >= 0) {
       store = get_storage_resource(ua, false /* no default */);
    } else {
       client = get_client_resource(ua);
@@ -1117,7 +1121,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
    Dmsg1(120, "setdebug:%s:\n", cmd);
 
    level = -1;
-   i = find_arg_with_value(ua, "level");
+   i = find_arg_with_value(ua, NT_("level"));
    if (i >= 0) {
       level = atoi(ua->argv[i]);
    }
@@ -1129,7 +1133,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
    }
 
    /* Look for trace flag. -1 => not change */
-   i = find_arg_with_value(ua, "trace");
+   i = find_arg_with_value(ua, NT_("trace"));
    if (i >= 0) {
       trace_flag = atoi(ua->argv[i]);
       if (trace_flag > 0) {
@@ -1138,7 +1142,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
    }
 
    /* Look for hangup (debug only)flag. -1 => not change */
-   i = find_arg_with_value(ua, "hangup");
+   i = find_arg_with_value(ua, NT_("hangup"));
    if (i >= 0) {
       hangup = atoi(ua->argv[i]);
    }
