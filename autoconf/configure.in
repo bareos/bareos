@@ -1060,7 +1060,7 @@ AC_SEARCH_LIBS(dlopen, [dl])
 dnl ------------------------------------------
 dnl Where to place working dir
 dnl ------------------------------------------
-working_dir=`eval echo ${prefix}/opt/bareos/working`
+working_dir=`eval echo ${prefix}/var/bareos/working`
 AC_ARG_WITH(working-dir,
    AC_HELP_STRING([--with-working-dir=PATH], [specify path of Bareos working directory]),
    [
@@ -1146,7 +1146,7 @@ AC_SUBST(scriptdir)
 dnl ------------------------------------------
 dnl Where to place bsrdir (bsr files)
 dnl ------------------------------------------
-bsrdir=`eval echo ${prefix}/opt/bareos/bsr`
+bsrdir=`eval echo ${prefix}/var/bareos/working`
 AC_ARG_WITH(bsrdir,
    AC_HELP_STRING([--with-bsrdir=PATH], [specify path of Bareos bsrs directory]),
    [
@@ -1161,7 +1161,7 @@ AC_SUBST(bsrdir)
 dnl ------------------------------------------
 dnl Where to place logdir (bsr files)
 dnl ------------------------------------------
-logdir=`eval echo ${prefix}/opt/bareos/log`
+logdir=`eval echo ${prefix}/var/bareos/logs`
 AC_ARG_WITH(logdir,
    AC_HELP_STRING([--with-logdir=PATH], [specify path of Bareos logs directory]),
    [
