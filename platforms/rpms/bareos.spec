@@ -113,6 +113,7 @@ BuildRequires: openssl-devel
 BuildRequires: libacl-devel
 BuildRequires: pkgconfig
 BuildRequires: lzo-devel
+BuildRequires: libfastlz-devel
 %if 0%{?build_sqlite3}
 %if 0%{?suse_version}
 BuildRequires: sqlite3-devel
