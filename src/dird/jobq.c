@@ -675,6 +675,7 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
       set_jcr_defaults(njcr, jcr->res.job);
       njcr->reschedule_count = jcr->reschedule_count;
       njcr->sched_time = jcr->sched_time;
+      njcr->initial_sched_time = jcr->initial_sched_time;
       /*
        * Special test here since a Virtual Full gets marked
        *  as a Full, so we look at the resource record
