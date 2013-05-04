@@ -370,12 +370,9 @@ bool setup_compression_context(b_ctx &bctx)
          zfast_stream *pZfastStream = (zfast_stream *)bctx.jcr->pZfast_compress_workset;
          if (pZfastStream->total_in == 0) {
             int zstat;
-            zfast_stream_compressor compressor;
+            zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
 
             switch (bctx.ff_pkt->Compress_algo) {
-            case COMPRESS_FZFZ:
-               compressor = COMPRESSOR_FASTLZ;
-               break;
             case COMPRESS_FZ4L:
             case COMPRESS_FZ4H:
                compressor = COMPRESSOR_LZ4;
@@ -661,13 +658,10 @@ static bool decompress_with_fastlz(JCR *jcr, char **data, uint32_t *length, uint
 {
    int zstat;
    zfast_stream stream;
-   zfast_stream_compressor compressor;
+   zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
    char ec1[50]; /* Buffer printing huge values */
 
    switch (comp_magic) {
-   case COMPRESS_FZFZ:
-      compressor = COMPRESSOR_FASTLZ;
-      break;
    case COMPRESS_FZ4L:
    case COMPRESS_FZ4H:
       compressor = COMPRESSOR_LZ4;

@@ -445,12 +445,9 @@ static bool decompress_with_fastlz(DEV_RECORD *rec, uint32_t comp_magic)
 {
    int zstat;
    zfast_stream stream;
-   zfast_stream_compressor compressor;
+   zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
 
    switch (comp_magic) {
-   case COMPRESS_FZFZ:
-      compressor = COMPRESSOR_FASTLZ;
-      break;
    case COMPRESS_FZ4L:
    case COMPRESS_FZ4H:
       compressor = COMPRESSOR_LZ4;
