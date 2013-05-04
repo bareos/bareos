@@ -144,30 +144,30 @@ struct s_cmds {
  * The following are the recognized commands from the Director.
  */
 static struct s_cmds cmds[] = {
-   { "JobId=", job_cmd, 0 },                /* Start Job */
-   { "autochanger", changer_cmd, 0 },
-   { "bootstrap", bootstrap_cmd, 0 },
-   { "cancel", cancel_cmd, 0 },
-   { ".die", die_cmd, 0 },
-   { "finish", finish_cmd, 0 },             /* End of backup */
-   { "label", label_cmd, 0 },               /* Label a tape */
-   { "listen", listen_cmd, 0 },             /* Listen for an incoming Storage Job */
-   { "mount", mount_cmd, 0 },
-   { "nextrun", nextrun_cmd, 0 },           /* Prepare for next backup part of same Job */
-   { "readlabel", readlabel_cmd, 0 },
-   { "release", release_cmd, 0 },
-   { "relabel", relabel_cmd, 0 },           /* Relabel a tape */
-   { "setbandwidth=", setbandwidth_cmd, 0 },
-   { "setdebug=", setdebug_cmd, 0 },        /* Set debug level */
-   { "status", status_cmd, 1 },
-   { ".status", qstatus_cmd, 1 },
-   { "unmount", unmount_cmd, 0 },
-   { "use storage=", use_cmd, 0 },
-   { "replicate", replicate_cmd, 0 },       /* Replicate data to an external SD */
-   { "run", run_cmd, 0 },                   /* Start of Job */
-// { "action_on_purge",  action_on_purge_cmd, 0 },
-// { "query", query_cmd, 0 },
-   { NULL, NULL } /* list terminator */
+   { "JobId=", job_cmd, false },            /* Start Job */
+   { "autochanger", changer_cmd, false },
+   { "bootstrap", bootstrap_cmd, false },
+   { "cancel", cancel_cmd, false },
+   { ".die", die_cmd, false },
+   { "finish", finish_cmd, false },         /* End of backup */
+   { "label", label_cmd, false },           /* Label a tape */
+   { "listen", listen_cmd, false },         /* Listen for an incoming Storage Job */
+   { "mount", mount_cmd, false },
+   { "nextrun", nextrun_cmd, false },       /* Prepare for next backup part of same Job */
+   { "readlabel", readlabel_cmd, false },
+   { "release", release_cmd, false },
+   { "relabel", relabel_cmd, false },       /* Relabel a tape */
+   { "setbandwidth=", setbandwidth_cmd, false },
+   { "setdebug=", setdebug_cmd, false },    /* Set debug level */
+   { "status", status_cmd, true },
+   { ".status", qstatus_cmd, true },
+   { "unmount", unmount_cmd, false },
+   { "use storage=", use_cmd, false },
+   { "replicate", replicate_cmd, false },   /* Replicate data to an external SD */
+   { "run", run_cmd, false },               /* Start of Job */
+// { "action_on_purge",  action_on_purge_cmd, false },
+// { "query", query_cmd, false },
+   { NULL, NULL, false } /* list terminator */
 };
 
 /*

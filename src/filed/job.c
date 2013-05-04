@@ -97,41 +97,41 @@ static bool exit_cmd(JCR *jcr);
 struct s_cmds {
    const char *cmd;
    bool (*func)(JCR *);
-   int monitoraccess; /* specify if monitors have access to this function */
+   bool monitoraccess; /* specify if monitors have access to this function */
 };
 
 /**
  * The following are the recognized commands from the Director.
  */
 static struct s_cmds cmds[] = {
-   { "backup", backup_cmd, 0 },
-   { "cancel", cancel_cmd, 0 },
-   { "setbandwidth=", setbandwidth_cmd, 0 },
-   { "setdebug=", setdebug_cmd, 0 },
-   { "estimate", estimate_cmd, 0 },
-   { "Hello", hello_cmd, 1 },
-   { "fileset", fileset_cmd, 0 },
-   { "JobId=", job_cmd, 0 },
-   { "level = ", level_cmd, 0 },
-   { "restore ", restore_cmd, 0 },
-   { "endrestore", end_restore_cmd, 0 },
-   { "session", session_cmd, 0 },
-   { "status", status_cmd, 1 },
-   { ".status", qstatus_cmd, 1 },
-   { "storage ", storage_cmd, 0 },
-   { "verify", verify_cmd, 0 },
-   { "bootstrap", bootstrap_cmd, 0 },
-   { "RunBeforeNow", runbeforenow_cmd, 0 },
-   { "RunBeforeJob", runbefore_cmd, 0 },
-   { "RunAfterJob", runafter_cmd, 0 },
-   { "Run", runscript_cmd, 0 },
-   { "accurate", accurate_cmd, 0 },
-   { "restoreobject", restore_object_cmd, 0 },
-   { "sm_dump", sm_dump_cmd, 0 },
+   { "backup", backup_cmd, false },
+   { "cancel", cancel_cmd, false },
+   { "setbandwidth=", setbandwidth_cmd, false },
+   { "setdebug=", setdebug_cmd, false },
+   { "estimate", estimate_cmd, false },
+   { "Hello", hello_cmd, true },
+   { "fileset", fileset_cmd, false },
+   { "JobId=", job_cmd, false },
+   { "level = ", level_cmd, false },
+   { "restore ", restore_cmd, false },
+   { "endrestore", end_restore_cmd, false },
+   { "session", session_cmd, false },
+   { "status", status_cmd, true },
+   { ".status", qstatus_cmd, true },
+   { "storage ", storage_cmd, false },
+   { "verify", verify_cmd, false },
+   { "bootstrap", bootstrap_cmd, false },
+   { "RunBeforeNow", runbeforenow_cmd, false },
+   { "RunBeforeJob", runbefore_cmd, false },
+   { "RunAfterJob", runafter_cmd, false },
+   { "Run", runscript_cmd, false },
+   { "accurate", accurate_cmd, false },
+   { "restoreobject", restore_object_cmd, false },
+   { "sm_dump", sm_dump_cmd, false },
 #ifdef DEVELOPER
-   { "exit", exit_cmd, 0 },
+   { "exit", exit_cmd, false },
 #endif
-   { NULL, NULL } /* list terminator */
+   { NULL, NULL, false } /* list terminator */
 };
 
 /*
