@@ -1275,6 +1275,7 @@ void dird_free_jcr_pointers(JCR *jcr)
       jcr->file_bsock->close();
       jcr->file_bsock = NULL;
    }
+
    if (jcr->store_bsock) {
       Dmsg0(200, "Close Store bsock\n");
       jcr->store_bsock->close();
@@ -1301,14 +1302,6 @@ void dird_free_jcr_pointers(JCR *jcr)
 void dird_free_jcr(JCR *jcr)
 {
    Dmsg0(200, "Start dird free_jcr\n");
-
-   /*
-    * Close the messages for this Messages resource, which means to close
-    * any open files, and dispatch any pending email messages. We do this now
-    * that we still have all the info we need we start tearing down the jcr
-    * after this call.
-    */
-   close_msg(jcr);
 
    if (jcr->mig_jcr) {
       free_jcr(jcr->mig_jcr);
