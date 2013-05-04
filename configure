@@ -23543,6 +23543,7 @@ fi
 
 
 
+with_gnutls_directory=no
 
 # Check whether --with-gnutls was given.
 if test "${with_gnutls+set}" = set; then :
@@ -23552,8 +23553,6 @@ if test "${with_gnutls+set}" = set; then :
 
 fi
 
-
-with_gnutls_directory=no
 
 if test "x$support_crypto" != "xno" -o "x$support_tls" != "xno"; then
       if test "x$have_openssl" != "xyes" -a "x$with_gnutls_directory" != "xno"; then
