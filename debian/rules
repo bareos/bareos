@@ -30,12 +30,13 @@ override_dh_auto_configure:
 	dh_auto_configure --    \
   --with-sbin-perm=755 \
   --sysconfdir=/etc/bareos \
-  --docdir=\${_docdir}/bareos \
-  --htmldir=\${_docdir}/bareos/html \
+  --with-archivedir=/var/lib/bareos/storage \
   --with-scriptdir=/usr/lib/bareos/scripts \
   --with-plugindir=/usr/lib/bareos/plugins \
   --with-working-dir=/var/lib/bareos \
   --with-pid-dir=/var/lib/bareos \
+  --with-bsrdir=/var/lib/bareos \
+  --with-logdir=/var/log/bareos \
   --with-subsys-dir=/var/lock \
   --enable-smartalloc \
   --disable-conio \
@@ -67,6 +68,10 @@ override_dh_auto_configure:
   --with-basename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   --with-hostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   --enable-includes
+
+#  --docdir="\${_docdir}/bareos" \
+#  --htmldir="\${_docdir}/bareos/html" \
+
 
 override_dh_fixperms:
 	# all files in /etc/bareos

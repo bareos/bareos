@@ -15,6 +15,7 @@ Build-Depends: autotools-dev, debhelper (>= 7.0.50~),
  libcap-dev,
  libssl-dev,
  liblzo2-dev,
+ lsb-release,
  ncurses-dev
 # removed to be compliant with Ubuntu:
 # libsqlite0-dev,
