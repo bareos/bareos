@@ -288,6 +288,7 @@ static struct s_fs_opt FS_options[] = {
  */
 void find_used_compressalgos(POOL_MEM *compressalgos, JCR *jcr)
 {
+   int cnt = 0;
    INCEXE *inc;
    FOPTS *fopts;
    FILESETRES *fs;
@@ -295,7 +296,7 @@ void find_used_compressalgos(POOL_MEM *compressalgos, JCR *jcr)
 
    if (!jcr->res.job || !jcr->res.job->fileset) {
       return;
-  }
+   }
 
    fs = jcr->res.job->fileset;
    for (int i = 0; i < fs->num_includes; i++) { /* Parse all Include {} */
@@ -313,11 +314,12 @@ void find_used_compressalgos(POOL_MEM *compressalgos, JCR *jcr)
                   }
 
                   if (bstrncmp(k, fs_opt->option, strlen(fs_opt->option))) {
-                     if (strlen(compressalgos->c_str()) > 0) {
+                     if (cnt > 0) {
                         compressalgos->strcat(",");
                      }
                      compressalgos->strcat(fs_opt->name);
                      k += strlen(fs_opt->option) - 1;
+                     cnt++;
                      continue;
                   }
                }
