@@ -146,7 +146,8 @@ void Console::populateLists(bool /*forcenew*/)
    if (!getDirComm(conn)) {
       if (mainWin->m_connDebug) Pmsg0(000, "call newDirComm\n");
       if (!newDirComm(conn)) {
-         Emsg1(M_ABORT, 0, "Failed to connect to %s for populateLists.\n", m_dir->name());
+         Emsg1(M_ABORT, 0, _("Failed to connect to director %s for populateLists."
+                             " Check, if director's address or hostname is configured properly\n"), m_dir->name());
          return;
       }
    }
