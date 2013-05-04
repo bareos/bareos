@@ -1,6 +1,6 @@
 Format: 3.0 (native)
 Source: bareos
-Binary: bareos, bareos-bat, bareos-bconsole, bareos-client, bareos-common, bareos-database-common, bareos-database-postgresql, bareos-database-mysql, bareos-database-sqlite3, bareos-database-tools, bareos-devel, bareos-director, bareos-doc, bareos-filedaemon, bareos-storage, bareos-tools, bareos-traymonitor
+Binary: bareos, bareos-bat, bareos-bconsole, bareos-client, bareos-common, bareos-database-common, bareos-database-postgresql, bareos-database-mysql, bareos-database-sqlite3, bareos-database-tools, bareos-devel, bareos-director, bareos-doc, bareos-filedaemon, bareos-storage, bareos-tools, bareos-traymonitor, bareos-debug
 Architecture: any
 Version: 12.4.1
 Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
