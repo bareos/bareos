@@ -136,6 +136,8 @@ ndma_send_logmsg (struct ndm_session *sess, ndmp9_log_type ltype,
 	vsnprintf (buf, sizeof(buf), fmt, ap);
 	va_end (ap);
 
+	if (!from_conn) return;
+
 	switch (from_conn->protocol_version) {
 #ifndef NDMOS_OPTION_NO_NDMP2
 	case NDMP2VER:
