@@ -118,7 +118,7 @@ Description: Backup Archiving Recovery Open Sourced - director catalog common fi
 Package:        bareos-database-postgresql
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-database-common (= ${binary:Version}), lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-database-common (= ${binary:Version}), lsb-base (>= 3.2-13), postgresql-client, ${shlibs:Depends}, ${misc:Depends}
 Suggests:       postgresql
 Description: Backup Archiving Recovery Open Sourced - director catalog for PostgreSQL
  Bareos is a set of programs to manage backup, recovery and verification of
