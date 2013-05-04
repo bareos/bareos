@@ -108,6 +108,9 @@ void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd);
 /* getmsg.c */
 bool response(JCR *jcr, BSOCK *fd, char *resp, const char *cmd, e_prtmsg prtmsg);
 
+/* inc_conf.c */
+void find_used_compressalgos(POOL_MEM* compressalgos, JCR* jcr);
+
 /* job.c */
 bool allow_duplicate_job(JCR *jcr);
 void set_jcr_defaults(JCR *jcr, JOBRES *job);

@@ -284,6 +284,53 @@ static struct s_fs_opt FS_options[] = {
 };
 
 /*
+ * determine used compression algorithms
+ */
+void find_used_compressalgos(POOL_MEM *compressalgos, JCR *jcr)
+{
+   INCEXE *inc;
+   FOPTS *fopts;
+   FILESETRES *fs;
+   struct s_fs_opt *fs_opt;
+
+   if (!jcr->res.job || !jcr->res.job->fileset) {
+      return;
+  }
+
+   fs = jcr->res.job->fileset;
+   for (int i = 0; i < fs->num_includes; i++) { /* Parse all Include {} */
+      inc = fs->include_items[i];
+
+      for (int j = 0; j < inc->num_opts; j++) { /* Parse all Options {} */
+         fopts = inc->opts_list[j];
+
+         for (char *k = fopts->opts; *k; k++) { /* Try to find one request */
+           switch (*k) {
+            case 'Z':           /* Compression */
+               for (fs_opt = FS_options; fs_opt->name; fs_opt++) {
+                  if (fs_opt->keyword != INC_KW_COMPRESSION) {
+                    continue;
+                  }
+
+                  if (bstrncmp(k, fs_opt->option, strlen(fs_opt->option))) {
+                     if (strlen(compressalgos->c_str()) > 0) {
+                        compressalgos->strcat(",");
+                     }
+                     compressalgos->strcat(fs_opt->name);
+                     k += strlen(fs_opt->option) - 1;
+                     continue;
+                  }
+               }
+               break;
+            default:
+               break;
+            }
+         }
+      }
+   }
+}
+
+/*
  * Scan for right hand side of Include options (keyword=option) is
  *    converted into one or two characters. Verifyopts=xxxx is Vxxxx:
  *    Whatever is found is concatenated to the opts string.
