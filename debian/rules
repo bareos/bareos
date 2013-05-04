@@ -16,6 +16,11 @@ export DH_VERBOSE=1
 # This has to be exported to make some magic below work.
 export DH_OPTIONS=-v
 
+#export DEB_BUILD_OPTIONS=noopt
+#export DEB_CFLAGS_MAINT_APPEND=-O0
+export CFLAGS=-g -O0
+export CXXFLAGS=-g -O0
+
 export daemon_user=bareos
 export daemon_group=bareos
 export director_daemon_user=${daemon_user}
@@ -79,6 +84,8 @@ override_dh_fixperms:
 		--exclude etc/bareos/ \
 		--exclude var/lib/bareos/
 
+override_dh_strip:
+	dh_strip --dbg-package=bareos-dbg
 
 %:
 	dh $@
