@@ -28632,7 +28632,7 @@ main ()
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
-	      ba_cv_va_copy=yes,
+	      ba_cv_va_copy=yes
 
 else
 

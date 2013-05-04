@@ -2347,7 +2347,7 @@ AC_CACHE_CHECK(for va_copy, ba_cv_va_copy,
 	  ], [
 	      call_use_va_copy(1,2,3)
 	  ], [
-	      ba_cv_va_copy=yes,
+	      ba_cv_va_copy=yes
 	  ], [
 	      ba_cv_va_copy=no
 	  ]
