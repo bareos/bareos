@@ -1106,6 +1106,9 @@ AC_ARG_WITH(gnutls,
     ]
 )
 
+dnl FIXME: Explictly set GNUTLS to no until we get things working.
+with_gnutls_directory=no
+
 dnl See if crypto or tls support is wanted
 if test "x$support_crypto" != "xno" -o "x$support_tls" != "xno"; then
    dnl When openssl was alread found and enabled use that.
