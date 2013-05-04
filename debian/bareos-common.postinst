@@ -23,6 +23,7 @@ daemon_group=bareos
 permissions()
 {
   chown ${daemon_user}:${daemon_group} /var/lib/bareos/
+  chown ${daemon_user}:${daemon_group} /var/log/bareos/
 }
 
 case "$1" in

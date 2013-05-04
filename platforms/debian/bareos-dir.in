@@ -48,25 +48,31 @@ if [ "x${BUSER}" != "x" ]; then
    fi
 fi
 
+# define LSB functions.
+. /lib/lsb/init-functions
+
 case "$1" in
-   start)
-      echo -n "Starting ${DESC}: "
-      start-stop-daemon --start --quiet --pidfile ${PIDFILE} ${USERGRP} --exec ${DAEMON} -- ${BOPTIONS}
-      RETVAL=$?
-      echo "${NAME}"
-      ;;
-   stop)
+    start)
+        log_daemon_msg "Starting $DESC" "$NAME"
+        start-stop-daemon --start --quiet --pidfile ${PIDFILE} ${USERGRP} --exec ${DAEMON} -- ${BOPTIONS}
+        log_end_msg $?
+        sleep 2
+        ;;
+    stop)
       echo -n "Stopping ${DESC}: "
       start-stop-daemon --oknodo --stop --quiet ${USERGRP} --exec ${DAEMON} -- ${BOPTIONS}
       RETVAL=$?
       echo "${NAME}"
       ;;
-   restart|force-reload)
+    restart|force-reload)
       $0 stop
       sleep 5
       $0 start
       ;;
-   *)
+    status)
+        status_of_proc -p ${PIDFILE} ${DAEMON} ${NAME} && exit 0 || exit $?
+        ;;
+    *)
       echo "Usage: /etc/init.d/${NAME} {start|stop|restart|force-reload}" >&2
       exit 1
       ;;

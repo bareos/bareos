@@ -29,6 +29,7 @@ storage_daemon_group=$daemon_group
 permissions()
 {
   chown ${storage_daemon_user}:${daemon_group} /etc/bareos/bareos-sd.conf
+  chown ${storage_daemon_user}:${daemon_group} /var/lib/bareos/storage/
 }
 
 case "$1" in

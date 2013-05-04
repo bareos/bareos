@@ -48,6 +48,7 @@ Vendor: 	The Bareos Team
 %define script_dir     /usr/lib/bareos/scripts
 %define working_dir    /var/lib/bareos
 %define pid_dir        /var/lib/bareos
+%define bsr_dir        /var/lib/bareos
 # TODO: use /run ?
 %define _subsysdir     /var/lock
 
@@ -426,10 +427,13 @@ export MTX=/usr/sbin/mtx
   --mandir=%{_mandir} \
   --docdir=%{_docdir}/%{name} \
   --htmldir=%{_docdir}/%{name}/html \
+  --with-archivedir=/var/lib/bareos/storage \
   --with-scriptdir=%{script_dir} \
   --with-working-dir=%{working_dir} \
   --with-plugindir=%{plugin_dir} \
   --with-pid-dir=%{pid_dir} \
+  --with-bsrdir=%{bsr_dir} \
+  --with-logdir=%{_logdir}/bareos \
   --with-subsys-dir=%{_subsysdir} \
   --enable-smartalloc \
   --disable-conio \
