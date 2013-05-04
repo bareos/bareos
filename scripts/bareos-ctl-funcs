@@ -120,7 +120,7 @@ status() {
    base=`basename $1`
 
    # First try "pidof"
-   if [ ! -z "${PIDOF}" -x "${PIDOF}" ] ; then
+   if [ ! -z "${PIDOF}" -a -x "${PIDOF}" ] ; then
       pid=`${PIDOF} $1`
       if [ "$pid" != "" ] ; then
          echo "$base (pid $pid) is running..."
