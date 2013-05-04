@@ -1,51 +1,44 @@
 /*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
    Copyright (C) 2011-2011 Bacula Systems(R) SA
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can modify it under the terms of
-   version three of the GNU Affero General Public License as published by the 
+   version three of the GNU Affero General Public License as published by the
    Free Software Foundation, which is listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   Bacula Systems(R) is a trademark of Bacula Systems SA.
-   Bacula Enterprise(TM) is a trademark of Bacula Systems SA.
-
-   The licensor of Bacula Enterprise(TM) is Bacula Systems(R) SA,
-   Rue Galilee 5, 1400 Yverdon-les-Bains, Switzerland.
 */
 
 #ifndef INI_H
 #define INI_H
 
-/* 
+/*
  * Plugin has a internal C structure that describes the configuration:
  * struct ini_items[]
  *
  * The ConfigFile object can generate a text file that describes the C
  * structure. This text format is saved as RestoreObject in the catalog.
- * 
+ *
  *   struct ini_items[]  -> register_items()  -> serialize() -> RestoreObject R1
  *
  * On the Director side, at the restore time, we can analyse this text to
  * get the C structure.
- * 
+ *
  * RestoreObject R1 -> write to disk -> unserialize() -> struct ini_items[]
  *
  * Once done, we can ask questions to the user at the restore time and fill
  * the C struct with answers. The Director can send back as a RestoreObject
  * the result of the questionnaire.
- * 
+ *
  * struct ini_items[] -> UAContext -> dump_result() -> FD as RestoreObject R2
  *
  * On the Plugin side, it can get back the C structure and use it.
@@ -66,8 +59,8 @@ typedef union {
 } item_value;
 
 /* These functions are used to convert a string to the appropriate value */
-typedef 
-bool (INI_ITEM_HANDLER)(LEX *lc, ConfigFile *inifile, 
+typedef
+bool (INI_ITEM_HANDLER)(LEX *lc, ConfigFile *inifile,
                         struct ini_items *item);
 
 /* If no items are registred at the scan time, we detect this list from
@@ -166,7 +159,7 @@ public:
    /* Dump the item table to a file (used on plugin side) */
    bool serialize(const char *fname);
 
-   /* Dump the item table format to a buffer (used on plugin side) 
+   /* Dump the item table format to a buffer (used on plugin side)
     * returns the length of the buffer, -1 if error
     */
    int serialize(POOLMEM **buf);
@@ -189,14 +182,14 @@ public:
       }
       return false;
    }
-   
+
    /* Parse a ini file with a item list previously registred (plugin side) */
    bool parse(const char *filename);
 
    /* Create a item list from a ini file (director side) */
    bool unserialize(const char *filename);
 };
-                              
+
 /*
  * Standard global parsers defined in ini.c
  * When called with lc=NULL, it converts the item value back in inifile->edit

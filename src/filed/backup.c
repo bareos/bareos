@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /**
- *  Bacula File Daemon  backup.c  send file attributes and data
- *   to the Storage daemon.
+ * Bareos File Daemon  backup.c  send file attributes and data to the Storage daemon.
  *
- *    Kern Sibbald, March MM
- *
+ * Kern Sibbald, March MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "filed.h"
 #include "ch.h"
 
@@ -199,7 +192,7 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
 /**
  * Save OSX specific resource forks and finder info.
  */
-static inline bool save_rsrc_and_finder(bs_ctx &bsctx)
+static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
 {
    int flags, status;
    int rsrc_stream;
@@ -266,7 +259,7 @@ bail_out:
  *   determined a different way!!!!!!  What happens if
  *   sha2 was available during backup but not restore?
  */
-static inline bool setup_encryption_digests(bs_ctx &bsctx)
+static inline bool setup_encryption_digests(b_save_ctx &bsctx)
 {
    bool retval = false;
    // TODO landonf: Allow the user to specify the digest algorithm
@@ -334,7 +327,7 @@ bail_out:
 /*
  * Terminate the signing digest and send it to the Storage daemon
  */
-static inline bool terminate_signing_digest(bs_ctx &bsctx)
+static inline bool terminate_signing_digest(b_save_ctx &bsctx)
 {
    uint32_t size = 0;
    bool retval = false;
@@ -395,7 +388,7 @@ bail_out:
 /*
  * Terminate any digest and send it to Storage daemon
  */
-static inline bool terminate_digest(bs_ctx &bsctx)
+static inline bool terminate_digest(b_save_ctx &bsctx)
 {
    uint32_t size;
    bool retval = false;
@@ -500,7 +493,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    bool do_plugin_set = false;
    int status, data_stream;
    int rtnstat = 0;
-   bs_ctx bsctx;
+   b_save_ctx bsctx;
    bool has_file_data = false;
    struct save_pkt sp;          /* use by option plugin */
    BSOCK *sd = jcr->store_bsock;
@@ -626,7 +619,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    /*
     * Setup backup signing context.
     */
-   memset(&bsctx, 0, sizeof(bs_ctx));
+   memset(&bsctx, 0, sizeof(b_save_ctx));
    bsctx.digest_stream = STREAM_NONE;
    bsctx.jcr = jcr;
    bsctx.ff_pkt = ff_pkt;
@@ -668,7 +661,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
                ff_pkt->plugin, ff_pkt->fname);
          goto good_rtn;
       default:
-         Dmsg2(10, "Option plugin %s decided to let bacula handle %s\n",
+         Dmsg2(10, "Option plugin %s decided to let bareos handle %s\n",
                ff_pkt->plugin, ff_pkt->fname);
          break;
       }

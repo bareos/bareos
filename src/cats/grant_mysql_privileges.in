@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to grant privileges to the bacula database
+# shell script to grant privileges to the bareos database
 #
 db_user=${db_user:-@db_user@}
 bindir=@MYSQL_BINDIR@

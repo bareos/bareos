@@ -1,0 +1,54 @@
+#! /bin/sh
+#
+# bareos       This shell script takes care of starting and stopping
+#	       the bareos daemons.
+#
+#   This is pretty much watered down version of the RedHat script
+#   that works on Solaris as well as Linux, but it won't work everywhere.
+#
+# description: Backup Archiving REcovery Open Sourced.
+#
+
+# All these are not *really* needed but it makes it
+#  easier to "steal" this code for the development
+#  environment where they are different.
+#
+SCRIPTDIR=@scriptdir@
+#
+# Disable Glibc malloc checks, it doesn't help and it keeps from getting
+#   good dumps
+MALLOC_CHECK_=0
+export MALLOC_CHECK_
+
+case "$1" in
+   start)
+      [ -x ${SCRIPTDIR}/bareos-ctl-sd ] && ${SCRIPTDIR}/bareos-ctl-sd $1 $2
+      [ -x ${SCRIPTDIR}/bareos-ctl-fd ] && ${SCRIPTDIR}/bareos-ctl-fd $1 $2
+      [ -x ${SCRIPTDIR}/bareos-ctl-dir ] && ${SCRIPTDIR}/bareos-ctl-dir $1 $2
+      ;;
+
+   stop)
+      # Stop the FD first so that SD will fail jobs and update catalog
+      [ -x ${SCRIPTDIR}/bareos-ctl-fd ] && ${SCRIPTDIR}/bareos-ctl-fd $1 $2
+      [ -x ${SCRIPTDIR}/bareos-ctl-sd ] && ${SCRIPTDIR}/bareos-ctl-sd $1 $2
+      [ -x ${SCRIPTDIR}/bareos-ctl-dir ] && ${SCRIPTDIR}/bareos-ctl-dir $1 $2
+      ;;
+
+   restart)
+      $0 stop
+      sleep 2
+      $0 start
+      ;;
+
+   status)
+      [ -x ${SCRIPTDIR}/bareos-ctl-sd ] && ${SCRIPTDIR}/bareos-ctl-sd status
+      [ -x ${SCRIPTDIR}/bareos-ctl-fd ] && ${SCRIPTDIR}/bareos-ctl-fd status
+      [ -x ${SCRIPTDIR}/bareos-ctl-dir ] && ${SCRIPTDIR}/bareos-ctl-dir status
+      ;;
+
+   *)
+      echo "Usage: $0 {start|stop|restart|status}"
+      exit 1
+      ;;
+esac
+exit 0

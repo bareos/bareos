@@ -19,7 +19,7 @@
  *  quit
  *
  *  The output will be:
- * 
+ *
  * ========
  *  Rewound /dev/nsa0
  *  *Begin writing blocks of 64512 bytes.
@@ -47,7 +47,7 @@
  *  c++ -g -O2 -Wall -pthread tapetest.o -o tapetest
  *    Note, we simply added -pthread compared to the
  *    previous example.
- *			
+ *
  *  Procedure for testing tape
  *  ./tapetest /dev/your-tape-device
  *  rewind
@@ -75,7 +75,7 @@
  * ========
  *
  * which is incroorect because it wrote 17,926 blocks but read
- * back only 17,913 blocks, AND because the return status on 
+ * back only 17,913 blocks, AND because the return status on
  * the last block written was -1 when it should have been
  * 0 (ie. status=0 above).
  *
@@ -103,14 +103,14 @@
 
 /* Device state bits */
 #define ST_OPENED	   (1<<0)     /* set when device opened */
-#define ST_TAPE 	   (1<<1)     /* is a tape device */  
+#define ST_TAPE 	   (1<<1)     /* is a tape device */
 #define ST_FILE 	   (1<<2)     /* is a file device */
 #define ST_FIFO 	   (1<<3)     /* is a fifo device */
 #define ST_PROG 	   (1<<4)     /* is a program device */
 #define ST_LABEL	   (1<<5)     /* label found */
 #define ST_MALLOC          (1<<6)     /* dev packet malloc'ed in init_dev() */
-#define ST_APPEND	   (1<<7)     /* ready for Bacula append */
-#define ST_READ 	   (1<<8)     /* ready for Bacula read */
+#define ST_APPEND	   (1<<7)     /* ready for Bareos append */
+#define ST_READ 	   (1<<8)     /* ready for Bareos read */
 #define ST_EOT		   (1<<9)     /* at end of tape */
 #define ST_WEOT 	   (1<<10)    /* Got EOT on write */
 #define ST_EOF		   (1<<11)    /* Read EOF i.e. zero bytes */
@@ -143,7 +143,7 @@ DEVICE *dev;
 
 #define uint32_t unsigned long
 #define uint64_t unsigned long long
-	    
+
 /* Forward referenced subroutines */
 static void do_tape_cmds();
 static void helpcmd();
@@ -162,7 +162,7 @@ int get_cmd(char *prompt);
 
 /*********************************************************************
  *
- *	   Main Bacula Pool Creation Program
+ *	   Main Bareos Pool Creation Program
  *
  */
 int main(int argc, char *argv[])
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
          case 'd':                    /* set debug level */
 	    debug_level = atoi(optarg);
 	    if (debug_level <= 0) {
-	       debug_level = 1; 
+	       debug_level = 1;
 	    }
 	    break;
 
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 	    helpcmd();
 	    exit(0);
 
-      }  
+      }
    }
    argc -= optind;
    argv += optind;
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
       exit(1);
    }
 
-   fd = open(argv[0], O_RDWR);	 
+   fd = open(argv[0], O_RDWR);
    if (fd < 0) {
       printf("Error opening %s ERR=%s\n", argv[0], strerror(errno));
       exit(1);
@@ -249,9 +249,9 @@ int rewind_dev(DEVICE *dev)
  *   Returns: 0 on success
  *	      non-zero on failure
  */
-int 
+int
 weof_dev(DEVICE *dev, int num)
-{ 
+{
    struct mtop mt_com;
    int status;
 
@@ -289,7 +289,7 @@ void quitcmd()
 
 
 /*
- * Rewind the tape.   
+ * Rewind the tape.
  */
 static void rewindcmd()
 {
@@ -301,7 +301,7 @@ static void rewindcmd()
 }
 
 /*
- * Write and end of file on the tape   
+ * Write and end of file on the tape
  */
 static void weofcmd()
 {
@@ -316,7 +316,7 @@ static void weofcmd()
 }
 
 
-/* 
+/*
  * Read a record from the tape
  */
 static void rrcmd()
@@ -342,7 +342,7 @@ static void rrcmd()
    free(buf);
 }
 
-/* 
+/*
  * Write a record to the tape
  */
 static void wrcmd()
@@ -388,7 +388,7 @@ static void scancmd()
    bytes = 0;
    if (dev->state & ST_EOT) {
       printf("End of tape\n");
-      return; 
+      return;
    }
    tot_files = dev->file;
    printf("Starting scan at file %u\n", dev->file);
@@ -397,13 +397,13 @@ static void scancmd()
 	 dev->dev_errno = errno;
          printf("Bad status from read %d. ERR=%s\n", status, strerror(dev->dev_errno));
 	 if (blocks > 0)
-            printf("%d block%s of %d bytes in file %d\n",        
+            printf("%d block%s of %d bytes in file %d\n",
                     blocks, blocks>1?"s":"", block_size, dev->file);
 	 return;
       }
       if (status != block_size) {
 	 if (blocks > 0) {
-            printf("%d block%s of %d bytes in file %d\n", 
+            printf("%d block%s of %d bytes in file %d\n",
                  blocks, blocks>1?"s":"", block_size, dev->file);
 	    blocks = 0;
 	 }
@@ -430,8 +430,8 @@ static void scancmd()
       }
    }
    tot_files = dev->file - tot_files;
-   printf("Total files=%d, blocks=%d, bytes = %d\n", tot_files, tot_blocks, 
-      (int)bytes);			   
+   printf("Total files=%d, blocks=%d, bytes = %d\n", tot_files, tot_blocks,
+      (int)bytes);
 }
 
 
@@ -511,17 +511,17 @@ fstrsch(char *a, char *b)   /* folded case search */
    }
    return 1;
 }
-   
 
-struct cmdstruct { char *key; void (*func)(); char *help; }; 
+
+struct cmdstruct { char *key; void (*func)(); char *help; };
 static struct cmdstruct commands[] = {
  {"help",       helpcmd,      "print this command"},
- {"quit",       quitcmd,      "quit tapetest"},   
+ {"quit",       quitcmd,      "quit tapetest"},
  {"rawfill",    rawfill_cmd,  "use write() to fill tape"},
  {"rewind",     rewindcmd,    "rewind the tape"},
  {"rr",         rrcmd,        "raw read the tape"},
  {"wr",         wrcmd,        "raw write one block to the tape"},
- {"scan",       scancmd,      "read() tape block by block to EOT and report"}, 
+ {"scan",       scancmd,      "read() tape block by block to EOT and report"},
  {"weof",       weofcmd,      "write an EOF on the tape"},
 	     };
 #define comsize (sizeof(commands)/sizeof(struct cmdstruct))
@@ -564,19 +564,19 @@ static void usage()
    fprintf(stderr,
 "Usage: tapetest [-d debug_level] [device_name]\n"
 "       -dnn        set debug level to nn\n"
-"       -?          print this message.\n"  
+"       -?          print this message.\n"
 "\n");
 
 }
 
 
 
-/*	
+/*
  * Get next input command from terminal.  This
  * routine is REALLY primitive, and should be enhanced
  * to have correct backspacing, etc.
  */
-int 
+int
 get_cmd(char *prompt)
 {
    int i = 0;
@@ -587,7 +587,7 @@ get_cmd(char *prompt)
     * up a bit.
     */
    cmd[i] = 0;
-   while ((ch = fgetc(stdin)) != EOF) { 
+   while ((ch = fgetc(stdin)) != EOF) {
       if (ch == '\n') {
 	 strip_trailing_junk(cmd);
 	 return 1;
@@ -595,8 +595,8 @@ get_cmd(char *prompt)
 	 if (i > 0)
 	    cmd[--i] = 0;
 	 continue;
-      } 
-	 
+      }
+
       cmd[i++] = ch;
       cmd[i] = 0;
    }

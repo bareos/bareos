@@ -1,0 +1,14 @@
+/usr/lib/bareos/scripts/bareos-config
+/usr/lib/bareos/scripts/btraceback.gdb
+/usr/lib/libbareos.so
+/usr/lib/libbareos-*.so
+/usr/lib/libbareoscfg.so
+/usr/lib/libbareoscfg-*.so
+/usr/lib/libbareosfind.so
+/usr/lib/libbareosfind-*.so
+/usr/lib/libbareosndmp.so
+/usr/lib/libbareosndmp-*.so
+/usr/sbin/btraceback
+/usr/share/man/man8/btraceback.8.gz
+/var/lib/bareos/
+#/var/lib/bareos/log

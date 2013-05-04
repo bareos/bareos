@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Authenticate Director who is attempting to connect.
  *
- *   Kern Sibbald, October 2000
- *
+ * Kern Sibbald, October 2000
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "filed.h"
 
 const int dbglvl = 50;
@@ -97,7 +91,7 @@ static bool authenticate(int rcode, BSOCK *bs, JCR* jcr)
    if (!director) {
       char addr[64];
       char *who = bnet_get_peer(bs, addr, sizeof(addr)) ? bs->who() : addr;
-      Jmsg2(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"), 
+      Jmsg2(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"),
             dirname, who);
       goto auth_fatal;
    }
@@ -123,7 +117,7 @@ static bool authenticate(int rcode, BSOCK *bs, JCR* jcr)
 
    tid = start_bsock_timer(bs, AUTH_TIMEOUT);
    /* Challenge the director */
-   auth_success = cram_md5_challenge(bs, director->password, tls_local_need, compatible);  
+   auth_success = cram_md5_challenge(bs, director->password, tls_local_need, compatible);
    if (job_canceled(jcr)) {
       auth_success = false;
       goto auth_fatal;                   /* quick exit */
@@ -267,7 +261,7 @@ int authenticate_storagedaemon(JCR *jcr)
 
    /* Verify that the remote host is willing to meet our TLS requirements */
    if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not" 
+      Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not"
            " advertize required TLS support.\n"));
       Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
       auth_success = false;

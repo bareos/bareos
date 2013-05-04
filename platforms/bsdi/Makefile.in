@@ -1,16 +1,14 @@
-# 
+#
 # This file is used as the template to create the
 # Makefile for the Solaris specific installation.
 #
 #  15 November 2001 -- Kern Sibbald
 #
-#  for Bacula release @VERSION@ (@DATE@) -- @DISTNAME@
+#  for Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
+@MCOMMON@
 
 VPATH = @srcdir@
-INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@
-SED = /usr/bin/sed
 
 nothing:
 
@@ -18,123 +16,67 @@ install: install-autostart
 
 install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
 
-	
 install-autostart-fd:
 	@echo "FreeBSD platform installation"
-	$(INSTALL_PROGRAM) -m 744 bacula-fd /etc/rc.bacula-fd
+	$(INSTALL_PROGRAM) bareos-fd /etc/rc.bareos-fd
 	@-today="`date +%Y%m%d%H%M`"; \
-	grep -q /etc/rc.bacula-fd /etc/rc.local; \
+	grep -q /etc/rc.bareos-fd /etc/rc.local; \
 	if [ $$? -eq 0 ]; then \
 	    echo "/etc/rc.local already patched"; \
 	else \
-	    rm -f /etc/rc.local.$$today; \
+	    $(RMF) /etc/rc.local.$$today; \
 	    cp -p /etc/rc.local /etc/rc.local.$$today; \
-	    ( echo "Start the Bacula File daemon. Do not remove the 'TAG_BACULA_FD' text"; \
-	      echo "if [ -x /etc/rc.bacula-fd ]; then	  # TAG_BACULA_FD"; \
-	      echo "	    /etc/rc.bacula-fd start	  # TAG_BACULA_FD"; \
-	      echo "fi					  # TAG_BACULA_FD"; \
+	    ( echo "Start the Bareos File daemon. Do not remove the 'TAG_BAREOS_FD' text"; \
+	      echo "if [ -x /etc/rc.bareos-fd ]; then	  # TAG_BAREOS_FD"; \
+	      echo "	    /etc/rc.bareos-fd start	  # TAG_BAREOS_FD"; \
+	      echo "fi					  # TAG_BAREOS_FD"; \
 	    ) >> /etc/rc.local; \
 	    echo ""; \
 	fi
 
-
 install-autostart-sd:
 	@echo "FreeBSD platform installation"
-	$(INSTALL_PROGRAM) -m 744 bacula-sd /etc/rc.bacula-sd
+	$(INSTALL_PROGRAM) bareos-sd /etc/rc.bareos-sd
 	@-today="`date +%Y%m%d%H%M`"; \
-	grep -q /etc/rc.bacula-sd /etc/rc.local; \
+	grep -q /etc/rc.bareos-sd /etc/rc.local; \
 	if [ $$? -eq 0 ]; then \
 	    echo "/etc/rc.local already patched"; \
 	else \
-	    rm -f /etc/rc.local.$$today; \
+	    $(RMF) /etc/rc.local.$$today; \
 	    cp -p /etc/rc.local /etc/rc.local.$$today; \
-	    ( echo "Start the Bacula Storage daemon. Do not remove the 'TAG_BACULA_SD' text"; \
-	      echo "if [ -x /etc/rc.bacula-fd ]; then	  # TAG_BACULA_SD"; \
-	      echo "	    /etc/rc.bacula-fd start	  # TAG_BACULA_SD"; \
-	      echo "fi					  # TAG_BACULA_SD"; \
+	    ( echo "Start the Bareos Storage daemon. Do not remove the 'TAG_BAREOS_SD' text"; \
+	      echo "if [ -x /etc/rc.bareos-fd ]; then	  # TAG_BAREOS_SD"; \
+	      echo "	    /etc/rc.bareos-fd start	  # TAG_BAREOS_SD"; \
+	      echo "fi					  # TAG_BAREOS_SD"; \
 	    ) >> /etc/rc.local; \
 	    echo ""; \
 	fi
 
 install-autostart-dir:
 	@echo "FreeBSD platform installation"
-	$(INSTALL_PROGRAM) -m 744 bacula-dir /etc/rc.bacula-dir
+	$(INSTALL_PROGRAM) bareos-dir /etc/rc.bareos-dir
 	@-today="`date +%Y%m%d%H%M`"; \
-	grep -q /etc/rc.bacula-dir /etc/rc.local; \
+	grep -q /etc/rc.bareos-dir /etc/rc.local; \
 	if [ $$? -eq 0 ]; then \
 	    echo "/etc/rc.local already patched"; \
 	else \
-	    rm -f /etc/rc.local.$$today; \
+	    $(RMF) /etc/rc.local.$$today; \
 	    cp -p /etc/rc.local /etc/rc.local.$$today; \
-	    ( echo "Start the Bacula Director. Do not remove the 'TAG_BACULA_DIR' text"; \
-	      echo "if [ -x /etc/rc.bacula-dir ]; then	  # TAG_BACULA_DIR"; \
-	      echo "	    /etc/rc.bacula-dir start	  # TAG_BACULA_DIR"; \
-	      echo "fi					  # TAG_BACULA_DIR"; \
+	    ( echo "Start the Bareos Director. Do not remove the 'TAG_BAREOS_DIR' text"; \
+	      echo "if [ -x /etc/rc.bareos-dir ]; then	  # TAG_BAREOS_DIR"; \
+	      echo "	    /etc/rc.bareos-dir start	  # TAG_BAREOS_DIR"; \
+	      echo "fi					  # TAG_BAREOS_DIR"; \
 	    ) >> /etc/rc.local; \
 	    echo ""; \
 	fi
 
-
-uninstall: uninstall-autostart
-
-uninstall-autostart: uninstall-autostart-fd uninstall-autostart-sd uninstall-autostart-dir
-
-uninstall-autostart-fd:
-	@echo "FreeBSD platform uninstall"
-	rm -f /etc/rc.bacula-fd
-	@-today="`date +%Y%m%d%H%M`"; \
-	for f in /etc/rc.local ; do \
-	    grep -q '# TAG_BACULA_FD' $$f; \
-	    if [ $$? -eq 0 ]; then \
-		    echo "removing Bacula lines from $$f"; \
-		    rm -f $$f.$$today; \
-		    cp -p $$f $$f.$$today; \
-		    $(SED) -e '/TAG_BACULA_FD/d;' \
-			    < $$f.$$today > $$f; \
-		    chmod 644 $$f; \
-	    fi; \
-	done
-
-
-uninstall-autostart-sd:
-	@echo "FreeBSD platform uninstall"
-	rm -f /etc/rc.bacula-sd
-	@-today="`date +%Y%m%d%H%M`"; \
-	for f in /etc/rc.local ; do \
-	    grep -q '# TAG_BACULA_SD' $$f; \
-	    if [ $$? -eq 0 ]; then \
-		    echo "removing Bacula lines from $$f"; \
-		    rm -f $$f.$$today; \
-		    cp -p $$f $$f.$$today; \
-		    $(SED) -e '/TAG_BACULA_SD/d;' \
-			    < $$f.$$today > $$f; \
-		    chmod 644 $$f; \
-	    fi; \
-	done
-
-uninstall-autostart-dir:
-	@echo "FreeBSD platform uninstall"
-	rm -f /etc/rc.bacula-dir
-	@-today="`date +%Y%m%d%H%M`"; \
-	for f in /etc/rc.local ; do \
-	    grep -q '# TAG_BACULA_DIR' $$f; \
-	    if [ $$? -eq 0 ]; then \
-		    echo "removing Bacula lines from $$f"; \
-		    rm -f $$f.$$today; \
-		    cp -p $$f $$f.$$today; \
-		    $(SED) -e '/TAG_BACULA_DIR/d;' \
-			    < $$f.$$today > $$f; \
-		    chmod 644 $$f; \
-	    fi; \
-	done
-
 clean:
-	@rm -f 1 2 3
+	@$(RMF) 1 2 3
 
 distclean: clean
-	@rm -f bacula-sd bacula-fd bacula-dir
-	@rm -f Makefile bacula-*.spec
+	@$(RMF) bareos-sd bareos-fd bareos-dir
+	@$(RMF) Makefile bareos-*.spec
 
 devclean: clean
-	@rm -f bacula-sd bacula-fd bacula-dir
-	@rm -f Makefile bacula-*.spec
+	@$(RMF) bareos-sd bareos-fd bareos-dir
+	@$(RMF) Makefile bareos-*.spec

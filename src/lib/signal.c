@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,34 +11,28 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Signal handlers for Bacula daemons
+ * Signal handlers for BAREOS daemons
  *
- *   Kern Sibbald, April 2000
+ * Kern Sibbald, April 2000
  *
  * Note, we probably should do a core dump for the serious
  * signals such as SIGBUS, SIGPFE, ...
  * Also, for SIGHUP and SIGUSR1, we should re-read the
  * configuration file.  However, since this is a "general"
  * routine, we leave it to the individual daemons to
- * tweek their signals after calling this routine.
- *
+ * tweak their signals after calling this routine.
  */
 
 #ifndef HAVE_WIN32
-#include "bacula.h"
+#include "bareos.h"
 
 #ifndef _NSIG
 #define BA_NSIG 100
@@ -78,25 +70,25 @@ extern void dbg_print_plugin(FILE *fp);
 extern void dbg_print_lock(FILE *fp);
 
 /*
- * !!! WARNING !!! 
+ * !!! WARNING !!!
  *
  * This function should be used ONLY after a violent signal. We walk through the
- * JCR chain without locking, Bacula should not be running.
+ * JCR chain without locking, BAREOS should not be running.
  */
-static void dbg_print_bacula()
+static void dbg_print_bareos()
 {
    char buf[512];
 
-   snprintf(buf, sizeof(buf), "%s/%s.%d.bactrace", 
+   snprintf(buf, sizeof(buf), "%s/%s.%d.bactrace",
             working_directory, my_name, (int)getpid());
    FILE *fp = fopen(buf, "a+") ;
    if (!fp) {
       fp = stderr;
    }
-   
+
    fprintf(stderr, "Dumping: %s\n", buf);
 
-   /* Print also B_DB and RWLOCK structure 
+   /* Print also B_DB and RWLOCK structure
     * Can add more info about JCR with dbg_jcr_add_hook()
     */
    dbg_print_lock(fp);
@@ -147,11 +139,11 @@ extern "C" void signal_handler(int sig)
    already_dead++;
    /* Don't use Emsg here as it may lock and thus block us */
    if (sig == SIGTERM) {
-       syslog(LOG_DAEMON|LOG_ERR, "Shutting down Bacula service: %s ...\n", my_name);
+       syslog(LOG_DAEMON|LOG_ERR, "Shutting down BAREOS service: %s ...\n", my_name);
    } else {
-      fprintf(stderr, _("Bacula interrupted by signal %d: %s\n"), sig, get_signal_name(sig));
-      syslog(LOG_DAEMON|LOG_ERR, 
-         _("Bacula interrupted by signal %d: %s\n"), sig, get_signal_name(sig));
+      fprintf(stderr, _("BAREOS interrupted by signal %d: %s\n"), sig, get_signal_name(sig));
+      syslog(LOG_DAEMON|LOG_ERR,
+         _("BAREOS interrupted by signal %d: %s\n"), sig, get_signal_name(sig));
    }
 
 #ifdef TRACEBACK
@@ -250,8 +242,8 @@ extern "C" void signal_handler(int sig)
 #ifdef direct_print
       if (prt_kaboom) {
          FILE *fd;
-         snprintf(buf, sizeof(buf), "%s/bacula.%s.traceback", working_directory, pid_buf); 
-         fd = fopen(buf, "r"); 
+         snprintf(buf, sizeof(buf), "%s/bareos.%s.traceback", working_directory, pid_buf);
+         fd = fopen(buf, "r");
          if (fd != NULL) {
             printf("\n\n ==== Traceback output ====\n\n");
             while (fgets(buf, (int)sizeof(buf), fd) != NULL) {
@@ -263,7 +255,7 @@ extern "C" void signal_handler(int sig)
       }
 #else
       if (prt_kaboom) {
-         snprintf(buf, sizeof(buf), "/bin/cat %s/bacula.%s.traceback", working_directory, pid_buf);
+         snprintf(buf, sizeof(buf), "/bin/cat %s/bareos.%s.traceback", working_directory, pid_buf);
          fprintf(stderr, "\n\n ==== Traceback output ====\n\n");
          system(buf);
          fprintf(stderr, " ==== End traceback output ====\n\n");
@@ -403,7 +395,7 @@ void init_signals(void terminate(int sig))
    sigaction(SIGEMT,    &sighandle, NULL);
 #endif
 #ifdef SIGIOT
-   sigaction(SIGIOT,    &sighandle, NULL);                     
+   sigaction(SIGIOT,    &sighandle, NULL);
 #endif
    sigaction(SIGBUS,    &sighandle, NULL);
    sigaction(SIGFPE,    &sighandle, NULL);

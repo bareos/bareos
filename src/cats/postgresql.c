@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,29 +13,24 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Bacula Catalog Database routines specific to PostgreSQL
- *   These are PostgreSQL specific routines
+ * BAREOS Catalog Database routines specific to PostgreSQL
+ * These are PostgreSQL specific routines
  *
- *    Dan Langille, December 2003
- *    based upon work done by Kern Sibbald, March 2000
+ * Dan Langille, December 2003
+ * based upon work done by Kern Sibbald, March 2000
  *
  * Major rewrite by Marco van Wieringen, January 2010 for catalog refactoring.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 #ifdef HAVE_POSTGRESQL
 
@@ -600,7 +595,7 @@ bail_out:
 }
 
 /*
- * Note, if this routine returns false (failure), Bacula expects
+ * Note, if this routine returns false (failure), BAREOS expects
  * that no result has been stored.
  * This is where QUERY_DB comes with Postgresql.
  *
@@ -1059,12 +1054,15 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
       Dmsg1(500, "failure %s\n", errmsg);
    }
 
-   /* Check command status and return to normal libpq state */
+   /*
+    * Check command status and return to normal libpq state
+    */
    pg_result = PQgetResult(m_db_handle);
    if (PQresultStatus(pg_result) != PGRES_COMMAND_OK) {
       Mmsg1(&errmsg, _("error ending batch mode: %s"), PQerrorMessage(m_db_handle));
       m_status = 0;
    }
+
    PQclear(pg_result);
 
    Dmsg0(500, "sql_batch_end finishing\n");

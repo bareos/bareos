@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,42 +13,35 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Bacula hash table routines
+ * BAREOS hash table routines
  *
- *  htable is a hash table of items (pointers). This code is
- *    adapted and enhanced from code I wrote in 1982 for a
- *    relocatable linker.  At that time, the hash table size
- *    was fixed and a primary number, which essentially provides
- *    the randomness. In this program, the hash table can grow when
- *    it gets too full, so the table size here is a binary number. The
- *    hashing is provided using an idea from Tcl where the initial
- *    hash code is "randomized" using a simple calculation from
- *    a random number generator that multiplies by a big number
- *    (I multiply by a prime number, while Tcl did not)
- *    then shifts the result down and does the binary division
- *    by masking.  Increasing the size of the hash table is simple.
- *    Just create a new larger table, walk the old table and
- *    re-hash insert each entry into the new table.
+ * htable is a hash table of items (pointers). This code is
+ * adapted and enhanced from code I wrote in 1982 for a
+ * relocatable linker.  At that time, the hash table size
+ * was fixed and a primary number, which essentially provides
+ * the randomness. In this program, the hash table can grow when
+ * it gets too full, so the table size here is a binary number. The
+ * hashing is provided using an idea from Tcl where the initial
+ * hash code is "randomized" using a simple calculation from
+ * a random number generator that multiplies by a big number
+ * (I multiply by a prime number, while Tcl did not)
+ * then shifts the result down and does the binary division
+ * by masking.  Increasing the size of the hash table is simple.
+ * Just create a new larger table, walk the old table and
+ * re-hash insert each entry into the new table.
  *
- *
- *   Kern Sibbald, July MMIII
- *
+ * Kern Sibbald, July MMIII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 #define B_PAGE_SIZE 4096
 #define MIN_PAGES 32
@@ -93,7 +86,7 @@ void htable::hash_big_free()
 }
 
 /*
- * Normal hash malloc routine that gets a 
+ * Normal hash malloc routine that gets a
  *  "small" buffer from the big buffer
  */
 char *htable::hash_malloc(int size)
@@ -205,7 +198,7 @@ uint32_t htable::size()
 
 /*
  * Take each hash link and walk down the chain of items
- *  that hash there counting them (i.e. the hits), 
+ *  that hash there counting them (i.e. the hits),
  *  then report that number.
  * Obiously, the more hits in a chain, the more time
  *  it takes to reference them. Empty chains are not so

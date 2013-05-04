@@ -1,4 +1,4 @@
-Embedding full NDMP support in Bacula.
+Embedding full NDMP support in BAREOS.
 
 No filed plugin but a proper implementation with support in
 the director to act as a NDMP DMA (Data Management Application)
@@ -25,7 +25,7 @@ storage daemon for handling NDMP backups.
 There is also some code added for registering authentication
 callbacks in the calling code. This way we can perform clear
 text and md5 based authentication against the internal config
-data we keep in Bacula native resources.
+data we keep in BAREOS native resources.
 
 The core fileindex handling code is rewritten to use callback
 functions for doing the real work. This way we can hook in
@@ -34,7 +34,7 @@ happens after a backup and before a restore to fill the
 files which have been backuped or restored.
 
 Some missing initialization, commission and decommission is
-added although its empty its better to have a consistent
+added although it is empty it is better to have a consistent
 coding path/style for everything. Added extra destroy method
 as for some agents a decommission means make it ready for a next
 run and we want something that does a tear down and cleanup
@@ -76,7 +76,7 @@ of nodes of each list. There is a enumerate function which
 returns a memory chunk with all entries concatenated which
 is used for the rpc calls. We keep track of this enumerate
 buffer in the list descriptor and when the list is torn down
-it is freed. (We cannot free it earlier as its needed
+it is freed. (We cannot free it earlier as it is needed
 as buffer for the returning rpc call.) This lingering of
 a buffer should be no problem as it should be moderate in
 size now and not the whopping 1024 or 10240 entries anymore.
@@ -113,15 +113,15 @@ based poller.
 
 The ndmjob program code is also included and you can build
 the ndmjob binary using the new shared library. Currently
-its mostly for testing the new code in the shared library.
+it is mostly for testing the new code in the shared library.
 
 The ndmjob program code is rewritten to also use linked list
 whereever possible without the need to completely rewrite the
 code.
 
 The NDMJOB header files are made C++ aware so we can compile
-the shared lib a pure C-code (which its essentially also is)
-and use it from Bacula.
+the shared lib a pure C-code (which it essentially also is)
+and use it from BAREOS.
 
 The config engine of the director and storage daemon have been
 made aware of the NDMP protocol. Currently there is support for
@@ -129,28 +129,28 @@ creating NDMP protocol based Backup and Restore Jobs. The storage
 resource is extended with a protocol and authentication type field
 which can be used by the NDMP DMA coded in ndmp_dma.c. A Client
 also has those two fields. When a storage daemon used in the NDMP
-backup/restore is in real life an Bacula storage daemon an extra
+backup/restore is in real life an BAREOS storage daemon an extra
 field named paired storage is part of the storage resource and is
 used by the DMA to contact the storage daemon via the native protocol
 to be able to simulate a NDMP save or restore via the normal
-Bacula infrastructure. Via the native protocol we reserve
+BAREOS infrastructure. Via the native protocol we reserve
 things like drives etc so the virtual NDMP tape client can
 save its data, the native link is also used for things like
 getting the next volume to load etc.
 
 The job start code for backup and restore is modified to check
 for the job protocol and dispatch to the native routines when
-its a native backup or to the NDMP routines when its any NDMP job.
+it is a native backup or to the NDMP routines when it is any NDMP job.
 
 The NDMP tape agent lives in ndmp_tape.c in the storage
 daemon it creates an extra listening thread which handles NDMP
-connections. Its based on the Bacula bnet_server_thread code but
+connections. Its based on the BAREOS bnet_server_thread code but
 put somewhat on a diet as for NDMP we don't need all the bells
 and whistles from the bsock class so we implemented a light weight
 ndmp connection structure. This structure is passed as handle to
 the connection handler and could be seen as local hook data and
 can be extended along the way to keep some state information on
-the NDMP session related to internal Bacula resources.
+the NDMP session related to internal BAREOS resources.
 
 A ndmp backup configuration looks somethings like this:
 
@@ -165,9 +165,9 @@ JobDefs {
   Schedule = "WeeklyCycle"
   Storage = NDMPFile
   Messages = Standard
-  Pool = File
+  Pool = NDMPFile
   Priority = 10
-  Write Bootstrap = "/var/opt/bacula/run/bacula/%c.bsr"
+  Write Bootstrap = "/var/opt/bareos/run/bareos/%c.bsr"
 }
 
 JobDefs {
@@ -254,9 +254,9 @@ Client {
 
 Storage {
   Name = File
-  Address = ...                   # N.B. Use a fully qualified name here
+  Address = ...                       # N.B. Use a fully qualified name here
   SDPort = 9103
-  Password = "8IhqS7vdoFghabBo549CReIFUYn6tkum0aofxddsh7v6"
+  Password = ...
   Device = FileStorage
   Media Type = File
 }
@@ -264,7 +264,7 @@ Storage {
 # Same storage daemon but via NDMP protocol.
 Storage {
   Name = NDMPFile
-  Address = ...                   # N.B. Use a fully qualified name here
+  Address = ...                       # N.B. Use a fully qualified name here
   Port = 10000
   Protocol = NDMPv4
   Auth Type = Clear
@@ -273,4 +273,27 @@ Storage {
   Device = FileStorage
   Media Type = File
   PairedStorage = File
+}
+
+Pool {
+  Name = File
+  Pool Type = Backup
+  Recycle = yes
+  AutoPrune = yes
+  Storage = File
+  Volume Retention = 365 days         # one year
+  Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
+  Maximum Volumes = 100               # Limit number of Volumes in Pool
+}
+
+# Seperate Pool for NDMP data so upgrading of Jobs works and selects the right storage.
+Pool {
+  Name = NDMPFile
+  Pool Type = Backup
+  Recycle = yes
+  AutoPrune = yes
+  Storage = NDMPFile
+  Volume Retention = 365 days         # one year
+  Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
+  Maximum Volumes = 100               # Limit number of Volumes in Pool
 }

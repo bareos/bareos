@@ -254,8 +254,8 @@ Veuillez vous reconnecter !</translation>
     </message>
     <message>
         <location filename="../console/console.ui" line="109"/>
-        <source>Reload bacula-dir.conf</source>
-        <translation>Recharger bacula-dir.conf</translation>
+        <source>Reload bareos-dir.conf</source>
+        <translation>Recharger bareos-dir.conf</translation>
     </message>
 </context>
 <context>
@@ -889,7 +889,7 @@ Il se pourrait que vous deviez ajouter &quot;catalog = all&quot; à la ressource
     </message>
     <message>
         <location filename="../job/job.ui" line="677"/>
-        <source>/var/www/bacula/spool</source>
+        <source>/var/www/bareos/spool</source>
         <translation></translation>
     </message>
     <message>
@@ -1612,13 +1612,13 @@ Cliquer OK pour continuer ?</translation>
     <name>MainForm</name>
     <message>
         <location filename="../main.ui" line="15"/>
-        <source>bat - Bacula Admin Tool</source>
+        <source>bat - Bareos Admin Tool</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../main.ui" line="25"/>
-        <source>Bacula Administration Tool</source>
-        <translation>Outil d&apos;administration de Bacula</translation>
+        <source>Bareos Administration Tool</source>
+        <translation>Outil d&apos;administration de Bareos</translation>
     </message>
     <message>
         <location filename="../main.ui" line="28"/>
@@ -1666,8 +1666,8 @@ Cliquer OK pour continuer ?</translation>
         <translation>Cliquer sur un élément de cette liste pour choisir l&apos;onglet actif du panneau</translation>
     </message>
     <message>
-        <source>Enter a bacula command</source>
-        <translation type="obsolete">Entrer une commande Bacula</translation>
+        <source>Enter a bareos command</source>
+        <translation type="obsolete">Entrer une commande Bareos</translation>
     </message>
     <message>
         <location filename="../main.ui" line="217"/>
@@ -3177,7 +3177,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../restore/runrestore.ui" line="146"/>
-        <source>Use file 
+        <source>Use file
 relocation:</source>
         <translation>Utiliser</translation>
     </message>
@@ -3203,7 +3203,7 @@ relocation:</source>
     </message>
     <message>
         <location filename="../restore/runrestore.ui" line="220"/>
-        <source>Where 
+        <source>Where
 regexp:</source>
         <translation>&quot;regexp&quot; :</translation>
     </message>

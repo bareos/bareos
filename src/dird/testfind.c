@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +11,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Test program for find files
  *
- *  Kern Sibbald, MM
- *
+ * Kern Sibbald, MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird/dird.h"
 #include "findlib/find.h"
 #include "lib/mntent_cache.h"
@@ -90,15 +82,15 @@ int
 main (int argc, char *const *argv)
 {
    FF_PKT *ff;
-   const char *configfile = "bacula-dir.conf";
+   const char *configfile = "bareos-dir.conf";
    const char *fileset_name = "Windows-Full-Set";
    int ch, hard_links;
 
    OSDependentInit();
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    lmgr_init_thread();
 
    while ((ch = getopt(argc, argv, "ac:d:f:?")) != -1) {
@@ -155,7 +147,7 @@ main (int argc, char *const *argv)
       FILESETRES *var;
 
       fprintf(stderr, "Valid FileSets:\n");
-      
+
       foreach_res(var, R_FILESET) {
          fprintf(stderr, "    %s\n", var->hdr.name);
       }
@@ -164,7 +156,7 @@ main (int argc, char *const *argv)
    }
 
    ff = init_find_files();
-   
+
    copy_fileset(ff, jcr);
 
    find_files(jcr, ff, print_file, NULL);
@@ -175,7 +167,7 @@ main (int argc, char *const *argv)
       free(config);
       config = NULL;
    }
-   
+
    term_last_jobs_list();
 
    /* Clean up fileset */
@@ -250,7 +242,7 @@ main (int argc, char *const *argv)
    exit(0);
 }
 
-static int print_file(JCR *jcr, FF_PKT *ff, bool top_level) 
+static int print_file(JCR *jcr, FF_PKT *ff, bool top_level)
 {
 
    switch (ff->type) {

@@ -6,9 +6,9 @@
 BEGIN {
     charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
     for (i = 0; i < length(charset); i++) {
-    	set[i] = substr(charset, i, 1)
+	set[i] = substr(charset, i, 1)
     }
 }
     { printf "%s", set[$1 % length(charset)] }
-    
+
 END { printf "\n" }

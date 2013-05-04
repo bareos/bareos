@@ -1,10 +1,9 @@
 /*
-   Bacula(R) - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2012-2012 Planets Communications B.V.
+   Copyright (C) 2012-2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation, which is
@@ -13,17 +12,12 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula(R) is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * SCSI Encryption Storage daemon Plugin
@@ -50,24 +44,24 @@
  *
  * If you have implemented Library Managed Encryption (LME) or
  * a Key Management Appliance (KMA) there is no need to have support
- * from Bacula on loading and clearing the encryption keys as either
+ * from Bareos on loading and clearing the encryption keys as either
  * the Library knows the per volume encryption keys itself or it
  * will ask the KMA for the encryption key when it needs it. For
  * big installations you might consider using a KMA but the Application
- * Managed Encryption implemented in Bacula should also scale rather
+ * Managed Encryption implemented in Bareos should also scale rather
  * well and has low overhead as the keys are only loaded and cleared
  * when needed.
  *
  * This plugin uses the lowlevel SCSI key loading implemented in the
- * libbac shared library.
+ * libbareos shared library.
  *
  * Marco van Wieringen, March 2012
  */
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 #include "lib/status.h"
 
-#define PLUGIN_LICENSE      "Bacula AGPLv3"
+#define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
 #define PLUGIN_DATE         "March 2012"
 #define PLUGIN_VERSION      "1"
@@ -88,7 +82,7 @@ static bRC send_device_encryption_status(void *value);
 static bRC send_volume_encryption_status(void *value);
 
 /*
- * Pointers to Bacula functions
+ * Pointers to Bareos functions
  */
 static bsdFuncs *bfuncs = NULL;
 static bsdInfo *binfo = NULL;
@@ -126,17 +120,17 @@ extern "C" {
 
 /*
  * loadPlugin() and unloadPlugin() are entry points that are
- *  exported, so Bacula can directly call these two entry points
- *  they are common to all Bacula plugins.
+ *  exported, so Bareos can directly call these two entry points
+ *  they are common to all Bareos plugins.
  *
- * External entry point called by Bacula to "load the plugin
+ * External entry point called by Bareos to "load the plugin
  */
 bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
                            bsdFuncs *lbfuncs,
                            genpInfo **pinfo,
                            psdFuncs **pfuncs)
 {
-   bfuncs = lbfuncs;       /* set Bacula funct pointers */
+   bfuncs = lbfuncs;       /* set Bareos funct pointers */
    binfo  = lbinfo;
    Dmsg2(dbglvl, "scsicrypto-sd: Loaded: size=%d version=%d\n", bfuncs->size, bfuncs->version);
    *pinfo  = &pluginInfo;  /* return pointer to our info */
@@ -159,7 +153,7 @@ bRC DLL_IMP_EXP unloadPlugin()
 
 /*
  * The following entry points are accessed through the function
- * pointers we supplied to Bacula. Each plugin type (dir, fd, sd)
+ * pointers we supplied to Bareos. Each plugin type (dir, fd, sd)
  * has its own set of entry points that the plugin must define.
  *
  * Create a new instance of the plugin i.e. allocate our private storage
@@ -168,7 +162,7 @@ static bRC newPlugin(bpContext *ctx)
 {
    int JobId = 0;
 
-   bfuncs->getBaculaValue(ctx, bsdVarJobId, (void *)&JobId);
+   bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
    Dmsg1(dbglvl, "scsicrypto-sd: newPlugin JobId=%d\n", JobId);
 
    /*
@@ -198,7 +192,7 @@ static bRC newPlugin(bpContext *ctx)
     * bsdEventVolumeStatus - plugin callback for encryption status
     *                        of the volume loaded in the drive.
     */
-   bfuncs->registerBaculaEvents(ctx,
+   bfuncs->registerBareosEvents(ctx,
                                 7,
                                 bsdEventLabelRead,
                                 bsdEventLabelVerified,
@@ -218,7 +212,7 @@ static bRC freePlugin(bpContext *ctx)
 {
    int JobId = 0;
 
-   bfuncs->getBaculaValue(ctx, bsdVarJobId, (void *)&JobId);
+   bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
    Dmsg1(dbglvl, "scsicrypto-sd: freePlugin JobId=%d\n", JobId);
    return bRC_OK;
 }
@@ -242,7 +236,7 @@ static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
 }
 
 /*
- * Handle an event that was generated in Bacula
+ * Handle an event that was generated in Bareos
  */
 static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
 {

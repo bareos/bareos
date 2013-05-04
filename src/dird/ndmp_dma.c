@@ -1,10 +1,9 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,17 +12,12 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * ndmp_dma.c implements the NDMP Data Management Application (DMA)
@@ -32,7 +26,7 @@
  * Marco van Wieringen, May 2012
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 #if HAVE_NDMP
@@ -51,7 +45,7 @@ extern DIRRES *director;
 /* Forward referenced functions */
 
 /*
- * Lightweight version of Bacula tree layout for holding the NDMP
+ * Lightweight version of Bareos tree layout for holding the NDMP
  * filehandle index database. See lib/tree.[ch] for the full version.
  */
 struct ndmp_fhdb_mem {
@@ -113,15 +107,15 @@ static char OKbootstrap[] = "3000 OK bootstrap\n";
  * Anything special should go into a so called meta-tag in the fileset options.
  */
 static char *ndmp_env_keywords[] = {
-   "HIST",
-   "TYPE",
-   "DIRECT",
-   "LEVEL",
-   "UPDATE",
-   "EXCLUDE",
-   "INCLUDE",
-   "FILESYSTEM",
-   "PREFIX"
+   (char *)"HIST",
+   (char *)"TYPE",
+   (char *)"DIRECT",
+   (char *)"LEVEL",
+   (char *)"UPDATE",
+   (char *)"EXCLUDE",
+   (char *)"INCLUDE",
+   (char *)"FILESYSTEM",
+   (char *)"PREFIX"
 };
 
 /*
@@ -144,8 +138,8 @@ enum {
  * Anything special should go into a so called meta-tag in the fileset options.
  */
 static char *ndmp_env_values[] = {
-   "n",
-   "y"
+   (char *)"n",
+   (char *)"y"
 };
 
 /*
@@ -157,7 +151,7 @@ enum {
 };
 
 /*
- * Lightweight version of Bacula tree functions for holding the NDMP
+ * Lightweight version of Bareos tree functions for holding the NDMP
  * filehandle index database. See lib/tree.[ch] for the full version.
  */
 static void malloc_buf(struct ndmp_fhdb_root *root, int size)
@@ -714,7 +708,7 @@ static inline bool fill_restore_environment(JCR *jcr,
        * FIXME: For now we say we want to restore everything later on it would
        * be nice to only restore parts of the whole backup.
        */
-      add_to_namelist(job, "/", destination_path.c_str());
+      add_to_namelist(job, (char *)"/", destination_path.c_str());
    }
 
    /*
@@ -896,7 +890,6 @@ static inline bool extract_post_backup_stats(JCR *jcr,
 {
    bool retval = true;
    struct ndmmedia *me;
-   uint32_t nr_files;
 
    /*
     * See if an error was raised during the backup session.
@@ -942,7 +935,6 @@ static inline bool extract_post_restore_stats(JCR *jcr,
 {
    bool retval = true;
    struct ndmmedia *me;
-   uint32_t nr_files;
 
    /*
     * See if an error was raised during the backup session.
@@ -1001,7 +993,7 @@ static inline void set_ua_in_cookie(UAContext *ua, void *cookie)
  */
 static inline int native_to_ndmp_loglevel(CLIENTRES *client, int debuglevel, void *cookie)
 {
-   int level;
+   unsigned int level;
    struct ndmp_log_cookie *log_cookie;
 
    log_cookie = (struct ndmp_log_cookie *)cookie;
@@ -1045,9 +1037,9 @@ static inline int native_to_ndmp_loglevel(CLIENTRES *client, int debuglevel, voi
 /*
  * Interface function which glues the logging infra of the NDMP lib with the daemon.
  */
-extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int lev, char *msg)
+extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
-   int internal_level;
+   unsigned int internal_level = level * 100;
    struct ndmp_log_cookie *log_cookie;
 
    /*
@@ -1062,7 +1054,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int lev, char *ms
     * If the log level of this message is under our logging treshold we
     * log it as part of the Job.
     */
-   if (lev <= log_cookie->LogLevel) {
+   if ((internal_level / 100) <= log_cookie->LogLevel) {
       if (log_cookie->jcr) {
          /*
           * Look at the tag field to see what is logged.
@@ -1110,8 +1102,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int lev, char *ms
     * level and let the normal debug logging handle if it needs to be printed
     * or not.
     */
-   internal_level = lev * 100;
-   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, lev, msg);
+   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, (internal_level / 100), msg);
 }
 
 /*
@@ -1158,7 +1149,7 @@ bool do_ndmp_backup_init(JCR *jcr)
    }
 
    /*
-    * For now we only allow NDMP backups to bacula SD's
+    * For now we only allow NDMP backups to bareos SD's
     * so we need a paired storage definition.
     */
    if (!has_paired_storage(jcr)) {
@@ -1175,7 +1166,8 @@ bool do_ndmp_backup_init(JCR *jcr)
  */
 bool do_ndmp_backup(JCR *jcr)
 {
-   int i, cnt, status;
+   unsigned int cnt;
+   int i, status;
    char ed1[100];
    FILESETRES *fileset;
    struct ndm_job_param ndmp_job;

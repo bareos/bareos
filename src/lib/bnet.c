@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,29 +13,23 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Network Utility Routines
  *
- *  by Kern Sibbald
+ * by Kern Sibbald
  *
- * Adapted and enhanced for Bacula, originally written
+ * Adapted and enhanced for BAREOS, originally written
  * for inclusion in the Apcupsd package
- *
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "jcr.h"
 #include <netdb.h>
 
@@ -113,6 +107,9 @@ int32_t read_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes)
       }
       nleft -= nread;
       ptr += nread;
+      if (bsock->use_bwlimit()) {
+         bsock->control_bwlimit(nread);
+      }
    }
    return nbytes - nleft;          /* return >= 0 */
 }
@@ -189,6 +186,9 @@ int32_t write_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes)
       }
       nleft -= nwritten;
       ptr += nwritten;
+      if (bsock->use_bwlimit()) {
+         bsock->control_bwlimit(nwritten);
+      }
    }
    return nbytes - nleft;
 }
@@ -266,7 +266,7 @@ bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
 {
    TLS_CONNECTION *tls;
    JCR *jcr = bsock->jcr();
-   
+
    tls = new_tls_connection(ctx, bsock->m_fd);
    if (!tls) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
@@ -332,7 +332,7 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
       }
    } else {
       if (!tls_postconnect_verify_host(jcr, tls, bsock->host())) {
-         Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS host certificate verification failed. Host name \"%s\" did not match presented certificate\n"), 
+         Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS host certificate verification failed. Host name \"%s\" did not match presented certificate\n"),
                bsock->host());
          goto err;
       }
@@ -570,7 +570,11 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
       addr->set_addr4(&inaddr);
       addr_list->append(addr);
 #ifdef HAVE_IPV6
+#ifndef HAVE_WIN32
    } else if (inet_pton(AF_INET6, host, &inaddr6) == 1) {
+#else
+   } else if (p_InetPton && p_InetPton(AF_INET6, host, &inaddr6) == 1) {
+#endif
       addr = New(IPADDR(AF_INET6));
       addr->set_type(IPADDR::R_MULTIPLE);
       addr->set_addr6(&inaddr6);
@@ -606,9 +610,9 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
 
 /*
  * This is the "old" way of opening a connection.  The preferred way is
- *   now to do what this subroutine does, but inline. That allows the 
+ *   now to do what this subroutine does, but inline. That allows the
  *   connect() call to return error status, ...
- */      
+ */
 BSOCK *bnet_connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
                     utime_t heart_beat,
                     const char *name, char *host, char *service, int port,
@@ -663,9 +667,9 @@ bool bnet_fsend(BSOCK * bs, const char *fmt, ...)
    return bs->send();
 }
 
-int bnet_get_peer(BSOCK *bs, char *buf, socklen_t buflen) 
+int bnet_get_peer(BSOCK *bs, char *buf, socklen_t buflen)
 {
-   return bs->get_peer(buf, buflen);  
+   return bs->get_peer(buf, buflen);
 }
 
 /*
@@ -684,7 +688,7 @@ bool bnet_set_buffer_size(BSOCK * bs, uint32_t size, int rw)
  * Set socket non-blocking
  * Returns previous socket flag
  */
-int bnet_set_nonblocking(BSOCK *bsock) 
+int bnet_set_nonblocking(BSOCK *bsock)
 {
    return bsock->set_nonblocking();
 }
@@ -693,7 +697,7 @@ int bnet_set_nonblocking(BSOCK *bsock)
  * Set socket blocking
  * Returns previous socket flags
  */
-int bnet_set_blocking(BSOCK *bsock) 
+int bnet_set_blocking(BSOCK *bsock)
 {
    return bsock->set_blocking();
 }
@@ -701,7 +705,7 @@ int bnet_set_blocking(BSOCK *bsock)
 /*
  * Restores socket flags
  */
-void bnet_restore_blocking (BSOCK *bsock, int flags) 
+void bnet_restore_blocking (BSOCK *bsock, int flags)
 {
    bsock->restore_blocking(flags);
 }

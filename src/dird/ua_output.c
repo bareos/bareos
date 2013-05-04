@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- User Agent Output Commands
  *
- *   Bacula Director -- User Agent Output Commands
- *     I.e. messages, listing database, showing resources, ...
+ * I.e. messages, listing database, showing resources, ...
  *
- *     Kern Sibbald, September MM
+ * Kern Sibbald, September MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /* Imported subroutines */
@@ -96,14 +91,14 @@ int gui_cmd(UAContext *ua, const char *cmd)
    return 1;
 }
 
-/* 
- * Enter with Resources locked 
+/*
+ * Enter with Resources locked
  */
 static void show_disabled_jobs(UAContext *ua)
 {
    JOBRES *job;
    bool first = true;
-   foreach_res(job, R_JOB) {   
+   foreach_res(job, R_JOB) {
       if (!acl_access_ok(ua, Job_ACL, job->name())) {
          continue;
       }
@@ -347,7 +342,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                db_list_base_files_for_job(ua->jcr, ua->db, jobid, prtit, ua);
             }
          }
-      
+
       /* List FILES */
       } else if (bstrcasecmp(ua->argk[i], NT_("files"))) {
 
@@ -513,7 +508,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                }
             } else if (bstrcasecmp(ua->argk[j], NT_("limit")) && ua->argv[j]) {
                limit = atoi(ua->argv[j]);
-            } 
+            }
          }
          db_list_copies_records(ua->jcr,ua->db,limit,jobids,prtit,ua,llist);
       } else if (bstrcasecmp(ua->argk[i], NT_("limit"))
@@ -529,7 +524,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 static bool list_nextvol(UAContext *ua, int ndays)
 {
    JOBRES *job;
-   JCR *jcr;          
+   JCR *jcr;
    USTORERES store;
    RUNRES *run;
    utime_t runtime;
@@ -643,7 +638,7 @@ RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays)
          is_scheduled = bit_is_set(mday, run->mday) && bit_is_set(wday, run->wday) &&
             bit_is_set(month, run->month) && bit_is_set(wom, run->wom) &&
             bit_is_set(woy, run->woy);
- 
+
 #ifdef xxx
          Pmsg2(000, "day=%d is_scheduled=%d\n", day, is_scheduled);
          Pmsg1(000, "bit_set_mday=%d\n", bit_is_set(mday, run->mday));
@@ -805,7 +800,7 @@ void prtit(void *ctx, const char *msg)
  * Format message and send to other end.
 
  * If the UA_sock is NULL, it means that there is no user
- * agent, so we are being called from Bacula core. In
+ * agent, so we are being called from BAREOS core. In
  * that case direct the messages to the Job.
  */
 #ifdef HAVE_VA_COPY
@@ -881,7 +876,7 @@ void bmsg(UAContext *ua, const char *fmt, va_list arg_ptr)
 
 }
 #endif
- 
+
 void bsendmsg(void *ctx, const char *fmt, ...)
 {
    va_list arg_ptr;
@@ -895,7 +890,7 @@ void bsendmsg(void *ctx, const char *fmt, ...)
  * programs
  */
 /*
- * This is a message that should be displayed on the user's 
+ * This is a message that should be displayed on the user's
  *  console.
  */
 void UAContext::send_msg(const char *fmt, ...)
@@ -921,7 +916,7 @@ void UAContext::error_msg(const char *fmt, ...)
    va_end(arg_ptr);
 }
 
-/*  
+/*
  * This is a warning message, that should bring up a warning
  *  dialog box on the GUI. The command is not aborted, but something
  *  went wrong.
@@ -937,7 +932,7 @@ void UAContext::warning_msg(const char *fmt, ...)
    va_end(arg_ptr);
 }
 
-/* 
+/*
  * This is an information message that should probably be put
  *  into the status line of a GUI program.
  */

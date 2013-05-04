@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +13,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Bacula low level File I/O routines.  This routine simulates
- *    open(), read(), write(), and close(), but using native routines.
- *    I.e. on Windows, we use Windows APIs.
+ * Bareos low level File I/O routines.  This routine simulates
+ * open(), read(), write(), and close(), but using native routines.
+ * I.e. on Windows, we use Windows APIs.
  *
- *    Kern Sibbald, April MMIII
- *
+ * Kern Sibbald, April MMIII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "find.h"
 
 const int dbglvl = 200;
@@ -219,10 +213,10 @@ const char *stream_to_ascii(int stream)
    }
 }
 
-/**   
+/**
  *  Convert a 64 bit little endian to a big endian
  */
-void int64_LE2BE(int64_t* pBE, const int64_t v)
+static inline void int64_LE2BE(int64_t* pBE, const int64_t v)
 {
    /* convert little endian to big endian */
    if (htonl(1) != 1L) { /* no work if on little endian machine */
@@ -236,13 +230,13 @@ void int64_LE2BE(int64_t* pBE, const int64_t v)
          rv[i] = pv[7 - i];
       }
       memcpy(pBE, &rv, sizeof(int64_t));
-   }    
+   }
 }
 
 /**
  *  Convert a 32 bit little endian to a big endian
  */
-void int32_LE2BE(int32_t* pBE, const int32_t v)
+static inline void int32_LE2BE(int32_t* pBE, const int32_t v)
 {
    /* convert little endian to big endian */
    if (htonl(1) != 1L) { /* no work if on little endian machine */
@@ -256,16 +250,15 @@ void int32_LE2BE(int32_t* pBE, const int32_t v)
          rv[i] = pv[3 - i];
       }
       memcpy(pBE, &rv, sizeof(int32_t));
-   }    
+   }
 }
-
 
 /**
  *  Read a BackupRead block and pull out the file data
  */
 bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
 {
-   /* pByte contains the buffer 
+   /* pByte contains the buffer
       dwSize the len to be processed.  function assumes to be
       called in successive incremental order over the complete
       BackupRead stream beginning at pos 0 and ending at the end.
@@ -277,9 +270,9 @@ bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
    int64_t dwDataLen;
 
    /* Win32 Stream Header size without name of stream.
-    * = sizeof (WIN32_STREAM_ID)- sizeof(WCHAR*); 
+    * = sizeof (WIN32_STREAM_ID)- sizeof(WCHAR*);
     */
-   int32_t dwSizeHeader = 20; 
+   int32_t dwSizeHeader = 20;
 
    do {
       if (pContext->liNextHeader >= dwSize) {
@@ -303,7 +296,7 @@ bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
 
          if (pContext->liNextHeader < 0) {
             /* start of header was before this block, so we
-             * continue with the part in the current block 
+             * continue with the part in the current block
              */
             dwOffsetTarget = -pContext->liNextHeader;
             dwOffsetSource = 0;
@@ -318,7 +311,7 @@ bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
 
          if (dwHeaderPartLen <= dwSize-dwOffsetSource) {
             /* header (or rest of header) is completely available
-               in current block 
+               in current block
              */
             bHeaderIsComplete = true;
          } else {
@@ -333,7 +326,7 @@ bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
          /* recalculate position of next header */
          if (bHeaderIsComplete) {
             /* convert stream name size (32 bit little endian) to machine type */
-            int32_t dwNameSize; 
+            int32_t dwNameSize;
             int32_LE2BE (&dwNameSize, pContext->header_stream.dwStreamNameSize);
             dwDataOffset = dwNameSize+pContext->liNextHeader+dwSizeHeader;
 
@@ -358,8 +351,6 @@ bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
    return TRUE;
 }
 
-
-
 /* ===============================================================
  *
  *            W I N D O W S
@@ -372,7 +363,6 @@ bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
 void unix_name_to_win32(POOLMEM **win32_name, char *name);
 extern "C" HANDLE get_osfhandle(int fd);
 
-
 void binit(BFILE *bfd)
 {
    memset(bfd, 0, sizeof(BFILE));
@@ -380,6 +370,7 @@ void binit(BFILE *bfd)
    bfd->mode = BF_CLOSED;
    bfd->use_backup_api = have_win32_api();
    bfd->cmd_plugin = false;
+   bfd->pvContext = NULL;
 }
 
 /*
@@ -393,7 +384,6 @@ bool set_win32_backup(BFILE *bfd)
    bfd->use_backup_api = have_win32_api();
    return bfd->use_backup_api;
 }
-
 
 bool set_portable_backup(BFILE *bfd)
 {
@@ -421,7 +411,6 @@ bool have_win32_api()
 {
    return p_BackupRead && p_BackupWrite;
 }
-
 
 /*
  * Return true  if we support the stream
@@ -498,6 +487,80 @@ HANDLE bget_handle(BFILE *bfd)
    return bfd->fh;
 }
 
+/*
+ * Windows flags for the OpenEncryptedFileRaw functions.
+ */
+#ifndef CREATE_FOR_EXPORT
+#define CREATE_FOR_EXPORT 0
+#endif
+#ifndef CREATE_FOR_IMPORT
+#define CREATE_FOR_IMPORT 1
+#endif
+#ifndef CREATE_FOR_DIR
+#define CREATE_FOR_DIR 2
+#endif
+#ifndef OVERWRITE_HIDDEN
+#define OVERWRITE_HIDDEN 4
+#endif
+
+int bopen_encrypted(BFILE *bfd, const char *fname, int flags, mode_t mode, bool is_dir)
+{
+   ULONG ulFlags = 0;
+   POOLMEM *win32_fname;
+   POOLMEM *win32_fname_wchar;
+
+   if (!(p_OpenEncryptedFileRawA || p_OpenEncryptedFileRawW)) {
+      Dmsg0(50, "No p_OpenEncryptedFileRawA and no p_OpenEncryptedFileRawW!!!!!\n");
+      return 0;
+   }
+
+   /* Convert to Windows path format */
+   win32_fname = get_pool_memory(PM_FNAME);
+   win32_fname_wchar = get_pool_memory(PM_FNAME);
+
+   unix_name_to_win32(&win32_fname, (char *)fname);
+
+   if (p_OpenEncryptedFileRawW && p_MultiByteToWideChar) {
+      make_win32_path_UTF8_2_wchar(&win32_fname_wchar, fname);
+   }
+
+   /* See if we open the file for create or read-write. */
+   if ((flags & O_CREAT) || (flags & O_WRONLY)) {
+      if (is_dir) {
+         ulFlags |= CREATE_FOR_IMPORT | OVERWRITE_HIDDEN | CREATE_FOR_DIR;
+      } else {
+         ulFlags |= CREATE_FOR_IMPORT | OVERWRITE_HIDDEN;
+      }
+      bfd->mode=BF_WRITE;
+   } else {
+      ulFlags = CREATE_FOR_EXPORT;
+      bfd->mode=BF_READ;
+   }
+
+   if (p_OpenEncryptedFileRawW && p_MultiByteToWideChar) {
+      /* Unicode open. */
+      Dmsg1(100, "OpenEncryptedFileRawW=%s\n", win32_fname);
+      if (p_OpenEncryptedFileRawW((LPCWSTR)win32_fname_wchar,
+                                  ulFlags,
+                                  &(bfd->pvContext))) {
+         bfd->mode=BF_CLOSED;
+      }
+   } else {
+      /* ASCII open. */
+      Dmsg1(100, "OpenEncryptedFileRawA=%s\n", win32_fname);
+      if (p_OpenEncryptedFileRawA(win32_fname_wchar,
+                                  ulFlags,
+                                  &(bfd->pvContext))) {
+         bfd->mode=BF_CLOSED;
+      }
+   }
+
+   free_pool_memory(win32_fname_wchar);
+   free_pool_memory(win32_fname);
+
+   return bfd->mode == BF_CLOSED ? -1 : 1;
+}
+
 int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
 {
    POOLMEM *win32_fname;
@@ -508,7 +571,7 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
    /* Convert to Windows path format */
    win32_fname = get_pool_memory(PM_FNAME);
    win32_fname_wchar = get_pool_memory(PM_FNAME);
-   
+
    unix_name_to_win32(&win32_fname, (char *)fname);
 
    if (bfd->cmd_plugin && plugin_bopen) {
@@ -545,14 +608,14 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
 
    if (flags & O_CREAT) {             /* Create */
       if (bfd->use_backup_api) {
-         dwaccess = GENERIC_WRITE|FILE_ALL_ACCESS|WRITE_OWNER|WRITE_DAC|ACCESS_SYSTEM_SECURITY;
+         dwaccess = GENERIC_WRITE | FILE_ALL_ACCESS | WRITE_OWNER | WRITE_DAC | ACCESS_SYSTEM_SECURITY;
          dwflags = FILE_FLAG_BACKUP_SEMANTICS;
       } else {
          dwaccess = GENERIC_WRITE;
          dwflags = 0;
       }
 
-      if (p_CreateFileW && p_MultiByteToWideChar) {   
+      if (p_CreateFileW && p_MultiByteToWideChar) {
          // unicode open for create write
          Dmsg1(100, "Create CreateFileW=%s\n", win32_fname);
          bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
@@ -575,17 +638,16 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
       }
 
       bfd->mode = BF_WRITE;
-
    } else if (flags & O_WRONLY) {     /* Open existing for write */
       if (bfd->use_backup_api) {
-         dwaccess = GENERIC_WRITE|WRITE_OWNER|WRITE_DAC;
+         dwaccess = GENERIC_WRITE | WRITE_OWNER | WRITE_DAC;
          dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
       } else {
          dwaccess = GENERIC_WRITE;
          dwflags = 0;
       }
 
-      if (p_CreateFileW && p_MultiByteToWideChar) {   
+      if (p_CreateFileW && p_MultiByteToWideChar) {
          // unicode open for open existing write
          Dmsg1(100, "Write only CreateFileW=%s\n", win32_fname);
          bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
@@ -609,20 +671,19 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
       }
 
       bfd->mode = BF_WRITE;
-
    } else {                           /* Read */
       if (bfd->use_backup_api) {
-         dwaccess = GENERIC_READ|READ_CONTROL|ACCESS_SYSTEM_SECURITY;
+         dwaccess = GENERIC_READ | READ_CONTROL | ACCESS_SYSTEM_SECURITY;
          dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_SEQUENTIAL_SCAN |
                    FILE_FLAG_OPEN_REPARSE_POINT;
          dwshare = FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE;
       } else {
          dwaccess = GENERIC_READ;
          dwflags = 0;
-         dwshare = FILE_SHARE_READ|FILE_SHARE_WRITE;
+         dwshare = FILE_SHARE_READ | FILE_SHARE_WRITE;
       }
 
-      if (p_CreateFileW && p_MultiByteToWideChar) {   
+      if (p_CreateFileW && p_MultiByteToWideChar) {
          // unicode open for open existing read
          Dmsg1(100, "Read CreateFileW=%s\n", win32_fname);
          bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
@@ -633,7 +694,7 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
                 dwflags,                 /* Flags and attributes */
                 NULL);                   /* TemplateFile */
       } else {
-         // ascii open 
+         // ascii open
          Dmsg1(100, "Read CreateFileA=%s\n", win32_fname);
          bfd->fh = p_CreateFileA(win32_fname,
                 dwaccess,                /* Requested access */
@@ -653,13 +714,32 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
       errno = b_errno_win32;
       bfd->mode = BF_CLOSED;
    }
+
    bfd->errmsg = NULL;
    bfd->lpContext = NULL;
    bfd->win32DecompContext.bIsInData = false;
    bfd->win32DecompContext.liNextHeader = 0;
    free_pool_memory(win32_fname_wchar);
    free_pool_memory(win32_fname);
+
    return bfd->mode == BF_CLOSED ? -1 : 1;
+}
+
+/*
+ * Returns  0 on success
+ *         -1 on error
+ */
+int bclose_encrypted(BFILE *bfd)
+{
+   if (bfd->mode == BF_CLOSED) {
+      Dmsg0(50, "=== BFD already closed.\n");
+      return 0;
+   }
+
+   CloseEncryptedFileRaw(bfd->pvContext);
+   bfd->pvContext = NULL;
+   bfd->mode = BF_CLOSED;
+   return 0;
 }
 
 /*
@@ -724,6 +804,7 @@ all_done:
    bfd->mode = BF_CLOSED;
    bfd->lpContext = NULL;
    bfd->cmd_plugin = false;
+
    return status;
 }
 
@@ -801,6 +882,7 @@ ssize_t bwrite(BFILE *bfd, void *buf, size_t count)
          return -1;
       }
    }
+
    return (ssize_t)bfd->rw_bytes;
 }
 
@@ -884,8 +966,8 @@ bool set_cmd_plugin(BFILE *bfd, JCR *jcr)
    return true;
 }
 
-/* 
- * This code is running on a non-Win32 machine 
+/*
+ * This code is running on a non-Win32 machine
  */
 bool is_restore_stream_supported(int stream)
 {
@@ -894,7 +976,7 @@ bool is_restore_stream_supported(int stream)
 #ifndef HAVE_LIBZ
    case STREAM_GZIP_DATA:
    case STREAM_SPARSE_GZIP_DATA:
-   case STREAM_WIN32_GZIP_DATA:    
+   case STREAM_WIN32_GZIP_DATA:
 #endif
 #ifndef HAVE_LZO
    case STREAM_COMPRESSED_DATA:
@@ -913,7 +995,7 @@ bool is_restore_stream_supported(int stream)
 #ifdef HAVE_LIBZ
    case STREAM_GZIP_DATA:
    case STREAM_SPARSE_GZIP_DATA:
-   case STREAM_WIN32_GZIP_DATA:    
+   case STREAM_WIN32_GZIP_DATA:
 #endif
 #ifdef HAVE_LZO
    case STREAM_COMPRESSED_DATA:
@@ -1026,7 +1108,6 @@ int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode)
 }
 #endif
 
-
 int bclose(BFILE *bfd)
 {
    int status;
@@ -1099,5 +1180,4 @@ boffset_t blseek(BFILE *bfd, boffset_t offset, int whence)
    bfd->berrno = errno;
    return pos;
 }
-
 #endif

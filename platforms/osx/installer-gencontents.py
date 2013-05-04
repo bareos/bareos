@@ -11,13 +11,13 @@ def createFtags(doc, path, isrootpath=True):
 
     statinfo = os.lstat(path)
     isdir = stat.S_ISDIR(statinfo[0])
-    
+
     ftag = doc.createElement("f")
     ftag.setAttribute("n",os.path.split(path)[1])
     ftag.setAttribute("p","%d" % statinfo[0])
     ftag.setAttribute("o","root")
     ftag.setAttribute("g","wheel")
-    
+
     # we additionally have to create <mod>owner</mod> and <mod>group</mod>
     # within each f-tag
     ftag.appendChild(doc.createElement("mod").appendChild(doc.createTextNode("owner")))
@@ -33,7 +33,7 @@ def createFtags(doc, path, isrootpath=True):
     if isdir:
         for item in os.listdir(path):
             ftag.appendChild(createFtags(doc, os.path.join(path,item), False))
-    
+
     return ftag
 
 def generateContentsDocument(path):

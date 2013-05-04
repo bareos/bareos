@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,33 +13,26 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- catreq.c -- handles the message channel
+ *                                catalog request from the Storage daemon.
  *
- *   Bacula Director -- catreq.c -- handles the message channel
- *    catalog request from the Storage daemon.
+ * Kern Sibbald, March MMI
  *
- *     Kern Sibbald, March MMI
+ * This routine runs as a thread and must be thread reentrant.
  *
- *    This routine runs as a thread and must be thread reentrant.
- *
- *  Basic tasks done here:
- *      Handle Catalog services.
- *
+ * Basic tasks done here:
+ *    Handle Catalog services.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 #include "findlib/find.h"
 
@@ -116,7 +109,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
 
    memset(&sdmr, 0, sizeof(sdmr));
    memset(&jm, 0, sizeof(jm));
-   Dsm_check(100);      
+   Dsm_check(100);
 
    /*
     * Request to find next appendable Volume for this Job
@@ -125,7 +118,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    if (!jcr->db) {
       omsg = get_memory(bs->msglen+1);
       pm_strcpy(omsg, bs->msg);
-      bs->fsend(_("1990 Invalid Catalog Request: %s"), omsg);    
+      bs->fsend(_("1990 Invalid Catalog Request: %s"), omsg);
       Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog request; DB not open: %s"), omsg);
       free_memory(omsg);
       return;
@@ -266,7 +259,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       Dmsg2(400, "Update media: BefVolJobs=%u After=%u\n", mr.VolJobs, sdmr.VolJobs);
 
       /*
-       * Check if the volume has been written by the job, 
+       * Check if the volume has been written by the job,
        * and update the LastWritten field if needed.
        */
       if (mr.VolBlocks != sdmr.VolBlocks && VolLastWritten != 0) {
@@ -299,7 +292,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       mr.Slot         = sdmr.Slot;
       mr.InChanger    = sdmr.InChanger;
       bstrncpy(mr.VolStatus, sdmr.VolStatus, sizeof(mr.VolStatus));
-      if (sdmr.VolReadTime >= 0) { 
+      if (sdmr.VolReadTime >= 0) {
          mr.VolReadTime  = sdmr.VolReadTime;
       }
       if (sdmr.VolWriteTime >= 0) {
@@ -383,12 +376,12 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
 
    /* Start transaction allocates jcr->attr and jcr->ar if needed */
    db_start_transaction(jcr, jcr->db);     /* start transaction if not already open */
-   ar = jcr->ar;      
+   ar = jcr->ar;
 
    /*
-    * Start by scanning directly in the message buffer to get Stream   
+    * Start by scanning directly in the message buffer to get Stream
     *  there may be a cached attr so we cannot yet write into
-    *  jcr->attr or jcr->ar  
+    *  jcr->attr or jcr->ar
     */
    p = msg;
    skip_nonspaces(&p);                /* UpdCat */
@@ -454,7 +447,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
       p = jcr->attr - msg + p;    /* point p into jcr->attr */
       skip_nonspaces(&p);         /* skip FileIndex */
       skip_spaces(&p);
-      ar->FileType = str_to_int32(p); 
+      ar->FileType = str_to_int32(p);
       skip_nonspaces(&p);         /* skip FileType */
       skip_spaces(&p);
       fname = p;
@@ -466,7 +459,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
          p = p + strlen(p) + 1;        /* point to extended attributes */
          p = p + strlen(p) + 1;        /* point to delta sequence */
          /*
-          * Older FDs don't have a delta sequence, so check if it is there 
+          * Older FDs don't have a delta sequence, so check if it is there
           */
          if (p - jcr->attr < msglen) {
             ar->DeltaSeq = str_to_int32(p); /* delta_seq */
@@ -509,7 +502,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
       }
 
       Dmsg1(100, "Robj=%s\n", p);
-      
+
       skip_nonspaces(&p);                  /* skip FileIndex */
       skip_spaces(&p);
       ro.FileType = str_to_int32(p);        /* FileType */
@@ -519,7 +512,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
       skip_nonspaces(&p);
       skip_spaces(&p);
       ro.object_len = str_to_int32(p);      /* object length possibly compressed */
-      skip_nonspaces(&p);                  
+      skip_nonspaces(&p);
       skip_spaces(&p);
       ro.object_full_len = str_to_int32(p); /* uncompressed object length */
       skip_nonspaces(&p);
@@ -545,7 +538,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    } else if (crypto_digest_stream_type(Stream) != CRYPTO_DIGEST_NONE) {
       fname = p;
       if (ar->FileIndex != FileIndex) {
-         Jmsg3(jcr, M_WARNING, 0, _("%s not same File=%d as attributes=%d\n"), 
+         Jmsg3(jcr, M_WARNING, 0, _("%s not same File=%d as attributes=%d\n"),
             stream_to_ascii(Stream), FileIndex, ar->FileIndex);
       } else {
          /* Update digest in catalog */
@@ -590,7 +583,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
                Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s"),
                         db_strerror(jcr->db));
             }
-            jcr->cached_attribute = false; 
+            jcr->cached_attribute = false;
          } else {
             if (!db_add_digest_to_file_record(jcr, jcr->db, ar->FileId, digestbuf, type)) {
                Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. %s"),
@@ -616,7 +609,7 @@ void catalog_update(JCR *jcr, BSOCK *bs)
    if (!jcr->db) {
       POOLMEM *omsg = get_memory(bs->msglen+1);
       pm_strcpy(omsg, bs->msg);
-      bs->fsend(_("1994 Invalid Catalog Update: %s"), omsg);    
+      bs->fsend(_("1994 Invalid Catalog Update: %s"), omsg);
       Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog Update; DB not open: %s"), omsg);
       free_memory(omsg);
       goto bail_out;

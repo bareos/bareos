@@ -11,26 +11,15 @@
    This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public License
-   along with Bacula.  If not, see <http://www.gnu.org/licenses/>.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
+   GNU Lesser Affero General Public License for more details.
 */
 /*
- *  Original 32 bit CRC.  Algorithm from RFC 2083 (png format)
+ * Original 32 bit CRC.  Algorithm from RFC 2083 (png format)
+ * By Kern Sibbald, January 2001
  *
- *   By Kern Sibbald, January 2001
- *
- *   Inproved, faster version
- *
- *   By Joakim Tjernlunc, 2010
+ * Inproved, faster version
+ * By Joakim Tjernlunc, 2010
  */
-
 
 #ifdef GENERATE_STATIC_CRC_TABLE
 /*
@@ -68,7 +57,7 @@ main()
 }
 #endif
 
-#include "bacula.h"
+#include "bareos.h"
 
 #if defined(AC_APPLE_UNIVERSAL_BUILD)
 #error This code only supports compile time endianess selection not during runtime.
@@ -424,7 +413,7 @@ static void usage()
  * Reads a single ASCII file and prints the HEX md5 sum.
  */
 #include <stdio.h>
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
    FILE *fd;
    char buf[5000];
@@ -455,7 +444,7 @@ int main(int argc, char *argv[])
    uint32_t res;
    while (fgets(buf, sizeof(buf), fd)) {
       res = bcrc32((unsigned char *)buf, strlen(buf));
-      printf("%02x\n", res); 
+      printf("%02x\n", res);
    }
    printf("  %s\n", argv[0]);
    fclose(fd);

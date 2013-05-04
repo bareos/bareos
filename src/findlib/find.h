@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,22 +13,17 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * File types as returned by find_files()
  *
- *     Kern Sibbald MMI
+ * Kern Sibbald MMI
  */
 
 #ifndef __FILES_H
@@ -209,7 +204,7 @@ struct FF_PKT {
    struct f_link *linked;             /* Set if this file is hard linked */
    int type;                          /* FT_ type from above */
    int ff_errno;                      /* errno */
-   BFILE bfd;                         /* Bacula file descriptor */
+   BFILE bfd;                         /* Bareos file descriptor */
    time_t save_time;                  /* start of incremental time */
    bool accurate_found;               /* Found in the accurate hash (valid after check_changes()) */
    bool dereference;                  /* follow links (not implemented) */

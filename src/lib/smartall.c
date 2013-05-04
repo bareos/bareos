@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,17 +11,12 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
 
@@ -44,7 +37,7 @@
 
 #define _LOCKMGR_COMPLIANT
 
-#include "bacula.h"
+#include "bareos.h"
 /* Use the real routines here */
 #undef realloc
 #undef calloc
@@ -212,7 +205,7 @@ void sm_free(const char *file, int line, void *fp)
 
    if (((unsigned char *)cp)[head->ablen - 1] != ((((intptr_t) cp) & 0xFF) ^ 0xC5)) {
       V(mutex);
-      Emsg6(M_ABORT, 0, _("Overrun buffer: len=%d addr=%p allocated: %s:%d called from %s:%d\n"), 
+      Emsg6(M_ABORT, 0, _("Overrun buffer: len=%d addr=%p allocated: %s:%d called from %s:%d\n"),
          head->ablen, fp, get_basename(head->abfname), head->ablineno, file, line);
    }
    if (sm_buffers > 0) {
@@ -374,7 +367,7 @@ void actuallyfree(void *cp)
 /*  SM_DUMP  --  Print orphaned buffers (and dump them if BUFDUMP is
  *               True).
  */
-void sm_dump(bool bufdump, bool in_use) 
+void sm_dump(bool bufdump, bool in_use)
 {
    struct abufhead *ap;
 
@@ -399,7 +392,7 @@ void sm_dump(bool bufdump, bool in_use)
          uint32_t memsize = ap->ablen - (HEAD_SIZE + 1);
          char *cp = ((char *)ap) + HEAD_SIZE;
 
-         Pmsg6(0, "%s buffer: %s %d bytes at %p from %s:%d\n", 
+         Pmsg6(0, "%s buffer: %s %d bytes at %p from %s:%d\n",
             in_use?"In use":"Orphaned",
             my_name, memsize, cp, get_basename(ap->abfname), ap->ablineno);
          if (bufdump) {
@@ -465,7 +458,7 @@ int sm_check_rtn(const char *fname, int lineno, bool bufdump)
       }
       badbuf |= bad;
       if (bad) {
-         Pmsg2(0, 
+         Pmsg2(0,
             _("\nDamaged buffers found at %s:%d\n"), get_basename(fname), (uint32_t)lineno);
 
          if (bad & 0x1) {
@@ -490,7 +483,7 @@ int sm_check_rtn(const char *fname, int lineno, bool bufdump)
             uint32_t memsize = ap->ablen - (HEAD_SIZE + 1);
             char errmsg[80];
 
-            Pmsg4(0, 
+            Pmsg4(0,
               _("Damaged buffer:  %6u bytes allocated at line %d of %s %s\n"),
                memsize, ap->ablineno, my_name, get_basename(ap->abfname)
             );

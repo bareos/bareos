@@ -1,6 +1,6 @@
     /*
 	"bc" implementation of the "Minimal Standard"
-	multiplicative congruential generator of Park and Miller. 
+	multiplicative congruential generator of Park and Miller.
 	[Park, S.K. and K.W. Miller, Communications of the ACM 31,
 	1192-1201 (1988).]
 
@@ -19,7 +19,7 @@
     */
 
     /* Initialise state to default value of 1. */
-    
+
     t = 1
 
     /* Generate and return the next random byte, updating
@@ -29,16 +29,16 @@
 	t = (t * 16807) % (2^31)
 	return ((t / 2048) % (2^8))
     }
-    
+
     /* Set the seed to the x argument.  The state t is
        set from the seed, after an initial shuffle.  If
        you don't want 0 printed when setting the seed,
        assign s(x) to a junk variable. */
 
     define s(x) {
-    	auto i, j
+	auto i, j
 	if (x == 0) { "Seed must be nonzero"; return }
-    	t = x % (2^32)
+	t = x % (2^32)
 	/* Perform initial shuffle of state. */
 	for (i = 0; i < 11; i++) j = r()
     }

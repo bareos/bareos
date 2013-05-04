@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,25 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Configuration file parser for Bacula Storage daemon
+ * Configuration file parser for Bareos Storage daemon
  *
- *     Kern Sibbald, March MM
+ * Kern Sibbald, March MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
 /*
@@ -75,12 +70,12 @@ int32_t res_all_size = sizeof(res_all);
 static RES_ITEM store_items[] = {
    { "name", store_name, ITEM(res_store.hdr.name), 0, ITEM_REQUIRED, NULL },
    { "description", store_str, ITEM(res_store.hdr.desc), 0, 0, NULL },
-   { "sdaddress", store_addresses_address, ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, "9103" },
-   { "sdaddresses", store_addresses, ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, "9103" },
+   { "sdaddress", store_addresses_address, ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "sdaddresses", store_addresses, ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
    { "messages", store_res, ITEM(res_store.messages), R_MSGS, 0, NULL },
-   { "sdport", store_addresses_port, ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, "9103" },
-   { "workingdirectory", store_dir, ITEM(res_store.working_directory), 0, ITEM_DEFAULT, _PATH_BACULA_WORKINGDIR },
-   { "piddirectory", store_dir, ITEM(res_store.pid_directory), 0, ITEM_DEFAULT, _PATH_BACULA_PIDDIR },
+   { "sdport", store_addresses_port, ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "workingdirectory", store_dir, ITEM(res_store.working_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
+   { "piddirectory", store_dir, ITEM(res_store.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "subsysdirectory", store_dir, ITEM(res_store.subsys_directory), 0, 0, NULL },
    { "plugindirectory", store_dir, ITEM(res_store.plugin_directory), 0, 0, NULL },
    { "scriptsdirectory", store_dir, ITEM(res_store.scripts_directory), 0, 0, NULL },
@@ -98,7 +93,8 @@ static RES_ITEM store_items[] = {
    { "tlsallowedcn", store_alist_str, ITEM(res_store.tls_allowed_cns), 0, 0, NULL },
    { "clientconnectwait", store_time, ITEM(res_store.client_wait), 0, ITEM_DEFAULT, "180" /* 30 * 60 */ },
    { "verid", store_str, ITEM(res_store.verid), 0, 0, NULL },
-   { "ndmpenable", store_bool, ITEM(res_store.ndmp_enable), 0, 0, 0 },
+   { "compatible", store_bool, ITEM(res_store.compatible), 0, 0, "true" },
+   { "ndmpenable", store_bool, ITEM(res_store.ndmp_enable), 0, 0, NULL },
    { "ndmpsnooping", store_bool, ITEM(res_store.ndmp_snooping), 0, 0, NULL },
    { "ndmploglevel", store_pint32, ITEM(res_store.ndmploglevel), 0, ITEM_DEFAULT, "4" },
    { "ndmpaddress", store_addresses_address, ITEM(res_store.ndmpaddrs), 0, ITEM_DEFAULT, "10000" },
@@ -348,7 +344,7 @@ static void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    store_size32(lc, item, index, pass);
    if (*(uint32_t *)(item->value) > MAX_BLOCK_LENGTH) {
-      scan_err2(lc, _("Maximum Block Size configured value %u is greater than allowed maximum: %u"), 
+      scan_err2(lc, _("Maximum Block Size configured value %u is greater than allowed maximum: %u"),
          *(uint32_t *)(item->value), MAX_BLOCK_LENGTH );
    }
 }
@@ -528,7 +524,7 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.address) {
          free(res->res_dir.address);
       }
-      if (res->res_dir.tls_ctx) { 
+      if (res->res_dir.tls_ctx) {
          free_tls_context(res->res_dir.tls_ctx);
       }
       if (res->res_dir.tls_ca_certfile) {
@@ -572,7 +568,7 @@ void free_resource(RES *sres, int type)
          delete res->res_changer.device;
       }
       rwl_destroy(&res->res_changer.changer_lock);
-      break; 
+      break;
    case R_STORAGE:
       if (res->res_store.sdaddrs) {
          free_addresses(res->res_store.sdaddrs);
@@ -592,7 +588,7 @@ void free_resource(RES *sres, int type)
       if (res->res_store.scripts_directory) {
          free(res->res_store.scripts_directory);
       }
-      if (res->res_store.tls_ctx) { 
+      if (res->res_store.tls_ctx) {
          free_tls_context(res->res_store.tls_ctx);
       }
       if (res->res_store.tls_ca_certfile) {
@@ -683,7 +679,7 @@ void free_resource(RES *sres, int type)
 /*
  * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
- * or alist pointers.  
+ * or alist pointers.
  */
 void save_resource(int type, RES_ITEM *items, int pass)
 {
@@ -753,17 +749,17 @@ void save_resource(int type, RES_ITEM *items, int pass)
           */
          res->res_changer.device   = res_all.res_changer.device;
          /*
-          * Now update each device in this resource to point back 
+          * Now update each device in this resource to point back
           * to the changer resource.
           */
          foreach_alist(dev, res->res_changer.device) {
             dev->changer_res = (AUTOCHANGERRES *)&res->res_changer;
          }
-         if ((errstat = rwl_init(&res->res_changer.changer_lock, 
+         if ((errstat = rwl_init(&res->res_changer.changer_lock,
                                  PRIO_SD_ACH_ACCESS)) != 0)
          {
             berrno be;
-            Jmsg1(NULL, M_ERROR_TERM, 0, _("Unable to init lock: ERR=%s\n"), 
+            Jmsg1(NULL, M_ERROR_TERM, 0, _("Unable to init lock: ERR=%s\n"),
                   be.bstrerror(errstat));
          }
          break;

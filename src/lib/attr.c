@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   attr.c  Unpack an Attribute record returned from the tape
+ * attr.c  Unpack an Attribute record returned from the tape
  *
- *    Kern Sibbald, June MMIII  (code pulled from filed/restore.c and updated)
- *
+ * Kern Sibbald, June MMIII  (code pulled from filed/restore.c and updated)
  */
 
-
-#include "bacula.h"
+#include "bareos.h"
 #include "jcr.h"
 #include "lib/breg.h"
 
@@ -113,7 +106,7 @@ int unpack_attributes_record(JCR *jcr, int32_t stream, char *rec, int32_t reclen
       /* We have an object, so do a binary copy */
       object_len = reclen + rec - p;
       attr->attrEx = check_pool_memory_size(attr->attrEx, object_len + 1);
-      memcpy(attr->attrEx, p, object_len);  
+      memcpy(attr->attrEx, p, object_len);
       /* Add a EOS for those who attempt to print the object */
       p = attr->attrEx + object_len;
       *p = 0;
@@ -131,7 +124,7 @@ int unpack_attributes_record(JCR *jcr, int32_t stream, char *rec, int32_t reclen
          if (p - rec < reclen) {
             attr->delta_seq = str_to_int32(p); /* delta_seq */
          }
-      }       
+      }
    }
    Dmsg8(dbglvl, "unpack_attr FI=%d Type=%d fname=%s attr=%s lname=%s attrEx=%s datastr=%d delta_seq=%d\n",
       attr->file_index, attr->type, attr->fname, attr->attr, attr->lname,
@@ -174,7 +167,7 @@ void build_attr_output_fnames(JCR *jcr, ATTR *attr)
     *
     */
 
-   if (jcr->where_bregexp) { 
+   if (jcr->where_bregexp) {
       char *ret;
       apply_bregexps(attr->fname, jcr->where_bregexp, &ret);
       pm_strcpy(attr->ofname, ret);
@@ -192,7 +185,7 @@ void build_attr_output_fnames(JCR *jcr, ATTR *attr)
             pm_strcpy(attr->olname, attr->lname);
          }
       }
-      
+
    } else if (jcr->where[0] == 0) {
       pm_strcpy(attr->ofname, attr->fname);
       pm_strcpy(attr->olname, attr->lname);
@@ -236,8 +229,8 @@ void build_attr_output_fnames(JCR *jcr, ATTR *attr)
 #endif
          fn = attr->lname;       /* take whole name */
          /* Ensure where is terminated with a slash */
-         if (add_link && 
-            !IsPathSeparator(jcr->where[wherelen-1]) && 
+         if (add_link &&
+            !IsPathSeparator(jcr->where[wherelen-1]) &&
             !IsPathSeparator(fn[0])) {
             pm_strcat(attr->olname, "/");
          }
@@ -278,7 +271,7 @@ void print_ls_output(JCR *jcr, ATTR *attr)
    guid = jcr->id_list;
    p = encode_mode(attr->statp.st_mode, buf);
    p += sprintf(p, "  %2d ", (uint32_t)attr->statp.st_nlink);
-   p += sprintf(p, "%-8.8s %-8.8s", 
+   p += sprintf(p, "%-8.8s %-8.8s",
                 guid->uid_to_name(attr->statp.st_uid, en1, sizeof(en1)),
                 guid->gid_to_name(attr->statp.st_gid, en2, sizeof(en2)));
    p += sprintf(p, "%12.12s ", edit_int64(attr->statp.st_size, ec1));

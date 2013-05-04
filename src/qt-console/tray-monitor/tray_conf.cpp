@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,42 +11,34 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   Main configuration file parser for Bacula Tray Monitor.
+ * Main configuration file parser for Bareos Tray Monitor.
+ * Adapted from dird_conf.c
  *
- *   Adapted from dird_conf.c
+ * Note, the configuration file parser consists of three parts
  *
- *   Note, the configuration file parser consists of three parts
+ * 1. The generic lexical scanner in lib/lex.c and lib/lex.h
  *
- *   1. The generic lexical scanner in lib/lex.c and lib/lex.h
+ * 2. The generic config  scanner in lib/parse_config.c and
+ *    lib/parse_config.h. These files contain the parser code,
+ *    some utility routines, and the common store routines
+ *    (name, int, string).
  *
- *   2. The generic config  scanner in lib/parse_config.c and
- *       lib/parse_config.h.
- *       These files contain the parser code, some utility
- *       routines, and the common store routines (name, int,
- *       string).
+ * 3. The daemon specific file, which contains the Resource
+ *    definitions as well as any specific store routines
+ *    for the resource records.
  *
- *   3. The daemon specific file, which contains the Resource
- *       definitions as well as any specific store routines
- *       for the resource records.
- *
- *     Nicolas Boichat, August MMIV
- *
+ * Nicolas Boichat, August MMIV
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "tray_conf.h"
 
 /*
@@ -187,7 +177,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    }
    switch (type) {
    case R_MONITOR:
-      sendit(sock, _("Monitor: name=%s FDtimeout=%s SDtimeout=%s\n"), 
+      sendit(sock, _("Monitor: name=%s FDtimeout=%s SDtimeout=%s\n"),
              reshdr->name,
              edit_uint64(res->res_monitor.FDConnectTimeout, ed1),
              edit_uint64(res->res_monitor.SDConnectTimeout, ed2));

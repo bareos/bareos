@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director Job processing routines
  *
- *   Bacula Director Job processing routines
- *
- *     Kern Sibbald, October MM
- *
+ * Kern Sibbald, October MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /* Forward referenced subroutines */
@@ -535,6 +528,8 @@ bool cancel_job(UAContext *ua, JCR *jcr)
       }
       break;
    }
+
+   run_scripts(jcr, jcr->res.job->RunScripts, "AfterJob");
 
    return true;
 }
@@ -1166,7 +1161,7 @@ void dird_free_jcr(JCR *jcr)
    jcr->job_end_push.destroy();
 
    if (jcr->JobId != 0) {
-      write_state_file(director->working_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
+      write_state_file(director->working_directory, "bareos-dir", get_first_port_host_order(director->DIRaddrs));
    }
 
    free_plugins(jcr);                 /* release instantiated plugins */

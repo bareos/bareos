@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH BWILD 8 "30 October 2011" "Kern Sibbald" "Network backup, utilities"
+.TH BWILD 8 "30 October 2011" "Kern Sibbald" "Backup Archiving REcovery Open Sourced"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -16,7 +16,7 @@
 .\" .sp <n>    insert n+1 empty lines
 .\" for manpage-specific macros, see man(7)
 .SH NAME
- bwild \- Bacula's 'wildcard' engine
+ bwild \- Bareos's 'wildcard' engine
 .SH SYNOPSIS
 .B bwild
 .RI [ options ]
@@ -45,9 +45,13 @@ Set debug level to \fInn\fP.
 Print timestamp in debug output
 .TP
 .BI \-f\ <data\-file>
-The data-file is a filename that contains lines of data to be matched (or not) against one or more patterns. When the program is run, it will prompt you for a wild-card pattern, then apply it one line at a time against the data in the file. Each line that matches will be printed preceded by its line number. You will then be prompted again for another pattern.
+The data-file is a filename that contains lines of data to be matched (or not) against one
+or more patterns. When the program is run, it will prompt you for a wild-card pattern,
+then apply it one line at a time against the data in the file. Each line that matches will
+be printed preceded by its line number. You will then be prompted again for another pattern.
 .br
-Enter an empty line for a pattern to terminate the program. You can print only lines that do not match by using the \-n option, and you can suppress printing of line numbers with the \-l option.
+Enter an empty line for a pattern to terminate the program. You can print only lines that
+do not match by using the \-n option, and you can suppress printing of line numbers with the \-l option.
 .TP
 .BI \-n
 Print lines that do not match

@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,34 +11,24 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   Generic base 64 input and output routines
+ * Generic base 64 input and output routines
  *
- *    Written by Kern E. Sibbald, March MM.
- *
- *   Version $Id$
+ * Written by Kern E. Sibbald, March MM.
  */
 
-
-#include "bacula.h"
-
+#include "bareos.h"
 
 #ifdef TEST_MODE
 #include <glob.h>
 #endif
-
 
 static uint8_t const base64_digits[64] =
 {
@@ -231,7 +219,7 @@ int base64_to_bin(char *dest, int dest_size, char *src, int srclen)
       nprbytes -= 4;
    }
 
-   /* Bacula base64 strings are not always padded with = */
+   /* BAREOS base64 strings are not always padded with = */
    if (nprbytes > 1) {
       *(bufout++) = (base64_map[bufin[0]] << 2 | base64_map[bufin[1]] >> 4);
    }
@@ -242,7 +230,7 @@ int base64_to_bin(char *dest, int dest_size, char *src, int srclen)
       *(bufout++) = (base64_map[bufin[2]] << 6 | base64_map[bufin[3]]);
    }
    *bufout = 0;
-   
+
    return (bufout - (uint8_t *) dest);
 }
 

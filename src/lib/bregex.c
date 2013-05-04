@@ -1,3 +1,23 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2006-2010 Free Software Foundation Europe e.V.
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
 /* regexpr.c
  *
  * Author: Tatu Ylonen <ylo@ngs.fi>
@@ -26,44 +46,14 @@
  * Peters, Guido van Rossum, Ka-Ping Yee, Sjoerd Mullender, and
  * probably one or two others that I'm forgetting.
  *
- * This file modified to work with Bacula and C++ by
+ * This file modified to work with BAREOS and C++ by
  *    Kern Sibbald, April 2006
  *
- * This file modified to work with REG_ICASE and Bacula by
+ * This file modified to work with REG_ICASE and BAREOS by
  *    Eric Bollengier April 2007
  */
-/*
-   Bacula® - The Network Backup Solution
 
-   Copyright (C) 2006-2010 Free Software Foundation Europe e.V.
-
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
-   This program is Free Software; you can redistribute it and/or
-   modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation and included
-   in the file LICENSE.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
-
-   You should have received a copy of the GNU Affero General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
-*/
-
-#include "bacula.h"
-
-#ifndef HAVE_REGEX_H
-
+#include "bareos.h"
 #include "bregex.h"
 
 #define set_error(x) bufp->errmsg=((char *)(x))
@@ -728,7 +718,7 @@ void re_compile_fastmap(regex_t * bufp)
    bufp->fastmap_accurate = 1;
 }
 
-/* 
+/*
  * star is coded as:
  * 1: failure_jump 2
  *    ... code for operand of star
@@ -1467,7 +1457,7 @@ int regcomp(regex_t * bufp, const char *regex, int cflags)
       char *p, *lcase = bstrdup(regex);
       for( p = lcase; *p ; p++) {
          *p = tolower(*p);
-      } 
+      }
       re_compile_pattern(bufp, (unsigned char *)lcase);
       bfree(lcase);
    } else {
@@ -1479,12 +1469,12 @@ int regcomp(regex_t * bufp, const char *regex, int cflags)
    return 0;
 }
 
-void re_registers_to_regmatch(regexp_registers_t old_regs, 
-                              regmatch_t pmatch[], 
+void re_registers_to_regmatch(regexp_registers_t old_regs,
+                              regmatch_t pmatch[],
                               size_t nmatch)
 {
    size_t i=0;
-   
+
    /* We have to set the last entry to -1 */
    nmatch = nmatch - 1;
    for (i=0; (i < nmatch) && (old_regs->start[i] > -1) ; i++) {
@@ -1493,7 +1483,7 @@ void re_registers_to_regmatch(regexp_registers_t old_regs,
    }
 
    pmatch[i].rm_eo = pmatch[i].rm_so = -1;
-} 
+}
 
 int regexec(regex_t * preg, const char *string, size_t nmatch,
             regmatch_t pmatch[], int eflags)
@@ -2033,4 +2023,3 @@ int re_search(regex_t * bufp, unsigned char *str, int size, int pos,
 ** c-file-style: "python"
 ** End:
 */
-#endif /* HAVE_REGEX_H */

@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,25 +11,18 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Main program for bat (qt-console)
+ * Main program for bat (qt-console)
  *
- *   Kern Sibbald, January MMVII
- *
- */ 
-
+ * Kern Sibbald, January MMVII
+ */
 
 #include "bat.h"
 #include <QApplication>
@@ -50,7 +41,7 @@ MainWin *mainWin;
 QApplication *app;
 
 /* Forward referenced functions */
-void terminate_console(int sig);                                
+void terminate_console(int sig);
 static void usage();
 static int check_resources();
 
@@ -71,10 +62,10 @@ int main(int argc, char *argv[])
    bool test_config = false;
 
 
-   app = new QApplication(argc, argv);        
+   app = new QApplication(argc, argv);
    app->setQuitOnLastWindowClosed(true);
    QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
-     
+
    QTranslator qtTranslator;
    qtTranslator.load(QString("qt_") + QLocale::system().name(),QLibraryInfo::location(QLibraryInfo::TranslationsPath));
    app->installTranslator(&qtTranslator);
@@ -87,8 +78,8 @@ int main(int argc, char *argv[])
 
 #ifdef xENABLE_NLS
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
 #endif
 
 #ifdef HAVE_WIN32
@@ -221,7 +212,7 @@ static int check_resources()
          if (have_tls) {
             director->tls_enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
             ok = false;
             continue;
          }
@@ -236,7 +227,7 @@ static int check_resources()
          ok = false;
       }
    }
-   
+
    if (numdir == 0) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"
                           "Without that I don't how to speak to the Director :-(\n"), configfile);
@@ -251,7 +242,7 @@ static int check_resources()
          if (have_tls) {
             cons->tls_enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
             ok = false;
             continue;
          }

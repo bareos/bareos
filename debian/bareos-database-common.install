@@ -1,0 +1,9 @@
+/usr/lib/libbareossql.so
+/usr/lib/libbareoscats.so
+/usr/lib/libbareoscats-[0-9]*.so
+/usr/lib/libbareossql*.so
+#/usr/lib/bareos/scripts/create_bareos_database
+#/usr/lib/bareos/scripts/drop_bareos_database
+#/usr/lib/bareos/scripts/drop_bareos_tables
+#/usr/lib/bareos/scripts/grant_bareos_privileges
+#/usr/lib/bareos/scripts/make_bareos_tables

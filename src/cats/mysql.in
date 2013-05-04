@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to create Bacula MySQL tables
+# shell script to create Bareos MySQL tables
 #
 bindir=@MYSQL_BINDIR@
 db_name=@db_name@

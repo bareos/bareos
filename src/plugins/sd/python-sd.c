@@ -1,29 +1,24 @@
 /*
-   Bacula(R) - The Network Backup Solution
+   BAREOS R) - Backup Archiving Recovery Made Open Source
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation, which is 
+   License as published by the Free Software Foundation, which is
    listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula(R) is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Python Storage daemon Plugin program
@@ -31,7 +26,7 @@
  * Marco van Wieringen, August 2012
  *
  */
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
 #ifdef HAVE_PYTHON
@@ -39,7 +34,7 @@
 #include <Python.h>
 #endif
 
-#define PLUGIN_LICENSE      "Bacula AGPLv3"
+#define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
 #define PLUGIN_DATE         "August 2012"
 #define PLUGIN_VERSION      "1"
@@ -53,7 +48,7 @@ static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value);
 static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value);
 
 
-/* Pointers to Bacula functions */
+/* Pointers to Bareos functions */
 static bsdFuncs *bfuncs = NULL;
 static bsdInfo  *binfo = NULL;
 
@@ -104,15 +99,15 @@ extern "C" {
 
 /*
  * loadPlugin() and unloadPlugin() are entry points that are
- *  exported, so Bacula can directly call these two entry points
- *  they are common to all Bacula plugins.
+ *  exported, so Bareos can directly call these two entry points
+ *  they are common to all Bareos plugins.
  *
- * External entry point called by Bacula to "load" the plugin
+ * External entry point called by Bareos to "load" the plugin
  */
 bRC DLL_IMP_EXP
 loadPlugin(bsdInfo *lbinfo, bsdFuncs *lbfuncs, genpInfo **pinfo, psdFuncs **pfuncs)
 {
-   bfuncs = lbfuncs;                /* Set Bacula funct pointers */
+   bfuncs = lbfuncs;                /* Set Bareos funct pointers */
    binfo  = lbinfo;
 
    *pinfo  = &pluginInfo;           /* Return pointer to our info */
@@ -131,10 +126,10 @@ loadPlugin(bsdInfo *lbinfo, bsdFuncs *lbfuncs, genpInfo **pinfo, psdFuncs **pfun
 }
 
 /*
- * External entry point to unload the plugin 
+ * External entry point to unload the plugin
  */
 bRC DLL_IMP_EXP
-unloadPlugin() 
+unloadPlugin()
 {
 #ifdef HAVE_PYTHON
    /*
@@ -152,8 +147,8 @@ unloadPlugin()
 #endif
 
 /*
- * The following entry points are accessed through the function 
- * pointers we supplied to Bacula. Each plugin type (dir, fd, sd)
+ * The following entry points are accessed through the function
+ * pointers we supplied to Bareos. Each plugin type (dir, fd, sd)
  * has its own set of entry points that the plugin must define.
  */
 /*
@@ -161,6 +156,7 @@ unloadPlugin()
  */
 static bRC newPlugin(bpContext *ctx)
 {
+#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx;
 
    p_ctx = (struct plugin_ctx *)malloc(sizeof(struct plugin_ctx));
@@ -170,7 +166,6 @@ static bRC newPlugin(bpContext *ctx)
    memset(p_ctx, 0, sizeof(struct plugin_ctx));
    ctx->pContext = (void *)p_ctx;        /* set our context pointer */
 
-#ifdef HAVE_PYTHON
    /*
     * For each plugin instance we instantiate a new Python interpreter.
     */
@@ -187,9 +182,9 @@ static bRC newPlugin(bpContext *ctx)
  */
 static bRC freePlugin(bpContext *ctx)
 {
+#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
 
-#ifdef HAVE_PYTHON
    /*
     * Stop any sub interpreter started per plugin instance.
     */
@@ -209,11 +204,11 @@ static bRC freePlugin(bpContext *ctx)
 /*
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value) 
+static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
+#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
 
    /*
@@ -229,11 +224,11 @@ static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
 /*
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value) 
+static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
+#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
 
    /*
@@ -247,13 +242,13 @@ static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
 }
 
 /*
- * Handle an event that was generated in Bacula
+ * Handle an event that was generated in Bareos
  */
 static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
 {
+#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
 
    /*

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +13,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- Update command processing
  *
- *   Bacula Director -- Update command processing
- *     Split from ua_cmds.c March 2005
+ * Split from ua_cmds.c March 2005
  *
- *     Kern Sibbald, September MM
- *
+ * Kern Sibbald, September MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /* Forward referenced functions */
@@ -352,28 +346,28 @@ void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    POOL_DBR pr;
    POOL_MEM query(PM_MESSAGE);
-   char ed1[50], ed2[50], *poolname;
+   char ed1[50], ed2[50];
+   const char *poolname;
 
    if (val && *val) { /* update volume recyclepool="Scratch" */
-     /* If a pool name is given, look up the PoolId */
-     memset(&pr, 0, sizeof(pr));
-     bstrncpy(pr.Name, val, sizeof(pr.Name));
-     if (!get_pool_dbr(ua, &pr, NT_("recyclepool"))) {
-        return;
-     }
-     /* pool = select_pool_resource(ua);  */
-     mr->RecyclePoolId = pr.PoolId;            /* get the PoolId */
-     poolname = pr.Name;
-
-  } else { /* update volume recyclepool="" */
-    /* If no pool name is given, set the PoolId to 0 (the default) */
-     mr->RecyclePoolId = 0;
-     poolname = _("*None*");
-  }
+      /* If a pool name is given, look up the PoolId */
+      memset(&pr, 0, sizeof(pr));
+      bstrncpy(pr.Name, val, sizeof(pr.Name));
+      if (!get_pool_dbr(ua, &pr, NT_("recyclepool"))) {
+         return;
+      }
+      /* pool = select_pool_resource(ua);  */
+      mr->RecyclePoolId = pr.PoolId;            /* get the PoolId */
+      poolname = pr.Name;
+   } else { /* update volume recyclepool="" */
+      /* If no pool name is given, set the PoolId to 0 (the default) */
+      mr->RecyclePoolId = 0;
+      poolname = _("*None*");
+   }
 
    db_lock(ua->db);
    Mmsg(query, "UPDATE Media SET RecyclePoolId=%s WHERE MediaId=%s",
-      edit_int64(mr->RecyclePoolId, ed1), edit_int64(mr->MediaId, ed2));
+        edit_int64(mr->RecyclePoolId, ed1), edit_int64(mr->MediaId, ed2));
    if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
@@ -408,7 +402,7 @@ static void update_vol_from_pool(UAContext *ua, MEDIA_DBR *mr)
  * Refresh the Volume information from the Pool record
  *   for all Volumes
  */
-static void update_all_vols_from_pool(UAContext *ua, const char *pool_name) 
+static void update_all_vols_from_pool(UAContext *ua, const char *pool_name)
 {
    POOL_DBR pr;
    MEDIA_DBR mr;
@@ -437,7 +431,7 @@ static void update_all_vols(UAContext *ua)
    MEDIA_DBR mr;
 
    memset(&pr, 0, sizeof(pr));
-   
+
    if (!db_get_pool_ids(ua->jcr, ua->db, &num_pools, &ids)) {
       ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"), db_strerror(ua->db));
       return;
@@ -487,20 +481,20 @@ static void update_vol_actiononpurge(UAContext *ua, char *val, MEDIA_DBR *mr)
    } else {
       mr->ActionOnPurge = 0;
    }
-   
+
    set_storageid_in_mr(NULL, mr);
    if (!db_update_media_record(ua->jcr, ua->db, mr)) {
       ua->error_msg(_("Error updating media record ActionOnPurge: ERR=%s"),
                     db_strerror(ua->db));
    } else {
-      ua->info_msg(_("New ActionOnPurge is: %s\n"), 
+      ua->info_msg(_("New ActionOnPurge is: %s\n"),
                    action_on_purge_to_string(mr->ActionOnPurge, ret));
    }
 }
 
 /*
  * Update a media record -- allows you to change the
- *  Volume status. E.g. if you want Bacula to stop
+ *  Volume status. E.g. if you want BAREOS to stop
  *  writing on the volume, set it to anything other
  *  than Append.
  */
@@ -628,7 +622,7 @@ static int update_volume(UAContext *ua)
       add_prompt(ua, _("RecyclePool")),                /* 15 */
       add_prompt(ua, _("Action On Purge")),            /* 16 */
       add_prompt(ua, _("Done"));                       /* 17 */
-      i = do_prompt(ua, "", _("Select parameter to modify"), NULL, 0);  
+      i = do_prompt(ua, "", _("Select parameter to modify"), NULL, 0);
 
       /* For All Volumes, All Volumes from Pool, and Done, we don't need
            * a Volume record */
@@ -643,7 +637,7 @@ static int update_volume(UAContext *ua)
          /* Modify Volume Status */
          ua->info_msg(_("Current Volume status is: %s\n"), mr.VolStatus);
          start_prompt(ua, _("Possible Values are:\n"));
-         add_prompt(ua, NT_("Append")); 
+         add_prompt(ua, NT_("Append"));
          add_prompt(ua, NT_("Archive"));
          add_prompt(ua, NT_("Disabled"));
          add_prompt(ua, NT_("Full"));
@@ -717,7 +711,7 @@ static int update_volume(UAContext *ua)
          }
          update_volslot(ua, ua->cmd, &mr);
          break;
-         
+
       case 8:                         /* InChanger */
          ua->info_msg(_("Current InChanger flag is: %d\n"), mr.InChanger);
          bsnprintf(buf, sizeof(buf), _("Set InChanger flag for Volume \"%s\": yes/no: "),
@@ -802,7 +796,7 @@ static int update_volume(UAContext *ua)
             mr.Enabled = 1;
          } else if (bstrcasecmp(ua->cmd, "no") || bstrcasecmp(ua->cmd, "false")) {
             mr.Enabled = 0;
-         } else if (bstrcasecmp(ua->cmd, "archived")) { 
+         } else if (bstrcasecmp(ua->cmd, "archived")) {
             mr.Enabled = 2;
          } else {
             mr.Enabled = atoi(ua->cmd);
@@ -826,7 +820,7 @@ static int update_volume(UAContext *ua)
 
       case 16:
          pm_strcpy(ret, "");
-         ua->info_msg(_("Current ActionOnPurge is: %s\n"), 
+         ua->info_msg(_("Current ActionOnPurge is: %s\n"),
                       action_on_purge_to_string(mr.ActionOnPurge, ret));
          if (!get_cmd(ua, _("Enter new ActionOnPurge (one of: Truncate, None): "))) {
             return 0;
@@ -965,7 +959,7 @@ static bool update_job(UAContext *ua)
          return false;
       }
       delta_start = StartTime - jr.StartTime;
-      Dmsg3(200, "ST=%lld jr.ST=%lld delta=%lld\n", StartTime, 
+      Dmsg3(200, "ST=%lld jr.ST=%lld delta=%lld\n", StartTime,
             (utime_t)jr.StartTime, delta_start);
       jr.StartTime = (time_t)StartTime;
       jr.SchedTime += (time_t)delta_start;
@@ -977,12 +971,12 @@ static bool update_job(UAContext *ua)
       bstrutime(jr.cEndTime, sizeof(jr.cEndTime), jr.EndTime);
    }
    Mmsg(cmd, "UPDATE Job SET ClientId=%s,StartTime='%s',SchedTime='%s',"
-             "EndTime='%s',JobTDate=%s WHERE JobId=%s", 
-             edit_int64(jr.ClientId, ed1), 
+             "EndTime='%s',JobTDate=%s WHERE JobId=%s",
+             edit_int64(jr.ClientId, ed1),
              jr.cStartTime,
              jr.cSchedTime,
              jr.cEndTime,
-             edit_uint64(jr.JobTDate, ed1), 
+             edit_uint64(jr.JobTDate, ed1),
              edit_int64(jr.JobId, ed2));
    if (!db_sql_query(ua->db, cmd.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));

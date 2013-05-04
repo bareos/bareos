@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Bacula File Daemon Job processing
+ * Bareos File Daemon Job processing
  *
- *    Kern Sibbald, October MM
- *
+ * Kern Sibbald, October MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "filed.h"
 #include "ch.h"
 
@@ -90,6 +84,8 @@ static int response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd);
 static void filed_free_jcr(JCR *jcr);
 static int open_sd_read_session(JCR *jcr);
 static int runscript_cmd(JCR *jcr);
+static int runbefore_cmd(JCR *jcr);
+static int runafter_cmd(JCR *jcr);
 static int runbeforenow_cmd(JCR *jcr);
 static int restore_object_cmd(JCR *jcr);
 static void set_storage_auth_key(JCR *jcr, char *key);
@@ -128,6 +124,8 @@ static struct s_cmds cmds[] = {
    { "verify", verify_cmd, 0 },
    { "bootstrap", bootstrap_cmd, 0 },
    { "RunBeforeNow", runbeforenow_cmd, 0 },
+   { "RunBeforeJob", runbefore_cmd, 0 },
+   { "RunAfterJob", runafter_cmd, 0 },
    { "Run", runscript_cmd, 0 },
    { "accurate", accurate_cmd, 0 },
    { "restoreobject", restore_object_cmd, 0 },
@@ -151,6 +149,8 @@ static char restoreobjcmd1[] = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d\n";
 static char endrestoreobjectcmd[] = "restoreobject end\n";
 static char verifycmd[] = "verify level=%30s";
 static char estimatecmd[] = "estimate listing=%d";
+static char runbefore[] = "RunBeforeJob %s";
+static char runafter[] = "RunAfterJob %s";
 static char runscript[] = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
 static char setbandwidth[] = "setbandwidth=%lld Job=%127s";
 
@@ -174,7 +174,9 @@ static char OKsetdebug[] = "2000 OK setdebug=%d trace=%d hangup=%d\n";
 static char BADjob[] = "2901 Bad Job\n";
 static char EndJob[] = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
                        " JobBytes=%s Errors=%u VSS=%d Encrypt=%d\n";
+static char OKRunBefore[] = "2000 OK RunBefore\n";
 static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
+static char OKRunAfter[] = "2000 OK RunAfter\n";
 static char OKRunScript[] = "2000 OK RunScript\n";
 static char FailedRunScript[] = "2905 Failed RunScript\n";
 static char BADcmd[] = "2902 Bad %s\n";
@@ -499,6 +501,9 @@ static int setbandwidth_cmd(JCR *jcr)
          cjcr->max_bandwidth = bw;
          if (cjcr->store_bsock) {
             cjcr->store_bsock->set_bwlimit(bw);
+            if (me->allow_bw_bursting) {
+               cjcr->store_bsock->set_bwlimit_bursting();
+            }
          }
          free_jcr(cjcr);
       }
@@ -571,7 +576,7 @@ static int job_cmd(JCR *jcr)
    sd_auth_key.check_size(dir->msglen);
 
    if (sscanf(dir->msg, jobcmd,  &jcr->JobId, jcr->Job,
-              &jcr->VolSessionId, &jcr->VolSessionTime, 
+              &jcr->VolSessionId, &jcr->VolSessionTime,
               sd_auth_key.c_str()) != 5) {
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Bad Job Command: %s"), jcr->errmsg);
@@ -590,6 +595,50 @@ static int job_cmd(JCR *jcr)
 #endif
 }
 
+static int runbefore_cmd(JCR *jcr)
+{
+   bool ok;
+   POOLMEM *cmd;
+   RUNSCRIPT *script;
+   BSOCK *dir = jcr->dir_bsock;
+
+   if (!me->compatible) {
+      dir->fsend(_("2905 Bad RunBeforeJob command.\n"));
+      return 0;
+   }
+
+   Dmsg1(100, "runbefore_cmd: %s", dir->msg);
+   cmd = get_memory(dir->msglen + 1);
+   if (sscanf(dir->msg, runbefore, cmd) != 1) {
+      pm_strcpy(jcr->errmsg, dir->msg);
+      Jmsg1(jcr, M_FATAL, 0, _("Bad RunBeforeJob command: %s\n"), jcr->errmsg);
+      dir->fsend(_("2905 Bad RunBeforeJob command.\n"));
+      free_memory(cmd);
+      return 0;
+   }
+   unbash_spaces(cmd);
+
+   /*
+    * Run the command now
+    */
+   script = new_runscript();
+   script->set_job_code_callback(job_code_callback_filed);
+   script->set_command(cmd);
+   script->when = SCRIPT_Before;
+   free_memory(cmd);
+
+   ok = script->run(jcr, "ClientRunBeforeJob");
+   free_runscript(script);
+
+   if (ok) {
+      dir->fsend(OKRunBefore);
+      return 1;
+   } else {
+      dir->fsend(_("2905 Bad RunBeforeJob command.\n"));
+      return 0;
+   }
+}
+
 static int runbeforenow_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
@@ -606,6 +655,41 @@ static int runbeforenow_cmd(JCR *jcr)
    }
 }
 
+static int runafter_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   POOLMEM *cmd;
+   RUNSCRIPT *script;
+
+   if (!me->compatible) {
+      dir->fsend(_("2905 Bad RunAfterJob command.\n"));
+      return 0;
+   }
+
+   Dmsg1(100, "runafter_cmd: %s", dir->msg);
+   cmd = get_memory(dir->msglen + 1);
+   if (sscanf(dir->msg, runafter, cmd) != 1) {
+      pm_strcpy(jcr->errmsg, dir->msg);
+      Jmsg1(jcr, M_FATAL, 0, _("Bad RunAfter command: %s\n"), jcr->errmsg);
+      dir->fsend(_("2905 Bad RunAfterJob command.\n"));
+      free_memory(cmd);
+      return 0;
+   }
+   unbash_spaces(cmd);
+
+   script = new_runscript();
+   script->set_job_code_callback(job_code_callback_filed);
+   script->set_command(cmd);
+   script->on_success = true;
+   script->on_failure = false;
+   script->when = SCRIPT_After;
+   free_memory(cmd);
+
+   jcr->RunScripts->append(script);
+
+   return dir->fsend(OKRunAfter);
+}
+
 static int runscript_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
@@ -617,7 +701,7 @@ static int runscript_cmd(JCR *jcr)
 
    Dmsg1(100, "runscript_cmd: '%s'\n", dir->msg);
    /* Note, we cannot sscanf into bools */
-   if (sscanf(dir->msg, runscript, &on_success, 
+   if (sscanf(dir->msg, runscript, &on_success,
                                   &on_failure,
                                   &fail_on_error,
                                   &cmd->when,
@@ -667,14 +751,14 @@ static int restore_object_cmd(JCR *jcr)
    rop.plugin_name = (char *) malloc (dir->msglen);
    *rop.plugin_name = 0;
 
-   if (sscanf(dir->msg, restoreobjcmd, &rop.JobId, &rop.object_len, 
-              &rop.object_full_len, &rop.object_index, 
-              &rop.object_type, &rop.object_compression, &FileIndex, 
+   if (sscanf(dir->msg, restoreobjcmd, &rop.JobId, &rop.object_len,
+              &rop.object_full_len, &rop.object_index,
+              &rop.object_type, &rop.object_compression, &FileIndex,
               rop.plugin_name) != 8) {
 
       /* Old version, no plugin_name */
-      if (sscanf(dir->msg, restoreobjcmd1, &rop.JobId, &rop.object_len, 
-                 &rop.object_full_len, &rop.object_index, 
+      if (sscanf(dir->msg, restoreobjcmd1, &rop.JobId, &rop.object_len,
+                 &rop.object_full_len, &rop.object_index,
                  &rop.object_type, &rop.object_compression, &FileIndex) != 7) {
          Dmsg0(5, "Bad restore object command\n");
          pm_strcpy(jcr->errmsg, dir->msg);
@@ -687,7 +771,7 @@ static int restore_object_cmd(JCR *jcr)
 
    Dmsg7(100, "Recv object: JobId=%u objlen=%d full_len=%d objinx=%d objtype=%d "
          "FI=%d plugin_name=%s\n",
-         rop.JobId, rop.object_len, rop.object_full_len, 
+         rop.JobId, rop.object_len, rop.object_full_len,
          rop.object_index, rop.object_type, FileIndex, rop.plugin_name);
    /* Read Object name */
    if (dir->recv() < 0) {
@@ -726,7 +810,7 @@ static int restore_object_cmd(JCR *jcr)
       Dmsg0(100, "got job metadata\n");
       jcr->got_metadata = true;
    }
-   
+
    generate_plugin_event(jcr, bEventRestoreObject, (void *)&rop);
 
    if (rop.object_name) {
@@ -834,8 +918,8 @@ static int bootstrap_cmd(JCR *jcr)
    }
    fclose(bs);
    /*
-    * Note, do not free the bootstrap yet -- it needs to be 
-    *  sent to the SD 
+    * Note, do not free the bootstrap yet -- it needs to be
+    *  sent to the SD
     */
    return dir->fsend(OKbootstrap);
 }
@@ -988,13 +1072,13 @@ static int session_cmd(JCR *jcr)
 static void set_storage_auth_key(JCR *jcr, char *key)
 {
    /* if no key don't update anything */
-   if (!*key) {                
+   if (!*key) {
       return;
    }
 
    /**
     * We can be contacting multiple storage daemons.
-    * So, make sure that any old jcr->store_bsock is cleaned up. 
+    * So, make sure that any old jcr->store_bsock is cleaned up.
     */
    if (jcr->store_bsock) {
       jcr->store_bsock->destroy();
@@ -1003,7 +1087,7 @@ static void set_storage_auth_key(JCR *jcr, char *key)
 
    /**
     * We can be contacting multiple storage daemons.
-    *   So, make sure that any old jcr->sd_auth_key is cleaned up. 
+    *   So, make sure that any old jcr->sd_auth_key is cleaned up.
     */
    if (jcr->sd_auth_key) {
       /*
@@ -1034,7 +1118,7 @@ static int storage_cmd(JCR *jcr)
 
    Dmsg1(100, "StorageCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->msglen);
-   if (sscanf(dir->msg, storaddr, &jcr->stored_addr, &stored_port, 
+   if (sscanf(dir->msg, storaddr, &jcr->stored_addr, &stored_port,
               &enable_ssl, sd_auth_key.c_str()) != 4) {
       if (sscanf(dir->msg, storaddr_v1, &jcr->stored_addr,
                  &stored_port, &enable_ssl) != 3) {
@@ -1046,8 +1130,7 @@ static int storage_cmd(JCR *jcr)
 
    set_storage_auth_key(jcr, sd_auth_key.c_str());
 
-   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", jcr->stored_addr, stored_port, 
-         enable_ssl);
+   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", jcr->stored_addr, stored_port, enable_ssl);
    /* Open command communications with Storage daemon */
    /* Try to connect for 1 hour at 10 second intervals */
 
@@ -1057,24 +1140,27 @@ static int storage_cmd(JCR *jcr)
    if (!jcr->max_bandwidth) {
       if (jcr->director->max_bandwidth_per_job) {
          jcr->max_bandwidth = jcr->director->max_bandwidth_per_job;
-
       } else if (me->max_bandwidth_per_job) {
          jcr->max_bandwidth = me->max_bandwidth_per_job;
       }
    }
+
    sd->set_bwlimit(jcr->max_bandwidth);
+   if (me->allow_bw_bursting) {
+      sd->set_bwlimit_bursting();
+   }
 
    if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
-                _("Storage daemon"), jcr->stored_addr, NULL, stored_port, 1)) {
+                    _("Storage daemon"), jcr->stored_addr, NULL, stored_port, 1)) {
      sd->destroy();
      sd = NULL;
    }
 
    if (sd == NULL) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"),
-          jcr->stored_addr, stored_port);
+           jcr->stored_addr, stored_port);
       Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n",
-          jcr->stored_addr, stored_port);
+            jcr->stored_addr, stored_port);
       goto bail_out;
    }
    Dmsg0(110, "Connection OK to SD.\n");
@@ -1126,23 +1212,22 @@ static int backup_cmd(JCR *jcr)
       P(vss_mutex);
    }
 #endif
-  
+
    if (sscanf(dir->msg, "backup FileIndex=%ld\n", &FileIndex) == 1) {
       jcr->JobFiles = FileIndex;
       Dmsg1(100, "JobFiles=%ld\n", jcr->JobFiles);
    }
 
    /**
-    * Validate some options given to the backup make sense for the compiled in
-    * options of this filed.
+    * Validate some options given to the backup make sense for the compiled in options of this filed.
     */
    if (jcr->ff->flags & FO_ACL && !have_acl) {
-      Jmsg(jcr, M_FATAL, 0, _("ACL support not configured for your machine.\n"));
-      goto cleanup;
+      Jmsg(jcr, M_WARNING, 0, _("ACL support requested in fileset but not available on this platform. Disabling ...\n"));
+      jcr->ff->flags &= ~FO_ACL;
    }
    if (jcr->ff->flags & FO_XATTR && !have_xattr) {
-      Jmsg(jcr, M_FATAL, 0, _("XATTR support not configured for your machine.\n"));
-      goto cleanup;
+      Jmsg(jcr, M_WARNING, 0, _("XATTR support requested in fileset but not available on this platform. Disabling ...\n"));
+      jcr->ff->flags &= ~FO_XATTR;
    }
 
    jcr->setJobStatus(JS_Blocked);
@@ -1191,22 +1276,22 @@ static int backup_cmd(JCR *jcr)
    if (!response(jcr, sd, OK_data, "Append Data")) {
       goto cleanup;
    }
-   
+
    generate_plugin_event(jcr, bEventStartBackupJob);
 
 #if defined(WIN32_VSS)
    /* START VSS ON WIN32 */
-   if (jcr->VSS) {      
-      if (g_pVSSClient->InitializeForBackup(jcr)) {   
+   if (jcr->VSS) {
+      if (g_pVSSClient->InitializeForBackup(jcr)) {
         generate_plugin_event(jcr, bEventVssBackupAddComponents);
-        /* tell vss which drives to snapshot */   
+        /* tell vss which drives to snapshot */
         char szWinDriveLetters[27];
         *szWinDriveLetters=0;
         /* Plugin driver can return drive letters */
         generate_plugin_event(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
         if (get_win32_driveletters(jcr->ff, szWinDriveLetters)) {
             Jmsg(jcr, M_INFO, 0, _("Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\"\n"), g_pVSSClient->GetDriverName(), szWinDriveLetters);
-            if (!g_pVSSClient->CreateSnapshots(szWinDriveLetters)) {               
+            if (!g_pVSSClient->CreateSnapshots(szWinDriveLetters)) {
                berrno be;
                Jmsg(jcr, M_FATAL, 0, _("CreateSGenerate VSS snapshots failed. ERR=%s\n"),
                     be.bstrerror());
@@ -1219,10 +1304,10 @@ static int backup_cmd(JCR *jcr)
                   }
                }
                /* inform user about writer states */
-               for (i=0; i < (int)g_pVSSClient->GetWriterCount(); i++) {               
+               for (i=0; i < (int)g_pVSSClient->GetWriterCount(); i++) {
                   if (g_pVSSClient->GetWriterState(i) < 1) {
-                     Jmsg(jcr, M_INFO, 0, _("VSS Writer (PrepareForBackup): %s\n"), g_pVSSClient->GetWriterInfo(i));                    
-                  }                            
+                     Jmsg(jcr, M_INFO, 0, _("VSS Writer (PrepareForBackup): %s\n"), g_pVSSClient->GetWriterInfo(i));
+                  }
                }
             }
         } else {
@@ -1232,7 +1317,7 @@ static int backup_cmd(JCR *jcr)
          berrno be;
          Jmsg(jcr, M_FATAL, 0, _("VSS was not initialized properly. ERR=%s\n"),
             be.bstrerror());
-      } 
+      }
       run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS");
    }
 #endif
@@ -1427,7 +1512,7 @@ static int restore_cmd(JCR *jcr)
 
    /**
     * No need to enable VSS for restore if we do not have plugin
-    *  data to restore 
+    *  data to restore
     */
    enable_vss = jcr->got_metadata;
 
@@ -1592,7 +1677,7 @@ bail_out:
    return ret;
 }
 
-static int end_restore_cmd(JCR *jcr) 
+static int end_restore_cmd(JCR *jcr)
 {
    Dmsg0(5, "end_restore_cmd\n");
    generate_plugin_event(jcr, bEventEndRestoreJob);
@@ -1666,7 +1751,7 @@ static void filed_free_jcr(JCR *jcr)
    free_path_list(jcr);
 
    if (jcr->JobId != 0)
-      write_state_file(me->working_directory, "bacula-fd", get_first_port_host_order(me->FDaddrs));
+      write_state_file(me->working_directory, "bareos-fd", get_first_port_host_order(me->FDaddrs));
 
    return;
 }

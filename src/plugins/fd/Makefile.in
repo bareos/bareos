@@ -1,0 +1,84 @@
+#
+# Simple Makefile for building test FD plugins for Bareos
+#
+@MCOMMON@
+
+CPPFLAGS += @PYTHON_INC@ @ZLIB_INC@ @LZO_INC@
+
+srcdir = @srcdir@
+VPATH = @srcdir@:../../filed
+.PATH: @srcdir@
+
+basedir = ../..
+# top dir
+topdir = ../../..
+# this dir relative to top dir
+thisdir = src/plugins/fd
+
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/filed
+
+.SUFFIXES:    .c .lo
+
+# inference rules
+.c.lo:
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) -c $<
+
+all: Makefile bpipe-fd.la python-fd.la test-plugin-fd.la test-deltaseq-fd.la
+
+Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+		&& CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+example-plugin-fd.la: Makefile example-plugin-fd$(DEFAULT_OBJECT_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared example-plugin-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
+
+bpipe-fd.la: Makefile bpipe-fd$(DEFAULT_OBJECT_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared bpipe-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
+
+python-fd.la: Makefile \
+	      python-fd$(DEFAULT_OBJECT_TYPE) \
+	      ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared python-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
+	-L../../lib -lbareos @PYTHON_LIBS@
+
+test-deltaseq-fd.la: Makefile test-deltaseq-fd$(DEFAULT_OBJECT_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared test-deltaseq-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
+	-L../../lib -lbareos
+
+test-plugin-fd.la: Makefile test-plugin-fd$(DEFAULT_OBJECT_TYPE) ../../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared test-plugin-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
+	-L../../lib -lbareoscfg -lbareos
+
+plugtest: Makefile fd_plugins.c fileset.c \
+	  ../../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../filed/fd_plugins.c
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../filed/fileset.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -L../../findlib -o $@ fd_plugins.o fileset.o -lbareosfind -lbareos $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
+
+install: all
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bpipe-fd.la $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/bpipe-fd.la
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) python-fd.la $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/python-fd.la
+
+install-test-plugin: all
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) test-plugin-fd.la $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/test-plugin-fd.la
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) test-deltaseq-fd.la $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/test-deltaseq-fd.la
+
+libtool-clean:
+	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
+	@$(RMF) *.la
+	@$(RMF) -r .libs _libs
+
+clean:	libtool-clean
+	@$(RMF) plugtest *.so *.o 1 2 3
+
+distclean: clean
+	@$(RMF) Makefile
+
+depend:

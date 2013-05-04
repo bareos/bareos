@@ -1,5 +1,0 @@
-/* Configure vim and python to use the correct whitespace
- *   These *should* be the right settings for Bacula development
- * vim: set tabstop=8 shiftwidth=3:
- * -*- mode: c; tab-width: 3 -*-
- */

@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +11,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Bacula floating point time and date routines -- John Walker
+ * BAREOS floating point time and date routines -- John Walker
  *
  * Later double precision integer time/date routines -- Kern Sibbald
  *
  */
 
-
 /* Concerning times. There are a number of differnt time standards
- * in Bacula (fdate_t, ftime_t, time_t (Unix standard), btime_t, and
+ * in BAREOS (fdate_t, ftime_t, time_t (Unix standard), btime_t, and
  *  utime_t).  fdate_t and ftime_t are deprecated and should no longer
  *  be used, and in general, Unix time time_t should no longer be used,
  *  it is being phased out.
@@ -47,7 +39,7 @@
  *     utime_t  (64 bit integer in seconds base Epoch)
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include <math.h>
 
 /* Formatted time for user display: dd-Mon-yyyy hh:mm */
@@ -156,7 +148,7 @@ utime_t str_to_utime(const char *str)
 
 
 /*
- * Bacula's time (btime_t) is an unsigned 64 bit integer that contains
+ * BAREOS's time (btime_t) is an unsigned 64 bit integer that contains
  *   the number of microseconds since Epoch Time (1 Jan 1970) UTC.
  */
 
@@ -223,7 +215,7 @@ int tm_woy(time_t stime)
    tm_yday = tm.tm_yday;
    tm.tm_mon = 0;
    tm.tm_mday = 4;
-   tm.tm_isdst = 0;                   /* 4 Jan is not DST */ 
+   tm.tm_isdst = 0;                   /* 4 Jan is not DST */
    time4 = mktime(&tm);
    (void)localtime_r(&time4, &tm);
    fty = 1 - tm.tm_wday;

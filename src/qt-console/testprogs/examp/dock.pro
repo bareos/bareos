@@ -12,4 +12,3 @@ UI_DIR = ui
 #RESOURCES = dockwidgets.qrc
 HEADERS += mainwindow.h
 SOURCES += mainwindow.cpp main.cpp
-

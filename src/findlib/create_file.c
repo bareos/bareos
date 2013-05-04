@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Create a file, and reset the modes
+ * Create a file, and reset the modes
  *
- *    Kern Sibbald, November MM
- *
- *   Version $Id$
- *
+ * Kern Sibbald, November MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "find.h"
 
 #ifndef S_IRWXUGO
@@ -156,7 +148,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    case FT_SPEC:                      /* fifo, ... to be backed up */
    case FT_REGE:                      /* empty file */
    case FT_REG:                       /* regular file */
-      /* 
+      /*
        * Note, we do not delete FT_RAW because these are device files
        *  or FIFOs that should already exist. If we blow it away,
        *  we may blow away a FIFO that is being used to read the
@@ -221,7 +213,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
             Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
             bclose(bfd);
          }
-      
+
 
          if ((bopen(bfd, attr->ofname, flags, S_IRUSR | S_IWUSR)) < 0) {
             berrno be;
@@ -234,8 +226,8 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
          return CF_EXTRACT;
 
 #ifndef HAVE_WIN32  // none of these exist in MS Windows
-      case FT_RAW:                    /* Bacula raw device e.g. /dev/sda1 */
-      case FT_FIFO:                   /* Bacula fifo to save data */
+      case FT_RAW:                    /* Bareos raw device e.g. /dev/sda1 */
+      case FT_FIFO:                   /* Bareos fifo to save data */
       case FT_SPEC:
          flags = O_WRONLY | O_BINARY;
 
@@ -281,7 +273,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
           * Here we are going to attempt to restore to a FIFO, which
           *   means that the FIFO must already exist, AND there must
           *   be some process already attempting to read from the
-          *   FIFO, so we open it write-only. 
+          *   FIFO, so we open it write-only.
           */
          if (attr->type == FT_RAW || attr->type == FT_FIFO) {
             btimer_t *tid;
@@ -397,8 +389,8 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
             be.set_errno(bfd->berrno);
 #ifdef HAVE_WIN32
             /* Check for trying to create a drive, if so, skip */
-            if (attr->ofname[1] == ':' && 
-                IsPathSeparator(attr->ofname[2]) && 
+            if (attr->ofname[1] == ':' &&
+                IsPathSeparator(attr->ofname[2]) &&
                 attr->ofname[3] == '\0') {
                return CF_SKIP;
             }

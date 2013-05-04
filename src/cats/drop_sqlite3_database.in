@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to drop Bacula SQLite tables
+# shell script to drop Bareos SQLite tables
 db_name=@db_name@
 
 cd @working_dir@

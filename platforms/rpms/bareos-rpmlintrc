@@ -1,0 +1,53 @@
+#addFilter("E: shlib-policy-name-error")
+# We as packager don't take the risk to reload a perhaps running daemon
+# Bareos administrator should know that and only the director could be reloaded
+# safely if no jobs are running
+addFilter("W: init-script-without-%restart_on_update-postun /etc/init.d/bareos-dir")
+addFilter("W: init-script-without-%restart_on_update-postun /etc/init.d/bareos-sd")
+addFilter("W: init-script-without-%restart_on_update-postun /etc/init.d/bareos-fd")
+addFilter("W: no-reload-entry /etc/init.d/bareos-dir")
+addFilter("W: no-reload-entry /etc/init.d/bareos-fd")
+addFilter("W: no-reload-entry /etc/init.d/bareos-sd")
+
+# Filtered due to absolute false positive
+# http://lists.opensuse.org/opensuse-factory/2011-05/msg00315.html
+addFilter("W: file-contains-date-and-time")
+
+# Filtered there's no manual for init.d scripts
+# linked as /usr/sbin/rc
+addFilter("W: no-manual-page-for-binary rcbareos-dir")
+addFilter("W: no-manual-page-for-binary rcbareos-fd")
+addFilter("W: no-manual-page-for-binary rcbareos-sd")
+# Neither for console
+addFilter("W: no-manual-page-for-binary bareos-tray-monitor-gtk")
+addFilter("W: no-manual-page-for-binary bareos-tray-monitor-qt")
+# no man page for simple bash script unfrequently used
+addFilter("W: no-manual-page-for-binary btraceback")
+
+# BF asked upstream for fix - let the warning to remember
+# bareos-dir.x86_64: I: binary-or-shlib-calls-gethostbyname /usr/sbin/bsmtp
+# The binary calls gethostbyname(). Please port the code to use getaddrinfo().
+# addFilter("I: binary-or-shlib-calls-gethostbyname /usr/sbin/bsmtp")
+
+# We use %%config on a non config file
+# see spec for explanation
+addFilter("W: non-etc-or-var-file-marked-as-conffile /usr/lib64/bareos/query.sql")
+
+# Filtered non-standard-gid
+# We will ask for that
+addFilter("W: non-standard-gid")
+addFilter("W: non-standard-uid")
+
+# shlibs-policy : asked in -buildservice 2011-11-24
+# Filter added cause we don't share our .so and they can't be a different
+# version.
+# We (packagers & bareos specialists) decide to split those into separates
+# packages to simplify the requires and link with the 3 databases.
+addFilter("W: shlib-policy-missing-suffix")
+
+# These are fake warning, our package contain at least one lib
+# don't need versioning
+# can't be placed in runtime -dir package
+addFilter("W: shlib-policy-missing-lib ")
+addFilter("W: shlib-unversioned-lib")
+addFilter("E: shlib-policy-name-error")

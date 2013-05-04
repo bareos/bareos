@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,34 +13,28 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *     Old style 
+ * Old style
  *
- *  Routines used to keep and match include and exclude
- *   filename/pathname patterns.
+ * Routines used to keep and match include and exclude
+ * filename/pathname patterns.
  *
- *  Note, this file is used for the old style include and
- *   excludes, so is deprecated. The new style code is
- *   found in find.c.   
- *  This code is still used for lists in testls and bextract.
+ * Note, this file is used for the old style include and
+ * excludes, so is deprecated. The new style code is
+ * found in find.c.
+ * This code is still used for lists in testls and bextract.
  *
- *   Kern E. Sibbald, December MMI
- *
+ * Kern E. Sibbald, December MMI
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "find.h"
 #include "ch.h"
 
@@ -334,7 +328,7 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
          { }
       next->next = inc;
    }
-   Dmsg4(100, "add_fname_to_include prefix=%d compres=%d alg= %d fname=%s\n", 
+   Dmsg4(100, "add_fname_to_include prefix=%d compres=%d alg= %d fname=%s\n",
          prefixed, !!(inc->options & FO_COMPRESS), inc->algo, inc->fname);
 }
 

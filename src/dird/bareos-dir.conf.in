@@ -1,0 +1,326 @@
+#
+# Default Bareos Director Configuration file
+#
+#  The only thing that MUST be changed is to add one or more
+#   file or directory names in the Include directive of the
+#   FileSet resource.
+#
+#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
+#
+#  You might also want to change the default email address
+#   from root to your address.  See the "mail" and "operator"
+#   directives in the Messages resource.
+#
+
+Director {                            # define myself
+  Name = @basename@-dir
+  QueryFile = "@scriptdir@/query.sql"
+  Maximum Concurrent Jobs = 1
+  Password = "@dir_password@"         # Console password
+  Messages = Daemon
+
+  # remove comment in next line to load plugins from specified directory
+  # Plugin Directory = @plugindir@
+}
+
+JobDefs {
+  Name = "DefaultJob"
+  Type = Backup
+  Level = Incremental
+  Client = @basename@-fd
+  FileSet = "Full Set"
+  Schedule = "WeeklyCycle"
+  Storage = File
+  Messages = Standard
+  Pool = File
+  Priority = 10
+  Write Bootstrap = "@working_dir@/%c.bsr"
+}
+
+
+#
+# Define the main nightly save backup job
+#   By default, this job will back up to disk in @archivedir@
+Job {
+  Name = "BackupClient1"
+  JobDefs = "DefaultJob"
+}
+
+#Job {
+#  Name = "BackupClient2"
+#  Client = @basename@2-fd
+#  JobDefs = "DefaultJob"
+#}
+
+# Backup the catalog database (after the nightly save)
+Job {
+  Name = "BackupCatalog"
+  JobDefs = "DefaultJob"
+  Level = Full
+  FileSet="Catalog"
+  Schedule = "WeeklyCycleAfterBackup"
+  # This creates an ASCII copy of the catalog
+  # Arguments to make_catalog_backup.pl are:
+  #  make_catalog_backup.pl <catalog-name>
+  RunBeforeJob = "@scriptdir@/make_catalog_backup.pl MyCatalog"
+  # This deletes the copy of the catalog
+  RunAfterJob  = "@scriptdir@/delete_catalog_backup"
+  Write Bootstrap = "@working_dir@/%n.bsr"
+  Priority = 11                   # run after main backup
+}
+
+#
+# Standard Restore template, to be changed by Console program
+#  Only one such job is needed for all Jobs/Clients/Storage ...
+#
+Job {
+  Name = "RestoreFiles"
+  Type = Restore
+  Client=@basename@-fd
+  FileSet="Full Set"
+  Storage = File
+  Pool = Default
+  Messages = Standard
+  Where = @archivedir@/bareos-restores
+}
+
+
+# List of files to be backed up
+FileSet {
+  Name = "Full Set"
+  Include {
+    Options {
+      signature = MD5
+    }
+#
+#  Put your list of files here, preceded by 'File =', one per line
+#    or include an external list with:
+#
+#    File = <file-name
+#
+#  Note: / backs up everything on the root partition.
+#    if you have other partitions such as /usr or /home
+#    you will probably want to add them too.
+#
+#  By default this is defined to point to the Bareos binary
+#    directory to give a reasonable FileSet to backup to
+#    disk storage during initial testing.
+#
+    File = @sbindir@
+  }
+
+#
+# If you backup the root directory, the following two excluded
+#   files can be useful
+#
+  Exclude {
+    File = @working_dir@
+    File = @archivedir@
+    File = /proc
+    File = /tmp
+    File = /.journal
+    File = /.fsck
+  }
+}
+
+FileSet {
+  Name = "Windows All Drives"
+  Enable VSS = yes
+  Include {
+    Options {
+      Signature = MD5
+      Drive Type = fixed
+      IgnoreCase = yes
+      WildFile = "[A-Z]:/pagefile.sys"
+      WildDir = "[A-Z]:/RECYCLER"
+      WildDir = "[A-Z]:/$RECYCLE.BIN"
+      WildDir = "[A-Z]:/System Volume Information"
+      Exclude = yes
+    }
+    File = /
+  }
+}
+
+#
+# When to do the backups, full backup on first sunday of the month,
+#  differential (i.e. incremental since full) every other sunday,
+#  and incremental backups other days
+Schedule {
+  Name = "WeeklyCycle"
+  Run = Full 1st sun at 23:05
+  Run = Differential 2nd-5th sun at 23:05
+  Run = Incremental mon-sat at 23:05
+}
+
+# This schedule does the catalog. It starts after the WeeklyCycle
+Schedule {
+  Name = "WeeklyCycleAfterBackup"
+  Run = Full sun-sat at 23:10
+}
+
+# This is the backup of the catalog
+FileSet {
+  Name = "Catalog"
+  Include {
+    Options {
+      signature = MD5
+    }
+    File = "@working_dir@/@db_name@.sql"
+  }
+}
+
+# Client (File Services) to backup
+Client {
+  Name = @basename@-fd
+  Address = @hostname@
+  Password = "@fd_password@"          # password for FileDaemon
+  File Retention = 30 days            # 30 days
+  Job Retention = 6 months            # six months
+  AutoPrune = no                      # Prune expired Jobs/Files
+}
+
+#
+# Second Client (File Services) to backup
+#  You should change Name, Address, and Password before using
+#
+#Client {
+#  Name = @basename@2-fd
+#  Address = @hostname@2
+#  Password = "@fd_password@2"         # password for FileDaemon 2
+#  File Retention = 30 days            # 30 days
+#  Job Retention = 6 months            # six months
+#  AutoPrune = no                      # Prune expired Jobs/Files
+#}
+
+
+# Definition of file storage device
+Storage {
+  Name = File
+# Do not use "localhost" here
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  Password = "@sd_password@"
+  Device = FileStorage
+  Media Type = File
+}
+
+
+
+# Definition of DDS tape storage device
+#Storage {
+#  Name = DDS-4
+#  Do not use "localhost" here
+#  Address = @hostname@                # N.B. Use a fully qualified name here
+#  Password = "@sd_password@"          # password for Storage daemon
+#  Device = DDS-4                      # must be same as Device in Storage daemon
+#  Media Type = DDS-4                  # must be same as MediaType in Storage daemon
+#  Autochanger = yes                   # enable for autochanger device
+#}
+
+# Definition of 8mm tape storage device
+#Storage {
+#  Name = "8mmDrive"
+#  Do not use "localhost" here
+#  Address = @hostname@                # N.B. Use a fully qualified name here
+#  Password = "@sd_password@"
+#  Device = "Exabyte 8mm"
+#  MediaType = "8mm"
+#}
+
+# Definition of DVD storage device
+#Storage {
+#  Name = "DVD"
+#  Do not use "localhost" here
+#  Address = @hostname@                # N.B. Use a fully qualified name here
+#  Password = "@sd_password@"
+#  Device = "DVD Writer"
+#  MediaType = "DVD"
+#}
+
+# Generic catalog service
+Catalog {
+  Name = MyCatalog
+  # Uncomment the following lines if you want the dbi driver
+  @uncomment_dbi@ dbdriver = "dbi:@DEFAULT_DB_TYPE@"; dbaddress = 127.0.0.1; dbport = @db_port@
+  #dbdriver = "@DEFAULT_DB_TYPE@"
+  dbdriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
+  dbname = "@db_name@"
+  dbuser = "@db_user@"
+  dbpassword = "@db_password@"
+}
+
+# Reasonable message delivery -- send most everything to email address
+#  and to the console
+Messages {
+  Name = Standard
+#
+# NOTE! If you send to two email or more email addresses, you will need
+#  to replace the %r in the from field (-f part) with a single valid
+#  email address in both the mailcommand and the operatorcommand.
+#  What this does is, it sets the email address that emails would display
+#  in the FROM field, which is by default the same email as they're being
+#  sent to.  However, if you send email to more than one address, then
+#  you'll have to set the FROM address manually, to a single address.
+#  for example, a 'no-reply@mydomain.com', is better since that tends to
+#  tell (most) people that its coming from an automated source.
+
+#
+  mailcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
+  operatorcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
+  mail = @job_email@ = all, !skipped
+  operator = @job_email@ = mount
+  console = all, !skipped, !saved
+#
+# WARNING! the following will create a file that you must cycle from
+#          time to time as it will grow indefinitely. However, it will
+#          also keep all your messages if they scroll off the console.
+#
+  append = "@logdir@/bareos.log" = all, !skipped
+  catalog = all
+}
+
+
+#
+# Message delivery for daemon messages (no job).
+Messages {
+  Name = Daemon
+  mailcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
+  mail = @job_email@ = all, !skipped
+  console = all, !skipped, !saved
+  append = "@logdir@/bareos.log" = all, !skipped
+}
+
+# Default pool definition
+Pool {
+  Name = Default
+  Pool Type = Backup
+  Recycle = yes                       # Bareos can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365 days         # one year
+}
+
+# File Pool definition
+Pool {
+  Name = File
+  Pool Type = Backup
+  Recycle = yes                       # Bareos can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365 days         # one year
+  Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
+  Maximum Volumes = 100               # Limit number of Volumes in Pool
+}
+
+
+# Scratch pool definition
+Pool {
+  Name = Scratch
+  Pool Type = Backup
+}
+
+#
+# Restricted console used by tray-monitor to get the status of the director
+#
+Console {
+  Name = @basename@-mon
+  Password = "@mon_dir_password@"
+  CommandACL = status, .status
+}

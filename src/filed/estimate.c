@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,29 +11,21 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Bacula File Daemon estimate.c
- *   Make and estimate of the number of files and size to be saved.
+ * Bareos File Daemon estimate.c
+ * Make and estimate of the number of files and size to be saved.
  *
- *    Kern Sibbald, September MMI
- *
- *   Version $Id$
- *
+ * Kern Sibbald, September MMI
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "filed.h"
 
 static int tally_file(JCR *jcr, FF_PKT *ff_pkt, bool);
@@ -53,7 +43,7 @@ int make_estimate(JCR *jcr)
    /* in accurate mode, we overwrite the find_one check function */
    if (jcr->accurate) {
       set_find_changed_function((FF_PKT *)jcr->ff, accurate_check_file);
-   } 
+   }
 
    status = find_files(jcr, (FF_PKT *)jcr->ff, tally_file, plugin_estimate);
    accurate_free(jcr);
@@ -64,7 +54,7 @@ int make_estimate(JCR *jcr)
  * Called here by find() for each file included.
  *
  */
-static int tally_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level) 
+static int tally_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 {
    ATTR attr;
 

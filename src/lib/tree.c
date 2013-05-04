@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +11,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Directory tree build/traverse routines
  *
- *    Kern Sibbald, June MMII
- *
-*/
+ * Kern Sibbald, June MMII
+ */
 
-
-#include "bacula.h"
+#include "bareos.h"
 
 #define B_PAGE_SIZE 4096
 #define MAX_PAGES 2400
@@ -472,7 +463,7 @@ int main(int argc, char *argv[])
     *root->fname = 0;
     root->fname_len = 0;
 
-    FillDirectoryTree("/home/kern/bacula/k", root, NULL);
+    FillDirectoryTree("/home/kern/bareos/k", root, NULL);
 
     for (node = first_tree_node(root); node; node=next_tree_node(node)) {
        tree_getpath(node, buf, sizeof(buf));
@@ -480,15 +471,15 @@ int main(int argc, char *argv[])
     }
 
     node = (TREE_NODE *)root;
-    Pmsg0(000, "doing cd /home/kern/bacula/k/techlogs\n");
-    node = tree_cwd("/home/kern/bacula/k/techlogs", root, node);
+    Pmsg0(000, "doing cd /home/kern/bareos/k/techlogs\n");
+    node = tree_cwd("/home/kern/bareos/k/techlogs", root, node);
     if (node) {
        tree_getpath(node, buf, sizeof(buf));
        Dmsg2(100, "findex=%d: cwd=%s\n", node->FileIndex, buf);
     }
 
-    Pmsg0(000, "doing cd /home/kern/bacula/k/src/testprogs\n");
-    node = tree_cwd("/home/kern/bacula/k/src/testprogs", root, node);
+    Pmsg0(000, "doing cd /home/kern/bareos/k/src/testprogs\n");
+    node = tree_cwd("/home/kern/bareos/k/src/testprogs", root, node);
     if (node) {
        tree_getpath(node, buf, sizeof(buf));
        Dmsg2(100, "findex=%d: cwd=%s\n", node->FileIndex, buf);

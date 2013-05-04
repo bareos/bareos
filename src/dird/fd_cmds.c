@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,33 +13,26 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- fd_cmds.c -- send commands to File daemon
  *
- *   Bacula Director -- fd_cmds.c -- send commands to File daemon
+ * Kern Sibbald, October MM
  *
- *     Kern Sibbald, October MM
+ * This routine is run as a separate thread.  There may be more
+ * work to be done to make it totally reentrant!!!!
  *
- *    This routine is run as a separate thread.  There may be more
- *    work to be done to make it totally reentrant!!!!
- *
- *  Utility functions for sending info to File Daemon.
- *   These functions are used by both backup and verify.
- *
+ * Utility functions for sending info to File Daemon.
+ * These functions are used by both backup and verify.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 #include "findlib/find.h"
 
@@ -79,16 +72,15 @@ extern int FDConnectTimeout;
  *   give up after max_retry_time (default 30 mins).
  */
 
-int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
-                           int verbose)
+int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, int verbose)
 {
-   BSOCK   *fd = new_bsock();
+   BSOCK *fd = new_bsock();
    char ed1[30];
    utime_t heart_beat;
 
    if (jcr->res.client->heartbeat_interval) {
       heart_beat = jcr->res.client->heartbeat_interval;
-   } else {           
+   } else {
       heart_beat = director->heartbeat_interval;
    }
 
@@ -190,7 +182,7 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
    /* Make sure stime buffer is allocated */
    if (!jcr->stime) {
       jcr->stime = get_pool_memory(PM_MESSAGE);
-   } 
+   }
    jcr->PrevJob[0] = jcr->stime[0] = 0;
    /*
     * Lookup the last FULL backup job to get the time/date for a
@@ -218,7 +210,7 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
       } else {
          do_full = true;               /* No full, upgrade to one */
       }
-      Dmsg4(50, "have_full=%d do_full=%d now=%lld full_time=%lld\n", have_full, 
+      Dmsg4(50, "have_full=%d do_full=%d now=%lld full_time=%lld\n", have_full,
             do_full, now, last_full_time);
       /* Make sure the last diff is recent enough */
       if (have_full && JobLevel == L_INCREMENTAL && jcr->res.job->MaxDiffInterval > 0) {
@@ -288,7 +280,7 @@ static void send_since_time(JCR *jcr)
    char ed1[50];
 
    stime = str_to_utime(jcr->stime);
-   fd->fsend(levelcmd, "", NT_("since_utime "), edit_uint64(stime, ed1), 0, 
+   fd->fsend(levelcmd, "", NT_("since_utime "), edit_uint64(stime, ed1), 0,
              NT_("prev_job="), jcr->PrevJob);
    while (bget_dirmsg(fd) >= 0) {  /* allow him to poll us to sync clocks */
       Jmsg(jcr, M_INFO, 0, "%s\n", fd->msg);
@@ -298,6 +290,7 @@ static void send_since_time(JCR *jcr)
 bool send_bwlimit(JCR *jcr, const char *Job)
 {
    BSOCK *fd = jcr->file_bsock;
+
    if (jcr->FDVersion >= 4) {
       fd->fsend(bandwidthcmd, jcr->max_bandwidth, Job);
       if (!response(jcr, fd, OKBandwidth, "Bandwidth", DISPLAY_ERROR)) {
@@ -305,6 +298,7 @@ bool send_bwlimit(JCR *jcr, const char *Job)
          return false;
       }
    }
+
    return true;
 }
 
@@ -398,9 +392,9 @@ static bool send_fileset(JCR *jcr)
             /* Strip out compression option Zn if disallowed for this Storage */
             if (store && !store->AllowCompress) {
                char newopts[MAX_FOPTS];
-               bool done=false;         /* print warning only if compression enabled in FS */ 
+               bool done=false;         /* print warning only if compression enabled in FS */
                int j = 0;
-               for (k=0; fo->opts[k]!='\0'; k++) {                   
+               for (k=0; fo->opts[k]!='\0'; k++) {
                  /* Z compress option is followed by the single-digit compress level or 'o' */
                  if (fo->opts[k]=='Z') {
                     done=true;
@@ -569,7 +563,7 @@ static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd)
       break;
    }
    return true;
-}            
+}
 
 /*
  * Send include list to File daemon
@@ -596,6 +590,27 @@ bool send_exclude_list(JCR *jcr)
 }
 
 /*
+ * This checks to see if there are any non local runscripts for this job.
+ */
+static inline bool have_client_runscripts(alist *run_scripts)
+{
+   RUNSCRIPT *cmd;
+   bool retval = false;
+
+   if (run_scripts->empty()) {
+      return false;
+   }
+
+   foreach_alist(cmd, run_scripts) {
+      if (!cmd->is_local()) {
+         retval = true;
+      }
+   }
+
+   return retval;
+}
+
+/*
  * Send RunScripts to File daemon
  * 1) We send all runscript to FD, they can be executed Before, After, or twice
  * 2) Then, we send a "RunBeforeNow" command to the FD to tell him to do the
@@ -603,14 +618,23 @@ bool send_exclude_list(JCR *jcr)
  */
 int send_runscripts_commands(JCR *jcr)
 {
-   POOLMEM *msg = get_pool_memory(PM_FNAME);
-   BSOCK *fd = jcr->file_bsock;
-   RUNSCRIPT *cmd;
-   POOLMEM *ehost = get_pool_memory(PM_FNAME);
    int result;
+   RUNSCRIPT *cmd;
+   POOLMEM *msg, *ehost;
+   BSOCK *fd = jcr->file_bsock;
+   bool has_before_jobs = false;
+
+   /*
+    * See if there are any runscripts that need to be ran on the client.
+    */
+   if (!have_client_runscripts(jcr->res.job->RunScripts)) {
+      return 1;
+   }
 
    Dmsg0(120, "bdird: sending runscripts to fd\n");
-   
+
+   msg = get_pool_memory(PM_FNAME);
+   ehost = get_pool_memory(PM_FNAME);
    foreach_alist(cmd, jcr->res.job->RunScripts) {
       if (cmd->can_run_at_level(jcr->getJobLevel()) && cmd->target) {
          ehost = edit_job_codes(jcr, ehost, cmd->target, "");
@@ -621,15 +645,16 @@ int send_runscripts_commands(JCR *jcr)
             bash_spaces(msg);
 
             Dmsg1(120, "bdird: sending runscripts to fd '%s'\n", cmd->command);
-            
-            fd->fsend(runscript, cmd->on_success,
-                                 cmd->on_failure,
-                                 cmd->fail_on_error,
-                                 cmd->when,
-                                 msg);
+
+            fd->fsend(runscript,
+                      cmd->on_success,
+                      cmd->on_failure,
+                      cmd->fail_on_error,
+                      cmd->when,
+                      msg);
 
             result = response(jcr, fd, OKRunScript, "RunScript", DISPLAY_ERROR);
-            
+
             if (!result) {
                goto bail_out;
             }
@@ -640,25 +665,36 @@ int send_runscripts_commands(JCR *jcr)
            send command to an other client
            }
          */
-      }        
-   } 
+      }
+
+      /*
+       * See if this is a ClientRunBeforeJob.
+       */
+      if (cmd->when & SCRIPT_Before || cmd->when & SCRIPT_AfterVSS) {
+         has_before_jobs = true;
+      }
+   }
 
    /*
     * Tell the FD to execute the ClientRunBeforeJob
     */
-   fd->fsend(runbeforenow);
-   if (!response(jcr, fd, OKRunBeforeNow, "RunBeforeNow", DISPLAY_ERROR)) {
-     goto bail_out;
+   if (has_before_jobs) {
+      fd->fsend(runbeforenow);
+      if (!response(jcr, fd, OKRunBeforeNow, "RunBeforeNow", DISPLAY_ERROR)) {
+        goto bail_out;
+      }
    }
 
    free_pool_memory(msg);
    free_pool_memory(ehost);
+
    return 1;
 
 bail_out:
    Jmsg(jcr, M_FATAL, 0, _("Client \"%s\" RunScript failed.\n"), ehost);
    free_pool_memory(msg);
    free_pool_memory(ehost);
+
    return 0;
 }
 
@@ -680,7 +716,7 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
    /* Old File Daemon doesn't handle restore objects */
    if (jcr->FDVersion < 3) {
       Jmsg(jcr, M_WARNING, 0, _("Client \"%s\" may not be used to restore "
-                                "this job. Please upgrade your client.\n"), 
+                                "this job. Please upgrade your client.\n"),
            jcr->res.client->name());
       return 1;
    }
@@ -690,7 +726,7 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
                 row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
    } else {
       /* bash spaces from PluginName */
-      bash_spaces(row[9]);      
+      bash_spaces(row[9]);
       fd->fsend("restoreobject JobId=%s %s,%s,%s,%s,%s,%s,%s\n",
                 row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[9]);
    }
@@ -705,7 +741,7 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
 //   Dmsg1(000, "obj size: %lld\n", (uint64_t)fd->msglen);
 
    /* object */
-   db_unescape_object(jcr, jcr->db, 
+   db_unescape_object(jcr, jcr->db,
                       row[8],                /* Object  */
                       str_to_uint64(row[1]), /* Object length */
                       &fd->msg, &fd->msglen);
@@ -714,7 +750,7 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
 
    if (debug_level) {
       for (int i=0; i < fd->msglen; i++)
-         if (!fd->msg[i]) 
+         if (!fd->msg[i])
             fd->msg[i] = ' ';
       Dmsg1(000, "Send obj: %s\n", fd->msg);
    }
@@ -734,15 +770,15 @@ bool send_restore_objects(JCR *jcr)
    }
    octx.jcr = jcr;
    octx.count = 0;
-   
+
    /* restore_object_handler is called for each file found */
-   
+
    /* send restore objects for all jobs involved  */
    Mmsg(query, get_restore_objects, jcr->JobIds, FT_RESTORE_FIRST);
    db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)&octx);
 
    /* send config objects for the current restore job */
-   Mmsg(query, get_restore_objects, 
+   Mmsg(query, get_restore_objects,
         edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
    db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)&octx);
 
@@ -863,12 +899,12 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
       return 0;
    }
    if (jcr->cached_attribute) {
-      Dmsg3(dbglvl, "Cached attr with digest. Stream=%d fname=%s attr=%s\n", ar->Stream,            
+      Dmsg3(dbglvl, "Cached attr with digest. Stream=%d fname=%s attr=%s\n", ar->Stream,
          ar->fname, ar->attr);
       if (!db_create_file_attributes_record(jcr, jcr->db, ar)) {
          Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), db_strerror(jcr->db));
       }
-      jcr->cached_attribute = false; 
+      jcr->cached_attribute = false;
    }
    jcr->setJobStatus(JS_Terminated);
    return 1;

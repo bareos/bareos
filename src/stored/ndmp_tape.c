@@ -1,10 +1,9 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,33 +12,28 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * ndmp_tape.c implements the NDMP TAPE service which interfaces to
- * the internal Bacula infrstructure. This is implemented as a seperate
+ * the internal Bareos infrstructure. This is implemented as a seperate
  * daemon protocol on a different port (10000 NDMP by default) which
- * interfaces to the standard Bacula storage daemon at the record level.
+ * interfaces to the standard Bareos storage daemon at the record level.
  *
  * E.g. normal data from a FD comes via the 9103 port and then get turned
  * into records for NDMP packets travel via the NDMP protocol library
- * which is named libbacndmp and the data gets turned into native Bacula
+ * which is named libbareosndmp and the data gets turned into native Bareos
  * tape records.
  *
  * Marco van Wieringen, May 2012
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 #if HAVE_NDMP
 
@@ -100,19 +94,16 @@ struct ndmp_log_cookie {
 
 /* Static globals */
 static bool quit = false;
+static bool ndmp_initialized = false;
 static pthread_t ndmp_tid;
 static struct ndmp_thread_server_args ndmp_thread_server_args;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Forward referenced functions */
 
-/* Responses sent to the Director */
-static char Job_end[] =
-   "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
-
 static inline int native_to_ndmp_loglevel(int debuglevel, void *cookie)
 {
-   int level;
+   unsigned int level;
    struct ndmp_log_cookie *log_cookie;
 
    log_cookie = (struct ndmp_log_cookie *)cookie;
@@ -152,9 +143,9 @@ static inline int native_to_ndmp_loglevel(int debuglevel, void *cookie)
 /*
  * Interface function which glues the logging infra of the NDMP lib with the daemon.
  */
-extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int lev, char *msg)
+extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
-   int internal_level;
+   unsigned int internal_level = level * 100;
    struct ndmp_log_cookie *log_cookie;
 
    /*
@@ -169,7 +160,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int lev, char *ms
     * If the log level of this message is under our logging treshold we
     * log it as part of the Job.
     */
-   if (lev <= log_cookie->LogLevel) {
+   if ((internal_level / 100) <= log_cookie->LogLevel) {
       if (log_cookie->jcr) {
          /*
           * Look at the tag field to see what is logged.
@@ -217,8 +208,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int lev, char *ms
     * level and let the normal debug logging handle if it needs to be printed
     * or not.
     */
-   internal_level = lev * 100;
-   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, lev, msg);
+   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, (internal_level / 100), msg);
 }
 
 /*
@@ -692,7 +682,6 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
       }
    } else {
       bool ok = true;
-      bool done = false;
       READ_CTX *rctx;
 
       /*
@@ -785,6 +774,7 @@ extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
    ndmp9_error err;
    struct ndmp_session_handle *handle;
    struct ndm_tape_agent *ta = sess->tape_acb;
+   char ndmp_seperator[] = { "NdMpSePeRaToR" };
 
    if (ta->tape_fd < 0) {
       return NDMP9_DEV_NOT_OPEN_ERR;
@@ -809,7 +799,7 @@ extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
        * Write a seperator record so on restore we can recognize the different
        * NDMP datastreams from each other.
        */
-      if (!bndmp_write_data_to_block(jcr, STREAM_NDMP_SEPERATOR, "NdMpSePeRaToR", 13)) {
+      if (!bndmp_write_data_to_block(jcr, STREAM_NDMP_SEPERATOR, ndmp_seperator, 13)) {
          err = NDMP9_IO_ERR;
       }
    }
@@ -828,7 +818,6 @@ extern "C" ndmp9_error bndmp_tape_mtio(struct ndm_session *sess,
                                        u_long *resid)
 {
    struct ndm_tape_agent *ta = sess->tape_acb;
-   int rc;
 
    *resid = 0;
 
@@ -1153,7 +1142,7 @@ extern "C" void *handle_ndmp_client_request(void *arg)
       goto bail_out;
    }
 
-   conn = ndmconn_initialize(0, "#C");
+   conn = ndmconn_initialize(0, (char *)"#C");
    if (!conn) {
       Emsg0(M_ABORT, 0,
             _("Cannot initialize new NDMA connection\n"));
@@ -1207,7 +1196,7 @@ bail_out:
 
 /*
  * Create a seperate thread that accepts NDMP connections.
- * We don't use the Bacula native bnet_thread_server which
+ * We don't use the Bareos native bnet_thread_server which
  * uses the bsock class which is a bit to much overhead
  * for simple sockets which we need and has all kinds of
  * extra features likes TLS and keep-alive support etc.
@@ -1223,7 +1212,7 @@ extern "C" void *ndmp_thread_server(void *arg)
    int new_sockfd, status;
    socklen_t clilen;
    struct sockaddr cli_addr;       /* client's address */
-   int tlog;
+   int tlog, tmax;
    int turnon = 1;
 #ifdef HAVE_LIBWRAP
    struct request_info request;
@@ -1235,7 +1224,7 @@ extern "C" void *ndmp_thread_server(void *arg)
       int port;
    } *fd_ptr = NULL;
    char buf[128];
-   dlist sockfds;
+   alist sockfds(10, not_owned_by_alist);
 #ifdef HAVE_POLL
    nfds_t nfds;
    struct pollfd *pfds;
@@ -1301,7 +1290,7 @@ extern "C" void *ndmp_thread_server(void *arg)
                be.bstrerror());
       }
 
-      int tmax = 30 * (60 / 5);    /* wait 30 minutes max */
+      tmax = 30 * (60 / 5);    /* wait 30 minutes max */
       for (tlog = 0; bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->get_sockaddr_len()) < 0; tlog -= 5) {
          berrno be;
          if (tlog <= 0) {
@@ -1343,7 +1332,7 @@ extern "C" void *ndmp_thread_server(void *arg)
    memset(pfds, 0, sizeof(struct pollfd) * nfds);
 
    nfds = 0;
-   foreach_dlist(fd_ptr, &sockfds) {
+   foreach_alist(fd_ptr, &sockfds) {
       pfds[nfds].fd = fd_ptr->fd;
       pfds[nfds].events |= POLL_IN;
       nfds++;
@@ -1361,7 +1350,7 @@ extern "C" void *ndmp_thread_server(void *arg)
       fd_set sockset;
       FD_ZERO(&sockset);
 
-      foreach_dlist(fd_ptr, &sockfds) {
+      foreach_alist(fd_ptr, &sockfds) {
          FD_SET((unsigned)fd_ptr->fd, &sockset);
          maxfd = maxfd > (unsigned)fd_ptr->fd ? maxfd : fd_ptr->fd;
       }
@@ -1376,7 +1365,7 @@ extern "C" void *ndmp_thread_server(void *arg)
          break;
       }
 
-      foreach_dlist(fd_ptr, &sockfds) {
+      foreach_alist(fd_ptr, &sockfds) {
          if (FD_ISSET(fd_ptr->fd, &sockset)) {
 #else
       int cnt;
@@ -1392,7 +1381,7 @@ extern "C" void *ndmp_thread_server(void *arg)
       }
 
       cnt = 0;
-      foreach_dlist(fd_ptr, &sockfds) {
+      foreach_alist(fd_ptr, &sockfds) {
          if (pfds[cnt++].revents & POLLIN) {
 #endif
             /*
@@ -1461,11 +1450,10 @@ extern "C" void *ndmp_thread_server(void *arg)
    }
 
    /*
-    * Cleanup open files and pointers to them
+    * Cleanup open files.
     */
    while ((fd_ptr = (s_sockfd *)sockfds.first())) {
       close(fd_ptr->fd);
-      sockfds.remove(fd_ptr);     /* don't free() item it is on stack */
    }
 
    /*
@@ -1497,13 +1485,21 @@ int start_ndmp_thread_server(dlist *addr_list, int max_clients, workq_t *client_
       return status;
    }
 
+   ndmp_initialized = true;
+
    return 0;
 }
 
 void stop_ndmp_thread_server()
 {
+   if (!ndmp_initialized) {
+      return;
+   }
+
    quit = true;
-   pthread_cancel(ndmp_tid);
+   if (!pthread_equal(ndmp_tid, pthread_self())) {
+      pthread_join(ndmp_tid, NULL);
+   }
 }
 #else
 void end_of_ndmp_backup(JCR *jcr)

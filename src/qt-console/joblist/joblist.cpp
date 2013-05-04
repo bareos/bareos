@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,34 +11,24 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   Version $Id$
- *
- *   Dirk Bartley, March 2007
+ * Dirk Bartley, March 2007
  */
- 
+
 #include "bat.h"
 #include <QAbstractEventDispatcher>
 #include <QTableWidgetItem>
 #include "joblist.h"
-#include "restore.h"
+#include "restore/restore.h"
 #include "job/job.h"
 #include "joblog/joblog.h"
-#ifdef HAVE_QWT
-#include "jobgraphs/jobplot.h"
-#endif
 #include "util/fmtwidgetitem.h"
 #include "util/comboutil.h"
 
@@ -122,8 +110,8 @@ void JobList::populateTable()
 
    /* Set up the Header for the table */
    QStringList headerlist = (QStringList()
-      << tr("Job Id") << tr("Job Name") << tr("Client") << tr("Job Starttime") 
-      << tr("Job Type") << tr("Job Level") << tr("Job Files") 
+      << tr("Job Id") << tr("Job Name") << tr("Client") << tr("Job Starttime")
+      << tr("Job Type") << tr("Job Level") << tr("Job Files")
       << tr("Job Bytes") << tr("Job Status")  << tr("Purged") << tr("File Set")
       << tr("Pool Name") << tr("First Volume") << tr("VolCount"));
 
@@ -169,7 +157,7 @@ void JobList::populateTable()
             continue; /* some fields missing, ignore row */
 
          TableItemFormatter jobitem(*mp_tableWidget, row);
-  
+
          /* Iterate through fields in the record */
          QStringListIterator fld(fieldlist);
          int col = 0;
@@ -217,11 +205,11 @@ void JobList::populateTable()
          jobitem.setNumericFld(col++, fld.next());
          row++;
       }
-   } 
+   }
    /* set default sorting */
    mp_tableWidget->sortByColumn(m_jobIdIndex, Qt::DescendingOrder);
    mp_tableWidget->setSortingEnabled(true);
-   
+
    /* Resize the columns */
    mp_tableWidget->resizeColumnsToContents();
    mp_tableWidget->resizeRowsToContents();
@@ -278,7 +266,7 @@ void JobList::fillQueryString(QString &query)
       m_mediaName = volumeComboBox->itemText(volumeIndex);
    QString distinct = "";
    if (m_mediaName != tr("Any")) { distinct = "DISTINCT "; }
-   query += "SELECT " + distinct + "Job.JobId AS JobId, Job.Name AS JobName, " 
+   query += "SELECT " + distinct + "Job.JobId AS JobId, Job.Name AS JobName, "
             " Client.Name AS Client,"
             " Job.Starttime AS JobStart, Job.Type AS JobType,"
             " Job.Level AS BackupLevel, Job.Jobfiles AS FileCount,"
@@ -396,16 +384,10 @@ void JobList::treeWidgetName(QString &desc)
  */
 void JobList::createConnections()
 {
-   /* connect to the action specific to this pages class that shows up in the 
+   /* connect to the action specific to this pages class that shows up in the
     * page selector tree */
    connect(actionRefreshJobList, SIGNAL(triggered()), this, SLOT(populateTable()));
    connect(refreshButton, SIGNAL(pressed()), this, SLOT(populateTable()));
-#ifdef HAVE_QWT
-   connect(graphButton, SIGNAL(pressed()), this, SLOT(graphTable()));
-#else
-   graphButton->setEnabled(false);
-   graphButton->setVisible(false);
-#endif
    /* for the selectionChanged to maintain m_currentJob and a delete selection */
    connect(mp_tableWidget, SIGNAL(itemSelectionChanged()), this, SLOT(selectionChanged()));
    connect(mp_tableWidget, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(showInfoForJob()));
@@ -561,30 +543,6 @@ void JobList::consoleCancelJob()
    QString cmd("cancel jobid=");
    cmd += m_currentJob;
    consoleCommand(cmd);
-}
-
-/*
- * Graph this table
- */
-void JobList::graphTable()
-{
-#ifdef HAVE_QWT
-   JobPlotPass pass;
-   pass.recordLimitCheck = limitCheckBox->checkState();
-   pass.daysLimitCheck = daysCheckBox->checkState();
-   pass.recordLimitSpin = limitSpinBox->value();
-   pass.daysLimitSpin = daysSpinBox->value();
-   pass.jobCombo = jobComboBox->currentText();
-   pass.clientCombo = clientComboBox->currentText();
-   pass.volumeCombo = volumeComboBox->currentText();
-   pass.fileSetCombo = fileSetComboBox->currentText();
-   pass.purgedCombo = purgedComboBox->currentText();
-   pass.levelCombo = levelComboBox->currentText();
-   pass.statusCombo = statusComboBox->currentText();
-   pass.use = true;
-   QTreeWidgetItem* pageSelectorTreeWidgetItem = mainWin->getFromHash(this);
-   new JobPlot(pageSelectorTreeWidgetItem, pass);
-#endif
 }
 
 /*

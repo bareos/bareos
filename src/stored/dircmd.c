@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,39 +13,33 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  This file handles accepting Director Commands
+ * This file handles accepting Director Commands
  *
- *    Most Director commands are handled here, with the
- *    exception of the Job command command and subsequent
- *    subcommands that are handled
- *    in job.c.
+ * Most Director commands are handled here, with the
+ * exception of the Job command command and subsequent
+ * subcommands that are handled
+ * in job.c.
  *
- *    N.B. in this file, in general we must use P(dev->mutex) rather
- *      than dev->r_lock() so that we can examine the blocked
- *      state rather than blocking ourselves because a Job
- *      thread has the device blocked. In some "safe" cases,
- *      we can do things to a blocked device. CAREFUL!!!!
+ * N.B. in this file, in general we must use P(dev->mutex) rather
+ * than dev->r_lock() so that we can examine the blocked
+ * state rather than blocking ourselves because a Job
+ * thread has the device blocked. In some "safe" cases,
+ * we can do things to a blocked device. CAREFUL!!!!
  *
- *    File daemon commands are handled in fdcmd.c
+ * File daemon commands are handled in fdcmd.c
  *
- *     Kern Sibbald, May MMI
- *
+ * Kern Sibbald, May MMI
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
 /* Exported variables */
@@ -492,7 +486,7 @@ static bool do_label(JCR *jcr, bool relabel)
 
 /*
  * Read the tape label and determine if we can safely
- * label the tape (not a Bacula volume), then label it.
+ * label the tape (not a Bareos volume), then label it.
  *
  *  Enter with the mutex set
  */
@@ -553,7 +547,7 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
          dir->fsend(_("3921 Wrong volume mounted.\n"));
          goto bail_out;
       }
-      if (dev->label_type != B_BACULA_LABEL) {
+      if (dev->label_type != B_BAREOS_LABEL) {
          dir->fsend(_("3922 Cannot relabel an ANSI/IBM labeled Volume.\n"));
          goto bail_out;
       }
@@ -766,7 +760,7 @@ static bool mount_cmd(JCR *jcr)
                dir->fsend(_("3001 Device \"%s\" is mounted with Volume \"%s\"\n"),
                   dev->print_name(), dev->VolHdr.VolumeName);
             } else {
-               dir->fsend(_("3905 Device \"%s\" open but no Bacula volume is mounted.\n"
+               dir->fsend(_("3905 Device \"%s\" open but no Bareos volume is mounted.\n"
                                  "If this is not a blank tape, try unmounting and remounting the Volume.\n"),
                           dev->print_name());
             }
@@ -795,7 +789,7 @@ static bool mount_cmd(JCR *jcr)
                   dir->fsend(_("3001 Device \"%s\" is mounted with Volume \"%s\"\n"),
                      dev->print_name(), dev->VolHdr.VolumeName);
                } else {
-                  dir->fsend(_("3905 Device \"%s\" open but no Bacula volume is mounted.\n"
+                  dir->fsend(_("3905 Device \"%s\" open but no Bareos volume is mounted.\n"
                                  "If this is not a blank tape, try unmounting and remounting the Volume.\n"),
                              dev->print_name());
                }
@@ -810,7 +804,7 @@ static bool mount_cmd(JCR *jcr)
                   dir->fsend(_("3001 Device \"%s\" is already mounted with Volume \"%s\"\n"),
                      dev->print_name(), dev->VolHdr.VolumeName);
                } else {
-                  dir->fsend(_("3905 Device \"%s\" open but no Bacula volume is mounted.\n"
+                  dir->fsend(_("3905 Device \"%s\" open but no Bareos volume is mounted.\n"
                                     "If this is not a blank tape, try unmounting and remounting the Volume.\n"),
                              dev->print_name());
                }
@@ -988,7 +982,7 @@ done:
 
 /*
  * Release command from Director. This rewinds the device and if
- *   configured does a offline and ensures that Bacula will
+ *   configured does a offline and ensures that Bareos will
  *   re-read the label of the tape before continuing. This gives
  *   the operator the chance to change the tape anytime before the
  *   next job starts.

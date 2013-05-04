@@ -1,7 +1,6 @@
 #!/bin/sh
-# unload bacula file daemon before upgrading
+# unload bareos file daemon before upgrading
 
-if [ -f "$3/Library/LaunchDaemons/org.bacula.bacula-fd.plist" ]; then
-  /bin/launchctl unload "$3/Library/LaunchDaemons/org.bacula.bacula-fd.plist"
+if [ -f "$3/Library/LaunchDaemons/org.bareos.bareos-fd.plist" ]; then
+  /bin/launchctl unload "$3/Library/LaunchDaemons/org.bareos.bareos-fd.plist"
 fi
-

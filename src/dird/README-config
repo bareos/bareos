@@ -1,6 +1,6 @@
 
 To add a new resource -- as an example, the BAZ resource,
-  which will have foo record which is an integer,    
+  which will have foo record which is an integer,
   a storage record, which is the name of a storage
   resource, and a special time field.
 
@@ -33,7 +33,7 @@ To add a new resource -- as an example, the BAZ resource,
     static struct res_items bas_items[] = {
         name,   store sub,   where to store,   extra info
        {"name", store_name, ITEM(res_baz.name), 0},    /* manditory */
-       {"foo",  store_int,  ITEM(res_baz.foo), 0}, 
+       {"foo",  store_int,  ITEM(res_baz.foo), 0},
        {"storage", stor_res, ITEM(res_baz.storage), 0},
        {"time",  store_time, ITME(res_baz.time), 0},
     };
@@ -51,9 +51,9 @@ To add a new resource -- as an example, the BAZ resource,
     passes of the configurator to be able to create your
     resource.  Pass 2 is used only for finding a reference
     to a resource and stuffing its address. In the above example,
-    you will need to include the storage resource.  See the 
+    you will need to include the storage resource.  See the
     example for the Job Resource.
-    
+
     Add an entry so that the correct size of your resource is
     allocated for pass one.
 
@@ -76,7 +76,7 @@ To add a new resource record:
      definition to the exising structure.
 
   3. Update the dump_resource() routine to dump the new record.
-   
+
   4. Update the free_resource() routine if you allocated any memory.
 
   5. Update init_resource() if you have any special requirements (not
@@ -94,7 +94,7 @@ To add a new resource record:
 
 Note, the core parsing code is in lib/parse_config.c and lib/parse_config.h.
 lib/parse_config.c provides the following store routines:
-    
+
       store_name   stores a resource name
       store_str    stores a string
       store_res    stores a resource
@@ -105,14 +105,14 @@ and the following utilities:
       scan_to_eol  causes the lexical scanner to scan to the end of the line
       scan_error   prints an error message
       GetResWithName  returns the resource of a specified type and name
-      GetNextRes   returns the next resource of a specified type 
+      GetNextRes   returns the next resource of a specified type
       parse_config parses the configuration file
 
 Note: when your store routine gets control, the parser will have already
 scanned the record name (i.e. "baz =") before calling your routine.
 The lexical scanner is by default in a mode where spaces will be
 compressed out of unquoted strings. Consequently if you want to scan
- 
+
      baz = full backup every sunday
 
 and you do not want to get "full backup every sunday" as a single token
@@ -122,12 +122,9 @@ lexical scanner options field:
    int options = lc->options;
 
    lc->options |= LOPT_NO_IDENT;      /* don't eat spaces */
-     
+
    get_token(lc) ...
    ...
 
    lc->options = options;
    return;
-
-
-             

@@ -1,13 +1,13 @@
 #
-# Bacula Tray Monitor Configuration File
+# Bareos Tray Monitor Configuration File
 #
 
 Monitor {
   Name = @basename@-mon
-  Password = "@mon_dir_password@"         # password for the Directors   
+  Password = "@mon_dir_password@"         # password for the Directors
   RefreshInterval = 30 seconds
 }
-   
+
 Client {
   Name = @basename@-fd
   Address = @hostname@

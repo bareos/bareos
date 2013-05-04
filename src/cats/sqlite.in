@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to invoke SQLite on Bacula database
+# shell script to invoke SQLite on Bareos database
 
 bindir=@SQLITE_BINDIR@
 db_name=@db_name@

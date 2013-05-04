@@ -1,0 +1,2 @@
+/usr/lib/libb*-sqlite3*.so
+/usr/lib/bareos/scripts/*_sqlite3_*

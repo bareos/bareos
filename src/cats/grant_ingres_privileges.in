@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script TO GRANT privileges to the bacula database
+# shell script TO GRANT privileges to the bareos database
 #
 bindir=@INGRES_BINDIR@
 PATH="$bindir:$PATH"

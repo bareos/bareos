@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to create Bacula SQLite tables
+# shell script to create Bareos SQLite tables
 
 bindir=@SQLITE_BINDIR@
 PATH=$bindir:$PATH

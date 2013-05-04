@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +13,21 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * block.c -- tape block handling functions
  *
- *   block.c -- tape block handling functions
- *
- *              Kern Sibbald, March MMI
- *                 added BB02 format October MMII
- *
+ * Kern Sibbald, March MMI
+ * added BB02 format October MMII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
 #ifdef DEBUG_BLOCK_CHECKSUM
@@ -472,7 +465,7 @@ bool DCR::write_block_to_dev()
       Dmsg1(100, "Attempt to write on read-only Volume. dev=%s\n", dev->print_name());
       return false;
    }
- 
+
    if (!dev->is_open()) {
       Jmsg1(jcr, M_FATAL, 0, _("Attempt to write on closed device=%s\n"), dev->print_name());
       Dmsg1(100, "Attempt to write on closed device=%s\n", dev->print_name());
@@ -1034,8 +1027,8 @@ reread:
     */
    block->read_len = status;      /* save length read */
    if (block->read_len == 80 &&
-      (dcr->VolCatInfo.LabelType != B_BACULA_LABEL ||
-       dcr->device->label_type != B_BACULA_LABEL)) {
+      (dcr->VolCatInfo.LabelType != B_BAREOS_LABEL ||
+       dcr->device->label_type != B_BAREOS_LABEL)) {
       /* ***FIXME*** should check label */
       Dmsg2(100, "Ignore 80 byte ANSI label at %u:%u\n", dev->file, dev->block_num);
       dev->clear_eof();

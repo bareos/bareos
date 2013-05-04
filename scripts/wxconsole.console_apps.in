@@ -1,3 +1,0 @@
-USER=root
-PROGRAM=@sbindir@/bwx-console
-SESSION=true

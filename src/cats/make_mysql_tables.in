@@ -1,8 +1,8 @@
 #!/bin/sh
 #
-# shell script to create Bacula MySQL tables
+# shell script to create Bareos MySQL tables
 #
-# Important note: 
+# Important note:
 #   You won't get any support for performance issue if you changed the default
 #   schema.
 #
@@ -10,7 +10,8 @@ bindir=@MYSQL_BINDIR@
 PATH="$bindir:$PATH"
 db_name=${db_name:-@db_name@}
 
-if mysql -D ${db_name} $* -f <<END-OF-DATA
+if mysql $* -f <<END-OF-DATA
+USE ${db_name};
 --
 -- Note, we use BLOB rather than TEXT because in MySQL,
 --  BLOBs are identical to TEXT except that BLOB is case
@@ -40,7 +41,7 @@ CREATE TABLE Path (
 -- configuration parameters concerning sorting, joining and global
 -- memory.  By default, sort and join parameters are very small
 -- (sometimes 8Kb), and having sufficient memory specified by those
--- parameters is extremely important to run fast.  
+-- parameters is extremely important to run fast.
 
 -- In File table
 -- FileIndex can be 0 for FT_DELETED files
@@ -149,7 +150,7 @@ CREATE TABLE Job (
    INDEX (Name(128))
 );
 
--- Create a table like Job for long term statistics 
+-- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (
    JobId INTEGER UNSIGNED NOT NULL,
    Job TINYBLOB NOT NULL,
@@ -373,7 +374,7 @@ CREATE TABLE PathHierarchy
    CONSTRAINT pathhierarchy_pkey PRIMARY KEY (PathId)
 );
 
-CREATE INDEX pathhierarchy_ppathid 
+CREATE INDEX pathhierarchy_ppathid
 	  ON PathHierarchy (PPathId);
 
 CREATE TABLE PathVisibility
@@ -388,7 +389,7 @@ CREATE INDEX pathvisibility_jobid
 	     ON PathVisibility (JobId);
 
 CREATE TABLE Version (
-   VersionId INTEGER UNSIGNED NOT NULL 
+   VersionId INTEGER UNSIGNED NOT NULL
 );
 
 CREATE TABLE Quota (
@@ -429,13 +430,13 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records', 15),
    ('a', 'SD despooling attributes', 15);
 
--- Initialize Version		 
+-- Initialize Version
 INSERT INTO Version (VersionId) VALUES (@BDB_VERSION@);
 
 END-OF-DATA
 then
-   echo "Creation of Bacula MySQL tables succeeded."
+   echo "Creation of Bareos MySQL tables succeeded."
 else
-   echo "Creation of Bacula MySQL tables failed."
+   echo "Creation of Bareos MySQL tables failed."
 fi
 exit 0

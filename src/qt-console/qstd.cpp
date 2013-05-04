@@ -101,4 +101,3 @@ void qstd::promptInputFile(QFile& infile) {
     cout << filename << " open for reading ...\n";
     cout.flush();
 }
-

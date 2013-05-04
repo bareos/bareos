@@ -17,32 +17,33 @@ from the memory of the Tape Drive using the SCSI SPOUT command set.
 
 If you have implemented Library Managed Encryption (LME) or
 a Key Management Appliance (KMA) there is no need to have support
-from Bacula on loading and clearing the encryption keys as either
+from Bareos on loading and clearing the encryption keys as either
 the Library knows the per volume encryption keys itself or it
 will ask the KMA for the encryption key when it needs it. For
 big installations you might consider using a KMA but the Application
-Managed Encryption implemented in Bacula should also scale rather
+Managed Encryption implemented in Bareos should also scale rather
 well and has low overhead as the keys are only loaded and cleared
 when needed.
 
 How does it all work:
 
-- the libbac library has some new features:
+- the libbareos library has some new features:
    - crypto_wrap.c  - Implements a RFC3394 based wrapping of crypto keys
    - crypto_cache.c - Implements a cache of wrapped crypto keys used when
                       we cannot ask the director for the key e.g. on
                       startup of the storage daemon.
-   - passphrase.c   - Implements a generation of semi-random passphrases
-   - scsi_crypto.c  - Implements a lowlevel interface to the tape drive for
-                      sending SCSI Security Protocol IN (SPIN) and SCSI Security
-                      Protocol OUT (SPOUT) pages using several ioctl interfaces
-                      available on some modern UNIX platforms. Current supported
-                      platforms are:
+   - passphrase.c   - Implements generation of semi-random passphrases
+   - scsi_lli.c     - Implements a lowlevel interface to the tape drive for
+                      several ioctl interfaces available on some modern UNIX
+                      platforms. Current supported platforms are:
                          - Linux (SG_IO ioctl interface) (tested)
                          - Solaris (USCSI ioctl interface) (tested)
                          - FreeBSD (libcam interface)
                          - NetBSD (SCIOCCOMMAND ioctl interface)
                          - OpenBSD (SCIOCCOMMAND ioctl interface)
+   - scsi_crypto.c  - Implements sending of SCSI Security Protocol IN (SPIN)
+                      and SCSI Security Protocol OUT (SPOUT) pages using
+                      the scsi_lli interface.
 
 - A new tool named bscrypto allows you to manipulate the tape drive.
   It is mostly used for Disaster Recovery (DR) purposes. The storage
@@ -73,9 +74,9 @@ How does it all work:
        all your stored encryption keys as they are stored in the database
        wrapped using the Key Encryption Key available in the config during
        the label phase of the volume
-     - Clear the crypto cache on the machine running the bacula-sd which keeps
-       a cache of used encryption keys which can be used when the bacula-sd is
-       restarted without the need to connect to the bacula-dir to retrieve the
+     - Clear the crypto cache on the machine running the bareos-sd which keeps
+       a cache of used encryption keys which can be used when the bareos-sd is
+       restarted without the need to connect to the bareos-dir to retrieve the
        encryption keys.
      - Set the encryption key of the drive
      - Clear the encryption key of the drive
@@ -129,7 +130,7 @@ How does it all work:
   the database the user never has to enter these passphrases.
 
   The volume label is written unencrypted to the volume so
-  we can always recognize a Bacula volume. When the key is
+  we can always recognize a Bareos volume. When the key is
   loaded onto the drive we set the decryption mode to mixed
   so we can read both unencrypted and encrypted data from the
   volume. When there is no key loaded or the wrong key is
@@ -167,7 +168,7 @@ The initial setup of SCSI crypto looks something like this:
 
 - Run configure with your normal configure options and
   add the --enable-scsi-crypto option.
-- Build the Bacula programs and package/install them
+- Build the Bareos programs and package/install them
   in the normal way.
 - Generate a Key Encryption Key e.g.
      bscrypto -g -
@@ -197,14 +198,14 @@ The initial setup of SCSI crypto looks something like this:
        When you are using systemd you could add this additional
        capability to the CapabilityBoundingSet parameter.
 
-       For systemd add to the bacula-sd.service the following:
+       For systemd add to the bareos-sd.service the following:
 
        Capabilities=cap_sys_rawio+ep
 
        You can also setup the extra capability on bscrypto and
-       bacula-sd by running the following cmd:
+       bareos-sd by running the following cmd:
 
-       # setcap cap_sys_rawio=ep bscrypto bacula-sd
+       # setcap cap_sys_rawio=ep bscrypto bareos-sd
 
        Check the setting with
 
@@ -231,30 +232,30 @@ The initial setup of SCSI crypto looks something like this:
        block.
 
        <method_context working_directory=":default">
-          <method_credential user="bacula" group="bacula" privileges="basic,sys_devices"/>
+          <method_credential user="bareos" group="bareos" privileges="basic,sys_devices"/>
        </method_context>
 
-  === Changes in bacula-sd.conf ===
+  === Changes in bareos-sd.conf ===
 
-- Put the Key Encryption Key into the bacula-sd.conf
+- Put the Key Encryption Key into the bareos-sd.conf
   under the director entry in that config for the specific
   director you are creating the config for. e.g.
   Key Encryption Key = "<passphrase>"
 - Enable the loading of storage daemon plugins by
-  setting the plugin dir in the bacula-sd.conf e.g.
+  setting the plugin dir in the bareos-sd.conf e.g.
   Plugin Directory = <path_to_sd_plugins>
 - Enable the SCSI encryption option in the device configuration
-  section of the drive in the bacula-sd.conf. e.g.
+  section of the drive in the bareos-sd.conf. e.g.
   Drive Crypto Enabled = Yes
 - When you want the plugin to probe the drive for its encryption
   status if it needs to clear a pending key enable the Query
   Crypto Status option in the device configuration section of the
-  drive in the bacula-sd.conf e.g.
+  drive in the bareos-sd.conf e.g.
   Query Crypto Status = Yes
 
-  === Changes in bacula-dir.conf ===
+  === Changes in bareos-dir.conf ===
 
-- Put the Key Encryption Key into the bacula-dir.conf under
+- Put the Key Encryption Key into the bareos-dir.conf under
   the director config item named Key Encryption Key e.g.
   Key Encryption Key = "<passphrase>"
 
@@ -264,7 +265,7 @@ The initial setup of SCSI crypto looks something like this:
 
 For Disaster Recovery (DR) you need the following information:
 
-- Actual bacula-sd.conf with config options enabled as described
+- Actual bareos-sd.conf with config options enabled as described
   above, including things like a definition of a director with
   the Key Encryption Key used for creating the encryption keys
   of the volumes.
@@ -277,7 +278,7 @@ For Disaster Recovery (DR) you need the following information:
   Most of the times the needed information e.g. bootstrap info
   is available on recently written volumes and most of the
   time the encryption cache will contain the most recent data
-  so a recent copy of the bacula-sd.<portnr>.cryptoc file in
+  so a recent copy of the bareos-sd.<portnr>.cryptoc file in
   the workingdir is most of the time enough. You can also save
   the info from database in a save place and use bscrypto to
   populate this info (VolumeName<tab>EncryptKey) into the crypto
@@ -285,7 +286,7 @@ For Disaster Recovery (DR) you need the following information:
   with the following flags to create a new or update an existing
   crypto cache file e.g. :
 
-  # bscrypto -p /var/lib/bacula/bacula-sd.<portnr>.cryptoc
+  # bscrypto -p /var/lib/bareos/bareos-sd.<portnr>.cryptoc
 
 - A valid BSR file with the location of the last save of the
   database makes recovery much easier. Adding a post script
@@ -293,11 +294,11 @@ For Disaster Recovery (DR) you need the following information:
   make sure its stored somewhere safe.
 - Recover the database in the normal way e.g. for postgresql:
 
-  # bextract -D <director_name> -c bacula-sd.conf -V <volname> \
+  # bextract -D <director_name> -c bareos-sd.conf -V <volname> \
              /dev/nst0 /tmp -b bootstrap.bsr
-  # /usr/lib64/bacula/create_bacula_database
-  # /usr/lib64/bacula/grant_bacula_privileges
-  # psql bacula < /tmp/var/lib/bacula/bacula.sql
+  # /usr/lib64/bareos/create_bareos_database
+  # /usr/lib64/bareos/grant_bareos_privileges
+  # psql bareos < /tmp/var/lib/bareos/bareos.sql
 
   Or something similar (change paths to follow where you
   installed the software or where the package put it.)

@@ -67,6 +67,7 @@
 #include <sys/fcntl.h>
 #include <signal.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <rpc/rpc.h>
 #include <assert.h>
 #include <errno.h>

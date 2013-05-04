@@ -1,5 +1,5 @@
 #
-# Bacula Makefile for the File daemon
+# Bareos Makefile for the File daemon
 #
 #
 
@@ -41,11 +41,7 @@ FDLIBS += @AFS_LIBS_NONSHARED@
 FDLIBS += @ACL_LIBS_NONSHARED@
 FDLIBS += @XATTR_LIBS_NONSHARED@
 
-# extra items for linking on Win32
-WIN32OBJS = win32/winmain.o win32/winlib.a win32/winres.res
-win32 = $(WIN32OBJS) -luser32 -lgdi32
-
-WIN32LIBS = $(@WIN32@)
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 
 .SUFFIXES:	.c .o
 .PHONY:
@@ -54,9 +50,9 @@ WIN32LIBS = $(@WIN32@)
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
-all: Makefile @WIN32@ bacula-fd @STATIC_FD@
+all: Makefile bareos-fd @STATIC_FD@
 	@echo "==== Make of filed is good ===="
 	@echo " "
 
@@ -64,42 +60,35 @@ win32/winlib.a:
 	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
 	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
 	fi
-	@rm -f bacula-fd.exe
+	@rm -f bareos-fd.exe
 
 win32/winmain.o:
 	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
 	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
 	fi
-	@rm -f bacula-fd.exe
+	@rm -f bareos-fd.exe
 
 win32/winres.res:
 	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
 	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
 	fi
-	@rm -f bacula-fd.exe
+	@rm -f bareos-fd.exe
 
-# win32 libraries if needed
-win32:	$(WIN32OBJS)
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
-	fi
-	@rm -f bacula-fd.exe
-
-bacula-fd: Makefile $(SVROBJS) \
-	   ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) \
-	   ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-	   ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) @WIN32@
+bareos-fd: Makefile $(SVROBJS) \
+	   ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	   ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+	   ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(SVROBJS) \
-	  $(WIN32LIBS) $(FDLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
+	  $(FDLIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) \
 	  $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-static-bacula-fd: Makefile $(SVROBJS) \
-		  ../findlib/libbacfind.a \
-		  ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-		  ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) @WIN32@
+static-bareos-fd: Makefile $(SVROBJS) \
+		  ../findlib/libbareosfind.a \
+		  ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+		  ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -L../findlib -o $@ $(SVROBJS) \
-	   $(WIN32LIBS) $(FDLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
+	   $(FDLIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) \
 	   $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 	strip $@
 
@@ -111,14 +100,14 @@ libtool-clean:
 	@$(RMF) -r .libs _libs
 
 clean:	libtool-clean
-	@$(RMF) bacula-fd filed core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
-	@$(RMF) static-bacula-fd
+	@$(RMF) bareos-fd filed core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+	@$(RMF) static-bareos-fd
 	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
 	   (cd win32; $(GMAKE) clean); \
 	fi
 
 realclean: clean
-	@$(RMF) tags bacula-fd.conf
+	@$(RMF) tags bareos-fd.conf
 
 distclean: realclean
 	if test $(srcdir) = .; then $(MAKE) realclean; fi
@@ -135,8 +124,8 @@ devclean: realclean
 	fi
 
 install: all
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-fd $(DESTDIR)$(sbindir)/bacula-fd 
-	@srcconf=bacula-fd.conf; \
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-fd $(DESTDIR)$(sbindir)/bareos-fd
+	@srcconf=bareos-fd.conf; \
 	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
 	   destconf=$$srcconf.new; \
 	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
@@ -148,16 +137,9 @@ install: all
 	@if test "x${fd_group}" != "x"; then \
 	   chgrp -f ${fd_group} ${DESTDIR}${sysconfdir}/$$destconf ; \
 	fi
-	@if test -f static-bacula-fd; then \
-	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bacula-fd $(DESTDIR)$(sbindir)/static-bacula-fd; \
+	@if test -f static-bareos-fd; then \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bareos-fd $(DESTDIR)$(sbindir)/static-bareos-fd; \
 	fi
-
-uninstall:
-	(cd $(DESTDIR)$(sbindir); $(RMF) bacula-fd)
-	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-fd.conf)
-	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-fd.conf.new)
-
-
 
 # Semi-automatic generation of dependencies:
 # Use gcc -MM because X11 `makedepend' doesn't work on all systems
@@ -167,8 +149,8 @@ uninstall:
 depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
-	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) $(XINC) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@$(ECHOCMD) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(INCLUDES) *.c >> Makefile
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \

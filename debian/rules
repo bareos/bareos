@@ -1,0 +1,79 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+#
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+#
+# Modified to make a template file for a multi-binary package with separated
+# build-arch and build-indep targets  by Bill Allombert 2001
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS=-v
+
+export daemon_user=bareos
+export daemon_group=bareos
+export director_daemon_user=${daemon_user}
+export storage_daemon_user=${daemon_user}
+export file_daemon_user=root
+export storage_daemon_group=${daemon_group}
+export working_dir=/var/lib/bareos
+
+#	./configure --build=x86_64-linux-gnu --prefix=/usr --includedir=\${prefix}/include --mandir=\${prefix}/share/man --infodir=\${prefix}/share/info --sysconfdir=/etc --localstatedir=/var --libexecdir=\${prefix}/lib/bareos --disable-maintainer-mode --disable-dependency-tracking --with-sbin-perm=755 --sysconfdir=/etc/bareos --mandir= --docdir=%{_docdir}/%{name} --htmldir=%{_docdir}/%{name}/html --with-scriptdir=%{script_dir} --with-working-dir=%{working_dir} --with-plugindir=%{script_dir} --with-pid-dir=%{pid_dir} --with-subsys-dir=%{_subsysdir} --enable-smartalloc --disable-conio --enable-readline --enable-batch-insert --enable-dynamic-cats-backends --enable-acl --enable-xattr --with-postgresql --with-tcp-wrappers --with-scsi-crypto --with-ndmp --with-openssl --with-basename=XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX --enable-includes
+
+override_dh_auto_configure:
+	dh_auto_configure --    \
+  --with-sbin-perm=755 \
+  --sysconfdir=/etc/bareos \
+  --docdir=\${_docdir}/bareos \
+  --htmldir=\${_docdir}/bareos/html \
+  --with-scriptdir=/usr/lib/bareos/scripts \
+  --with-plugindir=/usr/lib/bareos/plugins \
+  --with-working-dir=/var/lib/bareos \
+  --with-pid-dir=/var/lib/bareos \
+  --with-subsys-dir=/var/lock \
+  --enable-smartalloc \
+  --disable-conio \
+  --enable-readline \
+  --enable-batch-insert \
+  --enable-dynamic-cats-backends \
+  --enable-acl \
+  --enable-xattr \
+  --enable-scsi-crypto \
+  --enable-ndmp \
+  --enable-ipv6 \
+  --with-postgresql \
+  --with-mysql \
+  --with-sqlite3 \
+  --with-tcp-wrappers \
+  --with-openssl \
+  --with-dir-user=${director_daemon_user} \
+  --with-dir-group=${daemon_group} \
+  --with-sd-user=${storage_daemon_user} \
+  --with-sd-group=${storage_daemon_group} \
+  --with-fd-user=${file_daemon_user} \
+  --with-fd-group=${daemon_group} \
+  --with-dir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" \
+  --with-fd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" \
+  --with-sd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" \
+  --with-mon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
+  --with-mon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
+  --with-mon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
+  --with-basename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+  --with-hostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+  --enable-includes
+
+override_dh_fixperms:
+	# all files in /etc/bareos
+	dh_fixperms \
+		--exclude etc/bareos/ \
+		--exclude var/lib/bareos/
+
+
+%:
+	dh $@

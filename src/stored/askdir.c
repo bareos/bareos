@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,21 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Subroutines to handle Catalog reqests sent to the Director
- *   Reqests/commands from the Director are handled in dircmd.c
+ * Subroutines to handle Catalog reqests sent to the Director
+ * Reqests/commands from the Director are handled in dircmd.c
  *
- *   Kern Sibbald, December 2000
- *
+ * Kern Sibbald, December 2000
  */
 
-#include "bacula.h"                   /* pull in global headers */
+#include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
 #include "lib/crypto_cache.h"
 
@@ -80,7 +74,7 @@ bool dir_update_device(JCR *jcr, DEVICE *dev)
    POOL_MEM dev_name, VolumeName, MediaType, ChangerName;
    DEVRES *device = dev->device;
    bool ok;
-   
+
    pm_strcpy(dev_name, device->hdr.name);
    bash_spaces(dev_name);
    if (dev->is_labeled()) {
@@ -97,15 +91,15 @@ bool dir_update_device(JCR *jcr, DEVICE *dev)
    } else {
       pm_strcpy(ChangerName, "*");
    }
-   ok = dir->fsend(Device_update, 
+   ok = dir->fsend(Device_update,
       jcr->Job,
       dev_name.c_str(),
       dev->can_append()!=0,
-      dev->can_read()!=0, dev->num_writers, 
+      dev->can_read()!=0, dev->num_writers,
       dev->is_open()!=0, dev->is_labeled()!=0,
-      dev->is_offline()!=0, dev->reserved_device, 
+      dev->is_offline()!=0, dev->reserved_device,
       dev->is_tape()?100000:1,
-      dev->autoselect, 0, 
+      dev->autoselect, 0,
       ChangerName.c_str(), MediaType.c_str(), VolumeName.c_str());
    Dmsg1(dbglvl, ">dird: %s\n", dir->msg);
    return ok;
@@ -182,7 +176,7 @@ static bool do_get_volume_info(DCR *dcr)
                &vol.EndFile, &vol.EndBlock, &vol.LabelType,
                &vol.VolMediaId, vol.VolEncrKey);
     if (n != 22) {
-       Dmsg3(dbglvl, "Bad response from Dir fields=%d, len=%d: %s", 
+       Dmsg3(dbglvl, "Bad response from Dir fields=%d, len=%d: %s",
              n, dir->msglen, dir->msg);
        Mmsg(jcr->errmsg, _("Error getting Volume info: %s"), dir->msg);
        return false;
@@ -199,7 +193,7 @@ static bool do_get_volume_info(DCR *dcr)
      */
     if (*vol.VolEncrKey) {
        if (update_crypto_cache(vol.VolCatName, vol.VolEncrKey)) {
-          write_crypto_cache(me->working_directory, "bacula-sd",
+          write_crypto_cache(me->working_directory, "bareos-sd",
                              get_first_port_host_order(me->sdaddrs));
        }
     }
@@ -245,7 +239,7 @@ bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw writing)
  * Returns: true  on success dcr->VolumeName is volume
  *                reserve_volume() called on Volume name
  *          false on failure dcr->VolumeName[0] == 0
- *                also sets dcr->found_in_use if at least one 
+ *                also sets dcr->found_in_use if at least one
  *                in use volume was found.
  *
  *          Volume information returned in dcr
@@ -361,7 +355,7 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten)
       vol->VolCatBlocks, edit_uint64(vol->VolCatBytes, ed1),
       vol->VolCatMounts, vol->VolCatErrors,
       vol->VolCatWrites, edit_uint64(vol->VolCatMaxBytes, ed2),
-      edit_uint64(vol->VolLastWritten, ed6), 
+      edit_uint64(vol->VolLastWritten, ed6),
       vol->VolCatStatus, vol->Slot, label,
       InChanger,                      /* bool in structure */
       edit_int64(vol->VolReadTime, ed3),
@@ -373,7 +367,7 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten)
    if (!jcr->is_canceled()) {
       if (!do_get_volume_info(dcr)) {
          Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
-         Dmsg2(dbglvl, _("Didn't get vol info vol=%s: ERR=%s"), 
+         Dmsg2(dbglvl, _("Didn't get vol info vol=%s: ERR=%s"),
             vol->VolCatName, jcr->errmsg);
          goto bail_out;
       }
@@ -403,7 +397,7 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
    }
 
    /* Throw out records where FI is zero -- i.e. nothing done */
-   if (!zero && dcr->VolFirstIndex == 0 && 
+   if (!zero && dcr->VolFirstIndex == 0 &&
         (dcr->StartBlock != 0 || dcr->EndBlock != 0)) {
       Dmsg0(dbglvl, "JobMedia FI=0 StartBlock!=0 record suppressed\n");
       return true;
@@ -422,8 +416,8 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
       dir->fsend(Create_job_media, jcr->Job,
          dcr->VolFirstIndex, dcr->VolLastIndex,
          dcr->StartFile, dcr->EndFile,
-         dcr->StartBlock, dcr->EndBlock, 
-         dcr->Copy, dcr->Stripe, 
+         dcr->StartBlock, dcr->EndBlock,
+         dcr->Copy, dcr->Stripe,
          edit_uint64(dcr->VolMediaId, ed1));
    }
    Dmsg1(dbglvl, ">dird %s", dir->msg);
@@ -446,7 +440,7 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
 /**
  * Update File Attribute data
  * We do the following:
- *  1. expand the bsock buffer to be large enough 
+ *  1. expand the bsock buffer to be large enough
  *  2. Write a "header" into the buffer with serialized data
  *    VolSessionId
  *    VolSeesionTime

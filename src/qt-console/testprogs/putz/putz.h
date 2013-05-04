@@ -6,7 +6,7 @@
 
 class Putz : public QMainWindow, public Ui::MainWindow
 {
-   Q_OBJECT 
+   Q_OBJECT
 
 public:
    Putz();

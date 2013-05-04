@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,21 +13,17 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Define Message Types for Bacula
- *    Kern Sibbald, 2000
+ * Define Message Types for BAREOS
+ *
+ * Kern Sibbald, 2000
  */
 #include "bits.h"
 
@@ -47,22 +43,22 @@
 
 /*
  * Most of these message levels are more or less obvious.
- * They have evolved somewhat during the development of Bacula,
+ * They have evolved somewhat during the development of BAREOS,
  * and here are some of the details of where I am trying to
  * head (in the process of changing the code) as of 15 June 2002.
  *
- *  M_ABORT       Bacula immediately aborts and tries to produce a traceback
+ *  M_ABORT       BAREOS immediately aborts and tries to produce a traceback
  *                  This is for really serious errors like segmentation fault.
- *  M_ERROR_TERM  Bacula immediately terminates but no dump. This is for
+ *  M_ERROR_TERM  BAREOS immediately terminates but no dump. This is for
  *                  "obvious" serious errors like daemon already running or
  *                   cannot open critical file, ... where a dump is not wanted.
- *  M_TERM        Bacula daemon shutting down because of request (SIGTERM).
+ *  M_TERM        BAREOS daemon shutting down because of request (SIGTERM).
  *
  * The remaining apply to Jobs rather than the daemon.
  *
- *  M_FATAL       Bacula detected a fatal Job error. The Job will be killed,
- *                  but Bacula continues running.
- *  M_ERROR       Bacula detected a Job error. The Job will continue running
+ *  M_FATAL       BAREOS detected a fatal Job error. The Job will be killed,
+ *                  but BAREOS continues running.
+ *  M_ERROR       BAREOS detected a Job error. The Job will continue running
  *                  but the termination status will be error.
  *  M_WARNING     Job warning message.
  *  M_INFO        Job information message.

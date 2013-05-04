@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,52 +13,47 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   Master Configuration routines.
+ * Master Configuration routines.
  *
- *   This file contains the common parts of the Bacula
- *   configuration routines.
+ * This file contains the common parts of the BAREOS
+ * configuration routines.
  *
- *   Note, the configuration file parser consists of three parts
+ * Note, the configuration file parser consists of three parts
  *
- *   1. The generic lexical scanner in lib/lex.c and lib/lex.h
+ * 1. The generic lexical scanner in lib/lex.c and lib/lex.h
  *
- *   2. The generic config  scanner in lib/parse_conf.c and
- *      lib/parse_conf.h.
- *      These files contain the parser code, some utility
- *      routines, and the common store routines (name, int,
- *      string, time, int64, size, ...).
+ * 2. The generic config  scanner in lib/parse_conf.c and
+ *    lib/parse_conf.h.
+ *    These files contain the parser code, some utility
+ *    routines, and the common store routines (name, int,
+ *    string, time, int64, size, ...).
  *
- *   3. The daemon specific file, which contains the Resource
- *      definitions as well as any specific store routines
- *      for the resource records.
+ * 3. The daemon specific file, which contains the Resource
+ *    definitions as well as any specific store routines
+ *    for the resource records.
  *
- *    N.B. This is a two pass parser, so if you malloc() a string
- *         in a "store" routine, you must ensure to do it during
- *         only one of the two passes, or to free it between.
- *         Also, note that the resource record is malloced and
- *         saved in save_resource() during pass 1.  Anything that
- *         you want saved after pass two (e.g. resource pointers)
- *         must explicitly be done in save_resource. Take a look
- *         at the Job resource in src/dird/dird_conf.c to see how
- *         it is done.
+ * N.B. This is a two pass parser, so if you malloc() a string
+ * in a "store" routine, you must ensure to do it during
+ * only one of the two passes, or to free it between.
+ * Also, note that the resource record is malloced and
+ * saved in save_resource() during pass 1. Anything that
+ * you want saved after pass two (e.g. resource pointers)
+ * must explicitly be done in save_resource. Take a look
+ * at the Job resource in src/dird/dird_conf.c to see how
+ * it is done.
  *
- *     Kern Sibbald, January MM
+ * Kern Sibbald, January MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 #if defined(HAVE_WIN32)
 #include "shlobj.h"
@@ -154,7 +149,7 @@ struct s_kw {
  *   tape label      label code = token
  */
 static s_kw tapelabels[] = {
-   { "bacula", B_BACULA_LABEL },
+   { "bareos", B_BAREOS_LABEL },
    { "ansi", B_ANSI_LABEL },
    { "ibm", B_IBM_LABEL },
    { NULL, 0 }
@@ -693,11 +688,6 @@ void store_int64(LEX *lc, RES_ITEM *item, int index, int pass)
    set_bit(index, res_all.hdr.item_present);
 }
 
-enum store_unit_type {
-   STORE_SIZE,
-   STORE_SPEED
-} ;
-
 /*
  * Store a size in bytes
  */
@@ -729,17 +719,25 @@ static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
             break;
          }
       }
-      if (type == STORE_SIZE) {
+
+      switch (type) {
+      case STORE_SIZE:
          if (!size_to_uint64(bsize, &uvalue)) {
             scan_err1(lc, _("expected a size number, got: %s"), lc->str);
             return;
          }
-      } else {
+         break;
+      case STORE_SPEED:
          if (!speed_to_uint64(bsize, &uvalue)) {
             scan_err1(lc, _("expected a speed number, got: %s"), lc->str);
             return;
          }
+         break;
+      default:
+         scan_err0(lc, _("unknown unit type encountered"));
+         return;
       }
+
       if (size32) {
          *(uint32_t *)(item->value) = (uint32_t)uvalue;
       } else {
@@ -864,7 +862,7 @@ void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /*
- * Store Tape Label Type (Bacula, ANSI, IBM)
+ * Store Tape Label Type (BAREOS, ANSI, IBM)
  */
 void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
 {
@@ -1066,14 +1064,6 @@ void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass)
    }
 }
 
-/*
- * Parser state
- */
-enum parse_state {
-   p_none,
-   p_resource
-};
-
 CONFIG *new_config_parser()
 {
    CONFIG *config;
@@ -1082,18 +1072,17 @@ CONFIG *new_config_parser()
    return config;
 }
 
-void CONFIG::init(
-   const char *cf,
-   LEX_ERROR_HANDLER *scan_error,
-   LEX_WARNING_HANDLER *scan_warning,
-   INIT_RES_HANDLER *init_res,
-   int32_t err_type,
-   void *vres_all,
-   int32_t res_all_size,
-   int32_t r_first,
-   int32_t r_last,
-   RES_TABLE *resources,
-   RES **res_head)
+void CONFIG::init(const char *cf,
+                  LEX_ERROR_HANDLER *scan_error,
+                  LEX_WARNING_HANDLER *scan_warning,
+                  INIT_RES_HANDLER *init_res,
+                  int32_t err_type,
+                  void *vres_all,
+                  int32_t res_all_size,
+                  int32_t r_first,
+                  int32_t r_last,
+                  RES_TABLE *resources,
+                  RES **res_head)
 {
    m_cf = cf;
    m_scan_error = scan_error;
@@ -1325,7 +1314,7 @@ const char *get_default_configdir()
       hr = p_SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szConfigDir);
 
       if (SUCCEEDED(hr)) {
-         bstrncat(szConfigDir, "\\Bacula", sizeof(szConfigDir));
+         bstrncat(szConfigDir, "\\Bareos", sizeof(szConfigDir));
       } else {
          bstrncpy(szConfigDir, DEFAULT_CONFIGDIR, sizeof(szConfigDir));
       }

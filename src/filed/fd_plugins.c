@@ -1,37 +1,31 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation, which is 
+   License as published by the Free Software Foundation, which is
    listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
-/**
- * Main program to test loading and running Bacula plugins.
- *   Destined to become Bacula pluginloader, ...
+/*
+ * Bareos pluginloader
  *
  * Kern Sibbald, October 2007
  */
-#include "bacula.h"
+#include "bareos.h"
 #include "filed.h"
 
 extern CLIENTRES *me;
@@ -63,28 +57,28 @@ extern DLL_IMP_EXP boffset_t (*plugin_blseek)(BFILE *bfd, boffset_t offset, int 
 /*
  * Forward referenced functions
  */
-static bRC baculaGetValue(bpContext *ctx, bVariable var, void *value);
-static bRC baculaSetValue(bpContext *ctx, bVariable var, void *value);
-static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...);
-static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value);
+static bRC bareosSetValue(bpContext *ctx, bVariable var, void *value);
+static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...);
+static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...);
-static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...);
-static void *baculaMalloc(bpContext *ctx, const char *file, int line,
+static void *bareosMalloc(bpContext *ctx, const char *file, int line,
                           size_t size);
-static void baculaFree(bpContext *ctx, const char *file, int line, void *mem);
-static bRC  baculaAddExclude(bpContext *ctx, const char *file);
-static bRC baculaAddInclude(bpContext *ctx, const char *file);
-static bRC baculaAddOptions(bpContext *ctx, const char *opts);
-static bRC baculaAddRegex(bpContext *ctx, const char *item, int type);
-static bRC baculaAddWild(bpContext *ctx, const char *item, int type);
-static bRC baculaNewOptions(bpContext *ctx);
-static bRC baculaNewInclude(bpContext *ctx);
-static bRC baculaNewPreInclude(bpContext *ctx);
+static void bareosFree(bpContext *ctx, const char *file, int line, void *mem);
+static bRC  bareosAddExclude(bpContext *ctx, const char *file);
+static bRC bareosAddInclude(bpContext *ctx, const char *file);
+static bRC bareosAddOptions(bpContext *ctx, const char *opts);
+static bRC bareosAddRegex(bpContext *ctx, const char *item, int type);
+static bRC bareosAddWild(bpContext *ctx, const char *item, int type);
+static bRC bareosNewOptions(bpContext *ctx);
+static bRC bareosNewInclude(bpContext *ctx);
+static bRC bareosNewPreInclude(bpContext *ctx);
 static bool is_plugin_compatible(Plugin *plugin);
 static bool get_plugin_name(JCR *jcr, char *cmd, int *ret);
-static bRC baculaCheckChanges(bpContext *ctx, struct save_pkt *sp);
-static bRC baculaAcceptFile(bpContext *ctx, struct save_pkt *sp);
+static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp);
+static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp);
 
 /*
  * These will be plugged into the global pointer structure for the findlib.
@@ -95,39 +89,39 @@ static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count);
 static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count);
 static boffset_t my_plugin_blseek(BFILE *bfd, boffset_t offset, int whence);
 
-/* Bacula info */
+/* Bareos info */
 static bInfo binfo = {
    sizeof(bInfo),
-   FD_PLUGIN_INTERFACE_VERSION 
+   FD_PLUGIN_INTERFACE_VERSION
 };
 
-/* Bacula entry points */
+/* Bareos entry points */
 static bFuncs bfuncs = {
    sizeof(bFuncs),
    FD_PLUGIN_INTERFACE_VERSION,
-   baculaRegisterEvents,
-   baculaGetValue,
-   baculaSetValue,
-   baculaJobMsg,
-   baculaDebugMsg,
-   baculaMalloc,
-   baculaFree,
-   baculaAddExclude,
-   baculaAddInclude,
-   baculaAddOptions,
-   baculaAddRegex,
-   baculaAddWild,
-   baculaNewOptions,
-   baculaNewInclude,
-   baculaNewPreInclude,
-   baculaCheckChanges,
-   baculaAcceptFile
+   bareosRegisterEvents,
+   bareosGetValue,
+   bareosSetValue,
+   bareosJobMsg,
+   bareosDebugMsg,
+   bareosMalloc,
+   bareosFree,
+   bareosAddExclude,
+   bareosAddInclude,
+   bareosAddOptions,
+   bareosAddRegex,
+   bareosAddWild,
+   bareosNewOptions,
+   bareosNewInclude,
+   bareosNewPreInclude,
+   bareosCheckChanges,
+   bareosAcceptFile
 };
 
-/* 
- * Bacula private context
+/*
+ * Bareos private context
  */
-struct bacula_ctx {
+struct b_plugin_ctx {
    JCR *jcr;                                       /* jcr for plugin */
    bRC  rc;                                        /* last return code */
    bool disabled;                                  /* set if plugin disabled */
@@ -138,11 +132,11 @@ struct bacula_ctx {
 
 static inline bool is_event_enabled(bpContext *ctx, bEventType eventType)
 {
-   bacula_ctx *b_ctx;
+   b_plugin_ctx *b_ctx;
    if (!ctx) {
       return true;
    }
-   b_ctx = (bacula_ctx *)ctx->bContext;
+   b_ctx = (b_plugin_ctx *)ctx->bContext;
    if (!b_ctx) {
       return true;
    }
@@ -151,12 +145,12 @@ static inline bool is_event_enabled(bpContext *ctx, bEventType eventType)
 
 static inline bool is_plugin_disabled(bpContext *ctx)
 {
-   bacula_ctx *b_ctx;
+   b_plugin_ctx *b_ctx;
    Dsm_check(999);
    if (!ctx) {
       return true;
    }
-   b_ctx = (bacula_ctx *)ctx->bContext;
+   b_ctx = (b_plugin_ctx *)ctx->bContext;
    if (!b_ctx) {
       return true;
    }
@@ -178,7 +172,7 @@ static bool for_this_plugin(Plugin *plugin, char *name, int len)
    }
    if (bstrcmp("*all*", name)) { /* new v6.0 name for VSS job metadata */
       return true;
-   } 
+   }
    /* Check if this is the correct plugin */
    if (len == plugin->file_len && bstrncmp(plugin->file, name, len)) {
       return true;
@@ -196,7 +190,7 @@ bool is_plugin_disabled(JCR *jcr)
  * Create a plugin event When receiving bEventCancelCommand, this function is
  * called by an other thread.
  */
-void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)     
+void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)
 {
    bpContext *ctx;
    bEvent event;
@@ -211,7 +205,7 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)
    if (!fd_plugin_list || !jcr || !jcr->plugin_ctx_list) {
       return;                         /* Return if no plugins loaded */
    }
-   
+
    /*
     * Some events are sent to only a particular plugin or must be
     *  called even if the job is canceled
@@ -270,12 +264,12 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)
     */
    foreach_alist_index(i, plugin, fd_plugin_list) {
       if (!for_this_plugin(plugin, name, len)) {
-         Dmsg2(dbglvl, "Not for this plugin name=%s NULL=%d\n", 
+         Dmsg2(dbglvl, "Not for this plugin name=%s NULL=%d\n",
             name, (name == NULL) ? 1 : 0);
          continue;
       }
       /*
-       * Note, at this point do not change 
+       * Note, at this point do not change
        *   jcr->plugin or jcr->plugin_ctx
        */
       Dsm_check(999);
@@ -345,7 +339,7 @@ bool plugin_check_file(JCR *jcr, char *fname)
 
 /*
  * Get the first part of the the plugin command
- *  systemstate:/@SYSTEMSTATE/ 
+ *  systemstate:/@SYSTEMSTATE/
  * => ret = 11
  * => can use for_this_plugin(plug, cmd, ret);
  *
@@ -393,14 +387,14 @@ static void update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
       ff_pkt->flags &= ~FO_DELTA;   /* clean delta sequence number */
       ff_pkt->delta_seq = 0;
    }
-   
+
    if (sp->flags & FO_OFFSETS) {
       ff_pkt->flags |= FO_OFFSETS;
    } else {
       ff_pkt->flags &= ~FO_OFFSETS;
    }
    /* Sparse code doesn't work with plugins
-    * that use FIFO or STDOUT/IN to communicate 
+    * that use FIFO or STDOUT/IN to communicate
     */
    if (sp->flags & FO_SPARSE) {
       ff_pkt->flags |= FO_SPARSE;
@@ -465,10 +459,10 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
 
       jcr->plugin_ctx = &plugin_ctx_list[i];
       jcr->plugin = plugin;
-      
-      ret = plug_func(plugin)->handlePluginEvent(&plugin_ctx_list[i], 
+
+      ret = plug_func(plugin)->handlePluginEvent(&plugin_ctx_list[i],
                                                  &event, sp);
-      
+
       /* TODO: would be better to set this in save_file() */
       if (ret == bRC_OK) {
          jcr->opt_plugin = true;
@@ -491,7 +485,7 @@ bail_out:
    return ret;
 }
 
-/**  
+/**
  * Sequence of calls for a backup:
  * 1. plugin_save() here is called with ff_pkt
  * 2. we find the plugin requested on the command string
@@ -499,7 +493,7 @@ bail_out:
  *    and pass it the command string.
  * 4. we make a startPluginBackup call to the plugin, which gives
  *    us the data we need in save_pkt
- * 5. we call Bacula's save_file() subroutine to save the specified
+ * 5. we call Bareos's save_file() subroutine to save the specified
  *    file.  The plugin will be called at pluginIO() to supply the
  *    file data.
  *
@@ -537,7 +531,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       if (!for_this_plugin(plugin, cmd, len)) {
          continue;
       }
-      /* 
+      /*
        * We put the current plugin pointer, and the plugin context
        *  into the jcr, because during save_file(), the plugin
        *  will be called many times and these values are needed.
@@ -555,7 +549,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          goto bail_out;
       }
       /* Loop getting filenames to backup then saving them */
-      while (!jcr->is_job_canceled()) { 
+      while (!jcr->is_job_canceled()) {
          memset(&sp, 0, sizeof(sp));
          sp.pkt_size = sizeof(sp);
          sp.pkt_end = sizeof(sp);
@@ -578,7 +572,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          jcr->plugin_sp = &sp;
          ff_pkt = jcr->ff;
          /*
-          * Copy fname and link because save_file() zaps them.  This 
+          * Copy fname and link because save_file() zaps them.  This
           *  avoids zaping the plugin's strings.
           */
          ff_pkt->type = sp.type;
@@ -614,8 +608,8 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          Dmsg2(dbglvl, "startBackup returned type=%d, fname=%s\n", sp.type, sp.fname);
          if (sp.object) {
             Dmsg2(dbglvl, "index=%d object=%s\n", sp.index, sp.object);
-         }   
-         /* Call Bacula core code to backup the plugin's file */
+         }
+         /* Call Bareos core code to backup the plugin's file */
          save_file(jcr, ff_pkt, true);
          bRC rc = plug_func(plugin)->endBackupFile(jcr->plugin_ctx);
          if (rc == bRC_More || rc == bRC_OK) {
@@ -639,7 +633,7 @@ bail_out:
    return 1;
 }
 
-/**  
+/**
  * Sequence of calls for a estimate:
  * 1. plugin_estimate() here is called with ff_pkt
  * 2. we find the plugin requested on the command string
@@ -683,7 +677,7 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       if (!for_this_plugin(plugin, cmd, len)) {
          continue;
       }
-      /* 
+      /*
        * We put the current plugin pointer, and the plugin context
        *  into the jcr, because during save_file(), the plugin
        *  will be called many times and these values are needed.
@@ -705,7 +699,7 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       /*
        * Loop getting filenames to backup then saving them
        */
-      while (!jcr->is_job_canceled()) { 
+      while (!jcr->is_job_canceled()) {
          Dsm_check(999);
          memset(&sp, 0, sizeof(sp));
          sp.pkt_size = sizeof(sp);
@@ -807,7 +801,7 @@ bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start)
    if (jcr->is_job_canceled()) {
       return false;
    }
-  
+
    if (start) {
       index++;                  /* JobFiles not incremented yet */
    }
@@ -848,7 +842,7 @@ bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start)
  * Returns: true  if start of stream
  *          false if end of steam
  */
-bool plugin_name_stream(JCR *jcr, char *name)    
+bool plugin_name_stream(JCR *jcr, char *name)
 {
    char *p = name;
    char *cmd;
@@ -873,7 +867,7 @@ bool plugin_name_stream(JCR *jcr, char *name)
       cmd = p;
    } else {
       /*
-       * End of plugin data, notify plugin, then clear flags   
+       * End of plugin data, notify plugin, then clear flags
        */
       Dmsg2(dbglvl, "End plugin data plugin=%p ctx=%p\n", jcr->plugin, jcr->plugin_ctx);
       if (jcr->plugin && jcr->plugin->restoreFileStarted) {
@@ -891,7 +885,7 @@ bool plugin_name_stream(JCR *jcr, char *name)
    if (!plugin_ctx_list) {
       goto bail_out;
    }
-      
+
    /*
     * After this point, we are dealing with a restore start
     */
@@ -900,7 +894,7 @@ bool plugin_name_stream(JCR *jcr, char *name)
    }
 
    /*
-    * Search for correct plugin as specified on the command 
+    * Search for correct plugin as specified on the command
     */
    Dsm_check(999);
    foreach_alist_index(i, plugin, fd_plugin_list) {
@@ -917,8 +911,8 @@ bool plugin_name_stream(JCR *jcr, char *name)
          goto bail_out;
       }
       Dmsg1(dbglvl, "Restore Command plugin = %s\n", cmd);
-      event.eventType = bEventRestoreCommand;     
-      if (plug_func(plugin)->handlePluginEvent(jcr->plugin_ctx, 
+      event.eventType = bEventRestoreCommand;
+      if (plug_func(plugin)->handlePluginEvent(jcr->plugin_ctx,
             &event, cmd) != bRC_OK) {
          Dmsg1(dbglvl, "Handle event failed. Plugin=%s\n", cmd);
          goto bail_out;
@@ -989,7 +983,7 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    rp.RegexWhere = jcr->RegexWhere;
    rp.replace = jcr->replace;
    rp.create_status = CF_ERROR;
-   Dmsg4(dbglvl, "call plugin createFile stream=%d type=%d LinkFI=%d File=%s\n", 
+   Dmsg4(dbglvl, "call plugin createFile stream=%d type=%d LinkFI=%d File=%s\n",
          rp.stream, rp.type, rp.LinkFI, rp.ofname);
    if (rp.attrEx) {
       Dmsg1(dbglvl, "attrEx=\"%s\"\n", rp.attrEx);
@@ -1018,7 +1012,7 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    }
 
    if (rp.create_status == CF_CORE) {
-      return CF_CORE;           /* Let Bacula core handle the file creation */
+      return CF_CORE;           /* Let Bareos core handle the file creation */
    }
 
    /* Created link or directory? */
@@ -1084,7 +1078,7 @@ bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    rp.create_status = CF_ERROR;
 
    plug_func(plugin)->setFileAttributes(jcr->plugin_ctx, &rp);
-   
+
    if (rp.create_status == CF_CORE) {
       set_attributes(jcr, attr, ofd);
    } else {
@@ -1122,7 +1116,7 @@ static void dump_fd_plugins(FILE *fp)
 }
 
 /**
- * This entry point is called internally by Bacula to ensure
+ * This entry point is called internally by Bareos to ensure
  *  that the plugin IO calls come into this code.
  */
 void load_fd_plugins(const char *plugin_dir)
@@ -1156,7 +1150,7 @@ void load_fd_plugins(const char *plugin_dir)
    plugin_blseek = my_plugin_blseek;
    Dsm_check(999);
 
-   /* 
+   /*
     * Verify that the plugin is acceptable, and print information
     *  about it.
     */
@@ -1209,8 +1203,9 @@ static bool is_plugin_compatible(Plugin *plugin)
            plugin->file, FD_PLUGIN_INTERFACE_VERSION, info->version);
       return false;
    }
-   if (!bstrcmp(info->plugin_license, "Bacula AGPLv3") &&
-       !bstrcmp(info->plugin_license, "AGPLv3")) {
+   if (!bstrcasecmp(info->plugin_license, "Bareos AGPLv3") &&
+       !bstrcasecmp(info->plugin_license, "Bacula AGPLv3") &&
+       !bstrcasecmp(info->plugin_license, "AGPLv3")) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin license incompatible. Plugin=%s license=%s\n"),
            plugin->file, info->plugin_license);
       Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
@@ -1223,7 +1218,7 @@ static bool is_plugin_compatible(Plugin *plugin)
            plugin->file, sizeof(genpInfo), info->size);
       return false;
    }
-      
+
    Dsm_check(999);
    return true;
 }
@@ -1261,10 +1256,10 @@ void new_plugins(JCR *jcr)
    foreach_alist_index(i, plugin, fd_plugin_list) {
       Dsm_check(999);
       /* Start a new instance of each plugin */
-      bacula_ctx *b_ctx = (bacula_ctx *)malloc(sizeof(bacula_ctx));
-      memset(b_ctx, 0, sizeof(bacula_ctx));
+      b_plugin_ctx *b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
+      memset(b_ctx, 0, sizeof(b_plugin_ctx));
       b_ctx->jcr = jcr;
-      plugin_ctx_list[i].bContext = (void *)b_ctx;   /* Bacula private context */
+      plugin_ctx_list[i].bContext = (void *)b_ctx;   /* Bareos private context */
       plugin_ctx_list[i].pContext = NULL;
       if (plug_func(plugin)->newPlugin(&plugin_ctx_list[i]) != bRC_OK) {
          b_ctx->disabled = true;
@@ -1292,10 +1287,10 @@ void free_plugins(JCR *jcr)
    Dsm_check(999);
    bpContext *plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
    Dmsg2(dbglvl, "Free instance plugin_ctx=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
-   foreach_alist_index(i, plugin, fd_plugin_list) {   
+   foreach_alist_index(i, plugin, fd_plugin_list) {
       /* Free the plugin instance */
       plug_func(plugin)->freePlugin(&plugin_ctx_list[i]);
-      free(plugin_ctx_list[i].bContext);     /* free Bacula private context */
+      free(plugin_ctx_list[i].bContext);     /* free Bareos private context */
       Dsm_check(999);
    }
    Dsm_check(999);
@@ -1467,7 +1462,7 @@ static boffset_t my_plugin_blseek(BFILE *bfd, boffset_t offset, int whence)
  *
  * ==============================================================
  */
-static bRC baculaGetValue(bpContext *ctx, bVariable var, void *value)
+static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
 {
    JCR *jcr;
    if (!value) {
@@ -1502,7 +1497,7 @@ static bRC baculaGetValue(bpContext *ctx, bVariable var, void *value)
       return bRC_Error;
    }
 
-   jcr = ((bacula_ctx *)ctx->bContext)->jcr;
+   jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    if (!jcr) {
       return bRC_Error;
    }
@@ -1510,39 +1505,39 @@ static bRC baculaGetValue(bpContext *ctx, bVariable var, void *value)
    switch (var) {
    case bVarJobId:
       *((int *)value) = jcr->JobId;
-      Dmsg1(dbglvl, "Bacula: return bVarJobId=%d\n", jcr->JobId);
+      Dmsg1(dbglvl, "Bareos: return bVarJobId=%d\n", jcr->JobId);
       break;
    case bVarLevel:
       *((int *)value) = jcr->getJobLevel();
-      Dmsg1(dbglvl, "Bacula: return bVarJobLevel=%d\n", jcr->getJobLevel());
+      Dmsg1(dbglvl, "Bareos: return bVarJobLevel=%d\n", jcr->getJobLevel());
       break;
    case bVarType:
       *((int *)value) = jcr->getJobType();
-      Dmsg1(dbglvl, "Bacula: return bVarJobType=%d\n", jcr->getJobType());
+      Dmsg1(dbglvl, "Bareos: return bVarJobType=%d\n", jcr->getJobType());
       break;
    case bVarClient:
       *((char **)value) = jcr->client_name;
-      Dmsg1(dbglvl, "Bacula: return Client_name=%s\n", jcr->client_name);
+      Dmsg1(dbglvl, "Bareos: return Client_name=%s\n", jcr->client_name);
       break;
    case bVarJobName:
       *((char **)value) = jcr->Job;
-      Dmsg1(dbglvl, "Bacula: return Job name=%s\n", jcr->Job);
+      Dmsg1(dbglvl, "Bareos: return Job name=%s\n", jcr->Job);
       break;
    case bVarPrevJobName:
       *((char **)value) = jcr->PrevJob;
-      Dmsg1(dbglvl, "Bacula: return Previous Job name=%s\n", jcr->PrevJob);
+      Dmsg1(dbglvl, "Bareos: return Previous Job name=%s\n", jcr->PrevJob);
       break;
    case bVarJobStatus:
       *((int *)value) = jcr->JobStatus;
-      Dmsg1(dbglvl, "Bacula: return bVarJobStatus=%d\n", jcr->JobStatus);
+      Dmsg1(dbglvl, "Bareos: return bVarJobStatus=%d\n", jcr->JobStatus);
       break;
    case bVarSinceTime:
       *((int *)value) = (int)jcr->mtime;
-      Dmsg1(dbglvl, "Bacula: return since=%d\n", (int)jcr->mtime);
+      Dmsg1(dbglvl, "Bareos: return since=%d\n", (int)jcr->mtime);
       break;
    case bVarAccurate:
       *((int *)value) = (int)jcr->accurate;
-      Dmsg1(dbglvl, "Bacula: return accurate=%d\n", (int)jcr->accurate);
+      Dmsg1(dbglvl, "Bareos: return accurate=%d\n", (int)jcr->accurate);
       break;
    case bVarFileSeen:
       break;                 /* a write only variable, ignore read request */
@@ -1583,24 +1578,24 @@ static bRC baculaGetValue(bpContext *ctx, bVariable var, void *value)
    return bRC_OK;
 }
 
-static bRC baculaSetValue(bpContext *ctx, bVariable var, void *value)
+static bRC bareosSetValue(bpContext *ctx, bVariable var, void *value)
 {
    JCR *jcr;
    Dsm_check(999);
    if (!value || !ctx) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "bacula: baculaGetValue var=%d\n", var);
-   jcr = ((bacula_ctx *)ctx->bContext)->jcr;
+// Dmsg1(dbglvl, "bareos: bareosGetValue var=%d\n", var);
+   jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    if (!jcr) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "Bacula: jcr=%p\n", jcr); 
+// Dmsg1(dbglvl, "Bareos: jcr=%p\n", jcr);
    switch (var) {
    case bVarFileSeen:
       if (!accurate_mark_file_as_seen(jcr, (char *)value)) {
          return bRC_Error;
-      } 
+      }
       break;
    default:
       break;
@@ -1609,18 +1604,18 @@ static bRC baculaSetValue(bpContext *ctx, bVariable var, void *value)
    return bRC_OK;
 }
 
-static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...)
+static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
 {
    int i;
    va_list args;
    uint32_t event;
-   bacula_ctx *b_ctx;
+   b_plugin_ctx *b_ctx;
 
    Dsm_check(999);
    if (!ctx) {
       return bRC_Error;
    }
-   b_ctx = (bacula_ctx *)ctx->bContext;
+   b_ctx = (b_plugin_ctx *)ctx->bContext;
 
    va_start(args, nr_events);
    for (i = 0; i < nr_events; i++) {
@@ -1633,7 +1628,7 @@ static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...)
    return bRC_OK;
 }
 
-static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...)
 {
    va_list arg_ptr;
@@ -1642,7 +1637,7 @@ static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
 
    Dsm_check(999);
    if (ctx) {
-      jcr = ((bacula_ctx *)ctx->bContext)->jcr;
+      jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    } else {
       jcr = NULL;
    }
@@ -1655,7 +1650,7 @@ static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
    return bRC_OK;
 }
 
-static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...)
 {
    va_list arg_ptr;
@@ -1670,7 +1665,7 @@ static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
    return bRC_OK;
 }
 
-static void *baculaMalloc(bpContext *ctx, const char *file, int line,
+static void *bareosMalloc(bpContext *ctx, const char *file, int line,
                           size_t size)
 {
 #ifdef SMARTALLOC
@@ -1680,7 +1675,7 @@ static void *baculaMalloc(bpContext *ctx, const char *file, int line,
 #endif
 }
 
-static void baculaFree(bpContext *ctx, const char *file, int line, void *mem)
+static void bareosFree(bpContext *ctx, const char *file, int line, void *mem)
 {
 #ifdef SMARTALLOC
    sm_free(file, line, mem);
@@ -1689,13 +1684,13 @@ static void baculaFree(bpContext *ctx, const char *file, int line, void *mem)
 #endif
 }
 
-static bool is_ctx_good(bpContext *ctx, JCR *&jcr, bacula_ctx *&bctx)
+static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
 {
    Dsm_check(999);
    if (!ctx) {
       return false;
    }
-   bctx = (bacula_ctx *)ctx->bContext;
+   bctx = (b_plugin_ctx *)ctx->bContext;
    if (!bctx) {
       return false;
    }
@@ -1710,11 +1705,11 @@ static bool is_ctx_good(bpContext *ctx, JCR *&jcr, bacula_ctx *&bctx)
  * Let the plugin define files/directories to be excluded
  *  from the main backup.
  */
-static bRC baculaAddExclude(bpContext *ctx, const char *file)
+static bRC bareosAddExclude(bpContext *ctx, const char *file)
 {
    JCR *jcr;
    findINCEXE *old;
-   bacula_ctx *bctx;
+   b_plugin_ctx *bctx;
    Dsm_check(999);
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
@@ -1731,7 +1726,7 @@ static bRC baculaAddExclude(bpContext *ctx, const char *file)
       return bRC_Error;
    }
 
-   if (!bctx->exclude) {  
+   if (!bctx->exclude) {
       bctx->exclude = new_exclude(jcr);
    }
 
@@ -1752,11 +1747,11 @@ static bRC baculaAddExclude(bpContext *ctx, const char *file)
  * Let the plugin define files/directories to be excluded
  *  from the main backup.
  */
-static bRC baculaAddInclude(bpContext *ctx, const char *file)
+static bRC bareosAddInclude(bpContext *ctx, const char *file)
 {
    JCR *jcr;
    findINCEXE *old;
-   bacula_ctx *bctx;
+   b_plugin_ctx *bctx;
 
    Dsm_check(999);
    if (!is_ctx_good(ctx, jcr, bctx)) {
@@ -1788,10 +1783,10 @@ static bRC baculaAddInclude(bpContext *ctx, const char *file)
    return bRC_OK;
 }
 
-static bRC baculaAddOptions(bpContext *ctx, const char *opts)
+static bRC bareosAddOptions(bpContext *ctx, const char *opts)
 {
    JCR *jcr;
-   bacula_ctx *bctx;
+   b_plugin_ctx *bctx;
    Dsm_check(999);
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
@@ -1805,10 +1800,10 @@ static bRC baculaAddOptions(bpContext *ctx, const char *opts)
    return bRC_OK;
 }
 
-static bRC baculaAddRegex(bpContext *ctx, const char *item, int type)
+static bRC bareosAddRegex(bpContext *ctx, const char *item, int type)
 {
    JCR *jcr;
-   bacula_ctx *bctx;
+   b_plugin_ctx *bctx;
    Dsm_check(999);
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
@@ -1822,10 +1817,10 @@ static bRC baculaAddRegex(bpContext *ctx, const char *item, int type)
    return bRC_OK;
 }
 
-static bRC baculaAddWild(bpContext *ctx, const char *item, int type)
+static bRC bareosAddWild(bpContext *ctx, const char *item, int type)
 {
    JCR *jcr;
-   bacula_ctx *bctx;
+   b_plugin_ctx *bctx;
    Dsm_check(999);
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
@@ -1839,10 +1834,10 @@ static bRC baculaAddWild(bpContext *ctx, const char *item, int type)
    return bRC_OK;
 }
 
-static bRC baculaNewOptions(bpContext *ctx)
+static bRC bareosNewOptions(bpContext *ctx)
 {
    JCR *jcr;
-   bacula_ctx *bctx;
+   b_plugin_ctx *bctx;
    Dsm_check(999);
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
@@ -1852,10 +1847,10 @@ static bRC baculaNewOptions(bpContext *ctx)
    return bRC_OK;
 }
 
-static bRC baculaNewInclude(bpContext *ctx)
+static bRC bareosNewInclude(bpContext *ctx)
 {
    JCR *jcr;
-   bacula_ctx *bctx;
+   b_plugin_ctx *bctx;
    Dsm_check(999);
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
@@ -1865,10 +1860,10 @@ static bRC baculaNewInclude(bpContext *ctx)
    return bRC_OK;
 }
 
-static bRC baculaNewPreInclude(bpContext *ctx)
+static bRC bareosNewPreInclude(bpContext *ctx)
 {
    JCR *jcr;
-   bacula_ctx *bctx;
+   b_plugin_ctx *bctx;
    Dsm_check(999);
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
@@ -1882,13 +1877,13 @@ static bRC baculaNewPreInclude(bpContext *ctx)
    return bRC_OK;
 }
 
-/* 
+/*
  * Check if a file have to be backuped using Accurate code
  */
-static bRC baculaCheckChanges(bpContext *ctx, struct save_pkt *sp)
+static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp)
 {
    JCR *jcr;
-   bacula_ctx *bctx;
+   b_plugin_ctx *bctx;
    FF_PKT *ff_pkt;
    bRC ret = bRC_Error;
 
@@ -1899,15 +1894,15 @@ static bRC baculaCheckChanges(bpContext *ctx, struct save_pkt *sp)
    if (!sp) {
       goto bail_out;
    }
-   
+
    ff_pkt = jcr->ff;
    /*
-    * Copy fname and link because save_file() zaps them.  This 
+    * Copy fname and link because save_file() zaps them.  This
     *  avoids zaping the plugin's strings.
     */
    ff_pkt->type = sp->type;
    if (!sp->fname) {
-      Jmsg0(jcr, M_FATAL, 0, _("Command plugin: no fname in baculaCheckChanges packet.\n"));
+      Jmsg0(jcr, M_FATAL, 0, _("Command plugin: no fname in bareosCheckChanges packet.\n"));
       goto bail_out;
    }
 
@@ -1922,7 +1917,7 @@ static bRC baculaCheckChanges(bpContext *ctx, struct save_pkt *sp)
    }
 
    /*
-    * check_changes() can update delta sequence number, return it to the plugin 
+    * check_changes() can update delta sequence number, return it to the plugin
     */
    sp->delta_seq = ff_pkt->delta_seq;
    sp->accurate_found = ff_pkt->accurate_found;
@@ -1933,14 +1928,14 @@ bail_out:
    return ret;
 }
 
-/* 
+/*
  * Check if a file would be saved using current Include/Exclude code
  */
-static bRC baculaAcceptFile(bpContext *ctx, struct save_pkt *sp)
+static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp)
 {
    JCR *jcr;
    FF_PKT *ff_pkt;
-   bacula_ctx *bctx;
+   b_plugin_ctx *bctx;
 
    char *old;
    struct stat oldstat;
@@ -1953,7 +1948,7 @@ static bRC baculaAcceptFile(bpContext *ctx, struct save_pkt *sp)
    if (!sp) {
       goto bail_out;
    }
-   
+
    ff_pkt = jcr->ff;
 
    /* Probably not needed, but keep a copy */
@@ -2030,7 +2025,7 @@ int main(int argc, char *argv[])
 
    unload_fd_plugins();
 
-   Dmsg0(dbglvl, "bacula: OK ...\n");
+   Dmsg0(dbglvl, "bareos: OK ...\n");
 
    term_msg();
    close_memory_pool();

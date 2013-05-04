@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,24 +11,18 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   Match Bootstrap Records (used for restores) against
- *     Volume Records
+ * Match Bootstrap Records (used for restores) against
+ * Volume Records
  *
- *     Kern Sibbald, June MMII
- *
+ * Kern Sibbald, June MMII
  */
 
 /*
@@ -42,7 +34,7 @@
  *   To be done ...
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
 const int dbglevel = 500;
@@ -445,7 +437,7 @@ static int match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
 
    /*
     * If a count was specified and we have a FileIndex, assume
-    *   it is a Bacula created bsr (or the equivalent). We
+    *   it is a Bareos created bsr (or the equivalent). We
     *   then save the bsr where the match occurred so that
     *   after processing the record or records, we can update
     *   the found count. I.e. rec->bsr points to the bsr that
@@ -458,7 +450,7 @@ static int match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
    }
 
    /*
-    * The selections below are not used by Bacula's
+    * The selections below are not used by Bareos's
     *   restore command, and don't work because of
     *   the rec->bsr = bsr optimization above.
     */

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Routines for handling mounting tapes for reading and for writing.
  *
- *  Routines for handling mounting tapes for reading and for
- *    writing.
- *
- *   Kern Sibbald, August MMII
- *
+ * Kern Sibbald, August MMII
  */
 
-#include "bacula.h"                   /* pull in global headers */
+#include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
 static pthread_mutex_t mount_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -128,7 +120,7 @@ mount_next_vol:
       goto bail_out;
    }
    Dmsg2(150, "After find_next_append. Vol=%s Slot=%d\n", getVolCatName(), VolCatInfo.Slot);
-   
+
    /*
     * Get next volume and ready it for append
     * This code ensures that the device is ready for
@@ -179,7 +171,7 @@ mount_next_vol:
    if (job_canceled(jcr)) {
       goto bail_out;
    }
-   Dmsg3(150, "want vol=%s devvol=%s dev=%s\n", VolumeName, 
+   Dmsg3(150, "want vol=%s devvol=%s dev=%s\n", VolumeName,
       dev->VolHdr.VolumeName, dev->print_name());
 
    if (dev->poll && dev->has_cap(CAP_CLOSEONPOLL)) {
@@ -238,7 +230,7 @@ read_volume:
       break;
    }
    /*
-    * Check that volcatinfo is good   
+    * Check that volcatinfo is good
     */
    if (!dev->haveVolCatInfo()) {
       Dmsg0(210, "Do not have volcatinfo\n");
@@ -269,7 +261,7 @@ read_volume:
       }
    } else {
       /*
-       * OK, at this point, we have a valid Bacula label, but
+       * OK, at this point, we have a valid Bareos label, but
        * we need to position to the end of the volume, since we are
        * just now putting it into append mode.
        */
@@ -279,7 +271,7 @@ read_volume:
          VolumeName);
 
       if (!dev->eod(dcr)) {
-         Dmsg2(050, "Unable to position to end of data on device %s: ERR=%s\n", 
+         Dmsg2(050, "Unable to position to end of data on device %s: ERR=%s\n",
             dev->print_name(), dev->bstrerror());
          Jmsg(jcr, M_ERROR, 0, _("Unable to position to end of data on device %s: ERR=%s\n"),
             dev->print_name(), dev->bstrerror());
@@ -296,7 +288,7 @@ read_volume:
       if (!dir_update_volume_info(dcr, false, false)) {
          goto bail_out;
       }
-      
+
       /* Return an empty block */
       empty_block(block);             /* we used it for reading so set for write */
    }
@@ -432,7 +424,7 @@ int DCR::check_volume_label(bool &ask, bool &autochanger)
          if (autochanger && !dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ)) {
             /*
              * If we get here, we know we cannot write on the Volume,
-             *  and we know that we cannot read it either, so it 
+             *  and we know that we cannot read it either, so it
              *  is not in the autochanger.
              */
             mark_volume_not_inchanger();
@@ -630,7 +622,7 @@ bool DCR::is_eod_valid()
             return false;
          }
       } else {
-         Jmsg(jcr, M_ERROR, 0, _("Bacula cannot write on tape Volume \"%s\" because:\n"
+         Jmsg(jcr, M_ERROR, 0, _("Bareos cannot write on tape Volume \"%s\" because:\n"
                                  "The number of files mismatch! Volume=%u Catalog=%u\n"),
               VolumeName, dev->get_file(), dev->VolCatInfo.VolCatFiles);
          mark_volume_in_error();
@@ -648,7 +640,7 @@ bool DCR::is_eod_valid()
          Jmsg(jcr, M_WARNING, 0, _("For Volume \"%s\":\n"
                                    "The sizes do not match! Volume=%s Catalog=%s\n"
                                    "Correcting Catalog\n"),
-              VolumeName, edit_uint64(pos, ed1), 
+              VolumeName, edit_uint64(pos, ed1),
               edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
          dev->VolCatInfo.VolCatBytes = (uint64_t)pos;
          dev->VolCatInfo.VolCatFiles = (uint32_t)(pos >> 32);
@@ -658,7 +650,7 @@ bool DCR::is_eod_valid()
             return false;
          }
       } else {
-         Mmsg(jcr->errmsg, _("Bacula cannot write on disk Volume \"%s\" because: "
+         Mmsg(jcr->errmsg, _("Bareos cannot write on disk Volume \"%s\" because: "
                              "The sizes do not match! Volume=%s Catalog=%s\n"),
               VolumeName,
               edit_uint64(pos, ed1),
@@ -710,7 +702,7 @@ int DCR::try_autolabel(bool opened)
                                          false /* no relabel */)) {
          Dmsg2(150, "write_vol_label failed. vol=%s, pool=%s\n",
            VolumeName, pool_name);
-         if (opened) { 
+         if (opened) {
             mark_volume_in_error();
          }
          return try_next_vol;
@@ -726,7 +718,7 @@ int DCR::try_autolabel(bool opened)
       return try_read_vol;   /* read label we just wrote */
    }
    if (!dev->has_cap(CAP_LABEL) && VolCatInfo.VolCatBytes == 0) {
-      Jmsg(jcr, M_WARNING, 0, _("Device %s not configured to autolabel Volumes.\n"), 
+      Jmsg(jcr, M_WARNING, 0, _("Device %s not configured to autolabel Volumes.\n"),
          dev->print_name());
    }
    /* If not removable, Volume is broken */
@@ -801,7 +793,7 @@ void DCR::release_volume()
    dev->clear_labeled();
    dev->clear_read();
    dev->clear_append();
-   dev->label_type = B_BACULA_LABEL;
+   dev->label_type = B_BAREOS_LABEL;
    VolumeName[0] = 0;
 
    if (dev->is_open() && (!dev->is_tape() || !dev->has_cap(CAP_ALWAYSOPEN))) {
@@ -816,14 +808,14 @@ void DCR::release_volume()
 }
 
 /*
- *      Insanity check 
+ *      Insanity check
  *
  * Check to see if the tape position as defined by the OS is
- *  the same as our concept.  If it is not, 
+ *  the same as our concept.  If it is not,
  *  it means the user has probably manually rewound the tape.
  * Note, we check only if num_writers == 0, but this code will
  *  also work fine for any number of writers. If num_writers > 0,
- *  we probably should cancel all jobs using this device, or 
+ *  we probably should cancel all jobs using this device, or
  *  perhaps even abort the SD, or at a minimum, mark the tape
  *  in error.  Another strategy with num_writers == 0, would be
  *  to rewind the tape and do a new eod() request.
@@ -836,7 +828,7 @@ bool DCR::is_tape_position_ok()
          Jmsg(jcr, M_ERROR, 0, _("Invalid tape position on volume \"%s\""
                                  " on device %s. Expected %d, got %d\n"),
               dev->VolHdr.VolumeName, dev->print_name(), dev->get_file(), file);
-         /* 
+         /*
           * If the current file is greater than zero, it means we probably
           *  have some bad count of EOF marks, so mark tape in error.  Otherwise
           *  the operator might have moved the tape, so we just release it

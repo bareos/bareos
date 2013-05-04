@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,33 +13,26 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Bareos Tape manipulation program
  *
- *   Bacula Tape manipulation program
+ * Has various tape manipulation commands -- mostly for
+ * use in determining how tapes really work.
  *
- *    Has various tape manipulation commands -- mostly for
- *    use in determining how tapes really work.
+ * Kern Sibbald, April MM
  *
- *     Kern Sibbald, April MM
- *
- *   Note, this program reads stored.conf, and will only
- *     talk to devices that are configured.
- *
+ * Note, this program reads stored.conf, and will only
+ * talk to devices that are configured.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 #include "lib/crypto_cache.h"
 
@@ -101,7 +94,7 @@ static bool do_unfill();
 
 /* Static variables */
 static CONFIG *config;
-#define CONFIG_FILE "bacula-sd.conf"
+#define CONFIG_FILE "bareos-sd.conf"
 char *configfile = NULL;
 
 #define MAX_CMD_ARGS 30
@@ -153,7 +146,7 @@ int get_cmd(const char *prompt);
 
 /*********************************************************************
  *
- *     Bacula tape testing program
+ *     Bareos tape testing program
  *
  */
 int main(int margc, char *margv[])
@@ -164,10 +157,10 @@ int main(int margc, char *margv[])
    char buf[1000];
    char *DirectorName = NULL;
    DIRRES *director = NULL;
-   
+
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    init_stack_dump();
    lmgr_init_thread();
 
@@ -196,7 +189,7 @@ int main(int margc, char *margv[])
    bsnprintf(buf, sizeof(buf), "%" llu, x64);
    i = bsscanf(buf, "%llu", &y64);
    if (i != 1 || x64 != y64) {
-      Pmsg3(-1, _("64 bit printf/scanf problem. i=%d x64=%" llu " y64=%" llu "\n"), 
+      Pmsg3(-1, _("64 bit printf/scanf problem. i=%d x64=%" llu " y64=%" llu "\n"),
             i, x64, y64);
       exit(1);
    }
@@ -302,7 +295,7 @@ int main(int margc, char *margv[])
 
    load_sd_plugins(me->plugin_directory);
 
-   read_crypto_cache(me->working_directory, "bacula-sd",
+   read_crypto_cache(me->working_directory, "bareos-sd",
                      get_first_port_host_order(me->sdaddrs));
 
    /* See if we can open a device */
@@ -407,7 +400,7 @@ static void print_total_speed()
    char ec1[50], ec2[50];
    uint64_t rate = total_size / total_time;
    Pmsg2(000, _("Total Volume bytes=%sB. Total Write rate = %sB/s\n"),
-         edit_uint64_with_suffix(total_size, ec1), 
+         edit_uint64_with_suffix(total_size, ec1),
          edit_uint64_with_suffix(rate, ec2));
 }
 
@@ -642,7 +635,7 @@ static void weofcmd()
 
 
 /* Go to the end of the medium -- raw command
- * The idea was orginally that the end of the Bacula
+ * The idea was orginally that the end of the Bareos
  * medium would be flagged differently. This is not
  * currently the case. So, this is identical to the
  * eodcmd().
@@ -801,10 +794,10 @@ static void rectestcmd()
 }
 
 /*
- * This test attempts to re-read a block written by Bacula
- *   normally at the end of the tape. Bacula will then back up
+ * This test attempts to re-read a block written by Bareos
+ *   normally at the end of the tape. Bareos will then back up
  *   over the two eof marks, backup over the record and reread
- *   it to make sure it is valid.  Bacula can skip this validation
+ *   it to make sure it is valid.  Bareos can skip this validation
  *   if you set "Backward space record = no"
  */
 static bool re_read_block_test()
@@ -822,7 +815,7 @@ static bool re_read_block_test()
    Pmsg0(-1, _("\n=== Write, backup, and re-read test ===\n\n"
       "I'm going to write three records and an EOF\n"
       "then backup over the EOF and re-read the last record.\n"
-      "Bacula does this after writing the last block on the\n"
+      "Bareos does this after writing the last block on the\n"
       "tape to verify that the block was written correctly.\n\n"
       "This is not an *essential* feature ...\n\n"));
    rewindcmd();
@@ -908,9 +901,9 @@ static bool re_read_block_test()
 bail_out:
    free_record(rec);
    if (!rc) {
-      Pmsg0(0, _("This is not terribly serious since Bacula only uses\n"
+      Pmsg0(0, _("This is not terribly serious since Bareos only uses\n"
                  "this function to verify the last block written to the\n"
-                 "tape. Bacula will skip the last block verification\n"
+                 "tape. Bareos will skip the last block verification\n"
                  "if you add:\n\n"
                   "Backward Space Record = No\n\n"
                   "to your Storage daemon's Device resource definition.\n"));
@@ -930,7 +923,7 @@ static bool speed_test_raw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
    init_total_speed();
    fill_buffer(mode, block->buf, block->buf_len);
 
-   Pmsg3(0, _("Begin writing %i files of %sB with raw blocks of %u bytes.\n"), 
+   Pmsg3(0, _("Begin writing %i files of %sB with raw blocks of %u bytes.\n"),
          nb, edit_uint64_with_suffix(nb_gb, ed1), block->buf_len);
 
    for (uint32_t j=0; j<nb; j++) {
@@ -966,7 +959,7 @@ static bool speed_test_raw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 }
 
 
-static bool speed_test_bacula(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
+static bool speed_test_bareos(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 {
    DEV_BLOCK *block = dcr->block;
    char ed1[200];
@@ -985,7 +978,7 @@ static bool speed_test_bacula(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 
    fill_buffer(mode, rec->data, rec->data_len);
 
-   Pmsg3(0, _("Begin writing %i files of %sB with blocks of %u bytes.\n"), 
+   Pmsg3(0, _("Begin writing %i files of %sB with blocks of %u bytes.\n"),
          nb, edit_uint64_with_suffix(nb_gb, ed1), block->buf_len);
 
    for (uint32_t j=0; j<nb; j++) {
@@ -1038,10 +1031,10 @@ static int btape_find_arg(const char *keyword)
 #define ok(a)    if (!(a)) return
 
 /*
- * For file (/dev/zero, /dev/urandom, normal?) 
+ * For file (/dev/zero, /dev/urandom, normal?)
  *    use raw mode to write a suite of 3 files of 1, 2, 4, 8 GB
  *    use qfill mode to write the same
- * 
+ *
  */
 static void speed_test()
 {
@@ -1080,7 +1073,7 @@ static void speed_test()
 
    if (do_raw) {
       dev->rewind(dcr);
-      if (do_zero) { 
+      if (do_zero) {
          Pmsg0(0, _("Test with zero data, should give the "
                     "maximum throughput.\n"));
          if (file_size) {
@@ -1092,7 +1085,7 @@ static void speed_test()
          }
       }
 
-      if (do_random) { 
+      if (do_random) {
          Pmsg0(0, _("Test with random data, should give the minimum "
                     "throughput.\n"));
          if (file_size) {
@@ -1108,25 +1101,25 @@ static void speed_test()
    if (do_block) {
       dev->rewind(dcr);
       if (do_zero) {
-         Pmsg0(0, _("Test with zero data and bacula block structure.\n"));
+         Pmsg0(0, _("Test with zero data and bareos block structure.\n"));
          if (file_size) {
-            ok(speed_test_bacula(FILL_ZERO, file_size, nb_file));
-         } else { 
-            ok(speed_test_bacula(FILL_ZERO, 1, nb_file));
-            ok(speed_test_bacula(FILL_ZERO, 2, nb_file));
-               ok(speed_test_bacula(FILL_ZERO, 4, nb_file));
+            ok(speed_test_bareos(FILL_ZERO, file_size, nb_file));
+         } else {
+            ok(speed_test_bareos(FILL_ZERO, 1, nb_file));
+            ok(speed_test_bareos(FILL_ZERO, 2, nb_file));
+               ok(speed_test_bareos(FILL_ZERO, 4, nb_file));
          }
       }
-   
-      if (do_random) { 
+
+      if (do_random) {
          Pmsg0(0, _("Test with random data, should give the minimum "
                     "throughput.\n"));
          if (file_size) {
-            ok(speed_test_bacula(FILL_RANDOM, file_size, nb_file));
+            ok(speed_test_bareos(FILL_RANDOM, file_size, nb_file));
          } else {
-            ok(speed_test_bacula(FILL_RANDOM, 1, nb_file));
-            ok(speed_test_bacula(FILL_RANDOM, 2, nb_file));
-            ok(speed_test_bacula(FILL_RANDOM, 4, nb_file));
+            ok(speed_test_bareos(FILL_RANDOM, 1, nb_file));
+            ok(speed_test_bareos(FILL_RANDOM, 2, nb_file));
+            ok(speed_test_bareos(FILL_RANDOM, 4, nb_file));
          }
       }
    }
@@ -1213,7 +1206,7 @@ bail_out:
 }
 
 /*
- * This test writes Bacula blocks to the tape in
+ * This test writes Bareos blocks to the tape in
  *   several files. It then rewinds the tape and attepts
  *   to read these blocks back checking the data.
  */
@@ -1284,13 +1277,13 @@ read_again:
 bail_out:
    free_record(rec);
    if (!rc) {
-      exit_code = 1;   
+      exit_code = 1;
    }
    return rc;
 }
 
 /*
- * This test writes Bacula blocks to the tape in
+ * This test writes Bareos blocks to the tape in
  *   several files. It then rewinds the tape and attepts
  *   to read these blocks back checking the data.
  */
@@ -1379,7 +1372,7 @@ read_again:
          Pmsg4(0, _("Read block %d failed! file=%d blk=%d. ERR=%s\n\n"),
             recno, file, blk, be.bstrerror(dev->dev_errno));
          Pmsg0(0, _("This may be because the tape drive block size is not\n"
-                    " set to variable blocking as normally used by Bacula.\n"
+                    " set to variable blocking as normally used by Bareos.\n"
                     " Please see the Tape Testing chapter in the manual and \n"
                     " look for using mt with defblksize and setoptions\n"
                     "If your tape drive block size is correct, then perhaps\n"
@@ -1422,12 +1415,12 @@ bail_out:
  * This test writes some records, then writes an end of file,
  *   rewinds the tape, moves to the end of the data and attepts
  *   to append to the tape.  This function is essential for
- *   Bacula to be able to write multiple jobs to the tape.
+ *   Bareos to be able to write multiple jobs to the tape.
  */
 static int append_test()
 {
    Pmsg0(-1, _("\n\n=== Append files test ===\n\n"
-               "This test is essential to Bacula.\n\n"
+               "This test is essential to Bareos.\n\n"
 "I'm going to write one record  in file 0,\n"
 "                   two records in file 1,\n"
 "             and three records in file 2\n\n"));
@@ -1467,7 +1460,7 @@ static int append_test()
    }
    rewindcmd();
    Pmsg0(-1, _("Done appending, there should be no I/O errors\n\n"));
-   Pmsg0(-1, _("Doing Bacula scan of blocks:\n"));
+   Pmsg0(-1, _("Doing Bareos scan of blocks:\n"));
    scan_blocks();
    Pmsg0(-1, _("End scanning the tape.\n"));
    Pmsg2(-1, _("We should be in file 4. I am at file %d. %s\n"),
@@ -1519,7 +1512,7 @@ try_again:
    dcr->VolCatInfo.Slot = slot;
    /* Find out what is loaded, zero means device is unloaded */
    Pmsg0(-1, _("3301 Issuing autochanger \"loaded\" command.\n"));
-   changer = edit_device_codes(dcr, changer, 
+   changer = edit_device_codes(dcr, changer,
                 dcr->device->changer_command, "loaded");
    status = run_program(changer, timeout, results);
    Dmsg3(100, "run_prog: %s stat=%d result=\"%s\"\n", changer, status, results);
@@ -1543,7 +1536,7 @@ try_again:
       dev->close(dcr);
       Pmsg2(-1, _("3302 Issuing autochanger \"unload %d %d\" command.\n"),
          loaded, dev->drive_index);
-      changer = edit_device_codes(dcr, changer, 
+      changer = edit_device_codes(dcr, changer,
                    dcr->device->changer_command, "unload");
       status = run_program(changer, timeout, results);
       Pmsg2(-1, _("unload status=%s %d\n"), status==0?_("OK"):_("Bad"), status);
@@ -1562,7 +1555,7 @@ try_again:
    dcr->VolCatInfo.Slot = slot;
    Pmsg2(-1, _("3303 Issuing autochanger \"load %d %d\" command.\n"),
       slot, dev->drive_index);
-   changer = edit_device_codes(dcr, changer, 
+   changer = edit_device_codes(dcr, changer,
                 dcr->device->changer_command, "load");
    Dmsg1(100, "Changer=%s\n", changer);
    dev->close(dcr);
@@ -1640,7 +1633,7 @@ static bool fsf_test()
    bool set_off = false;
 
    Pmsg0(-1, _("\n\n=== Forward space files test ===\n\n"
-               "This test is essential to Bacula.\n\n"
+               "This test is essential to Bareos.\n\n"
                "I'm going to write five files then test forward spacing\n\n"));
    argc = 1;
    rewindcmd();
@@ -1728,7 +1721,7 @@ bail_out:
       set_off = true;
       goto test_again;
    }
-   Pmsg0(-1, _("You must correct this error or Bacula will not work.\n"
+   Pmsg0(-1, _("You must correct this error or Bareos will not work.\n"
             "Some systems, e.g. OpenBSD, require you to set\n"
             "   Use MTIOCGET= no\n"
             "in your device resource. Use with caution.\n"));
@@ -1740,7 +1733,7 @@ bail_out:
 
 
 /*
- * This is a general test of Bacula's functions
+ * This is a general test of Bareos's functions
  *   needed to read and write the tape.
  */
 static void testcmd()
@@ -1801,8 +1794,8 @@ failed:
       Pmsg0(-1, _("\nAppend test failed.\n\n"
             "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
             "Unable to correct the problem. You MUST fix this\n"
-             "problem before Bacula can use your tape drive correctly\n"
-            "\nPerhaps running Bacula in fixed block mode will work.\n"
+             "problem before Bareos can use your tape drive correctly\n"
+            "\nPerhaps running Bareos in fixed block mode will work.\n"
             "Do so by setting:\n\n"
             "Minimum Block Size = nnn\n"
             "Maximum Block Size = nnn\n\n"
@@ -1820,7 +1813,7 @@ failed:
    }
 
 all_done:
-   Pmsg0(-1, _("\nThe above Bacula scan should have output identical to what follows.\n"
+   Pmsg0(-1, _("\nThe above Bareos scan should have output identical to what follows.\n"
         "Please double check it ...\n"
         "=== Sample correct output ===\n"
         "1 block of 64448 bytes in file 1\n"
@@ -1835,7 +1828,7 @@ all_done:
         "=== End sample correct output ===\n\n"
         "If the above scan output is not identical to the\n"
         "sample output, you MUST correct the problem\n"
-        "or Bacula will not be able to write multiple Jobs to \n"
+        "or Bareos will not be able to write multiple Jobs to \n"
         "the tape.\n\n"));
 
    if (status == 1) {
@@ -1897,7 +1890,7 @@ static void fsrcmd()
 }
 
 /*
- * Read a Bacula block from the tape
+ * Read a Bareos block from the tape
  */
 static void rbcmd()
 {
@@ -1906,7 +1899,7 @@ static void rbcmd()
 }
 
 /*
- * Write a Bacula block to the tape
+ * Write a Bareos block to the tape
  */
 static void wrcmd()
 {
@@ -2057,8 +2050,8 @@ static void scancmd()
 
 
 /*
- * Scan tape by reading Bacula block by block. Report what is
- * on the tape.  This function reads Bacula blocks, so if your
+ * Scan tape by reading Bareos block by block. Report what is
+ * on the tape.  This function reads Bareos blocks, so if your
  * Device resource is correctly defined, it should work with
  * either variable or fixed block sizes.
  */
@@ -2197,7 +2190,7 @@ static void fillcmd()
    exit_code = 0;
 
    Pmsg1(-1, _("\n"
-"This command simulates Bacula writing to a tape.\n"
+"This command simulates Bareos writing to a tape.\n"
 "It requires either one or two blank tapes, which it\n"
 "will label and write.\n\n"
 "If you have an autochanger configured, it will use\n"
@@ -2281,9 +2274,9 @@ static void fillcmd()
    (void)localtime_r(&jcr->run_time, &tm);
    strftime(buf1, sizeof(buf1), "%H:%M:%S", &tm);
    if (simple) {
-      Pmsg1(-1, _("%s Begin writing Bacula records to tape ...\n"), buf1);
+      Pmsg1(-1, _("%s Begin writing Bareos records to tape ...\n"), buf1);
    } else {
-      Pmsg1(-1, _("%s Begin writing Bacula records to first tape ...\n"), buf1);
+      Pmsg1(-1, _("%s Begin writing Bareos records to first tape ...\n"), buf1);
    }
    for (file_index = 0; ok && !job_canceled(jcr); ) {
       rec.VolSessionId = jcr->VolSessionId;
@@ -2296,7 +2289,7 @@ static void fillcmd()
       mix_buffer(FILL_RANDOM, rec.data, rec.data_len);
 
       Dmsg4(250, "before write_rec FI=%d SessId=%d Strm=%s len=%d\n",
-         rec.FileIndex, rec.VolSessionId, 
+         rec.FileIndex, rec.VolSessionId,
          stream_to_ascii(buf1, rec.Stream, rec.FileIndex),
          rec.data_len);
 
@@ -2360,7 +2353,7 @@ static void fillcmd()
       /* Get out after writing 1000 blocks to the second tape */
       if (BlockNumber > 1000 && stop != 0) {      /* get out */
          char ed1[50];
-         Pmsg1(-1, "Done writing %s records ...\n", 
+         Pmsg1(-1, "Done writing %s records ...\n",
              edit_uint64_with_commas(write_count, ed1));
          break;
       }
@@ -2702,7 +2695,7 @@ static bool compare_blocks(DEV_BLOCK *last_block, DEV_BLOCK *block)
       Pmsg1(-1, _("\n\nThe blocks differ at byte %u\n"), p - last_block->buf);
       Pmsg0(-1, _("\n\n!!!! The last block written and the block\n"
                 "that was read back differ. The test FAILED !!!!\n"
-                "This must be corrected before you use Bacula\n"
+                "This must be corrected before you use Bareos\n"
                 "to write multi-tape Volumes.!!!!\n"));
       return false;
    }
@@ -2771,7 +2764,7 @@ static int flush_block(DEV_BLOCK *block, int dump)
       vol_size = dev->VolCatInfo.VolCatBytes;
       Pmsg4(000, _("End of tape %d:%d. Volume Bytes=%s. Write rate = %sB/s\n"),
          dev->file, dev->block_num,
-         edit_uint64_with_commas(dev->VolCatInfo.VolCatBytes, ec1), 
+         edit_uint64_with_commas(dev->VolCatInfo.VolCatBytes, ec1),
          edit_uint64_with_suffix(rate, ec2));
 
       if (simple) {
@@ -2839,7 +2832,7 @@ static void qfillcmd()
    rewindcmd();
    init_speed();
 
-   Pmsg1(0, _("Begin writing %d Bacula blocks to tape ...\n"), count);
+   Pmsg1(0, _("Begin writing %d Bareos blocks to tape ...\n"), count);
    for (i=0; i < count; i++) {
       if (i % 100 == 0) {
          printf("+");
@@ -2904,7 +2897,7 @@ static void rawfill_cmd()
    berrno be;
    printf(_("Write failed at block %u. status=%d ERR=%s\n"), block_num, status,
       be.bstrerror(my_errno));
-   
+
    print_speed(jcr->JobBytes);
    weofcmd();
 }
@@ -2918,29 +2911,29 @@ static struct cmdstruct commands[] = {
  {NT_("bsr"),       bsrcmd,       _("backspace record")},
  {NT_("cap"),       capcmd,       _("list device capabilities")},
  {NT_("clear"),     clearcmd,     _("clear tape errors")},
- {NT_("eod"),       eodcmd,       _("go to end of Bacula data for append")},
+ {NT_("eod"),       eodcmd,       _("go to end of Bareos data for append")},
  {NT_("eom"),       eomcmd,       _("go to the physical end of medium")},
  {NT_("fill"),      fillcmd,      _("fill tape, write onto second volume")},
  {NT_("unfill"),    unfillcmd,    _("read filled tape")},
  {NT_("fsf"),       fsfcmd,       _("forward space a file")},
  {NT_("fsr"),       fsrcmd,       _("forward space a record")},
  {NT_("help"),      helpcmd,      _("print this command")},
- {NT_("label"),     labelcmd,     _("write a Bacula label to the tape")},
+ {NT_("label"),     labelcmd,     _("write a Bareos label to the tape")},
  {NT_("load"),      loadcmd,      _("load a tape")},
  {NT_("quit"),      quitcmd,      _("quit btape")},
  {NT_("rawfill"),   rawfill_cmd,  _("use write() to fill tape")},
- {NT_("readlabel"), readlabelcmd, _("read and print the Bacula tape label")},
+ {NT_("readlabel"), readlabelcmd, _("read and print the Bareos tape label")},
  {NT_("rectest"),   rectestcmd,   _("test record handling functions")},
  {NT_("rewind"),    rewindcmd,    _("rewind the tape")},
  {NT_("scan"),      scancmd,      _("read() tape block by block to EOT and report")},
- {NT_("scanblocks"),scan_blocks,  _("Bacula read block by block to EOT and report")},
+ {NT_("scanblocks"),scan_blocks,  _("Bareos read block by block to EOT and report")},
  {NT_("speed"),     speed_test,   _("[file_size=n(GB)|nb_file=3|skip_zero|skip_random|skip_raw|skip_block] report drive speed")},
  {NT_("status"),    statcmd,      _("print tape status")},
- {NT_("test"),      testcmd,      _("General test Bacula tape functions")},
+ {NT_("test"),      testcmd,      _("General test Bareos tape functions")},
  {NT_("weof"),      weofcmd,      _("write an EOF on the tape")},
- {NT_("wr"),        wrcmd,        _("write a single Bacula block")},
+ {NT_("wr"),        wrcmd,        _("write a single Bareos block")},
  {NT_("rr"),        rrcmd,        _("read a single record")},
- {NT_("rb"),        rbcmd,        _("read a single Bacula block")},
+ {NT_("rb"),        rbcmd,        _("read a single Bareos block")},
  {NT_("qfill"),     qfillcmd,     _("quick fill command")}
              };
 #define comsize (sizeof(commands)/sizeof(struct cmdstruct))
@@ -3132,7 +3125,7 @@ static bool my_mount_next_read_volume(DCR *dcr)
    }
    rate = VolBytes / now;
    Pmsg3(-1, _("Read block=%u, VolBytes=%s rate=%sB/s\n"), block->BlockNumber,
-            edit_uint64_with_commas(VolBytes, ec1), 
+            edit_uint64_with_commas(VolBytes, ec1),
             edit_uint64_with_suffix(rate, ec2));
 
    if (bstrcmp(dcr->VolumeName, "TestVolume2")) {

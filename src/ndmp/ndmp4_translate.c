@@ -214,6 +214,8 @@ ndmp_4to9_pval_vec_free (
 	for (i = 0; i < n_pval; i++)
 		ndmp_4to9_pval_free(&pval9[i]);
 	NDMOS_MACRO_FREE(pval9);
+
+	return 0;
 }
 
 /*
@@ -2610,6 +2612,8 @@ ndmp_4to9_data_get_env_free_reply (
   ndmp9_data_get_env_reply *reply9)
 {
 	ndmp_4to9_pval_vec_free(reply9->env.env_val, reply9->env.env_len);
+
+	return 0;
 }
 
 int
@@ -3239,6 +3243,8 @@ ndmp_4to9_fh_add_file_free_request (
 	}
 
 	NDMOS_MACRO_FREE(request9->files.files_val);
+
+	return 0;
 }
 
 int

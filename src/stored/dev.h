@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,24 +13,18 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Definitions for using the Device functions in Bacula
- *  Tape and File storage access
+ * Definitions for using the Device functions in Bareos
+ * Tape and File storage access
  *
  * Kern Sibbald, MM
- *
  */
 
 /*
@@ -67,7 +61,7 @@
 #ifndef __DEV_H
 #define __DEV_H 1
 
-#undef DCR                            /* used by Bacula */
+#undef DCR                            /* used by Bareos */
 
 /* Return values from wait_for_sysop() */
 enum {
@@ -145,8 +139,8 @@ enum {
 
 #define ST_LABEL           (1 << 6)   /* label found */
 #define ST_MALLOC          (1 << 7)   /* dev packet malloc'ed in init_dev() */
-#define ST_APPEND          (1 << 8)   /* ready for Bacula append */
-#define ST_READ            (1 << 9)   /* ready for Bacula read */
+#define ST_APPEND          (1 << 8)   /* ready for Bareos append */
+#define ST_READ            (1 << 9)   /* ready for Bareos read */
 #define ST_EOT             (1 << 10)  /* at end of tape */
 #define ST_WEOT            (1 << 11)  /* Got EOT on write */
 #define ST_EOF             (1 << 12)  /* Read EOF i.e. zero bytes */
@@ -173,7 +167,7 @@ struct VOLUME_CAT_INFO {
    uint32_t VolCatRecycles;           /* Number of recycles this volume */
    uint32_t EndFile;                  /* Last file number */
    uint32_t EndBlock;                 /* Last block number */
-   int32_t LabelType;                 /* Bacula/ANSI/IBM */
+   int32_t LabelType;                 /* Bareos/ANSI/IBM */
    int32_t Slot;                      /* >0=Slot loaded, 0=nothing, -1=unknown */
    uint32_t VolCatMaxJobs;            /* Maximum Jobs to write to volume */
    uint32_t VolCatMaxFiles;           /* Maximum files to write to volume */
@@ -207,7 +201,7 @@ private:
    int m_blocked;                     /* set if we must wait (i.e. change tape) */
    int m_count;                       /* Mutex use count -- DEBUG only */
    int m_num_reserved;                /* counter of device reservations */
-   int32_t m_slot;                    /* slot loaded in drive or -1 if none */ 
+   int32_t m_slot;                    /* slot loaded in drive or -1 if none */
    pthread_t m_pid;                   /* Thread that locked -- DEBUG only */
    bool m_unload;                     /* set when Volume must be unloaded */
    bool m_load;                       /* set when Volume must be loaded */
@@ -236,7 +230,7 @@ public:
    bool autoselect;                   /* Autoselect in autochanger */
    bool norewindonclose;              /* Don't rewind tape drive on close */
    bool initiated;                    /* set when init_dev() called */
-   int label_type;                    /* Bacula/ANSI/IBM label types */
+   int label_type;                    /* Bareos/ANSI/IBM label types */
    uint32_t drive_index;              /* Autochanger drive index (base 0) */
    POOLMEM *dev_name;                 /* Physical device name */
    POOLMEM *prt_name;                 /* Name used for display purposes */
@@ -259,7 +253,7 @@ public:
    uint32_t max_rewind_wait;          /* max secs to allow for rewind */
    uint32_t max_open_wait;            /* max secs to allow for open */
    uint32_t max_open_vols;            /* max simultaneous open volumes */
-   
+
    utime_t vol_poll_interval;         /* interval between polling Vol mount */
    DEVRES *device;                    /* pointer to Device Resource */
    VOLRES *vol;                       /* Pointer to Volume reservation item */
@@ -298,7 +292,7 @@ public:
    int is_autochanger() const { return capabilities & CAP_AUTOCHANGER; }
    int requires_mount() const { return capabilities & CAP_REQMOUNT; }
    int is_removable() const { return capabilities & CAP_REM; }
-   int is_tape() const { return (dev_type == B_TAPE_DEV || 
+   int is_tape() const { return (dev_type == B_TAPE_DEV ||
                                  dev_type == B_VTAPE_DEV); }
    int is_ftp() const { return dev_type == B_FTP_DEV; }
    int is_file() const { return (dev_type == B_FILE_DEV); }
@@ -332,7 +326,7 @@ public:
                     (m_blocked == BST_UNMOUNTED ||
                      m_blocked == BST_WAITING_FOR_SYSOP ||
                      m_blocked == BST_UNMOUNTED_WAITING_FOR_SYSOP); };
-   bool waiting_for_mount() const { return 
+   bool waiting_for_mount() const { return
                     (m_blocked == BST_UNMOUNTED ||
                      m_blocked == BST_WAITING_FOR_SYSOP ||
                      m_blocked == BST_UNMOUNTED_WAITING_FOR_SYSOP); };
@@ -428,7 +422,7 @@ public:
    virtual bool rewind(DCR *dcr);
    virtual bool truncate(DCR *dcr);
    virtual void open_device(DCR *dcr, int omode);
-   /* 
+   /*
     * Locking and blocking calls
     */
 #ifdef  SD_DEBUG_LOCK
@@ -487,10 +481,10 @@ inline const char *DEVICE::print_name() const { return prt_name; }
  *  There is one of these records for each Job that is using
  *  the device. Items in this record are "local" to the Job and
  *  do not affect other Jobs. Note, a job can have multiple
- *  DCRs open, each pointing to a different device. 
+ *  DCRs open, each pointing to a different device.
  * Normally, there is only one JCR thread per DCR. However, the
  *  big and important exception to this is when a Job is being
- *  canceled. At that time, there may be two threads using the 
+ *  canceled. At that time, there may be two threads using the
  *  same DCR. Consequently, when creating/attaching/detaching
  *  and freeing the DCR we must lock it (m_mutex).
  */
@@ -543,7 +537,7 @@ public:
    VOLUME_CAT_INFO VolCatInfo;        /* Catalog info for desired volume */
 
    /* Methods */
-   void set_dev(DEVICE *ndev) { dev = ndev; }; 
+   void set_dev(DEVICE *ndev) { dev = ndev; };
    void inc_dev_lock() { m_dev_lock++; };
    void dec_dev_lock() { m_dev_lock--; };
    bool found_in_use() const { return m_found_in_use; };
@@ -605,7 +599,7 @@ public:
 
    /* Methods in label.c */
    bool rewrite_volume_label(bool recycle);
-   
+
 };
 
 /* Get some definition of function to position

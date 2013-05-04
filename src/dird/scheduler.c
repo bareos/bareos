@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,30 +13,24 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS scheduler
  *
- *   Bacula scheduler
- *     It looks at what jobs are to be run and when
- *     and waits around until it is time to
- *     fire them up.
+ * It looks at what jobs are to be run and when
+ * and waits around until it is time to
+ * fire them up.
  *
- *     Kern Sibbald, May MM, major revision December MMIII
- *
+ * Kern Sibbald, May MM, major revision December MMIII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 #if 0
@@ -81,7 +75,7 @@ static void dump_job(job_item *ji, const char *msg);
  * on are new and no longer have a valid last_run time which
  * causes us to double run schedules that get put into the list
  * because run_nh = 1.
- */   
+ */
 static bool schedules_invalidated = false;
 void invalidate_schedules(void) {
     schedules_invalidated = true;
@@ -89,7 +83,7 @@ void invalidate_schedules(void) {
 
 /*********************************************************************
  *
- *         Main Bacula Scheduler
+ *         Main Bareos Scheduler
  *
  */
 JCR *wait_for_next_job(char *one_shot_job_to_run)
@@ -154,7 +148,7 @@ again:
       time_t twait;
       /** discard scheduled queue and rebuild with new schedule objects. **/
       lock_jobs();
-      if (schedules_invalidated) { 
+      if (schedules_invalidated) {
           dump_job(next_job, "Invalidated job");
           free(next_job);
           while (!jobs_to_run->empty()) {
@@ -278,7 +272,8 @@ static bool is_doy_in_last_week(int year, int doy)
    }
 
    for (i = 0; i < 12; i++) {
-      if (doy > (last_dom[i] - 7) && doy <= last_dom[i]) {
+      /* doy is zero-based */
+      if (doy > ((last_dom[i] - 1) - 7) && doy <= (last_dom[i] - 1)) {
          return true;
       }
    }
@@ -340,7 +335,7 @@ static void find_runs()
    Dmsg8(dbglvl, "nh = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n\n",
          next_hour, nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy, nh_yday);
 
-   nh_is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , yday);
+   nh_is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , nh_yday);
 
    /*
     * Loop through all jobs
@@ -359,8 +354,8 @@ static void find_runs()
           */
 #ifdef xxxx
          Dmsg0(000, "\n");
-         Dmsg6(000, "run h=%d m=%d md=%d wd=%d wom=%d woy=%d\n",
-            hour, month, mday, wday, wom, woy);
+         Dmsg7(000, "run h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
+            hour, month, mday, wday, wom, woy, yday);
          Dmsg6(000, "bitset bsh=%d bsm=%d bsmd=%d bswd=%d bswom=%d bswoy=%d\n",
             bit_is_set(hour, run->hour),
             bit_is_set(month, run->month),
@@ -369,8 +364,8 @@ static void find_runs()
             bit_is_set(wom, run->wom),
             bit_is_set(woy, run->woy));
 
-         Dmsg6(000, "nh_run h=%d m=%d md=%d wd=%d wom=%d woy=%d\n",
-            nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy);
+         Dmsg7(000, "nh_run h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
+            nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy, nh_yday);
          Dmsg6(000, "nh_bitset bsh=%d bsm=%d bsmd=%d bswd=%d bswom=%d bswoy=%d\n",
             bit_is_set(nh_hour, run->hour),
             bit_is_set(nh_month, run->month),
@@ -428,14 +423,14 @@ static void add_job(JOBRES *job, RUNRES *run, time_t now, time_t runtime)
     */
    if (((runtime - run->last_run) < 61) || ((runtime+59) < now)) {
 #ifdef SCHED_DEBUG
-      Dmsg4(000, "Drop: Job=\"%s\" run=%lld. last_run=%lld. now=%lld\n", job->hdr.name, 
+      Dmsg4(000, "Drop: Job=\"%s\" run=%lld. last_run=%lld. now=%lld\n", job->hdr.name,
             (utime_t)runtime, (utime_t)run->last_run, (utime_t)now);
       fflush(stdout);
 #endif
       return;
    }
 #ifdef SCHED_DEBUG
-   Dmsg4(000, "Add: Job=\"%s\" run=%lld last_run=%lld now=%lld\n", job->hdr.name, 
+   Dmsg4(000, "Add: Job=\"%s\" run=%lld last_run=%lld now=%lld\n", job->hdr.name,
             (utime_t)runtime, (utime_t)run->last_run, (utime_t)now);
 #endif
    /* accept to run this job */
@@ -481,7 +476,7 @@ static void dump_job(job_item *ji, const char *msg)
       return;
    }
    bstrftime_nc(dt, sizeof(dt), ji->runtime);
-   Dmsg4(dbglvl, "%s: Job=%s priority=%d run %s\n", msg, ji->job->hdr.name, 
+   Dmsg4(dbglvl, "%s: Job=%s priority=%d run %s\n", msg, ji->job->hdr.name,
       ji->Priority, dt);
    fflush(stdout);
    debug_level = save_debug;

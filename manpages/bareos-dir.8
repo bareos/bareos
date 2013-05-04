@@ -1,0 +1,93 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BAREOS\-DIR 8 "6 December 2009" "Kern Sibbald" "Backup Archiving REcovery Open Sourced"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+.B bareos\-dir
+\- Bareos Director
+.SH SYNOPSIS
+.B bareos\-dir
+.RI [ options ]
+.br
+.SH DESCRIPTION
+This manual page documents briefly the
+.B bareos\-dir
+command.
+.br
+Bareos's Director Daemon acts as the controller of the
+network backup system: it is responsible for scheduling and
+coordinating backups across the network.
+.SH OPTIONS
+.TP
+.BI \-c\  file
+Specify the configuration file to use.
+.TP
+.BI \-d\  nn
+Set debug level to \fInn\fP.
+.TP
+.BI \-dt
+Print timestamp in debug output.
+.TP
+.BI \-f
+Run in foreground (for debugging).
+.TP
+.BI \-g\  group
+Set the group/gid to run as.
+.TP
+.BI \-r\  job
+Run <job>.
+.TP
+.BI \-s
+No signals (for debugging).
+.TP
+.B \-t
+Test the configuration file and report errors.
+.TP
+.BI \-u\  user
+Set the username/uid to run as.
+.TP
+.BI \-v
+Set verbose mode.
+.TP
+.BI \-?
+Show version and usage of program.
+.SH TCP-WRAPPERS CONFIGURATION
+Tcpwrappers looks for the service name of the bareos daemons in
+.I hosts.allow
+, and the service names of these daemons is configured to be different from the
+binary.
+The service names are configured to be
+.B %hostname%-%component%
+rather than
+.B bareos-dir
+(As defined in the bareos-dir.conf.in file)
+
+
+So the hosts.allow entry has to match
+.B %hostname%-%component%
+(servername-dir for example) instead of bareos-%component%
+
+.B WARNING:
+This means that if the hosts.allow file has the entry:
+
+.B bareos-dir: ALL
+
+you will not be able to run bconsole to connect to the local director!
+
+The entry would have to read:
+
+.B server-dir: ALL
+
+and this will allow the console to connect to the director.
+(The process running is bareos-dir.)
+.SH SEE ALSO
+.BR bareos-fd (8),
+.BR bareos-sd (8).
+
+.SH AUTHOR
+This manual page was written by Jose Luis Tallon
+.nh
+<jltallon@adv\-solutions.net>.

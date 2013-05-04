@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,33 +11,27 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Bacula Thread Read/Write locking code. It permits
- *  multiple readers but only one writer.  Note, however,
- *  that the writer thread is permitted to make multiple
- *  nested write lock calls.
+ * BAREOS Thread Read/Write locking code. It permits
+ * multiple readers but only one writer.  Note, however,
+ * that the writer thread is permitted to make multiple
+ * nested write lock calls.
  *
- *  Kern Sibbald, January MMI
+ * Kern Sibbald, January MMI
  *
- *  This code adapted from "Programming with POSIX Threads", by
- *    David R. Butenhof
- *
+ * This code adapted from "Programming with POSIX Threads", by
+ * David R. Butenhof
  */
 
 #define _LOCKMGR_COMPLIANT
-#include "bacula.h"
+#include "bareos.h"
 #include "devlock.h"
 
 /*
@@ -49,7 +41,7 @@
  *           errno on failure
  */
 
-devlock *new_devlock()                          
+devlock *new_devlock()
 {
    devlock *lock;
    lock = (devlock *)malloc(sizeof (devlock));
@@ -273,7 +265,7 @@ int devlock::writelock(int areason, bool acan_take)
       rwl->w_active++;                /* we are running */
       rwl->writer_id = pthread_self(); /* save writer thread's id */
       lmgr_post_lock();
-   } 
+   }
    rwl->reason = areason;
    rwl->can_take = acan_take;
    pthread_mutex_unlock(&rwl->mutex);

@@ -674,7 +674,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>/var/www/bacula/spool</string>
+           <string>/var/www/bareos/spool</string>
           </property>
          </widget>
         </item>

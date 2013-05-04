@@ -1,9 +1,0 @@
-#!/bin/sh
-#
-# postremove for Bacula
-#
-if [ ! -d /var/bacula ]; then
-    rm -rf /var/bacula
-fi
-
-exit 0

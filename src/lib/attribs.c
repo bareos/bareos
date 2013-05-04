@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,25 +11,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /**
- *  Encode and decode standard Unix attributes
+ * Encode and decode standard Unix attributes
  *
- *    Kern Sibbald, October MMII
+ * Kern Sibbald, October MMII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 /**
  * Encode a stat structure into a base64 character string
@@ -54,7 +47,7 @@ void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, i
     *  the same when compiling this library and the calling program.
     */
    ASSERT(stat_size == (int)sizeof(struct stat));
-      
+
    /**
     *  Encode a stat packet.  I should have done this more intelligently
     *   with a length so that it could be easily expanded.

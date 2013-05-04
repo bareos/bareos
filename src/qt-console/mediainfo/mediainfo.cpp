@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,19 +11,14 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
- 
+
 #include "bat.h"
 #include <QAbstractEventDispatcher>
 #include <QTableWidgetItem>
@@ -38,9 +31,9 @@
 #include "job/job.h"
 
 /*
- * A constructor 
+ * A constructor
  */
-MediaInfo::MediaInfo(QTreeWidgetItem *parentWidget, QString &mediaName) 
+MediaInfo::MediaInfo(QTreeWidgetItem *parentWidget, QString &mediaName)
   : Pages()
 {
    setupUi(this);
@@ -55,7 +48,7 @@ MediaInfo::MediaInfo(QTreeWidgetItem *parentWidget, QString &mediaName)
    connect(pbImport, SIGNAL(clicked()), this, SLOT(importVol()));
    connect(pbExport, SIGNAL(clicked()), this, SLOT(exportVol()));
    connect(tableJob, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(showInfoForJob(QTableWidgetItem *)));
-   
+
    dockPage();
    setCurrent();
    populateForm();
@@ -161,7 +154,7 @@ void MediaInfo::populateForm()
    QString stat, LastWritten;
    struct tm tm;
    char buf[256];
-   QString query = 
+   QString query =
       "SELECT MediaId, VolumeName, Pool.Name, MediaType, FirstWritten,"
       "LastWritten, VolMounts, VolBytes, Media.Enabled,"
       "Location.Location, VolStatus, RecyclePool.Name, Media.Recycle, "
@@ -199,7 +192,7 @@ void MediaInfo::populateForm()
          label_Location->setText(fld.next());
          label_VolStatus->setText(fld.next());
          label_RecyclePool->setText(fld.next());
-         chkbox_Recycle->setCheckState(fld.next().toInt()?Qt::Checked:Qt::Unchecked);         
+         chkbox_Recycle->setCheckState(fld.next().toInt()?Qt::Checked:Qt::Unchecked);
          edit_utime(fld.next().toULongLong(), buf, sizeof(buf));
          label_VolReadTime->setText(QString(buf));
 
@@ -221,7 +214,7 @@ void MediaInfo::populateForm()
             t = str_to_utime(LastWritten.toAscii().data());
             t = t + stat.toULongLong();
             ttime = t;
-            localtime_r(&ttime, &tm);         
+            localtime_r(&ttime, &tm);
             strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
             label_Expire->setText(QString(buf));
          }
@@ -233,11 +226,11 @@ void MediaInfo::populateForm()
 
 //         jobstatus_to_ascii_gui(stat[0].toAscii(), buf, sizeof(buf));
 //         stat = buf;
-//       
+//
       }
    }
 
-   query = 
+   query =
       "SELECT DISTINCT JobId, Name, StartTime, Type, Level, JobFiles,"
       "JobBytes,JobStatus "
       "FROM Job JOIN JobMedia USING (JobId) JOIN Media USING (MediaId) "
@@ -259,7 +252,7 @@ void MediaInfo::populateForm()
          TableItemFormatter jobitem(*tableJob, row);
 
          /* JobId */
-         jobitem.setNumericFld(index++, fld.next()); 
+         jobitem.setNumericFld(index++, fld.next());
 
          /* job name */
          jobitem.setTextFld(index++, fld.next());

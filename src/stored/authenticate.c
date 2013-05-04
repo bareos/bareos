@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,34 +11,26 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Authenticate caller
  *
- *   Kern Sibbald, October 2000
- *
+ * Kern Sibbald, October 2000
  */
 
-
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
 const int dbglvl = 50;
 
 static char Dir_sorry[] = "3999 No go\n";
 static char OK_hello[]  = "3000 OK Hello\n";
-
 
 /*********************************************************************
  *
@@ -134,7 +124,7 @@ static int authenticate(int rcode, BSOCK *bs, JCR* jcr)
 
    /* Verify that the remote host is willing to meet our TLS requirements */
    if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      Jmsg0(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not" 
+      Jmsg0(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not"
            " advertize required TLS support.\n"));
       Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
       auth_success = false;
@@ -245,7 +235,7 @@ int authenticate_filed(JCR *jcr)
 
    /* Verify that the remote host is willing to meet our TLS requirements */
    if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not" 
+      Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not"
            " advertize required TLS support.\n"));
       Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
       auth_success = false;

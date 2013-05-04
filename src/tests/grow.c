@@ -7,11 +7,11 @@
     them to download a HOW_BIG pseudo GIF file which is actually
     a holey file occupying trivial space on our server.
 
-    Make:  make gigaslam            
+    Make:  make gigaslam
     Run:   ./gigaslam
     Output: a file named gigaslam.gif that contains something like
-            16K bytes (i.e. 2-8K blocks), but appears to be 1GB in 
-            length because the second block is written at a 1GB 
+            16K bytes (i.e. 2-8K blocks), but appears to be 1GB in
+            length because the second block is written at a 1GB
             address.
 
     Be careful what you do with this file as not all programs know
@@ -19,7 +19,7 @@
 
     Tweaked by Kern Sibbald, July 2007 to grow a file to a specified
     size.
-    
+
 */
 
 #ifdef __GNUC__
@@ -31,7 +31,7 @@
 #endif
 #endif
 
-#include "bacula.h"
+#include "bareos.h"
 
 int main(int argc, char *argv[])
 {

@@ -5,11 +5,11 @@
 LIBTOOL_TAG = CC
 
 # Define library versions
-LIBBACNDMP_LT_RELEASE = @LIBBACNDMP_LT_RELEASE@
+LIBBAREOSNDMP_LT_RELEASE = @LIBBAREOSNDMP_LT_RELEASE@
 
-srcdir =	.
-VPATH = 	.
-.PATH:		.
+srcdir = @srcdir@
+VPATH = @srcdir@
+.PATH: @srcdir@
 
 # one up
 basedir = ..
@@ -65,15 +65,16 @@ NDMJOB_SRCS = ndmjob_args.c ndmjob_fhdb.c ndmjob_job.c ndmjob_main.c \
 	      ndmjob_main_util.c ndmjob_rules.c ndmjob_simulator.c ndmjr_none.c
 
 #
-# libbacndmp
+# libbareosndmp
 #
-LIBBACNDMP_SRCS = $(NDMP_PROTO_SRCS) $(NDMP_LIB_SRCS) $(NDMP_AGENT_SRCS) $(NDMP_HELPER_SRCS)
-LIBBACNDMP_OBJS = $(LIBBACNDMP_SRCS:.c=.o)
-LIBBACNDMP_LOBJS = $(LIBBACNDMP_SRCS:.c=.lo)
+LIBBAREOSNDMP_SRCS = $(NDMP_PROTO_SRCS) $(NDMP_LIB_SRCS) $(NDMP_AGENT_SRCS) $(NDMP_HELPER_SRCS)
+LIBBAREOSNDMP_OBJS = $(LIBBAREOSNDMP_SRCS:.c=.o)
+LIBBAREOSNDMP_LOBJS = $(LIBBAREOSNDMP_SRCS:.c=.lo)
 
 NDMJOB_OBJS = $(NDMJOB_SRCS:.c=.lo)
 
-CFLAGS += -I. -I../lib -DNDMOS_OPTION_NO_TEST_AGENTS
+INCLUDES += -I. -I$(srcdir) -I$(basedir) -I$(basedir)/include
+CFLAGS += -DNDMOS_OPTION_NO_TEST_AGENTS
 
 .SUFFIXES:	.c .cc .o .lo .ch .dvi .pdf .tex .view .w .1
 .PHONY:
@@ -82,37 +83,37 @@ CFLAGS += -I. -I../lib -DNDMOS_OPTION_NO_TEST_AGENTS
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CC) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(CC) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CFLAGS) $<
 
 .c.lo:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CC) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CC) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CFLAGS) $<
 
 .cc.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
 .cc.lo:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
 #-------------------------------------------------------------------------
-all: Makefile libbacndmp$(DEFAULT_ARCHIVE_TYPE)
+all: Makefile libbareosndmp$(DEFAULT_ARCHIVE_TYPE)
 	@echo "==== Make of lib is good ===="
 	@echo " "
 
-libbacndmp.a: $(RPC_GEN_FILES) $(LIBBACNDMP_OBJS)
+libbareosndmp.a: $(RPC_GEN_FILES) $(LIBBAREOSNDMP_OBJS)
 	@echo "Making $@ ..."
-	$(AR) rc  $@ $(LIBBACNDMP_OBJS)
+	$(AR) rc  $@ $(LIBBAREOSNDMP_OBJS)
 	$(RANLIB) $@
 
-libbacndmp.la: $(RPC_GEN_FILES) Makefile $(LIBBACNDMP_LOBJS)
+libbareosndmp.la: $(RPC_GEN_FILES) Makefile $(LIBBAREOSNDMP_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CC) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBACNDMP_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACNDMP_LT_RELEASE) $(SOCKLIBS)
+	$(LIBTOOL_LINK) $(CC) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBAREOSNDMP_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSNDMP_LT_RELEASE) $(SOCKLIBS)
 
-ndmjob: libbacndmp$(DEFAULT_ARCHIVE_TYPE) $(NDMJOB_OBJS)
+ndmjob: libbareosndmp$(DEFAULT_ARCHIVE_TYPE) $(NDMJOB_OBJS)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -o $@ $(NDMJOB_OBJS) -lbacndmp
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -o $@ $(NDMJOB_OBJS) -lbareosndmp
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
@@ -121,30 +122,17 @@ Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 install-ndmjob: ndmjob
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) ndmjob $(DESTDIR)$(sbindir)/ndmjob
 
-uninstall-ndmjob:
-	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/ndmjob
-
 install-includes:
-	$(MKDIR) $(DESTDIR)/$(includedir)/bacula/ndmp
+	$(MKDIR) $(DESTDIR)/$(includedir)/bareos/ndmp
 	for I in $(INCLUDE_FILES); do \
-	   $(INSTALL_DATA) $$I $(DESTDIR)$(includedir)/bacula/ndmp/`basename $$I`; \
-	done
-
-uninstall-includes:
-	for I in $(INCLUDE_FILES); do \
-	   $(RMF) $(DESTDIR)$(includedir)/bacula/ndmp/`basename $$I`; \
+	   $(INSTALL_DATA) $$I $(DESTDIR)$(includedir)/bareos/ndmp/`basename $$I`; \
 	done
 
 libtool-install: all
 	$(MKDIR) $(DESTDIR)$(libdir)
-	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbacndmp.la $(DESTDIR)$(libdir)
-
-libtool-uninstall:
-	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/libbacndmp.la
+	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareosndmp.la $(DESTDIR)$(libdir)
 
 install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@
-
-uninstall: @LIBTOOL_UNINSTALL_TARGET@ @INCLUDE_UNINSTALL_TARGET@
 
 libtool-clean:
 	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
@@ -180,10 +168,10 @@ ndmp9.h ndmp9_xdr.c: ndmp9.x
 
 ndmos.lo: ndmos.c
 	@echo "Compiling $<"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) \
-		-DNDMOS_CONST_PRODUCT_NAME='"Bacula NDMP"' \
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) \
+		-DNDMOS_CONST_PRODUCT_NAME='"BAREOS NDMP"' \
 		-DNDMOS_CONST_VENDOR_NAME='"Planets Communications B.V."' \
-		-DNDMOS_CONST_NDMJOBLIB_REVISION='"bacula-$(LIBBACNDMP_LT_RELEASE)"' \
+		-DNDMOS_CONST_NDMJOBLIB_REVISION='"bareos-$(LIBBAREOSNDMP_LT_RELEASE)"' \
 		ndmos.c
 
 # Semi-automatic generation of dependencies:
@@ -194,9 +182,9 @@ ndmos.lo: ndmos.c
 depend: $(RPC_GEN_FILES)
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
-	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@for src in $(LIBBACNDMP_SRCS) ; do \
-	   $(CC) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) -I$(srcdir) -I$(basedir) $$src >> Makefile; \
+	@$(ECHOCMD) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@for src in $(LIBBAREOSNDMP_SRCS) ; do \
+	   $(CC) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) $(INCLUDES) $$src >> Makefile; \
         done
 	@if test -f Makefile ; then \
 	   $(RMF) Makefile.bak; \

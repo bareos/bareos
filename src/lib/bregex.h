@@ -1,10 +1,23 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-#ifndef b_REGEXPR_H
-#define b_REGEXPR_H
-#ifdef __cplusplus
-extern "C" {
-#endif
+   Copyright (C) 2006-2010 Free Software Foundation Europe e.V.
 
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
 /*
  * regexpr.h
  *
@@ -20,42 +33,21 @@ extern "C" {
  * Created: Thu Sep 26 17:15:36 1991 ylo
  * Last modified: Mon Nov  4 15:49:46 1991 ylo
  *
- *  Modified to work with C++ for use in Bacula,           
- *     Kern Sibbald April, 2006
- */ 
-/*
-   Bacula® - The Network Backup Solution
+ * Modified to work with C++ for use in BAREOS,
+ * Kern Sibbald April, 2006
+ */
 
-   Copyright (C) 2006-2010 Free Software Foundation Europe e.V.
-
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
-   This program is Free Software; you can redistribute it and/or
-   modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation and included
-   in the file LICENSE.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
-
-   You should have received a copy of the GNU Affero General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
-*/
+#ifndef b_REGEXPR_H
+#define b_REGEXPR_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef REGEXPR_H
 #define REGEXPR_H
 
 /* If we pull in this header, make sure we only get our own library
- *  bregex.c 
+ *  bregex.c
  */
 #define regex_t               b_regex_t
 #define regmatch_t            b_regmatch_t
@@ -108,7 +100,7 @@ struct regex_t
    char *errmsg;
    int cflags;                     /* compilation flags */
    POOLMEM *lcase;                 /* used by REG_ICASE */
-};        
+};
 
 
 typedef struct re_registers
@@ -190,7 +182,7 @@ void re_compile_fastmap(regex_t *compiled);
 int regcomp(regex_t *preg, const char *regex, int cflags);
 int regexec(regex_t *preg, const char *string, size_t nmatch,
             regmatch_t pmatch[], int eflags);
-size_t regerror(int errcode, regex_t *preg, char *errbuf, 
+size_t regerror(int errcode, regex_t *preg, char *errbuf,
                 size_t errbuf_size);
 void regfree(regex_t *preg);
 

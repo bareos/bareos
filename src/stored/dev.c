@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,40 +13,33 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * dev.c  -- low level operations on device (storage device)
  *
- *   dev.c  -- low level operations on device (storage device)
+ * Kern Sibbald, MM
  *
- *              Kern Sibbald, MM
+ * NOTE!!!! None of these routines are reentrant. You must
+ * use dev->rLock() and dev->Unlock() at a higher level,
+ * or use the xxx_device() equivalents.  By moving the
+ * thread synchronization to a higher level, we permit
+ * the higher level routines to "seize" the device and
+ * to carry out operations without worrying about who
+ * set what lock (i.e. race conditions).
  *
- *     NOTE!!!! None of these routines are reentrant. You must
- *        use dev->rLock() and dev->Unlock() at a higher level,
- *        or use the xxx_device() equivalents.  By moving the
- *        thread synchronization to a higher level, we permit
- *        the higher level routines to "seize" the device and
- *        to carry out operations without worrying about who
- *        set what lock (i.e. race conditions).
+ * Note, this is the device dependent code, and may have
+ * to be modified for each system, but is meant to
+ * be as "generic" as possible.
  *
- *     Note, this is the device dependent code, and may have
- *           to be modified for each system, but is meant to
- *           be as "generic" as possible.
- *
- *     The purpose of this code is to develop a SIMPLE Storage
- *     daemon. More complicated coding (double buffering, writer
- *     thread, ...) is left for a later version.
- *
+ * The purpose of this code is to develop a SIMPLE Storage
+ * daemon. More complicated coding (double buffering, writer
+ * thread, ...) is left for a later version.
  */
 
 /*
@@ -77,15 +70,15 @@
  * business with no lost data.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
-#ifndef O_NONBLOCK 
+#ifndef O_NONBLOCK
 #define O_NONBLOCK 0
 #endif
 
 /* Forward referenced functions */
-void set_os_device_parameters(DCR *dcr);   
+void set_os_device_parameters(DCR *dcr);
 static bool dev_get_os_pos(DEVICE *dev, struct mtget *mt_stat);
 static const char *mode_to_str(int mode);
 static DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init);
@@ -121,7 +114,7 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       /* Check that device is available */
       if (stat(device->device_name, &statp) < 0) {
          berrno be;
-         Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"), 
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"),
             device->device_name, be.bstrerror());
          return NULL;
       }
@@ -132,10 +125,10 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       } else if (S_ISFIFO(statp.st_mode)) {
          device->dev_type = B_FIFO_DEV;
 #ifdef USE_VTAPE
-      /* must set DeviceType = Vtape 
+      /* must set DeviceType = Vtape
        * in normal mode, autodetection is disabled
        */
-      } else if (S_ISREG(statp.st_mode)) { 
+      } else if (S_ISREG(statp.st_mode)) {
          device->dev_type = B_VTAPE_DEV;
 #endif
       } else if (!(device->cap_bits & CAP_REQMOUNT)) {
@@ -209,17 +202,17 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    }
 
    /* If the device requires mount :
-    * - Check that the mount point is available 
+    * - Check that the mount point is available
     * - Check that (un)mount commands are defined
     */
    if (dev->is_file() && dev->requires_mount()) {
       if (!device->mount_point || stat(device->mount_point, &statp) < 0) {
          berrno be;
          dev->dev_errno = errno;
-         Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat mount point %s: ERR=%s\n"), 
+         Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat mount point %s: ERR=%s\n"),
             device->mount_point, be.bstrerror());
       }
-   
+
       if (!device->mount_command || !device->unmount_command) {
          Jmsg0(jcr, M_ERROR_TERM, 0, _("Mount and unmount commands must defined for a device which requires mount.\n"));
       }
@@ -232,7 +225,7 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       max_bs = dev->max_block_size;
    }
    if (dev->min_block_size > max_bs) {
-      Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"), 
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"),
            dev->print_name());
    }
    if (dev->max_block_size > MAX_BLOCK_LENGTH) {
@@ -245,7 +238,7 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
          dev->max_block_size, dev->print_name(), TAPE_BSIZE);
    }
    if (dev->max_volume_size != 0 && dev->max_volume_size < (dev->max_block_size << 4)) {
-      Jmsg(jcr, M_ERROR_TERM, 0, _("Max Vol Size < 8 * Max Block Size for device %s\n"), 
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Max Vol Size < 8 * Max Block Size for device %s\n"),
            dev->print_name());
    }
 
@@ -305,7 +298,7 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    dev->attached_dcrs = New(dlist(dcr, &dcr->dev_link));
    Dmsg2(100, "init_dev: tape=%d dev_name=%s\n", dev->is_tape(), dev->dev_name);
    dev->initiated = true;
-   
+
    return dev;
 }
 
@@ -369,7 +362,7 @@ bool DEVICE::open(DCR *dcr, int omode)
    Dmsg4(100, "open dev: type=%d dev_name=%s vol=%s mode=%s\n", dev_type,
          print_name(), getVolCatName(), mode_to_str(omode));
    state &= ~(ST_LABEL|ST_APPEND|ST_READ|ST_EOT|ST_WEOT|ST_EOF);
-   label_type = B_BACULA_LABEL;
+   label_type = B_BAREOS_LABEL;
 
    if (is_tape() || is_fifo()) {
       open_tape_device(dcr, omode);
@@ -384,7 +377,7 @@ bool DEVICE::open(DCR *dcr, int omode)
    return m_fd >= 0;
 }
 
-void DEVICE::set_mode(int new_mode) 
+void DEVICE::set_mode(int new_mode)
 {
    switch (new_mode) {
    case CREATE_READ_WRITE:
@@ -407,7 +400,7 @@ void DEVICE::set_mode(int new_mode)
 /*
  * Open a tape device
  */
-void DEVICE::open_tape_device(DCR *dcr, int omode) 
+void DEVICE::open_tape_device(DCR *dcr, int omode)
 {
    file_size = 0;
    int timeout = max_open_wait;
@@ -451,7 +444,7 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
       if (m_fd < 0) {
          berrno be;
          dev_errno = errno;
-         Dmsg5(100, "Open error on %s omode=%d mode=%x errno=%d: ERR=%s\n", 
+         Dmsg5(100, "Open error on %s omode=%d mode=%x errno=%d: ERR=%s\n",
               print_name(), omode, mode, errno, be.bstrerror());
       } else {
          /* Tape open, now rewind it */
@@ -477,7 +470,7 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
             if (m_fd < 0) {
                berrno be;
                dev_errno = errno;
-               Dmsg5(100, "Open error on %s omode=%d mode=%x errno=%d: ERR=%s\n", 
+               Dmsg5(100, "Open error on %s omode=%d mode=%x errno=%d: ERR=%s\n",
                      print_name(), omode, mode, errno, be.bstrerror());
                break;
             }
@@ -518,7 +511,7 @@ void DEVICE::open_device(DCR *dcr, int omode)
 /*
  * Open a file device.
  */
-void DEVICE::open_file_device(DCR *dcr, int omode) 
+void DEVICE::open_file_device(DCR *dcr, int omode)
 {
    POOL_MEM archive_name(PM_FNAME);
 
@@ -526,10 +519,10 @@ void DEVICE::open_file_device(DCR *dcr, int omode)
 
    /*
     * Handle opening of File Archive (not a tape)
-    */     
+    */
 
    pm_strcpy(archive_name, dev_name);
-   /*  
+   /*
     * If this is a virtual autochanger (i.e. changer_res != NULL)
     *  we simply use the device name, assuming it has been
     *  appropriately setup by the "autochanger".
@@ -549,17 +542,17 @@ void DEVICE::open_file_device(DCR *dcr, int omode)
    }
 
    mount(dcr, 1);                     /* do mount if required */
-         
+
    openmode = omode;
    set_mode(omode);
    /* If creating file, give 0640 permissions */
-   Dmsg3(100, "open disk: mode=%s open(%s, 0x%x, 0640)\n", mode_to_str(omode), 
+   Dmsg3(100, "open disk: mode=%s open(%s, 0x%x, 0640)\n", mode_to_str(omode),
          archive_name.c_str(), mode);
    /* Use system open() */
    if ((m_fd = ::open(archive_name.c_str(), mode, 0640)) < 0) {
       berrno be;
       dev_errno = errno;
-      Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(), 
+      Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
             be.bstrerror());
       Dmsg1(100, "open failed: %s", errmsg);
    }
@@ -622,7 +615,7 @@ bool DEVICE::rewind(DCR *dcr)
                continue;
             }
 #ifdef HAVE_SUN_OS
-            if (dev_errno == EIO) {         
+            if (dev_errno == EIO) {
                Mmsg1(errmsg, _("No tape loaded or drive offline on %s.\n"), print_name());
                return false;
             }
@@ -655,8 +648,8 @@ bool DEVICE::rewind(DCR *dcr)
  * Called to indicate that we have just read an
  *  EOF from the device.
  */
-void DEVICE::set_ateof() 
-{ 
+void DEVICE::set_ateof()
+{
    set_eof();
    if (is_tape()) {
       file++;
@@ -670,7 +663,7 @@ void DEVICE::set_ateof()
  * Called to indicate we are now at the end of the tape, and
  *   writing is not possible.
  */
-void DEVICE::set_ateot() 
+void DEVICE::set_ateot()
 {
    /* Make tape effectively read-only */
    state |= (ST_EOF|ST_EOT|ST_WEOT);
@@ -807,7 +800,7 @@ bool DEVICE::eod(DCR *dcr)
             if (os_file >= 0) {
                Dmsg2(100, "Adjust file from %d to %d\n", file_num, os_file);
                file = os_file;
-            }       
+            }
             break;
          }
       }
@@ -898,7 +891,7 @@ uint32_t status_dev(DEVICE *dev)
    }
    if (dev->is_tape()) {
       status |= BMT_TAPE;
-      Pmsg0(-20,_(" Bacula status:"));
+      Pmsg0(-20,_(" Bareos status:"));
       Pmsg2(-20,_(" file=%d block=%d\n"), dev->file, dev->block_num);
       if (dev->d_ioctl(dev->fd(), MTIOCGET, (char *)&mt_stat) < 0) {
          berrno be;
@@ -1078,7 +1071,7 @@ bool DEVICE::offline_or_rewind()
    } else {
    /*
     * Note, this rewind probably should not be here (it wasn't
-    *  in prior versions of Bacula), but on FreeBSD, this is
+    *  in prior versions of Bareos), but on FreeBSD, this is
     *  needed in the case the tape was "frozen" due to an error
     *  such as backspacing after writing and EOF. If it is not
     *  done, all future references to the drive get and I/O error.
@@ -1418,14 +1411,14 @@ void DEVICE::unlock_door()
 }
 
 void DEVICE::set_slot(int32_t slot)
-{ 
-   m_slot = slot; 
+{
+   m_slot = slot;
    if (vol) vol->clear_slot();
 }
 
 void DEVICE::clear_slot()
-{ 
-   m_slot = -1; 
+{
+   m_slot = -1;
    if (vol) vol->set_slot(-1);
 }
 
@@ -1484,7 +1477,7 @@ bool DEVICE::reposition(DCR *dcr, uint32_t rfile, uint32_t rblock)
       Dmsg2(100, "wanted_blk=%d at_blk=%d\n", rblock, block_num);
    }
    if (has_cap(CAP_POSITIONBLOCKS) && rblock > block_num) {
-      /* Ignore errors as Bacula can read to the correct block */
+      /* Ignore errors as Bareos can read to the correct block */
       Dmsg1(100, "fsr %d\n", rblock-block_num);
       return fsr(rblock-block_num);
    } else {
@@ -1512,7 +1505,7 @@ bool DEVICE::weof(int num)
    struct mtop mt_com;
    int status;
    Dmsg1(129, "=== weof_dev=%s\n", print_name());
-   
+
    if (!is_open()) {
       dev_errno = EBADF;
       Mmsg0(errmsg, _("Bad call to weof_dev. Device not open\n"));
@@ -1529,7 +1522,7 @@ bool DEVICE::weof(int num)
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }
-      
+
    clear_eof();
    clear_eot();
    mt_com.mt_op = MTWEOF;
@@ -1617,7 +1610,7 @@ void DEVICE::clrerror(int func)
          break;
 #endif
 
-#ifdef MTSETBSIZ 
+#ifdef MTSETBSIZ
       case MTSETBSIZ:
          msg = "MTSETBSIZ";
          break;
@@ -1750,7 +1743,7 @@ void DEVICE::close(DCR *dcr)
 
    state &= ~(ST_LABEL | ST_READ | ST_APPEND | ST_EOT | ST_WEOT |
               ST_EOF | ST_MOUNTED | ST_MEDIA | ST_SHORT);
-   label_type = B_BACULA_LABEL;
+   label_type = B_BAREOS_LABEL;
    file = block_num = 0;
    file_size = 0;
    file_addr = 0;
@@ -1796,14 +1789,14 @@ bool DEVICE::truncate(DCR *dcr)
       for ( ;; ) {
          if (ftruncate(dev->m_fd, 0) != 0) {
             berrno be;
-            Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), 
+            Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"),
                   print_name(), be.bstrerror());
             return false;
          }
 
          /*
-          * Check for a successful ftruncate() and issue a work-around for devices 
-          * (mostly cheap NAS) that don't support truncation. 
+          * Check for a successful ftruncate() and issue a work-around for devices
+          * (mostly cheap NAS) that don't support truncation.
           * Workaround supplied by Martin Schmid as a solution to bug #1011.
           * 1. close file
           * 2. delete file
@@ -1813,41 +1806,41 @@ bool DEVICE::truncate(DCR *dcr)
 
          if (fstat(dev->m_fd, &st) != 0) {
             berrno be;
-            Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), 
+            Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"),
                   print_name(), be.bstrerror());
             return false;
          }
-             
+
          if (st.st_size != 0) {             /* ftruncate() didn't work */
             POOL_MEM archive_name(PM_FNAME);
-                   
+
             pm_strcpy(archive_name, dev_name);
             if (!IsPathSeparator(archive_name.c_str()[strlen(archive_name.c_str())-1])) {
                pm_strcat(archive_name, "/");
             }
             pm_strcat(archive_name, dcr->VolumeName);
-                      
-            Mmsg2(errmsg, _("Device %s doesn't support ftruncate(). Recreating file %s.\n"), 
+
+            Mmsg2(errmsg, _("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
                   print_name(), archive_name.c_str());
 
             /* Close file and blow it away */
             ::close(dev->m_fd);
             ::unlink(archive_name.c_str());
-                      
+
             /* Recreate the file -- of course, empty */
             dev->set_mode(CREATE_READ_WRITE);
             if ((dev->m_fd = ::open(archive_name.c_str(), mode, st.st_mode)) < 0) {
                berrno be;
                dev_errno = errno;
-               Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(), 
+               Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(),
                      be.bstrerror());
                Dmsg1(100, "reopen failed: %s", errmsg);
                Emsg0(M_FATAL, 0, errmsg);
                return false;
             }
-                      
+
             /* Reset proper owner */
-            chown(archive_name.c_str(), st.st_uid, st.st_gid);  
+            chown(archive_name.c_str(), st.st_uid, st.st_gid);
          }
          break;
       }
@@ -2037,9 +2030,9 @@ bool DEVICE::do_file_mount(DCR *dcr, int mount, int dotimeout)
    } else {
       icmd = device->unmount_command;
    }
-   
+
    edit_mount_codes(ocmd, icmd);
-   
+
    Dmsg2(100, "do_file_mount: cmd=%s mounted=%d\n", ocmd.c_str(), !!is_mounted());
 
    if (dotimeout) {
@@ -2082,21 +2075,21 @@ bool DEVICE::do_file_mount(DCR *dcr, int mount, int dotimeout)
       if (name_max < 1024) {
          name_max = 1024;
       }
-         
+
       if (!(dp = opendir(device->mount_point))) {
          berrno be;
          dev_errno = errno;
-         Dmsg3(100, "do_file_mount: failed to open dir %s (dev=%s), ERR=%s\n", 
+         Dmsg3(100, "do_file_mount: failed to open dir %s (dev=%s), ERR=%s\n",
                device->mount_point, print_name(), be.bstrerror());
          goto get_out;
       }
-      
+
       entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
       count = 0;
       while (1) {
          if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
             dev_errno = EIO;
-            Dmsg2(129, "do_file_mount: failed to find suitable file in dir %s (dev=%s)\n", 
+            Dmsg2(129, "do_file_mount: failed to find suitable file in dir %s (dev=%s)\n",
                   device->mount_point, print_name());
             break;
          }
@@ -2109,9 +2102,9 @@ bool DEVICE::do_file_mount(DCR *dcr, int mount, int dotimeout)
       }
       free(entry);
       closedir(dp);
-      
+
       Dmsg1(100, "do_file_mount: got %d files in the mount point (not counting ., .. and .keep)\n", count);
-      
+
       if (count > 0) {
          /* If we got more than ., .. and .keep */
          /*   there must be something mounted */
@@ -2131,7 +2124,7 @@ get_out:
       Dsm_check(200);
       return false;
    }
-   
+
    free_pool_memory(results);
    Dmsg1(200, "============ mount=%d\n", mount);
    return true;
@@ -2152,7 +2145,7 @@ void DEVICE::edit_mount_codes(POOL_MEM &omsg, const char *imsg)
    const char *p;
    const char *str;
    char add[20];
-   
+
    POOL_MEM archive_name(PM_FNAME);
 
    omsg.c_str()[0] = 0;
@@ -2187,7 +2180,7 @@ void DEVICE::edit_mount_codes(POOL_MEM &omsg, const char *imsg)
    }
 }
 
-/* return the last timer interval (ms) 
+/* return the last timer interval (ms)
  * or 0 if something goes wrong
  */
 btime_t DEVICE::get_timer_count()
@@ -2216,7 +2209,7 @@ ssize_t DEVICE::read(void *buf, size_t len)
       DevReadBytes += read_len;
    }
 
-   return read_len;   
+   return read_len;
 }
 
 /* write to fd */
@@ -2237,7 +2230,7 @@ ssize_t DEVICE::write(const void *buf, size_t len)
       DevWriteBytes += write_len;
    }
 
-   return write_len;   
+   return write_len;
 }
 
 /* Return the resource name for the device */
@@ -2340,7 +2333,7 @@ void init_jcr_device_wait_timers(JCR *jcr)
 }
 
 /*
- * The dev timers are used for waiting on a particular device 
+ * The dev timers are used for waiting on a particular device
  *
  * Returns: true if time doubled
  *          false if max time expired
@@ -2371,7 +2364,7 @@ void set_os_device_parameters(DCR *dcr)
    struct mtop mt_com;
 
    Dmsg0(100, "In set_os_device_parameters\n");
-#if defined(MTSETBLK) 
+#if defined(MTSETBLK)
    if (dev->min_block_size == dev->max_block_size &&
        dev->min_block_size == 0) {    /* variable block mode */
       mt_com.mt_op = MTSETBLK;
@@ -2430,7 +2423,7 @@ void set_os_device_parameters(DCR *dcr)
          dev->clrerror(MTSETBSIZ);
       }
    }
-#if defined(MTIOCSETEOTMODEL) 
+#if defined(MTIOCSETEOTMODEL)
    uint32_t neof;
    if (dev->has_cap(CAP_TWOEOF)) {
       neof = 2;
@@ -2465,7 +2458,7 @@ void set_os_device_parameters(DCR *dcr)
 static bool dev_get_os_pos(DEVICE *dev, struct mtget *mt_stat)
 {
    Dmsg0(100, "dev_get_os_pos\n");
-   return dev->has_cap(CAP_MTIOCGET) && 
+   return dev->has_cap(CAP_MTIOCGET) &&
           dev->d_ioctl(dev->fd(), MTIOCGET, (char *)mt_stat) == 0 &&
           mt_stat->mt_fileno >= 0;
 }
@@ -2477,7 +2470,7 @@ static const char *modes[] = {
    "OPEN_WRITE_ONLY"
 };
 
-static const char *mode_to_str(int mode)  
+static const char *mode_to_str(int mode)
 {
    static char buf[100];
    if (mode < 1 || mode > 4) {

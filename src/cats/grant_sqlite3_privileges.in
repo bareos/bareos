@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to grant privileges to the bacula database
+# shell script to grant privileges to the bareos database
 #
 bindir=@SQLITE_BINDIR@
 

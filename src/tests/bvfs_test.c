@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2009-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,33 +11,25 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Program to test cache path
  *
- *  Program to test cache path
- *
- *   Eric Bollengier, August 2009
- *
- *
+ * Eric Bollengier, August 2009
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "cats/cats.h"
 #include "cats/sql_glue.h"
 #include "cats/bvfs.h"
 #include "findlib/find.h"
- 
+
 /* Local variables */
 static B_DB *db;
 static const char *file = "COPYRIGHT";
@@ -58,8 +48,8 @@ PROG_COPYRIGHT
 "       -d <nn>           set debug level to <nn>\n"
 "       -dt               print timestamp in debug output\n"
 "       -D <driver name>  specify the driver database name (default NULL)\n"
-"       -n <name>         specify the database name (default bacula)\n"
-"       -u <user>         specify database user name (default bacula)\n"
+"       -n <name>         specify the database name (default bareos)\n"
+"       -u <user>         specify database user name (default bareos)\n"
 "       -P <password      specify database password (default none)\n"
 "       -h <host>         specify database host (default NULL)\n"
 "       -w <working>      specify working directory\n"
@@ -87,13 +77,13 @@ static int result_handler(void *ctx, int fields, char **row)
       /* display clean stuffs */
 
       if (bvfs_is_dir(row)) {
-         pm_strcpy(attr->ofname, bvfs_basename_dir(row[BVFS_Name]));   
+         pm_strcpy(attr->ofname, bvfs_basename_dir(row[BVFS_Name]));
       } else {
          /* if we see the requested file, note his filenameid */
          if (bstrcmp(row[BVFS_Name], file)) {
             fnid = str_to_int64(row[BVFS_FilenameId]);
          }
-         pm_strcpy(attr->ofname, row[BVFS_Name]);   
+         pm_strcpy(attr->ofname, row[BVFS_Name]);
       }
       print_ls_output(vfs->get_jcr(), attr);
 
@@ -119,12 +109,12 @@ int main (int argc, char *argv[])
    uint64_t limit=0;
    bool clean=false;
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    init_stack_dump();
 
    Dmsg0(0, "Starting bvfs_test tool\n");
-   
+
    my_name_is(argc, argv, "bvfs_test");
    init_msg(NULL, NULL);
 
@@ -216,9 +206,9 @@ int main (int argc, char *argv[])
    bjcr->client_name = get_pool_memory(PM_FNAME);
    pm_strcpy(bjcr->client_name, "Dummy.Client.Name");
    bstrncpy(bjcr->Job, "bvfs_test", sizeof(bjcr->Job));
-   
+
    if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password, db_host, 0, NULL)) == NULL) {
-      Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
+      Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
    }
    Dmsg1(0, "db_type=%s\n", db_get_type(db));
 
@@ -229,7 +219,7 @@ int main (int argc, char *argv[])
    if (verbose) {
       Pmsg2(000, _("Using Database: %s, User: %s\n"), db_name, db_user);
    }
-   
+
    bjcr->db = db;
 
    if (clean) {
@@ -265,7 +255,7 @@ int main (int argc, char *argv[])
       exit (0);
    }
 
-   
+
    Pmsg0(0, "list /\n");
    fs.ch_dir("/");
    fs.ls_special_dirs();

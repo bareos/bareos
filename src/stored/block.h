@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,25 +11,18 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Block definitions for Bacula media data format.
+ * Block definitions for Bareos media data format.
  *
- *    Kern Sibbald, MM
- *
+ * Kern Sibbald, MM
  */
-
 
 #ifndef __BLOCK_H
 #define __BLOCK_H 1
@@ -40,28 +31,30 @@
 #define DEFAULT_BLOCK_SIZE (512 * 126)  /* 64,512 N.B. do not use 65,636 here */
 
 /* Block Header definitions. */
-#define BLKHDR1_ID       "BB01"
-#define BLKHDR2_ID       "BB02"
-#define BLKHDR_ID_LENGTH  4
-#define BLKHDR_CS_LENGTH  4             /* checksum length */
-#define BLKHDR1_LENGTH   16             /* Total length */
-#define BLKHDR2_LENGTH   24             /* Total length */
+#define BLKHDR1_ID                       "BB01"
+#define BLKHDR2_ID                       "BB02"
+#define BLKHDR_ID_LENGTH                  4
+#define BLKHDR_CS_LENGTH                  4     /* checksum length */
+#define BLKHDR1_LENGTH                   16     /* Total length */
+#define BLKHDR2_LENGTH                   24     /* Total length */
 
 #define WRITE_BLKHDR_ID     BLKHDR2_ID
 #define WRITE_BLKHDR_LENGTH BLKHDR2_LENGTH
-#define BLOCK_VER               2
+#define BLOCK_VER                        2
 
 /* Record header definitions */
-#define RECHDR1_LENGTH      20
-#define RECHDR2_LENGTH      12
+#define RECHDR1_LENGTH                   20
+#define RECHDR2_LENGTH                   12
 #define WRITE_RECHDR_LENGTH RECHDR2_LENGTH
 
 /* Tape label and version definitions */
-#define BaculaId         "Bacula 1.0 immortal\n"
-#define OldBaculaId      "Bacula 0.9 mortal\n"
-#define BaculaTapeVersion                11
-#define OldCompatibleBaculaTapeVersion1  10
-#define OldCompatibleBaculaTapeVersion2   9
+#define BareosId                         "Bareos 2.0 immortal\n"
+#define OldBaculaId                      "Bacula 1.0 immortal\n"
+#define OlderBaculaId                    "Bacula 0.9 mortal\n"
+#define BareosTapeVersion                20
+#define OldCompatibleBareosTapeVersion1  11
+#define OldCompatibleBareosTapeVersion2  10
+#define OldCompatibleBareosTapeVersion3  9
 
 /*
  * This is the Media structure for a block header
@@ -99,7 +92,7 @@ struct DEV_BLOCK {
    uint32_t binbuf;                   /* bytes in buffer */
    uint32_t block_len;                /* length of current block read */
    uint32_t buf_len;                  /* max/default block length */
-   uint32_t BlockNumber;              /* sequential Bacula block number */
+   uint32_t BlockNumber;              /* sequential Bareos block number */
    uint32_t read_len;                 /* bytes read into buffer, if zero, block empty */
    uint32_t VolSessionId;             /* */
    uint32_t VolSessionTime;           /* */

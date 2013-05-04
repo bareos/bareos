@@ -1,0 +1,41 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BACULA-TRAY-MONITOR 1 "May 10, 2006" "Kern Sibbald" "Backup Archiving REcovery Open Sourced"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+ bareos-tray-monitor \- Bareos's 'System Tray' monitor
+.SH SYNOPSIS
+.B bareos-tray-monitor
+.RI [options]
+.br
+.SH DESCRIPTION
+This manual page documents briefly the
+.B bareos-tray-monitor
+command, a simple monitor for the 'system tray' in KDE/GNOME
+.PP
+.SH OPTIONS
+bareos-tray-monitor [\-c config_file] [\-d debug_level] [\-t]
+.TP
+.B \-c <config>
+Specify configuration file.
+.TP
+.B \-d <nn>
+Set debug level to \fInn\fP.
+.TP
+.B \-t
+Test config mode: read configuration and exit.
+.TP
+.B \-?
+Show version and usage of program.
+.SH SEE ALSO
+.BR bareos-dir (8),
+.BR bls (1),
+.BR bextract (1).
+.br
+.SH AUTHOR
+This manual page was written by Jose Luis Tallon
+.nh
+<jltallon@adv\-solutions.net>.

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,43 +13,35 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   Main configuration file parser for Bacula File Daemon (Client)
- *    some parts may be split into separate files such as
- *    the schedule configuration (sch_config.c).
+ * Main configuration file parser for Bareos File Daemon (Client)
+ * some parts may be split into separate files such as
+ * the schedule configuration (sch_config.c).
  *
- *   Note, the configuration file parser consists of three parts
+ * Note, the configuration file parser consists of three parts
  *
- *   1. The generic lexical scanner in lib/lex.c and lib/lex.h
+ * 1. The generic lexical scanner in lib/lex.c and lib/lex.h
  *
- *   2. The generic config  scanner in lib/parse_config.c and
- *      lib/parse_config.h.
- *      These files contain the parser code, some utility
- *      routines, and the common store routines (name, int,
- *      string).
+ * 2. The generic config  scanner in lib/parse_config.c and
+ *    lib/parse_config.h. These files contain the parser code,
+ *    some utility routines, and the common store routines
+ *    (name, int, string).
  *
- *   3. The daemon specific file, which contains the Resource
- *      definitions as well as any specific store routines
- *      for the resource records.
+ * 3. The daemon specific file, which contains the Resource
+ *    definitions as well as any specific store routines
+ *    for the resource records.
  *
- *     Kern Sibbald, September MM
- *
- *   Version $Id$
+ * Kern Sibbald, September MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "filed.h"
 
 /*
@@ -93,12 +85,12 @@ int32_t res_all_size = sizeof(res_all);
 static RES_ITEM cli_items[] = {
    { "name", store_name, ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, NULL },
    { "description", store_str, ITEM(res_client.hdr.desc), 0, 0, NULL },
-   { "fdport", store_addresses_port, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, "9102" },
-   { "fdaddress", store_addresses_address, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, "9102" },
-   { "fdaddresses", store_addresses, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, "9102" },
+   { "fdport", store_addresses_port, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "fdaddress", store_addresses_address, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "fdaddresses", store_addresses, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
    { "fdsourceaddress", store_addresses_address, ITEM(res_client.FDsrc_addr), 0, ITEM_DEFAULT, "0" },
-   { "workingdirectory", store_dir, ITEM(res_client.working_directory), 0, ITEM_DEFAULT, _PATH_BACULA_WORKINGDIR },
-   { "piddirectory", store_dir, ITEM(res_client.pid_directory), 0, ITEM_DEFAULT, _PATH_BACULA_PIDDIR },
+   { "workingdirectory", store_dir, ITEM(res_client.working_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
+   { "piddirectory", store_dir, ITEM(res_client.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "subsysdirectory", store_dir, ITEM(res_client.subsys_directory), 0, 0, NULL },
    { "plugindirectory", store_dir, ITEM(res_client.plugin_directory), 0, 0, NULL },
    { "scriptsdirectory", store_dir, ITEM(res_client.scripts_directory), 0, 0, NULL },
@@ -122,7 +114,9 @@ static RES_ITEM cli_items[] = {
    { "tlscertificate", store_dir, ITEM(res_client.tls_certfile), 0, 0, NULL },
    { "tlskey", store_dir, ITEM(res_client.tls_keyfile), 0, 0, NULL },
    { "verid", store_str, ITEM(res_client.verid), 0, 0, NULL },
+   { "compatible", store_bool, ITEM(res_client.compatible), 0, 0, "true" },
    { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
+   { "allowbandwidthbursting", store_bool, ITEM(res_client.allow_bw_bursting), 0, 0, "false" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -240,7 +234,7 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.address) {
          free(res->res_dir.address);
       }
-      if (res->res_dir.tls_ctx) { 
+      if (res->res_dir.tls_ctx) {
          free_tls_context(res->res_dir.tls_ctx);
       }
       if (res->res_dir.tls_ca_certfile) {
@@ -285,7 +279,7 @@ void free_resource(RES *sres, int type)
          free_addresses(res->res_client.FDsrc_addr);
       }
 
-      if (res->res_client.pki_keypair_file) { 
+      if (res->res_client.pki_keypair_file) {
          free(res->res_client.pki_keypair_file);
       }
       if (res->res_client.pki_keypair) {
@@ -315,7 +309,7 @@ void free_resource(RES *sres, int type)
          delete res->res_client.pki_recipients;
       }
 
-      if (res->res_client.tls_ctx) { 
+      if (res->res_client.tls_ctx) {
          free_tls_context(res->res_client.tls_ctx);
       }
       if (res->res_client.tls_ca_certfile) {

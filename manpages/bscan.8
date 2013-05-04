@@ -2,37 +2,37 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH BSCAN 8 "26 November 2009" "Kern Sibbald" "Network backup, recovery and verification"
+.TH BSCAN 8 "26 November 2009" "Kern Sibbald" "Backup Archiving REcovery Open Sourced"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
- bscan \- Bacula's 'Scan tape'
+ bscan \- Bareos's 'Scan tape'
 .SH SYNOPSIS
 .B bscan
 .RI [ options ]
-.I bacula-archive
+.I bareos-archive
 .br
 .SH DESCRIPTION
 .LP
-The purpose of bscan is to read (scan) a Bacula Volume and to recreate
+The purpose of bscan is to read (scan) a Bareos Volume and to recreate
 or update the database contents with the information found on the Volume.
 This is done in a non-destructive way. This permits restoring database
 entries that have been lost by pruning, purging, deleting, or a database
-corruption problem.        
- 
+corruption problem.
+
 .LP
 Normally, it should not be necessary to run the bscan command because
 the database is self maintaining, and most corrupted databases can be
 repaired by the tools provided by the database vendors.
 In addition, if you have maintained bootstrap files during backups, you
-should be able to recover all your data from the bootstrap file    
+should be able to recover all your data from the bootstrap file
 without needed an up to date catalog.
 
 .B bscan
 command.
 .PP
 .\" TeX users may be more comfortable with the \fB<whatever>\fP and
-.\" \fI<whatever>\fP escape sequences to invoke bold face and italics, 
+.\" \fI<whatever>\fP escape sequences to invoke bold face and italics,
 .\" respectively.
 .SH OPTIONS
 A summary of options is included below.
@@ -59,10 +59,10 @@ Update media info in database.
 Specify the driver database name (default: \fINULL\fP)
 .TP
 .BI \-n\  name
-Specify the database name (default: \fIbacula\fP)
+Specify the database name (default: \fIbareos\fP)
 .TP
 .BI \-u\  username
-Specify database username (default: \fIbacula\fP)
+Specify database username (default: \fIbareos\fP)
 .TP
 .BI \-P\  password
 Specify database password (default: \fInone\fP)
@@ -99,7 +99,6 @@ Specify working directory (default from conf file)
 .br
 .SH AUTHOR
 This manual page was written by Jose Luis Tallon
-.nh 
+.nh
 <jltallon@adv\-solutions.net>,
 for the Debian GNU/Linux system (but may be used by others).
- 

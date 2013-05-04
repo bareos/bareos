@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,25 +11,19 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
- 
+
 /*
- *  Run Dialog class
+ * Run Dialog class
  *
- *   Kern Sibbald, February MMVII
- *
- */ 
+ * Kern Sibbald, February MMVII
+ */
 
 #include "bat.h"
 #include "run.h"
@@ -53,7 +45,7 @@ runPage::runPage(const QString &defJob) : Pages()
 }
 
 
-runPage::runPage(const QString &defJob, const QString &level, 
+runPage::runPage(const QString &defJob, const QString &level,
                  const QString &pool, const QString &storage,
                  const QString &client, const QString &fileset)
    : Pages()
@@ -69,7 +61,7 @@ runPage::runPage(const QString &defJob, const QString &level,
    poolCombo->setCurrentIndex(poolCombo->findText(pool, Qt::MatchExactly));
 
    if (storage != "") {         // TODO: enable storage
-      storageCombo->setCurrentIndex(storageCombo->findText(storage, 
+      storageCombo->setCurrentIndex(storageCombo->findText(storage,
                                                            Qt::MatchExactly));
    }
    show();
@@ -82,7 +74,7 @@ runPage::runPage(const QString &defJob, const QString &level,
 void runPage::init()
 {
    QDateTime dt;
-   QDesktopWidget *desk = QApplication::desktop(); 
+   QDesktopWidget *desk = QApplication::desktop();
    QRect scrn;
 
    m_name = tr("Run");
@@ -126,7 +118,7 @@ void runPage::okButtonPushed()
 {
    this->hide();
    QString cmd;
-   QTextStream(&cmd) << "run" << 
+   QTextStream(&cmd) << "run" <<
       " job=\"" << jobCombo->currentText() << "\"" <<
       " fileset=\"" << filesetCombo->currentText() << "\"" <<
       " level=\"" << levelCombo->currentText() << "\"" <<
@@ -141,7 +133,7 @@ void runPage::okButtonPushed()
       * with a  job */
 #endif
    if (bootstrap->text() != "") {
-      cmd += " bootstrap=\"" + bootstrap->text() + "\""; 
+      cmd += " bootstrap=\"" + bootstrap->text() + "\"";
    }
    cmd += " yes";
 

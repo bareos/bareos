@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Dumb program to do an "ls" of a Bareos 2.0 mortal file.
  *
- *  Dumb program to do an "ls" of a Bacula 1.0 mortal file.
- * 
- *  Kern Sibbald, MM
- *
+ * Kern Sibbald, MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
@@ -60,7 +53,7 @@ static uint32_t num_files = 0;
 static ATTR *attr;
 static CONFIG *config;
 
-#define CONFIG_FILE "bacula-sd.conf"
+#define CONFIG_FILE "bareos-sd.conf"
 char *configfile = NULL;
 STORES *me = NULL;                    /* our Global resource */
 bool forge_on = false;
@@ -107,8 +100,8 @@ int main (int argc, char *argv[])
    DIRRES *director = NULL;
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    init_stack_dump();
    lmgr_init_thread();
 
@@ -250,7 +243,7 @@ int main (int argc, char *argv[])
 
    load_sd_plugins(me->plugin_directory);
 
-   read_crypto_cache(me->working_directory, "bacula-sd",
+   read_crypto_cache(me->working_directory, "bareos-sd",
                      get_first_port_host_order(me->sdaddrs));
 
    if (ff->included_files_list == NULL) {
@@ -453,7 +446,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    default:
       break;
    }
-      
+
    return true;
 }
 
@@ -493,7 +486,7 @@ static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sess
       break;
    default:
       rtype = _("Unknown");
-      Dmsg1(10, "FI rtype=%d unknown\n", rec->FileIndex);     
+      Dmsg1(10, "FI rtype=%d unknown\n", rec->FileIndex);
       break;
    }
    Dmsg5(10, "%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n",
@@ -511,7 +504,7 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
 bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
 bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
 bool dir_send_job_status(JCR *jcr) {return 1;}
-       
+
 bool dir_ask_sysop_to_mount_volume(DCR *dcr, int /*mode*/)
 {
    DEVICE *dev = dcr->dev;

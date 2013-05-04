@@ -1,27 +1,41 @@
 #!/bin/sh
 #
-#  Make the stupid bacula.def file so that we don't have to do it
-#    manually
+# Make the stupid bareos.def file so that we don't have to do it manually
 #
-#  Kern Sibbald, June 2007
+# Kern Sibbald, June 2007
 #
+NM=nm
 
-TOPDIR=`(cd ../../..;pwd)`
-TOPDIR=${DEPKGS:-${TOPDIR}}
-NM=${TOPDIR}/cross-tools/mingw32/mingw32/bin/nm
- 
-echo "LIBRARY bacula.dll"
+case $1 in
+   32)
+      SYMBOL_START=13
+      ;;
+   64)
+      SYMBOL_START=20
+      ;;
+   *)
+      SYMBOL_START=13
+      ;;
+esac
+shift
+
+echo "LIBRARY libbareos.dll"
 echo "EXPORTS"
 echo " "
 
-cd obj32
-for i in *.o ; do \
+for i in $* ; do \
    echo "; $i"; \
-   ${NM} $i | grep "^[0-9a-f]* T _" | cut -c13- ; \
+   ${NM} $i | grep "^[0-9a-f]* T " | cut -c${SYMBOL_START}- ; \
    echo " "; \
 done
 
-DATA="console_command"
+DATA="\
+console_command \
+exepath \
+beef \
+version \
+dist_name \
+"
 for i in ${DATA}; do \
    echo "$i DATA"; \
 done

@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +11,21 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
+   BAREOS® is a registered trademark of Bareos GmbH & Co. KG
 */
 
 /*
+ * Main Window control for bat (qt-console)
  *
- *  Main Window control for bat (qt-console)
- *
- *   Kern Sibbald, January MMVII
- *
- */ 
+ * Kern Sibbald, January MMVII
+ */
 
 #include "bat.h"
 #include "version.h"
@@ -50,13 +43,10 @@
 #include "help/help.h"
 #include "jobs/jobs.h"
 #include "medialist/mediaview.h"
-#ifdef HAVE_QWT
-#include "jobgraphs/jobplot.h"
-#endif
 #include "status/dirstat.h"
 #include "util/fmtwidgetitem.h"
 
-/* 
+/*
  * Daemon message callback
  */
 void message_callback(int /* type */, char *msg)
@@ -85,11 +75,6 @@ MainWin::MainWin(QWidget *parent) : QMainWindow(parent)
 
    resetFocus(); /* lineEdit->setFocus() */
 
-#ifndef HAVE_QWT
-   actionJobPlot->setEnabled(false);
-   actionJobPlot->setVisible(false);
-#endif
-
    this->show();
 
    readSettings();
@@ -97,7 +82,7 @@ MainWin::MainWin(QWidget *parent) : QMainWindow(parent)
    foreach(Console *console, m_consoleHash) {
       console->connect_dir();
    }
-   /* 
+   /*
     * Note, the notifier is now a global flag, although each notifier
     *  can be individually turned on and off at a socket level.  Once
     *  the notifier is turned off, we don't accept anything from anyone
@@ -169,20 +154,14 @@ void MainWin::createPages()
       item->setForeground(0, redBrush);
 
       /*
-       * Create instances in alphabetic order of the rest 
-       *  of the classes that will by default exist under each Director.  
+       * Create instances in alphabetic order of the rest
+       *  of the classes that will by default exist under each Director.
        */
       new bRestore();
       new Clients();
       new FileSet();
       new Jobs();
       createPageJobList("", "", "", "", NULL);
-#ifdef HAVE_QWT
-      JobPlotPass pass;
-      pass.use = false;
-      if (m_openPlot)
-         new JobPlot(NULL, pass);
-#endif
       new MediaList();
       new MediaView();
       new Storage();
@@ -272,9 +251,6 @@ void MainWin::connectSignals()
    connect(actionEstimate, SIGNAL(triggered()), this,  SLOT(estimateButtonClicked()));
    connect(actionBrowse, SIGNAL(triggered()), this,  SLOT(browseButtonClicked()));
    connect(actionStatusDirPage, SIGNAL(triggered()), this,  SLOT(statusPageButtonClicked()));
-#ifdef HAVE_QWT
-   connect(actionJobPlot, SIGNAL(triggered()), this,  SLOT(jobPlotButtonClicked()));
-#endif
    connect(actionRestore, SIGNAL(triggered()), this,  SLOT(restoreButtonClicked()));
    connect(actionUndock, SIGNAL(triggered()), this,  SLOT(undockWindowButton()));
    connect(actionToggleDock, SIGNAL(triggered()), this,  SLOT(toggleDockContextWindow()));
@@ -300,9 +276,6 @@ void MainWin::disconnectSignals()
    disconnect(actionEstimate, SIGNAL(triggered()), this,  SLOT(estimateButtonClicked()));
    disconnect(actionBrowse, SIGNAL(triggered()), this,  SLOT(browseButtonClicked()));
    disconnect(actionStatusDirPage, SIGNAL(triggered()), this,  SLOT(statusPageButtonClicked()));
-#ifdef HAVE_QWT
-   disconnect(actionJobPlot, SIGNAL(triggered()), this,  SLOT(jobPlotButtonClicked()));
-#endif
    disconnect(actionRestore, SIGNAL(triggered()), this,  SLOT(restoreButtonClicked()));
    disconnect(actionUndock, SIGNAL(triggered()), this,  SLOT(undockWindowButton()));
    disconnect(actionToggleDock, SIGNAL(triggered()), this,  SLOT(toggleDockContextWindow()));
@@ -317,7 +290,7 @@ void MainWin::disconnectSignals()
  */
 void MainWin::waitEnter()
 {
-   if (m_waitState || m_isClosing) { 
+   if (m_waitState || m_isClosing) {
       return;
    }
    m_waitState = true;
@@ -363,7 +336,7 @@ void MainWin::disconnectConsoleSignals(Console *console)
 }
 
 
-/* 
+/*
  * Two functions to respond to menu items to repop lists and execute reload and repopulate
  * the lists for jobs, clients, filesets .. ..
  */
@@ -378,8 +351,8 @@ void MainWin::reloadRepopLists()
    m_currentConsole->populateLists(false);
 }
 
-/* 
- * Reimplementation of QWidget closeEvent virtual function   
+/*
+ * Reimplementation of QWidget closeEvent virtual function
  */
 void MainWin::closeEvent(QCloseEvent *event)
 {
@@ -414,7 +387,7 @@ void MainWin::closeEvent(QCloseEvent *event)
 
 void MainWin::writeSettings()
 {
-   QSettings settings("bacula.org", "bat");
+   QSettings settings("bareos.org", "bat");
 
    settings.beginGroup("MainWin");
    settings.setValue("winSize", size());
@@ -425,8 +398,8 @@ void MainWin::writeSettings()
 }
 
 void MainWin::readSettings()
-{ 
-   QSettings settings("bacula.org", "bat");
+{
+   QSettings settings("bareos.org", "bat");
 
    settings.beginGroup("MainWin");
    resize(settings.value("winSize", QSize(1041, 801)).toSize());
@@ -437,7 +410,7 @@ void MainWin::readSettings()
 
 /*
  * This subroutine is called with an item in the Page Selection window
- *   is clicked 
+ *   is clicked
  */
 void MainWin::treeItemClicked(QTreeWidgetItem *item, int /*column*/)
 {
@@ -490,7 +463,7 @@ void MainWin::treeItemChanged(QTreeWidgetItem *currentitem, QTreeWidgetItem *pre
       nextPage = NULL;
       nextConsole = NULL;
    }
-          
+
    /* The Previous item */
 
    /* this condition prevents a segfault.  The first time there is no previousitem*/
@@ -518,7 +491,7 @@ void MainWin::treeItemChanged(QTreeWidgetItem *currentitem, QTreeWidgetItem *pre
    }
 
    /* process the current (next) item */
-   
+
    if ((nextPage) || (nextConsole)) {
       if (nextConsole != previousConsole) {
          /* make connections to the current console */
@@ -533,7 +506,7 @@ void MainWin::treeItemChanged(QTreeWidgetItem *currentitem, QTreeWidgetItem *pre
       /* set the value for the currently active console */
       int stackindex = tabWidget->indexOf(nextPage);
       nextPage->firstUseDock();
-   
+
       /* Is this page currently on the stack or is it undocked */
       if (stackindex >= 0) {
          /* put this page on the top of the stack */
@@ -556,22 +529,22 @@ void MainWin::treeItemChanged(QTreeWidgetItem *currentitem, QTreeWidgetItem *pre
    }
 }
 
-void MainWin::labelButtonClicked() 
+void MainWin::labelButtonClicked()
 {
    new labelPage();
 }
 
-void MainWin::runButtonClicked() 
+void MainWin::runButtonClicked()
 {
    new runPage("");
 }
 
-void MainWin::estimateButtonClicked() 
+void MainWin::estimateButtonClicked()
 {
    new estimatePage();
 }
 
-void MainWin::browseButtonClicked() 
+void MainWin::browseButtonClicked()
 {
    new restoreTree();
 }
@@ -593,19 +566,10 @@ void MainWin::statusPageButtonClicked()
    }
 }
 
-void MainWin::restoreButtonClicked() 
+void MainWin::restoreButtonClicked()
 {
    new prerestorePage();
    if (mainWin->m_miscDebug) Pmsg0(000, "in restoreButtonClicked after prerestorePage\n");
-}
-
-void MainWin::jobPlotButtonClicked()
-{
-#ifdef HAVE_QWT
-   JobPlotPass pass;
-   pass.use = false;
-   new JobPlot(NULL, pass);
-#endif
 }
 
 /*
@@ -635,11 +599,15 @@ void MainWin::input_line()
 
 void MainWin::about()
 {
-   QMessageBox::about(this, tr("About bat"),
-      tr("<br><h2>bat %1 (%2), by Dirk H Bartley and Kern Sibbald</h2>"
-         "<p>Copyright &copy; 2007-%3 Free Software Foundation Europe e.V."
-         "<p>The <b>bat</b> is an administrative console"
-         " interface to the Director.").arg(VERSION).arg(BDATE).arg(BYEAR));
+   QMessageBox::about(this, tr("About Bareos Administration Tool"),
+      tr("<br><h2>Bareos Administration Tool %1</h2>"
+         "<p>Original by Dirk H Bartley and Kern Sibbald</p>"
+         "<p>For more information, see: www.bareos.com</p>"
+         "<p>Copyright &copy; 2007-%2 Free Software Foundation Europe e.V.</p>"
+         "<p>Copyright &copy; 2011-2012 Planets Communications B.V.</p>"
+         "<p>Copyright &copy; 2013-%2 Bareos GmbH & Co. KG</p>"
+         "<p>BAREOS® is a registered trademark of Bareos GmbH & Co. KG</p>"
+         "<p>Licensed under GNU AGPLv3.</p>").arg(VERSION).arg(BYEAR));
 }
 
 void MainWin::help()
@@ -684,14 +652,14 @@ void MainWin::undockWindowButton()
 }
 
 /*
- * Function to respond to action on page selector context menu to toggle the 
+ * Function to respond to action on page selector context menu to toggle the
  * dock status of the window associated with the page selectors current
  * tree widget item.
  */
 void MainWin::toggleDockContextWindow()
 {
    QTreeWidgetItem *currentitem = treeWidget->currentItem();
-   
+
    /* Is this a page that has been inserted into the hash  */
    if (getFromHash(currentitem)) {
       Pages* page = getFromHash(currentitem);
@@ -787,8 +755,8 @@ void MainWin::closePage(int item)
       if (getFromHash(currentitem)) {
          page = getFromHash(currentitem);
       }
-   }   
-   
+   }
+
    if (page) {
       if (page->isCloseable()) {
          page->closeStackPage();
@@ -851,9 +819,6 @@ void MainWin::setPreferences()
       break;
    }
    prefs.openPlotCheckBox->setCheckState(m_openPlot ? Qt::Checked : Qt::Unchecked);
-#ifndef HAVE_QWT
-   prefs.openPlotCheckBox->setVisible(false);
-#endif
    prefs.openBrowserCheckBox->setCheckState(m_openBrowser ? Qt::Checked : Qt::Unchecked);
    prefs.openDirStatCheckBox->setCheckState(m_openDirStat ? Qt::Checked : Qt::Unchecked);
    prefs.exec();
@@ -905,7 +870,7 @@ void prefsDialog::accept()
    mainWin->m_openBrowser = this->openBrowserCheckBox->checkState() == Qt::Checked;
    mainWin->m_openDirStat = this->openDirStatCheckBox->checkState() == Qt::Checked;
 
-   QSettings settings("www.bacula.org", "bat");
+   QSettings settings("www.bareos.org", "bat");
    settings.beginGroup("Debug");
    settings.setValue("commDebug", mainWin->m_commDebug);
    settings.setValue("connDebug", mainWin->m_connDebug);
@@ -956,7 +921,7 @@ void prefsDialog::reject()
 /* read preferences for the prefences dialog box */
 void MainWin::readPreferences()
 {
-   QSettings settings("www.bacula.org", "bat");
+   QSettings settings("www.bareos.org", "bat");
    settings.beginGroup("Debug");
    m_commDebug = settings.value("commDebug", false).toBool();
    m_connDebug = settings.value("connDebug", false).toBool();
@@ -978,7 +943,7 @@ void MainWin::readPreferences()
    settings.beginGroup("Misc");
    m_longList = settings.value("longList", false).toBool();
    ItemFormatterBase::setBytesConversion(
-         (ItemFormatterBase::BYTES_CONVERSION) settings.value("byteConvert", 
+         (ItemFormatterBase::BYTES_CONVERSION) settings.value("byteConvert",
          ItemFormatterBase::BYTES_CONVERSION_IEC).toInt());
    m_openPlot = settings.value("openplot", false).toBool();
    m_openBrowser = settings.value("openbrowser", false).toBool();

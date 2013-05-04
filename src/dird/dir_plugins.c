@@ -1,37 +1,31 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation, which is 
+   License as published by the Free Software Foundation, which is
    listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Main program to test loading and running Bacula plugins.
- *   Destined to become Bacula pluginloader, ...
+ * BAREOS pluginloader
  *
  * Kern Sibbald, October 2007
  */
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 #include "dir_plugins.h"
 
@@ -41,36 +35,36 @@ const char *plugin_type = "-dir.so";
 static alist *dird_plugin_list;
 
 /* Forward referenced functions */
-static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value);
-static bRC baculaSetValue(bpContext *ctx, bwDirVariable var, void *value);
-static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...);
-static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value);
+static bRC bareosSetValue(bpContext *ctx, bwDirVariable var, void *value);
+static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...);
+static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...);
-static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...);
 static bool is_plugin_compatible(Plugin *plugin);
 
-/* Bacula info */
+/* BAREOS info */
 static bDirInfo binfo = {
    sizeof(bDirFuncs),
    DIR_PLUGIN_INTERFACE_VERSION
 };
 
-/* Bacula entry points */
+/* BAREOS entry points */
 static bDirFuncs bfuncs = {
    sizeof(bDirFuncs),
    DIR_PLUGIN_INTERFACE_VERSION,
-   baculaRegisterEvents,
-   baculaGetValue,
-   baculaSetValue,
-   baculaJobMsg,
-   baculaDebugMsg
+   bareosRegisterEvents,
+   bareosGetValue,
+   bareosSetValue,
+   bareosJobMsg,
+   bareosDebugMsg
 };
 
-/* 
- * Bacula private context
+/*
+ * BAREOS private context
  */
-struct bacula_ctx {
+struct b_plugin_ctx {
    JCR *jcr;                                        /* jcr for plugin */
    bRC  rc;                                         /* last return code */
    bool disabled;                                   /* set if plugin disabled */
@@ -79,11 +73,11 @@ struct bacula_ctx {
 
 static inline bool is_event_enabled(bpContext *ctx, bDirEventType eventType)
 {
-   bacula_ctx *b_ctx;
+   b_plugin_ctx *b_ctx;
    if (!ctx) {
       return true;
    }
-   b_ctx = (bacula_ctx *)ctx->bContext;
+   b_ctx = (b_plugin_ctx *)ctx->bContext;
    if (!b_ctx) {
       return true;
    }
@@ -92,11 +86,11 @@ static inline bool is_event_enabled(bpContext *ctx, bDirEventType eventType)
 
 static inline bool is_plugin_disabled(bpContext *ctx)
 {
-   bacula_ctx *b_ctx;
+   b_plugin_ctx *b_ctx;
    if (!ctx) {
       return true;
    }
-   b_ctx = (bacula_ctx *)ctx->bContext;
+   b_ctx = (b_plugin_ctx *)ctx->bContext;
    return b_ctx->disabled;
 }
 
@@ -108,7 +102,7 @@ static inline bool is_plugin_disabled(JCR *jcr)
 #endif
 
 /*
- * Create a plugin event 
+ * Create a plugin event
  */
 int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value)
 {
@@ -173,7 +167,7 @@ static void dump_dir_plugins(FILE *fp)
 }
 
 /**
- * This entry point is called internally by Bacula to ensure
+ * This entry point is called internally by BAREOS to ensure
  *  that the plugin IO calls come into this code.
  */
 void load_dir_plugins(const char *plugin_dir)
@@ -198,7 +192,7 @@ void load_dir_plugins(const char *plugin_dir)
          return;
       }
    }
-   /* 
+   /*
     * Verify that the plugin is acceptable, and print information
     *  about it.
     */
@@ -251,9 +245,9 @@ static bool is_plugin_compatible(Plugin *plugin)
            plugin->file, DIR_PLUGIN_INTERFACE_VERSION, info->version);
       return false;
    }
-   if (!bstrcmp(info->plugin_license, "Bacula AGPLv3") &&
-       !bstrcmp(info->plugin_license, "AGPLv3") &&
-       !bstrcmp(info->plugin_license, "Bacula Systems(R) SA")) {
+   if (!bstrcasecmp(info->plugin_license, "Bareos AGPLv3") &&
+       !bstrcasecmp(info->plugin_license, "Bacula AGPLv3") &&
+       !bstrcasecmp(info->plugin_license, "AGPLv3")) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin license incompatible. Plugin=%s license=%s\n"),
            plugin->file, info->plugin_license);
       Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
@@ -300,8 +294,8 @@ void new_plugins(JCR *jcr)
    Dmsg2(dbglvl, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
    foreach_alist_index(i, plugin, dird_plugin_list) {
       /* Start a new instance of each plugin */
-      bacula_ctx *b_ctx = (bacula_ctx *)malloc(sizeof(bacula_ctx));
-      memset(b_ctx, 0, sizeof(bacula_ctx));
+      b_plugin_ctx *b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
+      memset(b_ctx, 0, sizeof(b_plugin_ctx));
       b_ctx->jcr = jcr;
       plugin_ctx_list[i].bContext = (void *)b_ctx;
       plugin_ctx_list[i].pContext = NULL;
@@ -328,7 +322,7 @@ void free_plugins(JCR *jcr)
    foreach_alist_index(i, plugin, dird_plugin_list) {
       /* Free the plugin instance */
       dirplug_func(plugin)->freePlugin(&plugin_ctx_list[i]);
-      free(plugin_ctx_list[i].bContext);     /* free Bacula private context */
+      free(plugin_ctx_list[i].bContext);     /* free BAREOS private context */
    }
    free(plugin_ctx_list);
    jcr->plugin_ctx_list = NULL;
@@ -340,7 +334,7 @@ void free_plugins(JCR *jcr)
  *
  * ==============================================================
  */
-static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
+static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
 {
    JCR *jcr;
    bRC ret = bRC_OK;
@@ -348,7 +342,7 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
    if (!ctx) {
       return bRC_Error;
    }
-   jcr = ((bacula_ctx *)ctx->bContext)->jcr;
+   jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    if (!jcr) {
       return bRC_Error;
    }
@@ -362,23 +356,23 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
       break;
    case bDirVarJobName:
       *((char **)value) = jcr->Job;
-      Dmsg1(dbglvl, "Bacula: return Job name=%s\n", jcr->Job);
+      Dmsg1(dbglvl, "BAREOS: return Job name=%s\n", jcr->Job);
       break;
    case bDirVarJob:
       *((char **)value) = jcr->res.job->hdr.name;
-      Dmsg1(dbglvl, "Bacula: return bDirVarJob=%s\n", jcr->res.job->hdr.name);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarJob=%s\n", jcr->res.job->hdr.name);
       break;
    case bDirVarLevel:
       *((int *)value) = jcr->getJobLevel();
-      Dmsg1(dbglvl, "Bacula: return bDirVarLevel=%c\n", jcr->getJobLevel());
+      Dmsg1(dbglvl, "BAREOS: return bDirVarLevel=%c\n", jcr->getJobLevel());
       break;
    case bDirVarType:
       *((int *)value) = jcr->getJobType();
-      Dmsg1(dbglvl, "Bacula: return bDirVarType=%c\n", jcr->getJobType());
+      Dmsg1(dbglvl, "BAREOS: return bDirVarType=%c\n", jcr->getJobType());
       break;
    case bDirVarClient:
       *((char **)value) = jcr->res.client->hdr.name;
-      Dmsg1(dbglvl, "Bacula: return bDirVarClient=%s\n", jcr->res.client->hdr.name);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarClient=%s\n", jcr->res.client->hdr.name);
       break;
    case bDirVarNumVols:
       POOL_DBR pr;
@@ -388,11 +382,11 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
          ret=bRC_Error;
       }
       *((int *)value) = pr.NumVols;
-      Dmsg1(dbglvl, "Bacula: return bDirVarNumVols=%d\n", pr.NumVols);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarNumVols=%d\n", pr.NumVols);
       break;
    case bDirVarPool:
       *((char **)value) = jcr->res.pool->hdr.name;
-      Dmsg1(dbglvl, "Bacula: return bDirVarPool=%s\n", jcr->res.pool->hdr.name);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarPool=%s\n", jcr->res.pool->hdr.name);
       break;
    case bDirVarStorage:
       if (jcr->res.wstore) {
@@ -403,7 +397,7 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
          *((char **)value) = NULL;
          ret=bRC_Error;
       }
-      Dmsg1(dbglvl, "Bacula: return bDirVarStorage=%s\n", NPRT(*((char **)value)));
+      Dmsg1(dbglvl, "BAREOS: return bDirVarStorage=%s\n", NPRT(*((char **)value)));
       break;
    case bDirVarWriteStorage:
       if (jcr->res.wstore) {
@@ -412,7 +406,7 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
          *((char **)value) = NULL;
          ret=bRC_Error;
       }
-      Dmsg1(dbglvl, "Bacula: return bDirVarWriteStorage=%s\n", NPRT(*((char **)value)));
+      Dmsg1(dbglvl, "BAREOS: return bDirVarWriteStorage=%s\n", NPRT(*((char **)value)));
       break;
    case bDirVarReadStorage:
       if (jcr->res.rstore) {
@@ -421,11 +415,11 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
          *((char **)value) = NULL;
          ret=bRC_Error;
       }
-      Dmsg1(dbglvl, "Bacula: return bDirVarReadStorage=%s\n", NPRT(*((char **)value)));
+      Dmsg1(dbglvl, "BAREOS: return bDirVarReadStorage=%s\n", NPRT(*((char **)value)));
       break;
    case bDirVarCatalog:
       *((char **)value) = jcr->res.catalog->hdr.name;
-      Dmsg1(dbglvl, "Bacula: return bDirVarCatalog=%s\n", jcr->res.catalog->hdr.name);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarCatalog=%s\n", jcr->res.catalog->hdr.name);
       break;
    case bDirVarMediaType:
       if (jcr->res.wstore) {
@@ -436,46 +430,46 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
          *((char **)value) = NULL;
          ret=bRC_Error;
       }
-      Dmsg1(dbglvl, "Bacula: return bDirVarMediaType=%s\n", NPRT(*((char **)value)));
+      Dmsg1(dbglvl, "BAREOS: return bDirVarMediaType=%s\n", NPRT(*((char **)value)));
       break;
    case bDirVarJobStatus:
       *((int *)value) = jcr->JobStatus;
-      Dmsg1(dbglvl, "Bacula: return bDirVarJobStatus=%c\n", jcr->JobStatus);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarJobStatus=%c\n", jcr->JobStatus);
       break;
    case bDirVarPriority:
       *((int *)value) = jcr->JobPriority;
-      Dmsg1(dbglvl, "Bacula: return bDirVarPriority=%d\n", jcr->JobPriority);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarPriority=%d\n", jcr->JobPriority);
       break;
    case bDirVarVolumeName:
       *((char **)value) = jcr->VolumeName;
-      Dmsg1(dbglvl, "Bacula: return bDirVarVolumeName=%s\n", jcr->VolumeName);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarVolumeName=%s\n", jcr->VolumeName);
       break;
    case bDirVarCatalogRes:
       ret = bRC_Error;
       break;
    case bDirVarJobErrors:
       *((int *)value) = jcr->JobErrors;
-      Dmsg1(dbglvl, "Bacula: return bDirVarErrors=%d\n", jcr->JobErrors);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarErrors=%d\n", jcr->JobErrors);
       break;
    case bDirVarJobFiles:
       *((int *)value) = jcr->JobFiles;
-      Dmsg1(dbglvl, "Bacula: return bDirVarFiles=%d\n", jcr->JobFiles);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarFiles=%d\n", jcr->JobFiles);
       break;
    case bDirVarSDJobFiles:
       *((int *)value) = jcr->SDJobFiles;
-      Dmsg1(dbglvl, "Bacula: return bDirVarSDFiles=%d\n", jcr->SDJobFiles);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarSDFiles=%d\n", jcr->SDJobFiles);
       break;
    case bDirVarSDErrors:
       *((int *)value) = jcr->SDErrors;
-      Dmsg1(dbglvl, "Bacula: return bDirVarSDErrors=%d\n", jcr->SDErrors);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarSDErrors=%d\n", jcr->SDErrors);
       break;
    case bDirVarFDJobStatus:
       *((int *)value) = jcr->FDJobStatus;
-      Dmsg1(dbglvl, "Bacula: return bDirVarFDJobStatus=%c\n", jcr->FDJobStatus);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarFDJobStatus=%c\n", jcr->FDJobStatus);
       break;
    case bDirVarSDJobStatus:
       *((int *)value) = jcr->SDJobStatus;
-      Dmsg1(dbglvl, "Bacula: return bDirVarSDJobStatus=%c\n", jcr->SDJobStatus);
+      Dmsg1(dbglvl, "BAREOS: return bDirVarSDJobStatus=%c\n", jcr->SDJobStatus);
       break;
    default:
       break;
@@ -483,34 +477,34 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
    return ret;
 }
 
-static bRC baculaSetValue(bpContext *ctx, bwDirVariable var, void *value)
+static bRC bareosSetValue(bpContext *ctx, bwDirVariable var, void *value)
 {
    JCR *jcr;
    if (!value || !ctx) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "bacula: baculaGetValue var=%d\n", var);
-   jcr = ((bacula_ctx *)ctx->bContext)->jcr;
+// Dmsg1(dbglvl, "bareos: bareosGetValue var=%d\n", var);
+   jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    if (!jcr) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "Bacula: jcr=%p\n", jcr); 
+// Dmsg1(dbglvl, "BAREOS: jcr=%p\n", jcr);
    /* Nothing implemented yet */
-   Dmsg1(dbglvl, "dir-plugin: baculaSetValue var=%d\n", var);
+   Dmsg1(dbglvl, "dir-plugin: bareosSetValue var=%d\n", var);
    return bRC_OK;
 }
 
-static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...)
+static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
 {
    int i;
    va_list args;
    uint32_t event;
-   bacula_ctx *b_ctx;
+   b_plugin_ctx *b_ctx;
 
    if (!ctx) {
       return bRC_Error;
    }
-   b_ctx = (bacula_ctx *)ctx->bContext;
+   b_ctx = (b_plugin_ctx *)ctx->bContext;
    va_start(args, nr_events);
    for (i = 0; i < nr_events; i++) {
       event = va_arg(args, uint32_t);
@@ -521,7 +515,7 @@ static bRC baculaRegisterEvents(bpContext *ctx, int nr_events, ...)
    return bRC_OK;
 }
 
-static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...)
 {
    va_list arg_ptr;
@@ -529,7 +523,7 @@ static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
    JCR *jcr;
 
    if (ctx) {
-      jcr = ((bacula_ctx *)ctx->bContext)->jcr;
+      jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    } else {
       jcr = NULL;
    }
@@ -541,7 +535,7 @@ static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
    return bRC_OK;
 }
 
-static bRC baculaDebugMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...)
 {
    va_list arg_ptr;

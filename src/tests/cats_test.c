@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2011-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,36 +13,29 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Program to test CATS DB routines
- *
- *  
+ * Program to test CATS DB routines
  */
 #define _BDB_PRIV_INTERFACE_
 
-#include "bacula.h"
+#include "bareos.h"
 #include "cats/cats.h"
 #include "cats/bdb_priv.h"
 #include "cats/sql_glue.h"
- 
+
 /* Local variables */
 static B_DB *db;
 static const char *file = "COPYRIGHT";
 //static DBId_t fnid=0;
-static const char *db_name = "bacula";
-static const char *db_user = "bacula";
+static const char *db_name = "bareos";
+static const char *db_user = "bareos";
 static const char *db_password = "";
 static const char *db_host = NULL;
 static const char *db_address = NULL;
@@ -60,8 +53,8 @@ PROG_COPYRIGHT
 "       -d <nn>           set debug level to <nn>\n"
 "       -dt               print timestamp in debug output\n"
 "       -D <driver name>  specify the driver database name (default NULL)\n"
-"       -n <name>         specify the database name (default bacula)\n"
-"       -u <user>         specify database user name (default bacula)\n"
+"       -n <name>         specify the database name (default bareos)\n"
+"       -u <user>         specify database user name (default bareos)\n"
 "       -P <password      specify database password (default none)\n"
 "       -h <host>         specify database host (default NULL)\n"
 "       -w <working>      specify working directory\n"
@@ -163,7 +156,7 @@ static void cmp_client(CLIENT_DBR &cr, CLIENT_DBR &cr2)
    ok(bstrcmp(cr2.Name, cr.Name),           "  Check Client Name");
    ok(bstrcmp(cr2.Uname, cr.Uname),         "  Check Client Uname");
    ok(cr.AutoPrune == cr2.AutoPrune,        "  Check Client Autoprune");
-   ok(cr.JobRetention == cr2.JobRetention,  "  Check Client JobRetention");   
+   ok(cr.JobRetention == cr2.JobRetention,  "  Check Client JobRetention");
    ok(cr.FileRetention == cr2.FileRetention,"  Check Client FileRetention");
 }
 
@@ -233,13 +226,13 @@ int main (int argc, char *argv[])
    POOLMEM *buf3 = get_pool_memory(PM_FNAME);
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    init_stack_dump();
    pid = getpid();
 
    Pmsg0(0, "Starting cats_test tool" PLINE);
-   
+
    my_name_is(argc, argv, "");
    init_msg(NULL, NULL);
 
@@ -384,7 +377,7 @@ int main (int argc, char *argv[])
    /* Check if the SQL library is thread-safe */
    //db_check_backend_thread_safe();
    ok(check_tables_version(jcr, db), "Check table version");
-   ok(db_sql_query(db, "SELECT VersionId FROM Version", 
+   ok(db_sql_query(db, "SELECT VersionId FROM Version",
                    db_int_handler, &j), "SELECT VersionId");
 
    ok(UPDATE_DB(jcr, db, (char*)"UPDATE Version SET VersionId = 1"),
@@ -397,19 +390,19 @@ int main (int argc, char *argv[])
       ok(db_check_max_connections(jcr, db, 1), "Test min Max Connexion");
       nok(db_check_max_connections(jcr, db, 10000), "Test max Max Connexion");
    }
-   
+
    ok(db_open_batch_connexion(jcr, db), "Opening batch connection");
    db_close_database(jcr, jcr->db_batch);
    jcr->db_batch = NULL;
 
    /* ---------------------------------------------------------------- */
-   
+
    uint32_t storageid=0;
-   ok(db_sql_query(db, "SELECT MIN(StorageId) FROM Storage", 
+   ok(db_sql_query(db, "SELECT MIN(StorageId) FROM Storage",
                    db_int_handler, &storageid), "Get StorageId");
    ok(storageid > 0, "Check StorageId");
    if (!storageid) {
-      Pmsg0(0, "Please, run REGRESS_DEBUG=1 tests/bacula-backup-test before this test");
+      Pmsg0(0, "Please, run REGRESS_DEBUG=1 tests/bareos-backup-test before this test");
       exit (1);
    }
 
@@ -417,7 +410,7 @@ int main (int argc, char *argv[])
    Pmsg0(0, PLINE "Doing Basic SQL tests" PLINE);
    ok(db_sql_query(db, "SELECT 1,2,3,4,5", count_col, &j), "Count 5 rows");
    ok(j == 5, "Check number of columns");
-   ok(db_sql_query(db, "SELECT 1,2,3,4,5,'a','b','c','d','e'", 
+   ok(db_sql_query(db, "SELECT 1,2,3,4,5,'a','b','c','d','e'",
                    count_col, &j), "Count 10 rows");
    ok(j == 10, "Check number of columns");
 
@@ -425,7 +418,7 @@ int main (int argc, char *argv[])
    ok(db_sql_query(db, "SELECT 2", db_int_handler, &j), "Good SELECT query");
    ok(db_sql_query(db, "SELECT 1 FROM Media WHERE VolumeName='missing'",
                    db_int_handler, &j), "Good empty SELECT query");
-   
+
    db_int64_ctx i64;
    i64.value = 0; i64.count = 0;
    ok(db_sql_query(db, "SELECT 1",db_int64_handler, &i64),"db_int64_handler");
@@ -464,10 +457,10 @@ int main (int argc, char *argv[])
    Mmsg(buf, "DELETE FROM %s", temp);
    ok(DELETE_DB(jcr, db, buf), "DELETE query");
    nok(DELETE_DB(jcr, db, buf), "Empty DELETE query"); /* TODO bug ? */
-      
+
    Mmsg(buf, "DELETE FROM aaa%s", temp);
    ok(DELETE_DB(jcr, db, buf), "Bad DELETE query"); /* TODO bug ? */
-   
+
    Mmsg(buf, "DROP TABLE %s", temp);
    ok(QUERY_DB(jcr, db, buf), "DROP query");
    nok(QUERY_DB(jcr, db, buf), "Empty DROP query");
@@ -481,7 +474,7 @@ int main (int argc, char *argv[])
    ok(db_sql_query(db, buf, NULL, NULL), "Inserting quoted string");
 
    /* ---------------------------------------------------------------- */
-   Pmsg0(0, PLINE "Doing Job tests" PLINE);   
+   Pmsg0(0, PLINE "Doing Job tests" PLINE);
 
    JOB_DBR jr, jr2;
    memset(&jr, 0, sizeof(jr));
@@ -489,7 +482,7 @@ int main (int argc, char *argv[])
    jr.JobId = 1;
    ok(db_get_job_record(jcr, db, &jr), "Get Job record for JobId=1");
    ok(jr.JobFiles > 10, "Check number of files");
-   
+
    jr.JobId = (JobId_t)pid;
    Mmsg(buf, "%s-%lld", jr.Job, pid);
    strcpy(jr.Job, buf);
@@ -564,7 +557,7 @@ int main (int argc, char *argv[])
 
    ok(db_get_client_record(jcr, db, &cr2), "Search client by ClientId");
    cmp_client(cr, cr2);
-   
+
    Pmsg0(0, "Search client by Name\n");
    memset(&cr2, 0, sizeof(cr2));
    strcpy(cr2.Name, cr.Name);
@@ -601,7 +594,7 @@ int main (int argc, char *argv[])
    POOL_DBR pr, pr2;
    memset(&pr, 0, sizeof(pr));
    memset(&pr2, 0, sizeof(pr2));
-   
+
    bsnprintf(pr.Name, sizeof(pr.Name), "pool-%lld", pid);
    pr.MaxVols = 10;
    pr.UseOnce = 0;
@@ -620,10 +613,10 @@ int main (int argc, char *argv[])
    pr.RecyclePoolId = 0;
    pr.ScratchPoolId = 0;
    pr.ActionOnPurge = 1;
-   
+
    ok(db_create_pool_record(jcr, db, &pr), "db_create_pool_record()");
    ok(pr.PoolId > 0, "Check PoolId");
-   
+
    pr2.PoolId = pr.PoolId;
    pr.PoolId = 0;
 
@@ -659,11 +652,11 @@ int main (int argc, char *argv[])
 
    /* ---------------------------------------------------------------- */
    Pmsg0(0, PLINE "Doing Media tests" PLINE);
-   
+
    MEDIA_DBR mr, mr2;
    memset(&mr, 0, sizeof(mr));
    memset(&mr2, 0, sizeof(mr2));
-   
+
    bsnprintf(mr.VolumeName, sizeof(mr.VolumeName), "media-%lld", pid);
    bsnprintf(mr.MediaType, sizeof(mr.MediaType), "type-%lld", pid);
 
@@ -698,7 +691,7 @@ int main (int argc, char *argv[])
 
    /* ---------------------------------------------------------------- */
    Pmsg0(0, PLINE "Doing ... tests" PLINE);
-   
+
    db_close_database(jcr, db);
    report();
    free_pool_memory(buf);

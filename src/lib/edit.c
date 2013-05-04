@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *   edit.c  edit string to ascii, and ascii to internal
+ * edit.c  edit string to ascii, and ascii to internal
  *
- *    Kern Sibbald, December MMII
- *
+ * Kern Sibbald, December MMII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include <math.h>
 
 /* We assume ASCII input and don't worry about overflow */
@@ -262,9 +256,7 @@ bool duration_to_utime(char *str, utime_t *value)
    char mod_str[20];
    char num_str[50];
    /*
-    * The "n" = mins and months appears before minutes so that m maps
-    *   to months. These "kludges" make it compatible with pre 1.31
-    *   Baculas.
+    * The "n" = mins and months appears before minutes so that m maps to months.
     */
    static const char *mod[] = {"n", "seconds", "months", "minutes", "mins",
                   "hours", "days", "weeks",   "quarters",   "years", NULL};
@@ -391,7 +383,7 @@ bool size_to_uint64(char *str, uint64_t *value)
 bool speed_to_uint64(char *str, uint64_t *value)
 {
    /* first item * not used */
-   static const char *mod[]  = {"*", "k/s", "kb/s", "m/s", "mb/s",  NULL}; 
+   static const char *mod[]  = {"*", "k/s", "kb/s", "m/s", "mb/s",  NULL};
    return strunit_to_uint64(str, value, mod);
 }
 
@@ -427,7 +419,7 @@ bool is_a_number(const char *n)
  */
 bool is_a_number_list(const char *n)
 {
-   bool previous_digit = false; 
+   bool previous_digit = false;
    bool digit_seen = false;
    while (*n) {
       if (B_ISDIGIT(*n)) {
@@ -440,7 +432,7 @@ bool is_a_number_list(const char *n)
       }
       n++;
    }
-   return digit_seen && *n==0; 
+   return digit_seen && *n==0;
 }
 
 /*
@@ -457,7 +449,7 @@ bool is_an_integer(const char *n)
 }
 
 /*
- * Check if Bacula Resoure Name is valid
+ * Check if BAREOS Resoure Name is valid
  */
 /*
  * Check if the Volume name has legal characters

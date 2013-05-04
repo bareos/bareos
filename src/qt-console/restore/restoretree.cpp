@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +11,19 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
- 
+
 /*
+ * Restore Class
  *
- *  Restore Class 
- *
- *   Kern Sibbald, February MMVII
- *
- */ 
+ * Kern Sibbald, February MMVII
+ */
 
 #include "bat.h"
 #include "restoretree.h"
@@ -171,7 +162,7 @@ void restoreTree::populateDirectoryTree()
    updateRefresh();
    int taskcount = 3, ontask = 1;
    if (m_dropdownChanged) taskcount += 1;
-   
+
    /* Set progress bars and repaint */
    prBar1->setVisible(true);
    prBar1->setRange(0,taskcount);
@@ -292,7 +283,7 @@ void restoreTree::populateDirectoryTree()
 /*
  *  Function to set m_checkedJobs from the jobs that are checked in the table
  *  of jobs
- */     
+ */
 void restoreTree::setJobsCheckedList()
 {
    m_JobsCheckedList = "";
@@ -336,7 +327,7 @@ void restoreTree::parseDirectory(const QString &dir_in)
 
      QTreeWidgetItem *item       = NULL;
      QTreeWidgetItem *parentItem = m_dirPaths.value(parent);
-     
+
      if (parentItem==0) {
        // recurse to build parent...
        parseDirectory(parent);
@@ -421,7 +412,7 @@ void restoreTree::directoryCurrentItemChanged(QTreeWidgetItem *item, QTreeWidget
    fileTable->setColumnCount(headerlist.size());
    fileTable->setHorizontalHeaderLabels(headerlist);
    fileTable->setRowCount(0);
-   
+
    m_fileCheckStateList.clear();
    disconnect(fileTable, SIGNAL(itemChanged(QTableWidgetItem *)),
            this, SLOT(fileTableItemChanged(QTableWidgetItem *)));
@@ -442,12 +433,12 @@ void restoreTree::directoryCurrentItemChanged(QTreeWidgetItem *item, QTreeWidget
 
       QStringList results;
       if (m_console->sql_cmd(cmd, results)) {
-      
+
          QTableWidgetItem* tableItem;
          QString field;
          QStringList fieldlist;
          fileTable->setRowCount(results.size());
-   
+
          int row = 0;
          /* Iterate through the record returned from the query */
          foreach (QString resultline, results) {
@@ -458,7 +449,7 @@ void restoreTree::directoryCurrentItemChanged(QTreeWidgetItem *item, QTreeWidget
                field = field.trimmed();  /* strip leading & trailing spaces */
                tableItem = new QTableWidgetItem(field, 1);
                /* Possible flags are Qt::ItemFlags flag = Qt::ItemIsSelectable | Qt::ItemIsEditablex
-                *  | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsUserCheckable 
+                *  | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsUserCheckable
                 *  | Qt::ItemIsEnabled | Qt::ItemIsTristate; */
                tableItem->setForeground(blackBrush);
                /* Just in case a column ever gets added */
@@ -520,16 +511,16 @@ void restoreTree::fileCurrentItemChanged(QTableWidgetItem *currentFileTableItem,
 
    QBrush blackBrush(Qt::black);
 
-   QStringList headerlist = (QStringList() 
+   QStringList headerlist = (QStringList()
       << tr("Job Id") << tr("Type") << tr("End Time") << tr("Hash") << tr("FileId") << tr("Job Type") << tr("First Volume"));
    versionTable->clear();
    versionTable->setColumnCount(headerlist.size());
    versionTable->setHorizontalHeaderLabels(headerlist);
    versionTable->setRowCount(0);
-   
+
    int pathid = m_directoryPathIdHash.value(directory, -1);
    if ((pathid != -1) && (fileNameId != -1)) {
-      QString cmd = 
+      QString cmd =
          "SELECT Job.JobId AS JobId, Job.Level AS Type,"
            " Job.EndTime AS EndTime, File.MD5 AS MD5,"
            " File.FileId AS FileId, Job.Type AS JobType,"
@@ -543,16 +534,16 @@ void restoreTree::fileCurrentItemChanged(QTableWidgetItem *currentFileTableItem,
          " AND Filename.FilenameId=" + QString("%1").arg(fileNameId) +
          " AND Job.Jobid IN (" + m_checkedJobs + ")"
          " ORDER BY Job.EndTime DESC";
-   
+
       if (mainWin->m_sqlDebug) Pmsg1(000, "Query cmd : %s\n", cmd.toUtf8().data());
       QStringList results;
       if (m_console->sql_cmd(cmd, results)) {
-      
+
          QTableWidgetItem* tableItem;
          QString field;
          QStringList fieldlist;
          versionTable->setRowCount(results.size());
-   
+
          int row = 0;
          /* Iterate through the record returned from the query */
          foreach (QString resultline, results) {
@@ -650,7 +641,7 @@ void restoreTree::populateJobTable()
    QBrush blackBrush(Qt::black);
 
    if (mainWin->m_rtPopDirDebug) Pmsg0(000, "Repopulating the Job Table\n");
-   QStringList headerlist = (QStringList() 
+   QStringList headerlist = (QStringList()
       << tr("Job Id") << tr("End Time") << tr("Level") << tr("Type")
       << tr("Name") << tr("Purged") << tr("TU") << tr("TD"));
    m_toggleUpIndex = headerlist.indexOf(tr("TU"));
@@ -696,7 +687,7 @@ void restoreTree::populateJobTable()
 
    QStringList results;
    if (m_console->sql_cmd(jobQuery, results)) {
-   
+
       QTableWidgetItem* tableItem;
       QString field;
       QStringList fieldlist;
@@ -726,7 +717,7 @@ void restoreTree::populateJobTable()
                   if (mainWin->m_sqlDebug) Pmsg1(000, "Column=%d\n", column);
                   if (column == 0) {
                      bool ok;
-                     int purged = fieldlist[purgedIndex].toInt(&ok, 10); 
+                     int purged = fieldlist[purgedIndex].toInt(&ok, 10);
                      if (!((ok) && (purged == 1))) {
                         Qt::ItemFlags flag = Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsTristate;
                         tableItem->setFlags(flag);
@@ -1313,7 +1304,7 @@ void restoreTree::directoryIconStateRemove()
 
       QStringList paths;
       fullPathtoSubPaths(paths, keyPath);
-      /* if the state of the item in m_fileExceptionHash is checked 
+      /* if the state of the item in m_fileExceptionHash is checked
        * each of the subpaths should be "Checked Green" */
       if (state == Qt::Checked) {
 
@@ -1473,7 +1464,7 @@ void restoreTree::restoreButtonPushed()
          if (mainWin->m_rtRestore1Debug)
             Pmsg1(000, "Directory Checked=\"%s\"\n", directory.toUtf8().data());
          /* With a checked directory, query for the files in the directory */
-   
+
          QString cmd =
             "SELECT Filename.Name AS Filename, t1.JobId AS JobId, File.FileIndex AS FileIndex"
             " FROM"
@@ -1490,12 +1481,12 @@ void restoreTree::restoreButtonPushed()
               " AND File.FilenameId=t1.FilenameId"
               " AND Job.Jobid=t1.JobId"
             " ORDER BY Filename";
-   
+
          if (mainWin->m_sqlDebug) Pmsg1(000, "Query cmd : %s\n", cmd.toUtf8().data());
          QStringList results;
          if (m_console->sql_cmd(cmd, results)) {
             QStringList fieldlist;
-      
+
             int row = 0;
             /* Iterate through the record returned from the query */
             foreach (QString resultline, results) {
@@ -1519,7 +1510,7 @@ void restoreTree::restoreButtonPushed()
                   column++;
                }
                fileExcpState = m_fileExceptionHash.value(fullPath, (Qt::CheckState)3);
-               
+
                int excpVersion = m_versionExceptionHash.value(fullPath, 0);
                if (fileExcpState != Qt::Unchecked) {
                   QString debugtext;
@@ -1601,7 +1592,7 @@ void restoreTree::restoreButtonPushed()
       /* did not succeed in getting an iterator to work as expected on versionFilesMulti so use doneKeys */
       if (doneKeys.value(fversion, 0) == 0) {
          if (tempTable == "") {
-            QSettings settings("www.bacula.org", "bat");
+            QSettings settings("www.bareos.org", "bat");
             settings.beginGroup("Restore");
             int counter = settings.value("Counter", 1).toInt();
             settings.setValue("Counter", counter+1);
@@ -1686,7 +1677,7 @@ int restoreTree::mostRecentVersionfromFullPath(QString &fullPath)
             " AND Filename.Name='" + fileName + "'"
             " AND File.FilenameId!=" + QString("%1").arg(m_nullFileNameId) +
             " GROUP BY Filename.Name";
-    
+
          if (mainWin->m_sqlDebug) Pmsg1(000, "Query cmd : %s\n", cmd.toUtf8().data());
          QStringList results;
          if (m_console->sql_cmd(cmd, results)) {

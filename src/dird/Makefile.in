@@ -1,6 +1,6 @@
 #
-#  Bacula Director Makefile
-#  
+#  Bareos Director Makefile
+#
 @MCOMMON@
 
 srcdir = @srcdir@
@@ -43,6 +43,8 @@ DBCHKOBJS = $(DBCHKSRCS:.c=.o)
 TSTFNDSRCS = testfind.c dird_conf.c ua_acl.c run_conf.c inc_conf.c
 TSTFNDOBJS = $(TSTFNDSRCS:.c=.o)
 
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
+
 .SUFFIXES:	.c .o
 .PHONY:
 .DONTCARE:
@@ -50,52 +52,52 @@ TSTFNDOBJS = $(TSTFNDSRCS:.c=.o)
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
-all: Makefile bacula-dir dbcheck @STATIC_DIR@
+all: Makefile bareos-dir bareos-dbcheck @STATIC_DIR@
 	@echo "==== Make of dird is good ===="
 	@echo " "
 
-bacula-dir: Makefile $(SVROBJS) \
-	    ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
-	    ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-	    ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
-	    ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) \
-	    ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) \
+bareos-dir: Makefile $(SVROBJS) \
+	    ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+	    ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+	    ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
+	    ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE) \
+	    ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
 	    @NDMP_DEPS@
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
-	      $(NDMP_LIBS) -lbacfind -lbacsql -lbaccats -lbaccfg -lbac -lm $(DLIB) \
+	      $(NDMP_LIBS) -lbareosfind -lbareossql -lbareoscats -lbareoscfg -lbareos -lm $(DLIB) \
 	      $(DB_LIBS) $(LIBS) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
 
-dbcheck: Makefile $(DBCHKOBJS) \
-	 ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
-	 ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) \
-	 ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-	 ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
-	 ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE)
+bareos-dbcheck: Makefile $(DBCHKOBJS) \
+	 ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+	 ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	 ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+	 ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
+	 ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -L../cats -o $@ $(DBCHKOBJS) \
-	      -lbaccats -lbacsql -lbaccfg -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 testfind: Makefile $(TSTFNDOBJS) \
-	 ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
-	 ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) \
-	 ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-	 ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
-	 ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE)
+	 ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+	 ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	 ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+	 ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
+	 ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -L../cats -o $@ $(TSTFNDOBJS) \
-	      -lbaccats -lbacsql -lbaccfg -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-static-bacula-dir:  Makefile $(SVROBJS) \
-	            ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
-	            ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-	            ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
-	            ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) \
-	            ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) \
+static-bareos-dir:  Makefile $(SVROBJS) \
+	            ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+	            ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+	            ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
+	            ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE) \
+	            ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
 	            @NDMP_DEPS@
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
-	      $(NDMP_LIBS) -lbacfind -lbacsql -lbaccats -lbaccfg -lbac -lm $(DLIB) $(DB_LIBS) $(LIBS) \
+	      $(NDMP_LIBS) -lbareosfind -lbareossql -lbareoscats -lbareoscfg -lbareos -lm $(DLIB) $(DB_LIBS) $(LIBS) \
 	      $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
 	strip $@
 
@@ -107,11 +109,11 @@ libtool-clean:
 	@$(RMF) -r .libs _libs
 
 clean:	libtool-clean
-	@$(RMF) dird bacula-dir core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
-	@$(RMF) static-bacula-dir
+	@$(RMF) dird bareos-dir core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+	@$(RMF) static-bareos-dir
 
 realclean: clean
-	@$(RMF) tags bacula-dir.conf
+	@$(RMF) tags bareos-dir.conf
 
 distclean: realclean
 	if test $(srcdir) = .; then $(MAKE) realclean; fi
@@ -122,9 +124,9 @@ devclean: realclean
 	(cd $(srcdir); $(RMF) Makefile)
 
 install: all
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-dir $(DESTDIR)$(sbindir)/bacula-dir
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) dbcheck $(DESTDIR)$(sbindir)/dbcheck
-	@srcconf=bacula-dir.conf; \
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-dir $(DESTDIR)$(sbindir)/bareos-dir
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-dbcheck $(DESTDIR)$(sbindir)/bareos-dbcheck
+	@srcconf=bareos-dir.conf; \
 	   if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
 	      destconf=$$srcconf.new; \
 	      echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
@@ -139,17 +141,11 @@ install: all
 	@if  test -f ${DESTDIR}${scriptdir}/query.sql; then \
 	   echo "  ==> Saving existing query.sql to query.sql.old"; \
 	   $(MV) -f ${DESTDIR}${scriptdir}/query.sql ${DESTDIR}${scriptdir}/query.sql.old; \
-	fi 
-	${INSTALL_DATA} query.sql ${DESTDIR}${scriptdir}/query.sql
-	@if test -f static-bacula-dir; then \
-	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bacula-dir $(DESTDIR)$(sbindir)/static-bacula-dir; \
 	fi
-
-uninstall:
-	(cd $(DESTDIR)$(sbindir); $(RMF) bacula-dir)
-	(cd $(DESTDIR)$(sbindir); $(RMF) dbcheck)
-	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-dir.conf bacula-dir.conf.new)
-	(cd $(DESTDIR)$(scriptdir); $(RMF) query.sql)
+	${INSTALL_DATA} query.sql ${DESTDIR}${scriptdir}/query.sql
+	@if test -f static-bareos-dir; then \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bareos-dir $(DESTDIR)$(sbindir)/static-bareos-dir; \
+	fi
 
 # Semi-automatic generation of dependencies:
 # Use gcc -MM because X11 `makedepend' doesn't work on all systems
@@ -159,8 +155,8 @@ uninstall:
 depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
-	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) $(XINC) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@$(ECHOCMD) "# DO NOT DELETE: nice dependency list follows" >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(INCLUDES) *.c >> Makefile
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \

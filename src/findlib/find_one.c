@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,30 +13,23 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
-
-   This file was derived from GNU TAR source code. Except for a few key
-   ideas, it has been entirely rewritten for Bacula.
-
-      Kern Sibbald, MM
-
-   Thanks to the TAR programmers.
-
+ * This file was derived from GNU TAR source code. Except for a few key
+ * ideas, it has been entirely rewritten for Bareos.
+ *
+ * Kern Sibbald, MM
+ *
+ * Thanks to the TAR programmers.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "find.h"
 #ifdef HAVE_DARWIN_OS
 #include <sys/param.h>
@@ -58,7 +51,7 @@ struct f_link {
     struct f_link *next;
     dev_t dev;                        /* device */
     ino_t ino;                        /* inode with device is unique */
-    uint32_t FileIndex;               /* Bacula FileIndex of this file */
+    uint32_t FileIndex;               /* Bareos FileIndex of this file */
     int32_t digest_stream;            /* Digest type if needed */
     uint32_t digest_len;              /* Digest len if needed */
     char *digest;                     /* Checksum of the file if needed */

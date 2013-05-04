@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,17 +13,12 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Configuration parser for Director Run Configuration
@@ -32,7 +27,7 @@
  * Kern Sibbald, May MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 #if defined(_MSC_VER)
@@ -302,7 +297,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                }
                break;
             case 'm':                 /* Max run sched time */
-               token = lex_get_token(lc, T_QUOTED_STRING); 
+               token = lex_get_token(lc, T_QUOTED_STRING);
                if (!duration_to_utime(lc->str, &utime)) {
                   scan_err1(lc, _("expected a time period, got: %s"), lc->str);
                   return;
@@ -354,7 +349,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
    set_defaults();
 
    for (; token != T_EOL; (token = lex_get_token(lc, T_ALL))) {
-      int len; 
+      int len;
       bool pm = false;
       bool am = false;
       switch (token) {
@@ -478,11 +473,11 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
          } else if (len != 2) {
             scan_err0(lc, _("Bad time specification."));
             /* NOT REACHED */
-         }   
-         /* 
+         }
+         /*
           * Note, according to NIST, 12am and 12pm are ambiguous and
           *  can be defined to anything.  However, 12:01am is the same
-          *  as 00:01 and 12:01pm is the same as 12:01, so we define 
+          *  as 00:01 and 12:01pm is the same as 12:01, so we define
           *  12am as 00:00 and 12pm as 12:00.
           */
          if (pm) {
@@ -511,6 +506,10 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
          break;
       case s_last:
          lrun.last_set = true;
+         if (!have_wom) {
+            clear_bits(0, 4, lrun.wom);
+            have_wom = true;
+         }
          break;
       case s_modulo:
          p = strchr(lc->str, '/');
@@ -524,7 +523,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
              * Check for day modulo specification.
              */
             code = atoi(lc->str) - 1;
-            code2 = atoi(p) - 1;
+            code2 = atoi(p);
             if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
                scan_err0(lc, _("Bad day specification in modulo."));
             }

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,32 +13,24 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- User Agent Prompt and Selection code
  *
- *   Bacula Director -- User Agent Prompt and Selection code
- *
- *     Kern Sibbald, October MMI
- *
+ * Kern Sibbald, October MMI
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 /* Imported variables */
 extern struct s_jl joblevels[];
-
 
 /*
  * Confirm a retention period
@@ -243,7 +235,7 @@ CATRES *get_catalog_resource(UAContext *ua)
 
 
 /*
- * Select a job to enable or disable   
+ * Select a job to enable or disable
  */
 JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable)
 {
@@ -292,7 +284,7 @@ JOBRES *select_job_resource(UAContext *ua)
    return job;
 }
 
-/* 
+/*
  * Select a Restore Job resource from argument or prompt
  */
 JOBRES *get_restore_job(UAContext *ua)
@@ -798,7 +790,7 @@ void add_prompt(UAContext *ua, const char *prompt)
  *               is copied to prompt if not NULL
  *             prompt is set to the chosen prompt item string
  */
-int do_prompt(UAContext *ua, const char *automsg, const char *msg, 
+int do_prompt(UAContext *ua, const char *automsg, const char *msg,
               char *prompt, int max_prompt)
 {
    int i, item;
@@ -1202,7 +1194,7 @@ JCR *select_running_job(UAContext *ua, const char *reason)
       if (bstrcmp(reason, "cancel")) {
          if (ua->api && njobs == 1) {
             char nbuf[1000];
-            bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf,  
+            bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf,
                       _("Confirm cancel?"));
             if (!get_yesno(ua, nbuf) || ua->pint32_val == 0) {
                return NULL;
@@ -1319,12 +1311,16 @@ bool get_user_slot_list(UAContext *ua, char *slot_list, const char *argument, in
          set_bit(i - 1, slot_list);
       }
    }
-   Dmsg0(100, "Slots turned on:\n");
-   for (i = 1; i <= num_slots; i++) {
-      if (bit_is_set(i - 1, slot_list)) {
-         Dmsg1(100, "%d\n", i);
+
+   if (debug_level >= 100) {
+      Dmsg0(100, "Slots turned on:\n");
+      for (i = 1; i <= num_slots; i++) {
+         if (bit_is_set(i - 1, slot_list)) {
+            Dmsg1(100, "%d\n", i);
+         }
       }
    }
+
    return true;
 
 bail_out:

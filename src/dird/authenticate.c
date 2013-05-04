@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,32 +13,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- authorize.c -- handles authorization of Storage and File daemons.
  *
- *   Bacula Director -- authorize.c -- handles authorization of
- *     Storage and File daemons.
+ * Kern Sibbald, May MMI
  *
- *     Kern Sibbald, May MMI
- *
- *    This routine runs as a thread and must be thread reentrant.
- *
- *   Version $Id$
- *
+ * This routine runs as a thread and must be thread reentrant.
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
 
 static const int dbglvl = 50;
@@ -189,7 +179,7 @@ int authenticate_file_daemon(JCR *jcr)
    btimer_t *tid = start_bsock_timer(fd, AUTH_TIMEOUT);
    if (!fd->fsend(hello, dirname)) {
       stop_bsock_timer(tid);
-      Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"), 
+      Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
            fd->host(), fd->port(), fd->bstrerror());
       return 0;
    }
@@ -297,7 +287,7 @@ int authenticate_user_agent(UAContext *uac)
    bool auth_success = false;
    TLS_CONTEXT *tls_ctx = NULL;
    alist *verify_list = NULL;
- 
+
    if (ua->msglen < 16 || ua->msglen >= MAX_NAME_LENGTH + 15) {
       Emsg4(M_ERROR, 0, _("UA Hello from %s:%s:%d is invalid. Len=%d\n"), ua->who(),
             ua->host(), ua->port(), ua->msglen);

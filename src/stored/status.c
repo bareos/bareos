@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  This file handles the status command
+ * This file handles the status command
  *
- *     Kern Sibbald, May MMIII
- *
- *
+ * Kern Sibbald, May MMIII
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 #include "lib/status.h"
 
@@ -178,9 +171,9 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
                               "    Volume:      %s\n"
                               "    Pool:        %s\n"
                               "    Media type:  %s\n"),
-               dev->print_name(), 
+               dev->print_name(),
                dev->blocked() ? _("waiting for") : _("mounted with"),
-               dev->VolHdr.VolumeName, 
+               dev->VolHdr.VolumeName,
                dev->pool_name[0] ? dev->pool_name : "*unknown*",
                dev->device->media_type);
             sendit(msg, len, sp);
@@ -247,7 +240,7 @@ static void list_status_header(STATUS_PKT *sp)
    POOL_MEM msg(PM_MESSAGE);
    int len;
 
-   len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s\n"), 
+   len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s\n"),
               my_name, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
    sendit(msg, len, sp);
 
@@ -265,7 +258,7 @@ static void list_status_header(STATUS_PKT *sp)
          edit_uint64_with_commas(sm_max_buffers, b5));
    sendit(msg, len, sp);
    len = Mmsg(msg, " Sizes: boffset_t=%d size_t=%d int32_t=%d int64_t=%d "
-              "mode=%d,%d\n", 
+              "mode=%d,%d\n",
               (int)sizeof(boffset_t), (int)sizeof(size_t), (int)sizeof(int32_t),
               (int)sizeof(int64_t), (int)DEVELOPER_MODE, (int)BEEF);
    sendit(msg, len, sp);
@@ -404,17 +397,17 @@ static void send_device_status(DEVICE *dev, STATUS_PKT *sp)
    sendit(msg, len, sp);
 
    len = Mmsg(msg, "  %sOPENED %sTAPE %sLABEL %sMALLOC %sAPPEND %sREAD %sEOT %sWEOT %sEOF %sNEXTVOL %sSHORT %sMOUNTED\n",
-      dev->is_open() ? "" : "!", 
-      dev->is_tape() ? "" : "!", 
-      dev->is_labeled() ? "" : "!", 
-      dev->state & ST_MALLOC ? "" : "!", 
-      dev->can_append() ? "" : "!", 
-      dev->can_read() ? "" : "!", 
-      dev->at_eot() ? "" : "!", 
-      dev->state & ST_WEOT ? "" : "!", 
-      dev->at_eof() ? "" : "!", 
-      dev->state & ST_NEXTVOL ? "" : "!", 
-      dev->state & ST_SHORT ? "" : "!", 
+      dev->is_open() ? "" : "!",
+      dev->is_tape() ? "" : "!",
+      dev->is_labeled() ? "" : "!",
+      dev->state & ST_MALLOC ? "" : "!",
+      dev->can_append() ? "" : "!",
+      dev->can_read() ? "" : "!",
+      dev->at_eot() ? "" : "!",
+      dev->state & ST_WEOT ? "" : "!",
+      dev->at_eof() ? "" : "!",
+      dev->state & ST_NEXTVOL ? "" : "!",
+      dev->state & ST_SHORT ? "" : "!",
       dev->state & ST_MOUNTED ? "" : "!");
    sendit(msg, len, sp);
 
@@ -492,7 +485,7 @@ static void list_running_jobs(STATUS_PKT *sp)
                    jcr->JobId,
                    rdcr->VolumeName,
                    rdcr->pool_name,
-                   rdcr->dev?rdcr->dev->print_name(): 
+                   rdcr->dev?rdcr->dev->print_name():
                             rdcr->device->device_name);
             sendit(msg, len, sp);
          }
@@ -505,7 +498,7 @@ static void list_running_jobs(STATUS_PKT *sp)
                    jcr->JobId,
                    dcr->VolumeName,
                    dcr->pool_name,
-                   dcr->dev?dcr->dev->print_name(): 
+                   dcr->dev?dcr->dev->print_name():
                             dcr->device->device_name);
             sendit(msg, len, sp);
             len= Mmsg(msg, _("    spooling=%d despooling=%d despool_wait=%d\n"),
@@ -558,7 +551,7 @@ static void list_running_jobs(STATUS_PKT *sp)
 }
 
 static void list_jobs_waiting_on_reservation(STATUS_PKT *sp)
-{ 
+{
    JCR *jcr;
    POOL_MEM msg(PM_MESSAGE);
    int len;
@@ -659,7 +652,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
             edit_uint64_with_suffix(je->JobBytes, b2),
             termstat,
             dt, JobName);
-      }  
+      }
       sendit(buf, strlen(buf), sp);
    }
    unlock_last_jobs_list();
@@ -837,7 +830,7 @@ int bacstat = 0;
 char *bac_status(char *buf, int buf_len)
 {
    JCR *njcr;
-   const char *termstat = _("Bacula Storage: Idle");
+   const char *termstat = _("Bareos Storage: Idle");
    struct s_last_job *job;
    int status = 0;                    /* Idle */
 
@@ -848,7 +841,7 @@ char *bac_status(char *buf, int buf_len)
    foreach_jcr(njcr) {
       if (njcr->JobId != 0) {
          status = JS_Running;
-         termstat = _("Bacula Storage: Running");
+         termstat = _("Bareos Storage: Running");
          break;
       }
    }
@@ -862,15 +855,15 @@ char *bac_status(char *buf, int buf_len)
       status = job->JobStatus;
       switch (job->JobStatus) {
       case JS_Canceled:
-         termstat = _("Bacula Storage: Last Job Canceled");
+         termstat = _("Bareos Storage: Last Job Canceled");
          break;
       case JS_ErrorTerminated:
       case JS_FatalError:
-         termstat = _("Bacula Storage: Last Job Failed");
+         termstat = _("Bareos Storage: Last Job Failed");
          break;
       default:
          if (job->Errors) {
-            termstat = _("Bacula Storage: Last Job had Warnings");
+            termstat = _("Bareos Storage: Last Job had Warnings");
          }
          break;
       }

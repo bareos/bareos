@@ -1,0 +1,43 @@
+#
+# Default  Bareos File Daemon Configuration file
+#
+#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
+#
+# There is not much to change here except perhaps the
+# File daemon Name to
+#
+
+#
+# List Directors who are permitted to contact this File daemon
+#
+Director {
+  Name = @basename@-dir
+  Password = "@fd_password@"
+}
+
+#
+# Restricted Director, used by tray-monitor to get the
+#   status of the file daemon
+#
+Director {
+  Name = @basename@-mon
+  Password = "@mon_fd_password@"
+  Monitor = yes
+}
+
+#
+# "Global" File daemon configuration specifications
+#
+FileDaemon {                          # this is me
+  Name = @basename@-fd
+  Maximum Concurrent Jobs = 20
+
+  # remove comment in next line to load plugins from specified directory
+  # Plugin Directory = @plugindir@
+}
+
+# Send all messages except skipped files back to Director
+Messages {
+  Name = Standard
+  director = @basename@-dir = all, !skipped, !restored
+}

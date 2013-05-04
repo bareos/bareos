@@ -1,30 +1,24 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation, which is 
+   License as published by the Free Software Foundation, which is
    listed in the file LICENSE.
 
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
+   BAREOS® is a registered trademark of Bareos GmbH & Co. KG
 */
 
 #ifndef TRAYUI_H
@@ -83,7 +77,7 @@ public:
 
       qDebug() << "start getting elements";
       get_list(item, ".jobs type=B", res.job_list);
-      
+
       if (res.job_list.length() == 0) {
          QMessageBox msgBox;
          msgBox.setText("This restricted console doesn't have access to Backup jobs");
@@ -205,7 +199,7 @@ public:
        return hash.value(QString(title));
     }
 
-    void clearText(char *title) 
+    void clearText(char *title)
     {
        QPlainTextEdit *w = getTextEdit(title);
        if (!w) {
@@ -214,7 +208,7 @@ public:
        w->clear();
     }
 
-    void appendText(char *title, char *line) 
+    void appendText(char *title, char *line)
     {
        QPlainTextEdit *w = getTextEdit(title);
        if (!w) {
@@ -257,7 +251,7 @@ public:
         director = NULL;
         if (TrayMonitor->objectName().isEmpty())
             TrayMonitor->setObjectName(QString::fromUtf8("TrayMonitor"));
-        TrayMonitor->setWindowIcon(QIcon(":/images/cartridge.png")); 
+        TrayMonitor->setWindowIcon(QIcon(":/images/cartridge.png"));
         TrayMonitor->resize(789, 595);
         centralwidget = new QWidget(TrayMonitor);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
@@ -319,7 +313,7 @@ public:
         stmenu->addAction(actAbout);
         stmenu->addSeparator();
 	stmenu->addAction(actQuit);
-        
+
         connect(actRun, SIGNAL(triggered()), this, SLOT(cb_run()));
         connect(actShow, SIGNAL(triggered()), this, SLOT(cb_show()));
         connect(actQuit, SIGNAL(triggered()), this, SLOT(cb_quit()));
@@ -331,7 +325,7 @@ public:
 	tray->setContextMenu(stmenu);
 	QIcon icon(":/images/cartridge.png");
 	tray->setIcon(icon);
-        tray->setToolTip(QString("Bacula Tray Monitor"));
+        tray->setToolTip(QString("Bareos Tray Monitor"));
 	tray->show();
 
         retranslateUi(TrayMonitor);
@@ -340,7 +334,7 @@ public:
 
     void retranslateUi(QMainWindow *TrayMonitor)
     {
-       TrayMonitor->setWindowTitle(QApplication::translate("TrayMonitor", "Bacula Tray Monitor", 0, QApplication::UnicodeUTF8));
+       TrayMonitor->setWindowTitle(QApplication::translate("TrayMonitor", "Bareos Tray Monitor", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
 
 private slots:
@@ -355,10 +349,12 @@ private slots:
     }
 
     void cb_about() {
-       QMessageBox::about(this, "Bacula Tray Monitor", "Bacula Tray Monitor\n"
-                          "For more information, see: www.baculasystems.com\n"
-                          "Copyright (C) 1999-2010, Bacula Systems(R) SA\n"
-                          "Licensed under GNU AGPLv3.");
+       QMessageBox::about(this, tr("About Bareos Tray Monitor"),
+      tr("<br><h2>Bareos Tray Monitor %1</h2>"
+         "<p>For more information, see: www.bareos.com"
+         "<p>Copyright &copy; 1999-2010, Bacula Systems(R) SA"
+         "<p>BAREOS® is a registered trademark of Bareos GmbH & Co. KG"
+         "<p>Licensed under GNU AGPLv3.").arg(VERSION).arg(BYEAR));
     }
 
     void cb_run() {

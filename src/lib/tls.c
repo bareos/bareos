@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,46 +13,31 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * tls.c TLS support functions
  *
  * Author: Landon Fuller <landonf@threerings.net>
- *
- * This file was contributed to the Bacula project by Landon Fuller
- * and Three Rings Design, Inc.
- *
- * Three Rings Design, Inc. has been granted a perpetual, worldwide,
- * non-exclusive, no-charge, royalty-free, irrevocable copyright
- * license to reproduce, prepare derivative works of, publicly
- * display, publicly perform, sublicense, and distribute the original
- * work contributed by Three Rings Design, Inc. and its employees to
- * the Bacula project in source or object form.
- *
- * If you wish to license contributions from Three Rings Design, Inc,
- * under an alternate open source license please contact
- * Landon Fuller <landonf@threerings.net>.
  */
 
-
-#include "bacula.h"
+#include "bareos.h"
 #include <assert.h>
-
 
 #ifdef HAVE_TLS /* Is TLS enabled? */
 
 #ifdef HAVE_OPENSSL /* How about OpenSSL? */
+
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+#include <openssl/err.h>
+#include <openssl/asn1.h>
+#include <openssl/asn1t.h>
 
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers */
 #define TLS_DEFAULT_CIPHERS "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"
@@ -229,12 +214,12 @@ void free_tls_context(TLS_CONTEXT *ctx)
    free(ctx);
 }
 
-bool get_tls_require(TLS_CONTEXT *ctx) 
+bool get_tls_require(TLS_CONTEXT *ctx)
 {
    return ctx->tls_require;
 }
 
-bool get_tls_enable(TLS_CONTEXT *ctx) 
+bool get_tls_enable(TLS_CONTEXT *ctx)
 {
    return ctx->tls_enable;
 }
@@ -300,7 +285,7 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
 
    /* Check if peer provided a certificate */
    if (!(cert = SSL_get_peer_certificate(ssl))) {
-      Qmsg1(jcr, M_ERROR, 0, 
+      Qmsg1(jcr, M_ERROR, 0,
             _("Peer %s failed to present a TLS certificate\n"), host);
       return false;
    }
@@ -468,7 +453,7 @@ static inline bool openssl_bsock_session_start(BSOCK *bsock, bool server)
    bsock->clear_timed_out();
    bsock->set_killable(false);
 
-   for (;;) { 
+   for (;;) {
       if (server) {
          err = SSL_accept(tls->openssl);
       } else {
@@ -600,7 +585,7 @@ static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, b
 
    nleft = nbytes;
 
-   while (nleft > 0) { 
+   while (nleft > 0) {
       if (write) {
          nwritten = SSL_write(tls->openssl, ptr, nleft);
       } else {
@@ -664,13 +649,13 @@ cleanup:
 }
 
 
-int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes) 
+int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes)
 {
    /* SSL_write(bsock->tls->openssl, ptr, nbytes) */
    return openssl_bsock_readwrite(bsock, ptr, nbytes, true);
 }
 
-int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes) 
+int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes)
 {
    /* SSL_read(bsock->tls->openssl, ptr, nbytes) */
    return openssl_bsock_readwrite(bsock, ptr, nbytes, false);
@@ -699,12 +684,12 @@ void tls_bsock_shutdown(BSOCK *bsock) { }
 
 void free_tls_connection(TLS_CONNECTION *tls) { }
 
-bool get_tls_require(TLS_CONTEXT *ctx) 
+bool get_tls_require(TLS_CONTEXT *ctx)
 {
    return false;
 }
 
-bool get_tls_enable(TLS_CONTEXT *ctx) 
+bool get_tls_enable(TLS_CONTEXT *ctx)
 {
    return false;
 }

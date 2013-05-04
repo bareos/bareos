@@ -1,5 +1,5 @@
 #!/bin/sh
-which dirname >/dev/null 
+which dirname >/dev/null
 # does dirname exit?
 if [ $? = 0 ] ; then
   cwd=`dirname $0`
@@ -7,7 +7,7 @@ if [ $? = 0 ] ; then
      cwd=`pwd`
   fi
   if [ x$cwd = x@sbindir@ ] ; then
-     echo "bconsole not properly installed."  
+     echo "bconsole not properly installed."
      exit 1
   fi
 fi

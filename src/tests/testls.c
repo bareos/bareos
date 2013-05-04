@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,28 +13,22 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Test program for listing files during regression testing
- *   Links have their permissions and time bashed since they cannot
- *   be set by Bacula.
+ * Links have their permissions and time bashed since they cannot
+ * be set by Bareos.
  *
- *  Kern Sibbald, MM
- *
+ * Kern Sibbald, MM
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "findlib/find.h"
 
 /* Dummy functions */
@@ -90,8 +84,8 @@ int main(int argc, char *const *argv)
    FILE *fd;
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
    lmgr_init_thread();
 
    while ((ch = getopt(argc, argv, "ad:e:i:q?")) != -1) {
@@ -197,7 +191,7 @@ static int count_files(JCR *jcr, FF_PKT *ff, bool top_level)
    return 1;
 }
 
-static int print_file(JCR *jcr, FF_PKT *ff, bool top_level) 
+static int print_file(JCR *jcr, FF_PKT *ff, bool top_level)
 {
 
    switch (ff->type) {

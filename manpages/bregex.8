@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH BREGEX 8 "30 October 2011" "Kern Sibbald" "Network backup, utilities"
+.TH BREGEX 8 "30 October 2011" "Kern Sibbald" "Backup Archiving REcovery Open Sourced"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -16,7 +16,7 @@
 .\" .sp <n>    insert n+1 empty lines
 .\" for manpage-specific macros, see man(7)
 .SH NAME
- bregex \- Bacula's 'regex' engine
+ bregex \- Bareos's 'regex' engine
 .SH SYNOPSIS
 .B bregex
 .RI [ options ]
@@ -30,7 +30,7 @@ command.
 This program can be useful for testing regex expressions to be applied against a list of filenames.
 .PP
 .\" TeX users may be more comfortable with the \fB<whatever>\fP and
-.\" \fI<whatever>\fP escape sequences to invoke bold face and italics, 
+.\" \fI<whatever>\fP escape sequences to invoke bold face and italics,
 .\" respectively.
 .SH OPTIONS
 A summary of options is included below.
@@ -45,9 +45,13 @@ Set debug level to \fInn\fP.
 Print timestamp in debug output
 .TP
 .BI \-f\ <data\-file>
-The data-file is a filename that contains lines of data to be matched (or not) against one or more patterns. When the program is run, it will prompt you for a regular expression pattern, then apply it one line at a time against the data in the file. Each line that matches will be printed preceded by its line number. You will then be prompted again for another pattern. 
+The data-file is a filename that contains lines of data to be matched (or not)
+against one or more patterns. When the program is run, it will prompt you for a
+regular expression pattern, then apply it one line at a time against the data in
+the file. Each line that matches will be printed preceded by its line number.
+You will then be prompted again for another pattern.
 .TP
-.BI \-n 
+.BI \-n
 Print lines that do not match
 .TP
 .BI \-l
@@ -57,5 +61,5 @@ Suppress lines numbers.
 .br
 .SH AUTHOR
 This manual page was written by Bruno Friedmann
-.nh 
+.nh
 <bruno@ioda\-net.ch>.

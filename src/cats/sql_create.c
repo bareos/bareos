@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Bacula Catalog Database Create record interface routines
+ * BAREOS Catalog Database Create record interface routines
  *
- *    Kern Sibbald, March 2000
- *
+ * Kern Sibbald, March 2000
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 static const int dbglevel = 100;
 
@@ -463,11 +457,11 @@ bool db_create_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
           edit_int64(mr->VolReadTime, ed6),
           edit_int64(mr->VolWriteTime, ed7),
           mr->LabelType,
-          edit_int64(mr->StorageId, ed8), 
-          edit_int64(mr->DeviceId, ed9), 
-          edit_int64(mr->LocationId, ed10), 
-          edit_int64(mr->ScratchPoolId, ed11), 
-          edit_int64(mr->RecyclePoolId, ed12), 
+          edit_int64(mr->StorageId, ed8),
+          edit_int64(mr->DeviceId, ed9),
+          edit_int64(mr->LocationId, ed10),
+          edit_int64(mr->ScratchPoolId, ed11),
+          edit_int64(mr->RecyclePoolId, ed12),
           mr->Enabled, mr->ActionOnPurge,
           mr->EncrKey);
 
@@ -779,10 +773,10 @@ bail_out:
 /**
  * All sql_batch_* functions are used to do bulk batch insert in File/Filename/Path
  * tables.
- *  
+ *
  * To sum up :
  *  - bulk load a temp table
- *  - insert missing filenames into filename with a single query (lock filenames 
+ *  - insert missing filenames into filename with a single query (lock filenames
  *  - table before that to avoid possible duplicate inserts with concurrent update)
  *  - insert missing paths into path with another single query
  *  - then insert the join between the temp, filename and path tables into file.
@@ -827,7 +821,7 @@ bool db_write_batch_file_records(JCR *jcr)
       db_sql_query(jcr->db_batch, batch_unlock_tables_query[db_get_type_index(jcr->db_batch)]);
       goto bail_out;
    }
-   
+
    if (!db_sql_query(jcr->db_batch, batch_unlock_tables_query[db_get_type_index(jcr->db_batch)])) {
       Jmsg1(jcr, M_FATAL, 0, "Unlock Path table %s\n", jcr->db_batch->errmsg);
       goto bail_out;
@@ -840,7 +834,7 @@ bool db_write_batch_file_records(JCR *jcr)
       Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", jcr->db_batch->errmsg);
       goto bail_out;
    }
-   
+
    if (!db_sql_query(jcr->db_batch, batch_fill_filename_query[db_get_type_index(jcr->db_batch)])) {
       Jmsg1(jcr,M_FATAL,0,"Fill Filename table %s\n",jcr->db_batch->errmsg);
       db_sql_query(jcr->db_batch, batch_unlock_tables_query[db_get_type_index(jcr->db_batch)]);
@@ -851,8 +845,8 @@ bool db_write_batch_file_records(JCR *jcr)
       Jmsg1(jcr, M_FATAL, 0, "Unlock Filename table %s\n", jcr->db_batch->errmsg);
       goto bail_out;
    }
-   
-   if (!db_sql_query(jcr->db_batch, 
+
+   if (!db_sql_query(jcr->db_batch,
 "INSERT INTO File (FileIndex, JobId, PathId, FilenameId, LStat, MD5, DeltaSeq) "
     "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
            "Filename.FilenameId,batch.LStat, batch.MD5, batch.DeltaSeq "
@@ -909,7 +903,7 @@ bool db_create_batch_file_attributes_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
          return false;     /* error already printed */
       }
       if (!sql_batch_start(jcr, jcr->db_batch)) {
-         Mmsg1(&mdb->errmsg, 
+         Mmsg1(&mdb->errmsg,
                "Can't start batch mode: ERR=%s",
                db_strerror(jcr->db_batch));
          Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
@@ -1022,7 +1016,7 @@ static bool db_create_filename_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
    mdb->errmsg[0] = 0;
    mdb->esc_name = check_pool_memory_size(mdb->esc_name, 2*mdb->fnl+2);
    db_escape_string(jcr, mdb, mdb->esc_name, mdb->fname, mdb->fnl);
-   
+
    Mmsg(mdb->cmd, "SELECT FilenameId FROM Filename WHERE Name='%s'", mdb->esc_name);
 
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
@@ -1059,7 +1053,7 @@ static bool db_create_filename_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
    return ar->FilenameId > 0;
 }
 
-/** 
+/**
  * Create file attributes record, or base file attributes record
  * Returns: false on failure
  *          true on success
@@ -1076,7 +1070,7 @@ bool db_create_attributes_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
          ar->Stream == STREAM_UNIX_ATTRIBUTES_EX)) {
       Mmsg1(&mdb->errmsg, _("Attempt to put non-attributes into catalog. Stream=%d\n"),
          ar->Stream);
-      Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg); 
+      Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
       return false;
    }
 
@@ -1109,15 +1103,15 @@ bool db_create_base_file_attributes_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
    Dmsg1(dbglevel, "create_base_file Fname=%s\n", ar->fname);
    Dmsg0(dbglevel, "put_base_file_into_catalog\n");
 
-   db_lock(mdb); 
+   db_lock(mdb);
    split_path_and_file(jcr, mdb, ar->fname);
-   
+
    mdb->esc_name = check_pool_memory_size(mdb->esc_name, mdb->fnl*2+1);
    db_escape_string(jcr, mdb, mdb->esc_name, mdb->fname, mdb->fnl);
-   
+
    mdb->esc_path = check_pool_memory_size(mdb->esc_path, mdb->pnl*2+1);
    db_escape_string(jcr, mdb, mdb->esc_path, mdb->path, mdb->pnl);
-   
+
    Mmsg(mdb->cmd, "INSERT INTO basefile%lld (Path, Name) VALUES ('%s','%s')",
         (uint64_t)jcr->JobId, mdb->esc_path, mdb->esc_name);
 
@@ -1127,7 +1121,7 @@ bool db_create_base_file_attributes_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
    return retval;
 }
 
-/** 
+/**
  * Cleanup the base file temporary tables
  */
 static void db_cleanup_base_file(JCR *jcr, B_DB *mdb)
@@ -1153,14 +1147,14 @@ bool db_commit_base_file_attributes_record(JCR *jcr, B_DB *mdb)
 
    db_lock(mdb);
 
-   Mmsg(mdb->cmd, 
+   Mmsg(mdb->cmd,
   "INSERT INTO BaseFiles (BaseJobId, JobId, FileId, FileIndex) "
    "SELECT B.JobId AS BaseJobId, %s AS JobId, "
           "B.FileId, B.FileIndex "
      "FROM basefile%s AS A, new_basefile%s AS B "
     "WHERE A.Path = B.Path "
       "AND A.Name = B.Name "
-    "ORDER BY B.FileId", 
+    "ORDER BY B.FileId",
         edit_uint64(jcr->JobId, ed1), ed1, ed1);
    retval = db_sql_query(mdb, mdb->cmd);
    jcr->nb_base_files_used = sql_affected_rows(mdb);
@@ -1172,7 +1166,7 @@ bool db_commit_base_file_attributes_record(JCR *jcr, B_DB *mdb)
 
 /**
  * Find the last "accurate" backup state with Base jobs
- * 1) Get all files with jobid in list (F subquery) 
+ * 1) Get all files with jobid in list (F subquery)
  * 2) Take only the last version of each file (Temp subquery) => accurate list is ok
  * 3) Put the result in a temporary table for the end of job
  * Returns: false on failure
@@ -1183,7 +1177,7 @@ bool db_create_base_file_list(JCR *jcr, B_DB *mdb, char *jobids)
    bool retval = false;
    POOL_MEM buf;
 
-   db_lock(mdb);   
+   db_lock(mdb);
 
    if (!*jobids) {
       Mmsg(mdb->errmsg, _("ERR=JobIds are empty\n"));
@@ -1223,7 +1217,7 @@ bool db_create_restore_object_record(JCR *jcr, B_DB *mdb, ROBJECT_DBR *ro)
    mdb->fnl = strlen(ro->object_name);
    mdb->esc_name = check_pool_memory_size(mdb->esc_name, mdb->fnl*2+1);
    db_escape_string(jcr, mdb, mdb->esc_name, ro->object_name, mdb->fnl);
-   
+
    db_escape_object(jcr, mdb, ro->object, ro->object_len);
 
    plug_name_len = strlen(ro->plugin_name);
@@ -1236,7 +1230,7 @@ bool db_create_restore_object_record(JCR *jcr, B_DB *mdb, ROBJECT_DBR *ro)
         "ObjectCompression,FileIndex,JobId) "
         "VALUES ('%s','%s','%s',%d,%d,%d,%d,%d,%d,%u)",
         mdb->esc_name, esc_plug_name, mdb->esc_obj,
-        ro->object_len, ro->object_full_len, ro->object_index, 
+        ro->object_len, ro->object_full_len, ro->object_index,
         ro->FileType, ro->object_compression, ro->FileIndex, ro->JobId);
 
    ro->RestoreObjectId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("RestoreObject"));

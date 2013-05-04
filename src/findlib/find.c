@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,31 +13,24 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  * Main routine for finding files on a file system.
- *  The heart of the work to find the files on the
- *    system is done in find_one.c. Here we have the
- *    higher level control as well as the matching
- *    routines for the new syntax Options resource.
+ * The heart of the work to find the files on the
+ * system is done in find_one.c. Here we have the
+ * higher level control as well as the matching
+ * routines for the new syntax Options resource.
  *
- *  Kern E. Sibbald, MM
- *
+ * Kern E. Sibbald, MM
  */
 
-
-#include "bacula.h"
+#include "bareos.h"
 #include "find.h"
 
 static const int dbglvl = 450;
@@ -261,7 +254,7 @@ int find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, boo
                bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
             }
          }
-         Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n", 
+         Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
                ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
          dlistString *node;
          foreach_dlist(node, &incexe->name_list) {

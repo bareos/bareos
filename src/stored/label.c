@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * label.c  Bareos routines to handle labels
  *
- *  label.c  Bacula routines to handle labels
- *
- *   Kern Sibbald, MM
- *
+ * Kern Sibbald, MM
  */
 
-#include "bacula.h"                   /* pull in global headers */
+#include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
 /* Forward referenced functions */
@@ -42,8 +35,8 @@ static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec);
 /*
  * Read the volume label
  *
- *  If dcr->VolumeName == NULL, we accept any Bacula Volume
- *  If dcr->VolumeName[0] == 0, we accept any Bacula Volume
+ *  If dcr->VolumeName == NULL, we accept any Bareos Volume
+ *  If dcr->VolumeName[0] == 0, we accept any Bareos Volume
  *  otherwise dcr->VolumeName must match the Volume.
  *
  *  If VolName given, ensure that it matches
@@ -75,7 +68,7 @@ int read_dev_volume_label(DCR *dcr)
    bool have_ansi_label = false;
 
    Dmsg4(100, "Enter read_volume_label res=%d device=%s vol=%s dev_Vol=%s\n",
-      dev->num_reserved(), dev->print_name(), VolName, 
+      dev->num_reserved(), dev->print_name(), VolName,
       dev->VolHdr.VolumeName[0]?dev->VolHdr.VolumeName:"*NULL*");
 
    if (!dev->is_open()) {
@@ -87,10 +80,10 @@ int read_dev_volume_label(DCR *dcr)
    dev->clear_labeled();
    dev->clear_append();
    dev->clear_read();
-   dev->label_type = B_BACULA_LABEL;
+   dev->label_type = B_BAREOS_LABEL;
 
    if (!dev->rewind(dcr)) {
-      Mmsg(jcr->errmsg, _("Couldn't rewind device %s: ERR=%s\n"), 
+      Mmsg(jcr->errmsg, _("Couldn't rewind device %s: ERR=%s\n"),
          dev->print_name(), dev->print_errmsg());
       Dmsg1(130, "return VOL_NO_MEDIA: %s", jcr->errmsg);
       return VOL_NO_MEDIA;
@@ -109,8 +102,8 @@ int read_dev_volume_label(DCR *dcr)
    /*
     * Read ANSI/IBM label if so requested
     */
-   want_ansi_label = dcr->VolCatInfo.LabelType != B_BACULA_LABEL ||
-                     dcr->device->label_type != B_BACULA_LABEL;
+   want_ansi_label = dcr->VolCatInfo.LabelType != B_BAREOS_LABEL ||
+                     dcr->device->label_type != B_BAREOS_LABEL;
    if (want_ansi_label || dev->has_cap(CAP_CHECKLABELS)) {
       status = read_ansi_ibm_label(dcr);
       /*
@@ -133,17 +126,17 @@ int read_dev_volume_label(DCR *dcr)
          have_ansi_label = true;
       }
    }
-  
+
    /*
-    * Read the Bacula Volume label block
+    * Read the Bareos Volume label block
     */
    record = new_record();
    empty_block(block);
 
    Dmsg0(130, "Big if statement in read_volume_label\n");
    if (!dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
-      Mmsg(jcr->errmsg, _("Requested Volume \"%s\" on %s is not a Bacula "
-           "labeled Volume, because: ERR=%s"), NPRT(VolName), 
+      Mmsg(jcr->errmsg, _("Requested Volume \"%s\" on %s is not a Bareos "
+           "labeled Volume, because: ERR=%s"), NPRT(VolName),
            dev->print_name(), dev->print_errmsg());
       Dmsg1(130, "%s", jcr->errmsg);
    } else if (!read_record_from_block(dcr, record)) {
@@ -153,8 +146,9 @@ int read_dev_volume_label(DCR *dcr)
       Mmsg(jcr->errmsg, _("Could not unserialize Volume label: ERR=%s\n"),
          dev->print_errmsg());
       Dmsg1(130, "%s", jcr->errmsg);
-   } else if (!bstrcmp(dev->VolHdr.Id, BaculaId) &&
-              !bstrcmp(dev->VolHdr.Id, OldBaculaId)) {
+   } else if (!bstrcmp(dev->VolHdr.Id, BareosId) &&
+              !bstrcmp(dev->VolHdr.Id, OldBaculaId) &&
+              !bstrcmp(dev->VolHdr.Id, OlderBaculaId)) {
       Mmsg(jcr->errmsg, _("Volume Header Id bad: %s\n"), dev->VolHdr.Id);
       Dmsg1(130, "%s", jcr->errmsg);
    } else {
@@ -168,7 +162,7 @@ int read_dev_volume_label(DCR *dcr)
 
    if (!ok) {
       if (forge_on || jcr->ignore_label_errors) {
-         dev->set_labeled();         /* set has Bacula label */
+         dev->set_labeled();         /* set has Bareos label */
          Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
          goto ok_out;
       }
@@ -178,26 +172,27 @@ int read_dev_volume_label(DCR *dcr)
    }
 
    /*
-    * At this point, we have read the first Bacula block, and
-    * then read the Bacula Volume label. Now we need to
+    * At this point, we have read the first Bareos block, and
+    * then read the Bareos Volume label. Now we need to
     * make sure we have the right Volume.
     */
-   if (dev->VolHdr.VerNum != BaculaTapeVersion &&
-       dev->VolHdr.VerNum != OldCompatibleBaculaTapeVersion1 &&
-       dev->VolHdr.VerNum != OldCompatibleBaculaTapeVersion2) {
-      Mmsg(jcr->errmsg, _("Volume on %s has wrong Bacula version. Wanted %d got %d\n"),
-         dev->print_name(), BaculaTapeVersion, dev->VolHdr.VerNum);
+   if (dev->VolHdr.VerNum != BareosTapeVersion &&
+       dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion1 &&
+       dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion2 &&
+       dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion3) {
+      Mmsg(jcr->errmsg, _("Volume on %s has wrong Bareos version. Wanted %d got %d\n"),
+           dev->print_name(), BareosTapeVersion, dev->VolHdr.VerNum);
       Dmsg1(130, "VOL_VERSION_ERROR: %s", jcr->errmsg);
       status = VOL_VERSION_ERROR;
       goto bail_out;
    }
 
    /*
-    * We are looking for either an unused Bacula tape (PRE_LABEL) or
-    * a Bacula volume label (VOL_LABEL)
+    * We are looking for either an unused Bareos tape (PRE_LABEL) or
+    * a Bareos volume label (VOL_LABEL)
     */
    if (dev->VolHdr.LabelType != PRE_LABEL && dev->VolHdr.LabelType != VOL_LABEL) {
-      Mmsg(jcr->errmsg, _("Volume on %s has bad Bacula label type: %x\n"),
+      Mmsg(jcr->errmsg, _("Volume on %s has bad Bareos label type: %x\n"),
           dev->print_name(), dev->VolHdr.LabelType);
       Dmsg1(130, "%s", jcr->errmsg);
       if (!dev->poll && jcr->label_errors++ > 100) {
@@ -208,7 +203,7 @@ int read_dev_volume_label(DCR *dcr)
       goto bail_out;
    }
 
-   dev->set_labeled();               /* set has Bacula label */
+   dev->set_labeled();               /* set has Bareos label */
 
    /* Compare Volume Names */
    Dmsg2(130, "Compare Vol names: VolName=%s hdr=%s\n", VolName?VolName:"*", dev->VolHdr.VolumeName);
@@ -326,7 +321,7 @@ static bool write_volume_label_to_block(DCR *dcr)
  *
  *  This routine should be used only when labeling a blank tape.
  */
-bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName, 
+bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
                                    const char *PoolName, bool relabel)
 {
    JCR *jcr = dcr->jcr;
@@ -389,10 +384,10 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
 
       /*
        * If we have already detected an ANSI label, re-read it
-       *   to skip past it. Otherwise, we write a new one if 
-       *   so requested.  
+       *   to skip past it. Otherwise, we write a new one if
+       *   so requested.
        */
-      if (dev->label_type != B_BACULA_LABEL) {
+      if (dev->label_type != B_BAREOS_LABEL) {
          if (read_ansi_ibm_label(dcr) != VOL_OK) {
             dev->rewind(dcr);
             goto bail_out;
@@ -451,7 +446,7 @@ bail_out:
 }
 
 /*
- * Write a volume label. This is ONLY called if we have a valid Bacula
+ * Write a volume label. This is ONLY called if we have a valid Bareos
  *   label of type PRE_LABEL or we are recyling an existing Volume.
  *
  *  Returns: true if OK
@@ -519,10 +514,10 @@ bool DCR::rewrite_volume_label(bool recycle)
 
       /*
        * If we have already detected an ANSI label, re-read it
-       *   to skip past it. Otherwise, we write a new one if 
-       *   so requested.  
+       *   to skip past it. Otherwise, we write a new one if
+       *   so requested.
        */
-      if (dev->label_type != B_BACULA_LABEL) {
+      if (dev->label_type != B_BAREOS_LABEL) {
          if (read_ansi_ibm_label(dcr) != VOL_OK) {
             dev->rewind(dcr);
             return false;
@@ -636,7 +631,7 @@ static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec)
    ser_string(dev->VolHdr.LabelProg);
    ser_string(dev->VolHdr.ProgVersion);
    ser_string(dev->VolHdr.ProgDate);
-      
+
    ser_end(rec->data, SER_LENGTH_Volume_Label);
    bstrncpy(dcr->VolumeName, dev->VolHdr.VolumeName, sizeof(dcr->VolumeName));
    rec->data_len = ser_length(rec->data);
@@ -645,8 +640,8 @@ static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec)
    rec->VolSessionTime = jcr->VolSessionTime;
    rec->Stream = jcr->NumWriteVolumes;
    rec->maskedStream = jcr->NumWriteVolumes;
-   Dmsg2(150, "Created Vol label rec: FI=%s len=%d\n", FI_to_ascii(buf, rec->FileIndex),
-      rec->data_len);
+   Dmsg2(150, "Created Vol label rec: FI=%s len=%d\n",
+         FI_to_ascii(buf, rec->FileIndex), rec->data_len);
 }
 
 /*
@@ -662,8 +657,13 @@ void create_volume_label(DEVICE *dev, const char *VolName, const char *PoolName)
 
    dev->clear_volhdr();          /* clear any old volume info */
 
-   bstrncpy(dev->VolHdr.Id, BaculaId, sizeof(dev->VolHdr.Id));
-   dev->VolHdr.VerNum = BaculaTapeVersion;
+   if (me->compatible) {
+      bstrncpy(dev->VolHdr.Id, OldBaculaId, sizeof(dev->VolHdr.Id));
+      dev->VolHdr.VerNum = OldCompatibleBareosTapeVersion1;
+   } else {
+      bstrncpy(dev->VolHdr.Id, BareosId, sizeof(dev->VolHdr.Id));
+      dev->VolHdr.VerNum = BareosTapeVersion;
+   }
    dev->VolHdr.LabelType = PRE_LABEL;  /* Mark tape as unused */
    bstrncpy(dev->VolHdr.VolumeName, VolName, sizeof(dev->VolHdr.VolumeName));
    bstrncpy(dev->VolHdr.PoolName, PoolName, sizeof(dev->VolHdr.PoolName));
@@ -681,7 +681,7 @@ void create_volume_label(DEVICE *dev, const char *VolName, const char *PoolName)
    bstrncpy(dev->VolHdr.LabelProg, my_name, sizeof(dev->VolHdr.LabelProg));
    sprintf(dev->VolHdr.ProgVersion, "Ver. %s %s", VERSION, BDATE);
    sprintf(dev->VolHdr.ProgDate, "Build %s %s", __DATE__, __TIME__);
-   dev->set_labeled();               /* set has Bacula label */
+   dev->set_labeled();               /* set has Bareos label */
    if (debug_level >= 90) {
       dump_volume_label(dev);
    }
@@ -703,8 +703,13 @@ void create_session_label(DCR *dcr, DEV_RECORD *rec, int label)
 
    rec->data = check_pool_memory_size(rec->data, SER_LENGTH_Session_Label);
    ser_begin(rec->data, SER_LENGTH_Session_Label);
-   ser_string(BaculaId);
-   ser_uint32(BaculaTapeVersion);
+   if (me->compatible) {
+      ser_string(OldBaculaId);
+      ser_uint32(OldCompatibleBareosTapeVersion1);
+   } else {
+      ser_string(BareosId);
+      ser_uint32(BareosTapeVersion);
+   }
 
    ser_uint32(jcr->JobId);
 
@@ -809,7 +814,7 @@ bool write_session_label(DCR *dcr, int label)
 
 /*  unser_volume_label
  *
- * Unserialize the Bacula Volume label into the device Volume_Label
+ * Unserialize the Bareos Volume label into the device Volume_Label
  * structure.
  *
  * Assumes that the record is already read.
@@ -1103,7 +1108,7 @@ void dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose)
          break;
       case EOM_LABEL:
          Pmsg7(-1, _("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d DataLen=%d\n"),
-            type, dev->file, dev->block_num, rec->VolSessionId, 
+            type, dev->file, dev->block_num, rec->VolSessionId,
             rec->VolSessionTime, rec->Stream, rec->data_len);
          break;
       case EOT_LABEL:
@@ -1111,7 +1116,7 @@ void dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose)
          break;
       default:
          Pmsg7(-1, _("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d DataLen=%d\n"),
-            type, dev->file, dev->block_num, rec->VolSessionId, 
+            type, dev->file, dev->block_num, rec->VolSessionId,
             rec->VolSessionTime, rec->Stream, rec->data_len);
          break;
       }
@@ -1144,7 +1149,7 @@ void dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose)
       case VOL_LABEL:
       default:
          Pmsg7(-1, _("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d DataLen=%d\n"),
-            type, dev->file, dev->block_num, rec->VolSessionId, rec->VolSessionTime, 
+            type, dev->file, dev->block_num, rec->VolSessionId, rec->VolSessionTime,
             rec->Stream, rec->data_len);
          break;
       case EOT_LABEL:

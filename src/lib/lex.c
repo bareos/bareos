@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +13,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- * Lexical scanner for Bacula configuration file
+ * Lexical scanner for BAREOS configuration file
  *
- *   Kern Sibbald, 2000
- *
+ * Kern Sibbald, 2000
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "lex.h"
 
 extern int debug_level;
@@ -174,6 +168,8 @@ LEX *lex_close_file(LEX *lf)
    }
    Dmsg1(dbglvl, "Close cfg file %s\n", lf->fname);
    free(lf->fname);
+   free_memory(lf->line);
+   lf->line = NULL;
    if (of) {
       of->options = lf->options;      /* preserve options */
       memcpy(lf, of, sizeof(LEX));
@@ -208,7 +204,6 @@ LEX *lex_open_file(LEX *lf,
    BPIPE *bpipe = NULL;
    char *fname = bstrdup(filename);
 
-
    if (fname[0] == '|') {
       if ((bpipe = open_bpipe(fname+1, 0, "rb")) == NULL) {
          free(fname);
@@ -227,7 +222,7 @@ LEX *lex_open_file(LEX *lf,
       lf->next = nf;                  /* if have lf, push it behind new one */
       lf->options = nf->options;      /* preserve user options */
       /*
-       * preserve err_type to prevent bacula exiting on 'reload'
+       * preserve err_type to prevent bareos exiting on 'reload'
        * if config is invalid. Fixes bug #877
        */
       lf->err_type = nf->err_type;
@@ -252,6 +247,7 @@ LEX *lex_open_file(LEX *lf,
    lf->fd = fd;
    lf->bpipe = bpipe;
    lf->fname = fname;
+   lf->line = get_memory(5000);
    lf->state = lex_none;
    lf->ch = L_EOL;
    Dmsg1(dbglvl, "Return lex=%x\n", lf);
@@ -271,7 +267,7 @@ int lex_get_char(LEX *lf)
          " You may have a open double quote without the closing double quote.\n"));
    }
    if (lf->ch == L_EOL) {
-      if (bfgets(lf->line, MAXSTRING, lf->fd) == NULL) {
+      if (bfgets(lf->line, lf->fd) == NULL) {
          lf->ch = L_EOF;
          if (lf->next) {
             lex_close_file(lf);
@@ -299,7 +295,6 @@ void lex_unget_char(LEX *lf)
    } else {
       lf->col_no--;                   /* Backup to re-read char */
    }
-
 }
 
 
@@ -631,6 +626,13 @@ lex_get_token(LEX *lf, int expect)
          }
          if (ch == '"') {
             token = T_QUOTED_STRING;
+            /*
+             * Since we may be scanning a quoted list of names,
+             *  we get the next character (a comma indicates another
+             *  one), then we put it back for rescanning.
+             */
+            lex_get_char(lf);
+            lex_unget_char(lf);
             lf->state = lex_none;
             break;
          }

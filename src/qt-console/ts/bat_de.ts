@@ -130,7 +130,7 @@ Press OK to proceed with the purge operation?</source>
     </message>
     <message>
         <location filename="../console/console.ui" line="109"/>
-        <source>Reload bacula-dir.conf</source>
+        <source>Reload bareos-dir.conf</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -728,12 +728,12 @@ Press OK to continue?</source>
     <name>MainForm</name>
     <message>
         <location filename="../main.ui" line="14"/>
-        <source>bat - Bacula Admin Tool</source>
+        <source>bat - Bareos Admin Tool</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../main.ui" line="23"/>
-        <source>Bacula Administration Tool</source>
+        <source>Bareos Administration Tool</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -793,7 +793,7 @@ Press OK to continue?</source>
     </message>
     <message>
         <location filename="../main.ui" line="251"/>
-        <source>Enter a bacula command</source>
+        <source>Enter a bareos command</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

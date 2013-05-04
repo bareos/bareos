@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,27 +11,19 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
- 
+
 /*
- *   Version $Id$
+ * JobLog Class
  *
- *  JobLog Class
- *
- *   Dirk Bartley, March 2007
- *
- */ 
+ * Dirk Bartley, March 2007
+ */
 
 #include "bat.h"
 #include "joblog.h"
@@ -81,7 +71,7 @@ void JobLog::populateText()
    if (mainWin->m_sqlDebug) {
       Pmsg1(000, "Log query cmd : %s\n", query.toUtf8().data());
    }
-  
+
    QStringList results;
    if (m_console->sql_cmd(query, results)) {
 
@@ -91,14 +81,14 @@ void JobLog::populateText()
 	       "It is possible you may need to add \"catalog = all\" "
 	       "to the Messages resource for this job.\n"), QMessageBox::Ok);
 	 return;
-      } 
+      }
 
       QString jobstr("JobId "); /* FIXME: should this be translated ? */
       jobstr += m_jobId;
 
       QString htmlbuf("<html><body><b>" + tr("Log records for job %1").arg(m_jobId) );
       htmlbuf += "</b><table>";
-  
+
       /* Iterate through the lines of results. */
       QString field;
       QStringList fieldlist;
@@ -106,7 +96,7 @@ void JobLog::populateText()
       QString lastSvc;
       foreach (QString resultline, results) {
          fieldlist = resultline.split("\t");
-	 
+
 	 if (fieldlist.size() < 2)
 	    continue;
 
@@ -117,12 +107,12 @@ void JobLog::populateText()
 	 field = fieldlist[1].trimmed();
 	 int colon = field.indexOf(":");
 	 if (colon > 0) {
- 	    /* string is like <service> <jobId xxxx>: ..." 
-	     * we split at ':' then remove the jobId xxxx string (always the same) */ 
+	    /* string is like <service> <jobId xxxx>: ..."
+	     * we split at ':' then remove the jobId xxxx string (always the same) */
 	    QString curSvc(field.left(colon).replace(jobstr,"").trimmed());
 	    if (curSvc == lastSvc  && curTime == lastTime) {
 	       curTime.clear();
-	       curSvc.clear(); 
+	       curSvc.clear();
 	    } else {
 	       lastTime = curTime;
 	       lastSvc = curSvc;
@@ -134,13 +124,13 @@ void JobLog::populateText()
 	     * be avoided, to preserve original formatting) */
 	    QString msg(field.mid(colon+2));
 	    if (msg.startsWith( tr("Error:")) ) { /* FIXME: should really be translated ? */
- 	       /* error msg, use a specific class */
+	       /* error msg, use a specific class */
 	       htmlbuf += "<td><pre class=err>" + msg + "</pre></td>";
 	    } else {
 	       htmlbuf += "<td><pre>" + msg + "</pre></td>";
 	    }
 	 } else {
- 	    /* non standard string, place as-is */
+	    /* non standard string, place as-is */
 	    if (curTime == lastTime) {
 	       curTime.clear();
 	    } else {
@@ -151,7 +141,7 @@ void JobLog::populateText()
 	 }
 
 	 htmlbuf += "</tr>";
-  
+
       } /* foreach resultline */
 
       htmlbuf += "</table></body></html>";
@@ -159,10 +149,9 @@ void JobLog::populateText()
       /* full text ready. Here a custom sheet is used to align columns */
       QString logSheet("p,pre,.err {margin-left: 10px} .err {color:#FF0000;}");
       textEdit->document()->setDefaultStyleSheet(logSheet);
-      textEdit->document()->setHtml(htmlbuf); 
+      textEdit->document()->setHtml(htmlbuf);
       textEdit->moveCursor(QTextCursor::Start);
 
    } /* if results from query */
-  
+
 }
-  

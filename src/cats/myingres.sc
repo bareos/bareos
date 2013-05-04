@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +11,23 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
+   BAREOS® is a registered trademark of Bareos GmbH & Co. KG
 */
 /*
- * Bacula Catalog Database routines specific to Ingres
+ * Bareos Catalog Database routines specific to Ingres
  *   These are Ingres specific routines
  *
  *    Stefan Reddig, June 2009 with help of Marco van Wieringen April 2010
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 #ifdef HAVE_INGRES
 EXEC SQL INCLUDE SQLCA;
@@ -58,7 +53,7 @@ int INGgetCols(INGconn *dbconn, const char *query, bool explicit_commit)
 
    sqlda = (IISQLDA *)malloc(IISQDA_HEAD_SIZE + IISQDA_VAR_SIZE);
    memset(sqlda, 0, (IISQDA_HEAD_SIZE + IISQDA_VAR_SIZE));
-   
+
    sqlda->sqln = number;
 
    stmt = bstrdup(query);
@@ -74,7 +69,7 @@ int INGgetCols(INGconn *dbconn, const char *query, bool explicit_commit)
    EXEC SQL PREPARE s1 INTO :sqlda FROM :stmt;
 
    EXEC SQL WHENEVER SQLERROR CONTINUE;
-     
+
    number = sqlda->sqld;
 
 bail_out:
@@ -104,11 +99,11 @@ static inline IISQLDA *INGgetDescriptor(int numCols, const char *query)
 
    sqlda = (IISQLDA *)malloc(IISQDA_HEAD_SIZE + (numCols * IISQDA_VAR_SIZE));
    memset(sqlda, 0, (IISQDA_HEAD_SIZE + (numCols * IISQDA_VAR_SIZE)));
-   
+
    sqlda->sqln = numCols;
-   
+
    stmt = bstrdup(query);
-  
+
    EXEC SQL PREPARE s2 INTO :sqlda FROM :stmt;
 
    for (i = 0; i < sqlda->sqld; ++i) {
@@ -143,7 +138,7 @@ static inline IISQLDA *INGgetDescriptor(int numCols, const char *query)
          break;
       }
    }
-   
+
    free(stmt);
    return sqlda;
 }
@@ -170,7 +165,7 @@ static void INGfreeDescriptor(IISQLDA *sqlda)
 static inline int INGgetTypeSize(IISQLVAR *ingvar)
 {
    int inglength = 0;
-   
+
    switch (ingvar->sqltype) {
    case IISQ_TSWO_TYPE:
       inglength = 20;
@@ -188,7 +183,7 @@ static inline int INGgetTypeSize(IISQLVAR *ingvar)
       inglength = ingvar->sqllen;
       break;
    }
-   
+
    return inglength;
 }
 
@@ -196,10 +191,10 @@ static inline INGresult *INGgetINGresult(int numCols, const char *query)
 {
    int i;
    INGresult *ing_res;
-   
+
    ing_res = (INGresult *)malloc(sizeof(INGresult));
    memset(ing_res, 0, sizeof(INGresult));
-   
+
    if ((ing_res->sqlda = INGgetDescriptor(numCols, query)) == NULL) {
       return NULL;
    }
@@ -209,7 +204,7 @@ static inline INGresult *INGgetINGresult(int numCols, const char *query)
    ing_res->first_row = NULL;
    ing_res->status = ING_EMPTY_RESULT;
    ing_res->act_row = NULL;
-   
+
    if (ing_res->num_fields) {
       ing_res->fields = (INGRES_FIELD *)malloc(sizeof(INGRES_FIELD) * ing_res->num_fields);
       memset(ing_res->fields, 0, sizeof(INGRES_FIELD) * ing_res->num_fields);
@@ -305,7 +300,7 @@ static inline ING_ROW *INGgetRowSpace(INGresult *ing_res)
 
    for (i = 0; i < sqlda->sqld; ++i) {
       /*
-       * Make strings out of the data, then the space and assign 
+       * Make strings out of the data, then the space and assign
        * (why string? at least it seems that way, looking into the sources)
        */
       vars[i].sqlind = (short *)malloc(sizeof(short));
@@ -400,14 +395,14 @@ static inline int INGfetchAll(INGresult *ing_res)
    ING_ROW *row;
    IISQLDA *desc;
    int linecount = -1;
-   
+
    desc = ing_res->sqlda;
-   
+
    EXEC SQL WHENEVER SQLERROR GOTO bail_out;
 
    EXEC SQL DECLARE c2 CURSOR FOR s2;
    EXEC SQL OPEN c2;
-      
+
    EXEC SQL WHENEVER SQLERROR CONTINUE;
 
    linecount = 0;
@@ -419,7 +414,7 @@ static inline int INGfetchAll(INGresult *ing_res)
           * Allocate space for fetched row
           */
          row = INGgetRowSpace(ing_res);
-            
+
          /*
           * Initialize list when encountered first time
           */
@@ -427,16 +422,16 @@ static inline int INGfetchAll(INGresult *ing_res)
             ing_res->first_row = row; /* head of the list */
             ing_res->first_row->next = NULL;
             ing_res->act_row = ing_res->first_row;
-         }      
+         }
 
          ing_res->act_row->next = row; /* append row to old act_row */
          ing_res->act_row = row; /* set row as act_row */
          row->row_number = linecount++;
       }
    } while ( (sqlca.sqlcode == 0) || (sqlca.sqlcode == -40202) );
-   
+
    EXEC SQL CLOSE c2;
-   
+
    ing_res->status = ING_COMMAND_OK;
    ing_res->num_rows = linecount;
 
@@ -460,7 +455,7 @@ static void INGrowSeek(INGresult *ing_res, int row_number)
    if (ing_res->act_row->row_number == row_number) {
       return;
    }
-   
+
    /*
     * TODO: real error handling
     */
@@ -525,7 +520,7 @@ int INGexec(INGconn *dbconn, const char *query, bool explicit_commit)
    int errors;
    char *stmt;
    EXEC SQL END DECLARE SECTION;
-   
+
    rowcount = -1;
    stmt = bstrdup(query);
 
@@ -672,7 +667,7 @@ INGconn *INGconnectDB(char *dbname, char *user, char *passwd, int session_id)
 
    sess_id = session_id;
    ingdbname = dbname;
-   
+
    EXEC SQL WHENEVER SQLERROR GOTO bail_out;
 
    if (user != NULL) {
@@ -694,8 +689,8 @@ INGconn *INGconnectDB(char *dbname, char *user, char *passwd, int session_id)
       EXEC SQL CONNECT
          :ingdbname
          SESSION :sess_id;
-   }   
-   
+   }
+
    EXEC SQL WHENEVER SQLERROR CONTINUE;
 
    dbconn = (INGconn *)malloc(sizeof(INGconn));

@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,25 +13,19 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
  /*
   * Originally written by Kern Sibbald for inclusion in apcupsd,
-  *  but heavily modified for Bacula
-  *
+  * but heavily modified for BAREOS
   */
 
-#include "bacula.h"
+#include "bareos.h"
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -77,26 +71,24 @@ void bnet_stop_thread_server(pthread_t tid)
  *
  * At the moment it is impossible to bind to different ports.
  */
-void
-bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
-                   void *handle_client_request(void *bsock))
+void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
+                        void *handle_client_request(void *bsock))
 {
    int newsockfd, status;
    socklen_t clilen;
    struct sockaddr cli_addr;       /* client's address */
-   int tlog;
+   int tlog, tmax;
    int turnon = 1;
 #ifdef HAVE_LIBWRAP
    struct request_info request;
 #endif
    IPADDR *ipaddr, *next;
    struct s_sockfd {
-      dlink link;                     /* this MUST be the first item */
       int fd;
       int port;
    } *fd_ptr = NULL;
    char buf[128];
-   dlist sockfds;
+   alist sockfds(10, not_owned_by_alist);
 #ifdef HAVE_POLL
    nfds_t nfds;
    struct pollfd *pfds;
@@ -130,6 +122,7 @@ bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
        */
       fd_ptr = (s_sockfd *)alloca(sizeof(s_sockfd));
       fd_ptr->port = ipaddr->get_port_net_order();
+
       /*
        * Open a TCP socket
        */
@@ -144,6 +137,7 @@ bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
          }
          bmicrosleep(10, 0);
       }
+
       /*
        * Reuse old sockets
        */
@@ -154,7 +148,7 @@ bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
                be.bstrerror());
       }
 
-      int tmax = 30 * (60 / 5);    /* wait 30 minutes max */
+      tmax = 30 * (60 / 5);        /* wait 30 minutes max */
       for (tlog = 0; bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->get_sockaddr_len()) < 0; tlog -= 5) {
          berrno be;
          if (tlog <= 0) {
@@ -168,12 +162,15 @@ bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
                   be.bstrerror());
          }
       }
+
       listen(fd_ptr->fd, 50);      /* tell system we are ready */
       sockfds.append(fd_ptr);
+
 #ifdef HAVE_POLL
       nfds++;
 #endif
    }
+
    /*
     * Start work queue thread
     */
@@ -191,7 +188,7 @@ bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
    memset(pfds, 0, sizeof(struct pollfd) * nfds);
 
    nfds = 0;
-   foreach_dlist(fd_ptr, &sockfds) {
+   foreach_alist(fd_ptr, &sockfds) {
       pfds[nfds].fd = fd_ptr->fd;
       pfds[nfds].events |= POLL_IN;
       nfds++;
@@ -201,13 +198,13 @@ bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
    /*
     * Wait for a connection from the client process.
     */
-   for (; !quit;) {
+   while (!quit) {
 #ifndef HAVE_POLL
       unsigned int maxfd = 0;
       fd_set sockset;
       FD_ZERO(&sockset);
 
-      foreach_dlist(fd_ptr, &sockfds) {
+      foreach_alist(fd_ptr, &sockfds) {
          FD_SET((unsigned)fd_ptr->fd, &sockset);
          if ((unsigned)fd_ptr->fd > maxfd) {
             maxfd = fd_ptr->fd;
@@ -224,7 +221,7 @@ bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
          break;
       }
 
-      foreach_dlist(fd_ptr, &sockfds) {
+      foreach_alist(fd_ptr, &sockfds) {
          if (FD_ISSET(fd_ptr->fd, &sockset)) {
 #else
       int cnt;
@@ -240,7 +237,7 @@ bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
       }
 
       cnt = 0;
-      foreach_dlist(fd_ptr, &sockfds) {
+      foreach_alist(fd_ptr, &sockfds) {
          if (pfds[cnt++].revents & POLLIN) {
 #endif
             /*
@@ -309,7 +306,6 @@ bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
     */
    while ((fd_ptr = (s_sockfd *)sockfds.first())) {
       close(fd_ptr->fd);
-      sockfds.remove(fd_ptr);     /* don't free() item it is on stack */
    }
 
    /*

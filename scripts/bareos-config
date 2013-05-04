@@ -1,0 +1,220 @@
+#!/bin/bash
+DIR_CFG=/etc/bareos
+CFG_DIR=${DIR_CFG}/bareos-dir.conf
+DIR_SCRIPTS=/usr/lib/bareos/scripts
+
+PASSWORD_SUBST="\
+XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX \
+XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX \
+XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX \
+XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX \
+XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX \
+XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX \
+"
+
+usage()
+{
+cat <<-EOT
+usage: $0 <function>
+
+available functions:
+EOT
+    list_functions
+    exit 1
+}
+
+help()
+{
+    usage
+}
+
+is_function()
+{
+    func=$1
+    test "$func" && type -t "$func" > /dev/null 2>&1
+    local rc=$?
+    return $rc
+}
+
+list_functions()
+{
+    # show available shell functions,
+    # but exclude internal functions (name starts with "_" ...)
+    typeset -F | cut -d " " -f 3 | grep "^[a-z]"
+}
+
+# TODO: use defines
+get_user_fd()
+{
+    printf "root"
+}
+
+get_group_fd()
+{
+    printf "bareos"
+}
+
+get_user_sd()
+{
+    printf "bareos"
+}
+
+get_group_sd()
+{
+    printf "bareos"
+}
+
+get_user_dir()
+{
+    printf "bareos"
+}
+
+get_group_dir()
+{
+    printf "bareos"
+}
+
+get_database_driver()
+{
+    if ! [ -r "${CFG_DIR}" ]; then
+        return
+    fi
+
+    # get dbdriver, that is defined in director configuration.
+    # If string is still set to default, return nothing
+    DBDRIVER=`sed -r -n 's/^\s*dbdriver\s*=\s*["]?([^"]*)["]?/\1/ip' "${CFG_DIR}" | grep -v "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"`
+
+    printf "$DBDRIVER"
+}
+
+get_databases_installed()
+{
+    #for i in `ls ${DIR_SCRIPTS}/create_*_database`
+    #do
+    #    sed -n -r 's#.*/create_([a-z]+)_database#\1#p' <<<$i | grep -v bareos
+    #done
+
+    # manually check different backends, to get the correct order
+    [ -e ${DIR_SCRIPTS}/create_postgresql_database ] && echo "postgresql"
+    [ -e ${DIR_SCRIPTS}/create_mysql_database ] && echo "mysql"
+    [ -e ${DIR_SCRIPTS}/create_sqlite3_database ] && echo "sqlite3"
+}
+
+get_database_driver_default()
+{
+    DBDRIVER=`get_database_driver`
+
+    if [ -z "$DBDRIVER" ]; then
+        DBDRIVER=`get_databases_installed | head -n 1`
+    fi
+
+    if [ -z "$DBDRIVER" ]; then
+        # fallback and first choice
+        DBDRIVER="postgresql"
+    fi
+
+    echo "$DBDRIVER"
+}
+
+initialize_database_driver()
+{
+    DBDRIVER=`get_database_driver_default`
+    replace "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" "${DBDRIVER}"
+}
+
+get_local_hostname()
+{
+    # put actual short hostname in configuration files
+    # try to get short hostname
+    hname=`hostname -s`
+    if [ -z "$hname" ]; then
+        # try to get long hostname
+        hname=`hostname|sed 's/\..*//g'`
+        if [ -z "$hname" ]; then
+            # set to "localhost"
+            hname='localhost'
+        fi
+    fi
+    echo "$hname"
+}
+
+initialize_local_hostname()
+{
+    #
+    # Replace all XXX_REPLACE_WITH_LOCAL_HOSTNAME by the local hostname.
+    #
+    hname=`get_local_hostname`
+    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-dir" "${hname}-dir"
+    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-fd" "${hname}-fd"
+    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-sd" "${hname}-sd"
+    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-mon" "${hname}-mon"
+    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" "${hname}"
+}
+
+initialize_passwords()
+{
+    #
+    # See if we need to generate a set of random passwords.
+    #
+    if [ ! -f ${DIR_CFG}/.rndpwd ]; then
+        for string in ${PASSWORD_SUBST}
+        do
+           pass=`openssl rand -base64 33`
+           echo "${string}=${pass}" >> ${DIR_CFG}/.rndpwd
+        done
+        chmod 400 ${DIR_CFG}/.rndpwd
+    fi
+
+    # Source the passwords
+    . ${DIR_CFG}/.rndpwd
+
+    for string in ${PASSWORD_SUBST}
+    do
+        eval "pass=\${$string}"
+        if [ ! -z "${pass}" ]; then
+            replace "${string}" "${pass}"
+        fi
+    done
+}
+
+replace()
+{
+    if ! [ $# -eq 2 ]; then
+        return 1
+    fi
+
+    SEARCH="$1"
+    REPLACE="$2"
+
+    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf`
+    do
+        echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
+        sed -i'' "s#${SEARCH}#${REPLACE}#g" ${file};
+    done
+    return 0
+}
+
+init()
+{
+    initialize_local_hostname
+    initialize_director_hostname
+    initialize_passwords
+    initialize_database_driver
+}
+
+# number of args passed
+args=$#
+
+# without parameter, nothing is done.
+# this allows thsi script to be sourced
+# to use its functions
+if [ $args -ge 1 ]; then
+    # executes given arguments
+    if is_function $1; then
+        $*
+    else
+        echo "failed to execute $*. Not found."
+        #usage
+        exit 127
+    fi
+fi

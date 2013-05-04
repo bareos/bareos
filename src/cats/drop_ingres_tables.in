@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# shell script to delete Bacula tables for PostgreSQL
+# shell script to delete Bareos tables for PostgreSQL
 
 bindir=@INGRES_BINDIR@
 PATH="$bindir:$PATH"
@@ -56,10 +56,10 @@ DROP SEQUENCE BaseFiles_Seq;
 \g
 END-OF-DATA
 pstat=$?
-if test $pstat = 0; 
+if test $pstat = 0;
 then
-   echo "Deletion of Bacula Ingres tables succeeded."
+   echo "Deletion of Bareos Ingres tables succeeded."
 else
-   echo "Deletion of Bacula Ingres tables failed."
+   echo "Deletion of Bareos Ingres tables failed."
 fi
 exit $pstat

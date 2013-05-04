@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,50 +13,41 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * Higher Level Device routines.
+ * Knows about Bareos tape labels and such
  *
- *  Higher Level Device routines.
- *  Knows about Bacula tape labels and such
- *
- *  NOTE! In general, subroutines that have the word
- *        "device" in the name do locking.  Subroutines
- *        that have the word "dev" in the name do not
- *        do locking.  Thus if xxx_device() calls
- *        yyy_dev(), all is OK, but if xxx_device()
- *        calls yyy_device(), everything will hang.
- *        Obviously, no zzz_dev() is allowed to call
- *        a www_device() or everything falls apart.
+ * NOTE! In general, subroutines that have the word
+ * "device" in the name do locking. Subroutines
+ * that have the word "dev" in the name do not
+ * do locking.  Thus if xxx_device() calls
+ * yyy_dev(), all is OK, but if xxx_device()
+ * calls yyy_device(), everything will hang.
+ * Obviously, no zzz_dev() is allowed to call
+ * a www_device() or everything falls apart.
  *
  * Concerning the routines dev->r_lock()() and block_device()
- *  see the end of this module for details.  In general,
- *  blocking a device leaves it in a state where all threads
- *  other than the current thread block when they attempt to
- *  lock the device. They remain suspended (blocked) until the device
- *  is unblocked. So, a device is blocked during an operation
- *  that takes a long time (initialization, mounting a new
- *  volume, ...) locking a device is done for an operation
- *  that takes a short time such as writing data to the
- *  device.
+ * see the end of this module for details.  In general,
+ * blocking a device leaves it in a state where all threads
+ * other than the current thread block when they attempt to
+ * lock the device. They remain suspended (blocked) until the device
+ * is unblocked. So, a device is blocked during an operation
+ * that takes a long time (initialization, mounting a new
+ * volume, ...) locking a device is done for an operation
+ * that takes a short time such as writing data to the
+ * device.
  *
- *
- *   Kern Sibbald, MM, MMI
- *
- *   Version $Id$
+ * Kern Sibbald, MM, MMI
  */
 
-#include "bacula.h"                   /* pull in global headers */
+#include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
 /* Forward referenced functions */
@@ -76,7 +67,7 @@
  * We enter with device locked, and
  *     exit with device locked.
  *
- * Note, we are called only from one place in block.c for the daemons.  
+ * Note, we are called only from one place in block.c for the daemons.
  *     The btape utility calls it from btape.c.
  *
  *  Returns: true  on success
@@ -187,7 +178,7 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
         be.bstrerror(dev->dev_errno));
       /* Note: recursive call */
       if (retries-- <= 0 || !fixup_device_block_write_error(dcr, retries)) {
-         Jmsg2(jcr, M_FATAL, 0, 
+         Jmsg2(jcr, M_FATAL, 0,
               _("Catastrophic error. Cannot write overflow block to device %s. ERR=%s"),
               dev->print_name(), be.bstrerror(dev->dev_errno));
          goto bail_out;
@@ -322,7 +313,7 @@ bool open_device(DCR *dcr)
       if (!dev->poll && !dev->is_removable()) {
          Jmsg2(dcr->jcr, M_FATAL, 0, _("Unable to open device %s: ERR=%s\n"),
             dev->print_name(), dev->bstrerror());
-         Pmsg2(000, _("Unable to open archive %s: ERR=%s\n"), 
+         Pmsg2(000, _("Unable to open archive %s: ERR=%s\n"),
             dev->print_name(), dev->bstrerror());
       }
       return false;

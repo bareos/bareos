@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,26 +11,20 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  Spooling code
+ * Spooling code
  *
- *      Kern Sibbald, March 2004
- *
+ * Kern Sibbald, March 2004
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "stored.h"
 
 /* Forward referenced subroutines */
@@ -95,7 +87,7 @@ void list_spool_stats(void sendit(const char *msg, int len, void *sarg), void *a
          spool_stats.attr_jobs, edit_uint64_with_commas(spool_stats.attr_size, ed1),
          spool_stats.total_attr_jobs,
          edit_uint64_with_commas(spool_stats.max_attr_size, ed2));
-   
+
       sendit(msg.c_str(), len, arg);
    }
 }
@@ -228,7 +220,7 @@ static bool despool_data(DCR *dcr, bool commit)
 
    /*
     * Commit means that the job is done, so we commit, otherwise, we
-    *  are despooling because of user spool size max or some error  
+    *  are despooling because of user spool size max or some error
     *  (e.g. filesystem full).
     */
    if (commit) {
@@ -327,7 +319,7 @@ static bool despool_data(DCR *dcr, bool commit)
    set_new_file_parameters(dcr);
 
    /*
-    * Subtracting run_time give us elapsed time - wait_time since 
+    * Subtracting run_time give us elapsed time - wait_time since
     * we started despooling. Note, don't use time_t as it is 32 or 64
     * bits depending on the OS and doesn't edit with %d
     */
@@ -665,7 +657,7 @@ static void make_unique_spool_filename(JCR *jcr, POOLMEM **name, int fd)
 }
 
 /*
- * Tell Director where to find the attributes spool file 
+ * Tell Director where to find the attributes spool file
  *  Note, if we are not on the same machine, the Director will
  *  return an error, and the higher level routine will transmit
  *  the data record by record -- using bsock->despool().
@@ -678,13 +670,13 @@ static bool blast_attr_spool_file(JCR *jcr, boffset_t size)
    bash_spaces(name);
    jcr->dir_bsock->fsend("BlastAttr Job=%s File=%s\n", jcr->Job, name);
    free_pool_memory(name);
-   
+
    if (jcr->dir_bsock->recv() <= 0) {
       Jmsg(jcr, M_FATAL, 0, _("Network error on BlastAttributes.\n"));
       jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
       return false;
    }
-   
+
    if (!bstrcmp(jcr->dir_bsock->msg, "1000 OK BlastAttr\n")) {
       return false;
    }
@@ -721,7 +713,7 @@ bool commit_attribute_spool(JCR *jcr)
                jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
                goto bail_out;
             }
-            Dmsg2(100, "=== Attrib spool truncated from %lld to %lld\n", 
+            Dmsg2(100, "=== Attrib spool truncated from %lld to %lld\n",
                   size, data_end);
             size = data_end;
          }

@@ -1,10 +1,8 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,36 +11,27 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
+ * BAREOS Director -- User Agent Input and scanning code
  *
- *   Bacula Director -- User Agent Input and scanning code
- *
- *     Kern Sibbald, October MMI
- *
+ * Kern Sibbald, October MMI
  */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "dird.h"
-
 
 /* Imported variables */
 
-
 /* Exported functions */
 
-/* 
+/*
  * If subprompt is set, we send a BNET_SUB_PROMPT signal otherwise
  *   send a BNET_TEXT_INPUT signal.
  */
@@ -171,12 +160,12 @@ bool get_yesno(UAContext *ua, const char *prompt)
    }
 }
 
-/* 
+/*
  *  Gets an Enabled value => 0, 1, 2, yes, no, archived
  *  Returns: 0, 1, 2 if OK
  *           -1 on error
  */
-int get_enabled(UAContext *ua, const char *val) 
+int get_enabled(UAContext *ua, const char *val)
 {
    int Enabled = -1;
 
@@ -184,14 +173,14 @@ int get_enabled(UAContext *ua, const char *val)
      Enabled = 1;
    } else if (bstrcasecmp(val, "no") || bstrcasecmp(val, "false")) {
       Enabled = 0;
-   } else if (bstrcasecmp(val, "archived")) { 
+   } else if (bstrcasecmp(val, "archived")) {
       Enabled = 2;
    } else {
       Enabled = atoi(val);
    }
    if (Enabled < 0 || Enabled > 2) {
       ua->error_msg(_("Invalid Enabled value, it must be yes, no, archived, 0, 1, or 2\n"));
-      return -1;     
+      return -1;
    }
    return Enabled;
 }

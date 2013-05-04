@@ -1,18 +1,8 @@
 /*
- * Program for determining drive type
- *
- *   Written by Robert Nelson, June 2006
- *
- *   Version $Id$
- *
- */
-/*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -21,24 +11,24 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
+/*
+ * Program for determining drive type
+ *
+ * Written by Robert Nelson, June 2006
+ */
 
-#include "bacula.h"
+#include "bareos.h"
 #include "findlib/find.h"
 
 /* Dummy functions */
-int generate_daemon_event(JCR *jcr, const char *event) 
+int generate_daemon_event(JCR *jcr, const char *event)
    { return 1; }
 
 static void usage()
@@ -93,8 +83,8 @@ main (int argc, char *const *argv)
    char buf[16];
 
    setlocale(LC_ALL, "");
-   bindtextdomain("bacula", LOCALEDIR);
-   textdomain("bacula");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
 
    while ((ch = getopt(argc, argv, "alv?")) != -1) {
       switch (ch) {
@@ -117,7 +107,7 @@ main (int argc, char *const *argv)
    argv += optind;
 
    OSDependentInit();
- 
+
    if (argc < 1 && display_all) {
       /* Try all letters */
       for (drive = 'A'; drive <= 'Z'; drive++) {

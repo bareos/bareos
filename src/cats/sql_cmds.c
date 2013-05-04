@@ -1,10 +1,10 @@
 /*
-   Bacula® - The Network Backup Solution
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -13,32 +13,27 @@
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   Affero General Public License for more details.
 
    You should have received a copy of the GNU Affero General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-
-   Bacula® is a registered trademark of Kern Sibbald.
-   The licensor of Bacula is the Free Software Foundation Europe
-   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
-   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
- *  This file contains all the SQL commands that are either issued by the
- *  Director or which are database backend specific.
+ * This file contains all the SQL commands that are either issued by the
+ * Director or which are database backend specific.
  *
- *     Kern Sibbald, July MMII
+ * Kern Sibbald, July MMII
  */
 /*
  * Note, PostgreSQL imposes some constraints on using DISTINCT and GROUP BY
- *  for example, the following is illegal in PostgreSQL:
- *  SELECT DISTINCT JobId FROM temp ORDER BY StartTime ASC;
- *  because all the ORDER BY expressions must appear in the SELECT list!
+ * for example, the following is illegal in PostgreSQL:
+ * SELECT DISTINCT JobId FROM temp ORDER BY StartTime ASC;
+ * because all the ORDER BY expressions must appear in the SELECT list!
  */
 
-#include "bacula.h"
+#include "bareos.h"
 
 const char *get_restore_objects =
    "SELECT JobId,ObjectLength,ObjectFullLength,ObjectIndex,"
@@ -822,7 +817,7 @@ const char *sql_get_max_connections[] = {
  *  The Group By can return strange numbers when having multiple
  *  version of a file in the same dataset.
  */
-const char *default_sql_bvfs_select = 
+const char *default_sql_bvfs_select =
 "CREATE TABLE %s AS "
 "SELECT File.JobId, File.FileIndex, File.FileId "
 "FROM Job, File, ( "
