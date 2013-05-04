@@ -869,6 +869,10 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{script_dir}/bareos-config initialize_passwords
 %add_service_start bareos-fd
 
+%post bconsole
+%{script_dir}/bareos-config initialize_local_hostname
+%{script_dir}/bareos-config initialize_passwords
+
 %post common
 /sbin/ldconfig
 
@@ -901,13 +905,11 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 /sbin/ldconfig
 %endif
 
-%post bconsole
-%{script_dir}/bareos-config initialize_local_hostname
-
 %if 0%{?build_qt_monitor}
 # TODO: only provide bareos-traymonitor
 %post traymonitor
 %{script_dir}/bareos-config initialize_local_hostname
+%{script_dir}/bareos-config initialize_passwords
 echo "linking %{_sbindir}/bareos-tray-monitor-qt %{_sbindir}/bareos-traymonitor"
 ln -sf %{_sbindir}/bareos-tray-monitor-qt %{_sbindir}/bareos-traymonitor
 %endif
