@@ -18,9 +18,14 @@
 #  $5 is the type of database
 #
 #
+CFG="@sysconfdir@/bareos-dir.conf"
+DBCHECK="@sbindir@/bareos-dbcheck"
 
-default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
-
+default_db_type=`${DBCHECK} -B -c ${CFG} | \
+                 grep 'db_type=' | \
+                 head -1 | \
+                 cut -d'=' -f2 | \
+                 tr '[A-Z]' '[a-z]'`
 
 #
 # See if the fifth argument is a valid backend name.
