@@ -314,6 +314,7 @@ public:
    volatile int32_t JobStatus;            /* ready, running, blocked, terminated */
    int32_t JobPriority;                   /* Job priority */
    time_t sched_time;                     /* Job schedule time, i.e. when it should start */
+   time_t initial_sched_time;             /* Original sched time before any reschedules are done */
    time_t start_time;                     /* When job actually started */
    time_t run_time;                       /* Used for computing speed */
    time_t last_time;                      /* Last sample time */
@@ -393,7 +394,7 @@ public:
    uint32_t ExpectedFiles;                /* Expected restore files */
    uint32_t MediaId;                      /* DB record IDs associated with this job */
    uint32_t FileIndex;                    /* Last FileIndex processed */
-   utime_t MaxRunSchedTime;               /* Max run time in seconds from Scheduled time*/
+   utime_t MaxRunSchedTime;               /* Max run time in seconds from Initial Scheduled time */
    POOLMEM *fname;                        /* Name to put into catalog */
    POOLMEM *component_fname;              /* Component info file name */
    FILE *component_fd;                    /* Component info file desc */

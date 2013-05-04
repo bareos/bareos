@@ -354,6 +354,7 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
    }
    jcr->job_end_push.init(1, false);
    jcr->sched_time = time(NULL);
+   jcr->initial_sched_time = jcr->sched_time;
    jcr->daemon_free_jcr = daemon_free_jcr;    /* plug daemon free routine */
    jcr->init_mutex();
    jcr->inc_use_count();

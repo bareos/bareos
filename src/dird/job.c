@@ -685,7 +685,7 @@ static bool job_check_maxrunschedtime(JCR *jcr)
    if (jcr->MaxRunSchedTime == 0 || job_canceled(jcr)) {
       return false;
    }
-   if ((watchdog_time - jcr->sched_time) < jcr->MaxRunSchedTime) {
+   if ((watchdog_time - jcr->initial_sched_time) < jcr->MaxRunSchedTime) {
       Dmsg3(200, "Job %p (%s) with MaxRunSchedTime %d not expired\n",
             jcr, jcr->Job, jcr->MaxRunSchedTime);
       return false;
