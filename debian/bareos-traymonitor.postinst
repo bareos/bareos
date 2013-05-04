@@ -22,7 +22,7 @@ daemon_group=bareos
 
 permissions()
 {
-  chown root:${daemon_group} /etc/bareos/bconsole.conf
+  chown root:${daemon_group} /etc/bareos/tray-monitor.conf
 }
 
 case "$1" in
