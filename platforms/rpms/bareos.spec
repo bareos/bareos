@@ -884,6 +884,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %if 0%{?build_bat}
 %post bat
 %{script_dir}/bareos-config initialize_local_hostname
+%{script_dir}/bareos-config initialize_passwords
 %endif
 
 %pre director
