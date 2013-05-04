@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH BSCRYPTO 8 "03 January 2013" "Marco van Wieringen" "Backup Archiving REcovery Open Sourced"
+.TH BSCRYPTO 8 "23 February 2013" "Marco van Wieringen" "Backup Archiving REcovery Open Sourced"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
@@ -47,6 +47,9 @@ and as such converted to normal ASCII.
 Clear encryption key. Clear the encryption key currently loaded on the
 drive by issueing a SCSI SPOUT clear key page.
 .TP
+.B \-D <cachefile>
+Dump the content of given cachefile
+.TP
 .B \-d <nn>
 Set debug level to <nn>
 .TP
@@ -69,6 +72,9 @@ in RFC3394 which gives binary output.
 .B \-p <cachefile>
 Populate given cachefile with crypto keys
 .TP
+.B \-r <cachefile>
+Reset expiry time for entries of given cachefile
+.TP
 .B \-s <keyfile>
 Set encryption key loaded from keyfile. Load the new key from the keyfile
 and load it into the drives crypto buffer using a SCSI SPOUT command.
@@ -90,4 +96,4 @@ flag to base64 encode this data.
 .SH AUTHOR
 This manual page was written by Marco van Wieringen
 .nh
-<mvw@planets.elm.net>
+<marco.van.wieringen@bareos.com>

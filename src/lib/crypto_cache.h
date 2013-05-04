@@ -48,6 +48,8 @@ void write_crypto_cache(const char *dir, const char *progname, int port);
 void write_crypto_cache(const char *cache_file);
 bool update_crypto_cache(const char *VolumeName, const char *EncryptionKey);
 char *lookup_crypto_cache_entry(const char *VolumeName);
+void dump_crypto_cache(int fd);
+void reset_crypto_cache(void);
 void flush_crypto_cache(void);
 
 #endif /* _CRYPTO_CACHE_H */

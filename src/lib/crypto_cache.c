@@ -312,6 +312,89 @@ char *lookup_crypto_cache_entry(const char *VolumeName)
 }
 
 /*
+ * Dump the content of the crypto cache to a filedescriptor.
+ */
+void dump_crypto_cache(int fd)
+{
+   int len;
+   POOL_MEM msg(PM_MESSAGE);
+   crypto_cache_entry_t *cce;
+   char dt1[MAX_TIME_LENGTH],
+        dt2[MAX_TIME_LENGTH];
+   unsigned int max_vol_length,
+                max_key_length;
+
+   if (!cached_crypto_keys) {
+      return;
+   }
+
+   /*
+    * Lock the cache.
+    */
+   P(crypto_cache_lock);
+
+   /*
+    * See how long the biggest volumename and key are.
+    */
+   max_vol_length = strlen(_("Volumename"));
+   max_key_length = strlen(_("EncryptionKey"));
+   foreach_dlist(cce, cached_crypto_keys) {
+      if (strlen(cce->VolumeName) > max_vol_length) {
+         max_vol_length = strlen(cce->VolumeName);
+      }
+
+      if (strlen(cce->EncryptionKey) > max_key_length) {
+         max_key_length = strlen(cce->EncryptionKey);
+      }
+   }
+
+   len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n",
+              max_vol_length, _("Volumename"),
+              max_key_length, _("EncryptionKey"),
+              _("Added"), _("Expires"));
+   write(fd, msg.c_str(), len);
+
+   foreach_dlist(cce, cached_crypto_keys) {
+      bstrutime(dt1, sizeof(dt1), cce->added);
+      bstrutime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
+      len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n",
+                 max_vol_length, cce->VolumeName,
+                 max_key_length, cce->EncryptionKey,
+                 dt1, dt2);
+
+      write(fd, msg.c_str(), len);
+   }
+
+   V(crypto_cache_lock);
+}
+
+/*
+ * Reset all entries in the cache to the current time.
+ */
+void reset_crypto_cache(void)
+{
+   time_t now;
+   crypto_cache_entry_t *cce;
+
+   if (!cached_crypto_keys) {
+      return;
+   }
+
+   now = time(NULL);
+
+   /*
+    * Lock the cache.
+    */
+   P(crypto_cache_lock);
+
+   foreach_dlist(cce, cached_crypto_keys) {
+      cce->added = now;
+   }
+
+   V(crypto_cache_lock);
+}
+
+/*
  * Flush the date from the internal cache.
  */
 void flush_crypto_cache(void)
