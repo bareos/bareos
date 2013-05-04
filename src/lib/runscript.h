@@ -95,7 +95,8 @@ RUNSCRIPT *new_runscript();
 RUNSCRIPT *copy_runscript(RUNSCRIPT *src);
 
 /* launch each script from runscripts*/
-int run_scripts(JCR *jcr, alist *runscripts, const char *name);
+int run_scripts(JCR *jcr, alist *runscripts, const char *name,
+                alist *allowed_script_dirs = NULL);
 
 /* free RUNSCRIPT (and all POOLMEM) */
 void free_runscript(RUNSCRIPT *script);
