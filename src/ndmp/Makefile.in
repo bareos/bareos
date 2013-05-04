@@ -170,7 +170,7 @@ ndmos.lo: ndmos.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) \
 		-DNDMOS_CONST_PRODUCT_NAME='"BAREOS NDMP"' \
-		-DNDMOS_CONST_VENDOR_NAME='"Planets Communications B.V."' \
+		-DNDMOS_CONST_VENDOR_NAME='"Bareos GmbH & Co. KG"' \
 		-DNDMOS_CONST_NDMJOBLIB_REVISION='"bareos-$(LIBBAREOSNDMP_LT_RELEASE)"' \
 		ndmos.c
 
