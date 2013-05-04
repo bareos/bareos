@@ -31,10 +31,11 @@ LDLIBS = ../lib/libbareos.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
 SVRSRCS = accurate.c authenticate.c backup.c compression.c \
-	  crypto.c estimate.c fd_plugins.c filed_conf.c filed.c \
-	  fileset.c heartbeat.c job.c restore.c status.c verify.c \
+	  crypto.c dir_cmd.c estimate.c fd_plugins.c filed_conf.c \
+	  filed.c fileset.c heartbeat.c restore.c sd_cmds.c status.c verify.c \
 	  verify_vol.c vss.c vss_XP.c vss_W2K3.c vss_Vista.c \
 	  service.c main.c
+
 SVROBJS = $(SVRSRCS:.c=.o)
 
 all: bareos-fd.exe
