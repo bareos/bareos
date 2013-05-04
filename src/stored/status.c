@@ -257,10 +257,9 @@ static void list_status_header(STATUS_PKT *sp)
          edit_uint64_with_commas(sm_buffers, b4),
          edit_uint64_with_commas(sm_max_buffers, b5));
    sendit(msg, len, sp);
-   len = Mmsg(msg, " Sizes: boffset_t=%d size_t=%d int32_t=%d int64_t=%d "
-              "mode=%d,%d\n",
+   len = Mmsg(msg, " Sizes: boffset_t=%d size_t=%d int32_t=%d int64_t=%d mode=%d\n",
               (int)sizeof(boffset_t), (int)sizeof(size_t), (int)sizeof(int32_t),
-              (int)sizeof(int64_t), (int)DEVELOPER_MODE, (int)BEEF);
+              (int)sizeof(int64_t), (int)DEVELOPER_MODE);
    sendit(msg, len, sp);
 
    len = list_sd_plugins(msg);

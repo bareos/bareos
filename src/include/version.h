@@ -136,7 +136,6 @@
 /* #define DEBUG_MEMSET 1 */
 /* #define DEBUG_MUTEX 1 */
 /* #define DEBUG_BLOCK_CHECKSUM 1 */
-#define BEEF 0
 
 /*
  * Set SMALLOC_SANITY_CHECK to zero to turn off, otherwise

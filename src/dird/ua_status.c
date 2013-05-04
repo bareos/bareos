@@ -364,9 +364,8 @@ void list_dir_status_header(UAContext *ua)
    ua->send_msg(_("%s Version: %s (%s) %s %s %s\n"), my_name, VERSION, BDATE,
                 HOST_OS, DISTNAME, DISTVER);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-   ua->send_msg(_("Daemon started %s. Jobs: run=%d, running=%d "
-                  "mode=%d,%d\n"), dt,
-                num_jobs_run, job_count(), (int)DEVELOPER_MODE, (int)BEEF);
+   ua->send_msg(_("Daemon started %s. Jobs: run=%d, running=%d mode=%d\n"),
+                dt, num_jobs_run, job_count(), (int)DEVELOPER_MODE);
    ua->send_msg(_(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
                 edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
                 edit_uint64_with_commas(sm_bytes, b2),

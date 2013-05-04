@@ -10,7 +10,6 @@ echo "host_os ==> \c"; print -l (char *)host_os
 echo "distname ==> \c"; print -l (char *)distname
 echo "distver ==> \c"; print -l (char *)distver
 echo "dist_name ==> \c"; print -l (char *)dist_name
-echo "beef ==> \c"; print -l (int)beef
 
 echo "******** RUNNING THREADS/LWPS:"
 echo
