@@ -37,6 +37,7 @@ static void usage()
 "Usage: bscrypto <options> [<device_name>]\n"
 "       -b              Perform base64 encoding of keydata\n"
 "       -c              Clear encryption key\n"
+"       -D <cachefile>  Dump content of given cachefile\n"
 "       -d <nn>         Set debug level to <nn>\n"
 "       -e              Show drive encryption status\n"
 "       -g <keyfile>    Generate new encryption passphrase in keyfile\n"
@@ -58,6 +59,7 @@ int main(int argc, char *const *argv)
    int ch, kfd, length;
    bool base64_transform = false,
         clear_encryption = false,
+        dump_cache = false,
         drive_encryption_status = false,
         generate_passphrase = false,
         populate_cache = false,
@@ -75,7 +77,7 @@ int main(int argc, char *const *argv)
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
 
-   while ((ch = getopt(argc, argv, "bcd:eg:k:p:s:vw:?")) != -1) {
+   while ((ch = getopt(argc, argv, "bcD:d:eg:k:p:s:vw:?")) != -1) {
       switch (ch) {
       case 'b':
          base64_transform = true;
@@ -83,6 +85,11 @@ int main(int argc, char *const *argv)
 
       case 'c':
          clear_encryption = true;
+         break;
+
+      case 'D':
+         dump_cache = true;
+         cache_file = bstrdup(optarg);
          break;
 
       case 'd':
@@ -148,7 +155,7 @@ int main(int argc, char *const *argv)
    argc -= optind;
    argv += optind;
 
-   if (!generate_passphrase && !show_keydata && !populate_cache && argc < 1) {
+   if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache && argc < 1) {
       fprintf(stderr, _("Missing device_name argument for this option\n"));
       usage();
       retval = 1;
@@ -182,6 +189,7 @@ int main(int argc, char *const *argv)
         volume_encryption_status) &&
        (generate_passphrase ||
         show_keydata ||
+        dump_cache ||
         populate_cache)) {
       fprintf(stderr, _("Don't mix operations which are incompatible "
                         "e.g. generate/show vs set/clear etc.\n"));
@@ -191,6 +199,21 @@ int main(int argc, char *const *argv)
 
    OSDependentInit();
    init_msg(NULL, NULL);
+
+   if (dump_cache) {
+      /*
+       * Load any keys currently in the cache.
+       */
+      read_crypto_cache(cache_file);
+
+      /*
+       * Dump the content of the cache.
+       */
+      dump_crypto_cache(1);
+
+      flush_crypto_cache();
+      goto bail_out;
+   }
 
    if (populate_cache) {
       char *VolumeName, *EncrKey;
@@ -227,6 +250,8 @@ int main(int argc, char *const *argv)
        * Write out the new cache entries.
        */
       write_crypto_cache(cache_file);
+
+      flush_crypto_cache();
       goto bail_out;
    }
 
