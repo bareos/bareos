@@ -258,11 +258,12 @@ bool InsertDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
    return true;
 }
 
-/* Utility routine for updates.
+/*
+ * Utility routine for updates.
  * Returns: false on failure
  *          true on success
  */
-bool UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
+bool UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd, int nr_afr)
 {
    int num_rows;
 
@@ -274,38 +275,20 @@ bool UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
       }
       return false;
    }
-   num_rows = sql_affected_rows(mdb);
-   if (num_rows < 1) {
-      char ed1[30];
-      m_msg(file, line, &mdb->errmsg, _("Update failed: affected_rows=%s for %s\n"),
-         edit_uint64(num_rows, ed1), cmd);
-      if (verbose) {
-//       j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
-      }
-      return false;
-   }
-   mdb->changes++;
-   return true;
-}
 
-/* Utility routine for updates.
- * Returns: false on failure
- *          true on success
- * sames as UpdateDB() but ignores the number of affected rows
- */
-bool UpdateDB_no_afr(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
-{
-   int num_rows;
-
-   if (!sql_query(mdb, cmd)) {
-      m_msg(file, line, &mdb->errmsg, _("update %s failed:\n%s\n"), cmd, sql_strerror(mdb));
-      j_msg(file, line, jcr, M_ERROR, 0, "%s", mdb->errmsg);
-      if (verbose) {
-         j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
+   if (nr_afr > 0) {
+      num_rows = sql_affected_rows(mdb);
+      if (num_rows < nr_afr) {
+         char ed1[30];
+         m_msg(file, line, &mdb->errmsg, _("Update failed: affected_rows=%s for %s\n"),
+               edit_uint64(num_rows, ed1), cmd);
+         if (verbose) {
+//          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
+         }
+         return false;
       }
-      return false;
    }
-   num_rows = sql_affected_rows(mdb);
+
    mdb->changes++;
    return true;
 }
