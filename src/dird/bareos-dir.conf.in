@@ -83,7 +83,7 @@ Job {
   Storage = File
   Pool = Default
   Messages = Standard
-  Where = /tmp
+  Where = /tmp/bareos-restores
 }
 
 
