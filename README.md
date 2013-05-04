@@ -1,7 +1,7 @@
 BAREOS is a fork of the Bacula source code with the following
 changes (highlevel):
 
-Release 12.4.0
+Release 12.4.x
 
 * First attempt at adding a rerun command.
 * Pass the restore context as parameter to display_job_parameters
@@ -140,7 +140,7 @@ Long standing bugs fixed (bug numbers are from the bacula bug database):
     * OpenSuse 12.1
     * OpenSuse 12.1
     * OpenSuse factory
-    * More to come like Ubuntu etc.
+    * Ubuntu 12.04
   * Fully automatic generation of new packages within one hour after new
     release of software or bugfix.
   * Fully automatic continuos integration tests of new packages with most major linux distribution
