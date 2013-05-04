@@ -15,8 +15,8 @@
 #
 ### BEGIN INIT INFO
 # Provides:			bareos-sd
-# Required-Start:		$local_fs $remote_fs $network
-# Required-Stop:		$local_fs $remote_fs $network
+# Required-Start:		$local_fs $remote_fs $network $time $syslog
+# Required-Stop:		$local_fs $remote_fs $network $time $syslog
 # Default-Start:		3 5
 # Default-Stop: 	0 1 2 6
 # Short-Description:	bareos storage daemon
@@ -31,18 +31,12 @@ case "$1" in
     start)
        echo -n "Starting the Bareos Storage daemon: "
        /sbin/startproc -u @sd_user@ -g @sd_group@ @sbindir@/bareos-sd $2 -c @sysconfdir@/bareos-sd.conf
-       RETVAL=$?
-       rc_status -v
-       echo
-       [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-sd
+       rc_status -v && touch @subsysdir@/bareos-sd
        ;;
     stop)
        echo -n "Stopping the Bareos Storage daemon: "
        /sbin/killproc @sbindir@/bareos-sd
-       RETVAL=$?
-       rc_status -v
-       echo
-       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bareos-sd
+       rc_status -v && rm -f @subsysdir@/bareos-sd
        ;;
     restart)
        $0 stop
@@ -50,8 +44,8 @@ case "$1" in
        $0 start
        ;;
     status)
+       echo -n "Checking for Bareos storage daemon "
        /sbin/checkproc @sbindir@/bareos-sd
-       RETVAL=$?
        rc_status -v
        ;;
     *)
@@ -59,4 +53,4 @@ case "$1" in
        exit 1
        ;;
 esac
-exit $RETVAL
+rc_exit
