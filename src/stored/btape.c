@@ -375,6 +375,7 @@ static void terminate_btape(int status)
 
    if (this_block) {
       free_block(this_block);
+      this_block = NULL;
    }
 
    stop_watchdog();
@@ -2656,6 +2657,12 @@ bail_out:
    free_block(last_block1);
    free_block(last_block2);
    free_block(first_block);
+
+   last_block1 = NULL;
+   last_block2 = NULL;
+   last_block = NULL;
+   first_block = NULL;
+
    return rc;
 }
 
