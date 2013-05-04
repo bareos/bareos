@@ -484,7 +484,7 @@ db_make_inchanger_unique(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
                edit_int64(mr->StorageId, ed1), mr->VolumeName);
        }
        Dmsg1(100, "%s\n", mdb->cmd);
-       UPDATE_DB(jcr, mdb, mdb->cmd);
+       UPDATE_DB_NO_AFR(jcr, mdb, mdb->cmd);
    }
 }
 

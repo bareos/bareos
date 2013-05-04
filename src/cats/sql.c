@@ -288,6 +288,28 @@ bool UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
    return true;
 }
 
+/* Utility routine for updates.
+ * Returns: false on failure
+ *          true on success
+ * sames as UpdateDB() but ignores the number of affected rows
+ */
+bool UpdateDB_no_afr(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
+{
+   int num_rows;
+
+   if (!sql_query(mdb, cmd)) {
+      m_msg(file, line, &mdb->errmsg, _("update %s failed:\n%s\n"), cmd, sql_strerror(mdb));
+      j_msg(file, line, jcr, M_ERROR, 0, "%s", mdb->errmsg);
+      if (verbose) {
+         j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
+      }
+      return false;
+   }
+   num_rows = sql_affected_rows(mdb);
+   mdb->changes++;
+   return true;
+}
+
 /*
  * Utility routine for deletes
  *
