@@ -10,6 +10,11 @@ Release 13.1.x
 * Cleanup of compression framework (#34)
 * Encryption cipher is hardcoded (#46)
 * Job migration/copy between different SDs (#7)
+* Use open_bpipe wrapper in bpipe plugin (#104)
+   * Side effect of using open_bpipe is that you can only call
+     a binary or a script like all other things in Bareos e.g.
+     runscripts etc. If you want to use a direct cmdline you need
+     to embed the cmdline in a sh -c 'cmdline ...'
 
 Release 12.4.x
 
