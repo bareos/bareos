@@ -42,7 +42,7 @@ void strip_path(FF_PKT *ff_pkt);
 void unstrip_path(FF_PKT *ff_pkt);
 
 /* compression.c */
-void adjust_compression_buffers(JCR *jcr);
+bool adjust_compression_buffers(JCR *jcr);
 bool adjust_decompression_buffers(JCR *jcr);
 bool setup_compression_context(b_ctx &bctx);
 bool compress_data(b_ctx &bctx);

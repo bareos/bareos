@@ -2651,14 +2651,17 @@ CPPFLAGS="${saved_CPPFLAGS} ${ZLIB_INC}"
 
 AC_CHECK_HEADERS(zlib.h)
 
+AC_MSG_CHECKING(for deflate in zlib library)
 AC_TRY_LINK(
    [
        #include <zlib.h>
    ], [
        deflate(Z_NULL, 0);
    ], [
+       AC_MSG_RESULT(yes)
        have_zlib="yes"
    ], [
+       AC_MSG_RESULT(no)
        have_zlib="no"
    ]
 )
@@ -2708,6 +2711,7 @@ CPPFLAGS="${saved_CPPFLAGS} ${LZO_INC}"
 AC_CHECK_HEADERS(lzo/lzoconf.h)
 AC_CHECK_HEADERS(lzo/lzo1x.h)
 
+AC_MSG_CHECKING(for lzo1x_1_compress in lzo library)
 AC_TRY_LINK(
    [
        #include <lzo/lzoconf.h>
@@ -2715,8 +2719,10 @@ AC_TRY_LINK(
    ], [
        lzo1x_1_compress(NULL, 0, NULL, NULL, NULL);
    ], [
+       AC_MSG_RESULT(yes)
        have_lzo="yes"
    ], [
+       AC_MSG_RESULT(no)
        have_lzo="no"
    ]
 )
@@ -2734,6 +2740,65 @@ fi
 
 AC_SUBST(LZO_INC)
 AC_SUBST(LZO_LIBS)
+
+dnl
+dnl Check for fastlz
+dnl
+FASTLZ_LIBS="-lfastlz"
+FASTLZ_INC=""
+have_fastlz=no
+AC_ARG_WITH(fastlz,
+   AC_HELP_STRING([--with-fastlz@<:@=DIR@:>@], [Directory holding fastlz includes/libs]),
+   with_fastlz_directory=${withval}
+)
+
+if test "x${with_fastlz_directory}" != "xyes" && test x"${with_fastlz_directory}" != "x"; then
+   #
+   # Make sure the $with_fastlz_directory also makes sense
+   #
+   if test -d "${with_fastlz_directory}/lib" -a -d "${with_fastlz_directory}/include"; then
+      FASTLZ_LIBS="-L${with_fastlz_directory}/lib ${FASTLZ_LIBS}"
+      FASTLZ_INC="-I${with_fastlz_directory}/include ${FASTLZ_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${FASTLZ_LIBS}"
+CFLAGS="${saved_CFLAGS} ${FASTLZ_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${FASTLZ_INC}"
+
+AC_CHECK_HEADERS(fastlzlib.h)
+
+AC_MSG_CHECKING(for fastlzlibCompress in fastlz library)
+AC_TRY_LINK(
+   [
+       #include <fastlzlib.h>
+   ], [
+       fastlzlibCompress(Z_NULL, 0);
+   ], [
+       AC_MSG_RESULT(yes)
+       have_fastlz="yes"
+   ], [
+       AC_MSG_RESULT(no)
+       have_fastlz="no"
+   ]
+)
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_fastlz}" = "xyes"; then
+   AC_DEFINE(HAVE_FASTLZ, 1, [Define to 1 if you have fastlz lib])
+else
+   FASTLZ_LIBS=""
+   FASTLZ_INC=""
+fi
+
+AC_SUBST(FASTLZ_INC)
+AC_SUBST(FASTLZ_LIBS)
 
 dnl
 dnl Check if we have AFS on this system
@@ -3872,6 +3937,7 @@ Configuration on `date`:
    GNUTLS support:          ${have_gnutls}
    ZLIB support:            ${have_zlib}
    LZO support:             ${have_lzo}
+   FASTLZ support:          ${have_fastlz}
    NDMP support:            ${support_ndmp}
    enable-smartalloc:       ${support_smartalloc}
    enable-lockmgr:          ${support_lockmgr}

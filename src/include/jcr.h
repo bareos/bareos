@@ -466,6 +466,9 @@ public:
 #ifdef HAVE_LZO
    void *LZO_compress_workset;            /* LZO compression session data */
 #endif
+#ifdef HAVE_FASTLZ
+   void *pZfast_compress_workset;         /* FASTLZ compression session data */
+#endif
    int32_t replace;                       /* Replace options */
    int32_t buf_size;                      /* Length of buffer */
    FF_PKT *ff;                            /* Find Files packet */

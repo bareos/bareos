@@ -22,7 +22,7 @@ DEBUG=@DEBUG@
 
 GETTEXT_LIBS = @LIBINTL@
 
-CPPFLAGS += @ZLIB_INC@ @LZO_INC@
+COMPRESS_CPPFLAGS += @ZLIB_INC@ @LZO_INC@ @FASTLZ_INC@
 
 first_rule: all
 dummy:
@@ -37,6 +37,7 @@ SVROBJS = $(SVRSRCS:.c=.o)
 FDLIBS += @CAP_LIBS@
 FDLIBS += @ZLIB_LIBS@
 FDLIBS += @LZO_LIBS@
+FDLIBS += @FASTLZ_LIBS@
 FDLIBS += @AFS_LIBS_NONSHARED@
 FDLIBS += @ACL_LIBS_NONSHARED@
 FDLIBS += @XATTR_LIBS_NONSHARED@
@@ -52,6 +53,10 @@ INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
+compression.o: compression.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(COMPRESS_CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
 all: Makefile bareos-fd @STATIC_FD@
 	@echo "==== Make of filed is good ===="
 	@echo " "

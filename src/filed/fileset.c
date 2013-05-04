@@ -850,11 +850,25 @@ static int set_options(findFOPTS *fo, const char *opts)
             fo->flags |= FO_COMPRESS;
             fo->Compress_algo = COMPRESS_GZIP;
             fo->Compress_level = *p - '0';
-         }
-         else if (*p == 'o') {
+         } else if (*p == 'o') {
             fo->flags |= FO_COMPRESS;
             fo->Compress_algo = COMPRESS_LZO1X;
             fo->Compress_level = 1;     /* not used with LZO */
+         } else if (*p == 'f') {
+	    p++;
+	    if (*p == 'f') {
+               fo->flags |= FO_COMPRESS;
+               fo->Compress_algo = COMPRESS_FZFZ;
+               fo->Compress_level = 1;     /* not used with FZFZ */
+            } else if (*p == '4') {
+               fo->flags |= FO_COMPRESS;
+               fo->Compress_algo = COMPRESS_FZ4L;
+               fo->Compress_level = 1;     /* not used with FZ4L */
+            } else if (*p == 'h') {
+               fo->flags |= FO_COMPRESS;
+               fo->Compress_algo = COMPRESS_FZ4H;
+               fo->Compress_level = 1;     /* not used with FZ4H */
+            }
          }
          break;
       case 'z':                         /* Min, max or approx size or size range */
