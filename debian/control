@@ -264,3 +264,12 @@ Description: Backup Archiving Recovery Open Sourced - tray monitor
  GNOME.
  .
  The monitor constantly displays Bareos's status.
+
+Package: bareos-dbg
+Architecture: any
+Section: debug
+Priority: extra
+Depends:
+    bareos (= ${binary:Version}),
+    ${misc:Depends}
+Description: Backup Archiving Recovery Open Sourced - debugging symbols
