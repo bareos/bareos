@@ -1166,8 +1166,14 @@ int main(int argc, char *argv[])
        * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
        */
       cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
-                                      cons->tls_ca_certdir, cons->tls_certfile,
-                                      cons->tls_keyfile, tls_pem_callback, &errmsg, NULL, true);
+                                      cons->tls_ca_certdir,
+                                      cons->tls_crlfile,
+                                      cons->tls_certfile,
+                                      cons->tls_keyfile,
+                                      tls_pem_callback,
+                                      &errmsg,
+                                      NULL,
+                                      true);
 
       if (!cons->tls_ctx) {
          senditf(_("Failed to initialize TLS context for Console \"%s\".\n"), cons->hdr.name);
@@ -1193,8 +1199,14 @@ int main(int argc, char *argv[])
        * Args: CA certfile, CA certdir, Certfile, Keyfile,
        * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
       dir->tls_ctx = new_tls_context(dir->tls_ca_certfile,
-                                     dir->tls_ca_certdir, dir->tls_certfile,
-                                     dir->tls_keyfile, tls_pem_callback, &errmsg, NULL, true);
+                                     dir->tls_ca_certdir,
+                                     dir->tls_crlfile,
+                                     dir->tls_certfile,
+                                     dir->tls_keyfile,
+                                     tls_pem_callback,
+                                     &errmsg,
+                                     NULL,
+                                     true);
 
       if (!dir->tls_ctx) {
          senditf(_("Failed to initialize TLS context for Director \"%s\".\n"), dir->hdr.name);

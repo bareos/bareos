@@ -104,7 +104,7 @@ bareos-sd: Makefile $(SDOBJS) \
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -o $@ $(SDOBJS) \
 	   $(NDMP_LIBS) -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
-	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   $(SD_LIBS) $(GETTEXT_LIBS)
 
 static-bareos-sd: Makefile $(SDOBJS) \
 	          ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
@@ -113,7 +113,7 @@ static-bareos-sd: Makefile $(SDOBJS) \
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -o $@ $(SDOBJS) \
 	   $(NDMP_LIBS) -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
-	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS)
 	strip $@
 
 ndmp_tape.o: ndmp_tape.c
@@ -122,26 +122,26 @@ ndmp_tape.o: ndmp_tape.c
 
 btape: Makefile  $(TAPEOBJS) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(TAPEOBJS) \
-	   -lbareoscfg -lbareos $(DLIB) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   -lbareoscfg -lbareos $(DLIB) -lm $(LIBS) $(GETTEXT_LIBS)
 
 bls:	Makefile $(BLSOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Compiling $<"
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BLSOBJS) $(DLIB) \
-	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
 
 bextract: Makefile $(BEXTOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Compiling $<"
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BEXTOBJS) $(DLIB) \
-	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(BEXTRACT_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(AFS_LIBS) $(ACL_LIBS) $(XATTR_LIBS)
+	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(BEXTRACT_LIBS) $(GETTEXT_LIBS)
 
 bscan:	Makefile $(SCNOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
 	../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SCNOBJS) \
-	   -lbareossql -lbareoscats $(DB_LIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   -lbareossql -lbareoscats $(DB_LIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(GETTEXT_LIBS)
 
 bcopy:	Makefile $(COPYOBJS) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(COPYOBJS) \
-	   -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \

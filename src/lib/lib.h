@@ -40,7 +40,6 @@
 #include "queue.h"
 #include "serial.h"
 #include "message.h"
-#include "openssl.h"
 #include "lex.h"
 #include "parse_conf.h"
 #include "tls.h"

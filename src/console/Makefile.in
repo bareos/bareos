@@ -44,13 +44,12 @@ all: Makefile bconsole @STATIC_CONS@
 
 bconsole: Makefile $(CONSOBJS) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) $(CONS_LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
-	      $(DLIB) $(CONS_LIBS) -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) \
-	      $(OPENSSL_LIBS)
+	      $(DLIB) $(CONS_LIBS) -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
 
 static-bconsole: Makefile $(CONSOBJS) ../lib/libbareos.a ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) -static $(LDFLAGS) $(CONS_LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
 	      $(DLIB) $(CONS_LIBS) -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) \
-	      $(OPENSSL_LIBS)
+	      $(OPENSSL_LIBS) $(GNUTLS_LIBS)
 	strip $@
 
 

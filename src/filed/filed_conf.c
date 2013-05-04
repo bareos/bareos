@@ -113,6 +113,7 @@ static RES_ITEM cli_items[] = {
    { "tlsrequire", store_bool, ITEM(res_client.tls_require), 0, 0, NULL },
    { "tlscacertificatefile", store_dir, ITEM(res_client.tls_ca_certfile), 0, 0, NULL },
    { "tlscacertificatedir", store_dir, ITEM(res_client.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", store_dir, ITEM(res_client.tls_crlfile), 0, 0, NULL },
    { "tlscertificate", store_dir, ITEM(res_client.tls_certfile), 0, 0, NULL },
    { "tlskey", store_dir, ITEM(res_client.tls_keyfile), 0, 0, NULL },
    { "verid", store_str, ITEM(res_client.verid), 0, 0, NULL },
@@ -139,6 +140,7 @@ static RES_ITEM dir_items[] = {
    { "tlsverifypeer", store_bool, ITEM(res_dir.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
    { "tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
    { "tlscacertificatedir", store_dir, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", store_dir, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
    { "tlscertificate", store_dir, ITEM(res_dir.tls_certfile), 0, 0, NULL },
    { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
    { "tlsdhfile", store_dir, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
@@ -249,6 +251,9 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.tls_ca_certdir) {
          free(res->res_dir.tls_ca_certdir);
       }
+      if (res->res_dir.tls_crlfile) {
+         free(res->res_dir.tls_crlfile);
+      }
       if (res->res_dir.tls_certfile) {
          free(res->res_dir.tls_certfile);
       }
@@ -324,6 +329,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_client.tls_ca_certdir) {
          free(res->res_client.tls_ca_certdir);
+      }
+      if (res->res_client.tls_crlfile) {
+         free(res->res_client.tls_crlfile);
       }
       if (res->res_client.tls_certfile) {
          free(res->res_client.tls_certfile);

@@ -684,7 +684,7 @@ static bool check_resources()
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
           */
          director->tls_ctx = new_tls_context(director->tls_ca_certfile,
-            director->tls_ca_certdir, director->tls_certfile,
+            director->tls_ca_certdir, director->tls_crlfile, director->tls_certfile,
             director->tls_keyfile, NULL, NULL, director->tls_dhfile,
             director->tls_verify_peer);
 
@@ -914,7 +914,7 @@ static bool check_resources()
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
           */
          cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
-                                         cons->tls_ca_certdir, cons->tls_certfile,
+                                         cons->tls_ca_certdir, cons->tls_crlfile, cons->tls_certfile,
                                          cons->tls_keyfile, NULL, NULL,
                                          cons->tls_dhfile, cons->tls_verify_peer);
          if (!cons->tls_ctx) {
@@ -961,7 +961,7 @@ static bool check_resources()
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
           */
          client->tls_ctx = new_tls_context(client->tls_ca_certfile,
-                                           client->tls_ca_certdir, client->tls_certfile,
+                                           client->tls_ca_certdir, client->tls_crlfile, client->tls_certfile,
                                            client->tls_keyfile, NULL, NULL, NULL,
                                            true);
          if (!client->tls_ctx) {
@@ -1009,7 +1009,7 @@ static bool check_resources()
          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
          */
          store->tls_ctx = new_tls_context(store->tls_ca_certfile,
-                                          store->tls_ca_certdir, store->tls_certfile,
+                                          store->tls_ca_certdir, store->tls_crlfile, store->tls_certfile,
                                           store->tls_keyfile, NULL, NULL, NULL, true);
          if (!store->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),

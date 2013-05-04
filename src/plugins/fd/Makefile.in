@@ -54,7 +54,7 @@ plugtest: Makefile fd_plugins.c fileset.c \
 	  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../filed/fd_plugins.c
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../filed/fileset.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -L../../findlib -o $@ fd_plugins.o fileset.o -lbareosfind -lbareos $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -L../../findlib -o $@ fd_plugins.o fileset.o -lbareosfind -lbareos $(DLIB) -lm $(LIBS)
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)

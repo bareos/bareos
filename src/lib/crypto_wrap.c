@@ -41,10 +41,16 @@
 
 #include "bareos.h"
 
-#ifdef HAVE_CRYPTO /* Is encryption enabled? */
-#ifdef HAVE_OPENSSL /* How about OpenSSL? */
+#if defined(HAVE_OPENSSL) || defined(HAVE_GNUTLS)
 
+#ifdef HAVE_OPENSSL
 #include <openssl/aes.h>
+#endif
+
+#ifdef HAVE_GNUTLS
+#include <gnutls/gnutls.h>
+#include <gnutls/crypto.h>
+#endif
 
 /*
  * @kek: key encryption key (KEK)
@@ -56,7 +62,13 @@ void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
 {
    uint8_t *a, *r, b[16];
    int i, j;
+#ifdef HAVE_OPENSSL
    AES_KEY key;
+#endif
+#ifdef HAVE_GNUTLS
+   gnutls_cipher_hd_t key;
+   gnutls_datum_t key_data;
+#endif
 
    a = cipher;
    r = cipher + 8;
@@ -67,7 +79,14 @@ void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
    memset(a, 0xa6, 8);
    memcpy(r, plain, 8 * n);
 
+#ifdef HAVE_OPENSSL
    AES_set_encrypt_key(kek, 128, &key);
+#endif
+#ifdef HAVE_GNUTLS
+   key_data.data = kek;
+   key_data.size = strlen((char *)kek);
+   gnutls_cipher_init(&key, GNUTLS_CIPHER_AES_128_CBC, &key_data, NULL);
+#endif
 
    /*
     * 2) Calculate intermediate values.
@@ -82,7 +101,12 @@ void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
       for (i = 1; i <= n; i++) {
          memcpy(b, a, 8);
          memcpy(b + 8, r, 8);
+#ifdef HAVE_OPENSSL
          AES_encrypt(b, b, &key);
+#endif
+#ifdef HAVE_GNUTLS
+         gnutls_cipher_encrypt(key, b, sizeof(b));
+#endif
          memcpy(a, b, 8);
          a[7] ^= n * j + i;
          memcpy(r, b + 8, 8);
@@ -95,6 +119,9 @@ void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
     * These are already in @cipher due to the location of temporary
     * variables.
     */
+#ifdef HAVE_GNUTLS
+   gnutls_cipher_deinit(key);
+#endif
 }
 
 /*
@@ -107,7 +134,13 @@ int aes_unwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
 {
    uint8_t a[8], *r, b[16];
    int i, j;
+#ifdef HAVE_OPENSSL
    AES_KEY key;
+#endif
+#ifdef HAVE_GNUTLS
+   gnutls_cipher_hd_t key;
+   gnutls_datum_t key_data;
+#endif
 
    /*
     * 1) Initialize variables.
@@ -116,7 +149,14 @@ int aes_unwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
    r = plain;
    memcpy(r, cipher + 8, 8 * n);
 
+#ifdef HAVE_OPENSSL
    AES_set_decrypt_key(kek, 128, &key);
+#endif
+#ifdef HAVE_GNUTLS
+   key_data.data = kek;
+   key_data.size = strlen((char *)kek);
+   gnutls_cipher_init(&key, GNUTLS_CIPHER_AES_128_CBC, &key_data, NULL);
+#endif
 
    /*
     * 2) Compute intermediate values.
@@ -133,7 +173,12 @@ int aes_unwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
          b[7] ^= n * j + i;
 
          memcpy(b + 8, r, 8);
+#ifdef HAVE_OPENSSL
          AES_decrypt(b, b, &key);
+#endif
+#ifdef HAVE_GNUTLS
+         gnutls_cipher_decrypt(key, b, sizeof(b));
+#endif
          memcpy(a, b, 8);
          memcpy(r, b + 8, 8);
          r -= 8;
@@ -152,15 +197,13 @@ int aes_unwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
       }
    }
 
+#ifdef HAVE_GNUTLS
+   gnutls_cipher_deinit(key);
+#endif
+
    return 0;
 }
-
-#else /* HAVE_OPENSSL */
-#error No encryption library available
-#endif /* HAVE_OPENSSL */
-
-#else /* HAVE_CRYPTO */
-
+#else
 /*
  * @kek: key encryption key (KEK)
  * @n: length of the wrapped key in 64-bit units; e.g., 2 = 128-bit = 16 bytes
@@ -183,5 +226,4 @@ int aes_unwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
    memcpy(cipher, plain, n * 8);
    return 0;
 }
-
-#endif /* HAVE_CRYPTO */
+#endif /* HAVE_OPENSSL || HAVE_GNUTLS */
