@@ -317,7 +317,8 @@ char *lookup_crypto_cache_entry(const char *VolumeName)
 void dump_crypto_cache(int fd)
 {
    int len;
-   const char *header;
+   int max_vol_length = 0;
+   int max_key_length = 0;
    crypto_cache_entry_t *cce;
    char dt1[MAX_TIME_LENGTH],
         dt2[MAX_TIME_LENGTH];
@@ -328,20 +329,32 @@ void dump_crypto_cache(int fd)
    }
 
    /*
-    * Default header
-    */
-   header = _("Volumename       EncryptionKey                    Added                Expires\n");
-
-   /*
     * Lock the cache.
     */
    P(crypto_cache_lock);
 
-   write(fd, header, strlen(header));
+   /*
+    * See how long the biggest volumename and key are.
+    */
+   foreach_dlist(cce, cached_crypto_keys) {
+      if (strlen(cce->VolumeName) > max_vol_length) {
+         max_vol_length = strlen(cce->VolumeName);
+      }
+
+      if (strlen(cce->EncryptionKey) > max_key_length) {
+         max_key_length = strlen(cce->EncryptionKey);
+      }
+   }
+
+   len = Mmsg(msg, "%*s %*s %-20s %-20s\n", max_vol_length, _("Volumename"), max_key_length,
+              _("EncryptionKey"), _("Added"), _("Expires"));
+   write(fd, msg.c_str(), len);
+
    foreach_dlist(cce, cached_crypto_keys) {
       bstrutime(dt1, sizeof(dt1), cce->added);
       bstrutime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
-      len = Mmsg(msg, "%-16s %-32s %-20s %-20s\n", cce->VolumeName, cce->EncryptionKey, dt1, dt2);
+      len = Mmsg(msg, "%*s %*s %-20s %-20s\n", max_vol_length, cce->VolumeName, max_key_length,
+                 cce->EncryptionKey, dt1, dt2);
 
       write(fd, msg.c_str(), len);
    }
