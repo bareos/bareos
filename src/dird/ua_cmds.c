@@ -188,7 +188,7 @@ static struct cmdstruct commands[] = {
          "\tcomment=<text> yes"), false },
    { NT_("status"), status_cmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | client=<client-name> | storage=<storage-name> slots | days=nnn"), true },
-   { NT_("setbandwidth"),   setbwlimit_cmd,  _("Sets bandwidth"),
+   { NT_("setbandwidth"), setbwlimit_cmd,  _("Sets bandwidth"),
      NT_("limit=<nn-kbs> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true },
    { NT_("setdebug"), setdebug_cmd, _("Sets debug level"),
      NT_("level=<nn> trace=0/1 client=<client-name> | dir | storage=<storage-name> | all"), true },
