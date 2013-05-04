@@ -32,7 +32,6 @@ done
 DATA="\
 console_command \
 exepath \
-beef \
 version \
 dist_name \
 "

@@ -32,7 +32,6 @@ extern CLIENTRES *me;
 extern DLL_IMP_EXP char *exepath;
 extern DLL_IMP_EXP char *version;
 extern DLL_IMP_EXP char *dist_name;
-extern DLL_IMP_EXP int beef;
 
 const int dbglvl = 150;
 #ifdef HAVE_WIN32
@@ -1486,9 +1485,6 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
    case bVarDistName:
       *(char **)value = dist_name;
       break;
-   case bVarBEEF:
-      *((int *)value) = beef;
-      break;
    default:
       break;
    }
@@ -1571,7 +1567,6 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
    case bVarExePath:
    case bVarVersion:
    case bVarDistName:
-   case bVarBEEF:
       break;
    }
    Dsm_check(999);
