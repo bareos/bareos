@@ -1143,7 +1143,11 @@ static bool write_two_files()
     * Set big max_file_size so that write_record_to_block
     * doesn't insert any additional EOF marks
     */
-   dev->max_file_size = 2 * num_recs * dev->max_block_size;
+   if (dev->max_block_size) {
+      dev->max_file_size = 2 * num_recs * dev->max_block_size;
+   } else {
+      dev->max_file_size = 2 * num_recs * DEFAULT_BLOCK_SIZE;
+   }
    Pmsg2(-1, _("\n=== Write, rewind, and re-read test ===\n\n"
       "I'm going to write %d records and an EOF\n"
       "then write %d records and an EOF, then rewind,\n"
@@ -2231,6 +2235,8 @@ static void fillcmd()
    min_block_size = dev->min_block_size;
    dev->min_block_size = dev->max_block_size;
    write_eof = dev->max_file_size / REC_SIZE; /*compute when we add EOF*/
+   ASSERT(write_eof > 0);
+
    set_volume_name("TestVolume1", 1);
    dir_ask_sysop_to_create_appendable_volume(dcr);
    dev->set_append();                 /* force volume to be relabeled */
