@@ -867,7 +867,8 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
             statistics,
             quota_info,
             client_options,
-            daemon_status;
+            daemon_status,
+            compress_algo_list;
 
    bstrftimes(schedt, sizeof(schedt), jcr->jr.SchedTime);
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
@@ -876,6 +877,8 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
    bstrftimes(gdt, sizeof(gdt),
               jcr->res.client->GraceTime +
               jcr->res.client->SoftQuotaGracePeriod);
+
+   find_used_compressalgos( &compress_algo_list, jcr);
 
    if (RunTime <= 0) {
       kbps = 0;
@@ -993,12 +996,13 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
       } else {
          if (jcr->HasBase) {
             Mmsg(client_options, _(
-                 "  Software Compression:   %s\n"
+                 "  Software Compression:   %s (%s)\n"
                  "  Base files/Used files:  %lld/%lld (%.2f%%)\n"
                  "  VSS:                    %s\n"
                  "  Encryption:             %s\n"
                  "  Accurate:               %s\n"),
                  compress,
+                 compress_algo_list.c_str(),
                  jcr->nb_base_files,
                  jcr->nb_base_files_used,
                  jcr->nb_base_files_used * 100.0 / jcr->nb_base_files,
@@ -1007,11 +1011,12 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
                  jcr->accurate ? _("yes") : _("no"));
          } else {
             Mmsg(client_options, _(
-                 "  Software Compression:   %s\n"
+                 "  Software Compression:   %s (%s)\n"
                  "  VSS:                    %s\n"
                  "  Encryption:             %s\n"
                  "  Accurate:               %s\n"),
                  compress,
+                 compress_algo_list.c_str(),
                  jcr->VSS ? _("yes") : _("no"),
                  jcr->Encrypt ? _("yes") : _("no"),
                  jcr->accurate ? _("yes") : _("no"));
