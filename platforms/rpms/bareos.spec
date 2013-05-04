@@ -433,7 +433,7 @@ export MTX=/usr/sbin/mtx
   --with-plugindir=%{plugin_dir} \
   --with-pid-dir=%{pid_dir} \
   --with-bsrdir=%{bsr_dir} \
-  --with-logdir=%{_logdir}/bareos \
+  --with-logdir=/var/log/bareos \
   --with-subsys-dir=%{_subsysdir} \
   --enable-smartalloc \
   --disable-conio \
@@ -666,6 +666,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-sd.service
 %endif
+%attr(0775, %{storage_daemon_user}, %{daemon_group}) %dir /var/lib/bareos/storage
 
 %files filedaemon
 # fd package (bareos-fd, plugins)
@@ -700,6 +701,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_libdir}/libbareosfind.so
 %{_libdir}/libbareosndmp-%{_libversion}.so
 %{_libdir}/libbareosndmp.so
+%attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos
 
 #
 # Generic stuff needed for all software so stuffed into libs package
