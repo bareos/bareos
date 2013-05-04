@@ -1149,6 +1149,7 @@ static void status_slots(UAContext *ua, STORERES *store_r)
                   case slot_type_drive:
                      if (vl1->Slot == vl2->Loaded) {
                         found = true;
+                        continue;
                      }
                      break;
                   default:
