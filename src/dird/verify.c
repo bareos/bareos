@@ -36,12 +36,16 @@
 #include "findlib/find.h"
 
 /* Commands sent to File daemon */
-static char verifycmd[] = "verify level=%s\n";
-static char storaddr[] = "storage address=%s port=%d ssl=0 Authorization=%s\n";
+static char verifycmd[] =
+   "verify level=%s\n";
+static char storaddr[] =
+   "storage address=%s port=%d ssl=0 Authorization=%s\n";
 
 /* Responses received from File daemon */
-static char OKverify[] = "2000 OK verify\n";
-static char OKstore[] = "2000 OK storage\n";
+static char OKverify[] =
+   "2000 OK verify\n";
+static char OKstore[] =
+   "2000 OK storage\n";
 
 /* Forward referenced functions */
 static void prt_fname(JCR *jcr);
@@ -227,7 +231,7 @@ bool do_verify(JCR *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!start_storage_daemon_job(jcr, jcr->rstorage, NULL, /*send_bsr*/true)) {
+      if (!start_storage_daemon_job(jcr, jcr->rstorage, NULL, /* send_bsr */ true)) {
          return false;
       }
 
@@ -527,7 +531,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
    fdbr.JobId = JobId;
    jcr->FileIndex = 0;
 
-   Dmsg0(20, "bdird: waiting to receive file attributes\n");
+   Dmsg0(20, "dir: waiting to receive file attributes\n");
    /*
     * Get Attributes and Signature from File daemon
     * We expect:
@@ -749,7 +753,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
 
    if (is_bnet_error(fd)) {
       berrno be;
-      Jmsg2(jcr, M_FATAL, 0, _("bdird<filed: bad attributes from filed n=%d : %s\n"),
+      Jmsg2(jcr, M_FATAL, 0, _("dir<filed: bad attributes from filed n=%d : %s\n"),
                         n, be.bstrerror());
       goto bail_out;
    }

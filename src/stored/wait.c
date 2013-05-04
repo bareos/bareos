@@ -84,7 +84,7 @@ int wait_for_sysop(DCR *dcr)
       dev->set_blocked(BST_WAITING_FOR_SYSOP); /* indicate waiting for mount */
    }
 
-   for ( ; !job_canceled(jcr); ) {
+   while (!job_canceled(jcr)) {
       time_t now, start, total_waited;
 
       gettimeofday(&tv, &tz);

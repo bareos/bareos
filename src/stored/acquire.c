@@ -219,7 +219,7 @@ bool acquire_device_for_read(DCR *dcr)
        * reading. If it is a file, it opens it.
        * If it is a tape, it checks the volume name
        */
-      Dmsg1(rdbglvl, "open vol=%s\n", dcr->VolumeName);
+      Dmsg1(rdbglvl, "stored: open vol=%s\n", dcr->VolumeName);
       if (!dev->open(dcr, OPEN_READ_ONLY)) {
          if (!dev->poll) {
             Jmsg3(jcr, M_WARNING, 0, _("Read open device %s Volume \"%s\" failed: ERR=%s\n"),

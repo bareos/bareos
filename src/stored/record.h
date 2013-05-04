@@ -111,6 +111,7 @@ struct DEV_RECORD {
    uint32_t last_VolSessionId;        /* used in sequencing FI for Vbackup */
    uint32_t last_VolSessionTime;
    int32_t  last_FileIndex;
+   int32_t  last_Stream;              /* used in SD-SD replication */
 };
 
 

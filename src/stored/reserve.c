@@ -44,15 +44,20 @@ static void pop_reserve_messages(JCR *jcr);
 //void switch_device(DCR *dcr, DEVICE *dev);
 
 /* Requests from the Director daemon */
-static char use_storage[]  = "use storage=%127s media_type=%127s "
+static char use_storage[] =
+   "use storage=%127s media_type=%127s "
    "pool_name=%127s pool_type=%127s append=%d copy=%d stripe=%d\n";
-static char use_device[]  = "use device=%127s\n";
+static char use_device[]  =
+   "use device=%127s\n";
 
 /* Responses sent to Director daemon */
-static char OK_device[] = "3000 OK use device device=%s\n";
-static char NO_device[] = "3924 Device \"%s\" not in SD Device"
+static char OK_device[] =
+   "3000 OK use device device=%s\n";
+static char NO_device[] =
+   "3924 Device \"%s\" not in SD Device"
    " resources or no matching Media Type.\n";
-static char BAD_use[]   = "3913 Bad use command: %s\n";
+static char BAD_use[] =
+   "3913 Bad use command: %s\n";
 
 bool use_cmd(JCR *jcr)
 {

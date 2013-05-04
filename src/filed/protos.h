@@ -30,9 +30,10 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt);
 bool accurate_mark_file_as_seen(JCR *jcr, char *fname);
 void accurate_free(JCR *jcr);
 
-/* authenicate.c */
-int authenticate_director(JCR *jcr);
-int authenticate_storagedaemon(JCR *jcr);
+/* authenticate.c */
+bool authenticate_director(JCR *jcr);
+bool authenticate_storagedaemon(JCR *jcr);
+bool authenticate_with_storagedaemon(JCR *jcr);
 
 /* backup.c */
 bool blast_data_to_storage_daemon(JCR *jcr, char *addr);

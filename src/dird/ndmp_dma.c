@@ -100,7 +100,8 @@ struct ndmp_log_cookie {
    struct ndmp_fhdb_root *fhdb_root;
 };
 
-static char OKbootstrap[] = "3000 OK bootstrap\n";
+static char OKbootstrap[] =
+   "3000 OK bootstrap\n";
 
 /*
  * Array used for storing fixed NDMP env keywords.

@@ -36,18 +36,21 @@
 #include "dird.h"
 
 /* Commands sent to File daemon */
-static char backupcmd[] = "backup FileIndex=%ld\n";
-static char storaddr[]  = "storage address=%s port=%d ssl=%d\n";
+static char backupcmd[] =
+   "backup FileIndex=%ld\n";
+static char storaddr[] =
+   "storage address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
-static char OKbackup[]   = "2000 OK backup\n";
-static char OKstore[]    = "2000 OK storage\n";
-static char EndJob[]     = "2800 End Job TermCode=%d JobFiles=%u "
-                           "ReadBytes=%llu JobBytes=%llu Errors=%u "
-                           "VSS=%d Encrypt=%d\n";
-/* Pre 1.39.29 (04Dec06) EndJob */
-static char OldEndJob[]  = "2800 End Job TermCode=%d JobFiles=%u "
-                           "ReadBytes=%llu JobBytes=%llu Errors=%u\n";
+static char OKbackup[] =
+   "2000 OK backup\n";
+static char OKstore[] =
+   "2000 OK storage\n";
+static char EndJob[] =
+   "2800 End Job TermCode=%d JobFiles=%u "
+   "ReadBytes=%llu JobBytes=%llu Errors=%u "
+   "VSS=%d Encrypt=%d\n";
+
 /*
  * Called here before the job is run to do the job
  *   specific setup.
@@ -401,7 +404,6 @@ bool do_native_backup(JCR *jcr)
       goto bail_out;
    }
 
-   /* TODO: See priority with bandwidth parameter */
    if (jcr->res.job->max_bandwidth > 0) {
       jcr->max_bandwidth = jcr->res.job->max_bandwidth;
    } else if (jcr->res.client->max_bandwidth > 0) {
@@ -409,7 +411,7 @@ bool do_native_backup(JCR *jcr)
    }
 
    if (jcr->max_bandwidth > 0) {
-      send_bwlimit(jcr, jcr->Job); /* Old clients don't have this command */
+      send_bwlimit_to_fd(jcr, jcr->Job); /* Old clients don't have this command */
    }
 
    /*
@@ -525,10 +527,8 @@ int wait_for_job_termination(JCR *jcr, int timeout)
       /* Wait for Client to terminate */
       while ((n = bget_dirmsg(fd)) >= 0) {
          if (!fd_ok &&
-             (sscanf(fd->msg, EndJob, &jcr->FDJobStatus, &JobFiles,
-                     &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt) == 7 ||
-              sscanf(fd->msg, OldEndJob, &jcr->FDJobStatus, &JobFiles,
-                     &ReadBytes, &JobBytes, &JobErrors) == 5)) {
+             sscanf(fd->msg, EndJob, &jcr->FDJobStatus, &JobFiles,
+                     &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt) == 7) {
             fd_ok = true;
             jcr->setJobStatus(jcr->FDJobStatus);
             Dmsg1(100, "FDStatus=%c\n", (char)jcr->JobStatus);

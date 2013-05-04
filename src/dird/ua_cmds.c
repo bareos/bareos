@@ -189,7 +189,7 @@ static struct cmdstruct commands[] = {
    { NT_("status"), status_cmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | client=<client-name> | storage=<storage-name> slots | days=nnn"), true },
    { NT_("setbandwidth"),   setbwlimit_cmd,  _("Sets bandwidth"),
-     NT_("limit=<nn-kbs> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true },
+     NT_("storage=<storage-name> limit=<nn-kbs> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true },
    { NT_("setdebug"), setdebug_cmd, _("Sets debug level"),
      NT_("level=<nn> trace=0/1 client=<client-name> | dir | storage=<storage-name> | all"), true },
    { NT_("setip"), setip_cmd, _("Sets new client address -- if authorized"),
@@ -696,12 +696,98 @@ static int create_cmd(UAContext *ua, const char *cmd)
    return 1;
 }
 
+static inline int setbwlimit_filed(UAContext *ua, CLIENTRES *client,
+                                   int64_t limit, char *Job)
+{
+   /*
+    * Connect to File daemon
+    */
+   ua->jcr->res.client = client;
+   ua->jcr->max_bandwidth = limit;
+
+   /*
+    * Try to connect for 15 seconds
+    */
+   ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
+                client->name(), client->address, client->FDport);
+
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
+      ua->error_msg(_("Failed to connect to Client.\n"));
+      return 1;
+   }
+
+   Dmsg0(120, "Connected to file daemon\n");
+   if (!send_bwlimit_to_fd(ua->jcr, Job)) {
+      ua->error_msg(_("Failed to set bandwidth limit on Client.\n"));
+   } else {
+      ua->info_msg(_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024, Job);
+   }
+
+   ua->jcr->file_bsock->signal(BNET_TERMINATE);
+   ua->jcr->file_bsock->close();
+   ua->jcr->file_bsock = NULL;
+   ua->jcr->res.client = NULL;
+   ua->jcr->max_bandwidth = 0;
+
+   return 1;
+}
+
+static inline int setbwlimit_stored(UAContext *ua, STORERES *store,
+                                    int64_t limit, char *Job)
+{
+   /*
+    * Check the storage daemon protocol.
+    */
+   switch (store->Protocol) {
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      ua->error_msg(_("Storage selected is NDMP storage which cannot have a bandwidth limit\n"));
+      return 1;
+   default:
+      break;
+   }
+
+   /*
+    * Connect to Storage daemon
+    */
+   ua->jcr->res.wstore = store;
+   ua->jcr->max_bandwidth = limit;
+
+   /*
+    * Try to connect for 15 seconds
+    */
+   ua->send_msg(_("Connecting to Storage daemon %s at %s:%d\n"),
+                store->name(), store->address, store->SDport);
+
+   if (!connect_to_storage_daemon(ua->jcr, 1, 15, 0)) {
+      ua->error_msg(_("Failed to connect to Storage daemon.\n"));
+      return 1;
+   }
+
+   Dmsg0(120, "Connected to Storage daemon\n");
+   if (!send_bwlimit_to_fd(ua->jcr, Job)) {
+      ua->error_msg(_("Failed to set bandwidth limit on Storage daemon.\n"));
+   } else {
+      ua->info_msg(_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024, Job);
+   }
+
+   ua->jcr->store_bsock->signal(BNET_TERMINATE);
+   ua->jcr->store_bsock->close();
+   ua->jcr->store_bsock = NULL;
+   ua->jcr->res.wstore = NULL;
+   ua->jcr->max_bandwidth = 0;
+
+   return 1;
+}
+
 static int setbwlimit_cmd(UAContext *ua, const char *cmd)
 {
    int i;
    JCR *jcr;
    int64_t limit = -1;
    CLIENTRES *client = NULL;
+   STORERES *store = NULL;
    char Job[MAX_NAME_LENGTH];
    const char *lst[] = {
       "job",
@@ -726,50 +812,34 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
    if (find_arg_keyword(ua, lst) > 0) {
       jcr = select_running_job(ua, "limit");
       if (jcr) {
-         jcr->max_bandwidth = limit; /* TODO: see for locking (Should be safe)*/
+         jcr->max_bandwidth = limit;
          bstrncpy(Job, jcr->Job, sizeof(Job));
-         client = jcr->res.client;
+         switch (jcr->getJobType()) {
+         case JT_COPY:
+         case JT_MIGRATE:
+            store = jcr->res.rstore;
+            break;
+         default:
+            client = jcr->res.client;
+            break;
+         }
          free_jcr(jcr);
       } else {
          return 1;
       }
+   } else if (find_arg(ua, "storage") >= 0) {
+      store = get_storage_resource(ua, false /* no default */);
    } else {
       client = get_client_resource(ua);
    }
 
-   if (!client) {
-      return 1;
+   if (client) {
+      return setbwlimit_filed(ua, client, limit, Job);
    }
 
-   /*
-    * Connect to File daemon
-    */
-   ua->jcr->res.client = client;
-   ua->jcr->max_bandwidth = limit;
-
-   /*
-    * Try to connect for 15 seconds
-    */
-   ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                client->name(), client->address, client->FDport);
-
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
-      ua->error_msg(_("Failed to connect to Client.\n"));
-      return 1;
+   if (store) {
+      return setbwlimit_stored(ua, store, limit, Job);
    }
-
-   Dmsg0(120, "Connected to file daemon\n");
-   if (!send_bwlimit(ua->jcr, Job)) {
-      ua->error_msg(_("Failed to set bandwidth limit to Client.\n"));
-   } else {
-      ua->info_msg(_("OK Limiting bandwidth to %lldkb/s %s\n"), limit/1024, Job);
-   }
-
-   ua->jcr->file_bsock->signal(BNET_TERMINATE);
-   ua->jcr->file_bsock->close();
-   ua->jcr->file_bsock = NULL;
-   ua->jcr->res.client = NULL;
-   ua->jcr->max_bandwidth = 0;
 
    return 1;
 }

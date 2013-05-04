@@ -29,6 +29,44 @@
 #include "bareos.h"
 #include "dird.h"
 
+/* Commands sent to Storage daemon */
+static char readlabelcmd[] =
+   "readlabel %s Slot=%d drive=%d\n";
+static char changerlistallcmd[] =
+   "autochanger listall %s \n";
+static char changerlistcmd[] =
+   "autochanger list %s \n";
+static char changerslotscmd[] =
+   "autochanger slots %s\n";
+static char changerdrivescmd[] =
+   "autochanger drives %s\n";
+static char changertransfercmd[] =
+   "autochanger transfer %s %d %d \n";
+static char changervolopslotcmd[] =
+   "%s %s drive=%d slot=%d\n";
+static char changervolopcmd[] =
+   "%s %s drive=%d\n";
+static char canceljobcmd[] =
+   "cancel Job=%s\n";
+static char dotstatuscmd[] =
+   ".status %s\n";
+static char statuscmd[] =
+   "status\n";
+static char bandwidthcmd[] =
+   "setbandwidth=%lld Job=%s\n";
+
+/* Responses received from File daemon */
+static char OKBandwidth[] =
+   "2000 OK Bandwidth\n";
+
+/* Commands received from storage daemon that need scanning */
+static char readlabelresponse[] =
+   "3001 Volume=%s Slot=%d";
+static char changerslotsresponse[] =
+   "slots=%d\n";
+static char changerdrivesresponse[] =
+   "drives=%d\n";
+
 /*
  * Establish a connection with the Storage daemon and perform authentication.
  */
@@ -137,7 +175,7 @@ char *get_volume_name_from_SD(UAContext *ua, int Slot, int drive)
     * specific slot of the autochanger using the drive number given.
     * This could change the loaded volume in the drive.
     */
-   sd->fsend(NT_("readlabel %s Slot=%d drive=%d\n"), dev_name, Slot, drive);
+   sd->fsend(readlabelcmd, dev_name, Slot, drive);
    Dmsg1(100, "Sent: %s", sd->msg);
 
    /*
@@ -148,7 +186,7 @@ char *get_volume_name_from_SD(UAContext *ua, int Slot, int drive)
       Dmsg1(100, "Got: %s", sd->msg);
       if (strncmp(sd->msg, NT_("3001 Volume="), 12) == 0) {
          VolName = (char *)malloc(sd->msglen);
-         if (sscanf(sd->msg, NT_("3001 Volume=%s Slot=%d"), VolName, &rtn_slot) == 2) {
+         if (sscanf(sd->msg, readlabelresponse, VolName, &rtn_slot) == 2) {
             break;
          }
          free(VolName);
@@ -228,9 +266,9 @@ dlist *get_vol_list_from_SD(UAContext *ua, STORERES *store, bool listall, bool s
     * Ask for autochanger list of volumes
     */
    if (listall) {
-      bnet_fsend(sd, NT_("autochanger listall %s \n"), dev_name);
+      bnet_fsend(sd, changerlistallcmd , dev_name);
    } else {
-      bnet_fsend(sd, NT_("autochanger list %s \n"), dev_name);
+      bnet_fsend(sd, changerlistcmd, dev_name);
    }
 
    vol_list = New(dlist(vl, &vl->link));
@@ -244,7 +282,7 @@ dlist *get_vol_list_from_SD(UAContext *ua, STORERES *store, bool listall, bool s
       /*
        * Check for returned SD messages
        */
-      if (sd->msg[0] == '3'     && B_ISDIGIT(sd->msg[1]) &&
+      if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) &&
           B_ISDIGIT(sd->msg[2]) && B_ISDIGIT(sd->msg[3]) &&
           sd->msg[4] == ' ') {
          ua->send_msg("%s\n", sd->msg);   /* pass them on to user */
@@ -515,11 +553,13 @@ int get_num_slots_from_SD(UAContext *ua)
 
    bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
    bash_spaces(dev_name);
-   /* Ask for autochanger number of slots */
-   sd->fsend(NT_("autochanger slots %s\n"), dev_name);
 
+   /*
+    * Ask for autochanger number of slots
+    */
+   sd->fsend(changerslotscmd, dev_name);
    while (sd->recv() >= 0) {
-      if (sscanf(sd->msg, "slots=%d\n", &slots) == 1) {
+      if (sscanf(sd->msg, changerslotsresponse, &slots) == 1) {
          break;
       } else {
          ua->send_msg("%s", sd->msg);
@@ -546,11 +586,13 @@ int get_num_drives_from_SD(UAContext *ua)
 
    bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
    bash_spaces(dev_name);
-   /* Ask for autochanger number of drives */
-   sd->fsend(NT_("autochanger drives %s\n"), dev_name);
 
+   /*
+    * Ask for autochanger number of drives
+    */
+   sd->fsend(changerdrivescmd, dev_name);
    while (sd->recv() >= 0) {
-      if (sscanf(sd->msg, NT_("drives=%d\n"), &drives) == 1) {
+      if (sscanf(sd->msg, changerdrivesresponse, &drives) == 1) {
          break;
       } else {
          ua->send_msg("%s", sd->msg);
@@ -627,7 +669,7 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent)
    }
    Dmsg0(200, "Connected to storage daemon\n");
    sd = ua->jcr->store_bsock;
-   sd->fsend("cancel Job=%s\n", jcr->Job);
+   sd->fsend(canceljobcmd, jcr->Job);
    while (sd->recv() >= 0) {
       if (!silent) {
          ua->send_msg("%s", sd->msg);
@@ -708,9 +750,9 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
    Dmsg0(20, _("Connected to storage daemon\n"));
    sd = ua->jcr->store_bsock;
    if (cmd) {
-      sd->fsend(".status %s", cmd);
+      sd->fsend(dotstatuscmd, cmd);
    } else {
-      sd->fsend("status");
+      sd->fsend(statuscmd);
    }
    while (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
@@ -738,16 +780,17 @@ bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
    bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
    bash_spaces(dev_name);
 
-   /* Ask for autochanger transfer of volumes */
-   bnet_fsend(sd, NT_("autochanger transfer %s %d %d \n"), dev_name, src_slot, dst_slot);
-
+   /*
+    * Ask for autochanger transfer of volumes
+    */
+   bnet_fsend(sd, changertransfercmd, dev_name, src_slot, dst_slot);
    while (bnet_recv(sd) >= 0) {
       strip_trailing_junk(sd->msg);
 
       /*
        * Check for returned SD messages
        */
-      if (sd->msg[0] == '3'     && B_ISDIGIT(sd->msg[1]) &&
+      if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) &&
           B_ISDIGIT(sd->msg[2]) && B_ISDIGIT(sd->msg[3]) &&
           sd->msg[4] == ' ') {
          /*
@@ -785,9 +828,9 @@ bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
    bash_spaces(dev_name);
 
    if (slot > 0) {
-      sd->fsend("%s %s drive=%d slot=%d", operation, dev_name, drive, slot);
+      sd->fsend(changervolopslotcmd, operation, dev_name, drive, slot);
    } else {
-      sd->fsend("%s %s drive=%d", operation, dev_name, drive);
+      sd->fsend(changervolopcmd, operation, dev_name, drive);
    }
 
    /*
@@ -806,4 +849,17 @@ bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
    close_sd_bsock(ua);
 
    return retval;
+}
+
+bool send_bwlimit_to_sd(JCR *jcr, const char *Job)
+{
+   BSOCK *sd = jcr->store_bsock;
+
+   sd->fsend(bandwidthcmd, jcr->max_bandwidth, Job);
+   if (!response(jcr, sd, OKBandwidth, "Bandwidth", DISPLAY_ERROR)) {
+      jcr->max_bandwidth = 0;      /* can't set bandwidth limit */
+      return false;
+   }
+
+   return true;
 }

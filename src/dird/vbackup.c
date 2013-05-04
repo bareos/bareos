@@ -224,7 +224,7 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
    /*
     * Now start a job with the Storage daemon
     */
-   if (!start_storage_daemon_job(jcr, jcr->rstorage, jcr->wstorage, /*send_bsr*/true)) {
+   if (!start_storage_daemon_job(jcr, jcr->rstorage, jcr->wstorage, /* send_bsr */ true)) {
       return false;
    }
    Dmsg0(100, "Storage daemon connection OK\n");

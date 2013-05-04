@@ -256,6 +256,7 @@ static RES_ITEM store_items[] = {
    { "tlscertificate", store_dir, ITEM(res_store.tls_certfile), 0, 0, NULL },
    { "tlskey", store_dir, ITEM(res_store.tls_keyfile), 0, 0, NULL },
    { "pairedstorage", store_res, ITEM(res_store.paired_storage), R_STORAGE, 0, NULL },
+   { "maximumbandwidthperjob", store_speed, ITEM(res_store.max_bandwidth), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -781,6 +782,10 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
                 res->res_store.dev_name(), res->res_store.media_type,
                (res->res_store.paired_storage) ? res->res_store.paired_storage->hdr.name : "None",
                 edit_int64(res->res_store.StorageId, ed1));
+         if (res->res_store.max_bandwidth) {
+            sendit(sock, _("     MaximumBandwidth=%lld\n"),
+                   res->res_store.max_bandwidth);
+         }
       }
       break;
 
@@ -2398,6 +2403,7 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char *param)
 {
    static char yes[] = "yes";
    static char no[] = "no";
+
    switch (param[0]) {
       case 'f':
          if (jcr->res.fileset) {

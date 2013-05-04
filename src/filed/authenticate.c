@@ -39,20 +39,24 @@ const int dbglvl = 50;
  *   4 25Nov10 - added bandwidth command 5.1
  *   5 24Nov11 - added new restore object command format (pluginname) 6.0
  */
-static char OK_hello[]  = "2000 OK Hello 5\n";
-static char Dir_sorry[] = "2999 Authentication failed.\n";
+static char OK_hello[] =
+   "2000 OK Hello 5\n";
+static char Dir_sorry[] =
+   "2999 Authentication failed.\n";
+
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-/*********************************************************************
- *
+/*
+ * See who is connecting and lookup the authentication information.
+ * First make him prove his identity and then prove our identity to the Remote daemon.
  */
-static bool authenticate(int rcode, BSOCK *bs, JCR* jcr)
+static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
 {
    POOLMEM *dirname = get_pool_memory(PM_MESSAGE);
    DIRRES *director = NULL;
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
-   int compatible = true;                 /* Want md5 compatible DIR */
+   bool compatible = true;                /* Want md5 compatible DIR */
    bool auth_success = false;
    alist *verify_list = NULL;
    btimer_t *tid = NULL;
@@ -62,6 +66,7 @@ static bool authenticate(int rcode, BSOCK *bs, JCR* jcr)
       Jmsg1(jcr, M_FATAL, 0, _("I only authenticate directors, not %d\n"), rcode);
       goto auth_fatal;
    }
+
    if (bs->msglen < 25 || bs->msglen > 500) {
       Dmsg2(dbglvl, "Bad Hello command from Director at %s. Len=%d.\n",
             bs->who(), bs->msglen);
@@ -97,7 +102,9 @@ static bool authenticate(int rcode, BSOCK *bs, JCR* jcr)
    }
 
    if (have_tls) {
-      /* TLS Requirement */
+      /*
+       * TLS Requirement
+       */
       if (director->tls_enable) {
          if (director->tls_require) {
             tls_local_need = BNET_TLS_REQUIRED;
@@ -115,13 +122,20 @@ static bool authenticate(int rcode, BSOCK *bs, JCR* jcr)
       }
    }
 
+   /*
+    * Timeout Hello after 10 min
+    */
    tid = start_bsock_timer(bs, AUTH_TIMEOUT);
-   /* Challenge the director */
+
+   /*
+    * Challenge the director
+    */
    auth_success = cram_md5_challenge(bs, director->password, tls_local_need, compatible);
    if (job_canceled(jcr)) {
       auth_success = false;
       goto auth_fatal;                   /* quick exit */
    }
+
    if (auth_success) {
       auth_success = cram_md5_respond(bs, director->password, &tls_remote_need, &compatible);
       if (!auth_success) {
@@ -134,13 +148,16 @@ static bool authenticate(int rcode, BSOCK *bs, JCR* jcr)
        char *who = bnet_get_peer(bs, addr, sizeof(addr)) ? bs->who() : addr;
        Dmsg1(dbglvl, "cram_auth failed for %s\n", who);
    }
+
    if (!auth_success) {
        Emsg1(M_FATAL, 0, _("Incorrect password given by Director at %s.\n"),
              bs->who());
        goto auth_fatal;
    }
 
-   /* Verify that the remote host is willing to meet our TLS requirements */
+   /*
+    * Verify that the remote host is willing to meet our TLS requirements
+    */
    if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
       Jmsg0(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not"
            " advertize required TLS support.\n"));
@@ -149,7 +166,9 @@ static bool authenticate(int rcode, BSOCK *bs, JCR* jcr)
       goto auth_fatal;
    }
 
-   /* Verify that we are willing to meet the remote host's requirements */
+   /*
+    * Verify that we are willing to meet the remote host's requirements
+    */
    if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
       Jmsg0(jcr, M_FATAL, 0, _("Authorization problem: Remote server requires TLS.\n"));
       Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
@@ -158,7 +177,9 @@ static bool authenticate(int rcode, BSOCK *bs, JCR* jcr)
    }
 
    if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-      /* Engage TLS! Full Speed Ahead! */
+      /*
+       * Engage TLS! Full Speed Ahead!
+       */
       if (!bnet_tls_server(director->tls_ctx, bs, verify_list)) {
          Jmsg0(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
          auth_success = false;
@@ -176,50 +197,33 @@ auth_fatal:
    }
    free_pool_memory(dirname);
    jcr->director = director;
-   /* Single thread all failures to avoid DOS */
+
+   /*
+    * Single thread all failures to avoid DOS
+    */
    if (!auth_success) {
       P(mutex);
       bmicrosleep(6, 0);
       V(mutex);
    }
+
    return auth_success;
 }
 
 /*
- * Inititiate the communications with the Director.
- * He has made a connection to our server.
- *
- * Basic tasks done here:
- *   We read Director's initial message and authorize him.
- *
+ * First prove our identity to the Remote daemon and then make him prove his identity.
  */
-int authenticate_director(JCR *jcr)
+static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, const char *what)
 {
-   BSOCK *dir = jcr->dir_bsock;
-
-   if (!authenticate(R_DIRECTOR, dir, jcr)) {
-      bnet_fsend(dir, "%s", Dir_sorry);
-      Emsg0(M_FATAL, 0, _("Unable to authenticate Director\n"));
-      return 0;
-   }
-   return bnet_fsend(dir, "%s", OK_hello);
-}
-
-/*
- * First prove our identity to the Storage daemon, then
- * make him prove his identity.
- */
-int authenticate_storagedaemon(JCR *jcr)
-{
-   BSOCK *sd = jcr->store_bsock;
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
-   int compatible = true;
+   bool compatible = true;
    bool auth_success = false;
+   btimer_t *tid = NULL;
 
-   btimer_t *tid = start_bsock_timer(sd, AUTH_TIMEOUT);
-
-   /* TLS Requirement */
+   /*
+    * TLS Requirement
+    */
    if (have_tls && me->tls_enable) {
       if (me->tls_require) {
          tls_local_need = BNET_TLS_REQUIRED;
@@ -237,38 +241,72 @@ int authenticate_storagedaemon(JCR *jcr)
       goto auth_fatal;
    }
 
-   /* Respond to SD challenge */
-   auth_success = cram_md5_respond(sd, jcr->sd_auth_key, &tls_remote_need, &compatible);
-   if (job_canceled(jcr)) {
-      auth_success = false;     /* force quick exit */
-      goto auth_fatal;
-   }
-   if (!auth_success) {
-      Dmsg1(dbglvl, "cram_respond failed for %s\n", sd->who());
+   /*
+    * Timeout Hello after 10 min
+    */
+   tid = start_bsock_timer(bs, AUTH_TIMEOUT);
+
+   /*
+    * See if we initiate the challenge or respond to a challenge.
+    */
+   if (initiate) {
+      /*
+       * Challenge SD
+       */
+      auth_success = cram_md5_challenge(bs, jcr->sd_auth_key, tls_local_need, compatible);
+      if (auth_success) {
+          /*
+           * Respond to his challenge
+           */
+          auth_success = cram_md5_respond(bs, jcr->sd_auth_key, &tls_remote_need, &compatible);
+          if (!auth_success) {
+             Dmsg1(dbglvl, "Respond cram-get-auth failed with %s\n", bs->who());
+          }
+      } else {
+         Dmsg1(dbglvl, "Challenge cram-auth failed with %s\n", bs->who());
+      }
    } else {
-      /* Now challenge him */
-      auth_success = cram_md5_challenge(sd, jcr->sd_auth_key, tls_local_need, compatible);
+      /*
+       * Respond to challenge
+       */
+      auth_success = cram_md5_respond(bs, jcr->sd_auth_key, &tls_remote_need, &compatible);
+      if (job_canceled(jcr)) {
+         auth_success = false;     /* force quick exit */
+         goto auth_fatal;
+      }
       if (!auth_success) {
-         Dmsg1(dbglvl, "cram_challenge failed for %s\n", sd->who());
+         Dmsg1(dbglvl, "cram_respond failed for %s\n", bs->who());
+      } else {
+         /*
+          * Challenge SD.
+          */
+         auth_success = cram_md5_challenge(bs, jcr->sd_auth_key, tls_local_need, compatible);
+         if (!auth_success) {
+            Dmsg1(dbglvl, "cram_challenge failed for %s\n", bs->who());
+         }
       }
    }
 
    if (!auth_success) {
-      Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected by Storage daemon.\n"
-       "Please see " MANUAL_AUTH_URL " for help.\n"));
+      Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected by %s daemon.\n"
+                              "Please see " MANUAL_AUTH_URL " for help.\n"), what);
       goto auth_fatal;
    }
 
-   /* Verify that the remote host is willing to meet our TLS requirements */
+   /*
+    * Verify that the remote host is willing to meet our TLS requirements
+    */
    if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
       Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not"
-           " advertize required TLS support.\n"));
+                              " advertize required TLS support.\n"));
       Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
       auth_success = false;
       goto auth_fatal;
    }
 
-   /* Verify that we are willing to meet the remote host's requirements */
+   /*
+    * Verify that we are willing to meet the remote host's requirements
+    */
    if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
       Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server requires TLS.\n"));
       Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
@@ -277,26 +315,74 @@ int authenticate_storagedaemon(JCR *jcr)
    }
 
    if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-      /* Engage TLS! Full Speed Ahead! */
-      if (!bnet_tls_client(me->tls_ctx, sd, NULL)) {
+      /*
+       * Engage TLS! Full Speed Ahead!
+       */
+      if (!bnet_tls_client(me->tls_ctx, bs, NULL)) {
          Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
          auth_success = false;
          goto auth_fatal;
       }
       if (me->tls_authenticate) {           /* tls authentication only? */
-         sd->free_tls();                    /* yes, shutdown tls */
+         bs->free_tls();                    /* yes, shutdown tls */
       }
    }
 
 auth_fatal:
-   /* Destroy session key */
+   /*
+    * Destroy session key
+    */
    memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
    stop_bsock_timer(tid);
-   /* Single thread all failures to avoid DOS */
+
+   /*
+    * Single thread all failures to avoid DOS
+    */
    if (!auth_success) {
       P(mutex);
       bmicrosleep(6, 0);
       V(mutex);
    }
+
    return auth_success;
+}
+
+/*
+ * Inititiate the communications with the Director.
+ * He has made a connection to our server.
+ *
+ * Basic tasks done here:
+ *   We read Director's initial message and authorize him.
+ */
+bool authenticate_director(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+
+   if (!two_way_authenticate(R_DIRECTOR, dir, jcr)) {
+      bnet_fsend(dir, "%s", Dir_sorry);
+      Emsg0(M_FATAL, 0, _("Unable to authenticate Director\n"));
+      return false;
+   }
+
+   return bnet_fsend(dir, "%s", OK_hello);
+}
+
+/*
+ * Authenticate a remote storage daemon.
+ */
+bool authenticate_storagedaemon(JCR *jcr)
+{
+   BSOCK *sd = jcr->store_bsock;
+
+   return two_way_authenticate(sd, jcr, true, "Storage");
+}
+
+/*
+ * Authenticate with a remote storage daemon.
+ */
+bool authenticate_with_storagedaemon(JCR *jcr)
+{
+   BSOCK *sd = jcr->store_bsock;
+
+   return two_way_authenticate(sd, jcr, false, "Storage");
 }

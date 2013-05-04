@@ -51,7 +51,6 @@
 //extern int rl_catch_signals;
 
 /* Imported functions */
-int authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons);
 extern bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
@@ -1006,13 +1005,19 @@ try_again:
 int main(int argc, char *argv[])
 {
    int ch;
-   char *director=NULL;
-   bool list_directors=false;
+   int errmsg_len;
+   char *director = NULL;
+   const char *name;
+   char *password;
+   char errmsg[1024];
+   bool list_directors = false;
    bool no_signals = false;
    bool test_config = false;
    JCR jcr;
+   TLS_CONTEXT *tls_ctx = NULL;
    utime_t heart_beat;
 
+   errmsg_len = sizeof(errmsg);
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
@@ -1085,7 +1090,6 @@ int main(int argc, char *argv[])
       init_signals(terminate_console);
    }
 
-
 #if !defined(HAVE_WIN32)
    /* Override Bareos default signals */
    signal(SIGQUIT, SIG_IGN);
@@ -1147,46 +1151,59 @@ int main(int argc, char *argv[])
 
    senditf(_("Connecting to Director %s:%d\n"), dir->address,dir->DIRport);
 
-   char buf[1024];
-   /* Initialize Console TLS context */
+   /*
+    * Initialize Console TLS context
+    */
    if (cons && (cons->tls_enable || cons->tls_require)) {
-      /* Generate passphrase prompt */
-      bsnprintf(buf, sizeof(buf), "Passphrase for Console \"%s\" TLS private key: ", cons->hdr.name);
+      /*
+       * Generate passphrase prompt
+       */
+      bsnprintf(errmsg, errmsg_len, "Passphrase for Console \"%s\" TLS private key: ", cons->hdr.name);
 
-      /* Initialize TLS context:
+      /*
+       * Initialize TLS context:
        * Args: CA certfile, CA certdir, Certfile, Keyfile,
        * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
        */
       cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
-         cons->tls_ca_certdir, cons->tls_certfile,
-         cons->tls_keyfile, tls_pem_callback, &buf, NULL, true);
+                                      cons->tls_ca_certdir, cons->tls_certfile,
+                                      cons->tls_keyfile, tls_pem_callback, &errmsg, NULL, true);
 
       if (!cons->tls_ctx) {
-         senditf(_("Failed to initialize TLS context for Console \"%s\".\n"),
-            dir->hdr.name);
+         senditf(_("Failed to initialize TLS context for Console \"%s\".\n"), cons->hdr.name);
          terminate_console(0);
          return 1;
       }
+
+      set_tls_enable(cons->tls_ctx, cons->tls_enable);
+      set_tls_require(cons->tls_ctx, cons->tls_require);
    }
 
-   /* Initialize Director TLS context */
+   /*
+    * Initialize Director TLS context
+    */
    if (dir->tls_enable || dir->tls_require) {
-      /* Generate passphrase prompt */
-      bsnprintf(buf, sizeof(buf), "Passphrase for Director \"%s\" TLS private key: ", dir->hdr.name);
+      /*
+       * Generate passphrase prompt
+       */
+      bsnprintf(errmsg, errmsg_len, "Passphrase for Director \"%s\" TLS private key: ", dir->hdr.name);
 
-      /* Initialize TLS context:
+      /*
+       * Initialize TLS context:
        * Args: CA certfile, CA certdir, Certfile, Keyfile,
        * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
       dir->tls_ctx = new_tls_context(dir->tls_ca_certfile,
-         dir->tls_ca_certdir, dir->tls_certfile,
-         dir->tls_keyfile, tls_pem_callback, &buf, NULL, true);
+                                     dir->tls_ca_certdir, dir->tls_certfile,
+                                     dir->tls_keyfile, tls_pem_callback, &errmsg, NULL, true);
 
       if (!dir->tls_ctx) {
-         senditf(_("Failed to initialize TLS context for Director \"%s\".\n"),
-            dir->hdr.name);
+         senditf(_("Failed to initialize TLS context for Director \"%s\".\n"), dir->hdr.name);
          terminate_console(0);
          return 1;
       }
+
+      set_tls_enable(dir->tls_ctx, dir->tls_enable);
+      set_tls_require(dir->tls_ctx, dir->tls_require);
    }
 
    if (dir->heartbeat_interval) {
@@ -1204,8 +1221,21 @@ int main(int argc, char *argv[])
    }
    jcr.dir_bsock = UA_sock;
 
-   /* If cons==NULL, default console will be used */
-   if (!authenticate_director(&jcr, dir, cons)) {
+   /*
+    * If cons==NULL, default console will be used
+    */
+   if (cons) {
+      name = cons->hdr.name;
+      password = cons->password;
+      tls_ctx = cons->tls_ctx;
+   } else {
+      name = "*UserAgent*";
+      password = dir->password;
+      tls_ctx = dir->tls_ctx;
+   }
+
+   if (!UA_sock->authenticate_with_director(name, password, tls_ctx, errmsg, errmsg_len)) {
+      sendit(errmsg);
       terminate_console(0);
       return 1;
    }

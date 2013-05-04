@@ -126,6 +126,9 @@ bool DirComm::connect_dir()
          }
          goto bail_out;
       }
+
+      set_tls_enable(cons->tls_ctx, cons->tls_enable);
+      set_tls_require(cons->tls_ctx, cons->tls_require);
    }
 
    /* Initialize Director TLS context once */
@@ -150,6 +153,9 @@ bool DirComm::connect_dir()
          }
          goto bail_out;
       }
+
+      set_tls_enable(m_console->m_dir->tls_ctx, m_console->m_dir->tls_enable);
+      set_tls_require(m_console->m_dir->tls_ctx, m_console->m_dir->tls_require);
    }
 
    if (m_console->m_dir->heartbeat_interval) {
@@ -181,7 +187,7 @@ bool DirComm::connect_dir()
 
    jcr->dir_bsock = m_sock;
 
-   if (!authenticate_director(jcr, m_console->m_dir, cons, buf, sizeof(buf))) {
+   if (!authenticate_with_director(jcr, m_console->m_dir, cons, buf, sizeof(buf))) {
       m_console->display_text(buf);
       if (mainWin->m_connDebug) {
          Pmsg2(000, "DirComm %i BAILING Connection failed %s\n", m_conn, m_console->m_dir->name());
@@ -538,4 +544,26 @@ static int tls_pem_callback(char *buf, int size, const void *userdata)
    buf[0] = 0;
    return 0;
 #endif
+}
+
+bool DirComm::authenticate_with_director(JCR *jcr, DIRRES *director, CONRES *cons,
+                                         char *errmsg, int errmsg_len)
+{
+   const char *name;
+   char *password;
+   TLS_CONTEXT *tls_ctx = NULL;
+   BSOCK *dir = jcr->dir_bsock;
+
+   errmsg[0] = 0;
+   if (cons) {
+      name = cons->hdr.name;
+      password = cons->password;
+      tls_ctx = cons->tls_ctx;
+   } else {
+      name = "*UserAgent*";
+      password = director->password;
+      tls_ctx = director->tls_ctx;
+   }
+
+   return dir->authenticate_with_director(name, password, tls_ctx, errmsg, errmsg_len);
 }

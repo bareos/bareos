@@ -244,7 +244,7 @@ int main (int argc, char *argv[])
    load_sd_plugins(me->plugin_directory);
 
    read_crypto_cache(me->working_directory, "bareos-sd",
-                     get_first_port_host_order(me->sdaddrs));
+                     get_first_port_host_order(me->SDaddrs));
 
    if (ff->included_files_list == NULL) {
       add_fname_to_include_list(ff, 0, "/");

@@ -36,14 +36,12 @@
 #include "stored.h"
 
 /* Imported variables */
-extern STORES *me;
 
 /* Static variables */
-static char ferrmsg[]      = "3900 Invalid command\n";
+static char ferrmsg[] =
+   "3900 Invalid command\n";
 
 /* Imported functions */
-extern bool do_append_data(JCR *jcr);
-extern bool do_read_data(JCR *jcr);
 
 /* Forward referenced FD commands */
 static bool append_open_session(JCR *jcr);
@@ -55,7 +53,6 @@ static bool read_data_cmd(JCR *jcr);
 static bool read_close_session(JCR *jcr);
 
 /* Exported function */
-bool get_bootstrap_file(JCR *jcr, BSOCK *bs);
 
 struct s_cmds {
    const char *cmd;
@@ -73,7 +70,7 @@ static struct s_cmds fd_cmds[] = {
    { "read open", read_open_session },
    { "read data", read_data_cmd },
    { "read close", read_close_session },
-   { NULL, NULL} /* list terminator */
+   { NULL, NULL } /* list terminator */
 };
 
 /* Commands from the File daemon that require additional scanning */
@@ -102,7 +99,7 @@ static char Job_end[] =
 
 /*
  * After receiving a connection (in dircmd.c) if it is
- *   from the File daemon, this routine is called.
+ * from the File daemon, this routine is called.
  */
 void handle_filed_connection(BSOCK *fd, char *job_name)
 {
@@ -113,7 +110,7 @@ void handle_filed_connection(BSOCK *fd, char *job_name)
  * SD under the debugger fails.
  */
 // bmicrosleep(0, 50000);             /* wait 50 millisecs */
-   if (!(jcr=get_jcr_by_full_name(job_name))) {
+   if (!(jcr = get_jcr_by_full_name(job_name))) {
       Jmsg1(NULL, M_FATAL, 0, _("FD connect failed: Job name not found: %s\n"), job_name);
       Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
       fd->close();
@@ -124,9 +121,9 @@ void handle_filed_connection(BSOCK *fd, char *job_name)
 
    if (jcr->authenticated) {
       Jmsg2(jcr, M_FATAL, 0, _("Hey!!!! JobId %u Job %s already authenticated.\n"),
-         (uint32_t)jcr->JobId, jcr->Job);
+            (uint32_t)jcr->JobId, jcr->Job);
       Dmsg2(50, "Hey!!!! JobId %u Job %s already authenticated.\n",
-         (uint32_t)jcr->JobId, jcr->Job);
+            (uint32_t)jcr->JobId, jcr->Job);
       fd->close();
       free_jcr(jcr);
       return;
@@ -138,30 +135,28 @@ void handle_filed_connection(BSOCK *fd, char *job_name)
    /*
     * Authenticate the File daemon
     */
-   if (jcr->authenticated || !authenticate_filed(jcr)) {
+   if (!authenticate_filedaemon(jcr)) {
       Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
       Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
+      jcr->setJobStatus(JS_ErrorTerminated);
    } else {
       jcr->authenticated = true;
       Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId, jcr->Job);
    }
 
-   if (!jcr->authenticated) {
-      jcr->setJobStatus(JS_ErrorTerminated);
-   }
    pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
    free_jcr(jcr);
+
    return;
 }
 
 /*
  * Run a File daemon Job -- File daemon already authorized
- *  Director sends us this command.
+ * Director sends us this command.
  *
  * Basic task here is:
  * - Read a command from the File daemon
  * - Execute it
- *
  */
 void run_job(JCR *jcr)
 {
@@ -195,15 +190,16 @@ void run_job(JCR *jcr)
  */
 void do_fd_commands(JCR *jcr)
 {
-   int i;
+   int i, status;
    bool found, quit;
    BSOCK *fd = jcr->file_bsock;
 
    fd->set_jcr(jcr);
-   for (quit=false; !quit;) {
-      int status;
-
-      /* Read command coming from the File daemon */
+   quit = false;
+   while (!quit) {
+      /*
+       * Read command coming from the File daemon
+       */
       status = fd->recv();
       if (is_bnet_stop(fd)) {         /* hardeof or error */
          break;                       /* connection terminated */
@@ -211,14 +207,17 @@ void do_fd_commands(JCR *jcr)
       if (status <= 0) {
          continue;                    /* ignore signals and zero length msgs */
       }
+
       Dmsg1(110, "<filed: %s", fd->msg);
       found = false;
-      for (i=0; fd_cmds[i].cmd; i++) {
+      for (i = 0; fd_cmds[i].cmd; i++) {
          if (bstrncmp(fd_cmds[i].cmd, fd->msg, strlen(fd_cmds[i].cmd))) {
             found = true;               /* indicate command found */
             jcr->errmsg[0] = 0;
             if (!fd_cmds[i].func(jcr)) {    /* do command */
-               /* Note fd->msg command may be destroyed by comm activity */
+               /*
+                * Note fd->msg command may be destroyed by comm activity
+                */
                if (!job_canceled(jcr)) {
                   if (jcr->errmsg[0]) {
                      Jmsg1(jcr, M_FATAL, 0, _("Command error with FD, hanging up. %s\n"),
@@ -233,6 +232,7 @@ void do_fd_commands(JCR *jcr)
             break;
          }
       }
+
       if (!found) {                   /* command not found */
          if (!job_canceled(jcr)) {
             Jmsg1(jcr, M_FATAL, 0, _("FD command not found: %s\n"), fd->msg);
@@ -246,9 +246,9 @@ void do_fd_commands(JCR *jcr)
 }
 
 /*
- *   Append Data command
- *     Open Data Channel and receive Data for archiving
- *     Write the Data to the archive device
+ * Append Data command
+ *    Open Data Channel and receive Data for archiving
+ *    Write the Data to the archive device
  */
 static bool append_data_cmd(JCR *jcr)
 {
@@ -256,9 +256,9 @@ static bool append_data_cmd(JCR *jcr)
 
    Dmsg1(120, "Append data: %s", fd->msg);
    if (jcr->session_opened) {
-      Dmsg1(110, "<bfiled: %s", fd->msg);
+      Dmsg1(110, "<filed: %s", fd->msg);
       jcr->setJobType(JT_BACKUP);
-      if (do_append_data(jcr)) {
+      if (do_append_data(jcr, fd, "FD")) {
          return true;
       } else {
          pm_strcpy(jcr->errmsg, _("Append data error.\n"));
@@ -276,7 +276,7 @@ static bool append_end_session(JCR *jcr)
 {
    BSOCK *fd = jcr->file_bsock;
 
-   Dmsg1(120, "store<file: %s", fd->msg);
+   Dmsg1(120, "stored<filed: %s", fd->msg);
    if (!jcr->session_opened) {
       pm_strcpy(jcr->errmsg, _("Attempt to close non-open session.\n"));
       fd->fsend(NOT_opened);
@@ -285,10 +285,8 @@ static bool append_end_session(JCR *jcr)
    return fd->fsend(OK_end);
 }
 
-
 /*
  * Append Open session command
- *
  */
 static bool append_open_session(JCR *jcr)
 {
@@ -311,9 +309,9 @@ static bool append_open_session(JCR *jcr)
 }
 
 /*
- *   Append Close session command
- *      Close the append session and send back Statistics
- *         (need to fix statistics)
+ * Append Close session command
+ *    Close the append session and send back Statistics
+ *    (need to fix statistics)
  */
 static bool append_close_session(JCR *jcr)
 {
@@ -325,7 +323,10 @@ static bool append_close_session(JCR *jcr)
       fd->fsend(NOT_opened);
       return false;
    }
-   /* Send final statistics to File daemon */
+
+   /*
+    * Send final statistics to File daemon
+    */
    fd->fsend(OK_close, jcr->JobStatus);
    Dmsg1(120, ">filed: %s", fd->msg);
 
@@ -336,10 +337,10 @@ static bool append_close_session(JCR *jcr)
 }
 
 /*
- *   Read Data command
- *     Open Data Channel, read the data from
- *     the archive device and send to File
- *     daemon.
+ * Read Data command
+ *    Open Data Channel, read the data from
+ *    the archive device and send to File
+ *    daemon.
  */
 static bool read_data_cmd(JCR *jcr)
 {
@@ -347,7 +348,7 @@ static bool read_data_cmd(JCR *jcr)
 
    Dmsg1(120, "Read data: %s", fd->msg);
    if (jcr->session_opened) {
-      Dmsg1(120, "<bfiled: %s", fd->msg);
+      Dmsg1(120, "<filed: %s", fd->msg);
       return do_read_data(jcr);
    } else {
       pm_strcpy(jcr->errmsg, _("Attempt to read on non-open session.\n"));
@@ -358,8 +359,7 @@ static bool read_data_cmd(JCR *jcr)
 
 /*
  * Read Open session command
- *
- *  We need to scan for the parameters of the job
+ *    We need to scan for the parameters of the job
  *    to be restored.
  */
 static bool read_open_session(JCR *jcr)
@@ -374,25 +374,27 @@ static bool read_open_session(JCR *jcr)
    }
 
    if (sscanf(fd->msg, read_open, jcr->read_dcr->VolumeName, &jcr->read_VolSessionId,
-         &jcr->read_VolSessionTime, &jcr->read_StartFile, &jcr->read_EndFile,
-         &jcr->read_StartBlock, &jcr->read_EndBlock) == 7) {
+              &jcr->read_VolSessionTime, &jcr->read_StartFile, &jcr->read_EndFile,
+              &jcr->read_StartBlock, &jcr->read_EndBlock) == 7) {
       if (jcr->session_opened) {
          pm_strcpy(jcr->errmsg, _("Attempt to open read on non-open session.\n"));
          fd->fsend(NOT_opened);
          return false;
       }
       Dmsg4(100, "read_open_session got: JobId=%d Vol=%s VolSessId=%ld VolSessT=%ld\n",
-         jcr->JobId, jcr->read_dcr->VolumeName, jcr->read_VolSessionId,
-         jcr->read_VolSessionTime);
+            jcr->JobId, jcr->read_dcr->VolumeName, jcr->read_VolSessionId,
+            jcr->read_VolSessionTime);
       Dmsg4(100, "  StartF=%ld EndF=%ld StartB=%ld EndB=%ld\n",
-         jcr->read_StartFile, jcr->read_EndFile, jcr->read_StartBlock,
-         jcr->read_EndBlock);
+            jcr->read_StartFile, jcr->read_EndFile, jcr->read_StartBlock,
+            jcr->read_EndBlock);
    }
 
    jcr->session_opened = true;
    jcr->setJobType(JT_RESTORE);
 
-   /* Send "Ticket" to File Daemon */
+   /*
+    * Send "Ticket" to File Daemon
+    */
    fd->fsend(OK_open, jcr->VolSessionId);
    Dmsg1(110, ">filed: %s", fd->msg);
 
@@ -400,8 +402,8 @@ static bool read_open_session(JCR *jcr)
 }
 
 /*
- *   Read Close session command
- *      Close the read session
+ * Read Close session command
+ *    Close the read session
  */
 static bool read_close_session(JCR *jcr)
 {
@@ -412,7 +414,10 @@ static bool read_close_session(JCR *jcr)
       fd->fsend(NOT_opened);
       return false;
    }
-   /* Send final close msg to File daemon */
+
+   /*
+    * Send final close msg to File daemon
+    */
    fd->fsend(OK_close, jcr->JobStatus);
    Dmsg1(160, ">filed: %s\n", fd->msg);
 

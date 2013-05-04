@@ -31,6 +31,7 @@ const int dbglvl = 50;
 
 /* Authorize other end
  * Codes that tls_local_need and tls_remote_need can take:
+ *
  *   BNET_TLS_NONE     I cannot do tls
  *   BNET_TLS_OK       I can do tls, but it is not required on my end
  *   BNET_TLS_REQUIRED  tls is required on my end
@@ -38,7 +39,7 @@ const int dbglvl = 50;
  *   Returns: false if authentication failed
  *            true if OK
  */
-bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, int compatible)
+bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, bool compatible)
 {
    struct timeval t1;
    struct timeval t2;
@@ -104,7 +105,7 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, int
 }
 
 /* Respond to challenge from other end */
-bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, int *compatible)
+bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, bool *compatible)
 {
    char chal[MAXSTRING];
    uint8_t hmac[20];

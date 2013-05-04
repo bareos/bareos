@@ -44,28 +44,33 @@
 /*
  * Requests from the Storage daemon
  */
-static char Find_media[] = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s\n";
-static char Get_Vol_Info[] = "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
-static char Update_media[] = "CatReq Job=%127s UpdateMedia VolName=%s"
-                             " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
-                             " VolErrors=%u VolWrites=%u MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
-                             " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
-                             " VolFirstWritten=%lld\n";
-static char Create_job_media[] = "CatReq Job=%127s CreateJobMedia "
-                                 " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
-                                 " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%" lld "\n";
+static char Find_media[] =
+   "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s\n";
+static char Get_Vol_Info[] =
+   "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
+static char Update_media[] =
+   "CatReq Job=%127s UpdateMedia VolName=%s"
+   " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
+   " VolErrors=%u VolWrites=%u MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
+   " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
+   " VolFirstWritten=%lld\n";
+static char Create_job_media[] =
+   "CatReq Job=%127s CreateJobMedia "
+   " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
+   " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%" lld "\n";
 
 /*
- * Responses  sent to Storage daemon
+ * Responses sent to Storage daemon
  */
-static char OK_media[] = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
-                         " VolBlocks=%u VolBytes=%s VolMounts=%u VolErrors=%u VolWrites=%u"
-                         " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
-                         " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
-                         " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
-                         " MediaId=%s EncryptionKey=%s\n";
-static char OK_create[] = "1000 OK CreateJobMedia\n";
-
+static char OK_media[] =
+   "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
+   " VolBlocks=%u VolBytes=%s VolMounts=%u VolErrors=%u VolWrites=%u"
+   " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
+   " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
+   " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
+   " MediaId=%s EncryptionKey=%s\n";
+static char OK_create[] =
+   "1000 OK CreateJobMedia\n";
 
 static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr)
 {

@@ -70,17 +70,20 @@ int32_t res_all_size = sizeof(res_all);
 static RES_ITEM store_items[] = {
    { "name", store_name, ITEM(res_store.hdr.name), 0, ITEM_REQUIRED, NULL },
    { "description", store_str, ITEM(res_store.hdr.desc), 0, 0, NULL },
-   { "sdaddress", store_addresses_address, ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "sdaddresses", store_addresses, ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "messages", store_res, ITEM(res_store.messages), R_MSGS, 0, NULL },
-   { "sdport", store_addresses_port, ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "sdport", store_addresses_port, ITEM(res_store.SDaddrs), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "sdaddress", store_addresses_address, ITEM(res_store.SDaddrs), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "sdaddresses", store_addresses, ITEM(res_store.SDaddrs), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "sdsourceaddress", store_addresses_address, ITEM(res_store.SDsrc_addr), 0, ITEM_DEFAULT, "0" },
    { "workingdirectory", store_dir, ITEM(res_store.working_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
    { "piddirectory", store_dir, ITEM(res_store.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "subsysdirectory", store_dir, ITEM(res_store.subsys_directory), 0, 0, NULL },
    { "plugindirectory", store_dir, ITEM(res_store.plugin_directory), 0, 0, NULL },
    { "scriptsdirectory", store_dir, ITEM(res_store.scripts_directory), 0, 0, NULL },
    { "maximumconcurrentjobs", store_pint32, ITEM(res_store.max_concurrent_jobs), 0, ITEM_DEFAULT, "20" },
+   { "messages", store_res, ITEM(res_store.messages), R_MSGS, 0, NULL },
+   { "sdconnecttimeout", store_time,ITEM(res_store.SDConnectTimeout), 0, ITEM_DEFAULT, "180" /* 60 * 30 */ },
    { "heartbeatinterval", store_time, ITEM(res_store.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
+   { "maximumnetworkbuffersize", store_pint32, ITEM(res_store.max_network_buffer_size), 0, 0, NULL },
    { "tlsauthenticate", store_bool, ITEM(res_store.tls_authenticate), 0, 0, NULL },
    { "tlsenable", store_bool, ITEM(res_store.tls_enable), 0, 0, NULL },
    { "tlsrequire", store_bool, ITEM(res_store.tls_require), 0, 0, NULL },
@@ -94,12 +97,14 @@ static RES_ITEM store_items[] = {
    { "clientconnectwait", store_time, ITEM(res_store.client_wait), 0, ITEM_DEFAULT, "180" /* 30 * 60 */ },
    { "verid", store_str, ITEM(res_store.verid), 0, 0, NULL },
    { "compatible", store_bool, ITEM(res_store.compatible), 0, 0, "true" },
+   { "maximumbandwidthperjob", store_speed, ITEM(res_store.max_bandwidth_per_job), 0, 0, NULL },
+   { "allowbandwidthbursting", store_bool, ITEM(res_store.allow_bw_bursting), 0, 0, "false" },
    { "ndmpenable", store_bool, ITEM(res_store.ndmp_enable), 0, 0, NULL },
    { "ndmpsnooping", store_bool, ITEM(res_store.ndmp_snooping), 0, 0, NULL },
    { "ndmploglevel", store_pint32, ITEM(res_store.ndmploglevel), 0, ITEM_DEFAULT, "4" },
-   { "ndmpaddress", store_addresses_address, ITEM(res_store.ndmpaddrs), 0, ITEM_DEFAULT, "10000" },
-   { "ndmpaddresses", store_addresses, ITEM(res_store.ndmpaddrs), 0, ITEM_DEFAULT, "10000" },
-   { "ndmpport", store_addresses_port, ITEM(res_store.ndmpaddrs), 0, ITEM_DEFAULT, "10000" },
+   { "ndmpaddress", store_addresses_address, ITEM(res_store.NDMPaddrs), 0, ITEM_DEFAULT, "10000" },
+   { "ndmpaddresses", store_addresses, ITEM(res_store.NDMPaddrs), 0, ITEM_DEFAULT, "10000" },
+   { "ndmpport", store_addresses_port, ITEM(res_store.NDMPaddrs), 0, ITEM_DEFAULT, "10000" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -121,6 +126,7 @@ static RES_ITEM dir_items[] = {
    { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
    { "tlsdhfile", store_dir, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
    { "tlsallowedcn", store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
+   { "maximumbandwidthperjob", store_speed, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL },
    { "keyencryptionkey", store_clearpassword, ITEM(res_dir.keyencrkey), 1, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
@@ -377,18 +383,18 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    case R_STORAGE:
       sendit(sock, "Storage: name=%s SDaddr=%s SDport=%d HB=%s\n",
              res->res_store.hdr.name,
-             NPRT(get_first_address(res->res_store.sdaddrs, buf, sizeof(buf))),
-             get_first_port_host_order(res->res_store.sdaddrs),
+             NPRT(get_first_address(res->res_store.SDaddrs, buf, sizeof(buf))),
+             get_first_port_host_order(res->res_store.SDaddrs),
              edit_utime(res->res_store.heartbeat_interval, buf, sizeof(buf)));
-      if (res->res_store.sdaddrs) {
-         foreach_dlist(addr, res->res_store.sdaddrs) {
+      if (res->res_store.SDaddrs) {
+         foreach_dlist(addr, res->res_store.SDaddrs) {
             sendit(sock, "        SDaddr=%s SDport=%d\n",
                    addr->get_address(buf, sizeof(buf)),
                    addr->get_port_host_order());
          }
       }
-      if (res->res_store.sdaddrs) {
-         foreach_dlist(addr, res->res_store.ndmpaddrs) {
+      if (res->res_store.SDaddrs) {
+         foreach_dlist(addr, res->res_store.NDMPaddrs) {
             sendit(sock, "        NDMPaddr=%s NDMPport=%d\n",
                    addr->get_address(buf, sizeof(buf)),
                    addr->get_port_host_order());
@@ -570,8 +576,14 @@ void free_resource(RES *sres, int type)
       rwl_destroy(&res->res_changer.changer_lock);
       break;
    case R_STORAGE:
-      if (res->res_store.sdaddrs) {
-         free_addresses(res->res_store.sdaddrs);
+      if (res->res_store.SDaddrs) {
+         free_addresses(res->res_store.SDaddrs);
+      }
+      if (res->res_store.SDsrc_addr) {
+         free_addresses(res->res_store.SDsrc_addr);
+      }
+      if (res->res_store.NDMPaddrs) {
+         free_addresses(res->res_store.NDMPaddrs);
       }
       if (res->res_store.working_directory) {
          free(res->res_store.working_directory);
@@ -611,9 +623,6 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_store.verid) {
          free(res->res_store.verid);
-      }
-      if (res->res_store.ndmpaddrs) {
-         free_addresses(res->res_store.ndmpaddrs);
       }
       break;
    case R_DEVICE:

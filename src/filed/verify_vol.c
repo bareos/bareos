@@ -29,7 +29,8 @@
 #include "filed.h"
 
 /* Data received from Storage Daemon */
-static char rec_header[] = "rechdr %ld %ld %ld %ld %ld";
+static char rec_header[] =
+   "rechdr %ld %ld %ld %ld %ld";
 
 /* Forward referenced functions */
 
@@ -193,7 +194,7 @@ void do_verify_volume(JCR *jcr)
                                 STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
                                 0, ap, 0, 0);
          }
-         Dmsg2(200, "bfiled>bdird: attribs len=%d: msg=%s\n", dir->msglen, dir->msg);
+         Dmsg2(200, "filed>dir: attribs len=%d: msg=%s\n", dir->msglen, dir->msg);
          if (!status) {
             Jmsg(jcr, M_FATAL, 0, _("Network error in send to Director: ERR=%s\n"), bnet_strerror(dir));
             goto bail_out;
@@ -205,7 +206,7 @@ void do_verify_volume(JCR *jcr)
          Dmsg2(400, "send inx=%d MD5=%s\n", jcr->JobFiles, digest);
          bnet_fsend(dir, "%d %d %s *MD5-%d*", jcr->JobFiles, STREAM_MD5_DIGEST, digest,
                     jcr->JobFiles);
-         Dmsg2(20, "bfiled>bdird: MD5 len=%d: msg=%s\n", dir->msglen, dir->msg);
+         Dmsg2(20, "filed>dir: MD5 len=%d: msg=%s\n", dir->msglen, dir->msg);
          break;
 
       case STREAM_SHA1_DIGEST:
@@ -213,7 +214,7 @@ void do_verify_volume(JCR *jcr)
          Dmsg2(400, "send inx=%d SHA1=%s\n", jcr->JobFiles, digest);
          bnet_fsend(dir, "%d %d %s *SHA1-%d*", jcr->JobFiles, STREAM_SHA1_DIGEST,
                     digest, jcr->JobFiles);
-         Dmsg2(20, "bfiled>bdird: SHA1 len=%d: msg=%s\n", dir->msglen, dir->msg);
+         Dmsg2(20, "filed>dir: SHA1 len=%d: msg=%s\n", dir->msglen, dir->msg);
          break;
 
       case STREAM_SHA256_DIGEST:
@@ -221,7 +222,7 @@ void do_verify_volume(JCR *jcr)
          Dmsg2(400, "send inx=%d SHA256=%s\n", jcr->JobFiles, digest);
          bnet_fsend(dir, "%d %d %s *SHA256-%d*", jcr->JobFiles, STREAM_SHA256_DIGEST,
                     digest, jcr->JobFiles);
-         Dmsg2(20, "bfiled>bdird: SHA256 len=%d: msg=%s\n", dir->msglen, dir->msg);
+         Dmsg2(20, "filed>dir: SHA256 len=%d: msg=%s\n", dir->msglen, dir->msg);
          break;
 
       case STREAM_SHA512_DIGEST:
@@ -229,7 +230,7 @@ void do_verify_volume(JCR *jcr)
          Dmsg2(400, "send inx=%d SHA512=%s\n", jcr->JobFiles, digest);
          bnet_fsend(dir, "%d %d %s *SHA512-%d*", jcr->JobFiles, STREAM_SHA512_DIGEST,
                     digest, jcr->JobFiles);
-         Dmsg2(20, "bfiled>bdird: SHA512 len=%d: msg=%s\n", dir->msglen, dir->msg);
+         Dmsg2(20, "filed>dir: SHA512 len=%d: msg=%s\n", dir->msglen, dir->msg);
          break;
 
       /* Ignore everything else */

@@ -326,6 +326,7 @@ public:
    bool autochanger;                  /* Set if autochanger */
    bool AllowCompress;                /* Set if this Storage should allow jobs to enable compression */
    int64_t StorageId;                 /* Set from Storage DB record */
+   int64_t max_bandwidth;             /* Limit speed on this storage daemon for replication */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    uint32_t drives;                   /* Number of drives in autochanger */
    STORERES *paired_storage;          /* Paired storage configuration item for protocols like NDMP */

@@ -216,14 +216,27 @@ void free_tls_context(TLS_CONTEXT *ctx)
 
 bool get_tls_require(TLS_CONTEXT *ctx)
 {
-   return ctx->tls_require;
+   return (ctx) ? ctx->tls_require : false;
+}
+
+void set_tls_require(TLS_CONTEXT *ctx, bool value)
+{
+   if (ctx) {
+      ctx->tls_require = value;
+   }
 }
 
 bool get_tls_enable(TLS_CONTEXT *ctx)
 {
-   return ctx->tls_enable;
+   return (ctx) ? ctx->tls_enable : false;
 }
 
+void set_tls_enable(TLS_CONTEXT *ctx, bool value)
+{
+   if (ctx) {
+      ctx->tls_enable = value;
+   }
+}
 
 /*
  * Verifies a list of common names against the certificate
@@ -689,9 +702,16 @@ bool get_tls_require(TLS_CONTEXT *ctx)
    return false;
 }
 
+void set_tls_require(TLS_CONTEXT *ctx, bool value)
+{
+}
+
 bool get_tls_enable(TLS_CONTEXT *ctx)
 {
    return false;
 }
 
+void set_tls_enable(TLS_CONTEXT *ctx, bool value)
+{
+}
 #endif /* HAVE_TLS */

@@ -31,8 +31,8 @@ void admin_cleanup(JCR *jcr, int TermCode);
 
 /* authenticate.c */
 bool authenticate_storage_daemon(JCR *jcr, STORERES *store);
-int authenticate_file_daemon(JCR *jcr);
-int authenticate_user_agent(UAContext *ua);
+bool authenticate_file_daemon(JCR *jcr);
+bool authenticate_user_agent(UAContext *ua);
 
 /* autoprune.c */
 void do_autoprune(JCR *jcr);
@@ -95,7 +95,7 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval,
 bool send_include_list(JCR *jcr);
 bool send_exclude_list(JCR *jcr);
 bool send_level_command(JCR *jcr);
-bool send_bwlimit(JCR *jcr, const char *Job);
+bool send_bwlimit_to_fd(JCR *jcr, const char *Job);
 int get_attributes_and_put_in_catalog(JCR *jcr);
 void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId);
 int put_file_into_catalog(JCR *jcr, long file_index, char *fname,
@@ -136,7 +136,7 @@ bool select_next_rstore(JCR *jcr, bootstrap_info &info);
 void set_paired_storage(JCR *jcr);
 void free_paired_storage(JCR *jcr);
 bool has_paired_storage(JCR *jcr);
-bool setup_job(JCR *jcr);
+bool setup_job(JCR *jcr, bool suppress_output = false);
 void create_clones(JCR *jcr);
 int create_restore_bootstrap_file(JCR *jcr);
 void dird_free_jcr(JCR *jcr);
@@ -215,6 +215,7 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd);
 bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot);
 bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
                                      const char *operation, int drive, int slot);
+bool send_bwlimit_to_sd(JCR *jcr, const char *Job);
 
 /* scheduler.c */
 JCR *wait_for_next_job(char *one_shot_job_to_run);

@@ -37,10 +37,13 @@ extern BSOCK *filed_chan;
 extern void *start_heap;
 
 /* Static variables */
-static char qstatus[] = ".status %127s\n";
+static char qstatus[] =
+   ".status %127s\n";
 
-static char OKqstatus[]   = "3000 OK .status\n";
-static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
+static char OKqstatus[] =
+   "3000 OK .status\n";
+static char DotStatusJob[] =
+   "JobId=%d JobStatus=%c JobErrors=%d\n";
 
 /* Forward referenced functions */
 static void sendit(const char *msg, int len, STATUS_PKT *sp);
@@ -258,9 +261,10 @@ static void list_status_header(STATUS_PKT *sp)
          edit_uint64_with_commas(sm_max_buffers, b5));
    sendit(msg, len, sp);
    len = Mmsg(msg, " Sizes: boffset_t=%d size_t=%d int32_t=%d int64_t=%d "
-              "mode=%d,%d\n",
+                   "mode=%d,%d bwlimit=%skB/s\n",
               (int)sizeof(boffset_t), (int)sizeof(size_t), (int)sizeof(int32_t),
-              (int)sizeof(int64_t), (int)DEVELOPER_MODE, (int)BEEF);
+              (int)sizeof(int64_t), (int)DEVELOPER_MODE, (int)BEEF,
+              edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
    sendit(msg, len, sp);
 
    len = list_sd_plugins(msg);

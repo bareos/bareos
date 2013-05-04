@@ -39,22 +39,35 @@
 const int dbglvl = 400;
 
 /* Commands sent to File daemon */
-static char filesetcmd[] = "fileset%s\n"; /* set full fileset */
-static char jobcmd[] = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
+static char filesetcmd[] =
+   "fileset%s\n"; /* set full fileset */
+static char jobcmd[] =
+   "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
 /* Note, mtime_only is not used here -- implemented as file option */
-static char levelcmd[] = "level = %s%s%s mtime_only=%d %s%s\n";
-static char runscript[] = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
-static char runbeforenow[]= "RunBeforeNow\n";
-static char bandwidthcmd[] = "setbandwidth=%lld Job=%s\n";
+static char levelcmd[] =
+   "level = %s%s%s mtime_only=%d %s%s\n";
+static char runscript[] =
+   "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
+static char runbeforenow[] =
+   "RunBeforeNow\n";
+static char bandwidthcmd[] =
+   "setbandwidth=%lld Job=%s\n";
 
 /* Responses received from File daemon */
-static char OKinc[] = "2000 OK include\n";
-static char OKjob[] = "2000 OK Job";
-static char OKlevel[] = "2000 OK level\n";
-static char OKRunScript[] = "2000 OK RunScript\n";
-static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
-static char OKRestoreObject[] = "2000 OK ObjectRestored\n";
-static char OKBandwidth[] = "2000 OK Bandwidth\n";
+static char OKinc[] =
+   "2000 OK include\n";
+static char OKjob[] =
+   "2000 OK Job";
+static char OKlevel[] =
+   "2000 OK level\n";
+static char OKRunScript[] =
+   "2000 OK RunScript\n";
+static char OKRunBeforeNow[] =
+   "2000 OK RunBeforeNow\n";
+static char OKRestoreObject[] =
+   "2000 OK ObjectRestored\n";
+static char OKBandwidth[] =
+   "2000 OK Bandwidth\n";
 
 /* Forward referenced functions */
 static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd);
@@ -90,8 +103,9 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, int
       bstrncat(name, jcr->res.client->name(), sizeof(name));
 
       fd->set_source_address(director->DIRsrc_addr);
-      if (!fd->connect(jcr,retry_interval,max_retry_time, heart_beat, name, jcr->res.client->address,
-           NULL, jcr->res.client->FDport, verbose)) {
+      if (!fd->connect(jcr,retry_interval,max_retry_time, heart_beat, name,
+                       jcr->res.client->address, NULL,
+                       jcr->res.client->FDport, verbose)) {
         fd->destroy();
         fd = NULL;
       }
@@ -287,7 +301,7 @@ static void send_since_time(JCR *jcr)
    }
 }
 
-bool send_bwlimit(JCR *jcr, const char *Job)
+bool send_bwlimit_to_fd(JCR *jcr, const char *Job)
 {
    BSOCK *fd = jcr->file_bsock;
 
