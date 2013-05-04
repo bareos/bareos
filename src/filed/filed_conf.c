@@ -96,7 +96,7 @@ static RES_ITEM cli_items[] = {
    { "scriptsdirectory", store_dir, ITEM(res_client.scripts_directory), 0, 0, NULL },
    { "maximumconcurrentjobs", store_pint32, ITEM(res_client.MaxConcurrentJobs), 0, ITEM_DEFAULT, "20" },
    { "messages", store_res, ITEM(res_client.messages), R_MSGS, 0, NULL },
-   { "sdconnecttimeout", store_time,ITEM(res_client.SDConnectTimeout), 0, ITEM_DEFAULT, "1800" /* 30 * 60 */ },
+   { "sdconnecttimeout", store_time,ITEM(res_client.SDConnectTimeout), 0, ITEM_DEFAULT, "1800" /* 30 minutes */ },
    { "heartbeatinterval", store_time, ITEM(res_client.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
    { "maximumnetworkbuffersize", store_pint32, ITEM(res_client.max_network_buffer_size), 0, 0, NULL },
 #ifdef DATA_ENCRYPTION
