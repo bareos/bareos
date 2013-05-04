@@ -421,6 +421,8 @@ static inline int process_hfsattributes(JCR *jcr, FF_PKT *ff_pkt,
        ff_pkt->ff_errno = errno;
        return handle_file(jcr, ff_pkt, top_level);
     }
+
+    return -1;
 }
 #endif
 
@@ -968,7 +970,10 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
    if (ff_pkt->flags & FO_HFSPLUS &&
        ff_pkt->volhas_attrlist &&
        S_ISREG(ff_pkt->statp.st_mode)) {
-      return process_hfsattributes(jcr, ff_pkt, handle_file, fname, top_level);
+      rtn_stat = process_hfsattributes(jcr, ff_pkt, handle_file, fname, top_level);
+      if (rtn_stat != -1) {
+         return rtn_stat;
+      }
    }
 #endif
 
