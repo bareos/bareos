@@ -289,7 +289,7 @@ checkName:
          bstrncpy(dev_name, store.store->dev_name(), sizeof(dev_name));
          ua->info_msg(_("Requesting to mount %s ...\n"), dev_name);
          bash_spaces(dev_name);
-         bnet_fsend(sd, "mount %s drive=%d", dev_name, drive);
+         sd->fsend("mount %s drive=%d", dev_name, drive);
          unbash_spaces(dev_name);
          while (bnet_recv(sd) >= 0) {
             ua->send_msg("%s", sd->msg);

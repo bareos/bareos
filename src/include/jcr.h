@@ -334,6 +334,7 @@ public:
    alist *where_bregexp;                  /* BREGEXP alist for path manipulation */
    int32_t cached_pnl;                    /* Cached path length */
    POOLMEM *cached_path;                  /* Cached path */
+   bool passive_client;                   /* Client is a passive client e.g. doesn't initiate any network connection */
    bool prefix_links;                     /* Prefix links with Where path */
    bool gui;                              /* Set if gui using console */
    bool authenticated;                    /* Set when client authenticated */

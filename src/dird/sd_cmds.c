@@ -266,9 +266,9 @@ dlist *get_vol_list_from_SD(UAContext *ua, STORERES *store, bool listall, bool s
     * Ask for autochanger list of volumes
     */
    if (listall) {
-      bnet_fsend(sd, changerlistallcmd , dev_name);
+      sd->fsend(changerlistallcmd , dev_name);
    } else {
-      bnet_fsend(sd, changerlistcmd, dev_name);
+      sd->fsend(changerlistcmd, dev_name);
    }
 
    vol_list = New(dlist(vl, &vl->link));
@@ -783,7 +783,7 @@ bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
    /*
     * Ask for autochanger transfer of volumes
     */
-   bnet_fsend(sd, changertransfercmd, dev_name, src_slot, dst_slot);
+   sd->fsend(changertransfercmd, dev_name, src_slot, dst_slot);
    while (bnet_recv(sd) >= 0) {
       strip_trailing_junk(sd->msg);
 

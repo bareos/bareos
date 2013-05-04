@@ -43,8 +43,12 @@ static char restorecmd[] =
    "restore replace=%c prelinks=%d where=%s\n";
 static char restorecmdR[] =
    "restore replace=%c prelinks=%d regexwhere=%s\n";
-static char storaddr[] =
-   "storage address=%s port=%d ssl=0 Authorization=%s\n";
+static char storaddrcmd[] =
+   "storage address=%s port=%d ssl=%d Authorization=%s\n";
+static char setauthorizationcmd[] =
+   "setauthorization Authorization=%s\n";
+static char passiveclientcmd[] =
+   "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
 static char OKrestore[] =
@@ -53,6 +57,10 @@ static char OKstore[] =
    "2000 OK storage\n";
 static char OKstoreend[] =
    "2000 OK storage end\n";
+static char OKAuthorization[] =
+   "2000 OK Authorization\n";
+static char OKpassiveclient[] =
+   "2000 OK passive client\n";
 
 /* Responses received from the Storage daemon */
 static char OKbootstrap[] =
@@ -110,10 +118,11 @@ static void build_restore_command(JCR *jcr, POOL_MEM &ret)
  */
 static inline bool do_native_restore_bootstrap(JCR *jcr)
 {
+   STORERES *store;
+   bootstrap_info info;
    BSOCK *fd = NULL;
    BSOCK *sd;
    bool first_time = true;
-   bootstrap_info info;
    POOL_MEM restore_cmd(PM_MESSAGE);
    bool ret = false;
 
@@ -132,10 +141,12 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
    /*
     * Read the bootstrap file
     */
+   jcr->passive_client = jcr->res.client->passive;
    while (!feof(info.bs)) {
       if (!select_next_rstore(jcr, info)) {
          goto bail_out;
       }
+      store = jcr->res.rstore;
 
       /**
        * Open a message channel connection with the Storage
@@ -170,6 +181,17 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, 1)) {
             goto bail_out;
          }
+
+         /*
+          * Check if the file daemon supports passive client mode.
+          */
+         if (jcr->passive_client && jcr->FDVersion < FD_VERSION_51) {
+            Jmsg(jcr, M_FATAL, 0,
+                  _("Client \"%s\" doesn't support passive client mode. Please upgrade your client.\n\n"),
+                 jcr->res.client->name());
+            goto bail_out;
+         }
+
          fd = jcr->file_bsock;
       }
 
@@ -183,33 +205,103 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          goto bail_out;
       }
 
-      if (!sd->fsend("run")) {
-         goto bail_out;
-      }
+      if (!jcr->passive_client) {
+         int tls_need = BNET_TLS_NONE;
 
-      /*
-       * Now start a Storage daemon message thread
-       */
-      if (!start_storage_daemon_message_thread(jcr)) {
-         goto bail_out;
-      }
-      Dmsg0(50, "Storage daemon connection OK\n");
+         /*
+          * When the client is not in passive mode we can put the SD in
+          * listen mode for the FD connection. And ask the FD to connect
+          * to the SD.
+          */
+         if (!sd->fsend("run")) {
+            goto bail_out;
+         }
 
-      /*
-       * send Storage daemon address to the File daemon,
-       *   then wait for File daemon to make connection
-       *   with Storage daemon.
-       */
-      if (jcr->res.rstore->SDDport == 0) {
-         jcr->res.rstore->SDDport = jcr->res.rstore->SDport;
-      }
-      fd->fsend(storaddr, jcr->res.rstore->address, jcr->res.rstore->SDDport,
-                jcr->sd_auth_key);
-      memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
+         /*
+          * Now start a Storage daemon message thread
+          */
+         if (!start_storage_daemon_message_thread(jcr)) {
+            goto bail_out;
+         }
+         Dmsg0(50, "Storage daemon connection OK\n");
 
-      Dmsg1(6, "dird>filed: %s\n", fd->msg);
-      if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
-         goto bail_out;
+         /*
+          * Send Storage daemon address to the File daemon,
+          * then wait for File daemon to make connection
+          * with Storage daemon.
+          */
+         if (store->SDDport == 0) {
+            store->SDDport = store->SDport;
+         }
+
+         /*
+          * TLS Requirement
+          */
+         if (store->tls_enable) {
+            if (store->tls_require) {
+               tls_need = BNET_TLS_REQUIRED;
+            } else {
+               tls_need = BNET_TLS_OK;
+            }
+         }
+
+         fd->fsend(storaddrcmd, store->address,
+                   store->SDDport, tls_need, jcr->sd_auth_key);
+         memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
+
+         Dmsg1(6, "dird>filed: %s\n", fd->msg);
+         if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
+            goto bail_out;
+         }
+      } else {
+         int tls_need = BNET_TLS_NONE;
+         CLIENTRES *client = jcr->res.client;
+         /*
+          * In passive mode we tell the FD what authorization key to use
+          * and the ask the SD to initiate the connection.
+          */
+         fd->fsend(setauthorizationcmd, jcr->sd_auth_key);
+         memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
+
+         Dmsg1(6, "dird>filed: %s\n", fd->msg);
+         if (!response(jcr, fd, OKAuthorization, "Setauthorization", DISPLAY_ERROR)) {
+            goto bail_out;
+         }
+
+         /*
+          * TLS Requirement
+          */
+         tls_need = BNET_TLS_NONE;
+         if (client->tls_enable) {
+            if (client->tls_require) {
+               tls_need = BNET_TLS_REQUIRED;
+            } else {
+               tls_need = BNET_TLS_OK;
+            }
+         }
+
+         /*
+          * Tell the SD to connect to the FD.
+          */
+         sd->fsend(passiveclientcmd, client->address, client->FDport, tls_need);
+         if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
+            goto bail_out;
+         }
+
+         /*
+          * Start the Job in the SD.
+          */
+         if (!sd->fsend("run")) {
+            goto bail_out;
+         }
+
+         /*
+          * Now start a Storage daemon message thread
+          */
+         if (!start_storage_daemon_message_thread(jcr)) {
+            goto bail_out;
+         }
+         Dmsg0(50, "Storage daemon connection OK\n");
       }
 
       /*
@@ -237,7 +329,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          goto bail_out;
       }
 
-      if (jcr->FDVersion < 2) { /* Old FD */
+      if (jcr->FDVersion < FD_VERSION_2) { /* Old FD */
          break;                 /* we do only one loop */
       } else {
          if (!response(jcr, fd, OKstoreend, "Store end", DISPLAY_ERROR)) {
@@ -247,7 +339,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
       }
    } /* the whole boostrap has been send */
 
-   if (fd && jcr->FDVersion >= 2) {
+   if (fd && jcr->FDVersion >= FD_VERSION_2) {
       fd->fsend("endrestore");
    }
 

@@ -21,7 +21,7 @@
    02110-1301, USA.
 */
 /*
- * Bareos File Daemon Job processing
+ * This file handles accepting Director Commands
  *
  * Kern Sibbald, October MM
  */
@@ -57,40 +57,41 @@ const bool have_xattr = false;
 #endif
 
 /* Imported functions */
+extern bool accurate_cmd(JCR *jcr);
 extern bool status_cmd(JCR *jcr);
 extern bool qstatus_cmd(JCR *jcr);
-extern bool accurate_cmd(JCR *jcr);
 extern "C" char *job_code_callback_filed(JCR *jcr, const char* param);
 
 /* Forward referenced functions */
 static bool backup_cmd(JCR *jcr);
 static bool bootstrap_cmd(JCR *jcr);
 static bool cancel_cmd(JCR *jcr);
-static bool setbandwidth_cmd(JCR *jcr);
-static bool setdebug_cmd(JCR *jcr);
-static bool estimate_cmd(JCR *jcr);
-static bool hello_cmd(JCR *jcr);
-static bool job_cmd(JCR *jcr);
-static bool fileset_cmd(JCR *jcr);
-static bool level_cmd(JCR *jcr);
-static bool verify_cmd(JCR *jcr);
-static bool restore_cmd(JCR *jcr);
 static bool end_restore_cmd(JCR *jcr);
-static bool storage_cmd(JCR *jcr);
-static bool session_cmd(JCR *jcr);
-static bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd);
-static void filed_free_jcr(JCR *jcr);
-static bool open_sd_read_session(JCR *jcr);
-static bool runscript_cmd(JCR *jcr);
-static bool runbefore_cmd(JCR *jcr);
-static bool runafter_cmd(JCR *jcr);
-static bool runbeforenow_cmd(JCR *jcr);
-static bool restore_object_cmd(JCR *jcr);
-static void set_storage_auth_key(JCR *jcr, char *key);
-static bool sm_dump_cmd(JCR *jcr);
+static bool estimate_cmd(JCR *jcr);
 #ifdef DEVELOPER
 static bool exit_cmd(JCR *jcr);
 #endif
+static bool fileset_cmd(JCR *jcr);
+static bool job_cmd(JCR *jcr);
+static bool level_cmd(JCR *jcr);
+static bool runafter_cmd(JCR *jcr);
+static bool runbeforenow_cmd(JCR *jcr);
+static bool runbefore_cmd(JCR *jcr);
+static bool runscript_cmd(JCR *jcr);
+static bool restore_object_cmd(JCR *jcr);
+static bool restore_cmd(JCR *jcr);
+static bool session_cmd(JCR *jcr);
+static bool setauthorization_cmd(JCR *jcr);
+static bool setbandwidth_cmd(JCR *jcr);
+static bool setdebug_cmd(JCR *jcr);
+static bool storage_cmd(JCR *jcr);
+static bool sm_dump_cmd(JCR *jcr);
+static bool verify_cmd(JCR *jcr);
+
+static bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd);
+static void filed_free_jcr(JCR *jcr);
+static bool open_sd_read_session(JCR *jcr);
+static void set_storage_auth_key(JCR *jcr, char *key);
 
 /* Exported functions */
 
@@ -102,51 +103,55 @@ struct s_cmds {
 
 /**
  * The following are the recognized commands from the Director.
+ *
+ * Keywords are sorted first longest match when the keywords start with the same string.
  */
 static struct s_cmds cmds[] = {
-   { "backup", backup_cmd, false },
-   { "cancel", cancel_cmd, false },
-   { "setbandwidth=", setbandwidth_cmd, false },
-   { "setdebug=", setdebug_cmd, false },
-   { "estimate", estimate_cmd, false },
-   { "Hello", hello_cmd, true },
-   { "fileset", fileset_cmd, false },
-   { "JobId=", job_cmd, false },
-   { "level = ", level_cmd, false },
-   { "restore ", restore_cmd, false },
-   { "endrestore", end_restore_cmd, false },
-   { "session", session_cmd, false },
-   { "status", status_cmd, true },
-   { ".status", qstatus_cmd, true },
-   { "storage ", storage_cmd, false },
-   { "verify", verify_cmd, false },
-   { "bootstrap", bootstrap_cmd, false },
-   { "RunBeforeNow", runbeforenow_cmd, false },
-   { "RunBeforeJob", runbefore_cmd, false },
-   { "RunAfterJob", runafter_cmd, false },
-   { "Run", runscript_cmd, false },
    { "accurate", accurate_cmd, false },
-   { "restoreobject", restore_object_cmd, false },
-   { "sm_dump", sm_dump_cmd, false },
+   { "backup", backup_cmd, false },
+   { "bootstrap", bootstrap_cmd, false },
+   { "cancel", cancel_cmd, false },
+   { "endrestore", end_restore_cmd, false },
+   { "estimate", estimate_cmd, false },
 #ifdef DEVELOPER
    { "exit", exit_cmd, false },
 #endif
+   { "fileset", fileset_cmd, false },
+   { "JobId=", job_cmd, false },
+   { "level = ", level_cmd, false },
+   { "RunAfterJob", runafter_cmd, false },
+   { "RunBeforeNow", runbeforenow_cmd, false },
+   { "RunBeforeJob", runbefore_cmd, false },
+   { "Run", runscript_cmd, false },
+   { "restoreobject", restore_object_cmd, false },
+   { "restore ", restore_cmd, false },
+   { "session", session_cmd, false },
+   { "setauthorization", setauthorization_cmd, false },
+   { "setbandwidth=", setbandwidth_cmd, false },
+   { "setdebug=", setdebug_cmd, false },
+   { "status", status_cmd, true },
+   { ".status", qstatus_cmd, true },
+   { "storage ", storage_cmd, false },
+   { "sm_dump", sm_dump_cmd, false },
+   { "verify", verify_cmd, false },
    { NULL, NULL, false } /* list terminator */
 };
 
 /*
  * Commands received from director that need scanning
  */
-static char setbandwidth[] =
+static char setauthorizationcmd[] =
+   "setauthorization Authorization=%100s";
+static char setbandwidthcmd[] =
    "setbandwidth=%lld Job=%127s";
 static char setdebugcmd[] =
    "setdebug=%d trace=%d hangup=%d";
 static char jobcmd[] =
    "JobId=%d Job=%127s SDid=%d SDtime=%d Authorization=%100s";
-static char storaddr[] =
-   "storage address=%s port=%d ssl=%d Authorization=%100s";
-static char storaddr_v1[] =
+static char storaddrv0cmd[] =
    "storage address=%s port=%d ssl=%d";
+static char storaddrv1cmd[] =
+   "storage address=%s port=%d ssl=%d Authorization=%100s";
 static char sessioncmd[] =
    "session %127s %ld %ld %ld %ld %ld %ld\n";
 static char restorecmd[] =
@@ -165,11 +170,11 @@ static char verifycmd[] =
    "verify level=%30s";
 static char estimatecmd[] =
    "estimate listing=%d";
-static char runbefore[] =
+static char runbeforecmd[] =
    "RunBeforeJob %s";
-static char runafter[] =
+static char runaftercmd[] =
    "RunAfterJob %s";
-static char runscript[] =
+static char runscriptcmd[] =
    "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
 
 /*
@@ -181,6 +186,8 @@ static char no_auth[] =
    "2998 No Authorization\n";
 static char invalid_cmd[] =
    "2997 Invalid command for a Director with Monitor directive enabled.\n";
+static char OkAuthorization[] =
+   "2000 OK Authorization\n";
 static char OKBandwidth[] =
    "2000 OK Bandwidth\n";
 static char OKinc[] =
@@ -292,158 +299,32 @@ static bool validate_command(JCR *jcr, const char *cmd, alist *allowed_job_cmds)
    return allowed;
 }
 
-/**
- * Accept requests from a Director
- *
- * NOTE! We are running as a separate thread
- *
- * Send output one line
- * at a time followed by a zero length transmission.
- *
- * Return when the connection is terminated or there
- * is an error.
- *
- * Basic task here is:
- *   Authenticate Director (during Hello command).
- *   Accept commands one at a time from the Director
- *     and execute them.
- *
- * Concerning ClientRunBefore/After, the sequence of events
- * is rather critical. If they are not done in the right
- * order one can easily get FD->SD timeouts if the script
- * runs a long time.
- *
- * The current sequence of events is:
- *  1. Dir starts job with FD
- *  2. Dir connects to SD
- *  3. Dir connects to FD
- *  4. FD connects to SD
- *  5. FD gets/runs ClientRunBeforeJob and sends ClientRunAfterJob
- *  6. Dir sends include/exclude
- *  7. FD sends data to SD
- *  8. SD/FD disconnects while SD despools data and attributes (optional)
- *  9. FD runs ClientRunAfterJob
- */
-void *handle_client_request(void *dirp)
+static inline void cleanup_fileset(JCR *jcr)
 {
-   int i;
-   bool found, quit;
-   JCR *jcr;
-   BSOCK *dir = (BSOCK *)dirp;
-   const char jobname[12] = "*Director*";
-// saveCWD save_cwd;
+   int i, j, k;
+   findFILESET *fileset;
+   findINCEXE *incexe;
+   findFOPTS *fo;
 
-   jcr = new_jcr(sizeof(JCR), filed_free_jcr); /* create JCR */
-   jcr->dir_bsock = dir;
-   jcr->ff = init_find_files();
-// save_cwd.save(jcr);
-   jcr->start_time = time(NULL);
-   jcr->RunScripts = New(alist(10, not_owned_by_alist));
-   jcr->last_fname = get_pool_memory(PM_FNAME);
-   jcr->last_fname[0] = 0;
-   jcr->client_name = get_memory(strlen(my_name) + 1);
-   pm_strcpy(jcr->client_name, my_name);
-   bstrncpy(jcr->Job, jobname, sizeof(jobname));  /* dummy */
-   jcr->crypto.pki_sign = me->pki_sign;
-   jcr->crypto.pki_encrypt = me->pki_encrypt;
-   jcr->crypto.pki_keypair = me->pki_keypair;
-   jcr->crypto.pki_signers = me->pki_signers;
-   jcr->crypto.pki_recipients = me->pki_recipients;
-   dir->set_jcr(jcr);
-   enable_backup_privileges(NULL, 1 /* ignore_errors */);
-
-   /**********FIXME******* add command handler error code */
-
-   for (quit=false; !quit;) {
-      /* Read command */
-      if (dir->recv() < 0) {
-         break;               /* connection terminated */
-      }
-      dir->msg[dir->msglen] = 0;
-      Dmsg1(100, "<dird: %s", dir->msg);
-      found = false;
-      for (i=0; cmds[i].cmd; i++) {
-         if (strncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd)) == 0) {
-            found = true;         /* indicate command found */
-            if (!jcr->authenticated && cmds[i].func != hello_cmd) {
-               dir->fsend(no_auth);
-               dir->signal(BNET_EOD);
-               break;
-            }
-            if ((jcr->authenticated) && (!cmds[i].monitoraccess) && (jcr->director->monitor)) {
-               Dmsg1(100, "Command \"%s\" is invalid.\n", cmds[i].cmd);
-               dir->fsend(invalid_cmd);
-               dir->signal(BNET_EOD);
-               break;
-            }
-            Dmsg1(100, "Executing %s command.\n", cmds[i].cmd);
-            if (!cmds[i].func(jcr)) {         /* do command */
-               quit = true;         /* error or fully terminated, get out */
-               Dmsg1(100, "Quit command loop. Canceled=%d\n", job_canceled(jcr));
-            }
-            break;
-         }
-      }
-      if (!found) {              /* command not found */
-         dir->fsend(errmsg);
-         quit = true;
-         break;
-      }
-   }
-
-   /* Inform Storage daemon that we are done */
-   if (jcr->store_bsock) {
-      jcr->store_bsock->signal(BNET_TERMINATE);
-   }
-
-   /* Run the after job */
-   if (jcr->RunScripts) {
-      run_scripts(jcr, jcr->RunScripts, "ClientAfterJob",
-                 (jcr->director && jcr->director->allowed_script_dirs) ?
-                  jcr->director->allowed_script_dirs :
-                  me->allowed_script_dirs);
-   }
-
-   if (jcr->JobId) {            /* send EndJob if running a job */
-      char ed1[50], ed2[50];
-      /* Send termination status back to Dir */
-      dir->fsend(EndJob, jcr->JobStatus, jcr->JobFiles,
-                 edit_uint64(jcr->ReadBytes, ed1),
-                 edit_uint64(jcr->JobBytes, ed2), jcr->JobErrors, jcr->VSS,
-                 jcr->crypto.pki_encrypt);
-      Dmsg1(110, "End FD msg: %s\n", dir->msg);
-   }
-
-   generate_plugin_event(jcr, bEventJobEnd);
-
-   dequeue_messages(jcr);             /* send any queued messages */
-
-   /* Inform Director that we are done */
-   dir->signal(BNET_TERMINATE);
-
-   free_plugins(jcr);                 /* release instantiated plugins */
-   free_and_null_pool_memory(jcr->job_metadata);
-
-   /* Clean up fileset */
-   FF_PKT *ff = jcr->ff;
-   findFILESET *fileset = ff->fileset;
+   fileset = jcr->ff->fileset;
    if (fileset) {
-      int i, j, k;
-      /* Delete FileSet Include lists */
-      for (i=0; i<fileset->include_list.size(); i++) {
-         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
-         for (j=0; j<incexe->opts_list.size(); j++) {
-            findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+      /*
+       * Delete FileSet Include lists
+       */
+      for (i = 0; i<fileset->include_list.size(); i++) {
+         incexe = (findINCEXE *)fileset->include_list.get(i);
+         for (j = 0; j<incexe->opts_list.size(); j++) {
+            fo = (findFOPTS *)incexe->opts_list.get(j);
             if (fo->plugin) {
                free(fo->plugin);
             }
-            for (k=0; k<fo->regex.size(); k++) {
+            for (k = 0; k<fo->regex.size(); k++) {
                regfree((regex_t *)fo->regex.get(k));
             }
-            for (k=0; k<fo->regexdir.size(); k++) {
+            for (k = 0; k<fo->regexdir.size(); k++) {
                regfree((regex_t *)fo->regexdir.get(k));
             }
-            for (k=0; k<fo->regexfile.size(); k++) {
+            for (k = 0; k<fo->regexfile.size(); k++) {
                regfree((regex_t *)fo->regexfile.get(k));
             }
             if (fo->size_match) {
@@ -469,11 +350,13 @@ void *handle_client_request(void *dirp)
       }
       fileset->include_list.destroy();
 
-      /* Delete FileSet Exclude lists */
-      for (i=0; i<fileset->exclude_list.size(); i++) {
-         findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
-         for (j=0; j<incexe->opts_list.size(); j++) {
-            findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+      /*
+       * Delete FileSet Exclude lists
+       */
+      for (i = 0; i<fileset->exclude_list.size(); i++) {
+         incexe = (findINCEXE *)fileset->exclude_list.get(i);
+         for (j = 0; j<incexe->opts_list.size(); j++) {
+            fo = (findFOPTS *)incexe->opts_list.get(j);
             if (fo->size_match) {
                free(fo->size_match);
             }
@@ -498,7 +381,147 @@ void *handle_client_request(void *dirp)
       fileset->exclude_list.destroy();
       free(fileset);
    }
-   ff->fileset = NULL;
+   jcr->ff->fileset = NULL;
+}
+
+/*
+ * Connection request from an director.
+ *
+ * Accept commands one at a time from the Director and execute them.
+ *
+ * Concerning ClientRunBefore/After, the sequence of events
+ * is rather critical. If they are not done in the right
+ * order one can easily get FD->SD timeouts if the script
+ * runs a long time.
+ *
+ * The current sequence of events is:
+ *  1. Dir starts job with FD
+ *  2. Dir connects to SD
+ *  3. Dir connects to FD
+ *  4. FD connects to SD
+ *  5. FD gets/runs ClientRunBeforeJob and sends ClientRunAfterJob
+ *  6. Dir sends include/exclude
+ *  7. FD sends data to SD
+ *  8. SD/FD disconnects while SD despools data and attributes (optional)
+ *  9. FD runs ClientRunAfterJob
+ */
+static void *handle_director_connection(BSOCK *dir)
+{
+   int i;
+   JCR *jcr;
+   bool found;
+   bool quit = false;
+   const char jobname[12] = "*Director*";
+// saveCWD save_cwd;
+
+   jcr = new_jcr(sizeof(JCR), filed_free_jcr); /* create JCR */
+   jcr->dir_bsock = dir;
+   jcr->ff = init_find_files();
+// save_cwd.save(jcr);
+   jcr->start_time = time(NULL);
+   jcr->RunScripts = New(alist(10, not_owned_by_alist));
+   jcr->last_fname = get_pool_memory(PM_FNAME);
+   jcr->last_fname[0] = 0;
+   jcr->client_name = get_memory(strlen(my_name) + 1);
+   pm_strcpy(jcr->client_name, my_name);
+   bstrncpy(jcr->Job, jobname, sizeof(jobname));  /* dummy */
+   jcr->crypto.pki_sign = me->pki_sign;
+   jcr->crypto.pki_encrypt = me->pki_encrypt;
+   jcr->crypto.pki_keypair = me->pki_keypair;
+   jcr->crypto.pki_signers = me->pki_signers;
+   jcr->crypto.pki_recipients = me->pki_recipients;
+   dir->set_jcr(jcr);
+   enable_backup_privileges(NULL, 1 /* ignore_errors */);
+
+   Dmsg0(120, "Calling Authenticate\n");
+   if (!authenticate_director(jcr)) {
+      return NULL;
+   }
+
+   Dmsg0(120, "OK Authenticate\n");
+   jcr->authenticated = true;
+
+   /**********FIXME******* add command handler error code */
+
+   while (!quit) {
+      /*
+       * Read command
+       */
+      if (dir->recv() < 0) {
+         break;               /* connection terminated */
+      }
+
+      dir->msg[dir->msglen] = 0;
+      Dmsg1(100, "<dird: %s", dir->msg);
+      found = false;
+      for (i = 0; cmds[i].cmd; i++) {
+         if (bstrncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd))) {
+            found = true;         /* indicate command found */
+            if ((!cmds[i].monitoraccess) && (jcr->director->monitor)) {
+               Dmsg1(100, "Command \"%s\" is invalid.\n", cmds[i].cmd);
+               dir->fsend(invalid_cmd);
+               dir->signal(BNET_EOD);
+               break;
+            }
+            Dmsg1(100, "Executing %s command.\n", cmds[i].cmd);
+            if (!cmds[i].func(jcr)) {         /* do command */
+               quit = true;         /* error or fully terminated, get out */
+               Dmsg1(100, "Quit command loop. Canceled=%d\n", job_canceled(jcr));
+            }
+            break;
+         }
+      }
+      if (!found) {              /* command not found */
+         dir->fsend(errmsg);
+         quit = true;
+         break;
+      }
+   }
+
+   /*
+    * Inform Storage daemon that we are done
+    */
+   if (jcr->store_bsock) {
+      jcr->store_bsock->signal(BNET_TERMINATE);
+   }
+
+   /*
+    * Run the after job
+    */
+   if (jcr->RunScripts) {
+      run_scripts(jcr, jcr->RunScripts, "ClientAfterJob",
+                 (jcr->director && jcr->director->allowed_script_dirs) ?
+                  jcr->director->allowed_script_dirs :
+                  me->allowed_script_dirs);
+   }
+
+   if (jcr->JobId) {            /* send EndJob if running a job */
+      char ed1[50], ed2[50];
+      /* Send termination status back to Dir */
+      dir->fsend(EndJob, jcr->JobStatus, jcr->JobFiles,
+                 edit_uint64(jcr->ReadBytes, ed1),
+                 edit_uint64(jcr->JobBytes, ed2), jcr->JobErrors, jcr->VSS,
+                 jcr->crypto.pki_encrypt);
+      Dmsg1(110, "End FD msg: %s\n", dir->msg);
+   }
+
+   generate_plugin_event(jcr, bEventJobEnd);
+
+   dequeue_messages(jcr);             /* send any queued messages */
+
+   /*
+    * Inform Director that we are done
+    */
+   dir->signal(BNET_TERMINATE);
+
+   free_plugins(jcr);                 /* release instantiated plugins */
+   free_and_null_pool_memory(jcr->job_metadata);
+
+   /*
+    * Clean up fileset
+    */
+   cleanup_fileset(jcr);
+
    Dmsg0(100, "Calling term_find_files\n");
    term_find_files(jcr->ff);
 // save_cwd.restore(jcr);
@@ -509,6 +532,54 @@ void *handle_client_request(void *dirp)
    Dmsg0(100, "Done with free_jcr\n");
    Dsm_check(100);
    garbage_collect_memory_pool();
+
+   return NULL;
+}
+
+/*
+ * Connection request. We accept connections either from the Director or the Storage Daemon
+ *
+ * NOTE! We are running as a separate thread
+ *
+ * Send output one line at a time followed by a zero length transmission.
+ * Return when the connection is terminated or there is an error.
+ *
+ * Basic tasks done here:
+ *  - If it was a connection from an SD, call handle_stored_connection()
+ *  - Otherwise it was a connection from the DIR, call handle_director_connection()
+ */
+void *handle_connection_request(void *arg)
+{
+   BSOCK *bs = (BSOCK *)arg;
+   char tbuf[100];
+
+   if (bs->recv() <= 0) {
+      Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
+      bmicrosleep(5, 0);   /* make user wait 5 seconds */
+      bs->close();
+      return NULL;
+   }
+
+   Dmsg1(110, "Conn: %s", bs->msg);
+
+   /*
+    * See if its a director making a connection.
+    */
+   if (bstrncmp(bs->msg, "Hello Director", 14)) {
+      Dmsg1(110, "Got a DIR connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+      return handle_director_connection(bs);
+   }
+
+   /*
+    * See if its a storage daemon making a connection.
+    */
+   if (bstrncmp(bs->msg, "Hello Storage", 13)) {
+      Dmsg1(110, "Got a SD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+      return handle_stored_connection(bs);
+   }
+
+   Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->msglen);
+
    return NULL;
 }
 
@@ -528,20 +599,6 @@ static bool exit_cmd(JCR *jcr)
    return false;
 }
 #endif
-
-/**
- * Hello from Director he must identify himself and provide his password.
- */
-static bool hello_cmd(JCR *jcr)
-{
-   Dmsg0(120, "Calling Authenticate\n");
-   if (!authenticate_director(jcr)) {
-      return false;
-   }
-   Dmsg0(120, "OK Authenticate\n");
-   jcr->authenticated = true;
-   return true;
-}
 
 /**
  * Cancel a Job
@@ -574,6 +631,26 @@ static bool cancel_cmd(JCR *jcr)
 }
 
 /**
+ * Set new authorization key as requested by the Director
+ */
+static bool setauthorization_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   POOL_MEM sd_auth_key(PM_MESSAGE);
+
+   sd_auth_key.check_size(dir->msglen);
+   if (sscanf(dir->msg, setauthorizationcmd, sd_auth_key.c_str()) != 1) {
+      dir->fsend(BADcmd, "setauthorization");
+      return false;
+   }
+
+   set_storage_auth_key(jcr, sd_auth_key.c_str());
+   Dmsg2(120, "JobId=%d Auth=%s\n", jcr->JobId, jcr->sd_auth_key);
+
+   return dir->fsend(OkAuthorization);
+}
+
+/**
  * Set bandwidth limit as requested by the Director
  */
 static bool setbandwidth_cmd(JCR *jcr)
@@ -584,7 +661,7 @@ static bool setbandwidth_cmd(JCR *jcr)
    char Job[MAX_NAME_LENGTH];
 
    *Job = 0;
-   if (sscanf(dir->msg, setbandwidth, &bw, Job) != 2 || bw < 0) {
+   if (sscanf(dir->msg, setbandwidthcmd, &bw, Job) != 2 || bw < 0) {
       pm_strcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("2991 Bad setbandwidth command: %s\n"), jcr->errmsg);
       return false;
@@ -715,7 +792,7 @@ static bool runbefore_cmd(JCR *jcr)
 
    Dmsg1(100, "runbefore_cmd: %s", dir->msg);
    cmd = get_memory(dir->msglen + 1);
-   if (sscanf(dir->msg, runbefore, cmd) != 1) {
+   if (sscanf(dir->msg, runbeforecmd, cmd) != 1) {
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad RunBeforeJob command: %s\n"), jcr->errmsg);
       dir->fsend(BadRunBeforeJob);
@@ -778,7 +855,7 @@ static bool runafter_cmd(JCR *jcr)
 
    Dmsg1(100, "runafter_cmd: %s", dir->msg);
    cmd = get_memory(dir->msglen + 1);
-   if (sscanf(dir->msg, runafter, cmd) != 1) {
+   if (sscanf(dir->msg, runaftercmd, cmd) != 1) {
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad RunAfter command: %s\n"), jcr->errmsg);
       dir->fsend(BadRunAfterJob);
@@ -827,7 +904,7 @@ static bool runscript_cmd(JCR *jcr)
    /*
     * Note, we cannot sscanf into bools
     */
-   if (sscanf(dir->msg, runscript, &on_success, &on_failure,
+   if (sscanf(dir->msg, runscriptcmd, &on_success, &on_failure,
               &fail_on_error, &cmd->when, msg) != 5) {
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad RunScript command: %s\n"), jcr->errmsg);
@@ -1241,9 +1318,9 @@ static bool storage_cmd(JCR *jcr)
 
    Dmsg1(100, "StorageCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->msglen);
-   if (sscanf(dir->msg, storaddr, stored_addr, &stored_port,
+   if (sscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port,
               &enable_ssl, sd_auth_key.c_str()) != 4) {
-      if (sscanf(dir->msg, storaddr_v1, stored_addr,
+      if (sscanf(dir->msg, storaddrv0cmd, stored_addr,
                  &stored_port, &enable_ssl) != 3) {
          pm_strcpy(jcr->errmsg, dir->msg);
          Jmsg(jcr, M_FATAL, 0, _("Bad storage command: %s"), jcr->errmsg);
@@ -1257,7 +1334,9 @@ static bool storage_cmd(JCR *jcr)
 
    sd->set_source_address(me->FDsrc_addr);
 
-   /* TODO: see if we put limit on restore and backup... */
+   /*
+    * TODO: see if we put limit on restore and backup...
+    */
    if (!jcr->max_bandwidth) {
       if (jcr->director->max_bandwidth_per_job) {
          jcr->max_bandwidth = jcr->director->max_bandwidth_per_job;
@@ -1271,7 +1350,9 @@ static bool storage_cmd(JCR *jcr)
       sd->set_bwlimit_bursting();
    }
 
-   /* Open command communications with Storage daemon */
+   /*
+    * Open command communications with Storage daemon
+    */
    if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
                     _("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
      sd->destroy();
@@ -1296,13 +1377,14 @@ static bool storage_cmd(JCR *jcr)
    }
    Dmsg0(110, "Authenticated with SD.\n");
 
-   /* Send OK to Director */
+   /*
+    * Send OK to Director
+    */
    return dir->fsend(OKstore);
 
 bail_out:
    dir->fsend(BADcmd, "storage");
    return false;
-
 }
 
 /**

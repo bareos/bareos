@@ -114,4 +114,11 @@ typedef struct s_vol_list {
 #define INDEX_MAX_DRIVES 100
 #define INDEX_SLOT_OFFSET 100
 
+#define FD_VERSION_1 1
+#define FD_VERSION_2 2
+#define FD_VERSION_3 3
+#define FD_VERSION_4 4
+#define FD_VERSION_5 5
+#define FD_VERSION_51 51
+
 #include "protos.h"

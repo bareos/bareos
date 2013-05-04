@@ -396,12 +396,12 @@ bool authenticate_filedaemon(JCR *jcr)
  */
 bool authenticate_with_filedaemon(JCR *jcr)
 {
-   BSOCK *sd = jcr->file_bsock;
+   BSOCK *fd = jcr->file_bsock;
 
-   if (!two_way_authenticate(sd, jcr, false, "File")) {
+   if (!two_way_authenticate(fd, jcr, false, "File")) {
       Jmsg1(jcr, M_FATAL, 0,
             _("Authorization problem: Two way security handshake failed with File daemon at %s\n"),
-            sd->who());
+            fd->who());
       return false;
    }
 

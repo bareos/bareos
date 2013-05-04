@@ -201,6 +201,7 @@ static RES_ITEM cli_items[] = {
    { "password", store_clearpassword, ITEM(res_client.password), 0, ITEM_REQUIRED, NULL },
    { "fdpassword", store_clearpassword, ITEM(res_client.password), 0, 0, NULL },
    { "catalog", store_res, ITEM(res_client.catalog), R_CATALOG, 0, NULL },
+   { "passive", store_bool, ITEM(res_client.passive), 0, ITEM_DEFAULT, "false" },
    { "hardquota", store_size64, ITEM(res_client.HardQuota), 0, ITEM_DEFAULT, "0" },
    { "softquota", store_size64, ITEM(res_client.SoftQuota), 0, ITEM_DEFAULT, "0" },
    { "softquotagraceperiod", store_time, ITEM(res_client.SoftQuotaGracePeriod), 0, ITEM_DEFAULT, "0" },
@@ -744,11 +745,12 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
          sendit(sock, _("Client: name=%s protocol=%d authtype=%d address=%s FDport=%d MaxJobs=%u\n"),
                 res->res_client.hdr.name, res->res_client.Protocol, res->res_client.AuthType,
                 res->res_client.address, res->res_client.FDport, res->res_client.MaxConcurrentJobs);
-         sendit(sock, _("      JobRetention=%s FileRetention=%s AutoPrune=%d"
+         sendit(sock, _("      JobRetention=%s FileRetention=%s AutoPrune=%d Passive=%d"
                         " SoftQuota=%s SoftQuotaGrace=%s HardQuota=%s StrictQuotas=%d\n"),
                 edit_utime(res->res_client.JobRetention, ed1, sizeof(ed1)),
                 edit_utime(res->res_client.FileRetention, ed2, sizeof(ed2)),
                 res->res_client.AutoPrune,
+                res->res_client.passive,
                 edit_uint64(res->res_client.SoftQuota, ed3),
                 edit_utime(res->res_client.SoftQuotaGracePeriod, ed4, sizeof(ed4)),
                 edit_uint64(res->res_client.HardQuota, ed5),

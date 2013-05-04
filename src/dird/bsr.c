@@ -725,7 +725,7 @@ static inline bool is_on_same_storage(JCR *jcr, char *new_one)
    /*
     * With old FD, we send the whole bootstrap to the storage
     */
-   if (jcr->FDVersion < 2) {
+   if (jcr->FDVersion < FD_VERSION_2) {
       return true;
    }
 

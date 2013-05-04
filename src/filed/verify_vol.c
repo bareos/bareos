@@ -181,16 +181,16 @@ void do_verify_volume(JCR *jcr)
          /* Send file attributes to Director */
          Dmsg2(200, "send ATTR inx=%d fname=%s\n", jcr->JobFiles, fname);
          if (type == FT_LNK || type == FT_LNKSAVED) {
-            status = bnet_fsend(dir, "%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
+            status = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
                                 STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
                                 0, ap, 0, lname, 0);
          /* for a deleted record, we set fileindex=0 */
          } else if (type == FT_DELETED)  {
-            status = bnet_fsend(dir,"%d %d %s %s%c%s%c%c", 0,
+            status = dir->fsend("%d %d %s %s%c%s%c%c", 0,
                                 STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
                                 0, ap, 0, 0);
          } else {
-            status = bnet_fsend(dir,"%d %d %s %s%c%s%c%c", jcr->JobFiles,
+            status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
                                 STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
                                 0, ap, 0, 0);
          }
@@ -204,7 +204,7 @@ void do_verify_volume(JCR *jcr)
       case STREAM_MD5_DIGEST:
          bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_MD5_SIZE, true);
          Dmsg2(400, "send inx=%d MD5=%s\n", jcr->JobFiles, digest);
-         bnet_fsend(dir, "%d %d %s *MD5-%d*", jcr->JobFiles, STREAM_MD5_DIGEST, digest,
+         dir->fsend("%d %d %s *MD5-%d*", jcr->JobFiles, STREAM_MD5_DIGEST, digest,
                     jcr->JobFiles);
          Dmsg2(20, "filed>dir: MD5 len=%d: msg=%s\n", dir->msglen, dir->msg);
          break;
@@ -212,7 +212,7 @@ void do_verify_volume(JCR *jcr)
       case STREAM_SHA1_DIGEST:
          bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA1_SIZE, true);
          Dmsg2(400, "send inx=%d SHA1=%s\n", jcr->JobFiles, digest);
-         bnet_fsend(dir, "%d %d %s *SHA1-%d*", jcr->JobFiles, STREAM_SHA1_DIGEST,
+         dir->fsend("%d %d %s *SHA1-%d*", jcr->JobFiles, STREAM_SHA1_DIGEST,
                     digest, jcr->JobFiles);
          Dmsg2(20, "filed>dir: SHA1 len=%d: msg=%s\n", dir->msglen, dir->msg);
          break;
@@ -220,7 +220,7 @@ void do_verify_volume(JCR *jcr)
       case STREAM_SHA256_DIGEST:
          bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA256_SIZE, true);
          Dmsg2(400, "send inx=%d SHA256=%s\n", jcr->JobFiles, digest);
-         bnet_fsend(dir, "%d %d %s *SHA256-%d*", jcr->JobFiles, STREAM_SHA256_DIGEST,
+         dir->fsend("%d %d %s *SHA256-%d*", jcr->JobFiles, STREAM_SHA256_DIGEST,
                     digest, jcr->JobFiles);
          Dmsg2(20, "filed>dir: SHA256 len=%d: msg=%s\n", dir->msglen, dir->msg);
          break;
@@ -228,7 +228,7 @@ void do_verify_volume(JCR *jcr)
       case STREAM_SHA512_DIGEST:
          bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA512_SIZE, true);
          Dmsg2(400, "send inx=%d SHA512=%s\n", jcr->JobFiles, digest);
-         bnet_fsend(dir, "%d %d %s *SHA512-%d*", jcr->JobFiles, STREAM_SHA512_DIGEST,
+         dir->fsend("%d %d %s *SHA512-%d*", jcr->JobFiles, STREAM_SHA512_DIGEST,
                     digest, jcr->JobFiles);
          Dmsg2(20, "filed>dir: SHA512 len=%d: msg=%s\n", dir->msglen, dir->msg);
          break;

@@ -34,13 +34,18 @@ const int dbglvl = 50;
 /* Version at end of Hello
  *   prior to 10Mar08 no version
  *   1 10Mar08
- *   2 13Mar09 - added the ability to restore from multiple storages
- *   3 03Sep10 - added the restore object command for vss plugin 4.0
- *   4 25Nov10 - added bandwidth command 5.1
- *   5 24Nov11 - added new restore object command format (pluginname) 6.0
+ *   2 13Mar09 - Added the ability to restore from multiple storages
+ *   3 03Sep10 - Added the restore object command for vss plugin 4.0
+ *   4 25Nov10 - Added bandwidth command 5.1
+ *   5 24Nov11 - Added new restore object command format (pluginname) 6.0
+ *
+ *  51 21Mar13 - Added reverse datachannel initialization
  */
-static char OK_hello[] =
+static char OK_hello_compat[] =
    "2000 OK Hello 5\n";
+static char OK_hello[] =
+   "2000 OK Hello 51\n";
+
 static char Dir_sorry[] =
    "2999 Authentication failed.\n";
 
@@ -359,12 +364,12 @@ bool authenticate_director(JCR *jcr)
    BSOCK *dir = jcr->dir_bsock;
 
    if (!two_way_authenticate(R_DIRECTOR, dir, jcr)) {
-      bnet_fsend(dir, "%s", Dir_sorry);
+      dir->fsend("%s", Dir_sorry);
       Emsg0(M_FATAL, 0, _("Unable to authenticate Director\n"));
       return false;
    }
 
-   return bnet_fsend(dir, "%s", OK_hello);
+   return dir->fsend("%s", (me->compatible) ? OK_hello_compat : OK_hello);
 }
 
 /*
