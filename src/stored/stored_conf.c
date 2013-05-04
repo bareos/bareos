@@ -157,7 +157,7 @@ static RES_ITEM dev_items[] = {
    { "forwardspacefile", store_bit, ITEM(res_dev.cap_bits), CAP_FSF, ITEM_DEFAULT, "on" },
    { "fastforwardspacefile", store_bit, ITEM(res_dev.cap_bits), CAP_FASTFSF, ITEM_DEFAULT, "on" },
    { "removablemedia", store_bit, ITEM(res_dev.cap_bits), CAP_REM, ITEM_DEFAULT, "on" },
-   { "randomaccess", store_bit, ITEM(res_dev.cap_bits), CAP_RACCESS, 0, "off" },
+   { "randomaccess", store_bit, ITEM(res_dev.cap_bits), CAP_RACCESS, ITEM_DEFAULT, "off" },
    { "automaticmount", store_bit, ITEM(res_dev.cap_bits), CAP_AUTOMOUNT, ITEM_DEFAULT, "off" },
    { "labelmedia", store_bit, ITEM(res_dev.cap_bits), CAP_LABEL, ITEM_DEFAULT, "off" },
    { "alwaysopen", store_bit, ITEM(res_dev.cap_bits), CAP_ALWAYSOPEN, ITEM_DEFAULT, "on" },

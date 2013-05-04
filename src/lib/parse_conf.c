@@ -196,6 +196,19 @@ static inline void init_resource(CONFIG *config, int type, RES_ITEM *items, int 
          Dmsg3(900, "Item=%s def=%s defval=%s\n", items[i].name,
                (items[i].flags & ITEM_DEFAULT) ? "yes" : "no",
                (items[i].default_value) ? items[i].default_value : "None");
+
+         /*
+          * Sanity check.
+          *
+          * Items with a default value but without the ITEM_DEFAULT flag set
+          * are most of the time an indication of a programmers error.
+          */
+         if (items[i].default_value != NULL && !(items[i].flags & ITEM_DEFAULT)) {
+            Pmsg1(000, _("Found config item %s which has default value but no ITEM_DEFAULT flag set\n"),
+                  items[i].name);
+            items[i].flags |= ITEM_DEFAULT;
+         }
+
          if (items[i].flags & ITEM_DEFAULT && items[i].default_value != NULL) {
             /*
              * First try to handle the generic types.
