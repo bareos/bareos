@@ -117,7 +117,7 @@ bool try_device_repositioning(JCR *jcr, DEV_RECORD *rec, DCR *dcr);
 void *handle_connection_request(void *arg);
 
 /* fd_cmds.c */
-void handle_filed_connection(BSOCK *fd, char *job_name);
+void *handle_filed_connection(BSOCK *fd, char *job_name);
 void run_job(JCR *jcr);
 void do_fd_commands(JCR *jcr);
 
@@ -256,7 +256,7 @@ extern int reservations_lock_count;
 #endif
 
 /* sd_cmds.c */
-void handle_stored_connection(BSOCK *sd, char *job_name);
+void *handle_stored_connection(BSOCK *sd, char *job_name);
 bool do_listen_run(JCR *jcr);
 
 /* sd_plugins.c */

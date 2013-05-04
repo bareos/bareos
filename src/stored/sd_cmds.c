@@ -90,7 +90,7 @@ static char Job_end[] =
  * After receiving a connection (in dircmd.c) if it is
  * from the Storage daemon, this routine is called.
  */
-void handle_stored_connection(BSOCK *sd, char *job_name)
+void *handle_stored_connection(BSOCK *sd, char *job_name)
 {
    JCR *jcr;
 
@@ -103,7 +103,7 @@ void handle_stored_connection(BSOCK *sd, char *job_name)
       Jmsg1(NULL, M_FATAL, 0, _("SD connect failed: Job name not found: %s\n"), job_name);
       Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
       sd->close();
-      return;
+      return NULL;
    }
 
    Dmsg1(50, "Found Job %s\n", job_name);
@@ -115,7 +115,7 @@ void handle_stored_connection(BSOCK *sd, char *job_name)
          (uint32_t)jcr->JobId, jcr->Job);
       sd->close();
       free_jcr(jcr);
-      return;
+      return NULL;
    }
 
    jcr->store_bsock = sd;
@@ -139,7 +139,7 @@ void handle_stored_connection(BSOCK *sd, char *job_name)
    pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
    free_jcr(jcr);
 
-   return;
+   return NULL;
 }
 
 /*

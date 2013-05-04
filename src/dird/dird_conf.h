@@ -282,13 +282,14 @@ public:
    char *tls_keyfile;                 /* TLS Client Key File */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   bool passive;                      /* Passive Client */
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
    bool AutoPrune;                    /* Do automatic pruning? */
-   int64_t max_bandwidth;             /* Limit speed on this client */
    bool StrictQuotas;                 /* Enable strict quotas? */
    bool QuotaIncludeFailedJobs;       /* Ignore failed jobs when calculating quota */
+   int64_t max_bandwidth;             /* Limit speed on this client */
 
    /* Methods */
    char *name() const;

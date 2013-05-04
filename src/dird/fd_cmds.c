@@ -185,7 +185,7 @@ bool send_bwlimit_to_fd(JCR *jcr, const char *Job)
 {
    BSOCK *fd = jcr->file_bsock;
 
-   if (jcr->FDVersion >= 4) {
+   if (jcr->FDVersion >= FD_VERSION_4) {
       fd->fsend(bandwidthcmd, jcr->max_bandwidth, Job);
       if (!response(jcr, fd, OKBandwidth, "Bandwidth", DISPLAY_ERROR)) {
          jcr->max_bandwidth = 0;      /* can't set bandwidth limit */
@@ -270,7 +270,7 @@ static bool send_fileset(JCR *jcr)
             fd->fsend("E\n");
          }
          if (ie->ignoredir) {
-            bnet_fsend(fd, "Z %s\n", ie->ignoredir);
+            fd->fsend("Z %s\n", ie->ignoredir);
          }
          for (j=0; j<ie->num_opts; j++) {
             FOPTS *fo = ie->opts_list[j];
@@ -608,14 +608,14 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
       return 1;
    }
    /* Old File Daemon doesn't handle restore objects */
-   if (jcr->FDVersion < 3) {
+   if (jcr->FDVersion < FD_VERSION_3) {
       Jmsg(jcr, M_WARNING, 0, _("Client \"%s\" may not be used to restore "
                                 "this job. Please upgrade your client.\n"),
            jcr->res.client->name());
       return 1;
    }
 
-   if (jcr->FDVersion < 5) {    /* Old version without PluginName */
+   if (jcr->FDVersion < FD_VERSION_5) {    /* Old version without PluginName */
       fd->fsend("restoreobject JobId=%s %s,%s,%s,%s,%s,%s\n",
                 row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
    } else {

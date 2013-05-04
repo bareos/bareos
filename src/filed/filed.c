@@ -31,7 +31,7 @@
 #include "lib/mntent_cache.h"
 
 /* Imported Functions */
-extern void *handle_client_request(void *dir_sock);
+extern void *handle_connection_request(void *dir_sock);
 extern bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
@@ -261,7 +261,7 @@ int main (int argc, char *argv[])
    }
 
    sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server(me->FDaddrs, me->MaxConcurrentJobs, sock_fds, &dir_workq, handle_client_request);
+   bnet_thread_server(me->FDaddrs, me->MaxConcurrentJobs, sock_fds, &dir_workq, handle_connection_request);
 
    terminate_filed(0);
 

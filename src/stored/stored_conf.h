@@ -95,6 +95,7 @@ public:
    uint32_t ndmploglevel;             /* Initial NDMP log level */
    MSGSRES *messages;                 /* Daemon message handler */
    utime_t SDConnectTimeout;          /* Timeout in seconds */
+   utime_t FDConnectTimeout;          /* Timeout in seconds */
    utime_t heartbeat_interval;        /* Interval to send hb to FD */
    utime_t client_wait;               /* Time to wait for FD to connect */
    uint32_t max_network_buffer_size;  /* Max network buf size */

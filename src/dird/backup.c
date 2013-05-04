@@ -38,14 +38,18 @@
 /* Commands sent to File daemon */
 static char backupcmd[] =
    "backup FileIndex=%ld\n";
-static char storaddr[] =
+static char storaddrcmd[] =
    "storage address=%s port=%d ssl=%d\n";
+static char passiveclientcmd[] =
+   "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
 static char OKbackup[] =
    "2000 OK backup\n";
 static char OKstore[] =
    "2000 OK storage\n";
+static char OKpassiveclient[] =
+   "2000 OK passive client\n";
 static char EndJob[] =
    "2800 End Job TermCode=%d JobFiles=%u "
    "ReadBytes=%llu JobBytes=%llu Errors=%u "
@@ -132,11 +136,10 @@ static int accurate_list_handler(void *ctx, int num_fields, char **row)
    }
 
    /* sending with checksum */
-   if (jcr->use_accurate_chksum
-       && num_fields == 7
-       && row[6][0] /* skip checksum = '0' */
-       && row[6][1])
-   {
+   if (jcr->use_accurate_chksum &&
+       num_fields == 7 &&
+       row[6][0] && /* skip checksum = '0' */
+       row[6][1]) {
       jcr->file_bsock->fsend("%s%s%c%s%c%s%c%s",
                              row[0], row[1], 0, row[4], 0, row[6], 0, row[5]);
    } else {
@@ -302,8 +305,9 @@ bool do_native_backup(JCR *jcr)
 {
    int status;
    int tls_need = BNET_TLS_NONE;
-   BSOCK   *fd;
+   BSOCK *fd, *sd;
    STORERES *store;
+   CLIENTRES *client;
    char ed1[100];
    db_int64_ctx job;
    POOL_MEM buf;
@@ -320,13 +324,13 @@ bool do_native_backup(JCR *jcr)
    }
 
    if (quota_check_hardquotas(jcr)) {
-      Jmsg(jcr, M_FATAL, 0, "Quota Exceeded. Job terminated.");
+      Jmsg(jcr, M_FATAL, 0, _("Quota Exceeded. Job terminated.\n"));
       return false;
    }
 
    if (quota_check_softquotas(jcr)) {
       Dmsg0(10, "Quota exceeded\n");
-      Jmsg(jcr, M_FATAL, 0, "Soft Quota Exceeded / Grace Time expired. Job terminated.");
+      Jmsg(jcr, M_FATAL, 0, _("Soft Quota Exceeded / Grace Time expired. Job terminated.\n"));
       return false;
    }
 
@@ -334,7 +338,6 @@ bool do_native_backup(JCR *jcr)
     * Open a message channel connection with the Storage
     * daemon. This is to let him know that our client
     * will be contacting him for a backup  session.
-    *
     */
    Dmsg0(110, "Open connection with storage daemon\n");
    jcr->setJobStatus(JS_WaitSD);
@@ -345,6 +348,7 @@ bool do_native_backup(JCR *jcr)
    if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
       return false;
    }
+   sd = jcr->store_bsock;
 
    /*
     * Now start a job with the Storage daemon
@@ -354,27 +358,45 @@ bool do_native_backup(JCR *jcr)
    }
 
    /*
-    * Start the job prior to starting the message thread below
-    * to avoid two threads from using the BSOCK structure at
-    * the same time.
+    * When the client is not in passive mode we can put the SD in
+    * listen mode for the FD connection.
     */
-   if (!jcr->store_bsock->fsend("run")) {
-      return false;
-   }
+   jcr->passive_client = jcr->res.client->passive;
+   if (!jcr->passive_client) {
+      /*
+       * Start the job prior to starting the message thread below
+       * to avoid two threads from using the BSOCK structure at
+       * the same time.
+       */
+      if (!sd->fsend("run")) {
+         return false;
+      }
 
-   /*
-    * Now start a Storage daemon message thread.  Note,
-    *   this thread is used to provide the catalog services
-    *   for the backup job, including inserting the attributes
-    *   into the catalog.  See catalog_update() in catreq.c
-    */
-   if (!start_storage_daemon_message_thread(jcr)) {
-      return false;
+      /*
+       * Now start a Storage daemon message thread.  Note,
+       * this thread is used to provide the catalog services
+       * for the backup job, including inserting the attributes
+       * into the catalog.  See catalog_update() in catreq.c
+       */
+      if (!start_storage_daemon_message_thread(jcr)) {
+         return false;
+      }
+
+      Dmsg0(150, "Storage daemon connection OK\n");
    }
-   Dmsg0(150, "Storage daemon connection OK\n");
 
    jcr->setJobStatus(JS_WaitFD);
    if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, 1)) {
+      goto bail_out;
+   }
+
+   /*
+    * Check if the file daemon supports passive client mode.
+    */
+   if (jcr->passive_client && jcr->FDVersion < FD_VERSION_51) {
+      Jmsg(jcr, M_FATAL, 0,
+            _("Client \"%s\" doesn't support passive client mode. Please upgrade your client.\n\n"),
+           client->name());
       goto bail_out;
    }
 
@@ -404,44 +426,97 @@ bool do_native_backup(JCR *jcr)
    }
 
    /*
-    * send Storage daemon address to the File daemon
+    * See if the client is a passive client or not.
     */
-   store = jcr->res.wstore;
-   if (store->SDDport == 0) {
-      store->SDDport = store->SDport;
-   }
-
-   /* TLS Requirement */
-   if (store->tls_enable) {
-      if (store->tls_require) {
-         tls_need = BNET_TLS_REQUIRED;
-      } else {
-         tls_need = BNET_TLS_OK;
+   if (!jcr->passive_client) {
+      /*
+       * Send Storage daemon address to the File daemon
+       */
+      store = jcr->res.wstore;
+      if (store->SDDport == 0) {
+         store->SDDport = store->SDport;
       }
+
+      /*
+       * TLS Requirement
+       */
+      if (store->tls_enable) {
+         if (store->tls_require) {
+            tls_need = BNET_TLS_REQUIRED;
+         } else {
+            tls_need = BNET_TLS_OK;
+         }
+      }
+
+      fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need);
+      if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
+         goto bail_out;
+      }
+   } else {
+      client = jcr->res.client;
+
+      /*
+       * TLS Requirement
+       */
+      if (client->tls_enable) {
+         if (client->tls_require) {
+            tls_need = BNET_TLS_REQUIRED;
+         } else {
+            tls_need = BNET_TLS_OK;
+         }
+      }
+
+      /*
+       * Tell the SD to connect to the FD.
+       */
+      sd->fsend(passiveclientcmd, client->address, client->FDport, tls_need);
+      if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
+         goto bail_out;
+      }
+
+      /*
+       * Start the job prior to starting the message thread below
+       * to avoid two threads from using the BSOCK structure at
+       * the same time.
+       */
+      if (!jcr->store_bsock->fsend("run")) {
+         return false;
+      }
+
+      /*
+       * Now start a Storage daemon message thread.  Note,
+       * this thread is used to provide the catalog services
+       * for the backup job, including inserting the attributes
+       * into the catalog.  See catalog_update() in catreq.c
+       */
+      if (!start_storage_daemon_message_thread(jcr)) {
+         return false;
+      }
+
+      Dmsg0(150, "Storage daemon connection OK\n");
    }
 
-   fd->fsend(storaddr, store->address, store->SDDport, tls_need);
-   if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
-      goto bail_out;
-   }
-
-   /* Declare the job started to start the MaxRunTime check */
+   /*
+    * Declare the job started to start the MaxRunTime check
+    */
    jcr->setJobStarted();
 
-   /* Send and run the RunBefore */
+   /*
+    * Send and run the RunBefore
+    */
    if (!send_runscripts_commands(jcr)) {
       goto bail_out;
    }
 
    /*
     * We re-update the job start record so that the start
-    *  time is set after the run before job.  This avoids
-    *  that any files created by the run before job will
-    *  be saved twice.  They will be backed up in the current
-    *  job, but not in the next one unless they are changed.
-    *  Without this, they will be backed up in this job and
-    *  in the next job run because in that case, their date
-    *   is after the start of this run.
+    * time is set after the run before job.  This avoids
+    * that any files created by the run before job will
+    * be saved twice.  They will be backed up in the current
+    * job, but not in the next one unless they are changed.
+    * Without this, they will be backed up in this job and
+    * in the next job run because in that case, their date
+    * is after the start of this run.
     */
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
@@ -457,14 +532,18 @@ bool do_native_backup(JCR *jcr)
       goto bail_out;     /* error */
    }
 
-   /* Send backup command */
+   /*
+    * Send backup command
+    */
    fd->fsend(backupcmd, jcr->JobFiles);
    Dmsg1(100, ">filed: %s", fd->msg);
-   if (!response(jcr, fd, OKbackup, "backup", DISPLAY_ERROR)) {
+   if (!response(jcr, fd, OKbackup, "Backup", DISPLAY_ERROR)) {
       goto bail_out;
    }
 
-   /* Pickup Job termination data */
+   /*
+    * Pickup Job termination data
+    */
    status = wait_for_job_termination(jcr);
    db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
 
@@ -478,11 +557,16 @@ bool do_native_backup(JCR *jcr)
    }
    return false;
 
-/* Come here only after starting SD thread */
 bail_out:
+   /*
+    * Come here only after starting SD thread
+    */
    jcr->setJobStatus(JS_ErrorTerminated);
    Dmsg1(400, "wait for sd. use=%d\n", jcr->use_count());
-   /* Cancel SD */
+
+   /*
+    * Cancel SD
+    */
    wait_for_job_termination(jcr, me->FDConnectTimeout);
    Dmsg1(400, "after wait for sd. use=%d\n", jcr->use_count());
    return false;
@@ -490,8 +574,9 @@ bail_out:
 
 /*
  * Here we wait for the File daemon to signal termination,
- *   then we wait for the Storage daemon.  When both
- *   are done, we return the job status.
+ * then we wait for the Storage daemon. When both are done,
+ * we return the job status.
+ *
  * Also used by restore.c
  */
 int wait_for_job_termination(JCR *jcr, int timeout)
@@ -513,7 +598,10 @@ int wait_for_job_termination(JCR *jcr, int timeout)
       if (timeout) {
          tid = start_bsock_timer(fd, timeout); /* TODO: New timeout directive??? */
       }
-      /* Wait for Client to terminate */
+
+      /*
+       * Wait for Client to terminate
+       */
       while ((n = bget_dirmsg(fd)) >= 0) {
          if (!fd_ok &&
              sscanf(fd->msg, EndJob, &jcr->FDJobStatus, &JobFiles,
@@ -546,8 +634,7 @@ int wait_for_job_termination(JCR *jcr, int timeout)
    }
 
    /*
-    * Force cancel in SD if failing, but not for Incomplete jobs
-    *  so that we let the SD despool.
+    * Force cancel in SD if failing, but not for Incomplete jobs so that we let the SD despool.
     */
    Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->is_canceled(), fd_ok, jcr->FDJobStatus,
         jcr->JobStatus, jcr->SDJobStatus);
@@ -557,10 +644,14 @@ int wait_for_job_termination(JCR *jcr, int timeout)
       cancel_storage_daemon_job(jcr);
    }
 
-   /* Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors */
+   /*
+    * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
+    */
    wait_for_storage_daemon_termination(jcr);
 
-   /* Return values from FD */
+   /*
+    * Return values from FD
+    */
    if (fd_ok) {
       jcr->JobFiles = JobFiles;
       jcr->JobErrors += JobErrors;       /* Keep total errors */
@@ -576,7 +667,9 @@ int wait_for_job_termination(JCR *jcr, int timeout)
 // Dmsg4(100, "fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", fd_ok, jcr->FDJobStatus,
 //   jcr->JobStatus, jcr->SDJobStatus);
 
-   /* Return the first error status we find Dir, FD, or SD */
+   /*
+    * Return the first error status we find Dir, FD, or SD
+    */
    if (!fd_ok || is_bnet_error(fd)) { /* if fd not set, that use !fd_ok */
       jcr->FDJobStatus = JS_ErrorTerminated;
    }

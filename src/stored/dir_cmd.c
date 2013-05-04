@@ -78,6 +78,8 @@ static char readlabelcmd[] =
    "readlabel %127s Slot=%d drive=%d";
 static char replicatecmd[] =
    "replicate Job=%127s address=%s port=%d ssl=%d Authorization=%100s";
+static char passiveclientcmd[] =
+   "passive client address=%s port=%d ssl=%d";
 
 /* Responses sent to Director */
 static char derrmsg[] =
@@ -96,34 +98,41 @@ static char BADcmd[] =
    "3991 Bad %s command: %s\n";
 static char OKBandwidth[] =
    "2000 OK Bandwidth\n";
+static char OKpassive[] =
+   "2000 OK passive client\n";
 
 /* Imported functions */
+extern bool finish_cmd(JCR *jcr);
+extern bool job_cmd(JCR *jcr);
+extern bool nextrun_cmd(JCR *jcr);
+extern bool qstatus_cmd(JCR *jcr);
+//extern bool query_cmd(JCR *jcr);
+extern bool status_cmd(JCR *sjcr);
+extern bool use_cmd(JCR *jcr);
+
 extern bool do_job_run(JCR *jcr);
 extern bool do_mac_run(JCR *jcr);
 extern void terminate_child();
-extern bool job_cmd(JCR *jcr);
-extern bool use_cmd(JCR *jcr);
-extern bool nextrun_cmd(JCR *jcr);
-extern bool finish_cmd(JCR *jcr);
-extern bool status_cmd(JCR *sjcr);
-extern bool qstatus_cmd(JCR *jcr);
-//extern bool query_cmd(JCR *jcr);
 
 /* Forward referenced functions */
-static bool label_cmd(JCR *jcr);
-static bool listen_cmd(JCR *jcr);
-static bool die_cmd(JCR *jcr);
-static bool relabel_cmd(JCR *jcr);
-static bool readlabel_cmd(JCR *jcr);
-static bool release_cmd(JCR *jcr);
-static bool setdebug_cmd(JCR *jcr);
-static bool setbandwidth_cmd(JCR *jcr);
-static bool cancel_cmd(JCR *cjcr);
-static bool mount_cmd(JCR *jcr);
-static bool unmount_cmd(JCR *jcr);
 //static bool action_on_purge_cmd(JCR *jcr);
 static bool bootstrap_cmd(JCR *jcr);
+static bool cancel_cmd(JCR *cjcr);
 static bool changer_cmd(JCR *jcr);
+static bool die_cmd(JCR *jcr);
+static bool label_cmd(JCR *jcr);
+static bool listen_cmd(JCR *jcr);
+static bool mount_cmd(JCR *jcr);
+static bool passive_cmd(JCR *jcr);
+static bool readlabel_cmd(JCR *jcr);
+static bool relabel_cmd(JCR *jcr);
+static bool release_cmd(JCR *jcr);
+static bool replicate_cmd(JCR *jcr);
+static bool run_cmd(JCR *jcr);
+static bool setbandwidth_cmd(JCR *jcr);
+static bool setdebug_cmd(JCR *jcr);
+static bool unmount_cmd(JCR *jcr);
+
 static DCR *find_device(JCR *jcr, POOL_MEM &dev_name, int drive);
 static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, int Slot);
 static void label_volume_if_ok(DCR *dcr, char *oldname,
@@ -131,8 +140,6 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
                                int Slot, bool relabel);
 static bool try_autoload_device(JCR *jcr, DCR *dcr, int slot, const char *VolName);
 static void send_dir_busy_message(BSOCK *dir, DEVICE *dev);
-static bool replicate_cmd(JCR *jcr);
-static bool run_cmd(JCR *jcr);
 
 struct s_cmds {
    const char *cmd;
@@ -142,110 +149,60 @@ struct s_cmds {
 
 /*
  * The following are the recognized commands from the Director.
+ *
+ * Keywords are sorted first longest match when the keywords start with the same string.
  */
 static struct s_cmds cmds[] = {
-   { "JobId=", job_cmd, false },            /* Start Job */
+// { "action_on_purge",  action_on_purge_cmd, false },
    { "autochanger", changer_cmd, false },
    { "bootstrap", bootstrap_cmd, false },
    { "cancel", cancel_cmd, false },
    { ".die", die_cmd, false },
    { "finish", finish_cmd, false },         /* End of backup */
+   { "JobId=", job_cmd, false },            /* Start Job */
    { "label", label_cmd, false },           /* Label a tape */
    { "listen", listen_cmd, false },         /* Listen for an incoming Storage Job */
    { "mount", mount_cmd, false },
    { "nextrun", nextrun_cmd, false },       /* Prepare for next backup part of same Job */
+   { "passive", passive_cmd, false },
+// { "query", query_cmd, false },
    { "readlabel", readlabel_cmd, false },
-   { "release", release_cmd, false },
    { "relabel", relabel_cmd, false },       /* Relabel a tape */
+   { "release", release_cmd, false },
+   { "replicate", replicate_cmd, false },   /* Replicate data to an external SD */
+   { "run", run_cmd, false },               /* Start of Job */
    { "setbandwidth=", setbandwidth_cmd, false },
    { "setdebug=", setdebug_cmd, false },    /* Set debug level */
    { "status", status_cmd, true },
    { ".status", qstatus_cmd, true },
    { "unmount", unmount_cmd, false },
    { "use storage=", use_cmd, false },
-   { "replicate", replicate_cmd, false },   /* Replicate data to an external SD */
-   { "run", run_cmd, false },               /* Start of Job */
-// { "action_on_purge",  action_on_purge_cmd, false },
-// { "query", query_cmd, false },
    { NULL, NULL, false } /* list terminator */
 };
 
 /*
- * Connection request. We accept connections either from the
- * Director, Storage Daemon or a Client (File daemon).
- *
- * Note, we are running as a seperate thread of the Storage daemon.
- * and it is because a Director has made a connection with
- * us on the "Message" channel.
+ * Connection request from an director.
  *
  * Basic tasks done here:
- *  - If it was a connection from the FD, call handle_filed_connection()
- *  - If it was a connection from an other SD, call handle_stored_connection()
  *  - Create a JCR record
  *  - Authenticate the Director
  *  - We wait for a command
  *  - We execute the command
  *  - We continue or exit depending on the return status
  */
-void *handle_connection_request(void *arg)
+static void *handle_director_connection(BSOCK *dir, char *job_name)
 {
-   BSOCK *bs = (BSOCK *)arg;
    JCR *jcr;
    int i, errstat;
-   bool found, quit;
    int bnet_stat = 0;
-   char name[500];
-   char tbuf[100];
-
-   if (bs->recv() <= 0) {
-      Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
-      bmicrosleep(5, 0);   /* make user wait 5 seconds */
-      bs->close();
-      return NULL;
-   }
-
-   /*
-    * Do a sanity check on the message received
-    */
-   if (bs->msglen < 25 || bs->msglen > (int)sizeof(name)) {
-      Dmsg1(000, "<filed: %s", bs->msg);
-      Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->msglen);
-      bmicrosleep(5, 0);   /* make user wait 5 seconds */
-      bs->close();
-      return NULL;
-   }
-
-   Dmsg1(110, "Conn: %s", bs->msg);
-
-   /*
-    * See if this is a File daemon connection. If so call FD handler.
-    */
-   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
-      Dmsg1(110, "Got a FD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf),
-            (utime_t)time(NULL)));
-      handle_filed_connection(bs, name);
-      return NULL;
-   }
-
-   /*
-    * See if this is a Storage daemon connection. If so call SD handler.
-    */
-   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
-      Dmsg1(110, "Got a SD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf),
-            (utime_t)time(NULL)));
-      handle_stored_connection(bs, name);
-      return NULL;
-   }
+   bool found, quit;
 
    /*
     * This is a connection from the Director, so setup a JCR
     */
-   Dmsg1(110, "Got a DIR connection at %s\n", bstrftimes(tbuf, sizeof(tbuf),
-         (utime_t)time(NULL)));
-
    jcr = new_jcr(sizeof(JCR), stored_free_jcr); /* create Job Control Record */
    new_plugins(jcr);                            /* instantiate plugins */
-   jcr->dir_bsock = bs;                         /* save Director bsock */
+   jcr->dir_bsock = dir;                        /* save Director bsock */
    jcr->dir_bsock->set_jcr(jcr);
    jcr->dcrs = New(alist(10, not_owned_by_alist));
 
@@ -286,11 +243,11 @@ void *handle_connection_request(void *arg)
       /*
        * Read command
        */
-      if ((bnet_stat = bs->recv()) <= 0) {
+      if ((bnet_stat = dir->recv()) <= 0) {
          break;               /* connection terminated */
       }
 
-      Dmsg1(199, "<dird: %s\n", bs->msg);
+      Dmsg1(199, "<dird: %s\n", dir->msg);
 
       /*
        * Ensure that device initialization is complete
@@ -301,11 +258,11 @@ void *handle_connection_request(void *arg)
 
       found = false;
       for (i = 0; cmds[i].cmd; i++) {
-        if (bstrncmp(cmds[i].cmd, bs->msg, strlen(cmds[i].cmd))) {
+        if (bstrncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd))) {
            if ((!cmds[i].monitoraccess) && (jcr->director->monitor)) {
               Dmsg1(100, "Command \"%s\" is invalid.\n", cmds[i].cmd);
-              bs->fsend(invalid_cmd);
-              bs->signal(BNET_EOD);
+              dir->fsend(invalid_cmd);
+              dir->signal(BNET_EOD);
               break;
            }
            Dmsg1(200, "Do command: %s\n", cmds[i].cmd);
@@ -319,8 +276,8 @@ void *handle_connection_request(void *arg)
       }
       if (!found) {                   /* command not found */
         POOL_MEM err_msg;
-        Mmsg(err_msg, "%s %s\n", derrmsg, bs->msg);
-        bs->fsend(err_msg.c_str());
+        Mmsg(err_msg, "%s %s\n", derrmsg, dir->msg);
+        dir->fsend(err_msg.c_str());
         break;
       }
    }
@@ -328,10 +285,71 @@ void *handle_connection_request(void *arg)
 bail_out:
    generate_plugin_event(jcr, bsdEventJobEnd);
    dequeue_messages(jcr);             /* send any queued messages */
-   bs->signal(BNET_TERMINATE);
+   dir->signal(BNET_TERMINATE);
    free_plugins(jcr);                 /* release instantiated plugins */
    free_jcr(jcr);
+
    return NULL;
+}
+
+/*
+ * Connection request. We accept connections either from the
+ * Director, Storage Daemon or a Client (File daemon).
+ *
+ * Note, we are running as a seperate thread of the Storage daemon.
+ * and it is because a Director has made a connection with
+ * us on the "Message" channel.
+ *
+ * Basic tasks done here:
+ *  - If it was a connection from the FD, call handle_filed_connection()
+ *  - If it was a connection from an other SD, call handle_stored_connection()
+ *  - Otherwise it was a connection from the DIR, call handle_director_connection()
+ */
+void *handle_connection_request(void *arg)
+{
+   BSOCK *bs = (BSOCK *)arg;
+   char name[500];
+   char tbuf[100];
+
+   if (bs->recv() <= 0) {
+      Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
+      bmicrosleep(5, 0);   /* make user wait 5 seconds */
+      bs->close();
+      return NULL;
+   }
+
+   /*
+    * Do a sanity check on the message received
+    */
+   if (bs->msglen < 25 || bs->msglen > (int)sizeof(name)) {
+      Dmsg1(000, "<filed: %s", bs->msg);
+      Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->msglen);
+      bmicrosleep(5, 0);   /* make user wait 5 seconds */
+      bs->close();
+      return NULL;
+   }
+
+   Dmsg1(110, "Conn: %s", bs->msg);
+
+   /*
+    * See if this is a File daemon connection. If so call FD handler.
+    */
+   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
+      Dmsg1(110, "Got a FD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+      return handle_filed_connection(bs, name);
+   }
+
+   /*
+    * See if this is a Storage daemon connection. If so call SD handler.
+    */
+   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
+      Dmsg1(110, "Got a SD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+      return handle_stored_connection(bs, name);
+   }
+
+   Dmsg1(110, "Got a DIR connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+
+   return handle_director_connection(bs, name);
 }
 
 /*
@@ -1547,4 +1565,62 @@ static bool run_cmd(JCR *jcr)
    } else {
       return do_job_run(jcr);
    }
+}
+
+static bool passive_cmd(JCR *jcr)
+{
+   int filed_port;                 /* file daemon port */
+   int enable_ssl;                 /* enable ssl to fd */
+   char filed_addr[MAX_NAME_LENGTH];
+   BSOCK *dir = jcr->dir_bsock;
+   BSOCK *fd = new_bsock();        /* file daemon bsock */
+
+   Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
+   if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
+      pm_strcpy(jcr->errmsg, dir->msg);
+      Jmsg(jcr, M_FATAL, 0, _("Bad passiveclientcmd command: %s"), jcr->errmsg);
+      goto bail_out;
+   }
+
+   Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%d\n", filed_addr, filed_port, enable_ssl);
+
+   jcr->passive_client = true;
+
+   fd->set_source_address(me->SDsrc_addr);
+
+   /*
+    * Open command communications with passive filedaemon
+    */
+   if (!fd->connect(jcr, 10, (int)me->FDConnectTimeout, me->heartbeat_interval,
+                    _("File Daemon"), filed_addr, NULL, filed_port, 1)) {
+     fd->destroy();
+     fd = NULL;
+   }
+
+   if (fd == NULL) {
+      Jmsg(jcr, M_FATAL, 0, _("Failed to connect to File daemon: %s:%d\n"),
+           filed_addr, filed_port);
+      Dmsg2(100, "Failed to connect to File daemon: %s:%d\n",
+            filed_addr, filed_port);
+      goto bail_out;
+   }
+   Dmsg0(110, "Connection OK to FD.\n");
+
+   jcr->file_bsock = fd;
+
+   fd->fsend("Hello Storage calling Start Job %s\n", jcr->Job);
+   if (!authenticate_with_filedaemon(jcr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate File daemon.\n"));
+      goto bail_out;
+   }
+   Dmsg0(110, "Authenticated with FD.\n");
+
+   /*
+    * Send OK to Director
+    */
+   return dir->fsend(OKpassive);
+
+bail_out:
+   dir->fsend(BADcmd, "passive client");
+   return false;
 }

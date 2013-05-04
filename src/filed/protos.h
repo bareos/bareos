@@ -93,6 +93,9 @@ int do_file_digest(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 bool sparse_data(JCR *jcr, BFILE *bfd, uint64_t *addr, char **data, uint32_t *length);
 bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win32_decomp);
 
+/* sd_cmds.c */
+void *handle_stored_connection(BSOCK *sd);
+
 /* verify.c */
 int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest);
 void do_verify(JCR *jcr);

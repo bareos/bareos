@@ -101,7 +101,7 @@ static char Job_end[] =
  * After receiving a connection (in dircmd.c) if it is
  * from the File daemon, this routine is called.
  */
-void handle_filed_connection(BSOCK *fd, char *job_name)
+void *handle_filed_connection(BSOCK *fd, char *job_name)
 {
    JCR *jcr;
 
@@ -114,7 +114,7 @@ void handle_filed_connection(BSOCK *fd, char *job_name)
       Jmsg1(NULL, M_FATAL, 0, _("FD connect failed: Job name not found: %s\n"), job_name);
       Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
       fd->close();
-      return;
+      return NULL;
    }
 
    Dmsg1(50, "Found Job %s\n", job_name);
@@ -126,7 +126,7 @@ void handle_filed_connection(BSOCK *fd, char *job_name)
             (uint32_t)jcr->JobId, jcr->Job);
       fd->close();
       free_jcr(jcr);
-      return;
+      return NULL;
    }
 
    jcr->file_bsock = fd;
@@ -147,7 +147,7 @@ void handle_filed_connection(BSOCK *fd, char *job_name)
    pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
    free_jcr(jcr);
 
-   return;
+   return NULL;
 }
 
 /*
