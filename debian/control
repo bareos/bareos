@@ -4,9 +4,8 @@ Priority: optional
 Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
 Build-Depends: autotools-dev, debhelper (>= 7.0.50~),
  po-debconf (>= 0.8.2),
- zlib1g-dev, libreadline-dev, libjconv-dev,
- libsqlite0-dev, libsqlite3-dev, libmysqlclient-dev, libpq-dev (>= 8.4),
- postgresql-server-dev-8.4,
+ zlib1g-dev, libreadline-dev,
+ libsqlite3-dev, libmysqlclient-dev, libpq-dev (>= 8.4),
  libwrap0-dev, python-dev, libgtk2.0-dev (>= 2.10),
  libgnome2-dev, libacl1-dev, libkrb5-dev, libgnomeui-dev,
  libx11-dev, mtx, libxt-dev, dpkg-dev (>= 1.13.19), libqt4-dev,
@@ -17,6 +16,10 @@ Build-Depends: autotools-dev, debhelper (>= 7.0.50~),
  libssl-dev,
  liblzo2-dev,
  ncurses-dev
+# removed to be compliant with Ubuntu:
+# libsqlite0-dev,
+# libjconv-dev,
+# postgresql-server-dev-8.4,
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools
 Standards-Version: 3.8.4
 #Vcs-Git: git://git.debian.org/collab-maint/bareos.git
