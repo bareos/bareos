@@ -77,7 +77,8 @@ override_dh_fixperms:
 	# all files in /etc/bareos
 	dh_fixperms \
 		--exclude etc/bareos/ \
-		--exclude var/lib/bareos/
+		--exclude var/lib/bareos/ \
+		--exclude var/log/bareos/
 
 override_dh_strip:
 	dh_strip --dbg-package=bareos-dbg
