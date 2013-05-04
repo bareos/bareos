@@ -1127,15 +1127,13 @@ AC_SUBST(OPENSSL_INC)
 dnl -----------------------------------------------------------
 dnl Check whether GNUTLS is available
 dnl -----------------------------------------------------------
+with_gnutls_directory=no
 AC_ARG_WITH(gnutls,
     AC_HELP_STRING([--with-gnutls@<:@=DIR@:>@], [Include GNUTLS support. DIR is the GNUTLS base]),
     [
 	with_gnutls_directory=${withval}
     ]
 )
-
-dnl FIXME: Explictly set GNUTLS to no until we get things working.
-with_gnutls_directory=no
 
 dnl See if crypto or tls support is wanted
 if test "x$support_crypto" != "xno" -o "x$support_tls" != "xno"; then

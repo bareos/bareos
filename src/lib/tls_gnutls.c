@@ -141,13 +141,16 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
     */
    if (ca_certfile) {
       error = gnutls_certificate_set_x509_trust_file(ctx->gnutls_cred,
-                                                      ca_certfile,
-                                                      GNUTLS_X509_FMT_PEM);
-      if (error != GNUTLS_E_SUCCESS) {
+                                                     ca_certfile,
+                                                     GNUTLS_X509_FMT_PEM);
+      if (error < GNUTLS_E_SUCCESS) {
          error = gnutls_certificate_set_x509_trust_file(ctx->gnutls_cred,
-                                                         ca_certfile,
-                                                         GNUTLS_X509_FMT_DER);
-         if (error != GNUTLS_E_SUCCESS) {
+                                                        ca_certfile,
+                                                        GNUTLS_X509_FMT_DER);
+         if (error < GNUTLS_E_SUCCESS) {
+            Jmsg1(NULL, M_ERROR, 0,
+                  _("Error loading CA certificates from %s\n"),
+                  ca_certfile);
             goto bail_out;
          }
       }
@@ -165,13 +168,16 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
     */
    if (crlfile) {
       error = gnutls_certificate_set_x509_crl_file(ctx->gnutls_cred,
-                                                    crlfile,
-                                                    GNUTLS_X509_FMT_PEM);
-      if (error != GNUTLS_E_SUCCESS) {
+                                                   crlfile,
+                                                   GNUTLS_X509_FMT_PEM);
+      if (error < GNUTLS_E_SUCCESS) {
          error = gnutls_certificate_set_x509_crl_file(ctx->gnutls_cred,
-                                                       crlfile,
-                                                       GNUTLS_X509_FMT_DER);
-         if (error != GNUTLS_E_SUCCESS) {
+                                                      crlfile,
+                                                      GNUTLS_X509_FMT_DER);
+         if (error < GNUTLS_E_SUCCESS) {
+            Jmsg1(NULL, M_ERROR, 0,
+                  _("Error loading certificate revocation list from %s\n"),
+                  crlfile);
             goto bail_out;
          }
       }
@@ -191,6 +197,9 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                                                        keyfile,
                                                        GNUTLS_X509_FMT_DER);
          if (error != GNUTLS_E_SUCCESS) {
+            Jmsg2(NULL, M_ERROR, 0,
+                  _("Error loading key from %s or certificate from %s\n"),
+                  keyfile, certfile);
             goto bail_out;
          }
       }
@@ -203,11 +212,16 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
 
    if (dhfile) {
       if (!load_dhfile_data(ctx, dhfile)) {
+         Jmsg1(NULL, M_ERROR, 0,
+               _("Failed to load DH file %s\n"),
+               dhfile);
          goto bail_out;
       }
    } else {
       error = gnutls_dh_params_generate2(ctx->dh_params, DH_BITS);
       if (error != GNUTLS_E_SUCCESS) {
+         Jmsg0(NULL, M_ERROR, 0,
+               _("Failed to generate new DH parameters\n"));
          goto bail_out;
       }
    }
@@ -237,22 +251,37 @@ void free_tls_context(TLS_CONTEXT *ctx)
 
 bool get_tls_require(TLS_CONTEXT *ctx)
 {
-   return ctx->tls_require;
+   return (ctx) ? ctx->tls_require : false;
+}
+
+void set_tls_require(TLS_CONTEXT *ctx, bool value)
+{
+   if (ctx) {
+      ctx->tls_require = value;
+   }
 }
 
 bool get_tls_enable(TLS_CONTEXT *ctx)
 {
-   return ctx->tls_enable;
+   return (ctx) ? ctx->tls_enable : false;
+}
+
+void set_tls_enable(TLS_CONTEXT *ctx, bool value)
+{
+   if (ctx) {
+      ctx->tls_enable = value;
+   }
 }
 
 /*
  * Certs are not automatically verified during the handshake.
  */
-static bool tls_cert_verify(TLS_CONNECTION *tls)
+static inline bool tls_cert_verify(TLS_CONNECTION *tls)
 {
    unsigned int status = 0;
    int error;
    time_t now = time(NULL);
+   time_t peertime;
 
    error = gnutls_certificate_verify_peers2(tls->gnutls_state, &status);
    if (error != GNUTLS_E_SUCCESS) {
@@ -269,12 +298,22 @@ static bool tls_cert_verify(TLS_CONNECTION *tls)
       return false;
    }
 
-   if (gnutls_certificate_expiration_time_peers(tls->gnutls_state) < now) {
+   peertime = gnutls_certificate_expiration_time_peers(tls->gnutls_state);
+   if (peertime == -1) {
+      Jmsg0(NULL, M_ERROR, 0, _("gnutls_certificate_expiration_time_peers failed\n"));
+      return false;
+   }
+   if (peertime < now) {
       Jmsg0(NULL, M_ERROR, 0, _("peer certificate is expired\n"));
       return false;
    }
 
-   if (gnutls_certificate_activation_time_peers(tls->gnutls_state) > now) {
+   peertime = gnutls_certificate_activation_time_peers(tls->gnutls_state);
+   if (peertime == -1) {
+      Jmsg0(NULL, M_ERROR, 0, _("gnutls_certificate_activation_time_peers failed\n"));
+      return false;
+   }
+   if (peertime > now) {
       Jmsg0(NULL, M_ERROR, 0, _("peer certificate not yet active\n"));
       return false;
    }
@@ -298,6 +337,13 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
    bool auth_success = false;
    gnutls_x509_crt_t cert;
    const gnutls_datum_t *peer_cert_list;
+
+   /*
+    * See if we verify the peer certificate.
+    */
+   if (!tls->ctx->verify_peer) {
+      return true;
+   }
 
    peer_cert_list = gnutls_certificate_get_peers(tls->gnutls_state, &list_size);
    if (!peer_cert_list) {
@@ -365,6 +411,13 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
    gnutls_x509_crt_t cert;
    const gnutls_datum_t *peer_cert_list;
 
+   /*
+    * See if we verify the peer certificate.
+    */
+   if (!tls->ctx->verify_peer) {
+      return true;
+   }
+
    peer_cert_list = gnutls_certificate_get_peers(tls->gnutls_state, &list_size);
    if (!peer_cert_list) {
       return false;
@@ -375,7 +428,7 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
       return false;
    }
 
-   gnutls_x509_crt_import(cert, peer_cert_list, GNUTLS_X509_FMT_DER);
+   error = gnutls_x509_crt_import(cert, peer_cert_list, GNUTLS_X509_FMT_DER);
    if (error != GNUTLS_E_SUCCESS) {
       gnutls_x509_crt_deinit(cert);
       return false;
@@ -387,7 +440,6 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
    }
 
    gnutls_x509_crt_deinit(cert);
-
    return true;
 }
 
@@ -472,9 +524,12 @@ void free_tls_connection(TLS_CONNECTION *tls)
 
 static inline bool gnutls_bsock_session_start(BSOCK *bsock, bool server)
 {
-   TLS_CONNECTION *tls = bsock->tls;
    int flags, error;
    bool status = true;
+   bool done = false;
+   unsigned int list_size;
+   TLS_CONNECTION *tls = bsock->tls;
+   const gnutls_datum_t *peer_cert_list;
 
    /* Ensure that socket is non-blocking */
    flags = bsock->set_nonblocking();
@@ -484,12 +539,13 @@ static inline bool gnutls_bsock_session_start(BSOCK *bsock, bool server)
    bsock->clear_timed_out();
    bsock->set_killable(false);
 
-   for (;;) {
+   while (!done) {
       error = gnutls_handshake(tls->gnutls_state);
 
       switch (error) {
       case GNUTLS_E_SUCCESS:
          status = true;
+         done = true;
          break;
       case GNUTLS_E_AGAIN:
       case GNUTLS_E_INTERRUPTED:
@@ -505,18 +561,23 @@ static inline bool gnutls_bsock_session_start(BSOCK *bsock, bool server)
          goto cleanup;
       }
 
+      if (bsock->is_timed_out()) {
+         goto cleanup;
+      }
+
       /*
        * See if we need to verify the peer.
        */
+      peer_cert_list = gnutls_certificate_get_peers(tls->gnutls_state, &list_size);
+      if (!peer_cert_list && !tls->ctx->tls_require) {
+         goto cleanup;
+      }
+
       if (tls->ctx->verify_peer) {
          if (!tls_cert_verify(tls)) {
             status = false;
             goto cleanup;
          }
-      }
-
-      if (bsock->is_timed_out()) {
-         goto cleanup;
       }
    }
 
@@ -585,7 +646,7 @@ static inline int gnutls_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bo
       }
 
       /* Handle errors */
-      if (nwritten >= 0) {
+      if (nwritten > 0) {
          nleft -= nwritten;
          if (nleft) {
             ptr += nwritten;

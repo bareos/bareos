@@ -124,7 +124,7 @@ public:
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
-   bool tls_verify_peer;              /* TLS Verify Client Certificate */
+   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
    bool optimize_for_size;            /* Optimize daemon for minimum memory size */
    bool optimize_for_speed;           /* Optimize daemon for speed which may need more memory */
    bool ndmp_snooping;                /* NDMP Protocol specific snooping enabled */
@@ -210,7 +210,7 @@ public:
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
-   bool tls_verify_peer;              /* TLS Verify Client Certificate */
+   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
 
    /* Methods */
    char *name() const;
