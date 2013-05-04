@@ -4,6 +4,7 @@
 @MCOMMON@
 
 working_dir = @working_dir@
+log_dir = @logdir@
 dir_group = @dir_group@
 dir_user = @dir_user@
 
@@ -102,6 +103,10 @@ installdirs:
 	   $(MKDIR) $(DESTDIR)$(working_dir); \
 	   chmod 770 $(DESTDIR)$(working_dir); \
 	fi
+
+	$(MKDIR) $(DESTDIR)$(log_dir);
+	chmod 775 $(DESTDIR)$(log_dir);
+
 	-if test "x$(dir_user)" != "x" ; then \
 	   chown $(dir_user) $(DESTDIR)$(working_dir); \
 	fi
