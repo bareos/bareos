@@ -2,6 +2,7 @@
 changes (highlevel):
 
 Release 13.2.x
+==============
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
 
