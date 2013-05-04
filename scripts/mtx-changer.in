@@ -47,23 +47,23 @@
 #
 
 # source our conf file
-if test ! -f @scriptdir@/mtx-changer.conf ; then
+if test ! -f @sysconfdir@/mtx-changer.conf ; then
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  echo "ERROR: @scriptdir@/mtx-changer.conf file not found!!!!"
+  echo "ERROR: @sysconfdir@/mtx-changer.conf file not found!!!!"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   exit 1
 fi
-. @scriptdir@/mtx-changer.conf
+. @sysconfdir@/mtx-changer.conf
 
 MTX=@MTX@
 
+dbgfile="@logdir@/mtx.log"
 if test ${debug_log} -ne 0 ; then
-  touch @working_dir@/mtx.log
+  touch $dbgfile
 fi
-dbgfile="@working_dir@/mtx.log"
 debug() {
     if test -f $dbgfile; then
-	echo "`date +\"%Y%m%d-%H:%M:%S\"` $*" >> $dbgfile
+        echo "`date +\"%Y%m%d-%H:%M:%S\"` $*" >> $dbgfile
     fi
 }
 
@@ -178,10 +178,10 @@ case $cmd in
       debug "Doing mtx -f $ctl unload $slot $drive"
 
       if test ${offline} -eq 1 ; then
-	mt -f $device offline
+        mt -f $device offline
       fi
       if test ${offline_sleep} -ne 0 ; then
-	sleep ${offline_sleep}
+        sleep ${offline_sleep}
       fi
       make_err_file
       ${MTX} -f $ctl unload $slot $drive 2>${ERRFILE}
@@ -197,7 +197,7 @@ case $cmd in
       ${MTX} -f $ctl load $slot $drive 2>${ERRFILE}
       rtn=$?
       if test ${load_sleep} -ne 0 ; then
-	sleep ${load_sleep}
+        sleep ${load_sleep}
       fi
       wait_for_drive $device
       cat ${ERRFILE}
@@ -209,12 +209,12 @@ case $cmd in
       debug "Doing mtx -f $ctl -- to list volumes"
       make_temp_file
       if test ${inventory} -ne 0 ; then
-	${MTX} -f $ctl inventory
+        ${MTX} -f $ctl inventory
       fi
       ${MTX} -f $ctl status >${TMPFILE}
       rtn=$?
       if test ${vxa_packetloader} -ne 0 ; then
-	cat ${TMPFILE} | grep " *Storage Element [0-9]*:.*Full" | sed "s/ Storage Element //" | sed "s/Full :VolumeTag=//"
+        cat ${TMPFILE} | grep " *Storage Element [0-9]*:.*Full" | sed "s/ Storage Element //" | sed "s/Full :VolumeTag=//"
       else
 	cat ${TMPFILE} | grep " Storage Element [0-9]*:.*Full" | awk "{print \$3 \$4}" | sed "s/Full *\(:VolumeTag=\)*//"
       fi
@@ -242,7 +242,7 @@ case $cmd in
       debug "Doing mtx -f $ctl -- to list all"
       make_temp_file
       if test ${inventory} -ne 0 ; then
-	${MTX} -f $ctl inventory
+        ${MTX} -f $ctl inventory
       fi
       ${MTX} -f $ctl status >${TMPFILE}
       rtn=$?
