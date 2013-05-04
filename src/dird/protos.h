@@ -306,7 +306,7 @@ bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr);
 POOLRES *get_pool_resource(UAContext *ua);
 JOBRES *get_restore_job(UAContext *ua);
 POOLRES *select_pool_resource(UAContext *ua);
-JCR *select_running_job(UAContext *ua, const char *reason);
+alist *select_jobs(UAContext *ua, const char *reason);
 CLIENTRES *get_client_resource(UAContext *ua);
 int get_job_dbr(UAContext *ua, JOB_DBR *jr);
 bool get_user_slot_list(UAContext *ua, char *slot_list, const char *argument, int num_slots);

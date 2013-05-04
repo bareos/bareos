@@ -937,7 +937,7 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default)
                ua->error_msg(_("Expecting jobid=nn command, got: %s\n"), ua->argk[i]);
                return NULL;
             }
-            if (!(jcr=get_jcr_by_id(jobid))) {
+            if (!(jcr = get_jcr_by_id(jobid))) {
                ua->error_msg(_("JobId %s is not running.\n"), edit_int64(jobid, ed1));
                return NULL;
             }
@@ -951,7 +951,7 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default)
                ua->error_msg(_("Expecting job=xxx, got: %s.\n"), ua->argk[i]);
                return NULL;
             }
-            if (!(jcr=get_jcr_by_partial_name(ua->argv[i]))) {
+            if (!(jcr = get_jcr_by_partial_name(ua->argv[i]))) {
                ua->error_msg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
                return NULL;
             }
@@ -963,7 +963,7 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default)
                ua->error_msg(_("Expecting ujobid=xxx, got: %s.\n"), ua->argk[i]);
                return NULL;
             }
-            if (!(jcr=get_jcr_by_full_name(ua->argv[i]))) {
+            if (!(jcr = get_jcr_by_full_name(ua->argv[i]))) {
                ua->error_msg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
                return NULL;
             }
@@ -1091,65 +1091,105 @@ bool get_level_from_name(JCR *jcr, const char *level_name)
    return found;
 }
 
-/* Get a running job
- * "reason" is used in user messages
- * can be: cancel, limit, ...
- *  Returns: NULL on error
- *           JCR on success (should be free_jcr() after)
+/*
+ * Insert an JobId into the list of selected JobIds when its a unique new id.
  */
-JCR *select_running_job(UAContext *ua, const char *reason)
+static inline bool insert_selected_jobid(alist *selected_jobids, JobId_t JobId)
+{
+   bool found;
+   JobId_t *selected_jobid;
+
+   found = false;
+   foreach_alist(selected_jobid, selected_jobids) {
+      if (*selected_jobid == JobId) {
+         found = true;
+         break;
+      }
+   }
+
+   if (!found) {
+      selected_jobid = (JobId_t *)malloc(sizeof(JobId_t));
+      *selected_jobid = JobId;
+      selected_jobids->append(selected_jobid);
+      return true;
+   }
+
+   return false;
+}
+
+/*
+ * Get a job selection, "reason" is used in user messages and can be: cancel, limit, ...
+ *
+ * Returns: NULL on error
+ *          alist on success with the selected jobids.
+ */
+alist *select_jobs(UAContext *ua, const char *reason)
 {
    int i;
+   int cnt = 0;
    int njobs = 0;
    JCR *jcr = NULL;
    char JobName[MAX_NAME_LENGTH];
    char temp[256];
+   alist *selected_jobids;
+   const char *lst[] = {
+      "job",
+      "jobid",
+      "ujobid",
+      NULL
+   };
 
-   for (i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
-         uint32_t JobId;
-         JobId = str_to_int64(ua->argv[i]);
-         if (!JobId) {
-            break;
+   selected_jobids = New(alist(10, owned_by_alist));
+
+   /*
+    * See if there are any jobid, job or ujobid keywords.
+    */
+   if (find_arg_keyword(ua, lst) > 0) {
+      for (i = 1; i < ua->argc; i++) {
+         if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
+            JobId_t JobId = str_to_int64(ua->argv[i]);
+            if (!JobId) {
+               continue;
+            }
+            if (!(jcr = get_jcr_by_id(JobId))) {
+               ua->error_msg(_("JobId %s is not running. Use Job name to %s inactive jobs.\n"),  ua->argv[i], _(reason));
+               continue;
+            }
+         } else if (bstrcasecmp(ua->argk[i], NT_("job"))) {
+            if (!ua->argv[i]) {
+               continue;
+            }
+            if (!(jcr = get_jcr_by_partial_name(ua->argv[i]))) {
+               ua->warning_msg(_("Warning Job %s is not running. Continuing anyway ...\n"), ua->argv[i]);
+               continue;
+            }
+         } else if (bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
+            if (!ua->argv[i]) {
+               continue;
+            }
+            if (!(jcr = get_jcr_by_full_name(ua->argv[i]))) {
+               ua->warning_msg(_("Warning Job %s is not running. Continuing anyway ...\n"), ua->argv[i]);
+               continue;
+            }
          }
-         if (!(jcr=get_jcr_by_id(JobId))) {
-            ua->error_msg(_("JobId %s is not running. Use Job name to %s inactive jobs.\n"),  ua->argv[i], _(reason));
-            return NULL;
+
+         if (jcr) {
+            if (jcr->res.job && !acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
+               ua->error_msg(_("Unauthorized command from this console.\n"));
+               goto bail_out;
+            }
          }
-         break;
-      } else if (bstrcasecmp(ua->argk[i], NT_("job"))) {
-         if (!ua->argv[i]) {
-            break;
+
+         if (insert_selected_jobid(selected_jobids, jcr->JobId)) {
+            cnt++;
          }
-         if (!(jcr=get_jcr_by_partial_name(ua->argv[i]))) {
-            ua->warning_msg(_("Warning Job %s is not running. Continuing anyway ...\n"), ua->argv[i]);
-            jcr = new_jcr(sizeof(JCR), dird_free_jcr);
-            bstrncpy(jcr->Job, ua->argv[i], sizeof(jcr->Job));
-         }
-         break;
-      } else if (bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
-         if (!ua->argv[i]) {
-            break;
-         }
-         if (!(jcr=get_jcr_by_full_name(ua->argv[i]))) {
-            ua->warning_msg(_("Warning Job %s is not running. Continuing anyway ...\n"), ua->argv[i]);
-            jcr = new_jcr(sizeof(JCR), dird_free_jcr);
-            bstrncpy(jcr->Job, ua->argv[i], sizeof(jcr->Job));
-         }
-         break;
+
+         free_jcr(jcr);
+         jcr = NULL;
       }
-
    }
-   if (jcr) {
-      if (jcr->res.job && !acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
-         ua->error_msg(_("Unauthorized command from this console.\n"));
-         return NULL;
-      }
-   } else {
-     /*
-      * If we still do not have a jcr,
-      *   throw up a list and ask the user to select one.
-      */
+
+   if (cnt == 0) {
       char buf[1000];
       int tjobs = 0;                  /* total # number jobs */
       /* Count Jobs running */
@@ -1171,7 +1211,7 @@ JCR *select_running_job(UAContext *ua, const char *reason)
          } else {
             ua->send_msg(_("None of your jobs are running.\n"));
          }
-         return NULL;
+         goto bail_out;
       }
 
       start_prompt(ua, _("Select Job:\n"));
@@ -1189,7 +1229,7 @@ JCR *select_running_job(UAContext *ua, const char *reason)
       endeach_jcr(jcr);
       bsnprintf(temp, sizeof(temp), _("Choose Job to %s"), _(reason));
       if (do_prompt(ua, _("Job"),  temp, buf, sizeof(buf)) < 0) {
-         return NULL;
+         goto bail_out;
       }
       if (bstrcmp(reason, "cancel")) {
          if (ua->api && njobs == 1) {
@@ -1197,12 +1237,12 @@ JCR *select_running_job(UAContext *ua, const char *reason)
             bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf,
                       _("Confirm cancel?"));
             if (!get_yesno(ua, nbuf) || ua->pint32_val == 0) {
-               return NULL;
+               goto bail_out;
             }
          } else {
             if (njobs == 1) {
                if (!get_yesno(ua, _("Confirm cancel (yes/no): ")) || ua->pint32_val == 0) {
-                  return NULL;
+                  goto bail_out;
                }
             }
          }
@@ -1211,12 +1251,28 @@ JCR *select_running_job(UAContext *ua, const char *reason)
       jcr = get_jcr_by_full_name(JobName);
       if (!jcr) {
          ua->warning_msg(_("Job \"%s\" not found.\n"), JobName);
-         return NULL;
+         goto bail_out;
       }
+
+      insert_selected_jobid(selected_jobids, jcr->JobId);
+
+      free_jcr(jcr);
    }
-   return jcr;
+
+   return selected_jobids;
+
+bail_out:
+
+   delete selected_jobids;
+   return NULL;
 }
 
+/*
+ * Get a slot selection.
+ *
+ * Returns: false on error
+ *          true on success with the selected slots set in the slot_list.
+ */
 bool get_user_slot_list(UAContext *ua, char *slot_list, const char *argument, int num_slots)
 {
    int i, len, beg, end;

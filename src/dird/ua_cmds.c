@@ -466,47 +466,75 @@ int automount_cmd(UAContext *ua, const char *cmd)
    return 1;
 }
 
+static inline int cancel_storage_daemon_job(UAContext *ua, const char *cmd)
+{
+   int i;
+   STORERES *store;
+
+   store = get_storage_resource(ua, false /* no default */);
+   if (store) {
+      /*
+       * See what JobId to cancel on the storage daemon.
+       */
+      i = find_arg_with_value(ua, "jobid");
+      if (i >= 0) {
+         if (!is_a_number(ua->argv[i])) {
+            ua->warning_msg(_("JobId %s not a number\n"), ua->argv[i]);
+         }
+
+         cancel_storage_daemon_job(ua, store, ua->argv[i]);
+      } else {
+         ua->warning_msg(_("Missing jobid=JobId specification\n"));
+      }
+   }
+
+   return 1;
+}
+
+static inline int cancel_jobs(UAContext *ua, const char *cmd)
+{
+   JCR *jcr;
+   JobId_t *JobId;
+   alist *selection;
+
+   selection = select_jobs(ua, "cancel");
+   if (!selection) {
+      return 1;
+   }
+
+   /*
+    * Loop over the different JobIds selected.
+    */
+   foreach_alist(JobId, selection) {
+      if (!(jcr = get_jcr_by_id(*JobId))) {
+         continue;
+      }
+
+      cancel_job(ua, jcr);
+      free_jcr(jcr);
+   }
+
+   delete selection;
+
+   return 1;
+}
+
 /*
  * Cancel a job
  */
 static int cancel_cmd(UAContext *ua, const char *cmd)
 {
-   int i, ret;
-   JCR *jcr;
-   STORERES *store;
+   int i;
 
    /*
     * See if we need to explicitly cancel a storage daemon Job.
     */
    i = find_arg_with_value(ua, "storage");
    if (i >= 0) {
-      store = get_storage_resource(ua, false /* no default */);
-      if (store) {
-         /*
-          * See what JobId to cancel on the storage daemon.
-          */
-         i = find_arg_with_value(ua, "jobid");
-         if (i >= 0) {
-            if (!is_a_number(ua->argv[i])) {
-               ua->warning_msg(_("JobId %s not a number\n"), ua->argv[i]);
-            }
-
-            cancel_storage_daemon_job(ua, store, ua->argv[i]);
-         } else {
-            ua->warning_msg(_("Missing jobid=JobId specification\n"));
-         }
-      }
+      return cancel_storage_daemon_job(ua, cmd);
    } else {
-      jcr = select_running_job(ua, "cancel");
-      if (!jcr) {
-         return 1;
-      }
-      ret = cancel_job(ua, jcr);
-      free_jcr(jcr);
-      return ret;
+      return cancel_jobs(ua, cmd);
    }
-
-   return 1;
 }
 
 /*
@@ -784,7 +812,6 @@ static inline int setbwlimit_stored(UAContext *ua, STORERES *store,
 static int setbwlimit_cmd(UAContext *ua, const char *cmd)
 {
    int i;
-   JCR *jcr;
    int64_t limit = -1;
    CLIENTRES *client = NULL;
    STORERES *store = NULL;
@@ -792,7 +819,7 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
    const char *lst[] = {
       "job",
       "jobid",
-      "jobname",
+      "ujobid",
       NULL
    };
 
@@ -810,8 +837,23 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
    }
 
    if (find_arg_keyword(ua, lst) > 0) {
-      jcr = select_running_job(ua, "limit");
-      if (jcr) {
+      JCR *jcr;
+      JobId_t *JobId;
+      alist *selection;
+
+      selection = select_jobs(ua, "limit");
+      if (!selection) {
+         return 1;
+      }
+
+      /*
+       * Loop over the different JobIds selected.
+       */
+      foreach_alist(JobId, selection) {
+         if (!(jcr = get_jcr_by_id(*JobId))) {
+            continue;
+         }
+
          jcr->max_bandwidth = limit;
          bstrncpy(Job, jcr->Job, sizeof(Job));
          switch (jcr->getJobType()) {
@@ -824,9 +866,9 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
             break;
          }
          free_jcr(jcr);
-      } else {
-         return 1;
       }
+
+      delete selection;
    } else if (find_arg(ua, "storage") >= 0) {
       store = get_storage_resource(ua, false /* no default */);
    } else {
