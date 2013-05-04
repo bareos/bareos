@@ -83,15 +83,15 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr);
 int bnet_set_blocking(BSOCK *sock);
 int bnet_set_nonblocking(BSOCK *sock);
 void bnet_restore_blocking(BSOCK *sock, int flags);
-
-/* bnet_server.c */
-void bnet_thread_server(dlist *addr_lis, int max_clients, workq_t *client_wq,
-                        void *handle_client_request(void *bsock));
-void bnet_stop_thread_server(pthread_t tid);
-void bnet_server(int port, void handle_client_request(BSOCK *bsock));
 int net_connect(int port);
 BSOCK *bnet_bind(int port);
 BSOCK *bnet_accept(BSOCK *bsock, char *who);
+
+/* bnet_server.c */
+void cleanup_bnet_thread_server(alist *sockfds, workq_t *client_wq);
+void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
+                        workq_t *client_wq, void *handle_client_request(void *bsock));
+void bnet_stop_thread_server(pthread_t tid);
 
 /* bpipe.c */
 BPIPE *open_bpipe(char *prog, int wait, const char *mode);

@@ -62,7 +62,6 @@ pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 void *start_heap;
 
-
 static uint32_t VolSessionId = 0;
 uint32_t VolSessionTime;
 char *configfile = NULL;
@@ -75,8 +74,8 @@ static workq_t dird_workq;            /* queue for processing connections */
 #if HAVE_NDMP
 static workq_t ndmp_workq;            /* queue for processing NDMP connections */
 #endif
+static alist *sock_fds;
 static CONFIG *config;
-
 
 static void usage()
 {
@@ -298,8 +297,10 @@ int main (int argc, char *argv[])
 #endif
 
    /* Single server used for Director and File daemon */
+   sock_fds = New(alist(10, not_owned_by_alist));
    bnet_thread_server(me->sdaddrs,
                       me->max_concurrent_jobs * 2 + 1,
+                      sock_fds,
                       &dird_workq,
                       handle_connection_request);
    exit(1);                           /* to keep compiler quiet */
@@ -676,6 +677,10 @@ void terminate_stored(int sig)
    }
 #endif
    stop_watchdog();
+
+   cleanup_bnet_thread_server(sock_fds, &dird_workq);
+   delete sock_fds;
+   sock_fds = NULL;
 
    if (sig == SIGTERM) {              /* normal shutdown request? */
       /*

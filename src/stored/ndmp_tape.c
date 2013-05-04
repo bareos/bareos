@@ -1452,8 +1452,10 @@ extern "C" void *ndmp_thread_server(void *arg)
    /*
     * Cleanup open files.
     */
-   while ((fd_ptr = (s_sockfd *)sockfds.first())) {
+   fd_ptr = (s_sockfd *)sockfds->first();
+   while (fd_ptr) {
       close(fd_ptr->fd);
+      fd_ptr = (s_sockfd *)sockfds->next();
    }
 
    /*

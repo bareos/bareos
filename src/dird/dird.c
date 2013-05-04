@@ -53,8 +53,8 @@ extern void invalidate_schedules();
 extern bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Imported subroutines */
-void term_ua_server();
 void start_UA_server(dlist *addrs);
+void stop_UA_server(void);
 void init_job_server(int max_workers);
 void term_job_server();
 void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass);
@@ -406,7 +406,7 @@ void terminate_dird(int sig)
       free(config);
       config = NULL;
    }
-   term_ua_server();
+   stop_UA_server();
    term_msg();                        /* terminate message handler */
    cleanup_crypto();
    close_memory_pool();               /* release free memory in pool */
