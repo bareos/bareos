@@ -1,0 +1,336 @@
+; Copyright (c) uib gmbh (www.uib.de)
+; This sourcecode is owned by uib
+; and published under the Terms of the General Public License.
+; credits: http://www.opsi.org/en/credits/
+
+[Actions]
+requiredWinstVersion >= "4.10.8.6"
+
+DefVar $MsiId32$
+DefVar $UninstallProgram32$
+DefVar $MsiId64$
+DefVar $UninstallProgram64$
+DefVar $LogDir$
+DefVar $ProductId$
+DefVar $ProductVer$
+DefVar $ReleaseVer$
+DefVar $MinimumSpace$
+DefVar $InstallDir$
+DefVar $InstallDir32$
+DefVar $InstallDir64$
+DefVar $ExitCode$
+DefVar $LicenseRequired$
+DefVar $LicenseKey$
+DefVar $LicensePool$
+DefVar $INST_SystemType$
+DefVar $INST_architecture$
+
+DefVar $filedaemon_full_name$
+DefVar $filedaemon_full_password$
+DefVar $filedaemon_monitor_name$
+DefVar $filedaemon_monitor_password$
+DefVar $filedaemon_client_address$
+DefVar $director_name$
+DefVar $director_address$
+DefVar $director_password$
+
+
+Set $INST_SystemType$ = GetSystemType
+Set $INST_architecture$ = GetProductProperty("install_architecture","system specific")
+
+Set $filedaemon_full_name$ = GetProductProperty( "filedaemon_full_name", "" )
+Set $filedaemon_full_password$ = GetProductProperty( "filedaemon_full_password", "filedaemon_full_password" )
+Set $filedaemon_monitor_name$ = GetProductProperty( "filedaemon_monitor_name", "filedaemon_monitor_name" )
+Set $filedaemon_monitor_password$ = GetProductProperty( "filedaemon_monitor_password", "filedaemon_monitor_password" )
+Set $filedaemon_client_address$ = GetProductProperty( "filedaemon_client_address", "")
+Set $director_name$ = GetProductProperty( "director_name", "director_name" )
+Set $director_address$ = GetProductProperty( "director_address", "director_address" )
+Set $director_password$ = GetProductProperty( "director_password", "director_password" )
+
+Set $LogDir$ = "%SystemDrive%\tmp"
+
+; ----------------------------------------------------------------
+; - Please edit the following values                             -
+; ----------------------------------------------------------------
+;$ProductId$ should be the name of the product in opsi
+; therefore please: only lower letters, no umlauts,
+; no white space use '-' as a seperator
+Set $ProductId$       = "bareos"
+Set $ProductVer$      = "12.4.1"
+Set $ReleaseVer$      = "r1.1.exe"
+Set $MinimumSpace$    = "30 MB"
+; the path were we find the product after the installation
+Set $InstallDir$        = "%ProgramFilesDir%\Bareos"
+Set $InstallDir32$      = "%ProgramFiles32Dir%\Bareos"
+Set $InstallDir64$      = "%ProgramFiles64Dir%\Bareos"
+Set $LicenseRequired$ = "false"
+Set $LicensePool$     = "p_" + $ProductId$
+; ----------------------------------------------------------------
+
+if not(HasMinimumSpace ("%SystemDrive%", $MinimumSpace$))
+	LogError "Not enough space on %SystemDrive%, " + $MinimumSpace$ + " on drive %SystemDrive% needed for " + $ProductId$
+	isFatalError
+	; Stop process and set installation status to failed
+endif
+
+comment "Show product picture"
+ShowBitmap "%ScriptPath%\logo.png" $ProductId$
+
+if FileExists("%ScriptPath%\delsub3264.ins")
+    comment "Start uninstall sub section"
+    Sub "%ScriptPath%\delsub3264.ins"
+endif
+
+;if $LicenseRequired$ = "true"
+;	comment "Licensing required, reserve license and get license key"
+;	Sub_get_licensekey
+;endif
+
+comment "installing"
+
+if $filedaemon_full_name$ = ""
+    set $filedaemon_full_name$    = "%HostID%-fd"
+    opsiservicecall_set_product_property_filedaemon_full_name
+endif
+
+if $filedaemon_monitor_name$ = ""
+    set $filedaemon_monitor_name$ = "%HostID%-mon"
+    opsiservicecall_set_product_property_filedaemon_monitor_name
+endif
+
+if $filedaemon_client_address$ = ""
+    set $filedaemon_monitor_name$ = "%HostID%"
+    opsiservicecall_set_product_property_filedaemon_client_address
+endif
+
+
+
+if (($INST_SystemType$ = "x86 System") and ($INST_architecture$ = "system specific")) or ($INST_architecture$ = "both") or ($INST_architecture$ = "32 only")
+    Message "Installing " + $ProductId$ + " 32 Bit..."
+    comment "Start setup program"
+    Winbatch_install_32
+    Sub_check_exitcode
+    ;comment "Copy files"
+    ;Files_install_32 /32Bit
+    ;comment "Patch Registry"
+    ;Registry_install /32Bit
+    ;comment "Create shortcuts"
+    ;LinkFolder_install
+endif
+
+if ($INST_SystemType$ = "64 Bit System") and (($INST_architecture$ = "system specific") or ($INST_architecture$ = "both") or ($INST_architecture$ = "64 only"))
+    Message "Installing " + $ProductId$ + " 64 Bit..."
+    comment "Start setup program"
+    Winbatch_install_64
+    Sub_check_exitcode
+    ;comment "Copy files"
+    ;Files_install_64 /64Bit
+    ;comment "Patch Registry"
+    ;Registry_install /64Bit
+    ;comment "Create shortcuts"
+    ;LinkFolder_install
+endif
+
+;Patches_bareos_conf $InstallDir$+"\bareos-fd.conf"
+;DosBatch_bareos-fd.conf
+
+;
+; end
+;
+
+
+
+; winbatch installer:
+; /S silent installl
+; /D destination path
+;       use this, otherwise it installs to "program files" for all languages.
+;       don't use " around argument, otherwise argument is ignored
+
+[Winbatch_install_32]
+"%ScriptPath%\data\winbareos-$ProductVer$-32-bit-$ReleaseVer$" /S /CLIENTNAME=$filedaemon_full_name$ /CLIENTPASSWORD=$filedaemon_full_password$ /DIRECTORNAME=$director_name$ /CLIENTADDRESS=$filedaemon_client_address$ /CLIENTMONITORPASSWORD=$filedaemon_monitor_password$ /DIRECTORADDRESS=$director_address$ /DIRECTORPASSWORD=$director_password$ /D=$InstallDir32$
+
+
+[Winbatch_install_64]
+"%ScriptPath%\data\winbareos-$ProductVer$-64-bit-$ReleaseVer$" /S /CLIENTNAME=$filedaemon_full_name$ /CLIENTPASSWORD=$filedaemon_full_password$ /DIRECTORNAME=$director_name$ /CLIENTADDRESS=$filedaemon_client_address$ /CLIENTMONITORPASSWORD=$filedaemon_monitor_password$ /DIRECTORADDRESS=$director_address$ /DIRECTORPASSWORD=$director_password$ /D=$InstallDir64$
+
+
+;[DosBatch_bareos-fd.conf]
+;(
+;echo # managed by opsi
+;echo #
+;echo # "Global" File daemon configuration specifications
+;echo #
+;echo FileDaemon {                            # this is me
+;echo   Name = $filedaemon_full_name$
+;echo   FDport = 9102                # where we listen for the director
+;echo   WorkingDirectory = "$InstallDir32$\\working"
+;echo   Pid Directory = "$InstallDir32$\\working"
+;echo   Plugin Directory = "$InstallDir32$\\plugins"
+;echo   Maximum Concurrent Jobs = 10
+;echo }
+;echo
+;echo #
+;echo # List Directors who are permitted to contact this File daemon
+;echo #
+;echo Director {
+;echo   Name     = $director_name$
+;echo   Password = "$filedaemon_full_password$"
+;echo }
+;echo
+;echo #
+;echo # Restricted Director, used by tray-monitor to get the
+;echo #   status of the file daemon
+;echo #
+;echo Director {
+;echo   Name     = $filedaemon_monitor_name$
+;echo   Password = "$filedaemon_monitor_password$"
+;echo   Monitor  = yes
+;echo }
+;echo
+;echo # Send all messages except skipped files back to Director
+;echo Messages {
+;echo   Name = Standard
+;echo   director = $director_name$ = all, !skipped, !restored
+;echo }
+;) >> $InstallDir$/bareos-fd.conf
+
+[opsiservicecall_set_product_property_filedaemon_full_name]
+"method": "setProductProperty",
+"params": [
+        'bareos',
+        'filedaemon_full_name',
+        '$filedaemon_full_name$',
+        '%HostID%'
+]
+
+;[opsiservicecall_set_product_property_filedaemon_monitor_name]
+;"method": "setProductProperty",
+;"params": [
+;        'bareos',
+;        'filedaemon_monitor_name',
+;        '$filedaemon_monitor_name$',
+;        '%HostID%'
+;]
+
+[opsiservicecall_set_product_property_filedaemon_client_address]
+"method": "setProductProperty",
+"params": [
+        'bareos',
+        'filedaemon_client_address',
+        '$filedaemon_client_address$',
+        '%HostID%'
+]
+
+
+[Files_install_32]
+; Example of recursively copying some files into the installation directory:
+;
+; copy -s "%ScriptPath%\files\*.*" "$InstallDir32$"
+
+[Files_install_64]
+; Example of recursively copying some files into the installation directory:
+;
+; copy -s "%ScriptPath%\files\*.*" "$InstallDir64$"
+
+[Registry_install]
+; Example of setting some values of an registry key:
+;
+; openkey [HKEY_LOCAL_MACHINE\Software\$ProductId$]
+; set "name1" = "some string value"
+; set "name2" = REG_DWORD:0001
+; set "name3" = REG_BINARY:00 af 99 cd
+
+[LinkFolder_install]
+; Example of deleting a folder from AllUsers startmenu:
+;
+; set_basefolder common_programs
+; delete_subfolder $ProductId$
+;
+; Example of creating an shortcut to the installed exe in AllUsers startmenu:
+;
+; set_basefolder common_programs
+; set_subfolder $ProductId$
+;
+; set_link
+; 	name: $ProductId$
+; 	target: <path to the program>
+; 	parameters:
+; 	working_dir: $InstallDir$
+; 	icon_file:
+; 	icon_index:
+; end_link
+;
+; Example of creating an shortcut to the installed exe on AllUsers desktop:
+;
+; set_basefolder common_desktopdirectory
+; set_subfolder ""
+;
+; set_link
+; 	name: $ProductId$
+; 	target: <path to the program>
+; 	parameters: <some_param>
+; 	working_dir: $InstallDir$
+; 	icon_file: <path to icon file>
+; 	icon_index: 2
+; end_link
+
+[Sub_get_licensekey]
+comment "License management is enabled and will be used"
+
+comment "Trying to get a license key"
+Set $LicenseKey$ = demandLicenseKey ($LicensePool$)
+; If there is an assignment of exactly one licensepool to the product the following call is possible:
+; Set $LicenseKey$ = demandLicenseKey ("", $ProductId$)
+;
+; If there is an assignment of a license pool to a windows software id, it is possible to use:
+; DefVar $WindowsSoftwareId$
+; $WindowsSoftwareId$ = "..."
+; Set $LicenseKey$ = demandLicenseKey ("", "", $WindowsSoftwareId$)
+
+DefVar $ServiceErrorClass$
+set $ServiceErrorClass$ = getLastServiceErrorClass
+comment "Error class: " + $ServiceErrorClass$
+
+if $ServiceErrorClass$ = "None"
+	comment "Everything fine, we got the license key '" + $LicenseKey$ + "'"
+else
+	if $ServiceErrorClass$ = "LicenseConfigurationError"
+		LogError "Fatal: license configuration must be corrected"
+		LogError getLastServiceErrorMessage
+		isFatalError
+	else
+		if $ServiceErrorClass$ = "LicenseMissingError"
+			LogError "Fatal: required license is not supplied"
+			isFatalError
+		endif
+	endif
+endif
+
+[Sub_check_exitcode]
+comment "Test for installation success via exit code"
+set $ExitCode$ = getLastExitCode
+; informations to exit codes see
+; http://msdn.microsoft.com/en-us/library/aa372835(VS.85).aspx
+; http://msdn.microsoft.com/en-us/library/aa368542.aspx
+if ($ExitCode$ = "0")
+	comment "Looks good: setup program gives exitcode zero"
+else
+	comment "Setup program gives a exitcode unequal zero: " + $ExitCode$
+	if ($ExitCode$ = "1605")
+		comment "ERROR_UNKNOWN_PRODUCT	1605	This action is only valid for products that are currently installed."
+		comment "Uninstall of a not installed product failed - no problem"
+	else
+		if ($ExitCode$ = "1641")
+			comment "looks good: setup program gives exitcode 1641"
+			comment "ERROR_SUCCESS_REBOOT_INITIATED	1641	The installer has initiated a restart. This message is indicative of a success."
+		else
+			if ($ExitCode$ = "3010")
+				comment "looks good: setup program gives exitcode 3010"
+				comment "ERROR_SUCCESS_REBOOT_REQUIRED	3010	A restart is required to complete the install. This message is indicative of a success."
+			else
+				logError "Fatal: Setup program gives an unknown exitcode unequal zero: " + $ExitCode$
+				isFatalError
+			endif
+		endif
+	endif
+endif

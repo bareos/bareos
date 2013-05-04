@@ -1,0 +1,128 @@
+; Copyright (c) uib gmbh (www.uib.de)
+; This sourcecode is owned by uib gmbh
+; and published under the Terms of the General Public License.
+; credits: http://www.opsi.org/en/credits/
+
+
+;Set $MsiId32$ = 'Bareos'
+Set $UninstallProgram32$ = $InstallDir32$ + "\uninst.exe"
+
+;Set $MsiId64$ = 'Bareos'
+Set $UninstallProgram64$ = $InstallDir64$ + "\uninst.exe"
+
+if (($INST_SystemType$ = "x86 System") and ($INST_architecture$ = "system specific")) or ($INST_architecture$ = "both") or ($INST_architecture$ = "32 only")
+	Message "Uninstalling " + $ProductId$ + " 32 Bit..."
+
+	if FileExists($UninstallProgram32$)
+		comment "Uninstall program found, starting uninstall"
+		Winbatch_uninstall_32
+		sub_check_exitcode
+	endif
+
+	;if not (GetRegistryStringValue32("[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" + $MsiId32$ + "] DisplayName") = "")
+	;	comment "MSI id " + $MsiId32$ + " found in registry, starting msiexec to uninstall"
+	;	Winbatch_uninstall_msi_32
+	;	sub_check_exitcode
+	;endif
+
+	;comment "Delete files"
+	;Files_uninstall_32 /32Bit
+	;comment "Cleanup registry"
+	;Registry_uninstall /32Bit
+endif
+
+if ($INST_SystemType$ = "64 Bit System") and (($INST_architecture$ = "system specific") or ($INST_architecture$ = "both") or ($INST_architecture$ = "64 only"))
+	Message "Uninstalling " + $ProductId$ + " 64 Bit..."
+
+	if FileExists($UninstallProgram64$)
+		comment "Uninstall program found, starting uninstall"
+		Winbatch_uninstall_64
+		sub_check_exitcode
+	endif
+
+	;if not (GetRegistryStringValue64("[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" + $MsiId64$ + "] DisplayName") = "")
+	;	comment "MSI id " + $MsiId64$ + " found in registry, starting msiexec to uninstall"
+	;	Winbatch_uninstall_msi_64
+	;	sub_check_exitcode
+	;endif
+
+	;comment "Delete files"
+	;Files_uninstall_64 /64Bit
+	;comment "Cleanup registry"
+	;Registry_uninstall /64Bit
+endif
+
+;comment "Delete program shortcuts"
+;LinkFolder_uninstall
+
+[Winbatch_uninstall_32]
+"$UninstallProgram32$" /S
+
+
+[Winbatch_uninstall_64]
+"$UninstallProgram64$" /S
+
+
+[Winbatch_uninstall_msi_32]
+msiexec /x $MsiId32$ /qb! REBOOT=ReallySuppress
+
+[Files_uninstall_32]
+; Example for recursively deleting the installation directory (don't forget the trailing backslash):
+;
+; delete -sf "$InstallDir32$\"
+
+
+
+[Winbatch_uninstall_msi_64]
+msiexec /x $MsiId64$ /qb! REBOOT=ReallySuppress
+
+[Files_uninstall_64]
+; Example for recursively deleting the installation directory (don't forget the trailing backslash):
+;
+; delete -sf "$InstallDir64$\"
+
+[Registry_uninstall]
+; Example of deleting a registry key:
+;
+; deletekey [HKEY_LOCAL_MACHINE\Software\$ProductId$]
+
+[LinkFolder_uninstall]
+; Example of deleting a folder from AllUsers startmenu:
+;
+; set_basefolder common_programs
+; delete_subfolder $ProductId$
+;
+; Example of deleting a shortcut from AllUsers desktop:
+;
+; set_basefolder common_desktopdirectory
+; set_subfolder ""
+; delete_element $ProductId$
+
+[Sub_check_exitcode]
+comment "Test for installation success via exit code"
+set $ExitCode$ = getLastExitCode
+; informations to exit codes see
+; http://msdn.microsoft.com/en-us/library/aa372835(VS.85).aspx
+; http://msdn.microsoft.com/en-us/library/aa368542.aspx
+if ($ExitCode$ = "0")
+	comment "Looks good: setup program gives exitcode zero"
+else
+	comment "Setup program gives a exitcode unequal zero: " + $ExitCode$
+	if ($ExitCode$ = "1605")
+		comment "ERROR_UNKNOWN_PRODUCT	1605	This action is only valid for products that are currently installed."
+		comment "Uninstall of a not installed product failed - no problem"
+	else
+		if ($ExitCode$ = "1641")
+			comment "looks good: setup program gives exitcode 1641"
+			comment "ERROR_SUCCESS_REBOOT_INITIATED	1641	The installer has initiated a restart. This message is indicative of a success."
+		else
+			if ($ExitCode$ = "3010")
+				comment "looks good: setup program gives exitcode 3010"
+				comment "ERROR_SUCCESS_REBOOT_REQUIRED	3010	A restart is required to complete the install. This message is indicative of a success."
+			else
+				logError "Fatal: Setup program gives an unknown exitcode unequal zero: " + $ExitCode$
+				isFatalError
+			endif
+		endif
+	endif
+endif
