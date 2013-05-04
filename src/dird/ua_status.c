@@ -211,6 +211,7 @@ int status_cmd(UAContext *ua, const char *cmd)
       add_prompt(ua, NT_("Director"));
       add_prompt(ua, NT_("Storage"));
       add_prompt(ua, NT_("Client"));
+      add_prompt(ua, NT_("Scheduler"));
       add_prompt(ua, NT_("All"));
       Dmsg0(20, "do_prompt: select daemon\n");
       if ((item=do_prompt(ua, "",  _("Select daemon type for status"), prmt, sizeof(prmt))) < 0) {
@@ -252,6 +253,9 @@ int status_cmd(UAContext *ua, const char *cmd)
          }
          break;
       case 3:
+         do_scheduler_status(ua);
+         break;
+      case 4:
          do_all_status(ua);
          break;
       default:
@@ -385,23 +389,96 @@ void list_dir_status_header(UAContext *ua)
    }
 }
 
-static void do_scheduler_status(UAContext *ua)
+static void show_scheduled_preview(UAContext *ua, SCHEDRES *sched, struct tm tm, time_t time_to_check)
 {
-   int i, hour, mday, wday, month, wom, woy, yday;
-   int days = 14;                                     /* Default days for preview */
-   bool is_last_week = false,                         /* Are we in the last week of a month? */
-        schedulegiven = false;
-   char dt[MAX_TIME_LENGTH];
-   time_t time_to_check, now, runtime;
+   int hour, mday, wday, month, wom, woy, yday;
+   bool is_last_week = false;                      /* Are we in the last week of a month? */
    char level[15];
-   char schedulename[MAX_NAME_LENGTH];
-   const int seconds_per_day = 86400;                 /* Number of seconds in one day */
-   struct tm tm;
-   SCHEDRES *sched;
-   JOBRES *job;
+   char dt[MAX_TIME_LENGTH];
+   time_t runtime;
    RUNRES *run;
 
-   now = time(NULL);                                  /* Initialize to now */
+   hour = tm.tm_hour;
+   mday = tm.tm_mday - 1;
+   wday = tm.tm_wday;
+   month = tm.tm_mon;
+   wom = mday / 7;
+   woy = tm_woy(time_to_check);                    /* Get week of year */
+   yday = tm.tm_yday;                              /* Get day of year */
+
+   is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , yday);
+
+   for (run = sched->run; run; run = run->next) {
+      bool run_now;
+
+      run_now = bit_is_set(hour, run->hour) &&
+                bit_is_set(mday, run->mday) &&
+                bit_is_set(wday, run->wday) &&
+                bit_is_set(month, run->month) &&
+               (bit_is_set(wom, run->wom) ||
+                (run->last_set && is_last_week)) &&
+                bit_is_set(woy, run->woy);
+
+      if (run_now) {
+         /*
+          * Find time (time_t) job is to be run
+          */
+         (void)localtime_r(&time_to_check, &tm); /* Reset tm structure */
+         tm.tm_min = run->minute;                /* Set run minute */
+         tm.tm_sec = 0;                          /* Zero secs */
+         runtime = mktime(&tm);
+         bstrftime_wd(dt, sizeof(dt), runtime);
+
+         ua->send_msg(dt);
+         ua->send_msg("  %-22.22s  ", sched->hdr.name);
+
+         bstrncpy(level, level_to_str(run->level), sizeof(level));
+         ua->send_msg("Level=%s ", level);
+
+         if (run->Priority) {
+            ua->send_msg("Priority=%d ", run->Priority);
+         }
+
+         if (run->spool_data_set) {
+            ua->send_msg("Spool Data=%d ", run->spool_data);
+         }
+
+         if (run->accurate_set) {
+            ua->send_msg("Accurate=%d ", run->accurate);
+         }
+
+         if (run->pool) {
+            ua->send_msg("Pool=%s ", run->pool->name());
+         }
+
+         if (run->storage) {
+            ua->send_msg("Storage=%s ", run->storage->name());
+         }
+
+         if (run->msgs) {
+            ua->send_msg("Messages=%s ", run->msgs->name());
+         }
+
+         ua->send_msg("\n");
+      }
+   }
+}
+
+static void do_scheduler_status(UAContext *ua)
+{
+   int i;
+   int days = 14;                                /* Default days for preview */
+   bool schedulegiven = false;
+   time_t time_to_check, now, runtime;
+   char schedulename[MAX_NAME_LENGTH];
+   const int seconds_per_day = 86400;            /* Number of seconds in one day */
+   const int seconds_per_hour = 3600;            /* Number of seconds in one hour */
+   struct tm tm;
+   CLIENTRES *client = NULL;
+   JOBRES *job = NULL;
+   SCHEDRES *sched;
+
+   now = time(NULL);                             /* Initialize to now */
    time_to_check = now;
 
    i = find_arg_with_value(ua, NT_("days"));
@@ -414,12 +491,35 @@ static void do_scheduler_status(UAContext *ua)
    }
 
    /*
-    * Schedule given?
+    * Schedule given ?
     */
    i = find_arg_with_value(ua, NT_("schedule"));
    if (i >= 0) {
       bstrncpy(schedulename, ua->argv[i], sizeof(schedulename));
       schedulegiven = true;
+   }
+
+   /*
+    * Client given ?
+    */
+   i = find_arg_with_value(ua, NT_("client"));
+   if (i >= 0) {
+      client = get_client_resource(ua);
+   }
+
+   /*
+    * Jobname given ?
+    */
+   i = find_arg_with_value(ua, NT_("job"));
+   if (i >= 0) {
+      job = GetJobResWithName(ua->argv[i]);
+
+      /*
+       * If a bogus jobname was given ask for it interactively.
+       */
+      if (!job) {
+         job = select_job_resource(ua);
+      }
    }
 
    ua->send_msg("Scheduler Jobs:\n\n");
@@ -428,15 +528,35 @@ static void do_scheduler_status(UAContext *ua)
 
    LockRes();
    foreach_res(sched, R_SCHEDULE) {
+      int cnt = 0;
+
       if (schedulegiven) {
          if (!bstrcmp(sched->hdr.name, schedulename)) {
            continue;
          }
       }
-      ua->send_msg("%s\n", sched->hdr.name);
-      foreach_res(job, R_JOB) {
-         if (job->schedule &&  bstrcmp(sched->hdr.name, job->schedule->hdr.name)) {
+
+      if (job) {
+         if (job->schedule && bstrcmp(sched->hdr.name, job->schedule->hdr.name)) {
+            if (cnt == 0) {
+               ua->send_msg("%s\n", sched->hdr.name);
+            }
             ua->send_msg("                       %s\n", job->name());
+            cnt++;
+         }
+      } else {
+         foreach_res(job, R_JOB) {
+            if (client && job->client != client) {
+               continue;
+            }
+
+            if (job->schedule && bstrcmp(sched->hdr.name, job->schedule->hdr.name)) {
+               if (cnt == 0) {
+                  ua->send_msg("%s\n", sched->hdr.name);
+               }
+               ua->send_msg("                       %s\n", job->name());
+               cnt++;
+            }
          }
       }
       ua->send_msg("\n");
@@ -445,88 +565,50 @@ static void do_scheduler_status(UAContext *ua)
 
    ua->send_msg("====\n\n");
    ua->send_msg("Scheduler Preview for %d days:\n\n", days);
-   ua->send_msg("Date             Schedule                Overrides\n");
+   ua->send_msg("Date              Schedule                Overrides\n");
    ua->send_msg("==============================================================\n");
 
    while (time_to_check < (now + (days * seconds_per_day))) {
       (void)localtime_r(&time_to_check, &tm);
-      hour = tm.tm_hour;
-      mday = tm.tm_mday - 1;
-      wday = tm.tm_wday;
-      month = tm.tm_mon;
-      wom = mday / 7;
-      woy = tm_woy(time_to_check);                    /* Get week of year */
-      yday = tm.tm_yday;                              /* Get day of year */
 
-      is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , yday);
-
-      LockRes();
-      foreach_res(sched, R_SCHEDULE) {
-         if (schedulegiven) {
-            if (!bstrcmp(sched->hdr.name, schedulename)) {
-               continue;
+      if (client || job) {
+         /*
+          * List specific schedule.
+          */
+         if (job) {
+            if (job->schedule) {
+               show_scheduled_preview(ua, job->schedule, tm, time_to_check);
             }
-         }
-
-         for (run = sched->run; run; run = run->next) {
-            bool run_now;
-
-            run_now = bit_is_set(hour, run->hour) &&
-                      bit_is_set(mday, run->mday) &&
-                      bit_is_set(wday, run->wday) &&
-                      bit_is_set(month, run->month) &&
-                     (bit_is_set(wom, run->wom) ||
-                      (run->last_set && is_last_week)) &&
-                      bit_is_set(woy, run->woy);
-
-            if (run_now) {
-               /*
-                * Find time (time_t) job is to be run
-                */
-               (void)localtime_r(&time_to_check, &tm); /* Reset tm structure */
-               tm.tm_min = run->minute;                /* Set run minute */
-               tm.tm_sec = 0;                          /* Zero secs */
-               runtime = mktime(&tm);
-               bstrftime_wd(dt, sizeof(dt), runtime);
-
-               ua->send_msg(dt);
-               ua->send_msg("  %-22.22s  ", sched->hdr.name);
-
-               bstrncpy(level, level_to_str(run->level), sizeof(level));
-               ua->send_msg("Level=%s ", level);
-
-               if (run->Priority) {
-                  ua->send_msg("Priority=%d ", run->Priority);
+         } else {
+            LockRes();
+            foreach_res(job, R_JOB) {
+               if (job->schedule && job->client == client) {
+                  show_scheduled_preview(ua, job->schedule, tm, time_to_check);
                }
-
-               if (run->spool_data_set) {
-                  ua->send_msg("Spool Data=%d ", run->spool_data);
-               }
-
-               if (run->accurate_set) {
-                  ua->send_msg("Accurate=%d ", run->accurate);
-               }
-
-               if (run->pool) {
-                  ua->send_msg("Pool=%s ", run->pool->name());
-               }
-
-               if (run->storage) {
-                  ua->send_msg("Storage=%s ", run->storage->name());
-               }
-
-               if (run->msgs) {
-                  ua->send_msg("Messages=%s ", run->msgs->name());
-               }
-
-               ua->send_msg("\n");
             }
+            UnlockRes();
+            job = NULL;
          }
+      } else {
+         /*
+          * List all schedules.
+          */
+         LockRes();
+         foreach_res(sched, R_SCHEDULE) {
+            if (schedulegiven) {
+               if (!bstrcmp(sched->hdr.name, schedulename)) {
+                  continue;
+               }
+            }
+
+            show_scheduled_preview(ua, sched, tm, time_to_check);
+         }
+         UnlockRes();
       }
-      UnlockRes();
 
-      time_to_check += 3600; /* next hour */
+      time_to_check += seconds_per_hour; /* next hour */
    }
+
    ua->send_msg("====\n");
 }
 
