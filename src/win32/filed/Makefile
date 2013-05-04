@@ -27,6 +27,7 @@ LDLIBS = ../lib/libbareos.a \
          $(MINGW_LIB)/libpthreadGCE2.a \
          $(MINGW_LIB)/libz.dll.a \
          $(MINGW_LIB)/liblzo2.dll.a \
+         $(MINGW_LIB)/libfastlz.dll.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
 SVRSRCS = accurate.c authenticate.c backup.c compression.c \

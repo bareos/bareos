@@ -55,6 +55,8 @@ BuildRequires:  mingw32-readline
 BuildRequires:  mingw32-readline-devel
 BuildRequires:  mingw32-lzo
 BuildRequires:  mingw32-lzo-devel
+BuildRequires:  mingw32-libfastlz
+BuildRequires:  mingw32-libfastlz-devel
 
 BuildRequires:  sed
 BuildRequires:  vim, procps, bc
@@ -84,7 +86,7 @@ tar xvf %SOURCE2
 cd src/win32/
 
 
-make BUILD_QTGUI=yes   %{?jobs:-j%jobs}
+make BUILD_QTGUI=yes %{?jobs:-j%jobs}
 #make  %{?jobs:-j%jobs}
 
 #make BUILD_QTGUI=yes WIN_VERSION=64  %{?jobs:-j%jobs}

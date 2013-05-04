@@ -269,6 +269,7 @@ SectionIn 1 2 3
   File "pthreadGCE2.dll"
   File "zlib1.dll"
   File "liblzo2-2.dll"
+  File "libfastlz.dll"
 
 # for password generation
   File "openssl.exe"
@@ -794,6 +795,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\QtCore4.dll"
   Delete "$INSTDIR\QtGui4.dll"
   Delete "$INSTDIR\liblzo2-2.dll"
+  Delete "$INSTDIR\libfastlz.dll"
   Delete "$INSTDIR\libpng15-15.dll"
   Delete "$INSTDIR\openssl.exe"
   Delete "$INSTDIR\sed.exe"
