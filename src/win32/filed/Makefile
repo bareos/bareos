@@ -38,7 +38,7 @@ SVRSRCS = accurate.c authenticate.c backup.c compression.c \
 
 SVROBJS = $(SVRSRCS:.c=.o)
 
-WINDRESSRCS = icon.rc
+WINDRESSRCS = filedres.rc
 WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
 
 

@@ -160,3 +160,6 @@ INSTALLS += confs
 QMAKE_EXTRA_TARGETS += depend
 
 TRANSLATIONS += ts/bat_fr.ts ts/bat_de.ts
+
+# Windows Icon and App Info
+win32:RC_FILE = batres.rc

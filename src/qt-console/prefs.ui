@@ -19,7 +19,7 @@
    <string>Preferences</string>
   </property>
   <property name="windowIcon" >
-   <iconset>images/bat.png</iconset>
+   <iconset>images/bareos_1.png</iconset>
   </property>
   <layout class="QGridLayout" >
    <property name="leftMargin" >

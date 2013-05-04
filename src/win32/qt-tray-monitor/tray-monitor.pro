@@ -37,3 +37,7 @@ SOURCES += authenticate.cpp tray_conf.cpp tray-monitor.cpp \
            monitoritemthread.cpp
 
 FORMS += mainwindow.ui
+
+# Application icon and info
+win32:RC_FILE = traymon.rc
+
