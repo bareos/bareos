@@ -16,9 +16,6 @@ DH_VERBOSE = 1
 # This has to be exported to make some magic below work.
 DH_OPTIONS = -v
 
-# This disables the hardening flags which lead to LDFLAGS=-Wl,-Bsymbolic-functions -Wl,-z,relro which breaks the config engine.
-DEB_BUILD_HARDENING = 0
-
 DAEMON_USER = bareos
 DAEMON_GROUP = bareos
 DIRECTOR_DAEMON_USER = $(DAEMON_USER)
@@ -28,6 +25,7 @@ STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
 WORKING_DIR = /var/lib/bareos
 
 override_dh_auto_configure:
+	export LDFLAGS="" && \
 	dh_auto_configure --    \
   --with-sbin-perm=755 \
   --sysconfdir=/etc/bareos \
