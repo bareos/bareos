@@ -24007,80 +24007,93 @@ $as_echo_n "checking for PostgreSQL support... " >&6; }
 # Check whether --with-postgresql was given.
 if test "${with_postgresql+set}" = set; then :
   withval=$with_postgresql;
-  if test "$withval" != "no"; then
+   if test "$withval" != "no"; then
       if test "$withval" = "yes"; then
-          PG_CONFIG=`which pg_config 2>/dev/null`
-          if test -n "$PG_CONFIG"; then
-              POSTGRESQL_INCDIR=`"$PG_CONFIG" --includedir`
-              POSTGRESQL_LIBDIR=`"$PG_CONFIG" --libdir`
-              POSTGRESQL_BINDIR=`"$PG_CONFIG" --bindir`
-          elif test -f /usr/local/include/libpq-fe.h; then
-              POSTGRESQL_INCDIR=/usr/local/include
-              if test -d /usr/local/lib64; then
-                 POSTGRESQL_LIBDIR=/usr/local/lib64
-              else
-                 POSTGRESQL_LIBDIR=/usr/local/lib
-              fi
-              POSTGRESQL_BINDIR=/usr/local/bin
-          elif test -f /usr/include/libpq-fe.h; then
-              POSTGRESQL_INCDIR=/usr/include
-              if test -d /usr/lib64; then
-                 POSTGRESQL_LIBDIR=/usr/lib64
-              else
-                 POSTGRESQL_LIBDIR=/usr/lib
-              fi
-              POSTGRESQL_BINDIR=/usr/bin
-          elif test -f /usr/include/pgsql/libpq-fe.h; then
-              POSTGRESQL_INCDIR=/usr/include/pgsql
-              if test -d /usr/lib64/pgsql; then
-                 POSTGRESQL_LIBDIR=/usr/lib64/pgsql
-              else
-                 POSTGRESQL_LIBDIR=/usr/lib/pgsql
-              fi
-              POSTGRESQL_BINDIR=/usr/bin
-          elif test -f /usr/include/postgresql/libpq-fe.h; then
-              POSTGRESQL_INCDIR=/usr/include/postgresql
-              if test -d /usr/lib64/postgresql; then
-                 POSTGRESQL_LIBDIR=/usr/lib64/postgresql
-              else
-                 POSTGRESQL_LIBDIR=/usr/lib/postgresql
-              fi
-              POSTGRESQL_BINDIR=/usr/bin
-          else
-              { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+         PG_CONFIG=`which pg_config 2>/dev/null`
+         if test -n "$PG_CONFIG"; then
+            POSTGRESQL_INCDIR=`"$PG_CONFIG" --includedir`
+            POSTGRESQL_LIBDIR=`"$PG_CONFIG" --libdir`
+            POSTGRESQL_BINDIR=`"$PG_CONFIG" --bindir`
+         fi
+
+         #
+         # See if the pg_config gave something that is worth anything.
+         #
+         if test x${POSTGRESQL_LIBDIR} = x -o \
+            ! \( -f ${POSTGRESQL_LIBDIR}/libpq.so -o \
+                -f ${POSTGRESQL_LIBDIR}/libpq.a \); then
+            if test -f /usr/local/include/libpq-fe.h; then
+               POSTGRESQL_INCDIR=/usr/local/include
+               if test -d /usr/local/lib64; then
+                  POSTGRESQL_LIBDIR=/usr/local/lib64
+               else
+                  POSTGRESQL_LIBDIR=/usr/local/lib
+               fi
+               POSTGRESQL_BINDIR=/usr/local/bin
+            elif test -f /usr/include/libpq-fe.h; then
+               POSTGRESQL_INCDIR=/usr/include
+               if test -d /usr/lib64; then
+                  POSTGRESQL_LIBDIR=/usr/lib64
+               else
+                  POSTGRESQL_LIBDIR=/usr/lib
+               fi
+               POSTGRESQL_BINDIR=/usr/bin
+            elif test -f /usr/include/pgsql/libpq-fe.h; then
+               POSTGRESQL_INCDIR=/usr/include/pgsql
+               if test -d /usr/lib64/pgsql; then
+                  POSTGRESQL_LIBDIR=/usr/lib64/pgsql
+               else
+                  POSTGRESQL_LIBDIR=/usr/lib/pgsql
+               fi
+               POSTGRESQL_BINDIR=/usr/bin
+            elif test -f /usr/include/postgresql/libpq-fe.h; then
+               POSTGRESQL_INCDIR=/usr/include/postgresql
+               if test -d /usr/lib64/postgresql; then
+                  POSTGRESQL_LIBDIR=/usr/lib64/postgresql
+               else
+                  POSTGRESQL_LIBDIR=/usr/lib/postgresql
+               fi
+               POSTGRESQL_BINDIR=/usr/bin
+            else
+               { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-              as_fn_error $? "Unable to find libpq-fe.h in standard locations" "$LINENO" 5
-          fi
-      elif test -f $withval/include/libpq-fe.h; then
-          POSTGRESQL_INCDIR=$withval/include
-          POSTGRESQL_LIBDIR=$withval/lib
-          POSTGRESQL_BINDIR=$withval/bin
-      elif test -f $withval/include/postgresql/libpq-fe.h; then
-          POSTGRESQL_INCDIR=$withval/include/postgresql
-          if test -d $withval/lib64; then
-              POSTGRESQL_LIBDIR=$withval/lib64
-          else
-              POSTGRESQL_LIBDIR=$withval/lib
-          fi
-          POSTGRESQL_BINDIR=$withval/bin
+               as_fn_error $? "Unable to find libpq-fe.h in standard locations" "$LINENO" 5
+            fi
+         fi
       else
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+         if test -f $withval/include/libpq-fe.h; then
+            POSTGRESQL_INCDIR=$withval/include
+            POSTGRESQL_LIBDIR=$withval/lib
+            POSTGRESQL_BINDIR=$withval/bin
+         elif test -f $withval/include/postgresql/libpq-fe.h; then
+            POSTGRESQL_INCDIR=$withval/include/postgresql
+            if test -d $withval/lib64; then
+               POSTGRESQL_LIBDIR=$withval/lib64
+            else
+               POSTGRESQL_LIBDIR=$withval/lib
+            fi
+            POSTGRESQL_BINDIR=$withval/bin
+         else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-          as_fn_error $? "Invalid PostgreSQL directory $withval - unable to find libpq-fe.h under $withval" "$LINENO" 5
+            as_fn_error $? "Invalid PostgreSQL directory $withval - unable to find libpq-fe.h under $withval" "$LINENO" 5
+         fi
       fi
+
+      if test x$POSTGRESQL_LIBDIR != x; then
 
 $as_echo "#define HAVE_POSTGRESQL 1" >>confdefs.h
 
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-     POSTGRESQL_INCLUDE=-I$POSTGRESQL_INCDIR
-     if test x$use_libtool != xno; then
-        POSTGRESQL_LIBS="-R $POSTGRESQL_LIBDIR -L$POSTGRESQL_LIBDIR -lpq"
-     else
-        POSTGRESQL_LIBS="-L$POSTGRESQL_LIBDIR -lpq"
-     fi
-     ac_fn_c_check_func "$LINENO" "crypt" "ac_cv_func_crypt"
+         POSTGRESQL_INCLUDE=-I$POSTGRESQL_INCDIR
+         if test x$use_libtool != xno; then
+            POSTGRESQL_LIBS="-R $POSTGRESQL_LIBDIR -L$POSTGRESQL_LIBDIR -lpq"
+         else
+            POSTGRESQL_LIBS="-L$POSTGRESQL_LIBDIR -lpq"
+         fi
+         ac_fn_c_check_func "$LINENO" "crypt" "ac_cv_func_crypt"
 if test "x$ac_cv_func_crypt" = xyes; then :
 
 else
@@ -24126,29 +24139,29 @@ fi
 
 fi
 
-     POSTGRESQL_LIB=$POSTGRESQL_LIBDIR/libpq.a
-     DB_LIBS="${DB_LIBS} ${POSTGRESQL_LIBS}"
+         POSTGRESQL_LIB=$POSTGRESQL_LIBDIR/libpq.a
+         DB_LIBS="${DB_LIBS} ${POSTGRESQL_LIBS}"
 
-     if test -z "${db_backends}"; then
-         db_backends="PostgreSQL"
-     else
-         db_backends="${db_backends} PostgreSQL"
-     fi
-     if test -z "${DB_BACKENDS}"; then
-         DB_BACKENDS="postgresql"
-     else
-         DB_BACKENDS="${DB_BACKENDS} postgresql"
-     fi
-
-                    if test "x$support_batch_insert" = "xyes"; then
-                  saved_LDFLAGS="${LDFLAGS}"
-         LDFLAGS="${saved_LDFLAGS} -L$POSTGRESQL_LIBDIR"
-         saved_LIBS="${LIBS}"
-         if test "x$ac_cv_lib_crypt_crypt" = "xyes" ; then
-            LIBS="${saved_LIBS} -lcrypt"
+         if test -z "${db_backends}"; then
+            db_backends="PostgreSQL"
+         else
+            db_backends="${db_backends} PostgreSQL"
+         fi
+         if test -z "${DB_BACKENDS}"; then
+            DB_BACKENDS="postgresql"
+         else
+            DB_BACKENDS="${DB_BACKENDS} postgresql"
          fi
 
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PQisthreadsafe in -lpq" >&5
+                                    if test "x$support_batch_insert" = "xyes"; then
+                        saved_LDFLAGS="${LDFLAGS}"
+            LDFLAGS="${saved_LDFLAGS} -L$POSTGRESQL_LIBDIR"
+            saved_LIBS="${LIBS}"
+            if test "x$ac_cv_lib_crypt_crypt" = "xyes" ; then
+               LIBS="${saved_LIBS} -lcrypt"
+            fi
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PQisthreadsafe in -lpq" >&5
 $as_echo_n "checking for PQisthreadsafe in -lpq... " >&6; }
 if ${ac_cv_lib_pq_PQisthreadsafe+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -24190,7 +24203,7 @@ $as_echo "#define HAVE_PQISTHREADSAFE 1" >>confdefs.h
 
 fi
 
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PQputCopyData in -lpq" >&5
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PQputCopyData in -lpq" >&5
 $as_echo_n "checking for PQputCopyData in -lpq... " >&6; }
 if ${ac_cv_lib_pq_PQputCopyData+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -24232,41 +24245,40 @@ $as_echo "#define HAVE_PQ_COPY 1" >>confdefs.h
 
 fi
 
-         if test "x$ac_cv_lib_pq_PQputCopyData" = "xyes"; then
-             if test $support_batch_insert = yes ; then
+            if test "x$ac_cv_lib_pq_PQputCopyData" = "xyes"; then
+               if test $support_batch_insert = yes ; then
 
 $as_echo "#define HAVE_POSTGRESQL_BATCH_FILE_INSERT 1" >>confdefs.h
 
-                 if test -z "${batch_insert_db_backends}"; then
+                  if test -z "${batch_insert_db_backends}"; then
                      batch_insert_db_backends="PostgreSQL"
-                 else
+                  else
                      batch_insert_db_backends="${batch_insert_db_backends} PostgreSQL"
-                 fi
-             fi
-         fi
+                  fi
+               fi
+            fi
 
-         if test x$ac_cv_lib_pq_PQisthreadsafe != xyes -a x$support_batch_insert = xyes
-         then
-             echo "WARNING: Your PostgreSQL client library is too old to detect "
-             echo "if it was compiled with --enable-thread-safety, consider to "
-             echo "upgrade it in order to avoid problems with Batch insert mode"
-         fi
+            if test x$ac_cv_lib_pq_PQisthreadsafe != xyes -a x$support_batch_insert = xyes; then
+                 echo "WARNING: Your PostgreSQL client library is too old to detect "
+                 echo "if it was compiled with --enable-thread-safety, consider to "
+                 echo "upgrade it in order to avoid problems with Batch insert mode"
+            fi
 
-                  LDFLAGS="${saved_LDFLAGS}"
-         LIBS="${saved_LIBS}"
-     fi
-  else
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+                        LDFLAGS="${saved_LDFLAGS}"
+            LIBS="${saved_LIBS}"
+         fi
+      fi
+   else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-  fi
+   fi
 
 else
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 fi
-
 
 
 
@@ -24280,145 +24292,160 @@ $as_echo_n "checking for MySQL support... " >&6; }
 # Check whether --with-mysql was given.
 if test "${with_mysql+set}" = set; then :
   withval=$with_mysql;
-  if test "$withval" != "no"; then
-        if test "$withval" = "yes"; then
-           MYSQL_CONFIG=`which mysql_config 2>/dev/null`
-           if test "x${MYSQL_CONFIG}" != x; then
-              MYSQL_BINDIR="${MYSQL_CONFIG%/*}"
-              ${MYSQL_CONFIG} --variable=pkglibdir > /dev/null 2>&1
-              if test $? = 0 ; then
-                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --variable=pkglibdir`
-                 MYSQL_INCDIR=`${MYSQL_CONFIG} --variable=pkgincludedir`
-              else
-                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --libs | sed -e 's/.*-L//' -e 's/ .*//'`
-                 MYSQL_INCDIR=`${MYSQL_CONFIG} --include | sed -e 's/-I//'`
-              fi
-           elif test -f /usr/local/mysql/include/mysql/mysql.h; then
-              MYSQL_INCDIR=/usr/local/mysql/include/mysql
-              if test -f /usr/local/mysql/lib64/mysql/libmysqlclient_r.a \
-                      -o -f /usr/local/mysql/lib64/mysql/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=/usr/local/mysql/lib64/mysql
-              else
-                 MYSQL_LIBDIR=/usr/local/mysql/lib/mysql
-              fi
-              MYSQL_BINDIR=/usr/local/mysql/bin
-           elif test -f /usr/include/mysql/mysql.h; then
-              MYSQL_INCDIR=/usr/include/mysql
-              if test -f /usr/lib64/mysql/libmysqlclient_r.a \
-                      -o -f /usr/lib64/mysql/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=/usr/lib64/mysql
-              elif test -f /usr/lib64/libmysqlclient_r.a \
-                        -o -f /usr/lib64/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=/usr/lib64
-              elif test -f /usr/lib/x86_64-linux-gnu/libmysqlclient_r.a \
-                        -o -f /usr/lib/x86_64-linux-gnu/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=/usr/lib/x86_64-linux-gnu
-              elif test -f /usr/lib/mysql/libmysqlclient_r.a \
-                        -o -f /usr/lib/mysql/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=/usr/lib/mysql
-              else
-                 MYSQL_LIBDIR=/usr/lib
-              fi
-              MYSQL_BINDIR=/usr/bin
-           elif test -f /usr/include/mysql.h; then
-              MYSQL_INCDIR=/usr/include
-              if test -f /usr/lib64/libmysqlclient_r.a \
-                      -o -f /usr/lib64/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=/usr/lib64
-              else
-                 MYSQL_LIBDIR=/usr/lib
-              fi
-              MYSQL_BINDIR=/usr/bin
-           elif test -f /usr/local/include/mysql/mysql.h; then
-              MYSQL_INCDIR=/usr/local/include/mysql
-              if test -f /usr/local/lib64/mysql/libmysqlclient_r.a \
-                      -o -f /usr/local/lib64/mysql/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=/usr/local/lib64/mysql
-              else
-                 MYSQL_LIBDIR=/usr/local/lib/mysql
-              fi
-              MYSQL_BINDIR=/usr/local/bin
-           elif test -f /usr/local/include/mysql.h; then
-              MYSQL_INCDIR=/usr/local/include
-              if test -f /usr/local/lib64/libmysqlclient_r.a \
-                      -o -f /usr/local/lib64/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=/usr/local/lib64
-              else
-                 MYSQL_LIBDIR=/usr/local/lib
-              fi
-              MYSQL_BINDIR=/usr/local/bin
-           else
-              { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+   if test "$withval" != "no"; then
+      if test "$withval" = "yes"; then
+         MYSQL_CONFIG=`which mysql_config 2>/dev/null`
+         if test "x${MYSQL_CONFIG}" != x; then
+            MYSQL_BINDIR="${MYSQL_CONFIG%/*}"
+            ${MYSQL_CONFIG} --variable=pkglibdir > /dev/null 2>&1
+            if test $? = 0 ; then
+               MYSQL_LIBDIR=`${MYSQL_CONFIG} --variable=pkglibdir`
+               MYSQL_INCDIR=`${MYSQL_CONFIG} --variable=pkgincludedir`
+            else
+               MYSQL_LIBDIR=`${MYSQL_CONFIG} --libs | sed -e 's/.*-L//' -e 's/ .*//'`
+               MYSQL_INCDIR=`${MYSQL_CONFIG} --include | sed -e 's/-I//'`
+            fi
+         fi
+
+         #
+         # See if the mysql_config gave something that is worth anything.
+         # Some OS-es just lie about this when you ask for the library to use
+         # they just give you back the directory its not in.
+         #
+         # Fallback to the old way of finding the right settings to use and hope for the best.
+         #
+         if test x${MYSQL_LIBDIR} = x -o \
+            ! \( -f ${MYSQL_LIBDIR}/libmysqlclient_r.so -o \
+                 -f ${MYSQL_LIBDIR}/libmysqlclient_r.a \); then
+            if test -f /usr/local/mysql/include/mysql/mysql.h; then
+               MYSQL_INCDIR=/usr/local/mysql/include/mysql
+               if test -f /usr/local/mysql/lib64/mysql/libmysqlclient_r.a \
+                       -o -f /usr/local/mysql/lib64/mysql/libmysqlclient_r.so; then
+                  MYSQL_LIBDIR=/usr/local/mysql/lib64/mysql
+               else
+                  MYSQL_LIBDIR=/usr/local/mysql/lib/mysql
+               fi
+               MYSQL_BINDIR=/usr/local/mysql/bin
+            elif test -f /usr/include/mysql/mysql.h; then
+               MYSQL_INCDIR=/usr/include/mysql
+               if test -f /usr/lib64/mysql/libmysqlclient_r.a \
+                       -o -f /usr/lib64/mysql/libmysqlclient_r.so; then
+                  MYSQL_LIBDIR=/usr/lib64/mysql
+               elif test -f /usr/lib64/libmysqlclient_r.a \
+                         -o -f /usr/lib64/libmysqlclient_r.so; then
+                  MYSQL_LIBDIR=/usr/lib64
+               elif test -f /usr/lib/x86_64-linux-gnu/libmysqlclient_r.a \
+                         -o -f /usr/lib/x86_64-linux-gnu/libmysqlclient_r.so; then
+                  MYSQL_LIBDIR=/usr/lib/x86_64-linux-gnu
+               elif test -f /usr/lib/mysql/libmysqlclient_r.a \
+                         -o -f /usr/lib/mysql/libmysqlclient_r.so; then
+                  MYSQL_LIBDIR=/usr/lib/mysql
+               else
+                  MYSQL_LIBDIR=/usr/lib
+               fi
+               MYSQL_BINDIR=/usr/bin
+            elif test -f /usr/include/mysql.h; then
+               MYSQL_INCDIR=/usr/include
+               if test -f /usr/lib64/libmysqlclient_r.a \
+                       -o -f /usr/lib64/libmysqlclient_r.so; then
+                  MYSQL_LIBDIR=/usr/lib64
+               else
+                  MYSQL_LIBDIR=/usr/lib
+               fi
+               MYSQL_BINDIR=/usr/bin
+            elif test -f /usr/local/include/mysql/mysql.h; then
+               MYSQL_INCDIR=/usr/local/include/mysql
+               if test -f /usr/local/lib64/mysql/libmysqlclient_r.a \
+                       -o -f /usr/local/lib64/mysql/libmysqlclient_r.so; then
+                  MYSQL_LIBDIR=/usr/local/lib64/mysql
+               else
+                  MYSQL_LIBDIR=/usr/local/lib/mysql
+               fi
+               MYSQL_BINDIR=/usr/local/bin
+            elif test -f /usr/local/include/mysql.h; then
+               MYSQL_INCDIR=/usr/local/include
+               if test -f /usr/local/lib64/libmysqlclient_r.a \
+                       -o -f /usr/local/lib64/libmysqlclient_r.so; then
+                  MYSQL_LIBDIR=/usr/local/lib64
+               else
+                  MYSQL_LIBDIR=/usr/local/lib
+               fi
+               MYSQL_BINDIR=/usr/local/bin
+            else
+               { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-              as_fn_error $? "Unable to find mysql.h in standard locations" "$LINENO" 5
-           fi
-        else
-           if test -f $withval/include/mysql/mysql.h; then
-              MYSQL_INCDIR=$withval/include/mysql
-              if test -f $withval/lib64/mysql/libmysqlclient_r.a \
-                   -o -f $withval/lib64/mysql/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=$withval/lib64/mysql
-              elif test -f $withval/lib64/libmysqlclient_r.a \
-                   -o -f $withval/lib64/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=$withval/lib64
-              elif test -f $withval/lib/libmysqlclient_r.a \
-                   -o -f $withval/lib/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=$withval/lib
-              else
-                 MYSQL_LIBDIR=$withval/lib/mysql
-              fi
-              MYSQL_BINDIR=$withval/bin
-           elif test -f $withval/include/mysql.h; then
-              MYSQL_INCDIR=$withval/include
-              if test -f $withval/lib64/libmysqlclient_r.a \
-                   -o -f $withval/lib64/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=$withval/lib64
-              else
-                 MYSQL_LIBDIR=$withval/lib
-              fi
-              MYSQL_BINDIR=$withval/bin
-           else
-              { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+               as_fn_error $? "Unable to find mysql.h in standard locations" "$LINENO" 5
+            fi
+         fi
+      else
+         if test -f $withval/include/mysql/mysql.h; then
+            MYSQL_INCDIR=$withval/include/mysql
+            if test -f $withval/lib64/mysql/libmysqlclient_r.a \
+                 -o -f $withval/lib64/mysql/libmysqlclient_r.so; then
+               MYSQL_LIBDIR=$withval/lib64/mysql
+            elif test -f $withval/lib64/libmysqlclient_r.a \
+                 -o -f $withval/lib64/libmysqlclient_r.so; then
+               MYSQL_LIBDIR=$withval/lib64
+            elif test -f $withval/lib/libmysqlclient_r.a \
+                 -o -f $withval/lib/libmysqlclient_r.so; then
+               MYSQL_LIBDIR=$withval/lib
+            else
+               MYSQL_LIBDIR=$withval/lib/mysql
+            fi
+            MYSQL_BINDIR=$withval/bin
+         elif test -f $withval/include/mysql.h; then
+            MYSQL_INCDIR=$withval/include
+            if test -f $withval/lib64/libmysqlclient_r.a \
+                 -o -f $withval/lib64/libmysqlclient_r.so; then
+               MYSQL_LIBDIR=$withval/lib64
+            else
+               MYSQL_LIBDIR=$withval/lib
+            fi
+            MYSQL_BINDIR=$withval/bin
+         else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-              as_fn_error $? "Invalid MySQL directory $withval - unable to find mysql.h under $withval" "$LINENO" 5
-           fi
-        fi
-     MYSQL_INCLUDE=-I$MYSQL_INCDIR
-     if test -f $MYSQL_LIBDIR/libmysqlclient_r.a \
-          -o -f $MYSQL_LIBDIR/libmysqlclient_r.so; then
-        if test x$use_libtool != xno; then
-           MYSQL_LIBS="-R $MYSQL_LIBDIR -L$MYSQL_LIBDIR -lmysqlclient_r -lz"
-        else
-           MYSQL_LIBS="-L$MYSQL_LIBDIR -lmysqlclient_r -lz"
-        fi
-        DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
-     fi
-     MYSQL_LIB=$MYSQL_LIBDIR/libmysqlclient_r.a
+            as_fn_error $? "Invalid MySQL directory $withval - unable to find mysql.h under $withval" "$LINENO" 5
+         fi
+      fi
+
+      if test x${MYSQL_LIBDIR} != x; then
+         MYSQL_INCLUDE=-I$MYSQL_INCDIR
+         if test -f $MYSQL_LIBDIR/libmysqlclient_r.a \
+              -o -f $MYSQL_LIBDIR/libmysqlclient_r.so; then
+            if test x$use_libtool != xno; then
+               MYSQL_LIBS="-R $MYSQL_LIBDIR -L$MYSQL_LIBDIR -lmysqlclient_r -lz"
+            else
+               MYSQL_LIBS="-L$MYSQL_LIBDIR -lmysqlclient_r -lz"
+            fi
+            DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
+         fi
+         MYSQL_LIB=$MYSQL_LIBDIR/libmysqlclient_r.a
 
 
 $as_echo "#define HAVE_MYSQL 1" >>confdefs.h
 
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-     if test -z "${db_backends}" ; then
-         db_backends="MySQL"
-     else
-         db_backends="${db_backends} MySQL"
-     fi
-     if test -z "${DB_BACKENDS}" ; then
-         DB_BACKENDS="mysql"
-     else
-         DB_BACKENDS="${DB_BACKENDS} mysql"
-     fi
+         if test -z "${db_backends}" ; then
+             db_backends="MySQL"
+         else
+            db_backends="${db_backends} MySQL"
+         fi
+         if test -z "${DB_BACKENDS}" ; then
+             DB_BACKENDS="mysql"
+         else
+             DB_BACKENDS="${DB_BACKENDS} mysql"
+         fi
 
-                    if test "x$support_batch_insert" = "xyes"; then
-                  saved_LDFLAGS="${LDFLAGS}"
-         LDFLAGS="${saved_LDFLAGS} -L$MYSQL_LIBDIR"
-         saved_LIBS="${LIBS}"
-         LIBS="${saved_LIBS} -lz"
+                                    if test "x$support_batch_insert" = "xyes"; then
+                          saved_LDFLAGS="${LDFLAGS}"
+             LDFLAGS="${saved_LDFLAGS} -L$MYSQL_LIBDIR"
+             saved_LIBS="${LIBS}"
+             LIBS="${saved_LIBS} -lz"
 
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql_thread_safe in -lmysqlclient_r" >&5
+             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql_thread_safe in -lmysqlclient_r" >&5
 $as_echo_n "checking for mysql_thread_safe in -lmysqlclient_r... " >&6; }
 if ${ac_cv_lib_mysqlclient_r_mysql_thread_safe+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -24460,25 +24487,26 @@ $as_echo "#define HAVE_MYSQL_THREAD_SAFE 1" >>confdefs.h
 
 fi
 
-         if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
-             if test -z "${batch_insert_db_backends}"; then
-                 batch_insert_db_backends="MySQL"
-             else
-                 batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+             if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
+                 if test -z "${batch_insert_db_backends}"; then
+                     batch_insert_db_backends="MySQL"
+                 else
+                     batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+                 fi
              fi
-         fi
 
-                  LDFLAGS="${saved_LDFLAGS}"
-         LIBS="${saved_LIBS}"
-     fi
-  else
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+                          LDFLAGS="${saved_LDFLAGS}"
+             LIBS="${saved_LIBS}"
+         fi
+      else
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-  fi
+      fi
+   fi
 
 else
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 fi
@@ -24490,84 +24518,86 @@ $as_echo_n "checking for MySQL embedded support... " >&6; }
 # Check whether --with-embedded-mysql was given.
 if test "${with_embedded_mysql+set}" = set; then :
   withval=$with_embedded_mysql;
-  if test "$withval" != "no"; then
-        if test "$withval" = "yes"; then
-                if test -f /usr/local/mysql/include/mysql/mysql.h; then
-                        MYSQL_INCDIR=/usr/local/mysql/include/mysql
-                        if test -d /usr/local/mysql/lib64/mysql; then
-                                MYSQL_LIBDIR=/usr/local/mysql/lib64/mysql
-                        else
-                                MYSQL_LIBDIR=/usr/local/mysql/lib/mysql
-                        fi
-                        MYSQL_BINDIR=/usr/local/mysql/bin
-                elif test -f /usr/include/mysql/mysql.h; then
-                        MYSQL_INCDIR=/usr/include/mysql
-                        if test -d /usr/lib64/mysql; then
-                                MYSQL_LIBDIR=/usr/lib64/mysql
-                        else
-                                MYSQL_LIBDIR=/usr/lib/mysql
-                        fi
-                        MYSQL_BINDIR=/usr/bin
-                elif test -f /usr/include/mysql.h; then
-                        MYSQL_INCDIR=/usr/include
-                        if test -d /usr/lib64; then
-                                MYSQL_LIBDIR=/usr/lib64
-                        else
-                                MYSQL_LIBDIR=/usr/lib
-                        fi
-                        MYSQL_BINDIR=/usr/bin
-                elif test -f /usr/local/include/mysql/mysql.h; then
-                        MYSQL_INCDIR=/usr/local/include/mysql
-                        if test -d /usr/local/lib64/mysql; then
-                                MYSQL_LIBDIR=/usr/local/lib64/mysql
-                        else
-                                MYSQL_LIBDIR=/usr/local/lib/mysql
-                        fi
-                        MYSQL_BINDIR=/usr/local/bin
-                elif test -f /usr/local/include/mysql.h; then
-                        MYSQL_INCDIR=/usr/local/include
-                        if test -d /usr/local/lib64; then
-                                MYSQL_LIBDIR=/usr/local/lib64
-                        else
-                                MYSQL_LIBDIR=/usr/local/lib
-                        fi
-                        MYSQL_BINDIR=/usr/local/bin
-                else
-                   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+   if test "$withval" != "no"; then
+      if test "$withval" = "yes"; then
+         if test -f /usr/local/mysql/include/mysql/mysql.h; then
+            MYSQL_INCDIR=/usr/local/mysql/include/mysql
+            if test -d /usr/local/mysql/lib64/mysql; then
+               MYSQL_LIBDIR=/usr/local/mysql/lib64/mysql
+            else
+               MYSQL_LIBDIR=/usr/local/mysql/lib/mysql
+            fi
+            MYSQL_BINDIR=/usr/local/mysql/bin
+         elif test -f /usr/include/mysql/mysql.h; then
+            MYSQL_INCDIR=/usr/include/mysql
+            if test -d /usr/lib64/mysql; then
+               MYSQL_LIBDIR=/usr/lib64/mysql
+            else
+               MYSQL_LIBDIR=/usr/lib/mysql
+            fi
+            MYSQL_BINDIR=/usr/bin
+         elif test -f /usr/include/mysql.h; then
+            MYSQL_INCDIR=/usr/include
+            if test -d /usr/lib64; then
+               MYSQL_LIBDIR=/usr/lib64
+            else
+               MYSQL_LIBDIR=/usr/lib
+            fi
+            MYSQL_BINDIR=/usr/bin
+         elif test -f /usr/local/include/mysql/mysql.h; then
+            MYSQL_INCDIR=/usr/local/include/mysql
+            if test -d /usr/local/lib64/mysql; then
+               MYSQL_LIBDIR=/usr/local/lib64/mysql
+            else
+               MYSQL_LIBDIR=/usr/local/lib/mysql
+            fi
+            MYSQL_BINDIR=/usr/local/bin
+         elif test -f /usr/local/include/mysql.h; then
+            MYSQL_INCDIR=/usr/local/include
+            if test -d /usr/local/lib64; then
+               MYSQL_LIBDIR=/usr/local/lib64
+            else
+               MYSQL_LIBDIR=/usr/local/lib
+            fi
+            MYSQL_BINDIR=/usr/local/bin
+         else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-                   as_fn_error $? "Unable to find mysql.h in standard locations" "$LINENO" 5
-                fi
-        else
-                if test -f $withval/include/mysql/mysql.h; then
-                        MYSQL_INCDIR=$withval/include/mysql
-                        if test -d $withval/lib64/mysql; then
-                                MYSQL_LIBDIR=$withval/lib64/mysql
-                        else
-                                MYSQL_LIBDIR=$withval/lib/mysql
-                        fi
-                        MYSQL_BINDIR=$withval/bin
-                elif test -f $withval/include/mysql.h; then
-                        MYSQL_INCDIR=$withval/include
-                        if test -d $withval/lib64; then
-                                MYSQL_LIBDIR=$withval/lib64
-                        else
-                                MYSQL_LIBDIR=$withval/lib
-                        fi
-                        MYSQL_BINDIR=$withval/bin
-                else
-                   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+            as_fn_error $? "Unable to find mysql.h in standard locations" "$LINENO" 5
+         fi
+      else
+         if test -f $withval/include/mysql/mysql.h; then
+            MYSQL_INCDIR=$withval/include/mysql
+            if test -d $withval/lib64/mysql; then
+               MYSQL_LIBDIR=$withval/lib64/mysql
+            else
+               MYSQL_LIBDIR=$withval/lib/mysql
+            fi
+            MYSQL_BINDIR=$withval/bin
+         elif test -f $withval/include/mysql.h; then
+            MYSQL_INCDIR=$withval/include
+            if test -d $withval/lib64; then
+               MYSQL_LIBDIR=$withval/lib64
+            else
+               MYSQL_LIBDIR=$withval/lib
+            fi
+            MYSQL_BINDIR=$withval/bin
+         else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-                   as_fn_error $? "Invalid MySQL directory $withval - unable to find mysql.h under $withval" "$LINENO" 5
-                fi
-        fi
-     MYSQL_INCLUDE=-I$MYSQL_INCDIR
-     if test x$use_libtool != xno; then
-        MYSQL_LIBS="-R $MYSQL_LIBDIR -L$MYSQL_LIBDIR -lmysqld -lz -lm -lcrypt"
-     else
-        MYSQL_LIBS="-L$MYSQL_LIBDIR -lmysqld -lz -lm -lcrypt"
-     fi
-     MYSQL_LIB=$MYSQL_LIBDIR/libmysqld.a
-     DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
+            as_fn_error $? "Invalid MySQL directory $withval - unable to find mysql.h under $withval" "$LINENO" 5
+         fi
+      fi
+
+      if test x$MYSQL_LIBDIR != x; then
+         MYSQL_INCLUDE=-I$MYSQL_INCDIR
+         if test x$use_libtool != xno; then
+            MYSQL_LIBS="-R $MYSQL_LIBDIR -L$MYSQL_LIBDIR -lmysqld -lz -lm -lcrypt"
+         else
+            MYSQL_LIBS="-L$MYSQL_LIBDIR -lmysqld -lz -lm -lcrypt"
+         fi
+         MYSQL_LIB=$MYSQL_LIBDIR/libmysqld.a
+         DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
 
 
 $as_echo "#define HAVE_MYSQL 1" >>confdefs.h
@@ -24575,27 +24605,27 @@ $as_echo "#define HAVE_MYSQL 1" >>confdefs.h
 
 $as_echo "#define HAVE_EMBEDDED_MYSQL 1" >>confdefs.h
 
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-     if test -z "${db_backends}"; then
-         db_backends="MySQL"
-     else
-         db_backends="${db_backends} MySQL"
-     fi
-     if test -z "${DB_BACKENDS}"; then
-         DB_BACKENDS="mysql"
-     else
-         DB_BACKENDS="${DB_BACKENDS} mysql"
-     fi
+         if test -z "${db_backends}"; then
+            db_backends="MySQL"
+         else
+            db_backends="${db_backends} MySQL"
+         fi
+         if test -z "${DB_BACKENDS}"; then
+            DB_BACKENDS="mysql"
+         else
+            DB_BACKENDS="${DB_BACKENDS} mysql"
+         fi
 
-                    if test "x$support_batch_insert" = "xyes"; then
-                  saved_LDFLAGS="${LDFLAGS}"
-         LDFLAGS="${saved_LDFLAGS} -L$MYSQL_LIBDIR"
-         saved_LIBS="${LIBS}"
-         LIBS="${saved_LIBS} -lz -lm -lcrypt"
+                                    if test "x$support_batch_insert" = "xyes"; then
+                        saved_LDFLAGS="${LDFLAGS}"
+            LDFLAGS="${saved_LDFLAGS} -L$MYSQL_LIBDIR"
+            saved_LIBS="${LIBS}"
+            LIBS="${saved_LIBS} -lz -lm -lcrypt"
 
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql_thread_safe in -lmysqlclient_r" >&5
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql_thread_safe in -lmysqlclient_r" >&5
 $as_echo_n "checking for mysql_thread_safe in -lmysqlclient_r... " >&6; }
 if ${ac_cv_lib_mysqlclient_r_mysql_thread_safe+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -24637,17 +24667,18 @@ $as_echo "#define HAVE_MYSQL_THREAD_SAFE 1" >>confdefs.h
 
 fi
 
-         if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
-             if test -z "${batch_insert_db_backends}"; then
-                 batch_insert_db_backends="MySQL"
-             else
-                 batch_insert_db_backends="${batch_insert_db_backends} MySQL"
-             fi
-         fi
+            if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
+               if test -z "${batch_insert_db_backends}"; then
+                  batch_insert_db_backends="MySQL"
+               else
+                  batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+               fi
+            fi
 
-                  LDFLAGS="${saved_LDFLAGS}"
-         LIBS="${saved_LIBS}"
-     fi
+                        LDFLAGS="${saved_LDFLAGS}"
+            LIBS="${saved_LIBS}"
+         fi
+      fi
   else
      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -24655,11 +24686,10 @@ $as_echo "no" >&6; }
 
 else
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 fi
-
 
 
 
@@ -24674,87 +24704,89 @@ $as_echo_n "checking for SQLite3 support... " >&6; }
 # Check whether --with-sqlite3 was given.
 if test "${with_sqlite3+set}" = set; then :
   withval=$with_sqlite3;
-  if test "$withval" != "no"; then
-     if test "$withval" = "yes"; then
-        if test -f /usr/local/include/sqlite3.h; then
-           SQLITE_INCDIR=/usr/local/include
-           if test -d /usr/local/lib64; then
-              SQLITE_LIBDIR=/usr/local/lib64
-           else
-              SQLITE_LIBDIR=/usr/local/lib
-           fi
-           SQLITE_BINDIR=/usr/local/bin
-        elif test -f /usr/include/sqlite3.h; then
-           SQLITE_INCDIR=/usr/include
-           if test -d /usr/lib64; then
-              SQLITE_LIBDIR=/usr/lib64
-           else
-              SQLITE_LIBDIR=/usr/lib
-           fi
-           SQLITE_BINDIR=/usr/bin
-        elif test -f $prefix/include/sqlite3.h; then
-           SQLITE_INCDIR=$prefix/include
-           if test -d $prefix/lib64; then
-              SQLITE_LIBDIR=$prefix/lib64
-           else
-              SQLITE_LIBDIR=$prefix/lib
-           fi
-           SQLITE_BINDIR=$prefix/bin
-        else
-           { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+   if test "$withval" != "no"; then
+      if test "$withval" = "yes"; then
+         if test -f /usr/local/include/sqlite3.h; then
+            SQLITE_INCDIR=/usr/local/include
+            if test -d /usr/local/lib64; then
+               SQLITE_LIBDIR=/usr/local/lib64
+            else
+               SQLITE_LIBDIR=/usr/local/lib
+            fi
+            SQLITE_BINDIR=/usr/local/bin
+         elif test -f /usr/include/sqlite3.h; then
+            SQLITE_INCDIR=/usr/include
+            if test -d /usr/lib64; then
+               SQLITE_LIBDIR=/usr/lib64
+            else
+               SQLITE_LIBDIR=/usr/lib
+            fi
+            SQLITE_BINDIR=/usr/bin
+         elif test -f $prefix/include/sqlite3.h; then
+            SQLITE_INCDIR=$prefix/include
+            if test -d $prefix/lib64; then
+               SQLITE_LIBDIR=$prefix/lib64
+            else
+               SQLITE_LIBDIR=$prefix/lib
+            fi
+            SQLITE_BINDIR=$prefix/bin
+         else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-           as_fn_error $? "Unable to find sqlite3.h in standard locations" "$LINENO" 5
-        fi
-     else
-        if test -f $withval/sqlite3.h; then
-           SQLITE_INCDIR=$withval
-           SQLITE_LIBDIR=$withval
-           SQLITE_BINDIR=$withval
-        elif test -f $withval/include/sqlite3.h; then
-           SQLITE_INCDIR=$withval/include
-           if test -d $withval/lib64; then
-              SQLITE_LIBDIR=$withval/lib64
-           else
-              SQLITE_LIBDIR=$withval/lib
-           fi
-           SQLITE_BINDIR=$withval/bin
-        else
-           { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+            as_fn_error $? "Unable to find sqlite3.h in standard locations" "$LINENO" 5
+         fi
+      else
+         if test -f $withval/sqlite3.h; then
+            SQLITE_INCDIR=$withval
+            SQLITE_LIBDIR=$withval
+            SQLITE_BINDIR=$withval
+         elif test -f $withval/include/sqlite3.h; then
+            SQLITE_INCDIR=$withval/include
+            if test -d $withval/lib64; then
+               SQLITE_LIBDIR=$withval/lib64
+            else
+               SQLITE_LIBDIR=$withval/lib
+            fi
+            SQLITE_BINDIR=$withval/bin
+         else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-           as_fn_error $? "Invalid SQLite3 directory $withval - unable to find sqlite3.h under $withval" "$LINENO" 5
-        fi
-     fi
-     SQLITE_INCLUDE=-I$SQLITE_INCDIR
-     if test x$use_libtool != xno; then
-        SQLITE_LIBS="-R $SQLITE_LIBDIR -L$SQLITE_LIBDIR -lsqlite3"
-     else
-        SQLITE_LIBS="-L$SQLITE_LIBDIR -lsqlite3"
-     fi
-     SQLITE_LIB=$SQLITE_LIBDIR/libsqlite3.a
-     DB_LIBS="${DB_LIBS} ${SQLITE_LIBS}"
+            as_fn_error $? "Invalid SQLite3 directory $withval - unable to find sqlite3.h under $withval" "$LINENO" 5
+         fi
+      fi
+
+      if test x$SQLITE_LIBDIR != x; then
+         SQLITE_INCLUDE=-I$SQLITE_INCDIR
+         if test x$use_libtool != xno; then
+            SQLITE_LIBS="-R $SQLITE_LIBDIR -L$SQLITE_LIBDIR -lsqlite3"
+         else
+            SQLITE_LIBS="-L$SQLITE_LIBDIR -lsqlite3"
+         fi
+         SQLITE_LIB=$SQLITE_LIBDIR/libsqlite3.a
+         DB_LIBS="${DB_LIBS} ${SQLITE_LIBS}"
 
 
 $as_echo "#define HAVE_SQLITE3 1" >>confdefs.h
 
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-     if test -z "${db_backends}"; then
-         db_backends="SQLite3"
-     else
-         db_backends="${db_backends} SQLite3"
-     fi
-     if test -z "${DB_BACKENDS}"; then
-         DB_BACKENDS="sqlite3"
-     else
-         DB_BACKENDS="${DB_BACKENDS} sqlite3"
-     fi
+         if test -z "${db_backends}"; then
+            db_backends="SQLite3"
+         else
+            db_backends="${db_backends} SQLite3"
+         fi
+         if test -z "${DB_BACKENDS}"; then
+            DB_BACKENDS="sqlite3"
+         else
+            DB_BACKENDS="${DB_BACKENDS} sqlite3"
+         fi
 
-                    if test "x$support_batch_insert" = "xyes"; then
-                  saved_LDFLAGS="${LDFLAGS}"
-         LDFLAGS="${saved_LDFLAGS} -L$SQLITE_LIBDIR"
+                                    if test "x$support_batch_insert" = "xyes"; then
+                        saved_LDFLAGS="${LDFLAGS}"
+            LDFLAGS="${saved_LDFLAGS} -L$SQLITE_LIBDIR"
 
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_threadsafe in -lsqlite3" >&5
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_threadsafe in -lsqlite3" >&5
 $as_echo_n "checking for sqlite3_threadsafe in -lsqlite3... " >&6; }
 if ${ac_cv_lib_sqlite3_sqlite3_threadsafe+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -24796,28 +24828,28 @@ $as_echo "#define HAVE_SQLITE3_THREADSAFE 1" >>confdefs.h
 
 fi
 
-         if test "x$ac_cv_lib_sqlite3_sqlite3_threadsafe" = "xyes"; then
-             if test -z "${batch_insert_db_backends}"; then
-                 batch_insert_db_backends="SQLite3"
-             else
-                 batch_insert_db_backends="${batch_insert_db_backends} SQLite3"
-             fi
-         fi
+            if test "x$ac_cv_lib_sqlite3_sqlite3_threadsafe" = "xyes"; then
+               if test -z "${batch_insert_db_backends}"; then
+                  batch_insert_db_backends="SQLite3"
+               else
+                  batch_insert_db_backends="${batch_insert_db_backends} SQLite3"
+               fi
+            fi
 
-                  LDFLAGS="${saved_LDFLAGS}"
-     fi
-  else
+                        LDFLAGS="${saved_LDFLAGS}"
+         fi
+      fi
+   else
      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-  fi
+   fi
 
 else
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 fi
-
 
 
 
