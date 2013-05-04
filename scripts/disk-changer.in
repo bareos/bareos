@@ -21,8 +21,6 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #  02110-1301, USA.
 #
-#  BAREOS® is a registered trademark of Bareos GmbH & Co. KG
-#
 #  If you set in your Device resource
 #
 #  Changer Command = "path-to-this-script/disk-changer %c %o %S %a %d"
