@@ -482,7 +482,14 @@ bool is_volume_name_legal(UAContext *ua, const char *name)
 {
    int len;
    const char *p;
-   const char *accept = ":.-_";
+   const char *accept = ":.-_/";
+
+   if (name[0] == '/') {
+      if (ua) {
+         ua->error_msg(_("Volume name can not start with \"/\".\n"));
+      }
+      return 0;
+   }
 
    /*
     * Restrict the characters permitted in the Volume name
