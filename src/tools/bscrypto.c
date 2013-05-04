@@ -43,6 +43,7 @@ static void usage()
 "       -g <keyfile>    Generate new encryption passphrase in keyfile\n"
 "       -k <keyfile>    Show content of keyfile\n"
 "       -p <cachefile>  Populate given cachefile with crypto keys\n"
+"       -r <cachefile>  Reset expiry time for entries of given cachefile\n"
 "       -s <keyfile>    Set encryption key loaded from keyfile\n"
 "       -v              Show volume encryption status\n"
 "       -w <keyfile>    Wrap/Unwrap the key using RFC3394 aes-(un)wrap\n"
@@ -63,6 +64,7 @@ int main(int argc, char *const *argv)
         drive_encryption_status = false,
         generate_passphrase = false,
         populate_cache = false,
+        reset_cache = false,
         set_encryption = false,
         show_keydata = false,
         volume_encryption_status = false,
@@ -77,7 +79,7 @@ int main(int argc, char *const *argv)
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
 
-   while ((ch = getopt(argc, argv, "bcD:d:eg:k:p:s:vw:?")) != -1) {
+   while ((ch = getopt(argc, argv, "bcD:d:eg:k:p:r:s:vw:?")) != -1) {
       switch (ch) {
       case 'b':
          base64_transform = true;
@@ -126,6 +128,11 @@ int main(int argc, char *const *argv)
          cache_file = bstrdup(optarg);
          break;
 
+      case 'r':
+         reset_cache = true;
+         cache_file = bstrdup(optarg);
+         break;
+
       case 's':
          set_encryption = true;
          if (keyfile) {
@@ -155,7 +162,7 @@ int main(int argc, char *const *argv)
    argc -= optind;
    argv += optind;
 
-   if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache && argc < 1) {
+   if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache && !reset_cache && argc < 1) {
       fprintf(stderr, _("Missing device_name argument for this option\n"));
       usage();
       retval = 1;
@@ -190,7 +197,8 @@ int main(int argc, char *const *argv)
        (generate_passphrase ||
         show_keydata ||
         dump_cache ||
-        populate_cache)) {
+        populate_cache ||
+        reset_cache)) {
       fprintf(stderr, _("Don't mix operations which are incompatible "
                         "e.g. generate/show vs set/clear etc.\n"));
       retval = 1;
@@ -230,6 +238,8 @@ int main(int argc, char *const *argv)
        */
       fprintf(stdout, _("Enter cache entrie(s) (close with ^D): "));
       fflush(stdout);
+
+      memset(new_cache_entry, 0, sizeof(new_cache_entry));
       while (read(1, new_cache_entry, sizeof(new_cache_entry)) > 0) {
          strip_trailing_junk(new_cache_entry);
 
@@ -244,7 +254,28 @@ int main(int argc, char *const *argv)
 
          *EncrKey++ = '\0';
          update_crypto_cache(VolumeName, EncrKey);
+         memset(new_cache_entry, 0, sizeof(new_cache_entry));
       }
+
+      /*
+       * Write out the new cache entries.
+       */
+      write_crypto_cache(cache_file);
+
+      flush_crypto_cache();
+      goto bail_out;
+   }
+
+   if (reset_cache) {
+      /*
+       * Load any keys currently in the cache.
+       */
+      read_crypto_cache(cache_file);
+
+      /*
+       * Reset all entries.
+       */
+      reset_crypto_cache();
 
       /*
        * Write out the new cache entries.
