@@ -1427,11 +1427,6 @@ void migration_cleanup(JCR *jcr, int TermCode)
         sd_term_msg,
         term_code);
 
-   Dmsg1(100, "migrate_cleanup() mig_jcr=0x%x\n", jcr->mig_jcr);
-   if (jcr->mig_jcr) {
-      free_jcr(jcr->mig_jcr);
-      jcr->mig_jcr = NULL;
-   }
    Dmsg0(100, "Leave migrate_cleanup()\n");
 }
 

@@ -475,7 +475,9 @@ static void *job_thread(void *arg)
 
    run_scripts(jcr, jcr->res.job->RunScripts, "AfterJob");
 
-   /* Send off any queued messages */
+   /*
+    * Send off any queued messages
+    */
    if (jcr->msg_queue && jcr->msg_queue->size() > 0) {
       dequeue_messages(jcr);
    }
@@ -483,6 +485,16 @@ static void *job_thread(void *arg)
    generate_plugin_event(jcr, bDirEventJobEnd);
    Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->JobStatus);
    Dsm_check(100);
+
+   /*
+    * If we have a migration JCR now is the correct time to detach it
+    * as we are done running.
+    */
+   if (jcr->mig_jcr) {
+      free_jcr(jcr->mig_jcr);
+      jcr->mig_jcr = NULL;
+   }
+
    return NULL;
 }
 
