@@ -704,7 +704,7 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
 #endif
 
    /* Convert integer part */
-   cvt_str = caps ? "0123456789ABCDEF" : "0123456789abcdef";
+   cvt_str = "0123456789";
    do {
       iconvert[iplace++] = cvt_str[(int)(intpart % 10)];
       intpart = (intpart / 10);
@@ -716,7 +716,7 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
    iconvert[iplace] = 0;
 
    /* Convert fractional part */
-   cvt_str = caps ? "0123456789ABCDEF" : "0123456789abcdef";
+   cvt_str = "0123456789";
    fiter = max;
    do {
       fconvert[fplace++] = cvt_str[fracpart % 10];
