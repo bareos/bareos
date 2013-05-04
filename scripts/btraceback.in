@@ -44,7 +44,7 @@ if [ ! -z "${DBX}" -a -x "${DBX}" ]; then
    DEBUGGER="DBX"
 elif [ ! -z "${GDB}" -a -x "${GDB}"  ]; then
    DEBUGGER="GDB"
-elif [ ! -z "${MDB}"-a -x "${MDB}"  ]; then
+elif [ ! -z "${MDB}" -a -x "${MDB}"  ]; then
    DEBUGGER="MDB"
 else
    #
