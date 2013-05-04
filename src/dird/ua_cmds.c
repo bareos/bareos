@@ -1250,7 +1250,6 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
    CLIENTRES *client = NULL;
    FILESETRES *fileset = NULL;
    int listing = 0;
-   char since[MAXSTRING];
    JCR *jcr = ua->jcr;
    int accurate=-1;
 
@@ -1315,7 +1314,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
       }
       if (bstrcasecmp(ua->argk[i], NT_("level"))) {
          if (ua->argv[i]) {
-            if (!get_level_from_name(ua->jcr, ua->argv[i])) {
+            if (!get_level_from_name(jcr, ua->argv[i])) {
                ua->error_msg(_("Level \"%s\" not valid.\n"), ua->argv[i]);
             }
             continue;
@@ -1384,7 +1383,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
       return 1;
    }
 
-   get_level_since_time(ua->jcr, since, sizeof(since));
+   get_level_since_time(jcr);
 
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
       jcr->res.client->name(), jcr->res.client->address, jcr->res.client->FDport);
