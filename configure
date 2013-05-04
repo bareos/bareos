@@ -21749,7 +21749,7 @@ if test "${enable_traymonitor+set}" = set; then :
 
 $as_echo "#define HAVE_TRAYMONITOR 1" >>confdefs.h
 
-      support_traymonitor=yes
+          support_traymonitor=yes
        fi
 
 
@@ -21761,7 +21761,7 @@ if test x$support_traymonitor = xyes; then
    abc=`$PKGCONFIG --atleast-version=4.6 QtGui`
    pkg=$?
    if test $pkg = 0; then
-      TRAY_MONITOR_DIR=src/qt-console/tray-monitor
+      TRAY_MONITOR_DIR=src/qt-tray-monitor
    else
       as_fn_error $? "Unable to find suitable Qt4 installation needed by tray-monitor" "$LINENO" 5
    fi
@@ -31248,7 +31248,7 @@ if test "x${subsysdir}" = "x${sbindir}" ; then
    exit 1
 fi
 
-ac_config_files="$ac_config_files autoconf/Make.common Makefile manpages/Makefile debian/bareos-common.preinst debian/bareos-filedaemon.preinst debian/bareos-director.preinst debian/bareos-storage.preinst scripts/bareos-config scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-console/tray-monitor/bareos-tray-monitor.desktop src/qt-console/tray-monitor/tray-monitor.conf src/qt-console/tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_postgresql_database src/cats/update_postgresql_tables src/cats/make_postgresql_tables src/cats/grant_postgresql_privileges src/cats/drop_postgresql_tables src/cats/drop_postgresql_database src/cats/create_mysql_database src/cats/update_mysql_tables src/cats/make_mysql_tables src/cats/grant_mysql_privileges src/cats/drop_mysql_tables src/cats/drop_mysql_database src/cats/create_sqlite3_database src/cats/update_sqlite3_tables src/cats/make_sqlite3_tables src/cats/grant_sqlite3_privileges src/cats/drop_sqlite3_tables src/cats/drop_sqlite3_database src/cats/sqlite src/cats/mysql src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/findlib/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/fd/Makefile src/plugins/sd/Makefile src/plugins/dir/Makefile po/Makefile.in $PFILES"
+ac_config_files="$ac_config_files autoconf/Make.common Makefile manpages/Makefile debian/bareos-common.preinst debian/bareos-filedaemon.preinst debian/bareos-director.preinst debian/bareos-storage.preinst scripts/bareos-config scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_postgresql_database src/cats/update_postgresql_tables src/cats/make_postgresql_tables src/cats/grant_postgresql_privileges src/cats/drop_postgresql_tables src/cats/drop_postgresql_database src/cats/create_mysql_database src/cats/update_mysql_tables src/cats/make_mysql_tables src/cats/grant_mysql_privileges src/cats/drop_mysql_tables src/cats/drop_mysql_database src/cats/create_sqlite3_database src/cats/update_sqlite3_tables src/cats/make_sqlite3_tables src/cats/grant_sqlite3_privileges src/cats/drop_sqlite3_tables src/cats/drop_sqlite3_database src/cats/sqlite src/cats/mysql src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/findlib/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/fd/Makefile src/plugins/sd/Makefile src/plugins/dir/Makefile po/Makefile.in $PFILES"
 
 ac_config_commands="$ac_config_commands default"
 
@@ -32363,9 +32363,9 @@ do
     "src/include/host.h") CONFIG_FILES="$CONFIG_FILES src/include/host.h" ;;
     "src/console/Makefile") CONFIG_FILES="$CONFIG_FILES src/console/Makefile" ;;
     "src/console/bconsole.conf") CONFIG_FILES="$CONFIG_FILES src/console/bconsole.conf" ;;
-    "src/qt-console/tray-monitor/bareos-tray-monitor.desktop") CONFIG_FILES="$CONFIG_FILES src/qt-console/tray-monitor/bareos-tray-monitor.desktop" ;;
-    "src/qt-console/tray-monitor/tray-monitor.conf") CONFIG_FILES="$CONFIG_FILES src/qt-console/tray-monitor/tray-monitor.conf" ;;
-    "src/qt-console/tray-monitor/tray-monitor.pro") CONFIG_FILES="$CONFIG_FILES src/qt-console/tray-monitor/tray-monitor.pro" ;;
+    "src/qt-tray-monitor/bareos-tray-monitor.desktop") CONFIG_FILES="$CONFIG_FILES src/qt-tray-monitor/bareos-tray-monitor.desktop" ;;
+    "src/qt-tray-monitor/tray-monitor.conf") CONFIG_FILES="$CONFIG_FILES src/qt-tray-monitor/tray-monitor.conf" ;;
+    "src/qt-tray-monitor/tray-monitor.pro") CONFIG_FILES="$CONFIG_FILES src/qt-tray-monitor/tray-monitor.pro" ;;
     "src/qt-console/bat.conf") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.conf" ;;
     "src/qt-console/bat.desktop") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.desktop" ;;
     "src/qt-console/bat.pro") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.pro" ;;
@@ -33983,7 +33983,7 @@ if test "${support_traymonitor}" = "yes" ; then
       as_fn_error $? "Could not find qmake $PATH. Check your Qt installation" "$LINENO" 5
    fi
 
-   cd src/qt-console/tray-monitor
+   cd src/qt-tray-monitor
    echo "Creating tray-monitor Makefile"
    # hack: required to get "make install" to work
    touch bareos-tray-monitor
