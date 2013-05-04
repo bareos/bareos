@@ -412,7 +412,7 @@ bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length)
    }
 }
 #else
-void adjust_compression_buffers()
+void adjust_compression_buffers(JCR *jcr)
 {
 }
 
