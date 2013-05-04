@@ -715,7 +715,7 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
  *
  *  omsg = edited output message
  *  imsg = input string containing edit codes (%x)
- *  to = recepients list
+ *  to = recipients list
  */
 POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t callback)
 {
