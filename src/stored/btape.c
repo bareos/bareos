@@ -335,23 +335,15 @@ int main(int margc, char *margv[])
 
 static void terminate_btape(int status)
 {
-
    Dsm_check(200);
    free_jcr(jcr);
    jcr = NULL;
 
-   if (configfile) {
-      free(configfile);
-   }
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
-   }
    if (args) {
       free_pool_memory(args);
       args = NULL;
    }
+
    if (cmd) {
       free_pool_memory(cmd);
       cmd = NULL;
@@ -361,15 +353,25 @@ static void terminate_btape(int status)
       free_bsr(bsr);
    }
 
-
    free_volume_lists();
 
    if (dev) {
       dev->term();
    }
 
-   if (debug_level > 10)
+   if (configfile) {
+      free(configfile);
+   }
+
+   if (config) {
+      config->free_resources();
+      free(config);
+      config = NULL;
+   }
+
+   if (debug_level > 10) {
       print_memory_pool_stats();
+   }
 
    if (this_block) {
       free_block(this_block);
