@@ -217,10 +217,10 @@ Summary:  Provide bareos director daemon
 Group:    Productivity/Archiving/Backup
 Requires: %{name}-common = %{version}
 Requires: %{name}-database-common = %{version}
+Requires: %{name}-database-tools
 %if 0%{?suse_version}
 # Don't use this option on anything other then SUSE derived distributions
 # as Fedora & others don't know this tag
-Recommends: %{name}-database-tools
 Recommends: logrotate
 %endif
 Provides: %{name}-dir

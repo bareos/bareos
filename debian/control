@@ -192,7 +192,8 @@ Description: Backup Archiving Recovery Open Sourced - development files
 Package:        bareos-director
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        bareos-common (= ${binary:Version}), bareos-database-common (= ${binary:Version}), lsb-base (>= 3.2-13), mailx, ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-database-common (= ${binary:Version}), bareos-database-tools, lsb-base (>= 3.2-13), mailx, ${shlibs:Depends}, ${misc:Depends}
+Recommends:     logrotate
 Conflicts:      bacula-director
 Replaces:       bacula-director
 Description: Backup Archiving Recovery Open Sourced - director daemon
