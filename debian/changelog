@@ -1,9 +1,15 @@
+bareos (12.4.1-1) unstable; urgency=low
+
+  * Switch version number
+
+ -- Marco van Wieringen <marco.van.wieringen@bareos.com> Wed, 06 Feb 2013 15:09:10 +0100
+
 bareos (12.4.0-7) unstable; urgency=low
 
   * enable ndmp and scsi-crypto
   * remove deprecated gtk tray monitor
 
- -- Marco van Wieringen <mvw@bareos.com>  Sun, 30 Dec 2012 16:51:18 +0100
+ -- Marco van Wieringen <marco.van.wieringen@bareos.com>  Sun, 30 Dec 2012 16:51:18 +0100
 
 bareos (12.4.0-6) unstable; urgency=low
 
