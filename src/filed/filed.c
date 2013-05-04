@@ -373,7 +373,7 @@ static bool check_resources()
                                        NULL,
                                        NULL,
                                        NULL,
-                                       true);
+                                       me->tls_verify_peer);
 
          if (!me->tls_ctx) {
             Emsg2(M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),

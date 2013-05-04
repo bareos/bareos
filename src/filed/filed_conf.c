@@ -111,6 +111,7 @@ static RES_ITEM cli_items[] = {
    { "tlsauthenticate", store_bool, ITEM(res_client.tls_authenticate), 0, 0, NULL },
    { "tlsenable", store_bool, ITEM(res_client.tls_enable), 0, 0, NULL },
    { "tlsrequire", store_bool, ITEM(res_client.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", store_bool, ITEM(res_client.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
    { "tlscacertificatefile", store_dir, ITEM(res_client.tls_ca_certfile), 0, 0, NULL },
    { "tlscacertificatedir", store_dir, ITEM(res_client.tls_ca_certdir), 0, 0, NULL },
    { "tlscertificaterevocationlist", store_dir, ITEM(res_client.tls_crlfile), 0, 0, NULL },

@@ -43,11 +43,13 @@ struct TLS_Context {
    SSL_CTX *openssl;
    CRYPTO_PEM_PASSWD_CB *pem_callback;
    const void *pem_userdata;
+   bool verify_peer;
    bool tls_enable;
    bool tls_require;
 };
 
 struct TLS_Connection {
+   TLS_Context *ctx;
    SSL *openssl;
 };
 
@@ -126,6 +128,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
       ctx->pem_callback = crypto_default_pem_callback;
       ctx->pem_userdata = NULL;
    }
+   ctx->verify_peer = verify_peer;
 
    SSL_CTX_set_default_passwd_cb(ctx->openssl, tls_pem_callback_dispatch);
    SSL_CTX_set_default_passwd_cb_userdata(ctx->openssl, (void *) ctx);
@@ -233,8 +236,12 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
        * SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
        */
       SSL_CTX_set_verify(ctx->openssl,
-                         SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                         SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
                          openssl_verify_peer);
+   } else {
+      SSL_CTX_set_verify(ctx->openssl,
+                         SSL_VERIFY_NONE,
+                         NULL);
    }
 
    return ctx;
@@ -297,7 +304,16 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
    bool auth_success = false;
    char data[256];
 
-   /* Check if peer provided a certificate */
+   /*
+    * See if we verify the peer certificate.
+    */
+   if (!tls->ctx->verify_peer) {
+      return true;
+   }
+
+   /*
+    * Check if peer provided a certificate
+    */
    if (!(cert = SSL_get_peer_certificate(ssl))) {
       Qmsg0(jcr, M_ERROR, 0, _("Peer failed to present a TLS certificate\n"));
       return false;
@@ -306,10 +322,11 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
    if ((subject = X509_get_subject_name(cert)) != NULL) {
       if (X509_NAME_get_text_by_NID(subject, NID_commonName, data, sizeof(data)) > 0) {
          char *cn;
-         /* NULL terminate data */
-         data[255] = 0;
+         data[255] = 0; /* NULL terminate data */
 
-         /* Try all the CNs in the list */
+         /*
+          * Try all the CNs in the list
+          */
          foreach_alist(cn, verify_list) {
             if (bstrcasecmp(data, cn)) {
                auth_success = true;
@@ -330,25 +347,35 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
  */
 bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host)
 {
-   SSL *ssl = tls->openssl;
+   int i, j;
+   int extensions;
+   int cnLastPos = -1;
    X509 *cert;
    X509_NAME *subject;
-   bool auth_success = false;
-   int extensions;
-   int i, j;
-
-   int cnLastPos = -1;
    X509_NAME_ENTRY *neCN;
    ASN1_STRING *asn1CN;
+   SSL *ssl = tls->openssl;
+   bool auth_success = false;
 
-   /* Check if peer provided a certificate */
+   /*
+    * See if we verify the peer certificate.
+    */
+   if (!tls->ctx->verify_peer) {
+      return true;
+   }
+
+   /*
+    * Check if peer provided a certificate
+    */
    if (!(cert = SSL_get_peer_certificate(ssl))) {
       Qmsg1(jcr, M_ERROR, 0,
             _("Peer %s failed to present a TLS certificate\n"), host);
       return false;
    }
 
-   /* Check subjectAltName extensions first */
+   /*
+    * Check subjectAltName extensions first
+    */
    if ((extensions = X509_get_ext_count(cert)) > 0) {
       for (i = 0; i < extensions; i++) {
          X509_EXTENSION *ext;
@@ -372,7 +399,9 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
             unsigned char *ext_value_data;
 #endif
 
-            /* Get x509 extension method structure */
+            /*
+             * Get x509 extension method structure
+             */
             if (!(method = X509V3_EXT_get(ext))) {
                break;
             }
@@ -381,15 +410,17 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
 
 #if (OPENSSL_VERSION_NUMBER > 0x00907000L)
             if (method->it) {
-               /* New style ASN1 */
-
-               /* Decode ASN1 item in data */
+               /*
+                * New style ASN1
+                * Decode ASN1 item in data
+                */
                extstr = ASN1_item_d2i(NULL, &ext_value_data, ext->value->length,
                                       ASN1_ITEM_ptr(method->it));
             } else {
-               /* Old style ASN1 */
-
-               /* Decode ASN1 item in data */
+               /*
+                * Old style ASN1
+                * Decode ASN1 item in data
+                */
                extstr = method->d2i(NULL, &ext_value_data, ext->value->length);
             }
 
@@ -397,10 +428,14 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
             extstr = method->d2i(NULL, &ext_value_data, ext->value->length);
 #endif
 
-            /* Iterate through to find the dNSName field(s) */
+            /*
+             * Iterate through to find the dNSName field(s)
+             */
             val = method->i2v(method, extstr, NULL);
 
-            /* dNSName shortname is "DNS" */
+            /*
+             * dNSName shortname is "DNS"
+             */
             for (j = 0; j < sk_CONF_VALUE_num(val); j++) {
                nval = sk_CONF_VALUE_value(val, j);
                if (bstrcmp(nval->name, "DNS")) {
@@ -414,10 +449,14 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
       }
    }
 
-   /* Try verifying against the subject name */
+   /*
+    * Try verifying against the subject name
+    */
    if (!auth_success) {
       if ((subject = X509_get_subject_name(cert)) != NULL) {
-         /* Loop through all CNs */
+         /*
+          * Loop through all CNs
+          */
          for (;;) {
             cnLastPos = X509_NAME_get_index_by_NID(subject, NID_commonName, cnLastPos);
             if (cnLastPos == -1) {
@@ -463,6 +502,9 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
 
    /* Allocate our new tls connection */
    TLS_CONNECTION *tls = (TLS_CONNECTION *)malloc(sizeof(TLS_CONNECTION));
+
+   /* Link the TLS context and the TLS session. */
+   tls->ctx = ctx;
 
    /* Create the SSL object and attach the socket BIO */
    if ((tls->openssl = SSL_new(ctx->openssl)) == NULL) {

@@ -1173,7 +1173,7 @@ int main(int argc, char *argv[])
                                       tls_pem_callback,
                                       &errmsg,
                                       NULL,
-                                      true);
+                                      cons->tls_verify_peer);
 
       if (!cons->tls_ctx) {
          senditf(_("Failed to initialize TLS context for Console \"%s\".\n"), cons->hdr.name);
@@ -1206,7 +1206,7 @@ int main(int argc, char *argv[])
                                      tls_pem_callback,
                                      &errmsg,
                                      NULL,
-                                     true);
+                                     dir->tls_verify_peer);
 
       if (!dir->tls_ctx) {
          senditf(_("Failed to initialize TLS context for Director \"%s\".\n"), dir->hdr.name);

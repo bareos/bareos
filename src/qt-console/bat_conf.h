@@ -59,6 +59,7 @@ public:
    bool tls_authenticate;             /* Authenticate with tls */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
+   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
@@ -87,6 +88,7 @@ public:
    bool tls_authenticate;             /* Authenticate with tls */
    bool tls_enable;                   /* Enable TLS on all connections */
    bool tls_require;                  /* Require TLS on all connections */
+   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */

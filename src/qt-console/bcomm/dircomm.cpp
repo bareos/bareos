@@ -116,7 +116,7 @@ bool DirComm::connect_dir()
        */
       cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
          cons->tls_ca_certdir, cons->tls_crlfile, cons->tls_certfile,
-         cons->tls_keyfile, tls_pem_callback, &buf, NULL, true);
+         cons->tls_keyfile, tls_pem_callback, &buf, NULL, cons->tls_verify_peer);
 
       if (!cons->tls_ctx) {
          m_console->display_textf(_("Failed to initialize TLS context for Console \"%s\".\n"),
@@ -143,7 +143,7 @@ bool DirComm::connect_dir()
       m_console->m_dir->tls_ctx = new_tls_context(m_console->m_dir->tls_ca_certfile,
                           m_console->m_dir->tls_ca_certdir, m_console->m_dir->tls_crlfile,
                           m_console->m_dir->tls_certfile, m_console->m_dir->tls_keyfile,
-                          tls_pem_callback, &buf, NULL, true);
+                          tls_pem_callback, &buf, NULL, m_console->m_dir->tls_verify_peer);
 
       if (!m_console->m_dir->tls_ctx) {
          m_console->display_textf(_("Failed to initialize TLS context for Director \"%s\".\n"),
