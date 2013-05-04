@@ -570,6 +570,8 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                   set_bit(i + code - 1, lrun.woy);
                }
             }
+         } else {
+            scan_err0(lc, _("Bad modulo time specification. Format for weekdays is '01/02', for yearweeks is 'w01/w02'."));
          }
          break;
       case s_range:
