@@ -1,6 +1,16 @@
 BAREOS is a fork of the Bacula source code with the following
 changes (highlevel):
 
+Release 13.1.x
+
+* Allow cancel by JobId on storage daemon. (#13)
+* Security (filed)
+   * Implementation of an allowed scriptdir keyword (#31)
+   * Implementation of an allowed job command keyword (#32)
+* Cleanup of compression framework (#34)
+* Encryption cipher is hardcoded (#46)
+* Job migration/copy between different SDs (#7)
+
 Release 12.4.x
 
 * First attempt at adding a rerun command.
@@ -110,6 +120,7 @@ Release 12.4.x
 * Native NDMP backup/restore with DataManagementAgent (DMA) in director
   and NDMP Tape Server support int the storage daemon. Currently all or
   nothing restore for NDMP.
+* Automatic sending of BSR (at least of the Catalog DB) vie email (#24)
 
 Long standing bugs fixed (bug numbers are from the bacula bug database):
 * Implement feature request #1698
