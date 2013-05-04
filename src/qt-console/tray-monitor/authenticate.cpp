@@ -55,7 +55,7 @@ int authenticate_director(JCR *jcr, MONITORRES *mon, DIRRES *director)
    BSOCK *dir = jcr->dir_bsock;
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
-   int compatible = true;
+   bool compatible = true;
    char bashed_name[MAX_NAME_LENGTH];
    char *password;
 
@@ -103,7 +103,7 @@ int authenticate_storage_daemon(JCR *jcr, MONITORRES *monitor, STORERES* store)
    char dirname[MAX_NAME_LENGTH];
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
-   int compatible = true;
+   bool compatible = true;
 
    /*
     * Send my name to the Storage daemon then do authentication
@@ -149,7 +149,7 @@ int authenticate_file_daemon(JCR *jcr, MONITORRES *monitor, CLIENTRES* client)
    char dirname[MAX_NAME_LENGTH];
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
-   int compatible = true;
+   bool compatible = true;
 
    /*
     * Send my name to the File daemon then do authentication
