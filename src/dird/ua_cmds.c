@@ -217,7 +217,7 @@ static struct cmdstruct commands[] = {
          "\tpool=<pool-name> recycle=<yes/no> slot=<number>\n"
          "\tinchanger=<yes/no>\n"
          "\tmaxvolbytes=<size> maxvolfiles=<nb> maxvoljobs=<nb>\n"
-         "\tenable=<yes/no> recyclepool=<pool-name> actiononpurge=<action>"), true },
+         "\tenabled=<yes/no> recyclepool=<pool-name> actiononpurge=<action>"), true },
    { NT_("use"), use_cmd, _("Use specific catalog"),
      NT_("catalog=<catalog>"), false },
    { NT_("var"), var_cmd, _("Does variable expansion"),
