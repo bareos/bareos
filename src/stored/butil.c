@@ -206,29 +206,36 @@ static void my_free_jcr(JCR *jcr)
       free_pool_memory(jcr->job_name);
       jcr->job_name = NULL;
    }
+
    if (jcr->client_name) {
       free_pool_memory(jcr->client_name);
       jcr->client_name = NULL;
    }
+
    if (jcr->fileset_name) {
       free_pool_memory(jcr->fileset_name);
       jcr->fileset_name = NULL;
    }
+
    if (jcr->fileset_md5) {
       free_pool_memory(jcr->fileset_md5);
       jcr->fileset_md5 = NULL;
    }
+
    if (jcr->comment) {
       free_pool_memory(jcr->comment);
       jcr->comment = NULL;
    }
+
    if (jcr->VolList) {
       free_restore_volume_list(jcr);
    }
+
    if (jcr->dcr) {
       free_dcr(jcr->dcr);
       jcr->dcr = NULL;
    }
+
    return;
 }
 
