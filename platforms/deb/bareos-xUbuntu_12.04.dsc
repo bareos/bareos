@@ -2,7 +2,7 @@ Format: 3.0 (native)
 Source: bareos
 Binary: bareos, bareos-bat, bareos-bconsole, bareos-client, bareos-common, bareos-database-common, bareos-database-postgresql, bareos-database-mysql, bareos-database-sqlite3, bareos-database-tools, bareos-devel, bareos-director, bareos-doc, bareos-filedaemon, bareos-storage, bareos-tools, bareos-traymonitor
 Architecture: any
-Version: 12.4.2
+Version: 12.4.3
 Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
 Homepage: http://www.bareos.org/
 Standards-Version: 3.8.4
