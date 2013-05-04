@@ -649,13 +649,13 @@ static bool generate_new_encryption_key(UAContext *ua, MEDIA_DBR *mr)
    /*
     * See if we need to wrap the passphrase.
     */
-   if (director->keyencrkey) {
+   if (me->keyencrkey) {
       char *wrapped_passphrase;
 
       length = DEFAULT_PASSPHRASE_LENGTH + 8;
       wrapped_passphrase = (char *)malloc(length);
       memset(wrapped_passphrase, 0, length);
-      aes_wrap((unsigned char *)director->keyencrkey,
+      aes_wrap((unsigned char *)me->keyencrkey,
                DEFAULT_PASSPHRASE_LENGTH / 8,
                (unsigned char *)passphrase,
                (unsigned char *)wrapped_passphrase);

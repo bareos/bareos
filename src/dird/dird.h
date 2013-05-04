@@ -43,9 +43,7 @@
 #include "jobq.h"
 
 /* Globals that dird.c exports */
-extern DIRRES *director;                     /* Director resource */
-extern int FDConnectTimeout;
-extern int SDConnectTimeout;
+extern DIRRES *me;                   /* "Global" daemon resource */
 
 /* Used in ua_prune.c and ua_purge.c */
 

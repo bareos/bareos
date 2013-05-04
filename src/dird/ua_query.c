@@ -55,7 +55,7 @@ int querycmd(UAContext *ua, const char *cmd)
    int i, item, len;
    char *prompt[9];
    int nprompt = 0;
-   char *query_file = director->query_file;
+   char *query_file = me->query_file;
 
    if (!open_client_db(ua)) {
       goto bail_out;

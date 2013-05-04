@@ -72,7 +72,7 @@ bool authenticate_storage_daemon(JCR *jcr, STORERES *store)
    /*
     * Send my name to the Storage daemon then do authentication
     */
-   bstrncpy(dirname, director->hdr.name, sizeof(dirname));
+   bstrncpy(dirname, me->hdr.name, sizeof(dirname));
    bash_spaces(dirname);
 
    /*
@@ -196,7 +196,7 @@ bool authenticate_file_daemon(JCR *jcr)
    /*
     * Send my name to the File daemon then do authentication
     */
-   bstrncpy(dirname, director->name(), sizeof(dirname));
+   bstrncpy(dirname, me->name(), sizeof(dirname));
    bash_spaces(dirname);
 
    /*
@@ -343,26 +343,26 @@ bool authenticate_user_agent(UAContext *uac)
       /*
        * TLS Requirement
        */
-      if (director->tls_enable) {
-         if (director->tls_require) {
+      if (me->tls_enable) {
+         if (me->tls_require) {
             tls_local_need = BNET_TLS_REQUIRED;
          } else {
             tls_local_need = BNET_TLS_OK;
          }
       }
 
-      tls_authenticate = director->tls_authenticate;
+      tls_authenticate = me->tls_authenticate;
 
       if (tls_authenticate) {
          tls_local_need = BNET_TLS_REQUIRED;
       }
 
-      if (director->tls_verify_peer) {
-         verify_list = director->tls_allowed_cns;
+      if (me->tls_verify_peer) {
+         verify_list = me->tls_allowed_cns;
       }
 
-      auth_success = cram_md5_challenge(ua, director->password, tls_local_need, compatible) &&
-                     cram_md5_respond(ua, director->password, &tls_remote_need, &compatible);
+      auth_success = cram_md5_challenge(ua, me->password, tls_local_need, compatible) &&
+                     cram_md5_respond(ua, me->password, &tls_remote_need, &compatible);
    } else {
       unbash_spaces(name);
       cons = (CONRES *)GetResWithName(R_CONSOLE, name);
@@ -425,7 +425,7 @@ bool authenticate_user_agent(UAContext *uac)
       if (cons) {
          tls_ctx = cons->tls_ctx;
       } else {
-         tls_ctx = director->tls_ctx;
+         tls_ctx = me->tls_ctx;
       }
 
       /*

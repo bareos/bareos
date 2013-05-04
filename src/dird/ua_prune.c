@@ -178,10 +178,10 @@ int prunecmd(UAContext *ua, const char *cmd)
       prune_volume(ua, &mr);
       return true;
    case 3:  /* prune stats */
-      if (!director->stats_retention) {
+      if (!me->stats_retention) {
          return false;
       }
-      retention = director->stats_retention;
+      retention = me->stats_retention;
       if (!confirm_retention(ua, &retention, "Statistics")) {
          return false;
       }
