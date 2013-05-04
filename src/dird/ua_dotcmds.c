@@ -644,7 +644,7 @@ static void do_client_cmd(UAContext *ua, CLIENTRES *client, const char *cmd)
 
    /* Connect to File daemon */
 
-   ua->jcr->client = client;
+   ua->jcr->res.client = client;
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
       client->name(), client->address, client->FDport);
