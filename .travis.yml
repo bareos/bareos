@@ -14,9 +14,9 @@ before_install:
     - yes "" | sudo apt-get -q --assume-no install acl-dev autotools-dev bc debhelper dpkg-dev hostname libacl1-dev libcap-dev liblzo2-dev libqt4-dev libreadline-dev libssl-dev libwrap0-dev libx11-dev libsqlite3-dev libmysqlclient-dev libpq-dev lsb-release mtx ncurses-dev pkg-config po-debconf python-dev zlib1g-dev
 
 before_script:
-    - for script in $PWD/debian/*.preinst; do echo "$script"; sudo /bin/sh $script install; done
     - ./configure --prefix=/usr --with-sbin-perm=755 --sysconfdir=/etc/bareos --docdir=/usr/share/doc/bareos --htmldir=/usr/share/doc/bareos/html --with-archivedir=/var/lib/bareos/storage --with-scriptdir=/usr/lib/bareos/scripts --with-plugindir=/usr/lib/bareos/plugins --with-working-dir=/var/lib/bareos --with-pid-dir=/var/lib/bareos   --with-bsrdir=/var/lib/bareos --with-logdir=/var/log/bareos --with-subsys-dir=/var/lock --enable-smartalloc --disable-conio --enable-readline --enable-batch-insert --enable-dynamic-cats-backends --enable-acl --enable-bat --enable-traymonitor --enable-xattr --enable-scsi-crypto --enable-ipv6 --with-tcp-wrappers --with-openssl --with-dir-user=bareos  --with-dir-group=bareos --with-sd-user=bareos --with-sd-group=bareos --with-fd-user=root --with-fd-group=bareos --with-dir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" --with-fd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" --with-sd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" --with-mon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" --with-mon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" --with-mon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" --with-basename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" --with-hostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" ${CONFIGURE_DB}
     - make
+    - for script in $PWD/debian/*.preinst; do echo "$script"; sudo /bin/sh $script install; done
     - sudo make install
     - for script in $PWD/debian/*.postinst; do echo "$script"; sudo /bin/sh $script configure; done
 # --enable-ndmp
