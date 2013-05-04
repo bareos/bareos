@@ -31,7 +31,7 @@ LDLIBS = ../lib/libbareos.a \
          $(MINGW_LIB)/libreadline.dll.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
-CONSSRCS = console.c console_conf.c authenticate.c
+CONSSRCS = console.c console_conf.c
 CONSOBJS = $(CONSSRCS:.c=.o)
 
 all: bconsole.exe

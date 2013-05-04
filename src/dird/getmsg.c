@@ -46,9 +46,11 @@
 /* Forward referenced functions */
 static char *find_msg_start(char *msg);
 
-static char Job_status[] = "Status Job=%127s JobStatus=%d\n";
+static char Job_status[] =
+   "Status Job=%127s JobStatus=%d\n";
 #ifdef needed
-static char Device_update[]   = "DevUpd Job=%127s "
+static char Device_update[] =
+   "DevUpd Job=%127s "
    "device=%127s "
    "append=%d read=%d num_writers=%d "
    "open=%d labeled=%d offline=%d "
@@ -59,9 +61,8 @@ static char Device_update[]   = "DevUpd Job=%127s "
    "DevWriteBytes=%d\n";
 #endif
 
-
-static char OK_msg[] = "1000 OK\n";
-
+static char OK_msg[] =
+   "1000 OK\n";
 
 static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
 {

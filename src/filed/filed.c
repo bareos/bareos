@@ -365,15 +365,18 @@ static bool check_resources()
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         me->tls_ctx = new_tls_context(me->tls_ca_certfile,
-            me->tls_ca_certdir, me->tls_certfile, me->tls_keyfile,
-            NULL, NULL, NULL, true);
+         me->tls_ctx = new_tls_context(me->tls_ca_certfile, me->tls_ca_certdir,
+                                       me->tls_certfile, me->tls_keyfile,
+                                       NULL, NULL, NULL, true);
 
          if (!me->tls_ctx) {
             Emsg2(M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                                 me->hdr.name, configfile);
             OK = false;
          }
+
+         set_tls_enable(me->tls_ctx, need_tls);
+         set_tls_require(me->tls_ctx, me->tls_require);
       }
 
       if (me->pki_encrypt || me->pki_sign) {
@@ -539,16 +542,18 @@ static bool check_resources()
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         director->tls_ctx = new_tls_context(director->tls_ca_certfile,
-            director->tls_ca_certdir, director->tls_certfile,
-            director->tls_keyfile, NULL, NULL, director->tls_dhfile,
-            director->tls_verify_peer);
+         director->tls_ctx = new_tls_context(director->tls_ca_certfile, director->tls_ca_certdir,
+                                             director->tls_certfile, director->tls_keyfile,
+                                             NULL, NULL, director->tls_dhfile, director->tls_verify_peer);
 
          if (!director->tls_ctx) {
             Emsg2(M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
                                 director->hdr.name, configfile);
             OK = false;
          }
+
+         set_tls_enable(director->tls_ctx, need_tls);
+         set_tls_require(director->tls_ctx, director->tls_require);
       }
    }
 

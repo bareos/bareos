@@ -201,7 +201,7 @@ int main (int argc, char *argv[])
    load_sd_plugins(me->plugin_directory);
 
    read_crypto_cache(me->working_directory, "bareos-sd",
-                     get_first_port_host_order(me->sdaddrs));
+                     get_first_port_host_order(me->SDaddrs));
 
    /* Setup and acquire input device for reading */
    Dmsg0(100, "About to setup input jcr\n");

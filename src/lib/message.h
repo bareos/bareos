@@ -48,28 +48,24 @@
  * head (in the process of changing the code) as of 15 June 2002.
  *
  *  M_ABORT       BAREOS immediately aborts and tries to produce a traceback
- *                  This is for really serious errors like segmentation fault.
+ *                This is for really serious errors like segmentation fault.
  *  M_ERROR_TERM  BAREOS immediately terminates but no dump. This is for
- *                  "obvious" serious errors like daemon already running or
- *                   cannot open critical file, ... where a dump is not wanted.
+ *                "obvious" serious errors like daemon already running or
+ *                cannot open critical file, ... where a dump is not wanted.
  *  M_TERM        BAREOS daemon shutting down because of request (SIGTERM).
  *
  * The remaining apply to Jobs rather than the daemon.
  *
  *  M_FATAL       BAREOS detected a fatal Job error. The Job will be killed,
- *                  but BAREOS continues running.
+ *                but BAREOS continues running.
  *  M_ERROR       BAREOS detected a Job error. The Job will continue running
- *                  but the termination status will be error.
+ *                but the termination status will be error.
  *  M_WARNING     Job warning message.
  *  M_INFO        Job information message.
- *
  *  M_RESTORED    An ls -l of each restored file.
- *
  *  M_SECURITY    For security viloations. This is equivalent to FATAL.
  *                (note, this is currently being implemented in 1.33).
- *
  *  M_ALERT       For Tape Alert messages.
- *
  *  M_VOLMGMT     Volume Management message
  */
 

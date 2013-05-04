@@ -23,9 +23,10 @@
 /*
  * BAREOS Director -- migrate.c -- responsible for doing migration and copy jobs.
  *
- * Also handles Copy jobs (March MMVIII)
+ * Also handles Copy jobs (March 2008)
  *
- * Kern Sibbald, September MMIV
+ * Kern Sibbald, September 2004
+ * Marco van Wieringen, November 2012
  *
  * Basic tasks done here:
  *    Open DB and create records for this job.
@@ -42,6 +43,10 @@
 #include <regex.h>
 #endif
 
+/* Commands sent to other storage daemon */
+static char replicatecmd[]  =
+   "replicate Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
+
 static const int dbglevel = 10;
 
 static int getJob_to_migrate(JCR *jcr);
@@ -57,32 +62,51 @@ static int get_next_dbid_from_list(char **p, DBId_t *DBId);
 static bool set_migration_next_pool(JCR *jcr, POOLRES **pool);
 
 /*
- * Called here before the job is run to do the job
- *   specific setup.  Note, one of the important things to
- *   complete in this init code is to make the definitive
- *   choice of input and output storage devices.  This is
- *   because immediately after the init, the job is queued
- *   in the jobq.c code, and it checks that all the resources
- *   (storage resources in particular) are available, so these
- *   must all be properly defined.
+ * See if two storage definitions point to the same Storage Daemon.
  *
- *  previous_jr refers to the job DB record of the Job that is
- *    going to be migrated.
- *  prev_job refers to the job resource of the Job that is
- *    going to be migrated.
- *  jcr is the jcr for the current "migration" job.  It is a
- *    control job that is put in the DB as a migration job, which
- *    means that this job migrated a previous job to a new job.
- *    No Volume or File data is associated with this control
- *    job.
- *  mig_jcr refers to the newly migrated job that is run by
- *    the current jcr.  It is a backup job that moves (migrates) the
- *    data written for the previous_jr into the new pool.  This
- *    job (mig_jcr) becomes the new backup job that replaces
- *    the original backup job. Note, this jcr is not really run. It
- *    is simply attached to the current jcr.  It will show up in
- *    the Director's status output, but not in the SD or FD, both of
- *    which deal only with the current migration job (i.e. jcr).
+ * We compare:
+ *  - address
+ *  - SDport
+ *  - password
+ */
+static inline bool is_same_storage_daemon(STORERES *rstore, STORERES *wstore)
+{
+   return rstore->SDport == wstore->SDport &&
+          bstrcasecmp(rstore->address, wstore->address) &&
+          bstrcasecmp(rstore->password, wstore->password);
+}
+
+/*
+ * Called here before the job is run to do the job
+ * specific setup.  Note, one of the important things to
+ * complete in this init code is to make the definitive
+ * choice of input and output storage devices.  This is
+ * because immediately after the init, the job is queued
+ * in the jobq.c code, and it checks that all the resources
+ * (storage resources in particular) are available, so these
+ * must all be properly defined.
+ *
+ * - previous_jr refers to the job DB record of the Job that is
+ *   going to be migrated.
+ * - prev_job refers to the job resource of the Job that is
+ *   going to be migrated.
+ * - jcr is the jcr for the current "migration" job. It is a
+ *   control job that is put in the DB as a migration job, which
+ *   means that this job migrated a previous job to a new job.
+ *   No Volume or File data is associated with this control
+ *   job.
+ * - mig_jcr refers to the newly migrated job that is run by
+ *   the current jcr. It is a backup job that moves (migrates) the
+ *   data written for the previous_jr into the new pool. This
+ *   job (mig_jcr) becomes the new backup job that replaces
+ *   the original backup job. Note, when this is a migration
+ *   on a single storage daemon this jcr is not really run. It
+ *   is simply attached to the current jcr. It will show up in
+ *   the Director's status output, but not in the SD or FD, both of
+ *   which deal only with the current migration job (i.e. jcr).
+ *   When this is is a migration between two storage daemon this
+ *   mig_jcr is used to control the second connection to the
+ *   remote storage daemon.
  */
 bool do_migration_init(JCR *jcr)
 {
@@ -105,9 +129,9 @@ bool do_migration_init(JCR *jcr)
    }
    /*
     * Note, at this point, pool is the pool for this job.  We
-    *  transfer it to rpool (read pool), and a bit later,
-    *  pool will be changed to point to the write pool,
-    *  which comes from pool->NextPool.
+    * transfer it to rpool (read pool), and a bit later,
+    * pool will be changed to point to the write pool,
+    * which comes from pool->NextPool.
     */
    jcr->res.rpool = jcr->res.pool;    /* save read pool */
    pm_strcpy(jcr->res.rpool_source, jcr->res.pool_source);
@@ -119,7 +143,9 @@ bool do_migration_init(JCR *jcr)
       return false;
    }
 
-   /* If we find a job or jobs to migrate it is previous_jr.JobId */
+   /*
+    * If we find a job or jobs to migrate it is previous_jr.JobId
+    */
    count = getJob_to_migrate(jcr);
    if (count < 0) {
       return false;
@@ -176,28 +202,48 @@ bool do_migration_init(JCR *jcr)
 
    jcr->spool_data = job->spool_data;     /* turn on spooling if requested in job */
 
-   /* Create a migration jcr */
+   /*
+    * Create a migration jcr
+    */
    mig_jcr = jcr->mig_jcr = new_jcr(sizeof(JCR), dird_free_jcr);
    memcpy(&mig_jcr->previous_jr, &jcr->previous_jr, sizeof(mig_jcr->previous_jr));
 
    /*
     * Turn the mig_jcr into a "real" job that takes on the aspects of
-    *   the previous backup job "prev_job".
+    * the previous backup job "prev_job". We only don't want it to
+    * ever send any messages to the database or mail messages when
+    * we are doing a migrate or copy to a remote storage daemon. When
+    * doing such operations the mig_jcr is used for tracking some of
+    * the remote state and it might want to send some captured state
+    * info on tear down of the mig_jcr so we call setup_job with the
+    * suppress_output argument set to true (e.g. don't init messages
+    * and set the jcr suppress_output boolean to true).
     */
    set_jcr_defaults(mig_jcr, prev_job);
-   if (!setup_job(mig_jcr)) {
+   if (!setup_job(mig_jcr, true)) {
       Jmsg(jcr, M_FATAL, 0, _("setup job failed.\n"));
       return false;
    }
 
-   /* Now reset the job record from the previous job */
+   /*
+    * Keep track that the mig_jcr has a controling JCR.
+    */
+   mig_jcr->cjcr = jcr;
+
+   /*
+    * Now reset the job record from the previous job
+    */
    memcpy(&mig_jcr->jr, &jcr->previous_jr, sizeof(mig_jcr->jr));
 
-   /* Update the jr to reflect the new values of PoolId and JobId. */
+   /*
+    * Update the jr to reflect the new values of PoolId and JobId.
+    */
    mig_jcr->jr.PoolId = jcr->jr.PoolId;
    mig_jcr->jr.JobId = mig_jcr->JobId;
 
-   /* Don't let WatchDog checks Max*Time value on this Job */
+   /*
+    * Don't let WatchDog checks Max*Time value on this Job
+    */
    mig_jcr->no_maxtime = true;
 
    /*
@@ -210,7 +256,9 @@ bool do_migration_init(JCR *jcr)
       mig_jcr->jr.JobType, mig_jcr->jr.JobLevel);
 
    if (set_migration_next_pool(jcr, &pool)) {
-      /* If pool storage specified, use it as source */
+      /*
+       * If pool storage specified, use it as source
+       */
       copy_rstorage(mig_jcr, pool->storage, _("Pool resource"));
       copy_rstorage(jcr, pool->storage, _("Pool resource"));
 
@@ -219,16 +267,24 @@ bool do_migration_init(JCR *jcr)
       mig_jcr->jr.PoolId = jcr->jr.PoolId;
    }
 
+   /*
+    * See if the read and write storage is the same.
+    * When they are we do the migrate/copy over one SD connection
+    * otherwise we open a connection to the reading SD and a second
+    * one to the writing SD.
+    */
+   jcr->remote_replicate = !is_same_storage_daemon(jcr->res.rstore, jcr->res.wstore);
+
    return true;
 }
-
 
 /*
  * set_migration_next_pool() called by do_migration_init()
  * at differents stages.
- * The  idea here is to make a common subroutine for the
- *   NextPool's search code and to permit do_migration_init()
- *   to return with NextPool set in jcr struct.
+ *
+ * The idea here is to make a common subroutine for the
+ * NextPool's search code and to permit do_migration_init()
+ * to return with NextPool set in jcr struct.
  */
 static bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
 {
@@ -239,7 +295,7 @@ static bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
 
    /*
     * Get the PoolId used with the original job. Then
-    *  find the pool name from the database record.
+    * find the pool name from the database record.
     */
    memset(&pr, 0, sizeof(pr));
    pr.PoolId = jcr->jr.PoolId;
@@ -288,8 +344,8 @@ static bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
 
    /*
     * If the original backup pool has a NextPool, make sure a
-    *  record exists in the database. Note, in this case, we
-    *  will be migrating from pool to pool->NextPool.
+    * record exists in the database. Note, in this case, we
+    * will be migrating from pool to pool->NextPool.
     */
    if (jcr->res.next_pool) {
       jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->res.next_pool->name());
@@ -311,18 +367,18 @@ static bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
 /*
  * Do a Migration of a previous job
  *
- *  Returns:  false on failure
- *            true  on success
+ * Returns:  false on failure
+ *           true  on success
  */
 bool do_migration(JCR *jcr)
 {
    char ed1[100];
-   BSOCK *sd;
+   bool retval = false;
    JCR *mig_jcr = jcr->mig_jcr;    /* newly migrated job */
 
    /*
     * If mig_jcr is NULL, there is nothing to do for this job,
-    *  so set a normal status, cleanup and return OK.
+    * so set a normal status, cleanup and return OK.
     */
    if (!mig_jcr) {
       jcr->setJobStatus(JS_Terminated);
@@ -339,7 +395,10 @@ bool do_migration(JCR *jcr)
       migration_cleanup(jcr, jcr->JobStatus);
       return true;
    }
-   /* Make sure this job was not already migrated */
+
+   /*
+    * Make sure this job was not already migrated
+    */
    if (jcr->previous_jr.JobType != JT_BACKUP &&
        jcr->previous_jr.JobType != JT_JOB_COPY) {
       Jmsg(jcr, M_INFO, 0, _("JobId %s already %s probably by another Job. %s stopped.\n"),
@@ -351,61 +410,143 @@ bool do_migration(JCR *jcr)
       return true;
    }
 
-   /* Print Job Start message */
+   /*
+    * Print Job Start message
+    */
    Jmsg(jcr, M_INFO, 0, _("Start %s JobId %s, Job=%s\n"),
         jcr->get_OperationName(), edit_uint64(jcr->JobId, ed1), jcr->Job);
 
-   /*
-    * Open a message channel connection with the Storage
-    * daemon. This is to let him know that our client
-    * will be contacting him for a backup  session.
-    *
-    */
-   Dmsg0(110, "Open connection with storage daemon\n");
-   jcr->setJobStatus(JS_WaitSD);
-   mig_jcr->setJobStatus(JS_WaitSD);
-   /*
-    * Start conversation with Storage daemon
-    */
-   if (!connect_to_storage_daemon(jcr, 10, SDConnectTimeout, 1)) {
-      return false;
-   }
-   sd = jcr->store_bsock;
-   /*
-    * Now start a job with the Storage daemon
-    */
    Dmsg2(dbglevel, "Read store=%s, write store=%s\n",
-      ((STORERES *)jcr->rstorage->first())->name(),
-      ((STORERES *)jcr->wstorage->first())->name());
+         ((STORERES *)jcr->rstorage->first())->name(),
+         ((STORERES *)jcr->wstorage->first())->name());
 
-   if (!start_storage_daemon_job(jcr, jcr->rstorage, jcr->wstorage, /*send_bsr*/true)) {
-      return false;
+   if (!jcr->remote_replicate) {
+      /*
+       * Open a message channel connection with the Storage daemon.
+       */
+      Dmsg0(110, "Open connection with storage daemon\n");
+      jcr->setJobStatus(JS_WaitSD);
+      mig_jcr->setJobStatus(JS_WaitSD);
+
+      /*
+       * Start conversation with Storage daemon
+       */
+      if (!connect_to_storage_daemon(jcr, 10, SDConnectTimeout, 1)) {
+         return false;
+      }
+
+      /*
+       * Now start a job with the Storage daemon
+       */
+      if (!start_storage_daemon_job(jcr, jcr->rstorage, jcr->wstorage, /* send_bsr */ true)) {
+         return false;
+      }
+
+      Dmsg0(150, "Storage daemon connection OK\n");
+   } else {
+      alist *wstorage;
+
+      /*
+       * See if we need to apply any bandwidth limiting.
+       * We search the bandwidth limiting in the following way:
+       * - Job bandwith limiting
+       * - Writing Storage Daemon bandwidth limiting
+       * - Reading Storage Daemon bandwidth limiting
+       */
+      if (jcr->res.job->max_bandwidth > 0) {
+         jcr->max_bandwidth = jcr->res.job->max_bandwidth;
+      } else if (jcr->res.wstore->max_bandwidth > 0) {
+         jcr->max_bandwidth = jcr->res.wstore->max_bandwidth;
+      } else if (jcr->res.rstore->max_bandwidth > 0) {
+         jcr->max_bandwidth = jcr->res.rstore->max_bandwidth;
+      }
+
+      /*
+       * Open a message channel connection with the Reading Storage daemon.
+       */
+      Dmsg0(110, "Open connection with reading storage daemon\n");
+
+      /*
+       * Clear the wstore of the jcr and assign it to the mig_jcr so
+       * the jcr is connected to the reading storage daemon and the
+       * mig_jcr to the writing storage daemon.
+       */
+      mig_jcr->res.wstore = jcr->res.wstore;
+      jcr->res.wstore = NULL;
+
+      /*
+       * Swap the wstorage between the jcr and the mig_jcr.
+       */
+      wstorage = mig_jcr->wstorage;
+      mig_jcr->wstorage = jcr->wstorage;
+      jcr->wstorage = wstorage;
+
+      /*
+       * Start conversation with Reading Storage daemon
+       */
+      jcr->setJobStatus(JS_WaitSD);
+      if (!connect_to_storage_daemon(jcr, 10, SDConnectTimeout, 1)) {
+         goto bail_out;
+      }
+
+      /*
+       * Open a message channel connection with the Writing Storage daemon.
+       */
+      Dmsg0(110, "Open connection with writing storage daemon\n");
+
+      /*
+       * Start conversation with Writing Storage daemon
+       */
+      mig_jcr->setJobStatus(JS_WaitSD);
+      if (!connect_to_storage_daemon(mig_jcr, 10, SDConnectTimeout, 1)) {
+         goto bail_out;
+      }
+
+      /*
+       * Now start a job with the Reading Storage daemon
+       */
+      if (!start_storage_daemon_job(jcr, jcr->rstorage, NULL, /* send_bsr */ true)) {
+         goto bail_out;
+      }
+
+      Dmsg0(150, "Reading Storage daemon connection OK\n");
+
+      /*
+       * Now start a job with the Writing Storage daemon
+       */
+      if (!start_storage_daemon_job(mig_jcr, NULL, mig_jcr->wstorage, /* send_bsr */ false)) {
+         goto bail_out;
+      }
+
+      Dmsg0(150, "Writing Storage daemon connection OK\n");
    }
-   Dmsg0(150, "Storage daemon connection OK\n");
-
 
    /*
     * We re-update the job start record so that the start
-    *  time is set after the run before job.  This avoids
-    *  that any files created by the run before job will
-    *  be saved twice.  They will be backed up in the current
-    *  job, but not in the next one unless they are changed.
-    *  Without this, they will be backed up in this job and
-    *  in the next job run because in that case, their date
-    *   is after the start of this run.
+    * time is set after the run before job.  This avoids
+    * that any files created by the run before job will
+    * be saved twice.  They will be backed up in the current
+    * job, but not in the next one unless they are changed.
+    * Without this, they will be backed up in this job and
+    * in the next job run because in that case, their date
+    * is after the start of this run.
     */
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
    jcr->jr.JobTDate = jcr->start_time;
    jcr->setJobStatus(JS_Running);
 
-   /* Update job start record for this migration control job */
+   /*
+    * Update job start record for this migration control job
+    */
    if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
-      return false;
+      goto bail_out;
    }
 
-   /* Declare the job started to start the MaxRunTime check */
+   /*
+    * Declare the job started to start the MaxRunTime check
+    */
    jcr->setJobStarted();
 
    mig_jcr->start_time = time(NULL);
@@ -413,49 +554,137 @@ bool do_migration(JCR *jcr)
    mig_jcr->jr.JobTDate = mig_jcr->start_time;
    mig_jcr->setJobStatus(JS_Running);
 
-   /* Update job start record for the real migration backup job */
+   /*
+    * Update job start record for the real migration backup job
+    */
    if (!db_update_job_start_record(mig_jcr, mig_jcr->db, &mig_jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(mig_jcr->db));
-      return false;
+      goto bail_out;
    }
 
    Dmsg4(dbglevel, "mig_jcr: Name=%s JobId=%d Type=%c Level=%c\n",
-      mig_jcr->jr.Name, (int)mig_jcr->jr.JobId,
-      mig_jcr->jr.JobType, mig_jcr->jr.JobLevel);
+         mig_jcr->jr.Name, (int)mig_jcr->jr.JobId,
+         mig_jcr->jr.JobType, mig_jcr->jr.JobLevel);
 
+   /*
+    * If we are connected to two different SDs tell the writing one
+    * to be ready to receive the data and tell the reading one
+    * to replicate to the other.
+    */
+   if (jcr->remote_replicate) {
+      STORERES *store;
+      POOL_MEM command(PM_MESSAGE);
+      int tls_need = BNET_TLS_NONE;
+
+      if (jcr->max_bandwidth > 0) {
+         send_bwlimit_to_sd(jcr, jcr->Job);
+      }
+
+      /*
+       * Start the job prior to starting the message thread below
+       * to avoid two threads from using the BSOCK structure at
+       * the same time.
+       */
+      if (!mig_jcr->store_bsock->fsend("listen")) {
+         goto bail_out;
+      }
+
+      if (!start_storage_daemon_message_thread(mig_jcr)) {
+         goto bail_out;
+      }
+
+      /*
+       * Send Storage daemon address to the other Storage daemon
+       */
+      store = mig_jcr->res.wstore;
+      if (store->SDDport == 0) {
+         store->SDDport = store->SDport;
+      }
+
+      /*
+       * TLS Requirement
+       */
+      if (store->tls_enable) {
+         if (store->tls_require) {
+            tls_need = BNET_TLS_REQUIRED;
+         } else {
+            tls_need = BNET_TLS_OK;
+         }
+      }
+
+      Mmsg(command, replicatecmd, mig_jcr->Job, store->address,
+           store->SDDport, tls_need, mig_jcr->sd_auth_key);
+
+      if (!jcr->store_bsock->fsend(command.c_str())) {
+         return false;
+      }
+   }
 
    /*
     * Start the job prior to starting the message thread below
     * to avoid two threads from using the BSOCK structure at
     * the same time.
     */
-   if (!sd->fsend("run")) {
-      return false;
+   if (!jcr->store_bsock->fsend("run")) {
+      goto bail_out;
    }
 
    /*
     * Now start a Storage daemon message thread
     */
    if (!start_storage_daemon_message_thread(jcr)) {
-      return false;
+      goto bail_out;
    }
-
 
    jcr->setJobStatus(JS_Running);
    mig_jcr->setJobStatus(JS_Running);
 
-   /* Pickup Job termination data */
-   /* Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors */
-   wait_for_storage_daemon_termination(jcr);
-   jcr->setJobStatus(jcr->SDJobStatus);
-   db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
-   if (jcr->JobStatus != JS_Terminated) {
-      return false;
+   /*
+    * Pickup Job termination data
+    * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors or
+    * mig_jcr->JobFiles/ReadBytes/JobBytes/JobErrors when replicating to
+    * a remote storage daemon.
+    */
+   if (jcr->remote_replicate) {
+      wait_for_storage_daemon_termination(jcr);
+      wait_for_storage_daemon_termination(mig_jcr);
+      jcr->setJobStatus(jcr->SDJobStatus);
+      db_write_batch_file_records(mig_jcr);
+   } else {
+      wait_for_storage_daemon_termination(jcr);
+      jcr->setJobStatus(jcr->SDJobStatus);
+      db_write_batch_file_records(jcr);
    }
 
-   migration_cleanup(jcr, jcr->JobStatus);
+bail_out:
+   if (jcr->remote_replicate) {
+      alist *wstorage;
 
-   return true;
+      /*
+       * Swap the wstorage between the jcr and the mig_jcr.
+       */
+      wstorage = mig_jcr->wstorage;
+      mig_jcr->wstorage = jcr->wstorage;
+      jcr->wstorage = wstorage;
+
+      /*
+       * Undo the clear of the wstore in the jcr and assign the mig_jcr wstore
+       * back to the jcr. This is an undo of the clearing we did earlier
+       * as we want the jcr connected to the reading storage daemon and the
+       * mig_jcr to the writing jcr. By clearing the wstore of the jcr the
+       * connect_to_storage_daemon function will do the right thing e.g. connect
+       * the jcrs in the way we want them to.
+       */
+      jcr->res.wstore = mig_jcr->res.wstore;
+      mig_jcr->res.wstore = NULL;
+   }
+
+   if (jcr->JobStatus == JS_Terminated) {
+      migration_cleanup(jcr, jcr->JobStatus);
+      retval = true;
+   }
+
+   return retval;
 }
 
 struct idpkt {
@@ -463,14 +692,18 @@ struct idpkt {
    uint32_t count;
 };
 
-/* Add an item to the list if it is unique */
+/*
+ * Add an item to the list if it is unique
+ */
 static void add_unique_id(idpkt *ids, char *item)
 {
    const int maxlen = 30;
    char id[maxlen+1];
    char *q = ids->list;
 
-   /* Walk through current list to see if each item is the same as item */
+   /*
+    * Walk through current list to see if each item is the same as item
+    */
    while (*q) {
        id[0] = 0;
        for (int i=0; i<maxlen; i++) {
@@ -487,7 +720,9 @@ static void add_unique_id(idpkt *ids, char *item)
           return;
        }
    }
-   /* Did not find item, so add it to list */
+   /*
+    * Did not find item, so add it to list
+    */
    if (ids->count == 0) {
       ids->list[0] = 0;
    } else {
@@ -506,7 +741,9 @@ static int unique_dbid_handler(void *ctx, int num_fields, char **row)
 {
    idpkt *ids = (idpkt *)ctx;
 
-   /* Sanity check */
+   /*
+    * Sanity check
+    */
    if (!row || !row[0]) {
       Dmsg0(dbglevel, "dbid_hdlr error empty row\n");
       return 1;              /* stop calling us */
@@ -1203,7 +1440,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
 
    /*
     * Check if we actually did something.
-    *  mig_jcr is jcr of the newly migrated job.
+    * mig_jcr is jcr of the newly migrated job.
     */
    if (mig_jcr) {
       char old_jobid[50], new_jobid[50];
@@ -1211,44 +1448,67 @@ void migration_cleanup(JCR *jcr, int TermCode)
       edit_uint64(jcr->previous_jr.JobId, old_jobid);
       edit_uint64(mig_jcr->jr.JobId, new_jobid);
 
-      mig_jcr->JobFiles = jcr->JobFiles = jcr->SDJobFiles;
-      mig_jcr->JobBytes = jcr->JobBytes = jcr->SDJobBytes;
-      mig_jcr->VolSessionId = jcr->VolSessionId;
-      mig_jcr->VolSessionTime = jcr->VolSessionTime;
+      /*
+       * See if we used a remote SD if so the mig_jcr contains
+       * the jobfiles and jobbytes and the new volsessionid
+       * and volsessiontime as the writing SD generates this info.
+       */
+      if (jcr->remote_replicate) {
+         mig_jcr->JobFiles = jcr->JobFiles = mig_jcr->SDJobFiles;
+         mig_jcr->JobBytes = jcr->JobBytes = mig_jcr->SDJobBytes;
+         mig_jcr->VolSessionId = mig_jcr->VolSessionId;
+         mig_jcr->VolSessionTime = mig_jcr->VolSessionTime;
+      } else {
+         mig_jcr->JobFiles = jcr->JobFiles = jcr->SDJobFiles;
+         mig_jcr->JobBytes = jcr->JobBytes = jcr->SDJobBytes;
+         mig_jcr->VolSessionId = jcr->VolSessionId;
+         mig_jcr->VolSessionTime = jcr->VolSessionTime;
+      }
       mig_jcr->jr.RealEndTime = 0;
       mig_jcr->jr.PriorJobId = jcr->previous_jr.JobId;
 
       update_job_end(mig_jcr, TermCode);
 
-      /* Update final items to set them to the previous job's values */
+      /*
+       * Update final items to set them to the previous job's values
+       */
       Mmsg(query, "UPDATE Job SET StartTime='%s',EndTime='%s',"
                   "JobTDate=%s WHERE JobId=%s",
-         jcr->previous_jr.cStartTime, jcr->previous_jr.cEndTime,
-         edit_uint64(jcr->previous_jr.JobTDate, ec1),
-         new_jobid);
+           jcr->previous_jr.cStartTime, jcr->previous_jr.cEndTime,
+           edit_uint64(jcr->previous_jr.JobTDate, ec1),
+           new_jobid);
       db_sql_query(mig_jcr->db, query.c_str());
 
       /*
        * If we terminated a migration normally:
-       *   - mark the previous job as migrated
-       *   - move any Log records to the new JobId
-       *   - Purge the File records from the previous job
+       * - mark the previous job as migrated
+       * - move any Log records to the new JobId
+       * - Purge the File records from the previous job
        */
       if (jcr->getJobType() == JT_MIGRATE && jcr->JobStatus == JS_Terminated) {
+         UAContext *ua;
+
          Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
               (char)JT_MIGRATED_JOB, old_jobid);
          db_sql_query(mig_jcr->db, query.c_str());
-         UAContext *ua = new_ua_context(jcr);
-         /* Move JobLog to new JobId */
+
+         /*
+          * Move JobLog to new JobId
+          */
+         ua = new_ua_context(jcr);
          Mmsg(query, "UPDATE Log SET JobId=%s WHERE JobId=%s",
-           new_jobid, old_jobid);
+              new_jobid, old_jobid);
          db_sql_query(mig_jcr->db, query.c_str());
 
          if (jcr->res.job->PurgeMigrateJob) {
-            /* Purge old Job record */
+            /*
+             * Purge old Job record
+             */
             purge_jobs_from_catalog(ua, old_jobid);
          } else {
-            /* Purge all old file records, but leave Job record */
+            /*
+             * Purge all old file records, but leave Job record
+             */
             purge_files_from_jobs(ua, old_jobid);
          }
 
@@ -1257,15 +1517,18 @@ void migration_cleanup(JCR *jcr, int TermCode)
 
       /*
        * If we terminated a Copy (rather than a Migration) normally:
-       *   - copy any Log records to the new JobId
-       *   - set type="Job Copy" for the new job
+       * - copy any Log records to the new JobId
+       * - set type="Job Copy" for the new job
        */
       if (jcr->getJobType() == JT_COPY && jcr->JobStatus == JS_Terminated) {
-         /* Copy JobLog to new JobId */
+         /*
+          * Copy JobLog to new JobId
+          */
          Mmsg(query, "INSERT INTO Log (JobId, Time, LogText ) "
-                      "SELECT %s, Time, LogText FROM Log WHERE JobId=%s",
+                     "SELECT %s, Time, LogText FROM Log WHERE JobId=%s",
               new_jobid, old_jobid);
          db_sql_query(mig_jcr->db, query.c_str());
+
          Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
               (char)JT_JOB_COPY, new_jobid);
          db_sql_query(mig_jcr->db, query.c_str());
@@ -1273,7 +1536,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
 
       if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
          Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"),
-            db_strerror(jcr->db));
+              db_strerror(jcr->db));
          jcr->setJobStatus(JS_ErrorTerminated);
       }
 
@@ -1282,9 +1545,9 @@ void migration_cleanup(JCR *jcr, int TermCode)
       if (!db_get_job_volume_names(mig_jcr, mig_jcr->db, mig_jcr->jr.JobId, &mig_jcr->VolumeName)) {
          /*
           * Note, if the job has failed, most likely it did not write any
-          *  tape, so suppress this "error" message since in that case
-          *  it is normal.  Or look at it the other way, only for a
-          *  normal exit should we complain about this error.
+          * tape, so suppress this "error" message since in that case
+          * it is normal.  Or look at it the other way, only for a
+          * normal exit should we complain about this error.
           */
          if (jcr->JobStatus == JS_Terminated && jcr->jr.JobBytes) {
             Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(mig_jcr->db));
@@ -1293,7 +1556,9 @@ void migration_cleanup(JCR *jcr, int TermCode)
       }
 
       if (mig_jcr->VolumeName[0]) {
-         /* Find last volume name. Multiple vols are separated by | */
+         /*
+          * Find last volume name. Multiple vols are separated by |
+          */
          char *p = strrchr(mig_jcr->VolumeName, '|');
          if (p) {
             p++;                         /* skip | */
@@ -1317,21 +1582,39 @@ void migration_cleanup(JCR *jcr, int TermCode)
          break;
       case JS_FatalError:
       case JS_ErrorTerminated:
-         term_msg = _("*** %s Error ***");
-         msg_type = M_ERROR;          /* Generate error message */
+      case JS_Canceled:
+         /*
+          * We catch any error here as the close of the SD sessions is mandatory for each
+          * failure path. The termination message and the message type can be different
+          * so that is why we do a second switch inside the switch on the JobStatus.
+          */
+         switch (jcr->JobStatus) {
+         case JS_Canceled:
+            term_msg = _("%s Canceled");
+            break;
+         default:
+            term_msg = _("*** %s Error ***");
+            msg_type = M_ERROR;          /* Generate error message */
+            break;
+         }
+
+         /*
+          * Close connection to Reading SD.
+          */
          if (jcr->store_bsock) {
             jcr->store_bsock->signal(BNET_TERMINATE);
             if (jcr->SD_msg_chan) {
                pthread_cancel(jcr->SD_msg_chan);
             }
          }
-         break;
-      case JS_Canceled:
-         term_msg = _("%s Canceled");
-         if (jcr->store_bsock) {
-            jcr->store_bsock->signal(BNET_TERMINATE);
-            if (jcr->SD_msg_chan) {
-               pthread_cancel(jcr->SD_msg_chan);
+
+         /*
+          * Close connection to Writing SD (if SD-SD replication)
+          */
+         if (mig_jcr->store_bsock) {
+            mig_jcr->store_bsock->signal(BNET_TERMINATE);
+            if (mig_jcr->SD_msg_chan) {
+               pthread_cancel(mig_jcr->SD_msg_chan);
             }
          }
          break;
@@ -1341,7 +1624,9 @@ void migration_cleanup(JCR *jcr, int TermCode)
       }
    } else {
       if (jcr->getJobType() == JT_MIGRATE && jcr->previous_jr.JobId != 0) {
-         /* Mark previous job as migrated */
+         /*
+          * Mark previous job as migrated
+          */
          Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
               (char)JT_MIGRATED_JOB, edit_uint64(jcr->previous_jr.JobId, ec1));
          db_sql_query(jcr->db, query.c_str());

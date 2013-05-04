@@ -49,12 +49,51 @@ extern BSOCK *filed_chan;
 extern struct s_last_job last_job;
 extern bool init_done;
 
-/* Static variables */
-static char derrmsg[] = "3900 Invalid command:";
-static char OKsetdebug[] = "3000 OK setdebug=%d\n";
-static char invalid_cmd[] = "3997 Invalid command for a Director with Monitor directive enabled.\n";
-static char OK_bootstrap[] = "3000 OK bootstrap\n";
-static char ERROR_bootstrap[] = "3904 Error bootstrap\n";
+/* Commands received from director that need scanning */
+static char setbandwidth[] =
+   "setbandwidth=%lld Job=%127s";
+static char setdebugcmd[] =
+   "setdebug=%d trace=%d";
+static char cancelcmd[] =
+   "cancel Job=%127s";
+static char relabelcmd[] =
+   "relabel %127s OldName=%127s NewName=%127s PoolName=%127s "
+   "MediaType=%127s Slot=%d drive=%d";
+static char labelcmd[] =
+   "label %127s VolumeName=%127s PoolName=%127s "
+   "MediaType=%127s Slot=%d drive=%d";
+static char mountslotcmd[] =
+   "mount %127s drive=%d slot=%d";
+static char mountcmd[] =
+   "mount %127s drive=%d";
+static char unmountcmd[] =
+   "unmount %127s drive=%d";
+static char actionopcmd[] =
+   "action_on_purge %127s vol=%127s action=%d";
+static char releasecmd[] =
+   "release %127s drive=%d";
+static char readlabelcmd[] =
+   "readlabel %127s Slot=%d drive=%d";
+static char replicatecmd[] =
+   "replicate Job=%127s address=%s port=%d ssl=%d Authorization=%100s";
+
+/* Responses sent to Director */
+static char derrmsg[] =
+   "3900 Invalid command:";
+static char OK_setdebug[] =
+   "3000 OK setdebug=%d\n";
+static char invalid_cmd[] =
+   "3997 Invalid command for a Director with Monitor directive enabled.\n";
+static char OK_bootstrap[] =
+   "3000 OK bootstrap\n";
+static char ERROR_bootstrap[] =
+   "3904 Error bootstrap\n";
+static char OK_replicate[] =
+   "3000 OK replicate\n";
+static char BADcmd[] =
+   "3991 Bad %s command: %s\n";
+static char OKBandwidth[] =
+   "2000 OK Bandwidth\n";
 
 /* Imported functions */
 extern bool do_job_run(JCR *jcr);
@@ -70,18 +109,19 @@ extern bool qstatus_cmd(JCR *jcr);
 
 /* Forward referenced functions */
 static bool label_cmd(JCR *jcr);
+static bool listen_cmd(JCR *jcr);
 static bool die_cmd(JCR *jcr);
 static bool relabel_cmd(JCR *jcr);
 static bool readlabel_cmd(JCR *jcr);
 static bool release_cmd(JCR *jcr);
 static bool setdebug_cmd(JCR *jcr);
+static bool setbandwidth_cmd(JCR *jcr);
 static bool cancel_cmd(JCR *cjcr);
 static bool mount_cmd(JCR *jcr);
 static bool unmount_cmd(JCR *jcr);
 //static bool action_on_purge_cmd(JCR *jcr);
 static bool bootstrap_cmd(JCR *jcr);
 static bool changer_cmd(JCR *jcr);
-static bool do_label(JCR *jcr, bool relabel);
 static DCR *find_device(JCR *jcr, POOL_MEM &dev_name, int drive);
 static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, int Slot);
 static void label_volume_if_ok(DCR *dcr, char *oldname,
@@ -89,6 +129,7 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
                                int Slot, bool relabel);
 static bool try_autoload_device(JCR *jcr, DCR *dcr, int slot, const char *VolName);
 static void send_dir_busy_message(BSOCK *dir, DEVICE *dev);
+static bool replicate_cmd(JCR *jcr);
 static bool run_cmd(JCR *jcr);
 
 struct s_cmds {
@@ -101,24 +142,27 @@ struct s_cmds {
  * The following are the recognized commands from the Director.
  */
 static struct s_cmds cmds[] = {
-   { "JobId=", job_cmd, 0 },                /* start Job */
+   { "JobId=", job_cmd, 0 },                /* Start Job */
    { "autochanger", changer_cmd, 0 },
    { "bootstrap", bootstrap_cmd, 0 },
    { "cancel", cancel_cmd, 0 },
    { ".die", die_cmd, 0 },
-   { "label", label_cmd, 0 },               /* label a tape */
+   { "finish", finish_cmd, 0 },             /* End of backup */
+   { "label", label_cmd, 0 },               /* Label a tape */
+   { "listen", listen_cmd, 0 },             /* Listen for an incoming Storage Job */
    { "mount", mount_cmd, 0 },
+   { "nextrun", nextrun_cmd, 0 },           /* Prepare for next backup part of same Job */
    { "readlabel", readlabel_cmd, 0 },
    { "release", release_cmd, 0 },
-   { "relabel", relabel_cmd, 0 },           /* relabel a tape */
-   { "setdebug=", setdebug_cmd, 0 },        /* set debug level */
+   { "relabel", relabel_cmd, 0 },           /* Relabel a tape */
+   { "setbandwidth=", setbandwidth_cmd, 0 },
+   { "setdebug=", setdebug_cmd, 0 },        /* Set debug level */
    { "status", status_cmd, 1 },
    { ".status", qstatus_cmd, 1 },
    { "unmount", unmount_cmd, 0 },
    { "use storage=", use_cmd, 0 },
-   { "run", run_cmd, 0 },                   /* start of backup */
-   { "nextrun", nextrun_cmd, 0 },           /* prepare for next backup part of same Job */
-   { "finish", finish_cmd, 0 },             /* end of backup */
+   { "replicate", replicate_cmd, 0 },       /* Replicate data to an external SD */
+   { "run", run_cmd, 0 },                   /* Start of Job */
 // { "action_on_purge",  action_on_purge_cmd, 0 },
 // { "query", query_cmd, 0 },
    { NULL, NULL } /* list terminator */
@@ -126,15 +170,16 @@ static struct s_cmds cmds[] = {
 
 /*
  * Connection request. We accept connections either from the
- *  Director or a Client (File daemon).
+ * Director, Storage Daemon or a Client (File daemon).
  *
  * Note, we are running as a seperate thread of the Storage daemon.
- *  and it is because a Director has made a connection with
- *  us on the "Message" channel.
+ * and it is because a Director has made a connection with
+ * us on the "Message" channel.
  *
  * Basic tasks done here:
+ *  - If it was a connection from the FD, call handle_filed_connection()
+ *  - If it was a connection from an other SD, call handle_stored_connection()
  *  - Create a JCR record
- *  - If it was from the FD, call handle_filed_connection()
  *  - Authenticate the Director
  *  - We wait for a command
  *  - We execute the command
@@ -167,19 +212,26 @@ void *handle_connection_request(void *arg)
       bs->close();
       return NULL;
    }
-   /*
-    * See if this is a File daemon connection. If so
-    *   call FD handler.
-    */
+
    Dmsg1(110, "Conn: %s", bs->msg);
-   if (debug_level == 3) {
-      Dmsg1(000, "<filed: %s", bs->msg);
-   }
+
+   /*
+    * See if this is a File daemon connection. If so call FD handler.
+    */
    if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
       Dmsg1(110, "Got a FD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf),
             (utime_t)time(NULL)));
-      Dmsg1(50, "%s", bs->msg);
       handle_filed_connection(bs, name);
+      return NULL;
+   }
+
+   /*
+    * See if this is a Storage daemon connection. If so call SD handler.
+    */
+   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
+      Dmsg1(110, "Got a SD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf),
+            (utime_t)time(NULL)));
+      handle_stored_connection(bs, name);
       return NULL;
    }
 
@@ -188,6 +240,7 @@ void *handle_connection_request(void *arg)
     */
    Dmsg1(110, "Got a DIR connection at %s\n", bstrftimes(tbuf, sizeof(tbuf),
          (utime_t)time(NULL)));
+
    jcr = new_jcr(sizeof(JCR), stored_free_jcr); /* create Job Control Record */
    new_plugins(jcr);                            /* instantiate plugins */
    jcr->dir_bsock = bs;                         /* save Director bsock */
@@ -223,20 +276,29 @@ void *handle_connection_request(void *arg)
       Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Director\n"));
       goto bail_out;
    }
+
    Dmsg0(90, "Message channel init completed.\n");
 
-   for (quit=false; !quit;) {
-      /* Read command */
+   quit = false;
+   while (!quit) {
+      /*
+       * Read command
+       */
       if ((bnet_stat = bs->recv()) <= 0) {
          break;               /* connection terminated */
       }
+
       Dmsg1(199, "<dird: %s\n", bs->msg);
-      /* Ensure that device initialization is complete */
+
+      /*
+       * Ensure that device initialization is complete
+       */
       while (!init_done) {
          bmicrosleep(1, 0);
       }
+
       found = false;
-      for (i=0; cmds[i].cmd; i++) {
+      for (i = 0; cmds[i].cmd; i++) {
         if (bstrncmp(cmds[i].cmd, bs->msg, strlen(cmds[i].cmd))) {
            if ((!cmds[i].monitoraccess) && (jcr->director->monitor)) {
               Dmsg1(100, "Command \"%s\" is invalid.\n", cmds[i].cmd);
@@ -260,6 +322,7 @@ void *handle_connection_request(void *arg)
         break;
       }
    }
+
 bail_out:
    generate_plugin_event(jcr, bsdEventJobEnd);
    dequeue_messages(jcr);             /* send any queued messages */
@@ -291,12 +354,48 @@ static bool die_cmd(JCR *jcr)
    a = djcr->JobId;   /* ref NULL pointer */
    djcr->JobId = a;
 #endif
-   return 0;
+   return false;
+}
+
+/**
+ * Set bandwidth limit as requested by the Director
+ */
+static bool setbandwidth_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   int64_t bw = 0;
+   JCR *cjcr;
+   char Job[MAX_NAME_LENGTH];
+
+   *Job = 0;
+   if (sscanf(dir->msg, setbandwidth, &bw, Job) != 2 || bw < 0) {
+      pm_strcpy(jcr->errmsg, dir->msg);
+      dir->fsend(_("2991 Bad setbandwidth command: %s\n"), jcr->errmsg);
+      return false;
+   }
+
+   if (*Job) {
+      if (!(cjcr = get_jcr_by_full_name(Job))) {
+         dir->fsend(_("2901 Job %s not found.\n"), Job);
+      } else {
+         cjcr->max_bandwidth = bw;
+         if (cjcr->store_bsock) {
+            cjcr->store_bsock->set_bwlimit(bw);
+            if (me->allow_bw_bursting) {
+               cjcr->store_bsock->set_bwlimit_bursting();
+            }
+         }
+         free_jcr(cjcr);
+      }
+   } else {                           /* No job requested, apply globally */
+      me->max_bandwidth_per_job = bw; /* Overwrite directive */
+   }
+
+   return dir->fsend(OKBandwidth);
 }
 
 /*
  * Set debug level as requested by the Director
- *
  */
 static bool setdebug_cmd(JCR *jcr)
 {
@@ -304,13 +403,13 @@ static bool setdebug_cmd(JCR *jcr)
    int32_t level, trace_flag;
 
    Dmsg1(10, "setdebug_cmd: %s", dir->msg);
-   if (sscanf(dir->msg, "setdebug=%d trace=%d", &level, &trace_flag) != 2 || level < 0) {
-      dir->fsend(_("3991 Bad setdebug command: %s\n"), dir->msg);
-      return 0;
+   if (sscanf(dir->msg, setdebugcmd, &level, &trace_flag) != 2 || level < 0) {
+      dir->fsend(BADcmd, "setdebug", dir->msg);
+      return false;
    }
    debug_level = level;
    set_trace(trace_flag);
-   return dir->fsend(OKsetdebug, level);
+   return dir->fsend(OK_setdebug, level);
 }
 
 /*
@@ -328,7 +427,7 @@ static bool cancel_cmd(JCR *cjcr)
    int status;
    const char *reason;
 
-   if (sscanf(dir->msg, "cancel Job=%127s", Job) == 1) {
+   if (sscanf(dir->msg, cancelcmd, Job) == 1) {
       status = JS_Canceled;
       reason = "canceled";
    } else {
@@ -392,21 +491,7 @@ static bool cancel_cmd(JCR *cjcr)
 
 bail_out:
    dir->signal(BNET_EOD);
-   return 1;
-}
-
-/*
- * Label a Volume
- *
- */
-static bool label_cmd(JCR *jcr)
-{
-   return do_label(jcr, false);
-}
-
-static bool relabel_cmd(JCR *jcr)
-{
-   return do_label(jcr, true);
+   return true;
 }
 
 static bool do_label(JCR *jcr, bool relabel)
@@ -441,18 +526,14 @@ static bool do_label(JCR *jcr, bool relabel)
    poolname = get_memory(len);
    mediatype = get_memory(len);
    if (relabel) {
-      if (sscanf(dir->msg, "relabel %127s OldName=%127s NewName=%127s PoolName=%127s "
-                           "MediaType=%127s Slot=%d drive=%d",
-                 dev_name.c_str(), oldname, newname, poolname, mediatype,
-                 &slot, &drive) == 7) {
+      if (sscanf(dir->msg, relabelcmd, dev_name.c_str(), oldname,
+                 newname, poolname, mediatype, &slot, &drive) == 7) {
          ok = true;
       }
    } else {
       *oldname = 0;
-      if (sscanf(dir->msg, "label %127s VolumeName=%127s PoolName=%127s "
-                           "MediaType=%127s Slot=%d drive=%d",
-                 dev_name.c_str(), newname, poolname, mediatype,
-                 &slot, &drive) == 6) {
+      if (sscanf(dir->msg, labelcmd, dev_name.c_str(), newname,
+                 poolname, mediatype, &slot, &drive) == 6) {
          ok = true;
       }
    }
@@ -495,6 +576,19 @@ static bool do_label(JCR *jcr, bool relabel)
    free_memory(mediatype);
    dir->signal(BNET_EOD);
    return true;
+}
+
+/*
+ * Label a Volume
+ */
+static bool label_cmd(JCR *jcr)
+{
+   return do_label(jcr, false);
+}
+
+static bool relabel_cmd(JCR *jcr)
+{
+   return do_label(jcr, true);
 }
 
 /*
@@ -632,8 +726,7 @@ static bool read_label(DCR *dcr)
 }
 
 /*
- * Searches for device by name, and if found, creates a dcr and
- *  returns it.
+ * Searches for device by name, and if found, creates a dcr and returns it.
  */
 static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive)
 {
@@ -715,11 +808,11 @@ static bool mount_cmd(JCR *jcr)
    int32_t slot = 0;
    bool ok;
 
-   ok = sscanf(dir->msg, "mount %127s drive=%d slot=%d", devname.c_str(),
-               &drive, &slot) == 3;
+   ok = sscanf(dir->msg, mountslotcmd, devname.c_str(), &drive, &slot) == 3;
    if (!ok) {
-      ok = sscanf(dir->msg, "mount %127s drive=%d", devname.c_str(), &drive) == 2;
+      ok = sscanf(dir->msg, mountcmd, devname.c_str(), &drive) == 2;
    }
+
    Dmsg3(100, "ok=%d drive=%d slot=%d\n", ok, drive, slot);
    if (ok) {
       dcr = find_device(jcr, devname, drive);
@@ -734,7 +827,7 @@ static bool mount_cmd(JCR *jcr)
             Dmsg0(100, "Waiting for mount. Attempting to wake thread\n");
             dev->set_blocked(BST_MOUNT);
             dir->fsend("3001 OK mount requested. %sDevice=%s\n",
-                       slot>0?_("Specified slot ignored. "):"",
+                      (slot > 0) ? _("Specified slot ignored. ") : "",
                        dev->print_name());
             pthread_cond_broadcast(&dev->wait_next_vol);
             Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)dcr->jcr->JobId);
@@ -871,7 +964,7 @@ static bool unmount_cmd(JCR *jcr)
    DCR *dcr;
    int32_t drive;
 
-   if (sscanf(dir->msg, "unmount %127s drive=%d", devname.c_str(), &drive) == 2) {
+   if (sscanf(dir->msg, unmountcmd, devname.c_str(), &drive) == 2) {
       dcr = find_device(jcr, devname, drive);
       if (dcr) {
          dev = dcr->dev;
@@ -971,9 +1064,7 @@ static bool action_on_purge_cmd(JCR *jcr)
    int32_t action;
 
    /* TODO: Need to find a free device and ask for slot to the director */
-   if (sscanf(dir->msg,
-              "action_on_purge %127s vol=%127s action=%d",
-              devname, volumename, &action)!= 5)
+   if (sscanf(dir->msg, actionopcmd, devname, volumename, &action) != 3)
    {
       dir->fsend(_("3916 Error scanning action_on_purge command\n"));
       goto done;
@@ -1008,7 +1099,7 @@ static bool release_cmd(JCR *jcr)
    DCR *dcr;
    int32_t drive;
 
-   if (sscanf(dir->msg, "release %127s drive=%d", devname.c_str(), &drive) == 2) {
+   if (sscanf(dir->msg, releasecmd, devname.c_str(), &drive) == 2) {
       dcr = find_device(jcr, devname, drive);
       if (dcr) {
          dev = dcr->dev;
@@ -1212,7 +1303,7 @@ static bool readlabel_cmd(JCR *jcr)
    DCR *dcr;
    int32_t Slot, drive;
 
-   if (sscanf(dir->msg, "readlabel %127s Slot=%d drive=%d", devname.c_str(),
+   if (sscanf(dir->msg, readlabelcmd, devname.c_str(),
        &Slot, &drive) == 3) {
       dcr = find_device(jcr, devname, drive);
       if (dcr) {
@@ -1326,6 +1417,119 @@ static void send_dir_busy_message(BSOCK *dir, DEVICE *dev)
        dir->fsend(_("3937 Device \"%s\" is busy with writers=%d reserved=%d.\n"),
           dev->print_name(), dev->num_writers, dev->num_reserved());
    }
+}
+
+static inline void set_storage_auth_key(JCR *jcr, char *key)
+{
+   /*
+    * If no key don't update anything
+    */
+   if (!*key) {
+      return;
+   }
+
+   /*
+    * Clear any sd_auth_key which can be a key when we are acting as
+    * the endpoint for a backup session which we don't seem to be.
+    */
+   if (jcr->sd_auth_key) {
+      bfree(jcr->sd_auth_key);
+   }
+
+   jcr->sd_auth_key = bstrdup(key);
+   Dmsg0(5, "set sd auth key\n");
+}
+
+/*
+ * Listen for incoming replication session from other SD.
+ */
+static bool listen_cmd(JCR *jcr)
+{
+   Dsm_check(200);
+
+   return do_listen_run(jcr);
+}
+
+/*
+ * Get address of storage daemon from Director
+ */
+static bool replicate_cmd(JCR *jcr)
+{
+   int stored_port;                /* storage daemon port */
+   int enable_ssl;                 /* enable ssl to sd */
+   char JobName[MAX_NAME_LENGTH];
+   char stored_addr[MAX_NAME_LENGTH];
+   POOL_MEM sd_auth_key(PM_MESSAGE);
+   BSOCK *dir = jcr->dir_bsock;
+   BSOCK *sd = new_bsock();        /* storage daemon bsock */
+
+   Dmsg1(100, "ReplicateCmd: %s", dir->msg);
+   sd_auth_key.check_size(dir->msglen);
+
+   if (sscanf(dir->msg, replicatecmd, JobName, stored_addr, &stored_port,
+              &enable_ssl, sd_auth_key.c_str()) != 5) {
+      dir->fsend(BADcmd, "replicate", dir->msg);
+      goto bail_out;
+   }
+
+   set_storage_auth_key(jcr, sd_auth_key.c_str());
+
+   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, enable_ssl);
+
+   sd->set_source_address(me->SDsrc_addr);
+
+   if (!jcr->max_bandwidth) {
+      if (jcr->director->max_bandwidth_per_job) {
+         jcr->max_bandwidth = jcr->director->max_bandwidth_per_job;
+      } else if (me->max_bandwidth_per_job) {
+         jcr->max_bandwidth = me->max_bandwidth_per_job;
+      }
+   }
+
+   sd->set_bwlimit(jcr->max_bandwidth);
+   if (me->allow_bw_bursting) {
+      sd->set_bwlimit_bursting();
+   }
+
+   /*
+    * Open command communications with Storage daemon
+    */
+   if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
+                    _("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
+     sd->destroy();
+     sd = NULL;
+   }
+
+   if (sd == NULL) {
+      Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"),
+           stored_addr, stored_port);
+      Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n",
+            stored_addr, stored_port);
+      goto bail_out;
+   }
+   Dmsg0(110, "Connection OK to SD.\n");
+
+   jcr->store_bsock = sd;
+
+   sd->fsend("Hello Start Storage Job %s\n", JobName);
+   if (!authenticate_with_storagedaemon(jcr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
+      goto bail_out;
+   }
+   Dmsg0(110, "Authenticated with SD.\n");
+
+   /*
+    * Keep track that we are replicating to a remote SD.
+    */
+   jcr->remote_replicate = true;
+
+   /*
+    * Send OK to Director
+    */
+   return dir->fsend(OK_replicate);
+
+bail_out:
+   return false;
 }
 
 static bool run_cmd(JCR *jcr)

@@ -90,13 +90,21 @@ JobId_t run_job(JCR *jcr)
    return 0;
 }
 
-bool setup_job(JCR *jcr)
+bool setup_job(JCR *jcr, bool suppress_output)
 {
    int errstat;
 
    jcr->lock();
    Dsm_check(100);
-   init_msg(jcr, jcr->res.messages, job_code_callback_director);
+
+   /*
+    * See if we should suppress all output.
+    */
+   if (!suppress_output) {
+      init_msg(jcr, jcr->res.messages, job_code_callback_director);
+   } else {
+      jcr->suppress_output = true;
+   }
 
    /*
     * Initialize termination condition variable
@@ -525,6 +533,16 @@ bool cancel_job(UAContext *ua, JCR *jcr)
             return false;
          }
       }
+
+      /*
+       * Cancel second Storage daemon for SD-SD replication.
+       */
+      if (jcr->mig_jcr && jcr->mig_jcr->store_bsock) {
+         if (!cancel_storage_daemon_job(ua, jcr->mig_jcr)) {
+            return false;
+         }
+      }
+
       break;
    }
 

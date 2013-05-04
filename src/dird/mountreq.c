@@ -40,10 +40,10 @@
 
 /* Requests from the Storage daemon */
 
-
 /* Responses  sent to Storage daemon */
 #ifdef xxx
-static char OK_mount[]  = "1000 OK MountVolume\n";
+static char OK_mount[] =
+   "1000 OK MountVolume\n";
 #endif
 
 static BQUEUE mountq = {&mountq, &mountq};
@@ -55,7 +55,6 @@ typedef struct mnt_req_s {
    BSOCK *bs;
    JCR *jcr;
 } MNT_REQ;
-
 
 void mount_request(JCR *jcr, BSOCK *bs, char *buf)
 {

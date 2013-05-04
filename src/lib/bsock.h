@@ -117,8 +117,8 @@ public:
    void set_killable(bool killable);
    int wait_data(int sec, int usec=0);
    int wait_data_intr(int sec, int usec=0);
-   bool authenticate_director(const char *name, const char *password,
-                  TLS_CONTEXT *tls_ctx, char *response, int response_len);
+   bool authenticate_with_director(const char *name, const char *password,
+                                   TLS_CONTEXT *tls_ctx, char *response, int response_len);
    bool set_locking();                /* in bsock.c */
    void clear_locking();              /* in bsock.c */
    void set_source_address(dlist *src_addr_list);

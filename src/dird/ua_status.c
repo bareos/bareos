@@ -39,8 +39,10 @@ static void do_all_status(UAContext *ua);
 static void status_slots(UAContext *ua, STORERES *store);
 static void status_content(UAContext *ua, STORERES *store);
 
-static char OKqstatus[]   = "1000 OK .status\n";
-static char DotStatusJob[] = "JobId=%s JobStatus=%c JobErrors=%d\n";
+static char OKqstatus[] =
+   "1000 OK .status\n";
+static char DotStatusJob[] =
+   "JobId=%s JobStatus=%c JobErrors=%d\n";
 
 /*
  * .status command

@@ -39,17 +39,24 @@
 #include "dird.h"
 
 /* Commands sent to File daemon */
-static char restorecmd[]  = "restore replace=%c prelinks=%d where=%s\n";
-static char restorecmdR[] = "restore replace=%c prelinks=%d regexwhere=%s\n";
-static char storaddr[]    = "storage address=%s port=%d ssl=0 Authorization=%s\n";
+static char restorecmd[] =
+   "restore replace=%c prelinks=%d where=%s\n";
+static char restorecmdR[] =
+   "restore replace=%c prelinks=%d regexwhere=%s\n";
+static char storaddr[] =
+   "storage address=%s port=%d ssl=0 Authorization=%s\n";
 
 /* Responses received from File daemon */
-static char OKrestore[]   = "2000 OK restore\n";
-static char OKstore[]     = "2000 OK storage\n";
-static char OKstoreend[]  = "2000 OK storage end\n";
+static char OKrestore[] =
+   "2000 OK restore\n";
+static char OKstore[] =
+   "2000 OK storage\n";
+static char OKstoreend[] =
+   "2000 OK storage end\n";
 
 /* Responses received from the Storage daemon */
-static char OKbootstrap[] = "3000 OK bootstrap\n";
+static char OKbootstrap[] =
+   "3000 OK bootstrap\n";
 
 static void build_restore_command(JCR *jcr, POOL_MEM &ret)
 {

@@ -17,7 +17,7 @@ first_rule: all
 dummy:
 
 #
-CONSSRCS = console.c console_conf.c authenticate.c @CONS_SRC@
+CONSSRCS = console.c console_conf.c @CONS_SRC@
 CONSOBJS = $(CONSSRCS:.c=.o)
 
 GETTEXT_LIBS = @LIBINTL@

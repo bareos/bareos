@@ -201,7 +201,7 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
                           STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
                           0, attribs, 0, 0);
    }
-   Dmsg2(20, "bfiled>bdird: attribs len=%d: msg=%s\n", dir->msglen, dir->msg);
+   Dmsg2(20, "filed>dir: attribs len=%d: msg=%s\n", dir->msglen, dir->msg);
    if (!status) {
       Jmsg(jcr, M_FATAL, 0, _("Network error in send to Director: ERR=%s\n"), bnet_strerror(dir));
       return 0;
@@ -263,7 +263,7 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
             Dmsg3(400, "send inx=%d %s=%s\n", jcr->JobFiles, digest_name, digest_buf);
             dir->fsend("%d %d %s *%s-%d*", jcr->JobFiles, digest_stream, digest_buf,
                        digest_name, jcr->JobFiles);
-            Dmsg3(20, "bfiled>bdird: %s len=%d: msg=%s\n", digest_name,
+            Dmsg3(20, "filed>dir: %s len=%d: msg=%s\n", digest_name,
                   dir->msglen, dir->msg);
 
             free(digest_buf);

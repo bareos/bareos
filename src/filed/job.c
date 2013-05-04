@@ -34,7 +34,7 @@
 #include "vss.h"
 
 static pthread_mutex_t vss_mutex = PTHREAD_MUTEX_INITIALIZER;
-static int enable_vss = 0;
+static bool enable_vss = false;
 #endif
 
 extern bool backup_only_mode;
@@ -56,49 +56,47 @@ const bool have_xattr = true;
 const bool have_xattr = false;
 #endif
 
-extern CLIENTRES *me;                 /* our client resource */
-
 /* Imported functions */
-extern int status_cmd(JCR *jcr);
-extern int qstatus_cmd(JCR *jcr);
-extern int accurate_cmd(JCR *jcr);
+extern bool status_cmd(JCR *jcr);
+extern bool qstatus_cmd(JCR *jcr);
+extern bool accurate_cmd(JCR *jcr);
 extern "C" char *job_code_callback_filed(JCR *jcr, const char* param);
 
 /* Forward referenced functions */
-static int backup_cmd(JCR *jcr);
-static int bootstrap_cmd(JCR *jcr);
-static int cancel_cmd(JCR *jcr);
-static int setdebug_cmd(JCR *jcr);
-static int setbandwidth_cmd(JCR *jcr);
-static int estimate_cmd(JCR *jcr);
-static int hello_cmd(JCR *jcr);
-static int job_cmd(JCR *jcr);
-static int fileset_cmd(JCR *jcr);
-static int level_cmd(JCR *jcr);
-static int verify_cmd(JCR *jcr);
-static int restore_cmd(JCR *jcr);
-static int end_restore_cmd(JCR *jcr);
-static int storage_cmd(JCR *jcr);
-static int session_cmd(JCR *jcr);
-static int response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd);
+static bool backup_cmd(JCR *jcr);
+static bool bootstrap_cmd(JCR *jcr);
+static bool cancel_cmd(JCR *jcr);
+static bool setbandwidth_cmd(JCR *jcr);
+static bool setdebug_cmd(JCR *jcr);
+static bool estimate_cmd(JCR *jcr);
+static bool hello_cmd(JCR *jcr);
+static bool job_cmd(JCR *jcr);
+static bool fileset_cmd(JCR *jcr);
+static bool level_cmd(JCR *jcr);
+static bool verify_cmd(JCR *jcr);
+static bool restore_cmd(JCR *jcr);
+static bool end_restore_cmd(JCR *jcr);
+static bool storage_cmd(JCR *jcr);
+static bool session_cmd(JCR *jcr);
+static bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd);
 static void filed_free_jcr(JCR *jcr);
-static int open_sd_read_session(JCR *jcr);
-static int runscript_cmd(JCR *jcr);
-static int runbefore_cmd(JCR *jcr);
-static int runafter_cmd(JCR *jcr);
-static int runbeforenow_cmd(JCR *jcr);
-static int restore_object_cmd(JCR *jcr);
+static bool open_sd_read_session(JCR *jcr);
+static bool runscript_cmd(JCR *jcr);
+static bool runbefore_cmd(JCR *jcr);
+static bool runafter_cmd(JCR *jcr);
+static bool runbeforenow_cmd(JCR *jcr);
+static bool restore_object_cmd(JCR *jcr);
 static void set_storage_auth_key(JCR *jcr, char *key);
-static int sm_dump_cmd(JCR *jcr);
+static bool sm_dump_cmd(JCR *jcr);
 #ifdef DEVELOPER
-static int exit_cmd(JCR *jcr);
+static bool exit_cmd(JCR *jcr);
 #endif
 
 /* Exported functions */
 
 struct s_cmds {
    const char *cmd;
-   int (*func)(JCR *);
+   bool (*func)(JCR *);
    int monitoraccess; /* specify if monitors have access to this function */
 };
 
@@ -108,8 +106,8 @@ struct s_cmds {
 static struct s_cmds cmds[] = {
    { "backup", backup_cmd, 0 },
    { "cancel", cancel_cmd, 0 },
-   { "setdebug=", setdebug_cmd, 0 },
    { "setbandwidth=", setbandwidth_cmd, 0 },
+   { "setdebug=", setdebug_cmd, 0 },
    { "estimate", estimate_cmd, 0 },
    { "Hello", hello_cmd, 1 },
    { "fileset", fileset_cmd, 0 },
@@ -136,67 +134,134 @@ static struct s_cmds cmds[] = {
    { NULL, NULL } /* list terminator */
 };
 
-/* Commands received from director that need scanning */
-static char jobcmd[] = "JobId=%d Job=%127s SDid=%d SDtime=%d Authorization=%100s";
-static char storaddr[] = "storage address=%s port=%d ssl=%d Authorization=%100s";
-static char storaddr_v1[] = "storage address=%s port=%d ssl=%d";
-static char sessioncmd[] = "session %127s %ld %ld %ld %ld %ld %ld\n";
-static char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
-static char restorecmd1[] = "restore replace=%c prelinks=%d where=\n";
-static char restorecmdR[] = "restore replace=%c prelinks=%d regexwhere=%s\n";
-static char restoreobjcmd[]  = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d,%s";
-static char restoreobjcmd1[] = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d\n";
-static char endrestoreobjectcmd[] = "restoreobject end\n";
-static char verifycmd[] = "verify level=%30s";
-static char estimatecmd[] = "estimate listing=%d";
-static char runbefore[] = "RunBeforeJob %s";
-static char runafter[] = "RunAfterJob %s";
-static char runscript[] = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
-static char setbandwidth[] = "setbandwidth=%lld Job=%127s";
+/*
+ * Commands received from director that need scanning
+ */
+static char setbandwidth[] =
+   "setbandwidth=%lld Job=%127s";
+static char setdebugcmd[] =
+   "setdebug=%d trace=%d hangup=%d";
+static char jobcmd[] =
+   "JobId=%d Job=%127s SDid=%d SDtime=%d Authorization=%100s";
+static char storaddr[] =
+   "storage address=%s port=%d ssl=%d Authorization=%100s";
+static char storaddr_v1[] =
+   "storage address=%s port=%d ssl=%d";
+static char sessioncmd[] =
+   "session %127s %ld %ld %ld %ld %ld %ld\n";
+static char restorecmd[] =
+   "restore replace=%c prelinks=%d where=%s\n";
+static char restorecmd1[] =
+   "restore replace=%c prelinks=%d where=\n";
+static char restorecmdR[] =
+   "restore replace=%c prelinks=%d regexwhere=%s\n";
+static char restoreobjcmd[] =
+   "restoreobject JobId=%u %d,%d,%d,%d,%d,%d,%s";
+static char restoreobjcmd1[] =
+   "restoreobject JobId=%u %d,%d,%d,%d,%d,%d\n";
+static char endrestoreobjectcmd[] =
+   "restoreobject end\n";
+static char verifycmd[] =
+   "verify level=%30s";
+static char estimatecmd[] =
+   "estimate listing=%d";
+static char runbefore[] =
+   "RunBeforeJob %s";
+static char runafter[] =
+   "RunAfterJob %s";
+static char runscript[] =
+   "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
 
-/* Responses sent to Director */
-static char errmsg[] = "2999 Invalid command\n";
-static char no_auth[] = "2998 No Authorization\n";
-static char invalid_cmd[] = "2997 Invalid command for a Director with Monitor directive enabled.\n";
-static char OKBandwidth[] = "2000 OK Bandwidth\n";
-static char OKinc[] = "2000 OK include\n";
-static char OKest[] = "2000 OK estimate files=%s bytes=%s\n";
-static char OKlevel[] = "2000 OK level\n";
-static char OKbackup[] = "2000 OK backup\n";
-static char OKbootstrap[] = "2000 OK bootstrap\n";
-static char OKverify[] = "2000 OK verify\n";
-static char OKrestore[] = "2000 OK restore\n";
-static char OKsession[] = "2000 OK session\n";
-static char OKstore[] = "2000 OK storage\n";
-static char OKstoreend[]  = "2000 OK storage end\n";
-static char OKjob[] = "2000 OK Job %s (%s) %s,%s,%s";
-static char OKsetdebug[] = "2000 OK setdebug=%d trace=%d hangup=%d\n";
-static char BADjob[] = "2901 Bad Job\n";
-static char EndJob[] = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
-                       " JobBytes=%s Errors=%u VSS=%d Encrypt=%d\n";
-static char OKRunBefore[] = "2000 OK RunBefore\n";
-static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
-static char OKRunAfter[] = "2000 OK RunAfter\n";
-static char OKRunScript[] = "2000 OK RunScript\n";
-static char FailedRunScript[] = "2905 Failed RunScript\n";
-static char BADcmd[] = "2902 Bad %s\n";
-static char OKRestoreObject[] = "2000 OK ObjectRestored\n";
+/*
+ * Responses sent to Director
+ */
+static char errmsg[] =
+   "2999 Invalid command\n";
+static char no_auth[] =
+   "2998 No Authorization\n";
+static char invalid_cmd[] =
+   "2997 Invalid command for a Director with Monitor directive enabled.\n";
+static char OKBandwidth[] =
+   "2000 OK Bandwidth\n";
+static char OKinc[] =
+   "2000 OK include\n";
+static char OKest[] =
+   "2000 OK estimate files=%s bytes=%s\n";
+static char OKlevel[] =
+   "2000 OK level\n";
+static char OKbackup[] =
+   "2000 OK backup\n";
+static char OKbootstrap[] =
+   "2000 OK bootstrap\n";
+static char OKverify[] =
+   "2000 OK verify\n";
+static char OKrestore[] =
+   "2000 OK restore\n";
+static char OKsession[] =
+   "2000 OK session\n";
+static char OKstore[] =
+   "2000 OK storage\n";
+static char OKstoreend[] =
+   "2000 OK storage end\n";
+static char OKjob[] =
+   "2000 OK Job %s (%s) %s,%s,%s";
+static char OKsetdebug[] =
+   "2000 OK setdebug=%d trace=%d hangup=%d\n";
+static char BADjob[] =
+   "2901 Bad Job\n";
+static char EndJob[] =
+   "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
+   " JobBytes=%s Errors=%u VSS=%d Encrypt=%d\n";
+static char OKRunBefore[] =
+   "2000 OK RunBefore\n";
+static char OKRunBeforeNow[] =
+   "2000 OK RunBeforeNow\n";
+static char OKRunAfter[] =
+   "2000 OK RunAfter\n";
+static char OKRunScript[] =
+   "2000 OK RunScript\n";
+static char BadRunBeforeJob[] =
+   "2905 Bad RunBeforeJob command.\n";
+static char FailedRunScript[] =
+   "2905 Failed RunScript\n";
+static char BadRunAfterJob[] =
+   "2905 Bad RunAfterJob command.\n";
+static char BADcmd[] =
+   "2902 Bad %s\n";
+static char OKRestoreObject[] =
+   "2000 OK ObjectRestored\n";
 
-/* Responses received from Storage Daemon */
-static char OK_end[] = "3000 OK end\n";
-static char OK_close[] = "3000 OK close Status = %d\n";
-static char OK_open[] = "3000 OK open ticket = %d\n";
-static char OK_data[] = "3000 OK data\n";
-static char OK_append[] = "3000 OK append data\n";
+/*
+ * Responses received from Storage Daemon
+ */
+static char OK_end[] =
+   "3000 OK end\n";
+static char OK_close[] =
+   "3000 OK close Status = %d\n";
+static char OK_open[] =
+   "3000 OK open ticket = %d\n";
+static char OK_data[] =
+   "3000 OK data\n";
+static char OK_append[] =
+   "3000 OK append data\n";
 
-/* Commands sent to Storage Daemon */
-static char append_open[] = "append open session\n";
-static char append_data[] = "append data %d\n";
-static char append_end[] = "append end session %d\n";
-static char append_close[] = "append close session %d\n";
-static char read_open[] = "read open session = %s %ld %ld %ld %ld %ld %ld\n";
-static char read_data[] = "read data %d\n";
-static char read_close[] = "read close session %d\n";
+/*
+ * Commands sent to Storage Daemon
+ */
+static char append_open[] =
+   "append open session\n";
+static char append_data[] =
+   "append data %d\n";
+static char append_end[] =
+   "append end session %d\n";
+static char append_close[] =
+   "append close session %d\n";
+static char read_open[] =
+   "read open session = %s %ld %ld %ld %ld %ld %ld\n";
+static char read_data[] =
+   "read data %d\n";
+static char read_close[] =
+   "read close session %d\n";
 
 /*
  * See if we are allowed to execute the command issued.
@@ -445,42 +510,41 @@ void *handle_client_request(void *dirp)
    return NULL;
 }
 
-static int sm_dump_cmd(JCR *jcr)
+static bool sm_dump_cmd(JCR *jcr)
 {
    close_memory_pool();
    sm_dump(false, true);
    jcr->dir_bsock->fsend("2000 sm_dump OK\n");
-   return 1;
+   return true;
 }
 
 #ifdef DEVELOPER
-static int exit_cmd(JCR *jcr)
+static bool exit_cmd(JCR *jcr)
 {
    jcr->dir_bsock->fsend("2000 exit OK\n");
    terminate_filed(0);
-   return 0;
+   return false;
 }
 #endif
 
 /**
- * Hello from Director he must identify himself and provide his
- *  password.
+ * Hello from Director he must identify himself and provide his password.
  */
-static int hello_cmd(JCR *jcr)
+static bool hello_cmd(JCR *jcr)
 {
    Dmsg0(120, "Calling Authenticate\n");
    if (!authenticate_director(jcr)) {
-      return 0;
+      return false;
    }
    Dmsg0(120, "OK Authenticate\n");
    jcr->authenticated = true;
-   return 1;
+   return true;
 }
 
 /**
  * Cancel a Job
  */
-static int cancel_cmd(JCR *jcr)
+static bool cancel_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    char Job[MAX_NAME_LENGTH];
@@ -504,29 +568,28 @@ static int cancel_cmd(JCR *jcr)
       dir->fsend(_("2902 Error scanning cancel command.\n"));
    }
    dir->signal(BNET_EOD);
-   return 1;
+   return true;
 }
 
 /**
  * Set bandwidth limit as requested by the Director
- *
  */
-static int setbandwidth_cmd(JCR *jcr)
+static bool setbandwidth_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
-   int64_t bw=0;
+   int64_t bw = 0;
    JCR *cjcr;
    char Job[MAX_NAME_LENGTH];
-   *Job=0;
 
+   *Job = 0;
    if (sscanf(dir->msg, setbandwidth, &bw, Job) != 2 || bw < 0) {
       pm_strcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("2991 Bad setbandwidth command: %s\n"), jcr->errmsg);
-      return 0;
+      return false;
    }
 
    if (*Job) {
-      if(!(cjcr=get_jcr_by_full_name(Job))) {
+      if (!(cjcr = get_jcr_by_full_name(Job))) {
          dir->fsend(_("2901 Job %s not found.\n"), Job);
       } else {
          cjcr->max_bandwidth = bw;
@@ -538,7 +601,6 @@ static int setbandwidth_cmd(JCR *jcr)
          }
          free_jcr(cjcr);
       }
-
    } else {                           /* No job requested, apply globally */
       me->max_bandwidth_per_job = bw; /* Overwrite directive */
    }
@@ -548,23 +610,21 @@ static int setbandwidth_cmd(JCR *jcr)
 
 /**
  * Set debug level as requested by the Director
- *
  */
-static int setdebug_cmd(JCR *jcr)
+static bool setdebug_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    int32_t level, trace, hangup;
    int scan;
 
    Dmsg1(50, "setdebug_cmd: %s", dir->msg);
-   scan = sscanf(dir->msg, "setdebug=%d trace=%d hangup=%d",
-       &level, &trace, &hangup);
+   scan = sscanf(dir->msg, setdebugcmd, &level, &trace, &hangup);
    if (scan != 3) {
       Dmsg2(20, "sscanf failed: msg=%s scan=%d\n", dir->msg, scan);
       if (sscanf(dir->msg, "setdebug=%d trace=%d", &level, &trace) != 2) {
          pm_strcpy(jcr->errmsg, dir->msg);
          dir->fsend(_("2991 Bad setdebug command: %s\n"), jcr->errmsg);
-         return 0;
+         return false;
       } else {
          hangup = -1;
       }
@@ -578,7 +638,7 @@ static int setdebug_cmd(JCR *jcr)
    return dir->fsend(OKsetdebug, level, get_trace(), get_hangup());
 }
 
-static int estimate_cmd(JCR *jcr)
+static bool estimate_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    char ed1[50], ed2[50];
@@ -598,7 +658,7 @@ static int estimate_cmd(JCR *jcr)
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Bad estimate command: %s"), jcr->errmsg);
       dir->fsend(_("2992 Bad estimate command.\n"));
-      return 0;
+      return false;
    }
 
    make_estimate(jcr);
@@ -607,13 +667,13 @@ static int estimate_cmd(JCR *jcr)
               edit_uint64_with_commas(jcr->JobBytes, ed2));
    dir->signal(BNET_EOD);
 
-   return 1;
+   return true;
 }
 
 /**
  * Get JobId and Storage Daemon Authorization key from Director
  */
-static int job_cmd(JCR *jcr)
+static bool job_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    POOL_MEM sd_auth_key(PM_MESSAGE);
@@ -625,7 +685,7 @@ static int job_cmd(JCR *jcr)
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Bad Job Command: %s"), jcr->errmsg);
       dir->fsend(BADjob);
-      return 0;
+      return false;
    }
    set_storage_auth_key(jcr, sd_auth_key.c_str());
    Dmsg2(120, "JobId=%d Auth=%s\n", jcr->JobId, jcr->sd_auth_key);
@@ -639,7 +699,7 @@ static int job_cmd(JCR *jcr)
 #endif
 }
 
-static int runbefore_cmd(JCR *jcr)
+static bool runbefore_cmd(JCR *jcr)
 {
    bool ok;
    POOLMEM *cmd;
@@ -647,8 +707,8 @@ static int runbefore_cmd(JCR *jcr)
    BSOCK *dir = jcr->dir_bsock;
 
    if (!me->compatible) {
-      dir->fsend(_("2905 Bad RunBeforeJob command.\n"));
-      return 0;
+      dir->fsend(BadRunBeforeJob);
+      return false;
    }
 
    Dmsg1(100, "runbefore_cmd: %s", dir->msg);
@@ -656,9 +716,9 @@ static int runbefore_cmd(JCR *jcr)
    if (sscanf(dir->msg, runbefore, cmd) != 1) {
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad RunBeforeJob command: %s\n"), jcr->errmsg);
-      dir->fsend(_("2905 Bad RunBeforeJob command.\n"));
+      dir->fsend(BadRunBeforeJob);
       free_memory(cmd);
-      return 0;
+      return false;
    }
    unbash_spaces(cmd);
 
@@ -676,14 +736,14 @@ static int runbefore_cmd(JCR *jcr)
 
    if (ok) {
       dir->fsend(OKRunBefore);
-      return 1;
+      return true;
    } else {
-      dir->fsend(_("2905 Bad RunBeforeJob command.\n"));
-      return 0;
+      dir->fsend(BadRunBeforeJob);
+      return false;
    }
 }
 
-static int runbeforenow_cmd(JCR *jcr)
+static bool runbeforenow_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
 
@@ -695,23 +755,23 @@ static int runbeforenow_cmd(JCR *jcr)
    if (job_canceled(jcr)) {
       dir->fsend(FailedRunScript);
       Dmsg0(100, "Back from run_scripts ClientBeforeJob now: FAILED\n");
-      return 0;
+      return false;
    } else {
       dir->fsend(OKRunBeforeNow);
       Dmsg0(100, "Back from run_scripts ClientBeforeJob now: OK\n");
-      return 1;
+      return true;
    }
 }
 
-static int runafter_cmd(JCR *jcr)
+static bool runafter_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    POOLMEM *cmd;
    RUNSCRIPT *script;
 
    if (!me->compatible) {
-      dir->fsend(_("2905 Bad RunAfterJob command.\n"));
-      return 0;
+      dir->fsend(BadRunAfterJob);
+      return false;
    }
 
    Dmsg1(100, "runafter_cmd: %s", dir->msg);
@@ -719,9 +779,9 @@ static int runafter_cmd(JCR *jcr)
    if (sscanf(dir->msg, runafter, cmd) != 1) {
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad RunAfter command: %s\n"), jcr->errmsg);
-      dir->fsend(_("2905 Bad RunAfterJob command.\n"));
+      dir->fsend(BadRunAfterJob);
       free_memory(cmd);
-      return 0;
+      return false;
    }
    unbash_spaces(cmd);
 
@@ -738,7 +798,7 @@ static int runafter_cmd(JCR *jcr)
    return dir->fsend(OKRunAfter);
 }
 
-static int runscript_cmd(JCR *jcr)
+static bool runscript_cmd(JCR *jcr)
 {
    POOLMEM *msg;
    RUNSCRIPT *cmd;
@@ -772,8 +832,7 @@ static int runscript_cmd(JCR *jcr)
       dir->fsend(FailedRunScript);
       free_runscript(cmd);
       free_memory(msg);
-
-      return 0;
+      return false;
    }
 
    cmd->on_success = on_success;
@@ -796,7 +855,7 @@ static int runscript_cmd(JCR *jcr)
  *   that were backed up (VSS .xml data) and are needed
  *   before starting the restore.
  */
-static int restore_object_cmd(JCR *jcr)
+static bool restore_object_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    int32_t FileIndex;
@@ -888,30 +947,30 @@ static int restore_object_cmd(JCR *jcr)
    }
 
    Dmsg1(100, "Send: %s", OKRestoreObject);
-   return 1;
+   return true;
 
 bail_out:
    dir->fsend(_("2909 Bad RestoreObject command.\n"));
-   return 0;
+   return false;
 }
 
 /**
  * Director is passing his Fileset
  */
-static int fileset_cmd(JCR *jcr)
+static bool fileset_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
-   int rtnstat;
+   bool retval;
 
 #if defined(WIN32_VSS)
    int vss = 0;
 
    sscanf(dir->msg, "fileset vss=%d", &vss);
-   enable_vss = vss;
+   enable_vss = (vss) ? true : false;
 #endif
 
    if (!init_fileset(jcr)) {
-      return 0;
+      return false;
    }
    while (dir->recv() >= 0) {
       strip_trailing_junk(dir->msg);
@@ -919,12 +978,12 @@ static int fileset_cmd(JCR *jcr)
       add_fileset(jcr, dir->msg);
    }
    if (!term_fileset(jcr)) {
-      return 0;
+      return false;
    }
-   rtnstat = dir->fsend(OKinc);
+   retval = dir->fsend(OKinc);
    generate_plugin_event(jcr, bEventEndFileSet);
    check_include_list_shadowing(jcr, jcr->ff->fileset);
-   return rtnstat;
+   return retval;
 }
 
 static void free_bootstrap(JCR *jcr)
@@ -945,7 +1004,7 @@ static uint32_t bsr_uniq = 0;
  *   Deprecated.  The bsr is now sent directly from the
  *   Director to the SD.
  */
-static int bootstrap_cmd(JCR *jcr)
+static bool bootstrap_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    POOLMEM *fname = get_pool_memory(PM_FNAME);
@@ -972,7 +1031,7 @@ static int bootstrap_cmd(JCR *jcr)
         {  }
       free_bootstrap(jcr);
       jcr->setJobStatus(JS_ErrorTerminated);
-      return 0;
+      return false;
    }
 
    while (dir->recv() >= 0) {
@@ -991,7 +1050,7 @@ static int bootstrap_cmd(JCR *jcr)
  * Get backup level from Director
  *
  */
-static int level_cmd(JCR *jcr)
+static bool level_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    POOLMEM *level, *buf = NULL;
@@ -1019,11 +1078,11 @@ static int level_cmd(JCR *jcr)
    } else if (strstr(level, "differential")) {
       jcr->setJobLevel(L_DIFFERENTIAL);
       free_memory(level);
-      return 1;
+      return true;
    } else if (strstr(level, "incremental")) {
       jcr->setJobLevel(L_INCREMENTAL);
       free_memory(level);
-      return 1;
+      return true;
    /*
     * We get his UTC since time, then sync the clocks and correct it
     *   to agree with our clock.
@@ -1092,7 +1151,7 @@ static int level_cmd(JCR *jcr)
    } else {
       Jmsg1(jcr, M_FATAL, 0, _("Unknown backup level: %s\n"), level);
       free_memory(level);
-      return 0;
+      return false;
    }
    free_memory(level);
    if (buf) {
@@ -1108,14 +1167,14 @@ bail_out:
    if (buf) {
       free_memory(buf);
    }
-   return 0;
+   return false;
 }
 
 /**
  * Get session parameters from Director -- this is for a Restore command
  *   This is deprecated. It is now passed via the bsr.
  */
-static int session_cmd(JCR *jcr)
+static bool session_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
 
@@ -1126,7 +1185,7 @@ static int session_cmd(JCR *jcr)
               &jcr->StartBlock, &jcr->EndBlock) != 7) {
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Bad session command: %s"), jcr->errmsg);
-      return 0;
+      return false;
    }
 
    return dir->fsend(OKsession);
@@ -1168,22 +1227,21 @@ static void set_storage_auth_key(JCR *jcr, char *key)
 
 /**
  * Get address of storage daemon from Director
- *
  */
-static int storage_cmd(JCR *jcr)
+static bool storage_cmd(JCR *jcr)
 {
    int stored_port;                /* storage daemon port */
    int enable_ssl;                 /* enable ssl to sd */
+   char stored_addr[MAX_NAME_LENGTH];
    POOL_MEM sd_auth_key(PM_MESSAGE);
    BSOCK *dir = jcr->dir_bsock;
    BSOCK *sd = new_bsock();        /* storage daemon bsock */
 
-
    Dmsg1(100, "StorageCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->msglen);
-   if (sscanf(dir->msg, storaddr, &jcr->stored_addr, &stored_port,
+   if (sscanf(dir->msg, storaddr, stored_addr, &stored_port,
               &enable_ssl, sd_auth_key.c_str()) != 4) {
-      if (sscanf(dir->msg, storaddr_v1, &jcr->stored_addr,
+      if (sscanf(dir->msg, storaddr_v1, stored_addr,
                  &stored_port, &enable_ssl) != 3) {
          pm_strcpy(jcr->errmsg, dir->msg);
          Jmsg(jcr, M_FATAL, 0, _("Bad storage command: %s"), jcr->errmsg);
@@ -1193,9 +1251,7 @@ static int storage_cmd(JCR *jcr)
 
    set_storage_auth_key(jcr, sd_auth_key.c_str());
 
-   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", jcr->stored_addr, stored_port, enable_ssl);
-   /* Open command communications with Storage daemon */
-   /* Try to connect for 1 hour at 10 second intervals */
+   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, enable_ssl);
 
    sd->set_source_address(me->FDsrc_addr);
 
@@ -1213,17 +1269,18 @@ static int storage_cmd(JCR *jcr)
       sd->set_bwlimit_bursting();
    }
 
+   /* Open command communications with Storage daemon */
    if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
-                    _("Storage daemon"), jcr->stored_addr, NULL, stored_port, 1)) {
+                    _("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
      sd->destroy();
      sd = NULL;
    }
 
    if (sd == NULL) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"),
-           jcr->stored_addr, stored_port);
+           stored_addr, stored_port);
       Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n",
-            jcr->stored_addr, stored_port);
+            stored_addr, stored_port);
       goto bail_out;
    }
    Dmsg0(110, "Connection OK to SD.\n");
@@ -1231,7 +1288,7 @@ static int storage_cmd(JCR *jcr)
    jcr->store_bsock = sd;
 
    sd->fsend("Hello Start Job %s\n", jcr->Job);
-   if (!authenticate_storagedaemon(jcr)) {
+   if (!authenticate_with_storagedaemon(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
       goto bail_out;
    }
@@ -1242,14 +1299,14 @@ static int storage_cmd(JCR *jcr)
 
 bail_out:
    dir->fsend(BADcmd, "storage");
-   return 0;
+   return false;
 
 }
 
 /**
  * Do a backup.
  */
-static int backup_cmd(JCR *jcr)
+static bool backup_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    BSOCK *sd = jcr->store_bsock;
@@ -1462,14 +1519,14 @@ cleanup:
 #endif
 
    generate_plugin_event(jcr, bEventEndBackupJob);
-   return 0;                          /* return and stop command loop */
+   return false;                      /* return and stop command loop */
 }
 
 /**
  * Do a Verify for Director
  *
  */
-static int verify_cmd(JCR *jcr)
+static bool verify_cmd(JCR *jcr)
 {
    char level[100];
    BSOCK *dir = jcr->dir_bsock;
@@ -1489,7 +1546,7 @@ static int verify_cmd(JCR *jcr)
    jcr->setJobType(JT_VERIFY);
    if (sscanf(dir->msg, verifycmd, level) != 1) {
       dir->fsend(_("2994 Bad verify command: %s\n"), dir->msg);
-      return 0;
+      return false;
    }
 
    if (bstrcasecmp(level, "init")) {
@@ -1504,7 +1561,7 @@ static int verify_cmd(JCR *jcr)
       jcr->setJobLevel(L_VERIFY_DISK_TO_CATALOG);
    } else {
       dir->fsend(_("2994 Bad verify level: %s\n"), dir->msg);
-      return 0;
+      return false;
    }
 
    dir->fsend(OKverify);
@@ -1521,7 +1578,7 @@ static int verify_cmd(JCR *jcr)
       break;
    case L_VERIFY_VOLUME_TO_CATALOG:
       if (!open_sd_read_session(jcr)) {
-         return 0;
+         return false;
       }
       start_dir_heartbeat(jcr);
       do_verify_volume(jcr);
@@ -1544,12 +1601,12 @@ static int verify_cmd(JCR *jcr)
       break;
    default:
       dir->fsend(_("2994 Bad verify level: %s\n"), dir->msg);
-      return 0;
+      return false;
    }
 
    dir->signal(BNET_EOD);
    generate_plugin_event(jcr, bEventEndVerifyJob);
-   return 0;                          /* return and terminate command loop */
+   return false;                      /* return and terminate command loop */
 }
 
 #if 0
@@ -1575,12 +1632,13 @@ static bool vss_restore_init_callback(JCR *jcr, int init_type)
  * Do a Restore for Director
  *
  */
-static int restore_cmd(JCR *jcr)
+static bool restore_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    BSOCK *sd = jcr->store_bsock;
    POOLMEM *args;
-   bool use_regexwhere=false;
+   bool use_regexwhere = false;
+   bool retval;
    int prefix_links;
    char replace;
 
@@ -1589,7 +1647,7 @@ static int restore_cmd(JCR *jcr)
     */
    if (backup_only_mode) {
       Jmsg(jcr, M_FATAL, 0, _("Filed in backup only mode, restores are not allowed, aborting...\n"));
-      return 0;
+      return false;
    }
 
    /*
@@ -1633,7 +1691,7 @@ static int restore_cmd(JCR *jcr)
          if (sscanf(dir->msg, restorecmd1, &replace, &prefix_links) != 2) {
             pm_strcpy(jcr->errmsg, dir->msg);
             Jmsg(jcr, M_FATAL, 0, _("Bad replace command. CMD=%s\n"), jcr->errmsg);
-            return 0;
+            return false;
          }
          *args = 0;
       }
@@ -1657,7 +1715,7 @@ static int restore_cmd(JCR *jcr)
       if (!jcr->where_bregexp) {
          Jmsg(jcr, M_FATAL, 0, _("Bad where regexp. where=%s\n"), args);
          free_pool_memory(args);
-         return 0;
+         return false;
       }
    } else {
       jcr->where = bstrdup(args);
@@ -1759,39 +1817,39 @@ bail_out:
 
    Dmsg0(100, "Done in job.c\n");
 
-   int ret;
    if (jcr->multi_restore) {
       Dmsg0(100, OKstoreend);
       dir->fsend(OKstoreend);
-      ret = 1;     /* we continue the loop, waiting for next part */
+      retval = true;                  /* we continue the loop, waiting for next part */
    } else {
-      ret = 0;     /* we stop here */
+      retval = false;                 /* we stop here */
    }
 
    if (job_canceled(jcr)) {
-      ret = 0;     /* we stop here */
+      retval = false;                 /* we stop here */
    }
 
-   if (ret == 0) {
-      end_restore_cmd(jcr);  /* stopping so send bEventEndRestoreJob */
+   if (!retval) {
+      end_restore_cmd(jcr);           /* stopping so send bEventEndRestoreJob */
    }
-   return ret;
+
+   return retval;
 }
 
-static int end_restore_cmd(JCR *jcr)
+static bool end_restore_cmd(JCR *jcr)
 {
    Dmsg0(5, "end_restore_cmd\n");
    generate_plugin_event(jcr, bEventEndRestoreJob);
-   return 0;                          /* return and terminate command loop */
+   return false;                      /* return and terminate command loop */
 }
 
-static int open_sd_read_session(JCR *jcr)
+static bool open_sd_read_session(JCR *jcr)
 {
    BSOCK *sd = jcr->store_bsock;
 
    if (!sd) {
       Jmsg(jcr, M_FATAL, 0, _("Improper calling sequence.\n"));
-      return 0;
+      return false;
    }
    Dmsg4(120, "VolSessId=%ld VolsessT=%ld SF=%ld EF=%ld\n",
       jcr->VolSessionId, jcr->VolSessionTime, jcr->StartFile, jcr->EndFile);
@@ -1811,12 +1869,12 @@ static int open_sd_read_session(JCR *jcr)
       Dmsg1(110, "filed<stored: %s", sd->msg);
       if (sscanf(sd->msg, OK_open, &jcr->Ticket) != 1) {
          Jmsg(jcr, M_FATAL, 0, _("Bad response to SD read open: %s\n"), sd->msg);
-         return 0;
+         return false;
       }
       Dmsg1(110, "filed: got Ticket=%d\n", jcr->Ticket);
    } else {
       Jmsg(jcr, M_FATAL, 0, _("Bad response from stored to read open command\n"));
-      return 0;
+      return false;
    }
 
    /*
@@ -1829,9 +1887,10 @@ static int open_sd_read_session(JCR *jcr)
     * Get OK data
     */
    if (!response(jcr, sd, OK_data, "Read Data")) {
-      return 0;
+      return false;
    }
-   return 1;
+
+   return true;
 }
 
 /**
@@ -1851,8 +1910,9 @@ static void filed_free_jcr(JCR *jcr)
    delete jcr->RunScripts;
    free_path_list(jcr);
 
-   if (jcr->JobId != 0)
+   if (jcr->JobId != 0) {
       write_state_file(me->working_directory, "bareos-fd", get_first_port_host_order(me->FDaddrs));
+   }
 
    return;
 }
@@ -1861,22 +1921,22 @@ static void filed_free_jcr(JCR *jcr)
  * Get response from Storage daemon to a command we
  * sent. Check that the response is OK.
  *
- *  Returns: 0 on failure
- *           1 on success
+ *  Returns: false on failure
+ *           true on success
  */
-int response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
+bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
 {
    if (sd->errors) {
-      return 0;
+      return false;
    }
    if (bget_msg(sd) > 0) {
       Dmsg0(110, sd->msg);
       if (bstrcmp(sd->msg, resp)) {
-         return 1;
+         return true;
       }
    }
    if (job_canceled(jcr)) {
-      return 0;                       /* if canceled avoid useless error messages */
+      return false;                   /* if canceled avoid useless error messages */
    }
    if (is_bnet_error(sd)) {
       Jmsg2(jcr, M_FATAL, 0, _("Comm error with SD. bad response to %s. ERR=%s\n"),
@@ -1885,5 +1945,5 @@ int response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
       Jmsg3(jcr, M_FATAL, 0, _("Bad response to %s command. Wanted %s, got %s\n"),
          cmd, resp, sd->msg);
    }
-   return 0;
+   return false;
 }

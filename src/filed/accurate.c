@@ -484,7 +484,7 @@ bail_out:
 /*
  * TODO: use big buffer from htable
  */
-int accurate_cmd(JCR *jcr)
+bool accurate_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    int lstat_pos, chksum_pos;

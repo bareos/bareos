@@ -45,8 +45,7 @@ int32_t decode_LinkFI(char *buf, struct stat *statp, int stat_size);
 void base64_init(void);
 int to_base64(int64_t value, char *where);
 int from_base64(int64_t *value, char *where);
-int bin_to_base64(char *buf, int buflen, char *bin, int binlen,
-                  int compatible);
+int bin_to_base64(char *buf, int buflen, char *bin, int binlen, bool compatible);
 int base64_to_bin(char *dest, int destlen, char *src, int srclen);
 
 /* bget_msg.c */
@@ -138,8 +137,8 @@ void stack_trace();
 int safer_unlink(const char *pathname, const char *regex);
 
 /* cram-md5.c */
-bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, int *compatible);
-bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, int compatible);
+bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, bool *compatible);
+bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, bool compatible);
 void hmac_md5(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8_t *hmac);
 
 /* crypto.c */
@@ -338,7 +337,9 @@ bool tls_bsock_connect(BSOCK *bsock);
 void tls_bsock_shutdown(BSOCK *bsock);
 void free_tls_connection(TLS_CONNECTION *tls);
 bool get_tls_require(TLS_CONTEXT *ctx);
+void set_tls_require(TLS_CONTEXT *ctx, bool value);
 bool get_tls_enable(TLS_CONTEXT *ctx);
+void set_tls_enable(TLS_CONTEXT *ctx, bool value);
 
 /* util.c */
 bool is_buf_zero(char *buf, int len);

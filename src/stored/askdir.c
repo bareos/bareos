@@ -32,34 +32,41 @@
 #include "lib/crypto_cache.h"
 
 static const int dbglvl = 200;
+static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Requests sent to the Director */
-static char Find_media[]   = "CatReq Job=%s FindMedia=%d pool_name=%s media_type=%s\n";
-static char Get_Vol_Info[] = "CatReq Job=%s GetVolInfo VolName=%s write=%d\n";
-static char Update_media[] = "CatReq Job=%s UpdateMedia VolName=%s"
+static char Find_media[] =
+   "CatReq Job=%s FindMedia=%d pool_name=%s media_type=%s\n";
+static char Get_Vol_Info[] =
+   "CatReq Job=%s GetVolInfo VolName=%s write=%d\n";
+static char Update_media[] =
+   "CatReq Job=%s UpdateMedia VolName=%s"
    " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%s VolMounts=%u"
    " VolErrors=%u VolWrites=%u MaxVolBytes=%s EndTime=%s VolStatus=%s"
    " Slot=%d relabel=%d InChanger=%d VolReadTime=%s VolWriteTime=%s"
    " VolFirstWritten=%s\n";
-static char Create_job_media[] = "CatReq Job=%s CreateJobMedia"
+static char Create_job_media[] =
+   "CatReq Job=%s CreateJobMedia"
    " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u"
    " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%s\n";
-static char FileAttributes[] = "UpdCat Job=%s FileAttributes ";
+static char FileAttributes[] =
+   "UpdCat Job=%s FileAttributes ";
 
 /* Responses received from the Director */
-static char OK_media[] = "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
+static char OK_media[] =
+   "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
    " VolBlocks=%lu VolBytes=%lld VolMounts=%lu VolErrors=%lu VolWrites=%lu"
    " MaxVolBytes=%lld VolCapacityBytes=%lld VolStatus=%20s"
    " Slot=%ld MaxVolJobs=%lu MaxVolFiles=%lu InChanger=%ld"
    " VolReadTime=%lld VolWriteTime=%lld EndFile=%lu EndBlock=%lu"
    " LabelType=%ld MediaId=%lld EncryptionKey=%127s\n";
-static char OK_create[] = "1000 OK CreateJobMedia\n";
-
-static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
+static char OK_create[] =
+   "1000 OK CreateJobMedia\n";
 
 #ifdef needed
 
-static char Device_update[] = "DevUpd Job=%s device=%s "
+static char Device_update[] =
+   "DevUpd Job=%s device=%s "
    "append=%d read=%d num_writers=%d "
    "open=%d labeled=%d offline=%d "
    "reserved=%d max_writers=%d "
@@ -194,7 +201,7 @@ static bool do_get_volume_info(DCR *dcr)
     if (*vol.VolEncrKey) {
        if (update_crypto_cache(vol.VolCatName, vol.VolEncrKey)) {
           write_crypto_cache(me->working_directory, "bareos-sd",
-                             get_first_port_host_order(me->sdaddrs));
+                             get_first_port_host_order(me->SDaddrs));
        }
     }
 

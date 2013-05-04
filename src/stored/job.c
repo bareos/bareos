@@ -460,6 +460,10 @@ void stored_free_jcr(JCR *jcr)
       jcr->dir_bsock->signal(BNET_EOD);
       jcr->dir_bsock->signal(BNET_TERMINATE);
    }
+   if (jcr->store_bsock) {
+      jcr->store_bsock->close();
+      jcr->store_bsock = NULL;
+   }
    if (jcr->file_bsock) {
       jcr->file_bsock->close();
       jcr->file_bsock = NULL;
@@ -543,7 +547,7 @@ void stored_free_jcr(JCR *jcr)
    Dsm_check(200);
 
    if (jcr->JobId != 0)
-      write_state_file(me->working_directory, "bareos-sd", get_first_port_host_order(me->sdaddrs));
+      write_state_file(me->working_directory, "bareos-sd", get_first_port_host_order(me->SDaddrs));
 
    Dmsg0(200, "End stored free_jcr\n");
    return;

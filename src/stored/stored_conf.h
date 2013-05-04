@@ -61,6 +61,7 @@ public:
    char *tls_keyfile;                 /* TLS Server Key File */
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
+   uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (per director) */
    char *keyencrkey;                  /* Key Encryption Key */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
@@ -81,9 +82,10 @@ class STORES {
 public:
    RES hdr;
 
-   dlist *sdaddrs;
-   dlist *ndmpaddrs;
-   char *working_directory;           /* working directory for checkpoints */
+   dlist *SDaddrs;
+   dlist *SDsrc_addr;                 /* Address to source connections from */
+   dlist *NDMPaddrs;
+   char *working_directory;           /* Working directory for checkpoints */
    char *pid_directory;
    char *subsys_directory;
    char *plugin_directory;            /* Plugin directory */
@@ -91,9 +93,12 @@ public:
    uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs to run */
    uint32_t ndmploglevel;             /* Initial NDMP log level */
    MSGSRES *messages;                 /* Daemon message handler */
+   utime_t SDConnectTimeout;          /* Timeout in seconds */
    utime_t heartbeat_interval;        /* Interval to send hb to FD */
    utime_t client_wait;               /* Time to wait for FD to connect */
+   uint32_t max_network_buffer_size;  /* Max network buf size */
    bool compatible;                   /* Write compatible format */
+   bool allow_bw_bursting;            /* Allow bursting with bandwidth limiting */
    bool ndmp_enable;                  /* Enable NDMP protocol listener */
    bool ndmp_snooping;                /* Enable NDMP protocol snooping */
    bool tls_authenticate;             /* Authenticate with TLS */
@@ -107,6 +112,8 @@ public:
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    char *verid;                       /* Custom Id to print in version command */
+   uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */
+
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
 };
 

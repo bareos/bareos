@@ -249,11 +249,11 @@ int main (int argc, char *argv[])
    }
 
    create_pid_file(me->pid_directory, "bareos-sd",
-                   get_first_port_host_order(me->sdaddrs));
+                   get_first_port_host_order(me->SDaddrs));
    read_state_file(me->working_directory, "bareos-sd",
-                   get_first_port_host_order(me->sdaddrs));
+                   get_first_port_host_order(me->SDaddrs));
    read_crypto_cache(me->working_directory, "bareos-sd",
-                     get_first_port_host_order(me->sdaddrs));
+                     get_first_port_host_order(me->SDaddrs));
 
    set_jcr_in_tsd(INVALID_JCR);
 
@@ -290,15 +290,15 @@ int main (int argc, char *argv[])
 #if HAVE_NDMP
    /* Seperate thread that handles NDMP connections */
    if (me->ndmp_enable) {
-      start_ndmp_thread_server(me->ndmpaddrs,
+      start_ndmp_thread_server(me->NDMPaddrs,
                                me->max_concurrent_jobs * 2 + 1,
                                &ndmp_workq);
    }
 #endif
 
-   /* Single server used for Director and File daemon */
+   /* Single server used for Director/Storage and File daemon */
    sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server(me->sdaddrs,
+   bnet_thread_server(me->SDaddrs,
                       me->max_concurrent_jobs * 2 + 1,
                       sock_fds,
                       &dird_workq,
@@ -403,16 +403,18 @@ static int check_resources()
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         store->tls_ctx = new_tls_context(store->tls_ca_certfile,
-            store->tls_ca_certdir, store->tls_certfile,
-            store->tls_keyfile, NULL, NULL, store->tls_dhfile,
-            store->tls_verify_peer);
+         store->tls_ctx = new_tls_context(store->tls_ca_certfile, store->tls_ca_certdir,
+                                          store->tls_certfile, store->tls_keyfile,
+                                          NULL, NULL, store->tls_dhfile, store->tls_verify_peer);
 
          if (!store->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
                  store->hdr.name, configfile);
             OK = false;
          }
+
+         set_tls_enable(store->tls_ctx, tls_needed);
+         set_tls_require(store->tls_ctx, store->tls_require);
       }
    }
 
@@ -451,16 +453,18 @@ static int check_resources()
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         director->tls_ctx = new_tls_context(director->tls_ca_certfile,
-            director->tls_ca_certdir, director->tls_certfile,
-            director->tls_keyfile, NULL, NULL, director->tls_dhfile,
-            director->tls_verify_peer);
+         director->tls_ctx = new_tls_context(director->tls_ca_certfile, director->tls_ca_certdir,
+                                             director->tls_certfile, director->tls_keyfile,
+                                             NULL, NULL, director->tls_dhfile, director->tls_verify_peer);
 
          if (!director->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
                  director->hdr.name, configfile);
             OK = false;
          }
+
+         set_tls_enable(director->tls_ctx, tls_needed);
+         set_tls_require(director->tls_ctx, director->tls_require);
       }
    }
 
@@ -718,8 +722,8 @@ void terminate_stored(int sig)
       bmicrosleep(0, 500000);         /* give them 1/2 sec to clean up */
    }
 
-   write_state_file(me->working_directory, "bareos-sd", get_first_port_host_order(me->sdaddrs));
-   delete_pid_file(me->pid_directory, "bareos-sd", get_first_port_host_order(me->sdaddrs));
+   write_state_file(me->working_directory, "bareos-sd", get_first_port_host_order(me->SDaddrs));
+   delete_pid_file(me->pid_directory, "bareos-sd", get_first_port_host_order(me->SDaddrs));
 
    Dmsg1(200, "In terminate_stored() sig=%d\n", sig);
 

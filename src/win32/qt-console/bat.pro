@@ -52,7 +52,7 @@ SOURCES += main.cpp bat_conf.cpp mainwin.cpp qstd.cpp pages.cpp
 
 # bcomm
 HEADERS += bcomm/dircomm.h
-SOURCES += bcomm/dircomm.cpp bcomm/dircomm_auth.cpp
+SOURCES += bcomm/dircomm.cpp
 
 # Console
 HEADERS += console/console.h

@@ -77,7 +77,7 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
 
    jcr->setJobStatus(JS_Running);
 
-   Dmsg1(300, "bfiled: opened data connection %d to stored\n", sd->m_fd);
+   Dmsg1(300, "filed: opened data connection %d to stored\n", sd->m_fd);
 
    LockRes();
    CLIENTRES *client = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
@@ -230,7 +230,7 @@ static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
 
    Dmsg1(300, "Saving Finder Info for \"%s\"\n", bsctx.ff_pkt->fname);
    sd->fsend("%ld %d 0", bsctx.jcr->JobFiles, STREAM_HFSPLUS_ATTRIBUTES);
-   Dmsg1(300, "bfiled>stored:header %s\n", sd->msg);
+   Dmsg1(300, "filed>stored:header %s\n", sd->msg);
    pm_memcpy(sd->msg, bsctx.ff_pkt->hfsinfo.fndrinfo, 32);
    sd->msglen = 32;
    if (bsctx.digest) {
@@ -363,7 +363,7 @@ static inline bool terminate_signing_digest(b_save_ctx &bsctx)
     * Send our header
     */
    sd->fsend("%ld %ld 0", bsctx.jcr->JobFiles, STREAM_SIGNED_DIGEST);
-   Dmsg1(300, "bfiled>stored:header %s\n", sd->msg);
+   Dmsg1(300, "filed>stored:header %s\n", sd->msg);
 
    /*
     * Encode signature data
@@ -395,7 +395,7 @@ static inline bool terminate_digest(b_save_ctx &bsctx)
    BSOCK *sd = bsctx.jcr->store_bsock;
 
    sd->fsend("%ld %d 0", bsctx.jcr->JobFiles, bsctx.digest_stream);
-   Dmsg1(300, "bfiled>stored:header %s\n", sd->msg);
+   Dmsg1(300, "filed>stored:header %s\n", sd->msg);
 
    size = CRYPTO_DIGEST_MAX_SIZE;
 
@@ -614,7 +614,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       return 1;
    }
 
-   Dmsg1(130, "bfiled: sending %s to stored\n", ff_pkt->fname);
+   Dmsg1(130, "filed: sending %s to stored\n", ff_pkt->fname);
 
    /*
     * Setup backup signing context.

@@ -36,6 +36,7 @@ DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev);
 void free_dcr(DCR *dcr);
 
 /* append.c */
+bool do_append_data(JCR *jcr, BSOCK *bs, const char *what);
 bool send_attrs_to_dir(JCR *jcr, DEV_RECORD *rec);
 
 /* askdir.c */
@@ -54,8 +55,11 @@ bool dir_update_device(JCR *jcr, DEVICE *dev);
 bool dir_update_changer(JCR *jcr, AUTOCHANGERRES *changer);
 
 /* authenticate.c */
-int authenticate_director(JCR *jcr);
-int authenticate_filed(JCR *jcr);
+bool authenticate_director(JCR *jcr);
+bool authenticate_storagedaemon(JCR *jcr);
+bool authenticate_with_storagedaemon(JCR *jcr);
+bool authenticate_filedaemon(JCR *jcr);
+bool authenticate_with_filedaemon(JCR *jcr);
 
 /* autochanger.c */
 bool init_autochangers();
@@ -174,16 +178,8 @@ void free_bsr(BSR *bsr);
 void free_restore_volume_list(JCR *jcr);
 void create_restore_volume_list(JCR *jcr);
 
-/* record.c */
-const char *FI_to_ascii(char *buf, int fi);
-const char *stream_to_ascii(char *buf, int stream, int fi);
-bool write_record_to_block(DCR *dcr, DEV_RECORD *rec);
-bool can_write_record_to_block(DEV_BLOCK *block, DEV_RECORD *rec);
-bool read_record_from_block(DCR *dcr, DEV_RECORD *rec);
-DEV_RECORD *new_record();
-void free_record(DEV_RECORD *rec);
-void empty_record(DEV_RECORD *rec);
-uint64_t get_record_address(DEV_RECORD *rec);
+/* read.c */
+bool do_read_data(JCR *jcr);
 
 /* read_record.c */
 READ_CTX *new_read_context(void);
@@ -200,6 +196,17 @@ bool read_next_record_from_block(DCR *dcr,
 bool read_records(DCR *dcr,
                   bool record_cb(DCR *dcr, DEV_RECORD *rec),
                   bool mount_cb(DCR *dcr));
+
+/* record.c */
+const char *FI_to_ascii(char *buf, int fi);
+const char *stream_to_ascii(char *buf, int stream, int fi);
+bool write_record_to_block(DCR *dcr, DEV_RECORD *rec);
+bool can_write_record_to_block(DEV_BLOCK *block, DEV_RECORD *rec);
+bool read_record_from_block(DCR *dcr, DEV_RECORD *rec);
+DEV_RECORD *new_record();
+void free_record(DEV_RECORD *rec);
+void empty_record(DEV_RECORD *rec);
+uint64_t get_record_address(DEV_RECORD *rec);
 
 /* reserve.c */
 void init_reservations_lock();
@@ -247,6 +254,10 @@ extern int reservations_lock_count;
 #define lock_volumes() _lock_volumes(__FILE__, __LINE__)
 #define unlock_volumes() _unlock_volumes()
 #endif
+
+/* sd_cmds.c */
+void handle_stored_connection(BSOCK *sd, char *job_name);
+bool do_listen_run(JCR *jcr);
 
 /* sd_plugins.c */
 char *edit_device_codes(DCR *dcr, char *omsg, const char *imsg, const char *cmd);

@@ -42,10 +42,8 @@ static uint8_t const base64_digits[64] =
 static int base64_inited = 0;
 static uint8_t base64_map[256];
 
-
 /* Initialize the Base 64 conversion routines */
-void
-base64_init(void)
+void base64_init(void)
 {
    int i;
    memset(base64_map, 0, sizeof(base64_map));
@@ -61,8 +59,7 @@ base64_init(void)
  * Returns the number of characters
  * stored (not including the EOS).
  */
-int
-to_base64(int64_t value, char *where)
+int to_base64(int64_t value, char *where)
 {
    uint64_t val;
    int i = 0;
@@ -99,8 +96,7 @@ to_base64(int64_t value, char *where)
  *
  * Returns the value.
  */
-int
-from_base64(int64_t *value, char *where)
+int from_base64(int64_t *value, char *where)
 {
    uint64_t val = 0;
    int i, neg;
@@ -134,8 +130,7 @@ from_base64(int64_t *value, char *where)
  *  Returns: the number of characters stored not
  *           including the EOS
  */
-int
-bin_to_base64(char *buf, int buflen, char *bin, int binlen, int compatible)
+int bin_to_base64(char *buf, int buflen, char *bin, int binlen, bool compatible)
 {
    uint32_t reg, save, mask;
    int rem, i;
@@ -272,7 +267,6 @@ static int errfunc(const char *epath, int eernoo)
   printf("in errfunc\n");
   return 1;
 }
-
 
 /*
  * Test the base64 routines by encoding and decoding

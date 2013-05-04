@@ -41,10 +41,13 @@ static void sendit(const char *msg, int len, STATUS_PKT *sp);
 static const char *level_to_str(int level);
 
 /* Static variables */
-static char qstatus[] = ".status %s\n";
+static char qstatus[] =
+   ".status %s\n";
 
-static char OKqstatus[]   = "2000 OK .status\n";
-static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
+static char OKqstatus[] =
+   "2000 OK .status\n";
+static char DotStatusJob[] =
+   "JobId=%d JobStatus=%c JobErrors=%d\n";
 
 #if defined(HAVE_WIN32)
 static int privs = 0;
@@ -140,7 +143,7 @@ static void  list_status_header(STATUS_PKT *sp)
    sendit(msg.c_str(), len, sp);
    len = Mmsg(msg, _(" Sizeof: boffset_t=%d size_t=%d debug=%d trace=%d "
                      "bwlimit=%skB/s\n"), sizeof(boffset_t), sizeof(size_t),
-              debug_level, get_trace(), edit_uint64_with_commas(me->max_bandwidth_per_job/1024, b1));
+              debug_level, get_trace(), edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
    sendit(msg.c_str(), len, sp);
    if (debug_level > 0) {
       int len;
@@ -417,7 +420,7 @@ static void sendit(const char *msg, int len, STATUS_PKT *sp)
 /*
  * Status command from Director
  */
-int status_cmd(JCR *jcr)
+bool status_cmd(JCR *jcr)
 {
    BSOCK *user = jcr->dir_bsock;
    STATUS_PKT sp;
@@ -428,13 +431,13 @@ int status_cmd(JCR *jcr)
    output_status(&sp);
 
    user->signal(BNET_EOD);
-   return 1;
+   return true;
 }
 
 /*
  * .status command from Director
  */
-int qstatus_cmd(JCR *jcr)
+bool qstatus_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    POOLMEM *cmd;
@@ -451,7 +454,7 @@ int qstatus_cmd(JCR *jcr)
       dir->fsend(_("2900 Bad .status command, missing argument.\n"));
       dir->signal(BNET_EOD);
       free_memory(cmd);
-      return 0;
+      return false;
    }
    unbash_spaces(cmd);
 
@@ -484,12 +487,12 @@ int qstatus_cmd(JCR *jcr)
       dir->fsend(_("2900 Bad .status command, wrong argument.\n"));
       dir->signal(BNET_EOD);
       free_memory(cmd);
-      return 0;
+      return false;
    }
 
    dir->signal(BNET_EOD);
    free_memory(cmd);
-   return 1;
+   return true;
 }
 
 /*

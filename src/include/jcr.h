@@ -345,6 +345,11 @@ public:
    bool HasBase;                          /* True if job use base jobs */
    bool rerunning;                        /* Rerunning an incomplete job */
    bool job_started;                      /* Set when the job is actually started */
+   bool suppress_output;                  /* Set if this JCR should not output any Jmsgs */
+   JCR *cjcr;                             /* Controlling JCR when this is a slave JCR being
+                                           * controlled by an other JCR used for sending
+                                           * normal and fatal errors.
+                                           */
 
    POOLMEM *attr;                         /* Attribute string from SD */
    B_DB *db;                              /* database pointer */
@@ -432,6 +437,7 @@ public:
    bool keep_sd_auth_key;                 /* Clear or not the SD auth key after connection*/
    bool use_accurate_chksum;              /* Use or not checksum option in accurate code */
    bool sd_canceled;                      /* Set if SD canceled */
+   bool remote_replicate;                 /* Replicate data to remote SD */
    bool RescheduleIncompleteJobs;         /* Set if incomplete can be rescheduled */
    bool HasQuota;                         /* Client has quota limits */
 #endif /* DIRECTOR_DAEMON */
@@ -458,7 +464,6 @@ public:
    int32_t replace;                       /* Replace options */
    int32_t buf_size;                      /* Length of buffer */
    FF_PKT *ff;                            /* Find Files packet */
-   char stored_addr[MAX_NAME_LENGTH];     /* Storage daemon address */
    char PrevJob[MAX_NAME_LENGTH];         /* Previous job name assiciated with since time */
    uint32_t ExpectedFiles;                /* Expected restore files */
    uint32_t StartFile;
@@ -503,6 +508,7 @@ public:
    int32_t CurReadVolume;                 /* Current read volume number */
    int32_t label_errors;                  /* Count of label errors */
    bool session_opened;
+   bool remote_replicate;                 /* Replicate data to remote SD */
    long Ticket;                           /* Ticket for this job */
    bool ignore_label_errors;              /* Ignore Volume label errors */
    bool spool_attributes;                 /* Set if spooling attributes */

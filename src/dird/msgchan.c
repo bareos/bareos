@@ -52,9 +52,12 @@ static char use_storage[] =
    "pool_type=%s append=%d copy=%d stripe=%d\n";
 static char use_device[] =
    "use device=%s\n";
-//static char query_device[] = _("query device=%s");
+//static char query_device[] =
+//   "query device=%s";
 
 /* Response from Storage daemon */
+static char OKbootstrap[] =
+   "3000 OK bootstrap\n";
 static char OK_job[] =
    "3000 OK Job SDid=%d SDtime=%d Authorization=%100s\n";
 static char OK_nextrun[] =
@@ -95,8 +98,6 @@ bool update_device_res(JCR *jcr, DEVICERES *dev)
    return true;
 }
 #endif
-
-static char OKbootstrap[] = "3000 OK bootstrap\n";
 
 /*
  * Send bootstrap file to Storage daemon.
