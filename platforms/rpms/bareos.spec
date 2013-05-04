@@ -506,6 +506,7 @@ for F in  \
 %{script_dir}/bareos_config \
 %{script_dir}/btraceback.dbx \
 %{script_dir}/btraceback.mdb \
+%{script_dir}/bareos-ctl-funcs \
 %{script_dir}/bareos-ctl-dir \
 %{script_dir}/bareos-ctl-fd \
 %{script_dir}/bareos-ctl-sd \
