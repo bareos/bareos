@@ -118,6 +118,7 @@ static RES_ITEM cli_items[] = {
    { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
    { "allowbandwidthbursting", store_bool, ITEM(res_client.allow_bw_bursting), 0, 0, "false" },
    { "allowedscriptdir", store_alist_str, ITEM(res_client.allowed_script_dirs), 0, 0, NULL },
+   { "allowedjobcommand", store_alist_str, ITEM(res_client.allowed_job_cmds), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -142,6 +143,7 @@ static RES_ITEM dir_items[] = {
    { "tlsallowedcn", store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
    { "maximumbandwidthperjob", store_speed, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL },
    { "allowedscriptdir", store_alist_str, ITEM(res_dir.allowed_script_dirs), 0, 0, NULL },
+   { "allowedjobcommand", store_alist_str, ITEM(res_dir.allowed_job_cmds), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -260,6 +262,9 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.allowed_script_dirs) {
          delete res->res_dir.allowed_script_dirs;
       }
+      if (res->res_dir.allowed_job_cmds) {
+         delete res->res_dir.allowed_job_cmds;
+      }
       break;
    case R_CLIENT:
       if (res->res_client.working_directory) {
@@ -329,6 +334,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_client.allowed_script_dirs) {
          delete res->res_client.allowed_script_dirs;
+      }
+      if (res->res_client.allowed_job_cmds) {
+         delete res->res_client.allowed_job_cmds;
       }
       break;
    case R_MSGS:
@@ -400,6 +408,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
             }
             res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
             res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
+            res->res_dir.allowed_job_cmds = res_all.res_dir.allowed_job_cmds;
             break;
          case R_CLIENT:
             if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_dir.hdr.name)) == NULL) {
@@ -411,6 +420,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
             res->res_client.pki_recipients = res_all.res_client.pki_recipients;
             res->res_client.messages = res_all.res_client.messages;
             res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
+            res->res_client.allowed_job_cmds = res_all.res_client.allowed_job_cmds;
             break;
          default:
             Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);

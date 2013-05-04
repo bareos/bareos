@@ -198,6 +198,35 @@ static char read_open[] = "read open session = %s %ld %ld %ld %ld %ld %ld\n";
 static char read_data[] = "read data %d\n";
 static char read_close[] = "read close session %d\n";
 
+/*
+ * See if we are allowed to execute the command issued.
+ */
+static bool validate_command(JCR *jcr, const char *cmd, alist *allowed_job_cmds)
+{
+   char *allowed_job_cmd;
+   bool allowed = false;
+
+   /*
+    * If there is no explicit list of allowed cmds allow all cmds.
+    */
+   if (!allowed_job_cmds) {
+      return true;
+   }
+
+   foreach_alist(allowed_job_cmd, allowed_job_cmds) {
+      if (bstrcasecmp(cmd, allowed_job_cmd)) {
+         allowed = true;
+         break;
+      }
+   }
+
+   if (!allowed) {
+      Jmsg(jcr, M_FATAL, 0, _("Illegal %s command not allowed by Allowed Job Cmds setting of this filed.\n"), cmd);
+   }
+
+   return allowed;
+}
+
 /**
  * Accept requests from a Director
  *
@@ -230,7 +259,6 @@ static char read_close[] = "read close session %d\n";
  *  8. SD/FD disconnects while SD despools data and attributes (optional)
  *  9. FD runs ClientRunAfterJob
  */
-
 void *handle_client_request(void *dirp)
 {
    int i;
@@ -550,11 +578,21 @@ static int setdebug_cmd(JCR *jcr)
    return dir->fsend(OKsetdebug, level, get_trace(), get_hangup());
 }
 
-
 static int estimate_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    char ed1[50], ed2[50];
+
+   /*
+    * See if we are allowed to run estimate cmds.
+    */
+   if (!validate_command(jcr, "estimate",
+                        (jcr->director->allowed_job_cmds) ?
+                         jcr->director->allowed_job_cmds :
+                         me->allowed_job_cmds)) {
+      dir->fsend(_("2992 Bad estimate command.\n"));
+      return 0;
+   }
 
    if (sscanf(dir->msg, estimatecmd, &jcr->listing) != 1) {
       pm_strcpy(jcr->errmsg, dir->msg);
@@ -562,10 +600,13 @@ static int estimate_cmd(JCR *jcr)
       dir->fsend(_("2992 Bad estimate command.\n"));
       return 0;
    }
+
    make_estimate(jcr);
+
    dir->fsend(OKest, edit_uint64_with_commas(jcr->num_files_examined, ed1),
-      edit_uint64_with_commas(jcr->JobBytes, ed2));
+              edit_uint64_with_commas(jcr->JobBytes, ed2));
    dir->signal(BNET_EOD);
+
    return 1;
 }
 
@@ -699,27 +740,42 @@ static int runafter_cmd(JCR *jcr)
 
 static int runscript_cmd(JCR *jcr)
 {
+   POOLMEM *msg;
+   RUNSCRIPT *cmd;
    BSOCK *dir = jcr->dir_bsock;
-   POOLMEM *msg = get_memory(dir->msglen+1);
    int on_success, on_failure, fail_on_error;
 
-   RUNSCRIPT *cmd = new_runscript() ;
+   /*
+    * See if we are allowed to run runscript cmds.
+    */
+   if (!validate_command(jcr, "runscript",
+                        (jcr->director->allowed_job_cmds) ?
+                         jcr->director->allowed_job_cmds :
+                         me->allowed_job_cmds)) {
+      dir->fsend(FailedRunScript);
+      return 0;
+   }
+
+   msg = get_memory(dir->msglen + 1);
+   cmd = new_runscript();
    cmd->set_job_code_callback(job_code_callback_filed);
 
    Dmsg1(100, "runscript_cmd: '%s'\n", dir->msg);
-   /* Note, we cannot sscanf into bools */
-   if (sscanf(dir->msg, runscript, &on_success,
-                                  &on_failure,
-                                  &fail_on_error,
-                                  &cmd->when,
-                                  msg) != 5) {
+
+   /*
+    * Note, we cannot sscanf into bools
+    */
+   if (sscanf(dir->msg, runscript, &on_success, &on_failure,
+              &fail_on_error, &cmd->when, msg) != 5) {
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad RunScript command: %s\n"), jcr->errmsg);
-      dir->fsend(_("2905 Bad RunScript command.\n"));
+      dir->fsend(FailedRunScript);
       free_runscript(cmd);
       free_memory(msg);
+
       return 0;
    }
+
    cmd->on_success = on_success;
    cmd->on_failure = on_failure;
    cmd->fail_on_error = fail_on_error;
@@ -730,6 +786,7 @@ static int runscript_cmd(JCR *jcr)
    jcr->RunScripts->append(cmd);
 
    free_pool_memory(msg);
+
    return dir->fsend(OKRunScript);
 }
 
@@ -836,7 +893,6 @@ static int restore_object_cmd(JCR *jcr)
 bail_out:
    dir->fsend(_("2909 Bad RestoreObject command.\n"));
    return 0;
-
 }
 
 /**
@@ -1209,6 +1265,16 @@ static int backup_cmd(JCR *jcr)
       goto cleanup;
    }
 
+   /*
+    * See if we are allowed to run backup cmds.
+    */
+   if (!validate_command(jcr, "backup",
+                        (jcr->director->allowed_job_cmds) ?
+                         jcr->director->allowed_job_cmds :
+                         me->allowed_job_cmds)) {
+      goto cleanup;
+   }
+
 #if defined(WIN32_VSS)
    // capture state here, if client is backed up by multiple directors
    // and one enables vss and the other does not then enable_vss can change
@@ -1405,9 +1471,20 @@ cleanup:
  */
 static int verify_cmd(JCR *jcr)
 {
+   char level[100];
    BSOCK *dir = jcr->dir_bsock;
    BSOCK *sd  = jcr->store_bsock;
-   char level[100];
+
+   /*
+    * See if we are allowed to run verify cmds.
+    */
+   if (!validate_command(jcr, "verify",
+                        (jcr->director->allowed_job_cmds) ?
+                         jcr->director->allowed_job_cmds :
+                         me->allowed_job_cmds)) {
+      dir->fsend(_("2994 Bad verify command: %s\n"), dir->msg);
+      return 0;
+   }
 
    jcr->setJobType(JT_VERIFY);
    if (sscanf(dir->msg, verifycmd, level) != 1) {
@@ -1512,6 +1589,16 @@ static int restore_cmd(JCR *jcr)
     */
    if (backup_only_mode) {
       Jmsg(jcr, M_FATAL, 0, _("Filed in backup only mode, restores are not allowed, aborting...\n"));
+      return 0;
+   }
+
+   /*
+    * See if we are allowed to run restore cmds.
+    */
+   if (!validate_command(jcr, "restore",
+                        (jcr->director->allowed_job_cmds) ?
+                         jcr->director->allowed_job_cmds :
+                         me->allowed_job_cmds)) {
       return 0;
    }
 
