@@ -432,8 +432,10 @@ static void show_scheduled_preview(UAContext *ua, SCHEDRES *sched, struct tm tm,
          ua->send_msg(dt);
          ua->send_msg("  %-22.22s  ", sched->hdr.name);
 
-         bstrncpy(level, level_to_str(run->level), sizeof(level));
-         ua->send_msg("Level=%s ", level);
+         if (run->level) {
+            bstrncpy(level, level_to_str(run->level), sizeof(level));
+            ua->send_msg("Level=%s ", level);
+         }
 
          if (run->Priority) {
             ua->send_msg("Priority=%d ", run->Priority);
@@ -554,7 +556,11 @@ static void do_scheduler_status(UAContext *ua)
                if (cnt == 0) {
                   ua->send_msg("%s\n", sched->hdr.name);
                }
-               ua->send_msg("                       %s\n", job->name());
+               if (job->enabled) {
+                  ua->send_msg("                       %s\n", job->name());
+               } else {
+                  ua->send_msg("                       %s (disabled)\n", job->name());
+               }
                cnt++;
             }
          }
@@ -565,7 +571,7 @@ static void do_scheduler_status(UAContext *ua)
 
    ua->send_msg("====\n\n");
    ua->send_msg("Scheduler Preview for %d days:\n\n", days);
-   ua->send_msg("Date              Schedule                Overrides\n");
+   ua->send_msg("Date                  Schedule                Overrides\n");
    ua->send_msg("==============================================================\n");
 
    while (time_to_check < (now + (days * seconds_per_day))) {
