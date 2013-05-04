@@ -138,6 +138,23 @@ get_local_hostname()
     echo "$hname"
 }
 
+replace()
+{
+    if ! [ $# -eq 2 ]; then
+        return 1
+    fi
+
+    SEARCH="$1"
+    REPLACE="$2"
+
+    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf`
+    do
+        echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
+        sed -i'' "s#${SEARCH}#${REPLACE}#g" ${file};
+    done
+    return 0
+}
+
 initialize_local_hostname()
 {
     #
@@ -149,6 +166,23 @@ initialize_local_hostname()
     replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-sd" "${hname}-sd"
     replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-mon" "${hname}-mon"
     replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" "${hname}"
+}
+
+replace_password()
+{
+    if ! [ $# -eq 2 ]; then
+        return 1
+    fi
+
+    SEARCH="$1"
+    REPLACE="$2"
+
+    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf`
+    do
+        echo "replacing '${SEARCH}' in $file"
+        sed -i'' "s#${SEARCH}#${REPLACE}#g" ${file};
+    done
+    return 0
 }
 
 initialize_passwords()
@@ -172,26 +206,9 @@ initialize_passwords()
     do
         eval "pass=\${$string}"
         if [ ! -z "${pass}" ]; then
-            replace "${string}" "${pass}"
+            replace_password "${string}" "${pass}"
         fi
     done
-}
-
-replace()
-{
-    if ! [ $# -eq 2 ]; then
-        return 1
-    fi
-
-    SEARCH="$1"
-    REPLACE="$2"
-
-    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf`
-    do
-        echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
-        sed -i'' "s#${SEARCH}#${REPLACE}#g" ${file};
-    done
-    return 0
 }
 
 init()
