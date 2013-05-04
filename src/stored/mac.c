@@ -276,6 +276,9 @@ static bool clone_record_to_remote_sd(DCR *dcr, DEV_RECORD *rec)
           */
          send_eod = true;
          send_header = true;
+      } else {
+         send_eod = false;
+         send_header = false;
       }
    }
 
