@@ -170,7 +170,7 @@ static struct cmdstruct commands[] = {
      NT_(""), false },
    { NT_("restore"), restore_cmd, _("Restore files"),
      NT_("where=</path> client=<client-name> storage=<storage-name> bootstrap=<file>\n"
-         "\trestorejob=<job-name> comment=<text> jobid=<jobid> done select all"), false },
+         "\trestorejob=<job-name> comment=<text> jobid=<jobid> copies done select all"), false },
    { NT_("relabel"), relabel_cmd, _("Relabel a tape"),
      NT_("storage=<storage-name> oldvolume=<old-volume-name>\n"
          "\tvolume=<new-volume-name> pool=<pool-name> [ encrypt ]"), false },
