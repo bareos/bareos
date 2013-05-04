@@ -823,6 +823,15 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %nil
 %endif
 
+%define create_group() \
+getent group %1 > /dev/null || groupadd -r %1 \
+%nil
+
+# shell: use /bin/false, because nologin has different paths on different distributions
+%define create_user() \
+getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} -g %{daemon_group} --shell /bin/false %1 \
+%nil
+
 %post director
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
@@ -830,6 +839,9 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %add_service_start bareos-dir
 
 %post storage
+# pre script has already generated the storage daemon user,
+# but here we add the user to additional groups
+%{script_dir}/bareos-config setup_sd_user
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
 %add_service_start bareos-sd
@@ -888,73 +900,23 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %endif
 
 %pre director
-if [ "%{director_daemon_user}" != "root" -a "%{director_daemon_user}" != "%{daemon_user}" ]; then
-   getent passwd %{director_daemon_user} > /dev/null || useradd -r -c "Bareos" -d %{working_dir} -g %{daemon_group} -M -s /sbin/nologin %{director_daemon_user}
-fi
+%create_group %{daemon_group}
+%create_user  %{director_daemon_user}
 exit 0
 
 %pre storage
-#
-# See what secondary groups exist for the sd user to be added to.
-#
-SEC_GROUPS="tape disk"
-ADD_GROUPS=""
-for sec_group in ${SEC_GROUPS}
-do
-   cnt=`getent group ${sec_group} | wc -l`
-   if [ ${cnt} -gt 0 ]; then
-      [ -z ${ADD_GROUPS} ] && ADD_GROUPS="${sec_group}" || ADD_GROUPS="${ADD_GROUPS},${sec_group}"
-   fi
-done
-
-if [ "%{storage_daemon_group}" != "%{daemon_group}" ]; then
-   getent group %{storage_daemon_group} > /dev/null || groupadd -r %{storage_daemon_group}
-fi
-
-#
-# If the user doesn't exist create a new one otherwise modify it to have
-# the wanted secondary groups.
-#
-if [ "%{storage_daemon_user}" != "root" -a "%{storage_daemon_user}" != "%{daemon_user}" ]; then
-   getent passwd %{storage_daemon_user} > /dev/null
-   if [ $? = 0 ]; then
-      #
-      # Make sure the correct primary group is set otherwise fix it.
-      #
-      if [ `id -gn %{storage_daemon_user}` != %{storage_daemon_group} ]; then
-         usermod -g %{storage_daemon_group} %{storage_daemon_user}
-      fi
-      #
-      # Make sure storage_daemon_user is part of the wanted secondary groups
-      #
-      usermod -G ${ADD_GROUPS} %{storage_daemon_user}
-   else
-      #
-      # Create a new storage_daemon_user
-      #
-      useradd -r -c "Bareos" -d %{working_dir} -g %{storage_daemon_group} -M -s /sbin/nologin %{storage_daemon_user}
-      #
-      # Make sure storage_daemon_user is part of the wanted secondary groups
-      #
-      usermod -G ${ADD_GROUPS} %{storage_daemon_user}
-   fi
-else
-   #
-   # Make sure storage_daemon_user is part of the wanted secondary groups
-   #
-   usermod -G ${ADD_GROUPS} %{storage_daemon_user}
-fi
+%create_group %{daemon_group}
+%create_user  %{storage_daemon_user}
 exit 0
 
 %pre filedaemon
-if [ "%{file_daemon_user}" != "root" -a "%{file_daemon_user}" != "%{daemon_user}" ]; then
-   getent passwd %{file_daemon_user} > /dev/null || useradd -r -c "Bareos" -d %{working_dir} -g %{daemon_group} -M -s /sbin/nologin %{file_daemon_user}
-fi
+%create_group %{daemon_group}
+%create_user  %{storage_daemon_user}
 exit 0
 
 %pre common
-getent group %{daemon_group} > /dev/null || groupadd -r %{daemon_group}
-getent passwd %{daemon_user} > /dev/null || useradd -r -c "Bareos" -d %{working_dir} -g %{daemon_group} -M -s /sbin/nologin %{daemon_user}
+%create_group %{daemon_group}
+%create_user  %{daemon_user}
 exit 0
 
 %preun director

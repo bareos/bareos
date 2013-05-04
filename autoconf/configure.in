@@ -3513,6 +3513,10 @@ fi
 AC_OUTPUT([autoconf/Make.common \
 	   Makefile \
 	   manpages/Makefile \
+	   debian/bareos-common.preinst \
+	   debian/bareos-filedaemon.preinst \
+	   debian/bareos-director.preinst \
+	   debian/bareos-storage.preinst \
 	   scripts/bareos-config \
 	   scripts/btraceback \
 	   scripts/bconsole \
