@@ -68,8 +68,10 @@ static char mountcmd[] =
    "mount %127s drive=%d";
 static char unmountcmd[] =
    "unmount %127s drive=%d";
+#if 0
 static char actionopcmd[] =
    "action_on_purge %127s vol=%127s action=%d";
+#endif
 static char releasecmd[] =
    "release %127s drive=%d";
 static char readlabelcmd[] =
