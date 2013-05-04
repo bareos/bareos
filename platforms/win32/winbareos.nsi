@@ -147,12 +147,24 @@ Page custom displayDirconfSnippet
  SetShellVarContext all
 
   ${If} ${FileExists} "$APPDATA\${PRODUCT_NAME}\${fname}"
-  IfSilent +2
-  MessageBox MB_OK|MB_ICONEXCLAMATION \
-    "Existing config file found: $APPDATA\${PRODUCT_NAME}\${fname}$\r$\nmoving to $APPDATA\${PRODUCT_NAME}\${fname}.old"
-    Rename "$APPDATA\${PRODUCT_NAME}\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.old"
+  MessageBox MB_YESNO|MB_ICONQUESTION \
+    "Existing config file found: $APPDATA\${PRODUCT_NAME}\${fname}$\r$\nKeep existing config file?" \
+    /SD IDNO IDYES keep IDNO move
+    move:
+      Rename "$APPDATA\${PRODUCT_NAME}\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.old"
+      Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
+      MessageBox MB_OK|MB_ICONINFORMATION \
+        "Existing config file saved as $APPDATA\${PRODUCT_NAME}\${fname}.old" \
+        /SD IDOK
+    GOTO +3
+    keep:
+      Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.new"
+      MessageBox MB_OK|MB_ICONINFORMATION \
+        "New config file stored $APPDATA\${PRODUCT_NAME}\${fname}.new" \
+        /SD IDOK
+  ${Else}
+    Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
   ${EndIf}
- Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Edit ${fname}.lnk" "write.exe" '"$APPDATA\${PRODUCT_NAME}\${fname}"'
 !macroend
 
@@ -561,6 +573,7 @@ Function .onInit
   File "/oname=$PLUGINSDIR\sed.exe"  	         "sed.exe"
   File "/oname=$PLUGINSDIR\libcrypto-8.dll" 	   "libcrypto-8.dll"
   File "/oname=$PLUGINSDIR\libgcc_s_sjlj-1.dll" "libgcc_s_sjlj-1.dll"
+#  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll"  "libgcc_s_seh-1.dll"
   File "/oname=$PLUGINSDIR\libssl-8.dll" 	      "libssl-8.dll"
   File "/oname=$PLUGINSDIR\libstdc++-6.dll" 	   "libstdc++-6.dll"
   File "/oname=$PLUGINSDIR\zlib1.dll" 	         "zlib1.dll"
@@ -758,7 +771,7 @@ Section Uninstall
 # ask if existing config files should be kept
   IfSilent +2
   MessageBox MB_YESNO|MB_ICONQUESTION \
-    "Do you want to delete the existing configuration files?" /SD IDYES IDNO ConfDeleteSkip
+    "Do you want to keep the existing configuration files?" /SD IDYES IDYES ConfDeleteSkip
 
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf"
   Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"
