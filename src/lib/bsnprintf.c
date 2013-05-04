@@ -652,7 +652,6 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
    int fplace = 0;
    int padlen = 0;                 /* amount to pad */
    int zpadlen = 0;
-   int caps = 0;
    int64_t intpart;
    int64_t fracpart;
    const char *cvt_str;
@@ -672,11 +671,6 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
       signvalue = '+';
    else if (flags & DP_F_SPACE)
       signvalue = ' ';
-
-#if 0
-   if (flags & DP_F_UP)
-      caps = 1;                    /* Should characters be upper case? */
-#endif
 
 #ifndef HAVE_FCVT
    intpart = (int64_t)ufvalue;
