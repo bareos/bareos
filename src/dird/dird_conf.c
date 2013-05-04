@@ -2393,42 +2393,67 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * callback function for edit_job_codes
  * See ../lib/util.c, function edit_job_codes, for more remaining codes
+ *
+ * %f = Filesetname
+ * %h = Client Address
+ * %p = Poolname
+ * %w = Write storage
+ * %x = Spooling (yes/no)
+ * %C = Cloning (yes/no)
+ * %D = Director name
+ * %V = Volume name(s) (Destination)
  */
 extern "C" char *job_code_callback_director(JCR *jcr, const char *param)
 {
    static char yes[] = "yes";
    static char no[] = "no";
    switch (param[0]) {
-      case 'f':
-         if (jcr->res.fileset) {
-            return jcr->res.fileset->name();
+   case 'f':
+      if (jcr->res.fileset) {
+         return jcr->res.fileset->name();
+      }
+      break;
+   case 'h':
+      if (jcr->res.client) {
+         return jcr->res.client->address;
+      }
+      break;
+   case 'p':
+      if (jcr->res.pool) {
+         return jcr->res.pool->name();
+      }
+      break;
+   case 'w':
+      if (jcr->res.wstore) {
+         return jcr->res.wstore->name();
+      }
+      break;
+   case 'x':
+      return jcr->spool_data ? yes : no;
+   case 'C':
+      return jcr->cloned ? yes : no;
+   case 'D':
+      return my_name;
+   case 'V':
+      if (jcr) {
+         /*
+          * If this is a migration/copy we need the volume name from the mig_jcr.
+          */
+         if (jcr->mig_jcr) {
+            jcr = jcr->mig_jcr;
          }
-         break;
-      case 'h':
-         if (jcr->res.client) {
-            return jcr->res.client->address;
+
+         if (jcr->VolumeName) {
+            return jcr->VolumeName;
+         } else {
+            return _("*none*");
          }
-         break;
-      case 'p':
-         if (jcr->res.pool) {
-            return jcr->res.pool->name();
-         }
-         break;
-      case 'w':
-         if (jcr->res.wstore) {
-            return jcr->res.wstore->name();
-         }
-         break;
-      case 'x':
-         return jcr->spool_data ? yes : no;
-         break;
-      case 'D':
-         return my_name;
-         break;
-      case 'C':
-         return jcr->cloned ? yes : no;
-         break;
+      } else {
+         return _("*none*");
+      }
+      break;
    }
+
    return NULL;
 }
 
