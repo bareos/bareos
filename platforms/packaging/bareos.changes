@@ -59,6 +59,5 @@ bareos (12.4.0-2) unstable; urgency=low
 bareos (12.4.0-1) unstable; urgency=low
 
   * Initial release
-  *
 
  -- Joerg Steffens <joerg.steffens@bareos.com>  Tue, 04 Dec 2012 16:43:57 +0100
