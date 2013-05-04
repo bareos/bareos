@@ -1003,7 +1003,7 @@ static char *move_volumes_in_autochanger(UAContext *ua,
  * - export of normal slots into export slots
  * - move from one normal slot to an other normal slot
  */
-static void perform_move_operation(UAContext *ua, enum e_move_op operation)
+static int perform_move_operation(UAContext *ua, enum e_move_op operation)
 {
    bool scan;
    USTORERES store;
@@ -1016,10 +1016,11 @@ static void perform_move_operation(UAContext *ua, enum e_move_op operation)
        nr_enabled_dst_slots = 0;
    int drive = -1;
    int i, max_slots;
+   int retval = 0;
 
    store.store = get_storage_resource(ua, false/*no default*/);
    if (!store.store) {
-      return;
+      return retval;
    }
 
    switch (store.store->Protocol) {
@@ -1027,7 +1028,7 @@ static void perform_move_operation(UAContext *ua, enum e_move_op operation)
    case APT_NDMPV3:
    case APT_NDMPV4:
       ua->warning_msg(_("Storage has non-native protocol.\n"));
-      return;
+      return retval;
    default:
       break;
    }
@@ -1052,7 +1053,7 @@ static void perform_move_operation(UAContext *ua, enum e_move_op operation)
    max_slots = get_num_slots_from_SD(ua);
    if (max_slots <= 0) {
       ua->warning_msg(_("No slots in changer.\n"));
-      return;
+      return retval;
    }
 
    /*
@@ -1321,6 +1322,8 @@ static void perform_move_operation(UAContext *ua, enum e_move_op operation)
       update_slots_from_vol_list(ua, store.store, vol_list, visited_slot_list);
    }
 
+   retval = 1;
+
 bail_out:
    close_sd_bsock(ua);
 
@@ -1337,7 +1340,7 @@ bail_out:
       free(visited_slot_list);
    }
 
-   return;
+   return retval;
 }
 
 /*
@@ -1345,8 +1348,7 @@ bail_out:
  */
 int import_cmd(UAContext *ua, const char *cmd)
 {
-   perform_move_operation(ua, VOLUME_IMPORT);
-   return 0;
+   return perform_move_operation(ua, VOLUME_IMPORT);
 }
 
 /*
@@ -1354,8 +1356,7 @@ int import_cmd(UAContext *ua, const char *cmd)
  */
 int export_cmd(UAContext *ua, const char *cmd)
 {
-   perform_move_operation(ua, VOLUME_EXPORT);
-   return 0;
+   return perform_move_operation(ua, VOLUME_EXPORT);
 }
 
 /*
@@ -1363,6 +1364,5 @@ int export_cmd(UAContext *ua, const char *cmd)
  */
 int move_cmd(UAContext *ua, const char *cmd)
 {
-   perform_move_operation(ua, VOLUME_MOVE);
-   return 0;
+   return perform_move_operation(ua, VOLUME_MOVE);
 }
