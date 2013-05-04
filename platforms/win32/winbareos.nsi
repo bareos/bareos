@@ -22,8 +22,6 @@ RequestExecutionLevel admin
 
 !addplugindir ../nsisplugins
 
-
-
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Bareos"
 #!define PRODUCT_VERSION "1.0"
@@ -34,7 +32,6 @@ RequestExecutionLevel admin
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
 SetCompressor lzma
-
 
 # variable definitions
 Var LocalHostAddress
@@ -76,13 +73,11 @@ Var hwnd
 !include "WinMessages.nsh"
 !include "nsDialogs.nsh"
 !include "x64.nsh"
+!include "WinVer.nsh"
 
 # call functions once to have them included
 ${StrCase}
 ${StrTrimNewLines}
-
-
-
 
 ; MUI 1.67 compatible ------
 !include "MUI.nsh"
@@ -91,7 +86,6 @@ ${StrTrimNewLines}
 !define MUI_ABORTWARNING
 !define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
-
 
 !insertmacro GetParameters
 !insertmacro GetOptions
@@ -161,7 +155,6 @@ Page custom displayDirconfSnippet
  Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Edit ${fname}.lnk" "write.exe" '"$APPDATA\${PRODUCT_NAME}\${fname}"'
 !macroend
-
 
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -250,15 +243,10 @@ Section -SetPasswords
 #
 #  FileClose $R1
 #
-
-
 SectionEnd
-
-
 
 Section "Bareos Client (FileDaemon) and base libs" SEC_CLIENT
 SectionIn 1 2 3
-
 
   SetShellVarContext all
 # TODO: only do this if the file exists
@@ -286,9 +274,8 @@ SectionIn 1 2 3
   File "openssl.exe"
   File "sed.exe"
 
-  !insertmacro InstallConfFile bareos-fd.conf
 #  File "bareos-fd.conf"
-
+  !insertmacro InstallConfFile bareos-fd.conf
 SectionEnd
 
 Section /o "Text Console (bconsole)" SEC_BCONSOLE
@@ -364,13 +351,36 @@ SectionIn 2
 
 SectionEnd
 
+Section "Open Firewall for Client" SEC_FIREWALL
+  SectionIn 1 2 3
+  SetShellVarContext current
+  ${If} ${AtLeastWin7}
+#
+# See http://technet.microsoft.com/de-de/library/dd734783%28v=ws.10%29.aspx
+#
+    DetailPrint  "Opening Firewall, OS is Win7+"
+    DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-fd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-fd.exe$\" enable=yes protocol=TCP localport=9102 description=$\"Bareos backup client rule$\""
+    # profile=[private,domain]"
+    nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-fd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-fd.exe$\" enable=yes protocol=TCP localport=9102 description=$\"Bareos backup client rule$\""
+    # profile=[private,domain]"
+  ${Else}
+    DetailPrint  "Opening Firewall, OS is < Win7"
+    DetailPrint  "netsh firewall add portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
+    nsExec::Exec "netsh firewall add portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
+  ${EndIf}
+SectionEnd
+
+
 ; Section descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CLIENT} "Installs the Bareos File Daemon and required Files"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BCONSOLE} "Installs the CLI client console (bconsole)"
 #  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the tray Icon to monitor the Bareos client"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BAT} "Installs the Qt Console (BAT)"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL} "Opens Port 9102/TCP for bareos-fd.exe (Client program) in the Windows Firewall"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
+
+
 
 Section -AdditionalIcons
   SetShellVarContext all
@@ -452,7 +462,7 @@ Function .onInit
 # check if we are installing on 64Bit, then do some settings
   ${If} ${RunningX64} # 64Bit OS
     ${If} ${BIT_WIDTH} == '32'
-      MessageBox MB_OK|MB_ICONSTOP "You are running a 32 Bit installer on a 64Bit OS.$\r$\nPlease use the 64Bit installer."
+      MessageBox MB_OK|MB_ICONSTOP "You are running a 32 Bit installer on a 64 Bit OS.$\r$\nPlease use the 64 Bit installer."
       Abort
     ${EndIf}
     StrCpy $INSTDIR "$PROGRAMFILES64\${PRODUCT_NAME}"
@@ -460,7 +470,7 @@ Function .onInit
     ${EnableX64FSRedirection}
   ${Else} # 32Bit OS
     ${If} ${BIT_WIDTH} == '64'
-      MessageBox MB_OK|MB_ICONSTOP "You are running a 64 Bit installer on a 32Bit OS.$\r$\nPlease use the 32Bit installer."
+      MessageBox MB_OK|MB_ICONSTOP "You are running a 64 Bit installer on a 32 Bit OS.$\r$\nPlease use the 32 Bit installer."
       Abort
     ${EndIf}
   ${EndIf}
@@ -638,15 +648,10 @@ Function getClientParameters
 # information
 
   WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 2" "state" $ClientName
-
   WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 3" "state" $DirectorName
-
   WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 4" "state" $ClientPassword
-
   WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 14" "state" $ClientMonitorPassword
-
   WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 5" "state" $ClientAddress
-
 #  WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 7" "state" "Director console password"
 
 
@@ -654,13 +659,9 @@ ${If} ${SectionIsSelected} ${SEC_CLIENT}
   InstallOptions::dialog $PLUGINSDIR\clientdialog.ini
   Pop $R0
   ReadINIStr  $ClientName             "$PLUGINSDIR\clientdialog.ini" "Field 2" "state"
-
   ReadINIStr  $DirectorName            "$PLUGINSDIR\clientdialog.ini" "Field 3" "state"
-
   ReadINIStr  $ClientPassword          "$PLUGINSDIR\clientdialog.ini" "Field 4" "state"
-
   ReadINIStr  $ClientMonitorPassword   "$PLUGINSDIR\clientdialog.ini" "Field 14" "state"
-
   ReadINIStr  $ClientAddress           "$PLUGINSDIR\clientdialog.ini" "Field 5" "state"
 ${EndIf}
 #  MessageBox MB_OK "$ClientName$\r$\n$ClientPassword$\r$\n$ClientMonitorPassword "
@@ -676,18 +677,13 @@ FunctionEnd
 Function getDirectorParameters
   Push $R0
 # prefill the dialog fields
-
   WriteINIStr "$PLUGINSDIR\directordialog.ini" "Field 2" "state" $DirectorAddress
-
   WriteINIStr "$PLUGINSDIR\directordialog.ini" "Field 3" "state" $DirectorPassword
-
 #TODO: also do this if BAT is selected alone
 ${If} ${SectionIsSelected} ${SEC_BCONSOLE}
   InstallOptions::dialog $PLUGINSDIR\directordialog.ini
   Pop $R0
-
   ReadINIStr  $DirectorAddress        "$PLUGINSDIR\directordialog.ini" "Field 2" "state"
-
   ReadINIStr  $DirectorPassword       "$PLUGINSDIR\directordialog.ini" "Field 3" "state"
 
 #  MessageBox MB_OK "$DirectorAddress$\r$\n$DirectorPassword"
@@ -733,7 +729,6 @@ Function displayDirconfSnippet
 FunctionEnd
 
 
-
 Function un.onUninstSuccess
   HideWindow
   MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) was successfully uninstalled." /SD IDYES
@@ -743,6 +738,7 @@ Function un.onInit
   MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "Do you want to uninstall $(^Name) and all its components?" /SD IDYES IDYES +2
   Abort
 FunctionEnd
+
 
 Section Uninstall
   # on 64Bit Systems, change the INSTDIR and Registry view to remove the right entries
@@ -821,6 +817,18 @@ ConfDeleteSkip:
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
   SetAutoClose true
+
+# close Firewall
+  ${If} ${AtLeastWin7}
+    DetailPrint  "Closing Firewall, OS is Win7+"
+    DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos backup client (bareos-fd) access$\""
+    nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos backup client (bareos-fd) access$\""
+  ${Else}
+    DetailPrint  "Closing Firewall, OS is < Win7"
+    DetailPrint  "netsh firewall delete portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
+    nsExec::Exec "netsh firewall delete portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
+  ${EndIf}
+
 SectionEnd
 
 
@@ -843,14 +851,13 @@ FunctionEnd
 # - access on conf files has to be limited to administrators
 # - tray-monitor automatic start at login
 # - tray-monitor does not work right now (why?)
-# - add firewall rule for bareos-fd after installation.
 # - create snippet for restricted console that is only allowed to access
 #   this client
-# - find out if a prior version is already installed and use that install directory or uninstall it first
-# - silent installer with configurable parameters that are otherwise in the forms
-
 #
 # DONE:
+# - silent installer with configurable parameters that are otherwise in the forms
+# - find out if a prior version is already installed and use that install directory or uninstall it first
+# - add firewall rule for bareos-fd after installation.
 # - put the config files in $APPDATA
 # - add section bconsole automatically when section bat is selected
 # - add license information to installer
