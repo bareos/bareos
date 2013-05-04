@@ -118,9 +118,6 @@ static void destroy_pool_descriptor(SQL_POOL_DESCRIPTOR *spd, bool flush_only)
       db_pooling_descriptors->remove(spd);
       delete spd->pool_entries;
       free(spd);
-   } else {
-      delete spd->pool_entries;
-      spd->pool_entries = NULL;
    }
 }
 
@@ -695,6 +692,10 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
     */
    now = time(NULL);
    foreach_dlist(spd, db_pooling_descriptors) {
+      if (!spd->pool_entries) {
+         continue;
+      }
+
       foreach_dlist(spe, spd->pool_entries) {
          if (spe->db_handle == mdb) {
             found = true;
@@ -737,7 +738,11 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
                free(spe);
                spd->nr_connections--;
             }
-            goto ok_out;
+
+            /*
+             * No need to search further if we found the item we were looking for.
+             */
+            break;
          }
       }
 
@@ -758,6 +763,13 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
             sql_pool_shrink(spd);
          }
       }
+
+      /*
+       * No need to search further if we found the item we were looking for.
+       */
+      if (found) {
+         break;
+      }
    }
 
    /*
@@ -768,7 +780,6 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
       db_close_database(jcr, mdb);
    }
 
-ok_out:
    V(mutex);
 }
 

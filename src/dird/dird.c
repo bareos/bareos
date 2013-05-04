@@ -543,7 +543,7 @@ void reload_config(int sig)
    ok = parse_dir_config(config, configfile, M_ERROR);
 
    Dmsg0(100, "Reloaded config file\n");
-   if (!ok || !check_resources() || !check_catalog(UPDATE_CATALOG)) {
+   if (!ok || !check_resources() || !check_catalog(UPDATE_CATALOG) || !initialize_sql_pooling()) {
       rtable = find_free_reload_table_entry();    /* save new, bad table */
       if (rtable < 0) {
          Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
