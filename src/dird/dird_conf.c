@@ -362,7 +362,7 @@ RES_ITEM job_items[] = {
    { "maximumconcurrentjobs", store_pint32, ITEM(res_job.MaxConcurrentJobs), 0, ITEM_DEFAULT, "1" },
    { "rescheduleonerror", store_bool, ITEM(res_job.RescheduleOnError), 0, ITEM_DEFAULT, "false" },
    { "rescheduleinterval", store_time, ITEM(res_job.RescheduleInterval), 0, ITEM_DEFAULT, "180" /* 60 * 30 */ },
-   { "rescheduletimes", store_pint32, ITEM(res_job.RescheduleTimes), 0, 0, "5" },
+   { "rescheduletimes", store_pint32, ITEM(res_job.RescheduleTimes), 0, ITEM_DEFAULT, "5" },
    { "priority", store_pint32, ITEM(res_job.Priority), 0, ITEM_DEFAULT, "10" },
    { "allowmixedpriority", store_bool, ITEM(res_job.allow_mixed_priority), 0, ITEM_DEFAULT, "false" },
    { "writepartafterjob", store_bool, ITEM(res_job.write_part_after_job), 0, ITEM_DEPRECATED, NULL },

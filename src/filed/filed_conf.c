@@ -114,9 +114,9 @@ static RES_ITEM cli_items[] = {
    { "tlscertificate", store_dir, ITEM(res_client.tls_certfile), 0, 0, NULL },
    { "tlskey", store_dir, ITEM(res_client.tls_keyfile), 0, 0, NULL },
    { "verid", store_str, ITEM(res_client.verid), 0, 0, NULL },
-   { "compatible", store_bool, ITEM(res_client.compatible), 0, 0, "true" },
+   { "compatible", store_bool, ITEM(res_client.compatible), 0, ITEM_DEFAULT, "true" },
    { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
-   { "allowbandwidthbursting", store_bool, ITEM(res_client.allow_bw_bursting), 0, 0, "false" },
+   { "allowbandwidthbursting", store_bool, ITEM(res_client.allow_bw_bursting), 0, ITEM_DEFAULT, "false" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 

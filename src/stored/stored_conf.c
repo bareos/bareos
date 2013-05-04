@@ -93,7 +93,7 @@ static RES_ITEM store_items[] = {
    { "tlsallowedcn", store_alist_str, ITEM(res_store.tls_allowed_cns), 0, 0, NULL },
    { "clientconnectwait", store_time, ITEM(res_store.client_wait), 0, ITEM_DEFAULT, "180" /* 30 * 60 */ },
    { "verid", store_str, ITEM(res_store.verid), 0, 0, NULL },
-   { "compatible", store_bool, ITEM(res_store.compatible), 0, 0, "true" },
+   { "compatible", store_bool, ITEM(res_store.compatible), 0, ITEM_DEFAULT, "true" },
    { "ndmpenable", store_bool, ITEM(res_store.ndmp_enable), 0, 0, NULL },
    { "ndmpsnooping", store_bool, ITEM(res_store.ndmp_snooping), 0, 0, NULL },
    { "ndmploglevel", store_pint32, ITEM(res_store.ndmploglevel), 0, ITEM_DEFAULT, "4" },
