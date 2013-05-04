@@ -735,6 +735,7 @@ STATIC_DIR
 STATIC_SD
 STATIC_FD
 TTOOL_LDFLAGS
+TRAY_MONITOR_DIR
 BAT_DIR
 INTL_LIBTOOL_SUFFIX_PREFIX
 INTLOBJS
@@ -944,6 +945,7 @@ with_libiconv_prefix
 with_libintl_prefix
 with_included_gettext
 enable_bat
+enable_traymonitor
 enable_smartalloc
 enable_lockmgr
 enable_static_tools
@@ -1652,6 +1654,7 @@ Optional Features:
   --disable-nls           do not use Native Language Support
   --disable-rpath         do not hardcode runtime library paths
   --enable-bat            enable build of bat Qt4 GUI [default=no]
+  --enable-traymonitor    enable build of traymonitor [default=no]
   --enable-smartalloc     enable smartalloc debugging support [default=no]
   --enable-lockmgr        enable lock manager support [default=no]
   --enable-static-tools   enable static tape tools [default=no]
@@ -5260,7 +5263,7 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
+for as_dir in $PATH$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/sbin
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
@@ -5315,7 +5318,6 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_MTX" && ac_cv_path_MTX="mtx"
   ;;
 esac
 fi
@@ -21697,9 +21699,7 @@ support_smartalloc=yes
 support_readline=yes
 support_conio=yes
 support_bat=no
-support_tray_monitor=no
-support_tls=no
-support_crypto=no
+support_traymonitor=no
 support_static_tools=no
 support_static_fd=no
 support_static_sd=no
@@ -21739,6 +21739,34 @@ if test x$support_bat = xyes; then
       as_fn_error $? "Unable to find suitable Qt4 installation needed by bat" "$LINENO" 5
    fi
 fi
+
+
+
+# Check whether --enable-traymonitor was given.
+if test "${enable_traymonitor+set}" = set; then :
+  enableval=$enable_traymonitor;
+       if test x$enableval = xyes; then
+
+$as_echo "#define HAVE_TRAYMONITOR 1" >>confdefs.h
+
+      support_traymonitor=yes
+       fi
+
+
+fi
+
+
+TRAY_MONITOR_DIR=
+if test x$support_traymonitor = xyes; then
+   abc=`$PKGCONFIG --atleast-version=4.6 QtGui`
+   pkg=$?
+   if test $pkg = 0; then
+      TRAY_MONITOR_DIR=src/qt-console/tray-monitor
+   else
+      as_fn_error $? "Unable to find suitable Qt4 installation needed by tray-monitor" "$LINENO" 5
+   fi
+fi
+
 
 
 
@@ -31192,7 +31220,7 @@ if test "x${subsysdir}" = "x${sbindir}" ; then
    exit 1
 fi
 
-ac_config_files="$ac_config_files autoconf/Make.common Makefile manpages/Makefile scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/bareos-tray-monitor.desktop scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.desktop scripts/bat.desktop.xsu scripts/bat.desktop.consolehelper scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-console/tray-monitor/tray-monitor.pro src/qt-console/tray-monitor/tray-monitor.conf src/qt-console/bat.conf src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_postgresql_database src/cats/update_postgresql_tables src/cats/make_postgresql_tables src/cats/grant_postgresql_privileges src/cats/drop_postgresql_tables src/cats/drop_postgresql_database src/cats/create_mysql_database src/cats/update_mysql_tables src/cats/make_mysql_tables src/cats/grant_mysql_privileges src/cats/drop_mysql_tables src/cats/drop_mysql_database src/cats/create_sqlite3_database src/cats/update_sqlite3_tables src/cats/make_sqlite3_tables src/cats/grant_sqlite3_privileges src/cats/drop_sqlite3_tables src/cats/drop_sqlite3_database src/cats/sqlite src/cats/mysql src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/findlib/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/fd/Makefile src/plugins/sd/Makefile src/plugins/dir/Makefile po/Makefile.in $PFILES"
+ac_config_files="$ac_config_files autoconf/Make.common Makefile manpages/Makefile scripts/bareos-config scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-console/tray-monitor/bareos-tray-monitor.desktop src/qt-console/tray-monitor/tray-monitor.conf src/qt-console/tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_postgresql_database src/cats/update_postgresql_tables src/cats/make_postgresql_tables src/cats/grant_postgresql_privileges src/cats/drop_postgresql_tables src/cats/drop_postgresql_database src/cats/create_mysql_database src/cats/update_mysql_tables src/cats/make_mysql_tables src/cats/grant_mysql_privileges src/cats/drop_mysql_tables src/cats/drop_mysql_database src/cats/create_sqlite3_database src/cats/update_sqlite3_tables src/cats/make_sqlite3_tables src/cats/grant_sqlite3_privileges src/cats/drop_sqlite3_tables src/cats/drop_sqlite3_database src/cats/sqlite src/cats/mysql src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/findlib/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/fd/Makefile src/plugins/sd/Makefile src/plugins/dir/Makefile po/Makefile.in $PFILES"
 
 ac_config_commands="$ac_config_commands default"
 
@@ -32284,6 +32312,7 @@ do
     "autoconf/Make.common") CONFIG_FILES="$CONFIG_FILES autoconf/Make.common" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "manpages/Makefile") CONFIG_FILES="$CONFIG_FILES manpages/Makefile" ;;
+    "scripts/bareos-config") CONFIG_FILES="$CONFIG_FILES scripts/bareos-config" ;;
     "scripts/btraceback") CONFIG_FILES="$CONFIG_FILES scripts/btraceback" ;;
     "scripts/bconsole") CONFIG_FILES="$CONFIG_FILES scripts/bconsole" ;;
     "scripts/bareos") CONFIG_FILES="$CONFIG_FILES scripts/bareos" ;;
@@ -32295,20 +32324,18 @@ do
     "scripts/logrotate") CONFIG_FILES="$CONFIG_FILES scripts/logrotate" ;;
     "scripts/mtx-changer") CONFIG_FILES="$CONFIG_FILES scripts/mtx-changer" ;;
     "scripts/disk-changer") CONFIG_FILES="$CONFIG_FILES scripts/disk-changer" ;;
-    "scripts/bareos-tray-monitor.desktop") CONFIG_FILES="$CONFIG_FILES scripts/bareos-tray-monitor.desktop" ;;
     "scripts/logwatch/Makefile") CONFIG_FILES="$CONFIG_FILES scripts/logwatch/Makefile" ;;
     "scripts/logwatch/logfile.bareos.conf") CONFIG_FILES="$CONFIG_FILES scripts/logwatch/logfile.bareos.conf" ;;
-    "scripts/bat.desktop") CONFIG_FILES="$CONFIG_FILES scripts/bat.desktop" ;;
-    "scripts/bat.desktop.xsu") CONFIG_FILES="$CONFIG_FILES scripts/bat.desktop.xsu" ;;
-    "scripts/bat.desktop.consolehelper") CONFIG_FILES="$CONFIG_FILES scripts/bat.desktop.consolehelper" ;;
     "scripts/bat.console_apps") CONFIG_FILES="$CONFIG_FILES scripts/bat.console_apps" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "src/include/host.h") CONFIG_FILES="$CONFIG_FILES src/include/host.h" ;;
     "src/console/Makefile") CONFIG_FILES="$CONFIG_FILES src/console/Makefile" ;;
     "src/console/bconsole.conf") CONFIG_FILES="$CONFIG_FILES src/console/bconsole.conf" ;;
-    "src/qt-console/tray-monitor/tray-monitor.pro") CONFIG_FILES="$CONFIG_FILES src/qt-console/tray-monitor/tray-monitor.pro" ;;
+    "src/qt-console/tray-monitor/bareos-tray-monitor.desktop") CONFIG_FILES="$CONFIG_FILES src/qt-console/tray-monitor/bareos-tray-monitor.desktop" ;;
     "src/qt-console/tray-monitor/tray-monitor.conf") CONFIG_FILES="$CONFIG_FILES src/qt-console/tray-monitor/tray-monitor.conf" ;;
+    "src/qt-console/tray-monitor/tray-monitor.pro") CONFIG_FILES="$CONFIG_FILES src/qt-console/tray-monitor/tray-monitor.pro" ;;
     "src/qt-console/bat.conf") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.conf" ;;
+    "src/qt-console/bat.desktop") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.desktop" ;;
     "src/qt-console/bat.pro") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.pro" ;;
     "src/qt-console/install_conf_file") CONFIG_FILES="$CONFIG_FILES src/qt-console/install_conf_file" ;;
     "src/dird/Makefile") CONFIG_FILES="$CONFIG_FILES src/dird/Makefile" ;;
@@ -33910,6 +33937,7 @@ if test "${support_bat}" = "yes" ; then
 
    cd src/qt-console
    echo "Creating bat Makefile"
+   # hack: required to get "make install" to work
    touch bat
    chmod 755 bat
    rm -f Makefile
@@ -33917,6 +33945,23 @@ if test "${support_bat}" = "yes" ; then
    ${MAKE:-make} clean
    cd ${BUILD_DIR}
 fi
+
+if test "${support_traymonitor}" = "yes" ; then
+   if test "x$QMAKE" = "xnone"; then
+      as_fn_error $? "Could not find qmake $PATH. Check your Qt installation" "$LINENO" 5
+   fi
+
+   cd src/qt-console/tray-monitor
+   echo "Creating tray-monitor Makefile"
+   # hack: required to get "make install" to work
+   touch bareos-tray-monitor
+   chmod 755 bareos-tray-monitor
+   rm -f Makefile
+   $QMAKE
+   ${MAKE:-make} clean
+   cd ${BUILD_DIR}
+fi
+
 
 if test X"$GCC" = "Xyes" ; then
   echo "Doing make of dependencies"
@@ -34037,6 +34082,7 @@ Configuration on `date`:
    enable-smartalloc:	     ${support_smartalloc}
    enable-lockmgr:	     ${support_lockmgr}
    bat support: 	     ${support_bat}
+   tray-monitor support:     ${support_traymonitor}
    client-only: 	     ${build_client_only}
    build-dird:		     ${build_dird}
    build-stored:	     ${build_stored}
