@@ -544,6 +544,7 @@ public:
 
 /* Use for better error location printing */
 #define UPDATE_DB(jcr, db, cmd) UpdateDB(__FILE__, __LINE__, jcr, db, cmd)
+#define UPDATE_DB_NO_AFR(jcr, db, cmd) UpdateDB_no_afr(__FILE__, __LINE__, jcr, db, cmd)
 #define INSERT_DB(jcr, db, cmd) InsertDB(__FILE__, __LINE__, jcr, db, cmd)
 #define QUERY_DB(jcr, db, cmd) QueryDB(__FILE__, __LINE__, jcr, db, cmd)
 #define DELETE_DB(jcr, db, cmd) DeleteDB(__FILE__, __LINE__, jcr, db, cmd)
@@ -631,5 +632,6 @@ bool QueryDB(const char *file, int line, JCR *jcr, B_DB *db, char *select_cmd);
 bool InsertDB(const char *file, int line, JCR *jcr, B_DB *db, char *select_cmd);
 int DeleteDB(const char *file, int line, JCR *jcr, B_DB *db, char *delete_cmd);
 bool UpdateDB(const char *file, int line, JCR *jcr, B_DB *db, char *update_cmd);
+bool UpdateDB_no_afr(const char *file, int line, JCR *jcr, B_DB *db, char *update_cmd);
 void split_path_and_file(JCR *jcr, B_DB *mdb, const char *fname);
 #endif /* __CATS_H_ */
