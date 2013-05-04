@@ -3633,6 +3633,7 @@ fi
 AC_OUTPUT([autoconf/Make.common \
 	   Makefile \
 	   manpages/Makefile \
+       scripts/bareos-config \
 	   scripts/btraceback \
 	   scripts/bconsole \
 	   scripts/bareos \
