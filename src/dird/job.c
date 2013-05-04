@@ -206,6 +206,24 @@ bool setup_job(JCR *jcr)
     */
    switch (jcr->getJobType()) {
    case JT_BACKUP:
+      if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+         if (get_or_create_fileset_record(jcr)) {
+            /*
+             * See if we need to upgrade the level. If get_level_since_time returns true
+             * it has updated the level of the backup and we run apply_pool_overrides
+             * with the force flag so the correct pool (full, diff, incr) is selected.
+             * For all others we respect any set ignore flags.
+             */
+            if (get_level_since_time(jcr)) {
+               apply_pool_overrides(jcr, true);
+            } else {
+               apply_pool_overrides(jcr, false);
+            }
+         } else {
+            goto bail_out;
+         }
+      }
+
       switch (jcr->getJobProtocol()) {
       case PT_NDMP:
          if (!do_ndmp_backup_init(jcr)) {
@@ -835,14 +853,166 @@ bool allow_duplicate_job(JCR *jcr)
    return true;
 }
 
-void apply_pool_overrides(JCR *jcr)
+/*
+ * This subroutine edits the last job start time into a
+ * "since=date/time" buffer that is returned in the
+ * variable since.  This is used for display purposes in
+ * the job report.  The time in jcr->stime is later
+ * passed to tell the File daemon what to do.
+ */
+bool get_level_since_time(JCR *jcr)
+{
+   int JobLevel;
+   bool have_full;
+   bool do_full = false;
+   bool do_diff = false;
+   bool pool_updated = false;
+   utime_t now;
+   utime_t last_full_time = 0;
+   utime_t last_diff_time;
+   char prev_job[MAX_NAME_LENGTH];
+
+   jcr->since[0] = 0;
+
+   /*
+    * If job cloned and a since time already given, use it
+    */
+   if (jcr->cloned && jcr->stime && jcr->stime[0]) {
+      bstrncpy(jcr->since, _(", since="), sizeof(jcr->since));
+      bstrncat(jcr->since, jcr->stime, sizeof(jcr->since));
+      return pool_updated;
+   }
+
+   /*
+    * Make sure stime buffer is allocated
+    */
+   if (!jcr->stime) {
+      jcr->stime = get_pool_memory(PM_MESSAGE);
+   }
+   jcr->PrevJob[0] = jcr->stime[0] = 0;
+
+   /*
+    * Lookup the last FULL backup job to get the time/date for a
+    * differential or incremental save.
+    */
+   JobLevel = jcr->getJobLevel();
+   switch (JobLevel) {
+   case L_DIFFERENTIAL:
+   case L_INCREMENTAL:
+      POOLMEM *stime = get_pool_memory(PM_MESSAGE);
+
+      /*
+       * Look up start time of last Full job
+       */
+      now = (utime_t)time(NULL);
+      jcr->jr.JobId = 0;     /* flag to return since time */
+
+      /*
+       * This is probably redundant, but some of the code below
+       * uses jcr->stime, so don't remove unless you are sure.
+       */
+      if (!db_find_job_start_time(jcr,jcr->db, &jcr->jr, &jcr->stime, jcr->PrevJob)) {
+         do_full = true;
+      }
+
+      have_full = db_find_last_job_start_time(jcr, jcr->db, &jcr->jr,
+                                              &stime, prev_job, L_FULL);
+      if (have_full) {
+         last_full_time = str_to_utime(stime);
+      } else {
+         do_full = true;               /* No full, upgrade to one */
+      }
+
+      Dmsg4(50, "have_full=%d do_full=%d now=%lld full_time=%lld\n", have_full,
+            do_full, now, last_full_time);
+
+      /*
+       * Make sure the last diff is recent enough
+       */
+      if (have_full && JobLevel == L_INCREMENTAL && jcr->res.job->MaxDiffInterval > 0) {
+         /*
+          * Lookup last diff job
+          */
+         if (db_find_last_job_start_time(jcr, jcr->db, &jcr->jr,
+                                         &stime, prev_job, L_DIFFERENTIAL)) {
+            last_diff_time = str_to_utime(stime);
+            /*
+             * If no Diff since Full, use Full time
+             */
+            if (last_diff_time < last_full_time) {
+               last_diff_time = last_full_time;
+            }
+            Dmsg2(50, "last_diff_time=%lld last_full_time=%lld\n", last_diff_time,
+                  last_full_time);
+         } else {
+            /*
+             * No last differential, so use last full time
+             */
+            last_diff_time = last_full_time;
+            Dmsg1(50, "No last_diff_time setting to full_time=%lld\n", last_full_time);
+         }
+         do_diff = ((now - last_diff_time) >= jcr->res.job->MaxDiffInterval);
+         Dmsg2(50, "do_diff=%d diffInter=%lld\n", do_diff, jcr->res.job->MaxDiffInterval);
+      }
+
+      /*
+       * Note, do_full takes precedence over do_diff
+       */
+      if (have_full && jcr->res.job->MaxFullInterval > 0) {
+         do_full = ((now - last_full_time) >= jcr->res.job->MaxFullInterval);
+      }
+      free_pool_memory(stime);
+
+      if (do_full) {
+         /*
+          * No recent Full job found, so upgrade this one to Full
+          */
+         Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
+         Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing FULL backup.\n"));
+         bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
+         jcr->setJobLevel(jcr->jr.JobLevel = L_FULL);
+         pool_updated = true;
+       } else if (do_diff) {
+         /*
+          * No recent diff job found, so upgrade this one to Diff
+          */
+         Jmsg(jcr, M_INFO, 0, _("No prior or suitable Differential backup found in catalog. Doing Differential backup.\n"));
+         bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
+         jcr->setJobLevel(jcr->jr.JobLevel = L_DIFFERENTIAL);
+         pool_updated = true;
+      } else {
+         if (jcr->res.job->rerun_failed_levels) {
+            if (db_find_failed_job_since(jcr, jcr->db, &jcr->jr, jcr->stime, JobLevel)) {
+               Jmsg(jcr, M_INFO, 0, _("Prior failed job found in catalog. Upgrading to %s.\n"), level_to_str(JobLevel));
+               bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
+               jcr->setJobLevel(jcr->jr.JobLevel = JobLevel);
+               jcr->jr.JobId = jcr->JobId;
+               pool_updated = true;
+               break;
+            }
+         }
+         bstrncpy(jcr->since, _(", since="), sizeof(jcr->since));
+         bstrncat(jcr->since, jcr->stime, sizeof(jcr->since));
+      }
+      jcr->jr.JobId = jcr->JobId;
+      break;
+   }
+
+   Dmsg3(100, "Level=%c last start time=%s job=%s\n",
+         JobLevel, jcr->stime, jcr->PrevJob);
+
+   return pool_updated;
+}
+
+void apply_pool_overrides(JCR *jcr, bool force)
 {
    bool pool_override = false;
 
    /*
     * If a cmdline pool override is given ignore any level pool overrides.
+    * Unless a force is given then we always apply any overrides.
     */
-   if (jcr->IgnoreLevelPoolOverides) {
+   if (!force && jcr->IgnoreLevelPoolOverides) {
       return;
    }
 
@@ -897,7 +1067,6 @@ void apply_pool_overrides(JCR *jcr)
       pm_strcpy(jcr->res.catalog_source, _("Pool resource"));
    }
 }
-
 
 /*
  * Get or create a Client record for this Job

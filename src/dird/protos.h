@@ -99,7 +99,6 @@ int get_attributes_and_put_in_catalog(JCR *jcr);
 void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId);
 int put_file_into_catalog(JCR *jcr, long file_index, char *fname,
                           char *link, char *attr, int stream);
-void get_level_since_time(JCR *jcr, char *since, int since_len);
 int send_runscripts_commands(JCR *jcr);
 bool send_restore_objects(JCR *jcr);
 bool cancel_file_daemon_job(UAContext *ua, JCR *jcr);
@@ -116,7 +115,8 @@ void update_job_end_record(JCR *jcr);
 bool get_or_create_client_record(JCR *jcr);
 bool get_or_create_fileset_record(JCR *jcr);
 DBId_t get_or_create_pool_record(JCR *jcr, char *pool_name);
-void apply_pool_overrides(JCR *jcr);
+bool get_level_since_time(JCR *jcr);
+void apply_pool_overrides(JCR *jcr, bool force = false);
 JobId_t run_job(JCR *jcr);
 bool cancel_job(UAContext *ua, JCR *jcr);
 void get_job_storage(USTORERES *store, JOBRES *job, RUNRES *run);

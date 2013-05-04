@@ -56,17 +56,6 @@ bool do_native_backup_init(JCR *jcr)
 {
    free_rstorage(jcr);                   /* we don't read so release */
 
-   if (!get_or_create_fileset_record(jcr)) {
-      return false;
-   }
-
-   /*
-    * Get definitive Job level and since time
-    */
-   get_level_since_time(jcr, jcr->since, sizeof(jcr->since));
-
-   apply_pool_overrides(jcr);
-
    if (!allow_duplicate_job(jcr)) {
       return false;
    }
