@@ -229,16 +229,6 @@ Storage {
 #  MediaType = "8mm"
 #}
 
-# Definition of DVD storage device
-#Storage {
-#  Name = "DVD"
-#  Do not use "localhost" here
-#  Address = @hostname@                # N.B. Use a fully qualified name here
-#  Password = "@sd_password@"
-#  Device = "DVD Writer"
-#  MediaType = "DVD"
-#}
-
 # Generic catalog service
 Catalog {
   Name = MyCatalog
