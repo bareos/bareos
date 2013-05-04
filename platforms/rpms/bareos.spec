@@ -613,7 +613,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{plugin_dir}/*-dir.so
 %{script_dir}/delete_catalog_backup
 %{script_dir}/make_catalog_backup
-%{script_dir}/update_bareos_tables
 %{_sbindir}/bareos-dir
 %{_sbindir}/bsmtp
 %dir %{_docdir}/%{name}
@@ -726,6 +725,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{script_dir}/drop_bareos_tables
 %{script_dir}/grant_bareos_privileges
 %{script_dir}/make_bareos_tables
+%{script_dir}/update_bareos_tables
 
 %files database-postgresql
 # postgresql catalog files
