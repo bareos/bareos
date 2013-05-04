@@ -138,7 +138,7 @@ Long standing bugs fixed (bug numbers are from the bacula bug database):
     * Suse Linux Enterprise 11 SP2 (SLE_11_SP2)
     * OpenSuse 11.4
     * OpenSuse 12.1
-    * OpenSuse 12.1
+    * OpenSuse 12.2
     * OpenSuse factory
     * Ubuntu 12.04
   * Fully automatic generation of new packages within one hour after new
