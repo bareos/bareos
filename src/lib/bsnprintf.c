@@ -647,6 +647,7 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
    int r_length;
    extern char *fcvt(double value, int ndigit, int *decpt, int *sign);
 #endif
+   int fiter;
    int iplace = 0;
    int fplace = 0;
    int padlen = 0;                 /* amount to pad */
@@ -716,10 +717,11 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
 
    /* Convert fractional part */
    cvt_str = caps ? "0123456789ABCDEF" : "0123456789abcdef";
+   fiter = max;
    do {
       fconvert[fplace++] = cvt_str[fracpart % 10];
       fracpart = (fracpart / 10);
-   } while (fracpart && (fplace < (int)sizeof(fconvert)));
+   } while (--fiter);
 
    if (fplace == (int)sizeof(fconvert)) {
       fplace--;
