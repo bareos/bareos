@@ -54,11 +54,53 @@ int deny_severity = LOG_WARNING;
 
 static bool quit = false;
 
+struct s_sockfd {
+   int fd;
+   int port;
+};
+
+/*
+ * Stop the Threaded Network Server if its realy running in a seperate thread.
+ * e.g. set the quit flag and wait for the other thread to exit cleanly.
+ */
 void bnet_stop_thread_server(pthread_t tid)
 {
    quit = true;
    if (!pthread_equal(tid, pthread_self())) {
       pthread_kill(tid, TIMEOUT_SIGNAL);
+   }
+}
+
+/*
+ * Perform a cleanup for the Threaded Network Server check if there is still
+ * something to do or that the cleanup already took place.
+ */
+void cleanup_bnet_thread_server(alist *sockfds, workq_t *client_wq)
+{
+   int status;
+   s_sockfd *fd_ptr = NULL;
+
+   if (!sockfds->empty()) {
+      /*
+       * Cleanup open files and pointers to them
+       */
+      fd_ptr = (s_sockfd *)sockfds->first();
+      while (fd_ptr) {
+         close(fd_ptr->fd);
+         fd_ptr = (s_sockfd *)sockfds->next();
+      }
+
+      sockfds->destroy();
+
+      /*
+       * Stop work queue thread
+       */
+      if ((status = workq_destroy(client_wq)) != 0) {
+         berrno be;
+         be.set_errno(status);
+         Emsg1(M_FATAL, 0, _("Could not destroy client queue: ERR=%s\n"),
+               be.bstrerror());
+      }
    }
 }
 
@@ -71,8 +113,8 @@ void bnet_stop_thread_server(pthread_t tid)
  *
  * At the moment it is impossible to bind to different ports.
  */
-void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
-                        void *handle_client_request(void *bsock))
+void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
+                        workq_t *client_wq, void *handle_client_request(void *bsock))
 {
    int newsockfd, status;
    socklen_t clilen;
@@ -83,12 +125,8 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
    struct request_info request;
 #endif
    IPADDR *ipaddr, *next;
-   struct s_sockfd {
-      int fd;
-      int port;
-   } *fd_ptr = NULL;
+   s_sockfd *fd_ptr = NULL;
    char buf[128];
-   alist sockfds(10, not_owned_by_alist);
 #ifdef HAVE_POLL
    nfds_t nfds;
    struct pollfd *pfds;
@@ -164,7 +202,7 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
       }
 
       listen(fd_ptr->fd, 50);      /* tell system we are ready */
-      sockfds.append(fd_ptr);
+      sockfds->append(fd_ptr);
 
 #ifdef HAVE_POLL
       nfds++;
@@ -188,7 +226,7 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
    memset(pfds, 0, sizeof(struct pollfd) * nfds);
 
    nfds = 0;
-   foreach_alist(fd_ptr, &sockfds) {
+   foreach_alist(fd_ptr, sockfds) {
       pfds[nfds].fd = fd_ptr->fd;
       pfds[nfds].events |= POLL_IN;
       nfds++;
@@ -204,7 +242,7 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
       fd_set sockset;
       FD_ZERO(&sockset);
 
-      foreach_alist(fd_ptr, &sockfds) {
+      foreach_alist(fd_ptr, sockfds) {
          FD_SET((unsigned)fd_ptr->fd, &sockset);
          if ((unsigned)fd_ptr->fd > maxfd) {
             maxfd = fd_ptr->fd;
@@ -221,7 +259,7 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
          break;
       }
 
-      foreach_alist(fd_ptr, &sockfds) {
+      foreach_alist(fd_ptr, sockfds) {
          if (FD_ISSET(fd_ptr->fd, &sockset)) {
 #else
       int cnt;
@@ -237,7 +275,7 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
       }
 
       cnt = 0;
-      foreach_alist(fd_ptr, &sockfds) {
+      foreach_alist(fd_ptr, sockfds) {
          if (pfds[cnt++].revents & POLLIN) {
 #endif
             /*
@@ -301,20 +339,5 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
       }
    }
 
-   /*
-    * Cleanup open files and pointers to them
-    */
-   while ((fd_ptr = (s_sockfd *)sockfds.first())) {
-      close(fd_ptr->fd);
-   }
-
-   /*
-    * Stop work queue thread
-    */
-   if ((status = workq_destroy(client_wq)) != 0) {
-      berrno be;
-      be.set_errno(status);
-      Emsg1(M_FATAL, 0, _("Could not destroy client queue: ERR=%s\n"),
-            be.bstrerror());
-   }
+   cleanup_bnet_thread_server(sockfds, client_wq);
 }
