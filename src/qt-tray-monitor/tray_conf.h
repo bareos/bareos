@@ -1,9 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2004-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +31,12 @@
 /*
  * Resource codes -- they must be sequential for indexing
  */
-enum rescode {
+
+#ifndef TRAY_CONF_H_INCLUDED
+#define TRAY_CONF_H_INCLUDED
+
+enum Rescode {
+   R_UNKNOWN = 0,
    R_MONITOR = 1001,
    R_DIRECTOR,
    R_CLIENT,
@@ -125,3 +128,5 @@ union URES {
    CONFONTRES con_font;
    RES hdr;
 };
+
+#endif /* TRAY_CONF_H_INCLUDED */

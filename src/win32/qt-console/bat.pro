@@ -18,7 +18,7 @@ DEPENDPATH  += .
 INCLUDEPATH += ../.. ../../include ../include ../compat/include ../../qt-console
 VPATH        = ../../qt-console
 
-LIBS        += -mwindows ../lib/libbareos.a ../lib/libbareos.dll ../findlib/libbareosfind.dll -lwsock32
+LIBS        += -mwindows ../lib/libbareos.a ../lib/libbareos.dll -lwsock32
 DEFINES     += HAVE_WIN32 HAVE_MINGW
 
 RESOURCES    = main.qrc

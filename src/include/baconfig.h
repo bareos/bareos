@@ -661,10 +661,10 @@ extern void pause_msg(const char *file, const char *func, int line, const char *
  *   Unix/Linix
  */
 #define PathSeparator '/'
-/* Define Winsock functions if we aren't on Windows */
 
-#define WSA_Init() 0 /* 0 = success */
-#define WSACleanup() 0 /* 0 = success */
+/* Define Winsock functions if we aren't on Windows */
+inline int WSA_Init() { return (0); } /* 0 = success */
+inline int WSACleanup() { return (0); } /* 0 = success */
 
 inline bool IsPathSeparator(int ch) { return ch == '/'; }
 inline char *first_path_separator(char *path) { return strchr(path, '/'); }

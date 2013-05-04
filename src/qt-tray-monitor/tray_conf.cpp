@@ -2,6 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -236,6 +238,11 @@ void free_resource(RES *sres, int type)
    switch (type) {
    case R_MONITOR:
       break;
+   case R_DIRECTOR:
+      if (res->res_dir.address) {
+         free(res->res_dir.address);
+      }
+      break;
    case R_CLIENT:
       if (res->res_client.address) {
          free(res->res_client.address);
@@ -288,7 +295,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
    /*
     * Ensure that all required items are present
     */
-   for (i=0; items[i].name; i++) {
+   for (i = 0; items[i].name; i++) {
       if (items[i].flags & ITEM_REQUIRED) {
          if (!bit_is_set(i, res_all.res_monitor.hdr.item_present)) {
                Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
@@ -378,7 +385,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          /*
           * Add new res to end of chain
           */
-         for (last=next=res_head[rindex]; next; next=next->next) {
+         for (last = next = res_head[rindex]; next; next=next->next) {
             last = next;
             if (strcmp(next->name, res->res_monitor.hdr.name) == 0) {
                Emsg2(M_ERROR_TERM, 0,
