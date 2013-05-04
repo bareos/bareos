@@ -70,9 +70,7 @@ static void init_reload(void);
 static CONFIG *config;
 
 /* Globals Exported */
-DIRRES *director;                     /* Director resource */
-int FDConnectTimeout;
-int SDConnectTimeout;
+DIRRES *me;           /* "Global" daemon resource */
 char *configfile = NULL;
 void *start_heap;
 
@@ -301,18 +299,18 @@ int main (int argc, char *argv[])
          init_stack_dump();              /* grab new pid */
       }
       /* Create pid must come after we are a daemon -- so we have our final pid */
-      create_pid_file(director->pid_directory, "bareos-dir",
-                      get_first_port_host_order(director->DIRaddrs));
-      read_state_file(director->working_directory, "bareos-dir",
-                      get_first_port_host_order(director->DIRaddrs));
+      create_pid_file(me->pid_directory, "bareos-dir",
+                      get_first_port_host_order(me->DIRaddrs));
+      read_state_file(me->working_directory, "bareos-dir",
+                      get_first_port_host_order(me->DIRaddrs));
    }
 
    set_jcr_in_tsd(INVALID_JCR);
-   set_thread_concurrency(director->MaxConcurrentJobs * 2 +
+   set_thread_concurrency(me->MaxConcurrentJobs * 2 +
                           4 /* UA */ + 5 /* sched+watchdog+jobsvr+misc */);
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
-   load_dir_plugins(director->plugin_directory);
+   load_dir_plugins(me->plugin_directory);
 
    /* If we are in testing mode, we don't try to fix the catalog */
    cat_op mode=(test_config)?CHECK_CONNECTION:UPDATE_AND_FIX;
@@ -329,14 +327,11 @@ int main (int argc, char *argv[])
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
 
-   my_name_is(0, NULL, director->name());    /* set user defined name */
+   my_name_is(0, NULL, me->name());    /* set user defined name */
 
    cleanup_old_files();
 
    p_db_log_insert = (db_log_insert_func)dir_db_log_insert;
-
-   FDConnectTimeout = (int)director->FDConnectTimeout;
-   SDConnectTimeout = (int)director->SDConnectTimeout;
 
 #if !defined(HAVE_WIN32)
    signal(SIGHUP, reload_config);
@@ -345,13 +340,13 @@ int main (int argc, char *argv[])
    init_console_msg(working_directory);
 
    Dmsg0(200, "Start UA server\n");
-   start_UA_server(director->DIRaddrs);
+   start_UA_server(me->DIRaddrs);
 
    start_watchdog();                  /* start network watchdog thread */
 
    init_jcr_subsystem();              /* start JCR watchdogs etc. */
 
-   init_job_server(director->MaxConcurrentJobs);
+   init_job_server(me->MaxConcurrentJobs);
 
    dbg_jcr_add_hook(db_debug_print); /* used to debug B_DB connexion after fatal signal */
 
@@ -388,8 +383,8 @@ void terminate_dird(int sig)
    db_sql_pool_destroy();
    db_flush_backends();
    unload_dir_plugins();
-   write_state_file(director->working_directory, "bareos-dir", get_first_port_host_order(director->DIRaddrs));
-   delete_pid_file(director->pid_directory, "bareos-dir", get_first_port_host_order(director->DIRaddrs));
+   write_state_file(me->working_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));
+   delete_pid_file(me->pid_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));
    term_scheduler();
    term_job_server();
    if (runjob) {
@@ -576,9 +571,7 @@ void reload_config(int sig)
    }
 
    /* Reset globals */
-   set_working_directory(director->working_directory);
-   FDConnectTimeout = director->FDConnectTimeout;
-   SDConnectTimeout = director->SDConnectTimeout;
+   set_working_directory(me->working_directory);
    Dmsg0(10, "Director's configuration file reread.\n");
 
    /* Now release saved resources, if no jobs using the resources */
@@ -612,27 +605,27 @@ static bool check_resources()
    LockRes();
 
    job = (JOBRES *)GetNextRes(R_JOB, NULL);
-   director = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
-   if (!director) {
+   me = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+   if (!me) {
       Jmsg(NULL, M_FATAL, 0, _("No Director resource defined in %s\n"
                                "Without that I don't know who I am :-(\n"), configfile);
       OK = false;
    } else {
-      set_working_directory(director->working_directory);
-      if (!director->messages) {       /* If message resource not specified */
-         director->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
-         if (!director->messages) {
+      set_working_directory(me->working_directory);
+      if (!me->messages) {       /* If message resource not specified */
+         me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
+         if (!me->messages) {
             Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
             OK = false;
          }
       }
 
-      if (director->optimize_for_size && director->optimize_for_speed) {
+      if (me->optimize_for_size && me->optimize_for_speed) {
          Jmsg(NULL, M_FATAL, 0, _("Cannot optimize for speed and size define only one in %s\n"), configfile);
          OK = false;
       }
 
-      if (GetNextRes(R_DIRECTOR, (RES *)director) != NULL) {
+      if (GetNextRes(R_DIRECTOR, (RES *)me) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
             configfile);
          OK = false;
@@ -641,56 +634,54 @@ static bool check_resources()
       /*
        * tls_require implies tls_enable
        */
-      if (director->tls_require) {
+      if (me->tls_require) {
          if (have_tls) {
-            director->tls_enable = true;
+            me->tls_enable = true;
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
          }
       }
 
-      need_tls = director->tls_enable || director->tls_authenticate;
+      need_tls = me->tls_enable || me->tls_authenticate;
 
-      if (!director->tls_certfile && need_tls) {
-         Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"),
-            director->name(), configfile);
+      if (!me->tls_certfile && need_tls) {
+         Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"), me->name(), configfile);
          OK = false;
       }
 
-      if (!director->tls_keyfile && need_tls) {
-         Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),
-            director->name(), configfile);
+      if (!me->tls_keyfile && need_tls) {
+         Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"), me->name(), configfile);
          OK = false;
       }
 
-      if ((!director->tls_ca_certfile && !director->tls_ca_certdir) &&
-           need_tls && director->tls_verify_peer) {
+      if ((!me->tls_ca_certfile && !me->tls_ca_certdir) &&
+           need_tls && me->tls_verify_peer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\" or \"TLS CA"
               " Certificate Dir\" are defined for Director \"%s\" in %s."
               " At least one CA certificate store is required"
               " when using \"TLS Verify Peer\".\n"),
-              director->name(), configfile);
+              me->name(), configfile);
          OK = false;
       }
 
       /*
        * If everything is well, attempt to initialize our per-resource TLS context
        */
-      if (OK && (need_tls || director->tls_require)) {
+      if (OK && (need_tls || me->tls_require)) {
          /*
           * Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
           */
-         director->tls_ctx = new_tls_context(director->tls_ca_certfile,
-            director->tls_ca_certdir, director->tls_crlfile, director->tls_certfile,
-            director->tls_keyfile, NULL, NULL, director->tls_dhfile,
-            director->tls_verify_peer);
+         me->tls_ctx = new_tls_context(me->tls_ca_certfile,
+            me->tls_ca_certdir, me->tls_crlfile, me->tls_certfile,
+            me->tls_keyfile, NULL, NULL, me->tls_dhfile,
+            me->tls_verify_peer);
 
-         if (!director->tls_ctx) {
+         if (!me->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
-                 director->name(), configfile);
+                 me->name(), configfile);
             OK = false;
          }
       }
@@ -1022,7 +1013,7 @@ static bool check_resources()
    UnlockRes();
    if (OK) {
       close_msg(NULL);                    /* close temp message handler */
-      init_msg(NULL, director->messages); /* open daemon message handler */
+      init_msg(NULL, me->messages); /* open daemon message handler */
    }
    return OK;
 }
@@ -1098,7 +1089,7 @@ static bool check_catalog(cat_op mode)
       }
 
       /* Display a message if the db max_connections is too low */
-      if (!db_check_max_connections(NULL, db, director->MaxConcurrentJobs)) {
+      if (!db_check_max_connections(NULL, db, me->MaxConcurrentJobs)) {
          Pmsg1(000, "Warning, settings problem for Catalog=%s\n", catalog->name());
          Pmsg1(000, "%s", db_strerror(db));
       }
@@ -1229,7 +1220,7 @@ static void cleanup_old_files()
    struct dirent *entry, *result;
    int rc, name_max;
    int my_name_len = strlen(my_name);
-   int len = strlen(director->working_directory);
+   int len = strlen(me->working_directory);
    POOLMEM *cleanup = get_pool_memory(PM_MESSAGE);
    POOLMEM *basename = get_pool_memory(PM_MESSAGE);
    regex_t preg1;
@@ -1242,8 +1233,8 @@ static void cleanup_old_files()
    const char *pat1 = "^[^ ]+\\.(restore\\.[^ ]+\\.bsr|mail)$";
 
    /* Setup working directory prefix */
-   pm_strcpy(basename, director->working_directory);
-   if (len > 0 && !IsPathSeparator(director->working_directory[len-1])) {
+   pm_strcpy(basename, me->working_directory);
+   if (len > 0 && !IsPathSeparator(me->working_directory[len-1])) {
       pm_strcat(basename, "/");
    }
 
@@ -1261,10 +1252,10 @@ static void cleanup_old_files()
       name_max = 1024;
    }
 
-   if (!(dp = opendir(director->working_directory))) {
+   if (!(dp = opendir(me->working_directory))) {
       berrno be;
       Pmsg2(000, "Failed to open working dir %s for cleanup: ERR=%s\n",
-            director->working_directory, be.bstrerror());
+            me->working_directory, be.bstrerror());
       goto get_out1;
       return;
    }

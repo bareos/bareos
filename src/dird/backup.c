@@ -342,7 +342,7 @@ bool do_native_backup(JCR *jcr)
    /*
     * Start conversation with Storage daemon
     */
-   if (!connect_to_storage_daemon(jcr, 10, SDConnectTimeout, 1)) {
+   if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
       return false;
    }
 
@@ -374,7 +374,7 @@ bool do_native_backup(JCR *jcr)
    Dmsg0(150, "Storage daemon connection OK\n");
 
    jcr->setJobStatus(JS_WaitFD);
-   if (!connect_to_file_daemon(jcr, 10, FDConnectTimeout, 1)) {
+   if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, 1)) {
       goto bail_out;
    }
 
@@ -483,7 +483,7 @@ bail_out:
    jcr->setJobStatus(JS_ErrorTerminated);
    Dmsg1(400, "wait for sd. use=%d\n", jcr->use_count());
    /* Cancel SD */
-   wait_for_job_termination(jcr, FDConnectTimeout);
+   wait_for_job_termination(jcr, me->FDConnectTimeout);
    Dmsg1(400, "after wait for sd. use=%d\n", jcr->use_count());
    return false;
 }

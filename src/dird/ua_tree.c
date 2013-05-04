@@ -280,7 +280,7 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
             /*
              * See if we are optimizing for speed or size.
              */
-            if (!director->optimize_for_size && director->optimize_for_speed) {
+            if (!me->optimize_for_size && me->optimize_for_speed) {
                /*
                 * Hardlink to known file index: lookup original file
                 */
@@ -361,7 +361,7 @@ static int set_extract(UAContext *ua, TREE_NODE *node, TREE_CTX *tree, bool extr
          /*
           * See if we are optimizing for speed or size.
           */
-         if (!director->optimize_for_size && director->optimize_for_speed) {
+         if (!me->optimize_for_size && me->optimize_for_speed) {
             if (node->hard_link) {
                key = (((uint64_t) node->JobId) << 32) + node->FileIndex;  /* every hardlink is in hashtable, and it points to linked file */
                is_hardlinked = true;

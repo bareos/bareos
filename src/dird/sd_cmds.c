@@ -93,14 +93,14 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
    if (store->heartbeat_interval) {
       heart_beat = store->heartbeat_interval;
    } else {
-      heart_beat = director->heartbeat_interval;
+      heart_beat = me->heartbeat_interval;
    }
 
    /*
     * Open message channel with the Storage daemon
     */
    Dmsg2(100, "bnet_connect to Storage daemon %s:%d\n", store->address, store->SDport);
-   sd->set_source_address(director->DIRsrc_addr);
+   sd->set_source_address(me->DIRsrc_addr);
    if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat, _("Storage daemon"),
                     store->address, NULL, store->SDport, verbose)) {
       sd->destroy();
@@ -132,7 +132,7 @@ BSOCK *open_sd_bsock(UAContext *ua)
    if (!ua->jcr->store_bsock) {
       ua->send_msg(_("Connecting to Storage daemon %s at %s:%d ...\n"),
                    store->name(), store->address, store->SDport);
-      if (!connect_to_storage_daemon(ua->jcr, 10, SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(ua->jcr, 10, me->SDConnectTimeout, 1)) {
          ua->error_msg(_("Failed to connect to Storage daemon.\n"));
          return NULL;
       }
@@ -617,7 +617,7 @@ bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId)
    control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
 
    control_jcr->res.wstore = store;
-   if (!connect_to_storage_daemon(control_jcr, 10, SDConnectTimeout, 1)) {
+   if (!connect_to_storage_daemon(control_jcr, 10, me->SDConnectTimeout, 1)) {
       ua->error_msg(_("Failed to connect to Storage daemon.\n"));
    }
 
@@ -661,7 +661,7 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent)
       set_wstorage(ua->jcr, &store);
    }
 
-   if (!connect_to_storage_daemon(ua->jcr, 10, SDConnectTimeout, 1)) {
+   if (!connect_to_storage_daemon(ua->jcr, 10, me->SDConnectTimeout, 1)) {
       if (!silent) {
          ua->error_msg(_("Failed to connect to Storage daemon.\n"));
       }
@@ -738,7 +738,7 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
                    store->name(), store->address, store->SDport);
    }
 
-   if (!connect_to_storage_daemon(ua->jcr, 10, SDConnectTimeout, 0)) {
+   if (!connect_to_storage_daemon(ua->jcr, 10, me->SDConnectTimeout, 0)) {
       ua->send_msg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
                    store->name());
       if (ua->jcr->store_bsock) {

@@ -1003,10 +1003,10 @@ static inline int native_to_ndmp_loglevel(CLIENTRES *client, int debuglevel, voi
    /*
     * Take the highest loglevel from either the Director config or the client config.
     */
-   if (client && (client->ndmp_loglevel > director->ndmp_loglevel)) {
+   if (client && (client->ndmp_loglevel > me->ndmp_loglevel)) {
       log_cookie->LogLevel = client->ndmp_loglevel;
    } else {
-      log_cookie->LogLevel = director->ndmp_loglevel;
+      log_cookie->LogLevel = me->ndmp_loglevel;
    }
 
    /*
@@ -1201,7 +1201,7 @@ bool do_ndmp_backup(JCR *jcr)
       set_paired_storage(jcr);
 
       jcr->setJobStatus(JS_WaitSD);
-      if (!connect_to_storage_daemon(jcr, 10, SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
          return false;
       }
 
@@ -1279,7 +1279,7 @@ bool do_ndmp_backup(JCR *jcr)
           * Initialize a new NDMP session
           */
          memset(&ndmp_sess, 0, sizeof(ndmp_sess));
-         ndmp_sess.conn_snooping = (director->ndmp_snooping) ? 1 : 0;
+         ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
          ndmp_sess.control_agent_enabled = 1;
 
          ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
@@ -1677,7 +1677,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
       /*
        * Start conversation with Storage daemon
        */
-      if (!connect_to_storage_daemon(jcr, 10, SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
          goto bail_out;
       }
       sd = jcr->store_bsock;
@@ -1722,7 +1722,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
              * Initialize a new NDMP session
              */
             memset(&ndmp_sess, 0, sizeof(ndmp_sess));
-            ndmp_sess.conn_snooping = (director->ndmp_snooping) ? 1 : 0;
+            ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
             ndmp_sess.control_agent_enabled = 1;
 
             ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
@@ -2015,7 +2015,7 @@ static void do_ndmp_query(UAContext *ua, ndm_job_param *ndmp_job, CLIENTRES *cli
     * Initialize a new NDMP session
     */
    memset(&ndmp_sess, 0, sizeof(ndmp_sess));
-   ndmp_sess.conn_snooping = (director->ndmp_snooping) ? 1 : 0;
+   ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
    ndmp_sess.control_agent_enabled = 1;
 
    ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));

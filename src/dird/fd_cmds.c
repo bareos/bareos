@@ -74,7 +74,6 @@ static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd);
 
 /* External functions */
 extern DIRRES *director;
-extern int FDConnectTimeout;
 
 #define INC_LIST 0
 #define EXC_LIST 1
@@ -94,7 +93,7 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, int
    if (jcr->res.client->heartbeat_interval) {
       heart_beat = jcr->res.client->heartbeat_interval;
    } else {
-      heart_beat = director->heartbeat_interval;
+      heart_beat = me->heartbeat_interval;
    }
 
    if (!jcr->file_bsock) {
@@ -102,7 +101,7 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, int
       bstrncpy(name, _("Client: "), sizeof(name));
       bstrncat(name, jcr->res.client->name(), sizeof(name));
 
-      fd->set_source_address(director->DIRsrc_addr);
+      fd->set_source_address(me->DIRsrc_addr);
       if (!fd->connect(jcr,retry_interval,max_retry_time, heart_beat, name,
                        jcr->res.client->address, NULL,
                        jcr->res.client->FDport, verbose)) {
@@ -813,7 +812,7 @@ bool cancel_file_daemon_job(UAContext *ua, JCR *jcr)
    BSOCK *fd;
 
    ua->jcr->res.client = jcr->res.client;
-   if (!connect_to_file_daemon(ua->jcr, 10, FDConnectTimeout, 1)) {
+   if (!connect_to_file_daemon(ua->jcr, 10, me->FDConnectTimeout, 1)) {
       ua->error_msg(_("Failed to connect to File daemon.\n"));
       return false;
    }
