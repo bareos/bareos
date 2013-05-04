@@ -620,8 +620,10 @@ static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc)
 
    if (rc.next_pool_name) {
       pm_strcpy(jcr->res.npool_source, _("command line"));
+      jcr->res.run_next_pool_override = true;
    } else if (jcr->res.next_pool != jcr->res.pool->NextPool) {
       pm_strcpy(jcr->res.npool_source, _("user input"));
+      jcr->res.run_next_pool_override = true;
    }
 
    jcr->res.client = rc.client;
