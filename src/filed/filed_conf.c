@@ -106,7 +106,7 @@ static RES_ITEM cli_items[] = {
    { "pkikeypair", store_dir, ITEM(res_client.pki_keypair_file), 0, 0, NULL },
    { "pkisigner", store_alist_str, ITEM(res_client.pki_signing_key_files), 0, 0, NULL },
    { "pkimasterkey", store_alist_str, ITEM(res_client.pki_master_key_files), 0, 0, NULL },
-   { "pkicipher", store_cipher, ITEM(res_client.pki_cipher), 0, 0, "aes128" },
+   { "pkicipher", store_cipher, ITEM(res_client.pki_cipher), 0, ITEM_DEFAULT, "aes128" },
 #endif
    { "tlsauthenticate", store_bool, ITEM(res_client.tls_authenticate), 0, 0, NULL },
    { "tlsenable", store_bool, ITEM(res_client.tls_enable), 0, 0, NULL },
@@ -117,9 +117,9 @@ static RES_ITEM cli_items[] = {
    { "tlscertificate", store_dir, ITEM(res_client.tls_certfile), 0, 0, NULL },
    { "tlskey", store_dir, ITEM(res_client.tls_keyfile), 0, 0, NULL },
    { "verid", store_str, ITEM(res_client.verid), 0, 0, NULL },
-   { "compatible", store_bool, ITEM(res_client.compatible), 0, 0, "true" },
+   { "compatible", store_bool, ITEM(res_client.compatible), 0, ITEM_DEFAULT, "true" },
    { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
-   { "allowbandwidthbursting", store_bool, ITEM(res_client.allow_bw_bursting), 0, 0, "false" },
+   { "allowbandwidthbursting", store_bool, ITEM(res_client.allow_bw_bursting), 0, ITEM_DEFAULT, "false" },
    { "allowedscriptdir", store_alist_str, ITEM(res_client.allowed_script_dirs), 0, 0, NULL },
    { "allowedjobcommand", store_alist_str, ITEM(res_client.allowed_job_cmds), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
