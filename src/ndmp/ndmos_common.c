@@ -101,8 +101,8 @@ ndmos_sync_config_info (struct ndm_session *sess)
 	sess->config_info->os_vers = unam.release;
 	sess->config_info->hostid = idbuf;
 
-	sess->config_info->vendor_name = NDMOS_CONST_VENDOR_NAME;
-	sess->config_info->product_name = NDMOS_CONST_PRODUCT_NAME;
+	sess->config_info->vendor_name = (char *)NDMOS_CONST_VENDOR_NAME;
+	sess->config_info->product_name = (char *)NDMOS_CONST_PRODUCT_NAME;
 
 	sprintf (revbuf, "%s LIB:%d.%d/%s OS:%s (%s)",
 		NDMOS_CONST_PRODUCT_REVISION,
