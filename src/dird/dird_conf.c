@@ -325,10 +325,10 @@ RES_ITEM job_items[] = {
    { "addprefix", store_str, ITEM(res_job.add_prefix), 0, 0, NULL },
    { "addsuffix", store_str, ITEM(res_job.add_suffix), 0, 0, NULL },
    /* Where to find bootstrap during restore */
-   { "bootstrap",store_dir, ITEM(res_job.RestoreBootstrap), 0, 0, NULL },
+   { "bootstrap", store_dir, ITEM(res_job.RestoreBootstrap), 0, 0, NULL },
    /* Where to write bootstrap file during backup */
-   { "writebootstrap",store_dir, ITEM(res_job.WriteBootstrap), 0, 0, NULL },
-   { "writeverifylist",store_dir, ITEM(res_job.WriteVerifyList), 0, 0, NULL },
+   { "writebootstrap", store_dir, ITEM(res_job.WriteBootstrap), 0, 0, NULL },
+   { "writeverifylist", store_dir, ITEM(res_job.WriteVerifyList), 0, 0, NULL },
    { "replace", store_replace, ITEM(res_job.replace), 0, ITEM_DEFAULT, "Always" },
    { "maximumbandwidth", store_speed, ITEM(res_job.max_bandwidth), 0, 0, NULL },
    { "maxrunschedtime", store_time, ITEM(res_job.MaxRunSchedTime), 0, 0, NULL },
