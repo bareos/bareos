@@ -79,6 +79,17 @@ char *bstrftime_ny(char *dt, int maxlen, utime_t utime)
    return dt;
 }
 
+/* Formatted time for user display with weekday: weekday dd-Mon hh:mm */
+char *bstrftime_wd(char *dt, int maxlen, utime_t utime)
+{
+   time_t time = (time_t)utime;
+   struct tm tm;
+
+   /* ***FIXME**** the format and localtime_r() should be user configurable */
+   (void)localtime_r(&time, &tm);
+   strftime(dt, maxlen, "%a %d-%b %H:%M", &tm);
+   return dt;
+}
 
 /* Formatted time for user display: dd-Mon-yy hh:mm  (no century) */
 char *bstrftime_nc(char *dt, int maxlen, utime_t utime)

@@ -67,6 +67,7 @@ static bool locationscmd(UAContext *ua, const char *cmd);
 static bool mediacmd(UAContext *ua, const char *cmd);
 static bool aopcmd(UAContext *ua, const char *cmd);
 static bool catalogscmd(UAContext *ua, const char *cmd);
+static bool schedulecmd(UAContext *ua, const char *cmd);
 
 static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd);
 static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd);
@@ -107,6 +108,7 @@ static struct cmdstruct commands[] = {
    { NT_(".pools"), poolscmd, NULL, true },
    { NT_(".quit"), dot_quit_cmd, NULL, false },
    { NT_(".sql"), sql_cmd, NULL, false },
+   { NT_(".schedule"), schedulecmd, NULL, false },
    { NT_(".status"), dot_status_cmd, NULL, false },
    { NT_(".storage"), storagecmd, NULL, true },
    { NT_(".volstatus"), volstatuscmd, NULL, true },
@@ -1051,6 +1053,19 @@ static bool mediacmd(UAContext *ua, const char *cmd)
    }
    return true;
 }
+
+static bool schedulecmd(UAContext *ua, const char *cmd)
+{
+   SCHEDRES *sched;
+
+   LockRes();
+   foreach_res(sched, R_SCHEDULE) {
+      ua->send_msg("%s\n", sched->hdr.name);
+   }
+   UnlockRes();
+   return true;
+}
+
 
 static bool locationscmd(UAContext *ua, const char *cmd)
 {
