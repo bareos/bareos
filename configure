@@ -716,6 +716,8 @@ hostname
 basename
 archivedir
 working_dir
+GNUTLS_INC
+GNUTLS_LIBS
 OPENSSL_INC
 OPENSSL_LIBS
 PYTHON_INC
@@ -960,7 +962,10 @@ enable_readline
 with_readline
 with_python
 with_tcp_wrappers
+enable_crypto
+enable_tls
 with_openssl
+with_gnutls
 with_working_dir
 with_archivedir
 with_basename
@@ -1666,6 +1671,8 @@ Optional Features:
   --disable-conio         disable conio support [default=no]
   --enable-ipv6           enable ipv6 support [default=yes]
   --disable-readline      disable readline support [default=yes]
+  --disable-crypto        disable crypto support [default=auto]
+  --disable-tls           disable TLS support [default=auto]
   --enable-ndmp           enable build of NDMP support [default=no]
   --enable-batch-insert   enable the DB batch insert code [default=yes]
   --enable-dynamic-cats-backends
@@ -1699,6 +1706,7 @@ Optional Packages:
   --with-tcp-wrappers[=DIR]
                           enable tcpwrappers support
   --with-openssl[=DIR]    Include OpenSSL support. DIR is the OpenSSL base
+  --with-gnutls[=DIR]     Include GNUTLS support. DIR is the GNUTLS base
   --with-working-dir=PATH specify path of Bareos working directory
   --with-archivedir=PATH  specify path of SD archive directory
   --with-basename=RESNAME specify base resource name for daemons
@@ -21698,8 +21706,6 @@ support_readline=yes
 support_conio=yes
 support_bat=no
 support_tray_monitor=no
-support_tls=no
-support_crypto=no
 support_static_tools=no
 support_static_fd=no
 support_static_sd=no
@@ -23073,6 +23079,37 @@ rm -f core conftest.err conftest.$ac_objext \
 fi
 
 
+support_crypto=auto
+# Check whether --enable-crypto was given.
+if test "${enable_crypto+set}" = set; then :
+  enableval=$enable_crypto;
+       if test x$enableval = xyes; then
+	  support_crypto=yes
+       elif test x$enableval = xno; then
+	  support_crypto=no
+       fi
+
+
+fi
+
+
+support_tls=auto
+# Check whether --enable-tls was given.
+if test "${enable_tls+set}" = set; then :
+  enableval=$enable_tls;
+       if test x$enableval = xyes; then
+	  support_tls=yes
+       elif test x$enableval = xno; then
+	  support_tls=no
+       fi
+
+
+fi
+
+
+have_crypto=no
+have_tls=no
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OpenSSL" >&5
 $as_echo_n "checking for OpenSSL... " >&6; }
 
@@ -23085,37 +23122,38 @@ if test "${with_openssl+set}" = set; then :
 fi
 
 
-if test "x$with_openssl_directory" != "xno"; then
-   OPENSSL_LIBS="-lssl -lcrypto"
-   OPENSSL_INC=""
+if test "x$support_crypto" != "xno" -o "x$support_tls" != "xno"; then
+   if test "x$with_openssl_directory" != "xno"; then
+      OPENSSL_LIBS="-lssl -lcrypto"
+      OPENSSL_INC=""
 
-   if test "x$with_openssl_directory" != "xyes" && test x"${with_openssl_directory}" != "x"; then
-      #
-      # Make sure the $with_openssl_directory also makes sense
-      #
-      if test -d "$with_openssl_directory/lib" -a -d "$with_openssl_directory/include"; then
-	 OPENSSL_LIBS="-L$with_openssl_directory/lib $OPENSSL_LIBS"
-	 OPENSSL_INC="-I$with_openssl_directory/include $OPENSSL_INC"
+      if test "x$with_openssl_directory" != "xyes" && test x"${with_openssl_directory}" != "x"; then
+         #
+         # Make sure the $with_openssl_directory also makes sense
+         #
+         if test -d "$with_openssl_directory/lib" -a -d "$with_openssl_directory/include"; then
+	    OPENSSL_LIBS="-L$with_openssl_directory/lib $OPENSSL_LIBS"
+            OPENSSL_INC="-I$with_openssl_directory/include $OPENSSL_INC"
+         fi
       fi
-   fi
 
-   saved_LIBS="${LIBS}"
-   saved_CFLAGS="${CFLAGS}"
-   saved_CPPFLAGS="${CFLAGS}"
-   LIBS="${saved_LIBS} ${OPENSSL_LIBS}"
-   CFLAGS="${saved_CFLAGS} ${OPENSSL_INC}"
-   CPPFLAGS="${saved_CPPFLAGS} ${OPENSSL_INC}"
+      saved_LIBS="${LIBS}"
+      saved_CFLAGS="${CFLAGS}"
+      saved_CPPFLAGS="${CFLAGS}"
+      LIBS="${saved_LIBS} ${OPENSSL_LIBS}"
+      CFLAGS="${saved_CFLAGS} ${OPENSSL_INC}"
+      CPPFLAGS="${saved_CPPFLAGS} ${OPENSSL_INC}"
 
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-	  #include <openssl/ssl.h>
+	     #include <openssl/ssl.h>
 
 int
 main ()
 {
 
-	   CRYPTO_set_id_callback(NULL);
+	      CRYPTO_set_id_callback(NULL);
 
   ;
   return 0;
@@ -23123,29 +23161,27 @@ main ()
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
-	  support_tls="yes"
-	  support_crypto="yes"
+             have_openssl="yes"
 
 else
 
-	  support_tls="no"
-	  support_crypto="no"
+             have_openssl="no"
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-	  #include <openssl/evp.h>
+	     #include <openssl/evp.h>
 
 int
 main ()
 {
 
-	  EVP_sha512();
+	     EVP_sha512();
 
   ;
   return 0;
@@ -23153,27 +23189,27 @@ main ()
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
-	  ac_cv_openssl_sha2="yes"
+	     ac_cv_openssl_sha2="yes"
 
 else
 
-	  ac_cv_openssl_sha2="no"
+	     ac_cv_openssl_sha2="no"
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-               cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+                              cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-	  #include <openssl/evp.h>
+	     #include <openssl/evp.h>
 
 int
 main ()
 {
 
-	  EVP_aes_192_cbc();
+	     EVP_aes_192_cbc();
 
   ;
   return 0;
@@ -23181,45 +23217,25 @@ main ()
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
-	  ac_cv_openssl_export="no"
+	     ac_cv_openssl_export="no"
 
 else
 
-	  ac_cv_openssl_export="yes"
+	     ac_cv_openssl_export="yes"
 
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $support_tls" >&5
-$as_echo "$support_tls" >&6; }
-   if test "$support_tls" = "yes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_crypto" >&5
+$as_echo "$have_crypto" >&6; }
+
+      if test "$have_openssl" = "yes"; then
 
 $as_echo "#define HAVE_OPENSSL 1" >>confdefs.h
 
-
-$as_echo "#define HAVE_TLS 1" >>confdefs.h
-
-
-$as_echo "#define HAVE_CRYPTO 1" >>confdefs.h
-
-   fi
-
-   if test "$ac_cv_openssl_sha2" = "yes"; then
-
-$as_echo "#define HAVE_SHA2 1" >>confdefs.h
-
-   fi
-
-   if test "$ac_cv_openssl_export" = "yes"; then
-
-$as_echo "#define HAVE_OPENSSL_EXPORT_LIBRARY 1" >>confdefs.h
-
-   fi
-
-   if test "$support_crypto" = "yes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EVP_PKEY_encrypt_old in -lcrypto" >&5
+         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EVP_PKEY_encrypt_old in -lcrypto" >&5
 $as_echo_n "checking for EVP_PKEY_encrypt_old in -lcrypto... " >&6; }
 if ${ac_cv_lib_crypto_EVP_PKEY_encrypt_old+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -23261,21 +23277,170 @@ $as_echo "#define HAVE_OPENSSLv1 1" >>confdefs.h
 
 fi
 
-   fi
+      fi
 
-   LIBS="${saved_LIBS}"
-   CFLAGS="${saved_CFLAGS}"
-   CPPFLAGS="${saved_CPPFLAGS}"
-else
-   support_tls="no"
-   support_crypto="no"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $support_tls" >&5
-$as_echo "$support_tls" >&6; }
+      if test "$support_crypto" != "no" -a "$have_openssl" = "yes"; then
+         have_crypto="yes"
+
+$as_echo "#define HAVE_CRYPTO 1" >>confdefs.h
+
+      fi
+
+      if test "$support_tls" != "no" -a "$have_openssl" = "yes"; then
+         have_tls="yes"
+
+$as_echo "#define HAVE_TLS 1" >>confdefs.h
+
+      fi
+
+      if test "$ac_cv_openssl_sha2" = "yes"; then
+
+$as_echo "#define HAVE_SHA2 1" >>confdefs.h
+
+      fi
+
+      if test "$ac_cv_openssl_export" = "yes"; then
+
+$as_echo "#define HAVE_OPENSSL_EXPORT_LIBRARY 1" >>confdefs.h
+
+      fi
+
+      LIBS="${saved_LIBS}"
+      CFLAGS="${saved_CFLAGS}"
+      CPPFLAGS="${saved_CPPFLAGS}"
+   else
+      have_openssl="no"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+   fi
 fi
 
-if test "$support_tls" = "no" -o "$support_crypto" = "no"; then
+if test "$have_openssl" = "no"; then
    OPENSSL_LIBS=""
    OPENSSL_INC=""
+fi
+
+
+
+
+
+# Check whether --with-gnutls was given.
+if test "${with_gnutls+set}" = set; then :
+  withval=$with_gnutls;
+	with_gnutls_directory=${withval}
+
+
+fi
+
+
+if test "x$support_crypto" != "xno" -o "x$support_tls" != "xno"; then
+      if test "x$have_openssl" != "xyes" -a "x$with_gnutls_directory" != "xno"; then
+      GNUTLS_LIBS="-lgnutls"
+      GNUTLS_INC=""
+      if test "x$with_gnutls_directory" != "xyes" && test x"${with_gnutls_directory}" != "x"; then
+         #
+         # Make sure the $with_gnutls_directory also makes sense
+         #
+         if test -d "$with_gnutls_directory/lib" -a -d "$with_gnutls_directory/include"; then
+	    GNUTLS_LIBS="-L$with_gnutls_directory/lib $GNUTLS_LIBS"
+	    GNUTLS_INC="-I$with_gnutls_directory/include $GNUTLS_INC"
+         fi
+      fi
+
+      saved_LIBS="${LIBS}"
+      saved_CFLAGS="${CFLAGS}"
+      saved_CPPFLAGS="${CFLAGS}"
+      LIBS="${saved_LIBS} ${GNUTLS_LIBS}"
+      CFLAGS="${saved_CFLAGS} ${GNUTLS_INC}"
+      CPPFLAGS="${saved_CPPFLAGS} ${GNUTLS_INC}"
+
+      for ac_header in gnutls/gnutls.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "gnutls/gnutls.h" "ac_cv_header_gnutls_gnutls_h" "$ac_includes_default"
+if test "x$ac_cv_header_gnutls_gnutls_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GNUTLS_GNUTLS_H 1
+_ACEOF
+
+fi
+
+done
+
+
+      if test $ac_cv_header_gnutls_gnutls_h = yes ; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gnutls_init in -lgnutls" >&5
+$as_echo_n "checking for gnutls_init in -lgnutls... " >&6; }
+if ${ac_cv_lib_gnutls_gnutls_init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgnutls  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gnutls_init ();
+int
+main ()
+{
+return gnutls_init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gnutls_gnutls_init=yes
+else
+  ac_cv_lib_gnutls_gnutls_init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gnutls_gnutls_init" >&5
+$as_echo "$ac_cv_lib_gnutls_gnutls_init" >&6; }
+if test "x$ac_cv_lib_gnutls_gnutls_init" = xyes; then :
+
+	        have_gnutls="yes"
+
+else
+
+	        have_gnutls="no"
+
+
+fi
+
+      fi
+
+      if test "$have_gnutls" = "yes"; then
+
+$as_echo "#define HAVE_GNUTLS 1" >>confdefs.h
+
+      fi
+
+      if test "$support_tls" != "no" -a "$have_gnutls" = "yes"; then
+         have_tls="yes"
+
+$as_echo "#define HAVE_TLS 1" >>confdefs.h
+
+      fi
+
+      LIBS="${saved_LIBS}"
+      CFLAGS="${saved_CFLAGS}"
+      CPPFLAGS="${saved_CPPFLAGS}"
+   else
+      have_gnutls="no"
+   fi
+fi
+
+if test "$have_gnutls" = "no"; then
+   GNUTLS_LIBS=""
+   GNUTLS_INC=""
 fi
 
 
@@ -33980,74 +34145,76 @@ ${MAKE:-make} clean
 echo "
 Configuration on `date`:
 
-   Host:		     ${host}${post_host} -- ${DISTNAME} ${DISTVER}
-   Bareos version:	     ${BAREOS} ${VERSION} (${DATE})
-   Source code location:     ${srcdir}
-   Install binaries:	     ${sbindir}
-   Install libraries:	     ${libdir}
-   Install config files:     ${sysconfdir}
-   Scripts directory:	     ${scriptdir}
-   Archive directory:	     ${archivedir}
-   Working directory:	     ${working_dir}
-   PID directory:	     ${piddir}
-   Subsys directory:	     ${subsysdir}
-   Man directory:	     ${mandir}
-   Data directory:	     ${datarootdir}
-   Plugin directory:	     ${plugindir}
-   C Compiler:		     ${CC} ${CCVERSION}
-   C++ Compiler:	     ${CXX} ${CXXVERSION}
-   Compiler flags:	     ${WCFLAGS} ${CFLAGS}
-   Linker flags:	     ${WLDFLAGS} ${LDFLAGS}
-   Libraries:		     ${LIBS}
-   Statically Linked Tools:  ${support_static_tools}
-   Statically Linked FD:     ${support_static_fd}
-   Statically Linked SD:     ${support_static_sd}
-   Statically Linked DIR:    ${support_static_dir}
-   Statically Linked CONS:   ${support_static_cons}
-   Database backends:	     ${db_backends}
-   Database port:	     ${db_port}
-   Database name:	     ${db_name}
-   Database user:	     ${db_user}
-   Database version:	     ${BDB_VERSION}
+   Host:                    ${host}${post_host} -- ${DISTNAME} ${DISTVER}
+   Bareos version:          ${BAREOS} ${VERSION} (${DATE})
+   Source code location:    ${srcdir}
+   Install binaries:        ${sbindir}
+   Install libraries:       ${libdir}
+   Install config files:    ${sysconfdir}
+   Scripts directory:       ${scriptdir}
+   Archive directory:       ${archivedir}
+   Working directory:       ${working_dir}
+   PID directory:           ${piddir}
+   Subsys directory:        ${subsysdir}
+   Man directory:           ${mandir}
+   Data directory:          ${datarootdir}
+   Plugin directory:        ${plugindir}
+   C Compiler:              ${CC} ${CCVERSION}
+   C++ Compiler:            ${CXX} ${CXXVERSION}
+   Compiler flags:          ${WCFLAGS} ${CFLAGS}
+   Linker flags:            ${WLDFLAGS} ${LDFLAGS}
+   Libraries:               ${LIBS}
+   Statically Linked Tools: ${support_static_tools}
+   Statically Linked FD:    ${support_static_fd}
+   Statically Linked SD:    ${support_static_sd}
+   Statically Linked DIR:   ${support_static_dir}
+   Statically Linked CONS:  ${support_static_cons}
+   Database backends:       ${db_backends}
+   Database port:           ${db_port}
+   Database name:           ${db_name}
+   Database user:           ${db_user}
+   Database version:        ${BDB_VERSION}
 
-   Job Output Email:	     ${job_email}
-   Traceback Email:	     ${dump_email}
-   SMTP Host Address:	     ${smtp_host}
+   Job Output Email:        ${job_email}
+   Traceback Email:         ${dump_email}
+   SMTP Host Address:       ${smtp_host}
 
-   Director Port:	     ${dir_port}
-   File daemon Port:	     ${fd_port}
-   Storage daemon Port:      ${sd_port}
+   Director Port:           ${dir_port}
+   File daemon Port:        ${fd_port}
+   Storage daemon Port:     ${sd_port}
 
-   Director User:	     ${dir_user}
-   Director Group:	     ${dir_group}
-   Storage Daemon User:      ${sd_user}
-   Storage DaemonGroup:      ${sd_group}
-   File Daemon User:	     ${fd_user}
-   File Daemon Group:	     ${fd_group}
+   Director User:           ${dir_user}
+   Director Group:          ${dir_group}
+   Storage Daemon User:     ${sd_user}
+   Storage DaemonGroup:     ${sd_group}
+   File Daemon User:        ${fd_user}
+   File Daemon Group:       ${fd_group}
 
-   Large file support:	     $largefile_support
-   Bareos conio support:     ${got_conio} ${CONS_LIBS}
-   readline support:	     ${got_readline} ${PRTREADLINE_SRC}
-   TCP Wrappers support:     ${TCPW_MSG} ${WRAPLIBS}
-   TLS support: 	     ${support_tls}
-   Encryption support:	     ${support_crypto}
-   ZLIB support:	     ${have_zlib}
-   LZO support: 	     ${have_lzo}
-   NDMP support: 	     ${support_ndmp}
-   enable-smartalloc:	     ${support_smartalloc}
-   enable-lockmgr:	     ${support_lockmgr}
-   bat support: 	     ${support_bat}
-   client-only: 	     ${build_client_only}
-   build-dird:		     ${build_dird}
-   build-stored:	     ${build_stored}
-   Plugin support:	     ${have_plugins}
-   AFS support: 	     ${have_afs}
-   ACL support: 	     ${have_acl}
-   XATTR support:	     ${have_xattr}
-   SCSI Crypto support:	     ${have_scsi_crypto}
-   Python support:	     ${support_python} ${PYTHON_LIBS}
-   systemd support:	     ${support_systemd} ${SYSTEMD_UNITDIR}
-   Batch insert enabled:     ${batch_insert_db_backends}
+   Large file support:      $largefile_support
+   Bareos conio support:    ${got_conio} ${CONS_LIBS}
+   readline support:        ${got_readline} ${PRTREADLINE_SRC}
+   TCP Wrappers support:    ${TCPW_MSG} ${WRAPLIBS}
+   TLS support:             ${have_tls}
+   Encryption support:      ${have_crypto}
+   OpenSSL support:         ${have_openssl}
+   GNUTLS support:          ${have_gnutls}
+   ZLIB support:            ${have_zlib}
+   LZO support:             ${have_lzo}
+   NDMP support:            ${support_ndmp}
+   enable-smartalloc:       ${support_smartalloc}
+   enable-lockmgr:          ${support_lockmgr}
+   bat support:             ${support_bat}
+   client-only:             ${build_client_only}
+   build-dird:              ${build_dird}
+   build-stored:            ${build_stored}
+   Plugin support:          ${have_plugins}
+   AFS support:             ${have_afs}
+   ACL support:             ${have_acl}
+   XATTR support:           ${have_xattr}
+   SCSI Crypto support:     ${have_scsi_crypto}
+   Python support:          ${support_python} ${PYTHON_LIBS}
+   systemd support:         ${support_systemd} ${SYSTEMD_UNITDIR}
+   Batch insert enabled:    ${batch_insert_db_backends}
 
   " > config.out
 

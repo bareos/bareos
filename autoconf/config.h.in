@@ -345,6 +345,12 @@
 /* Define to 1 if you have the `get_proplist_entry' function. */
 #undef HAVE_GET_PROPLIST_ENTRY
 
+/* Define to 1 if GNUTLS library is available */
+#undef HAVE_GNUTLS
+
+/* Define to 1 if you have the <gnutls/gnutls.h> header file. */
+#undef HAVE_GNUTLS_GNUTLS_H
+
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
 
