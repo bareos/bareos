@@ -16,6 +16,9 @@ export DH_VERBOSE=1
 # This has to be exported to make some magic below work.
 export DH_OPTIONS=-v
 
+# This disables the hardening flags which lead to LDFLAGS=-Wl,-Bsymbolic-functions -Wl,-z,relro which breaks the config engine.
+export DEB_BUILD_OPTIONS=nohardening
+
 export daemon_user=bareos
 export daemon_group=bareos
 export director_daemon_user=${daemon_user}
