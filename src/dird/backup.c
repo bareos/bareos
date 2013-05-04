@@ -878,7 +878,6 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
               jcr->res.client->GraceTime +
               jcr->res.client->SoftQuotaGracePeriod);
 
-   find_used_compressalgos(&compress_algo_list, jcr);
 
    if (RunTime <= 0) {
       kbps = 0;
@@ -907,6 +906,7 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
          bstrncpy(compress, "None", sizeof(compress));
       } else {
          bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
+         find_used_compressalgos(&compress_algo_list, jcr);
       }
    }
 
