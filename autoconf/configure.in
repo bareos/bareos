@@ -3262,19 +3262,11 @@ osx)
 debian)
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
-   if test "$DISTNAME" = "ubuntu" ; then
-      PFILES="${PFILES} \
-	 platforms/ubuntu/Makefile \
-	 platforms/ubuntu/bareos-fd \
-	 platforms/ubuntu/bareos-sd \
-	 platforms/ubuntu/bareos-dir"
-   else
-      PFILES="${PFILES} \
+   PFILES="${PFILES} \
 	 platforms/debian/Makefile \
 	 platforms/debian/bareos-fd \
 	 platforms/debian/bareos-sd \
 	 platforms/debian/bareos-dir"
-   fi
   ;;
 freebsd)
    VER=`echo $DISTVER | cut -c 1`
@@ -3410,6 +3402,15 @@ suse)
        platforms/suse/bareos-sd \
        platforms/suse/bareos-dir \
        platforms/suse/bareos"
+  ;;
+ubuntu)
+   TAPEDRIVE="/dev/nst0"
+   PSCMD="ps -e -o pid,command"
+   PFILES="${PFILES} \
+       platforms/ubuntu/Makefile \
+       platforms/ubuntu/bareos-fd \
+       platforms/ubuntu/bareos-sd \
+       platforms/ubuntu/bareos-dir"
   ;;
 unknown)
    TAPEDRIVE="/dev/nst0"
