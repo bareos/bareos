@@ -47,7 +47,7 @@ BACKUP_TEST_FILE=/usr/sbin/bareos.test
 echo -e "status dir" | bconsole
 echo
 echo "---- label a volume ----"
-echo -e "label\rtestvol\r2" | bconsole
+echo -e "label volume=testvol pool=File" | bconsole
 echo
 echo "----- create some file to test backup / restore ----"
 echo "bareos restore test" > ${BACKUP_TEST_FILE}
