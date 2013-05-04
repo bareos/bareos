@@ -170,18 +170,20 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
       free_pool_memory(jcr->compress_buf);
       jcr->compress_buf = NULL;
    }
+#ifdef HAVE_LIBZ
    if (jcr->pZLIB_compress_workset) {
       /* Free the zlib stream */
-#ifdef HAVE_LIBZ
       deflateEnd((z_stream *)jcr->pZLIB_compress_workset);
-#endif
       free(jcr->pZLIB_compress_workset);
       jcr->pZLIB_compress_workset = NULL;
    }
+#endif
+#ifdef HAVE_LZO
    if (jcr->LZO_compress_workset) {
       free(jcr->LZO_compress_workset);
       jcr->LZO_compress_workset = NULL;
    }
+#endif
 
    crypto_session_end(jcr);
 
