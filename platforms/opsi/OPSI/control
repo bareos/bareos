@@ -1,0 +1,256 @@
+[Package]
+version: 1
+depends:
+incremental: False
+
+[Product]
+type: localboot
+id: bareos
+name: bareos file daemon
+description: backup software
+advice:
+version: 12.4.0
+priority: 0
+licenseRequired: False
+productClasses:
+setupScript: setup3264.ins
+uninstallScript: uninstall3264.ins
+updateScript:
+alwaysScript:
+onceScript:
+customScript:
+userLoginScript:
+
+[ProductProperty]
+type: unicode
+name: filedaemon_full_name
+multivalue: False
+editable: True
+description: filedaemon bareos name. Leave empty for HostID-fd
+default: [""]
+
+[ProductProperty]
+type: unicode
+name: filedaemon_full_password
+multivalue: False
+editable: True
+description: password used by director to connect to this filedaemon
+default: ["filedaemon_full_password"]
+
+[ProductProperty]
+type: unicode
+name: filedaemon_client_address
+multivalue: False
+editable: True
+description: address of the filedaemon. Leave empty for HostID-fd
+default: [""]
+
+[ProductProperty]
+type: unicode
+name: filedaemon_monitor_name
+multivalue: False
+editable: True
+description: filedaemon bareos name. Leave empty for HostID-mon
+default: [""]
+
+[ProductProperty]
+type: unicode
+name: filedaemon_monitor_password
+multivalue: False
+editable: True
+description: password used by monitoring (eg. tray-monitor) to connect to this filedaemon
+default: ["filedaemon_monitor_password"]
+
+[ProductProperty]
+type: unicode
+name: director_name
+multivalue: False
+editable: True
+description: access to Bacula director for bconsole and bat
+default: ["director_name"]
+
+[ProductProperty]
+type: unicode
+name: director_address
+multivalue: False
+editable: True
+description: access to Bacula director for bconsole and bat
+default: ["director_address"]
+
+[ProductProperty]
+type: unicode
+name: director_password
+multivalue: False
+editable: True
+description: access to Bacula director for bconsole and bat
+default: ["director_password"]
+
+[ProductProperty]
+type: unicode
+name: install_architecture
+multivalue: False
+editable: False
+description: which architecture (32/64 bit) has to be installed
+values: ["32 only", "64 only", "both", "system specific"]
+default: ["system specific"]
+
+[Changelog]
+20130129, , Daniel Neuberger
+  * inital Bareos
+  * added properties filedaemon_client_address
+  * added Variables in setup
+  * added silent installation in Setup
+
+20120710, 5.2.10-3, Joerg Steffens
+  * write properties filedaemon_full_name and filedaemon_monitor_name back to opsi server
+  * added properties fileset and jobdefs
+
+20120704, 5.2.10-2, Joerg Steffens
+  * uninstall
+  * properties
+  * generate bareos-fd.conf
+
+20120702, 5.2.10-1, Joerg Steffens
+  * initial
+
+opsi-template (4.0.1-5) stable; urgency=low
+
+	* added /nocancel at Inno example
+	* added login.ins for 'user profile management'
+	* moved changelog to control file
+
+ -- detlef oertel <d.oertel@uib.de>  Mon, 02 Jan 2012 16:01:53 +0200
+
+
+opsi-template (4.0.1-4) stable; urgency=low
+
+	* removed uncommented test for installation success via registry entries
+
+ -- detlef oertel <d.oertel@uib.de>  Thu, 30 Nov 2011 16:01:53 +0200
+
+
+opsi-template (4.0.1-3) stable; urgency=low
+
+	* changed setup.ins to setup3264.ins (and so on ..)
+	* added /SUPPRESSMSGBOXES at Inno example
+
+ -- detlef oertel <d.oertel@uib.de>  Thu, 06 Oct 2011 16:01:53 +0200
+
+
+opsi-template (4.0.1-2) stable; urgency=low
+
+	* bugfix: removed '\\' by '\' in showBitMap calls
+
+ -- detlef oertel <d.oertel@uib.de>  Tue, 02 Aug 2011 16:01:53 +0200
+
+
+opsi-template (4.0.1-1) stable; urgency=low
+
+	* bugfix: delsub.ins: Set $UninstallProgram64$ = $InstallDir64$ + "\uninstall.exe"
+
+ -- detlef oertel <d.oertel@uib.de>  Wed, 18 Jan 2011 16:01:53 +0200
+
+
+opsi-template (4.0-1) stable; urgency=low
+
+	* requires opsi.winst 4.10.8
+	* default: 32Bit Version
+	* additional: 64Bit Version
+	* additional: 32/64Bit Version
+
+ -- detlef oertel <d.oertel@uib.de>  Wed, 18 Jan 2011 16:01:53 +0200
+
+
+opsi-template (1.0-20) stable; urgency=low
+
+	* removed EnvVar("temp")
+	* all variable definitions at top
+	* new loglevel
+	* removed $NewExe$
+	* more infos for inno setup
+	* removed number at showBitmap
+	* Initial section removed
+	* example for $installDir$ changed
+
+ -- detlef oertel <d.oertel@uib.de>  Wed, 14 Apr 2010 16:01:53 +0200
+
+
+opsi-template (1.0-19) stable; urgency=low
+
+	* adding 'Installshield + MSI' to the Winbatch_install section
+	* changing to 'if $LicenseRequired$ = "true"' from 'if not ($LicenseRequired$ = "false")'
+	* changed from <productid>.ins to 'setup.ins'
+
+ -- detlef oertel <d.oertel@uib.de>  Tue, 26 Jan 2010 16:01:53 +0200
+
+
+opsi-template (1.0-18) stable; urgency=low
+	* bug fix in the successful request (comment out)
+
+opsi-template (1.0-17) stable; urgency=low
+
+	* bug fix in delsub.ins : deleting a shortcut from AllUsers desktop
+
+ -- detlef oertel <d.oertel@uib.de>  Mon, 28 Sep 2009 16:01:53 +0200
+
+opsi-template (1.0-16) stable; urgency=low
+
+  * Added some examples for other installers
+  * Some cleanups
+  * More examples in other sections
+
+ -- Jan Schneider <j.schneider@uib.de>  Fri, 18 Sep 2009 13:01:53 +0200
+
+opsi-template (1.0-15) stable; urgency=low
+
+   * bugfix for delopsi-template
+
+ -- Rupert Roeder <r.roeder@uib.de>  Mon, 06 Jun 2009 11:15:00 +0100
+
+opsi-template (1.0-14) stable; urgency=low
+
+   * bugfix for delopsi-template
+
+ -- Rupert Roeder <r.roeder@uib.de>  Tue, 26 May 2009 11:15:00 +0100
+
+opsi-template (1.0-13) stable; urgency=low
+
+   * some corrections
+
+ -- Rupert Roeder <r.roeder@uib.de>  Tue, 26 May 2009 11:15:00 +0100
+
+opsi-template (1.0-12) stable; urgency=low
+
+   * code for license management added
+
+ -- Rupert Roeder <r.roeder@uib.de>  Tue, 19 May 2009 11:15:00 +0100
+
+opsi-template (1.0-11) stable; urgency=low
+
+   * sub_check_exitcode modified
+   * sub_check_exitcode 1641 added
+   * sub_check_exitcode integrated in delsub.ins
+
+ -- Detlef Oertel <d.oertel@uib.de>  Mon, 18 May 2009 14:15:00 +0100
+
+opsi-template (1.0-10) stable; urgency=low
+
+  * modified test on exit code added 3010 success restart required
+ -- bardo wolf
+
+opsi-template (1.0-9) stable; urgency=low
+
+  * renamed from softprod to opsi-template
+  * added test on exit code
+
+ -- Detlef Oertel <d.oertel@uib.de>  Fri, 13 Mar 2009 12:35:32 +0100
+
+opsi-template (1.0-8) stable; urgency=low
+
+  * comment Anweisungen
+  * delsub:
+     Section: Files_uninstall
+     ;something like (don't forget the trailing backslash)
+     ;delete -sf "$InstallDir$\"
+
+ -- Detlef Oertel <d.oertel@uib.de>  Wed, 5 Nov 2008 17:00:00 +0100

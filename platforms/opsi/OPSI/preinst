@@ -1,0 +1,9 @@
+#! /bin/sh
+#
+# preinst script for softprod
+# This script executes before that package will be unpacked from its archive file.
+#
+# The following environment variables can be used to obtain information about the current installation:
+#   PRODUCT_ID: id of the current product
+#   CLIENT_DATA_DIR: directory where client data will be installed
+#
