@@ -553,10 +553,6 @@ install -m 644 scripts/tray-monitor.xpm %{buildroot}/usr/share/pixmaps/bareos-tr
 # install the sample-query.sql file as default query file
 #install -m 644 examples/sample-query.sql %{buildroot}%{script_dir}/query.sql
 
-# we create that for SLES & RHEL5
-touch %{buildroot}%{working_dir}/log
-chmod 0640 %{buildroot}%{working_dir}/log
-
 # remove man page if bat is not built
 %if !0%{?build_bat}
 rm %{buildroot}%{_mandir}/man1/bat.1.gz
@@ -610,34 +606,28 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %else
 %{_sysconfdir}/rc.d/init.d/bareos-dir
 %endif
-
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.conf
 %attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{name}-dir
 %{plugin_dir}/*-dir.so
 %{script_dir}/delete_catalog_backup
 %{script_dir}/make_catalog_backup
+%{script_dir}/make_catalog_backup.pl
 %{_sbindir}/bareos-dir
 %{_sbindir}/bsmtp
 %dir %{_docdir}/%{name}
-#%{_docdir}/%{name}/ChangeLog
-#%{_docdir}/%{name}/LICENSE
-#%{_docdir}/%{name}/README
-#%{_docdir}/%{name}/ReleaseNotes
-#%{_docdir}/%{name}/technotes
-#%{_docdir}/%{name}/VERIFYING
 %{_mandir}/man1/bsmtp.1.gz
 %{_mandir}/man8/bareos-dir.8.gz
 %{_mandir}/man8/bareos.8.gz
+%if 0%{?systemd_support}
+%{_unitdir}/bareos-dir.service
+%endif
 
 # This is not a config file, but we need what %config is able to do
 # the query.sql can be personalized by end user.
 # a rpmlint rule is add to filter the warning
 #%config(noreplace) %{script_dir}/query.sql
 
-%if 0%{?systemd_support}
-%{_unitdir}/bareos-dir.service
-%endif
 
 %files storage
 # sd package (bareos-sd, bls, btape, bcopy, bextract)
@@ -701,23 +691,20 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_libdir}/libbareosfind.so
 %{_libdir}/libbareosndmp-%{_libversion}.so
 %{_libdir}/libbareosndmp.so
-%attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos
-
-#
-# Generic stuff needed for all software so stuffed into libs package
-#
+# generic stuff needed from multiple bareos packages
+%dir /usr/lib/bareos/
+%dir %{script_dir}
+%{script_dir}/bareos-config
+%{script_dir}/btraceback.gdb
 %if "%{_libdir}/bareos/" != "/usr/lib/bareos/"
 %dir %{_libdir}/bareos/
 %endif
-%dir /usr/lib/bareos/
-%dir %{script_dir}
 %dir %{plugin_dir}
 %{_sbindir}/btraceback
 %{_mandir}/man8/btraceback.8.gz
-%{script_dir}/bareos-config
-%{script_dir}/btraceback.gdb
-%attr(770 %{daemon_user}, %{daemon_group}) %dir %{working_dir}
-%attr(640, %{daemon_user}, %{daemon_group}) %ghost %{working_dir}/log
+%attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
+%attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos
+
 
 %files database-common
 # catalog independent files
@@ -761,7 +748,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{_sbindir}/bareos-dbcheck
 %{_sbindir}/bscan
-%{script_dir}/make_catalog_backup.pl
 %{_mandir}/man8/bareos-dbcheck.8.gz
 %{_mandir}/man8/bscan.8.gz
 
