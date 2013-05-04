@@ -11,11 +11,20 @@
 #
 @MCOMMON@
 
+ALL_INSTALL_TARGETS = install-autostart-fd install-autostart-sd install-autostart-dir
+
 nothing:
 
 install: install-autostart
 
-install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
+install-autostart:
+	@case `uname -r` in \
+	5.8|5.9) \
+	for target in $(ALL_INSTALL_TARGETS); do \
+	$(MAKE) DESTDIR=$(DESTDIR) $$target; \
+	done \
+	;; \
+	esac
 
 install-autostart-%:
 	@$(RMF) $(DESTDIR)/etc/rc0.d/K20bareos-$*
