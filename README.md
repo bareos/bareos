@@ -17,8 +17,13 @@ Release 13.1.x
      a binary or a script like all other things in Bareos e.g.
      runscripts etc. If you want to use a direct cmdline you need
      to embed the cmdline in a sh -c 'cmdline ...'
-
-
+* Add firewall friendly reverse data channel initialization.
+   * instead of FD connecting to SD for backup, restore and verify
+     the client is defined as a passive client and the Director instructs
+     the SD to connect to the FD. So no need for puching holes in your firewall
+     for returning data traffic but initiate all connections from the inside to
+     the outside. The default is still non passive mode but for external clients
+     in an DMZ or on the Internet you can define the client as a passive client.
 
 Release 12.4.x
 ==============
