@@ -494,15 +494,6 @@ static void *job_thread(void *arg)
    Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->JobStatus);
    Dsm_check(100);
 
-   /*
-    * If we have a migration JCR now is the correct time to detach it
-    * as we are done running.
-    */
-   if (jcr->mig_jcr) {
-      free_jcr(jcr->mig_jcr);
-      jcr->mig_jcr = NULL;
-   }
-
    return NULL;
 }
 
@@ -1310,6 +1301,19 @@ void dird_free_jcr_pointers(JCR *jcr)
 void dird_free_jcr(JCR *jcr)
 {
    Dmsg0(200, "Start dird free_jcr\n");
+
+   /*
+    * Close the messages for this Messages resource, which means to close
+    * any open files, and dispatch any pending email messages. We do this now
+    * that we still have all the info we need we start tearing down the jcr
+    * after this call.
+    */
+   close_msg(jcr);
+
+   if (jcr->mig_jcr) {
+      free_jcr(jcr->mig_jcr);
+      jcr->mig_jcr = NULL;
+   }
 
    dird_free_jcr_pointers(jcr);
    if (jcr->term_wait_inited) {
