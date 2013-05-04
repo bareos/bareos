@@ -11,7 +11,7 @@ env:
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -qq zlib1g-dev libreadline-dev libsqlite3-dev libmysqlclient-dev libpq-dev postgresql-server-dev-9.1 libwrap0-dev python-dev libgtk2.0-dev libgnome2-dev libacl1-dev libgnomeui-dev libx11-dev mtx bc libxt-dev libqt4-dev acl-dev libcap-dev libssl-dev liblzo2-dev ncurses-dev
+    - sudo apt-get install -qq acl-dev autotools-dev bc debhelper dpkg-dev hostname libacl1-dev libcap-dev liblzo2-dev libqt4-dev libreadline-dev libssl-dev libwrap0-dev libx11-dev libsqlite3-dev libmysqlclient-dev libpq-dev lsb-release mtx ncurses-dev pkg-config po-debconf python-dev zlib1g-dev
 
 before_script:
     - for script in $PWD/debian/*.preinst; do echo "$script"; sudo /bin/sh $script install; done
