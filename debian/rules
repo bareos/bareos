@@ -16,10 +16,7 @@ export DH_VERBOSE=1
 # This has to be exported to make some magic below work.
 export DH_OPTIONS=-v
 
-#export DEB_BUILD_OPTIONS=noopt
-#export DEB_CFLAGS_MAINT_APPEND=-O0
-export CFLAGS=-g -O0
-export CXXFLAGS=-g -O0
+export LDFLAGS=""
 
 export daemon_user=bareos
 export daemon_group=bareos
