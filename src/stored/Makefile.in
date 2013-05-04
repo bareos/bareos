@@ -68,11 +68,12 @@ COPYSRCS = acquire.c ansi_label.c autochanger.c bcopy.c block.c bsr.c \
 	   spool.c stored_conf.c vol_mgr.c vtape.c wait.c
 COPYOBJS = $(COPYSRCS:.c=.o)
 
-CPPFLAGS += @ZLIB_INC@ @LZO_INC@
+COMPRESS_CPPFLAGS += @ZLIB_INC@ @LZO_INC@ @FASTLZ_INC@
 
 SD_LIBS += @CAP_LIBS@
 BEXTRACT_LIBS += @ZLIB_LIBS@
 BEXTRACT_LIBS += @LZO_LIBS@
+BEXTRACT_LIBS += @FASTLZ_LIBS@
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 
@@ -128,6 +129,10 @@ bls:	Makefile $(BLSOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/
 	@echo "Compiling $<"
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BLSOBJS) $(DLIB) \
 	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
+
+bextract.o: bextract.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(COMPRESS_CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
 bextract: Makefile $(BEXTOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Compiling $<"

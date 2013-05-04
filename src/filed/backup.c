@@ -96,7 +96,9 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
 
    jcr->buf_size = sd->msglen;
 
-   adjust_compression_buffers(jcr);
+   if (!adjust_compression_buffers(jcr)) {
+      return false;
+   }
 
    if (!crypto_session_start(jcr)) {
       return false;
@@ -257,7 +259,7 @@ bail_out:
  *
  * The signing digest is a single algorithm depending on
  * whether or not we have SHA2.
- *   ****FIXME****  the signing algoritm should really be
+ *   ****FIXME****  the signing algorithm should really be
  *   determined a different way!!!!!!  What happens if
  *   sha2 was available during backup but not restore?
  */

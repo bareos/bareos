@@ -37,6 +37,10 @@
 #include <lzo/lzo1x.h>
 #endif
 
+#ifdef HAVE_FASTLZ
+#include <fastlzlib.h>
+#endif
+
 /*
  * Don't allow the uncompressed data buffer to grow larger then this amount of bytes.
  */
@@ -436,6 +440,84 @@ static bool decompress_with_lzo(DEV_RECORD *rec)
 }
 #endif
 
+#ifdef HAVE_FASTLZ
+static bool decompress_with_fastlz(DEV_RECORD *rec, uint32_t comp_magic)
+{
+   int zstat;
+   zfast_stream stream;
+   zfast_stream_compressor compressor;
+
+   switch (comp_magic) {
+   case COMPRESS_FZFZ:
+      compressor = COMPRESSOR_FASTLZ;
+      break;
+   case COMPRESS_FZ4L:
+   case COMPRESS_FZ4H:
+      compressor = COMPRESSOR_LZ4;
+      break;
+   }
+
+   /*
+    * NOTE! We only use uInt and Bytef because they are
+    * needed by the fastlz routines, they should not otherwise
+    * be used in Bareos.
+    */
+   memset(&stream, 0, sizeof(stream));
+   stream.next_in = (Bytef *)wbuf + sizeof(comp_stream_header);
+   stream.avail_in = (uInt)wsize - sizeof(comp_stream_header);
+   stream.next_out = (Bytef *)compress_buf;
+   stream.avail_out = (uInt)compress_buf_size;
+
+   Dmsg2(200, "Comp_len=%d msglen=%d\n", stream.avail_in, wsize);
+
+   if ((zstat = fastlzlibDecompressInit(&stream)) != Z_OK) {
+      goto cleanup;
+   }
+
+   if ((zstat = fastlzlibSetCompressor(&stream, compressor)) != Z_OK) {
+      goto cleanup;
+   }
+
+   while (1) {
+      zstat = fastlzlibDecompress(&stream);
+      switch (zstat) {
+      case Z_BUF_ERROR:
+         /*
+          * The buffer size is too small, try with a bigger one
+          */
+         compress_buf_size = 2 * compress_buf_size;
+         compress_buf = check_pool_memory_size(compress_buf, compress_buf_size);
+         stream.next_out = (Bytef *)compress_buf;
+         stream.avail_out = (uInt)compress_buf_size;
+         continue;
+      case Z_OK:
+      case Z_STREAM_END:
+         break;
+      default:
+         goto cleanup;
+      }
+      break;
+   }
+
+   Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n", stream.total_out, total);
+   store_data(&bfd, compress_buf, stream.total_out);
+   total += stream.total_out;
+   fileAddr += stream.total_out;
+   Dmsg2(100, "Compress len=%d uncompressed=%d\n", rec->data_len, stream.total_out);
+   fastlzlibDecompressEnd(&stream);
+
+   return true;
+
+cleanup:
+   Emsg1(M_ERROR, 0, _("Uncompression error. ERR=%d\n"), zstat);
+   extract = false;
+   fastlzlibDecompressEnd(&stream);
+
+   return false;
+}
+
+#endif
+
 /*
  * Called here for each record from read_records()
  */
@@ -669,6 +751,15 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 #ifdef HAVE_LZO
             case COMPRESS_LZO1X:
                if (!decompress_with_lzo(rec)) {
+                  return true;
+               }
+               break;
+#endif
+#ifdef HAVE_FASTLZ
+            case COMPRESS_FZFZ:
+            case COMPRESS_FZ4L:
+            case COMPRESS_FZ4H:
+               if (!decompress_with_fastlz(rec, comp_magic)) {
                   return true;
                }
                break;

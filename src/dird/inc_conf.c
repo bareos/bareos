@@ -233,6 +233,9 @@ static struct s_fs_opt FS_options[] = {
    { "gzip8", INC_KW_COMPRESSION, "Z8" },
    { "gzip9", INC_KW_COMPRESSION, "Z9" },
    { "lzo", INC_KW_COMPRESSION, "Zo" },
+   { "lzfast", INC_KW_COMPRESSION, "Zff" },
+   { "lz4", INC_KW_COMPRESSION, "Zf4" },
+   { "lz4hc", INC_KW_COMPRESSION, "Zfh" },
    { "blowfish", INC_KW_ENCRYPTION, "B"}, /* ***FIXME*** not implemented */
    { "3des", INC_KW_ENCRYPTION, "3"}, /* ***FIXME*** not implemented */
    { "yes", INC_KW_ONEFS, "0" },
@@ -289,12 +292,11 @@ static struct s_fs_opt FS_options[] = {
 static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
 {
    int i;
-   char option[3];
+   char option[64];
    int lcopts = lc->options;
    struct s_sz_matching size_matching;
 
-   option[0] = 0;                     /* default option = none */
-   option[2] = 0;                     /* terminate options */
+   memset(option, 0, sizeof(option));
    lc->options |= LOPT_STRING;        /* force string */
    lex_get_token(lc, T_STRING);       /* expect at least one option */
    if (keyword == INC_KW_VERIFY) { /* special case */
@@ -335,11 +337,9 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
       /*
        * Standard keyword options for Include/Exclude
        */
-      for (i=0; FS_options[i].name; i++) {
+      for (i = 0; FS_options[i].name; i++) {
          if (FS_options[i].keyword == keyword && bstrcasecmp(lc->str, FS_options[i].name)) {
-            /* NOTE! maximum 2 letters here or increase option[3] */
-            option[0] = FS_options[i].option[0];
-            option[1] = FS_options[i].option[1];
+            strncpy(option, FS_options[i].option, sizeof(option));
             i = 0;
             break;
          }

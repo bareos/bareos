@@ -29,11 +29,15 @@
 #include "bareos.h"
 #include "filed.h"
 
-#if defined(HAVE_LZO) || defined(HAVE_LIBZ)
+#if defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ)
 
 #ifdef HAVE_LZO
 #include <lzo/lzoconf.h>
 #include <lzo/lzo1x.h>
+#endif
+
+#ifdef HAVE_FASTLZ
+#include <fastlzlib.h>
 #endif
 
 #ifdef HAVE_LIBZ
@@ -64,22 +68,48 @@ static const char *zlib_strerror(int stat)
 }
 #endif
 
-static inline void unknown_compression_algoritm(JCR *jcr, uint32_t compression_algoritm)
+static inline void unknown_compression_algorithm(JCR *jcr, uint32_t compression_algorithm)
 {
-   switch (compression_algoritm) {
+   switch (compression_algorithm) {
    case COMPRESS_GZIP:
       Jmsg(jcr, M_FATAL, 0, _("GZIP compression not supported on this platform\n"));
       break;
    case COMPRESS_LZO1X:
-      Jmsg(jcr, M_FATAL, 0, _("LZ02 compression not supported on this platform\n"));
+      Jmsg(jcr, M_FATAL, 0, _("LZO2 compression not supported on this platform\n"));
+      break;
+   case COMPRESS_FZFZ:
+      Jmsg(jcr, M_FATAL, 0, _("LZFZ compression not supported on this platform\n"));
+      break;
+   case COMPRESS_FZ4L:
+      Jmsg(jcr, M_FATAL, 0, _("LZ4 compression not supported on this platform\n"));
+      break;
+   case COMPRESS_FZ4H:
+      Jmsg(jcr, M_FATAL, 0, _("LZ4HC compression not supported on this platform\n"));
       break;
    default:
-      Jmsg(jcr, M_FATAL, 0, _("Unknown compression algoritm specified %d\n"), compression_algoritm);
+      Jmsg(jcr, M_FATAL, 0, _("Unknown compression algorithm specified %d\n"), compression_algorithm);
       break;
    }
 }
 
-void adjust_compression_buffers(JCR *jcr)
+static inline void non_compatible_compression_algorithm(JCR *jcr, uint32_t compression_algorithm)
+{
+   switch (compression_algorithm) {
+   case COMPRESS_FZFZ:
+      Jmsg(jcr, M_FATAL, 0, _("Illegal compression algorithm LZFZ for compatible mode\n"));
+      break;
+   case COMPRESS_FZ4L:
+      Jmsg(jcr, M_FATAL, 0, _("Illegal compression algorithm LZ4 for compatible mode\n"));
+      break;
+   case COMPRESS_FZ4H:
+      Jmsg(jcr, M_FATAL, 0, _("Illegal compression algorithm LZ4HC for compatible mode\n"));
+      break;
+   default:
+      break;
+   }
+}
+
+bool adjust_compression_buffers(JCR *jcr)
 {
    uint32_t wanted_compress_buf_size;
    uint32_t compress_buf_size = 0;
@@ -117,7 +147,8 @@ void adjust_compression_buffers(JCR *jcr)
                wanted_compress_buf_size = compressBound(jcr->buf_size) + 18 + (int)sizeof(comp_stream_header);
                compress_buf_size = wanted_compress_buf_size;
 
-               z_stream *pZlibStream = (z_stream*)malloc(sizeof(z_stream));
+               z_stream *pZlibStream = (z_stream *)malloc(sizeof(z_stream));
+               memset(pZlibStream, 0, sizeof(z_stream));
                if (pZlibStream) {
                   pZlibStream->zalloc = Z_NULL;
                   pZlibStream->zfree = Z_NULL;
@@ -127,7 +158,9 @@ void adjust_compression_buffers(JCR *jcr)
                   if (deflateInit(pZlibStream, Z_DEFAULT_COMPRESSION) == Z_OK) {
                      jcr->pZLIB_compress_workset = pZlibStream;
                   } else {
+                     Jmsg(jcr, M_FATAL, 0, _("Failed to initialize ZLIB compression\n"));
                      free(pZlibStream);
+                     return false;
                   }
                }
                break;
@@ -136,7 +169,7 @@ void adjust_compression_buffers(JCR *jcr)
 #ifdef HAVE_LZO
             case COMPRESS_LZO1X: {
                /**
-                * For LZO1X compression the recommended value is :
+                * For LZO1X compression the recommended value is:
                 *    output_block_size = input_block_size + (input_block_size / 16) + 64 + 3 + sizeof(comp_stream_header)
                 *
                 * The LZO compression workset is initialized here to minimize
@@ -149,18 +182,70 @@ void adjust_compression_buffers(JCR *jcr)
                }
 
                lzo_voidp pLzoMem = (lzo_voidp) malloc(LZO1X_1_MEM_COMPRESS);
+               memset(pLzoMem, 0, LZO1X_1_MEM_COMPRESS);
                if (pLzoMem) {
                   if (lzo_init() == LZO_E_OK) {
                      jcr->LZO_compress_workset = pLzoMem;
                   } else {
+                     Jmsg(jcr, M_FATAL, 0, _("Failed to initialize LZO compression\n"));
                      free(pLzoMem);
+                     return false;
+                  }
+               }
+               break;
+            }
+#endif
+#ifdef HAVE_FASTLZ
+            case COMPRESS_FZFZ:
+            case COMPRESS_FZ4L:
+            case COMPRESS_FZ4H: {
+               int level, zstat;
+
+               if (me->compatible) {
+                  non_compatible_compression_algorithm(jcr, fo->Compress_algo);
+                  return false;
+               }
+
+               if (fo->Compress_algo == COMPRESS_FZ4H) {
+                  level = Z_BEST_COMPRESSION;
+               } else {
+                  level = Z_BEST_SPEED;
+               }
+
+               /*
+                * For FASTLZ compression the recommended value is:
+                *    output_block_size = input_block_size + (input_block_size / 10 + 16 * 2) + sizeof(comp_stream_header)
+                *
+                * The FASTLZ compression workset is initialized here to minimize
+                * the "per file" load. The jcr member is only set, if the init
+                * was successful.
+                */
+               wanted_compress_buf_size = jcr->buf_size + (jcr->buf_size / 10 + 16 * 2) + (int)sizeof(comp_stream_header);
+               if (wanted_compress_buf_size > compress_buf_size) {
+                  compress_buf_size = wanted_compress_buf_size;
+               }
+
+               zfast_stream *pZfastStream = (zfast_stream *)malloc(sizeof(zfast_stream));
+               memset(pZfastStream, 0, sizeof(zfast_stream));
+               if (pZfastStream) {
+                  pZfastStream->zalloc = Z_NULL;
+                  pZfastStream->zfree = Z_NULL;
+                  pZfastStream->opaque = Z_NULL;
+                  pZfastStream->state = Z_NULL;
+
+                  if ((zstat = fastlzlibCompressInit(pZfastStream, level)) == Z_OK) {
+                     jcr->pZfast_compress_workset = pZfastStream;
+                  } else {
+                     Jmsg(jcr, M_FATAL, 0, _("Failed to initialize FASTLZ compression\n"));
+                     free(pZfastStream);
+                     return false;
                   }
                }
                break;
             }
 #endif
             default:
-               unknown_compression_algoritm(jcr, fo->Compress_algo);
+               unknown_compression_algorithm(jcr, fo->Compress_algo);
                break;
             }
          }
@@ -171,6 +256,8 @@ void adjust_compression_buffers(JCR *jcr)
       jcr->compress_buf_size = compress_buf_size;
       jcr->compress_buf = get_memory(jcr->compress_buf_size);
    }
+
+   return true;
 }
 
 bool adjust_decompression_buffers(JCR *jcr)
@@ -248,7 +335,7 @@ bool setup_compression_context(b_ctx &bctx)
       case COMPRESS_GZIP:
          /**
           * Only change zlib parameters if there is no pending operation.
-          * This should never happen as deflatereset is called after each
+          * This should never happen as deflateReset is called after each
           * deflate.
           */
          if (((z_stream *)bctx.jcr->pZLIB_compress_workset)->total_in == 0) {
@@ -271,6 +358,40 @@ bool setup_compression_context(b_ctx &bctx)
       case COMPRESS_LZO1X:
          break;
 #endif
+#ifdef HAVE_FASTLZ
+      case COMPRESS_FZFZ:
+      case COMPRESS_FZ4L:
+      case COMPRESS_FZ4H: {
+         /**
+          * Only change fastlz parameters if there is no pending operation.
+          * This should never happen as fastlzlibCompressReset is called after each
+          * fastlzlibCompress.
+          */
+         zfast_stream *pZfastStream = (zfast_stream *)bctx.jcr->pZfast_compress_workset;
+         if (pZfastStream->total_in == 0) {
+            int zstat;
+            zfast_stream_compressor compressor;
+
+            switch (bctx.ff_pkt->Compress_algo) {
+            case COMPRESS_FZFZ:
+               compressor = COMPRESSOR_FASTLZ;
+               break;
+            case COMPRESS_FZ4L:
+            case COMPRESS_FZ4H:
+               compressor = COMPRESSOR_LZ4;
+               break;
+            }
+
+            if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor)) != Z_OK) {
+               Jmsg(bctx.jcr, M_FATAL, 0, _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
+               bctx.jcr->setJobStatus(JS_ErrorTerminated);
+               goto bail_out;
+            }
+         }
+         bctx.ch.level = bctx.ff_pkt->Compress_level;
+         break;
+      }
+#endif
       default:
          break;
       }
@@ -290,23 +411,23 @@ static bool compress_with_zlib(b_ctx &bctx)
 
    Dmsg3(400, "cbuf=0x%x rbuf=0x%x len=%u\n", bctx.cbuf, bctx.rbuf, input_len);
 
-   ((z_stream*)bctx.jcr->pZLIB_compress_workset)->next_in = (Bytef *)bctx.rbuf;
-   ((z_stream*)bctx.jcr->pZLIB_compress_workset)->avail_in = input_len;
-   ((z_stream*)bctx.jcr->pZLIB_compress_workset)->next_out = (Bytef *)bctx.cbuf;
-   ((z_stream*)bctx.jcr->pZLIB_compress_workset)->avail_out = bctx.max_compress_len;
+   ((z_stream *)bctx.jcr->pZLIB_compress_workset)->next_in = (Bytef *)bctx.rbuf;
+   ((z_stream *)bctx.jcr->pZLIB_compress_workset)->avail_in = input_len;
+   ((z_stream *)bctx.jcr->pZLIB_compress_workset)->next_out = (Bytef *)bctx.cbuf;
+   ((z_stream *)bctx.jcr->pZLIB_compress_workset)->avail_out = bctx.max_compress_len;
 
-   if ((zstat = deflate((z_stream*)bctx.jcr->pZLIB_compress_workset, Z_FINISH)) != Z_STREAM_END) {
+   if ((zstat = deflate((z_stream *)bctx.jcr->pZLIB_compress_workset, Z_FINISH)) != Z_STREAM_END) {
       Jmsg(bctx.jcr, M_FATAL, 0, _("Compression deflate error: %d\n"), zstat);
       bctx.jcr->setJobStatus(JS_ErrorTerminated);
       return false;
    }
 
-   bctx.compress_len = ((z_stream*)bctx.jcr->pZLIB_compress_workset)->total_out;
+   bctx.compress_len = ((z_stream *)bctx.jcr->pZLIB_compress_workset)->total_out;
 
    /*
     * Reset zlib stream to be able to begin from scratch again
     */
-   if ((zstat = deflateReset((z_stream*)bctx.jcr->pZLIB_compress_workset)) != Z_OK) {
+   if ((zstat = deflateReset((z_stream *)bctx.jcr->pZLIB_compress_workset)) != Z_OK) {
       Jmsg(bctx.jcr, M_FATAL, 0, _("Compression deflateReset error: %d\n"), zstat);
       bctx.jcr->setJobStatus(JS_ErrorTerminated);
       return false;
@@ -346,6 +467,42 @@ static bool compress_with_lzo(b_ctx &bctx)
 }
 #endif
 
+#ifdef HAVE_FASTLZ
+static bool compress_with_fastlz(b_ctx &bctx)
+{
+   int zstat;
+   uint32_t input_len = bctx.jcr->store_bsock->msglen;
+
+   Dmsg3(400, "cbuf=0x%x rbuf=0x%x len=%u\n", bctx.cbuf, bctx.rbuf, input_len);
+
+   ((zfast_stream *)bctx.jcr->pZfast_compress_workset)->next_in = (Bytef *)bctx.rbuf;
+   ((zfast_stream *)bctx.jcr->pZfast_compress_workset)->avail_in = input_len;
+   ((zfast_stream *)bctx.jcr->pZfast_compress_workset)->next_out = (Bytef *)bctx.cbuf;
+   ((zfast_stream *)bctx.jcr->pZfast_compress_workset)->avail_out = bctx.max_compress_len;
+
+   if ((zstat = fastlzlibCompress((zfast_stream *)bctx.jcr->pZfast_compress_workset, Z_FINISH)) != Z_STREAM_END) {
+      Jmsg(bctx.jcr, M_FATAL, 0, _("Compression fastlzlibCompress error: %d\n"), zstat);
+      bctx.jcr->setJobStatus(JS_ErrorTerminated);
+      return false;
+   }
+
+   bctx.compress_len = ((zfast_stream *)bctx.jcr->pZfast_compress_workset)->total_out;
+
+   /*
+    * Reset fastlz stream to be able to begin from scratch again
+    */
+   if ((zstat = fastlzlibCompressReset((zfast_stream *)bctx.jcr->pZfast_compress_workset)) != Z_OK) {
+      Jmsg(bctx.jcr, M_FATAL, 0, _("Compression fastlzlibCompressReset error: %d\n"), zstat);
+      bctx.jcr->setJobStatus(JS_ErrorTerminated);
+      return false;
+   }
+
+   Dmsg2(400, "FASTLZ compressed len=%d uncompressed len=%d\n", bctx.compress_len, input_len);
+
+   return true;
+}
+#endif
+
 bool compress_data(b_ctx &bctx)
 {
    bool retval = false;
@@ -365,6 +522,17 @@ bool compress_data(b_ctx &bctx)
    case COMPRESS_LZO1X:
       if (bctx.jcr->LZO_compress_workset) {
          if (!compress_with_lzo(bctx)) {
+            goto bail_out;
+         }
+      }
+      break;
+#endif
+#ifdef HAVE_FASTLZ
+   case COMPRESS_FZFZ:
+   case COMPRESS_FZ4L:
+   case COMPRESS_FZ4H:
+      if (bctx.jcr->pZfast_compress_workset) {
+         if (!compress_with_fastlz(bctx)) {
             goto bail_out;
          }
       }
@@ -488,6 +656,82 @@ static bool decompress_with_lzo(JCR *jcr, char **data, uint32_t *length)
 }
 #endif
 
+#ifdef HAVE_FASTLZ
+static bool decompress_with_fastlz(JCR *jcr, char **data, uint32_t *length, uint32_t comp_magic)
+{
+   int zstat;
+   zfast_stream stream;
+   zfast_stream_compressor compressor;
+   char ec1[50]; /* Buffer printing huge values */
+
+   switch (comp_magic) {
+   case COMPRESS_FZFZ:
+      compressor = COMPRESSOR_FASTLZ;
+      break;
+   case COMPRESS_FZ4L:
+   case COMPRESS_FZ4H:
+      compressor = COMPRESSOR_LZ4;
+      break;
+   }
+
+   /*
+    * NOTE! We only use uInt and Bytef because they are
+    * needed by the fastlz routines, they should not otherwise
+    * be used in Bareos.
+    */
+   memset(&stream, 0, sizeof(stream));
+   stream.next_in = (Bytef *)*data + sizeof(comp_stream_header);
+   stream.avail_in = (uInt)*length - sizeof(comp_stream_header);
+   stream.next_out = (Bytef *)jcr->compress_buf;
+   stream.avail_out = (uInt)jcr->compress_buf_size;
+
+   Dmsg2(200, "Comp_len=%d msglen=%d\n", stream.avail_in, *length);
+
+   if ((zstat = fastlzlibDecompressInit(&stream)) != Z_OK) {
+      goto cleanup;
+   }
+
+   if ((zstat = fastlzlibSetCompressor(&stream, compressor)) != Z_OK) {
+      goto cleanup;
+   }
+
+   while (1) {
+      zstat = fastlzlibDecompress(&stream);
+      switch (zstat) {
+      case Z_BUF_ERROR:
+         /*
+          * The buffer size is too small, try with a bigger one
+          */
+         jcr->compress_buf_size = jcr->compress_buf_size + (jcr->compress_buf_size >> 1);
+         jcr->compress_buf = check_pool_memory_size(jcr->compress_buf, jcr->compress_buf_size);
+         stream.next_out = (Bytef *)jcr->compress_buf;
+         stream.avail_out = (uInt)jcr->compress_buf_size;
+         continue;
+      case Z_OK:
+      case Z_STREAM_END:
+         break;
+      default:
+         goto cleanup;
+      }
+      break;
+   }
+
+   *data = jcr->compress_buf;
+   *length = stream.total_out;
+   Dmsg2(200, "Write uncompressed %d bytes, total before write=%s\n", *length, edit_uint64(jcr->JobBytes, ec1));
+   fastlzlibDecompressEnd(&stream);
+
+   return true;
+
+cleanup:
+   Qmsg(jcr, M_ERROR, 0, _("Uncompression error on file %s. ERR=%s\n"),
+        jcr->last_fname, zlib_strerror(zstat));
+   fastlzlibDecompressEnd(&stream);
+
+   return false;
+}
+#endif
+
 bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length)
 {
 
@@ -543,6 +787,12 @@ bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length)
          case COMPRESS_LZO1X:
             return decompress_with_lzo(jcr, data, length);
 #endif
+#ifdef HAVE_FASTLZ
+         case COMPRESS_FZFZ:
+         case COMPRESS_FZ4L:
+         case COMPRESS_FZ4H:
+            return decompress_with_fastlz(jcr, data, length, comp_magic);
+#endif
          default:
             Qmsg(jcr, M_ERROR, 0, _("Compression algorithm 0x%x found, but not supported!\n"), comp_magic);
             return false;
@@ -554,8 +804,9 @@ bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length)
    }
 }
 #else
-void adjust_compression_buffers(JCR *jcr)
+bool adjust_compression_buffers(JCR *jcr)
 {
+   return true;
 }
 
 bool setup_compression_context(b_ctx &bctx)

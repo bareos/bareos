@@ -231,7 +231,7 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
             break;
          case 'V':                  /* verify options */
             /* Copy Verify Options */
-            for (j=0; *rp && *rp != ':'; rp++) {
+            for (j = 0; *rp && *rp != ':'; rp++) {
                inc->VerifyOpts[j] = *rp;
                if (j < (int)sizeof(inc->VerifyOpts) - 1) {
                   j++;
@@ -248,23 +248,39 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
          case 'X':
             inc->options |= FO_XATTR;
             break;
-         case 'Z':                 /* compression */
-            rp++;                   /* skip Z */
+         case 'Z':                  /* Compression */
+            rp++;                   /* Skip Z */
             if (*rp >= '0' && *rp <= '9') {
                inc->options |= FO_COMPRESS;
                inc->algo = COMPRESS_GZIP;
                inc->level = *rp - '0';
-            }
-            else if (*rp == 'o') {
+            } else if (*rp == 'o') {
                inc->options |= FO_COMPRESS;
                inc->algo = COMPRESS_LZO1X;
-               inc->level = 1; /* not used with LZO */
+               inc->level = 1;      /* Not used with LZO */
+            } else if (*rp == 'f') {
+               if (rp[1] == 'f') {
+                  rp++;             /* Skip f */
+                  inc->options |= FO_COMPRESS;
+                  inc->algo = COMPRESS_FZFZ;
+                  inc->level = 1;   /* Not used with libfzlib */
+               } else if (rp[1] == '4') {
+                  rp++;             /* Skip f */
+                  inc->options |= FO_COMPRESS;
+                  inc->algo = COMPRESS_FZ4L;
+                  inc->level = 1;   /* Not used with libfzlib */
+               } else if (rp[1] == 'h') {
+                  rp++;             /* Skip f */
+                  inc->options |= FO_COMPRESS;
+                  inc->algo = COMPRESS_FZ4H;
+                  inc->level = 1;   /* Not used with libfzlib */
+               }
             }
             Dmsg2(200, "Compression alg=%d level=%d\n", inc->algo, inc->level);
             break;
-         case 'z':                 /* min, max or approx size or size range */
-            rp++;                   /* skip z */
-            for (j=0; *rp && *rp != ':'; rp++) {
+         case 'z':                  /* Min, Max or Approx size or Size range */
+            rp++;                   /* Skip z */
+            for (j = 0; *rp && *rp != ':'; rp++) {
                size[j] = *rp;
                if (j < (int)sizeof(size) - 1) {
                   j++;

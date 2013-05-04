@@ -21,8 +21,7 @@
 /**
  * Compressed stream header struct
  *
- *  Laurent Papier
- *
+ * Laurent Papier
  */
 
 #ifndef __CH_H
@@ -34,6 +33,9 @@
 #define COMPRESS_NONE  0x4e4f4e45  /* used for incompressible block */
 #define COMPRESS_GZIP  0x475a4950
 #define COMPRESS_LZO1X 0x4c5a4f58
+#define COMPRESS_FZFZ  0x465A465A
+#define COMPRESS_FZ4L  0x465A344C
+#define COMPRESS_FZ4H  0x465A3448
 
 /*
  * Compression header version
