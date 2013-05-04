@@ -50,9 +50,19 @@ else
    #
    # If we fail to find the configured debugger do a last try to find it on the PATH.
    #
-   which gdb > /dev/null 2>&1 && GDB="`which gdb`";DEBUGGER="GDB" || GDB=''
-   which dbx > /dev/null 2>&1 && DBX="`which dbx`";DEBUGGER="DBX" || DBX=''
-   which mdb > /dev/null 2>&1 && MDB="`which mdb`";DEBUGGER="MDB" || MDB=''
+   which gdb > /dev/null 2>&1 && GDB="`which gdb`" || GDB=''
+   which dbx > /dev/null 2>&1 && DBX="`which dbx`" || DBX=''
+   which mdb > /dev/null 2>&1 && MDB="`which mdb`" || MDB=''
+
+   if [ ! -z "${DBX}" -a -x "${DBX}" ]; then
+      DEBUGGER="DBX"
+   elif [ ! -z "${GDB}" -a -x "${GDB}"  ]; then
+      DEBUGGER="GDB"
+   elif [ ! -z "${MDB}" -a -x "${MDB}"  ]; then
+      DEBUGGER="MDB"
+   else
+      DEBUGGER="NONE"
+   fi
 fi
 
 #
@@ -80,8 +90,7 @@ case ${DEBUGGER} in
          ${MDB} -u -p $2 < @scriptdir@/btraceback.mdb >> ${WD}/bareos.$2.traceback 2>&1
       fi
       ;;
-   *)
-      DEBUGGER="NONE"
+   NONE)
       echo "No debugger available on this platform," \
            " please install one to get proper stack traces" >> ${WD}/bareos.$2.traceback
       ;;
