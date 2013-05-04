@@ -84,8 +84,10 @@ ${StrTrimNewLines}
 
 ; MUI Settings
 !define MUI_ABORTWARNING
-!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
-!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+!define MUI_ICON   "bareos.ico"
+!define MUI_UNICON "bareos.ico"
+#!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
+#!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 
 !insertmacro GetParameters
 !insertmacro GetOptions
@@ -313,30 +315,33 @@ SectionIn 2
 
 SectionEnd
 
-#Section /o "Tray-Monitor" SEC_TRAYMON
-#SectionIn 1 2
-#
-#
-#  SetShellVarContext all
-#  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe" '-c "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"'
-#
-#  File "bareos-tray-monitor.exe"
-##  File "libbareos.dll"
-##  File "libcrypto-8.dll"
-##  File "libgcc_s_*-1.dll"
-#  File "libpng15-15.dll"
-##  File "libssl-8.dll"
-##  File "libstdc++-6.dll"
-##  File "pthreadGCE2.dll"
-#  File "QtCore4.dll"
-#  File "QtGui4.dll"
-##  File "zlib1.dll"
-#
-#
-#  !insertmacro InstallConfFile "tray-monitor.conf"
-##  File "tray-monitor.conf"
-#
-#SectionEnd
+Section /o "Tray-Monitor" SEC_TRAYMON
+SectionIn 1 2
+
+
+  SetShellVarContext all
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe" '-c "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"'
+
+# autostart
+  CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe" '-c "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"'
+
+  File "bareos-tray-monitor.exe"
+#  File "libbareos.dll"
+#  File "libcrypto-8.dll"
+#  File "libgcc_s_*-1.dll"
+  File "libpng15-15.dll"
+#  File "libssl-8.dll"
+#  File "libstdc++-6.dll"
+#  File "pthreadGCE2.dll"
+  File "QtCore4.dll"
+  File "QtGui4.dll"
+#  File "zlib1.dll"
+
+
+  !insertmacro InstallConfFile "tray-monitor.conf"
+#  File "tray-monitor.conf"
+
+SectionEnd
 
 
 Section /o "Qt Console (BAT)" SEC_BAT
@@ -387,7 +392,7 @@ SectionEnd
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CLIENT} "Installs the Bareos File Daemon and required Files"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BCONSOLE} "Installs the CLI client console (bconsole)"
-#  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the tray Icon to monitor the Bareos client"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the tray Icon to monitor the Bareos client"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BAT} "Installs the Qt Console (BAT)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL} "Opens Port 9102/TCP for bareos-fd.exe (Client program) in the Windows Firewall"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
@@ -423,8 +428,10 @@ SectionEnd
 
 Section -StartDaemon
   nsExec::ExecToLog "net start bareos-fd"
+  ${If} ${SectionIsSelected} ${SEC_TRAYMON}
+    MessageBox MB_OK|MB_ICONINFORMATION "The tray monitor will be started automatically on next login" /SD IDOK
+  ${EndIf}
 SectionEnd
-
 
 # helper functions to find out computer name
 Function GetComputerName
@@ -588,7 +595,7 @@ Function .onInit
 # make first section mandatory
   SectionSetFlags ${SEC_CLIENT}  17 # SF_SELECTED & SF_RO
 #  SectionSetFlags ${SEC_BCONSOLE}  ${SF_SELECTED} # SF_SELECTED
-#SectionSetFlags ${SEC_TRAYMON}  ${SF_SELECTED} # SF_SELECTED
+SectionSetFlags ${SEC_TRAYMON}  ${SF_SELECTED} # SF_SELECTED
 
 # find out the computer name
   Call GetComputerName
@@ -770,6 +777,12 @@ Section Uninstall
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /remove'
 
 
+#  KillProcWMI::KillProc "bareos-fd.exe"
+# kill tray monitor
+  KillProcWMI::KillProc "bareos-tray-monitor.exe"
+
+
+
 # ask if existing config files should be kept
   IfSilent +2
   MessageBox MB_YESNO|MB_ICONQUESTION \
@@ -825,6 +838,11 @@ ConfDeleteSkip:
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\BAT.lnk"
   Delete "$DESKTOP\BAT.lnk"
+# traymon
+  Delete "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk"
+# traymon autostart
+  Delete "$SMSTARTUP\bareos-tray-monitor.lnk"
+
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
   RMDir "$SMPROGRAMS\${PRODUCT_NAME}"

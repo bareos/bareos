@@ -38,6 +38,7 @@ Source1:         winbareos.nsi
 Source2:         clientdialog.ini
 Source3:         directordialog.ini
 Source4:         KillProcWMI.dll
+Source5:         bareos.ico
 
 %description
 bareos
@@ -83,11 +84,8 @@ for cfg in /etc/mingw64-winbareos/*.conf; do
       cp $cfg $RPM_BUILD_ROOT/release64
 done
 
-find / | grep LICENSE
-
-cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4  %_sourcedir/LICENSE $RPM_BUILD_ROOT/release32
-cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4  %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
-
+cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release32
+cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
 
 makensis -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=32 $RPM_BUILD_ROOT/release32/winbareos.nsi
 makensis -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=64 $RPM_BUILD_ROOT/release64/winbareos.nsi

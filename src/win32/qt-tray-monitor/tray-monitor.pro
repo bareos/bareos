@@ -14,20 +14,26 @@ confs.commands = ./install_conf_file
 
 TEMPLATE     = app
 TARGET       = bareos-tray-monitor
+PRE_TARGETDEPS += ../lib/libbareos.a ../lib/libbareos.dll
 DEPENDPATH  += .
-INCLUDEPATH += ../.. ../../include ../include ../compat/include ../../qt-console/tray-monitor ../qt-console
-VPATH        = ../../qt-console/tray-monitor ../../qt-console
+INCLUDEPATH += ../.. ../../include ../include ../compat/include \
+               ../../qt-tray-monitor
+VPATH        = ../../qt-tray-monitor
 
-LIBS        += -mwindows ../lib/libbareos.a ../lib/libbareos.dll ../findlib/libbareosfind.dll -lwsock32
-DEFINES     += HAVE_WIN32 HAVE_MINGW
+LIBS        += -mwindows ../lib/libbareos.a ../lib/libbareos.dll -lwsock32
+DEFINES     += HAVE_WIN32 HAVE_MINGW _STAT_DEFINED=1
 
-RESOURCES    = ../main.qrc
+RESOURCES    = main.qrc
 MOC_DIR      = moc
 OBJECTS_DIR  = obj
 UI_DIR       = ui
 
 # Main directory
-HEADERS += tray_conf.h  tray-monitor.h  tray-ui.h
-SOURCES += authenticate.cpp  tray_conf.cpp  tray-monitor.cpp
+HEADERS += tray_conf.h tray-monitor.h traymenu.h \
+           systemtrayicon.h mainwindow.h authenticate.h monitoritem.h \
+           monitoritemthread.h monitortab.h
+SOURCES += authenticate.cpp tray_conf.cpp tray-monitor.cpp \
+           traymenu.cpp systemtrayicon.cpp mainwindow.cpp monitoritem.cpp \
+           monitoritemthread.cpp
 
-FORMS += ../run/run.ui
+FORMS += mainwindow.ui

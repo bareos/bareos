@@ -1,0 +1,13 @@
+[Desktop Entry]
+X-SuSE-translate=true
+Name=Bareos Tray Monitor
+GenericName=Backup Tray Monitor
+Comment=Notification Tray Monitor
+Icon=bareos-tray-monitor
+Exec=/home/pstorz/bareos/sbin/bareos-tray-monitor -c /home/pstorz/bareos/etc/tray-monitor.conf
+Terminal=false
+Type=Application
+Encoding=UTF-8
+X-Desktop-File-Install-Version=0.3
+Categories=System;Utility;Archiving;X-SuSE-Backup;
+#TrayIcon;

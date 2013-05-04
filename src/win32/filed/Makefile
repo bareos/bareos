@@ -36,11 +36,15 @@ SVRSRCS = accurate.c authenticate.c backup.c compression.c \
 	  service.c main.c
 SVROBJS = $(SVRSRCS:.c=.o)
 
+WINDRESSRCS = icon.rc
+WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
+
+
 all: bareos-fd.exe
 
 bareos-fd.exe: DLL_USAGE = -DUSING_DLL
-bareos-fd.exe: $(SVROBJS)
-	$(CXX) $(LDFLAGS_WINAPP) $(SVROBJS) $(LDLIBS) -o $@
+bareos-fd.exe: $(SVROBJS) $(WINDRESOBJS)
+	$(CXX) $(LDFLAGS_WINAPP) $(SVROBJS) $(WINDRESOBJS) $(LDLIBS) -o $@
 
 clean:
 	rm -f *.o
@@ -52,3 +56,7 @@ distclean:: clean
 .c.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
+
+%.o : %.rc
+	@echo "Ressource Compiling $^"
+	$(WINDRES) $^ -o $@

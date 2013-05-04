@@ -1,6 +1,6 @@
-diff -ruN bareos-12.11.orig/src/qt-console/tray-monitor/tray-monitor.conf.in bareos-12.11/src/qt-console/tray-monitor/tray-monitor.conf.in
---- bareos-12.11.orig/src/qt-console/tray-monitor/tray-monitor.conf.in	2012-11-12 11:28:21.000000000 +0100
-+++ bareos-12.11/src/qt-console/tray-monitor/tray-monitor.conf.in	2012-11-17 00:59:17.000000000 +0100
+diff -ruN bareos-12.11.orig/src/qt-tray-monitor/tray-monitor.conf.in bareos-12.11/src/qt-tray-monitor/tray-monitor.conf.in
+--- bareos-12.11.orig/src/qt-tray-monitor/tray-monitor.conf.in	2012-11-12 11:28:21.000000000 +0100
++++ bareos-12.11/src/qt-tray-monitor/tray-monitor.conf.in	2012-11-17 00:59:17.000000000 +0100
 @@ -15,15 +15,15 @@
    Password = "@mon_fd_password@"          # password for FileDaemon
  }

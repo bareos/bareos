@@ -15,7 +15,7 @@ CONFIG( debug, debug|release )  {
    CONFIG += release
 }
 
-LIBS        += -L../../lib -lbareoscfg -lbareos -L../../findlib -lbareosfind @OPENSSL_LIBS@
+LIBS += -L../lib -lbareoscfg -lbareos
 
 bins.path            = /$(DESTDIR)@sbindir@
 bins.files           = bareos-tray-monitor
@@ -31,7 +31,7 @@ autostarts.files     = bareos-tray-monitor.desktop
 TEMPLATE     = app
 TARGET       = bareos-tray-monitor
 DEPENDPATH  += .
-INCLUDEPATH += ../.. ../../include .
+INCLUDEPATH += ../include .. .
 
 LIBTOOL_LINK = @QMAKE_LIBTOOL@ --silent --tag=CXX --mode=link
 LIBTOOL_INSTALL = @QMAKE_LIBTOOL@ --silent --mode=install
@@ -39,16 +39,16 @@ QMAKE_LINK   = $${LIBTOOL_LINK} $(CXX)
 QMAKE_INSTALL_PROGRAM = $${LIBTOOL_INSTALL} install -m @SBINPERM@ -p
 QMAKE_CLEAN += .libs/* bareos-tray-monitor release/bareos-tray-monitor
 
-RESOURCES    = ../main.qrc
+RESOURCES    = main.qrc
 MOC_DIR      = moc
 OBJECTS_DIR  = obj
 UI_DIR       = ui
 
 # Main directory
-HEADERS += tray_conf.h  tray-monitor.h  tray-ui.h
-SOURCES += authenticate.cpp  tray_conf.cpp  tray-monitor.cpp
+HEADERS += tray_conf.h tray-monitor.h traymenu.h systemtrayicon.h mainwindow.h authenticate.h monitoritem.h monitoritemthread.h
+SOURCES += authenticate.cpp tray_conf.cpp tray-monitor.cpp traymenu.cpp systemtrayicon.cpp mainwindow.cpp monitoritem.cpp monitoritemthread.cpp
 
-FORMS += ../run/run.ui
+FORMS += mainwindow.ui
 
 INSTALLS += bins confs icons desktopentries autostarts
 

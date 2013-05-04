@@ -2,6 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,8 +26,10 @@
  * Nicolas Boichat, August MMIV
  */
 
-#include "tray-monitor.h"
+#include "monitoritem.h"
+#include "authenticate.h"
 #include "jcr.h"
+#include "monitoritemthread.h"
 
 void senditf(const char *fmt, ...);
 void sendit(const char *buf);
@@ -50,8 +54,10 @@ static char FDOKhello[] = "2000 OK Hello";
 /*
  * Authenticate Director
  */
-int authenticate_director(JCR *jcr, MONITORRES *mon, DIRRES *director)
+static int authenticate_director(JCR *jcr)
 {
+   const MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
+
    BSOCK *dir = jcr->dir_bsock;
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
@@ -59,9 +65,9 @@ int authenticate_director(JCR *jcr, MONITORRES *mon, DIRRES *director)
    char bashed_name[MAX_NAME_LENGTH];
    char *password;
 
-   bstrncpy(bashed_name, mon->hdr.name, sizeof(bashed_name));
+   bstrncpy(bashed_name, monitor->hdr.name, sizeof(bashed_name));
    bash_spaces(bashed_name);
-   password = mon->password;
+   password = monitor->password;
 
    /* Timeout Hello after 5 mins */
    btimer_t *tid = start_bsock_timer(dir, 60 * 5);
@@ -97,8 +103,10 @@ int authenticate_director(JCR *jcr, MONITORRES *mon, DIRRES *director)
 /*
  * Authenticate Storage daemon connection
  */
-int authenticate_storage_daemon(JCR *jcr, MONITORRES *monitor, STORERES* store)
+static int authenticate_storage_daemon(JCR *jcr, STORERES* store)
 {
+   const MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
+
    BSOCK *sd = jcr->store_bsock;
    char dirname[MAX_NAME_LENGTH];
    int tls_local_need = BNET_TLS_NONE;
@@ -143,8 +151,10 @@ int authenticate_storage_daemon(JCR *jcr, MONITORRES *monitor, STORERES* store)
 /*
  * Authenticate File daemon connection
  */
-int authenticate_file_daemon(JCR *jcr, MONITORRES *monitor, CLIENTRES* client)
+static int authenticate_file_daemon(JCR *jcr, CLIENTRES* client)
 {
+   const MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
+
    BSOCK *fd = jcr->file_bsock;
    char dirname[MAX_NAME_LENGTH];
    int tls_local_need = BNET_TLS_NONE;
@@ -184,4 +194,20 @@ int authenticate_file_daemon(JCR *jcr, MONITORRES *monitor, CLIENTRES* client)
       return 0;
    }
    return 1;
+}
+
+int authenticate_daemon(MonitorItem* item, JCR *jcr)
+{
+   switch (item->type()) {
+   case R_DIRECTOR:
+      return authenticate_director(jcr);
+   case R_CLIENT:
+      return authenticate_file_daemon(jcr, (CLIENTRES*)item->resource());
+   case R_STORAGE:
+      return authenticate_storage_daemon(jcr, (STORERES*)item->resource());
+   default:
+      printf(_("Error, currentitem is not a Client or a Storage..\n"));
+      return FALSE;
+   }
+   return false;
 }

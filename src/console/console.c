@@ -946,7 +946,7 @@ try_again:
       if (get_cmd(stdin, _("Select Director by entering a number: "),
                   UA_sock, 600) < 0)
       {
-         (void)WSACleanup();               /* Cleanup Windows sockets */
+         WSACleanup();               /* Cleanup Windows sockets */
          return 0;
       }
       if (!is_a_number(UA_sock->msg)) {
@@ -1268,7 +1268,7 @@ static void terminate_console(int sig)
    if (!no_conio) {
       con_term();
    }
-   (void)WSACleanup();               /* Cleanup Windows sockets */
+   WSACleanup();               /* Cleanup Windows sockets */
    lmgr_cleanup_main();
 
    if (sig != 0) {
