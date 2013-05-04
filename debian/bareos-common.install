@@ -11,4 +11,3 @@
 /usr/sbin/btraceback
 /usr/share/man/man8/btraceback.8.gz
 /var/lib/bareos/
-#/var/lib/bareos/log

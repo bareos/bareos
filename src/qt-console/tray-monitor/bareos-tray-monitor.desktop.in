@@ -1,10 +1,13 @@
 [Desktop Entry]
-Name=Bareos Monitor
+X-SuSE-translate=true
+Name=Bareos Tray Monitor
+GenericName=Backup Tray Monitor
 Comment=Notification Tray Monitor
-Icon=bareos-tray-monitor.xpm
+Icon=bareos-tray-monitor
 Exec=@sbindir@/bareos-tray-monitor -c @sysconfdir@/tray-monitor.conf
 Terminal=false
 Type=Application
 Encoding=UTF-8
 X-Desktop-File-Install-Version=0.3
-Categories=System;Application;Utility;X-Red-Hat-Base;
+Categories=System;Utility;Archiving;X-SuSE-Backup;
+#TrayIcon;

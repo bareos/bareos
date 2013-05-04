@@ -21,6 +21,11 @@ confs.path = /$(DESTDIR)@sysconfdir@
 confs.commands = ./install_conf_file
 help.path = /$(DESTDIR)@htmldir@
 help.files = help/*.html images/status.png images/mail-message-new.png
+icons.path  = /$(DESTDIR)@datarootdir@/pixmaps/
+icons.files = images/bat.png images/bat.svg
+desktopentries.path  = /$(DESTDIR)@datarootdir@/applications/
+desktopentries.files = bat.desktop
+
 
 TEMPLATE     = app
 TARGET       = bat
@@ -34,7 +39,7 @@ QMAKE_INSTALL_PROGRAM = $${LIBTOOL_INSTALL} install -m @SBINPERM@ -p
 QMAKE_CLEAN += .libs/* bat
 
 macx {
-  ICON = images/bat_icon.icns
+  ICON = images/bat.icns
 }
 
 RESOURCES    = main.qrc
@@ -171,7 +176,7 @@ SOURCES += status/storstat.cpp
 HEADERS += util/fmtwidgetitem.h util/comboutil.h
 SOURCES += util/fmtwidgetitem.cpp util/comboutil.cpp
 
-INSTALLS = bins confs help
+INSTALLS = bins confs help icons desktopentries
 
 QMAKE_EXTRA_TARGETS += depend
 
