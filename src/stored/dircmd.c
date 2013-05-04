@@ -323,6 +323,7 @@ static bool cancel_cmd(JCR *cjcr)
    BSOCK *dir = cjcr->dir_bsock;
    int oldStatus;
    char Job[MAX_NAME_LENGTH];
+   JobId_t JobId;
    JCR *jcr;
    int status;
    const char *reason;
@@ -335,47 +336,59 @@ static bool cancel_cmd(JCR *cjcr)
       goto bail_out;
    }
 
-   if (!(jcr=get_jcr_by_full_name(Job))) {
-      dir->fsend(_("3904 Job %s not found.\n"), Job);
+   /*
+    * See if the Jobname is a number only then its a JobId.
+    */
+   if (is_a_number(Job)) {
+      JobId = str_to_int64(Job);
+      if (!(jcr = get_jcr_by_id(JobId))) {
+         dir->fsend(_("3904 Job %s not found.\n"), Job);
+         goto bail_out;
+      }
    } else {
-      oldStatus = jcr->JobStatus;
-      jcr->setJobStatus(status);
-
-      Dmsg2(800, "Cancel JobId=%d %p\n", jcr->JobId, jcr);
-      if (!jcr->authenticated && oldStatus == JS_WaitFD) {
-         pthread_cond_signal(&jcr->job_start_wait); /* wake waiting thread */
+      if (!(jcr = get_jcr_by_full_name(Job))) {
+         dir->fsend(_("3904 Job %s not found.\n"), Job);
+         goto bail_out;
       }
-
-      if (jcr->file_bsock) {
-         jcr->file_bsock->set_terminated();
-         jcr->file_bsock->set_timed_out();
-         Dmsg2(800, "Term bsock jid=%d %p\n", jcr->JobId, jcr);
-      } else {
-         /* Still waiting for FD to connect, release it */
-         pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
-         Dmsg2(800, "Signal FD connect jid=%d %p\n", jcr->JobId, jcr);
-      }
-
-      /*
-       * If thread waiting on mount, wake him
-       */
-      if (jcr->dcr && jcr->dcr->dev && jcr->dcr->dev->waiting_for_mount()) {
-         pthread_cond_broadcast(&jcr->dcr->dev->wait_next_vol);
-         Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
-         pthread_cond_broadcast(&wait_device_release);
-      }
-
-      if (jcr->read_dcr && jcr->read_dcr->dev && jcr->read_dcr->dev->waiting_for_mount()) {
-         pthread_cond_broadcast(&jcr->read_dcr->dev->wait_next_vol);
-         Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
-         pthread_cond_broadcast(&wait_device_release);
-      }
-
-      pthread_cond_signal(&jcr->job_end_wait); /* wake waiting job */
-
-      dir->fsend(_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId, jcr->Job, reason);
-      free_jcr(jcr);
    }
+
+   oldStatus = jcr->JobStatus;
+   jcr->setJobStatus(status);
+
+   Dmsg2(800, "Cancel JobId=%d %p\n", jcr->JobId, jcr);
+   if (!jcr->authenticated && oldStatus == JS_WaitFD) {
+      pthread_cond_signal(&jcr->job_start_wait); /* wake waiting thread */
+   }
+
+   if (jcr->file_bsock) {
+      jcr->file_bsock->set_terminated();
+      jcr->file_bsock->set_timed_out();
+      Dmsg2(800, "Term bsock jid=%d %p\n", jcr->JobId, jcr);
+   } else {
+      /* Still waiting for FD to connect, release it */
+      pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
+      Dmsg2(800, "Signal FD connect jid=%d %p\n", jcr->JobId, jcr);
+   }
+
+   /*
+    * If thread waiting on mount, wake him
+    */
+   if (jcr->dcr && jcr->dcr->dev && jcr->dcr->dev->waiting_for_mount()) {
+      pthread_cond_broadcast(&jcr->dcr->dev->wait_next_vol);
+      Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
+      pthread_cond_broadcast(&wait_device_release);
+   }
+
+   if (jcr->read_dcr && jcr->read_dcr->dev && jcr->read_dcr->dev->waiting_for_mount()) {
+      pthread_cond_broadcast(&jcr->read_dcr->dev->wait_next_vol);
+      Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
+      pthread_cond_broadcast(&wait_device_release);
+   }
+
+   pthread_cond_signal(&jcr->job_end_wait); /* wake waiting job */
+
+   dir->fsend(_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId, jcr->Job, reason);
+   free_jcr(jcr);
 
 bail_out:
    dir->signal(BNET_EOD);
