@@ -878,7 +878,7 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
               jcr->res.client->GraceTime +
               jcr->res.client->SoftQuotaGracePeriod);
 
-   find_used_compressalgos( &compress_algo_list, jcr);
+   find_used_compressalgos(&compress_algo_list, jcr);
 
    if (RunTime <= 0) {
       kbps = 0;
@@ -996,7 +996,7 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
       } else {
          if (jcr->HasBase) {
             Mmsg(client_options, _(
-                 "  Software Compression:   %s (%s)\n"
+                 "  Software Compression:   %s%s\n"
                  "  Base files/Used files:  %lld/%lld (%.2f%%)\n"
                  "  VSS:                    %s\n"
                  "  Encryption:             %s\n"
@@ -1011,7 +1011,7 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
                  jcr->accurate ? _("yes") : _("no"));
          } else {
             Mmsg(client_options, _(
-                 "  Software Compression:   %s (%s)\n"
+                 "  Software Compression:   %s%s\n"
                  "  VSS:                    %s\n"
                  "  Encryption:             %s\n"
                  "  Accurate:               %s\n"),

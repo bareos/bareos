@@ -316,6 +316,8 @@ void find_used_compressalgos(POOL_MEM *compressalgos, JCR *jcr)
                   if (bstrncmp(k, fs_opt->option, strlen(fs_opt->option))) {
                      if (cnt > 0) {
                         compressalgos->strcat(",");
+                     } else {
+                        compressalgos->strcat(" (");
                      }
                      compressalgos->strcat(fs_opt->name);
                      k += strlen(fs_opt->option) - 1;
@@ -329,6 +331,10 @@ void find_used_compressalgos(POOL_MEM *compressalgos, JCR *jcr)
             }
          }
       }
+   }
+
+   if (cnt > 0) {
+      compressalgos->strcat(")");
    }
 }
 
