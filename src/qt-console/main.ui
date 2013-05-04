@@ -16,7 +16,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="main.qrc">
-    <normaloff>:/images/bat.png</normaloff>:/images/bat.png</iconset>
+    <normaloff>:/images/bareos_1.png</normaloff>:/images/bareos_1.png</iconset>
   </property>
   <property name="toolTip">
    <string/>
@@ -239,7 +239,7 @@
   <action name="actionAbout_bat">
    <property name="icon">
     <iconset resource="main.qrc">
-     <normaloff>:/images/bat.png</normaloff>:/images/bat.png</iconset>
+     <normaloff>:/images/bareos_1.png</normaloff>:/images/bareos_1.png</iconset>
    </property>
    <property name="text">
     <string>&amp;About bat</string>
