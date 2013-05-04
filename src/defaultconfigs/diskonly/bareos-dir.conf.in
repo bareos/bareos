@@ -63,7 +63,7 @@ JobDefs {
   Schedule = "WeeklyCycle"
   Storage = File
   Messages = Standard
-  Pool = File
+  Pool = Incremental
   Priority = 10
   Write Bootstrap = "@working_dir@/%c.bsr"
   Full Backup Pool = Full                  # write Full Backups into "Full" Pool         (#5)
@@ -113,7 +113,7 @@ Job {
   Client=@basename@-fd
   FileSet = "Linux All"
   Storage = File
-  Pool = Default
+  Pool = Incremental
   Messages = Standard
   Where = /tmp/bareos-restores
 }
