@@ -37,6 +37,7 @@ install: installdirs
 	$(INSTALL_SCRIPT) bareos $(DESTDIR)$(scriptdir)/bareos
 	$(INSTALL_SCRIPT) bareos_config $(DESTDIR)$(scriptdir)/bareos_config
 	$(INSTALL_SCRIPT) bareos $(DESTDIR)$(sbindir)/bareos
+	$(INSTALL_SCRIPT) bareos-ctl-funcs $(DESTDIR)$(scriptdir)/bareos-ctl-funcs
 	$(INSTALL_SCRIPT) bareos-ctl-dir $(DESTDIR)$(scriptdir)/bareos-ctl-dir
 	$(INSTALL_SCRIPT) bareos-ctl-fd $(DESTDIR)$(scriptdir)/bareos-ctl-fd
 	$(INSTALL_SCRIPT) bareos-ctl-sd $(DESTDIR)$(scriptdir)/bareos-ctl-sd
