@@ -40,7 +40,7 @@ OS=`uname -s`
 #
 # Source the generic functions.
 #
-. @scriptdir@/bareos-ctl-funcs.in
+. @scriptdir@/bareos-ctl-funcs
 
 # if /lib/tls exists, force Bareos to use the glibc pthreads instead
 if [ -d "/lib/tls" -a $OS = "Linux" -a `uname -r | cut -c1-3` = "2.4" ] ; then
