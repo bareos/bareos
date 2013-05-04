@@ -3675,6 +3675,8 @@ AC_OUTPUT([autoconf/Make.common \
 	   src/plugins/sd/Makefile \
 	   src/plugins/dir/Makefile \
 	   po/Makefile.in \
+	   src/defaultconfigs/diskonly/bareos-sd.conf \
+	   src/defaultconfigs/diskonly/bareos-dir.conf \
 	   $PFILES ],
      [ ]
 )
