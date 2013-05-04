@@ -77,7 +77,7 @@ bpluginfo: Makefile bpluginfo.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bpluginfo.o -lbareos $(GETTEXT_LIBS)
 
 timelimit.o: timelimit.c
-	${CC} ${DEFS} ${DEBUG} $(CXXFLAGS) -DHAVE_ERRNO_H -DHAVE_SETITIMER -DHAVE_SIGACTION -c timelimit.c
+	${CC} ${DEFS} ${DEBUG} $(CFLAGS) -DHAVE_ERRNO_H -DHAVE_SETITIMER -DHAVE_SIGACTION -c timelimit.c
 
 timelimit: timelimit.o
 	$(LIBTOOL) --silent --mode=link $(CC) $(LDFLAGS) -o $@ timelimit.o
