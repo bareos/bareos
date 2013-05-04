@@ -68,9 +68,9 @@ for file in \
       bpipe-fd.dll libbareos.dll libbareosfind.dll \
       libcrypto-8.dll libgcc_s_sjlj-1.dll libhistory6.dll \
       libreadline6.dll libssl-8.dll libstdc++-6.dll \
-      libtermcap-0.dll pthreadGCE2.dll zlib1.dll\
-      QtCore4.dll QtGui4.dll liblzo2-2.dll libpng15-15.dll\
-      openssl.exe sed.exe; do
+      libtermcap-0.dll pthreadGCE2.dll zlib1.dll \
+      QtCore4.dll QtGui4.dll liblzo2-2.dll libfastlz.dll \
+      libpng15-15.dll openssl.exe sed.exe; do
       cp  %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/release32
       cp  %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/release64
 done

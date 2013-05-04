@@ -23,7 +23,6 @@ BuildArch:      noarch
 Source1:       fillup.sed
 Source2:       vss_headers.tar
 
-
 Patch1:        tray-monitor-conf.patch
 
 BuildRequires:  mingw64-filesystem
@@ -56,6 +55,8 @@ BuildRequires:  mingw64-readline
 BuildRequires:  mingw64-readline-devel
 BuildRequires:  mingw64-lzo
 BuildRequires:  mingw64-lzo-devel
+BuildRequires:  mingw64-libfastlz
+BuildRequires:  mingw64-libfastlz-devel
 
 BuildRequires:  sed
 BuildRequires:  vim, procps, bc
