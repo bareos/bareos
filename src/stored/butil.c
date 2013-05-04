@@ -99,8 +99,6 @@ JCR *setup_jcr(const char *name, char *dev_name,
    pm_strcpy(jcr->fileset_name, "Dummy.fileset.name");
    jcr->fileset_md5 = get_pool_memory(PM_FNAME);
    pm_strcpy(jcr->fileset_md5, "Dummy.fileset.md5");
-   jcr->comment = get_pool_memory(PM_MESSAGE);
-   *jcr->comment = '\0';
 
    new_plugins(jcr);  /* instantiate plugins */
 
