@@ -471,7 +471,7 @@ static void do_scheduler_status(UAContext *ua)
    int i;
    int days = 14;                                /* Default days for preview */
    bool schedulegiven = false;
-   time_t time_to_check, now, runtime;
+   time_t time_to_check, now;
    char schedulename[MAX_NAME_LENGTH];
    const int seconds_per_day = 86400;            /* Number of seconds in one day */
    const int seconds_per_hour = 3600;            /* Number of seconds in one hour */
@@ -565,7 +565,10 @@ static void do_scheduler_status(UAContext *ua)
             }
          }
       }
-      ua->send_msg("\n");
+
+      if (cnt > 0) {
+         ua->send_msg("\n");
+      }
    }
    UnlockRes();
 
