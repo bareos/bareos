@@ -92,31 +92,36 @@ dnl -------------------------------------------------------
 dnl Check for programs.
 dnl ------------------------------------------------------
 AC_PROG_INSTALL
-AC_PATH_PROG(MV, mv, mv)
+AC_PATH_PROG(MV, mv, [])
 dnl Alert !!!
 dnl If we name the variable RM it will shadow the RM variable in the configure script and we overwrite the
 dnl value with the name of the rm command and not rm -f which is its normal content. This gives all kind
 dnl of strange output of the configure script (like things don't exist etc.).
 dnl So we name it REMOVE (more software has run into this problem)
-AC_PATH_PROG(REMOVE, rm, rm)
+AC_PATH_PROG(REMOVE, rm, [])
 dnl Alert !!!
 dnl If we name the variable ECHO it will shadow the ECHO variable in the configure script
 dnl This gives all kind of strange output in the make depend on some platforms
 dnl So we name it ECHOCMD (more software has run into this problem)
-AC_PATH_PROG(ECHOCMD, echo, echo)
-AC_PATH_PROG(CP, cp, cp)
-AC_PATH_PROG(SED, sed, sed)
-AC_PATH_PROG(CMP, cmp, cmp)
-AC_PATH_PROG(TBL, tbl, tbl)
-AC_PATH_PROG(AR, ar, ar)
-AC_PATH_PROG(OPENSSL, openssl, none)
-AC_PATH_PROG(MTX, mtx, mtx)
-AC_PATH_PROG(DD, dd, dd)
-AC_PATH_PROG(PYTHON, python, python)
-AC_PATH_PROG(PKGCONFIG, pkg-config, pkg-config)
-AC_PATH_PROG(QMAKE, qmake, none)
-AC_PATH_PROG(GMAKE, gmake, none)
-AC_PATH_PROG(PIDOF, pidof, pidof)
+AC_PATH_PROG(ECHOCMD, echo, [])
+AC_PATH_PROG(CP, cp, [])
+AC_PATH_PROG(SED, sed, [])
+AC_PATH_PROG(CMP, cmp, [])
+AC_PATH_PROG(TBL, tbl, [])
+AC_PATH_PROG(AR, ar, [])
+AC_PATH_PROG(OPENSSL, openssl, [])
+AC_PATH_PROG(MTX, mtx, [])
+AC_PATH_PROG(DD, dd, [])
+AC_PATH_PROG(PYTHON, python, [])
+AC_PATH_PROG(PKGCONFIG, pkg-config, [])
+AC_PATH_PROG(QMAKE, qmake, [])
+AC_PATH_PROG(GMAKE, gmake, [])
+AC_PATH_PROG(PIDOF, pidof, [])
+AC_PATH_PROG(GCORE, gcore, [])
+AC_PATH_PROG(GDB, gdb, [])
+AC_PATH_PROG(DBX, dbx, [])
+AC_PATH_PROG(MDB, mdb, [])
+
 AC_PROG_AWK
 # Some AWK programs fail, so test it and warn the user
 if echo xfoo | $AWK 'BEGIN { prog=ARGV[1]; ARGC=1 }
@@ -131,7 +136,6 @@ else
 fi
 THE_AWK=$AWK
 AC_PATH_PROG(AWK, $THE_AWK, $THE_AWK)
-
 
 test -n "$ARFLAG" || ARFLAGS="cr"
 AC_SUBST(ARFLAGS)
