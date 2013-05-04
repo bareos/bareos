@@ -97,7 +97,8 @@ bool do_verify(JCR *jcr)
 {
    int JobLevel;
    const char *level;
-   BSOCK *fd, *sd;
+   BSOCK *fd = NULL;
+   BSOCK *sd = NULL;
    int status;
    char ed1[100];
    JOB_DBR jr;

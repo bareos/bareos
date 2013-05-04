@@ -306,8 +306,8 @@ bool do_native_backup(JCR *jcr)
    int status;
    int tls_need = BNET_TLS_NONE;
    BSOCK *fd, *sd;
-   STORERES *store;
-   CLIENTRES *client;
+   STORERES *store = NULL;
+   CLIENTRES *client = NULL;
    char ed1[100];
    db_int64_ctx job;
    POOL_MEM buf;
