@@ -856,9 +856,9 @@ static void init_resource_cb(RES_ITEM *item)
 
    if (item->handler == store_authtype) {
       for (i = 0; authmethods[i].name; i++) {
-          if (bstrcasecmp(item->default_value, authmethods[i].name)) {
-             *(uint32_t *)(item->value) = authmethods[i].token;
-          }
+         if (bstrcasecmp(item->default_value, authmethods[i].name)) {
+            *(uint32_t *)(item->value) = authmethods[i].token;
+         }
       }
    }
 }
