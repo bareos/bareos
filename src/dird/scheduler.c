@@ -255,7 +255,7 @@ void term_scheduler()
  * depending if the year is leap year or not, the doy of the last day of the month
  * is varying one day.
  */
-static bool is_doy_in_last_week(int year, int doy)
+bool is_doy_in_last_week(int year, int doy)
 {
    int i;
    int *last_dom;
