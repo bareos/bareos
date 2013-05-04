@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+
 DIR_CFG=/etc/bareos
 CFG_DIR=${DIR_CFG}/bareos-dir.conf
 DIR_SCRIPTS=/usr/lib/bareos/scripts
@@ -31,16 +32,19 @@ help()
 is_function()
 {
     func=$1
-    test "$func" && type -t "$func" > /dev/null 2>&1
-    local rc=$?
-    return $rc
+    test "$func" && type "$func" > /dev/null 2>&1
+    return $?
 }
 
 list_functions()
 {
-    # show available shell functions,
-    # but exclude internal functions (name starts with "_" ...)
-    typeset -F | cut -d " " -f 3 | grep "^[a-z]"
+    if type typeset >/dev/null 2>&1; then
+        # show available shell functions,
+        # but exclude internal functions (name starts with "_" ...)
+        typeset -F | cut -d " " -f 3 | grep "^[a-z]"
+    else
+        echo "function list not available"
+    fi
 }
 
 # TODO: use defines
