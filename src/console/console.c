@@ -586,24 +586,24 @@ struct cpl_keywords_t {
 };
 
 static struct cpl_keywords_t cpl_keywords[] = {
-   {"pool=",      ".pool"          },
-   {"fileset=",   ".fileset"       },
-   {"client=",    ".client"        },
-   {"job=",       ".jobs"          },
-   {"restore_job=",".jobs type=R"  },
-   {"level=",     ".level"         },
-   {"storage=",   ".storage"       },
-   {"schedule=",  ".schedule"      },
-   {"volume=",    ".media"         },
-   {"oldvolume=", ".media"         },
-   {"volstatus=", ".volstatus"     },
-   {"ls",         ".ls"            },
-   {"cd",         ".lsdir"         },
-   {"mark",       ".ls"            },
-   {"m",          ".ls"            },
-   {"unmark",     ".lsmark"        },
-   {"catalog=",   ".catalogs"      },
-   {"actiononpurge=", ".actiononpurge" }
+   { "pool=", ".pool" },
+   { "fileset=", ".fileset" },
+   { "client=", ".client" },
+   { "job=", ".jobs" },
+   { "restore_job=",".jobs type=R" },
+   { "level=", ".level" },
+   { "storage=", ".storage" },
+   { "schedule=", ".schedule" },
+   { "volume=", ".media" },
+   { "oldvolume=", ".media" },
+   { "volstatus=", ".volstatus" },
+   { "ls", ".ls" },
+   { "cd", ".lsdir" },
+   { "mark", ".ls" },
+   { "m", ".ls" },
+   { "unmark", ".lsmark" },
+   { "catalog=", ".catalogs" },
+   { "actiononpurge=", ".actiononpurge" }
 };
 #define key_size ((int)(sizeof(cpl_keywords)/sizeof(struct cpl_keywords_t)))
 

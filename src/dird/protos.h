@@ -216,6 +216,7 @@ bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
 
 /* scheduler.c */
 JCR *wait_for_next_job(char *one_shot_job_to_run);
+bool is_doy_in_last_week(int year, int doy);
 void term_scheduler();
 
 /* ua_acl.c */

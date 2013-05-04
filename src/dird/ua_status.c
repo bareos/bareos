@@ -35,6 +35,7 @@ static void list_scheduled_jobs(UAContext *ua);
 static void list_running_jobs(UAContext *ua);
 static void list_terminated_jobs(UAContext *ua);
 static void do_director_status(UAContext *ua);
+static void do_scheduler_status(UAContext *ua);
 static void do_all_status(UAContext *ua);
 static void status_slots(UAContext *ua, STORERES *store);
 static void status_content(UAContext *ua, STORERES *store);
@@ -148,12 +149,11 @@ int status_cmd(UAContext *ua, const char *cmd)
 
    Dmsg1(20, "status:%s:\n", cmd);
 
-   for (i=1; i<ua->argc; i++) {
+   for (i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("all"))) {
          do_all_status(ua);
          return 1;
-      } else if (bstrcasecmp(ua->argk[i], NT_("dir")) ||
-                 bstrcasecmp(ua->argk[i], NT_("director"))) {
+      } else if (bstrncasecmp(ua->argk[i], NT_("dir"), 3)) {
          do_director_status(ua);
          return 1;
       } else if (bstrcasecmp(ua->argk[i], NT_("client"))) {
@@ -170,6 +170,9 @@ int status_cmd(UAContext *ua, const char *cmd)
                break;
             }
          }
+         return 1;
+      } else if (bstrncasecmp(ua->argk[i], NT_("sched"), 5)) {
+         do_scheduler_status(ua);
          return 1;
       } else {
          store = get_storage_resource(ua, false/*no default*/);
@@ -202,7 +205,7 @@ int status_cmd(UAContext *ua, const char *cmd)
    }
    /* If no args, ask for status type */
    if (ua->argc == 1) {
-       char prmt[MAX_NAME_LENGTH];
+      char prmt[MAX_NAME_LENGTH];
 
       start_prompt(ua, _("Status available for:\n"));
       add_prompt(ua, NT_("Director"));
@@ -380,6 +383,151 @@ void list_dir_status_header(UAContext *ua)
          ua->send_msg("%s\n", msg.c_str());
       }
    }
+}
+
+static void do_scheduler_status(UAContext *ua)
+{
+   int i, hour, mday, wday, month, wom, woy, yday;
+   int days = 14;                                     /* Default days for preview */
+   bool is_last_week = false,                         /* Are we in the last week of a month? */
+        schedulegiven = false;
+   char dt[MAX_TIME_LENGTH];
+   time_t time_to_check, now, runtime;
+   char level[15];
+   char schedulename[MAX_NAME_LENGTH];
+   const int seconds_per_day = 86400;                 /* Number of seconds in one day */
+   struct tm tm;
+   SCHEDRES *sched;
+   JOBRES *job;
+   RUNRES *run;
+
+   now = time(NULL);                                  /* Initialize to now */
+   time_to_check = now;
+
+   i = find_arg_with_value(ua, NT_("days"));
+   if (i >= 0) {
+      days = atoi(ua->argv[i]);
+      if (((days < 0) || (days > 366)) && !ua->api) {
+         ua->send_msg(_("Ignoring invalid value for days. Max is 366.\n"));
+         days = 14;
+      }
+   }
+
+   /*
+    * Schedule given?
+    */
+   i = find_arg_with_value(ua, NT_("schedule"));
+   if (i >= 0) {
+      bstrncpy(schedulename, ua->argv[i], sizeof(schedulename));
+      schedulegiven = true;
+   }
+
+   ua->send_msg("Scheduler Jobs:\n\n");
+   ua->send_msg("Schedule               Jobs Triggered\n");
+   ua->send_msg("===========================================================\n");
+
+   LockRes();
+   foreach_res(sched, R_SCHEDULE) {
+      if (schedulegiven) {
+         if (!bstrcmp(sched->hdr.name, schedulename)) {
+           continue;
+         }
+      }
+      ua->send_msg("%s\n", sched->hdr.name);
+      foreach_res(job, R_JOB) {
+         if (job->schedule &&  bstrcmp(sched->hdr.name, job->schedule->hdr.name)) {
+            ua->send_msg("                       %s\n", job->name());
+         }
+      }
+      ua->send_msg("\n");
+   }
+   UnlockRes();
+
+   ua->send_msg("====\n\n");
+   ua->send_msg("Scheduler Preview for %d days:\n\n", days);
+   ua->send_msg("Date             Schedule                Overrides\n");
+   ua->send_msg("==============================================================\n");
+
+   while (time_to_check < (now + (days * seconds_per_day))) {
+      (void)localtime_r(&time_to_check, &tm);
+      hour = tm.tm_hour;
+      mday = tm.tm_mday - 1;
+      wday = tm.tm_wday;
+      month = tm.tm_mon;
+      wom = mday / 7;
+      woy = tm_woy(time_to_check);                    /* Get week of year */
+      yday = tm.tm_yday;                              /* Get day of year */
+
+      is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , yday);
+
+      LockRes();
+      foreach_res(sched, R_SCHEDULE) {
+         if (schedulegiven) {
+            if (!bstrcmp(sched->hdr.name, schedulename)) {
+               continue;
+            }
+         }
+
+         for (run = sched->run; run; run = run->next) {
+            bool run_now;
+
+            run_now = bit_is_set(hour, run->hour) &&
+                      bit_is_set(mday, run->mday) &&
+                      bit_is_set(wday, run->wday) &&
+                      bit_is_set(month, run->month) &&
+                     (bit_is_set(wom, run->wom) ||
+                      (run->last_set && is_last_week)) &&
+                      bit_is_set(woy, run->woy);
+
+            if (run_now) {
+               /*
+                * Find time (time_t) job is to be run
+                */
+               (void)localtime_r(&time_to_check, &tm); /* Reset tm structure */
+               tm.tm_min = run->minute;                /* Set run minute */
+               tm.tm_sec = 0;                          /* Zero secs */
+               runtime = mktime(&tm);
+               bstrftime_wd(dt, sizeof(dt), runtime);
+
+               ua->send_msg(dt);
+               ua->send_msg("  %-22.22s  ", sched->hdr.name);
+
+               bstrncpy(level, level_to_str(run->level), sizeof(level));
+               ua->send_msg("Level=%s ", level);
+
+               if (run->Priority) {
+                  ua->send_msg("Priority=%d ", run->Priority);
+               }
+
+               if (run->spool_data_set) {
+                  ua->send_msg("Spool Data=%d ", run->spool_data);
+               }
+
+               if (run->accurate_set) {
+                  ua->send_msg("Accurate=%d ", run->accurate);
+               }
+
+               if (run->pool) {
+                  ua->send_msg("Pool=%s ", run->pool->name());
+               }
+
+               if (run->storage) {
+                  ua->send_msg("Storage=%s ", run->storage->name());
+               }
+
+               if (run->msgs) {
+                  ua->send_msg("Messages=%s ", run->msgs->name());
+               }
+
+               ua->send_msg("\n");
+            }
+         }
+      }
+      UnlockRes();
+
+      time_to_check += 3600; /* next hour */
+   }
+   ua->send_msg("====\n");
 }
 
 static void do_director_status(UAContext *ua)
