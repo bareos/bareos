@@ -11,6 +11,8 @@ Release 13.2.x
 Release 13.1.x
 ==============
 
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+
 * Allow cancel by JobId on storage daemon. (#13)
 * Security (filed)
    * Implementation of an allowed scriptdir keyword (#31)
