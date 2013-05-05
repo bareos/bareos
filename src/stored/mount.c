@@ -71,7 +71,7 @@ bool DCR::mount_next_write_volume()
       dev->print_name());
 
    init_device_wait_timers(dcr);
-   
+
    P(mount_mutex);
 
    /*

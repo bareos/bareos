@@ -27,7 +27,7 @@
  *
  * NOTE!!!! None of these routines are reentrant. You must
  * use dev->rLock() and dev->Unlock() at a higher level,
- * or use the xxx_device() equivalents.  By moving the
+ * or use the xxx_device() equivalents. By moving the
  * thread synchronization to a higher level, we permit
  * the higher level routines to "seize" the device and
  * to carry out operations without worrying about who

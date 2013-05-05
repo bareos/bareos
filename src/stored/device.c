@@ -122,7 +122,7 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
       goto bail_out;
    }
    Dmsg2(050, "must_unload=%d dev=%s\n", dev->must_unload(), dev->print_name());
-   dev->Lock();
+   dev->Lock();                     /* lock again */
 
    dev->VolCatInfo.VolCatJobs++;              /* increment number of jobs on vol */
    dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
