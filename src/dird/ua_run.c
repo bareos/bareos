@@ -152,6 +152,7 @@ int run_cmd(UAContext *ua, const char *cmd)
    RUN_CTX rc;
    int status, length;
    bool valid_response;
+   bool do_pool_overrides = true;
 
    if (!open_client_db(ua)) {
       return 1;
@@ -207,15 +208,29 @@ try_again:
 
    /*
     * When doing interactive runs perform the pool level overrides
-    *   early this way the user doesn't get nasty surprisses when
-    *   a level override changes the pool the data will be saved to
-    *   later.
+    * early this way the user doesn't get nasty surprisses when
+    * a level override changes the pool the data will be saved to
+    * later. We only want to do these overrides once so we use
+    * a tracking boolean do_pool_overrides to see if we still
+    * need to do this (e.g. we pass by here multiple times when
+    * the user interactivly changes options.
     */
-   apply_pool_overrides(jcr);
+   if (do_pool_overrides) {
+      switch (jcr->getJobType()) {
+      case JT_BACKUP:
+         if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+            apply_pool_overrides(jcr);
+         }
+         break;
+      default:
+         break;
+      }
+      do_pool_overrides = false;
+   }
 
    /*
     * Prompt User to see if all run job parameters are correct, and
-    *   allow him to modify them.
+    * allow him to modify them.
     */
    if (!display_job_parameters(ua, jcr, rc)) {
       goto bail_out;
@@ -281,7 +296,7 @@ try_again:
 
    /*
     * For interactive runs we set IgnoreLevelPoolOverrides as we already
-    *   performed the actual overrrides.
+    * performed the actual overrrides.
     */
    jcr->IgnoreLevelPoolOverides = true;
 
@@ -372,7 +387,15 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
       case 0:
          /* Level */
          select_job_level(ua, jcr);
-         apply_pool_overrides(jcr);
+         switch (jcr->getJobType()) {
+         case JT_BACKUP:
+            if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+               apply_pool_overrides(jcr);
+            }
+            break;
+         default:
+            break;
+         }
          goto try_again;
       case 1:
          /* Storage */
@@ -1026,28 +1049,32 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
    case JT_BACKUP:
    case JT_VERIFY:
       if (jcr->getJobType() == JT_BACKUP) {
+         bool is_virtual = jcr->is_JobLevel(L_VIRTUAL_FULL);
+
          if (ua->api) {
             ua->signal(BNET_RUN_CMD);
             ua->send_msg("Type: Backup\n"
-                        "Title: Run Backup Job\n"
-                        "JobName:  %s\n"
-                        "Level:    %s\n"
-                        "Client:   %s\n"
-                        "Format:   %s\n"
-                        "FileSet:  %s\n"
-                        "Pool:     %s\n"
-                        "NextPool: %s\n"
-                        "Storage:  %s\n"
-                        "When:     %s\n"
-                        "Priority: %d\n"
-                        "%s%s%s",
+                         "Title: Run Backup Job\n"
+                         "JobName:  %s\n"
+                         "Level:    %s\n"
+                         "Client:   %s\n"
+                         "Format:   %s\n"
+                         "FileSet:  %s\n"
+                         "Pool:     %s\n"
+                         "%s%s%s"
+                         "Storage:  %s\n"
+                         "When:     %s\n"
+                         "Priority: %d\n"
+                         "%s%s%s",
                  job->name(),
                  level_to_str(jcr->getJobLevel()),
                  jcr->res.client->name(),
                  jcr->backup_format,
                  jcr->res.fileset->name(),
                  NPRT(jcr->res.pool->name()),
-                 jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
+                 is_virtual ? "NextPool: " : "",
+                 is_virtual ? (jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*")) : "",
+                 is_virtual ? "\n" : "",
                  jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
                  bstrutime(dt, sizeof(dt), jcr->sched_time),
                  jcr->JobPriority,
@@ -1056,25 +1083,28 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
                  jcr->plugin_options ? "\n" : "");
          } else {
             ua->send_msg(_("Run Backup job\n"
-                        "JobName:  %s\n"
-                        "Level:    %s\n"
-                        "Client:   %s\n"
-                        "Format:   %s\n"
-                        "FileSet:  %s\n"
-                        "Pool:     %s (From %s)\n"
-                        "NextPool: %s (From %s)\n"
-                        "Storage:  %s (From %s)\n"
-                        "When:     %s\n"
-                        "Priority: %d\n"
-                        "%s%s%s"),
+                           "JobName:  %s\n"
+                           "Level:    %s\n"
+                           "Client:   %s\n"
+                           "Format:   %s\n"
+                           "FileSet:  %s\n"
+                           "Pool:     %s (From %s)\n"
+                           "%s%s%s%s%s"
+                           "Storage:  %s (From %s)\n"
+                           "When:     %s\n"
+                           "Priority: %d\n"
+                           "%s%s%s"),
                  job->name(),
                  level_to_str(jcr->getJobLevel()),
                  jcr->res.client->name(),
                  jcr->backup_format,
                  jcr->res.fileset->name(),
                  NPRT(jcr->res.pool->name()), jcr->res.pool_source,
-                 jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
-                 jcr->res.npool_source,
+                 is_virtual ? "NextPool: " : "",
+                 is_virtual ? (jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*")) : "",
+                 is_virtual ? " (From " : "",
+                 is_virtual ? jcr->res.npool_source : "",
+                 is_virtual ? ")\n" : "",
                  jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
                  jcr->res.wstore_source,
                  bstrutime(dt, sizeof(dt), jcr->sched_time),

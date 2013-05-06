@@ -1018,6 +1018,7 @@ bool get_level_since_time(JCR *jcr)
 
 void apply_pool_overrides(JCR *jcr, bool force)
 {
+   Dmsg0(100, "entering apply_pool_overrides()\n");
    bool pool_override = false;
 
    /*
@@ -1028,47 +1029,60 @@ void apply_pool_overrides(JCR *jcr, bool force)
       return;
    }
 
-   if (jcr->res.run_pool_override) {
-      pm_strcpy(jcr->res.pool_source, _("Run pool override"));
-   }
-
    /*
-    * Apply any level related Pool selections
+    * If only a pool override and no level overrides are given in run entry choose this pool
     */
-   switch (jcr->getJobLevel()) {
-   case L_FULL:
-      if (jcr->res.full_pool) {
-         jcr->res.pool = jcr->res.full_pool;
-         pool_override = true;
-         if (jcr->res.run_full_pool_override) {
-            pm_strcpy(jcr->res.pool_source, _("Run FullPool override"));
-         } else {
-            pm_strcpy(jcr->res.pool_source, _("Job FullPool override"));
+   if (jcr->res.run_pool_override &&
+      !jcr->res.run_full_pool_override &&
+      !jcr->res.run_inc_pool_override &&
+      !jcr->res.run_diff_pool_override) {
+      pm_strcpy(jcr->res.pool_source, _("Run Pool override"));
+      Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.pool->name(), _("Run Pool override\n"));
+   } else {
+      /*
+       * Apply any level related Pool selections
+       */
+      switch (jcr->getJobLevel()) {
+      case L_FULL:
+         if (jcr->res.full_pool) {
+            jcr->res.pool = jcr->res.full_pool;
+            pool_override = true;
+            if (jcr->res.run_full_pool_override) {
+               pm_strcpy(jcr->res.pool_source, _("Run FullPool override"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Run FullPool override\n"));
+            } else {
+               pm_strcpy(jcr->res.pool_source, _("Job FullPool override"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Job FullPool override\n"));
+            }
          }
-      }
-      break;
-   case L_INCREMENTAL:
-      if (jcr->res.inc_pool) {
-         jcr->res.pool = jcr->res.inc_pool;
-         pool_override = true;
-         if (jcr->res.run_inc_pool_override) {
-            pm_strcpy(jcr->res.pool_source, _("Run IncPool override"));
-         } else {
-            pm_strcpy(jcr->res.pool_source, _("Job IncPool override"));
+         break;
+      case L_INCREMENTAL:
+         if (jcr->res.inc_pool) {
+            jcr->res.pool = jcr->res.inc_pool;
+            pool_override = true;
+            if (jcr->res.run_inc_pool_override) {
+               pm_strcpy(jcr->res.pool_source, _("Run IncPool override"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Run IncPool override\n"));
+            } else {
+               pm_strcpy(jcr->res.pool_source, _("Job IncPool override"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Job IncPool override\n"));
+            }
          }
-      }
-      break;
-   case L_DIFFERENTIAL:
-      if (jcr->res.diff_pool) {
-         jcr->res.pool = jcr->res.diff_pool;
-         pool_override = true;
-         if (jcr->res.run_diff_pool_override) {
-            pm_strcpy(jcr->res.pool_source, _("Run DiffPool override"));
-         } else {
-            pm_strcpy(jcr->res.pool_source, _("Job DiffPool override"));
+         break;
+      case L_DIFFERENTIAL:
+         if (jcr->res.diff_pool) {
+            jcr->res.pool = jcr->res.diff_pool;
+            pool_override = true;
+            if (jcr->res.run_diff_pool_override) {
+               pm_strcpy(jcr->res.pool_source, _("Run DiffPool override"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Run DiffPool override\n"));
+            } else {
+               pm_strcpy(jcr->res.pool_source, _("Job DiffPool override"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Job DiffPool override\n"));
+            }
          }
+         break;
       }
-      break;
    }
 
    /*
