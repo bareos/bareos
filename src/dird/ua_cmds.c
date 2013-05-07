@@ -40,15 +40,14 @@ extern int gui_cmd(UAContext *ua, const char *cmd);
 extern int label_cmd(UAContext *ua, const char *cmd);
 extern int list_cmd(UAContext *ua, const char *cmd);
 extern int llist_cmd(UAContext *ua, const char *cmd);
-extern int messagescmd(UAContext *ua, const char *cmd);
-extern int prunecmd(UAContext *ua, const char *cmd);
-extern int purgecmd(UAContext *ua, const char *cmd);
-extern int querycmd(UAContext *ua, const char *cmd);
+extern int messages_cmd(UAContext *ua, const char *cmd);
+extern int prune_cmd(UAContext *ua, const char *cmd);
+extern int purge_cmd(UAContext *ua, const char *cmd);
+extern int query_cmd(UAContext *ua, const char *cmd);
 extern int relabel_cmd(UAContext *ua, const char *cmd);
 extern int restore_cmd(UAContext *ua, const char *cmd);
-extern int retentioncmd(UAContext *ua, const char *cmd);
 extern int show_cmd(UAContext *ua, const char *cmd);
-extern int sqlquerycmd(UAContext *ua, const char *cmd);
+extern int sqlquery_cmd(UAContext *ua, const char *cmd);
 extern int status_cmd(UAContext *ua, const char *cmd);
 extern int update_cmd(UAContext *ua, const char *cmd);
 
@@ -150,7 +149,7 @@ static struct cmdstruct commands[] = {
          "\tvolumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
          "\tmedia [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] | clients |\n"
          "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid>"), true },
-   { NT_("messages"), messagescmd, _("Display pending messages"),
+   { NT_("messages"), messages_cmd, _("Display pending messages"),
      NT_(""), false },
    { NT_("memory"), memory_cmd, _("Print current memory usage"),
      NT_(""), true },
@@ -159,14 +158,14 @@ static struct cmdstruct commands[] = {
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false },
    { NT_("move"), move_cmd, _("Move slots in an autochanger"),
      NT_("storage=<storage-name> srcslots=<slot-selection> dstslots=<slot-selection>"), true },
-   { NT_("prune"), prunecmd, _("Prune expired records from catalog"),
-     NT_("files | jobs | pool=<pool-name> | client=<client-name> | volume=<volume-name> "), true },
-   { NT_("purge"), purgecmd, _("Purge records from catalog"),
+   { NT_("prune"), prune_cmd, _("Prune records from catalog"),
+     NT_("files | jobs | pool=<pool-name> | client=<client-name> | volume=<volume-name> | directory=<directory> | recursive"), true },
+   { NT_("purge"), purge_cmd, _("Purge records from catalog"),
      NT_("files jobs volume=<volume-name> [ action=<action> devicetype=<type> pool=<pool-name>\n"
          "\tallpools storage=<storage-name> drive=<num> ]"), true },
    { NT_("quit"), quit_cmd, _("Terminate Bconsole session"),
      NT_(""), false },
-   { NT_("query"), querycmd, _("Query catalog"),
+   { NT_("query"), query_cmd, _("Query catalog"),
      NT_(""), false },
    { NT_("restore"), restore_cmd, _("Restore files"),
      NT_("where=</path> client=<client-name> storage=<storage-name> bootstrap=<file>\n"
@@ -200,7 +199,7 @@ static struct cmdstruct commands[] = {
    { NT_("show"), show_cmd, _("Show resource records"),
      NT_("job=<job-name> | pool=<pool-name> | fileset=<fileset-name> | schedule=<schedule-name> |\n"
          "\tclient=<client-name> | jobs | pools | filesets | schedules | clients | disabled | all"), true },
-   { NT_("sqlquery"), sqlquerycmd, _("Use SQL to query catalog"),
+   { NT_("sqlquery"), sqlquery_cmd, _("Use SQL to query catalog"),
      NT_(""), false },
    { NT_("time"), time_cmd, _("Print current time"),
      NT_(""), true },

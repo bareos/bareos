@@ -232,7 +232,7 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, int len);
 /* ua_cmds.c */
 bool do_a_command(UAContext *ua);
 bool do_a_dot_command(UAContext *ua);
-int qmessagescmd(UAContext *ua, const char *cmd);
+int qmessages_cmd(UAContext *ua, const char *cmd);
 bool open_new_client_db(UAContext *ua);
 bool open_client_db(UAContext *ua, bool need_private = false);
 bool open_db(UAContext *ua, bool need_private = false);
@@ -327,9 +327,8 @@ bool user_select_files_from_tree(TREE_CTX *tree);
 int insert_tree_handler(void *ctx, int num_fields, char **row);
 
 /* ua_prune.c */
-int prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool);
-int prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType);
-int prune_stats(UAContext *ua, utime_t retention);
+bool prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool);
+bool prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType);
 bool prune_volume(UAContext *ua, MEDIA_DBR *mr);
 int job_delete_handler(void *ctx, int num_fields, char **row);
 int del_count_handler(void *ctx, int num_fields, char **row);

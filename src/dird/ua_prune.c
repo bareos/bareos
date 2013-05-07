@@ -31,13 +31,15 @@
 #include "bareos.h"
 #include "dird.h"
 
+/* Imported variables */
+extern struct s_jt jobtypes[];
+
 /* Imported functions */
 
 /* Forward referenced functions */
+static bool prune_directory(UAContext *ua, CLIENTRES *client);
+static bool prune_stats(UAContext *ua, utime_t retention);
 static bool grow_del_list(struct del_ctx *del);
-
-/* External functions */
-extern DIRRES *director;
 
 /*
  * Called here to count entries to be deleted
@@ -53,7 +55,6 @@ int del_count_handler(void *ctx, int num_fields, char **row)
    }
    return 0;
 }
-
 
 /*
  * Called here to make in memory list of JobIds to be
@@ -89,14 +90,15 @@ int file_delete_handler(void *ctx, int num_fields, char **row)
 }
 
 /*
- *   Prune records from database
+ * Prune records from database
  *
- *    prune files (from) client=xxx [pool=yyy]
- *    prune jobs (from) client=xxx [pool=yyy]
- *    prune volume=xxx
- *    prune stats
+ * prune files client=xxx [pool=yyy]
+ * prune jobs client=xxx [pool=yyy]
+ * prune volume=xxx
+ * prune stats
+ * prune directory=xxx [client=xxx] [recursive]
  */
-int prunecmd(UAContext *ua, const char *cmd)
+int prune_cmd(UAContext *ua, const char *cmd)
 {
    CLIENTRES *client;
    POOLRES *pool;
@@ -104,36 +106,45 @@ int prunecmd(UAContext *ua, const char *cmd)
    MEDIA_DBR mr;
    utime_t retention;
    int kw;
-
    static const char *keywords[] = {
       NT_("Files"),
       NT_("Jobs"),
       NT_("Volume"),
       NT_("Stats"),
-      NULL};
+      NT_("Directory"),
+      NULL
+   };
 
    if (!open_client_db(ua)) {
       return false;
    }
 
-   /* First search args */
+   /*
+    * First search args
+    */
    kw = find_arg_keyword(ua, keywords);
-   if (kw < 0 || kw > 3) {
-      /* no args, so ask user */
+   if (kw < 0 || kw > 4) {
+      /*
+       * No args, so ask user
+       */
       kw = do_keyword_prompt(ua, _("Choose item to prune"), keywords);
    }
 
    switch (kw) {
-   case 0:  /* prune files */
+   case 0: /* prune files */
       if (!(client = get_client_resource(ua))) {
          return false;
       }
-      if (find_arg_with_value(ua, "pool") >= 0) {
+
+      if (find_arg_with_value(ua, NT_("pool")) >= 0) {
          pool = get_pool_resource(ua);
       } else {
          pool = NULL;
       }
-      /* Pool File Retention takes precedence over client File Retention */
+
+      /*
+       * Pool File Retention takes precedence over client File Retention
+       */
       if (pool && pool->FileRetention > 0) {
          if (!confirm_retention(ua, &pool->FileRetention, "File")) {
             return false;
@@ -141,18 +152,45 @@ int prunecmd(UAContext *ua, const char *cmd)
       } else if (!confirm_retention(ua, &client->FileRetention, "File")) {
          return false;
       }
+
       prune_files(ua, client, pool);
+
       return true;
-   case 1:  /* prune jobs */
+   case 1: { /* prune jobs */
+      int i;
+      char jobtype[MAX_NAME_LENGTH];
+
       if (!(client = get_client_resource(ua))) {
          return false;
       }
-      if (find_arg_with_value(ua, "pool") >= 0) {
+
+      if (find_arg_with_value(ua, NT_("pool")) >= 0) {
          pool = get_pool_resource(ua);
       } else {
          pool = NULL;
       }
-      /* Pool Job Retention takes precedence over client Job Retention */
+
+      /*
+       * Ask what jobtype to prune.
+       */
+      start_prompt(ua, _("Jobtype to prune:\n"));
+      for (i = 0; jobtypes[i].type_name; i++) {
+         add_prompt(ua, jobtypes[i].type_name);
+      }
+
+      if (do_prompt(ua, _("JobType"),  _("Select Job Type"), jobtype, sizeof(jobtype)) < 0) {
+         return true;
+      }
+
+      for (i = 0; jobtypes[i].type_name; i++) {
+         if (bstrcmp(jobtypes[i].type_name, jobtype)) {
+            break;
+         }
+      }
+
+      /*
+       * Pool Job Retention takes precedence over client Job Retention
+       */
       if (pool && pool->JobRetention > 0) {
          if (!confirm_retention(ua, &pool->JobRetention, "Job")) {
             return false;
@@ -160,33 +198,51 @@ int prunecmd(UAContext *ua, const char *cmd)
       } else if (!confirm_retention(ua, &client->JobRetention, "Job")) {
          return false;
       }
-      /* ****FIXME**** allow user to select JobType */
-      prune_jobs(ua, client, pool, JT_BACKUP);
-      return 1;
-   case 2:  /* prune volume */
+
+      if (jobtypes[i].type_name) {
+         return prune_jobs(ua, client, pool, jobtypes[i].job_type);
+      }
+
+      return false;
+   }
+   case 2: /* prune volume */
       if (!select_pool_and_media_dbr(ua, &pr, &mr)) {
          return false;
       }
+
       if (mr.Enabled == 2) {
          ua->error_msg(_("Cannot prune Volume \"%s\" because it is archived.\n"),
-            mr.VolumeName);
+                       mr.VolumeName);
          return false;
       }
+
       if (!confirm_retention(ua, &mr.VolRetention, "Volume")) {
          return false;
       }
-      prune_volume(ua, &mr);
-      return true;
-   case 3:  /* prune stats */
+
+      return prune_volume(ua, &mr);
+   case 3: /* prune stats */
       if (!me->stats_retention) {
          return false;
       }
+
       retention = me->stats_retention;
+
       if (!confirm_retention(ua, &retention, "Statistics")) {
          return false;
       }
-      prune_stats(ua, retention);
-      return true;
+
+      return prune_stats(ua, retention);
+   case 4: /* prune directory */
+      if (find_arg_with_value(ua, NT_("client")) >= 0) {
+         if (!(client = get_client_resource(ua))) {
+            return false;
+         }
+      } else {
+         client = NULL;
+      }
+
+      return prune_directory(ua, client);
    default:
       break;
    }
@@ -194,10 +250,142 @@ int prunecmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/* Prune Job stat records from the database.
- *
+/*
+ * Prune Directory meta data records from the database.
  */
-int prune_stats(UAContext *ua, utime_t retention)
+static bool prune_directory(UAContext *ua, CLIENTRES *client)
+{
+   int i, len;
+   CLIENT_DBR cr;
+   char *prune_topdir = NULL;
+   POOL_MEM query(PM_MESSAGE),
+            temp(PM_MESSAGE);
+   bool recursive = false;
+   bool retval = false;
+
+   /*
+    * See if a client was selected.
+    */
+   if (!client) {
+      if (!get_yesno(ua, _("No client restriction given really remove "
+                           "directory for all clients (yes/no): ")) ||
+          ua->pint32_val == 0) {
+         if (!(client = get_client_resource(ua))) {
+            return false;
+         }
+      }
+   }
+
+   /*
+    * See if we need to recursively remove all directories under a certain path.
+    */
+   recursive = find_arg(ua, NT_("recursive")) >= 0;
+
+   /*
+    * Get the directory to prune.
+    */
+   i = find_arg_with_value(ua, NT_("directory"));
+   if (i >= 0) {
+      pm_strcpy(temp, ua->argv[i]);
+   } else {
+      if (recursive) {
+         if (!get_cmd(ua, _("Please enter the full path prefix to remove: "), false)) {
+            return false;
+         }
+      } else {
+         if (!get_cmd(ua, _("Please enter the full path to remove: "), false)) {
+            return false;
+         }
+      }
+      pm_strcpy(temp, ua->cmd);
+   }
+
+   /*
+    * See if the directory ends in a / and escape it for usage in a database query.
+    */
+   len = strlen(temp.c_str());
+   if (*(temp.c_str() + len - 1) != '/') {
+      pm_strcat(temp, "/");
+      len++;
+   }
+   prune_topdir = (char *)malloc(len * 2 + 1);
+   db_escape_string(ua->jcr, ua->db, prune_topdir, temp.c_str(), len);
+
+   /*
+    * Remove all files in particular directory.
+    */
+   if (recursive) {
+      Mmsg(query, "DELETE FROM file WHERE pathid IN ("
+                  "SELECT pathid FROM path "
+                  "WHERE path LIKE '%s%%'"
+                  ")", prune_topdir);
+   } else {
+      Mmsg(query, "DELETE FROM file WHERE pathid IN ("
+                  "SELECT pathid FROM path "
+                  "WHERE path LIKE '%s'"
+                  ")", prune_topdir);
+   }
+
+   if (client) {
+      char ed1[50];
+
+      memset(&cr, 0, sizeof(cr));
+      bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
+      if (!db_create_client_record(ua->jcr, ua->db, &cr)) {
+         goto bail_out;
+      }
+
+      Mmsg(temp, " AND JobId IN ("
+                 "SELECT JobId FROM Job "
+                 "WHERE ClientId=%s"
+                 ")", edit_int64(cr.ClientId, ed1));
+
+      pm_strcat(query, temp.c_str());
+   }
+
+   db_lock(ua->db);
+   db_sql_query(ua->db, query.c_str());
+   db_unlock(ua->db);
+
+   /*
+    * If we removed the entries from the file table without limiting it to a
+    * certain client we created orphaned path entries as no one is referencing
+    * them anymore.
+    */
+   if (!client) {
+      if (!get_yesno(ua, _("Cleanup orphaned path records (yes/no):")) ||
+          ua->pint32_val == 0) {
+         retval = true;
+         goto bail_out;
+      }
+
+      if (recursive) {
+         Mmsg(query, "DELETE FROM path "
+                     "WHERE path LIKE '%s%%'", prune_topdir);
+      } else {
+         Mmsg(query, "DELETE FROM path "
+                     "WHERE path LIKE '%s'", prune_topdir);
+      }
+
+      db_lock(ua->db);
+      db_sql_query(ua->db, query.c_str());
+      db_unlock(ua->db);
+   }
+
+   retval = true;
+
+bail_out:
+   if (prune_topdir) {
+      free(prune_topdir);
+   }
+
+   return retval;
+}
+
+/*
+ * Prune Job stat records from the database.
+ */
+static bool prune_stats(UAContext *ua, utime_t retention)
 {
    char ed1[50];
    POOL_MEM query(PM_MESSAGE);
@@ -219,8 +407,9 @@ int prune_stats(UAContext *ua, utime_t retention)
  * returns add_from string to add in FROM clause
  *         add_where string to add in WHERE clause
  */
-bool prune_set_filter(UAContext *ua, CLIENTRES *client, POOLRES *pool, utime_t period,
-                      POOL_MEM *add_from, POOL_MEM *add_where)
+static bool prune_set_filter(UAContext *ua, CLIENTRES *client,
+                             POOLRES *pool, utime_t period,
+                             POOL_MEM *add_from, POOL_MEM *add_where)
 {
    utime_t now;
    char ed1[50], ed2[MAX_ESCAPE_NAME_LENGTH];
@@ -267,7 +456,7 @@ bool prune_set_filter(UAContext *ua, CLIENTRES *client, POOLRES *pool, utime_t p
  *
  * Note: client or pool can possibly be NULL (not both).
  */
-int prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool)
+bool prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool)
 {
    struct del_ctx del;
    struct s_count_ctx cnt;
@@ -345,7 +534,6 @@ bail_out:
    }
    return 1;
 }
-
 
 static void drop_temp_tables(UAContext *ua)
 {
@@ -443,7 +631,7 @@ static int job_select_handler(void *ctx, int num_fields, char **row)
  *
  * For Restore Jobs there are no restrictions.
  */
-int prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
+bool prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
 {
    POOL_MEM query(PM_MESSAGE);
    POOL_MEM sql_where(PM_MESSAGE);
@@ -459,10 +647,8 @@ int prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
 
    if (pool && pool->JobRetention > 0) {
       period = pool->JobRetention;
-
    } else if (client) {
       period = client->JobRetention;
-
    } else {                     /* should specify at least pool or client */
       return false;
    }
@@ -697,7 +883,6 @@ bail_out:
  *   excludes it.
  *
  * Returns the number of jobs that can be prunned or purged.
- *
  */
 int exclude_running_jobs_from_list(del_ctx *prune_list)
 {
