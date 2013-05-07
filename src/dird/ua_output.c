@@ -768,7 +768,7 @@ void do_messages(UAContext *ua, const char *cmd)
    Vw(con_lock);
 }
 
-int qmessagescmd(UAContext *ua, const char *cmd)
+int qmessages_cmd(UAContext *ua, const char *cmd)
 {
    if (console_msg_pending && ua->auto_display_messages) {
       do_messages(ua, cmd);
@@ -776,7 +776,7 @@ int qmessagescmd(UAContext *ua, const char *cmd)
    return 1;
 }
 
-int messagescmd(UAContext *ua, const char *cmd)
+int messages_cmd(UAContext *ua, const char *cmd)
 {
    if (console_msg_pending) {
       do_messages(ua, cmd);

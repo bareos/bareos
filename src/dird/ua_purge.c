@@ -49,14 +49,14 @@ static const char *select_jobs_from_client =
    "WHERE ClientId=%s";
 
 /*
- *   Purge records from database
+ * Purge records from database
  *
- *     Purge Files (from) [Job|JobId|Client|Volume]
- *     Purge Jobs  (from) [Client|Volume]
+ * Purge Files (from) [Job|JobId|Client|Volume]
+ * Purge Jobs  (from) [Client|Volume]
  *
- *  N.B. Not all above is implemented yet.
+ * N.B. Not all above is implemented yet.
  */
-int purgecmd(UAContext *ua, const char *cmd)
+int purge_cmd(UAContext *ua, const char *cmd)
 {
    int i;
    CLIENTRES *client;

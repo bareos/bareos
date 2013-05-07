@@ -62,7 +62,7 @@ int get_cmd(UAContext *ua, const char *prompt, bool subprompt)
       pm_strcpy(ua->cmd, sock->msg);
       strip_trailing_junk(ua->cmd);
       if (bstrcmp(ua->cmd, ".messages")) {
-         qmessagescmd(ua, ua->cmd);
+         qmessages_cmd(ua, ua->cmd);
       }
       /* Lone dot => break */
       if (ua->cmd[0] == '.' && ua->cmd[1] == 0) {
