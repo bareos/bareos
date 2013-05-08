@@ -118,8 +118,14 @@ Page custom getDirectorParameters
 ; Custom page shows director config snippet
 Page custom displayDirconfSnippet
 
+Function LaunchLink
+  ExecShell "open" "http://www.bareos.com"
+FunctionEnd
 
-#!define MUI_FINISHPAGE_RUN "$INSTDIR\bareos-fd.exe"
+!define MUI_FINISHPAGE_RUN
+#!define MUI_FINISHPAGE_RUN_NOTCHECKED
+!define MUI_FINISHPAGE_RUN_TEXT "Open www.bareos.com"
+!define MUI_FINISHPAGE_RUN_FUNCTION "LaunchLink"
 
 !insertmacro MUI_PAGE_FINISH
 
