@@ -159,7 +159,7 @@ static struct cmdstruct commands[] = {
    { NT_("move"), move_cmd, _("Move slots in an autochanger"),
      NT_("storage=<storage-name> srcslots=<slot-selection> dstslots=<slot-selection>"), true },
    { NT_("prune"), prune_cmd, _("Prune records from catalog"),
-     NT_("files | jobs | pool=<pool-name> | client=<client-name> | volume=<volume-name> | directory=<directory> | recursive"), true },
+     NT_("files | jobs | jobtype=<jobtype> | pool=<pool-name> | client=<client-name> | volume=<volume-name> | directory=<directory> | recursive"), true },
    { NT_("purge"), purge_cmd, _("Purge records from catalog"),
      NT_("files jobs volume=<volume-name> [ action=<action> devicetype=<type> pool=<pool-name>\n"
          "\tallpools storage=<storage-name> drive=<num> ]"), true },
