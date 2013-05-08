@@ -173,19 +173,28 @@ int prune_cmd(UAContext *ua, const char *cmd)
       /*
        * Ask what jobtype to prune.
        */
-      start_prompt(ua, _("Jobtype to prune:\n"));
-      for (i = 0; jobtypes[i].type_name; i++) {
-         add_prompt(ua, jobtypes[i].type_name);
+      if (find_arg_with_value(ua, NT_("jobtype")) >= 0) {
+         bstrncpy(jobtype, ua->argv[i], sizeof(jobtype));
+      } else {
+         start_prompt(ua, _("Jobtype to prune:\n"));
+         for (i = 0; jobtypes[i].type_name; i++) {
+            add_prompt(ua, jobtypes[i].type_name);
+         }
+
+         if (do_prompt(ua, _("JobType"),  _("Select Job Type"), jobtype, sizeof(jobtype)) < 0) {
+            return true;
+         }
       }
 
-      if (do_prompt(ua, _("JobType"),  _("Select Job Type"), jobtype, sizeof(jobtype)) < 0) {
-         return true;
-      }
-
       for (i = 0; jobtypes[i].type_name; i++) {
-         if (bstrcmp(jobtypes[i].type_name, jobtype)) {
+         if (bstrcasecmp(jobtypes[i].type_name, jobtype)) {
             break;
          }
+      }
+
+      if (!jobtypes[i].type_name) {
+         ua->warning_msg(_("Illegal jobtype %s.\n"), jobtype);
+         return false;
       }
 
       /*
