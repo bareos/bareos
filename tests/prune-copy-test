@@ -79,7 +79,7 @@ sql
 SELECT JobId, Name, JobTDate, StartTime, Type, Level, JobFiles, JobStatus
 FROM Job ORDER BY StartTime;
 
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 @################################################################
 @# now do a restore

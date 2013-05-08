@@ -110,7 +110,7 @@ sql
 SELECT count(*) FROM BaseFiles;
 
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 @$out $tmp/log1.out
 @################################################################
@@ -120,7 +120,7 @@ wait
 messages
 @$out $tmp/log11.out
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 @$out $tmp/log1.out
 @################################################################
@@ -136,7 +136,7 @@ wait
 messages
 @$out $tmp/log13.out
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 @$out $tmp/log1.out
 @################################################################
@@ -155,7 +155,7 @@ messages
 list jobs
 @$out $tmp/log14.out
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 END_OF_DATA
 

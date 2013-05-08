@@ -39,7 +39,7 @@ messages
 @################################################################
 @# Should not prune anything
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 @$out $tmp/log4.out
 @################################################################
@@ -53,7 +53,7 @@ wait
 messages
 @sleep 2
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 @$out $tmp/log5.out
 @################################################################
@@ -63,7 +63,7 @@ wait
 messages
 @sleep 2
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 @$out $tmp/log6.out
 @################################################################
@@ -80,7 +80,7 @@ messages
 @################################################################
 @# Should prune the restore job and the last incremental job (jobfiles=0)
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 quit
 EOF

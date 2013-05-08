@@ -56,7 +56,7 @@ messages
 @$out $tmp/log10.out
 @# should prune nothing
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 quit
 EOF
@@ -76,7 +76,7 @@ reload
 messages
 @# should prune jobs using DailySave
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 EOF
 
@@ -96,7 +96,7 @@ reload
 messages
 @# should prune jobs using Full Set
 list jobs
-prune jobs yes
+prune jobs jobtype=backup yes
 list jobs
 EOF
 
