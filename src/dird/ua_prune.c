@@ -173,7 +173,7 @@ int prune_cmd(UAContext *ua, const char *cmd)
       /*
        * Ask what jobtype to prune.
        */
-      if (find_arg_with_value(ua, NT_("jobtype")) >= 0) {
+      if ((i = find_arg_with_value(ua, NT_("jobtype"))) >= 0) {
          bstrncpy(jobtype, ua->argv[i], sizeof(jobtype));
       } else {
          start_prompt(ua, _("Jobtype to prune:\n"));
