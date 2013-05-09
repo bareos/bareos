@@ -179,7 +179,7 @@ static struct cmdstruct commands[] = {
    { NT_("reload"), reload_cmd, _("Reload conf file"),
      NT_(""), true },
    { NT_("rerun"), rerun_cmd, _("Rerun a job"),
-     NT_("jobid=<jobid> yes"), false },
+     NT_("jobid=<jobid> | since_jobid=<jobid> | days=<nr_days> | hours=<nr_hours> | yes"), false },
    { NT_("run"), run_cmd, _("Run a job"),
      NT_("job=<job-name> client=<client-name>\n"
          "\tfileset=<fileset-name> level=<level>\n"
@@ -188,7 +188,7 @@ static struct cmdstruct commands[] = {
          "\tcomment=<text> yes"), false },
    { NT_("status"), status_cmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | client=<client-name> |\n"
-         "\tstorage=<storage-name> slots | days=nnn | job=<job-name> | schedule=<schedule-name>"), true },
+         "\tstorage=<storage-name> slots | days=<nr_days> | job=<job-name> | schedule=<schedule-name>"), true },
    { NT_("setbandwidth"), setbwlimit_cmd,  _("Sets bandwidth"),
      NT_("limit=<nn-kbs> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true },
    { NT_("setdebug"), setdebug_cmd, _("Sets debug level"),

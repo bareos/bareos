@@ -67,7 +67,6 @@ extern "C" void got_sigcontinue(int sig);
 extern "C" void got_sigtout(int sig);
 extern "C" void got_sigtin(int sig);
 
-
 /* Static variables */
 static char *configfile = NULL;
 static BSOCK *UA_sock = NULL;
@@ -85,7 +84,6 @@ static char *argk[MAX_CMD_ARGS];
 static char *argv[MAX_CMD_ARGS];
 static CONFIG *config;
 
-
 /* Command prototypes */
 static int versioncmd(FILE *input, BSOCK *UA_sock);
 static int inputcmd(FILE *input, BSOCK *UA_sock);
@@ -100,14 +98,13 @@ static int execcmd(FILE *input, BSOCK *UA_sock);
 #ifdef HAVE_READLINE
 static int eolcmd(FILE *input, BSOCK *UA_sock);
 
-# ifndef HAVE_REGEX_H
-#  include "lib/bregex.h"
-# else
-#  include <regex.h>
-# endif
-
+#ifndef HAVE_REGEX_H
+#include "lib/bregex.h"
+#else
+#include <regex.h>
 #endif
 
+#endif
 
 #define CONFIG_FILE "bconsole.conf"   /* default configuration file */
 
@@ -129,7 +126,6 @@ PROG_COPYRIGHT
 "       -?          print this message.\n"
 "\n"), 2000, HOST_OS, DISTNAME, DISTVER);
 }
-
 
 extern "C"
 void got_sigstop(int sig)
@@ -155,7 +151,6 @@ void got_sigtin(int sig)
 // printf("Got tin\n");
 }
 
-
 static int zed_keyscmd(FILE *input, BSOCK *UA_sock)
 {
    con_set_zed_keys();
@@ -165,24 +160,28 @@ static int zed_keyscmd(FILE *input, BSOCK *UA_sock)
 /*
  * These are the @command
  */
-struct cmdstruct { const char *key; int (*func)(FILE *input, BSOCK *UA_sock); const char *help; };
+struct cmdstruct {
+   const char *key;
+   int (*func)(FILE *input, BSOCK *UA_sock);
+   const char *help;
+};
 static struct cmdstruct commands[] = {
- { N_("input"),      inputcmd,     _("input from file")},
- { N_("output"),     outputcmd,    _("output to file")},
- { N_("quit"),       quitcmd,      _("quit")},
- { N_("tee"),        teecmd,       _("output to file and terminal")},
- { N_("sleep"),      sleepcmd,     _("sleep specified time")},
- { N_("time"),       timecmd,      _("print current time")},
- { N_("version"),    versioncmd,   _("print Console's version")},
- { N_("echo"),       echocmd,      _("echo command string")},
- { N_("exec"),       execcmd,      _("execute an external command")},
- { N_("exit"),       quitcmd,      _("exit = quit")},
- { N_("zed_keys"),   zed_keyscmd,  _("zed_keys = use zed keys instead of bash keys")},
- { N_("help"),       helpcmd,      _("help listing")},
+   { N_("input"), inputcmd, _("input from file")},
+   { N_("output"), outputcmd, _("output to file")},
+   { N_("quit"), quitcmd, _("quit")},
+   { N_("tee"), teecmd, _("output to file and terminal")},
+   { N_("sleep"), sleepcmd, _("sleep specified time")},
+   { N_("time"), timecmd, _("print current time")},
+   { N_("version"), versioncmd, _("print Console's version")},
+   { N_("echo"), echocmd, _("echo command string")},
+   { N_("exec"), execcmd, _("execute an external command")},
+   { N_("exit"), quitcmd, _("exit = quit")},
+   { N_("zed_keys"), zed_keyscmd, _("zed_keys = use zed keys instead of bash keys")},
+   { N_("help"), helpcmd, _("help listing")},
 #ifdef HAVE_READLINE
- { N_("separator"),  eolcmd,       _("set command separator")},
+   { N_("separator"), eolcmd, _("set command separator")},
 #endif
-             };
+};
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
 
 static int do_a_command(FILE *input, BSOCK *UA_sock)
@@ -220,7 +219,6 @@ static int do_a_command(FILE *input, BSOCK *UA_sock)
    }
    return status;
 }
-
 
 static void read_and_process_input(FILE *input, BSOCK *UA_sock)
 {
@@ -332,7 +330,7 @@ static int tls_pem_callback(char *buf, int size, const void *userdata)
 {
 #ifdef HAVE_TLS
    const char *prompt = (const char *)userdata;
-# if defined(HAVE_WIN32)
+#if defined(HAVE_WIN32)
    sendit(prompt);
    if (win32_cgets(buf, size) == NULL) {
       buf[0] = 0;
@@ -340,13 +338,13 @@ static int tls_pem_callback(char *buf, int size, const void *userdata)
    } else {
       return strlen(buf);
    }
-# else
+#else
    char *passwd;
 
    passwd = getpass(prompt);
    bstrncpy(buf, passwd, size);
    return strlen(buf);
-# endif
+#endif
 #else
    buf[0] = 0;
    return 0;
@@ -358,9 +356,10 @@ static int tls_pem_callback(char *buf, int size, const void *userdata)
 #include "readline/readline.h"
 #include "readline/history.h"
 
-/* Get the first keyword of the line */
-static char *
-get_first_keyword()
+/*
+ * Get the first keyword of the line
+ */
+static char *get_first_keyword()
 {
    char *ret=NULL;
    int len;
@@ -378,21 +377,24 @@ get_first_keyword()
  * Return the command before the current point.
  * Set nb to the number of command to skip
  */
-static char *
-get_previous_keyword(int current_point, int nb)
+static char *get_previous_keyword(int current_point, int nb)
 {
    int i, end=-1, start, inquotes=0;
    char *s=NULL;
 
    while (nb-- >= 0) {
-      /* first we look for a space before the current word */
+      /*
+       * First we look for a space before the current word
+       */
       for (i = current_point; i >= 0; i--) {
          if (rl_line_buffer[i] == ' ' || rl_line_buffer[i] == '=') {
             break;
          }
       }
 
-      /* find the end of the command */
+      /*
+       * Find the end of the command
+       */
       for (; i >= 0; i--) {
          if (rl_line_buffer[i] != ' ') {
             end = i;
@@ -400,12 +402,16 @@ get_previous_keyword(int current_point, int nb)
          }
       }
 
-      /* no end of string */
+      /*
+       * No end of string
+       */
       if (end == -1) {
          return NULL;
       }
 
-      /* look for the start of the command */
+      /*
+       * Look for the start of the command
+       */
       for (start = end; start > 0; start--) {
          if (rl_line_buffer[start] == '"') {
             inquotes = !inquotes;
@@ -426,7 +432,9 @@ get_previous_keyword(int current_point, int nb)
    return s;
 }
 
-/* Simple structure that will contain the completion list */
+/*
+ * Simple structure that will contain the completion list
+ */
 struct ItemList {
    alist list;
 };
@@ -485,7 +493,7 @@ void get_arguments(const char *what)
    int rc;
    init_items();
 
-   rc = regcomp(&preg, "(([a-z]+=)|([a-z]+)( |$))", REG_EXTENDED);
+   rc = regcomp(&preg, "(([a-z_]+=)|([a-z]+)( |$))", REG_EXTENDED);
    if (rc != 0) {
       return;
    }
@@ -621,18 +629,18 @@ static char **readline_completion(const char *text, int start, int end)
    matches = (char **)NULL;
 
    /* If this word is at the start of the line, then it is a command
-    * to complete.  Otherwise it is the name of a file in the current
+    * to complete. Otherwise it is the name of a file in the current
     * directory.
     */
    s = get_previous_keyword(start, 0);
    cmd = get_first_keyword();
    if (s) {
-      for (int i=0; i < key_size; i++) {
+      for (int i = 0; i < key_size; i++) {
          if (bstrcasecmp(s, cpl_keywords[i].key)) {
             cpl_item = cpl_keywords[i].cmd;
             cpl_type = ITEM_ARG;
             matches = rl_completion_matches(text, cpl_generator);
-            found=true;
+            found = true;
             break;
          }
       }
@@ -641,7 +649,7 @@ static char **readline_completion(const char *text, int start, int end)
          cpl_item = cmd;
          cpl_type = ITEM_HELP;
          /* we don't want to append " " at the end */
-         rl_completion_suppress_append=true;
+         rl_completion_suppress_append = true;
          matches = rl_completion_matches(text, cpl_generator);
       }
       free(s);
@@ -674,8 +682,7 @@ static int eolcmd(FILE *input, BSOCK *UA_sock)
  *        0 if no input
  *       -1 error (must stop)
  */
-int
-get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
+int get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
 {
    static char *line = NULL;
    static char *next = NULL;
@@ -753,8 +760,7 @@ static bool bisatty(int fd)
  *   Returns: 1 if got input
  *           -1 if EOF or error
  */
-int
-get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
+int get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
 {
    int len;
 
@@ -805,8 +811,7 @@ again:
  *            0 if timeout
  *           -1 if EOF or error
  */
-int
-get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
+int get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
 {
    int len;
 
@@ -967,8 +972,11 @@ try_again:
       }
       UnlockRes();
    }
+
+   /*
+    * Look for a console linked to this director
+    */
    LockRes();
-   /* Look for a console linked to this director */
    for (i=0; i<numcon; i++) {
       cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)cons);
       if (cons->director && bstrcmp(cons->director, dir->hdr.name)) {
@@ -976,7 +984,10 @@ try_again:
       }
       cons = NULL;
    }
-   /* Look for the first non-linked console */
+
+   /*
+    * Look for the first non-linked console
+    */
    if (cons == NULL) {
       for (i=0; i<numcon; i++) {
          cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)cons);
@@ -986,7 +997,9 @@ try_again:
       }
    }
 
-   /* If no console, take first one */
+   /*
+    * If no console, take first one
+    */
    if (!cons) {
       cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)NULL);
    }
@@ -998,10 +1011,8 @@ try_again:
    return 1;
 }
 
-/*********************************************************************
- *
- *         Main Bareos Console -- User Interface Program
- *
+/*
+ * Main Bareos Console -- User Interface Program
  */
 int main(int argc, char *argv[])
 {
@@ -1396,7 +1407,6 @@ static int outputcmd(FILE *input, BSOCK *UA_sock)
    return do_outputcmd(input, UA_sock);
 }
 
-
 static int do_outputcmd(FILE *input, BSOCK *UA_sock)
 {
    FILE *fd;
@@ -1465,7 +1475,6 @@ static int execcmd(FILE *input, BSOCK *UA_sock)
    return 1;
 }
 
-
 /* @echo xxx yyy */
 static int echocmd(FILE *input, BSOCK *UA_sock)
 {
@@ -1491,7 +1500,6 @@ static int helpcmd(FILE *input, BSOCK *UA_sock)
    }
    return 1;
 }
-
 
 /* @sleep secs */
 static int sleepcmd(FILE *input, BSOCK *UA_sock)
@@ -1557,7 +1565,6 @@ void sendit(const char *buf)
       fputs(buf, output);
    }
 #else
-
    fputs(buf, output);
    fflush(output);
    if (teeout) {

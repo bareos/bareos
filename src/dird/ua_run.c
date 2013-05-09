@@ -40,17 +40,8 @@ static int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc);
 /* Imported variables */
 extern struct s_kw ReplaceOptions[];
 
-/*
- * Rerun a job by jobid. Lookup the job data and rerun the
- * job with that data.
- *
- * Returns: 0 on error
- *          JobId if OK
- */
-int rerun_cmd(UAContext *ua, const char *cmd)
+static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now)
 {
-   int i;
-   utime_t now;
    JOB_DBR jr;
    CLIENT_DBR cr;
    POOL_DBR pr;
@@ -58,22 +49,15 @@ int rerun_cmd(UAContext *ua, const char *cmd)
    char dt[MAX_TIME_LENGTH];
    POOL_MEM cmdline(PM_MESSAGE);
 
-   if (!open_client_db(ua)) {
-      return 1;
-   }
-
-   i = find_arg_with_value(ua, NT_("jobid"));
-   if (i < 0) {
-      goto bail_out;
-   }
-
    memset(&jr, 0, sizeof(jr));
-   jr.JobId = str_to_int64(ua->argv[i]);
+   jr.JobId = JobId;
+   ua->send_msg("rerunning jobid %d\n", jr.JobId);
    if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
       Jmsg(ua->jcr, M_WARNING, 0, _("Error getting Job record for Job rerun: ERR=%s"),
            db_strerror(ua->jcr->db));
       goto bail_out;
    }
+
    if (jr.JobLevel == L_NONE) {
       Mmsg(cmdline, "run job=\"%s\"", jr.Name);
    } else {
@@ -117,19 +101,151 @@ int rerun_cmd(UAContext *ua, const char *cmd)
       pm_strcat(ua->cmd, cmdline);
    }
 
-   now = (utime_t)time(NULL);
    bstrutime(dt, sizeof(dt), now);
    Mmsg(cmdline, " when=\"%s\"", dt);
    pm_strcat(ua->cmd, cmdline);
 
-   if (find_arg(ua, NT_("yes")) > 0) {
+   if (yes) {
       pm_strcat(ua->cmd, " yes");
    }
 
    Dmsg1(100, "rerun cmdline=%s\n", ua->cmd);
 
    parse_ua_args(ua);
-   return run_cmd(ua, ua->cmd);
+   return (run_cmd(ua, ua->cmd) != 0);
+
+bail_out:
+   return false;
+}
+
+/*
+ * Rerun a job by jobid. Lookup the job data and rerun the
+ * job with that data.
+ *
+ * Returns: 0 on error
+ *          JobId if OK
+ */
+int rerun_cmd(UAContext *ua, const char *cmd)
+{
+   int i, j, d, h, s;
+   int days = 0;
+   int hours = 0;
+   int since_jobid = 0;
+   struct tm tm;
+   JobId_t JobId;
+   dbid_list ids;
+   POOL_MEM query(PM_MESSAGE);
+   utime_t now;
+   time_t schedtime;
+   char dt[MAX_TIME_LENGTH];
+   char ed1[50];
+   bool yes = false;                 /* Was "yes" given on cmdline*/
+   bool timeframe = false;           /* Should the selection happen based on timeframe? */
+   bool since_jobid_given = false;   /* Was since_jobid given? */
+   const int secs_in_day = 86400;
+   const int secs_in_hour = 3600;
+
+   if (!open_client_db(ua)) {
+      return 1;
+   }
+
+   now = (utime_t)time(NULL);
+
+   /*
+    * Determine what cmdline arguments are given.
+    */
+   j = find_arg_with_value(ua, NT_("jobid"));
+   d = find_arg_with_value(ua, NT_("days"));
+   h = find_arg_with_value(ua, NT_("hours"));
+   s = find_arg_with_value(ua, NT_("since_jobid"));
+
+   if (s > 0) {
+      since_jobid = str_to_int64(ua->argv[s]);
+      since_jobid_given = true;
+   }
+
+   if (d > 0 || h > 0) {
+      timeframe = true;
+   }
+
+   if (find_arg(ua, NT_("yes")) > 0) {
+      yes = true;
+   }
+
+   if (j < 0 && !timeframe && !since_jobid_given) {
+      ua->send_msg("Please specifiy jobid, since_jobid, hours or days\n");
+      goto bail_out;
+   }
+
+   if (j >= 0 && since_jobid_given) {
+      ua->send_msg("Please specifiy either jobid or since_jobid\n");
+      goto bail_out;
+   }
+
+   if (j >= 0 && timeframe) {
+      ua->send_msg("Please specifiy either jobid or timeframe\n");
+      goto bail_out;
+   }
+
+   if (timeframe || since_jobid_given) {
+      if (d > 0) {
+         days = str_to_int64(ua->argv[d]);
+         schedtime = now - secs_in_day * days;   /* Days in the past */
+      }
+      if (h > 0) {
+         hours = str_to_int64(ua->argv[h]);
+         schedtime = now - secs_in_hour * hours; /* Hours in the past */
+      }
+
+      /*
+       * Job Query Start
+       */
+      (void)localtime_r(&schedtime, &tm);
+      strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+
+      if (since_jobid_given) {
+         Mmsg(query, "SELECT JobId FROM job WHERE JobStatus = 'f' AND JobId >= %s",
+              edit_int64(since_jobid, ed1));
+      } else {
+         Mmsg(query, "SELECT JobId FROM job WHERE JobStatus = 'f' AND SchedTime > '%s'", dt);
+      }
+
+      db_get_query_dbids(ua->jcr, ua->db, query, ids);
+
+      ua->send_msg("The following ids were selected for rerun:\n");
+      for (i = 0; i < ids.num_ids; i++) {
+         if (i > 0) {
+            ua->send_msg(",%d", ids.DBId[i]);
+         } else {
+            ua->send_msg("%d", ids.DBId[i]);
+         }
+      }
+      ua->send_msg("\n");
+
+      if (!yes &&  (!get_yesno(ua, _("rerun these jobids? (yes/no): ")) || ua->pint32_val == 0 )) {
+         goto bail_out;
+      }
+      /*
+       * Job Query End
+       */
+
+      /*
+       * Loop over all selected JobIds.
+       */
+      for (i = 0; i < ids.num_ids; i++) {
+         JobId = ids.DBId[i];
+         if (!rerun_job(ua, JobId, yes, now)) {
+            goto bail_out;
+         }
+      }
+   } else {
+      JobId = str_to_int64(ua->argv[j]);
+      if (!rerun_job(ua, JobId, yes, now)) {
+         goto bail_out;
+      }
+   }
+
+   return 1;
 
 bail_out:
    return -1;
@@ -1123,7 +1239,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
             jr.JobId = jcr->RestoreJobId;
             if (!db_get_job_record(jcr, ua->db, &jr)) {
                ua->error_msg(_("Could not get job record for selected JobId. ERR=%s"),
-                    db_strerror(ua->db));
+                             db_strerror(ua->db));
                return false;
             }
             Name = jr.Job;
