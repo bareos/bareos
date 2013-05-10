@@ -75,7 +75,7 @@ int32_t res_all_size = sizeof(res_all);
 static RES_ITEM mon_items[] = {
    { "name", store_name, ITEM(res_monitor.hdr.name), 0, ITEM_REQUIRED, 0 },
    { "description", store_str, ITEM(res_monitor.hdr.desc), 0, 0, 0 },
-   { "requiressl", store_bool, ITEM(res_monitor.require_ssl), 1, ITEM_DEFAULT, "false" },
+   { "requiressl", store_bool, ITEM(res_monitor.require_ssl), 0, ITEM_DEFAULT, "false" },
    { "password", store_password, ITEM(res_monitor.password), 0, ITEM_REQUIRED, NULL },
    { "refreshinterval", store_time, ITEM(res_monitor.RefreshInterval), 0, ITEM_DEFAULT, "60" },
    { "fdconnecttimeout", store_time, ITEM(res_monitor.FDConnectTimeout), 0, ITEM_DEFAULT, "10" },
@@ -92,9 +92,9 @@ static RES_ITEM mon_items[] = {
 static RES_ITEM dir_items[] = {
    { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
    { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "dirport", store_pint32, ITEM(res_dir.DIRport), 0, ITEM_DEFAULT, "9101" },
+   { "dirport", store_pint32, ITEM(res_dir.DIRport), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
    { "address", store_str, ITEM(res_dir.address), 0, ITEM_REQUIRED, NULL },
-   { "enablessl", store_bool, ITEM(res_dir.enable_ssl), 1, ITEM_DEFAULT, "false" },
+   { "enablessl", store_bool, ITEM(res_dir.enable_ssl), 0, ITEM_DEFAULT, "false" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -107,9 +107,9 @@ static RES_ITEM cli_items[] = {
    { "name", store_name, ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, NULL },
    { "description", store_str, ITEM(res_client.hdr.desc), 0, 0, NULL },
    { "address", store_str, ITEM(res_client.address), 0, ITEM_REQUIRED, NULL },
-   { "fdport", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, "9102" },
+   { "fdport", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
    { "password", store_password, ITEM(res_client.password), 0, ITEM_REQUIRED, NULL },
-   { "enablessl", store_bool, ITEM(res_client.enable_ssl), 1, ITEM_DEFAULT, "false" },
+   { "enablessl", store_bool, ITEM(res_client.enable_ssl), 0, ITEM_DEFAULT, "false" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -121,12 +121,12 @@ static RES_ITEM cli_items[] = {
 static RES_ITEM store_items[] = {
    { "name", store_name, ITEM(res_store.hdr.name), 0, ITEM_REQUIRED, NULL },
    { "description", store_str, ITEM(res_store.hdr.desc), 0, 0, NULL },
-   { "sdport", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, "9103" },
+   { "sdport", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
    { "address", store_str, ITEM(res_store.address), 0, ITEM_REQUIRED, NULL },
    { "sdaddress", store_str, ITEM(res_store.address), 0, 0, NULL },
    { "password", store_password, ITEM(res_store.password), 0, ITEM_REQUIRED, NULL },
    { "sdpassword", store_password, ITEM(res_store.password), 0, 0, NULL },
-   { "enablessl", store_bool, ITEM(res_store.enable_ssl), 1, ITEM_DEFAULT, "false" },
+   { "enablessl", store_bool, ITEM(res_store.enable_ssl), 0, ITEM_DEFAULT, "false" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
