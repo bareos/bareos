@@ -40,6 +40,12 @@ static int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc);
 /* Imported variables */
 extern struct s_kw ReplaceOptions[];
 
+/*
+ * Rerun a job by jobid. Lookup the job data and rerun the job with that data.
+ *
+ * Returns: false on error
+ *          true if OK
+ */
 static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now)
 {
    JOB_DBR jr;
@@ -119,11 +125,10 @@ bail_out:
 }
 
 /*
- * Rerun a job by jobid. Lookup the job data and rerun the
- * job with that data.
+ * Rerun a job selection.
  *
  * Returns: 0 on error
- *          JobId if OK
+ *          1 if OK
  */
 int rerun_cmd(UAContext *ua, const char *cmd)
 {
@@ -248,7 +253,7 @@ int rerun_cmd(UAContext *ua, const char *cmd)
    return 1;
 
 bail_out:
-   return -1;
+   return 0;
 }
 
 /*
