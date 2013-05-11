@@ -88,7 +88,7 @@ static void print_bsr_item(POOL_MEM *pool_buf, const char *fmt, ...)
    int len, maxlen;
    POOL_MEM item(PM_MESSAGE);
 
-   for (;;) {
+   while (1) {
       maxlen = item.max_size() - 1;
       va_start(arg_ptr, fmt);
       len = bvsnprintf(item.c_str(), maxlen, fmt, arg_ptr);
@@ -149,12 +149,13 @@ static inline bool is_volume_selected(RBSR_FINDEX *fi,
                                       int32_t FirstIndex,
                                       int32_t LastIndex)
 {
-   for ( ; fi; fi=fi->next) {
+   while (fi) {
       if ((fi->findex >= FirstIndex && fi->findex <= LastIndex) ||
           (fi->findex2 >= FirstIndex && fi->findex2 <= LastIndex) ||
           (fi->findex < FirstIndex && fi->findex2 > LastIndex)) {
          return true;
       }
+      fi = fi->next;
    }
    return false;
 }
@@ -165,6 +166,7 @@ static inline bool is_volume_selected(RBSR_FINDEX *fi,
 RBSR *new_bsr()
 {
    RBSR *bsr = (RBSR *)bmalloc(sizeof(RBSR));
+
    memset(bsr, 0, sizeof(RBSR));
    return bsr;
 }
@@ -175,16 +177,21 @@ RBSR *new_bsr()
 void free_bsr(RBSR *bsr)
 {
    RBSR *next;
-   for ( ; bsr; bsr=next) {
+
+   while (bsr) {
       free_findex(bsr->fi);
+
       if (bsr->VolParams) {
          free(bsr->VolParams);
       }
+
       if (bsr->fileregex) {
          free(bsr->fileregex);
       }
+
       next = bsr->next;
       free(bsr);
+      bsr = next;
    }
 }
 
@@ -304,7 +311,7 @@ static void display_vol_info(UAContext *ua, RESTORE_CTX &rx, JobId_t JobId)
    POOL_MEM volmsg(PM_MESSAGE);
    char Device[MAX_NAME_LENGTH];
 
-   for (bsr = rx.bsr; bsr; bsr=bsr->next) {
+   for (bsr = rx.bsr; bsr; bsr = bsr->next) {
       if (JobId && JobId != bsr->JobId) {
          continue;
       }
@@ -330,6 +337,7 @@ static void display_vol_info(UAContext *ua, RESTORE_CTX &rx, JobId_t JobId)
 
 void display_bsr_info(UAContext *ua, RESTORE_CTX &rx)
 {
+   int i;
    char *p;
    JobId_t JobId;
 
@@ -354,19 +362,22 @@ void display_bsr_info(UAContext *ua, RESTORE_CTX &rx)
       /*
        * Ensure that the volumes are printed in JobId order
        */
-      for (p=rx.JobIds; get_next_jobid_from_list(&p, &JobId) > 0; ) {
+      for (p = rx.JobIds; get_next_jobid_from_list(&p, &JobId) > 0; ) {
          display_vol_info(ua, rx, JobId);
       }
    }
-   for (int i=0; i < ua->num_prompts; i++) {
+
+   for (i = 0; i < ua->num_prompts; i++) {
       ua->send_msg("   %s\n", ua->prompt[i]);
       free(ua->prompt[i]);
    }
+
    if (ua->num_prompts == 0) {
       ua->send_msg(_("No Volumes found to restore.\n"));
    } else {
       ua->send_msg(_("\nVolumes marked with \"*\" are online.\n"));
    }
+
    ua->num_prompts = 0;
    ua->send_msg("\n");
 
@@ -380,6 +391,7 @@ static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
                                RESTORE_CTX &rx, POOL_MEM *buffer,
                                bool &first, uint32_t &LastIndex)
 {
+   int i;
    char ed1[50], ed2[50];
    uint32_t count = 0;
    uint32_t total_count = 0;
@@ -389,7 +401,7 @@ static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
     * For a given volume, loop over all the JobMedia records.
     * VolCount is the number of JobMedia records.
     */
-   for (int i=0; i < bsr->VolCount; i++) {
+   for (i = 0; i < bsr->VolCount; i++) {
       if (!is_volume_selected(bsr->fi, bsr->VolParams[i].FirstIndex,
            bsr->VolParams[i].LastIndex)) {
          bsr->VolParams[i].VolumeName[0] = 0;  /* zap VolumeName */
@@ -404,15 +416,19 @@ static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
       print_bsr_item(buffer, "Storage=\"%s\"\n", bsr->VolParams[i].Storage);
       print_bsr_item(buffer, "Volume=\"%s\"\n", bsr->VolParams[i].VolumeName);
       print_bsr_item(buffer, "MediaType=\"%s\"\n", bsr->VolParams[i].MediaType);
+
       if (bsr->fileregex) {
          print_bsr_item(buffer, "FileRegex=%s\n", bsr->fileregex);
       }
+
       if (get_storage_device(device, bsr->VolParams[i].Storage)) {
          print_bsr_item(buffer, "Device=\"%s\"\n", device);
       }
+
       if (bsr->VolParams[i].Slot > 0) {
          print_bsr_item(buffer, "Slot=%d\n", bsr->VolParams[i].Slot);
       }
+
       print_bsr_item(buffer, "VolSessionId=%u\n", bsr->VolSessionId);
       print_bsr_item(buffer, "VolSessionTime=%u\n", bsr->VolSessionTime);
       print_bsr_item(buffer, "VolAddr=%s-%s\n", edit_uint64(bsr->VolParams[i].StartAddr, ed1),
@@ -425,6 +441,7 @@ static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
       if (count) {
          print_bsr_item(buffer, "Count=%u\n", count);
       }
+
       total_count += count;
 
       /*
@@ -438,6 +455,7 @@ static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
       first = false;
       LastIndex = bsr->VolParams[i].LastIndex;
    }
+
    return total_count;
 }
 
@@ -460,18 +478,20 @@ uint32_t write_bsr(UAContext *ua, RESTORE_CTX &rx, POOL_MEM *buffer)
    RBSR *bsr;
 
    if (*rx.JobIds == 0) {
-      for (bsr=rx.bsr; bsr; bsr=bsr->next) {
+      for (bsr = rx.bsr; bsr; bsr = bsr->next) {
          total_count += write_bsr_item(bsr, ua, rx, buffer, first, LastIndex);
       }
       return total_count;
    }
-   for (p=rx.JobIds; get_next_jobid_from_list(&p, &JobId) > 0; ) {
-      for (bsr=rx.bsr; bsr; bsr=bsr->next) {
+
+   for (p = rx.JobIds; get_next_jobid_from_list(&p, &JobId) > 0; ) {
+      for (bsr = rx.bsr; bsr; bsr = bsr->next) {
          if (JobId == bsr->JobId) {
             total_count += write_bsr_item(bsr, ua, rx, buffer, first, LastIndex);
          }
       }
    }
+
    return total_count;
 }
 
@@ -514,7 +534,7 @@ void add_findex(RBSR *bsr, uint32_t JobId, int32_t findex)
     * Walk down list of bsrs until we find the JobId
     */
    if (bsr->JobId != JobId) {
-      for (nbsr=bsr->next; nbsr; nbsr=nbsr->next) {
+      for (nbsr = bsr->next; nbsr; nbsr = nbsr->next) {
          if (nbsr->JobId == JobId) {
             bsr = nbsr;
             break;
@@ -525,7 +545,7 @@ void add_findex(RBSR *bsr, uint32_t JobId, int32_t findex)
          /*
           * Add new JobId at end of chain
           */
-         for (nbsr=bsr; nbsr->next; nbsr=nbsr->next)
+         for (nbsr = bsr; nbsr->next; nbsr = nbsr->next)
             {  }
          nbsr->next = new_bsr();
          nbsr->next->JobId = JobId;
@@ -543,10 +563,17 @@ void add_findex(RBSR *bsr, uint32_t JobId, int32_t findex)
    lfi = fi = bsr->fi;
 
    /*
+    * Check if this findex is a duplicate.
+    */
+   if (findex >= fi->findex && findex <= fi->findex2) {
+      return;
+   }
+
+   /*
     * Check if this findex is smaller than first item
     */
    if (findex < fi->findex) {
-      if ((findex+1) == fi->findex) {
+      if ((findex + 1) == fi->findex) {
          fi->findex = findex;         /* extend down */
          return;
       }
@@ -561,15 +588,23 @@ void add_findex(RBSR *bsr, uint32_t JobId, int32_t findex)
    /*
     * Walk down fi chain and find where to insert insert new FileIndex
     */
-   for ( ; fi; fi=fi->next) {
+   while (fi) {
+      /*
+       * Check if this findex is a duplicate.
+       */
+      if (findex >= fi->findex && findex <= fi->findex2) {
+         return;
+      }
+
       if (findex == (fi->findex2 + 1)) {  /* extend up */
          RBSR_FINDEX *nfi;
          fi->findex2 = findex;
+
          /*
           * If the following record contains one higher, merge its
           * file index by extending it up.
           */
-         if (fi->next && ((findex+1) == fi->next->findex)) {
+         if (fi->next && ((findex + 1) == fi->next->findex)) {
             nfi = fi->next;
             fi->findex2 = nfi->findex2;
             fi->next = nfi->next;
@@ -577,14 +612,17 @@ void add_findex(RBSR *bsr, uint32_t JobId, int32_t findex)
          }
          return;
       }
+
       if (findex < fi->findex) {      /* add before */
-         if ((findex+1) == fi->findex) {
+         if ((findex + 1) == fi->findex) {
             fi->findex = findex;
             return;
          }
          break;
       }
+
       lfi = fi;
+      fi = fi->next;
    }
 
    /*
@@ -624,7 +662,7 @@ void add_findex_all(RBSR *bsr, uint32_t JobId)
     * Walk down list of bsrs until we find the JobId
     */
    if (bsr->JobId != JobId) {
-      for (nbsr=bsr->next; nbsr; nbsr=nbsr->next) {
+      for (nbsr = bsr->next; nbsr; nbsr = nbsr->next) {
          if (nbsr->JobId == JobId) {
             bsr = nbsr;
             break;
@@ -635,7 +673,7 @@ void add_findex_all(RBSR *bsr, uint32_t JobId)
          /*
           * Add new JobId at end of chain
           */
-         for (nbsr=bsr; nbsr->next; nbsr=nbsr->next)
+         for (nbsr = bsr; nbsr->next; nbsr = nbsr->next)
             {  }
 
          nbsr->next = new_bsr();
@@ -816,7 +854,7 @@ bool send_bootstrap_file(JCR *jcr, BSOCK *sock, bootstrap_info &info)
    sock->fsend(bootstrap);
    pos = ftello(bs);
 
-   while(fgets(ua->cmd, UA_CMD_SIZE, bs)) {
+   while (fgets(ua->cmd, UA_CMD_SIZE, bs)) {
       if (check_for_new_storage(jcr, info)) {
          /*
           * Otherwise, we need to contact another storage daemon.

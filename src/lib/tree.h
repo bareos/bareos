@@ -64,13 +64,13 @@ struct s_tree_node {
    uint32_t JobId;                    /* JobId */
    int32_t delta_seq;                 /* current delta sequence */
    uint16_t fname_len;                /* filename length */
-   int type: 8;                       /* node type */
-   unsigned int extract: 1;           /* extract item */
-   unsigned int extract_dir: 1;       /* extract dir entry only */
-   unsigned int hard_link: 1;         /* set if have hard link */
-   unsigned int soft_link: 1;         /* set if is soft link */
-   unsigned int inserted: 1;          /* set when node newly inserted */
-   unsigned int loaded: 1;            /* set when the dir is in the tree */
+   unsigned int type:8;               /* node type */
+   unsigned int extract:1;            /* extract item */
+   unsigned int extract_dir:1;        /* extract dir entry only */
+   unsigned int hard_link:1;          /* set if have hard link */
+   unsigned int soft_link:1;          /* set if is soft link */
+   unsigned int inserted:1;           /* set when node newly inserted */
+   unsigned int loaded:1;             /* set when the dir is in the tree */
    struct s_tree_node *parent;
    struct s_tree_node *next;          /* next hash of FileIndex */
    struct delta_list *delta_list;     /* delta parts for this node */
@@ -87,12 +87,12 @@ struct s_tree_root {
    uint32_t JobId;                    /* JobId */
    int32_t delta_seq;                 /* current delta sequence */
    uint16_t fname_len;                /* filename length */
-   unsigned int type: 8;              /* node type */
-   unsigned int extract: 1;           /* extract item */
-   unsigned int extract_dir: 1;       /* extract dir entry only */
-   unsigned int have_link: 1;         /* set if have hard link */
-   unsigned int inserted: 1;          /* set when newly inserted */
-   unsigned int loaded: 1;            /* set when the dir is in the tree */
+   unsigned int type:8;               /* node type */
+   unsigned int extract:1;            /* extract item */
+   unsigned int extract_dir:1;        /* extract dir entry only */
+   unsigned int have_link:1;          /* set if have hard link */
+   unsigned int inserted:1;           /* set when newly inserted */
+   unsigned int loaded:1;             /* set when the dir is in the tree */
    struct s_tree_node *parent;
    struct s_tree_node *next;          /* next hash of FileIndex */
    struct delta_list *delta_list;     /* delta parts for this node */

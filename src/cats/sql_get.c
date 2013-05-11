@@ -59,7 +59,7 @@ static int db_get_filename_record(JCR *jcr, B_DB *mdb);
 bool db_get_file_attributes_record(JCR *jcr, B_DB *mdb, char *fname, JOB_DBR *jr, FILE_DBR *fdbr)
 {
    bool retval;
-   Dmsg1(100, "db_get_file_att_record fname=%s \n", fname);
+   Dmsg1(100, "db_get_file_attributes_record fname=%s \n", fname);
 
    db_lock(mdb);
    split_path_and_file(jcr, mdb, fname);
