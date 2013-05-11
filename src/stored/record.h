@@ -238,6 +238,12 @@ struct Read_Context {
 };
 typedef struct Read_Context READ_CTX;
 
+struct DELAYED_DATA_STREAM {
+   int32_t stream;                     /* stream less new bits */
+   char *content;                      /* stream data */
+   uint32_t content_length;            /* stream length */
+};
+
 #define READ_NO_FILEINDEX -999999
 
 #endif

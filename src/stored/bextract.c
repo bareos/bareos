@@ -64,6 +64,7 @@ static DIRRES *director = NULL;
 
 static struct acl_data_t acl_data;
 static struct xattr_data_t xattr_data;
+static alist *delayed_streams = NULL;
 
 static char *wbuf;                    /* write buffer address */
 static uint32_t wsize;                /* write size */
@@ -97,7 +98,6 @@ PROG_COPYRIGHT
 "       -?              print this message\n\n"), 2000, VERSION, BDATE);
    exit(1);
 }
-
 
 int main (int argc, char *argv[])
 {
@@ -266,6 +266,140 @@ int main (int argc, char *argv[])
    return 0;
 }
 
+/*
+ * Cleanup of delayed restore stack with streams for later processing.
+ */
+static inline void drop_delayed_data_streams()
+{
+   DELAYED_DATA_STREAM *dds;
+
+   if (!delayed_streams ||
+       delayed_streams->empty()) {
+      return;
+   }
+
+   foreach_alist(dds, delayed_streams) {
+      free(dds->content);
+   }
+
+   delayed_streams->destroy();
+}
+
+/*
+ * Push a data stream onto the delayed restore stack for later processing.
+ */
+static inline void push_delayed_data_stream(int stream, char *content, uint32_t content_length)
+{
+   DELAYED_DATA_STREAM *dds;
+
+   if (!delayed_streams) {
+      delayed_streams = New(alist(10, owned_by_alist));
+   }
+
+   dds = (DELAYED_DATA_STREAM *)malloc(sizeof(DELAYED_DATA_STREAM));
+   dds->stream = stream;
+   dds->content = (char *)malloc(content_length);
+   memcpy(dds->content, content, content_length);
+   dds->content_length = content_length;
+
+   delayed_streams->append(dds);
+}
+
+/*
+ * Restore any data streams that are restored after the file
+ * is fully restored and has its attributes restored. Things
+ * like acls and xattr are restored after we set the file
+ * attributes otherwise we might clear some security flags
+ * by setting the attributes.
+ */
+static inline void pop_delayed_data_streams()
+{
+   DELAYED_DATA_STREAM *dds;
+
+   /*
+    * See if there is anything todo.
+    */
+   if (!delayed_streams ||
+        delayed_streams->empty()) {
+      return;
+   }
+
+   /*
+    * Only process known delayed data streams here.
+    * If you start using more delayed data streams
+    * be sure to add them in this loop and add the
+    * proper calls here.
+    *
+    * Currently we support delayed data stream
+    * processing for the following type of streams:
+    * - *_ACL_*
+    * - *_XATTR_*
+    */
+   foreach_alist(dds, delayed_streams) {
+      switch (dds->stream) {
+      case STREAM_UNIX_ACCESS_ACL:
+      case STREAM_UNIX_DEFAULT_ACL:
+      case STREAM_ACL_AIX_TEXT:
+      case STREAM_ACL_DARWIN_ACCESS_ACL:
+      case STREAM_ACL_FREEBSD_DEFAULT_ACL:
+      case STREAM_ACL_FREEBSD_ACCESS_ACL:
+      case STREAM_ACL_HPUX_ACL_ENTRY:
+      case STREAM_ACL_IRIX_DEFAULT_ACL:
+      case STREAM_ACL_IRIX_ACCESS_ACL:
+      case STREAM_ACL_LINUX_DEFAULT_ACL:
+      case STREAM_ACL_LINUX_ACCESS_ACL:
+      case STREAM_ACL_TRU64_DEFAULT_ACL:
+      case STREAM_ACL_TRU64_DEFAULT_DIR_ACL:
+      case STREAM_ACL_TRU64_ACCESS_ACL:
+      case STREAM_ACL_SOLARIS_ACLENT:
+      case STREAM_ACL_SOLARIS_ACE:
+      case STREAM_ACL_AFS_TEXT:
+      case STREAM_ACL_AIX_AIXC:
+      case STREAM_ACL_AIX_NFS4:
+      case STREAM_ACL_FREEBSD_NFS4_ACL:
+      case STREAM_ACL_HURD_DEFAULT_ACL:
+      case STREAM_ACL_HURD_ACCESS_ACL:
+         parse_acl_streams(jcr, &acl_data, dds->stream, dds->content, dds->content_length);
+         free(dds->content);
+         break;
+      case STREAM_XATTR_HURD:
+      case STREAM_XATTR_IRIX:
+      case STREAM_XATTR_TRU64:
+      case STREAM_XATTR_AIX:
+      case STREAM_XATTR_OPENBSD:
+      case STREAM_XATTR_SOLARIS_SYS:
+      case STREAM_XATTR_DARWIN:
+      case STREAM_XATTR_FREEBSD:
+      case STREAM_XATTR_LINUX:
+      case STREAM_XATTR_NETBSD:
+         parse_xattr_streams(jcr, &xattr_data,  dds->stream, dds->content, dds->content_length);
+         free(dds->content);
+         break;
+      default:
+         Jmsg(jcr, M_WARNING, 0, _("Unknown stream=%d ignored. This shouldn't happen!\n"), dds->stream);
+         break;
+      }
+   }
+
+   /*
+    * We processed the stack so we can destroy it.
+    */
+   delayed_streams->destroy();
+
+   /*
+    * (Re)Initialize the stack for a new use.
+    */
+   delayed_streams->init(10, owned_by_alist);
+
+   return;
+}
+
+static void close_previous_stream(void)
+{
+   pop_delayed_data_streams();
+   set_attributes(jcr, attr, &bfd);
+}
+
 static void do_extract(char *devname)
 {
    struct stat statp;
@@ -282,7 +416,9 @@ static void do_extract(char *devname)
    }
    dcr = jcr->read_dcr;
 
-   /* Make sure where directory exists and that it is a directory */
+   /*
+    * Make sure where directory exists and that it is a directory
+    */
    if (stat(where, &statp) < 0) {
       berrno be;
       Emsg2(M_ERROR_TERM, 0, _("Cannot stat %s. It must exist. ERR=%s\n"),
@@ -302,16 +438,22 @@ static void do_extract(char *devname)
    xattr_data.last_fname = get_pool_memory(PM_FNAME);
 
    read_records(dcr, record_cb, mount_next_read_volume);
-   /* If output file is still open, it was the last one in the
+
+   /*
+    * If output file is still open, it was the last one in the
     * archive since we just hit an end of file, so close the file.
     */
    if (is_bopen(&bfd)) {
-      set_attributes(jcr, attr, &bfd);
+      close_previous_stream();
    }
    free_attr(attr);
 
    free_pool_memory(acl_data.last_fname);
    free_pool_memory(xattr_data.last_fname);
+   if (delayed_streams) {
+      drop_delayed_data_streams();
+      delete delayed_streams;
+   }
 
    clean_device(jcr->dcr);
    dev->term();
@@ -367,7 +509,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          if (!is_bopen(&bfd)) {
             Emsg0(M_ERROR, 0, _("Logic error output file should be open but is not.\n"));
          }
-         set_attributes(jcr, attr, &bfd);
+         close_previous_stream();
          extract = false;
       }
 
@@ -407,7 +549,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             fileAddr = 0;
             break;
          case CF_CREATED:
-            set_attributes(jcr, attr, &bfd);
+            close_previous_stream();
             print_ls_output(jcr, attr);
             num_files++;
             fileAddr = 0;
@@ -650,11 +792,8 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case STREAM_ACL_HURD_DEFAULT_ACL:
    case STREAM_ACL_HURD_ACCESS_ACL:
       if (extract) {
-         wbuf = rec->data;
-         wsize = rec->data_len;
          pm_strcpy(acl_data.last_fname, attr->fname);
-
-         parse_acl_streams(jcr, &acl_data, rec->maskedStream, wbuf, wsize);
+         push_delayed_data_stream(rec->maskedStream, rec->data, rec->data_len);
       }
       break;
 
@@ -670,11 +809,8 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case STREAM_XATTR_LINUX:
    case STREAM_XATTR_NETBSD:
       if (extract) {
-         wbuf = rec->data;
-         wsize = rec->data_len;
          pm_strcpy(xattr_data.last_fname, attr->fname);
-
-         parse_xattr_streams(jcr, &xattr_data, rec->maskedStream, wbuf, wsize);
+         push_delayed_data_stream(rec->maskedStream, rec->data, rec->data_len);
       }
       break;
 
@@ -682,12 +818,14 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       break;
 
    default:
-      /* If extracting, weird stream (not 1 or 2), close output file anyway */
+      /*
+       * If extracting, weird stream (not 1 or 2), close output file anyway
+       */
       if (extract) {
          if (!is_bopen(&bfd)) {
             Emsg0(M_ERROR, 0, _("Logic error output file should be open but is not.\n"));
          }
-         set_attributes(jcr, attr, &bfd);
+         close_previous_stream();
          extract = false;
       }
       Jmsg(jcr, M_ERROR, 0, _("Unknown stream=%d ignored. This shouldn't happen!\n"),
@@ -699,11 +837,11 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 }
 
 /* Dummies to replace askdir.c */
-bool dir_find_next_appendable_volume(DCR *dcr) { return 1;}
+bool dir_find_next_appendable_volume(DCR *dcr) { return 1; }
 bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
 bool dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
 bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
+bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1; }
 
 bool dir_ask_sysop_to_mount_volume(DCR *dcr, int /*mode*/)
 {
