@@ -78,7 +78,7 @@ struct ndmagent;
 
 struct ndmlog {
 	void	(*deliver)(struct ndmlog *log, char *tag, int lev, char *msg);
-	void *	cookie;
+	void *	ctx;
 };
 extern char *	ndmlog_time_stamp (void);
 extern void	ndmlogf (struct ndmlog *log, char *tag,

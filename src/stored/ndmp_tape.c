@@ -85,12 +85,13 @@ struct ndmp_session_handle {
 };
 
 /*
- * Internal structure to keep track of private data for logging.
+ * Internal structure to keep track of private data.
  */
-struct ndmp_log_cookie {
+struct ndmp_internal_state {
    uint32_t LogLevel;
    JCR *jcr;
 };
+typedef struct ndmp_internal_state NIS;
 
 /* Static globals */
 static bool quit = false;
@@ -101,18 +102,16 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Forward referenced functions */
 
-static inline int native_to_ndmp_loglevel(int debuglevel, void *cookie)
+static inline int native_to_ndmp_loglevel(int debuglevel, NIS *nis)
 {
    unsigned int level;
-   struct ndmp_log_cookie *log_cookie;
 
-   log_cookie = (struct ndmp_log_cookie *)cookie;
-   memset(log_cookie, 0, sizeof(struct ndmp_log_cookie));
+   memset(nis, 0, sizeof(NIS));
 
    /*
     * Lookup the initial default log_level from the default STORES.
     */
-   log_cookie->LogLevel = me->ndmploglevel;
+   nis->LogLevel = me->ndmploglevel;
 
    /*
     * NDMP loglevels run from 0 - 9 so we take a look at the
@@ -124,8 +123,8 @@ static inline int native_to_ndmp_loglevel(int debuglevel, void *cookie)
     * get debug messages.
     */
    level = debuglevel / 100;
-   if (level < log_cookie->LogLevel) {
-      level = log_cookie->LogLevel;
+   if (level < nis->LogLevel) {
+      level = nis->LogLevel;
    }
 
    /*
@@ -146,13 +145,18 @@ static inline int native_to_ndmp_loglevel(int debuglevel, void *cookie)
 extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
    unsigned int internal_level = level * 100;
-   struct ndmp_log_cookie *log_cookie;
+   NIS *nis;
+
+   /*
+    * We don't want any trailing newline in log messages.
+    */
+   strip_trailing_newline(msg);
 
    /*
     * Make sure if the logging system was setup properly.
     */
-   log_cookie = (struct ndmp_log_cookie *)log->cookie;
-   if (!log_cookie) {
+   nis = (NIS *)log->ctx;
+   if (!nis) {
       return;
    }
 
@@ -160,8 +164,8 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
     * If the log level of this message is under our logging treshold we
     * log it as part of the Job.
     */
-   if ((internal_level / 100) <= log_cookie->LogLevel) {
-      if (log_cookie->jcr) {
+   if ((internal_level / 100) <= nis->LogLevel) {
+      if (nis->jcr) {
          /*
           * Look at the tag field to see what is logged.
           */
@@ -183,22 +187,22 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
              */
             switch (*(tag + 3)) {
             case 'n':
-               Jmsg(log_cookie->jcr, M_INFO, 0, "%s\n", msg);
+               Jmsg(nis->jcr, M_INFO, 0, "%s\n", msg);
                break;
             case 'e':
-               Jmsg(log_cookie->jcr, M_ERROR, 0, "%s\n", msg);
+               Jmsg(nis->jcr, M_ERROR, 0, "%s\n", msg);
                break;
             case 'w':
-               Jmsg(log_cookie->jcr, M_WARNING, 0, "%s\n", msg);
+               Jmsg(nis->jcr, M_WARNING, 0, "%s\n", msg);
                break;
             case '?':
-               Jmsg(log_cookie->jcr, M_INFO, 0, "%s\n", msg);
+               Jmsg(nis->jcr, M_INFO, 0, "%s\n", msg);
                break;
             default:
                break;
             }
          } else {
-            Jmsg(log_cookie->jcr, M_INFO, 0, "%s\n", msg);
+            Jmsg(nis->jcr, M_INFO, 0, "%s\n", msg);
          }
       }
    }
@@ -231,13 +235,13 @@ extern "C" int bndmp_auth_clear(struct ndm_session *sess, char *name, char *pass
          /*
           * See if we need to adjust the logging level.
           */
-         if (sess->param->log.cookie) {
-            struct ndmp_log_cookie *log_cookie;
+         if (sess->param->log.ctx) {
+            NIS *nis;
 
-            log_cookie = (struct ndmp_log_cookie *)sess->param->log.cookie;
-            if (log_cookie->LogLevel != auth_config->LogLevel) {
+            nis = (NIS *)sess->param->log.ctx;
+            if (nis->LogLevel != auth_config->LogLevel) {
                if (auth_config->LogLevel >= 0 && auth_config->LogLevel <= 9) {
-                  log_cookie->LogLevel = auth_config->LogLevel;
+                  nis->LogLevel = auth_config->LogLevel;
                }
             }
          }
@@ -274,13 +278,13 @@ extern "C" int bndmp_auth_md5(struct ndm_session *sess, char *name, char digest[
       /*
        * See if we need to adjust the logging level.
        */
-      if (sess->param->log.cookie) {
-         struct ndmp_log_cookie *log_cookie;
+      if (sess->param->log.ctx) {
+         NIS *nis;
 
-         log_cookie = (struct ndmp_log_cookie *)sess->param->log.cookie;
-         if (log_cookie->LogLevel != auth_config->LogLevel) {
+         nis = (NIS *)sess->param->log.ctx;
+         if (nis->LogLevel != auth_config->LogLevel) {
             if (auth_config->LogLevel >= 0 && auth_config->LogLevel <= 9) {
-               log_cookie->LogLevel = auth_config->LogLevel;
+               nis->LogLevel = auth_config->LogLevel;
             }
          }
       }
@@ -569,11 +573,11 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
    /*
     * Keep track of the JCR for logging purposes.
     */
-   if (sess->param->log.cookie) {
-      struct ndmp_log_cookie *log_cookie;
+   if (sess->param->log.ctx) {
+      NIS *nis;
 
-      log_cookie = (struct ndmp_log_cookie *)sess->param->log.cookie;
-      log_cookie->jcr = jcr;
+      nis = (NIS *)sess->param->log.ctx;
+      nis->jcr = jcr;
    }
 
    /*
@@ -1090,6 +1094,7 @@ extern "C" void *handle_ndmp_client_request(void *arg)
    struct ndmconn *conn;
    struct ndm_session *sess;
    struct ndmp_session_handle *handle;
+   NIS *nis;
 
    handle = (struct ndmp_session_handle *)arg;
    if (!handle) {
@@ -1107,8 +1112,9 @@ extern "C" void *handle_ndmp_client_request(void *arg)
    sess->param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
    memset(sess->param, 0, sizeof(struct ndm_session_param));
    sess->param->log.deliver = ndmp_loghandler;
-   sess->param->log.cookie = malloc(sizeof(struct ndmp_log_cookie));
-   sess->param->log_level = native_to_ndmp_loglevel(debug_level, sess->param->log.cookie);
+   nis = (NIS *)malloc(sizeof(NIS));
+   sess->param->log.ctx = nis;
+   sess->param->log_level = native_to_ndmp_loglevel(debug_level, nis);
    sess->param->log_tag = bstrdup("SD-NDMP");
 
    /*
@@ -1180,7 +1186,7 @@ extern "C" void *handle_ndmp_client_request(void *arg)
    ndma_session_decommission(sess);
 
 bail_out:
-   free(sess->param->log.cookie);
+   free(sess->param->log.ctx);
    free(sess->param->log_tag);
    free(sess->param);
    free(sess);

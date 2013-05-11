@@ -379,14 +379,16 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    ATTR_DBR *ar = NULL;
    uint32_t reclen;
 
-   /* Start transaction allocates jcr->attr and jcr->ar if needed */
+   /*
+    * Start transaction allocates jcr->attr and jcr->ar if needed
+    */
    db_start_transaction(jcr, jcr->db);     /* start transaction if not already open */
    ar = jcr->ar;
 
    /*
     * Start by scanning directly in the message buffer to get Stream
-    *  there may be a cached attr so we cannot yet write into
-    *  jcr->attr or jcr->ar
+    * there may be a cached attr so we cannot yet write into
+    * jcr->attr or jcr->ar
     */
    p = msg;
    skip_nonspaces(&p);                /* UpdCat */
@@ -395,7 +397,10 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    skip_spaces(&p);
    skip_nonspaces(&p);                /* "FileAttributes" */
    p += 1;
-   /* The following "SD header" fields are serialized */
+
+   /*
+    * The following "SD header" fields are serialized
+    */
    unser_begin(p, 0);
    unser_uint32(VolSessionId);        /* VolSessionId */
    unser_uint32(VolSessionTime);      /* VolSessionTime */
@@ -434,11 +439,16 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
 
    Dmsg1(400, "UpdCat msg=%s\n", msg);
    Dmsg5(400, "UpdCat VolSessId=%d VolSessT=%d FI=%d Strm=%d reclen=%d\n",
-      VolSessionId, VolSessionTime, FileIndex, Stream, reclen);
+         VolSessionId, VolSessionTime, FileIndex, Stream, reclen);
 
    jcr->SDJobBytes += reclen; /* update number of bytes transferred for quotas */
 
-   if (Stream == STREAM_UNIX_ATTRIBUTES || Stream == STREAM_UNIX_ATTRIBUTES_EX) {
+   /*
+    * Depending on the stream we are handling dispatch.
+    */
+   switch (Stream) {
+   case STREAM_UNIX_ATTRIBUTES:
+   case STREAM_UNIX_ATTRIBUTES_EX:
       if (jcr->cached_attribute) {
          Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
          if (!db_create_attributes_record(jcr, jcr->db, ar)) {
@@ -446,17 +456,20 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
          }
          jcr->cached_attribute = false;
       }
-      /* Any cached attr is flushed so we can reuse jcr->attr and jcr->ar */
+
+      /*
+       * Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
+       */
       jcr->attr = check_pool_memory_size(jcr->attr, msglen);
       memcpy(jcr->attr, msg, msglen);
-      p = jcr->attr - msg + p;    /* point p into jcr->attr */
-      skip_nonspaces(&p);         /* skip FileIndex */
+      p = jcr->attr - msg + p;         /* point p into jcr->attr */
+      skip_nonspaces(&p);              /* skip FileIndex */
       skip_spaces(&p);
       ar->FileType = str_to_int32(p);
-      skip_nonspaces(&p);         /* skip FileType */
+      skip_nonspaces(&p);              /* skip FileType */
       skip_spaces(&p);
       fname = p;
-      len = strlen(fname);        /* length before attributes */
+      len = strlen(fname);             /* length before attributes */
       attr = &fname[len+1];
       ar->DeltaSeq = 0;
       if (ar->FileType == FT_REG) {
@@ -473,6 +486,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
 
       Dmsg2(400, "dird<stored: stream=%d %s\n", Stream, fname);
       Dmsg1(400, "dird<stored: attr=%s\n", attr);
+
       ar->attr = attr;
       ar->fname = fname;
       if (ar->FileType == FT_DELETED) {
@@ -493,8 +507,8 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
 
       Dmsg2(400, "dird<filed: stream=%d %s\n", Stream, fname);
       Dmsg1(400, "dird<filed: attr=%s\n", attr);
-
-   } else if (Stream == STREAM_RESTORE_OBJECT) {
+      break;
+   case STREAM_RESTORE_OBJECT: {
       ROBJECT_DBR ro;
 
       memset(&ro, 0, sizeof(ro));
@@ -532,85 +546,99 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
       len = strlen(ro.object_name);
       ro.object = &ro.object_name[len+1];      /* point to object */
       ro.object[ro.object_len] = 0;            /* add zero for those who attempt printing */
+
       Dmsg7(100, "oname=%s stream=%d FT=%d FI=%d JobId=%d, obj_len=%d\nobj=\"%s\"\n",
-         ro.object_name, ro.Stream, ro.FileType, ro.FileIndex, ro.JobId,
-         ro.object_len, ro.object);
-      /* Send it */
+            ro.object_name, ro.Stream, ro.FileType, ro.FileIndex, ro.JobId,
+            ro.object_len, ro.object);
+
+      /*
+       * Store it.
+       */
       if (!db_create_restore_object_record(jcr, jcr->db, &ro)) {
          Jmsg1(jcr, M_FATAL, 0, _("Restore object create error. %s"), db_strerror(jcr->db));
       }
-
-   } else if (crypto_digest_stream_type(Stream) != CRYPTO_DIGEST_NONE) {
-      fname = p;
-      if (ar->FileIndex != FileIndex) {
-         Jmsg3(jcr, M_WARNING, 0, _("%s not same File=%d as attributes=%d\n"),
-            stream_to_ascii(Stream), FileIndex, ar->FileIndex);
-      } else {
-         /* Update digest in catalog */
-         char digestbuf[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
-         int len = 0;
-         int type = CRYPTO_DIGEST_NONE;
-
-         switch(Stream) {
-         case STREAM_MD5_DIGEST:
-            len = CRYPTO_DIGEST_MD5_SIZE;
-            type = CRYPTO_DIGEST_MD5;
-            break;
-         case STREAM_SHA1_DIGEST:
-            len = CRYPTO_DIGEST_SHA1_SIZE;
-            type = CRYPTO_DIGEST_SHA1;
-            break;
-         case STREAM_SHA256_DIGEST:
-            len = CRYPTO_DIGEST_SHA256_SIZE;
-            type = CRYPTO_DIGEST_SHA256;
-            break;
-         case STREAM_SHA512_DIGEST:
-            len = CRYPTO_DIGEST_SHA512_SIZE;
-            type = CRYPTO_DIGEST_SHA512;
-            break;
-         default:
-            /* Never reached ... */
-            Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. Unsupported digest stream type: %d"),
-                 Stream);
-         }
-
-         bin_to_base64(digestbuf, sizeof(digestbuf), fname, len, true);
-         Dmsg3(400, "DigestLen=%d Digest=%s type=%d\n", strlen(digestbuf),
-               digestbuf, Stream);
-         if (jcr->cached_attribute) {
-            ar->Digest = digestbuf;
-            ar->DigestType = type;
-            Dmsg2(400, "Cached attr with digest. Stream=%d fname=%s\n",
-                  ar->Stream, ar->fname);
-
-            /* Update BaseFile table */
-            if (!db_create_attributes_record(jcr, jcr->db, ar)) {
-               Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s"),
-                        db_strerror(jcr->db));
-            }
-            jcr->cached_attribute = false;
+      break;
+   }
+   default:
+      if (crypto_digest_stream_type(Stream) != CRYPTO_DIGEST_NONE) {
+         fname = p;
+         if (ar->FileIndex != FileIndex) {
+            Jmsg3(jcr, M_WARNING, 0, _("%s not same File=%d as attributes=%d\n"),
+               stream_to_ascii(Stream), FileIndex, ar->FileIndex);
          } else {
-            if (!db_add_digest_to_file_record(jcr, jcr->db, ar->FileId, digestbuf, type)) {
-               Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. %s"),
-                  db_strerror(jcr->db));
+            /*
+             * Update digest in catalog
+             */
+            char digestbuf[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
+            int len = 0;
+            int type = CRYPTO_DIGEST_NONE;
+
+            switch(Stream) {
+            case STREAM_MD5_DIGEST:
+               len = CRYPTO_DIGEST_MD5_SIZE;
+               type = CRYPTO_DIGEST_MD5;
+               break;
+            case STREAM_SHA1_DIGEST:
+               len = CRYPTO_DIGEST_SHA1_SIZE;
+               type = CRYPTO_DIGEST_SHA1;
+               break;
+            case STREAM_SHA256_DIGEST:
+               len = CRYPTO_DIGEST_SHA256_SIZE;
+               type = CRYPTO_DIGEST_SHA256;
+               break;
+            case STREAM_SHA512_DIGEST:
+               len = CRYPTO_DIGEST_SHA512_SIZE;
+               type = CRYPTO_DIGEST_SHA512;
+               break;
+            default:
+               /*
+                * Never reached ...
+                */
+               Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. Unsupported digest stream type: %d"), Stream);
+            }
+
+            bin_to_base64(digestbuf, sizeof(digestbuf), fname, len, true);
+
+            Dmsg3(400, "DigestLen=%d Digest=%s type=%d\n", strlen(digestbuf),
+                  digestbuf, Stream);
+
+            if (jcr->cached_attribute) {
+               ar->Digest = digestbuf;
+               ar->DigestType = type;
+
+               Dmsg2(400, "Cached attr with digest. Stream=%d fname=%s\n", ar->Stream, ar->fname);
+
+               /*
+                * Update BaseFile table
+                */
+               if (!db_create_attributes_record(jcr, jcr->db, ar)) {
+                  Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s"), db_strerror(jcr->db));
+               }
+               jcr->cached_attribute = false;
+            } else {
+               if (!db_add_digest_to_file_record(jcr, jcr->db, ar->FileId, digestbuf, type)) {
+                  Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. %s"), db_strerror(jcr->db));
+               }
             }
          }
       }
+      break;
    }
 }
 
 /*
- * Update File Attributes in the catalog with data
- *  sent by the Storage daemon.
+ * Update File Attributes in the catalog with data sent by the Storage daemon.
  */
 void catalog_update(JCR *jcr, BSOCK *bs)
 {
    if (!jcr->res.pool->catalog_files) {
       return;                         /* user disabled cataloging */
    }
+
    if (jcr->is_job_canceled()) {
       goto bail_out;
    }
+
    if (!jcr->db) {
       POOLMEM *omsg = get_memory(bs->msglen+1);
       pm_strcpy(omsg, bs->msg);
@@ -619,6 +647,7 @@ void catalog_update(JCR *jcr, BSOCK *bs)
       free_memory(omsg);
       goto bail_out;
    }
+
    update_attribute(jcr, bs->msg, bs->msglen);
 
 bail_out:
@@ -658,8 +687,7 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
    posix_fadvise(fileno(spool_fd), 0, 0, POSIX_FADV_WILLNEED);
 #endif
 
-   while (fread((char *)&pktsiz, 1, sizeof(int32_t), spool_fd) ==
-          sizeof(int32_t)) {
+   while (fread((char *)&pktsiz, 1, sizeof(int32_t), spool_fd) == sizeof(int32_t)) {
       size += sizeof(int32_t);
       msglen = ntohl(pktsiz);
       if (msglen > 0) {
@@ -676,6 +704,7 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
          }
          size += nbytes;
       }
+
       if (!jcr->is_job_canceled()) {
          update_attribute(jcr, msg, msglen);
          if (jcr->is_job_canceled()) {
@@ -683,12 +712,14 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
          }
       }
    }
+
    if (ferror(spool_fd)) {
       berrno be;
       Qmsg1(jcr, M_FATAL, 0, _("fread attr spool error. ERR=%s\n"),
             be.bstrerror());
       goto bail_out;
    }
+
    retval = true;
 
 bail_out:
