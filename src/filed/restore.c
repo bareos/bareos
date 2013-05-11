@@ -135,20 +135,19 @@ static inline bool restore_finderinfo(JCR *jcr, POOLMEM *buf, int32_t buflen)
 }
 
 /*
- * Cleanup of delayed restore stack with streams for later
- * processing.
+ * Cleanup of delayed restore stack with streams for later processing.
  */
-static inline void drop_delayed_restore_streams(r_ctx &rctx, bool reuse)
+static inline void drop_delayed_data_streams(r_ctx &rctx, bool reuse)
 {
-   RESTORE_DATA_STREAM *rds;
+   DELAYED_DATA_STREAM *dds;
 
    if (!rctx.delayed_streams ||
        rctx.delayed_streams->empty()) {
       return;
    }
 
-   foreach_alist(rds, rctx.delayed_streams) {
-      free(rds->content);
+   foreach_alist(dds, rctx.delayed_streams) {
+      free(dds->content);
    }
 
    rctx.delayed_streams->destroy();
@@ -158,24 +157,23 @@ static inline void drop_delayed_restore_streams(r_ctx &rctx, bool reuse)
 }
 
 /*
- * Push a data stream onto the delayed restore stack for
- * later processing.
+ * Push a data stream onto the delayed restore stack for later processing.
  */
-static inline void push_delayed_restore_stream(r_ctx &rctx, BSOCK *sd)
+static inline void push_delayed_data_stream(r_ctx &rctx, BSOCK *sd)
 {
-   RESTORE_DATA_STREAM *rds;
+   DELAYED_DATA_STREAM *dds;
 
    if (!rctx.delayed_streams) {
       rctx.delayed_streams = New(alist(10, owned_by_alist));
    }
 
-   rds = (RESTORE_DATA_STREAM *)malloc(sizeof(RESTORE_DATA_STREAM));
-   rds->stream = rctx.stream;
-   rds->content = (char *)malloc(sd->msglen);
-   memcpy(rds->content, sd->msg, sd->msglen);
-   rds->content_length = sd->msglen;
+   dds = (DELAYED_DATA_STREAM *)malloc(sizeof(DELAYED_DATA_STREAM));
+   dds->stream = rctx.stream;
+   dds->content = (char *)malloc(sd->msglen);
+   memcpy(dds->content, sd->msg, sd->msglen);
+   dds->content_length = sd->msglen;
 
-   rctx.delayed_streams->append(rds);
+   rctx.delayed_streams->append(dds);
 }
 
 /*
@@ -246,7 +244,7 @@ static inline bool do_restore_xattr(JCR *jcr,
  */
 static inline bool pop_delayed_data_streams(JCR *jcr, r_ctx &rctx)
 {
-   RESTORE_DATA_STREAM *rds;
+   DELAYED_DATA_STREAM *dds;
 
    /*
     * See if there is anything todo.
@@ -267,8 +265,8 @@ static inline bool pop_delayed_data_streams(JCR *jcr, r_ctx &rctx)
     * - *_ACL_*
     * - *_XATTR_*
     */
-   foreach_alist(rds, rctx.delayed_streams) {
-      switch (rds->stream) {
+   foreach_alist(dds, rctx.delayed_streams) {
+      switch (dds->stream) {
       case STREAM_UNIX_ACCESS_ACL:
       case STREAM_UNIX_DEFAULT_ACL:
       case STREAM_ACL_AIX_TEXT:
@@ -291,10 +289,10 @@ static inline bool pop_delayed_data_streams(JCR *jcr, r_ctx &rctx)
       case STREAM_ACL_FREEBSD_NFS4_ACL:
       case STREAM_ACL_HURD_DEFAULT_ACL:
       case STREAM_ACL_HURD_ACCESS_ACL:
-         if (!do_restore_acl(jcr, rds->stream, rds->content, rds->content_length)) {
+         if (!do_restore_acl(jcr, dds->stream, dds->content, dds->content_length)) {
             goto bail_out;
          }
-         free(rds->content);
+         free(dds->content);
          break;
       case STREAM_XATTR_HURD:
       case STREAM_XATTR_IRIX:
@@ -306,14 +304,14 @@ static inline bool pop_delayed_data_streams(JCR *jcr, r_ctx &rctx)
       case STREAM_XATTR_FREEBSD:
       case STREAM_XATTR_LINUX:
       case STREAM_XATTR_NETBSD:
-         if (!do_restore_xattr(jcr, rds->stream, rds->content, rds->content_length)) {
+         if (!do_restore_xattr(jcr, dds->stream, dds->content, dds->content_length)) {
             goto bail_out;
          }
-         free(rds->content);
+         free(dds->content);
          break;
       default:
          Jmsg(jcr, M_WARNING, 0, _("Unknown stream=%d ignored. This shouldn't happen!\n"),
-              rds->stream);
+              dds->stream);
          break;
       }
    }
@@ -335,7 +333,7 @@ bail_out:
    /*
     * Destroy the content of the stack and (re)initialize it for a new use.
     */
-   drop_delayed_restore_streams(rctx, true);
+   drop_delayed_data_streams(rctx, true);
 
    return false;
 }
@@ -896,7 +894,7 @@ void do_restore(JCR *jcr)
              * the restore of acls till a later stage.
              */
             if (jcr->last_type != FT_DIREND) {
-               push_delayed_restore_stream(rctx, sd);
+               push_delayed_data_stream(rctx, sd);
             } else {
                if (!do_restore_acl(jcr, rctx.stream, sd->msg, sd->msglen)) {
                   goto bail_out;
@@ -934,7 +932,7 @@ void do_restore(JCR *jcr)
              * the restore of xattr till a later stage.
              */
             if (jcr->last_type != FT_DIREND) {
-               push_delayed_restore_stream(rctx, sd);
+               push_delayed_data_stream(rctx, sd);
             } else {
                if (!do_restore_xattr(jcr, rctx.stream, sd->msg, sd->msglen)) {
                   goto bail_out;
@@ -1127,7 +1125,7 @@ ok_out:
     * Free the delayed stream stack list.
     */
    if (rctx.delayed_streams) {
-      drop_delayed_restore_streams(rctx, false);
+      drop_delayed_data_streams(rctx, false);
       delete rctx.delayed_streams;
    }
 
