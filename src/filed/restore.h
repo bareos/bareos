@@ -22,7 +22,7 @@
 #ifndef __RESTORE_H
 #define __RESTORE_H
 
-struct RESTORE_DATA_STREAM {
+struct DELAYED_DATA_STREAM {
    int32_t stream;                     /* stream less new bits */
    char *content;                      /* stream data */
    uint32_t content_length;            /* stream length */
