@@ -158,35 +158,20 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
       free(jcr->acl_data);
       jcr->acl_data = NULL;
    }
+
    if (have_xattr && jcr->xattr_data) {
       free_pool_memory(jcr->xattr_data->u.build->content);
       free(jcr->xattr_data->u.build);
       free(jcr->xattr_data);
       jcr->xattr_data = NULL;
    }
+
    if (jcr->big_buf) {
       free(jcr->big_buf);
       jcr->big_buf = NULL;
    }
-   if (jcr->compress_buf) {
-      free_pool_memory(jcr->compress_buf);
-      jcr->compress_buf = NULL;
-   }
-#ifdef HAVE_LIBZ
-   if (jcr->pZLIB_compress_workset) {
-      /* Free the zlib stream */
-      deflateEnd((z_stream *)jcr->pZLIB_compress_workset);
-      free(jcr->pZLIB_compress_workset);
-      jcr->pZLIB_compress_workset = NULL;
-   }
-#endif
-#ifdef HAVE_LZO
-   if (jcr->LZO_compress_workset) {
-      free(jcr->LZO_compress_workset);
-      jcr->LZO_compress_workset = NULL;
-   }
-#endif
 
+   cleanup_compression(jcr);
    crypto_session_end(jcr);
 
    Dmsg1(100, "end blast_data ok=%d\n", ok);
@@ -938,8 +923,34 @@ static inline bool send_plain_data(b_ctx &bctx)
       /*
        * Compress the data.
        */
-      if ((bctx.ff_pkt->flags & FO_COMPRESS) && !compress_data(bctx)) {
-         goto bail_out;
+      if ((bctx.ff_pkt->flags & FO_COMPRESS)) {
+         if (!compress_data(bctx.jcr, bctx.ff_pkt->Compress_algo, bctx.rbuf,
+                            bctx.jcr->store_bsock->msglen, bctx.cbuf,
+                            bctx.max_compress_len, &bctx.compress_len)) {
+            goto bail_out;
+         }
+
+         /*
+          * See if we need to generate a compression header.
+          */
+         if (bctx.chead) {
+            ser_declare;
+
+            /*
+             * Complete header
+             */
+            ser_begin(bctx.chead, sizeof(comp_stream_header));
+            ser_uint32(bctx.ch.magic);
+            ser_uint32(bctx.compress_len);
+            ser_uint16(bctx.ch.level);
+            ser_uint16(bctx.ch.version);
+            ser_end(bctx.chead, sizeof(comp_stream_header));
+
+            bctx.compress_len += sizeof(comp_stream_header); /* add size of header */
+         }
+
+         bctx.jcr->store_bsock->msglen = bctx.compress_len; /* set compressed length */
+         bctx.cipher_input_len = bctx.compress_len;
       }
 
       /*

@@ -1108,12 +1108,6 @@ ok_out:
       rctx.fork_cipher_ctx.buf = NULL;
    }
 
-   if (jcr->compress_buf) {
-      free_pool_memory(jcr->compress_buf);
-      jcr->compress_buf = NULL;
-      jcr->compress_buf_size = 0;
-   }
-
    if (have_acl && jcr->acl_data) {
       free(jcr->acl_data->u.parse);
       free(jcr->acl_data);
@@ -1133,6 +1127,8 @@ ok_out:
       drop_delayed_data_streams(rctx, false);
       delete rctx.delayed_streams;
    }
+
+   cleanup_compression(jcr);
 
    bclose(&rctx.forkbfd);
    bclose(&rctx.bfd);
@@ -1224,7 +1220,7 @@ int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
    }
 
    if (flags & FO_COMPRESS) {
-      if (!decompress_data(jcr, stream, &wbuf, &wsize)) {
+      if (!decompress_data(jcr, jcr->last_fname, stream, &wbuf, &wsize)) {
          goto bail_out;
       }
    }

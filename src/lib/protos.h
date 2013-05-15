@@ -136,6 +136,18 @@ int Zinflate(char *in, int in_len, char *out, int &out_len);
 void stack_trace();
 int safer_unlink(const char *pathname, const char *regex);
 
+/* compression.c */
+bool setup_compression_buffers(JCR *jcr, bool compatible,
+                               uint32_t compression_algorithm,
+                               uint32_t *compress_buf_size);
+bool setup_decompression_buffers(JCR *jcr);
+bool compress_data(JCR *jcr, uint32_t compression_algorithm, char *rbuf,
+                   uint32_t rsize, unsigned char *cbuf,
+                   uint32_t max_compress_len, uint32_t *compress_len);
+bool decompress_data(JCR *jcr, const char *last_fname, int32_t stream,
+                     char **data, uint32_t *length);
+void cleanup_compression(JCR *jcr);
+
 /* cram-md5.c */
 bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, bool *compatible);
 bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, bool compatible);

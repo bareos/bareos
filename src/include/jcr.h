@@ -232,6 +232,22 @@ struct RESOURCES {
 };
 #endif
 
+struct CMPRS_CTX {
+   POOLMEM *buffer;                       /* Compression buffer */
+   int32_t buffer_size;                   /* Length of compression buffer */
+   struct {
+#ifdef HAVE_LIBZ
+      void *pZLIB;                        /* ZLIB compression session data */
+#endif
+#ifdef HAVE_LZO
+      void *pLZO;                         /* LZO compression session data */
+#endif
+#ifdef HAVE_FASTLZ
+      void *pZFAST;                       /* FASTLZ compression session data */
+#endif
+   } workset;
+};
+
 typedef void (JCR_free_HANDLER)(JCR *jcr);
 
 /*
@@ -353,6 +369,8 @@ public:
                                            * normal and fatal errors.
                                            */
 
+   int32_t buf_size;                      /* Length of buffer */
+   CMPRS_CTX compress;                    /* Compression ctx */
    POOLMEM *attr;                         /* Attribute string from SD */
    B_DB *db;                              /* database pointer */
    B_DB *db_batch;                        /* database pointer for batch and accurate */
@@ -459,19 +477,7 @@ public:
    int listing;                           /* Job listing in estimate */
    long Ticket;                           /* Ticket */
    char *big_buf;                         /* I/O buffer */
-   POOLMEM *compress_buf;                 /* Compression buffer */
-   int32_t compress_buf_size;             /* Length of compression buffer */
-#ifdef HAVE_LIBZ
-   void *pZLIB_compress_workset;          /* ZLIB compression session data */
-#endif
-#ifdef HAVE_LZO
-   void *LZO_compress_workset;            /* LZO compression session data */
-#endif
-#ifdef HAVE_FASTLZ
-   void *pZfast_compress_workset;         /* FASTLZ compression session data */
-#endif
    int32_t replace;                       /* Replace options */
-   int32_t buf_size;                      /* Length of buffer */
    FF_PKT *ff;                            /* Find Files packet */
    char PrevJob[MAX_NAME_LENGTH];         /* Previous job name assiciated with since time */
    uint32_t ExpectedFiles;                /* Expected restore files */
