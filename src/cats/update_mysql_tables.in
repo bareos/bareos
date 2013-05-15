@@ -30,7 +30,7 @@ CREATE TABLE NDMPLevelMap (
    ClientId INTEGER DEFAULT 0 REFERENCES Client,
    FileSetId INTEGER UNSIGNED DEFAULT 0 REFERENCES FileSet,
    FileSystem TINYBLOB NOT NULL,
-   PathId integer NOT NULL,
+   DumpLevel INTEGER NOT NULL,
    CONSTRAINT NDMPLevelMap_pkey PRIMARY KEY (ClientId, FilesetId, FileSystem(256))
 );
 

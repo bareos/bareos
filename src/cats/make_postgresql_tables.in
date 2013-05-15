@@ -406,7 +406,7 @@ CREATE TABLE NDMPLevelMap (
     ClientId          INTEGER     NOT NULL,
     FilesetId         INTEGER     DEFAULT 0,
     FileSystem        TEXT        NOT NULL,
-    PathId            INTEGER     NOT NULL,
+    DumpLevel         INTEGER     NOT NULL,
     CONSTRAINT NDMPLevelMap_pkey PRIMARY KEY (ClientId, FilesetId, FileSystem)
 );
 
