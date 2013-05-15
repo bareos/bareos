@@ -30,7 +30,7 @@
 #include "filed.h"
 #include "ch.h"
 
-#ifdef HAVE_DARWIN_OS
+#if defined(HAVE_DARWIN_OS)
 #include <sys/attr.h>
 const bool have_darwin_os = true;
 #else
@@ -49,7 +49,7 @@ const bool have_acl = true;
 const bool have_acl = false;
 #endif
 
-#ifdef HAVE_SHA2
+#if defined(HAVE_SHA2)
 const bool have_sha2 = true;
 #else
 const bool have_sha2 = false;
@@ -75,10 +75,15 @@ const bool have_libz = true;
 #else
 const bool have_libz = false;
 #endif
-#ifdef HAVE_LZO
+#if defined(HAVE_LZO)
 const bool have_lzo = true;
 #else
 const bool have_lzo = false;
+#endif
+#if defined(HAVE_FASTLZ)
+const bool have_fastlz = true;
+#else
+const bool have_fastlz = false;
 #endif
 
 static void free_signature(r_ctx &rctx);
@@ -387,7 +392,7 @@ void do_restore(JCR *jcr)
    }
    jcr->buf_size = sd->msglen;
 
-   if (have_libz || have_lzo) {
+   if (have_libz || have_lzo || have_fastlz) {
       if (!adjust_decompression_buffers(jcr)) {
          goto bail_out;
       }
