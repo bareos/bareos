@@ -19,9 +19,13 @@ thisdir = src/lib
 
 CPPFLAGS += @ZLIB_INC@
 
+COMPRESS_CPPFLAGS += @ZLIB_INC@ @LZO_INC@ @FASTLZ_INC@
+
 DEBUG = @DEBUG@
 CAP_LIBS = @CAP_LIBS@
 ZLIB_LIBS = @ZLIB_LIBS@
+LZO_LIBS = @LZO_LIBS@
+FASTLZ_LIBS = @FASTLZ_LIBS@
 
 first_rule: all
 dummy:
@@ -48,14 +52,15 @@ INCLUDE_FILES = ../include/baconfig.h ../include/bareos.h \
 LIBBAREOS_SRCS = address_conf.c alist.c attr.c attribs.c base64.c \
 	         berrno.c bget_msg.c binflate.c bnet_server.c bnet.c \
 	         bpipe.c breg.c bregex.c bsnprintf.c bsock.c bsys.c \
-	         btime.c btimers.c cram-md5.c crypto.c crypto_cache.c \
-	         crypto_gnutls.c crypto_none.c crypto_nss.c crypto_openssl.c \
-		 crypto_wrap.c daemon.c devlock.c dlist.c edit.c fnmatch.c \
-		 guid_to_name.c hmac.c htable.c jcr.c lockmgr.c md5.c \
-		 mem_pool.c message.c mntent_cache.c passphrase.c plugins.c \
-		 poll.c priv.c queue.c rblist.c runscript.c rwlock.c scan.c \
-		 scsi_crypto.c scsi_lli.c sellist.c serial.c sha1.c signal.c \
-		 smartall.c tls_gnutls.c tls_none.c tls_nss.c tls_openssl.c \
+	         btime.c btimers.c compression.c cram-md5.c crypto.c \
+		 crypto_cache.c crypto_gnutls.c crypto_none.c crypto_nss.c \
+		 crypto_openssl.c crypto_wrap.c daemon.c devlock.c dlist.c \
+		 edit.c fnmatch.c guid_to_name.c hmac.c htable.c jcr.c \
+		 lockmgr.c md5.c mem_pool.c message.c mntent_cache.c \
+		 passphrase.c plugins.c poll.c priv.c queue.c rblist.c \
+		 runscript.c rwlock.c scan.c scsi_crypto.c scsi_lli.c \
+		 sellist.c serial.c sha1.c signal.c smartall.c \
+		 tls_gnutls.c tls_none.c tls_nss.c tls_openssl.c \
 		 tree.c util.c var.c watchdog.c workq.c
 
 LIBBAREOS_OBJS = $(LIBBAREOS_SRCS:.c=.o)
@@ -135,6 +140,14 @@ passphrase.lo: passphrase.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(OPENSSL_INCLUDES) $(GNUTLS_INCLUDES) $(CXXFLAGS) $<
 
+compression.o: compression.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(COMPRESS_CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+compression.lo: compression.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(COMPRESS_CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
 libbareos.a: $(LIBBAREOS_OBJS)
 	@echo "Making $@ ..."
 	$(AR) rc  $@ $(LIBBAREOS_OBJS)
@@ -143,7 +156,7 @@ libbareos.a: $(LIBBAREOS_OBJS)
 libbareos.la: Makefile $(LIBBAREOS_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBAREOS_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOS_LT_RELEASE) \
-	                $(WRAPLIBS) $(CAP_LIBS) $(ZLIB_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS) $(LIBS) $(DLLIBS)
+	                $(WRAPLIBS) $(CAP_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(FASTLZ_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS) $(LIBS) $(DLLIBS)
 
 libbareoscfg.a: $(LIBBAREOSCFG_OBJS)
 	@echo "Making $@ ..."

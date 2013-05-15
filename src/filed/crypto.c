@@ -318,7 +318,7 @@ again:
    }
 
    if (flags & FO_COMPRESS) {
-      if (!decompress_data(jcr, stream, &wbuf, &wsize)) {
+      if (!decompress_data(jcr, jcr->last_fname, stream, &wbuf, &wsize)) {
          return false;
       }
    }

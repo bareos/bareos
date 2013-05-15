@@ -246,12 +246,9 @@ bail_out:
    jcr->setJobStatus(JS_ErrorTerminated);
 
 ok_out:
-   if (jcr->compress_buf) {
-      free(jcr->compress_buf);
-      jcr->compress_buf = NULL;
-   }
+   cleanup_compression(jcr);
+
    free_pool_memory(fname);
    free_pool_memory(lname);
-   Dmsg2(050, "End Verify-Vol. Files=%d Bytes=%" lld "\n", jcr->JobFiles,
-      jcr->JobBytes);
+   Dmsg2(050, "End Verify-Vol. Files=%d Bytes=%" lld "\n", jcr->JobFiles, jcr->JobBytes);
 }
