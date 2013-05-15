@@ -36,6 +36,7 @@ static void list_running_jobs(UAContext *ua);
 static void list_terminated_jobs(UAContext *ua);
 static void do_director_status(UAContext *ua);
 static void do_scheduler_status(UAContext *ua);
+static bool do_subscription_status(UAContext *ua);
 static void do_all_status(UAContext *ua);
 static void status_slots(UAContext *ua, STORERES *store);
 static void status_content(UAContext *ua, STORERES *store);
@@ -174,6 +175,12 @@ int status_cmd(UAContext *ua, const char *cmd)
       } else if (bstrncasecmp(ua->argk[i], NT_("sched"), 5)) {
          do_scheduler_status(ua);
          return 1;
+      } else if (bstrncasecmp(ua->argk[i], NT_("sub"), 3)) {
+         if (do_subscription_status(ua)) {
+            return 1;
+         } else {
+            return 0;
+         }
       } else {
          store = get_storage_resource(ua, false/*no default*/);
          if (store) {
@@ -525,6 +532,45 @@ static bool show_scheduled_preview(UAContext *ua, SCHEDRES *sched,
    return true;
 }
 
+/*
+ * Check the number of clients in the DB against the configured number of subscriptions
+ *
+ * Return true if (number of clients < number of subscriptions), else
+ * return false
+ */
+static bool do_subscription_status(UAContext *ua)
+{
+   int available;
+   bool retval = false;
+
+   /*
+    * See if we need to check.
+    */
+   if (me->subscriptions == 0) {
+      ua->send_msg(_("No subscriptions configured in director.\n"));
+      retval = true;
+      goto bail_out;
+   }
+
+   if (me->subscriptions_used <= 0) {
+      ua->error_msg(_("No clients defined.\n"));
+      goto bail_out;
+   } else {
+      available = me->subscriptions - me->subscriptions_used;
+      if (available < 0) {
+         ua->send_msg(_("Warning! No available subscriptions: %d (%d/%d) (used/total)\n"),
+                      available, me->subscriptions_used, me->subscriptions);
+      } else {
+         ua->send_msg(_("Ok: available subscriptions: %d (%d/%d) (used/total)\n"),
+                      available, me->subscriptions_used, me->subscriptions);
+         retval = true;
+      }
+   }
+
+bail_out:
+   return retval;
+}
+
 static void do_scheduler_status(UAContext *ua)
 {
    int i;
@@ -634,7 +680,7 @@ static void do_scheduler_status(UAContext *ua)
    /*
     * Build an overview.
     */
-   if ( days > 0 ) {                            /* future */
+   if (days > 0) {                            /* future */
       start = now;
       stop = now + (days * seconds_per_day);
    } else {                                     /* past */
@@ -856,7 +902,7 @@ static void list_scheduled_jobs(UAContext *ua)
       if (!acl_access_ok(ua, Job_ACL, job->name()) || !job->enabled) {
          continue;
       }
-      for (run=NULL; (run = find_next_run(run, job, runtime, days)); ) {
+      for (run = NULL; (run = find_next_run(run, job, runtime, days)); ) {
          USTORERES store;
          level = job->JobLevel;
          if (run->level) {

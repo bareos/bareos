@@ -121,6 +121,7 @@ static RES_ITEM dir_items[] = {
    { "piddirectory", store_dir, ITEM(res_dir.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "plugindirectory", store_dir, ITEM(res_dir.plugin_directory), 0, 0, NULL },
    { "scriptsdirectory", store_dir, ITEM(res_dir.scripts_directory), 0, 0, NULL },
+   { "subscriptions", store_pint32, ITEM(res_dir.subscriptions), 0, ITEM_DEFAULT, "0" },
    { "subsysdirectory", store_dir, ITEM(res_dir.subsys_directory), 0, 0, NULL },
    { "maximumconcurrentjobs", store_pint32, ITEM(res_dir.MaxConcurrentJobs), 0, ITEM_DEFAULT, "1" },
    { "maximumconsoleconnections", store_pint32, ITEM(res_dir.MaxConsoleConnect), 0, ITEM_DEFAULT, "20" },
@@ -701,10 +702,14 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    }
    switch (type) {
    case R_DIRECTOR:
-      sendit(sock, _("Director: name=%s MaxJobs=%d FDtimeout=%s SDtimeout=%s\n"),
-             reshdr->name, res->res_dir.MaxConcurrentJobs,
+      sendit(sock, _("Director: name=%s MaxJobs=%d FDtimeout=%s SDtimeout=%s \n"
+                     "   subscriptions=%d, subscriptions_used=%d\n"),
+             reshdr->name,
+             res->res_dir.MaxConcurrentJobs,
              edit_uint64(res->res_dir.FDConnectTimeout, ed1),
-             edit_uint64(res->res_dir.SDConnectTimeout, ed2));
+             edit_uint64(res->res_dir.SDConnectTimeout, ed2),
+             res->res_dir.subscriptions,
+             res->res_dir.subscriptions_used);
       if (res->res_dir.query_file) {
          sendit(sock, _("   query_file=%s\n"), res->res_dir.query_file);
       }
@@ -712,6 +717,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
          sendit(sock, _("  --> "));
          dump_resource(-R_MSGS, (RES *)res->res_dir.messages, sendit, sock);
       }
+
       break;
    case R_CONSOLE:
       sendit(sock, _("Console: name=%s SSL=%d\n"),

@@ -473,6 +473,15 @@ static void *job_thread(void *arg)
       break;
    }
 
+   /*
+    * Check for subscriptions and issue a warning when exceeded.
+    */
+   if (me->subscriptions &&
+       me->subscriptions < me->subscriptions_used) {
+      Jmsg(jcr, M_WARNING, 0, _("Subscriptions exceeded: (used/total) (%d/%d)\n"),
+           me->subscriptions_used, me->subscriptions);
+   }
+
    run_scripts(jcr, jcr->res.job->RunScripts, "AfterJob");
 
    /*

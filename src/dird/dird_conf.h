@@ -128,6 +128,8 @@ public:
    bool optimize_for_speed;           /* Optimize daemon for speed which may need more memory */
    bool ndmp_snooping;                /* NDMP Protocol specific snooping enabled */
    uint32_t ndmp_loglevel;            /* NDMP Protocol specific loglevel to use */
+   uint32_t subscriptions;            /* Number of subscribtions available */
+   uint32_t subscriptions_used;       /* Number of subscribtions used */
    char *verid;                       /* Custom Id to print in version command */
    char *keyencrkey;                  /* Key Encryption Key */
 
