@@ -546,23 +546,23 @@ static bool do_subscription_status(UAContext *ua)
    /*
     * See if we need to check.
     */
-   if (me->subscriptions == 0) {
+   if (director->subscriptions == 0) {
       ua->send_msg(_("No subscriptions configured in director.\n"));
       retval = true;
       goto bail_out;
    }
 
-   if (me->subscriptions_used <= 0) {
+   if (director->subscriptions_used <= 0) {
       ua->error_msg(_("No clients defined.\n"));
       goto bail_out;
    } else {
-      available = me->subscriptions - me->subscriptions_used;
+      available = director->subscriptions - director->subscriptions_used;
       if (available < 0) {
          ua->send_msg(_("Warning! No available subscriptions: %d (%d/%d) (used/total)\n"),
-                      available, me->subscriptions_used, me->subscriptions);
+                      available, director->subscriptions_used, director->subscriptions);
       } else {
          ua->send_msg(_("Ok: available subscriptions: %d (%d/%d) (used/total)\n"),
-                      available, me->subscriptions_used, me->subscriptions);
+                      available, director->subscriptions_used, director->subscriptions);
          retval = true;
       }
    }
