@@ -1042,7 +1042,7 @@ int main(int argc, char *argv[])
    working_directory = "/tmp";
    args = get_pool_memory(PM_FNAME);
 
-   while ((ch = getopt(argc, argv, "D:lbc:d:nstu:?")) != -1) {
+   while ((ch = getopt(argc, argv, "D:lc:d:nstu:?")) != -1) {
       switch (ch) {
       case 'D':                    /* Director */
          if (director) {
