@@ -929,7 +929,7 @@ static bool check_resources()
    /*
     * Loop over Clients
     */
-   me->subscriptions_used = 0;
+   director->subscriptions_used = 0;
    CLIENTRES *client;
    foreach_res(client, R_CLIENT) {
       /*
@@ -937,7 +937,7 @@ static bool check_resources()
        *
        * Only used as indication not an enforced limit.
        */
-      me->subscriptions_used++;
+      director->subscriptions_used++;
 
       /*
        * tls_require implies tls_enable
