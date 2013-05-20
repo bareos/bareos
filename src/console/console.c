@@ -607,8 +607,10 @@ static struct cpl_keywords_t cpl_keywords[] = {
    { "volstatus=", ".volstatus" },
    { "ls", ".ls" },
    { "cd", ".lsdir" },
+   { "add", ".ls" },
    { "mark", ".ls" },
    { "m", ".ls" },
+   { "delete", ".lsmark" },
    { "unmark", ".lsmark" },
    { "catalog=", ".catalogs" },
    { "actiononpurge=", ".actiononpurge" }
