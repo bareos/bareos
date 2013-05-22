@@ -21,14 +21,19 @@ to demonstrate access to backuped files information
 - python-fuse must be installed
 
 ## Usage:
+
+`
 ./bareos-fuse.py /mnt
 ls -la /mnt
 ls -la /mnt/usr
 ...
 fusermount -u /mnt
+`
 
 
 For debugging purposes, better use
-./baculafs.py -f -s -d /mnt
+`./baculafs.py -f -s -d /mnt`
 
-Also take a look at the log files /tmp/bareos-fuse.log and /tmp/bareos-fuse-bconsole.log
+Also take a look at the log files 
+  * `/tmp/bareos-fuse.log` and 
+  * `/tmp/bareos-fuse-bconsole.log`
