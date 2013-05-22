@@ -22,13 +22,12 @@ to demonstrate access to backuped files information
 
 ## Usage:
 
-`
-./bareos-fuse.py /mnt
-ls -la /mnt
-ls -la /mnt/usr
-...
-fusermount -u /mnt
-`
+
+    ./bareos-fuse.py /mnt
+    ls -la /mnt
+    ls -la /mnt/usr
+    ...
+    fusermount -u /mnt
 
 
 For debugging purposes, better use
