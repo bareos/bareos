@@ -1446,7 +1446,7 @@ static void status_slots(UAContext *ua, STORERES *store_r)
    MEDIA_DBR mr;
    char *slot_list;
    int max_slots;
-   bool found;
+   bool is_loaded_in_drive;
    /*
     * Slot | Volume | Status | MediaType | Pool
     */
@@ -1513,6 +1513,7 @@ static void status_slots(UAContext *ua, STORERES *store_r)
          }
 
          vl2 = NULL;
+         is_loaded_in_drive = false;
          switch (vl1->Content) {
          case slot_content_empty:
             if (vl1->Type == slot_type_normal) {
@@ -1520,13 +1521,12 @@ static void status_slots(UAContext *ua, STORERES *store_r)
                 * See if this empty slot is empty because the volume is loaded
                 * in one of the drives.
                 */
-               found = false;
                vl2 = (vol_list_t *)vol_list->first();
-               while (!found && vl2) {
+               while (!is_loaded_in_drive && vl2) {
                   switch (vl2->Type) {
                   case slot_type_drive:
                      if (vl1->Slot == vl2->Loaded) {
-                        found = true;
+                        is_loaded_in_drive = true;
                         continue;
                      }
                      break;
@@ -1535,7 +1535,7 @@ static void status_slots(UAContext *ua, STORERES *store_r)
                   }
                   vl2 = (vol_list_t *)vol_list->next((void *)vl2);
                }
-               if (!found) {
+               if (!is_loaded_in_drive) {
                   ua->send_msg(slot_hformat,
                                vl1->Slot, '*',
                                "?", "?", "?", "?");
@@ -1597,7 +1597,8 @@ static void status_slots(UAContext *ua, STORERES *store_r)
                                mr.VolumeName, mr.VolStatus, mr.MediaType, pr.Name);
                } else {
                   ua->send_msg(slot_hformat,
-                               vl1->Slot, ((vl1->Slot == mr.Slot) ? ' ' : '*'),
+                               vl1->Slot,
+                               ((vl1->Slot == mr.Slot) ? (is_loaded_in_drive ? '%' : ' ') : '*'),
                                mr.VolumeName, mr.VolStatus, mr.MediaType, pr.Name);
                }
             } else {
