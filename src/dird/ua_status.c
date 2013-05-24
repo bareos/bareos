@@ -1049,7 +1049,16 @@ static void list_running_jobs(UAContext *ua)
          msg = _("is waiting on max total jobs");
          break;
       case JS_WaitStartTime:
-         msg = _("is waiting for its start time");
+         emsg = (char *) get_pool_memory(PM_FNAME);
+         if (jcr->sched_time) {
+            char dt[MAX_TIME_LENGTH];
+            bstrftime_nc(dt, sizeof(dt), jcr->sched_time);
+            Mmsg(emsg, _("is waiting for its start time at %s"), dt);
+         } else {
+            Mmsg(emsg, _("is waiting for its start time"));
+         }
+         pool_mem = true;
+         msg = emsg;
          break;
       case JS_WaitPriority:
          msg = _("is waiting for higher priority jobs to finish");
