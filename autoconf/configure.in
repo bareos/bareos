@@ -2677,8 +2677,15 @@ else
    ZLIB_INC=""
 fi
 
+if test x$use_libtool != xno; then
+   ZLIB_LIBS_NONSHARED=""
+else
+   ZLIB_LIBS_NONSHARED="${ZLIB_LIBS}"
+fi
+
 AC_SUBST(ZLIB_INC)
 AC_SUBST(ZLIB_LIBS)
+AC_SUBST(ZLIB_LIBS_NONSHARED)
 
 dnl
 dnl Check for lzo
@@ -2738,8 +2745,16 @@ else
    LZO_INC=""
 fi
 
+if test x$use_libtool != xno; then
+   LZO_LIBS_NONSHARED=""
+else
+   LZO_LIBS_NONSHARED="${LZO_LIBS}"
+fi
+
 AC_SUBST(LZO_INC)
 AC_SUBST(LZO_LIBS)
+AC_SUBST(LZO_LIBS_NONSHARED)
+
 
 dnl
 dnl Check for fastlz
@@ -2797,8 +2812,15 @@ else
    FASTLZ_INC=""
 fi
 
+if test x$use_libtool != xno; then
+   FASTLZ_LIBS_NONSHARED=""
+else
+   FASTLZ_LIBS_NONSHARED="${FASTLZ_LIBS}"
+fi
+
 AC_SUBST(FASTLZ_INC)
 AC_SUBST(FASTLZ_LIBS)
+AC_SUBST(FASTLZ_LIBS_NONSHARED)
 
 dnl
 dnl Check if we have AFS on this system
