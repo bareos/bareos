@@ -653,10 +653,13 @@ ACL_LIBS
 AFS_LIBS_NONSHARED
 AFS_LIBS
 AFS_CFLAGS
+FASTLZ_LIBS_NONSHARED
 FASTLZ_LIBS
 FASTLZ_INC
+LZO_LIBS_NONSHARED
 LZO_LIBS
 LZO_INC
+ZLIB_LIBS_NONSHARED
 ZLIB_LIBS
 ZLIB_INC
 LIBOBJS
@@ -29923,6 +29926,13 @@ else
    ZLIB_INC=""
 fi
 
+if test x$use_libtool != xno; then
+   ZLIB_LIBS_NONSHARED=""
+else
+   ZLIB_LIBS_NONSHARED="${ZLIB_LIBS}"
+fi
+
+
 
 
 
@@ -30027,6 +30037,14 @@ else
    LZO_INC=""
 fi
 
+if test x$use_libtool != xno; then
+   LZO_LIBS_NONSHARED=""
+else
+   LZO_LIBS_NONSHARED="${LZO_LIBS}"
+fi
+
+
+
 
 
 
@@ -30117,6 +30135,13 @@ else
    FASTLZ_LIBS=""
    FASTLZ_INC=""
 fi
+
+if test x$use_libtool != xno; then
+   FASTLZ_LIBS_NONSHARED=""
+else
+   FASTLZ_LIBS_NONSHARED="${FASTLZ_LIBS}"
+fi
+
 
 
 
