@@ -59,11 +59,6 @@ const int sd_dbglvl = 300;
 #include "vol_mgr.h"
 #include "reserve.h"
 #include "protos.h"
-#ifdef HAVE_LIBZ
-#include <zlib.h>                     /* compression headers */
-#else
-#define uLongf uint32_t
-#endif
 #ifdef HAVE_FNMATCH
 #include <fnmatch.h>
 #else

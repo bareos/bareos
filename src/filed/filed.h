@@ -32,11 +32,6 @@
 #include "lib/htable.h"
 #include "lib/runscript.h"
 #include "findlib/find.h"
-#ifdef HAVE_LIBZ
-#include <zlib.h>                     /* compression headers */
-#else
-#define uLongf uint32_t
-#endif
 #include "ch.h"
 #include "backup.h"
 #include "restore.h"

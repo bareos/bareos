@@ -31,6 +31,10 @@
 
 #if defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ)
 
+#if defined(HAVE_LIBZ)
+#include <zlib.h>
+#endif
+
 #if defined(HAVE_LZO)
 #include <lzo/lzoconf.h>
 #include <lzo/lzo1x.h>

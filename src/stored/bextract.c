@@ -32,15 +32,6 @@
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 
-#ifdef HAVE_LZO
-#include <lzo/lzoconf.h>
-#include <lzo/lzo1x.h>
-#endif
-
-#ifdef HAVE_FASTLZ
-#include <fastlzlib.h>
-#endif
-
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
 static void do_extract(char *devname);
