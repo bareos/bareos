@@ -1,3 +1,5 @@
+ADD_TEST(disk:rerun-test "@regressdir@/tests/rerun-test")
+ADD_TEST(disk:subscription-test "@regressdir@/tests/subscription-test")
 ADD_TEST(disk:acl-xattr-test "@regressdir@/tests/acl-xattr-test")
 ADD_TEST(disk:action-on-purge-test "@regressdir@/tests/action-on-purge-test")
 ADD_TEST(disk:accurate-test "@regressdir@/tests/accurate-test")
