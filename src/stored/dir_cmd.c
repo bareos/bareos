@@ -163,7 +163,7 @@ static struct s_cmds cmds[] = {
    { "label", label_cmd, false },           /* Label a tape */
    { "listen", listen_cmd, false },         /* Listen for an incoming Storage Job */
    { "mount", mount_cmd, false },
-   { "nextrun", nextrun_cmd, false },       /* Prepare for next backup part of same Job */
+   { "nextrun", nextrun_cmd, false },       /* Prepare for next backup/restore part of same Job */
    { "passive", passive_cmd, false },
 // { "query", query_cmd, false },
    { "readlabel", readlabel_cmd, false },
