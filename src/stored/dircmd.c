@@ -117,7 +117,7 @@ static struct s_cmds cmds[] = {
    { "unmount", unmount_cmd, 0 },
    { "use storage=", use_cmd, 0 },
    { "run", run_cmd, 0 },                   /* start of backup */
-   { "nextrun", nextrun_cmd, 0 },           /* prepare for next backup part of same Job */
+   { "nextrun", nextrun_cmd, 0 },           /* Prepare for next backup/restore part of same Job */
    { "finish", finish_cmd, 0 },             /* end of backup */
 // { "action_on_purge",  action_on_purge_cmd, 0 },
 // { "query", query_cmd, 0 },

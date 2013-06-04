@@ -690,11 +690,15 @@ static inline bool fill_restore_environment(JCR *jcr,
       return false;
    }
 
-   Mmsg(destination_path, "%s/%s", restore_prefix, restore_pathname + 7);
-
    /*
     * Tell the data engine where to restore.
     */
+   if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
+      pm_strcpy(destination_path, restore_pathname + 6);
+   } else {
+      pm_strcpy(destination_path, restore_prefix);
+      pm_strcat(destination_path, restore_pathname + 6);
+   }
    pv.name = ndmp_env_keywords[NDMP_ENV_KW_PREFIX];
    pv.value = destination_path.c_str();
    ndma_store_env_list(&job->env_tab, &pv);
@@ -1263,10 +1267,10 @@ bool do_ndmp_backup(JCR *jcr)
          /*
           * See if this is the first Backup run or not. For NDMP we can have multiple Backup
           * runs as part of the same Job. When we are saving data to a Native Storage Daemon
-          * we let it know to expect a new backup session. It will generate a new authentication
-          * id so we wait for the nextrun_ready conditional variable to be raised by the msg_thread.
+          * we let it know to expect a new backup session. It will generate a new authorization
+          * key so we wait for the nextrun_ready conditional variable to be raised by the msg_thread.
           */
-         if (jcr->store_bsock && j > 0) {
+         if (jcr->store_bsock && cnt > 0) {
             jcr->store_bsock->fsend("nextrun");
             P(mutex);
             pthread_cond_wait(&jcr->nextrun_ready, &mutex);
@@ -1615,6 +1619,7 @@ static inline int ndmp_wait_for_job_termination(JCR *jcr)
  */
 static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
 {
+   int cnt;
    BSOCK *sd;
    BSR *bsr;
    BSR_FINDEX *fileindex;
@@ -1714,8 +1719,22 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
        * Walk each fileindex of the current BSR record. Each different fileindex is
        * a seperate NDMP stream.
        */
+      cnt = 0;
       for (fileindex = bsr->FileIndex; fileindex; fileindex = fileindex->next) {
          for (current_fi = fileindex->findex; current_fi <= fileindex->findex2; current_fi++) {
+            /*
+             * See if this is the first Restore NDMP stream or not. For NDMP we can have multiple Backup
+             * runs as part of the same Job. When we are restoring data from a Native Storage Daemon
+             * we let it know to expect a next restore session. It will generate a new authorization
+             * key so we wait for the nextrun_ready conditional variable to be raised by the msg_thread.
+             */
+            if (jcr->store_bsock && cnt > 0) {
+               jcr->store_bsock->fsend("nextrun");
+               P(mutex);
+               pthread_cond_wait(&jcr->nextrun_ready, &mutex);
+               V(mutex);
+            }
+
             /*
              * Perform the actual NDMP job.
              * Initialize a new NDMP session
@@ -1823,6 +1842,11 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
              * Reset the initialized state so we don't try to cleanup again.
              */
             session_initialized = false;
+
+            /*
+             * Keep track that we finished this part of the restore.
+             */
+            cnt++;
          }
       }
 
