@@ -1,8 +1,6 @@
 #
 # TestA   Bareos Director Configuration file
 #
-#  For Bareos release 1.30 (12 April 2003) -- redhat 7.3
-#
 
 Director {                            # define myself
   Name = @hostname@-dir

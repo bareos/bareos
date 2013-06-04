@@ -1,8 +1,6 @@
 #
 # Default  Bareos File Daemon Configuration file
 #
-#  For Bareos release 1.33
-#
 # There is not much to change here except perhaps the
 # File daemon Name to
 #

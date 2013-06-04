@@ -1,8 +1,6 @@
 #
 # TestA   Bareos Director Configuration file
 #
-#  For Bareos release 2.2.x
-#
 
 Director {                            # define myself
   Name = @hostname@-dir

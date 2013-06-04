@@ -1,8 +1,6 @@
 #
 # Default Bareos Storage Daemon Configuration file
 #
-#  For Bareos release 2.1.x
-#
 #  Special configuration for testing two different tape drives
 #    with different Media
 #

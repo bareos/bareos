@@ -1,8 +1,6 @@
 #
 # Default  Bareos File Daemon Configuration file
 #
-#  For Bareos release 2.1.29 (31 July 2007) -- suse 10.2
-#
 # There is not much to change here except perhaps the
 # File daemon Name to
 #
