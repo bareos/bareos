@@ -42,7 +42,6 @@ run_bareos
 
 stop_bareos
 
-
 NRLINES=`grep TestSchedule tmp/log1.out  | wc -l`
 if [ $NRLINES = "337" ]; then
    print_debug "status scheduler OK"
@@ -71,7 +70,6 @@ else
    estat=4
 fi
 
-
 stop_bareos
 
-#end_test
+end_test
