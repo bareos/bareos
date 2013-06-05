@@ -32,7 +32,7 @@ quit
 END_OF_DATA
 run_bareos
 
-scripts/check_for_zombie_jobs storage=file
+scripts/check_for_zombie_jobs storage=file client=client
 
 echo "Backup 1 done"
 

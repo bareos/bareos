@@ -51,7 +51,7 @@ run_bareos
 
 #scripts/check_for_zombie_jobs storage=File client=client
 
-echo "Backup 1 done"
+echo "rerun check done"
 
 stop_bareos
 
@@ -99,4 +99,4 @@ fi
 
 stop_bareos
 
-#end_test
+end_test
