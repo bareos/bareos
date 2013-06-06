@@ -118,6 +118,15 @@ echo "Start non-root virtual disk autochanger tests" >>test.out
 ./run tests/quota-hardquota-test
 ./run tests/quota-includefailed-test
 ./run tests/bandwidth-limit-per-client-test
+./run tests/rerun-test
+./run tests/status-schedule-test
+./run tests/subscription-test
+./run tests/lz4-encrypt-test
+./run tests/lz4-test
+./run tests/lz4hc-encrypt-test
+./run tests/lz4hc-test
+./run tests/lzfast-encrypt-test
+./run tests/lzfast-test
 # Turn back on after next_vol.c bug is fixed
 #  ./run tests/next-vol-test
 echo "End non-root virtual disk autochanger tests"

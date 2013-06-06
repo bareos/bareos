@@ -130,6 +130,7 @@ Job {
   Maximum Concurrent Jobs = 10
 }
 
+#####  LZO
 Job {
   Name = "LZOTest"
   Type = Backup
@@ -143,6 +144,101 @@ Job {
   Max Run Time = 30min
   SpoolData=yes
 }
+
+FileSet {
+  Name = "LZOSet"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    File = <@tmpdir@/file-list
+  }
+}
+###### LZO END
+
+#####  lzfast
+Job {
+  Name = "lzfastTest"
+  Type = Backup
+  Client=@hostname@-fd
+  FileSet="lzfastSet"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Maximum Concurrent Jobs = 10
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Max Run Time = 30min
+  SpoolData=yes
+}
+
+FileSet {
+  Name = "lzfastSet"
+  Include {
+    Options {
+      signature=MD5
+      compression=lzfast
+    }
+    File = <@tmpdir@/file-list
+  }
+}
+###### lzfast END
+
+#####  lz4
+Job {
+  Name = "lz4Test"
+  Type = Backup
+  Client=@hostname@-fd
+  FileSet="lz4Set"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Maximum Concurrent Jobs = 10
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Max Run Time = 30min
+  SpoolData=yes
+}
+
+FileSet {
+  Name = "lz4Set"
+  Include {
+    Options {
+      signature=MD5
+      compression=lz4
+    }
+    File = <@tmpdir@/file-list
+  }
+}
+###### lz4 END
+
+#####  lz4hc
+Job {
+  Name = "lz4hcTest"
+  Type = Backup
+  Client=@hostname@-fd
+  FileSet="lz4hcSet"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Maximum Concurrent Jobs = 10
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Max Run Time = 30min
+  SpoolData=yes
+}
+
+FileSet {
+  Name = "lz4hcSet"
+  Include {
+    Options {
+      signature=MD5
+      compression=lz4hc
+    }
+    File = <@tmpdir@/file-list
+  }
+}
+###### lz4hc END
+
+
 
 Job {
   Name = "SparseLZOTest"
@@ -260,17 +356,6 @@ FileSet {
     Options {
       signature=MD5
       compression=GZIP
-    }
-    File = <@tmpdir@/file-list
-  }
-}
-
-FileSet {
-  Name = "LZOSet"
-  Include {
-    Options {
-      signature=MD5
-      compression=LZO
     }
     File = <@tmpdir@/file-list
   }
