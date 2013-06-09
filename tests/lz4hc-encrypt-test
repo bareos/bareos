@@ -3,9 +3,16 @@
 # Run a simple backup with encryption and compression of the Bareos build directory
 #   then verify the signatures.
 #
-TestName="lzo-encrypt-test"
+TestName="lz4hc-encrypt-test"
 JobName=lz4hcTest
 . scripts/functions
+
+# Require fastlzcat to be installed
+fastlzcat 2>&1 >/dev/null
+if test $? -ne 1; then
+   echo "$TestName skipped: fastlzcat not installed"
+   exit 0
+fi
 
 scripts/cleanup
 scripts/copy-crypto-confs

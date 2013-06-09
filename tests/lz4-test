@@ -7,10 +7,16 @@ TestName="lz4-test"
 JobName=lz4
 . scripts/functions
 
+# Require fastlzcat to be installed
+fastlzcat 2>&1 >/dev/null
+if test $? -ne 1; then
+   echo "$TestName skipped: fastlzcat not installed"
+   exit 0
+fi
+
 scripts/cleanup
 scripts/copy-test-confs
 echo "${cwd}/build" >${cwd}/tmp/file-list
-
 
 # set compatible mode for filedaemon so that lz4hc is allowed
 cp ${scripts}/bareos-fd.conf ${scripts}/bareos-fd.conf.tmp
