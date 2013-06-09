@@ -10,7 +10,7 @@ JobName=lz4
 #
 # See if library is linked against libfastlz
 #
-cnt=`ldd ${cwd}/bin/libbareos.so 2>/dev/null | grep -c libfastlz`
+cnt=`ldd ${bin}/libbareos.so 2>/dev/null | grep -c libfastlz`
 if test ${cnt} -lt 1; then
    echo "$TestName skipped: not linked for fastlz compression"
    exit 0
