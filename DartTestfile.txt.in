@@ -99,6 +99,8 @@ ADD_TEST(disk:bandwidth-limit-per-client-test "@regressdir@/tests/bandwidth-limi
 ADD_TEST(disk:rerun-test "@regressdir@/tests/rerun-test")
 ADD_TEST(disk:status-schedule-test "@regressdir@/tests/status-schedule-test")
 ADD_TEST(disk:subscription-test "@regressdir@/tests/subscription-test")
+ADD_TEST(disk:lzo-encrypt-test-encrypt-test "@regressdir@/tests/lzo-encrypt-test")
+ADD_TEST(disk:lzo-test "@regressdir@/tests/lzo-test")
 ADD_TEST(disk:lz4-encrypt-test "@regressdir@/tests/lz4-encrypt-test")
 ADD_TEST(disk:lz4-test "@regressdir@/tests/lz4-test")
 ADD_TEST(disk:lz4hc-encrypt-test "@regressdir@/tests/lz4hc-encrypt-test")

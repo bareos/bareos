@@ -7,14 +7,17 @@ TestName="lz4hc-encrypt-test"
 JobName=lz4hcTest
 . scripts/functions
 
-# Require fastlzcat to be installed
-fastlzcat 2>&1 >/dev/null
-if test $? -ne 1; then
-   echo "$TestName skipped: fastlzcat not installed"
+scripts/cleanup
+
+#
+# See if library is linked against libfastlz
+#
+cnt=`ldd ${cwd}/bin/libbareos.so 2>/dev/null | grep -c libfastlz`
+if test ${cnt} -lt 1; then
+   echo "$TestName skipped: not linked for fastlz compression"
    exit 0
 fi
 
-scripts/cleanup
 scripts/copy-crypto-confs
 echo "${cwd}/build" >${cwd}/tmp/file-list
 

@@ -7,10 +7,12 @@ TestName="lzfast-encrypt-test"
 JobName=lzfastTest
 . scripts/functions
 
-# Require fastlzcat to be installed
-fastlzcat 2>&1 >/dev/null
-if test $? -ne 1; then
-   echo "$TestName skipped: fastlzcat not installed"
+#
+# See if library is linked against libfastlz
+#
+cnt=`ldd ${cwd}/bin/libbareos.so 2>/dev/null | grep -c libfastlz`
+if test ${cnt} -lt 1; then
+   echo "$TestName skipped: not linked for fastlz compression"
    exit 0
 fi
 
