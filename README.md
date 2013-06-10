@@ -1,17 +1,24 @@
 [BAREOS](http://www.bareos.org/) is a fork of the Bacula source code with the following
 changes (highlevel):
 
-Release 13.2.x
+Release 13.3.x
 ==============
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+
+* NDMP enhancements (first code for doing filelevel restores, preliminary).
+
+Release 13.2.x
+==============
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-13.2)](https://travis-ci.org/bareos/bareos)
 
 * Allow to cancel multiple jobids with cancel cmd from bconsole.
 
 Release 13.1.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-13.2)](https://travis-ci.org/bareos/bareos)
 
 * Allow cancel by JobId on storage daemon. (#13)
 * Security (filed)
