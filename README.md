@@ -4,7 +4,7 @@ changes (highlevel):
 Release 12.4.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=Branch-12.4)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-12.4)](https://travis-ci.org/bareos/bareos)
 
 * First attempt at adding a rerun command.
 * Pass the restore context as parameter to display_job_parameters
