@@ -1,7 +1,7 @@
 #undef  VERSION
 #define VERSION "13.2.0"
-#define BDATE   "09 April 2013"
-#define LSMDATE "09Apr13"
+#define BDATE   "12 June 2013"
+#define LSMDATE "12Jun13"
 
 #define PROG_COPYRIGHT "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
                        "Copyright (C) 2013-2013 Bareos GmbH & Co. KG\n"
