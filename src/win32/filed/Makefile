@@ -24,10 +24,10 @@ endif
 LDLIBS = ../lib/libbareos.a \
 	 ../lib/libbareos.dll \
 	 ../findlib/libbareosfind.dll \
-         $(MINGW_LIB)/libpthreadGCE2.a \
          $(MINGW_LIB)/libz.dll.a \
          $(MINGW_LIB)/liblzo2.dll.a \
          $(MINGW_LIB)/libfastlz.dll.a \
+         $(MINGW_LIB)/libpthreadGCE2.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
 SVRSRCS = accurate.c authenticate.c backup.c compression.c \
@@ -40,7 +40,6 @@ SVROBJS = $(SVRSRCS:.c=.o)
 
 WINDRESSRCS = filedres.rc
 WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
-
 
 all: bareos-fd.exe
 
