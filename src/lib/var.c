@@ -2408,7 +2408,7 @@ var_create(
         return VAR_RC(VAR_ERR_INVALID_ARGUMENT);
     if ((var = (var_t *)malloc(sizeof(var_t))) == NULL)
         return VAR_RC(VAR_ERR_OUT_OF_MEMORY);
-    memset(var, 0, sizeof(var));
+    memset(var, 0, sizeof(var_t));
     var_config(var, VAR_CONFIG_SYNTAX, &var_syntax_default);
     *pvar = var;
     return VAR_OK;
