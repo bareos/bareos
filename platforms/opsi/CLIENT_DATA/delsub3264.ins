@@ -12,7 +12,7 @@ if (($INST_SystemType$ = "x86 System") and ($INST_architecture$ = "system specif
 
 	if FileExists($UninstallProgram32$)
 		comment "Uninstall program found, starting uninstall"
-		Winbatch_uninstall_32
+		Winbatch_uninstall_32 /WaitForProcessEnding "Au_.exe" /TimeOutSeconds "60"
 		sub_check_exitcode
 	endif
 
@@ -27,7 +27,7 @@ if ($INST_SystemType$ = "64 Bit System") and (($INST_architecture$ = "system spe
 
 	if FileExists($UninstallProgram64$)
 		comment "Uninstall program found, starting uninstall"
-		Winbatch_uninstall_64
+		Winbatch_uninstall_64 /WaitForProcessEnding "Au_.exe" /TimeOutSeconds "60"
 		sub_check_exitcode
 	endif
 
