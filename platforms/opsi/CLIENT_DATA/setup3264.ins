@@ -53,8 +53,8 @@ Set $LogDir$ = "%SystemDrive%\tmp"
 ; therefore please: only lower letters, no umlauts,
 ; no white space use '-' as a seperator
 Set $ProductId$         = "winbareos"
-Set $ProductExe32$      = "winbareos32.exe"
-Set $ProductExe64$      = "winbareos64.exe"
+Set $ProductExe32$ = "data\winbareos-12.4.4-32-bit-r510.4.exe"
+Set $ProductExe64$ = "data\winbareos-12.4.4-64-bit-r510.4.exe"
 Set $MinimumSpace$      = "30 MB"
 ; the path were we find the product after the installation
 Set $InstallDir$        = "%ProgramFilesDir%\Bareos"
@@ -79,7 +79,7 @@ endif
 comment "installing"
 
 if $filedaemon_full_name$ = ""
-    set $filedaemon_full_name$    = "%HostID%-fd"
+    set $filedaemon_full_name$ = "%HostID%-fd"
     opsiservicecall_set_product_property_filedaemon_full_name
 endif
 
@@ -89,7 +89,7 @@ if $filedaemon_monitor_name$ = ""
 endif
 
 if $filedaemon_client_address$ = ""
-    set $filedaemon_monitor_name$ = "%HostID%"
+    set $filedaemon_client_address$ = "%HostID%"
     opsiservicecall_set_product_property_filedaemon_client_address
 endif
 
@@ -134,35 +134,35 @@ endif
 ;       don't use " around argument, otherwise argument is ignored
 
 [Winbatch_install_32]
-"%ScriptPath%\$ProductExe32$" /S /CLIENTNAME=$filedaemon_full_name$ /CLIENTPASSWORD=$filedaemon_full_password$ /DIRECTORNAME=$director_name$ /CLIENTADDRESS=$filedaemon_client_address$ /CLIENTMONITORPASSWORD=$filedaemon_monitor_password$ /DIRECTORADDRESS=$director_address$ /DIRECTORPASSWORD=$director_password$ /D=$InstallDir32$
+"%ScriptPath%\$ProductExe32$" /S /CLIENTNAME="$filedaemon_full_name$" /CLIENTPASSWORD="$filedaemon_full_password$" /DIRECTORNAME="$director_name$ /CLIENTADDRESS=$filedaemon_client_address$" /CLIENTMONITORPASSWORD="$filedaemon_monitor_password$" /DIRECTORADDRESS="$director_address$" /DIRECTORPASSWORD="$director_password$" /D=$InstallDir32$
 
 
 [Winbatch_install_64]
-"%ScriptPath%\$ProductExe64$" /S /CLIENTNAME=$filedaemon_full_name$ /CLIENTPASSWORD=$filedaemon_full_password$ /DIRECTORNAME=$director_name$ /CLIENTADDRESS=$filedaemon_client_address$ /CLIENTMONITORPASSWORD=$filedaemon_monitor_password$ /DIRECTORADDRESS=$director_address$ /DIRECTORPASSWORD=$director_password$ /D=$InstallDir64$
+"%ScriptPath%\$ProductExe64$" /S /CLIENTNAME="$filedaemon_full_name$" /CLIENTPASSWORD="$filedaemon_full_password$" /DIRECTORNAME="$director_name$" /CLIENTADDRESS="$filedaemon_client_address$" /CLIENTMONITORPASSWORD="$filedaemon_monitor_password$" /DIRECTORADDRESS="$director_address$" /DIRECTORPASSWORD="$director_password$" /D=$InstallDir64$
 
 
 [opsiservicecall_set_product_property_filedaemon_full_name]
 "method": "setProductProperty",
 "params": [
-        'bareos',
+        '$ProductId$',
         'filedaemon_full_name',
         '$filedaemon_full_name$',
         '%HostID%'
 ]
 
-;[opsiservicecall_set_product_property_filedaemon_monitor_name]
-;"method": "setProductProperty",
-;"params": [
-;        'bareos',
-;        'filedaemon_monitor_name',
-;        '$filedaemon_monitor_name$',
-;        '%HostID%'
-;]
+[opsiservicecall_set_product_property_filedaemon_monitor_name]
+"method": "setProductProperty",
+"params": [
+        '$ProductId$',
+        'filedaemon_monitor_name',
+        '$filedaemon_monitor_name$',
+        '%HostID%'
+]
 
 [opsiservicecall_set_product_property_filedaemon_client_address]
 "method": "setProductProperty",
 "params": [
-        'bareos',
+        '$ProductId$',
         'filedaemon_client_address',
         '$filedaemon_client_address$',
         '%HostID%'
