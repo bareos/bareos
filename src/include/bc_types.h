@@ -19,7 +19,7 @@
    02110-1301, USA.
 */
 /*
- * Define integer types for Bareos -- Kern Sibbald
+ * Define integer types for Bareos
  *
  * Integer types.  These types should be be used in all
  * contexts in which the length of an integer stored on
@@ -32,6 +32,8 @@
  * uint8_t, uint16_t, uint32_t, uint64_t
  *
  * Also, we define types such as file address lengths.
+ *
+ * Kern Sibbald, March MM
  */
 
 #ifndef __bc_types_INCLUDED
