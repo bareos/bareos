@@ -1,8 +1,7 @@
 #
-# Kern's Bareos Storage Daemon Configuration file
+# Bareos Storage Daemon Configuration file
 #
-#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
-#
+# For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
 #
 # "Global" Storage daemon configuration specifications
 #
