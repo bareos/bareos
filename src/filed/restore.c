@@ -628,72 +628,74 @@ void do_restore(JCR *jcr)
       /*
        * Data stream
        */
-      case STREAM_ENCRYPTED_SESSION_DATA:
+      case STREAM_ENCRYPTED_SESSION_DATA: {
          crypto_error_t cryptoerr;
 
-         /*
-          * Is this an unexpected session data entry?
-          */
-         if (rctx.cs) {
-            Jmsg0(jcr, M_ERROR, 0, _("Unexpected cryptographic session data stream.\n"));
-            rctx.extract = false;
-            bclose(&rctx.bfd);
-            continue;
-         }
-
-         /*
-          * Do we have any keys at all?
-          */
-         if (!jcr->crypto.pki_recipients) {
-            Jmsg(jcr, M_ERROR, 0, _("No private decryption keys have been defined to decrypt encrypted backup data.\n"));
-            rctx.extract = false;
-            bclose(&rctx.bfd);
-            break;
-         }
-
-         if (jcr->crypto.digest) {
-            crypto_digest_free(jcr->crypto.digest);
-         }
-         jcr->crypto.digest = crypto_digest_new(jcr, signing_algorithm);
-         if (!jcr->crypto.digest) {
-            Jmsg0(jcr, M_FATAL, 0, _("Could not create digest.\n"));
-            rctx.extract = false;
-            bclose(&rctx.bfd);
-            break;
-         }
-
-         /*
-          * Decode and save session keys.
-          */
-         cryptoerr = crypto_session_decode((uint8_t *)sd->msg, (uint32_t)sd->msglen,
-                        jcr->crypto.pki_recipients, &rctx.cs);
-         switch(cryptoerr) {
-         case CRYPTO_ERROR_NONE:
+         if (rctx.extract) {
             /*
-             * Success
+             * Is this an unexpected session data entry?
              */
-            break;
-         case CRYPTO_ERROR_NORECIPIENT:
-            Jmsg(jcr, M_ERROR, 0, _("Missing private key required to decrypt encrypted backup data.\n"));
-            break;
-         case CRYPTO_ERROR_DECRYPTION:
-            Jmsg(jcr, M_ERROR, 0, _("Decrypt of the session key failed.\n"));
-            break;
-         default:
+            if (rctx.cs) {
+               Jmsg0(jcr, M_ERROR, 0, _("Unexpected cryptographic session data stream.\n"));
+               rctx.extract = false;
+               bclose(&rctx.bfd);
+               continue;
+            }
+
             /*
-             * Shouldn't happen
+             * Do we have any keys at all?
              */
-            Jmsg1(jcr, M_ERROR, 0, _("An error occurred while decoding encrypted session data stream: %s\n"), crypto_strerror(cryptoerr));
-            break;
-         }
+            if (!jcr->crypto.pki_recipients) {
+               Jmsg(jcr, M_ERROR, 0, _("No private decryption keys have been defined to decrypt encrypted backup data.\n"));
+               rctx.extract = false;
+               bclose(&rctx.bfd);
+               break;
+            }
 
-         if (cryptoerr != CRYPTO_ERROR_NONE) {
-            rctx.extract = false;
-            bclose(&rctx.bfd);
-            continue;
-         }
+            if (jcr->crypto.digest) {
+               crypto_digest_free(jcr->crypto.digest);
+            }
+            jcr->crypto.digest = crypto_digest_new(jcr, signing_algorithm);
+            if (!jcr->crypto.digest) {
+               Jmsg0(jcr, M_FATAL, 0, _("Could not create digest.\n"));
+               rctx.extract = false;
+               bclose(&rctx.bfd);
+               break;
+            }
 
+            /*
+             * Decode and save session keys.
+             */
+            cryptoerr = crypto_session_decode((uint8_t *)sd->msg, (uint32_t)sd->msglen,
+                           jcr->crypto.pki_recipients, &rctx.cs);
+            switch(cryptoerr) {
+            case CRYPTO_ERROR_NONE:
+               /*
+                * Success
+                */
+               break;
+            case CRYPTO_ERROR_NORECIPIENT:
+               Jmsg(jcr, M_ERROR, 0, _("Missing private key required to decrypt encrypted backup data.\n"));
+               break;
+            case CRYPTO_ERROR_DECRYPTION:
+               Jmsg(jcr, M_ERROR, 0, _("Decrypt of the session key failed.\n"));
+               break;
+            default:
+               /*
+                * Shouldn't happen
+                */
+               Jmsg1(jcr, M_ERROR, 0, _("An error occurred while decoding encrypted session data stream: %s\n"), crypto_strerror(cryptoerr));
+               break;
+            }
+
+            if (cryptoerr != CRYPTO_ERROR_NONE) {
+               rctx.extract = false;
+               bclose(&rctx.bfd);
+               continue;
+            }
+         }
          break;
+      }
 
       case STREAM_FILE_DATA:
       case STREAM_SPARSE_DATA:
