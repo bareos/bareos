@@ -249,7 +249,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       bfuncs->AddWild(ctx, "*.c", ' ');
       bfuncs->AddWild(ctx, "*.cpp", ' ');
       bfuncs->AddOptions(ctx, "ei");         /* exclude, ignore case */
-      bfuncs->AddExclude(ctx, "/home/kern/bareos/regress/README");
+      bfuncs->AddExclude(ctx, "/home/user/bareos/regress/README");
       break;
    case bEventRestoreObject:
    {
