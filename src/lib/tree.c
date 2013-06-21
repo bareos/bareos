@@ -463,7 +463,7 @@ int main(int argc, char *argv[])
     *root->fname = 0;
     root->fname_len = 0;
 
-    FillDirectoryTree("/home/kern/bareos/k", root, NULL);
+    FillDirectoryTree("/home/user/bareos", root, NULL);
 
     for (node = first_tree_node(root); node; node=next_tree_node(node)) {
        tree_getpath(node, buf, sizeof(buf));
@@ -471,15 +471,15 @@ int main(int argc, char *argv[])
     }
 
     node = (TREE_NODE *)root;
-    Pmsg0(000, "doing cd /home/kern/bareos/k/techlogs\n");
-    node = tree_cwd("/home/kern/bareos/k/techlogs", root, node);
+    Pmsg0(000, "doing cd /home/user/bareos/techlogs\n");
+    node = tree_cwd("/home/user/bareos/techlogs", root, node);
     if (node) {
        tree_getpath(node, buf, sizeof(buf));
        Dmsg2(100, "findex=%d: cwd=%s\n", node->FileIndex, buf);
     }
 
-    Pmsg0(000, "doing cd /home/kern/bareos/k/src/testprogs\n");
-    node = tree_cwd("/home/kern/bareos/k/src/testprogs", root, node);
+    Pmsg0(000, "doing cd /home/user/bareos/src/testprogs\n");
+    node = tree_cwd("/home/user/bareos/src/testprogs", root, node);
     if (node) {
        tree_getpath(node, buf, sizeof(buf));
        Dmsg2(100, "findex=%d: cwd=%s\n", node->FileIndex, buf);
