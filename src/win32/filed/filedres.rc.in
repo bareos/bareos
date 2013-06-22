@@ -9,12 +9,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Bareos GmbH & Co. KG"
       VALUE "FileDescription", "Bareos File Daemon"
-      VALUE "FileVersion", "13.2.0"
+      VALUE "FileVersion", @VERSION@
       VALUE "InternalName", "bareos-fd.exe"
       VALUE "LegalCopyright", "See LICENSE File"
       VALUE "OriginalFilename", "bareos-fd.exe"
       VALUE "ProductName", "Bareos File Daemon"
-      VALUE "ProductVersion", "13.2.0"
+      VALUE "ProductVersion", @VERSION@
     END
   END
 
