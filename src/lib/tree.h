@@ -135,7 +135,7 @@ TREE_NODE *tree_relcwd(char *path, TREE_ROOT *root, TREE_NODE *node);
 void tree_add_delta_part(TREE_ROOT *root, TREE_NODE *node,
                          JobId_t JobId, int32_t FileIndex);
 void free_tree(TREE_ROOT *root);
-int tree_getpath(TREE_NODE *node, char *buf, int buf_size);
+POOLMEM *tree_getpath(TREE_NODE *node);
 void tree_remove_node(TREE_ROOT *root, TREE_NODE *node);
 
 /*

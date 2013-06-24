@@ -365,36 +365,55 @@ static TREE_NODE *search_and_insert_tree_node(char *fname, int type,
    return node;
 }
 
-int tree_getpath(TREE_NODE *node, char *buf, int buf_size)
+static void tree_getpath_item(TREE_NODE *node, POOLMEM *path)
 {
    if (!node) {
-      buf[0] = 0;
-      return 1;
+      return;
    }
 
-   tree_getpath(node->parent, buf, buf_size);
+   tree_getpath_item(node->parent, path);
 
    /*
     * Fixup for Win32. If we have a Win32 directory and
     * there is only a / in the buffer, remove it since
     * win32 names don't generally start with /
     */
-   if (node->type == TN_DIR_NLS && IsPathSeparator(buf[0]) && buf[1] == '\0') {
-      buf[0] = '\0';
+   if (node->type == TN_DIR_NLS && IsPathSeparator(path[0]) && path[1] == '\0') {
+      pm_strcpy(path, "");
    }
-   bstrncat(buf, node->fname, buf_size);
+   pm_strcat(path, node->fname);
 
    /*
     * Add a slash for all directories unless we are at the root,
     * also add a slash to a soft linked file if it has children
     * i.e. it is linked to a directory.
     */
-   if ((node->type != TN_FILE && !(IsPathSeparator(buf[0]) && buf[1] == '\0')) ||
+   if ((node->type != TN_FILE && !(IsPathSeparator(path[0]) && path[1] == '\0')) ||
        (node->soft_link && tree_node_has_child(node))) {
-      bstrncat(buf, "/", buf_size);
+      pm_strcat(path, "/");
+   }
+}
+
+POOLMEM *tree_getpath(TREE_NODE *node)
+{
+   POOLMEM *path;
+
+   if (!node) {
+      return NULL;
    }
 
-   return 1;
+   /*
+    * Allocate a new empty path.
+    */
+   path = get_pool_memory(PM_NAME);
+   pm_strcpy(path, "");
+
+   /*
+    * Fill the path with the full path.
+    */
+   tree_getpath_item(node, path);
+
+   return path;
 }
 
 /*
