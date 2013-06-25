@@ -66,6 +66,10 @@ Var ConfigSnippet
 Var dialog
 Var hwnd
 
+# keep the configuration files also when running silently?
+
+Var SilentKeepConfig
+
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
 !include "Sections.nsh"
@@ -155,6 +159,9 @@ FunctionEnd
  SetShellVarContext all
 
   ${If} ${FileExists} "$APPDATA\${PRODUCT_NAME}\${fname}"
+
+  StrCmp $SilentKeepConfig "yes" keep
+
   MessageBox MB_YESNO|MB_ICONQUESTION \
     "Existing config file found: $APPDATA\${PRODUCT_NAME}\${fname}$\r$\nKeep existing config file?" \
     /SD IDNO IDYES keep IDNO move
@@ -549,7 +556,9 @@ Function .onInit
                     [/DIRECTORADDRESS=Network Address of the Director (for bconsole or BAT)] $\r$\n\
                     [/DIRECTORPASSWORD=Password to access Director]$\r$\n\
                     $\r$\n\
-                    [/S (silent install without user interaction)]$\r$\n\
+                    [/S silent install without user interaction]$\r$\n\
+                        (deletes config files on uinstall, moves existing config files away and uses newly new ones) $\r$\n\
+                    [/SILENTKEEPCONFIG keep configuration files on silent uninstall and use exinsting config files during silent install]$\r$\n\
                     [/D=C:\specify\installation\directory (! HAS TO BE THE LAST OPTION !)$\r$\n\
                     [/? (this help dialog)"
 #                   [/DIRECTORNAME=Name of the Director to be accessed from bconsole/BAT]"
@@ -578,6 +587,17 @@ Function .onInit
 
   ${GetOptions} $cmdLineParams "/DIRECTORNAME=" $DirectorName
   ClearErrors
+
+  StrCpy $SilentKeepConfig "yes"
+  ${GetOptions} $cmdLineParams "/SILENTKEEPCONFIG"  $R0
+  IfErrors 0 +2         # error is set if NOT found
+    StrCpy $SilentKeepConfig "no"
+  ClearErrors
+
+##
+##   MessageBox MB_YESNO|MB_ICONQUESTION \
+##       "SilentKeepConfig is $SilentKeepConfig"
+##
 
 
   InitPluginsDir
@@ -770,6 +790,20 @@ FunctionEnd
 
 
 Section Uninstall
+
+# UnInstaller Options
+   ${GetParameters} $cmdLineParams
+   ClearErrors
+
+# check cmdline parameters
+  StrCpy $SilentKeepConfig "yes"
+  ${GetOptions} $cmdLineParams "/SILENTKEEPCONFIG"  $R0
+  IfErrors 0 +2         # error is set if NOT found
+    StrCpy $SilentKeepConfig "no"
+  ClearErrors
+
+
+
   # on 64Bit Systems, change the INSTDIR and Registry view to remove the right entries
   ${If} ${RunningX64} # 64Bit OS
     StrCpy $INSTDIR "$PROGRAMFILES64\${PRODUCT_NAME}"
@@ -789,11 +823,16 @@ Section Uninstall
   KillProcWMI::KillProc "bareos-tray-monitor.exe"
 
 
+##
+##   MessageBox MB_YESNO|MB_ICONQUESTION \
+##       "SilentKeepConfig is $SilentKeepConfig"
+##
 
-# ask if existing config files should be kept
-  IfSilent +2
+
+  StrCmp $SilentKeepConfig "yes" ConfDeleteSkip # keep if silent and  $SilentKeepConfig is yes
+
   MessageBox MB_YESNO|MB_ICONQUESTION \
-    "Do you want to keep the existing configuration files?" /SD IDYES IDYES ConfDeleteSkip
+    "Do you want to keep the existing configuration files?" /SD IDNO IDYES ConfDeleteSkip
 
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf"
   Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"
