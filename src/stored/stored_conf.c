@@ -78,6 +78,7 @@ static RES_ITEM store_items[] = {
    { "piddirectory", store_dir, ITEM(res_store.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "subsysdirectory", store_dir, ITEM(res_store.subsys_directory), 0, 0, NULL },
    { "plugindirectory", store_dir, ITEM(res_store.plugin_directory), 0, 0, NULL },
+   { "pluginnames", store_str, ITEM(res_store.plugin_names), 0, 0, NULL },
    { "scriptsdirectory", store_dir, ITEM(res_store.scripts_directory), 0, 0, NULL },
    { "maximumconcurrentjobs", store_pint32, ITEM(res_store.max_concurrent_jobs), 0, ITEM_DEFAULT, "20" },
    { "messages", store_res, ITEM(res_store.messages), R_MSGS, 0, NULL },

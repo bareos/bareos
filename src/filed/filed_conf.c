@@ -94,6 +94,7 @@ static RES_ITEM cli_items[] = {
    { "piddirectory", store_dir, ITEM(res_client.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "subsysdirectory", store_dir, ITEM(res_client.subsys_directory), 0, 0, NULL },
    { "plugindirectory", store_dir, ITEM(res_client.plugin_directory), 0, 0, NULL },
+   { "pluginnames", store_str, ITEM(res_client.plugin_names), 0, 0, NULL },
    { "scriptsdirectory", store_dir, ITEM(res_client.scripts_directory), 0, 0, NULL },
    { "maximumconcurrentjobs", store_pint32, ITEM(res_client.MaxConcurrentJobs), 0, ITEM_DEFAULT, "20" },
    { "messages", store_res, ITEM(res_client.messages), R_MSGS, 0, NULL },

@@ -90,6 +90,7 @@ public:
    char *pid_directory;
    char *subsys_directory;
    char *plugin_directory;            /* Plugin directory */
+   char *plugin_names;
    char *scripts_directory;
    uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs to run */
    uint32_t ndmploglevel;             /* Initial NDMP log level */

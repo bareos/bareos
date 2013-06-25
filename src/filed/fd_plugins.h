@@ -230,12 +230,13 @@ typedef struct s_bareosInfo {
 #ifdef FILE_DAEMON
 struct BFILE;                   /* forward referenced */
 struct FF_PKT;
-void load_fd_plugins(const char *plugin_dir);
+void load_fd_plugins(const char *plugin_dir, const char *plugin_names);
 void unload_fd_plugins(void);
 int list_fd_plugins(POOL_MEM &msg);
 void new_plugins(JCR *jcr);
 void free_plugins(JCR *jcr);
-void generate_plugin_event(JCR *jcr, bEventType event, void *value=NULL);
+void generate_plugin_event(JCR *jcr, bEventType event,
+                           void *value = NULL, bool reverse = false);
 bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start);
 bool plugin_name_stream(JCR *jcr, char *name);
 int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace);
