@@ -185,13 +185,47 @@ bool is_plugin_disabled(JCR *jcr)
    return is_plugin_disabled(jcr->plugin_ctx);
 }
 
+static inline void trigger_plugin_event(JCR *jcr, bEventType eventType, bEvent *event, Plugin *plugin,
+                                        bpContext *plugin_ctx_list, int index, void *value)
+{
+   bpContext *ctx;
+
+   /*
+    * Note, at this point do not change
+    * jcr->plugin or jcr->plugin_ctx
+    */
+   Dsm_check(999);
+   ctx = &plugin_ctx_list[index];
+   if (!is_event_enabled(ctx, eventType)) {
+      Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
+      return;
+   }
+
+   if (is_plugin_disabled(ctx)) {
+      return;
+   }
+
+   if (eventType == bEventEndRestoreJob) {
+      Dmsg0(50, "eventType==bEventEndRestoreJob\n");
+      if (jcr->plugin && jcr->plugin->restoreFileStarted) {
+         plug_func(jcr->plugin)->endRestoreFile(jcr->plugin_ctx);
+      }
+
+      if (jcr->plugin) {
+         jcr->plugin->restoreFileStarted = false;
+         jcr->plugin->createFileCalled = false;
+      }
+   }
+
+   plug_func(plugin)->handlePluginEvent(ctx, event, value);
+}
+
 /**
  * Create a plugin event When receiving bEventCancelCommand, this function is
  * called by an other thread.
  */
-void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)
+void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool reverse)
 {
-   bpContext *ctx;
    bEvent event;
    Plugin *plugin;
    char *name = NULL;
@@ -207,7 +241,7 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)
 
    /*
     * Some events are sent to only a particular plugin or must be
-    *  called even if the job is canceled
+    * called even if the job is canceled.
     */
    switch(eventType) {
    case bEventPluginCommand:
@@ -218,9 +252,13 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)
       }
       break;
    case bEventRestoreObject:
-      /* After all RestoreObject, we have it one more time with value=NULL */
+      /*
+       * After all RestoreObject, we have it one more time with value = NULL
+       */
       if (value) {
-         /* Some RestoreObjects may not have a plugin name */
+         /*
+          * Some RestoreObjects may not have a plugin name
+          */
          rop = (restore_object_pkt *)value;
          if (*rop->plugin_name) {
             name = rop->plugin_name;
@@ -246,7 +284,9 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)
       break;
    }
 
-   /* If call_if_canceled is set, we call the plugin anyway */
+   /*
+    * If call_if_canceled is set, we call the plugin anyway
+    */
    if (!call_if_canceled && jcr->is_job_canceled()) {
       return;
    }
@@ -258,39 +298,31 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)
 
    /*
     * Pass event to every plugin that has requested this event type
-    *   (except if name is set). If name is set, we pass it only to
-    *   the plugin with that name.
+    * (except if name is set). If name is set, we pass it only to
+    * the plugin with that name.
+    *
+    * See if we need to trigger the loaded plugins in reverse order.
     */
-   foreach_alist_index(i, plugin, fd_plugin_list) {
-      if (!for_this_plugin(plugin, name, len)) {
-         Dmsg2(dbglvl, "Not for this plugin name=%s NULL=%d\n",
-            name, (name == NULL) ? 1 : 0);
-         continue;
-      }
-      /*
-       * Note, at this point do not change
-       *   jcr->plugin or jcr->plugin_ctx
-       */
-      Dsm_check(999);
-      ctx = &plugin_ctx_list[i];
-      if (!is_event_enabled(ctx, eventType)) {
-         Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
-         continue;
-      }
-      if (is_plugin_disabled(ctx)) {
-         continue;
-      }
-      if (eventType == bEventEndRestoreJob) {
-         Dmsg0(50, "eventType==bEventEndRestoreJob\n");
-         if (jcr->plugin && jcr->plugin->restoreFileStarted) {
-            plug_func(jcr->plugin)->endRestoreFile(jcr->plugin_ctx);
+   if (reverse) {
+      foreach_alist_rindex(i, plugin, fd_plugin_list) {
+         if (!for_this_plugin(plugin, name, len)) {
+            Dmsg2(dbglvl, "Not for this plugin name=%s NULL=%d\n",
+                  name, (name == NULL) ? 1 : 0);
+            continue;
          }
-         if (jcr->plugin) {
-            jcr->plugin->restoreFileStarted = false;
-            jcr->plugin->createFileCalled = false;
-         }
+
+         trigger_plugin_event(jcr, eventType, &event, plugin, plugin_ctx_list, i, value);
       }
-      plug_func(plugin)->handlePluginEvent(ctx, &event, value);
+   } else {
+      foreach_alist_index(i, plugin, fd_plugin_list) {
+         if (!for_this_plugin(plugin, name, len)) {
+            Dmsg2(dbglvl, "Not for this plugin name=%s NULL=%d\n",
+                  name, (name == NULL) ? 1 : 0);
+            continue;
+         }
+
+         trigger_plugin_event(jcr, eventType, &event, plugin, plugin_ctx_list, i, value);
+      }
    }
 
    return;
@@ -1118,7 +1150,7 @@ static void dump_fd_plugins(FILE *fp)
  * This entry point is called internally by Bareos to ensure
  *  that the plugin IO calls come into this code.
  */
-void load_fd_plugins(const char *plugin_dir)
+void load_fd_plugins(const char *plugin_dir, const char *plugin_names)
 {
    Plugin *plugin;
    int i;
@@ -1131,8 +1163,10 @@ void load_fd_plugins(const char *plugin_dir)
    fd_plugin_list = New(alist(10, not_owned_by_alist));
    Dsm_check(999);
    if (!load_plugins((void *)&binfo, (void *)&bfuncs, fd_plugin_list,
-                     plugin_dir, plugin_type, is_plugin_compatible)) {
-      /* Either none found, or some error */
+                     plugin_dir, plugin_names, plugin_type, is_plugin_compatible)) {
+      /*
+       * Either none found, or some error
+       */
       if (fd_plugin_list->size() == 0) {
          delete fd_plugin_list;
          fd_plugin_list = NULL;
@@ -1141,7 +1175,9 @@ void load_fd_plugins(const char *plugin_dir)
       }
    }
 
-   /* Plug entry points called from findlib */
+   /*
+    * Plug entry points called from findlib
+    */
    plugin_bopen  = my_plugin_bopen;
    plugin_bclose = my_plugin_bclose;
    plugin_bread  = my_plugin_bread;
@@ -1150,8 +1186,7 @@ void load_fd_plugins(const char *plugin_dir)
    Dsm_check(999);
 
    /*
-    * Verify that the plugin is acceptable, and print information
-    *  about it.
+    * Verify that the plugin is acceptable, and print information about it.
     */
    foreach_alist_index(i, plugin, fd_plugin_list) {
       Jmsg(NULL, M_INFO, 0, _("Loaded plugin: %s\n"), plugin->file);
@@ -2003,7 +2038,7 @@ int main(int argc, char *argv[])
    } else {
       getcwd(plugin_dir, sizeof(plugin_dir)-1);
    }
-   load_fd_plugins(plugin_dir);
+   load_fd_plugins(plugin_dir, NULL);
 
    jcr1->JobId = 111;
    new_plugins(jcr1);

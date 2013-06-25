@@ -86,8 +86,8 @@ typedef struct gen_pluginInfo {
 
 /* Functions */
 extern bool load_plugins(void *binfo, void *bfuncs, alist *plugin_list,
-                         const char *plugin_dir, const char *type,
-                         bool is_plugin_compatible(Plugin *plugin));
+                         const char *plugin_dir, const char *plugin_names,
+                         const char *type, bool is_plugin_compatible(Plugin *plugin));
 extern void unload_plugins(alist *plugin_list);
 extern int list_plugins(alist *plugin_list, POOL_MEM &msg);
 

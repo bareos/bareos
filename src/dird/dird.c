@@ -310,7 +310,7 @@ int main (int argc, char *argv[])
                           4 /* UA */ + 5 /* sched+watchdog+jobsvr+misc */);
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
-   load_dir_plugins(me->plugin_directory);
+   load_dir_plugins(me->plugin_directory, me->plugin_names);
 
    /* If we are in testing mode, we don't try to fix the catalog */
    cat_op mode=(test_config)?CHECK_CONNECTION:UPDATE_AND_FIX;

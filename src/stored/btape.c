@@ -293,7 +293,7 @@ int main(int margc, char *margv[])
       }
    }
 
-   load_sd_plugins(me->plugin_directory);
+   load_sd_plugins(me->plugin_directory, me->plugin_names);
 
    read_crypto_cache(me->working_directory, "bareos-sd",
                      get_first_port_host_order(me->SDaddrs));

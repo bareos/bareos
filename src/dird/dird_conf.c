@@ -120,6 +120,7 @@ static RES_ITEM dir_items[] = {
    { "workingdirectory", store_dir, ITEM(res_dir.working_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
    { "piddirectory", store_dir, ITEM(res_dir.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "plugindirectory", store_dir, ITEM(res_dir.plugin_directory), 0, 0, NULL },
+   { "pluginnames", store_str, ITEM(res_dir.plugin_names), 0, 0, NULL },
    { "scriptsdirectory", store_dir, ITEM(res_dir.scripts_directory), 0, 0, NULL },
    { "subscriptions", store_pint32, ITEM(res_dir.subscriptions), 0, ITEM_DEFAULT, "0" },
    { "subsysdirectory", store_dir, ITEM(res_dir.subsys_directory), 0, 0, NULL },
