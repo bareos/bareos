@@ -17,6 +17,7 @@ srcdir=${BAREOS_SOURCE}
 dirport=${BASEPORT}
 fdport=`expr ${BASEPORT} '+' 1`
 sdport=`expr ${BASEPORT} '+' 2`
+sdport2=`expr ${BASEPORT} '+' 3`
 db_name=${db_name:-"regress"}
 db_user=${db_user:-"regress"}
 db_password=${db_password:-""}
@@ -61,6 +62,7 @@ echo "s%@hostname2_password@%${hostname2_password}%g" >>${out}
 echo "s%@hostname3_password@%${hostname3_password}%g" >>${out}
 echo "s%@dirport@%${dirport}%g" >>${out}
 echo "s%@sdport@%${sdport}%g" >>${out}
+echo "s%@sdport2@%${sdport2}%g" >>${out}
 echo "s%@fdport@%${fdport}%g" >>${out}
 echo "s%@regressdir@%${cwd}%g" >>${out}
 echo "s%@dbengine@%${dbengine}%g" >>${out}

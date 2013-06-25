@@ -1,3 +1,4 @@
+ADD_TEST(disk:migrate-sd-sd-test "@regressdir@/tests/migration-volume-sd-sd-test")
 ADD_TEST(disk:acl-xattr-test "@regressdir@/tests/acl-xattr-test")
 ADD_TEST(disk:action-on-purge-test "@regressdir@/tests/action-on-purge-test")
 ADD_TEST(disk:accurate-test "@regressdir@/tests/accurate-test")
