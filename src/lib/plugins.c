@@ -45,9 +45,8 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 static const int dbglvl = 50;
 
 /*
- * Create a new plugin "class" entry and enter it in the
- *  list of plugins.  Note, this is not the same as
- *  an instance of the plugin.
+ * Create a new plugin "class" entry and enter it in the list of plugins.
+ * Note, this is not the same as an instance of the plugin.
  */
 static Plugin *new_plugin()
 {
@@ -76,137 +75,241 @@ static void close_plugin(Plugin *plugin)
 }
 
 /*
- * Load all the plugins in the specified directory.
+ * Load a specific plugin and check if the plugin had the correct
+ * entry points, the license is compatible and the initialize the plugin.
  */
-bool load_plugins(void *binfo, void *bfuncs, alist *plugin_list,
-                  const char *plugin_dir, const char *type,
-                  bool is_plugin_compatible(Plugin *plugin))
+static bool load_a_plugin(void *binfo,
+                          void *bfuncs,
+                          const char *plugin_pathname,
+                          const char *plugin_name,
+                          const char *type,
+                          alist *plugin_list,
+                          bool is_plugin_compatible(Plugin *plugin))
 {
-   bool found = false;
    t_loadPlugin loadPlugin;
    Plugin *plugin = NULL;
-   DIR* dp = NULL;
-   struct dirent *entry = NULL, *result;
-   int name_max;
+
+   plugin = new_plugin();
+   plugin->file = bstrdup(plugin_name);
+   plugin->file_len = strstr(plugin->file, type) - plugin->file;
+
+   plugin->pHandle = dlopen(plugin_pathname, RTLD_NOW);
+
+   if (!plugin->pHandle) {
+      const char *error = dlerror();
+
+      Jmsg(NULL, M_ERROR, 0, _("dlopen plugin %s failed: ERR=%s\n"),
+           plugin_pathname, NPRT(error));
+      Dmsg2(dbglvl, "dlopen plugin %s failed: ERR=%s\n",
+            plugin_pathname, NPRT(error));
+
+      close_plugin(plugin);
+
+      return false;
+   }
+
+   /*
+    * Get two global entry points
+    */
+   loadPlugin = (t_loadPlugin)dlsym(plugin->pHandle, "loadPlugin");
+   if (!loadPlugin) {
+      Jmsg(NULL, M_ERROR, 0, _("Lookup of loadPlugin in plugin %s failed: ERR=%s\n"),
+           plugin_pathname, NPRT(dlerror()));
+      Dmsg2(dbglvl, "Lookup of loadPlugin in plugin %s failed: ERR=%s\n",
+            plugin_pathname, NPRT(dlerror()));
+
+      close_plugin(plugin);
+
+      return false;
+   }
+
+   plugin->unloadPlugin = (t_unloadPlugin)dlsym(plugin->pHandle, "unloadPlugin");
+   if (!plugin->unloadPlugin) {
+      Jmsg(NULL, M_ERROR, 0, _("Lookup of unloadPlugin in plugin %s failed: ERR=%s\n"),
+           plugin_pathname, NPRT(dlerror()));
+      Dmsg2(dbglvl, "Lookup of unloadPlugin in plugin %s failed: ERR=%s\n",
+            plugin_pathname, NPRT(dlerror()));
+
+      close_plugin(plugin);
+
+      return false;
+   }
+
+   /*
+    * Initialize the plugin
+    */
+   if (loadPlugin(binfo, bfuncs, &plugin->pinfo, &plugin->pfuncs) != bRC_OK) {
+      close_plugin(plugin);
+
+      return false;
+   }
+
+   if (!is_plugin_compatible) {
+      Dmsg0(50, "Plugin compatibility pointer not set.\n");
+   } else if (!is_plugin_compatible(plugin)) {
+      close_plugin(plugin);
+
+      return false;
+   }
+
+   plugin_list->append(plugin);
+
+   return true;
+}
+
+/*
+ * Load all the plugins in the specified directory.
+ * Or when plugin_names is give it has a list of plugins
+ * to load from the specified directory where the plugin_names
+ * string is something like "<plugin_1>:<plugin_2>" where the
+ * name is expanded to <plugin_dir>/<plugin-1>-<type> e.g.
+ * <plugin_dir>/bpipe-fd.so
+ */
+bool load_plugins(void *binfo,
+                  void *bfuncs,
+                  alist *plugin_list,
+                  const char *plugin_dir,
+                  const char *plugin_names,
+                  const char *type,
+                  bool is_plugin_compatible(Plugin *plugin))
+{
    struct stat statp;
+   bool found = false;
    POOL_MEM fname(PM_FNAME);
    bool need_slash = false;
-   int len, type_len;
-
+   int len;
 
    Dmsg0(dbglvl, "load_plugins\n");
-   name_max = pathconf(".", _PC_NAME_MAX);
-   if (name_max < 1024) {
-      name_max = 1024;
-   }
-
-   if (!(dp = opendir(plugin_dir))) {
-      berrno be;
-      Jmsg(NULL, M_ERROR_TERM, 0, _("Failed to open Plugin directory %s: ERR=%s\n"),
-            plugin_dir, be.bstrerror());
-      Dmsg2(dbglvl, "Failed to open Plugin directory %s: ERR=%s\n",
-            plugin_dir, be.bstrerror());
-      goto get_out;
-   }
 
    len = strlen(plugin_dir);
    if (len > 0) {
       need_slash = !IsPathSeparator(plugin_dir[len - 1]);
    }
-   entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
-   for ( ;; ) {
-      plugin = NULL;            /* Start from a fresh plugin */
 
-      if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
-         if (!found) {
-            Jmsg(NULL, M_WARNING, 0, _("Failed to find any plugins in %s\n"),
-                  plugin_dir);
-            Dmsg1(dbglvl, "Failed to find any plugins in %s\n", plugin_dir);
+   /*
+    * See if we are loading certain plugins only or all plugins of a certain type.
+    */
+   if (plugin_names) {
+      char *p, *name, *names;
+      POOL_MEM plugin_name(PM_FNAME);
+
+      /*
+       * Make a private copy so we can split it into the different items.
+       * The passed in string is a const string so we should not change it
+       * as it points directly to the config string.
+       */
+      names = bstrdup(plugin_names);
+      name = names;
+      while (name) {
+         /*
+          * Split the name string on ':'
+          */
+         if ((p = strchr(name, ':'))) {
+            *p++ = '\0';
          }
-         break;
-      }
-      if (bstrcmp(result->d_name, ".") ||
-          bstrcmp(result->d_name, "..")) {
-         continue;
+
+         /*
+          * Generate the plugin name e.g. <name>-<daemon>.so
+          */
+         Mmsg(plugin_name, "%s%s", name, type);
+
+         /*
+          * Generate the full pathname to the plugin to load.
+          */
+         Mmsg(fname, "%s%s%s", plugin_dir, (need_slash) ? "/" : "", plugin_name.c_str());
+
+         /*
+          * Make sure the plugin exists and is a regular file.
+          */
+         if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
+            name = p;
+         }
+
+         /*
+          * Try to load the plugin and resolve the wanted symbols.
+          */
+         if (load_a_plugin(binfo, bfuncs, fname.c_str(), plugin_name.c_str(), type,
+                           plugin_list, is_plugin_compatible)) {
+            found = true;
+         }
+         name = p;
       }
 
-      len = strlen(result->d_name);
-      type_len = strlen(type);
-      if (len < type_len+1 || !bstrcmp(&result->d_name[len-type_len], type)) {
-         Dmsg3(dbglvl, "Rejected plugin: want=%s name=%s len=%d\n", type, result->d_name, len);
-         continue;
-      }
-      Dmsg2(dbglvl, "Found plugin: name=%s len=%d\n", result->d_name, len);
+      free(names);
+   } else {
+      int name_max, type_len;
+      DIR* dp = NULL;
+      struct dirent *entry = NULL, *result;
 
-      pm_strcpy(fname, plugin_dir);
-      if (need_slash) {
-         pm_strcat(fname, "/");
-      }
-      pm_strcat(fname, result->d_name);
-      if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
-         continue;                 /* ignore directories & special files */
+      name_max = pathconf(".", _PC_NAME_MAX);
+      if (name_max < 1024) {
+         name_max = 1024;
       }
 
-      plugin = new_plugin();
-      plugin->file = bstrdup(result->d_name);
-      plugin->file_len = strstr(plugin->file, type) - plugin->file;
-      plugin->pHandle = dlopen(fname.c_str(), RTLD_NOW);
-      if (!plugin->pHandle) {
-         const char *error = dlerror();
-         Jmsg(NULL, M_ERROR, 0, _("dlopen plugin %s failed: ERR=%s\n"),
-              fname.c_str(), NPRT(error));
-         Dmsg2(dbglvl, "dlopen plugin %s failed: ERR=%s\n", fname.c_str(),
-               NPRT(error));
-         close_plugin(plugin);
-         continue;
+      if (!(dp = opendir(plugin_dir))) {
+         berrno be;
+         Jmsg(NULL, M_ERROR_TERM, 0, _("Failed to open Plugin directory %s: ERR=%s\n"),
+               plugin_dir, be.bstrerror());
+         Dmsg2(dbglvl, "Failed to open Plugin directory %s: ERR=%s\n",
+               plugin_dir, be.bstrerror());
+         goto bail_out;
       }
 
-      /* Get two global entry points */
-      loadPlugin = (t_loadPlugin)dlsym(plugin->pHandle, "loadPlugin");
-      if (!loadPlugin) {
-         Jmsg(NULL, M_ERROR, 0, _("Lookup of loadPlugin in plugin %s failed: ERR=%s\n"),
-            fname.c_str(), NPRT(dlerror()));
-         Dmsg2(dbglvl, "Lookup of loadPlugin in plugin %s failed: ERR=%s\n",
-            fname.c_str(), NPRT(dlerror()));
-         close_plugin(plugin);
-         continue;
-      }
-      plugin->unloadPlugin = (t_unloadPlugin)dlsym(plugin->pHandle, "unloadPlugin");
-      if (!plugin->unloadPlugin) {
-         Jmsg(NULL, M_ERROR, 0, _("Lookup of unloadPlugin in plugin %s failed: ERR=%s\n"),
-            fname.c_str(), NPRT(dlerror()));
-         Dmsg2(dbglvl, "Lookup of unloadPlugin in plugin %s failed: ERR=%s\n",
-            fname.c_str(), NPRT(dlerror()));
-         close_plugin(plugin);
-         continue;
+      entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
+      while (1) {
+         if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+            if (!found) {
+               Jmsg(NULL, M_WARNING, 0, _("Failed to find any plugins in %s\n"), plugin_dir);
+               Dmsg1(dbglvl, "Failed to find any plugins in %s\n", plugin_dir);
+            }
+            break;
+         }
+
+         if (bstrcmp(result->d_name, ".") ||
+             bstrcmp(result->d_name, "..")) {
+            continue;
+         }
+
+         len = strlen(result->d_name);
+         type_len = strlen(type);
+         if (len < type_len + 1 || !bstrcmp(&result->d_name[len - type_len], type)) {
+            Dmsg3(dbglvl, "Rejected plugin: want=%s name=%s len=%d\n", type, result->d_name, len);
+            continue;
+         }
+         Dmsg2(dbglvl, "Found plugin: name=%s len=%d\n", result->d_name, len);
+
+         pm_strcpy(fname, plugin_dir);
+         if (need_slash) {
+            pm_strcat(fname, "/");
+         }
+         pm_strcat(fname, result->d_name);
+
+         /*
+          * Make sure the plugin exists and is a regular file.
+          */
+         if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
+            continue;
+         }
+
+         /*
+          * Try to load the plugin and resolve the wanted symbols.
+          */
+         if (load_a_plugin(binfo, bfuncs, fname.c_str(), result->d_name, type,
+                           plugin_list, is_plugin_compatible)) {
+            found = true;
+         }
       }
 
-      /* Initialize the plugin */
-      if (loadPlugin(binfo, bfuncs, &plugin->pinfo, &plugin->pfuncs) != bRC_OK) {
-         close_plugin(plugin);
-         continue;
-      }
-      if (!is_plugin_compatible) {
-         Dmsg0(50, "Plugin compatibility pointer not set.\n");
-      } else if (!is_plugin_compatible(plugin)) {
-         close_plugin(plugin);
-         continue;
+      if (entry) {
+         free(entry);
       }
 
-      found = true;                /* found a plugin */
-      plugin_list->append(plugin);
+      if (dp) {
+         closedir(dp);
+      }
    }
 
-get_out:
-   if (!found && plugin) {
-      close_plugin(plugin);
-   }
-   if (entry) {
-      free(entry);
-   }
-   if (dp) {
-      closedir(dp);
-   }
+bail_out:
    return found;
 }
 

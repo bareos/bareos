@@ -102,8 +102,9 @@ public:
    char *password;                    /* Password for UA access */
    char *query_file;                  /* SQL query file */
    char *working_directory;           /* WorkingDirectory */
-   const char *scripts_directory;     /* ScriptsDirectory */
-   const char *plugin_directory;      /* Plugin Directory */
+   char *scripts_directory;           /* ScriptsDirectory */
+   char *plugin_directory;            /* Plugin Directory */
+   char *plugin_names;                /* Plugin names to load */
    char *pid_directory;               /* PidDirectory */
    char *subsys_directory;            /* SubsysDirectory */
    MSGSRES *messages;                 /* Daemon message handler */

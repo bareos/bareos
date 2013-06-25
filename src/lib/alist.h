@@ -28,26 +28,36 @@
  * (void *) as an lvalue on the left side of an equal.
  *
  * Loop var through each member of list
+ * Loop var through each member of list using an increasing index.
+ * Loop var through each member of list using an decreasing index.
  */
 #ifdef HAVE_TYPEOF
 #define foreach_alist(var, list) \
-        for((var)=(typeof(var))(list)->first(); (var); (var)=(typeof(var))(list)->next() )
+        for ((var)=(typeof((var)))(list)->first(); (var); (var) = (typeof(var))(list)->next())
+
+#define foreach_alist_index(inx, var, list) \
+        for ((inx) = 0; ((var) = (typeof((var)))(list)->get((inx))); (inx)++ )
+
+#define foreach_alist_rindex(inx, var, list) \
+        for ((inx) = ((list)->size() - 1); ((var) = (typeof((var)))(list)->get((inx))); (inx)--)
+
 #else
 #define foreach_alist(var, list) \
-    for((*((void **)&(var))=(void*)((list)->first())); \
-         (var); \
-         (*((void **)&(var))=(void*)((list)->next())))
+        for ((*((void **)&(var))=(void*)((list)->first())); \
+            (var); \
+            (*((void **)&(var))=(void*)((list)->next())))
+
+#define foreach_alist_index(inx, var, list) \
+        for ((inx) = 0; ((*((void **)&(var)) = (void*)((list)->get((inx))))); (inx)++)
+
+#define foreach_alist_rindex(inx, var, list) \
+        for ((inx) = ((list)->size() - 1); ((*((void **)&(var)) = (void*)((list)->get((inx))))); (inx)--)
+
 #endif
 
-#ifdef HAVE_TYPEOF
-#define foreach_alist_index(inx, var, list) \
-        for(inx=0; ((var)=(typeof(var))(list)->get(inx)); inx++ )
-#else
-#define foreach_alist_index(inx, var, list) \
-    for(inx=0; ((*((void **)&(var))=(void*)((list)->get(inx)))); inx++ )
-#endif
-
-/* Second arg of init */
+/*
+ * Second arg of init
+ */
 enum {
   owned_by_alist = true,
   not_owned_by_alist = false
@@ -55,7 +65,7 @@ enum {
 
 /*
  * Array list -- much like a simplified STL vector
- *   array of pointers to inserted items
+ *               array of pointers to inserted items
  */
 class alist : public SMARTALLOC {
    void **items;
@@ -84,9 +94,11 @@ public:
    void destroy();
    void grow(int num);
 
-   /* Use it as a stack, pushing and poping from the end */
+   /*
+    * Use it as a stack, pushing and poping from the end
+    */
    void push(void *item) { append(item); };
-   void *pop() { return remove(num_items-1); };
+   void *pop() { return remove(num_items - 1); };
 };
 
 /*

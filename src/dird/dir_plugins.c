@@ -101,12 +101,31 @@ static inline bool is_plugin_disabled(JCR *jcr)
 }
 #endif
 
+static inline bRC trigger_plugin_event(JCR *jcr, bDirEventType eventType, bDirEvent *event,
+                                       Plugin *plugin, bpContext *plugin_ctx_list,
+                                       int index, void *value)
+{
+   bpContext *ctx;
+
+   ctx = &plugin_ctx_list[index];
+   if (!is_event_enabled(ctx, eventType)) {
+      Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
+      return bRC_OK;
+   }
+
+   if (is_plugin_disabled(ctx)) {
+      Dmsg0(dbglvl, "Plugin disabled.\n");
+      return bRC_OK;
+   }
+
+   return dirplug_func(plugin)->handlePluginEvent(ctx, event, value);
+}
+
 /*
  * Create a plugin event
  */
-int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value)
+int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value, bool reverse)
 {
-   bpContext *ctx;
    bDirEvent event;
    Plugin *plugin;
    int i;
@@ -115,6 +134,7 @@ int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value)
    if (!dird_plugin_list || !jcr || !jcr->plugin_ctx_list) {
       return bRC_OK;                  /* Return if no plugins loaded */
    }
+
    if (jcr->is_job_canceled()) {
       return bRC_Cancel;
    }
@@ -124,19 +144,24 @@ int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value)
 
    Dmsg2(dbglvl, "dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
 
-   foreach_alist_index(i, plugin, dird_plugin_list) {
-      ctx = &plugin_ctx_list[i];
-      if (!is_event_enabled(ctx, eventType)) {
-         Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
-         continue;
+   /*
+    * See if we need to trigger the loaded plugins in reverse order.
+    */
+   if (reverse) {
+      foreach_alist_rindex(i, plugin, dird_plugin_list) {
+         rc = trigger_plugin_event(jcr, eventType, &event, plugin, plugin_ctx_list, i, value);
+
+         if (rc != bRC_OK) {
+            break;
+         }
       }
-      if (is_plugin_disabled(ctx)) {
-         Dmsg0(dbglvl, "Plugin disabled.\n");
-         continue;
-      }
-      rc = dirplug_func(plugin)->handlePluginEvent(ctx, &event, value);
-      if (rc != bRC_OK) {
-         break;
+   } else {
+      foreach_alist_index(i, plugin, dird_plugin_list) {
+         rc = trigger_plugin_event(jcr, eventType, &event, plugin, plugin_ctx_list, i, value);
+
+         if (rc != bRC_OK) {
+            break;
+         }
       }
    }
 
@@ -170,7 +195,7 @@ static void dump_dir_plugins(FILE *fp)
  * This entry point is called internally by BAREOS to ensure
  *  that the plugin IO calls come into this code.
  */
-void load_dir_plugins(const char *plugin_dir)
+void load_dir_plugins(const char *plugin_dir, const char *plugin_names)
 {
    Plugin *plugin;
    int i;
@@ -182,8 +207,8 @@ void load_dir_plugins(const char *plugin_dir)
    }
 
    dird_plugin_list = New(alist(10, not_owned_by_alist));
-   if (!load_plugins((void *)&binfo, (void *)&bfuncs, dird_plugin_list, plugin_dir, plugin_type,
-                is_plugin_compatible)) {
+   if (!load_plugins((void *)&binfo, (void *)&bfuncs, dird_plugin_list,
+                     plugin_dir, plugin_names, plugin_type, is_plugin_compatible)) {
       /* Either none found, or some error */
       if (dird_plugin_list->size() == 0) {
          delete dird_plugin_list;
@@ -572,7 +597,7 @@ int main(int argc, char *argv[])
    } else {
       getcwd(plugin_dir, sizeof(plugin_dir)-1);
    }
-   load_dir_plugins(plugin_dir);
+   load_dir_plugins(plugin_dir, NULL);
 
    jcr1->JobId = 111;
    new_plugins(jcr1);

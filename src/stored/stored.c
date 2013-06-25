@@ -263,7 +263,7 @@ int main (int argc, char *argv[])
    set_thread_concurrency(me->max_concurrent_jobs * 2 + 4);
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
-   load_sd_plugins(me->plugin_directory);
+   load_sd_plugins(me->plugin_directory, me->plugin_names);
 
    cleanup_old_files();
 

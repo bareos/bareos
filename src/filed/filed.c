@@ -242,7 +242,7 @@ int main (int argc, char *argv[])
    read_state_file(me->working_directory, "bareos-fd",
                    get_first_port_host_order(me->FDaddrs));
 
-   load_fd_plugins(me->plugin_directory);
+   load_fd_plugins(me->plugin_directory, me->plugin_names);
 
 #ifdef BOMB
    me += 1000000;

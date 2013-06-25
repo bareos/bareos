@@ -142,12 +142,13 @@ typedef struct s_dirbareosFuncs {
  * Bareos Core Routines -- not used within a plugin
  */
 #ifdef DIRECTOR_DAEMON
-void load_dir_plugins(const char *plugin_dir);
+void load_dir_plugins(const char *plugin_dir, const char *plugin_names);
 void unload_dir_plugins(void);
 int list_dir_plugins(POOL_MEM &msg);
 void new_plugins(JCR *jcr);
 void free_plugins(JCR *jcr);
-int generate_plugin_event(JCR *jcr, bDirEventType event, void *value=NULL);
+int generate_plugin_event(JCR *jcr, bDirEventType event,
+                          void *value = NULL, bool reverse = false);
 #endif
 
 /****************************************************************************
