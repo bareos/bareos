@@ -3,7 +3,8 @@
 #
 @MCOMMON@
 
-CPPFLAGS += @PYTHON_INC@ @ZLIB_INC@ @LZO_INC@
+PYTHON_CPPFLAGS += @PYTHON_INC@
+COMPRESS_CPPFLAGS += @ZLIB_INC@ @LZO_INC@ @FASTLZ_INC@
 
 # No optimization for now for easy debugging
 
@@ -25,14 +26,25 @@ INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/stored
 .c.lo:
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) -c $<
 
-all: Makefile python-sd.la scsicrypto-sd.la
+all: Makefile autoxflate-sd.la python-sd.la scsicrypto-sd.la
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
 		&& CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
+autoxflate-sd.lo: autoxflate-sd.c
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(COMPRESS_CPPFLAGS) -c $<
+
+autoxflate-sd.la: Makefile \
+		  autoxflate-sd$(DEFAULT_OBJECT_TYPE) \
+		  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared autoxflate-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version -L../../lib -lbareos
+
 example-plugin-sd.la: Makefile example-plugin-sd$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared example-plugin-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
+
+python-sd.lo: python-sd.c
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(PYTHON_CPPFLAGS) -c $<
 
 python-sd.la: Makefile \
 	      python-sd$(DEFAULT_OBJECT_TYPE) \
@@ -52,6 +64,8 @@ plugtest: Makefile sd_plugins.c \
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) autoxflate-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/autoxflate-sd.la
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) python-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/python-sd.la
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) scsicrypto-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)

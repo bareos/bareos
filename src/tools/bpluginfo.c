@@ -42,6 +42,11 @@
 #include <dlfcn.h>
 #endif
 
+/*
+ * Dumy global variable.
+ */
+void *me = NULL;
+
 extern "C" {
    typedef int (*loadPlugin) (void *binfo, void *bfuncs, void **pinfo,
                void **pfuncs);

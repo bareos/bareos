@@ -233,8 +233,10 @@ struct RESOURCES {
 #endif
 
 struct CMPRS_CTX {
-   POOLMEM *buffer;                       /* Compression buffer */
-   int32_t buffer_size;                   /* Length of compression buffer */
+   POOLMEM *deflate_buffer;               /* Buffer used for deflation (compression) */
+   POOLMEM *inflate_buffer;               /* Buffer used for inflation (decompression) */
+   uint32_t deflate_buffer_size;          /* Length of deflation buffer */
+   uint32_t inflate_buffer_size;          /* Length of inflation buffer */
    struct {
 #ifdef HAVE_LIBZ
       void *pZLIB;                        /* ZLIB compression session data */

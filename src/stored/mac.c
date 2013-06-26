@@ -339,6 +339,70 @@ static bool clone_record_to_remote_sd(DCR *dcr, DEV_RECORD *rec)
 }
 
 /*
+ * Check autoinflation/autodeflation settings.
+ */
+static inline void check_auto_xflation(JCR *jcr)
+{
+   /*
+    * See if the autoxflateonreplication flag is set to true then we allow
+    * autodeflation and autoinflation to take place.
+    */
+   if (me->autoxflateonreplication) {
+      return;
+   }
+
+   /*
+    * Check autodeflation.
+    */
+   switch (jcr->read_dcr->autodeflate) {
+   case IO_DIRECTION_IN:
+   case IO_DIRECTION_INOUT:
+      Dmsg0(200, "Clearing autodeflate on read_dcr\n");
+      jcr->read_dcr->autodeflate = IO_DIRECTION_NONE;
+      break;
+   default:
+      break;
+   }
+
+   if (jcr->dcr) {
+      switch (jcr->dcr->autodeflate) {
+         case IO_DIRECTION_OUT:
+         case IO_DIRECTION_INOUT:
+            Dmsg0(200, "Clearing autodeflate on write dcr\n");
+            jcr->dcr->autodeflate = IO_DIRECTION_NONE;
+            break;
+         default:
+            break;
+      }
+   }
+
+   /*
+    * Check autoinflation.
+    */
+   switch (jcr->read_dcr->autoinflate) {
+   case IO_DIRECTION_IN:
+   case IO_DIRECTION_INOUT:
+      Dmsg0(200, "Clearing autoinflate on read_dcr\n");
+      jcr->read_dcr->autoinflate = IO_DIRECTION_NONE;
+      break;
+   default:
+      break;
+   }
+
+   if (jcr->dcr) {
+      switch (jcr->dcr->autoinflate) {
+         case IO_DIRECTION_OUT:
+         case IO_DIRECTION_INOUT:
+            Dmsg0(200, "Clearing autoinflate on write dcr\n");
+            jcr->dcr->autoinflate = IO_DIRECTION_NONE;
+            break;
+         default:
+            break;
+      }
+   }
+}
+
+/*
  * Read Data and commit to new job.
  */
 bool do_mac_run(JCR *jcr)
@@ -373,6 +437,11 @@ bool do_mac_run(JCR *jcr)
       Jmsg(jcr, M_FATAL, 0, _("No Volume names found for %s.\n"), Type);
       goto bail_out;
    }
+
+   /*
+    * Check autoinflation/autodeflation settings.
+    */
+   check_auto_xflation(jcr);
 
    /*
     * See if we perform both read and write or read only.

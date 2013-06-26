@@ -130,12 +130,7 @@ bool setup_compression_buffers(JCR *jcr,
       break;
 #ifdef HAVE_LIBZ
    case COMPRESS_GZIP: {
-      /*
-       * See if this compression algorithm is already setup.
-       */
-      if (jcr->compress.workset.pZLIB) {
-         return true;
-      }
+      z_stream *pZlibStream;
 
       /**
        * Use compressBound() to get an idea what zlib thinks
@@ -156,33 +151,33 @@ bool setup_compression_buffers(JCR *jcr,
          *compress_buf_size = wanted_compress_buf_size;
       }
 
-      z_stream *pZlibStream = (z_stream *)malloc(sizeof(z_stream));
-      memset(pZlibStream, 0, sizeof(z_stream));
-      if (pZlibStream) {
-         pZlibStream->zalloc = Z_NULL;
-         pZlibStream->zfree = Z_NULL;
-         pZlibStream->opaque = Z_NULL;
-         pZlibStream->state = Z_NULL;
+      /*
+       * See if this compression algorithm is already setup.
+       */
+      if (jcr->compress.workset.pZLIB) {
+         return true;
+      }
 
-         if (deflateInit(pZlibStream, Z_DEFAULT_COMPRESSION) == Z_OK) {
-            jcr->compress.workset.pZLIB = pZlibStream;
-         } else {
-            Jmsg(jcr, M_FATAL, 0, _("Failed to initialize ZLIB compression\n"));
-            free(pZlibStream);
-            return false;
-         }
+      pZlibStream = (z_stream *)malloc(sizeof(z_stream));
+      memset(pZlibStream, 0, sizeof(z_stream));
+      pZlibStream->zalloc = Z_NULL;
+      pZlibStream->zfree = Z_NULL;
+      pZlibStream->opaque = Z_NULL;
+      pZlibStream->state = Z_NULL;
+
+      if (deflateInit(pZlibStream, Z_DEFAULT_COMPRESSION) == Z_OK) {
+         jcr->compress.workset.pZLIB = pZlibStream;
+      } else {
+         Jmsg(jcr, M_FATAL, 0, _("Failed to initialize ZLIB compression\n"));
+         free(pZlibStream);
+         return false;
       }
       break;
    }
 #endif
 #ifdef HAVE_LZO
    case COMPRESS_LZO1X: {
-      /*
-       * See if this compression algorithm is already setup.
-       */
-      if (jcr->compress.workset.pLZO) {
-         return true;
-      }
+      lzo_voidp pLzoMem;
 
       /**
        * For LZO1X compression the recommended value is:
@@ -197,16 +192,22 @@ bool setup_compression_buffers(JCR *jcr,
          *compress_buf_size = wanted_compress_buf_size;
       }
 
-      lzo_voidp pLzoMem = (lzo_voidp) malloc(LZO1X_1_MEM_COMPRESS);
+      /*
+       * See if this compression algorithm is already setup.
+       */
+      if (jcr->compress.workset.pLZO) {
+         return true;
+      }
+
+      pLzoMem = (lzo_voidp) malloc(LZO1X_1_MEM_COMPRESS);
       memset(pLzoMem, 0, LZO1X_1_MEM_COMPRESS);
-      if (pLzoMem) {
-         if (lzo_init() == LZO_E_OK) {
-            jcr->compress.workset.pLZO = pLzoMem;
-         } else {
-            Jmsg(jcr, M_FATAL, 0, _("Failed to initialize LZO compression\n"));
-            free(pLzoMem);
-            return false;
-         }
+
+      if (lzo_init() == LZO_E_OK) {
+         jcr->compress.workset.pLZO = pLzoMem;
+      } else {
+         Jmsg(jcr, M_FATAL, 0, _("Failed to initialize LZO compression\n"));
+         free(pLzoMem);
+         return false;
       }
       break;
    }
@@ -216,13 +217,7 @@ bool setup_compression_buffers(JCR *jcr,
    case COMPRESS_FZ4L:
    case COMPRESS_FZ4H: {
       int level, zstat;
-
-      /*
-       * See if this compression algorithm is already setup.
-       */
-      if (jcr->compress.workset.pZFAST) {
-         return true;
-      }
+      zfast_stream *pZfastStream;
 
       if (compatible) {
          non_compatible_compression_algorithm(jcr, compression_algorithm);
@@ -248,21 +243,26 @@ bool setup_compression_buffers(JCR *jcr,
          *compress_buf_size = wanted_compress_buf_size;
       }
 
-      zfast_stream *pZfastStream = (zfast_stream *)malloc(sizeof(zfast_stream));
-      memset(pZfastStream, 0, sizeof(zfast_stream));
-      if (pZfastStream) {
-         pZfastStream->zalloc = Z_NULL;
-         pZfastStream->zfree = Z_NULL;
-         pZfastStream->opaque = Z_NULL;
-         pZfastStream->state = Z_NULL;
+      /*
+       * See if this compression algorithm is already setup.
+       */
+      if (jcr->compress.workset.pZFAST) {
+         return true;
+      }
 
-         if ((zstat = fastlzlibCompressInit(pZfastStream, level)) == Z_OK) {
-            jcr->compress.workset.pZFAST = pZfastStream;
-         } else {
-            Jmsg(jcr, M_FATAL, 0, _("Failed to initialize FASTLZ compression\n"));
-            free(pZfastStream);
-            return false;
-         }
+      pZfastStream = (zfast_stream *)malloc(sizeof(zfast_stream));
+      memset(pZfastStream, 0, sizeof(zfast_stream));
+      pZfastStream->zalloc = Z_NULL;
+      pZfastStream->zfree = Z_NULL;
+      pZfastStream->opaque = Z_NULL;
+      pZfastStream->state = Z_NULL;
+
+      if ((zstat = fastlzlibCompressInit(pZfastStream, level)) == Z_OK) {
+         jcr->compress.workset.pZFAST = pZfastStream;
+      } else {
+         Jmsg(jcr, M_FATAL, 0, _("Failed to initialize FASTLZ compression\n"));
+         free(pZfastStream);
+         return false;
       }
       break;
    }
@@ -275,24 +275,21 @@ bool setup_compression_buffers(JCR *jcr,
    return true;
 }
 
-bool setup_decompression_buffers(JCR *jcr)
+bool setup_decompression_buffers(JCR *jcr, uint32_t *decompress_buf_size)
 {
    uint32_t compress_buf_size;
 
    /*
     * Use the same buffer size to decompress all data.
     */
-   memset(&jcr->compress, 0, sizeof(CMPRS_CTX));
    compress_buf_size = jcr->buf_size;
    if (compress_buf_size < DEFAULT_NETWORK_BUFFER_SIZE) {
       compress_buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
    }
-   compress_buf_size = compress_buf_size + 12 + ((compress_buf_size + 999) / 1000) + 100;
-   jcr->compress.buffer = get_memory(compress_buf_size);
-   jcr->compress.buffer_size = compress_buf_size;
+   *decompress_buf_size = compress_buf_size + 12 + ((compress_buf_size + 999) / 1000) + 100;
 
 #ifdef HAVE_LZO
-   if (lzo_init() != LZO_E_OK) {
+   if (!jcr->compress.inflate_buffer && lzo_init() != LZO_E_OK) {
       Jmsg(jcr, M_FATAL, 0, _("LZO init failed\n"));
       return false;
    }
@@ -310,26 +307,28 @@ static bool compress_with_zlib(JCR *jcr,
                                uint32_t *compress_len)
 {
    int zstat;
+   z_stream *pZlibStream;
 
    Dmsg3(400, "cbuf=0x%x rbuf=0x%x len=%u\n", cbuf, rbuf, rsize);
 
-   ((z_stream *)jcr->compress.workset.pZLIB)->next_in = (Bytef *)rbuf;
-   ((z_stream *)jcr->compress.workset.pZLIB)->avail_in = rsize;
-   ((z_stream *)jcr->compress.workset.pZLIB)->next_out = (Bytef *)cbuf;
-   ((z_stream *)jcr->compress.workset.pZLIB)->avail_out = max_compress_len;
+   pZlibStream = (z_stream *)jcr->compress.workset.pZLIB;
+   pZlibStream->next_in = (Bytef *)rbuf;
+   pZlibStream->avail_in = rsize;
+   pZlibStream->next_out = (Bytef *)cbuf;
+   pZlibStream->avail_out = max_compress_len;
 
-   if ((zstat = deflate((z_stream *)jcr->compress.workset.pZLIB, Z_FINISH)) != Z_STREAM_END) {
+   if ((zstat = deflate(pZlibStream, Z_FINISH)) != Z_STREAM_END) {
       Jmsg(jcr, M_FATAL, 0, _("Compression deflate error: %d\n"), zstat);
       jcr->setJobStatus(JS_ErrorTerminated);
       return false;
    }
 
-   *compress_len = ((z_stream *)jcr->compress.workset.pZLIB)->total_out;
+   *compress_len = pZlibStream->total_out;
 
    /*
     * Reset zlib stream to be able to begin from scratch again
     */
-   if ((zstat = deflateReset((z_stream *)jcr->compress.workset.pZLIB)) != Z_OK) {
+   if ((zstat = deflateReset(pZlibStream)) != Z_OK) {
       Jmsg(jcr, M_FATAL, 0, _("Compression deflateReset error: %d\n"), zstat);
       jcr->setJobStatus(JS_ErrorTerminated);
       return false;
@@ -382,26 +381,28 @@ static bool compress_with_fastlz(JCR *jcr,
                                  uint32_t *compress_len)
 {
    int zstat;
+   zfast_stream *pZfastStream;
 
    Dmsg3(400, "cbuf=0x%x rbuf=0x%x len=%u\n", cbuf, rbuf, rsize);
 
-   ((zfast_stream *)jcr->compress.workset.pZFAST)->next_in = (Bytef *)rbuf;
-   ((zfast_stream *)jcr->compress.workset.pZFAST)->avail_in = rsize;
-   ((zfast_stream *)jcr->compress.workset.pZFAST)->next_out = (Bytef *)cbuf;
-   ((zfast_stream *)jcr->compress.workset.pZFAST)->avail_out = max_compress_len;
+   pZfastStream = (zfast_stream *)jcr->compress.workset.pZFAST;
+   pZfastStream->next_in = (Bytef *)rbuf;
+   pZfastStream->avail_in = rsize;
+   pZfastStream->next_out = (Bytef *)cbuf;
+   pZfastStream->avail_out = max_compress_len;
 
-   if ((zstat = fastlzlibCompress((zfast_stream *)jcr->compress.workset.pZFAST, Z_FINISH)) != Z_STREAM_END) {
+   if ((zstat = fastlzlibCompress(pZfastStream, Z_FINISH)) != Z_STREAM_END) {
       Jmsg(jcr, M_FATAL, 0, _("Compression fastlzlibCompress error: %d\n"), zstat);
       jcr->setJobStatus(JS_ErrorTerminated);
       return false;
    }
 
-   *compress_len = ((zfast_stream *)jcr->compress.workset.pZFAST)->total_out;
+   *compress_len = pZfastStream->total_out;
 
    /*
     * Reset fastlz stream to be able to begin from scratch again
     */
-   if ((zstat = fastlzlibCompressReset((zfast_stream *)jcr->compress.workset.pZFAST)) != Z_OK) {
+   if ((zstat = fastlzlibCompressReset(pZfastStream)) != Z_OK) {
       Jmsg(jcr, M_FATAL, 0, _("Compression fastlzlibCompressReset error: %d\n"), zstat);
       jcr->setJobStatus(JS_ErrorTerminated);
       return false;
@@ -460,11 +461,18 @@ bool compress_data(JCR *jcr,
 }
 
 #ifdef HAVE_LIBZ
-static bool decompress_with_zlib(JCR *jcr, const char *last_fname, char **data, uint32_t *length, bool with_header)
+static bool decompress_with_zlib(JCR *jcr,
+                                 const char *last_fname,
+                                 char **data,
+                                 uint32_t *length,
+                                 bool sparse,
+                                 bool with_header,
+                                 bool want_data_stream)
 {
    char ec1[50]; /* Buffer printing huge values */
    uLong compress_len;
    const unsigned char *cbuf;
+   char *wbuf;
    int status, real_compress_len;
 
    /*
@@ -472,7 +480,13 @@ static bool decompress_with_zlib(JCR *jcr, const char *last_fname, char **data, 
     * needed by the zlib routines, they should not otherwise
     * be used in Bareos.
     */
-   compress_len = jcr->compress.buffer_size;
+   if (sparse && want_data_stream) {
+      wbuf = jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
+      compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+   } else {
+      wbuf = jcr->compress.inflate_buffer;
+      compress_len = jcr->compress.inflate_buffer_size;
+   }
 
    /*
     * See if this is a compressed stream with the new compression header or an old one.
@@ -485,16 +499,23 @@ static bool decompress_with_zlib(JCR *jcr, const char *last_fname, char **data, 
       real_compress_len = *length;
    }
 
-   Dmsg2(200, "Comp_len=%d msglen=%d\n", compress_len, *length);
+   Dmsg2(400, "Comp_len=%d msglen=%d\n", compress_len, *length);
 
-   while ((status = uncompress((Byte *)jcr->compress.buffer, &compress_len,
-                               (const Byte *)cbuf, (uLong)real_compress_len)) == Z_BUF_ERROR) {
+   while ((status = uncompress((Byte *)wbuf, &compress_len, (const Byte *)cbuf, (uLong)real_compress_len)) == Z_BUF_ERROR) {
       /*
        * The buffer size is too small, try with a bigger one
        */
-      compress_len = jcr->compress.buffer_size = jcr->compress.buffer_size + (jcr->compress.buffer_size >> 1);
-      Dmsg2(200, "Comp_len=%d msglen=%d\n", compress_len, *length);
-      jcr->compress.buffer = check_pool_memory_size(jcr->compress.buffer, compress_len);
+      jcr->compress.inflate_buffer_size = jcr->compress.inflate_buffer_size + (jcr->compress.inflate_buffer_size >> 1);
+      jcr->compress.inflate_buffer = check_pool_memory_size(jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
+
+      if (sparse && want_data_stream) {
+         wbuf = jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
+         compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+      } else {
+         wbuf = jcr->compress.inflate_buffer;
+         compress_len = jcr->compress.inflate_buffer_size;
+      }
+      Dmsg2(400, "Comp_len=%d msglen=%d\n", compress_len, *length);
    }
 
    if (status != Z_OK) {
@@ -502,35 +523,62 @@ static bool decompress_with_zlib(JCR *jcr, const char *last_fname, char **data, 
       return false;
    }
 
-   *data = jcr->compress.buffer;
+   /*
+    * We return a decompressed data stream with the fileoffset encoded when this was a sparse stream.
+    */
+   if (sparse && want_data_stream) {
+      memcpy(jcr->compress.inflate_buffer, *data, OFFSET_FADDR_SIZE);
+   }
+
+   *data = jcr->compress.inflate_buffer;
    *length = compress_len;
 
-   Dmsg2(200, "Write uncompressed %d bytes, total before write=%s\n", compress_len, edit_uint64(jcr->JobBytes, ec1));
+   Dmsg2(400, "Write uncompressed %d bytes, total before write=%s\n", compress_len, edit_uint64(jcr->JobBytes, ec1));
 
    return true;
 }
 #endif
 #ifdef HAVE_LZO
-static bool decompress_with_lzo(JCR *jcr, const char *last_fname, char **data, uint32_t *length)
+static bool decompress_with_lzo(JCR *jcr,
+                                const char *last_fname,
+                                char **data,
+                                uint32_t *length,
+                                bool sparse,
+                                bool want_data_stream)
 {
    char ec1[50]; /* Buffer printing huge values */
    lzo_uint compress_len;
    const unsigned char *cbuf;
+   unsigned char *wbuf;
    int status, real_compress_len;
 
-   compress_len = jcr->compress.buffer_size;
-   cbuf = (const unsigned char *)*data + sizeof(comp_stream_header);
+   if (sparse && want_data_stream) {
+      compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+      cbuf = (const unsigned char *)*data + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
+      wbuf = (unsigned char *)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
+   } else {
+      compress_len = jcr->compress.inflate_buffer_size;
+      cbuf = (const unsigned char *)*data + sizeof(comp_stream_header);
+      wbuf = (unsigned char *)jcr->compress.inflate_buffer;
+   }
+
    real_compress_len = *length - sizeof(comp_stream_header);
-   Dmsg2(200, "Comp_len=%d msglen=%d\n", compress_len, *length);
-   while ((status = lzo1x_decompress_safe(cbuf, real_compress_len,
-                                          (unsigned char *)jcr->compress.buffer,
-                                          &compress_len, NULL)) == LZO_E_OUTPUT_OVERRUN) {
+   Dmsg2(400, "Comp_len=%d msglen=%d\n", compress_len, *length);
+   while ((status = lzo1x_decompress_safe(cbuf, real_compress_len, wbuf, &compress_len, NULL)) == LZO_E_OUTPUT_OVERRUN) {
       /*
        * The buffer size is too small, try with a bigger one
        */
-      compress_len = jcr->compress.buffer_size = jcr->compress.buffer_size + (jcr->compress.buffer_size >> 1);
-      Dmsg2(200, "Comp_len=%d msglen=%d\n", compress_len, *length);
-      jcr->compress.buffer = check_pool_memory_size(jcr->compress.buffer, compress_len);
+      jcr->compress.inflate_buffer_size = jcr->compress.inflate_buffer_size + (jcr->compress.inflate_buffer_size >> 1);
+      jcr->compress.inflate_buffer = check_pool_memory_size(jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
+
+      if (sparse && want_data_stream) {
+         compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+         wbuf = (unsigned char *)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
+      } else {
+         compress_len = jcr->compress.inflate_buffer_size;
+         wbuf = (unsigned char *)jcr->compress.inflate_buffer;
+      }
+      Dmsg2(400, "Comp_len=%d msglen=%d\n", compress_len, *length);
    }
 
    if (status != LZO_E_OK) {
@@ -538,17 +586,30 @@ static bool decompress_with_lzo(JCR *jcr, const char *last_fname, char **data, u
       return false;
    }
 
-   *data = jcr->compress.buffer;
+   /*
+    * We return a decompressed data stream with the fileoffset encoded when this was a sparse stream.
+    */
+   if (sparse && want_data_stream) {
+      memcpy(jcr->compress.inflate_buffer, *data, OFFSET_FADDR_SIZE);
+   }
+
+   *data = jcr->compress.inflate_buffer;
    *length = compress_len;
 
-   Dmsg2(200, "Write uncompressed %d bytes, total before write=%s\n", compress_len, edit_uint64(jcr->JobBytes, ec1));
+   Dmsg2(400, "Write uncompressed %d bytes, total before write=%s\n", compress_len, edit_uint64(jcr->JobBytes, ec1));
 
    return true;
 }
 #endif
 
 #ifdef HAVE_FASTLZ
-static bool decompress_with_fastlz(JCR *jcr, const char *last_fname, char **data, uint32_t *length, uint32_t comp_magic)
+static bool decompress_with_fastlz(JCR *jcr,
+                                   const char *last_fname,
+                                   char **data,
+                                   uint32_t *length,
+                                   uint32_t comp_magic,
+                                   bool sparse,
+                                   bool want_data_stream)
 {
    int zstat;
    zfast_stream stream;
@@ -570,10 +631,15 @@ static bool decompress_with_fastlz(JCR *jcr, const char *last_fname, char **data
    memset(&stream, 0, sizeof(stream));
    stream.next_in = (Bytef *)*data + sizeof(comp_stream_header);
    stream.avail_in = (uInt)*length - sizeof(comp_stream_header);
-   stream.next_out = (Bytef *)jcr->compress.buffer;
-   stream.avail_out = (uInt)jcr->compress.buffer_size;
+   if (sparse && want_data_stream) {
+      stream.next_out = (Bytef *)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
+      stream.avail_out = (uInt)jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+   } else {
+      stream.next_out = (Bytef *)jcr->compress.inflate_buffer;
+      stream.avail_out = (uInt)jcr->compress.inflate_buffer_size;
+   }
 
-   Dmsg2(200, "Comp_len=%d msglen=%d\n", stream.avail_in, *length);
+   Dmsg2(400, "Comp_len=%d msglen=%d\n", stream.avail_in, *length);
 
    if ((zstat = fastlzlibDecompressInit(&stream)) != Z_OK) {
       goto cleanup;
@@ -590,10 +656,15 @@ static bool decompress_with_fastlz(JCR *jcr, const char *last_fname, char **data
          /*
           * The buffer size is too small, try with a bigger one
           */
-         jcr->compress.buffer_size = jcr->compress.buffer_size + (jcr->compress.buffer_size >> 1);
-         jcr->compress.buffer = check_pool_memory_size(jcr->compress.buffer, jcr->compress.buffer_size);
-         stream.next_out = (Bytef *)jcr->compress.buffer;
-         stream.avail_out = (uInt)jcr->compress.buffer_size;
+         jcr->compress.inflate_buffer_size = jcr->compress.inflate_buffer_size + (jcr->compress.inflate_buffer_size >> 1);
+         jcr->compress.inflate_buffer = check_pool_memory_size(jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
+         if (sparse && want_data_stream) {
+            stream.next_out = (Bytef *)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
+            stream.avail_out = (uInt)jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+         } else {
+            stream.next_out = (Bytef *)jcr->compress.inflate_buffer;
+            stream.avail_out = (uInt)jcr->compress.inflate_buffer_size;
+         }
          continue;
       case Z_OK:
       case Z_STREAM_END:
@@ -604,9 +675,16 @@ static bool decompress_with_fastlz(JCR *jcr, const char *last_fname, char **data
       break;
    }
 
-   *data = jcr->compress.buffer;
+   /*
+    * We return a decompressed data stream with the fileoffset encoded when this was a sparse stream.
+    */
+   if (sparse && want_data_stream) {
+      memcpy(jcr->compress.inflate_buffer, *data, OFFSET_FADDR_SIZE);
+   }
+
+   *data = jcr->compress.inflate_buffer;
    *length = stream.total_out;
-   Dmsg2(200, "Write uncompressed %d bytes, total before write=%s\n", *length, edit_uint64(jcr->JobBytes, ec1));
+   Dmsg2(400, "Write uncompressed %d bytes, total before write=%s\n", *length, edit_uint64(jcr->JobBytes, ec1));
    fastlzlibDecompressEnd(&stream);
 
    return true;
@@ -619,10 +697,14 @@ cleanup:
 }
 #endif
 
-bool decompress_data(JCR *jcr, const char *last_fname, int32_t stream, char **data, uint32_t *length)
+bool decompress_data(JCR *jcr,
+                     const char *last_fname,
+                     int32_t stream,
+                     char **data,
+                     uint32_t *length,
+                     bool want_data_stream)
 {
-
-   Dmsg1(200, "Stream found in decompress_data(): %d\n", stream);
+   Dmsg1(400, "Stream found in decompress_data(): %d\n", stream);
    switch (stream) {
    case STREAM_COMPRESSED_DATA:
    case STREAM_SPARSE_COMPRESSED_DATA:
@@ -642,7 +724,7 @@ bool decompress_data(JCR *jcr, const char *last_fname, int32_t stream, char **da
       unser_uint16(comp_level);
       unser_uint16(comp_version);
       unser_end(*data, sizeof(comp_stream_header));
-      Dmsg4(200, "Compressed data stream found: magic=0x%x, len=%d, level=%d, ver=0x%x\n",
+      Dmsg4(400, "Compressed data stream found: magic=0x%x, len=%d, level=%d, ver=0x%x\n",
             comp_magic, comp_len, comp_level, comp_version);
 
       /*
@@ -668,17 +750,32 @@ bool decompress_data(JCR *jcr, const char *last_fname, int32_t stream, char **da
       switch (comp_magic) {
 #ifdef HAVE_LIBZ
          case COMPRESS_GZIP:
-            return decompress_with_zlib(jcr, last_fname, data, length, true);
+            switch (stream) {
+            case STREAM_SPARSE_COMPRESSED_DATA:
+               return decompress_with_zlib(jcr, last_fname, data, length, true, true, want_data_stream);
+            default:
+               return decompress_with_zlib(jcr, last_fname, data, length, false, true, want_data_stream);
+            }
 #endif
 #ifdef HAVE_LZO
          case COMPRESS_LZO1X:
-            return decompress_with_lzo(jcr, last_fname, data, length);
+            switch (stream) {
+            case STREAM_SPARSE_COMPRESSED_DATA:
+               return decompress_with_lzo(jcr, last_fname, data, length, true, want_data_stream);
+            default:
+               return decompress_with_lzo(jcr, last_fname, data, length, false, want_data_stream);
+            }
 #endif
 #ifdef HAVE_FASTLZ
          case COMPRESS_FZFZ:
          case COMPRESS_FZ4L:
          case COMPRESS_FZ4H:
-            return decompress_with_fastlz(jcr, last_fname, data, length, comp_magic);
+            switch (stream) {
+            case STREAM_SPARSE_COMPRESSED_DATA:
+               return decompress_with_fastlz(jcr, last_fname, data, length, comp_magic, true, want_data_stream);
+            default:
+               return decompress_with_fastlz(jcr, last_fname, data, length, comp_magic, false, want_data_stream);
+            }
 #endif
          default:
             Qmsg(jcr, M_ERROR, 0, _("Compression algorithm 0x%x found, but not supported!\n"), comp_magic);
@@ -687,16 +784,27 @@ bool decompress_data(JCR *jcr, const char *last_fname, int32_t stream, char **da
       break;
    }
    default:
-      return decompress_with_zlib(jcr, last_fname, data, length, false);
+      switch (stream) {
+      case STREAM_SPARSE_GZIP_DATA:
+         return decompress_with_zlib(jcr, last_fname, data, length, true, false, want_data_stream);
+      default:
+         return decompress_with_zlib(jcr, last_fname, data, length, false, false, want_data_stream);
+      }
    }
 }
 
 void cleanup_compression(JCR *jcr)
 {
-   if (jcr->compress.buffer) {
-      free_pool_memory(jcr->compress.buffer);
-      jcr->compress.buffer = NULL;
+   if (jcr->compress.deflate_buffer) {
+      free_pool_memory(jcr->compress.deflate_buffer);
+      jcr->compress.deflate_buffer = NULL;
    }
+
+   if (jcr->compress.inflate_buffer) {
+      free_pool_memory(jcr->compress.inflate_buffer);
+      jcr->compress.inflate_buffer = NULL;
+   }
+
 #ifdef HAVE_LIBZ
    if (jcr->compress.workset.pZLIB) {
       /*
@@ -707,18 +815,21 @@ void cleanup_compression(JCR *jcr)
       jcr->compress.workset.pZLIB = NULL;
    }
 #endif
+
 #ifdef HAVE_LZO
    if (jcr->compress.workset.pLZO) {
       free(jcr->compress.workset.pLZO);
       jcr->compress.workset.pLZO = NULL;
    }
 #endif
+
 #ifdef HAVE_FASTLZ
    if (jcr->compress.workset.pZFAST) {
       free(jcr->compress.workset.pZFAST);
       jcr->compress.workset.pZFAST = NULL;
    }
 #endif
+
 }
 #else
 bool setup_compression_buffers(JCR *jcr,
@@ -745,7 +856,12 @@ bool compress_data(JCR *jcr,
    return true;
 }
 
-bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length)
+bool decompress_data(JCR *jcr,
+                     const char *last_fname,
+                     int32_t stream,
+                     char **data,
+                     uint32_t *length,
+                     bool want_data_stream)
 {
    Qmsg(jcr, M_ERROR, 0, _("Compressed data stream found, but compression not configured!\n"));
    return false;

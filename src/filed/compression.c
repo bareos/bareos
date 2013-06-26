@@ -35,11 +35,6 @@
 #include <zlib.h>
 #endif
 
-#if defined(HAVE_LZO)
-#include <lzo/lzoconf.h>
-#include <lzo/lzo1x.h>
-#endif
-
 #if defined(HAVE_FASTLZ)
 #include <fastlzlib.h>
 #endif
@@ -52,7 +47,6 @@ bool adjust_compression_buffers(JCR *jcr)
    findFILESET *fileset = jcr->ff->fileset;
    uint32_t compress_buf_size = 0;
 
-   memset(&jcr->compress, 0, sizeof(CMPRS_CTX));
    if (fileset) {
       int i, j;
 
@@ -69,8 +63,8 @@ bool adjust_compression_buffers(JCR *jcr)
       }
 
       if (compress_buf_size > 0) {
-         jcr->compress.buffer = get_memory(compress_buf_size);
-         jcr->compress.buffer_size = compress_buf_size;
+         jcr->compress.deflate_buffer = get_memory(compress_buf_size);
+         jcr->compress.deflate_buffer_size = compress_buf_size;
       }
    }
 
@@ -82,7 +76,14 @@ bool adjust_compression_buffers(JCR *jcr)
  */
 bool adjust_decompression_buffers(JCR *jcr)
 {
-   return setup_decompression_buffers(jcr);
+   uint32_t decompress_buf_size;
+
+   setup_decompression_buffers(jcr, &decompress_buf_size);
+
+   jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
+   jcr->compress.inflate_buffer_size = decompress_buf_size;
+
+   return true;
 }
 
 bool setup_compression_context(b_ctx &bctx)
@@ -101,17 +102,17 @@ bool setup_compression_context(b_ctx &bctx)
           */
          if ((bctx.ff_pkt->flags & FO_SPARSE) ||
              (bctx.ff_pkt->flags & FO_OFFSETS)) {
-            bctx.chead = (Bytef *)bctx.jcr->compress.buffer + OFFSET_FADDR_SIZE;
-            bctx.cbuf = (Bytef *)bctx.jcr->compress.buffer + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
-            bctx.max_compress_len = bctx.jcr->compress.buffer_size - (sizeof(comp_stream_header) + OFFSET_FADDR_SIZE);
+            bctx.chead = (Bytef *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
+            bctx.cbuf = (Bytef *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
+            bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size - (sizeof(comp_stream_header) + OFFSET_FADDR_SIZE);
          } else {
-            bctx.chead = (Bytef *)bctx.jcr->compress.buffer;
-            bctx.cbuf = (Bytef *)bctx.jcr->compress.buffer + sizeof(comp_stream_header);
-            bctx.max_compress_len = bctx.jcr->compress.buffer_size - sizeof(comp_stream_header);
+            bctx.chead = (Bytef *)bctx.jcr->compress.deflate_buffer;
+            bctx.cbuf = (Bytef *)bctx.jcr->compress.deflate_buffer + sizeof(comp_stream_header);
+            bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size - sizeof(comp_stream_header);
          }
 
-         bctx.wbuf = bctx.jcr->compress.buffer; /* compressed output here */
-         bctx.cipher_input = (uint8_t *)bctx.jcr->compress.buffer; /* encrypt compressed data */
+         bctx.wbuf = bctx.jcr->compress.deflate_buffer; /* compressed output here */
+         bctx.cipher_input = (uint8_t *)bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
          bctx.ch.magic = bctx.ff_pkt->Compress_algo;
          bctx.ch.version = COMP_HEAD_VERSION;
       } else {
@@ -121,14 +122,14 @@ bool setup_compression_context(b_ctx &bctx)
          bctx.chead = NULL;
          if ((bctx.ff_pkt->flags & FO_SPARSE) ||
              (bctx.ff_pkt->flags & FO_OFFSETS)) {
-            bctx.cbuf = (Bytef *)bctx.jcr->compress.buffer + OFFSET_FADDR_SIZE;
-            bctx.max_compress_len = bctx.jcr->compress.buffer_size - OFFSET_FADDR_SIZE;
+            bctx.cbuf = (Bytef *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
+            bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size - OFFSET_FADDR_SIZE;
          } else {
-            bctx.cbuf = (Bytef *)bctx.jcr->compress.buffer;
-            bctx.max_compress_len = bctx.jcr->compress.buffer_size;
+            bctx.cbuf = (Bytef *)bctx.jcr->compress.deflate_buffer;
+            bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size;
          }
-         bctx.wbuf = bctx.jcr->compress.buffer; /* compressed output here */
-         bctx.cipher_input = (uint8_t *)bctx.jcr->compress.buffer; /* encrypt compressed data */
+         bctx.wbuf = bctx.jcr->compress.deflate_buffer; /* compressed output here */
+         bctx.cipher_input = (uint8_t *)bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
       }
 
       /*
@@ -136,20 +137,22 @@ bool setup_compression_context(b_ctx &bctx)
        */
       switch (bctx.ff_pkt->Compress_algo) {
 #if defined(HAVE_LIBZ)
-      case COMPRESS_GZIP:
+      case COMPRESS_GZIP: {
+         z_stream *pZlibStream;
+
          /**
           * Only change zlib parameters if there is no pending operation.
           * This should never happen as deflateReset is called after each
           * deflate.
           */
-         if (((z_stream *)bctx.jcr->compress.workset.pZLIB)->total_in == 0) {
+         pZlibStream = (z_stream *)bctx.jcr->compress.workset.pZLIB;
+         if (pZlibStream->total_in == 0) {
             int zstat;
 
             /*
              * Set gzip compression level - must be done per file
              */
-            if ((zstat = deflateParams((z_stream*)bctx.jcr->compress.workset.pZLIB,
-                                        bctx.ff_pkt->Compress_level, Z_DEFAULT_STRATEGY)) != Z_OK) {
+            if ((zstat = deflateParams(pZlibStream, bctx.ff_pkt->Compress_level, Z_DEFAULT_STRATEGY)) != Z_OK) {
                Jmsg(bctx.jcr, M_FATAL, 0, _("Compression deflateParams error: %d\n"), zstat);
                bctx.jcr->setJobStatus(JS_ErrorTerminated);
                goto bail_out;
@@ -157,6 +160,7 @@ bool setup_compression_context(b_ctx &bctx)
          }
          bctx.ch.level = bctx.ff_pkt->Compress_level;
          break;
+     }
 #endif
 #if defined(HAVE_LZO)
       case COMPRESS_LZO1X:
@@ -166,15 +170,17 @@ bool setup_compression_context(b_ctx &bctx)
       case COMPRESS_FZFZ:
       case COMPRESS_FZ4L:
       case COMPRESS_FZ4H: {
+         int zstat;
+         zfast_stream *pZfastStream;
+         zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
+
          /**
           * Only change fastlz parameters if there is no pending operation.
           * This should never happen as fastlzlibCompressReset is called after each
           * fastlzlibCompress.
           */
-         zfast_stream *pZfastStream = (zfast_stream *)bctx.jcr->compress.workset.pZFAST;
+         pZfastStream = (zfast_stream *)bctx.jcr->compress.workset.pZFAST;
          if (pZfastStream->total_in == 0) {
-            int zstat;
-            zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
 
             switch (bctx.ff_pkt->Compress_algo) {
             case COMPRESS_FZ4L:

@@ -100,6 +100,7 @@ public:
    utime_t heartbeat_interval;        /* Interval to send hb to FD */
    utime_t client_wait;               /* Time to wait for FD to connect */
    uint32_t max_network_buffer_size;  /* Max network buf size */
+   bool autoxflateonreplication;      /* Perform autoxflation when replicating data */
    bool compatible;                   /* Write compatible format */
    bool allow_bw_bursting;            /* Allow bursting with bandwidth limiting */
    bool ndmp_enable;                  /* Enable NDMP protocol listener */
@@ -159,6 +160,10 @@ public:
    uint32_t max_volume_jobs;          /* Max jobs to put on one volume */
    uint32_t max_network_buffer_size;  /* Max network buf size */
    uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs this drive */
+   uint32_t autodeflate_algorithm;    /* Compression algorithm to use for compression */
+   uint32_t autodeflate_level;        /* Compression level to use for compression algorithm which uses levels */
+   uint32_t autodeflate;              /* Perform auto deflation in this IO direction */
+   uint32_t autoinflate;              /* Perform auto inflation in this IO direction */
    utime_t vol_poll_interval;         /* Interval between polling volume during mount */
    int64_t max_volume_files;          /* Max files to put on one volume */
    int64_t max_volume_size;           /* Max bytes to put on one volume */
@@ -174,7 +179,9 @@ public:
    char *write_part_command;          /* Write part command */
    char *free_space_command;          /* Free space command */
 
-   /* The following are set at runtime */
+   /*
+    * The following are set at runtime
+    */
    DEVICE *dev;                       /* Pointer to phyical dev -- set at runtime */
    AUTOCHANGERRES *changer_res;       /* Pointer to changer res if any */
 };

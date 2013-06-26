@@ -49,8 +49,8 @@ static char rec_header[] =
 bool do_read_data(JCR *jcr)
 {
    BSOCK *fd = jcr->file_bsock;
-   bool ok = true;
    DCR *dcr = jcr->read_dcr;
+   bool ok = true;
 
    Dmsg0(20, "Start read data.\n");
 
@@ -72,6 +72,14 @@ bool do_read_data(JCR *jcr)
     */
    if (!acquire_device_for_read(dcr)) {
       fd->fsend(FD_error);
+      return false;
+   }
+
+   /*
+    * Let any SD plugin know now its time to setup the record translation infra.
+    */
+   if (generate_plugin_event(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
+      jcr->setJobStatus(JS_ErrorTerminated);
       return false;
    }
 

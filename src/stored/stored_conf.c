@@ -44,6 +44,8 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass);
 static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass);
 static void store_devtype(LEX *lc, RES_ITEM *item, int index, int pass);
 static void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass);
+static void store_io_direction(LEX *lc, RES_ITEM *item, int index, int pass);
+static void store_compressionalgorithm(LEX *lc, RES_ITEM *item, int index, int pass);
 
 /*
  * We build the current resource here statically,
@@ -108,6 +110,7 @@ static RES_ITEM store_items[] = {
    { "ndmpaddress", store_addresses_address, ITEM(res_store.NDMPaddrs), 0, ITEM_DEFAULT, NDMP_DEFAULT_PORT },
    { "ndmpaddresses", store_addresses, ITEM(res_store.NDMPaddrs), 0, ITEM_DEFAULT, NDMP_DEFAULT_PORT },
    { "ndmpport", store_addresses_port, ITEM(res_store.NDMPaddrs), 0, ITEM_DEFAULT, NDMP_DEFAULT_PORT },
+   { "autoxflateonreplication", store_bool, ITEM(res_store.autoxflateonreplication), 0, ITEM_DEFAULT, "false" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -209,6 +212,10 @@ static RES_ITEM dev_items[] = {
    { "norewindonclose", store_bool, ITEM(res_dev.norewindonclose), 0, ITEM_DEFAULT, "true" },
    { "drivecryptoenabled", store_bool, ITEM(res_dev.drive_crypto_enabled), 0, 0, NULL },
    { "querycryptostatus", store_bool, ITEM(res_dev.query_crypto_status), 0, 0, NULL },
+   { "autodeflate", store_io_direction, ITEM(res_dev.autodeflate), 0, 0, NULL },
+   { "autodeflatealgorithm", store_compressionalgorithm, ITEM(res_dev.autodeflate_algorithm), 0, 0, NULL },
+   { "autodeflatelevel", store_pint32, ITEM(res_dev.autodeflate_level), 0, ITEM_DEFAULT, "6" },
+   { "autoinflate", store_io_direction, ITEM(res_dev.autoinflate), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -265,6 +272,28 @@ static s_kw dev_types[] = {
    { "fifo", B_FIFO_DEV },
    { "vtl", B_VTL_DEV },
    { "vtape", B_VTAPE_DEV },
+   { NULL, 0 }
+};
+
+/*
+ * IO directions.
+ */
+static s_kw io_directions[] = {
+   { "in", IO_DIRECTION_IN },
+   { "out", IO_DIRECTION_OUT },
+   { "both", IO_DIRECTION_INOUT },
+   { NULL, 0 }
+};
+
+/*
+ * Compression algorithms
+ */
+static s_kw compression_algorithms[] = {
+   { "gzip", COMPRESS_GZIP },
+   { "lzo", COMPRESS_LZO1X },
+   { "lzfast", COMPRESS_FZFZ },
+   { "lz4", COMPRESS_FZ4L },
+   { "lz4hc", COMPRESS_FZ4H },
    { NULL, 0 }
 };
 
@@ -357,6 +386,50 @@ static void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass)
       scan_err2(lc, _("Maximum Block Size configured value %u is greater than allowed maximum: %u"),
          *(uint32_t *)(item->value), MAX_BLOCK_LENGTH );
    }
+}
+
+/*
+ * Store the IO direction on a certain device.
+ */
+static void store_io_direction(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int i;
+
+   lex_get_token(lc, T_NAME);
+   for (i = 0; io_directions[i].name; i++) {
+      if (bstrcasecmp(lc->str, io_directions[i].name)) {
+         *(uint32_t *)(item->value) = io_directions[i].token;
+         i = 0;
+         break;
+      }
+   }
+   if (i != 0) {
+      scan_err1(lc, _("Expected a IO direction keyword, got: %s"), lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all.hdr.item_present);
+}
+
+/*
+ * Store the compression algorithm to use on a certain device.
+ */
+static void store_compressionalgorithm(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int i;
+
+   lex_get_token(lc, T_NAME);
+   for (i = 0; compression_algorithms[i].name; i++) {
+      if (bstrcasecmp(lc->str, compression_algorithms[i].name)) {
+         *(uint32_t *)(item->value) = compression_algorithms[i].token;
+         i = 0;
+         break;
+      }
+   }
+   if (i != 0) {
+      scan_err1(lc, _("Expected a Compression algorithm keyword, got: %s"), lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all.hdr.item_present);
 }
 
 /*

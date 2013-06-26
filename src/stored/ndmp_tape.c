@@ -303,29 +303,36 @@ static inline bool bndmp_write_data_to_block(JCR *jcr,
                                              char *data,
                                              u_long data_length)
 {
+   bool retval = false;
    DCR *dcr = jcr->dcr;
-   DEV_RECORD rec;
+   POOLMEM *rec_data;
 
-   memset(&rec, 0, sizeof(rec));
-   rec.VolSessionId = jcr->VolSessionId;
-   rec.VolSessionTime = jcr->VolSessionTime;
-   rec.FileIndex = dcr->FileIndex;
-   rec.Stream = stream;
-   rec.maskedStream = stream & STREAMMASK_TYPE; /* strip high bits */
-   rec.data = data;
-   rec.data_len = data_length;
+   /*
+    * Keep track of the original data buffer and restore it on exit from this function.
+    */
+   rec_data = dcr->rec->data;
 
-   if (!dcr->write_record(&rec)) {
-      return false;
+   dcr->rec->VolSessionId = jcr->VolSessionId;
+   dcr->rec->VolSessionTime = jcr->VolSessionTime;
+   dcr->rec->FileIndex = dcr->FileIndex;
+   dcr->rec->Stream = stream;
+   dcr->rec->maskedStream = stream & STREAMMASK_TYPE; /* strip high bits */
+   dcr->rec->data = data;
+   dcr->rec->data_len = data_length;
+
+   if (!dcr->write_record()) {
+      goto bail_out;
    }
-
-   jcr->JobBytes += rec.data_len;         /* increment bytes of this job */
 
    if (stream == STREAM_UNIX_ATTRIBUTES) {
-      dir_update_file_attributes(dcr, &rec);
+      dir_update_file_attributes(dcr, dcr->rec);
    }
 
-   return true;
+   retval = true;
+
+bail_out:
+   dcr->rec->data = rec_data;
+   return retval;
 }
 
 /*
@@ -624,6 +631,14 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
          }
 
          /*
+          * Let any SD plugin know now its time to setup the record translation infra.
+          */
+         if (generate_plugin_event(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
+            jcr->setJobStatus(JS_ErrorTerminated);
+            return NDMP9_NO_DEVICE_ERR;
+         }
+
+         /*
           * Keep track that we acquired the storage.
           */
          jcr->acquired_storage = true;
@@ -707,6 +722,14 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
           * Ready device for reading
           */
          if (!acquire_device_for_read(dcr)) {
+            jcr->setJobStatus(JS_ErrorTerminated);
+            return NDMP9_NO_DEVICE_ERR;
+         }
+
+         /*
+          * Let any SD plugin know now its time to setup the record translation infra.
+          */
+         if (generate_plugin_event(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
             jcr->setJobStatus(JS_ErrorTerminated);
             return NDMP9_NO_DEVICE_ERR;
          }
@@ -898,15 +921,9 @@ extern "C" ndmp9_error bndmp_tape_write(struct ndm_session *sess,
     * Turn the NDMP data into a internal record and save it.
     */
    if (bndmp_write_data_to_block(jcr, STREAM_FILE_DATA, buf, count)) {
-      if (jcr->RemainingQuota && jcr->JobBytes > jcr->RemainingQuota) {
-         Jmsg0(jcr, M_FATAL, 0, _("Quota Exceeded. Job Terminated.\n"));
-         jcr->setJobStatus(JS_ErrorTerminated);
-         err = NDMP9_IO_ERR;
-      } else {
-         ta->tape_state.blockno.value++;
-         *done_count = count;
-         err = NDMP9_NO_ERR;
-      }
+      ta->tape_state.blockno.value++;
+      *done_count = count;
+      err = NDMP9_NO_ERR;
    } else {
       jcr->setJobStatus(JS_ErrorTerminated);
       err = NDMP9_IO_ERR;

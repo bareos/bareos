@@ -364,7 +364,7 @@ bool read_next_record_from_block(DCR *dcr, READ_CTX *rctx, bool *done)
 
 /*
  * This subroutine reads all the records and passes them back to your
- *  callback routine (also mount routine at EOM).
+ * callback routine (also mount routine at EOM).
  *
  * You must not change any values in the DEV_RECORD packet
  */
@@ -440,22 +440,46 @@ bool read_records(DCR *dcr,
              *  check the match_stat in the record */
             ok = record_cb(dcr, rctx->rec);
          } else {
+            DEV_RECORD *rec;
+
             Dmsg6(dbglvl, "OK callback. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
                   rctx->records_processed, rec_state_bits_to_str(rctx->rec), dcr->block->BlockNumber,
                   rctx->rec->VolSessionId, rctx->rec->VolSessionTime, rctx->rec->FileIndex);
 
-            ok = record_cb(dcr, rctx->rec);
+            /*
+             * Perform record translations.
+             */
+            dcr->before_rec = rctx->rec;
+            dcr->after_rec = NULL;
+
+            /*
+             * We want the plugins to be called in reverse order so we give the generate_plugin_event()
+             * the reverse argument so it knows that we want the plugins to be called in that order.
+             */
+            if (generate_plugin_event(jcr, bsdEventReadRecordTranslation, dcr, true) != bRC_OK) {
+               ok = false;
+               continue;
+            }
+
+            /*
+             * The record got translated when we got an after_rec pointer after calling the
+             * bsdEventReadRecordTranslation plugin event. If no translation has taken place
+             * we just point the rec pointer to same DEV_RECORD as in the before_rec pointer.
+             */
+            rec = (dcr->after_rec) ? dcr->after_rec : dcr->before_rec;
+            ok = record_cb(dcr, rec);
+
 #if 0
             /*
              * If we have a digest stream, we check to see if we have
              *  finished the current bsr, and if so, repositioning will
              *  be turned on.
              */
-            if (crypto_digest_stream_type(rctx->rec->Stream) != CRYPTO_DIGEST_NONE) {
+            if (crypto_digest_stream_type(rec->Stream) != CRYPTO_DIGEST_NONE) {
                Dmsg3(dbglvl, "=== Have digest FI=%u before bsr check pos %u:%u\n",
-                     rctx->rec->FileIndex, dev->file, dev->block_num);
-               if (is_this_bsr_done(jcr->bsr, rctx->rec) && try_repositioning(jcr, rctx->rec, dcr)) {
-                  Dmsg1(dbglvl, "==== BSR done at FI=%d\n", rctx->rec->FileIndex);
+                     rec->FileIndex, dev->file, dev->block_num);
+               if (is_this_bsr_done(jcr->bsr, rec) && try_repositioning(jcr, rec, dcr)) {
+                  Dmsg1(dbglvl, "==== BSR done at FI=%d\n", rec->FileIndex);
                   Dmsg2(dbglvl, "This bsr done, break pos %u:%u\n",
                         dev->file, dev->block_num);
                   break;
@@ -463,6 +487,16 @@ bool read_records(DCR *dcr,
                Dmsg2(900, "After is_bsr_done pos %u:%u\n", dev->file, dev->block_num);
             }
 #endif
+
+            /*
+             * We can just release the translated record here as the record may not be
+             * changed by the record callback so any changes made don't need to be copied
+             * back to the original DEV_RECORD.
+             */
+            if (dcr->after_rec) {
+               free_record(dcr->after_rec);
+               dcr->after_rec = NULL;
+            }
          }
       }
       Dmsg2(dbglvl, "After end recs in block. pos=%u:%u\n", dcr->dev->file, dcr->dev->block_num);
