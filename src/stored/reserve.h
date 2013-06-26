@@ -49,7 +49,7 @@ public:
    JCR *jcr;
    char *device_name;
    DIRSTORE *store;
-   DEVRES   *device;
+   DEVRES *device;
    DEVICE *low_use_drive;             /* Low use drive candidate */
    int num_writers;                   /* for selecting low use drive */
    bool try_low_use_drive;            /* see if low use drive available */

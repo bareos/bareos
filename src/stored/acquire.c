@@ -628,29 +628,50 @@ DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev)
       }
    }
    dcr->jcr = jcr;                 /* point back to jcr */
-   /* Set device information, possibly change device */
+
+   /*
+    * Set device information, possibly change device
+    */
    if (dev) {
       if (dcr->block) {
          free_block(dcr->block);
       }
       dcr->block = new_block(dev);
+
       if (dcr->rec) {
          free_record(dcr->rec);
+         dcr->rec = NULL;
       }
       dcr->rec = new_record();
+
       if (dcr->attached_to_dev) {
          detach_dcr_from_dev(dcr);
       }
-      /* Use job spoolsize prior to device spoolsize */
+
+      /*
+       * Use job spoolsize prior to device spoolsize
+       */
       if (jcr && jcr->spool_size) {
          dcr->max_job_spool_size = jcr->spool_size;
       } else {
          dcr->max_job_spool_size = dev->device->max_job_spool_size;
       }
+
       dcr->device = dev->device;
       dcr->set_dev(dev);
       attach_dcr_to_dev(dcr);
+
+      /*
+       * Initialize the auto deflation/inflation which can
+       * be disabled per DCR when we want to. e.g. when we want to
+       * send the data as part of a replication stream in which we
+       * don't want to first inflate the data to then again
+       * do deflation for sending it to the other storage daemon.
+       */
+      dcr->autodeflate = dcr->device->autodeflate;
+      dcr->autoinflate = dcr->device->autoinflate;
    }
+
    return dcr;
 }
 
@@ -752,18 +773,24 @@ void free_dcr(DCR *dcr)
    if (dcr->block) {
       free_block(dcr->block);
    }
+
    if (dcr->rec) {
       free_record(dcr->rec);
    }
+
    if (jcr && jcr->dcr == dcr) {
       jcr->dcr = NULL;
    }
+
    if (jcr && jcr->read_dcr == dcr) {
       jcr->read_dcr = NULL;
    }
+
    V(dcr->m_mutex);
+
    pthread_mutex_destroy(&dcr->m_mutex);
    pthread_mutex_destroy(&dcr->r_mutex);
+
    free(dcr);
 }
 

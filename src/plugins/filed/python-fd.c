@@ -1,7 +1,6 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
    Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
@@ -36,7 +35,7 @@
 #include <Python.h>
 #endif
 
-#define PLUGIN_LICENSE      "AGPLv3"
+#define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
 #define PLUGIN_DATE         "August 2012"
 #define PLUGIN_VERSION      "1"

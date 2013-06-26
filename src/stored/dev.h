@@ -90,6 +90,14 @@ enum {
    B_VTL_DEV
 };
 
+/* IO directions */
+enum {
+   IO_DIRECTION_NONE = 0,
+   IO_DIRECTION_IN,
+   IO_DIRECTION_OUT,
+   IO_DIRECTION_INOUT
+};
+
 /* Generic status bits returned from status_dev() */
 #define BMT_TAPE           (1 << 0)   /* is tape device */
 #define BMT_EOF            (1 << 1)   /* just read EOF */
@@ -490,33 +498,37 @@ inline const char *DEVICE::print_name() const { return prt_name; }
  */
 class DCR {
 private:
-   bool m_dev_locked;                 /* set if dev already locked */
-   int m_dev_lock;                    /* non-zero if rLock already called */
-   bool m_reserved;                   /* set if reserved device */
-   bool m_found_in_use;               /* set if a volume found in use */
+   bool m_dev_locked;                 /* Set if dev already locked */
+   int m_dev_lock;                    /* Non-zero if rLock already called */
+   bool m_reserved;                   /* Set if reserved device */
+   bool m_found_in_use;               /* Set if a volume found in use */
 
 public:
-   dlink dev_link;                    /* link to attach to dev */
-   JCR *jcr;                          /* pointer to JCR */
-   bthread_mutex_t m_mutex;           /* access control */
+   dlink dev_link;                    /* Link to attach to dev */
+   JCR *jcr;                          /* Pointer to JCR */
+   bthread_mutex_t m_mutex;           /* Access control */
    pthread_mutex_t r_mutex;           /* rLock pre-mutex */
-   DEVICE * volatile dev;             /* pointer to device */
-   DEVRES *device;                    /* pointer to device resource */
-   DEV_BLOCK *block;                  /* pointer to block */
-   DEV_RECORD *rec;                   /* pointer to record */
+   DEVICE * volatile dev;             /* Pointer to device */
+   DEVRES *device;                    /* Pointer to device resource */
+   DEV_BLOCK *block;                  /* Pointer to current block */
+   DEV_RECORD *rec;                   /* Pointer to record being processed */
+   DEV_RECORD *before_rec;            /* Pointer to record before translation */
+   DEV_RECORD *after_rec;             /* Pointer to record after translation */
    pthread_t tid;                     /* Thread running this dcr */
-   int spool_fd;                      /* fd if spooling */
-   bool spool_data;                   /* set to spool data */
-   bool spooling;                     /* set when actually spooling */
-   bool despooling;                   /* set when despooling */
-   bool despool_wait;                 /* waiting for despooling */
-   bool NewVol;                       /* set if new Volume mounted */
-   bool WroteVol;                     /* set if Volume written */
-   bool NewFile;                      /* set when EOF written */
-   bool reserved_volume;              /* set if we reserved a volume */
+   int spool_fd;                      /* Fd if spooling */
+   bool spool_data;                   /* Set to spool data */
+   bool spooling;                     /* Set when actually spooling */
+   bool despooling;                   /* Set when despooling */
+   bool despool_wait;                 /* Waiting for despooling */
+   bool NewVol;                       /* Set if new Volume mounted */
+   bool WroteVol;                     /* Set if Volume written */
+   bool NewFile;                      /* Set when EOF written */
+   bool reserved_volume;              /* Set if we reserved a volume */
    bool any_volume;                   /* Any OK for dir_find_next... */
-   bool attached_to_dev;              /* set when attached to dev */
-   bool keep_dcr;                     /* do not free dcr in release_dcr */
+   bool attached_to_dev;              /* Set when attached to dev */
+   bool keep_dcr;                     /* Do not free dcr in release_dcr */
+   uint32_t autodeflate;              /* Try to autodeflate streams */
+   uint32_t autoinflate;              /* Try to autoinflate streams */
    uint32_t VolFirstIndex;            /* First file index this Volume */
    uint32_t VolLastIndex;             /* Last file index this Volume */
    uint32_t FileIndex;                /* Current File Index */
@@ -528,11 +540,11 @@ public:
    int64_t job_spool_size;            /* Current job spool size */
    int64_t max_job_spool_size;        /* Max job spool size */
    char VolumeName[MAX_NAME_LENGTH];  /* Volume name */
-   char pool_name[MAX_NAME_LENGTH];   /* pool name */
-   char pool_type[MAX_NAME_LENGTH];   /* pool type */
-   char media_type[MAX_NAME_LENGTH];  /* media type */
-   char dev_name[MAX_NAME_LENGTH];    /* dev name */
-   int Copy;                          /* identical copy number */
+   char pool_name[MAX_NAME_LENGTH];   /* Pool name */
+   char pool_type[MAX_NAME_LENGTH];   /* Pool type */
+   char media_type[MAX_NAME_LENGTH];  /* Media type */
+   char dev_name[MAX_NAME_LENGTH];    /* Dev name */
+   int Copy;                          /* Identical copy number */
    int Stripe;                        /* RAIT stripe */
    VOLUME_CAT_INFO VolCatInfo;        /* Catalog info for desired volume */
 
@@ -564,7 +576,7 @@ public:
 #endif
 
    /* Methods in record.c */
-   bool write_record(DEV_RECORD *rec);
+   bool write_record();
 
    /* Methods in reserve.c */
    void clear_reserved();

@@ -1,4 +1,4 @@
-all_subdirs = fd
+all_subdirs = filed
 
 all:
 	@for I in ${all_subdirs}; \

@@ -1,7 +1,6 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
    Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
@@ -21,13 +20,13 @@
    02110-1301, USA.
 */
 /*
- * Python Plugin
+ * Python Storage daemon Plugin program
  *
  * Marco van Wieringen, August 2012
  *
  */
 #include "bareos.h"
-#include "dir_plugins.h"
+#include "stored.h"
 
 #ifdef HAVE_PYTHON
 #undef _POSIX_C_SOURCE
@@ -38,23 +37,24 @@
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
 #define PLUGIN_DATE         "August 2012"
 #define PLUGIN_VERSION      "1"
-#define PLUGIN_DESCRIPTION  "Python Director Daemon Plugin"
+#define PLUGIN_DESCRIPTION  "Python Storage Daemon Plugin"
 
 /* Forward referenced functions */
 static bRC newPlugin(bpContext *ctx);
 static bRC freePlugin(bpContext *ctx);
-static bRC getPluginValue(bpContext *ctx, pDirVariable var, void *value);
-static bRC setPluginValue(bpContext *ctx, pDirVariable var, void *value);
-static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value);
+static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value);
+static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value);
+static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value);
+
 
 /* Pointers to Bareos functions */
-static bDirFuncs *bfuncs = NULL;
-static bDirInfo  *binfo = NULL;
+static bsdFuncs *bfuncs = NULL;
+static bsdInfo  *binfo = NULL;
 
 static genpInfo pluginInfo = {
    sizeof(pluginInfo),
-   DIR_PLUGIN_INTERFACE_VERSION,
-   DIR_PLUGIN_MAGIC,
+   SD_PLUGIN_INTERFACE_VERSION,
+   SD_PLUGIN_MAGIC,
    PLUGIN_LICENSE,
    PLUGIN_AUTHOR,
    PLUGIN_DATE,
@@ -62,13 +62,13 @@ static genpInfo pluginInfo = {
    PLUGIN_DESCRIPTION
 };
 
-static pDirFuncs pluginFuncs = {
+static psdFuncs pluginFuncs = {
    sizeof(pluginFuncs),
-   DIR_PLUGIN_INTERFACE_VERSION,
+   SD_PLUGIN_INTERFACE_VERSION,
 
    /* Entry points into plugin */
-   newPlugin,                         /* New plugin instance */
-   freePlugin,                        /* Free plugin instance */
+   newPlugin,                         /* new plugin instance */
+   freePlugin,                        /* free plugin instance */
    getPluginValue,
    setPluginValue,
    handlePluginEvent
@@ -79,7 +79,7 @@ static pDirFuncs pluginFuncs = {
  */
 struct plugin_ctx {
 #ifdef HAVE_PYTHON
-   PyThreadState *interpreter;
+      PyThreadState *interpreter;
 #endif
 };
 
@@ -103,13 +103,14 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(bDirInfo *lbinfo, bDirFuncs *lbfuncs, genpInfo **pinfo, pDirFuncs **pfuncs)
+bRC DLL_IMP_EXP
+loadPlugin(bsdInfo *lbinfo, bsdFuncs *lbfuncs, genpInfo **pinfo, psdFuncs **pfuncs)
 {
-   bfuncs = lbfuncs;                  /* Set Bareos funct pointers */
+   bfuncs = lbfuncs;                /* Set Bareos funct pointers */
    binfo  = lbinfo;
 
-   *pinfo  = &pluginInfo;             /* Return pointer to our info */
-   *pfuncs = &pluginFuncs;            /* Return pointer to our functions */
+   *pinfo  = &pluginInfo;           /* Return pointer to our info */
+   *pfuncs = &pluginFuncs;          /* Return pointer to our functions */
 
 #ifdef HAVE_PYTHON
    /*
@@ -126,7 +127,8 @@ bRC loadPlugin(bDirInfo *lbinfo, bDirFuncs *lbfuncs, genpInfo **pinfo, pDirFuncs
 /*
  * External entry point to unload the plugin
  */
-bRC unloadPlugin()
+bRC DLL_IMP_EXP
+unloadPlugin()
 {
 #ifdef HAVE_PYTHON
    /*
@@ -143,6 +145,14 @@ bRC unloadPlugin()
 }
 #endif
 
+/*
+ * The following entry points are accessed through the function
+ * pointers we supplied to Bareos. Each plugin type (dir, fd, sd)
+ * has its own set of entry points that the plugin must define.
+ */
+/*
+ * Create a new instance of the plugin i.e. allocate our private storage
+ */
 static bRC newPlugin(bpContext *ctx)
 {
 #ifdef HAVE_PYTHON
@@ -166,6 +176,9 @@ static bRC newPlugin(bpContext *ctx)
    return bRC_OK;
 }
 
+/*
+ * Free a plugin instance, i.e. release our private storage
+ */
 static bRC freePlugin(bpContext *ctx)
 {
 #ifdef HAVE_PYTHON
@@ -187,7 +200,10 @@ static bRC freePlugin(bpContext *ctx)
    return bRC_OK;
 }
 
-static bRC getPluginValue(bpContext *ctx, pDirVariable var, void *value)
+/*
+ * Return some plugin value (none defined)
+ */
+static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
 #ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
@@ -200,10 +216,14 @@ static bRC getPluginValue(bpContext *ctx, pDirVariable var, void *value)
 
    PyEval_ReleaseThread(p_ctx->interpreter);
 #endif
+
    return bRC_OK;
 }
 
-static bRC setPluginValue(bpContext *ctx, pDirVariable var, void *value)
+/*
+ * Set a plugin value (none defined)
+ */
+static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
 #ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
@@ -216,10 +236,14 @@ static bRC setPluginValue(bpContext *ctx, pDirVariable var, void *value)
 
    PyEval_ReleaseThread(p_ctx->interpreter);
 #endif
+
    return bRC_OK;
 }
 
-static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value)
+/*
+ * Handle an event that was generated in Bareos
+ */
+static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
 {
 #ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;

@@ -1222,7 +1222,7 @@ int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
    }
 
    if (flags & FO_COMPRESS) {
-      if (!decompress_data(jcr, jcr->last_fname, stream, &wbuf, &wsize)) {
+      if (!decompress_data(jcr, jcr->last_fname, stream, &wbuf, &wsize, false)) {
          goto bail_out;
       }
    }

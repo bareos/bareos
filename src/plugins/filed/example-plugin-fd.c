@@ -16,7 +16,7 @@
 #include "bareos.h"
 #include "fd_plugins.h"
 
-#define PLUGIN_LICENSE      "AGPLv3"
+#define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Your name"
 #define PLUGIN_DATE         "January 2010"
 #define PLUGIN_VERSION      "1"

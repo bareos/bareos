@@ -502,7 +502,13 @@ void stored_free_jcr(JCR *jcr)
       jcr->rctx = NULL;
    }
 
-   /* Free any restore volume list created */
+   if (jcr->compress.deflate_buffer || jcr->compress.inflate_buffer) {
+      cleanup_compression(jcr);
+   }
+
+   /*
+    * Free any restore volume list created
+    */
    free_restore_volume_list(jcr);
    if (jcr->RestoreBootstrap) {
       unlink(jcr->RestoreBootstrap);
@@ -522,7 +528,9 @@ void stored_free_jcr(JCR *jcr)
       jcr->dcrs = NULL;
    }
 
-   /* Avoid a double free */
+   /*
+    * Avoid a double free
+    */
    if (jcr->dcr == jcr->read_dcr) {
       jcr->read_dcr = NULL;
    }
@@ -561,8 +569,9 @@ void stored_free_jcr(JCR *jcr)
 
    Dsm_check(200);
 
-   if (jcr->JobId != 0)
+   if (jcr->JobId != 0) {
       write_state_file(me->working_directory, "bareos-sd", get_first_port_host_order(me->SDaddrs));
+   }
 
    Dmsg0(200, "End stored free_jcr\n");
 

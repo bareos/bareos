@@ -27,7 +27,6 @@
 #ifndef __MEM_POOL_H_
 #define __MEM_POOL_H_
 
-
 #ifdef SMARTALLOC
 
 #define get_pool_memory(pool) sm_get_pool_memory(__FILE__, __LINE__, pool)
@@ -71,13 +70,14 @@ extern void  print_memory_pool_stats();
 extern void garbage_collect_memory();
 
 
-#define PM_NOPOOL  0                  /* nonpooled memory */
+#define PM_NOPOOL  0                  /* Nonpooled memory */
 #define PM_NAME    1                  /* BAREOS name */
-#define PM_FNAME   2                  /* file name buffer */
-#define PM_MESSAGE 3                  /* daemon message */
-#define PM_EMSG    4                  /* error message */
+#define PM_FNAME   2                  /* File name buffer */
+#define PM_MESSAGE 3                  /* Daemon message */
+#define PM_EMSG    4                  /* Error message */
 #define PM_BSOCK   5                  /* BSOCK buffer */
-#define PM_MAX     PM_BSOCK           /* Number of types */
+#define PM_RECORD  6                  /* DEV_RECORD buffer */
+#define PM_MAX     PM_RECORD          /* Number of types */
 
 class POOL_MEM {
    char *mem;

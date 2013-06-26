@@ -50,6 +50,7 @@ const int sd_dbglvl = 300;
 #endif
 #endif
 #include "lib/bsr.h"
+#include "ch.h"
 #include "lock.h"
 #include "block.h"
 #include "record.h"

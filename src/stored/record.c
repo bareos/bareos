@@ -226,14 +226,18 @@ const char *stream_to_ascii(char *buf, int stream, int fi)
 /*
  * Return a new record entity
  */
-DEV_RECORD *new_record(void)
+DEV_RECORD *new_record(bool with_data)
 {
    DEV_RECORD *rec;
 
-   rec = (DEV_RECORD *)get_memory(sizeof(DEV_RECORD));
+   rec = (DEV_RECORD *)get_pool_memory(PM_RECORD);
    memset(rec, 0, sizeof(DEV_RECORD));
-   rec->data = get_pool_memory(PM_MESSAGE);
+   if (with_data) {
+      rec->data = get_pool_memory(PM_MESSAGE);
+      rec->own_mempool = true;
+   }
    rec->state = st_none;
+
    return rec;
 }
 
@@ -243,18 +247,42 @@ void empty_record(DEV_RECORD *rec)
    rec->VolSessionId = rec->VolSessionTime = 0;
    rec->FileIndex = rec->Stream = 0;
    rec->data_len = rec->remainder = 0;
-   rec->state_bits &= ~(REC_PARTIAL_RECORD|REC_BLOCK_EMPTY|REC_NO_MATCH|REC_CONTINUATION);
+   rec->state_bits &= ~(REC_PARTIAL_RECORD | REC_BLOCK_EMPTY | REC_NO_MATCH | REC_CONTINUATION);
    rec->state = st_none;
+}
+
+void copy_record_state(DEV_RECORD *dst, DEV_RECORD *src)
+{
+   bool own_mempool;
+   int32_t Stream, maskedStream;
+   uint32_t data_len;
+   POOLMEM *data;
+
+   /*
+    * Preserve some important fields all other can be overwritten.
+    */
+   Stream = dst->Stream;
+   maskedStream = dst->maskedStream;
+   data = dst->data;
+   data_len = dst->data_len;
+   own_mempool = dst->own_mempool;
+
+   memcpy(dst, src, sizeof(DEV_RECORD));
+
+   dst->Stream = Stream;
+   dst->maskedStream = maskedStream;
+   dst->data = data;
+   dst->data_len = data_len;
+   dst->own_mempool = own_mempool;
 }
 
 /*
  * Free the record entity
- *
  */
 void free_record(DEV_RECORD *rec)
 {
    Dmsg0(950, "Enter free_record.\n");
-   if (rec->data) {
+   if (rec->data && rec->own_mempool) {
       free_pool_memory(rec->data);
    }
    Dmsg0(950, "Data buf is freed.\n");
@@ -267,7 +295,10 @@ static inline bool write_header_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
    ser_declare;
 
    rec->remlen = block->buf_len - block->binbuf;
-   /* Require enough room to write a full header */
+
+   /*
+    * Require enough room to write a full header
+    */
    if (rec->remlen >= WRITE_RECHDR_LENGTH) {
       ser_begin(block->bufp, WRITE_RECHDR_LENGTH);
       if (BLOCK_VER == 1) {
@@ -286,7 +317,9 @@ static inline bool write_header_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
       rec->remlen -= WRITE_RECHDR_LENGTH;
       rec->remainder = rec->data_len;
       if (rec->FileIndex > 0) {
-         /* If data record, update what we have in this block */
+         /*
+          * If data record, update what we have in this block
+          */
          if (block->FirstIndex == 0) {
             block->FirstIndex = rec->FileIndex;
          }
@@ -296,6 +329,7 @@ static inline bool write_header_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
       rec->remainder = rec->data_len + WRITE_RECHDR_LENGTH;
       return false;
    }
+
    return true;
 }
 
@@ -304,6 +338,7 @@ static inline void write_continue_header_to_block(DEV_BLOCK *block, DEV_RECORD *
    ser_declare;
 
    rec->remlen = block->buf_len - block->binbuf;
+
    /*
     * We have unwritten bytes from a previous
     * time. Presumably we have a new buffer (possibly
@@ -336,14 +371,18 @@ static inline void write_continue_header_to_block(DEV_BLOCK *block, DEV_RECORD *
       ser_uint32(rec->remainder);  /* bytes to do */
    }
 
-   /* Require enough room to write a full header */
+   /*
+    * Require enough room to write a full header
+    */
    ASSERT(rec->remlen >= WRITE_RECHDR_LENGTH);
 
    block->bufp += WRITE_RECHDR_LENGTH;
    block->binbuf += WRITE_RECHDR_LENGTH;
    rec->remlen -= WRITE_RECHDR_LENGTH;
    if (rec->FileIndex > 0) {
-      /* If data record, update what we have in this block */
+      /*
+       * If data record, update what we have in this block
+       */
       if (block->FirstIndex == 0) {
          block->FirstIndex = rec->FileIndex;
       }
@@ -354,18 +393,21 @@ static inline void write_continue_header_to_block(DEV_BLOCK *block, DEV_RECORD *
 static inline bool write_data_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
 {
    rec->remlen = block->buf_len - block->binbuf;
-   /* Write as much of data as possible */
+
+   /*
+    * Write as much of data as possible
+    */
    if (rec->remlen >= rec->remainder) {
-      memcpy(block->bufp, rec->data+rec->data_len-rec->remainder,
-             rec->remainder);
+      memcpy(block->bufp, rec->data + (rec->data_len - rec->remainder), rec->remainder);
       block->bufp += rec->remainder;
       block->binbuf += rec->remainder;
    } else {
-      memcpy(block->bufp, rec->data+rec->data_len-rec->remainder,
-             rec->remlen);
+      memcpy(block->bufp, rec->data + (rec->data_len - rec->remainder), rec->remlen);
 #ifdef xxxxxSMCHECK
       if (!sm_check_rtn(__FILE__, __LINE__, False)) {
-         /* We damaged a buffer */
+         /*
+          * We damaged a buffer
+          */
          Dmsg6(0, "Damaged block FI=%s SessId=%d Strm=%s len=%d\n"
             "rem=%d remainder=%d\n",
             FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
@@ -383,29 +425,75 @@ static inline bool write_data_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
       block->bufp += rec->remlen;
       block->binbuf += rec->remlen;
       rec->remainder -= rec->remlen;
+
       return false;                /* did partial transfer */
    }
+
    return true;
 }
 
 /*
  * Write a Record to the block
  *
- *  Returns: false means the block could not be written to tape/disk.
- *           true  on success (all bytes written to the block).
+ * Returns: false means the block could not be written to tape/disk.
+ *          true on success (all bytes written to the block).
  */
-bool DCR::write_record(DEV_RECORD *nrec)
+bool DCR::write_record()
 {
-   while (!write_record_to_block(this, nrec)) {
-      Dmsg2(850, "!write_record_to_block data_len=%d rem=%d\n", nrec->data_len,
-                 nrec->remainder);
+   bool retval = false;
+   bool translated_record = false;
+   char buf1[100], buf2[100];
+
+   /*
+    * Perform record translations.
+    */
+   before_rec = rec;
+   after_rec = NULL;
+   if (generate_plugin_event(jcr, bsdEventWriteRecordTranslation, this) != bRC_OK) {
+      goto bail_out;
+   }
+
+   /*
+    * The record got translated when we got an after_rec pointer after calling the
+    * bsdEventWriteRecordTranslation plugin event. If no translation has taken place
+    * we just point the after_rec pointer to same DEV_RECORD as in the before_rec pointer.
+    */
+   if (!after_rec) {
+      after_rec = before_rec;
+   } else {
+      translated_record = true;
+   }
+
+   while (!write_record_to_block(this, after_rec)) {
+      Dmsg2(850, "!write_record_to_block data_len=%d rem=%d\n",
+            after_rec->data_len, after_rec->remainder);
       if (!write_block_to_device()) {
          Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",
-            dev->print_name(), dev->bstrerror());
-         return false;
+               dev->print_name(), dev->bstrerror());
+         goto bail_out;
       }
    }
-   return true;
+
+   jcr->JobBytes += after_rec->data_len;   /* increment bytes this job */
+   if (jcr->RemainingQuota && jcr->JobBytes > jcr->RemainingQuota) {
+      Jmsg0(jcr, M_FATAL, 0, _("Quota Exceeded. Job Terminated.\n"));
+      goto bail_out;
+   }
+
+   Dmsg4(850, "write_record FI=%s SessId=%d Strm=%s len=%d\n",
+         FI_to_ascii(buf1, after_rec->FileIndex), after_rec->VolSessionId,
+         stream_to_ascii(buf2, after_rec->Stream, after_rec->FileIndex), after_rec->data_len);
+
+   retval = true;
+
+bail_out:
+   if (translated_record) {
+      copy_record_state(before_rec, after_rec);
+      free_record(after_rec);
+      after_rec = NULL;
+   }
+
+   return retval;
 }
 
 /*
@@ -424,22 +512,30 @@ bool DCR::write_record(DEV_RECORD *nrec)
  */
 bool write_record_to_block(DCR *dcr, DEV_RECORD *rec)
 {
+   bool retval = false;
    char buf1[100], buf2[100];
    DEV_BLOCK *block = dcr->block;
 
-   for ( ;; ) {
+   /*
+    * After this point the record is in nrec not rec e.g. its either converted
+    * or is just a pointer to the same as the rec pointer being passed in.
+    */
+
+   while (1) {
       ASSERT(block->binbuf == (uint32_t)(block->bufp - block->buf));
       ASSERT(block->buf_len >= block->binbuf);
 
       Dmsg6(890, "write_record_to_block() FI=%s SessId=%d Strm=%s len=%d\n"
-         "rem=%d remainder=%d\n",
-         FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
-         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len,
-         rec->remlen, rec->remainder);
+            "rem=%d remainder=%d\n",
+            FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
+            stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len,
+            rec->remlen, rec->remainder);
 
       switch (rec->state) {
       case st_none:
-         /* Figure out what to do */
+         /*
+          * Figure out what to do
+          */
          rec->state = st_header;
          continue;              /* go to next state */
 
@@ -448,25 +544,29 @@ bool write_record_to_block(DCR *dcr, DEV_RECORD *rec)
           * Write header
           *
           * If rec->remainder is non-zero, we have been called a
-          *  second (or subsequent) time to finish writing a record
-          *  that did not previously fit into the block.
+          * second (or subsequent) time to finish writing a record
+          * that did not previously fit into the block.
           */
           if (!write_header_to_block(block, rec)) {
-             return false;        /* write block then come back here */
+             goto bail_out;      /* write block then come back here */
           }
           rec->state = st_data;  /* after header, now write data */
           continue;
 
-      /* Write continuation header */
+      /*
+       * Write continuation header
+       */
       case st_header_cont:
          write_continue_header_to_block(block, rec);
          rec->state = st_data;
          if (rec->remlen == 0) {
-            return false;                   /* partial transfer */
+            goto bail_out;       /* Partial transfer */
          }
          continue;
 
-      /* Write normal data */
+      /*
+       * Write normal data
+       */
       case st_data:
          /*
           * Write data
@@ -477,20 +577,24 @@ bool write_record_to_block(DCR *dcr, DEV_RECORD *rec)
          if (rec->remainder > 0) {
             if (!write_data_to_block(block, rec)) {
                rec->state = st_header_cont;
-               return false;
+               goto bail_out;
             }
          }
-         rec->remainder = 0;                /* did whole transfer */
+         rec->remainder = 0;               /* did whole transfer */
          rec->state = st_none;
-         return true;
+         retval = true;
+         goto bail_out;
 
       default:
          Dmsg0(000, "Something went wrong. Default state.\n");
          rec->state = st_none;
-         return true;
+         retval = true;
+         goto bail_out;
       }
    }
-   return true;
+
+bail_out:
+   return retval;
 }
 
 /*
@@ -527,11 +631,12 @@ uint64_t get_record_address(DEV_RECORD *rec)
 
 /*
  * Read a Record from the block
- *  Returns: false if nothing read or if the continuation record does not match.
- *                 In both of these cases, a block read must be done.
- *           true  if at least the record header was read, this
- *                 routine may have to be called again with a new
- *                 block if the entire record was not read.
+ *
+ * Returns: false if nothing read or if the continuation record does not match.
+ *                In both of these cases, a block read must be done.
+ *          true  if at least the record header was read, this
+ *                routine may have to be called again with a new
+ *                block if the entire record was not read.
  */
 bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
 {
@@ -547,7 +652,9 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
 
    remlen = dcr->block->binbuf;
 
-   /* Clear state flags */
+   /*
+    * Clear state flags
+    */
    rec->state_bits = 0;
    if (dcr->block->dev->is_tape()) {
       rec->state_bits |= REC_ISTAPE;
@@ -556,8 +663,7 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
    rec->File = ((DEVICE *)(dcr->block->dev))->EndFile;
 
    /*
-    * Get the header. There is always a full header,
-    * otherwise we find it in the next block.
+    * Get the header. There is always a full header, otherwise we find it in the next block.
     */
    Dmsg3(450, "Block=%d Ver=%d size=%u\n", dcr->block->BlockNumber, dcr->block->BlockVer,
          dcr->block->block_len);
@@ -586,8 +692,9 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
       dcr->block->binbuf -= rhl;
       remlen -= rhl;
 
-      /* If we are looking for more (remainder!=0), we reject anything
-       *  where the VolSessionId and VolSessionTime don't agree
+      /*
+       * If we are looking for more (remainder!=0), we reject anything
+       * where the VolSessionId and VolSessionTime don't agree
        */
       if (rec->remainder && (rec->VolSessionId != VolSessionId ||
                              rec->VolSessionTime != VolSessionTime)) {
@@ -596,7 +703,8 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
          return false;             /* This is from some other Session */
       }
 
-      /* if Stream is negative, it means that this is a continuation
+      /*
+       * If Stream is negative, it means that this is a continuation
        * of a previous partially written record.
        */
       if (Stream < 0) {               /* continuation record? */
@@ -659,7 +767,7 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
       return false;
    }
 
-   rec->data = check_pool_memory_size(rec->data, rec->data_len+data_bytes);
+   rec->data = check_pool_memory_size(rec->data, rec->data_len + data_bytes);
 
    /*
     * At this point, we have read the header, now we
@@ -670,13 +778,17 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
     * record.
     */
    if (remlen >= data_bytes) {
-      /* Got whole record */
+      /*
+       * Got whole record
+       */
       memcpy(rec->data+rec->data_len, dcr->block->bufp, data_bytes);
       dcr->block->bufp += data_bytes;
       dcr->block->binbuf -= data_bytes;
       rec->data_len += data_bytes;
    } else {
-      /* Partial record */
+      /*
+       * Partial record
+       */
       memcpy(rec->data+rec->data_len, dcr->block->bufp, remlen);
       dcr->block->bufp += remlen;
       dcr->block->binbuf -= remlen;
@@ -687,8 +799,10 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
       return true;
    }
    rec->remainder = 0;
+
    Dmsg4(450, "Rtn full rd_rec_blk FI=%s SessId=%d Strm=%s len=%d\n",
-      FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
-      stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
+         FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
+         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
+
    return true;                       /* transferred full record */
 }

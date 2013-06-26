@@ -112,7 +112,7 @@ static psdFuncs pluginFuncs = {
    handlePluginEvent
 };
 
-static int const dbglvl = 10;
+static int const dbglvl = 100;
 
 #ifdef __cplusplus
 extern "C" {
@@ -214,6 +214,7 @@ static bRC freePlugin(bpContext *ctx)
 
    bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
    Dmsg1(dbglvl, "scsicrypto-sd: freePlugin JobId=%d\n", JobId);
+
    return bRC_OK;
 }
 
@@ -223,6 +224,7 @@ static bRC freePlugin(bpContext *ctx)
 static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
    Dmsg1(dbglvl, "scsicrypto-sd: getPluginValue var=%d\n", var);
+
    return bRC_OK;
 }
 
@@ -232,6 +234,7 @@ static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
 static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
    Dmsg1(dbglvl, "scsicrypto-sd: setPluginValue var=%d\n", var);
+
    return bRC_OK;
 }
 
@@ -256,8 +259,9 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
       return send_volume_encryption_status(value);
    default:
       Dmsg1(dbglvl, "scsicrypto-sd: Unknown event %d\n", event->eventType);
-      break;
+      return bRC_Error;
    }
+
    return bRC_OK;
 }
 

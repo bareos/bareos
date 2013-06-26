@@ -50,10 +50,10 @@ bool do_append_data(JCR *jcr, BSOCK *bs, const char *what)
 {
    int32_t n, file_index, stream, last_file_index, job_elapsed;
    bool ok = true;
-   DEV_RECORD rec;
-   char buf1[100], buf2[100];
+   char buf1[100];
    DCR *dcr = jcr->dcr;
    DEVICE *dev;
+   POOLMEM *rec_data;
    char ec[50];
 
    if (!dcr) {
@@ -68,8 +68,6 @@ bool do_append_data(JCR *jcr, BSOCK *bs, const char *what)
 
    Dmsg1(100, "Start append data. res=%d\n", dev->num_reserved());
 
-   memset(&rec, 0, sizeof(rec));
-
    if (!bs->set_buffer_size(dcr->device->max_network_buffer_size, BNET_SETBUF_WRITE)) {
       jcr->setJobStatus(JS_ErrorTerminated);
       Jmsg0(jcr, M_FATAL, 0, _("Unable to set network buffer size.\n"));
@@ -77,6 +75,11 @@ bool do_append_data(JCR *jcr, BSOCK *bs, const char *what)
    }
 
    if (!acquire_device_for_append(dcr)) {
+      jcr->setJobStatus(JS_ErrorTerminated);
+      return false;
+   }
+
+   if (generate_plugin_event(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
       jcr->setJobStatus(JS_ErrorTerminated);
       return false;
    }
@@ -194,43 +197,41 @@ fi_checked:
       }
 
       /*
-       * Read data stream from the daemon.
-       * The data stream is just raw bytes
+       * Read data stream from the daemon. The data stream is just raw bytes.
+       * We save the original data pointer from the record so we can restore
+       * that after the loop ends.
        */
+      rec_data = dcr->rec->data;
       while ((n = bget_msg(bs)) > 0 && !jcr->is_job_canceled()) {
-         rec.VolSessionId = jcr->VolSessionId;
-         rec.VolSessionTime = jcr->VolSessionTime;
-         rec.FileIndex = file_index;
-         rec.Stream = stream;
-         rec.maskedStream = stream & STREAMMASK_TYPE;   /* strip high bits */
-         rec.data_len = bs->msglen;
-         rec.data = bs->msg;            /* use message buffer */
+         dcr->rec->VolSessionId = jcr->VolSessionId;
+         dcr->rec->VolSessionTime = jcr->VolSessionTime;
+         dcr->rec->FileIndex = file_index;
+         dcr->rec->Stream = stream;
+         dcr->rec->maskedStream = stream & STREAMMASK_TYPE; /* strip high bits */
+         dcr->rec->data_len = bs->msglen;
+         dcr->rec->data = bs->msg; /* use message buffer */
 
          Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
-            rec.FileIndex, rec.VolSessionId,
-            stream_to_ascii(buf1, rec.Stream,rec.FileIndex),
-            rec.data_len);
+               dcr->rec->FileIndex, dcr->rec->VolSessionId,
+               stream_to_ascii(buf1, dcr->rec->Stream,
+               dcr->rec->FileIndex), dcr->rec->data_len);
 
-         ok = dcr->write_record(&rec);
+         ok = dcr->write_record();
          if (!ok) {
             Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",
                   dcr->dev->print_name(), dcr->dev->bstrerror());
             break;
          }
-         jcr->JobBytes += rec.data_len;   /* increment bytes this job */
-         if (jcr->RemainingQuota && jcr->JobBytes > jcr->RemainingQuota) {
-            Jmsg0(jcr, M_FATAL, 0, _("Quota Exceeded. Job Terminated.\n"));
-            ok = false;
-            break;
-         }
-         Dmsg4(850, "write_record FI=%s SessId=%d Strm=%s len=%d\n",
-            FI_to_ascii(buf1, rec.FileIndex), rec.VolSessionId,
-            stream_to_ascii(buf2, rec.Stream, rec.FileIndex), rec.data_len);
 
-         send_attrs_to_dir(jcr, &rec);
+         send_attrs_to_dir(jcr, dcr->rec);
          Dmsg0(650, "Enter bnet_get\n");
       }
       Dmsg2(650, "End read loop with %s. Stat=%d\n", what, n);
+
+      /*
+       * Restore the original data pointer.
+       */
+      dcr->rec->data = rec_data;
 
       if (bs->is_error()) {
          if (!jcr->is_job_canceled()) {

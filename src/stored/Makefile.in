@@ -20,6 +20,7 @@ DB_LIBS = @DB_LIBS@
 AFS_LIBS = @AFS_LIBS_NONSHARED@
 ACL_LIBS = @ACL_LIBS_NONSHARED@
 XATTR_LIBS = @XATTR_LIBS_NONSHARED@
+COMPRESS_LIBS = @ZLIB_LIBS_NONSHARED@ @LZO_LIBS_NONSHARED@ @FASTLZ_LIBS_NONSHARED@
 
 first_rule: all
 dummy:
@@ -27,45 +28,45 @@ dummy:
 # bareos-sd
 SDSRCS = acquire.c ansi_label.c append.c askdir.c authenticate.c \
          autochanger.c block.c bsr.c butil.c crc32.c dev.c device.c \
-	 dir_cmd.c ebcdic.c fd_cmds.c job.c label.c lock.c mac.c \
-	 mount.c ndmp_tape.c read_record.c read.c record.c reserve.c \
-	 scan.c sd_cmds.c sd_plugins.c spool.c status.c stored_conf.c \
-	 stored.c vol_mgr.c vtape.c wait.c
+	 dir_cmd.c ebcdic.c fd_cmds.c job.c label.c lock.c mac.c mount.c \
+	 ndmp_tape.c read_record.c read.c record.c reserve.c scan.c sd_cmds.c \
+	 sd_plugins.c spool.c status.c stored_conf.c stored.c vol_mgr.c vtape.c \
+	 wait.c
 SDOBJS = $(SDSRCS:.c=.o)
 
 # btape
 TAPESRCS = acquire.c ansi_label.c autochanger.c block.c btape.c bsr.c \
-           butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c \
-           mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
-	   spool.c stored_conf.c vol_mgr.c vtape.c wait.c
+           butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
+	   read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
+	   stored_conf.c vol_mgr.c vtape.c wait.c
 TAPEOBJS = $(TAPESRCS:.c=.o)
 
 # bls
 BLSSRCS = acquire.c ansi_label.c autochanger.c block.c bls.c bsr.c \
-	  butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c \
-          mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
-	  spool.c stored_conf.c vol_mgr.c vtape.c wait.c
+	  butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
+	  read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
+	  stored_conf.c vol_mgr.c vtape.c wait.c
 BLSOBJS = $(BLSSRCS:.c=.o)
 
 # bextract
-BEXTSRCS = acquire.c ansi_label.c autochanger.c bextract.c block.c \
-           bsr.c butil.c crc32.c dev.c device.c ebcdic.c label.c \
-	   lock.c mount.c read_record.c record.c reserve.c scan.c \
-	   sd_plugins.c spool.c stored_conf.c vol_mgr.c vtape.c wait.c
+BEXTSRCS = acquire.c ansi_label.c autochanger.c bextract.c block.c bsr.c \
+	   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
+	   read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
+	   stored_conf.c vol_mgr.c vtape.c wait.c
 BEXTOBJS = $(BEXTSRCS:.c=.o)
 
 # bscan
 SCNSRCS = acquire.c ansi_label.c autochanger.c block.c bscan.c bsr.c \
-	  butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c \
-          mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
-	  spool.c stored_conf.c vol_mgr.c vtape.c wait.c
+	  butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
+	  read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
+	  stored_conf.c vol_mgr.c vtape.c wait.c
 SCNOBJS = $(SCNSRCS:.c=.o)
 
 # bcopy
 COPYSRCS = acquire.c ansi_label.c autochanger.c bcopy.c block.c bsr.c \
-	   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c \
-           mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
-	   spool.c stored_conf.c vol_mgr.c vtape.c wait.c
+	   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
+	   read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
+	   stored_conf.c vol_mgr.c vtape.c wait.c
 COPYOBJS = $(COPYSRCS:.c=.o)
 
 SD_LIBS += @CAP_LIBS@
@@ -103,7 +104,7 @@ bareos-sd: Makefile $(SDOBJS) \
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -o $@ $(SDOBJS) \
 	   $(NDMP_LIBS) -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
-	   $(SD_LIBS) $(GETTEXT_LIBS)
+	   $(SD_LIBS) $(GETTEXT_LIBS) $(COMPRESS_LIBS)
 
 static-bareos-sd: Makefile $(SDOBJS) \
 	          ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
@@ -112,7 +113,7 @@ static-bareos-sd: Makefile $(SDOBJS) \
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -o $@ $(SDOBJS) \
 	   $(NDMP_LIBS) -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
-	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS)
+	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS) $(COMPRESS_LIBS)
 	strip $@
 
 ndmp_tape.o: ndmp_tape.c

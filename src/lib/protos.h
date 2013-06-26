@@ -140,12 +140,12 @@ int safer_unlink(const char *pathname, const char *regex);
 bool setup_compression_buffers(JCR *jcr, bool compatible,
                                uint32_t compression_algorithm,
                                uint32_t *compress_buf_size);
-bool setup_decompression_buffers(JCR *jcr);
+bool setup_decompression_buffers(JCR *jcr, uint32_t *decompress_buf_size);
 bool compress_data(JCR *jcr, uint32_t compression_algorithm, char *rbuf,
                    uint32_t rsize, unsigned char *cbuf,
                    uint32_t max_compress_len, uint32_t *compress_len);
 bool decompress_data(JCR *jcr, const char *last_fname, int32_t stream,
-                     char **data, uint32_t *length);
+                     char **data, uint32_t *length, bool want_data_stream);
 void cleanup_compression(JCR *jcr);
 
 /* cram-md5.c */

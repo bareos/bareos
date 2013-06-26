@@ -89,31 +89,31 @@ enum rec_state {
 struct BSR;                           /* satisfy forward reference */
 struct DEV_RECORD {
    dlink link;                        /* link for chaining in read_record.c */
-   /* File and Block are always returned during reading
-    *  and writing records.
+   /*
+    * File and Block are always returned during reading and writing records.
     */
    uint32_t File;                     /* File number */
    uint32_t Block;                    /* Block number */
-   uint32_t VolSessionId;             /* sequential id within this session */
-   uint32_t VolSessionTime;           /* session start time */
-   int32_t  FileIndex;                /* sequential file number */
-   int32_t  Stream;                   /* Full Stream number with high bits */
-   int32_t  maskedStream;             /* Masked Stream without high bits */
-   uint32_t data_len;                 /* current record length */
-   uint32_t remainder;                /* remaining bytes to read/write */
-   uint32_t remlen;                   /* temp remainder bytes */
-   uint32_t state_bits;               /* state bits */
-   rec_state state;                   /* state of write_record_to_block */
-   BSR *bsr;                          /* pointer to bsr that matched */
-   uint8_t  ser_buf[WRITE_RECHDR_LENGTH];   /* serialized record header goes here */
+   uint32_t VolSessionId;             /* Sequential id within this session */
+   uint32_t VolSessionTime;           /* Session start time */
+   int32_t FileIndex;                 /* Sequential file number */
+   int32_t Stream;                    /* Full Stream number with high bits */
+   int32_t maskedStream;              /* Masked Stream without high bits */
+   uint32_t data_len;                 /* Current record length */
+   uint32_t remainder;                /* Remaining bytes to read/write */
+   uint32_t remlen;                   /* Temp remainder bytes */
+   uint32_t state_bits;               /* State bits */
+   rec_state state;                   /* State of write_record_to_block */
+   BSR *bsr;                          /* Pointer to bsr that matched */
+   uint8_t ser_buf[WRITE_RECHDR_LENGTH]; /* Serialized record header goes here */
    POOLMEM *data;                     /* Record data. This MUST be a memory pool item */
-   int32_t match_stat;                /* bsr match status */
-   uint32_t last_VolSessionId;        /* used in sequencing FI for Vbackup */
+   int32_t match_stat;                /* BSR match status */
+   uint32_t last_VolSessionId;        /* Used in sequencing FI for Vbackup */
    uint32_t last_VolSessionTime;
-   int32_t  last_FileIndex;
-   int32_t  last_Stream;              /* used in SD-SD replication */
+   int32_t last_FileIndex;
+   int32_t last_Stream;               /* Used in SD-SD replication */
+   bool own_mempool;                  /* Do we own the POOLMEM pointed to in data ? */
 };
-
 
 /*
  * Values for LabelType that are put into the FileIndex field
@@ -130,12 +130,10 @@ struct DEV_RECORD {
 #define EOB_LABEL   -8                /* End of object (after all streams) */
 
 /*
- *   Volume Label Record.  This is the in-memory definition. The
- *     tape definition is defined in the serialization code itself
- *     ser_volume_label() and unser_volume_label() and is slightly different.
+ * Volume Label Record.  This is the in-memory definition. The
+ * tape definition is defined in the serialization code itself
+ * ser_volume_label() and unser_volume_label() and is slightly different.
  */
-
-
 struct Volume_Label {
   /*
    * The first items in this structure are saved

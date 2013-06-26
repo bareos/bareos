@@ -110,10 +110,13 @@ typedef enum {
   bsdEventReadError = 14,
   bsdEventWriteError = 15,
   bsdEventDriveStatus = 16,
-  bsdEventVolumeStatus = 17
+  bsdEventVolumeStatus = 17,
+  bsdEventSetupRecordTranslation = 18,
+  bsdEventReadRecordTranslation = 19,
+  bsdEventWriteRecordTranslation = 20
 } bsdEventType;
 
-#define SD_NR_EVENTS bsdEventVolumeStatus /* keep this updated ! */
+#define SD_NR_EVENTS bsdEventWriteRecordTranslation /* keep this updated ! */
 
 typedef struct s_bsdEvent {
    uint32_t eventType;

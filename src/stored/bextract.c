@@ -28,7 +28,6 @@
 
 #include "bareos.h"
 #include "stored.h"
-#include "ch.h"
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 
@@ -396,6 +395,7 @@ static void close_previous_stream(void)
 static void do_extract(char *devname)
 {
    struct stat statp;
+   uint32_t decompress_buf_size;
 
    enable_backup_privileges(NULL, 1);
 
@@ -426,7 +426,10 @@ static void do_extract(char *devname)
    attr = new_attr(jcr);
 
    jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
-   setup_decompression_buffers(jcr);
+   setup_decompression_buffers(jcr, &decompress_buf_size);
+   memset(&jcr->compress, 0, sizeof(CMPRS_CTX));
+   jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
+   jcr->compress.inflate_buffer_size = decompress_buf_size;
 
    acl_data.last_fname = get_pool_memory(PM_FNAME);
    xattr_data.last_fname = get_pool_memory(PM_FNAME);
@@ -628,7 +631,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             wsize = rec->data_len;
          }
 
-         if (decompress_data(jcr, attr->ofname, rec->maskedStream, &wbuf, &wsize)) {
+         if (decompress_data(jcr, attr->ofname, rec->maskedStream, &wbuf, &wsize, false)) {
             Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n", wsize, total);
             store_data(&bfd, wbuf, wsize);
             total += wsize;
