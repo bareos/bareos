@@ -12,6 +12,7 @@ DefVar $MsiId64$
 DefVar $UninstallProgram64$
 DefVar $LogDir$
 DefVar $ProductId$
+DefVar $ProductName$
 DefVar $ProductExe32$
 DefVar $ProductExe64$
 DefVar $MinimumSpace$
@@ -30,21 +31,15 @@ DefVar $filedaemon_client_address$
 DefVar $director_name$
 DefVar $director_address$
 DefVar $director_password$
+DefVar $keep_config$
+DefVar $auto_config$
 
 
 Set $INST_SystemType$ = GetSystemType
 Set $INST_architecture$ = GetProductProperty("install_architecture","system specific")
 
-Set $filedaemon_full_name$ = GetProductProperty( "filedaemon_full_name", "" )
-Set $filedaemon_full_password$ = GetProductProperty( "filedaemon_full_password", "filedaemon_full_password" )
-Set $filedaemon_monitor_name$ = GetProductProperty( "filedaemon_monitor_name", "filedaemon_monitor_name" )
-Set $filedaemon_monitor_password$ = GetProductProperty( "filedaemon_monitor_password", "filedaemon_monitor_password" )
-Set $filedaemon_client_address$ = GetProductProperty( "filedaemon_client_address", "")
-Set $director_name$ = GetProductProperty( "director_name", "director_name" )
-Set $director_address$ = GetProductProperty( "director_address", "director_address" )
-Set $director_password$ = GetProductProperty( "director_password", "director_password" )
-
 Set $LogDir$ = "%SystemDrive%\tmp"
+
 
 ; ----------------------------------------------------------------
 ; - Please edit the following values                             -
@@ -53,8 +48,8 @@ Set $LogDir$ = "%SystemDrive%\tmp"
 ; therefore please: only lower letters, no umlauts,
 ; no white space use '-' as a seperator
 Set $ProductId$         = "winbareos"
-Set $ProductExe32$ = "data\winbareos-12.4.4-32-bit-r510.4.exe"
-Set $ProductExe64$ = "data\winbareos-12.4.4-64-bit-r510.4.exe"
+Set $ProductExe32$ = "data\winbareos-12.4.4-32-bit-r512.1.exe"
+Set $ProductExe64$ = "data\winbareos-12.4.4-64-bit-r512.1.exe"
 Set $MinimumSpace$      = "30 MB"
 ; the path were we find the product after the installation
 Set $InstallDir$        = "%ProgramFilesDir%\Bareos"
@@ -68,8 +63,18 @@ if not(HasMinimumSpace ("%SystemDrive%", $MinimumSpace$))
 	; Stop process and set installation status to failed
 endif
 
+
+Set $auto_config$ = lower( GetProductProperty("auto_config", "true"))
+
+if $auto_config$ = "true"
+    set $ProductName$ = $ProductId$ + " (auto config)"
+else
+    set $keep_config$ = "/SILENTKEEPCONFIG"
+    set $ProductName$ = $ProductId$
+endif
+
 comment "Show product picture"
-ShowBitmap "%ScriptPath%\logo.png" "Bareos"
+ShowBitmap "%ScriptPath%\logo.png" $ProductName$
 
 if FileExists("%ScriptPath%\delsub3264.ins")
     comment "Start uninstall sub section"
@@ -78,16 +83,25 @@ endif
 
 comment "installing"
 
+Set $filedaemon_full_password$ = GetProductProperty( "filedaemon_full_password", "filedaemon_full_password" )
+Set $filedaemon_monitor_password$ = GetProductProperty( "filedaemon_monitor_password", "filedaemon_monitor_password" )
+Set $director_name$ = GetProductProperty( "director_name", "director_name" )
+Set $director_address$ = GetProductProperty( "director_address", "director_address" )
+Set $director_password$ = GetProductProperty( "director_password", "director_password" )
+
+Set $filedaemon_full_name$ = GetProductProperty( "filedaemon_full_name", "" )
 if $filedaemon_full_name$ = ""
     set $filedaemon_full_name$ = "%HostID%-fd"
     opsiservicecall_set_product_property_filedaemon_full_name
 endif
 
+Set $filedaemon_monitor_name$ = GetProductProperty( "filedaemon_monitor_name", "filedaemon_monitor_name" )
 if $filedaemon_monitor_name$ = ""
     set $filedaemon_monitor_name$ = "%HostID%-mon"
     opsiservicecall_set_product_property_filedaemon_monitor_name
 endif
 
+Set $filedaemon_client_address$ = GetProductProperty( "filedaemon_client_address", "")
 if $filedaemon_client_address$ = ""
     set $filedaemon_client_address$ = "%HostID%"
     opsiservicecall_set_product_property_filedaemon_client_address
@@ -134,11 +148,11 @@ endif
 ;       don't use " around argument, otherwise argument is ignored
 
 [Winbatch_install_32]
-"%ScriptPath%\$ProductExe32$" /S /CLIENTNAME="$filedaemon_full_name$" /CLIENTPASSWORD="$filedaemon_full_password$" /DIRECTORNAME="$director_name$ /CLIENTADDRESS=$filedaemon_client_address$" /CLIENTMONITORPASSWORD="$filedaemon_monitor_password$" /DIRECTORADDRESS="$director_address$" /DIRECTORPASSWORD="$director_password$" /D=$InstallDir32$
+"%ScriptPath%\$ProductExe32$" /S $keep_config$ /CLIENTNAME="$filedaemon_full_name$" /CLIENTPASSWORD="$filedaemon_full_password$" /DIRECTORNAME="$director_name$ /CLIENTADDRESS=$filedaemon_client_address$" /CLIENTMONITORPASSWORD="$filedaemon_monitor_password$" /DIRECTORADDRESS="$director_address$" /DIRECTORPASSWORD="$director_password$" /D=$InstallDir32$
 
 
 [Winbatch_install_64]
-"%ScriptPath%\$ProductExe64$" /S /CLIENTNAME="$filedaemon_full_name$" /CLIENTPASSWORD="$filedaemon_full_password$" /DIRECTORNAME="$director_name$" /CLIENTADDRESS="$filedaemon_client_address$" /CLIENTMONITORPASSWORD="$filedaemon_monitor_password$" /DIRECTORADDRESS="$director_address$" /DIRECTORPASSWORD="$director_password$" /D=$InstallDir64$
+"%ScriptPath%\$ProductExe64$" /S $keep_config$ /CLIENTNAME="$filedaemon_full_name$" /CLIENTPASSWORD="$filedaemon_full_password$" /DIRECTORNAME="$director_name$" /CLIENTADDRESS="$filedaemon_client_address$" /CLIENTMONITORPASSWORD="$filedaemon_monitor_password$" /DIRECTORADDRESS="$director_address$" /DIRECTORPASSWORD="$director_password$" /D=$InstallDir64$
 
 
 [opsiservicecall_set_product_property_filedaemon_full_name]
@@ -168,58 +182,6 @@ endif
         '%HostID%'
 ]
 
-
-[Files_install_32]
-; Example of recursively copying some files into the installation directory:
-;
-; copy -s "%ScriptPath%\files\*.*" "$InstallDir32$"
-
-[Files_install_64]
-; Example of recursively copying some files into the installation directory:
-;
-; copy -s "%ScriptPath%\files\*.*" "$InstallDir64$"
-
-[Registry_install]
-; Example of setting some values of an registry key:
-;
-; openkey [HKEY_LOCAL_MACHINE\Software\$ProductId$]
-; set "name1" = "some string value"
-; set "name2" = REG_DWORD:0001
-; set "name3" = REG_BINARY:00 af 99 cd
-
-[LinkFolder_install]
-; Example of deleting a folder from AllUsers startmenu:
-;
-; set_basefolder common_programs
-; delete_subfolder $ProductId$
-;
-; Example of creating an shortcut to the installed exe in AllUsers startmenu:
-;
-; set_basefolder common_programs
-; set_subfolder $ProductId$
-;
-; set_link
-; 	name: $ProductId$
-; 	target: <path to the program>
-; 	parameters:
-; 	working_dir: $InstallDir$
-; 	icon_file:
-; 	icon_index:
-; end_link
-;
-; Example of creating an shortcut to the installed exe on AllUsers desktop:
-;
-; set_basefolder common_desktopdirectory
-; set_subfolder ""
-;
-; set_link
-; 	name: $ProductId$
-; 	target: <path to the program>
-; 	parameters: <some_param>
-; 	working_dir: $InstallDir$
-; 	icon_file: <path to icon file>
-; 	icon_index: 2
-; end_link
 
 [Sub_check_exitcode]
 comment "Test for installation success via exit code"
