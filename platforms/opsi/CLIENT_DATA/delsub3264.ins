@@ -41,40 +41,11 @@ endif
 ;LinkFolder_uninstall
 
 [Winbatch_uninstall_32]
-"$UninstallProgram32$" /S
+"$UninstallProgram32$" /S $keep_config$
 
 
 [Winbatch_uninstall_64]
-"$UninstallProgram64$" /S
-
-
-[Files_uninstall_32]
-; Example for recursively deleting the installation directory (don't forget the trailing backslash):
-;
-; delete -sf "$InstallDir32$\"
-
-
-[Files_uninstall_64]
-; Example for recursively deleting the installation directory (don't forget the trailing backslash):
-;
-; delete -sf "$InstallDir64$\"
-
-[Registry_uninstall]
-; Example of deleting a registry key:
-;
-; deletekey [HKEY_LOCAL_MACHINE\Software\$ProductId$]
-
-[LinkFolder_uninstall]
-; Example of deleting a folder from AllUsers startmenu:
-;
-; set_basefolder common_programs
-; delete_subfolder $ProductId$
-;
-; Example of deleting a shortcut from AllUsers desktop:
-;
-; set_basefolder common_desktopdirectory
-; set_subfolder ""
-; delete_element $ProductId$
+"$UninstallProgram64$" /S $keep_config$
 
 [Sub_check_exitcode]
 comment "Test for installation success via exit code"
