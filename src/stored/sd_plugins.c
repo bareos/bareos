@@ -327,7 +327,6 @@ void load_sd_plugins(const char *plugin_dir, const char *plugin_names)
     * Verify that the plugin is acceptable, and print information about it.
     */
    foreach_alist_index(i, plugin, sd_plugin_list) {
-      Jmsg(NULL, M_INFO, 0, _("Loaded plugin: %s\n"), plugin->file);
       Dmsg1(dbglvl, "Loaded plugin: %s\n", plugin->file);
    }
 

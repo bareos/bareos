@@ -222,7 +222,6 @@ void load_dir_plugins(const char *plugin_dir, const char *plugin_names)
     *  about it.
     */
    foreach_alist_index(i, plugin, dird_plugin_list) {
-      Jmsg(NULL, M_INFO, 0, _("Loaded plugin: %s\n"), plugin->file);
       Dmsg1(dbglvl, "Loaded plugin: %s\n", plugin->file);
    }
 
