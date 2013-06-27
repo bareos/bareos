@@ -13,10 +13,13 @@ DefVar $UninstallProgram64$
 DefVar $LogDir$
 DefVar $ExitCode$
 DefVar $ProductId$
+DefVar $ProductName$
 DefVar $InstallDir32$
 DefVar $InstallDir64$
 DefVar $LicenseRequired$
 DefVar $LicensePool$
+DefVar $auto_config$
+DefVar $keep_config$
 DefVar $INST_SystemType$
 DefVar $INST_architecture$
 
@@ -32,13 +35,21 @@ Set $LogDir$ = "%SystemDrive%\tmp"
 Set $ProductId$       = "bareos"
 Set $InstallDir32$    = "%ProgramFiles32Dir%\Bareos"
 Set $InstallDir64$    = "%ProgramFiles64Dir%\Bareos"
-Set $LicenseRequired$ = "false"
-Set $LicensePool$     = "p_" + $ProductId$
+;Set $LicenseRequired$ = "false"
+;Set $LicensePool$     = "p_" + $ProductId$
 ; ----------------------------------------------------------------
 
+Set $auto_config$ = lower( GetProductProperty("auto_config", "true"))
+
+if $auto_config$ = "true"
+    set $ProductName$ = $ProductId$ + " (auto config)"
+else
+    set $keep_config$ = "/SILENTKEEPCONFIG"
+    set $ProductName$ = $ProductId$
+endif
 
 comment "Show product picture"
-ShowBitmap "%ScriptPath%\" + $ProductId$ + ".png" $ProductId$
+ShowBitmap "%ScriptPath%\logo.png" $ProductId$
 
 Message "Uninstalling " + $ProductId$ + " ..."
 
@@ -47,21 +58,3 @@ if FileExists("%ScriptPath%\delsub3264.ins")
 	Sub "%ScriptPath%\delsub3264.ins"
 endif
 
-;if $LicenseRequired$ = "true"
-;	comment "Licensing required, free license used"
-;	Sub_free_license
-;endif
-
-[Sub_free_license]
-comment "License management is enabled and will be used"
-
-comment "Trying to free license used for the product"
-DefVar $result$
-Set $result$ = FreeLicense($LicensePool$)
-; If there is an assignment of a license pool to the product, it is possible to use
-; Set $result$ = FreeLicense("", $ProductId$)
-;
-; If there is an assignment of a license pool to a windows software id, it is possible to use
-; DefVar $WindowsSoftwareId$
-; $WindowsSoftwareId$ = "..."
-; set $result$ = FreeLicense("", "", $WindowsSoftwareId$)
