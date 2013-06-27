@@ -23,6 +23,15 @@ userLoginScript:
 
 [ProductProperty]
 type: unicode
+name: auto_config
+multivalue: False
+editable: False
+description: if true, Bareos configuration gets generated from Opsi properties
+values: ["false", "true"]
+default: ["true"]
+
+[ProductProperty]
+type: unicode
 name: filedaemon_full_name
 multivalue: False
 editable: True
@@ -95,6 +104,9 @@ values: ["32 only", "64 only", "both", "system specific"]
 default: ["system specific"]
 
 [Changelog]
+20130627, Daniel Neuberger
+  * added ProductProperty Update_KeepConfig
+
 20130215, Joerg Steffens
   * adapted to be build with http://build.opensuse.org
 
