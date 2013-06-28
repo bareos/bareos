@@ -1,0 +1,18 @@
+Client {
+  Name = "${client_name}-fd"
+  Address = "$client_name"
+  Password = "${password}"
+
+  File Retention = 30 days            # 30 days
+  Job Retention = 6 months            # six months
+  AutoPrune = no                      # Prune expired Jobs/Files
+}
+
+Job {
+  Name = "Backup-${client_name}"
+  Client = "${client_name}-fd"
+  JobDefs = "DefaultJob"
+  FileSet = "Linux All"
+  Schedule = "WeeklyCycle"
+  Enabled = "$enable"
+}

@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -e
+#set -x
+
+#DEBHELPER#
+
+if [ -f /usr/share/debconf/confmodule ]; then
+        . /usr/share/debconf/confmodule
+fi
+if [ -f /usr/share/dbconfig-common/dpkg/postrm.pgsql  ]; then
+        . /usr/share/dbconfig-common/dpkg/postrm.pgsql
+fi
+dbc_go univention-bareos $@
+
+invoke-rc.d bareos-dir stop || true
+
+invoke-rc.d univention-directory-listener restart
+
+. /usr/share/univention-lib/all.sh
+
+. /usr/share/univention-join/joinscripthelper.lib
+
+if [ "$1" = "remove" ]; then
+	call_unjoinscript 63univention-bareos-uninstall.uinst
+	joinscript_remove_script_from_status_file univention-bareos
+fi

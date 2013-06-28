@@ -1,0 +1,9 @@
+#!/bin/sh
+
+. /usr/share/univention-lib/all.sh
+if [ "$1" = "configure" ]; then
+
+	ucs_registerLDAPSchema /usr/share/univention-bareos-schema/univention-bareos.schema
+fi
+
+exit 0

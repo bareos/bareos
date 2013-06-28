@@ -1,0 +1,41 @@
+[bareos/filestorage]
+Description[de]=Speicherort für Backup-Volumes (bareos)
+Description[en]=Directory for backup volumes (bareos)
+Type=str
+Categories=backup
+
+[bareos/backup_myself]
+Description[de]=Eigensicherung aktivieren (yes/no)
+Description[en]=Enable backup job for the server itself (yes/no)
+Type=bool
+Categories=backup
+
+[bareos/max_incr_volumes]
+Description[de]=Maximale Anzahl der Volumes (10GB) im Pool für Incremental-Backups
+Description[en]=Maximum number of volumes (10GB) for the incremental backup pool
+Type=int
+Categories=backup
+
+[bareos/max_diff_volumes]
+Description[de]=Maximale Anzahl der Volumes (10GB) im Pool für Differential-Backups
+Description[en]=Maximum number of volumes (10GB) for the differential backup pool
+Type=int
+Categories=backup
+
+[bareos/max_full_volumes]
+Description[de]=Maximale Anzahl der Volumes (10GB) im Pool für Full-Backups
+Description[en]=Maximum number of volumes (10GB) for the full backup pool
+Type=int
+Categories=backup
+
+[bareos/pgsql/database]
+Description[de]=Datenbankname für die Bareos-Datenbank (bareos).
+Description[en]=Name of the bareos postgres database (bareos).
+Type=str
+Categories=backup
+
+[bareos/pgsql/user]
+Description[de]=Benutzername für die Bareos-Datenbank (bareos).
+Description[en]=Name of the bareos postgres user (bareos).
+Type=str
+Categories=backup
