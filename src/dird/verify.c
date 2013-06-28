@@ -266,13 +266,14 @@ bool do_verify(JCR *jcr)
       if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, 1)) {
          goto bail_out;
       }
+      fd = jcr->file_bsock;
 
       /*
        * Check if the file daemon supports passive client mode.
        */
       if (jcr->passive_client && jcr->FDVersion < FD_VERSION_51) {
          Jmsg(jcr, M_FATAL, 0,
-               _("Client \"%s\" doesn't support passive client mode. Please upgrade your client.\n\n"),
+               _("Client \"%s\" doesn't support passive client mode. Please upgrade your client.\n"),
               jcr->res.client->name());
          goto bail_out;
       }
@@ -285,11 +286,11 @@ bool do_verify(JCR *jcr)
       if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, 1)) {
          goto bail_out;
       }
+      fd = jcr->file_bsock;
       break;
    }
 
    jcr->setJobStatus(JS_Running);
-   fd = jcr->file_bsock;
 
    Dmsg0(30, ">filed: Send include list\n");
    if (!send_include_list(jcr)) {
@@ -459,6 +460,12 @@ bool do_verify(JCR *jcr)
    return true;
 
 bail_out:
+   if (jcr->file_bsock) {
+      jcr->file_bsock->signal(BNET_TERMINATE);
+      jcr->file_bsock->close();
+      jcr->file_bsock = NULL;
+   }
+
    return false;
 }
 

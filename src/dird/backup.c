@@ -305,7 +305,8 @@ bool do_native_backup(JCR *jcr)
 {
    int status;
    int tls_need = BNET_TLS_NONE;
-   BSOCK *fd, *sd;
+   BSOCK *fd = NULL;
+   BSOCK *sd = NULL;
    STORERES *store = NULL;
    CLIENTRES *client = NULL;
    char ed1[100];
@@ -389,19 +390,19 @@ bool do_native_backup(JCR *jcr)
    if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, 1)) {
       goto bail_out;
    }
+   fd = jcr->file_bsock;
 
    /*
     * Check if the file daemon supports passive client mode.
     */
    if (jcr->passive_client && jcr->FDVersion < FD_VERSION_51) {
       Jmsg(jcr, M_FATAL, 0,
-            _("Client \"%s\" doesn't support passive client mode. Please upgrade your client.\n\n"),
+            _("Client \"%s\" doesn't support passive client mode. Please upgrade your client.\n"),
            jcr->res.client->name());
-      goto bail_out;
+      goto close_fd;
    }
 
    jcr->setJobStatus(JS_Running);
-   fd = jcr->file_bsock;
 
    if (!send_level_command(jcr)) {
       goto bail_out;
@@ -555,20 +556,20 @@ bool do_native_backup(JCR *jcr)
       native_backup_cleanup(jcr, status);
       return true;
    }
+
    return false;
 
-bail_out:
-   /*
-    * Come here only after starting SD thread
-    */
-   jcr->setJobStatus(JS_ErrorTerminated);
-   Dmsg1(400, "wait for sd. use=%d\n", jcr->use_count());
+close_fd:
+   if (jcr->file_bsock) {
+      jcr->file_bsock->signal(BNET_TERMINATE);
+      jcr->file_bsock->close();
+      jcr->file_bsock = NULL;
+   }
 
-   /*
-    * Cancel SD
-    */
+bail_out:
+   jcr->setJobStatus(JS_ErrorTerminated);
    wait_for_job_termination(jcr, me->FDConnectTimeout);
-   Dmsg1(400, "after wait for sd. use=%d\n", jcr->use_count());
+
    return false;
 }
 
