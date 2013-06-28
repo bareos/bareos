@@ -1,0 +1,16 @@
+/usr/share/univention-bareos/restart_director
+/usr/lib/univention-install/62univention-bareos.inst
+/usr/share/dbconfig-common/data/univention-bareos/install/pgsql
+/etc/cron.d/univention-bareos
+/etc/univention/templates/info/univention-bareos.info
+/etc/univention/templates/files/etc/bareos/bareos-fd.conf
+/etc/univention/templates/files/etc/bareos/bconsole.conf
+/etc/univention/templates/files/etc/bareos/bareos-dir.conf
+/etc/univention/templates/files/etc/bareos/bareos-sd.conf
+/etc/univention/templates/files/etc/postgresql
+/etc/univention/templates/files/etc/postgresql/8.4
+/etc/univention/templates/files/etc/postgresql/8.4/main
+/etc/univention/templates/files/etc/postgresql/8.4/main/pg_hba.conf.d
+/etc/univention/templates/files/etc/postgresql/8.4/main/pg_hba.conf.d/25-univention-bareos
+/etc/univention/service.info/services/univention-bareos.cfg
+/etc/univention/registry.info/variables/univention-bareos.cfg

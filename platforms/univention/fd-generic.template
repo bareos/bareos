@@ -1,0 +1,19 @@
+#
+# This file needs to be copied to the backup client
+# as /etc/bareos/bareos-fd.conf
+#
+
+  Director {
+    Name = ${server_name}-dir
+    Password = "$password"
+  }
+  FileDaemon {
+    Name = ${client_name}-fd
+    WorkingDirectory = /var/lib/bareos
+    Pid Directory = /var/run
+    Maximum Concurrent Jobs = 20
+  }
+  Messages {
+    Name = Standard
+    director = ${server_name}-dir = all, !skipped, !restored
+  }
