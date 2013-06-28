@@ -1,0 +1,22 @@
+#!/bin/sh
+
+#set -x
+
+
+set -e
+
+. /usr/share/debconf/confmodule
+. /usr/share/dbconfig-common/dpkg/prerm.pgsql
+dbc_go univention-bareos $@
+
+#DEBHELPER#
+
+if [ "$1" = remove ]
+then
+	invoke-rc.d bareos-dir stop || true
+	file="/usr/lib/univention-uninstall/63univention-bareos-uninstall.uinst"
+	if [ -r "$file" ]
+	then
+	  cp "$file" /usr/lib/univention-install/
+	fi
+fi

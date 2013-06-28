@@ -1,0 +1,20 @@
+[bareos-director]
+description[de]=Dienst zum Steuern von Backups
+description[en]=Service for coordinating backups
+icon=service/bareos-dir
+programs=/usr/sbin/bareos-dir -c /etc/bareos/bareos-dir.conf
+start_type=bareos/dir/autostart
+
+[bareos-sd]
+description[de]=Dienst für den Zugriff auf Sicherungsmedien
+description[en]=Service for accessing backup media
+icon=service/bareos-sd
+programs=/usr/sbin/bareos-sd -c /etc/bareos/bareos-sd.conf
+start_type=bareos/sd/autostart
+
+[bareos-fd]
+description[de]=Dienst für den Zugriff auf zu sichernde Systeme
+description[en]=Service for accessing systems for backup
+icon=service/bareos-fd
+programs=/usr/sbin/bareos-fd -c /etc/bareos/bareos-fd.conf
+start_type=bareos/fd/autostart

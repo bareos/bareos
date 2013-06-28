@@ -1,0 +1,35 @@
+Type: multifile
+Multifile: etc/postgresql/8.4/main/pg_hba.conf
+
+Type: subfile
+Multifile: etc/postgresql/8.4/main/pg_hba.conf
+Subfile: etc/postgresql/8.4/main/pg_hba.conf.d/25-univention-bareos
+Variables: bareos/pgsql/.*
+
+Type: file
+File: etc/bareos/bareos-dir.conf
+Variables: bareos/pgsql/database
+Variables: bareos/pgsql/user
+Variables: bareos/filestorage
+Variables: hostname
+Variables: domainname
+
+Type: file
+File: etc/bareos/bareos-sd.conf
+Variables: bareos/filestorage
+Variables: hostname
+Variables: domainname
+Variables: bareos/backup_myself
+Variables: bareos/max_incr_volumes
+Variables: bareos/max_diff_volumes
+Variables: bareos/max_full_volumes
+
+Type: file
+File: etc/bareos/bareos-fd.conf
+Variables: hostname
+Variables: domainname
+
+Type: file
+File: etc/bareos/bconsole.conf
+Variables: hostname
+Variables: domainname
