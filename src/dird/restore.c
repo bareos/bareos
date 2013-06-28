@@ -121,10 +121,9 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
    STORERES *store;
    bootstrap_info info;
    BSOCK *fd = NULL;
-   BSOCK *sd;
+   BSOCK *sd = NULL;
    bool first_time = true;
    POOL_MEM restore_cmd(PM_MESSAGE);
-   bool ret = false;
 
    /*
     * This command is used for each part
@@ -181,18 +180,17 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, 1)) {
             goto bail_out;
          }
+         fd = jcr->file_bsock;
 
          /*
           * Check if the file daemon supports passive client mode.
           */
          if (jcr->passive_client && jcr->FDVersion < FD_VERSION_51) {
             Jmsg(jcr, M_FATAL, 0,
-                  _("Client \"%s\" doesn't support passive client mode. Please upgrade your client.\n\n"),
+                  _("Client \"%s\" doesn't support passive client mode. Please upgrade your client.\n"),
                  jcr->res.client->name());
             goto bail_out;
          }
-
-         fd = jcr->file_bsock;
       }
 
       jcr->setJobStatus(JS_Running);
@@ -343,11 +341,18 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
       fd->fsend("endrestore");
    }
 
-   ret = true;
+   close_bootstrap_file(info);
+   return true;
 
 bail_out:
+   if (jcr->file_bsock) {
+      jcr->file_bsock->signal(BNET_TERMINATE);
+      jcr->file_bsock->close();
+      jcr->file_bsock = NULL;
+   }
+
    close_bootstrap_file(info);
-   return ret;
+   return false;
 }
 
 /**
