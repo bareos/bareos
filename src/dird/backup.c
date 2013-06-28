@@ -396,7 +396,7 @@ bool do_native_backup(JCR *jcr)
    if (jcr->passive_client && jcr->FDVersion < FD_VERSION_51) {
       Jmsg(jcr, M_FATAL, 0,
             _("Client \"%s\" doesn't support passive client mode. Please upgrade your client.\n\n"),
-           client->name());
+           jcr->res.client->name());
       goto bail_out;
    }
 
