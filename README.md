@@ -7,6 +7,7 @@ Release 13.3.x
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
 
 * NDMP enhancements (first code for doing filelevel restores, preliminary).
+* Auto inflation/deflation storage daemon plugin (needs more testing).
 
 Release 13.2.x
 ==============
