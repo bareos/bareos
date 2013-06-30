@@ -8,7 +8,7 @@
 
 
 Name:           mingw64-winbareos
-Version:        13.2.0
+Version:        13.3.0
 Release:        0
 Summary:        bareos
 License:        LGPLv2+
