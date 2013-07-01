@@ -3,7 +3,7 @@
 /build/src/dird/testfind.c
 /build/Makefile.in
 /build/src/dird/bareos-dir
-/build/src/plugins/fd/bpipe-fd.c
+/build/src/plugins/filed/bpipe-fd.c
 /build/src/console/bconsole
 /build/src/filed/bareos-fd
 /build/src/findlib/find_one.c
