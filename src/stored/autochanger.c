@@ -556,9 +556,8 @@ bool unload_dev(DCR *dcr, DEVICE *dev)
 }
 
 /*
- * List the Volumes that are in the autoloader possibly
- *   with their barcodes.
- *   We assume that it is always the Console that is calling us.
+ * List the Volumes that are in the autoloader possibly with their barcodes.
+ * We assume that it is always the Console that is calling us.
  */
 bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd)
 {
@@ -568,6 +567,7 @@ bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd)
    BPIPE *bpipe;
    int len = sizeof_pool_memory(dir->msg) - 1;
    int status;
+   int retries = 1; /* Number of retries on failing slot count */
 
    if (!dev->is_autochanger() ||
        !dcr->device->changer_name ||
@@ -591,7 +591,9 @@ bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd)
       return true;
    }
 
-   /* If listing, reprobe changer */
+   /*
+    * If listing, reprobe changer
+    */
    if (bstrcmp(cmd, "list") || bstrcmp(cmd, "listall")) {
       dcr->dev->set_slot(0);
       get_autochanger_loaded_slot(dcr);
@@ -604,29 +606,52 @@ bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd)
                                dcr->device->changer_command,
                                cmd);
    dir->fsend(_("3306 Issuing autochanger \"%s\" command.\n"), cmd);
-   /* Now issue the command */
+
+   /*
+    * Now issue the command
+    */
+retry_changercmd:
    bpipe = open_bpipe(changer, timeout, "r");
    if (!bpipe) {
       dir->fsend(_("3996 Open bpipe failed.\n"));
       goto bail_out;            /* TODO: check if we need to return false */
    }
+
    if (bstrcmp(cmd, "list") || bstrcmp(cmd, "listall")) {
-      /* Get output from changer */
+      /*
+       * Get output from changer
+       */
       while (fgets(dir->msg, len, bpipe->rfd)) {
          dir->msglen = strlen(dir->msg);
          Dmsg1(100, "<stored: %s\n", dir->msg);
          bnet_send(dir);
       }
    } else if (bstrcmp(cmd, "slots")) {
+      int slots;
       char buf[100], *p;
-      /* For slots command, read a single line */
+
+      /*
+       * For slots command, read a single line
+       */
       buf[0] = 0;
       fgets(buf, sizeof(buf)-1, bpipe->rfd);
       buf[sizeof(buf)-1] = 0;
-      /* Strip any leading space in front of # of slots */
-      for (p=buf; B_ISSPACE(*p); p++)
-        { }
-      dir->fsend("slots=%s", p);
+
+      /*
+       * Strip any leading space in front of # of slots
+       */
+      for (p = buf; B_ISSPACE(*p); p++) { }
+
+      /*
+       * Validate slot count. If slots == 0 retry retries more times.
+       */
+      slots = str_to_int32(p);
+      if (slots == 0 && retries-- >= 0) {
+         close_bpipe(bpipe);
+         goto retry_changercmd;
+      }
+
+      dir->fsend("slots=%d", slots);
       Dmsg1(100, "<stored: %s", dir->msg);
    }
 
