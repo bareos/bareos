@@ -32,6 +32,9 @@ rm -f dumps/*
 ./run tests/copy-upgrade-test
 ./run tests/copy-volume-test
 ./run tests/data-encrypt-test
+./run tests/data-encrypt-aes256-test
+./run tests/data-encrypt-blowfish-test
+./run tests/data-encrypt-camellia256-test
 ./run tests/delete-test
 ./run tests/encrypt-bug-test
 ./run tests/estimate-test
