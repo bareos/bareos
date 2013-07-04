@@ -13,6 +13,7 @@ rm -f dumps/*
 ./run tests/accurate-test
 ./run tests/auto-label-test
 ./run tests/backup-bareos-test
+./run tests/backup-bareos-passive-test
 ./run tests/bextract-test
 ./run tests/bconsole-test
 ./run tests/base-job-test
