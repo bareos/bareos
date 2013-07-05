@@ -11,6 +11,7 @@ rm -f dumps/*
 ./run tests/action-on-purge-test
 ./run tests/allowcompress-test
 ./run tests/allowed-scriptdir-test
+./run tests/allowed-jobcommand-test
 ./run tests/accurate-test
 ./run tests/auto-label-test
 ./run tests/backup-bareos-test
