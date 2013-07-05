@@ -291,7 +291,7 @@ static bool validate_command(JCR *jcr, const char *cmd, alist *allowed_job_cmds)
    }
 
    if (!allowed) {
-      Jmsg(jcr, M_FATAL, 0, _("Illegal %s command not allowed by Allowed Job Cmds setting of this filed.\n"), cmd);
+      Jmsg(jcr, M_FATAL, 0, _("Illegal \"%s\" command not allowed by Allowed Job Cmds setting of this filed.\n"), cmd);
    }
 
    return allowed;

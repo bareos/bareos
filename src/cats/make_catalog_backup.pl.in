@@ -90,7 +90,7 @@ sub dump_mysql
     print MY "[client]
 $addr
 user=$args{db_user}
-password=$args{db_password}
+password=\"$args{db_password}\"
 ";
     if ($args{db_port}) {
         print MY "port=$args{db_port}\n";
