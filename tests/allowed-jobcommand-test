@@ -247,24 +247,11 @@ else
    estat=11
 fi
 
-grep "Fatal error: Illegal restore command not allowed by Allowed Job Cmds setting of this filed." ${tmp}/restore4.log 2>&1 >/dev/null
+grep "Fatal error: Illegal \"restore\" command not allowed by Allowed Job Cmds setting of this filed." ${tmp}/restore4.log 2>&1 >/dev/null
 if test $? -eq 0; then
    print_debug "Restore Blocked: OK"
 else
    estat=12
 fi
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 end_test
