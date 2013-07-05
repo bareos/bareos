@@ -152,15 +152,6 @@ int run_scripts(JCR *jcr, alist *runscripts, const char *label, alist *allowed_s
       Dmsg2(200, "runscript: try to run %s:%s\n", NPRT(script->target), NPRT(script->command));
       runit = false;
 
-      if (!script_dir_allowed(jcr, script, allowed_script_dirs)) {
-         Dmsg1(200, "runscript: Not running script %s because its not in one of the allowed scripts dirs\n",
-               script->command);
-         Jmsg(jcr, M_ERROR, 0, _("Runscript: run %s \"%s\" could not execute, "
-                                 "not in one of the allowed scripts dirs\n"), label, script->command);
-         jcr->setJobStatus(JS_ErrorTerminated);
-         goto bail_out;
-      }
-
       if ((script->when & SCRIPT_Before) && (when & SCRIPT_Before)) {
          if ((script->on_success && (jcr->JobStatus == JS_Running || jcr->JobStatus == JS_Created)) ||
              (script->on_failure && (job_canceled(jcr) || jcr->JobStatus == JS_Differences))) {
@@ -192,8 +183,19 @@ int run_scripts(JCR *jcr, alist *runscripts, const char *label, alist *allowed_s
          runit = false;
       }
 
-      /* we execute it */
+      /*
+       * We execute it
+       */
       if (runit) {
+         if (!script_dir_allowed(jcr, script, allowed_script_dirs)) {
+            Dmsg1(200, "runscript: Not running script %s because its not in one of the allowed scripts dirs\n",
+                  script->command);
+            Jmsg(jcr, M_ERROR, 0, _("Runscript: run %s \"%s\" could not execute, "
+                                    "not in one of the allowed scripts dirs\n"), label, script->command);
+            jcr->setJobStatus(JS_ErrorTerminated);
+            goto bail_out;
+         }
+
          script->run(jcr, label);
       }
    }
