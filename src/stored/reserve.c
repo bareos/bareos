@@ -373,8 +373,7 @@ static bool use_device_cmd(JCR *jcr)
 
 
 /*
- * Walk through the autochanger resources and check if
- *  the volume is in one of them.
+ * Walk through the autochanger resources and check if the volume is in one of them.
  *
  * Returns:  true  if volume is in device
  *           false otherwise
@@ -383,7 +382,13 @@ static bool is_vol_in_autochanger(RCTX &rctx, VOLRES *vol)
 {
    AUTOCHANGERRES *changer = vol->dev->device->changer_res;
 
-   /* Find resource, and make sure we were able to open it */
+   if (!changer) {
+      return false;
+   }
+
+   /*
+    * Find resource, and make sure we were able to open it
+    */
    if (bstrcmp(rctx.device_name, changer->hdr.name)) {
       Dmsg1(dbglvl, "Found changer device %s\n", vol->dev->device->hdr.name);
       return true;
