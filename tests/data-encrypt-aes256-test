@@ -8,17 +8,13 @@ TestName="data-encrypt-aes256-test"
 JobName=Crypto-AES256
 . scripts/functions
 
-
 scripts/cleanup
 scripts/copy-crypto-confs
 echo "${cwd}/build" >${cwd}/tmp/file-list
 
-outf="$tmp/sed_tmp"
-# set compatible to no in fd.conf
-cp $scripts/bareos-fd.conf $tmp/1
-echo 's#^FileDaemon {#FileDaemon { \n compatible = no \n PKI Cipher = aes256 #g' >${outf}
-sed -f ${outf} $tmp/1 >$scripts/bareos-fd.conf
-
+fdcfg=$conf/bareos-fd.conf
+$bperl -e "add_attribute('$fdcfg', 'Compatible', 'No', 'FileDaemon')"
+$bperl -e "add_attribute('$fdcfg', 'PKI Cipher', 'aes256', 'FileDaemon')"
 
 change_jobname NightlySave $JobName
 start_test

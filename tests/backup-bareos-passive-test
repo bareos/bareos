@@ -19,19 +19,11 @@ echo "s%  Schedule =%# Schedule =%g" >${outf}
 cp $scripts/bareos-dir.conf $tmp/1
 sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
 
+dircfg=$conf/bareos-dir.conf
+$bperl -e "add_attribute('$dircfg', 'passive', 'Yes', 'Client')"
 
-# set passive to yes:
-cp $scripts/bareos-dir.conf $tmp/1
-echo 's#^Client {#Client { \n passive = yes \n#g' >${outf}
-sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
-
-# set compatible to no in fd.conf
-cp $scripts/bareos-fd.conf $tmp/1
-echo 's#^FileDaemon {#FileDaemon { \n compatible = no \n#g' >${outf}
-sed -f ${outf} $tmp/1 >$scripts/bareos-fd.conf
-
-
-
+fdcfg=$conf/bareos-fd.conf
+$bperl -e "add_attribute('$fdcfg', 'Compatible', 'No', 'FileDaemon')"
 
 change_jobname BackupClient1 $JobName
 start_test
