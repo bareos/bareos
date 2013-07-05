@@ -10,6 +10,7 @@ rm -f dumps/*
 ./run tests/acl-xattr-test
 ./run tests/action-on-purge-test
 ./run tests/allowcompress-test
+./run tests/allowed-scriptdir-test
 ./run tests/accurate-test
 ./run tests/auto-label-test
 ./run tests/backup-bareos-test
