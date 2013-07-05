@@ -68,6 +68,10 @@ bool crypto_session_start(JCR *jcr)
 
       /** Create per-job session encryption context */
       jcr->crypto.pki_session = crypto_session_new(cipher, jcr->crypto.pki_recipients);
+      if (!jcr->crypto.pki_session) {
+         Jmsg(jcr, M_FATAL, 0, _("Cannot create a new crypto session probably unsupported cipher configured.\n"));
+         return false;
+      }
 
       /** Get the session data size */
       if (!crypto_session_encode(jcr->crypto.pki_session, (uint8_t *)0, &size)) {
@@ -90,6 +94,7 @@ bool crypto_session_start(JCR *jcr)
       /** Allocate the encryption/decryption buffer */
       jcr->crypto.crypto_buf = get_memory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
    }
+
    return true;
 }
 
