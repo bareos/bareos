@@ -1000,32 +1000,46 @@ int get_storage_drive(UAContext *ua, STORERES *store)
    unsigned int cnt;
    char drivename[10];
 
-   /* Get drive for autochanger if possible */
-   i = find_arg_with_value(ua, "drive");
+   /*
+    * Get drive for autochanger if possible
+    */
+   i = find_arg_with_value(ua, NT_("drive"));
    if (i >= 0) {
       drive = atoi(ua->argv[i]);
    } else if (store && store->autochanger) {
-      /* If our structure is not set ask SD for # drives */
+      /*
+       * If our structure is not set ask SD for # drives
+       */
       if (store->drives == 0) {
          store->drives = get_num_drives_from_SD(ua);
       }
-      /* If only one drive, default = 0 */
+      /*
+       * If only one drive, default = 0
+       */
       if (store->drives == 1) {
          drive = 0;
       } else {
-         /* Ask user to enter drive number */
+         /*
+          * Ask user to enter drive number
+          */
          start_prompt(ua, _("Select Drive:\n"));
          for (cnt = 0; cnt < store->drives; cnt++) {
             bsnprintf(drivename, sizeof(drivename), "Drive %d", cnt);
             add_prompt(ua, drivename);
          }
          if (do_prompt(ua, _("Drive"), _("Select drive"), drivename, sizeof(drivename)) < 0) {
-            drive = -1;  /* None */
+            drive = -1; /* None */
          } else {
             sscanf(drivename, "Drive %d", &drive);
          }
       }
+   } else {
+      /*
+       * If only one drive, default = 0
+       */
+      drive = 0;
    }
+
    return drive;
 }
 
