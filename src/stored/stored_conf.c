@@ -160,6 +160,7 @@ static RES_ITEM dev_items[] = {
    { "mediatype", store_strname, ITEM(res_dev.media_type), 0, ITEM_REQUIRED, NULL },
    { "devicetype", store_devtype, ITEM(res_dev.dev_type), 0, 0, NULL },
    { "archivedevice", store_strname, ITEM(res_dev.device_name), 0, ITEM_REQUIRED, NULL },
+   { "diagnosticdevice", store_strname, ITEM(res_dev.diag_device_name), 0, 0, NULL },
    { "hardwareendoffile", store_bit, ITEM(res_dev.cap_bits), CAP_EOF, ITEM_DEFAULT, "on" },
    { "hardwareendofmedium", store_bit, ITEM(res_dev.cap_bits), CAP_EOM, ITEM_DEFAULT, "on" },
    { "backwardspacerecord", store_bit, ITEM(res_dev.cap_bits), CAP_BSR, ITEM_DEFAULT, "on" },
@@ -479,9 +480,11 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
       }
       break;
    case R_DEVICE:
-      sendit(sock, "Device: name=%s MediaType=%s Device=%s LabelType=%d\n",
+      sendit(sock, "Device: name=%s MediaType=%s Device=%s DiagDevice=%s LabelType=%d\n",
              res->res_dev.hdr.name,
-             res->res_dev.media_type, res->res_dev.device_name,
+             res->res_dev.media_type,
+             res->res_dev.device_name,
+             NPRT(res->res_dev.diag_device_name),
              res->res_dev.label_type);
       sendit(sock, "        rew_wait=%" lld " min_bs=%d max_bs=%d chgr_wait=%" lld "\n",
              res->res_dev.max_rewind_wait, res->res_dev.min_block_size,
@@ -714,6 +717,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_dev.device_name) {
          free(res->res_dev.device_name);
+      }
+      if (res->res_dev.diag_device_name) {
+         free(res->res_dev.diag_device_name);
       }
       if (res->res_dev.changer_name) {
          free(res->res_dev.changer_name);
