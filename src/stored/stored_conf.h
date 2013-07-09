@@ -139,6 +139,7 @@ public:
 
    char *media_type;                  /* User assigned media type */
    char *device_name;                 /* Archive device name */
+   char *diag_device_name;            /* Diagnostic device name */
    char *changer_name;                /* Changer device name */
    char *changer_command;             /* Changer command  -- external program */
    char *alert_command;               /* Alert command -- external program */

@@ -111,12 +111,13 @@ static inline bool is_plugin_disabled(JCR *jcr)
 /*
  * Edit codes into ChangerCommand
  *  %% = %
- *  %a = archive device name
- *  %c = changer device name
- *  %d = changer drive index
+ *  %a = Archive device name
+ *  %c = Changer device name
+ *  %D = Diagnostic device name
+ *  %d = Changer drive index
  *  %f = Client's name
  *  %j = Job name
- *  %o = command
+ *  %o = Command
  *  %s = Slot base 0
  *  %S = Slot base 1
  *  %v = Volume name
@@ -146,6 +147,9 @@ char *edit_device_codes(DCR *dcr, char *omsg, const char *imsg, const char *cmd)
             break;
          case 'c':
             str = NPRT(dcr->device->changer_name);
+            break;
+         case 'D':
+            str = NPRT(dcr->device->diag_device_name);
             break;
          case 'd':
             str = edit_int64(dcr->dev->drive_index, ed1);
