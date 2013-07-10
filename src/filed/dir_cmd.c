@@ -299,7 +299,6 @@ static bool validate_command(JCR *jcr, const char *cmd, alist *allowed_job_cmds)
 
 static inline void cleanup_fileset(JCR *jcr)
 {
-   int i, j, k;
    findFILESET *fileset;
    findINCEXE *incexe;
    findFOPTS *fo;
@@ -309,20 +308,20 @@ static inline void cleanup_fileset(JCR *jcr)
       /*
        * Delete FileSet Include lists
        */
-      for (i = 0; i<fileset->include_list.size(); i++) {
+      for (int i = 0; i < fileset->include_list.size(); i++) {
          incexe = (findINCEXE *)fileset->include_list.get(i);
-         for (j = 0; j<incexe->opts_list.size(); j++) {
+         for (int j = 0; j < incexe->opts_list.size(); j++) {
             fo = (findFOPTS *)incexe->opts_list.get(j);
             if (fo->plugin) {
                free(fo->plugin);
             }
-            for (k = 0; k<fo->regex.size(); k++) {
+            for (int k = 0; k<fo->regex.size(); k++) {
                regfree((regex_t *)fo->regex.get(k));
             }
-            for (k = 0; k<fo->regexdir.size(); k++) {
+            for (int k = 0; k<fo->regexdir.size(); k++) {
                regfree((regex_t *)fo->regexdir.get(k));
             }
-            for (k = 0; k<fo->regexfile.size(); k++) {
+            for (int k = 0; k<fo->regexfile.size(); k++) {
                regfree((regex_t *)fo->regexfile.get(k));
             }
             if (fo->size_match) {
@@ -351,9 +350,9 @@ static inline void cleanup_fileset(JCR *jcr)
       /*
        * Delete FileSet Exclude lists
        */
-      for (i = 0; i<fileset->exclude_list.size(); i++) {
+      for (int i = 0; i<fileset->exclude_list.size(); i++) {
          incexe = (findINCEXE *)fileset->exclude_list.get(i);
-         for (j = 0; j<incexe->opts_list.size(); j++) {
+         for (int j = 0; j<incexe->opts_list.size(); j++) {
             fo = (findFOPTS *)incexe->opts_list.get(j);
             if (fo->size_match) {
                free(fo->size_match);
@@ -405,7 +404,6 @@ static inline void cleanup_fileset(JCR *jcr)
  */
 static void *handle_director_connection(BSOCK *dir)
 {
-   int i;
    JCR *jcr;
    bool found;
    bool quit = false;
@@ -452,7 +450,7 @@ static void *handle_director_connection(BSOCK *dir)
       dir->msg[dir->msglen] = 0;
       Dmsg1(100, "<dird: %s", dir->msg);
       found = false;
-      for (i = 0; cmds[i].cmd; i++) {
+      for (int i = 0; cmds[i].cmd; i++) {
          if (bstrncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd))) {
             found = true;         /* indicate command found */
             if ((!cmds[i].monitoraccess) && (jcr->director->monitor)) {
@@ -1031,6 +1029,25 @@ bail_out:
    return false;
 }
 
+#if defined(WIN32_VSS)
+static inline int count_include_list_file_entries(JCR *jcr)
+{
+   int cnt = 0;
+   findFILESET *fileset;
+   findINCEXE *incexe;
+
+   fileset = jcr->ff->fileset;
+   if (fileset) {
+      for (int i = 0; i < fileset->include_list.size(); i++) {
+         incexe = (findINCEXE *)fileset->include_list.get(i);
+         cnt += incexe->name_list.size();
+      }
+   }
+
+   return cnt;
+}
+#endif
+
 /**
  * Director is passing his Fileset
  */
@@ -1038,28 +1055,34 @@ static bool fileset_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
    bool retval;
-
 #if defined(WIN32_VSS)
    int vss = 0;
 
    sscanf(dir->msg, "fileset vss=%d", &vss);
-   enable_vss = (vss) ? true : false;
 #endif
 
    if (!init_fileset(jcr)) {
       return false;
    }
+
    while (dir->recv() >= 0) {
       strip_trailing_junk(dir->msg);
       Dmsg1(500, "Fileset: %s\n", dir->msg);
       add_fileset(jcr, dir->msg);
    }
+
    if (!term_fileset(jcr)) {
       return false;
    }
+
+#if defined(WIN32_VSS)
+   enable_vss = (vss && (count_include_list_file_entries(jcr) > 0)) ? true : false;
+#endif
+
    retval = dir->fsend(OKinc);
    generate_plugin_event(jcr, bEventEndFileSet);
    check_include_list_shadowing(jcr, jcr->ff->fileset);
+
    return retval;
 }
 
@@ -1185,7 +1208,7 @@ static bool level_cmd(JCR *jcr)
        * Sync clocks by polling him for the time. We take
        *   10 samples of his time throwing out the first two.
        */
-      for (int i=0; i<10; i++) {
+      for (int i = 0; i < 10; i++) {
          bt_start = get_current_btime();
          dir->signal(BNET_BTIME);     /* poll for time */
          if (dir->recv() <= 0) {      /* get response */
@@ -1415,12 +1438,16 @@ static bool backup_cmd(JCR *jcr)
    }
 
 #if defined(WIN32_VSS)
-   // capture state here, if client is backed up by multiple directors
-   // and one enables vss and the other does not then enable_vss can change
-   // between here and where its evaluated after the job completes.
+   /*
+    * Capture state here, if client is backed up by multiple directors
+    * and one enables vss and the other does not then enable_vss can change
+    * between here and where its evaluated after the job completes.
+    */
    jcr->VSS = g_pVSSClient && enable_vss;
    if (jcr->VSS) {
-      /* Run only one at a time */
+      /*
+       * Run only one at a time
+       */
       P(vss_mutex);
    }
 #endif
@@ -1493,15 +1520,25 @@ static bool backup_cmd(JCR *jcr)
    generate_plugin_event(jcr, bEventStartBackupJob);
 
 #if defined(WIN32_VSS)
-   /* START VSS ON WIN32 */
+   /*
+    * START VSS ON WIN32
+    */
    if (jcr->VSS) {
       if (g_pVSSClient->InitializeForBackup(jcr)) {
-        generate_plugin_event(jcr, bEventVssBackupAddComponents);
-        /* tell vss which drives to snapshot */
         char szWinDriveLetters[27];
-        *szWinDriveLetters=0;
-        /* Plugin driver can return drive letters */
+
+        generate_plugin_event(jcr, bEventVssBackupAddComponents);
+
+        /*
+         * Tell vss which drives to snapshot
+         */
+        *szWinDriveLetters = 0;
+
+        /*
+         * Plugin driver can return drive letters
+         */
         generate_plugin_event(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
+
         if (get_win32_driveletters(jcr->ff, szWinDriveLetters)) {
             Jmsg(jcr, M_INFO, 0, _("Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\"\n"), g_pVSSClient->GetDriverName(), szWinDriveLetters);
             if (!g_pVSSClient->CreateSnapshots(szWinDriveLetters)) {
@@ -1509,15 +1546,19 @@ static bool backup_cmd(JCR *jcr)
                Jmsg(jcr, M_FATAL, 0, _("CreateSGenerate VSS snapshots failed. ERR=%s\n"),
                     be.bstrerror());
             } else {
-               /* tell user if snapshot creation of a specific drive failed */
-               int i;
-               for (i=0; i < (int)strlen(szWinDriveLetters); i++) {
+               /*
+                * Tell user if snapshot creation of a specific drive failed
+                */
+               for (int i = 0; i < (int)strlen(szWinDriveLetters); i++) {
                   if (islower(szWinDriveLetters[i])) {
                      Jmsg(jcr, M_FATAL, 0, _("Generate VSS snapshot of drive \"%c:\\\" failed.\n"), szWinDriveLetters[i]);
                   }
                }
-               /* inform user about writer states */
-               for (i=0; i < (int)g_pVSSClient->GetWriterCount(); i++) {
+
+               /*
+                * Inform user about writer states
+                */
+               for (int i = 0; i < (int)g_pVSSClient->GetWriterCount(); i++) {
                   if (g_pVSSClient->GetWriterState(i) < 1) {
                      Jmsg(jcr, M_INFO, 0, _("VSS Writer (PrepareForBackup): %s\n"), g_pVSSClient->GetWriterInfo(i));
                   }
@@ -1750,22 +1791,27 @@ static bool restore_cmd(JCR *jcr)
 #if defined(WIN32_VSS)
 
    /**
-    * No need to enable VSS for restore if we do not have plugin
-    *  data to restore
+    * No need to enable VSS for restore if we do not have plugin data to restore
     */
    enable_vss = jcr->got_metadata;
 
    Dmsg2(50, "g_pVSSClient = %p, enable_vss = %d\n", g_pVSSClient, enable_vss);
-   // capture state here, if client is backed up by multiple directors
-   // and one enables vss and the other does not then enable_vss can change
-   // between here and where its evaluated after the job completes.
+   /*
+    * Capture state here, if client is backed up by multiple directors
+    * and one enables vss and the other does not then enable_vss can change
+    * between here and where its evaluated after the job completes.
+    */
    jcr->VSS = g_pVSSClient && enable_vss;
    if (jcr->VSS) {
-      /* Run only one at a time */
+      /*
+       * Run only one at a time
+       */
       P(vss_mutex);
    }
 #endif
-   /* Pickup where string */
+   /*
+    * Pickup where string
+    */
    args = get_memory(dir->msglen+1);
    *args = 0;
 
