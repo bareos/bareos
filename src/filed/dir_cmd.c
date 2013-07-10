@@ -1484,10 +1484,11 @@ static bool backup_cmd(JCR *jcr)
    /**
     * Expect to get OK data
     */
-   Dmsg1(110, "<stored: %s", sd->msg);
    if (!response(jcr, sd, OK_data, "Append Data")) {
+      Dmsg1(110, "<stored: %s", sd->msg);
       goto cleanup;
    }
+   Dmsg1(110, "<stored: %s", sd->msg);
 
    generate_plugin_event(jcr, bEventStartBackupJob);
 
