@@ -1411,11 +1411,15 @@ void unstrip_path(FF_PKT *ff_pkt)
 static void close_vss_backup_session(JCR *jcr)
 {
 #if defined(WIN32_VSS)
-   /* STOP VSS ON WIN32 */
-   /* tell vss to close the backup session */
+   /*
+    * STOP VSS ON WIN32
+    * Tell vss to close the backup session
+    */
    if (jcr->VSS) {
       if (g_pVSSClient->CloseBackup()) {
-         /* inform user about writer states */
+         /*
+          * Inform user about writer states
+          */
          for (int i=0; i<(int)g_pVSSClient->GetWriterCount(); i++) {
             int msg_type = M_INFO;
             if (g_pVSSClient->GetWriterState(i) < 1) {
@@ -1425,7 +1429,10 @@ static void close_vss_backup_session(JCR *jcr)
             Jmsg(jcr, msg_type, 0, _("VSS Writer (BackupComplete): %s\n"), g_pVSSClient->GetWriterInfo(i));
          }
       }
-      /* Generate Job global writer metadata */
+
+      /*
+       * Generate Job global writer metadata
+       */
       WCHAR *metadata = g_pVSSClient->GetMetadata();
       if (metadata) {
          FF_PKT *ff_pkt = jcr->ff;
