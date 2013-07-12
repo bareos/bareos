@@ -13,8 +13,8 @@
 #
 [Unit]
 Description=Bareos File Daemon service
-Requires=nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
-After=nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
+Requires=nss-lookup.target network.target remote-fs.target time-sync.target
+After=nss-lookup.target network.target remote-fs.target time-sync.target
 # Wants=
 # Before=
 # Conflicts=
