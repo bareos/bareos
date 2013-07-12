@@ -309,7 +309,7 @@ void *Main_Msg_Loop(LPVOID lpwThreadParam)
 #endif
 
    /* Now enter the Windows message handling loop until told to quit! */
-   while (GetMessage(&msg, NULL, 0,0) ) {
+   while (GetMessage(&msg, NULL, 0,0)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
    }
@@ -490,7 +490,7 @@ bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
 
    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
-   if( !(bOsVersionInfoEx = GetVersionEx ((OSVERSIONINFO *) &osvi)) )
+   if (!(bOsVersionInfoEx = GetVersionEx ((OSVERSIONINFO *) &osvi)))
       return 1;
 
    // Call GetNativeSystemInfo if supported or GetSystemInfo otherwise.
@@ -506,26 +506,39 @@ bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
    if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT && osvi.dwMajorVersion > 4) {
       bstrncpy(osbuf, TEXT("Microsoft "), maxsiz);
 
-      // Test for the specific product.
-
-      if (osvi.dwMajorVersion == 6) {
-         if (osvi.dwMinorVersion == 0) {
-            if (osvi.wProductType == VER_NT_WORKSTATION)
+      /*
+       * Test for the specific product.
+       */
+      switch (osvi.dwMajorVersion) {
+      case 6:
+         switch (osvi.dwMinorVersion) {
+         case 0:
+            if (osvi.wProductType == VER_NT_WORKSTATION) {
                 bstrncat(osbuf, TEXT("Windows Vista "), maxsiz);
-            else
-                bstrncat(osbuf, TEXT("Windows Server 2008 " ), maxsiz);
-         }
-
-         if (osvi.dwMinorVersion == 1) {
-            if (osvi.wProductType == VER_NT_WORKSTATION )
+            } else {
+                bstrncat(osbuf, TEXT("Windows Server 2008 "), maxsiz);
+            }
+            break;
+         case 1:
+            if (osvi.wProductType == VER_NT_WORKSTATION) {
                 bstrncat(osbuf, TEXT("Windows 7 "), maxsiz);
-            else
-                bstrncat(osbuf, TEXT("Windows Server 2008 R2 " ), maxsiz);
+            } else {
+                bstrncat(osbuf, TEXT("Windows Server 2008 R2 "), maxsiz);
+            }
+            break;
+         case 2:
+            if (osvi.wProductType == VER_NT_WORKSTATION) {
+                bstrncat(osbuf, TEXT("Windows 8 "), maxsiz);
+            } else {
+                bstrncat(osbuf, TEXT("Windows Server 2012 "), maxsiz);
+            }
+            break;
+         default:
+            bstrncat(osbuf, TEXT("Windows Unknown Release "), maxsiz);
+            break;
          }
 
-         pGPI = (PGPI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
-            "GetProductInfo");
-
+         pGPI = (PGPI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetProductInfo");
          if (pGPI) {
             pGPI(osvi.dwMajorVersion, osvi.dwMinorVersion, 0, 0, &dwType);
          } else {
@@ -533,128 +546,142 @@ bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
          }
 
          switch (dwType) {
-            case PRODUCT_ULTIMATE:
-               bstrncat(osbuf, TEXT("Ultimate Edition" ), maxsiz);
-               break;
-            case PRODUCT_PROFESSIONAL:
-               bstrncat(osbuf, TEXT("Professional" ), maxsiz);
-               break;
-            case PRODUCT_HOME_PREMIUM:
-               bstrncat(osbuf, TEXT("Home Premium Edition" ), maxsiz);
-               break;
-            case PRODUCT_HOME_BASIC:
-               bstrncat(osbuf, TEXT("Home Basic Edition" ), maxsiz);
-               break;
-            case PRODUCT_ENTERPRISE:
-               bstrncat(osbuf, TEXT("Enterprise Edition" ), maxsiz);
-               break;
-            case PRODUCT_BUSINESS:
-               bstrncat(osbuf, TEXT("Business Edition" ), maxsiz);
-               break;
-            case PRODUCT_STARTER:
-               bstrncat(osbuf, TEXT("Starter Edition" ), maxsiz);
-               break;
-            case PRODUCT_CLUSTER_SERVER:
-               bstrncat(osbuf, TEXT("Cluster Server Edition" ), maxsiz);
-               break;
-            case PRODUCT_DATACENTER_SERVER:
-               bstrncat(osbuf, TEXT("Datacenter Edition" ), maxsiz);
-               break;
-            case PRODUCT_DATACENTER_SERVER_CORE:
-               bstrncat(osbuf, TEXT("Datacenter Edition (core installation)" ), maxsiz);
-               break;
-            case PRODUCT_ENTERPRISE_SERVER:
-               bstrncat(osbuf, TEXT("Enterprise Edition" ), maxsiz);
-               break;
-            case PRODUCT_ENTERPRISE_SERVER_CORE:
-               bstrncat(osbuf, TEXT("Enterprise Edition (core installation)" ), maxsiz);
-               break;
-            case PRODUCT_ENTERPRISE_SERVER_IA64:
-               bstrncat(osbuf, TEXT("Enterprise Edition for Itanium-based Systems" ), maxsiz);
-               break;
-            case PRODUCT_SMALLBUSINESS_SERVER:
-               bstrncat(osbuf, TEXT("Small Business Server" ), maxsiz);
-               break;
-            case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM:
-               bstrncat(osbuf, TEXT("Small Business Server Premium Edition" ), maxsiz);
-               break;
-            case PRODUCT_STANDARD_SERVER:
-               bstrncat(osbuf, TEXT("Standard Edition" ), maxsiz);
-               break;
-            case PRODUCT_STANDARD_SERVER_CORE:
-               bstrncat(osbuf, TEXT("Standard Edition (core installation)" ), maxsiz);
-               break;
-            case PRODUCT_WEB_SERVER:
-               bstrncat(osbuf, TEXT("Web Server Edition" ), maxsiz);
-               break;
+         case PRODUCT_ULTIMATE:
+            bstrncat(osbuf, TEXT("Ultimate Edition"), maxsiz);
+            break;
+         case PRODUCT_PROFESSIONAL:
+            bstrncat(osbuf, TEXT("Professional"), maxsiz);
+            break;
+         case PRODUCT_HOME_PREMIUM:
+            bstrncat(osbuf, TEXT("Home Premium Edition"), maxsiz);
+            break;
+         case PRODUCT_HOME_BASIC:
+            bstrncat(osbuf, TEXT("Home Basic Edition"), maxsiz);
+            break;
+         case PRODUCT_ENTERPRISE:
+            bstrncat(osbuf, TEXT("Enterprise Edition"), maxsiz);
+            break;
+         case PRODUCT_BUSINESS:
+            bstrncat(osbuf, TEXT("Business Edition"), maxsiz);
+            break;
+         case PRODUCT_STARTER:
+            bstrncat(osbuf, TEXT("Starter Edition"), maxsiz);
+            break;
+         case PRODUCT_CLUSTER_SERVER:
+            bstrncat(osbuf, TEXT("Cluster Server Edition"), maxsiz);
+            break;
+         case PRODUCT_DATACENTER_SERVER:
+            bstrncat(osbuf, TEXT("Datacenter Edition"), maxsiz);
+            break;
+         case PRODUCT_DATACENTER_SERVER_CORE:
+            bstrncat(osbuf, TEXT("Datacenter Edition (core installation)"), maxsiz);
+            break;
+         case PRODUCT_ENTERPRISE_SERVER:
+            bstrncat(osbuf, TEXT("Enterprise Edition"), maxsiz);
+            break;
+         case PRODUCT_ENTERPRISE_SERVER_CORE:
+            bstrncat(osbuf, TEXT("Enterprise Edition (core installation)"), maxsiz);
+            break;
+         case PRODUCT_ENTERPRISE_SERVER_IA64:
+            bstrncat(osbuf, TEXT("Enterprise Edition for Itanium-based Systems"), maxsiz);
+            break;
+         case PRODUCT_SMALLBUSINESS_SERVER:
+            bstrncat(osbuf, TEXT("Small Business Server"), maxsiz);
+            break;
+         case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM:
+            bstrncat(osbuf, TEXT("Small Business Server Premium Edition"), maxsiz);
+            break;
+         case PRODUCT_STANDARD_SERVER:
+            bstrncat(osbuf, TEXT("Standard Edition"), maxsiz);
+            break;
+         case PRODUCT_STANDARD_SERVER_CORE:
+            bstrncat(osbuf, TEXT("Standard Edition (core installation)"), maxsiz);
+            break;
+         case PRODUCT_WEB_SERVER:
+            bstrncat(osbuf, TEXT("Web Server Edition"), maxsiz);
+            break;
          }
-      }
-
-      if (osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2) {
-         if( GetSystemMetrics(SM_SERVERR2) )
-            bstrncat(osbuf, TEXT( "Windows Server 2003 R2 "), maxsiz);
-         else if (osvi.wSuiteMask & VER_SUITE_STORAGE_SERVER)
-            bstrncat(osbuf, TEXT( "Windows Storage Server 2003"), maxsiz);
-         else if (osvi.wSuiteMask & VER_SUITE_WH_SERVER )
-            bstrncat(osbuf, TEXT( "Windows Home Server"), maxsiz);
-         else if (osvi.wProductType == VER_NT_WORKSTATION &&
-                  si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64)
-            bstrncat(osbuf, TEXT( "Windows XP Professional x64 Edition"), maxsiz);
-         else
-            bstrncat(osbuf, TEXT("Windows Server 2003 "), maxsiz);
-
-         // Test for the server type.
-         if (osvi.wProductType != VER_NT_WORKSTATION) {
-            if (si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_IA64) {
-                if( osvi.wSuiteMask & VER_SUITE_DATACENTER )
-                   bstrncat(osbuf, TEXT( "Datacenter Edition for Itanium-based Systems" ), maxsiz);
-                else if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE )
-                   bstrncat(osbuf, TEXT( "Enterprise Edition for Itanium-based Systems" ), maxsiz);
-            }
-
-            else if (si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64) {
-                if( osvi.wSuiteMask & VER_SUITE_DATACENTER )
-                   bstrncat(osbuf, TEXT( "Datacenter x64 Edition" ), maxsiz);
-                else if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE )
-                   bstrncat(osbuf, TEXT( "Enterprise x64 Edition" ), maxsiz);
-                else bstrncat(osbuf, TEXT( "Standard x64 Edition" ), maxsiz);
+         break;
+      case 5:
+         switch (osvi.dwMinorVersion) {
+         case 2:
+            if (GetSystemMetrics(SM_SERVERR2)) {
+               bstrncat(osbuf, TEXT("Windows Server 2003 R2 "), maxsiz);
+            } else if (osvi.wSuiteMask & VER_SUITE_STORAGE_SERVER) {
+               bstrncat(osbuf, TEXT("Windows Storage Server 2003"), maxsiz);
+            } else if (osvi.wSuiteMask & VER_SUITE_WH_SERVER) {
+               bstrncat(osbuf, TEXT("Windows Home Server"), maxsiz);
+            } else if (osvi.wProductType == VER_NT_WORKSTATION &&
+                       si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+               bstrncat(osbuf, TEXT("Windows XP Professional x64 Edition"), maxsiz);
             } else {
-                if ( osvi.wSuiteMask & VER_SUITE_COMPUTE_SERVER )
-                   bstrncat(osbuf, TEXT( "Compute Cluster Edition" ), maxsiz);
-                else if( osvi.wSuiteMask & VER_SUITE_DATACENTER )
-                   bstrncat(osbuf, TEXT( "Datacenter Edition" ), maxsiz);
-                else if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE )
-                   bstrncat(osbuf, TEXT( "Enterprise Edition" ), maxsiz);
-                else if ( osvi.wSuiteMask & VER_SUITE_BLADE )
-                   bstrncat(osbuf, TEXT( "Web Edition" ), maxsiz);
-                else bstrncat(osbuf, TEXT( "Standard Edition" ), maxsiz);
+               bstrncat(osbuf, TEXT("Windows Server 2003 "), maxsiz);
             }
+
+            /*
+             * Test for the server type.
+             */
+            if (osvi.wProductType != VER_NT_WORKSTATION) {
+               if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64) {
+                   if (osvi.wSuiteMask & VER_SUITE_DATACENTER) {
+                      bstrncat(osbuf, TEXT("Datacenter Edition for Itanium-based Systems"), maxsiz);
+                   } else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE) {
+                      bstrncat(osbuf, TEXT("Enterprise Edition for Itanium-based Systems"), maxsiz);
+                   }
+               } else if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+                   if (osvi.wSuiteMask & VER_SUITE_DATACENTER) {
+                      bstrncat(osbuf, TEXT("Datacenter x64 Edition"), maxsiz);
+                   } else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE) {
+                      bstrncat(osbuf, TEXT("Enterprise x64 Edition"), maxsiz);
+                   } else {
+                      bstrncat(osbuf, TEXT("Standard x64 Edition"), maxsiz);
+                   }
+               } else {
+                   if (osvi.wSuiteMask & VER_SUITE_COMPUTE_SERVER) {
+                      bstrncat(osbuf, TEXT("Compute Cluster Edition"), maxsiz);
+                   } else if (osvi.wSuiteMask & VER_SUITE_DATACENTER) {
+                      bstrncat(osbuf, TEXT("Datacenter Edition"), maxsiz);
+                   } else if(osvi.wSuiteMask & VER_SUITE_ENTERPRISE) {
+                      bstrncat(osbuf, TEXT("Enterprise Edition"), maxsiz);
+                   } else if (osvi.wSuiteMask & VER_SUITE_BLADE) {
+                      bstrncat(osbuf, TEXT("Web Edition"), maxsiz);
+                   } else {
+                      bstrncat(osbuf, TEXT("Standard Edition"), maxsiz);
+                   }
+               }
+            }
+            break;
+         case 1:
+            bstrncat(osbuf, TEXT("Windows XP "), maxsiz);
+            if (osvi.wSuiteMask & VER_SUITE_PERSONAL) {
+               bstrncat(osbuf, TEXT("Home Edition"), maxsiz);
+            } else {
+               bstrncat(osbuf, TEXT("Professional"), maxsiz);
+            }
+            break;
+         case 0:
+            bstrncat(osbuf, TEXT("Windows 2000 "), maxsiz);
+            if (osvi.wProductType == VER_NT_WORKSTATION) {
+               bstrncat(osbuf, TEXT("Professional"), maxsiz);
+            } else {
+               if (osvi.wSuiteMask & VER_SUITE_DATACENTER) {
+                  bstrncat(osbuf, TEXT("Datacenter Server"), maxsiz);
+               } else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE) {
+                  bstrncat(osbuf, TEXT("Advanced Server"), maxsiz);
+               } else {
+                  bstrncat(osbuf, TEXT("Server"), maxsiz);
+               }
+            }
+            break;
          }
+         break;
+      default:
+         break;
       }
 
-      if (osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 1) {
-         bstrncat(osbuf, TEXT("Windows XP "), maxsiz);
-         if( osvi.wSuiteMask & VER_SUITE_PERSONAL )
-            bstrncat(osbuf, TEXT( "Home Edition" ), maxsiz);
-         else
-            bstrncat(osbuf, TEXT( "Professional" ), maxsiz);
-      }
-
-      if (osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0) {
-         bstrncat(osbuf, TEXT("Windows 2000 "), maxsiz);
-         if ( osvi.wProductType == VER_NT_WORKSTATION ) {
-            bstrncat(osbuf, TEXT( "Professional" ), maxsiz);
-         } else {
-            if( osvi.wSuiteMask & VER_SUITE_DATACENTER )
-               bstrncat(osbuf, TEXT( "Datacenter Server" ), maxsiz);
-            else if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE )
-               bstrncat(osbuf, TEXT( "Advanced Server" ), maxsiz);
-            else bstrncat(osbuf, TEXT( "Server" ), maxsiz);
-         }
-      }
-
-       // Include service pack (if any) and build number.
-
+      /*
+       * Include service pack (if any) and build number.
+       */
       if (_tcslen(osvi.szCSDVersion) > 0) {
           bstrncat(osbuf, TEXT(" ") , maxsiz);
           bstrncat(osbuf, osvi.szCSDVersion, maxsiz);
@@ -666,9 +693,9 @@ bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
       bstrncat(osbuf, buf, maxsiz);
 
       if (osvi.dwMajorVersion >= 6) {
-         if ( si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64 )
-            bstrncat(osbuf, TEXT( ", 64-bit" ), maxsiz);
-         else if (si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_INTEL )
+         if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+            bstrncat(osbuf, TEXT(", 64-bit"), maxsiz);
+         else if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)
             bstrncat(osbuf, TEXT(", 32-bit"), maxsiz);
       }
 
