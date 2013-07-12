@@ -14,8 +14,8 @@
 [Unit]
 Description=Bareos Director Daemon service
 Alias=bareos-dir
-Requires=nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
-After=nss-lookup.target network.target remote-fs.target syslog.target time-sync.target
+Requires=nss-lookup.target network.target remote-fs.target time-sync.target
+After=nss-lookup.target network.target remote-fs.target time-sync.target
 # Dependency about the database
 # We let administrators decide if they need it (if local db instance)
 # Wants=@DEFAULT_DB_TYPE@.service
