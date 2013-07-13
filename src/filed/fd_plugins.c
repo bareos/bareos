@@ -156,7 +156,7 @@ static inline bool is_plugin_disabled(bpContext *ctx)
    return b_ctx->disabled;
 }
 
-/*
+/**
  * Test if event is for this plugin
  */
 static bool for_this_plugin(Plugin *plugin, char *name, int len)
@@ -165,34 +165,47 @@ static bool for_this_plugin(Plugin *plugin, char *name, int len)
    if (!name) {   /* if no plugin name, all plugins get it */
       return true;
    }
-   /* Return global VSS job metadata to all plugins */
+
+   /*
+    * Return global VSS job metadata to all plugins
+    */
    if (bstrcmp("job", name)) {  /* old V4.0 name for VSS job metadata */
       return true;
    }
+
    if (bstrcmp("*all*", name)) { /* new v6.0 name for VSS job metadata */
       return true;
    }
-   /* Check if this is the correct plugin */
+
+   /*
+    * Check if this is the correct plugin
+    */
    if (len == plugin->file_len && bstrncmp(plugin->file, name, len)) {
       return true;
    }
+
    return false;
 }
 
 
+/**
+ * Test if plugin is disabled.
+ */
 bool is_plugin_disabled(JCR *jcr)
 {
    return is_plugin_disabled(jcr->plugin_ctx);
 }
 
+/**
+ * Raise a certain plugin event.
+ */
 static inline void trigger_plugin_event(JCR *jcr, bEventType eventType, bEvent *event, Plugin *plugin,
                                         bpContext *plugin_ctx_list, int index, void *value)
 {
    bpContext *ctx;
 
    /*
-    * Note, at this point do not change
-    * jcr->plugin or jcr->plugin_ctx
+    * Note, at this point do not change jcr->plugin or jcr->plugin_ctx
     */
    Dsm_check(999);
    ctx = &plugin_ctx_list[index];
@@ -221,8 +234,7 @@ static inline void trigger_plugin_event(JCR *jcr, bEventType eventType, bEvent *
 }
 
 /**
- * Create a plugin event When receiving bEventCancelCommand, this function is
- * called by an other thread.
+ * Create a plugin event When receiving bEventCancelCommand, this function is called by an other thread.
  */
 void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool reverse)
 {
@@ -240,8 +252,7 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
    }
 
    /*
-    * Some events are sent to only a particular plugin or must be
-    * called even if the job is canceled.
+    * Some events are sent to only a particular plugin or must be called even if the job is canceled.
     */
    switch(eventType) {
    case bEventPluginCommand:
@@ -265,7 +276,6 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
             get_plugin_name(jcr, name, &len);
          }
       }
-
       break;
    case bEventEndBackupJob:
    case bEventEndVerifyJob:
@@ -297,9 +307,8 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
    Dmsg2(dbglvl, "plugin_ctx=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
 
    /*
-    * Pass event to every plugin that has requested this event type
-    * (except if name is set). If name is set, we pass it only to
-    * the plugin with that name.
+    * Pass event to every plugin that has requested this event type (except if name is set).
+    * If name is set, we pass it only to the plugin with that name.
     *
     * See if we need to trigger the loaded plugins in reverse order.
     */
@@ -346,7 +355,9 @@ bool plugin_check_file(JCR *jcr, char *fname)
 
    Dmsg2(dbglvl, "plugin_ctx=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
 
-   /* Pass event to every plugin */
+   /*
+    * Pass event to every plugin
+    */
    foreach_alist_index(i, plugin, fd_plugin_list) {
       jcr->plugin_ctx = &plugin_ctx_list[i];
       jcr->plugin = plugin;
@@ -368,7 +379,7 @@ bool plugin_check_file(JCR *jcr, char *fname)
    return rc == bRC_Seen;
 }
 
-/*
+/**
  * Get the first part of the the plugin command
  *  systemstate:/@SYSTEMSTATE/
  * => ret = 11
@@ -386,7 +397,10 @@ static bool get_plugin_name(JCR *jcr, char *cmd, int *ret)
    if (!cmd || (*cmd == '\0')) {
       return false;
    }
-   /* Handle plugin command here backup */
+
+   /*
+    * Handle plugin command here backup
+    */
    Dmsg1(dbglvl, "plugin cmd=%s\n", cmd);
    if ((p = strchr(cmd, ':')) == NULL) {
       if (strchr(cmd, ' ') == NULL) { /* we have just the plugin name */
@@ -411,6 +425,7 @@ static void update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
    Dsm_check(999);
    ff_pkt->no_read = sp->no_read;
    ff_pkt->delta_seq = sp->delta_seq;
+
    if (sp->flags & FO_DELTA) {
       ff_pkt->flags |= FO_DELTA;
       ff_pkt->delta_seq++;          /* make new delta sequence number */
@@ -424,7 +439,9 @@ static void update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
    } else {
       ff_pkt->flags &= ~FO_OFFSETS;
    }
-   /* Sparse code doesn't work with plugins
+
+   /*
+    * Sparse code doesn't work with plugins
     * that use FIFO or STDOUT/IN to communicate
     */
    if (sp->flags & FO_SPARSE) {
@@ -432,16 +449,18 @@ static void update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
    } else {
       ff_pkt->flags &= ~FO_SPARSE;
    }
+
    if (sp->flags & FO_PORTABLE_DATA) {
       ff_pkt->flags |= FO_PORTABLE_DATA;
    } else {
       ff_pkt->flags &= ~FO_PORTABLE_DATA;
    }
+
    ff_pkt->flags |= FO_PLUGIN;       /* data from plugin */
    Dsm_check(999);
 }
 
-/*
+/**
  * Ask to a Option Plugin what to do with the current file
  */
 bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
@@ -476,7 +495,9 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
       goto bail_out;
    }
 
-   /* Note, we stop the loop on the first plugin that matches the name */
+   /*
+    * Note, we stop the loop on the first plugin that matches the name
+    */
    foreach_alist_index(i, plugin, fd_plugin_list) {
       Dmsg4(dbglvl, "plugin=%s plen=%d cmd=%s len=%d\n", plugin->file, plugin->file_len, cmd, len);
       if (!for_this_plugin(plugin, cmd, len)) {
@@ -491,10 +512,11 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
       jcr->plugin_ctx = &plugin_ctx_list[i];
       jcr->plugin = plugin;
 
-      ret = plug_func(plugin)->handlePluginEvent(&plugin_ctx_list[i],
-                                                 &event, sp);
+      ret = plug_func(plugin)->handlePluginEvent(&plugin_ctx_list[i], &event, sp);
 
-      /* TODO: would be better to set this in save_file() */
+      /*
+       * TODO: would be better to set this in save_file()
+       */
       if (ret == bRC_OK) {
          jcr->opt_plugin = true;
          jcr->plugin = plugin;
@@ -502,9 +524,10 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
          jcr->plugin_ctx = &plugin_ctx_list[i];
 
          update_ff_pkt(ff_pkt, sp);
-
-      /* reset plugin in JCR if not used this time */
       } else {
+         /*
+          * Reset plugin in JCR if not used this time
+          */
          jcr->plugin_ctx = NULL;
          jcr->plugin = NULL;
       }
@@ -556,16 +579,18 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       goto bail_out;
    }
 
-   /* Note, we stop the loop on the first plugin that matches the name */
+   /*
+    * Note, we stop the loop on the first plugin that matches the name
+    */
    foreach_alist_index(i, plugin, fd_plugin_list) {
       Dmsg4(dbglvl, "plugin=%s plen=%d cmd=%s len=%d\n", plugin->file, plugin->file_len, cmd, len);
       if (!for_this_plugin(plugin, cmd, len)) {
          continue;
       }
+
       /*
-       * We put the current plugin pointer, and the plugin context
-       *  into the jcr, because during save_file(), the plugin
-       *  will be called many times and these values are needed.
+       * We put the current plugin pointer, and the plugin context into the jcr, because during save_file(),
+       * the plugin will be called many times and these values are needed.
        */
       Dsm_check(999);
       jcr->plugin_ctx = &plugin_ctx_list[i];
@@ -574,12 +599,17 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          goto bail_out;
       }
 
+      /*
+       * Send the backup command to the right plugin
+       */
       Dmsg1(dbglvl, "Command plugin = %s\n", cmd);
-      /* Send the backup command to the right plugin*/
       if (plug_func(plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd) != bRC_OK) {
          goto bail_out;
       }
-      /* Loop getting filenames to backup then saving them */
+
+      /*
+       * Loop getting filenames to backup then saving them
+       */
       while (!jcr->is_job_canceled()) {
          memset(&sp, 0, sizeof(sp));
          sp.pkt_size = sizeof(sp);
@@ -591,7 +621,10 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          Dmsg3(dbglvl, "startBackup st_size=%p st_blocks=%p sp=%p\n", &sp.statp.st_size, &sp.statp.st_blocks,
                 &sp);
          Dsm_check(999);
-         /* Get the file save parameters. I.e. the stat pkt ... */
+
+         /*
+          * Get the file save parameters. I.e. the stat pkt ...
+          */
          if (plug_func(plugin)->startBackupFile(jcr->plugin_ctx, &sp) != bRC_OK) {
             goto bail_out;
          }
@@ -602,9 +635,9 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          }
          jcr->plugin_sp = &sp;
          ff_pkt = jcr->ff;
+
          /*
-          * Copy fname and link because save_file() zaps them.  This
-          *  avoids zaping the plugin's strings.
+          * Copy fname and link because save_file() zaps them.  This avoids zaping the plugin's strings.
           */
          ff_pkt->type = sp.type;
          if (IS_FT_OBJECT(sp.type)) {
@@ -640,7 +673,10 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          if (sp.object) {
             Dmsg2(dbglvl, "index=%d object=%s\n", sp.index, sp.object);
          }
-         /* Call Bareos core code to backup the plugin's file */
+
+         /*
+          * Call Bareos core code to backup the plugin's file
+          */
          save_file(jcr, ff_pkt, true);
          bRC rc = plug_func(plugin)->endBackupFile(jcr->plugin_ctx);
          if (rc == bRC_More || rc == bRC_OK) {
@@ -708,10 +744,10 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       if (!for_this_plugin(plugin, cmd, len)) {
          continue;
       }
+
       /*
-       * We put the current plugin pointer, and the plugin context
-       *  into the jcr, because during save_file(), the plugin
-       *  will be called many times and these values are needed.
+       * We put the current plugin pointer, and the plugin context into the jcr, because during save_file(),
+       * the plugin will be called many times and these values are needed.
        */
       Dsm_check(999);
       jcr->plugin_ctx = &plugin_ctx_list[i];
@@ -720,13 +756,14 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          goto bail_out;
       }
 
-      Dmsg1(dbglvl, "Command plugin = %s\n", cmd);
       /*
        * Send the backup command to the right plugin
        */
+      Dmsg1(dbglvl, "Command plugin = %s\n", cmd);
       if (plug_func(plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd) != bRC_OK) {
          goto bail_out;
       }
+
       /*
        * Loop getting filenames to backup then saving them
        */
@@ -738,12 +775,16 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          sp.portable = true;
          sp.flags = 0;
          sp.cmd = cmd;
-         Dmsg3(dbglvl, "startBackup st_size=%p st_blocks=%p sp=%p\n", &sp.statp.st_size, &sp.statp.st_blocks,
-                &sp);
-         /* Get the file save parameters. I.e. the stat pkt ... */
+         Dmsg3(dbglvl, "startBackup st_size=%p st_blocks=%p sp=%p\n",
+               &sp.statp.st_size, &sp.statp.st_blocks, &sp);
+
+         /*
+          * Get the file save parameters. I.e. the stat pkt ...
+          */
          if (plug_func(plugin)->startBackupFile(jcr->plugin_ctx, &sp) != bRC_OK) {
             goto bail_out;
          }
+
          if (sp.type == 0) {
             Jmsg1(jcr, M_FATAL, 0, _("Command plugin \"%s\": no type in startBackupFile packet.\n"),
                cmd);
@@ -757,7 +798,9 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
                goto bail_out;
             }
 
-            /* Count only files backed up */
+            /*
+             * Count only files backed up
+             */
             switch (sp.type) {
             case FT_REGE:
             case FT_REG:
@@ -837,7 +880,10 @@ bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start)
       index++;                  /* JobFiles not incremented yet */
    }
    Dmsg1(dbglvl, "send_plugin_name=%s\n", sp->cmd);
-   /* Send stream header */
+
+   /*
+    * Send stream header
+    */
    Dsm_check(999);
    if (!sd->fsend("%ld %d 0", index, STREAM_PLUGIN_NAME)) {
      Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
@@ -848,10 +894,14 @@ bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start)
 
    Dsm_check(999);
    if (start) {
-      /* Send data -- not much */
+      /*
+       * Send data -- not much
+       */
       status = sd->fsend("%ld 1 %d %s%c", index, sp->portable, sp->cmd, 0);
    } else {
-      /* Send end of data */
+      /*
+       * Send end of data
+       */
       status = sd->fsend("%ld 0", jcr->JobFiles);
    }
    Dsm_check(999);
@@ -867,8 +917,8 @@ bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start)
 }
 
 /**
- * Plugin name stream found during restore.  The record passed in
- *  argument name was generated in send_plugin_name() above.
+ * Plugin name stream found during restore.  The record passed in argument name was
+ * generated in send_plugin_name() above.
  *
  * Returns: true  if start of stream
  *          false if end of steam
@@ -889,7 +939,9 @@ bool plugin_name_stream(JCR *jcr, char *name)
    skip_spaces(&p);
    start = *p == '1';
    if (start) {
-      /* Start of plugin data */
+      /*
+       * Start of plugin data
+       */
       skip_nonspaces(&p);          /* skip start/end flag */
       skip_spaces(&p);
 //    portable = *p == '1';
@@ -975,13 +1027,13 @@ bail_out:
 }
 
 /**
- * Tell the plugin to create the file.  Return values are
- *   This is called only during Restore
+ * Tell the plugin to create the file. this is called only during Restore.
+ * Return values are:
  *
- *  CF_ERROR    -- error
- *  CF_SKIP     -- skip processing this file
- *  CF_EXTRACT  -- extract the file (i.e.call i/o routines)
- *  CF_CREATED  -- created, but no content to extract (typically directories)
+ * CF_ERROR    -> error
+ * CF_SKIP     -> skip processing this file
+ * CF_EXTRACT  -> extract the file (i.e.call i/o routines)
+ * CF_CREATED  -> created, but no content to extract (typically directories)
  *
  */
 int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
@@ -1046,7 +1098,9 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
       return CF_CORE;           /* Let Bareos core handle the file creation */
    }
 
-   /* Created link or directory? */
+   /*
+    * Created link or directory?
+    */
    if (rp.create_status == CF_CREATED) {
       return rp.create_status;        /* yes, no need to bopen */
    }
@@ -1074,10 +1128,10 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 }
 
 /**
- * Reset the file attributes after all file I/O is done -- this allows
- *  the previous access time/dates to be set properly, and it also allows
- *  us to properly set directory permissions.
- *  Not currently Implemented.
+ * Reset the file attributes after all file I/O is done -- this allows the previous access time/dates
+ * to be set properly, and it also allows us to properly set directory permissions.
+ *
+ * Not currently Implemented.
  */
 bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
 {
@@ -1123,7 +1177,7 @@ bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    return true;
 }
 
-/*
+/**
  * Print to file the plugin info.
  */
 static void dump_fd_plugin(Plugin *plugin, FILE *fp)
@@ -1147,8 +1201,7 @@ static void dump_fd_plugins(FILE *fp)
 }
 
 /**
- * This entry point is called internally by Bareos to ensure
- *  that the plugin IO calls come into this code.
+ * This entry point is called internally by Bareos to ensure that the plugin IO calls come into this code.
  */
 void load_fd_plugins(const char *plugin_dir, const char *plugin_names)
 {
@@ -1210,8 +1263,7 @@ int list_fd_plugins(POOL_MEM &msg)
 }
 
 /**
- * Check if a plugin is compatible.  Called by the load_plugin function
- *  to allow us to verify the plugin.
+ * Check if a plugin is compatible.  Called by the load_plugin function to allow us to verify the plugin.
  */
 static bool is_plugin_compatible(Plugin *plugin)
 {
@@ -1258,8 +1310,8 @@ static bool is_plugin_compatible(Plugin *plugin)
 
 /**
  * Create a new instance of each plugin for this Job
- *   Note, fd_plugin_list can exist but jcr->plugin_ctx_list can
- *   be NULL if no plugins were loaded.
+ *
+ * Note, fd_plugin_list can exist but jcr->plugin_ctx_list can be NULL if no plugins were loaded.
  */
 void new_plugins(JCR *jcr)
 {
@@ -1288,7 +1340,9 @@ void new_plugins(JCR *jcr)
    Dmsg2(dbglvl, "Instantiate plugin_ctx=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
    foreach_alist_index(i, plugin, fd_plugin_list) {
       Dsm_check(999);
-      /* Start a new instance of each plugin */
+      /*
+       * Start a new instance of each plugin
+       */
       b_plugin_ctx *b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
       memset(b_ctx, 0, sizeof(b_plugin_ctx));
       b_ctx->jcr = jcr;
@@ -1321,7 +1375,9 @@ void free_plugins(JCR *jcr)
    bpContext *plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
    Dmsg2(dbglvl, "Free instance plugin_ctx=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
    foreach_alist_index(i, plugin, fd_plugin_list) {
-      /* Free the plugin instance */
+      /*
+       * Free the plugin instance
+       */
       plug_func(plugin)->freePlugin(&plugin_ctx_list[i]);
       free(plugin_ctx_list[i].bContext);     /* free Bareos private context */
       Dsm_check(999);
@@ -1331,6 +1387,9 @@ void free_plugins(JCR *jcr)
    jcr->plugin_ctx_list = NULL;
 }
 
+/**
+ * Entry point for opening the file this is a wrapper around the pluginIO entry point in the plugin.
+ */
 static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
 {
    JCR *jcr = bfd->jcr;
@@ -1365,6 +1424,9 @@ static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode
    return io.status;
 }
 
+/**
+ * Entry point for closing the file this is a wrapper around the pluginIO entry point in the plugin.
+ */
 static int my_plugin_bclose(BFILE *bfd)
 {
    JCR *jcr = bfd->jcr;
@@ -1396,6 +1458,9 @@ static int my_plugin_bclose(BFILE *bfd)
    return io.status;
 }
 
+/**
+ * Entry point for reading from the file this is a wrapper around the pluginIO entry point in the plugin.
+ */
 static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count)
 {
    JCR *jcr = bfd->jcr;
@@ -1428,6 +1493,9 @@ static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count)
    return (ssize_t)io.status;
 }
 
+/**
+ * Entry point for writing to the file this is a wrapper around the pluginIO entry point in the plugin.
+ */
 static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count)
 {
    JCR *jcr = bfd->jcr;
@@ -1459,6 +1527,9 @@ static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count)
    return (ssize_t)io.status;
 }
 
+/**
+ * Entry point for seeking in the file this is a wrapper around the pluginIO entry point in the plugin.
+ */
 static boffset_t my_plugin_blseek(BFILE *bfd, boffset_t offset, int whence)
 {
    JCR *jcr = bfd->jcr;
@@ -1731,8 +1802,7 @@ static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
 }
 
 /**
- * Let the plugin define files/directories to be excluded
- *  from the main backup.
+ * Let the plugin define files/directories to be excluded from the main backup.
  */
 static bRC bareosAddExclude(bpContext *ctx, const char *file)
 {
@@ -1747,10 +1817,14 @@ static bRC bareosAddExclude(bpContext *ctx, const char *file)
       return bRC_Error;
    }
 
-   /* Save the include context */
+   /*
+    * Save the include context
+    */
    old = get_incexe(jcr);
 
-   /* Not right time to add exlude */
+   /*
+    * Not right time to add exlude
+    */
    if (!old) {
       return bRC_Error;
    }
@@ -1759,12 +1833,16 @@ static bRC bareosAddExclude(bpContext *ctx, const char *file)
       bctx->exclude = new_exclude(jcr);
    }
 
-   /* Set the Exclude context */
+   /*
+    * Set the Exclude context
+    */
    set_incexe(jcr, bctx->exclude);
 
    add_file_to_fileset(jcr, file, true);
 
-   /* Restore the current context */
+   /*
+    * Restore the current context
+    */
    set_incexe(jcr, old);
 
    Dmsg1(100, "Add exclude file=%s\n", file);
@@ -1773,8 +1851,7 @@ static bRC bareosAddExclude(bpContext *ctx, const char *file)
 }
 
 /**
- * Let the plugin define files/directories to be excluded
- *  from the main backup.
+ * Let the plugin define files/directories to be excluded from the main backup.
  */
 static bRC bareosAddInclude(bpContext *ctx, const char *file)
 {
@@ -1786,17 +1863,23 @@ static bRC bareosAddInclude(bpContext *ctx, const char *file)
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
    }
+
    if (!file) {
       return bRC_Error;
    }
 
-   /* Save the include context */
+   /*
+    * Save the include context
+    */
    old = get_incexe(jcr);
 
-   /* Not right time to add include */
+   /*
+    * Not right time to add include
+    */
    if (!old) {
       return bRC_Error;
    }
+
    if (!bctx->include) {
       bctx->include = old;
    }
@@ -1804,7 +1887,9 @@ static bRC bareosAddInclude(bpContext *ctx, const char *file)
    set_incexe(jcr, bctx->include);
    add_file_to_fileset(jcr, file, true);
 
-   /* Restore the current context */
+   /*
+    * Restore the current context
+    */
    set_incexe(jcr, old);
 
    Dmsg1(100, "Add include file=%s\n", file);
@@ -1906,7 +1991,7 @@ static bRC bareosNewPreInclude(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Check if a file have to be backuped using Accurate code
  */
 static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp)
@@ -1920,14 +2005,15 @@ static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp)
    if (!is_ctx_good(ctx, jcr, bctx)) {
       goto bail_out;
    }
+
    if (!sp) {
       goto bail_out;
    }
 
    ff_pkt = jcr->ff;
    /*
-    * Copy fname and link because save_file() zaps them.  This
-    *  avoids zaping the plugin's strings.
+    * Copy fname and link because save_file() zaps them.
+    * This avoids zaping the plugin's strings.
     */
    ff_pkt->type = sp->type;
    if (!sp->fname) {
@@ -1957,7 +2043,7 @@ bail_out:
    return ret;
 }
 
-/*
+/**
  * Check if a file would be saved using current Include/Exclude code
  */
 static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp)
@@ -1980,7 +2066,9 @@ static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp)
 
    ff_pkt = jcr->ff;
 
-   /* Probably not needed, but keep a copy */
+   /*
+    * TODO: Probably not needed, but keep a copy
+    */
    old = ff_pkt->fname;
    oldstat = ff_pkt->statp;
 

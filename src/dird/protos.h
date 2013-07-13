@@ -101,6 +101,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId);
 int put_file_into_catalog(JCR *jcr, long file_index, char *fname,
                           char *link, char *attr, int stream);
 int send_runscripts_commands(JCR *jcr);
+bool send_plugin_options(JCR *jcr);
 bool send_restore_objects(JCR *jcr);
 bool cancel_file_daemon_job(UAContext *ua, JCR *jcr);
 void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd);

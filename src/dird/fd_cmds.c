@@ -46,12 +46,16 @@ static char jobcmd[] =
 /* Note, mtime_only is not used here -- implemented as file option */
 static char levelcmd[] =
    "level = %s%s%s mtime_only=%d %s%s\n";
-static char runscript[] =
+static char runscriptcmd[] =
    "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
-static char runbeforenow[] =
+static char runbeforenowcmd[] =
    "RunBeforeNow\n";
+static char restoreobjectendcmd[] =
+   "restoreobject end\n";
 static char bandwidthcmd[] =
    "setbandwidth=%lld Job=%s\n";
+static char pluginoptionscmd[] =
+   "pluginoptions %s\n";
 
 /* Responses received from File daemon */
 static char OKinc[] =
@@ -68,6 +72,8 @@ static char OKRestoreObject[] =
    "2000 OK ObjectRestored\n";
 static char OKBandwidth[] =
    "2000 OK Bandwidth\n";
+static char OKPluginOptions[] =
+   "2000 OK PluginOptions\n";
 
 /* Forward referenced functions */
 static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd);
@@ -251,16 +257,15 @@ static bool send_fileset(JCR *jcr)
    int num;
    bool include = true;
 
-   for ( ;; ) {
+   while (1) {
       if (include) {
          num = fileset->num_includes;
       } else {
          num = fileset->num_excludes;
       }
-      for (int i=0; i<num; i++) {
+      for (int i = 0; i < num; i++) {
          char *item;
          INCEXE *ie;
-         int j, k;
 
          if (include) {
             ie = fileset->include_items[i];
@@ -269,98 +274,124 @@ static bool send_fileset(JCR *jcr)
             ie = fileset->exclude_items[i];
             fd->fsend("E\n");
          }
+
          if (ie->ignoredir) {
             fd->fsend("Z %s\n", ie->ignoredir);
          }
-         for (j=0; j<ie->num_opts; j++) {
-            FOPTS *fo = ie->opts_list[j];
 
+         for (int j = 0; j < ie->num_opts; j++) {
+            FOPTS *fo = ie->opts_list[j];
             bool enhanced_wild = false;
-            for (k=0; fo->opts[k]!='\0'; k++) {
+
+            for (int k = 0; fo->opts[k] != '\0'; k++) {
                if (fo->opts[k]=='W') {
                   enhanced_wild = true;
                   break;
                }
             }
 
-            /* Strip out compression option Zn if disallowed for this Storage */
+            /*
+             * Strip out compression option Zn if disallowed for this Storage
+             */
             if (store && !store->AllowCompress) {
                char newopts[MAX_FOPTS];
                bool done=false;         /* print warning only if compression enabled in FS */
-               int j = 0;
-               for (k=0; fo->opts[k]!='\0'; k++) {
-                 /* Z compress option is followed by the single-digit compress level or 'o' */
+               int l = 0;
+
+               for (int k = 0; fo->opts[k] != '\0'; k++) {
+                 /*
+                  * Z compress option is followed by the single-digit compress level or 'o'
+                  */
                  if (fo->opts[k]=='Z') {
-                    done=true;
+                    done = true;
                     k++;                /* skip option and level */
                  } else {
-                    newopts[j] = fo->opts[k];
-                    j++;
+                    newopts[l] = fo->opts[k];
+                    l++;
                  }
                }
-               newopts[j] = '\0';
+               newopts[l] = '\0';
 
                if (done) {
                   Jmsg(jcr, M_INFO, 0,
-                      _("FD compression disabled for this Job because AllowCompress=No in Storage resource.\n") );
+                        _("FD compression disabled for this Job because AllowCompress=No in Storage resource.\n") );
                }
-               /* Send the new trimmed option set without overwriting fo->opts */
+
+               /*
+                * Send the new trimmed option set without overwriting fo->opts
+                */
                fd->fsend("O %s\n", newopts);
             } else {
-               /* Send the original options */
+               /*
+                * Send the original options
+                */
                fd->fsend("O %s\n", fo->opts);
             }
 
-            for (k=0; k<fo->regex.size(); k++) {
+            for (int k = 0; k < fo->regex.size(); k++) {
                fd->fsend("R %s\n", fo->regex.get(k));
             }
-            for (k=0; k<fo->regexdir.size(); k++) {
+
+            for (int k = 0; k < fo->regexdir.size(); k++) {
                fd->fsend("RD %s\n", fo->regexdir.get(k));
             }
-            for (k=0; k<fo->regexfile.size(); k++) {
+
+            for (int k = 0; k < fo->regexfile.size(); k++) {
                fd->fsend("RF %s\n", fo->regexfile.get(k));
             }
-            for (k=0; k<fo->wild.size(); k++) {
+
+            for (int k = 0; k<fo->wild.size(); k++) {
                fd->fsend("W %s\n", fo->wild.get(k));
             }
-            for (k=0; k<fo->wilddir.size(); k++) {
+
+            for (int k = 0; k < fo->wilddir.size(); k++) {
                fd->fsend("WD %s\n", fo->wilddir.get(k));
             }
-            for (k=0; k<fo->wildfile.size(); k++) {
+
+            for (int k = 0; k < fo->wildfile.size(); k++) {
                fd->fsend("WF %s\n", fo->wildfile.get(k));
             }
-            for (k=0; k<fo->wildbase.size(); k++) {
+
+            for (int k = 0; k < fo->wildbase.size(); k++) {
                fd->fsend("W%c %s\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
             }
-            for (k=0; k<fo->base.size(); k++) {
+
+            for (int k = 0; k < fo->base.size(); k++) {
                fd->fsend("B %s\n", fo->base.get(k));
             }
-            for (k=0; k<fo->fstype.size(); k++) {
+
+            for (int k = 0; k < fo->fstype.size(); k++) {
                fd->fsend("X %s\n", fo->fstype.get(k));
             }
-            for (k=0; k<fo->drivetype.size(); k++) {
+
+            for (int k = 0; k < fo->drivetype.size(); k++) {
                fd->fsend("XD %s\n", fo->drivetype.get(k));
             }
+
             if (fo->plugin) {
                fd->fsend("G %s\n", fo->plugin);
             }
+
             if (fo->reader) {
                fd->fsend("D %s\n", fo->reader);
             }
+
             if (fo->writer) {
                fd->fsend("T %s\n", fo->writer);
             }
+
             fd->fsend("N\n");
          }
 
-         for (j=0; j<ie->name_list.size(); j++) {
+         for (int j = 0; j < ie->name_list.size(); j++) {
             item = (char *)ie->name_list.get(j);
             if (!send_list_item(jcr, "F ", item, fd)) {
                goto bail_out;
             }
          }
          fd->fsend("N\n");
-         for (j=0; j<ie->plugin_list.size(); j++) {
+
+         for (int j = 0; j < ie->plugin_list.size(); j++) {
             item = (char *)ie->plugin_list.get(j);
             if (!send_list_item(jcr, "P ", item, fd)) {
                goto bail_out;
@@ -368,9 +399,11 @@ static bool send_fileset(JCR *jcr)
          }
          fd->fsend("N\n");
       }
+
       if (!include) {                 /* If we just did excludes */
          break;                       /*   all done */
       }
+
       include = false;                /* Now do excludes */
    }
 
@@ -540,7 +573,7 @@ int send_runscripts_commands(JCR *jcr)
 
             Dmsg1(120, "bdird: sending runscripts to fd '%s'\n", cmd->command);
 
-            fd->fsend(runscript,
+            fd->fsend(runscriptcmd,
                       cmd->on_success,
                       cmd->on_failure,
                       cmd->fail_on_error,
@@ -573,7 +606,7 @@ int send_runscripts_commands(JCR *jcr)
     * Tell the FD to execute the ClientRunBeforeJob
     */
    if (has_before_jobs) {
-      fd->fsend(runbeforenow);
+      fd->fsend(runbeforenowcmd);
       if (!response(jcr, fd, OKRunBeforeNow, "RunBeforeNow", DISPLAY_ERROR)) {
         goto bail_out;
       }
@@ -652,6 +685,27 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
+bool send_plugin_options(JCR *jcr)
+{
+   BSOCK *fd = jcr->file_bsock;
+   POOLMEM *msg;
+
+   if (jcr->plugin_options) {
+      msg = get_pool_memory(PM_FNAME);
+      pm_strcpy(msg, jcr->plugin_options);
+      bash_spaces(msg);
+
+      fd->fsend(pluginoptionscmd, msg);
+      free_pool_memory(msg);
+
+      if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
+         Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
+         return false;
+      }
+   }
+   return true;
+}
+
 bool send_restore_objects(JCR *jcr)
 {
    char ed1[50];
@@ -682,7 +736,7 @@ bool send_restore_objects(JCR *jcr)
     */
    if (octx.count > 0) {
       fd = jcr->file_bsock;
-      fd->fsend("restoreobject end\n");
+      fd->fsend(restoreobjectendcmd);
       if (!response(jcr, fd, OKRestoreObject, "RestoreObject", DISPLAY_ERROR)) {
          Jmsg(jcr, M_FATAL, 0, _("RestoreObject failed.\n"));
          return false;
