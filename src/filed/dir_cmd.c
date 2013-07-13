@@ -74,6 +74,7 @@ static bool exit_cmd(JCR *jcr);
 static bool fileset_cmd(JCR *jcr);
 static bool job_cmd(JCR *jcr);
 static bool level_cmd(JCR *jcr);
+static bool pluginoptions_cmd(JCR *jcr);
 static bool runafter_cmd(JCR *jcr);
 static bool runbeforenow_cmd(JCR *jcr);
 static bool runbefore_cmd(JCR *jcr);
@@ -119,6 +120,7 @@ static struct s_cmds cmds[] = {
    { "fileset", fileset_cmd, false },
    { "JobId=", job_cmd, false },
    { "level = ", level_cmd, false },
+   { "pluginoptions", pluginoptions_cmd, false },
    { "RunAfterJob", runafter_cmd, false },
    { "RunBeforeNow", runbeforenow_cmd, false },
    { "RunBeforeJob", runbefore_cmd, false },
@@ -166,6 +168,8 @@ static char restoreobjcmd1[] =
    "restoreobject JobId=%u %d,%d,%d,%d,%d,%d\n";
 static char endrestoreobjectcmd[] =
    "restoreobject end\n";
+static char pluginoptionscmd[] =
+   "pluginoptions %s";
 static char verifycmd[] =
    "verify level=%30s";
 static char estimatecmd[] =
@@ -235,6 +239,10 @@ static char BADcmd[] =
    "2902 Bad %s\n";
 static char OKRestoreObject[] =
    "2000 OK ObjectRestored\n";
+static char OKPluginOptions[] =
+   "2000 OK PluginOptions\n";
+static char BadPluginOptions[] =
+   "2905 Bad PluginOptions command.\n";
 
 /*
  * Responses received from Storage Daemon
@@ -922,6 +930,30 @@ static bool runscript_cmd(JCR *jcr)
    free_pool_memory(msg);
 
    return dir->fsend(OKRunScript);
+}
+
+/*
+ * This passes plugin specific options.
+ */
+static bool pluginoptions_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   POOLMEM *msg;
+
+   msg = get_memory(dir->msglen + 1);
+   if (sscanf(dir->msg, pluginoptionscmd, msg) != 1) {
+      pm_strcpy(jcr->errmsg, dir->msg);
+      Jmsg1(jcr, M_FATAL, 0, _("Bad Plugin Options command: %s\n"), jcr->errmsg);
+      dir->fsend(BadPluginOptions);
+      free_memory(msg);
+      return false;
+   }
+
+   unbash_spaces(msg);
+   generate_plugin_event(jcr, bEventPluginCommand, (void *)msg);
+   free_memory(msg);
+
+   return dir->fsend(OKPluginOptions);
 }
 
 /*
@@ -2034,6 +2066,10 @@ static void filed_free_jcr(JCR *jcr)
 
    if (jcr->last_fname) {
       free_pool_memory(jcr->last_fname);
+   }
+
+   if (jcr->plugin_options) {
+      free(jcr->plugin_options);
    }
 
    free_bootstrap(jcr);
