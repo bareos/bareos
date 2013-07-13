@@ -315,9 +315,20 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          if (!send_runscripts_commands(jcr)) {
             goto bail_out;
          }
+
          if (!send_restore_objects(jcr)) {
             Dmsg0(000, "FAIL: Send restore objects\n");
             goto bail_out;
+         }
+
+         /*
+          * Only FD version 52 and later understand the sending of plugin options.
+          */
+         if (jcr->FDVersion >= FD_VERSION_52) {
+            if (!send_plugin_options(jcr)) {
+               Dmsg0(000, "FAIL: Send plugin options\n");
+               goto bail_out;
+            }
          }
       }
 

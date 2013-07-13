@@ -40,11 +40,12 @@ const int dbglvl = 50;
  *   5 24Nov11 - Added new restore object command format (pluginname) 6.0
  *
  *  51 21Mar13 - Added reverse datachannel initialization
+ *  52 13Jul13 - Added plugin options
  */
 static char OK_hello_compat[] =
    "2000 OK Hello 5\n";
 static char OK_hello[] =
-   "2000 OK Hello 51\n";
+   "2000 OK Hello 52\n";
 
 static char Dir_sorry[] =
    "2999 Authentication failed.\n";
