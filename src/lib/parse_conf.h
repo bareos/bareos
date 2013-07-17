@@ -232,6 +232,7 @@ void store_strname(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_res(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_int32(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass);

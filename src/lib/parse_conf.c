@@ -487,8 +487,8 @@ void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
 
 /*
  * Store a directory name at specified address. Note, we do
- *   shell expansion except if the string begins with a vertical
- *   bar (i.e. it will likely be passed to the shell later).
+ * shell expansion except if the string begins with a vertical
+ * bar (i.e. it will likely be passed to the shell later).
  */
 void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 {
@@ -565,10 +565,10 @@ void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
 
 /*
  * Store a resource pointer in an alist. default_value indicates how many
- *   times this routine can be called -- i.e. how many alists
- *   there are.
- * If we are in pass 2, do a lookup of the
- *   resource.
+ * times this routine can be called -- i.e. how many alists
+ * there are.
+ *
+ * If we are in pass 2, do a lookup of the resource.
  */
 void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
 {
@@ -636,7 +636,37 @@ void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
 
       lex_get_token(lc, T_STRING);   /* scan next item */
       Dmsg4(900, "Append %s to alist %p size=%d %s\n",
-         lc->str, list, list->size(), item->name);
+            lc->str, list, list->size(), item->name);
+      list->append(bstrdup(lc->str));
+      *(item->value) = (char *)list;
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all.hdr.item_present);
+}
+
+/*
+ * Store a directory name at specified address in an alist.
+ * Note, we do shell expansion except if the string begins
+ * with a vertical bar (i.e. it will likely be passed to the
+ * shell later).
+ */
+void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   alist *list;
+
+   if (pass == 2) {
+      if (*(item->value) == NULL) {
+         list = New(alist(10, owned_by_alist));
+      } else {
+         list = (alist *)(*(item->value));
+      }
+
+      lex_get_token(lc, T_STRING);   /* scan next item */
+      Dmsg4(900, "Append %s to alist %p size=%d %s\n",
+            lc->str, list, list->size(), item->name);
+      if (lc->str[0] != '|') {
+         do_shell_expansion(lc->str, sizeof(lc->str));
+      }
       list->append(bstrdup(lc->str));
       *(item->value) = (char *)list;
    }
