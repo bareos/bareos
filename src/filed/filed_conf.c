@@ -105,8 +105,8 @@ static RES_ITEM cli_items[] = {
    { "pkisignatures", store_bool, ITEM(res_client.pki_sign), 0, ITEM_DEFAULT, "false" },
    { "pkiencryption", store_bool, ITEM(res_client.pki_encrypt), 0, ITEM_DEFAULT, "false" },
    { "pkikeypair", store_dir, ITEM(res_client.pki_keypair_file), 0, 0, NULL },
-   { "pkisigner", store_alist_str, ITEM(res_client.pki_signing_key_files), 0, 0, NULL },
-   { "pkimasterkey", store_alist_str, ITEM(res_client.pki_master_key_files), 0, 0, NULL },
+   { "pkisigner", store_alist_dir, ITEM(res_client.pki_signing_key_files), 0, 0, NULL },
+   { "pkimasterkey", store_alist_dir, ITEM(res_client.pki_master_key_files), 0, 0, NULL },
    { "pkicipher", store_cipher, ITEM(res_client.pki_cipher), 0, ITEM_DEFAULT, "aes128" },
 #endif
    { "tlsauthenticate", store_bool, ITEM(res_client.tls_authenticate), 0, 0, NULL },
@@ -122,7 +122,7 @@ static RES_ITEM cli_items[] = {
    { "compatible", store_bool, ITEM(res_client.compatible), 0, ITEM_DEFAULT, "true" },
    { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
    { "allowbandwidthbursting", store_bool, ITEM(res_client.allow_bw_bursting), 0, ITEM_DEFAULT, "false" },
-   { "allowedscriptdir", store_alist_str, ITEM(res_client.allowed_script_dirs), 0, 0, NULL },
+   { "allowedscriptdir", store_alist_dir, ITEM(res_client.allowed_script_dirs), 0, 0, NULL },
    { "allowedjobcommand", store_alist_str, ITEM(res_client.allowed_job_cmds), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
@@ -148,7 +148,7 @@ static RES_ITEM dir_items[] = {
    { "tlsdhfile", store_dir, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
    { "tlsallowedcn", store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
    { "maximumbandwidthperjob", store_speed, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL },
-   { "allowedscriptdir", store_alist_str, ITEM(res_dir.allowed_script_dirs), 0, 0, NULL },
+   { "allowedscriptdir", store_alist_dir, ITEM(res_dir.allowed_script_dirs), 0, 0, NULL },
    { "allowedjobcommand", store_alist_str, ITEM(res_dir.allowed_job_cmds), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
