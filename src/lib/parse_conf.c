@@ -1374,31 +1374,58 @@ const char *get_default_configdir()
  * Returns false on error
  *         true  on OK, with full_path set to where config file should be
  */
-static bool
-find_config_file(const char *config_file, char *full_path, int max_path)
+static bool find_config_file(const char *config_file, char *full_path, int max_path)
 {
-   int file_length = strlen(config_file) + 1;
+   int dir_length, file_length;
+   const char *config_dir;
+#if defined(HAVE_SETENV) || defined(HAVE_PUTENV)
+   char *bp;
+   POOL_MEM env_string(PM_NAME);
+#endif
 
    /*
     * If a full path specified, use it
     */
+   file_length = strlen(config_file) + 1;
    if (first_path_separator(config_file) != NULL) {
       if (file_length > max_path) {
          return false;
       }
+
       bstrncpy(full_path, config_file, file_length);
+
+#ifdef HAVE_SETENV
+      pm_strcpy(env_string, config_file);
+      bp = (char *)last_path_separator(env_string.c_str());
+      *bp = '\0';
+      setenv("BAREOS_CFGDIR", env_string.c_str(), 1);
+#elif HAVE_PUTENV
+      Mmsg(env_string, "BAREOS_CFGDIR=%s", config_file);
+      bp = (char *)last_path_separator(env_string.c_str());
+      *bp = '\0';
+      putenv(bstrdup(env_string.c_str()));
+#endif
+
       return true;
    }
 
    /*
     * config_file is default file name, now find default dir
     */
-   const char *config_dir = get_default_configdir();
-   int dir_length = strlen(config_dir);
+   config_dir = get_default_configdir();
+   dir_length = strlen(config_dir);
 
    if ((dir_length + 1 + file_length) > max_path) {
       return false;
    }
+
+#ifdef HAVE_SETENV
+   pm_strcpy(env_string, config_dir);
+   setenv("BAREOS_CFGDIR", env_string.c_str(), 1);
+#elif HAVE_PUTENV
+   Mmsg(env_string, "BAREOS_CFGDIR=%s", config_dir);
+   putenv(bstrdup(env_string.c_str()));
+#endif
 
    memcpy(full_path, config_dir, dir_length + 1);
 
@@ -1406,7 +1433,7 @@ find_config_file(const char *config_file, char *full_path, int max_path)
       full_path[dir_length++] = '/';
    }
 
-   memcpy(&full_path[dir_length], config_file, file_length);
+   memcpy(full_path + dir_length, config_file, file_length);
 
    return true;
 }

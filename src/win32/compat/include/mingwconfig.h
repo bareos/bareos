@@ -130,19 +130,22 @@
 #define HAVE_NANOSLEEP 1
 
 /* Define to 1 if you have the <pwd.h> header file. */
-/*#define HAVE_PWD_H 1*/
+/* #undef HAVE_PWD_H */
 
 /* Define to 1 if you have the `readdir_r' function. */
 /* #undef HAVE_READDIR_R */
 
 /* Define to 1 if you have the <resolv.h> header file. */
-/*#define HAVE_RESOLV_H 1*/
+/* #undef HAVE_RESOLV_H */
 
 /* Define to 1 if you have the `select' function. */
 #define HAVE_SELECT 1
 
 /* Define to 1 if you have the `setenv' function. */
-#define HAVE_SETENV 1
+/* #undef HAVE_SETENV */
+
+/* Define to 1 if you have the `putenv' function. */
+#define HAVE_PUTENV 1
 
 /* Define to 1 if you have the `setlocale' function. */
 #undef HAVE_SETLOCALE
