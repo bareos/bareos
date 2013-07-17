@@ -246,7 +246,9 @@ static inline void init_resource(CONFIG *config, int type, RES_ITEM *items, int 
                char pathname[MAXSTRING];
 
                bstrncpy(pathname, items[i].default_value, sizeof(pathname));
-               do_shell_expansion(pathname, sizeof(pathname));
+               if (pathname[0] != '|') {
+                  do_shell_expansion(pathname, sizeof(pathname));
+               }
                *items[i].value = bstrdup(pathname);
             } else if (items[i].handler == store_addresses) {
                init_default_addresses((dlist **)items[i].value, items[i].default_value);
