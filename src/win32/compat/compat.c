@@ -218,10 +218,8 @@ void unix_name_to_win32(POOLMEM **win32_name, char *name)
  *
  *        created 02/27/2006 Thorsten Engel
  */
-static POOLMEM*
-make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*= NULL*/)
+static POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*= NULL*/)
 {
-
    Dmsg0(dbglvl, "Enter wchar_win32_path\n");
    if (pBIsRawPath) {
       *pBIsRawPath = FALSE;              /* Initialize, set later */
@@ -413,8 +411,7 @@ make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*= NULL*/)
 /*
  * Convert from WCHAR (UCS) to UTF-8
  */
-int
-wchar_2_UTF8(POOLMEM **pszUTF, const wchar_t *pszUCS)
+int wchar_2_UTF8(POOLMEM **pszUTF, const wchar_t *pszUCS)
 {
    /**
     * The return value is the number of bytes written to the buffer.
@@ -434,8 +431,7 @@ wchar_2_UTF8(POOLMEM **pszUTF, const wchar_t *pszUCS)
 /*
  * Convert from WCHAR (UCS) to UTF-8
  */
-int
-wchar_2_UTF8(char *pszUTF, const wchar_t *pszUCS, int cchChar)
+int wchar_2_UTF8(char *pszUTF, const wchar_t *pszUCS, int cchChar)
 {
    /**
     * The return value is the number of bytes written to the buffer.
@@ -451,8 +447,7 @@ wchar_2_UTF8(char *pszUTF, const wchar_t *pszUCS, int cchChar)
    }
 }
 
-int
-UTF8_2_wchar(POOLMEM **ppszUCS, const char *pszUTF)
+int UTF8_2_wchar(POOLMEM **ppszUCS, const char *pszUTF)
 {
    /* the return value is the number of wide characters written to the buffer. */
    /* convert null terminated string from utf-8 to ucs2, enlarge buffer if necessary */
@@ -470,9 +465,65 @@ UTF8_2_wchar(POOLMEM **ppszUCS, const char *pszUTF)
    }
 }
 
+/*
+ * Convert a C character string into an BSTR.
+ */
+BSTR str_2_BSTR(const char *pSrc)
+{
+   DWORD cwch;
+   BSTR wsOut(NULL);
 
-void
-wchar_win32_path(const char *name, wchar_t *win32_name)
+   if (!pSrc) {
+      return NULL;
+   }
+
+   if (p_MultiByteToWideChar) {
+      if ((cwch = p_MultiByteToWideChar(CP_ACP, 0, pSrc, -1, NULL, 0))) {
+         cwch--;
+         wsOut = SysAllocStringLen(NULL, cwch);
+         if (wsOut) {
+            if (!p_MultiByteToWideChar(CP_ACP, 0, pSrc, -1, wsOut, cwch)) {
+               if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+                  return wsOut;
+               }
+               SysFreeString(wsOut);
+               wsOut = NULL;
+            }
+         }
+      }
+   }
+
+   return wsOut;
+}
+
+/*
+ * Convert a BSTR into an C character string.
+ */
+char *BSTR_2_str(BSTR pSrc)
+{
+   DWORD cb, cwch;
+   char *szOut = NULL;
+
+   if (!pSrc) {
+      return NULL;
+   }
+
+   if (p_WideCharToMultiByte) {
+      cwch = SysStringLen(pSrc);
+      if ((cb = p_WideCharToMultiByte(CP_ACP, 0, pSrc, cwch + 1, NULL, 0, 0, 0))) {
+         szOut = (char *)malloc(cb);
+         szOut[cb - 1] = '\0';
+         if (!p_WideCharToMultiByte(CP_ACP, 0, pSrc, cwch + 1, szOut, cb, 0, 0)) {
+            free(szOut);
+            szOut = NULL;
+         }
+      }
+   }
+
+   return szOut;
+}
+
+void wchar_win32_path(const char *name, wchar_t *win32_name)
 {
     const char *fname = name;
     while (*name) {
@@ -496,8 +547,7 @@ wchar_win32_path(const char *name, wchar_t *win32_name)
     }
 }
 
-int
-make_win32_path_UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF, BOOL* pBIsRawPath /*= NULL*/)
+int make_win32_path_UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF, BOOL *pBIsRawPath /*= NULL*/)
 {
    P(Win32Convmutex);
    /* if we find the utf8 string in cache, we use the cached ucs2 version.
@@ -598,22 +648,19 @@ int lchown(const char *k, uid_t, gid_t)
    return 0;
 }
 
-long int
-random(void)
+long int random(void)
 {
     return rand();
 }
 
-void
-srandom(unsigned int seed)
+void srandom(unsigned int seed)
 {
    srand(seed);
 }
 // /////////////////////////////////////////////////////////////////
 // convert from Windows concept of time to Unix concept of time
 // /////////////////////////////////////////////////////////////////
-void
-cvt_utime_to_ftime(const time_t  &time, FILETIME &wintime)
+void cvt_utime_to_ftime(const time_t  &time, FILETIME &wintime)
 {
    uint64_t mstime = time;
    mstime *= WIN32_FILETIME_SCALE;
@@ -627,8 +674,7 @@ cvt_utime_to_ftime(const time_t  &time, FILETIME &wintime)
    wintime.dwHighDateTime = (DWORD) ((mstime>>32)& 0xffffffffUL);
 }
 
-time_t
-cvt_ftime_to_utime(const FILETIME &time)
+time_t cvt_ftime_to_utime(const FILETIME &time)
 {
     uint64_t mstime = time.dwHighDateTime;
     mstime <<= 32;
@@ -667,14 +713,12 @@ static const char *errorString(void)
    return rval;
 }
 
-
 /*
  * This is only called for directories, and is used to get the directory
  *  attributes and find out if we have a junction point or a mount point
  *  or other kind of "funny" directory.
  */
-static int
-statDir(const char *file, struct stat *sb)
+static int statDir(const char *file, struct stat *sb)
 {
    WIN32_FIND_DATAW info_w;       // window's file info
    WIN32_FIND_DATAA info_a;       // window's file info
@@ -703,11 +747,9 @@ statDir(const char *file, struct stat *sb)
       sb->st_atime = now;
       sb->st_rdev = 0;
       return 0;
-    }
+   }
 
-
-   // use unicode
-   if (p_FindFirstFileW) {
+   if (p_FindFirstFileW) { // use unicode
       POOLMEM* pwszBuf = get_pool_memory (PM_FNAME);
       make_win32_path_UTF8_2_wchar(&pwszBuf, file);
 
@@ -722,9 +764,7 @@ statDir(const char *file, struct stat *sb)
       pftLastAccessTime = &info_w.ftLastAccessTime;
       pftLastWriteTime  = &info_w.ftLastWriteTime;
       pftCreationTime   = &info_w.ftCreationTime;
-
-   // use ASCII
-   } else if (p_FindFirstFileA) {
+   } else if (p_FindFirstFileA) { // use ASCII
       Dmsg1(dbglvl, "FindFirstFileA=%s\n", file);
       h = p_FindFirstFileA(file, &info_a);
 
@@ -850,8 +890,7 @@ statDir(const char *file, struct stat *sb)
    return 0;
 }
 
-int
-fstat(intptr_t fd, struct stat *sb)
+int fstat(intptr_t fd, struct stat *sb)
 {
    BY_HANDLE_FILE_INFORMATION info;
 
@@ -906,8 +945,7 @@ fstat(intptr_t fd, struct stat *sb)
    return 0;
 }
 
-static int
-stat2(const char *file, struct stat *sb)
+static int stat2(const char *file, struct stat *sb)
 {
    HANDLE h = INVALID_HANDLE_VALUE;
    int rval = 0;
@@ -961,8 +999,7 @@ stat2(const char *file, struct stat *sb)
    return rval;
 }
 
-int
-stat(const char *file, struct stat *sb)
+int stat(const char *file, struct stat *sb)
 {
    WIN32_FILE_ATTRIBUTE_DATA data;
    errno = 0;
@@ -1085,63 +1122,53 @@ int fcntl(int fd, int cmd, long arg)
    return rval;
 }
 
-int
-lstat(const char *file, struct stat *sb)
+int lstat(const char *file, struct stat *sb)
 {
    return stat(file, sb);
 }
 
-void
-sleep(int sec)
+void sleep(int sec)
 {
    Sleep(sec * 1000);
 }
 
-int
-geteuid(void)
+int geteuid(void)
 {
    return 0;
 }
 
-int
-execvp(const char *, char *[]) {
+int execvp(const char *, char *[]) {
    errno = ENOSYS;
    return -1;
 }
 
 
-int
-fork(void)
+int fork(void)
 {
    errno = ENOSYS;
    return -1;
 }
 
-int
-pipe(int[])
+int pipe(int[])
 {
    errno = ENOSYS;
    return -1;
 }
 
-int
-waitpid(int, int*, int)
+int waitpid(int, int*, int)
 {
    errno = ENOSYS;
    return -1;
 }
 
-int
-readlink(const char *, char *, int)
+int readlink(const char *, char *, int)
 {
    errno = ENOSYS;
    return -1;
 }
-
 
 #ifndef HAVE_MINGW
-int
-strcasecmp(const char *s1, const char *s2)
+int strcasecmp(const char *s1, const char *s2)
 {
    register int ch1, ch2;
 
@@ -1162,8 +1189,7 @@ strcasecmp(const char *s1, const char *s2)
 }
 #endif //HAVE_MINGW
 
-int
-strncasecmp(const char *s1, const char *s2, int len)
+int strncasecmp(const char *s1, const char *s2, int len)
 {
    register int ch1 = 0, ch2 = 0;
 
@@ -1185,8 +1211,7 @@ strncasecmp(const char *s1, const char *s2, int len)
    return (ch1 - ch2);
 }
 
-int
-gettimeofday(struct timeval *tv, struct timezone *)
+int gettimeofday(struct timeval *tv, struct timezone *)
 {
     SYSTEMTIME now;
     FILETIME tmp;
@@ -1239,19 +1264,16 @@ extern "C" void syslog(int type, const char *fmt, ...)
    free_memory(msg);
 }
 
-void
-closelog()
+void closelog()
 {
 }
 
-struct passwd *
-getpwuid(uid_t)
+struct passwd *getpwuid(uid_t)
 {
     return NULL;
 }
 
-struct group *
-getgrgid(uid_t)
+struct group *getgrgid(uid_t)
 {
     return NULL;
 }
@@ -1269,8 +1291,7 @@ typedef struct _dir
     UINT32      offset;         // pseudo offset for d_off
 } _dir;
 
-DIR *
-opendir(const char *path)
+DIR *opendir(const char *path)
 {
     /* enough space for VSS !*/
     int max_len = strlen(path) + MAX_PATH;
@@ -1351,8 +1372,7 @@ err:
     return NULL;
 }
 
-int
-closedir(DIR *dirp)
+int closedir(DIR *dirp)
 {
     _dir *dp = (_dir *)dirp;
     FindClose(dp->dirh);
@@ -1361,23 +1381,7 @@ closedir(DIR *dirp)
     return 0;
 }
 
-/*
-  typedef struct _WIN32_FIND_DATA {
-    DWORD dwFileAttributes;
-    FILETIME ftCreationTime;
-    FILETIME ftLastAccessTime;
-    FILETIME ftLastWriteTime;
-    DWORD nFileSizeHigh;
-    DWORD nFileSizeLow;
-    DWORD dwReserved0;
-    DWORD dwReserved1;
-    TCHAR cFileName[MAX_PATH];
-    TCHAR cAlternateFileName[14];
-} WIN32_FIND_DATA, *PWIN32_FIND_DATA;
-*/
-
-static int
-copyin(struct dirent &dp, const char *fname)
+static int copyin(struct dirent &dp, const char *fname)
 {
     dp.d_ino = 0;
     dp.d_reclen = 0;
@@ -1390,8 +1394,7 @@ copyin(struct dirent &dp, const char *fname)
     return dp.d_reclen;
 }
 
-int
-readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
+int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
 {
     _dir *dp = (_dir *)dirp;
     if (dp->valid_w || dp->valid_a) {
@@ -1435,8 +1438,7 @@ readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
  * Returns 1 if  OK
  *         0 on error
  */
-int
-inet_aton(const char *a, struct in_addr *inp)
+int inet_aton(const char *a, struct in_addr *inp)
 {
    const char *cp = a;
    uint32_t acc = 0, tmp = 0;
@@ -1466,8 +1468,7 @@ inet_aton(const char *a, struct in_addr *inp)
    return 1;
 }
 
-int
-nanosleep(const struct timespec *req, struct timespec *rem)
+int nanosleep(const struct timespec *req, struct timespec *rem)
 {
     if (rem)
         rem->tv_sec = rem->tv_nsec = 0;
@@ -1475,21 +1476,18 @@ nanosleep(const struct timespec *req, struct timespec *rem)
     return 0;
 }
 
-void
-init_signals(void terminate(int sig))
+void init_signals(void terminate(int sig))
 {
 
 }
 
-void
-init_stack_dump(void)
+void init_stack_dump(void)
 {
 
 }
 
 
-long
-pathconf(const char *path, int name)
+long pathconf(const char *path, int name)
 {
     switch(name) {
     case _PC_PATH_MAX :
@@ -1502,8 +1500,7 @@ pathconf(const char *path, int name)
     return -1;
 }
 
-int
-WSA_Init(void)
+int WSA_Init(void)
 {
     WORD wVersionRequested = MAKEWORD( 1, 1);
     WSADATA wsaData;
@@ -1587,9 +1584,7 @@ int win32_chmod(const char *path, mode_t mode)
    return 0;
 }
 
-
-int
-win32_chdir(const char *dir)
+int win32_chdir(const char *dir)
 {
    if (p_SetCurrentDirectoryW) {
       POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
@@ -1615,8 +1610,7 @@ win32_chdir(const char *dir)
    return 0;
 }
 
-int
-win32_mkdir(const char *dir)
+int win32_mkdir(const char *dir)
 {
    Dmsg1(dbglvl, "enter win32_mkdir. dir=%s\n", dir);
    if (p_wmkdir){
@@ -1633,9 +1627,7 @@ win32_mkdir(const char *dir)
    return _mkdir(dir);
 }
 
-
-char *
-win32_getcwd(char *buf, int maxlen)
+char *win32_getcwd(char *buf, int maxlen)
 {
    int n=0;
 
@@ -1661,8 +1653,7 @@ win32_getcwd(char *buf, int maxlen)
    return buf;
 }
 
-int
-win32_fputs(const char *string, FILE *stream)
+int win32_fputs(const char *string, FILE *stream)
 {
    /* we use WriteConsoleA / WriteConsoleA
       so we can be sure that unicode support works on win32.
@@ -1703,8 +1694,7 @@ win32_fputs(const char *string, FILE *stream)
    return fputs(string, stream);
 }
 
-char*
-win32_cgets (char* buffer, int len)
+char *win32_cgets (char* buffer, int len)
 {
    /* we use console ReadConsoleA / ReadConsoleW to be able to read unicode
       from the win32 console and fallback if seomething fails */
@@ -1762,8 +1752,7 @@ win32_cgets (char* buffer, int len)
       return NULL;
 }
 
-int
-win32_unlink(const char *filename)
+int win32_unlink(const char *filename)
 {
    int nRetCode;
    if (p_wunlink) {
@@ -1808,7 +1797,6 @@ win32_unlink(const char *filename)
    return nRetCode;
 }
 
-
 #include "mswinver.h"
 
 char WIN_VERSION_LONG[64];
@@ -1821,7 +1809,6 @@ public:
 };
 
 static winver INIT;                     // cause constructor to be called before main()
-
 
 winver::winver(void)
 {
@@ -1881,8 +1868,7 @@ VOID ErrMsg(LPTSTR, BOOL);
  * CreateProcess() says the best way to ensure proper results with executables
  * with spaces in path or filename is to quote the string.
  */
-const char *
-getArgv0(const char *cmdline)
+const char *getArgv0(const char *cmdline)
 {
 
     int inquote = 0;
@@ -1924,8 +1910,7 @@ getArgv0(const char *cmdline)
  *
  * The malloc'ed buffer returned in *pexe must be freed by the caller.
  */
-bool
-GetApplicationName(const char *cmdline, char **pexe, const char **pargs)
+bool GetApplicationName(const char *cmdline, char **pexe, const char **pargs)
 {
    const char *pExeStart = NULL;    /* Start of executable name in cmdline */
    const char *pExeEnd = NULL;      /* Character after executable name (separator) */
@@ -2086,10 +2071,9 @@ GetApplicationName(const char *cmdline, char **pexe, const char **pargs)
 /**
  * Create the process with WCHAR API
  */
-static BOOL
-CreateChildProcessW(const char *comspec, const char *cmdLine,
-                    PROCESS_INFORMATION *hProcInfo,
-                    HANDLE in, HANDLE out, HANDLE err)
+static BOOL CreateChildProcessW(const char *comspec, const char *cmdLine,
+                                PROCESS_INFORMATION *hProcInfo,
+                                HANDLE in, HANDLE out, HANDLE err)
 {
    STARTUPINFOW siStartInfo;
    BOOL bFuncRetn = FALSE;
@@ -2137,10 +2121,9 @@ CreateChildProcessW(const char *comspec, const char *cmdLine,
 /**
  * Create the process with ANSI API
  */
-static BOOL
-CreateChildProcessA(const char *comspec, char *cmdLine,
-                    PROCESS_INFORMATION *hProcInfo,
-                    HANDLE in, HANDLE out, HANDLE err)
+static BOOL CreateChildProcessA(const char *comspec, char *cmdLine,
+                                PROCESS_INFORMATION *hProcInfo,
+                                HANDLE in, HANDLE out, HANDLE err)
 {
    STARTUPINFOA siStartInfo;
    BOOL bFuncRetn = FALSE;
@@ -2177,8 +2160,7 @@ CreateChildProcessA(const char *comspec, char *cmdLine,
  * OK, so it would seem CreateProcess only handles true executables:
  * .com or .exe files.  So grab $COMSPEC value and pass command line to it.
  */
-HANDLE
-CreateChildProcess(const char *cmdline, HANDLE in, HANDLE out, HANDLE err)
+HANDLE CreateChildProcess(const char *cmdline, HANDLE in, HANDLE out, HANDLE err)
 {
    static const char *comspec = NULL;
    PROCESS_INFORMATION piProcInfo;
@@ -2240,34 +2222,19 @@ CreateChildProcess(const char *cmdline, HANDLE in, HANDLE out, HANDLE err)
    return piProcInfo.hProcess;
 }
 
-void
-ErrorExit (LPCSTR lpszMessage)
+void ErrorExit (LPCSTR lpszMessage)
 {
     Dmsg1(0, "%s", lpszMessage);
 }
 
-
-/*
-typedef struct s_bpipe {
-   pid_t worker_pid;
-   time_t worker_stime;
-   int wait;
-   btimer_t *timer_id;
-   FILE *rfd;
-   FILE *wfd;
-} BPIPE;
-*/
-
-static void
-CloseHandleIfValid(HANDLE handle)
+static void CloseHandleIfValid(HANDLE handle)
 {
     if (handle != INVALID_HANDLE_VALUE) {
         CloseHandle(handle);
     }
 }
 
-BPIPE *
-open_bpipe(char *prog, int wait, const char *mode)
+BPIPE *open_bpipe(char *prog, int wait, const char *mode)
 {
     HANDLE hChildStdinRd, hChildStdinWr, hChildStdinWrDup,
         hChildStdoutRd, hChildStdoutWr, hChildStdoutRdDup,
@@ -2391,9 +2358,7 @@ cleanup:
     return NULL;
 }
 
-
-int
-kill(int pid, int signal)
+int kill(int pid, int signal)
 {
    int rval = 0;
    if (!TerminateProcess((HANDLE)pid, (UINT) signal)) {
@@ -2404,9 +2369,7 @@ kill(int pid, int signal)
    return rval;
 }
 
-
-int
-close_bpipe(BPIPE *bpipe)
+int close_bpipe(BPIPE *bpipe)
 {
    int rval = 0;
    int32_t remaining_wait = bpipe->wait;
@@ -2452,14 +2415,20 @@ close_bpipe(BPIPE *bpipe)
    if (bpipe->timer_id) {
        stop_child_timer(bpipe->timer_id);
    }
-   if (bpipe->rfd) fclose(bpipe->rfd);
-   if (bpipe->wfd) fclose(bpipe->wfd);
+
+   if (bpipe->rfd) {
+      fclose(bpipe->rfd);
+   }
+
+   if (bpipe->wfd) {
+      fclose(bpipe->wfd);
+   }
+
    free((void *)bpipe);
    return rval;
 }
 
-int
-close_wpipe(BPIPE *bpipe)
+int close_wpipe(BPIPE *bpipe)
 {
     int result = 1;
 
@@ -2474,8 +2443,7 @@ close_wpipe(BPIPE *bpipe)
 }
 
 #ifndef MINGW64
-int
-utime(const char *fname, struct utimbuf *times)
+int utime(const char *fname, struct utimbuf *times)
 {
     FILETIME acc, mod;
     char tmpbuf[5000];
@@ -2528,8 +2496,7 @@ utime(const char *fname, struct utimbuf *times)
 #endif
 
 #if 0
-int
-file_open(const char *file, int flags, int mode)
+int file_open(const char *file, int flags, int mode)
 {
    DWORD access = 0;
    DWORD shareMode = 0;
@@ -2577,9 +2544,7 @@ file_open(const char *file, int flags, int mode)
 
 }
 
-
-int
-file_close(int fd)
+int file_close(int fd)
 {
     if (!CloseHandle((HANDLE)fd)) {
         errno = b_errno_win32;
@@ -2589,8 +2554,7 @@ file_close(int fd)
     return 0;
 }
 
-ssize_t
-file_write(int fd, const void *data, ssize_t len)
+ssize_t file_write(int fd, const void *data, ssize_t len)
 {
     BOOL status;
     DWORD bwrite;
@@ -2601,8 +2565,7 @@ file_write(int fd, const void *data, ssize_t len)
 }
 
 
-ssize_t
-file_read(int fd, void *data, ssize_t len)
+ssize_t file_read(int fd, void *data, ssize_t len)
 {
     BOOL status;
     DWORD bread;
@@ -2613,8 +2576,7 @@ file_read(int fd, void *data, ssize_t len)
     return -1;
 }
 
-boffset_t
-file_seek(int fd, boffset_t offset, int whence)
+boffset_t file_seek(int fd, boffset_t offset, int whence)
 {
     DWORD method = 0;
     DWORD val;
@@ -2645,8 +2607,7 @@ file_seek(int fd, boffset_t offset, int whence)
     return val;
 }
 
-int
-file_dup2(int, int)
+int file_dup2(int, int)
 {
     errno = ENOSYS;
     return -1;
