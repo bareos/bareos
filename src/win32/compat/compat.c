@@ -2755,11 +2755,10 @@ void LogErrorMsg(const char *message)
  */
 void prevent_os_suspensions()
 {
-   /* not in mingw */
-//   SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
+  SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
 }
 
 void allow_os_suspensions()
 {
-//   SetThreadExecutionState(ES_CONTINUOUS);
+  SetThreadExecutionState(ES_CONTINUOUS);
 }

@@ -422,6 +422,10 @@ static void *handle_director_connection(BSOCK *dir)
    const char jobname[12] = "*Director*";
 // saveCWD save_cwd;
 
+#ifdef HAVE_WIN32
+   prevent_os_suspensions();
+#endif
+
    jcr = new_jcr(sizeof(JCR), filed_free_jcr); /* create JCR */
    jcr->dir_bsock = dir;
    jcr->ff = init_find_files();
@@ -540,6 +544,10 @@ static void *handle_director_connection(BSOCK *dir)
    Dmsg0(100, "Done with free_jcr\n");
    Dsm_check(100);
    garbage_collect_memory_pool();
+
+#ifdef HAVE_WIN32
+   allow_os_suspensions();
+#endif
 
    return NULL;
 }
