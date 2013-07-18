@@ -65,6 +65,8 @@ typedef char POOLMEM;
 int wchar_2_UTF8(POOLMEM **pszUTF, const wchar_t *pszUCS);
 int wchar_2_UTF8(char *pszUTF, const WCHAR *pszUCS, int cchChar = MAX_PATH_UTF8);
 int UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF);
+BSTR str_2_BSTR(const char *pSrc);
+char *BSTR_2_str(BSTR pSrc);
 int make_win32_path_UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF, BOOL* pBIsRawPath = NULL);
 
 // init with win9x, but maybe set to NT in InitWinAPI
