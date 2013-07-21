@@ -30,13 +30,6 @@
 #include "lib/ini.h"
 #include <wchar.h>
 
-#undef malloc
-#undef free
-#undef strdup
-
-#define fi __FILE__
-#define li __LINE__
-
 static const int dbglvl = 000;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -301,7 +294,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       char *p;
 
       Dmsg(ctx, dbglvl, "test-plugin-fd: pluginEvent cmd=%s\n", (char *)value);
-      p_ctx->cmd = strdup((char *)value);
+      p_ctx->cmd = bstrdup((char *)value);
       p = strchr(p_ctx->cmd, ':');
       if (!p) {
          Jmsg(ctx, M_FATAL, "Plugin terminator not found: %s\n", (char *)value);
