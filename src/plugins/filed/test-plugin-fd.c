@@ -20,13 +20,13 @@
 */
 /*
  * A simple test plugin for the Bareos File Daemon derived from
- *   the bpipe plugin, but used for testing new features.
+ * the bpipe plugin, but used for testing new features.
  *
- *  Kern Sibbald, October 2007
- *
+ * Kern Sibbald, October 2007
  */
 #include "bareos.h"
 #include "fd_plugins.h"
+#include "fd_common.h"
 #include "lib/ini.h"
 #include <wchar.h>
 
@@ -153,7 +153,6 @@ bRC loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, genpInfo **pinfo, pFuncs **pfuncs
  */
 bRC unloadPlugin()
 {
-// printf("test-plugin-fd: Unloaded\n");
    return bRC_OK;
 }
 
@@ -241,32 +240,32 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 
    switch (event->eventType) {
    case bEventJobStart:
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "test-plugin-fd: JobStart=%s\n", (char *)value);
+      Dmsg(ctx, dbglvl, "test-plugin-fd: JobStart=%s\n", (char *)value);
       break;
-   /* End of Dir FileSet commands, now we can add excludes */
    case bEventEndFileSet:
+      /*
+       * End of Dir FileSet commands, now we can add excludes
+       */
       bfuncs->NewOptions(ctx);
       bfuncs->AddWild(ctx, "*.c", ' ');
       bfuncs->AddWild(ctx, "*.cpp", ' ');
       bfuncs->AddOptions(ctx, "ei");         /* exclude, ignore case */
       bfuncs->AddExclude(ctx, "/home/user/bareos/regress/README");
       break;
-   case bEventRestoreObject:
-   {
-      printf("Plugin RestoreObject\n");
-      if (!value) {
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl, "test-plugin-fd: End restore objects\n");
-         break;
-      }
-      rop = (restore_object_pkt *)value;
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl,
-                           "Get RestoreObject len=%d JobId=%d oname=%s type=%d data=%.127s\n",
-                           rop->object_len, rop->JobId, rop->object_name, rop->object_type,
-                           rop->object);
+   case bEventRestoreObject: {
       FILE *fp;
       POOLMEM *q;
       char *working;
-      static int _nb=0;
+      static int _nb = 0;
+
+      printf("Plugin RestoreObject\n");
+      if (!value) {
+         Dmsg(ctx, dbglvl, "test-plugin-fd: End restore objects\n");
+         break;
+      }
+      rop = (restore_object_pkt *)value;
+      Dmsg(ctx, dbglvl, "Get RestoreObject len=%d JobId=%d oname=%s type=%d data=%.127s\n",
+           rop->object_len, rop->JobId, rop->object_name, rop->object_type, rop->object);
       q = get_pool_memory(PM_FNAME);
 
       bfuncs->getBareosValue(ctx, bVarWorkingDir, &working);
@@ -285,55 +284,60 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          }
          ini.register_items(test_items, sizeof(struct ini_items));
          if (ini.parse(ini.out_fname)) {
-            bfuncs->JobMessage(ctx, fi, li, M_INFO, 0, "string1 = %s\n",
-                               ini.items[0].val.strval);
+            Jmsg(ctx, M_INFO, "string1 = %s\n", ini.items[0].val.strval);
          } else {
-            bfuncs->JobMessage(ctx, fi, li, M_ERROR, 0, "Can't parse config\n");
+            Jmsg(ctx, M_ERROR, "Can't parse config\n");
          }
       }
 
       break;
    }
-   /* Plugin command e.g. plugin = <plugin-name>:<name-space>:read command:write command */
    case bEventEstimateCommand:
       /* Fall-through wanted */
-   case bEventBackupCommand:
-   {
+   case bEventBackupCommand: {
+      /*
+       * Plugin command e.g. plugin = <plugin-name>:<name-space>:read command:write command
+       */
       char *p;
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "test-plugin-fd: pluginEvent cmd=%s\n", (char *)value);
+
+      Dmsg(ctx, dbglvl, "test-plugin-fd: pluginEvent cmd=%s\n", (char *)value);
       p_ctx->cmd = strdup((char *)value);
       p = strchr(p_ctx->cmd, ':');
       if (!p) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Plugin terminator not found: %s\n", (char *)value);
+         Jmsg(ctx, M_FATAL, "Plugin terminator not found: %s\n", (char *)value);
+         Dmsg(ctx, dbglvl, "Plugin terminator not found: %s\n", (char *)value);
          return bRC_Error;
       }
       *p++ = 0;           /* terminate plugin */
       p_ctx->fname = p;
       p = strchr(p, ':');
       if (!p) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "File terminator not found: %s\n", (char *)value);
+         Jmsg(ctx, M_FATAL, "File terminator not found: %s\n", (char *)value);
+         Dmsg(ctx, dbglvl, "File terminator not found: %s\n", (char *)value);
          return bRC_Error;
       }
       *p++ = 0;           /* terminate file */
       p_ctx->reader = p;
       p = strchr(p, ':');
       if (!p) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Reader terminator not found: %s\n", (char *)value);
+         Jmsg(ctx, M_FATAL, "Reader terminator not found: %s\n", (char *)value);
+         Dmsg(ctx, dbglvl, "Reader terminator not found: %s\n", (char *)value);
          return bRC_Error;
       }
       *p++ = 0;           /* terminate reader string */
       p_ctx->writer = p;
-      printf("test-plugin-fd: plugin=%s fname=%s reader=%s writer=%s\n",
-          p_ctx->cmd, p_ctx->fname, p_ctx->reader, p_ctx->writer);
+      Dmsg(ctx, dbglvl, "test-plugin-fd: plugin=%s fname=%s reader=%s writer=%s\n",
+           p_ctx->cmd, p_ctx->fname, p_ctx->reader, p_ctx->writer);
       break;
    }
    case bEventComponentInfo:
-      printf("plugin: Component=%s\n", NPRT((char *)value));
+      Dmsg(ctx, dbglvl, "plugin: Component=%s\n", NPRT((char *)value));
       break;
    default:
-      printf("test-plugin-fd: unknown event=%d\n", event->eventType);
+      Dmsg(ctx, dbglvl, "test-plugin-fd: unknown event=%d\n", event->eventType);
       break;
    }
+
    return bRC_OK;
 }
 
@@ -349,16 +353,16 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
 
    if (p_ctx->nb_obj == 0) {
       sp->fname = (char *)"takeme.h";
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "AcceptFile=%s = %d\n",
-                           sp->fname, bfuncs->AcceptFile(ctx, sp));
+      Dmsg(ctx, dbglvl, "AcceptFile=%s = %d\n",
+           sp->fname, bfuncs->AcceptFile(ctx, sp));
 
       sp->fname = (char *)"/path/to/excludeme.o";
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "AcceptFile=%s = %d\n",
-                           sp->fname, bfuncs->AcceptFile(ctx, sp));
+      Dmsg(ctx, dbglvl, "AcceptFile=%s = %d\n",
+           sp->fname, bfuncs->AcceptFile(ctx, sp));
 
       sp->fname = (char *)"/path/to/excludeme.c";
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "AcceptFile=%s = %d\n",
-                           sp->fname, bfuncs->AcceptFile(ctx, sp));
+      Dmsg(ctx, dbglvl, "AcceptFile=%s = %d\n",
+           sp->fname, bfuncs->AcceptFile(ctx, sp));
    }
 
    if (p_ctx->nb_obj == 0) {
@@ -583,7 +587,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       sp->object = p_ctx->buf;
       sp->type = FT_PLUGIN_CONFIG;
 
-      Dmsg1(0, "RestoreOptions=<%s>\n", p_ctx->buf);
+      Dmsg(ctx, dbglvl, "RestoreOptions=<%s>\n", p_ctx->buf);
    }
 
    time_t now = time(NULL);
@@ -595,11 +599,9 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    sp->statp.st_size = sp->object_len;
    sp->statp.st_blksize = 4096;
    sp->statp.st_blocks = 1;
-   bfuncs->DebugMessage(ctx, fi, li, dbglvl,
-                        "Creating RestoreObject len=%d oname=%s data=%.127s\n",
-                        sp->object_len, sp->object_name, sp->object);
-
-   printf("test-plugin-fd: startBackupFile\n");
+   Dmsg(ctx, dbglvl, "Creating RestoreObject len=%d oname=%s data=%.127s\n",
+        sp->object_len, sp->object_name, sp->object);
+   Dmsg(ctx, dbglvl,"test-plugin-fd: startBackupFile\n");
    return bRC_OK;
 }
 
