@@ -1,4 +1,4 @@
-VPATH = .
+VPATH = .:../../../plugins/filed
 
 DEFINES = -DHAVE_WIN32 \
 	  -DHAVE_MINGW \
