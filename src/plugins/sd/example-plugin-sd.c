@@ -79,8 +79,10 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC DLL_IMP_EXP
-loadPlugin(bsdInfo *lbinfo, bsdFuncs *lbfuncs, genpInfo **pinfo, psdFuncs **pfuncs)
+bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
+                           bsdFuncs *lbfuncs,
+                           genpInfo **pinfo,
+                           psdFuncs **pfuncs)
 {
    bfuncs = lbfuncs;                /* set Bareos funct pointers */
    binfo  = lbinfo;
@@ -94,8 +96,7 @@ loadPlugin(bsdInfo *lbinfo, bsdFuncs *lbfuncs, genpInfo **pinfo, psdFuncs **pfun
 /*
  * External entry point to unload the plugin
  */
-bRC DLL_IMP_EXP
-unloadPlugin()
+bRC DLL_IMP_EXP unloadPlugin()
 {
    printf("example-plugin-sd: Unloaded\n");
    return bRC_OK;
