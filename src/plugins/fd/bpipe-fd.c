@@ -21,11 +21,11 @@
 /*
  * A simple pipe plugin for the Bareos File Daemon
  *
- *  Kern Sibbald, October 2007
- *
+ * Kern Sibbald, October 2007
  */
 #include "bareos.h"
 #include "fd_plugins.h"
+#include "fd_common.h"
 
 #undef malloc
 #undef free
@@ -227,50 +227,55 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 
    switch (event->eventType) {
    case bEventPluginCommand:
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl,
-                           "bpipe-fd: PluginCommand=%s\n", (char *)value);
+      Dmsg(ctx, dbglvl, "bpipe-fd: PluginCommand=%s\n", (char *)value);
       break;
    case bEventJobStart:
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: JobStart=%s\n", (char *)value);
+      Dmsg(ctx, dbglvl, "bpipe-fd: JobStart=%s\n", (char *)value);
       break;
-   /* Plugin command e.g. plugin = <plugin-name>:<name-space>:read command:write command */
    case bEventRestoreCommand:
-//    printf("bpipe-fd: EventRestoreCommand cmd=%s\n", (char *)value);
       /* Fall-through wanted */
    case bEventEstimateCommand:
       /* Fall-through wanted */
-   case bEventBackupCommand:
+   case bEventBackupCommand: {
+      /*
+       * Plugin command e.g. plugin = <plugin-name>:<name-space>:read command:write command
+       */
       char *p;
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: pluginEvent cmd=%s\n", (char *)value);
+
+      Dmsg(ctx, dbglvl, "bpipe-fd: pluginEvent cmd=%s\n", (char *)value);
       p_ctx->cmd = strdup((char *)value);
       p = strchr(p_ctx->cmd, ':');
       if (!p) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Plugin terminator not found: %s\n", (char *)value);
+         Jmsg(ctx, M_FATAL, "Plugin terminator not found: %s\n", (char *)value);
+         Dmsg(ctx, dbglvl, "Plugin terminator not found: %s\n", (char *)value);
          return bRC_Error;
       }
       *p++ = 0;           /* terminate plugin */
       p_ctx->fname = p;
       p = strchr(p, ':');
       if (!p) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "File terminator not found: %s\n", (char *)value);
+         Jmsg(ctx, M_FATAL, "File terminator not found: %s\n", (char *)value);
+         Dmsg(ctx, dbglvl, "File terminator not found: %s\n", (char *)value);
          return bRC_Error;
       }
       *p++ = 0;           /* terminate file */
       p_ctx->reader = p;
       p = strchr(p, ':');
       if (!p) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Reader terminator not found: %s\n", (char *)value);
+         Jmsg(ctx, M_FATAL, "Reader terminator not found: %s\n", (char *)value);
+         Dmsg(ctx, dbglvl, "Reader terminator not found: %s\n", (char *)value);
          return bRC_Error;
       }
       *p++ = 0;           /* terminate reader string */
       p_ctx->writer = p;
-//    printf("bpipe-fd: plugin=%s fname=%s reader=%s writer=%s\n",
-//         p_ctx->cmd, p_ctx->fname, p_ctx->reader, p_ctx->writer);
-      break;
-   default:
-      printf("bpipe-fd: unknown event=%d\n", event->eventType);
       break;
    }
+   default:
+      Jmsg(ctx, M_FATAL, "bpipe-fd: unknown event=%d\n", event->eventType);
+      Dmsg(ctx, dbglvl, "bpipe-fd: unknown event=%d\n", event->eventType);
+      break;
+   }
+
    return bRC_OK;
 }
 
@@ -279,11 +284,14 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
  */
 static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
 {
+   time_t now;
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
    if (!p_ctx) {
       return bRC_Error;
    }
-   time_t now = time(NULL);
+
+   now = time(NULL);
    sp->fname = p_ctx->fname;
    sp->type = FT_REG;
    sp->statp.st_mode = 0700 | S_IFREG;
@@ -294,7 +302,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    sp->statp.st_blksize = 4096;
    sp->statp.st_blocks = 1;
    p_ctx->backup = true;
-// printf("bpipe-fd: startBackupFile\n");
+
    return bRC_OK;
 }
 
@@ -325,18 +333,16 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
    io->io_errno = 0;
    switch(io->func) {
    case IO_OPEN:
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_OPEN\n");
+      Dmsg(ctx, dbglvl, "bpipe-fd: IO_OPEN\n");
       if (io->flags & (O_CREAT | O_WRONLY)) {
          char *writer_codes = apply_rp_codes(p_ctx);
 
          p_ctx->pfd = open_bpipe(writer_codes, 0, "w");
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl,
-                              "bpipe-fd: IO_OPEN fd=%p writer=%s\n",
-                              p_ctx->pfd, writer_codes);
+         Dmsg(ctx, dbglvl, "bpipe-fd: IO_OPEN fd=%p writer=%s\n", p_ctx->pfd, writer_codes);
          if (!p_ctx->pfd) {
             io->io_errno = errno;
-            bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
-               "Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(errno));
+            Jmsg(ctx, M_FATAL, "Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(io->io_errno));
+            Dmsg(ctx, dbglvl, "Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(io->io_errno));
             if (writer_codes) {
                free(writer_codes);
             }
@@ -347,69 +353,61 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
          }
       } else {
          p_ctx->pfd = open_bpipe(p_ctx->reader, 0, "r");
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl,
-                              "bpipe-fd: IO_OPEN fd=%p reader=%s\n",
-                              p_ctx->pfd, p_ctx->reader);
+         Dmsg(ctx, dbglvl, "bpipe-fd: IO_OPEN fd=%p reader=%s\n", p_ctx->pfd, p_ctx->reader);
          if (!p_ctx->pfd) {
             io->io_errno = errno;
-            bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
-               "Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(errno));
+            Jmsg(ctx, M_FATAL, "Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(io->io_errno));
+            Dmsg(ctx, dbglvl, "Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(io->io_errno));
             return bRC_Error;
          }
       }
       sleep(1);                 /* let pipe connect */
       break;
-
    case IO_READ:
       if (!p_ctx->pfd) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Logic error: NULL read FD\n");
+         Jmsg(ctx, M_FATAL, "Logic error: NULL read FD\n");
+         Dmsg(ctx, dbglvl, "Logic error: NULL read FD\n");
          return bRC_Error;
       }
       io->status = fread(io->buf, 1, io->count, p_ctx->pfd->rfd);
-//    bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_READ buf=%p len=%d\n", io->buf, io->status);
       if (io->status == 0 && ferror(p_ctx->pfd->rfd)) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
-            "Pipe read error: ERR=%s\n", strerror(errno));
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl,
-            "Pipe read error: ERR=%s\n", strerror(errno));
+         io->io_errno = errno;
+         Jmsg(ctx, M_FATAL, "Pipe read error: ERR=%s\n", strerror(io->io_errno));
+         Dmsg(ctx, dbglvl, "Pipe read error: ERR=%s\n", strerror(io->io_errno));
          return bRC_Error;
       }
       break;
-
    case IO_WRITE:
       if (!p_ctx->pfd) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Logic error: NULL write FD\n");
+         Jmsg(ctx, M_FATAL, "Logic error: NULL write FD\n");
+         Dmsg(ctx, dbglvl, "Logic error: NULL write FD\n");
          return bRC_Error;
       }
-//    printf("bpipe-fd: IO_WRITE fd=%p buf=%p len=%d\n", p_ctx->fd, io->buf, io->count);
       io->status = fwrite(io->buf, 1, io->count, p_ctx->pfd->wfd);
-//    printf("bpipe-fd: IO_WRITE buf=%p len=%d\n", io->buf, io->status);
       if (io->status == 0 && ferror(p_ctx->pfd->wfd)) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
-            "Pipe write error\n");
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl,
-            "Pipe read error: ERR=%s\n", strerror(errno));
+         io->io_errno = errno;
+         Jmsg(ctx, M_FATAL, "Pipe write error: ERR=%s\n", strerror(io->io_errno));
+         Dmsg(ctx, dbglvl, "Pipe write error: ERR=%s\n", strerror(io->io_errno));
          return bRC_Error;
       }
       break;
-
    case IO_CLOSE:
       if (!p_ctx->pfd) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Logic error: NULL FD on bpipe close\n");
+         Jmsg(ctx, M_FATAL, "Logic error: NULL FD on bpipe close\n");
+         Dmsg(ctx, dbglvl, "Logic error: NULL FD on bpipe close\n");
          return bRC_Error;
       }
       io->status = close_bpipe(p_ctx->pfd);
       if (io->status) {
-         bfuncs->JobMessage(ctx, fi, li, M_ERROR, 0,
-                            "bpipe plugin: Error closing stream for pseudo file %s: %d\n",
-                            p_ctx->fname, io->status);
+         Jmsg(ctx, M_FATAL, "bpipe plugin: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
+         Dmsg(ctx, dbglvl, "bpipe plugin: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
       }
       break;
-
    case IO_SEEK:
       io->offset = p_ctx->offset;
       break;
    }
+
    return bRC_OK;
 }
 
@@ -445,12 +443,13 @@ static bRC endRestoreFile(bpContext *ctx)
  */
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 {
-// printf("bpipe-fd: createFile\n");
    if (strlen(rp->where) > 512) {
       printf("Restore target dir too long. Restricting to first 512 bytes.\n");
    }
+
    bstrncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where, 513);
    ((struct plugin_ctx *)ctx->pContext)->replace = rp->replace;
+
    rp->create_status = CF_EXTRACT;
    return bRC_OK;
 }
@@ -461,17 +460,18 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
  */
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 {
-// printf("bpipe-fd: setFileAttributes\n");
    return bRC_OK;
 }
 
-/* When using Incremental dump, all previous dumps are necessary */
+/*
+ * When using Incremental dump, all previous dumps are necessary
+ */
 static bRC checkFile(bpContext *ctx, char *fname)
 {
    return bRC_OK;
 }
 
-/*************************************************************************
+/*
  * Apply codes in writer command:
  * %w -> "where"
  * %r -> "replace"
@@ -486,7 +486,6 @@ static bRC checkFile(bpContext *ctx, char *fname)
  * Need to be free()d manually.
  * Inspired by edit_job_codes in lib/util.c
  */
-
 static char *apply_rp_codes(struct plugin_ctx * p_ctx)
 {
    char *p, *q;
@@ -514,7 +513,8 @@ static char *apply_rp_codes(struct plugin_ctx * p_ctx)
       }
    }
 
-   /* Required mem:
+   /*
+    * Required mem:
     * len(imsg)
     * + number of "where" codes * (len(where)-2)
     * - number of "replace" codes
@@ -526,7 +526,6 @@ static char *apply_rp_codes(struct plugin_ctx * p_ctx)
    }
 
    *omsg = 0;
-   //printf("apply_rp_codes: %s\n", imsg);
    for (p=imsg; *p; p++) {
       if (*p == '%') {
          switch (*++p) {
@@ -552,9 +551,7 @@ static char *apply_rp_codes(struct plugin_ctx * p_ctx)
          add[1] = 0;
          str = add;
       }
-      //printf("add_str %s\n", str);
       strcat(omsg, str);
-      //printf("omsg=%s\n", omsg);
    }
    return omsg;
 }

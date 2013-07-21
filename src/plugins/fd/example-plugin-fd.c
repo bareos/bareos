@@ -201,11 +201,16 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
    case bEventEndRestoreJob:
       printf("plugin: EndRestoreJob\n");
       break;
-   /* Plugin command e.g. plugin = <plugin-name>:<name-space>:command */
    case bEventRestoreCommand:
+      /*
+       * Plugin command e.g. plugin = <plugin-name>:<name-space>:command
+       */
       printf("plugin: backup command=%s\n", NPRT((char *)value));
       break;
    case bEventBackupCommand:
+      /*
+       * Plugin command e.g. plugin = <plugin-name>:<name-space>:command
+       */
       printf("plugin: backup command=%s\n", NPRT((char *)value));
       break;
    case bEventComponentInfo:
@@ -215,18 +220,16 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       printf("plugin: unknown event=%d\n", event->eventType);
    }
    bfuncs->getBareosValue(ctx, bVarFDName, (void *)&name);
-// printf("FD Name=%s\n", name);
-// bfuncs->JobMessage(ctx, __FILE__, __LINE__, 1, 0, "JobMesssage message");
-// bfuncs->DebugMessage(ctx, __FILE__, __LINE__, 1, "DebugMesssage message");
+
    return bRC_OK;
 }
 
 /*
  * Called when starting to backup a file.  Here the plugin must
- *  return the "stat" packet for the directory/file and provide
- *  certain information so that Bareos knows what the file is.
- *  The plugin can create "Virtual" files by giving them a
- *  name that is not normally found on the file system.
+ * return the "stat" packet for the directory/file and provide
+ * certain information so that Bareos knows what the file is.
+ * The plugin can create "Virtual" files by giving them a
+ * name that is not normally found on the file system.
  */
 static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
 {
@@ -242,9 +245,8 @@ static bRC endBackupFile(bpContext *ctx)
 }
 
 /*
- * Do actual I/O.  Bareos calls this after startBackupFile
- *   or after startRestoreFile to do the actual file
- *   input or output.
+ * Do actual I/O. Bareos calls this after startBackupFile
+ * or after startRestoreFile to do the actual file input or output.
  */
 static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
 {
@@ -279,10 +281,10 @@ static bRC endRestoreFile(bpContext *ctx)
 
 /*
  * Called here to give the plugin the information needed to
- *  re-create the file on a restore.  It basically gets the
- *  stat packet that was created during the backup phase.
- *  This data is what is needed to create the file, but does
- *  not contain actual file data.
+ * re-create the file on a restore.  It basically gets the
+ * stat packet that was created during the backup phase.
+ * This data is what is needed to create the file, but does
+ * not contain actual file data.
  */
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 {
@@ -290,15 +292,16 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 }
 
 /*
- * Called after the file has been restored. This can be used to
- *  set directory permissions, ...
+ * Called after the file has been restored. This can be used to set directory permissions, ...
  */
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 {
    return bRC_OK;
 }
 
-/* When using Incremental dump, all previous dumps are necessary */
+/*
+ * When using Incremental dump, all previous dumps are necessary
+ */
 static bRC checkFile(bpContext *ctx, char *fname)
 {
    return bRC_OK;
