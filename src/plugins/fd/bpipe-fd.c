@@ -27,13 +27,6 @@
 #include "fd_plugins.h"
 #include "fd_common.h"
 
-#undef malloc
-#undef free
-#undef strdup
-
-#define fi __FILE__
-#define li __LINE__
-
 static const int dbglvl = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -243,7 +236,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       char *p;
 
       Dmsg(ctx, dbglvl, "bpipe-fd: pluginEvent cmd=%s\n", (char *)value);
-      p_ctx->cmd = strdup((char *)value);
+      p_ctx->cmd = bstrdup((char *)value);
       p = strchr(p_ctx->cmd, ':');
       if (!p) {
          Jmsg(ctx, M_FATAL, "Plugin terminator not found: %s\n", (char *)value);

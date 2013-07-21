@@ -27,10 +27,6 @@
 #include "fd_plugins.h"
 #include "fd_common.h"
 
-#undef malloc
-#undef free
-#undef strdup
-
 static const int dbglvl = 0;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
