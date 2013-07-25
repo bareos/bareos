@@ -1479,7 +1479,6 @@ void ndmp_backup_cleanup(JCR *jcr, int TermCode)
    const char *term_msg;
    char term_code[100];
    int msg_type = M_INFO;
-   MEDIA_DBR mr;
    CLIENT_DBR cr;
 
    Dmsg2(100, "Enter ndmp_backup_cleanup %d %c\n", TermCode, TermCode);
@@ -1509,13 +1508,6 @@ void ndmp_backup_cleanup(JCR *jcr, int TermCode)
    if (!db_get_client_record(jcr, jcr->db, &cr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"),
          db_strerror(jcr->db));
-   }
-
-   bstrncpy(mr.VolumeName, jcr->VolumeName, sizeof(mr.VolumeName));
-   if (!db_get_media_record(jcr, jcr->db, &mr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error getting Media record for Volume \"%s\": ERR=%s"),
-         mr.VolumeName, db_strerror(jcr->db));
-      jcr->setJobStatus(JS_ErrorTerminated);
    }
 
    update_bootstrap_file(jcr);
@@ -1557,7 +1549,7 @@ void ndmp_backup_cleanup(JCR *jcr, int TermCode)
          break;
    }
 
-   generate_backup_summary(jcr, &mr, &cr, msg_type, term_msg);
+   generate_backup_summary(jcr, &cr, msg_type, term_msg);
 
    Dmsg0(100, "Leave ndmp_backup_cleanup\n");
 }

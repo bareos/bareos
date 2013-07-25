@@ -597,7 +597,6 @@ void native_backup_cleanup(JCR *jcr, int TermCode)
    const char *term_msg;
    char term_code[100];
    int msg_type = M_INFO;
-   MEDIA_DBR mr;
    CLIENT_DBR cr;
 
    Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
@@ -627,13 +626,6 @@ void native_backup_cleanup(JCR *jcr, int TermCode)
    if (!db_get_client_record(jcr, jcr->db, &cr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"),
          db_strerror(jcr->db));
-   }
-
-   bstrncpy(mr.VolumeName, jcr->VolumeName, sizeof(mr.VolumeName));
-   if (!db_get_media_record(jcr, jcr->db, &mr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error getting Media record for Volume \"%s\": ERR=%s"),
-         mr.VolumeName, db_strerror(jcr->db));
-      jcr->setJobStatus(JS_ErrorTerminated);
    }
 
    update_bootstrap_file(jcr);
@@ -678,7 +670,7 @@ void native_backup_cleanup(JCR *jcr, int TermCode)
          break;
    }
 
-   generate_backup_summary(jcr, &mr, &cr, msg_type, term_msg);
+   generate_backup_summary(jcr, &cr, msg_type, term_msg);
 
    Dmsg0(100, "Leave backup_cleanup()\n");
 }
@@ -761,8 +753,7 @@ void update_bootstrap_file(JCR *jcr)
  *    - native_vbackup_cleanup e.g. virtual backups
  *    - ndmp_backup_cleanup e.g. NDMP backups
  */
-void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
-                             int msg_type, const char *term_msg)
+void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char *term_msg)
 {
    char sdt[50], edt[50], schedt[50], gdt[50];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], compress[50];
@@ -770,6 +761,7 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
    char fd_term_msg[100], sd_term_msg[100];
    double kbps, compression;
    utime_t RunTime;
+   MEDIA_DBR mr;
    POOL_MEM level_info,
             statistics,
             quota_info,
@@ -801,6 +793,23 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
          Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
       }
       jcr->VolumeName[0] = 0;         /* none */
+   }
+
+   if (jcr->VolumeName[0]) {
+      /*
+       * Find last volume name. Multiple vols are separated by |
+       */
+      char *p = strrchr(jcr->VolumeName, '|');
+      if (p) {
+         p++;                         /* skip | */
+      } else {
+         p = jcr->VolumeName;     /* no |, take full name */
+      }
+      bstrncpy(mr.VolumeName, p, sizeof(mr.VolumeName));
+      if (!db_get_media_record(jcr, jcr->db, &mr)) {
+         Jmsg(jcr, M_WARNING, 0, _("Error getting Media record for Volume \"%s\": ERR=%s"),
+              mr.VolumeName, db_strerror(jcr->db));
+      }
    }
 
    if (jcr->ReadBytes == 0) {
@@ -986,8 +995,8 @@ void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
         jcr->VolumeName,
         jcr->VolSessionId,
         jcr->VolSessionTime,
-        edit_uint64_with_commas(mr->VolBytes, ec7),
-        edit_uint64_with_suffix(mr->VolBytes, ec8),
+        edit_uint64_with_commas(mr.VolBytes, ec7),
+        edit_uint64_with_suffix(mr.VolBytes, ec8),
         daemon_status.c_str(),
         term_msg);
 }

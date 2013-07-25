@@ -53,8 +53,8 @@ bool do_native_backup(JCR *jcr);
 void native_backup_cleanup(JCR *jcr, int TermCode);
 void update_bootstrap_file(JCR *jcr);
 bool send_accurate_current_files(JCR *jcr);
-void generate_backup_summary(JCR *jcr, MEDIA_DBR *mr, CLIENT_DBR *cr,
-                             int msg_type, const char *term_msg);
+void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type,
+                             const char *term_msg);
 
 /* vbackup.c */
 bool do_native_vbackup_init(JCR *jcr);
