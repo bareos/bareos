@@ -1456,8 +1456,6 @@ void migration_cleanup(JCR *jcr, int TermCode)
       if (jcr->remote_replicate) {
          mig_jcr->JobFiles = jcr->JobFiles = mig_jcr->SDJobFiles;
          mig_jcr->JobBytes = jcr->JobBytes = mig_jcr->SDJobBytes;
-         mig_jcr->VolSessionId = mig_jcr->VolSessionId;
-         mig_jcr->VolSessionTime = mig_jcr->VolSessionTime;
       } else {
          mig_jcr->JobFiles = jcr->JobFiles = jcr->SDJobFiles;
          mig_jcr->JobBytes = jcr->JobBytes = jcr->SDJobBytes;
