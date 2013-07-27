@@ -504,15 +504,19 @@ ndma_session_destroy (struct ndm_session *sess)
 
 	if (sess->plumb.control) {
 		ndmconn_destruct (sess->plumb.control);
+		sess->plumb.control = NULL;
 	}
 	if (sess->plumb.data) {
 		ndmconn_destruct (sess->plumb.data);
+		sess->plumb.data = NULL;
 	}
 	if (sess->plumb.tape) {
 		ndmconn_destruct (sess->plumb.tape);
+		sess->plumb.tape = NULL;
 	}
 	if (sess->plumb.robot) {
 		ndmconn_destruct (sess->plumb.robot);
+		sess->plumb.robot = NULL;
 	}
 
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT

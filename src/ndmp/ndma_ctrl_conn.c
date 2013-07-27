@@ -128,6 +128,7 @@ ndmca_connect_tape_agent (struct ndm_session *sess)
 		rc = ndmca_connect_data_agent (sess);
 		if (rc) {
 			ndmconn_destruct (sess->plumb.data);
+			sess->plumb.data = NULL;
 			return rc;
 		}
 		sess->plumb.tape = sess->plumb.data;
