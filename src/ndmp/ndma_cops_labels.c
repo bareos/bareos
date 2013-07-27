@@ -76,6 +76,7 @@ ndmca_op_init_labels (struct ndm_session *sess)
 	rc = ndmca_connect_tape_agent (sess);
 	if (rc) {
 		ndmconn_destruct (sess->plumb.tape);
+		sess->plumb.tape = NULL;
 		return rc;	/* already tattled */
 	}
 
@@ -132,6 +133,7 @@ ndmca_op_list_labels (struct ndm_session *sess)
 
 	if ((rc = ndmca_connect_tape_agent (sess)) != 0) {
 		ndmconn_destruct (sess->plumb.tape);
+		sess->plumb.tape = NULL;
 		return rc;	/* already tattled */
 	}
 
