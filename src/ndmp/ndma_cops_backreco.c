@@ -649,6 +649,7 @@ ndmca_backreco_startup (struct ndm_session *sess)
 	rc = ndmca_connect_data_agent(sess);
 	if (rc) {
 		ndmconn_destruct (sess->plumb.data);
+		sess->plumb.data = NULL;
 		return rc;
 	}
 
@@ -659,6 +660,7 @@ ndmca_backreco_startup (struct ndm_session *sess)
 	rc = ndmca_connect_tape_agent(sess);
 	if (rc) {
 		ndmconn_destruct (sess->plumb.tape);
+		sess->plumb.tape = NULL;
 		return rc;
 	}
 
