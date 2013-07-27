@@ -104,7 +104,10 @@ ndmconn_destruct (struct ndmconn *conn)
 		conn->chan.fd = -1;
 	}
 
-	xdr_destroy (&conn->xdrs);
+	if (conn->xdrs.x_ops) {
+		xdr_destroy (&conn->xdrs);
+		conn->xdrs.x_ops = NULL;
+	}
 
 	if (conn->was_allocated) {
 		NDMOS_API_FREE (conn);

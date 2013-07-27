@@ -141,6 +141,7 @@ ndmca_op_test_mover (struct ndm_session *sess)
 		rc = ndmca_connect_data_agent (sess);
 		if (rc) {
 			ndmconn_destruct (sess->plumb.data);
+			sess->plumb.data = NULL;
 			return rc;
 		}
 	}
