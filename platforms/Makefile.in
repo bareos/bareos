@@ -24,31 +24,31 @@ all:
 	done
 
 install:
-	@if test x$(DISTNAME) != x ; then \
+	@if test x$(DISTNAME) != x -a -f $(DISTNAME)/Makefile ; then \
 	   (cd $(DISTNAME); \
 	      $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
 	fi
 
 install-autostart:
-	@if test x$(DISTNAME) != x ; then \
+	@if test x$(DISTNAME) != x -a -f $(DISTNAME)/Makefile ; then \
 	   (cd $(DISTNAME); \
 	      $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
 	fi
 
 install-autostart-dir:
-	@if test x$(DISTNAME) != x ; then \
+	@if test x$(DISTNAME) != x -a -f $(DISTNAME)/Makefile ; then \
 	   (cd $(DISTNAME); \
 	      $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
 	fi
 
 install-autostart-fd:
-	@if test x$(DISTNAME) != x ; then \
+	@if test x$(DISTNAME) != x -a -f $(DISTNAME)/Makefile ; then \
 	   (cd $(DISTNAME); \
 	      $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
 	fi
 
 install-autostart-sd:
-	@if test x$(DISTNAME) != x ; then \
+	@if test x$(DISTNAME) != x -a -f $(DISTNAME)/Makefile ; then \
 	   (cd $(DISTNAME); \
 	      $(MAKE) DESTDIR=$(DESTDIR) "DISTNAME=$(DISTNAME)" "DISTVER=$(DISTVER)" $@) \
 	fi
