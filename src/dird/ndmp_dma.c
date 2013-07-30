@@ -2177,6 +2177,12 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
     * Setup all paired read storage.
     */
    set_paired_storage(jcr);
+   if (!jcr->res.pstore) {
+      Jmsg(jcr, M_FATAL, 0,
+           _("Read storage %s doesn't point to storage definition with paired storage option.\n"),
+           jcr->res.rstore->name());
+      goto bail_out;
+   }
 
    /*
     * Open the bootstrap file
@@ -2191,7 +2197,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
    bsr = jcr->bsr;
    while (!feof(info.bs)) {
       if (!select_next_rstore(jcr, info)) {
-         goto bail_out;
+         goto cleanup;
       }
 
       /*
@@ -2200,7 +2206,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
        * part of the whole job. We only free the env_table between every sub-restore.
        */
       if (!build_ndmp_job(jcr, jcr->res.client, jcr->res.pstore, NDM_JOB_OP_EXTRACT, &ndmp_job)) {
-         goto bail_out;
+         goto cleanup;
       }
 
       /*
@@ -2216,7 +2222,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
        * Start conversation with Storage daemon
        */
       if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
-         goto bail_out;
+         goto cleanup;
       }
       sd = jcr->store_bsock;
 
@@ -2224,7 +2230,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
        * Now start a job with the Storage daemon
        */
       if (!start_storage_daemon_job(jcr, jcr->rstorage, NULL)) {
-         goto bail_out;
+         goto cleanup;
       }
 
       jcr->setJobStatus(JS_Running);
@@ -2234,18 +2240,18 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
        */
       if (!send_bootstrap_file(jcr, sd, info) ||
           !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR)) {
-         goto bail_out;
+         goto cleanup;
       }
 
       if (!sd->fsend("run")) {
-         goto bail_out;
+         goto cleanup;
       }
 
       /*
        * Now start a Storage daemon message thread
        */
       if (!start_storage_daemon_message_thread(jcr)) {
-         goto bail_out;
+         goto cleanup;
       }
       Dmsg0(50, "Storage daemon connection OK\n");
 
@@ -2292,7 +2298,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
              * Initialize the session structure.
              */
             if (ndma_session_initialize(&ndmp_sess)) {
-               goto cleanup;
+               goto cleanup_ndmp;
             }
             session_initialized = true;
 
@@ -2303,26 +2309,26 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
             if (!fill_restore_environment(jcr,
                                           current_fi,
                                           &ndmp_sess.control_acb->job)) {
-               goto cleanup;
+               goto cleanup_ndmp;
             }
 
             ndma_job_auto_adjust(&ndmp_sess.control_acb->job);
             if (!validate_ndmp_job(jcr, &ndmp_sess.control_acb->job)) {
-               goto cleanup;
+               goto cleanup_ndmp;
             }
 
             /*
              * Commission the session for a run.
              */
             if (ndma_session_commission(&ndmp_sess)) {
-               goto cleanup;
+               goto cleanup_ndmp;
             }
 
             /*
              * Setup the DMA.
              */
             if (ndmca_connect_control_agent(&ndmp_sess)) {
-               goto cleanup;
+               goto cleanup_ndmp;
             }
 
             ndmp_sess.conn_open = 1;
@@ -2332,14 +2338,14 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
              * Let the DMA perform its magic.
              */
             if (ndmca_control_agent(&ndmp_sess) != 0) {
-               goto cleanup;
+               goto cleanup_ndmp;
             }
 
             /*
              * See if there were any errors during the restore.
              */
             if (!extract_post_restore_stats(jcr, &ndmp_sess)) {
-               goto cleanup;
+               goto cleanup_ndmp;
             }
 
             /*
@@ -2398,9 +2404,9 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
     * Jump to the generic cleanup done for every Job.
     */
    retval = true;
-   goto bail_out;
+   goto cleanup;
 
-cleanup:
+cleanup_ndmp:
    /*
     * Only need to cleanup when things are initialized.
     */
@@ -2425,9 +2431,11 @@ cleanup:
       free(ndmp_sess.param);
    }
 
-bail_out:
+cleanup:
    free_paired_storage(jcr);
    close_bootstrap_file(info);
+
+bail_out:
    free_tree(jcr->restore_tree_root);
    jcr->restore_tree_root = NULL;
    return retval;
