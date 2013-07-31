@@ -39,7 +39,7 @@ Source2:         clientdialog.ini
 Source3:         directordialog.ini
 Source4:         KillProcWMI.dll
 Source5:         bareos.ico
-
+Source6:         AccessControl.dll
 %description
 bareos
 
@@ -59,7 +59,8 @@ bareos
 %build
 
 mkdir -p $RPM_BUILD_ROOT/nsisplugins
-cp %SOURCE4 $RPM_BUILD_ROOT/nsisplugins
+cp %SOURCE4 $RPM_BUILD_ROOT/nsisplugins  #  KillProcWMI
+cp %SOURCE6 $RPM_BUILD_ROOT/nsisplugins  #  AccessControl
 
 mkdir  $RPM_BUILD_ROOT/release32
 mkdir  $RPM_BUILD_ROOT/release64
@@ -84,8 +85,8 @@ for cfg in /etc/mingw64-winbareos/*.conf; do
       cp $cfg $RPM_BUILD_ROOT/release64
 done
 
-cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release32
-cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
+cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %SOURCE6 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release32
+cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %SOURCE6 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
 
 makensis -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=32 $RPM_BUILD_ROOT/release32/winbareos.nsi
 makensis -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=64 $RPM_BUILD_ROOT/release64/winbareos.nsi

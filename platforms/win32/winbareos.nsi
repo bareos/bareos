@@ -181,6 +181,33 @@ FunctionEnd
     Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
   ${EndIf}
  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Edit ${fname}.lnk" "write.exe" '"$APPDATA\${PRODUCT_NAME}\${fname}"'
+
+# disable file access inheritance
+ AccessControl::DisableFileInheritance "$APPDATA\${PRODUCT_NAME}\${fname}"
+ Pop $R0
+ DetailPrint `AccessControl result: $R0`
+ ${If} $R0 == error
+    Pop $R0
+    DetailPrint `AccessControl error: $R0`
+ ${EndIf}
+
+# set file owner to administrator
+ AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)"  # administratoren
+ Pop $R0
+ DetailPrint `AccessControl result: $R0`
+ ${If} $R0 == error
+    Pop $R0
+    DetailPrint `AccessControl error: $R0`
+ ${EndIf}
+
+# set fullaccess only for administrators (S-1-5-32-544)
+ AccessControl::ClearOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)" "FullAccess"
+ Pop $R0
+ DetailPrint `AccessControl result: $R0`
+ ${If} $R0 == error
+    Pop $R0
+    DetailPrint `AccessControl error: $R0`
+ ${EndIf}
 !macroend
 
 
@@ -283,6 +310,7 @@ SectionIn 1 2 3
 
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
+  CreateDirectory "$INSTDIR\Plugins"
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
   File "bareos-fd.exe"
@@ -893,6 +921,7 @@ ConfDeleteSkip:
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
   RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
+  RMDir "$INSTDIR\Plugins"
   RMDir "$INSTDIR"
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
@@ -924,22 +953,3 @@ Push $R1
 Pop $R1
 Pop $R0
 FunctionEnd
-
-
-
-# TODO:
-# - access on conf files has to be limited to administrators
-# - tray-monitor automatic start at login
-# - tray-monitor does not work right now (why?)
-# - create snippet for restricted console that is only allowed to access
-#   this client
-#
-# DONE:
-# - silent installer with configurable parameters that are otherwise in the forms
-# - find out if a prior version is already installed and use that install directory or uninstall it first
-# - add firewall rule for bareos-fd after installation.
-# - put the config files in $APPDATA
-# - add section bconsole automatically when section bat is selected
-# - add license information to installer
-# - kill tray monitor before installing / updateing TODO: testing
-# - replace "the network backups solution" by "backup archiving recovery open sourced"
