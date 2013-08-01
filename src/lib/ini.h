@@ -48,7 +48,9 @@
 class ConfigFile;
 struct ini_items;
 
-/* Used to store result */
+/*
+ * Used to store result
+ */
 typedef union {
    char    *strval;
    char    nameval[MAX_NAME_LENGTH];
@@ -58,12 +60,15 @@ typedef union {
    bool    boolval;
 } item_value;
 
-/* These functions are used to convert a string to the appropriate value */
+/*
+ * These functions are used to convert a string to the appropriate value
+ */
 typedef
 bool (INI_ITEM_HANDLER)(LEX *lc, ConfigFile *inifile,
                         struct ini_items *item);
 
-/* If no items are registred at the scan time, we detect this list from
+/*
+ * If no items are registred at the scan time, we detect this list from
  * the file itself
  */
 struct ini_items {
@@ -80,15 +85,18 @@ struct ini_items {
    item_value val;              /* val contains the value */
 };
 
-/* When reading a ini file, we limit the number of items that we
- *  can create
+/*
+ * When reading a ini file, we limit the number of items that we can create
  */
 #define MAX_INI_ITEMS 32
 
-/* Special RestoreObject name used to get user input at restore time */
+/*
+ * Special RestoreObject name used to get user input at restore time
+ */
 #define INI_RESTORE_OBJECT_NAME    "RestoreOptions"
 
-/* Can be used to set re_value, in_value, default_value, found and val to 0
+/*
+ * Can be used to set re_value, in_value, default_value, found and val to 0
  * G++ looks to allow partial declaration, let see with an other compiler
  */
 #define ITEMS_DEFAULT    NULL,NULL,NULL,0,{0}
@@ -142,35 +150,52 @@ public:
       free_items();
    }
 
-   /* Dump a config string to out_fname */
+   /*
+    * Dump a config string to out_fname
+    */
    bool dump_string(const char *buf, int32_t len);
 
-   /* JCR needed for Jmsg */
+   /*
+    * JCR needed for Jmsg
+    */
    void set_jcr(JCR *ajcr) {
       jcr = ajcr;
    }
 
-   /* Free malloced items such as char* or alist or items */
+   /*
+    * Free malloced items such as char* or alist or items
+    */
    void free_items();
 
-   /* Clear items member */
+   /*
+    * Clear items member
+    */
    void clear_items();
 
-   /* Dump the item table to a file (used on plugin side) */
+   /*
+    * Dump the item table to a file (used on plugin side)
+    */
    bool serialize(const char *fname);
 
-   /* Dump the item table format to a buffer (used on plugin side)
+   /*
+    * Dump the item table format to a buffer (used on plugin side)
     * returns the length of the buffer, -1 if error
     */
    int serialize(POOLMEM **buf);
 
-   /* Dump the item table content to a buffer */
+   /*
+    * Dump the item table content to a buffer
+    */
    int dump_results(POOLMEM **buf);
 
-   /* Get item position in items list (useful when dynamic) */
+   /*
+    * Get item position in items list (useful when dynamic)
+    */
    int get_item(const char *name);
 
-   /* Register config file structure, if size doesn't match */
+   /*
+    * Register config file structure, if size doesn't match
+    */
    bool register_items(struct ini_items *aitems, int size) {
       int i;
       if (sizeof_ini_items == size) {
@@ -183,10 +208,14 @@ public:
       return false;
    }
 
-   /* Parse a ini file with a item list previously registred (plugin side) */
+   /*
+    * Parse a ini file with a item list previously registred (plugin side)
+    */
    bool parse(const char *filename);
 
-   /* Create a item list from a ini file (director side) */
+   /*
+    * Create a item list from a ini file (director side)
+    */
    bool unserialize(const char *filename);
 };
 
@@ -204,10 +233,14 @@ bool ini_store_pint32(LEX *lc, ConfigFile *inifile, ini_items *item);
 bool ini_store_int32(LEX *lc, ConfigFile *inifile, ini_items *item);
 bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item);
 
-/* Get handler code from handler @ */
+/*
+ * Get handler code from handler @
+ */
 const char *ini_get_store_code(INI_ITEM_HANDLER *handler);
 
-/* Get handler function from handler name */
+/*
+ * Get handler function from handler name
+ */
 INI_ITEM_HANDLER *ini_get_store_handler(const char *);
 
 #endif

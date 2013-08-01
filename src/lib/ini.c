@@ -154,7 +154,9 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
    }
 }
 
-/* Reset free items */
+/*
+ * Reset free items
+ */
 void ConfigFile::clear_items()
 {
    if (!items) {
@@ -163,7 +165,9 @@ void ConfigFile::clear_items()
 
    for (int i = 0; items[i].name; i++) {
       if (items[i].found) {
-         /* special members require delete or free */
+         /*
+          * Special members require delete or free
+          */
          if (items[i].handler == ini_store_str) {
             free(items[i].val.strval);
             items[i].val.strval = NULL;
@@ -190,7 +194,9 @@ void ConfigFile::free_items()
    items_allocated = false;
 }
 
-/* Get a particular item from the items list */
+/*
+ * Get a particular item from the items list
+ */
 int ConfigFile::get_item(const char *name)
 {
    if (!items) {
@@ -198,20 +204,21 @@ int ConfigFile::get_item(const char *name)
    }
 
    for (int i = 0; i < MAX_INI_ITEMS && items[i].name; i++) {
-      if (strcasecmp(name, items[i].name) == 0) {
+      if (bstrcasecmp(name, items[i].name)) {
          return i;
       }
    }
    return -1;
 }
 
-/* Dump a buffer to a file in the working directory
+/*
+ * Dump a buffer to a file in the working directory
  * Needed to unserialise() a config
  */
 bool ConfigFile::dump_string(const char *buf, int32_t len)
 {
    FILE *fp;
-   bool ret=false;
+   bool ret = false;
 
    if (!out_fname) {
       out_fname = get_pool_memory(PM_FNAME);
@@ -231,7 +238,9 @@ bool ConfigFile::dump_string(const char *buf, int32_t len)
    return ret;
 }
 
-/* Dump the item table format to a text file (used by plugin) */
+/*
+ * Dump the item table format to a text file (used by plugin)
+ */
 bool ConfigFile::serialize(const char *fname)
 {
    FILE *fp;
@@ -259,7 +268,9 @@ bool ConfigFile::serialize(const char *fname)
    return ret;
 }
 
-/* Dump the item table format to a text file (used by plugin) */
+/*
+ * Dump the item table format to a text file (used by plugin)
+ */
 int ConfigFile::serialize(POOLMEM **buf)
 {
    int len;
@@ -297,7 +308,9 @@ int ConfigFile::serialize(POOLMEM **buf)
    return len ;
 }
 
-/* Dump the item table content to a text file (used by director) */
+/*
+ * Dump the item table content to a text file (used by director)
+ */
 int ConfigFile::dump_results(POOLMEM **buf)
 {
    int len;
@@ -326,11 +339,13 @@ int ConfigFile::dump_results(POOLMEM **buf)
    return len ;
 }
 
-/* Parse a config file used by Plugin/Director */
+/*
+ * Parse a config file used by Plugin/Director
+ */
 bool ConfigFile::parse(const char *fname)
 {
    int token, i;
-   bool ret=false;
+   bool ret = false;
 
    if (!items) {
       return false;
@@ -351,7 +366,7 @@ bool ConfigFile::parse(const char *fname)
          continue;
       }
       for (i = 0; items[i].name; i++) {
-         if (strcasecmp(items[i].name, lc->str) == 0) {
+         if (bstrcasecmp(items[i].name, lc->str)) {
             if ((token = lex_get_token(lc, T_EQUALS)) == T_ERROR) {
                Dmsg1(dbglevel, "in T_IDENT got token=%s\n",
                      lex_tok_to_str(token));
@@ -359,7 +374,9 @@ bool ConfigFile::parse(const char *fname)
             }
 
             Dmsg1(dbglevel, "calling handler for %s\n", items[i].name);
-            /* Call item handler */
+            /*
+             * Call item handler
+             */
             ret = items[i].found = items[i].handler(lc, this, &items[i]);
             i = -1;
             break;
@@ -368,7 +385,9 @@ bool ConfigFile::parse(const char *fname)
       if (i >= 0) {
          Dmsg1(dbglevel, "Keyword = %s\n", lc->str);
          scan_err1(lc, "Keyword %s not found", lc->str);
-         /* We can raise an error here */
+         /*
+          * We can raise an error here
+          */
          break;
       }
       if (!ret) {
@@ -388,7 +407,8 @@ bool ConfigFile::parse(const char *fname)
    return ret;
 }
 
-/* Analyse the content of a ini file to build the item list
+/*
+ * Analyse the content of a ini file to build the item list
  * It uses special syntax for datatype. Used by Director on Restore object
  *
  * OptPrompt = "Variable1"
@@ -400,17 +420,21 @@ bool ConfigFile::parse(const char *fname)
 bool ConfigFile::unserialize(const char *fname)
 {
    int token, i, nb = 0;
-   bool ret=false;
+   bool ret = false;
    const char **assign;
 
-   /* At this time, we allow only 32 different items */
+   /*
+    * At this time, we allow only 32 different items
+    */
    int s = MAX_INI_ITEMS * sizeof (struct ini_items);
 
    items = (struct ini_items *) malloc (s);
    memset(items, 0, s);
    items_allocated = true;
 
-   /* parse the file and generate the items structure on the fly */
+   /*
+    * Parse the file and generate the items structure on the fly
+    */
    if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
       berrno be;
       Emsg2(M_ERROR, 0, _("Cannot open config file %s: %s\n"),
@@ -434,13 +458,13 @@ bool ConfigFile::unserialize(const char *fname)
          break;
       }
 
-      if (strcasecmp("optprompt", lc->str) == 0) {
+      if (bstrcasecmp("optprompt", lc->str)) {
          assign = &(items[nb].comment);
 
-      } else if (strcasecmp("optdefault", lc->str) == 0) {
+      } else if (bstrcasecmp("optdefault", lc->str)) {
          assign = &(items[nb].default_value);
 
-      } else if (strcasecmp("optrequired", lc->str) == 0) {
+      } else if (bstrcasecmp("optrequired", lc->str)) {
          items[nb].required = true;               /* Don't use argument */
          scan_to_eol(lc);
          continue;
@@ -457,7 +481,9 @@ bool ConfigFile::unserialize(const char *fname)
          break;
       }
 
-      /* We may allow blank variable */
+      /*
+       * We may allow blank variable
+       */
       if (lex_get_token(lc, T_STRING) == T_ERROR) {
          break;
       }
@@ -490,9 +516,8 @@ bool ConfigFile::unserialize(const char *fname)
    return ret;
 }
 
-/* ----------------------------------------------------------------
+/*
  * Handle data type. Import/Export
- * ----------------------------------------------------------------
  */
 bool ini_store_str(LEX *lc, ConfigFile *inifile, ini_items *item)
 {
@@ -530,7 +555,9 @@ bool ini_store_alist_str(LEX *lc, ConfigFile *inifile, ini_items *item)
 {
    alist *list;
    if (!lc) {
-      /* TODO, write back the alist to edit buffer */
+      /*
+       * TODO, write back the alist to edit buffer
+       */
       return true;
    }
    if (lex_get_token(lc, T_STRING) == T_ERROR) {
@@ -617,12 +644,14 @@ bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item)
    if (lex_get_token(lc, T_NAME) == T_ERROR) {
       return false;
    }
-   if (strcasecmp(lc->str, "yes") == 0 || strcasecmp(lc->str, "true") == 0) {
+   if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
       item->val.boolval = true;
-   } else if (strcasecmp(lc->str, "no") == 0 || strcasecmp(lc->str, "false") == 0) {
+   } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
       item->val.boolval = false;
    } else {
-      /* YES and NO must not be translated */
+      /*
+       * YES and NO must not be translated
+       */
       scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str);
       return false;
    }
