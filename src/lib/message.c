@@ -63,7 +63,7 @@ job_code_callback_t message_job_code_callback = NULL; /* Job code callback. Only
 /* Forward referenced functions */
 
 /* Imported functions */
-void create_jcr_key();
+void setup_tsd_key();
 
 /* Static storage */
 
@@ -270,10 +270,10 @@ void init_msg(JCR *jcr, MSGSRES *msg, job_code_callback_t job_code_callback)
    if (jcr == NULL && msg == NULL) {
       init_last_jobs_list();
       /*
-       * Create a daemon key then set invalid jcr
+       * Setup a daemon key then set invalid jcr
        * Maybe we should give the daemon a jcr???
        */
-      create_jcr_key();
+      setup_tsd_key();
       set_jcr_in_tsd(INVALID_JCR);
    }
 
