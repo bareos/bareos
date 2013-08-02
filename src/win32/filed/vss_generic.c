@@ -354,10 +354,10 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
    HRESULT hr;
    // Initialize COM
    if (!m_bCoInitializeCalled) {
-      hr = CoInitialize(NULL);
+      hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
       if (FAILED(hr)) {
-         Dmsg1(0, "VSSClientGeneric::Initialize: CoInitialize returned 0x%08X\n", hr);
-         JmsgVssApiStatus(m_jcr, M_FATAL, hr, "CoInitialize");
+         Dmsg1(0, "VSSClientGeneric::Initialize: CoInitializeEx returned 0x%08X\n", hr);
+         JmsgVssApiStatus(m_jcr, M_FATAL, hr, "CoInitializeEx");
          errno = b_errno_win32;
          return false;
       }
@@ -676,7 +676,7 @@ bool VSSClientGeneric::CloseBackup()
    pVssObj->Release();
    m_pVssObject = NULL;
 
-   // Call CoUninitialize if the CoInitialize was performed sucesfully
+   // Call CoUninitialize if the CoInitializeEx was performed sucesfully
    if (m_bCoInitializeCalled) {
       CoUninitialize();
       m_bCoInitializeCalled = false;
