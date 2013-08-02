@@ -75,8 +75,18 @@ static dlist *jcrs = NULL;            /* JCR chain */
 static pthread_mutex_t jcr_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t job_start_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t last_jobs_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+#ifdef HAVE_WIN32
+static bool tsd_initialized = false;
+static pthread_key_t jcr_key;         /* Pointer to jcr for each thread */
+#else
+#ifdef PTHREAD_ONCE_KEY_NP
+static pthread_key_t jcr_key = PTHREAD_ONCE_KEY_NP;
+#else
 static pthread_key_t jcr_key;         /* Pointer to jcr for each thread */
 static pthread_once_t key_once = PTHREAD_ONCE_INIT;
+#endif
+#endif
 
 static char Job_status[]     = "Status Job=%s JobStatus=%d\n";
 
@@ -312,16 +322,49 @@ static void job_end_pop(JCR *jcr)
 }
 
 /*
- * Create thread key for thread specific data
+ * Create thread key for thread specific data.
  */
-void create_jcr_key()
+static void create_jcr_key()
 {
-   int status = pthread_key_create(&jcr_key, NULL);
+   int status;
+
+#ifdef PTHREAD_ONCE_KEY_NP
+   status = pthread_key_create_once_np(&jcr_key, NULL);
+#else
+   status = pthread_key_create(&jcr_key, NULL);
+#endif
    if (status != 0) {
       berrno be;
       Jmsg1(NULL, M_ABORT, 0, _("pthread key create failed: ERR=%s\n"),
             be.bstrerror(status));
    }
+}
+
+/*
+ * Setup thread key for thread specific data.
+ */
+void setup_tsd_key()
+{
+#ifdef HAVE_WIN32
+   P(jcr_lock);
+   if (!tsd_initialized) {
+      create_jcr_key();
+      tsd_initialized = true;
+   }
+   V(jcr_lock);
+#else
+#ifdef PTHREAD_ONCE_KEY_NP
+   create_jcr_key();
+#else
+   int status;
+
+   status = pthread_once(&key_once, create_jcr_key);
+   if (status != 0) {
+      berrno be;
+      Jmsg1(NULL, M_ABORT, 0, _("pthread_once failed. ERR=%s\n"), be.bstrerror(status));
+   }
+#endif
+#endif
 }
 
 /*
@@ -339,11 +382,9 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
    int status;
 
    Dmsg0(dbglvl, "Enter new_jcr\n");
-   status = pthread_once(&key_once, create_jcr_key);
-   if (status != 0) {
-      berrno be;
-      Jmsg1(NULL, M_ABORT, 0, _("pthread_once failed. ERR=%s\n"), be.bstrerror(status));
-   }
+
+   setup_tsd_key();
+
    jcr = (JCR *)malloc(size);
    memset(jcr, 0, size);
    jcr->msg_queue = New(dlist(item, &item->link));
@@ -352,6 +393,7 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
       Jmsg(NULL, M_ABORT, 0, _("Could not init msg_queue mutex. ERR=%s\n"),
          be.bstrerror(status));
    }
+
    jcr->job_end_push.init(1, false);
    jcr->sched_time = time(NULL);
    jcr->initial_sched_time = jcr->sched_time;
@@ -634,7 +676,9 @@ void JCR::set_killable(bool killable)
  */
 void set_jcr_in_tsd(JCR *jcr)
 {
-   int status = pthread_setspecific(jcr_key, (void *)jcr);
+   int status;
+
+   status = pthread_setspecific(jcr_key, (void *)jcr);
    if (status != 0) {
       berrno be;
       Jmsg1(jcr, M_ABORT, 0, _("pthread_setspecific failed: ERR=%s\n"),
