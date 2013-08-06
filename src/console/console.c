@@ -595,6 +595,8 @@ struct cpl_keywords_t {
 static struct cpl_keywords_t cpl_keywords[] = {
    { "pool=", ".pool" },
    { "fileset=", ".fileset" },
+   { "backupclient=", ".client" },
+   { "restoreclient=", ".client" },
    { "client=", ".client" },
    { "job=", ".jobs" },
    { "restore_job=",".jobs type=R" },
