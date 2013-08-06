@@ -170,7 +170,10 @@ static struct cmdstruct commands[] = {
      NT_(""), false },
    { NT_("restore"), restore_cmd, _("Restore files"),
      NT_("where=</path> client=<client-name> storage=<storage-name> bootstrap=<file>\n"
-         "\trestorejob=<job-name> comment=<text> jobid=<jobid> copies done select all"), false },
+         "\trestorejob=<job-name> comment=<text> jobid=<jobid> fileset=<fileset-name>\n"
+         "\treplace=<always|never|ifolder|ifnewer> pluginoptions=<plugin-options-string>\n"
+         "\tregexwhere=<regex> restoreclient=<client-name> backupclient=<client-name>\n"
+         "\tcopies done select  all"), false },
    { NT_("relabel"), relabel_cmd, _("Relabel a tape"),
      NT_("storage=<storage-name> oldvolume=<old-volume-name>\n"
          "\tvolume=<new-volume-name> pool=<pool-name> [ encrypt ]"), false },
@@ -185,6 +188,9 @@ static struct cmdstruct commands[] = {
          "\tfileset=<fileset-name> level=<level>\n"
          "\tstorage=<storage-name> where=<directory-prefix>\n"
          "\twhen=<universal-time-specification>\n"
+         "\tpool=<pool-name> pluginoptions=<plugin-options-string>\n"
+         "\taccurate=<yes|no> comment=<text>\n"
+         "\tspooldata=<yes|no> priority=<number>\n"
          "\tcomment=<text> yes"), false },
    { NT_("status"), status_cmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | client=<client-name> |\n"
