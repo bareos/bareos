@@ -69,6 +69,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd);
 static int setbwlimit_cmd(UAContext *ua, const char *cmd);
 static int setip_cmd(UAContext *ua, const char *cmd);
 static int time_cmd(UAContext *ua, const char *cmd);
+static int resolve_cmd(UAContext *ua, const char *cmd);
 static int trace_cmd(UAContext *ua, const char *cmd);
 static int unmount_cmd(UAContext *ua, const char *cmd);
 static int use_cmd(UAContext *ua, const char *cmd);
@@ -212,6 +213,8 @@ static struct cmdstruct commands[] = {
      NT_(""), true },
    { NT_("trace"), trace_cmd, _("Turn on/off trace to file"),
      NT_("on | off"), true },
+   { NT_("resolve"), resolve_cmd, _("Resolve a hostname"),
+     NT_("client=<client-name> | storage=<storage-name> <host-name>"), false },
    { NT_("unmount"), unmount_cmd, _("Unmount storage"),
      NT_("storage=<storage-name> [ drive=<num> ]\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false },
@@ -748,7 +751,7 @@ static inline int setbwlimit_filed(UAContext *ua, CLIENTRES *client,
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
                 client->name(), client->address, client->FDport);
 
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, false, false)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return 1;
    }
@@ -797,7 +800,7 @@ static inline int setbwlimit_stored(UAContext *ua, STORERES *store,
    ua->send_msg(_("Connecting to Storage daemon %s at %s:%d\n"),
                 store->name(), store->address, store->SDport);
 
-   if (!connect_to_storage_daemon(ua->jcr, 1, 15, 0)) {
+   if (!connect_to_storage_daemon(ua->jcr, 1, 15, false)) {
       ua->error_msg(_("Failed to connect to Storage daemon.\n"));
       return 1;
    }
@@ -984,7 +987,7 @@ static void do_storage_setdebug(UAContext *ua, STORERES *store, int level, int t
    /* Try connecting for up to 15 seconds */
    ua->send_msg(_("Connecting to Storage daemon %s at %s:%d\n"),
       store->name(), store->address, store->SDport);
-   if (!connect_to_storage_daemon(jcr, 1, 15, 0)) {
+   if (!connect_to_storage_daemon(jcr, 1, 15, false)) {
       ua->error_msg(_("Failed to connect to Storage daemon.\n"));
       return;
    }
@@ -1019,7 +1022,7 @@ static void do_client_setdebug(UAContext *ua, CLIENTRES *client,
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
       client->name(), client->address, client->FDport);
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, false, false)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return;
    }
@@ -1155,7 +1158,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
    }
 
    /* General debug? */
-   for (i=1; i<ua->argc; i++) {
+   for (i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], "all")) {
          do_all_setdebug(ua, level, trace_flag, hangup);
          return 1;
@@ -1256,6 +1259,88 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
 }
 
 /*
+ * Resolve a hostname.
+ */
+static int resolve_cmd(UAContext *ua, const char *cmd)
+{
+   STORERES *storage = NULL;
+   CLIENTRES *client = NULL;
+
+   for (int i = 1; i < ua->argc; i++) {
+      if (bstrcasecmp(ua->argk[i], NT_("client")) ||
+          bstrcasecmp(ua->argk[i], NT_("fd"))) {
+         if (ua->argv[i]) {
+            client = GetClientResWithName(ua->argv[i]);
+            if (!client) {
+               ua->error_msg(_("Client \"%s\" not found.\n"), ua->argv[i]);
+               return 1;
+            }
+
+            if (!acl_access_ok(ua, Client_ACL, client->name())) {
+               ua->error_msg(_("No authorization for Client \"%s\"\n"), client->name());
+               return 1;
+            }
+
+            *ua->argk[i] = 0;         /* zap keyword already visited */
+            continue;
+         } else {
+            ua->error_msg(_("Client name missing.\n"));
+            return 1;
+         }
+      } else if (bstrcasecmp(ua->argk[i], NT_("storage")))  {
+         if (ua->argv[i]) {
+            storage = GetStoreResWithName(ua->argv[i]);
+            if (!storage) {
+               ua->error_msg(_("Storage \"%s\" not found.\n"), ua->argv[i]);
+               return 1;
+            }
+
+            if (!acl_access_ok(ua, Storage_ACL, storage->name())) {
+               ua->error_msg(_("No authorization for Storage \"%s\"\n"), storage->name());
+               return 1;
+            }
+
+            *ua->argk[i] = 0;         /* zap keyword already visited */
+            continue;
+         } else {
+            ua->error_msg(_("Storage name missing.\n"));
+            return 1;
+         }
+      }
+   }
+
+   if (client) {
+      do_client_resolve(ua, client);
+   }
+
+   if (storage) {
+      do_storage_resolve(ua, storage);
+   }
+
+   if (!client && !storage) {
+      dlist *addr_list;
+      const char *errstr;
+      char addresses[2048];
+
+      for (int i = 1; i < ua->argc; i++) {
+         if (!*ua->argk[i]) {
+            continue;
+         }
+
+         if ((addr_list = bnet_host2ipaddrs(ua->argk[i], 0, &errstr)) == NULL) {
+            ua->error_msg(_("%s Failed to resolve %s\n"), my_name, ua->argk[i]);
+            return 0;
+         }
+         ua->send_msg(_("%s resolves %s to %s\n"), my_name, ua->argk[i],
+                      build_addresses_str(addr_list, addresses, sizeof(addresses), false));
+         free_addresses(addr_list);
+      }
+   }
+
+   return 1;
+}
+
+/*
  * Turn debug tracing to file on/off
  */
 static int trace_cmd(UAContext *ua, const char *cmd)
@@ -1270,6 +1355,7 @@ static int trace_cmd(UAContext *ua, const char *cmd)
    } else {
       onoff = ua->argk[1];
    }
+
 
    set_trace((bstrcasecmp(onoff, NT_("off"))) ? false : true);
    return 1;
@@ -1440,7 +1526,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
 
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
       jcr->res.client->name(), jcr->res.client->address, jcr->res.client->FDport);
-   if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
+   if (!connect_to_file_daemon(jcr, 1, 15, false, true)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return 1;
    }

@@ -153,7 +153,7 @@ bool MonitorItem::doconnect()
      message = QString("Connecting to Director %1:%2").arg(dird->address).arg(dird->DIRport);
      emit showStatusbarMessage(message);
      d->DSock = bnet_connect(NULL, d->connectTimeout,
-                                 0, 0, "Director daemon", dird->address, NULL, dird->DIRport, 0);
+                                 0, 0, "Director daemon", dird->address, NULL, dird->DIRport, false);
      jcr.dir_bsock = d->DSock;
      break;
   case R_CLIENT:
@@ -161,7 +161,7 @@ bool MonitorItem::doconnect()
      message = QString("Connecting to Client %1:%2").arg(filed->address).arg(filed->FDport);
      emit showStatusbarMessage(message);
      d->DSock = bnet_connect(NULL, d->connectTimeout,
-                                 0, 0, "File daemon", filed->address, NULL, filed->FDport, 0);
+                                 0, 0, "File daemon", filed->address, NULL, filed->FDport, false);
      jcr.file_bsock = d->DSock;
      break;
   case R_STORAGE:
@@ -169,7 +169,7 @@ bool MonitorItem::doconnect()
      message = QString("Connecting to Storage %1:%2").arg(stored->address).arg(stored->SDport);
      emit showStatusbarMessage(message);
      d->DSock = bnet_connect(NULL, d->connectTimeout,
-                                 0, 0, "Storage daemon", stored->address, NULL, stored->SDport, 0);
+                                 0, 0, "Storage daemon", stored->address, NULL, stored->SDport, false);
      jcr.store_bsock = d->DSock;
      break;
   default:

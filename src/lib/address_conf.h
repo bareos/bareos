@@ -64,7 +64,7 @@ class IPADDR : public SMARTALLOC {
 #endif
    const char *get_address(char *outputbuf, int outlen);
 
-   const char *build_address_str(char *buf, int blen);
+   const char *build_address_str(char *buf, int blen, bool print_port=true);
 
    /* private */
    dlink link;
@@ -79,7 +79,7 @@ int get_first_port_host_order(dlist * addrs);
 
 int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
                 const char *hostname_str, const char *port_str, char *buf, int buflen);
-const char *build_addresses_str(dlist *addrs, char *buf, int blen);
+const char *build_addresses_str(dlist *addrs, char *buf, int blen, bool print_port=true);
 
 int sockaddr_get_port_net_order(const struct sockaddr *sa);
 int sockaddr_get_port(const struct sockaddr *sa);

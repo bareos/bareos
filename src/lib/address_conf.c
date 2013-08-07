@@ -193,16 +193,23 @@ const char *IPADDR::get_address(char *outputbuf, int outlen)
    return outputbuf;
 }
 
-const char *IPADDR::build_address_str(char *buf, int blen)
+const char *IPADDR::build_address_str(char *buf, int blen, bool print_port/*=true*/)
 {
    char tmp[1024];
-   bsnprintf(buf, blen, "host[%s:%s:%hu] ",
+   if (print_port) {
+      bsnprintf(buf, blen, "host[%s:%s:%hu] ",
             get_family() == AF_INET ? "ipv4" : "ipv6",
             get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
+   } else {
+      bsnprintf(buf, blen, "host[%s:%s] ",
+            get_family() == AF_INET ? "ipv4" : "ipv6",
+            get_address(tmp, sizeof(tmp) - 1));
+
+   }
    return buf;
 }
 
-const char *build_addresses_str(dlist *addrs, char *buf, int blen)
+const char *build_addresses_str(dlist *addrs, char *buf, int blen, bool print_port/*=true*/)
 {
    if (!addrs || addrs->size() == 0) {
       bstrncpy(buf, "", blen);
@@ -212,7 +219,7 @@ const char *build_addresses_str(dlist *addrs, char *buf, int blen)
    IPADDR *p;
    foreach_dlist(p, addrs) {
       char tmp[1024];
-      int len = bsnprintf(work, blen, "%s", p->build_address_str(tmp, sizeof(tmp)));
+      int len = bsnprintf(work, blen, "%s", p->build_address_str(tmp, sizeof(tmp), print_port));
       if (len < 0)
          break;
       work += len;

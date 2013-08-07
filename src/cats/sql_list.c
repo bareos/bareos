@@ -45,7 +45,7 @@
  * Submit general SQL query
  */
 bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query, DB_LIST_HANDLER *sendit,
-                       void *ctx, int verbose, e_list_type type)
+                       void *ctx, bool verbose, e_list_type type)
 {
    bool retval = false;
 

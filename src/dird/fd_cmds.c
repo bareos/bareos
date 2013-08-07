@@ -90,7 +90,7 @@ extern DIRRES *director;
  *   give up after max_retry_time (default 30 mins).
  */
 
-int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, int verbose)
+int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, bool verbose, bool start_job)
 {
    BSOCK *fd = new_bsock();
    char ed1[30];
@@ -132,44 +132,47 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, int
       return 0;
    }
 
-   /*
-    * Now send JobId and authorization key
-    */
-   if (jcr->sd_auth_key == NULL) {
-      jcr->sd_auth_key = bstrdup("dummy");
-   }
-   fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
-             jcr->VolSessionTime, jcr->sd_auth_key);
-   if (!jcr->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
-      memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
-   }
-   Dmsg1(100, ">filed: %s", fd->msg);
-   if (bget_dirmsg(fd) > 0) {
-       Dmsg1(110, "<filed: %s", fd->msg);
-       if (!bstrncmp(fd->msg, OKjob, strlen(OKjob))) {
-          Jmsg(jcr, M_FATAL, 0, _("File daemon \"%s\" rejected Job command: %s\n"),
-             jcr->res.client->hdr.name, fd->msg);
-          jcr->setJobStatus(JS_ErrorTerminated);
-          return 0;
-       } else if (jcr->db) {
-          CLIENT_DBR cr;
-          memset(&cr, 0, sizeof(cr));
-          bstrncpy(cr.Name, jcr->res.client->hdr.name, sizeof(cr.Name));
-          cr.AutoPrune = jcr->res.client->AutoPrune;
-          cr.FileRetention = jcr->res.client->FileRetention;
-          cr.JobRetention = jcr->res.client->JobRetention;
-          bstrncpy(cr.Uname, fd->msg+strlen(OKjob)+1, sizeof(cr.Uname));
-          if (!db_update_client_record(jcr, jcr->db, &cr)) {
-             Jmsg(jcr, M_WARNING, 0, _("Error updating Client record. ERR=%s\n"),
-                db_strerror(jcr->db));
+   if (start_job) {
+      /*
+       * Now send JobId and authorization key
+       */
+      if (jcr->sd_auth_key == NULL) {
+         jcr->sd_auth_key = bstrdup("dummy");
+      }
+      fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
+                jcr->VolSessionTime, jcr->sd_auth_key);
+      if (!jcr->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
+         memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
+      }
+      Dmsg1(100, ">filed: %s", fd->msg);
+      if (bget_dirmsg(fd) > 0) {
+          Dmsg1(110, "<filed: %s", fd->msg);
+          if (!bstrncmp(fd->msg, OKjob, strlen(OKjob))) {
+             Jmsg(jcr, M_FATAL, 0, _("File daemon \"%s\" rejected Job command: %s\n"),
+                jcr->res.client->hdr.name, fd->msg);
+             jcr->setJobStatus(JS_ErrorTerminated);
+             return 0;
+          } else if (jcr->db) {
+             CLIENT_DBR cr;
+             memset(&cr, 0, sizeof(cr));
+             bstrncpy(cr.Name, jcr->res.client->hdr.name, sizeof(cr.Name));
+             cr.AutoPrune = jcr->res.client->AutoPrune;
+             cr.FileRetention = jcr->res.client->FileRetention;
+             cr.JobRetention = jcr->res.client->JobRetention;
+             bstrncpy(cr.Uname, fd->msg+strlen(OKjob)+1, sizeof(cr.Uname));
+             if (!db_update_client_record(jcr, jcr->db, &cr)) {
+                Jmsg(jcr, M_WARNING, 0, _("Error updating Client record. ERR=%s\n"),
+                   db_strerror(jcr->db));
+             }
           }
-       }
-   } else {
-      Jmsg(jcr, M_FATAL, 0, _("FD gave bad response to JobId command: %s\n"),
+      } else {
+         Jmsg(jcr, M_FATAL, 0, _("FD gave bad response to JobId command: %s\n"),
          bnet_strerror(fd));
-      jcr->setJobStatus(JS_ErrorTerminated);
-      return 0;
+         jcr->setJobStatus(JS_ErrorTerminated);
+         return 0;
+      }
    }
+
    return 1;
 }
 
@@ -866,7 +869,7 @@ bool cancel_file_daemon_job(UAContext *ua, JCR *jcr)
    BSOCK *fd;
 
    ua->jcr->res.client = jcr->res.client;
-   if (!connect_to_file_daemon(ua->jcr, 10, me->FDConnectTimeout, 1)) {
+   if (!connect_to_file_daemon(ua->jcr, 10, me->FDConnectTimeout, true, false)) {
       ua->error_msg(_("Failed to connect to File daemon.\n"));
       return false;
    }
@@ -897,23 +900,14 @@ void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
    ua->jcr->res.client = client;
 
    /*
-    * Release any old dummy key
-    */
-   if (ua->jcr->sd_auth_key) {
-      free(ua->jcr->sd_auth_key);
-   }
-
-   /*
-    * Create a new dummy SD auth key
-    */
-   ua->jcr->sd_auth_key = bstrdup("dummy");
-
-   /*
     * Try to connect for 15 seconds
     */
-   if (!ua->api) ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address, client->FDport);
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
+   if (!ua->api) {
+      ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
+                   client->name(), client->address, client->FDport);
+   }
+
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, false, false)) {
       ua->send_msg(_("Failed to connect to Client %s.\n====\n"),
          client->name());
       if (ua->jcr->file_bsock) {
@@ -922,6 +916,7 @@ void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
       }
       return;
    }
+
    Dmsg0(20, _("Connected to file daemon\n"));
    fd = ua->jcr->file_bsock;
    if (cmd) {
@@ -929,9 +924,62 @@ void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
    } else {
       fd->fsend("status");
    }
+
    while (fd->recv() >= 0) {
       ua->send_msg("%s", fd->msg);
    }
+
+   fd->signal(BNET_TERMINATE);
+   fd->close();
+   ua->jcr->file_bsock = NULL;
+
+   return;
+}
+
+/*
+ * resolve a host on a filedaemon
+ */
+void do_client_resolve(UAContext *ua, CLIENTRES *client)
+{
+   BSOCK *fd;
+
+   /*
+    * Connect to File daemon
+    */
+   ua->jcr->res.client = client;
+
+   /*
+    * Try to connect for 15 seconds
+    */
+   if (!ua->api) {
+      ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
+                   client->name(), client->address, client->FDport);
+   }
+
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, false, false)) {
+      ua->send_msg(_("Failed to connect to Client %s.\n====\n"),
+         client->name());
+      if (ua->jcr->file_bsock) {
+         ua->jcr->file_bsock->close();
+         ua->jcr->file_bsock = NULL;
+      }
+      return;
+   }
+
+   Dmsg0(20, _("Connected to file daemon\n"));
+   fd = ua->jcr->file_bsock;
+
+   for (int i = 1; i < ua->argc; i++) {
+      if (!*ua->argk[i]) {
+         continue;
+      }
+
+      fd->fsend("resolve %s", ua->argk[i]);
+      while (fd->recv() >= 0) {
+         ua->send_msg("%s", fd->msg);
+      }
+   }
+
    fd->signal(BNET_TERMINATE);
    fd->close();
    ua->jcr->file_bsock = NULL;

@@ -71,7 +71,7 @@ static char changerdrivesresponse[] =
  * Establish a connection with the Storage daemon and perform authentication.
  */
 bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
-                               int max_retry_time, int verbose)
+                               int max_retry_time, bool verbose)
 {
    BSOCK *sd = new_bsock();
    STORERES *store;
@@ -132,7 +132,7 @@ BSOCK *open_sd_bsock(UAContext *ua)
    if (!ua->jcr->store_bsock) {
       ua->send_msg(_("Connecting to Storage daemon %s at %s:%d ...\n"),
                    store->name(), store->address, store->SDport);
-      if (!connect_to_storage_daemon(ua->jcr, 10, me->SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
          ua->error_msg(_("Failed to connect to Storage daemon.\n"));
          return NULL;
       }
@@ -617,7 +617,7 @@ bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId)
    control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
 
    control_jcr->res.wstore = store;
-   if (!connect_to_storage_daemon(control_jcr, 10, me->SDConnectTimeout, 1)) {
+   if (!connect_to_storage_daemon(control_jcr, 10, me->SDConnectTimeout, true)) {
       ua->error_msg(_("Failed to connect to Storage daemon.\n"));
    }
 
@@ -661,7 +661,7 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent)
       set_wstorage(ua->jcr, &store);
    }
 
-   if (!connect_to_storage_daemon(ua->jcr, 10, me->SDConnectTimeout, 1)) {
+   if (!connect_to_storage_daemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
       if (!silent) {
          ua->error_msg(_("Failed to connect to Storage daemon.\n"));
       }
@@ -738,7 +738,7 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
                    store->name(), store->address, store->SDport);
    }
 
-   if (!connect_to_storage_daemon(ua->jcr, 10, me->SDConnectTimeout, 0)) {
+   if (!connect_to_storage_daemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
       ua->send_msg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
                    store->name());
       if (ua->jcr->store_bsock) {
@@ -860,6 +860,40 @@ bool send_bwlimit_to_sd(JCR *jcr, const char *Job)
       jcr->max_bandwidth = 0;      /* can't set bandwidth limit */
       return false;
    }
+
+   return true;
+}
+
+/*
+ * resolve a host on a storage daemon
+ */
+bool do_storage_resolve(UAContext *ua, STORERES *store)
+{
+   BSOCK *sd;
+   USTORERES lstore;
+
+   lstore.store = store;
+   pm_strcpy(lstore.store_source, _("unknown source"));
+   set_wstorage(ua->jcr, &lstore);
+
+   if (!(sd = open_sd_bsock(ua))) {
+      return false;
+   }
+
+   for (int i = 1; i < ua->argc; i++) {
+       if (!*ua->argk[i]) {
+          continue;
+       }
+
+       sd->fsend("resolve %s", ua->argk[i]);
+       while (sd->recv() >= 0) {
+          ua->send_msg("%s", sd->msg);
+       }
+   }
+
+   sd->signal(BNET_TERMINATE);
+   sd->close();
+   ua->jcr->store_bsock = NULL;
 
    return true;
 }

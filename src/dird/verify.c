@@ -229,7 +229,7 @@ bool do_verify(JCR *jcr)
        * Start conversation with Storage daemon
        */
       jcr->setJobStatus(JS_Blocked);
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
          return false;
       }
       sd = jcr->store_bsock;
@@ -263,7 +263,7 @@ bool do_verify(JCR *jcr)
        * OK, now connect to the File daemon and ask him for the files.
        */
       jcr->setJobStatus(JS_Blocked);
-      if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, 1)) {
+      if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true, true)) {
          goto bail_out;
       }
       fd = jcr->file_bsock;
@@ -283,7 +283,7 @@ bool do_verify(JCR *jcr)
        * OK, now connect to the File daemon and ask him for the files.
        */
       jcr->setJobStatus(JS_Blocked);
-      if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, 1)) {
+      if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true, true)) {
          goto bail_out;
       }
       fd = jcr->file_bsock;

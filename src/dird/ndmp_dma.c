@@ -1712,7 +1712,7 @@ bool do_ndmp_backup(JCR *jcr)
       set_paired_storage(jcr);
 
       jcr->setJobStatus(JS_WaitSD);
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
          return false;
       }
 
@@ -2221,7 +2221,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
       /*
        * Start conversation with Storage daemon
        */
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
          goto cleanup;
       }
       sd = jcr->store_bsock;

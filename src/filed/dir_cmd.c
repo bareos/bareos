@@ -79,6 +79,7 @@ static bool runafter_cmd(JCR *jcr);
 static bool runbeforenow_cmd(JCR *jcr);
 static bool runbefore_cmd(JCR *jcr);
 static bool runscript_cmd(JCR *jcr);
+static bool resolve_cmd(JCR *jcr);
 static bool restore_object_cmd(JCR *jcr);
 static bool restore_cmd(JCR *jcr);
 static bool session_cmd(JCR *jcr);
@@ -127,6 +128,7 @@ static struct s_cmds cmds[] = {
    { "Run", runscript_cmd, false },
    { "restoreobject", restore_object_cmd, false },
    { "restore ", restore_cmd, false },
+   { "resolve ", resolve_cmd, false },
    { "session", session_cmd, false },
    { "setauthorization", setauthorization_cmd, false },
    { "setbandwidth=", setbandwidth_cmd, false },
@@ -180,6 +182,8 @@ static char runaftercmd[] =
    "RunAfterJob %s";
 static char runscriptcmd[] =
    "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
+static char resolvecmd[] =
+   "resolve %s";
 
 /*
  * Responses sent to Director
@@ -595,8 +599,35 @@ static bool sm_dump_cmd(JCR *jcr)
    return true;
 }
 
+/*
+ * Resolve a hostname
+ */
+static bool resolve_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   dlist *addr_list;
+   const char *errstr;
+   char addresses[2048];
+   char hostname[2048];
+
+   sscanf(dir->msg, resolvecmd, &hostname);
+
+   if ((addr_list = bnet_host2ipaddrs(hostname, 0, &errstr)) == NULL) {
+      dir->fsend(_("%s: Failed to resolve %s\n"), my_name, hostname);
+      goto bail_out;
+   }
+
+   dir->fsend(_("%s resolves %s to %s\n"),my_name, hostname,
+              build_addresses_str(addr_list, addresses, sizeof(addresses), false));
+   free_addresses(addr_list);
+
+bail_out:
+   dir->signal(BNET_EOD);
+   return true;
+}
+
 #ifdef DEVELOPER
-static bool exit_cmd(JCR *jcr)
+   static bool exit_cmd(JCR *jcr)
 {
    jcr->dir_bsock->fsend("2000 exit OK\n");
    terminate_filed(0);

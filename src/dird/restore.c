@@ -159,7 +159,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
       /*
        * Start conversation with Storage daemon
        */
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
          goto bail_out;
       }
       sd = jcr->store_bsock;
@@ -177,7 +177,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
           */
          jcr->setJobStatus(JS_WaitFD);
          jcr->keep_sd_auth_key = true; /* don't clear the sd_auth_key now */
-         if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, 1)) {
+         if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true, true)) {
             goto bail_out;
          }
          fd = jcr->file_bsock;

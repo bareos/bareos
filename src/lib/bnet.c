@@ -616,7 +616,7 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
 BSOCK *bnet_connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
                     utime_t heart_beat,
                     const char *name, char *host, char *service, int port,
-                    int verbose)
+                    bool verbose)
 {
    BSOCK *bsock = new_bsock();
    if (!bsock->connect(jcr, retry_interval, max_retry_time, heart_beat,
@@ -796,7 +796,7 @@ BSOCK *dup_bsock(BSOCK *osock)
       bsock->set_host(bstrdup(osock->host()));
    }
    if (osock->src_addr) {
-      bsock->src_addr = New( IPADDR( *(osock->src_addr)) );
+      bsock->src_addr = New(IPADDR(*(osock->src_addr)));
    }
    bsock->set_duped();
    return bsock;
