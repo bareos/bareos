@@ -109,6 +109,11 @@ int restore_cmd(UAContext *ua, const char *cmd)
       rx.replace = ua->argv[i];
    }
 
+   i = find_arg_with_value(ua, "pluginoptions");
+   if (i >= 0) {
+      rx.plugin_options = ua->argv[i];
+   }
+
    i = find_arg_with_value(ua, "strip_prefix");
    if (i >= 0) {
       strip_prefix = ua->argv[i];
@@ -270,6 +275,11 @@ int restore_cmd(UAContext *ua, const char *cmd)
       pm_strcat(ua->cmd, buf);
    }
 
+   if (rx.plugin_options) {
+      Mmsg(buf, " pluginoptions=%s", rx.plugin_options);
+      pm_strcat(ua->cmd, buf);
+   }
+
    if (rx.comment) {
       Mmsg(buf, " comment=\"%s\"", rx.comment);
       pm_strcat(ua->cmd, buf);
@@ -290,6 +300,7 @@ int restore_cmd(UAContext *ua, const char *cmd)
    if (find_arg(ua, NT_("yes")) > 0) {
       pm_strcat(ua->cmd, " yes");    /* pass it on to the run command */
    }
+
    Dmsg1(200, "Submitting: %s\n", ua->cmd);
 
    /*
@@ -506,6 +517,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       "comment",       /* 21 */
       "restorejob",    /* 22 */
       "replace",       /* 23 */
+      "pluginoptions", /* 24 */
       NULL
    };
 

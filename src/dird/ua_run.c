@@ -1826,7 +1826,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
                }
                rc.plugin_options = ua->argv[i];
                if (!acl_access_ok(ua, PluginOptions_ACL, rc.plugin_options)) {
-                  ua->send_msg(_("No authoriztion for \"PluginOptions\" specification.\n"));
+                  ua->send_msg(_("No authorization for \"PluginOptions\" specification.\n"));
                   return false;
                }
                kw_ok = true;
