@@ -197,11 +197,11 @@ const char *IPADDR::build_address_str(char *buf, int blen, bool print_port/*=tru
 {
    char tmp[1024];
    if (print_port) {
-      bsnprintf(buf, blen, "host[%s:%s:%hu] ",
+      bsnprintf(buf, blen, "host[%s;%s;%hu] ",
             get_family() == AF_INET ? "ipv4" : "ipv6",
             get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
    } else {
-      bsnprintf(buf, blen, "host[%s:%s] ",
+      bsnprintf(buf, blen, "host[%s;%s] ",
             get_family() == AF_INET ? "ipv4" : "ipv6",
             get_address(tmp, sizeof(tmp) - 1));
 
