@@ -117,6 +117,7 @@ struct RESTORE_CTX {
    char *where;
    char *RegexWhere;
    char *replace;
+   char *plugin_options;
    RBSR *bsr;
    POOLMEM *fname;                    /* Filename only */
    POOLMEM *path;                     /* Path only */
