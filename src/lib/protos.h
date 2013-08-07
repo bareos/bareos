@@ -64,7 +64,7 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock,
 BSOCK * bnet_connect(JCR *jcr, int retry_interval,
                      utime_t max_retry_time, utime_t heart_beat,
                      const char *name, char *host, char *service,
-                     int port, int verbose);
+                     int port, bool verbose);
 void bnet_close(BSOCK *bsock);
 BSOCK *init_bsock(JCR *jcr, int sockfd, const char *who, const char *ip,
                   int port, struct sockaddr *client_addr);

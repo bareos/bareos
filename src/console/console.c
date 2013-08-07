@@ -1241,7 +1241,7 @@ int main(int argc, char *argv[])
       heart_beat = 0;
    }
    UA_sock = bnet_connect(NULL, 5, 15, heart_beat, "Director daemon", dir->address,
-                          NULL, dir->DIRport, 0);
+                          NULL, dir->DIRport, false);
    if (UA_sock == NULL) {
       terminate_console(0);
       return 1;

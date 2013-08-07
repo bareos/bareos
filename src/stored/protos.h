@@ -137,7 +137,7 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName);
 int read_ansi_ibm_label(DCR *dcr);
 bool write_session_label(DCR *dcr, int label);
 void dump_volume_label(DEVICE *dev);
-void dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose);
+void dump_label_record(DEVICE *dev, DEV_RECORD *rec, bool verbose);
 bool unser_volume_label(DEVICE *dev, DEV_RECORD *rec);
 bool unser_session_label(SESSION_LABEL *label, DEV_RECORD *rec);
 bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,

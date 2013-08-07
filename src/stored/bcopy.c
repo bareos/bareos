@@ -278,7 +278,7 @@ static bool record_cb(DCR *in_dcr, DEV_RECORD *rec)
       get_session_record(in_dcr->dev, rec, &sessrec);
 
       if (verbose > 1) {
-         dump_label_record(in_dcr->dev, rec, 1);
+         dump_label_record(in_dcr->dev, rec, true);
       }
       switch (rec->FileIndex) {
       case PRE_LABEL:

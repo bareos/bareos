@@ -95,7 +95,7 @@ void BSOCK::free_tls()
  */
 bool BSOCK::connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
                     utime_t heart_beat, const char *name, char *host,
-                    char *service, int port, int verbose)
+                    char *service, int port, bool verbose)
 {
    bool ok = false;
    int i;
@@ -177,7 +177,7 @@ void BSOCK::set_source_address(dlist *src_addr_list)
 
    if (src_addr_list) {
      addr = (IPADDR*) src_addr_list->first();
-     src_addr = New( IPADDR(*addr));
+     src_addr = New(IPADDR(*addr));
    }
 }
 

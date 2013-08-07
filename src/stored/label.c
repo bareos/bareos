@@ -1060,7 +1060,7 @@ static void dump_session_label(DEV_RECORD *rec, const char *type)
    debug_level = dbl;
 }
 
-void dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose)
+void dump_label_record(DEVICE *dev, DEV_RECORD *rec, bool verbose)
 {
    const char *type;
    int dbl;

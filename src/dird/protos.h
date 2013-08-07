@@ -90,8 +90,8 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char*);
 int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp);
 
 /* fd_cmds.c */
-int connect_to_file_daemon(JCR *jcr, int retry_interval,
-                                  int max_retry_time, int verbose);
+int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
+                           bool verbose, bool start_job);
 bool send_include_list(JCR *jcr);
 bool send_exclude_list(JCR *jcr);
 bool send_level_command(JCR *jcr);
@@ -105,6 +105,7 @@ bool send_plugin_options(JCR *jcr);
 bool send_restore_objects(JCR *jcr);
 bool cancel_file_daemon_job(UAContext *ua, JCR *jcr);
 void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd);
+void do_client_resolve(UAContext *ua, CLIENTRES *client);
 
 /* getmsg.c */
 bool response(JCR *jcr, BSOCK *fd, char *resp, const char *cmd, e_prtmsg prtmsg);
@@ -204,7 +205,7 @@ void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg);
 
 /* sd_cmds.c */
 bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
-                               int max_retry_time, int verbose);
+                               int max_retry_time, bool verbose);
 BSOCK *open_sd_bsock(UAContext *ua);
 void close_sd_bsock(UAContext *ua);
 char *get_volume_name_from_SD(UAContext *ua, int Slot, int drive);
@@ -220,6 +221,7 @@ bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
 bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
                                      const char *operation, int drive, int slot);
 bool send_bwlimit_to_sd(JCR *jcr, const char *Job);
+bool do_storage_resolve(UAContext *ua, STORERES *store);
 
 /* scheduler.c */
 JCR *wait_for_next_job(char *one_shot_job_to_run);

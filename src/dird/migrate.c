@@ -431,7 +431,7 @@ bool do_migration(JCR *jcr)
       /*
        * Start conversation with Storage daemon
        */
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
          return false;
       }
 
@@ -485,7 +485,7 @@ bool do_migration(JCR *jcr)
        * Start conversation with Reading Storage daemon
        */
       jcr->setJobStatus(JS_WaitSD);
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
          goto bail_out;
       }
 
@@ -498,7 +498,7 @@ bool do_migration(JCR *jcr)
        * Start conversation with Writing Storage daemon
        */
       mig_jcr->setJobStatus(JS_WaitSD);
-      if (!connect_to_storage_daemon(mig_jcr, 10, me->SDConnectTimeout, 1)) {
+      if (!connect_to_storage_daemon(mig_jcr, 10, me->SDConnectTimeout, true)) {
          goto bail_out;
       }
 

@@ -83,7 +83,7 @@ bool update_device_res(JCR *jcr, DEVICERES *dev)
 {
    POOL_MEM device_name;
    BSOCK *sd;
-   if (!connect_to_storage_daemon(jcr, 5, 30, 0)) {
+   if (!connect_to_storage_daemon(jcr, 5, 30, false)) {
       return false;
    }
    sd = jcr->store_bsock;
@@ -490,7 +490,7 @@ extern "C" void *device_thread(void *arg)
    pthread_detach(pthread_self());
    jcr = new_control_jcr("*DeviceInit*", JT_SYSTEM);
    for (i=0; i < MAX_TRIES; i++) {
-      if (!connect_to_storage_daemon(jcr, 10, 30, 1)) {
+      if (!connect_to_storage_daemon(jcr, 10, 30, true)) {
          Dmsg0(900, "Failed connecting to SD.\n");
          continue;
       }

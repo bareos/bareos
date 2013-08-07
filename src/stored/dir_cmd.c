@@ -80,6 +80,8 @@ static char replicatecmd[] =
    "replicate Job=%127s address=%s port=%d ssl=%d Authorization=%100s";
 static char passiveclientcmd[] =
    "passive client address=%s port=%d ssl=%d";
+static char resolvecmd[] =
+   "resolve %s";
 
 /* Responses sent to Director */
 static char derrmsg[] =
@@ -125,6 +127,7 @@ static bool listen_cmd(JCR *jcr);
 static bool mount_cmd(JCR *jcr);
 static bool passive_cmd(JCR *jcr);
 static bool readlabel_cmd(JCR *jcr);
+static bool resolve_cmd(JCR *jcr);
 static bool relabel_cmd(JCR *jcr);
 static bool release_cmd(JCR *jcr);
 static bool replicate_cmd(JCR *jcr);
@@ -169,6 +172,7 @@ static struct s_cmds cmds[] = {
    { "readlabel", readlabel_cmd, false },
    { "relabel", relabel_cmd, false },       /* Relabel a tape */
    { "release", release_cmd, false },
+   { "resolve", resolve_cmd, false },
    { "replicate", replicate_cmd, false },   /* Replicate data to an external SD */
    { "run", run_cmd, false },               /* Start of Job */
    { "setbandwidth=", setbandwidth_cmd, false },
@@ -508,6 +512,33 @@ static bool cancel_cmd(JCR *cjcr)
 
    dir->fsend(_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId, jcr->Job, reason);
    free_jcr(jcr);
+
+bail_out:
+   dir->signal(BNET_EOD);
+   return true;
+}
+
+/*
+ * Resolve a hostname
+ */
+static bool resolve_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   dlist *addr_list;
+   const char *errstr;
+   char addresses[2048];
+   char hostname[2048];
+
+   sscanf(dir->msg, resolvecmd, &hostname);
+
+   if ((addr_list = bnet_host2ipaddrs(hostname, 0, &errstr)) == NULL) {
+      dir->fsend(_("%s: Failed to resolve %s\n"), my_name, hostname);
+      goto bail_out;
+   }
+
+   dir->fsend(_("%s resolves %s to %s\n"), my_name, hostname,
+              build_addresses_str(addr_list, addresses, sizeof(addresses), false));
+   free_addresses(addr_list);
 
 bail_out:
    dir->signal(BNET_EOD);

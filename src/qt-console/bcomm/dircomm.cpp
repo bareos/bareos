@@ -169,7 +169,7 @@ bool DirComm::connect_dir()
 
    m_sock = bnet_connect(NULL, 5, 15, heart_beat,
                           _("Director daemon"), m_console->m_dir->address,
-                          NULL, m_console->m_dir->DIRport, 0);
+                          NULL, m_console->m_dir->DIRport, false);
    if (m_sock == NULL) {
       mainWin->set_status("Connection failed");
       if (mainWin->m_connDebug) {

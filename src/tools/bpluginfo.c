@@ -107,9 +107,9 @@ union _bareosinfos {
 
 typedef struct _progdata progdata;
 struct _progdata {
-   int verbose;
-   int listinfo;
-   int listfunc;
+   bool verbose;
+   bool listinfo;
+   bool listfunc;
    char *pluginfile;
    void *pluginhandle;
    int bapiversion;
@@ -244,15 +244,15 @@ void parse_args(progdata *pdata, int argc, char *argv[])
          break;
 
       case 'f':
-         pdata->listfunc = 1;
+         pdata->listfunc = true;
          break;
 
       case 'i':
-         pdata->listinfo = 1;
+         pdata->listinfo = true;
          break;
 
       case 'v':
-         pdata->verbose = 1;
+         pdata->verbose = true;
          break;
 
       case '?':

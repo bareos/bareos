@@ -463,7 +463,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       bool save_update_db = update_db;
 
       if (verbose > 1) {
-         dump_label_record(dev, rec, 1);
+         dump_label_record(dev, rec, true);
       }
       switch (rec->FileIndex) {
       case PRE_LABEL:
