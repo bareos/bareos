@@ -172,8 +172,10 @@ static struct cmdstruct commands[] = {
      NT_("where=</path> client=<client-name> storage=<storage-name> bootstrap=<file>\n"
          "\trestorejob=<job-name> comment=<text> jobid=<jobid> fileset=<fileset-name>\n"
          "\treplace=<always|never|ifolder|ifnewer> pluginoptions=<plugin-options-string>\n"
-         "\tregexwhere=<regex> restoreclient=<client-name> backupclient=<client-name>\n"
-         "\tcopies done select  all"), false },
+         "\tregexwhere=<regex> restoreclient=<client-name> backupformat=<format>\n"
+         "\tpool=<pool-name> file=<filename> directory=<directory> before=<date>\n"
+         "\tstrip_prefix=<prefix> add_prefix=<prefix> add_suffix=<suffix>\n"
+         "\tselect=<date> select before current copies done all"), false },
    { NT_("relabel"), relabel_cmd, _("Relabel a tape"),
      NT_("storage=<storage-name> oldvolume=<old-volume-name>\n"
          "\tvolume=<new-volume-name> pool=<pool-name> [ encrypt ]"), false },
@@ -184,14 +186,13 @@ static struct cmdstruct commands[] = {
    { NT_("rerun"), rerun_cmd, _("Rerun a job"),
      NT_("jobid=<jobid> | since_jobid=<jobid> | days=<nr_days> | hours=<nr_hours> | yes"), false },
    { NT_("run"), run_cmd, _("Run a job"),
-     NT_("job=<job-name> client=<client-name>\n"
-         "\tfileset=<fileset-name> level=<level>\n"
-         "\tstorage=<storage-name> where=<directory-prefix>\n"
-         "\twhen=<universal-time-specification>\n"
-         "\tpool=<pool-name> pluginoptions=<plugin-options-string>\n"
-         "\taccurate=<yes|no> comment=<text>\n"
-         "\tspooldata=<yes|no> priority=<number>\n"
-         "\tcomment=<text> yes"), false },
+     NT_("job=<job-name> client=<client-name> fileset=<fileset-name> level=<level>\n"
+         "\tstorage=<storage-name> where=<directory-prefix> when=<universal-time-specification>\n"
+         "\tpool=<pool-name> pluginoptions=<plugin-options-string> accurate=<yes|no> comment=<text>\n"
+         "\tspooldata=<yes|no> priority=<number> jobid=<jobid> catalog=<catalog> migrationjob=<>\n"
+         "\tbackupclient=<client-name> backupformat=<format> nextpool=<pool-name>\n"
+         "\tsince=<universal-time-specification> verifyjob=<job-name> verifylist=<verify-list>\n"
+         "\tmigrationjob=<complete_name> yes"), false },
    { NT_("status"), status_cmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | client=<client-name> |\n"
          "\tstorage=<storage-name> slots | days=<nr_days> | job=<job-name> | schedule=<schedule-name> |\n"
