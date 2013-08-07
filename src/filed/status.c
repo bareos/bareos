@@ -145,13 +145,9 @@ static void  list_status_header(STATUS_PKT *sp)
                      "bwlimit=%skB/s\n"), sizeof(boffset_t), sizeof(size_t),
               debug_level, get_trace(), edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
    sendit(msg.c_str(), len, sp);
-   if (debug_level > 0) {
-      int len;
-
-      len = list_fd_plugins(msg);
-      if (len > 0) {
-         sendit(msg.c_str(), len, sp);
-      }
+   len = list_fd_plugins(msg);
+   if (len > 0) {
+      sendit(msg.c_str(), len, sp);
    }
 }
 
