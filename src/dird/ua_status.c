@@ -375,6 +375,7 @@ static void do_all_status(UAContext *ua)
 
 void list_dir_status_header(UAContext *ua)
 {
+   int len;
    char dt[MAX_TIME_LENGTH];
    char b1[35], b2[35], b3[35], b4[35], b5[35];
    POOL_MEM msg(PM_FNAME);
@@ -390,13 +391,9 @@ void list_dir_status_header(UAContext *ua)
                 edit_uint64_with_commas(sm_max_bytes, b3),
                 edit_uint64_with_commas(sm_buffers, b4),
                 edit_uint64_with_commas(sm_max_buffers, b5));
-   if (debug_level > 0) {
-      int len;
-
-      len = list_dir_plugins(msg);
-      if (len > 0) {
-         ua->send_msg("%s\n", msg.c_str());
-      }
+   len = list_dir_plugins(msg);
+   if (len > 0) {
+      ua->send_msg("%s\n", msg.c_str());
    }
 }
 
