@@ -82,6 +82,7 @@ static POOLMEM *args;
 static char *argk[MAX_CMD_ARGS];
 static char *argv[MAX_CMD_ARGS];
 static CONFIG *config;
+static bool file_selection = false;
 
 /* Command prototypes */
 static int versioncmd(FILE *input, BSOCK *UA_sock);
@@ -225,9 +226,9 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
    bool at_prompt = false;
    int tty_input = isatty(fileno(input));
    int status;
-   btimer_t *tid=NULL;
+   btimer_t *tid = NULL;
 
-   for ( ;; ) {
+   while (1) {
       if (at_prompt) {                /* don't prompt multiple times */
          prompt = "";
       } else {
@@ -243,7 +244,9 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
             break;
          }
       } else {
-         /* Reading input from a file */
+         /*
+          * Reading input from a file
+          */
          int len = sizeof_pool_memory(UA_sock->msg) - 1;
          if (usrbrk()) {
             break;
@@ -251,7 +254,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
          if (fgets(UA_sock->msg, len, input) == NULL) {
             status = -1;
          } else {
-            sendit(UA_sock->msg);  /* echo to terminal */
+            sendit(UA_sock->msg);     /* echo to terminal */
             strip_trailing_junk(UA_sock->msg);
             UA_sock->msglen = strlen(UA_sock->msg);
             status = 1;
@@ -259,7 +262,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
       }
       if (status < 0) {
          break;                       /* error or interrupt */
-      } else if (status == 0) {         /* timeout */
+      } else if (status == 0) {       /* timeout */
          if (bstrcmp(prompt, "*")) {
             tid = start_bsock_timer(UA_sock, timeout);
             UA_sock->fsend(".messages");
@@ -269,7 +272,9 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
          }
       } else {
          at_prompt = false;
-         /* @ => internal command for us */
+         /*
+          * @ => internal command for us
+          */
          if (UA_sock->msg[0] == '@') {
             parse_args(UA_sock->msg, &args, &argc, argk, argv, MAX_CMD_ARGS);
             if (!do_a_command(input, UA_sock)) {
@@ -278,29 +283,46 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
             continue;
          }
          tid = start_bsock_timer(UA_sock, timeout);
-         if (!UA_sock->send()) {   /* send command */
+         if (!UA_sock->send()) {      /* send command */
             stop_bsock_timer(tid);
             break;                    /* error */
          }
          stop_bsock_timer(tid);
       }
+
       if (bstrcmp(UA_sock->msg, ".quit") || bstrcmp(UA_sock->msg, ".exit")) {
          break;
       }
+
       tid = start_bsock_timer(UA_sock, timeout);
-      while ((status = UA_sock->recv()) >= 0) {
+      while ((status = UA_sock->recv()) >= 0 ||
+             (status == BNET_SIGNAL && (UA_sock->msglen == BNET_START_RTREE ||
+                                        UA_sock->msglen == BNET_END_RTREE))) {
+         if (status == BNET_SIGNAL) {
+            if (UA_sock->msglen == BNET_START_RTREE) {
+               file_selection = true;
+            } else if (UA_sock->msglen == BNET_END_RTREE) {
+               file_selection = false;
+            }
+            continue;
+         }
+
          if (at_prompt) {
             if (!stop) {
                sendit("\n");
             }
             at_prompt = false;
          }
-         /* Suppress output if running in background or user hit ctl-c */
+
+         /*
+          * Suppress output if running in background or user hit ctl-c
+          */
          if (!stop && !usrbrk()) {
             sendit(UA_sock->msg);
          }
       }
       stop_bsock_timer(tid);
+
       if (usrbrk() > 1) {
          break;
       } else {
@@ -309,6 +331,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
       if (!stop) {
          fflush(stdout);
       }
+
       if (is_bnet_stop(UA_sock)) {
          break;                       /* error or term */
       } else if (status == BNET_SIGNAL) {
@@ -360,7 +383,7 @@ static int tls_pem_callback(char *buf, int size, const void *userdata)
  */
 static char *get_first_keyword()
 {
-   char *ret=NULL;
+   char *ret = NULL;
    int len;
    char *first_space = strchr(rl_line_buffer, ' ');
    if (first_space) {
@@ -379,7 +402,7 @@ static char *get_first_keyword()
 static char *get_previous_keyword(int current_point, int nb)
 {
    int i, end=-1, start, inquotes=0;
-   char *s=NULL;
+   char *s = NULL;
 
    while (nb-- >= 0) {
       /*
@@ -590,31 +613,30 @@ static char *dummy_completion_function(const char *text, int state)
 struct cpl_keywords_t {
    const char *key;
    const char *cmd;
+   bool file_selection;
 };
 
 static struct cpl_keywords_t cpl_keywords[] = {
-   { "pool=", ".pool" },
-   { "fileset=", ".fileset" },
-   { "backupclient=", ".client" },
-   { "restoreclient=", ".client" },
-   { "client=", ".client" },
-   { "job=", ".jobs" },
-   { "restore_job=",".jobs type=R" },
-   { "level=", ".level" },
-   { "storage=", ".storage" },
-   { "schedule=", ".schedule" },
-   { "volume=", ".media" },
-   { "oldvolume=", ".media" },
-   { "volstatus=", ".volstatus" },
-   { "ls", ".ls" },
-   { "cd", ".lsdir" },
-   { "add", ".ls" },
-   { "mark", ".ls" },
-   { "m", ".ls" },
-   { "delete", ".lsmark" },
-   { "unmark", ".lsmark" },
-   { "catalog=", ".catalogs" },
-   { "actiononpurge=", ".actiononpurge" }
+   { "pool=", ".pool", false },
+   { "fileset=", ".fileset", false },
+   { "client=", ".client", false },
+   { "job=", ".jobs", false },
+   { "restore_job=",".jobs type=R", false },
+   { "level=", ".level", false },
+   { "storage=", ".storage", false },
+   { "schedule=", ".schedule", false },
+   { "volume=", ".media", false },
+   { "oldvolume=", ".media", false },
+   { "volstatus=", ".volstatus", false },
+   { "catalog=", ".catalogs", false },
+   { "actiononpurge=", ".actiononpurge", false },
+   { "ls", ".ls", true },
+   { "cd", ".lsdir", true },
+   { "add", ".ls", true },
+   { "mark", ".ls", true },
+   { "m", ".ls", true },
+   { "delete", ".lsmark", true },
+   { "unmark", ".lsmark", true }
 };
 #define key_size ((int)(sizeof(cpl_keywords)/sizeof(struct cpl_keywords_t)))
 
@@ -626,7 +648,7 @@ static struct cpl_keywords_t cpl_keywords[] = {
  */
 static char **readline_completion(const char *text, int start, int end)
 {
-   bool found=false;
+   bool found = false;
    char **matches;
    char *s, *cmd;
    matches = (char **)NULL;
@@ -639,6 +661,13 @@ static char **readline_completion(const char *text, int start, int end)
    cmd = get_first_keyword();
    if (s) {
       for (int i = 0; i < key_size; i++) {
+         /*
+          * See if this keyword is allowed with the current file_selection setting.
+          */
+         if (cpl_keywords[i].file_selection != file_selection) {
+            continue;
+         }
+
          if (bstrcasecmp(s, cpl_keywords[i].key)) {
             cpl_item = cpl_keywords[i].cmd;
             cpl_type = ITEM_ARG;
@@ -903,8 +932,8 @@ static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret
    int numcon=0, numdir=0;
    int i=0, item=0;
    BSOCK *UA_sock;
-   DIRRES *dir=NULL;
-   CONRES *cons=NULL;
+   DIRRES *dir = NULL;
+   CONRES *cons = NULL;
    struct sockaddr client_addr;
    memset(&client_addr, 0, sizeof(client_addr));
 
@@ -1249,7 +1278,7 @@ int main(int argc, char *argv[])
    jcr.dir_bsock = UA_sock;
 
    /*
-    * If cons==NULL, default console will be used
+    * If cons == NULL, default console will be used
     */
    if (cons) {
       name = cons->hdr.name;

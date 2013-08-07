@@ -119,10 +119,7 @@ bool user_select_files_from_tree(TREE_CTX *tree)
                   "remove (unmark) files to be restored. No files are initially added, unless\n"
                   "you used the \"all\" keyword on the command line.\n"
                   "Enter \"done\" to leave this mode.\n\n"));
-
-   if (ua->api) {
-      user->signal(BNET_START_RTREE);
-   }
+   user->signal(BNET_START_RTREE);
 
    /*
     * Enter interactive command handler allowing selection of individual files.
@@ -185,9 +182,7 @@ bool user_select_files_from_tree(TREE_CTX *tree)
       }
    }
 
-   if (ua->api) {
-      user->signal(BNET_END_RTREE);
-   }
+   user->signal(BNET_END_RTREE);
 
    ua->UA_sock = NULL;                /* don't release restore socket */
    status = !ua->quit;
