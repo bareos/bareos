@@ -329,6 +329,16 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
                Dmsg0(000, "FAIL: Send plugin options\n");
                goto bail_out;
             }
+         } else {
+            /*
+             * Plugin options specified and not a FD that understands the new protocol keyword.
+             */
+            if (jcr->plugin_options) {
+               Jmsg(jcr, M_FATAL, 0,
+                     _("Client \"%s\" doesn't support plugin option passing. Please upgrade your client.\n"),
+                    jcr->res.client->name());
+               goto bail_out;
+            }
          }
       }
 
