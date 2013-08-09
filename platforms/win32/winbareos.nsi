@@ -312,6 +312,7 @@ SectionIn 1 2 3
   SetOverwrite ifnewer
   CreateDirectory "$INSTDIR\Plugins"
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
+  CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}\Plugins"
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
   File "bareos-fd.exe"
   File "bpipe-fd.dll"
@@ -920,6 +921,7 @@ ConfDeleteSkip:
 
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
+  RMDir "$SMPROGRAMS\${PRODUCT_NAME}\Plugins"
   RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
   RMDir "$INSTDIR\Plugins"
   RMDir "$INSTDIR"
