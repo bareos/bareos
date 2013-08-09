@@ -8,3 +8,4 @@ s#@dir_password@#XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX#g
 s#@dir_port@#9101#g
 s#@fd_port@#9102#g
 s#@sd_port@#9103#g
+s#@plugindir@#"C:/Program Files/Bareos/Plugins"#g
