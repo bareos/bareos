@@ -57,7 +57,7 @@ char *generate_crypto_passphrase(int length)
    char valid_chars[] = "abcdefghijklmnopqrstuvwxyz"
                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                         "0123456789"
-                        "!@#$%^&*()-_=+|\\[]{};:,.<>?/~";
+                        "!@#$%^&*()-_=+|[]{};:,.<>?/~";
 
    rand_bytes = (unsigned char *)malloc(length);
    passphrase = (char *)malloc(length);
@@ -124,7 +124,7 @@ char *generate_crypto_passphrase(int length)
    char valid_chars[] = "abcdefghijklmnopqrstuvwxyz"
                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                         "0123456789"
-                        "!@#$%^&*()-_=+|\\[]{};:,.<>?/~";
+                        "!@#$%^&*()-_=+|[]{};:,.<>?/~";
 
    rand_bytes = (int *)malloc(length * sizeof(int));
    passphrase = (char *)malloc(length);
