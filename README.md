@@ -136,18 +136,21 @@ Build System
       * CentOS 5
       * CentOS 6
       * Debian 6.0
-      * Fedora 16
-      * Fedora 17
+      * Debian 7.0
       * Fedora 18
+      * Fedora 19
       * RedHat Enterprise Linux 5 (RHEL5)
       * RedHat Enterprise Linux 6 (RHEL6)
       * Suse Linux Enterprise 11 SP1 (SLE_11_SP1)
       * Suse Linux Enterprise 11 SP2 (SLE_11_SP2)
+      * Suse Linux Enterprise 11 SP3 (SLE_11_SP3)
+      * Univention 3.1
       * OpenSuse 11.4
       * OpenSuse 12.1
       * OpenSuse 12.2
       * OpenSuse factory
       * Ubuntu 12.04
+      * Windows (32 and 64 Bit)
   * Fully automatic generation of new packages within one hour after new
     release of software or bugfix.
   * Fully automatic continuos integration tests of new packages with all supported Linux distributions
