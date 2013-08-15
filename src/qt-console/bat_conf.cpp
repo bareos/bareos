@@ -77,7 +77,7 @@ static RES_ITEM dir_items[] = {
    { "description", store_str, ITEM(dir_res.hdr.desc), 0, 0, NULL },
    { "dirport", store_pint32, ITEM(dir_res.DIRport), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
    { "address", store_str, ITEM(dir_res.address), 0, ITEM_REQUIRED, NULL },
-   { "password", store_password, ITEM(dir_res.password), 0, 0, NULL },
+   { "password", store_password, ITEM(dir_res.password), 0, ITEM_REQUIRED, NULL },
    { "tlsauthenticate",store_bool, ITEM(dir_res.tls_authenticate), 0, 0, NULL },
    { "tlsenable", store_bool, ITEM(dir_res.tls_enable), 0, 0, NULL },
    { "tlsrequire", store_bool, ITEM(dir_res.tls_require), 0, 0, NULL },
