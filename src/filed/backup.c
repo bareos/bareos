@@ -189,7 +189,7 @@ static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
    bool retval = false;
 
    if (bsctx.ff_pkt->hfsinfo.rsrclength > 0) {
-      if (!bopen_rsrc(&bsctx.ff_pkt->bfd, bsctx.ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
+      if (bopen_rsrc(&bsctx.ff_pkt->bfd, bsctx.ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
          bsctx.ff_pkt->ff_errno = errno;
          berrno be;
          Jmsg(bsctx.jcr, M_NOTSAVED, -1,
