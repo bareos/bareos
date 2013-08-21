@@ -155,6 +155,9 @@ void bRestore::displayFiles(int64_t pathid, QString path)
    bool foundFilter = false;
    QString FileFilter, FileName;
 
+   // Disable sorting while filling the table
+   FileList->setSortingEnabled(false);
+
    // If we provide pathid, use it (path can be altered by encoding conversion)
    if (pathid > 0) {
       arg = " pathid=" + QString().setNum(pathid);
@@ -256,6 +259,14 @@ void bRestore::displayFiles(int64_t pathid, QString path)
          item.widget(1)->setData(Qt::UserRole, fieldlist.join("\t")); // keep info
       }
    }
+
+   // Enable sorting after filling the table
+   FileList->setSortingEnabled(true);
+
+   // Default sort by the Filename column ascending
+   FileList->sortByColumn(1, Qt::AscendingOrder);
+
+   // Resize all columns to the data in them
    FileList->verticalHeader()->hide();
    FileList->resizeColumnsToContents();
    FileList->resizeRowsToContents();
@@ -294,6 +305,10 @@ void bRestore::displayFileVersion(QString pathid, QString fnid,
    QStringList results;
    QStringList fieldlist;
    QString tmp;
+
+   // Disable sorting while filling the table
+   FileRevisions->setSortingEnabled(false);
+
    if (m_console->dir_cmd(q, results)) {
       FileRevisions->setRowCount(results.size());
       foreach (QString resultline, results) {
@@ -321,6 +336,14 @@ void bRestore::displayFileVersion(QString pathid, QString fnid,
          item.widget(1)->setData(Qt::UserRole, fieldlist.join("\t"));
       }
    }
+
+   // Enable sorting after filling the table
+   FileRevisions->setSortingEnabled(true);
+
+   // Default sort by the Date column ascending
+   FileRevisions->sortByColumn(4, Qt::DescendingOrder);
+
+   // Resize all columns to the data in them
    FileRevisions->verticalHeader()->hide();
    FileRevisions->resizeColumnsToContents();
    FileRevisions->resizeRowsToContents();
@@ -571,8 +594,8 @@ void bRestore::get_info_from_selection(QStringList &fileids,
    int32_t LinkFI;
    for (int i=0; i < RestoreList->rowCount(); i++) {
       QTableWidgetItem *item = RestoreList->item(i, 1);
-      QString data = item->data(Qt::UserRole).toString();
-      QStringList lst = data.split("\t");
+      QString filedata = item->data(Qt::UserRole).toString();
+      QStringList lst = filedata.split("\t");
       if (lst.at(1) != "0") {   // skip path
          fileids << lst.at(2);
          jobids << lst.at(3);

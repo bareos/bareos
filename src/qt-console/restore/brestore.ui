@@ -133,7 +133,7 @@
            <bool>false</bool>
           </property>
           <property name="sortingEnabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <attribute name="verticalHeaderVisible">
            <bool>false</bool>
@@ -357,6 +357,9 @@
           <property name="dragDropMode">
            <enum>QAbstractItemView::DragOnly</enum>
           </property>
+	  <property name="sortingEnabled">
+	   <bool>true</bool>
+	  </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
@@ -469,6 +472,9 @@ p, li { white-space: pre-wrap; }
          <property name="dragDropMode">
           <enum>QAbstractItemView::DropOnly</enum>
          </property>
+	 <property name="sortingEnabled">
+	  <bool>true</bool>
+	 </property>
          <property name="defaultDropAction">
           <enum>Qt::MoveAction</enum>
          </property>
