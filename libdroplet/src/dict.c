@@ -33,7 +33,23 @@
  */
 #include "dropletp.h"
 
-/** @file */
+/**
+ * @defgroup dict Dictionaries
+ * @addtogroup dict
+ * @{
+ * Nestable dictionary keyed on strings.
+ *
+ * The `dpl_dict_t` structure is a simple key/value dictionary.  Keys
+ * are strings, and values may be strings, vectors, or nested dicts.
+ * Entries are unique for a given key; adding a second entry with a
+ * matching key silently replaces the original.
+ *
+ * Dicts are implemented with a chained hash table for efficiency.
+ *
+ * Dicts are used within Droplet to store all kinds of data, but in
+ * particular collections of user metadata strings (which map naturally
+ * to key/value string pairs).
+ */
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
@@ -679,3 +695,5 @@ dpl_dict_get_value(const dpl_dict_t *dict,
   assert(var->val->type == DPL_VALUE_STRING);
   return dpl_sbuf_get_str(var->val->string);
 }
+
+/** @} */
