@@ -33,3 +33,5 @@ tools/dplsh
 .deps
 .libs
 libdroplet.spec
+ylwrap
+.dirstamp
