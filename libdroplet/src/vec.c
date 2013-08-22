@@ -33,6 +33,8 @@
  */
 #include "dropletp.h"
 
+/** @file */
+
 void
 dpl_vec_free(dpl_vec_t *vec)
 {

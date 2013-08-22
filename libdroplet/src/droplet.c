@@ -33,6 +33,8 @@
  */
 #include "dropletp.h"
 
+/** @file */
+
 int dpl_header_size;
 
 const char *
