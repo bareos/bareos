@@ -16,10 +16,12 @@ libdroplet_la_SOURCES = \
 	src/req.c \
 	src/vec.c \
 	src/sbuf.c \
+	src/dbuf.c \
 	src/ntinydb.c \
 	src/utils.c \
 	src/rest.c \
 	src/sysmd.c \
+	src/id_scheme.c \
 	src/task.c \
 	src/async.c \
 	src/addrlist.c \
@@ -39,8 +41,18 @@ libdroplet_la_SOURCES = \
 	srws/replyparser.c \
 	srws/reqbuilder.c \
 	srws/srws.c \
+	srws/key.c \
+	sproxyd/backend.c \
+	sproxyd/replyparser.c \
+	sproxyd/reqbuilder.c \
+	sproxyd/sproxyd.c \
+	sproxyd/key.c \
 	posix/posix.c \
-	posix/backend.c
+	posix/backend.c \
+	posix/reqbuilder.c \
+	posix/replyparser.c \
+	uks/uks.c \
+	scal/gc.c
 
 libdropletincludedir = $(includedir)/droplet-3.0/
 libdropletinclude_HEADERS = \
@@ -60,11 +72,13 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/req.h \
 	include/droplet/vec.h \
 	include/droplet/sbuf.h \
+	include/droplet/dbuf.h \
 	include/droplet/ntinydb.h \
 	include/droplet/utils.h \
 	include/droplet/backend.h \
 	include/droplet/rest.h \
 	include/droplet/sysmd.h \
+	include/droplet/id_scheme.h \
 	include/droplet/vfs.h \
 	include/droplet/task.h \
 	include/droplet/addrlist.h \
@@ -91,9 +105,28 @@ libdropletdropletsrwsinclude_HEADERS = \
 	include/droplet/srws/backend.h \
 	include/droplet/srws/replyparser.h \
 	include/droplet/srws/reqbuilder.h \
-	include/droplet/srws/srws.h
+	include/droplet/srws/srws.h \
+	include/droplet/srws/key.h
+
+libdropletdropletsproxydincludedir = $(includedir)/droplet-3.0/droplet/sproxyd
+libdropletdropletsproxydinclude_HEADERS = \
+	include/droplet/sproxyd/backend.h \
+	include/droplet/sproxyd/replyparser.h \
+	include/droplet/sproxyd/reqbuilder.h \
+	include/droplet/sproxyd/sproxyd.h \
+	include/droplet/sproxyd/key.h
 
 libdropletdropletposixincludedir = $(includedir)/droplet-3.0/droplet/posix
 libdropletdropletposixinclude_HEADERS = \
 	include/droplet/posix/backend.h \
+	include/droplet/posix/reqbuilder.h \
+	include/droplet/posix/replyparser.h \
 	include/droplet/posix/posix.h
+
+libdropletdropletuksincludedir = $(includedir)/droplet-3.0/droplet/uks
+libdropletdropletuksinclude_HEADERS = \
+	include/droplet/uks/uks.h
+
+libdropletdropletscalincludedir = $(includedir)/droplet-3.0/droplet/scal
+libdropletdropletscalinclude_HEADERS = \
+	include/droplet/scal/gc.h

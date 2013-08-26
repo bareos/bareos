@@ -115,9 +115,25 @@ typedef enum
     DPL_TRACE_ID    = (1u<<8),  /*!< trace ID based calls */
     DPL_TRACE_VFS   = (1u<<9),  /*!< trace VFS based calls */
     DPL_TRACE_BACKEND = (1u<<10),  /*!< trace backend calls */
+    DPL_TRACE_ID_SCHEME = (1u<<11), /*!< trace ID scheme calls */
   } dpl_trace_t;
 
 typedef void (*dpl_trace_func_t)(pid_t tid, dpl_trace_t, const char *file, const char *func, int lineno, char *buf);
+
+typedef enum
+  {
+    DPL_CAP_BUCKETS         = (1ULL<<0), /*!< ability to manipulate buckets */
+    DPL_CAP_FNAMES          = (1ULL<<1), /*!< ability to manipulate files by name */
+    DPL_CAP_IDS             = (1ULL<<2), /*!< ability to manipulate files by ID */
+    DPL_CAP_LAZY            = (1ULL<<3), /*!< support lazy option */
+    DPL_CAP_HTTP_COMPAT     = (1ULL<<4), /*!< support HTTP compat option */
+    DPL_CAP_RAW             = (1ULL<<5), /*!< support raw operations */
+    DPL_CAP_APPEND_METADATA = (1ULL<<6), /*!< support append_metadata option */
+    DPL_CAP_CONSISTENCY     = (1ULL<<7), /*!< support consistency options */
+    DPL_CAP_VERSIONING      = (1ULL<<8), /*!< support versioning options */
+    DPL_CAP_CONDITIONS      = (1ULL<<9), /*!< support conditions */
+    DPL_CAP_PUT_RANGE       = (1ULL<<10), /*!< support PUT range */
+  } dpl_capability_t;
 
 #include <droplet/value.h>
 #include <droplet/vec.h>
@@ -260,8 +276,9 @@ typedef enum
     DPL_STORAGE_CLASS_UNDEF,
     DPL_STORAGE_CLASS_STANDARD,
     DPL_STORAGE_CLASS_REDUCED_REDUNDANCY,
+    DPL_STORAGE_CLASS_CUSTOM
   } dpl_storage_class_t;
-#define DPL_N_STORAGE_CLASS (DPL_STORAGE_CLASS_REDUCED_REDUNDANCY+1)
+#define DPL_N_STORAGE_CLASS (DPL_STORAGE_CLASS_CUSTOM+1)
 
 typedef enum
   {
@@ -300,6 +317,7 @@ typedef enum
     DPL_SYSMD_MASK_FTYPE         = (1u<<14),
     DPL_SYSMD_MASK_ENTERPRISE_NUMBER  = (1u<<15),
     DPL_SYSMD_MASK_PATH          = (1u<<16),
+    DPL_SYSMD_MASK_VERSION       = (1u<<17),
   } dpl_sysmd_mask_t;
 
 typedef struct
@@ -327,23 +345,34 @@ typedef struct
   dpl_ftype_t ftype;
   uint32_t enterprise_number;
   char path[DPL_MAXPATHLEN+1];
+  char version[DPL_SYSMD_ID_SIZE+1];
 } dpl_sysmd_t;
 
 /**/
 
 typedef enum
   {
-    DPL_CONDITION_IF_MODIFIED_SINCE   = (1u<<0),
-    DPL_CONDITION_IF_UNMODIFIED_SINCE = (1u<<1),
-    DPL_CONDITION_IF_MATCH            = (1u<<2),
-    DPL_CONDITION_IF_NONE_MATCH       = (1u<<3)
-  } dpl_condition_mask_t;
+    DPL_CONDITION_IF_MODIFIED_SINCE,
+    DPL_CONDITION_IF_UNMODIFIED_SINCE,
+    DPL_CONDITION_IF_MATCH,
+    DPL_CONDITION_IF_NONE_MATCH,
+  } dpl_condition_type_t;
 
 typedef struct
 {
-  dpl_condition_mask_t mask;
-  time_t time;
-  char etag[MD5_DIGEST_LENGTH];
+  dpl_condition_type_t type;
+  union
+  {
+    time_t time;
+    char etag[MD5_DIGEST_LENGTH];
+  };
+} dpl_condition_one_t;
+
+typedef struct
+{
+  int n_conds;
+#define DPL_COND_MAX 10
+  dpl_condition_one_t conds[DPL_COND_MAX];
 } dpl_condition_t;
 
 typedef enum
@@ -352,11 +381,17 @@ typedef enum
     DPL_OPTION_HTTP_COMPAT         = (1u<<1), /*!< use HTTP compat mode */
     DPL_OPTION_RAW                 = (1u<<2), /*!< put/get RAW buffer */
     DPL_OPTION_APPEND_METADATA     = (1u<<3), /*!< append metadata */
+    DPL_OPTION_CONSISTENT          = (1u<<4), /*!< perform a consistent operation */
+    DPL_OPTION_EXPECT_VERSION      = (1u<<5), /*!< expect version */
+    DPL_OPTION_FORCE_VERSION       = (1u<<6), /*!< force version */
+    DPL_OPTION_NOALLOC             = (1u<<7), /*!< caller provides buffer for GETs */
   } dpl_option_mask_t;
 
 typedef struct
 {
   dpl_option_mask_t mask;
+  char expect_version[DPL_SYSMD_ID_SIZE+1];
+  char force_version[DPL_SYSMD_ID_SIZE+1];
 } dpl_option_t;
 
 typedef struct
@@ -414,7 +449,7 @@ typedef struct dpl_ctx
 {
   /*
    * profile
-   */
+x   */
   int n_conn_buckets;         /*!< number of buckets         */
   int n_conn_max;             /*!< max connexions            */
   int n_conn_max_hits;        /*!< before auto-close         */
@@ -564,6 +599,7 @@ typedef dpl_status_t (*dpl_metadatum_func_t)(void *cb_arg,
 #include <droplet/req.h>
 #include <droplet/rest.h>
 #include <droplet/sysmd.h>
+#include <droplet/id_scheme.h>
 
 /* PROTO droplet.c */
 /* src/droplet.c */
@@ -578,6 +614,7 @@ double dpl_price_storage(dpl_ctx_t *ctx, size_t size);
 char *dpl_price_storage_str(dpl_ctx_t *ctx, size_t size);
 char *dpl_size_str(uint64_t size);
 struct dpl_backend_s *dpl_backend_find(const char *name);
+dpl_status_t dpl_print_capabilities(dpl_ctx_t *ctx);
 void dpl_bucket_free(dpl_bucket_t *bucket);
 void dpl_vec_buckets_free(dpl_vec_t *vec);
 void dpl_object_free(dpl_object_t *object);

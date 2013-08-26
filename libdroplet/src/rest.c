@@ -50,6 +50,43 @@ dpl_get_backend_name(dpl_ctx_t *ctx)
 }
 
 /**
+ * @brief get the backend capabilities
+ *
+ * @param ctx droplet context
+ * @param[out] maskp a pointer to @a mask
+ *
+ */
+dpl_status_t
+dpl_get_capabilities(dpl_ctx_t *ctx,
+                     dpl_capability_t *maskp)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "get_capabilities");
+
+  if (NULL == ctx->backend->get_capabilities)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret2 = ctx->backend->get_capabilities(ctx, maskp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+  
+ end:
+  
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+  
+  return ret;
+}
+
+/**
  * @brief convert the absolute URI in @a location string to a relative
  * resource (possibly removing ctx->base_path) and subresource
  *
@@ -1312,7 +1349,7 @@ dpl_copy_id(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "copy_id src_bucket=%s src_id=%s dst_bucket=%s dst_path=%s", src_bucket, src_id, dst_bucket, dst_path);
 
-  if (NULL == ctx->backend->copy)
+  if (NULL == ctx->backend->copy_id)
     {
       ret = DPL_ENOTSUPP;
       goto end;

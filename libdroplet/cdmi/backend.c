@@ -1259,7 +1259,7 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
 
   if (NULL != sysmd)
     {
-      ret2 = add_sysmd_to_req(sysmd, req);
+      ret2 = dpl_cdmi_add_sysmd_to_req(sysmd, req);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1544,7 +1544,7 @@ dpl_cdmi_put_buffered_internal(dpl_ctx_t *ctx,
 
   if (NULL != sysmd)
     {
-      ret2 = add_sysmd_to_req(sysmd, req);
+      ret2 = dpl_cdmi_add_sysmd_to_req(sysmd, req);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1918,7 +1918,15 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
+  if (option && option->mask & DPL_OPTION_NOALLOC)
+    {
+      data_buf = *data_bufp;
+      data_len = *data_lenp;
+    }
+
+  ret2 = dpl_read_http_reply_ext(conn, 1, 
+                                 (option && option->mask & DPL_OPTION_NOALLOC) ? 1 : 0,
+                                 &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2054,7 +2062,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   if (NULL != val)
     dpl_value_free(val);
 
-  if (NULL != data_buf)
+  if ((option && !(option->mask & DPL_OPTION_NOALLOC)) && NULL != data_buf)
     free(data_buf);
 
   if (NULL != conn)
@@ -2731,7 +2739,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
 
   if (NULL != sysmd)
     {
-      ret2 = add_sysmd_to_req(sysmd, req);
+      ret2 = dpl_cdmi_add_sysmd_to_req(sysmd, req);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;

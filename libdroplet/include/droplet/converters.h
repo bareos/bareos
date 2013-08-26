@@ -50,4 +50,6 @@ dpl_ftype_t dpl_object_type(char *str);
 char *dpl_object_type_str(dpl_ftype_t object_type);
 dpl_dict_t *dpl_parse_metadata(char *metadata);
 dpl_dict_t *dpl_parse_query_params(char *query_params);
+dpl_status_t dpl_parse_condition(const char *str, dpl_condition_t *condp);
+dpl_status_t dpl_parse_option(const char *str, dpl_option_t *optp);
 #endif
