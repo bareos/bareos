@@ -652,9 +652,10 @@ append_to_nonexisting_named_object_precond()
 
   banner("4 - append data to nonexisting named object with precondition");
   
-  condition.mask = DPL_CONDITION_IF_MATCH;
-  condition.etag[0] = '*';
-  condition.etag[1] = 0;
+  condition.conds[0].type = DPL_CONDITION_IF_MATCH;
+  condition.conds[0].etag[0] = '*';
+  condition.conds[0].etag[1] = 0;
+  condition.n_conds = 1;
 
   atask = (dpl_async_task_t *) dpl_post_async_prepare(ctx,
                                                       NULL,          //no bucket
@@ -719,9 +720,10 @@ add_existing_named_object()
 
   banner("3 - add existing named object with precondition");
   
-  condition.mask = DPL_CONDITION_IF_NONE_MATCH;
-  condition.etag[0] = '*';
-  condition.etag[1] = 0;
+  condition.conds[0].type = DPL_CONDITION_IF_NONE_MATCH;
+  condition.conds[0].etag[0] = '*';
+  condition.conds[0].etag[1] = 0;
+  condition.n_conds = 1;
 
   atask = (dpl_async_task_t *) dpl_put_async_prepare(ctx,
                                                      NULL,          //no bucket

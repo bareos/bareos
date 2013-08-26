@@ -884,3 +884,17 @@ dpl_copy_directive_to_str(dpl_copy_directive_t directive)
 
   return "impossible case";
 }
+
+u_int 
+dpl_pow2_next(u_int v)
+{
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v++;
+  
+  return v;
+}

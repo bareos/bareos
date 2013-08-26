@@ -645,7 +645,7 @@ dpl_posix_put(dpl_ctx_t *ctx,
         }
     }
 
-  ret2 = posix_setattr(path, metadata, sysmd);
+  ret2 = dpl_posix_setattr(path, metadata, sysmd);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -722,7 +722,7 @@ dpl_posix_put_buffered(dpl_ctx_t *ctx,
       break ;
     }
 
-  ret2 = posix_setattr(path, metadata, sysmd);
+  ret2 = dpl_posix_setattr(path, metadata, sysmd);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -862,11 +862,19 @@ dpl_posix_get(dpl_ctx_t *ctx,
       length = data_len;
     }
 
-  data_buf = malloc(length);
-  if (NULL == data_buf)
+  if (option && option->mask & DPL_OPTION_NOALLOC)
     {
-      ret = DPL_ENOMEM;
-      goto end;
+      data_buf = *data_bufp;
+      length = *data_lenp;
+    }
+  else
+    {
+      data_buf = malloc(length);
+      if (NULL == data_buf)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
     }
 
   cc = pread(fd, data_buf, length, offset);
@@ -895,7 +903,7 @@ dpl_posix_get(dpl_ctx_t *ctx,
 
  end:
 
-  if (NULL != data_buf)
+  if ((option && !(option->mask & DPL_OPTION_NOALLOC)) && NULL != data_buf)
     free(data_buf);
 
   if (-1 != fd)
@@ -1271,14 +1279,14 @@ dpl_posix_head_raw(dpl_ctx_t *ctx,
           goto end;
         }
 
-      if (strncmp(key, XATTR_PREFIX, strlen(XATTR_PREFIX)))
+      if (strncmp(key, DPL_POSIX_XATTR_PREFIX, strlen(DPL_POSIX_XATTR_PREFIX)))
         {
           ret = DPL_EINVAL;
           goto end;
         }
 
       buf[val_len] = 0;
-      ret2 = dpl_dict_add(subdict, key + strlen(XATTR_PREFIX), buf, 0);
+      ret2 = dpl_dict_add(subdict, key + strlen(DPL_POSIX_XATTR_PREFIX), buf, 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1480,7 +1488,7 @@ dpl_posix_copy(dpl_ctx_t *ctx,
           goto end;
         }
 
-      ret2 = posix_setattr(src_path, metadata, sysmd);
+      ret2 = dpl_posix_setattr(src_path, metadata, sysmd);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;

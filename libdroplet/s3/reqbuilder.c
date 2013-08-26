@@ -67,15 +67,15 @@ add_metadata_to_headers(dpl_dict_t *metadata,
 }
 
 static dpl_status_t
-add_condition_to_headers(const dpl_condition_t *condition,
+add_condition_to_headers(const dpl_condition_one_t *condition,
                          dpl_dict_t *headers,
                          int copy_source)
 {
   int ret;
   char *header;
 
-  if (condition->mask & (DPL_CONDITION_IF_MODIFIED_SINCE|
-                         DPL_CONDITION_IF_UNMODIFIED_SINCE))
+  if (condition->type == DPL_CONDITION_IF_MODIFIED_SINCE ||
+      condition->type == DPL_CONDITION_IF_UNMODIFIED_SINCE)
     {
       char date_str[128];
       struct tm tm_buf;
@@ -84,7 +84,7 @@ add_condition_to_headers(const dpl_condition_t *condition,
       if (0 == ret)
         return DPL_FAILURE;
 
-      if (condition->mask & DPL_CONDITION_IF_MODIFIED_SINCE)
+      if (condition->type == DPL_CONDITION_IF_MODIFIED_SINCE)
         {
           if (1 == copy_source)
             header = "x-amz-copy-source-if-modified-since";
@@ -97,7 +97,7 @@ add_condition_to_headers(const dpl_condition_t *condition,
             }
         }
 
-      if (condition->mask & DPL_CONDITION_IF_UNMODIFIED_SINCE)
+      if (condition->type == DPL_CONDITION_IF_UNMODIFIED_SINCE)
         {
           if (1 == copy_source)
             header = "x-amz-copy-source-if-unmodified-since";
@@ -111,7 +111,7 @@ add_condition_to_headers(const dpl_condition_t *condition,
         }
     }
 
-  if (condition->mask & DPL_CONDITION_IF_MATCH)
+  if (condition->type == DPL_CONDITION_IF_MATCH)
     {
       if (1 == copy_source)
         header = "x-amz-copy-source-if-match";
@@ -124,7 +124,7 @@ add_condition_to_headers(const dpl_condition_t *condition,
         }
     }
 
-  if (condition->mask & DPL_CONDITION_IF_NONE_MATCH)
+  if (condition->type == DPL_CONDITION_IF_NONE_MATCH)
     {
       if (1 == copy_source)
         header = "x-amz-copy-source-if-none-match";
@@ -138,6 +138,31 @@ add_condition_to_headers(const dpl_condition_t *condition,
     }
 
   return DPL_SUCCESS;
+}
+
+static dpl_status_t
+add_conditions_to_headers(const dpl_condition_t *condition,
+                          dpl_dict_t *headers,
+                          int copy_source)
+{
+  int i;
+  dpl_status_t ret, ret2;
+
+  for (i = 0;i < condition->n_conds;i++)
+    {
+      ret2 = add_condition_to_headers(&condition->conds[i], headers, copy_source);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
 }
 
 static int
@@ -460,7 +485,7 @@ dpl_s3_req_build(const dpl_req_t *req,
             }
         }
 
-      ret2 = add_condition_to_headers(&req->condition, headers, 0);
+      ret2 = add_conditions_to_headers(&req->condition, headers, 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -646,7 +671,7 @@ dpl_s3_req_build(const dpl_req_t *req,
                 }
             }
 
-          ret2 = add_condition_to_headers(&req->copy_source_condition, headers, 1);
+          ret2 = add_conditions_to_headers(&req->copy_source_condition, headers, 1);
           if (DPL_SUCCESS != ret2)
             {
               ret = ret2;

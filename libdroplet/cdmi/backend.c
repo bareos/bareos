@@ -388,7 +388,7 @@ dpl_cdmi_req_add_range(dpl_req_t *req,
       char buf[256];
       
       snprintf(buf, sizeof (buf), "value:%d-%d", range->start, range->end);
-      ret2 = dpl_req_set_subresource(req, buf);
+      ret2 = dpl_req_add_subresource(req, buf);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1198,7 +1198,7 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
   u_int data_len_returned;
   dpl_value_t *val = NULL;
   dpl_cdmi_req_mask_t req_mask = 0u;
-  
+
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   if (option)
@@ -1259,7 +1259,7 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
 
   if (NULL != sysmd)
     {
-      ret2 = add_sysmd_to_req(sysmd, req);
+      ret2 = dpl_cdmi_add_sysmd_to_req(sysmd, req);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1544,7 +1544,7 @@ dpl_cdmi_put_buffered_internal(dpl_ctx_t *ctx,
 
   if (NULL != sysmd)
     {
-      ret2 = add_sysmd_to_req(sysmd, req);
+      ret2 = dpl_cdmi_add_sysmd_to_req(sysmd, req);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1833,6 +1833,14 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
       goto end;
     }
 
+  if (NULL == subresource)
+    {
+      if (DPL_FTYPE_REG == object_type)
+        {
+          subresource = "valuetransferencoding";
+        }
+    }
+
   if (NULL != subresource)
     {
       ret2 = dpl_req_set_subresource(req, subresource);
@@ -1910,7 +1918,15 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
+  if (option && option->mask & DPL_OPTION_NOALLOC)
+    {
+      data_buf = *data_bufp;
+      data_len = *data_lenp;
+    }
+
+  ret2 = dpl_read_http_reply_ext(conn, 1, 
+                                 (option && option->mask & DPL_OPTION_NOALLOC) ? 1 : 0,
+                                 &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -2046,7 +2062,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   if (NULL != val)
     dpl_value_free(val);
 
-  if (NULL != data_buf)
+  if ((option && !(option->mask & DPL_OPTION_NOALLOC)) && NULL != data_buf)
     free(data_buf);
 
   if (NULL != conn)
@@ -2723,7 +2739,7 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
 
   if (NULL != sysmd)
     {
-      ret2 = add_sysmd_to_req(sysmd, req);
+      ret2 = dpl_cdmi_add_sysmd_to_req(sysmd, req);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;

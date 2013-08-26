@@ -657,6 +657,7 @@ struct httreply_conven
 {
   char *data_buf;
   u_int data_len;
+  u_int max_len;
   dpl_dict_t *headers;
 };
 
@@ -714,6 +715,23 @@ cb_httpreply_buffer(void *cb_arg,
   return DPL_SUCCESS;
 }
 
+static dpl_status_t
+cb_httpreply_buffer_noalloc(void *cb_arg,
+                            char *buf,
+                            u_int len)
+{
+  struct httreply_conven *hc = (struct httreply_conven *) cb_arg;
+  int remain;
+
+  remain = hc->max_len - hc->data_len;
+  remain = MIN(remain, len);
+
+  memcpy(hc->data_buf + hc->data_len, buf, remain);
+  hc->data_len += remain;
+
+  return DPL_SUCCESS;
+}
+
 dpl_status_t
 dpl_map_http_status(int http_status)
 {
@@ -756,6 +774,7 @@ dpl_map_http_status(int http_status)
  *
  * @param fd
  * @param expect_data
+ * @param buffer_provided if 1 then caller provides buffer and length in *data_bufp and *data_lenp
  * @param data_bufp caller must free it
  * @param data_lenp
  * @param headersp caller must free it
@@ -763,12 +782,13 @@ dpl_map_http_status(int http_status)
  * @return dpl_status
  */
 dpl_status_t
-dpl_read_http_reply(dpl_conn_t *conn,
-                    int expect_data,
-                    char **data_bufp,
-                    unsigned int *data_lenp,
-                    dpl_dict_t **headersp,
-                    int *connection_closep)
+dpl_read_http_reply_ext(dpl_conn_t *conn,
+                        int expect_data,
+                        int buffer_provided,
+                        char **data_bufp,
+                        unsigned int *data_lenp,
+                        dpl_dict_t **headersp,
+                        int *connection_closep)
 {
   int ret, ret2;
   struct httreply_conven hc;
@@ -777,7 +797,18 @@ dpl_read_http_reply(dpl_conn_t *conn,
 
   memset(&hc, 0, sizeof (hc));
 
-  ret2 = dpl_read_http_reply_buffered(conn, expect_data, &http_status, cb_httpreply_header, cb_httpreply_buffer, &hc);
+  if (buffer_provided)
+    {
+      hc.data_buf = *data_bufp;
+      hc.max_len = *data_lenp;
+    }
+
+  ret2 = dpl_read_http_reply_buffered(conn,
+                                      expect_data, 
+                                      &http_status, 
+                                      cb_httpreply_header, 
+                                      buffer_provided ? cb_httpreply_buffer_noalloc : cb_httpreply_buffer, 
+                                      &hc);
   if (DPL_SUCCESS != ret2)
     {
       //on I/O failure close connection
@@ -833,4 +864,15 @@ dpl_read_http_reply(dpl_conn_t *conn,
     *connection_closep = connection_close;
 
   return ret;
+}
+
+dpl_status_t
+dpl_read_http_reply(dpl_conn_t *conn,
+                    int expect_data,
+                    char **data_bufp,
+                    unsigned int *data_lenp,
+                    dpl_dict_t **headersp,
+                    int *connection_closep)
+{
+  return dpl_read_http_reply_ext(conn, expect_data, 0, data_bufp, data_lenp, headersp, connection_closep);
 }

@@ -41,6 +41,8 @@ dpl_backend_t
 dpl_backend_srws = 
   {
     "srws",
+    .get_capabilities   = dpl_srws_get_capabilities,
+    .get_id_scheme      = dpl_srws_get_id_scheme,
     .put_id 		= dpl_srws_put,
     .put_id_buffered	= dpl_srws_put_buffered,
     .get_id 		= dpl_srws_get,
@@ -48,5 +50,5 @@ dpl_backend_srws =
     .head_id 		= dpl_srws_head,
     .head_id_raw	= dpl_srws_head_raw,
     .delete_id 		= dpl_srws_delete,
-    .copy               = dpl_srws_copy,
+    .copy_id            = dpl_srws_copy,
   };

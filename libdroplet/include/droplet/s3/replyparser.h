@@ -38,6 +38,8 @@
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */
+dpl_status_t dpl_s3_get_metadatum_from_header(const char *header, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_s3_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_s3_parse_list_all_my_buckets(const dpl_ctx_t *ctx, const char *buf, int len, dpl_vec_t *vec);
 dpl_status_t dpl_s3_parse_list_bucket(const dpl_ctx_t *ctx, const char *buf, int len, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
 #endif

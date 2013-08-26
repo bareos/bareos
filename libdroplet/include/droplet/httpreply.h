@@ -73,5 +73,6 @@ dpl_status_t dpl_read_http_reply_buffered(dpl_conn_t *conn, int expect_data, int
 int dpl_connection_close(dpl_dict_t *headers_returned);
 char *dpl_location(dpl_dict_t *headers_returned);
 dpl_status_t dpl_map_http_status(int http_status);
+dpl_status_t dpl_read_http_reply_ext(dpl_conn_t *conn, int expect_data, int buffer_provided, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **headersp, int *connection_closep);
 dpl_status_t dpl_read_http_reply(dpl_conn_t *conn, int expect_data, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **headersp, int *connection_closep);
 #endif

@@ -63,12 +63,15 @@
 #include <pwd.h>
 #include <fcntl.h>
 #include <sys/prctl.h>
+#include <droplet/json_adapter.h>
 #include <droplet/utils.h>
 #include <droplet/profile.h>
 #include <droplet/httpreply.h>
 #include <droplet/pricing.h>
 #include <droplet/backend.h>
+#include <droplet/id_scheme.h>
 #include <droplet/sbuf.h>
+#include <droplet/dbuf.h>
 #include <droplet/ntinydb.h>
 #include <droplet/task.h>
 

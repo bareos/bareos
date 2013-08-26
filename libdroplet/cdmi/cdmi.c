@@ -41,6 +41,7 @@ dpl_backend_t
 dpl_backend_cdmi = 
   {
     "cdmi",
+    .get_capabilities   = dpl_cdmi_get_capabilities,
     .list_bucket 	= dpl_cdmi_list_bucket,
     .post 		= dpl_cdmi_post,
     .post_buffered      = dpl_cdmi_post_buffered,
@@ -51,6 +52,7 @@ dpl_backend_cdmi =
     .head 		= dpl_cdmi_head,
     .head_raw 		= dpl_cdmi_head_raw,
     .deletef 		= dpl_cdmi_delete,
+    .get_id_scheme      = dpl_cdmi_get_id_scheme,
     .post_id 		= dpl_cdmi_post_id,
     .post_id_buffered   = dpl_cdmi_post_id_buffered,
     .put_id 		= dpl_cdmi_put_id,

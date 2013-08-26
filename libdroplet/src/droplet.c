@@ -259,6 +259,7 @@ dpl_size_str(uint64_t size)
 extern dpl_backend_t dpl_backend_s3;
 extern dpl_backend_t dpl_backend_cdmi;
 extern dpl_backend_t dpl_backend_srws;
+extern dpl_backend_t dpl_backend_sproxyd;
 extern dpl_backend_t dpl_backend_posix;
 
 dpl_backend_t *
@@ -270,10 +271,50 @@ dpl_backend_find(const char *name)
     return &dpl_backend_cdmi;
   else if (!strcmp(name, "srws"))
     return &dpl_backend_srws;
+  else if (!strcmp(name, "sproxyd"))
+    return &dpl_backend_sproxyd;
   else if (!strcmp(name, "posix"))
     return &dpl_backend_posix;
 
   return NULL;
+}
+
+dpl_status_t
+dpl_print_capabilities(dpl_ctx_t *ctx)
+{
+  dpl_status_t ret, ret2;
+  dpl_capability_t mask;
+
+  if (NULL == ctx->backend->get_capabilities)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret2 = ctx->backend->get_capabilities(ctx, &mask);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  printf("buckets:\t\t%d\n", mask & DPL_CAP_BUCKETS ? 1 : 0);
+  printf("fnames:\t\t\t%d\n", mask & DPL_CAP_FNAMES ? 1 : 0);
+  printf("ids:\t\t\t%d\n", mask & DPL_CAP_IDS ? 1 : 0);
+  printf("lazy:\t\t\t%d\n", mask & DPL_CAP_LAZY ? 1 : 0);
+  printf("http_compat:\t\t%d\n", mask & DPL_CAP_HTTP_COMPAT ? 1 : 0);
+  printf("raw:\t\t\t%d\n", mask & DPL_CAP_RAW ? 1 : 0);
+  printf("append_metadata:\t%d\n", mask & DPL_CAP_APPEND_METADATA ? 1 : 0);
+  printf("consistency:\t\t%d\n", mask & DPL_CAP_CONSISTENCY ? 1 : 0);
+  printf("versioning:\t\t%d\n", mask & DPL_CAP_VERSIONING ? 1 : 0);
+  printf("conditions:\t\t%d\n", mask & DPL_CAP_CONDITIONS ? 1 : 0);
+  printf("put_range:\t\t%d\n", mask & DPL_CAP_PUT_RANGE ? 1 : 0);
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  return ret;
 }
 
 /* other */

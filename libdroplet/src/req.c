@@ -214,6 +214,28 @@ dpl_req_set_subresource(dpl_req_t *req,
   return DPL_SUCCESS;
 }
 
+dpl_status_t
+dpl_req_add_subresource(dpl_req_t *req,
+                        const char *subresource)
+{
+  char *nstr = NULL;
+  char *tmp = NULL;
+
+  if (! req->subresource)
+    return dpl_req_set_subresource(req, subresource);
+
+  tmp = realloc(req->subresource,
+                strlen(req->subresource) + strlen(subresource) + 2);
+  if (! tmp)
+    return DPL_ENOMEM;
+
+  tmp = strcat(tmp, ";");
+  tmp = strcat(tmp, subresource);
+  req->subresource = tmp;
+
+  return DPL_SUCCESS;
+}
+
 void
 dpl_req_add_behavior(dpl_req_t *req,
                      unsigned int flags)

@@ -35,6 +35,7 @@
 #define __DROPLET_REST_H__ 1
 
 const char *dpl_get_backend_name(dpl_ctx_t *ctx);
+dpl_status_t dpl_get_capabilities(dpl_ctx_t *ctx, dpl_capability_t *maskp);
 dpl_status_t dpl_list_all_my_buckets(dpl_ctx_t *ctx, dpl_vec_t **vecp);
 dpl_status_t dpl_list_bucket(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
 dpl_status_t dpl_make_bucket(dpl_ctx_t *ctx, const char *bucket, dpl_location_constraint_t location_constraint, dpl_canned_acl_t canned_acl);
@@ -52,9 +53,9 @@ dpl_status_t dpl_copy(dpl_ctx_t *ctx, const char *src_bucket, const char *src_pa
 dpl_status_t dpl_post_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, dpl_sysmd_t *returned_sysmdp);
 dpl_status_t dpl_post_id_buffered(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, const dpl_dict_t *query_params, dpl_conn_t **connp);dpl_status_t dpl_post_buffered_id(dpl_ctx_t *ctx, const char *bucket, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, const dpl_dict_t *query_params, dpl_conn_t **connp);
 dpl_status_t dpl_put_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len);
-dpl_status_t dpl_put_buffered_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp);
+dpl_status_t dpl_put_id_buffered(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, dpl_conn_t **connp);
 dpl_status_t dpl_get_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_get_buffered_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, dpl_metadatum_func_t metadatum_func, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, dpl_buffer_func_t buffer_func, void *cb_arg);
+dpl_status_t dpl_get_id_buffered(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, dpl_metadatum_func_t metadatum_func, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, dpl_buffer_func_t buffer_func, void *cb_arg);
 dpl_status_t dpl_head_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_head_raw_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap);
 dpl_status_t dpl_delete_id(dpl_ctx_t *ctx, const char *bucket, const char *id, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition);

@@ -40,23 +40,6 @@ typedef enum
     DPL_SRWS_REQ_LAZY    = (1u<<1),
   } dpl_srws_req_mask_t;
 
-#define SRWS_CLASS_NBITS            4
-#define SRWS_REPLICA_NBITS          4
-#define SRWS_EXTRA_NBITS            (SRWS_CLASS_NBITS+SRWS_REPLICA_NBITS)
-
-#define SRWS_SPECIFIC_NBITS       24
-#define SRWS_SERVICEID_NBITS      8
-#define SRWS_VOLID_NBITS          32
-#define SRWS_OID_NBITS            64
-#define SRWS_HASH_NBITS           24 /*!< dispersion */
-
-#define SRWS_PAYLOAD_NBITS        (SRWS_SPECIFIC_NBITS+SRWS_SERVICEID_NBITS+SRWS_VOLID_NBITS+SRWS_OID_NBITS)
-
-/*
- * Service IDs
- */
-#define SRWS_SERVICE_ID_TEST     0x00
-
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */
 dpl_status_t dpl_srws_req_build(const dpl_req_t *req, dpl_srws_req_mask_t req_mask, dpl_dict_t **headersp);

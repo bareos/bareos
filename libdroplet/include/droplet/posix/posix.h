@@ -35,5 +35,7 @@
 #define __DROPLET_POSIX_H__ 1
 
 #include <droplet/posix/backend.h>
+#include <droplet/posix/reqbuilder.h>
+#include <droplet/posix/replyparser.h>
 
 #endif

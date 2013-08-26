@@ -164,6 +164,8 @@ dpl_storage_class(char *str)
     return DPL_STORAGE_CLASS_STANDARD;
   else if (!strcasecmp(str, "reduced_redundancy"))
     return DPL_STORAGE_CLASS_REDUCED_REDUNDANCY;
+  else if (!strcasecmp(str, "custom"))
+    return DPL_STORAGE_CLASS_CUSTOM;
 
   return -1;
 }
@@ -179,6 +181,8 @@ dpl_storage_class_str(dpl_storage_class_t storage_class)
       return "standard";
     case DPL_STORAGE_CLASS_REDUCED_REDUNDANCY:
       return "reduced_redundancy";
+    case DPL_STORAGE_CLASS_CUSTOM:
+      return "custom";
     }
 
   return NULL;
@@ -391,3 +395,187 @@ dpl_parse_query_params(char *query_params)
 
 /**/
 
+static dpl_status_t
+condition_add(dpl_condition_t *cond,
+              time_t *now,
+              char *key,
+              char *value)
+{
+  dpl_condition_type_t type;
+
+  if (cond->n_conds >= DPL_COND_MAX)
+    {
+      return DPL_ENAMETOOLONG;
+    }
+
+  type = 0;
+
+  if (!strcmp(key, "if-modified-since"))
+    type = DPL_CONDITION_IF_MODIFIED_SINCE;
+  else if (!strcmp(key, "if-unmodified-since"))
+    type = DPL_CONDITION_IF_UNMODIFIED_SINCE;
+  else if (!strcmp(key, "if-match"))
+    type = DPL_CONDITION_IF_MATCH;
+  else if (!strcmp(key, "if-none-match"))
+    type = DPL_CONDITION_IF_NONE_MATCH;
+  else
+    return DPL_EINVAL;
+
+  switch (type)
+    {
+    case DPL_CONDITION_IF_MODIFIED_SINCE:
+    case DPL_CONDITION_IF_UNMODIFIED_SINCE:
+      cond->conds[cond->n_conds].time = dpl_get_date(value, now);
+      break ;
+    case DPL_CONDITION_IF_MATCH:
+    case DPL_CONDITION_IF_NONE_MATCH:
+      snprintf(cond->conds[cond->n_conds].etag, sizeof (cond->conds[cond->n_conds].etag), "%s", value);
+      break ;
+    }
+
+  cond->conds[cond->n_conds].type = type;
+
+  cond->n_conds++;
+  
+  return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_parse_condition(const char *str,
+                    dpl_condition_t *condp)
+{
+  char *nstr = NULL;
+  dpl_status_t ret, ret2;
+  char *saveptr, *s, *tok, *p;
+  dpl_condition_t cond;
+  time_t now = time(0);
+
+  memset(&cond, 0, sizeof (cond));
+
+  nstr = strdup(str);
+  if (NULL == nstr)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  for (s = nstr;;s = NULL)
+    {
+      tok = strtok_r(s, ";, ", &saveptr);
+      if (NULL == tok)
+        break ;
+
+      p = index(tok, ':');
+      if (NULL == p)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+
+      *p++ = 0;
+      
+      ret2 = condition_add(&cond, &now, tok, p);
+      if (0 != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  if (NULL != condp)
+    memcpy(condp, &cond, sizeof (cond));
+  
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  free(nstr);
+
+  return ret;
+}
+
+/**/
+
+static dpl_status_t
+option_add(dpl_option_t *opt,
+           char *key,
+           char *value)
+{
+  if (!strcmp(key, "lazy"))
+    opt->mask |= DPL_OPTION_LAZY;
+  else if (!strcmp(key, "http_compat"))
+    opt->mask |= DPL_OPTION_HTTP_COMPAT;
+  else if (!strcmp(key, "raw"))
+    opt->mask |= DPL_OPTION_RAW;
+  else if (!strcmp(key, "append_metadata"))
+    opt->mask |= DPL_OPTION_APPEND_METADATA;
+  else if (!strcmp(key, "consistent"))
+    opt->mask |= DPL_OPTION_CONSISTENT;
+  else if (!strcmp(key, "expect_version"))
+    {
+      opt->mask |= DPL_OPTION_EXPECT_VERSION;
+      snprintf(opt->expect_version, sizeof (opt->expect_version), "%s", value);
+    }
+  else if (!strcmp(key, "force_version"))
+    {
+      opt->mask |= DPL_OPTION_FORCE_VERSION;
+      snprintf(opt->force_version, sizeof (opt->force_version), "%s", value);
+    }
+  else
+    return DPL_EINVAL;
+  
+  return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_parse_option(const char *str,
+                 dpl_option_t *optp)
+{
+  char *nstr = NULL;
+  dpl_status_t ret, ret2;
+  char *saveptr, *s, *tok, *p;
+  dpl_option_t opt;
+
+  memset(&opt, 0, sizeof (opt));
+
+  nstr = strdup(str);
+  if (NULL == nstr)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  for (s = nstr;;s = NULL)
+    {
+      tok = strtok_r(s, ";, ", &saveptr);
+      if (NULL == tok)
+        break ;
+
+      p = index(tok, ':');
+      if (NULL == p)
+        {
+          ret = DPL_EINVAL;
+          goto end;
+        }
+
+      *p++ = 0;
+      
+      ret2 = option_add(&opt, tok, p);
+      if (0 != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  if (NULL != optp)
+    memcpy(optp, &opt, sizeof (opt));
+  
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  free(nstr);
+
+  return ret;
+}

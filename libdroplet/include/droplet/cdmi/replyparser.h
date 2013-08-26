@@ -39,6 +39,13 @@
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */
+dpl_status_t cb_cdmi_req_add_metadata(dpl_dict_var_t *var, void *cb_arg);
+dpl_status_t dpl_cdmi_req_add_metadata(dpl_req_t *req, const dpl_dict_t *metadata, int append);
+dpl_status_t dpl_cdmi_get_metadatum_from_value(const char *key, dpl_value_t *val, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_cdmi_get_metadatum_from_string(const char *key, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_cdmi_get_metadatum_from_header(const char *header, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_cdmi_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_cdmi_get_metadata_from_values(const dpl_dict_t *values, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx, const char *buf, int len, const char *prefix, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
 dpl_status_t dpl_cdmi_parse_json_buffer(dpl_ctx_t *ctx, const char *buf, int len, dpl_value_t **valp);
 dpl_ftype_t dpl_cdmi_content_type_to_ftype(const char *str);

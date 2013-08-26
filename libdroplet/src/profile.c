@@ -405,6 +405,30 @@ conf_cb_func(void *cb_arg,
     {
       ctx->enterprise_number = strtoul(value, NULL, 0);
     }
+  else if (! strcmp(var, "connection_timeout"))
+    {
+      ctx->conn_timeout = strtoul(value, NULL, 0);
+    }
+  else if (! strcmp(var, "read_timeout"))
+    {
+      ctx->read_timeout = strtoul(value, NULL, 0);
+    }
+  else if (! strcmp(var, "write_timeout"))
+    {
+      ctx->write_timeout = strtoul(value, NULL, 0);
+    }
+  else if (! strcmp(var, "connection_timeout"))
+    {
+      ctx->conn_timeout = strtoul(value, NULL, 0);
+    }
+  else if (! strcmp(var, "read_timeout"))
+    {
+      ctx->read_timeout = strtoul(value, NULL, 0);
+    }
+  else if (! strcmp(var, "write_timeout"))
+    {
+      ctx->write_timeout = strtoul(value, NULL, 0);
+    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);
@@ -491,8 +515,8 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->n_conn_buckets = DPL_DEFAULT_N_CONN_BUCKETS;
   ctx->n_conn_max = DPL_DEFAULT_N_CONN_MAX;
   ctx->n_conn_max_hits = DPL_DEFAULT_N_CONN_MAX_HITS;
-  ctx->conn_timeout = DPL_DEFAULT_CONN_TIMEOUT;
   ctx->conn_idle_time = DPL_DEFAULT_CONN_IDLE_TIME;
+  ctx->conn_timeout = DPL_DEFAULT_CONN_TIMEOUT;
   ctx->read_timeout = DPL_DEFAULT_READ_TIMEOUT;
   ctx->write_timeout = DPL_DEFAULT_WRITE_TIMEOUT;
   ctx->use_https = 0;

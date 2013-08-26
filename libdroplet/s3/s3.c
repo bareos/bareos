@@ -41,6 +41,7 @@ dpl_backend_t
 dpl_backend_s3 = 
   {
     "s3",
+    .get_capabilities   = dpl_s3_get_capabilities,
     .list_all_my_buckets = dpl_s3_list_all_my_buckets,
     .list_bucket 	= dpl_s3_list_bucket,
     .make_bucket 	= dpl_s3_make_bucket,

@@ -692,15 +692,12 @@ dpl_srws_get(dpl_ctx_t *ctx,
 
   if (range)
     {
-      if ( range->start > 0 && range->end > 0 )
-        {
-          ret2 = dpl_req_add_range(req, range->start, range->end);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-        }
+      ret2 = dpl_req_add_range(req, range->start, range->end);
+      if (DPL_SUCCESS != ret2)
+	{
+	  ret = ret2;
+	  goto end;
+	}
     }
 
   if (option)
@@ -761,7 +758,15 @@ dpl_srws_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
+  if (option && option->mask & DPL_OPTION_NOALLOC)
+    {
+      data_buf = *data_bufp;
+      data_len = *data_lenp;
+    }
+
+  ret2 = dpl_read_http_reply_ext(conn, 1, 
+                                 (option && option->mask & DPL_OPTION_NOALLOC) ? 1 : 0,
+                                 &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -788,7 +793,7 @@ dpl_srws_get(dpl_ctx_t *ctx,
 
  end:
 
-  if (NULL != data_buf)
+  if ((option && !(option->mask & DPL_OPTION_NOALLOC)) && NULL != data_buf)
     free(data_buf);
 
   if (NULL != conn)
@@ -1410,204 +1415,6 @@ dpl_srws_delete(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_srws_get_id_path(dpl_ctx_t *ctx,
-                      const char *bucket,
-                      char **id_pathp)
-{
-  //natively support id access
-  *id_pathp = NULL;
-  
-  return DPL_SUCCESS;
-}
-
-#define BIT_SET(bit)   (entropy[(bit)/NBBY] |= (1<<((bit)%NBBY)))
-#define BIT_CLEAR(bit) (entropy[(bit)/NBBY] &= ~(1<<((bit)%NBBY)))
-
-dpl_status_t
-dpl_srws_gen_key(BIGNUM *id,
-                 uint64_t oid,
-                 uint32_t volid,
-                 uint8_t serviceid,
-                 uint32_t specific)
-{
-  int off, i;
-  MD5_CTX ctx;
-  char entropy[SRWS_PAYLOAD_NBITS/NBBY];
-  u_char hash[MD5_DIGEST_LENGTH];
-
-  BN_zero(id);
-  
-  off = SRWS_REPLICA_NBITS +
-    SRWS_CLASS_NBITS;
-
-  for (i = 0;i < SRWS_SPECIFIC_NBITS;i++)
-    {
-      if (specific & 1<<i)
-        {
-          BN_set_bit(id, off + i);
-          BIT_SET(off - SRWS_EXTRA_NBITS + i);
-        }
-      else
-        {
-          BN_clear_bit(id, off + i);
-          BIT_CLEAR(off - SRWS_EXTRA_NBITS + i);
-        }
-    }
-
-  off += SRWS_SPECIFIC_NBITS;
-
-  for (i = 0;i < SRWS_SERVICEID_NBITS;i++)
-    {
-      if (serviceid & 1<<i)
-        {
-          BN_set_bit(id, off + i);
-          BIT_SET(off - SRWS_EXTRA_NBITS + i);
-        }
-      else
-        {
-          BN_clear_bit(id, off + i);
-          BIT_CLEAR(off - SRWS_EXTRA_NBITS + i);
-        }
-    }
-
-  off += SRWS_SERVICEID_NBITS;
-
-  for (i = 0;i < SRWS_VOLID_NBITS;i++)
-    {
-      if (volid & 1<<i)
-        {
-          BN_set_bit(id, off + i);
-          BIT_SET(off - SRWS_EXTRA_NBITS + i);
-        }
-      else
-        {
-          BN_clear_bit(id, off + i);
-          BIT_CLEAR(off - SRWS_EXTRA_NBITS + i);
-        }
-    }
-
-  off += SRWS_VOLID_NBITS;
-
-  for (i = 0;i < SRWS_OID_NBITS;i++)
-    {
-      if (oid & (1ULL<<i))
-        {
-          BN_set_bit(id, off + i);
-          BIT_SET(off - SRWS_EXTRA_NBITS + i);
-        }
-      else
-        {
-          BN_clear_bit(id, off + i);
-          BIT_CLEAR(off  - SRWS_EXTRA_NBITS + i);
-        }
-    }
-
-  off += SRWS_OID_NBITS;
-
-  MD5_Init(&ctx);
-  MD5_Update(&ctx, entropy, sizeof (entropy));
-  MD5_Final(hash, &ctx);
-
-  for (i = 0;i < SRWS_HASH_NBITS;i++)
-    {
-      if (hash[i/8] & 1<<(i%8))
-        BN_set_bit(id, off + i);
-      else
-        BN_clear_bit(id, off + i);
-    }
-
-  return DPL_SUCCESS;
-}
-
-dpl_status_t
-dpl_srws_set_class(BIGNUM *k,
-                   int class)
-{
-  int i;
-  
-  if (class < 0 ||
-      class >= 1<<SRWS_CLASS_NBITS)
-    return DPL_FAILURE;
-  
-  for (i = 0;i < SRWS_CLASS_NBITS;i++)
-    if (class & 1<<i)
-      BN_set_bit(k, SRWS_REPLICA_NBITS + i);
-    else
-      BN_clear_bit(k, SRWS_REPLICA_NBITS + i);
-  
-  return DPL_SUCCESS;
-}
-
-dpl_status_t
-dpl_srws_gen_id_from_oid(dpl_ctx_t *ctx,
-                         uint64_t oid,
-                         dpl_storage_class_t storage_class,
-                         char **resource_idp)
-{
-  BIGNUM *bn = NULL;
-  int ret, ret2;
-  int class;
-  char *resource_id = NULL;
-
-  bn = BN_new();
-  if (NULL == bn)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  ret2 = dpl_srws_gen_key(bn, oid, 0, SRWS_SERVICE_ID_TEST, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  class = 2;
-  switch (storage_class)
-    {
-    case DPL_STORAGE_CLASS_UNDEF:
-    case DPL_STORAGE_CLASS_STANDARD:
-      break ;
-    case DPL_STORAGE_CLASS_REDUCED_REDUNDANCY:
-      class = 1;
-      break ;
-    }
-
-  ret2 = dpl_srws_set_class(bn, class);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  resource_id = BN_bn2hex(bn);
-  if (NULL == resource_id)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  if (NULL != resource_idp)
-    {
-      *resource_idp = resource_id;
-      resource_id = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != resource_id)
-    free(resource_id);
-
-  if (NULL != bn)
-    BN_free(bn);
-  
-  return ret;
-}
-
-dpl_status_t
 dpl_srws_copy(dpl_ctx_t *ctx,
               const char *src_bucket,
               const char *src_resource,
@@ -1661,81 +1468,6 @@ dpl_srws_copy(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
   
  end:
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_srws_convert_id_to_native(dpl_ctx_t *ctx, 
-                              const char *id,
-                              uint32_t enterprise_number,
-                              char **native_idp)
-{
-  dpl_status_t ret;
-  char *str = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
-  str = strdup(id);
-  if (NULL == str)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  if (NULL != native_idp)
-    {
-      *native_idp = str;
-      str = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != str)
-    free(str);
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_srws_convert_native_to_id(dpl_ctx_t *ctx, 
-                              const char *native_id,
-                              char **idp, 
-                              uint32_t *enterprise_numberp)
-{
-  dpl_status_t ret;
-  char *str = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
-  str = strdup(native_id);
-  if (NULL == str)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  if (NULL != idp)
-    {
-      *idp = str;
-      str = NULL;
-    }
-
-  if (NULL != enterprise_numberp)
-    *enterprise_numberp = 0;
-  
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != str)
-    free(str);
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
