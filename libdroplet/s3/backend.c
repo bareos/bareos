@@ -37,162 +37,14 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-/** 
- * parse a HTTP header into a suitable metadata or sysmd
- * 
- * @param header 
- * @param value 
- * @param metadatum_func optional
- * @param cb_arg for metadatum_func
- * @param metadata optional
- * @param sysmdp optional
- * 
- * @return 
- */
 dpl_status_t
-dpl_s3_get_metadatum_from_header(const char *header,
-                                 const char *value,
-                                 dpl_metadatum_func_t metadatum_func,
-                                 void *cb_arg,
-                                 dpl_dict_t *metadata,
-                                 dpl_sysmd_t *sysmdp)
+dpl_s3_get_capabilities(dpl_ctx_t *ctx,
+                        dpl_capability_t *maskp)
 {
-  dpl_status_t ret, ret2;
-
-  if (!strncmp(header, DPL_X_AMZ_META_PREFIX, strlen(DPL_X_AMZ_META_PREFIX)))
-    {
-      char *key;
-
-      key = (char *) header + strlen(DPL_X_AMZ_META_PREFIX);
-
-      if (metadatum_func)
-        {
-          dpl_value_t val;
-          
-          val.type = DPL_VALUE_STRING;
-          val.string = (char *) value;
-          ret2 = metadatum_func(cb_arg, key, &val);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-        }
-
-      if (metadata)
-        {
-          ret2 = dpl_dict_add(metadata, key, value, 1);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-        }
-    }
-  else
-    {
-      if (sysmdp)
-        {
-          if (!strcmp(header, "content-length"))
-            {
-              sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
-              sysmdp->size = atoi(value);
-            }
-          else if (!strcmp(header, "last-modified"))
-            {
-              sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
-              sysmdp->mtime = dpl_get_date(value, NULL);
-            }
-          else if (!strcmp(header, "etag"))
-            {
-              int value_len = strlen(value);
-              
-              if (value_len < DPL_SYSMD_ETAG_SIZE && value_len >= 2)
-                {
-                  sysmdp->mask |= DPL_SYSMD_MASK_ETAG;
-                  //supress double quotes
-                  strncpy(sysmdp->etag, value + 1, DPL_SYSMD_ETAG_SIZE);
-                  sysmdp->etag[value_len-2] = 0;
-                }
-            }
-        }
-    }
-    
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
-}
-
-struct metadata_conven
-{
-  dpl_dict_t *metadata;
-  dpl_sysmd_t *sysmdp;
-};
-
-static dpl_status_t
-cb_headers_iterate(dpl_dict_var_t *var,
-                   void *cb_arg)
-{
-  struct metadata_conven *mc = (struct metadata_conven *) cb_arg;
+  if (NULL != maskp)
+    *maskp = DPL_CAP_BUCKETS|DPL_CAP_FNAMES;
   
-  assert(var->val->type == DPL_VALUE_STRING);
-  return dpl_s3_get_metadatum_from_header(var->key,
-                                          var->val->string,
-                                          NULL,
-                                          NULL,
-                                          mc->metadata,
-                                          mc->sysmdp);
-}
-
-dpl_status_t
-dpl_s3_get_metadata_from_headers(const dpl_dict_t *headers,
-                                 dpl_dict_t **metadatap,
-                                 dpl_sysmd_t *sysmdp)
-{
-  dpl_dict_t *metadata = NULL;
-  dpl_status_t ret, ret2;
-  struct metadata_conven mc;
-
-  if (metadatap)
-    {
-      metadata = dpl_dict_new(13);
-      if (NULL == metadata)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-
-  memset(&mc, 0, sizeof (mc));
-  mc.metadata = metadata;
-  mc.sysmdp = sysmdp;
-
-  if (sysmdp)
-    sysmdp->mask = 0;
-      
-  ret2 = dpl_dict_iterate(headers, cb_headers_iterate, &mc);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
-  return ret;
+  return DPL_SUCCESS;
 }
 
 dpl_status_t
@@ -1368,7 +1220,15 @@ dpl_s3_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
+  if (option && option->mask & DPL_OPTION_NOALLOC)
+    {
+      data_buf = *data_bufp;
+      data_len = *data_lenp;
+    }
+
+  ret2 = dpl_read_http_reply_ext(conn, 1, 
+                                 (option && option->mask & DPL_OPTION_NOALLOC) ? 1 : 0,
+                                 &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1397,7 +1257,7 @@ dpl_s3_get(dpl_ctx_t *ctx,
 
  end:
 
-  if (NULL != data_buf)
+  if ((option && !(option->mask & DPL_OPTION_NOALLOC)) && NULL != data_buf)
     free(data_buf);
 
   if (NULL != conn)

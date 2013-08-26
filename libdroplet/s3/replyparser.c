@@ -32,9 +32,172 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
+#include <droplet/s3/s3.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
+
+/** 
+ * parse a HTTP header into a suitable metadata or sysmd
+ * 
+ * @param header 
+ * @param value 
+ * @param metadatum_func optional
+ * @param cb_arg for metadatum_func
+ * @param metadata optional
+ * @param sysmdp optional
+ * 
+ * @return 
+ */
+dpl_status_t
+dpl_s3_get_metadatum_from_header(const char *header,
+                                 const char *value,
+                                 dpl_metadatum_func_t metadatum_func,
+                                 void *cb_arg,
+                                 dpl_dict_t *metadata,
+                                 dpl_sysmd_t *sysmdp)
+{
+  dpl_status_t ret, ret2;
+
+  if (!strncmp(header, DPL_X_AMZ_META_PREFIX, strlen(DPL_X_AMZ_META_PREFIX)))
+    {
+      char *key;
+
+      key = (char *) header + strlen(DPL_X_AMZ_META_PREFIX);
+
+      if (metadatum_func)
+        {
+          dpl_sbuf_t sbuf;
+          dpl_value_t val;
+          
+          sbuf.allocated = 0;
+          sbuf.buf = (char *) value;
+          sbuf.len = strlen(value);
+          val.type = DPL_VALUE_STRING;
+          val.string = &sbuf;
+          ret2 = metadatum_func(cb_arg, key, &val);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
+
+      if (metadata)
+        {
+          ret2 = dpl_dict_add(metadata, key, value, 1);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
+    }
+  else
+    {
+      if (sysmdp)
+        {
+          if (!strcmp(header, "content-length"))
+            {
+              sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
+              sysmdp->size = atoi(value);
+            }
+          else if (!strcmp(header, "last-modified"))
+            {
+              sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
+              sysmdp->mtime = dpl_get_date(value, NULL);
+            }
+          else if (!strcmp(header, "etag"))
+            {
+              int value_len = strlen(value);
+              
+              if (value_len < DPL_SYSMD_ETAG_SIZE && value_len >= 2)
+                {
+                  sysmdp->mask |= DPL_SYSMD_MASK_ETAG;
+                  //supress double quotes
+                  strncpy(sysmdp->etag, value + 1, DPL_SYSMD_ETAG_SIZE);
+                  sysmdp->etag[value_len-2] = 0;
+                }
+            }
+        }
+    }
+    
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
+}
+
+struct metadata_conven
+{
+  dpl_dict_t *metadata;
+  dpl_sysmd_t *sysmdp;
+};
+
+static dpl_status_t
+cb_headers_iterate(dpl_dict_var_t *var,
+                   void *cb_arg)
+{
+  struct metadata_conven *mc = (struct metadata_conven *) cb_arg;
+  
+  assert(var->val->type == DPL_VALUE_STRING);
+  return dpl_s3_get_metadatum_from_header(var->key,
+                                          dpl_sbuf_get_str(var->val->string),
+                                          NULL,
+                                          NULL,
+                                          mc->metadata,
+                                          mc->sysmdp);
+}
+
+dpl_status_t
+dpl_s3_get_metadata_from_headers(const dpl_dict_t *headers,
+                                 dpl_dict_t **metadatap,
+                                 dpl_sysmd_t *sysmdp)
+{
+  dpl_dict_t *metadata = NULL;
+  dpl_status_t ret, ret2;
+  struct metadata_conven mc;
+
+  if (metadatap)
+    {
+      metadata = dpl_dict_new(13);
+      if (NULL == metadata)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  memset(&mc, 0, sizeof (mc));
+  mc.metadata = metadata;
+  mc.sysmdp = sysmdp;
+
+  if (sysmdp)
+    sysmdp->mask = 0;
+      
+  ret2 = dpl_dict_iterate(headers, cb_headers_iterate, &mc);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
+  return ret;
+}
 
 static dpl_status_t
 parse_list_all_my_buckets_bucket(xmlNode *node,

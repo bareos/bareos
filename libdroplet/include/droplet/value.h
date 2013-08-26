@@ -34,6 +34,8 @@
 #ifndef __DROPLET_VAR_H__
 #define __DROPLET_VAR_H__ 1
 
+#include <droplet/sbuf.h>
+
 struct dpl_vec;
 struct dpl_dict;
 
@@ -49,7 +51,7 @@ typedef struct dpl_value
 {
   union
   {
-    char *string;
+    dpl_sbuf_t *string;
     struct dpl_dict *subdict;
     struct dpl_vec *vector;
     void *ptr;

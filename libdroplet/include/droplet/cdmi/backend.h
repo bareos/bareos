@@ -36,6 +36,8 @@
 
 /* PROTO backend.c */
 /* src/backend.c */
+dpl_status_t dpl_cdmi_get_capabilities(dpl_ctx_t *ctx, dpl_capability_t *maskp);
+dpl_status_t dpl_cdmi_get_id_scheme(dpl_ctx_t *ctx, dpl_id_scheme_t **id_schemep);
 dpl_status_t dpl_cdmi_list_bucket(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
 dpl_status_t dpl_cdmi_post(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, dpl_sysmd_t *returned_sysmdp, char **locationp);
 dpl_status_t dpl_cdmi_post_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, const dpl_dict_t *query_params, dpl_conn_t **connp, char **locationp);

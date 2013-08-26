@@ -41,6 +41,7 @@ dpl_backend_t
 dpl_backend_posix = 
   {
     "posix",
+    .get_capabilities   = dpl_posix_get_capabilities,
     .list_bucket 	= dpl_posix_list_bucket,
     .put 		= dpl_posix_put,
     .put_buffered       = dpl_posix_put_buffered,

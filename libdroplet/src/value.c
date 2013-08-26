@@ -50,7 +50,7 @@ dpl_value_free(dpl_value_t *value)
     {
     case DPL_VALUE_STRING:
       if (NULL != value->string)
-        free(value->string);
+        dpl_sbuf_free(value->string);
       break ;
     case DPL_VALUE_SUBDICT:
       if (NULL != value->subdict)
@@ -96,7 +96,7 @@ dpl_value_dup(dpl_value_t *src)
     case DPL_VALUE_STRING:
       if (NULL != src->string)
         {
-          dst->string = strdup(src->string);
+          dst->string = dpl_sbuf_dup(src->string);
           if (NULL == dst->string)
             goto bad;
         }
@@ -143,7 +143,7 @@ dpl_value_print(dpl_value_t *val,
   switch (val->type)
     {
     case DPL_VALUE_STRING:
-      fprintf(f, "%s", val->string);
+      dpl_sbuf_print(f, val->string);
       break ;
     case DPL_VALUE_SUBDICT:
       if (indent)

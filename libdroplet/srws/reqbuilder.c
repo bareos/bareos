@@ -62,7 +62,9 @@ add_metadata_to_headers(dpl_dict_t *metadata,
       for (var = metadata->buckets[bucket];var;var = var->prev)
         {
           assert(var->val->type == DPL_VALUE_STRING);
-          ret = dpl_ntinydb_set(sbuf, var->key, var->val->string, strlen(var->val->string));
+          ret = dpl_ntinydb_set(sbuf, var->key,
+                                dpl_sbuf_get_str(var->val->string),
+                                strlen(dpl_sbuf_get_str(var->val->string)));
           if (DPL_SUCCESS != ret)
             {
               ret = DPL_FAILURE;

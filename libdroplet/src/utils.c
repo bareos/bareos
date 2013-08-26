@@ -864,6 +864,29 @@ dpl_uuid_tostr(dpl_uuid_t *uuid,
 }
 
 char *
+dpl_ftype_to_str(dpl_ftype_t type)
+{
+  switch (type)
+    {
+#define MAP(x) case DPL_FTYPE_##x : return #x
+      MAP(UNDEF);
+      MAP(ANY);
+      MAP(REG);
+      MAP(DIR);
+      MAP(CAP);
+      MAP(DOM);
+      MAP(CHRDEV);
+      MAP(BLKDEV);
+      MAP(FIFO);
+      MAP(SOCKET);
+      MAP(SYMLINK);
+    }
+#undef MAP
+
+  return "impossible case";
+}
+
+char *
 dpl_copy_directive_to_str(dpl_copy_directive_t directive)
 {
   switch (directive)
@@ -883,4 +906,18 @@ dpl_copy_directive_to_str(dpl_copy_directive_t directive)
 
 
   return "impossible case";
+}
+
+u_int 
+dpl_pow2_next(u_int v)
+{
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v++;
+  
+  return v;
 }

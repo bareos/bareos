@@ -80,7 +80,7 @@ dpl_ntinydb_set(dpl_sbuf_t *blob,
 
   //printf("ntinydb_set '%s' '%.*s'\n", key, datalen, data);
 
-  dpl_sbuf_print(blob);
+  dpl_sbuf_print(stdout, blob);
 
   return DPL_SUCCESS;
 }

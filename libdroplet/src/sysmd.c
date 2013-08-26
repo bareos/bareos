@@ -66,6 +66,9 @@ dpl_sysmd_print(dpl_sysmd_t *sysmd,
   if (sysmd->mask & DPL_SYSMD_MASK_ID)
     fprintf(f, "id=%s\n", sysmd->id);
 
+  if (sysmd->mask & DPL_SYSMD_MASK_VERSION)
+    fprintf(f, "version=%s\n", sysmd->version);
+
   if (sysmd->mask & DPL_SYSMD_MASK_ENTERPRISE_NUMBER)
     fprintf(f, "enterprise_number=%u\n", sysmd->enterprise_number);
 
@@ -114,4 +117,7 @@ dpl_sysmd_print(dpl_sysmd_t *sysmd,
                  sysmd->aces[i].who);
         }
     }
+
+  if (sysmd->mask & DPL_SYSMD_MASK_PATH)
+    fprintf(f, "path=%s\n", sysmd->path);
 }

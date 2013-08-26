@@ -336,10 +336,14 @@ dpl_dict_add(dpl_dict_t *dict,
              const char *string,
              int lowered)
 {
+  dpl_sbuf_t sbuf;
   dpl_value_t value;
 
+  sbuf.allocated = 0;
+  sbuf.buf = (char *)string;
+  sbuf.len = strlen(string);
   value.type = DPL_VALUE_STRING;
-  value.string = (char *) string;
+  value.string = &sbuf;
   return dpl_dict_add_value(dict, key, &value, lowered);
 }
 
@@ -502,5 +506,5 @@ dpl_dict_get_value(const dpl_dict_t *dict,
     return NULL;
 
   assert(var->val->type == DPL_VALUE_STRING);
-  return var->val->string;
+  return dpl_sbuf_get_str(var->val->string);
 }

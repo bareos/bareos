@@ -44,4 +44,6 @@
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */
+dpl_status_t dpl_srws_get_metadatum_from_header(const char *header, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_srws_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 #endif

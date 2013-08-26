@@ -30,9 +30,28 @@ AC_PROG_LN_S
 
 AC_PROG_YACC
 
+AC_ARG_WITH(json_c_include_dir,
+        [  --with-json-c-include-dir=
+			  Specify json-c include dir [default=/usr/include/json]],
+        [json_c_include_dir="$withval"],[json_c_include_dir="/usr/include/json"])
+
+json_c_include_dir="$(cd $json_c_include_dir ; pwd)"
+
+JSON_CFLAGS="-I$json_c_include_dir $JSON_CFLAGS"
+
+AC_ARG_WITH(json_c_lib,
+        [  --with-json-c-lib=
+			  Specify linker cmd to link with json-c lib [default=-ljson]],
+        [json_c_lib="$withval"],[json_c_lib="-ljson"])
+
+JSON_LIBS="$json_c_lib $JSON_LIBS"
+
+AC_SUBST(JSON_CFLAGS)
+AC_SUBST(JSON_LIBS)
+
 PKG_CHECK_MODULES(LIBXML, libxml-2.0)
 PKG_CHECK_MODULES(OPENSSL, openssl)
-PKG_CHECK_MODULES(JSON, json)
+
 AC_SEARCH_LIBS([sqrt], [m], [], [AC_MSG_ERROR([libm library missing])])
 AX_PTHREAD
 
@@ -43,5 +62,6 @@ libdroplet/Makefile
 droplet-3.0.pc
 libdroplet.spec
 ])
+
 AC_OUTPUT
 

@@ -571,6 +571,20 @@ make_abs_path(dpl_ctx_t *ctx,
   return ret;
 }
 
+static void
+fqn_append_trailing_slash(dpl_fqn_t *obj_fqnp)
+{
+  size_t len;
+
+  len = strlen(obj_fqnp->path);
+  if (len < sizeof(obj_fqnp->path) - 1 &&
+      (0lu == len || obj_fqnp->path[len - 1] != '/'))
+    {
+      obj_fqnp->path[len] = '/';
+      obj_fqnp->path[len + 1] = '\0';
+    }
+}
+
 static const char *
 obj_type_ext(dpl_ftype_t type)
 {
@@ -595,16 +609,29 @@ dpl_cwd(dpl_ctx_t *ctx,
 {
   dpl_dict_var_t *var;
   dpl_fqn_t cwd;
+  char *p = NULL;
 
   dpl_ctx_lock(ctx);
   var = dpl_dict_get(ctx->cwds, bucket);
   if (NULL != var)
     {
       assert(var->val->type == DPL_VALUE_STRING);
-      strcpy(cwd.path, var->val->string); //XXX check overflow
+      p = dpl_sbuf_get_str(var->val->string);
+
+      if (strlen(p) >= sizeof cwd.path - 1)
+        {
+          // fallback on default value and log
+          DPL_TRACE(ctx, DPL_TRACE_VFS, "cwd too long: %s", p);
+          cwd = DPL_ROOT_FQN;
+          goto end;
+        }
+
+      strcpy(cwd.path, p);
     }
   else
     cwd = DPL_ROOT_FQN;
+
+ end:
   dpl_ctx_unlock(ctx);
 
   return cwd;
@@ -707,6 +734,8 @@ dpl_opendir(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
+
+  fqn_append_trailing_slash(&obj_fqn);
 
   ret2 = dir_open(ctx, bucket, obj_fqn, dir_hdlp);
   if (DPL_SUCCESS != ret2)
@@ -837,6 +866,8 @@ dpl_chdir(dpl_ctx_t *ctx,
       goto end;
     }
 
+  fqn_append_trailing_slash(&obj_fqn);
+
   dpl_ctx_lock(ctx);
   if (strcmp(bucket, ctx->cur_bucket))
     {
@@ -961,7 +992,7 @@ dpl_close_ex(dpl_vfile_t *vfile,
                           
                           //skip quotes
                           assert(var->val->type == DPL_VALUE_STRING);
-                          if (strncmp(var->val->string + 1, bcd_digest, DPL_BCD_LENGTH(MD5_DIGEST_LENGTH)))
+                          if (strncmp(dpl_sbuf_get_str(var->val->string) + 1, bcd_digest, DPL_BCD_LENGTH(MD5_DIGEST_LENGTH)))
                             {
                               fprintf(stderr, "MD5 checksum dont match\n");
                             }
@@ -2077,6 +2108,8 @@ dpl_rmdir(dpl_ctx_t *ctx,
       goto end;
     }
  
+  fqn_append_trailing_slash(&obj_fqn);
+
   path_len = strlen(obj_fqn.path);
   npath = malloc(path_len + 2);
   if (NULL == npath)
@@ -2271,7 +2304,16 @@ dpl_getattr(dpl_ctx_t *ctx,
           if (path_len > 0 && '/' == obj_fqn.path[path_len - 1])
             sysmdp->ftype = DPL_FTYPE_DIR;
           else
-            sysmdp->ftype = DPL_FTYPE_REG;
+            {
+              if (0 == strcmp(obj_fqn.path, ""))
+                {
+                  sysmdp->ftype = DPL_FTYPE_DIR;
+                }
+              else
+                {
+                  sysmdp->ftype = DPL_FTYPE_REG;
+                }
+            }
         }
     }
 
