@@ -63,6 +63,7 @@
 #include <pwd.h>
 #include <fcntl.h>
 #include <sys/prctl.h>
+#include <droplet/json_adapter.h>
 #include <droplet/utils.h>
 #include <droplet/profile.h>
 #include <droplet/httpreply.h>
