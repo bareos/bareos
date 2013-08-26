@@ -621,7 +621,7 @@ dpl_connection_close(dpl_dict_t *headers_returned)
   if (NULL != var)
     {
       assert(var->val->type == DPL_VALUE_STRING);
-      if (!strcasecmp(var->val->string, "close"))
+      if (!strcasecmp(dpl_sbuf_get_str(var->val->string), "close"))
         return 1;
     }
 
@@ -641,13 +641,17 @@ dpl_location(dpl_dict_t *headers_returned)
 {
   dpl_status_t ret;
   dpl_dict_var_t *var;
-  char *location = NULL;
   
   ret = dpl_dict_get_lowered(headers_returned, "Location", &var);
   if (DPL_SUCCESS == ret)
-    return location;
+    {
+      assert(DPL_VALUE_STRING == var->val->type);
+      return dpl_sbuf_get_str(var->val->string);
+    }
   else
-    return NULL;
+    {
+      return NULL;
+    }
 }
 
 /*
@@ -758,6 +762,7 @@ dpl_map_http_status(int http_status)
     case DPL_HTTP_CODE_PRECOND_FAILED:
       ret = DPL_EPRECOND;
       break;
+    case DPL_HTTP_CODE_REDIR_MOVED_PERM:
     case DPL_HTTP_CODE_REDIR_FOUND:
       ret = DPL_EREDIRECT;
       break ;

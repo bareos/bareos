@@ -1,8 +1,8 @@
 Installation Instructions
 *************************
 
-Copyright (C) 1994, 1995, 1996, 1999, 2000, 2001, 2002, 2004, 2005,
-2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright (C) 1994-1996, 1999-2002, 2004-2011 Free Software Foundation,
+Inc.
 
    Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright
@@ -51,10 +51,10 @@ of `autoconf'.
    The simplest way to compile this package is:
 
   1. `cd' to the directory containing the package's source code and type
-     `./autogen.sh' to generate the installation scripts.
+     `./configure' to configure the package for your system.
 
-     Then, run `./configure'. It might take a while.  While running, it
-     prints some messages telling which features it is checking for.
+     Running `configure' might take a while.  While running, it prints
+     some messages telling which features it is checking for.
 
   2. Type `make' to compile the package.
 
@@ -225,6 +225,11 @@ order to use an ANSI C compiler:
      ./configure CC="cc -Ae -D_XOPEN_SOURCE=500"
 
 and if that doesn't work, install pre-built binaries of GCC for HP-UX.
+
+   HP-UX `make' updates targets which have the same time stamps as
+their prerequisites, which makes it generally unusable when shipped
+generated files such as `configure' are involved.  Use GNU `make'
+instead.
 
    On OSF/1 a.k.a. Tru64, some versions of the default C compiler cannot
 parse its `<wchar.h>' header file.  The option `-nodtk' can be used as

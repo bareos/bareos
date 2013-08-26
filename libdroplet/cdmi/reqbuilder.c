@@ -416,7 +416,8 @@ convert_value_to_obj(dpl_value_t *val,
     {
     case DPL_VALUE_STRING:
       {
-        obj = json_object_new_string(val->string);
+        obj = json_object_new_string_len(val->string->buf,
+                                         val->string->len);
         if (NULL == obj)
           {
             ret = DPL_ENOMEM;

@@ -55,7 +55,8 @@ add_metadata_to_headers(dpl_dict_t *metadata,
           snprintf(header, sizeof (header), "%s%s", DPL_X_AMZ_META_PREFIX, var->key);
 
           assert(DPL_VALUE_STRING == var->val->type);
-          ret = dpl_dict_add(headers, header, var->val->string, 0);
+          ret = dpl_dict_add(headers, header,
+                             dpl_sbuf_get_str(var->val->string), 0);
           if (DPL_SUCCESS != ret)
             {
               return DPL_FAILURE;
@@ -267,7 +268,7 @@ make_signature(dpl_ctx_t *ctx,
         DPRINTF("%s:%s\n", var->key, var->val->string);
         DPL_APPEND_STR(var->key);
         DPL_APPEND_STR(":");
-        DPL_APPEND_STR(var->val->string);
+        DPL_APPEND_STR(dpl_sbuf_get_str(var->val->string));
         DPL_APPEND_STR("\n");
       }
 

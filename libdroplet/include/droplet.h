@@ -627,6 +627,8 @@ dpl_condition_t *dpl_condition_dup(const dpl_condition_t *src);
 void dpl_condition_free(dpl_condition_t *condition);
 dpl_range_t *dpl_range_dup(const dpl_range_t *src);
 void dpl_range_free(dpl_range_t *range);
+char *dpl_ftype_to_str(dpl_ftype_t type);
+char *dpl_copy_directive_to_str(dpl_copy_directive_t directive);
 
 #ifdef __cplusplus
 }

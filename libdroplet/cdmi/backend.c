@@ -38,960 +38,30 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-const char *
-dpl_cdmi_who_str(dpl_ace_who_t who)
+dpl_status_t
+dpl_cdmi_get_capabilities(dpl_ctx_t *ctx,
+                          dpl_capability_t *maskp)
 {
-  switch (who)
-    {
-    case DPL_ACE_WHO_OWNER:
-      return "OWNER@";
-    case DPL_ACE_WHO_GROUP:
-      return "GROUP@";
-    case DPL_ACE_WHO_EVERYONE:
-      return "EVERYONE@";
-    case DPL_ACE_WHO_ANONYMOUS:
-      return "ANONYMOUS@";
-    case DPL_ACE_WHO_AUTHENTICATED:
-      return "AUTHENTICATED@";
-    case DPL_ACE_WHO_ADMINISTRATOR:
-      return "ADMINISTRATOR@";
-    case DPL_ACE_WHO_ADMINUSERS:
-      return "ADMINUSERS@";
-    case DPL_ACE_WHO_INTERACTIVE:
-    case DPL_ACE_WHO_NETWORK:
-    case DPL_ACE_WHO_DIALUP:
-    case DPL_ACE_WHO_BATCH:
-    case DPL_ACE_WHO_SERVICE:
-      return NULL;
-    }
-
-  return NULL;
-}
-
-static dpl_status_t
-add_sysmd_to_req(const dpl_sysmd_t *sysmd,
-                 dpl_req_t *req)
-{
-  dpl_status_t ret, ret2;
-  char buf[256];
-  dpl_dict_t *tmp_dict = NULL;
-  dpl_dict_t *tmp_dict2 = NULL;
-  dpl_vec_t *tmp_vec = NULL;
-  int do_acl = 0;
-  uint32_t n_aces = 0;
-  dpl_ace_t aces[DPL_SYSMD_ACE_MAX], *acesp;
+  if (NULL != maskp)
+    *maskp = DPL_CAP_FNAMES|
+      DPL_CAP_IDS|
+      DPL_CAP_HTTP_COMPAT|
+      DPL_CAP_RAW|
+      DPL_CAP_APPEND_METADATA|
+      DPL_CAP_CONDITIONS|
+      DPL_CAP_PUT_RANGE;
   
-  tmp_dict = dpl_dict_new(13);
-  if (NULL == tmp_dict)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  if (sysmd->mask & DPL_SYSMD_MASK_SIZE)
-    {
-      /* optional (computed remotely by storage) */
-      snprintf(buf, sizeof (buf), "%ld", sysmd->size);
-      
-      ret2 = dpl_dict_add(tmp_dict, "cdmi_size", buf, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  if (sysmd->mask & DPL_SYSMD_MASK_ATIME)
-    {
-      /* optional */
-      ret2 = dpl_timetoiso8601(sysmd->atime, buf, sizeof (buf));
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-      
-      ret2 = dpl_dict_add(tmp_dict, "cdmi_atime", buf, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  if (sysmd->mask & DPL_SYSMD_MASK_MTIME)
-    {
-      /* optional */
-      ret2 = dpl_timetoiso8601(sysmd->mtime, buf, sizeof (buf));
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      ret2 = dpl_dict_add(tmp_dict, "cdmi_mtime", buf, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  if (sysmd->mask & DPL_SYSMD_MASK_CTIME)
-    {
-      /* optional */
-      ret2 = dpl_timetoiso8601(sysmd->ctime, buf, sizeof (buf));
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      ret2 = dpl_dict_add(tmp_dict, "cdmi_ctime", buf, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  if (sysmd->mask & DPL_SYSMD_MASK_OWNER)
-    {
-      ret2 = dpl_dict_add(tmp_dict, "cdmi_owner", sysmd->owner, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-  
-  if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL)
-    {
-      switch (sysmd->canned_acl)
-        {
-        case DPL_CANNED_ACL_UNDEF:
-          n_aces = 0;
-          break ;
-        case DPL_CANNED_ACL_PRIVATE:
-          aces[0].type = DPL_ACE_TYPE_ALLOW;
-          aces[0].flag = 0;
-          aces[0].access_mask = DPL_ACE_MASK_ALL;
-          aces[0].who = DPL_ACE_WHO_OWNER;
-          n_aces = 1;
-          break ;
-        case DPL_CANNED_ACL_PUBLIC_READ:
-          aces[0].type = DPL_ACE_TYPE_ALLOW;
-          aces[0].flag = 0;
-          aces[0].access_mask = DPL_ACE_MASK_READ_OBJECT|
-            DPL_ACE_MASK_EXECUTE;
-          aces[0].who = DPL_ACE_WHO_EVERYONE;
-          n_aces = 1;
-          break ;
-        case DPL_CANNED_ACL_PUBLIC_READ_WRITE:
-          aces[0].type = DPL_ACE_TYPE_ALLOW;
-          aces[0].flag = 0;
-          aces[0].access_mask = DPL_ACE_MASK_RW_ALL;
-          aces[0].who = DPL_ACE_WHO_EVERYONE;
-          n_aces = 1;
-          break ;
-        case DPL_CANNED_ACL_AUTHENTICATED_READ:
-          aces[0].type = DPL_ACE_TYPE_ALLOW;
-          aces[0].flag = 0;
-          aces[0].access_mask = DPL_ACE_MASK_READ_ALL;
-          aces[0].who = DPL_ACE_WHO_AUTHENTICATED;
-          n_aces = 1;
-          break ;
-        case DPL_CANNED_ACL_BUCKET_OWNER_READ:
-          //XXX ?
-          break ;
-        case DPL_CANNED_ACL_BUCKET_OWNER_FULL_CONTROL:
-          //XXX ?
-          break ;
-        }
-
-      acesp = aces;
-      do_acl = 1;
-    }
-
-  if (sysmd->mask & DPL_SYSMD_MASK_ACL)
-    {
-      n_aces = sysmd->n_aces;
-      acesp = (dpl_ace_t *) sysmd->aces;
-      do_acl = 1;
-    }
-
-  if (do_acl)
-    {
-      int i;
-      dpl_value_t value;
-
-      tmp_vec = dpl_vec_new(2, 2);
-      if (NULL == tmp_vec)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-
-      for (i = 0;i < n_aces;i++)
-        {
-          const char *str;
-          char buf[256];
-          dpl_value_t row_value;
-
-          tmp_dict2 = dpl_dict_new(13);
-          if (NULL == tmp_dict2)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
-  
-          str = dpl_cdmi_who_str(acesp[i].who);
-          if (NULL == str)
-            {
-              ret = DPL_EINVAL;
-              goto end;
-            }
-
-          ret2 = dpl_dict_add(tmp_dict2, "identifier", str, 0);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-
-          snprintf(buf, sizeof (buf), "0x%08x", acesp[i].type);
-
-          ret2 = dpl_dict_add(tmp_dict2, "acetype", buf, 0);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-
-          snprintf(buf, sizeof (buf), "0x%08x", acesp[i].flag);
-
-          ret2 = dpl_dict_add(tmp_dict2, "aceflags", buf, 0);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-
-          snprintf(buf, sizeof (buf), "0x%08x", acesp[i].access_mask);
-
-          ret2 = dpl_dict_add(tmp_dict2, "acemask", buf, 0);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-          
-          row_value.type = DPL_VALUE_SUBDICT;
-          row_value.subdict = tmp_dict2;
-          ret2 = dpl_vec_add_value(tmp_vec, &row_value);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-
-          dpl_dict_free(tmp_dict2);
-          tmp_dict2 = NULL;
-        }
-
-      value.type = DPL_VALUE_VECTOR;
-      value.vector = tmp_vec;
-      ret2 = dpl_dict_add_value(tmp_dict, "cdmi_acl", &value, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      dpl_vec_free(tmp_vec);
-      tmp_vec = NULL;
-    }
-
-  if (sysmd->mask & DPL_SYSMD_MASK_ID)
-    {
-      //XXX extension ???
-    }
-
-  //dpl_dict_print(tmp_dict, stderr, 0);
-
-  ret2 = dpl_req_add_metadata(req, tmp_dict);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-                            
-  ret = 0;
-
- end:
-
-  if (NULL != tmp_vec)
-    dpl_vec_free(tmp_vec);
-
-  if (NULL != tmp_dict2)
-    dpl_dict_free(tmp_dict2);
-
-  if (NULL != tmp_dict)
-    dpl_dict_free(tmp_dict);
-
-  return ret;
+  return DPL_SUCCESS;
 }
 
 dpl_status_t
-dpl_cdmi_req_set_resource(dpl_req_t *req,
-                          const char *resource)
+dpl_cdmi_get_id_scheme(dpl_ctx_t *ctx,
+                       dpl_id_scheme_t **id_schemep)
 {
-  char *nstr;
-  int len;
-  dpl_status_t ret;
-
-  nstr = strdup(resource);
-  if (NULL == nstr)
-    return DPL_ENOMEM;
-
-  len = strlen(nstr);
-
-  //suppress special chars
-  if (len > 0u && '?' == nstr[len - 1])
-    nstr[len - 1] = 0;
-
-  ret = dpl_req_set_resource(req, nstr);
-
-  free(nstr);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_cdmi_req_add_range(dpl_req_t *req,
-                       dpl_cdmi_req_mask_t req_mask,
-                       const dpl_range_t *range)
-{
-  dpl_status_t ret, ret2;
-
-  if (req_mask & DPL_CDMI_REQ_HTTP_COMPAT)
-    {
-      ret2 = dpl_req_add_range(req, range->start, range->end);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-  else
-    {
-      char buf[256];
-      
-      snprintf(buf, sizeof (buf), "value:%d-%d", range->start, range->end);
-      ret2 = dpl_req_add_subresource(req, buf);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  ret = DPL_SUCCESS;
+  if (NULL != id_schemep)
+    *id_schemep = DPL_ID_SCHEME_ANY;
   
- end:
-
-  return ret;
-}
-
-struct cdmi_req_add_md_arg
-{
-  dpl_sbuf_t *field;
-  int comma;
-};
-
-dpl_status_t 
-cb_cdmi_req_add_metadata(dpl_dict_var_t *var,
-                         void *cb_arg)
-{
-  struct cdmi_req_add_md_arg *arg = (struct cdmi_req_add_md_arg *) cb_arg;
-  dpl_status_t ret, ret2;
-  char buf[256];
-
-  snprintf(buf, sizeof (buf), "%smetadata:%s", arg->comma ? "," : "", var->key);
-
-  ret2 = dpl_sbuf_add(arg->field, buf, strlen(buf));
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
-  arg->comma = 1;
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  return ret;
-}
-
-dpl_status_t
-dpl_cdmi_req_add_metadata(dpl_req_t *req,
-                          const dpl_dict_t *metadata,
-                          int append)
-{
-  dpl_status_t ret, ret2;
-  struct cdmi_req_add_md_arg arg;
-
-  memset(&arg, 0, sizeof (arg));
-
-  if (append)
-    {
-      //iterate metadata object
-      arg.field = dpl_sbuf_new(30);
-      if (NULL == arg.field)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-
-      ret2 = dpl_dict_iterate(metadata, cb_cdmi_req_add_metadata, &arg);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      ret2 = dpl_sbuf_add(arg.field, "", 1);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      ret2 = dpl_req_set_subresource(req, arg.field->buf);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  ret2 = dpl_req_add_metadata(req, metadata);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != arg.field)
-    dpl_sbuf_free(arg.field);
-
-  return ret;
-}
-
-struct metadata_list_arg
-{
-  dpl_dict_t *metadata;
-  dpl_metadatum_func_t metadatum_func;
-  void *cb_arg;
-};
-
-dpl_status_t 
-cb_metadata_list(dpl_dict_var_t *var,
-                 void *cb_arg)
-{
-  struct metadata_list_arg *arg = (struct metadata_list_arg *) cb_arg;
-  dpl_status_t ret, ret2;
-
-  if (arg->metadatum_func)
-    {
-      dpl_value_t val;
-      
-      val.type = DPL_VALUE_STRING;
-      val.string = var->val->string;
-      ret2 = arg->metadatum_func(arg->cb_arg, var->key, &val);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-  
-  ret2 = dpl_dict_add_value(arg->metadata, var->key, var->val, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
-}
-
-/** 
- * parse a value into a suitable metadata or sysmd
- * 
- * @param key 
- * @param val 
- * @param metadatum_func
- * @param cb_arg
- * @param metadata 
- * @param sysmdp 
- * 
- * @return 
- */
-dpl_status_t
-dpl_cdmi_get_metadatum_from_value(const char *key,
-                                  dpl_value_t *val,
-                                  dpl_metadatum_func_t metadatum_func,
-                                  void *cb_arg,
-                                  dpl_dict_t *metadata,
-                                  dpl_sysmd_t *sysmdp)
-{
-  dpl_status_t ret, ret2;
-  dpl_dict_var_t *var;
-  dpl_cdmi_object_id_t obj_id;
-
-  DPRINTF("key=%s val.type=%d\n", key, val->type);
-
-  if (sysmdp)
-    {
-      if (!strcmp(key, "objectID"))
-        {
-          if (DPL_VALUE_STRING != val->type)
-            {
-              ret = DPL_EINVAL;
-              goto end;
-            }
-          
-          ret2 = dpl_cdmi_string_to_object_id(val->string, &obj_id);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-          
-          ret2 = dpl_cdmi_opaque_to_string(&obj_id, sysmdp->id);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-          
-          sysmdp->mask |= DPL_SYSMD_MASK_ID;
-          
-          sysmdp->enterprise_number = obj_id.enterprise_number;
-          sysmdp->mask |= DPL_SYSMD_MASK_ENTERPRISE_NUMBER;
-        }
-      else if (!strcmp(key, "parentID"))
-        {
-          if (DPL_VALUE_STRING != val->type)
-            {
-              ret = DPL_EINVAL;
-              goto end;
-            }
-
-          if (strcmp(val->string, ""))
-            {
-              ret2 = dpl_cdmi_string_to_object_id(val->string, &obj_id);
-              if (DPL_SUCCESS != ret2)
-                {
-                  ret = ret2;
-                  goto end;
-                }
-              
-              ret2 = dpl_cdmi_opaque_to_string(&obj_id, sysmdp->parent_id);
-              if (DPL_SUCCESS != ret2)
-                {
-                  ret = ret2;
-                  goto end;
-                }
-              
-              sysmdp->mask |= DPL_SYSMD_MASK_PARENT_ID;
-            }
-        }
-      else if (!strcmp(key, "objectType"))
-        {
-          if (DPL_VALUE_STRING != val->type)
-            {
-              ret = DPL_EINVAL;
-              goto end;
-            }
-          
-          sysmdp->mask |= DPL_SYSMD_MASK_FTYPE;
-          sysmdp->ftype = dpl_cdmi_content_type_to_ftype(val->string);
-        }
-    }
-
-  if (!strcmp(key, "metadata"))
-    {
-      //this is the metadata object
-      if (DPL_VALUE_SUBDICT != val->type)
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-
-      if (sysmdp)
-        {
-          //some sysmds are stored in metadata
-          
-          var = dpl_dict_get(val->subdict, "cdmi_mtime");
-          if (NULL != var)
-            {
-              if (DPL_VALUE_STRING != var->val->type)
-                {
-                  ret = DPL_EINVAL;
-                  goto end;
-                }
-              
-              sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
-              sysmdp->mtime = dpl_iso8601totime(var->val->string);
-            }
-          
-          var = dpl_dict_get(val->subdict, "cdmi_atime");
-          if (NULL != var)
-            {
-              if (DPL_VALUE_STRING != var->val->type)
-                {
-                  ret = DPL_EINVAL;
-                  goto end;
-                }
-              
-              sysmdp->mask |= DPL_SYSMD_MASK_ATIME;
-              sysmdp->atime = dpl_iso8601totime(var->val->string);
-            }
-          
-          var = dpl_dict_get(val->subdict, "cdmi_size");
-          if (NULL != var)
-            {
-              if (DPL_VALUE_STRING != var->val->type)
-                {
-                  ret = DPL_EINVAL;
-                  goto end;
-                }
-              
-              sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
-              sysmdp->size = strtoull(var->val->string, NULL, 0);
-            }
-        }
-
-      if (metadata)
-        {
-          struct metadata_list_arg arg;
-          
-          arg.metadatum_func = metadatum_func;
-          arg.metadata = metadata;
-          arg.cb_arg = cb_arg;
-
-          //iterate metadata object
-          ret2 = dpl_dict_iterate(val->subdict, cb_metadata_list, &arg);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-        }
-    }
-  
-  ret = DPL_SUCCESS;
-  
- end:
-
-  return ret;
-}
-
-/** 
- * common routine for x-object-meta-* and x-container-meta-*
- * 
- * @param string 
- * @param value 
- * @param metadatum_func 
- * @param cb_arg 
- * @param metadata 
- * @param sysmdp 
- * 
- * @return 
- */
-dpl_status_t
-dpl_cdmi_get_metadatum_from_string(const char *key,
-                                   const char *value,
-                                   dpl_metadatum_func_t metadatum_func,
-                                   void *cb_arg,
-                                   dpl_dict_t *metadata,
-                                   dpl_sysmd_t *sysmdp)
-{
-  dpl_status_t ret, ret2;
-  dpl_value_t *val = NULL;
-  
-  //XXX convert
-
-  ret2 = dpl_cdmi_get_metadatum_from_value(key, val, 
-                                           metadatum_func, cb_arg,
-                                           metadata, sysmdp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != val)
-    dpl_value_free(val);
-
-  return ret;
-}
-
-/** 
- * parse a HTTP header into a suitable metadata or sysmd
- * 
- * @param header 
- * @param value 
- * @param metadatum_func optional
- * @param cb_arg for metadatum_func
- * @param metadata optional
- * @param sysmdp optional
- * 
- * @return 
- */
-dpl_status_t
-dpl_cdmi_get_metadatum_from_header(const char *header,
-                                   const char *value,
-                                   dpl_metadatum_func_t metadatum_func,
-                                   void *cb_arg,
-                                   dpl_dict_t *metadata,
-                                   dpl_sysmd_t *sysmdp)
-{
-  dpl_status_t ret, ret2;
-
-  if (!strncmp(header, DPL_X_OBJECT_META_PREFIX, strlen(DPL_X_OBJECT_META_PREFIX)))
-    {
-      char *key;
-
-      key = (char *) header + strlen(DPL_X_OBJECT_META_PREFIX);
-
-      ret2 = dpl_cdmi_get_metadatum_from_string(key, value, 
-                                                metadatum_func, cb_arg,
-                                                metadata, sysmdp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-  else if (!strncmp(header, DPL_X_CONTAINER_META_PREFIX, strlen(DPL_X_CONTAINER_META_PREFIX)))
-    {
-      char *key;
-
-      key = (char *) header + strlen(DPL_X_CONTAINER_META_PREFIX);
-
-      ret2 = dpl_cdmi_get_metadatum_from_string(key, value, 
-                                                metadatum_func, cb_arg,
-                                                metadata, sysmdp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-  else
-    {
-      if (sysmdp)
-        {
-          if (!strcmp(header, "content-length"))
-            {
-              sysmdp->mask |= DPL_SYSMD_MASK_SIZE;
-              sysmdp->size = atoi(value);
-            }
-          
-          if (!strcmp(header, "last-modified"))
-            {
-              sysmdp->mask |= DPL_SYSMD_MASK_MTIME;
-              sysmdp->mtime = dpl_get_date(value, NULL);
-            }
-          
-          if (!strcmp(header, "etag"))
-            {
-              int value_len = strlen(value);
-              
-              if (value_len < DPL_SYSMD_ETAG_SIZE && value_len >= 2)
-                {
-                  sysmdp->mask |= DPL_SYSMD_MASK_ETAG;
-                  //supress double quotes
-                  strncpy(sysmdp->etag, value + 1, DPL_SYSMD_ETAG_SIZE);
-                  sysmdp->etag[value_len-2] = 0;
-                }
-            }
-        }
-    }
-    
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
-}
-
-struct metadata_conven
-{
-  dpl_dict_t *metadata;
-  dpl_sysmd_t *sysmdp;
-};
-
-static dpl_status_t
-cb_headers_iterate(dpl_dict_var_t *var,
-                   void *cb_arg)
-{
-  struct metadata_conven *mc = (struct metadata_conven *) cb_arg;
-  
-  assert(var->val->type == DPL_VALUE_STRING);
-  return dpl_cdmi_get_metadatum_from_header(var->key,
-                                            var->val->string,
-                                            NULL,
-                                            NULL,
-                                            mc->metadata,
-                                            mc->sysmdp);
-}
-
-/** 
- * get metadata from headers
- * 
- * @param headers 
- * @param metadatap 
- * @param sysmdp 
- * 
- * @return 
- */
-dpl_status_t
-dpl_cdmi_get_metadata_from_headers(const dpl_dict_t *headers,
-                                   dpl_dict_t **metadatap,
-                                   dpl_sysmd_t *sysmdp)
-{
-  dpl_dict_t *metadata = NULL;
-  dpl_status_t ret, ret2;
-  struct metadata_conven mc;
-
-  if (metadatap)
-    {
-      metadata = dpl_dict_new(13);
-      if (NULL == metadata)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-
-  memset(&mc, 0, sizeof (mc));
-  mc.metadata = metadata;
-  mc.sysmdp = sysmdp;
-
-  if (sysmdp)
-    sysmdp->mask = 0;
-      
-  ret2 = dpl_dict_iterate(headers, cb_headers_iterate, &mc);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
-  return ret;
-}
-
-static dpl_status_t
-cb_values_iterate(dpl_dict_var_t *var,
-                  void *cb_arg)
-{
-  struct metadata_conven *mc = (struct metadata_conven *) cb_arg;
-  
-  return dpl_cdmi_get_metadatum_from_value(var->key,
-                                           var->val,
-                                           NULL,
-                                           NULL,
-                                           mc->metadata,
-                                           mc->sysmdp);
-}
-
-/** 
- * get metadata from values
- * 
- * @param values 
- * @param metadatap 
- * @param sysmdp 
- * 
- * @return 
- */
-dpl_status_t
-dpl_cdmi_get_metadata_from_values(const dpl_dict_t *values,
-                                  dpl_dict_t **metadatap,
-                                  dpl_sysmd_t *sysmdp)
-{
-  dpl_dict_t *metadata = NULL;
-  dpl_status_t ret, ret2;
-  struct metadata_conven mc;
-
-  if (metadatap)
-    {
-      metadata = dpl_dict_new(13);
-      if (NULL == metadata)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-
-  memset(&mc, 0, sizeof (mc));
-  mc.metadata = metadata;
-  mc.sysmdp = sysmdp;
-
-  if (sysmdp)
-    sysmdp->mask = 0;
-      
-  ret2 = dpl_dict_iterate(values, cb_values_iterate, &mc);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
-  return ret;
+  return DPL_SUCCESS;
 }
 
 dpl_status_t
@@ -1393,14 +463,17 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
             }
           
           //remove the base_path from the answer
-          if (strncmp(var->val->string, ctx->base_path, base_path_len))
+          if (strncmp(dpl_sbuf_get_str(var->val->string),
+                      ctx->base_path, base_path_len))
             {
               ret = DPL_EINVAL;
               goto end;
             }
           
           returned_sysmdp->mask |= DPL_SYSMD_MASK_PATH;
-          strncpy(returned_sysmdp->path, var->val->string + base_path_len, DPL_MAXPATHLEN);
+          strncpy(returned_sysmdp->path,
+                  dpl_sbuf_get_str(var->val->string) + base_path_len,
+                  DPL_MAXPATHLEN);
         }
     }
   
@@ -1795,6 +868,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
   int orig_len;
   char *orig_buf = NULL;
   dpl_cdmi_req_mask_t req_mask = 0u;
+  char *location;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
@@ -1929,6 +1003,22 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
                                  &data_buf, &data_len, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
+      if (DPL_EREDIRECT == ret2)
+        {
+          if (NULL != locationp)
+            {
+              location = dpl_location(headers_reply);
+              if (NULL == location)
+                {
+                  DPL_TRACE(conn->ctx, DPL_TRACE_ERR,
+                            "missing \"Location\" header in redirect HTTP response");
+                  connection_close = 1;
+                  ret = DPL_FAILURE;
+                  goto end;
+                }
+              *locationp = strdup(location);
+            }
+        }
       ret = ret2;
       goto end;
     }
@@ -1998,9 +1088,9 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
               goto end;
             }
 
-          value_len = strlen(var->val->string);
+          value_len = var->val->string->len;
 
-          if (0 == strcmp(encoding->val->string, "base64"))
+          if (0 == strcmp(dpl_sbuf_get_str(encoding->val->string), "base64"))
             {
               orig_len = DPL_BASE64_ORIG_LENGTH(value_len);
               orig_buf = malloc(orig_len);
@@ -2010,7 +1100,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
                   goto end;
                 }
           
-              orig_len = dpl_base64_decode((u_char *) var->val->string, value_len, (u_char *) orig_buf);
+              orig_len = dpl_base64_decode((u_char *) dpl_sbuf_get_str(var->val->string), value_len, (u_char *) orig_buf);
           
               //swap pointers
               tmp = data_buf;
@@ -2018,7 +1108,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
               orig_buf = tmp;
               data_len = orig_len;
             }
-          else if (0 == strcmp(encoding->val->string, "utf-8"))
+          else if (0 == strcmp(dpl_sbuf_get_str(encoding->val->string), "utf-8"))
             {
               orig_buf = data_buf;
               orig_len = data_len;
@@ -2028,7 +1118,7 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
                   ret = DPL_ENOMEM;
                   goto end;
                 }
-              memcpy(data_buf, var->val->string, value_len);
+              memcpy(data_buf, dpl_sbuf_get_str(var->val->string), value_len);
               data_buf[value_len] = '\0';
               data_len = value_len;
             }
@@ -2402,7 +1492,7 @@ dpl_cdmi_head_raw(dpl_ctx_t *ctx,
   //fetch metadata from JSON content
   memset(&option2, 0, sizeof (option2));
   option2.mask |= DPL_OPTION_RAW;
-  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata;objectID;parentID;objectType", &option2, object_type, condition, NULL, &md_buf, &md_len, NULL, NULL, NULL);
+  ret2 = dpl_cdmi_get(ctx, bucket, resource, NULL != subresource ? subresource : "metadata;objectID;parentID;objectType", &option2, object_type, condition, NULL, &md_buf, &md_len, NULL, NULL, locationp);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

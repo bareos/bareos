@@ -57,27 +57,76 @@ dpl_sbuf_new(int size)
   return sb;
 }
 
+dpl_sbuf_t *
+dpl_sbuf_new_from_str(const char *str)
+{
+  dpl_sbuf_t *sb = NULL;
+
+  sb = malloc(sizeof(dpl_sbuf_t));
+  if (NULL == sb)
+    {
+      return NULL;
+    }
+
+  sb->allocated = strlen(str) + 1;
+  sb->buf = malloc(sb->allocated);
+  if (NULL == sb->buf)
+    {
+      free(sb);
+      return NULL;
+    }
+  memcpy(sb->buf, str, sb->allocated);
+  
+  sb->len = sb->allocated - 1;
+
+  return sb;
+}
+
 dpl_status_t
 dpl_sbuf_add(dpl_sbuf_t *sb, const char *buf, int len)
 {
-  if (sb->len+len > sb->allocated)
+  if (sb->len+len+1 > sb->allocated)
     {
       char *tmp = NULL;
 
-      tmp = realloc(sb->buf, sb->len+len);
+      tmp = realloc(sb->buf, sb->len+len+1);
       if (NULL == tmp)
 	{
 	  return DPL_FAILURE;
 	}
 
       sb->buf = tmp;
-      sb->allocated = sb->len+len;
+      sb->allocated = sb->len+len+1;
     }
 
   memcpy(&sb->buf[sb->len], buf, len);
+  sb->buf[sb->len+len] = '\0';
   sb->len = sb->len+len;
 
   return DPL_SUCCESS;
+}
+
+dpl_status_t dpl_sbuf_add_str(dpl_sbuf_t *sb, const char *str)
+{
+  return dpl_sbuf_add(sb, str, strlen(str));
+}
+
+dpl_sbuf_t *dpl_sbuf_dup(const dpl_sbuf_t *src)
+{
+  dpl_sbuf_t *dst;
+
+  dst = dpl_sbuf_new(src->allocated);
+  if (NULL == dst)
+    return NULL;
+
+  (void)dpl_sbuf_add(dst, src->buf, src->len);
+
+  return dst;
+}
+
+char *dpl_sbuf_get_str(dpl_sbuf_t *sbuf)
+{
+  return sbuf->buf;
 }
 
 void 
@@ -90,7 +139,7 @@ dpl_sbuf_free(dpl_sbuf_t *sb)
 }
 
 void
-dpl_sbuf_print(dpl_sbuf_t *sb)
+dpl_sbuf_print(FILE *f, dpl_sbuf_t *sb)
 {
-  printf("%.*s", sb->len, sb->buf);
+  fprintf(f, "%.*s", sb->len, sb->buf);
 }

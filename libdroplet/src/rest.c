@@ -136,7 +136,6 @@ dpl_location_to_resource(dpl_ctx_t *ctx,
     *subresourcep = subresource;
 }
 
-
 /**
  * list all buckets
  *
@@ -605,6 +604,9 @@ dpl_get(dpl_ctx_t *ctx,
 {
   dpl_status_t ret, ret2;
   u_int data_len;
+  char *new_location = NULL;
+  char *new_location_resource;
+  char *new_location_subresource;
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "get bucket=%s path=%s", bucket, path);
 
@@ -613,8 +615,21 @@ dpl_get(dpl_ctx_t *ctx,
       ret = DPL_ENOTSUPP;
       goto end;
     }
-  
-  ret2 = ctx->backend->get(ctx, bucket, path, NULL, option, object_type, condition, range, data_bufp, &data_len, metadatap, sysmdp, NULL);
+
+  ret2 = ctx->backend->get(ctx, bucket, path, NULL, option, object_type, condition, range, data_bufp, &data_len, metadatap, sysmdp, &new_location);
+
+  if (DPL_EREDIRECT == ret2)
+    {
+      dpl_location_to_resource(ctx,
+                               new_location,
+                               &new_location_resource,
+                               &new_location_subresource);
+
+      ret2 = ctx->backend->get(ctx, bucket, new_location_resource, new_location_subresource, option, object_type, condition, range, data_bufp, &data_len, metadatap, sysmdp, NULL);
+
+      free(new_location);
+    }
+
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -670,6 +685,9 @@ dpl_get_buffered(dpl_ctx_t *ctx,
                  void *cb_arg)
 {
   dpl_status_t ret, ret2;
+  char *new_location = NULL;
+  char *new_location_resource;
+  char *new_location_subresource;
 
   DPL_TRACE(ctx, DPL_TRACE_ID, "get_buffered bucket=%s path=%s", bucket, path);
 
@@ -679,7 +697,20 @@ dpl_get_buffered(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret2 = ctx->backend->get_buffered(ctx, bucket, path, NULL, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
+  ret2 = ctx->backend->get_buffered(ctx, bucket, path, NULL, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, &new_location);
+
+  if (DPL_EREDIRECT == ret2)
+    {
+      dpl_location_to_resource(ctx,
+                               new_location,
+                               &new_location_resource,
+                               &new_location_subresource);
+
+      ret2 = ctx->backend->get_buffered(ctx, bucket, new_location_resource, new_location_subresource, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
+
+      free(new_location);
+    }
+
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -725,6 +756,9 @@ dpl_head(dpl_ctx_t *ctx,
          dpl_sysmd_t *sysmdp)
 {
   dpl_status_t ret, ret2;
+  char *new_location = NULL;
+  char *new_location_resource;
+  char *new_location_subresource;
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "head bucket=%s path=%s", bucket, path);
 
@@ -734,7 +768,20 @@ dpl_head(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret2 = ctx->backend->head(ctx, bucket, path, NULL, option, object_type, condition, metadatap, sysmdp, NULL);
+  ret2 = ctx->backend->head(ctx, bucket, path, NULL, option, object_type, condition, metadatap, sysmdp, &new_location);
+
+  if (DPL_EREDIRECT == ret2)
+    {
+      dpl_location_to_resource(ctx,
+                               new_location,
+                               &new_location_resource,
+                               &new_location_subresource);
+
+      ret2 = ctx->backend->head(ctx, bucket, new_location_resource, new_location_subresource, option, object_type, condition, metadatap, sysmdp, NULL);
+
+      free(new_location);
+    }
+
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -777,6 +824,9 @@ dpl_head_raw(dpl_ctx_t *ctx,
              dpl_dict_t **metadatap)
 {
   dpl_status_t ret, ret2;
+  char *new_location = NULL;
+  char *new_location_resource;
+  char *new_location_subresource;
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "head_raw bucket=%s path=%s", bucket, path);
 
@@ -786,7 +836,20 @@ dpl_head_raw(dpl_ctx_t *ctx,
       goto end;
     }
   
-  ret2 = ctx->backend->head_raw(ctx, bucket, path, NULL, option, object_type, condition, metadatap, NULL);
+  ret2 = ctx->backend->head_raw(ctx, bucket, path, NULL, option, object_type, condition, metadatap, &new_location);
+
+  if (DPL_EREDIRECT == ret2)
+    {
+      dpl_location_to_resource(ctx,
+                               new_location,
+                               &new_location_resource,
+                               &new_location_subresource);
+
+      ret2 = ctx->backend->head_raw(ctx, bucket, new_location_resource, new_location_subresource, option, object_type, condition, metadatap, NULL);
+
+      free(new_location);
+    }
+
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

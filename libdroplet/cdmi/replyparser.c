@@ -894,17 +894,33 @@ convert_obj_to_value(dpl_ctx_t *ctx,
     case json_type_boolean:
     case json_type_double:
     case json_type_int:
-    case json_type_string:
       {
         pthread_mutex_lock(&ctx->lock); //lock for objects other than string
-        val->string = strdup((char *) json_object_get_string(obj));
-        pthread_mutex_unlock(&ctx->lock);
-
+        val->string = dpl_sbuf_new(16);
         if (NULL == val->string)
           {
             ret = DPL_ENOMEM;
             goto end;
           }
+        dpl_sbuf_add_str(val->string, json_object_get_string(obj));
+        pthread_mutex_unlock(&ctx->lock);
+
+        val->type = DPL_VALUE_STRING;
+        break ;
+      }
+    case json_type_string:
+      {
+        pthread_mutex_lock(&ctx->lock); //lock for objects other than string
+	val->string = dpl_sbuf_new(json_object_get_string_length(obj) + 1);
+        if (NULL == val->string)
+          {
+            ret = DPL_ENOMEM;
+            goto end;
+          }
+        dpl_sbuf_add(val->string, json_object_get_string(obj),
+                     json_object_get_string_length(obj));
+        pthread_mutex_unlock(&ctx->lock);
+
         val->type = DPL_VALUE_STRING;
         break ;
       }

@@ -310,7 +310,7 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
               DPL_APPEND_STR(var->key);
               DPL_APPEND_STR("=");
               assert(var->val->type == DPL_VALUE_STRING);
-              DPL_APPEND_STR(var->val->string);
+              DPL_APPEND_STR(dpl_sbuf_get_str(var->val->string));
               amp = 1;
             }
         }
@@ -337,7 +337,7 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
 
               DPL_APPEND_STR(var->key);
               DPL_APPEND_STR(": ");
-              DPL_APPEND_STR(var->val->string);
+              DPL_APPEND_STR(dpl_sbuf_get_str(var->val->string));
               DPL_APPEND_STR("\r\n");
             }
         }

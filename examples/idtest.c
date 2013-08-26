@@ -201,7 +201,7 @@ main(int argc,
     }
 
   assert(metadatum->val->type == DPL_VALUE_STRING);
-  if (strcmp(metadatum->val->string, "bar"))
+  if (strcmp(dpl_sbuf_get_str(metadatum->val->string), "bar"))
     {
       fprintf(stderr, "bad value in metadatum\n");
       ret = 1;
@@ -217,7 +217,7 @@ main(int argc,
     }
 
   assert(metadatum->val->type == DPL_VALUE_STRING);
-  if (strcmp(metadatum->val->string, "qux"))
+  if (strcmp(dpl_sbuf_get_str(metadatum->val->string), "qux"))
     {
       fprintf(stderr, "bad value in metadatum\n");
       ret = 1;
@@ -284,7 +284,7 @@ main(int argc,
     }
 
   assert(metadatum->val->type == DPL_VALUE_STRING);
-  if (strcmp(metadatum->val->string, "bar2"))
+  if (strcmp(dpl_sbuf_get_str(metadatum->val->string), "bar2"))
     {
       fprintf(stderr, "bad value in metadatum\n");
       ret = 1;
@@ -300,7 +300,7 @@ main(int argc,
     }
 
   assert(metadatum->val->type == DPL_VALUE_STRING);
-  if (strcmp(metadatum->val->string, "qux"))
+  if (strcmp(dpl_sbuf_get_str(metadatum->val->string), "qux"))
     {
       fprintf(stderr, "bad value in metadatum\n");
       ret = 1;
