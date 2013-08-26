@@ -216,7 +216,7 @@ dpl_ctx_unlock(dpl_ctx_t *ctx)
  * Thus, if both parameters are passed `NULL` the profile will be read
  * from the file `~/.droplet/default.profile`.
  *
- * See *Profile File* for details of the profile file format.
+ * See @ref profile "Profile File" for details of the profile file format.
  *
  * @param droplet_dir pathname of directory containing Droplet state, or `NULL`
  * @param profile_name name of the profile to use, or `NULL`
