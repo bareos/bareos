@@ -45,6 +45,7 @@ dpl_status_t dpl_req_set_bucket(dpl_req_t *req, const char *bucket);
 dpl_status_t dpl_req_set_src_resource_ext(dpl_req_t *req, const char *src_resource, int add_base_path);
 dpl_status_t dpl_req_set_resource(dpl_req_t *req, const char *resource);
 dpl_status_t dpl_req_set_subresource(dpl_req_t *req, const char *subresource);
+dpl_status_t dpl_req_add_subresource(dpl_req_t *req, const char *subresource);
 void dpl_req_add_behavior(dpl_req_t *req, unsigned int flags);
 void dpl_req_rm_behavior(dpl_req_t *req, unsigned int flags);
 void dpl_req_set_location_constraint(dpl_req_t *req, dpl_location_constraint_t location_constraint);

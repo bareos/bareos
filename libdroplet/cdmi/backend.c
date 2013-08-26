@@ -388,7 +388,7 @@ dpl_cdmi_req_add_range(dpl_req_t *req,
       char buf[256];
       
       snprintf(buf, sizeof (buf), "value:%d-%d", range->start, range->end);
-      ret2 = dpl_req_set_subresource(req, buf);
+      ret2 = dpl_req_add_subresource(req, buf);
       if (DPL_SUCCESS != ret2)
         {
           ret = ret2;
@@ -1198,7 +1198,7 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
   u_int data_len_returned;
   dpl_value_t *val = NULL;
   dpl_cdmi_req_mask_t req_mask = 0u;
-  
+
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
   if (option)
@@ -1831,6 +1831,14 @@ dpl_cdmi_get(dpl_ctx_t *ctx,
     {
       ret = ret2;
       goto end;
+    }
+
+  if (NULL == subresource)
+    {
+      if (DPL_FTYPE_REG == object_type)
+        {
+          subresource = "valuetransferencoding";
+        }
     }
 
   if (NULL != subresource)
