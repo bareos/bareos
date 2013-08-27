@@ -34,6 +34,8 @@
 #include "dropletp.h"
 #include <droplet/s3/s3.h>
 
+/** @file */
+
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 

@@ -13,6 +13,7 @@ configure
 config.*
 depcomp
 droplet-1.0.pc
+droplet-3.0.pc
 examples/idrangetest
 examples/idtest
 examples/srwskey
@@ -33,3 +34,5 @@ tools/dplsh
 .deps
 .libs
 libdroplet.spec
+ylwrap
+.dirstamp

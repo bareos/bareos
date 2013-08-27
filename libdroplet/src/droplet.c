@@ -33,6 +33,8 @@
  */
 #include "dropletp.h"
 
+/** @file */
+
 int dpl_header_size;
 
 const char *
@@ -87,6 +89,25 @@ dpl_status_str(dpl_status_t status)
   return "Unknown error";
 }
 
+/**
+ * @defgroup init Initialization
+ * @addtogroup init
+ * @{
+ * Initializing the Droplet library.
+ *
+ * These functions are used to initialize global data used by Droplet
+ * library.
+ */
+
+/**
+ * Initialize Droplet global data.
+ *
+ * Initializes global data used by the library.  Must be called once
+ * and only once before any other Droplet library functions.  The next
+ * step after calling `dpl_init()` is probably `dpl_ctx_new()`.
+ *
+ * @retval DPL_SUCCESS this function cannot currently fail
+ */
 dpl_status_t
 dpl_init()
 {
@@ -98,11 +119,60 @@ dpl_init()
   return DPL_SUCCESS;
 }
 
+/**
+ * Free Droplet global data.
+ *
+ * Must be called once and only once after all Droplet library calls
+ * have stopped.
+ */
 void
 dpl_free()
 {
   ERR_free_strings();
 }
+
+/** @} */
+
+/**
+ * @defgroup ctx Contexts
+ * @addtogroup ctx
+ * @{
+ * State for communicating with a cloud service
+ *
+ * The `dpl_ctx_t` object, or "context", holds all the state and options
+ * needed to communicate with a cloud service instance.  All other
+ * functions that perform operations on a cloud service require a
+ * context.  Thus, creating a context is one of the very first things which
+ * a program will do when using Droplet, just after calling `dpl_init()`.
+ *
+ * Most programs will only ever create a single context object and will
+ * keep it for the lifetime of the program, only freeing it just before
+ * calling `dpl_free()` and exiting.  This is not the only possible approach
+ * but it makes the most sense because
+ *
+ * @arg The context holds some static configuration data which is read
+ *      from a profile file when the context is created.  Reading this
+ *      data is expensive, and it does not change.
+ * @arg The context caches connections to cloud service hosts, which
+ *      allows re-use of connections between requests and thus amortises
+ *      connection setup latency (such as DNS and TCP roundtrip latency)
+ *      over multiple requests.
+ * @arg Most programs only need to communicate with a single cloud
+ *      storage service instance, so there's no need to create a
+ *      second context.
+ *
+ * An important parameter of the context is the droplet directory, which
+ * is established when the context is created.  Several important files
+ * are located relative to this directory, notably the profile file.
+ * See the description of `dpl_ctx_new()` for details.
+ *
+ * The context object is thread-safe and contains an internal mutex
+ * which is used to safely share access between multiple threads.  This
+ * mutex is not held while requests are being made to the back end.  If
+ * you need to make requests to a cloud service from multiple threads in
+ * the same process, just create a single context object and share it
+ * between all threads.
+ */
 
 void
 dpl_ctx_lock(dpl_ctx_t *ctx)
@@ -120,6 +190,38 @@ dpl_ctx_unlock(dpl_ctx_t *ctx)
   pthread_mutex_unlock(&ctx->lock);
 }
 
+/**
+ * Create a context.
+ *
+ * Creates and returns a new `dpl_ctx_t` object, or NULL on error.
+ *
+ * Possible errors include memory allocation failure, failure to find
+ * the profile, and failure to parse the profile.  @note If this function
+ * fails there is no way for the caller to discover what went wrong.
+ *
+ * The droplet directory is used as the base directory for finding several
+ * important files, notably the profile file.  It is the first non-NULL pathname of:
+ * @arg the parameter @a droplet_dir, or
+ * @arg the environmental variable `DPLDIR`, or
+ * @arg `"~/.droplet/"`.
+ *
+ * A profile file is read to set up options for the context.  The profile
+ * file is named `<name>.profile` where `<name>` is the profile's name,
+ * and is located in the droplet directory.  The profile's name is the
+ * first non-NULL name of:
+ * @arg the @a profile_name parameter, or
+ * @arg the environment variable `DPLPROFILE`, or
+ * @arg `"default"`.
+ *
+ * Thus, if both parameters are passed `NULL` the profile will be read
+ * from the file `~/.droplet/default.profile`.
+ *
+ * See @ref profile "Profile File" for details of the profile file format.
+ *
+ * @param droplet_dir pathname of directory containing Droplet state, or `NULL`
+ * @param profile_name name of the profile to use, or `NULL`
+ * @return a new context, or NULL on error
+ */
 dpl_ctx_t *
 dpl_ctx_new(const char *droplet_dir,
             const char *profile_name)
@@ -157,6 +259,19 @@ dpl_ctx_new(const char *droplet_dir,
   return ctx;
 }
 
+/**
+ * Free a context.
+ *
+ * Free a context created earlier by `dpl_ctx_new()`.  All resources
+ * associated with the context (e.g. profile data and cached connections)
+ * are freed.
+ *
+ * @note If you use the connection API to create your own connections,
+ * you @b must release all your connections created from this context, by
+ * calling either `dpl_conn_release()` or `dpl_conn_terminate()`, @b before
+ * calling `dpl_ctx_free()`.
+ */
+
 void
 dpl_ctx_free(dpl_ctx_t *ctx)
 {
@@ -164,6 +279,8 @@ dpl_ctx_free(dpl_ctx_t *ctx)
   pthread_mutex_destroy(&ctx->lock);
   free(ctx);
 }
+
+/** @} */
 
 /*
  * eval

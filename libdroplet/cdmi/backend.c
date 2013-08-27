@@ -35,6 +35,8 @@
 #include <droplet/cdmi/cdmi.h>
 #include <droplet/cdmi/object_id.h>
 
+/** @file */
+
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 

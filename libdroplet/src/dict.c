@@ -33,17 +33,31 @@
  */
 #include "dropletp.h"
 
+/**
+ * @defgroup dict Dictionaries
+ * @addtogroup dict
+ * @{
+ * Nestable dictionary keyed on strings.
+ *
+ * The `dpl_dict_t` structure is a simple key/value dictionary.  Keys
+ * are strings, and values may be strings, vectors, or nested dicts.
+ * Entries are unique for a given key; adding a second entry with a
+ * matching key silently replaces the original.
+ *
+ * Dicts are implemented with a chained hash table for efficiency.
+ *
+ * Dicts are used within Droplet to store all kinds of data, but in
+ * particular collections of user metadata strings (which map naturally
+ * to key/value string pairs).
+ */
+
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-/**
+/*
  * compute a simple hash code
  *
  * note: bad dispersion, good for hash tables
- *
- * @param s
- *
- * @return
  */
 static int
 dict_hashcode(const char *s)
@@ -65,6 +79,19 @@ dict_hashcode(const char *s)
   return h;
 }
 
+/**
+ * Create a new dict.
+ *
+ * Creates and returns a new `dpl_dict_t` object.  The @a n_buckets
+ * parameter controls how many hash buckets the dict will use, which
+ * is fixed for the lifetime of the dict but does not affect the dict's
+ * capacity, only it's performance.  Typically a prime number like 13
+ * is a good choice for small dicts.  You should call `dpl_dict_free()`
+ * to free the dict when you have finished using it.
+ *
+ * @param n_buckets specifies how many buckets the dict will use
+ * @return a new dict, or NULL on failure
+ */
 dpl_dict_t *
 dpl_dict_new(int n_buckets)
 {
@@ -89,6 +116,21 @@ dpl_dict_new(int n_buckets)
   return dict;
 }
 
+
+/**
+ * Lookup an entry.
+ *
+ * Looks up and returns an entry in the dict matching key @a key exactly,
+ * or `NULL` if no matching entry is found.  The `val` field in the returned
+ * `dpl_dict_var_t` structure points to a `dpl_value_t` which contains
+ * the stored value.  If you know beforehand that the value will be a
+ * string, you should call `dpl_dict_get_value()` instead, as it's a
+ * more convenient interface.
+ *
+ * @param dict the dict to look up
+ * @param key the key to look up
+ * @return the entry matching @a key if found, or NULL
+ */
 dpl_dict_var_t *
 dpl_dict_get(const dpl_dict_t *dict,
              const char *key)
@@ -107,6 +149,22 @@ dpl_dict_get(const dpl_dict_t *dict,
   return NULL;
 }
 
+/**
+ * Lookup an entry using a lowered key
+ *
+ * Looks up and returns an entry in the dict matching a lower case
+ * version of @a key.
+ *
+ * @note the use of `dpl_dict_get_lowered()` is buggy and should be avoided.
+ *
+ * @param dict the dict to look up in
+ * @param key the key to look up
+ * @param[out] varp if a matching entry is found, `*varp` will be
+ * changed to point at it
+ * @retval DPL_SUCCESS on success, or
+ * @retval DPL_ENOENT if no matching entry is found, or
+ * @retval DPL_* other Droplet error codes on failure
+ */
 dpl_status_t
 dpl_dict_get_lowered(const dpl_dict_t *dict,
                      const char *key,
@@ -134,14 +192,33 @@ dpl_dict_get_lowered(const dpl_dict_t *dict,
   return DPL_SUCCESS;
 }
 
-/** 
- * stop if cb_func status != DPL_SUCCESS
- * 
- * @param dict 
- * @param cb_func 
- * @param cb_arg 
- * 
- * @return the last failed status or DPL_SUCCESS
+/**
+ * Iterate the entries of a dict.
+ *
+ * Calls the callback function @a cb_func once for each entry in the
+ * dict.  The callback may safely add or delete entries from the dict;
+ * newly added entries may or may not be seen during the iteration.
+ *
+ * The callback returns a Droplet error code; if it returns any code
+ * other than `DPL_SUCCESS` iteration ceases immediately and that code
+ * is returned from `dpl_dict_iterate()`.  The callback function should
+ * be declared like this
+ *
+ * @code
+ * dpl_status_t
+ * my_callback(dpl_dict_var_t *var, void *cb_arg)
+ * {
+ *    const char *key = var->key;
+ *    dpl_value_t *val = var->val;
+ *    return DPL_SUCCESS;  // keep iterating
+ * }
+ * @endcode
+ *
+ * @param dict the dict whose entries will be iterated
+ * @param cb_func callback function to call
+ * @param cb_arg opaque pointer passed to callback function
+ * @retval DPL_SUCCESS on success, or
+ * @retval DPL_* a Droplet error code returned by the callback function
  */
 dpl_status_t
 dpl_dict_iterate(const dpl_dict_t *dict,
@@ -176,6 +253,14 @@ cb_var_count(dpl_dict_var_t *var,
   return DPL_SUCCESS;
 }
 
+/**
+ * Count entries in a dict.
+ *
+ * Counts and returns the number of entries in the dict.
+ *
+ * @param dict the dict whose entries are to be counted
+ * @return the number of entries in the dict
+ */
 int
 dpl_dict_count(const dpl_dict_t *dict)
 {
@@ -203,6 +288,13 @@ cb_var_free(dpl_dict_var_t *var,
   return DPL_SUCCESS;
 }
 
+/**
+ * Free a dict.
+ *
+ * Free the dict and all its entries.
+ *
+ * @param dict the dict to free
+ */
 void
 dpl_dict_free(dpl_dict_t *dict)
 {
@@ -234,6 +326,19 @@ cb_var_print(dpl_dict_var_t *var,
   return DPL_SUCCESS;
 }
 
+/**
+ * Print the contents of a dict.
+ *
+ * Prints the keys and values of all entries in the dict in a human
+ * readable format with indenting.  Handles non-string values; in
+ * particular vectors and nested dicts.  This function is useful only
+ * for debugging, as there is no ability to read this information back
+ * into a dict.
+ *
+ * @param dict the dict whose entries are to be printed
+ * @param f a stdio file to which to print the entries
+ * @param level you should pass 0 for this argument
+ */
 void
 dpl_dict_print(const dpl_dict_t *dict,
                FILE *f,
@@ -246,15 +351,23 @@ dpl_dict_print(const dpl_dict_t *dict,
   dpl_dict_iterate(dict, cb_var_print, &pd);
 }
 
-/** 
- * make a copy of the variable
- * 
- * @param dict 
- * @param key 
- * @param var 
- * @param lowered 
- * 
- * @return 
+/**
+ * Add or replace an entry.
+ *
+ * Adds to the dict a new entry keyed by @a key with value `value`.
+ * If the dict already contains an entry with the same key, the old
+ * entry is replaced.  Both @a key and @a value are copied.
+ * If the value is a string, you should use `dpl_dict_add()` which is
+ * a more convenient interface.
+ *
+ * @note passing a non-zero value for `lowered` is buggy and should be avoided.
+ *
+ * @param dict the dict to add an entry to
+ * @param key the key for the new
+ * @param value the new value to be entered
+ * @param lowered if nonzero, @a key is converted to lower case
+ * @retval DPL_SUCCESS on success, or
+ * @retval DPL_* a Droplet error code on failure
  */
 dpl_status_t
 dpl_dict_add_value(dpl_dict_t *dict,
@@ -320,15 +433,22 @@ dpl_dict_add_value(dpl_dict_t *dict,
   return DPL_SUCCESS;
 }
 
-/** 
- * assume value is DPL_VALUE_STRING
- * 
- * @param dict 
- * @param key 
- * @param string
- * @param lowered 
- * 
- * @return 
+/**
+ * Add or replace a string entry.
+ *
+ * Adds to the dict a new entry keyed by @a key with a string
+ * value @a string.  If the dict already contains an entry with
+ * the same key, the old entry is replaced.  Both @a key and
+ * @a string are copied.
+ *
+ * @note passing a non-zero value for `lowered` is buggy and should be avoided.
+ *
+ * @param dict the dict to add an entry to
+ * @param key the key for the new entry
+ * @param string the new value to be entered
+ * @param lowered if nonzero, @a key is converted to lower case
+ * @retval DPL_SUCCESS on success, or
+ * @retval DPL_* a Droplet error code on failure
  */
 dpl_status_t
 dpl_dict_add(dpl_dict_t *dict,
@@ -373,6 +493,18 @@ cb_var_copy(dpl_dict_var_t *var,
   return dpl_dict_add_value((dpl_dict_t *)arg, var->key, var->val, 0);
 }
 
+/**
+ * Copy all entries from one dict to another.
+ *
+ * Copies all the entries from dict @a src to dict @a dst.  If @a dst
+ * contains entries which match entries in @a src, those entries will
+ * be replaced.
+ *
+ * @param dst the dict to copy entries to
+ * @param src the dict to copy entries from
+ * @retval DPL_SUCCESS on success, or
+ * @retval DPL_* a Droplet error code on failure
+ */
 dpl_status_t
 dpl_dict_copy(dpl_dict_t *dst,
               const dpl_dict_t *src)
@@ -393,6 +525,16 @@ dpl_dict_copy(dpl_dict_t *dst,
   return ret;
 }
 
+/**
+ * Duplicate a dict.
+ *
+ * Creates and returns a new dict containing copies of all the entries
+ * from the dict @a src.  You should call `dpl_dict_free()` to free the
+ * dict when you have finished using it.
+ *
+ * @param src the dict to copy entries from
+ * @returns a new dict or NULL on failure
+ */
 dpl_dict_t *
 dpl_dict_dup(const dpl_dict_t *src)
 {
@@ -449,6 +591,23 @@ cb_var_filter_string(dpl_dict_var_t *var,
   return ret;
 }
 
+/**
+ * Copy entries matching a prefix from one dict to another
+ *
+ * Copies to dict @a dst all the entries from dict @a src whose keys
+ * match the string prefix @a prefix.  The comparison is case
+ * sensitive.  If @a dst contains entries which match entries in
+ * @a src, those entries will be replaced.
+ *
+ * @note if @a src is `NULL`, @a dst will be freed.  This may be
+ * surprising.
+ *
+ * @param dst the dict to copy entries to
+ * @param src the dict to copy entries from
+ * @param prefix a string prefix for comparing to keys
+ * @retval DPL_SUCCESS on success, or
+ * @retval DPL_* a Droplet error code on failure
+ */
 dpl_status_t
 dpl_dict_filter_prefix(dpl_dict_t *dst,
                        const dpl_dict_t *src,
@@ -470,6 +629,23 @@ dpl_dict_filter_prefix(dpl_dict_t *dst,
   return ret;
 }
 
+/**
+ * Copy entries not matching a prefix from one dict to another
+ *
+ * Copies to dict @a dst all the entries from dict @a src whose keys
+ * do @b NOT match the string prefix @a prefix.  The comparison is case
+ * sensitive.  If @a dst contains entries which match entries in
+ * @a src, those entries will be replaced.
+ *
+ * @note if @a src is `NULL`, @a dst will be freed.  This may be
+ * surprising.
+ *
+ * @param dst the dict to copy entries to
+ * @param src the dict to copy entries from
+ * @param prefix a string prefix for comparing to keys
+ * @retval DPL_SUCCESS on success, or
+ * @retval DPL_* a Droplet error code on failure
+ */
 dpl_status_t
 dpl_dict_filter_no_prefix(dpl_dict_t *dst,
                           const dpl_dict_t *src,
@@ -491,10 +667,21 @@ dpl_dict_filter_no_prefix(dpl_dict_t *dst,
   return ret;
 }
 
-/*
- * helpers for DPL_VALUE_STRING
+/**
+ * Lookup a string-valued entry.
+ *
+ * Looks up an entry in the dict matching key @a key exactly, and returns
+ * the entry's value string or `NULL` if no matching entry is found.
+ * The returned string is owned by the dict, do not free it.
+ *
+ * A found entry must be string valued, or this function will fail an
+ * assert.  Use `dpl_dict_get()` for the more general case where the
+ * entry can be other types than a string.
+ *
+ * @param dict the dict to look up
+ * @param key the key to look up
+ * @return the matching entry's value if found, or `NULL`
  */
-
 char *
 dpl_dict_get_value(const dpl_dict_t *dict,
                    const char *key)
@@ -508,3 +695,5 @@ dpl_dict_get_value(const dpl_dict_t *dict,
   assert(var->val->type == DPL_VALUE_STRING);
   return dpl_sbuf_get_str(var->val->string);
 }
+
+/** @} */

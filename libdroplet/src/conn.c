@@ -33,6 +33,8 @@
  */
 #include "dropletp.h"
 
+/** @file */
+
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
@@ -299,14 +301,9 @@ do_connect(dpl_ctx_t *ctx,
   return fd;
 }
 
-/**
+/*
  * check an existing connection bound on (addr,port). if none is found
  * a new connection is created.
- *
- * @param addr
- * @param port
- *
- * @return
  */
 static dpl_conn_t *
 conn_open(dpl_ctx_t *ctx,
@@ -521,6 +518,30 @@ dpl_blacklist_host(dpl_ctx_t *ctx,
   (void) dpl_addrlist_blacklist(ctx->addrlist, host, portstr, ctx->blacklist_expiretime);
 }
 
+/**
+ * Get a connection from the context.
+ *
+ * Creates or re-uses a connection suitable for use with the request
+ * `req`.  The calling thread is guaranteed exclusive use of the
+ * connection.  If a recently released connection is suitable, it will be
+ * returned.
+ *
+ * If multiple hosts are specified in the `host` variable in
+ * the profile, connections will be distributed between those hosts in
+ * a round-robin manner.  Any failure while connecting will cause the
+ * failing host to be blacklisted and the connection retried with
+ * another host; if no hosts remain, `DPL_FAILURE` is returned.
+ *
+ * On success, a pointer to a connection is returned in `*connp`.  You
+ * should release the connection by calling either `dpl_conn_release()` or
+ * `dpl_conn_terminate()`.  On error the value in `*connp` is unchanged.
+ *
+ * @param ctx the context from which to create a connection
+ * @param req the request for which this connection will be used
+ * @param[out] connp used to return the new connection
+ * @retval DPL_SUCCESS on success, or
+ * @return a Droplet error code on failure
+ */
 dpl_status_t
 dpl_try_connect(dpl_ctx_t *ctx,
                 dpl_req_t *req,
@@ -608,9 +629,18 @@ dpl_try_connect(dpl_ctx_t *ctx,
 }
 
 /**
- * release the connection
+ * Release the connection after use.
  *
- * @param conn
+ * Releases a connection when you have finished using it.  The
+ * connection cannot be used after calling `dpl_conn_release()`.
+ * Note that `dpl_conn_release()` may choose to keep the connection
+ * in an idle state for later re-use, i.e. the same connection
+ * may be returned from a future call to `dpl_try_connect()`.
+ * This means you should not call `dpl_conn_release()` if there has been
+ * an error condition on the connection; instead you should call
+ * `dpl_conn_terminate()`.
+ *
+ * @param conn connection to release
  */
 void
 dpl_conn_release(dpl_conn_t *conn)
@@ -635,9 +665,14 @@ dpl_conn_release(dpl_conn_t *conn)
 }
 
 /**
- * call this if you encounter an error on conn fd
+ * Release and immediately terminate a connection.
  *
- * @param conn
+ * Releases a connection when you have finished using it, with immediate
+ * destruction of the underlying network socket.  Call this instead of
+ * `dpl_conn_release()` if you have encountered any error conditions on
+ * the connection.
+ *
+ * @param conn connection to release
  */
 void
 dpl_conn_terminate(dpl_conn_t *conn)
@@ -693,17 +728,12 @@ dpl_conn_pool_destroy(dpl_ctx_t *ctx)
  * I/O
  */
 
-/**
- * write a vector with retry
+/*
+ * Write an IO vector to a connection with retry and timeout
  *
- * @note: modify iov content
+ * @note: modifies the iov in place
  *
- * @param fd
- * @param iov
- * @param n_iov
  * @param timeout in secs or -1
- *
- * @return biznet_status
  */
 static dpl_status_t
 writev_all_plaintext(dpl_conn_t *conn,
@@ -771,15 +801,15 @@ writev_all_plaintext(dpl_conn_t *conn,
   return DPL_SUCCESS;
 }
 
-/**
+/*
+ * Write an IO vector to a connection via the SSL library with retry
  *
+ * Note the default semantics of SSL_write() are to handle partial
+ * writes internally, so we don't need to do it ourselves.
  *
- * @param conn
- * @param iov
- * @param n_iov
- * @param timeout ignored for now
- *
- * @return
+ * Timeout is ignored, the SSL library doesn't implement a per-write
+ * timeout.  It has a session timeout, but that's a different beast
+ * and not helpful to us.
  */
 static dpl_status_t
 writev_all_ssl(dpl_conn_t *conn,
@@ -825,6 +855,22 @@ writev_all_ssl(dpl_conn_t *conn,
   return ret;
 }
 
+/**
+ * Write an IO vector to the connection.
+ *
+ * Writes an IO vector to the connection.  If the `use_https` variable
+ * in the profile is `true`, the data will be written via SSL.  All the
+ * data is written, without partial writes.  The `iov` structure may be
+ * modified.  Note that `timeout` is not implemented for SSL, due to a
+ * limitation of  the SSL library.
+ *
+ * @param conn the connection to write to
+ * @param iov IO vector which points to data to write
+ * @param length of the IO vector
+ * @param timeout per-write timeout in seconds or -1 for no timeout
+ * @retval DPL_SUCCESS on success, or
+ * @return a Droplet error code on failure
+ */
 dpl_status_t
 dpl_conn_writev_all(dpl_conn_t *conn,
                     struct iovec *iov,
@@ -853,13 +899,16 @@ dpl_conn_writev_all(dpl_conn_t *conn,
   return ret;
 }
 
-/** 
- * hack function for posix layer
- * 
- * @param ctx 
- * @param path 
- * 
- * @return 
+/**
+ * Create a connection to a local file
+ *
+ * This function is used by the `posix` backend to create a connection
+ * which reads from or writes to an open local file.  Call `dpl_conn_release()`
+ * to release the connection when you have finished using it.
+ *
+ * @param ctx the context from which to create a connection
+ * @param fd an open file descriptor for a local file
+ * @return a new context, or NULL on failure
  */
 dpl_conn_t *
 dpl_conn_open_file(dpl_ctx_t *ctx,
