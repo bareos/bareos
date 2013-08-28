@@ -1167,7 +1167,7 @@ extern "C" int bndmp_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
                               ndmp9_file_stat *fstat)
 {
    NIS *nis;
-   int8_t FileType;
+   int8_t FileType = 0;
    char attribs[MAXSTRING];
    char namebuf[NDMOS_CONST_PATH_MAX];
    POOL_MEM pathname(PM_FNAME);
@@ -1272,7 +1272,7 @@ extern "C" int bndmp_add_node(struct ndmlog *ixlog, int tagc,
 {
    NIS *nis;
    int attr_size;
-   int8_t FileType;
+   int8_t FileType = 0;
    N_TREE_NODE *wanted_node;
    char attribs[MAXSTRING];
 
