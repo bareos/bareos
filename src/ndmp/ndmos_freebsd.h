@@ -66,6 +66,7 @@
 #include <sys/fcntl.h>
 #include <signal.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <rpc/rpc.h>
 #include <assert.h>
 #include <errno.h>
@@ -100,6 +101,5 @@
 
 #define NDMOS_MACRO_ROBOT_AGENT_ADDITIONS \
 	struct cam_device *	camdev;
-
 
 #endif /* NDMOS_ID == NDMOS_ID_FREEBSD */
