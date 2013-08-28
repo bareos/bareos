@@ -241,6 +241,14 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
 #include <camlib.h>
 #include <cam/scsi/scsi_message.h>
 
+#ifndef SAM_STAT_CHECK_CONDITION
+#define SAM_STAT_CHECK_CONDITION 0x2
+#endif
+
+#ifndef SAM_STAT_COMMAND_TERMINATED
+#define SAM_STAT_COMMAND_TERMINATED 0x22
+#endif
+
 /*
  * Core interface function to lowlevel SCSI interface.
  */
@@ -281,7 +289,7 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
       return false;
    }
 
-   ccb = cam_getccv(cam_dev);
+   ccb = cam_getccb(cam_dev);
    if (!ccb) {
       Emsg1(M_ERROR, 0, _("Failed to allocate new ccb for %s\n"),
             device_name);
@@ -293,19 +301,19 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
    /*
     * Clear out structure, except for header that was filled for us.
     */
-   memset(&ccb->ccb_h)[1], 0, sizeof(struct ccb_scsiio) - sizeof(struct ccb_hdr));
+   memset(&(&ccb->ccb_h)[1], 0, sizeof(struct ccb_scsiio) - sizeof(struct ccb_hdr));
 
    cam_fill_csio(&ccb->csio,
                  1, /* retries */
                  NULL, /* cbfcnp */
                  direction, /* flags */
-                 MSG_SIMPLE_Q_TAG,, /* tagaction */
-                 cmd_page, /* dataptr */
+                 MSG_SIMPLE_Q_TAG, /* tagaction */
+                 (u_int8_t *)cmd_page, /* dataptr */
                  cmd_page_len, /* datalen */
                  sizeof(sense), /* senselength */
                  cdb_len, /* cdblength  */
                  15000 /* timeout (millisecs) */);
-   memcpy(ccb->csio.cdb_io.cdb_bytes, cdb, SPP_SP_CMD_LEN);
+   memcpy(ccb->csio.cdb_io.cdb_bytes, cdb, cdb_len);
 
    if (cam_send_ccb(cam_dev, ccb) < 0) {
       Emsg2(M_ERROR, 0, _("Failed to send ccb to device %s: %s\n"),
