@@ -65,7 +65,7 @@
 #define NDMOS_COMMON_MD5
 #define NDMOS_COMMON_NONBLOCKING_IO_SUPPORT
 #define NDMOS_COMMON_TAPE_INTERFACE	/* uses tape simulator */
-#undef NDMOS_COMMON_SCSI_INTERFACE	/* stub-out */
+#define NDMOS_COMMON_SCSI_INTERFACE	/* use scsi simulator */
 #define NDMOS_COMMON_DISPATCH_REQUEST	/* no-op */
 
 
@@ -216,7 +216,7 @@ ndmos_scsi_execute_cdb (struct ndm_session *sess,
 		}
 
 		data_len = request->datain_len;
-		data_in_ptr = malloc (data_len);
+		data_in_ptr = (u_int8_t *)malloc (data_len);
 
 		if (!data_in_ptr) {
 			reply->error = NDMP9_NO_MEM_ERR;
@@ -228,7 +228,7 @@ ndmos_scsi_execute_cdb (struct ndm_session *sess,
 
 	case NDMP9_SCSI_DATA_DIR_OUT:
 		data_len = request->dataout.dataout_len;
-		data_ptr = request->dataout.dataout_val;
+		data_ptr = (u_int8_t *)request->dataout.dataout_val;
 		flags = CAM_DIR_OUT;
 		break;
 
@@ -272,7 +272,7 @@ ndmos_scsi_execute_cdb (struct ndm_session *sess,
 			int	n_sense;
 
 			n_sense = ccb->csio.sense_len - ccb->csio.sense_resid;
-			reply->ext_sense.ext_sense_val = malloc (n_sense);
+			reply->ext_sense.ext_sense_val = (char *)malloc (n_sense);
 			if (reply->ext_sense.ext_sense_val) {
 				bcopy (&ccb->csio.sense_data,
 					reply->ext_sense.ext_sense_val,
@@ -298,7 +298,7 @@ ndmos_scsi_execute_cdb (struct ndm_session *sess,
 			break;
 
 		case NDMP9_SCSI_DATA_DIR_IN:
-			reply->datain.datain_val = data_in_ptr;
+			reply->datain.datain_val = (char *)data_in_ptr;
 			reply->datain.datain_len = data_len;
 			break;
 
