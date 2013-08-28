@@ -36,3 +36,4 @@ tools/dplsh
 libdroplet.spec
 ylwrap
 .dirstamp
+cscope.out
