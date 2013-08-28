@@ -3106,6 +3106,7 @@ AC_ARG_ENABLE(scsi-crypto,
    ]
 )
 
+CAM_LIBS=""
 have_scsi_crypto=no
 if test x$support_scsi_crypto = xyes; then
    if test x${HAVE_LINUX_OS_TRUE} = x; then
@@ -3134,6 +3135,7 @@ if test x$support_scsi_crypto = xyes; then
 
       if test x$ac_cv_header_camlib_h = xyes -a \
               x$ac_cv_header_cam_scsi_scsi_message_h = xyes; then
+         CAM_LIBS="-lcam"
          have_scsi_crypto=yes
       fi
    fi
@@ -3163,6 +3165,7 @@ if test x$support_scsi_crypto = xyes; then
       AC_DEFINE([HAVE_LOWLEVEL_SCSI_INTERFACE], 1, [Low level SCSI Interface support])
    fi
 fi
+AC_SUBST(CAM_LIBS)
 
 dnl
 dnl Check for pthread libraries

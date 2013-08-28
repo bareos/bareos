@@ -20,6 +20,7 @@ thisdir = src/lib
 CPPFLAGS += @ZLIB_INC@
 
 DEBUG = @DEBUG@
+CAM_LIBS = @CAM_LIBS@
 CAP_LIBS = @CAP_LIBS@
 ZLIB_LIBS = @ZLIB_LIBS@
 
@@ -92,7 +93,7 @@ libbareos.a: $(LIBBAREOS_OBJS)
 
 libbareos.la: Makefile $(LIBBAREOS_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBAREOS_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOS_LT_RELEASE) $(WRAPLIBS) $(CAP_LIBS) $(ZLIB_LIBS) $(OPENSSL_LIBS) $(LIBS) $(DLLIBS)
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBAREOS_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOS_LT_RELEASE) $(WRAPLIBS) $(CAM_LIBS) $(CAP_LIBS) $(ZLIB_LIBS) $(OPENSSL_LIBS) $(LIBS) $(DLLIBS)
 
 libbareoscfg.a: $(LIBBAREOSCFG_OBJS)
 	@echo "Making $@ ..."
