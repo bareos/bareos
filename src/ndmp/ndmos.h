@@ -495,6 +495,7 @@ extern char *ndml_strend(char *s);	/* ndml_util.c */
 #endif /* NDMOS_OPTION_TAPE_SIMULATOR */
 
 #ifdef NDMOS_OPTION_ROBOT_SIMULATOR
+#undef NDMOS_MACRO_ROBOT_AGENT_ADDITIONS
 #define NDMOS_MACRO_ROBOT_AGENT_ADDITIONS \
 	char *			sim_dir;
 #endif /* NDMOS_OPTION_ROBOT_SIMULATOR */

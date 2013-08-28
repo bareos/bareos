@@ -96,9 +96,11 @@ ndmta_destroy (struct ndm_session *sess)
 		NDMOS_API_FREE (sess->tape_acb->tape_buffer);
 	}
 
+#ifdef NDMOS_OPTION_TAPE_SIMULATOR
 	if (sess->tape_acb->drive_name) {
 		NDMOS_API_FREE (sess->tape_acb->drive_name);
 	}
+#endif
 
 	NDMOS_API_FREE (sess->tape_acb);
 	sess->tape_acb = NULL;

@@ -81,9 +81,11 @@ ndmra_destroy (struct ndm_session *sess)
 		return 0;
 	}
 
+#ifdef NDMOS_OPTION_ROBOT_SIMULATOR
 	if (sess->robot_acb->sim_dir) {
 		NDMOS_API_FREE (sess->robot_acb->sim_dir);
 	}
+#endif
 
 	NDMOS_API_FREE (sess->robot_acb);
 	sess->robot_acb = NULL;

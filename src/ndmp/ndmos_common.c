@@ -280,7 +280,9 @@ ndmos_tape_initialize (struct ndm_session *sess)
 void
 ndmos_tape_sync_state (struct ndm_session *sess)
 {
-	the_tape_state.error = NDMP9_DEV_NOT_OPEN_ERR;
+	struct ndm_tape_agent * ta = sess->tape_acb;
+
+	ta->tape_state.error = NDMP9_DEV_NOT_OPEN_ERR;
 }
 
 ndmp9_error
