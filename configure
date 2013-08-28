@@ -646,6 +646,7 @@ DLIB
 DINCLUDE
 DEBUG
 CAP_LIBS
+CAM_LIBS
 XATTR_LIBS_NONSHARED
 XATTR_LIBS
 ACL_LIBS_NONSHARED
@@ -31083,6 +31084,7 @@ if test "${enable_scsi_crypto+set}" = set; then :
 fi
 
 
+CAM_LIBS=""
 have_scsi_crypto=no
 if test x$support_scsi_crypto = xyes; then
    if test x${HAVE_LINUX_OS_TRUE} = x; then
@@ -31146,6 +31148,7 @@ fi
 
       if test x$ac_cv_header_camlib_h = xyes -a \
               x$ac_cv_header_cam_scsi_scsi_message_h = xyes; then
+         CAM_LIBS="-lcam"
          have_scsi_crypto=yes
       fi
    fi
@@ -31191,6 +31194,7 @@ $as_echo "#define HAVE_LOWLEVEL_SCSI_INTERFACE 1" >>confdefs.h
 
    fi
 fi
+
 
 PTHREAD_LIB=""
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lpthread" >&5
