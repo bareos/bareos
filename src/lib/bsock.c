@@ -718,8 +718,9 @@ bool BSOCK::set_buffer_size(uint32_t size, int rw)
 
 #if defined(IP_TOS) && defined(IPTOS_THROUGHPUT)
    int opt;
+
    opt = IPTOS_THROUGHPUT;
-   setsockopt(fd, IPPROTO_IP, IP_TOS, (sockopt_val_t)&opt, sizeof(opt));
+   setsockopt(m_fd, IPPROTO_IP, IP_TOS, (sockopt_val_t)&opt, sizeof(opt));
 #endif
 
    if (size != 0) {
