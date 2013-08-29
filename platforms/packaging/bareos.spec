@@ -618,7 +618,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # This is not a config file, but we need what %config is able to do
 # the query.sql can be personalized by end user.
 # a rpmlint rule is add to filter the warning
-#%config(noreplace) %{script_dir}/query.sql
+%config(noreplace) %{script_dir}/query.sql
 
 %files storage
 # sd package (bareos-sd, bls, btape, bcopy, bextract)
