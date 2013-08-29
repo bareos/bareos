@@ -163,7 +163,7 @@ install: all
 	fi; \
 	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
 	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
-	@if test "x${sd_group}" != "x"; then \
+	-@if test "x${sd_group}" != "x"; then \
 	   chgrp -f ${sd_group} ${DESTDIR}${sysconfdir}/$$destconf; \
 	fi
 	@if test -f static-bareos-sd; then \
