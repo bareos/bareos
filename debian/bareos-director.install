@@ -4,6 +4,7 @@
 /usr/lib/bareos/scripts/delete_catalog_backup
 /usr/lib/bareos/scripts/make_catalog_backup
 /usr/lib/bareos/scripts/make_catalog_backup.pl
+/usr/lib/bareos/scripts/query.sql
 /usr/lib/bareos/plugins/python-dir.so
 /usr/sbin/bareos-dir
 /usr/sbin/bsmtp
