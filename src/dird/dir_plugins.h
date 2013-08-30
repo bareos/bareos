@@ -163,7 +163,7 @@ typedef enum {
 } pDirVariable;
 
 #define DIR_PLUGIN_MAGIC     "*DirPluginData*"
-#define DIR_PLUGIN_INTERFACE_VERSION  1
+#define DIR_PLUGIN_INTERFACE_VERSION  2
 
 typedef struct s_dirpluginFuncs {
    uint32_t size;

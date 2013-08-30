@@ -41,6 +41,10 @@ static const int dbglvl = 150;
 #define PLUGIN_DATE         "January 2008"
 #define PLUGIN_VERSION      "1"
 #define PLUGIN_DESCRIPTION  "Bareos Pipe File Daemon Plugin"
+#define PLUGIN_USAGE        "bpipe:<filepath>:<readprogram>:<writeprogram>\n" \
+                            " readprogram runs on backup and its stdout is saved\n" \
+                            " writeprogram runs on restore and gets restored data into stdin\n" \
+                            " the data is internally stored as filepath (e.g. mybackup/backup1)"
 
 /* Forward referenced functions */
 static bRC newPlugin(bpContext *ctx);
@@ -72,7 +76,8 @@ static genpInfo pluginInfo = {
    PLUGIN_AUTHOR,
    PLUGIN_DATE,
    PLUGIN_VERSION,
-   PLUGIN_DESCRIPTION
+   PLUGIN_DESCRIPTION,
+   PLUGIN_USAGE
 };
 
 /* Plugin entry points for Bareos */

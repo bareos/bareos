@@ -39,6 +39,7 @@
 #define PLUGIN_DATE         "August 2012"
 #define PLUGIN_VERSION      "1"
 #define PLUGIN_DESCRIPTION  "Python Director Daemon Plugin"
+#define PLUGIN_USAGE        "(No usage yet)"
 
 /* Forward referenced functions */
 static bRC newPlugin(bpContext *ctx);
@@ -59,7 +60,8 @@ static genpInfo pluginInfo = {
    PLUGIN_AUTHOR,
    PLUGIN_DATE,
    PLUGIN_VERSION,
-   PLUGIN_DESCRIPTION
+   PLUGIN_DESCRIPTION,
+   PLUGIN_USAGE
 };
 
 static pDirFuncs pluginFuncs = {

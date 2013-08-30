@@ -82,6 +82,7 @@ typedef struct gen_pluginInfo {
    const char *plugin_date;
    const char *plugin_version;
    const char *plugin_description;
+   const char *plugin_usage;
 } genpInfo;
 
 /* Functions */

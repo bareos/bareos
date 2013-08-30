@@ -350,42 +350,29 @@ void dump_pluginfo(progdata *pdata)
    switch (pdata->bplugtype) {
    case DIRPLUGIN:
       printf("\nPlugin type:\t\tBareos Director plugin\n");
-      if (pdata->verbose) {
-         printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
-      }
-      printf("Plugin version:\t\t%s\n", pinfo->plugin_version);
-      printf("Plugin release date:\t%s\n", NPRT(pinfo->plugin_date));
-      printf("Plugin author:\t\t%s\n", NPRT(pinfo->plugin_author));
-      printf("Plugin licence:\t\t%s\n", NPRT(pinfo->plugin_license));
-      printf("Plugin description:\t%s\n", NPRT(pinfo->plugin_description));
-      printf("Plugin API version:\t%d\n", pinfo->version);
       break;
    case FDPLUGIN:
       printf("\nPlugin type:\t\tBareos File Daemon plugin\n");
-      if (pdata->verbose) {
-         printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
-      }
-      printf("Plugin version:\t\t%s\n", pinfo->plugin_version);
-      printf("Plugin release date:\t%s\n", NPRT(pinfo->plugin_date));
-      printf("Plugin author:\t\t%s\n", NPRT(pinfo->plugin_author));
-      printf("Plugin licence:\t\t%s\n", NPRT(pinfo->plugin_license));
-      printf("Plugin description:\t%s\n", NPRT(pinfo->plugin_description));
-      printf("Plugin API version:\t%d\n", pinfo->version);
       break;
    case SDPLUGIN:
       printf("\nPlugin type:\t\tBareos Storage plugin\n");
-      if (pdata->verbose) {
-         printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
-      }
-      printf("Plugin version:\t\t%s\n", pinfo->plugin_version);
-      printf("Plugin release date:\t%s\n", NPRT(pinfo->plugin_date));
-      printf("Plugin author:\t\t%s\n", NPRT(pinfo->plugin_author));
-      printf("Plugin licence:\t\t%s\n", NPRT(pinfo->plugin_license));
-      printf("Plugin description:\t%s\n", NPRT(pinfo->plugin_description));
-      printf("Plugin API version:\t%d\n", pinfo->version);
       break;
    default:
       printf("\nUnknown plugin type or other Error\n\n");
+      return;
+   }
+
+   if (pdata->verbose) {
+      printf("Plugin magic:\t\t%s\n", NPRT(pinfo->plugin_magic));
+   }
+   printf("Plugin version:\t\t%s\n", pinfo->plugin_version);
+   printf("Plugin release date:\t%s\n", NPRT(pinfo->plugin_date));
+   printf("Plugin author:\t\t%s\n", NPRT(pinfo->plugin_author));
+   printf("Plugin licence:\t\t%s\n", NPRT(pinfo->plugin_license));
+   printf("Plugin description:\t%s\n", NPRT(pinfo->plugin_description));
+   printf("Plugin API version:\t%d\n", pinfo->version);
+   if (pinfo->plugin_usage) {
+      printf("Plugin usage:\n%s\n", pinfo->plugin_usage);
    }
 }
 

@@ -293,7 +293,7 @@ typedef enum {
 
 #define FD_PLUGIN_MAGIC  "*FDPluginData*"
 
-#define FD_PLUGIN_INTERFACE_VERSION  7
+#define FD_PLUGIN_INTERFACE_VERSION  8
 
 /*
  * This is a set of function pointers that Bareos can call

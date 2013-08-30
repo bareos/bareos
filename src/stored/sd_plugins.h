@@ -173,7 +173,7 @@ typedef enum {
 } psdVariable;
 
 #define SD_PLUGIN_MAGIC     "*SDPluginData*"
-#define SD_PLUGIN_INTERFACE_VERSION  1
+#define SD_PLUGIN_INTERFACE_VERSION  2
 
 /*
  * Functions that must be defined in every plugin

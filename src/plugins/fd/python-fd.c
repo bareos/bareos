@@ -41,6 +41,7 @@
 #define PLUGIN_DATE         "August 2012"
 #define PLUGIN_VERSION      "1"
 #define PLUGIN_DESCRIPTION  "Python File Daemon Plugin"
+#define PLUGIN_USAGE        "(No usage yet)"
 
 /* Forward referenced functions */
 static bRC newPlugin(bpContext *ctx);
@@ -70,6 +71,7 @@ static genpInfo pluginInfo = {
    PLUGIN_DATE,
    PLUGIN_VERSION,
    PLUGIN_DESCRIPTION,
+   PLUGIN_USAGE
 };
 
 static pFuncs pluginFuncs = {
