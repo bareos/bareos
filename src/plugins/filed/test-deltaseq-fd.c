@@ -62,7 +62,7 @@ static genpInfo pluginInfo = {
    PLUGIN_AUTHOR,
    PLUGIN_DATE,
    PLUGIN_VERSION,
-   PLUGIN_DESCRIPTION,
+   PLUGIN_DESCRIPTION
 };
 
 /* Plugin entry points for Bareos */
