@@ -29,6 +29,8 @@
 #include "bareos.h"
 #include "dird.h"
 
+#define DEFAULT_STATUS_SCHED_DAYS 7
+
 extern void *start_heap;
 
 static void list_scheduled_jobs(UAContext *ua);
@@ -577,7 +579,7 @@ static void do_scheduler_status(UAContext *ua)
 {
    int i;
    int max_date_len = 0;
-   int days = 14;                                /* Default days for preview */
+   int days = DEFAULT_STATUS_SCHED_DAYS;         /* Default days for preview */
    bool schedulegiven = false;
    time_t time_to_check, now, start, stop;
    char schedulename[MAX_NAME_LENGTH];
@@ -597,7 +599,7 @@ static void do_scheduler_status(UAContext *ua)
       days = atoi(ua->argv[i]);
       if (((days < -366) || (days > 366)) && !ua->api) {
          ua->send_msg(_("Ignoring invalid value for days. Allowed is -366 < days < 366.\n"));
-         days = 14;
+         days = DEFAULT_STATUS_SCHED_DAYS;
       }
    }
 
