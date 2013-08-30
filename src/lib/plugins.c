@@ -340,25 +340,41 @@ int list_plugins(alist *plugin_list, POOL_MEM &msg)
    Plugin *plugin;
 
    if (plugin_list->size() > 0) {
-      pm_strcpy(msg, "Plugin: ");
+      pm_strcpy(msg, "Plugin Info:\n");
       foreach_alist(plugin, plugin_list) {
+         pm_strcat(msg, " Plugin     : ");
          len = pm_strcat(msg, plugin->file);
-         /*
-          * Print plugin version when debug activated
-          */
-         if (debug_level > 0 && plugin->pinfo) {
+         if (plugin->pinfo) {
             genpInfo *info = (genpInfo *)plugin->pinfo;
-            pm_strcat(msg, "(");
+            pm_strcat(msg, "\n");
+            pm_strcat(msg, " Description: ");
+            pm_strcat(msg, NPRT(info->plugin_description));
+            pm_strcat(msg, "\n");
+
+            pm_strcat(msg, " Version    : ");
             pm_strcat(msg, NPRT(info->plugin_version));
-            len = pm_strcat(msg, ")");
-         }
-         if (len > 80) {
-            pm_strcat(msg, "\n   ");
-         } else {
-            pm_strcat(msg, " ");
+            pm_strcat(msg, ", Date: ");
+            pm_strcat(msg, NPRT(info->plugin_date));
+            pm_strcat(msg, "\n");
+
+            pm_strcat(msg, " Author     : ");
+            pm_strcat(msg, NPRT(info->plugin_author));
+            pm_strcat(msg, "\n");
+
+            pm_strcat(msg, " License    : ");
+            pm_strcat(msg, NPRT(info->plugin_license));
+            pm_strcat(msg, "\n");
+
+            if (info->plugin_usage) {
+               pm_strcat(msg, " Usage      : ");
+               pm_strcat(msg, info->plugin_usage);
+               pm_strcat(msg, "\n");
+            }
+
+            pm_strcat(msg, "\n");
          }
       }
-      len = pm_strcat(msg, "\n");
+     len = pm_strcat(msg, "\n");
    }
 
   return len;

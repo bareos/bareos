@@ -39,6 +39,7 @@
 #define PLUGIN_DATE         "June 2013"
 #define PLUGIN_VERSION      "1"
 #define PLUGIN_DESCRIPTION  "Auto Xflation Storage Daemon Plugin"
+#define PLUGIN_USAGE        "(No usage yet)"
 
 /*
  * Forward referenced functions
@@ -71,7 +72,8 @@ static genpInfo pluginInfo = {
    PLUGIN_AUTHOR,
    PLUGIN_DATE,
    PLUGIN_VERSION,
-   PLUGIN_DESCRIPTION
+   PLUGIN_DESCRIPTION,
+   PLUGIN_USAGE
 };
 
 static psdFuncs pluginFuncs = {
