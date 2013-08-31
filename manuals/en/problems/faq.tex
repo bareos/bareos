@@ -10,12 +10,12 @@
 
 These are questions that have been submitted over time by the
 Bacula users. The following
-FAQ is very useful, but it is not always up to date 
-with newer information, so after reading it, if you don't find what you 
+FAQ is very useful, but it is not always up to date
+with newer information, so after reading it, if you don't find what you
 want, you might try the Bacula wiki maintained by Frank Sweetser, which
 contains more than just a FAQ:
 \elink{http://wiki.bacula.org}{http://wiki.bacula.org}
-or go directly to the FAQ at: 
+or go directly to the FAQ at:
 \elink{http://wiki.bacula.org/doku.php?id=faq}
 {http://wiki.bacula.org/doku.php?id=faq}.
 
@@ -28,7 +28,7 @@ of known bugs and solutions.
 \section{What is Bacula?}
 \item [What is {\bf Bacula}? ]
    \index[general]{What is Bacula? }
-   {\bf Bacula} is a network backup and restore program. 
+   {\bf Bacula} is a network backup and restore program.
 
 \section{Does Bacula support Windows?}
 \item [Does Bacula support Windows?]
@@ -38,7 +38,7 @@ of known bugs and solutions.
    (bacula-fd), but have not tested the Director nor the Storage daemon.
    Note, Win95 is no longer supported because it doesn't have the
    GetFileAttributesExA API call.
- 
+
 
 \label{lang}
 \section{What language is Bacula written in?}
@@ -48,7 +48,7 @@ of known bugs and solutions.
    the C++ extensions  over C.  Thus Bacula is completely  compiled using the
    C++ compiler. There are several modules, including the Win32 interface, that
    are written using the  object oriented C++ features. Over time, we are slowly
-   adding a larger  subset of C++.  
+   adding a larger  subset of C++.
 
 \label{run}
 \section{On what machines does Bacula run?}
@@ -61,7 +61,7 @@ of known bugs and solutions.
    Bacula has been my only backup tool for over seven years backing up 8
    machines nightly (6 Linux boxes running SuSE, previously
    Red Hat and Fedora, a WinXP machine, and a WinNT machine).
- 
+
 
 \label{stable}
 \section{Is Bacula Stable?}
@@ -83,14 +83,14 @@ of known bugs and solutions.
    crashes.  Of the three daemons, the Director is the most prone to having
    problems.  Still, it frequently runs several months with no problems.
 
-   There are a number of reasons for this stability.  
+   There are a number of reasons for this stability.
 
    \begin{enumerate}
    \item  The program is constantly checking the chain of allocated
       memory buffers to ensure that no overruns have occurred.  \\
    \item All  memory leaks (orphaned buffers) are reported each time the
       program  terminates.\\
-   \item Any signal (segmentation fault, ...) generates a 
+   \item Any signal (segmentation fault, ...) generates a
       traceback that is emailed to the developer.  This permits quick
       resolution of bugs even if they only show up rarely in a production
       system.\\
@@ -108,7 +108,7 @@ of known bugs and solutions.
    Storage daemon know the name  of the Director as well as its password. As a
    consequence,  if you change the Director's name or password, you must  make
    the corresponding change in the Storage daemon's and  in the File daemon's
-   configuration files.  
+   configuration files.
 
    During the authorization process, the Storage daemon and File daemon
    also require that the Director authenticates itself, so both ends
@@ -143,13 +143,13 @@ of known bugs and solutions.
    Here is a picture that indicates what names/passwords in which
    files/Resources must match up:
 
-   \includegraphics{\idir Conf-Diagram.eps}  
+   \includegraphics{\idir Conf-Diagram.eps}
 
    In the left column, you will find the Director, Storage, and  Client
    resources, with their names and passwords -- these  are all in {\bf
    bacula-dir.conf}. The right column is where the corresponding values
    should be found in the  Console, Storage daemon (SD), and File daemon (FD)
-   configuration  files.  
+   configuration  files.
 
    Another thing to check is to ensure that the Bacula component you are
    trying to access has {\bf Maximum Concurrent Jobs} set large enough to
@@ -167,26 +167,26 @@ of known bugs and solutions.
    Why? ]
 \index[general]{Cannot Access a Client}
    There are several reasons why Bacula could not contact a client  on a
-   different machine. They are:  
+   different machine. They are:
 
 \begin{itemize}
 \item It is a Windows Client, and the client died because of an  improper
    configuration file. Check that the Bacula icon is in  the system tray and the
    the menu items work. If the client has  died, the icon will disappear only
-   when you move the mouse over  the icon.  
+   when you move the mouse over  the icon.
 \item The Client address or port is incorrect or not resolved by  DNS. See if
    you can ping the client machine using the same  address as in the Client
-   record.  
+   record.
 \item You have a firewall, and it is blocking traffic on port  9102 between
    the Director's machine and the Client's  machine (or on port 9103 between the
-   Client and the Storage daemon  machines).  
+   Client and the Storage daemon  machines).
 \item Your password or names are not correct in both the Director and  the
    Client machine. Try configuring everything identical to  how you run the
    client on the same machine as the Director, but  just change the Address. If
-   that works, make the other changes  one step at a time until it works.  
+   that works, make the other changes  one step at a time until it works.
 \item You may also be having problems between your File daemon and your
    Storage daemon. The name you use in the Storage resource of your
-   Director's conf file must be known (resolvable) by the File daemon, 
+   Director's conf file must be known (resolvable) by the File daemon,
    because it is passed symbolically to the File daemon, which then
    resolves it to get an IP address used to contact the Storage daemon.
 \item You may have a {\bf hosts.allow} or {\bf hosts.deny} file that is
@@ -204,7 +204,7 @@ of known bugs and solutions.
    cd <bacula-source>/src/cats
    ./drop_mysql_tables
    ./make_mysql_tables
- 
+
 \end{verbatim}
 \normalsize
 
@@ -216,11 +216,11 @@ If you are using SQLite, do the following:
    cd <bacula-source>/src/cats
    ./drop_sqlite_tables
    ./make_sqlite_tables
- 
+
 \end{verbatim}
 \normalsize
 
-Then write an EOF on each tape you used with {\bf Bacula} using: 
+Then write an EOF on each tape you used with {\bf Bacula} using:
 
 \footnotesize
 \begin{verbatim}
@@ -229,7 +229,7 @@ mt -f /dev/st0 weof
 \end{verbatim}
 \normalsize
 
-where you need to adjust the device name for your system.  
+where you need to adjust the device name for your system.
 
 \label{restorehang}
 \section{I Run a Restore Job and Bacula Hangs. What do I do?}
@@ -267,19 +267,19 @@ You must have the configuration file in {\bf
 c:\textbackslash{}bacula\textbackslash{}bin\textbackslash{}bacula-fd.conf}.
 
 To {\bf see} what is going on when the File daemon starts  on Windows, do the
-following:  
+following:
 
 \footnotesize
 \begin{verbatim}
     Start a DOS shell Window.
     cd c:\bacula\bin
     bacula-fd -d100 -c c:\bacula\bin\bacula-fd.conf
-    
+
 \end{verbatim}
 \normalsize
 
 This will cause the FD to write a file {\bf bacula.trace}  in the current
-directory, which you can examine and thereby determine  the problem.  
+directory, which you can examine and thereby determine  the problem.
 
 \label{scroll}
 \item [When I Start the Console, the Error Messages Fly By. How can I see
@@ -294,27 +294,27 @@ directory, which you can examine and thereby determine  the problem.
 \footnotesize
 \begin{verbatim}
     append = "/home/kern/bacula/bin/log" = all, !skipped
-    
+
 \end{verbatim}
 \normalsize
 
 Obviously you will want to change the filename to be appropriate  for your
-system.  
+system.
 
 \label{nobackup}
-\section{My backups are not working on my Windows 
+\section{My backups are not working on my Windows
    Client. What should I do?}
-\item [I didn't realize that the backups were not working on my Windows 
+\item [I didn't realize that the backups were not working on my Windows
    Client. What should I do? ]
 \index[general]{Backups Failing}
 You should be sending yourself an email message for each job. This will  avoid
 the possibility of not knowing about a failed backup. To do so  put something
-like:  
+like:
 
 \footnotesize
 \begin{verbatim}
   Mail = yourname@yourdomain = all, !skipped
-  
+
 \end{verbatim}
 \normalsize
 
@@ -325,15 +325,15 @@ me 9 months), you might change that to:
 \footnotesize
 \begin{verbatim}
    MailOnError = yourname@yourdomain = all, !skipped
-   
+
 \end{verbatim}
 \normalsize
 
 then you only get email messages when a Job errors as is the case  for your
-Windows machine.  
+Windows machine.
 
 You should also be logging the Director's messages, please see the  previous
-FAQ for how to do so.  
+FAQ for how to do so.
 
 \label{sched}
 \section{All my Jobs are scheduled for the same time. Will this cause
@@ -363,7 +363,7 @@ FAQ for how to do so.
 
 \label{testbackup}
 \section{Can I use a dummy device to test the backup?}
-   Yes, to have a {\sl Virtual} device which just consumes data, you can use a 
+   Yes, to have a {\sl Virtual} device which just consumes data, you can use a
    FIFO device (see \ilink{Stored configuration}{SetupFifo}).
    It's useful to test a backup.
 \footnotesize
@@ -396,7 +396,7 @@ system supported by Bacula can handle files bigger 2 Gigabytes.
 %% Is there  a better way than "./bacula stop" to stop it?}
 \item [I Started A Job then Decided I Really Did Not Want to Run It. Is
    there  a better way than {\bf ./bacula stop} to stop it?]
-\index[general]{Cancelling jobs} 
+\index[general]{Cancelling jobs}
    Yes, you normally should use the Console command {\bf cancel} to cancel
    a Job that is either scheduled or running.  If the Job is scheduled, it
    will be marked for cancellation and will be canceled when it is
@@ -425,7 +425,7 @@ useful to our users, so we publish the very latest document.  Fortunately
 it is rare that there are confusions with new features.
 
 If you want to read a document that pertains only to a specific  version,
-please use the one distributed in the source code.  The web site also has 
+please use the one distributed in the source code.  The web site also has
 online versions of both the released manual and the current development
 manual.
 
@@ -483,7 +483,7 @@ manual.
 \section{Do you really handle unlimited path lengths?}
 \item [How Can You Claim to Handle Unlimited Path and Filename Lengths
    when  All Other Programs Have Fixed Limits?]
-\index[general]{Path and Filename Lengths} 
+\index[general]{Path and Filename Lengths}
    Most of those other programs have been around for a long time, in fact
    since the beginning of Unix, which means that they were designed for
    rather small fixed length path and filename lengths.  Over the years,
@@ -500,7 +500,7 @@ manual.
 \label{unique}
 \section{What Is the Really Unique Feature of Bacula?}
 \item [What Is the Really Unique Feature of Bacula?]
-\index[general]{Unique Feature of Bacula} 
+\index[general]{Unique Feature of Bacula}
    Well, it is hard to come up with unique features when backup programs
    for Unix machines have been around since the 1960s.  That said, I
    believe that Bacula is the first and only program to use a standard SQL
@@ -522,7 +522,7 @@ manual.
    Particular  Job to Run After Another Job? ]
 \index[general]{Multiple Simultaneous Jobs}
 Yes, you can set Priorities on your jobs so that they  run in the order you
-specify. Please see:  
+specify. Please see:
 \ilink{the Priority record}{Priority} in the  Job resource.
 
 \label{nomail}
@@ -552,14 +552,14 @@ specify. Please see:
   Bacula versions prior to 1.30, after changing your Pool Resource,  you must
   manually update the corresponding values in the Catalog by  using the {\bf
   update pool} command in the Console program. In Bacula  version 1.30, Bacula
-  does this for you automatically every time it  starts.  
-  
+  does this for you automatically every time it  starts.
+
   When Bacula creates a Media record (Volume), it uses many default  values from
   the Pool record. If you subsequently change the Pool  record, the new values
   will be used as a default for the next Volume  that is created, but if you
   want the new values to apply to existing  Volumes, you must manually update
   the Volume Catalog entry using  the {\bf update volume} command in the Console
-  program. 
+  program.
 
 \label{CompressionNotWorking}
 \section{Why aren't my files compressed?}
@@ -568,10 +568,10 @@ specify. Please see:
 \index[general]{Compression}
    There are two kinds of compression. One is tape compression. This  is done by
    the tape drive hardware, and you either enable or disable  it with system
-   tools such as {\bf mt}. This compression works  independently of Bacula,  
-   and when it is enabled, you should not use the Bacula software 
+   tools such as {\bf mt}. This compression works  independently of Bacula,
+   and when it is enabled, you should not use the Bacula software
    compression.
-   
+
    Bacula also has software compression code in the File daemons, which you
    normally need to enable only when backing up to file Volumes.  There are
    two conditions necessary to enable the Bacula software compression.
@@ -588,30 +588,30 @@ specify. Please see:
 \footnotesize
 \begin{verbatim}
     ZLIB support:  yes
-          
+
 \end{verbatim}
 \normalsize
 
 \item You must add the {\bf compression=gzip} option on your  Include
-   statement in the Director's configuration file.  
+   statement in the Director's configuration file.
 \end{enumerate}
 
 \label{NewTape}
 \item [Bacula is Asking for a New Tape After 2 GB of Data but My Tape
    holds 33 GB. Why?]
 \index[general]{Tape capacity}
-There are several reasons why Bacula will request a new tape.  
+There are several reasons why Bacula will request a new tape.
 
 \begin{itemize}
 \item There is an I/O error on the tape. Bacula prints an error message  and
    requests a new tape. Bacula does not attempt to continue writing  after an
-   I/O error.  
-\item Bacula encounters and end of medium on the tape. This is not always 
-   distinguishable from an I/O error.  
+   I/O error.
+\item Bacula encounters and end of medium on the tape. This is not always
+   distinguishable from an I/O error.
 \item You have specifically set some size limitation on the tape. For  example
    the {\bf Maximum Volume Bytes} or {\bf Maximum Volume Files}  in the
    Director's Pool resource, or {\bf Maximum Volume Size} in  the Storage
-   daemon's Device resource.  
+   daemon's Device resource.
 \end{itemize}
 
 \label{LevelChanging}
@@ -625,27 +625,27 @@ There are several reasons why Bacula will request a new tape.
    details on how/when Bacula decides to upgrade levels please see the
    \ilink{Level record}{Level} in the Director's configuration chapter of
    this manual.
-   
+
    If after reading the above mentioned section, you believe that Bacula  is not
    correctly handling the level (Differential/Incremental),  please send us the
-   following information for analysis:  
+   following information for analysis:
 
 \begin{itemize}
-\item Your Director's configuration file.  
+\item Your Director's configuration file.
 \item The output from {\bf list jobs} covering the period where you  are
-   having the problem.  
-\item The Job report output from the prior Full save (not critical).  
+   having the problem.
+\item The Job report output from the prior Full save (not critical).
 \item An {\bf llist jobid=nnn} where nnn is the JobId of the prior  Full save.
- 
+
 \item The Job report output from the save that is doing the  wrong thing (not
-   critical).  
+   critical).
 \item An {\bf llist jobid=nnn} where nnn is the JobId of the job  that was not
-   correct.  
-\item An explanation of what job went wrong and why you think it did.  
+   correct.
+\item An explanation of what job went wrong and why you think it did.
    \end{itemize}
 
-The above information can allow us to analyze what happened, without it, 
-there is not much we can do.  
+The above information can allow us to analyze what happened, without it,
+there is not much we can do.
 
 \label{WaitForever}
 \section{I am waiting forever for a backup of an offsite machine}
@@ -657,27 +657,27 @@ there is not much we can do.
    connection between all the daemons.  As a consequence, the current
    Bacula doesn't deal with faulty connections very well.  This situation
    is slowly being corrected over time.
-   
-   There are several things you can do to improve the situation.  
+
+   There are several things you can do to improve the situation.
 
 \begin{itemize}
 \item Upgrade to version 1.32 and use the new SDConnectTimeout record.  For
-   example, set:  
+   example, set:
 
 \footnotesize
 \begin{verbatim}
           SD Connect Timeout = 5 min
-          
+
 \end{verbatim}
 \normalsize
 
-in the FileDaemon resource.  
-\item Run these kinds of jobs after all other jobs.  
+in the FileDaemon resource.
+\item Run these kinds of jobs after all other jobs.
    \end{itemize}
 
 \label{sshHanging}
 \section{SSH hangs forever after starting Bacula}
-\item [When I ssh into a machine and start Bacula then attempt to exit, 
+\item [When I ssh into a machine and start Bacula then attempt to exit,
    ssh hangs forever.]
 \index[general]{ssh hangs}
    This happens because Bacula leaves stdin, stdout, and stderr open for
@@ -685,19 +685,19 @@ in the FileDaemon resource.
    the output of those files to {\bf /dev/null} or another file in your
    startup script (the Red Hat autostart scripts do this automatically).
    For example, you start the Director with:
-   
+
 \footnotesize
 \begin{verbatim}
     bacula-dir -c bacula-dir.conf ... >/dev/null 0>\&1 2>\&1
-    
+
 \end{verbatim}
 \normalsize
 
-and likewise for the other daemons.  
+and likewise for the other daemons.
 
 \label{RetentionPeriods}
 \section{I'm confused by retention periods}
-\item [I'm confused by the different Retention periods: File Retention, 
+\item [I'm confused by the different Retention periods: File Retention,
    Job Retention, Volume Retention. Why are there so many?]
 \index[general]{Retention Periods}
    Yes, this certainly can be confusing.  The basic reason for so many is
@@ -710,7 +710,7 @@ and likewise for the other daemons.
    individual file since Bacula no longer knows where it is.  However, as
    long as the Volume Retention period has not expired, the data will still
    be on the tape, and can be recovered from the tape.
-   
+
    For example, I keep a 30 day retention period for my Files to keep my
    catalog from getting too big, but I keep my tapes for a minimum of one
    year, just in case.
@@ -730,7 +730,7 @@ llist Volume=xxx
 \end{verbatim}
 \normalsize
 
-If it doesn't have the right value, you can use: 
+If it doesn't have the right value, you can use:
 
 \footnotesize
 \begin{verbatim}
@@ -738,7 +738,7 @@ update Volume=xxx
 \end{verbatim}
 \normalsize
 
-to change it.  
+to change it.
 
 \label{ConnectionRefused}
 \section{I get a Connection refused when connecting to my Client}
@@ -747,31 +747,31 @@ to change it.
 \index[general]{ERR:Connection Refused}
    This is typically a communications error resulting  from one of the
    following:
- 
+
 
 \begin{itemize}
 \item Old versions of Bacula, usually a Win32 client, where two  threads were
-   using the same I/O packet. Fixed in more recent  versions. Please upgrade.  
+   using the same I/O packet. Fixed in more recent  versions. Please upgrade.
 \item Some other program such as an HP Printer using the same  port (9102 in
-   this case).  
+   this case).
 \end{itemize}
 
-If it is neither of the above, please submit a bug report at  
-\elink{bugs.bacula.org}{http://bugs.bacula.org}.  
+If it is neither of the above, please submit a bug report at
+\elink{bugs.bacula.org}{http://bugs.bacula.org}.
 
-Another solution might be to run the daemon with the debug  option by:  
+Another solution might be to run the daemon with the debug  option by:
 
 \footnotesize
 \begin{verbatim}
     Start a DOS shell Window.
     cd c:\bacula\bin
     bacula-fd -d100 -c c:\bacula\bin\bacula-fd.conf
-    
+
 \end{verbatim}
 \normalsize
 
 This will cause the FD to write a file {\bf bacula.trace}  in the current
-directory, which you can examine to determine  the problem.  
+directory, which you can examine to determine  the problem.
 
 \section{Long running jobs die with Pipe Error}
 \item [During long running jobs my File daemon dies with Pipe Error, or
@@ -784,21 +784,21 @@ directory, which you can examine to determine  the problem.
    Most often, it is a router between your two computers that times out
    inactive lines (not respecting the keepalive feature that Bacula uses).
    In that case, you can use the {\bf Heartbeat Interval} directive in
-   both the Storage daemon and the File daemon. 
+   both the Storage daemon and the File daemon.
 
    In at least one case, the problem has been a bad driver for a Win32
-   NVidia NForce 3 ethernet card with driver (4.4.2 17/05/2004). 
+   NVidia NForce 3 ethernet card with driver (4.4.2 17/05/2004).
    In this case, a good driver is (4.8.2.0 06/04/2005).  Moral of
    the story, make sure you have the latest ethernet drivers
    loaded, or use the following workaround as suggested by Thomas
    Simmons for Win32 machines:
-     
-   Browse to:
-   Start \gt{} Control Panel \gt{} Network Connections
 
-   Right click the connection for the nvidia adapter and select properties. 
-   Under the General tab, click "Configure...". Under the Advanced tab set 
-   "Checksum Offload" to disabled and click OK to save the change.  
+   Browse to:
+   Start {\textgreater} Control Panel {\textgreater} Network Connections
+
+   Right click the connection for the nvidia adapter and select properties.
+   Under the General tab, click "Configure...". Under the Advanced tab set
+   "Checksum Offload" to disabled and click OK to save the change.
 
    Lack of communications, or communications that get interrupted can
    also be caused by Linux firewalls where you have a rule that throttles
@@ -820,7 +820,7 @@ iptables -t filter -A INPUT --dport 9103 -j ACCEPT
 \normalsize
    This will ensure that any Bacula traffic will not get terminated because
    of high usage rates.
-   
+
 \section{How do I tell the Job which Volume to use?}
 \item[I can't figure out how to tell the job which volume to use]
    \index[general]{What tape to mount}
@@ -829,7 +829,7 @@ iptables -t filter -A INPUT --dport 9103 -j ACCEPT
 
   In fact, you do not tell Bacula what tapes to use.  It is the inverse.  Bacula
   tells you want tapes it wants.  You put tapes at its disposition and it
-  chooses.  
+  chooses.
 
   Now, if you *really* want to be tricky and try to tell Bacula what to do, it
   will be reasonable if for example you mount a valid tape that it can use on a
@@ -839,7 +839,7 @@ iptables -t filter -A INPUT --dport 9103 -j ACCEPT
   So, the trick is to invert your concept of things and put Bacula in charge of
   handling the tapes.  Once you do that, you will be fine.  If you want to
   anticipate what it is going to do, you can generally figure it out correctly
-  and  get what you want.  
+  and  get what you want.
 
   If you start with the idea that you are going to force or tell Bacula to use
   particular tapes or you insist on trying to run in that kind of mode, you will
@@ -853,7 +853,7 @@ iptables -t filter -A INPUT --dport 9103 -j ACCEPT
   In such a case, one little "trick" to knowing what tape Bacula will want at
   2am  while you are asleep is to run a tiny job at 4pm while you are still at
   work  that backs up say one directory, or even one file. You will quickly find
-  out  what tape it wants, and you can mount it before you go home ... 
+  out  what tape it wants, and you can mount it before you go home ...
 
 \label{Password generation}
 \section{Password generation}
@@ -873,4 +873,3 @@ iptables -t filter -A INPUT --dport 9103 -j ACCEPT
    configuration files.
 
 \end{description}
-        

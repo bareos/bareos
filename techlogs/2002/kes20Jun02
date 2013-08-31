@@ -1,9 +1,0 @@
-              Technical notes on version 1.22 20June02
-                       20 June 2002
-                       Kern Sibbald
-
-General:
-
-Changes submitted this submission:
-- Added expect argment to lex_get_token().
-- Added tree.c and tree.h to lib directory.

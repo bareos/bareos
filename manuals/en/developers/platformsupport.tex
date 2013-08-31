@@ -11,22 +11,22 @@
 \index{General }
 \addcontentsline{toc}{subsection}{General}
 
-This chapter describes the requirements for having a 
+This chapter describes the requirements for having a
 supported platform (Operating System).  In general, Bacula is
 quite portable. It supports 32 and 64 bit architectures as well
-as bigendian and littleendian machines. For full         
-support, the platform (Operating System) must implement POSIX Unix 
+as bigendian and littleendian machines. For full
+support, the platform (Operating System) must implement POSIX Unix
 system calls.  However, for File daemon support only, a small
-compatibility library can be written to support almost any 
+compatibility library can be written to support almost any
 architecture.
 
 Currently Linux, FreeBSD, and Solaris are fully supported
 platforms, which means that the code has been tested on those
 machines and passes a full set of regression tests.
 
-In addition, the Windows File daemon is supported on most versions  
-of Windows, and finally, there are a number of other platforms  
-where the File daemon (client) is known to run: NetBSD, OpenBSD, 
+In addition, the Windows File daemon is supported on most versions
+of Windows, and finally, there are a number of other platforms
+where the File daemon (client) is known to run: NetBSD, OpenBSD,
 Mac OSX, SGI, ...
 
 \section{Requirements to become a Supported Platform}
@@ -47,7 +47,7 @@ requirements must be met:
    a system administrator for the machine that is available. This
    person need not be a developer/programmer but must be familiar
    with system administration of the platform.
-\item There must be at least one person designated who will 
+\item There must be at least one person designated who will
    run regression tests prior to each release.  Releases occur
    approximately once every 6 months, but can be more frequent.
    It takes at most a day's effort to setup the regression scripts
@@ -58,7 +58,7 @@ requirements must be met:
 \item Ideally there are one or more persons who will package
    each Bacula release.
 \item Ideally there are one or more developers who can respond to
-   and fix platform specific bugs.  
+   and fix platform specific bugs.
 \end{itemize}
 
 Ideal requirements for a test machine:

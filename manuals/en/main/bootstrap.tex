@@ -7,44 +7,44 @@
 \index[general]{Bootstrap File }
 
 The information in this chapter is provided so that you may either create your
-own bootstrap files, or so that you can edit a bootstrap file produced by {\bf
-Bacula}. However, normally the bootstrap file will be automatically created
-for you during the 
-\ilink{restore\_command}{_ConsoleChapter} command in the Console program, or
-by using a 
+own bootstrap files, or so that you can edit a bootstrap file produced by
+Bareos. However, normally the bootstrap file will be automatically created
+for you during the
+\ilink{restore command}{_ConsoleChapter} in the Console program, or
+by using a
 \ilink{ Write Bootstrap}{writebootstrap} record in your Backup
-Jobs, and thus you will never need to know the details of this file. 
+Jobs, and thus you will never need to know the details of this file.
 
 The {\bf bootstrap} file contains ASCII information that permits precise
 specification of what files should be restored, what volume they are on,
 and where they are on the volume. It is a relatively compact
 form of specifying the information, is human readable, and can be edited with
-any text editor. 
+any text editor.
 
 \section{Bootstrap File Format}
 \index[general]{Format!Bootstrap}
 \index[general]{Bootstrap File Format }
 
-The general format of a {\bf bootstrap} file is: 
+The general format of a {\bf bootstrap} file is:
 
-{\bf \lt{}keyword\gt{}= \lt{}value\gt{}} 
+{\bf {\textless}keyword{\textgreater}= {\textless}value{\textgreater}}
 
 Where each {\bf keyword} and the {\bf value} specify which files to restore.
 More precisely the {\bf keyword} and their {\bf values} serve to limit which
 files will be restored and thus act as a filter. The absence of a keyword
-means that all records will be accepted. 
+means that all records will be accepted.
 
 Blank lines and lines beginning with a pound sign (\#) in the bootstrap file
-are ignored. 
+are ignored.
 
 There are keywords which permit filtering by Volume, Client, Job, FileIndex,
-Session Id, Session Time, ... 
+Session Id, Session Time, ...
 
 The more keywords that are specified, the more selective the specification of
 which files to restore will be. In fact, each keyword is {\bf AND}ed with
-other keywords that may be present. 
+other keywords that may be present.
 
-For example, 
+For example,
 
 \footnotesize
 \begin{verbatim}
@@ -56,10 +56,10 @@ VolSessionTime = 108927638
 
 directs the Storage daemon (or the {\bf bextract} program) to restore only
 those files on Volume Test-001 {\bf AND} having VolumeSessionId equal to one
-{\bf AND} having VolumeSession time equal to 108927638. 
+{\bf AND} having VolumeSession time equal to 108927638.
 
 The full set of permitted keywords presented in the order in which they are
-matched against the Volume records are: 
+matched against the Volume records are:
 
 \begin{description}
 
@@ -74,7 +74,7 @@ matched against the Volume records are:
 \item [Count]
    \index[general]{Count}
    The value is the total number of files that  will be restored for this Volume.
-   This allows the Storage  daemon to know when to stop reading the Volume.  
+   This allows the Storage  daemon to know when to stop reading the Volume.
    This value is optional.
 
 \item [VolFile]
@@ -96,7 +96,7 @@ matched against the Volume records are:
 \item [VolSessionTime]
    \index[general]{VolSessionTime }
    The value specifies a Volume Session Time to  be matched from the current
-   volume.  
+   volume.
 
 \item [VolSessionId]
    \index[general]{VolSessionId }
@@ -110,8 +110,8 @@ matched against the Volume records are:
    The value specifies a JobId, list of JobIds, or range of JobIds  to be
    selected from the current Volume. Note, the JobId may not be  unique if you
    have multiple Directors, or if you have reinitialized your  database. The
-   JobId filter works only if you do not run  multiple simultaneous jobs.  
-   This value is optional and not used by Bacula to restore files.
+   JobId filter works only if you do not run  multiple simultaneous jobs.
+   This value is optional and not used by Bareos to restore files.
 
 \item [Job]
    \index[general]{Job }
@@ -120,16 +120,16 @@ matched against the Volume records are:
    VolSessionTime pair. However, the Job is perhaps a  bit more readable by
    humans. Standard regular expressions (wildcards)  may be used to match Job
    names. The Job filter works only if you do  not run multiple simultaneous
-   jobs.  
-   This value is optional and not used by Bacula to restore files.
+   jobs.
+   This value is optional and not used by Bareos to restore files.
 
 \item [Client]
    \index[general]{Client }
    The value specifies a Client name or list of Clients to  will be matched on
    the current Volume. Standard regular expressions  (wildcards) may be used to
    match Client names. The Client filter works  only if you do not run multiple
-   simultaneous jobs.  
-   This value is optional and not used by Bacula to restore files.
+   simultaneous jobs.
+   This value is optional and not used by Bareos to restore files.
 
 \item [FileIndex]
    \index[general]{FileIndex}
@@ -137,13 +137,13 @@ matched against the Volume records are:
    to be selected from the current Volume.  Each file (data) stored on a Volume
    within a Session has a unique  FileIndex. For each Session, the first file
    written is assigned  FileIndex equal to one and incremented for each file
-   backed up.  
+   backed up.
 
    This for a given Volume, the triple VolSessionId, VolSessionTime,  and
    FileIndex uniquely identifies a file stored on the Volume. Multiple  copies of
    the same file may be stored on the same Volume, but for  each file, the triple
    VolSessionId, VolSessionTime, and FileIndex  will be unique. This triple is
-   stored in the Catalog database for  each file.  
+   stored in the Catalog database for  each file.
 
    To restore a particular file, this value (or a range of FileIndexes) is
    required.
@@ -160,33 +160,33 @@ matched against the Volume records are:
 \item [Slot]
    \index[general]{Slot }
    The value specifies the autochanger slot. There may  be only a single {\bf
-   Slot} specification for each Volume.  
+   Slot} specification for each Volume.
 
 \item [Stream]
    \index[general]{Stream }
    The value specifies a Stream, a list of Streams,  or a range of Streams to be
    selected from the current Volume.  Unless you really know what you are doing
-   (the internals of  {\bf Bacula}), you should avoid this specification.  
-   This value is optional and not used by Bacula to restore files.
+   (the internals of  Bareos), you should avoid this specification.
+   This value is optional and not used by Bareos to restore files.
 
 \item [*JobType]
    \index[general]{*JobType }
-   Not yet implemented.  
+   Not yet implemented.
 
 \item [*JobLevel]
    \index[general]{*JobLevel }
-   Not yet implemented.  
+   Not yet implemented.
 \end{description}
 
 The {\bf Volume} record is a bit special in that it must be the first record.
 The other keyword records may appear in any order and any number following a
-Volume record. 
+Volume record.
 
 Multiple Volume records may be specified in the same bootstrap file, but each
-one starts a new set of filter criteria for the Volume. 
+one starts a new set of filter criteria for the Volume.
 
 In processing the bootstrap file within the current Volume, each filter
-specified by a keyword is {\bf AND}ed with the next. Thus, 
+specified by a keyword is {\bf AND}ed with the next. Thus,
 
 \footnotesize
 \begin{verbatim}
@@ -197,9 +197,9 @@ FileIndex = 1
 \normalsize
 
 will match records on Volume {\bf Test-01} {\bf AND} Client records for {\bf
-My machine} {\bf AND} FileIndex equal to {\bf one}. 
+My machine} {\bf AND} FileIndex equal to {\bf one}.
 
-Multiple occurrences of the same record are {\bf OR}ed together. Thus, 
+Multiple occurrences of the same record are {\bf OR}ed together. Thus,
 
 \footnotesize
 \begin{verbatim}
@@ -212,11 +212,11 @@ FileIndex = 1
 
 will match records on Volume {\bf Test-01} {\bf AND} (Client records for {\bf
 My machine} {\bf OR} {\bf Backup machine}) {\bf AND} FileIndex equal to {\bf
-one}. 
+one}.
 
 For integer values, you may supply a range or a list, and for all other values
 except Volumes, you may specify a list. A list is equivalent to multiple
-records of the same keyword. For example, 
+records of the same keyword. For example,
 
 \footnotesize
 \begin{verbatim}
@@ -228,20 +228,20 @@ FileIndex = 1-20, 35
 
 will match records on Volume {\bf Test-01} {\bf AND} {\bf (}Client records for
 {\bf My machine} {\bf OR} {\bf Backup machine}{\bf )} {\bf AND} {\bf
-(}FileIndex 1 {\bf OR} 2 {\bf OR} 3 ... {\bf OR} 20 {\bf OR} 35{\bf )}. 
+(}FileIndex 1 {\bf OR} 2 {\bf OR} 3 ... {\bf OR} 20 {\bf OR} 35{\bf )}.
 
 As previously mentioned above, there may be multiple Volume records in the
 same bootstrap file. Each new Volume definition begins a new set of filter
 conditions that apply to that Volume and will be {\bf OR}ed with any other
-Volume definitions. 
+Volume definitions.
 
 As an example, suppose we query for the current set of tapes to restore all
 files on Client {\bf Rufus} using the {\bf query} command in the console
-program: 
+program:
 
 \footnotesize
 \begin{verbatim}
-Using default Catalog name=MySQL DB=bacula
+Using default Catalog name=MySQL DB=bareos
 *query
 Available queries:
      1: List Job totals:
@@ -266,9 +266,9 @@ Enter Client Name: Rufus
 \normalsize
 
 The output shows us that there are four Jobs that must be restored. The first
-one is a Full backup, and the following three are all Incremental backups. 
+one is a Full backup, and the following three are all Incremental backups.
 
-The following bootstrap file will restore those files: 
+The following bootstrap file will restore those files:
 
 \footnotesize
 \begin{verbatim}
@@ -288,7 +288,7 @@ VolSessionTime=1024380678
 \normalsize
 
 As a final example, assume that the initial Full save spanned two Volumes. The
-output from {\bf query} might look like: 
+output from {\bf query} might look like:
 
 \footnotesize
 \begin{verbatim}
@@ -303,7 +303,7 @@ output from {\bf query} might look like:
 \end{verbatim}
 \normalsize
 
-and the following bootstrap file would restore those files: 
+and the following bootstrap file would restore those files:
 
 \footnotesize
 \begin{verbatim}
@@ -333,17 +333,17 @@ Differential jobs, the records pertaining to the files written for the
 Job are appended to the end of the bootstrap file.
 As consequence, all the files saved to an Incremental or Differential job will be
 restored first by the Full save, then by any Incremental or Differential
-saves. 
+saves.
 
 When the bootstrap file is generated for the restore command, only one copy
-(the most recent) of each file is restored. 
+(the most recent) of each file is restored.
 
 So if you have spare cycles on your machine, you could optimize the bootstrap
-files by doing the following: 
+files by doing the following:
 
 \footnotesize
 \begin{verbatim}
-   ./bconsole
+   bconsole
    restore client=xxx select all
    done
    no
@@ -354,9 +354,9 @@ files by doing the following:
 
 The above will not work if you have multiple FileSets because that will be an
 extra prompt. However, the {\bf restore client=xxx select all} builds the
-in-memory tree, selecting everything and creates the bootstrap file. 
+in-memory tree, selecting everything and creates the bootstrap file.
 
-The {\bf no} answers the {\bf Do you want to run this (yes/mod/no)} question. 
+The {\bf no} answers the {\bf Do you want to run this (yes/mod/no)} question.
 
 \label{bscanBootstrap}
 \section{Bootstrap for bscan}
@@ -386,8 +386,8 @@ Volume="Vol005"
 If you want to extract or copy a single Job, you can do it by selecting by
 JobId (code not tested) or better yet, if you know the VolSessionTime and the
 VolSessionId (printed on Job report and in Catalog), specifying this is by far
-the best. Using the VolSessionTime and VolSessionId is the way Bacula does
-restores. A bsr file might look like the following: 
+the best. Using the VolSessionTime and VolSessionId is the way Bareos does
+restores. A bsr file might look like the following:
 
 \footnotesize
 \begin{verbatim}
@@ -399,7 +399,7 @@ VolSessionTime=1080847820
 
 If you know how many files are backed up (on the job report), you can
 enormously speed up the selection by adding (let's assume there are 157
-files): 
+files):
 
 \footnotesize
 \begin{verbatim}
@@ -409,7 +409,7 @@ Count=157
 \normalsize
 
 Finally, if you know the File number where the Job starts, you can also cause
-bcopy to forward space to the right file without reading every record: 
+bcopy to forward space to the right file without reading every record:
 
 \footnotesize
 \begin{verbatim}
@@ -418,10 +418,10 @@ VolFile=20
 \normalsize
 
 There is nothing magic or complicated about a BSR file. Parsing it and
-properly applying it within Bacula *is* magic, but you don't need to worry
-about that. 
+properly applying it within Bareos *is* magic, but you don't need to worry
+about that.
 
 If you want to see a *real* bsr file, simply fire up the {\bf restore} command
 in the console program, select something, then answer no when it prompts to
 run the job. Then look at the file {\bf restore.bsr} in your working
-directory. 
+directory.

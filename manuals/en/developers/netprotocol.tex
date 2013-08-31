@@ -14,19 +14,19 @@
 This document describes the TCP/IP protocol used by Bacula to communicate
 between the various daemons and services. The definitive definition of the
 protocol can be found in src/lib/bsock.h, src/lib/bnet.c and
-src/lib/bnet\_server.c. 
+src/lib/bnet\_server.c.
 
 Bacula's network protocol is basically a ``packet oriented'' protocol built on
 a standard TCP/IP streams. At the lowest level all packet transfers are done
 with read() and write() requests on system sockets. Pipes are not used as they
 are considered unreliable for large serial data transfers between various
-hosts. 
+hosts.
 
 Using the routines described below (bnet\_open, bnet\_write, bnet\_recv, and
 bnet\_close) guarantees that the number of bytes you write into the socket
 will be received as a single record on the other end regardless of how many
 low level write() and read() calls are needed. All data transferred are
-considered to be binary data. 
+considered to be binary data.
 
 \section{bnet and Threads}
 \index{Threads!bnet and}
@@ -38,36 +38,36 @@ that there is only one reader or writer on the socket at any time. It is
 highly recommended that only a single thread access any BSOCK packet. The
 exception to this rule is when the socket is first opened and it is waiting
 for a job to start. The wait in the Storage daemon is done in one thread and
-then passed to another thread for subsequent handling. 
+then passed to another thread for subsequent handling.
 
 If you envision having two threads using the same BSOCK, think twice, then you
 must implement some locking mechanism. However, it probably would not be
-appropriate to put locks inside the bnet subroutines for efficiency reasons. 
+appropriate to put locks inside the bnet subroutines for efficiency reasons.
 
 \section{bnet\_open}
 \index{Bnet\_open}
 \addcontentsline{toc}{subsection}{bnet\_open}
 
-To establish a connection to a server, use the subroutine: 
+To establish a connection to a server, use the subroutine:
 
 BSOCK *bnet\_open(void *jcr, char *host, char *service, int port,  int *fatal)
 bnet\_open(), if successful, returns the Bacula sock descriptor pointer to be
 used in subsequent bnet\_send() and bnet\_read() requests. If not successful,
 bnet\_open() returns a NULL. If fatal is set on return, it means that a fatal
 error occurred and that you should not repeatedly call bnet\_open(). Any error
-message will generally be sent to the JCR. 
+message will generally be sent to the JCR.
 
 \section{bnet\_send}
 \index{Bnet\_send}
 \addcontentsline{toc}{subsection}{bnet\_send}
 
-To send a packet, one uses the subroutine: 
+To send a packet, one uses the subroutine:
 
 int bnet\_send(BSOCK *sock) This routine is equivalent to a write() except
 that it handles the low level details. The data to be sent is expected to be
-in sock-\gt{}msg and be sock-\gt{}msglen bytes. To send a packet, bnet\_send()
+in sock-{\textgreater}msg and be sock-{\textgreater}msglen bytes. To send a packet, bnet\_send()
 first writes four bytes in network byte order than indicate the size of the
-following data packet. It returns: 
+following data packet. It returns:
 
 \footnotesize
 \begin{verbatim}
@@ -77,17 +77,17 @@ following data packet. It returns:
 \normalsize
 
 In the case of a failure, an error message will be sent to the JCR contained
-within the bsock packet. 
+within the bsock packet.
 
 \section{bnet\_fsend}
 \index{Bnet\_fsend}
 \addcontentsline{toc}{subsection}{bnet\_fsend}
 
-This form uses: 
+This form uses:
 
 int bnet\_fsend(BSOCK *sock, char *format, ...) and it allows you to send a
 formatted messages somewhat like fprintf(). The return status is the same as
-bnet\_send. 
+bnet\_send.
 
 \section{Additional Error information}
 \index{Information!Additional Error}
@@ -99,20 +99,20 @@ Fro additional error information, you can call {\bf is\_bnet\_error(BSOCK
 error on the last transmission. The {\bf is\_bnet\_stop(BSOCK *bsock)}
 function will return 0 if there no errors and you can continue sending. It
 will return non-zero if there are errors or the line is closed (no more
-transmissions should be sent). 
+transmissions should be sent).
 
 \section{bnet\_recv}
 \index{Bnet\_recv}
 \addcontentsline{toc}{subsection}{bnet\_recv}
 
-To read a packet, one uses the subroutine: 
+To read a packet, one uses the subroutine:
 
 int bnet\_recv(BSOCK *sock) This routine is similar to a read() except that it
 handles the low level details. bnet\_read() first reads packet length that
 follows as four bytes in network byte order. The data is read into
-sock-\gt{}msg and is sock-\gt{}msglen bytes. If the sock-\gt{}msg is not large
+sock-{\textgreater}msg and is sock-{\textgreater}msglen bytes. If the sock-{\textgreater}msg is not large
 enough, bnet\_recv() realloc() the buffer. It will return an error (-2) if
-maxbytes is less than the record size sent. It returns: 
+maxbytes is less than the record size sent. It returns:
 
 \footnotesize
 \begin{verbatim}
@@ -123,41 +123,41 @@ maxbytes is less than the record size sent. It returns:
 \end{verbatim}
 \normalsize
 
-It should be noted that bnet\_recv() is a blocking read. 
+It should be noted that bnet\_recv() is a blocking read.
 
 \section{bnet\_sig}
 \index{Bnet\_sig}
 \addcontentsline{toc}{subsection}{bnet\_sig}
 
-To send a ``signal'' from one daemon to another, one uses the subroutine: 
+To send a ``signal'' from one daemon to another, one uses the subroutine:
 
-int bnet\_sig(BSOCK *sock, SIGNAL) where SIGNAL is one of the following: 
+int bnet\_sig(BSOCK *sock, SIGNAL) where SIGNAL is one of the following:
 
 \begin{enumerate}
-\item BNET\_EOF - deprecated use BNET\_EOD  
-\item BNET\_EOD - End of data stream, new data may follow  
-\item BNET\_EOD\_POLL - End of data and poll all in one 
-\item BNET\_STATUS - Request full status  
-\item BNET\_TERMINATE - Conversation terminated, doing close() 
-\item BNET\_POLL - Poll request, I'm hanging on a read 
-\item BNET\_HEARTBEAT - Heartbeat Response requested 
-\item BNET\_HB\_RESPONSE - Only response permitted to HB 
-\item BNET\_PROMPT - Prompt for UA 
+\item BNET\_EOF - deprecated use BNET\_EOD
+\item BNET\_EOD - End of data stream, new data may follow
+\item BNET\_EOD\_POLL - End of data and poll all in one
+\item BNET\_STATUS - Request full status
+\item BNET\_TERMINATE - Conversation terminated, doing close()
+\item BNET\_POLL - Poll request, I'm hanging on a read
+\item BNET\_HEARTBEAT - Heartbeat Response requested
+\item BNET\_HB\_RESPONSE - Only response permitted to HB
+\item BNET\_PROMPT - Prompt for UA
    \end{enumerate}
 
 \section{bnet\_strerror}
 \index{Bnet\_strerror}
 \addcontentsline{toc}{subsection}{bnet\_strerror}
 
-Returns a formated string corresponding to the last error that occurred. 
+Returns a formated string corresponding to the last error that occurred.
 
 \section{bnet\_close}
 \index{Bnet\_close}
 \addcontentsline{toc}{subsection}{bnet\_close}
 
-The connection with the server remains open until closed by the subroutine: 
+The connection with the server remains open until closed by the subroutine:
 
-void bnet\_close(BSOCK *sock) 
+void bnet\_close(BSOCK *sock)
 
 \section{Becoming a Server}
 \index{Server!Becoming a}
@@ -169,7 +169,7 @@ client side to establish a connection and terminate a connection with the
 server. To become a server (i.e. wait for a connection from a client), use the
 routine {\bf bnet\_thread\_server}. The calling sequence is a bit complicated,
 please refer to the code in bnet\_server.c and the code at the beginning of
-each daemon as examples of how to call it. 
+each daemon as examples of how to call it.
 
 \section{Higher Level Conventions}
 \index{Conventions!Higher Level}
@@ -178,7 +178,7 @@ each daemon as examples of how to call it.
 
 Within Bacula, we have established the convention that any time a single
 record is passed, it is sent with bnet\_send() and read with bnet\_recv().
-Thus the normal exchange between the server (S) and the client (C) are: 
+Thus the normal exchange between the server (S) and the client (C) are:
 
 \footnotesize
 \begin{verbatim}
@@ -191,13 +191,13 @@ S: bnet_send() send ack            C: bnet_recv() wait for ack
 \normalsize
 
 Thus a single command is sent, acted upon by the server, and then
-acknowledged. 
+acknowledged.
 
 In certain cases, such as the transfer of the data for a file, all the
 information or data cannot be sent in a single packet. In this case, the
 convention is that the client will send a command to the server, who knows
 that more than one packet will be returned. In this case, the server will
-enter a loop: 
+enter a loop:
 
 \footnotesize
 \begin{verbatim}
@@ -209,7 +209,7 @@ if (n < 0)
 \end{verbatim}
 \normalsize
 
-The client will perform the following: 
+The client will perform the following:
 
 \footnotesize
 \begin{verbatim}
@@ -221,4 +221,4 @@ bnet_sig(bsock, BNET_EOD);
 \normalsize
 
 Thus the client will send multiple packets and signal to the server when all
-the packets have been sent by sending a zero length record. 
+the packets have been sent by sending a zero length record.

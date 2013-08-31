@@ -6,7 +6,7 @@
 \index[general]{Testing Your Tape Drive With Bacula}
 
 This chapter is concerned with testing and configuring your tape drive to make
-sure that it will work properly with Bacula using the {\bf btape} program. 
+sure that it will work properly with Bacula using the {\bf btape} program.
 \label{summary}
 
 \section{Get Your Tape Drive Working}
@@ -14,17 +14,17 @@ sure that it will work properly with Bacula using the {\bf btape} program.
 In general, you should follow the following steps to get your tape drive to
 work with Bacula. Start with a tape mounted in your drive. If you have an
 autochanger, load a tape into the drive. We use {\bf /dev/nst0} as the tape
-drive name, you will need to adapt it according to your system. 
+drive name, you will need to adapt it according to your system.
 
 Do not proceed to the next item until you have succeeded with the previous
-one. 
+one.
 
 \begin{enumerate}
 \item Make sure that Bacula (the Storage daemon) is not running
-  or that you have {\bf unmount}ed the drive you will use 
+  or that you have {\bf unmount}ed the drive you will use
   for testing.
 
-\item Use tar to write to, then read from your drive:  
+\item Use tar to write to, then read from your drive:
 
    \footnotesize
 \begin{verbatim}
@@ -32,7 +32,7 @@ one.
    tar cvf /dev/nst0 .
    mt -f /dev/nst0 rewind
    tar tvf /dev/nst0
-   
+
 \end{verbatim}
 \normalsize
 
@@ -40,7 +40,7 @@ one.
    to your drive.  For Linux users, generally, the default one works.  For
    FreeBSD users, there are two possible Device configurations (see below).
    For other drives and/or OSes, you will need to first ensure that your
-   system tape modes are properly setup (see below), then possibly modify 
+   system tape modes are properly setup (see below), then possibly modify
    you Device resource depending on the output from the btape program (next
    item). When doing this, you should consult the \ilink{Storage Daemon
    Configuration}{StoredConfChapter} of this manual.
@@ -49,13 +49,13 @@ one.
    Bacula, please be sure to disable any caching in the NSR (network
    storage router, which is a Fibre Channel to SCSI converter).
 
-\item Run the btape {\bf test} command:  
+\item Run the btape {\bf test} command:
 
    \footnotesize
 \begin{verbatim}
    ./btape -c bacula-sd.conf /dev/nst0
    test
-   
+
 \end{verbatim}
 \normalsize
 
@@ -68,7 +68,7 @@ one.
    can take a long time. If you have an autochanger and it  is configured, Bacula
    will automatically use it. If you do  not have it configured, you can manually
    issue the appropriate  {\bf mtx} command, or press the autochanger buttons to
-   change  the tape when requested to do so. 
+   change  the tape when requested to do so.
 
 \item FreeBSD users, if you have a pre-5.0 system run the {\bf tapetest}
    program, and make sure your system is patched if necessary. The tapetest
@@ -82,14 +82,14 @@ one.
    directory.  Then stop and restart Bacula.
 
 \item Do a restore of the directory backed up, by entering the  following
-   restore command, being careful to restore it to  an alternate location:  
+   restore command, being careful to restore it to  an alternate location:
 
 
 \footnotesize
 \begin{verbatim}
    restore select all done
    yes
-   
+
 \end{verbatim}
 \normalsize
 
@@ -99,19 +99,19 @@ one.
    on each system type.
 
 \item If you have an autochanger, you should now go back to the  btape program
-   and run the autochanger test:  
+   and run the autochanger test:
 
 \footnotesize
 \begin{verbatim}
      ./btape -c bacula-sd.conf /dev/nst0
      auto
-     
+
 \end{verbatim}
 \normalsize
 
    Adjust your autochanger as necessary to ensure that it works  correctly. See
    the Autochanger chapter of this manual  for a complete discussion of testing
-   your autochanger.  
+   your autochanger.
 
 \item We strongly recommend that you use a dedicated SCSI
    controller for your tape drives. Scanners are known to induce
@@ -134,8 +134,8 @@ If you have reached this point, you stand a good chance of having everything
 work. If you get into trouble at any point, {\bf carefully} read the
 documentation given below. If you cannot get past some point, ask the {\bf
 bacula-users} email list, but specify which of the steps you have successfully
-completed. In particular, you may want to look at the 
-\ilink{ Tips for Resolving Problems}{problems1} section below. 
+completed. In particular, you may want to look at the
+\ilink{ Tips for Resolving Problems}{problems1} section below.
 
 
 \label{NoTapeInDrive}
@@ -176,7 +176,7 @@ configuration parameters for your archive device (generally a tape drive).
 Without those parameters, the testing and utility programs do not know how to
 properly read and write your drive. By default, they use {\bf bacula-sd.conf}
 in the current directory, but you may specify a different configuration file
-using the {\bf -c} option. 
+using the {\bf -c} option.
 
 \subsection{Specifying a Device Name For a Tape}
 \index[general]{Tape!Specifying a Device Name For a}
@@ -188,7 +188,7 @@ tape, this is the physical device name such as {\bf /dev/nst0} or {\bf
 directive. For the program to work, it must find the identical name in the
 Device resource of the configuration file. If the name is not found in the
 list of physical names, the utility program will compare the name you entered
-to the Device names (rather than the Archive device names). 
+to the Device names (rather than the Archive device names).
 
 When specifying a tape device, it is preferable that the "non-rewind"
 variant of the device file name be given.  In addition, on systems such as
@@ -198,7 +198,7 @@ to use Berkeley I/O conventions with the device.  The
 what is needed in this case.  Bacula does not support SysV tape drive
 behavior.
 
-See below for specifying Volume names. 
+See below for specifying Volume names.
 
 \subsection{Specifying a Device Name For a File}
 \index[general]{File!Specifying a Device Name For a}
@@ -220,21 +220,21 @@ This program permits a number of elementary tape operations via a tty command
 interface. The {\bf test} command, described below, can be very useful for
 testing tape drive compatibility problems. Aside from initial testing of tape
 drive compatibility with {\bf Bacula}, {\bf btape} will be mostly used by
-developers writing new tape drivers. 
+developers writing new tape drivers.
 
 {\bf btape} can be dangerous to use with existing {\bf Bacula} tapes because
 it will relabel a tape or write on the tape if so requested regardless of
 whether or not the tape contains valuable data, so please be careful and use
-it only on blank tapes. 
+it only on blank tapes.
 
 To work properly, {\bf btape} needs to read the Storage daemon's configuration
 file. As a default, it will look for {\bf bacula-sd.conf} in the current
 directory. If your configuration file is elsewhere, please use the {\bf -c}
-option to specify where. 
+option to specify where.
 
 The physical device name or the Device resource name must be specified on the
 command line, and this same device name must be present in the Storage
-daemon's configuration file read by {\bf btape} 
+daemon's configuration file read by {\bf btape}
 
 \footnotesize
 \begin{verbatim}
@@ -255,13 +255,13 @@ Usage: btape [options] device_name
 
 An important reason for this program is to ensure that a Storage daemon
 configuration file is defined so that Bacula will correctly read and write
-tapes. 
+tapes.
 
 It is highly recommended that you run the {\bf test} command before running
 your first Bacula job to ensure that the parameters you have defined for your
 storage device (tape drive) will permit {\bf Bacula} to function properly. You
 only need to mount a blank tape, enter the command, and the output should be
-reasonably self explanatory. For example: 
+reasonably self explanatory. For example:
 
 \footnotesize
 \begin{verbatim}
@@ -270,7 +270,7 @@ reasonably self explanatory. For example:
 \end{verbatim}
 \normalsize
 
-The output will be: 
+The output will be:
 
 \footnotesize
 \begin{verbatim}
@@ -280,7 +280,7 @@ btape: btape.c:376 Using device: /dev/nst0
 \end{verbatim}
 \normalsize
 
-Enter the test command: 
+Enter the test command:
 
 \footnotesize
 \begin{verbatim}
@@ -289,7 +289,7 @@ test
 \normalsize
 
 The output produced should be something similar to the following: I've cut the
-listing short because it is frequently updated to have new tests. 
+listing short because it is frequently updated to have new tests.
 
 \footnotesize
 \begin{verbatim}
@@ -328,11 +328,11 @@ If you do not successfully complete the above test, please resolve the
 problem(s) before attempting to use {\bf Bacula}. Depending on your tape
 drive, the test may recommend that you add certain records to your
 configuration. We strongly recommend that you do so and then re-run the above
-test to insure it works the first time. 
+test to insure it works the first time.
 
 Some of the suggestions it provides for resolving the problems may or may not
 be useful. If at all possible avoid using fixed blocking. If the test suddenly
-starts to print a long series of: 
+starts to print a long series of:
 
 \footnotesize
 \begin{verbatim}
@@ -351,7 +351,7 @@ set in SysV tape drive mode. The drive must use BSD tape conventions.
 See the section above on setting your {\bf Archive device} correctly.
 
 For FreeBSD users, please see the notes below for doing further testing of
-your tape drive. 
+your tape drive.
 
 \subsection{Testing tape drive speed}
 \label{sec:btapespeed}
@@ -406,7 +406,7 @@ You can change the block size in the Storage Daemon configuration file.
 \index[general]{Tricks!Linux SCSI}
 \index[general]{Linux SCSI Tricks}
 
-You can find out what SCSI devices you have by doing: 
+You can find out what SCSI devices you have by doing:
 
 \footnotesize
 \begin{verbatim}
@@ -449,7 +449,7 @@ cat /proc/scsi/scsi
 For the above example with the three drives and two autochangers,
 I get:
 
-\footnotesize       
+\footnotesize
 \begin{verbatim}
 Attached devices:
 Host: scsi0 Channel: 00 Id: 00 Lun: 00
@@ -491,7 +491,7 @@ Host: scsi2 Channel: 00 Id: 04 Lun: 00
 
 The above represents first an autochanger and second a simple
 tape drive. The HP changer (the first entry) uses the same SCSI channel
-for data and for control, so in Bacula, you would use: 
+for data and for control, so in Bacula, you would use:
 \footnotesize
 \begin{verbatim}
 Archive Device = /dev/nst0
@@ -499,7 +499,7 @@ Changer Device = /dev/sg0
 \end{verbatim}
 \normalsize
 
-If you want to remove the SDT-10000 device, you can do so as root with: 
+If you want to remove the SDT-10000 device, you can do so as root with:
 
 \footnotesize
 \begin{verbatim}
@@ -507,7 +507,7 @@ echo "scsi remove-single-device 2 0 4 0">/proc/scsi/scsi
 \end{verbatim}
 \normalsize
 
-and you can put add it back with: 
+and you can put add it back with:
 
 \footnotesize
 \begin{verbatim}
@@ -517,7 +517,7 @@ echo "scsi add-single-device 2 0 4 0">/proc/scsi/scsi
 
 where the 2 0 4 0 are the Host, Channel, Id, and Lun as seen on the output
 from {\bf cat /proc/scsi/scsi}. Note, the Channel must be specified as
-numeric. 
+numeric.
 
 Below is a slightly more complicated output, which is a single autochanger
 with two drives, and which operates the changer on a different channel
@@ -556,7 +556,7 @@ the control channel for those two drives is /dev/sg3.
 \index[general]{Files!Bacula Saves But Cannot Restore}
 \index[general]{Bacula Saves But Cannot Restore Files}
 
-If you are getting error messages such as: 
+If you are getting error messages such as:
 
 \footnotesize
 \begin{verbatim}
@@ -568,15 +568,15 @@ It is very likely that Bacula has tried to do block positioning and ended up
 at an invalid block. This can happen if your tape drive is in fixed block mode
 while Bacula's default is variable blocks. Note that in such cases, Bacula is
 perfectly able to write to your Volumes (tapes), but cannot position to read
-them. 
+them.
 
-There are two possible solutions. 
+There are two possible solutions.
 
 \begin{enumerate}
 \item The first and  best is to always ensure that your drive is in  variable
    block mode. Note, it can switch back to  fixed block mode on a reboot or if
    another program  uses the drive. So on such systems you  need to modify the
-   Bacula startup files  to explicitly set: 
+   Bacula startup files  to explicitly set:
 
 \footnotesize
 \begin{verbatim}
@@ -591,7 +591,7 @@ have not loaded the appropriate {\bf mt} package, which is often called
 
 \item The second possibility, especially, if Bacula wrote  while the drive was
    in fixed block mode, is to turn  off block positioning in Bacula. This is done
-   by  adding: 
+   by  adding:
 
 \footnotesize
 \begin{verbatim}
@@ -600,9 +600,9 @@ Block Positioning = no
 \normalsize
 
 to the Device resource. This is not the recommended  procedure because it can
-enormously slow down  recovery of files, but it may help where all else 
+enormously slow down  recovery of files, but it may help where all else
 fails. This directive is available in version 1.35.5  or later (and not yet
-tested).  
+tested).
 \end{enumerate}
 
 If you are getting error messages such as:
@@ -613,7 +613,7 @@ Block checksum mismatch in block=0 len=32625 calc=345678 blk=123456
 \end{verbatim}
 \normalsize
 
-You are getting tape read errors, and this is most likely due to 
+You are getting tape read errors, and this is most likely due to
 one of the following things:
 \begin{enumerate}
 \item An old or bad tape.
@@ -632,7 +632,7 @@ one of the following things:
 \index[general]{Device!Bacula Cannot Open the}
 \index[general]{Bacula Cannot Open the Device}
 
-If you get an error message such as: 
+If you get an error message such as:
 
 \footnotesize
 \begin{verbatim}
@@ -642,7 +642,7 @@ device /dev/nst0:> ERR=No such device or address
 \normalsize
 
 the first time you run a job, it is most likely due to the fact that you
-specified the incorrect device name on your {\bf Archive Device}. 
+specified the incorrect device name on your {\bf Archive Device}.
 
 If Bacula works fine with your drive, then all off a sudden you get error
 messages similar to the one shown above, it is quite possible that your driver
@@ -650,7 +650,7 @@ module is being removed because the kernel deems it idle. This is done via
 {\bf crontab} with the use of {\bf rmmod -a}. To fix the problem, you can
 remove this entry from {\bf crontab}, or you can manually {\bf modprob} your
 driver module (or add it to the local startup script). Thanks to Alan Brown
-for this tip. 
+for this tip.
 \label{IncorrectFiles}
 
 \subsection{Incorrect File Number}
@@ -664,16 +664,16 @@ tape drivers will use a fast means of seeking to the end of the medium and in
 doing so, they will not know the current file position and hence return a {\bf
 -1}. As a consequence, if you get {\bf "This is NOT correct!"} in the
 positioning tests, this may be the cause. You must correct this condition in
-order for Bacula to work. 
+order for Bacula to work.
 
 There are two possible solutions to the above problem of incorrect file
-number: 
+number:
 
 \begin{itemize}
 \item Figure out how to configure your SCSI driver to  keep track of the file
-   position during the MTEOM  request. This is the preferred solution.  
+   position during the MTEOM  request. This is the preferred solution.
 \item Modify the {\bf Device} resource of your {\bf bacula-sd.conf} file  to
-   include:  
+   include:
 
 \footnotesize
 \begin{verbatim}
@@ -682,7 +682,7 @@ Hardware End of File = no
 \normalsize
 
 This will cause Bacula to use the MTFSF request to  seek to the end of the
-medium, and Bacula will keep  track of the file number itself. 
+medium, and Bacula will keep  track of the file number itself.
 \end{itemize}
 
 \label{IncorrectBlocks}
@@ -693,23 +693,23 @@ medium, and Bacula will keep  track of the file number itself.
 {\bf Bacula's} preferred method of working with tape drives (sequential
 devices) is to run in variable block mode, and this is what is set by default.
 You should first ensure that your tape drive is set for variable block mode
-(see below). 
+(see below).
 
 If your tape drive is in fixed block mode and you have told Bacula to use
 different fixed block sizes or variable block sizes (default), you will get
 errors when Bacula attempts to forward space to the correct block (the kernel
-driver's idea of tape blocks will not correspond to Bacula's). 
+driver's idea of tape blocks will not correspond to Bacula's).
 
 All modern tape drives support variable tape blocks, but some older drives (in
 particular the QIC drives) as well as the ATAPI ide-scsi driver run only in
 fixed block mode. The Travan tape drives also apparently must run in fixed
-block mode (to be confirmed). 
+block mode (to be confirmed).
 
 Even in variable block mode, with the exception of the first record on the
 second or subsequent volume of a multi-volume backup, Bacula will write blocks
 of a fixed size. However, in reading a tape, Bacula will assume that for each
 read request, exactly one block from the tape will be transferred. This the
-most common way that tape drives work and is well supported by {\bf Bacula}. 
+most common way that tape drives work and is well supported by {\bf Bacula}.
 
 Drives that run in fixed block mode can cause serious problems for Bacula if
 the drive's block size does not correspond exactly to {\bf Bacula's} block
@@ -719,7 +719,7 @@ this destroys the concept of tape blocks. It is much better to run in variable
 block mode, and almost all modern drives (the OnStream is an exception) run in
 variable block mode. In order for Bacula to run in fixed block mode, you must
 include the following records in the Storage daemon's Device resource
-definition: 
+definition:
 
 \footnotesize
 \begin{verbatim}
@@ -729,18 +729,18 @@ Maximum Block Size = nnn
 \normalsize
 
 where {\bf nnn} must be the same for both records and must be identical to the
-driver's fixed block size. 
+driver's fixed block size.
 
 We recommend that you avoid this configuration if at all possible by using
-variable block sizes. 
+variable block sizes.
 
 If you must run with fixed size blocks, make sure they are not 512 bytes. This
 is too small and the overhead that Bacula has with each record will become
 excessive. If at all possible set any fixed block size to something like
 64,512 bytes or possibly 32,768 if 64,512 is too large for your drive. See
-below for the details on checking and setting the default drive block size. 
+below for the details on checking and setting the default drive block size.
 
-To recover files from tapes written in fixed block mode, see below. 
+To recover files from tapes written in fixed block mode, see below.
 
 \label{TapeModes}
 \subsection{Ensuring that the Tape Modes Are Properly Set -- {\bf Linux
@@ -753,7 +753,7 @@ of your SCSI driver's options to non-default values. For example, if your
 driver is set to work in SysV manner, Bacula will not work correctly because
 it expects BSD behavior. To reset your tape drive to the default values, you
 can try the following, but {\bf ONLY} if you have a SCSI tape drive on a {\bf
-Linux} system: 
+Linux} system:
 
 \footnotesize
 \begin{verbatim}
@@ -769,12 +769,12 @@ such as SysV behavior must not be set. Bacula does not support SysV tape
 behavior. On systems other than Linux, you will need to consult your {\bf mt}
 man pages or documentation to figure out how to do the same thing. This should
 not really be necessary though -- for example, on both Linux and Solaris
-systems, the default tape driver options are compatible with Bacula. 
+systems, the default tape driver options are compatible with Bacula.
 On Solaris systems, you must take care to specify the correct device
 name on the {\bf Archive device} directive. See above for more details.
 
 You may also want to ensure that no prior program has set the default block
-size, as happened to one user, by explicitly turning it off with: 
+size, as happened to one user, by explicitly turning it off with:
 
 \footnotesize
 \begin{verbatim}
@@ -789,7 +789,7 @@ have not loaded the appropriate {\bf mt} package, which is often called
 
 If you would like to know what options you have set before making any of the
 changes noted above, you can now view them on Linux systems, thanks to a tip
-provided by Willem Riede. Do the following: 
+provided by Willem Riede. Do the following:
 
 \footnotesize
 \begin{verbatim}
@@ -799,7 +799,7 @@ grep st0 /var/log/messages
 \end{verbatim}
 \normalsize
 
-and you will get output that looks something like the following: 
+and you will get output that looks something like the following:
 
 \footnotesize
 \begin{verbatim}
@@ -811,15 +811,15 @@ kernel: st0:    sysv: 0 nowait: 0
 \normalsize
 
 Note, I have chopped off the beginning of the line with the date and machine
-name for presentation purposes. 
+name for presentation purposes.
 
 Some people find that the above settings only last until the next reboot, so
-please check this otherwise you may have unexpected problems. 
+please check this otherwise you may have unexpected problems.
 
 Beginning with Bacula version 1.35.8, if Bacula detects that you are running
 in variable block mode, it will attempt to set your drive appropriately. All
 OSes permit setting variable block mode, but some OSes do not permit setting
-the other modes that Bacula needs to function properly. 
+the other modes that Bacula needs to function properly.
 
 \label{compression}
 \subsection{Tape Hardware Compression and Blocking Size}
@@ -831,7 +831,7 @@ You should be able to verify the tape compression status with sysfs on Linux.
 cat /sys/class/scsi_tape/nst0/default_compression
 \end{verbatim}
 
-You can, turn it on by using (on Linux): 
+You can, turn it on by using (on Linux):
 
 \footnotesize
 \begin{verbatim}
@@ -841,14 +841,14 @@ mt -f /dev/nst0 defcompression 1
 \normalsize
 
 and of course, if you use a zero instead of the one at the end, you will turn
-it off. 
+it off.
 
 If you have built the {\bf mtx} program in the {\bf depkgs} package, you can
 use tapeinfo to get quite a bit of information about your tape drive even if
 it is not an autochanger. This program is called using the SCSI control
 device. On Linux for tape drive /dev/nst0, this is usually /dev/sg0, while on
 FreeBSD for /dev/nsa0, the control device is often /dev/pass2. For example on
-my DDS-4 drive (/dev/nst0), I get the following: 
+my DDS-4 drive (/dev/nst0), I get the following:
 
 \footnotesize
 \begin{verbatim}
@@ -866,7 +866,7 @@ Ready: yes
 BufferedMode: yes
 Medium Type: Not Loaded
 Density Code: 0x26
-BlockSize: 0             
+BlockSize: 0
 \end{verbatim}
 \normalsize
 
@@ -878,7 +878,7 @@ work in such a situation because it will normally attempt to write blocks of
 64,512 bytes, except the last block of the job which will generally be
 shorter. The first thing to try is setting the default block size to zero
 using the {\bf mt -f /dev/nst0 defblksize 0} command as shown above.
-On FreeBSD, this would be something like: {\bf mt -f /dev/nsa0 blocksize 0}. 
+On FreeBSD, this would be something like: {\bf mt -f /dev/nsa0 blocksize 0}.
 
 On some operating systems with some tape drives, the amount of data that
 can be written to the tape and whether or not compression is enabled is
@@ -888,19 +888,19 @@ density code that is used with the drive.  Most systems, but unfortunately
 not all, set the density to the maximum by default. On some systems, you
 can also get a list of all available density codes with:
 {\bf mt -f /dev/nst0 densities} or a similar {\bf mt} command.
-Note, for DLT and SDLT devices, no-compression versus compression is very 
+Note, for DLT and SDLT devices, no-compression versus compression is very
 often controlled by the density code.  On FreeBSD systems, the compression
 mode is set using {\bf mt -f /dev/nsa0 comp xxx} where xxx is the
 mode you want.  In general, see {\bf man mt}  for the options available on
 your system.
 
 Note, some of the above {\bf mt} commands may not be persistent depending
-on your system configuration. That is they may be reset if a program  
+on your system configuration. That is they may be reset if a program
 other than Bacula uses the drive or, as is frequently the case, on reboot
 of your system.
-                   
+
 If your tape drive requires fixed block sizes (very unusual), you can use the
-following records: 
+following records:
 
 \footnotesize
 \begin{verbatim}
@@ -915,13 +915,13 @@ should be done only if your drive does not support variable block sizes, or
 you have some other strong reasons for using fixed block sizes. As mentioned
 above, a small fixed block size of 512 or 1024 bytes will be very inefficient.
 Try to set any fixed block size to something like 64,512 bytes or larger if
-your drive will support it. 
+your drive will support it.
 
 Also, note that the {\bf Medium Type} field of the output of {\bf tapeinfo}
 reports {\bf Not Loaded}, which is not correct. As a consequence, you should
-ignore that field as well as the {\bf Attached Changer} field. 
+ignore that field as well as the {\bf Attached Changer} field.
 
-To recover files from tapes written in fixed block mode, see below. 
+To recover files from tapes written in fixed block mode, see below.
 \label{FreeBSDTapes}
 
 \subsection{Tape Modes on FreeBSD}
@@ -929,7 +929,7 @@ To recover files from tapes written in fixed block mode, see below.
 \index[general]{Tape Modes on FreeBSD}
 
 On most FreeBSD systems such as 4.9 and most tape drives, Bacula should run
-with: 
+with:
 
 \footnotesize
 \begin{verbatim}
@@ -941,11 +941,11 @@ mt  -f  /dev/nsa0  comp  enable
 
 You might want to put those commands in a startup script to make sure your
 tape driver is properly initialized before running Bacula, because
-depending on your system configuration, these modes may be reset if a      
+depending on your system configuration, these modes may be reset if a
 program other than Bacula uses the drive or when your system is rebooted.
 
 Then according to what the {\bf btape test} command returns, you will probably
-need to set the following (see below for an alternative): 
+need to set the following (see below for an alternative):
 
 \footnotesize
 \begin{verbatim}
@@ -960,13 +960,13 @@ need to set the following (see below for an alternative):
 
 Then be sure to run some append tests with Bacula where you start and stop
 Bacula between appending to the tape, or use {\bf btape} version 1.35.1 or
-greater, which includes simulation of stopping/restarting Bacula. 
+greater, which includes simulation of stopping/restarting Bacula.
 
 Please see the file {\bf platforms/freebsd/pthreads-fix.txt} in the main
 Bacula directory concerning {\bf important} information concerning
 compatibility of Bacula and your system. A much more optimal Device
 configuration is shown below, but does not work with all tape drives. Please
-test carefully before putting either into production. 
+test carefully before putting either into production.
 
 Note, for FreeBSD 4.10-RELEASE, using a Sony TSL11000 L100 DDS4 with an
 autochanger set to variable block size and DCLZ compression, Brian McDonald
@@ -981,7 +981,7 @@ mt  -f /dev/nsa0  comp  enable
 \end{verbatim}
 \normalsize
 
-and 
+and
 
 \footnotesize
 \begin{verbatim}
@@ -997,7 +997,7 @@ and
 This has been confirmed by several other people using different hardware. This
 configuration is the preferred one because it uses one EOF and no backspacing
 at the end of the tape, which works much more efficiently and reliably with
-modern tape drives. 
+modern tape drives.
 
 Finally, here is a Device configuration that Danny Butroyd reports to work
 correctly with the Overland Powerloader tape library using LT0-2 and
@@ -1010,7 +1010,7 @@ Device {
   Name = Powerloader
   Media Type = LT0-2
   Archive Device = /dev/nsa0
-  AutomaticMount = yes;              
+  AutomaticMount = yes;
   AlwaysOpen = yes;
   RemovableMedia = yes;
   RandomAccess = no;
@@ -1055,7 +1055,7 @@ Backward Space Record = yes.
 \index[general]{Finding Tape Drives and Autochangers on FreeBSD}
 
 On FreeBSD, you can do a {\bf camcontrol devlist} as root to determine what
-drives and autochangers you have. For example, 
+drives and autochangers you have. For example,
 
 \footnotesize
 \begin{verbatim}
@@ -1070,7 +1070,7 @@ from the above, you can determine that there is a tape drive on {\bf /dev/sa0}
 and another on {\bf /dev/sa1} in addition since there is a second line for the
 drive on {\bf /dev/sa1}, you know can assume that it is the control device for
 the autochanger (i.e. {\bf /dev/pass2}). It is also the control device name to
-use when invoking the tapeinfo program. E.g. 
+use when invoking the tapeinfo program. E.g.
 
 \footnotesize
 \begin{verbatim}
@@ -1085,11 +1085,11 @@ tapeinfo -f /dev/pass2
 \index[general]{Systems!Using the OnStream driver on Linux}
 
 Bacula version 1.33 (not 1.32x) is now working and ready for testing with the
-OnStream kernel osst driver version 0.9.14 or above. Osst is available from: 
+OnStream kernel osst driver version 0.9.14 or above. Osst is available from:
 \elink{http://sourceforge.net/projects/osst/}
-{http://sourceforge.net/projects/osst/}. 
+{http://sourceforge.net/projects/osst/}.
 
-To make Bacula work you must first load the new driver then, as root, do: 
+To make Bacula work you must first load the new driver then, as root, do:
 
 \footnotesize
 \begin{verbatim}
@@ -1098,7 +1098,7 @@ To make Bacula work you must first load the new driver then, as root, do:
 \normalsize
 
 Also you must add the following to your Device resource in your Storage
-daemon's conf file: 
+daemon's conf file:
 
 \footnotesize
 \begin{verbatim}
@@ -1108,7 +1108,7 @@ daemon's conf file:
 \normalsize
 
 Here is a Device specification provided by Michel Meyers that is known to
-work: 
+work:
 
 \footnotesize
 \begin{verbatim}
@@ -1153,7 +1153,7 @@ causes it to write random data to a tape until the tape fills. It then writes
 at least one more Bacula block to a second tape. Finally, it reads back both
 tapes to ensure that the data has been written in a way that Bacula can
 recover it. Note, there is also a single tape option as noted below, which you
-should use rather than the two tape test. See below for more details. 
+should use rather than the two tape test. See below for more details.
 
 This can be an extremely time consuming process (here it is about 6 hours) to
 fill a full tape. Note, that btape writes random data to the tape when it is
@@ -1161,14 +1161,14 @@ filling it. This has two consequences: 1. it takes a bit longer to generate
 the data, especially on slow CPUs. 2. the total amount of data is
 approximately the real physical capacity of your tape, regardless of whether
 or not the tape drive compression is on or off. This is because random data
-does not compress very much. 
+does not compress very much.
 
 To begin this test, you enter the {\bf fill} command and follow the
 instructions. There are two options: the simple single tape option and the
 multiple tape option. Please use only the simple single tape option because
 the multiple tape option still doesn't work totally correctly. If the single
 tape option does not succeed, you should correct the problem before using
-Bacula. 
+Bacula.
 \label{RecoveringFiles}
 
 \section{Recovering Files Written With Fixed Block Sizes}
@@ -1178,7 +1178,7 @@ If you have been previously running your tape drive in fixed block mode
 (default 512) and Bacula with variable blocks (default), then in version
 1.32f-x and 1.34 and above, Bacula will fail to recover files because it does
 block spacing, and because the block sizes don't agree between your tape drive
-and Bacula it will not work. 
+and Bacula it will not work.
 
 The long term solution is to run your drive in variable block mode as
 described above. However, if you have written tapes using fixed block sizes,
@@ -1190,7 +1190,7 @@ answer the prompt {\bf yes/mod/no}. Instead, edit the bootstrap file (the
 location is listed in the prompt) using any ASCII editor. Remove all {\bf
 VolBlock} lines in the file. When the file is re-written, answer the question,
 and Bacula will run without using block positioning, and it should recover
-your files. 
+your files.
 
 \label{BlockModes}
 \section{Tape Blocking Modes}
@@ -1209,7 +1209,7 @@ written to the tape. Each read returns a single record. If you request less
 bytes than are in the record, only those number of bytes will be returned, but
 the entire logical record will have been read (the next read will retrieve the
 next record). Thus data from a single write is always returned in a single
-read, and sequentially written records are returned by sequential reads. 
+read, and sequentially written records are returned by sequential reads.
 
 Bacula expects fixed block size tape drives to behave as follows: If a write
 length is greater than the physical block size of the drive, the write will be
@@ -1223,13 +1223,13 @@ Due to the complications of fixed block size tape drives, you should avoid
 them if possible with Bacula, or you must be ABSOLUTELY certain that you use
 fixed block sizes within Bacula that correspond to the physical block size of
 the tape drive. This will ensure that Bacula has a one to one correspondence
-between what it writes and the physical record on the tape. 
+between what it writes and the physical record on the tape.
 
 Please note that Bacula will not function correctly if it writes a block and
 that block is split into two or more physical records on the tape. Bacula
 assumes that each write causes a single record to be written, and that it can
 sequentially recover each of the blocks it has written by using the same
-number of sequential reads as it had written. 
+number of sequential reads as it had written.
 
 \section{Details of Tape Modes}
 \index[general]{Modes!Details}
@@ -1263,7 +1263,7 @@ certain tape modes and MTEOM.
   Linux does support both SCSI SPACE Filemarks and End-of-data: When MTEOM
   is called in MT\_ST\_FAST\_MTEOM mode, SCSI SPACE End-of-data is used.
   In the other case, SCSI SPACE Filemarks with count =
-  8388607 is used.  
+  8388607 is used.
   There is no real slow mode like in Solaris - I just expect, that for
   older tape drives Filemarks may be slower than End-of-data, but not so
   much as in Solaris slow mode.  File number is tracked for MTEOM just
@@ -1306,7 +1306,7 @@ certain tape modes and MTEOM.
 \index[general]{Tape Performance}
 If you have LTO-3 or LTO-4 drives, you should be able to
 fairly good transfer rates; from 60 to 150 MB/second, providing
-you have fast disks; GigaBit Ethernet connections (probably 2); you are 
+you have fast disks; GigaBit Ethernet connections (probably 2); you are
 running multiple simultaneous jobs; you have Bacula data spooling
 enabled; your tape block size is set to 131072 or 262144; and
 you have set {\bf Maximum File Size = 5G}.
@@ -1369,8 +1369,8 @@ If you are getting errors such as:
 you are most likely running your Storage daemon as non-root, and
 Bacula is attempting to set the correct OS buffering to correspond
 to your Device resource. Most OSes allow only root to issue this
-ioctl command. In general, the message can be ignored providing 
+ioctl command. In general, the message can be ignored providing
 you are sure that your OS parameters are properly configured as
-described earlier in this manual.  If you are running your Storage daemon 
+described earlier in this manual.  If you are running your Storage daemon
 as root, you should not be getting these system log messages, and if
 you are, something is probably wrong.

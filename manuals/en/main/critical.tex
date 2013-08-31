@@ -6,8 +6,8 @@
 \index[general]{Production!Critical Items to Implement Before }
 \index[general]{Critical Items to Implement Before Production }
 
-We recommend you take your time before implementing a production a Bacula
-backup system since Bacula is a rather complex program, and if you make a
+We recommend you take your time before implementing a production a Bareos
+backup system since Bareos is a rather complex program, and if you make a
 mistake, you may suddenly find that you cannot restore your files in case
 of a disaster.  This is especially true if you have not previously used a
 major backup product.
@@ -15,14 +15,14 @@ major backup product.
 If you follow the instructions in this chapter, you will have covered most of
 the major problems that can occur. It goes without saying that if you ever
 find that we have left out an important point, please inform us, so
-that we can document it to the benefit of everyone. 
+that we can document it to the benefit of everyone.
 
 \label{Critical}
 \section{Critical Items}
 \index[general]{Critical Items }
 \index[general]{Items!Critical }
 
-The following assumes that you have installed Bacula, you more or less
+The following assumes that you have installed Bareos, you more or less
 understand it, you have at least worked through the tutorial or have
 equivalent experience, and that you have set up a basic production
 configuration. If you haven't done the above, please do so and then come back
@@ -33,48 +33,46 @@ would use in setting up a production system (if you already are in
 production, use the checklist anyway).
 
 \begin{itemize}
-\item Test your tape drive for compatibility with Bacula by using the  test
-   command in the \ilink{btape}{btape} program. 
-\item Better than doing the above is to walk through the nine steps in the  
-   \ilink{Tape Testing}{TapeTestingChapter} chapter of the manual. It 
-   may take you a bit of time, but it will eliminate surprises. 
+\item Test your tape drive for compatibility with Bareos by using the  test
+   command in the \ilink{btape}{btape} program.
+% TODO: missing chapter
+% \item Better than doing the above is to walk through the nine steps in the
+%    \ilink{Tape Testing}{TapeTestingChapter} chapter of the manual. It
+%    may take you a bit of time, but it will eliminate surprises.
 \item Test the end of tape handling of your tape drive by using the
    fill command in the \ilink{btape}{btape} program.
-\item If you are using a Linux 2.4 kernel, make sure that /lib/tls is disabled. Bacula
-   does not work with this library. See the second point under 
-   \ilink{ Supported Operating Systems.}{SupportedOSes} 
 \item Do at least one restore of files. If you backup multiple OS types
    (Linux, Solaris, HP, MacOS, FreeBSD, Win32, ...),
-   restore files from each system type. The 
-   \ilink{Restoring Files}{RestoreChapter} chapter shows you how. 
+   restore files from each system type. The
+   \ilink{Restoring Files}{RestoreChapter} chapter shows you how.
 \item Write a bootstrap file to a separate system for each backup job.  The
-   Write Bootstrap directive is described in the  
+   Write Bootstrap directive is described in the
    \ilink{Director Configuration}{writebootstrap}  chapter of the
-   manual, and more details are available in the  
+   manual, and more details are available in the
    \ilink{Bootstrap File}{BootstrapChapter} chapter. Also, the default
-   bacula-dir.conf comes with a Write Bootstrap directive defined. This  allows
-   you to recover the state of your system as of the last backup.  
+   bareos-dir.conf comes with a Write Bootstrap directive defined. This  allows
+   you to recover the state of your system as of the last backup.
 \item Backup your catalog. An example of this is found in the default
-   bacula-dir.conf file. The backup script is installed by default and
+   bareos-dir.conf file. The backup script is installed by default and
    should handle any database, though you may want to make your own local
-   modifications.  See also \ilink{Backing Up Your Bacula Database -
-   Security Considerations }{BackingUpBaculaSecurityConsiderations} for more
+   modifications.  See also \ilink{Backing Up Your Bareos Database -
+   Security Considerations}{BackingUpBareosSecurityConsiderations} for more
    information.
 \item Write a bootstrap file for the catalog. An example of this is found in
-   the default bacula-dir.conf file. This will allow you to quickly restore your
+   the default bareos-dir.conf file. This will allow you to quickly restore your
    catalog in the event it is wiped out -- otherwise it  is many excruciating
-   hours of work.  
-\item Make a copy of the bacula-dir.conf, bacula-sd.conf, and
-   bacula-fd.conf files that you are using on your server. Put it in a safe
+   hours of work.
+\item Make a copy of the bareos-dir.conf, bareos-sd.conf, and
+   bareos-fd.conf files that you are using on your server. Put it in a safe
    place (on another machine) as these files can be difficult to
    reconstruct if your server dies.
-\item Make a Bacula Rescue CDROM! See the 
-   \ilink{Disaster Recovery Using a Bacula Rescue
-   CDROM}{RescueChapter} chapter. It is trivial to  make such a CDROM,
-   and it can make system recovery in the event of  a lost hard disk infinitely
-   easier. 
-\item Bacula assumes all filenames are in UTF-8 format. This is important 
-   when saving the filenames to the catalog. For Win32 machine, Bacula will
+% \item Make a Bareos Rescue CDROM! See the
+%    \ilink{Disaster Recovery Using a Bareos Rescue
+%    CDROM}{RescueChapter} chapter. It is trivial to  make such a CDROM,
+%    and it can make system recovery in the event of  a lost hard disk infinitely
+%    easier.
+\item Bareos assumes all filenames are in UTF-8 format. This is important
+   when saving the filenames to the catalog. For Win32 machine, Bareos will
    automatically convert from Unicode to UTF-8, but on Unix, Linux, *BSD,
    and MacOS X machines, you must explicitly ensure that your locale is set
    properly. Typically this means that the {\bf LANG} environment variable
@@ -91,40 +89,40 @@ production, use the checklist anyway).
 \index[general]{Recommended Items }
 
 Although these items may not be critical, they are recommended and will help
-you avoid problems. 
+you avoid problems.
 
 \begin{itemize}
-\item Read the \ilink{Quick Start Guide to Bacula}{QuickStartChapter} 
-\item After installing and experimenting with Bacula, read and work carefully 
-   through the examples in the 
-   \ilink{Tutorial}{TutorialChapter} chapter  of this manual. 
-\item Learn what each of the \ilink{Bacula Utility Programs}{_UtilityChapter} 
-   does. 
+\item Read the \ilink{Quick Start Guide to Bareos}{QuickStartChapter}
+\item After installing and experimenting with Bareos, read and work carefully
+   through the examples in the
+   \ilink{Tutorial}{TutorialChapter} chapter  of this manual.
+\item Learn what each of the \ilink{Bareos Utility Programs}{_UtilityChapter}
+   does.
 \item Set up reasonable retention periods so that your catalog does not  grow
    to be too big. See the following three chapters:\\
    \ilink{Recycling your Volumes}{RecyclingChapter},\\
    \ilink{Basic Volume Management}{DiskChapter},\\
-   \ilink{Using Pools to Manage Volumes}{PoolsChapter}. 
-\item Perform a bare metal recovery using the Bacula Rescue CDROM.  See the 
-   \ilink{Disaster Recovery Using a Bacula Rescue CDROM}{RescueChapter}
-    chapter. 
+   \ilink{Using Pools to Manage Volumes}{PoolsChapter}.
+% \item Perform a bare metal recovery using the Bareos Rescue CDROM.  See the
+%    \ilink{Disaster Recovery Using a Bareos Rescue CDROM}{RescueChapter}
+%     chapter.
 \end{itemize}
 
-If you absolutely must implement a system where you write a different 
-tape each night and take it offsite in the morning. We recommend that you do 
+If you absolutely must implement a system where you write a different
+tape each night and take it offsite in the morning. We recommend that you do
 several things:
 \begin{itemize}
 \item Write a bootstrap file of your backed up data and a bootstrap file
-   of your catalog backup to a floppy disk or a CDROM, and take that with
-   the tape.  If this is not possible, try to write those files to another 
+   of your catalog backup to a external media like CDROM or USB stick, and take that with
+   the tape.  If this is not possible, try to write those files to another
    computer or offsite computer, or send them as email to a friend. If none
    of that is possible, at least print the bootstrap files and take that
    offsite with the tape.  Having the bootstrap files will make recovery
    much easier.
-\item It is better not to force Bacula to load a particular tape each day.
-   Instead, let Bacula choose the tape.  If you need to know what tape to
+\item It is better not to force Bareos to load a particular tape each day.
+   Instead, let Bareos choose the tape.  If you need to know what tape to
    mount, you can print a list of recycled and appendable tapes daily, and
-   select any tape from that list.  Bacula may propose a particular tape
+   select any tape from that list.  Bareos may propose a particular tape
    for use that it considers optimal, but it will accept any valid tape
    from the correct pool.
 \end{itemize}

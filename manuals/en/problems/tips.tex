@@ -10,7 +10,7 @@
 
 There are a number of example scripts for various things that can be found in
 the {\bf example} subdirectory and its subdirectories of the Bacula source
-distribution. 
+distribution.
 
 For additional tips, please see the \elink{Bacula
 wiki}{http://wiki.bacula.org}.
@@ -26,12 +26,12 @@ ensure that you don't overwrite or delete your production (current) version
 of Bacula until you have tested that the new version works.
 
 If you have installed Bacula into a single directory, this is simple: simply
-make a copy of your Bacula directory. 
+make a copy of your Bacula directory.
 
 If you have done a more typical Unix installation where the binaries are
 placed in one directory and the configuration files are placed in another,
 then the simplest way is to configure your new Bacula to go into a single
-file. Alternatively, make copies of all your binaries and especially your 
+file. Alternatively, make copies of all your binaries and especially your
 conf files.
 
 Whatever your situation may be (one of the two just described), you should
@@ -42,7 +42,7 @@ Bacula, build it, install it, then stop your production Bacula, copy all the
 {\bf *.conf} files from your production Bacula directory to the test Bacula
 directory, start the test version, and run a few test backups. If all seems
 good, then you can proceed to install the new Bacula in place of or possibly
-over the old Bacula. 
+over the old Bacula.
 
 When installing a new Bacula you need not worry about losing the changes you
 made to your configuration files as the installation process will not
@@ -51,8 +51,8 @@ overwrite them providing that you do not do a {\bf make uninstall}.
 If the new version of Bacula requires an upgrade to the database,
 you can upgrade it with the script {\bf update\_bacula\_tables}, which
 will be installed in your scripts directory (default {\bf /etc/bacula}),
-or alternatively, you can find it in the  
-{\bf \lt{}bacula-source\gt{}/src/cats} directory.
+or alternatively, you can find it in the
+{\bf {\textless}bacula-source{\textgreater}/src/cats} directory.
 
 \section{Getting Notified of Job Completion}
 \label{notification}
@@ -61,21 +61,21 @@ or alternatively, you can find it in the
 
 One of the first things you should do is to ensure that you are being properly
 notified of the status of each Job run by Bacula, or at a minimum of each Job
-that terminates with an error. 
+that terminates with an error.
 
 Until you are completely comfortable with {\bf Bacula}, we recommend that you
 send an email to yourself for each Job that is run. This is most easily
 accomplished by adding an email notification address in the {\bf Messages}
 resource of your Director's configuration file. An email is automatically
 configured in the default configuration files, but you must ensure that the
-default {\bf root} address is replaced by your email address. 
+default {\bf root} address is replaced by your email address.
 
 For additional examples of how to configure a Bacula, please take a look at the
 {\bf .conf} files found in the {\bf examples} sub-directory. We recommend the
 following configuration (where you change the paths and email address to
 correspond to your setup). Note, the {\bf mailcommand} and {\bf
 operatorcommand} should be on a single line. They were split here for
-presentation: 
+presentation:
 
 \footnotesize
 \begin{verbatim}
@@ -100,27 +100,27 @@ mailcommand} and the {\bf operatorcommand} lines point to your {\bf Bacula}
 binary directory where the {\bf bsmtp} program will be installed. You will
 also want to ensure that the {\bf your-email-address} is replaced by your
 email address, and finally, you will also need to ensure that the {\bf
-/home/bacula/bin/log} points to the file where you want to log all messages. 
+/home/bacula/bin/log} points to the file where you want to log all messages.
 
 With the above Messages resource, you will be notified by email of every Job
 that ran, all the output will be appended to the {\bf log} file you specify,
 all output will be directed to the console program, and all mount messages
 will be emailed to you. Note, some messages will be sent to multiple
-destinations. 
+destinations.
 
 The form of the mailcommand is a bit complicated, but it allows you to
 distinguish whether the Job terminated in error or terminated normally. Please
-see the 
+see the
 \ilink{Mail Command}{mailcommand} section of the Messages
 Resource chapter of this manual for the details of the substitution characters
-used above. 
+used above.
 
 Once you are totally comfortable with Bacula as I am, or if you have a large
 number of nightly Jobs as I do (eight), you will probably want to change the
 {\bf Mail} command to {\bf Mail On Error} which will generate an email message
 only if the Job terminates in error. If the Job terminates normally, no email
 message will be sent, but the output will still be appended to the log file as
-well as sent to the Console program. 
+well as sent to the Console program.
 
 \section{Getting Email Notification to Work}
 \label{email}
@@ -129,25 +129,25 @@ well as sent to the Console program.
 
 The section above describes how to get email notification of job status.
 Occasionally, however, users have problems receiving any email at all. In that
-case, the things to check are the following: 
+case, the things to check are the following:
 
 \begin{itemize}
 \item Ensure that you have a valid email address specified on your  {\bf Mail}
    record in the Director's Messages resource. The email  address should be fully
    qualified. Simply using {\bf root} generally  will not work, rather you should
-use {\bf root@localhost} or better  yet your full domain.  
+use {\bf root@localhost} or better  yet your full domain.
 \item Ensure that you do not have a {\bf Mail} record in the Storage  daemon's
    or File daemon's configuration files. The only record  you should have is {\bf
-   director}:  
+   director}:
 
 \footnotesize
 \begin{verbatim}
       director = director-name = all
-      
+
 \end{verbatim}
 \normalsize
 
-\item If all else fails, try replacing the {\bf mailcommand} with 
+\item If all else fails, try replacing the {\bf mailcommand} with
 
    \footnotesize
 \begin{verbatim}
@@ -159,7 +159,7 @@ mailcommand = "mail -s test your@domain.com"
    the desired bsmtp command by hand and ensure that the email  is delivered,
    then put that command into {\bf Bacula}. Small  differences in things such as
 the parenthesis around the word  Bacula can make a big difference to some
-bsmtp programs.  For example, you might start simply by using: 
+bsmtp programs.  For example, you might start simply by using:
 
 \footnotesize
 \begin{verbatim}
@@ -178,12 +178,12 @@ If like me, you have setup Bacula so that email is sent only when a Job has
 errors, as described in the previous section of this chapter, inevitably, one
 day, something will go wrong and {\bf Bacula} can stall. This could be because
 Bacula crashes, which is vary rare, or more likely the network has caused {\bf
-Bacula} to {\bf hang} for some unknown reason. 
+Bacula} to {\bf hang} for some unknown reason.
 
 To avoid this, you can use the {\bf RunAfterJob} command in the Job resource
 to schedule a Job nightly, or weekly that simply emails you a message saying
 that Bacula is still running. For example, I have setup the following Job in
-my Director's configuration file: 
+my Director's configuration file:
 
 \footnotesize
 \begin{verbatim}
@@ -219,7 +219,7 @@ Where I established a schedule to run the Job nightly. The Job itself is type
 {\bf Admin} which means that it doesn't actually do anything, and I've defined
 a FileSet, Pool, Storage, and Client, all of which are not really used (and
 probably don't need to be specified). The key aspect of this Job is the
-command: 
+command:
 
 \footnotesize
 \begin{verbatim}
@@ -233,11 +233,11 @@ passed to the script. For example, if the Client's name is {\bf Watchdog} and
 the Director's name is {\bf main-dir} then referencing \$1 in the script would
 get {\bf Watchdog} and referencing \$2 would get {\bf main-dir}. In this case,
 having the script know the Client and Director's name is not really useful,
-but in other situations it may be. 
+but in other situations it may be.
 
 You can put anything in the watchdog script. In my case, I like to monitor the
 size of my catalog to be sure that {\bf Bacula} is really pruning it. The
-following is my watchdog script: 
+following is my watchdog script:
 
 \footnotesize
 \begin{verbatim}
@@ -250,7 +250,7 @@ du . * |
 \end{verbatim}
 \normalsize
 
-If you just wish to send yourself a message, you can do it with: 
+If you just wish to send yourself a message, you can do it with:
 
 \footnotesize
 \begin{verbatim}
@@ -269,18 +269,18 @@ END-OF-DATA
 \index[general]{Maintaining a Valid Bootstrap File }
 \index[general]{File!Maintaining a Valid Bootstrap }
 
-By using a 
+By using a
 \ilink{ WriteBootstrap}{writebootstrap} record in each of your
-Director's Job resources, you can constantly maintain a 
+Director's Job resources, you can constantly maintain a
 \ilink{bootstrap}{BootstrapChapter} file that will enable you to
 recover the state of your system as of the last backup without having the
 Bacula catalog. This permits you to more easily recover from a disaster that
-destroys your Bacula catalog. 
+destroys your Bacula catalog.
 
 When a Job resource has a {\bf WriteBootstrap} record, Bacula will maintain
 the designated file (normally on another system but mounted by NFS) with up to
 date information necessary to restore your system. For example, in my
-Director's configuration file, I have the following record: 
+Director's configuration file, I have the following record:
 
 \footnotesize
 \begin{verbatim}
@@ -292,7 +292,7 @@ where I replace {\bf client-name} by the actual name of the client that is
 being backed up. Thus, Bacula automatically maintains one file for each of my
 clients. The necessary bootstrap information is appended to this file during
 each {\bf Incremental} backup, and the file is totally rewritten during each
-{\bf Full} backup. 
+{\bf Full} backup.
 
 Note, one disadvantage of writing to an NFS mounted volume as I do is
 that if the other machine goes down, the OS will wait forever on the fopen()
@@ -301,7 +301,7 @@ the machine exporting the NFS mounts comes back up. A possible solution to this
 problem was provided by Andrew Hilborne, and consists of using the {\bf soft}
 option instead of the {\bf hard} option when mounting the NFS volume, which is
 typically done in {\bf /etc/fstab}/. The NFS documentation explains these
-options in detail. However, I found that with the {\bf soft} option 
+options in detail. However, I found that with the {\bf soft} option
 NFS disconnected frequently causing even more problems.
 
 If you are starting off in the middle of a cycle (i.e. with Incremental
@@ -315,7 +315,7 @@ then copy the bootstrap file that was written to the location specified on the
 {\bf Write Bootstrap} record. The restore bootstrap file can be found in {\bf
 restore.bsr} in the working directory that you defined. In the example given
 below for the client {\bf rufus}, my input is shown in bold. Note, the JobId
-output has been partially truncated to fit on the page here: 
+output has been partially truncated to fit on the page here:
 
 \footnotesize
 \begin{verbatim}
@@ -383,13 +383,13 @@ files are correct, and thus prevent overwriting valid data. If the Director or
 the Storage daemon crashes before the job has completed, the tape will contain
 one more file than is noted in the Catalog, and the next time you attempt to
 use the same Volume, Bacula will reject it due to a mismatch between the
-physical tape (Volume) and the catalog. 
+physical tape (Volume) and the catalog.
 
 The easiest solution to this problem is to label a new tape and start fresh.
 If you wish to continue appending to the current tape, you can do so by using
 the {\bf update} command in the console program to change the {\bf Volume
 Files} entry in the catalog. A typical sequence of events would go like the
-following: 
+following:
 
 \footnotesize
 \begin{verbatim}
@@ -398,7 +398,7 @@ following:
 \end{verbatim}
 \normalsize
 
-Bacula then prints: 
+Bacula then prints:
 
 \footnotesize
 \begin{verbatim}
@@ -419,7 +419,7 @@ Please use the "label"  command to create a new Volume for:
 \normalsize
 
 (note, lines wrapped for presentation)
-The key here is the line that reads: 
+The key here is the line that reads:
 
 \footnotesize
 \begin{verbatim}
@@ -434,15 +434,15 @@ catalog. As a consequence, you can just modify the catalog count to eleven,
 and even if the catalog contains references to files saved in file 11,
 everything will be OK and nothing will be lost. Note that if the SD had
 written several file marks to the volume, the difference between the Volume
-count and the Catalog count could be larger than one, but this is unusual. 
+count and the Catalog count could be larger than one, but this is unusual.
 
 If on the other hand the catalog is marked as having more files than Bacula
 found on the tape, you need to consider the possible negative consequences of
 modifying the catalog. Please see below for a more complete discussion of
-this. 
+this.
 
 Continuing with the example of {\bf Volume = 11 Catalog = 10}, to enable to
-Bacula to append to the tape, you do the following: 
+Bacula to append to the tape, you do the following:
 
 \footnotesize
 \begin{verbatim}
@@ -468,7 +468,7 @@ Enter MediaId or Volume name: 1
 (note table output truncated for presentation) First, you chose to update the
 Volume parameters by entering a {\bf 1}. In the volume listing that follows,
 notice how the VolStatus is {\bf Error}. We will correct that after changing
-the Volume Files. Continuing, you respond 1, 
+the Volume Files. Continuing, you respond 1,
 
 \footnotesize
 \begin{verbatim}
@@ -510,7 +510,7 @@ Select parameter to modify (1-10): 1
 
 Here, you have selected {\bf 9} in order to update the Volume Files, then you
 changed it from {\bf 10} to {\bf 11}, and you now answer {\bf 1} to change the
-Volume Status. 
+Volume Status.
 
 \footnotesize
 \begin{verbatim}
@@ -544,16 +544,16 @@ Selection done.
 
 At this point, you have changed the Volume Files from {\bf 10} to {\bf 11} to
 account for the last file that was written but not updated in the database,
-and you changed the Volume Status back to {\bf Append}. 
+and you changed the Volume Status back to {\bf Append}.
 
-This was a lot of words to describe something quite simple. 
+This was a lot of words to describe something quite simple.
 
 The {\bf Volume Files} option exists only in version 1.29 and later, and you
 should be careful using it. Generally, if you set the value to that which
 Bacula said is on the tape, you will be OK, especially if the value is one
-more than what is in the catalog. 
+more than what is in the catalog.
 
-Now lets consider the case: 
+Now lets consider the case:
 
 \footnotesize
 \begin{verbatim}
@@ -569,7 +569,7 @@ and if you ever try to restore any of the files that the catalog has marked as
 saved on Files 11 and 12, all chaos will break out. In this case, you will
 probably be better off using a new tape. In fact, you might want to see what
 files the catalog claims are actually stored on that Volume, and back them up
-to another tape and recycle this tape. 
+to another tape and recycle this tape.
 
 \section{Security Considerations}
 \label{security}
@@ -580,19 +580,19 @@ Only the File daemon needs to run with root permission (so that it can access
 all files). As a consequence, you may run your Director, Storage daemon, and
 MySQL or PostgreSQL database server as non-root processes. Version 1.30 has
 the {\bf -u} and the {\bf -g} options that allow you to specify a userid and
-groupid on the command line to be used after Bacula starts. 
+groupid on the command line to be used after Bacula starts.
 
 As of version 1.33, thanks to Dan Langille, it is easier to configure the
-Bacula Director and Storage daemon to run as non-root. 
+Bacula Director and Storage daemon to run as non-root.
 
 You should protect the Bacula port addresses (normally 9101, 9102, and 9103)
 from outside access by a firewall or other means of protection to prevent
-unauthorized use of your daemons. 
+unauthorized use of your daemons.
 
 You should ensure that the configuration files are not world readable since
 they contain passwords that allow access to the daemons. Anyone who can access
 the Director using a console program can restore any file from a backup
-Volume. 
+Volume.
 
 You should protect your Catalog database. If you are using SQLite, make sure
 that the working directory is readable only by root (or your Bacula userid),
@@ -600,7 +600,7 @@ and ensure that {\bf bacula.db} has permissions {\bf -rw-r\verb:--:r\verb:--:} (
 more strict. If you are using MySQL or PostgreSQL, please note that the Bacula
 setup procedure leaves the database open to anyone. At a minimum, you should
 assign the user {\bf bacula} a userid and add it to your Director's
-configuration file in the appropriate Catalog resource. 
+configuration file in the appropriate Catalog resource.
 
 If you use the make\_catalog\_backup script provided by Bacula, remember that
 you should take care when supplying passwords on the command line.  Read the
@@ -619,7 +619,7 @@ job runs on Thursday so that you can insert Friday's tape and be sure it will
 be used on Friday. To do so, define a {\bf RunJobBefore} script that normally
 returns zero, so that the Bacula job will normally continue. You can then
 modify the script to return non-zero on any day when you do not want Bacula to
-run the job. 
+run the job.
 
 \section{Automatic Labeling Using Your Autochanger}
 \label{autolabel}
@@ -628,12 +628,12 @@ run the job.
 
 If you have an autochanger but it does not support barcodes, using a "trick"
 you can make Bacula automatically label all the volumes in your autochanger's
-magazine. 
+magazine.
 
 First create a file containing one line for each slot in your autochanger that
 has a tape to be labeled. The line will contain the slot number a colon (:)
 then the Volume name you want to use. For example, create a file named {\bf
-volume-list}, which contains: 
+volume-list}, which contains:
 
 \footnotesize
 \begin{verbatim}
@@ -648,7 +648,7 @@ the slots. Normally, you will have a consistent set of Volume names and a
 sequential set of numbers for each slot you want labeled. In the example
 above, I've left out slots 3 and 4 just as an example. Now, modify your {\bf
 mtx-changer} script and comment out all the lines in the {\bf list)} case by
-putting a \# in column 1. Then add the following two lines: 
+putting a \# in column 1. Then add the following two lines:
 
 \footnotesize
 \begin{verbatim}
@@ -657,7 +657,7 @@ putting a \# in column 1. Then add the following two lines:
 \end{verbatim}
 \normalsize
 
-so that the whole case looks like: 
+so that the whole case looks like:
 
 \footnotesize
 \begin{verbatim}
@@ -670,8 +670,8 @@ so that the whole case looks like:
 \end{verbatim}
 \normalsize
 
-where you replace \lt{}absolute-path\gt{} with the full path to the
-volume-list file. Then using the console, you enter the following command: 
+where you replace {\textless}absolute-path{\textgreater} with the full path to the
+volume-list file. Then using the console, you enter the following command:
 
 \footnotesize
 \begin{verbatim}
@@ -682,9 +682,9 @@ volume-list file. Then using the console, you enter the following command:
 and Bacula will proceed to mount the autochanger Volumes in the list and label
 them with the Volume names you have supplied. Bacula will think that the list
 was provided by the autochanger barcodes, but in reality, it was you who
-supplied the \lt{}barcodes\gt{}. 
+supplied the {\textless}barcodes{\textgreater}.
 
-If it seems to work, when it finishes, enter: 
+If it seems to work, when it finishes, enter:
 
 \footnotesize
 \begin{verbatim}
@@ -692,7 +692,7 @@ If it seems to work, when it finishes, enter:
 \end{verbatim}
 \normalsize
 
-and you should see all the volumes nicely created. 
+and you should see all the volumes nicely created.
 
 \section{Backing Up Portables Using DHCP}
 \label{DNS}
@@ -703,7 +703,7 @@ You may want to backup laptops or portables that are not always connected to
 the network. If you are using DHCP to assign an IP address to those machines
 when they connect, you will need to use the Dynamic Update capability of DNS
 to assign a name to those machines that can be used in the Address field of
-the Client resource in the Director's conf file. 
+the Client resource in the Director's conf file.
 
 \section{Going on Vacation}
 \label{Vacation}
@@ -712,12 +712,12 @@ the Client resource in the Director's conf file.
 
 At some point, you may want to be absent for a week or two and you want to
 make sure Bacula has enough tape left so that the backups will complete. You
-start by doing a {\bf list volumes} in the Console program: 
+start by doing a {\bf list volumes} in the Console program:
 
 \footnotesize
 \begin{verbatim}
 list volumes
- 
+
 Using default Catalog name=BackupDB DB=bacula
 Pool: Default
 +---------+---------------+-----------+-----------+----------------+-
@@ -744,14 +744,14 @@ Note, I have truncated the output for presentation purposes. What is
 significant, is that I can see that my current tape has almost 10 Gbytes of
 data, and that the average amount of data I get on my tapes is about 60
 Gbytes. So if I go on vacation now, I don't need to worry about tape capacity
-(at least not for short absences). 
+(at least not for short absences).
 
 Equally significant is the fact that I did go on vacation the 28th of June
 2003, and when I did the {\bf list volumes} command, my current tape at that
 time, DLT-07Jun03 MediaId 31, had 56.5 Gbytes written. I could see that the
 tape would fill shortly. Consequently, I manually marked it as {\bf Used} and
 replaced it with a fresh tape that I labeled as DLT-28Jun03, thus assuring
-myself that the backups would all complete without my intervention. 
+myself that the backups would all complete without my intervention.
 
 \section{Exclude Files on Windows Regardless of Case}
 \label{Case}
@@ -763,7 +763,7 @@ This tip was submitted by Marc Brueckner who wasn't sure of the case of some
 of his files on Win32, which is case insensitive. The problem is that Bacula
 thinks that {\bf /UNIMPORTANT FILES} is different from {\bf /Unimportant
 Files}. Marc was aware that the file exclusion permits wild-cards. So, he
-specified: 
+specified:
 
 \footnotesize
 \begin{verbatim}
@@ -771,10 +771,10 @@ specified:
 \end{verbatim}
 \normalsize
 
-As a consequence, the above exclude works for files of any case. 
+As a consequence, the above exclude works for files of any case.
 
 Please note that this works only in Bacula Exclude statement and not in
-Include. 
+Include.
 
 \section{Executing Scripts on a Remote Machine}
 \label{RemoteExecution}
@@ -793,7 +793,7 @@ while doing the backup. (Of course I have to start the services again when the
 backup has finished) I found the following solution: Bacula could execute
 scripts on the remote machine by using ssh. The authentication is done
 automatically using a private key. First you have to generate a keypair. I've
-done this by: 
+done this by:
 
 \footnotesize
 \begin{verbatim}
@@ -804,11 +804,11 @@ ssh-keygen -b 4096 -t dsa -f Bacula_key
 This statement may take a little time to run. It creates a public/private key
 pair with no passphrase. You could save the keys in /etc/bacula. Now you have
 two new files : Bacula\_key which contains the private key and Bacula\_key.pub
-which contains the public key. 
+which contains the public key.
 
 Now you have to append the Bacula\_key.pub file to the file authorized\_keys
 in the \textbackslash{}root\textbackslash{}.ssh directory of the remote
-machine. Then you have to add (or uncomment) the line 
+machine. Then you have to add (or uncomment) the line
 
 \footnotesize
 \begin{verbatim}
@@ -817,10 +817,10 @@ AuthorizedKeysFile           %h/.ssh/authorized_keys
 \normalsize
 
 to the sshd\_config file on the remote machine. Where the \%h stands for the
-home-directory of the user (root in this case). 
+home-directory of the user (root in this case).
 
 Assuming that your sshd is already running on the remote machine, you can now
-enter the following on the machine where Bacula runs: 
+enter the following on the machine where Bacula runs:
 
 \footnotesize
 \begin{verbatim}
@@ -828,9 +828,9 @@ ssh -i Bacula_key  -l root <machine-name-or-ip-address> "ls -la"
 \end{verbatim}
 \normalsize
 
-This should execute the "ls -la" command on the remote machine. 
+This should execute the "ls -la" command on the remote machine.
 
-Now you could add lines like the following to your Director's conf file: 
+Now you could add lines like the following to your Director's conf file:
 
 \footnotesize
 \begin{verbatim}
@@ -845,20 +845,20 @@ Run After Job = ssh -i /etc/bacula/Bacula_key 192.168.1.1 \
 
 Even though Bacula version 1.32 and later has a ClientRunBeforeJob, the ssh method still
 could be useful for updating all the Bacula clients on several remote machines
-in a single script. 
+in a single script.
 
 \section{Recycling All Your Volumes}
 \label{recycle}
 \index[general]{Recycling All Your Volumes }
 \index[general]{Volumes!Recycling All Your }
 
-This tip comes from Phil Stracchino. 
+This tip comes from Phil Stracchino.
 
 If you decide to blow away your catalog and start over, the simplest way to
 re-add all your prelabeled tapes with a minimum of fuss (provided you don't
 care about the data on the tapes) is to add the tape labels using the console
 {\bf add} command, then go into the catalog and manually set the VolStatus of
-every tape to {\bf Recycle}. 
+every tape to {\bf Recycle}.
 
 The SQL command to do this is very simple, either use your vendor's
 command line interface (mysql, postgres, sqlite, ...) or use the sql
@@ -871,24 +871,24 @@ update Media set VolStatus='Recycle';
 \normalsize
 
 Bacula will then ignore the data already stored on the tapes and just re-use
-each tape without further objection. 
+each tape without further objection.
 
 \section{Backing up ACLs on ext3 or XFS filesystems}
 \label{ACLs}
 \index[general]{Filesystems!Backing up ACLs on ext3 or XFS }
 \index[general]{Backing up ACLs on ext3 or XFS filesystems }
 
-This tip comes from Volker Sauer. 
+This tip comes from Volker Sauer.
 
 Note, this tip was given prior to implementation of ACLs in Bacula (version
 1.34.5). It is left here because dumping/displaying ACLs can still be useful
 in testing/verifying that Bacula is backing up and restoring your ACLs
-properly. Please see the 
+properly. Please see the
 \ilink{aclsupport}{ACLSupport} FileSet option in the
-configuration chapter of this manual. 
+configuration chapter of this manual.
 
 For example, you could dump the ACLs to a file with a script similar to the
-following: 
+following:
 
 \footnotesize
 \begin{verbatim}
@@ -902,10 +902,10 @@ done
 \end{verbatim}
 \normalsize
 
-Then use Bacula to backup {\bf /root/acl-backup}. 
+Then use Bacula to backup {\bf /root/acl-backup}.
 
 The ACLs could be restored using Bacula to the {\bf /root/acl-backup} file,
-then restored to your system using: 
+then restored to your system using:
 
 \footnotesize
 \begin{verbatim}
@@ -918,18 +918,18 @@ setfacl --restore/root/acl-backup
 \index[general]{Handling!Total Automation of Bacula Tape }
 \index[general]{Total Automation of Bacula Tape Handling }
 
-This tip was provided by Alexander Kuehn. 
+This tip was provided by Alexander Kuehn.
 
 \elink{Bacula}{http://www.bacula.org/} is a really nice backup program except
 that the manual tape changing requires user interaction with the bacula
-console. 
+console.
 
 Fortunately I can fix this.
 NOTE!!! This suggestion applies for people who do *NOT* have tape autochangers
-and must change tapes manually.!!!!! 
+and must change tapes manually.!!!!!
 
 Bacula supports a variety of tape changers through the use of mtx-changer
-scripts/programs. This highly flexible approach allowed me to create 
+scripts/programs. This highly flexible approach allowed me to create
 \elink{this shell script}{http://www.bacula.org/en/rel-manual/mtx-changer.txt} which does the following:
 % TODO: We need to include this in book appendix and point to it.
 % TODO:
@@ -940,7 +940,7 @@ So you can schedule and run backups without ever having to log on or see the
 console.
 To make the whole thing work you need to create a Device resource which looks
 something like this ("Archive Device", "Maximum Changer Wait", "Media
-Type" and "Label media" may have different values): 
+Type" and "Label media" may have different values):
 
 \footnotesize
 \begin{verbatim}
@@ -986,11 +986,11 @@ its operation.
 
 Bacula can run multiple concurrent jobs, but the default configuration files
 do not enable it. Using the {\bf Maximum Concurrent Jobs} directive, you
-can configure how many and which jobs can be run simultaneously. 
+can configure how many and which jobs can be run simultaneously.
 The Director's default value for {\bf Maximum Concurrent Jobs} is "1".
 
-To initially setup concurrent jobs you need to define {\bf Maximum Concurrent Jobs} in 
-the Director's configuration file (bacula-dir.conf) in the 
+To initially setup concurrent jobs you need to define {\bf Maximum Concurrent Jobs} in
+the Director's configuration file (bacula-dir.conf) in the
 Director, Job, Client, and Storage resources.
 
 Additionally the File daemon, and the Storage daemon each have their own
@@ -1001,7 +1001,7 @@ File daemon and the Storage daemon is "20".
 For example, if you want two different jobs to run simultaneously backing up
 the same Client to the same Storage device, they will run concurrently only if
 you have set {\bf Maximum Concurrent Jobs} greater than one in the Director
-resource, the Client resource, and the Storage resource in bacula-dir.conf. 
+resource, the Client resource, and the Storage resource in bacula-dir.conf.
 
 We recommend that you read the \ilink{Data
 Spooling}{SpoolingChapter} of this manual first, then test your multiple
@@ -1012,7 +1012,7 @@ Below is a super stripped down bacula-dir.conf file showing you the four
 places where the the file must be modified to allow the same job {\bf
 NightlySave} to run up to four times concurrently. The change to the Job
 resource is not necessary if you want different Jobs to run at the same time,
-which is the normal case. 
+which is the normal case.
 
 \footnotesize
 \begin{verbatim}

@@ -1,6 +1,0 @@
-#
-# Avoid that @VERSION@ and @DATE@ are changed by configure
-#  This file is sourced by update_version
-#
-echo "s%@VERSION@%${VERSION}%g" >${out}
-echo "s%@DATE@%${DATE}%g" >>${out}

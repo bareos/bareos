@@ -5,7 +5,7 @@
 \index[general]{Encryption!Data}
 \index[general]{Data Encryption}
 
-Bacula permits file data encryption and signing within the File Daemon (or
+Bareos permits file data encryption and signing within the File Daemon (or
 Client) prior to sending data to the Storage Daemon.  Upon restoration,
 file signatures are validated and any mismatches are reported.  At no time
 does the Director or the Storage Daemon have access to unencrypted file
@@ -16,14 +16,15 @@ It is very important to specify what this implementation does NOT
 do:
 \begin{itemize}
 \item There is one important restore problem to be aware of, namely, it's
-  possible for the director to restore new keys or a Bacula configuration
+  possible for the director to restore new keys or a Bareos configuration
   file to the client, and thus force later backups to be made with a
   compromised key and/or with no encryption at all.  You can avoid this by
-  not changing the location of the keys in your Bacula File daemon
+  not changing the location of the keys in your Bareos File daemon
   configuration file, and not changing your File daemon keys.  If you do
   change either one, you must ensure that no restore is done that restores
   the old configuration or the old keys.  In general, the worst effect of
-  this will be that you can no longer connect the File daemon.
+  this will be that you can no longer connect the File daemon.\TODO{what does this sentence mean?}
+    \TODO{refer to SElinux?}
 
 \item The implementation does not encrypt file metadata such as file path
   names, permissions, and ownership. Extended attributes are also currently
@@ -32,7 +33,7 @@ do:
 
 Encryption and signing are implemented using RSA private keys coupled with
 self-signed x509 public certificates. This is also sometimes known as PKI
-or Public Key Infrastructure. 
+or Public Key Infrastructure.
 
 Each File Daemon should be given its own unique private/public key pair.
 In addition to this key pair, any number of "Master Keys" may be specified
@@ -57,22 +58,12 @@ NOTE!!! If you lose your encryption keys, backups will be unrecoverable.
 The basic algorithm used for each backup session (Job) is:
 \begin{enumerate}
 \item The File daemon generates a session key.
-\item The FD encrypts that session key via PKE for all recipients (the file  
+\item The FD encrypts that session key via PKE for all recipients (the file
 daemon, any master keys).
 \item The FD uses that session key to perform symmetric encryption on the data.
 \end{enumerate}
 
 
-\section{Building Bacula with Encryption Support}
-\index[general]{Building Bacula with Encryption Support}
-
-The configuration option for enabling OpenSSL encryption support has not changed
-since Bacula 1.38. To build Bacula with encryption support, you will need
-the OpenSSL libraries and headers installed.  When configuring Bacula, use:
-
-\begin{verbatim}
-   ./configure --with-openssl ...
-\end{verbatim}
 
 \section{Encryption Technical Details}
 \index[general]{Encryption Technical Details}
@@ -111,29 +102,6 @@ directly was not possible, as at the time of coding a free software
 streaming DER decoder/encoder was not available.
 
 
-\section{Decrypting with a Master Key}
-\index[general]{Decrypting with a Master Key}
-
-It is preferable to retain a secure, non-encrypted copy of the  
-client's own encryption keypair. However, should you lose the  
-client's keypair, recovery with the master keypair is possible.
-
-You must:
-\begin{itemize}
-\item Concatenate the master private and public key into a single  
-   keypair file, ie:
-   cat master.key master.cert \gt master.keypair
-
-\item Set the PKI Keypair statement in your bacula configuration file:
-
-\begin{verbatim}
-   PKI Keypair = master.keypair
-\end{verbatim}
-
-\item Start the restore. The master keypair will be used to decrypt
-     the file data.
- 
-\end{itemize}
 
 
 \section{Generating Private/Public Encryption Keys}
@@ -160,14 +128,14 @@ Generate  a File Daemon Key Pair for each FD:
 
 Note, there seems to be a lot of confusion around the file extensions given
 to these keys.  For example, a .pem file can contain all the following:
-private keys (RSA and DSA), public keys (RSA and DSA) and (x509) certificates. 
+private keys (RSA and DSA), public keys (RSA and DSA) and (x509) certificates.
 It is the default format for OpenSSL. It stores data Base64 encoded DER format,
 surrounded by ASCII headers, so is suitable for text mode transfers between
 systems. A .pem file may contain any number of keys either public or
 private. We use it in cases where there is both a public and a private
 key.
 
-Typically, above we have used the .cert extension to refer to X509
+Above we have used the .cert extension to refer to X509
 certificate encoding that contains only a single public key.
 
 
@@ -176,20 +144,44 @@ certificate encoding that contains only a single public key.
 \index[general]{Example!Data Encryption Configuration File}
 \index[general]{Example Data Encryption Configuration}
 
-{\bf bacula-fd.conf}
+{\bf bareos-fd.conf}
 \footnotesize
 \begin{verbatim}
 FileDaemon {
    Name = example-fd
    FDport = 9102                  # where we listen for the director
-   WorkingDirectory = /var/bacula/working
-   Pid Directory = /var/run
-   Maximum Concurrent Jobs = 20
- 
+
    PKI Signatures = Yes            # Enable Data Signing
    PKI Encryption = Yes            # Enable Data Encryption
-   PKI Keypair = "/etc/bacula/fd-example.pem"    # Public and Private Keys
-   PKI Master Key = "/etc/bacula/master.cert"    # ONLY the Public Key
+   PKI Keypair = "/etc/bareos/fd-example.pem"    # Public and Private Keys
+   PKI Master Key = "/etc/bareos/master.cert"    # ONLY the Public Key
 }
 \end{verbatim}
 \normalsize
+
+
+\section{Decrypting with a Master Key}
+\index[general]{Decrypting with a Master Key}
+
+It is preferable to retain a secure, non-encrypted copy of the
+client's own encryption keypair. However, should you lose the
+client's keypair, recovery with the master keypair is possible.
+
+You must:
+\begin{itemize}
+\item Concatenate the master private and public key into a single
+   keypair file, ie:
+    \begin{verbatim}
+cat master.key master.cert > master.keypair
+    \end{verbatim}
+
+
+\item Set the PKI Keypair statement in your bareos configuration file:
+\begin{verbatim}
+   PKI Keypair = master.keypair
+\end{verbatim}
+
+\item Start the restore. The master keypair will be used to decrypt
+     the file data.
+
+\end{itemize}

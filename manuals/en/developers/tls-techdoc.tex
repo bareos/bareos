@@ -21,11 +21,11 @@ Console/Director communications has been added as a proof of concept.
 Adding support for the remaining daemons will be straight-forward.
 Supported features of this patchset include:
 
-\begin{itemize} 
-\item Client/Server TLS Requirement Negotiation 
+\begin{itemize}
+\item Client/Server TLS Requirement Negotiation
 \item TLSv1 Connections with Server and Client Certificate
-Validation 
-\item Forward Secrecy Support via Diffie-Hellman Ephemeral Keying 
+Validation
+\item Forward Secrecy Support via Diffie-Hellman Ephemeral Keying
 \end{itemize}
 
 This document will refer to both ``server'' and ``client'' contexts.  These
@@ -99,8 +99,8 @@ specified, DH ephemeral keying will be enabled, allowing for forward
 secrecy of communications.  This directive is only valid within a server
 context.  To generate the parameter file, you may use openssl:
 \footnotesize
-\begin{verbatim} 
-openssl dhparam -out dh1024.pem -5 1024 
+\begin{verbatim}
+openssl dhparam -out dh1024.pem -5 1024
 \end{verbatim}
 \normalsize
 \end{itemize}

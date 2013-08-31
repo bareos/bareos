@@ -13,7 +13,7 @@
 
 This document is intended mostly for developers who wish to ensure that their
 changes to Bacula don't introduce bugs in the base code.  However, you
-don't need to be a developer to run the regression scripts, and we 
+don't need to be a developer to run the regression scripts, and we
 recommend them before putting your system into production, and before each
 upgrade, especially if you build from source code.  They are
 simply shell scripts that drive Bacula through bconsole and then typically
@@ -58,8 +58,8 @@ git pull
 \normalsize
 
 If you want to test with SQLite and it is not installed on your system,
-you will need to download the latest depkgs release from Source Forge and       
-unpack it into {\bf depkgs}, then simply: 
+you will need to download the latest depkgs release from Source Forge and
+unpack it into {\bf depkgs}, then simply:
 
 \footnotesize
 \begin{verbatim}
@@ -70,7 +70,7 @@ make
 
 
 There are two different aspects of regression testing that this document will
-discuss: 1. Running the Regression Script, 2. Writing a Regression test. 
+discuss: 1. Running the Regression Script, 2. Writing a Regression test.
 
 \section{Running the Regression Script}
 \index{Running the Regression Script}
@@ -90,8 +90,8 @@ drive autochanger based testing can take 3 or 4 hours.
 \index{Parameters!Setting the Configuration}
 \addcontentsline{toc}{subsection}{Setting the Configuration Parameters}
 
-There is nothing you need to change in the source directory.  
- 
+There is nothing you need to change in the source directory.
+
 To begin:
 
 \footnotesize
@@ -101,9 +101,9 @@ cd bacula/regress
 \normalsize
 
 
-The        
+The
 very first time you are going to run the regression scripts, you will
-need to create a custom config file for your system. 
+need to create a custom config file for your system.
 We suggest that you start by:
 
 \footnotesize
@@ -116,7 +116,7 @@ Then you can edit the {\bf config} file directly.
 
 \footnotesize
 \begin{verbatim}
-                                                                                        
+
 # Where to get the source to be tested
 BACULA_SOURCE="${HOME}/bacula/bacula"
 
@@ -131,7 +131,7 @@ SQLITE_DIR=${HOME}/depkgs/sqlite
 TAPE_DRIVE="/dev/nst0"
 # if you don't have an autochanger set AUTOCHANGER to /dev/null
 AUTOCHANGER="/dev/sg0"
-# For two drive tests -- set to /dev/null if you do not have it 
+# For two drive tests -- set to /dev/null if you do not have it
 TAPE_DRIVE1="/dev/null"
 
 # This must be the path to the autochanger including its name
@@ -153,15 +153,15 @@ TCPWRAPPERS="--with-tcp-wrappers"
 OPENSSL="--with-openssl"
 
 # You may put your real host name here, but localhost or 127.0.0.1
-# is valid also and it has the advantage that it works on a 
+# is valid also and it has the advantage that it works on a
 # non-networked machine
 HOST="localhost"
-                                                                                        
+
 \end{verbatim}
 \normalsize
 
 \begin{itemize}
-\item {\bf BACULA\_SOURCE} should be the full path to the Bacula source code 
+\item {\bf BACULA\_SOURCE} should be the full path to the Bacula source code
    that you wish to test. It will be loaded configured, compiled, and
    installed with the "make setup" command, which needs to be done only
    once each time you change the source code.
@@ -176,13 +176,13 @@ HOST="localhost"
    be build before running a Bacula regression, if you are  using SQLite. This
    variable is ignored if you are using  MySQL or PostgreSQL. To use PostgreSQL,
    edit the Makefile  and change (or add) WHICHDB?=``\verb{--{with-postgresql''.  For
-   MySQL use ``WHICHDB=''\verb{--{with-mysql``. 
-   
+   MySQL use ``WHICHDB=''\verb{--{with-mysql``.
+
    The advantage of using SQLite is that it is totally independent of any
    installation you may have running on your system, and there is no
    special configuration or authorization that must be done to run it.
    With both MySQL and PostgreSQL, you must pre-install the packages,
-   initialize them and ensure that you have authorization to access the 
+   initialize them and ensure that you have authorization to access the
    database and create and delete tables.
 
 \item {\bf TAPE\_DRIVE} is the full path to your tape drive.  The base set of
@@ -196,11 +196,11 @@ HOST="localhost"
    second tape drive.
 
 \item {\bf AUTOCHANGER} is the name of your autochanger control device.  Set this to
-   /dev/null if you do not have an autochanger. 
+   /dev/null if you do not have an autochanger.
 
 \item {\bf AUTOCHANGER\_PATH} is the full path including the  program name for
    your autochanger program (normally  {\bf mtx}. Leave the default value if you
-   do not have one. 
+   do not have one.
 
 \item {\bf TCPWRAPPERS} defines whether or not you want the ./configure
    to be performed with tcpwrappers enabled.
@@ -243,7 +243,7 @@ configuration parameters.
 \subsection{Setting up your SQL engine}
 \index{Setting up your SQL engine}
 \addcontentsline{toc}{subsection}{Setting up your SQL engine}
-If you are using SQLite or SQLite3, there is nothing more to do; you can   
+If you are using SQLite or SQLite3, there is nothing more to do; you can
 simply run the tests as described in the next section.
 
 If you are using MySQL or PostgreSQL, you will need to establish an
@@ -259,7 +259,7 @@ do it, and the scripts in bacula/regress/build/src/cats named
 create\_mysql\_database, create\_postgresql\_database, grant\_mysql\_privileges,
 and grant\_postgresql\_privileges may be of a help to you.
 
-Generally, to do the above, you will need to run under root to 
+Generally, to do the above, you will need to run under root to
 be able to create databases and modify permissions within MySQL and
 PostgreSQL.
 
@@ -369,7 +369,7 @@ make full_test
 \footnotesize
 \begin{verbatim}
 Test results
-  
+
   ===== Bacula tape test OK =====
   ===== Small File Size test OK =====
   ===== restore-by-file-tape test OK =====
@@ -382,7 +382,7 @@ Test results
 Each separate test is self contained in that it initializes to run Bacula from
 scratch (i.e. newly created database). It will also kill any Bacula session
 that is currently running. In addition, it uses ports 8101, 8102, and 8103 so
-that it does not intefere with a production system. 
+that it does not intefere with a production system.
 
 Alternatively, you can do the ./do\_disk work by hand with:
 
@@ -402,7 +402,7 @@ again.
 
 
 Once Bacula is built, you can run the basic disk only non-root regression test
-by entering: 
+by entering:
 
 \footnotesize
 \begin{verbatim}
@@ -427,26 +427,26 @@ are invoked by directly running the script are:
    \index{all\_non-root-tests}
    All non-tape tests not requiring root.  This is the standard set of tests,
 that in general, backup some  data, then restore it, and finally compares the
-restored data  with the original data.  
+restored data  with the original data.
 
 \item [all-root-tests]
    \index{all-root-tests}
    All non-tape tests requiring root permission.  These are a relatively small
 number of tests that require running  as root. The amount of data backed up
 can be quite large. For  example, one test backs up /usr, another backs up
-/etc. One  or more of these tests reports an error -- I'll fix it one  day. 
+/etc. One  or more of these tests reports an error -- I'll fix it one  day.
 
 \item [all-non-root-tape-tests]
    \index{all-non-root-tape-tests}
    All tape test not requiring root.  There are currently three tests, all run
 without being root,  and backup to a tape. The first two tests use one volume,
 and the third test requires an autochanger, and uses two  volumes. If you
-don't have an autochanger, then this script  will probably produce an error. 
+don't have an autochanger, then this script  will probably produce an error.
 
 \item [all-tape-and-file-tests]
    \index{all-tape-and-file-tests}
    All tape and file tests not requiring  root. This includes just about
-everything, and I don't run it  very often. 
+everything, and I don't run it  very often.
 \end{description}
 
 \subsection{If a Test Fails}
@@ -454,7 +454,7 @@ everything, and I don't run it  very often.
 \index{If a Test Fails}
 \addcontentsline{toc}{subsection}{If a Test Fails}
 
-If you one or more tests fail, the line output will be similar to: 
+If you one or more tests fail, the line output will be similar to:
 
 \footnotesize
 \begin{verbatim}
@@ -506,10 +506,10 @@ $ ./tests/backup-bacula-test
 ...
 \end{verbatim}
 
-All regression scripts must be run by hand or by calling the test scripts.  
+All regression scripts must be run by hand or by calling the test scripts.
 These are principally scripts that begin with {\bf all\_...} such as {\bf all\_disk\_tests},
 {\bf ./all\_test} ...
-None of the 
+None of the
 {\bf ./do\_disk}, {\bf ./do\_all}, {\bf ./nightly...}  scripts will work.
 
 If you want to switch back to running the regression scripts from source, first
@@ -546,7 +546,7 @@ tests/backup-to-null
 Any developer, who implements a major new feature, should write a regression
 test that exercises and validates the new feature. Each regression test is a
 complete test by itself. It terminates any running Bacula, initializes the
-database, starts Bacula, then runs the test by using the console program. 
+database, starts Bacula, then runs the test by using the console program.
 
 \subsection{Running the Tests by Hand}
 \index{Hand!Running the Tests by}
@@ -554,7 +554,7 @@ database, starts Bacula, then runs the test by using the console program.
 \addcontentsline{toc}{subsection}{Running the Tests by Hand}
 
 You can run any individual test by hand by cd'ing to the {\bf regress}
-directory and entering: 
+directory and entering:
 
 \footnotesize
 \begin{verbatim}
@@ -567,7 +567,7 @@ tests/<test-name>
 \index{Directory Structure}
 \addcontentsline{toc}{subsection}{Directory Structure}
 
-The directory structure of the regression tests is: 
+The directory structure of the regression tests is:
 
 \footnotesize
 \begin{verbatim}
@@ -595,14 +595,14 @@ The directory structure of the regression tests is:
 \addcontentsline{toc}{subsection}{Adding a New Test}
 
 If you want to write a new regression test, it is best to start with one of
-the existing test scripts, and modify it to do the new test. 
+the existing test scripts, and modify it to do the new test.
 
 When adding a new test, be extremely careful about adding anything to any of
 the daemons' configuration files. The reason is that it may change the prompts
 that are sent to the console. For example, adding a Pool means that the
 current scripts, which assume that Bacula automatically selects a Pool, will
 now be presented with a new prompt, so the test will fail. If you need to
-enhance the configuration files, consider making your own versions. 
+enhance the configuration files, consider making your own versions.
 
 \subsection{Running a Test Under The Debugger}
 \index{Debugger}
@@ -627,12 +627,12 @@ different shell window.  For example:
 
 \begin{verbatim}
 cd .../regress/bin
-gdb bacula-sd 
+gdb bacula-sd
 (possibly set breakpoints, ...)
 run -s -f
 \end{verbatim}
 
-Then enter any character in the window with the above message. 
+Then enter any character in the window with the above message.
 An error message will appear saying that the daemon you are debugging
 is already running, which is the case. You can simply ignore the
-error message.  
+error message.

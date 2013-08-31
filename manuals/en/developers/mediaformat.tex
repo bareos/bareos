@@ -14,12 +14,12 @@
 This document describes the media format written by the Storage daemon. The
 Storage daemon reads and writes in units of blocks. Blocks contain records.
 Each block has a block header followed by records, and each record has a
-record header followed by record data. 
+record header followed by record data.
 
 This chapter is intended to be a technical discussion of the Media Format and
 as such is not targeted at end users but rather at developers and system
 administrators that want or need to know more of the working details of {\bf
-Bacula}. 
+Bacula}.
 
 \section{Definitions}
 \index{Definitions}
@@ -31,7 +31,7 @@ Bacula}.
    \index{Block}
    A block represents the primitive unit of information  that the Storage daemon
 reads and writes to a physical  device. Normally, for a tape device, it will
-be the same as a  tape block. The Storage daemon always reads and writes 
+be the same as a  tape block. The Storage daemon always reads and writes
 blocks. A block consists of block header information  followed by records.
 Clients of the Storage daemon (the  File daemon) normally never see blocks.
 However, some  of the Storage tools (bls, bscan, bextract, ...) may  be use
@@ -40,40 +40,40 @@ contain records (see record definition below)  from multiple  jobs. However,
 all blocks currently written by Bacula are  block level BB02, and a given
 block contains records for  only a single job. Different jobs simply have
 their own private  blocks that are intermingled with the other blocks from
-other jobs  on the Volume (previously the records were intermingled within 
+other jobs  on the Volume (previously the records were intermingled within
 the blocks). Having only records from a single job in any  give block
 permitted moving the VolumeSessionId  and VolumeSessionTime (see below) from
 each record heading to  the Block header. This has two advantages: 1. a block
 can be  quickly rejected based on the contents of the header without  reading
 all the records. 2. because there is on the average  more than one record per
-block, less data is written to the  Volume for each job.  
+block, less data is written to the  Volume for each job.
 
 \item [Record]
    \index{Record}
    A record consists of a Record Header, which is managed  by the Storage daemon
 and Record Data, which is the data  received from the Client. A record is the
-primitive unit  of information sent to and from the Storage daemon by the 
-Client (File daemon) programs. The details are described below.  
+primitive unit  of information sent to and from the Storage daemon by the
+Client (File daemon) programs. The details are described below.
 
 \item [JobId]
    \index{JobId}
    A number assigned by the Director daemon for a  particular job. This number
-will be unique for  that particular Director (Catalog). The daemons use this 
+will be unique for  that particular Director (Catalog). The daemons use this
 number to keep track of individual jobs. Within the Storage  daemon, the JobId
 may not be unique if several Directors are  accessing the Storage daemon
-simultaneously.  
+simultaneously.
 
 \item [Session]
    \index{Session}
    A Session is a concept used in the Storage daemon  corresponds one to one to a
 Job with the exception that  each session is uniquely identified within the
-Storage  daemon by a unique SessionId/SessionTime pair (see below).  
+Storage  daemon by a unique SessionId/SessionTime pair (see below).
 
 \item [VolSessionId]
    \index{VolSessionId}
    A unique number assigned by the Storage daemon  to a particular session (Job)
-it is having with a File  daemon. This number by itself is not unique to the 
-given Volume, but with the VolSessionTime, it is unique.  
+it is having with a File  daemon. This number by itself is not unique to the
+given Volume, but with the VolSessionTime, it is unique.
 
 \item [VolSessionTime]
    \index{VolSessionTime}
@@ -81,7 +81,7 @@ given Volume, but with the VolSessionTime, it is unique.
 execution. It is actually  the Unix time\_t value of when the Storage daemon
 began  execution cast to a 32 bit unsigned integer. The combination  of the
 {\bf VolSessionId} and the {\bf VolSessionTime}  for a given Storage daemon is
-guaranteed to be unique for each  Job (or session). 
+guaranteed to be unique for each  Job (or session).
 
 \item [FileIndex]
    \index{FileIndex}
@@ -91,7 +91,7 @@ daemon ensures that this number  is greater than zero and sequential. Note,
 the Storage  daemon uses negative FileIndexes to flag Session Start  and End
 Labels as well as End of Volume Labels. Thus, the  combination of
 VolSessionId, VolSessionTime, and FileIndex  uniquely identifies the records
-for a single file written  to a Volume.  
+for a single file written  to a Volume.
 
 \item [Stream]
    \index{Stream}
@@ -100,10 +100,10 @@ can be any number of distinct  pieces of information about that file, e.g. the
 attributes,  the file data, ... The Stream indicates what piece of data  it
 is, and it is an arbitrary number assigned by the File daemon to the  parts
 (Unix attributes, Win32 attributes, data, compressed data,\ ...) of a file
-that are sent to  the Storage daemon. The Storage daemon has no knowledge of 
+that are sent to  the Storage daemon. The Storage daemon has no knowledge of
 the details of a Stream; it simply represents a numbered  stream of bytes. The
 data for a given stream may be  passed to the Storage daemon in single record,
-or in multiple  records.  
+or in multiple  records.
 
 \item [Block Header]
    \index{Block Header}
@@ -111,7 +111,7 @@ or in multiple  records.
 in bytes (typically  64,512) a checksum, and sequential block number.  Each
 block starts with a Block Header and is followed  by Records. Current block
 headers also contain the VolSessionId  and VolSessionTime for the records
-written to that block.  
+written to that block.
 
 \item [Record Header]
    \index{Record Header}
@@ -120,23 +120,23 @@ FileIndex, the Stream, and the size of the  data record which follows. The
 Record Header is always immediately  followed by a Data Record if the size
 given in the Header is greater  than zero. Note, for Block headers of level
 BB02 (version 1.27  and later), the Record header as written to tape does not
-contain  the Volume Session Id and the Volume Session Time as these two 
+contain  the Volume Session Id and the Volume Session Time as these two
 fields are stored in the BB02 Block header. The in-memory record  header does
-have those fields for convenience. 
+have those fields for convenience.
 
 \item [Data Record]
    \index{Data Record}
    A data record consists of a binary stream of bytes  and is always preceded by
 a Record Header. The details of the  meaning of the binary stream of bytes are
 unknown to the Storage  daemon, but the Client programs (File daemon) defines
-and thus  knows the details of each record type.  
+and thus  knows the details of each record type.
 
 \item [Volume Label]
    \index{Volume Label}
    A label placed by the Storage daemon at the beginning  of each storage volume.
 It contains general information about  the volume. It is written in Record
 format. The Storage daemon  manages Volume Labels, and if the client wants, he
-may also  read them.  
+may also  read them.
 
 \item [Begin Session Label]
    \index{Begin Session Label}
@@ -146,19 +146,19 @@ daemon. This record  is useful for finding the beginning of a particular
 session (Job),  since no records with the same VolSessionId and VolSessionTime
 will precede this record. This record is not normally visible  outside of the
 Storage daemon. The Begin Session Label is similar  to the Volume Label except
-that it contains additional information  pertaining to the Session.  
+that it contains additional information  pertaining to the Session.
 
 \item [End Session Label]
    \index{End Session Label}
    The End Session Label is a special record  placed by the Storage daemon on the
 storage medium as the last  record of an append session job with a File
 daemon. The End  Session Record is distinguished by a FileIndex with a value
-of  minus two (-2). This record is useful for detecting the end of a 
-particular session since no records with the same VolSessionId and 
+of  minus two (-2). This record is useful for detecting the end of a
+particular session since no records with the same VolSessionId and
 VolSessionTime will follow this record. This record is not normally  visible
 outside of the Storage daemon. The End Session Label is  similar to the Volume
 Label except that it contains additional  information pertaining to the
-Session. 
+Session.
 \end{description}
 
 \section{Storage Daemon File Output Format}
@@ -173,7 +173,7 @@ multiple of 1024 whereas the last record of file storage is not rounded up.
 The default block size of 64,512 bytes may be overridden by the user (some
 older tape drives only support block sizes of 32K). Each Session written to
 tape is terminated with an End of File mark (this will be removed later).
-Sessions written to file are simply appended to the end of the file. 
+Sessions written to file are simply appended to the end of the file.
 
 \section{Overall Format}
 \index{Format!Overall}
@@ -183,30 +183,30 @@ Sessions written to file are simply appended to the end of the file.
 A Bacula output file consists of Blocks of data. Each block contains a block
 header followed by records. Each record consists of a record header followed
 by the record data. The first record on a tape will always be the Volume Label
-Record. 
+Record.
 
 No Record Header will be split across Bacula blocks. However, Record Data may
 be split across any number of Bacula blocks. Obviously this will not be the
 case for the Volume Label which will always be smaller than the Bacula Block
-size. 
+size.
 
 To simplify reading tapes, the Start of Session (SOS) and End of Session (EOS)
 records are never split across blocks. If this is about to happen, Bacula will
 write a short block before writing the session record (actually, the SOS
 record should always be the first record in a block, excepting perhaps the
-Volume label). 
+Volume label).
 
 Due to hardware limitations, the last block written to the tape may not be
 fully written. If your drive permits backspace record, Bacula will backup over
 the last record written on the tape, re-read it and verify that it was
-correctly written. 
+correctly written.
 
 When a new tape is mounted Bacula will write the full contents of the
 partially written block to the new tape ensuring that there is no loss of
 data. When reading a tape, Bacula will discard any block that is not totally
 written, thus ensuring that there is no duplication of data. In addition,
 since Bacula blocks are sequentially numbered within a Job, it is easy to
-ensure that no block is missing or duplicated. 
+ensure that no block is missing or duplicated.
 
 \section{Serialization}
 \index{Serialization}
@@ -214,14 +214,14 @@ ensure that no block is missing or duplicated.
 
 All Block Headers, Record Headers, and Label Records are written using
 Bacula's serialization routines. These routines guarantee that the data is
-written to the output volume in a machine independent format. 
+written to the output volume in a machine independent format.
 
 \section{Block Header}
 \index{Header!Block}
 \index{Block Header}
 \addcontentsline{toc}{subsection}{Block Header}
 
-The format of the Block Header (version 1.27 and later) is: 
+The format of the Block Header (version 1.27 and later) is:
 
 \footnotesize
 \begin{verbatim}
@@ -252,9 +252,9 @@ be in machine independent format. See below for version 2 of the block header.
 Each binary data record is preceded by a Record Header. The Record Header is
 fixed length and fixed format, whereas the binary data record is of variable
 length. The Record Header is written using the Bacula serialization routines
-and thus is guaranteed to be in machine independent format. 
+and thus is guaranteed to be in machine independent format.
 
-The format of the Record Header (version 1.27 or later) is: 
+The format of the Record Header (version 1.27 or later) is:
 
 \footnotesize
 \begin{verbatim}
@@ -266,9 +266,9 @@ The format of the Record Header (version 1.27 or later) is:
 
 This record is followed by the binary Stream data of DataSize bytes, followed
 by another Record Header record and the binary stream data. For the definitive
-definition of this record, see record.h in the src/stored directory. 
+definition of this record, see record.h in the src/stored directory.
 
-Additional notes on the above: 
+Additional notes on the above:
 
 \begin{description}
 
@@ -276,14 +276,14 @@ Additional notes on the above:
    \index{VolSessionId}
    is a unique sequential number that is  assigned by the Storage Daemon to a
 particular Job. This number  is sequential since the start of execution of the
-daemon. 
+daemon.
 
 \item [The {\bf VolSessionTime} ]
    \index{VolSessionTime}
    is the time/date that the current execution  of the Storage Daemon started. It
 assures that the combination of  VolSessionId and VolSessionTime is unique for
 every jobs written  to the tape, even if there was a machine crash between two
-writes. 
+writes.
 
 \item [The {\bf FileIndex} ]
    \index{FileIndex}
@@ -291,21 +291,21 @@ writes.
 index to be greater than zero and  sequential. Note, however, that the File
 daemon may send multiple  Streams for the same FileIndex. In addition, the
 Storage daemon uses  negative FileIndices to hold the Begin Session Label, the
-End Session  Label, and the End of Volume Label. 
+End Session  Label, and the End of Volume Label.
 
 \item [The {\bf Stream} ]
    \index{Stream}
    is defined by the File daemon and is  used to identify separate parts of the
 data saved for each file  (Unix attributes, Win32 attributes, file data,
-compressed file data,  sparse file data, ...). The Storage Daemon has no idea 
+compressed file data,  sparse file data, ...). The Storage Daemon has no idea
 of what a Stream is or what it contains except that the Stream  is required to
 be a positive integer. Negative Stream numbers are  used internally by the
 Storage daemon to indicate that the record  is a continuation of the previous
-record (the previous record would  not entirely fit in the block).  
+record (the previous record would  not entirely fit in the block).
 
-For Start Session and End Session Labels (where the FileIndex is negative), 
+For Start Session and End Session Labels (where the FileIndex is negative),
 the Storage daemon uses the Stream field to contain the JobId.  The current
-stream definitions are:  
+stream definitions are:
 
 \footnotesize
 \begin{verbatim}
@@ -335,7 +335,7 @@ stream definitions are:
 Record header. The Storage Daemon  has no idea of the actual contents of the
 binary data record. For  standard Unix files, the data record typically
 contains the file  attributes or the file data. For a sparse file  the first
-64 bits of the file data contains the storage  address for the data block. 
+64 bits of the file data contains the storage  address for the data block.
 \end{description}
 
 The Record Header is never split across two blocks. If there is not enough
@@ -347,7 +347,7 @@ piece of the data is preceded by a new Record Header. Thus each piece of data
 is always immediately preceded by a Record Header. When reading a record, if
 Bacula finds only part of the data in the first record, it will automatically
 read the next record and concatenate the data record to form a full data
-record. 
+record.
 
 \section{Version BB02 Block Header}
 \index{Version BB02 Block Header}
@@ -356,7 +356,7 @@ record.
 
 Each session or Job has its own private block. As a consequence, the SessionId
 and SessionTime are written once in each Block Header and not in the Record
-Header. So, the second and current version of the Block Header BB02 is: 
+Header. So, the second and current version of the Block Header BB02 is:
 
 \footnotesize
 \begin{verbatim}
@@ -376,7 +376,7 @@ including the CheckSum field. The Block Header is always immediately followed
 by a Record Header. If the tape is damaged, a Bacula utility will be able to
 recover as much information as possible from the tape by recovering blocks
 which are valid. The Block header is written using the Bacula serialization
-routines and thus is guaranteed to be in machine independent format. 
+routines and thus is guaranteed to be in machine independent format.
 
 \section{Version 2 Record Header}
 \index{Version 2 Record Header}
@@ -391,7 +391,7 @@ with these values when the First user record is written (i.e. non label
 record) so that when the block is written, it will have the current and unique
 VolSessionId and VolSessionTime. On reading each record from the Block, the
 VolSessionId and VolSessionTime is filled in the Record Header from the Block
-Header. 
+Header.
 
 \section{Volume Label Format}
 \index{Volume Label Format}
@@ -402,9 +402,9 @@ Tape volume labels are created by the Storage daemon in response to a {\bf
 label} command given to the Console program, or alternatively by the {\bf
 btape} program. created. Each volume is labeled with the following information
 using the Bacula serialization routines, which guarantee machine byte order
-independence. 
+independence.
 
-For Bacula versions 1.27 and later, the Volume Label Format is: 
+For Bacula versions 1.27 and later, the Volume Label Format is:
 
 \footnotesize
 \begin{verbatim}
@@ -430,7 +430,7 @@ For Bacula versions 1.27 and later, the Volume Label Format is:
 
 Note, the LabelType (Volume Label, Volume PreLabel, Session Start Label, ...)
 is stored in the record FileIndex field of the Record Header and does not
-appear in the data part of the record. 
+appear in the data part of the record.
 
 \section{Session Label}
 \index{Label!Session}
@@ -465,7 +465,7 @@ as the last record on the physical medium. It has the following binary format:
 \end{verbatim}
 \normalsize
 
-In addition, the EOS label contains: 
+In addition, the EOS label contains:
 
 \footnotesize
 \begin{verbatim}
@@ -481,7 +481,7 @@ In addition, the EOS label contains:
 \normalsize
 
 In addition, for VerNum greater than 10, the EOS label contains (in addition
-to the above): 
+to the above):
 
 \footnotesize
 \begin{verbatim}
@@ -493,7 +493,7 @@ to the above):
 ...) is stored in the record FileIndex field and does not appear in the data
 part of the record. Also, the Stream field of the Record Header contains the
 JobId. This permits quick filtering without actually reading all the session
-data in many cases. 
+data in many cases.
 
 \section{Overall Storage Format}
 \index{Format!Overall Storage}
@@ -637,7 +637,7 @@ data in many cases.
    |              ProgDate         (32 bytes)              |
    |-------------------------------------------------------|
    :=======================================================:
-                 
+
    Id: 32 byte Bacula identifier "Bacula 1.0 immortal\n"
    (old version also recognized:)
    Id: 32 byte Bacula identifier "Bacula 0.9 mortal\n"
@@ -734,24 +734,24 @@ data in many cases.
 \index{Attributes!Unix File}
 \addcontentsline{toc}{subsection}{Unix File Attributes}
 
-The Unix File Attributes packet consists of the following: 
+The Unix File Attributes packet consists of the following:
 
-\lt{}File-Index\gt{} \lt{}Type\gt{}
-\lt{}Filename\gt{}@\lt{}File-Attributes\gt{}@\lt{}Link\gt{}
-@\lt{}Extended-Attributes@\gt{} where 
+{\textless}File-Index{\textgreater} {\textless}Type{\textgreater}
+{\textless}Filename{\textgreater}@{\textless}File-Attributes{\textgreater}@{\textless}Link{\textgreater}
+@{\textless}Extended-Attributes@{\textgreater} where
 
 \begin{description}
 
 \item [@]
-   represents a byte containing a binary zero.  
+   represents a byte containing a binary zero.
 
 \item [FileIndex]
    \index{FileIndex}
-   is the sequential file index starting from one assigned  by the File daemon.  
+   is the sequential file index starting from one assigned  by the File daemon.
 
 \item [Type]
    \index{Type}
-   is one of the following: 
+   is one of the following:
 
 \footnotesize
 \begin{verbatim}
@@ -777,79 +777,79 @@ The Unix File Attributes packet consists of the following:
 
 \item [Filename]
    \index{Filename}
-   is the fully qualified filename.  
+   is the fully qualified filename.
 
 \item [File-Attributes]
    \index{File-Attributes}
    consists of the 13 fields of the stat() buffer in  ASCII base64 format
 separated by spaces. These fields  and their meanings are shown below. This
 stat() packet is in Unix  format, and MUST be provided (constructed) for ALL
-systems.  
+systems.
 
 \item [Link]
    \index{Link}
    when the FT code is FT\_LNK or FT\_LNKSAVED, the item in  question is a Unix
 link, and this field contains the fully  qualified link name. When the FT code
-is not FT\_LNK or  FT\_LNKSAVED, this field is null.  
+is not FT\_LNK or  FT\_LNKSAVED, this field is null.
 
 \item [Extended-Attributes]
    \index{Extended-Attributes}
    The exact format of this field is  operating system dependent. It contains
 additional or extended  attributes of a system dependent nature. Currently,
-this field is  used only on WIN32 systems where it contains a ASCII base64 
+this field is  used only on WIN32 systems where it contains a ASCII base64
 representation of the WIN32\_FILE\_ATTRIBUTE\_DATA structure as defined  by
 Windows. The fields in the base64 representation of this structure  are like
-the File-Attributes separated by spaces. 
+the File-Attributes separated by spaces.
 \end{description}
 
-The File-attributes consist of the following: 
+The File-attributes consist of the following:
 
 \addcontentsline{lot}{table}{File Attributes}
 \begin{longtable}{|p{0.6in}|p{0.7in}|p{1in}|p{1in}|p{1.4in}|}
- \hline 
+ \hline
 \multicolumn{1}{|c|}{\bf Field No. } & \multicolumn{1}{c|}{\bf Stat Name }
 & \multicolumn{1}{c|}{\bf Unix } & \multicolumn{1}{c|}{\bf Win98/NT } &
 \multicolumn{1}{c|}{\bf MacOS } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{1 } & {st\_dev } & {Device number of filesystem } &
 {Drive number } & {vRefNum } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{2 } & {st\_ino } & {Inode number } & {Always 0 } &
 {fileID/dirID } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{3 } & {st\_mode } & {File mode } & {File mode } &
 {777 dirs/apps; 666 docs; 444 locked docs } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{4 } & {st\_nlink } & {Number of links to the file } &
 {Number of link (only on NTFS) } & {Always 1 } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{5 } & {st\_uid } & {Owner ID } & {Always 0 } &
 {Always 0 } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{6 } & {st\_gid } & {Group ID } & {Always 0 } &
 {Always 0 } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{7 } & {st\_rdev } & {Device ID for special files } &
 {Drive No. } & {Always 0 } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{8 } & {st\_size } & {File size in bytes } & {File
 size in bytes } & {Data fork file size in bytes } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{9 } & {st\_blksize } & {Preferred block size } &
 {Always 0 } & {Preferred block size } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{10 } & {st\_blocks } & {Number of blocks allocated }
 & {Always 0 } & {Number of blocks allocated } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{11 } & {st\_atime } & {Last access time since epoch }
 & {Last access time since epoch } & {Last access time -66 years } \\
- \hline 
+ \hline
 \multicolumn{1}{|c|}{12 } & {st\_mtime } & {Last modify time since epoch }
 & {Last modify time since epoch } & {Last access time -66 years } \\
- \hline 
-\multicolumn{1}{|c|}{13 } & {st\_ctime } & {Inode change time since epoch 
+ \hline
+\multicolumn{1}{|c|}{13 } & {st\_ctime } & {Inode change time since epoch
 } & {File create time since epoch } & {File create time -66 years}
-\\ \hline 
+\\ \hline
 
 \end{longtable}
 
@@ -858,7 +858,7 @@ size in bytes } & {Data fork file size in bytes } \\
 \index{Format!Old Depreciated Tape}
 \addcontentsline{toc}{subsection}{Old Depreciated Tape Format}
 
-The format of the Block Header (version 1.26 and earlier) is: 
+The format of the Block Header (version 1.26 and earlier) is:
 
 \footnotesize
 \begin{verbatim}
@@ -869,7 +869,7 @@ The format of the Block Header (version 1.26 and earlier) is:
 \end{verbatim}
 \normalsize
 
-The format of the Record Header (version 1.26 or earlier) is: 
+The format of the Record Header (version 1.26 or earlier) is:
 
 \footnotesize
 \begin{verbatim}
@@ -1023,7 +1023,7 @@ The format of the Record Header (version 1.26 or earlier) is:
    |              ProgDate         (32 bytes)              |
    |-------------------------------------------------------|
    :=======================================================:
-                 
+
    Id: 32 byte Bacula identifier "Bacula 1.0 immortal\n"
    (old version also recognized:)
    Id: 32 byte Bacula identifier "Bacula 0.9 mortal\n"

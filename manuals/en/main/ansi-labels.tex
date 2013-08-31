@@ -1,30 +1,30 @@
 
 \chapter{ANSI and IBM Tape Labels}
 \label{AnsiLabelsChapter}
-\index[general]{ANSI and IBM Tape Labels} 
+\index[general]{ANSI and IBM Tape Labels}
 \index[general]{Labels!Tape}
 
-Bacula supports ANSI or IBM tape labels as long as you
+Bareos supports ANSI or IBM tape labels as long as you
 enable it.  In fact, with the proper configuration, you can
-force Bacula to require ANSI or IBM labels.
+force Bareos to require ANSI or IBM labels.
 
-Bacula can create an ANSI or IBM label, but if Check Labels is
-enabled (see below), Bacula will look for an existing label, and
+Bareos can create an ANSI or IBM label, but if Check Labels is
+enabled (see below), Bareos will look for an existing label, and
 if it is found, it will keep the label. Consequently, you
-can label the tapes with programs other than Bacula, and Bacula
+can label the tapes with programs other than Bareos, and Bareos
 will recognize and support them.
 
-Even though Bacula will recognize and write ANSI and IBM labels, 
+Even though Bareos will recognize and write ANSI and IBM labels,
 it always writes its own tape labels as well.
 
 When using ANSI or IBM tape labeling, you must restrict your Volume
-names to a maximum of six characters.  
+names to a maximum of six characters.
 
-If you have labeled your Volumes outside of Bacula, then the
-ANSI/IBM label will be recognized by Bacula only if you have created
-the HDR1 label with {\bf BACULA.DATA} in the Filename field (starting
-with character 5).  If Bacula writes the labels, it will use
-this information to recognize the tape as a Bacula tape.  This allows
+If you have labeled your Volumes outside of Bareos, then the
+ANSI/IBM label will be recognized by Bareos only if you have created
+the HDR1 label with {\bf BAREOS.DATA} in the Filename field (starting
+with character 5).  If Bareos writes the labels, it will use
+this information to recognize the tape as a Bareos tape.  This allows
 ANSI/IBM labeled tapes to be used at sites with multiple machines
 and multiple backup programs.
 
@@ -32,27 +32,26 @@ and multiple backup programs.
 \section{Director Pool Directive}
 
 \begin{description}
-\item [ Label Type = ANSI | IBM | Bacula]  
+\directive{dir}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{}{Bareos}
   This directive is implemented in the Director Pool resource and in the SD Device
   resource.  If it is specified in the SD Device resource, it will take
-  precedence over the value passed from the Director to the SD. The default
-  is Label Type = Bacula.
+  precedence over the value passed from the Director to the SD.
 \end{description}
 
 \section{Storage Daemon Device Directives}
 
 \begin{description}
-\item [ Label Type = ANSI | IBM | Bacula]  
+\directive{sd}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{}{}
   This directive is implemented in the Director Pool resource and in the SD Device
   resource.  If it is specified in the the SD Device resource, it will take
   precedence over the value passed from the Director to the SD.
- 
-\item [Check Labels = yes | no]
+
+\directive{sd}{Check Label}{yes{\textbar}no}{}{no}
   This directive is implemented in the the SD Device resource.  If you intend
   to read ANSI or IBM labels, this *must* be set.  Even if the volume is
-  not ANSI labeled, you can set this to yes, and Bacula will check the
-  label type. Without this directive set to yes, Bacula will assume that
-  labels are of Bacula type and will not check for ANSI or IBM labels.
-  In other words, if there is a possibility of Bacula encountering an
+  not ANSI labeled, you can set this to yes, and Bareos will check the
+  label type. Without this directive set to yes, Bareos will assume that
+  labels are of Bareos type and will not check for ANSI or IBM labels.
+  In other words, if there is a possibility of Bareos encountering an
   ANSI/IBM label, you must set this to yes.
 \end{description}

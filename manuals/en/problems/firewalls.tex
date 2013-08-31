@@ -8,14 +8,14 @@
 
 If you have a firewall or a DMZ installed on your computer, you may experience
 difficulties contacting one or more of the Clients to back them up. This is
-especially true if you are trying to backup a Client across the Internet. 
+especially true if you are trying to backup a Client across the Internet.
 
 \section{Technical Details}
 \index[general]{Technical Details }
 \index[general]{Details!Technical }
 
 If you are attempting to do this, the sequence of network events in Bacula to
-do a backup are the following: 
+do a backup are the following:
 
 \footnotesize
 \begin{verbatim}
@@ -31,12 +31,12 @@ daemon or client, and SD the Storage daemon. The numbers that follow those
 names are the standard ports used by Bacula, and the \verb:->: represents the
 left side making a connection to the right side (i.e. the right side is the
 "server" or is listening on the specified port), and the left side is the
-"client" that initiates the conversation. 
+"client" that initiates the conversation.
 
 Note, port 9103 serves both the Director and the File daemon, each having its
-own independent connection. 
+own independent connection.
 
-If you are running {\bf iptables}, you might add something like: 
+If you are running {\bf iptables}, you might add something like:
 
 \footnotesize
 \begin{verbatim}
@@ -44,7 +44,7 @@ If you are running {\bf iptables}, you might add something like:
 \end{verbatim}
 \normalsize
 
-on your server, and 
+on your server, and
 
 \footnotesize
 \begin{verbatim}
@@ -55,7 +55,7 @@ on your server, and
 on your client. In both cases, I assume that the machine is allowed to
 initiate connections on any port. If not, you will need to allow outgoing
 connections on ports 9102 and 9103 on your server and 9103 on your client.
-Thanks to Raymond Norton for this tip. 
+Thanks to Raymond Norton for this tip.
 
 \section{A Concrete Example}
 \index[general]{Example!Concrete }
@@ -77,7 +77,7 @@ For the sake of discussion we will refer to this network as the 'internal'
 network because it connects to the internet through a NAT'd firewall. We will
 call the network on the public (internet) side of the NAT'd firewall the
 'external' network. Also, for the sake of discussion we will call my bacula
-server: 
+server:
 
 \footnotesize
 \begin{verbatim}
@@ -85,7 +85,7 @@ server:
 \end{verbatim}
 \normalsize
 
-when a fully qualified domain name is required, or simply: 
+when a fully qualified domain name is required, or simply:
 
 \footnotesize
 \begin{verbatim}
@@ -94,7 +94,7 @@ when a fully qualified domain name is required, or simply:
 \normalsize
 
 if a hostname is adequate. We will call the various bacula daemons running on
-the server.int.mydomain.tld machine: 
+the server.int.mydomain.tld machine:
 
 \footnotesize
 \begin{verbatim}
@@ -105,7 +105,7 @@ the server.int.mydomain.tld machine:
 \normalsize
 
 In addition, I have two clients that I want to back up with Bacula. The first
-client is on the internal network. Its fully qualified domain name is: 
+client is on the internal network. Its fully qualified domain name is:
 
 \footnotesize
 \begin{verbatim}
@@ -113,7 +113,7 @@ client is on the internal network. Its fully qualified domain name is:
 \end{verbatim}
 \normalsize
 
-And its hostname is: 
+And its hostname is:
 
 \footnotesize
 \begin{verbatim}
@@ -121,7 +121,7 @@ And its hostname is:
 \end{verbatim}
 \normalsize
 
-This machine is a client and therefore runs just one bacula daemon: 
+This machine is a client and therefore runs just one bacula daemon:
 
 \footnotesize
 \begin{verbatim}
@@ -130,7 +130,7 @@ This machine is a client and therefore runs just one bacula daemon:
 \normalsize
 
 The second client is on the external network. Its fully qualified domain name
-is: 
+is:
 
 \footnotesize
 \begin{verbatim}
@@ -138,7 +138,7 @@ is:
 \end{verbatim}
 \normalsize
 
-And its hostname is: 
+And its hostname is:
 
 \footnotesize
 \begin{verbatim}
@@ -146,7 +146,7 @@ And its hostname is:
 \end{verbatim}
 \normalsize
 
-This machine also runs just one bacula daemon: 
+This machine also runs just one bacula daemon:
 
 \footnotesize
 \begin{verbatim}
@@ -159,7 +159,7 @@ interface is on the internal network and serves as a gateway to the internet
 for all the machines attached to the internal network (For example,
 server.int.mydomain.tld and private1.int.mydomain.tld). The second interface
 is on the external (internet) network. The external interface has been
-assigned the name: 
+assigned the name:
 
 \footnotesize
 \begin{verbatim}
@@ -167,7 +167,7 @@ assigned the name:
 \end{verbatim}
 \normalsize
 
-Remember: 
+Remember:
 
 \footnotesize
 \begin{verbatim}
@@ -181,7 +181,7 @@ Remember:
 \index[general]{Bacula Configuration Files for the Above }
 
 server-sd manages a 4 tape AIT autoloader. All of my backups are written to
-server-sd. I have just *one* Device resource in my server-sd.conf file: 
+server-sd. I have just *one* Device resource in my server-sd.conf file:
 
 \footnotesize
 \begin{verbatim}
@@ -207,10 +207,10 @@ Device {
 \end{verbatim}
 \normalsize
 
-(note, please see 
+(note, please see
 \ilink{the Tape Testing}{FreeBSDTapes} chapter of this manual
 for important FreeBSD information.) However, unlike previously, there
-is only one Storage definition in my server-dir.conf file: 
+is only one Storage definition in my server-dir.conf file:
 
 \footnotesize
 \begin{verbatim}
@@ -237,7 +237,7 @@ machine), Storage-server is resolved to firewall.mydomain.tld.
 
 
 In addition to the above, I have two Client resources defined in
-server-dir.conf: 
+server-dir.conf:
 
 \footnotesize
 \begin{verbatim}
@@ -259,7 +259,7 @@ Client {
 \normalsize
 
 And finally, to tie it all together, I have two Job resources defined in
-server-dir.conf: 
+server-dir.conf:
 
 \footnotesize
 \begin{verbatim}
@@ -299,47 +299,47 @@ to contact the Storage daemon via the external net.
 
 I have left the Pool, Catalog, Messages, FileSet, Schedule, and Director
 resources out of the above server-dir.conf examples because they are not
-pertinent to the discussion. 
+pertinent to the discussion.
 
 \subsection{How Does It Work?}
 \index[general]{How Does It Work? }
 \index[general]{Work!How Does It }
 
 If I want to run a backup of private1.int.mydomain.tld and store that backup
-using server-sd then my understanding of the order of events is this: 
+using server-sd then my understanding of the order of events is this:
 
 \begin{enumerate}
-\item I execute my Bacula 'console' command on server.int.mydomain.tld.  
-\item console connects to server-dir.  
-\item I tell console to 'run' backup Job 'Private1-Backup'.  
-\item console relays this command to server-dir.  
-\item server-dir connects to private1-fd at private1.int.mydomain.tld:9102  
+\item I execute my Bacula 'console' command on server.int.mydomain.tld.
+\item console connects to server-dir.
+\item I tell console to 'run' backup Job 'Private1-Backup'.
+\item console relays this command to server-dir.
+\item server-dir connects to private1-fd at private1.int.mydomain.tld:9102
 \item server-dir tells private1-fd to start sending the files defined in  the
-   'Private1-Backup' Job's FileSet resource to the Storage resource 
-   'autochanger1', which we have defined in server-dir.conf as having the 
+   'Private1-Backup' Job's FileSet resource to the Storage resource
+   'autochanger1', which we have defined in server-dir.conf as having the
 address:port of Storage-server, which is mapped by DNS to server.int.mydomain.tld.
-\item private1-fd connects to server.int.mydomain.tld:9103 and begins sending 
-   files. 
+\item private1-fd connects to server.int.mydomain.tld:9103 and begins sending
+   files.
    \end{enumerate}
 
 Alternatively, if I want to run a backup of public1.mydomain.tld and store
 that backup using server-sd then my understanding of the order of events is
-this: 
+this:
 
 \begin{enumerate}
-\item I execute my Bacula 'console' command on server.int.mydomain.tld.  
-\item console connects to server-dir.  
-\item I tell console to 'run' backup Job 'Public1-Backup'.  
-\item console relays this command to server-dir.  
-\item server-dir connects, through the NAT'd firewall, to public1-fd at 
-   public1.mydomain.tld:9102  
+\item I execute my Bacula 'console' command on server.int.mydomain.tld.
+\item console connects to server-dir.
+\item I tell console to 'run' backup Job 'Public1-Backup'.
+\item console relays this command to server-dir.
+\item server-dir connects, through the NAT'd firewall, to public1-fd at
+   public1.mydomain.tld:9102
 \item server-dir tells public1-fd to start sending the files defined in  the
-   'Public1-Backup' Job's FileSet resource to the Storage resource 
-   'autochanger1', which we have defined in server-dir.conf as having the 
+   'Public1-Backup' Job's FileSet resource to the Storage resource
+   'autochanger1', which we have defined in server-dir.conf as having the
    same address:port as above of Storage-server, but which on this machine
-   is resolved to firewall.mydomain.tld:9103.  
-\item public1-fd connects to firewall.mydomain.tld:9103 and begins sending 
-   files. 
+   is resolved to firewall.mydomain.tld:9103.
+\item public1-fd connects to firewall.mydomain.tld:9103 and begins sending
+   files.
    \end{enumerate}
 
 \subsection{Important Note}
@@ -349,7 +349,7 @@ this:
 In order for the above 'Public1-Backup' Job to succeed,
 firewall.mydomain.tld:9103 MUST be forwarded using the firewall's
 configuration software to server.int.mydomain.tld:9103. Some firewalls call
-this 'Server Publication'. Others may call it 'Port Forwarding'. 
+this 'Server Publication'. Others may call it 'Port Forwarding'.
 
 \subsection{Firewall Problems}
 \index[general]{Firewall Problems}
@@ -364,10 +364,10 @@ terminated. In that case, the first thing to try is turning on the
 and set an interval of say five minutes.
 
 Also, if you have denial of service rate limiting in your firewall, this
-too can cause Bacula disconnects since Bacula can at times use very high 
+too can cause Bacula disconnects since Bacula can at times use very high
 access rates. To avoid this, you should implement default accept
 rules for the Bacula ports involved before the rate limiting rules.
 
 Finally, if you have a Windows machine, it will most likely by default
-disallow connections to the Bacula Windows File daemon.  See the      
+disallow connections to the Bacula Windows File daemon.  See the
 Windows chapter of this manual for additional details.

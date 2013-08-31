@@ -1,98 +1,59 @@
 %%
 %%
 
-\chapter{Bacula Security Issues}
+\chapter{Bareos Security Issues}
 \label{SecurityChapter}
-\index[general]{Bacula Security Issues}
+\index[general]{Bareos Security Issues}
 \index[general]{Security}
-\index[general]{Issues!Bacula Security}
+\index[general]{Issues!Bareos Security}
 
 \begin{itemize}
-\item Security means being able to restore your files, so read the 
+\item Security means being able to restore your files, so read the
    \ilink{Critical Items Chapter}{Critical} of this manual.
-\item The Clients ({\bf bacula-fd}) must run as root to be able to access  all
-   the system files. 
-\item It is not necessary to run the Director as root. 
+\item The Clients ({\bf bareos-fd}) must run as root to be able to access  all
+   the system files.
+\item It is not necessary to run the Director as root.
 \item It is not necessary to run the Storage daemon as root, but you  must
    ensure that it can open the tape drives, which are often restricted to root
    access by default. In addition, if you do not run the Storage daemon as root,
    it will not be able to automatically set your tape drive parameters on most
    OSes since these functions, unfortunately require root access.
-\item You should restrict access to the Bacula configuration files,  so that
-   the passwords are not world-readable. The {\bf Bacula}  daemons are password
+\item You should restrict access to the Bareos configuration files,  so that
+   the passwords are not world-readable. The {\bf Bareos}  daemons are password
    protected using CRAM-MD5 (i.e. the password is not  sent across the network).
    This will ensure that not everyone  can access the daemons. It is a reasonably
-   good protection, but  can be cracked by experts. 
+   good protection, but  can be cracked by experts.
 \item If you are using the recommended ports 9101, 9102, and 9103, you  will
    probably want to protect these ports from external access  using a firewall
-   and/or using tcp wrappers ({\bf etc/hosts.allow}).  
+   and/or using tcp wrappers ({\bf etc/hosts.allow}).
 \item By default, all data that is sent across the network is unencrypted.
-   However, Bacula does support TLS (transport layer security) and can
+   However, Bareos does support TLS (transport layer security) and can
    encrypt transmitted data.  Please read the
    \ilink{TLS (SSL) Communications Encryption}{CommEncryption}
    section of this manual.
-\item You should ensure that the Bacula working directories are  readable and
-   writable only by the Bacula daemons. 
+\item You should ensure that the Bareos working directories are  readable and
+   writable only by the Bareos daemons.
 \item If you are using {\bf MySQL} it is not necessary for it to  run with
-   {\bf root} permission. 
-\item The default Bacula {\bf grant-mysql-permissions} script  grants all
+   {\bf root} permission.
+\item The default Bareos {\bf grant-mysql-permissions} script  grants all
    permissions to use the MySQL database without a  password. If you want
-   security, please tighten this up! 
-\item Don't forget that Bacula is a network program, so anyone anywhere  on
+   security, please tighten this up!
+\item Don't forget that Bareos is a network program, so anyone anywhere  on
    the network with the console program and the Director's password  can access
-   Bacula and the backed up data. 
-\item You can restrict what IP addresses Bacula will bind to by using the 
+   Bareos and the backed up data.
+\item You can restrict what IP addresses Bareos will bind to by using the
    appropriate {\bf DirAddress}, {\bf FDAddress}, or {\bf SDAddress}  records in
-   the respective daemon configuration files. 
+   the respective daemon configuration files.
 \item Be aware that if you are backing up your database using the default
    script, if you have a password on your database, it will be passed as
    a command line option to that script, and any user will be able to see
    this information. If you want it to be secure, you will need to pass it
    by an environment variable or a secure file.
 
-   See also \ilink{Backing Up Your Bacula
-   Database - Security Considerations }{BackingUpBaculaSecurityConsiderations}
+   See also \ilink{Backing Up Your Bareos
+   Database - Security Considerations }{BackingUpBareosSecurityConsiderations}
    for more information.
 \end{itemize}
-
-
-\section{Backward Compatibility}
-\index[general]{Backward Compatibility}
-One of the major goals of Bacula is to ensure that you can restore
-tapes (I'll use the word tape to include disk Volumes) that you wrote years
-ago.  This means that each new version of Bacula should be able to read old
-format tapes. The first problem you will have is to ensure that the 
-hardware is still working some years down the road, and the second
-problem will be to ensure that the media will still be good, then 
-your OS must be able to interface to the device, and finally Bacula
-must be able to recognize old formats.  All the problems except the
-last are ones that we cannot solve, but by careful planning you can.
-
-Since the very beginning of Bacula (January 2000) until today (December
-2005), there have been two major Bacula tape formats.  The second format
-was introduced in version 1.27 in November of 2002, and it has not
-changed since then.  In principle, Bacula can still read the original
-format, but I haven't tried it lately so who knows ...
-
-Though the tape format is fixed, the kinds of data that we can put on the
-tapes are extensible, and that is how we added new features
-such as ACLs, Win32 data, encrypted data, ...  Obviously, an older
-version of Bacula would not know how to read these newer data streams,
-but each newer version of Bacula should know how to read all the 
-older streams.
-
-If you want to be 100% sure that you can read old tapes, you
-should:
-
-1. Try reading old tapes from time to time -- e.g. at least once
-a year.
-
-2. Keep statically linked copies of every version of Bacula that you use
-in production then if for some reason, we botch up old tape compatibility, you
-can always pull out an old copy of Bacula ...
-
-The second point is probably overkill but if you want to be sure, it may
-save you someday.
 
 
 
@@ -103,29 +64,24 @@ save you someday.
 \index[general]{Wrappers!TCP}
 \index[general]{libwrappers}
 
-TCP Wrappers are implemented if you turn them on when configuring
-({\bf ./configure \verb:--:with-tcp-wrappers}). 
-With this code enabled, you may control who may access your
+The TCP wrapper functionality is available on different plattforms.
+Be default, it is activated on Bareos for Linux.
+With this enabled, you may control who may access your
 daemons.  This control is done by modifying the file: {\bf
-/etc/hosts.allow}.  The program name that {\bf Bacula} uses when
+/etc/hosts.allow}.  The program name that {\bf Bareos} uses when
 applying these access restrictions is the name you specify in the
 daemon configuration file (see below for examples).
 You must not use the {\bf twist} option in your {\bf
-/etc/hosts.allow} or it will terminate the Bacula daemon when a
+/etc/hosts.allow} or it will terminate the Bareos daemon when a
 connection is refused.
 
-The exact name of the package you need loaded to build with TCP wrappers
-depends on the system.  For example,
-on SuSE, the TCP wrappers libraries needed to link Bacula are
-contained in the tcpd-devel package. On Red Hat, the package is named
-tcp\_wrappers.
-
+\hide{
 Dan Langille has provided the following information on configuring and
-testing TCP wrappers with Bacula. 
+testing TCP wrappers with Bareos.
 
 If you read hosts\_options(5), you will see an option called twist. This
 option replaces the current process by an instance of the specified shell
-command. Typically, something like this is used: 
+command. Typically, something like this is used:
 
 \footnotesize
 \begin{verbatim}
@@ -137,12 +93,12 @@ ALL : ALL \
 
 The libwrap code tries to avoid {\bf twist} if it runs in a resident process,
 but that test will not protect the first hosts\_access() call. This will
-result in the process (e.g. bacula-fd, bacula-sd, bacula-dir) being terminated
+result in the process (e.g. bareos-fd, bareos-sd, bareos-dir) being terminated
 if the first connection to their port results in the twist option being
 invoked. The potential, and I stress potential, exists for an attacker to
 prevent the daemons from running. This situation is eliminated if your
 /etc/hosts.allow file contains an appropriate rule set. The following example
-is sufficient: 
+is sufficient:
 
 \footnotesize
 \begin{verbatim}
@@ -157,7 +113,7 @@ undef-dir : ALL : deny
 
 You must adjust the names to be the same as the Name directives found
 in each of the daemon configuration files. They are, in general, not the
-same as the binary daemon names. It is not possible to use the 
+same as the binary daemon names. It is not possible to use the
 daemon names because multiple daemons may be running on the same machine
 but with different configurations.
 
@@ -165,7 +121,7 @@ In these examples, the Director is undef-dir, the
 Storage Daemon is undef-sd, and the File Daemon is undef-fd. Adjust to suit
 your situation. The above example rules assume that the SD, FD, and DIR all
 reside on the same box. If you have a remote FD client, then the following
-rule set on the remote client will suffice: 
+rule set on the remote client will suffice:
 
 \footnotesize
 \begin{verbatim}
@@ -175,11 +131,11 @@ undef-fd : ALL : deny
 \normalsize
 
 where director.example.org is the host which will be contacting the client
-(ie. the box on which the Bacula Director daemon runs). The use of "ALL :
+(ie. the box on which the Bareos Director daemon runs). The use of "ALL :
 deny" ensures that the twist option (if present) is not invoked. To properly
 test your configuration, start the daemon(s), then attempt to connect from an
 IP address which should be able to connect. You should see something like
-this: 
+this:
 
 \footnotesize
 \begin{verbatim}
@@ -192,7 +148,7 @@ $
 \end{verbatim}
 \normalsize
 
-This is the correct response. If you see this: 
+This is the correct response. If you see this:
 
 \footnotesize
 \begin{verbatim}
@@ -210,7 +166,7 @@ then twist has been invoked and your configuration is not correct and you need
 to add the deny statement. It is important to note that your testing must
 include restarting the daemons after each connection attempt. You can also
 tcpdchk(8) and tcpdmatch(8) to validate your /etc/hosts.allow rules. Here is a
-simple test using tcpdmatch: 
+simple test using tcpdmatch:
 
 \footnotesize
 \begin{verbatim}
@@ -225,9 +181,9 @@ access: granted
 \end{verbatim}
 \normalsize
 
-If you are running Bacula as a standalone daemon, the warning above can be
+If you are running Bareos as a standalone daemon, the warning above can be
 safely ignored. Here is an example which indicates that your rules are missing
-a deny statement and the twist option has been invoked. 
+a deny statement and the twist option has been invoked.
 
 \footnotesize
 \begin{verbatim}
@@ -242,11 +198,13 @@ option: twist /bin/echo "You are not welcome to use
 access: delegated
 \end{verbatim}
 \normalsize
+}
 
+\hide{
 \section{Running as non-root}
 \index[general]{Running as non-root }
 
-Security advice from Dan Langille: 
+Security advice from Dan Langille:
 % TODO: don't use specific name
 
 % TODO: don't be too specific on operating system
@@ -258,75 +216,76 @@ other words, if you can, don't run applications as root which do  not have to
 be root.  The Storage Daemon and the Director Daemon do not need to be root.
 The  File Daemon needs to be root in order to access all files on your system.
 In order to run as non-root, you need to create a user and a group.  Choosing
-{\tt bacula} as both the user name and the group name sounds like a good idea
-to me.  
+{\tt bareos} as both the user name and the group name sounds like a good idea
+to me.
 
 The FreeBSD port creates this user and group for you.
-Here is what those entries looked like on my FreeBSD laptop: 
+Here is what those entries looked like on my FreeBSD laptop:
 
 \footnotesize
 \begin{verbatim}
-bacula:*:1002:1002::0:0:Bacula Daemon:/var/db/bacula:/sbin/nologin
+bareos:*:1002:1002::0:0:Bareos Daemon:/var/db/bareos:/sbin/nologin
 \end{verbatim}
 \normalsize
 
 I used vipw to create this entry. I selected a User ID and Group ID  of 1002
-as they were unused on my system.  
+as they were unused on my system.
 
-I also created a group in /etc/group:  
-
-\footnotesize
-\begin{verbatim}
-bacula:*:1002:
-\end{verbatim}
-\normalsize
-
-The bacula user (as opposed to the Bacula daemon) will have a home  directory
-of {\tt /var/db/bacula} which is the  default location for the Bacula
-database.  
-
-Now that you have both a bacula user and a bacula group, you can  secure the
-bacula home directory by issuing this command: 
+I also created a group in /etc/group:
 
 \footnotesize
 \begin{verbatim}
-chown -R bacula:bacula /var/db/bacula/
+bareos:*:1002:
 \end{verbatim}
 \normalsize
 
-This ensures that only the bacula user can access this directory.  It also
-means that if we run the Director and the Storage daemon  as bacula, those
+The bareos user (as opposed to the Bareos daemon) will have a home  directory
+of {\tt /var/db/bareos} which is the  default location for the Bareos
+database.
+
+Now that you have both a bareos user and a bareos group, you can  secure the
+bareos home directory by issuing this command:
+
+\footnotesize
+\begin{verbatim}
+chown -R bareos:bareos /var/db/bareos/
+\end{verbatim}
+\normalsize
+
+This ensures that only the bareos user can access this directory.  It also
+means that if we run the Director and the Storage daemon  as bareos, those
 daemons also have restricted access. This would not be  the case if they were
-running as root.  
+running as root.
 
 It is important to note that the storage daemon actually needs  to be in the
 operator group for normal access to tape drives etc (at  least on a FreeBSD
 system, that's how things are set up by default)  Such devices are normally
-chown root:operator. It is easier and less  error prone  to make Bacula a
-member of that group than it is to play around  with system permissions. 
+chown root:operator. It is easier and less  error prone  to make Bareos a
+member of that group than it is to play around  with system permissions.
 
-Starting the Bacula daemons 
+Starting the Bareos daemons
 
-To start the bacula daemons on a FreeBSD system, issue the following command: 
+To start the bareos daemons on a FreeBSD system, issue the following command:
 
 \footnotesize
 \begin{verbatim}
-/usr/local/etc/rc.d/bacula-dir start
-/usr/local/etc/rc.d/bacula-sd  start
-/usr/local/etc/rc.d/bacula-fd  start
+/usr/local/etc/rc.d/bareos-dir start
+/usr/local/etc/rc.d/bareos-sd  start
+/usr/local/etc/rc.d/bareos-fd  start
 \end{verbatim}
 \normalsize
 
-To confirm they are all running: 
+To confirm they are all running:
 
 \footnotesize
 \begin{verbatim}
-$ ps auwx | grep bacula
+$ ps auwx | grep bareos
 root   63418 0.0 0.3 1856 1036 ?? Ss 4:09PM 0:00.00
-    /usr/local/sbin/bacula-fd -v -c /usr/local/etc/bacula-fd.conf
-bacula 63416 0.0 0.3 2040 1172 ?? Ss 4:09PM 0:00.01
-    /usr/local/sbin/bacula-sd -v -c /usr/local/etc/bacula-sd.conf
-bacula 63422 0.0 0.4 2360 1440 ?? Ss 4:09PM 0:00.00
-    /usr/local/sbin/bacula-dir -v -c /usr/local/etc/bacula-dir.conf
+    /usr/local/sbin/bareos-fd -v -c /usr/local/etc/bareos-fd.conf
+bareos 63416 0.0 0.3 2040 1172 ?? Ss 4:09PM 0:00.01
+    /usr/local/sbin/bareos-sd -v -c /usr/local/etc/bareos-sd.conf
+bareos 63422 0.0 0.4 2360 1440 ?? Ss 4:09PM 0:00.00
+    /usr/local/sbin/bareos-dir -v -c /usr/local/etc/bareos-dir.conf
 \end{verbatim}
 \normalsize
+}

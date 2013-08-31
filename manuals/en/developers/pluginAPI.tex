@@ -79,9 +79,9 @@ two entry points (loadPlugin and unloadPlugin) then calls the
 Bacula passes information to the plugin through this call and it gets
 back information that it needs to use the plugin.  Later, Bacula
  will call particular functions that are defined by the
-{\bf loadPlugin} interface.  
+{\bf loadPlugin} interface.
 
-When Bacula is finished with the plugin 
+When Bacula is finished with the plugin
 (when Bacula is going to exit), it will call the {\bf unloadPlugin}
 entry point.
 
@@ -157,10 +157,10 @@ and the arguments are:
 \begin{description}
 \item [lbinfo]
 This is information about Bacula in general. Currently, the only value
-defined in the bInfo structure is the version, which is the Bacula plugin 
+defined in the bInfo structure is the version, which is the Bacula plugin
 interface version, currently defined as 1.  The {\bf size} is set to the
 byte size of the structure. The exact definition of the bInfo structure
-as of this writing is: 
+as of this writing is:
 
 \begin{verbatim}
 typedef struct s_baculaInfo {
@@ -219,7 +219,7 @@ typedef struct s_pluginInfo {
 Where:
  \begin{description}
  \item [version] is the current Bacula defined plugin interface version, currently
-   set to 1. If the interface version differs from the current version of 
+   set to 1. If the interface version differs from the current version of
    Bacula, the plugin will not be run (not yet implemented).
  \item [plugin\_magic] is a pointer to the text string "*FDPluginData*", a
    sort of sanity check.  If this value is not specified, the plugin
@@ -230,7 +230,7 @@ Where:
  \item [plugin\_author] is a pointer to the text name of the author of the program.
    This string can be anything but is generally the author's name.
  \item [plugin\_date] is the pointer text string containing the date of the plugin.
-   This string can be anything but is generally some human readable form of 
+   This string can be anything but is generally some human readable form of
    the date.
  \item [plugin\_version] is a pointer to a text string containing the version of
    the plugin.  The contents are determined by the plugin writer.
@@ -279,7 +279,7 @@ typedef struct s_pluginFuncs {
 \end{verbatim}
 
 The details of the entry points will be presented in
-separate sections below. 
+separate sections below.
 
 Where:
  \begin{description}
@@ -297,7 +297,7 @@ Sample code for loadPlugin:
    return bRC_OK;
 \end{verbatim}
 
-where pluginInfo and pluginFuncs are statically defined structures. 
+where pluginInfo and pluginFuncs are statically defined structures.
 See bpipe-fd.c for details.
 
 
@@ -308,7 +308,7 @@ See bpipe-fd.c for details.
 This section will describe each of the entry points (subroutines) within
 the plugin that the plugin must provide for Bacula, when they are called
 and their arguments. As noted above, pointers to these subroutines are
-passed back to Bacula in the pFuncs structure when Bacula calls the 
+passed back to Bacula in the pFuncs structure when Bacula calls the
 loadPlugin() externally defined entry point.
 
 \subsection{newPlugin(bpContext *ctx)}
@@ -328,8 +328,8 @@ loadPlugin() externally defined entry point.
   keep any variable data in your plugin unless it is truly meant
   to apply globally to the whole plugin.  In addition, you must
   be aware that except the first and last call to the plugin
-  (loadPlugin and unloadPlugin) all the other calls will be 
-  made by threads that correspond to a Bacula job.  The 
+  (loadPlugin and unloadPlugin) all the other calls will be
+  made by threads that correspond to a Bacula job.  The
   bpContext that will be passed for each thread will remain the
   same throughout the Job thus you can keep your private Job specific
   data in it ({\bf bContext}).
@@ -341,7 +341,7 @@ typedef struct s_bpContext {
 } bpContext;
 
 \end{verbatim}
-   
+
   This context pointer will be passed as the first argument to all
   the entry points that Bacula calls within the plugin.  Needless
   to say, the plugin should not change the bContext variable, which
@@ -352,24 +352,24 @@ typedef struct s_bpContext {
 This entry point is called when the
 this instance of the plugin is no longer needed (the Job is
 ending), and the plugin should release all memory it may
-have allocated for this particular instance (Job) i.e. the pContext.  
+have allocated for this particular instance (Job) i.e. the pContext.
 This is not the final termination
-of the plugin signaled by a call to {\bf unloadPlugin}. 
+of the plugin signaled by a call to {\bf unloadPlugin}.
 Any other instances (Job) will
 continue to run, and the entry point {\bf newPlugin} may be called
 again if other jobs start.
 
-\subsection{getPluginValue(bpContext *ctx, pVariable var, void *value)} 
+\subsection{getPluginValue(bpContext *ctx, pVariable var, void *value)}
 Bacula will call this entry point to get
 a value from the plugin.  This entry point is currently not called.
 
 \subsection{setPluginValue(bpContext *ctx, pVariable var, void *value)}
 Bacula will call this entry point to set
 a value in the plugin.  This entry point is currently not called.
- 
+
 \subsection{handlePluginEvent(bpContext *ctx, bEvent *event, void *value)}
 This entry point is called when Bacula
-encounters certain events (discussed below). This is, in fact, the 
+encounters certain events (discussed below). This is, in fact, the
 main way that most plugins get control when a Job runs and how
 they know what is happening in the job. It can be likened to the
 {\bf RunScript} feature that calls external programs and scripts,
@@ -385,10 +385,10 @@ typedef struct s_bEvent {
 
   which defines what event has been triggered, and for each event,
   Bacula will pass a pointer to a value associated with that event.
-  If no value is associated with a particular event, Bacula will 
+  If no value is associated with a particular event, Bacula will
   pass a NULL pointer, so the plugin must be careful to always check
   value pointer prior to dereferencing it.
-  
+
   The current list of events are:
 
 \begin{verbatim}
@@ -406,9 +406,9 @@ typedef enum {
   bEventLevel                           = 11,
   bEventSince                           = 12,
   bEventCancelCommand                   = 13,  /* Executed by another thread */
- 
+
   /* Just before bEventVssPrepareSnapshot */
-  bEventVssBackupAddComponents          = 14,  
+  bEventVssBackupAddComponents          = 14,
 
   bEventVssRestoreLoadComponentMetadata = 15,
   bEventVssRestoreSetComponentsSelected = 16,
@@ -417,9 +417,9 @@ typedef enum {
   bEventPluginCommand                   = 19,
   bEventVssBeforeCloseRestore           = 21,
 
-  /* Add drives to VSS snapshot 
+  /* Add drives to VSS snapshot
    *  argument: char[27] drivelist
-   * You need to add them without duplicates, 
+   * You need to add them without duplicates,
    * see fd_common.h add_drive() copy_drives() to get help
    */
   bEventVssPrepareSnapshot              = 22,
@@ -429,12 +429,12 @@ typedef enum {
 } bEventType;
 
 \end{verbatim}
- 
+
 Most of the above are self-explanatory.
 
 \begin{description}
  \item [bEventJobStart] is called whenever a Job starts. The value
-   passed is a pointer to a string that contains: "Jobid=nnn 
+   passed is a pointer to a string that contains: "Jobid=nnn
    Job=job-name". Where nnn will be replaced by the JobId and job-name
    will be replaced by the Job name. The variable is temporary so if you
    need the values, you must copy them.
@@ -444,7 +444,7 @@ Most of the above are self-explanatory.
  \item [bEventStartBackupJob] is called when a Backup Job begins. No value
    is passed.
 
- \item [bEventEndBackupJob] is called when a Backup Job ends. No value is 
+ \item [bEventEndBackupJob] is called when a Backup Job ends. No value is
    passed.
 
  \item [bEventStartRestoreJob] is called when a Restore Job starts. No value
@@ -481,14 +481,14 @@ Most of the above are self-explanatory.
  \item [bEventLevel] is called when the level is set for a new Job. The value
    is a 32 bit integer stored in the void*, which represents the Job Level code.
 
- \item [bEventSince] is called when the since time is set for a new Job. The 
+ \item [bEventSince] is called when the since time is set for a new Job. The
    value is a time\_t time at which the last job was run.
 
 \item [bEventCancelCommand] is called whenever the currently
   running Job is cancelled. Be warned that this event is sent by a different
   thread.
 
-\item [bEventVssBackupAddComponents] 
+\item [bEventVssBackupAddComponents]
 
 \item [bEventPluginCommand] is called for each PluginCommand present in the
   current FileSet.  The event will be sent only on plugin specifed in the
@@ -508,11 +508,11 @@ variables.  (at the current time few Bacula variables are implemented, but it
 easily extended at a future time and as needs require).
 
 \subsection{startBackupFile(bpContext *ctx, struct save\_pkt *sp)}
-This entry point is called only if your plugin is a command plugin, and 
+This entry point is called only if your plugin is a command plugin, and
 it is called when Bacula encounters the "Plugin = " directive in
 the Include section of the FileSet.
 Called when beginning the backup of a file. Here Bacula provides you
-with a pointer to the {\bf save\_pkt} structure and you must fill in 
+with a pointer to the {\bf save\_pkt} structure and you must fill in
 this packet with the "attribute" data of the file.
 
 \begin{verbatim}
@@ -535,17 +535,17 @@ struct save_pkt {
 \end{verbatim}
 
 The second argument is a pointer to the {\bf save\_pkt} structure for the file
-to be backed up.  The plugin is responsible for filling in all the fields 
+to be backed up.  The plugin is responsible for filling in all the fields
 of the {\bf save\_pkt}. If you are backing up
 a real file, then generally, the statp structure can be filled in by doing
-a {\bf stat} system call on the file.  
+a {\bf stat} system call on the file.
 
 If you are backing up a database or
 something that is more complex, you might want to create a virtual file.
-That is a file that does not actually exist on the filesystem, but represents 
+That is a file that does not actually exist on the filesystem, but represents
 say an object that you are backing up.  In that case, you need to ensure
 that the {\bf fname} string that you pass back is unique so that it
-does not conflict with a real file on the system, and you need to 
+does not conflict with a real file on the system, and you need to
 artifically create values in the statp packet.
 
 Example programs such as {\bf bpipe-fd.c} show how to set these fields.  You
@@ -574,11 +574,11 @@ Example of filling in the save\_pkt as used in bpipe-fd.c:
    sp->statp.st_blksize = 4096;
    sp->statp.st_blocks = 1;
    p_ctx->backup = true;
-   return bRC_OK; 
+   return bRC_OK;
 \end{verbatim}
 
-Note: the filename to be created has already been created from the 
-command string previously sent to the plugin and is in the plugin 
+Note: the filename to be created has already been created from the
+command string previously sent to the plugin and is in the plugin
 context (p\_ctx->fname) and is a malloc()ed string.  This example
 creates a regular file (S\_IFREG), with various fields being created.
 
@@ -611,16 +611,16 @@ is probably a good time to release any malloc()ed memory you used to pass back
 filenames.
 
 \subsection{startRestoreFile(bpContext *ctx, const char *cmd)}
-Called when the first record is read from the Volume that was 
+Called when the first record is read from the Volume that was
 previously written by the command plugin.
 
 \subsection{createFile(bpContext *ctx, struct restore\_pkt *rp)}
-Called for a command plugin to create a file during a Restore job before 
-restoring the data. 
+Called for a command plugin to create a file during a Restore job before
+restoring the data.
 This entry point is called before any I/O is done on the file.  After
 this call, Bacula will call pluginIO() to open the file for write.
 
-The data in the 
+The data in the
 restore\_pkt is passed to the plugin and is based on the data that was
 originally given by the plugin during the backup and the current user
 restore settings (e.g. where, RegexWhere, replace).  This allows the
@@ -644,7 +644,7 @@ in the restore\_pkt value {\bf create\_status}.  For a normal file,
 unless there is an error, you must return {\bf CF\_EXTRACT}.
 
 \begin{verbatim}
- 
+
 struct restore_pkt {
    int32_t pkt_size;                  /* size of this packet */
    int32_t stream;                    /* attribute stream id */
@@ -683,7 +683,7 @@ Typical code to create a regular file would be the following:
    return bRC_OK;
 \end{verbatim}
 
-This will create a virtual file.  If you are creating a file that actually 
+This will create a virtual file.  If you are creating a file that actually
 exists, you will most likely want to fill the statp packet using the
 stat() system call.
 
@@ -705,12 +705,12 @@ Creating a directory is similar, but requires a few extra steps:
    return bRC_OK;
 \end{verbatim}
 
-The link field must be set with the full cononical path name, which always 
+The link field must be set with the full cononical path name, which always
 ends with a forward slash.  If you do not terminate it with a forward slash,
 you will surely have problems later.
 
 As with the example that creates a file, if you are backing up a real
-directory, you will want to do an stat() on the directory.  
+directory, you will want to do an stat() on the directory.
 
 Note, if you want the directory permissions and times to be correctly
 restored, you must create the directory {\bf after} all the file directories
@@ -781,27 +781,27 @@ should return:
  \item [IO\_OPEN]
    You will be passed fname, mode, and flags.
    You must set on return: status, and if there is a Unix error
-   io\_errno must be set to the errno value, and if there is a 
-   Win32 error win32 and lerror. 
+   io\_errno must be set to the errno value, and if there is a
+   Win32 error win32 and lerror.
 
  \item [IO\_READ]
   You will be passed: count, and buf (buffer of size count).
-  You must set on return: status to the number of bytes 
-  read into the buffer (buf) or -1 on an error, 
+  You must set on return: status to the number of bytes
+  read into the buffer (buf) or -1 on an error,
   and if there is a Unix error
   io\_errno must be set to the errno value, and if there is a
   Win32 error, win32 and lerror must be set.
 
  \item [IO\_WRITE]
   You will be passed: count, and buf (buffer of size count).
-  You must set on return: status to the number of bytes 
-  written from the buffer (buf) or -1 on an error, 
+  You must set on return: status to the number of bytes
+  written from the buffer (buf) or -1 on an error,
   and if there is a Unix error
   io\_errno must be set to the errno value, and if there is a
   Win32 error, win32 and lerror must be set.
 
  \item [IO\_CLOSE]
-  Nothing will be passed to you.  On return you must set 
+  Nothing will be passed to you.  On return you must set
   status to 0 on success and -1 on failure.  If there is a Unix error
   io\_errno must be set to the errno value, and if there is a
   Win32 error, win32 and lerror must be set.
@@ -810,16 +810,16 @@ should return:
   You will be passed: offset, and whence. offset is a 64 bit value
   and is the position to seek to relative to whence.  whence is one
   of the following SEEK\_SET, SEEK\_CUR, or SEEK\_END indicating to
-  either to seek to an absolute possition, relative to the current 
+  either to seek to an absolute possition, relative to the current
   position or relative to the end of the file.
-  You must pass back in offset the absolute location to which you 
+  You must pass back in offset the absolute location to which you
   seeked. If there is an error, offset should be set to -1.
   If there is a Unix error
   io\_errno must be set to the errno value, and if there is a
   Win32 error, win32 and lerror must be set.
 
   Note: Bacula will call IO\_SEEK only when writing a sparse file.
-  
+
 \end{description}
 
 \subsection{bool checkFile(bpContext *ctx, char *fname)}
@@ -842,7 +842,7 @@ to get or set information within Bacula.
 
 \subsection{bRC registerBaculaEvents(bpContext *ctx, ...)}
 This Bacula entrypoint will allow you to register to receive events
-that are not autmatically passed to your plugin by default. This 
+that are not autmatically passed to your plugin by default. This
 entrypoint currently is unimplemented.
 
 \subsection{bRC getBaculaValue(bpContext *ctx, bVariable var, void *value)}
@@ -861,7 +861,7 @@ in Bacula. The following Variables can be referenced:
 
 \subsection{bRC setBaculaValue(bpContext *ctx, bVariable var, void *value)}
 Calling this entrypoint allows you to set particular values in
-Bacula. The only variable that can currently be set is 
+Bacula. The only variable that can currently be set is
 {\bf bVarFileSeen} and the value passed is a char * that points
 to the full filename for a file that you are indicating has been
 seen and hence is not deleted.
@@ -900,21 +900,21 @@ one working plugin {\bf bpipe-fd.c} that can be found in the Bacula
 \end{verbatim}
 
 After building Bacula and changing into the src/plugins/fd directory,
-the {\bf make} command will build the {\bf bpipe-fd.so} plugin, which 
+the {\bf make} command will build the {\bf bpipe-fd.so} plugin, which
 is a very useful and working program.
 
 The {\bf make test} command will build the {\bf example-plugin-fd.so}
 plugin and a binary named {\bf main}, which is build from the source
-code located in {\bf src/filed/fd\_plugins.c}. 
+code located in {\bf src/filed/fd\_plugins.c}.
 
 If you execute {\bf ./main}, it will load and run the example-plugin-fd
 plugin simulating a small number of the calling sequences that Bacula uses
-in calling a real plugin.  This allows you to do initial testing of 
+in calling a real plugin.  This allows you to do initial testing of
 your plugin prior to trying it with Bacula.
 
-You can get a good idea of how to write your own plugin by first 
+You can get a good idea of how to write your own plugin by first
 studying the example-plugin-fd, and actually running it.  Then
-it can also be instructive to read the bpipe-fd.c code as it is 
+it can also be instructive to read the bpipe-fd.c code as it is
 a real plugin, which is still rather simple and small.
 
 When actually writing your own plugin, you may use the example-plugin-fd.c

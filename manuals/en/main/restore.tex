@@ -2,6 +2,7 @@
 %%
 \chapter{The Restore Command}
 \label{RestoreChapter}
+\label{_ConsoleChapter}
 \index[general]{Command!Console Restore}
 \index[general]{Console Restore Command}
 
@@ -14,38 +15,38 @@ to restore files by automatically starting a job as you do with Backup,
 Verify, ... jobs.  However, in addition to the console restore command,
 there is a standalone program named {\bf bextract}, which also permits
 restoring files.  For more information on this program, please see the
-\ilink{Bacula Utility Programs}{bextract} chapter of this manual. We 
+\TODO{missing link: \ilink{Bareos Utility Programs}{bextract}} chapter of this manual. We
 don't particularly recommend the {\bf bextract} program because it
-lacks many of the features of the normal Bacula restore, such as the 
+lacks many of the features of the normal Bareos restore, such as the
 ability to restore Win32 files to Unix systems, and the ability to
 restore access control lists (ACL).  As a consequence, we recommend,
-wherever possible to use Bacula itself for restores as described below.
+wherever possible to use Bareos itself for restores as described below.
 
 You may also want to look at the {\bf bls} program in the same chapter,
 which allows you to list the contents of your Volumes.  Finally, if you
 have an old Volume that is no longer in the catalog, you can restore the
 catalog entries using the program named {\bf bscan}, documented in the same
-\ilink{Bacula Utility Programs}{bscan} chapter.
+\ilink{Bareos Utility Programs}{bscan} chapter.
 
 In general, to restore a file or a set of files, you must run a {\bf restore}
 job. That is a job with {\bf Type = Restore}. As a consequence, you will need
-a predefined {\bf restore} job in your {\bf bacula-dir.conf} (Director's
+a predefined {\bf restore} job in your {\bf bareos-dir.conf} (Director's
 config) file. The exact parameters (Client, FileSet, ...) that you define are
 not important as you can either modify them manually before running the job or
-if you use the {\bf restore} command, explained below, Bacula will  
+if you use the {\bf restore} command, explained below, Bareos will
 automatically set them for you. In fact, you can no longer simply run a restore
-job.  You must use the restore command.                                  
+job.  You must use the restore command.
 
-Since Bacula is a network backup program, you must be aware that when you
-restore files, it is up to you to ensure that you or Bacula have selected the
+Since Bareos is a network backup program, you must be aware that when you
+restore files, it is up to you to ensure that you or Bareos have selected the
 correct Client and the correct hard disk location for restoring those files.
-{\bf Bacula} will quite willingly backup client A, and restore it by sending
+{\bf Bareos} will quite willingly backup client A, and restore it by sending
 the files to a different directory on client B. Normally, you will want to
 avoid this, but assuming the operating systems are not too different in their
-file structures, this should work perfectly well, if so desired. 
-By default, Bacula will restore data to the same Client that was backed
+file structures, this should work perfectly well, if so desired.
+By default, Bareos will restore data to the same Client that was backed
 up, and those data will be restored not to the original places but to
-{\bf /tmp/bacula-restores}.  You may modify any of these defaults when the
+\TODO{right? {\bf /tmp/bareos-restores}}.  You may modify any of these defaults when the
 restore command prompts you to run the job by selecting the {\bf mod}
 option.
 
@@ -54,34 +55,34 @@ option.
 \index[general]{Command!Restore}
 \index[general]{Restore Command}
 
-Since Bacula maintains a catalog of your files and on which Volumes (disk or
+Since Bareos maintains a catalog of your files and on which Volumes (disk or
 tape), they are stored, it can do most of the bookkeeping work, allowing you
 simply to specify what kind of restore you want (current, before a particular
-date), and what files to restore. Bacula will then do the rest. 
+date), and what files to restore. Bareos will then do the rest.
 
 This is accomplished using the {\bf restore} command in the Console. First you
 select the kind of restore you want, then the JobIds are selected,
-the File records for those Jobs are placed in an internal Bacula directory
+the File records for those Jobs are placed in an internal Bareos directory
 tree, and the restore enters a file selection mode that allows you to
 interactively walk up and down the file tree selecting individual files to be
 restored. This mode is somewhat similar to the standard Unix {\bf restore}
-program's interactive file selection mode. 
+program's interactive file selection mode.
 
 If a Job's file records have been pruned from the catalog, the {\bf restore}
-command will be unable to find any files to restore. Bacula will ask if you
+command will be unable to find any files to restore. Bareos will ask if you
 want to restore all of them or if you want to use a regular expression to
-restore only a selection while reading media. See \ilink{FileRegex
-  option}{FileRegex} and below for more details on this.
+restore only a selection while reading media.
+See \TODO{missinge link: \ilink{FileRegex option}{FileRegex}} and below for more details on this.
 
 Within the Console program, after entering the {\bf restore} command, you are
-presented with the following selection prompt:  
+presented with the following selection prompt:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{*}{restore}{}{}
 First you select one or more JobIds that contain files
 to be restored. You will be presented several methods
 of specifying the JobIds. Then you will be allowed to
 select which files from those JobIds are to be restored.
+
 To select the JobIds, you have the following choices:
      1: List last 20 Jobs run
      2: List Jobs where a given File is saved
@@ -94,13 +95,13 @@ To select the JobIds, you have the following choices:
      9: Find the JobIds of the most recent backup for a client
     10: Find the JobIds for a backup for a client before a specified time
     11: Enter a list of directories to restore for found JobIds
-    12: Cancel
-Select item:  (1-12):
-\end{verbatim}
-\normalsize
+    12: Select full restore to a specified Job date
+    13: Cancel
+Select item:  (1-13):
+\end{bconsole}
 
 There are a lot of options, and as a point of reference, most people will
-want to slect item 5 (the most recent backup for a client). The details
+want to select item 5 (the most recent backup for a client). The details
 of the above options are:
 
 \begin{itemize}
@@ -110,14 +111,14 @@ of the above options are:
 \item Item 2 will list all the Jobs where a specified file is saved.  If you
    find the Job you want, you can then select item 3 and enter the JobId.
 
-\item Item 3 allows you the enter a list of comma separated JobIds whose 
+\item Item 3 allows you the enter a list of comma separated JobIds whose
    files will be put into the directory tree. You may then select which
    files from those JobIds to restore. Normally, you would use this option
    if you have a particular version of a file that you want to restore and
    you know its JobId. The most common options (5 and 6) will not select
-   a job that did not terminate normally, so if you know a file is 
+   a job that did not terminate normally, so if you know a file is
    backed up by a Job that failed (possibly because of a system crash), you
-   can access it through this option by specifying the JobId. 
+   can access it through this option by specifying the JobId.
 
 \item Item 4 allows you to enter any arbitrary SQL command.  This is
    probably the most primitive way of finding the desired JobIds, but at
@@ -140,33 +141,33 @@ of the above options are:
    you will need to explicitly enter the JobId in item 3, then choose the
    files to restore.
 
-   If some of the Jobs that are needed to do the restore have had their 
-   File records pruned, the restore will be incomplete. Bacula currently
+   If some of the Jobs that are needed to do the restore have had their
+   File records pruned, the restore will be incomplete. Bareos currently
    does not correctly detect this condition.  You can however, check for
-   this by looking carefully at the list of Jobs that Bacula selects and
+   this by looking carefully at the list of Jobs that Bareos selects and
    prints. If you find Jobs with the JobFiles column set to zero, when
    files should have been backed up, then you should expect problems.
 
-   If all the File records have been pruned, Bacula will realize that there
+   If all the File records have been pruned, Bareos will realize that there
    are no file records in any of the JobIds chosen and will inform you. It
    will then propose doing a full restore (non-selective) of those JobIds.
-   This is possible because Bacula still knows where the beginning of the
+   This is possible because Bareos still knows where the beginning of the
    Job data is on the Volumes, even if it does not know where particular
    files are located or what their names are.
 
-\item Item 6 allows you to specify a date and time, after which Bacula  will
+\item Item 6 allows you to specify a date and time, after which Bareos  will
    automatically select the most recent Full backup and all  subsequent
    incremental and differential backups that started  before the specified date
-   and time.  
+   and time.
 
 \item Item 7 allows you to specify one or more filenames  (complete path
    required) to be restored. Each filename  is entered one at a time or if you
-   prefix a filename  with the less-than symbol (\lt{}) Bacula will read that 
+   prefix a filename  with the less-than symbol ({\textless}) Bareos will read that
    file and assume it is a list of filenames to be restored.  If you
    prefix the filename with a question mark (?), then the filename will
-   be interpreted as an SQL table name, and Bacula will include the rows
+   be interpreted as an SQL table name, and Bareos will include the rows
    of that table in the list to be restored. The table must contain the
-   JobId in the first column and the FileIndex in the second column. 
+   JobId in the first column and the FileIndex in the second column.
    This table feature is intended for external programs that want to build
    their own list of files to be restored.
    The filename entry mode is terminated by entering a  blank line.
@@ -189,22 +190,23 @@ of the above options are:
    select directories to be restored. The list of JobIds can have been
    previously created by using either item 9 or 10 on the menu.  You
    may then enter a full path to a directory name or a filename preceded
-   by a less than sign (\lt{}). The filename should contain a list
+   by a less than sign ({\textless}). The filename should contain a list
    of directories to be restored.  All files in those directories will
    be restored, but if the directory contains subdirectories, nothing
    will be restored in the subdirectory unless you explicitly enter its
    name.
 
-\item Item 12 allows you to cancel the restore command.  
+\item Item 12 is a full restore to a specified job date.
+
+\item Item 13 allows you to cancel the restore command.
 \end{itemize}
 
 As an example, suppose that we select item 5 (restore to most recent state).
 If you have not specified a client=xxx on the command line, it
 it will then ask for the desired Client, which on my system, will print all
-the Clients found in the database as follows:  
+the Clients found in the database as follows:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{Select item:  (1-13):}{5}{restore: select client}{}
 Defined clients:
      1: Rufus
      2: Matou
@@ -216,13 +218,14 @@ Defined clients:
      8: RufusVerify
      9: Watchdog
 Select Client (File daemon) resource (1-9):
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
-You will probably have far fewer Clients than this example, and if you have
-only one Client, it will be automatically selected.  In this case, I enter
-{\bf Rufus} to select the Client. Then  Bacula needs to know what FileSet is
-to be restored, so it prompts with:  
+The listed clients are only examples, yours will look differently.
+If you have only one Client, it will be automatically selected.
+In this example, I enter 1 for
+{\bf Rufus} to select the Client.
+Then Bareos needs to know what FileSet is
+to be restored, so it prompts with:
 
 \footnotesize
 \begin{verbatim}
@@ -238,10 +241,10 @@ automatically.  I choose item 1, which is my full backup.  Normally, you
 will only have a single FileSet for each Job, and if your machines are
 similar (all Linux) you may only have one FileSet for all your Clients.
 
-At this point, {\bf Bacula} has all the information it needs to find the most
+At this point, Bareos has all the information it needs to find the most
 recent set of backups. It will then query the database, which may take a bit
 of time, and it will come up with something like the following. Note, some of
-the columns are truncated here for presentation: 
+the columns are truncated here for presentation:
 
 \footnotesize
 \begin{verbatim}
@@ -268,19 +271,19 @@ JobFiles are zero, your Files have probably been pruned and you will not be
 able to select any individual files -- it will be restore everything or
 nothing.
 
-In our example, Bacula found four Jobs that comprise the most recent backup of
+In our example, Bareos found four Jobs that comprise the most recent backup of
 the specified Client and FileSet. Two of the Jobs have the same JobId because
 that Job wrote on two different Volumes. The third Job was an incremental
 backup to the previous Full backup, and it only saved 254 Files compared to
 128,374 for the Full backup. The fourth Job was also an incremental backup
-that saved 15 files. 
+that saved 15 files.
 
-Next Bacula entered those Jobs into the directory tree, with no files marked
+Next Bareos entered those Jobs into the directory tree, with no files marked
 to be restored as a default, tells you how many files are in the tree, and
-tells you that the current working directory ({\bf cwd}) is /. Finally, Bacula
+tells you that the current working directory ({\bf cwd}) is /. Finally, Bareos
 prompts with the dollar sign (\$) to indicate that you may enter commands to
-move around the directory tree and to select files. 
-             
+move around the directory tree and to select files.
+
 If you want all the files to automatically be marked when the directory
 tree is built, you could have entered the command {\bf restore all}, or
 at the \$ prompt, you can simply enter {\bf mark *}.
@@ -288,19 +291,19 @@ at the \$ prompt, you can simply enter {\bf mark *}.
 Instead of choosing item 5 on the first menu (Select the most recent backup
 for a client), if we had chosen item 3 (Enter list of JobIds to select) and we
 had entered the JobIds {\bf 1792,1797,1798} we would have arrived at the same
-point.                 
+point.
 
 One point to note, if you are manually entering JobIds, is that you must enter
 them in the order they were run (generally in increasing JobId order). If you
 enter them out of order and the same file was saved in two or more of the
 Jobs, you may end up with an old version of that file (i.e. not the most
-recent). 
+recent).
 
 Directly entering the JobIds can also permit you to recover data from
 a Job that wrote files to tape but that terminated with an error status.
 
 While in file selection mode, you can enter {\bf help} or a question mark (?)
-to produce a summary of the available commands:  
+to produce a summary of the available commands:
 
 \footnotesize
 \begin{verbatim}
@@ -329,56 +332,49 @@ to produce a summary of the available commands:
 As a default no files have been selected for restore (unless you
 added {\bf all} to the command line. If you want to restore
 everything, at this point, you should enter {\bf mark *}, and then {\bf done}
-and {\bf Bacula} will write the bootstrap records to a file and request your
-approval to start a restore job. 
+and Bareos will write the bootstrap records to a file and request your
+approval to start a restore job.
 
 If you do not enter the above mentioned {\bf mark *} command, you will start
-with an empty slate. Now you can simply start looking at the tree and {\bf
+with an empty state. Now you can simply start looking at the tree and {\bf
 mark} particular files or directories you want restored. It is easy to make
-a mistake in specifying a file to mark or unmark, and Bacula's error handling
+a mistake in specifying a file to mark or unmark, and Bareos's error handling
 is not perfect, so please check your work by using the {\bf ls} or {\bf dir}
 commands to see what files are actually selected. Any selected file has its
-name preceded by an asterisk. 
+name preceded by an asterisk.
 
 To check what is marked or not marked, enter the {\bf count} command, which
-displays:  
+displays:
 
 \footnotesize
 \begin{verbatim}
 128401 total files. 128401 marked to be restored.
-     
+
 \end{verbatim}
 \normalsize
 
 Each of the above commands will be described in more detail in the next
 section. We continue with the above example, having accepted to restore all
-files as Bacula set by default. On entering the {\bf done} command, Bacula
-prints:  
+files as Bareos set by default. On entering the {\bf done} command, Bareos
+prints:
 
 \footnotesize
 \begin{verbatim}
-Bootstrap records written to /home/kern/bacula/working/restore.bsr
-The job will require the following   
-   Volume(s)                 Storage(s)                SD Device(s)
-===========================================================================
-
-   DLT-19Jul02               Tape                      DLT8000
-   DLT-04Aug02               Tape                      DLT8000
-
-128401 files selected to restore.
 Run Restore job
-JobName:    kernsrestore
-Bootstrap:  /home/kern/bacula/working/restore.bsr
-Where:      /tmp/bacula-restores
-Replace:    always
-FileSet:    Other Files
-Client:     Rufus
-Storage:    Tape
-When:       2006-12-11 18:20:33
-Catalog:    MyCatalog
-Priority:   10
+JobName:         RestoreFiles
+Bootstrap:       /var/lib/bareos/client1.restore.3.bsr
+Where:           /tmp/bareos-restores
+Replace:         Always
+FileSet:         Full Set
+Backup Client:   client1
+Restore Client:  client1
+Format:          Native
+Storage:         File
+When:            2013-06-28 13:30:08
+Catalog:         MyCatalog
+Priority:        10
+Plugin Options:  *None*
 OK to run? (yes/mod/no):
-    
 \end{verbatim}
 \normalsize
 
@@ -395,46 +391,46 @@ The above assumes that you have defined a {\bf Restore} Job resource in your
 Director's configuration file. Normally, you will only need one Restore Job
 resource definition because by its nature, restoring is a manual operation,
 and using the Console interface, you will be able to modify the Restore Job to
-do what you want. 
+do what you want.
 
-An example Restore Job resource definition is given below. 
+An example Restore Job resource definition is given below.
 
 Returning to the above example, you should verify that the Client name is
 correct before running the Job. However, you may want to modify some of the
 parameters of the restore job. For example, in addition to checking the Client
-it is wise to check that the Storage device chosen by Bacula is indeed
+it is wise to check that the Storage device chosen by Bareos is indeed
 correct. Although the {\bf FileSet} is shown, it will be ignored in restore.
 The restore will choose the files to be restored either by reading the {\bf
 Bootstrap} file, or if not specified, it will restore all files associated
 with the specified backup {\bf JobId} (i.e. the JobId of the Job that
-originally backed up the files). 
+originally backed up the files).
 
 Finally before running the job, please note that the default location for
 restoring files is {\bf not} their original locations, but rather the directory
-{\bf /tmp/bacula-restores}. You can change this default by modifying your {\bf
-bacula-dir.conf} file, or you can modify it using the {\bf mod} option. If you
+{\bf /tmp/bareos-restores}. You can change this default by modifying your {\bf
+bareos-dir.conf} file, or you can modify it using the {\bf mod} option. If you
 want to restore the files to their original location, you must have {\bf
-Where} set to nothing or to the root, i.e. {\bf /}. 
+Where} set to nothing or to the root, i.e. {\bf /}.
 
-If you now enter {\bf yes}, Bacula will run the restore Job. The Storage
-daemon will first request Volume {\bf DLT-19Jul02} and after the appropriate
-files have been restored from that volume, it will request Volume {\bf
-DLT-04Aug02}. 
+If you now enter {\bf yes}, Bareos will run the restore Job.
 
 \subsection{Restore a pruned job using a pattern}
+
+\TODO{relevant? if yes, fix example}
+
   During a restore, if all File records are pruned from the catalog
-  for a Job, normally Bacula can restore only all files saved. That
+  for a Job, normally Bareos can restore only all files saved. That
   is there is no way using the catalog to select individual files.
-  With this new feature, Bacula will ask if you want to specify a Regex
+  With this new feature, Bareos will ask if you want to specify a Regex
   expression for extracting only a part of the full backup.
 
 \begin{verbatim}
   Building directory tree for JobId(s) 1,3 ...
   There were no files inserted into the tree, so file selection
   is not possible.Most likely your retention policy pruned the files
-  
+
   Do you want to restore all the files? (yes|no): no
-  
+
   Regexp matching files to restore? (empty to abort): /tmp/regress/(bin|tests)/
   Bootstrap records written to /tmp/regress/working/zog4-dir.restore.1.bsr
 \end{verbatim}
@@ -446,15 +442,19 @@ DLT-04Aug02}.
 \index[general]{Filename!Selecting Files by }
 
 If you have a small number of files to restore, and you know the filenames,
-you can either put the list of filenames in a file to be read by Bacula, or
+you can either put the list of filenames in a file to be read by Bareos, or
 you can enter the names one at a time. The filenames must include the full
-path and filename. No wild cards are used. 
+path and filename. No wild cards are used.
 
 To enter the files, after the {\bf restore}, you select item number 7 from the
-prompt list: 
+prompt list:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{*}{restore}{restore list of files}{7}
+First you select one or more JobIds that contain files
+to be restored. You will be presented several methods
+of specifying the JobIds. Then you will be allowed to
+select which files from those JobIds are to be restored.
+
 To select the JobIds, you have the following choices:
      1: List last 20 Jobs run
      2: List Jobs where a given File is saved
@@ -467,17 +467,18 @@ To select the JobIds, you have the following choices:
      9: Find the JobIds of the most recent backup for a client
     10: Find the JobIds for a backup for a client before a specified time
     11: Enter a list of directories to restore for found JobIds
-    12: Cancel
-Select item:  (1-12):
-\end{verbatim}
-\normalsize
+    12: Select full restore to a specified Job date
+    13: Cancel
+Select item:  (1-13): 7
+\end{bconsole}
 
-which then prompts you for the client name: 
+
+which then prompts you for the client name:
 
 \footnotesize
 \begin{verbatim}
 Defined Clients:
-     1: Timmy
+     1: client1
      2: Tibs
      3: Rufus
 Select the Client (1-3): 3
@@ -485,8 +486,8 @@ Select the Client (1-3): 3
 \normalsize
 
 Of course, your client list will be different, and if you have only one
-client, it will be automatically selected. And finally, Bacula requests you to
-enter a filename: 
+client, it will be automatically selected. And finally, Bareos requests you to
+enter a filename:
 
 \footnotesize
 \begin{verbatim}
@@ -494,17 +495,17 @@ Enter filename:
 \end{verbatim}
 \normalsize
 
-At this point, you can enter the full path and filename 
+At this point, you can enter the full path and filename
 
 \footnotesize
 \begin{verbatim}
-Enter filename: /home/kern/bacula/k/Makefile.in
+Enter filename: /etc/resolv.conf
 Enter filename:
 \end{verbatim}
 \normalsize
 
-as you can see, it took the filename. If Bacula cannot find a copy of the
-file, it prints the following: 
+as you can see, it took the filename. If Bareos cannot find a copy of the
+file, it prints the following:
 
 \footnotesize
 \begin{verbatim}
@@ -514,55 +515,30 @@ Enter filename:
 \end{verbatim}
 \normalsize
 
-If you want Bacula to read the filenames from a file, you simply precede the
-filename with a less-than symbol (\lt{}). When you have entered all the
-filenames, you enter a blank line, and Bacula will write the bootstrap file,
-tells you what tapes will be used, and proposes a Restore job to be run: 
-
-\footnotesize
-\begin{verbatim}
-Enter filename:
-Automatically selected Storage: DDS-4
-Bootstrap records written to /home/kern/bacula/working/restore.bsr
-The restore job will require the following Volumes:
-   
-   test1
-1 file selected to restore.
-Run Restore job
-JobName:    kernsrestore
-Bootstrap:  /home/kern/bacula/working/restore.bsr
-Where:      /tmp/bacula-restores
-Replace:    always
-FileSet:    Other Files
-Client:     Rufus
-Storage:    DDS-4
-When:       2003-09-11 10:20:53
-Priority:   10
-OK to run? (yes/mod/no):
-\end{verbatim}
-\normalsize
+If you want Bareos to read the filenames from a file, you simply precede the
+filename with a less-than symbol ({\textless}).
 
 It is possible to automate the selection by file by putting your list of files
-in say {\bf /tmp/file-list}, then using the following command: 
+in say {\bf /tmp/file-list}, then using the following command:
 
 \footnotesize
 \begin{verbatim}
-restore client=Rufus file=</tmp/file-list
+restore client=client1 file=</tmp/file-list
 \end{verbatim}
 \normalsize
 
-If in modifying the parameters for the Run Restore job, you find that Bacula
+If in modifying the parameters for the Run Restore job, you find that Bareos
 asks you to enter a Job number, this is because you have not yet specified
 either a Job number or a Bootstrap file. Simply entering zero will allow you
-to continue and to select another option to be modified. 
+to continue and to select another option to be modified.
 
 \label{Replace}
 
 \section{Replace Options}
 
-When restoring, you have the option to specify a Replace option.  This 
-directive determines the action to be taken when restoring a file or 
-directory that already exists.  This directive can be set by selecting 
+When restoring, you have the option to specify a Replace option.  This
+directive determines the action to be taken when restoring a file or
+directory that already exists.  This directive can be set by selecting
 the {\bf mod} option.  You will be given a list of parameters to choose
 from.  Full details on this option can be found in the Job Resource section
 of the Director documentation.
@@ -576,7 +552,7 @@ of the Director documentation.
 If all the above sounds complicated, you will probably agree that it really
 isn't after trying it a few times. It is possible to do everything that was
 shown above, with the exception of selecting the FileSet, by using command
-line arguments with a single command by entering: 
+line arguments with a single command by entering:
 
 \footnotesize
 \begin{verbatim}
@@ -585,57 +561,57 @@ restore client=Rufus select current all done yes
 \normalsize
 
 The {\bf client=Rufus} specification will automatically select Rufus as the
-client, the {\bf current} tells Bacula that you want to restore the system to
+client, the {\bf current} tells Bareos that you want to restore the system to
 the most current state possible, and the {\bf yes} suppresses the final {\bf
-yes/mod/no} prompt and simply runs the restore. 
+yes/mod/no} prompt and simply runs the restore.
 
-The full list of possible command line arguments are: 
+The full list of possible command line arguments are:
 
 \begin{itemize}
-\item {\bf all} -- select all Files to be restored.  
-\item {\bf select} -- use the tree selection method.  
-\item {\bf done} -- do not prompt the user in tree mode.  
+\item {\bf all} -- select all Files to be restored.
+\item {\bf select} -- use the tree selection method.
+\item {\bf done} -- do not prompt the user in tree mode.
 \item {\bf current} -- automatically select the most current set of  backups
-   for the specified client.  
+   for the specified client.
 \item {\bf client=xxxx} -- initially specifies the client from which the
    backup was made and the client to which the restore will be make.  See also
    "restoreclient" keyword.
 \item {\bf restoreclient=xxxx} -- if the keyword is specified, then the
    restore is written to that client.
 \item {\bf jobid=nnn} -- specify a JobId or comma separated list of  JobIds to
-   be restored.  
+   be restored.
 \item {\bf before=YYYY-MM-DD HH:MM:SS} -- specify a date and time to  which
    the system should be restored. Only Jobs started before  the specified
-   date/time will be selected, and as is the case  for {\bf current} Bacula will
+   date/time will be selected, and as is the case  for {\bf current} Bareos will
    automatically find the most  recent prior Full save and all Differential and
    Incremental  saves run before the date you specify. Note, this command is  not
-   too user friendly in that you must specify the date/time  exactly as shown. 
+   too user friendly in that you must specify the date/time  exactly as shown.
 \item {\bf file=filename} -- specify a filename to be restored. You  must
    specify the full path and filename. Prefixing the entry  with a less-than
    sign
-   (\lt{}) will cause Bacula to assume that the  filename is on your system and
-   contains a list of files to be  restored. Bacula will thus read the list from
+   ({\textless}) will cause Bareos to assume that the  filename is on your system and
+   contains a list of files to be  restored. Bareos will thus read the list from
    that file. Multiple  file=xxx specifications may be specified on the command
-   line. 
-\item {\bf jobid=nnn} -- specify a JobId to be restored. 
+   line.
+\item {\bf jobid=nnn} -- specify a JobId to be restored.
 \item {\bf pool=pool-name} -- specify a Pool name to be used for selection  of
    Volumes when specifying options 5 and 6 (restore current system,  and restore
    current system before given date). This permits you to  have several Pools,
-   possibly one offsite, and to select the Pool to  be used for restoring.  
-\item {\bf where=/tmp/bacula-restore} -- restore files in {\bf where} directory.
+   possibly one offsite, and to select the Pool to  be used for restoring.
+\item {\bf where=/tmp/bareos-restore} -- restore files in {\bf where} directory.
 \item {\bf yes} -- automatically run the restore without prompting  for
-   modifications (most useful in batch scripts). 
+   modifications (most useful in batch scripts).
 \item {\bf strip\_prefix=/prod} -- remove a part of the filename when restoring.
 \item {\bf add\_prefix=/test} -- add a prefix to all files when restoring (like
   where) (can't be used with {\bf where=}).
 \item {\bf add\_suffix=.old} -- add a suffix to all your files.
 \item {\bf regexwhere=!a.pdf!a.bkp.pdf!} -- do complex filename manipulation
   like with sed unix command. Will overwrite other filename manipulation.
-\item {\bf restorejob=jobname} -- Pre-chooses a restore job. Bacula can be
+\item {\bf restorejob=jobname} -- Pre-chooses a restore job. Bareos can be
   configured with multiple restore jobs ("Type = Restore" in the job
   definition). This allows the specification of different restore properties,
   including a set of RunScripts. When more than one job of this type is
-  configured, during restore, Bacula will ask for a user selection
+  configured, during restore, Bareos will ask for a user selection
   interactively, or use the given restorejob.
 \end{itemize}
 
@@ -647,11 +623,11 @@ The full list of possible command line arguments are:
 \subsection{Introduction}
 
 The \textbf{where=} option is simple, but not very powerful. With file
-relocation, Bacula can restore a file to the same directory, but with a
+relocation, Bareos can restore a file to the same directory, but with a
 different name, or in an other directory without recreating the full path.
 
-You can also do filename and path manipulations, implemented in Bacula
-2.1.8 or later, such as adding a suffix to all your files, renaming files
+You can also do filename and path manipulations,
+such as adding a suffix to all your files, renaming files
 or directories, etc.  Theses options will overwrite {\bf where=} option.
 
 
@@ -660,18 +636,18 @@ For example, many users use OS snapshot features so that file
 \texttt{/.snap/home/eric/mbox}, which can complicate restores.  If you use
 \textbf{where=/tmp}, the file will be restored to
 \texttt{/tmp/.snap/home/eric/mbox} and you will have to move the file to
-\texttt{/home/eric/mbox.bkp} by hand.  
+\texttt{/home/eric/mbox.bkp} by hand.
 
 However, case, you could use the
 \textbf{strip\_prefix=/.snap} and \textbf{add\_suffix=.bkp} options and
-Bacula will restore the file to its original location -- that is
+Bareos will restore the file to its original location -- that is
 \texttt{/home/eric/mbox}.
 
-To use this feature, there are command line options as described in 
+To use this feature, there are command line options as described in
 the \ilink{restore section}{restorefilerelocation} of this manual;
 you can modify your restore job before running it; or you can
-add options to your restore job in as described in 
-\ilink{bacula-dir.conf}{confaddprefix}.
+add options to your restore job in as described in
+\ilink{bareos-dir.conf}{confaddprefix}.
 
 \begin{verbatim}
 Parameters to modify:
@@ -690,16 +666,17 @@ This will replace your current Where value
      4: Enter a regexp
      5: Test filename manipulation
      6: Use this ?
-Select parameter to modify (1-6):   
+Select parameter to modify (1-6):
 \end{verbatim}
 
 
 \subsection{RegexWhere Format}
+    \label{useregexwhere}
 
 The format is very close to that used by sed or Perl (\texttt{s/replace this/by
   that/}) operator. A valid regexwhere expression has three fields :
 \begin{itemize}
-\item a search expression (with optionnal submatch)
+\item a search expression (with optional submatch)
 \item a replacement expression (with optionnal back references \$1 to \$9)
 \item a set of search options (only case-insensitive ``i'' at this time)
 \end{itemize}
@@ -732,7 +709,7 @@ Orignal filename & New filename & RegexWhere & Comments \\
 
 %\subsubsection{Using group}
 %
-%Like with Perl or Sed, you can make submatch with \texttt{()}, 
+%Like with Perl or Sed, you can make submatch with \texttt{()},
 %
 %\subsubsection*{Examples}
 
@@ -747,40 +724,40 @@ Orignal filename & New filename & RegexWhere & Comments \\
 
 Depending how you do the restore, you may or may not get the directory entries
 back to their original state. Here are a few of the problems you can
-encounter, and for same machine restores, how to avoid them. 
+encounter, and for same machine restores, how to avoid them.
 
 \begin{itemize}
-\item You backed up on one machine and are restoring to another that is 
-   either a different OS or doesn't have the same users/groups defined.  Bacula
-   does the best it can in these situations. Note, Bacula has saved the
+\item You backed up on one machine and are restoring to another that is
+   either a different OS or doesn't have the same users/groups defined.  Bareos
+   does the best it can in these situations. Note, Bareos has saved the
    user/groups in numeric form, which means on a different machine, they
    may map to different user/group names.
 
 \item You are restoring into a directory that is already created and has
-   file creation restrictions.  Bacula tries to reset everything but
+   file creation restrictions.  Bareos tries to reset everything but
    without walking up the full chain of directories and modifying them all
-   during the restore, which Bacula does and will not do, getting
+   during the restore, which Bareos does and will not do, getting
    permissions back correctly in this situation depends to a large extent
    on your OS.
 
 \item You are doing a recursive restore of a directory tree.  In this case
-   Bacula will restore a file before restoring the file's parent directory
-   entry.  In the process of restoring the file Bacula will create the
+   Bareos will restore a file before restoring the file's parent directory
+   entry.  In the process of restoring the file Bareos will create the
    parent directory with open permissions and ownership of the file being
-   restored.  Then when Bacula tries to restore the parent directory Bacula
+   restored.  Then when Bareos tries to restore the parent directory Bareos
    sees that it already exists (Similar to the previous situation).  If you
-   had set the Restore job's "Replace" property to "never" then Bacula will
+   had set the Restore job's "Replace" property to "never" then Bareos will
    not change the directory's permissions and ownerships to match what it
    backed up, you should also notice that the actual number of files
    restored is less then the expected number.  If you had set the Restore
-   job's "Replace" property to "always" then Bacula will change the
+   job's "Replace" property to "always" then Bareos will change the
    Directory's ownership and permissions to match what it backed up, also
    the actual number of files restored should be equal to the expected
    number.
 
 \item You selected one or more files in a directory, but did not select the
    directory entry to be restored.  In that case, if the directory is not
-   on disk Bacula simply creates the directory with some default attributes
+   on disk Bareos simply creates the directory with some default attributes
    which may not be the same as the original.  If you do not select a
    directory and all its contents to be restored, you can still select
    items within the directory to be restored by individually marking those
@@ -788,8 +765,6 @@ encounter, and for same machine restores, how to avoid them.
    command to select all higher level directory entries (one at a time) to
    be restored if you want the directory entries properly restored.
 
-\item The {\bf bextract} program does not restore access control lists
-  (ACLs) to Unix machines.
 \end{itemize}
 
 \label{Windows}
@@ -797,30 +772,30 @@ encounter, and for same machine restores, how to avoid them.
 \index[general]{Restoring on Windows }
 \index[general]{Windows!Restoring on }
 
-If you are restoring on WinNT/2K/XP systems, Bacula will restore the files
+If you are restoring on Windows systems, Bareos will restore the files
 with the original ownerships and permissions as would be expected.  This is
 also true if you are restoring those files to an alternate directory (using
 the Where option in restore).  However, if the alternate directory does not
-already exist, the Bacula File daemon (Client) will try to create it.  In
+already exist, the Bareos File daemon (Client) will try to create it.  In
 some cases, it may not create the directories, and if it does since the
 File daemon runs under the SYSTEM account, the directory will be created
 with SYSTEM ownership and permissions.  In this case, you may have problems
 accessing the newly restored files.
 
 To avoid this problem, you should create any alternate directory before
-doing the restore.  Bacula will not change the ownership and permissions of
+doing the restore.  Bareos will not change the ownership and permissions of
 the directory if it is already created as long as it is not one of the
 directories being restored (i.e.  written to tape).
 
-The default restore location is {\bf /tmp/bacula-restores/} and if you are
-restoring from drive {\bf E:}, the default will be 
-{\bf /tmp/bacula-restores/e/}, so you should ensure that this directory
+The default restore location is {\bf /tmp/bareos-restores/} and if you are
+restoring from drive {\bf E:}, the default will be
+{\bf /tmp/bareos-restores/e/}, so you should ensure that this directory
 exists before doing the restore, or use the {\bf mod} option to
 select a different {\bf where} directory that does exist.
 
 Some users have experienced problems restoring files that participate in
 the Active Directory. They also report that changing the userid under which
-Bacula (bacula-fd.exe) runs, from SYSTEM to a Domain Admin userid, resolves
+Bareos (bareos-fd.exe) runs, from SYSTEM to a Domain Admin userid, resolves
 the problem.
 
 
@@ -828,22 +803,26 @@ the problem.
 \index[general]{Slow!Restoring Files Can Be }
 \index[general]{Restoring Files Can Be Slow }
 
+
+\TODO{relevant? move to subsection?}
+
+
 Restoring files is generally {\bf much} slower than backing them up for several
 reasons. The first is that during a backup the tape is normally already
-positioned and Bacula only needs to write. On the other hand, because restoring
-files is done so rarely, Bacula keeps only the start file and block on the
+positioned and Bareos only needs to write. On the other hand, because restoring
+files is done so rarely, Bareos keeps only the start file and block on the
 tape for the whole job rather than on a file by file basis which would use
-quite a lot of space in the catalog. 
+quite a lot of space in the catalog.
 
-Bacula will forward space to the correct file mark on the tape for the Job,
+Bareos will forward space to the correct file mark on the tape for the Job,
 then forward space to the correct block, and finally sequentially read each
 record until it gets to the correct one(s) for the file or files you want to
-restore. Once the desired files are restored, Bacula will stop reading the
-tape. 
+restore. Once the desired files are restored, Bareos will stop reading the
+tape.
 
-Finally, instead of just reading a file for backup, during the restore, Bacula
+Finally, instead of just reading a file for backup, during the restore, Bareos
 must create the file, and the operating system must allocate disk space for
-the file as Bacula is restoring it. 
+the file as Bareos is restoring it.
 
 For all the above reasons the restore process is generally much slower than
 backing up (sometimes it takes three times as long).
@@ -852,8 +831,10 @@ backing up (sometimes it takes three times as long).
 \index[general]{Files!Problems Restoring }
 \index[general]{Problems Restoring Files }
 
+\TODO{relevant? move to appendix}
+
 The most frequent problems users have restoring files are error messages such
-as: 
+as:
 
 \footnotesize
 \begin{verbatim}
@@ -863,7 +844,7 @@ device /dev/tape discarded.
 \end{verbatim}
 \normalsize
 
-or 
+or
 
 \footnotesize
 \begin{verbatim}
@@ -876,17 +857,17 @@ Buffer discarded.
 Both these kinds of messages indicate that you were probably running your tape
 drive in fixed block mode rather than variable block mode. Fixed block mode
 will work with any program that reads tapes sequentially such as tar, but
-Bacula repositions the tape on a block basis when restoring files because this
+Bareos repositions the tape on a block basis when restoring files because this
 will speed up the restore by orders of magnitude when only a few files are being
 restored. There are several ways that you can attempt to recover from this
-unfortunate situation. 
+unfortunate situation.
 
 Try the following things, each separately, and reset your Device resource to
-what it is now after each individual test: 
+what it is now after each individual test:
 
 \begin{enumerate}
 \item Set "Block Positioning = no" in your Device resource  and try the
-   restore. This is a new directive and untested. 
+   restore. This is a new directive and untested.
 
 \item Set "Minimum Block Size = 512" and "Maximum  Block Size = 512" and
    try the restore.  If you are able to determine the block size your drive
@@ -895,9 +876,9 @@ what it is now after each individual test:
    to continue backing up your data without correcting this condition.
    Please see the Tape Testing chapter for more on this.
 
-\item Try editing the restore.bsr file at the Run xxx yes/mod/no prompt 
+\item Try editing the restore.bsr file at the Run xxx yes/mod/no prompt
    before starting the restore job and remove all the VolBlock statements.
-   These are what causes Bacula to reposition the tape, and where problems
+   These are what causes Bareos to reposition the tape, and where problems
    occur if you have a fixed block size set for your drive.  The VolFile
    commands also cause repositioning, but this will work regardless of the
    block size.
@@ -920,26 +901,26 @@ warning messages. Some of the more common ones are:
 \item [file count mismatch]
   This can occur for the following reasons:
   \begin{itemize}
-  \item You requested Bacula not to overwrite existing or newer
+  \item You requested Bareos not to overwrite existing or newer
      files.
-  \item A Bacula miscount of files/directories. This is an
+  \item A Bareos miscount of files/directories. This is an
      on-going problem due to the complications of directories,
      soft/hard link, and such.  Simply check that all the files you
      wanted were actually restored.
   \end{itemize}
 
 \item [file size error]
-   When Bacula restores files, it checks that the size of the
-   restored file is the same as the file status data it saved 
+   When Bareos restores files, it checks that the size of the
+   restored file is the same as the file status data it saved
    when starting the backup of the file. If the sizes do not
-   agree, Bacula will print an error message. This size mismatch
-   most often occurs because the file was being written as Bacula
-   backed up the file. In this case, the size that Bacula
+   agree, Bareos will print an error message. This size mismatch
+   most often occurs because the file was being written as Bareos
+   backed up the file. In this case, the size that Bareos
    restored will be greater than the status size.  This often
    happens with log files.
 
    If the restored size is smaller, then you should be concerned
-   about a possible tape error and check the Bacula output as
+   about a possible tape error and check the Bareos output as
    well as your system logs.
 \end{description}
 
@@ -957,7 +938,7 @@ Job {
   Client = Any-client
   FileSet = "Any-FileSet"
   Storage = Any-storage
-  Where = /tmp/bacula-restores
+  Where = /tmp/bareos-restores
   Messages = Standard
   Pool = Default
 }
@@ -965,14 +946,14 @@ Job {
 \normalsize
 
 If {\bf Where} is not specified, the default location for restoring files will
-be their original locations. 
+be their original locations.
 \label{Selection}
 
 \section{File Selection Commands}
 \index[general]{Commands!File Selection }
 \index[general]{File Selection Commands }
 
-After you have selected the Jobs to be restored and Bacula has created the
+After you have selected the Jobs to be restored and Bareos has created the
 in-memory directory tree, you will enter file selection mode as indicated by
 the dollar sign ({\bf \$}) prompt. While in this mode, you may use the
 commands listed above. The basic idea is to move up and down the in memory
@@ -981,7 +962,7 @@ system. Once you are in a directory, you may select the files that you want
 restored. As a default no files are marked to be restored. If you wish to
 start with all files, simply enter: {\bf cd /} and {\bf mark *}. Otherwise
 proceed to select the files you wish to restore by marking them with the {\bf
-mark} command. The available commands are: 
+mark} command. The available commands are:
 
 \begin{description}
 
@@ -1013,7 +994,7 @@ mark} command. The available commands are:
    \index[dir]{find}
    The {\bf find} command accepts one or more arguments  and displays all files
    in the tree that match that argument. The argument  may have wildcards. It is
-   somewhat similar to the Unix command  {\bf find / -name arg}.  
+   somewhat similar to the Unix command  {\bf find / -name arg}.
 
 \item [ls]
    The {\bf ls} command produces a listing of all the files  contained in the
@@ -1023,13 +1004,13 @@ mark} command. The available commands are:
 
    Any file that is marked to be restored will  have its name preceded by an
    asterisk ({\bf *}). Directory names  will be terminated with a forward slash
-   ({\bf /}) to distinguish them  from filenames.  
+   ({\bf /}) to distinguish them  from filenames.
 
 \item [lsmark]
    \index[fd]{lsmark}
    The {\bf lsmark} command is the same as the  {\bf ls} except that it will
    print only those files marked for  extraction. The other distinction is that
-   it will recursively  descend into any directory selected. 
+   it will recursively  descend into any directory selected.
 
 \item [mark]
    \index[dir]{mark}
@@ -1039,33 +1020,33 @@ mark} command. The available commands are:
    specification, in which  case all files that match in the current directory
    are marked to be  restored. If the argument matches a directory rather than a
    file,  then the directory and all the files contained in that directory
-   (recursively)  are marked to be restored. Any marked file will have its name 
+   (recursively)  are marked to be restored. Any marked file will have its name
    preceded with an asterisk ({\bf *}) in the output produced by the  {\bf ls}
 or
    {\bf dir} commands. Note, supplying a full path on  the mark command does not
    work as expected to select a file or  directory in the current directory.
    Also, the {\bf mark} command works  on the current and lower directories but
-   does not touch higher level  directories.  
+   does not touch higher level  directories.
 
-   After executing the {\bf mark} command, it will print a brief summary:  
+   After executing the {\bf mark} command, it will print a brief summary:
 
 \footnotesize
 \begin{verbatim}
     No files marked.
-    
+
 \end{verbatim}
 \normalsize
 
-   If no files were marked, or:  
+   If no files were marked, or:
 
 \footnotesize
 \begin{verbatim}
     nn files marked.
-    
+
 \end{verbatim}
 \normalsize
 
-   if some files are marked.  
+   if some files are marked.
 
 \item [unmark]
    \index[dir]{unmark }
@@ -1073,38 +1054,38 @@ or
    unmarks the specified file or files so that  they will not be restored. Note:
    the {\bf unmark} command works from  the current directory, so it does not
    unmark any files at a higher  level. First do a {\bf cd /} before the {\bf
-   unmark *} command if  you want to unmark everything.  
+   unmark *} command if  you want to unmark everything.
 
 \item [pwd]
    \index[dir]{pwd }
    The {\bf pwd} command prints the current working  directory. It accepts no
-   arguments.  
+   arguments.
 
 \item [count]
    \index[dir]{count }
    The {\bf count} command prints the total files in the  directory tree and the
-   number of files marked to be restored.  
+   number of files marked to be restored.
 
 \item [done]
    \index[dir]{done }
-   This command terminates file selection mode.  
+   This command terminates file selection mode.
 
 \item [exit]
    \index[fd]{exit }
-   This command terminates file selection mode (the same as  done).  
+   This command terminates file selection mode (the same as  done).
 
 \item [quit]
    \index[fd]{quit }
    This command terminates the file selection and does  not run the restore
-job. 
+job.
 
 
 \item [help]
    \index[fd]{help }
-   This command prints a summary of the commands available.  
+   This command prints a summary of the commands available.
 
 \item [?]
-   This command is the same as the {\bf help} command.  
+   This command is the same as the {\bf help} command.
 \end{description}
 
 If your filename contains some weird caracters, you can use \texttt{?},
@@ -1122,13 +1103,15 @@ contains a \textbackslash{}, you can use
 \index[general]{Restoring Your Database}
 \index[general]{Database!Restoring}
 
+\TODO{move to Desaster Recovery Section?}
+
 This and the following sections will try to present a few of the kinds of
 problems that can come up making restoring more difficult. We will try to
 provide a few ideas how to get out of these problem situations.
 In addition to what is presented here, there is more specific information
 on restoring a \ilink{Client}{restore_client} and your
 \ilink{Server}{restore_server} in the \ilink{Disaster Recovery Using
-Bacula}{RescueChapter} chapter of this manual.
+Bareos}{RescueChapter} chapter of this manual.
 
 \begin{description}
 \item[Problem]
@@ -1137,16 +1120,14 @@ Bacula}{RescueChapter} chapter of this manual.
    For SQLite, use the vacuum command to try to fix the database. For either
    MySQL or PostgreSQL, see the vendor's documentation. They have specific tools
    that check and repair databases, see the \ilink{database
-   repair}{DatabaseRepair} sections of this manual for links to vendor    
+   repair}{DatabaseRepair} sections of this manual for links to vendor
    information.
 
    Assuming the above does not resolve the problem, you will need to restore
    or rebuild your catalog.  Note, if it is a matter of some
-   inconsistencies in the Bacula tables rather than a broken database, then
-   running \ilink{dbcheck}{dbcheck} might help, but you will need to ensure
-   that your database indexes are properly setup.  Please see
-   the \ilink{Database Performance Issues}{DatabasePerformance} sections
-   of this manual for more details.
+   inconsistencies in the Bareos tables rather than a broken database, then
+   running \ilink{bareos-dbcheck}{bareos-dbcheck} might help, but you will need to ensure
+   that your database indexes are properly setup.
 
 \item[Problem]
    How do I restore my catalog?
@@ -1156,24 +1137,25 @@ Bacula}{RescueChapter} chapter of this manual.
    database (or the ASCII SQL output).  Make a copy of your current
    database, then re-initialize it, by running the following scripts:
 \begin{verbatim}
-   ./drop_bacula_tables
-   ./make_bacula_tables
+   ./drop_bareos_tables
+   ./make_bareos_tables
 \end{verbatim}
-   After re-initializing the database, you should be able to run 
-   Bacula. If you now try to use the restore command, it will not 
+   After re-initializing the database, you should be able to run
+   Bareos. If you now try to use the restore command, it will not
    work because the database will be empty. However, you can manually
    run a restore job and specify your bootstrap file. You do so
-   by entering the {bf run} command in the console and selecting the
-   restore job.  If you are using the default bacula-dir.conf, this
+   by entering the {\bf run} command in the console and selecting the
+   restore job.  If you are using the default bareos-dir.conf, this
    Job will be named {\bf RestoreFiles}. Most likely it will prompt
    you with something such as:
+\TODO{what is meant here?}
 
 \footnotesize
 \begin{verbatim}
 Run Restore job
 JobName:    RestoreFiles
-Bootstrap:  /home/kern/bacula/working/restore.bsr
-Where:      /tmp/bacula-restores
+Bootstrap:  /home/kern/bareos/working/restore.bsr
+Where:      /tmp/bareos-restores
 Replace:    always
 FileSet:    Full Set
 Client:     rufus-fd
@@ -1181,7 +1163,7 @@ Storage:    File
 When:       2005-07-10 17:33:40
 Catalog:    MyCatalog
 Priority:   10
-OK to run? (yes/mod/no): 
+OK to run? (yes/mod/no):
 \end{verbatim}
 \normalsize
 
@@ -1191,24 +1173,24 @@ OK to run? (yes/mod/no):
    Client, Storage, Catalog, and Where are correct.  The FileSet is not
    used when you specify a bootstrap file.  Once you have set all the
    correct values, run the Job and it will restore the backup of your
-   database, which is most likely an ASCII dump. 
+   database, which is most likely an ASCII dump.
 
    You will then need to follow the instructions for your
    database type to recreate the database from the ASCII backup file.
    See the \ilink {Catalog Maintenance}{CatMaintenanceChapter} chapter of
-   this manual for examples of the command needed to restore a 
+   this manual for examples of the command needed to restore a
    database from an ASCII dump (they are shown in the Compacting Your
    XXX Database sections).
-    
+
    Also, please note that after you restore your database from an ASCII
-   backup, you do NOT want to do a {\bf make\_bacula\_tables}  command, or
+   backup, you do NOT want to do a {\bf make\_bareos\_tables}  command, or
    you will probably erase your newly restored database tables.
 
-      
+
 \item[Solution with a Job listing]
    If you did save your database but did not make a bootstrap file, then
    recovering the database is more difficult.  You will probably need to
-   use bextract to extract the backup copy.  First you should locate the
+   use \command{bextract} to extract the backup copy.  First you should locate the
    listing of the job report from the last catalog backup.  It has
    important information that will allow you to quickly find your database
    file.  For example, in the job report for the CatalogBackup shown below,
@@ -1220,7 +1202,7 @@ OK to run? (yes/mod/no):
 \begin{verbatim}
 22-Apr 10:22 HeadMan: Start Backup JobId 7510,
 Job=CatalogBackup.2005-04-22_01.10.0
-22-Apr 10:23 HeadMan: Bacula 1.37.14 (21Apr05): 22-Apr-2005 10:23:06
+22-Apr 10:23 HeadMan: Bareos 1.37.14 (21Apr05): 22-Apr-2005 10:23:06
   JobId:                  7510
   Job:                    CatalogBackup.2005-04-22_01.10.00
   Backup Level:           Full
@@ -1260,13 +1242,13 @@ VolSessionId=11
 VolSessionTime=1114075126
 FileIndex=1-1
 \end{verbatim}
-\normalsize    
+\normalsize
 
   Where we have inserted the Volume name, Volume Session Id, and Volume
   Session Time that correspond to the values in the job report.  We've also
   used a FileIndex of one, which will always be the case providing that
   there was only one file backed up in the job.
-  
+
   The disadvantage of this bootstrap file compared to what is created when
   you ask for one to be written, is that there is no File and Block
   specified, so the restore code must search all data in the Volume to find
@@ -1288,28 +1270,28 @@ FileIndex=1-1
    you will then to follow the instructions for your
    database type to recreate the database from the ASCII backup file.
    See the \ilink {Catalog Maintenance}{CatMaintenanceChapter} chapter of
-   this manual for examples of the command needed to restore a 
+   this manual for examples of the command needed to restore a
    database from an ASCII dump (they are shown in the Compacting Your
    XXX Database sections).
-    
+
    Also, please note that after you restore your database from an ASCII
-   backup, you do NOT want to do a {\bf make\_bacula\_tables}  command, or
+   backup, you do NOT want to do a {\bf make\_bareos\_tables}  command, or
    you will probably erase your newly restored database tables.
 
 \item [Solution without a Job Listing]
    If you do not have a job listing, then it is a bit more difficult.
-   Either you use the \ilink{bscan}{bscan} program to scan the contents
-   of your tape into a database, which can be very time consuming 
+   Either you use the \TODO{missing link: \ilink{bscan}{bscan}} program to scan the contents
+   of your tape into a database, which can be very time consuming
    depending on the size of the tape, or you can use the \ilink{bls}{bls}
-   program to list everything on the tape, and reconstruct a bootstrap 
+   program to list everything on the tape, and reconstruct a bootstrap
    file from the bls listing for the file or files you want following
    the instructions given above.
 
    There is a specific example of how to use {\bf bls} below.
 
 \item [Problem]
-   I try to restore the last known good full backup by specifying
-   item 3 on the restore menu then the JobId to restore.  Bacula 
+   Trying to restore the last known good full backup by specifying
+   item 3 on the restore menu then the JobId to restore, but Bareos
    then reports:
 
 \footnotesize
@@ -1365,8 +1347,7 @@ select VolumeName from JobMedia,Media where JobId=1 and JobMedia.MediaId=Media.M
    Finally, you can create a bootstrap file as described in the previous
    problem above using this information.
 
-   If you are using Bacula version 1.38.0 or greater, when you select
-   item 3 from the menu and enter the JobId, it will ask you if
+   Bareos will ask you if
    you would like to restore all the files in the job, and it will
    collect the above information and write the bootstrap file for
    you.
@@ -1375,10 +1356,10 @@ select VolumeName from JobMedia,Media where JobId=1 and JobMedia.MediaId=Media.M
   You don't have a bootstrap file, and you don't have the Job report for
   the backup of your database, but you did backup the database, and you
   know the Volume to which it was backed up.
-  
+
 \item [Solution]
-  Either bscan the tape (see below for bscanning), or better use {\bf bls}
-  to find where it is on the tape, then use {\bf bextract} to 
+  Either \command{bscan} the tape (see below for bscanning), or better use \command{bls}
+  to find where it is on the tape, then use \command{bextract} to
   restore the database.  For example,
 
 
@@ -1409,12 +1390,12 @@ Volume "DLT-22Apr05"
 \end{verbatim}
 \normalsize
   Of course, there will be many more records printed, but we have indicated
-  the essential lines of output. From the information on the Begin Job and End 
+  the essential lines of output. From the information on the Begin Job and End
   Job Session Records, you can reconstruct a bootstrap file such as the one
   shown above.
 
 \item[Problem]
-  How can I find where a file is stored.
+  How can I find where a file is stored?
 \item[Solution]
   Normally, it is not necessary, you just use the {\bf restore} command to
   restore the most recently saved version (menu option 5), or a version
@@ -1424,7 +1405,7 @@ Volume "DLT-22Apr05"
   If you would like to know the JobId where a file was saved, select
   restore menu option 2.
 
-  You can also use the {\bf query} command to find information such as: 
+  You can also use the {\bf query} command to find information such as:
 \footnotesize
 \begin{verbatim}
 *query
@@ -1444,7 +1425,7 @@ directory
     12: List Files for a selected JobId
     13: List Jobs stored on a selected MediaId
     14: List Jobs stored for a given Volume name
-    15: List Volumes Bacula thinks are in changer
+    15: List Volumes Bareos thinks are in changer
     16: List Volumes likely to need replacement from age or errors
 Choose a query (1-16):
 \end{verbatim}
@@ -1455,18 +1436,18 @@ Choose a query (1-16):
 \item[Solution]
   This is probably the worst of all cases, and you will probably have
   to re-create your database from scratch and then bscan in all your
-  Volumes, which is a very long, painful, and inexact process.
+  volumes, which is a very long, painful, and inexact process.
 
 There are basically three steps to take:
 
 \begin{enumerate}
 \item Ensure that your SQL server is running (MySQL or PostgreSQL)
-   and that the Bacula database (normally bacula) exists.  See the
+   and that the Bareos database (normally bareos) exists.  See the
    \ilink{Installation}{CreateDatabase} chapter of the manual.
-\item Ensure that the Bacula databases are created. This is also
+\item Ensure that the Bareos databases are created. This is also
    described at the above link.
-\item Start and stop the Bacula Director using the propriate
-   bacula-dir.conf file so that it can create the Client and
+\item Start and stop the Bareos Director using the propriate
+   bareos-dir.conf file so that it can create the Client and
    Storage records which are not stored on the Volumes.  Without these
    records, scanning is unable to connect the Job records to the proper
   client.

@@ -1,12 +1,12 @@
-\chapter{Using Bacula catalog to grab information}
-\label{UseBaculaCatalogToExtractInformationChapter}
+\chapter{Using Bareos catalog to grab information}
+\label{UseBareosCatalogToExtractInformationChapter}
 \index[general]{Statistics}
 
-Bacula catalog contains lot of information about your IT infrastructure, how
-many files, their size, the number of video or music files etc. Using Bacula
+Bareos catalog contains lot of information about your IT infrastructure, how
+many files, their size, the number of video or music files etc. Using Bareos
 catalog during the day to get them permit to save resources on your servers.
 
-In this chapter, you will find tips and information to measure bacula
+In this chapter, you will find tips and information to measure Bareos
 efficiency and report statistics.
 
 \section{Job statistics}
@@ -23,7 +23,7 @@ SQL queries on the Job table to report how many:
 
 However, these statistics are accurate only if your job retention is greater
 than your statistics period. Ie, if jobs are purged from the catalog, you won't
-be able to use them. 
+be able to use them.
 
 Now, you can use the \textbf{update stats [days=num]} console command to fill
 the JobHistory table with new Job records. If you want to be sure to take in
@@ -36,13 +36,11 @@ three days depending on your organization using the \textbf{[days=num]} option.
 These statistics records aren't used for restoring, but mainly for
 capacity planning, billings, etc.
 
-The Bweb interface provides a statistics module that can use this feature. You
-can also use tools like Talend or extract information by yourself.
-
-The \textbf{Statistics Retention = \lt{}time\gt{}} director directive defines
-the length of time that Bacula will keep statistics job records in the Catalog
-database after the Job End time. (In \texttt{JobHistory} table) When this time
-period expires, and if user runs \texttt{prune stats} command, Bacula will
+The \configdirective{Statistics Retention = {\textless}time{\textgreater}} director directive defines
+the length of time that Bareos will keep statistics job records in the Catalog
+database after the Job End time. This information is stored in the \texttt{JobHistory} table.
+When this time
+period expires, and if user runs \texttt{prune stats} command, Bareos will
 prune (remove) Job records that are older than the specified period.
 
 You can use the following Job resource in your nightly \textbf{BackupCatalog}

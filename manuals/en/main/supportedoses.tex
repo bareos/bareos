@@ -1,27 +1,21 @@
 %%
 %%
 
-\chapter{Supported Operating Systems}
-\label{SupportedOSes}
-\index[general]{Systems!Supported Operating }
-\index[general]{Supported Operating Systems }
+\TODO{keep the information about supported/know to work plattforms here or at same other place (bareos.org)?}
 
-\begin{itemize}
-\item[X] Fully supported
-\item[$\star$] The are reported to work in many cases and the Community
-   has committed code for them.  However they are
-  not directly supported by the Bacula project, as we don't have the
-  hardware.
-\end{itemize}
+The Bareos project provides and supports packages that have been released unter
+\elink{http://download.bareos.org/bareos/release/}{http://download.bareos.org/bareos/release/}
 
+However, the following tabular gives an overview, what components are expected on which plattforms to run:
 
 \begin{tabular}[h]{|l|l|c|c|c|}
   \hline
   Operating Systems & Version & Client \small{Daemon} & Director \small{Daemon} & Storage \small{Daemon} \\
   \hline
   \hline
-  GNU/Linux
-  & All & X & X & X \\
+  GNU/Linux  & all & X & X & X \\
+  \hline
+  Univention Enterprise Linux & Univention App Center & X & X & X \\
   \hline
   FreeBSD & $\geq$ 5.0 & X & X & X
   \\
@@ -31,20 +25,19 @@
   OpenSolaris & ~ & X & X & X \\
   \hline
   \hline
-  MS Windows 32bit& Win98/Me & X  & ~ & ~ \\
+  MS Windows 32bit & XP & X  &  &  \\
+  ~ & 2008/Vista & X  &  &  \\
+  ~ & 7/8 & X  &  &  \\
   \hline
-  ~ & WinNT/2K & X  & $\star$ & $\star$ \\
-  \hline
-  ~ & XP & X  & $\star$ & $\star$ \\
-  ~ & 2008/Vista & X  & $\star$ & $\star$ \\
-  MS Windows 64bit& 2008/Vista & X  & $\star$ & $\star$ \\
+  MS Windows 64bit& 2008/Vista & X  &  &  \\
+  ~ & 7/8 & X  &  &  \\
   \hline
   \hline
-  MacOS X/Darwin & ~ & X & $\star$ & $\star$ \\
+  MacOS X/Darwin & ~ & X &  &  \\
   \hline
-  OpenBSD & ~ & X & $\star$ & ~ \\
+  OpenBSD & ~ & X &  & ~ \\
   \hline
-  NetBSD & ~ & X & $\star$ & ~ \\
+  NetBSD & ~ & X &  & ~ \\
   \hline
   Irix & ~ & $\star$ & ~ & ~ \\
   \hline
@@ -58,34 +51,23 @@
   \hline
 \end{tabular}
 
-\section*{Important notes}
-
 \begin{itemize}
-\item By GNU/Linux, we mean 32/64bit Gentoo, Red Hat, Fedora, Mandriva,
-    Debian, OpenSuSE, Ubuntu, Kubuntu, \dots
-
-\item For FreeBSD older than version 5.0,
-  please see some {\bf important} considerations in the
-  \ilink{ Tape Modes on FreeBSD}{FreeBSDTapes}  section of the
-  Tape Testing chapter of this manual.
-
-\item MS Windows Director and Storage daemon are available
-      in the binary Client installer
-
-\item For MacOSX see \elink{http://fink.sourceforge.net/ for obtaining the packages}{http://fink.sourceforge.net/}
+\item[X] known to work
+\item[$\star$] has been reported to work in many cases and the Community
+   has committed code for them
 \end{itemize}
 
-See the Porting chapter of the Bacula Developer's Guide for information on
-porting to other systems.
 
-If you have a older Red Hat Linux system running the 2.4.x kernel and you have
-the directory {\bf /lib/tls} installed on your system (normally by default),
-bacula will {\bf NOT} run. This is the new pthreads library and it is
-defective. You must remove this directory prior to running Bacula, or you can
-simply change the name to {\bf /lib/tls-broken}) then you must reboot your
-machine (one of the few times Linux must be rebooted). If you are not able to
-remove/rename /lib/tls, an alternative is to set the environment variable
-"LD\_ASSUME\_KERNEL=2.4.19" prior to executing Bacula. For this option, you do
-not need to reboot, and all programs other than Bacula will continue to use
-/lib/tls.
-The above mentioned {\bf /lib/tls} problem does not occur with Linux 2.6 kernels.
+\paragraph{Important notes}
+
+\begin{itemize}
+\item by GNU/Linux, we mean 32/64bit Debian, Fedora, openSUSE, Red Hat Enterprise Linux, SLES, Ubuntu, \dots
+\item The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server
+% \item For FreeBSD older than version 5.0,
+%   please see some {\bf important} considerations in the
+%   \ilink{ Tape Modes on FreeBSD}{FreeBSDTapes}  section of the
+%   Tape Testing chapter of this manual.
+\end{itemize}
+
+% See the Porting chapter of the Bareos Developer's Guide for information on
+% porting to other systems.

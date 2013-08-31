@@ -6,91 +6,77 @@
 \index[general]{Support!Autochanger }
 \index[general]{Autochanger Support }
 
-Bacula provides autochanger support for reading and writing tapes.  In
-order to work with an autochanger, Bacula requires a number of things, each of
+Bareos provides autochanger support for reading and writing tapes.  In
+order to work with an autochanger, Bareos requires a number of things, each of
 which is explained in more detail after this list:
 
 \begin{itemize}
 \item A script that actually controls the autochanger according  to commands
-   sent by Bacula. We furnish such a script  that works with {\bf mtx} found in
-   the {\bf depkgs} distribution. 
+   sent by Bareos. Bareos contains the script \command{mtx-changer}, that utilize the command \command{mtx}.
+   It's config file is normally located at \path|/etc/bareos/mtx-changer.conf|
 
 \item That each Volume (tape) to be used must be defined in the Catalog and
-   have a Slot number assigned to it so that Bacula knows where the Volume is
+   have a Slot number assigned to it so that Bareos knows where the Volume is
    in the autochanger. This is generally done with the {\bf label} command, but
    can also done after the tape is labeled using the {\bf update slots}
    command.  See below for more details. You must pre-label the tapes manually
    before using them.
 
 \item Modifications to your Storage daemon's Device configuration  resource to
-   identify that the device is a changer, as well  as a few other parameters.  
+   identify that the device is a changer, as well  as a few other parameters.
 
-\item You should also modify your Storage resource definition  in the
+\item You should also modify your Storage resource definition in the
    Director's configuration file so that you are automatically prompted for the
-   Slot when labeling a Volume. 
+   Slot when labeling a Volume.
 
-\item You need to ensure that your Storage daemon (if not running as root)
+\item You need to ensure that your Storage daemon
    has access permissions to both the tape drive and the control device.
+   On Linux, the system user \user{bareos} is added to the groups \group{disk} and \group{tape},
+   so that it should have the permission to access the library.
 
 \item You need to have {\bf Autochanger = yes} in your Storage resource
-   in your bacula-dir.conf file so that you will be prompted for the
+   in your \path|bareos-dir.conf| file so that you will be prompted for the
    slot number when you label Volumes.
 \end{itemize}
 
-In version 1.37 and later, there is a new \ilink{Autochanger
-resource}{AutochangerRes} that permits you to group Device resources thus
-creating a multi-drive autochanger. If you have an autochanger,
-you {\bf must} use this new resource. 
-
-Bacula uses its own {\bf mtx-changer} script to interface with a program
+Bareos uses its own \command{mtx-changer} script to interface with a program
 that actually does the tape changing.  Thus in principle, {\bf mtx-changer}
 can be adapted to function with any autochanger program, or you can
 call any other script or program. The current
-version of {\bf mtx-changer} works with the {\bf mtx} program.  However,
-FreeBSD users have provided a script in the {\bf examples/autochangers}
-directory that allows Bacula to use the {\bf chio} program.
+version of {\bf mtx-changer} works with the \command{mtx} program.
+FreeBSD users might need to adapt this script to use \command{chio}.
 
-Bacula also supports autochangers with barcode
-readers. This support includes two Console commands: {\bf label barcodes}
-and {\bf update slots}. For more details on these commands, see the "Barcode
-Support" section below. 
+Bareos also supports autochangers with barcode
+readers. This support includes two Console commands: \bcommand{label barcodes}
+and \bcommand{update slots}. For more details on these commands, see the chapter about \ilink{Barcode Support}{Barcodes}.
 
-Current Bacula autochanger support does not include cleaning, stackers, or
-silos. Stackers and silos are not supported because Bacula expects to
+Current Bareos autochanger support does not include cleaning, stackers, or
+silos. Stackers and silos are not supported because Bareos expects to
 be able to access the Slots randomly.
-However, if you are very careful to setup Bacula to access the Volumes
-in the autochanger sequentially, you may be able to make Bacula
-work with stackers (gravity feed and such).  
-
-Support for multi-drive
-autochangers requires the \ilink{Autochanger resource}{AutochangerRes}
-introduced in version 1.37.  This resource is also recommended for single
-drive autochangers.
+However, if you are very careful to setup Bareos to access the Volumes
+in the autochanger sequentially, you may be able to make Bareos
+work with stackers (gravity feed and such).
 
 In principle, if {\bf mtx} will operate your changer correctly, then it is
 just a question of adapting the {\bf mtx-changer} script (or selecting one
-already adapted) for proper interfacing. You can find a list of autochangers
-supported by {\bf mtx} at the following link: 
-\elink{http://mtx.opensource-sw.net/compatibility.php}
-{http://mtx.opensource-sw.net/compatibility.php}.
-The home page for the {\bf mtx} project can be found at: 
-\elink{http://mtx.opensource-sw.net/}{http://mtx.opensource-sw.net/}. 
+already adapted) for proper interfacing.
 
-Note, we have feedback from some users that there are certain
-incompatibilities between the Linux kernel and mtx.  For example between
-kernel 2.6.18-8.1.8.el5 of CentOS and RedHat and version 1.3.10 and 1.3.11
-of mtx.  This was fixed by upgrading to a version 2.6.22 kernel.
+% link does not exists any more:
+%You can find a list of autochangers
+%supported by {\bf mtx} at the following link:
+%\elink{http://mtx.opensource-sw.net/compatibility.php}
+%{http://mtx.opensource-sw.net/compatibility.php}.
 
-In addition, apparently certain versions of mtx, for example, version
-1.3.11 limit the number of slots to a maximum of 64. The solution was to
-use version 1.3.10.
+%In addition, apparently certain versions of mtx, for example, version
+%1.3.11 limit the number of slots to a maximum of 64. The solution was to
+%use version 1.3.10.
 
 If you are having troubles, please use the {\bf auto} command in the {\bf
-btape} program to test the functioning of your autochanger with Bacula. When
-Bacula is running, please remember that for many distributions (e.g. FreeBSD,
-Debian, ...) the Storage daemon runs as {\bf bacula.tape} rather than {\bf
-root.root}, so you will need to ensure that the Storage daemon has sufficient
-permissions to access the autochanger. 
+btape} program to test the functioning of your autochanger with Bareos.
+Please remember, that on most distributions, the Storage daemon
+runs as user \user{bareos} and not as \user{root}.
+You will need to ensure that the Storage daemon has sufficient
+permissions to access the autochanger.
 
 Some users have reported that the the Storage daemon blocks under certain
 circumstances in trying to mount a volume on a drive that has a different
@@ -107,7 +93,8 @@ before the drive can be used with a different Volume.
 \index[general]{SCSI devices}
 \index[general]{devices!SCSI}
 
-Under Linux, you can 
+\subsection{Linux}
+Under Linux, you can
 
 \footnotesize
 \begin{verbatim}
@@ -115,7 +102,7 @@ cat /proc/scsi/scsi
 \end{verbatim}
 \normalsize
 
-to see what SCSI devices you have available. You can also: 
+to see what SCSI devices you have available. You can also:
 
 \footnotesize
 \begin{verbatim}
@@ -125,7 +112,7 @@ cat /proc/scsi/sg/device_hdr /proc/scsi/sg/devices
 
 to find out how to specify their control address ({\bf /dev/sg0} for the
 first, {\bf /dev/sg1} for the second, ...) on the {\bf Changer Device = }
-Bacula directive. 
+Bareos directive.
 
 You can also use the excellent  {\bf lsscsi} tool.
 \footnotesize
@@ -139,11 +126,15 @@ $ lsscsi -g
 \end{verbatim}
 \normalsize
 
-For more detailed information on what SCSI devices you have please see
-the \ilink{Linux SCSI Tricks}{SCSITricks}  section of the Tape Testing
-chapter of this manual.
+% missing link:
+%For more detailed information on what SCSI devices you have please see
+%the \ilink{Linux SCSI Tricks}{SCSITricks}  section of the Tape Testing
+%chapter of this manual.
 
-Under FreeBSD, you can use: 
+\subsection{FreeBSD}
+Under FreeBSD, use the following command to list the SCSI devices as well as the {\bf /dev/passn} that you will use on
+the Bareos {\bf Changer Device = } directive:
+
 
 \footnotesize
 \begin{verbatim}
@@ -151,74 +142,72 @@ camcontrol devlist
 \end{verbatim}
 \normalsize
 
-To list the SCSI devices as well as the {\bf /dev/passn} that you will use on
-the Bacula {\bf Changer Device = } directive. 
-
 Please check that your Storage daemon has permission to access this
 device.
 
 The following tip for FreeBSD users comes from Danny Butroyd:
-on reboot Bacula will NOT have permission to 
-control the device /dev/pass0 (assuming this is your changer device).  
-To get around this just edit the /etc/devfs.conf file and add the 
-following to the bottom:                   
+on reboot Bareos will NOT have permission to
+control the device /dev/pass0 (assuming this is your changer device).
+To get around this just edit the /etc/devfs.conf file and add the
+following to the bottom:
 \footnotesize
 \begin{verbatim}
-own     pass0   root:bacula
+own     pass0   root:bareos
 perm    pass0   0666
-own     nsa0.0  root:bacula
+own     nsa0.0  root:bareos
 perm    nsa0.0    0666
 \end{verbatim}
 \normalsize
 
-This gives the bacula group permission to write to the nsa0.0 device 
-too just to be on the safe side.   To bring these changes into effect 
+This gives the bareos group permission to write to the nsa0.0 device
+too just to be on the safe side.   To bring these changes into effect
 just run:-
 
 /etc/rc.d/devfs restart
 
-Basically this will stop you having to manually change permissions on these 
-devices to make Bacula work when operating the AutoChanger after a reboot.
+Basically this will stop you having to manually change permissions on these
+devices to make Bareos work when operating the AutoChanger after a reboot.
 
-\label{scripts}
-\section{Example Scripts}
-\index[general]{Scripts!Example }
-\index[general]{Example Scripts }
+% example directory does not exist:
+% \label{scripts}
+% \section{Example Scripts}
+% \index[general]{Scripts!Example }
+% \index[general]{Example Scripts }
+%
+% Please read the sections below so that you understand how autochangers work
+% with Bareos. Although we supply a default {\bf mtx-changer} script, your
+% autochanger may require some additional changes. If you want to see examples
+% of configuration files and scripts, please look in the {\bf
+% {\textless}bareos-src{\textgreater}/examples/devices} directory where you will find an
+% example {\bf HP-autoloader.conf} Bareos Device resource, and several {\bf
+% mtx-changer} scripts that have been modified to work with different
+% autochangers.
 
-Please read the sections below so that you understand how autochangers work
-with Bacula. Although we supply a default {\bf mtx-changer} script, your
-autochanger may require some additional changes. If you want to see examples
-of configuration files and scripts, please look in the {\bf
-\lt{}bacula-src\gt{}/examples/devices} directory where you will find an
-example {\bf HP-autoloader.conf} Bacula Device resource, and several {\bf
-mtx-changer} scripts that have been modified to work with different
-autochangers. 
-
-\label{Slots}
 
 \section{Slots}
-\index[general]{Slots }
+\index[general]{Slots}
+\label{Slots}
 
-To properly address autochangers, Bacula must know which Volume is in each
+To properly address autochangers, Bareos must know which Volume is in each
 {\bf slot} of the autochanger. Slots are where the changer cartridges reside
-when not loaded into the drive. Bacula numbers these slots from one to the
-number of cartridges contained in the autochanger. 
+when not loaded into the drive. Bareos numbers these slots from one to the
+number of cartridges contained in the autochanger.
 
-Bacula will not automatically use a Volume in your autochanger unless it is
+Bareos will not automatically use a Volume in your autochanger unless it is
 labeled and the slot number is stored in the catalog and the Volume is marked
-as InChanger. This is because it must know where each volume is (slot) to
+as InChanger. This is because it must know where each volume is to
 be able to load the volume.
 For each Volume in your
 changer, you will, using the Console program, assign a slot. This information
-is kept in {\bf Bacula's} catalog database along with the other data for the
-volume. If no slot is given, or the slot is set to zero, Bacula will not
+is kept in {\bf Bareos's} catalog database along with the other data for the
+volume. If no slot is given, or the slot is set to zero, Bareos will not
 attempt to use the autochanger even if all the necessary configuration records
 are present. When doing a {\bf mount} command on an autochanger, you must
-specify which slot you want mounted.  If the drive is loaded with a tape 
+specify which slot you want mounted.  If the drive is loaded with a tape
 from another slot, it will unload it and load the correct tape, but
 normally, no tape will be loaded because an {\bf unmount} command causes
-Bacula to unload the tape in the drive.
-          
+Bareos to unload the tape in the drive.
+
 
 You can check if the Slot number and InChanger flag are set by doing a:
 \begin{verbatim}
@@ -233,12 +222,11 @@ in the Console program.
 \index[general]{Multiple Devices}
 
 Some autochangers have more than one read/write device (drive). The
-new \ilink{Autochanger resource}{AutochangerRes} introduced in version
-1.37 permits you to group Device resources, where each device 
+\ilink{Autochanger resource}{AutochangerRes} permits you to group Device resources, where each device
 represents a drive. The Director may still reference the Devices (drives)
 directly, but doing so, bypasses the proper functioning of the
 drives together.  Instead, the Director (in the Storage resource)
-should reference the Autochanger resource name. Doing so permits 
+should reference the Autochanger resource name. Doing so permits
 the Storage daemon to ensure that only one drive uses the mtx-changer
 script at a time, and also that two drives don't reference the
 same Volume.
@@ -250,11 +238,11 @@ at zero, which is the default. To use the second Drive in an autochanger, you
 need to define a second Device resource and set the Drive Index to 1 for
 that device. In general, the second device will have the same {\bf Changer
 Device} (control channel) as the first drive, but a different {\bf Archive
-Device}. 
+Device}.
 
-As a default, Bacula jobs will prefer to write to a Volume that is
+As a default, Bareos jobs will prefer to write to a Volume that is
 already mounted. If you have a multiple drive autochanger and you want
-Bacula to write to more than one Volume in the same Pool at the same
+Bareos to write to more than one Volume in the same Pool at the same
 time, you will need to set \ilink{Prefer Mounted Volumes} {PreferMountedVolumes}
 in the Directors Job resource to {\bf no}. This will cause
 the Storage daemon to maximize the use of drives.
@@ -265,13 +253,13 @@ the Storage daemon to maximize the use of drives.
 \index[general]{Records!Device Configuration }
 \index[general]{Device Configuration Records }
 
-Configuration of autochangers within Bacula is done in the Device resource of
+Configuration of autochangers within Bareos is done in the Device resource of
 the Storage daemon. Four records: {\bf Autochanger}, {\bf Changer Device},
-{\bf Changer Command}, and {\bf Maximum Changer Wait} control how Bacula uses
-the autochanger. 
+{\bf Changer Command}, and {\bf Maximum Changer Wait} control how Bareos uses
+the autochanger.
 
 These four records, permitted in {\bf Device} resources, are described in
-detail below. Note, however, that the {\bf Changer Device} and the 
+detail below. Note, however, that the {\bf Changer Device} and the
 {\bf Changer Command} directives are not needed in the Device resource
 if they are present in the {\bf Autochanger} resource.
 
@@ -280,9 +268,9 @@ if they are present in the {\bf Autochanger} resource.
 \item [Autochanger = {\it Yes|No} ]
    \index[sd]{Autochanger  }
    The {\bf Autochanger} record specifies that the current device  is or is not
-an autochanger. The default is {\bf no}.  
+an autochanger. The default is {\bf no}. \TODO{check}
 
-\item [Changer Device = \lt{}device-name\gt{}]
+\item [Changer Device = {\textless}device-name{\textgreater}]
    \index[sd]{Changer Device  }
    In addition to the Archive Device name, you must specify a  {\bf Changer
 Device} name. This is because most autochangers are  controlled through a
@@ -292,25 +280,25 @@ controlling the autochanger, but the standard SCSI interface for reading and
 writing the  tapes. On Linux, for the {\bf Archive Device = /dev/nst0},  you
 would typically have {\bf Changer Device = /dev/sg0}.  Note, some of the more
 advanced autochangers will locate the changer device on {\bf /dev/sg1}. Such
-devices typically have  several drives and a large number of tapes.  
+devices typically have  several drives and a large number of tapes.
 
 On FreeBSD systems, the changer device will typically be on {\bf /dev/pass0}
-through {\bf /dev/passn}.  
+through {\bf /dev/passN}.
 
 On Solaris, the changer device will typically be some file under {\bf
-/dev/rdsk}.  
+/dev/rdsk}.
 
 Please ensure that your Storage daemon has permission to access this
 device.
 
-\item [Changer Command = \lt{}command\gt{}]
+\item [Changer Command = {\textless}command{\textgreater}]
    \index[sd]{Changer Command  }
    This record is used to specify the external program to call  and what
 arguments to pass to it. The command is assumed to be  a standard program or
 shell script that can be executed by  the operating system. This command is
-invoked each time that Bacula wishes to manipulate the autochanger.  The
+invoked each time that Bareos wishes to manipulate the autochanger.  The
 following substitutions are made in the {\bf command}  before it is sent to
-the operating system for execution:  
+the operating system for execution:
 
 \footnotesize
 \begin{verbatim}
@@ -328,66 +316,63 @@ the operating system for execution:
 \normalsize
 
 An actual example for using {\bf mtx} with the  {\bf mtx-changer} script (part
-of the Bacula distribution) is:  
+of the Bareos distribution) is:
 
 \footnotesize
 \begin{verbatim}
-Changer Command = "/etc/bacula/mtx-changer %c %o %S %a %d"
+Changer Command = "/usr/lib/bareos/scripts/mtx-changer %c %o %S %a %d"
 \end{verbatim}
 \normalsize
 
-Where you will need to adapt the {\bf /etc/bacula} to be  the actual path on
-your system where the mtx-changer script  resides.  Details of the three
-commands currently used by Bacula  (loaded, load, unload) as well as the
-output expected by  Bacula are give in the {\bf Bacula Autochanger Interface} 
-section below.  
+Details of the three
+commands currently used by Bareos  (loaded, load, unload) as well as the
+output expected by  Bareos are given in the \ilink{Bareos Autochanger Interface}{autochanger-interface} section.
 
-\item [Maximum Changer Wait = \lt{}time\gt{}]
+\item [Maximum Changer Wait = {\textless}time{\textgreater}]
    \index[sd]{Maximum Changer Wait  }
-   This record is used to define the maximum amount of time that Bacula
+   This record is used to define the maximum amount of time that Bareos
    will wait for an autoloader to respond to a command (e.g.  load).  The
    default is set to 120 seconds.  If you have a slow autoloader you may
    want to set it longer.
 
 If the autoloader program fails to respond in this time, it  will be killed
-and Bacula will request operator intervention.  
+and Bareos will request operator intervention.
 
-\item [Drive Index = \lt{}number\gt{}]
+\item [Drive Index = {\textless}number{\textgreater}]
    \index[sd]{Drive Index  }
-   This record allows you to tell Bacula to use the second or subsequent
+   This record allows you to tell Bareos to use the second or subsequent
    drive in an autochanger with multiple drives.  Since the drives are
    numbered from zero, the second drive is defined by
 
 \footnotesize
 \begin{verbatim}
 Device Index = 1
-      
+
 \end{verbatim}
 \normalsize
 
 To use the second drive, you need a second Device resource definition  in the
-Bacula configuration file. See the Multiple Drive section above  in this
-chapter for more information. 
+Bareos configuration file. See the Multiple Drive section above  in this
+chapter for more information.
 \end{description}
 
-In addition, for proper functioning of the Autochanger, you must 
+In addition, for proper functioning of the Autochanger, you must
 define an Autochanger resource.
-\input{autochangerres}
 
 \label{example}
 \section{An Example Configuration File}
 \index[general]{Example Configuration File }
 \index[general]{File!Example Configuration }
 
-The following two resources implement an autochanger: 
+The following two resources implement an autochanger:
 
 \footnotesize
 \begin{verbatim}
 Autochanger {
-  Name = "Autochanger"
+  Name = Autochanger
   Device = DDS-4
+  Changer Command = "/usr/lib/bareos/scripts/mtx-changer %c %o %S %a %d"
   Changer Device = /dev/sg0
-  Changer Command = "/etc/bacula/mtx-changer %c %o %S %a %d"
 }
 
 Device {
@@ -404,24 +389,25 @@ Device {
 
 where you will adapt the {\bf Archive Device}, the {\bf Changer Device}, and
 the path to the {\bf Changer Command} to correspond to the values used on your
-system. 
+system.
 
 \section{A Multi-drive Example Configuration File}
 \index[general]{Multi-drive Example Configuration File }
 
-The following resources implement a multi-drive autochanger: 
+The following resources implement a multi-drive autochanger:
 
 \footnotesize
 \begin{verbatim}
 Autochanger {
-  Name = "Autochanger"
-  Device = Drive-1, Drive-2
+  Name = Autochanger
+  Device = Drive-0
+  Device = Drive-1
+  Changer Command = "/usr/lib/bareos/scripts/mtx-changer %c %o %S %a %d"
   Changer Device = /dev/sg0
-  Changer Command = "/etc/bacula/mtx-changer %c %o %S %a %d"
 }
 
 Device {
-  Name = Drive-1
+  Name = Drive-0
   Drive Index = 0
   Media Type = DDS-4
   Archive Device = /dev/nst0    # Normal archive device
@@ -432,7 +418,7 @@ Device {
 }
 
 Device {
-  Name = Drive-2
+  Name = Drive-1
   Drive Index = 1
   Media Type = DDS-4
   Archive Device = /dev/nst1    # Normal archive device
@@ -441,55 +427,53 @@ Device {
   AutomaticMount = yes;
   AlwaysOpen = yes;
 }
-
 \end{verbatim}
 \normalsize
 
-where you will adapt the {\bf Archive Device}, the {\bf Changer Device}, and
-the path to the {\bf Changer Command} to correspond to the values used on your
-system. 
+where you will adapt the {\bf Archive Device} and the {\bf Changer Device} to correspond to the values used on your
+system.
 
-\label{SpecifyingSlots}
+
 \section{Specifying Slots When Labeling}
 \index[general]{Specifying Slots When Labeling }
 \index[general]{Labeling!Specifying Slots When }
+\label{SpecifyingSlots}
 
 If you add an {\bf Autochanger = yes} record to the Storage resource in your
-Director's configuration file, the Bacula Console will automatically prompt
+Director's configuration file, the Bareos Console will automatically prompt
 you for the slot number when the Volume is in the changer when
 you {\bf add} or {\bf label} tapes for that Storage device. If your
-{\bf mtx-changer} script is properly installed, Bacula will automatically
+{\bf mtx-changer} script is properly installed, Bareos will automatically
 load the correct tape during the label command.
-  
+
 You must also set
-{\bf Autochanger = yes} in the Storage daemon's Device resource                
+{\bf Autochanger = yes} in the Storage daemon's Device resource
 as we have described above in
-order for the autochanger to be used. Please see the 
+order for the autochanger to be used.
+\TODO{check: why not in the example?}
+Please see the
 \ilink{Storage Resource}{Autochanger1} in the Director's chapter
-and the 
+and the
 \ilink{Device Resource}{Autochanger} in the Storage daemon
-chapter for more details on these records. 
+chapter for more details on these records.
+
 
 Thus all stages of dealing with tapes can be totally automated. It is also
 possible to set or change the Slot using the {\bf update} command in the
-Console and selecting {\bf Volume Parameters} to update. 
+Console and selecting {\bf Volume Parameters} to update.
 
 Even though all the above configuration statements are specified and correct,
-Bacula will attempt to access the autochanger only if a {\bf slot} is non-zero
-in the catalog Volume record (with the Volume name). 
+Bareos will attempt to access the autochanger only if a {\bf slot} is non-zero
+in the catalog Volume record (with the Volume name).
 
 If your autochanger has barcode labels, you can label all the Volumes in
 your autochanger one after another by using the {\bf label barcodes} command.
-For each tape in the changer containing a barcode, Bacula will mount the tape
+For each tape in the changer containing a barcode, Bareos will mount the tape
 and then label it with the same name as the barcode. An appropriate Media
 record will also be created in the catalog. Any barcode that begins with the
 same characters as specified on the "CleaningPrefix=xxx" command, will be
-treated as a cleaning tape, and will not be labeled. For example with: 
-
-Please note that Volumes must be pre-labeled to be automatically used in
-the autochanger during a backup.  If you do not have a barcode reader, this
-is done manually (or via a script).
-
+treated as a cleaning tape, and will not be labeled.
+For example with:
 \footnotesize
 \begin{verbatim}
 Pool {
@@ -502,10 +486,11 @@ Pool {
 Any slot containing a barcode of CLNxxxx will be treated as a cleaning tape
 and will not be mounted.
 
+
 \section{Changing Cartridges}
 \index[general]{Changing Cartridges }
 If you wish to insert or remove cartridges in your autochanger or
-you manually run the {\bf mtx} program, you must first tell Bacula
+you manually run the {\bf mtx} program, you must first tell Bareos
 to release the autochanger by doing:
 
 \footnotesize
@@ -516,7 +501,7 @@ mount
 \end{verbatim}
 \normalsize
 
-If you do not do the unmount before making such a change, Bacula
+If you do not do the unmount before making such a change, Bareos
 will become completely confused about what is in the autochanger
 and may stop function because it expects to have exclusive use
 of the autochanger while it has the drive mounted.
@@ -528,14 +513,14 @@ of the autochanger while it has the drive mounted.
 \index[general]{Magazines!Dealing with Multiple }
 
 If you have several magazines or if you insert or remove cartridges from a
-magazine, you should notify Bacula of this. By doing so, Bacula will as
+magazine, you should notify Bareos of this. By doing so, Bareos will as
 a preference, use Volumes that it knows to be in the autochanger before
 accessing Volumes that are not in the autochanger. This prevents unneeded
-operator intervention. 
+operator intervention.
 
 If your autochanger has barcodes (machine readable tape labels), the task of
-informing Bacula is simple. Every time, you change a magazine, or add or
-remove a cartridge from the magazine, simply do 
+informing Bareos is simple. Every time, you change a magazine, or add or
+remove a cartridge from the magazine, simply use following commands in the Console program:
 
 \footnotesize
 \begin{verbatim}
@@ -547,23 +532,23 @@ mount
 \end{verbatim}
 \normalsize
 
-in the Console program. This will cause Bacula to request the autochanger to
+This will cause Bareos to request the autochanger to
 return the current Volume names in the magazine. This will be done without
 actually accessing or reading the Volumes because the barcode reader does this
-during inventory when the autochanger is first turned on. Bacula will ensure
+during inventory when the autochanger is first turned on. Bareos will ensure
 that any Volumes that are currently marked as being in the magazine are marked
 as no longer in the magazine, and the new list of Volumes will be marked as
 being in the magazine. In addition, the Slot numbers of the Volumes will be
-corrected in Bacula's catalog if they are incorrect (added or moved). 
+corrected in Bareos's catalog if they are incorrect (added or moved).
 
 If you do not have a barcode reader on your autochanger, you have several
-alternatives. 
+alternatives.
 
 \begin{enumerate}
 \item You can manually set the Slot and InChanger flag using  the {\bf update
-   volume} command in the Console (quite  painful). 
+   volume} command in the Console (quite  painful).
 
-\item You can issue a 
+\item You can issue a
 
 \footnotesize
 \begin{verbatim}
@@ -571,24 +556,26 @@ update slots scan
 \end{verbatim}
 \normalsize
 
-   command that will cause Bacula to read the label on each  of the cartridges in
+   command that will cause Bareos to read the label on each  of the cartridges in
    the magazine in turn and update the  information (Slot, InChanger flag) in the
-   catalog. This  is quite effective but does take time to load each cartridge 
-   into the drive in turn and read the Volume label.  
+   catalog. This  is quite effective but does take time to load each cartridge
+   into the drive in turn and read the Volume label.
 
-\item You can modify the mtx-changer script so that it simulates  an
-   autochanger with barcodes. See below for more details. 
+%\item You can modify the mtx-changer script so that it simulates  an
+%   autochanger with barcodes. See below for more details.
 \end{enumerate}
 
-\label{simulating}
+\hide{
+% unwanted, commented out
 \section{Simulating Barcodes in your Autochanger}
 \index[general]{Autochanger!Simulating Barcodes in your }
 \index[general]{Simulating Barcodes in your Autochanger }
+\label{simulating}
 
 You can simulate barcodes in your autochanger by making the {\bf mtx-changer}
 script return the same information that an autochanger with barcodes would do.
 This is done by commenting out the one and only line in the {\bf list)} case,
-which is: 
+which is:
 
 \footnotesize
 \begin{verbatim}
@@ -598,16 +585,16 @@ which is:
 
 at approximately line 99 by putting a \# in column one of that line, or by
 simply deleting it. Then in its place add a new line that prints the contents
-of a file. For example: 
+of a file. For example:
 
 \footnotesize
 \begin{verbatim}
-cat /etc/bacula/changer.volumes
+cat /etc/bareos/changer.volumes
 \end{verbatim}
 \normalsize
 
 Be sure to include a full path to the file, which can have any name. The
-contents of the file must be of the following format: 
+contents of the file must be of the following format:
 
 \footnotesize
 \begin{verbatim}
@@ -621,19 +608,21 @@ contents of the file must be of the following format:
 Where the 1, 2, 3 are the slot numbers and Volume1, Volume2, ... are the
 Volume names in those slots. You can have multiple files that represent the
 Volumes in different magazines, and when you change magazines, simply copy the
-contents of the correct file into your {\bf /etc/bacula/changer.volumes} file.
-There is no need to stop and start Bacula when you change magazines, simply
+contents of the correct file into your {\bf /etc/bareos/changer.volumes} file.
+There is no need to stop and start Bareos when you change magazines, simply
 put the correct data in the file, then run the {\bf update slots} command, and
-your autochanger will appear to Bacula to be an autochanger with barcodes. 
-\label{updateslots}
+your autochanger will appear to Bareos to be an autochanger with barcodes.
+}
 
-\section{The Full Form of the Update Slots Command}
+
+\section{Update Slots Command}
 \index[general]{Full Form of the Update Slots Command }
 \index[general]{Command!Full Form of the Update Slots }
+\label{updateslots}
 
 If you change only one cartridge in the magazine, you may not want to scan all
 Volumes, so the {\bf update slots} command (as well as the {\bf update slots
-scan} command) has the additional form: 
+scan} command) has the additional form:
 
 \footnotesize
 \begin{verbatim}
@@ -643,12 +632,12 @@ update slots=n1,n2,n3-n4, ...
 
 where the keyword {\bf scan} can be appended or not. The n1,n2, ... represent
 Slot numbers to be updated and the form n3-n4 represents a range of Slot
-numbers to be updated (e.g. 4-7 will update Slots 4,5,6, and 7). 
+numbers to be updated (e.g. 4-7 will update Slots 4,5,6, and 7).
 
 This form is particularly useful if you want to do a scan (time expensive) and
-restrict the update to one or two slots. 
+restrict the update to one or two slots.
 
-For example, the command: 
+For example, the command:
 
 \footnotesize
 \begin{verbatim}
@@ -656,7 +645,7 @@ update slots=1,6 scan
 \end{verbatim}
 \normalsize
 
-will cause Bacula to load the Volume in Slot 1, read its Volume label and
+will cause Bareos to load the Volume in Slot 1, read its Volume label and
 update the Catalog. It will do the same for the Volume in Slot 6. The command:
 
 
@@ -667,47 +656,27 @@ update slots=1-3,6
 \normalsize
 
 will read the barcoded Volume names for slots 1,2,3 and 6 and make the
-appropriate updates in the Catalog. If you don't have a barcode reader or have
-not modified the mtx-changer script as described above, the above command will
-not find any Volume names so will do nothing. 
-\label{FreeBSD}
+appropriate updates in the Catalog. If you don't have a barcode reader the above command will
+not find any Volume names so will do nothing.
 
-\section{FreeBSD Issues}
-\index[general]{Issues!FreeBSD }
-\index[general]{FreeBSD Issues }
-
-If you are having problems on FreeBSD when Bacula tries to select a tape, and
-the message is {\bf Device not configured}, this is because FreeBSD has made
-the tape device {\bf /dev/nsa1} disappear when there is no tape mounted in the
-autochanger slot. As a consequence, Bacula is unable to open the device. The
-solution to the problem is to make sure that some tape is loaded into the tape
-drive before starting Bacula. This problem is corrected in Bacula versions
-1.32f-5 and later. 
-
-Please see the 
-\ilink{ Tape Testing}{FreeBSDTapes} chapter of this manual for
-{\bf important} information concerning your tape drive before doing the
-autochanger testing. 
-\label{AutochangerTesting}
 
 \section{Testing Autochanger and Adapting mtx-changer script}
 \index[general]{Testing the Autochanger }
 \index[general]{Adapting Your mtx-changer script}
+\label{AutochangerTesting}
 
-
-Before attempting to use the autochanger with Bacula, it is preferable to
+Before attempting to use the autochanger with Bareos, it is preferable to
 "hand-test" that the changer works. To do so, we suggest you do the
-following commands (assuming that the {\bf mtx-changer} script is installed in
-{\bf /etc/bacula/mtx-changer}): 
+following commands:
 
 \begin{description}
 
-\item [Make sure Bacula is not running.]
+\item [Make sure Bareos is not running.]
 
-\item [/etc/bacula/mtx-changer \ /dev/sg0 \ list \ 0 \ /dev/nst0 \ 0]
+\item [/usr/lib/bareos/scripts/mtx-changer \ /dev/sg0 \ list \ 0 \ /dev/nst0 \ 0]
 \index[sd]{mtx-changer list}
 
-This command should print:  
+This command should print:
 
 \footnotesize
 \begin{verbatim}
@@ -715,27 +684,27 @@ This command should print:
    2:
    3:
    ...
-   
+
 \end{verbatim}
 \normalsize
 
 or one number per line for each slot that is  occupied in your changer, and
-the number should be  terminated by a colon ({\bf :}). If your changer has 
+the number should be  terminated by a colon ({\bf :}). If your changer has
 barcodes, the barcode will follow the colon.  If an error message is printed,
 you must resolve the  problem (e.g. try a different SCSI control device name
 if {\bf /dev/sg0}  is incorrect). For example, on FreeBSD systems, the
-autochanger  SCSI control device is generally {\bf /dev/pass2}.  
+autochanger  SCSI control device is generally {\bf /dev/pass2}.
 
-\item [/etc/bacula/mtx-changer \ /dev/sg0 \ listall \ 0 \ /dev/nst0 \ 0]
+\item [/usr/lib/bareos/scripts/mtx-changer \ /dev/sg0 \ listall \ 0 \ /dev/nst0 \ 0]
 \index[sd]{mtx-changer listall}
 
-This command should print:  
+This command should print:
 
 \footnotesize
 \begin{verbatim}
  Drive content:         D:Drive num:F:Slot loaded:Volume Name
  D:0:F:2:vol2        or D:Drive num:E
- D:1:F:42:vol42   
+ D:1:F:42:vol42
  D:3:E
 
  Slot content:
@@ -747,122 +716,117 @@ This command should print:
  I:10:F:vol10           I:Slot num:F:Volume Name
  I:11:E              or I:Slot num:E
  I:12:F:vol40
-   
+
 \end{verbatim}
 \normalsize
 
-\item [/etc/bacula/mtx-changer \ /dev/sg0 \ transfer \ 1 \ 2]
+\item [/usr/lib/bareos/scripts/mtx-changer \ /dev/sg0 \ transfer \ 1 \ 2]
 \index[sd]{mtx-changer listall}
 
 This command should transfer a volume from source (1) to destination (2)
 
-\item [/etc/bacula/mtx-changer \ /dev/sg0 \ slots ]
+\item [/usr/lib/bareos/scripts/mtx-changer \ /dev/sg0 \ slots ]
 \index[sd]{mtx-changer slots}
 
-This command should return the number of slots in your autochanger.  
+This command should return the number of slots in your autochanger.
 
-\item [/etc/bacula/mtx-changer \ /dev/sg0 \ unload \ 1 \ /dev/nst0 \ 0 ]
+\item [/usr/lib/bareos/scripts/mtx-changer \ /dev/sg0 \ unload \ 1 \ /dev/nst0 \ 0 ]
 \index[sd]{mtx-changer unload}
 
-   If a tape is loaded from slot 1, this should cause it to be unloaded.  
+   If a tape is loaded from slot 1, this should cause it to be unloaded.
 
-\item [/etc/bacula/mtx-changer \ /dev/sg0 \ load \ 3 \ /dev/nst0 \ 0 ]
+\item [/usr/lib/bareos/scripts/mtx-changer \ /dev/sg0 \ load \ 3 \ /dev/nst0 \ 0 ]
 \index[sd]{mtx-changer load}
 
 Assuming you have a tape in slot 3,  it will be loaded into drive (0).
- 
 
-\item [/etc/bacula/mtx-changer \ /dev/sg0 \ loaded \ 0 \ /dev/nst0 \ 0]
+
+\item [/usr/lib/bareos/scripts/mtx-changer \ /dev/sg0 \ loaded \ 0 \ /dev/nst0 \ 0]
 \index[sd]{mtx-changer loaded}
 
-It should print "3"  
+It should print "3"
 Note, we have used an "illegal" slot number 0. In this case, it is simply
 ignored because the slot number is not used.  However, it must be specified
 because the drive parameter at the end of the command is needed to select
 the correct drive.
 
-\item [/etc/bacula/mtx-changer \ /dev/sg0 \ unload \ 3 /dev/nst0 \ 0]
+\item [/usr/lib/bareos/scripts/mtx-changer \ /dev/sg0 \ unload \ 3 /dev/nst0 \ 0]
 
 will unload the tape into slot 3.
 
 \end{description}
 
 Once all the above commands work correctly, assuming that you have the right
-{\bf Changer Command} in your configuration, Bacula should be able to operate
+{\bf Changer Command} in your configuration, Bareos should be able to operate
 the changer. The only remaining area of problems will be if your autoloader
 needs some time to get the tape loaded after issuing the command. After the
-{\bf mtx-changer} script returns, Bacula will immediately rewind and read the
-tape. If Bacula gets rewind I/O errors after a tape change, you will probably
-need to insert a {\bf sleep 20} after the {\bf mtx} command, but be careful to
-exit the script with a zero status by adding {\bf exit 0} after any additional
-commands you add to the script. This is because Bacula checks the return
-status of the script, which should be zero if all went well. 
-
+{\bf mtx-changer} script returns, Bareos will immediately rewind and read the
+tape. If Bareos gets rewind I/O errors after a tape change, you will probably
+need to configure the \parameter{load_sleep} paramenter in the config file \file{/etc/bareos/mtx-changer.conf}.
 You can test whether or not you need a {\bf sleep} by putting the following
-commands into a file and running it as a script: 
+commands into a file and running it as a script:
 
 \footnotesize
 \begin{verbatim}
 #!/bin/sh
-/etc/bacula/mtx-changer /dev/sg0 unload 1 /dev/nst0 0
-/etc/bacula/mtx-changer /dev/sg0 load 3 /dev/nst0 0
+/usr/lib/bareos/scripts/mtx-changer /dev/sg0 unload 1 /dev/nst0 0
+/usr/lib/bareos/scripts/mtx-changer /dev/sg0 load 3 /dev/nst0 0
 mt -f /dev/st0 rewind
 mt -f /dev/st0 weof
 \end{verbatim}
 \normalsize
 
 If the above script runs, you probably have no timing problems. If it does not
-run, start by putting a {\bf sleep 30} or possibly a {\bf sleep 60} in the 
+run, start by putting a {\bf sleep 30} or possibly a {\bf sleep 60} in the
 script just after the mtx-changer load command. If that works, then you should
-move the sleep into the actual {\bf mtx-changer} script so that it will be
-effective when Bacula runs. 
+configure the \parameter{load_sleep} paramenter in the config file \file{/etc/bareos/mtx-changer.conf} to the specified value  so that it will be
+effective when Bareos runs.
 
 A second problem that comes up with a small number of autochangers is that
 they need to have the cartridge ejected before it can be removed. If this is
 the case, the {\bf load 3} will never succeed regardless of how long you wait.
 If this seems to be your problem, you can insert an eject just after the
-unload so that the script looks like: 
+unload so that the script looks like:
 
 \footnotesize
 \begin{verbatim}
 #!/bin/sh
-/etc/bacula/mtx-changer /dev/sg0 unload 1 /dev/nst0 0
+/usr/lib/bareos/scripts/mtx-changer /dev/sg0 unload 1 /dev/nst0 0
 mt -f /dev/st0 offline
-/etc/bacula/mtx-changer /dev/sg0 load 3 /dev/nst0 0
+/usr/lib/bareos/scripts/mtx-changer /dev/sg0 load 3 /dev/nst0 0
 mt -f /dev/st0 rewind
 mt -f /dev/st0 weof
 \end{verbatim}
 \normalsize
 
-Obviously, if you need the {\bf offline} command, you should move it into the
-mtx-changer script ensuring that you save the status of the {\bf mtx} command
-or always force an {\bf exit 0} from the script, because Bacula checks the
-return status of the script. 
+If this solves your problems, set the parameter \parameter{offline} in the config file \file{/etc/bareos/mtx-changer.conf} to "1".
 
-As noted earlier, there are several scripts in {\bf
-\lt{}bacula-source\gt{}/examples/devices} that implement the above features,
-so they may be a help to you in getting your script to work. 
+\TODO{provide a test script, distributed with Bareos}
 
-If Bacula complains "Rewind error on /dev/nst0. ERR=Input/output error." you
-most likely need more sleep time in your {\bf mtx-changer} before returning to
-Bacula after a load command has been completed.
+%As noted earlier, there are several scripts in {\bf
+%{\textless}bareos-source{\textgreater}/examples/devices} that implement the above features,
+%so they may be a help to you in getting your script to work.
 
-\label{using}
+%If Bareos complains "Rewind error on /dev/nst0. ERR=Input/output error." you
+%most likely need more sleep time in your {\bf mtx-changer} before returning to
+%Bareos after a load command has been completed.
+
 
 \section{Using the Autochanger}
 \index[general]{Using the Autochanger }
 \index[general]{Autochanger!Using the }
+\label{using}
 
 Let's assume that you have properly defined the necessary Storage daemon
 Device records, and you have added the {\bf Autochanger = yes} record to the
-Storage resource in your Director's configuration file. 
+Storage resource in your Director's configuration file.
 
-Now you fill your autochanger with say six blank tapes. 
+Now you fill your autochanger with say six blank tapes.
 
-What do you do to make Bacula access those tapes? 
+What do you do to make Bareos access those tapes?
 
-One strategy is to prelabel each of the tapes. Do so by starting Bacula, then
-with the Console program, enter the {\bf label} command: 
+One strategy is to prelabel each of the tapes. Do so by starting Bareos, then
+with the Console program, enter the {\bf label} command:
 
 \footnotesize
 \begin{verbatim}
@@ -873,11 +837,11 @@ Connecting to Director rufus:8101
 \end{verbatim}
 \normalsize
 
-it will then print something like: 
+it will then print something like:
 
 \footnotesize
 \begin{verbatim}
-Using default Catalog name=BackupDB DB=bacula
+Using default Catalog name=BackupDB DB=bareos
 The defined Storage resources are:
      1: Autochanger
      2: File
@@ -885,7 +849,7 @@ Select Storage resource (1-2): 1
 \end{verbatim}
 \normalsize
 
-I select the autochanger (1), and it prints: 
+I select the autochanger (1), and it prints:
 
 \footnotesize
 \begin{verbatim}
@@ -895,7 +859,7 @@ Enter slot (0 for none): 1
 \normalsize
 
 where I entered {\bf TestVolume1} for the tape name, and slot {\bf 1} for the
-slot. It then asks: 
+slot. It then asks:
 
 \footnotesize
 \begin{verbatim}
@@ -907,9 +871,9 @@ Select the Pool (1-2): 1
 \normalsize
 
 I select the Default pool. This will be automatically done if you only have a
-single pool, then Bacula will proceed to unload any loaded volume, load the
+single pool, then Bareos will proceed to unload any loaded volume, load the
 volume in slot 1 and label it. In this example, nothing was in the drive, so
-it printed: 
+it printed:
 
 \footnotesize
 \begin{verbatim}
@@ -926,20 +890,20 @@ You have messages.
 \normalsize
 
 You may then proceed to label the other volumes. The messages will change
-slightly because Bacula will unload the volume (just labeled TestVolume1)
-before loading the next volume to be labeled. 
+slightly because Bareos will unload the volume (just labeled TestVolume1)
+before loading the next volume to be labeled.
 
-Once all your Volumes are labeled, Bacula will automatically load them as they
-are needed. 
+Once all your Volumes are labeled, Bareos will automatically load them as they
+are needed.
 
 To "see" how you have labeled your Volumes, simply enter the {\bf list
 volumes} command from the Console program, which should print something like
-the following: 
+the following:
 
 \footnotesize
 \begin{verbatim}
 *{\bf list volumes}
-Using default Catalog name=BackupDB DB=bacula
+Using default Catalog name=BackupDB DB=bareos
 Defined Pools:
      1: Default
      2: File
@@ -955,25 +919,26 @@ Select the Pool (1-2): 1
 \end{verbatim}
 \normalsize
 
-\label{Barcodes}
+
 
 \section{Barcode Support}
 \index[general]{Support!Barcode }
 \index[general]{Barcode Support }
+\label{Barcodes}
 
-Bacula provides barcode support with two Console commands, {\bf label
+Bareos provides barcode support with two Console commands, {\bf label
 barcodes} and {\bf update slots}.
 
-The {\bf label barcodes} will cause Bacula to read the barcodes of all the
+The {\bf label barcodes} will cause Bareos to read the barcodes of all the
 cassettes that are currently installed in the magazine (cassette holder) using
 the {\bf mtx-changer} {\bf list} command. Each cassette is mounted in turn and
-labeled with the same Volume name as the barcode. 
+labeled with the same Volume name as the barcode.
 
 The {\bf update slots} command will first obtain the list of cassettes and
 their barcodes from {\bf mtx-changer}. Then it will find each volume in turn
 in the catalog database corresponding to the barcodes and set its Slot to
 correspond to the value just read. If the Volume is not in the catalog, then
-nothing will be done. This command is useful for synchronizing Bacula with the
+nothing will be done. This command is useful for synchronizing Bareos with the
 current magazine in case you have changed magazines or in case you have moved
 cassettes from one slot to another. If the autochanger is empty, nothing will
 be done.
@@ -981,7 +946,7 @@ be done.
 The {\bf Cleaning Prefix} statement can be used in the Pool resource to define
 a Volume name prefix, which if it matches that of the Volume (barcode) will
 cause that Volume to be marked with a VolStatus of {\bf Cleaning}. This will
-prevent Bacula from attempting to write on the Volume.
+prevent Bareos from attempting to write on the Volume.
 
 \section{Use bconsole to display Autochanger content}
 
@@ -1001,20 +966,21 @@ The {\bf status slots storage=xxx} command displays autochanger content.
 If you see a {\bf *} near the slot number, you have to run {\bf update slots}
 command to synchronize autochanger content with your catalog.
 
-\label{interface}
 
-\section{Bacula Autochanger Interface}
-\index[general]{Interface!Bacula Autochanger }
-\index[general]{Bacula Autochanger Interface }
 
-Bacula calls the autochanger script that you specify on the {\bf Changer
+\section{Bareos Autochanger Interface}
+\index[general]{Interface!Bareos Autochanger }
+\index[general]{Bareos Autochanger Interface }
+\label{autochanger-interface}
+
+Bareos calls the autochanger script that you specify on the {\bf Changer
 Command} statement. Normally this script will be the {\bf mtx-changer} script
 that we provide, but it can in fact be any program. The only requirement
 for the script is that it must understand the commands that
-Bacula uses, which are {\bf loaded}, {\bf load}, {\bf
+Bareos uses, which are {\bf loaded}, {\bf load}, {\bf
 unload}, {\bf list}, and {\bf slots}. In addition,
 each of those commands must return the information in the precise format as
-specified below: 
+specified below:
 
 \footnotesize
 \begin{verbatim}
@@ -1036,6 +1002,6 @@ specified below:
 \end{verbatim}
 \normalsize
 
-Bacula checks the exit status of the program called, and if it is zero, the
-data is accepted. If the exit status is non-zero, Bacula will print an
+Bareos checks the exit status of the program called, and if it is zero, the
+data is accepted. If the exit status is non-zero, Bareos will print an
 error message and request the tape be manually mounted on the drive.

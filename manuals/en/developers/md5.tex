@@ -15,20 +15,20 @@ This page describes {\bf md5}, a command line utility usable on either Unix or
 MS-DOS/Windows, which generates and verifies message digests (digital
 signatures) using the MD5 algorithm. This program can be useful when
 developing shell scripts or Perl programs for software installation, file
-comparison, and detection of file corruption and tampering. 
+comparison, and detection of file corruption and tampering.
 
 \subsection{Name}
 \index{Name}
 \addcontentsline{toc}{subsubsection}{Name}
 
-{\bf md5} - generate / check MD5 message digest 
+{\bf md5} - generate / check MD5 message digest
 
 \subsection{Synopsis}
 \index{Synopsis }
 \addcontentsline{toc}{subsubsection}{Synopsis}
 
 {\bf md5} [ {\bf -c}{\it signature} ] [ {\bf -u} ] [ {\bf -d}{\it input\_text}
-| {\it infile} ] [ {\it outfile} ] 
+| {\it infile} ] [ {\it outfile} ]
 
 \subsection{Description}
 \index{Description }
@@ -43,32 +43,32 @@ signature of modest size created with an algorithm designed to make
 preparation of input text with a given signature computationally infeasible.
 Message digest algorithms have much in common with techniques used in
 encryption, but to a different end; verification that data have not been
-altered since the signature was published. 
+altered since the signature was published.
 
 Many older programs requiring digital signatures employed 16 or 32 bit {\it
 cyclical redundancy codes} (CRC) originally developed to verify correct
 transmission in data communication protocols, but these short codes, while
 adequate to detect the kind of transmission errors for which they were
 intended, are insufficiently secure for applications such as electronic
-commerce and verification of security related software distributions. 
+commerce and verification of security related software distributions.
 
 The most commonly used present-day message digest algorithm is the 128 bit MD5
-algorithm, developed by Ron Rivest of the 
-\elink{MIT}{http://web.mit.edu/} 
-\elink{Laboratory for Computer Science}{http://www.lcs.mit.edu/} and 
+algorithm, developed by Ron Rivest of the
+\elink{MIT}{http://web.mit.edu/}
+\elink{Laboratory for Computer Science}{http://www.lcs.mit.edu/} and
 \elink{RSA Data Security, Inc.}{http://www.rsa.com/} The algorithm, with a
-reference implementation, was published as Internet 
+reference implementation, was published as Internet
 \elink{RFC 1321}{http://www.fourmilab.ch/md5/rfc1321.html} in April 1992, and
 was placed into the public domain at that time. Message digest algorithms such
 as MD5 are not deemed ``encryption technology'' and are not subject to the
 export controls some governments impose on other data security products.
 (Obviously, the responsibility for obeying the laws in the jurisdiction in
 which you reside is entirely your own, but many common Web and Mail utilities
-use MD5, and I am unaware of any restrictions on their distribution and use.) 
+use MD5, and I am unaware of any restrictions on their distribution and use.)
 
 The MD5 algorithm has been implemented in numerous computer languages
-including C, 
-\elink{Perl}{http://www.perl.org/}, and 
+including C,
+\elink{Perl}{http://www.perl.org/}, and
 \elink{Java}{http://www.javasoft.com/}; if you're writing a program in such a
 language, track down a suitable subroutine and incorporate it into your
 program. The program described on this page is a {\it command line}
@@ -77,11 +77,11 @@ is much faster than computing an MD5 signature directly in Perl). This {\bf
 md5} program was originally developed as part of a suite of tools intended to
 monitor large collections of files (for example, the contents of a Web site)
 to detect corruption of files and inadvertent (or perhaps malicious) changes.
-That task is now best accomplished with more comprehensive packages such as 
+That task is now best accomplished with more comprehensive packages such as
 \elink{Tripwire}{ftp://coast.cs.purdue.edu/pub/COAST/Tripwire/}, but the
 command line {\bf md5} component continues to prove useful for verifying
 correct delivery and installation of software packages, comparing the contents
-of two different systems, and checking for changes in specific files. 
+of two different systems, and checking for changes in specific files.
 
 \subsection{Options}
 \index{Options }
@@ -96,17 +96,17 @@ by the {\bf -d} option and compares it against the specified  {\it signature}.
 If the two signatures match, the exit status will be zero,  otherwise the exit
 status will be 1. No signature is written to  {\it outfile} or standard
 output; only the exit status is set. The  signature to be checked must be
-specified as 32 hexadecimal digits.  
+specified as 32 hexadecimal digits.
 
 \item [{\bf -d}{\it input\_text}  ]
    \index{-dinput\_text }
    A signature is computed for the given {\it input\_text} (which must be  quoted
 if it contains white space characters) instead of input from  {\it infile} or
 standard input. If input is specified with the {\bf -d}  option, no {\it
-infile} should be specified.  
+infile} should be specified.
 
 \item [{\bf -u}  ]
-   Print how-to-call information. 
+   Print how-to-call information.
    \end{description}
 
 \subsection{Files}
@@ -117,7 +117,7 @@ If no {\it infile} or {\bf -d} option is specified or {\it infile} is a single
 ``-'', {\bf md5} reads from standard input; if no {\it outfile} is given, or
 {\it outfile} is a single ``-'', output is sent to standard output. Input and
 output are processed strictly serially; consequently {\bf md5} may be used in
-pipelines. 
+pipelines.
 
 \subsection{Bugs}
 \index{Bugs }
@@ -126,10 +126,10 @@ pipelines.
 The mechanism used to set standard input to binary mode may be specific to
 Microsoft C; if you rebuild the DOS/Windows version of the program from source
 using another compiler, be sure to verify binary files work properly when read
-via redirection or a pipe. 
+via redirection or a pipe.
 
 This program has not been tested on a machine on which {\tt int} and/or {\tt
-long} are longer than 32 bits. 
+long} are longer than 32 bits.
 
 \section{
 \elink{Download md5.zip}{http://www.fourmilab.ch/md5/md5.zip} (Zipped
@@ -138,19 +138,19 @@ archive)}
 \index{Download md5.zip (Zipped archive) }
 \addcontentsline{toc}{subsection}{Download md5.zip (Zipped archive)}
 
-The program is provided as 
-\elink{md5.zip}{http://www.fourmilab.ch/md5/md5.zip}, a 
+The program is provided as
+\elink{md5.zip}{http://www.fourmilab.ch/md5/md5.zip}, a
 \elink{Zipped}{http://www.pkware.com/} archive containing an ready-to-run
 Win32 command-line executable program, {\tt md5.exe} (compiled using Microsoft
 Visual C++ 5.0), and in source code form along with a {\tt Makefile} to build
-the program under Unix. 
+the program under Unix.
 
 \subsection{See Also}
 \index{ALSO!SEE }
 \index{See Also }
 \addcontentsline{toc}{subsubsection}{SEE ALSO}
 
-{\bf sum}(1) 
+{\bf sum}(1)
 
 \subsection{Exit Status}
 \index{Status!Exit }
@@ -160,7 +160,7 @@ the program under Unix.
 {\bf md5} returns status 0 if processing was completed without errors, 1 if
 the {\bf -c} option was specified and the given signature does not match that
 of the input, and 2 if processing could not be performed at all due, for
-example, to a nonexistent input file. 
+example, to a nonexistent input file.
 
 \subsection{Copying}
 \index{Copying }
@@ -170,7 +170,7 @@ example, to a nonexistent input file.
 This software is in the public domain. Permission to use, copy,  modify, and
 distribute this software and its documentation for any purpose and  without
 fee is hereby granted, without any conditions or restrictions. This  software
-is provided ``as is'' without express or implied warranty. 
+is provided ``as is'' without express or implied warranty.
 \end{quote}
 
 \subsection{Acknowledgements}
@@ -178,7 +178,7 @@ is provided ``as is'' without express or implied warranty.
 \addcontentsline{toc}{subsubsection}{Acknowledgements}
 
 The MD5 algorithm was developed by Ron Rivest. The public domain C language
-implementation used in this program was written by Colin Plumb in 1993. 
-{\it 
+implementation used in this program was written by Colin Plumb in 1993.
+{\it
 \elink{by John Walker}{http://www.fourmilab.ch/}
-January 6th, MIM } 
+January 6th, MIM }

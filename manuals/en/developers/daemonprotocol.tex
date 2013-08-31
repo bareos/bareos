@@ -13,12 +13,12 @@
 This document describes the protocols used between the various daemons. As
 Bacula has developed, it has become quite out of date. The general idea still
 holds true, but the details of the fields for each command, and indeed the
-commands themselves have changed considerably. 
+commands themselves have changed considerably.
 
 It is intended to be a technical discussion of the general daemon protocols
 and as such is not targeted at end users but rather at developers and system
 administrators that want or need to know more of the working details of {\bf
-Bacula}. 
+Bacula}.
 
 \section{Low Level Network Protocol}
 \index{Protocol!Low Level Network }
@@ -38,7 +38,7 @@ BSOCK routines expect that only a single thread is accessing the socket at a
 time. It is advised that multiple threads do not read/write the same socket.
 If you must do this, you must provide some sort of locking mechanism. It would
 not be appropriate for efficiency reasons to make every call to the BSOCK
-routines lock and unlock the packet. 
+routines lock and unlock the packet.
 
 \section{General Daemon Protocol}
 \index{General Daemon Protocol }
@@ -48,26 +48,26 @@ routines lock and unlock the packet.
 In general, all the daemons follow the following global rules. There may be
 exceptions depending on the specific case. Normally, one daemon will be
 sending commands to another daemon (specifically, the Director to the Storage
-daemon and the Director to the File daemon). 
+daemon and the Director to the File daemon).
 
 \begin{itemize}
 \item Commands are always ASCII commands that are  upper/lower case dependent
-   as well as space sensitive.  
+   as well as space sensitive.
 \item All binary data is converted into ASCII (either with printf statements
-   or  using base64 encoding).  
+   or  using base64 encoding).
 \item All responses to commands sent are always  prefixed with a return
    numeric code where codes in the 1000's are  reserved for the Director, the
    2000's are reserved for the  File daemon, and the 3000's are reserved for the
-Storage daemon.  
+Storage daemon.
 \item Any response that is not prefixed with a numeric  code is a command (or
    subcommand if you like) coming  from the other end. For example, while the
    Director is  corresponding with the Storage daemon, the Storage daemon  can
 request Catalog services from the Director. This  convention permits each side
 to send commands to the  other daemon while simultaneously responding to
-commands.  
+commands.
 \item Any response that is of zero length, depending on the context,  either
    terminates the data stream being sent or terminates command mode  prior to
-   closing the connection. 
+   closing the connection.
 \item Any response that is of negative length is a special sign that  normally
    requires a response. For example, during data transfer from the  File daemon
    to the Storage daemon, normally the File daemon  sends continuously without
@@ -76,12 +76,12 @@ of length -1 indicating that  the current data stream is complete and that the
 Storage  daemon should respond to the packet with an OK, ABORT JOB,  PAUSE,
 etc. This permits the File daemon to efficiently send  data while at the same
 time occasionally ``polling''  the Storage daemon for his status or any
-special requests.  
+special requests.
 
 Currently, these negative lengths are specific to the daemon, but  shortly,
 the range 0 to -999 will be standard daemon wide signals,  while -1000 to
 -1999 will be for Director user, -2000 to -2999  for the File daemon, and
--3000 to -3999 for the Storage  daemon. 
+-3000 to -3999 for the Storage  daemon.
 \end{itemize}
 
 \section{The Protocol Used Between the Director and the Storage Daemon}
@@ -98,7 +98,7 @@ File daemon authorization (append, read all, or read for a specific session).
 The Storage daemon will then pass back to the Director a enabling key for this
 JobId that must be presented by the File daemon when opening the job. Until
 this process is complete, the Storage daemon is not available for use by File
-daemons. 
+daemons.
 
 \footnotesize
 \begin{verbatim}
@@ -115,10 +115,10 @@ SD: 3000 OK use device
 \end{verbatim}
 \normalsize
 
-For the Director to be authorized, the \lt{}Director-name\gt{} and the
-\lt{}password\gt{} must match the values in one of the Storage daemon's
+For the Director to be authorized, the {\textless}Director-name{\textgreater} and the
+{\textless}password{\textgreater} must match the values in one of the Storage daemon's
 Director resources (there may be several Directors that can access a single
-Storage daemon). 
+Storage daemon).
 
 \section{The Protocol Used Between the Director and the File Daemon}
 \index{Daemon!Protocol Used Between the Director and the File }
@@ -126,7 +126,7 @@ Storage daemon).
 \addcontentsline{toc}{subsection}{Protocol Used Between the Director and the
 File Daemon}
 
-A typical conversation might look like the following: 
+A typical conversation might look like the following:
 
 \footnotesize
 \begin{verbatim}
@@ -178,11 +178,11 @@ FD: close socket
 the Storage Daemon}
 
 Once the Director has send a {\bf save} command to the File daemon, the File
-daemon will contact the Storage daemon to begin the save. 
+daemon will contact the Storage daemon to begin the save.
 
 In what follows: FD: refers to information set via the network from the File
 daemon to the Storage daemon, and SD: refers to information set from the
-Storage daemon to the File daemon. 
+Storage daemon to the File daemon.
 
 \subsection{Command and Control Information}
 \index{Information!Command and Control }
@@ -212,35 +212,35 @@ The Data information consists of the file attributes and data to the Storage
 daemon. For the most part, the data information is sent one way: from the File
 daemon to the Storage daemon. This allows the File daemon to transfer
 information as fast as possible without a lot of handshaking and network
-overhead. 
+overhead.
 
 However, from time to time, the File daemon needs to do a sort of checkpoint
 of the situation to ensure that everything is going well with the Storage
 daemon. To do so, the File daemon sends a packet with a negative length
 indicating that he wishes the Storage daemon to respond by sending a packet of
 information to the File daemon. The File daemon then waits to receive a packet
-from the Storage daemon before continuing. 
+from the Storage daemon before continuing.
 
 All data sent are in binary format except for the header packet, which is in
 ASCII. There are two packet types used data transfer mode: a header packet,
 the contents of which are known to the Storage daemon, and a data packet, the
-contents of which are never examined by the Storage daemon. 
+contents of which are never examined by the Storage daemon.
 
 The first data packet to the Storage daemon will be an ASCII header packet
-consisting of the following data. 
+consisting of the following data.
 
-\lt{}File-Index\gt{} \lt{}Stream-Id\gt{} \lt{}Info\gt{} where {\bf
-\lt{}File-Index\gt{}} is a sequential number beginning from one that
-increments with each file (or directory) sent. 
+{\textless}File-Index{\textgreater} {\textless}Stream-Id{\textgreater} {\textless}Info{\textgreater} where {\bf
+{\textless}File-Index{\textgreater}} is a sequential number beginning from one that
+increments with each file (or directory) sent.
 
-where {\bf \lt{}Stream-Id\gt{}} will be 1 for the Attributes record and 2 for
-uncompressed File data. 3 is reserved for the MD5 signature for the file. 
+where {\bf {\textless}Stream-Id{\textgreater}} will be 1 for the Attributes record and 2 for
+uncompressed File data. 3 is reserved for the MD5 signature for the file.
 
-where {\bf \lt{}Info\gt{}} transmit information about the Stream to the
+where {\bf {\textless}Info{\textgreater}} transmit information about the Stream to the
 Storage Daemon. It is a character string field where each character has a
 meaning. The only character currently defined is 0 (zero), which is simply a
 place holder (a no op). In the future, there may be codes indicating
-compressed data, encrypted data, etc. 
+compressed data, encrypted data, etc.
 
 Immediately following the header packet, the Storage daemon will expect any
 number of data packets. The series of data packets is terminated by a zero
@@ -248,7 +248,7 @@ length packet, which indicates to the Storage daemon that the next packet will
 be another header packet. As previously mentioned, a negative length packet is
 a request for the Storage daemon to temporarily enter command mode and send a
 reply to the File daemon. Thus an actual conversation might contain the
-following exchanges: 
+following exchanges:
 
 \footnotesize
 \begin{verbatim}
@@ -281,4 +281,4 @@ FD: close socket
 \normalsize
 
 The information returned to the File daemon by the Storage daemon in response
-to the {\bf append close session} is transmit in turn to the Director. 
+to the {\bf append close session} is transmit in turn to the Director.

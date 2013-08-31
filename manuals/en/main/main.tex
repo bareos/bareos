@@ -5,9 +5,9 @@
 %%
 %%   # $ % & ~ _ ^ \ { }
 %%
-
+\listfiles
 \documentclass[10pt,a4paper]{book}
-
+\PassOptionsToPackage{obeyspaces}{url} %white space in url path
 \topmargin -0.5in
 \oddsidemargin 0.0in
 \evensidemargin 0.0in
@@ -18,7 +18,7 @@
 \usepackage{html}
 \usepackage{float}
 \usepackage{graphicx}
-\usepackage{bacula}
+\usepackage{bareos}
 \usepackage{longtable}
 \usepackage{makeidx}
 \usepackage{index}
@@ -26,12 +26,21 @@
 \usepackage{hyperref}
 % \usepackage[linkcolor=black,colorlinks=true]{hyperref}
 \usepackage{url}
+\usepackage{varioref}
+\usepackage{moreverb}
+\renewcommand\verbatimtabsize{4\relax}
+\usepackage{ifthen}
+\usepackage{xifthen}
+
+\usepackage{float}
+
 
 \makeindex
 \newindex{dir}{ddx}{dnd}{Director Index}
 \newindex{fd}{fdx}{fnd}{File Daemon Index}
 \newindex{sd}{sdx}{snd}{Storage Daemon Index}
 \newindex{console}{cdx}{cnd}{Console Index}
+\newindex{monitor}{mox}{mod}{Monitor Index}
 \newindex{general}{idx}{ind}{General Index}
 
 \sloppy
@@ -47,41 +56,87 @@
 \clearpage
 
 \pagestyle{myheadings}
-\markboth{Bacula Version \version}{Bacula Version \version}
+\markboth{Bareos Version \version}{Bareos Version \version}
 \pagenumbering{arabic}
-\include{general}
-%%% \include{newbsfeatures}
-\include{newfeatures}
-\include{state}
-\include{requirements}
-\include{supportedoses}
-\include{supporteddrives}
 
-\include{quickstart}   % install
-\include{install}      % install
-\include{critical}     % install
+
+\part{Introduction and Tuturial}
+
+\include{general}
+\include{state}
+
+
+\chapter{Installing Bareos}
+\label{InstallChapter}
+\index[general]{Bareos!Installing}
+\index[general]{Installing Bareos}
+
+  \input{install}      % install
+
+
+\chapter{Getting Started with Bareos}
+\label{QuickStartChapter}
+\index[general]{Getting Started with Bareos }
+
+    \input{quickstart}   % install
+
+
 
 \include{tutorial}
 
-\include{configure}    % install
-\include{dirdconf}     % install
-\include{filedconf}    % install
-\include{storedconf}   % install
-\include{messagesres}  % install
-\include{consoleconf}  % install
-\include{monitorconf}  % install
+\include{critical}     % install
+
+\part{Configuration Files}
+
+\chapter{Customizing the Configuration Files}
+\label{ConfigureChapter}
+\index[general]{Files!Customizing the Configuration }
+\index[general]{Customizing the Configuration Files }
+
+    \input{configure}    % install
+    \include{dirdconf}     % install
+    \include{filedconf}    % install
+    \include{storedconf}   % install
+    \include{messagesres}  % install
+    \include{consoleconf}  % install
+    \include{monitorconf}  % install
+
+
+\part{Tasks and Concepts}
+
+\include{console-commands}
 
 \include{restore}
-\include{recycling}
-\include{disk}
+
+\include{utilities}
+
+\chapter{Volume Management}
+  \include{disk}
+  \include{recycling}
+
 \include{pools}
-\include{migration}
-\include{basejob}
-\include{strategies}
+
+%tape
 \include{autochangers}
-\include{supportedchangers}
+%tape
+\include{tape-without-autochanger}
+
 \include{spooling}
+\include{migration}
+
+\chapter{Accurate Mode}
+    \label{accuratemode}
+    \TODO{to be written}
+
+\include{basejob}
+
+\chapter{Concurrent Jobs}
+    \label{ConcurrentJobs}
+    \TODO{to be written}
+
+
 \include{statistics}
+%tape
 \include{ansi-labels}
 \include{win32}
 \include{rescue}
@@ -89,22 +144,65 @@
 \include{dataencryption}
 \include{verify}
 
-\include{mysql}           % catalog
-\include{postgresql}      % catalog
-\include{sqlite}          % catalog
 \include{catmaintenance}  %catalog
 
-\include{tapetesting}   % install
+%tapetesting file is missing (also at bacula.org)
+%\include{tapetesting}   % install
 \include{security}        % install
 
+
+\appendix
+\part{Appendix}
+
+\input{requirements}
+
+\chapter{Operating Systems}
+\label{SupportedOSes}
+\index[general]{Systems!Supported Operating }
+\index[general]{Supported Operating Systems }
+
+    \input{supportedoses}
+
+% outdated information
+%\include{supporteddrives}
+%\include{supportedchangers}
+
+%\chapter{Compile Bareos from Source}
+% TODO: rework this chapter later. Most of the stuff can be removed,
+% however the description of the configure flags is usefull.  But is there a better place to document it?
+%\include{compile}
+%\include{mysql}           % catalog
+%\include{postgresql}      % catalog
+%\include{sqlite}          % catalog
+
 \include{bootstrap}
-\include{license}
-\include{fdl}
-\include{gpl}
-\include{lesser}
-\include{projects}
-\include{thanks}
-\include{bugs}
+
+\include{backward-compability}
+
+\chapter{Bareos Copyright, Trademark, and Licenses}
+\label{LicenseChapter}
+\index[general]{Licenses!Bareos Copyright Trademark}
+\index[general]{Bareos Copyright, Trademark, and Licenses}
+
+    \input{license}
+
+    %\include{fdl}
+\pagebreak
+\section{GNU Free Documentation License}
+    \label{fdl}
+    \verbatiminput{fdl.txt}
+
+    %\include{agpl}
+\pagebreak
+\section{GNU Affero Gerneral Public License}
+    \label{agpl}
+    \verbatiminput{agpl.txt}
+
+    %\include{lesser}
+\pagebreak
+\section{GNU Lesser Gerneral Public License}
+    \label{lgpl}
+    \verbatiminput{lgpl.txt}
 
 % pull in the index
 \clearpage

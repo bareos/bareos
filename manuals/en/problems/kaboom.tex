@@ -10,29 +10,29 @@ If you are running on a Linux system, and you have a set of working
 configuration files, it is very unlikely that {\bf Bacula} will crash. As with
 all software, however, it is inevitable that someday, it may crash,
 particularly if you are running on another operating system or using a new or
-unusual feature. 
+unusual feature.
 
 This chapter explains what you should do if one of the three {\bf Bacula}
-daemons (Director, File, Storage) crashes.  When we speak of crashing, we 
+daemons (Director, File, Storage) crashes.  When we speak of crashing, we
 mean that the daemon terminates abnormally because of an error.  There are
-many cases where Bacula detects errors (such as PIPE errors) and will fail 
+many cases where Bacula detects errors (such as PIPE errors) and will fail
 a job. These are not considered crashes.  In addition, under certain
-conditions, Bacula will detect a fatal in the configuration, such as 
+conditions, Bacula will detect a fatal in the configuration, such as
 lack of permission to read/write the working directory. In that case,
 Bacula will force itself to crash with a SEGFAULT. However, before
-crashing, Bacula will normally display a message indicating why.    
+crashing, Bacula will normally display a message indicating why.
 For more details, please read on.
-  
+
 
 \section{Traceback}
 \index[general]{Traceback}
 
 Each of the three Bacula daemons has a built-in exception handler which, in
 case of an error, will attempt to produce a traceback. If successful the
-traceback will be emailed to you. 
+traceback will be emailed to you.
 
 For this to work, you need to ensure that a few things are setup correctly on
-your system: 
+your system:
 
 \begin{enumerate}
 \item You must have a version of Bacula built with debug information turned
@@ -43,18 +43,18 @@ your system:
    gdb} may be replaced by {\bf dbx}.
 
 \item The Bacula installed script file {\bf btraceback} must  be in the same
-   directory as the daemon which dies, and it must  be marked as executable.  
+   directory as the daemon which dies, and it must  be marked as executable.
 
 \item The script file {\bf btraceback.gdb} must  have the correct  path to it
-   specified in the {\bf btraceback} file.  
+   specified in the {\bf btraceback} file.
 
-\item You must have a {\bf mail} program which is on {\bf Bacula's}  path. 
+\item You must have a {\bf mail} program which is on {\bf Bacula's}  path.
    By default, this {\bf mail} program is set to {\bf bsmtp}, so it must
    be correctly configured.
 
 \item If you run either the Director or Storage daemon under a non-root
    userid, you will most likely need to modify the {\bf btraceback} file
-   to do something like {\bf sudo} (raise to root priority) for the       
+   to do something like {\bf sudo} (raise to root priority) for the
    call to {\bf gdb} so that it has the proper permissions to debug
    Bacula.
 \end{enumerate}
@@ -64,12 +64,12 @@ traceback report and email it to you. If the above conditions are not true,
 you can either run the debugger by hand as described below, or you may be able
 to correct the problems by editing the {\bf btraceback} file. I recommend not
 spending too much time on trying to get the traceback to work as it can be
-very difficult. 
+very difficult.
 
 The changes that might be needed are to add a correct path to the {\bf gdb}
 program, correct the path to the {\bf btraceback.gdb} file, change the {\bf
 mail} program or its path, or change your email address. The key line in the
-{\bf btraceback} file is: 
+{\bf btraceback} file is:
 
 \footnotesize
 \begin{verbatim}
@@ -79,7 +79,7 @@ gdb -quiet -batch -x /home/kern/bacula/bin/btraceback.gdb \
 \normalsize
 
 Since each daemon has the same traceback code, a single btraceback file is
-sufficient if you are running more than one daemon on a machine. 
+sufficient if you are running more than one daemon on a machine.
 
 \section{Testing The Traceback}
 \index[general]{Traceback!Testing The }
@@ -89,7 +89,7 @@ To "manually" test the traceback feature, you simply start {\bf Bacula} then
 obtain the {\bf PID} of the main daemon thread (there are multiple threads).
 The output produced here will look different depending on what OS and what
 version of the kernel you are running.
-Unfortunately, the output had to be split to fit on this page: 
+Unfortunately, the output had to be split to fit on this page:
 
 \footnotesize
 \begin{verbatim}
@@ -107,7 +107,7 @@ Unfortunately, the output had to be split to fit on this page:
 
 which in this case is 2103. Then while Bacula is running, you call the program
 giving it the path to the Bacula executable and the {\bf PID}. In this case,
-it is: 
+it is:
 
 \footnotesize
 \begin{verbatim}
@@ -118,7 +118,7 @@ it is:
 It should produce an email showing you the current state of the daemon (in
 this case the Director), and then exit leaving {\bf Bacula} running as if
 nothing happened. If this is not the case, you will need to correct the
-problem by modifying the {\bf btraceback} script. 
+problem by modifying the {\bf btraceback} script.
 
 Typical problems might be that {\bf gdb} or {\bf dbx} for Solaris is not on
 the default path.  Fix this by specifying the full path to it in the {\bf
@@ -151,12 +151,12 @@ If for some reason you cannot get the automatic traceback, or if you want to
 interactively examine the variable contents after a crash, you can run Bacula
 under the debugger. Assuming you want to run the Storage daemon under the
 debugger (the technique is the same for the other daemons, only the name
-changes), you would do the following: 
+changes), you would do the following:
 
 \begin{enumerate}
 \item Start the Director and the File daemon. If the  Storage daemon also
    starts, you will need to find its PID  as shown above (ps fax | grep
-   bacula-sd) and kill it  with a command like the following:  
+   bacula-sd) and kill it  with a command like the following:
 
 \footnotesize
 \begin{verbatim}
@@ -164,14 +164,14 @@ changes), you would do the following:
 \end{verbatim}
 \normalsize
 
-where you replace {\bf PID} by the actual value. 
+where you replace {\bf PID} by the actual value.
 
 \item At this point, the Director and the File daemon should  be running but
-   the Storage daemon should not.  
+   the Storage daemon should not.
 
-\item cd to the directory containing the Storage daemon  
+\item cd to the directory containing the Storage daemon
 
-\item Start the Storage daemon under the debugger:  
+\item Start the Storage daemon under the debugger:
 
    \footnotesize
 \begin{verbatim}
@@ -179,7 +179,7 @@ where you replace {\bf PID} by the actual value.
 \end{verbatim}
 \normalsize
 
-\item Run the Storage daemon:  
+\item Run the Storage daemon:
 
    \footnotesize
 \begin{verbatim}
@@ -188,18 +188,18 @@ where you replace {\bf PID} by the actual value.
 \normalsize
 
 You may replace the {\bf ./bacula-sd.conf} with the full path  to the Storage
-daemon's configuration file.  
+daemon's configuration file.
 
-\item At this point, Bacula will be fully operational.  
+\item At this point, Bacula will be fully operational.
 
 \item In another shell command window, start the Console program  and do what
-   is necessary to cause Bacula to die.  
+   is necessary to cause Bacula to die.
 
 \item When Bacula crashes, the {\bf gdb} shell window will  become active and
-   {\bf gdb} will show you the error that  occurred.  
+   {\bf gdb} will show you the error that  occurred.
 
 \item To get a general traceback of all threads, issue the following  command:
- 
+
 
 \footnotesize
 \begin{verbatim}
@@ -207,7 +207,7 @@ daemon's configuration file.
 \end{verbatim}
 \normalsize
 
-After that you can issue any debugging command. 
+After that you can issue any debugging command.
 \end{enumerate}
 
 \section{Getting Debug Output from Bacula}
@@ -217,10 +217,10 @@ disabled. There are two ways to enable the debug output. One is to add the
 {\bf -d nnn} option on the command line when starting the debugger. The {\bf
 nnn} is the debug level, and generally anything between 50 and 200 is
 reasonable. The higher the number, the more output is produced. The output is
-written to standard output. 
+written to standard output.
 
 The second way of getting debug output is to dynamically turn it on using the
-Console using the {\bf setdebug} command. The full syntax of the command is: 
+Console using the {\bf setdebug} command. The full syntax of the command is:
 
 \footnotesize
 \begin{verbatim}
@@ -230,4 +230,4 @@ Console using the {\bf setdebug} command. The full syntax of the command is:
 
 If none of the options are given, the command will prompt you. You can
 selectively turn on/off debugging in any or all the daemons (i.e. it is not
-necessary to specify all the components of the above command). 
+necessary to specify all the components of the above command).

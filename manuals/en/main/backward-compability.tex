@@ -1,0 +1,39 @@
+\chapter{Backward Compatibility}
+\index[general]{Backward Compatibility}
+One of the major goals of Backup softare is to ensure that you can restore
+tapes (the word tape should also include disk volumes) that you wrote years
+ago.  This means that each new version of the software should be able to read old
+format tapes. The first problem you will have is to ensure that the
+hardware is still working some years down the road, and the second
+problem will be to ensure that the media will still be good, then
+your OS must be able to interface to the device, and finally Bareos
+must be able to recognize old formats.  All the problems except the
+last are ones that we cannot solve, but by careful planning you can.
+
+Since the very beginning of Bacula (January 2000) until today (2013),
+there have been three major Bacula/Bareos tape formats.  The second format
+was introduced in Bacula version 1.27 in November of 2002.
+Bareos has been required to adapt the tape format to avoid potential trademark issues,
+but is able to read also the old Bacula tape formats.
+
+Though the tape format is basically fixed, the kinds of data that we can put on the
+tapes are extensible, and that is how we added new features
+such as ACLs, Win32 data, encrypted data, ...  Obviously, an older
+version of Bacula/Bareos would not know how to read these newer data streams,
+but each newer version of Bareos should know how to read all the
+older streams.
+
+\TODO{add information about bareos bacula compatibility}
+
+% If you want to be 100% sure that you can read old tapes, you
+% should:
+%
+% 1. Try reading old tapes from time to time -- e.g. at least once
+% a year.
+%
+% 2. Keep statically linked copies of every version of Bareos that you use
+% in production then if for some reason, we botch up old tape compatibility, you
+% can always pull out an old copy of Bareos ...
+%
+% The second point is probably overkill but if you want to be sure, it may
+% save you someday.

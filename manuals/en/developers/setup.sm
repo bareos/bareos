@@ -11,7 +11,7 @@ available {
 }
 
 description {
-   From Jeffrey Schaefer, Geometry Center. Translates HTML document to LaTeX 
+   From Jeffrey Schaefer, Geometry Center. Translates HTML document to LaTeX
 }
 
 install {

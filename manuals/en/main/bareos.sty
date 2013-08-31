@@ -1,0 +1,149 @@
+%% bareos.sty
+%% Provides macros and other stuff for the bareos manual
+%%
+%% Original Creation -- K. Cunningham 2005-01-09
+%%
+%% New Commands Currently implemented:
+%%
+%% \elink{target}{text}
+%%    Inserts the text indicated (highlighted) and provides
+%%    an external hyperlink to the target.
+%%
+%% \ilink{target}{text}
+%%    Inserts the text indicated (highlighted) and provides
+%%    an internal hyperlink to the target. Target must be a
+%%    \label somewhere in the same document.
+%%
+%% \idir
+%%    Inserts the path to the images
+%%
+\ProvidesPackage{bareos}[2012/11/16]
+%%
+%%
+%% define images directory
+\def\idir{../../images/}  %% images directory
+
+\def\version{12.4.0}
+
+%%
+\newcommand*{\elink}[2]{%
+  \htmladdnormallink{#1}{#2}%
+}
+%%
+\newcommand*{\ilink}[2]{%
+  \htmlref{#1}{#2}%
+}
+%%
+\newcommand{\dq}{\verb+"+}
+%%
+% TODO: path removes spaces from argument! This is a problem that needs to get fixed, esspecially for the windwos section
+\newcommand{\command}[1]{\path|#1|}
+\newcommand{\bcommand}[1]{\path|#1|}
+\newcommand{\file}[1]{\path|#1|}
+\newcommand{\user}[1]{\path|#1|}
+\newcommand{\group}[1]{\path|#1|}
+\newcommand{\parameter}[1]{\path|#1|}
+
+\newcommand{\configdirective}[1]{\textbf{#1}}
+%%
+\newcommand{\debug}[1]{\marginpar{#1}}
+%%
+\newcommand{\TODO}[1]{\textit{#1}\marginpar{#1}}
+%\newcommand{\TODO}[1]{\textit{#1}}
+%\newcommand{\TODO}[1]{}
+\newcommand{\hide}[1]{}
+%%
+\newcommand{\warning}[1]{Please note! \textit{#1}}
+%%
+\newcommand{\sinceVersion}[3]{\index[#1]{#2}Included since version #3}
+\newcommand{\betaSince}[3]{\index[#1]{#2}Included as beta since version #3. Don't use in productive environment!}
+\newcommand{\deprecatedSince}[3]{This option is deprecated since version #3}
+\newcommand{\removedSince}[3]{This option is removed since version #3}
+
+\newcommand{\directive}[5]{
+% 1: config file
+% 2: directive name
+% 3: directory type/value
+% 4: "required" | ""
+% 5: default value
+\item [#2 = {\textless}#3{\textgreater}]
+    \hfill
+  \ifthenelse{\isempty{#5}}{}{(default: #5)}
+  \ifthenelse{\isempty{#4}}{}{(#4)}
+  \hfill \\
+\index[#1]{#2}\index[#1]{Directive!#2}}
+% \directive{}{}{}{required}{}
+
+
+\floatstyle{boxed}
+\newfloat{program}{h}{lop}
+\floatname{program}{bconsole}
+%\newbox\examplebox
+\newenvironment{bconsole}[4]{%
+    % #1 prompt
+    % #2 command
+    % #3 caption (caption is "command", if #3 is not given)
+    % #4 input
+    \ifthenelse{\isempty{#4}}{
+        \def\bconsoleinput{\vskip-1.0\baselineskip}
+    }{
+        \def\bconsoleinput{{\it enter #4}}
+    }
+    \program
+    \footnotesize
+    \ifthenelse{\isempty{#3}}{
+        \caption{#2}
+        \label{#2}
+    }{
+        \caption{#3}
+        \label{#3}
+    }
+    \verbatim
+#1 #2\\
+}
+{
+    \endverbatim
+    \bconsoleinput
+    \endprogram
+}
+
+
+\floatstyle{boxed}
+\newfloat{config}{h}{lop}
+\floatname{config}{bconfig}
+%\newbox\examplebox
+\newenvironment{bconfig}[1]{%
+    % #1 caption
+    \config
+    \footnotesize
+    \ifthenelse{\isempty{#1}}{
+    }{
+        \caption{#1}
+        \label{#1}
+    }
+    \verbatim
+}
+{    \endverbatim
+    \endconfig }
+
+
+
+\renewenvironment{theindex}
+               {\if@twocolumn
+                  \@restonecolfalse
+                \else
+                  \@restonecoltrue
+                \fi
+                \@mkboth{\MakeUppercase\indexname}%
+                        {\MakeUppercase\indexname}%
+                                \clearpage
+                                \subsection*{\indexname}
+                                \addcontentsline{toc}{subsection}{\indexname}
+                \thispagestyle{plain}\parindent\z@
+                \parskip\z@ \@plus .3\p@\relax
+                \let\item\@idxitem}
+                                {\if@restonecol\onecolumn\else\clearpage\fi}   %% Is this needed???
+
+%%
+\endinput
+%%

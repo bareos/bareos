@@ -7,7 +7,7 @@
 \index[general]{Tools!Volume Utility}
 
 This document describes the utility programs written to aid Bacula users and
-developers in dealing with Volumes external to Bacula. 
+developers in dealing with Volumes external to Bacula.
 
 \section{Specifying the Configuration File}
 \index[general]{Specifying the Configuration File}
@@ -18,7 +18,7 @@ configuration file that these programs need is the {\bf Device} resource
 definitions). This permits the programs to find the configuration parameters
 for your archive device (generally a tape drive). By default, they read {\bf
 bacula-sd.conf} in the current directory, but you may specify a different
-configuration file using the {\bf -c} option. 
+configuration file using the {\bf -c} option.
 
 
 \section{Specifying a Device Name For a Tape}
@@ -29,7 +29,7 @@ Each of these programs require a {\bf device-name} where the Volume can be
 found. In the case of a tape, this is the physical device name such as {\bf
 /dev/nst0} or {\bf /dev/rmt/0ubn} depending on your system. For the program to
 work, it must find the identical name in the Device resource of the
-configuration file. See below for specifying Volume names. 
+configuration file. See below for specifying Volume names.
 
 Please note that if you have Bacula running and you ant to use
 one of these programs, you will either need to stop the Storage daemon, or
@@ -59,7 +59,7 @@ In general, you must specify the Volume name to each of the programs below
 the bootstrap file, you will then specify the Volume name or Volume names if
 more than one volume is needed. For example, suppose you want to read tapes
 {\bf tape1} and {\bf tape2}. First construct a {\bf bootstrap} file named say,
-{\bf list.bsr} which contains: 
+{\bf list.bsr} which contains:
 
 \footnotesize
 \begin{verbatim}
@@ -67,7 +67,7 @@ Volume=test1|test2
 \end{verbatim}
 \normalsize
 
-where each Volume is separated by a vertical bar. Then simply use: 
+where each Volume is separated by a vertical bar. Then simply use:
 
 \footnotesize
 \begin{verbatim}
@@ -76,7 +76,7 @@ where each Volume is separated by a vertical bar. Then simply use:
 \normalsize
 
 In the case of Bacula Volumes that are on files, you may simply append volumes
-as follows: 
+as follows:
 
 \footnotesize
 \begin{verbatim}
@@ -85,12 +85,12 @@ as follows:
 \normalsize
 
 where the backslash (\textbackslash{}) was necessary as a shell escape to
-permit entering the vertical bar (|). 
+permit entering the vertical bar (|).
 
 And finally, if you feel that specifying a Volume name is a bit complicated
 with a bootstrap file, you can use the {\bf -V} option (on all programs except
 {\bf bcopy}) to specify one or more Volume names separated by the vertical bar
-(|). For example, 
+(|). For example,
 
 \footnotesize
 \begin{verbatim}
@@ -99,7 +99,7 @@ with a bootstrap file, you can use the {\bf -V} option (on all programs except
 \normalsize
 
 You may also specify an asterisk (*) to indicate that the program should
-accept any volume. For example: 
+accept any volume. For example:
 
 \footnotesize
 \begin{verbatim}
@@ -113,7 +113,7 @@ accept any volume. For example:
 \index[general]{program!bls}
 
 {\bf bls} can be used to do an {\bf ls} type listing of a {\bf Bacula} tape or
-file. It is called: 
+file. It is called:
 
 \footnotesize
 \begin{verbatim}
@@ -134,7 +134,7 @@ Usage: bls [options] <device-name>
 \end{verbatim}
 \normalsize
 
-For example, to list the contents of a tape: 
+For example, to list the contents of a tape:
 
 \footnotesize
 \begin{verbatim}
@@ -142,7 +142,7 @@ For example, to list the contents of a tape:
 \end{verbatim}
 \normalsize
 
-Or to list the contents of a file: 
+Or to list the contents of a file:
 
 \footnotesize
 \begin{verbatim}
@@ -154,16 +154,16 @@ or
 
 Note that, in the case of a file, the Volume name becomes the filename, so in
 the above example, you will replace the {\bf Volume-name} with the name of the volume
-(file) you wrote. 
+(file) you wrote.
 
 Normally if no options are specified, {\bf bls} will produce the equivalent
 output to the {\bf ls -l} command for each file on the tape. Using other
 options listed above, it is possible to display only the Job records, only the
-tape blocks, etc. For example: 
+tape blocks, etc. For example:
 
 \footnotesize
 \begin{verbatim}
- 
+
 ./bls /tmp/File002
 bls: butil.c:148 Using device: /tmp
 drwxrwxr-x   3 k  k  4096 02-10-19 21:08  /home/kern/bacula/k/src/dird/
@@ -190,7 +190,7 @@ bls: Got EOF on device /tmp
 
 If you are listing a Volume to determine what Jobs to restore, normally the
 {\bf -j} option provides you with most of what you will need as long as you
-don't have multiple clients. For example, 
+don't have multiple clients. For example,
 
 \footnotesize
 \begin{verbatim}
@@ -215,10 +215,10 @@ End Job Session Record: File:blk=0:109 SessId=4 SessTime=1121074625 JobId=1 Leve
 \end{verbatim}
 \normalsize
 
-shows a full save followed by two incremental saves. 
+shows a full save followed by two incremental saves.
 
 Adding the {\bf -v} option will display virtually all information that is
-available for each record: 
+available for each record:
 
 \subsection{Listing Blocks}
 \index[general]{Listing Blocks with bls}
@@ -226,7 +226,7 @@ available for each record:
 
 Normally, except for debugging purposes, you will not need to list Bacula
 blocks (the "primitive" unit of Bacula data on the Volume). However, you can
-do so with: 
+do so with:
 
 \footnotesize
 \begin{verbatim}
@@ -243,7 +243,7 @@ End of File on device
 \normalsize
 
 By adding the {\bf -v} option, you can get more information, which can be
-useful in knowing what sessions were written to the volume: 
+useful in knowing what sessions were written to the volume:
 
 \footnotesize
 \begin{verbatim}
@@ -274,10 +274,10 @@ End of File on device
 \normalsize
 
 Armed with the SessionId and the SessionTime, you can extract just about
-anything. 
+anything.
 
 If you want to know even more, add a second {\bf -v} to the command line to
-get a dump of every record in every block. 
+get a dump of every record in every block.
 
 \footnotesize
 \begin{verbatim}
@@ -324,7 +324,7 @@ Console} program. However, {\bf bextract} can be used to extract a single file
 or a list of files from a Bacula tape or file. In fact, {\bf bextract} can be
 a useful tool to restore files to an empty system assuming you are able to
 boot, you have statically linked {\bf bextract} and you have an appropriate
-{\bf bootstrap} file. 
+{\bf bootstrap} file.
 
 Please note that some of the current limitations of bextract are:
 
@@ -339,11 +339,11 @@ Please note that some of the current limitations of bextract are:
 \end{enumerate}
 
 
-It is called: 
+It is called:
 
 \footnotesize
 \begin{verbatim}
- 
+
 Usage: bextract [-d debug_level] <device-name> <directory-to-store-files>
        -b <file>       specify a bootstrap file
        -dnn            set debug level to nn
@@ -357,13 +357,13 @@ Usage: bextract [-d debug_level] <device-name> <directory-to-store-files>
 
 where {\bf device-name} is the Archive Device (raw device name or full
 filename) of the device to be read, and {\bf directory-to-store-files} is a
-path prefix to prepend to all the files restored. 
+path prefix to prepend to all the files restored.
 
 NOTE: On Windows systems, if you specify a prefix of say d:/tmp, any file that
 would have been restored to {\bf c:/My Documents} will be restored to {\bf
 d:/tmp/My Documents}. That is, the original drive specification will be
 stripped. If no prefix is specified, the file will be restored to the original
-drive. 
+drive.
 
 \subsection{Extracting with Include or Exclude Lists}
 \index[general]{Lists!Extracting with Include or Exclude}
@@ -374,7 +374,7 @@ to be excluded. Wildcards can be used in the exclusion list. This option will
 normally be used in conjunction with the {\bf -i} option (see below). Both the
 {\bf -e} and the {\bf -i} options may be specified at the same time as the
 {\bf -b} option. The bootstrap filters will be applied first, then the include
-list, then the exclude list. 
+list, then the exclude list.
 
 Likewise, and probably more importantly, with the {\bf -i} option, you can
 specify a file that contains a list (one file per line) of files and
@@ -382,9 +382,9 @@ directories to include to be restored. The list must contain the full filename
 with the path. If you specify a path name only, all files and subdirectories
 of that path will be restored. If you specify a line containing only the
 filename (e.g. {\bf my-file.txt}) it probably will not be extracted because
-you have not specified the full path. 
+you have not specified the full path.
 
-For example, if the file {\bf include-list} contains: 
+For example, if the file {\bf include-list} contains:
 
 \footnotesize
 \begin{verbatim}
@@ -393,7 +393,7 @@ For example, if the file {\bf include-list} contains:
 \end{verbatim}
 \normalsize
 
-Then the command: 
+Then the command:
 
 \footnotesize
 \begin{verbatim}
@@ -405,7 +405,7 @@ will restore from the Bacula archive {\bf /dev/nst0} all files and directories
 in the backup from {\bf /home/kern/bacula} and from {\bf /usr/local/bin}. The
 restored files will be placed in a file of the original name under the
 directory {\bf /tmp} (i.e. /tmp/home/kern/bacula/... and
-/tmp/usr/local/bin/...). 
+/tmp/usr/local/bin/...).
 
 \subsection{Extracting With a Bootstrap File}
 \index[general]{File!Extracting With a Bootstrap}
@@ -415,10 +415,10 @@ The {\bf -b} option is used to specify a {\bf bootstrap} file containing the
 information needed to restore precisely the files you want. Specifying a {\bf
 bootstrap} file is optional but recommended because it gives you the most
 control over which files will be restored. For more details on the {\bf
-bootstrap} file, please see 
+bootstrap} file, please see
 \ilink{Restoring Files with the Bootstrap File}{BootstrapChapter}
 chapter of this document. Note, you may also use a bootstrap file produced by
-the {\bf restore} command. For example: 
+the {\bf restore} command. For example:
 
 \footnotesize
 \begin{verbatim}
@@ -430,7 +430,7 @@ The bootstrap file allows detailed specification of what files you want
 restored (extracted). You may specify a bootstrap file and include and/or
 exclude files at the same time. The bootstrap conditions will first be
 applied, and then each file record seen will be compared to the include and
-exclude lists. 
+exclude lists.
 
 \subsection{Extracting From Multiple Volumes}
 \index[general]{Volumes!Extracting From Multiple}
@@ -476,13 +476,13 @@ the details of making a copy of your database.
 loss of a hard disk, if you do not have a valid {\bf bootstrap} file for
 reloading your system, or if a Volume has been recycled but not overwritten,
 you can use {\bf bscan} to re-create your database, which can then be used to
-{\bf restore} your system or a file to its previous state. 
+{\bf restore} your system or a file to its previous state.
 
-It is called: 
+It is called:
 
 \footnotesize
 \begin{verbatim}
- 
+
 Usage: bscan [options] <bacula-archive>
        -b bootstrap   specify a bootstrap file
        -c <file>      specify configuration file
@@ -506,11 +506,11 @@ If you are using MySQL or PostgreSQL, there is no need to supply a working
 directory since in that case, bscan knows where the databases are. However, if
 you have provided security on your database, you may need to supply either the
 database name ({\bf -b} option), the user name ({\bf -u} option), and/or the
-password ({\bf -p}) options. 
+password ({\bf -p}) options.
 
 NOTE: before {\bf bscan} can work, it needs at least a bare bones valid
 database.  If your database exists but some records are missing because
-they were pruned, then you are all set. If your database was lost or 
+they were pruned, then you are all set. If your database was lost or
 destroyed, then you must first ensure that you have the SQL program running
 (MySQL or PostgreSQL), then you must create the Bacula database (normally
 named bacula), and you must create the Bacula tables using the scripts in
@@ -522,13 +522,13 @@ Storage records which are not stored on the Volumes.  Without these
 records, scanning is unable to connect the Job records to the proper
 client.
 
-Forgetting for the moment the extra complications of a full rebuild of 
-your catalog, let's suppose that you did a backup to Volumes "Vol001" 
+Forgetting for the moment the extra complications of a full rebuild of
+your catalog, let's suppose that you did a backup to Volumes "Vol001"
 and "Vol002", then sometime later all records of one or both those
 Volumes were pruned or purged from the
 database. By using {\bf bscan} you can recreate the catalog entries for
 those Volumes and then use the {\bf restore} command in the Console to restore
-whatever you want. A command something like: 
+whatever you want. A command something like:
 
 \footnotesize
 \begin{verbatim}
@@ -543,10 +543,10 @@ command must read the entire tape, so if it has a lot of data, it may take a
 long time, and thus you might want to immediately use the command listed
 below. Note, if you are writing to a disk file, replace the device name with
 the path to the directory that contains the Volumes. This must correspond to
-the Archive Device in the conf file. 
+the Archive Device in the conf file.
 
 Then to actually write or store the records in the catalog, add the {\bf -s}
-option as follows: 
+option as follows:
 
 \footnotesize
 \begin{verbatim}
@@ -558,9 +558,9 @@ When writing to the database, if bscan finds existing records, it will
 generally either update them if something is wrong or leave them alone. Thus
 if the Volumes you are scanning are all or partially in the catalog already, no
 harm will be done to that existing data. Any missing data will simply be
-added. 
+added.
 
-If you have multiple tapes, you should scan them with: 
+If you have multiple tapes, you should scan them with:
 
 \footnotesize
 \begin{verbatim}
@@ -629,7 +629,7 @@ changing the catalog, you can safely do so if and only if you do {\bf not}
 specify either the {\bf -m} or the {\bf -s} options. However, at this time
 (Bacula version 1.26), the comparison routines are not as good or as thorough
 as they should be, so we don't particularly recommend this mode other than for
-testing. 
+testing.
 
 \subsection{Using bscan to Recreate a Catalog from a Volume}
 \index[general]{Volume!Using bscan to Recreate a Catalog from a Volume}
@@ -638,10 +638,10 @@ testing.
 This is the mode for which {\bf bscan} is most useful. You can either {\bf
 bscan} into a freshly created catalog, or directly into your existing catalog
 (after having made an ASCII copy as described above). Normally, you should
-start with a freshly created catalog that contains no data. 
+start with a freshly created catalog that contains no data.
 
 Starting with a single Volume named {\bf TestVolume1}, you run a command such
-as: 
+as:
 
 \footnotesize
 \begin{verbatim}
@@ -655,11 +655,11 @@ forward slash escape the shell -- e.g. {\bf
 TestVolume1\textbackslash{}|TestVolume2}. The {\bf -v} option was added for
 verbose output (this can be omitted if desired). The {\bf -s} option that
 tells {\bf bscan} to store information in the database. The physical device
-name {\bf /dev/nst0} is specified after all the options. 
+name {\bf /dev/nst0} is specified after all the options.
 
 {\bf} For example, after having done a full backup of a directory, then two
 incrementals, I reinitialized the SQLite database as described above, and
-using the bootstrap.bsr file noted above, I entered the following command: 
+using the bootstrap.bsr file noted above, I entered the following command:
 
 \footnotesize
 \begin{verbatim}
@@ -667,7 +667,7 @@ using the bootstrap.bsr file noted above, I entered the following command:
 \end{verbatim}
 \normalsize
 
-which produced the following output: 
+which produced the following output:
 
 \footnotesize
 \begin{verbatim}
@@ -703,25 +703,25 @@ bscan: bscan.c:428 End of Volume. VolFiles=3 VolBlocks=57 VolBytes=10,027,437
 The key points to note are that {\bf bscan} prints a line when each major
 record is created. Due to the volume of output, it does not print a line for
 each file record unless you supply the {\bf -v} option twice or more on the
-command line. 
+command line.
 
 In the case of a Job record, the new JobId will not normally be the same as
 the original Jobid. For example, for the first JobId above, the new JobId is
 1, but the original JobId is 2. This is nothing to be concerned about as it is
-the normal nature of databases. {\bf bscan} will keep everything straight. 
+the normal nature of databases. {\bf bscan} will keep everything straight.
 
 Although {\bf bscan} claims that it created a Client record for Client: Rufus
-three times, it was actually only created the first time. This is normal. 
+three times, it was actually only created the first time. This is normal.
 
 You will also notice that it read an end of file after each Job (Got EOF on
-device ...). Finally the last line gives the total statistics for the bscan. 
+device ...). Finally the last line gives the total statistics for the bscan.
 
 If you had added a second {\bf -v} option to the command line, Bacula would
 have been even more verbose, dumping virtually all the details of each Job
-record it encountered. 
+record it encountered.
 
 Now if you start Bacula and enter a {\bf list jobs} command to the console
-program, you will get: 
+program, you will get:
 
 \footnotesize
 \begin{verbatim}
@@ -739,13 +739,13 @@ which corresponds virtually identically with what the database contained
 before it was re-initialized and restored with bscan. All the Jobs and Files
 found on the tape are restored including most of the Media record. The Volume
 (Media) records restored will be marked as {\bf Full} so that they cannot be
-rewritten without operator intervention. 
+rewritten without operator intervention.
 
 It should be noted that {\bf bscan} cannot restore a database to the exact
 condition it was in previously because a lot of the less important information
 contained in the database is not saved to the tape. Nevertheless, the
 reconstruction is sufficiently complete, that you can run {\bf restore}
-against it and get valid results. 
+against it and get valid results.
 
 An interesting aspect of restoring a catalog backup using {\bf bscan} is
 that the backup was made while Bacula was running and writing to a tape. At
@@ -756,7 +756,7 @@ between what is contained in the backed up catalog and what is actually on
 the tape.  If after restoring a catalog, you attempt to write on the same
 tape that was used to backup the catalog, Bacula will detect the difference
 in the number of files registered in the catalog compared to what is on the
-tape, and will mark the tape in error.  
+tape, and will mark the tape in error.
 
 There are two solutions to this problem. The first is possibly the simplest
 and is to mark the volume as Used before doing any backups.  The second is
@@ -771,12 +771,12 @@ using the {\bf update volume} command in {\bf bconsole}.
 If the Storage daemon crashes during a backup Job, the catalog will not be
 properly updated for the Volume being used at the time of the crash. This
 means that the Storage daemon will have written say 20 files on the tape, but
-the catalog record for the Volume indicates only 19 files. 
+the catalog record for the Volume indicates only 19 files.
 
 Bacula refuses to write on a tape that contains a different number of files
 from what is in the catalog. To correct this situation, you may run a {\bf
 bscan} with the {\bf -m} option (but {\bf without} the {\bf -s} option) to
-update only the final Media record for the Volumes read. 
+update only the final Media record for the Volumes read.
 
 \subsection{After bscan}
 \index[general]{After bscan}
@@ -790,7 +790,7 @@ set the volume status (VolStatus) to {\bf Read-Only} by using the {\bf update}
 command in the catalog. This will allow you to restore from the volume without
 having it immediately purged. When you have restored and backed up the data,
 you can reset the VolStatus to {\bf Used} and the Volume will be purged from
-the catalog. 
+the catalog.
 
 \section{bcopy}
 \label{bcopy}
@@ -805,7 +805,7 @@ process of making the copy, no record of the information written to the new
 Volume is stored in the catalog. This means that the new Volume, though it
 contains valid backup data, cannot be accessed directly from existing catalog
 entries. If you wish to be able to use the Volume with the Console restore
-command, for example, you must first bscan the new Volume into the catalog. 
+command, for example, you must first bscan the new Volume into the catalog.
 
 \subsection{bcopy Command Options}
 \index[general]{Options!bcopy Command}
@@ -827,15 +827,15 @@ Usage: bcopy [-d debug_level] <input-archive> <output-archive>
 \normalsize
 
 By using a {\bf bootstrap} file, you can copy parts of a Bacula archive file
-to another archive. 
+to another archive.
 
 One of the objectives of this program is to be able to recover as much data as
 possible from a damaged tape. However, the current version does not yet have
-this feature. 
+this feature.
 
 As this is a new program, any feedback on its use would be appreciated. In
 addition, I only have a single tape drive, so I have never been able to test
-this program with two tape drives. 
+this program with two tape drives.
 
 \section{btape}
 \label{btape}
@@ -852,16 +852,16 @@ Aside from initial testing of tape drive compatibility with {\bf Bacula},
 {\bf btape} can be dangerous to use with existing {\bf Bacula} tapes because
 it will relabel a tape or write on the tape if so requested regardless that
 the tape may contain valuable data, so please be careful and use it only on
-blank tapes. 
+blank tapes.
 
 To work properly, {\bf btape} needs to read the Storage daemon's configuration
 file. As a default, it will look for {\bf bacula-sd.conf} in the current
 directory. If your configuration file is elsewhere, please use the {\bf -c}
-option to specify where. 
+option to specify where.
 
 The physical device name must be specified on the command line, and this
 same device name must be present in the Storage daemon's configuration file
-read by {\bf btape} 
+read by {\bf btape}
 
 \footnotesize
 \begin{verbatim}
@@ -882,21 +882,21 @@ Usage: btape <options> <device_name>
 
 An important reason for this program is to ensure that a Storage daemon
 configuration file is defined so that Bacula will correctly read and write
-tapes. 
+tapes.
 
 It is highly recommended that you run the {\bf test} command before running
 your first Bacula job to ensure that the parameters you have defined for your
 storage device (tape drive) will permit {\bf Bacula} to function properly. You
 only need to mount a blank tape, enter the command, and the output should be
-reasonably self explanatory. Please see the 
+reasonably self explanatory. Please see the
 \ilink{Tape Testing}{TapeTestingChapter} Chapter of this manual for
-the details. 
+the details.
 
 \subsection{btape Commands}
 \index[general]{Btape Commands}
 \index[general]{Commands!btape}
 
-The full list of commands are: 
+The full list of commands are:
 
 \footnotesize
 \begin{verbatim}
@@ -933,18 +933,18 @@ The full list of commands are:
 \end{verbatim}
 \normalsize
 
-The most useful commands are: 
+The most useful commands are:
 
 \begin{itemize}
-\item test -- test writing records and EOF marks and  reading them back.  
+\item test -- test writing records and EOF marks and  reading them back.
 \item fill -- completely fill a volume with records, then  write a few records
-   on a second volume, and finally,  both volumes will be read back. 
+   on a second volume, and finally,  both volumes will be read back.
    This command writes blocks containing random data, so your drive will
-   not be able to compress the data, and thus it is a good test of 
-   the real physical capacity of your tapes.              
-\item readlabel -- read and dump the label on a Bacula tape.  
+   not be able to compress the data, and thus it is a good test of
+   the real physical capacity of your tapes.
+\item readlabel -- read and dump the label on a Bacula tape.
 \item cap -- list the device capabilities as defined in the  configuration
-   file and as perceived by the Storage daemon. 
+   file and as perceived by the Storage daemon.
    \end{itemize}
 
 The {\bf readlabel} command can be used to display the details of a Bacula
@@ -954,7 +954,7 @@ tape label. This can be useful if the physical tape label was lost or damaged.
 In the event that you want to relabel a {\bf Bacula}, you can simply use the
 {\bf label} command which will write over any existing label. However, please
 note for labeling tapes, we recommend that you use the {\bf label} command in
-the {\bf Console} program since it will never overwrite a valid Bacula tape. 
+the {\bf Console} program since it will never overwrite a valid Bacula tape.
 
 \subsubsection*{Testing your Tape Drive}
 \label{sec:btapespeed}
@@ -1009,7 +1009,7 @@ You can change the block size in the Storage Daemon configuration file.
 \index[general]{Other Programs}
 
 The following programs are general utility programs and in general do not need
-a configuration file nor a device name. 
+a configuration file nor a device name.
 
 \section{bsmtp}
 \label{bsmtp}
@@ -1018,9 +1018,9 @@ a configuration file nor a device name.
 
 {\bf bsmtp} is a simple mail transport program that permits more flexibility
 than the standard mail programs typically found on Unix systems. It can even
-be used on Windows machines. 
+be used on Windows machines.
 
-It is called: 
+It is called:
 
 \footnotesize
 \begin{verbatim}
@@ -1038,7 +1038,7 @@ Usage: bsmtp [-f from] [-h mailhost] [-s subject] [-c copy] [recipient ...]
 If the {\bf -f} option is not specified, {\bf bsmtp} will use your userid. If
 the option {\bf -h} is not specified {\bf bsmtp} will use the value in the environment
 variable {\bf bsmtpSERVER} or if there is none {\bf localhost}. By default
-port 25 is used. 
+port 25 is used.
 
 If a line count limit is set with the {\bf -l} option, {\bf bsmtp} will
 not send an email with a body text exceeding that number of lines. This
@@ -1049,13 +1049,13 @@ job report and any error messages unless you check the log file written
 by the Director (see the messages resource in this manual for details).
 
 
-{\bf recipients} is a space separated list of email recipients. 
+{\bf recipients} is a space separated list of email recipients.
 
-The body of the email message is read from standard input. 
+The body of the email message is read from standard input.
 
 An example of the use of {\bf bsmtp} would be to put the following statement
 in the {\bf Messages} resource of your {\bf bacula-dir.conf} file. Note, these
-commands should appear on a single line each. 
+commands should appear on a single line each.
 
 \footnotesize
 \begin{verbatim}
@@ -1070,9 +1070,9 @@ Where you replace {\bf /home/bacula/bin} with the path to your {\bf Bacula}
 binary directory, and you replace {\bf mail.domain.com} with the fully
 qualified name of your bsmtp (email) server, which normally listens on port
 25. For more details on the substitution characters (e.g. \%r) used in the
-above line, please see the documentation of the 
+above line, please see the documentation of the
 \ilink{ MailCommand in the Messages Resource}{mailcommand}
-chapter of this manual. 
+chapter of this manual.
 
 It is HIGHLY recommended that you test one or two cases by hand to make sure
 that the {\bf mailhost} that you specified is correct and that it will accept
@@ -1082,10 +1082,10 @@ being rejected because it does not contain a valid domain, or because your
 message is caught in your spam filtering rules. Generally, you should specify
 a fully qualified domain name in the {\bf from} field, and depending on
 whether your bsmtp gateway is Exim or Sendmail, you may need to modify the
-syntax of the from part of the message. Please test. 
+syntax of the from part of the message. Please test.
 
 When running {\bf bsmtp} by hand, you will need to terminate the message by
-entering a ctl-d in column 1 of the last line. 
+entering a ctl-d in column 1 of the last line.
 % TODO: is "column" the correct terminology for this?
 
 If you are getting incorrect dates (e.g. 1970) and you are
@@ -1094,38 +1094,38 @@ a LANG=''en\_US'' immediately before the bsmtp call.
 
 In general, {\bf bsmtp} attempts to cleanup email addresses that you
 specify in the from, copy, mailhost, and recipient fields, by adding
-the necessary \lt{} and \gt{} characters around the address part.  However,
+the necessary {\textless} and {\textgreater} characters around the address part.  However,
 if you include a {\bf display-name} (see RFC 5332), some SMTP servers
 such as Exchange may not accept the message if the {\bf display-name} is
-also included in \lt{} and \gt{}.  As mentioned above, you must test, and
-if you run into this situation, you may manually add the \lt{} and \gt{}
+also included in {\textless} and {\textgreater}.  As mentioned above, you must test, and
+if you run into this situation, you may manually add the {\textless} and {\textgreater}
 to the Bacula {\bf mailcommand} or {\bf operatorcommand} and when
-{\bf bsmtp} is formatting an address if it already contains a \lt{} or
-\gt{} character, it will leave the address unchanged.
+{\bf bsmtp} is formatting an address if it already contains a {\textless} or
+{\textgreater} character, it will leave the address unchanged.
 
 \section{dbcheck}
 \label{dbcheck}
 \index[general]{Dbcheck}
 \index[general]{program!dbcheck}
 {\bf dbcheck} is a simple program that will search for logical
-inconsistencies in the Bacula tables in your database, and optionally fix them. 
+inconsistencies in the Bacula tables in your database, and optionally fix them.
 It is a database maintenance routine, in the sense that it can
 detect and remove unused rows, but it is not a database repair
 routine. To repair a database, see the tools furnished by the
 database vendor.  Normally dbcheck should never need to be run,
 but if Bacula has crashed or you have a lot of Clients, Pools, or
-Jobs that you have removed, it could be useful.  
-                             
-The {\bf dbcheck} program can be found in
-the {\bf \lt{}bacula-source\gt{}/src/tools} directory of the source
-distribution. Though it is built with the make process, it is not normally
-"installed". 
+Jobs that you have removed, it could be useful.
 
-It is called: 
+The {\bf dbcheck} program can be found in
+the {\bf {\textless}bacula-source{\textgreater}/src/tools} directory of the source
+distribution. Though it is built with the make process, it is not normally
+"installed".
+
+It is called:
 
 \footnotesize
 \begin{verbatim}
-Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug_level] 
+Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug_level]
   <working-directory> <bacula-database> <user> <password> [<dbhost>] [<dbport>]
        -b              batch mode
        -C              catalog name in the director conf file
@@ -1144,7 +1144,7 @@ information in a simple text based format. This is useful to backup it in a
 secure way.
 
 \begin{verbatim}
- $ dbcheck -B 
+ $ dbcheck -B
  catalog=MyCatalog
  db_type=SQLite
  db_name=regress
@@ -1158,15 +1158,15 @@ secure way.
 
 If the {\bf -c} option is given with the Director's conf file, there is no
 need to enter any of the command line arguments, in particular the working
-directory as dbcheck will read them from the file. 
+directory as dbcheck will read them from the file.
 
 If the {\bf -f} option is specified, {\bf dbcheck} will repair ({\bf fix}) the
-inconsistencies it finds. Otherwise, it will report only. 
+inconsistencies it finds. Otherwise, it will report only.
 
 If the {\bf -b} option is specified, {\bf dbcheck} will run in batch mode, and
 it will proceed to examine and fix (if -f is set) all programmed inconsistency
 checks. If the {\bf -b} option is not specified, {\bf dbcheck} will enter
-interactive mode and prompt with the following: 
+interactive mode and prompt with the following:
 
 \footnotesize
 \begin{verbatim}
@@ -1197,9 +1197,9 @@ By entering 1 or 2, you can toggle the modify database flag (-f option) and
 the verbose flag (-v). It can be helpful and reassuring to turn off the modify
 database flag, then select one or more of the consistency checks (items 3
 through 9) to see what will be done, then toggle the modify flag on and re-run
-the check. 
+the check.
 
-The inconsistencies examined are the following: 
+The inconsistencies examined are the following:
 
 \begin{itemize}
 \item Duplicate filename records. This can happen if you accidentally run  two
@@ -1207,23 +1207,23 @@ The inconsistencies examined are the following:
    simultaneously. It is a rare occurrence, but will create  an inconsistent
    database. If this is the case, you will receive  error messages during Jobs
    warning of duplicate database records.  If you are not getting these error
-   messages, there is no reason  to run this check. 
+   messages, there is no reason  to run this check.
 \item Repair bad Filename records. This checks and corrects filenames  that
-   have a trailing slash. They should not.  
+   have a trailing slash. They should not.
 \item Repair bad Path records. This checks and corrects path names  that do
-   not have a trailing slash. They should.  
+   not have a trailing slash. They should.
 \item Duplicate path records. This can happen if you accidentally run  two
    copies of Bacula at the same time, and they are both adding  filenames
    simultaneously. It is a rare occurrence, but will create  an inconsistent
    database. See the item above for why this occurs and  how you know it is
-   happening. 
-\item Orphaned JobMedia records. This happens when a Job record is deleted 
+   happening.
+\item Orphaned JobMedia records. This happens when a Job record is deleted
    (perhaps by a user issued SQL statement), but the corresponding  JobMedia
    record (one for each Volume used in the Job) was not deleted.  Normally, this
    should not happen, and even if it does, these records  generally do not take
    much space in your database. However, by running  this check, you can
-   eliminate any such orphans.  
-\item Orphaned File records. This happens when a Job record is deleted 
+   eliminate any such orphans.
+\item Orphaned File records. This happens when a Job record is deleted
    (perhaps by a user issued SQL statement), but the corresponding  File record
    (one for each Volume used in the Job) was not deleted.  Note, searching for
    these records can be {\bf very} time consuming (i.e.  it may take hours) for a
@@ -1234,36 +1234,36 @@ The inconsistencies examined are the following:
    want to ensure that you have indexes on JobId, FilenameId, and
    PathId for the File table in your catalog before running this
    command.
-\item Orphaned Path records. This condition happens any time a directory is 
-   deleted from your system and all associated Job records have been purged. 
+\item Orphaned Path records. This condition happens any time a directory is
+   deleted from your system and all associated Job records have been purged.
    During standard purging (or pruning) of Job records, Bacula does  not check
    for orphaned Path records. As a consequence, over a period  of time, old
    unused Path records will tend to accumulate and use  space in your database.
    This check will eliminate them. It is recommended that you run this
-   check at least once a year. 
-\item Orphaned Filename records. This condition happens any time a file is 
-   deleted from your system and all associated Job records have been purged. 
+   check at least once a year.
+\item Orphaned Filename records. This condition happens any time a file is
+   deleted from your system and all associated Job records have been purged.
    This can happen quite frequently as there are quite a large number  of files
    that are created and then deleted. In addition, if you  do a system update or
    delete an entire directory, there can be  a very large number of Filename
-   records that remain in the catalog  but are no longer used.  
+   records that remain in the catalog  but are no longer used.
 
    During standard purging (or pruning) of Job records, Bacula does  not check
    for orphaned Filename records. As a consequence, over a period  of time, old
    unused Filename records will accumulate and use  space in your database. This
    check will eliminate them. It is strongly  recommended that you run this check
    at least once a year, and for  large database (more than 200 Megabytes), it is
-   probably better to  run this once every 6 months.  
+   probably better to  run this once every 6 months.
 \item Orphaned Client records. These records can remain in the database  long
-   after you have removed a client. 
+   after you have removed a client.
 \item Orphaned Job records. If no client is defined for a job or you  do not
    run a job for a long time, you can accumulate old job  records. This option
    allow you to remove jobs that are not  attached to any client (and thus
-   useless).  
-\item All Admin records. This command will remove all Admin records, 
-   regardless of their age.  
-\item All Restore records. This command will remove all Restore records, 
-   regardless of their age. 
+   useless).
+\item All Admin records. This command will remove all Admin records,
+   regardless of their age.
+\item All Restore records. This command will remove all Restore records,
+   regardless of their age.
 \end{itemize}
 
 
@@ -1291,12 +1291,12 @@ waste their time running dbcheck too often.
 \index[general]{bregex}
 \index[general]{program!bregex}
 
-{\bf bregex} is a simple program that will allow you to test 
+{\bf bregex} is a simple program that will allow you to test
 regular expressions against a file of data. This can be useful
 because the regex libraries on most systems differ, and in
 addition, regex expressions can be complicated.
 
-{\bf bregex} is found in the src/tools directory and it is 
+{\bf bregex} is found in the src/tools directory and it is
 normally installed with your system binaries. To run it, use:
 
 \begin{verbatim}
@@ -1307,19 +1307,19 @@ Usage: bregex [-d debug_level] -f <data-file>
        -?          print this message.
 \end{verbatim}
 
-The \lt{}data-file\gt{} is a filename that contains lines
+The {\textless}data-file{\textgreater} is a filename that contains lines
 of data to be matched (or not) against one or more patterns.
-When the program is run, it will prompt you for a regular 
+When the program is run, it will prompt you for a regular
 expression pattern, then apply it one line at a time against
-the data in the file. Each line that matches will be printed 
-preceded by its line number.  You will then be prompted again  
-for another pattern.  
+the data in the file. Each line that matches will be printed
+preceded by its line number.  You will then be prompted again
+for another pattern.
 
 Enter an empty line for a pattern to terminate the program. You
 can print only lines that do not match by using the -n option,
 and you can suppress printing of line numbers with the -l option.
 
-This program can be useful for testing regex expressions to be 
+This program can be useful for testing regex expressions to be
 applied against a list of filenames.
 
 \section{bwild}
@@ -1327,10 +1327,10 @@ applied against a list of filenames.
 \index[general]{bwild}
 \index[general]{program!bwild}
 
-{\bf bwild} is a simple program that will allow you to test 
+{\bf bwild} is a simple program that will allow you to test
 wild-card expressions against a file of data.
 
-{\bf bwild} is found in the src/tools directory and it is 
+{\bf bwild} is found in the src/tools directory and it is
 normally installed with your system binaries. To run it, use:
 
 \begin{verbatim}
@@ -1341,19 +1341,19 @@ Usage: bwild [-d debug_level] -f <data-file>
        -?          print this message.
 \end{verbatim}
 
-The \lt{}data-file\gt{} is a filename that contains lines
+The {\textless}data-file{\textgreater} is a filename that contains lines
 of data to be matched (or not) against one or more patterns.
 When the program is run, it will prompt you for a wild-card
 pattern, then apply it one line at a time against
-the data in the file. Each line that matches will be printed 
-preceded by its line number.  You will then be prompted again  
-for another pattern.  
+the data in the file. Each line that matches will be printed
+preceded by its line number.  You will then be prompted again
+for another pattern.
 
 Enter an empty line for a pattern to terminate the program. You
 can print only lines that do not match by using the -n option,
 and you can suppress printing of line numbers with the -l option.
 
-This program can be useful for testing wild expressions to be 
+This program can be useful for testing wild expressions to be
 applied against a list of filenames.
 
 \section{testfind}
@@ -1364,17 +1364,17 @@ applied against a list of filenames.
 {\bf testfind} permits listing of files using the same search engine that is
 used for the {\bf Include} resource in Job resources. Note, much of the
 functionality of this program (listing of files to be included) is present in
-the 
-\ilink{estimate command}{estimate} in the Console program. 
+the
+\ilink{estimate command}{estimate} in the Console program.
 
 The original use of testfind was to ensure that Bacula's file search engine
 was correct and to print some statistics on file name and path length.
 However, you may find it useful to see what bacula would do with a given {\bf
 Include} resource. The {\bf testfind} program can be found in the {\bf
-\lt{}bacula-source\gt{}/src/tools} directory of the source distribution.
-Though it is built with the make process, it is not normally "installed". 
+{\textless}bacula-source{\textgreater}/src/tools} directory of the source distribution.
+Though it is built with the make process, it is not normally "installed".
 
-It is called: 
+It is called:
 
 \footnotesize
 \begin{verbatim}
@@ -1394,7 +1394,7 @@ Truncation is only in the catalog.
 
 Where a pattern is any filename specification that is valid within an {\bf
 Include} resource definition. If none is specified, {\bf /} (the root
-directory) is assumed. For example: 
+directory) is assumed. For example:
 
 \footnotesize
 \begin{verbatim}
@@ -1402,7 +1402,7 @@ directory) is assumed. For example:
 \end{verbatim}
 \normalsize
 
-Would print the following: 
+Would print the following:
 
 \footnotesize
 \begin{verbatim}
@@ -1432,10 +1432,10 @@ Paths truncated: 0
 Even though {\bf testfind} uses the same search engine as {\bf Bacula}, each
 directory to be listed, must be entered as a separate command line entry or
 entered one line at a time to standard input if the {\bf -} option was
-specified. 
+specified.
 
 Specifying a debug level of one (i.e. {\bf -d1}) on the command line will
 cause {\bf testfind} to print the raw filenames without showing the Bacula
 internal file type, or the link (if any). Debug levels of 10 or greater cause
 the filename and the path to be separated using the same algorithm that is
-used when putting filenames into the Catalog database. 
+used when putting filenames into the Catalog database.

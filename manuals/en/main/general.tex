@@ -1,123 +1,112 @@
 %%
 %%
 
-\chapter{What is Bacula?}
+\chapter{What is Bareos?}
 \label{GeneralChapter}
-\index[general]{Bacula!What is }
-\index[general]{What is Bacula? }
+\index[general]{Bareos!What is }
+\index[general]{What is Bareos? }
 
-Bacula is a set of computer programs that permits the system
+Bareos is a set of computer programs that permits the system
 administrator to manage backup, recovery, and verification of computer data
-across a network of computers of different kinds. Bacula can also run entirely
+across a network of computers of different kinds. Bareos can also run entirely
 upon a single computer and can backup to various types of media, including tape
 and disk.
 
 In technical terms, it is a
-network Client/Server based backup program. Bacula is relatively easy to use
+network Client/Server based backup program. Bareos is relatively easy to use
 and efficient, while offering many advanced storage management features that
 make it easy to find and recover lost or damaged files. Due to its modular
-design, Bacula is scalable from small single computer systems to systems
-consisting of hundreds of computers located over a large network. 
+design, Bareos is scalable from small single computer systems to systems
+consisting of hundreds of computers located over a large network.
 
-\section{Who Needs Bacula?}
-\index[general]{Who Needs Bacula? }
-\index[general]{Bacula!Who Needs }
+\section{Who Needs Bareos?}
+\index[general]{Who Needs Bareos? }
+\index[general]{Bareos!Who Needs }
 
 If you are currently using a program such as tar, dump, or
 bru to backup your computer data, and you would like a network solution, more
-flexibility, or catalog services, Bacula will most likely provide the
+flexibility, or catalog services, Bareos will most likely provide the
 additional features you want. However, if you are new to Unix systems or do
-not have offsetting experience with a sophisticated backup package, the Bacula project does not
-recommend using Bacula as it is much more difficult to setup and use than 
-tar or dump. 
+not have offsetting experience with a sophisticated backup package, the Bareos project does not
+recommend using Bareos as it is much more difficult to setup and use than
+tar or dump.
 
-If you want Bacula to behave like the above mentioned simple
+If you want Bareos to behave like the above mentioned simple
 programs and write over any tape that you put in the drive, then you will find
-working with Bacula difficult. Bacula is designed to protect your data
+working with Bareos difficult. Bareos is designed to protect your data
 following the rules you specify, and this means reusing a tape only
-as the last resort. It is possible to "force" Bacula to write
+as the last resort. It is possible to "force" Bareos to write
 over any tape in the drive, but it is easier and more efficient to use a
 simpler program for that kind of operation.
 
 If you would like a backup program that can write
-to multiple volumes (i.e. is not limited by your tape drive capacity), Bacula
-can most likely fill your needs. In addition, quite a number of Bacula users
-report that Bacula is simpler to setup and use than other equivalent programs.
+to multiple volumes (i.e. is not limited by your tape drive capacity), Bareos
+can most likely fill your needs.
 
 If you are currently using a sophisticated commercial package such as Legato
-Networker. ARCserveIT, Arkeia, or PerfectBackup+, you may be interested in
-Bacula, which provides many of the same features and is free software
-available under the GNU Version 2 software license. 
+Networker, ARCserveIT, Arkeia, IBM Tivoli Storage Manager or PerfectBackup+, you may be interested in
+Bareos, which provides many of the same features and is free software
+available under the GNU AGPLv3 software license.
 
-\section{Bacula Components or Services}
-\index[general]{Bacula Components or Services }
-\index[general]{Services!Bacula Components or }
+\section{Bareos Components or Services}
+\index[general]{Bareos Components or Services }
+\index[general]{Services!Bareos Components or }
 
-Bacula is made up of the following five major components or services:
+Bareos is made up of the following five major components or services:
 Director, Console, File, Storage, and Monitor services.
 
 
-\addcontentsline{lof}{figure}{Bacula Applications}
-\includegraphics{\idir bacula-applications.eps} 
-(thanks to Aristedes Maniatis for this graphic and the one below) 
+%\addcontentsline{lof}{figure}{Bareos Applications}
+%\includegraphics{\idir bareos-applications.eps}
+%(thanks to Aristedes Maniatis for this graphic and the one below)
 % TODO: move the thanks to Credits section in preface
 
-\subsection*{Bacula Director}
+\subsection*{Bareos Director}
    \label{DirDef}
-   The Bacula Director service is the program that supervises
+   The Bareos Director service is the program that supervises
    all the backup, restore, verify and archive operations.  The system
-   administrator uses the Bacula Director to schedule backups and to
+   administrator uses the Bareos Director to schedule backups and to
    recover files.  For more details see the Director Services Daemon Design
-   Document in the Bacula Developer's Guide.  The Director runs as a daemon
+   Document in the Bareos Developer's Guide.  The Director runs as a daemon
    (or service) in the background.
 % TODO: tell reader where this Developer's Guide is at?
    \label{UADef}
 
-\subsection*{Bacula Console}
+\subsection*{Bareos Console}
 
-   The Bacula Console service is the program that allows the
-   administrator or user to communicate with the Bacula Director
-   Currently, the Bacula Console is available in three versions:
-   text-based console interface, QT-based interface, and a
-   wxWidgets graphical interface.
+   The Bareos Console service is the program that allows the
+   administrator or user to communicate with the Bareos Director
+   Currently, the Bareos Console is available in two versions:
+   a text-based console and a QT-based GUI interface.
    The first and simplest is to run the Console program in a shell window
    (i.e.  TTY interface).  Most system administrators will find this
-   completely adequate.  The second version is a GNOME GUI interface that
+   completely adequate.  The second version is a GUI interface that
    is far from complete, but quite functional as it has most the
-   capabilities of the shell Console.  The third version is a wxWidgets GUI
-   with an interactive file restore.  It also has most of the capabilities
-   of the shell console, allows command completion with tabulation, and
-   gives you instant help about the command you are typing.  For more
-   details see the \ilink{Bacula Console Design Document}{_ConsoleChapter}.
+   capabilities of the shell Console. For more
+   details see the \ilink{Bareos Console Design Document}{_ConsoleChapter}.
 
-\subsection*{Bacula File}
+\subsection*{Bareos File}
    \label{FDDef}
-   The Bacula File service (also known as the Client program) is the software
+   The Bareos File service (also known as the Client program) is the software
    program that is installed on the machine to be backed up.
    It is specific to the
    operating system on which it runs and is responsible for providing the
    file attributes and data when requested by the Director.  The File
    services are also responsible for the file system dependent part of
    restoring the file attributes and data during a recovery operation.  For
-   more details see the File Services Daemon Design Document in the Bacula
+   more details see the File Services Daemon Design Document in the Bareos
    Developer's Guide.  This program runs as a daemon on the machine to be
    backed up.
-   In addition to Unix/Linux File daemons, there is a Windows File daemon
-   (normally distributed in binary format).  The Windows File daemon runs
-   on current Windows versions (NT, 2000, XP, 2003, and possibly Me and
-   98).
-% TODO: maybe do not list Windows here as that is listed elsewhere
-% TODO: remove "possibly"?
-% TODO: mention Vista?
+   In addition to Unix/Linux File daemons, there are File daemons for Windows and MacOS.
 
-\subsection*{Bacula Storage}
+\subsection*{Bareos Storage}
    \label{SDDef}
-   The Bacula Storage services consist of the software programs that
+   The Bareos Storage services consist of the software programs that
    perform the storage and recovery of the file attributes and data to the
    physical backup media or volumes.  In other words, the Storage daemon is
    responsible for reading and writing your tapes (or other storage media,
    e.g.  files).  For more details see the Storage Services Daemon Design
-   Document in the Bacula Developer's Guide.  The Storage services runs as
+   Document in the Bareos Developer's Guide.  The Storage services runs as
    a daemon on the machine that has the backup device (usually a tape
    drive).
 % TODO: may switch e.g. to "for example" or "such as" as appropriate
@@ -129,115 +118,114 @@ Director, Console, File, Storage, and Monitor services.
    responsible for maintaining the file indexes and volume databases for
    all files backed up.  The Catalog services permit the system
    administrator or user to quickly locate and restore any desired file.
-   The Catalog services sets Bacula apart from simple backup programs like
+   The Catalog services sets Bareos apart from simple backup programs like
    tar and bru, because the catalog maintains a record of all Volumes used,
    all Jobs run, and all Files saved, permitting efficient restoration and
-   Volume management.  Bacula currently supports three different databases,
+   Volume management.  Bareos currently supports three different databases,
    MySQL, PostgreSQL, and SQLite, one of which must be chosen when building
-   Bacula.
+   Bareos.
 
    The three SQL databases currently supported (MySQL, PostgreSQL or
    SQLite) provide quite a number of features, including rapid indexing,
-   arbitrary queries, and security.  Although the Bacula project plans to support other
-   major SQL databases, the current Bacula implementation interfaces only
+   arbitrary queries, and security.  Although the Bareos project plans to support other
+   major SQL databases, the current Bareos implementation interfaces only
    to MySQL, PostgreSQL and SQLite.  For the technical and porting details
    see the Catalog Services Design Document in the developer's documented.
 
    The packages for MySQL and PostgreSQL are available for several operating
    systems.
-   Alternatively, installing from the
-   source is quite easy, see the \ilink{ Installing and Configuring
-   MySQL}{MySqlChapter} chapter of this document for the details.  For
-   more information on MySQL, please see:
-   \elink{www.mysql.com}{http://www.mysql.com}.  Or see the \ilink{
-   Installing and Configuring PostgreSQL}{PostgreSqlChapter} chapter of this
-   document for the details.  For more information on PostgreSQL, please
-   see: \elink{www.postgresql.org}{http://www.postgresql.org}.
+   %Alternatively, installing from the
+   %source is quite easy, see the \ilink{ Installing and Configuring
+   %MySQL}{MySqlChapter} chapter of this document for the details.  For
+   %more information on MySQL, please see:
+   %\elink{www.mysql.com}{http://www.mysql.com}.  Or see the \ilink{
+   %Installing and Configuring PostgreSQL}{PostgreSqlChapter} chapter of this
+   %document for the details.  For more information on PostgreSQL, please
+   %see: \elink{www.postgresql.org}{http://www.postgresql.org}.
 
-   Configuring and building SQLite is even easier.  For the details of
-   configuring SQLite, please see the \ilink{ Installing and Configuring
-   SQLite}{SqlLiteChapter} chapter of this document.
+   %Configuring and building SQLite is even easier.  For the details of
+   %configuring SQLite, please see the \ilink{ Installing and Configuring
+   %SQLite}{SqlLiteChapter} chapter of this document.
 
-\subsection*{Bacula Monitor} 
+\subsection*{Bareos Tray Monitor}
    \label{MonDef}
-   A Bacula Monitor service is the program that allows the
-   administrator or user to watch current status of Bacula Directors,
-   Bacula File Daemons and Bacula Storage Daemons.
-   Currently, only a GTK+ version is available, which works with GNOME,
-   KDE, or any window manager that supports the FreeDesktop.org system tray
-   standard. 
+   A Bareos Tray Monitor service is the program that allows the
+   user to watch current status of Bareos Directors,
+   Bareos File Daemons and Bareos Storage Daemons.
+   Currently, a QT version is available, which works with Linux and Windows.
 
    To perform a successful save or restore, the following four daemons must be
    configured and running: the Director daemon, the File daemon, the Storage
-   daemon, and the Catalog service (MySQL, PostgreSQL or SQLite). 
+   daemon, and the Catalog service (MySQL, PostgreSQL or SQLite).
 
-\section{Bacula Configuration}
-\index[general]{Configuration!Bacula }
-\index[general]{Bacula Configuration }
+\section{Bareos Configuration}
+\index[general]{Configuration!Bareos }
+\index[general]{Bareos Configuration }
 
-In order for Bacula to understand your system, what clients you want backed
+In order for Bareos to understand your system, what clients you want backed
 up and how, you must create a number of configuration files containing
-resources (or objects). The following presents an overall picture of this: 
+resources (or objects).% The following presents an overall picture of this:
 
-\addcontentsline{lof}{figure}{Bacula Objects}
-\includegraphics{\idir bacula-objects.eps} 
+%\addcontentsline{lof}{figure}{Bareos Objects}
+%\includegraphics{\idir bareos-objects.eps}
 
 \section{Conventions Used in this Document}
 \index[general]{Conventions Used in this Document }
 \index[general]{Document!Conventions Used in this }
 
-Bacula is in a state of evolution, and as a consequence, this manual
+Bareos is in a state of evolution, and as a consequence, this manual
 will not always agree with the code. If an item in this manual is preceded by
 an asterisk (*), it indicates that the particular feature is not implemented.
 If it is preceded by a plus sign (+), it indicates that the feature may be
-partially implemented. 
+partially implemented.
 % TODO: search for plus sign and asterisk and "IMPLEMENTED" and fix for printed book
 
 If you are reading this manual as supplied in a released version of the
 software, the above paragraph holds true. If you are reading the online
-version of the manual, 
-\elink{ www.bacula.org}{http://www.bacula.org}, please bear in
-mind that this version describes the current version in development (in the
-CVS) that may contain features not in the released version. Just the same, it
-generally lags behind the code a bit. 
+version of the manual,
+\elink{www.bareos.org}{http://www.bareos.org}, please bear in
+mind that this version describes the current version in development
+that may contain features not in the released version. Just the same, it
+generally lags behind the code a bit.
 % TODO: is this still true? there are separate websites
 
 \section{Quick Start}
 \index[general]{Quick Start }
 \index[general]{Start!Quick }
 
-To get Bacula up and running quickly, the author recommends
+To get Bareos up and running quickly, the author recommends
 that you first scan the
-Terminology section below, then quickly review the next chapter entitled 
-\ilink{The Current State of Bacula}{StateChapter}, then the 
-\ilink{Getting Started with Bacula}{QuickStartChapter}, which will
-give you a quick overview of getting Bacula running. After which, you should
-proceed to the chapter on 
-\ilink{Installing Bacula}{InstallChapter}, then 
-\ilink{How to Configure Bacula}{ConfigureChapter}, and finally the
-chapter on 
-\ilink{ Running Bacula}{TutorialChapter}. 
+Terminology section below, then quickly review the next chapter entitled
+\ilink{The Current State of Bareos}{StateChapter}, then the
+\ilink{Installing Bareos}{InstallChapter}, 
+the \ilink{Getting Started with Bareos}{QuickStartChapter}, which will
+give you a quick overview of getting Bareos running. 
+After which, you should
+proceed to the chapter
+\ilink{How to Configure Bareos}{ConfigureChapter}, 
+and finally th chapter on
+\ilink{Running Bareos}{TutorialChapter}.
 
 \section{Terminology}
-\index[general]{Terminology }
+\index[general]{Terminology}
 
 \begin{description}
 
 \item [Administrator]
    \index[fd]{Administrator }
-   The person or persons responsible for administrating the Bacula system. 
+   The person or persons responsible for administrating the Bareos system.
 
 \item [Backup]
    \index[fd]{Backup }
-   The term Backup refers to a Bacula Job that saves files. 
+   The term Backup refers to a Bareos Job that saves files.
 
 \item [Bootstrap File]
    \index[fd]{Bootstrap File }
    The bootstrap file is an ASCII file containing a compact form of
-   commands that allow Bacula or the stand-alone file extraction utility
+   commands that allow Bareos or the stand-alone file extraction utility
    (bextract) to restore the contents of one or more Volumes, for
    example, the current state of a system just backed up.  With a bootstrap
-   file, Bacula can restore your system without a Catalog.  You can create
+   file, Bareos can restore your system without a Catalog.  You can create
    a bootstrap file from a Catalog to extract any file or files you wish.
 
 \item [Catalog]
@@ -254,12 +242,12 @@ chapter on
    backup volumes (i.e.  tapes).  Of course, the tapes will also have a
    copy of the file data in addition to the File Attributes (see below).
 
-   The catalog feature is one part of Bacula that distinguishes it from
+   The catalog feature is one part of Bareos that distinguishes it from
    simple backup and archive programs such as dump and tar.
 
 \item [Client]
    \index[fd]{Client }
-   In Bacula's terminology, the word Client refers to the machine being
+   In Bareos's terminology, the word Client refers to the machine being
    backed up, and it is synonymous with the File services or File daemon,
    and quite often, it is referred to it as the FD. A Client is defined in a
    configuration file resource.
@@ -267,13 +255,13 @@ chapter on
 \item [Console]
    \index[fd]{Console }
    The program that interfaces to the Director allowing  the user or system
-   administrator to control Bacula. 
+   administrator to control Bareos.
 
 \item [Daemon]
    \index[fd]{Daemon }
    Unix terminology for a program that is always present in  the background to
    carry out a designated task. On Windows systems, as well as some Unix
-   systems, daemons are called Services. 
+   systems, daemons are called Services.
 
 \item [Directive]
    \index[fd]{Directive }
@@ -283,27 +271,27 @@ chapter on
 
 \item [Director]
    \index[fd]{Director }
-   The main Bacula server daemon that schedules and directs all  Bacula
-   operations. Occasionally, the project refers to the Director as DIR. 
+   The main Bareos server daemon that schedules and directs all  Bareos
+   operations. Occasionally, the project refers to the Director as DIR.
 
 \item [Differential]
    \index[fd]{Differential }
    A backup that includes all files changed since the last  Full save started.
-   Note, other backup programs may define this differently. 
+   Note, other backup programs may define this differently.
 
 \item [File Attributes]
    \index[fd]{File Attributes }
    The File Attributes are all the information  necessary about a file to
    identify it and all its properties such as  size, creation date, modification
    date, permissions, etc. Normally, the  attributes are handled entirely by
-   Bacula so that the user never  needs to be concerned about them. The
-   attributes do not include the  file's data. 
+   Bareos so that the user never  needs to be concerned about them. The
+   attributes do not include the  file's data.
 
 \item [File Daemon]
    \index[fd]{File Daemon }
    The daemon running on the client  computer to be backed up. This is also
    referred to as the File  services, and sometimes as the Client services or the
-   FD. 
+   FD.
 
 \label{FileSetDef}
 \item [FileSet]
@@ -319,29 +307,29 @@ chapter on
    \index[fd]{Incremental }
    A backup that includes all files changed since the  last Full, Differential,
    or Incremental backup started. It is normally  specified on the {\bf Level}
-   directive within the Job resource  definition, or in a Schedule resource. 
+   directive within the Job resource  definition, or in a Schedule resource.
 
 \label{JobDef}
 \item [Job]
 \index[fd]{a name }
-   A Bacula Job is a configuration resource that defines the work that
-   Bacula must perform to backup or restore a particular Client.  It
+   A Bareos Job is a configuration resource that defines the work that
+   Bareos must perform to backup or restore a particular Client.  It
    consists of the {\bf Type} (backup, restore, verify, etc), the {\bf
-   Level} (full, incremental,...), the {\bf FileSet}, and {\bf Storage} the
+   Level} (full, differential, incremental, etc.), 
+   the {\bf FileSet}, and {\bf Storage} the
    files are to be backed up (Storage device, Media Pool).  For more
    details, see the \ilink{Job Resource definition}{JobResource} in the
    Director chapter of this document.
-% TODO: clean up "..." for book
 
 \item [Monitor]
    \index[fd]{Monitor }
    The program that interfaces to all the daemons  allowing the user or
-   system administrator to monitor Bacula status. 
+   system administrator to monitor Bareos status.
 
 \item [Resource]
    \index[fd]{Resource }
    A resource is a part of a configuration file that defines a specific
-   unit of information that is available to Bacula.  It consists of several
+   unit of information that is available to Bareos.  It consists of several
    directives (individual configuration statements).  For example, the {\bf
    Job} resource defines all the properties of a specific Job: name,
    schedule, Volume pool, backup type, backup level, ...
@@ -353,16 +341,15 @@ chapter on
    recovering a file from backup media.  It is the inverse of a save,
    except that in most cases, a restore will normally have a small set of
    files to restore, while normally a Save backs up all the files on the
-   system.  Of course, after a disk crash, Bacula can be called upon to do
+   system.  Of course, after a disk crash, Bareos can be called upon to do
    a full Restore of all files that were on the system.
-% TODO: Why? Why say "Of course"??
 
 % TODO: define "Save"
 % TODO: define "Full"
 
 \item [Schedule]
    \index[fd]{Schedule }
-   A Schedule is a configuration resource that defines when the Bacula Job
+   A Schedule is a configuration resource that defines when the Bareos Job
    will be scheduled for execution.  To use the Schedule, the Job resource
    will refer to the name of the Schedule.  For more details, see the
    \ilink{Schedule Resource definition}{ScheduleResource} in the Director
@@ -372,7 +359,7 @@ chapter on
    \index[fd]{Service }
    This is a program that remains permanently in memory awaiting
    instructions.  In Unix environments, services are also known as
-   {\bf daemons}. 
+   {\bf daemons}.
 
 \item [Storage Coordinates]
    \index[fd]{Storage Coordinates }
@@ -395,16 +382,16 @@ chapter on
    Normally refers to the internal conversation between the File daemon and
    the Storage daemon.  The File daemon opens a {\bf session} with the
    Storage daemon to save a FileSet or to restore it.  A session has a
-   one-to-one correspondence to a Bacula Job (see above).
+   one-to-one correspondence to a Bareos Job (see above).
 
 \item [Verify]
    \index[sd]{Verify }
    A verify is a job that compares the current file attributes to the
-   attributes that have previously been stored in the Bacula Catalog.  This
+   attributes that have previously been stored in the Bareos Catalog.  This
    feature can be used for detecting changes to critical system files
    similar to what a file integrity checker like Tripwire does.
    One of the major advantages of
-   using Bacula to do this is that on the machine you want protected such
+   using Bareos to do this is that on the machine you want protected such
    as a server, you can run just the File daemon, and the Director, Storage
    daemon, and Catalog reside on a different machine.  As a consequence, if
    your server is ever compromised, it is unlikely that your verification
@@ -415,16 +402,16 @@ chapter on
    the file attributes), *or it can check the Volume contents against the
    original files on disk.
 
-\item [*Archive]
-   \index[fd]{*Archive }
-   An Archive operation is done after a Save, and it  consists of removing the
-   Volumes on which data is saved from active  use. These Volumes are marked as
-   Archived, and may no longer be  used to save files. All the files contained
-   on an Archived Volume  are removed from the Catalog. NOT YET IMPLEMENTED. 
+%\item [*Archive]
+%   \index[fd]{*Archive }
+%   An Archive operation is done after a Save, and it  consists of removing the
+%   Volumes on which data is saved from active  use. These Volumes are marked as
+%   Archived, and may no longer be  used to save files. All the files contained
+%   on an Archived Volume  are removed from the Catalog. NOT YET IMPLEMENTED.
 
 \item [Retention Period]
    \index[fd]{Retention Period }
-   There are various kinds of retention periods that Bacula recognizes.
+   There are various kinds of retention periods that Bareos recognizes.
    The most important are the {\bf File} Retention Period, {\bf Job}
    Retention Period, and the {\bf Volume} Retention Period.  Each of these
    retention periods applies to the time that specific records will be kept
@@ -441,7 +428,7 @@ chapter on
    Period is because the volume of
    the database File records use the most storage space in the
    database.  As a consequence, you must ensure that regular "pruning" of
-   the database file records is done to keep your database from growing 
+   the database file records is done to keep your database from growing
    too large. (See the Console {\bf prune}
    command for more details on this subject).
 
@@ -454,7 +441,7 @@ chapter on
    purged.
 
    The Volume Retention Period is the minimum of time that a Volume will be
-   kept before it is reused.  Bacula will normally never overwrite a Volume
+   kept before it is reused.  Bareos will normally never overwrite a Volume
    that contains the only backup copy of a file.  Under ideal conditions,
    the Catalog would retain entries for all files backed up for all current
    Volumes.  Once a Volume is overwritten, the files that were backed up on
@@ -462,7 +449,7 @@ chapter on
    there is a very large pool of Volumes or a Volume is never overwritten,
    the Catalog database may become enormous.  To keep the Catalog to a
    manageable size, the backup information should be removed from the
-   Catalog after the defined File Retention Period.  Bacula provides the
+   Catalog after the defined File Retention Period.  Bareos provides the
    mechanisms for the catalog to be automatically pruned according to the
    retention periods defined.
 
@@ -470,53 +457,53 @@ chapter on
    \index[sd]{Scan }
    A Scan operation causes the contents of a Volume or a series of Volumes
    to be scanned.  These Volumes with the information on which files they
-   contain are restored to the Bacula Catalog.  Once the information is
+   contain are restored to the Bareos Catalog.  Once the information is
    restored to the Catalog, the files contained on those Volumes may be
    easily restored.  This function is particularly useful if certain
    Volumes or Jobs have exceeded their retention period and have been
    pruned or purged from the Catalog.  Scanning data from Volumes into the
    Catalog is done by using the {\bf bscan} program.  See the \ilink{ bscan
-   section}{bscan} of the Bacula Utilities Chapter of this manual for more
+   section}{bscan} of the Bareos Utilities Chapter of this manual for more
    details.
 
 \item [Volume]
    \index[sd]{Volume }
    A Volume is an archive unit, normally a tape or a named disk file where
-   Bacula stores the data from one or more backup jobs.  All Bacula Volumes
-   have a software label written to the Volume by Bacula so that it
+   Bareos stores the data from one or more backup jobs.  All Bareos Volumes
+   have a software label written to the Volume by Bareos so that it
    identifies what Volume it is really reading.  (Normally there should be
    no confusion with disk files, but with tapes, it is easy to mount the
    wrong one.)
 \end{description}
 
-\section{What Bacula is Not}
-\index[general]{What Bacula is Not}
+\section{What Bareos is Not}
+\index[general]{What Bareos is Not}
 
-Bacula is a backup, restore and verification program and is not a
+Bareos is a backup, restore and verification program and is not a
 complete disaster recovery system in itself, but it can be a key part of one
-if you plan carefully and follow the instructions included in the 
-\ilink{ Disaster Recovery}{RescueChapter} Chapter of this manual. 
+if you plan carefully and follow the instructions included in the
+\ilink{Disaster Recovery}{RescueChapter} Chapter of this manual.
 
 With proper planning, as mentioned in the Disaster Recovery chapter,
-Bacula can be a central component of your disaster recovery system. For
-example, if you have created an emergency boot disk, and/or a Bacula Rescue disk to
+Bareos can be a central component of your disaster recovery system. For
+example, if you have created an emergency boot disk, and/or a Bareos Rescue disk to
 save the current partitioning information of your hard disk, and maintain a
-complete Bacula backup, it is possible to completely recover your system from
-"bare metal" that is starting from an empty disk. 
+complete Bareos backup, it is possible to completely recover your system from
+"bare metal" that is starting from an empty disk.
 
 If you have used the {\bf WriteBootstrap} record in your job or some other
 means to save a valid bootstrap file, you will be able to use it to extract
 the necessary files (without using the catalog or manually searching for the
-files to restore). 
+files to restore).
 
-\section{Interactions Between the Bacula Services}
-\index[general]{Interactions Between the Bacula Services}
-\index[general]{Services!Interactions Between the Bacula}
+\section{Interactions Between the Bareos Services}
+\index[general]{Interactions Between the Bareos Services}
+\index[general]{Services!Interactions Between the Bareos}
 
-The following block diagram shows the typical interactions between the Bacula
+The following block diagram shows the typical interactions between the Bareos
 Services for a backup job. Each block represents in general a separate process
 (normally a daemon). In general, the Director oversees the flow of
-information. It also maintains the Catalog. 
+information. It also maintains the Catalog.
 
-\addcontentsline{lof}{figure}{Interactions between Bacula Services}
-\includegraphics{\idir flow.eps} 
+\addcontentsline{lof}{figure}{Interactions between Bareos Services}
+\includegraphics{\idir flow.eps}
