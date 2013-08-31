@@ -64,7 +64,7 @@ else
 fi
 
 NRLINES=`grep TestSchedule tmp/log4.out  | wc -l`
-if [ $NRLINES = "169" ]; then
+if [ $NRLINES = "170" ]; then
    print_debug "status scheduler schedule=TestSchedule OK"
 else
    estat=4
