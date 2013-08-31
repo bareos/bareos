@@ -1,0 +1,2155 @@
+\chapter{New Features in 5.0.0}
+\label{NewFeaturesChapter}
+
+This chapter presents the new features that are in the
+released Bacula version 5.0.0.
+
+\section{Truncate volume after purge}
+\label{sec:actiononpurge}
+
+The Pool directive \textbf{ActionOnPurge=Truncate} instructs Bacula to truncate
+the volume when it is purged. It is useful to prevent disk based volumes from
+consuming too much space. 
+
+\begin{verbatim}
+Pool {
+  Name = Default
+  Action On Purge = Truncate
+  ...
+}
+\end{verbatim}
+
+\section{Maximum Concurrent Jobs for Devices}
+\label{sec:maximumconcurrentjobdevice}
+
+{\bf Maximum Concurrent Jobs} is a new Device directive in the Storage
+Daemon configuration permits setting the maximum number of Jobs that can
+run concurrently on a specified Device.  Using this directive, it is
+possible to have different Jobs using multiple drives, because when the
+Maximum Concurrent Jobs limit is reached, the Storage Daemon will start new
+Jobs on any other available compatible drive.  This facilitates writing to
+multiple drives with multiple Jobs that all use the same Pool.
+
+This project was funded by Bacula Systems.
+
+\section{Restore from Multiple Storage Daemons}
+\index[general]{Restore}
+
+Previously, you were able to restore from multiple devices in a single Storage
+Daemon. Now, Bacula is able to restore from multiple Storage Daemons. For
+example, if your full backup runs on a Storage Daemon with an autochanger, and
+your incremental jobs use another Storage Daemon with lots of disks, Bacula
+will switch automatically from one Storage Daemon to an other within the same
+Restore job.
+
+You must upgrade your File Daemon to version 3.1.3 or greater to use this
+feature.
+
+This project was funded by Bacula Systems with the help of Equiinet.
+
+\section{File Deduplication using Base Jobs}
+A base job is sort of like a Full save except that you will want the FileSet to
+contain only files that are unlikely to change in the future (i.e.  a snapshot
+of most of your system after installing it).  After the base job has been run,
+when you are doing a Full save, you specify one or more Base jobs to be used.
+All files that have been backed up in the Base job/jobs but not modified will
+then be excluded from the backup.  During a restore, the Base jobs will be
+automatically pulled in where necessary.
+
+This is something none of the competition does, as far as we know (except
+perhaps BackupPC, which is a Perl program that saves to disk only).  It is big
+win for the user, it makes Bacula stand out as offering a unique optimization
+that immediately saves time and money.  Basically, imagine that you have 100
+nearly identical Windows or Linux machine containing the OS and user files.
+Now for the OS part, a Base job will be backed up once, and rather than making
+100 copies of the OS, there will be only one.  If one or more of the systems
+have some files updated, no problem, they will be automatically restored.
+
+A new Job directive \texttt{Base=Jobx, Joby...} permits to specify the list of
+files that will be used during Full backup as base.
+
+\begin{verbatim}
+Job {
+   Name = BackupLinux
+   Level= Base
+   ...
+}
+
+Job {
+   Name = BackupZog4
+   Base = BackupZog4, BackupLinux
+   Accurate = yes
+   ...
+}
+\end{verbatim}
+
+In this example, the job \texttt{BackupZog4} will use the most recent version
+of all files contained in \texttt{BackupZog4} and \texttt{BackupLinux}
+jobs. Base jobs should have run with \texttt{level=Base} to be used.
+
+By default, Bacula will compare permissions bits, user and group fields,
+modification time, size and the checksum of the file to choose between the
+current backup and the BaseJob file list. You can change this behavior with the
+\texttt{BaseJob} FileSet option. This option works like the \texttt{verify=}
+one, that is described in the \ilink{FileSet}{FileSetResource} chapter.
+
+\begin{verbatim}
+FileSet {
+  Name = Full
+  Include = {
+    Options {
+       BaseJob  = pmugcs5
+       Accurate = mcs5
+       Verify   = pin5
+    }
+    File = /
+  }
+}
+\end{verbatim}
+
+
+This project was funded by Bacula Systems.
+
+\section{AllowCompression = \lt{}yes\vb{}no\gt{}}
+\index[dir]{AllowCompression}
+
+This new directive may be added to Storage resource within the Director's
+configuration to allow users to selectively disable the client compression for
+any job which writes to this storage resource.
+
+For example:
+\begin{verbatim}
+Storage {
+  Name = UltriumTape
+  Address = ultrium-tape
+  Password = storage_password # Password for Storage Daemon
+  Device = Ultrium
+  Media Type = LTO 3
+  AllowCompression = No # Tape drive has hardware compression
+}
+\end{verbatim}
+The above example would cause any jobs running with the UltriumTape storage
+resource to run without compression from the client file daemons.  This
+effectively overrides any compression settings defined at the FileSet level.
+
+This feature is probably most useful if you have a tape drive which supports
+hardware compression.  By setting the \texttt{AllowCompression = No} directive
+for your tape drive storage resource, you can avoid additional load on the file
+daemon and possibly speed up tape backups.
+
+This project was funded by Collaborative Fusion, Inc.
+
+\section{Accurate Fileset Options}
+\label{sec:accuratefileset}
+
+In previous versions, the accurate code used the file creation and modification
+times to determine if a file was modified or not. Now you can specify which
+attributes to use (time, size, checksum, permission, owner, group, \dots),
+similar to the Verify options.
+
+\begin{verbatim}
+FileSet {
+  Name = Full
+  Include = {
+    Options {
+       Accurate = mcs5
+       Verify   = pin5
+    }
+    File = /
+  }
+}
+\end{verbatim}
+
+\begin{description}  
+\item {\bf i}  compare the inodes  
+\item {\bf p}  compare the permission bits  
+\item {\bf n}  compare the number of links  
+\item {\bf u}  compare the user id  
+\item {\bf g}  compare the group id  
+\item {\bf s}  compare the size  
+\item {\bf a}  compare the access time  
+\item {\bf m}  compare the modification time (st\_mtime)  
+\item {\bf c}  compare the change time (st\_ctime)  
+\item {\bf d}  report file size decreases  
+\item {\bf 5}  compare the MD5 signature  
+\item {\bf 1}  compare the SHA1 signature  
+\end{description}
+
+\textbf{Important note:} If you decide to use checksum in Accurate jobs,
+the File Daemon will have to read all files even if they normally would not
+be saved.  This increases the I/O load, but also the accuracy of the
+deduplication.  By default, Bacula will check modification/creation time
+and size.
+
+This project was funded by Bacula Systems.
+
+\section{Tab-completion for Bconsole}
+\label{sec:tabcompletion}
+
+If you build \texttt{bconsole} with readline support, you will be able to use
+the new auto-completion mode. This mode supports all commands, gives help
+inside command, and lists resources when required. It works also in the restore
+mode.
+
+To use this feature, you should have readline development package loaded on
+your system, and use the following option in configure.
+\begin{verbatim}
+./configure --with-readline=/usr/include/readline --disable-conio ...
+\end{verbatim}
+
+The new bconsole won't be able to tab-complete with older directors.
+
+This project was funded by Bacula Systems.
+
+\section{Pool File and Job retention}
+\label{sec:poolfilejobretention}
+
+% TODO check
+We added two new Pool directives, \texttt{FileRetention} and
+\texttt{JobRetention}, that take precedence over Client directives of the same
+name. It allows you to control the Catalog pruning algorithm Pool by Pool. For
+example, you can decide to increase Retention times for Archive or OffSite Pool.
+
+\section{Read-only File Daemon using capabilities}
+\label{sec:fdreadonly}
+This feature implements support of keeping \textbf{ReadAll} capabilities after
+UID/GID switch, this allows FD to keep root read but drop write permission.
+
+It introduces new \texttt{bacula-fd} option (\texttt{-k}) specifying that
+\textbf{ReadAll} capabilities should be kept after UID/GID switch.
+
+\begin{verbatim}
+root@localhost:~# bacula-fd -k -u nobody -g nobody
+\end{verbatim}
+
+The code for this feature was contributed by AltLinux.
+
+\section{Bvfs API}
+\label{sec:bvfs}
+
+To help developers of restore GUI interfaces, we have added new \textsl{dot
+  commands} that permit browsing the catalog in a very simple way.
+
+\begin{itemize}
+\item \texttt{.bvfs\_update [jobid=x,y,z]} This command is required to update
+  the Bvfs cache in the catalog. You need to run it before any access to the
+  Bvfs layer.
+
+\item \texttt{.bvfs\_lsdirs jobid=x,y,z path=/path | pathid=101} This command
+  will list all directories in the specified \texttt{path} or
+  \texttt{pathid}. Using \texttt{pathid} avoids problems with character
+  encoding of path/filenames.
+
+\item \texttt{.bvfs\_lsfiles jobid=x,y,z path=/path | pathid=101} This command
+  will list all files in the specified \texttt{path} or \texttt{pathid}. Using
+  \texttt{pathid} avoids problems with character encoding.
+\end{itemize}
+
+You can use \texttt{limit=xxx} and \texttt{offset=yyy} to limit the amount of
+data that will be displayed.
+
+\begin{verbatim}
+* .bvfs_update jobid=1,2
+* .bvfs_update
+* .bvfs_lsdir path=/ jobid=1,2
+\end{verbatim}
+
+This project was funded by Bacula Systems.
+
+\section{Testing your Tape Drive}
+\label{sec:btapespeed}
+
+To determine the best configuration of your tape drive, you can run the new
+\texttt{speed} command available in the \texttt{btape} program.
+
+This command can have the following arguments:
+\begin{itemize}
+\item[\texttt{file\_size=n}] Specify the Maximum File Size for this test
+  (between 1 and 5GB). This counter is in GB.
+\item[\texttt{nb\_file=n}] Specify the number of file to be written. The amount
+  of data should be greater than your memory ($file\_size*nb\_file$).
+\item[\texttt{skip\_zero}] This flag permits to skip tests with constant
+  data.
+\item[\texttt{skip\_random}] This flag permits to skip tests with random
+  data.
+\item[\texttt{skip\_raw}] This flag permits to skip tests with raw access.
+\item[\texttt{skip\_block}] This flag permits to skip tests with Bacula block
+  access.
+\end{itemize}
+
+\begin{verbatim}
+*speed file_size=3 skip_raw
+btape.c:1078 Test with zero data and bacula block structure.
+btape.c:956 Begin writing 3 files of 3.221 GB with blocks of 129024 bytes.
+++++++++++++++++++++++++++++++++++++++++++
+btape.c:604 Wrote 1 EOF to "Drive-0" (/dev/nst0)
+btape.c:406 Volume bytes=3.221 GB. Write rate = 44.128 MB/s
+...
+btape.c:383 Total Volume bytes=9.664 GB. Total Write rate = 43.531 MB/s
+
+btape.c:1090 Test with random data, should give the minimum throughput.
+btape.c:956 Begin writing 3 files of 3.221 GB with blocks of 129024 bytes.
++++++++++++++++++++++++++++++++++++++++++++
+btape.c:604 Wrote 1 EOF to "Drive-0" (/dev/nst0)
+btape.c:406 Volume bytes=3.221 GB. Write rate = 7.271 MB/s
++++++++++++++++++++++++++++++++++++++++++++
+...
+btape.c:383 Total Volume bytes=9.664 GB. Total Write rate = 7.365 MB/s
+
+\end{verbatim}
+
+When using compression, the random test will give your the minimum throughput
+of your drive . The test using constant string will give you the maximum speed
+of your hardware chain. (cpu, memory, scsi card, cable, drive, tape).
+
+You can change the block size in the Storage Daemon configuration file.
+
+\section{New {\bf Block Checksum} Device Directive}
+You may now turn off the Block Checksum (CRC32) code
+that Bacula uses when writing blocks to a Volume.  This is
+done by adding:
+
+\begin{verbatim}
+Block Checksum = no
+\end{verbatim}
+
+doing so can reduce the Storage daemon CPU usage slightly.  It
+will also permit Bacula to read a Volume that has corrupted data.
+
+The default is {\bf yes} -- i.e. the checksum is computed on write
+and checked on read. 
+
+We do not recommend to turn this off particularly on older tape
+drives or for disk Volumes where doing so may allow corrupted data
+to go undetected.
+
+\section{New Bat Features}
+
+Those new features were funded by Bacula Systems.
+
+\subsection{Media List View}
+
+By clicking on ``Media'', you can see the list of all your volumes. You will be
+able to filter by Pool, Media Type, Location,\dots And sort the result directly
+in the table. The old ``Media'' view is now known as ``Pool''.
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=13cm]{\idir bat-mediaview.eps}
+  \label{fig:mediaview}
+\end{figure}
+
+
+\subsection{Media Information View}
+
+By double-clicking on a volume (on the Media list, in the Autochanger content
+or in the Job information panel), you can access a detailed overview of your
+Volume. (cf \ref{fig:mediainfo}.)
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=13cm]{\idir bat11.eps}  
+  \caption{Media information}
+  \label{fig:mediainfo}
+\end{figure}
+
+\subsection{Job Information View}
+
+By double-clicking on a Job record (on the Job run list or in the Media
+information panel), you can access a detailed overview of your Job. (cf
+\ref{fig:jobinfo}.)
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=13cm]{\idir bat12.eps}  
+  \caption{Job information}
+  \label{fig:jobinfo}
+\end{figure}
+
+\subsection{Autochanger Content View}
+
+By double-clicking on a Storage record (on the Storage list panel), you can
+access a detailed overview of your Autochanger. (cf \ref{fig:jobinfo}.)
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=13cm]{\idir bat13.eps}  
+  \caption{Autochanger content}
+  \label{fig:achcontent}
+\end{figure}
+
+To use this feature, you need to use the latest mtx-changer script
+version. (With new \texttt{listall} and \texttt{transfer} commands)
+
+\section{Bat on Windows}
+We have ported {\bf bat} to Windows and it is now installed 
+by default when the installer is run.  It works quite well 
+on Win32, but has not had a lot of testing there, so your
+feedback would be welcome.  Unfortunately, eventhough it is
+installed by default, it does not yet work on 64 bit Windows
+operating systems.
+
+\section{New Win32 Installer}
+The Win32 installer has been modified in several very important
+ways.  
+\begin{itemize}
+\item You must deinstall any current version of the
+Win32 File daemon before upgrading to the new one. 
+If you forget to do so, the new installation will fail.
+To correct this failure, you must manually shutdown 
+and deinstall the old File daemon. 
+\item All files (other than menu links) are installed
+in {\bf c:/Program Files/Bacula}.  
+\item The installer no longer sets this
+file to require administrator privileges by default. If you want
+to do so, please do it manually using the {\bf cacls} program.
+For example:
+\begin{verbatim}
+cacls "C:\Program Files\Bacula" /T /G SYSTEM:F Administrators:F
+\end{verbatim}
+\item The server daemons (Director and Storage daemon) are
+no longer included in the Windows installer.  If you want the
+Windows servers, you will either need to build them yourself (note
+they have not been ported to 64 bits), or you can contact 
+Bacula Systems about this.
+\end{itemize}
+
+\section{Win64 Installer}
+We have corrected a number of problems that required manual
+editing of the conf files.  In most cases, it should now
+install and work.  {\bf bat} is by default installed in
+{\bf c:/Program Files/Bacula/bin32} rather than
+{\bf c:/Program Files/Bacula} as is the case with the 32
+bit Windows installer.
+
+\section{Bare Metal Recovery USB Key}
+We have made a number of significant improvements in the
+Bare Metal Recovery USB key.  Please see the README files
+it the {\bf rescue} release for more details.
+
+
+
+\section{bconsole Timeout Option}
+You can now use the -u option of {\bf bconsole} to set a timeout in seconds
+for commands. This is useful with GUI programs that use {\bf bconsole}
+to interface to the Director.
+
+\section{Important Changes}
+\label{sec:importantchanges}
+
+\begin{itemize}
+\item You are now allowed to Migrate, Copy, and Virtual Full to read and write
+  to the same Pool. The Storage daemon ensures that you do not read and
+  write to the same Volume.
+\item The \texttt{Device Poll Interval} is now 5 minutes. (previously did not
+  poll by default).
+\item The new \texttt{mtx-changer} script has two new options, \texttt{listall}
+  and \texttt{transfer}. Be sure to apply any custom changes on to the 
+  mtx-changer script, or better yet, use mtx-changer.conf to configure
+  them.
+\item To enhance security of the \texttt{BackupCatalog} job, we provide a new
+  script (\texttt{make\_catalog\_backup.pl}) that does not expose your catalog
+  password. If you want to use the new script, you will need to 
+  manually change the \texttt{BackupCatalog} Job definition.
+\item The \texttt{bconsole} \texttt{help} command now accepts
+  an argument, which if provided produces information on that
+  command (ex: \texttt{help run}).
+\end{itemize}
+
+\subsection{Custom Catalog queries}
+
+If you wish to add specialized commands that list the contents of the catalog,
+you can do so by adding them to the \texttt{query.sql} file. This
+\texttt{query.sql} file is now empty by default.  The file
+\texttt{examples/sample-query.sql} has an a number of sample commands
+you might find useful.
+
+\subsection{Deprecated parts}
+
+The following items have been \textbf{deprecated} for a long time, and are now
+removed from the code.
+\begin{itemize}
+\item Gnome console
+\item Support for SQLite 2
+\end{itemize}
+
+\section{Misc Changes}
+\label{sec:miscchanges}
+
+\begin{itemize}
+\item Updated Nagios check\_bacula
+\item Updated man files
+\item Added OSX package generation script in platforms/darwin
+\item Added Spanish and Ukrainian Bacula translations
+\item Enable/disable command shows only Jobs that can change
+\item Added \texttt{show disabled} command to show disabled Jobs
+\item Many ACL improvements
+\item Added Level to FD status Job output
+\item Begin Ingres DB driver (not yet working)
+\item Split RedHat spec files into bacula, bat, mtx, and docs
+\item Reorganized the manuals (fewer separate manuals)
+\item Added lock/unlock order protection in lock manager
+\item Allow 64 bit sizes for a number of variables
+\item Fixed several deadlocks or potential race conditions in the SD
+\end{itemize}
+
+\chapter{Released Version 3.0.3 and 3.0.3a}
+
+There are no new features in version 3.0.3.  This version simply fixes a
+number of bugs found in version 3.0.2 during the onging development
+process.
+
+\chapter{New Features in Released Version 3.0.2}
+
+This chapter presents the new features added to the
+Released Bacula Version 3.0.2.
+
+\section{Full Restore from a Given JobId}
+\index[general]{Restore menu}
+
+This feature allows selecting a single JobId and having Bacula
+automatically select all the other jobs that comprise a full backup up to
+and including the selected date (through JobId).
+
+Assume we start with the following jobs:
+\begin{verbatim}
++-------+--------------+---------------------+-------+----------+------------+
+| jobid | client       | starttime           | level | jobfiles | jobbytes   |
++-------+--------------+---------------------+-------+----------+------------
+| 6     | localhost-fd | 2009-07-15 11:45:49 | I     | 2        | 0          |
+| 5     | localhost-fd | 2009-07-15 11:45:45 | I     | 15       | 44143      |
+| 3     | localhost-fd | 2009-07-15 11:45:38 | I     | 1        | 10         |
+| 1     | localhost-fd | 2009-07-15 11:45:30 | F     | 1527     | 44143073   |
++-------+--------------+---------------------+-------+----------+------------+
+\end{verbatim}
+
+Below is an example of this new feature (which is number 12 in the
+menu).
+
+\begin{verbatim}
+* restore
+To select the JobIds, you have the following choices:
+     1: List last 20 Jobs run
+     2: List Jobs where a given File is saved
+...
+    12: Select full restore to a specified Job date
+    13: Cancel
+
+Select item:  (1-13): 12
+Enter JobId to get the state to restore: 5
+Selecting jobs to build the Full state at 2009-07-15 11:45:45
+You have selected the following JobIds: 1,3,5
+
+Building directory tree for JobId(s) 1,3,5 ...  +++++++++++++++++++
+1,444 files inserted into the tree.
+\end{verbatim}
+
+This project was funded by Bacula Systems.
+
+\section{Source Address}
+\index[general]{Source Address}
+
+A feature has been added which allows the administrator to specify the address
+from which the Director and File daemons will establish connections.  This
+may be used to simplify system configuration overhead when working in complex
+networks utilizing multi-homing and policy-routing.
+
+To accomplish this, two new configuration directives have been implemented:
+\begin{verbatim}
+FileDaemon {
+  FDSourceAddress=10.0.1.20    # Always initiate connections from this address
+}
+
+Director {
+  DirSourceAddress=10.0.1.10   # Always initiate connections from this address
+}
+\end{verbatim}
+
+Simply adding specific host routes on the OS
+would have an undesirable side-effect: any
+application trying to contact the destination host would be forced to use the
+more specific route possibly diverting management traffic onto a backup VLAN.
+Instead of adding host routes for each client connected to a multi-homed backup
+server (for example where there are management and backup VLANs), one can
+use the new directives to specify a specific source address at the application
+level.
+
+Additionally, this allows the simplification and abstraction of firewall rules
+when dealing with a Hot-Standby director or storage daemon configuration.  The
+Hot-standby pair may share a CARP address, which connections must be sourced
+from, while system services listen and act from the unique interface addresses.
+
+This project was funded by Collaborative Fusion, Inc.
+
+\section{Show volume availability when doing restore}
+
+When doing a restore the selection dialog ends by displaying this
+screen:
+
+\begin{verbatim}
+  The job will require the following
+   Volume(s)                 Storage(s)                SD Device(s)
+   ===========================================================================
+   *000741L3                  LTO-4                     LTO3 
+   *000866L3                  LTO-4                     LTO3 
+   *000765L3                  LTO-4                     LTO3 
+   *000764L3                  LTO-4                     LTO3 
+   *000756L3                  LTO-4                     LTO3 
+   *001759L3                  LTO-4                     LTO3 
+   *001763L3                  LTO-4                     LTO3 
+    001762L3                  LTO-4                     LTO3 
+    001767L3                  LTO-4                     LTO3 
+
+Volumes marked with ``*'' are online (in the autochanger).
+\end{verbatim}
+
+This should help speed up large restores by minimizing the time spent
+waiting for the operator to discover that he must change tapes in the library.
+
+This project was funded by Bacula Systems.
+
+\section{Accurate estimate command}
+
+The \texttt{estimate} command can now use the accurate code to detect changes
+and give a better estimation.
+
+You can set the accurate behavior on the command line by using
+\texttt{accurate=yes\vb{}no} or use the Job setting as default value.
+
+\begin{verbatim}
+* estimate listing accurate=yes level=incremental job=BackupJob
+\end{verbatim}
+
+This project was funded by Bacula Systems.
+
+\chapter{New Features in 3.0.0}
+\label{NewFeaturesChapter}
+\index[general]{New Features}
+
+This chapter presents the new features added to the development 2.5.x
+versions to be released as Bacula version 3.0.0 sometime in April 2009.
+
+\section{Accurate Backup}
+\index[general]{Accurate Backup}
+
+As with most other backup programs, by default Bacula decides what files to
+backup for Incremental and Differental backup by comparing the change
+(st\_ctime) and modification (st\_mtime) times of the file to the time the last
+backup completed.  If one of those two times is later than the last backup
+time, then the file will be backed up.  This does not, however, permit tracking
+what files have been deleted and will miss any file with an old time that may
+have been restored to or moved onto the client filesystem.
+
+\subsection{Accurate = \lt{}yes\vb{}no\gt{}}
+If the {\bf Accurate = \lt{}yes\vb{}no\gt{}} directive is enabled (default no) in
+the Job resource, the job will be run as an Accurate Job. For a {\bf Full}
+backup, there is no difference, but for {\bf Differential} and {\bf
+  Incremental} backups, the Director will send a list of all previous files
+backed up, and the File daemon will use that list to determine if any new files
+have been added or or moved and if any files have been deleted. This allows
+Bacula to make an accurate backup of your system to that point in time so that
+if you do a restore, it will restore your system exactly.  
+
+One note of caution
+about using Accurate backup is that it requires more resources (CPU and memory)
+on both the Director and the Client machines to create the list of previous
+files backed up, to send that list to the File daemon, for the File daemon to
+keep the list (possibly very big) in memory, and for the File daemon to do
+comparisons between every file in the FileSet and the list.  In particular,
+if your client has lots of files (more than a few million), you will need
+lots of memory on the client machine.
+
+Accurate must not be enabled when backing up with a plugin that is not
+specially designed to work with Accurate. If you enable it, your restores
+will probably not work correctly.
+
+This project was funded by Bacula Systems.
+                                       
+
+
+\section{Copy Jobs}
+\index[general]{Copy Jobs}
+
+A new {\bf Copy} job type 'C' has been implemented. It is similar to the
+existing Migration feature with the exception that the Job that is copied is
+left unchanged.  This essentially creates two identical copies of the same
+backup. However, the copy is treated as a copy rather than a backup job, and
+hence is not directly available for restore.  The {\bf restore} command lists
+copy jobs and allows selection of copies by using \texttt{jobid=}
+option. If the keyword {\bf copies} is present on the command line, Bacula will
+display the list of all copies for selected jobs.
+
+\begin{verbatim}
+* restore copies
+[...]
+These JobIds have copies as follows:
++-------+------------------------------------+-----------+------------------+
+| JobId | Job                                | CopyJobId | MediaType        |
++-------+------------------------------------+-----------+------------------+
+| 2     | CopyJobSave.2009-02-17_16.31.00.11 | 7         | DiskChangerMedia |
++-------+------------------------------------+-----------+------------------+
++-------+-------+----------+----------+---------------------+------------------+
+| JobId | Level | JobFiles | JobBytes | StartTime           | VolumeName       |
++-------+-------+----------+----------+---------------------+------------------+
+| 19    | F     | 6274     | 76565018 | 2009-02-17 16:30:45 | ChangerVolume002 |
+| 2     | I     | 1        | 5        | 2009-02-17 16:30:51 | FileVolume001    |
++-------+-------+----------+----------+---------------------+------------------+
+You have selected the following JobIds: 19,2
+
+Building directory tree for JobId(s) 19,2 ...  ++++++++++++++++++++++++++++++++++++++++++++
+5,611 files inserted into the tree.
+...
+\end{verbatim}
+
+
+The Copy Job runs without using the File daemon by copying the data from the
+old backup Volume to a different Volume in a different Pool. See the Migration
+documentation for additional details. For copy Jobs there is a new selection
+directive named {\bf PoolUncopiedJobs} which selects all Jobs that were
+not already copied to another Pool. 
+
+As with Migration, the Client, Volume, Job, or SQL query, are
+other possible ways of selecting the Jobs to be copied. Selection
+types like SmallestVolume, OldestVolume, PoolOccupancy and PoolTime also
+work, but are probably more suited for Migration Jobs. 
+
+If Bacula finds a Copy of a job record that is purged (deleted) from the catalog,
+it will promote the Copy to a \textsl{real} backup job and will make it available for
+automatic restore. If more than one Copy is available, it will promote the copy
+with the smallest JobId.
+
+A nice solution which can be built with the new Copy feature is often
+called disk-to-disk-to-tape backup (DTDTT). A sample config could
+look something like the one below:
+
+\begin{verbatim}
+Pool {
+  Name = FullBackupsVirtualPool
+  Pool Type = Backup
+  Purge Oldest Volume = Yes
+  Storage = vtl
+  NextPool = FullBackupsTapePool
+}
+
+Pool {
+  Name = FullBackupsTapePool
+  Pool Type = Backup
+  Recycle = Yes
+  AutoPrune = Yes
+  Volume Retention = 365 days
+  Storage = superloader
+}
+
+#
+# Fake fileset for copy jobs
+#
+Fileset {
+  Name = None
+  Include {
+    Options {
+      signature = MD5
+    }
+  }
+}
+
+#
+# Fake client for copy jobs
+#
+Client {
+  Name = None
+  Address = localhost
+  Password = "NoNe"
+  Catalog = MyCatalog
+}
+
+#
+# Default template for a CopyDiskToTape Job
+#
+JobDefs {
+  Name = CopyDiskToTape
+  Type = Copy
+  Messages = StandardCopy
+  Client = None
+  FileSet = None
+  Selection Type = PoolUncopiedJobs
+  Maximum Concurrent Jobs = 10
+  SpoolData = No
+  Allow Duplicate Jobs = Yes
+  Allow Higher Duplicates = No
+  Cancel Queued Duplicates = No
+  Cancel Running Duplicates = No
+  Priority = 13
+}
+
+Schedule {
+   Name = DaySchedule7:00
+   Run = Level=Full daily at 7:00
+}
+
+Job {
+  Name = CopyDiskToTapeFullBackups
+  Enabled = Yes
+  Schedule = DaySchedule7:00
+  Pool = FullBackupsVirtualPool
+  JobDefs = CopyDiskToTape
+}
+\end{verbatim}
+
+The example above had 2 pool which are copied using the PoolUncopiedJobs
+selection criteria. Normal Full backups go to the Virtual pool and are copied
+to the Tape pool the next morning.
+
+The command \texttt{list copies [jobid=x,y,z]} lists copies for a given
+\textbf{jobid}.
+
+\begin{verbatim}
+*list copies
++-------+------------------------------------+-----------+------------------+
+| JobId | Job                                | CopyJobId | MediaType        |
++-------+------------------------------------+-----------+------------------+
+|     9 | CopyJobSave.2008-12-20_22.26.49.05 |        11 | DiskChangerMedia |
++-------+------------------------------------+-----------+------------------+
+\end{verbatim}
+
+\section{ACL Updates}
+\index[general]{ACL Updates}
+The whole ACL code had been overhauled and in this version each platforms has
+different streams for each type of acl available on such an platform. As ACLs
+between platforms tend to be not that portable (most implement POSIX acls but
+some use an other draft or a completely different format) we currently only
+allow certain platform specific ACL streams to be decoded and restored on the
+same platform that they were created on.  The old code allowed to restore ACL
+cross platform but the comments already mention that not being to wise. For
+backward compatability the new code will accept the two old ACL streams and
+handle those with the platform specific handler. But for all new backups it
+will save the ACLs using the new streams.
+
+Currently the following platforms support ACLs:
+
+\begin{itemize}
+ \item {\bf AIX}
+ \item {\bf Darwin/OSX}
+ \item {\bf FreeBSD}
+ \item {\bf HPUX}
+ \item {\bf IRIX}
+ \item {\bf Linux}
+ \item {\bf Tru64}
+ \item {\bf Solaris}
+\end{itemize}
+
+Currently we support the following ACL types (these ACL streams use a reserved
+part of the stream numbers):
+
+\begin{itemize}
+\item {\bf STREAM\_ACL\_AIX\_TEXT} 1000 AIX specific string representation from
+  acl\_get
+ \item {\bf STREAM\_ACL\_DARWIN\_ACCESS\_ACL} 1001 Darwin (OSX) specific acl\_t
+   string representation from acl\_to\_text (POSIX acl)
+  \item {\bf STREAM\_ACL\_FREEBSD\_DEFAULT\_ACL} 1002 FreeBSD specific acl\_t
+    string representation from acl\_to\_text (POSIX acl) for default acls.
+  \item {\bf STREAM\_ACL\_FREEBSD\_ACCESS\_ACL} 1003 FreeBSD specific acl\_t
+    string representation from acl\_to\_text (POSIX acl) for access acls.
+  \item {\bf STREAM\_ACL\_HPUX\_ACL\_ENTRY} 1004 HPUX specific acl\_entry
+    string representation from acltostr (POSIX acl)
+  \item {\bf STREAM\_ACL\_IRIX\_DEFAULT\_ACL} 1005 IRIX specific acl\_t string
+    representation from acl\_to\_text (POSIX acl) for default acls.
+  \item {\bf STREAM\_ACL\_IRIX\_ACCESS\_ACL} 1006 IRIX specific acl\_t string
+    representation from acl\_to\_text (POSIX acl) for access acls.
+  \item {\bf STREAM\_ACL\_LINUX\_DEFAULT\_ACL} 1007 Linux specific acl\_t
+    string representation from acl\_to\_text (POSIX acl) for default acls.
+  \item {\bf STREAM\_ACL\_LINUX\_ACCESS\_ACL} 1008 Linux specific acl\_t string
+    representation from acl\_to\_text (POSIX acl) for access acls.
+  \item {\bf STREAM\_ACL\_TRU64\_DEFAULT\_ACL} 1009 Tru64 specific acl\_t
+    string representation from acl\_to\_text (POSIX acl) for default acls.
+  \item {\bf STREAM\_ACL\_TRU64\_DEFAULT\_DIR\_ACL} 1010 Tru64 specific acl\_t
+    string representation from acl\_to\_text (POSIX acl) for default acls.
+  \item {\bf STREAM\_ACL\_TRU64\_ACCESS\_ACL} 1011 Tru64 specific acl\_t string
+    representation from acl\_to\_text (POSIX acl) for access acls.
+  \item {\bf STREAM\_ACL\_SOLARIS\_ACLENT} 1012 Solaris specific aclent\_t
+    string representation from acltotext or acl\_totext (POSIX acl)
+  \item {\bf STREAM\_ACL\_SOLARIS\_ACE} 1013 Solaris specific ace\_t string
+    representation from from acl\_totext (NFSv4 or ZFS acl)
+\end{itemize}
+
+In future versions we might support conversion functions from one type of acl
+into an other for types that are either the same or easily convertable. For now
+the streams are seperate and restoring them on a platform that doesn't
+recognize them will give you a warning.
+
+\section{Extended Attributes}
+\index[general]{Extended Attributes}
+Something that was on the project list for some time is now implemented for
+platforms that support a similar kind of interface. Its the support for backup
+and restore of so called extended attributes. As extended attributes are so
+platform specific these attributes are saved in seperate streams for each
+platform.  Restores of the extended attributes can only be performed on the
+same platform the backup was done.  There is support for all types of extended
+attributes, but restoring from one type of filesystem onto an other type of
+filesystem on the same platform may lead to supprises.  As extended attributes
+can contain any type of data they are stored as a series of so called
+value-pairs.  This data must be seen as mostly binary and is stored as such.
+As security labels from selinux are also extended attributes this option also
+stores those labels and no specific code is enabled for handling selinux
+security labels.
+
+Currently the following platforms support extended attributes:
+\begin{itemize}
+ \item {\bf Darwin/OSX}
+ \item {\bf FreeBSD}
+ \item {\bf Linux}
+ \item {\bf NetBSD}
+\end{itemize}
+
+On linux acls are also extended attributes, as such when you enable ACLs on a
+Linux platform it will NOT save the same data twice e.g. it will save the ACLs
+and not the same exteneded attribute.
+
+To enable the backup of extended attributes please add the following to your
+fileset definition.
+\begin{verbatim}
+  FileSet {
+    Name = "MyFileSet"
+    Include {
+      Options {
+        signature = MD5
+        xattrsupport = yes
+      }
+      File = ...
+    }
+  }
+\end{verbatim}
+
+\section{Shared objects}
+\index[general]{Shared objects}
+A default build of Bacula will now create the libraries as shared objects
+(.so) rather than static libraries as was previously the case.  
+The shared libraries are built using {\bf libtool} so it should be quite
+portable.
+
+An important advantage of using shared objects is that on a machine with the
+Directory, File daemon, the Storage daemon, and a console, you will have only
+one copy of the code in memory rather than four copies.  Also the total size of
+the binary release is smaller since the library code appears only once rather
+than once for every program that uses it; this results in significant reduction
+in the size of the binaries particularly for the utility tools.
+ 
+In order for the system loader to find the shared objects when loading the
+Bacula binaries, the Bacula shared objects must either be in a shared object
+directory known to the loader (typically /usr/lib) or they must be in the
+directory that may be specified on the {\bf ./configure} line using the {\bf
+  {-}{-}libdir} option as:
+
+\begin{verbatim}
+  ./configure --libdir=/full-path/dir
+\end{verbatim}
+
+the default is /usr/lib. If {-}{-}libdir is specified, there should be
+no need to modify your loader configuration provided that
+the shared objects are installed in that directory (Bacula
+does this with the make install command). The shared objects
+that Bacula references are:
+
+\begin{verbatim}
+libbaccfg.so
+libbacfind.so
+libbacpy.so
+libbac.so
+\end{verbatim}
+
+These files are symbolically linked to the real shared object file,
+which has a version number to permit running multiple versions of
+the libraries if desired (not normally the case).
+
+If you have problems with libtool or you wish to use the old
+way of building static libraries, or you want to build a static
+version of Bacula you may disable
+libtool on the configure command line with:
+
+\begin{verbatim}
+  ./configure --disable-libtool
+\end{verbatim}
+
+
+\section{Building Static versions of Bacula}
+\index[general]{Static linking}
+In order to build static versions of Bacula, in addition
+to configuration options that were needed you now must
+also add --disable-libtool.  Example
+
+\begin{verbatim}
+  ./configure --enable-static-client-only --disable-libtool
+\end{verbatim}
+
+
+\section{Virtual Backup (Vbackup)}
+\index[general]{Virtual Backup}
+\index[general]{Vbackup}
+
+Bacula's virtual backup feature is often called Synthetic Backup or
+Consolidation in other backup products.  It permits you to consolidate the
+previous Full backup plus the most recent Differential backup and any
+subsequent Incremental backups into a new Full backup.  This new Full
+backup will then be considered as the most recent Full for any future
+Incremental or Differential backups.  The VirtualFull backup is
+accomplished without contacting the client by reading the previous backup
+data and writing it to a volume in a different pool.
+
+In some respects the Vbackup feature works similar to a Migration job, in
+that Bacula normally reads the data from the pool specified in the 
+Job resource, and writes it to the {\bf Next Pool} specified in the 
+Job resource. Note, this means that usually the output from the Virtual
+Backup is written into a different pool from where your prior backups
+are saved. Doing it this way guarantees that you will not get a deadlock
+situation attempting to read and write to the same volume in the Storage
+daemon. If you then want to do subsequent backups, you may need to
+move the Virtual Full Volume back to your normal backup pool.
+Alternatively, you can set your {\bf Next Pool} to point to the current
+pool.  This will cause Bacula to read and write to Volumes in the
+current pool. In general, this will work, because Bacula will
+not allow reading and writing on the same Volume. In any case, once
+a VirtualFull has been created, and a restore is done involving the
+most current Full, it will read the Volume or Volumes by the VirtualFull 
+regardless of in which Pool the Volume is found.
+
+The Vbackup is enabled on a Job by Job in the Job resource by specifying
+a level of {\bf VirtualFull}.
+
+A typical Job resource definition might look like the following:
+
+\begin{verbatim}
+Job {
+  Name = "MyBackup"
+  Type = Backup
+  Client=localhost-fd
+  FileSet = "Full Set"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  SpoolData = yes
+}
+
+# Default pool definition
+Pool {
+  Name = Default
+  Pool Type = Backup
+  Recycle = yes            # Automatically recycle Volumes
+  AutoPrune = yes          # Prune expired volumes
+  Volume Retention = 365d  # one year
+  NextPool = Full
+  Storage = File
+}
+
+Pool {
+  Name = Full
+  Pool Type = Backup
+  Recycle = yes            # Automatically recycle Volumes
+  AutoPrune = yes          # Prune expired volumes
+  Volume Retention = 365d  # one year
+  Storage = DiskChanger
+}
+
+# Definition of file storage device
+Storage {
+  Name = File
+  Address = localhost
+  Password = "xxx"
+  Device = FileStorage
+  Media Type = File
+  Maximum Concurrent Jobs = 5
+}
+
+# Definition of DDS Virtual tape disk storage device
+Storage {
+  Name = DiskChanger
+  Address = localhost  # N.B. Use a fully qualified name here
+  Password = "yyy"
+  Device = DiskChanger
+  Media Type = DiskChangerMedia
+  Maximum Concurrent Jobs = 4
+  Autochanger = yes
+}
+\end{verbatim}
+
+Then in bconsole or via a Run schedule, you would run the job as:
+
+\begin{verbatim}
+run job=MyBackup level=Full
+run job=MyBackup level=Incremental
+run job=MyBackup level=Differential
+run job=MyBackup level=Incremental
+run job=MyBackup level=Incremental
+\end{verbatim}
+
+So providing there were changes between each of those jobs, you would end up
+with a Full backup, a Differential, which includes the first Incremental
+backup, then two Incremental backups.  All the above jobs would be written to
+the {\bf Default} pool.
+
+To consolidate those backups into a new Full backup, you would run the
+following:
+
+\begin{verbatim}
+run job=MyBackup level=VirtualFull
+\end{verbatim}
+
+And it would produce a new Full backup without using the client, and the output
+would be written to the {\bf Full} Pool which uses the Diskchanger Storage.
+
+If the Virtual Full is run, and there are no prior Jobs, the Virtual Full will
+fail with an error.
+
+Note, the Start and End time of the Virtual Full backup is set to the
+values for the last job included in the Virtual Full (in the above example,
+it is an Increment). This is so that if another incremental is done, which
+will be based on the Virtual Full, it will backup all files from the
+last Job included in the Virtual Full rather than from the time the Virtual
+Full was actually run.
+
+
+
+\section{Catalog Format}
+\index[general]{Catalog Format}
+Bacula 3.0 comes with some changes to the catalog format.  The upgrade
+operation will convert the FileId field of the File table from 32 bits (max 4
+billion table entries) to 64 bits (very large number of items).  The
+conversion process can take a bit of time and will likely DOUBLE THE SIZE of
+your catalog during the conversion.  Also you won't be able to run jobs during
+this conversion period.  For example, a 3 million file catalog will take 2
+minutes to upgrade on a normal machine.  Please don't forget to make a valid
+backup of your database before executing the upgrade script. See the 
+ReleaseNotes for additional details.
+
+\section{64 bit Windows Client}
+\index[general]{Win64 Client}
+Unfortunately, Microsoft's implementation of Volume Shadown Copy (VSS) on
+their 64 bit OS versions is not compatible with a 32 bit Bacula Client.
+As a consequence, we are also releasing a 64 bit version of the Bacula 
+Windows Client (win64bacula-3.0.0.exe) that does work with VSS. 
+These binaries should only be installed on 64 bit Windows operating systems.
+What is important is not your hardware but whether or not you have
+a 64 bit version of the Windows OS.  
+
+Compared to the Win32 Bacula Client, the 64 bit release contains a few differences:
+\begin{enumerate}
+\item Before installing the Win64 Bacula Client, you must totally
+      deinstall any prior 2.4.x Client installation using the 
+      Bacula deinstallation (see the menu item). You may want
+      to save your .conf files first.
+\item Only the Client (File daemon) is ported to Win64, the Director
+      and the Storage daemon are not in the 64 bit Windows installer.
+\item bwx-console is not yet ported.
+\item bconsole is ported but it has not been tested.
+\item The documentation is not included in the installer.
+\item Due to Vista security restrictions imposed on a default installation
+      of Vista, before upgrading the Client, you must manually stop
+      any prior version of Bacula from running, otherwise the install
+      will fail.
+\item Due to Vista security restrictions imposed on a default installation
+      of Vista, attempting to edit the conf files via the menu items
+      will fail. You must directly edit the files with appropriate 
+      permissions.  Generally double clicking on the appropriate .conf
+      file will work providing you have sufficient permissions.
+\item All Bacula files are now installed in 
+      {\bf C:/Program Files/Bacula} except the main menu items,
+      which are installed as before. This vastly simplifies the installation.
+\item If you are running on a foreign language version of Windows, most
+      likely {\bf C:/Program Files} does not exist, so you should use the
+      Custom installation and enter an appropriate location to install
+      the files.
+\item The 3.0.0 Win32 Client continues to install files in the locations used
+      by prior versions. For the next version we will convert it to use
+      the same installation conventions as the Win64 version.
+\end{enumerate}
+
+This project was funded by Bacula Systems.
+
+
+\section{Duplicate Job Control}
+\index[general]{Duplicate Jobs}
+The new version of Bacula provides four new directives that
+give additional control over what Bacula does if duplicate jobs 
+are started.  A duplicate job in the sense we use it here means
+a second or subsequent job with the same name starts.  This
+happens most frequently when the first job runs longer than expected because no 
+tapes are available.
+
+The four directives each take as an argument a {\bf yes} or {\bf no} value and
+are specified in the Job resource.
+
+They are:
+
+\subsection{Allow Duplicate Jobs = \lt{}yes\vb{}no\gt{}}
+\index[general]{Allow Duplicate Jobs}
+  If this directive is enabled duplicate jobs will be run.  If
+  the directive is set to {\bf no} (default) then only one job of a given name
+  may run at one time, and the action that Bacula takes to ensure only
+  one job runs is determined by the other directives (see below).
+ 
+  If {\bf Allow Duplicate Jobs} is set to {\bf no} and two jobs
+  are present and none of the three directives given below permit
+  cancelling a job, then the current job (the second one started)
+  will be cancelled.
+
+
+\subsection{Allow Higher Duplicates = \lt{}yes\vb{}no\gt{}}
+\index[general]{Allow Higher Duplicates}
+  If this directive is set to {\bf yes} (default) the job with a higher
+  priority (lower priority number) will be permitted to run, and
+  the current job will be cancelled.  If the
+  priorities of the two jobs are the same, the outcome is determined by
+  other directives (see below).
+
+\subsection{Cancel Queued Duplicates = \lt{}yes\vb{}no\gt{}}
+\index[general]{Cancel Queued Duplicates}
+  If {\bf Allow Duplicate Jobs} is set to {\bf no} and
+  if this directive is set to {\bf yes} any job that is
+  already queued to run but not yet running will be canceled.
+  The default is {\bf no}. 
+
+\subsection{Cancel Running Duplicates = \lt{}yes\vb{}no\gt{}}
+\index[general]{Cancel Running Duplicates}
+  If {\bf Allow Duplicate Jobs} is set to {\bf no} and
+  if this directive is set to {\bf yes} any job that is already running
+  will be canceled.  The default is {\bf no}.
+
+
+\section{TLS Authentication}
+\index[general]{TLS Authentication}
+In Bacula version 2.5.x and later, in addition to the normal Bacula
+CRAM-MD5 authentication that is used to authenticate each Bacula
+connection, you can specify that you want TLS Authentication as well,
+which will provide more secure authentication.
+
+This new feature uses Bacula's existing TLS code (normally used for
+communications encryption) to do authentication.  To use it, you must
+specify all the TLS directives normally used to enable communications
+encryption (TLS Enable, TLS Verify Peer, TLS Certificate, ...) and
+a new directive:
+
+\subsection{TLS Authenticate = yes}
+\begin{verbatim}
+TLS Authenticate = yes
+\end{verbatim}
+
+in the main daemon configuration resource (Director for the Director,
+Client for the File daemon, and Storage for the Storage daemon).
+
+When {\bf TLS Authenticate} is enabled, after doing the CRAM-MD5
+authentication, Bacula will also do TLS authentication, then TLS 
+encryption will be turned off, and the rest of the communication between
+the two Bacula daemons will be done without encryption.
+
+If you want to encrypt communications data, use the normal TLS directives
+but do not turn on {\bf TLS Authenticate}.
+
+\section{bextract non-portable Win32 data}
+\index[general]{bextract handles Win32 non-portable data}
+{\bf bextract} has been enhanced to be able to restore
+non-portable Win32 data to any OS.  Previous versions were 
+unable to restore non-portable Win32 data to machines that
+did not have the Win32 BackupRead and BackupWrite API calls.
+
+\section{State File updated at Job Termination}
+\index[general]{State File}
+In previous versions of Bacula, the state file, which provides a
+summary of previous jobs run in the {\bf status} command output was
+updated only when Bacula terminated, thus if the daemon crashed, the
+state file might not contain all the run data.  This version of
+the Bacula daemons updates the state file on each job termination.
+
+\section{MaxFullInterval = \lt{}time-interval\gt{}}
+\index[general]{MaxFullInterval}
+The new Job resource directive {\bf Max Full Interval = \lt{}time-interval\gt{}}
+can be used to specify the maximum time interval between {\bf Full} backup
+jobs. When a job starts, if the time since the last Full backup is
+greater than the specified interval, and the job would normally be an
+{\bf Incremental} or {\bf Differential}, it will be automatically
+upgraded to a {\bf Full} backup.
+
+\section{MaxDiffInterval = \lt{}time-interval\gt{}}
+\index[general]{MaxDiffInterval}
+The new Job resource directive {\bf Max Diff Interval = \lt{}time-interval\gt{}}
+can be used to specify the maximum time interval between {\bf Differential} backup
+jobs. When a job starts, if the time since the last Differential backup is
+greater than the specified interval, and the job would normally be an
+{\bf Incremental}, it will be automatically
+upgraded to a {\bf Differential} backup.
+
+\section{Honor No Dump Flag = \lt{}yes\vb{}no\gt{}}
+\index[general]{MaxDiffInterval}
+On FreeBSD systems, each file has a {\bf no dump flag} that can be set
+by the user, and when it is set it is an indication to backup programs
+to not backup that particular file.  This version of Bacula contains a
+new Options directive within a FileSet resource, which instructs Bacula to
+obey this flag.  The new directive is:
+
+\begin{verbatim}
+  Honor No Dump Flag = yes\vb{}no
+\end{verbatim}
+
+The default value is {\bf no}.
+
+
+\section{Exclude Dir Containing = \lt{}filename-string\gt{}}
+\index[general]{IgnoreDir}
+The {\bf ExcludeDirContaining = \lt{}filename\gt{}} is a new directive that
+can be added to the Include section of the FileSet resource.  If the specified
+filename ({\bf filename-string}) is found on the Client in any directory to be
+backed up, the whole directory will be ignored (not backed up).  For example:
+
+\begin{verbatim}
+  # List of files to be backed up
+  FileSet {
+    Name = "MyFileSet"
+    Include {
+      Options {
+        signature = MD5
+      }
+      File = /home
+      Exclude Dir Containing = .excludeme
+    }
+  }
+\end{verbatim}
+
+But in /home, there may be hundreds of directories of users and some
+people want to indicate that they don't want to have certain
+directories backed up. For example, with the above FileSet, if
+the user or sysadmin creates a file named {\bf .excludeme} in 
+specific directories, such as
+
+\begin{verbatim}
+   /home/user/www/cache/.excludeme
+   /home/user/temp/.excludeme
+\end{verbatim}
+
+then Bacula will not backup the two directories named:
+
+\begin{verbatim}
+   /home/user/www/cache
+   /home/user/temp
+\end{verbatim}
+
+NOTE: subdirectories will not be backed up.  That is, the directive
+applies to the two directories in question and any children (be they
+files, directories, etc).
+
+
+\section{Bacula Plugins}
+\index[general]{Plugin}
+Support for shared object plugins has been implemented in the Linux, Unix
+and Win32 File daemons. The API will be documented separately in
+the Developer's Guide or in a new document.  For the moment, there is
+a single plugin named {\bf bpipe} that allows an external program to
+get control to backup and restore a file.
+
+Plugins are also planned (partially implemented) in the Director and the
+Storage daemon.  
+
+\subsection{Plugin Directory}
+\index[general]{Plugin Directory}
+Each daemon (DIR, FD, SD) has a new {\bf Plugin Directory} directive that may
+be added to the daemon definition resource. The directory takes a quoted 
+string argument, which is the name of the directory in which the daemon can
+find the Bacula plugins. If this directive is not specified, Bacula will not
+load any plugins. Since each plugin has a distinctive name, all the daemons
+can share the same plugin directory. 
+
+\subsection{Plugin Options}
+\index[general]{Plugin Options}
+The {\bf Plugin Options} directive takes a quoted string
+arguement (after the equal sign) and may be specified in the
+Job resource.  The options specified will be passed to all plugins
+when they are run.  This each plugin must know what it is looking
+for. The value defined in the Job resource can be modified
+by the user when he runs a Job via the {\bf bconsole} command line 
+prompts.
+
+Note: this directive may be specified, and there is code to modify
+the string in the run command, but the plugin options are not yet passed to
+the plugin (i.e. not fully implemented).
+
+\subsection{Plugin Options ACL}
+\index[general]{Plugin Options ACL}
+The {\bf Plugin Options ACL} directive may be specified in the
+Director's Console resource. It functions as all the other ACL commands
+do by permitting users running restricted consoles to specify a 
+{\bf Plugin Options} that overrides the one specified in the Job
+definition. Without this directive restricted consoles may not modify
+the Plugin Options.
+
+\subsection{Plugin = \lt{}plugin-command-string\gt{}}
+\index[general]{Plugin}
+The {\bf Plugin} directive is specified in the Include section of
+a FileSet resource where you put your {\bf File = xxx} directives.
+For example:
+
+\begin{verbatim}
+  FileSet {
+    Name = "MyFileSet"
+    Include {
+      Options {
+        signature = MD5
+      }
+      File = /home
+      Plugin = "bpipe:..."
+    }
+  }
+\end{verbatim}
+
+In the above example, when the File daemon is processing the directives
+in the Include section, it will first backup all the files in {\bf /home}
+then it will load the plugin named {\bf bpipe} (actually bpipe-dir.so) from
+the Plugin Directory.  The syntax and semantics of the Plugin directive
+require the first part of the string up to the colon (:) to be the name
+of the plugin. Everything after the first colon is ignored by the File daemon but
+is passed to the plugin. Thus the plugin writer may define the meaning of the
+rest of the string as he wishes.
+
+Please see the next section for information about the {\bf bpipe} Bacula
+plugin.
+
+\section{The bpipe Plugin}
+\index[general]{The bpipe Plugin}
+The {\bf bpipe} plugin is provided in the directory src/plugins/fd/bpipe-fd.c of
+the Bacula source distribution. When the plugin is compiled and linking into
+the resulting dynamic shared object (DSO), it will have the name {\bf bpipe-fd.so}.
+
+The purpose of the plugin is to provide an interface to any system program for
+backup and restore. As specified above the {\bf bpipe} plugin is specified in
+the Include section of your Job's FileSet resource.  The full syntax of the
+plugin directive as interpreted by the {\bf bpipe} plugin (each plugin is free
+to specify the sytax as it wishes) is:
+
+\begin{verbatim}
+  Plugin = "<field1>:<field2>:<field3>:<field4>"
+\end{verbatim}
+
+where
+\begin{description}
+\item {\bf field1} is the name of the plugin with the trailing {\bf -fd.so}
+stripped off, so in this case, we would put {\bf bpipe} in this field.
+
+\item {\bf field2} specifies the namespace, which for {\bf bpipe} is the
+pseudo path and filename under which the backup will be saved. This pseudo
+path and filename will be seen by the user in the restore file tree.
+For example, if the value is {\bf /MYSQL/regress.sql}, the data
+backed up by the plugin will be put under that "pseudo" path and filename.
+You must be careful to choose a naming convention that is unique to avoid
+a conflict with a path and filename that actually exists on your system.
+
+\item {\bf field3} for the {\bf bpipe} plugin 
+specifies the "reader" program that is called by the plugin during
+backup to read the data. {\bf bpipe} will call this program by doing a
+{\bf popen} on it.
+
+\item {\bf field4} for the {\bf bpipe} plugin
+specifies the "writer" program that is called by the plugin during
+restore to write the data back to the filesystem.  
+\end{description}
+
+Putting it all together, the full plugin directive line might look
+like the following:
+
+\begin{verbatim}
+Plugin = "bpipe:/MYSQL/regress.sql:mysqldump -f 
+          --opt --databases bacula:mysql"
+\end{verbatim}
+
+The directive has been split into two lines, but within the {\bf bacula-dir.conf} file
+would be written on a single line.
+
+This causes the File daemon to call the {\bf bpipe} plugin, which will write
+its data into the "pseudo" file {\bf /MYSQL/regress.sql} by calling the 
+program {\bf mysqldump -f --opt --database bacula} to read the data during
+backup. The mysqldump command outputs all the data for the database named
+{\bf bacula}, which will be read by the plugin and stored in the backup.
+During restore, the data that was backed up will be sent to the program
+specified in the last field, which in this case is {\bf mysql}.  When
+{\bf mysql} is called, it will read the data sent to it by the plugn
+then write it back to the same database from which it came ({\bf bacula}
+in this case).
+
+The {\bf bpipe} plugin is a generic pipe program, that simply transmits 
+the data from a specified program to Bacula for backup, and then from Bacula to 
+a specified program for restore.
+
+By using different command lines to {\bf bpipe},
+you can backup any kind of data (ASCII or binary) depending
+on the program called.
+
+\section{Microsoft Exchange Server 2003/2007 Plugin}
+\index[general]{Microsoft Exchange Server 2003/2007 Plugin}
+\subsection{Background}
+The Exchange plugin was made possible by a funded development project
+between Equiinet Ltd -- www.equiinet.com (many thanks) and Bacula Systems.
+The code for the plugin was written by James Harper, and the Bacula core
+code by Kern Sibbald.  All the code for this funded development has become
+part of the Bacula project.  Thanks to everyone who made it happen.
+
+\subsection{Concepts}
+Although it is possible to backup Exchange using Bacula VSS the Exchange 
+plugin adds a good deal of functionality, because while Bacula VSS
+completes a full backup (snapshot) of Exchange, it does
+not support Incremental or Differential backups, restoring is more
+complicated, and a single database restore is not possible.
+
+Microsoft Exchange organises its storage into Storage Groups with
+Databases inside them. A default installation of Exchange will have a
+single Storage Group called 'First Storage Group', with two Databases
+inside it, "Mailbox Store (SERVER NAME)" and 
+"Public Folder Store (SERVER NAME)", 
+which hold user email and public folders respectively.
+
+In the default configuration, Exchange logs everything that happens to
+log files, such that if you have a backup, and all the log files since,
+you can restore to the present time. Each Storage Group has its own set
+of log files and operates independently of any other Storage Groups. At
+the Storage Group level, the logging can be turned off by enabling a
+function called "Enable circular logging". At this time the Exchange
+plugin will not function if this option is enabled.
+
+The plugin allows backing up of entire storage groups, and the restoring
+of entire storage groups or individual databases. Backing up and
+restoring at the individual mailbox or email item is not supported but
+can be simulated by use of the "Recovery" Storage Group (see below).
+
+\subsection{Installing}
+The Exchange plugin requires a DLL that is shipped with Microsoft
+Exchanger Server called {\bf esebcli2.dll}. Assuming Exchange is installed
+correctly the Exchange plugin should find this automatically and run
+without any additional installation.
+
+If the DLL can not be found automatically it will need to be copied into
+the Bacula installation
+directory (eg C:\verb+\+Program Files\verb+\+Bacula\verb+\+bin). The Exchange API DLL is
+named esebcli2.dll and is found in C:\verb+\+Program Files\verb+\+Exchsrvr\verb+\+bin on a
+default Exchange installation.
+
+\subsection{Backing Up}
+To back up an Exchange server the Fileset definition must contain at
+least {\bf Plugin = "exchange:/@EXCHANGE/Microsoft Information Store"} for
+the backup to work correctly. The 'exchange:' bit tells Bacula to look
+for the exchange plugin, the '@EXCHANGE' bit makes sure all the backed
+up files are prefixed with something that isn't going to share a name
+with something outside the plugin, and the 'Microsoft Information Store'
+bit is required also. It is also possible to add the name of a storage
+group to the "Plugin =" line, eg \\
+{\bf Plugin = "exchange:/@EXCHANGE/Microsoft Information Store/First Storage Group"} \\
+if you want only a single storage group backed up.
+
+Additionally, you can suffix the 'Plugin =' directive with
+":notrunconfull" which will tell the plugin not to truncate the Exchange
+database at the end of a full backup.
+
+An Incremental or Differential backup will backup only the database logs
+for each Storage Group by inspecting the "modified date" on each
+physical log file. Because of the way the Exchange API works, the last
+logfile backed up on each backup will always be backed up by the next
+Incremental or Differential backup too. This adds 5MB to each
+Incremental or Differential backup size but otherwise does not cause any
+problems.
+
+By default, a normal VSS fileset containing all the drive letters will
+also back up the Exchange databases using VSS. This will interfere with
+the plugin and Exchange's shared ideas of when the last full backup was
+done, and may also truncate log files incorrectly. It is important,
+therefore, that the Exchange database files be excluded from the backup,
+although the folders the files are in should be included, or they will
+have to be recreated manually if a baremetal restore is done.
+
+\begin{verbatim}
+FileSet {
+   Include {
+      File = C:/Program Files/Exchsrvr/mdbdata
+      Plugin = "exchange:..."
+   }
+   Exclude {
+      File = C:/Program Files/Exchsrvr/mdbdata/E00.chk
+      File = C:/Program Files/Exchsrvr/mdbdata/E00.log
+      File = C:/Program Files/Exchsrvr/mdbdata/E000000F.log
+      File = C:/Program Files/Exchsrvr/mdbdata/E0000010.log
+      File = C:/Program Files/Exchsrvr/mdbdata/E0000011.log
+      File = C:/Program Files/Exchsrvr/mdbdata/E00tmp.log
+      File = C:/Program Files/Exchsrvr/mdbdata/priv1.edb
+   }
+}
+\end{verbatim}
+
+The advantage of excluding the above files is that you can significantly
+reduce the size of your backup since all the important Exchange files
+will be properly saved by the Plugin.
+
+
+\subsection{Restoring}
+The restore operation is much the same as a normal Bacula restore, with
+the following provisos:
+
+\begin{itemize}
+\item  The {\bf Where} restore option must not be specified
+\item Each Database directory must be marked as a whole. You cannot just
+     select (say) the .edb file and not the others.
+\item If a Storage Group is restored, the directory of the Storage Group
+     must be marked too.
+\item  It is possible to restore only a subset of the available log files,
+     but they {\bf must} be contiguous. Exchange will fail to restore correctly
+     if a log file is missing from the sequence of log files
+\item Each database to be restored must be dismounted and marked as "Can be
+    overwritten by restore"
+\item If an entire Storage Group is to be restored (eg all databases and
+   logs in the Storage Group), then it is best to manually delete the
+   database files from the server (eg C:\verb+\+Program Files\verb+\+Exchsrvr\verb+\+mdbdata\verb+\+*)
+   as Exchange can get confused by stray log files lying around.
+\end{itemize}
+
+\subsection{Restoring to the Recovery Storage Group}
+The concept of the Recovery Storage Group is well documented by
+Microsoft 
+\elink{http://support.microsoft.com/kb/824126}{http://support.microsoft.com/kb/824126}, 
+but to briefly summarize...
+
+Microsoft Exchange allows the creation of an additional Storage Group
+called the Recovery Storage Group, which is used to restore an older
+copy of a database (e.g. before a mailbox was deleted) into without
+messing with the current live data. This is required as the Standard and
+Small Business Server versions of Exchange can not ordinarily have more
+than one Storage Group.
+
+To create the Recovery Storage Group, drill down to the Server in Exchange
+System Manager, right click, and select
+{\bf "New -> Recovery Storage Group..."}.  Accept or change the file
+locations and click OK. On the Recovery Storage Group, right click and
+select {\bf "Add Database to Recover..."} and select the database you will
+be restoring.
+
+Restore only the single database nominated as the database in the
+Recovery Storage Group. Exchange will redirect the restore to the
+Recovery Storage Group automatically.
+Then run the restore.
+
+\subsection{Restoring on Microsoft Server 2007}
+Apparently the {\bf Exmerge} program no longer exists in Microsoft Server
+2007, and henc you use a new proceedure for recovering a single mail box.
+This procedure is ducomented by Microsoft at:
+\elink{http://technet.microsoft.com/en-us/library/aa997694.aspx}{http://technet.microsoft.com/en-us/library/aa997694.aspx},
+and involves using the {\bf Restore-Mailbox} and {\bf
+Get-MailboxStatistics} shell commands.
+
+\subsection{Caveats}
+This plugin is still being developed, so you should consider it
+currently in BETA test, and thus use in a production environment
+should be done only after very careful testing.
+
+When doing a full backup, the Exchange database logs are truncated by
+Exchange as soon as the plugin has completed the backup. If the data
+never makes it to the backup medium (eg because of spooling) then the
+logs will still be truncated, but they will also not have been backed
+up. A solution to this is being worked on. You will have to schedule a
+new Full backup to ensure that your next backups will be usable.
+
+The "Enable Circular Logging" option cannot be enabled or the plugin
+will fail.
+
+Exchange insists that a successful Full backup must have taken place if
+an Incremental or Differential backup is desired, and the plugin will
+fail if this is not the case. If a restore is done, Exchange will
+require that a Full backup be done before an Incremental or Differential
+backup is done.
+
+The plugin will most likely not work well if another backup application
+(eg NTBACKUP) is backing up the Exchange database, especially if the
+other backup application is truncating the log files.
+
+The Exchange plugin has not been tested with the {\bf Accurate} option, so
+we recommend either carefully testing or that you avoid this option for
+the current time.
+
+The Exchange plugin is not called during processing the bconsole {\bf
+estimate} command, and so anything that would be backed up by the plugin
+will not be added to the estimate total that is displayed.
+
+
+\section{libdbi Framework}
+\index[general]{libdbi Framework}
+As a general guideline, Bacula has support for a few catalog database drivers
+(MySQL, PostgreSQL, SQLite)
+coded natively by the Bacula team.  With the libdbi implementation, which is a
+Bacula driver that uses libdbi to access the catalog, we have an open field to
+use many different kinds database engines following the needs of users.
+
+The according to libdbi (http://libdbi.sourceforge.net/) project: libdbi
+implements a database-independent abstraction layer in C, similar to the
+DBI/DBD layer in Perl. Writing one generic set of code, programmers can
+leverage the power of multiple databases and multiple simultaneous database
+connections by using this framework.
+
+Currently the libdbi driver in Bacula project only supports the same drivers
+natively coded in Bacula.  However the libdbi project has support for many
+others database engines. You can view the list at
+http://libdbi-drivers.sourceforge.net/. In the future all those drivers can be
+supported by Bacula, however, they must be tested properly by the Bacula team.
+
+Some of benefits of using libdbi are:
+\begin{itemize}
+\item The possibility to use proprietary databases engines in which your
+  proprietary licenses prevent the Bacula team from developing the driver.
+ \item The possibility to use the drivers written for the libdbi project.
+ \item The possibility to use other database engines without recompiling Bacula
+   to use them.  Just change one line in bacula-dir.conf
+ \item Abstract Database access, this is, unique point to code and profiling
+   catalog database access.
+ \end{itemize}
+ 
+ The following drivers have been tested:
+ \begin{itemize}
+ \item PostgreSQL, with and without batch insert
+ \item Mysql, with and without batch insert
+ \item SQLite
+ \item SQLite3
+ \end{itemize}
+
+ In the future, we will test and approve to use others databases engines
+ (proprietary or not) like DB2, Oracle, Microsoft SQL.
+
+ To compile Bacula to support libdbi we need to configure the code with the
+ --with-dbi and --with-dbi-driver=[database] ./configure options, where
+ [database] is the database engine to be used with Bacula (of course we can
+ change the driver in file bacula-dir.conf, see below).  We must configure the
+ access port of the database engine with the option --with-db-port, because the
+ libdbi framework doesn't know the default access port of each database.
+
+The next phase is checking (or configuring) the bacula-dir.conf, example:
+\begin{verbatim}
+Catalog {
+  Name = MyCatalog
+  dbdriver = dbi:mysql; dbaddress = 127.0.0.1; dbport = 3306
+  dbname = regress; user = regress; password = ""
+}
+\end{verbatim}
+
+The parameter {\bf dbdriver} indicates that we will use the driver dbi with a
+mysql database.  Currently the drivers supported by Bacula are: postgresql,
+mysql, sqlite, sqlite3; these are the names that may be added to string "dbi:".
+
+The following limitations apply when Bacula is set to use the libdbi framework:
+ - Not tested on the Win32 platform
+ - A little performance is lost if comparing with native database driver. 
+   The reason is bound with the database driver provided by libdbi and the 
+   simple fact that one more layer of code was added.
+
+It is important to remember, when compiling Bacula with libdbi, the
+following packages are needed:
+ \begin{itemize}
+  \item libdbi version 1.0.0, http://libdbi.sourceforge.net/
+  \item libdbi-drivers 1.0.0, http://libdbi-drivers.sourceforge.net/
+ \end{itemize}
+ 
+ You can download them and compile them on your system or install the packages
+ from your OS distribution.
+
+\section{Console Command Additions and Enhancements}
+\index[general]{Console Additions}                                 
+
+\subsection{Display Autochanger Content}
+\index[general]{StatusSlots}
+
+The {\bf status slots storage=\lt{}storage-name\gt{}} command displays
+autochanger content.
+
+\footnotesize
+\begin{verbatim}
+ Slot |  Volume Name  |  Status  |  Media Type       |   Pool     |
+------+---------------+----------+-------------------+------------|
+    1 |         00001 |   Append |  DiskChangerMedia |    Default |
+    2 |         00002 |   Append |  DiskChangerMedia |    Default |
+    3*|         00003 |   Append |  DiskChangerMedia |    Scratch |
+    4 |               |          |                   |            |
+\end{verbatim}
+\normalsize
+
+If you an asterisk ({\bf *}) appears after the slot number, you must run an
+{\bf update slots} command to synchronize autochanger content with your
+catalog.
+
+\subsection{list joblog job=xxx or jobid=nnn}
+\index[general]{list joblog}
+A new list command has been added that allows you to list the contents
+of the Job Log stored in the catalog for either a Job Name (fully qualified)
+or for a particular JobId.  The {\bf llist} command will include a line with
+the time and date of the entry.
+
+Note for the catalog to have Job Log entries, you must have a directive 
+such as:
+
+\begin{verbatim}
+  catalog = all
+\end{verbatim}
+
+In your Director's {\bf Messages} resource.
+
+\subsection{Use separator for multiple commands}
+\index[general]{Command Separator}
+  When using bconsole with readline, you can set the command separator with 
+  \textbf{@separator} command to one
+  of those characters to write commands who require multiple input in one line.
+\begin{verbatim}
+  !$%&'()*+,-/:;<>?[]^`{|}~
+\end{verbatim}
+
+\subsection{Deleting Volumes}
+The delete volume bconsole command has been modified to
+require an asterisk (*) in front of a MediaId otherwise the
+value you enter is a taken to be a Volume name. This is so that
+users may delete numeric Volume names. The previous Bacula versions
+assumed that all input that started with a number was a MediaId.
+
+This new behavior is indicated in the prompt if you read it
+carefully.
+
+\section{Bare Metal Recovery}
+The old bare metal recovery project is essentially dead. One
+of the main features of it was that it would build a recovery
+CD based on the kernel on your system. The problem was that
+every distribution has a different boot procedure and different 
+scripts, and worse yet, the boot procedures and scripts change
+from one distribution to another.  This meant that maintaining
+(keeping up with the changes) the rescue CD was too much work.
+
+To replace it, a new bare metal recovery USB boot stick has been developed
+by Bacula Systems.  This technology involves remastering a Ubuntu LiveCD to
+boot from a USB key.  
+
+Advantages: 
+\begin{enumerate} 
+\item Recovery can be done from within graphical environment.  
+\item Recovery can be done in a shell.  
+\item Ubuntu boots on a large number of Linux systems.  
+\item The process of updating the system and adding new
+   packages is not too difficult. 
+\item The USB key can easily be upgraded to newer Ubuntu versions.
+\item The USB key has writable partitions for modifications to
+   the OS and for modification to your home directory.
+\item You can add new files/directories to the USB key very easily.
+\item You can save the environment from multiple machines on
+   one USB key.
+\item Bacula Systems is funding its ongoing development.
+\end{enumerate}
+
+The disadvantages are:
+\begin{enumerate}
+\item The USB key is usable but currently under development.
+\item Not everyone may be familiar with Ubuntu (no worse
+  than using Knoppix)
+\item Some older OSes cannot be booted from USB. This can
+   be resolved by first booting a Ubuntu LiveCD then plugging
+   in the USB key.
+\item Currently the documentation is sketchy and not yet added
+   to the main manual. See below ...
+\end{enumerate}
+
+The documentation and the code can be found in the {\bf rescue} package
+in the directory {\bf linux/usb}.
+
+\section{Miscellaneous}
+\index[general]{Misc New Features}
+
+\subsection{Allow Mixed Priority = \lt{}yes\vb{}no\gt{}}
+\index[general]{Allow Mixed Priority}
+   This directive is only implemented in version 2.5 and later.  When
+   set to {\bf yes} (default {\bf no}), this job may run even if lower
+   priority jobs are already running.  This means a high priority job
+   will not have to wait for other jobs to finish before starting.
+   The scheduler will only mix priorities when all running jobs have
+   this set to true.
+
+   Note that only higher priority jobs will start early.  Suppose the
+   director will allow two concurrent jobs, and that two jobs with
+   priority 10 are running, with two more in the queue.  If a job with
+   priority 5 is added to the queue, it will be run as soon as one of
+   the running jobs finishes.  However, new priority 10 jobs will not
+   be run until the priority 5 job has finished.
+
+\subsection{Bootstrap File Directive -- FileRegex}
+\index[general]{Bootstrap File Directive}
+  {\bf FileRegex} is a new command that can be added to the bootstrap
+  (.bsr) file.  The value is a regular expression.  When specified, only
+  matching filenames will be restored.
+
+  During a restore, if all File records are pruned from the catalog
+  for a Job, normally Bacula can restore only all files saved. That
+  is there is no way using the catalog to select individual files.
+  With this new feature, Bacula will ask if you want to specify a Regex
+  expression for extracting only a part of the full backup.
+
+\begin{verbatim}
+  Building directory tree for JobId(s) 1,3 ...
+  There were no files inserted into the tree, so file selection
+  is not possible.Most likely your retention policy pruned the files
+  
+  Do you want to restore all the files? (yes\vb{}no): no
+  
+  Regexp matching files to restore? (empty to abort): /tmp/regress/(bin|tests)/
+  Bootstrap records written to /tmp/regress/working/zog4-dir.restore.1.bsr
+\end{verbatim}
+
+\subsection{Bootstrap File Optimization Changes}
+In order to permit proper seeking on disk files, we have extended the bootstrap
+file format to include a {\bf VolStartAddr} and {\bf VolEndAddr} records. Each
+takes a 64 bit unsigned integer range (i.e. nnn-mmm) which defines the start
+address range and end address range respectively.  These two directives replace
+the {\bf VolStartFile}, {\bf VolEndFile}, {\bf VolStartBlock} and {\bf
+  VolEndBlock} directives.  Bootstrap files containing the old directives will
+still work, but will not properly take advantage of proper disk seeking, and
+may read completely to the end of a disk volume during a restore.  With the new
+format (automatically generated by the new Director), restores will seek
+properly and stop reading the volume when all the files have been restored.
+
+\subsection{Solaris ZFS/NFSv4 ACLs}
+This is an upgrade of the previous Solaris ACL backup code
+to the new library format, which will backup both the old
+POSIX(UFS) ACLs as well as the ZFS ACLs.
+
+The new code can also restore POSIX(UFS) ACLs to a ZFS filesystem
+(it will translate the POSIX(UFS)) ACL into a ZFS/NFSv4 one) it can also
+be used to transfer from UFS to ZFS filesystems.
+
+
+\subsection{Virtual Tape Emulation}
+\index[general]{Virtual Tape Emulation}
+We now have a Virtual Tape emulator that allows us to run though 99.9\% of
+the tape code but actually reading and writing to a disk file. Used with the
+\textbf{disk-changer} script, you can now emulate an autochanger with 10 drives
+and 700 slots. This feature is most useful in testing.  It is enabled
+by using {\bf Device Type = vtape} in the Storage daemon's Device
+directive. This feature is only implemented on Linux machines and should not be
+used for production.
+
+\subsection{Bat Enhancements}
+\index[general]{Bat Enhancements}
+Bat (the Bacula Administration Tool) GUI program has been significantly
+enhanced and stabilized. In particular, there are new table based status 
+commands; it can now be easily localized using Qt4 Linguist.
+
+The Bat communications protocol has been significantly enhanced to improve
+GUI handling. Note, you {\bf must} use a the bat that is distributed with
+the Director you are using otherwise the communications protocol will not
+work.
+
+\subsection{RunScript Enhancements}
+\index[general]{RunScript Enhancements}
+The {\bf RunScript} resource has been enhanced to permit multiple
+commands per RunScript.  Simply specify multiple {\bf Command} directives
+in your RunScript.
+
+\begin{verbatim}
+Job {
+  Name = aJob
+  RunScript {
+    Command = "/bin/echo test"
+    Command = "/bin/echo an other test"
+    Command = "/bin/echo 3 commands in the same runscript"
+    RunsWhen = Before
+  }
+ ...
+}
+\end{verbatim}
+
+A new Client RunScript {\bf RunsWhen} keyword of {\bf AfterVSS} has been
+implemented, which runs the command after the Volume Shadow Copy has been made.
+
+Console commands can be specified within a RunScript by using:
+{\bf Console = \lt{}command\gt{}}, however, this command has not been 
+carefully tested and debugged and is known to easily crash the Director.
+We would appreciate feedback.  Due to the recursive nature of this command, we
+may remove it before the final release.
+
+\subsection{Status Enhancements}
+\index[general]{Status Enhancements}
+The bconsole {\bf status dir} output has been enhanced to indicate
+Storage daemon job spooling and despooling activity.
+
+\subsection{Connect Timeout}
+\index[general]{Connect Timeout}
+The default connect timeout to the File
+daemon has been set to 3 minutes. Previously it was 30 minutes.
+
+\subsection{ftruncate for NFS Volumes}
+\index[general]{ftruncate for NFS Volumes}
+If you write to a Volume mounted by NFS (say on a local file server),
+in previous Bacula versions, when the Volume was recycled, it was not
+properly truncated because NFS does not implement ftruncate (file 
+truncate). This is now corrected in the new version because we have
+written code (actually a kind user) that deletes and recreates the Volume,
+thus accomplishing the same thing as a truncate.
+
+\subsection{Support for Ubuntu}
+The new version of Bacula now recognizes the Ubuntu (and Kubuntu)
+version of Linux, and thus now provides correct autostart routines.
+Since Ubuntu officially supports Bacula, you can also obtain any
+recent release of Bacula from the Ubuntu repositories.
+
+\subsection{Recycle Pool = \lt{}pool-name\gt{}}
+\index[general]{Recycle Pool}
+The new \textbf{RecyclePool} directive defines to which pool the Volume will
+be placed (moved) when it is recycled. Without this directive, a Volume will
+remain in the same pool when it is recycled. With this directive, it can be
+moved automatically to any existing pool during a recycle. This directive is
+probably most useful when defined in the Scratch pool, so that volumes will
+be recycled back into the Scratch pool.
+
+\subsection{FD Version}
+\index[general]{FD Version}
+The File daemon to Director protocol now includes a version 
+number, which although there is no visible change for users, 
+will help us in future versions automatically determine
+if a File daemon is not compatible.
+
+\subsection{Max Run Sched Time = \lt{}time-period-in-seconds\gt{}}
+\index[general]{Max Run Sched Time}
+The time specifies the maximum allowed time that a job may run, counted from
+when the job was scheduled. This can be useful to prevent jobs from running
+during working hours. We can see it like \texttt{Max Start Delay + Max Run
+  Time}.
+
+\subsection{Max Wait Time = \lt{}time-period-in-seconds\gt{}}
+\index[general]{Max Wait Time}
+Previous \textbf{MaxWaitTime} directives aren't working as expected, instead
+of checking the maximum allowed time that a job may block for a resource,
+those directives worked like \textbf{MaxRunTime}. Some users are reporting to
+use \textbf{Incr/Diff/Full Max Wait Time} to control the maximum run time of
+their job depending on the level. Now, they have to use
+\textbf{Incr/Diff/Full Max Run Time}.  \textbf{Incr/Diff/Full Max Wait Time}
+directives are now deprecated.
+
+\subsection{Incremental|Differential Max Wait Time = \lt{}time-period-in-seconds\gt{}} 
+\index[general]{Incremental Max Wait Time}
+\index[general]{Differential Max Wait Time}
+
+These directives have been deprecated in favor of
+\texttt{Incremental|Differential Max Run Time}.
+
+\subsection{Max Run Time directives}
+\index[general]{Max Run Time directives}
+Using \textbf{Full/Diff/Incr Max Run Time}, it's now possible to specify the
+maximum allowed time that a job can run depending on the level.
+
+\addcontentsline{lof}{figure}{Job time control directives}
+\includegraphics{\idir different_time.eps}
+
+\subsection{Statistics Enhancements}
+\index[general]{Statistics Enhancements}
+If you (or probably your boss) want to have statistics on your backups to
+provide some \textit{Service Level Agreement} indicators, you could use a few
+SQL queries on the Job table to report how many:
+
+\begin{itemize}
+\item jobs have run
+\item jobs have been successful
+\item files have been backed up
+\item ...
+\end{itemize}
+
+However, these statistics are accurate only if your job retention is greater
+than your statistics period. Ie, if jobs are purged from the catalog, you won't
+be able to use them. 
+
+Now, you can use the \textbf{update stats [days=num]} console command to fill
+the JobHistory table with new Job records. If you want to be sure to take in
+account only \textbf{good jobs}, ie if one of your important job has failed but
+you have fixed the problem and restarted it on time, you probably want to
+delete the first \textit{bad} job record and keep only the successful one. For
+that simply let your staff do the job, and update JobHistory table after two or
+three days depending on your organization using the \textbf{[days=num]} option.
+
+These statistics records aren't used for restoring, but mainly for
+capacity planning, billings, etc.
+
+The Bweb interface provides a statistics module that can use this feature. You
+can also use tools like Talend or extract information by yourself.
+
+The \textbf{Statistics Retention = \lt{}time\gt{}} director directive defines
+the length of time that Bacula will keep statistics job records in the Catalog
+database after the Job End time. (In \texttt{JobHistory} table) When this time
+period expires, and if user runs \texttt{prune stats} command, Bacula will
+prune (remove) Job records that are older than the specified period.
+
+You can use the following Job resource in your nightly \textbf{BackupCatalog}
+job to maintain statistics.
+\begin{verbatim}
+Job {
+  Name = BackupCatalog
+  ...
+  RunScript {
+    Console = "update stats days=3"
+    Console = "prune stats yes"
+    RunsWhen = After
+    RunsOnClient = no
+  }
+}
+\end{verbatim}
+
+\subsection{ScratchPool = \lt{}pool-resource-name\gt{}}
+\index[general]{ScratchPool}
+This directive permits to specify a specific \textsl{Scratch} pool for the
+current pool. This is useful when using multiple storage sharing the same
+mediatype or when you want to dedicate volumes to a particular set of pool.
+
+\subsection{Enhanced Attribute Despooling}
+\index[general]{Attribute Despooling}
+If the storage daemon and the Director are on the same machine, the spool file
+that contains attributes is read directly by the Director instead of being
+transmitted across the network. That should reduce load and speedup insertion.
+
+\subsection{SpoolSize = \lt{}size-specification-in-bytes\gt{}}
+\index[general]{SpoolSize}
+A new Job directive permits to specify the spool size per job. This is used
+in advanced job tunning. {\bf SpoolSize={\it bytes}}
+
+\subsection{MaxConsoleConnections = \lt{}number\gt{}}
+\index[general]{MaxConsoleConnections}
+A new director directive permits to specify the maximum number of Console
+Connections that could run concurrently. The default is set to 20, but you may
+set it to a larger number.
+
+\subsection{VerId = \lt{}string\gt{}}
+\index[general]{VerId}
+A new director directive permits to specify a personnal identifier that will be
+displayed in the \texttt{version} command.
+
+\subsection{dbcheck enhancements}
+\index[general]{dbcheck enhancements}
+If you are using Mysql, dbcheck will now ask you if you want to create
+temporary indexes to speed up orphaned Path and Filename elimination. 
+
+A new \texttt{-B} option allows you to print catalog information in a simple
+text based format. This is useful to backup it in a secure way.
+
+\begin{verbatim}
+ $ dbcheck -B 
+ catalog=MyCatalog
+ db_type=SQLite
+ db_name=regress
+ db_driver=
+ db_user=regress
+ db_password=
+ db_address=
+ db_port=0
+ db_socket=
+\end{verbatim} %$
+
+You can now specify the database connection port in the command line.
+
+\subsection{{-}{-}docdir configure option}
+\index[general]{{-}{-}docdir configure option}
+You can use {-}{-}docdir= on the ./configure command to
+specify the directory where you want Bacula to install the
+LICENSE, ReleaseNotes, ChangeLog, ... files.   The default is 
+{\bf /usr/share/doc/bacula}.
+      
+\subsection{{-}{-}htmldir configure option}
+\index[general]{{-}{-}htmldir configure option}
+You can use {-}{-}htmldir= on the ./configure command to
+specify the directory where you want Bacula to install the bat html help
+files. The default is {\bf /usr/share/doc/bacula/html}
+
+\subsection{{-}{-}with-plugindir configure option}
+\index[general]{{-}{-}plugindir configure option}
+You can use {-}{-}plugindir= on the ./configure command to
+specify the directory where you want Bacula to install
+the plugins (currently only bpipe-fd). The default is
+/usr/lib.

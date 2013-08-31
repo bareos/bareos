@@ -1,0 +1,21 @@
+              Technical notes on version 1.22 19June02
+                       19 June 2002
+                       Kern Sibbald
+
+General:
+- Improvements to the bootstrap compiler
+- Implemented first cut of bootstrap code in the Storage daemon
+- Modified the authentication code to be more explicit during 
+  failures.
+
+Changes submitted this submission:
+- Added a few more debug message numbers with more arguments (Dmsg10, ...)
+- Added more and more precise error messages when authentication fails.
+- Implemented new "expect" codes in the lexical scanner that allows
+  the caller to specify what he wants.                   
+- Added integer, positive integer, 64 bit integer, and integer ranges,
+  and name scanning to lex.
+- Implemented new lex code in parse_conf.c, this reduces significantly
+  the code.
+- Hopefully fixed a watchdog race bug that caused the watchdog to time
+  out a line after 1 hour rather than 6 days.

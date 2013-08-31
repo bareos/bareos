@@ -1,0 +1,85 @@
+              Technical notes on version 1.6 04Dec01
+                       06 December 2001
+                        Kern Sibbald
+
+General:
+- Played around trying to find a list of files on
+  a tape that are not backed up else where. I haven't
+  yet succeeded in doing this.
+
+Changes submitted this submission:
+- At some point when writing the Mmsg() routines, I assumed
+  that realloc() returned the buffer at the same address. Not
+  true. I fixed this by passing the message buffer as a pointer
+  to a pointer. This required a lot of changes, but everything
+  seems to work.
+- Made db_get_job_record() return JobFiles and JobBytes for
+  putting in the Job termination message.
+- Enhanced the "list jobtotals" Console command so that it list
+  Jobs, Files, and Bytes by Job name as well as the final
+  total.  This is implemented only for the SQL database.
+- Removed the Start/End File/Block from the Job record in
+  the database -- still need to add it to the JobMedia record.
+- Corrected Console so that it compiles and builds on Win32
+  systems.
+- Made the Job start message considerably shorter since all
+  the information is repeated in the Job end message.
+- If a Pool record is not found for a Job, the Director will
+  attempt to create it.  This is a big convenience for new
+  users -- it eliminates one (unnecessary) step.
+- Removed the code from the Director that required a appendable
+  Volume to be defined in the pool. This is now detected and
+  reported by the Storage daemon.
+- Removed all the final bits of Job information that the Storage
+  daemon was passing back to the File daemon who then passed
+  it back to the Director. All necessary information is now
+  passed directly from the Storage daemon to the Director.
+  E.g. JobBytes, JobFiles, Volumes written, ...
+- The Job termination code from the Storage daemon is now
+  read and stored in the database. If the File daemon errs,
+  this will be reported too.
+- Consolodated the VolumSessionId/Time, JobFiles/Bytes, ... in
+  the common part of the jcr.
+- Improved the mount messages adding considerably more information
+  (media type, pool, ...).
+- Added a new request from the Storage Daemon to the Director.
+  To return information on a given VolumeId.
+- Added a general error message buffer to the jcr structure.
+- Fixed the Storage daemon to pass back to the Director his
+  termination status as well as the JobBytes and JobFiles written
+  to the storage device.
+- Enhanced the Console cancel command to prompt for the Job
+  name, and to send the cancel to both the Storage daemon and
+  the File daemon.
+- Corrected a segmentation violation in the Director if ever
+  you generated a job message from the Console program. Did so
+  by removing the message handler from a console job.
+- Added more precision in the Status messages. For example, if
+  a job is blocked waiting for a mount or appendable volumes,
+  that will be noted in the status. Also as soon as that condition
+  is cleared, the Storage daemon sends an updated status to
+  the Director.
+- Added "Files examined" information to the status report of 
+  the File daemon (i.e. for an incremental job, there are a lot
+  of files examined but very few saved).
+- All the daemons now print out their version and build date
+  when called ./xxx -?
+- Fixed a problem with messages destined to the Director being
+  printed with the Director info prepended by moving them into
+  the dispatch_message() subroutine.
+- Worked on the btape program for testing how to handle end
+  of media.
+- Check that the file number where we are going to append
+  agrees with the catalog. If not, print a warning message.
+- Make the Storage daemon read the tape label if 
+  AutomaticMount is set.
+- On a Console Mount request, the tape label is read.
+
+
+
+
+
+
+
+
+

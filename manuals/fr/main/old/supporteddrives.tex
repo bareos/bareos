@@ -1,0 +1,174 @@
+%%
+%%
+
+\chapter{Lecteurs de bandes support\'es}
+\label{_ChapterStart19}
+\index[general]{Lecteurs de bandes support\'es }
+\index[general]{Lecteurs!bandes support\'ees }
+\addcontentsline{toc}{section}{Lecteurs de bandes support\'es}
+
+M\^eme si votre lecteur est dans la liste ci dessous, v\'erifiez le 
+\ilink{Chapitre Test des Lecteurs Bandes}{btape1} de ce manuel
+pour les proc\'edures que vous pouvez utiliser pour v\'erifier si votre
+lecteur de bandes est susceptible de fonctionner avec Bacula. 
+Si votre lecteur est en mode bloc
+fixe, il peut para\^itre fonctionner avec Bacula jusqu'\`a ce que vous essayiez de
+restaurer et que Bacula tente de se positionner sur la bande. Seuls la
+proc\'edure ci-dessus et vos propres tests peuvent vous garantir un
+fonctionnement correct. 
+
+Il est tr\`es difficile de fournir une liste de lecteurs de bandes
+support\'es, ou de lecteurs qui sont connus pour fonctionner avec Bacula en
+raison du peu de retours de la part des usagers. (par cons\'equent, si vous
+utilisez Bacula sur un lecteur qui ne figure pas dans la liste, merci de nous
+le faire savoir). Selon les informations provenant de nos utilisateurs, les
+lecteurs suivants sont connus pour fonctionner avec Bacula. Un trait d'union
+dans une colonne signifie "inconnu" : 
+
+\begin{longtable}{|l|l|l|l|l|}
+ \hline 
+\multicolumn{1}{|c| }{\bf OS  } & \multicolumn{1}{c| }{\bf Fabr.  } &
+\multicolumn{1}{c| }{\bf Media  } & \multicolumn{1}{c| }{\bf Mod\`ele  } &
+\multicolumn{1}{c| }{\bf Capacit\'e  } \\
+ \hline 
+{-  } & {ADIC  } & {DLT  } & {Adic Scalar 100 DLT  } & {100GB  } \\
+ \hline 
+{-  } & {ADIC  } & {DLT  } & {Adic Fastor 22 DLT  } & {-  } \\
+ \hline 
+{-  } & {-  } & {DDS  } & {Compaq DDS 2,3,4 } & {-  } \\
+ \hline 
+{-  } & {Exabyte  } & {-  } & {Lecteurs Exabyte de moins de dix ans } & {- 
+} \\
+ \hline 
+{-  } & {Exabyte  } & {-  } & {Exabyte VXA drives  } & {-  } \\
+ \hline 
+{-  } & {HP  } & {Travan 4  } & {Colorado T4000S  } & {-  } \\
+ \hline 
+{-  } & {HP  } & {DLT  } & {HP DLT drives  } & {-   } \\
+ \hline 
+{-  } & {HP  } & {LTO  } & {HP LTO Ultrium drives  } & {-  } \\
+ \hline 
+{FreeBSD 4.10 RELEASE  } & {HP  } & {DAT  } & {HP StorageWorks DAT72i  } & {- 
+} \\
+ \hline 
+{-  } & {Overland  } & {LTO  } & {LoaderXpress LTO  } & {-  } \\
+ \hline 
+{-  } & {Overland  } & {-  } & {Neo2000  } & {-  } \\
+ \hline 
+{-  } & {OnStream  } & {-  } & {OnStream drives (see below)  } & {-  } \\
+ \hline 
+{-  } & {Quantum  } & {DLT  } & {DLT-8000  } & {40/80GB  } \\
+ \hline 
+{Linux  } & {Seagate  } & {DDS-4  } & {Scorpio 40  } & {20/40GB  } \\
+ \hline 
+{FreeBSD 4.9 STABLE  } & {Seagate  } & {DDS-4  } & {STA2401LW  } & {20/40GB  }
+\\
+ \hline 
+{FreeBSD 5.2.1 pthreads patched RELEASE  } & {Seagate  } & {AIT-1  } &
+{STA1701W  } & {35/70GB  } \\
+ \hline 
+{Linux  } & {Sony  } & {DDS-2,3,4  } & {-  } & {4-40GB  } \\
+ \hline 
+{Linux  } & {Tandberg  } & {-  } & {Tandbert MLR3  } & {-  } \\
+ \hline 
+{FreeBSD  } & {Tandberg  } & {-  } & {Tandberg SLR6  } & {-  } \\
+ \hline 
+{Solaris  } & {Tandberg  } & {-  } & {Tandberg SLR75  } & {-  } \\
+ \hline 
+{Linux Gentoo  } & {ADIC  } & {-  } & {IBM Ultrium LTO I  } & {100/200 Go }
+\\ \hline 
+
+\end{longtable}
+
+Une liste des 
+\ilink{Librarires support\'ees}{Models} figure dans le 
+\ilink{chapitre librairies (autochangers)}{_ChapterStart} de
+ce document, o\`u vous trouverez d'autres lecteurs de bandes qui fonctionnent avec
+Bacula. 
+
+\section{Lecteurs de bande non support\'es}
+\label{UnSupportedDrives}
+\index[general]{Lecteurs de bande non support\'es }
+\addcontentsline{toc}{section}{Lecteurs de bande non support\'es}
+
+Auparavant les lecteurs de bandes OnStream IDE-SCSI ne fonctionnaient pas avec
+Bacula. A partir de la version 1.33 de Bacula et de la version 0.9.14 du
+pilote noyau ou sup\'erieur,ce lecteur est support\'e. Consultez le chapitre
+de test car vous devez le configurer pour fonctionner en mode blocs de taille
+fixe. 
+
+Les lecteurs QIC sont connus pour avoir nombre de particularit\'es (taille de
+blocs fixe, et un EOF plut\^ot que deux pour terminer la bande). En
+cons\'equence, vous devrez \^etre particuli\`erement attentif \`a sa
+configuration pour le faire fonctionner avec Bacula. 
+
+\section{A l'attention des utilisateurs de FreeBSD !!!}
+\index[general]{L'attention des utilisateurs de FreeBSD  }
+\index[general]{FreeBSD!l'attention des utilisateurs de }
+\addcontentsline{toc}{section}{l'attention des utilisateurs de FreeBSD !!!}
+
+A moins que vous n'ayez appliqu\'e un correctif sur la biblioth\`eque pthreads
+de votre syst\`eme FreeBSD, vous perdrez des donn\'ees quand Bacula aura
+rempli une bande et passera \`a la suivante. La raison en est que les
+biblioth\`eques pthreads sans correctifs \'echouent \`a retourner un \'etat
+d'alerte \`a Bacula signalant que la fin de bande est proche. Consultez le 
+\ilink{chapitre test des lecteurs de bandes}{FreeBSDTapes} de
+ce manuel pour d'importantes informations concernant la configuration de votre
+lecteur de bande pour qu'il soit compatible avec {\bf Bacula}. 
+
+\section{Librairiess support\'ees}
+\index[general]{Librairiess support\'ees }
+\addcontentsline{toc}{section}{Librairies support\'ees}
+
+Pour des informations sur les libraries (autochangeurs) support\'ees, allez
+voir la section 
+\ilink{Libraries connues pour fonctionner avec Bacula}{Models} du chapitre 
+Librairies support\'ees de ce manuel. 
+
+\section{Sp\'ecifications des cartouches}
+\index[general]{Sp\'ecifications!Cartouches}
+\index[general]{Cartouches Sp\'ecifications}
+\addcontentsline{toc}{section}{Sp\'ecifications des cartouches}
+Nous ne pouvons vraiment pas vous dire quel lecteur acheter pour utiliser Bacula. 
+Cependant, nous pouvons recommander d'\'eviter les lecteurs DDS. La 
+technologie est plut\^ot ancienne et ces lecteurs n\'ecessitent de fr\'equents 
+nettoyages. Les lecteurs DLT sont g\'en\'eralement bien meilleurs (technologie 
+plus r\'ecente) et ne requi\`erent pas autant d'op\'erations de nettoyage.
+
+Ci-dessous, vous trouverez une table de sp\'ecifications de cartouches DLT et LTO 
+qui vous permettra de vous faire une id\'ee de la capacit\'e et de la rapidit\'e des 
+lecteurs et cartouches modernes. Les capacit\'es report\'ees ici sont les natives, 
+sans compression. Tous les lecteurs modernes pratiquent la compression 
+mat\'erielle, et les fabricants affichent souvent une capacit\'e compress\'ee avec un 
+ratio de 2:1. Le facteur de compression r\'eel d\'epend principalement des donn\'ees 
+sauvegard\'ees, mais je pense qu'un ratio 1,5:1 est beaucoup plus raisonnable 
+(autrement dit, multipliez la valeur de la table par 1,5 pour obtenir une 
+estimation grossi\`ere de la capacit\'e compress\'ee). Les taux de transfert sont 
+arrondis au GB/hr le plus proche. Les valeurs sont fournies par les divers 
+fabricants.
+
+Le type de media est la d\'esignation du fabricant, vous n'\^etes pas oblig\'e de 
+l'utiliser (mais vous devriez...) dans vos ressources de configuration Bacula.
+
+
+\begin{tabular}{|c|c|c|c}
+Type de media      & Type de lecteur & Capacit\'e des media & Taux de transfert \\ \hline
+DDS-1              & DAT        & 2 GB &        ?? GB/hr   \\ \hline
+DDS-2              & DAT        & 4 GB &        ?? GB/hr   \\ \hline
+DDS-3              & DAT        & 12 GB &       5.4 GB/hr   \\ \hline
+Travan 40          & Travan     & 20 GB &       ?? GB/hr    \\ \hline
+DDS-4              & DAT        & 20 GB &       11 GB/hr    \\ \hline
+VXA-1              & Exabyte    & 33 GB &       11 GB/hr    \\ \hline
+DAT-72             & DAT        & 36 GB &       13 GB/hr    \\ \hline
+DLT IV             & DLT8000    & 40 GB  &      22 GB/hr    \\ \hline
+VXA-2              & Exabyte    & 80 GB &       22 GB/hr    \\ \hline
+Half-high Ultrum 1 & LTO 1      & 100 GB &      27 GB/hr    \\ \hline
+Ultrium 1          & LTO 1      & 100 GB &      54 GB/hr    \\ \hline
+Super DLT 1        & SDLT 220   & 110 GB &      40 GB/hr    \\ \hline
+VXA-3              & Exabyte    & 160 GB &      43 GB/hr    \\ \hline
+Super DLT I        & SDLT 320   & 160 GB &      58 GB/hr    \\ \hline
+Ultrium 2          & LTO 2      & 200 GB &      108 GB/hr   \\ \hline
+Super DLT II       & SDLT 600   & 300 GB &      127 GB/hr   \\ \hline
+VXA-4              & Exabyte    & 320 GB &      86 GB/hr    \\ \hline
+Ultrium 3          & LTO 3      & 400 GB &      216 GB/hr   \\ \hline
+\end{tabular}

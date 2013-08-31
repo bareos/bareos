@@ -1,0 +1,64 @@
+%%
+%%
+%%  The following characters must be preceded by a backslash
+%%    to be entered as printable characters:
+%%
+%%   # $ % & ~ _ ^ \ { }
+%%
+
+\documentclass[10pt,a4paper]{book}
+
+\topmargin -0.5in
+\oddsidemargin 0.0in
+\evensidemargin 0.0in
+\textheight 10in
+\textwidth 6.5in
+
+
+\usepackage{html}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{bacula}
+\usepackage{longtable}
+\usepackage{makeidx}
+\usepackage{index}
+\usepackage{setspace}
+\usepackage{hyperref}
+% \usepackage[linkcolor=black,colorlinks=true]{hyperref}
+\usepackage{url}
+
+\makeindex
+\newindex{general}{idx}{ind}{General Index}
+
+\sloppy
+
+\begin{document}
+\sloppy
+
+\include{coverpage-en}
+
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagestyle{myheadings}
+\markboth{Bacula Version \version}{Bacula Version \version}
+\pagenumbering{arabic}
+\include{python-en}
+\include{vars-en}
+\include{stunnel-en}
+\include{dvd-en}
+\include{projects-en}
+\include{internaldb-en}
+\include{license-en}
+\include{fdl-en}
+\include{gpl-en}
+\include{lesser-en}
+
+
+% pull in the index
+\clearpage
+\printindex[general]
+
+\end{document}

@@ -1,0 +1,25 @@
+              Technical notes on version 1.32a 04Oct03
+                        04 Oct 2003
+                        Kern Sibbald
+
+General:
+
+Changes submitted this submission:
+04Oct03
+- Combine the code in ua_output and ua_status that searches
+  the run records.
+03Oct03
+- Fixed "list nextvol" to search for the correct pool in the
+  Schedule Run records.
+- Correct an error in is_block_zero. It found a false
+  match if the first 1016 bytes of a 32K buffer and     
+  the last 248 bytes are zero.  Broke the sparse option.
+01Oct03
+- More documentation.
+- Test if multiple mail addresses works. Yes.
+- Add debug Jmsg() to trigger if the file I/O packet is
+  not closed in the FD, i.e file descriptor leaks.
+- When error occurs reading label in mount.c, start from
+  the very top so that the retry count is in effect.
+- Zap the mode in soft links in testls.c for regression
+  testing.

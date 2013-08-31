@@ -1,0 +1,32 @@
+              Technical notes on version 1.19 08May02
+                       09 May 2002
+                        Kern Sibbald
+
+General:
+- Made last changes for integrating prune and purge commands.
+
+Changes submitted this submission:
+- Add -ltermcap to CONS_LIBS when readline is configured.
+  More work to be done to search for termcap.
+- Added cats/drop_sqlite_tables.in, which will delete the
+  SQLite database.
+- Got CWEB working so that we can compile filesys.w and immortal.w
+- Modified depkgs to include cweb.             
+- Note, CWEB is not yet used by the core Bacula code.
+- Made cats/alter.sql, which alters an old database to bring it
+  up to the new format. This only works with MySQL since SQLite does
+  not have the ALTER SQL command.
+- Changed the old StartDay field in the db to be JobTDate, which is
+  the latest time/date in widened Unix time format that the Job ran.
+  This value is used when doing pruning.
+- Added code in cats/sql.c to verify that the database internal version
+  corresponds to the db version compiled in Bacula. It is set to 1 currently.
+- Lots of changes to cats to bring the SQL up to date with the new 
+  retention period changes.
+- Added Console command code to permit changing a Volume's retention
+  period.
+- Removed old code that used date_encode() and replaced it with widened
+  Unix time().
+- Started modifying Message resource scanner so that we can have multiple
+  message resources. Much more work to be done.
+- Moved scanning for time into new library routine string_to_btime().

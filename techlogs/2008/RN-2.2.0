@@ -1,0 +1,172 @@
+
+          Release Notes for Bacula 2.2.0 
+
+  Bacula code: Total files = 520 Total lines = 195,550 (*.h *.c *.in)
+  82 new files, 41,221 new lines of code, 208,380 lines of change from 2.0.3
+
+This Director and Storage daemon must be upgraded at the same time,
+but they should be compatible with all 2.0.x File daemons, unless you
+use some of the new features that affect the FD.  In other words, you should
+not have to upgrade all your File daemons when you upgrade. There is
+no database upgrade needed from version 2.0.x to 2.2.0.
+
+Areas requiring caution or testing:
+- You must have the thread safe version of MySQL client libraries loaded
+  to build with MySQL enabled.
+- Volumes are pruned only when absolutely necessary -- this may cause
+  your database to grow compared to prior Bacula versions.
+- Solaris door and even port files are no longer restored (equivalent
+    to what we do with sockets).
+- SQLite is no longer supported for Solaris -- it fails too often with
+  bus errors.  SQLite3 should work on Solaris.
+- The default setting for SQLite3 is now 'PRAGMA synchronous=OFF'.
+  This makes it run 30 times faster, but increases the possiblity
+  of a corrupted database if your server shuts down unexpectedly.
+  The default behavior can be changed in src/version.h
+- Restore on Win32, and in particular on Vista is untested. Please
+  test before relying on it.  It should backup and restore reparse
+  points.
+- Win32 servers are untested, and very likely not to work.
+
+The major new features are:
+- Much faster insertion of attributes (somewhere around 10 times),
+  many thanks to Eric Bollengier and Marc Cousin. 
+- First release of bat (Bacula Administration Tool).  Note to build
+  bat you must explicitly enable it on the ./configure line, you
+  must have the Qt4 version 4.2 or later libraries loaded, the qwt
+  (Qt Graphics) package loaded, and qmake and the other Qt4 tools 
+  must be available. Most of the implementation was done by Dirk Bartley.
+- Red/Black restore in memory tree (500 times faster loading).
+- The Regex Where code to allow easier relocation of restored files 
+  thanks to Eric.
+- Socket level heartbeat for all connections (untested).
+- posix_fadvise() use in the FD to improve performance reduces
+  swapping due to opening/reading lots of files. Win32 equivalent
+  implemented.
+- Much improved Volume reservation code that should eliminate most
+  conflicts experienced in multiple drive autochangers.
+- Simpler locking in the SD in the reservation system.
+- Detection of file size/date change during backup if enabled.
+- New Recycle Pool feature -- thanks to Eric.
+- Efficient implementation of very large include/exclude lists.
+- Volumes are no longer pruned during 'status dir'
+- Pruning is now more efficient, and if a Volume is purged,
+  during pruning, it is immediately discovered.
+- License is now GPL v2 without modifications, fix a few copyright
+  mistakes made when adding FSFE copyright notice.
+
+New ./configure options:
+- --enable-bwx-console    
+- --enable-bat
+- --with-qwt=
+- --with-db-name=
+- --with-db-user=
+- --enable-batch-insert
+
+New bconsole commands:
+- exec
+- memory
+- update recyclepool
+- .sql
+- .api
+- .pwd (in restore tree)
+- restoreclient (keyword)
+- backupclient  (keyword)
+- regexwhere    (keyword)
+- update jobid  (new command)
+- recyclepool   (keyword) 
+
+New directives:
+- Heartbeat Interval (bconsole.conf)
+- Heartbeat Interval (bacula-dir.conf in Director, Client, Storage)
+- TLS Allowed CN     (bacula-dir.conf in Client)
+- Regex Where        (bacula-dir.conf in Job)
+- Strip Prefix       (bacula-dir.conf in Job)
+- Add Prefix         (bacula-dir.conf in Job)
+- Add Suffex         (bacula-dir.conf in Job)
+- Recycle Pool       (bacula-dir.conf in Pool)
+- FailJobOnError     (bacula-dir.conf in RunScript)
+- CheckFileChanges   (bacula-dir.conf in FileSet)
+- StripPath          (bacula-dir.conf in FileSet)
+
+Other features or bug fixes:
+- Fixed bugs: 916, 910, 917, 914, 906, 907, 
+  842, 830, 893, 861, 888, 886, 807, 877, 872
+  885, 887, 864, 874, 882, 881, 863, 859, 
+  856, 854, 845, 847, 846, 809, 772, 
+  822, 825, 824, 808, 802, 797, 798, 795, 789, 791, 
+  788, 780, 763, 782, 612, 767, 775, 621, 772, 764, 
+  766, 621, 761, 755, 750, 741, 747, 742, 744, and 743.
+- Configure bat with --enable-bat. Define qwt libraries with
+  --with-qwt=<dir>. See Installation chapter of manual for details.
+- Create a depkgs-qt package that has both Qt4 and qwt, which are
+  needed to build bat. Most modern Linux systems will have both
+  these packages in the distro.
+- Storage overrides delete all previous storage definitions instead
+  of prepending.
+- One should be able to mount and unmount removable devices if the
+  Device resource has Removeable Media set and the mount and unmount
+  directives are defined.
+- ./configure will do a better job of searching for qwt libraries.
+- The Win32 version can no longer be shutdown from the tray monitor.
+  Use the command line or the Services panne.
+- Keep prune_volumes() from pruning the whole Scratch pool.
+- More debug output in status storage.
+- Correct moving a Scratch volume from pool to pool (some
+  critical columns were lost).
+- Different locking in reservations and despooling systems,
+  which means more micro-locking and less macro-locking, which
+  should give a lot more concurrency at the expense of slightly
+  (<0.1%) more overhead due to more locking/unlocking, but     
+  concurrent jobs should run much faster.
+- Additional drive reservation algorithm that should solve a lot of
+  the problems experienced with multiple drive autochangers.
+- Storage daemon status command enhanced to more clearly show Volume,
+  pool and media type when a job is waiting.
+- Made bsmtp work with more strict SMTP servers.
+- Detect doubly freed buffers in smartall.c
+- wx-console renamed to bwx-console (Fedora request)
+- gnome-console renamed to bgnome-console (Fedora request)
+- Migration preserves original job's FileSetId
+- Spooling implemented for migration jobs.
+- Config files can be read through a pipe, by specifying a leading |
+  in front of the configuration path/filename.
+- New memory command (bconsole) that will print the current Director's
+  memory usage, and an in use buffer dump.
+- Console name changed from *Console* to -Console- to accomodate Win32
+  filename restrictions.  
+- Corrected the Win32 ftruncate bug.
+- Additional version information added to Job reports.
+- New -8 option for bsmtp to specify UTF-8 encoding type.
+- bsmtp will no longer add < > to target (from, to, cc) if there
+  is already a < in the target.
+- Prefer Mounted Volumes extended to mean a volume that is being
+  mounted by another job.
+- Runscript timing set to same as version 1.38.11
+- New TLS Allowed CN directive(s) permitted.
+- New bconsole 'exec' command to run external script/command.
+- Turn on FreeBSD/OpenBSD code to set EOT model on tape.
+- Drop from root done before database is opened.
+- Database user and name can be configured with:
+  --with-db-name=name --with-db-user=user
+- Turn on wait_for_drive in mtx-changer script.
+- Rework how bar codes are handled in mtx-changer script.
+  This appears to have been an unreported bug.
+- Updated nagios plugin supplied by Christian Masopust
+- Better restricted console ACL checking.
+- New Client Connect Wait directive in Storage daemon so that
+  users can configure how long SD waits for FD connection.
+- Bacula will no longer permit pruning of the currently running
+  job (note, if other jobs are running, they may be pruned).
+- Sockets are no longer restored.
+- dbcheck works in 300K chunks so will typically run faster.
+- Include/Exclude lists can now be efficiently handled for quite
+  large sizes -- tens of thousands of entries.
+- Several memory leaks in migration and database usage were fixed.
+- New console keyword restoreclient, which specifies the client to
+  which the restore will be sent. The client keyword specifies 
+  the backup client. The restoreclient keyword is optional if it is
+  not specified, the backup client will also be the restore client.
+- The disk file size is now checked to ensure that it agrees with the
+  catalog value before Bacula will append to the disk (same as tape
+  and DVD).

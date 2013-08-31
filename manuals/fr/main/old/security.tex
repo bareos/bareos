@@ -1,0 +1,336 @@
+%%
+%%
+
+\chapter{Consid\'erations sur la s\'ecurit\'e de Bacula}
+\label{_ChapterStart14}
+\index[general]{Bacula!Consid\'erations sur la s\'ecurit\'e de}
+\index[general]{Consid\'erations sur la s\'ecurit\'e de Bacula}
+\index[general]{S\'ecurit\'e}
+
+\begin{itemize}
+\item La s\'ecurit\'e, c'est de pouvoir restaurer vos fichiers, aussi, lisez 
+   attentivement le chapitre \ilink{Critical Items Chapter}{Critical} de 
+   ce manuel.
+\item Le client ({\bf bacula-fd}) doit \^etre ex\'ecut\'e en tant que root
+   afin d'avoir  l'acc\`es \`a tous les fichiers du syst\`eme. 
+\item Il n'est pas n\'ecessaire d'ex\'ecuter le Director en tant que root. 
+\item Il n'est pas n\'ecessaire d'ex\'ecuter le Storage Daemon en tant que
+   root, mais  vous devez vous assurer qu'l peut utiliser le lecteur de bandes,
+   dont l'acc\`es  est presque toujours r\'eserv\'e \`a root par d\'efaut.
+   De plus, si vous n'ex\'ecutez pas le Storage Daemon en tant que root, il sera 
+   dans l'incapacit\'e de r\'egler automatiquement les param\`etres de votre lecteur 
+   de bandes. En effet, ces fonctions requi\`erent les droits root sur la plupart 
+   des syst\`emes d'exploitation.
+\item Vous devriez restreindre l'acc\`es au fichiers de configuration de
+   Bacula, de  sorte que les mots de passe ne soient pas lisibles par tous.  Les
+   {\it daemons} {\bf Bacula} sont prot\'eg\'es par des mots de passe et CRAM-MD5
+(i.e. les mots de passe ne sont pas envoy\'es sur le r\'eseau). Ceci assure
+que tout le  monde ne peut acc\'eder aux {\it daemons}. C'est une protection
+raisonnablement bonne,  mais qui peut \^etre craqu\'ee par un expert. 
+\item Si vous utilisez les ports recommand\'es 9101,9102 et 9103, vous voudrez
+   probablement  prot\'eger ces ports des acc\`es externes \`a l'aide d'un
+   firewall et/ou en utilisant  tcp wrappers ({\bf etc/hosts.allow}).  
+\item Actuellement, toutes les donn\'ees sont envoy\'ees sur le r\'eseau sans
+   chiffrement. Par  cons\'equent, \`a moins que vous n'utilisiez {\bf ssh} ou {\bf
+   stunnel} pour la  transmission de port (NDT: port forwarding), il n'est pas
+recommand\'e de faire des  sauvegardes \`a travers un r\'eseau non
+s\'ecuris\'e (par exemple, Internet). Nous  pr\'evoyons d'int\'egrer le
+chiffrage {\bf ssl} dans une version future.  
+\item Vous devriez vous assurer que seuls les {\it daemons} de Bacula ont
+   acc\`es  en lecture et \'ecriture aux r\'epertoires de travail de Bacula.  
+\item Si vous utilisez {\bf MySQL}, il n'est pas n\'ecessaire de l'ex\'ecuter
+   en tant que root  
+\item Le script par d\'efaut de Bacula {\bf grant-mysql-permissions} accorde
+   toutes les  permissions d'utilisation de la base de donn\'ees MySQL sans mot
+   de passe. Si vous  voulez la s\'ecurit\'e, affinez ceci !  
+\item N'oubliez pas que Bacula est un programme r\'eseau, ainsi quiconque sur
+   le r\'eseau  dispose du programme console et du mot de passe du Director peut
+   acc\'eder \`a  Bacula et aux donn\'ees sauvegard\'ees.  
+\item Vous pouvez restreindre les adresses IP avec auxquelles Bacula se
+   connectera en  utilisant les enregistrements appropri\'es {\bf DirAddress},
+   {\bf FDAddress},  ou {\bf SDAddress} dans les fichiers de configurations
+respectifs des {\it daemons}  
+\item Soyez conscient que si vous sauvegardez votre catalogue avec le script 
+   par d\'efaut, et si l'acc\`es \`a votre catalogue est prot\'eg\'e par un mot de passe, 
+   ce dernier est transmis en tant qu'option de ligne de commande \`a ce script, 
+   ce qui le rend visible \`a tout utilisateur du syst\`eme. Si vous voulez 
+   s\'ecuriser ce point, vous devez le passer via une variable d'environnement 
+   ou un fichier s\'ecuris\'e.
+\end{itemize}
+
+\section{Compatibilit\'e ascendante}
+\index[general]{Compatibilit\'e ascendante}
+\addcontentsline{toc}{section}{Compatibilit\'e ascendante}
+L'un des principaux objectifs de Bacula est de garantir que vous pouvez 
+restaurer depuis des cartouches (ou depuis des volumes disque) \'ecrites des ann\'ees 
+auparavant. Ceci implique que chaque nouvelle version de Bacula devrait \^etre 
+capable de relire les anciens formats de cartouches. Le premier probl\`eme est de 
+s'assurer que le mat\'eriel fonctionne encore malgr\'e les ann\'ees, et que les supports 
+sont encore valides. Ensuite, votre syst\`eme d'exploitation doit \^etre capable 
+de s'interfacer avec le p\'eriph\'erique et finalement, Bacula doit \^etre capable 
+de reconna\^itre les anciens formats. De tous ces probl\`emes, nous ne pouvons 
+prendre en charge que le dernier, pour les autres, vous devez vous pr\'eparer 
+consciencieusement.
+
+Depuis les tous premiers stades de Bacula (janvier 2000) jusqu'\`a aujourd'hui 
+(D\'ecembre 2005), Bacula a connu deux formats majeurs d'\'ecriture sur les 
+cartouches. Le second format a \'et\'e introduit dans la version 1.27 en 
+novembre 2002, et n'a pas chang\'e depuis. En principe, Bacula devrait encore pouvoir 
+lire le format d'origine, mais j'avoue ne pas avoir essay\'e depuis longtemps...
+
+Bien que le format des cartouches soit fix\'e, les types de donn\'ees qui peuvent \^etre 
+\'ecrites sur les cartouches sont extensibles, ce qui nous a permis d'ajouter de 
+nouvelles fonctionnalit\'es telles que les ACLs, les donn\'ees Win32, les donn\'ees 
+chiffr\'ees... Naturellement, une ancienne version de Bacula ne saurait lire des 
+nouveaux flux de donn\'ees, mais chaque nouvelle version de Bacula est en principe 
+capable de lire les anciens flux.
+
+Si vous voulez \^etre absolument certain de pouvoir lire vos vieilles cartouches, 
+vous devriez :
+
+1. Essayer de lire les vieilles cartouches de temps en temps, une fois par an 
+par exemple.
+
+2. Conserver une copie statiquement li\'ee de chaque version de Bacula que vous 
+avez utilis\'ee en production. Ainsi, si pour quelque raison nous venions \`a 
+abandonner la compatibilit\'e avec les anciens formats de cartouches, vous pourriez 
+toujours remettre en service une vieille copie de Bacula...
+
+Le second point est probablement excessif, en toute rigueur, il pourrait vous 
+sauver un jour.
+
+\label{wrappers}
+
+\section{Configurer et tester TCP Wrappers}
+\index[general]{Configurer et tester TCP Wrappers}
+\index[general]{Bacula!Configurer et tester TCP Wrappers}
+\index[general]{TCP Wrappers}
+\index[general]{Wrappers!TCP}
+\index[general]{libwrappers}
+\addcontentsline{toc}{section}{Configurer et tester TCP Wrappers}
+
+Les TCP Wrappers sont impl\'ement\'es si vous les activez lors de la
+configuration ({\bf ./configure \verb{:--:{with-tcp-wrappers}). Avec ce code activ\'e, vous
+pourrez contr\^oler qui peut acc\'eder \`a vos {\it daemons}. Ce contr\^ole
+est obtenu par la modification du fichier {\bf /etc/hosts.allow}. Le nom de
+programme qu'utilise {\bf Bacula} pour appliquer ces restrictions est celui
+que vous avez sp\'ecifi\'e dans le fichier de configuration du {\it daemon}.
+Vous ne devez pas utiliser l'option {\bf twist} dans votre {\bf
+/etc/hosts.allow} car elle stopperait les {\it daemons} Bacula lorsqu'une
+connection est refus\'ee. 
+
+Le nom exact du paquet requis pour compiler avec le support TCP wrappers 
+d\'epend du syst\`eme. Il s'agit, par exemple, de tcpd-devel sur SuSE, et de 
+tcp\_wrappers sur RedHat.
+
+Dan Langille a fourni les informations suivantes concernant la configuration
+et les tests de TCP Wrappers avec Bacula. 
+
+Si vous lisez hosts\_options(5), vous verrez une option nomm\'ee twist. Cette
+option remplace le processus courant par une instance de la commande shell
+sp\'ecifi\'ee. Voici un exemple typique de son utilisation : 
+
+\footnotesize
+\begin{verbatim}
+ALL : ALL \
+ : severity auth.info \
+ : twist /bin/echo "Vous n'\^etes pas autoris\'e \`a utiliser %d depuis %h."
+\end{verbatim}
+\normalsize
+
+\label{question-1}
+Le code libwrap tente d'\'eviter {\bf twist} s'il est
+ex\'ecut\'e dans un processus r\'esident. Il en r\'esulte que le processus (e.g.
+bacula-fd, bacula-sd, bacula-dir) sera stopp\'e si la premi\`ere connection
+\`a son port provoque l'invocation de l'option twist. Le risque est qu'une
+attaque provoque l'arr\^et des {\it daemons}.  Cette situation est \'evit\'ee si votre
+fichier /etc/hosts.allow contient un jeu de r\`egles appropri\'e. L'exemple
+suivant est suffisant : 
+
+\footnotesize
+\begin{verbatim}
+undef-fd : localhost : allow
+undef-sd : localhost : allow
+undef-dir : localhost : allow
+undef-fd : ALL : deny
+undef-sd : ALL : deny
+undef-dir : ALL : deny
+\end{verbatim}
+\normalsize
+
+Vous devez accorder les noms des {\it daemons} \`a ceux sp\'ecifi\'es dans leurs 
+fichiers de configuration respectifs. Ce ne sont, en g\'en\'eral, pas les noms 
+des fichiers binaires des {\it daemons}. Il n'est pas possible d'utiliser 
+les noms des binaires car plusieurs {\it daemons} peuvent \^etre ex\'ecut\'es 
+sur une machine avec des fichiers de configuration distincts. 
+
+Dans ces exemples, le Director est undef-dir, le
+Storage Daemon est undef-sd, et le File Daemon est undef-fd. Ajustez ces noms pour
+qu'ils conviennent \`a votre configuration. L'exemple de r\`egles ci-dessus suppose que
+SD, FD et DIR sont tous sur la m\^eme machine. Si vous avez un client FD
+distant, il vous suffira de placer le jeu de r\`egles suivant sur ce client : 
+
+\footnotesize
+\begin{verbatim}
+undef-fd : director.example.org : allow
+undef-fd : ALL : deny
+\end{verbatim}
+\normalsize
+
+O\`u director.example.org est l'h\^ote qui contactera le client (i.e. la
+machine sur laquelle le Bacula Director tourne). L'usage de "ALL : deny"
+assure que l'option twist (si pr\'esente) n'est pas invoqu\'ee. Pour tester
+correctement votre configuration, d\'emarrez le(s) {\it daemon(s)}, puis
+essayez de vous y connecter depuis une adresse IP qui devrait \^etre capable
+de le faire. Vous devriez voir quelque chose comme : 
+
+\footnotesize
+\begin{verbatim}
+$ telnet undef 9103
+Trying 192.168.0.56...
+Connected to undef.example.org.
+Escape character is '^]'.
+Connection closed by foreign host.
+$
+\end{verbatim}
+\normalsize
+
+C'est la r\'eponse correcte. Si vous voyez ceci : 
+
+\footnotesize
+\begin{verbatim}
+$ telnet undef 9103
+Trying 192.168.0.56...
+Connected to undef.example.org.
+Escape character is '^]'.
+You are not welcome to use undef-sd from xeon.example.org.
+Connection closed by foreign host.
+$
+\end{verbatim}
+\normalsize
+
+Alors, twist a \'et\'e invoqu\'ee, et votre configuration est incorrecte. vous
+devez ajouter la directive "deny". Il est important de noter que vos tests
+doivent inclure le red\'emarrage des {\it daemons} apr\`es chaque tentative de
+connexion. Vous pouvez aussi tcpdchk(8) et tcpdmatch(8) pour valider jeu de
+r\`egles /etc/hosts.allow. Voici un test simple avec tcpdmatch : 
+
+\footnotesize
+\begin{verbatim}
+$ tcpdmatch undef-dir xeon.example.org
+warning: undef-dir: no such process name in /etc/inetd.conf
+client: hostname xeon.example.org
+client: address 192.168.0.18
+server: process undef-dir
+matched: /etc/hosts.allow line 40
+option: allow
+access: granted
+\end{verbatim}
+\normalsize
+
+Si vous ex\'ecutez Bacula en tant que {\it standalone daemon}, les
+avertissements ci-dessus peuvent \^etre ignor\'es sans scrupules. Voici un
+exemple qui r\'ev\`ele que "deny" fait defaut \`a vos r\`egles, et que
+l'option twist a \'et\'e invoqu\'ee. 
+
+\footnotesize
+\begin{verbatim}
+$ tcpdmatch undef-dir 10.0.0.1
+warning: undef-dir: no such process name in /etc/inetd.conf
+client: address 10.0.0.1
+server: process undef-dir
+matched: /etc/hosts.allow line 91
+option: severity auth.info
+option: twist /bin/echo "You are not welcome to use
+  undef-dir from 10.0.0.1."
+access: delegated
+\end{verbatim}
+\normalsize
+
+\section{Ex\'ecuter Bacula sans \^etre root}
+\index[general]{Root!Ex\'ecuter Bacula sans \^etre }
+\index[general]{Ex\'ecuter Bacula sans \^etre root }
+\addcontentsline{toc}{section}{Ex\'ecuter Bacula sans \^etre root}
+
+Voici quelques recommandations de Dan Languille :  
+
+C'est une bonne id\'ee d'ex\'ecuter vos {\it daemons} avec des  privil\`eges
+aussi faibles que possible. En d'autres termes,  si vous pouvez, n'ex\'ecutez
+pas d'applications en tant que root  si elle n'ont pas besoin d'\^etre
+ex\'ecut\'ees en tant que root.  Le Storage Daemon et le Director Daemon n'ont
+pas besoin  d'\^etre ex\'ecut\'es en tant que root. Le File Daemon en a besoin
+pour acc\'eder  \`a l'ensemble des fichiers du syst\`eme. Pour vous passer des
+privil\`eges  root, il vous faut cr\'eer un utilisateur et un groupe. Choisir
+{\tt bacula}  pour l'un et l'autre me semble une bonne id\'ee.  
+
+Le port FreeBSD cr\'ee cet utilisateur et ce groupe pour vous. (En fait, au
+moment  ou j'\'ecris ces lignes, ce n'est pas encore le cas, mais \c{c}a le
+sera bient\^ot).  Voici \`a quoi ressemblent ces entr\'ees sur mon portable
+FreeBSD : 
+
+\footnotesize
+\begin{verbatim}
+bacula:*:1002:1002::0:0:Bacul Daemon:/var/db/bacula:/sbin/nologin
+\end{verbatim}
+\normalsize
+
+J'ai utilis\'e vipw pour cr\'eer ces entr\'ees. J'ai utilis\'e un User ID et
+un Group ID  disponibles sur mon syst\`eme : 1002.  
+
+J'ai aussi cr\'e\'e un groupe dans /etc/group:  
+
+\footnotesize
+\begin{verbatim}
+bacula:*:1002:
+\end{verbatim}
+\normalsize
+
+L'utilisateur bacula, contrairement au {\it daemon} Bacula, aura un 
+r\'epertoire d\'edi\'e (home directory) : {\tt /var/db/bacula}  qui est le
+r\'epertoire standard pour le catalogue de Bacula.  
+
+A pr\'esent, vous avez un utilisateur et un groupe bacula, et vous pouvez 
+s\'ecuriser le r\'epertoire d\'edi\'e de bacula en utilisant cette commande : 
+
+\footnotesize
+\begin{verbatim}
+chown -R bacula:bacula /var/db/bacula/
+\end{verbatim}
+\normalsize
+
+Celle-ci assure que seul l'utilisateur bacula peut acc\'eder \`a ce
+r\'epertoire.  Elle signifie aussi que si nous ex\'ecutons le Director et le
+Storage Daemon  en tant que bacula, ces {\it daemons} auront aussi des acc\`es
+restreints.  Ce ne serait pas le cas s'ils \'etaient ex\'ecut\'es en tant que
+root.  
+
+Il est important de noter que le Storage Daemon a vraiment besoin 
+d'appartenir au groupe operator pour un acc\`es normal aux lecteurs de bandes.
+(au moins sur FreeBSD, c'est ainsi que les choses sont configur\'ees par
+d\'efaut).  De tels p\'eriph\'eriques sont en principe attribu\'es \`a
+root:operator. Il est plus  facile et moins dangereux de faire de bacula un
+membre de ce groupe que de jouer  avec les permissions du syst\`eme. 
+
+D\'emarrer les {\it daemons} bacula 
+
+Pour d\'emarrer les {\it daemons} bacula sur FreeBSD, utilisez la commande : 
+
+\footnotesize
+\begin{verbatim}
+/usr/local/etc/rc.d/bacula.sh start
+\end{verbatim}
+\normalsize
+
+Pour vous assurer que tous fonctionnent : 
+
+\footnotesize
+\begin{verbatim}
+$ ps auwx | grep bacula
+root\ 63416\ 0.0\ 0.3\ 2040 1172\ ??\ Ss\ 4:09PM 0:00.01
+    /usr/local/sbin/bacula-sd -v -c /usr/local/etc/bacula-sd.conf
+root\ 63418\ 0.0\ 0.3\ 1856 1036\ ??\ Ss\ 4:09PM 0:00.00
+    /usr/local/sbin/bacula-fd -v -c /usr/local/etc/bacula-fd.conf
+root\ 63422\ 0.0\ 0.4\ 2360 1440\ ??\ Ss\ 4:09PM 0:00.00
+    /usr/local/sbin/bacula-dir -v -c /usr/local/etc/bacula-dir.conf
+\end{verbatim}
+\normalsize

@@ -1,0 +1,804 @@
+%%
+%%
+
+\chapter{Disaster Recovery Using Bacula}
+\label{RescueChapter}
+\index[general]{Disaster Recovery Using Bacula}
+\index[general]{Bacula!Disaster Recovery Using}
+\index[general]{Recovery!Disaster Recovery}
+\index[general]{Rescue!Disaster Recovery}
+
+\section{General}
+\index[general]{General}
+
+When disaster strikes, you must have a plan, and you must have prepared in
+advance otherwise the work of recovering your system and your files will be
+considerably greater.  For example, if you have not previously saved the
+partitioning information for your hard disk, how can you properly rebuild
+it if the disk must be replaced?
+
+Unfortunately, many of the steps one must take before and immediately after
+a disaster are very operating system dependent.  As a consequence, this
+chapter will discuss in detail disaster recovery (also called Bare Metal
+Recovery) for {\bf Linux} and {\bf Solaris}.  For Solaris, the procedures
+are still quite manual.  For FreeBSD the same procedures may be used but
+they are not yet developed.  For Win32, a number of Bacula users have
+reported success using BartPE.
+
+
+\label{considerations1}
+\section{Important Considerations}
+\index[general]{Important Considerations}
+\index[general]{Considerations!Important}
+
+Here are a few important considerations concerning disaster recovery that
+you should take into account before a disaster strikes.
+
+\begin{itemize}
+\item If the building which houses your computers burns down or is otherwise 
+   destroyed, do you have off-site backup data? 
+\item Disaster recovery is much easier if you have several machines. If  you
+   have a single machine, how will you handle unforeseen events  if your only
+   machine is down? 
+\item Do you want to protect your whole system and use Bacula to  recover
+   everything? or do you want to try to restore your system from  the original
+   installation disks and apply any other updates and  only restore user files? 
+\end{itemize}
+
+\label{steps1}
+\section{Steps to Take Before Disaster Strikes}
+\index[general]{Steps to Take Before Disaster Strikes}
+\index[general]{Strikes!Steps to Take Before Disaster}
+
+\begin{itemize}
+\item Create a rescue or CDROM for each of your Linux systems. Generally,
+   they are offered by each distribution, and there are many good 
+   rescue disks on the Web (Knoppix, sysrescuecd, PLD Linux rescue CD,
+   tomsrtbt, RIP ...
+
+\item Create a bacula-hostname directory on 
+   each machine and save it somewhere -- possibly on a USB key.
+\item Ensure that you always have a valid bootstrap file for your backup and 
+   that it is saved to an alternate machine.  This will permit you to
+   easily do a full restore of your system.
+\item If possible copy your catalog nightly to an alternate machine.  If you
+   have a valid bootstrap file, this is not necessary, but  can be very useful if
+   you do not want to reload everything. .  
+\item Ensure that you always have a valid bootstrap file for your  catalog
+   backup that is saved to an alternate machine. This will  permit you to restore
+   your catalog more easily if needed.  
+\item Test using the Rescue CDROM before you are forced to use it in
+   an emergency situation.
+\item Make a copy of your Bacula .conf files, particularly your
+   bacula-dir.conf, and your bacula-sd.conf files, because if your server
+   goes down, these files will be needed to get it back up and running,
+   and they can be difficult to rebuild from memory.
+\end{itemize}
+
+\label{rescueCDROM}
+\section{Bare Metal Recovery on Linux with a Rescue CD}
+\index[general]{Bare Metal Recovery on Linux with a Rescue CD}
+\index[general]{CDROM!Bare Metal Recovery on Linux with a Rescue}
+
+As an alternative to creating a Rescue CD, please see the
+section below entitled \ilink{Bare Metal Recovery using a LiveCD}{LiveCD}.
+
+Bacula previously had a Rescue CD.  Unfortunately, this CD did not work
+on every Linux Distro, and in addition, Linux is evolving with different
+boot methods, more and more complex hardware configurations (LVM, RAID, 
+WiFi, USB, ...).  As a consequence, the Bacula Rescue CD as it was
+originally envisioned no longer exists.
+
+However there are many other good rescue disks available.
+A so called "Bare Metal" recovery is one where you start with an empty hard
+disk and you restore your machine. There are also cases where you may lose a
+file or a directory and want it restored. Please see the previous chapter for
+more details for those cases. 
+
+Bare Metal Recovery assumes that you have the following items for your system:
+
+\begin{itemize}
+\item A Rescue CDROM containing a copy of your OS.
+\item Perhaps a copy of your
+   hard disk information, as well as a statically linked version of the
+   Bacula File daemon.  
+\item A full Bacula backup of your system possibly including  Incremental or
+   Differential backups since the last Full  backup 
+\item A second system running the Bacula Director, the Catalog, and the
+   Storage daemon.  (this is not an absolute requirement, but how to get
+   around it is not yet documented here)
+\end{itemize}
+
+\section{Requirements}
+\index[general]{Requirements}
+
+
+\label{restore_client}
+\section{Restoring a Client System}
+\index[general]{Restoring a Client System}
+\index[general]{System!Restoring a Client}
+
+Now, let's assume that your hard disk has just died and that you have replaced
+it with an new identical drive. In addition, we assume that you have: 
+
+\begin{enumerate}
+\item A recent Bacula backup (Full plus Incrementals)  
+\item A Rescue CDROM.  
+\item Your Bacula Director, Catalog, and Storage daemon running  on another
+   machine on your local network. 
+\end{enumerate}
+
+This is a relatively simple case, and later in this chapter, as time permits,
+we will discuss how you might recover from a situation where the machine that
+crashes is your main Bacula server (i.e. has the Director, the Catalog, and
+the Storage daemon). 
+
+You will take the following steps to get your system back up and running: 
+
+\begin{enumerate}
+\item Boot with your Rescue CDROM.  
+\item Start the Network (local network)  
+\item Re-partition your hard disk(s) as it was before  
+\item Re-format your partitions  
+\item Restore the Bacula File daemon (static version)  
+\item Perform a Bacula restore of all your files  
+\item Re-install your boot loader  
+\item Reboot 
+\end{enumerate}
+
+Now for the details ... 
+
+\section{Boot with your Rescue CDROM}
+\index[general]{CDROM!Boot with your Rescue}
+\index[general]{Boot with your Rescue CDROM}
+
+Each rescue disk boots somewhat differently.  Please see the
+instructions that go with your CDROM.
+
+
+\paragraph*{Start the Network:}
+
+\normalsize
+
+You can test it by pinging another machine, or pinging your broken machine
+machine from another machine. Do not proceed until your network is up. 
+
+\paragraph*{Partition Your Hard Disk(s):}
+
+\paragraph*{Format Your Hard Disk(s):}
+
+\paragraph*{Mount the Newly Formatted Disks:}
+
+
+\paragraph*{Somehow get the static File daemon loaded on your system}
+Put the static file daemon and its conf file in /tmp.
+
+\paragraph*{Restore and Start the File Daemon:}
+\footnotesize
+\begin{verbatim}
+chroot /mnt/disk /tmp/bacula-fd -c /tmp/bacula-fd.conf
+\end{verbatim}
+\normalsize
+
+The above command starts the Bacula File daemon with the proper root disk
+location (i.e. {\bf /mnt/disk/tmp}. If Bacula does not start, correct the
+problem and start it. You can check if it is running by entering: 
+
+\footnotesize
+\begin{verbatim}
+ps fax
+\end{verbatim}
+\normalsize
+
+You can kill Bacula by entering: 
+
+\footnotesize
+\begin{verbatim}
+kill -TERM <pid>
+\end{verbatim}
+\normalsize
+
+where {\bf pid} is the first number printed in front of the first occurrence
+of {\bf bacula-fd} in the {\bf ps fax} command. 
+
+Now, you should be able to use another computer with Bacula installed to check
+the status by entering: 
+
+\footnotesize
+\begin{verbatim}
+status client=xxxx
+\end{verbatim}
+\normalsize
+
+into the Console program, where xxxx is the name of the client you are
+restoring. 
+
+One common problem is that your {\bf bacula-dir.conf} may contain machine
+addresses that are not properly resolved on the stripped down system to be
+restored because it is not running DNS. This is particularly true for the
+address in the Storage resource of the Director, which may be very well
+resolved on the Director's machine, but not on the machine being restored and
+running the File daemon. In that case, be prepared to edit {\bf
+bacula-dir.conf} to replace the name of the Storage daemon's domain name with
+its IP address. 
+
+\paragraph*{Restore Your Files:}
+
+On the computer that is running the Director, you now run a {\bf restore}
+command and select the files to be restored (normally everything), but before
+starting the restore, there is one final change you must make using the {\bf
+mod} option. You must change the {\bf Where} directory to be the root by using
+the {\bf mod} option just before running the job and selecting {\bf Where}.
+Set it to: 
+
+\footnotesize
+\begin{verbatim}
+/
+\end{verbatim}
+\normalsize
+
+then run the restore. 
+
+You might be tempted to avoid using {\bf chroot} and running Bacula directly
+and then using a {\bf Where} to specify a destination of {\bf /mnt/disk}. This
+is possible, however, the current version of Bacula always restores files to
+the new location, and thus any soft links that have been specified with
+absolute paths will end up with {\bf /mnt/disk} prefixed to them. In general
+this is not fatal to getting your system running, but be aware that you will
+have to fix these links if you do not use {\bf chroot}. 
+
+\paragraph*{Final Step:}
+
+
+
+\footnotesize
+\begin{verbatim}
+/sbin/grub-install --root-directory=/mnt/disk /dev/hda
+\end{verbatim}
+\normalsize
+
+Note, in this case, you omit the chroot command, and you must
+replace /dev/hda with your boot device.  If you don't know what your
+boot device is, run the ./run\_grub script once and it will tell
+you.
+
+Finally, I've even run into a case where grub-install was unable to
+rewrite the boot block. In my case, it produced the following error
+message:
+
+\footnotesize
+\begin{verbatim}
+/dev/hdx does not have any corresponding BIOS drive.
+\end{verbatim}
+\normalsize
+
+The solution is to insure that all your disks are properly mounted on
+/mnt/disk, then do the following:
+
+\footnotesize
+\begin{verbatim}
+chroot /mnt/disk
+mount /dev/pts
+\end{verbatim}
+\normalsize
+
+Then edit the file {\bf /boot/grub/grub.conf} and uncomment the line
+that reads:
+
+\footnotesize
+\begin{verbatim}
+#boot=/dev/hda
+\end{verbatim}
+\normalsize
+
+So that it reads:
+
+\footnotesize
+\begin{verbatim}
+boot=/dev/hda
+\end{verbatim}
+\normalsize
+
+Note, the /dev/hda may be /dev/sda or possibly some other drive depending
+on your configuration, but in any case, it is the same as the one that
+you previously tried with {\bf grub-install}.
+
+Then, enter the following commands:
+
+\footnotesize
+\begin{verbatim}
+grub --batch --device-map=/boot/grub/device.map \
+  --config-file=/boot/grub/grub.conf --no-floppy
+root (hd0,0)
+setup (hd0)
+quit
+\end{verbatim}
+\normalsize
+
+If the {\bf grub} call worked, you will get a prompt of {\bf grub\gt{}}   
+before the {\bf root}, {\bf setup}, and {\bf quit} commands, and after 
+entering the {\bf setup} command, it should indicate that it successfully
+wrote the MBR (master boot record).
+
+
+\paragraph*{Reboot:}
+
+First unmount all your hard disks, otherwise they will not be cleanly
+shutdown, then reboot your machine by entering {\bf exit} until you get to the
+main prompt then enter {\bf Ctrl-d}. Once back to the main CDROM prompt, you
+will need to turn the power off, then back on to your machine to get it to
+reboot. 
+
+If everything went well, you should now be back up and running. If not,
+re-insert the emergency boot CDROM, boot, and figure out what is wrong. 
+
+\label{restore_server}
+\section{Restoring a Server}
+\index[general]{Restoring a Server}
+\index[general]{Server!Restoring a}
+
+Above, we considered how to recover a client machine where a valid Bacula
+server was running on another machine. However, what happens if your server
+goes down and you no longer have a running Director, Catalog, or Storage
+daemon? There are several solutions: 
+
+\begin{enumerate}
+\item Bring up static versions of your Director, Catalog, and Storage  daemon 
+   on the damaged machine.
+
+\item Move your server to another machine. 
+
+\item Use a Hot Spare Server on another Machine.
+\end{enumerate}
+
+The first option, is very difficult because it requires you to have created a
+static version of the Director and the Storage daemon as well as the Catalog.
+If the Catalog uses MySQL or PostgreSQL, this may or may not be possible. In
+addition, to loading all these programs on a bare system (quite possible), you
+will need to make sure you have a valid driver for your tape drive. 
+
+The second suggestion is probably a much simpler solution, and one I have done
+myself. To do so, you might want to consider the following steps: 
+
+\begin{itemize}
+\item If you are using MySQL or PostgreSQL, configure, build and install it
+   from source (or use rpms) on your new system.  
+\item Load the Bacula source code onto your new system, configure,  install
+   it, and create the Bacula database.  
+\item Ideally, you will have a copy of all the Bacula conf files that
+   were being used on your server. If not, you will at a minimum need
+   create a bacula-dir.conf that has the same Client resource that
+   was used to backup your system.
+\item If you have a valid saved Bootstrap file as created for your  damaged
+   machine with WriteBootstrap, use it to restore the files to the damaged
+   machine, where you have loaded a static Bacula File daemon using the
+   Rescue disk).  This is done by using the restore command and at
+   the yes/mod/no prompt, selecting {\bf mod} then specifying the path to
+   the bootstrap file.
+\item If you have the Bootstrap file, you should now be back up and  running,
+   if you do not have a Bootstrap file, continue with the  suggestions below.  
+\item Using {\bf bscan} scan the last set of backup tapes into your  MySQL,
+   PostgreSQL or SQLite database.  
+\item Start Bacula, and using the Console {\bf restore} command,  restore the
+   last valid copy of the Bacula database and the Bacula configuration
+   files.  
+\item Move the database to the correct location. 
+\item Start the database, and restart Bacula. Then use the Console {\bf
+   restore} command, restore all the files  on the damaged machine, where you
+   have loaded a Bacula File  daemon using the Rescue disk. 
+\end{itemize}
+
+For additional details of restoring your database, please see the
+\ilink{Restoring When Things Go Wrong}{database_restore} section
+of the Console Restore Command chapter of this manual.
+
+
+\label{problems2}
+\section{Linux Problems or Bugs}
+\index[general]{Bugs!Linux Problems or}
+\index[general]{Linux Problems or Bugs}
+
+Since every flavor and every release of Linux is different, there are likely
+to be some small difficulties with the scripts, so please be prepared to edit
+them in a minimal environment. A rudimentary knowledge of {\bf vi} is very
+useful. Also, these scripts do not do everything. You will need to reformat
+Windows partitions by hand, for example. 
+
+Getting the boot loader back can be a problem if you are using {\bf grub}
+because it is so complicated. If all else fails, reboot your system from your
+floppy but using the restored disk image, then proceed to a reinstallation of
+grub (looking at the run-grub script can help). By contrast, lilo is a piece
+of cake. 
+
+\label{LiveCD}
+\section{Bare Metal Recovery using a LiveCD}
+\index[general]{Bare Metal Recovery using a LiveCD}
+\index[general]{Recovery!Bare Metal Recovery using a LiveCD}
+\index[general]{Rescue!Bare Metal Recovery using a LiveCD}
+\index[general]{LiveCD!Bare Metal Recovery using a LiveCD}
+
+As an alternative to the old now defunct Bacula Rescue CDROM, you can use any
+system rescue or LiveCD to recover your system. The big problem
+with most rescue or LiveCDs is that they are not designed to
+capture the current state of your system, so when you boot them on
+a damaged system, you might be somewhat lost -- e.g. how many of
+you remember your exact hard disk partitioning.
+
+This lack can be easily corrected by running the part of the
+Bacula Rescue code that creates a directory containing a   
+static-bacula-fd, a snapshot of your current system disk
+configuration, and scripts that help restoring it.
+
+Before a disaster strikes:
+\begin{enumerate}
+\item Run only the {\bf make bacula} part of the
+  Bacula Rescue procedure to create the static Bacula
+  File daemon, and system disk snapshot. 
+\item Save the directory generated (more details below)
+  preferrably on a CDROM or alternatively to some other
+  system.
+\item Possibly run {\bf make bacula} every night as
+  part of your backup process to ensure that you have
+  a current snapshot of your system.
+\end{enumerate}
+
+Then when disaster strikes, do the following:
+
+\begin{enumerate}
+\item Boot with your system rescue disk or LiveCD
+   (e.g. Knoppix).
+\item Start the Network (local network).  
+\item Copy the Bacula recovery directory to the 
+   damaged system using ftp, scp, wget or if your
+   boot disk permits it reading it directly from a
+   CDROM.
+\item Continue as documented above.
+\item Re-partition your hard disk(s) as it was before,  
+   if necessary.
+\item Re-format your partitions, if necessary.  
+\item Restore the Bacula File daemon (static version).  
+\item Perform a Bacula restore of all your files.  
+\item Re-install your boot loader.  
+\item Reboot. 
+\end{enumerate}
+
+In order to create the Bacula recovery directory, you need
+a copy of the Bacula Rescue code as described above, and
+you must first configure that directory.
+
+Once the configuration is done, you can do the following
+to create the Bacula recovery directory:
+
+\footnotesize
+\begin{verbatim}
+cd <bacula-rescue-source>/linux/cdrom
+su (become root)
+make bacula
+\end{verbatim}
+\normalsize
+
+The directory you want to save will be created in
+the current directory with the name {\bf bacula}.  You
+need only save that directory either as a directory or
+possibly as a compressed tar file.  If you run this procedure
+on multiple machines, you will probably want to rename this directory
+to something like {\bf bacula-hostname}.
+
+
+
+\label{FreeBSD1}
+\section{FreeBSD Bare Metal Recovery}
+\index[general]{Recovery!FreeBSD Bare Metal}
+\index[general]{Rescue!FreeBSD Bare Metal}
+\index[general]{FreeBSD Bare Metal Recovery}
+
+The same basic techniques described above also apply to FreeBSD. Although we
+don't yet have a fully automated procedure, Alex Torres Molina has provided us
+with the following instructions with a few additions from Jesse Guardiani and
+Dan Langille: 
+
+\begin{enumerate}
+\item Boot with the FreeBSD installation disk 
+\item Go to Custom, Partition and create your slices and go to Label and 
+   create the partitions that you want. Apply changes. 
+\item Go to Fixit to start an emergency console. 
+\item Create devs ad0 .. .. if they don't exist under /mnt2/dev (in my  situation)
+   with MAKEDEV. The device or devices you  create depend on what hard drives you
+   have. ad0 is your  first ATA drive. da0 would by your first SCSI drive.  Under
+OS version 5 and greater, your device files are  most likely automatically
+created for you. 
+\item mkdir /mnt/disk
+   this is the root of the new disk 
+\item mount /mnt2/dev/ad0s1a /mnt/disk
+   mount /mnt2/dev/ad0s1c /mnt/disk/var
+   mount /mnt2/dev/ad0s1d /mnt/disk/usr
+.....
+The same hard drive issues as above apply here too.  Note, under OS version 5
+or higher, your disk devices may  be in /dev not /mnt2/dev. 
+\item Network configuration (ifconfig xl0 ip/mask + route add default 
+   ip-gateway) 
+\item mkdir /mnt/disk/tmp 
+\item cd /mnt/disk/tmp 
+\item Copy bacula-fd and bacula-fd.conf to this path 
+\item If you need to, use sftp to copy files, after which you must do this:
+   ln -s /mnt2/usr/bin /usr/bin 
+\item chmod u+x bacula-fd 
+\item Modify bacula-fd.conf to fit this machine 
+\item Copy /bin/sh to /mnt/disk, necessary for chroot 
+\item Don't forget to put your bacula-dir's IP address and domain  name in
+   /mnt/disk/etc/hosts if it's not on a public net.  Otherwise the FD on the
+   machine you are restoring to  won't be able to contact the SD and DIR on the
+remote machine. 
+\item mkdir -p /mnt/disk/var/db/bacula 
+\item chroot /mnt/disk /tmp/bacula-fd -c /tmp/bacula-fd.conf
+   to start bacula-fd 
+\item Now you can go to bacula-dir and restore the job with the entire 
+   contents of the broken server. 
+\item You must create /proc 
+\end{enumerate}
+
+\label{solaris}
+\section{Solaris Bare Metal Recovery}
+\index[general]{Solaris Bare Metal Recovery}
+\index[general]{Recovery!Solaris Bare Metal}
+
+The same basic techniques described above apply to Solaris: 
+
+\begin{itemize}
+\item the same restrictions as those given for Linux apply  
+\item you will need to create a Rescue disk 
+   \end{itemize}
+
+However, during the recovery phase, the boot and disk preparation procedures
+are different: 
+
+\begin{itemize}
+\item there is no need to create an emergency boot disk  since it is an
+   integrated part of the Solaris boot.  
+\item you must partition and format your hard disk by hand  following manual
+   procedures as described in W. Curtis Preston's  book "Unix Backup \&
+   Recovery" 
+\end{itemize}
+
+Once the disk is partitioned, formatted and mounted, you can continue with
+bringing up the network and reloading Bacula. 
+
+\section{Preparing Solaris Before a Disaster}
+\index[general]{Preparing Solaris Before a Disaster}
+\index[general]{Disaster!Preparing Solaris Before a}
+
+As mentioned above, before a disaster strikes, you should prepare the
+information needed in the case of problems. To do so, in the {\bf
+rescue/solaris} subdirectory enter: 
+
+\footnotesize
+\begin{verbatim}
+su
+./getdiskinfo
+./make_rescue_disk
+\end{verbatim}
+\normalsize
+
+The {\bf getdiskinfo} script will, as in the case of Linux described above,
+create a subdirectory {\bf diskinfo} containing the output from several system
+utilities. In addition, it will contain the output from the {\bf SysAudit}
+program as described in Curtis Preston's book. This file {\bf
+diskinfo/sysaudit.bsi} will contain the disk partitioning information that
+will allow you to manually follow the procedures in the "Unix Backup \&
+Recovery" book to repartition and format your hard disk. In addition, the
+{\bf getdiskinfo} script will create a {\bf start\_network} script. 
+
+Once you have your disks repartitioned and formatted, do the following: 
+
+\begin{itemize}
+\item Start Your Network with the {\bf start\_network} script  
+\item Restore the Bacula File daemon as documented above  
+\item Perform a Bacula restore of all your files using the same  commands as
+   described above for Linux  
+\item Re-install your boot loader using the instructions outlined  in the
+   "Unix Backup \& Recovery" book  using installboot 
+\end{itemize}
+
+\label{genbugs}
+
+\section{Bugs and Other Considerations}
+\index[general]{Considerations!Bugs and Other}
+\index[general]{Bugs and Other Considerations}
+
+\paragraph*{Directory Modification and Access Times are Modified on pre-1.30
+Baculas :}
+
+When a pre-1.30 version of Bacula restores a directory, it first must create
+the directory, then it populates the directory with its files and
+subdirectories. The act of creating the files and subdirectories updates both
+the modification and access times associated with the directory itself. As a
+consequence, all modification and access times of all directories will be
+updated to the time of the restore. 
+
+This has been corrected in Bacula version 1.30 and later. The directory
+modification and access times are reset to the value saved in the backup after
+all the files and subdirectories have been restored. This has been tested and
+verified on normal restore operations, but not verified during a bare metal
+recovery. 
+
+\paragraph*{Strange Bootstrap Files:}
+
+If any of you look closely at the bootstrap file that is produced and used for
+the restore (I sure do), you will probably notice that the FileIndex item does
+not include all the files saved to the tape. This is because in some instances
+there are duplicates (especially in the case of an Incremental save), and in
+such circumstances, {\bf Bacula} restores only the last of multiple copies of
+a file or directory. 
+
+\label{Win3233}
+\section{Disaster Recovery of Win32 Systems}
+\index[general]{Systems!Disaster Recovery of Win32}
+\index[general]{Disaster Recovery of Win32 Systems}
+
+Due to open system files, and registry problems, Bacula cannot save and
+restore a complete Win2K/XP/NT environment. 
+
+A suggestion by Damian Coutts using Microsoft's NTBackup utility in
+conjunction with Bacula should permit a Full bare metal restore of Win2K/XP
+(and possibly NT systems). His suggestion is to do an NTBackup of the critical
+system state prior to running a Bacula backup with the following command: 
+
+\footnotesize
+\begin{verbatim}
+ntbackup backup systemstate /F c:\systemstate.bkf
+\end{verbatim}
+\normalsize
+
+The {\bf backup} is the command, the {\bf systemstate} says to backup only the
+system state and not all the user files, and the {\bf /F
+c:\textbackslash{}systemstate.bkf} specifies where to write the state file.
+this file must then be saved and restored by Bacula. This command
+can be put in a Client Run Before Job directive so that it is automatically
+run during each backup, and thus saved to a Bacula Volume.
+
+To restore the system state, you first reload a base operating system, then
+you would use Bacula to restore all the users files and to recover the {\bf
+c:\textbackslash{}systemstate.bkf} file, and finally, run {\bf NTBackup} and
+{\bf catalogue} the system statefile, and then select it for restore. The
+documentation says you can't run a command line restore of the systemstate. 
+
+This procedure has been confirmed to work by Ludovic Strappazon -- many
+thanks! 
+
+A new tool is provided in the form of a bacula plugin for the BartPE rescue
+CD. BartPE is a self-contained WindowsXP boot CD which you can make using the
+PeBuilder tools available at 
+\elink{http://www.nu2.nu/pebuilder/}{\url{http://www.nu2.nu/pebuilder/}} and a valid
+Windows XP SP1 CDROM. The plugin is provided as a zip archive. Unzip the file
+and copy the bacula directory into the plugin directory of your BartPE
+installation. Edit the configuration files to suit your installation and build
+your CD according to the instructions at Bart's site. This will permit you to
+boot from the cd, configure and start networking, start the bacula file client
+and access your director with the console program. The programs menu on the
+booted CD contains entries to install the file client service, start the file
+client service, and start the WX-Console. You can also open a command line
+window and CD Programs\textbackslash{}Bacula and run the command line console
+bconsole. 
+
+\section{Ownership and Permissions on Win32 Systems}
+\index[general]{Systems!Resetting Directory and File Ownership and Permissions
+on Win32}
+\index[general]{Resetting Directory and File Ownership and Permissions on
+Win32 Systems}
+% TODO: should this be in the win32 chapter?
+
+Bacula versions after 1.31 should properly restore ownership and permissions
+on all WinNT/XP/2K systems. If you do experience problems, generally in
+restores to alternate directories because higher level directories were not
+backed up by Bacula, you can correct any problems with the {\bf SetACL}
+available under the GPL license at: 
+\elink{http://sourceforge.net/projects/setacl/}{\url{http://sourceforge.net/project%
+s/setacl/}}. 
+
+\section{Alternate Disaster Recovery Suggestion for Win32 Systems}
+\index[general]{Systems!Alternate Disaster Recovery Suggestion for Win32}
+\index[general]{Alternate Disaster Recovery Suggestion for Win32 Systems}
+% TODO: should this be in the win32 chapter??
+
+Ludovic Strappazon has suggested an interesting way to backup and restore
+complete Win32 partitions. Simply boot your Win32 system with a Linux Rescue
+disk as described above for Linux, install a statically linked Bacula, and
+backup any of the raw partitions you want. Then to restore the system, you
+simply restore the raw partition or partitions. Here is the email that Ludovic
+recently sent on that subject: 
+
+\footnotesize
+\begin{verbatim}
+I've just finished testing my brand new cd LFS/Bacula
+with a raw Bacula backup and restore of my portable.
+I can't resist sending you the results: look at the rates !!!
+hunt-dir: Start Backup JobId 100, Job=HuntBackup.2003-04-17_12.58.26
+hunt-dir: Bacula 1.30 (14Apr03): 17-Apr-2003 13:14
+JobId:                  100
+Job:                    HuntBackup.2003-04-17_12.58.26
+FileSet:                RawPartition
+Backup Level:           Full
+Client:                 sauvegarde-fd
+Start time:             17-Apr-2003 12:58
+End time:               17-Apr-2003 13:14
+Files Written:          1
+Bytes Written:          10,058,586,272
+Rate:                   10734.9 KB/s
+Software Compression:   None
+Volume names(s):        000103
+Volume Session Id:      2
+Volume Session Time:    1050576790
+Last Volume Bytes:      10,080,883,520
+FD termination status:  OK
+SD termination status:  OK
+Termination:            Backup OK
+hunt-dir: Begin pruning Jobs.
+hunt-dir: No Jobs found to prune.
+hunt-dir: Begin pruning Files.
+hunt-dir: No Files found to prune.
+hunt-dir: End auto prune.
+hunt-dir: Start Restore Job RestoreFilesHunt.2003-04-17_13.21.44
+hunt-sd: Forward spacing to file 1.
+hunt-dir: Bacula 1.30 (14Apr03): 17-Apr-2003 13:54
+JobId:                  101
+Job:                    RestoreFilesHunt.2003-04-17_13.21.44
+Client:                 sauvegarde-fd
+Start time:             17-Apr-2003 13:21
+End time:               17-Apr-2003 13:54
+Files Restored:         1
+Bytes Restored:         10,056,130,560
+Rate:                   5073.7 KB/s
+FD termination status:  OK
+Termination:            Restore OK
+hunt-dir: Begin pruning Jobs.
+hunt-dir: No Jobs found to prune.
+hunt-dir: Begin pruning Files.
+hunt-dir: No Files found to prune.
+hunt-dir: End auto prune.
+\end{verbatim}
+\normalsize
+
+\label{running}
+
+\section{Restoring to a Running System}
+\index[general]{System!Restoring to a Running}
+\index[general]{Restoring to a Running System}
+
+If for some reason you want to do a Full restore to a system that has a
+working kernel (not recommended), you will need to take care not to
+overwrite the following files:
+
+\footnotesize
+\begin{verbatim}
+/etc/grub.conf
+/etc/X11/Conf
+/etc/fstab
+/etc/mtab
+/lib/modules
+/usr/modules
+/usr/X11R6
+/etc/modules.conf
+\end{verbatim}
+\normalsize
+
+\label{Resources}
+
+\section{Additional Resources}
+\index[general]{Additional Resources}
+\index[general]{Resources!Additional}
+
+Many thanks to Charles Curley who wrote 
+\elink{Linux Complete Backup and Recovery HOWTO}
+{\url{http://www.tldp.org/HOWTO/Linux-Complete-Backup-and-Recovery-HOWTO/index.html%
+}} for the 
+\elink{The Linux Documentation Project}{\url{http://www.tldp.org/}}. This is an
+excellent document on how to do Bare Metal Recovery on Linux systems, and it
+was this document that made me realize that Bacula could do the same thing. 
+
+You can find quite a few additional resources, both commercial and free at 
+\elink{Storage Mountain}{\url{http://www.backupcentral.com}}, formerly known as
+Backup Central. 
+
+And finally, the O'Reilly book, "Unix Backup \& Recovery" by W. Curtis
+Preston covers virtually every backup and recovery topic including bare metal
+recovery for a large range of Unix systems. 

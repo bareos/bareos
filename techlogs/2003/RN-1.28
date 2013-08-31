@@ -1,0 +1,44 @@
+          Release Notes for Bacula 1.28
+
+  Bacula code: Total files = 228 Total lines = 62,042 (*.h *.c *.in)
+
+Major Changes this Release:
+- Bare Metal Recovery mostly automated for Linux systems and 
+  partially automated for Solaris
+- Optimized restore, forward spaces to correct tape file and
+  stops reading the archive when all files are restored.
+- Schedule permits specification of 1st, 2nd, ... week e.g.
+  1st Sun ...
+
+Other Changes this Release:
+- Allow backup of raw partitions.
+- Fixed Restore options (never,ifnewer, ...). They now work.
+- Added a --enable-client-only    option that will cause "make" to only
+  build the File daemon and the libraries it needs.
+- Documented how to save the Catalog database (with included script).
+- Faster Storage daemon initialization (using pthreads)
+- Unlimited devices in Storage daemon (previously hard coded to 20).
+- Fixed bug that recognized only the last option specified on Include record.
+- Easier building of statically linked version of Bacula.
+- Fixed pruning bug.
+- Fixes for VolUseDuration (problems putting it in DB).
+- Fix for / specified as Where.
+- Enhanced WriteBootstrap (more precise parameters -- e.g. volfile, ...)
+- Improved handling of Differential jobs (now on par with Incremental)
+- User supplied script in examples directory for backing up AFS file system.
+- User supplied script for Sun-desktop autoloader (examples/devices).
+- Added configure options for building static versions of the 
+  daemons and the console program.
+- New bidirectional timed pipe mechanism for running child processes
+  permits better error messages.
+- Removed last restrictions on filename length for catalog items. Previous
+  maximum was 500 chars for path and 500 chars for filename. Now unlimited.
+- Improvements all over the code to prevent string overflows and to ensure
+  that copied strings are properly terminated.
+- Improved handling of 64 bit integers especially concerning the DB.
+- Database now contains accurate tape file/block positions, and many other
+  DB items are more correctly handled.
+- Improved bootstrap record generation (more detail).
+
+Items to note:
+- Nothing in particular.

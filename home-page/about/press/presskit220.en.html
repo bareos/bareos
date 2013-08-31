@@ -1,0 +1,153 @@
+<html>
+<head>
+<title>Bacula 2.2.0 Press Kit</title>
+</head>
+<body>
+
+<h1>Bacula 2.2.0 Press Kit</h1>
+
+<h2>Contents</h2>
+
+<a href="#originalrelease">Text of Original Release</a><br>
+<a href="#additionalfeatures">Additional Features</a><br>
+<a href="#download">Where to Download</a><br>
+<a href="#doc">Documentation</a><br>
+<a href="#license">License</a><br>
+<a href="#contacts">Contacts</a><br>
+<a href="#support">Corporate Support</a><br>
+<a href="#links">Links</a><br>
+<a href="#translations">Translations</a><br>
+
+<a name="originalrelease"></a><h2>Original Press Release</h2>
+
+<p>
+<b>11 August, 2007, Lausanne, Switzerland</b>: The Bacula Development Group today announces the release of version 2.2.0
+of the Bacula Network Backup Solution.  This release adds features, maturity,
+and performance requested by users, delivering quality and usability comparable
+to enterprise backup solutions.  Version 2.2.0 is expected to drive even more
+migrations toward Bacula.  The previous release was 2.0.3 on March 7, 2007.
+
+<p>"This release introduces a new GUI interface, which reflects the increasing maturity of the product" said Bacula core 
+team member and project co-founder Kern Sibbald.  "This is the best tested release ever made, and I would 
+like to thank all the regression testers.  They have thoroughly tested it on 
+FreeBSD, Linux, Mac OSX, and Solaris.  I have personally run the regression 
+tests many times on CentOS 5 (RedHat derivative), OpenSUSE 10.2, and Mepis 
+(Debian/Ubuntu derivative)".
+
+<p>
+<a name="additionalfeatures"></a>New features and tools to make network backups easier include:
+
+<ul>
+<li>Bat - new GUI now part of the project
+<li>Optimized database performance to speed attribute insertion (approximately 10x 
+    faster than previous versions)
+<li>A new red/black algorithm used for building a restore tree in memory
+    (approximately 500x faster)
+<li>Added regex WHERE support to allow easier relocation of restored files
+<li>posix_fadvise() use in the FD to improve performance reduces swapping due
+    to opening/reading lots of files. Win32 equivalent implemented.
+<li>Much improved Volume reservation code that should eliminate most
+    conflicts experienced in multiple drive autochangers.
+<li>Simpler locking in the SD in the reservation system.
+<li>Detection of file size/date change during backup if enabled.
+<li>Efficient implementation of very large include/exclude lists.
+<li>Volumes are no longer pruned during 'status dir'
+<li>Pruning is now more efficient, and if a Volume is purged,
+    during pruning, it is immediately discovered.
+<li>License is now GPL v2 without modifications
+</ul>
+
+<p> <b>About Bacula:</b> Bacula is a set of computer programs for managing
+backup, recovery, and verification of computer data across a network. These
+programs, each performing a specific set of tasks, work together to provide
+a robust, easily managed, and complete backup solution for all environments.
+Bacula is the collective work of many developers, building upon six years of
+development.  Bacula is an open source product and use is available without
+fees for both commercial and non-commercial applications.
+
+<p>
+Bacula's quality is demonstrated by inclusion in backup tutorials and books.
+It has gained widespread use in a very short period of time.
+</p>
+
+<a name="download"></a><h2>Where to download</h2>
+
+<ul>
+<li><a href="http://sourceforge.net/project/showfiles.php?group_id=50727">Official Repository</a>
+<li>Packages are available for most operating systems (FreeBSD, OpenBSD, NetBSD, MacOSX, Win32,
+Irix, AIX, HP-UX, Gentoo, Debian, Ubuntu, etc)
+</ul>
+
+<a name="doc"></a><h2>Documentation</h2>
+<ul>
+<li><a href="http://www.bacula.org/en/rel-manual/">Official Documentation</a>
+<li><a href="http://www.bacula.org/en/rel-manual/Brief_Tutorial.html">Tutorial</a>
+<li><a href="http://www.bacula.org/en/developers/index.html">Developer's Guide</a>
+</ul>
+
+<a name="license"></a><h2>License</h2>
+
+Bacula is licensed under the GPL, which means the source code is freely available.
+Bacula is available without fees for both commercial and non-commercial applications.
+
+<ul>
+<li><a href="http://www.bacula.org/en/rel-manual/Bacula_Copyri_Tradem_Licens.html">Full license details</a>
+</ul>
+
+<a name="support"></a><h2>Corporate Support</h2>
+
+<p>
+Bacula enjoys the support of numerous companies, who sponsor developers, provide hosting resources,
+and give us financial support.
+
+<p>
+There is also a large community of <a href="http://www.bacula.org/?page=professional">companies
+offering Bacula Support</a>, from individual consultants to multinational companies.
+
+<p>
+<a href="http://www.bacula.org/en/?page=makedonation">Donations welcome</a>
+</p>
+
+<a name="contacts"></a><h2>Contacts</h2>
+
+<p>
+<a href="http://www.bacula.org/">Bacula home page</a>
+
+<p>
+General Inquiries:<br>
+Dan Langille<br>
+Bacula Project<br>
++1 215 882 0565<br>
+<a href="mailto:press@bacula.org">press@bacula.org</a>
+</p>
+
+<a name="links"></a><h2>Links</h2>
+
+<h3>Graphical User Interfaces</h3>
+<ul>
+<li><b>Bat</b> -  Bacula Administration Tool. It is a GUI form of the bconsole command-line utility, but with many additional features. Although we are still working on adding new features to bat, at this point, it has more features than both bwx-console and the bgnome-console, and over time many additional features will be added, including the functionality of the tray-monitor as well as the reporting capabilities of bweb.
+<li><b>bimagemgr</b> - Bimagemgr is a web based interface written in Perl that monitors disk Volumes intended to be written to CDROM.
+<li><b>wx-console</b> - wx-console is a graphical console interface written in wxWidgets and available on all client platforms.
+<li><b>gnome-console</b> - The gnome-console is a graphical console interface available on systems that support Gnome 2.x.
+<li><b>tray-monitor</b> - The tray-monitor is a daemon monitoring program that resides in the system tray.
+<li><b>bweb</b> - Bweb is a Perl based web program that provides a tool to do basic operations and get statistics.
+<li><b>brestore</b> - Brestore is a graphical restoration interface available on systems that support Perl/GTK/Glade.
+<li><b>bacula-web</b> - Bacula-web is a PHP based web program that provides a summarized output of jobs that have already run. 
+</ul>
+
+<p>
+Full list of <a href="http://www.bacula.org/en/rel-manual/GUI_Programs.html">GUI Programs</a>.
+</p>
+
+<a name="translations"></a><h3>Official Translations of This Document</h3>
+
+<ul>
+<li><a href="http://www.bacula.org/about/press/presskit220.ca.html">Catalan</a>
+<li><a href="http://www.bacula.org/about/press/presskit220.fr.html">French</a>
+<li><a href="http://www.bacula.org/about/press/presskit220.de.html">German</a>
+<li><a href="http://www.bacula.org/about/press/presskit220.es.html">Spanish</a>
+</ul>
+
+
+</body>
+<html>

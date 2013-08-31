@@ -1,0 +1,45 @@
+              Technical notes on version 1.27 24Nov02  
+                     21, 22, 23 and 24 November 2002
+                       Kern Sibbald
+
+General:
+- Another change in the database. You MUST either re-initialize
+  your database or use the appropriate ./alter_xxx_tables in
+  the src/cats directory.
+
+Changes submitted this submission:
+- Additional documentation.
+- Added MaxVolFiles to the database (not yet implemented in code).
+- Increased the database version from 3 to 4.
+- Change VolMaxBytes to MaxVolBytes, which is much more descriptive.
+- Compressed unnecessary spaces out of a lot of SQL statements.
+- Changed many %d to %u where unsigned integers are used.
+- Added the Bacula version and build date to each backup output.
+  This will help knowing what version of Bacula was used.
+- Implemented VolUseDuration MaxVolBytes, MaxVolFiles, and MaxVolJobs
+  based on maximums set in the Volume (Media) record rather than in the
+  resource. This means the values can be individually set on a Volume basis.
+- Allow commas separating Include options (this was a subtle bug).
+- Added maximum string length argments to a number of subroutines to
+  prevent buffer overflows. Most notably was do_prompt().
+- Replaced MANY occurrences of strcpy() with bstrncpy(), which guarantees
+  both that the length is not exceeded and that the string is properly terminated.
+  This has a risk of a certain destabilization -- as does the changes to
+  the SQL noted above.
+- In cram-md5 routine use my_name if gethostname() returns an error.
+- Increase timeout from 2 minutes to 3 minutes in authorization code.
+- Check the full string including \n in authorization.
+- Throw away any response longer than MAXSTRING.
+- Added a number of additional error checks on subroutine return statuses.
+- Replaced as many lld's with edit_uint64 as I could find.
+22Nov02:
+- Added MaxVolBytes to Pool record - had forgotten it. Updated DB version.
+23Nov02
+- Update manual to document new Pool/Volume attributes
+- Correct make_sqlite_tables (typo, plus missing value in Pool)
+- Fix bizarre behavior in gnome-console and console when auth fails.
+- Add Pool attribute query
+- Add a few more error messages in askdir.c
+- More strcpy() conversions to bstrncpy().
+24Nov02
+- Fixed a problem with intmax_t not being correctly defined on FreeBSD 5.0

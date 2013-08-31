@@ -1,0 +1,89 @@
+              Technical notes on version 1.6 25Nov
+                       29 November 2001
+                        Kern Sibbald
+
+General:
+
+Changes submitted this submission:
+- Updating to the latest version of CYGWIN was abandoned 
+  because Bacula errors and kxvt consumes 100% of the CPU.
+- Added HAVE_GETOPT_LONG for long command line options (not yet
+  used).
+- MANY updates and enhancements to the manual.
+- Eliminated virtually all use of MAXSTRING in favor of
+  dynamically allocated memory. A bit more work is needed,
+  but there should be few places left where overflow can occur.
+- Fixed most static variables that hold names to be allocated
+  as MAX_NAME_LENGTH. The same for times with MAX_TIME_LENGTH.
+- Began adding the new JobName code. The JobName will replace
+  the old JobId, and is composed of the Job resource name
+  followed by the date and the time. The time is guaranteed
+  to be unique for each Job.
+- Moved the Start/End File and the Start/End Block from the
+  Job record to the JobMedia record. This permits proper 
+  handling of multi-volumes for a Job.  The new JobMedia
+  values are not yet stored in the database because
+  it requires a database modification. I'll do that for
+  next release.
+- Try a second time to open the MySQL database if it fails.
+- Added preliminary code for implementing verification
+  of tape and data on the tape.
+- Added lock and unlock calls around code that accesses
+  resources in the Director. When fully implemented this
+  will permit re-reading the config file at any time.
+- Add use count to resources. Not yet totally implemented.
+- Removed Start/End File/Block from termination message
+  as there can be one for each volume.  Print JobName.
+- Get Start/End File/Block from Storage daemon for each
+  Volume.  Not yet stored in the database.
+- Move message destination chain and bit mask into the
+  JCR when the Job starts. Now I can implement multiple  
+  message resources.
+- Pass the new JobName to the Storage and File daemons.
+  More work required to completely cut over to it.
+- Wait for the Storage daemon to terminate the Job before
+  the Director terminates the Job.  This corrects all
+  race conditions with messages destined for a particular
+  Job but ending up with a different Job.
+- Modify the Console program so that immediately after a
+  Label, it will by default issue a Mount command. This
+  can be turned on/off with the Automount command in the
+  Console program.
+- Updated the Console program to use dynamic memory just
+  about everywhere.
+- Started modifying the Console program to deal with Job names
+  in addition to JobIds. Much more work to be done.
+- Made fairly extensive changes to the print_run_time()
+  routines, which print the time/date of the next scheduled
+  job -- assuming it is within 24 hours of the current time.
+  It should do a much better job of getting it right. Previously,
+  Jobs run hourly did not display correctly in the status
+  output.
+- Each daemon now requires a WorkingDirectory. This is necessary
+  so that it can write mail messages to disk, then send them
+  at the end of a Job.
+- Enhanced the Console Cancel command to send the cancel
+  to the File daemon as well as the Storage daemon.  It can
+  also cancel a job that is waiting execution.
+- Replaced a number of dir->msglen=0; bnet_send() with
+  bnet_sig() calls.
+- If the path_max or name_max is less than 1024, set it to
+  1024. Hopefully this will solve the shutdown crashes on
+  the File daemon on Win2000.
+- Added a few bytes extra on certain dynamically allocated
+  strings in the File daemon hoping to catch a possible
+  buffer overrun condition causing the crash on shutdown
+  on Win2000 systems.
+- Added new options for the mailcommand as follows:
+
+   Edit job codes into main command line
+    %% = %
+    %j = Job name
+    %t = Job type (Backup, ...)
+    %e = Job Exit code
+    %l = job level
+    %c = Client's name
+    %r = Recipients
+    %d = Director's name
+
+  I'll document this more completely in the manual.

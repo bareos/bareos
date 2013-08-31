@@ -1,0 +1,35 @@
+              Technical notes on version 1.24 10Aug02  
+                      10 August 2002
+                       Kern Sibbald
+
+General:
+
+Changes submitted this submission:
+- If the Console program terminated during the printing of messages,
+  the message file was left locked. This was corrected by using the
+  new read-write lock code.  
+- Implemented Pw() and Vw() for obtaining and releasing a write lock
+  using the rwl_xxx routines.
+- Deleted some old pthread_mutex code from mysql.c
+- In making the Irix port, I previously corrected the base64 routine so 
+  they were not sensitive to the machine definition of char. This made
+  them incompatible with previous versions invalidating MD5 signatures
+  which are in base64 format. I have now corrected this, making the
+  routines compatible with the previous version but also insensitive
+  to the default definition of char.
+- Removed some unnecessary NPRT() usage in signal.c (pointed out by
+  the Irix compiler).
+- Add back BNET_NONO for compatibility with older File daemons.
+- Implement runing a restore Job in the restore command.
+- Make installation of query.sql unconditional. To prevent you own file
+  from being overwritten, give it a different name.
+- Made parse_command_args() in ua take command from ua->cmd, this
+  simplifies it and allows usage in other places -- e.g. building
+  arguments for created run command in restore.
+- Cleaned the naming of s_full_ctx to be s_jobids.
+- Write the bsr created in restore to "working-directory"/restore.bsr
+- Fix bugs in command line scanner in run command -- also some misplaced
+  breaks!
+- Eliminate static cmd in ua_server.c
+- Eliminate segmentation fault when using the Run command in the
+  Console -- forgot to init_msgs().

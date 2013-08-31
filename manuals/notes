@@ -1,0 +1,6 @@
+- Had to change [dir] to [general]  in catmaintenance.tex
+- Had to rename faq.tex to genfax.tex
+- Had to rename install.tex to installation.tex
+- had to rename console.tex bconsole.tex
+- had to change [console] to [general] in bconsole.tex
+- had to change [dir] to [general] in bconsole.tex

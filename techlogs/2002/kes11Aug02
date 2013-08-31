@@ -1,0 +1,26 @@
+              Technical notes on version 1.24 11Aug02  
+                      11 August 2002
+                       Kern Sibbald
+
+General:
+- Made restore actually work.
+
+Changes submitted this submission:
+- Made console and gconsole be configured (requested by Chuck)
+- Updated kernstodo
+- changed fs in Job record to fileset for clarity
+- The console run command was not properly picking up the command
+  line arguments.  Fixed!
+- Changed add/remove/rm to mark/unmark
+- Volume keyword VolumeName was wrong, changed to Volume (in restore bsr).
+- Pass jcr to parse_bsr, and if non-NULL, it will output error messages
+  to Job stream rather than Emsg.
+- Modified lexical scanner to include caller context so that jcr can
+  be stored in lex context allowing error messages to be properly 
+  routed.
+- Renamed the Job message chain to be jcr_msgs. This eliminated the      
+  previous confusion with the default value, now named jcr->messages.
+- Implemented multi-volume bsr records.    
+- Implemented pm_strcat() and pm_strcpy() to cat/add to memory pool
+  buffers in same way as strcat/strcpy, but expanding buffer.
+- Modified db_get_volume_names to handle arbitrarily long Volume list.

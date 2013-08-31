@@ -1,0 +1,389 @@
+%%
+%%
+
+\chapter{Getting Started with Bacula}
+\label{QuickStartChapter}
+\index[general]{Getting Started with Bacula }
+
+If you are like me, you want to get Bacula running immediately to get a feel
+for it, then later you want to go back and read about all the details. This
+chapter attempts to accomplish just that: get you going quickly without all
+the details. If you want to skip the section on Pools, Volumes and Labels, you
+can always come back to it, but please read to the end of this chapter, and in
+particular follow the instructions for testing your tape drive. 
+
+We assume that you have managed to build and install Bacula, if not, you might
+want to first look at the 
+\ilink{System Requirements}{SysReqs} then at the 
+\ilink{Compiling and Installing Bacula}{InstallChapter} chapter of
+this manual. 
+
+\label{JobsandSchedules}
+\section{Understanding Jobs and Schedules}
+\index[general]{Jobs!Understanding}
+\index[general]{Schedules!Understanding}
+
+In order to make Bacula as flexible as possible, the directions given 
+to Bacula are specified in several pieces.  The main instruction is the 
+job resource, which defines a job.  A backup job generally consists of a 
+FileSet, a Client, a Schedule for one or several levels or times of backups, 
+a Pool, as well as additional instructions. Another way of looking
+at it is the FileSet is what to backup; the Client is who to backup; the
+Schedule defines when, and the Pool defines where (i.e. what Volume).
+
+Typically one FileSet/Client combination will have one corresponding job.
+Most of the directives, such as FileSets, Pools, Schedules, can be mixed
+and matched among the jobs.  So you might have two different Job
+definitions (resources) backing up different servers using the same
+Schedule, the same Fileset (backing up the same directories on two machines)
+and maybe even the same Pools.  The Schedule will define what type of
+backup will run when (e.g. Full on Monday, incremental the rest of the
+week), and when more than one job uses the same schedule, the job priority
+determines which actually runs first.  If you have a lot of jobs, you might
+want to use JobDefs, where you can set defaults for the jobs, which can
+then be changed in the job resource, but this saves rewriting the
+identical parameters for each job.  In addition to the FileSets you want to
+back up, you should also have a job that backs up your catalog.
+
+Finally, be aware that in addition to the backup jobs there are 
+restore, verify, and admin jobs, which have different requirements.
+
+\label{PoolsVolsLabels}
+\section{Understanding Pools, Volumes and Labels}
+\index[general]{Labels!Understanding Pools Volumes and }
+\index[general]{Understanding Pools, Volumes and Labels }
+
+If you have been using a program such as {\bf tar} to backup your system,
+Pools, Volumes, and labeling may be a bit confusing at first. A Volume is a
+single physical tape (or possibly a single file) on which Bacula will write
+your backup data. Pools group together Volumes so that a backup is not
+restricted to the length of a single Volume (tape). Consequently, rather than
+explicitly naming Volumes in your Job, you specify a Pool, and Bacula will
+select the next appendable Volume from the Pool and request you to mount it. 
+% TODO: can't it mount it itself if already available?
+
+Although the basic Pool options are specified in the Director's Pool resource,
+the {\bf real} Pool is maintained in the Bacula Catalog. It contains
+information taken from the Pool resource (bacula-dir.conf) as well as
+information on all the Volumes that have been added to the Pool. Adding
+Volumes to a Pool is usually done manually with the Console program using the
+{\bf label} command. 
+
+For each Volume, Bacula maintains a fair amount of catalog information such as
+the first write date/time, the last write date/time, the number of files on
+the Volume, the number of bytes on the Volume, the number of Mounts, etc. 
+
+Before Bacula will read or write a Volume, the physical Volume must have a
+Bacula software label so that Bacula can be sure the correct Volume is
+mounted. This is usually done using the {\bf label} command in the Console
+program. 
+
+The steps for creating a Pool, adding Volumes to it, and writing software
+labels to the Volumes, may seem tedious at first, but in fact, they are quite
+simple to do, and they allow you to use multiple Volumes (rather than being
+limited to the size of a single tape). Pools also give you significant
+flexibility in your backup process. For example, you can have a "Daily" Pool
+of Volumes for Incremental backups and a "Weekly" Pool of Volumes for Full
+backups. By specifying the appropriate Pool in the daily and weekly backup
+Jobs, you thereby insure that no daily Job ever writes to a Volume in the
+Weekly Pool and vice versa, and Bacula will tell you what tape is needed and
+when. 
+
+For more on Pools, see the 
+\ilink{Pool Resource}{PoolResource} section of the Director
+Configuration chapter, or simply read on, and we will come back to this
+subject later. 
+
+\section{Setting Up Bacula Configuration Files}
+\label{config}
+\index[general]{Setting Up Bacula Configuration Files }
+\index[general]{Files!Setting Up Bacula Configuration }
+
+% TODO: this assumes installation from source:
+After running the appropriate {\bf ./configure} command and doing
+a {\bf make}, and a {\bf make install}, if this is the first time
+you are running Bacula, you must create valid configuration files
+for the Director, the File daemon, the Storage daemon, and the
+Console programs.  If you have followed our recommendations,
+default configuration files as well as the daemon binaries will
+be located in your installation directory.  In any case, the
+binaries are found in the directory you specified on the {\bf
+\verb:--:sbindir} option to the {\bf ./configure} command, and
+the configuration files are found in the directory you specified
+on the {\bf \verb:--:sysconfdir} option.
+
+When initially setting up Bacula you will need to invest a bit of time in
+modifying the default configuration files to suit your environment. This may
+entail starting and stopping Bacula a number of times until you get everything
+right. Please do not despair. Once you have created your configuration files,
+you will rarely need to change them nor will you stop and start Bacula very
+often. Most of the work will simply be in changing the tape when it is full. 
+
+\subsection{Configuring the Console Program}
+\index[general]{Configuring the Console Program }
+\index[general]{Program!Configuring the Console }
+
+The Console program is used by the administrator to interact with the Director
+and to manually start/stop Jobs or to obtain Job status information. 
+
+The Console configuration file is found in the directory specified on the
+{\bf \verb:--:sysconfdir} option that you specified on the {\bf
+./configure} command and by default is named {\bf bconsole.conf}.
+
+If you choose to build the GNOME console with the {\bf
+\verb:--:enable-gnome} option, you also find a default configuration file
+for it, named {\bf bgnome-console.conf}.
+
+The same applies to the wxWidgets console, which is build with the {\bf
+\verb:--:enable-bwx-console} option, and the name of the default
+configuration file is, in this case, {\bf bwx-console.conf}.
+
+Normally, for first time users, no change is needed to these files. Reasonable
+defaults are set. 
+
+Further details are in the
+\ilink{Console configuration}{ConsoleConfChapter} chapter.
+
+\subsection{Configuring the Monitor Program}
+\index[general]{Program!Configuring the Monitor }
+\index[general]{Configuring the Monitor Program }
+
+The Monitor program is typically an icon in the system tray. However, once the
+icon is expanded into a full window, the administrator or user can obtain
+status information about the Director or the backup status on the local
+workstation or any other Bacula daemon that is configured. 
+
+\addcontentsline{lof}{figure}{Bacula Tray Monitor}
+\includegraphics{\idir Bacula-tray-monitor.eps} 
+
+% TODO: image may be too wide for 6" wide printed page.
+The image shows a tray-monitor configured for three daemons. By clicking on
+the radio buttons in the upper left corner of the image, you can see the
+status for each of the daemons. The image shows the status for the Storage
+daemon (MainSD) that is currently selected. 
+
+The Monitor configuration file is found in the directory specified on the {\bf
+\verb:--:sysconfdir} option that you specified on the {\bf ./configure} command
+and
+by default is named {\bf tray-monitor.conf}. Normally, for first time users,
+you just need to change the permission of this file to allow non-root users to
+run the Monitor, as this application must run as the same user as the
+graphical environment (don't forget to allow non-root users to execute {\bf
+bacula-tray-monitor}). This is not a security problem as long as you use the
+default settings. 
+
+More information is in the
+\ilink{Monitor configuration}{_MonitorChapter} chapter.
+
+\subsection{Configuring the File daemon}
+\index[general]{Daemon!Configuring the File }
+\index[general]{Configuring the File daemon }
+
+The File daemon is a program that runs on each (Client) machine. At the
+request of the Director, finds the files to be backed up and sends them (their
+data) to the Storage daemon. 
+
+The File daemon configuration file is found in the directory specified on
+the {\bf \verb:--:sysconfdir} option that you specified on the {\bf ./configure}
+command. By default, the File daemon's configuration file is named {\bf
+bacula-fd.conf}. Normally, for first time users, no change is needed to this
+file. Reasonable defaults are set. However, if you are going to back up more
+than one machine, you will need to install the File daemon with a unique
+configuration file on each machine to be backed up. The information about each
+File daemon must appear in the Director's configuration file. 
+% TODO: point to section about how to install just the File daemon
+% TODO: and creating the unique configuration file.
+
+Further details are in the 
+\ilink{File daemon configuration}{FiledConfChapter} chapter.
+
+\subsection{Configuring the Director}
+\index[general]{Director!Configuring the }
+\index[general]{Configuring the Director }
+
+The Director is the central control program for all the other daemons. It
+schedules and monitors all jobs to be backed up. 
+
+The Director configuration file is found in the directory specified on the
+{\bf \verb:--:sysconfdir} option that you specified on the {\bf ./configure}
+command. Normally the Director's configuration file is named {\bf bacula-dir.conf}. 
+
+In general, the only change you must make is modify the FileSet resource so
+that the {\bf Include} configuration directive contains at least one line with
+a valid name of a directory (or file) to be saved. 
+
+% TODO: is DLT still the default config?
+If you do not have a DLT tape drive, you will probably want to edit the
+Storage resource to contain names that are more representative of your actual
+storage device. You can always use the existing names as you are free to
+arbitrarily assign them, but they must agree with the corresponding names in
+the Storage daemon's configuration file. 
+
+You may also want to change the email address for notification from the
+default {\bf root} to your email address. 
+
+Finally, if you have multiple systems to be backed up, you will need a
+separate File daemon or Client specification for each system, specifying its
+% TODO: I don't see any example "File" configuraton in the default
+% TODO: bacula-dir.conf; I do see FileDaemon config in the default
+% TODO: bacula-fd.conf. Be more clear about this or point to explanation
+% TODO: about this.
+name, address, and password. We have found that giving your daemons the same
+% TODO: what passwords should I use? I have different ones in the
+% TODO: different configs on different systems. Point to explanation of
+% this.
+name as your system but post fixed with {\bf -fd} helps a lot in debugging.
+That is, if your system name is {\bf foobaz}, you would give the File daemon
+the name {\bf foobaz-fd}. For the Director, you should use {\bf foobaz-dir},
+and for the storage daemon, you might use {\bf foobaz-sd}. 
+Each of your Bacula components {\bf must} have a unique name.  If you
+make them all the same, aside from the fact that you will not
+know what daemon is sending what message, if they share the same
+working directory, the daemons temporary file names will not
+be unique, and you will get many strange failures.
+% TODO: why not check for that and not allow sharing working directory?
+
+More information is in the
+\ilink{Director configuration}{DirectorChapter} chapter.
+
+\subsection{Configuring the Storage daemon}
+\index[general]{Daemon!Configuring the Storage }
+\index[general]{Configuring the Storage daemon }
+
+The Storage daemon is responsible, at the Director's request, for accepting
+data from a File daemon and placing it on Storage media, or in the case of a
+restore request, to find the data and send it to the File daemon. 
+
+The Storage daemon's configuration file is found in the directory specified on
+the {\bf \verb:--:sysconfdir} option that you specified on the {\bf ./configure}
+command. By default, the Storage daemon's file is named {\bf bacula-sd.conf}.
+Edit this file to contain the correct Archive device names for any tape
+devices that you have. If the configuration process properly detected your
+system, they will already be correctly set. These Storage resource name and
+Media Type must be the same as the corresponding ones in the Director's
+configuration file {\bf bacula-dir.conf}. If you want to backup to a file
+instead of a tape, the Archive device must point to a directory in which the
+Volumes will be created as files when you label the Volume. 
+\label{ConfigTesting}
+
+Further information is in the
+\ilink{Storage daemon configuration}{StoredConfChapter} chapter.
+
+\section{Testing your Configuration Files}
+\index[general]{Testing your Configuration Files }
+\index[general]{Files!Testing your Configuration }
+
+You can test if your configuration file is syntactically correct by running
+the appropriate daemon with the {\bf -t} option. The daemon will process the
+configuration file and print any error messages then terminate. For example,
+assuming you have installed your binaries and configuration files in the same
+directory. 
+% TODO: why assume that? common default install has the executable
+% TODO: is in ./sbin and the configs are in ./etc. So maybe just have
+% TODO: example correct or change default install to be same.
+
+\footnotesize
+\begin{verbatim}
+cd <installation-directory>
+./bacula-dir -t -c bacula-dir.conf
+./bacula-fd -t -c bacula-fd.conf
+./bacula-sd -t -c bacula-sd.conf
+./bconsole -t -c bconsole.conf
+./bgnome-console -t -c bgnome-console.conf
+./bwx-console -t -c bwx-console.conf
+./bat -t -c bat.conf
+su <normal user> -c "./bacula-tray-monitor -t -c tray-monitor.conf"
+\end{verbatim}
+\normalsize
+
+will test the configuration files of each of the main programs. If the
+configuration file is OK, the program will terminate without printing
+anything. Please note that, depending on the configure options you choose,
+some, or even all, of the three last commands will not be available on your
+system. If you have installed the binaries in traditional Unix locations
+rather than a single file, you will need to modify the above commands
+appropriately (no ./ in front of the command name, and a path in front of the
+conf file name). 
+\label{TapeTesting}
+
+\section{Testing Compatibility with Your Tape Drive}
+\index[general]{Drive!Testing Bacula Compatibility with Your Tape}
+\index[general]{Testing Bacula Compatibility with Your Tape Drive}
+
+Before spending a lot of time on Bacula only to find that it doesn't work
+with your tape drive, please read the {\bf Testing Your Tape
+Drive} chapter of this manual.  If you have a modern
+standard SCSI tape drive on a Linux or Solaris, most likely it will work,
+but better test than be sorry.  For FreeBSD (and probably other xBSD
+flavors), reading the above mentioned tape testing chapter is a must.
+Also, for FreeBSD, please see \elink{The FreeBSD
+Diary}{\url{http://www.freebsddiary.org/bacula.php}} for a detailed description
+%TODO: fix elink so it shows URL in PDF
+on how to make Bacula work on your system.  In addition, users of FreeBSD
+prior to 4.9-STABLE dated Mon Dec 29 15:18:01 2003 UTC who plan to use tape
+devices, please see the file {\bf platforms/freebsd/pthreads-fix.txt} in
+the main Bacula directory concerning important information concerning
+compatibility of Bacula and your system.  \label{notls}
+
+\section{Get Rid of the /lib/tls Directory}
+\index[general]{Directory!Get Rid of the /lib/tls }
+\index[general]{Get Rid of the /lib/tls Directory }
+The new pthreads library {\bf /lib/tls} installed by default on recent Red
+Hat systems running Linux kernel 2.4.x is defective.  You must remove it or
+rename it, then reboot your system before running Bacula otherwise after a
+week or so of running, Bacula will either block for long periods or
+deadlock entirely.  You may want to use the loader environment variable
+override rather than removing /lib/tls.  Please see \ilink{ Supported
+Operating Systems}{SupportedOSes} for more information on this problem.
+
+This problem does not occur on systems running Linux 2.6.x kernels. 
+
+\label{Running1}
+
+\section{Running Bacula}
+\index[general]{Bacula!Running }
+\index[general]{Running Bacula }
+
+Probably the most important part of running Bacula is being able to restore
+files. If you haven't tried recovering files at least once, when you actually
+have to do it, you will be under a lot more pressure, and prone to make
+errors, than if you had already tried it once. 
+
+To get a good idea how to use Bacula in a short time, we {\bf strongly}
+recommend that you follow the example in the 
+\ilink{Running Bacula Chapter}{TutorialChapter} of this manual where
+you will get detailed instructions on how to run Bacula. 
+
+\section{Log Rotation}
+\index[general]{Rotation!Log }
+\index[general]{Log Rotation }
+If you use the default {\bf bacula-dir.conf} or some variation of it, you will
+note that it logs all the Bacula output to a file. To avoid that this file
+grows without limit, we recommend that you copy the file {\bf logrotate} from
+the {\bf scripts/logrotate} to {\bf /etc/logrotate.d/bacula}. This will cause
+the log file to be rotated once a month and kept for a maximum of five months.
+You may want to edit this file to change the default log rotation preferences.
+
+\section{Log Watch}
+\index[general]{Watch!Log}
+\index[general]{Log Watch}
+Some systems such as Red Hat and Fedora run the logwatch program
+every night, which does an analysis of your log file and sends an
+email report.  If you wish to include the output from your Bacula 
+jobs in that report, please look in the {\bf scripts/logwatch}
+directory.  The {\bf README} file in that directory gives a brief
+explanation on how to install it and what kind of output to expect.
+
+
+\section{Disaster Recovery}
+\index[general]{Recovery!Disaster }
+\index[general]{Disaster Recovery }
+
+If you intend to use Bacula as a disaster recovery tool rather than simply a
+program to restore lost or damaged files, you will want to read the 
+\ilink{Disaster Recovery Using Bacula Chapter}{RescueChapter} of
+this manual. 
+
+In any case, you are strongly urged to carefully test restoring some files
+that you have saved rather than wait until disaster strikes. This way, you
+will be prepared.

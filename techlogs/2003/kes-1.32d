@@ -1,0 +1,18 @@
+              Technical notes on version 1.32d 02Oct03
+                        03 Oct 2003
+                        Kern Sibbald
+
+General:
+
+Changes submitted this submission:
+02Nov03
+- Mainly a bug fix release.
+- Do a clean of both Gnome directories.
+- Require that FileSet id match when finding an Incremental
+  previous job. This was already the case for a Full.
+- Print message if no status returned from FD.
+- Correct "Do not forget to mount the drive" message. Test was
+  backward.
+- "status dir" stopped scanning the run records on the first
+  one that matched giving an incomplete listing.
+- Edit commas in Bytes on "estimate" command output.

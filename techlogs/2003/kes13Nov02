@@ -1,0 +1,31 @@
+              Technical notes on version 1.27 14Nov02  
+                     13 and 14 November 2002
+                       Kern Sibbald
+
+General:
+- You MUST either re-initialize your databases or use the 
+    ./alter_mysql_tables
+  or  
+    ./alter_sqlite_tables
+  in the <bacula-src>/src/cats directory to modify your database tables.
+- Major improvements to dbcheck including an interactive mode.
+
+Changes submitted this submission:
+- Implemented VolumeUseDuration and MaximumVolumeJobs which control
+  when a tape can be marked Used.
+- New tape status "Used" means it was used and cannot be used any more.
+- Defined utime_t which is 64 bit epoch time in seconds.  btime_t is
+  64 bit epoch time in microseconds.
+- Created alter_xxx_tables to add new columns (VolUseDuration, MaxVolJobs) to
+  database. Incremented db version.
+- Changed a few subroutine names concerning dates to be more descriptive.
+- Fixed several places where the last filename was not stored in JCR in
+  FD verify_vol.c and restore.c
+- Major update to dbcheck.  Unfortunately I used subselects, which work
+  perfectly fine in SQLite, but not at all in MySQL.  I must now rework
+  it for MySQL. What a pain!
+- Removed "Database found" from configure output. It was no longer used or valid.
+- Corrected doc --working-dir => --with-working-dir  Thanks to Tuck for 
+  reporting this.
+- Added the database name to the error message for mismatched DB version.
+- Commented out GMP and CWEB from configure as they are not currently used.

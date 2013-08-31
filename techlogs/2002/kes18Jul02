@@ -1,0 +1,29 @@
+              Technical notes on version 1.23 18Jul02
+                      18 July 2002
+                      Kern Sibbald
+
+General:
+- The following two changes were prompted by questions/suggestions
+  from A Morgan.
+
+Changes submitted this submission:
+- If you have "AlwaysOpen = no" in your SD Device
+  resource, Bacula will free() the drive when it
+  is finished with the Job.
+- If you have "Offline On Unmount = yes", in your
+  SD Device resource, Bacula will offline (or eject)
+  the tape prior to freeing it.
+- Added Maximum Open Wait to allow open() to wait if drive is busy.
+- Added RunBeforeJob and RunAfterJob records to Job records.
+  This permits running an external program with the following editing
+  codes:
+    %% = %
+    %c = Client's name
+    %d = Director's name
+    %i = JobId
+    %e = Job Exit
+    %j = Job
+    %l = Job Level
+    %n = Job name
+    %t = Job type
+   

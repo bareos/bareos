@@ -1,0 +1,91 @@
+Bacula-1.32f RPM Release Notes
+10 January 2004
+D. Scott Barninger
+<barninger at fairfieldcomputers dot com>
+
+Release 1.32f-2
+This release incorporates the 1.32f-1-weekofmonth and
+the 1.32f-2-eom-nextvol patches. A Fedora Core build
+define has been added and additional dependency
+information has been added to the package Requires.
+The virtual package names bacula-dir, bacula-sd and
+bacula-fd have been added as Provides and the rescue
+package now requires the bacula-fd which can be satisfied
+either with the client package or either one of the
+main packages.
+
+*************************************************************
+*This rpm release contains some important changes from 1.32d*
+*************************************************************
+
+The platform designator (rh7, rh8, rh9) has been
+REMOVED from the package names as this was creating
+some problems. Hence, you CAN NOT upgrade existing
+1.32d installations with these packages (rpm -U).
+
+To upgrade:
+1. Backup your configuration files (/etc/bacula/*.conf)
+"just to be safe."
+2. Uninstall the old bacula package, ie.
+rpm -e bacula-mysql-rh9
+If you are not sure what package name is installed do
+rpm -qa | grep bacula
+3. Install the new package with rpm -i
+
+In addition, the spec file has been reworked to include a
+platform configuration section at the beginning of the file.
+To rebuild the SRPM, first install using rpm -i then edit
+/usr/src/redhat/SPECS/bacula.spec (or whatever directory
+structure your platform uses) to set platform options and
+select whether to build MySQL support. You can also pass
+any of the defines on the command line as before.
+
+*************************
+*Future Platform Support*
+*************************
+
+RedHat 9 and perhaps 8 will continue to be supported for the
+forseeable future. Whitebox Enterprise Linux support is
+added with this release as I intend to migrate my server
+(currently RH8) to that platform. Future releases will probably
+add SuSE packages. I may also continue to provide RH8 packages 
+by setting up a box for that purpose.
+
+There is no intent to provide Fedora Core packages as neither
+one of us wishes to get on that upgrade treadmill, however I
+expect the SRPM will continue to build on that platform for some 
+time. Anyone who is interested in building Fedora Core packages
+please get in touch with me.
+
+*****************************
+*Rescue script package notes*
+*****************************
+
+This release officially includes the rescue package.
+This package installs scripts for disaster recovery and 
+builds rescue floppy disks for bare metal recovery. This 
+package includes tomsrtbt (http://www.toms.net/rb/, by 
+Tom Oehser, Tom@Toms.NET) to provide a tool to build a 
+boot floppy disk. This package is platform independant as
+it only includes shell scripts and a static file daemon.
+The tomsrtbt package requires the libc5 compat libraries, 
+available at
+ftp://rpmfind.net/linux/contrib/libc6/i386/libc5-5.4.38-3.i386.rpm
+
+You need to have the bacula-sqlite, bacula-mysql or 
+bacula-client package for your platform installed and 
+configured before installing this package. All of these
+packages will supply the virtual package bacula-fd which is
+a requirement for the rescue package.
+
+After installing the scripts, rpm will run the getdiskinfo 
+script to create the necessary information for your installation. 
+
+To create a boot floppy using this information run
+./make_rescue_disk --copy-static-bacula --copy-etc-files
+from the /etc/bacula/rescue directory.
+
+To recreate the disk information run
+./getdiskinfo 
+from the /etc/bacula/rescue directory.
+

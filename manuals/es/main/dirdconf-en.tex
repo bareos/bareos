@@ -1,0 +1,3605 @@
+%%
+%%
+
+\chapter{Configuring the Director}
+\label{DirectorChapter}
+\index[general]{Director!Configuring the}
+\index[general]{Configuring the Director}
+
+Of all the configuration files needed to run {\bf Bacula}, the Director's is
+the most complicated, and the one that you will need to modify the most often
+as you add clients or modify the FileSets. 
+
+For a general discussion of configuration files and resources including the
+data types recognized by {\bf Bacula}. Please see the 
+\ilink{Configuration}{ConfigureChapter} chapter of this manual. 
+
+\section{Director Resource Types}
+\index[general]{Types!Director Resource}
+\index[general]{Director Resource Types}
+
+Director resource type may be one of the following: 
+
+Job, JobDefs, Client, Storage, Catalog, Schedule, FileSet, Pool, Director,  or
+Messages. We present them here in the most logical order for defining them: 
+
+Note, everything revolves around a job and is tied to a job in one
+way or another.
+
+\begin{itemize}
+\item 
+   \ilink{Director}{DirectorResource4} -- to  define the Director's
+   name and its access password used for authenticating the Console program.
+   Only a single  Director resource definition may appear in the Director's 
+   configuration file.  If you have either {\bf /dev/random} or  {\bf bc} on your
+   machine, Bacula will generate a random password during the configuration
+   process, otherwise it will  be left blank. 
+\item 
+   \ilink{Job}{JobResource} -- to define the backup/restore Jobs 
+   and to tie together the Client, FileSet and Schedule resources to  be used
+   for each Job. Normally, you will Jobs of different names corresponding
+   to each client (i.e. one Job per client, but a different one with a different name
+   for each client).
+\item 
+   \ilink{JobDefs}{JobDefsResource} -- optional resource for 
+   providing defaults for Job resources.  
+\item 
+   \ilink{Schedule}{ScheduleResource} -- to define when a Job is to 
+   be automatically run by {\bf Bacula's} internal scheduler. You 
+   may have any number of Schedules, but each job will reference only
+   one.
+\item 
+   \ilink{FileSet}{FileSetResource} -- to define the set of files 
+   to be backed up for each Client. You may have any number of
+   FileSets but each Job will reference only one.
+\item 
+   \ilink{Client}{ClientResource2} -- to define what Client is to be
+   backed up. You will generally have multiple Client definitions. Each 
+   Job will reference only a single client.
+\item 
+   \ilink{Storage}{StorageResource2} -- to define on what physical
+   device the Volumes should be mounted. You may have one or
+   more Storage definitions.
+\item 
+   \ilink{Pool}{PoolResource} -- to define the pool of Volumes
+   that can be used for a particular Job. Most people use a
+   single default Pool.  However, if you have a large number
+   of clients or volumes, you may want to have multiple Pools.
+   Pools allow you to restrict a Job (or a Client) to use
+   only a particular set of Volumes.
+\item 
+   \ilink{Catalog}{CatalogResource} -- to define in what database to
+   keep the list of files and the Volume names where they are backed up.  
+   Most people only use a single catalog.  However, if you want to
+   scale the Director to many clients, multiple catalogs can be helpful.
+   Multiple catalogs require a bit more management because in general
+   you must know what catalog contains what data.  Currently, all 
+   Pools are defined in each catalog.  This restriction will be removed
+   in a later release.
+\item 
+   \ilink{Messages}{MessagesChapter} -- to define where error and
+   information messages are to be sent or logged. You may define
+   multiple different message resources and hence direct particular
+   classes of messages to different users or locations (files, ...).
+\end{itemize}
+
+\section{The Director Resource}
+\label{DirectorResource4}
+\index[general]{Director Resource}
+\index[general]{Resource!Director}
+
+The Director resource defines the attributes of the Directors running on the
+network. In the current implementation, there is only a single Director
+resource, but the final design will contain multiple Directors to maintain
+index and media database redundancy. 
+
+\begin{description}
+
+\item [Director]
+   \index[dir]{Director}
+   Start of the Director resource. One and only one  director resource must be
+supplied.  
+
+\item [Name = \lt{}name\gt{}]
+   \index[dir]{Name}
+   \index[dir]{Directive!Name}
+   The director name used by the system  administrator. This directive is
+required.  
+
+\item [Description = \lt{}text\gt{}]
+   \index[dir]{Description}
+   \index[dir]{Directive!Description}
+   The text field contains a  description of the Director that will be displayed
+in the  graphical user interface. This directive is optional.  
+
+\item [Password = \lt{}UA-password\gt{}]
+   \index[dir]{Password}
+   \index[dir]{Directive!Password}
+   Specifies the password that must be supplied for the default Bacula
+   Console to be authorized.  The same password must appear in the {\bf
+   Director} resource of the Console configuration file.  For added
+   security, the password is never passed across the network but instead a
+   challenge response hash code created with the password.  This directive
+   is required.  If you have either {\bf /dev/random} or {\bf bc} on your
+   machine, Bacula will generate a random password during the configuration
+   process, otherwise it will be left blank and you must manually supply
+   it.
+
+   The password is plain text.  It is not generated through any special
+   process but as noted above, it is better to use random text for 
+   security reasons.
+
+\item [Messages = \lt{}Messages-resource-name\gt{}]
+   \index[dir]{Messages}
+   \index[dir]{Directive!Messages}
+   The messages resource  specifies where to deliver Director messages that are
+   not associated  with a specific Job. Most messages are specific to a job and
+   will  be directed to the Messages resource specified by the job. However, 
+   there are a few messages that can occur when no job is running.  This
+   directive is required.  
+
+\item [Working Directory = \lt{}Directory\gt{}]
+   \index[dir]{Working Directory}
+   \index[dir]{Directive!Working Directory}
+   This directive  is mandatory and specifies a directory in which the Director 
+   may put its status files. This directory should be used only  by Bacula but
+   may be shared by other Bacula daemons. However, please note, if this
+   directory is shared with other Bacula daemons (the File daemon and Storage
+   daemon), you must ensure that the {\bf Name} given to each daemon is
+   unique so that the temporary filenames used do not collide.  By default
+   the Bacula configure process creates unique daemon names by postfixing them
+   with -dir, -fd, and -sd. Standard shell expansion of the {\bf
+   Directory}  is done when the configuration file is read so that values such 
+   as {\bf \$HOME} will be properly expanded. This directive is required.
+   The working directory specified must already exist and be
+   readable and writable by the Bacula daemon referencing it.
+
+   If you have specified a Director user and/or a Director group on your
+   ./configure line with {\bf {-}{-}with-dir-user} and/or 
+   {\bf {-}{-}with-dir-group} the Working Directory owner and group will
+   be set to those values.
+
+\item [Pid Directory = \lt{}Directory\gt{}]
+   \index[dir]{Pid Directory}
+   \index[dir]{Directive!Pid Directory}
+   This directive  is mandatory and specifies a directory in which the Director 
+   may put its process Id file. The process Id file is used to  shutdown
+   Bacula and to prevent multiple copies of  Bacula from running simultaneously. 
+   Standard shell expansion of the {\bf Directory}  is done when the
+   configuration file is read so that values such  as {\bf \$HOME} will be
+   properly expanded.  
+
+   The PID directory specified must already exist and be
+   readable and writable by the Bacula daemon referencing it
+
+   Typically on Linux systems, you will set this to:  {\bf /var/run}. If you are
+   not installing Bacula in the  system directories, you can use the {\bf Working
+   Directory} as  defined above.  This directive is required.  
+
+\item [Scripts Directory = \lt{}Directory\gt{}]
+   \index[dir]{Scripts Directory}
+   \index[dir]{Directive!Scripts Directory}
+   This directive is optional and, if defined, specifies a directory in
+   which the Director will look for the Python startup script {\bf
+   DirStartup.py}.  This directory may be shared by other Bacula daemons.
+   Standard shell expansion of the directory is done when the configuration
+   file is read so that values such as {\bf \$HOME} will be properly
+   expanded.
+
+\item [QueryFile = \lt{}Path\gt{}]
+   \index[dir]{QueryFile}
+   \index[dir]{Directive!QueryFile}
+   This directive is mandatory and specifies a directory and file in which
+   the Director can find the canned SQL statements for the {\bf Query}
+   command of the Console.  Standard shell expansion of the {\bf Path} is
+   done when the configuration file is read so that values such as {\bf
+   \$HOME} will be properly expanded.  This directive is required.
+
+\item [Heartbeat Interval = \lt{}time-interval\gt{}]
+   \index[dir]{Heartbeat Interval}
+   \index[dir]{Directive!Heartbeat}
+   This directive is optional and if specified will cause the Director to
+   set a keepalive interval (heartbeat) in seconds on each of the sockets
+   it opens for the Client resource.  This value will override any
+   specified at the Director level.  It is implemented only on systems
+   (Linux, ...) that provide the {\bf setsockopt} TCP\_KEEPIDLE function.
+   The default value is zero, which means no change is made to the socket.
+
+
+\label{DirMaxConJobs}
+\item [Maximum Concurrent Jobs = \lt{}number\gt{}]
+   \index[dir]{Maximum Concurrent Jobs}
+   \index[dir]{Directive!Maximum Concurrent Jobs}
+   \index[general]{Simultaneous Jobs}
+   \index[general]{Concurrent Jobs}
+   where \lt{}number\gt{}  is the maximum number of total Director Jobs that
+   should run  concurrently. The default is set to 1, but you may set it to a 
+   larger number.  
+
+   The Volume format becomes more complicated with 
+   multiple simultaneous jobs, consequently, restores may take longer if
+   Bacula must sort through interleaved volume blocks from  multiple simultaneous
+   jobs. This can be avoided by having each simultaneous job write to
+   a different volume or  by using data spooling, which will first spool the data
+   to disk simultaneously, then write one spool file at a time to the volume
+   thus avoiding excessive interleaving of the different job blocks.
+
+\item [FD Connect Timeout = \lt{}time\gt{}]
+   \index[dir]{FD Connect Timeout}
+   \index[dir]{Directive!FD Connect Timeout}
+   where {\bf time} is the time that the Director should continue
+   attempting to contact the File daemon to start a job, and after which
+   the Director will cancel the job.  The default is 30 minutes.
+
+\item [SD Connect Timeout = \lt{}time\gt{}]
+   \index[dir]{SD Connect Timeout}
+   \index[dir]{Directive!SD Connect Timeout}
+   where {\bf time} is the time that the Director should continue
+   attempting to contact the Storage daemon to start a job, and after which
+   the Director will cancel the job.  The default is 30 minutes.
+
+\item [DirAddresses = \lt{}IP-address-specification\gt{}]
+   \index[dir]{DirAddresses}
+   \index[dir]{Address}
+   \index[general]{Address}
+   \index[dir]{Directive!DirAddresses}
+   Specify the ports and addresses on which the Director daemon will listen
+   for Bacula Console connections.  Probably the simplest way to explain
+   this is to show an example:
+
+\footnotesize
+\begin{verbatim}
+ DirAddresses  = { 
+    ip = { addr = 1.2.3.4; port = 1205;}
+    ipv4 = {
+        addr = 1.2.3.4; port = http;}
+    ipv6 = {
+        addr = 1.2.3.4;
+        port = 1205;
+    }
+    ip = {
+        addr = 1.2.3.4
+        port = 1205
+    }
+    ip = { addr = 1.2.3.4 }
+    ip = { addr = 201:220:222::2 }
+    ip = {
+        addr = bluedot.thun.net
+    }
+}
+\end{verbatim}
+\normalsize
+
+where ip, ip4, ip6, addr, and port are all keywords. Note, that  the address
+can be specified as either a dotted quadruple, or  IPv6 colon notation, or as
+a symbolic name (only in the ip specification).  Also, port can be specified
+as a number or as the mnemonic value from  the /etc/services file.  If a port
+is not specified, the default will be used. If an ip  section is specified,
+the resolution can be made either by IPv4 or  IPv6. If ip4 is specified, then
+only IPv4 resolutions will be permitted,  and likewise with ip6. 
+
+Please note that if you use the DirAddresses directive, you must
+not use either a DirPort or a DirAddress directive in the same 
+resource.
+
+\item [DirPort = \lt{}port-number\gt{}]
+   \index[dir]{DirPort}
+   \index[dir]{Directive!DirPort}
+   Specify the port (a positive  integer) on which the  Director daemon will
+   listen for Bacula Console connections.  This same port number must be
+   specified in the Director resource  of the Console configuration file. The
+   default is 9101, so  normally this directive need not be specified.  This
+   directive should not be used if you specify DirAddresses (N.B plural)
+   directive.
+
+\item [DirAddress = \lt{}IP-Address\gt{}]
+   \index[dir]{DirAddress}
+   \index[dir]{Directive!DirAddress}
+   This directive is optional, but if it is specified, it will cause the
+   Director server (for the Console program) to bind to the specified {\bf
+     IP-Address}, which is either a domain name or an IP address specified as a
+   dotted quadruple in string or quoted string format.  If this directive is
+   not specified, the Director will bind to any available address (the
+   default).  Note, unlike the DirAddresses specification noted above, this
+   directive only permits a single address to be specified.  This directive
+   should not be used if you specify a DirAddresses (N.B. plural) directive.
+
+\item [DirSourceAddress = \lt{}IP-Address\gt{}]
+   \index[fd]{DirSourceAddress}
+   \index[fd]{Directive!DirSourceAddress}
+   This record is optional, and if it is specified, it will cause the Director
+   server (when initiating connections to a storage or file daemon) to source
+   its connections from the specified address.  Only a single IP address may be
+   specified.  If this record is not specified, the Director server will source
+   its outgoing connections according to the system routing table (the default).
+
+\item[Statistics Retention = \lt{}time\gt{}]
+   \index[dir]{StatisticsRetention}
+   \index[dir]{Directive!StatisticsRetention}
+   \label{PruneStatistics}
+
+   The \texttt{Statistics Retention} directive defines the length of time that
+   Bacula will keep statistics job records in the Catalog database after the
+   Job End time. (In \texttt{JobHistory} table) When this time period expires,
+   and if user runs \texttt{prune stats} command, Bacula will prune (remove)
+   Job records that are older than the specified period.
+
+   Theses statistics records aren't use for restore purpose, but mainly for
+   capacity planning, billings, etc. See \ilink{Statistics chapter} for
+   additional information.
+
+   See the \ilink{ Configuration chapter}{Time} of this manual for additional
+   details of time specification.
+
+   The default is 5 years.
+
+\item[VerId = \lt{}string\gt{}]
+  \index[dir]{Directive!VerId}
+  where  \lt{}string\gt{} is an identifier which can be used for support purpose.
+  This string is displayed using the \texttt{version} command.
+
+\item[MaxConsoleConnections = \lt{}number\gt{}] 
+  \index[dir]{MaximumConsoleConnections}
+  \index[dir]{MaxConsoleConnections}
+  \index[dir]{Directive!MaxConsoleConnections}
+  \index[dir]{Console}
+   where \lt{}number\gt{}  is the maximum number of Console Connections that
+   could run  concurrently. The default is set to 20, but you may set it to a 
+   larger number.
+
+\end{description}
+
+The following is an example of a valid Director resource definition: 
+
+\footnotesize
+\begin{verbatim}
+Director {
+  Name = HeadMan
+  WorkingDirectory = "$HOME/bacula/bin/working"
+  Password = UA_password
+  PidDirectory = "$HOME/bacula/bin/working"
+  QueryFile = "$HOME/bacula/bin/query.sql"
+  Messages = Standard
+}
+\end{verbatim}
+\normalsize
+
+\section{The Job Resource}
+\label{JobResource}
+\index[general]{Resource!Job}
+\index[general]{Job Resource}
+
+The Job resource defines a Job (Backup, Restore, ...) that Bacula must
+perform. Each Job resource definition contains the name of a Client and
+a FileSet to backup, the Schedule for the Job, where the data
+are to be stored, and what media Pool can be used. In effect, each Job
+resource must specify What, Where, How, and When or FileSet, Storage,
+Backup/Restore/Level, and Schedule respectively. Note, the FileSet must
+be specified for a restore job for historical reasons, but it is no longer used.
+
+Only a single type ({\bf Backup}, {\bf Restore}, ...) can be specified for any
+job. If you want to backup multiple FileSets on the same Client or multiple
+Clients, you must define a Job for each one. 
+
+Note, you define only a single Job to do the Full, Differential, and
+Incremental backups since the different backup levels are tied together by 
+a unique Job name.  Normally, you will have only one Job per Client, but   
+if a client has a really huge number of files (more than several million),
+you might want to split it into to Jobs each with a different FileSet
+covering only part of the total files.
+
+Multiple Storage daemons are not currently supported for Jobs, so if
+you do want to use multiple storage daemons, you will need to create
+a different Job and ensure that for each Job that the combination of
+Client and FileSet are unique.  The Client and FileSet are what Bacula
+uses to restore a client, so if there are multiple Jobs with the same
+Client and FileSet or multiple Storage daemons that are used, the
+restore will not work.  This problem can be resolved by defining multiple
+FileSet definitions (the names must be different, but the contents of
+the FileSets may be the same).
+               
+
+\begin{description}
+
+\item [Job]
+   \index[dir]{Job}
+   \index[dir]{Directive!Job}
+   Start of the Job resource. At least one Job  resource is required. 
+
+\item [Name = \lt{}name\gt{}]
+   \index[dir]{Name}
+   \index[dir]{Directive!Name}
+   The Job name. This name can be specified  on the {\bf Run} command in the
+   console program to start a job. If the  name contains spaces, it must be
+   specified between quotes. It is  generally a good idea to give your job the
+   same name as the Client  that it will backup. This permits easy
+   identification of jobs.  
+
+   When the job actually runs, the unique Job Name will consist  of the name you
+   specify here followed by the date and time the  job was scheduled for
+   execution. This directive is required. 
+
+\item [Enabled = \lt{}yes\vb{}no\gt{}]
+  \index[dir]{Enable}
+  \index[dir]{Directive!Enable}
+  This directive allows you to enable or disable automatic execution
+  via the scheduler of a Job.
+
+\item [Type = \lt{}job-type\gt{}]
+   \index[dir]{Type}
+   \index[dir]{Directive!Type}
+   The {\bf Type} directive specifies  the Job type, which may be one of the
+   following: {\bf Backup},  {\bf Restore}, {\bf Verify}, or {\bf Admin}. This
+   directive  is required. Within a particular Job Type, there are also Levels 
+   as discussed in the next item.  
+
+\begin{description}
+
+\item [Backup]
+   \index[dir]{Backup}
+   Run a backup Job. Normally you will  have at least one Backup job for each
+   client you want  to save. Normally, unless you turn off cataloging,  most all
+   the important statistics and data concerning  files backed up will be placed
+   in the catalog. 
+
+\item [Restore]
+   \index[dir]{Restore}
+   Run a restore Job.  Normally, you will specify only one Restore job
+   which acts as a sort of prototype that you will modify using the console
+   program in order to perform restores.  Although certain basic
+   information from a Restore job is saved in the catalog, it is very
+   minimal compared to the information stored for a Backup job -- for
+   example, no File database entries are generated since no Files are
+   saved.
+
+   {\bf Restore} jobs cannot be
+   automatically started by the scheduler as is the case for Backup, Verify
+   and Admin jobs. To restore files, you must use the {\bf restore} command
+   in the console.
+
+
+\item [Verify]
+   \index[dir]{Verify}
+   Run a verify Job. In general, {\bf verify}  jobs permit you to compare the
+   contents of the catalog  to the file system, or to what was backed up. In
+   addition,  to verifying that a tape that was written can be read,  you can
+   also use {\bf verify} as a sort of tripwire  intrusion detection.  
+
+\item [Admin]
+   \index[dir]{Admin}
+   Run an admin Job. An {\bf Admin} job can  be used to periodically run catalog
+   pruning, if you  do not want to do it at the end of each {\bf Backup}  Job.
+   Although an Admin job is recorded in the  catalog, very little data is saved. 
+\end{description}
+
+\label{Level}
+
+\item [Level = \lt{}job-level\gt{}]
+\index[dir]{Level}
+\index[dir]{Directive!Level}
+   The Level directive specifies the default Job level to be run.  Each
+   different Job Type (Backup, Restore, ...) has a different set of Levels
+   that can be specified.  The Level is normally overridden by a different
+   value that is specified in the {\bf Schedule} resource.  This directive
+   is not required, but must be specified either by a {\bf Level} directive
+   or as an override specified in the {\bf Schedule} resource.
+
+For a {\bf Backup} Job, the Level may be one of the  following:  
+
+\begin{description}
+
+\item [Full]
+\index[dir]{Full}
+   When the Level is set to Full all files in the FileSet whether or not
+   they have changed will be backed up.
+
+\item [Incremental]
+   \index[dir]{Incremental}
+   When the Level is set to Incremental all files specified in the FileSet
+   that have changed since the last successful backup of the the same Job
+   using the same FileSet and Client, will be backed up.  If the Director
+   cannot find a previous valid Full backup then the job will be upgraded
+   into a Full backup.  When the Director looks for a valid backup record
+   in the catalog database, it looks for a previous Job with:
+
+\begin{itemize}
+\item The same Job name.  
+\item The same Client name.  
+\item The same FileSet (any change to the definition of  the FileSet such as
+   adding or deleting a file in the  Include or Exclude sections constitutes a
+   different FileSet.  
+\item The Job was a Full, Differential, or Incremental backup.  
+\item The Job terminated normally (i.e. did not fail or was not  canceled).  
+\item The Job started no longer ago than {\bf Max Full Interval}.
+\end{itemize}
+
+   If all the above conditions do not hold, the Director will upgrade  the
+   Incremental to a Full save. Otherwise, the Incremental  backup will be
+   performed as requested.  
+
+   The File daemon (Client) decides which files to backup for an
+   Incremental backup by comparing start time of the prior Job (Full,
+   Differential, or Incremental) against the time each file was last
+   "modified" (st\_mtime) and the time its attributes were last
+   "changed"(st\_ctime).  If the file was modified or its attributes
+   changed on or after this start time, it will then be backed up.
+
+   Some virus scanning software may change st\_ctime while
+   doing the scan.  For example, if the virus scanning program attempts to
+   reset the access time (st\_atime), which Bacula does not use, it will
+   cause st\_ctime to change and hence Bacula will backup the file during
+   an Incremental or Differential backup.  In the case of Sophos virus
+   scanning, you can prevent it from resetting the access time (st\_atime)
+   and hence changing st\_ctime by using the {\bf \verb:--:no-reset-atime}
+   option.  For other software, please see their manual.
+
+   When Bacula does an Incremental backup, all modified files that are
+   still on the system are backed up.  However, any file that has been
+   deleted since the last Full backup remains in the Bacula catalog,
+   which means that if between a Full save and the time you do a
+   restore, some files are deleted, those deleted files will also be
+   restored.  The deleted files will no longer appear in the catalog
+   after doing another Full save.
+
+   In addition, if you move a directory rather than copy it, the files in
+   it do not have their modification time (st\_mtime) or their attribute
+   change time (st\_ctime) changed.  As a consequence, those files will
+   probably not be backed up by an Incremental or Differential backup which
+   depend solely on these time stamps.  If you move a directory, and wish
+   it to be properly backed up, it is generally preferable to copy it, then
+   delete the original.
+
+   However, to manage deleted files or directories changes in the
+   catalog during an Incremental backup you can use \texttt{accurate}
+   mode. This is quite memory consuming process. See \ilink{Accurate
+     mode}{accuratemode} for more details.
+
+\item [Differential]
+   \index[dir]{Differential}
+   When the Level is set to Differential
+   all files specified in the FileSet that have changed since the last
+   successful Full backup of the same Job will be backed up.
+   If the Director cannot find a
+   valid previous Full backup for the same Job, FileSet, and Client,
+   backup, then the Differential job will be upgraded into a Full backup.
+   When the Director looks for a valid Full backup record in the catalog
+   database, it looks for a previous Job with:
+
+\begin{itemize}
+\item The same Job name.  
+\item The same Client name.  
+\item The same FileSet (any change to the definition of  the FileSet such as
+   adding or deleting a file in the  Include or Exclude sections constitutes a
+   different FileSet.  
+\item The Job was a FULL backup.  
+\item The Job terminated normally (i.e. did not fail or was not  canceled).  
+\item The Job started no longer ago than {\bf Max Full Interval}.
+\end{itemize}
+
+   If all the above conditions do not hold, the Director will  upgrade the
+   Differential to a Full save. Otherwise, the  Differential backup will be
+   performed as requested.  
+
+   The File daemon (Client) decides which files to backup for a
+   differential backup by comparing the start time of the prior Full backup
+   Job against the time each file was last "modified" (st\_mtime) and the
+   time its attributes were last "changed" (st\_ctime).  If the file was
+   modified or its attributes were changed on or after this start time, it
+   will then be backed up.  The start time used is displayed after the {\bf
+   Since} on the Job report.  In rare cases, using the start time of the
+   prior backup may cause some files to be backed up twice, but it ensures
+   that no change is missed.  As with the Incremental option, you should
+   ensure that the clocks on your server and client are synchronized or as
+   close as possible to avoid the possibility of a file being skipped.
+   Note, on versions 1.33 or greater Bacula automatically makes the
+   necessary adjustments to the time between the server and the client so
+   that the times Bacula uses are synchronized.
+
+   When Bacula does a Differential backup, all modified files that are
+   still on the system are backed up.  However, any file that has been
+   deleted since the last Full backup remains in the Bacula catalog, which
+   means that if between a Full save and the time you do a restore, some
+   files are deleted, those deleted files will also be restored.  The
+   deleted files will no longer appear in the catalog after doing another
+   Full save.  However, to remove deleted files from the catalog during a
+   Differential backup is quite a time consuming process and not currently
+   implemented in Bacula.  It is, however, a planned future feature.
+
+   As noted above, if you move a directory rather than copy it, the
+   files in it do not have their modification time (st\_mtime) or
+   their attribute change time (st\_ctime) changed.  As a
+   consequence, those files will probably not be backed up by an
+   Incremental or Differential backup which depend solely on these
+   time stamps.  If you move a directory, and wish it to be
+   properly backed up, it is generally preferable to copy it, then
+   delete the original. Alternatively, you can move the directory, then
+   use the {\bf touch} program to update the timestamps.
+
+%% TODO: merge this with incremental 
+   However, to manage deleted files or directories changes in the
+   catalog during an Differential backup you can use \texttt{accurate}
+   mode. This is quite memory consuming process. See \ilink{Accurate
+     mode}{accuratemode} for more details.
+
+   Every once and a while, someone asks why we need Differential
+   backups as long as Incremental backups pickup all changed files.
+   There are possibly many answers to this question, but the one
+   that is the most important for me is that a Differential backup
+   effectively merges
+   all the Incremental and Differential backups since the last Full backup
+   into a single Differential backup.  This has two effects: 1.  It gives
+   some redundancy since the old backups could be used if the merged backup
+   cannot be read.  2.  More importantly, it reduces the number of Volumes
+   that are needed to do a restore effectively eliminating the need to read
+   all the volumes on which the preceding Incremental and Differential
+   backups since the last Full are done.
+
+\end{description}
+
+For a {\bf Restore} Job, no level needs to be specified.  
+
+For a {\bf Verify} Job, the Level may be one of the  following:  
+
+\begin{description}
+
+\item [InitCatalog]
+\index[dir]{InitCatalog}
+   does a scan of the specified {\bf FileSet} and stores the file
+   attributes in the Catalog database.  Since no file data is saved, you
+   might ask why you would want to do this.  It turns out to be a very
+   simple and easy way to have a {\bf Tripwire} like feature using {\bf
+   Bacula}.  In other words, it allows you to save the state of a set of
+   files defined by the {\bf FileSet} and later check to see if those files
+   have been modified or deleted and if any new files have been added.
+   This can be used to detect system intrusion.  Typically you would
+   specify a {\bf FileSet} that contains the set of system files that
+   should not change (e.g.  /sbin, /boot, /lib, /bin, ...).  Normally, you
+   run the {\bf InitCatalog} level verify one time when your system is
+   first setup, and then once again after each modification (upgrade) to
+   your system.  Thereafter, when your want to check the state of your
+   system files, you use a {\bf Verify} {\bf level = Catalog}.  This
+   compares the results of your {\bf InitCatalog} with the current state of
+   the files.
+
+\item [Catalog]
+\index[dir]{Catalog}
+   Compares the current state of the files against the state previously
+   saved during an {\bf InitCatalog}.  Any discrepancies are reported.  The
+   items reported are determined by the {\bf verify} options specified on
+   the {\bf Include} directive in the specified {\bf FileSet} (see the {\bf
+   FileSet} resource below for more details).  Typically this command will
+   be run once a day (or night) to check for any changes to your system
+   files.
+
+   Please note!  If you run two Verify Catalog jobs on the same client at
+   the same time, the results will certainly be incorrect.  This is because
+   Verify Catalog modifies the Catalog database while running in order to
+   track new files.
+
+\item [VolumeToCatalog]
+\index[dir]{VolumeToCatalog}
+   This level causes Bacula to read the file attribute data written to the
+   Volume from the last Job.  The file attribute data are compared to the
+   values saved in the Catalog database and any differences are reported.
+   This is similar to the {\bf Catalog} level except that instead of
+   comparing the disk file attributes to the catalog database, the
+   attribute data written to the Volume is read and compared to the catalog
+   database.  Although the attribute data including the signatures (MD5 or
+   SHA1) are compared, the actual file data is not compared (it is not in
+   the catalog).
+
+   Please note!  If you run two Verify VolumeToCatalog jobs on the same
+   client at the same time, the results will certainly be incorrect.  This
+   is because the Verify VolumeToCatalog modifies the Catalog database
+   while running.
+
+\item [DiskToCatalog]
+\index[dir]{DiskToCatalog}
+   This level causes Bacula to read the files as they currently are on
+   disk, and to compare the current file attributes with the attributes
+   saved in the catalog from the last backup for the job specified on the
+   {\bf VerifyJob} directive.  This level differs from the {\bf Catalog}
+   level described above by the fact that it doesn't compare against a
+   previous Verify job but against a previous backup.  When you run this
+   level, you must supply the verify options on your Include statements.
+   Those options determine what attribute fields are compared.
+
+   This command can be very useful if you have disk problems because it
+   will compare the current state of your disk against the last successful
+   backup, which may be several jobs.
+
+   Note, the current implementation (1.32c) does not identify files that
+   have been deleted.
+\end{description}
+
+\item [Accurate = \lt{}yes\vb{}no\gt{}]
+\index[dir]{Accurate}
+   In accurate mode, the File daemon knowns exactly which files were present
+   after the last backup. So it is able to handle deleted or renamed files.
+
+   When restoring a FileSet for a specified date (including "most
+   recent"), Bacula is able to restore exactly the files and
+   directories that existed at the time of the last backup prior to
+   that date including ensuring that deleted files are actually deleted,
+   and renamed directories are restored properly.
+
+   In this mode, the File daemon must keep data concerning all files in
+   memory.  So you do not have sufficient memory, the restore may
+   either be terribly slow or fail.
+
+%%   $$ memory = \sum_{i=1}^{n}(strlen(path_i + file_i) + sizeof(CurFile))$$
+
+   For 500.000 files (a typical desktop linux system), it will require
+   approximately 64 Megabytes of RAM on your File daemon to hold the
+   required information.
+
+\item [Verify Job = \lt{}Job-Resource-Name\gt{}]
+   \index[dir]{Verify Job}
+   \index[dir]{Directive!Verify Job}
+   If you run a verify job without this directive, the last job run will be
+   compared with the catalog, which means that you must immediately follow
+   a backup by a verify command.  If you specify a {\bf Verify Job} Bacula
+   will find the last job with that name that ran.  This permits you to run
+   all your backups, then run Verify jobs on those that you wish to be
+   verified (most often a {\bf VolumeToCatalog}) so that the tape just
+   written is re-read.
+
+\item [JobDefs = \lt{}JobDefs-Resource-Name\gt{}]
+\index[dir]{JobDefs}
+\index[dir]{Directive!JobDefs}
+   If a JobDefs-Resource-Name is specified, all the values contained in the
+   named JobDefs resource will be used as the defaults for the current Job.
+   Any value that you explicitly define in the current Job resource, will
+   override any defaults specified in the JobDefs resource.  The use of
+   this directive permits writing much more compact Job resources where the
+   bulk of the directives are defined in one or more JobDefs.  This is
+   particularly useful if you have many similar Jobs but with minor
+   variations such as different Clients.  A simple example of the use of
+   JobDefs is provided in the default bacula-dir.conf file.
+
+\item [Bootstrap = \lt{}bootstrap-file\gt{}]
+\index[dir]{Bootstrap}
+\index[dir]{Directive!Bootstrap}
+   The Bootstrap directive specifies a bootstrap file that, if provided,
+   will be used during {\bf Restore} Jobs and is ignored in other Job
+   types.  The {\bf bootstrap} file contains the list of tapes to be used
+   in a restore Job as well as which files are to be restored.
+   Specification of this directive is optional, and if specified, it is
+   used only for a restore job.  In addition, when running a Restore job
+   from the console, this value can be changed.
+
+   If you use the {\bf Restore} command in the Console program, to start a
+   restore job, the {\bf bootstrap} file will be created automatically from
+   the files you select to be restored.
+
+   For additional details of the {\bf bootstrap} file, please see
+   \ilink{Restoring Files with the Bootstrap File}{BootstrapChapter} chapter
+   of this manual.
+
+\label{writebootstrap}
+\item [Write Bootstrap =  \lt{}bootstrap-file-specification\gt{}]
+\index[dir]{Write Bootstrap}
+\index[dir]{Directive!Write Bootstrap}
+   The {\bf writebootstrap} directive specifies a file name where Bacula
+   will write a {\bf bootstrap} file for each Backup job run.  This
+   directive applies only to Backup Jobs.  If the Backup job is a Full
+   save, Bacula will erase any current contents of the specified file
+   before writing the bootstrap records.  If the Job is an Incremental
+   or Differential
+   save, Bacula will append the current bootstrap record to the end of the
+   file.
+
+   Using this feature, permits you to constantly have a bootstrap file that
+   can recover the current state of your system.  Normally, the file
+   specified should be a mounted drive on another machine, so that if your
+   hard disk is lost, you will immediately have a bootstrap record
+   available.  Alternatively, you should copy the bootstrap file to another
+   machine after it is updated. Note, it is a good idea to write a separate
+   bootstrap file for each Job backed up including the job that backs up
+   your catalog database.
+
+   If the {\bf bootstrap-file-specification} begins with a vertical bar
+   (|), Bacula will use the specification as the name of a program to which
+   it will pipe the bootstrap record.  It could for example be a shell
+   script that emails you the bootstrap record.
+
+   On versions 1.39.22 or greater, before opening the file or executing the
+   specified command, Bacula performs 
+   \ilink{character substitution}{character substitution} like in RunScript
+   directive. To automatically manage your bootstrap files, you can use
+   this in your {\bf JobDefs} resources:
+\begin{verbatim}
+JobDefs {
+   Write Bootstrap = "%c_%n.bsr"
+   ...
+}
+\end{verbatim}
+
+   For more details on using this file, please see the chapter entitled
+   \ilink{The Bootstrap File}{BootstrapChapter} of this manual.
+
+\item [Client = \lt{}client-resource-name\gt{}]
+\index[dir]{Client}
+\index[dir]{Directive!Client}
+   The Client directive  specifies the Client (File daemon) that will be used in
+   the  current Job. Only a single Client may be specified in any one Job.  The
+   Client runs on the machine to be backed up,  and sends the requested files to
+   the Storage daemon for backup,  or receives them when restoring. For
+   additional details, see the  
+   \ilink{Client Resource section}{ClientResource2} of this chapter.
+   This directive is required. 
+
+\item [FileSet = \lt{}FileSet-resource-name\gt{}]
+\index[dir]{FileSet}
+\index[dir]{FileSet}
+   The FileSet directive specifies the FileSet that will be used in the
+   current Job.  The FileSet specifies which directories (or files) are to
+   be backed up, and what options to use (e.g.  compression, ...).  Only a
+   single FileSet resource may be specified in any one Job.  For additional
+   details, see the \ilink{FileSet Resource section}{FileSetResource} of
+   this chapter.  This directive is required.
+
+\item [Messages = \lt{}messages-resource-name\gt{}]
+\index[dir]{Messages}
+\index[dir]{Directive!Messages}
+   The Messages directive defines what Messages resource should be used for
+   this job, and thus how and where the various messages are to be
+   delivered.  For example, you can direct some messages to a log file, and
+   others can be sent by email.  For additional details, see the
+   \ilink{Messages Resource}{MessagesChapter} Chapter of this manual.  This
+   directive is required.
+
+\item [Pool = \lt{}pool-resource-name\gt{}]
+\index[dir]{Pool}
+\index[dir]{Directive!Pool}
+   The Pool directive defines the pool of Volumes where your data can be
+   backed up.  Many Bacula installations will use only the {\bf Default}
+   pool.  However, if you want to specify a different set of Volumes for
+   different Clients or different Jobs, you will probably want to use
+   Pools.  For additional details, see the \ilink{Pool Resource
+   section}{PoolResource} of this chapter.  This directive is required.
+
+\item [Full Backup Pool = \lt{}pool-resource-name\gt{}]
+\index[dir]{Full Backup Pool}
+\index[dir]{Directive!Full Backup Pool}
+   The {\it Full Backup Pool} specifies a Pool to be used for Full backups.
+   It will override any Pool specification during a Full backup.  This
+   directive is optional.
+   
+\item [Differential Backup Pool = \lt{}pool-resource-name\gt{}]  
+\index[dir]{Differential Backup Pool}
+\index[dir]{Directive!Differential Backup Pool}
+   The {\it Differential Backup Pool} specifies a Pool to be used for
+   Differential backups.  It will override any Pool specification during a
+   Differential backup.  This directive is optional.
+   
+\item [Incremental Backup Pool = \lt{}pool-resource-name\gt{}]  
+\index[dir]{Incremental Backup Pool}
+\index[dir]{Directive!Incremental Backup Pool}
+   The {\it Incremental Backup Pool} specifies a Pool to be used for
+   Incremental backups.  It will override any Pool specification during an
+   Incremental backup.  This directive is optional.
+
+\item [Schedule = \lt{}schedule-name\gt{}]
+\index[dir]{Schedule}
+\index[dir]{Directive!Schedule}
+   The Schedule directive defines what schedule is to be used for the Job.
+   The schedule in turn determines when the Job will be automatically
+   started and what Job level (i.e.  Full, Incremental, ...) is to be run.
+   This directive is optional, and if left out, the Job can only be started
+   manually using the Console program.  Although you may specify only a
+   single Schedule resource for any one job, the Schedule resource may
+   contain multiple {\bf Run} directives, which allow you to run the Job at
+   many different times, and each {\bf run} directive permits overriding
+   the default Job Level Pool, Storage, and Messages resources.  This gives
+   considerable flexibility in what can be done with a single Job.  For
+   additional details, see the \ilink{Schedule Resource
+   Chapter}{ScheduleResource} of this manual.
+          
+
+\item [Storage = \lt{}storage-resource-name\gt{}]
+\index[dir]{Storage}
+\index[dir]{Directive!Storage}
+   The Storage directive defines the name of the storage services where you
+   want to backup the FileSet data.  For additional details, see the
+   \ilink{Storage Resource Chapter}{StorageResource2} of this manual.
+   The Storage resource may also be specified in the Job's Pool resource,
+   in which case the value in the Pool resource overrides any value
+   in the Job. This Storage resource definition is not required by either
+   the Job resource or in the Pool, but it must be specified in
+   one or the other, if not an error will result.
+
+\item [Max Start Delay = \lt{}time\gt{}]
+\index[dir]{Max Start Delay}
+\index[dir]{Directive!Max Start Delay}
+   The time specifies the maximum delay between the scheduled time and the
+   actual start time for the Job.  For example, a job can be scheduled to
+   run at 1:00am, but because other jobs are running, it may wait to run.
+   If the delay is set to 3600 (one hour) and the job has not begun to run
+   by 2:00am, the job will be canceled.  This can be useful, for example,
+   to prevent jobs from running during day time hours.  The default is 0
+   which indicates no limit.
+
+\item [Max Run Time = \lt{}time\gt{}]
+\index[dir]{Max Run Time}
+\index[dir]{Directive!Max Run Time}
+   The time specifies the maximum allowed time that a job may run, counted
+   from when the job starts, ({\bf not} necessarily the same as when the
+   job was scheduled).
+
+\item [Incremental|Differential Max Wait Time = \lt{}time\gt{}]
+\index[dir]{Incremental Wait Run Time}
+\index[dir]{Differential Wait Run Time}
+\index[dir]{Directive!Differential Max Wait Time}
+    Theses directives have been deprecated in favor of
+    \texttt{Incremental|Differential Max Run Time} since bacula 2.3.18.
+
+\item [Incremental Max Run Time = \lt{}time\gt{}]
+\index[dir]{Incremental Max Run Time}
+\index[dir]{Directive!Incremental Max Run Time}
+The time specifies the maximum allowed time that an Incremental backup job may
+run, counted from when the job starts, ({\bf not} necessarily the same as when
+the job was scheduled).
+
+\item [Differential Max Wait Time = \lt{}time\gt{}]
+\index[dir]{Differential Max Run Time}
+\index[dir]{Directive!Differential Max Run Time}
+The time specifies the maximum allowed time that a Differential backup job may
+run, counted from when the job starts, ({\bf not} necessarily the same as when
+the job was scheduled).
+
+\item [Max Run Sched Time = \lt{}time\gt{}]
+\index[dir]{Max Run Sched Time}
+\index[dir]{Directive!Max Run Sched Time}
+
+The time specifies the maximum allowed time that a job may run, counted from
+when the job was scheduled. This can be useful to prevent jobs from running
+during working hours. We can see it like \texttt{Max Start Delay + Max Run
+  Time}.
+
+\item [Max Wait Time = \lt{}time\gt{}]
+\index[dir]{Max Wait Time}
+\index[dir]{Directive!Max Wait Time}
+   The time specifies the maximum allowed time that a job may block waiting
+   for a resource (such as waiting for a tape to be mounted, or waiting for
+   the storage or file daemons to perform their duties), counted from the
+   when the job starts, ({\bf not} necessarily the same as when the job was
+   scheduled). This directive works as expected since bacula 2.3.18.
+
+\addcontentsline{lof}{figure}{Job time control directives}
+\includegraphics{\idir different_time.eps}
+
+\item [Max Full Interval = \lt{}time\gt{}]
+\index[dir]{Max Full Interval}
+\index[dir]{Directive!Max Full Interval}
+   The time specifies the maximum allowed age (counting from start time) of
+   the most recent successful Full backup that is required in order to run
+   Incremental or Differential backup jobs. If the most recent Full backup
+   is older than this interval, Incremental and Differential backups will be
+   upgraded to Full backups automatically. If this directive is not present,
+   or specified as 0, then the age of the previous Full backup is not
+   considered.
+
+\label{PreferMountedVolumes}
+\item [Prefer Mounted Volumes = \lt{}yes\vb{}no\gt{}]
+\index[dir]{Prefer Mounted Volumes}
+\index[dir]{Directive!Prefer Mounted Volumes}
+   If the Prefer Mounted Volumes directive is set to {\bf yes} (default
+   yes), the Storage daemon is requested to select either an Autochanger or
+   a drive with a valid Volume already mounted in preference to a drive
+   that is not ready.  This means that all jobs will attempt to append
+   to the same Volume (providing the Volume is appropriate -- right Pool, 
+   ... for that job), unless you are using multiple pools.
+   If no drive with a suitable Volume is available, it
+   will select the first available drive.  Note, any Volume that has
+   been requested to be mounted, will be considered valid as a mounted
+   volume by another job.  This if multiple jobs start at the same time
+   and they all prefer mounted volumes, the first job will request the
+   mount, and the other jobs will use the same volume.
+
+   If the directive is set to {\bf no}, the Storage daemon will prefer
+   finding an unused drive, otherwise, each job started will append to the
+   same Volume (assuming the Pool is the same for all jobs).  Setting
+   Prefer Mounted Volumes to no can be useful for those sites
+   with multiple drive autochangers that prefer to maximize backup
+   throughput at the expense of using additional drives and Volumes. 
+   This means that the job will prefer to use an unused drive rather
+   than use a drive that is already in use.
+
+   Despite the above, we recommend against setting this directive to
+   {\bf no} since
+   it tends to add a lot of swapping of Volumes between the different
+   drives and can easily lead to deadlock situations in the Storage
+   daemon. We will accept bug reports against it, but we cannot guarantee
+   that we will be able to fix the problem in a reasonable time.
+
+   A better alternative for using multiple drives is to use multiple
+   pools so that Bacula will be forced to mount Volumes from those Pools
+   on different drives.
+
+\item [Prune Jobs = \lt{}yes\vb{}no\gt{}]
+\index[dir]{Prune Jobs}
+\index[dir]{Directive!Prune Jobs}
+   Normally, pruning of Jobs from the Catalog is specified on a Client by
+   Client basis in the Client resource with the {\bf AutoPrune} directive.
+   If this directive is specified (not normally) and the value is {\bf
+   yes}, it will override the value specified in the Client resource.  The
+   default is {\bf no}.
+
+
+\item [Prune Files = \lt{}yes\vb{}no\gt{}]
+\index[dir]{Prune Files}
+\index[dir]{Directive!Prune Files}
+   Normally, pruning of Files from the Catalog is specified on a Client by
+   Client basis in the Client resource with the {\bf AutoPrune} directive.
+   If this directive is specified (not normally) and the value is {\bf
+   yes}, it will override the value specified in the Client resource.  The
+   default is {\bf no}.
+
+\item [Prune Volumes = \lt{}yes\vb{}no\gt{}]
+\index[dir]{Prune Volumes}
+\index[dir]{Directive!Prune Volumes}
+   Normally, pruning of Volumes from the Catalog is specified on a Client
+   by Client basis in the Client resource with the {\bf AutoPrune}
+   directive.  If this directive is specified (not normally) and the value
+   is {\bf yes}, it will override the value specified in the Client
+   resource.  The default is {\bf no}.
+
+\item [RunScript \{\lt{}body-of-runscript\gt{}\}]
+   \index[dir]{RunScript}
+   \index[dir]{Directive!Run Script}
+
+   The RunScript directive behaves like a resource in that it
+   requires opening and closing braces around a number of directives
+   that make up the body of the runscript.
+
+   The specified {\bf Command} (see below for details) is run as an external
+   program prior or after the current Job.  This is optional.  By default, the
+   program is executed on the Client side like in \texttt{ClientRunXXXJob}.
+
+   \textbf{Console} options are special commands that are sent to the director instead
+   of the OS. At this time, console command ouputs are redirected to log with
+   the jobid 0.
+
+   You can use following console command : \texttt{delete}, \texttt{disable},
+   \texttt{enable}, \texttt{estimate}, \texttt{list}, \texttt{llist},
+   \texttt{memory}, \texttt{prune}, \texttt{purge}, \texttt{reload},
+   \texttt{status}, \texttt{setdebug}, \texttt{show}, \texttt{time},
+   \texttt{trace}, \texttt{update}, \texttt{version}, \texttt{.client},
+   \texttt{.jobs}, \texttt{.pool}, \texttt{.storage}.  See console chapter for
+   more information. You need to specify needed information on command line, nothing
+   will be prompted. Example :
+
+\begin{verbatim}
+   Console = "prune files client=%c"
+   Console = "update stats age=3"
+\end{verbatim}
+
+   You can specify more than one Command/Console option per RunScript.
+
+   You can use following options may be specified in the body
+   of the runscript:\\
+
+\begin{tabular}{|c|c|c|l}
+Options         & Value  & Default & Information   \\
+\hline
+\hline
+Runs On Success & Yes/No & {\it Yes} & Run command if JobStatus is successful\\
+\hline
+Runs On Failure & Yes/No & {\it No} & Run command if JobStatus isn't successful\\
+\hline
+Runs On Client  & Yes/No & {\it Yes} & Run command on client\\
+\hline
+Runs When       & Before|After|Always|\textsl{AfterVSS} & {\it Never} & When run commands\\
+\hline
+Fail Job On Error & Yes/No & {\it Yes} & Fail job if script returns 
+                                          something different from 0 \\
+\hline
+Command          &       &          & Path to your script\\
+\hline
+Console          &       &          & Console command\\
+\hline
+\end{tabular}
+   \\
+
+   Any output sent by the command to standard output will be included in the
+   Bacula job report.  The command string must be a valid program name or name
+   of a shell script.
+
+   In addition, the command string is parsed then fed to the OS,
+   which means that the path will be searched to execute your specified
+   command, but there is no shell interpretation, as a consequence, if you
+   invoke complicated commands or want any shell features such as redirection
+   or piping, you must call a shell script and do it inside that script.
+ 
+   Before submitting the specified command to the operating system, Bacula
+   performs character substitution of the following characters:
+
+\label{character substitution}
+\footnotesize
+\begin{verbatim}
+    %% = %
+    %c = Client's name
+    %d = Director's name
+    %e = Job Exit Status
+    %i = JobId
+    %j = Unique Job id
+    %l = Job Level
+    %n = Job name
+    %s = Since time
+    %t = Job type (Backup, ...)
+    %v = Volume name (Only on director side)
+ 
+\end{verbatim}
+\normalsize
+
+The Job Exit Status code \%e edits the following values:
+
+\index[dir]{Exit Status}
+\begin{itemize}
+\item OK
+\item Error
+\item Fatal Error
+\item Canceled
+\item Differences
+\item Unknown term code
+\end{itemize}
+
+   Thus if you edit it on a command line, you will need to enclose 
+   it within some sort of quotes.
+
+
+You can use these following shortcuts:\\
+
+\begin{tabular}{|c|c|c|c|c|c}
+Keyword & RunsOnSuccess & RunsOnFailure  & FailJobOnError & Runs On Client & RunsWhen  \\
+\hline
+Run Before Job         &        &       & Yes     & No     & Before \\
+\hline
+Run After Job          &  Yes   &   No  &         & No     & After  \\
+\hline
+Run After Failed Job   &  No    &  Yes  &         & No     & After  \\
+\hline
+Client Run Before Job  &        &       & Yes     & Yes    & Before \\
+\hline
+Client Run After Job   &  Yes   &   No  &         & Yes    & After  \\
+\end{tabular}
+
+Examples:
+\begin{verbatim}
+RunScript {
+    RunsWhen = Before
+    FailJobOnError = No
+    Command = "/etc/init.d/apache stop"
+}
+
+RunScript {
+    RunsWhen = After
+    RunsOnFailure = yes
+    Command = "/etc/init.d/apache start"
+}
+\end{verbatim}
+
+   {\bf Notes about ClientRunBeforeJob}
+
+   For compatibility reasons, with this shortcut, the command is executed
+   directly when the client recieve it. And if the command is in error, other
+   remote runscripts will be discarded. To be sure that all commands will be
+   sent and executed, you have to use RunScript syntax.
+
+   {\bf Special Windows Considerations}
+
+   You can run scripts just after snapshots initializations with
+   \textsl{AfterVSS} keyword.
+
+   In addition, for a Windows client on version 1.33 and above, please take
+   note that you must ensure a correct path to your script.  The script or
+   program can be a .com, .exe or a .bat file.  If you just put the program
+   name in then Bacula will search using the same rules that cmd.exe uses
+   (current directory, Bacula bin directory, and PATH).  It will even try the
+   different extensions in the same order as cmd.exe.
+   The command can be anything that cmd.exe or command.com will recognize
+   as an executable file.  
+
+   However, if you have slashes in the program name then Bacula figures you
+   are fully specifying the name, so you must also explicitly add the three
+   character extension.
+
+   The command is run in a Win32 environment, so Unix like commands will not
+   work unless you have installed and properly configured Cygwin in addition
+   to and separately from Bacula.
+   
+   The System \%Path\% will be searched for the command.  (under the
+   environment variable dialog you have have both System Environment and
+   User Environment, we believe that only the System environment will be
+   available to bacula-fd, if it is running as a service.)
+   
+   System environment variables can be referenced with \%var\% and
+   used as either part of the command name or arguments.  
+
+   So if you have a script in the Bacula\\bin directory then the following lines
+   should work fine:
+   
+\footnotesize
+\begin{verbatim}
+        Client Run Before Job = systemstate
+or
+        Client Run Before Job = systemstate.bat
+or
+        Client Run Before Job = "systemstate"
+or
+        Client Run Before Job = "systemstate.bat"
+or
+        ClientRunBeforeJob = "\"C:/Program Files/Bacula/systemstate.bat\""
+\end{verbatim}
+\normalsize
+
+The outer set of quotes is removed when the configuration file is parsed.
+You need to escape the inner quotes so that they are there when the code
+that parses the command line for execution runs so it can tell what the
+program name is.
+
+
+\footnotesize
+\begin{verbatim}
+ClientRunBeforeJob = "\"C:/Program Files/Software
+     Vendor/Executable\" /arg1 /arg2 \"foo bar\""
+\end{verbatim}
+\normalsize
+
+   The special characters 
+\begin{verbatim}
+&<>()@^|
+\end{verbatim}
+   will need to be quoted,
+   if they are part of a filename or argument.
+   
+   If someone is logged in, a blank "command" window running the commands
+   will be present during the execution of the command.
+   
+   Some Suggestions from Phil Stracchino for running on Win32 machines with
+   the native Win32 File daemon:
+
+   \begin{enumerate}
+   \item You might want the ClientRunBeforeJob directive to specify a .bat
+      file which runs the actual client-side commands, rather than trying
+      to run (for example) regedit /e directly.
+   \item The batch file should explicitly 'exit 0' on successful completion.  
+   \item The path to the batch file should be specified in Unix form:  
+   
+      ClientRunBeforeJob = "c:/bacula/bin/systemstate.bat"  
+   
+   rather than DOS/Windows form:  
+   
+   ClientRunBeforeJob =
+
+"c:\textbackslash{}bacula\textbackslash{}bin\textbackslash{}systemstate.bat"
+   INCORRECT 
+   \end{enumerate}
+
+For Win32, please note that there are certain limitations:  
+
+ClientRunBeforeJob = "C:/Program Files/Bacula/bin/pre-exec.bat"
+
+Lines like the above do not work because there are limitations of
+cmd.exe that is used to execute the command.
+Bacula prefixes the string you supply with {\bf cmd.exe /c }.  To test that
+your command works you should type {\bf cmd /c "C:/Program Files/test.exe"} at a
+cmd prompt and see what happens.  Once the command is correct insert a
+backslash (\textbackslash{}) before each double quote ("), and
+then put quotes around the whole thing when putting it in
+the director's .conf file.  You either need to have only one set of quotes
+or else use the short name and don't put quotes around the command path.
+ 
+Below is the output from cmd's help as it relates to the command line
+passed to the /c option.
+ 
+ 
+ If /C or /K is specified, then the remainder of the command line after
+ the switch is processed as a command line, where the following logic is
+ used to process quote (") characters:
+ 
+\begin{enumerate}
+\item 
+     If all of the following conditions are met, then quote characters
+         on the command line are preserved:
+    \begin{itemize}
+       \item no /S switch.
+       \item exactly two quote characters.
+       \item no special characters between the two quote characters,
+           where special is one of: 
+\begin{verbatim}
+&<>()@^| 
+\end{verbatim}
+       \item there are one or more whitespace characters between the
+           the two quote characters.
+       \item the string between the two quote characters is the name
+           of an executable file.
+    \end{itemize}
+ 
+\item  Otherwise, old behavior is to see if the first character is
+         a quote character and if so, strip the leading character and
+         remove the last quote character on the command line, preserving
+         any text after the last quote character. 
+   
+\end{enumerate}
+
+   
+The following example of the use of the Client Run Before Job directive was 
+submitted by a user:\\
+You could write a shell script to back up a DB2 database to a FIFO. The shell
+script is:
+
+\footnotesize
+\begin{verbatim}
+ #!/bin/sh
+ # ===== backupdb.sh
+ DIR=/u01/mercuryd
+ 
+ mkfifo $DIR/dbpipe
+ db2 BACKUP DATABASE mercuryd TO $DIR/dbpipe WITHOUT PROMPTING &
+ sleep 1
+\end{verbatim}
+\normalsize
+ 
+The following line in the Job resource in the bacula-dir.conf file:
+\footnotesize
+\begin{verbatim}
+ Client Run Before Job = "su - mercuryd -c \"/u01/mercuryd/backupdb.sh '%t'
+'%l'\""
+\end{verbatim}
+\normalsize
+
+When the job is run, you will get messages from the output of the script
+stating that the backup has started. Even though the command being run is
+backgrounded with \&, the job will block until the "db2 BACKUP DATABASE"
+command, thus the backup stalls.
+ 
+To remedy this situation, the "db2 BACKUP DATABASE" line should be changed to
+the following:
+ 
+\footnotesize
+\begin{verbatim} 
+ db2 BACKUP DATABASE mercuryd TO $DIR/dbpipe WITHOUT PROMPTING > $DIR/backup.log
+2>&1 < /dev/null &
+\end{verbatim}
+\normalsize
+
+It is important to redirect the input and outputs of a backgrounded command to
+/dev/null to prevent the script from blocking.
+
+\item [Run Before Job = \lt{}command\gt{}]
+\index[dir]{Run Before Job}
+\index[dir]{Directive!Run Before Job}
+\index[dir]{Directive!Run Before Job}
+The specified {\bf command} is run as an external program prior to running the
+current Job.  This directive is not required, but if it is defined, and if the
+exit code of the program run is non-zero, the current Bacula job will be
+canceled.
+
+\begin{verbatim}
+Run Before Job = "echo test"
+\end{verbatim}
+   it's equivalent to :
+\begin{verbatim}
+RunScript {
+ Command = "echo test"
+ RunsOnClient = No
+ RunsWhen = Before
+}
+\end{verbatim} 
+
+   Lutz Kittler has pointed out that using the RunBeforeJob directive can be a
+   simple way to modify your schedules during a holiday.  For example, suppose
+   that you normally do Full backups on Fridays, but Thursday and Friday are
+   holidays.  To avoid having to change tapes between Thursday and Friday when
+   no one is in the office, you can create a RunBeforeJob that returns a
+   non-zero status on Thursday and zero on all other days.  That way, the
+   Thursday job will not run, and on Friday the tape you inserted on Wednesday
+   before leaving will be used.
+
+\item [Run After Job = \lt{}command\gt{}]
+\index[dir]{Run After Job}
+\index[dir]{Directive!Run After Job}
+   The specified {\bf command} is run as an external program if the current
+   job terminates normally (without error or without being canceled).  This
+   directive is not required.  If the exit code of the program run is
+   non-zero, Bacula will print a warning message.  Before submitting the
+   specified command to the operating system, Bacula performs character
+   substitution as described above for the {\bf RunScript} directive.
+   
+   An example of the use of this directive is given in the  
+   \ilink{Tips Chapter}{JobNotification} of this manual.  
+
+   See the {\bf Run After Failed Job} if you
+   want to run a script after the job has terminated with any
+   non-normal status.
+
+\item [Run After Failed Job = \lt{}command\gt{}]
+\index[dir]{Run After Job}
+\index[dir]{Directive!Run After Job}
+   The specified {\bf command} is run as an external program after the current
+   job terminates with any error status.  This directive is not required.  The
+   command string must be a valid program name or name of a shell script. If
+   the exit code of the program run is non-zero, Bacula will print a
+   warning message. Before submitting the specified command to the
+   operating system, Bacula performs character substitution as described above
+   for the {\bf RunScript} directive. Note, if you wish that your script
+   will run regardless of the exit status of the Job, you can use this :
+\begin{verbatim}
+RunScript {
+ Command = "echo test"
+ RunsWhen = After
+ RunsOnFailure = yes
+ RunsOnClient  = no
+ RunsOnSuccess = yes    # default, you can drop this line
+}
+\end{verbatim}
+
+   An example of the use of this directive is given in the  
+   \ilink{Tips Chapter}{JobNotification} of this manual.
+  
+
+\item [Client Run Before Job = \lt{}command\gt{}]
+\index[dir]{Client Run Before Job}
+\index[dir]{Directive!Client Run Before Job}
+   This directive is the same as {\bf Run Before Job} except that the
+   program is run on the client machine.  The same restrictions apply to
+   Unix systems as noted above for the {\bf RunScript}.
+
+\item [Client Run After Job = \lt{}command\gt{}]
+   \index[dir]{Client Run After Job}
+   \index[dir]{Directive!Client Run After Job}
+   The specified {\bf command} is run on the client machine as soon
+   as data spooling is complete in order to allow restarting applications
+   on the client as soon as possible. .
+
+   Note, please see the notes above in {\bf RunScript} 
+   concerning Windows clients.
+
+\item [Rerun Failed Levels = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{Rerun Failed Levels}
+   \index[dir]{Directive!Rerun Failed Levels}
+   If this directive is set to {\bf yes} (default no), and Bacula detects that
+   a previous job at a higher level (i.e.  Full or Differential) has failed,
+   the current job level will be upgraded to the higher level.  This is
+   particularly useful for Laptops where they may often be unreachable, and if
+   a prior Full save has failed, you wish the very next backup to be a Full
+   save rather than whatever level it is started as.
+
+   There are several points that must be taken into account when using this
+   directive: first, a failed job is defined as one that has not terminated
+   normally, which includes any running job of the same name (you need to
+   ensure that two jobs of the same name do not run simultaneously);
+   secondly, the {\bf Ignore FileSet Changes} directive is not considered 
+   when checking for failed levels, which means that any FileSet change will
+   trigger a rerun.
+
+\item [Spool Data = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{Spool Data}
+   \index[dir]{Directive!Spool Data}
+
+   If this directive is set  to {\bf yes} (default no), the Storage daemon will
+   be requested  to spool the data for this Job to disk rather than write it 
+   directly to tape. Once all the data arrives or the spool files' maximum sizes
+   are reached, the data will be despooled and written  to tape. Spooling data 
+   prevents tape  shoe-shine (start and stop) during
+   Incremental saves. If you are writing to a disk file using this option
+   will probably just slow down the backup jobs.
+
+   NOTE: When this directive is set to yes, Spool Attributes is also
+   automatically set to yes.
+
+\item [Spool Attributes = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{Spool Attributes}
+   \index[dir]{Directive!Spool Attributes}
+   \index[dir]{slow}
+   \index[general]{slow}
+   \index[dir]{Backups!slow}
+   \index[general]{Backups!slow}
+   The default is set to {\bf no}, which means that the File attributes are
+   sent by the Storage daemon to the Director as they are stored on tape.
+   However, if you want to avoid the possibility that database updates will
+   slow down writing to the tape, you may want to set the value to {\bf
+   yes}, in which case the Storage daemon will buffer the File attributes
+   and Storage coordinates to a temporary file in the Working Directory,
+   then when writing the Job data to the tape is completed, the attributes
+   and storage coordinates will be sent to the Director.
+
+   NOTE: When Spool Data is set to yes, Spool Attributes is also
+   automatically set to yes.
+
+\item [Where = \lt{}directory\gt{}]
+   \index[dir]{Where}
+   \index[dir]{Directive!Where}
+   This directive applies only to a Restore job and specifies a prefix to
+   the directory name of all files being restored.  This permits files to
+   be restored in a different location from which they were saved.  If {\bf
+   Where} is not specified or is set to backslash ({\bf /}), the files will
+   be restored to their original location.  By default, we have set {\bf
+   Where} in the example configuration files to be {\bf
+   /tmp/bacula-restores}.  This is to prevent accidental overwriting of
+   your files.
+
+\item [Add Prefix = \lt{}directory\gt{}]
+  \label{confaddprefix}
+  \index[dir]{AddPrefix}
+  \index[dir]{Directive!AddPrefix}
+  This directive applies only to a Restore job and specifies a prefix to the
+  directory name of all files being restored.  This will use \ilink{File
+  Relocation}{filerelocation} feature implemented in Bacula 2.1.8 or later.  
+
+\item [Add Suffix = \lt{}extention\gt{}]
+  \index[dir]{AddSuffix}
+  \index[dir]{Directive!AddSuffix}
+  This directive applies only to a Restore job and specifies a suffix to all
+  files being restored.  This will use \ilink{File Relocation}{filerelocation}
+  feature implemented in Bacula 2.1.8 or later.
+
+  Using \texttt{Add Suffix=.old}, \texttt{/etc/passwd} will be restored to
+  \texttt{/etc/passwsd.old}
+
+\item [Strip Prefix = \lt{}directory\gt{}]
+  \index[dir]{StripPrefix}
+  \index[dir]{Directive!StripPrefix}
+  This directive applies only to a Restore job and specifies a prefix to remove
+  from the directory name of all files being restored.  This will use the
+  \ilink{File Relocation}{filerelocation} feature implemented in Bacula 2.1.8 
+  or later.
+
+  Using \texttt{Strip Prefix=/etc}, \texttt{/etc/passwd} will be restored to
+  \texttt{/passwd}
+
+  Under Windows, if you want to restore \texttt{c:/files} to \texttt{d:/files},
+  you can use :
+
+\begin{verbatim}
+ Strip Prefix = c:
+ Add Prefix = d:
+\end{verbatim}
+
+\item [RegexWhere = \lt{}expressions\gt{}]
+  \index[dir]{RegexWhere}
+  \index[dir]{Directive!RegexWhere}
+  This directive applies only to a Restore job and specifies a regex filename
+  manipulation of all files being restored.  This will use \ilink{File
+  Relocation}{filerelocation} feature implemented in Bacula 2.1.8 or later.
+
+  For more informations about how use this option, see
+  \ilink{this}{useregexwhere}.
+
+\item [Replace = \lt{}replace-option\gt{}]
+   \index[dir]{Replace}
+   \index[dir]{Directive!Replace}
+   This directive applies only to a Restore job and specifies what happens
+   when Bacula wants to restore a file or directory that already exists.
+   You have the following options for {\bf replace-option}:
+
+\begin{description}
+
+\item [always]
+   \index[dir]{always}
+  when the file to be restored already exists, it is deleted and then
+  replaced by the copy that was backed up.  This is the default value.
+
+\item [ifnewer]
+\index[dir]{ifnewer}
+  if the backed up file (on tape) is newer than the existing file, the
+  existing file is deleted and replaced by the back up.
+
+\item [ifolder]
+   \index[dir]{ifolder}
+  if the backed up file (on tape) is older than the existing file, the
+  existing file is deleted and replaced by the back up.
+
+\item [never]
+   \index[dir]{never}
+  if the backed up file already exists, Bacula skips  restoring this file.  
+\end{description}
+
+\item [Prefix Links=\lt{}yes\vb{}no\gt{}]
+   \index[dir]{Prefix Links}
+   \index[dir]{Directive!Prefix Links}
+   If a {\bf Where} path prefix is specified for a recovery job, apply it
+   to absolute links as well.  The default is {\bf No}.  When set to {\bf
+   Yes} then while restoring files to an alternate directory, any absolute
+   soft links will also be modified to point to the new alternate
+   directory.  Normally this is what is desired -- i.e.  everything is self
+   consistent.  However, if you wish to later move the files to their
+   original locations, all files linked with absolute names will be broken.
+
+\item [Maximum Concurrent Jobs = \lt{}number\gt{}]
+   \index[dir]{Maximum Concurrent Jobs}
+   \index[dir]{Directive!Maximum Concurrent Jobs}
+   where \lt{}number\gt{} is the maximum number of Jobs from the current
+   Job resource that can run concurrently.  Note, this directive limits
+   only Jobs with the same name as the resource in which it appears.  Any
+   other restrictions on the maximum concurrent jobs such as in the
+   Director, Client, or Storage resources will also apply in addition to
+   the limit specified here.  The default is set to 1, but you may set it
+   to a larger number.  We strongly recommend that you read the WARNING
+   documented under \ilink{ Maximum Concurrent Jobs}{DirMaxConJobs} in the
+   Director's resource.
+
+\item [Reschedule On Error = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{Reschedule On Error}
+   \index[dir]{Directive!Reschedule On Error}
+   If this directive is enabled, and the job terminates in error, the job
+   will be rescheduled as determined by the {\bf Reschedule Interval} and
+   {\bf Reschedule Times} directives.  If you cancel the job, it will not
+   be rescheduled.  The default is {\bf no} (i.e.  the job will not be
+   rescheduled).
+
+   This specification can be useful for portables, laptops, or other
+   machines that are not always connected to the network or switched on.
+
+\item [Reschedule Interval = \lt{}time-specification\gt{}]
+   \index[dir]{Reschedule Interval}
+   \index[dir]{Directive!Reschedule Interval}
+   If you have specified {\bf Reschedule On Error = yes} and the job
+   terminates in error, it will be rescheduled after the interval of time
+   specified by {\bf time-specification}.  See \ilink{the time
+   specification formats}{Time} in the Configure chapter for details of
+   time specifications.  If no interval is specified, the job will not be
+   rescheduled on error.
+
+\item [Reschedule Times = \lt{}count\gt{}]
+   \index[dir]{Reschedule Times}
+   \index[dir]{Directive!Reschedule Times}
+   This directive specifies the maximum number of times to reschedule the
+   job.  If it is set to zero (the default) the job will be rescheduled an
+   indefinite number of times.
+
+\item [Run = \lt{}job-name\gt{}]
+   \index[dir]{Run}
+   \index[dir]{Directive!Run}
+   \index[dir]{Clone a Job}
+   The Run directive (not to be confused with the Run option in a 
+   Schedule) allows you to start other jobs or to clone jobs. By using the
+   cloning keywords (see below), you can backup
+   the same data (or almost the same data) to two or more drives
+   at the same time. The {\bf job-name} is normally the same name
+   as the current Job resource (thus creating a clone). However, it
+   may be any Job name, so one job may start other related jobs.
+
+   The part after the equal sign must be enclosed in double quotes,
+   and can contain any string or set of options (overrides) that you
+   can specify when entering the Run command from the console. For
+   example {\bf storage=DDS-4 ...}.  In addition, there are two special
+   keywords that permit you to clone the current job. They are {\bf level=\%l}
+   and {\bf since=\%s}. The \%l in the level keyword permits 
+   entering the actual level of the current job and the \%s in the since
+   keyword permits putting the same time for comparison as used on the
+   current job.  Note, in the case of the since keyword, the \%s must be
+   enclosed in double quotes, and thus they must be preceded by a backslash
+   since they are already inside quotes. For example:
+
+\begin{verbatim}
+   run = "Nightly-backup level=%l since=\"%s\" storage=DDS-4"
+\end{verbatim}
+
+   A cloned job will not start additional clones, so it is not
+   possible to recurse.
+
+   Please note that all cloned jobs, as specified in the Run directives are
+   submitted for running before the original job is run (while it is being
+   initialized). This means that any clone job will actually start before
+   the original job, and may even block the original job from starting
+   until the original job finishes unless you allow multiple simultaneous
+   jobs.  Even if you set a lower priority on the clone job, if no other
+   jobs are running, it will start before the original job.
+
+   If you are trying to prioritize jobs by using the clone feature (Run
+   directive), you will find it much easier to do using a RunScript
+   resource, or a RunBeforeJob directive.
+
+\label{Priority}
+\item [Priority = \lt{}number\gt{}]
+   \index[dir]{Priority}
+   \index[dir]{Directive!Priority}
+   This directive permits you to control the order in which your jobs will
+   be run by specifying a positive non-zero number. The higher the number,
+   the lower the job priority. Assuming you are not running concurrent jobs,
+   all queued jobs of priority 1 will run before queued jobs of priority 2
+   and so on, regardless of the original scheduling order.
+
+   The priority only affects waiting jobs that are queued to run, not jobs
+   that are already running.  If one or more jobs of priority 2 are already
+   running, and a new job is scheduled with priority 1, the currently
+   running priority 2 jobs must complete before the priority 1 job is
+   run, unless Allow Mixed Priority is set.
+
+   The default priority is 10.  
+
+   If you want to run concurrent jobs you should
+   keep these points in mind:
+
+\begin{itemize}
+\item See \ilink{Running Concurrent Jobs}{ConcurrentJobs} on how to setup
+   concurrent jobs.
+
+\item Bacula concurrently runs jobs of only one priority at a time.  It
+   will not simultaneously run a priority 1 and a priority 2 job.
+
+\item If Bacula is running a priority 2 job and a new priority 1 job is
+   scheduled, it will wait until the running priority 2 job terminates even
+   if the Maximum Concurrent Jobs settings would otherwise allow two jobs
+   to run simultaneously.
+
+\item Suppose that bacula is running a priority 2 job and a new priority 1
+   job is scheduled and queued waiting for the running priority 2 job to
+   terminate.  If you then start a second priority 2 job, the waiting
+   priority 1 job will prevent the new priority 2 job from running
+   concurrently with the running priority 2 job.  That is: as long as there
+   is a higher priority job waiting to run, no new lower priority jobs will
+   start even if the Maximum Concurrent Jobs settings would normally allow
+   them to run.  This ensures that higher priority jobs will be run as soon
+   as possible.
+\end{itemize}
+
+If you have several jobs of different priority, it may not best to start
+them at exactly the same time, because Bacula must examine them one at a
+time.  If by Bacula starts a lower priority job first, then it will run
+before your high priority jobs.  If you experience this problem, you may
+avoid it by starting any higher priority jobs a few seconds before lower
+priority ones.  This insures that Bacula will examine the jobs in the
+correct order, and that your priority scheme will be respected.
+
+\label{AllowMixedPriority}
+\item [Allow Mixed Priority = \lt{}yes\vb{}no\gt{}]
+\index[dir]{Allow Mixed Priority}
+   This directive is only implemented in version 2.5 and later.  When
+   set to {\bf yes} (default {\bf no}), this job may run even if lower
+   priority jobs are already running.  This means a high priority job
+   will not have to wait for other jobs to finish before starting.
+   The scheduler will only mix priorities when all running jobs have
+   this set to true.
+
+   Note that only higher priority jobs will start early.  Suppose the
+   director will allow two concurrent jobs, and that two jobs with
+   priority 10 are running, with two more in the queue.  If a job with
+   priority 5 is added to the queue, it will be run as soon as one of
+   the running jobs finishes.  However, new priority 10 jobs will not
+   be run until the priority 5 job has finished.
+
+\label{WritePartAfterJob}
+\item [Write Part After Job = \lt{}yes\vb{}no\gt{}]
+\index[dir]{Write Part After Job}
+\index[dir]{Directive!Write Part After Job}
+   This directive is only implemented in version 1.37 and later.
+   If this directive is set to {\bf yes} (default {\bf no}), a new part file
+   will be created after the job is finished.  
+
+   It should be set to {\bf yes} when writing to devices that require mount
+   (for example DVD), so you are sure that the current part, containing
+   this job's data, is written to the device, and that no data is left in
+   the temporary file on the hard disk.  However, on some media, like DVD+R
+   and DVD-R, a lot of space (about 10Mb) is lost every time a part is
+   written.  So, if you run several jobs each after another, you could set
+   this directive to {\bf no} for all jobs, except the last one, to avoid
+   wasting too much space, but to ensure that the data is written to the
+   medium when all jobs are finished.
+
+   This directive is ignored with tape and FIFO devices.  
+
+\end{description}
+
+The following is an example of a valid Job resource definition: 
+
+\footnotesize
+\begin{verbatim}
+Job {
+  Name = "Minou"
+  Type = Backup
+  Level = Incremental                 # default
+  Client = Minou
+  FileSet="Minou Full Set"
+  Storage = DLTDrive
+  Pool = Default
+  Schedule = "MinouWeeklyCycle"
+  Messages = Standard
+}
+\end{verbatim}
+\normalsize
+
+\section{The JobDefs Resource}
+\label{JobDefsResource}
+\index[general]{JobDefs Resource}
+\index[general]{Resource!JobDefs}
+
+The JobDefs resource permits all the same directives that can appear in a Job
+resource. However, a JobDefs resource does not create a Job, rather it can be
+referenced within a Job to provide defaults for that Job. This permits you to
+concisely define several nearly identical Jobs, each one referencing a JobDefs
+resource which contains the defaults. Only the changes from the defaults need to
+be mentioned in each Job. 
+
+\section{The Schedule Resource}
+\label{ScheduleResource}
+\index[general]{Resource!Schedule}
+\index[general]{Schedule Resource}
+
+The Schedule resource provides a means of automatically scheduling a Job as
+well as the ability to override the default Level, Pool, Storage and Messages
+resources. If a Schedule resource is not referenced in a Job, the Job can only
+be run manually. In general, you specify an action to be taken and when. 
+
+\begin{description}
+
+\item [Schedule]
+\index[dir]{Schedule}
+\index[dir]{Directive!Schedule}
+   Start of the Schedule directives.  No {\bf Schedule} resource is
+   required, but you will need at least one if you want Jobs to be
+   automatically started.
+
+\item [Name = \lt{}name\gt{}]
+   \index[dir]{Name}
+   \index[dir]{Directive!Name}
+   The name of the schedule being defined.  The Name directive is required. 
+
+\item [Run = \lt{}Job-overrides\gt{} \lt{}Date-time-specification\gt{}]
+   \index[dir]{Run}
+   \index[dir]{Directive!Run}
+   The Run directive defines when a Job is to be run, and what overrides if
+   any to apply.  You may specify multiple {\bf run} directives within a
+   {\bf Schedule} resource.  If you do, they will all be applied (i.e.
+   multiple schedules).  If you have two {\bf Run} directives that start at
+   the same time, two Jobs will start at the same time (well, within one
+   second of each other).
+
+   The {\bf Job-overrides} permit overriding the Level, the Storage, the
+   Messages, and the Pool specifications provided in the Job resource.  In
+   addition, the FullPool, the IncrementalPool, and the DifferentialPool
+   specifications permit overriding the Pool specification according to
+   what backup Job Level is in effect.
+
+   By the use of overrides, you may customize a particular Job.  For
+   example, you may specify a Messages override for your Incremental
+   backups that outputs messages to a log file, but for your weekly or
+   monthly Full backups, you may send the output by email by using a
+   different Messages override.
+
+   {\bf Job-overrides} are specified as: {\bf keyword=value} where the
+   keyword is Level, Storage, Messages, Pool, FullPool, DifferentialPool,
+   or IncrementalPool, and the {\bf value} is as defined on the respective
+   directive formats for the Job resource.  You may specify multiple {\bf
+   Job-overrides} on one {\bf Run} directive by separating them with one or
+   more spaces or by separating them with a trailing comma.  For example:
+
+\begin{description}
+
+\item [Level=Full]
+   \index[dir]{Level}
+   \index[dir]{Directive!Level}
+   is all files in the FileSet whether or not  they have changed.  
+
+\item [Level=Incremental]
+   \index[dir]{Level}
+   \index[dir]{Directive!Level}
+   is all files that have changed since  the last backup.  
+
+\item [Pool=Weekly]
+   \index[dir]{Pool}
+   \index[dir]{Directive!Pool}
+   specifies to use the Pool named {\bf Weekly}.  
+
+\item [Storage=DLT\_Drive]
+   \index[dir]{Storage}
+   \index[dir]{Directive!Storage}
+   specifies to use {\bf DLT\_Drive} for  the storage device.  
+
+\item [Messages=Verbose]
+   \index[dir]{Messages}
+   \index[dir]{Directive!Messages}
+   specifies to use the {\bf Verbose}  message resource for the Job.  
+
+\item [FullPool=Full]
+   \index[dir]{FullPool}
+   \index[dir]{Directive!FullPool}
+   specifies to use the Pool named {\bf Full}  if the job is a full backup, or
+is
+upgraded from another type  to a full backup.  
+
+\item [DifferentialPool=Differential]
+   \index[dir]{DifferentialPool}
+   \index[dir]{Directive!DifferentialPool}
+   specifies to use the Pool named {\bf Differential} if the job is a
+   differential  backup.  
+
+\item [IncrementalPool=Incremental]
+   \index[dir]{IncrementalPool}
+   \index[dir]{Directive!IncrementalPool}
+   specifies to use the Pool  named {\bf Incremental} if the job is an
+incremental  backup.  
+
+\item [SpoolData=yes\vb{}no]
+   \index[dir]{SpoolData}
+   \index[dir]{Directive!SpoolData}
+   tells Bacula to request the Storage  daemon to spool data to a disk file
+   before writing it to the Volume (normally a tape). Thus the data is
+   written in large blocks to the Volume rather than small blocks. This
+   directive is particularly useful when running multiple simultaneous
+   backups to tape. It prevents interleaving of the job data and reduces
+   or eliminates tape drive stop and start commonly known as "shoe-shine".
+
+\item [SpoolSize={\it bytes}]
+   \index[dir]{SpoolSize}
+   \index[dir]{Directive!SpoolSize}
+   where the bytes specify the maximum spool size for this job.
+   The default is take from Device Maximum Spool Size limit. 
+   This directive is available only in Bacula version 2.3.5 or 
+   later.
+
+\item [WritePartAfterJob=yes\vb{}no]
+   \index[dir]{WritePartAfterJob}
+   \index[dir]{Directive!WritePartAfterJob}
+   tells Bacula to request the Storage daemon to write the current part
+   file to the device when the job is finished (see \ilink{Write Part After
+   Job directive in the Job resource}{WritePartAfterJob}).  Please note,
+   this directive is implemented only in version 1.37 and later.  The
+   default is yes.  We strongly recommend that you keep this set to yes
+   otherwise, when the last job has finished one part will remain in the
+   spool file and restore may or may not work.
+
+\end{description}
+
+{\bf Date-time-specification} determines when the  Job is to be run. The
+specification is a repetition, and as  a default Bacula is set to run a job at
+the beginning of the  hour of every hour of every day of every week of every
+month  of every year. This is not normally what you want, so you  must specify
+or limit when you want the job to run. Any  specification given is assumed to
+be repetitive in nature and  will serve to override or limit the default
+repetition. This  is done by specifying masks or times for the hour, day of the
+month, day of the week, week of the month, week of the year,  and month when
+you want the job to run. By specifying one or  more of the above, you can
+define a schedule to repeat at  almost any frequency you want.  
+
+Basically, you must supply a {\bf month}, {\bf day}, {\bf hour}, and  {\bf
+minute} the Job is to be run. Of these four items to be specified,  {\bf day}
+is special in that you may either specify a day of the month  such as 1, 2,
+... 31, or you may specify a day of the week such  as Monday, Tuesday, ...
+Sunday. Finally, you may also specify a  week qualifier to restrict the
+schedule to the first, second, third,  fourth, or fifth week of the month.  
+
+For example, if you specify only a day of the week, such as {\bf Tuesday}  the
+Job will be run every hour of every Tuesday of every Month. That  is the {\bf
+month} and {\bf hour} remain set to the defaults of  every month and all
+hours.  
+
+Note, by default with no other specification, your job will run  at the
+beginning of every hour. If you wish your job to run more than  once in any
+given hour, you will need to specify multiple {\bf run}  specifications each
+with a different minute.  
+
+The date/time to run the Job can be specified in the following way  in
+pseudo-BNF:  
+
+\footnotesize
+\begin{verbatim}
+<void-keyword>    = on
+<at-keyword>      = at
+<week-keyword>    = 1st | 2nd | 3rd | 4th | 5th | first |
+                    second | third | fourth | fifth
+<wday-keyword>    = sun | mon | tue | wed | thu | fri | sat |
+                    sunday | monday | tuesday | wednesday |
+                    thursday | friday | saturday
+<week-of-year-keyword> = w00 | w01 | ... w52 | w53
+<month-keyword>   = jan | feb | mar | apr | may | jun | jul |
+                    aug | sep | oct | nov | dec | january |
+                    february | ... | december
+<daily-keyword>   = daily
+<weekly-keyword>  = weekly
+<monthly-keyword> = monthly
+<hourly-keyword>  = hourly
+<digit>           = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0
+<number>          = <digit> | <digit><number>
+<12hour>          = 0 | 1 | 2 | ... 12
+<hour>            = 0 | 1 | 2 | ... 23
+<minute>          = 0 | 1 | 2 | ... 59
+<day>             = 1 | 2 | ... 31
+<time>            = <hour>:<minute> |
+                    <12hour>:<minute>am |
+                    <12hour>:<minute>pm
+<time-spec>       = <at-keyword> <time> |
+                    <hourly-keyword>
+<date-keyword>    = <void-keyword>  <weekly-keyword>
+<day-range>       = <day>-<day>
+<month-range>     = <month-keyword>-<month-keyword>
+<wday-range>      = <wday-keyword>-<wday-keyword>
+<range>           = <day-range> | <month-range> |
+                          <wday-range>
+<date>            = <date-keyword> | <day> | <range>
+<date-spec>       = <date> | <date-spec>
+<day-spec>        = <day> | <wday-keyword> |
+                    <day> | <wday-range> |
+                    <week-keyword> <wday-keyword> |
+                    <week-keyword> <wday-range> |
+                    <daily-keyword>
+<month-spec>      = <month-keyword> | <month-range> |
+                    <monthly-keyword>
+<date-time-spec>  = <month-spec> <day-spec> <time-spec>
+\end{verbatim}
+\normalsize
+
+\end{description}
+
+Note, the Week of Year specification wnn follows the ISO standard definition
+of the week of the year, where Week 1 is the week in which the first Thursday
+of the year occurs, or alternatively, the week which contains the 4th of
+January. Weeks are numbered w01 to w53. w00 for Bacula is the week that
+precedes the first ISO week (i.e. has the first few days of the year if any
+occur before Thursday). w00 is not defined by the ISO specification. A week
+starts with Monday and ends with Sunday. 
+
+According to the NIST (US National Institute of Standards and Technology),
+12am and 12pm are ambiguous and can be defined to anything.  However,
+12:01am is the same as 00:01 and 12:01pm is the same as 12:01, so Bacula
+defines 12am as 00:00 (midnight) and 12pm as 12:00 (noon).  You can avoid
+this abiguity (confusion) by using 24 hour time specifications (i.e.  no
+am/pm). This is the definition in Bacula version 2.0.3 and later.
+
+An example schedule resource that is named {\bf WeeklyCycle} and runs a job
+with level full each Sunday at 2:05am and an incremental job Monday through
+Saturday at 2:05am is: 
+
+\footnotesize
+\begin{verbatim}
+Schedule {
+  Name = "WeeklyCycle"
+  Run = Level=Full sun at 2:05
+  Run = Level=Incremental mon-sat at 2:05
+}
+\end{verbatim}
+\normalsize
+
+An example of a possible monthly cycle is as follows: 
+
+\footnotesize
+\begin{verbatim}
+Schedule {
+  Name = "MonthlyCycle"
+  Run = Level=Full Pool=Monthly 1st sun at 2:05
+  Run = Level=Differential 2nd-5th sun at 2:05
+  Run = Level=Incremental Pool=Daily mon-sat at 2:05
+}
+\end{verbatim}
+\normalsize
+
+The first of every month: 
+
+\footnotesize
+\begin{verbatim}
+Schedule {
+  Name = "First"
+  Run = Level=Full on 1 at 2:05
+  Run = Level=Incremental on 2-31 at 2:05
+}
+\end{verbatim}
+\normalsize
+
+Every 10 minutes: 
+
+\footnotesize
+\begin{verbatim}
+Schedule {
+  Name = "TenMinutes"
+  Run = Level=Full hourly at 0:05
+  Run = Level=Full hourly at 0:15
+  Run = Level=Full hourly at 0:25
+  Run = Level=Full hourly at 0:35
+  Run = Level=Full hourly at 0:45
+  Run = Level=Full hourly at 0:55
+}
+\end{verbatim}
+\normalsize
+
+\section{Technical Notes on Schedules}
+\index[general]{Schedules!Technical Notes on}
+\index[general]{Technical Notes on Schedules}
+
+Internally Bacula keeps a schedule as a bit mask. There are six masks and a
+minute field to each schedule. The masks are hour, day of the month (mday),
+month, day of the week (wday), week of the month (wom), and week of the year
+(woy). The schedule is initialized to have the bits of each of these masks
+set, which means that at the beginning of every hour, the job will run. When
+you specify a month for the first time, the mask will be cleared and the bit
+corresponding to your selected month will be selected. If you specify a second
+month, the bit corresponding to it will also be added to the mask. Thus when
+Bacula checks the masks to see if the bits are set corresponding to the
+current time, your job will run only in the two months you have set. Likewise,
+if you set a time (hour), the hour mask will be cleared, and the hour you
+specify will be set in the bit mask and the minutes will be stored in the
+minute field. 
+
+For any schedule you have defined, you can see how these bits are set by doing
+a {\bf show schedules} command in the Console program. Please note that the
+bit mask is zero based, and Sunday is the first day of the week (bit zero). 
+
+\input{fileset-en}
+
+\section{The Client Resource}
+\label{ClientResource2}
+\index[general]{Resource!Client}
+\index[general]{Client Resource}
+
+The Client resource defines the attributes of the Clients that are served by
+this Director; that is the machines that are to be backed up. You will need
+one Client resource definition for each machine to be backed up. 
+
+\begin{description}
+
+\item [Client (or FileDaemon)]
+   \index[dir]{Client (or FileDaemon)}
+   \index[dir]{Directive!Client (or FileDaemon)}
+   Start of the Client directives.  
+
+\item [Name = \lt{}name\gt{}]
+   \index[dir]{Name}
+   \index[dir]{Directive!Name}
+   The client name which will be used in the  Job resource directive or in the
+console run command.  This directive is required.  
+
+\item [Address = \lt{}address\gt{}]
+   \index[dir]{Address}
+   \index[dir]{Directive!FD Address}
+   \index[dir]{File Daemon Address}
+   \index[dir]{Client Address}
+   Where the address is a host name, a fully qualified domain name, or a
+   network address in dotted quad notation for a Bacula File server daemon.
+   This directive is required.
+
+\item [FD Port = \lt{}port-number\gt{}]
+   \index[dir]{FD Port}
+   \index[dir]{Directive!FD Port}
+   Where the port is a port  number at which the Bacula File server daemon can
+   be contacted.  The default is 9102. 
+
+\item [Catalog = \lt{}Catalog-resource-name\gt{}]
+   \index[dir]{Catalog}
+   \index[dir]{Directive!Catalog}
+   This specifies the  name of the catalog resource to be used for this Client. 
+   This directive is required.  
+
+\item [Password = \lt{}password\gt{}]
+   \index[dir]{Password}
+   \index[dir]{Directive!Password}
+   This is the password to be  used when establishing a connection with the File
+   services, so  the Client configuration file on the machine to be backed up
+   must  have the same password defined for this Director. This directive is 
+   required.  If you have either {\bf /dev/random}  {\bf bc} on your machine,
+   Bacula will generate a random  password during the configuration process,
+   otherwise it will  be left blank. 
+
+   The password is plain text.  It is not generated through any special
+   process, but it is preferable for security reasons to make the text
+   random.
+
+\label{FileRetention}
+\item [File Retention = \lt{}time-period-specification\gt{}]
+   \label{FileRetention}
+   \index[dir]{File Retention}
+   \index[dir]{Directive!File Retention}
+   The File Retention directive defines the length of time that  Bacula will
+   keep File records in the Catalog database after the End time of the
+   Job corresponding to the File records.
+   When this time period expires, and if
+   {\bf AutoPrune} is set to  {\bf yes} Bacula will prune (remove) File records
+   that  are older than the specified File Retention period. Note, this  affects
+   only records in the catalog database. It does not  affect your archive
+   backups.  
+
+   File records  may actually be retained for a shorter period than you specify
+   on  this directive if you specify either a shorter {\bf Job Retention}  or a
+   shorter {\bf Volume Retention} period. The shortest  retention period of the
+   three takes precedence.  The time may be expressed in seconds, minutes, 
+   hours, days, weeks, months, quarters, or years. See the 
+   \ilink{ Configuration chapter}{Time} of this  manual for
+   additional details of time specification. 
+
+   The  default is 60 days. 
+
+\label{JobRetention}
+\item [Job Retention = \lt{}time-period-specification\gt{}]
+   \label{JobRetention}
+   \index[dir]{Job Retention}
+   \index[dir]{Directive!Job Retention}
+   The Job Retention directive defines the length of time that  Bacula will keep
+   Job records in the Catalog database after the Job End time.  When
+   this time period expires, and if {\bf AutoPrune} is set to {\bf yes}
+   Bacula will prune (remove) Job records that are older than the specified
+   File Retention period.  As with the other retention periods, this
+   affects only records in the catalog and not data in your archive backup.
+
+   If a Job record is selected for pruning, all associated File and JobMedia
+   records will also be pruned regardless of the File Retention period set.
+   As a consequence, you normally will set the File retention period to be
+   less than the Job retention period.  The Job retention period can actually
+   be less than the value you specify here if you set the {\bf Volume
+   Retention} directive in the Pool resource to a smaller duration.  This is
+   because the Job retention period and the Volume retention period are
+   independently applied, so the smaller of the two takes precedence.
+
+   The Job retention period is specified as seconds,  minutes, hours, days,
+   weeks, months,  quarters, or years.  See the 
+   \ilink{ Configuration chapter}{Time} of this manual for
+   additional details of  time specification.  
+
+   The default is 180 days.  
+
+\label{AutoPrune}
+\item [AutoPrune = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{AutoPrune}
+   \index[dir]{Directive!AutoPrune}
+   If AutoPrune is set to  {\bf yes} (default), Bacula (version 1.20 or greater)
+   will  automatically apply the File retention period and the Job  retention
+   period for the Client at the end of the Job.  If you set {\bf AutoPrune = no},
+   pruning will not be done,  and your Catalog will grow in size each time you
+   run a Job.  Pruning affects only information in the catalog and not data 
+   stored in the backup archives (on Volumes).  
+
+\item [Maximum Concurrent Jobs = \lt{}number\gt{}]
+   \index[dir]{Maximum Concurrent Jobs}
+   \index[dir]{Directive!Maximum Concurrent Jobs}
+   where \lt{}number\gt{}  is the maximum number of Jobs with the current Client
+   that  can run concurrently. Note, this directive limits only Jobs  for Clients
+   with the same name as the resource in which it appears. Any  other
+   restrictions on the maximum concurrent jobs such as in  the Director, Job, or
+   Storage resources will also apply in addition to  any limit specified here.
+   The  default is set to 1, but you may set it to a larger number.
+
+\item [Priority = \lt{}number\gt{}]
+   \index[dir]{Priority}
+   \index[dir]{Directive!Priority}
+   The number specifies the  priority of this client relative to other clients
+   that the  Director is processing simultaneously. The priority can range  from
+   1 to 1000. The clients are ordered such that the smaller  number priorities
+   are performed first (not currently  implemented). 
+\end{description}
+
+   The following is an example of a valid Client resource definition: 
+
+\footnotesize
+\begin{verbatim}
+Client {
+  Name = Minimatou
+  FDAddress = minimatou
+  Catalog = MySQL
+  Password = very_good
+}
+\end{verbatim}
+\normalsize
+
+\section{The Storage Resource}
+\label{StorageResource2}
+\index[general]{Resource!Storage}
+\index[general]{Storage Resource}
+
+The Storage resource defines which Storage daemons are available for use by
+the Director. 
+
+\begin{description}
+
+\item [Storage]
+   \index[dir]{Storage}
+   \index[dir]{Directive!Storage}
+   Start of the Storage resources. At least one  storage resource must be
+   specified. 
+
+\item [Name = \lt{}name\gt{}]
+   \index[dir]{Name}
+   \index[dir]{Directive!Name}
+   The name of the storage resource. This  name appears on the Storage directive
+   specified in the Job resource and is required. 
+
+\item [Address = \lt{}address\gt{}]
+   \index[dir]{Address}
+   \index[dir]{Directive!SD Address}
+   \index[dir]{Storage daemon Address}
+   Where the address is a host name,  a {\bf fully qualified domain name}, or an
+   {\bf IP address}. Please note  that the \lt{}address\gt{} as specified here
+   will be transmitted to  the File daemon who will then use it to contact the
+   Storage daemon. Hence,  it is {\bf not}, a good idea to use {\bf localhost} as
+   the  name but rather a fully qualified machine name or an IP address.  This
+   directive is required. 
+
+\item [SD Port = \lt{}port\gt{}]
+   \index[dir]{SD Port}
+   \index[dir]{Directive!SD Port}
+   Where port is the port to use to  contact the storage daemon for information
+   and to start jobs.  This same port number must appear in the Storage resource
+   of the  Storage daemon's configuration file. The default is 9103. 
+
+\item [Password = \lt{}password\gt{}]
+   \index[dir]{Password}
+   \index[dir]{Directive!Password}
+   This is the password to be used  when establishing a connection with the
+   Storage services. This  same password also must appear in the Director
+   resource of the Storage  daemon's configuration file. This directive is
+   required.  If you have either {\bf /dev/random}  {\bf bc} on your machine,
+   Bacula will generate a random  password during the configuration process,
+   otherwise it will  be left blank. 
+
+   The password is plain text.  It is not generated through any special
+   process, but it is preferable for security reasons to use random text.
+
+\item [Device = \lt{}device-name\gt{}]
+   \index[dir]{Device}
+   \index[dir]{Directive!Device}
+   This directive specifies the Storage daemon's name of the device
+   resource to be used for the storage.  If you are using an Autochanger,
+   the name specified here should be the name of the Storage daemon's
+   Autochanger resource rather than the name of an individual device.  This
+   name is not the physical device name, but the logical device name as
+   defined on the {\bf Name} directive contained in the {\bf Device} or the
+   {\bf Autochanger} resource definition of the {\bf Storage daemon}
+   configuration file.  You can specify any name you would like (even the
+   device name if you prefer) up to a maximum of 127 characters in length.
+   The physical device name associated with this device is specified in the
+   {\bf Storage daemon} configuration file (as {\bf Archive Device}).
+   Please take care not to define two different Storage resource directives
+   in the Director that point to the same Device in the Storage daemon.
+   Doing so may cause the Storage daemon to block (or hang) attempting to
+   open the same device that is already open.  This directive is required.
+
+\label{MediaType}
+\item [Media Type = \lt{}MediaType\gt{}]
+   \index[dir]{Media Type}
+   \index[dir]{Directive!Media Type}
+   This directive specifies the Media Type to be used to store the data.
+   This is an arbitrary string of characters up to 127 maximum that you
+   define.  It can be anything you want.  However, it is best to make it
+   descriptive of the storage media (e.g.  File, DAT, "HP DLT8000", 8mm,
+   ...).  In addition, it is essential that you make the {\bf Media Type}
+   specification unique for each storage media type.  If you have two DDS-4
+   drives that have incompatible formats, or if you have a DDS-4 drive and
+   a DDS-4 autochanger, you almost certainly should specify different {\bf
+   Media Types}.  During a restore, assuming a {\bf DDS-4} Media Type is
+   associated with the Job, Bacula can decide to use any Storage daemon
+   that supports Media Type {\bf DDS-4} and on any drive that supports it.
+
+   If you are writing to disk Volumes, you must make doubly sure that each
+   Device resource defined in the Storage daemon (and hence in the
+   Director's conf file) has a unique media type.  Otherwise for Bacula
+   versions 1.38 and older, your restores may not work because Bacula
+   will assume that you can mount any Media Type with the same name on
+   any Device associated with that Media Type. This is possible with
+   tape drives, but with disk drives, unless you are very clever you
+   cannot mount a Volume in any directory -- this can be done by creating
+   an appropriate soft link.
+
+   Currently Bacula permits only a single Media Type per Storage           
+   and Device definition. Consequently, if
+   you have a drive that supports more than one Media Type, you can
+   give a unique string to Volumes with different intrinsic Media 
+   Type (Media Type = DDS-3-4 for DDS-3 and DDS-4 types), but then
+   those volumes will only be mounted on drives indicated with the
+   dual type (DDS-3-4).
+
+   If you want to tie Bacula to using a single Storage daemon or drive, you
+   must specify a unique Media Type for that drive.  This is an important
+   point that should be carefully understood.  Note, this applies equally
+   to Disk Volumes.  If you define more than one disk Device resource in
+   your Storage daemon's conf file, the Volumes on those two devices are in
+   fact incompatible because one can not be mounted on the other device
+   since they are found in different directories.  For this reason, you
+   probably should use two different Media Types for your two disk Devices
+   (even though you might think of them as both being File types).  You can
+   find more on this subject in the \ilink{Basic Volume
+   Management}{DiskChapter} chapter of this manual.
+
+   The {\bf MediaType} specified in the Director's Storage resource, {\bf
+   must} correspond to the {\bf Media Type} specified in the {\bf Device}
+   resource of the {\bf Storage daemon} configuration file.  This directive
+   is required, and it is used by the Director and the Storage daemon to
+   ensure that a Volume automatically selected from the Pool corresponds to
+   the physical device.  If a Storage daemon handles multiple devices (e.g.
+   will write to various file Volumes on different partitions), this
+   directive allows you to specify exactly which device.
+
+   As mentioned above, the value specified in the Director's Storage
+   resource must agree with the value specified in the Device resource in
+   the {\bf Storage daemon's} configuration file.  It is also an additional
+   check so that you don't try to write data for a DLT onto an 8mm device.
+
+\label{Autochanger1}
+\item [Autochanger = \lt{}yes\vb{}no\gt{}]  
+   \index[dir]{Autochanger}
+   \index[dir]{Directive!Autochanger}
+   If you specify {\bf yes} for this command (the default is {\bf no}),
+   when you use the {\bf label} command or the {\bf add} command to create
+   a new Volume, {\bf Bacula} will also request the Autochanger Slot
+   number.  This simplifies creating database entries for Volumes in an
+   autochanger.  If you forget to specify the Slot, the autochanger will
+   not be used.  However, you may modify the Slot associated with a Volume
+   at any time by using the {\bf update volume} or {\bf update slots}
+   command in the console program.  When {\bf autochanger} is enabled, the
+   algorithm used by Bacula to search for available volumes will be
+   modified to consider only Volumes that are known to be in the
+   autochanger's magazine.  If no {\bf in changer} volume is found, Bacula
+   will attempt recycling, pruning, ..., and if still no volume is found,
+   Bacula will search for any volume whether or not in the magazine.  By
+   privileging in changer volumes, this procedure minimizes operator
+   intervention.  The default is {\bf no}.
+
+   For the autochanger to be used, you must also specify {\bf Autochanger =
+   yes} in the \ilink{Device Resource}{Autochanger} in the Storage daemon's
+   configuration file as well as other important Storage daemon
+   configuration information.  Please consult the \ilink{Using
+   Autochangers}{AutochangersChapter} manual of this chapter for the
+   details of using autochangers.
+
+\item [Maximum Concurrent Jobs = \lt{}number\gt{}]
+   \index[dir]{Maximum Concurrent Jobs}
+   \index[dir]{Directive!Maximum Concurrent Jobs}
+   where \lt{}number\gt{}  is the maximum number of Jobs with the current
+   Storage resource that can run concurrently.  Note, this directive limits
+   only Jobs for Jobs using this Storage daemon.  Any other restrictions on
+   the maximum concurrent jobs such as in the Director, Job, or Client
+   resources will also apply in addition to any limit specified here.  The
+   default is set to 1, but you may set it to a larger number.  However, if
+   you set the Storage daemon's number of concurrent jobs greater than one,
+   we recommend that you read the waring documented under \ilink{Maximum
+   Concurrent Jobs}{DirMaxConJobs} in the Director's resource or simply
+   turn data spooling on as documented in the \ilink{Data
+   Spooling}{SpoolingChapter} chapter of this manual.
+
+\item [AllowCompression = \lt{}yes\vb{}no\gt{}]
+  \label{AllowCompression}
+   \index[dir]{AllowCompression}
+   \index[dir]{Directive!AllowCompression}
+
+   This directive is optional, and if you specify {\bf No} (the default is {\bf
+     Yes}), it will cause backups jobs running on this storage resource to run
+   without client File Daemon compression.  This effectively overrides
+   compression options in FileSets used by jobs which use this storage
+   resource.
+
+\item [Heartbeat Interval = \lt{}time-interval\gt{}]
+   \index[dir]{Heartbeat Interval}
+   \index[dir]{Directive!Heartbeat}
+   This directive is optional and if specified will cause the Director to
+   set a keepalive interval (heartbeat) in seconds on each of the sockets
+   it opens for the Storage resource.  This value will override any
+   specified at the Director level.  It is implemented only on systems
+   (Linux, ...) that provide the {\bf setsockopt} TCP\_KEEPIDLE function.
+   The default value is zero, which means no change is made to the socket.
+
+\end{description}
+
+The following is an example of a valid Storage resource definition: 
+
+\footnotesize
+\begin{verbatim}
+# Definition of tape storage device
+Storage {
+  Name = DLTDrive
+  Address = lpmatou
+  Password = storage_password # password for Storage daemon
+  Device = "HP DLT 80"    # same as Device in Storage daemon
+  Media Type = DLT8000    # same as MediaType in Storage daemon
+}
+\end{verbatim}
+\normalsize
+
+\section{The Pool Resource}
+\label{PoolResource}
+\index[general]{Resource!Pool}
+\index[general]{Pool Resource}
+
+The Pool resource defines the set of storage Volumes (tapes or files) to be
+used by Bacula to write the data. By configuring different Pools, you can
+determine which set of Volumes (media) receives the backup data. This permits,
+for example, to store all full backup data on one set of Volumes and all
+incremental backups on another set of Volumes. Alternatively, you could assign
+a different set of Volumes to each machine that you backup. This is most
+easily done by defining multiple Pools. 
+
+Another important aspect of a Pool is that it contains the default attributes
+(Maximum Jobs, Retention Period, Recycle flag, ...) that will be given to a
+Volume when it is created. This avoids the need for you to answer a large
+number of questions when labeling a new Volume. Each of these attributes can
+later be changed on a Volume by Volume basis using the {\bf update} command in
+the console program. Note that you must explicitly specify which Pool Bacula
+is to use with each Job. Bacula will not automatically search for the correct
+Pool. 
+
+Most often in Bacula installations all backups for all machines (Clients) go
+to a single set of Volumes. In this case, you will probably only use the {\bf
+Default} Pool. If your backup strategy calls for you to mount a different tape
+each day, you will probably want to define a separate Pool for each day. For
+more information on this subject, please see the 
+\ilink{Backup Strategies}{StrategiesChapter} chapter of this
+manual. 
+
+
+To use a Pool, there are three distinct steps. First the Pool must be defined
+in the Director's configuration file. Then the Pool must be written to the
+Catalog database. This is done automatically by the Director each time that it
+starts, or alternatively can be done using the {\bf create} command in the
+console program. Finally, if you change the Pool definition in the Director's
+configuration file and restart Bacula, the pool will be updated alternatively
+you can use the {\bf update pool} console command to refresh the database
+image. It is this database image rather than the Director's resource image
+that is used for the default Volume attributes. Note, for the pool to be
+automatically created or updated, it must be explicitly referenced by a Job
+resource. 
+
+Next the physical media must be labeled. The labeling can either be done with
+the {\bf label} command in the {\bf console} program or using the {\bf btape}
+program. The preferred method is to use the {\bf label} command in the {\bf
+console} program. 
+
+Finally, you must add Volume names (and their attributes) to the Pool. For
+Volumes to be used by Bacula they must be of the same {\bf Media Type} as the
+archive device specified for the job (i.e. if you are going to back up to a
+DLT device, the Pool must have DLT volumes defined since 8mm volumes cannot be
+mounted on a DLT drive). The {\bf Media Type} has particular importance if you
+are backing up to files. When running a Job, you must explicitly specify which
+Pool to use. Bacula will then automatically select the next Volume to use from
+the Pool, but it will ensure that the {\bf Media Type} of any Volume selected
+from the Pool is identical to that required by the Storage resource you have
+specified for the Job. 
+
+If you use the {\bf label} command in the console program to label the
+Volumes, they will automatically be added to the Pool, so this last step is
+not normally required. 
+
+It is also possible to add Volumes to the database without explicitly labeling
+the physical volume. This is done with the {\bf add} console command. 
+
+As previously mentioned, each time Bacula starts, it scans all the Pools
+associated with each Catalog, and if the database record does not already
+exist, it will be created from the Pool Resource definition. {\bf Bacula}
+probably should do an {\bf update pool} if you change the Pool definition, but
+currently, you must do this manually using the {\bf update pool} command in
+the Console program. 
+
+The Pool Resource defined in the Director's configuration file
+(bacula-dir.conf) may contain the following directives: 
+
+\begin{description}
+
+\item [Pool]
+   \index[dir]{Pool}
+   \index[dir]{Directive!Pool}
+   Start of the Pool resource.  There must be at least one Pool resource
+   defined.
+
+
+\item [Name = \lt{}name\gt{}]
+   \index[dir]{Name}
+   \index[dir]{Directive!Name}
+   The name of the pool.  For most applications, you will use the default
+   pool name {\bf Default}.  This directive is required.
+
+\label{MaxVolumes}
+\item [Maximum Volumes = \lt{}number\gt{}]
+   \index[dir]{Maximum Volumes}
+   \index[dir]{Directive!Maximum Volumes}
+   This directive specifies the maximum number of volumes (tapes or files)
+   contained in the pool.  This directive is optional, if omitted or set to
+   zero, any number of volumes will be permitted.  In general, this
+   directive is useful for Autochangers where there is a fixed number of
+   Volumes, or for File storage where you wish to ensure that the backups
+   made to disk files do not become too numerous or consume too much space.
+
+\item [Pool Type = \lt{}type\gt{}]
+   \index[dir]{Pool Type}
+   \index[dir]{Directive!Pool Type}
+   This directive defines the pool type, which corresponds to the type of
+   Job being run.  It is required and may be one of the following:
+
+\begin{itemize}
+  \item [Backup]  
+  \item [*Archive]  
+  \item [*Cloned]  
+  \item [*Migration]  
+  \item [*Copy]  
+  \item [*Save]  
+\end{itemize}
+   Note, only Backup is current implemented.
+
+\item [Storage = \lt{}storage-resource-name\gt{}]
+\index[dir]{Storage}
+\index[dir]{Directive!Storage}
+   The Storage directive defines the name of the storage services where you
+   want to backup the FileSet data.  For additional details, see the
+   \ilink{Storage Resource Chapter}{StorageResource2} of this manual.
+   The Storage resource may also be specified in the Job resource,
+   but the value, if any, in the Pool resource overrides any value
+   in the Job. This Storage resource definition is not required by either
+   the Job resource or in the Pool, but it must be specified in
+   one or the other.  If not configuration error will result.
+
+\item [Use Volume Once = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{Use Volume Once}
+   \index[dir]{Directive!Use Volume Once}
+   This directive if set to {\bf yes} specifies that each volume is to be
+   used only once.  This is most useful when the Media is a file and you
+   want a new file for each backup that is done.  The default is {\bf no}
+   (i.e.  use volume any number of times).  This directive will most likely
+   be phased out (deprecated), so you are recommended to use {\bf Maximum
+   Volume Jobs = 1} instead.
+
+   The value defined by this directive in the bacula-dir.conf file is the
+   default value used when a Volume is created.  Once the volume is
+   created, changing the value in the bacula-dir.conf file will not change
+   what is stored for the Volume.  To change the value for an existing
+   Volume you must use the {\bf update} command in the Console.
+
+   Please see the notes below under {\bf Maximum Volume Jobs} concerning
+   using this directive with multiple simultaneous jobs.
+
+\item [Maximum Volume Jobs = \lt{}positive-integer\gt{}]
+   \index[dir]{Maximum Volume Jobs}
+   \index[dir]{Directive!Maximum Volume Jobs}
+   This directive specifies the maximum number of Jobs that can be written
+   to the Volume.  If you specify zero (the default), there is no limit.
+   Otherwise, when the number of Jobs backed up to the Volume equals {\bf
+   positive-integer} the Volume will be marked {\bf Used}.  When the Volume
+   is marked {\bf Used} it can no longer be used for appending Jobs, much
+   like the {\bf Full} status but it can be recycled if recycling is
+   enabled, and thus used again.  By setting {\bf MaximumVolumeJobs} to
+   one, you get the same effect as setting {\bf UseVolumeOnce = yes}.
+
+   The value defined by this directive in the  bacula-dir.conf
+   file is the default value used when a Volume  is created. Once the volume is
+   created, changing the value  in the bacula-dir.conf file will not change what
+   is stored  for the Volume. To change the value for an existing Volume  you
+   must use the {\bf update} command in the Console.  
+
+   If you are running multiple simultaneous jobs, this directive may not
+   work correctly because when a drive is reserved for a job, this
+   directive is not taken into account, so multiple jobs may try to 
+   start writing to the Volume. At some point, when the Media record is
+   updated, multiple simultaneous jobs may fail since the Volume can no
+   longer be written.
+
+\item [Maximum Volume Files = \lt{}positive-integer\gt{}]
+   \index[dir]{Maximum Volume Files}
+   \index[dir]{Directive!Maximum Volume Files}
+   This directive specifies the maximum number of files that can be written
+   to the Volume.  If you specify zero (the default), there is no limit.
+   Otherwise, when the number of files written to the Volume equals {\bf
+   positive-integer} the Volume will be marked {\bf Used}.  When the Volume
+   is marked {\bf Used} it can no longer be used for appending Jobs, much
+   like the {\bf Full} status but it can be recycled if recycling is
+   enabled and thus used again.  This value is checked and the {\bf Used}
+   status is set only at the end of a job that writes to the particular
+   volume.
+
+   The value defined by this directive in the bacula-dir.conf file is the
+   default value used when a Volume is created.  Once the volume is
+   created, changing the value in the bacula-dir.conf file will not change
+   what is stored for the Volume.  To change the value for an existing
+   Volume you must use the {\bf update} command in the Console.
+
+\item [Maximum Volume Bytes = \lt{}size\gt{}]
+   \index[dir]{Maximum Volume Bytes}
+   \index[dir]{Directive!Maximum Volume Bytes}
+   This directive specifies the maximum number of bytes that can be written
+   to the Volume.  If you specify zero (the default), there is no limit
+   except the physical size of the Volume.  Otherwise, when the number of
+   bytes written to the Volume equals {\bf size} the Volume will be marked
+   {\bf Used}.  When the Volume is marked {\bf Used} it can no longer be
+   used for appending Jobs, much like the {\bf Full} status but it can be
+   recycled if recycling is enabled, and thus the Volume can be re-used
+   after recycling.  This value is checked and the {\bf Used} status set
+   while the job is writing to the particular volume.
+
+   This directive is particularly useful for restricting the size
+   of disk volumes, and will work correctly even in the case of
+   multiple simultaneous jobs writing to the volume.
+
+   The value defined by this directive in the bacula-dir.conf file is the
+   default value used when a Volume is created.  Once the volume is
+   created, changing the value in the bacula-dir.conf file will not change
+   what is stored for the Volume.  To change the value for an existing
+   Volume you must use the {\bf update} command in the Console.
+
+\item [Volume Use Duration = \lt{}time-period-specification\gt{}]
+   \index[dir]{Volume Use Duration}
+   \index[dir]{Directive!Volume Use Duration}
+   The Volume Use Duration directive defines the time period that the
+   Volume can be written beginning from the time of first data write to the
+   Volume.  If the time-period specified is zero (the default), the Volume
+   can be written indefinitely.  Otherwise, the next time a job
+   runs that wants to access this Volume, and the time period from the
+   first write to the volume (the first Job written) exceeds the
+   time-period-specification, the Volume will be marked {\bf Used}, which
+   means that no more Jobs can be appended to the Volume, but it may be
+   recycled if recycling is enabled. Using the command {\bf
+   status dir} applies algorithms similar to running jobs, so
+   during such a command, the Volume status may also be changed.
+   Once the Volume is
+   recycled, it will be available for use again.
+   
+   You might use this directive, for example, if you have a Volume used for
+   Incremental backups, and Volumes used for Weekly Full backups.  Once the
+   Full backup is done, you will want to use a different Incremental
+   Volume.  This can be accomplished by setting the Volume Use Duration for
+   the Incremental Volume to six days.  I.e.  it will be used for the 6
+   days following a Full save, then a different Incremental volume will be
+   used.  Be careful about setting the duration to short periods such as 23
+   hours, or you might experience problems of Bacula waiting for a tape
+   over the weekend only to complete the backups Monday morning when an
+   operator mounts a new tape.
+   
+   The use duration is checked and the {\bf Used} status is set only at the
+   end of a job that writes to the particular volume, which means that even
+   though the use duration may have expired, the catalog entry will not be
+   updated until the next job that uses this volume is run. This
+   directive is not intended to be used to limit volume sizes
+   and will not work correctly (i.e. will fail jobs) if the use
+   duration expires while multiple simultaneous jobs are writing
+   to the volume.
+      
+   Please note that the value defined by this directive in the  bacula-dir.conf
+   file is the default value used when a Volume  is created. Once the volume is
+   created, changing the value  in the bacula-dir.conf file will not change what
+   is stored  for the Volume. To change the value for an existing Volume  you
+   must use the 
+   \ilink{\bf update volume}{UpdateCommand} command in the Console.  
+
+\item [Catalog Files = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{Catalog Files}
+   \index[dir]{Directive!Catalog Files}
+   This directive defines whether or not you want the names of the files
+   that were saved to be put into the catalog.  The default is {\bf yes}.
+   The advantage of specifying {\bf Catalog Files = No} is that you will
+   have a significantly smaller Catalog database.  The disadvantage is that
+   you will not be able to produce a Catalog listing of the files backed up
+   for each Job (this is often called Browsing).  Also, without the File
+   entries in the catalog, you will not be able to use the Console {\bf
+   restore} command nor any other command that references File entries.
+   
+\label{PoolAutoPrune}
+\item [AutoPrune = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{AutoPrune}
+   \index[dir]{Directive!AutoPrune}
+   If AutoPrune is set to {\bf yes} (default), Bacula (version 1.20 or
+   greater) will automatically apply the Volume Retention period when new
+   Volume is needed and no appendable Volumes exist in the Pool.  Volume
+   pruning causes expired Jobs (older than the {\bf Volume Retention}
+   period) to be deleted from the Catalog and permits possible recycling of
+   the Volume.
+   
+\label{VolRetention}
+\item [Volume Retention = \lt{}time-period-specification\gt{}]
+   \index[dir]{Volume Retention}
+   \index[dir]{Directive!Volume Retention}
+   The Volume Retention directive defines the length of time that {\bf
+   Bacula} will keep records associated with the Volume in
+   the Catalog database after the End time of each Job written to the
+   Volume.  When this time period expires, and if {\bf AutoPrune} is set to
+   {\bf yes} Bacula may prune (remove) Job records that are older than the
+   specified Volume Retention period if it is necessary to free up a
+   Volume.  Recycling will not occur until it is absolutely necessary to
+   free up a volume (i.e. no other writable volume exists).
+   All File records associated with pruned Jobs are also
+   pruned.  The time may be specified as seconds, minutes, hours, days,
+   weeks, months, quarters, or years.  The {\bf Volume Retention} is
+   applied independently of the {\bf Job Retention} and the {\bf File
+   Retention} periods defined in the Client resource.  This means that all
+   the retentions periods are applied in turn and that the shorter period
+   is the one that effectively takes precedence.  Note, that when the {\bf
+   Volume Retention} period has been reached, and it is necessary to obtain
+   a new volume, Bacula will prune both the Job and the File records.  This
+   pruning could also occur during a {\bf status dir} command because it
+   uses similar algorithms for finding the next available Volume.
+
+   It is important to know that when the Volume Retention period expires, 
+   Bacula does not automatically recycle a Volume. It attempts to keep the
+   Volume data intact as long as possible before over writing the Volume.
+   
+   By defining multiple Pools with different Volume Retention periods, you
+   may effectively have a set of tapes that is recycled weekly, another
+   Pool of tapes that is recycled monthly and so on.  However, one must
+   keep in mind that if your {\bf Volume Retention} period is too short, it
+   may prune the last valid Full backup, and hence until the next Full
+   backup is done, you will not have a complete backup of your system, and
+   in addition, the next Incremental or Differential backup will be
+   promoted to a Full backup.  As a consequence, the minimum {\bf Volume
+   Retention} period should be at twice the interval of your Full backups.
+   This means that if you do a Full backup once a month, the minimum Volume
+   retention period should be two months.
+   
+   The default Volume retention period is 365 days, and either the default
+   or the value defined by this directive in the bacula-dir.conf file is
+   the default value used when a Volume is created.  Once the volume is
+   created, changing the value in the bacula-dir.conf file will not change
+   what is stored for the Volume.  To change the value for an existing
+   Volume you must use the {\bf update} command in the Console.
+
+\item [Action On Purge = \lt{Truncate}]
+\index[dir]{actiononpurge}
+
+This directive \textbf{ActionOnPurge=Truncate} instructs Bacula to truncate
+the volume when it is purged. It is useful to prevent disk based volumes from
+consuming too much space. 
+
+\begin{verbatim}
+Pool {
+  Name = Default
+  Action On Purge = Truncate
+  ...
+}
+\end{verbatim}
+
+\label{PoolScratchPool}
+\item [ScratchPool = \lt{}pool-resource-name\gt{}]
+   \index[dir]{ScrachPool}
+   \index[dir]{Directive!ScrachPool}
+   This directive permits to specify a dedicate \textsl{Scratch} for the
+   current pool. This pool will replace the special pool named \textsl{Scrach}
+   for volume selection. For more information about \textsl{Scratch} see
+   \ilink{Scratch Pool}{TheScratchPool} section of this manual. This is useful
+   when using multiple storage sharing the same mediatype or when you want to
+   dedicate volumes to a particular set of pool.
+
+\label{PoolRecyclePool}
+\item [RecyclePool = \lt{}pool-resource-name\gt{}]
+   \index[dir]{RecyclePool}
+   \index[dir]{Directive!RecyclePool}
+   This directive defines to which pool
+   the Volume will be placed (moved) when it is recycled. Without
+   this directive, a Volume will remain in the same pool when it is
+   recycled. With this directive, it can be moved automatically to any
+   existing pool during a recycle. This directive is probably most
+   useful when defined in the Scratch pool, so that volumes will
+   be recycled back into the Scratch pool. For more on the see the   
+   \ilink{Scratch Pool}{TheScratchPool} section of this manual.
+
+   Although this directive is called RecyclePool, the Volume in
+   question is actually moved from its current pool to the one
+   you specify on this directive when Bacula prunes the Volume and
+   discovers that there are no records left in the catalog and hence
+   marks it as {\bf Purged}.
+        
+   
+\label{PoolRecycle}
+\item [Recycle = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{Recycle}
+   \index[dir]{Directive!Recycle}
+   This directive specifies whether or not Purged Volumes may be recycled.
+   If it is set to {\bf yes} (default) and Bacula needs a volume but finds
+   none that are appendable, it will search for and recycle (reuse) Purged
+   Volumes (i.e.  volumes with all the Jobs and Files expired and thus
+   deleted from the Catalog).  If the Volume is recycled, all previous data
+   written to that Volume will be overwritten. If Recycle is set to {\bf
+   no}, the Volume will not be recycled, and hence, the data will remain
+   valid.  If you want to reuse (re-write) the Volume, and the recycle flag
+   is no (0 in the catalog), you may manually set the recycle flag (update
+   command) for a Volume to be reused.
+
+   Please note that the value defined by this directive in the
+   bacula-dir.conf file is the default value used when a Volume is created.
+   Once the volume is created, changing the value in the bacula-dir.conf
+   file will not change what is stored for the Volume.  To change the value
+   for an existing Volume you must use the {\bf update} command in the
+   Console.
+
+   When all Job and File records have been pruned or purged from the      
+   catalog for a particular Volume, if that Volume is marked as
+   Append, Full, Used, or Error, it will then be marked as Purged. Only
+   Volumes marked as Purged will be considered to be converted to the
+   Recycled state if the {\bf Recycle} directive is set to {\bf yes}.
+
+
+\label{RecycleOldest}
+\item [Recycle Oldest Volume = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{Recycle Oldest Volume}
+   \index[dir]{Directive!Recycle Oldest Volume}
+   This directive instructs the Director to search for the oldest used
+   Volume in the Pool when another Volume is requested by the Storage
+   daemon and none are available.  The catalog is then {\bf pruned}
+   respecting the retention periods of all Files and Jobs written to this
+   Volume.  If all Jobs are pruned (i.e. the volume is Purged), then the
+   Volume is recycled and will be used as the next Volume to be written.
+   This directive respects any Job, File, or Volume retention periods that
+   you may have specified, and as such it is {\bf much} better to use this
+   directive than the Purge Oldest Volume.
+
+   This directive can be useful if you have a fixed number of Volumes in the
+   Pool and you want to cycle through them and you have specified the correct
+   retention periods.  
+
+   However, if you use this directive and have only one
+   Volume in the Pool, you will immediately recycle your Volume if you fill
+   it and Bacula needs another one. Thus your backup will be totally invalid.
+   Please use this directive with care. The default is {\bf no}.
+
+\label{RecycleCurrent}
+
+\item [Recycle Current Volume = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{Recycle Current Volume}
+   \index[dir]{Directive!Recycle Current Volume}
+   If Bacula needs a new Volume, this directive instructs Bacula to Prune
+   the volume respecting the Job and File retention periods.  If all Jobs
+   are pruned (i.e.  the volume is Purged), then the Volume is recycled and
+   will be used as the next Volume to be written.  This directive respects
+   any Job, File, or Volume retention periods that you may have specified,
+   and thus it is {\bf much} better to use it rather than the Purge Oldest
+   Volume directive.
+
+   This directive can be useful if you have: a fixed number of Volumes in
+   the Pool, you want to cycle through them, and you have specified
+   retention periods that prune Volumes before you have cycled through the
+   Volume in the Pool.
+
+   However, if you use this directive and have only one Volume in the Pool,
+   you will immediately recycle your Volume if you fill it and Bacula needs
+   another one.  Thus your backup will be totally invalid.  Please use this
+   directive with care.  The default is {\bf no}.
+
+\label{PurgeOldest}
+
+\item [Purge Oldest Volume = \lt{}yes\vb{}no\gt{}]
+   \index[dir]{Purge Oldest Volume}
+   \index[dir]{Directive!Purge Oldest Volume}
+   This directive instructs the Director to search for the oldest used
+   Volume in the Pool when another Volume is requested by the Storage
+   daemon and none are available.  The catalog is then {\bf purged}
+   irrespective of retention periods of all Files and Jobs written to this
+   Volume.  The Volume is then recycled and will be used as the next Volume
+   to be written.  This directive overrides any Job, File, or Volume
+   retention periods that you may have specified.
+
+   This directive can be useful if you have a fixed number of Volumes in
+   the Pool and you want to cycle through them and reusing the oldest one
+   when all Volumes are full, but you don't want to worry about setting
+   proper retention periods.  However, by using this option you risk losing
+   valuable data.
+
+   Please be aware that {\bf Purge Oldest Volume} disregards all retention
+   periods. If you have only a single Volume defined and you turn this
+   variable on, that Volume will always be immediately overwritten when it
+   fills!  So at a minimum, ensure that you have a decent number of Volumes
+   in your Pool before running any jobs.  If you want retention periods to
+   apply do not use this directive.  To specify a retention period, use the
+   {\bf Volume Retention} directive (see above).
+
+   We {\bf highly} recommend against using this directive, because it is
+   sure that some day, Bacula will recycle a Volume that contains current
+   data.  The default is {\bf no}.
+
+\item [File Retention = \lt{}time-period-specification\gt{}]
+   \index[dir]{File Retention}
+   \index[dir]{Directive!File Retention}
+   The File Retention directive defines the length of time that  Bacula will
+   keep File records in the Catalog database after the End time of the
+   Job corresponding to the File records. 
+
+   This directive takes precedence over Client directives of the same name. For
+   example, you can decide to increase Retention times for Archive or OffSite
+   Pool.
+
+   Note, this affects only records in the catalog database. It does not affect
+   your archive backups.
+
+   For more information see Client documentation about
+   \ilink{FileRetention}{FileRetention}
+
+\item [Job Retention = \lt{}time-period-specification\gt{}]
+   \index[dir]{Job Retention}
+   \index[dir]{Directive!Job Retention}
+
+   The Job Retention directive defines the length of time that Bacula will keep
+   Job records in the Catalog database after the Job End time.  As with the
+   other retention periods, this affects only records in the catalog and not
+   data in your archive backup.
+
+   This directive takes precedence over Client directives of the same name.
+   For example, you can decide to increase Retention times for Archive or
+   OffSite Pool.
+
+   For more information see Client side documentation
+   \ilink{JobRetention}{JobRetention}
+
+\item [Cleaning Prefix = \lt{}string\gt{}]
+   \index[dir]{Cleaning Prefix}
+   \index[dir]{Directive!Cleaning Prefix}
+   This directive defines a prefix string, which if it matches the
+   beginning of a Volume name during labeling of a Volume, the Volume will
+   be defined with the VolStatus set to {\bf Cleaning} and thus Bacula will
+   never attempt to use this tape.  This is primarily for use with
+   autochangers that accept barcodes where the convention is that barcodes
+   beginning with {\bf CLN} are treated as cleaning tapes.
+
+\label{Label}
+\item [Label Format = \lt{}format\gt{}]
+   \index[dir]{Label Format}
+   \index[dir]{Directive!Label Format}
+   This directive specifies the format of the labels contained in this
+   pool.  The format directive is used as a sort of template to create new
+   Volume names during automatic Volume labeling.
+
+   The {\bf format} should be specified in double quotes, and consists of
+   letters, numbers and the special characters hyphen ({\bf -}), underscore
+   ({\bf \_}), colon ({\bf :}), and period ({\bf .}), which are the legal
+   characters for a Volume name.  The {\bf format} should be enclosed in
+   double quotes (").
+
+   In addition, the format may contain a number of variable expansion
+   characters which will be expanded by a complex algorithm allowing you to
+   create Volume names of many different formats.  In all cases, the
+   expansion process must resolve to the set of characters noted above that
+   are legal Volume names.  Generally, these variable expansion characters
+   begin with a dollar sign ({\bf \$}) or a left bracket ({\bf [}).  If you
+   specify variable expansion characters, you should always enclose the
+   format with double quote characters ({\bf "}).  For more details on
+   variable expansion, please see the \ilink{Variable
+   Expansion}{VarsChapter} Chapter of this manual.
+
+   If no variable expansion characters are found in the string, the Volume
+   name will be formed from the {\bf format} string appended with the
+   a unique number that increases.  If you do not remove volumes from the
+   pool, this number should be the number of volumes plus one, but this
+   is not guaranteed. The unique number will be edited as four
+   digits with leading zeros.  For example, with a {\bf Label Format =
+   "File-"}, the first volumes will be named {\bf File-0001}, {\bf
+   File-0002}, ...
+
+   With the exception of Job specific variables, you can test your {\bf
+   LabelFormat} by using the \ilink{ var command}{var} the Console Chapter
+   of this manual.
+
+   In almost all cases, you should enclose the format specification (part
+   after the equal sign) in double quotes.  Please note that this directive
+   is deprecated and is replaced in version 1.37 and greater with a Python
+   script for creating volume names.
+
+\end{description}
+
+In order for a Pool to be used during a Backup Job, the Pool must have at
+least one Volume associated with it.  Volumes are created for a Pool using
+the {\bf label} or the {\bf add} commands in the {\bf Bacula Console},
+program.  In addition to adding Volumes to the Pool (i.e.  putting the
+Volume names in the Catalog database), the physical Volume must be labeled
+with a valid Bacula software volume label before {\bf Bacula} will accept
+the Volume.  This will be automatically done if you use the {\bf label}
+command.  Bacula can automatically label Volumes if instructed to do so,
+but this feature is not yet fully implemented.
+
+The following is an example of a valid Pool resource definition: 
+
+\footnotesize
+\begin{verbatim}
+ 
+Pool {
+  Name = Default
+  Pool Type = Backup
+}
+\end{verbatim}
+\normalsize
+
+\subsection{The Scratch Pool}
+\label{TheScratchPool}
+\index[general]{Scratch Pool}
+In general, you can give your Pools any name you wish, but there is one 
+important restriction: the Pool named {\bf Scratch}, if it exists behaves 
+like a scratch pool of Volumes in that when Bacula needs a new Volume for 
+writing and it cannot find one, it will look in the Scratch pool, and if
+it finds an available Volume, it will move it out of the Scratch pool into
+the Pool currently being used by the job.
+
+
+\section{The Catalog Resource}
+\label{CatalogResource}
+\index[general]{Resource!Catalog}
+\index[general]{Catalog Resource}
+
+The Catalog Resource defines what catalog to use for the current job.
+Currently, Bacula can only handle a single database server (SQLite, MySQL,
+PostgreSQL) that is defined when configuring {\bf Bacula}.  However, there
+may be as many Catalogs (databases) defined as you wish.  For example, you
+may want each Client to have its own Catalog database, or you may want
+backup jobs to use one database and verify or restore jobs to use another
+database. 
+
+Since SQLite is compiled in, it always runs on the same machine
+as the Director and the database must be directly accessible (mounted) from
+the Director.  However, since both MySQL and PostgreSQL are networked
+databases, they may reside either on the same machine as the Director
+or on a different machine on the network.  See below for more details.
+
+\begin{description}
+
+\item [Catalog]
+   \index[dir]{Catalog}
+   \index[dir]{Directive!Catalog}
+   Start of the Catalog resource.  At least one Catalog resource must be
+defined.
+
+
+\item [Name = \lt{}name\gt{}]
+   \index[dir]{Name}
+   \index[dir]{Directive!Name}
+   The name of the Catalog.  No necessary relation to the database server
+   name.  This name will be specified in the Client resource directive
+   indicating that all catalog data for that Client is maintained in this
+   Catalog.  This directive is required.
+
+\item [password = \lt{}password\gt{}]
+   \index[dir]{password}
+   \index[dir]{Directive!password}
+   This specifies the password to use when logging into the database.  This
+   directive is required.
+
+\item [DB Name = \lt{}name\gt{}]
+   \index[dir]{DB Name}
+   \index[dir]{Directive!DB Name}
+   This specifies the name of the database.  If you use multiple catalogs
+   (databases), you specify which one here.  If you are using an external
+   database server rather than the internal one, you must specify a name
+   that is known to the server (i.e.  you explicitly created the Bacula
+   tables using this name.  This directive is required.
+
+\item [user = \lt{}user\gt{}]
+   \index[dir]{user}
+   \index[dir]{Directive!user}
+   This specifies what user name to use to log into the database.  This
+   directive is required.
+
+\item [DB Socket = \lt{}socket-name\gt{}]
+   \index[dir]{DB Socket}
+   \index[dir]{Directive!DB Socket}
+   This is the name of  a socket to use on the local host to connect to the
+   database. This directive is used only by MySQL and is ignored by  SQLite.
+   Normally, if neither {\bf DB Socket} or {\bf DB Address}  are specified, MySQL
+   will use the default socket. If the DB Socket is specified, the
+   MySQL server must reside on the same machine as the Director.
+
+\item [DB Address = \lt{}address\gt{}]
+   \index[dir]{DB Address}
+   \index[dir]{Directive!DB Address}
+   This is the host address  of the database server. Normally, you would specify
+   this instead  of {\bf DB Socket} if the database server is on another machine.
+   In that case, you will also specify {\bf DB Port}. This directive  is used
+   only by MySQL and PostgreSQL and is ignored by SQLite if provided.  
+   This directive is optional.  
+
+\item [DB Port = \lt{}port\gt{}]
+   \index[dir]{DB Port}
+   \index[dir]{Directive!DB Port}
+   This defines the port to  be used in conjunction with {\bf DB Address} to
+   access the  database if it is on another machine. This directive is used  only
+   by MySQL and PostgreSQL and is ignored by SQLite if provided.  This
+   directive is optional.
+
+%% \item [Multiple Connections = \lt{}yes\vb{}no\gt{}]
+%% \index[dir]{Multiple Connections}
+%% \index[dir]{Directive!Multiple Connections}
+%% By default, this  directive is set to no. In that case, each job that uses
+the
+%% same Catalog will use a single connection to the catalog. It will  be shared,
+%% and Bacula will allow only one Job at a time to  communicate. If you set this
+%% directive to yes, Bacula will  permit multiple connections to the database,
+%% and the database  must be multi-thread capable. For SQLite and PostgreSQL,
+%% this is  no problem. For MySQL, you must be *very* careful to have the 
+%% multi-thread version of the client library loaded on your system.  When this
+%% directive is set yes, each Job will have a separate  connection to the
+%% database, and the database will control the  interaction between the
+different
+%% Jobs. This can significantly  speed up the database operations if you are
+%% running multiple  simultaneous jobs. In addition, for SQLite and PostgreSQL,
+%% Bacula  will automatically enable transactions. This can significantly  speed
+%% up insertion of attributes in the database either for  a single Job or
+%% multiple simultaneous Jobs.  
+
+%% This directive has not been tested. Please test carefully  before running it
+%% in production and report back your results.  
+
+\end{description}
+
+The following is an example of a valid Catalog resource definition: 
+
+\footnotesize
+\begin{verbatim}
+Catalog
+{
+  Name = SQLite
+  dbname = bacula;
+  user = bacula;
+  password = ""                       # no password = no security
+}
+\end{verbatim}
+\normalsize
+
+or for a Catalog on another machine: 
+
+\footnotesize
+\begin{verbatim}
+Catalog
+{
+  Name = MySQL
+  dbname = bacula
+  user = bacula
+  password = ""
+  DB Address = remote.acme.com
+  DB Port = 1234
+}
+\end{verbatim}
+\normalsize
+
+\section{The Messages Resource}
+\label{MessagesResource2}
+\index[general]{Resource!Messages}
+\index[general]{Messages Resource}
+
+For the details of the Messages Resource, please see the 
+\ilink{Messages Resource Chapter}{MessagesChapter} of this
+manual. 
+
+\section{The Console Resource}
+\label{ConsoleResource1}
+\index[general]{Console Resource}
+\index[general]{Resource!Console}
+
+As of Bacula version 1.33 and higher, there are three different kinds of
+consoles, which the administrator or user can use to interact with the
+Director. These three kinds of consoles comprise three different security
+levels. 
+
+\begin{itemize}
+\item The first console type is an {\bf anonymous} or {\bf default}  console,
+   which has full privileges.  There is no console resource necessary for
+   this type since the password is specified in the Director's resource and
+   consequently such consoles do not have a name as defined on a {\bf Name
+   =} directive.  This is the kind of console that was initially
+   implemented in versions prior to 1.33 and remains valid.  Typically you
+   would use it only for  administrators.  
+
+\item The second type of console, and new to version 1.33 and  higher is a
+   "named" console defined within a Console resource in both the Director's
+   configuration file and in the Console's configuration file.  Both the
+   names and the passwords in these two entries must match much as is the
+   case for Client programs.
+
+   This second type of console begins with absolutely no privileges except
+   those explicitly specified in the Director's Console resource.  Thus you
+   can have multiple Consoles with different names and passwords, sort of
+   like multiple users, each with different privileges.  As a default,
+   these consoles can do absolutely nothing -- no commands whatsoever.  You
+   give them privileges or rather access to commands and resources by
+   specifying access control lists in the Director's Console resource.  The
+   ACLs are specified by a directive followed by a list of access names.
+   Examples of this are shown below.
+
+\item The third type of console is similar to the above mentioned  one in that
+   it requires a Console resource definition in both the Director and the
+   Console.  In addition, if the console name, provided on the {\bf Name =}
+   directive, is the same as a Client name, that console is permitted to
+   use the {\bf SetIP} command to change the Address directive in the
+   Director's client resource to the IP address of the Console.  This
+   permits portables or other machines using DHCP (non-fixed IP addresses)
+   to "notify" the Director of their current IP address.
+\end{itemize}
+
+The Console resource is optional and need not be specified. The following
+directives are permitted within the Director's configuration resource: 
+
+\begin{description}
+
+\item [Name = \lt{}name\gt{}]
+   \index[dir]{Name}
+   \index[dir]{Directive!Name}
+   The name of the console. This  name must match the name specified in the
+Console's configuration  resource (much as is the case with Client
+definitions).  
+
+\item [Password = \lt{}password\gt{}]
+   \index[dir]{Password}
+   \index[dir]{Directive!Password}
+   Specifies the password that must be supplied for a named Bacula Console
+   to be authorized.  The same password must appear in the {\bf Console}
+   resource of the Console configuration file.  For added security, the
+   password is never actually passed across the network but rather a
+   challenge response hash code created with the password.  This directive
+   is required.  If you have either {\bf /dev/random} {\bf bc} on your
+   machine, Bacula will generate a random password during the configuration
+   process, otherwise it will be left blank.
+
+   The password is plain text.  It is not generated through any special
+   process.  However, it is preferable for security reasons to choose 
+   random text.      
+
+\item [JobACL = \lt{}name-list\gt{}]
+   \index[dir]{JobACL}
+   \index[dir]{Directive!JobACL}
+   This directive is used to specify a list of Job resource names that can
+   be accessed by the console.  Without this directive, the console cannot
+   access any of the Director's Job resources.  Multiple Job resource names
+   may be specified by separating them with commas, and/or by specifying
+   multiple JobACL directives.  For example, the directive may be specified
+   as:
+
+\footnotesize
+\begin{verbatim}
+    JobACL = kernsave, "Backup client 1", "Backup client 2"
+    JobACL = "RestoreFiles"
+    
+\end{verbatim}
+\normalsize
+
+With the above specification, the console can access the Director's  resources
+for the four jobs named on the JobACL directives,  but for no others.  
+
+\item [ClientACL = \lt{}name-list\gt{}]
+   \index[dir]{ClientACL}
+   \index[dir]{Directive!ClientACL}
+   This directive is used to  specify a list of Client resource names that can
+be
+accessed by  the console.  
+
+\item [StorageACL = \lt{}name-list\gt{}]
+   \index[dir]{StorageACL}
+   \index[dir]{Directive!StorageACL}
+   This directive is used to  specify a list of Storage resource names that can
+be accessed by  the console.  
+
+\item [ScheduleACL = \lt{}name-list\gt{}]
+   \index[dir]{ScheduleACL}
+   \index[dir]{Directive!ScheduleACL}
+   This directive is used to  specify a list of Schedule resource names that can
+   be accessed by the console.
+
+\item [PoolACL = \lt{}name-list\gt{}]
+   \index[dir]{PoolACL}
+   \index[dir]{Directive!PoolACL}
+   This directive is used to  specify a list of Pool resource names that can be
+   accessed by the console.
+
+\item [FileSetACL = \lt{}name-list\gt{}]
+   \index[dir]{FileSetACL}
+   \index[dir]{Directive!FileSetACL}
+   This directive is used to specify a list of FileSet resource names that
+   can be accessed by the console.
+
+\item [CatalogACL = \lt{}name-list\gt{}]
+   \index[dir]{CatalogACL}
+   \index[dir]{Directive!CatalogACL}
+   This directive is used to specify a list of Catalog resource names that
+   can be accessed by the console.
+
+\item [CommandACL = \lt{}name-list\gt{}]
+   \index[dir]{CommandACL}
+   \index[dir]{Directive!CommandACL}
+   This directive is used to specify a list of of console commands that can
+   be executed by the console.
+
+\item [WhereACL = \lt{}string\gt{}]
+   \index[dir]{WhereACL}
+   \index[dir]{Directive!WhereACL}
+   This directive permits you to specify where a restricted console
+   can restore files. If this directive is not specified, only the
+   default restore location is permitted (normally {\bf
+   /tmp/bacula-restores}. If {\bf *all*} is specified any path the
+   user enters will be accepted (not very secure), any other
+   value specified (there may be multiple WhereACL directives) will
+   restrict the user to use that path. For example, on a Unix system,
+   if you specify "/", the file will be restored to the original 
+   location.  This directive is untested.
+
+\end{description}
+
+Aside from Director resource names and console command names, the special
+keyword {\bf *all*} can be specified in any of the above access control lists.
+When this keyword is present, any resource or command name (which ever is
+appropriate) will be accepted. For an example configuration file, please see
+the 
+\ilink{Console Configuration}{ConsoleConfChapter} chapter of this
+manual. 
+
+\section{The Counter Resource}
+\label{CounterResource}
+\index[general]{Resource!Counter}
+\index[general]{Counter Resource}
+
+The Counter Resource defines a counter variable that can be accessed by
+variable expansion used for creating Volume labels with the {\bf LabelFormat}
+directive. See the 
+\ilink{LabelFormat}{Label} directive in this chapter for more
+details. 
+
+\begin{description}
+
+\item [Counter] 
+   \index[dir]{Counter}
+   \index[dir]{Directive!Counter}
+   Start of the Counter resource.  Counter directives are optional. 
+
+\item [Name = \lt{}name\gt{}]
+   \index[dir]{Name}
+   \index[dir]{Directive!Name}
+   The name of the Counter.  This is the name you will use in the variable
+expansion  to reference the counter value.  
+
+\item [Minimum = \lt{}integer\gt{}]
+   \index[dir]{Minimum}
+   \index[dir]{Directive!Minimum}
+   This specifies the minimum  value that the counter can have. It also becomes
+the default.  If not supplied, zero is assumed.  
+
+\item [Maximum = \lt{}integer\gt{}]
+   \index[dir]{Maximum}
+   \index[dir]{Directive!Maximum}
+   \index[dir]{Directive!Maximum}
+   This is the maximum value  value that the counter can have. If not specified
+or set to  zero, the counter can have a maximum value of 2,147,483,648  (2 to
+the 31 power). When the counter is incremented past  this value, it is reset
+to the Minimum.  
+
+\item [*WrapCounter = \lt{}counter-name\gt{}]
+   \index[dir]{*WrapCounter}
+   \index[dir]{Directive!*WrapCounter}
+   If this value  is specified, when the counter is incremented past the
+maximum 
+and thus reset to the minimum, the counter specified on the  {\bf WrapCounter}
+is incremented. (This is not currently  implemented). 
+
+\item [Catalog = \lt{}catalog-name\gt{}]
+   \index[dir]{Catalog}
+   \index[dir]{Directive!Catalog}
+   If this directive is  specified, the counter and its values will be saved in 
+the specified catalog. If this directive is not present, the  counter will be
+redefined each time that Bacula is started. 
+\end{description}
+
+\section{Example Director Configuration File}
+\label{SampleDirectorConfiguration}
+\index[general]{File!Example Director Configuration}
+\index[general]{Example Director Configuration File}
+
+An example Director configuration file might be the following: 
+
+\footnotesize
+\begin{verbatim}
+#
+# Default Bacula Director Configuration file
+#
+#  The only thing that MUST be changed is to add one or more
+#   file or directory names in the Include directive of the
+#   FileSet resource.
+#
+#  For Bacula release 1.15 (5 March 2002) -- redhat
+#
+#  You might also want to change the default email address
+#   from root to your address.  See the "mail" and "operator"
+#   directives in the Messages resource.
+#
+Director {                            # define myself
+  Name = rufus-dir
+  QueryFile = "/home/kern/bacula/bin/query.sql"
+  WorkingDirectory = "/home/kern/bacula/bin/working"
+  PidDirectory = "/home/kern/bacula/bin/working"
+  Password = "XkSfzu/Cf/wX4L8Zh4G4/yhCbpLcz3YVdmVoQvU3EyF/"
+}
+# Define the backup Job
+Job {
+  Name = "NightlySave"
+  Type = Backup
+  Level = Incremental                 # default
+  Client=rufus-fd
+  FileSet="Full Set"
+  Schedule = "WeeklyCycle"
+  Storage = DLTDrive
+  Messages = Standard
+  Pool = Default
+}
+Job {
+  Name = "Restore"
+  Type = Restore
+  Client=rufus-fd
+  FileSet="Full Set"
+  Where = /tmp/bacula-restores
+  Storage = DLTDrive
+  Messages = Standard
+  Pool = Default
+}
+   
+# List of files to be backed up
+FileSet {
+  Name = "Full Set"
+  Include {
+    Options { signature=SHA1}
+#
+#  Put your list of files here, one per line or include an
+#    external list with:
+#
+#    @file-name
+#
+#  Note: / backs up everything
+  File = /
+}
+  Exclude {}
+}
+# When to do the backups
+Schedule {
+  Name = "WeeklyCycle"
+  Run = level=Full sun at 2:05
+  Run = level=Incremental mon-sat at 2:05
+}
+# Client (File Services) to backup
+Client {
+  Name = rufus-fd
+  Address = rufus
+  Catalog = MyCatalog
+  Password = "MQk6lVinz4GG2hdIZk1dsKE/LxMZGo6znMHiD7t7vzF+"
+  File Retention = 60d      # sixty day file retention
+  Job Retention = 1y        # 1 year Job retention
+  AutoPrune = yes           # Auto apply retention periods
+}
+# Definition of DLT tape storage device
+Storage {
+  Name = DLTDrive
+  Address = rufus
+  Password = "jMeWZvfikUHvt3kzKVVPpQ0ccmV6emPnF2cPYFdhLApQ"
+  Device = "HP DLT 80"      # same as Device in Storage daemon
+  Media Type = DLT8000      # same as MediaType in Storage daemon
+}
+# Definition for a DLT autochanger device
+Storage {
+  Name = Autochanger
+  Address = rufus
+  Password = "jMeWZvfikUHvt3kzKVVPpQ0ccmV6emPnF2cPYFdhLApQ"
+  Device = "Autochanger"    # same as Device in Storage daemon
+  Media Type = DLT-8000     # Different from DLTDrive
+  Autochanger = yes
+}
+# Definition of DDS tape storage device
+Storage {
+  Name = SDT-10000
+  Address = rufus
+  Password = "jMeWZvfikUHvt3kzKVVPpQ0ccmV6emPnF2cPYFdhLApQ"
+  Device = SDT-10000        # same as Device in Storage daemon
+  Media Type = DDS-4        # same as MediaType in Storage daemon
+}
+# Definition of 8mm tape storage device
+Storage {
+  Name = "8mmDrive"
+  Address = rufus
+  Password = "jMeWZvfikUHvt3kzKVVPpQ0ccmV6emPnF2cPYFdhLApQ"
+  Device = "Exabyte 8mm"
+  MediaType = "8mm"
+}
+# Definition of file storage device
+Storage {
+  Name = File
+  Address = rufus
+  Password = "jMeWZvfikUHvt3kzKVVPpQ0ccmV6emPnF2cPYFdhLApQ"
+  Device = FileStorage
+  Media Type = File
+}
+# Generic catalog service
+Catalog {
+  Name = MyCatalog
+  dbname = bacula; user = bacula; password = ""
+}
+# Reasonable message delivery -- send most everything to
+#   the email address and to the console
+Messages {
+  Name = Standard
+  mail = root@localhost = all, !skipped, !terminate
+  operator = root@localhost = mount
+  console = all, !skipped, !saved
+}
+    
+# Default pool definition
+Pool {
+  Name = Default
+  Pool Type = Backup
+  AutoPrune = yes
+  Recycle = yes
+}
+#
+# Restricted console used by tray-monitor to get the status of the director
+#
+Console {
+  Name = Monitor
+  Password = "GN0uRo7PTUmlMbqrJ2Gr1p0fk0HQJTxwnFyE4WSST3MWZseR"
+  CommandACL = status, .status
+}
+\end{verbatim}
+\normalsize

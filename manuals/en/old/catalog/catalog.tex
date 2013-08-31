@@ -1,0 +1,83 @@
+%%
+%%
+%%  The following characters must be preceded by a backslash
+%%    to be entered as printable characters:
+%%
+%%   # $ % & ~ _ ^ \ { }
+%%
+
+\documentclass[10pt,a4paper]{book}
+
+\topmargin -0.5in
+\oddsidemargin 0.0in
+\evensidemargin 0.0in
+\textheight 10in
+\textwidth 6.5in
+
+\usepackage{html}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{bacula}
+\usepackage{longtable}
+\usepackage{makeidx}
+\usepackage{index}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{url}
+
+
+\makeindex
+\newindex{general}{idx}{ind}{General Index}
+
+\sloppy
+
+\begin{document}
+\sloppy
+
+\newfont{\bighead}{cmr17 at 36pt}
+\parskip 10pt
+\parindent 0pt
+
+\title{\includegraphics{\idir bacula-logo.eps} \\ \bigskip
+  \Huge{Bacula Catalog Database Guide}
+  \begin{center}
+   \large{It comes in the night and sucks 
+          the essence from your computers. }
+  \end{center}
+}
+
+
+\author{Kern Sibbald}
+\date{\vspace{1.0in}\today \\
+      This manual documents Bacula version \input{version} \\
+      \vspace{0.2in}
+      Copyright \copyright 1999-2009, Free Software Foundation Europe
+      e.V. \\
+      \vspace{0.2in}
+  Permission is granted to copy, distribute and/or modify this document under the terms of the
+  GNU Free Documentation License, Version 1.2 published by the Free Software Foundation; 
+  with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
+  A copy of the license is included in the section entitled "GNU Free Documentation License".
+}
+
+\maketitle
+
+\clearpage
+\tableofcontents
+\clearpage
+
+\include{catmaintenance}
+\include{mysql}
+\include{postgresql}
+\include{sqlite}
+\include{fdl}
+
+
+% The following line tells link_resolver.pl to not include these files:
+% nolinks developersi baculai-dir baculai-fd baculai-sd baculai-console baculai-main
+
+% pull in the index
+\clearpage
+\printindex[general]
+
+\end{document}

@@ -1,0 +1,42 @@
+              Technical notes on version 1.3-04Oct
+                       06 October 2001
+                        Kern Sibbald
+
+General:
+- Added mutex deadlock detection (don't recommend
+  enabling it because it prints all deadlocks, even
+  ones that are resolved).
+- Important reworking done on the End of Media handling.
+  I think this time, we should be pretty close to having
+  it work.
+
+Changes submitted this submission:
+- Enhanced the P and V defines by creating subroutines
+  if DEBUG_MUTEX is set that detects a mutex that is
+  locked if you are going to lock it. This will cause
+  an error message to print (not necessarily a real error).
+- Fixed an erroneous fwrite() statement that incorrectly tested
+  for bytes transferred thus always producing an error. This 
+  was only in the homebrew database.
+- More cleanup in the Bacula database routines -- return
+  correct address during get for subsequent record change.
+- Added a new field to bnet_connect() that suppresses the
+  warning messages when not able to connect. This is used
+  in the console program.
+- Moved the connection timeouts to connect_to_storage_daemon
+  and connect_to_file_daemon so that the console program can
+  limit the wait time if the daemon is not running.  Generally
+  it is now set to 15 seconds in the console program.
+- Removed the Errors output line from the backup summary printout
+  because errors are not yet returned to the Director.
+- Enhanced the "run" command in the console program to produce
+  a full printout of the options it is going to use. It gives
+  you the choice to continue or not. More coding is needed to
+  allow you to change the options before proceeding.
+- Modified the status command to prompt for the status you
+  want. If you enter "status all", it will give you a status
+  of all the daemons.
+- Remove the tape mount time from the calculations when computing
+  bytes/sec in the Storage daemon.
+- Return unique error codes when doing label or mount commands
+  from the console.

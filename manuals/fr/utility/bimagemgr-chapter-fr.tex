@@ -1,0 +1,215 @@
+b%%
+%%
+%%  The following characters must be preceded by a backslash
+%%    to be entered as printable characters:
+%%
+%%   # $ % & ~ _ ^ \ { }
+%%  
+%% Translator : Sebastien Guilbaud / sebastien.guilbaud@bull.net
+
+\section{bimagemgr}
+\label{bimagemgr}
+\index[general]{Bimagemgr }
+
+{\bf bimagemgr} est un utilitaire destiné à ceux qui sauvegardent vers des 
+volumes disque afin de les graver ensuite sur CD, plutôt que vers des bandes.
+C'est une interface web écrite en Perl qui est utilisée pour détecter quand un
+volume doit être gravé. Il nécessite : 
+
+\begin{itemize}
+\item Un serveur web fonctionnant sur le serveur Bacula 
+\item Un graveur de CD installé et configuré sur le serveur Bacula 
+\item Le paquet cdrtools installé sur le serveur Bacula 
+\item perl, le module perl-DBI, et l'un des modules DBD-MySQL, DBD-SQLite ou
+DBD-PostgreSQL. 
+\end{itemize}
+
+Le gravage de DVD n'est pas supporté actuellement par {\bf bimagemgr} mais c'est
+prévu pour une future version. 
+
+\subsection{Installation de bimagemgr}
+\index[general]{bimagemgr!Installation }
+\index[general]{Installation de bimagemgr}
+
+
+Installation depuis les sources :
+% TODO: use itemized list for this?
+% SG : DONE :)
+\begin{enumerate}
+\item Vérifiez le Makefile et adaptez-le à votre configuration au besoin.
+\item Adaptez config.pm à votre configuration.
+\item Lancez un 'make install' en tant que root.
+\item Modifiez votre \texttt{httpd.conf} et modifiez la valeur de la directive
+    Timeout value. Le serveur web ne doit pas expirer et donc couper la 
+    connexion avant que le gravage ne soit terminé. La valeur exacte dépend de
+    la vitesse de votre graveur et du fait que vous graviez le CD sur le serveur
+    Bacula ou bien sur une autre machine en réseau. Dans mon cas, je l'ai 
+    positionné à 1000 secondes. Redémarrez httpd par la suite pour prendre en
+    compte vos modifications.
+\item Assurez-vous que cdrecord est bien setuid root.
+\end{enumerate}
+% TODO: I am pretty sure cdrecord can be used without setuid root
+% TODO: as long as devices are setup correctly
+
+Installation depuis des paquets RPM :
+% TODO: use itemized list for this?
+% SG : DONE 
+\begin{enumerate}
+\item Installez le paquet RPM correspondant à votre plate-forme.
+\item Modifiez /cgi-bin/config.pm pour l'adapter à votre configuration.
+\item Modifiez votre \texttt{httpd.conf} et modifiez la valeur de la directive
+    Timeout value. Le serveur web ne doit pas expirer et donc couper la 
+    connexion avant que le gravage ne soit terminé. La valeur exacte dépend de
+    la vitesse de votre graveur et du fait que vous graviez le CD sur le serveur
+    Bacula ou bien sur une autre machine en réseau. Dans mon cas, je l'ai 
+    positionné à 1000 secondes. Redémarrez httpd par la suite pour prendre en
+    compte vos modifications.
+\item Assurez-vous que cdrecord est bien setuid root.
+\end{enumerate}
+
+Pour les versions de Bacula inférieures à la 1.36 :
+% TODO: use itemized list for this?
+% SG : DONE 
+\begin{enumerate}
+\item Adaptez la partie configurable de config.pm à votre environnement.
+\item Lancez \texttt{/etc/bacula/create\_cdimage\_table.pl} depuis une console
+    en root de votre serveur Bacula pour ajouter la table CDImage à votre base
+    de données Bacula.
+\end{enumerate}
+
+Accéder aux fichiers de Volume :
+Les fichiers de Volume ont des permissions à 640 par défaut, et ne peuvent donc
+être lues que par root. L'approche recommandée est la suivante (ceci fonctionne
+seulement si bimagemgr et Apache fonctionnent sur le même serveur que Bacula) :
+
+Pour Bacula en 1.34 ou 1.36 installé depuis les sources :
+% TODO: use itemized list for this?
+% SG : DONE 
+\begin{enumerate}
+\item Ajoutez un nouveau groupe d'utilisateurs appelé "bacula" et ajoutez
+    l'utilisateur "apache" à ce groupe (Redhat/Mandrake). Sur une SuSE,
+    l'utilisateur à ajouter au groupe est "wwwrun".
+\item Modifiez le propriétaire des tous les fichiers de Volume à root.bacula
+\item Modifiez le script de démarrage \texttt{/etc/bacula/bacula} pour 
+    positionner \texttt{SD\_USER=root} et \texttt{SD\_GROUP=bacula}. Redémarrez 
+    Bacula.
+\end{enumerate}
+
+Note: L'étape 3 devrait aussi comprendre la modification de 
+\texttt{/etc/init.d/bacula-sd} mais les versions de ce fichier antérieures à la 
+1.36 ne le supportent pas. Il serait nécessaire dans ce cas de lancer 
+\texttt{/etc/bacula/bacula restart} après un reboot du serveur.
+
+Pour Bacula 1.38 installé depuis les sources :
+% TODO: use itemized list for this?
+% SG : DONE 
+\begin{enumerate}
+\item Votre déclaration de \texttt{configure} doit comprendre :
+% TODO: fix formatting here
+% SG : DONE
+\begin{alltt}
+    --with-dir-user=bacula
+    --with-dir-group=bacula
+    --with-sd-user=bacula
+    --with-sd-group=disk
+    --with-fd-user=root
+    --with-fd-group=bacula
+\end{alltt}
+\item Ajoutez l'utilisateur "apache" au groupe "bacula" pour les systèmes Redhat
+    ou Mandrake. Pour les SuSE, ajoutez l'utilisateur "wwwrun" au groupe 
+    "bacula"
+\item Vérifier/corrigez le propriétaire de tous vos fichiers de Volume Bacula à
+    root.bacula
+\end{enumerate}
+
+Pour Bacula 1.36 ou 1.38 installé depuis des paquets RPM :
+% TODO: use itemized list for this?
+% SG : DONE 
+\begin{enumerate}
+\item  Ajoutez l'utilisateur "apache" au groupe "bacula" pour les systèmes Redhat
+    ou Mandrake. Pour les SuSE, ajoutez l'utilisateur "wwwrun" au groupe 
+    "bacula"
+\item Vérifier/corrigez le propriétaire de tous vos fichiers de Volume Bacula à
+    root.bacula
+\end{enumerate}
+
+bimagemgr installé depuis un paquet RPM > 1.38.9 se charge d'ajouter l
+'utilisateur du serveur web au groupe bacula dans un script post-installation.
+Assurez-vous de modification la partie configurable de config.pm après 
+l'installation du paquet RPM.
+
+bimagemgr sera désormais capable de lire les fichiers de Volume mais ils ne sont
+toujours pas lisibles par tout le moned
+
+Si vous utilisez bimagemgr depuis une autre machine (déconseillé), vous allez
+avoir besoin de changer les droits sur tous les fichiers de Volume en 644
+pour mettre d'y accéder par exemple en NFS (entre autres). Cette approche ne
+doit être choisie que si vous êtes certain de la sécurité de votre 
+environnement car dans ce cas les Volumes de sauvegarde peuvent être lus par
+n'importe qui.
+
+\subsection{Utilisation de bimagemgr}
+\index[general]{bimagemgr!Utilisation }
+\index[general]{Utilisation de bimagemgr}
+
+En appelant la programme à partir de votre navigateur, c'est-à-dire  
+\url{http://localhost/cgi-bin/bimagemgr.pl}, vous obtiendrez un affichage comme
+à la figure \ref{fig:baculacdimagemanager}
+% TODO: use tex to say figure number
+% SG : DONE
+Le programme interroge la base de données d Bacula et affiche tous les Volumes
+avec la date de leur dernière écriture et la date à laquelle ils ont été gravés.
+Si un Volume doit être gravé (modifié depuis le dernier gravage), un bouton
+"Burn" sera affiché dans la dernière colonne à droite
+
+% small kludge to correct strange spacing caused by large figures later.
+\vfill
+~
+
+\begin{figure}[H]
+\includegraphics[width=14cm]{\idir bimagemgr1.eps} 
+% TODO: use tex to say figure number
+% SG : DONE
+\caption{\label{fig:baculacdimagemanager}Gestionnaires d'images CD Bacula}
+\end{figure}
+
+Insérez un support vierge dans votre graveur et cliquez sur le bouton "Burn".
+Ceci va ouvrir une fenêtre popup comme la figure 
+\ref{fig:baculacdimageburnprogress} pour afficher la progression du gravage. 
+
+% TODO: use tex to say figure number
+% SG : DONE
+
+\begin{figure}[H]
+\includegraphics[width=14cm]{\idir bimagemgr2.eps} 
+% TODO: use tex to say figure number
+% SG : DONE
+\caption{\label{fig:baculacdimageburnprogress}Fenêtre de progression du gravage 
+d'une image CD Bacula}
+\end{figure}
+
+A la fin du gravage, la fenêtre popup affichera les résultats de cdrecord comme
+% TODO: use tex to say figure number
+% SG : DONE
+vous pouvez le voir à la figure \ref{fig:baculacdimageburnresults}. Fermez cette
+fenêtre et rafraîchissez la fenêtre principale. La date du dernier gravage aura
+été mise à jour et le bouton "Burn" disparaîtra pour ce volume. Si le gravage a 
+échoué, vous pouvez réinitialiser la date de dernier gravage pour ce volume en
+cliquant sur le lien "Reset". 
+
+\begin{figure}[H]
+\includegraphics[width=14cm]{\idir bimagemgr3.eps} 
+% TODO: use tex to say figure number
+% SG : DONE
+\caption{\label{fig:baculacdimageburnresults}Résultats du gravage d'une image CD
+Bacula}
+\end{figure}
+
+Sur la dernière ligne de la fenêtre principale, vous allez trouver deux boutons
+supplémentaires appelés "Burn Catalog" et "Blank CDRW". "Burn Catalog" fera une
+copie de votre catalogue Bacula sur disque. Si vous utilisez des supports
+réinscriptibles (CD-RW) au lieu de CD-R, le bouton "Blank CDRW" vous permettra
+d'effacer le disque avant de graver de nouveau dessus. La copie régulière de vos
+volumes et de votre catalogue vers des CD avec {\bf bimagemgr} vous permet de
+tout reconstruire facilement en cas de désastre sur le serveur Bacula.
+

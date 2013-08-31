@@ -1,0 +1,553 @@
+%%
+%%
+
+\chapter{Using Stunnel to Encrypt Communications}
+\label{StunnelChapter}
+\index[general]{Using Stunnel to Encrypt Communications to Clients }
+
+Prior to version 1.37, Bacula did not have built-in communications encryption.
+Please see the \ilink {TLS chapter}{CommEncryption} if you are using Bacula
+1.37 or greater.
+
+Without too much effort, it is possible to encrypt the communications
+between any of the daemons. This chapter will show you how to use {\bf
+stunnel} to encrypt communications to your client programs. We assume the
+Director and the Storage daemon are running on one machine that will be called
+{\bf server} and the Client or File daemon is running on a different machine
+called {\bf client}. Although the details may be slightly different, the same
+principles apply whether you are encrypting between Unix, Linux, or Win32
+machines. This example was developed between two Linux machines running
+stunnel version 4.04-4 on a Red Hat Enterprise 3.0 system. 
+
+\section{Communications Ports Used}
+\index[general]{Used!Communications Ports }
+\index[general]{Communications Ports Used }
+
+First, you must know that with the standard Bacula configuration, the Director
+will contact the File daemon on port 9102. The File daemon then contacts the
+Storage daemon using the address and port parameters supplied by the Director.
+The standard port used will be 9103. This is the typical server/client view of
+the world, the File daemon is a server to the Director (i.e. listens for the
+Director to contact it), and the Storage daemon is a server to the File
+daemon.
+
+\section{Encryption}
+\index[general]{Encryption }
+
+The encryption is accomplished between the Director and the File daemon by
+using an stunnel on the Director's machine (server) to encrypt the data and to
+contact an stunnel on the File daemon's machine (client), which decrypts the
+data and passes it to the client. 
+
+Between the File daemon and the Storage daemon, we use an stunnel on the File
+daemon's machine to encrypt the data and another stunnel on the Storage
+daemon's machine to decrypt the data. 
+
+As a consequence, there are actually four copies of stunnel running, two on the
+server and two on the client. This may sound a bit complicated, but it really
+isn't. To accomplish this, we will need to construct four separate conf files
+for stunnel, and we will need to make some minor modifications to the
+Director's conf file. None of the other conf files need to be changed. 
+
+\section{A Picture}
+\index[general]{Picture }
+
+Since pictures usually help a lot, here is an overview of what we will be
+doing. Don't worry about all the details of the port numbers and such for the
+moment. 
+
+\footnotesize
+\begin{verbatim}
+  File daemon (client):
+                 stunnel-fd1.conf
+                   |===========|
+  Port 29102  >----| Stunnel 1 |-----> Port 9102
+                   |===========|
+                 stunnel-fd2.conf
+                   |===========|
+  Port 9103   >----| Stunnel 2 |-----> server:29103
+                   |===========|
+  Director (server):
+                 stunnel-dir.conf
+                   |===========|
+  Port 29102  >----| Stunnel 3 |-----> client:29102
+                   |===========|
+                 stunnel-sd.conf
+                   |===========|
+  Port 29103  >----| Stunnel 4 |-----> 9103
+                   |===========|
+\end{verbatim}
+\normalsize
+
+\section{Certificates}
+\index[general]{Certificates }
+
+In order for stunnel to function as a server, which it does in our diagram for
+Stunnel 1 and Stunnel 4, you must have a certificate and the key. It is
+possible to keep the two in separate files, but normally, you keep them in one
+single .pem file. You may create this certificate yourself in which case, it
+will be self-signed, or you may have it signed by a CA. 
+
+If you want your clients to verify that the server is in fact valid (Stunnel 2
+and Stunnel 3), you will need to have the server certificates signed by a CA
+(Certificate Authority), and you will need to have the CA's public certificate
+(contains the CA's public key). 
+
+Having a CA signed certificate is {\bf highly} recommended if you are using
+your client across the Internet, otherwise you are exposed to the man in the
+middle attack and hence loss of your data. 
+
+See below for how to create a self-signed certificate. 
+
+\section{Securing the Data Channel}
+\index[general]{Channel!Securing the Data }
+\index[general]{Securing the Data Channel }
+
+To simplify things a bit, let's for the moment consider only the data channel.
+That is the connection between the File daemon and the Storage daemon, which
+takes place on port 9103. In fact, in a minimalist solution, this is the only
+connection that needs to be encrypted, because it is the one that transports your
+data. The connection between the Director and the File daemon is simply a
+control channel used to start the job and get the job status. 
+
+Normally the File daemon will contact the Storage daemon on port 9103
+(supplied by the Director), so we need an stunnel that listens on port 9103 on
+the File daemon's machine, encrypts the data and sends it to the Storage
+daemon. This is depicted by Stunnel 2 above. Note that this stunnel is
+listening on port 9103 and sending to server:29103. We use port 29103 on the
+server because if we would send the data to port 9103, it would go directly to the
+Storage daemon, which doesn't understand encrypted data. On the server
+machine, we run Stunnel 4, which listens on port 29103, decrypts the data and
+sends it to the Storage daemon, which is listening on port 9103. 
+
+\section{Data Channel Configuration}
+\index[general]{Modification of bacula-dir.conf for the Data Channel }
+\index[general]{baculoa-dir.conf!Modification for the Data Channel }
+
+The Storage resource of the bacula-dir.conf normally looks something like the
+following: 
+
+\footnotesize
+\begin{verbatim}
+Storage {
+  Name = File
+  Address = server
+  SDPort = 9103
+  Password = storage_password
+  Device = File
+  Media Type = File
+}
+\end{verbatim}
+\normalsize
+
+Notice that this is running on the server machine, and it points the File
+daemon back to server:9103, which is where our Storage daemon is listening. We
+modify this to be: 
+
+\footnotesize
+\begin{verbatim}
+Storage {
+  Name = File
+  Address = localhost
+  SDPort = 9103
+  Password = storage_password
+  Device = File
+  Media Type = File
+}
+\end{verbatim}
+\normalsize
+
+This causes the File daemon to send the data to the stunnel running on
+localhost (the client machine). We could have used client as the address as
+well. 
+
+\section{Stunnel Configuration for the Data Channel}
+\index[general]{Stunnel Configuration for the Data Channel }
+
+In the diagram above, we see above Stunnel 2 that we use stunnel-fd2.conf on the
+client. A pretty much minimal config file would look like the following: 
+
+\footnotesize
+\begin{verbatim}
+client = yes
+[29103]
+accept = localhost:9103
+connect = server:29103
+\end{verbatim}
+\normalsize
+
+The above config file does encrypt the data but it does not require a
+certificate, so it is subject to the man in the middle attack. The file I
+actually used, stunnel-fd2.conf, looked like this: 
+
+\footnotesize
+\begin{verbatim}
+#
+# Stunnel conf for Bacula client -> SD
+#
+pid = /home/kern/bacula/bin/working/stunnel.pid
+#
+# A cert is not mandatory here. If verify=2, a
+#  cert signed by a CA must be specified, and
+#  either CAfile or CApath must point to the CA's
+#  cert
+#
+cert = /home/kern/stunnel/stunnel.pem
+CAfile = /home/kern/ssl/cacert.pem
+verify = 2
+client = yes
+# debug = 7
+# foreground = yes
+[29103]
+accept = localhost:9103
+connect = server:29103
+\end{verbatim}
+\normalsize
+
+You will notice that I specified a pid file location because I ran stunnel
+under my own userid so I could not use the default, which requires root
+permission. I also specified a certificate that I have as well as verify level
+2 so that the certificate is required and verified, and I must supply the
+location of the CA (Certificate Authority) certificate so that the stunnel
+certificate can be verified. Finally, you will see that there are two lines
+commented out, which when enabled, produce a lot of nice debug info in the
+command window. 
+
+If you do not have a signed certificate (stunnel.pem), you need to delete the
+cert, CAfile, and verify lines. 
+
+Note that the stunnel.pem, is actually a private key and a certificate in a
+single file. These two can be kept and specified individually, but keeping
+them in one file is more convenient. 
+
+The config file, stunnel-sd.conf, needed for Stunnel 4 on the server machine
+is: 
+
+\footnotesize
+\begin{verbatim}
+#
+# Bacula stunnel conf for Storage daemon
+#
+pid = /home/kern/bacula/bin/working/stunnel.pid
+#
+# A cert is mandatory here, it may be self signed
+#  If it is self signed, the client may not use
+#  verify
+#
+cert   = /home/kern/stunnel/stunnel.pem
+client = no
+# debug = 7
+# foreground = yes
+[29103]
+accept = 29103
+connect = 9103
+\end{verbatim}
+\normalsize
+
+\section{Starting and Testing the Data Encryption}
+\index[general]{Starting and Testing the Data Encryption }
+\index[general]{Encryption!Starting and Testing the Data }
+
+It will most likely be the simplest to implement the Data Channel encryption
+in the following order: 
+
+\begin{itemize}
+\item Setup and run Bacula backing up some data on your  client machine
+   without encryption.  
+\item Stop Bacula.  
+\item Modify the Storage resource in the Director's conf  file.  
+\item Start Bacula  
+\item Start stunnel on the server with:  
+
+   \footnotesize
+\begin{verbatim}
+     stunnel stunnel-sd.conf
+  
+\end{verbatim}
+\normalsize
+
+\item Start stunnel on the client with:  
+
+   \footnotesize
+\begin{verbatim}
+    stunnel stunnel-fd2.conf
+  
+\end{verbatim}
+\normalsize
+
+\item Run a job.  
+\item If it doesn't work, turn debug on in both stunnel conf files,  restart
+   the stunnels, rerun the job, repeat until it works. 
+   \end{itemize}
+
+\section{Encrypting the Control Channel}
+\index[general]{Channel!Encrypting the Control }
+\index[general]{Encrypting the Control Channel }
+
+The Job control channel is between the Director and the File daemon, and as
+mentioned above, it is not really necessary to encrypt, but it is good
+practice to encrypt it as well. The two stunnels that are used in this case
+will be Stunnel 1 and Stunnel 3 in the diagram above. Stunnel 3 on the server
+might normally listen on port 9102, but if you have a local File daemon, this
+will not work, so we make it listen on port 29102. It then sends the data to
+client:29102. Again we use port 29102 so that the stunnel on the client
+machine can decrypt the data before passing it on to port 9102 where the File
+daemon is listening. 
+
+\section{Control Channel Configuration}
+\index[general]{Control Channel Configuration }
+
+We need to modify the standard Client resource, which would normally look
+something like: 
+
+\footnotesize
+\begin{verbatim}
+Client {
+  Name = client-fd
+  Address = client
+  FDPort = 9102
+  Catalog = BackupDB
+  Password = "xxx"
+}
+\end{verbatim}
+\normalsize
+
+to be: 
+
+\footnotesize
+\begin{verbatim}
+Client {
+  Name = client-fd
+  Address = localhost
+  FDPort = 29102
+  Catalog = BackupDB
+  Password = "xxx"
+}
+\end{verbatim}
+\normalsize
+
+This will cause the Director to send the control information to
+localhost:29102 instead of directly to the client. 
+
+\section{Stunnel Configuration for the Control Channel}
+\index[general]{Config Files for stunnel to Encrypt the Control Channel }
+
+The stunnel config file, stunnel-dir.conf, for the Director's machine would
+look like the following: 
+
+\footnotesize
+\begin{verbatim}
+#
+# Bacula stunnel conf for the Directory to contact a client
+#
+pid = /home/kern/bacula/bin/working/stunnel.pid
+#
+# A cert is not mandatory here. If verify=2, a
+#  cert signed by a CA must be specified, and
+#  either CAfile or CApath must point to the CA's
+#  cert
+#
+cert   = /home/kern/stunnel/stunnel.pem
+CAfile = /home/kern/ssl/cacert.pem
+verify = 2
+client = yes
+# debug = 7
+# foreground = yes
+[29102]
+accept = localhost:29102
+connect = client:29102
+\end{verbatim}
+\normalsize
+
+and the config file, stunnel-fd1.conf, needed to run stunnel on the Client
+would be: 
+
+\footnotesize
+\begin{verbatim}
+#
+# Bacula stunnel conf for the Directory to contact a client
+#
+pid = /home/kern/bacula/bin/working/stunnel.pid
+#
+# A cert is not mandatory here. If verify=2, a
+#  cert signed by a CA must be specified, and
+#  either CAfile or CApath must point to the CA's
+#  cert
+#
+cert   = /home/kern/stunnel/stunnel.pem
+CAfile = /home/kern/ssl/cacert.pem
+verify = 2
+client = yes
+# debug = 7
+# foreground = yes
+[29102]
+accept = localhost:29102
+connect = client:29102
+\end{verbatim}
+\normalsize
+
+\section{Starting and Testing the Control Channel}
+\index[general]{Starting and Testing the Control Channel }
+\index[general]{Channel!Starting and Testing the Control }
+
+It will most likely be the simplest to implement the Control Channel
+encryption in the following order: 
+
+\begin{itemize}
+\item Stop Bacula.  
+\item Modify the Client resource in the Director's conf  file.  
+\item Start Bacula  
+\item Start stunnel on the server with:  
+
+   \footnotesize
+\begin{verbatim}
+     stunnel stunnel-dir.conf
+  
+\end{verbatim}
+\normalsize
+
+\item Start stunnel on the client with:  
+
+   \footnotesize
+\begin{verbatim}
+    stunnel stunnel-fd1.conf
+  
+\end{verbatim}
+\normalsize
+
+\item Run a job.  
+\item If it doesn't work, turn debug on in both stunnel conf files,  restart
+   the stunnels, rerun the job, repeat until it works. 
+   \end{itemize}
+
+\section{Using stunnel to Encrypt to a Second Client}
+\index[general]{Using stunnel to Encrypt to a Second Client }
+\index[general]{Client!Using stunnel to Encrypt to a Second }
+
+On the client machine, you can just duplicate the setup that you have on the
+first client file for file and it should work fine. 
+
+In the bacula-dir.conf file, you will want to create a second client pretty
+much identical to how you did for the first one, but the port number must be
+unique. We previously used: 
+
+\footnotesize
+\begin{verbatim}
+Client {
+  Name = client-fd
+  Address = localhost
+  FDPort = 29102
+  Catalog = BackupDB
+  Password = "xxx"
+}
+\end{verbatim}
+\normalsize
+
+so for the second client, we will, of course, have a different name, and we
+will also need a different port. Remember that we used port 29103 for the
+Storage daemon, so for the second client, we can use port 29104, and the
+Client resource would look like: 
+
+\footnotesize
+\begin{verbatim}
+Client {
+  Name = client2-fd
+  Address = localhost
+  FDPort = 29104
+  Catalog = BackupDB
+  Password = "yyy"
+}
+\end{verbatim}
+\normalsize
+
+Now, fortunately, we do not need a third stunnel to on the Director's machine,
+we can just add the new port to the config file, stunnel-dir.conf, to make: 
+
+\footnotesize
+\begin{verbatim}
+#
+# Bacula stunnel conf for the Directory to contact a client
+#
+pid = /home/kern/bacula/bin/working/stunnel.pid
+#
+# A cert is not mandatory here. If verify=2, a
+#  cert signed by a CA must be specified, and
+#  either CAfile or CApath must point to the CA's
+#  cert
+#
+cert   = /home/kern/stunnel/stunnel.pem
+CAfile = /home/kern/ssl/cacert.pem
+verify = 2
+client = yes
+# debug = 7
+# foreground = yes
+[29102]
+accept = localhost:29102
+connect = client:29102
+[29104]
+accept = localhost:29102
+connect = client2:29102
+\end{verbatim}
+\normalsize
+
+There are no changes necessary to the Storage daemon or the other stunnel so
+that this new client can talk to our Storage daemon. 
+
+\section{Creating a Self-signed Certificate}
+\index[general]{Creating a Self-signed Certificate }
+\index[general]{Certificate!Creating a Self-signed }
+
+You may create a self-signed certificate for use with stunnel that will permit
+you to make it function, but will not allow certificate validation. The .pem
+file containing both the certificate and the key can be made with the
+following, which I put in a file named {\bf makepem}: 
+
+\footnotesize
+\begin{verbatim}
+#!/bin/sh
+#
+# Simple shell script to make a .pem file that can be used
+# with stunnel and Bacula
+#
+OPENSSL=openssl
+   umask 77
+   PEM1="/bin/mktemp openssl.XXXXXX"
+   PEM2="/bin/mktemp openssl.XXXXXX"
+   ${OPENSSL} req -newkey rsa:1024 -keyout $PEM1 -nodes \
+       -x509 -days 365 -out $PEM2
+   cat $PEM1 > stunnel.pem
+   echo ""   >>stunnel.pem
+   cat $PEM2 >>stunnel.pem
+   rm $PEM1 $PEM2
+\end{verbatim}
+\normalsize
+
+The above script will ask you a number of questions. You may simply answer
+each of them by entering a return, or if you wish you may enter your own data.
+
+
+\section{Getting a CA Signed Certificate}
+\index[general]{Certificate!Getting a CA Signed }
+\index[general]{Getting a CA Signed Certificate }
+
+The process of getting a certificate that is signed by a CA is quite a bit
+more complicated. You can purchase one from quite a number of PKI vendors, but
+that is not at all necessary for use with Bacula. 
+
+To get a CA signed
+certificate, you will either need to find a friend that has setup his own CA
+or to become a CA yourself, and thus you can sign all your own certificates.
+The book OpenSSL by John Viega, Matt Mesier \& Pravir Chandra from O'Reilly
+explains how to do it, or you can read the documentation provided in the
+Open-source PKI Book project at Source Forge: 
+\elink{
+http://ospkibook.sourceforge.net/docs/OSPKI-2.4.7/OSPKI-html/ospki-book.htm}
+{http://ospkibook.sourceforge.net/docs/OSPKI-2.4.7/OSPKI-html/ospki-book.htm}.
+Note, this link may change. 
+
+\section{Using ssh to Secure the Communications}
+\index[general]{Communications!Using ssh to Secure the }
+\index[general]{Using ssh to Secure the Communications }
+
+Please see the script {\bf ssh-tunnel.sh} in the {\bf examples} directory. It
+was contributed by Stephan Holl. 

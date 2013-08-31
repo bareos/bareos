@@ -1,0 +1,25 @@
+              Technical notes on version 1.22 15June02
+                       15 June 2002
+                       Kern Sibbald
+
+General:
+- Implemented a Bootstrap file parser and matcher.
+- Implemented first cut of bootstrap code in bextract  
+
+Changes submitted this submission:
+- Started clarifying different termination codes.
+- Added M_ERROR_TERM to immediately terminate the daemon -- no dump.
+  Also changed a few termination codes as appropriate.
+- Fixed create_jobmedia_record() to include all the fields such as
+  StartFile/EndFile, StartBlock/EndBlock.
+- Print user friendly message when query mode ends.
+- Fixed ls style print routines (bextract, bls, restore) to check
+  buffer size, to print the link if any, and to used edit_uint64()
+  instead of %lld.
+- Moved scan_to_eol() and s_err() to lex.c to avoid dragging in 
+  parse_conf.c for new bsr scanning code.
+- New files: bsr.h, parse_bsr.c and match_bsr.c. parse_bsr.c parses
+  a Bootstrap file, and match_bsr.c matches a bsr against a tape.
+- use strcasecmp() in several places instead of lcase().
+- Add first cut of bootstrap to bextract.
+- Added File Size limit -- writes EOF after limit exeeded.

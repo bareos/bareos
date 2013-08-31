@@ -1,0 +1,45 @@
+              Technical notes on version 1.26 14Sep02  
+                      14 September 2002
+                       Kern Sibbald
+
+General:
+- Better key generation on non OpenSSL systems.
+- 64 bit file address support if available.
+- Implement autochanger for reading
+- Lots of cleanup of tape reading code.
+- Automatically create all Pool resources when Bacula starts.
+- Implement bscan.c
+- Implement autochanger use via the Console commands "add" and "label"
+- Begin implementation of a regression script 
+- Write bootstrap after ever job
+
+Changes submitted this submission:
+- After noticing that the non OpenSSL random key generator was
+  not good on Solaris, John wrote a very nice randpass generator.
+- Integrated John's makeSessionKey for generating the FD->SD
+  authorization.
+- Statically link tools (doesn't work on Solaris).
+- Document how to debug Bacula (new chapter in the manual)
+- Remove unneeded printing of error message in sql_get.c
+- Free SD description config record (previous oversight)
+- Bash spaces when sending Director names, and unbash them when 
+  received.
+- Ensure no divide by zero in rate computation in backup.c
+- Implement WriteBootstrap in backup.c
+- Allow tape reading to request volume information for any
+  volume.
+- Create all Pool resources at startup.
+- Show only Backup jobs in Restore listing of last 20 Jobs.
+- Handle 64 bit stat packets in restore.
+- Don't do shell expansion on store_dir in config if string 
+  starts with |.  This is used for piping the program for the
+  WriteBootstrap.
+- Ignore SIGHUP -- DÈj‡Gnu was triggering this. 
+- Implement autochanger for reading, many changes to 
+  acquire_device_for_read()
+- Implement callback for reading Volume. Implement in bextract,
+  bls, and bscan.
+- Implement bscan
+- Add count to bsr.
+- Fix Volume in bsr.
+- Move autochanger code to new subroutine in mount.c

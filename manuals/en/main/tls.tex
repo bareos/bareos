@@ -1,0 +1,315 @@
+
+\chapter{Bacula TLS -- Communications Encryption}
+\label{CommEncryption}
+\index[general]{TLS -- Communications Encryption}
+\index[general]{Communications Encryption}
+\index[general]{Encryption!Communications}
+\index[general]{Encryption!Transport}
+\index[general]{Transport Encryption}
+\index[general]{TLS}
+
+Bacula TLS (Transport Layer Security) is built-in network
+encryption code to provide secure network transport similar to
+that offered by {\bf stunnel} or {\bf ssh}.  The data written to  
+Volumes by the Storage daemon is not encrypted by this code.
+For data encryption, please see the \ilink{Data Encryption
+Chapter}{DataEncryption} of this manual.
+
+The Bacula encryption implementations were written by Landon Fuller.
+
+Supported features of this code include: 
+\begin{itemize} 
+\item Client/Server TLS Requirement Negotiation 
+\item TLSv1 Connections with Server and Client Certificate
+Validation 
+\item Forward Secrecy Support via Diffie-Hellman Ephemeral Keying 
+\end{itemize}
+
+This document will refer to both "server" and "client" contexts.  These
+terms refer to the accepting and initiating peer, respectively.
+
+Diffie-Hellman anonymous ciphers are not supported by this code.  The
+use of DH anonymous ciphers increases the code complexity and places
+explicit trust upon the two-way CRAM-MD5 implementation.  CRAM-MD5 is
+subject to known plaintext attacks, and it should be considered
+considerably less secure than PKI certificate-based authentication.
+
+Appropriate autoconf macros have been added to detect and use OpenSSL  
+if enabled on the {\bf ./configure} line with {\bf \verb?--?with-openssl}
+
+\section{TLS Configuration Directives}
+Additional configuration directives have been added to all the daemons
+(Director, File daemon, and Storage daemon) as well as the various
+different Console programs.
+These new directives are defined as follows:
+
+\begin{description}
+\item [TLS Enable = \lt{}yes|no\gt{}]
+Enable TLS support.  If TLS is not enabled, none of the other TLS directives
+have any effect. In other words, even if you set {\bf TLS Require = yes} 
+you need to have TLS enabled or TLS will not be used.
+
+\item [TLS Require = \lt{}yes|no\gt{}]
+Require TLS connections.  This directive is ignored unless {\bf TLS Enable}
+is set to {\bf yes}.  If TLS is not required, and TLS is enabled, then
+Bacula will connect with other daemons either with or without TLS depending
+on what the other daemon requests.  If TLS is enabled and TLS is required,
+then Bacula will refuse any connection that does not use TLS.
+
+\item [TLS Certificate = \lt{}Filename\gt{}]
+The full path and filename of a PEM encoded TLS certificate.  It can be
+used as either a client or server certificate.  PEM stands for Privacy
+Enhanced Mail, but in this context refers to how the certificates are
+encoded.  It is used because PEM files are base64 encoded and hence ASCII
+text based rather than binary.  They may also contain encrypted
+information.
+
+\item [TLS Key = \lt{}Filename\gt{}]
+The full path and filename of a PEM encoded TLS private key.  It must
+correspond to the TLS certificate.
+
+\item [TLS Verify Peer = \lt{}yes|no\gt{}]
+Verify peer certificate.  Instructs server to request and verify the
+client's x509 certificate.  Any client certificate signed by a known-CA
+will be accepted unless the TLS Allowed CN configuration directive is used,
+in which case the client certificate must correspond to the Allowed
+Common Name specified. This directive is valid only for a server
+and not in a client context.
+
+\item [TLS Allowed CN = \lt{}string list\gt{}]
+Common name attribute of allowed peer certificates.  If this directive is
+specified, all server certificates will be verified against this list. This
+can be used to ensure that only the CA-approved Director may connect.
+This directive may be specified more than once.
+
+\item [TLS CA Certificate File = \lt{}Filename\gt{}]
+The full path and filename specifying a
+PEM encoded TLS CA certificate(s).  Multiple certificates are
+permitted in the file.  One of \emph{TLS CA Certificate File} or \emph{TLS
+CA Certificate Dir} are required in a server context if \emph{TLS
+Verify Peer} (see above) is also specified, and are always required in a client
+context.
+
+\item [TLS CA Certificate Dir = \lt{}Directory\gt{}]
+Full path to TLS CA certificate directory.  In the current implementation,
+certificates must be stored PEM encoded with OpenSSL-compatible hashes,
+which is the subject name's hash and an extension of {\bf .0}.
+One of \emph{TLS CA Certificate File} or \emph{TLS CA Certificate Dir} are
+required in a server context if \emph{TLS Verify Peer} is also specified,
+and are always required in a client context.
+
+\item [TLS DH File = \lt{}Directory\gt{}]
+Path to PEM encoded Diffie-Hellman parameter file.  If this directive is
+specified, DH key exchange will be used for the ephemeral keying, allowing
+for forward secrecy of communications.  DH key exchange adds an additional
+level of security because the key used for encryption/decryption by the
+server and the client is computed on each end and thus is never passed over
+the network if Diffie-Hellman key exchange is used.  Even if DH key
+exchange is not used, the encryption/decryption key is always passed
+encrypted.  This directive is only valid within a server context.
+
+To generate the parameter file, you
+may use openssl:
+
+\begin{verbatim} 
+   openssl dhparam -out dh1024.pem -5 1024 
+\end{verbatim}
+
+\end{description}
+
+\section{Creating a Self-signed Certificate}
+\index[general]{Creating a Self-signed Certificate }
+\index[general]{Certificate!Creating a Self-signed }
+
+You may create a self-signed certificate for use with the Bacula TLS that
+will permit you to make it function, but will not allow certificate
+validation.  The .pem file containing both the certificate and the key
+valid for ten years can be made with the following:
+
+\footnotesize
+\begin{verbatim}
+   openssl req -new -x509 -nodes -out bacula.pem -keyout bacula.pem -days 3650
+\end{verbatim}
+\normalsize
+
+The above script will ask you a number of questions. You may simply answer
+each of them by entering a return, or if you wish you may enter your own data.
+
+Note, however, that self-signed certificates will only work for the
+outgoing end of connections.  For example, in the case of the Director
+making a connection to a File Daemon, the File Daemon may be configured to
+allow self-signed certificates, but the certificate used by the
+Director must be signed by a certificate that is explicitly trusted on the
+File Daemon end.
+
+This is necessary to prevent ``man in the middle'' attacks from tools such
+as \elink{ettercap}{http://ettercap.sourceforge.net/}.  Essentially, if the
+Director does not verify that it is talking to a trusted remote endpoint,
+it can be tricked into talking to a malicious 3rd party who is relaying and
+capturing all traffic by presenting its own certificates to the Director
+and File Daemons.  The only way to prevent this is by using trusted
+certificates, so that the man in the middle is incapable of spoofing the
+connection using his own.
+
+To get a trusted certificate (CA or Certificate Authority signed
+certificate), you will either need to purchase certificates signed by a
+commercial CA or find a friend that has setup his own CA or become a CA
+yourself, and thus you can sign all your own certificates.  The book
+OpenSSL by John Viega, Matt Mesier \& Pravir Chandra from O'Reilly explains
+how to do it, or you can read the documentation provided in the Open-source
+PKI Book project at Source Forge: \elink{
+http://ospkibook.sourceforge.net/docs/OSPKI-2.4.7/OSPKI-html/ospki-book.htm}
+{http://ospkibook.sourceforge.net/docs/OSPKI-2.4.7/OSPKI-html/ospki-book.htm}.
+Note, this link may change. 
+
+The program TinyCA has a very nice Graphical User Interface 
+that allows you to easily setup and maintain your own CA.
+TinyCA can be found at
+\elink{http://tinyca.sm-zone.net/}{http://tinyca.sm-zone.net/}.
+
+
+\section{Getting a CA Signed Certificate}
+\index[general]{Certificate!Getting a CA Signed }
+\index[general]{Getting a CA Signed Certificate }
+
+The process of getting a certificate that is signed by a CA is quite a bit
+more complicated. You can purchase one from quite a number of PKI vendors, but
+that is not at all necessary for use with Bacula. To get a CA signed
+certificate, you will either need to find a friend that has setup his own CA
+or to become a CA yourself, and thus you can sign all your own certificates.
+The book OpenSSL by John Viega, Matt Mesier \& Pravir Chandra from O'Reilly
+explains how to do it, or you can read the documentation provided in the
+Open-source PKI Book project at Source Forge: 
+\elink{
+http://ospkibook.sourceforge.net/docs/OSPKI-2.4.7/OSPKI-html/ospki-book.htm}
+{http://ospkibook.sourceforge.net/docs/OSPKI-2.4.7/OSPKI-html/ospki-book.htm}.
+Note, this link may change. 
+
+\section{Example TLS Configuration Files}
+\index[general]{Example!TLS Configuration Files}
+\index[general]{TLS Configuration Files}
+
+Landon has supplied us with the TLS portions of his configuration
+files, which should help you setting up your own.  Note, this example
+shows the directives necessary for a Director to Storage daemon session.
+The technique is the same between the Director and the Client and
+for bconsole to the Director.
+
+{\bf bacula-dir.conf}
+\footnotesize
+\begin{verbatim}
+   Director {                            # define myself
+     Name = backup1-dir
+     ...
+     TLS Enable = yes
+     TLS Require = yes
+     TLS Verify Peer = yes
+     TLS Allowed CN = "bacula@backup1.example.com"
+     TLS Allowed CN = "administrator@example.com"
+     TLS CA Certificate File = /usr/local/etc/ssl/ca.pem
+     # This is a server certificate, used for incoming
+     # console connections.
+     TLS Certificate = /usr/local/etc/ssl/backup1/cert.pem
+     TLS Key = /usr/local/etc/ssl/backup1/key.pem
+   }
+
+   Storage {
+     Name = File
+     Address = backup1.example.com
+     ...
+     TLS Require = yes
+     TLS CA Certificate File = /usr/local/etc/ssl/ca.pem
+     # This is a client certificate, used by the director to
+     # connect to the storage daemon
+     TLS Certificate = /usr/local/etc/ssl/bacula@backup1/cert.pem
+     TLS Key = /usr/local/etc/ssl/bacula@backup1/key.pem
+   }
+
+   Client {
+     Name = backup1-fd
+     Address = server1.example.com
+     ...
+   
+     TLS Enable = yes
+     TLS Require = yes
+     TLS CA Certificate File = /usr/local/etc/ssl/ca.pem
+   }
+
+\end{verbatim}
+\normalsize
+
+{\bf bacula-fd.conf}
+\footnotesize
+\begin{verbatim}
+   Director {
+     Name = backup1-dir
+     ...
+     TLS Enable = yes
+     TLS Require = yes
+     TLS Verify Peer = yes
+     # Allow only the Director to connect
+     TLS Allowed CN = "bacula@backup1.example.com"
+     TLS CA Certificate File = /usr/local/etc/ssl/ca.pem
+     # This is a server certificate. It is used by connecting
+     # directors to verify the authenticity of this file daemon
+     TLS Certificate = /usr/local/etc/ssl/server1/cert.pem
+     TLS Key = /usr/local/etc/ssl/server1/key.pem
+   }
+
+  FileDaemon {
+     Name = backup1-fd
+     ...
+     # you need these TLS entries so the SD and FD can
+     # communicate
+     TLS Enable = yes
+     TLS Require = yes
+
+     TLS CA Certificate File = /usr/local/etc/ssl/ca.pem
+     TLS Certificate = /usr/local/etc/ssl/server1/cert.pem
+     TLS Key = /usr/local/etc/ssl/server1/key.pem
+}
+\end{verbatim}
+\normalsize
+
+{\bf bacula-sd.conf}
+\footnotesize
+\begin{verbatim}
+   Storage {                             # definition of myself
+     Name = backup1-sd
+     ...
+     # These TLS configuration options are used for incoming
+     # file daemon connections. Director TLS settings are handled
+     # below.
+     TLS Enable = yes
+     TLS Require = yes
+     # Peer certificate is not required/requested -- peer validity
+     # is verified by the storage connection cookie provided to the
+     # File Daemon by the director.
+     TLS Verify Peer = no
+     TLS CA Certificate File = /usr/local/etc/ssl/ca.pem
+     # This is a server certificate. It is used by connecting
+     # file daemons to verify the authenticity of this storage daemon
+     TLS Certificate = /usr/local/etc/ssl/backup1/cert.pem
+     TLS Key = /usr/local/etc/ssl/backup1/key.pem
+   }
+
+   #
+   # List Directors who are permitted to contact Storage daemon
+   #
+   Director {
+     Name = backup1-dir
+     ...
+     TLS Enable = yes
+     TLS Require = yes
+     # Require the connecting director to provide a certificate
+     # with the matching CN.
+     TLS Verify Peer = yes
+     TLS Allowed CN = "bacula@backup1.example.com"
+     TLS CA Certificate File = /usr/local/etc/ssl/ca.pem
+     # This is a server certificate. It is used by the connecting
+     # director to verify the authenticity of this storage daemon
+     TLS Certificate = /usr/local/etc/ssl/backup1/cert.pem
+     TLS Key = /usr/local/etc/ssl/backup1/key.pem
+   }
+\end{verbatim}
+\normalsize

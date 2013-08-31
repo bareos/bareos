@@ -1,0 +1,109 @@
+\chapter{La ressource Autochanger}
+\label{Autochangerres}
+\index[sd]{Autochanger Ressource }
+\index[sd]{Ressource!Autochanger }
+
+La ressource Autochanger supporte les librairies \`a un ou plusieurs 
+lecteurs en regroupant une ou plusieurs ressources Device en une 
+unit\'e nomm\'ee Autochanger dans Bacula (souvent d\'esign\'ee en tant que 
+librairie de bandes par les constructeurs). Si vous poss\'edez une 
+librairie, et si vous voulez qu'elle fonctionne correctement,  vous 
+{\bf devez} avoir une ressource Autochanger dans le fichier de 
+configuration de votre Storage Daemon, et les directives Storage 
+de votre Director {\bf doivent} se r\'ef\'erer au nom de la ressource 
+Autochanger si elles sont suppos\'ees utiliser la librairie. Dans les 
+versions ant\'erieures \`a 1.38.0, les directives Storage du Director 
+se r\'ef\'eraient directement aux ressources Device qui \'etaient des 
+librairies. D\'esormais, ce type de r\'ef\'erence directe ne fonctionne 
+plus avec les librairies. 
+ 
+\begin{description}
+\item [Name = \lt{}Autochanger-Name\gt{}]
+   \index[sd]{Name}
+   Sp\'ecifie le nom de la librairie. Ce nom est utilis\'e dans la 
+   la d\'efinition de ressource Storage du Director afin de d\'esigner 
+   la librairie. Cette directive est requise.
+
+\item [Device = \lt{}Device-name1, device-name2, ...\gt{}]
+   Sp\'ecifie le nom de la (ou des) ressource(s) Device associ\'ees \`a la 
+   librairie. Si votre librairie contient plusieurs lecteurs, vous 
+   devez sp\'ecifier plusieurs noms de ressources Device, chacun d\'esignant 
+   une ressource Device distincte qui comporte un  
+   Drive Index correspondant au num\'ero de lecteur. Vous pouvez sp\'ecifier 
+   plusieurs noms en une seule ligne s\'epar\'es par des virgules ou/et utiliser 
+   plusieurs fois la directive Device. Cette directive est requise.
+
+\item [Changer Device = {\it name-string}]
+   \index[sd]{Changer Device}
+   La cha\^ine {\bf name-string} sp\'ecifi\'ee indique le nom du fichier syst\`eme 
+   d\'esignant la librairie. S'il est sp\'ecifi\'e dans cette ressource, ce nom 
+   n'est pas requis dans la ressource Device. Le nom \'eventuellement sp\'ecifi\'e 
+   dans la ressource Device prend le pas sur celui sp\'ecifi\'e dans la ressource 
+   Autochanger.
+   
+\item [Changer Command = {\it name-string}]
+   \index[sd]{Changer Command  }
+   La cha\^ine {\bf name-string} sp\'ecifie un programme externe appel\'e pour 
+   changer de volume automatiquement \`a la demande de Bacula. La plupart du 
+   temps, vous renseignerez ce champ avec le script fourni {\bf mtx-changer} 
+   comme suit. Si cette commande est sp\'ecifi\'ee ici, elle n'a pas besoin de 
+   l'\^etre dans la ressource Device. Dans le cas o\`u elle le serait dans les deux 
+   ressources, la sp\'ecification de la ressource Device prendrait le pas sur celle 
+   de la ressource Autochanger.
+
+\end{description}
+
+Voici un exemple de d\'efinition de ressource Autochanger valide :
+
+\footnotesize
+\begin{verbatim}
+Autochanger {
+  Name = "DDS-4-changer"
+  Device = DDS-4-1, DDS-4-2, DDS-4-3
+  Changer Device = /dev/sg0
+  Changer Command = "/etc/bacula/mtx-changer %c %o %S %a %d"
+}
+Device {
+  Name = "DDS-4-1"
+  Drive Index = 0
+  Autochanger = yes
+  ...
+}
+Device {
+  Name = "DDS-4-2"
+  Drive Index = 1
+  Autochanger = yes
+  ...
+Device {
+  Name = "DDS-4-3"
+  Drive Index = 2
+  Autochanger = yes
+  Autoselect = no
+  ...
+}
+\end{verbatim}
+\normalsize
+
+Notez l'importance de la directive {\bf Autochanger = yes} dans chaque d\'efinition 
+de p\'eriph\'erique appartenant \`a une librairie. Un p\'eriph\'erique ne devrait pas \^etre 
+d\'efini comme appartenant \`a plusieurs librairies. Aussi, votre directive Device 
+dans la ressource Storage du Director devrait comporter le nom de la ressource 
+Autochanger plut\^ot que le nom de l'un des lecteurs.
+
+Si vous avez un lecteur qui appartient physiquement \`a une librairie mais que 
+vous ne souhaitez pas que Bacula puisse l'utiliser automatiquement (par exemple, 
+si vous voulez le r\'eserver pour les restaurations) vous pouvez utiliser la 
+directive :
+
+\footnotesize
+\begin{verbatim}
+Autoselect = no
+\end{verbatim}
+\normalsize
+
+\`a la ressource Device de ce lecteur. Dans ce cas, Bacula ne le s\'electionnera pas 
+automatiquement en acc\'edant \`a la librairie. Vous pouvez encore utiliser le lecteur en 
+le d\'esignant par son nom de ressource device plut\^ot que par celui de la ressource 
+Autochanger. Un exemple d'une telle d\'efinition est montr\'e ci-dessus pour le 
+lecteur DDS-4-3, qui ne sera pas s\'electionn\'e si le nom DDS-4-changer est utilis\'e 
+dans une ressource Storage, mais le sera si DDS-4-3 est utilis\'e.

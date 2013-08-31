@@ -1,0 +1,19 @@
+              Technical notes on version 1.10 01Jan02
+                       02 January 2002
+                        Kern Sibbald
+
+General:
+- Modified immortal.w and filesys.w to compile correctly
+  on Win32.
+
+
+Changes submitted this submission:
+- Changed header files in immortal.w and filesys.w to
+  use bacula.h and in the case of filesys.w to include
+  the findlib/find.h and findlib/system.h headers. 
+- Modified filesys.w to use the S_IFMT, ... defines
+  rather than the __S... defines since on Win32, the
+  __S defines are actually _S 
+- Put back a few uint32_t for JobId in place of the
+  unsigned ints.
+  

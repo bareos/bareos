@@ -1,0 +1,132 @@
+%%
+%%
+
+\chapter*{Implementing a GUI Interface}
+\label{_ChapterStart}
+\index[general]{Interface!Implementing a Bacula GUI }
+\index[general]{Implementing a Bacula GUI Interface }
+\addcontentsline{toc}{section}{Implementing a Bacula GUI Interface}
+
+\section{General}
+\index[general]{General }
+\addcontentsline{toc}{subsection}{General}
+
+This document is intended mostly for developers who wish to develop a new GUI
+interface to {\bf Bacula}. 
+
+\subsection{Minimal Code in Console Program}
+\index[general]{Program!Minimal Code in Console }
+\index[general]{Minimal Code in Console Program }
+\addcontentsline{toc}{subsubsection}{Minimal Code in Console Program}
+
+Until now, I have kept all the Catalog code in the Directory (with the
+exception of dbcheck and bscan). This is because at some point I would like to
+add user level security and access. If we have code spread everywhere such as
+in a GUI this will be more difficult. The other advantage is that any code you
+add to the Director is automatically available to both the tty console program
+and the WX program. The major disadvantage is it increases the size of the
+code -- however, compared to Networker the Bacula Director is really tiny. 
+
+\subsection{GUI Interface is Difficult}
+\index[general]{GUI Interface is Difficult }
+\index[general]{Difficult!GUI Interface is }
+\addcontentsline{toc}{subsubsection}{GUI Interface is Difficult}
+
+Interfacing to an interactive program such as Bacula can be very difficult
+because the interfacing program must interpret all the prompts that may come.
+This can be next to impossible. There are are a number of ways that Bacula is
+designed to facilitate this: 
+
+\begin{itemize}
+\item The Bacula network protocol is packet based, and  thus pieces of
+information sent can be ASCII or binary.  
+\item The packet interface permits knowing where the end of  a list is.  
+\item The packet interface permits special ``signals''  to be passed rather
+than data.  
+\item The Director has a number of commands that are  non-interactive. They
+all begin with a period,  and provide things such as the list of all Jobs, 
+list of all Clients, list of all Pools, list of  all Storage, ... Thus the GUI
+interface can get  to virtually all information that the Director has  in a
+deterministic way. See  \lt{}bacula-source\gt{}/src/dird/ua\_dotcmds.c for 
+more details on this.  
+\item Most console commands allow all the arguments to  be specified on the
+command line: e.g.  {\bf run job=NightlyBackup level=Full} 
+\end{itemize}
+
+One of the first things to overcome is to be able to establish a conversation
+with the Director. Although you can write all your own code, it is probably
+easier to use the Bacula subroutines. The following code is used by the
+Console program to begin a conversation. 
+
+\footnotesize
+\begin{verbatim}
+static BSOCK *UA_sock = NULL;
+static JCR *jcr;
+...
+  read-your-config-getting-address-and-pasword;
+  UA_sock = bnet_connect(NULL, 5, 15, "Director daemon", dir->address,
+                          NULL, dir->DIRport, 0);
+   if (UA_sock == NULL) {
+      terminate_console(0);
+      return 1;
+   }
+   jcr.dir_bsock = UA_sock;
+   if (!authenticate_director(\&jcr, dir)) {
+      fprintf(stderr, "ERR=%s", UA_sock->msg);
+      terminate_console(0);
+      return 1;
+   }
+   read_and_process_input(stdin, UA_sock);
+   if (UA_sock) {
+      bnet_sig(UA_sock, BNET_TERMINATE); /* send EOF */
+      bnet_close(UA_sock);
+   }
+   exit 0;
+\end{verbatim}
+\normalsize
+
+Then the read\_and\_process\_input routine looks like the following: 
+
+\footnotesize
+\begin{verbatim}
+   get-input-to-send-to-the-Director;
+   bnet_fsend(UA_sock, "%s", input);
+   stat = bnet_recv(UA_sock);
+   process-output-from-the-Director;
+\end{verbatim}
+\normalsize
+
+For a GUI program things will be a bit more complicated. Basically in the very
+inner loop, you will need to check and see if any output is available on the
+UA\_sock. For an example, please take a look at the WX GUI interface code
+in: \lt{bacula-source/src/wx-console}
+
+\section{Bvfs API}
+\label{sec:bvfs}
+
+To help developers of restore GUI interfaces, we have added new \textsl{dot
+  commands} that permit browsing the catalog in a very simple way.
+
+\begin{itemize}
+\item \texttt{.bvfs\_update [jobid=x,y,z]} This command is required to update
+  the Bvfs cache in the catalog. You need to run it before any access to the
+  Bvfs layer.
+
+\item \texttt{.bvfs\_lsdirs jobid=x,y,z path=/path | pathid=101} This command
+  will list all directories in the specified \texttt{path} or
+  \texttt{pathid}. Using \texttt{pathid} avoids problems with character
+  encoding of path/filenames.
+
+\item \texttt{.bvfs\_lsfiles jobid=x,y,z path=/path | pathid=101} This command
+  will list all files in the specified \texttt{path} or \texttt{pathid}. Using
+  \texttt{pathid} avoids problems with character encoding.
+\end{itemize}
+
+You can use \texttt{limit=xxx} and \texttt{offset=yyy} to limit the amount of
+data that will be displayed.
+
+\begin{verbatim}
+* .bvfs_update jobid=1,2
+* .bvfs_update
+* .bvfs_lsdir path=/ jobid=1,2
+\end{verbatim}

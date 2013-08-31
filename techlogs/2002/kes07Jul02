@@ -1,0 +1,66 @@
+              Technical notes on version 1.23 07Jul02
+                       7 July 2002
+                       Kern Sibbald
+
+General:
+- This documents what I did while on vacation. 
+- A fair amount of documentation.
+- Implemented Verify Volume to Catalog (needs renaming)
+- Modified the database to include new MarkId field as
+  well as Counters. Database level is incremented from 1 to  2.
+- Added first cut of managing autochangers by implementing Slot in DB.
+- Fixed a good number of M_ERROR messages to be M_FATAL where appropriate.
+  Also converted a number of Emsg() to Jmsg() permitting better Job error
+  messages.
+- First cut at implementing a general packet passing mechanism for bsock
+  to replace printf and sscanf for passing data.     
+
+Changes submitted this submission:
+- Made make_xxx_tables and drop_xxx_tables and create_xxx_database
+  for bdb as well as sqlite. With this each database has the
+  same set of scripts (with the exception that MySQL has grant_privileges).
+- Modified Makefile to only install the database scripts for the
+  database that you are using.
+- Updated the pdf script to include all the html files.
+- Did quite a lot of documentation.
+- Made Bacula compile correctly with DEBUG turned off.
+- Implemented Pmsg() macros that permit using the debug print
+  routines even with DEBUG off.
+- Updated job_cancelled() macro to handle JS_FatalError.
+- Changed db_find_last_full_verify() to db_find_last_jobid(). This
+  permits working with Verify Volume to Catalog.
+- Removed TRANSACTION code from incrementing NextId for SQLite. 
+- Implemented quick and dirty (not fully functional code) so that
+  console program does not die if ctl-Z is entered. 
+- Cleaned up backup.c a bit adding a bail_out goto to ensure proper
+  handling of errors with minimum code.
+- Added passing Slot back and forth to Storage daemon with Volume info.
+- Implemented Slot in Media record in DB.
+- Implemented first cut of Counter resource in dird_conf.c. A counter
+  resource is part of the Pool resource.
+- Implemented necessary database record. However, the resource doesn't
+  yet create a DB record.
+- Implemented onefs (One File System) and recurse options on Include
+  resource.
+- Implemented autopruning of Verify and Restore Jobs.
+- Did a better job of calculating thread_concurrency() for Sun systems.
+  This permits better multi-threading allowing all the threads to run
+  at the same time.
+- Implemented a wait_for_storage_daemon_termination(), which is used by
+  backup and verify volume.
+- Clarified a number of UA prompts, and add feedback where certain commands
+  completed but printed nothing. (More work to be done here).
+- Added a pile of new code to implement Verify Volume to Catalog. It is sort
+  of a hybrid of "restore" and "verify" in that it actually reads the tape,
+  then compares it to the catalog.  Need Verify Volume to Client.
+- Added a good number of checks for job_cancelled() this should permit
+  quicker and more reliable cancelling of jobs.
+- Fixed one bug in restore where I used ofile instead of lname, which means
+  that if the lname was too long, the memory was not properly reallocated.
+- Cleaned up find_one.c in findlib quite a bit.
+- Link smtp static so that it works even if the libraries are messed up.
+- If mail host is not found, retry with local host in smtp.
+- Added slot and stream to the bootstrap record processing.
+- Do offline on tape cartrige for unmount command. This can be turned off
+  by the user in the config file. OffLineOnUnmount in Device resource.
+- Implemented AutoChanger = yes/no in Device resource.

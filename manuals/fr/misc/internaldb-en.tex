@@ -1,0 +1,76 @@
+%%
+%%
+
+\chapter{The internal database is not supported, please do not
+use it.}
+\label{InternalDbChapter}
+\index[general]{Use it!The internal database is not supported please
+do not }
+\index[general]{The internal database is not supported, please do not
+use it. }
+
+\section{Internal Bacula Database}
+\index[general]{Internal Bacula Database }
+\index[general]{Database!Internal Bacula }
+
+Previously it was intended to be used primarily by Bacula developers for
+testing; although SQLite is also a good choice for this. We do not recommend
+its use in general. 
+
+This database is simplistic in that it consists entirely of Bacula's internal
+structures appended sequentially to a file. Consequently, it is in most cases
+inappropriate for sites with many clients or systems with large numbers of
+files, or long-term production environments. 
+
+Below, you will find a table comparing the features available with SQLite and
+MySQL and with the internal Bacula database. At the current time, you cannot
+dynamically switch from one to the other, but must rebuild the Bacula source
+code. If you wish to experiment with both, it is possible to build both
+versions of Bacula and install them into separate directories. 
+
+\addcontentsline{lot}{table}{SQLite vs MySQL Database Comparison}
+\begin{longtable}{|l|l|l|}
+ \hline 
+\multicolumn{1}{|c| }{\bf Feature } & \multicolumn{1}{c| }{\bf SQLite or MySQL
+ } & \multicolumn{1}{c| }{\bf Bacula  } \\
+ \hline 
+{Job Record  } & {Yes  } & {Yes  } \\
+ \hline 
+{Media Record  } & {Yes  } & {Yes  } \\
+ \hline 
+{FileName Record  } & {Yes  } & {No  } \\
+ \hline 
+{File Record  } & {Yes  } & {No  } \\
+ \hline 
+{FileSet Record  } & {Yes  } & {Yes  } \\
+ \hline 
+{Pool Record  } & {Yes  } & {Yes  } \\
+ \hline 
+{Client Record  } & {Yes  } & {Yes  } \\
+ \hline 
+{JobMedia Record  } & {Yes  } & {Yes  } \\
+ \hline 
+{List Job Records  } & {Yes  } & {Yes  } \\
+ \hline 
+{List Media Records  } & {Yes  } & {Yes  } \\
+ \hline 
+{List Pool Records  } & {Yes  } & {Yes  } \\
+ \hline 
+{List JobMedia Records } & {Yes  } & {Yes  } \\
+ \hline 
+{Delete Pool Record  } & {Yes  } & {Yes  } \\
+ \hline 
+{Delete Media Record  } & {Yes  } & {Yes  } \\
+ \hline 
+{Update Pool Record  } & {Yes  } & {Yes  } \\
+ \hline 
+{Implement Verify  } & {Yes  } & {No  } \\
+ \hline 
+{MD5 Signatures  } & {Yes  } & {No }
+\\ \hline 
+
+\end{longtable}
+
+In addition, since there is no SQL available, the Console commands: {\bf
+sqlquery}, {\bf query}, {\bf retention}, and any other command that directly
+uses SQL are not available with the Internal database. 

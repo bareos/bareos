@@ -1,0 +1,161 @@
+              Technical notes on version 1.28 02Jan02  
+                     03 January 2003
+                       Kern Sibbald
+
+General:
+- Implemented Bare Metal Recovery for Linux and manual procedures for Solaris
+- Now using only a single technotes file kes-1.28 and will add to
+  it as the development goes on.
+- Wrote a general purpose bi-directional pipe command. This replaces
+  previous use of pipes as well as the run_program previously used.
+- Make BSRs stop if no more matches are possible.
+- Allow unliminted number of devices in Storage daemon.
+- Allow connections to Storage daemon before all devices are initialized.
+- Better documentation (and btape test command) on using fixed block
+  tape drivers.
+
+Changes submitted this submission:
+06Jan03
+- Thanks to James MacLean for finding two errors in the bacula-dir.conf 
+  file as well as discovering that the filename quoting was not working
+  for the database. This necessitated version 1.28a and 1.28b.
+04Jan03
+- Add cygreadline5.dll to Win32 release -- needed for console
+03Jan03
+- Add scripts make_catalog_backup and delete_catalog_backup that makes and
+  deletes an ASCII copy of the catalog for backup. An example of how
+  to use it is in the <bacula-src/src/dird/bacula-dir.conf file.
+- Made a nicer column oriented listing of scheduled jobs for "status dir".
+02Jan03
+- Added backup/restore of raw partitions.
+- Corrected restoration of files in root directory (problem with
+  splitting path from file).
+01Jan03
+- Finally decided to cleanup handling of splitting path and filenames
+  in the cats directory. Now the code is in one place sql.c and it
+  is done using Pool memory, so there are no length restrictions.
+31Dec02
+- Add start of Solaris bare metal recovery
+- Add Site Visit usage statistics to Web page
+- Got Bacula listed on www.backupcentral.com
+30Dec02
+- Retest bare metal recovery on Linux 2 times with verify
+- Cleanup printout of verify differences using proper casting to
+  handle shorts and long longs.
+29Dec02
+- Added --enable-client-only to ./configure
+- Modified --enable-static-sd to work better and documented it.
+- Fixed Restore options (never,ifnewer, ...). They now work.
+- Moved the stored.c Resource lock into the allocation thread so
+  that the same thread sets/clears it. This created a problem on
+  FreeBSD.
+- Set close_bpipe() status to zero for FreeBSD because it does not
+  seem to return good child termination status codes.
+28Dec02
+- Added more rescue documentation.
+- Did a spell check of the Bacula doc.
+- Modified bscan to use the working directory as specified in the
+  configuration file as the default.
+25Dec02
+- Fixed an important bug reported by George Motter that caused only
+  the last option on an Include record to be used (all previous options
+  were lost).
+24Dec02
+- Chase down some inconsistencies in creating Media records from
+  the Pool defaults, and in updating/creating the Pool from the
+  resource. Also fixed the cats DB routines to include all
+  fileds (VolUseDuration was missing for example).
+21Dec02
+- Added building static versions of daemon static-bacula-dir, ...
+- Fine tuned the rescue (bare metal) code including support for grub.
+- Added skeleton freebsd rescue
+- Corrected SQL syntax error in autoprune code (JobType => Type).
+- Added error messages for SQL errors in autopruning.
+19Dec02
+- Documented Bare Metal Recovery
+- Create new "rescue" directory containg the Bare Metal Recovery code.
+- Fiddle with SQL a bit for pruning as apparently the last InitCatalog
+  was pruned after the expiration date eventhough it was the ONLY copy!
+  I'm not sure this is fixed yet.
+18Dec02
+- Allow Director to pass a NUL where string to FD (fix in FD).
+- Fix installation mv of query.sql.
+- Make sure btraceback.gdb is not wiped on "make distclean"
+- Corrected a bug in mod of replace options pointed out by Dave Anderson.
+16Dec02
+- Started adding FileOptions ...
+- Fixed  and incorrect print out of the number of files restored (Jarif).
+- Finally fixed EndBlock (and file address for Files) in catalog!
+- Added hostname to tape header as always planned.
+- Removed Level code (will not implement unless strong demand exists).
+- Tweaked bscan to print number of errors ignored before first SOS.
+- Enhanced btape "fill" to permit using one tape and to dump last
+  block before writing and upon read back.
+- Make fsf_dev() return 0 on fail and 1 on success.
+- Use new db_get_job_volume_parameters() to enhance Write Bootstrap to
+  contain more info (start/end file/block, file indexes).
+- Added --enable-static-fd, sd, and dir to configuration to enable making
+  static versions of the daemons.
+
+13Dec02
+- The btape test program was indicating errors on Adrian's machine
+  using the ATAPI (ide-scsi) tape drive. It turns out that this
+  is a fixed block driver as a consequence, Bacula must be setup
+  to write fixed blocks. btape was not always using the fixed
+  blocks defined in the Bacula config, so that has been updated.
+  It now works fine. A lot of tips added to the Bacula test command 
+  to help guide the user.
+- Documentation of the above significantly improved in the manual.
+12Dec02
+- Added code in watchdog to permit setting and clearing child timers. If
+  the timer expires, the child process is killed.
+- Modified restore to handle differential jobs.
+- Added a new test to the btape "test" command
+09Dec02
+- More documentation of new features (week position in scheduler, bsr).
+- Re-read last block written on full tape to verify it.
+- Fix segmentation fault with btape fill command due to missing FileSet MD5.
+
+07Dec02
+- Created better SQL input editing routines str_to_int64 and str_to_uint64()
+- Pull Client from database in Console restore command.
+- Create a Unique list of Volumes to be mounted (previously had repeats).
+- Made many of the SQL searches better by using the ClientId rather than the name 
+  in the restore Console command.
+- Modified reading of a tape to include the VolFile info. Once the
+  tape is past the specified file, reading stops.  The BSR now includes
+  both the VolFile and VolBlock. Currently VolBlock is not used.  
+- Handle multiple volumes better by creating a real volume list with all
+  parameters in it.
+- Display "At prompt waiting for input" in gnome console when at subcommand   
+  prompt.
+- Broke ascii to internal and internal to string editing routines out into
+  new lib/edit.c file.
+
+02Dec02
+- Added a readme and an afs-bacula script to the examples directory
+  that permits Bacula to backup an AFS filesystem. Thanks to
+  Lucas Mingarro for the submission.
+- Added A Sun-desktop autoloader script and Device definition to the
+  examples/devices subdirectory.  Thanks to Lucas Mingarro for the
+  submission.
+- If the WriteBootStrap fails, the job will now be marked in error.
+- Added a week position to the scheduler syntax that allows you to
+  specify 1st, 2nd, 3rd, 4th, or 4th, or first, ... fifth as a week
+  position specification in front of a day. So if you say
+
+    1st sun ...
+
+  the scheduler will start only on the first sunday of the month.  The
+  day specification can also be a day range e.g. sun-fri.
+  This code is untested.
+- Implemented bpipe.h and bpipe.c in src/lib, which defines a bi-directional
+  pipe.  This allows executing other programs and sending them information
+  as well as getting info from them.   
+- Replaced the previous pipe usage with bpipes in RunBeforeJob and   
+  RunAfterJob.
+- The mail program now uses bpipes rather than pipes, which means that any
+  error output will appear in the job output (truly bi-directional).
+- Modified BSR to handle counts and to stop when no more matches are possible.
+  This is untested.
+- Improved error messages in smtp.

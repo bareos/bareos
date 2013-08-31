@@ -1,0 +1,79 @@
+%%
+%%
+
+\chapter{Sistemas Operativos Soportados} \label{SupportedOSes} \index{Sistemas!Operativos Soportados}
+\index{Sistemas Operativos Soportados} 
+\begin{itemize}
+\item [X] Soportado completamente 
+\item [$\star$] se ha reportado que trabaja en muchos sistemas, sin embargo, esto
+no está garantizado por el proyecto de bacula. 
+\end{itemize}
+\begin{tabular}{|l|l|c|c|c|}
+\hline 
+Sistemas Operativos  & Versión  & Cliente {\small {Demonio} }  & Director {\small {Demonio} }  & Storage {\small {Demonio} }\tabularnewline
+\hline
+\hline 
+GNU/Linux  & All  & X  & X  & X \tabularnewline
+\hline 
+FreeBSD  & $\geq$ 5.0  & X  & X  & X \tabularnewline
+\hline 
+Solaris  & $\geq$ 8  & X  & X  & X \tabularnewline
+\hline 
+OpenSolaris  & ~  & X  & X  & X \tabularnewline
+\hline
+\hline 
+MS Windows 32bit  & Win98/Me  & X  & ~  & ~ \tabularnewline
+\hline 
+~  & WinNT/2K  & X  & $\star$  & $\star$ \tabularnewline
+\hline 
+~  & XP  & X  & $\star$  & $\star$ \tabularnewline
+~  & 2008/Vista  & X  & $\star$  & $\star$ \tabularnewline
+MS Windows 64bit  & 2008/Vista  & X  & ~  & ~ \tabularnewline
+\hline
+\hline 
+MacOS X/Darwin  & ~  & X  & ~  & ~ \tabularnewline
+\hline 
+OpenBSD  & ~  & X  & $\star$  & ~ \tabularnewline
+\hline 
+NetBSD  & ~  & X  & $\star$  & ~ \tabularnewline
+\hline 
+Irix  & ~  & $\star$  & ~  & ~ \tabularnewline
+\hline 
+True64  & ~  & $\star$  & ~  & ~ \tabularnewline
+\hline 
+AIX  & $\geq$ 4.3  & $\star$  & ~  & ~ \tabularnewline
+\hline 
+BSDI  & ~  & $\star$  & ~  & ~ \tabularnewline
+\hline 
+HPUX  & ~  & $\star$  & ~  & ~ \tabularnewline
+\hline
+\end{tabular}
+
+
+\section*{Notas importantes}
+\begin{itemize}
+\item Cuando se hace referencia a GNU/Linux, significa las versiones de 32/64 bits
+para Gentoo, Red Hat, Fedora, Mandriva, Debian, OpenSUSE, Ubuntu, Kubuntu, {\ldots{}} 
+\item Para versiones menores a la 5.0 de FreeBSD, se deben tomar algunas consideraciones
+\textbf{importantes} en los modos para la unidad de tape, descritos en la sección
+\ilink{Modos de Tape en FreeBSD} {FreeBSDTapes} del capítulo de Probando
+el Tape de este manual. 
+\item Los paquetes de director y storage para MS Windows están disponibles como un
+programa binario de instalación. 
+\item Para MacOSX revisar \elink{http://fink.sourceforge.net/ para obtener los paquetes}{http://fink.sourceforge.net/} 
+\end{itemize}
+Revise el capítulo de Portabilidad en la guia de Desarrolladores para Bacula,
+para obtener información acerca de la portabilidad a otros sistemas.
+
+Si se cuenta con una versión de sistema operativo de Red Hat con kernel de 2.4.x
+y se tiene el directorio \textbf{/lib/tls} instalado en el equipo (por defecto),
+bacula \textbf{no} correrá. Esto es nuevo para la librería de pthreads y constituye
+un defecto. Para correrlo, se debe remover el directorio antes de la ejecución
+de bacula, o simplemente, se puede cambiar el nombre a \textbf{/lib/tls-broken},
+y luego reiniciar el sistema (una de las pocas veces que Linux debe reiniciarse).
+Si no se puede eliminar o renombrar el directorio /lib/tls, un método alternativo
+consiste en definir la variable de ambiente \textbf{LD\_ASSUME\_KERNEL=2.4.19},
+previo a la ejecución de bacula. Con esta opción, no es necesario el reinicio
+y todos los programas, distintos a bacula, continuarán utilizando \textbf{/lib/tls}.
+Este problema no ocurre con versiones de kernel 2.6 de Linux. 
+

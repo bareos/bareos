@@ -1,0 +1,14 @@
+              Technical notes on version 1.22 21June02
+                       21 June 2002
+                       Kern Sibbald
+
+General:
+
+Changes submitted this submission:
+- Fixed scan_to_eol
+- Fixed backup scanning forgot one T_STRING -> T_UNQUOTED_STRING
+- changed all rwlock_t to brwlock_t to avoid conflicts with
+  Solaris library.
+- Added NPRT() macro to allow printing of NULL pointers, which
+  segment fault on Solaris.
+- Cast printing of pid_t to int for Solaris compiler.

@@ -1,0 +1,25 @@
+              Technical notes on version 1.26 25Sep02  
+                      25 September 2002
+                       Kern Sibbald
+
+General:
+- Added means to bind servers to specific address.
+- Documentation
+
+Changes submitted this submission:
+- Added DirAddress, FDAddress, and SDAddress records to the corresponding
+  resources that allow the server to bind to a specific address 
+  rather than any address.  This security improvement was suggested by
+  a user -- thank you.
+- Eliminated deprecated "Address" record from all sample Storage resources.
+- Made quite a lot of improvements to the bscan program. Much more
+  to do. Aside from details, it is able to recreate a database
+  from which you can do a restore.
+- The s option is not accepted on all versions of ar, so replaced it
+  by an explicit ranlib call.
+- Fixed a bug that caused the Director to crash if you rudely bring
+  down the console program in the middle of an SQL command.
+- Fixed a bug (missing break) that caused scheduled Admin jobs to
+  be listed as "Unknown type".
+- Removed old code from Storage daemon that used a separate FD port.
+

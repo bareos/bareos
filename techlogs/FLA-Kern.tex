@@ -1,0 +1,260 @@
+%% $Id: FLA.gfdl.en.tex,v 1.1 2007/04/16 11:11:03 shanecoughlan Exp $
+%% 
+%% Fiduciary License Agreement (Copyright Assignment)
+%% of the Free Software Foundation Europe paying respect to the two
+%% different Copyright traditions  
+%%
+%% Language: English
+%%
+
+%{{{ Header
+
+\newcommand{\fiduciary}{FSFE}
+\newcommand{\fiduciaryaddress}{\begin{alltt}
+Free Software Foundation Europe
+Talstrasse 110
+40217 Dusseldorf
+Germany
+\end{alltt}}
+\documentclass[a4wide,12pt]{article}
+%%\usepackage{german,umlaut}
+%%\usepackage{fancyheadings}
+\usepackage{alltt}
+\usepackage{epsfig}
+\usepackage[english]{babel}
+
+\selectlanguage{english}
+%\pagestyle{fancyplain}
+
+%\lhead[\fancyplain{}{\bfseries\thepage}]
+%        {\fancyplain{}{\bfseries\rightmark}}
+%\rhead[\fancyplain{}{\bfseries\leftmark}]
+%        {\fancyplain{}{\bfseries\thepage}}
+%\cfoot{}
+\renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
+\renewcommand{\thesection}{\S~\arabic{section}}
+
+%
+% alternative ways of doing it...
+%
+
+% this makes the references work correctly:
+%\newcommand{\A}{\subsection{}}
+%\renewcommand{\subsectionmark}[1]{\markright{\thesection\ }}
+
+% this looks better:
+\newcounter{absatz}[section]
+\newcommand{\A}{\par\vspace{1ex}
+                \stepcounter{absatz}\noindent(\arabic{absatz})~~}
+
+% make the page a little wider
+%\addtolength{\textwidth}{3cm}
+%\addtolength{\headwidth}{3cm}
+%\addtolength{\hoffset}{-1.5cm}
+%\addtolength{\textheight}{2cm}
+%\addtolength{\textwidth}{3cm}
+%\addtolength{\headwidth}{3cm}
+%\addtolength{\hoffset}{-1.5cm}
+%\addtolength{\textheight}{4cm}
+
+%}}}
+
+\begin{document}
+
+%{{{ Head of front page
+
+\thispagestyle{empty}
+
+\begin{center}
+{\LARGE\bf Fiduciary Licence Agreement}\\
+(Version 3.0)
+\end{center}
+
+%}}}
+
+\begin{center}
+{\Large\bf Preamble}
+\end{center}
+ 
+The purpose of this agreement is to ensure the lasting protection of
+Bacula by making Kern Sibbald the fiduciary of the author's interests.
+It empowers Kern Sibbald (here after referred to as "Kern") -- to uphold the
+interests of Free Software authors and protect them in court, if
+necessary.\\
+
+Kern is given the right to relicense the software as necessary for the
+long-term legal maintainability and protection of the software. The
+agreement also grants the author an unlimited amount of non-exclusive
+licences by Kern, which allow using and distributing the program in
+other projects and under other licences. \\
+
+The contracting parties sign the following agreement in full
+consciousness that by the grant of exclusive licence to Kern Sibbald
+and by the administration of these
+rights the Kern becomes trustee of the author's interests for
+the benefit of Bacula and allows Kern to use and distribute the
+program in other projects and under other licenses. \\
+
+\pagebreak
+\begin{center}
+{\Large\bf Agreement}
+\end{center}
+
+Between 
+{\bf (please cross out unsuitable alternatives)}\\
+\begin{itemize}
+\item the author
+\begin{alltt}
+_______________________________________________ (Name)
+
+_______________________________________________ (Occupation, Date of Birth)
+
+_______________________________________________ (Street)
+
+_______________________________________________ (ZIP, City, Country)
+
+_______________________________________________ (Pseudonym, Email)
+\end{alltt}
+\item the owner of the exclusive licence,
+\begin{alltt}
+_______________________________________________ (Company or name)
+
+_______________________________________________ (HQ or addr.)
+
+_______________________________________________ (managing director)
+\end{alltt}
+\begin{itemize}
+\item acquired by virtue of a contract date as of
+\item contracting party:
+\item acquired as employer in the context of a work and service
+  relationship
+\end{itemize}
+\end{itemize}
+\begin{flushright}
+- hereinafter referred to as "Beneficiary" --
+\end{flushright}
+and the
+\begin{alltt}
+    Kern Sibbald
+    Cotes-de-Montmoiret 9
+    1012 Lausanne
+    Switzerland
+\end{alltt}
+\begin{flushright}
+- hereinafter referred to as "Kern" --
+\end{flushright}
+the following agreement is entered into:\\
+
+\section{Grant}
+\A Subject to the provision of {\S}~2, Beneficiary assigns to Kern the
+Copyright in computer programs and other copyrightable material
+world-wide, or in countries where such an assignment is not
+possible,\footnote{Countries where assignments of the copyright in a
+work are impossible include, but are not limited to, Germany, Austria,
+Slovenia and Hungary.} grants an exclusive licence, including, inter
+alia:
+\begin{enumerate}
+\item the right to reproduce in original or modified form;
+\item the right to redistribute in original or modified form;
+\item the right of making available in data networks, in particular
+  via the Internet, as well as by providing downloads, in original or
+  modified form;
+\item the right to authorize third parties to make derivative works of
+  the Software, or to work on and commit changes or perform this
+  conduct themselves.
+\end{enumerate}
+\A Beneficiary's moral or personal rights remain unaffected by this
+Agreement.\\ 
+\A In some countries, the law may provide that the employer is deemed
+to be the owner of the rights on materials developed by an employee in
+the course of his or her employment, unless the parties have agreed
+otherwise. The Beneficiary is aware of these provisions, and therefore
+warrants, represents and guarantees that the Subject Matter is free of
+any of his or her employer's exclusive exploitation rights.
+
+\section{Subject Matter}
+
+The rights and licences granted in {\S}~1 are subject to all
+``Software'' and ``Documentation.'' For the purpose of this Agreement,
+``Software'' shall mean all computer programs, copyrightable sections
+of computer programs or modifications of computer programs that have
+been developed or programmed by Beneficiary and that are specified in
+this Agreement below or that are listed in Exhibit A attached to this
+Agreement and dated and signed by the contracting parties. Likewise,
+``Documentation'' shall refer to all manuals and documentation written
+by Beneficiary alongside and usually distributed with the ``Software''
+and are similarly specified below or listed in Exhibit A:
+\begin{alltt}
+_______________________________________________________________
+
+_______________________________________________________________
+
+_______________________________________________________________
+\end{alltt}
+Except in countries where such an assignment is not
+possible,\footnote{Countries where assignments of the copyright in a
+future work are impossible include, but are not limited to, France.}
+the rights [and licences] granted under this agreement by Beneficiary
+shall also include future developments, future corrections of errors
+or faults and other future modifications and derivative works of the
+software that Beneficiary obtains copyright ownership.  Excluded from
+this provision are modifications that are not derived from the subject
+matter and that have to be regarded as independent and original
+software. 
+
+\section{Kern's Rights and \\Re-Transfer of Non-Exclusive Licence}
+\A Kern shall exercise the granted rights and licences in his
+own name. Furthermore, Kern shall be authorized to enjoin third
+parties from using the software and forbid any unlawful or copyright
+infringing use of the Software, and shall be entitled to enforce all
+its rights in its own name in and out of court. Kern shall also
+be authorized to permit third parties to exercise Kern's rights
+in and out of court.\\ 
+
+\A Kern grants to Beneficiary a non-exclusive, worldwide, perpetual
+and unrestricted licence in the Software. This right's [and licence's]
+scope shall encompass and include all the rights [and licences]
+specified in {\S}~1. Furthermore, Kern grants to Beneficiary
+additional non-exclusive, transferable license to use, reproduce,
+redistribute and make available the Software as needed for releases of
+the Software under other licences.  This re-transfer shall not limit
+the scope of Kern's exclusive licence in the Software and Kern's
+rights pursuant to {\S}~1.\\
+
+
+\A The transfer of the rights and licences specified in {\S}~1 shall
+be unrestricted in territory and thus shall apply world-wide and be
+temporally unlimited.
+
+\section{Miscellaneous}
+\A Regarding the succession of rights in this contractual
+relationship, Swiss law shall apply, unless this Agreement imposes
+deviating regulations. In case of the Beneficiary's death, the
+assignment of exclusive rights shall continue with the heirs. In case
+of more than one heir, all heirs have to exercise their rights through
+a common authorized person.\\
+
+\A Place of jurisdiction for all legal conflicts arising out of or in
+connection with this Agreement is Lausanne, Switzerland.\\
+
+\enlargethispage{2cm}
+\vspace{1cm}
+\begin{alltt}
+
+City/Country,           Date             City/Country,          Date
+
+
+
+
+__________________, ______________    __________________, ______________
+
+
+
+
+__________________________________    __________________________________
+          (Signature)                             (Kern)
+
+\end{alltt}
+
+\end{document}
+

@@ -1,0 +1,38 @@
+              Technical notes on version 1.22 25June02
+                       25 June 2002
+                       Kern Sibbald
+
+General:
+- All the basic Restore code to handle the boostrap file is
+  now implemented with the exception of the Console Restore command.
+- Retained compatibility with previous Restore providing no 
+  bootstrap file is specified. However, the old code (JobId based)
+  will go away in a future release.
+- Additional documentation
+- Fixed a number of segmentation faults in the Console program due
+  to printing of NULL pointers -- thanks to Chuck and his Sun for
+  finding and reporting them -- mostly in ua_output.c.
+
+Changes submitted this submission:
+- Null pointers now are printed as *None* if NPRT() is used.
+- At the request of Phil, all resources are now chained in in the
+  order they appear in the config file.
+- Implement Bootstrap record in the Director's config file, which
+  allows you to specify a predefined bootstrap file for Restore Jobs.
+- Allow Bootstrap on the Restore record. This is deprecated.
+- Implemented code to pass the Bootstrap file, if defined, to the
+  File daemon, then from the File daemon to the Storage daemon.
+- Added ability to set Bootstrap file in the Console when running a Restore.
+- Allow scan_error() routine to be passed to lex_open_file(). This permits
+  using lex in the Storage daemon without worrying that it will ABORT on
+  a syntax error.  More work is needed to direct the error messages correctly.
+- Improved error messages a bit when config syntax errors are found.
+- Tested and corrected some errors in match_bsr.c
+- Removed askdir.c from bls and bextract by defining dummy entry points.
+- bextract now has bootstrap pretty well integrated.
+- Changed bextract ABORTs into FATAL and exit(1) or ERROR_TERMINATE.
+  More user friendly.
+- Eliminated at least one lld and replaced it by edit_uint64() 
+- Eliminated a few more _PROTO()s.
+- Corrected a problem with the SQL for in query.sql for 
+  Listing Volumes to Restore All Files

@@ -1,0 +1,101 @@
+#
+#
+#  Makefile for LaTeX  
+#
+# To build everything do
+#    make tex
+#    make web
+#    make html
+#    make dvipdf
+#
+# or simply
+#
+#    make
+#
+
+IMAGES=../../../images
+
+first_rule: bacula
+
+bacula: tex web html dvipdf
+
+.SUFFIXES:     .tex .html
+.PHONY:
+.DONTCARE:
+
+
+tex:
+	@cp -fp ${IMAGES}/hires/*.eps .
+	touch install.idx installi-general.tex
+	-latex -interaction=batchmode install.tex
+	makeindex install.idx >/dev/null 2>/dev/null
+	-latex -interaction=batchmode install.tex
+
+pdf:
+	@echo "Making install pdf"
+	@cp -fp ${IMAGES}/hires/*.eps .
+	dvipdf install.dvi install.pdf
+	@rm -f *.eps *.old
+
+dvipdf:
+	@echo "Making install pdfm"
+	@cp -fp ${IMAGES}/hires/*.eps .
+	dvipdfm -p a4 install.dvi
+	@rm -f *.eps *.old
+
+html:
+	@echo "Making install html"
+	@cp -fp ${IMAGES}/*.eps .
+	@rm -f next.eps next.png prev.eps prev.png up.eps up.png
+	@(if [ -f imagename_translations ] ; then \
+	    ./translate_images.pl --from_meaningful_names install.html; \
+	 fi)
+	latex2html -white -no_subdir -split 0 -toc_stars -white -notransparent \
+		install >/dev/null
+	./translate_images.pl --to_meaningful_names install.html
+	@rm -f *.eps *.gif *.jpg *.old
+
+web:
+	@echo "Making install web"
+	@mkdir -p install
+	@rm -f install/*
+	@cp -fp ${IMAGES}/*.eps .
+	@rm -f next.eps next.png prev.eps prev.png up.eps up.png
+	@cp -fp ${IMAGES}/*.eps ${IMAGES}/*.png install/
+	@rm -f install/next.eps install/next.png install/prev.eps install/prev.png install/up.eps install/up.png
+	@(if [ -f install/imagename_translations ] ; then \
+	   ./translate_images.pl --to_meaningful_names install/Bacula_Users_Guide.html; \
+	 fi)
+	@rm -rf install/*.html
+	latex2html -split 3 -local_icons -t "Developer's Guide" \
+	   -long_titles 4 -contents_in_nav -toc_stars -white \
+	   -notransparent install >/dev/null
+	./translate_images.pl --to_meaningful_names install/install_Guide.html
+	@cp -f install/install_Guide.html install/index.html
+	@rm -f *.eps *.gif *.jpg install/*.eps	*.old 
+	@rm -f install/idle.png
+	@rm -f install/win32-*.png install/wx-console*.png install/xp-*.png
+	@rm -f install/*.pl install/*.log install/*.aux install/*.idx
+	@rm -f install/*.out WARNINGS
+
+texcheck:
+	./check_tex.pl install.tex
+
+main_configs:
+	pic2graph -density 100 <main_configs.pic >main_configs.png
+
+clean:
+	@rm -f 1 2 3
+	@rm -f *.png *.gif *.jpg *.eps
+	@rm -f *.pdf *.aux *.cp *.fn *.ky *.log *.pg
+	@rm -f *.html *.backup *.pdf *.ps *.dvi *.ilg *.lof *.lot
+	@rm -f *.cdx *.cnd *.ddx *.ddn *.fdx *.fnd *.ind *.sdx *.snd
+	@rm -f *.dnd imagename_translations
+	@rm -f *.old WARNINGS *.out *.toc *.idx
+	@rm -f images.pl labels.pl internals.pl
+	@rm -rf install
+	@rm -f images.tex installi-general.tex
+
+
+distclean:  clean
+	@rm -f install.html install.pdf

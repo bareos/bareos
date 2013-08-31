@@ -1,0 +1,158 @@
+%%
+%%
+
+\chapter{Unidades de Tape Soportadas}
+\label{DrivesSoportados}
+\index{Unidades! de Tape Soportadas}
+\index{Unidades de Tape Soportadas}
+
+Bacula utiliza llamadas estándar al sistema operativo (read,write, ioctl) para interactuar
+con las unidades de tape. Como consecuencia de esto, es necesario contar con el driver
+de tape adecuado y desarrollado para el sistema operativo seleccionado. Bacula trabaja
+perfectamente bien con unidades de tape SCSI en equipos FreeBSD, Linux, Solaris y
+Windows, y puede funcionar en otras máquinas UNIX, sin embargo, esto no se ha probado
+todavía. Recientemente, han surgido nuevos drives que utilizan interfaces IDE, ATAPI
+o SATA, en vez de SCSI. En Linux, el drive de OnStream, que utiliza el driver OSST
+es uno de estos ejemplos, es renocido que trabaja con Bacula. En adición, un gran
+número de unidades de cinta (es decir, OS drivers) se ha visto que trabajan en sistemas
+Windows. Sin embargo, las unidades de tape no-SCSI (diferentes a OnStream) que utilizan
+drivers ide-scis, ide-tape o no-scsi, no funcionan de manera correcta con Bacula
+(o cualquier otra aplicación que demande una unidad de tape) hasta hoy (abril 2007).
+Si ha seleccionado un tape drive no-SCSI para utilizar con Bacula, hay una gran probabilidad
+que la misma no funcione. El equipo de desarrollo de Bacula, está trabajando en conjunto
+con los programadores del kernel para rectificar esta situación, sin embargo, esto
+no se resolverá en un futuro cercano.
+
+Incluso, si su drive aparece en el listado siguiente, por favor, chequee el capítulo
+\ilink{Probando el Tape}{btape1} de este manual, para revisar los procedimientos
+que se pueden utilizar para verificar si la unidad de cinta trabajará con Bacula.
+Si su drive está en un modo de bloque fijo, este puede aparentar que trabaja con
+Bacula, hasta que se intenta realizar una restauración y Bacula necesita posicionarse
+en el tape. Solo se puede estar seguro, siguiendo los procedimientos sugeridos anteriormente
+y probar.
+
+Es muy difícil suministrar una lista de unidades de tape soportados, o drives conocidos
+para trabajar con Bacula, debido al limitado feedback de los usuarios (por lo tanto, si 
+usted utiliza Bacula en un drive diferente, por favor, permitanos conocer su experiencia). 
+Basado en dicho feedback, los siguiente drives son conocidos que trabajan con
+Bacula. Un signo menos \{''-''\} en la columna, significa desconocido.
+
+\addcontentsline{lot}{table}{Unidades de Tape Soportadas}
+\begin{longtable}{|p{2.0in}|l|l|p{2.5in}|l|}
+ \hline 
+\multicolumn{1}{|c| }{\bf SO } & \multicolumn{1}{c| }{\bf Man. } &
+\multicolumn{1}{c| }{\bf Media } & \multicolumn{1}{c| }{\bf Modelo } &
+\multicolumn{1}{c| }{\bf Capacidad } \\
+ \hline {- } & {ADIC } & {DLT } & {Adic Scalar 100 DLT } & {100GB  } \\
+ \hline {- } & {ADIC } & {DLT } & {Adic Fastor 22 DLT } & {-  } \\
+ \hline {FreeBSD 5.4-RELEASE-p1 amd64 } & {Certance} & {LTO } & {AdicCertance CL400 LTO Ultrium 2 } & {200GB  } \\
+ \hline {- } & {- } & {DDS } & {Compaq DDS 2,3,4 } & {-  } \\
+ \hline {SuSE 8.1 Pro} & {Compaq} & {AIT } & {Compaq AIT 35 LVD } & {35/70GB } \\
+ \hline {- } & {Exabyte } & {-  } & {Exabyte drives less than 10 years old } & {-  } \\
+ \hline {- } & {Exabyte } & {-  } & {Exabyte VXA drives } & {-  } \\
+ \hline {- } & {HP } & {Travan 4 } & {Colorado T4000S } & {-  } \\
+ \hline {- } & {HP } & {DLT } & {HP DLT drives } & {-  } \\
+ \hline {- } & {HP } & {LTO } & {HP LTO Ultrium drives } & {-  } \\
+ \hline {- } & {IBM} & {??} & {3480, 3480XL, 3490, 3490E, 3580 and 3590 drives} & {-  } \\
+ \hline {FreeBSD 4.10 RELEASE } & {HP } & {DAT } & {HP StorageWorks DAT72i } & {-  } \\
+ \hline {- } & {Overland } & {LTO } & {LoaderXpress LTO } & {-  } \\
+ \hline {- } & {Overland } & {- } & {Neo2000 } & {-  } \\
+ \hline {- } & {OnStream } & {- } & {OnStream drives (see below) } & {-  } \\
+ \hline {FreeBSD 4.11-Release} & {Quantum } & {SDLT } & {SDLT320 } & {160/320GB  } \\
+ \hline {- } & {Quantum } & {DLT } & {DLT-8000 } & {40/80GB  } \\
+ \hline {Linux } & {Seagate } & {DDS-4 } & {Scorpio 40 } & {20/40GB  } \\
+ \hline {FreeBSD 4.9 STABLE } & {Seagate } & {DDS-4 } & {STA2401LW } & {20/40GB  } \\
+ \hline {FreeBSD 5.2.1 pthreads patched RELEASE } & {Seagate } & {AIT-1 } & {STA1701W} & {35/70GB  } \\
+ \hline {Linux } & {Sony } & {DDS-2,3,4 } & {- } & {4-40GB  } \\
+ \hline {Linux } & {Tandberg } & {- } & {Tandbert MLR3 } & {-  } \\
+ \hline {FreeBSD } & {Tandberg } & {- } & {Tandberg SLR6 } & {-  } \\
+ \hline {Solaris } & {Tandberg } & {- } & {Tandberg SLR75 } & {- } \\
+ \hline 
+
+\end{longtable}
+
+Hay una lista de \ilink{librerías de cintas con recambio automático soportadas}{Modelos},
+en el capítulo de Autochangers Soportados de este documento, se pueden ubicar otras
+unidades de tape que trabajan con Bacula.
+
+\section{Unidades de Tape No Soportadas}
+\label{DrivesNoSoportados}
+\index[general]{Unidades de Tape No Soportadas}
+\index[general]{Unidades! de Tape No Soportados }
+
+Anteriormente, las unidades de tape OnStream IDE-SCSI no trabajaban con Bacula. Desde
+la versión 1.33 y la versión de driver de kernel de osst 0.9.14 o superior, ahora
+se puede trabajar. Por favor, revise el capítulo de pruebas para definir un tamaño
+de bloque fijo.
+
+Los tapes QIC son conocidos por tener un conjunto de particularidades (tamaño fijo
+de bloque y una marca de EOF en vez de dos para terminar la cinta). Como consecuencia
+de esto, se necesitan tomar algunas consideraciones para configurarlas y hacer que
+las mismas trabajen correctamente con Bacula.
+
+\section{Los usuarios FreeBSD deben tener precaución!!!}
+\index[general]{Los usuarios FreeBSD deben tener precaución!!!}
+\index[general]{Precaución!Los usuarios FreeBSD deben tener }
+
+A menos que se haya aplicado el patch de las librerías pthreads en los sistemas FreeBSD
+en versiones 4.11, se perderá data cuando Bacula se extienda sobre varios tapes.
+Esto se debe a que las librerías que no cuentan con el patch, presentan errores para
+retornar un status de advertencia a Bacula, cuando el fin de la cinta está próximo.
+Este problema está corregido en los sistemas FreeBSD liberados después de la versión
+4.11. Por favor, revise el capítulo \ilink{Probando el Tape}{FreeBSDTapes} de
+este manual, para obtener información \textbf{importante} acerca de cómo configurar
+su unidad de cinta, de manera que sea compatible con Bacula.
+
+\section{Autochangers Soportados}
+\index[general]{Autochangers!Soportados }
+\index[general]{Autochangers Soportados}
+
+Para mayor información acerca de los autochangers soportados, por favor vea la sección
+\ilink{Autochangers conocidos que trabajan con Bacula}{Modelos}, de este manual.
+
+\section{Especificaciones de Tape}
+\index[general]{Especificaciones!deTape}
+\index[general]{Especificaciones de Tape}
+
+Si usted quiere conocer qué unidad de tape debe comprar para trabajar con Bacula,
+realmente no se lo podemos decir. Sin embargo, podemos indicarle si usted va a comprar
+un drive, debe evitar los drives DDS. La tecnología es más vieja y las unidades de
+tape DDS necesitan limpieza frecuente. Los drives DLT, generalmente son mejores (tecnología
+más nueva) y no requieren una limpieza tan frecuente.
+
+A continuación, encontrará una tabla con las especificaciones de tapes DLT y LTO
+que le darán una idea de la capacidad y velocidad de las cintas modernas. Las capacidades
+listadas están en la capacidad nativa del tape, sin compresión. Todos los drives
+modernos cuentan con compresión de hardware, y los fabricantes, generalmente, muestran
+las capacidades utilizando una razón de compresión de 2:1. La razón de compresión
+actual, en mayor parte, depende de la data a la cual se le hace respaldo, pero una
+razón de 1.5:1 es un número mas razonable (es decir, multiplique el valor mostrado
+por 1.5, para obtener un promedio bruto de lo que usted probablemente observará).
+Las ratas de transferencia son redondeadas a los GB/hr mas cercanos. Todos los
+valores son suministrados por varios fabricantes.
+
+El tipo de media (Media Type), representa como está diseñado por el fabricante, y
+usted no requiere utilizar (pero podría) el mismo nombre en sus recursos de configuración
+de Bacula.
+
+\begin{tabular}{|c|c|c|c}
+Tipo de Media & Tipo de Drive & Capacidad de la Media & Rata de Transferencia \\ \hline
+DDS-1              & DAT        & 2 GB &        ?? GB/hr   \\ \hline
+DDS-2              & DAT        & 4 GB &        ?? GB/hr   \\ \hline
+DDS-3              & DAT        & 12 GB &       5.4 GB/hr   \\ \hline
+Travan 40          & Travan     & 20 GB &       ?? GB/hr    \\ \hline
+DDS-4              & DAT        & 20 GB &       11 GB/hr    \\ \hline
+VXA-1              & Exabyte    & 33 GB &       11 GB/hr    \\ \hline
+DAT-72             & DAT        & 36 GB &       13 GB/hr    \\ \hline
+DLT IV             & DLT8000    & 40 GB  &      22 GB/hr    \\ \hline
+VXA-2              & Exabyte    & 80 GB &       22 GB/hr    \\ \hline
+Half-high Ultrium 1 & LTO 1      & 100 GB &      27 GB/hr    \\ \hline
+Ultrium 1          & LTO 1      & 100 GB &      54 GB/hr    \\ \hline
+Super DLT 1        & SDLT 220   & 110 GB &      40 GB/hr    \\ \hline
+VXA-3              & Exabyte    & 160 GB &      43 GB/hr    \\ \hline
+Super DLT I        & SDLT 320   & 160 GB &      58 GB/hr    \\ \hline
+Ultrium 2          & LTO 2      & 200 GB &      108 GB/hr   \\ \hline
+Super DLT II       & SDLT 600   & 300 GB &      127 GB/hr   \\ \hline
+VXA-4              & Exabyte    & 320 GB &      86 GB/hr    \\ \hline
+Ultrium 3          & LTO 3      & 400 GB &      216 GB/hr   \\ \hline
+\end{tabular}

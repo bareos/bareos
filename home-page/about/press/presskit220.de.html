@@ -1,0 +1,379 @@
+<html>
+<head>
+<title>Bacula 2.2.0 Press Kit</title>
+</head>
+<body>
+
+
+<h1>Bacula 2.2.0 Press Kit</h1>
+
+
+<h2>Contents</h2>
+
+
+<a href="#originalrelease">Release-Mitteilung</a><br>
+<a href="#additionalfeatures">Neue&nbsp;Funktionen</a><br>
+<a href="#download">Download-Quellen</a><br>
+<a href="#doc">Dokumentation</a><br>
+<a href="#license">Lizenz</a><br>
+<a href="#contacts">Kontakt</a><br>
+<a href="#support">Kommerzieller Support</a><br>
+<a href="#links">Links</a><br>
+
+
+<a href="#translations">Übersetzungen</a><br>
+
+
+<h2><a name="originalrelease"></a>Release-Mitteilung</h2>
+
+
+<p><b>26. August 2007, Lausanne, Switzerland</b>:
+Das Bacula-Projekt hat am 11. August 2007 die Version 2.2.0 der
+Netzwerk-Backuplösung Bacula freigegeben.&nbsp;Diese Version bringt
+neue Features und Leistungsverbesserungen, die von vielen
+Benutzern gewünscht wurden. Damit bekommt Bacula in weiteren Bereichen
+die Fähigkeiten
+von Enterprise-Backup-Lösungen. Mit Version 2.2.0 dürften noch
+mehr&nbsp;Nutzer zu Bacula
+migrieren als bisher. Die letzte Release-Version war&nbsp;2.0.3
+vom&nbsp;7. März 2007.
+</p>
+
+
+<p>"Diese Version enthält ein
+neues&nbsp;GUI-Interface, das der zunehmenden Reife des Produkts
+entspricht" meint Kern Sibbald, Mitbegründer des Projekts und einer der
+zentralen Entwickler. "Dies ist die bisher am gründlichsten getestete
+Version, und ich möchte allen Testern danken. Sie
+haben&nbsp;unter&nbsp;FreeBSD, Linux, Mac OSX und Solaris sehr
+gründlich getestet. Ich selbst
+habe sehr oft Regressions-Test unter&nbsp;CentOS 5
+(RedHat-Derivat), OpenSUSE 10.2 und Mepis (Debian/Ubuntu-Derivat)
+durchgeführt".
+</p>
+
+
+<p><a name="additionalfeatures"></a>Neue
+Funktionen und Tools um Netzwerk-Backups
+zu vereinfachen sind u.a.:
+</p>
+
+
+<ul>
+
+
+  <li>Bat - neues GUI ist jetzt ins Projekt
+integriert.
+  </li>
+
+
+  <li>Optimierte Databank-Performance beschleunigt
+Metadaten-Speicherung&nbsp;(ca. 10x schneller als vorhergehende
+Versionen).
+  </li>
+
+
+  <li>Neuer Red/Black Algorithmus beim Aufbau des
+Verzeichnisbaums im Speicher beim Restore (ca. 500x schneller).
+  </li>
+
+
+  <li>"regex WHERE"-Unterstützung um Dateien beim
+Restore in neue Pfade zu speichern.
+  </li>
+
+
+  <li>posix_fadvise() wird zur Leistungssteigerung im FD
+benutzt; Äquivalent unter Windows.
+  </li>
+
+
+  <li>Verbessertes Reservierungssystem das die meisten
+Konflikte die bei Autoloadern mit mehreren Laufwerken auftraten zu
+vermeiden.
+  </li>
+
+
+  <li>Vereinfachtes Locking im Reservierungssystem des
+SD.
+  </li>
+
+
+  <li>Konfigurierbare Erkennung von Dateidatum /
+-Größenänderung während der Sicherung.
+  </li>
+
+
+  <li>Effiziente Implementierung sehr großer Include/
+Exclude-Listen im Client.
+  </li>
+
+
+  <li>Medien werden bei dem Befehl&nbsp;'status dir'
+nicht mehr zum Wiederverwenden vorbereitet ("pruning").
+  </li>
+
+
+  <li>"pruning" ist effizienter, und wenn ein Medium
+frei wird, wird dies sofort erkannt.
+  </li>
+
+
+  <li>Die Lizenz ist nun die unmodifizierte GPL Version
+2.
+  </li>
+
+
+</ul>
+
+
+<p> <b>Über Bacula:</b> Bacula
+ist eine Gruppe von Programmen um Backup, Recovery und Überprüfung von
+Dateien im Netzwerk durchzuführen. Diese Programme mit spezifischen
+Teilaufgaben bilden zusammen eine stabile, leicht zu verwaltende und
+vollständige Backup-Lösung für viele Systemumgebungen. Bacula ist das
+gemeinsame Produkt vieler Entwickler und wird seit sechs Jahren
+kontinuierlich weiterentwickelt.&nbsp;Bacula ist ein
+Open-Source-Projekt und kann ohne Lizenzkosten sowohl für
+kommerzielle wie nicht-kommerzielle Anwendungen eingesetzt werden.</p>
+
+
+<p>Die
+Qualität von Bacula zeigt sich u.a. darin, dass es in Backup-Tutorials
+wie auch
+in Büchern vorgestellt wird. Es hat in kurzer Zeit eine weite
+Verbreitung gefunden.
+</p>
+
+
+<h2><a name="download"></a>Download-Quellen</h2>
+
+
+<ul>
+
+
+  <li><a href="http://sourceforge.net/project/showfiles.php?group_id=50727">Offizielles
+Repository</a> (english)
+  </li>
+
+
+  <li>Installationspakete für viele Betriebssysteme
+(FreeBSD, OpenBSD, NetBSD, MacOSX, Win32,
+Irix, AIX, HP-UX, Gentoo, Debian, Ubuntu, etc) sind verfügbar.
+  </li>
+
+
+</ul>
+
+
+<br>
+
+
+<h2><a name="doc"></a>Dokumentation</h2>
+
+
+<ul>
+
+
+  <li><a href="http://www.bacula.org/en/rel-manual/">Offizielle
+Dokumentation</a> (english)
+  </li>
+
+
+  <li><a href="http://www.bacula.org/en/rel-manual/Brief_Tutorial.html">Tutorial</a>
+(english)
+  </li>
+
+
+  <li><a href="http://www.bacula.org/en/developers/index.html">Developer's
+Guide</a> (english)
+  </li>
+
+
+</ul>
+
+
+<br>
+
+
+<h2><a name="license"></a>Lizenz</h2>
+
+
+<p>Bacula
+steht unter der GPL, das heisst der Quellcode ist frei
+verfügbar. Bacula kann ohne jede Lizenzkosten eingesetzt werden.</p>
+
+
+<ul>
+
+
+  <li><a href="http://www.bacula.org/en/rel-manual/Bacula_Copyri_Tradem_Licens.html">Vollständiger
+Lizenztext (english)</a>
+  </li>
+
+
+</ul>
+
+
+<br>
+
+
+<h2><a name="support"></a>Kommerzieller
+Support</h2>
+
+
+<p>Bacula wird von einer Vielzahl von Firmen unterstützt: Sie
+stellen oder
+bezahlen Entwickler, bieten Hosting-Ressourcen oder helfen finanziell.
+</p>
+
+
+<p>Es gibt eine große Gruppe von&nbsp;<a href="http://www.bacula.org/?page=professional">Firmen die
+Bacula-Support
+anbieten</a>,&nbsp;von einzelnen Beratern bis zu
+international agierenden Unternehmen.
+</p>
+
+
+<p><a href="http://www.bacula.org/en/?page=makedonation">Finanzielle
+Unterstützung wird gerne gesehen</a> (english)
+</p>
+
+
+<br>
+
+
+<h2><a name="contacts"></a>Kontakt</h2>
+
+
+<p><a href="http://www.bacula.org/">Bacula-Projekt
+Homepage</a> (english)
+</p>
+
+
+<p>Allgemeine Fragen (englischsprachig):<br>
+
+
+Dan Langille<br>
+
+
+Bacula Project<br>
+
+
++1 215 882 0565<br>
+
+
+<a href="mailto:press@bacula.org">press@bacula.org</a>
+<br>
+
+
+<br>
+
+
+oder (deutschsprachig)<br>
+
+
+<br>
+
+
+Arno Lehmann<br>
+
+
+IT-Service Lehmann<br>
+
+
++49 541 5803396<br>
+
+
+<a href="mailto:press-de@bacula.org">press-de@bacula.org</a><br>
+
+
+</p>
+
+
+<h2><a name="links"></a>Links</h2>
+
+
+<h3>Grafische Nutzerinterfaces</h3>
+
+
+<ul>
+
+
+  <li><b>Bat</b> - Bacula Administration
+Tool. Eine grafische Variante der der Befehlszeilen-Console, jedoch mit
+vielen weiteren Funktionen. Zwar wird noch intensiv daran gearbeitet,
+weitere Features hinzuzufügen, doch hat Bat bereits jetzt mehr
+Möglichkeiten als&nbsp;bwx-console oder bgnome-console. Bat wird
+sowohl Statusanzeigen wie die Systemtray-Monitore wie auch Berichte wie
+bweb erhalten.
+  </li>
+
+
+  <li><b>bimagemgr</b> -&nbsp;Bimagemgr
+ist ein Web-basiertes Programm um
+Datei-Volumes auf CDs zu schreiben. Bimagemgr ist in Perl geschrieben.
+  </li>
+
+
+  <li><b>wx-console</b>
+-&nbsp;wx-console
+ist ein grafisches Konsolenprogramm, das mit wxWidgets
+entwickelt wurde und auf allen Client-Plattformen zur Verfügung steht.
+  </li>
+
+
+  <li><b>gnome-console</b> -&nbsp;Die
+gnome-console ist eine grafische Konsole für Systeme mit Gnome 2.x.
+  </li>
+
+
+  <li><b>tray-monitor</b> -&nbsp;Der
+tray-monitor ist ein Daemon-Überwachungsprogramm für den
+Systemtray-Bereich.
+  </li>
+
+
+  <li><b>bweb</b> -&nbsp;Bweb ist ein in
+Perl entwickeles Web-Frontend für grundlegende Aufgaben und
+Statistiken.
+  </li>
+
+
+  <li><b>brestore</b> -&nbsp;Brestore
+ist ein grafisches Interface für den Restore-Prozess. Es erfordert
+Perl/GTK/Glade.
+  </li>
+
+
+  <li><b>bacula-web</b>
+-&nbsp;Bacula-web
+ist ein php-basierendes Web-Frontend für den Überblick über ausgeführte
+Jobs und Volume-Benutzung. </li>
+
+
+</ul>
+
+
+<p>Eine vollständige Liste der&nbsp;<a href="http://www.bacula.org/en/rel-manual/GUI_Programs.html">grafischen
+Nutzerinterfaces</a> (englisch).
+</p>
+
+
+<br>
+
+
+<h3><a name="translations"></a>Offizielle
+Übersetzungen dieses Dokuments</h3>
+
+
+<ul>
+  <li><a href="http://www.bacula.org/about/press/presskit220.en.html">Englisch</a></li>
+  <li><a href="http://www.bacula.org/about/press/presskit220.fr.html">Französisch</a></li>
+  <li><a href="http://www.bacula.org/about/press/presskit220.ca.html">Katalanisch</a></li>
+  <li><a href="http://www.bacula.org/about/press/presskit220.es.html">Spanisch</a></li>
+</ul>
+
+
+</body>
+</html>

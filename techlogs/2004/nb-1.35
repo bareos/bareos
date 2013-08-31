@@ -1,0 +1,33 @@
+              Technical notes on version 1.35  
+                      Nicolas Boichat
+
+General:
+
+Changes to 1.35.2:
+27Aug04
+- Use POOLMEM and get_memory instead of alloca in src/dird/status.c
+  and src/stored/status.c.
+24Aug04
+- Add Monitor documentation
+- Add Monitor directive in documentation
+22Aug04
+- Add default Console resource in src/dird/bacula-dir.conf.in with
+  access restricted to commands used by tray-monitor: status and 
+  .status.
+- Add default Director ressource in src/filed/bacula-fd.conf.in and 
+  src/stored/bacula-sd.conf.in with Monitor directive enabled.
+- Add .status dir [current|last] command to dird.
+- Add Monitor directive in fd/sd configuration file (restrict 
+  access to status and .status commands).
+19Aug04
+- Add .status [current|last] command to filed and stored
+17Aug04
+- Set WANT_AUTOCONF to 2.5 before running autoconf and autoheader
+  in the main Makefile (force Gentoo to use the newer version of
+  autoconf/autoheader).
+
+Changes to 1.35.1:
+14Aug04
+- Add src/tray-monitor directory
+07Aug04
+- Implement .help command.

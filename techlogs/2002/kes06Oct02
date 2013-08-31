@@ -1,0 +1,37 @@
+              Technical notes on version 1.26 04Oct02  
+                      6 October 2002
+                       Kern Sibbald
+
+General:
+- Implemented first major cut of bscan -- program to scan a tape
+  and recreate a Bacula catalog.
+- Fixed lseek() relative negative seek that prevented writing multiple
+  jobs to a File volume.
+- Implemented BB02 tape format -- currently turned off for writing.
+
+Changes submitted this submission:
+- Updated README
+- Implemented new BB02 tape format, which moves the VolSessionId and
+  VolSessionTime from the record headers into the Block header.  It
+  is currently turned off.
+- Implemented new btime time/date format on the tape. This is currently
+  turned off.
+- Added JobStatus to EOS tape label. This is currently turned off.
+- Changed start_block, ... to StartBlock in JCR for uniformity.
+- Print a message telling which tables were dropped/made with  
+  ./drop_bacula_tables.
+- Return JobType and JobLevel in db_get_job_record().
+- Implemented get_current_btime(), which returns btime_t.
+- Bump debug message max size to 2000 bytes.
+- Add btime_t serial/unserial routines.
+- Rework all tape label routines to integrate btime and other
+  label format changes (currently turned off -- for writing).
+- Fix lseek() to always be positive -- block.c
+- Consolidate record, block, and label major #defines in block.h.
+- Major implementation of bscan. Some more minor tweaking will be
+  necessary.  E.g. add multiple records for multiple simultaneous
+  Jobs.
+- Cleanup lseek() to always use off_t as second argument.
+- Add new "created" tape label (EOT_LABEL). This generates a callback
+  to the read_records() routine when the final end of all tapes is
+  reached allowing proper termination and updating of the media records.

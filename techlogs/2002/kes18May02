@@ -1,0 +1,33 @@
+              Technical notes on version 1.20 16May02
+                       18 May 2002
+                       Kern Sibbald
+
+General:
+- Implemented multiple Messages resource. Jobs may now have
+  different messages resources.
+- Implemented daemon pid files. This prevents multiple 
+  daemons from running simultaneously. You can run multiple
+  daemons if they listen on different ports.
+
+Changes submitted this submission:
+- Documented the Schedule resource a bit better.
+- Began gently adding a POOLMEM type (perviously void).
+  For the moment it is a #define to char, but long term
+  it should be its own typedef.
+- Corrected a bit of spacing on the status bar of gnome-console
+- Added Admin and Archive Job types.
+- Implemented multiple Messages resources. Each daemon has
+  its own message resource, which defaults if not defined.
+  Jobs may now have different message handlers.
+- Cleaned up a bit of duplicate code in backup, verify, and
+  restore by creating appropriate subroutines in job.c
+- Added Type, Client, FileSet, and Level resource record
+  definitions to the Director. These can be used in place
+  of the Backup = ..., Verify = ..., ... commands.  This needs
+  documenting.
+- Corrected an incorrect message in the prune code and added
+  the number of Files pruned in the message.
+- Corrected several paint problems with gnome-console.
+- Added a bit of printout in signal handler during traceback.
+- Cleaned up most of sm_check() to be turned on/off by define
+  in version.h

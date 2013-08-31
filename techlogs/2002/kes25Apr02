@@ -1,0 +1,41 @@
+              Technical notes on version 1.19 25Apr02
+                       25 April 2002
+                        Kern Sibbald
+
+General:
+- Additional config options for Console.
+- Started adding code for Automatic Recycling of Volumes.
+- Allow arbitrary length filenames in Verify code.
+- Fix incorrect filename in Verify code.
+- Significant enhancement to number scanning in config parser.
+- Requires initializing MySQL tables, or applying cats/alter.sql
+  to modify Media table.
+
+Changes submitted this submission:
+- Modified Makefile to printer a much more visible
+  message if the make ends in error.
+- Added the Purge value to the VolStatus in the Media table.
+  This value is set if the Volume is purged.
+- Enhanced the db_delete_media_record() routine to delete
+  all associated records in the database.
+- Modified Console to always write to the variable "output"       
+  rather than stdout. This will permit directing output to a file.
+- Enhanced the Console configuration file to have a Console 
+  resource. This will allow us to add an rcfile and history
+  file.
+- Modified Find_next_vol in catreq.c to search for "Recycle"
+  volumes if there are none marked Append. Also made Get_Vol_info
+  return the VolStatus to the Storage daemon.
+- Allow upper/lower case match on job level names.
+- Added another warning message to the Console "delete media" 
+  command.
+- Corrected a number of FileId types from uint64_t to FileId_t in
+  ua_retention.c.
+- In ua server close database before freeing JCR (because pointer is
+  kept in ua and jcr structures).
+- parse all numbers as doubles. Do lots of checking for valid number
+  formats. Allow numbers in scientific form (e.g. 1.5e+10).
+- Remove terabyte modifier as it doesn't work in some compilers.
+- Fix bug in handling some modifiers.
+- Added all necessary code for Recycle to Storage daemon. A Volume
+  marked Recycle will now be overwritten.

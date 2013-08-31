@@ -1,0 +1,235 @@
+              Technical notes on version 1.34  
+                        Kern Sibbald
+
+General:
+21Jun04
+- Fixed Gnome crash on up/down arrow with no history.
+- Fixed btape "fill" crash with multiple tape option.
+19Jun04
+- Fix a number of places in query.sql where multiple JobIds are
+  printed (due to JobMedia records).
+- Add new query: List jobs on Volume given Volume name.   
+- Correct socket close on Win32 in bnet.c (in addition to compat.cpp).
+  Caused fd leak in Win32 for each connection.
+- Remove vol labeled test in askdir update_volume_info so that non-labeled
+  Volume in catalog can be marked in error.
+- Close socket in SD when connection rejected. Caused fd leaks.
+- Initialize job_start_wait cond variable after every new_jcr() otherwise
+  NetBSD gets error in library when trying to delete it without being inited.
+- Fix typo (9 instead of 0) return status in write_new_volume_label.
+- Fix mount.c to call routine that correctly marks a volume in error.
+18Jun04
+- Eliminate printing INFO message in UpdateDB (cats) -- it generates
+  "false" error messages.
+- Eliminate some GTK error messages when running the Gnome2 console.
+16Jun04
+- Apply Peter Eriksson's lib file order changes in linking for IRIX.
+- Abort configure if Internal is  selected as the database.
+- Add testimonials to the Web page
+- Add the bugs list to the Web page "lists".
+- Clarify the English in SuSE and Slackware when SD not running.
+15Jun04
+- Applied the patches sent by Andreas Jellinghaus: build Gnome and  
+  wx-console in client-only build if configured; add ./configure option
+  to permit setting of sbin modes -- default is 0745 as before; remove
+  cats library from Gnome console build; remove old version from Gnome
+  About box. Thanks Andreas.
+
+14Jun04 Release 1.34.4
+12Jun04
+- Enhance regression scripts.
+- Apply Tim Oberfoell's ACL patch.
+11Jun04
+- Implement bsscanf() because sscanf on FreeBSD amd64 stores
+  in 64 bit words for %ld. Turned on for the moment only for
+  FreeBSD amd64.
+- Fix all conversions of ptr to int to use (long unsigned) this
+  works on i386 and amd64.
+- Add mtimeonly and keepatime to new Options list -- omitted before.
+- Add a bit more authentication debug code.
+- Start variable name/overload cleanup in SD
+- Fix sscanf() in askdir.c scanning into bool to use local int.
+- Make max_spool_size int to allow proper arithmetic.
+- Remove trailing junk on sscanf() of "Hello Start Job" in SD.
+- Make ask_sysop_to_mount_volume() always ask sysop.
+- In SD mount.c, if get I/O error or read label error on non-removable
+  Volume, mark the volume in error and retry. 
+- In SD mount.c, if non-removable volume, never ask sysop to mount. We
+  ask sysop if there are no appendable Volumes though.
+- The above 3 items fix the looping error Bacula would get if the
+  Volume was in the catalog but didn't exist -- or was zero bytes 
+  long.
+10Jun04
+- Implement | and < in FD for new FileSet files.
+- Implement simplistic attribute spooling statistics in status.
+- Make storage=xxx on restore override the restore default.
+- Fix an uninitialized stack variable in append.c that caused data
+  corruption on amd64 machines and *could* cause the same on other
+  machines.
+- Fix a seg fault in automatic tape labeling.
+- Eliminate a PoolId=nn when zeroing the InChanger flag for a Volume.
+- Add a bit more debug info to bls.c
+- Clear InChanger flag during "update barcodes" if no VolName present,
+  i.e. no Volume in Changer.
+- An update pulled in Christopher Hull's fixes to the client program          
+  execution on Win32 to search the path and use COMSPEC.  New rules
+  apply!
+- Fix UpdateDB to complain if mum_rows < 1 rather than != 1.
+
+09Apr04 Release 1.34.3
+09Jun04
+- Found and fixed a SD connection problem during update slots scan.
+- Add missing FT codes in new FileSet callback, which caused error
+  return on unchanged directories.
+08Jun04
+- Fix "update volumes" move from one pool to another.
+- Change default search location for PostgreSQL -- thanks
+  to Hans-Ulrich Schaefer.
+06Jun04
+- Zero Slot if not autochanger in stored/mount.c
+- As a last ditch effort to mount the next tape in mount.c, zero slot
+  and ask sysop.                 
+- Win32 status was picking up the first status in the list job terminated
+  jobs instead of the last.
+05Jun04
+- Add additional fields to llist pools
+- Correct some minor label scan problems with update slots
+- Ensure correct Pool is used with tape cleaning prefixes.
+- Eliminate false error message in update slots (slots taken as
+  Storage device).
+02Jun04
+- Print "Unimplemented" message if user does reload command in Console.
+- Add DISTINCT to Volumes for restore in query message (user supplied fix).
+- Fix crash in btape during read after fill -- important bug.
+- Turn config parse ABORTs into ERROR_TERM in Storage daemon.
+- Add dbcheck enhancements submitted by Mano Abels and
+  Jose Luis Tallon.
+- Update autoconf files to latest version.
+01Jun04
+- Modify jobq scheduler to require exclusive use of the Storage device
+  before starting it.
+31May04
+- Eliminate a few compiler warnings on Win32
+- Change Win32 to use btimers instead of timers.
+- Remove two returns in void subroutines in wxbconfigpanel.cpp
+30May04
+- Apply Christopher Hull's check for error return from open_bpipe()
+  in filed/job.c
+- Be sure to clear *all* bits in hourly when an hour is given.
+- Apply a user fix to query.sql
+- Check status code returned from _open_osfhandle in compat
+28May04
+- Apply Peter Eriksson's bug fixes.
+- Add Alpha (tru64) submitted by Scott Bailey.
+- Update manual
+- Add new Autochanger to list supported
+- Cleanup src dir better after glade trashes it with junk
+- Make another attempt to get hourly, daily, ... keywords working
+  intuitively and correctly.
+- Prevent seg fault when no job name specified on "status job"
+- Rename timers.h/.c in lib to prevent conflict on some machines
+- Trap NULL DCR in block.c
+- Add additional info to failed btape test pointing user to manual.
+- Undefine DCR, which is defined on some stupid systems.
+- Fix stored/dircmd.c not to quote Volume name on label query so that
+  "update slots scan" works right (the quotes confused it).
+- Fix autochanger.c not to attempt to unload a slot if the prior loaded
+  request returned -1.
+01May04
+- In testing for Mike Acar's problem. I *finally* found and nailed
+  the mount command that did not release a waiting job. The return
+  of a stolen lock forgot to broadcast.
+- In examining Mike Acar's problems, it appears that the Bacula                      
+  block size is not always set to a multiple of 1024. I've modified
+  block.c to do so.
+30Apr04
+- Add Excludes to new FileSet handling.
+- Fix bsmtp.c to correspond to RFC-2821 by removing extra spaces.
+29Apr04
+- Implement new style FileSets in both the Director and in the
+  File daemon. No filters yet. Both old and new styles work.
+28Apr04
+- Apply the fixes Chris Hanson sent for mtx-changer and for detecting
+  PostgreSQL on debian.
+- Rework File Options document
+- Re-begin work on File Options.
+- Add define for nl_langinfo in configure
+- Add additional tape drives sent by Jesse.
+27Apr04
+- Modify syslog in win32/compat to throw up a MessageBox().
+- Inhibit sending daemon messages to stdout if Win32 is set.
+- PostgreSQL performance updates from Volker Goetz
+- DB script updates suggested by Dan
+- Doc updates
+
+26Apr04 Release 1.34.2
+24Apr04
+- Get production build on Win32 of wx-console working -- mostly a problem
+  of getting the paths right and installing and building wxWidgets.
+23Apr04
+- Create Native Win32 console program.
+- Move bacula-fd.conf from src/win32 to src/win32/baculafd 
+- Make SD utility programs accept device name as well as archive device
+  on command line.
+- Update docs
+22Apr04
+- Fix one off bug in StartBlock in bscan -- thanks to Gregory Brauer for
+  reporting this.
+- Remove old debug code from Win32 FD.
+
+21Apr04 Release 1.34.1
+18Apr04
+- Found and fixed SD crash during restore.
+- Added FreeBSD Bare Metal Recovery documentation by Alex Torres 
+  Molina and others.
+- Added nice graphics produced by Aristedes Maniatis giving an
+  overall view of Bacula.
+- Changed textdomain to be "bacula" in all progs.
+- Fixed a major race condition in the job scheduler when multiple
+  simultaneous jobs is enabled. This occurred only when on job had
+  blocked another because of resource usage. This caused a deadlock
+  and CPU usage. Reported by Michel Meyers.
+- Changed the backup report to indicate "Backup OK -- with warnings
+  if any warning messages were generated.
+- Change output of restore report to indicate:
+  "Restore OK -- warning file count mismatch"
+- Make backup report say "Backup OK with warnings" if either FD or SD
+  report any non-fatal errors.
+- Modify bscan to print some elementary statistics (#Jobs, #Files, ...)
+  added to catalog.
+16Apr04
+- Modify bscan to print some elementary statistics (#Jobs, #Files, ...)
+  added to catalog.
+15Apr04
+- Added --enable-wx-console and updated Makefile.in
+- Fix mtx-changer so that the calling sequence is compatible
+  with the previous version (the new one required arguments that
+  were not necessarily used).
+- Document how to use stunnel with Bacula.
+13Apr04
+- Fix crash in query command.
+- Remove schedule from the default restore job.
+- Fix data spooler to use min/max tape blocking factors.
+- Automatically turn of conio if library not found instead of bombing.
+- Cleaned up a lot of copyright dates.
+- Try to keep spool statistics from going negative.
+09Apr04
+- Added new Pools chapter. Doc about using two disks.
+- Attempt to keep the spool file statistics size from going 
+  negative.
+08Apr04
+- Fix the Director's Scheduled Jobs: list to have a ===
+  termination.
+- Fixed ./configure to disable readline rather than stop if 
+  readline.h is not found
+- Fixed a typo in the SQLite database update script as reported
+  by Robert J. Clark - thanks.
+07Apr04
+- Removed src/win32/pthreads and src/win32/zlib from the source
+  tree.
+- Created a new depkgs-win32 that has the pthreads and zlib source
+  code.
+- Removed the JobDefs from the default Restore job as it has a
+  schedule. Thanks to Matt Howard for this.
+
+06Apr04 Release 1.34.0

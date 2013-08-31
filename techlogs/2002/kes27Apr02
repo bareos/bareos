@@ -1,0 +1,23 @@
+              Technical notes on version 1.19 27Apr02
+                       27 April 2002
+                        Kern Sibbald
+
+General:
+- Fixes to Verify when only MD5 differs.
+- Make gnome-console display messages every five seconds.
+
+Changes submitted this submission:
+- Insert 0 for MD5 as default rather than space.
+- Allow .messages "transparent" command while reading input
+  in UserAgent server.
+- In dird/verify.c ensure that correct filename is printed if only
+  the MD5 differs. Minor reindenting caused large diff.
+- Delete unused code from backup.c
+- In filed/verify.c ensure that same algorithm as backup.c is used
+  to pass back MD5 signatures -- especially for directories and files
+  that cannot be read. Change dummy filename from X to *MD5-id*.
+  This dummy value should never be printed.
+- Make gnome-console poll Director every 5 seconds for output.
+  This means that queued up messages are displayed at reasonable
+  intervals. Delete some unused code hanging around from the tty
+  console program.

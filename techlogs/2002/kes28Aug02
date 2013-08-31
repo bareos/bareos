@@ -1,0 +1,65 @@
+              Technical notes on version 1.25 26Aug02  
+                      28 August 2002
+                       Kern Sibbald
+
+General:
+- Bacula backups now run up to 12 times faster than version 1.24
+- Bacula can run multiple simultaneous Jobs.
+- Had to turn off TRANSACTIONS in SQLite because it doesn't work
+  with multiple simultaneous jobs (I'm working on this).
+- Added a better Job printout for Restore Jobs.
+- Added a save/restore Rate to backup and restore jobs. This
+  does not yet subtract out operator wait time so it will be
+  underestimated it the Job waits on the tape (mount/label).
+- Fixed a major bug caused by free()ing a buffer twice in
+  the Restore code. This made the SD more or less useless after
+  any restore Job. Arrggg!
+- DIR - SD protocol changed, both must be updated at the same time.
+- DIR - FD protocol changed in upward compatible way. Upgrade of   
+  FD not required, but recommended.
+
+Changes submitted this submission:
+- Added bell to "make" when errors are detected.
+- Changed default compile option from -g to -g -O2
+- Additional documentation as usual -- much based on questions or
+  feedback from users. Thanks.
+- Fixed example config files to use new syntax and to have a 
+  Restore Job.
+- Define ETIME to ETIMEOUT for Irix
+- Added JCR filed to DB structure permitting direct printing error
+  messages from within the Database subroutines.
+  Some error messages may be printed twice as a consequence.
+  When I see them or someone reports them, I will remove the double.
+- Added JCR to the bsock structure. This allows direct printing
+  of network errors from within the network code.
+- Made most "trivial" debug messages have level 100 or greater. This
+  allows for easier debugging of new code using the range below 100.
+- Began replacing all Emsg() with Jmsg() using a NULL as the JCR in    
+  Jmsg() is the same as Emsg().
+- Fixed several crashes in the Director because of malformed config files.
+- Added SpoolAttributes to Job resource.
+- Pass CatalogFiles to SD. If set to no, the attributes are dropped 
+  within the SD rather than being sent to the DIR.
+- Cleaned up a number of information/error messages in user interface.
+  This includes eliminating the "pretty please" response in favor of
+  "yes/no" to delete volumes and pools.
+- Cleaned up quite a number of uninitialized variables reported when going
+  to -O2, most were harmless, but a couple could cause problems.
+- The cd command in restore was not working correctly (it didn't allow some
+  legal cds).
+- Fixed a segmentation violation in the directory tree handling code in 
+  the restore command.
+- Handle a few error conditions in the restore command better.
+- Permit "Where" to be set to nul in modification of a run command.
+- Clarified the error message for Verify if an InitCatalog has not previously
+  been done -- thanks Chuck.
+- Add MaximumConcurrentJobs to FD.
+- Added code to mem_pool to die if a buffer is released twice.
+- Lots of work done on SD for multiple simultaneous jobs. Split device.c
+  into device.c, mount.c and acquire.c
+- Started writing new lock code for SD, but may back it out -- needs more
+  thought. Current code works, but is too complicated. Maybe can simplify it.
+- Cleaned up the SD tools code quite a bit. Added bootstrap to all tools.
+- Ensure that tape session labels are not split across two blocks. This makes
+  reading them back much easier.
+- Fixed another restore bug concerning tape labels on multi-volume saves.

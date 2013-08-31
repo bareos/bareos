@@ -1,0 +1,155 @@
+%%
+%%
+%%  The following characters must be preceded by a backslash
+%%    to be entered as printable characters:
+%%
+%%   # $ % & ~ _ ^ \ { }
+%%  
+
+\section{bimagemgr}
+\label{bimagemgr}
+\index[general]{Bimagemgr }
+
+{\bf bimagemgr} is a utility for those who backup to disk volumes in order to
+commit them to CDR disk, rather than tapes. It is a web based interface
+written in Perl and is used to monitor when a volume file needs to be burned to
+disk. It requires: 
+
+\begin{itemize}
+\item A web server running on the bacula server 
+\item A CD recorder installed and configured on the bacula server 
+\item The cdrtools package installed on the bacula server. 
+\item perl, perl-DBI module, and either DBD-MySQL DBD-SQLite or DBD-PostgreSQL modules 
+   \end{itemize}
+
+DVD burning is not supported by {\bf bimagemgr} at this
+time, but both are planned for future releases. 
+
+\subsection{bimagemgr installation}
+\index[general]{bimagemgr!Installation }
+\index[general]{bimagemgr Installation }
+
+Installation from tarball:
+% TODO: use itemized list for this?
+1. Examine the Makefile and adjust it to your configuration if needed.
+2. Edit config.pm to fit your configuration.
+3. Do 'make install' as root.
+4. Edit httpd.conf and change the Timeout value. The web server must not time
+out and close the connection before the burn process is finished. The exact
+value needed may vary depending upon your cd recorder speed and whether you are
+burning on the bacula server on on another machine across your network. In my 
+case I set it to 1000 seconds. Restart httpd.
+5. Make sure that cdrecord is setuid root.
+% TODO: I am pretty sure cdrecord can be used without setuid root
+% TODO: as long as devices are setup correctly
+
+Installation from rpm package:
+% TODO: use itemized list for this?
+1. Install the rpm package for your platform.
+2. Edit /cgi-bin/config.pm to fit your configuration.
+3. Edit httpd.conf and change the Timeout value. The web server must not time
+out and close the connection before the burn process is finished. The exact
+value needed may vary depending upon your cd recorder speed and whether you are
+burning on the bacula server on on another machine across your network. In my 
+case I set it to 1000 seconds. Restart httpd.
+4. Make sure that cdrecord is setuid root.
+
+For bacula systems less than 1.36:
+% TODO: use itemized list for this?
+1. Edit the configuration section of config.pm to fit your configuration.
+2. Run /etc/bacula/create\_cdimage\_table.pl from a console on your bacula
+server (as root) to add the CDImage table to your bacula database.
+
+Accessing the Volume files:
+The Volume files by default have permissions 640 and can only be read by root. 
+The recommended approach to this is as follows (and only works if bimagemgr and 
+apache are running on the same host as bacula.
+
+For bacula-1.34 or 1.36 installed from tarball -
+% TODO: use itemized list for this?
+1. Create a new user group bacula and add the user apache to the group for 
+Red Hat or Mandrake systems. For SuSE systems add the user wwwrun to the 
+bacula group.
+2. Change ownership of all of your Volume files to root.bacula
+3. Edit the /etc/bacula/bacula startup script and set SD\_USER=root and 
+SD\_GROUP=bacula. Restart bacula.
+
+Note: step 3 should also be done in /etc/init.d/bacula-sd but released versions
+of this file prior to 1.36 do not support it. In that case it would be necessary after 
+a reboot of the server to execute '/etc/bacula/bacula restart'.
+
+For bacula-1.38 installed from tarball -
+% TODO: use itemized list for this?
+1. Your configure statement should include:
+% TODO: fix formatting here
+	--with-dir-user=bacula
+        --with-dir-group=bacula
+        --with-sd-user=bacula
+        --with-sd-group=disk
+        --with-fd-user=root
+        --with-fd-group=bacula
+2. Add the user apache to the bacula group for Red Hat or Mandrake systems. 
+For SuSE systems add the user wwwrun to the bacula group.
+3. Check/change ownership of all of your Volume files to root.bacula
+
+For bacula-1.36 or bacula-1.38 installed from rpm -
+% TODO: use itemized list for this?
+1. Add the user apache to the group bacula for Red Hat or Mandrake systems. 
+For SuSE systems add the user wwwrun to the bacula group.
+2. Check/change ownership of all of your Volume files to root.bacula
+
+bimagemgr installed from rpm > 1.38.9 will add the web server user to the 
+bacula group in a post install script. Be sure to edit the configuration 
+information in config.pm after installation of rpm package.
+
+bimagemgr will now be able to read the Volume files but they are still not 
+world readable.
+
+If you are running bimagemgr on another host (not recommended) then you will
+need to change the permissions on all of your backup volume files to 644 in 
+order to access them via nfs share or other means. This approach should only 
+be taken if you are sure of the security of your environment as it exposes 
+the backup Volume files to world read.
+
+\subsection{bimagemgr usage}
+\index[general]{bimagemgr!Usage }
+\index[general]{bimagemgr Usage }
+
+Calling the program in your web browser, e.g. {\tt
+http://localhost/cgi-bin/bimagemgr.pl} will produce a display as shown below
+% TODO: use tex to say figure number
+in Figure 1. The program will query the bacula database and display all volume
+files with the date last written and the date last burned to disk. If a volume
+needs to be burned (last written is newer than last burn date) a "Burn"
+button will be displayed in the rightmost column. 
+
+\addcontentsline{lof}{figure}{Bacula CD Image Manager}
+\includegraphics{\idir bimagemgr1.eps} \\Figure 1 
+% TODO: use tex to say figure number
+
+Place a blank CDR disk in your recorder and click the "Burn" button. This will
+cause a pop up window as shown in Figure 2 to display the burn progress. 
+% TODO: use tex to say figure number
+
+\addcontentsline{lof}{figure}{Bacula CD Image Burn Progress Window}
+\includegraphics{\idir bimagemgr2.eps} \\Figure 2 
+% TODO: use tex to say figure number
+
+When the burn finishes the pop up window will display the results of cdrecord
+% TODO: use tex to say figure number
+as shown in Figure 3. Close the pop up window and refresh the main window. The
+last burn date will be updated and the "Burn" button for that volume will
+disappear. Should you have a failed burn you can reset the last burn date of
+that volume by clicking its "Reset" link. 
+
+\addcontentsline{lof}{figure}{Bacula CD Image Burn Results}
+\includegraphics{\idir bimagemgr3.eps} \\Figure 3 
+% TODO: use tex to say figure number
+
+In the bottom row of the main display window are two more buttons labeled
+"Burn Catalog" and "Blank CDRW". "Burn Catalog" will place a copy of
+your bacula catalog on a disk. If you use CDRW disks rather than CDR then
+"Blank CDRW" allows you to erase the disk before re-burning it. Regularly
+committing your backup volume files and your catalog to disk with {\bf
+bimagemgr} ensures that you can rebuild easily in the event of some disaster
+on the bacula server itself. 

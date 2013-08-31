@@ -1,0 +1,11 @@
+#!/bin/sh
+
+ftp -i ftp.sectoor.de <<END_OF_DATA
+cd www/htdocs/dev-manual
+lcd /home/kern/bacula/docs/manual/bacula
+mput *
+cd ..
+lcd ..
+put dev-bacula.pdf dev-bacula.pdf
+quit
+END_OF_DATA

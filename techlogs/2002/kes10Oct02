@@ -1,0 +1,34 @@
+              Technical notes on version 1.26 10Oct02  
+                     10 October 2002
+                       Kern Sibbald
+
+General:
+- Changed Job name conventions to avoid : which is an illegal
+  character on Windows.
+
+Changes submitted this submission:
+- Added check for inet_pton to configure.in. If it does not
+  exist (e.g. Windows) use inet_aton
+- Documentation on GZIP.
+- Another restore doc example.
+- Documented btape fill command.
+- Set default restore directory from /tmp to /tmp/bacula-restores
+- Add additional no find error messages to sql_get.c
+- Creating a bootstrap file on Windows failed because the Job name
+  contained colons which are illegal on Windows. Replaced the
+  colons with periods.  This corrects the Windows restore problem.
+- Print number of files to be restored in "restore" command.
+- On Windows systems, if there is a prefix, completely eliminate
+  any drive: at the beginning of a path.
+- Minor corrections to the tree routines to handle Windows
+  files such as c:/ better. Previously it insisted on /c:/, which
+  would then not be found in the catalog for a "dir" command.
+- Modified cd command in restore to try /c: if c: fails.
+- Add a new S_ISWIN32 bit to the st_mode word so that low level
+  routines that create files do not print error messages.
+- More work must be done to restore all Windows files correctly.
+  Currently the following bits are not handled:
+    Archive
+    Hidden
+    System 
+  Also, all the dates are not properly restored.

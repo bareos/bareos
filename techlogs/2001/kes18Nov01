@@ -1,0 +1,24 @@
+              Technical notes on version 1.4-18Nov
+                       18 November 2001
+                        Kern Sibbald
+
+General:
+
+Changes submitted this submission:
+- Allow the console to set the debug level in any or all of
+  the daemons.
+- Detect lchown in ./configure
+- Automount after "label". This can be turned off. Default
+  is on. If the volume is not automatically mounted, a message
+  is printed to remind you to mount it.
+- Additional details in the status output (name of current
+  file being saved in File daemons).
+- On Win32, the Status dialogue box now refreshes automatically
+  every 5 seconds. Someday, I'll implement a "Preferences" dialog
+  so that the refresh time can be set.
+- The beginnings of platform dependent install code to allow
+  automatic start of any or all the daemons.
+- I'm just now upgrading to the latest version of CYGWIN, which
+  reportedly does not have the recursive make SEGV problem and
+  which should handle pthread_cancel() much better.
+

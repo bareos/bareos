@@ -1,0 +1,69 @@
+%%
+%%
+
+\documentclass[11pt,a4paper]{report}
+\usepackage{html}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{bacula}
+\usepackage{longtable}
+\usepackage{makeidx}
+\usepackage{index}
+\usepackage{setspace}
+\usepackage{hyperref}
+
+
+\makeindex
+\newindex{general}{idx}{ind}{General Index}
+
+\sloppy
+
+\begin{document}
+\sloppy
+
+\newfont{\bighead}{cmr17 at 36pt}
+\parskip 10pt
+\parindent 0pt
+
+\title{\includegraphics{./bacula-logo.eps} \\ \bigskip
+  \begin{center}
+   \large{It comes in the night and sucks 
+          the essence from your computers. }
+  \end{center}
+}
+
+\author{Kern Sibbald}
+\date{\vspace{1.0in}\today \\
+      This manual documents Bacula-web version \input{version} \\
+      The Bacula-web program was written by Juan Luis Frances\\
+      \vspace{0.2in}\\
+      Copyright \copyright 2005-2008, Free Software Foundation Europe e.V.
+      \\
+      \vspace{0.2in}\\
+  Permission is granted to copy, distribute and/or modify this document under the terms of the \\
+  GNU Free Documentation License, Version 1.2 published by the Free Software Foundation; \\ 
+  with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts. \\
+  A copy of the license is included in the section entitled "GNU Free Documentation License".
+}
+
+\maketitle
+
+\clearpage
+\tableofcontents
+\clearpage
+\listoffigures
+\clearpage
+\listoftables
+\clearpage
+
+\include{general}
+\include{fdl}
+
+% The following line tells link_resolver.pl to not include these files:
+% nolinks developersi baculai-dir baculai-fd baculai-sd baculai-console baculai-main
+
+% pull in the index
+\clearpage
+\printindex
+
+\end{document}

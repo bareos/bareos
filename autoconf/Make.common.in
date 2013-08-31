@@ -1,0 +1,43 @@
+# autoconf/Make.common.in        -*- Makefile -*-
+# release date (man), LSM date, version number/name, current maintainer
+DATE="@DATE@"
+LSMDATE=@LSMDATE@
+VERSION=@VERSION@
+VERNAME=bacula-$(VERSION)#
+MAINT=Kern Sibbald#
+MAINTEMAIL=<kern@sibbald.com>#
+#-------------------------------------------------------------------------
+
+SHELL = /bin/sh
+
+# Installation target directories & other installation stuff
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+binprefix =
+manprefix =
+sbindir = @sbindir@
+sysconfdir = @sysconfdir@
+scriptdir = @scriptdir@
+mandir = @mandir@/man1
+manext = 1
+datarootdir=@datarootdir@
+
+# Tools & program stuff
+MV = @MV@
+RM = @RM@
+RMF = @RM@ -f
+CP = @CP@
+SED = @SED@
+AWK = @AWK@
+ECHO = @ECHO@
+CMP = @CMP@
+INSTALL = @INSTALL@
+# add the -s to the following in PRODUCTION mode
+INSTALL_PROGRAM = @INSTALL@ -m @SBINPERM@
+INSTALL_DATA = @INSTALL@ -m 644
+INSTALL_SCRIPT = @INSTALL@ -m @SBINPERM@
+INSTALL_CONFIG = @INSTALL@ -m 640
+
+
+# End of common section of the Makefile
+#-------------------------------------------------------------------------

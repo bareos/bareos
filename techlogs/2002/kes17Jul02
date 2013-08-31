@@ -1,0 +1,33 @@
+              Technical notes on version 1.23 16Jul02
+                      17 July 2002
+                      Kern Sibbald
+
+General:
+- Added support for autoloaders
+
+Changes submitted this submission:
+- Added changer support to devices.c
+- Allow user to change Slot in the Volume record.
+- Implemented code in lib to run an external program
+  (tape changer)
+- Implemented a changer script for mtx.
+- Currently the changer commands used are:  
+    loaded -- returns number of slot loaded or 0
+    load   -- loads a specified slot
+    unload -- unloads the device (returns casette to slot)
+- Other changer commands defined but not yet used:
+    list   -- returns list of slots containing a cassette
+    slots  -- returns total number of slots 
+- Implemented ChangerCommand, specified in the SD Device
+  resource, permits editing of:
+      %% = %
+      %a = archive device name
+      %c = changer device name
+      %f = Client's name
+      %j = Job name
+      %o = command
+      %s = Slot base 0
+      %S = Slot base 1
+      %v = Volume name
+- Implemented ChangerTimeout default 60 seconds. It is 
+  specified in the SD Device resource.

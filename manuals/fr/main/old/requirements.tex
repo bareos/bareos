@@ -1,0 +1,63 @@
+%%
+%%
+
+\chapter{Caract\'eristiques syst\`eme g\'en\'erales indispensables \`a Bacula}
+\label{_ChapterStart51}
+\index[general]{Caract\'eristiques syst\`eme g\'en\'erales indispensables \`a Bacula }
+\index[general]{Bacula!Caract\'eristiques syst\`eme g\'en\'erales indispensables \`a }
+\addcontentsline{toc}{section}{Caract\'eristiques syst\`eme g\'en\'erales indispensables \`a Bacula}
+
+\label{SysReqs}
+
+\section{Caract\'eristiques syst\`eme g\'en\'erales indispensables \`a Bacula}
+\index[general]{Caract\'eristiques syst\`eme g\'en\'erales indispensables \`a Bacula }
+\index[general]{Bacula!Caract\'eristiques syst\`eme g\'en\'erales indispensables \`a }
+\addcontentsline{toc}{section}{Caract\'eristiques syst\`eme g\'en\'erales indispensables \`a Bacula}
+
+\begin{itemize}
+\item {\bf Bacula} a \'et\'e compil\'e et ex\'ecut\'e sur  les syst\`emes
+   Linux RedHat, Mandriva, SUSE, Debian et Gentoo, sur FreeBSD, et Solaris. 
+\item Il requiert GNU C++ version 2.95 ou sup\'erieur pour compiler. Vous 
+   pouvez essayer avec d'autres compilateurs et des versions plus anciennes,  mais
+   vous serez seuls.  Nous avons compil\'e et utilis\'e avec succ\`es Bacula sur 
+RH8.0/RH9/RHEL 3.0 avec GCC 3.2. Note, en g\'en\'eral GNU C++ est un  paquet
+s\'epar\'e (e.g. RPM) de GNU C, et vous devrez avoir les deux. Sur les
+syst\`emes RedHat, le compilateur C++ fait partie du paquet RPM {\bf
+gcc-c++}. 
+\item Certains paquets tiers sont n\'ecessaires \`a {\bf Bacula}. 
+   Except\'e pour MySQL et PostgreSQL, ils peuvent tous \^etre  trouv\'es dans
+   les distributions {\bf depkgs} et {\bf depkgs1}. 
+\item Si vous voulez construire les binaires Win32, vous aurez besoin du 
+   compilateur Microsoft Visual C++ (ou Visual Studio).  Bien que tous les
+   composants compilent (la console produit quelques messages  d'alertes), seul
+le File Daemon a \'et\'e  test\'e. 
+\item {\bf Bacula} requiert une bonne impl\'ementation fonctionnelle des
+   pthreads.  Ce n'est pas le cas sur certains syst\`emes BSD. 
+\item Le code source a \'et\'e \'ecrit dans un esprit de  portabilit\'e et est
+   le plus souvent compatible POSIX.  Ainsi le portage sur chaque syst\`eme
+   d'exploitation  compatible POSIX est relativement ais\'e. 
+\item Le programme GNOME Console est developp\'e et test\'e sous GNOME  2.X.
+   Il s'ex\'ecute aussi sous GNOME 1.4 mais cette version est  d\'epr\'eci\'ee et
+   n'est plus maintenue. 
+\item Le programme wxWidgets Console est developp\'e et test\'e avec la 
+   derni\`ere version stable de 
+   \elink{ wxWidgets}{http://www.wxwidgets.org/} (2.4.2). Il fonctionne  bien
+avec la version Windows et GTK+-1.x de wxWidgets, ainsi que  sur les autres
+plateformes support\'ees par wxWidgets. 
+\item Le programme Tray Monitor est developp\'e pour GTK+-2.x.  Il n\'ecessite
+   Gnome \gt{}=2.2, KDE \gt{}=3.1 ou un  gestionnaire de fen\^etre supportant le
+   standard 
+\elink{systemtray}{http://www.freedesktop.org/Standards/systemtray-spec} de 
+FreeDesktop. 
+\item Si vous voulez permettre l'\'edition en ligne de  commande et
+   l'historique, il vous faudra  /usr/include/termcap.h et l'une des
+   biblioth\`eques  termcap ou ncurses charg\'ee (libtermcap-devel ou 
+ncurses-devel).
+\item Si vous voulez utiliser des DVD en guise de media de sauvegarde, vous devrez 
+   t\'el\'echarger les \elink{dvd+rw-tools 5.21.4.10.8}{http://fy.chalmers.se/~appro/linux/DVD+RW/}, 
+   appliquer le \elink{patch}{http://cvs.sourceforge.net/viewcvs.py/*checkout*/bacula/bacula/patches/dvd+rw-tools-5.21.4.10.8.bacula.patch} 
+   pour rendre ces outils compatibles avec Bacula, puis les compiler et installer. 
+   N'utilisez pas les dvd+rw-tools fournis par votre distribution, ils ne 
+   fonctionneront pas avec Bacula.
+
+\end{itemize}

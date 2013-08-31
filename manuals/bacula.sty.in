@@ -1,0 +1,79 @@
+%% bacula.sty
+%% Provides macros and other stuff for the bacula manual
+%% 
+%% Original Creation -- K. Cunningham 2005-01-09
+%% 
+%% 
+%% 
+%% New Commands Currently implemented:
+%% 
+%% \elink{target}{text}
+%%    Inserts the text indicated (highlighted) and provides
+%%    an external hyperlink to the target.
+%% 
+%% 
+%% \ilink{target}{text}
+%%    Inserts the text indicated (highlighted) and provides
+%%    an internal hyperlink to the target. Target must be a
+%%    \label somewhere in the same document.
+%% 
+%% \lt
+%%    Inserts a less-than character (<).
+%%
+%% \gt
+%%    Inserts a greater-than character (>).
+%%
+%% \idir
+%%    Inserts the path to the images
+%%
+%% 
+%% 
+\ProvidesPackage{bacula}[2008/10/03]
+%%
+%%
+%% define images directory -- KES 15Aug08
+\def\idir{@BUILD_DIR@/images/}  %% images directory
+
+\def\version{@VERSION@}
+
+
+%%
+\newcommand*{\elink}[2]{%
+  \htmladdnormallink{#1}{#2}%
+}
+%%
+\newcommand*{\ilink}[2]{%
+  \htmlref{#1}{#2}%
+}
+%%
+\newcommand{\dq}{\verb+"+}
+\newcommand{\vb}{$|$}
+\newcommand{\lt}{$<$}
+\newcommand{\gt}{$>$}
+
+%% copied from /usr/share/texmf/tex/latex/base/book.cls, and
+%%  modified to suit.  KEC 4-28-05
+%% KEC: Removed the two-column arrangement, and added \newpage
+\renewenvironment{theindex}
+               {\if@twocolumn
+                  \@restonecolfalse
+                \else
+                  \@restonecoltrue
+                \fi
+%% KEC:  Switch to one column.
+%%              \columnseprule \z@
+%%              \columnsep 35\p@
+%%              \twocolumn[\@makeschapterhead{\indexname}]%
+                \@mkboth{\MakeUppercase\indexname}%
+                        {\MakeUppercase\indexname}%
+                                \clearpage
+                                \subsection*{\indexname}
+                                \addcontentsline{toc}{subsection}{\indexname}
+                \thispagestyle{plain}\parindent\z@
+                \parskip\z@ \@plus .3\p@\relax
+                \let\item\@idxitem}
+                                {\if@restonecol\onecolumn\else\clearpage\fi}   %% Is this needed???
+
+%% 
+\endinput
+%% 

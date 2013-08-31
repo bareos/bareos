@@ -1,0 +1,1209 @@
+%%
+%%
+
+\chapter{La commande restore de la console Bacula}
+\label{_ChapterStart13}
+\index[general]{Commande!restore de la console Bacula}
+\index[general]{La commande restore de la console Bacula}
+\addcontentsline{toc}{section}{La commande restore de la console Bacula}
+
+\section{G\'en\'eralit\'es}
+\index[general]{G\'en\'eralit\'es}
+\addcontentsline{toc}{section}{G\'en\'eralit\'es}
+
+Nous allons maintenant d\'ecrire la restauration de fichiers avec la commande
+{\bf restore} de la Console, qui est le mode de restauration recommand\'e.
+Il existe cependant un programme ind\'ependant nomm\'e {\bf bextract}, qui permet
+lui aussi de restaurer des fichiers. Pour plus d'informations sur ce
+programme, consultez le chapitre \ilink{Programmes utilitaires Bacula}{bextract}
+de ce manuel. Vous y trouverez aussi des informations sur le programme {\bf bls}
+qui sert \`a produire une liste du contenu de vos volumes, et sur le programme
+{\bf bscan} qui vous sera utilie si vous voulez restaurer les enregistrements
+du catalogue relatifs \`a un ancien volume qui n'y figure plus.
+
+En g\'en\'eral, pour restaurer un fichier ou un ensemble de fichiers, vous devez
+ex\'ecuter un job de type {\bf restore}, par cons\'equent, vous devez pr\'ed\'efinir
+un tel job dans le fichier de configuration de votre Director. Les param\`etres
+(Client, FileSet,...) que vous d\'efinissez ici ne sont pas importants,
+Bacula les ajustera automatiquement lors de l'utilisation de {\bf restore}.
+
+Bacula \'etant un programme r\'eseau, il vous appartient de vous assurer que
+vous avez s\'electionn\'e le bon client et le bon disque dur pour recevoir la
+restauration. Bacula peut sauvegarder le client A et restaurer ses fichiers 
+sur le client B, pourvu que leurs syst\`emes ne soient pas trop diff\'erents 
+au niveau de leurs structures de fichiers. Par d\'efaut, Bacula restaure les 
+donn\'ees sur leur client d'origine, mais pas \`a leur emplacement d'origine : 
+dans le r\'epertoire {\bf /tmp/bacula-restores}. Vous pouvez modifier ces 
+valeurs par d\'efaut lorsque la commande {\bf restore} vous demande confirmation 
+d'ex\'ecution du job en choisissant l'option {\bf mod}.
+
+\label{Example1}
+\section{La commande Restore}
+\index[general]{Commande!Restore }
+\index[general]{La commande Restore}
+\addcontentsline{toc}{section}{La commande Restore}
+Puisque Bacula maintient un catalogue des fichiers sauvegard\'es, et des volumes 
+o\`u ils sont stock\'es, il peut se charger de la majeure partie du travail 
+d'intendance. Ainsi, il vous suffit de sp\'ecifier le type de restauration que 
+vous souhaitez (d'apr\`es la derni\`ere sauvegarde, d'apr\`es la derni\`ere sauvegarde 
+ant\'erieure \`a une date sp\'ecifi\'ee...), et quels fichiers vous voulez restaurer. 
+
+Ceci est r\'ealis\'e par la commande {\bf restore} de la Console. Vous s\'electionnez 
+d'abord le type de restauration souhait\'ee ce qui entra\^ine la s\'election des 
+JobIds requis et la construction d'une arborescence interne \`a Bacula contenant 
+les enregistrements de fichiers des JobIds s\'electionn\'es. A ce stade, le 
+processus de restauration entre dans un mode o\`u vous pouvez naviguer 
+interactivement dans l'arborescence des fichiers disponibles pour restauration 
+et s\'electionner ceux que vous voulez restaurer. Ce mode est similaire au 
+programme de s\'election de fichier interactif standard d'Unix {\bf restore}.
+
+Si vos fichiers ont \'et\'e \'elagu\'es, la commande {\bf restore} sera dans 
+l'incapacit\'e de les trouver. Voyez ci-dessous pour plus de d\'etails sur ce cas 
+de figure.
+
+Dans la Console, apr\`es avoir saisi {\bf restore}, le menu suivant vous est 
+pr\'esent\'e :
+
+\footnotesize
+\begin{verbatim}
+First you select one or more JobIds that contain files
+to be restored. You will be presented several methods
+of specifying the JobIds. Then you will be allowed to
+select which files from those JobIds are to be restored.
+To select the JobIds, you have the following choices:
+     1: List last 20 Jobs run
+     2: List Jobs where a given File is saved
+     3: Enter list of comma separated JobIds to select
+     4: Enter SQL list command
+     5: Select the most recent backup for a client
+     6: Select backup for a client before a specified time
+     7: Enter a list of files to restore
+     8: Enter a list of files to restore before a specified time
+     9: Find the JobIds of the most recent backup for a client
+    10: Find the JobIds for a backup for a client before a specified time
+    11: Enter a list of directories to restore for found JobIds
+    12: Cancel
+Select item:  (1-12):
+\end{verbatim}
+\normalsize
+
+\begin{itemize}
+\item Le choix 1 \'enum\`ere les 20 derniers jobs ex\'ecut\'es. Si vous trouvez 
+   celui (ceux) que vous voulez, vous pouvez ensuite faire le choix 3 et entrer 
+   son (leurs) JobId(s).
+
+\item Le choix 2 affiche tous les Jobs ayant sauvegard\'e un fichier 
+   sp\'ecifi\'e. Si vous trouvez celui (ceux) que vous voulez, vous pouvez ensuite 
+   faire le choix 3 et entrer son (leurs) JobId(s).
+
+\item Le choix 3 vous permet de saisir une liste de JobIds, s\'epar\'es par des 
+   virgules. Les fichiers de ces jobs seront plac\'es dans l'arborescence afin 
+   que vous puissiez s\'electionner ceux que vous voulez restaurer.
+
+\item Le choix 4 vous permet d'entrer une requ\^ete SQL arbitraire. C'est 
+   certainement le moyen le plus primitif pour trouver les jobs d\'esir\'es, 
+   mais aussi le plus flexible. Si vous trouvez celui (ceux) que vous voulez, 
+   vous pouvez ensuite faire le choix 3 et entrer son (leurs) JobId(s).
+      
+\item Le choix 5 s\'electionne automatiquement la full la plus r\'ecente, et toutes 
+   les incr\'ementales et diff\'erentielles subs\'equentes \`a cette full pour un 
+   client sp\'ecifi\'e. Il s'agit l\`a des jobs et fichiers qui, si vous les 
+   restaurez, ram\`eneront votre syst\`eme \`a son dernier \'etat sauvegard\'e. 
+   Les JobIds sont automatiquement charg\'es dans l'arborescence. C'est 
+   probablement le plus pratique des choix propos\'es pour restaurer un 
+   client \`a son \'etat le plus r\'ecent.
+
+   Notez que ce processus de s\'election automatique ne s\'electionnera jamais 
+   un job qui a \'echou\'e (termin\'e avec un statut d'erreur). Si vous disposez 
+   d'un tel job dont vous voulez extraire des fichiers, vous devez 
+   eplicitement entrer son JobId au niveau du choix 3 et choisir les fichiers 
+   \`a restaurer.
+   
+   Si certains de jobs requis pour la restauration ont eu leurs enregistrements 
+   de fichiers \'elagu\'es, la restauration sera incompl\`ete. Bacula ne d\'etecte 
+   pas, pour l'instant, cette condition. Vous pouvez cependant la 
+   contr\^oler en examinant attentivement la liste des jobs s\'electionn\'es 
+   et affich\'es par Bacula. Si vous trouvez des jobs dont le champ JobFiles 
+   est \`a z\'ero alors que ces fichiers auraient d\^u \^etre sauvegard\'es, alors 
+   vous pouvez vous attendre \`a des probl\`emes.
+   
+   Si tous les enregistrements de fichiers ont \'et\'e \'elagu\'es, Bacula constatera 
+   qu'il n'y a aucune r\'ef\'erence \`a aucun fichier pour le JobIds s\'electionn\'es 
+   et vous en informera, et vous proposera de faire une restauration compl\`ete 
+   (non s\'elective) de ces JobIds. Ceci est possible car Bacula sait encore 
+   o\`u commencent les donn\'ees sur les volumes, m\^eme s'il ne sait plus o\`u sont 
+   les fichiers individuellement.
+   
+\item Le choix 6 vous permet de sp\'ecifier une date et un heure. Bacula 
+   s\'electionne alors automatiquement la plus r\'ecente full ant\'erieure \`a cette date 
+   ainsi que les incr\'ementales et diff\'erentielles subs\'equentes \`a cette full et 
+   ant\'erieures \`a cette date.
+
+\item Le choix 7 vous permet de sp\'ecifier un ou plusieurs noms de fichiers 
+   (le chemin absolu est requis) \`a restaurer. Les noms de fichiers sont saisis 
+   un par un, \`a moins que vous ne pr\'ef\'eriez cr\'eer un fichier pr\'efix\'e du 
+   caract\`ere "moins" (\lt{}) que Bacula consid\`ere comme une liste de fichier 
+   \`a restaurer. Pour quitter ce mode, entrez une ligne vide.
+
+\item Le choix 8 vous permet de sp\'ecifier une date et une heure avant 
+   d'entrer les noms de fichiers. Voir le choix 7 pour plus de d\'etails.
+
+\item Le choix 9 vous permet de d\'eterminer les JobIds de la sauvegarde 
+   la plus r\'ecente pour un client. C'est essentiellement la m\^eme chose 
+   que le choix 5 (le m\^eme code est utilis\'e), mais ces JobIds sont 
+   conserv\'es en interne comme si vous les aviez saisis manuellement. 
+   Vous pouvez alors faire le choix 11 pour restaurer un ou plusieurs 
+   r\'epertoires.
+   
+\item Le choix 10 est le m\^eme que le 9, sauf qu'il vous permet d'entrer 
+   une date butoir (comme pour le choix 6) pour la s\'election des JobIds. 
+   Ces JobIds sont conserv\'es en interne comme si vous les aviez saisis manuellement.
+   
+\index[general]{Restaurer des r\'epertoires}
+\item Le choix 11 vous permet d'entrer une liste de JobIds \`a partir de 
+   laquelle vous pouvez s\'electionner les r\'epertoires \`a restaurer. La liste de 
+   JobIds peut avoir \'et\'e \'etablie pr\'ec\'edemment \`a l'aide des choix 9 ou 10 
+   du menu. Vous pouvez alors entrer le chemin absolu d'un r\'epertoire, ou 
+   un nom de fichier pr\'efix\'e d'un signe "moins" (\lt{}) contenant la liste 
+   des r\'epertoires \`a restaurer. Tous les fichiers des r\'epertoires s\'electionn\'es 
+   seront restaur\'es, mais pas les sous-r\'epertoires, \`a moins que vous ne les 
+   sp\'ecifiiez explicitement. 
+   
+\item  Le choix 12 vous permet d'abandonner la restauration.
+\end{itemize}
+
+A titre d'exemple, supposons que nous s\'electionnions l'option 5 (restaurer \`a 
+l'\'etat le plus r\'ecent). Bacula vous demande alors le client d\'esir\'e ce qui, 
+sur mon syst\`eme, se manifeste ainsi :
+
+\footnotesize
+\begin{verbatim}
+Defined clients:
+     1: Rufus
+     2: Matou
+     3: Polymatou
+     4: Minimatou
+     5: Minou
+     6: MatouVerify
+     7: PmatouVerify
+     8: RufusVerify
+     9: Watchdog
+Select Client (File daemon) resource (1-9):
+     
+\end{verbatim}
+\normalsize
+
+Si vous n'avez qu'un client, il est automatiquement s\'electionn\'e. Dans le cas 
+pr\'esent, j'entre {\bf Rufus} pour s\'electionner ce client. Bacula a 
+maintenant conna\^itre le FileSet \`a restaurer, aussi il affiche :
+
+\footnotesize
+\begin{verbatim}
+The defined FileSet resources are:
+     1: Full Set
+     2: Kerns Files
+Select FileSet resource (1-2):
+     
+\end{verbatim}
+\normalsize
+
+J'opte pour le choix 1, ma sauvegarde full. En principe, vous n'aurez qu'un 
+FileSet pour chaque job, et si vos machines de ressemblent (m\^emes syst\`emes), 
+vous pouvez n'avoir qu'un seul FileSet pour tous vos clients.
+
+A ce stade, Bacula d\'etient toutes les informations dont il a besoin pour 
+trouver le jeu de sauvegardes le plus r\'ecent. Il va maintenant interroger le 
+cataloguie, ce qui peut prendre un peu de temps, et afficher quelque chose 
+comme :
+
+\footnotesize
+\begin{verbatim}
++-------+------+----------+-------------+-------------+------+-------+----------
+--+
+| JobId | Levl | JobFiles | StartTime   | VolumeName  | File | SesId |
+VolSesTime |
++-------+------+----------+-------------+-------------+------+-------+----------
+--+
+| 1,792 | F    |  128,374 | 08-03 01:58 | DLT-19Jul02 |   67 |    18 |
+1028042998 |
+| 1,792 | F    |  128,374 | 08-03 01:58 | DLT-04Aug02 |    0 |    18 |
+1028042998 |
+| 1,797 | I    |      254 | 08-04 13:53 | DLT-04Aug02 |    5 |    23 |
+1028042998 |
+| 1,798 | I    |       15 | 08-05 01:05 | DLT-04Aug02 |    6 |    24 |
+1028042998 |
++-------+------+----------+-------------+-------------+------+-------+----------
+--+
+You have selected the following JobId: 1792,1792,1797
+Building directory tree for JobId 1792 ...
+Building directory tree for JobId 1797 ...
+Building directory tree for JobId 1798 ...
+cwd is: /
+$
+\end{verbatim}
+\normalsize
+
+(Certaines colonnes sont tromqu\'ees pour des n\'ecessit\'es de mise en page).
+
+Selon le nombre de {\bf JobFiles} pour chaque JobId, la construction de 
+l'arborescence peut prendre un certain temps. Si vous constatez que tous les 
+JobFiles sont \`a z\'ero, vos fichiers ont probalement \'et\'e \'elagu\'es et vous ne 
+pourrez pas s\'electionner les fichiers individuellement : vous devrez 
+restaurer tout ou rien.
+
+Dans notre exemple, Bacula a trouv\'e quatre jobs qui comprennent la 
+sauvegarde la plus r\'ecente du client et du FileSet sp\'ecifi\'es. Deux des jobs 
+ont le m\^eme JobId car le job a \'ecrit sur deux volumes diff\'erents. Le 
+troisi\`eme est une incr\'ementale qui n'a sauvegard\'e que 254 fichier sur les 
+128 374 de la full. Le quatri\`eme est aussi une incr\'ementale, et n'a sauvegard\'e 
+que 15 fichiers. 
+
+Maintenant Bacula ins\`ere ces jobs dans l'arborescence, sans en marquer aucun 
+pour restauration par d\'efaut. Il vous indique le nombre de fichiers dans 
+l'arbre, et vous informe que le r\'epertoire de travail courant ({\bf cwd}) est 
+/. Finalement, Bacula vous invite avec le signe (\$) \`a saisir des commandes 
+pour vous d\'eplacer dans l'arborescence, et s\'electionner des fichiers.
+
+Si vous voulez que tous les fichiers de l'arbre soient marqu\'es pour 
+restauration \`a sa construction, tapez {\bf restore all}.
+
+Plut\^ot que de choisir l'option 5 du premier menu (s\'electionner la 
+sauvegarde la plus r\'ecente pour un client), si nous avions choisi l'option 3 
+(Entrer une liste de JobIds \`a s\'electionner), et si nous avions saisi 
+{\bf 1792,1797,1798}, nous serions arriv\'es au m\^eme point. 
+             
+Il faut noter un point si vous saisissez manuellement les JobIds : vous devez 
+les entrer dans l'ordre o\`u ils ont \'et\'e ex\'ecut\'es (en g\'en\'eral, l'ordre croissant. 
+Si vous les sasissez dans un ordre diff\'erent, vous courrez le risque de ne pas 
+version la plus r\'ecente d'un fichier sauvegard\'e plusieurs fois si celui-ci a \'et\'e 
+sauvegard\'e dans plusieurs jobs.
+
+Entre vos JobIds directement peut aussi vous permettre de restaurer depuis 
+un job qui a \'ecrit des donn\'ees sur les volumes mais qui s'est termin\'e en erreur.
+
+Dans le mode s\'election de fichiers, vous pouvez utiliser {\bf help} ou une 
+question (?) pour produire un r\'esum\'e des commandes disponibles :
+
+\footnotesize
+\begin{verbatim}
+ Command    Description
+  =======    ===========
+  cd         change current directory
+  count      count marked files in and below the cd
+  dir        long list current directory, wildcards allowed
+  done       leave file selection mode
+  estimate   estimate restore size
+  exit       same as done command
+  find       find files, wildcards allowed
+  help       print help
+  ls         list current directory, wildcards allowed
+  lsmark     list the marked files in and below the cd
+  mark       mark dir/file to be restored recursively in dirs
+  markdir    mark directory name to be restored (no files)
+  pwd        print current working directory
+  unmark     unmark dir/file to be restored recursively in dir
+  unmarkdir  unmark directory name only no recursion
+  quit       quit and do not do restore
+  ?          print help
+\end{verbatim}
+\normalsize
+
+Par d\'efaut, aucun fichier n'est s\'electionn\'e pour restauration (sauf si vous  
+avez ajout\'e {\bf all} \`a la ligne de commande). Si, \`a ce stade, vous voulez 
+tout restaurer, vous devriez saisir {\bf mark *}, puis {\bf done}, Bacula 
+\'ecrira alors les donn\'ees bootstrap dans un fichier et sollicitera votre 
+approbation pour d\'emarrer la restauration.
+
+Si vous n'utilisez pas {\bf mark *}, vous commencez avec une s\'election vide. 
+Vous pouvez simplement regarder et marquer ({\bf mark}) les fichiers et/ou 
+r\'epertoires qui vous int\'eressent. Il est ais\'e de commettre une erreur dans ces 
+op\'erations, et la gestion des erreurs dans Bacula n'est pas parfaite, aussi 
+contr\^olez votre travail avec la commande {\bf ls} ou {\bf dir} pour voir 
+quels fichiers ont \'et\'e s\'electionn\'es. Les fichiers s\'electionn\'es sont pr\'ec\'ed\'es 
+d'une ast\'erisque.
+
+Pour contr\^oler ce qui est marqu\'e et ce qui ne l'est pas utilisez la commande 
+{\bf count} qui affiche :
+
+\footnotesize
+\begin{verbatim}
+128401 total files. 128401 marked to be restored.
+     
+\end{verbatim}
+\normalsize
+
+Chacune des commandes ci-dessus sera expliqu\'e plus en d\'etail dans la 
+prochaine section. Poursuivons avec notre exemple, en validant la restauration de 
+tous les fichiers. En saisissant {\bf done}, Bacula affiche :
+
+\footnotesize
+\begin{verbatim}
+Bootstrap records written to /home/kern/bacula/working/restore.bsr
+The restore job will require the following Volumes:
+   
+   DLT-19Jul02
+   DLT-04Aug02
+128401 files selected to restore.
+Run Restore job
+JobName:    kernsrestore
+Bootstrap:  /home/kern/bacula/working/restore.bsr
+Where:      /tmp/bacula-restores
+Replace:    always
+FileSet:    Kerns Files
+Client:     Rufus
+Storage:    SDT-10000
+JobId:      *None*
+OK to run? (yes/mod/no):
+    
+\end{verbatim}
+\normalsize
+
+Examinez chaque \'el\'ement attentivement pour vous assurer que tout est 
+conforme \`a ce que vous souhaitez. En particulier, v\'erifiez la ligne {\bf where}, 
+qui vous indique dans quelle partie du syst\`eme de fichiers vos donn\'ees 
+seront restaur\'ees, et quel client va les recevoir (par d\'efaut, les 
+restaurations ont lieu sur le client d'origine). Ces param\`etres n'auront pas 
+forc\'ement les bonnes valeurs, mais vous pouvez les modifier \`a l'aide 
+de la commande {\bf mod} et en vous laissant guider par l'invite de la 
+console.
+
+L'affichage ci-dessus suppose que vous ayez d\'efini une ressource Job de type 
+{\bf restore} dans le fichier de configuration de votre Director. en 
+principe, vous n'en n'aurez besoin que d'une, car, par nature, une 
+restauration est une op\'eration essentiellement manuelle. A l'aide de la 
+Console, vous pourrez modifier le job Restore pour faire ce que vous voulez 
+qu'il fasse.
+
+Un exemple de ressource Job de type restore est donn\'e plus bas.
+
+Pour en revenir \`a notre exemple, en plus de v\'erifier le client, il est sage 
+de v\'erifier que le p\'eriph\'erique de stockage choisi par Bacula est le bon. 
+Bien que le FileSet soit pr\'esent\'e, il est en fait ignor\'e dans la restauration. 
+Le processus de restauration choisit ses fichiers en lisant le fichier 
+{\bf bootstrap}, et restaure tous les fichiers associ\'es au JobId consid\'er\'e 
+si ce fichier n'est pas sp\'ecifi\'e. 
+
+Enfin, avant de lancer la restauration, notez que le lieu par d\'efaut pour les 
+fichiers restaur\'es n'est pas leur emplacement d'origine mais le r\'epertoire 
+{\bf /tmp/bacula-restores}. Vous pouvez modifier cette valeur par d\'efaut dans 
+le fichier de configuration du Director, ou avec l'option {\bf mod}. Si vous 
+voulez restaurer les fichiers \`a leurs emplacements d'origine, modifiez l'option 
+{\bf where} : sp\'ecifiez la racine ({\bf /} ou rien du tout).
+
+Si vous entrez maintenant {\bf yes}, Bacula lance la restauration. le Storage 
+Daemon va d'abord requ\'erir le volume {\bf DLT-19Jul02}, puis le {\bf DLT-04Aug02} 
+une fois qu'il aura extrait les fichiers requis du premier.
+
+\section{S\'electionner des fichiers par leurs noms}
+\index[general]{S\'electionner des fichiers par leurs noms}
+\index[general]{Noms de fichiers!S\'electionner des fichiers par leurs}
+\addcontentsline{toc}{section}{S\'electionner des fichiers par leurs noms}
+
+Si vous n'avez qu'un petit nombre de fichiers \`a restaurer dont vous connaissez 
+les noms, vous pouvez, aux choix, placer ces noms dans un fichier qui sera 
+lu par Bacula, ou saisir les noms un par un. Les noms de fichier doivent inclure 
+le chemin absolu. Les caract\`eres jokers ne peuvent \^etre utilis\'es.
+
+Pour saisir la liste, choisissez l'option 7 dans le menu de la commande {\bf restore} :
+
+\footnotesize
+\begin{verbatim}
+To select the JobIds, you have the following choices:
+     1: List last 20 Jobs run
+     2: List Jobs where a given File is saved
+     3: Enter list of comma separated JobIds to select
+     4: Enter SQL list command
+     5: Select the most recent backup for a client
+     6: Select backup for a client before a specified time
+     7: Enter a list of files to restore
+     8: Enter a list of files to restore before a specified time
+     9: Find the JobIds of the most recent backup for a client
+    10: Find the JobIds for a backup for a client before a specified time
+    11: Enter a list of directories to restore for found JobIds
+    12: Cancel
+Select item:  (1-12):
+\end{verbatim}
+\normalsize
+
+Vous \^etes alors invit\'e \`a pr\'eciser le client :
+
+\footnotesize
+\begin{verbatim}
+Defined Clients:
+     1: Timmy
+     2: Tibs
+     3: Rufus
+Select the Client (1-3): 3
+\end{verbatim}
+\normalsize
+
+Si vous n'avez qu'un client, il est s\'electionn\'e automatiquement.
+Finalement, Bacula vous demande d'entrer un nom de fichier :
+
+\footnotesize
+\begin{verbatim}
+Enter filename:
+\end{verbatim}
+\normalsize
+
+Vous pouvez, \`a ce stade, saisir le chemin absolu et le nom du fichier :
+
+\footnotesize
+\begin{verbatim}
+Enter filename: /home/kern/bacula/k/Makefile.in
+Enter filename:
+\end{verbatim}
+\normalsize
+
+Si Bacula ne peut en trouver aucune copie, il affiche ce qui suit :
+
+\footnotesize
+\begin{verbatim}
+Enter filename: junk filename
+No database record found for: junk filename
+Enter filename:
+\end{verbatim}
+\normalsize
+
+Si vous souhaitez que Bacula r\'ecup\`ere la liste des fichiers \`a restaurer depuis 
+un fichier, r\'edigez ce fichier et donnez lui un nom commen\c{c}ant par le signe 
+moins (\lt{}) et saisissez-le ici. Lorsque vous avez entr\'e tous les noms de 
+fichiers, validez une ligne vide. Bacula \'ecrit maintenant le fichier 
+bootstrap, vous indique les cartouches qui seront utilis\'ees, et vous propose 
+de valider la restauration :
+
+\footnotesize
+\begin{verbatim}
+Enter filename:
+Automatically selected Storage: DDS-4
+Bootstrap records written to /home/kern/bacula/working/restore.bsr
+The restore job will require the following Volumes:
+   
+   test1
+1 file selected to restore.
+Run Restore job
+JobName:    kernsrestore
+Bootstrap:  /home/kern/bacula/working/restore.bsr
+Where:      /tmp/bacula-restores
+Replace:    always
+FileSet:    Kerns Files
+Client:     Rufus
+Storage:    DDS-4
+When:       2003-09-11 10:20:53
+Priority:   10
+OK to run? (yes/mod/no):
+\end{verbatim}
+\normalsize
+
+Il est possible d'automatiser la s\'election des fichiers en pla\c{c}ant votre liste 
+de fichiers dans, part exemple, {\bf /tmp/file-list}, puis en utilisant la 
+commande suivante :
+
+\footnotesize
+\begin{verbatim}
+restore client=Rufus file=</tmp/file-list
+\end{verbatim}
+\normalsize
+
+Si, en modifiant les param\`etres du job restauration, vous constatez que Bacula 
+vous demande d'entrer un num\'ero de job, c'est vous n'avez pour l'instant sp\'ecifi\'e 
+ni num\'ero de job, ni fichier bootstrap. Entrez simplement z\'ero pour pouvoir 
+continuer et s\'electionner une autre option \`a modifier.
+
+\label{CommandArguments}
+
+\section{Arguments de la ligne de commande}
+\index[general]{Arguments!ligne de commande}
+\index[general]{Arguments de la ligne de commande}
+\addcontentsline{toc}{section}{Arguments de la ligne de commande}
+
+Si tout ce qui pr\'ec\`ede vous a sembl\'e compliqu\'e, vous admettrez certainement 
+que ce n'est vraiment pas le cas apr\`es quelques essais. Il est possible de 
+faire tout ce qui vient d'\^etre vu en utilisant la ligne de commande, \`a 
+l'exception de la s\'election du FileSet. Voici une telle ligne de commande :
+
+\footnotesize
+\begin{verbatim}
+restore client=Rufus select current all done yes
+\end{verbatim}
+\normalsize
+
+Le sp\'ecification {\bf client=Rufus} s\'electionne automatiquement le client Rufus, 
+l'option {\bf current} pr\'ecise que vous voulez une restauration \`a l'\'etat le plus 
+r\'ecent possible, et le  {\bf yes} \'elude l'invite finale {\bf yes/mod/no} et 
+ex\'ecute directement la restauration.
+
+Voici la liste des arguments de la ligne de commandes :
+
+\begin{itemize}
+\item {\bf all} -- s\'electionne tous les fichiers pour la restauration.
+\item {\bf select} -- utilise la s\'election via l'arborescence.
+\item {\bf done} -- permet de quitter le mode de s\'election dans l'arborescence.
+\item {\bf current} -- s\'electionne automatiquement le jeu de sauvegardes le plus 
+   r\'ecent pour le client sp\'ecifi\'e.
+\item {\bf client=xxxx} -- S\'electionne le client sp\'ecifi\'e.  
+\item {\bf jobid=nnn} -- Sp\'ecifie un JobId ou une liste de JobIds s\'epar\'es par des 
+   virgules pour la restauration.
+\item {\bf before=YYYY-MM-DD HH:MM:SS} -- Sp\'ecifie une date et un horaire. Bacula 
+   s\'electionne le plus r\'ecent des jeux de sauvegardes ant\'erieurs \`a la date sp\'ecifi\'ee.
+   Cette commande n'est pas tr\`es conviviale, en effet, vous devez sp\'ecifier la date 
+   et l'heure en respectant exactement le mod\`ele.
+\item {\bf file=filename} -- Sp\'ecifie un nom de fichier \`a restaurer. Vous devez 
+   sp\'ecifier le chemin absolu vers le fichier. Si vous pr\'efixez l'entr\'ee d'un signe moins 
+   (\lt{}), Bacula consid\`ere que ce fichier existe et qu'il contient la liste des 
+   fichiers \`a restaurer. Les sp\'ecifications multiples {\bf file=xxx} peuvent \^etre 
+   utilis\'ees en ligne de commandes.
+\item {\bf jobid=nnn} -- Sp\'ecifie un JobId \`a restaurer. 
+\item {\bf pool=pool-name} -- Sp\'ecifie un nom de pool \`a utiliser pour la s\'election des 
+   volumes au niveau des options 5 et 6 (restauration \`a l'\'etat le plus r\'ecent et 
+   restauration \`a l'\'etat le plus r\'ecent avant une date donn\'ee). Ceci vous permet d'avoir 
+   plusieurs pools, dont un \'eventuellement hors site et l'autre sur place disponible pour 
+   les restaurations.
+\item {\bf yes} -- Ex\'ecute automatiquement la restauration sans passer par l'invite finale 
+   de validation/modification surtout utile pour l'utilisation dans des scripts). 
+   \end{itemize}
+
+\section{Restaurer les attributs de fichiers}
+\index[general]{Attributs de fichiers!Restaurer}
+\index[general]{Restaurer les attributs de fichiers}
+\addcontentsline{toc}{section}{Restaurer les attributs de fichiers}
+
+Selon la fa\c{c}on dont vous restaurez, vous pouvez ou non restaurer les 
+attributs de fichiers \`a leur \'etat initial. Voici quelques uns des 
+probl\`emes auxquels vous pouvez \^etre confront\'es, et, pour les 
+restaurations sur la machine d'origine, comment les \'eviter.
+
+\begin{itemize}
+\item Vous avez sauvegard\'e des fichiers sur une machine, et les restaurez
+   sur une autre qui a peut-\^etre un autre syst\`eme d'exploitation ou des 
+   utilisateurs/groupes diff\'erents. Bacula fait du mieux qu'il peut dans ces 
+   situations. Notez qu'utilisateurs et groupes sont sauvegard\'es au format 
+   num\'erique, et qu'ils peuvent donc se r\'ef\'erer \`a d'autres utilisateurs et 
+   groupes sur un autre syst\`eme.
+\item Vous restaurez dans un r\'epertoire existant sur lequel portent des 
+   restrictions du droit de cr\'eation. Bacula tente alors de tout r\'etablir, 
+   mais sans parcourir la cha\^ine compl\`ete des r\'epertoires ni les modifier 
+   durant la restauration. En fait, ce que pourra faire Bacula pour r\'etablir 
+   les permissions correctement d\'epend pour beaucoup de votre syst\`eme 
+   d'exploitation.
+\item Vous faites une restauration recursive d'une arborescence. Dans ce cas, 
+   de figure, Bacula restaure un fichier avant de restaurer l'entr\'ee de son 
+   r\'epertoire parent. Dans le processus de restauration du fichier, Bacula 
+   cr\'ee le r\'epertoire parent avec des permissions ouvertes et le m\^eme 
+   propri\'etaire que le fichier restaur\'e. Alors, lorsque Bacula tente de restaurer 
+   le r\'epertoire en lui m\^eme, il se rend compte qu'il existe d\'ej\`a (situation 
+   similaire \`a la pr\'ec\'edente). Si vous avez fix\'e l'option "Replace" \`a "never" 
+   lors du lancement du job, alors Bacula ne modifie pas les permissions et 
+   propri\'et\'es du r\'epertoire pour s'accorder \`a ce qu'elles \'etaient lors de la 
+   sauvegarde. Vous devriez aussi noter une divergence entre le nombre de fichiers 
+   effectivement restaur\'es et le nombre de fichiers attendus. Si vous voulez 
+   \'eviter ces inconv\'enients, fixez l'option "Replace" \`a "always", ainsi 
+   Bacula sera en mesure de modifier les propri\'etaire et permissions des 
+   r\'epertoires pour les ramener \`a leurs \'etats d'origine. Le nombre de 
+   fichiers restaur\'es devrait cette fois \^etre identique \`a celui attendu.
+
+\item Vous avez s\'electionn\'e un ou plusieurs fichiers d'un r\'epertoire sans 
+   s\'electionner le r\'epertoire lui-m\^eme. Dans ce cas, si le r\'epertoire 
+   n'existe pas d\'ej\`a, Bacula le cr\'ee avec des attributs par d\'efaut qui ne 
+   seront peut-\^etre pas ceux d'origine. Si vous ne voulez pas s\'electionner 
+   un r\'epertoire et tout son contenu, mais seulement quelques objets dans 
+   ce r\'epertoire en les marquant individuellement, vous devriez utiliser 
+   la commande {\bf markdir} pour s\'electionner un r\'epertoire de plus haut 
+   niveau (un \`a la fois) si vous voulez que les entr\'ees de r\'epertoires 
+   soient restaur\'ees correctement.
+\end{itemize}
+
+\label{Windows}
+
+\section{Restaurer sur Windows}
+\index[general]{Restaurer sur Windows}
+\index[general]{Windows!Restaurer sur}
+\addcontentsline{toc}{section}{Restaurer sur Windows}
+Sur les syst\`emes WinNT/2K/XP, Bacula restaure les fichiers avec les droits 
+et permissions d'origine comme on s'y attend. Ceci est aussi v\'erifi\'e si vous 
+restaurez ces fichiers vers un autre r\'epertoire (avec l'option "where") que celui 
+d'origine. Cependant, si le nouveau r\'epertoire n'existe pas, le File Daemon 
+tente de le cr\'eer. Dans certains cas, il n'y parvient pas. S'il y parvient, le 
+r\'epertoire cr\'e\'e appartient \`a l'utilisateur qui ex\'ecute le File Daemon, c'est-\`a-dire 
+SYSTEM. Dans ce cas, il se peut que vous ayez des difficult\'es pour acc\'eder aux 
+fichiers fraichement restaur\'es.
+
+Pour \'eviter ce probl\`eme, vous devriez cr\'eer le r\'epertoire alternatif avant 
+de lancer la restauration. Bacula ne changera pas les attributs de ce r\'epertoire, 
+du moment que ce n'est pas l'un des r\'epertoires \`a restaurer.
+
+Le r\'epertoire de restauration par d\'efaut est {\bf /tmp/bacula-restores/}, qui devient  
+{\bf /tmp/bacula-restores/e/} si vous restaurez depuis le disque {\bf E}. 
+Aussi, assurez-vous que ce r\'epertoire existe avant de lancer la restauration, ou 
+utilisez l'option {\bf mod} pour s\'electionner un r\'epertoire destination existant.
+
+Certains utilisateurs ont signal\'e des probl\`emes en restaurant des fichiers 
+qui participent \`a Active Directory. Ils ont aussi rapport\'e que le changement de 
+l'Id utilisateur sous lequel est ex\'ecut\'e Bacula de SYSTEM en un Id d'administrateur 
+du domaine r\'esout le probl\`eme.
+
+\section{Une restauration peut prendre du temps}
+\index[general]{temps!Restauration}
+\index[general]{Une restauration peut prendre du temps}
+\addcontentsline{toc}{section}{Une restauration peut prendre du temps}
+
+Restaurer des fichiers est g\'en\'eralement {\bf beaucoup} plus lent que de les 
+sauvegarder, ce pour plusieurs raisons. La premi\`ere est que lors d'une sauvegarde, 
+la cartouche est normalement d\'ej\`a positionn\'ee, Bacula n'a qu'\`a \'ecrire dessus. 
+D'autre part, les restaurations \'etant si rares (par rapport aux sauvegardes), 
+Bacula ne garde dans le catalogue que l'emplacement sur la cartouche du premier 
+fichier et du premier bloc pour chaque job, et non l'emplacement de chaque fichier, 
+ce qui occuperait trop de place dans le catalogue.
+
+Bacula se place d'abord sur la bonne marque de fichier sur la cartouche, puis 
+sur le bloc correct, puis lit s\'equentiellement chaque enregistrement jusqu'\`a 
+trouver ceux correspondant aux fichier que vous voulez restaurer. Une fois ces 
+fichiers restaur\'es, Bacula cesse de lire la cartouche.
+
+Enfin, au lieu de simplement lire un fichier comme pour une sauvegarde, Bacula 
+doit, lors d'une restauration, cr\'eer les fichiers, tandis que le syst\`eme 
+d'exploitation doit, de son cot\'e, allouer de l'espace disque pour ces fichiers 
+restaur\'es.
+
+Pour toutes ces raisons, le processus de restauration est g\'en\'eralement beaucoup 
+plus lent que celui de sauvegarde (une restauration peut prendre trois fois 
+plus de temps que la sauvegarde).
+
+\section{Probl\`emes lors de la restauration de fichiers}
+\index[general]{Fichiers!Probl\`emes de restauration}
+\index[general]{Probl\`emes lors de la restauration de fichiers}
+\addcontentsline{toc}{section}{Probl\`emes lors de la restauration de fichiers}
+
+Les probl\`emes que les utilisateurs rencontrent le plus souvent lors des restaurations 
+sont des messages d'erreurs tels que :
+
+\footnotesize
+\begin{verbatim}
+04-Jan 00:33 z217-sd: RestoreFiles.2005-01-04_00.31.04 Error:
+block.c:868 Volume data error at 20:0! Short block of 512 bytes on
+device /dev/tape discarded.
+\end{verbatim}
+\normalsize
+
+ou 
+
+\footnotesize
+\begin{verbatim}
+04-Jan 00:33 z217-sd: RestoreFiles.2005-01-04_00.31.04 Error:
+block.c:264 Volume data error at 20:0! Wanted ID: "BB02", got ".".
+Buffer discarded.
+\end{verbatim}
+\normalsize
+
+Ces deux types de messages indiquent que vous avez probablement utilis\'e votre 
+lecteur en mode "blocs de taille fixe" plut\^ot qu'en mode "blocs de taille 
+variable". Le mode "blocs de taille fixe" fonctionne avec tout programme 
+qui lit les cartouches s\'equentiellement tel que {\bf tar}, cependant Bacula 
+repositionne la bande suivant les blocs lors des restaurations, ce qui lui 
+permet d'am\'eliorer les performances en restauration de plusieurs ordres 
+de grandeur lorsqu'il s'agit de restaurer quelques fichiers isol\'es. Il existe 
+plusieurs moyens pour vous tirer de ce mauvais pas.
+
+Tentez-les l'un apr\`es l'autre, en r\'etablissant votre ressource Device apr\`es 
+chacun des tests :
+
+\begin{enumerate}
+\item D\'esactivez le positionnement par blocs ("Block Positioning = no" 
+   dans la ressource Device) et essayez de restaurer. Cette directive est 
+   r\'ecente et n'est pas encore bien test\'ee.
+\item R\'eglez \`a 512 les tailles minimum et maximum de blocs  
+   ("Minimum Block Size = 512" et "Maximum  Block Size = 512") et essayez de 
+   restaurer. Si vous \^etes en mesure de d\'eterminer la taille de blocs 
+   utilis\'ee par votre lecteur pour \'ecrire les donn\'ees, vous devriez essayer 
+   cette valeur si la restauration a \'echou\'e avec 512. 
+\item Editez le fichier restore.bsr \`a l'invite yes/mod/no de la 
+   commande Run xxx avant de valider la restauration, et supprimez tous les 
+   enregistrements VolBlock. Ce sont eux qui causent les repositionnements de 
+   la bande et les probl\`emes qui s'ensuivent si vous utilisez des blocs de taille 
+   fixe sur votre lecteur. Les commandes VolFile provoquent aussi le 
+   repositionnement, mais celui-ci fonctionne ind\'ependamment de la taille des blocs.
+\item Utilisez bextract pour extraire vos fichiers -- ce programme lit les 
+   volumes s\'equentiellement si vous utilisez la fonctionnalit\'e des listes 
+   d'inclusions, ou si vous utilisez un fichier .bsr (priv\'e des enregistrements 
+   VolBlock) \`a l'invite "yes/mod/no" qui pr\'ec\`ede le lancement de la 
+   restauration.
+\end{enumerate}
+
+\section{Erreurs de restaurations}
+\index[general]{Erreurs!Restauration}
+\index[general]{Erreurs de restauration}
+\addcontentsline{toc}{section}{Erreurs de restauration}
+
+Il existe de multiples causes qui peuvent \^etre \`a l'origine de messages d'alerte ou d'erreurs 
+lors des restaurations. Les plus courantes sont les suivantes :
+
+\begin{description}
+
+\item [file count mismatch]
+   Cette erreur peut se produire dans les cas suivants : 
+   \begin{itemize}
+   \item Vous avez enjoint Bacula \`a ne pas \'ecraser les fichiers 
+      existants ou plus r\'ecents.
+   \item Bacula a commis une erreur dans le d\'ecompte des fichiers/r\'epertoires. 
+      Ceci est un probl\`eme inh\'erent \`a la complexit\'e des r\'epertoires, liens 
+      symboliques/durs, etc. Contr\^olez simplement que tous les fichiers voulus ont \'et\'e 
+      effectivement restaur\'es.
+   \end{itemize}
+\item [file size error]
+   Lorsque Bacula restaure un fichier, il v\'erifie que la taille du fichier 
+   restaur\'e est conforme aux donn\'ees d'\'etat enregistr\'ees au d\'ebut de la sauvegarde 
+   du fichier. En cas de divergence, Bacula affiche un message d'erreur. Cet 
+   divergence survient presque toujours \`a cause d'une \'ecriture du fichier 
+   au cours de sa sauvegarde. Dans ce cas, la taille du fichier restaur\'e 
+   est plus grande que la taille enregistr\'ee dans les donn\'ees d'\'etat. Cette 
+   erreur se produit souvent avec les fichiers de journaux.
+
+   Si en revanche la taille du fichier restaur\'ee est plus petite, vous devriez 
+   pousser vos investigations du cot\'e d'un \'eventuel probl\`eme de bande et 
+   contr\^oler les rapports de Bacula ainsi que votre syst\`eme de journalisation.
+\end{description}
+
+\section{Un exemple de ressource Restore Job}
+\index[general]{Exemple ressource Restore Job }
+\index[general]{Ressource!Exemple Restore Job }
+\addcontentsline{toc}{section}{Exemple ressource Restore Job}
+
+\footnotesize
+\begin{verbatim}
+Job {
+  Name = "RestoreFiles"
+  Type = Restore
+  Client = Any-client
+  FileSet = "Any-FileSet"
+  Storage = Any-storage
+  Where = /tmp/bacula-restores
+  Messages = Standard
+  Pool = Default
+}
+\end{verbatim}
+\normalsize
+Si la directive {\bf Where} n'est pas pr\'ecis\'ee, les fichiers sont restaur\'es \`a 
+leur emplacement d'origine. 
+\label{Selection}
+
+\section{Les commande de s\'election de fichiers}
+\index[general]{Commandes!s\'election fichiers}
+\index[general]{Fichiers S\'election Commandes }
+\addcontentsline{toc}{section}{Commandes de s\'election de fichiers}
+
+Une fois que vous avez s\'electionn\'e les jobs \`a restaurer et apr\`es que Bacula a cr\'e\'e 
+l'arborescence des r\'epertoires en m\'emoire, vous entrez dans le mode de s\'election 
+de fichiers, ce qui est rappel\'e par l'invite ({\bf \$}). Dans ce mode, vous 
+pouvez utiliser les commandes \'enum\'er\'ees plus haut. Vous pouvez naviguer dans 
+l'arborescence avec la commande {\bf cd} tout comme vous le feriez dans  
+un syst\`eme de fichiers. Lorsque vous \^etes dans un r\'epertoire, vous pouvez en 
+s\'electionner des fichiers ou r\'epertoires pour restauration. Par d\'efaut, aucun 
+fichier n'est s\'electionn\'e. Si vous souhaitez au contraire partir d'une situation 
+o\`u tous les fichiers sont s\'electionn\'es, saisissez simplement : {\bf cd /} et 
+{\bf mark *}. Sinon, s\'electionnez vos fichiers avec la commande {\bf mark}. Les 
+commandes disponibles sont :
+
+\begin{description}
+
+\item [cd]
+   La commande {\bf cd} change le r\'epertoire courant en l'argument sp\'ecifi\'e. les 
+   caract\`eres joker ne sont pas admis. 
+
+   Notez que sur les syst\`emes Windows, les diff\'erents disques (c:, d:, ...) sont 
+   trait\'es comme des r\'epertoires dans l'arborescence. Une cons\'equence est que vous 
+   devez saisir {\bf cd c:} ou \'eventuellement {\bf cd C:} pour descendre dans le 
+   premier r\'epertoire.
+
+\item [dir]
+   \index[dir]{dir }
+   La commande {\bf dir} est similaire \`a la commande {\bf ls}, mais produit un 
+   affichage au format long (tous les d\'etails). Cette commande peut \^etre un peu 
+   plus lente que la commande {\bf ls} car elle n\'ecessite l'acc\`es au catalogue 
+   pour produire les informations d\'etaill\'ees concernant chaque fichier.
+
+\item [estimate]
+   \index[dir]{estimate }
+   La commande {\bf estimate} affiche un aper\c{c}u du nombre total de fichiers dans 
+   l'arbre, de ceux s\'electionn\'es pour restauration, et une estimation du nombre 
+   d'octets \`a restaurer. Ceci peut-\^etre tr\`es utile si la machine o\`u vous comptez 
+   restaurer est limit\'ee en espace disque.
+
+\item [find]
+   \index[dir]{find }
+   La commande {\bf find} prend un ou plusieurs arguments et affiche tous les fichiers 
+   de l'arbre qui satisfont ces arguments. Les arguments peuvent comporter 
+   des caract\`eres joker. Cette commande est similaire \`a la commande Unix 
+   {\bf find / -name arg}.
+
+\item [ls]
+   La commande {\bf ls} produit la liste des fichiers du r\'epertoire courant, comme 
+   le ferait la commande Unix {\bf ls}. Vous pouvez sp\'ecifier un argument 
+   comportant des caract\`eres joker, auquel cas seuls les fichiers concern\'es seront 
+   list\'es. Le nom de tout fichier s\'electionn\'e pour restauration est pr\'ec\'ed\'e 
+   d'un ast\'erisque ({\bf *}). Les noms de r\'epertoires sont suivis d'une barre oblique 
+   avant (slash {\bf /}) pour les distinguer des noms de fichiers.
+
+\item [lsmark]
+   \index[fd]{lsmark}
+   La commande {\bf lsmark} est similaire \`a la commande {\bf ls}, mais de port\'ee  
+   restreinte aux fichiers s\'electionn\'es pour restauration. D'autre part, contrairement 
+   \`a {\bf lsmark}, elle descend r\'ecursivement dans les sous-r\'epertoire du 
+   r\'epertoire s\'electionn\'e.
+
+\item [mark]
+   \index[dir]{mark }
+   La commande {\bf mark} vous permet de s\'electionner vos fichiers pour restauration. 
+   Elle prend pour unique argument le nom du fichier ou r\'epertoire (du r\'epertoire 
+   courant) \`a restaurer. L'argument peut comporter des caract\`eres joker, auquel cas 
+   tous les fichiers qui co\"incident avec le motif sp\'ecifi\'e sont s\'electionn\'es pour 
+   restauration. Si un r\'epertoire du r\'epertoire courant co\"incide avec l'argument, 
+   alors ce r\'epertoire et tous les fichiers qu'il contient sont r\'ecursivement 
+   s\'electionn\'es pour restauration. Chacun des fichiers s\'electionn\'e est identifiable par 
+   l'ast\'erisque qui pr\'ec\`ede son nom dans la liste produite par les commandes {\bf ls} 
+   ou {\bf dir}. Notez que fournir un chemin absolu en argument de la commande 
+   {\bf mark} ne produit pas le r\'esultat qu'on pourrait en attendre pour s\'electionner 
+   un fichier ou un r\'epertoire du r\'epertoire courant. La commande {\bf mark} travaille 
+   sur le r\'epertoire courant et sur les r\'epertoires enfants, mais ne remonte pas vers les 
+   r\'epertoires de plus haut niveau.
+
+   Apr\`es ex\'ecution, la commande {\bf mark} affiche un bref r\'esum\'e :
+
+\footnotesize
+\begin{verbatim}
+    No files marked.    
+
+\end{verbatim}
+\normalsize
+
+   si aucun fichier n'a \'et\'e s\'electionn\'e, ou :
+
+\footnotesize
+\begin{verbatim}
+    nn files marked.
+    
+\end{verbatim}
+\normalsize
+
+   si certains fichiers ont \'et\'e s\'electionn\'es.
+
+\item [unmark]
+   \index[dir]{unmark }
+   la commande {\bf unmark} fonctionne exactement comme la commande {\bf mark}, mais 
+   sert \`a d\'es\'electionner les fichiers sp\'ecifi\'es pour qu'ils ne soient pas 
+   restaur\'es. Notez que la commande {\bf unmark} travaille sur le r\'epertoire courant 
+   et sur les r\'epertoires enfants, mais ne remonte pas vers les r\'epertoires de plus 
+   haut niveau. Si vous souhaitez d\'es\'electionner l'ensembles des fichiers, placez-vous  
+   \`a la racine ({\bf cd /}) avant de saisir {\bf unmark *}.
+
+\item [pwd]
+   \index[dir]{pwd }
+   La commande {\bf pwd} affiche le r\'epertoire courant. Elle ne prend aucun argument.
+
+\item [count]
+   \index[dir]{count }
+   La commande {\bf count} affiche le nombre total de fichiers dans l'arborescence des 
+   fichiers et le nombre de fichiers s\'electionn\'es pour restauration.
+
+\item [done]
+   \index[dir]{done }
+   Cette commande permet de quitter le mode de s\'election de fichiers.
+
+\item [exit]
+   \index[fd]{exit }
+   Cette commande permet de quitter le mode de s\'election de fichiers (identique \`a {\bf done}).
+
+\item [quit]
+   \index[fd]{quit }
+   Cette commande permet de quitter le mode de s\'election de fichiers sans ex\'ecuter la restauration.
+
+\item [help]
+   \index[fd]{help }
+   Cette commande affiche un aper\c{c}u des commandes disponibles.
+
+\item [?]
+   Cette commande est identique \`a {\bf help}.
+\end{description}
+
+\label{database_restore}
+\section{Restaurer lorsque tout va de travers}
+\index[general]{Restaurer lorsque tout va de travers}
+\index[general]{Restaurer le catalogue}
+\index[general]{Catalogue!Restaurer}
+\addcontentsline{toc}{section}{Restaurer lorsque tout va de travers}
+
+Je pr\'esente ici quelques-uns des probl\`emes qui peuvent survenir et 
+rendre les op\'erations de restaurations plus difficiles, et quelques id\'ees 
+pour se sortir de ces situations d\'elicates. Des informations plus 
+sp\'ecifiques aux restaurations compl\`etes des \ilink{clients}{restore_client}
+ou du \ilink{serveur}{restore_server} sont fournies dans le chapitre 
+\ilink{Disaster recovery avec Bacula}{_ChapterRescue}.
+
+\begin{description}
+\item[Probl\`eme]
+   Mon catalogue est corrompu.
+\item[Solution]
+   Pour SQLite, utilisez la commande {\bf vacuum} pour tenter de r\'ecup\'erer 
+   le catalogue. Pour MySQL ou PostgreSQL, consultez la documentation 
+   officielle de la base de donn\'ees. Des outils sp\'ecifiques vous permettront 
+   de contr\^oler et r\'eparer votre catalogue.
+
+   Dans le cas contraire, vous devrez restaurer le catalogue.
+\item[Probl\`eme]
+   Comment restaurer mon catalogue ?
+\item[Solution]
+   Si vous avez sauvegard\'e votre catalogue quotidiennement (comme il se doit...) 
+   et avez fait un fichier {\it bootstrap}, vous pouvez imm\'ediatement 
+   recharger votre base de donn\'ees. Faites une copie de votre base courante, 
+   puis r\'einitialisez-la avec les scripts suivants :
+\begin{verbatim}
+   ./drop_bacula_tables
+   ./make_bacula_tables
+\end{verbatim}
+   Apr\`es r\'einitialisation de la base, vous devriez pouvoir d\'emarrer Bacula.
+   Si vous tentez maintenat d'utiliser la commande {\bf run}, \c{c}a ne 
+   marchera pas puisque le catalogue est vierge. Cependant, vous pouvez 
+   ex\'ecuter manuellement un job et sp\'ecifier votre fichier bootstrap.
+   Pour cela, utilisez la commande {\bf run} et choisissez un job de type 
+   {\bf retore}. Si vous utilisez le bacula-dir.conf par d\'efaut, il s'agit 
+   de {\bf RestoreFiles}. Vous devriez obtenir quelque chose comme :
+
+\footnotesize
+\begin{verbatim}
+Run Restore job
+JobName:    RestoreFiles
+Bootstrap:  /home/kern/bacula/working/restore.bsr
+Where:      /tmp/bacula-restores
+Replace:    always
+FileSet:    Full Set
+Client:     rufus-fd
+Storage:    File
+When:       2005-07-10 17:33:40
+Catalog:    MyCatalog
+Priority:   10
+OK to run? (yes/mod/no): 
+\end{verbatim}
+\normalsize
+   Plusieurs param\`etres seront diff\'erents dans votre cas. Vous aller modifier 
+   (commande {\bf mod}) le param\`etre {\bf Bootstrap} pour qu'il pointe 
+   vers votre fichier bootstrap, et vous assurer que les autres param\`etres 
+   sont corrects. Notez que le FileSet est ignor\'e lorque vous utilisez un 
+   fichier bootstrap. Une fois que vous avez fix\'e tous les bons param\`etres, 
+   ex\'evutez le job, vous devriez r\'ecup\'erer la sauvegarde de votre catalogue. 
+   Il vous reste alors \`a r\'eg\'en\'erer votre base de donn\'ees \`a partir du 
+   fichier de sauvegarde ASCII.
+
+\item[Solution]
+   Si vous avez sauvegard\'e votre catalogue mais n'avez pas fait de fichier 
+   bootstrap, la reconstruction du catalogue sera un peu plus difficile. 
+   Il vous faudra probablement utiliser {\bf bextract} pour extraire 
+   la sauvegarde du catalogue. D'abord vous devez la localiser en 
+   consultant le rapport de la derni\`ere sauvegarde du catalogue. Il comporte 
+   des informations qui vous seront pr\'ecieuses pour le restaurer rapidement.
+   Par exemple, dans le rapport ci-dessous, les \'elements critiques sont 
+   {\it Volume name(s)}, {\it the Volume Session Id} et {\it Volume Session Time}. 
+   Si vous les connaissez, vous pouvez restaurer ais\'ement votre catalogue.
+\footnotesize
+\begin{verbatim}
+
+22-Apr 10:22 HeadMan: Start Backup JobId 7510,
+Job=CatalogBackup.2005-04-22_01.10.0
+22-Apr 10:23 HeadMan: Bacula 1.37.14 (21Apr05): 22-Apr-2005 10:23:06
+  JobId:                  7510
+  Job:                    CatalogBackup.2005-04-22_01.10.00
+  Backup Level:           Full
+  Client:                 Polymatou
+  FileSet:                "CatalogFile" 2003-04-10 01:24:01
+  Pool:                   "Default"
+  Storage:                "DLTDrive"
+  Start time:             22-Apr-2005 10:21:00
+  End time:               22-Apr-2005 10:23:06
+  FD Files Written:       1
+  SD Files Written:       1
+  FD Bytes Written:       210,739,395
+  SD Bytes Written:       210,739,521
+  Rate:                   1672.5 KB/s
+  Software Compression:   None
+  Volume name(s):         DLT-22Apr05
+  Volume Session Id:      11
+  Volume Session Time:    1114075126
+  Last Volume Bytes:      1,428,240,465
+  Non-fatal FD errors:    0
+  SD Errors:              0
+  FD termination status:  OK
+  SD termination status:  OK
+  Termination:            Backup OK
+
+\end{verbatim}
+\normalsize
+  Avec ces informations, vous pouvez cr\'eer manuellement un fichier 
+  bootstrap et embrayer sur les instructions donn\'ees plus haut pour 
+  restaurer le catalogue. Un fichier bootstrap reconstruit pour le job 
+  ci-dessus ressemblerait \`a ceci :
+
+\footnotesize
+\begin{verbatim}
+Volume="DLT-22Apr05"
+VolSessionId=11
+VolSessionTime=1114075126
+FileIndex=1-1
+\end{verbatim}
+\normalsize    
+  
+  o\`u les valeurs {\it Volume name}, {\it Volume Session Id} , et {\it Volume Session Time} 
+  conformes \`a celles du rapport de job ont \'et\'e introduites. Notez aussi 
+  le {\it FileIndex} de valeur 1, ce sera toujours le cas pourvu qu'un seul fichier 
+  ait \'et\'e sauvegard\'e par le job.
+
+  L'inconv\'enient de ce fichier bootstrap par rapport \`a celui cr\'e\'e automatiquement 
+  lorsque vous le sp\'ecifiez est qu'il ne comporte aucune sp\'ecification {\it File} 
+  ou {\it Block}, aussi Bacula doit examiner toutes les donn\'ees du volume pour 
+  trouver le fichier requis. Un fichier bootstrap compl\`etement renseign\'e ressemblerait 
+  \`a ceci :
+
+\footnotesize
+\begin{verbatim}
+Volume="DLT-22Apr05"
+VolSessionId=11
+VolSessionTime=1114075126
+VolFile=118-118
+VolBlock=0-4053
+FileIndex=1-1
+\end{verbatim}
+\normalsize
+
+\item [Probl\`eme]
+   J'essaye de restaurer depuis la derni\`ere sauvegarde compl\`ete en 
+   s\'electionnant le choix 3 dans le menu de restauration, puis le 
+   JobId \`a restaurer. Bacula affiche alors :
+
+\footnotesize
+\begin{verbatim}
+   1 Job 0 Files
+\end{verbatim}
+\normalsize
+   et ne restaure rien.
+\item[Solution]
+   Les enregistrements de fichiers ont tr\`es probablement \'et\'e \'elagu\'es du catalogue 
+   soit par expiration de leur p\'eriode de r\'etention (File Retention), soit par purge 
+   explicite du job. La commande {\it llist jobid=nn} permet d'obtenir toutes les 
+   informations importantes sur ce job :
+\footnotesize
+\begin{verbatim}
+llist jobid=120
+           JobId: 120
+             Job: save.2005-12-05_18.27.33
+        Job.Name: save
+     PurgedFiles: 0
+            Type: B
+           Level: F
+    Job.ClientId: 1
+     Client.Name: Rufus
+       JobStatus: T
+       SchedTime: 2005-12-05 18:27:32
+       StartTime: 2005-12-05 18:27:35
+         EndTime: 2005-12-05 18:27:37
+        JobTDate: 1133803657
+    VolSessionId: 1
+  VolSessionTime: 1133803624
+        JobFiles: 236
+       JobErrors: 0
+ JobMissingFiles: 0
+      Job.PoolId: 4
+       Pool.Name: Full
+   Job.FileSetId: 1
+ FileSet.FileSet: BackupSet
+\end{verbatim}
+\normalsize
+   Vous pouvez alors d\'eterminer le(s) volume(s) avec : 
+\footnotesize
+\begin{verbatim}
+sql
+select VolumeName from JobMedia,Media where JobId=1 and JobMedia.MediaId=Media.MediaId;
+\end{verbatim}
+\normalsize
+   Finalement, vous pouvez cr\'eer un fichier bootstrap iavec ces informations 
+   comme d\'ecrit plus haut.
+
+   A partir de la version 1.38.0, lorsque vous entrez un jobId apr\`es avoir 
+   fait le choix 3, Bacula v ous demande si vous voulez restaurer tous les 
+   fichiers du job, collecte pour vous les informations requises et \'ecrit le 
+   fichier bootstrap.
+
+\item [Probl\`eme]
+  Vous n'avez ni fichier bootstrap, ni rapport de job pour votre sauvegarde 
+  de catalogue, mais vous avez une sauvegarde et vous savez sur quel volume.
+  
+\item [Solution]
+  Utilisez {\bf bls} pour d\'eterminer o\`u se trouve le fichier requis sur la bande. 
+  Par exemple :
+
+\footnotesize
+\begin{verbatim}
+./bls -j -V DLT-22Apr05 /dev/nst0
+\end{verbatim}
+\normalsize
+  pourrait produire ceci :
+\footnotesize
+\begin{verbatim}
+bls: butil.c:258 Using device: "/dev/nst0" for reading.
+21-Jul 18:34 bls: Ready to read from volume "DLT-22Apr05" on device "DLTDrive"
+(/dev/nst0).
+Volume Record: File:blk=0:0 SessId=11 SessTime=1114075126 JobId=0 DataLen=164
+...
+Begin Job Session Record: File:blk=118:0 SessId=11 SessTime=1114075126
+JobId=7510
+   Job=CatalogBackup.2005-04-22_01.10.0 Date=22-Apr-2005 10:21:00 Level=F Type=B
+End Job Session Record: File:blk=118:4053 SessId=11 SessTime=1114075126
+JobId=7510
+   Date=22-Apr-2005 10:23:06 Level=F Type=B Files=1 Bytes=210,739,395 Errors=0
+Status=T
+...
+21-Jul 18:34 bls: End of Volume at file 201 on device "DLTDrive" (/dev/nst0),
+Volume "DLT-22Apr05"
+21-Jul 18:34 bls: End of all volumes.
+\end{verbatim}
+\normalsize
+  Bien sur, il y aura de nombreuses autres informations affich\'ees, nous n'avons 
+  reproduit ici que les essentielles. D'apr\`es les informations sur le d\'ebut 
+  ({\it Begin job Session Record} et sur la fin {\it End Job Session Record} du 
+  job, vous pouvez \'ecrire un fichier bootstrap comme indiqu\'e plus haut.
+
+\item[Probl\`eme]
+  Comment puis-je d\'eterminer o\`u un fichier est stock\'e ?
+\item[Solution]
+  En principe, ce n'est pas n\'ecessaire. La commande {\bf restore} permet de 
+  restaurer la version de la sauvegarde la plus r\'ecente (option 5 du menu), 
+  ou une version sauvegard\'ee avant une date donn\'ee (option 8 du menu). Si vous 
+  connaissez le JobId du job qui l'a sauvegard\'e, vous pouvez utiliser l'option 3 
+  pour entrer ce JobId.
+
+  Pour rechercher le JobId d'une sauvegarde d'un fichier donn\'e, choisissez 
+  l'option 2.
+
+  Vous pouvez aussi utiliser la commande {\bf query} pour trouver l'information :
+
+\footnotesize
+\begin{verbatim}
+*query
+Available queries:
+     1: List Job totals:
+     2: List up to 20 places where a File is saved regardless of the directory:
+     3: List where the most recent copies of a file are saved:
+     4: List last 20 Full Backups for a Client:
+     5: List all backups for a Client after a specified time
+     6: List all backups for a Client
+     7: List Volume Attributes for a selected Volume:
+     8: List Volumes used by selected JobId:
+     9: List Volumes to Restore All Files:
+    10: List Pool Attributes for a selected Pool:
+    11: List total files/bytes by Job:
+    12: List total files/bytes by Volume:
+    13: List Files for a selected JobId:
+    14: List Jobs stored in a selected MediaId:
+    15: List Jobs stored for a given Volume name:
+Choose a query (1-15):
+\end{verbatim}
+\normalsize
+
+
+\end{description}

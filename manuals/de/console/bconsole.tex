@@ -1,0 +1,1647 @@
+%%
+%%
+
+\chapter{Bacula Console}
+\label{_ConsoleChapter}
+\index[general]{Console!Bacula}
+\index[general]{Bacula Console}
+\index[general]{Console!Bacula}
+\index[general]{Bacula Console}
+
+The {\bf Bacula Console} (sometimes called the User Agent) is a program that
+allows the user or the System Administrator, to interact with the Bacula
+Director daemon while the daemon is running. 
+
+The current Bacula Console comes in two versions: a shell interface (TTY
+style), and a QT GUI interface (Bat). Both permit the administrator or
+authorized users to interact with Bacula. You can determine the status of a
+particular job, examine the contents of the Catalog as well as perform certain
+tape manipulations with the Console program.
+
+In addition, there is a bwx-console built with wxWidgets that allows a graphic
+restore of files. As of version 1.34.1 it is in an early stage of development,
+but it already is quite useful. Unfortunately, it has not been enhanced for
+some time now.
+
+Since the Console program interacts with the Director through the network, your
+Console and Director programs do not necessarily need to run on the same
+machine. 
+
+In fact, a certain minimal knowledge of the Console program is needed in order
+for Bacula to be able to write on more than one tape, because when Bacula
+requests a new tape, it waits until the user, via the Console program,
+indicates that the new tape is mounted. 
+
+\section{Console Configuration}
+\index[general]{Console Configuration}
+\index[general]{Configuration!Console}
+\index[general]{Console Configuration}
+\index[general]{Configuration!Console}
+
+When the Console starts, it reads a standard Bacula configuration file
+named {\bf bconsole.conf} or {\bf bat.conf} in the case of the Bat
+QT Console version from the current directory unless you specify the {\bf {-}c}
+command line option (see below). This file allows default configuration 
+of the Console, and at the current time, the only Resource Record defined
+is the Director resource, which gives the Console the name and address of
+the Director.  For more information on configuration of the Console
+program, please see the \ilink{Console Configuration
+File}{ConsoleConfChapter} Chapter of this document.
+
+\section{Running the Console Program}
+\index[general]{Running the Console Program}
+\index[general]{Program!Running the Console}
+\index[general]{Running the Console Program}
+\index[general]{Program!Running the Console}
+
+The console program can be run with the following options:
+\footnotesize
+\begin{verbatim}
+Usage: bconsole [-s] [-c config_file] [-d debug_level]
+       -c <file>   set configuration file to file
+       -dnn        set debug level to nn
+       -n          no conio
+       -s          no signals
+       -u <nn>     set command execution timeout to <nn> seconds
+       -t          test - read configuration and exit
+       -?          print this message.
+\end{verbatim}
+\normalsize
+
+
+After launching the Console program (bconsole), it will prompt you for the next
+command with an asterisk (*).  Generally, for all commands, you can simply
+enter the command name and the Console program will prompt you for the
+necessary arguments. Alternatively, in most cases, you may enter the command
+followed by arguments. The general format is:
+
+\footnotesize
+\begin{verbatim}
+ <command> <keyword1>[=<argument1>] <keyword2>[=<argument2>] ...
+\end{verbatim}
+\normalsize
+
+where {\bf command} is one of the commands listed below; {\bf keyword} is one
+of the keywords listed below (usually followed by an argument); and {\bf
+argument} is the value. The command may be abbreviated to the shortest unique
+form. If two commands have the same starting letters, the one that will be
+selected is the one that appears first in the {\bf help} listing. If you want
+the second command, simply spell out the full command. None of the keywords
+following the command may be abbreviated. 
+
+For example: 
+
+\footnotesize
+\begin{verbatim}
+list files jobid=23
+\end{verbatim}
+\normalsize
+
+will list all files saved for JobId 23. Or: 
+
+\footnotesize
+\begin{verbatim}
+show pools
+\end{verbatim}
+\normalsize
+
+will display all the Pool resource records. 
+
+The maximum command line length is limited to 511 characters, so if you
+are scripting the console, you may need to take some care to limit the
+line length.
+
+\section{Stopping the Console Program}
+\index[general]{Program!Stopping the Console}
+\index[general]{Stopping the Console Program}
+\index[general]{Program!Stopping the Console}
+\index[general]{Stopping the Console Program}
+
+Normally, you simply enter {\bf quit} or {\bf exit} and the Console program
+will terminate. However, it waits until the Director acknowledges the command.
+If the Director is already doing a lengthy command (e.g. prune), it may take
+some time. If you want to immediately terminate the Console program, enter the
+{\bf .quit} command. 
+
+There is currently no way to interrupt a Console command once issued (i.e.
+Ctrl-C does not work). However, if you are at a prompt that is asking you to
+select one of several possibilities and you would like to abort the command,
+you can enter a period ({\bf .}), and in most cases, you will either be
+returned to the main command prompt or if appropriate the previous prompt (in
+the case of nested prompts). In a few places such as where it is asking for a
+Volume name, the period will be taken to be the Volume name. In that case, you
+will most likely be able to cancel at the next prompt. 
+
+\label{keywords}
+\section{Alphabetic List of Console Keywords}
+\index[general]{Keywords!Alphabetic List of Console}
+\index[general]{Alphabetic List of Console Keywords}
+\index[general]{Keywords!Alphabetic List of Console}
+\index[general]{Alphabetic List of Console Keywords}
+Unless otherwise specified, each of the following keywords
+takes an argument, which is specified after the keyword following
+an equal sign. For example:
+
+\begin{verbatim}
+jobid=536
+\end{verbatim}
+
+Please note, this list is incomplete as it is currently in
+the process of being created and is not currently totally in 
+alphabetic
+order ...
+
+\begin{description}
+\item [restart]
+  Permitted on the python command, and causes the Python 
+  interpreter to be restarted. Takes no argument.
+\item [all]
+  Permitted on the status and show commands to specify all components or
+  resources respectively.
+\item [allfrompool]
+  Permitted on the update command to specify that all Volumes in the
+  pool (specified on the command line) should be updated.
+\item [allfrompools]
+  Permitted on the update command to specify that all Volumes in all
+  pools should be updated.
+\item [before]
+  Used in the restore command.
+\item [bootstrap]
+  Used in the restore command.
+\item [catalog]
+  Allowed in the use command to specify the catalog name
+  to be used.
+\item [catalogs]
+  Used in the show command. Takes no arguments.
+\item [client | fd]
+\item [clients]
+  Used in the show, list, and llist commands. Takes no arguments.
+\item [counters]
+  Used in the show command. Takes no arguments.
+\item [current]
+  Used in the restore command. Takes no argument.
+\item [days]
+  Used to define the number of days the "list nextvol" command
+  should consider when looking for jobs to be run.  The days keyword
+  can also be used on the "status dir" command so that it will display
+  jobs scheduled for the number of days you want.
+\item [devices]
+  Used in the show command. Takes no arguments.
+\item [dir | director]
+\item [directors]
+  Used in the show command. Takes no arguments.
+\item [directory]
+  Used in the restore command. Its argument specifies the directory
+  to be restored. 
+\item [enabled]
+  This keyword can appear on the {\bf update volume} as well
+  as the {\bf update slots} commands, and can 
+  allows one of the following arguments: yes, true, no, false, archived,
+  0, 1, 2.  Where 0 corresponds to no or false, 1 corresponds to yes or true, and
+  2 corresponds to archived.  Archived volumes will not be used, nor will
+  the Media record in the catalog be pruned. Volumes that are not enabled,
+  will not be used for backup or restore.
+\item [done]
+  Used in the restore command. Takes no argument.
+\item [file]
+  Used in the restore command.
+\item [files]
+  Used in the list and llist commands. Takes no arguments.
+\item [fileset]
+\item [filesets]
+  Used in the show command. Takes no arguments.
+\item [help]
+  Used in the show command. Takes no arguments.
+\item [jobs]
+  Used in the show, list and llist commands. Takes no arguments.
+\item [jobmedia]
+  Used in the list and llist commands. Takes no arguments.
+\item [jobtotals]
+  Used in the list and llist commands. Takes no arguments.
+\item [jobid]
+  The JobId is the numeric jobid that is printed in the Job
+  Report output. It is the index of the database record for the
+  given job. While it is unique for all the existing Job records
+  in the catalog database, the same JobId can be reused once a
+  Job is removed from the catalog. Probably you will refer
+  specific Jobs that ran using their numeric JobId.
+\item [job | jobname]
+  The Job or Jobname keyword refers to the name you specified
+  in the Job resource, and hence it refers to any number of
+  Jobs that ran.  It is typically useful if you want to list
+  all jobs of a particular name.
+\item [level]
+\item [listing]
+  Permitted on the estimate command. Takes no argument.
+\item [limit]
+\item [messages]
+  Used in the show command. Takes no arguments.
+\item [media]
+  Used in the list and llist commands. Takes no arguments.
+\item [nextvol | nextvolume]
+  Used in the list and llist commands. Takes no arguments.
+\item [on]
+  Takes no keyword.
+\item [off]
+  Takes no keyword.
+\item [pool]
+\item [pools]
+  Used in the show, list, and llist commands. Takes no arguments.
+\item [select]
+  Used in the restore command. Takes no argument.
+\item [storages]
+  Used in the show command. Takes no arguments.
+\item [schedules]
+  Used in the show command. Takes no arguments.
+\item [sd | store | storage]
+\item [ujobid]
+  The ujobid is a unique job identification that is printed
+  in the Job Report output. At the current time, it consists
+  of the Job name (from the Name directive for the job) appended
+  with the date and time the job was run. This keyword is useful
+  if you want to completely identify the Job instance run.
+\item [volume]
+\item [volumes]
+  Used in the list and llist commands. Takes no arguments.
+\item [where]
+  Used in the restore command.
+\item [yes]
+  Used in the restore command. Takes no argument.
+\end{description}
+
+\label{list}
+\section{Alphabetic List of Console Commands}
+\index[general]{Commands!Alphabetic List of Console}
+\index[general]{Alphabetic List of Console Commands}
+\index[general]{Commands!Alphabetic List of Console}
+\index[general]{Alphabetic List of Console Commands}
+
+The following commands are currently implemented: 
+
+\begin{description}
+\item [{add [pool=\lt{}pool-name\gt{} storage=\lt{}storage\gt{}
+   jobid=\lt{}JobId\gt{}]} ]
+   \index[general]{add}
+   This command is used to add Volumes to an existing Pool.  That is,
+   it creates the Volume name in the catalog and inserts into the Pool
+   in the catalog, but does not attempt to access the physical Volume.
+   Once
+   added, Bacula expects that Volume to exist and to be labeled.
+   This command is not normally used since Bacula will 
+   automatically do the equivalent when Volumes are labeled. However,
+   there may be times when you have removed a Volume from the catalog
+   and want to later add it back.
+
+   Normally, the {\bf label} command is used rather than this command
+   because the {\bf label} command labels the physical media (tape, disk,
+   DVD, ...) and does the equivalent of the {\bf add} command.  The {\bf
+   add} command affects only the Catalog and not the physical media (data
+   on Volumes).  The physical media must exist and be labeled before use
+   (usually with the {\bf label} command).  This command can, however, be
+   useful if you wish to add a number of Volumes to the Pool that will be
+   physically labeled at a later time.  It can also be useful if you are
+   importing a tape from another site.  Please see the {\bf label} command
+   below for the list of legal characters in a Volume name.
+
+\item [autodisplay on/off]
+   \index[general]{autodisplay on/off}
+   This command accepts {\bf on} or {\bf off} as an argument, and turns
+   auto-display of messages on or off respectively.  The default for the
+   console program is {\bf off}, which means that you will be notified when
+   there are console messages pending, but they will not automatically be
+   displayed.
+
+   When autodisplay is turned off, you must explicitly retrieve the
+   messages with the {\bf messages} command.  When autodisplay is turned
+   on, the messages will be displayed on the console as they are received.
+
+\item [automount on/off]
+   \index[general]{automount on/off}
+   This command accepts {\bf on} or {\bf off} as the argument, and turns
+   auto-mounting of the Volume after a {\bf label} command on or off
+   respectively.  The default is {\bf on}.  If {\bf automount} is turned
+   off, you must explicitly {\bf mount} tape Volumes after a label command to
+   use it.
+
+\item [{cancel [jobid=\lt{}number\gt{} job=\lt{}job-name\gt{} ujobid=\lt{}unique-jobid\gt{}]}]
+   \index[general]{cancel jobid}
+   This command is used to cancel a job and accepts {\bf jobid=nnn} or {\bf
+   job=xxx} as an argument where nnn is replaced by the JobId and xxx is
+   replaced by the job name.  If you do not specify a keyword, the Console
+   program will prompt you with the names of all the active jobs allowing
+   you to choose one.
+
+   Once a Job is marked to be canceled, it may take a bit of time
+   (generally within a minute but up to two hours) before the Job actually 
+   terminates, depending on what operations it is doing.
+   Don't be surprised that you receive a Job not found message. That just
+   means that one of the three daemons had already canceled the job.
+   Messages numbered in the 1000's are from the Director, 2000's are from
+   the File daemon and 3000's from the Storage daemon.
+
+
+\item [{create [pool=\lt{}pool-name\gt{}]}]
+   \index[general]{create pool}
+   This command is not normally used as the Pool records are automatically
+   created by the Director when it starts based on what it finds in
+   the conf file.  If needed, this command can be 
+   to create a Pool record in the database using the
+   Pool resource record defined in the Director's configuration file.  So
+   in a sense, this command simply transfers the information from the Pool
+   resource in the configuration file into the Catalog.  Normally this
+   command is done automatically for you when the Director starts providing
+   the Pool is referenced within a Job resource.  If you use this command
+   on an existing Pool, it will automatically update the Catalog to have
+   the same information as the Pool resource.  After creating a Pool, you
+   will most likely use the {\bf label} command to label one or more
+   volumes and add their names to the Media database.
+
+   When starting a Job, if Bacula determines that there is no Pool record
+   in the database, but there is a Pool resource of the appropriate name,
+   it will create it for you.  If you want the Pool record to appear in the
+   database immediately, simply use this command to force it to be created.
+
+\item [{delete [volume=\lt{}vol-name\gt{} pool=\lt{}pool-name\gt{}  job
+   jobid=\lt{}id\gt{}]}]
+   \index[general]{delete}
+   The delete command is used to delete a Volume, Pool or Job record from
+   the Catalog as well as all associated catalog Volume records that were
+   created.  This command operates only on the Catalog database and has no
+   effect on the actual data written to a Volume.  This command can be
+   dangerous and we strongly recommend that you do not use it unless you
+   know what you are doing.
+
+   If the keyword {\bf Volume} appears on the command line, the named
+   Volume will be deleted from the catalog, if the keyword {\bf Pool}
+   appears on the command line, a Pool will be deleted, and if the keyword
+   {\bf Job} appears on the command line, a Job and all its associated
+   records (File and JobMedia) will be deleted from the catalog.  The full
+   form of this command is:
+
+\begin{verbatim}
+delete pool=<pool-name>
+\end{verbatim}
+
+   or  
+
+\begin{verbatim}
+delete volume=<volume-name> pool=<pool-name>  or  
+\end{verbatim}
+
+\begin{verbatim}
+delete JobId=<job-id> JobId=<job-id2> ...  or  
+\end{verbatim}
+
+\begin{verbatim}
+delete Job JobId=n,m,o-r,t ...  
+\end{verbatim}
+
+   The first form deletes a Pool record from the catalog database.  The
+   second form deletes a Volume record from the specified pool in the
+   catalog database.  The third form deletes the specified Job record from
+   the catalog database.  The last form deletes JobId records for JobIds
+   n, m, o, p, q, r, and t.  Where each one of the n,m,...  is, of course, a
+   number. That is a "delete jobid" accepts lists and ranges of
+   jobids.
+
+\item [disable job\lt{}job-name\gt{}]
+  \index[general]{disable}
+  This command permits you to disable a Job for automatic scheduling. 
+  The job may have been previously enabled with the Job resource      
+  {\bf Enabled} directive or using the console {\bf enable} command.
+  The next time the Director is restarted or the conf file is reloaded,
+  the Enable/Disable state will be set to the value in the Job resource
+  (default enabled) as defined in the bacula-dir.conf file.
+
+\item [enable job\lt{}job-name\gt{}]
+  \index[general]{enable}
+  This command permits you to enable a Job for automatic scheduling. 
+  The job may have been previously disabled with the Job resource      
+  {\bf Enabled} directive or using the console {\bf disable} command.
+  The next time the Director is restarted or the conf file is reloaded,
+  the Enable/Disable state will be set to the value in the Job resource
+  (default enabled) as defined in the bacula-dir.conf file.
+
+\label{estimate}
+\item [estimate]
+   \index[general]{estimate}
+   Using this command, you can get an idea how many files will be backed
+   up, or if you are unsure about your Include statements in your FileSet,
+   you can test them without doing an actual backup.  The default is to
+   assume a Full backup.  However, you can override this by specifying a
+   {\bf level=Incremental} or {\bf level=Differential} on the command line.
+   A Job name must be specified or you will be prompted for one, and
+   optionally a Client and FileSet may be specified on the command line.
+   It then contacts the client which computes the number of files and bytes
+   that would be backed up.  Please note that this is an estimate
+   calculated from the number of blocks in the file rather than by reading
+   the actual bytes.  As such, the estimated backup size will generally be
+   larger than an actual backup. 
+
+   The \texttt{estimate} command can use the accurate code to detect changes
+   and give a better estimation. You can set the accurate behavior on command
+   line using \texttt{accurate=yes/no} or use the Job setting as default value.
+
+   Optionally you may specify the keyword {\bf listing} in  which case, all the
+   files to be backed up will be listed.  Note, it could take quite some time to
+   display them if the  backup is large. The full form is:  
+
+\begin{verbatim}
+estimate job=<job-name> listing client=<client-name> accurate=<yes/no>
+       fileset=<fileset-name> level=<level-name>  
+\end{verbatim}
+
+   Specification of the {\bf job} is sufficient, but you can also override the
+   client, fileset, accurate and/or level by specifying them on the estimate
+   command line.
+ 
+
+As an example, you might do:  
+
+\footnotesize
+\begin{verbatim}
+     @output /tmp/listing
+     estimate job=NightlySave listing level=Incremental
+     @output
+\end{verbatim}
+\normalsize
+
+   which will do a full listing of all files to be backed up for the  Job {\bf
+   NightlySave} during an Incremental save and put it in the  file {\bf
+   /tmp/listing}.  Note, the byte estimate provided by this command is 
+   based on the file size contained in the directory item. This can give
+   wildly incorrect estimates of the actual storage used if there are
+   sparse files on your systems. Sparse files are often found on 64 bit 
+   systems for certain system files. The size that is returned is the size
+   Bacula will backup if the sparse option is not specified in the FileSet.
+   There is currently no way to get an estimate of the real file size that 
+   would be found should the sparse option be enabled.
+                                   
+\item [exit]
+   \index[general]{exit}
+   This command terminates the console program.  
+
+\item [gui]
+   \index[general]{gui}
+   Invoke the non-interactive gui mode.
+\begin{verbatim}
+gui [on|off]
+\end{verbatim}
+
+\item [help]
+   \index[general]{help}
+   This command displays the list of commands available.  
+
+\item [label]
+   \index[general]{label}
+   \index[general]{relabel}
+   \index[general]{label}
+   \index[general]{relabel}
+   This command is used to label physical volumes.  The full form of this command
+   is:
+
+\begin{verbatim}
+label storage=<storage-name> volume=<volume-name>
+      slot=<slot>  
+\end{verbatim}
+
+   If you leave out any part, you will be prompted for it.  The media type
+   is automatically taken from the Storage resource definition that you
+   supply.  Once the necessary information is obtained, the Console program
+   contacts the specified Storage daemon and requests that the Volume be
+   labeled.  If the Volume labeling is successful, the Console program will
+   create a Volume record in the appropriate Pool.
+
+   The Volume name is restricted to letters, numbers, and the special
+   characters hyphen ({\bf -}), underscore ({\bf \_}), colon ({\bf :}), and
+   period ({\bf .}).  All other characters including a space are invalid.
+   This restriction is to ensure good readability of Volume names to reduce
+   operator errors.
+
+   Please note, when labeling a blank tape, Bacula will get {\bf read I/O
+   error} when it attempts to ensure that the tape is not already labeled.  If
+   you wish to avoid getting these messages, please write an EOF mark on
+   your tape before attempting to label it:
+
+\footnotesize
+\begin{verbatim}
+       mt rewind
+       mt weof
+       
+\end{verbatim}
+\normalsize
+
+The label command can fail for a number of reasons:  
+
+\begin{enumerate}
+\item The Volume name you specify is already in the  Volume database.  
+
+\item The Storage daemon has a tape or other Volume already mounted on the
+   device, in which case you must {\bf unmount} the device, insert a blank
+   tape, then do the {\bf label} command.
+
+\item The Volume in the device is already a Bacula labeled Volume.  (Bacula will
+   never relabel a Bacula labeled Volume unless it is recycled and you use the
+   {\bf relabel} command).  
+
+\item There is no Volume in the drive.  
+\end{enumerate}
+
+There are two ways to relabel a volume that already has a Bacula label. The
+brute  force method is to write an end of file mark on the tape  using the
+system {\bf mt} program, something like the  following:  
+
+\footnotesize
+\begin{verbatim}
+       mt -f /dev/st0 rewind
+       mt -f /dev/st0 weof
+\end{verbatim}
+\normalsize
+
+For a disk volume, you would manually delete the Volume.
+
+Then you use the {\bf label} command to add a new label.  However, this could
+leave traces of the old volume in the  catalog.  
+
+The preferable method to relabel a Volume is to first {\bf purge}  the volume,
+either automatically, or explicitly with the  {\bf purge} command, then use
+the {\bf relabel} command described  below.  
+
+If your autochanger has barcode labels, you can label all the Volumes in
+your autochanger one after another by using the {\bf label barcodes}
+command.  For each tape in the changer containing a barcode, Bacula will
+mount the tape and then label it with the same name as the barcode.  An
+appropriate Media record will also be created in the catalog.  Any barcode
+that begins with the same characters as specified on the
+"CleaningPrefix=xxx" directive in the Director's Pool resource, will be
+treated as a cleaning tape, and will not be labeled.  However, an entry for
+the cleaning tape will be created in the catalog.  For example with:
+
+\footnotesize
+\begin{verbatim}
+        Pool {
+          Name ...
+          Cleaning Prefix = "CLN"
+       }
+        
+\end{verbatim}
+\normalsize
+
+Any slot containing a barcode of CLNxxxx will be treated as a cleaning tape
+and will not be mounted.  Note, the full form of the command is:
+
+\footnotesize
+\begin{verbatim}
+label storage=xxx pool=yyy slots=1-5,10 barcodes
+\end{verbatim}
+\normalsize
+
+\item [list]
+   \index[general]{list}
+   The list command lists the requested contents of the Catalog.  The
+   various fields of each record are listed on a single line.  The various
+   forms of the list command are:
+\footnotesize
+\begin{verbatim}
+   list jobs
+   
+   list jobid=<id>           (list jobid id)
+
+   list ujobid=<unique job name> (list job with unique name)
+   
+   list job=<job-name>   (list all jobs with "job-name")
+
+   list jobname=<job-name>  (same as above)
+
+       In the above, you can add "limit=nn" to limit the output to
+       nn jobs.
+   
+   list jobmedia
+   
+   list jobmedia jobid=<id>
+   
+   list jobmedia job=<job-name>
+   
+   list files jobid=<id>
+   
+   list files job=<job-name>
+   
+   list pools
+   
+   list clients
+   
+   list jobtotals
+   
+   list volumes
+   
+   list volumes jobid=<id>
+   
+   list volumes pool=<pool-name>
+   
+   list volumes job=<job-name>
+   
+   list volume=<volume-name>  
+
+   list nextvolume job=<job-name>
+   
+   list nextvol job=<job-name>
+
+   list nextvol job=<job-name> days=nnn
+
+\end{verbatim}
+\normalsize
+
+   What most of the above commands do should be more or less obvious.  In
+   general if you do not specify all the command line arguments, the
+   command will prompt you for what is needed.
+
+   The {\bf list nextvol} command will print the Volume name to be used by
+   the specified job.  You should be aware that exactly what Volume will be
+   used depends on a lot of factors including the time and what a prior job
+   will do.  It may fill a tape that is not full when you issue this
+   command.  As a consequence, this command will give you a good estimate
+   of what Volume will be used but not a definitive answer.  In addition,
+   this command may have certain side effect because it runs through the
+   same algorithm as a job, which means it may automatically purge or
+   recycle a Volume. By default, the job specified must run within the 
+   next two days or no volume will be found. You can, however, use the
+   {\bf days=nnn} specification to specify up to 50 days. For example,
+   if on Friday, you want to see what Volume will be needed on Monday,
+   for job MyJob, you would use {\bf list nextvol job=MyJob days=3}.
+
+   If you wish to add specialized commands that list the contents of the
+   catalog, you can do so by adding them to the {\bf query.sql} file.
+   However, this takes some knowledge of programming SQL. Please see the
+   {\bf query} command below for additional information.  See below for
+   listing the full contents of a catalog record with the {\bf llist}
+   command.
+
+   As an example, the command {\bf list pools} might produce  the following
+   output: 
+
+\footnotesize
+\begin{verbatim}
++------+---------+---------+---------+----------+-------------+
+| PoId | Name    | NumVols | MaxVols | PoolType | LabelFormat |
++------+---------+---------+---------+----------+-------------+
+|    1 | Default |       0 |       0 | Backup   | *           |
+|    2 | Recycle |       0 |       8 | Backup   | File        |
++------+---------+---------+---------+----------+-------------+
+\end{verbatim}
+\normalsize
+
+   As mentioned above, the {\bf list} command lists what is in the
+   database.  Some things are put into the database immediately when Bacula
+   starts up, but in general, most things are put in only when they are
+   first used, which is the case for a Client as with Job records, etc.
+
+   Bacula should create a client record in the database the first time you
+   run a job for that client.  Doing a {\bf status} will not cause a
+   database record to be created.  The client database record will be
+   created whether or not the job fails, but it must at least start.  When
+   the Client is actually contacted, additional info from the client will
+   be added to the client record (a "uname -a" output).
+
+   If you want to see what Client resources you have available in your conf
+   file, you use the Console command {\bf show clients}.
+
+\item [llist]
+   \index[general]{llist}
+   The llist or "long list" command takes all the same arguments that the
+   list command described above does.  The difference is that the llist
+   command list the full contents of each database record selected.  It
+   does so by listing the various fields of the record vertically, with one
+   field per line.  It is possible to produce a very large number of output
+   lines with this command.
+
+   If instead of the {\bf list pools} as in the example above, you enter
+   {\bf llist pools} you might get the following output:
+
+\footnotesize
+\begin{verbatim}
+          PoolId: 1
+            Name: Default
+         NumVols: 0
+         MaxVols: 0
+         UseOnce: 0
+      UseCatalog: 1
+ AcceptAnyVolume: 1
+    VolRetention: 1,296,000
+  VolUseDuration: 86,400
+      MaxVolJobs: 0
+     MaxVolBytes: 0
+       AutoPrune: 0
+         Recycle: 1
+        PoolType: Backup
+     LabelFormat: *
+
+          PoolId: 2
+            Name: Recycle
+         NumVols: 0
+         MaxVols: 8
+         UseOnce: 0
+      UseCatalog: 1
+ AcceptAnyVolume: 1
+    VolRetention: 3,600
+  VolUseDuration: 3,600
+      MaxVolJobs: 1
+     MaxVolBytes: 0
+       AutoPrune: 0
+         Recycle: 1
+        PoolType: Backup
+     LabelFormat: File
+      
+\end{verbatim}
+\normalsize
+
+\item [messages]
+   \index[general]{messages}
+   This command causes any pending  console messages to be immediately displayed.
+
+\item [memory]
+   \index[general]{memory}
+   Print current memory usage.
+ 
+
+\item [mount]
+   \index[general]{mount}
+   The mount command is used to get Bacula to read a volume on a physical
+   device.  It is a way to tell Bacula that you have mounted a tape and
+   that Bacula should examine the tape.  This command is normally
+   used only after there was no Volume in a drive and Bacula requests you to mount a new
+   Volume or when you have specifically unmounted a Volume with the {\bf
+   unmount} console command, which causes Bacula to close the drive.  If
+   you have an autoloader, the mount command will not cause Bacula to
+   operate the autoloader unless you specify a {\bf slot} and possibly a
+   {\bf drive}. The various forms of the mount command are:
+
+mount  storage=\lt{}storage-name\gt{} [ slot=\lt{}num\gt{} ] [
+       drive=\lt{}num\gt{} ]
+
+mount [ jobid=\lt{}id\gt{} |  job=\lt{}job-name\gt{} ]
+
+   If you have specified {\bf Automatic  Mount = yes} in the Storage daemon's
+   Device resource,  under most circumstances, Bacula will automatically access 
+   the Volume unless you have explicitly {\bf unmount}ed it in  the Console
+   program. 
+
+\label{ManualPruning}
+\item [prune]
+   \index[general]{prune}
+   The Prune command allows you to safely remove expired database records from
+   Jobs, Volumes and Statistics.  This command works only on the Catalog
+   database and does not affect data written to Volumes.  In all cases, the
+   Prune command applies a retention period to the specified records.  You can
+   Prune expired File entries from Job records; you can Prune expired Job
+   records from the database, and you can Prune both expired Job and File
+   records from specified Volumes.
+
+prune files|jobs|volume|stats client=\lt{}client-name\gt{} 
+volume=\lt{}volume-name\gt{}  
+
+   For a Volume to be pruned, the {\bf VolStatus} must be Full, Used, or
+   Append, otherwise the pruning will not take place.
+
+\item [purge]
+   \index[general]{purge}
+   The Purge command will delete associated Catalog database records from
+   Jobs and Volumes without considering the retention period.  {\bf Purge}
+   works only on the Catalog database and does not affect data written to
+   Volumes.  This command can be dangerous because you can delete catalog
+   records associated with current backups of files, and we recommend that
+   you do not use it unless you know what you are doing.  The permitted
+   forms of {\bf purge} are:
+
+purge files jobid=\lt{}jobid\gt{}|job=\lt{}job-name\gt{}|client=\lt{}client-name\gt{} 
+
+purge jobs client=\lt{}client-name\gt{} (of all jobs)
+
+purge volume|volume=\lt{}vol-name\gt{} (of all jobs)
+
+For the {\bf purge} command to work on Volume Catalog database  records the
+{\bf VolStatus}  must be Append, Full, Used, or Error.  
+
+The actual data written to the Volume will be unaffected by  this command.  
+
+\item[python]
+   \index[general]{python}
+  The python command takes a single argument {\bf restart}:
+
+python restart
+
+   This causes the Python interpreter in the Director to be reinitialized.
+   This can be helpful for testing because once the Director starts and the
+   Python interpreter is initialized, there is no other way to make it
+   accept any changes to the startup script {\bf DirStartUp.py}.  For more
+   details on Python scripting, please see the \ilink{Python
+   Scripting}{PythonChapter} chapter of this manual.
+
+\item [query]
+   \index[general]{query}
+   This command reads a predefined SQL query from  the query file (the name and
+   location of the  query file is defined with the QueryFile resource record in 
+   the Director's configuration file). You are prompted to select  a query from
+   the file, and possibly enter one or more parameters,  then the command is
+   submitted to the Catalog database SQL engine.  
+
+The following queries are currently available (version 2.2.7):  
+
+\footnotesize
+\begin{verbatim}
+Available queries:
+1: List up to 20 places where a File is saved regardless of the directory
+2: List where the most recent copies of a file are saved
+3: List last 20 Full Backups for a Client
+4: List all backups for a Client after a specified time
+5: List all backups for a Client
+6: List Volume Attributes for a selected Volume
+7: List Volumes used by selected JobId
+8: List Volumes to Restore All Files
+9: List Pool Attributes for a selected Pool
+10: List total files/bytes by Job
+11: List total files/bytes by Volume
+12: List Files for a selected JobId
+13: List Jobs stored on a selected MediaId
+14: List Jobs stored for a given Volume name
+15: List Volumes Bacula thinks are in changer
+16: List Volumes likely to need replacement from age or errors
+Choose a query (1-16):
+\end{verbatim}
+\normalsize
+
+\item [quit]
+   \index[general]{quit}
+   This command terminates the console program. The  console program sends the
+   {\bf quit} request to the Director  and waits for acknowledgment. If the
+   Director is busy doing  a previous command for you that has not terminated, it
+   may  take some time. You may quit immediately by issuing the  {\bf .quit}
+   command (i.e. quit preceded by a period).  
+
+\item [relabel]
+   \index[general]{relabel}
+   \index[general]{relabel}
+   This command is used to label physical volumes.  The full form of this
+   command is:
+
+relabel storage=\lt{}storage-name\gt{} oldvolume=\lt{}old-volume-name\gt{}  
+    volume=\lt{}newvolume-name\gt{} 
+ 
+   If you leave out any part, you will be prompted for it.  In order for
+   the Volume (old-volume-name) to be relabeled, it must be in the catalog,
+   and the volume status must be marked {\bf Purged} or {\bf Recycle}.
+   This happens automatically as a result of applying retention periods, or
+   you may explicitly purge the volume using the {\bf purge} command.
+
+   Once the volume is physically relabeled, the old data previously written
+   on the Volume is lost and cannot be recovered.
+
+\item [release]
+   \index[general]{release}
+   This command is used to cause the Storage daemon to rewind (release) the
+   current tape in the drive, and to re-read the Volume label the next time
+   the tape is used.
+
+release storage=\lt{}storage-name\gt{}  
+
+   After a release command, the device is still kept open by Bacula (unless
+   Always Open is set to No in the Storage Daemon's configuration) so it
+   cannot be used by another program.  However, with some tape drives, the
+   operator can remove the current tape and to insert a different one, and
+   when the next Job starts, Bacula will know to re-read the tape label to
+   find out what tape is mounted.  If you want to be able to use the drive
+   with another program (e.g.  {\bf mt}), you must use the {\bf unmount}
+   command to cause Bacula to completely release (close) the device.
+
+\item [reload]
+  \index[general]{reload}
+  The reload command causes the Director to re-read its configuration
+  file and apply the new values. The new values will take effect     
+  immediately for all new jobs.  However, if you change schedules,
+  be aware that the scheduler pre-schedules jobs up to two hours in
+  advance, so any changes that are to take place during the next two
+  hours may be delayed.  Jobs that have already been scheduled to run
+  (i.e. surpassed their requested start time) will continue with the
+  old values.  New jobs will use the new values. Each time you issue
+  a reload command while jobs are running, the prior config values   
+  will queued until all jobs that were running before issuing
+  the reload terminate, at which time the old config values will
+  be released from memory. The Directory permits keeping up to
+  ten prior set of configurations before it will refuse a reload
+  command. Once at least one old set of config values has been
+  released it will again accept new reload commands. 
+
+   While it is possible to reload the Director's configuration on the fly,
+   even while jobs are executing, this is a complex operation and not
+   without side effects.  Accordingly, if you have to reload the Director's
+   configuration while Bacula is running, it is advisable to restart the
+   Director at the next convenient opportunity.
+
+\label{restore_command}
+\item [restore]
+   \index[general]{restore}
+   The restore command allows you to select one or more Jobs (JobIds) to be
+   restored using various methods.  Once the JobIds are selected, the File
+   records for those Jobs are placed in an internal Bacula directory tree,
+   and the restore enters a file selection mode that allows you to
+   interactively walk up and down the file tree selecting individual files
+   to be restored.  This mode is somewhat similar to the standard Unix {\bf
+   restore} program's interactive file selection mode.
+
+restore storage=\lt{}storage-name\gt{} client=\lt{}backup-client-name\gt{} 
+  where=\lt{}path\gt{} pool=\lt{}pool-name\gt{} fileset=\lt{}fileset-name\gt{} 
+  restoreclient=\lt{}restore-client-name\gt{}
+  select current all done  
+
+   Where {\bf current}, if specified, tells the restore command to
+   automatically select a restore to the most current backup.  If not
+   specified, you will be prompted.  The {\bf all} specification tells the
+   restore command to restore all files.  If it is not specified, you will
+   be prompted for the files to restore.  For details of the {\bf restore}
+   command, please see the \ilink{Restore Chapter}{RestoreChapter} of this
+   manual.
+
+   The client keyword initially specifies the client from which the backup
+   was made and the client to which the restore will be make.  However,
+   if the restoreclient keyword is specified, then the restore is written
+   to that client.
+
+\item [run]
+   \index[general]{run}
+   This command allows you to schedule jobs  to be run immediately. The full form
+   of the command is:
+
+run job=\lt{}job-name\gt{} client=\lt{}client-name\gt{}
+  fileset=\lt{}FileSet-name\gt{}  level=\lt{}level-keyword\gt{}
+  storage=\lt{}storage-name\gt{}  where=\lt{}directory-prefix\gt{}
+  when=\lt{}universal-time-specification\gt{} spooldata=yes|no yes
+
+   Any information that is needed but not specified will be listed for
+   selection, and before starting the job, you will be prompted to accept,
+   reject, or modify the parameters of the job to be run, unless you have
+   specified {\bf yes}, in which case the job will be immediately sent to
+   the scheduler.
+
+   On my system, when I enter a run command, I get the following  prompt:  
+
+\footnotesize
+\begin{verbatim}
+A job name must be specified.
+The defined Job resources are:
+     1: Matou
+     2: Polymatou
+     3: Rufus
+     4: Minimatou
+     5: Minou
+     6: PmatouVerify
+     7: MatouVerify
+     8: RufusVerify
+     9: Watchdog
+Select Job resource (1-9):
+     
+\end{verbatim}
+\normalsize
+
+If I then select number 5, I am prompted with:  
+
+\footnotesize
+\begin{verbatim}
+Run Backup job
+JobName:  Minou
+FileSet:  Minou Full Set
+Level:    Incremental
+Client:   Minou
+Storage:  DLTDrive
+Pool:     Default
+When:     2003-04-23 17:08:18
+OK to run? (yes/mod/no):
+     
+\end{verbatim}
+\normalsize
+
+If I now enter {\bf yes}, the Job will be run. If I enter {\bf mod},  I will
+be presented with the following prompt.  
+
+\footnotesize
+\begin{verbatim}
+Parameters to modify:
+     1: Level
+     2: Storage
+     3: Job
+     4: FileSet
+     5: Client
+     6: When
+     7: Pool
+Select parameter to modify (1-7):
+     
+\end{verbatim}
+\normalsize
+
+If you wish to start a job at a later time, you can do so by setting  the When
+time. Use the {\bf mod} option and select {\bf When} (no. 6).  Then enter the
+desired start time in YYYY-MM-DD HH:MM:SS format.
+
+The spooldata argument of the run command cannot be modified through the menu
+and is only accessible by setting its value on the intial command line. If
+no spooldata flag is set, the job, storage or schedule flag is used.
+
+\item [setdebug]
+   \index[general]{setdebug}
+   \index[general]{setdebug}
+   \index[general]{debugging}
+   \index[general]{debugging Win32}
+   \index[general]{Windows!debugging}
+   This command is used to set the debug level in each  daemon. The form of this
+   command is:
+
+setdebug level=nn [trace=0/1 client=\lt{}client-name\gt{} | dir | director |
+  storage=\lt{}storage-name\gt{} | all]  
+
+   If trace=1 is set, then tracing will be enabled, and the daemon will be
+   placed in trace mode, which means that all debug output as set by the
+   debug level will be directed to the file {\bf bacula.trace} in the
+   current directory of the daemon.  Normally, tracing is needed only for
+   Win32 clients where the debug output cannot be written to a terminal or
+   redirected to a file.  When tracing, each debug output message is
+   appended to the trace file.  You must explicitly delete the file when
+   you are done.
+
+\item [setip]
+   \index[general]{setip}
+   Sets new client address -- if authorized.
+
+
+\item [show]
+   \index[general]{show}
+   \index[general]{show}
+   The show command will list the Director's resource records as defined in
+   the Director's configuration file (normally {\bf bacula-dir.conf}).
+   This command is used mainly for debugging purposes by developers.     
+   The following keywords are accepted on the
+   show command line: catalogs, clients, counters, devices, directors,
+   filesets, jobs, messages, pools, schedules, storages, all, help.
+   Please don't confuse this command
+   with the {\bf list}, which displays the contents of the catalog.
+
+\item [sqlquery]
+   \index[general]{sqlquery}
+   The sqlquery command puts the Console program into SQL query mode where
+   each line you enter is concatenated to the previous line until a
+   semicolon (;) is seen.  The semicolon terminates the command, which is
+   then passed directly to the SQL database engine.  When the output from
+   the SQL engine is displayed, the formation of a new SQL command begins.
+   To terminate SQL query mode and return to the Console command prompt,
+   you enter a period (.) in column 1.
+
+   Using this command, you can query the SQL catalog database directly.
+   Note you should really know what you are doing otherwise you could
+   damage the catalog database.  See the {\bf query} command below for
+   simpler and safer way of entering SQL queries.
+
+   Depending on what database engine you are using (MySQL, PostgreSQL or
+   SQLite), you will have somewhat different SQL commands available.  For
+   more detailed information, please refer to the MySQL, PostgreSQL or
+   SQLite documentation.
+
+\item [status]
+   \index[general]{status}
+
+   This command will display the status of all components. For the director, it
+   will display the next jobs that are scheduled during the next 24 hours as
+   well as the status of currently running jobs. For the Storage Daemon, you
+   will have drive status or autochanger content. The File Daemon will give you
+   information about current jobs like average speed or file accounting. The
+   full form of this command is:
+
+status [all | dir=\lt{}dir-name\gt{} | director [days=nnn] | 
+  client=\lt{}client-name\gt{} | [slots] storage=\lt{}storage-name\gt{}]
+
+   If you do a {\bf status dir}, the console will list any currently
+   running jobs, a summary of all jobs scheduled to be run in the next 24
+   hours, and a listing of the last ten terminated jobs with their statuses.
+   The scheduled jobs summary will include the Volume name to be used.  You
+   should be aware of two things: 1. to obtain the volume name, the code
+   goes through the same code that will be used when the job runs, but it
+   does not do pruning nor recycling of Volumes; 2.  The Volume listed is
+   at best a guess.  The Volume actually used may be different because of
+   the time difference (more durations may expire when the job runs) and
+   another job could completely fill the Volume requiring a new one.
+
+   In the Running Jobs listing, you may find the following types of
+   information:
+
+
+\footnotesize
+\begin{verbatim}
+2507 Catalog MatouVerify.2004-03-13_05.05.02 is waiting execution
+5349 Full    CatalogBackup.2004-03-13_01.10.00 is waiting for higher
+             priority jobs to finish
+5348 Differe Minou.2004-03-13_01.05.09 is waiting on max Storage jobs
+5343 Full    Rufus.2004-03-13_01.05.04 is running
+\end{verbatim}
+\normalsize
+
+   Looking at the above listing from bottom to top, obviously JobId 5343
+   (Rufus) is running.  JobId 5348 (Minou) is waiting for JobId 5343 to
+   finish because it is using the Storage resource, hence the "waiting on
+   max Storage jobs".  JobId 5349 has a lower priority than all the other
+   jobs so it is waiting for higher priority jobs to finish, and finally,
+   JobId 2507 (MatouVerify) is waiting because only one job can run at a
+   time, hence it is simply "waiting execution"
+
+   If you do a {\bf status dir}, it will by default list the first
+   occurrence of all jobs that are scheduled today and tomorrow.  If you
+   wish to see the jobs that are scheduled in the next three days (e.g.  on
+   Friday you want to see the first occurrence of what tapes are scheduled
+   to be used on Friday, the weekend, and Monday), you can add the {\bf
+   days=3} option.  Note, a {\bf days=0} shows the first occurrence of jobs
+   scheduled today only.  If you have multiple run statements, the first
+   occurrence of each run statement for the job will be displayed for the
+   period specified.
+
+   If your job seems to be blocked, you can get a general idea of the
+   problem by doing a {\bf status dir}, but you can most often get a 
+   much more specific indication of the problem by doing a
+   {\bf status storage=xxx}.  For example, on an idle test system, when
+   I do {\bf status storage=File}, I get:
+\footnotesize
+\begin{verbatim}
+status storage=File
+Connecting to Storage daemon File at 192.168.68.112:8103
+
+rufus-sd Version: 1.39.6 (24 March 2006) i686-pc-linux-gnu redhat (Stentz)
+Daemon started 26-Mar-06 11:06, 0 Jobs run since started.
+
+Running Jobs:
+No Jobs running.
+====
+
+Jobs waiting to reserve a drive:
+====
+
+Terminated Jobs:
+ JobId  Level   Files          Bytes Status   Finished        Name 
+======================================================================
+    59  Full        234      4,417,599 OK       15-Jan-06 11:54 kernsave
+====
+
+Device status:
+Autochanger "DDS-4-changer" with devices:
+   "DDS-4" (/dev/nst0)
+Device "DDS-4" (/dev/nst0) is mounted with Volume="TestVolume002"
+Pool="*unknown*"
+    Slot 2 is loaded in drive 0.
+    Total Bytes Read=0 Blocks Read=0 Bytes/block=0
+    Positioned at File=0 Block=0
+
+Device "DVD-Writer" (/dev/hdc) is not open.
+Device "File" (/tmp) is not open.
+====
+
+In Use Volume status:
+====
+\end{verbatim}
+\normalsize
+
+Now, what this tells me is that no jobs are running and that none of
+the devices are in use.  Now, if I {\bf unmount} the autochanger, which
+will not be used in this example, and then start a Job that uses the
+File device, the job will block.  When I re-issue the status storage
+command, I get for the Device status:
+
+\footnotesize
+\begin{verbatim}
+status storage=File
+...
+Device status:
+Autochanger "DDS-4-changer" with devices:
+   "DDS-4" (/dev/nst0)
+Device "DDS-4" (/dev/nst0) is not open.
+    Device is BLOCKED. User unmounted.
+    Drive 0 is not loaded.
+
+Device "DVD-Writer" (/dev/hdc) is not open.
+Device "File" (/tmp) is not open.
+    Device is BLOCKED waiting for media.
+====
+...
+\end{verbatim}
+\normalsize
+
+Now, here it should be clear that if a job were running that wanted
+to use the Autochanger (with two devices), it would block because
+the user unmounted the device. The real problem for the Job I started
+using the "File" device is that the device is blocked waiting for
+media -- that is Bacula needs you to label a Volume.
+
+\item [time]
+   \index[general]{time}
+   Prints the current time.
+
+\item [trace]
+   \index[general]{trace}
+   Turn on/off trace to file.
+
+\item [umount]
+   \index[general]{umount}
+   For old-time Unix guys.  See the unmount command for full details.
+
+\item [unmount]
+   \index[general]{unmount}
+   This command causes the indicated Bacula Storage  daemon to unmount the
+   specified device. The forms of the command  are the same as the mount command:
+\footnotesize
+\begin{verbatim}
+unmount storage=<storage-name> [ drive=<num> ]
+
+unmount [ jobid=<id> | job=<job-name> ]
+\end{verbatim}
+\normalsize
+
+   Once you unmount a storage device, Bacula will no longer be able to use
+   it until you issue a mount command for that device. If Bacula needs to
+   access that device, it will block and issue mount requests periodically
+   to the operator.
+
+   If the device you are unmounting is an autochanger, it will unload
+   the drive you have specified on the command line. If no drive is 
+   specified, it will assume drive 1.
+
+\label{UpdateCommand}
+\item [update]
+   \index[general]{update}
+   This command will update the catalog for either a specific Pool record, a Volume
+   record, or the Slots in an  autochanger with barcode capability. In the case
+   of updating a  Pool record, the new information will be automatically taken
+   from  the corresponding Director's configuration resource record. It  can be
+   used to increase the maximum number of volumes permitted or  to set a maximum
+   number of volumes. The following main  keywords may be specified:  
+\footnotesize
+\begin{verbatim}
+   media, volume, pool, slots, stats
+\end{verbatim}
+\normalsize
+
+In the case of updating a  Volume, you will be prompted for which value you
+wish to change.  The following Volume parameters may be changed:  
+
+\footnotesize
+\begin{verbatim}
+ 
+   Volume Status
+   Volume Retention Period
+   Volume Use Duration
+   Maximum Volume Jobs
+   Maximum Volume Files
+   Maximum Volume Bytes
+   Recycle Flag
+   Recycle Pool
+   Slot
+   InChanger Flag
+   Pool
+   Volume Files
+   Volume from Pool
+   All Volumes from Pool
+   All Volumes from all Pools
+   
+\end{verbatim}
+\normalsize
+
+   For slots {\bf update slots}, Bacula will obtain a list of slots and
+   their barcodes from the Storage daemon, and for each barcode found, it
+   will automatically update the slot in the catalog Media record to
+   correspond to the new value.  This is very useful if you have moved
+   cassettes in the magazine, or if you have removed the magazine and
+   inserted a different one.  As the slot of each Volume is updated, the
+   InChanger flag for that Volume will also be set, and any other Volumes
+   in the Pool that were last mounted on the same Storage device
+   will have their InChanger flag turned off.  This permits
+   Bacula to know what magazine (tape holder) is currently in the
+   autochanger.
+
+   If you do not have barcodes, you can accomplish the same thing in
+   version 1.33 and later by using the {\bf update slots scan} command.
+   The {\bf scan} keyword tells Bacula to physically mount each tape and to
+   read its VolumeName.
+
+   For Pool {\bf update pool}, Bacula will move the Volume record from its
+   existing pool to the pool specified.
+
+   For {\bf Volume from Pool}, {\bf All Volumes from Pool} and {\bf All Volumes
+     from all Pools}, the following values are updated from the Pool record:
+   Recycle, RecyclePool, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles,
+   and MaxVolBytes.  (RecyclePool feature is available with bacula 2.1.4 or
+   higher.)
+
+   The full form of the update command with all command line arguments is:
+
+\footnotesize
+\begin{verbatim}
+       update volume=xxx pool=yyy slots volstatus=xxx VolRetention=ddd
+         VolUse=ddd MaxVolJobs=nnn MaxVolBytes=nnn Recycle=yes|no
+         slot=nnn enabled=n recyclepool=zzz
+      
+\end{verbatim}
+\normalsize
+
+\item [use]
+   \index[general]{use}
+   This command allows you to specify which Catalog  database to use. Normally,
+you will be using only one database so  this will be done automatically. In
+the case that you are using  more than one database, you can use this command
+to switch from  one to another.  
+
+\footnotesize
+\begin{verbatim}
+       use [catalog=name-of-catalog]
+\end{verbatim}
+\normalsize
+
+
+\item [var]
+   \label{var}
+   \index[general]{var name}
+   This command takes a string or quoted string and  does variable expansion on
+   it the same way variable expansion  is done on the {\bf LabelFormat} string.
+   Thus, for the  most part, you can test your LabelFormat strings. The
+   difference  between the {\bf var} command and the actual LabelFormat process 
+   is that during the var command, no job is running so "dummy"  values are
+   used in place of Job specific variables. Generally,  however, you will get a
+   good idea of what is going to happen  in the real case.  
+
+\item [version]
+   \index[general]{version}
+   The command prints the Director's version.  
+
+\item [wait]
+   \index[general]{wait}
+   The wait command causes the Director to pause  until there are no jobs
+   running. This command is useful in  a batch situation such as regression
+   testing where you  wish to start a job and wait until that job completes 
+   before continuing. This command now has the following options:
+\footnotesize
+\begin{verbatim}
+   wait [jobid=nn] [jobuid=unique id] [job=job name]
+\end{verbatim}
+\normalsize
+   If specified with a specific JobId, ... the wait command will wait
+   for that particular job to terminate before continuing.
+
+\end{description}
+
+\label{dotcommands}
+\section{Special dot Commands}
+\index[general]{Commands!Special dot}
+\index[general]{Special dot Commands}
+
+There is a list of commands that are prefixed with a period (.). These
+commands are intended to be used either by batch programs or graphical user
+interface front-ends. They are not normally used by interactive users. Once
+GUI development begins, this list will be considerably expanded. The following
+is the list of dot commands: 
+
+\footnotesize
+\begin{verbatim}
+.backups job=xxx      list backups for specified job
+.clients              list all client names
+.defaults client=xxx fileset=yyy  list defaults for specified client
+.die                  cause the Director to segment fault (for debugging)
+.dir                  when in tree mode prints the equivalent to the dir command,
+                        but with fields separated by commas rather than spaces.
+.exit                 quit
+.filesets             list all fileset names
+.help                 help command output
+.jobs                 list all job names
+.levels               list all levels
+.messages             get quick messages
+.msgs                 return any queued messages
+.pools                list all pool names
+.quit                 quit
+.status               get status output
+.storage              return storage resource names
+.types                list job types
+\end{verbatim}
+\normalsize
+
+\label{atcommands}
+
+\section{Special At (@) Commands}
+\index[general]{Commands!Special At @}
+\index[general]{Special At (@) Commands}
+
+Normally, all commands entered to the Console program are immediately
+forwarded to the Director, which may be on another machine, to be executed.
+However, there is a small list of {\bf at} commands, all beginning with an at
+character (@), that will not be sent to the Director, but rather interpreted
+by the Console program directly. Note, these commands are implemented only in
+the tty console program and not in the Bat Console. These commands are: 
+
+\begin{description}
+
+\item [@input \lt{}filename\gt{}]
+   \index[general]{@input \lt{}filename\gt{}}
+   Read and execute the commands  contained in the file specified.  
+
+\item [@output \lt{}filename\gt{} w/a]
+   \index[general]{@output \lt{}filename\gt{} w/a}
+   Send all following output to the  filename specified either overwriting the
+file (w) or appending to  the file (a). To redirect the output to the
+terminal, simply enter  {\bf @output} without a filename specification.
+WARNING: be careful  not to overwrite a valid file. A typical example during a
+regression  test might be:  
+
+\footnotesize
+\begin{verbatim}
+    @output /dev/null
+    commands ...
+    @output
+    
+\end{verbatim}
+\normalsize
+
+\item [@tee \lt{}filename\gt{} w/a]
+   \index[general]{@tee \lt{}filename\gt{} w/a}
+   Send all subsequent output to  both the specified file and the terminal. It is
+   turned off by  specifying {\bf @tee} or {\bf @output} without a filename.  
+
+\item [@sleep \lt{}seconds\gt{}]
+   \index[general]{@sleep \lt{}seconds\gt{}}
+   Sleep the specified number of seconds.  
+
+\item [@time]
+   \index[general]{@time}
+   Print the current time and date.  
+
+\item [@version]
+   \index[general]{@version}
+   Print the console's version.  
+
+\item [@quit]
+   \index[general]{@quit}
+   quit  
+
+\item [@exit]
+   \index[general]{@exit}
+   quit  
+
+\item [@\# anything]
+   \index[general]{anything}
+   Comment 
+
+\item [@help]
+   \index[general]{@help}
+   Get the list of every special @ commands.
+
+\item [@separator \lt{}char\gt{}]
+\index[general]{@separator} 
+  When using bconsole with readline, you can set the command separator to one
+  of those characters to write commands who require multiple input on one line,
+  or to put multiple commands on a single line.
+\begin{verbatim}
+  !$%&'()*+,-/:;<>?[]^`{|}~
+\end{verbatim}
+
+  Note, if you use a semicolon (;) as a separator character, which is
+  common, you will not be able to use the {\bf sql} command, which 
+  requires each command to be terminated by a semicolon.
+
+\end{description}
+
+\label{scripting}
+\section{Running the Console from a Shell Script}
+\index[general]{Script!Running the Console Program from a Shell}
+\index[general]{Running the Console Program from a Shell Script}
+
+You can automate many Console tasks by running the console program from a
+shell script. For example, if you have created a file containing the following
+commands: 
+
+\footnotesize
+\begin{verbatim}
+ ./bconsole -c ./bconsole.conf <<END_OF_DATA
+ unmount storage=DDS-4
+ quit
+ END_OF_DATA
+\end{verbatim}
+\normalsize
+
+when that file is executed, it will unmount the current DDS-4 storage device.
+You might want to run this command during a Job by using the {\bf
+RunBeforeJob} or {\bf RunAfterJob} records. 
+
+It is also possible to run the Console program from file input where the file
+contains the commands as follows: 
+
+\footnotesize
+\begin{verbatim}
+./bconsole -c ./bconsole.conf <filename
+\end{verbatim}
+\normalsize
+
+where the file named {\bf filename} contains any set of console commands. 
+
+As a real example, the following script is part of the Bacula regression
+tests. It labels a volume (a disk volume), runs a backup, then does a restore
+of the files saved. 
+
+\footnotesize
+\begin{verbatim}
+bin/bconsole -c bin/bconsole.conf <<END_OF_DATA
+@output /dev/null
+messages
+@output /tmp/log1.out
+label volume=TestVolume001
+run job=Client1 yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@output /tmp/log2.out
+restore current all
+yes
+wait
+messages
+@output
+quit
+END_OF_DATA
+\end{verbatim}
+\normalsize
+
+The output from the backup is directed to /tmp/log1.out and the output from
+the restore is directed to /tmp/log2.out. To ensure that the backup and
+restore ran correctly, the output files are checked with: 
+
+\footnotesize
+\begin{verbatim}
+grep "^Termination: *Backup OK" /tmp/log1.out
+backupstat=$?
+grep "^Termination: *Restore OK" /tmp/log2.out
+restorestat=$?
+\end{verbatim}
+\normalsize
+
+\section{Adding Volumes to a Pool}
+\index[general]{Adding Volumes to a Pool}
+\index[general]{Pool!Adding Volumes to a}
+
+If you have used the {\bf label} command to label a Volume, it will be
+automatically added to the Pool, and you will not need to add any media to the
+pool. 
+
+Alternatively, you may choose to add a number of Volumes to the pool without
+labeling them. At a later time when the Volume is requested by {\bf Bacula}
+you will need to label it. 
+
+Before adding a volume, you must know the following information: 
+
+\begin{enumerate}
+\item The name of the Pool (normally "Default")  
+\item The Media Type as specified in the Storage Resource  in the Director's
+   configuration file (e.g. "DLT8000")  
+\item The number and names of the Volumes you wish to create. 
+\end{enumerate}
+
+For example, to add media to a Pool, you would issue the following commands to
+the console program: 
+
+\footnotesize
+\begin{verbatim}
+*add
+Enter name of Pool to add Volumes to: Default
+Enter the Media Type: DLT8000
+Enter number of Media volumes to create. Max=1000: 10
+Enter base volume name: Save
+Enter the starting number: 1
+10 Volumes created in pool Default
+*
+\end{verbatim}
+\normalsize
+
+To see what you have added, enter: 
+
+\footnotesize
+\begin{verbatim}
+*list media pool=Default
++-------+----------+---------+---------+-------+------------------+
+| MedId | VolumeNa | MediaTyp| VolStat | Bytes | LastWritten      |
++-------+----------+---------+---------+-------+------------------+
+|    11 | Save0001 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+|    12 | Save0002 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+|    13 | Save0003 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+|    14 | Save0004 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+|    15 | Save0005 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+|    16 | Save0006 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+|    17 | Save0007 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+|    18 | Save0008 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+|    19 | Save0009 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+|    20 | Save0010 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
++-------+----------+---------+---------+-------+------------------+
+*
+\end{verbatim}
+\normalsize
+
+Notice that the console program automatically appended a number to the base
+Volume name that you specify (Save in this case). If you don't want it to
+append a number, you can simply answer 0 (zero) to the question "Enter number
+of Media volumes to create. Max=1000:", and in this case, it will create a
+single Volume with the exact name you specify. 

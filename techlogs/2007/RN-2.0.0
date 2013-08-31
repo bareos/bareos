@@ -1,0 +1,392 @@
+
+          Release Notes for Bacula 2.0.0
+
+  Bacula code: Total files = 438 Total lines = 154,329 (*.h *.c *.in)
+
+==== IMPORTANT Catalog update required =====
+- The database format has been updated from what was used in    
+  Bacula 1.38.x.  You must manually update your database before 
+  running Bacula 1.39.x or higher.  If you are using Bacula supplied
+  RPMs this is not necessary as the RPM does it automatically.
+  Please backup your previous version of the database before
+  running the update.  The update script will be automatically
+  installed in your scripts directory, or can also be found in
+  <bacula-source>/src/cats.  It is called:
+
+     ./update_bacula_tables
+
+  It is necessary to run it only once the first time you move to
+  a 2.0.0.  Upgrading the Bacula version thereafter does not
+  require updating the database again.  Depending on the size of
+  your database the script make take a bit of time, to run, but
+  in general, it should be very fast.
+
+==== IMPORTANT new Win32 install procedure =====
+  For Win32 migrations from versions prior to 1.39.0 nothing special
+  needs to be done to upgrade.  Everything should be taken care of
+  automatically.  The only thing not done is to delete the old C:\bacula
+  directory mostly out of paranoia.
+
+==== IMPORTANT miscellaneous ====
+- The Gnome console program (gconsole) no longer functions as it
+  should.More importantly, in restore mode, the restore tree is
+  no longer shown in the left pane.  I suspect this is due to
+  incompatible changes in the GTK+ API, and hence have given up
+  on gnome and gtk+, as this has already happened several times
+  previously.  At some point there will be a new GUI console.
+- The bacula-dir.conf directive Accept Any Volume has been
+  removed because it was never implemented. You must delete all
+  occurrence of this directive for the Director to run. The Storage
+  daemon will automatically accept any valid Volume that you mount.
+- The --mandir ./configure option now points to the top level man
+  directory.  The man files will be installed under mandir/man8 and
+  mandir/man1 as appropriate.
+- You *should* be able to use 1.38.x FDs with version 2.0.0 Director
+  and SD providing you do not use any of the new features (runscript,   
+  data encryption). It seems to work here, but we do not guarantee it.
+- Your Director and SD must be simultaneously upgraded.
+- The restore command no longer uses the MediaType as the primary method
+  of finding a suitable Storage device. Normally it will select the last
+  device used to write a Volume. If no storage device is defined, it
+  will use the old algorithm which selects the first Storage resource  
+  with the correct MediaType.
+- The MD5/SHA1 hash codes kept in the database are now kept in a binary
+  format compatible with the rest of the world. If you are running verify 
+  jobs, you *must* do an InitCatalog or all files will show an MD5   
+  difference.  Also, authentication uses the new algorithm by
+  default, but *should* accept connections from older components (FD) using
+  the old non-compatible algorithm. This has been tested, but more
+  more testing is still needed.  
+- A stock SuSE 10.1 kernel may crash when Bacula runs and accesses
+  the tape drive. Workaround, load the SuSE 10.1 version 2.6.16.21-0.25
+  kernel or later. The SuSE 10.2 Alpha 5 or later kernel also works.
+  This problem may also be present in certain Fedora FC5 kernels.
+- If you have been using the data encryption feature of 1.39.x, please
+  be aware that certain combinations of encryption and other options
+  with version 1.39.0 through 1.39.26 created Volume data that cannot
+  be restored. We strongly recommend that anyone using encryption 
+  carefully review his/her backups and at a minium do a Full backup
+  with 1.39.28 of all encrypted data.  Robert Nelson has identified 
+  and fixed it as follows:
+     As of 1.39.27:
+        No filters = Works fine
+        Sparse = Works fine
+        Compression = Works fine
+        Encryption = Works fine
+        Sparse + Compression = Works fine
+
+        Sparse + Encryption = Restore broken
+        Sparse + Compression + Encryption = Restore broken
+        Compression + Encryption = Restore broken
+
+     As of 1.39.28:
+        Most combinations work, but some encrypted files are
+        not properly restored.
+
+     As of 1.39.30:
+        All combinations work fine except Sparse+Encryption.
+
+  Bottom line, if you are using data encryption, please test restoring
+  data to be sure it all works correctly.
+- The current Volume format written by 1.39.22 is different from
+  the format written by previous versions. The two formats
+  are not compatible. Thus any DVDs written prior to 1.39.22 will
+  be unreadable by version 1.39.22.
+- If you previously run a Bacula version prior to 1.39.30, the JobMedia
+  data may not be correct for disk Volumes. This can cause incorrect
+  seeking in versions after 1.39.30. If you experience what appears to
+  be data I/O or integrity errors during restores, please add the
+  following directive to your disk DEVICE resource in the Storage
+  daemon conf file:
+
+    Block Positioning = no
+
+  This will turn off all seek requests during restores and avoid
+  this problem.
+- VSS for Windows clients is now enabled by default.
+- Do not unload autochanger when doing "update slots"
+- Implement mount command for autochanger, see manual.
+
+New Features in 2.0.0:
+- Turn on disk seek code for restores.
+- There is a partial but reasonable translation of the Bacula
+  messages for French.  To install it, first configure and build
+  Bacula, then as root run:
+
+    cd <bacula-source>/po
+    make install
+
+  If you have your locale set properly you will get the translated
+  messages.
+- Bacula now support Migration jobs that are documented in a new
+  Migration chapter in the manual
+  http://www.bacula.org/dev-manual/Migration.html
+- Data encryption is now implemented and is documented in
+  a new chapter of the manual at:
+  http://www.bacula.org/dev-manual/Bacula_Data_Encryption.html
+- Additional support for removable devices.  See the 
+  Requires Mount, Mount Point, Mount Command, and Unmount
+  Commands in the Storage daemon configuration chapter:
+  http://www.bacula.org/dev-manual/Storage_Daemon_Configuratio.html
+  Also see the Edit Codes for Mount and Unmount Directives in the
+  same chapter.
+- Switch the Win32 build from using Microsoft C++ to using mingw32
+  cross-compiling.  The initial work was done by Howard Thomson,
+  then tweaked by me.  Robert Nelson then totally reworked the
+  cross-compiling code so that it not only cross-compiles, but
+  also compiles on Visual Studio, and at the same time, he added
+  all the current Unix features to the FD, such as selection on
+  drives, encryption support, building *all* the tools, ...
+- The Director and Storage daemon have now been ported to Win32.
+  This code is working but should still be tested carefully
+  before putting into production.
+- Bacula restore and bextract can now extract non-portable Win32 data to
+  any client (including Unix/Linux clients). Of course, in doing so,
+  the Microsoft specific permissions and ACLs will be lost.  Thanks
+  to Thorsten Engel for this code.
+- The 260 character limitation for Win32 paths name lengths is now 
+  eliminated thanks to Thorsten Engel. However, if you are using
+  Volume Shadow Copy, please be careful to specify all the paths
+  in the bacula-fd.conf file using a full path notation including
+  the drive letter.
+- Eric Bollengier wrote new RunScript directives that includes
+  the old RunBefore/AfterJob and ClientRunBefore/AfterJob features
+  plus a *lot* more, allowing you to control just about every aspect
+  of running scripts.  See the manual for detailed documentation.
+  http://www.bacula.org/dev-manual/Configuring_Director.html#5227
+- SunOS ACLs should now work thanks to a patch from David Duchscher.
+- Apply days keyword patch from Alexander.Bergolth at wu-wien.ac.at
+  If this patch is applied, the number of days can be specified with
+  "list nextvol days=xx"
+  or
+  "status dir days=xx"
+  This can be used to preview the next scheduled job (and the
+  next tape to be used) on Fridays if there are no scheduled jobs during
+  the weekend.
+- From Eric Bollengier. One can now using the bconsole wait command do:
+   wait  (wait for all jobs to stop)
+   wait jobid=nn
+   wait jobuid=unique id
+   wait job=job-name
+- Volumes can now be set to Enable, Disable, or Archive. If they
+  are not enabled, Volumes will not be mounted.             
+  Implement update volume enable=(on|off|true|false|archived|0|1|2)
+- Add Catalog message destination in Messages resource that puts the
+  job report in the Log database table.
+- Writing/reading DVD Volumes is much more stable -- to the point
+  of being useful. Thanks to Richard Mortimer.
+- Add enable/disable job=<job-name>.  This command prevents
+  the specified job from being scheduled. Even when disabled,
+  the job can be manually started from the console.
+- The database Id records should be 32/64 bit independent now. 64 bits
+  can be enabled by changing one define and changing the appropriate
+  table variable. Normally, you need 64 bits only for FileId.
+- Relative path specifications (i.e. ../xxx) are now permitted in
+  the restore cd command.
+- When running multiple simultaneous jobs, most jobs that use spooling
+  will now finish faster due to a mutex optimization made by Eric
+  Bollengier.
+- Conf files containing UTF-8 marker at the head of the file as well as
+  conf files containing Window cr/lf and Mac cr line termination characters 
+  are now accepted thanks to Robert Nelson.
+- Windows tray status windows are scrollable and resizable.
+- Win32 external script execution is much more flexible -- handles
+  spaces in names better, ...
+- Lots of DVD fixes -- writing DVDs is now reported to work.
+- Fix opening of database in a restricted console to respect     
+  any Catalog ACL.
+- Much better automatic handling of multiple database catalogs in
+  the restore command.
+- Permit multiple console/director resources in bconsole.conf.
+  patch from Carsten Paeth calle@calle.in-berlin.de
+- Character substitution in Job/JobDefs WriteBootStrap.
+  from Eric Bollengier.
+- Apply patch supplied in bug #656 to pass priority field
+  in the run dialog to the Director in gnome console.
+- Add support of encrypted data stream to bscan from Eric.
+  display data_len instead of data content (may be binary).
+- Add Enabled=xxx on update slots command.
+- Add host:port to connect failure messages to FD and SD from Dir/
+- Add WhereACL to console ACL list.  If nothing is specified, only
+  the default is permitted for restore. Otherwise, *all* allows any
+  path, or you can specify permitted paths. This should allow control
+  over where users can restore files. This is untested.
+- Install man pages with 'make install'.
+- Add Media.Enabled flag to client backups for dotcmds.c
+- Enforce Media.Enabled=1 for a current restore to work
+- Require restore case 3 to have sqlquery permission to work.
+- Add -n option to bconsole to turn off conio -- used in bweb.
+- The bytes field in the terminated jobs part of the status
+  command now reports in KB, MB, ... units.
+- When not descending into a directory, print the File= name that
+  triggered it -- makes why not descending a bit clearer
+- Do not unload autochanger when doing "update slots"
+- Implement mount command for autochanger
+- Fix bug #462 incorrect error message printed when client script called
+  from File= was not found.
+- Fix bug #558 (waiting for feedback) where Bacula needs too much time to
+  do a rewind on Solaris when no tape is in the drive (Solaris does not
+  have the detailed errno found on Linux).  Added Solaris specific code.
+  Note, this may apply to other OSes as well.
+- The examples directory has a new bacula_mail_summary.sh file that
+  creates a single email summary of any number of jobs. Submitted by
+  Andrew J. Millar.
+- Add nagios plugin to the examples directory. Submitted by
+  Christian Masopust.
+- Modify most restore error messages to be queued so that they
+  appear at the end of the job rather than mixed with the restore
+  listing where they could be "lost".
+- Apply patch supplied by user (slightly modified) to fix
+  correct detection of holes in block devices and FIFOs.
+  Bug # 506.
+- Added a report.pl program to the examples directory from Jonas Bjorklund.
+- Add two new queries to query.sql provided by Arno. One
+  list volumes known to the Storage device, and the other
+  lists volumes possibly needing replacement (error, ...).
+- Implement new code for changing userid and group at startup. This
+  should get Bacula into the correct groups.
+- Implement support for removable filesystems -- device type directive
+  and mount, unmount directives.
+- Transfer rates are now presented in a more readable format thanks
+  to a user submission.
+- SD is now aware of what volumes are mounted. More information is printed
+  in the Status report. You must take much more care now to unmount
+  devices prior to removing tapes that Bacula has open or prior to
+  changing a magazine. Don't forget to do a mount afterwards or the
+  device will be blocked.
+- The Pool Maximum Volumes directive is now respected in all places.
+- A Storage device can now be specified in a Pool resource. It will override
+  all other Storage specifications.
+- Most but not all directives accept true/false in place of yes/no.
+- A patch from Karl Hakimian that reads JobIds, FileIndexes
+  from a database table for restore.
+- There are a number of new tables. Some such as the Location table are
+  designed for user use in doing Volume Management software.
+- Maximum Changer Wait, Maximum Open Wait, Maximum Rewind Wait to
+  accept time qualifiers.
+- Implement jobuid to replace old usage of job in keywords as
+  suggested by Eric Bollengier.
+- Implement write variables for Python to set Priority (anytime), and
+  Job Level, only during JobInit event.
+- Use the keyword ujobid to mean the unique job id; job or jobname
+  to mean the Job name given on the Name directive, and jobid to
+  be the numeric (non-unique) job id.
+- Allow the SD to use multiple drives during a backup/restore (only
+  one at a time).
+- Integrate addition of line count limitation to bsmtp -l from
+  Sebastian Stark <stark at tuebingen.mpg.de>
+- Split the bacula start/start script into four files:
+   bacula         -- starts and stops calling other scripts
+   bacula-ctl-dir -- starts/stops the director
+   bacula-ctl-fd  -- starts/stops the File daemon
+   bacula-ctl-sd  -- starts/stops the Storage daemon
+- Remove automatic case folding on Windows FDs. You must
+  explicitly use the 'Ignore Case = yes' option.
+- Implement wild program in tools directory for testing
+  wild-cards. Almost identical to the regex program.
+- Use the new bregex.c to implement Regex expressions on Win32.
+- Apply patch from Christopher Hull
+  - Allow multiple connections to database with different
+    parameters.
+  - Invalidate the scheduler when doing a reload. Fixes seg
+    fault, but still 60 second window.
+  - Additional info in Reschedule message.
+  - Use set_jcr_job_status() everywhere to prevent loss of
+    cancel, error.
+  - Display peer IP in FD if error from connecting DIR.
+  - Don't increment file count for DIRBEGIN.
+  - Replace illegal characters in Win32 filename by _.
+  - Add SE_CREATE_PERMANENT_NAME privilege in Win32.
+  - Hash hard link filenames rather than linked list (performance).
+  - Fix for security failure in chdir on Win32.
+  - Add CreateDirectoryA/W win32 API entry points.
+- programs to duplicate Bacula's base64 algorithm using standard
+  routines. This fixes bugs #296, and 565. Patch submitted by
+  author of bug #565.
+- Fixes to reloading the Dir conf file from Eric Bollengier and Christopher
+  Hull.
+- Modify LICENSE to correct some problems pointed out by Debian.
+- Apply a patch submitted by cesarb in bug #606 to implement O_NOATIME support.
+    O_NOATIME is a open() flag which makes it possible to read a file without
+    updating the inode atime (and also without the inode ctime update which
+    happens if you try to set the atime back to its previous value). It also
+    prevents a race condition when two programs are reading the same file, but
+    only one does not want to change the atime. It's most useful for backup
+    programs and file integrity checkers (and bacula can fit on both
+    categories).                                                    
+  You enable it in the Bacula FileSet Options resource by setting:
+     noatime = yes
+  The effect of this option is similar to the keepatime option except
+  it is more efficient and avoids modifying ctime.
+- Implement a pile of new man pages contributed by Jose Tallon.
+- Modify the database format for handling Migration jobs:
+   Add PriorJobId, RealEndTime to Job table
+   Delete MAC table
+   Remove Stripe from JobMedia record (not used, wasting space)
+   Add ScratchPoolId, RecyclePoolId, Enabled to Media record
+   Add Cost to Location table.
+   Enabled to Media table and Location table.
+- Security: harden authentication failure in FD by single threading errors
+  and forcing a 6 second wait.
+- If using GCC (actually g++) add the following compiler flags
+  -fno-strict-aliasing -fno-exceptions -fno-rtti
+- Turn on new bsnprintf() code.  The reason for this code is to
+  eliminate the security problems associated with using the
+  system libraries print routines.
+- Implement job report that indicates where Storage and Pool
+  came from -- with overrides and Pool storage and NextPool,
+  it is all very complicated.
+- Add more detail (Storage, Device) to list of volumes printed
+  for restore.
+- Add new VOLMGMT message class. No messages are yet sent with this 
+  class.
+- Improved Bacula rescue procedures -- see the Disaster Recovery
+  chapter of the manual
+- Add spooling/despooling info in status output of SD.
+- Add Comment field to llist of a volume.
+- Allow true/false in many but not all yes/no directives.
+- The Bacula source code is now copyrighted by the Free Software 
+  Foundation Europe. The Developer's Guide documents the new procedures,
+  and the LICENSE file has been updated.
+- Apply Jaime Ventura's patch that implements the Messages resource
+  Mail On Success directive.
+- The Client returns its Version string, which is printed in the Job
+  report.
+- The Client returns whether or not VSS and Encryption are used, which
+  are printed in the Job report.
+
+Additional Features Added for Win32:
+- Added DriveType directive to the Director's Include Option FileSet
+  resource.  Allowed values are: fixed, removable, cdrom, and remote.  There
+  is only an implementation for Windows because it is the only platform that
+  has the concept of drives.
+ 
+- Adds EnhancedWild directive to the Director's Include Option FileSet
+  resource.  Allowed values are: yes and no.
+ 
+  When EnhancedWild is enabled then the processing of the
+  Wild, WildDir and WildFile is changed in the following ways.
+ 
+  Patterns conform to Posix
+      \ is not a special character in character classification []
+      To match a - it must be the first or last character
+      To match a ] it must be the first character
+ 
+      fnmatch option FNM_FILE_NAME is specified * doesn't match a / 
+      so it won't match multiple directory levels in a path
+ 
+- Relative WildFile patterns (ones without a leading /) match
+  against the filename portion.  This in combination with the
+  FNM_FILE_NAME fnmatch() flag makes directives such as WildFile =
+  abc*.def work as expected.
+ 
+- Adds support for the shell's feature of brace expansion.
+
+  Here is an example where braces allow 24 lines to be expressed in 5.
+
+  # Exclude directories full of lots and lots of useless little files
+  WildDir = "[A-Z]:/{Documents and Settings,{WINNT,Windows}/Profiles}/*/Cookies"
+  WildDir = "[A-Z]:/{Documents and Settings,{WINNT,Windows}/Profiles}/*/Recent"
+  WildDir = "[A-Z]:/{Documents and Settings,{WINNT,Windows}/Profiles}/*/{Local Settings,LOCALS~1}/History"
+  WildDir = "[A-Z]:/{Documents and Settings,{WINNT,Windows}/Profiles}/*/{Local Settings,LOCALS~1}/Temp"
+  WildDir = "[A-Z]:/{Documents and Settings,{WINNT,Windows}/Profiles}/*/{Local Settings,LOCALS~1}/Temporary Internet Files"

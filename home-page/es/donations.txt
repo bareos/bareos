@@ -1,0 +1,9 @@
+Kern;;;2006/08/04;;;12:30 
+Donaciones Recibidas
+
+Las siguientes personas u organizaciones han donado o suplido soporte financiero para el desarrollo del proyecto Bacula y han pedido expl&iacute;citamente/espec&iacute;ficamente que sus nombres aparezcan aqu&iacute;:
+
+
+Muchas gracias a todas las personas mencionadas o no aqu&iacute; que han provisto de soporte o hecho donaciones a Bacula. Los nombres aqu&iacute; listados est&aacute;n porque as&iacute; lo solicitaron. Si hizo una donaci&oacute;n o dio soporte econ&oacute;mico al proyecto y desa aparecer en esta lista, env&iacute;e un email a kern arroba sibbald punto com.
+
+;;;

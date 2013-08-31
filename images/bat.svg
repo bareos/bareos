@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="svg2595"
+   sodipodi:version="0.32"
+   inkscape:version="0.46"
+   width="1052.3622"
+   height="744.09448"
+   version="1.0"
+   sodipodi:docname="bat.svg"
+   style="display:inline"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
+  <sodipodi:namedview
+     inkscape:window-height="725"
+     inkscape:window-width="1280"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     guidetolerance="10.0"
+     gridtolerance="10.0"
+     objecttolerance="10.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base"
+     showgrid="false"
+     inkscape:zoom="0.28735632"
+     inkscape:cx="-144.75432"
+     inkscape:cy="360.16079"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:current-layer="layer4" />
+  <metadata
+     id="metadata2600">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>Bacula bat vectorized</dc:title>
+        <dc:date>2009-04-27</dc:date>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Philippe Chauvat</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title>Creative Commons</dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <dc:publisher>
+          <cc:Agent>
+            <dc:title>Philippe Chauvat</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:source>Vectorized from BAT bitmap version</dc:source>
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>bat bacula</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by/3.0/" />
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by/3.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs2598">
+    <linearGradient
+       id="linearGradient3581"
+       inkscape:collect="always">
+      <stop
+         id="stop3583"
+         offset="0"
+         style="stop-color:#c80000;stop-opacity:1;" />
+      <stop
+         id="stop3585"
+         offset="1"
+         style="stop-color:#c80000;stop-opacity:0;" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3562"
+       inkscape:collect="always">
+      <stop
+         id="stop3564"
+         offset="0"
+         style="stop-color:#000000;stop-opacity:1;" />
+      <stop
+         id="stop3566"
+         offset="1"
+         style="stop-color:#000000;stop-opacity:0;" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3554"
+       inkscape:collect="always">
+      <stop
+         id="stop3556"
+         offset="0"
+         style="stop-color:#202020;stop-opacity:1;" />
+      <stop
+         id="stop3558"
+         offset="1"
+         style="stop-color:#202020;stop-opacity:0;" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3546">
+      <stop
+         id="stop3548"
+         offset="0"
+         style="stop-color:#ff0000;stop-opacity:1;" />
+      <stop
+         id="stop3550"
+         offset="1"
+         style="stop-color:#cd1700;stop-opacity:1;" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3538"
+       inkscape:collect="always">
+      <stop
+         id="stop3540"
+         offset="0"
+         style="stop-color:#d70000;stop-opacity:1;" />
+      <stop
+         id="stop3542"
+         offset="1"
+         style="stop-color:#d70000;stop-opacity:0;" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3446"
+       inkscape:collect="always">
+      <stop
+         id="stop3448"
+         offset="0"
+         style="stop-color:#000000;stop-opacity:1;" />
+      <stop
+         id="stop3450"
+         offset="1"
+         style="stop-color:#000000;stop-opacity:0;" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3422"
+       inkscape:collect="always">
+      <stop
+         id="stop3424"
+         offset="0"
+         style="stop-color:#000000;stop-opacity:1;" />
+      <stop
+         id="stop3426"
+         offset="1"
+         style="stop-color:#000000;stop-opacity:0;" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3408"
+       inkscape:collect="always">
+      <stop
+         id="stop3410"
+         offset="0"
+         style="stop-color:#ffffff;stop-opacity:1;" />
+      <stop
+         id="stop3412"
+         offset="1"
+         style="stop-color:#ffffff;stop-opacity:0;" />
+    </linearGradient>
+    <inkscape:perspective
+       id="perspective2602"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <radialGradient
+       r="16.487856"
+       fy="82.875977"
+       fx="188.06699"
+       cy="82.875977"
+       cx="188.06699"
+       gradientTransform="matrix(57.71288,3.8720145,-0.8261363,12.313483,-7077.0055,-7906.9183)"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient3420"
+       xlink:href="#linearGradient3408"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="matrix(22.964421,0,0,22.964421,-610.43338,-8061.427)"
+       gradientUnits="userSpaceOnUse"
+       y2="89.647285"
+       x2="221.25453"
+       y1="91.121109"
+       x1="193.70023"
+       id="linearGradient3428"
+       xlink:href="#linearGradient3422"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="matrix(22.964421,0,0,22.964421,-610.43338,-8061.427)"
+       gradientUnits="userSpaceOnUse"
+       y2="80.563316"
+       x2="210.18567"
+       y1="80.563316"
+       x1="199.71756"
+       id="linearGradient3436"
+       xlink:href="#linearGradient3422"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="matrix(22.964421,0,0,22.964421,-610.43338,-8061.427)"
+       gradientUnits="userSpaceOnUse"
+       y2="81.520798"
+       x2="196.04082"
+       y1="79.632515"
+       x1="206.46768"
+       id="linearGradient3452"
+       xlink:href="#linearGradient3446"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="matrix(22.96442,0,0,22.96442,-610.43337,-8061.427)"
+       gradientUnits="userSpaceOnUse"
+       y2="336.42953"
+       x2="21.946251"
+       y1="183.30956"
+       x1="152.1675"
+       id="linearGradient3544"
+       xlink:href="#linearGradient3538"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="matrix(22.964421,0,0,22.964421,-610.43338,-8061.427)"
+       gradientUnits="userSpaceOnUse"
+       y2="71.369583"
+       x2="254.85071"
+       y1="71.369583"
+       x1="71.915245"
+       id="linearGradient3552"
+       xlink:href="#linearGradient3546"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="matrix(22.964421,0,0,22.964421,-610.43338,-8061.427)"
+       gradientUnits="userSpaceOnUse"
+       y2="66.035789"
+       x2="195.61513"
+       y1="66.035789"
+       x1="171.5802"
+       id="linearGradient3560"
+       xlink:href="#linearGradient3554"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="matrix(22.964421,0,0,22.964421,-610.43338,-8061.427)"
+       gradientUnits="userSpaceOnUse"
+       y2="56.581802"
+       x2="201.06261"
+       y1="56.581802"
+       x1="241.0495"
+       id="linearGradient3568"
+       xlink:href="#linearGradient3562"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="matrix(22.96442,0,0,22.96442,-610.43337,-8061.427)"
+       y2="100.03291"
+       x2="392.17911"
+       y1="-12.54556"
+       x1="252.84018"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient3605"
+       xlink:href="#linearGradient3581"
+       inkscape:collect="always" />
+  </defs>
+  <g
+     inkscape:label="corps"
+     id="layer6"
+     inkscape:groupmode="layer" />
+  <g
+     style="display:inline"
+     inkscape:label="oreilles"
+     id="layer3"
+     inkscape:groupmode="layer" />
+  <g
+     style="display:inline"
+     inkscape:label="yeux"
+     id="layer2"
+     inkscape:groupmode="layer" />
+  <g
+     style="display:inline"
+     inkscape:label="ailes"
+     id="layer4"
+     inkscape:groupmode="layer">
+    <g
+       style="opacity:1"
+       inkscape:export-ydpi="120"
+       inkscape:export-xdpi="120"
+       inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+       transform="matrix(8.3341609e-2,0,0,8.3341609e-2,136.88377,664.53954)"
+       id="g3621">
+      <path
+         style="fill:url(#linearGradient3552);fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:22.96441841px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;display:inline"
+         d="M 2664.9182,-5541.1414 C 2475.9635,-5684.2949 1252.1627,-6370.3424 1052.5406,-6668.3171 C 1057.5568,-6806.6495 1222.6337,-6855.0474 1346.9071,-6985.9864 C 1358.0516,-7026.3465 1268.2687,-7084.7095 1340.4557,-7096.4404 C 1370.0395,-7101.248 1398.8464,-7073.1711 1442.3896,-7079.2324 C 1557.8704,-7095.3074 1871.4695,-7383.0587 2327.698,-7305.6511 C 3034.5956,-7185.713 4261.4455,-6673.953 4574.1288,-6405.6637 C 4619.9653,-6298.798 4622.4626,-6155.823 4570.4211,-6018.9609 C 4518.3793,-5882.0989 4469.2388,-5798.8002 4361.8514,-5696.4075 C 4151.3166,-5495.6652 3759.9827,-5643.9625 3759.9827,-5643.9625 C 3759.9827,-5643.9625 3643.5462,-5559.571 3585.166,-5544.0674 C 3370.8278,-5487.1469 3280.9247,-5587.7888 2664.9182,-5541.1414 z"
+         id="path3536"
+         sodipodi:nodetypes="cccssscsscsc"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         style="fill:#ed0000;fill-opacity:1;fill-rule:evenodd;stroke:url(#linearGradient3560);stroke-width:22.96441841;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;display:inline"
+         d="M 3365.4505,-6070.0562 C 3197.5526,-6170.9649 3073.9849,-6239.8187 2913.7474,-6436.0907 C 2705.6963,-6690.9289 2821.4499,-7015.2442 2821.4499,-7015.2442 C 2821.4499,-7015.2442 3095.7545,-7054.4306 3370.0595,-6904.216 C 3725.957,-6709.3197 3870.272,-6476.3293 3870.272,-6476.3293 C 3870.272,-6476.3293 3520.2863,-6080.1758 3365.4505,-6070.0562 z"
+         id="path3513"
+         sodipodi:nodetypes="cscscc"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         style="fill:#c80000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;display:inline"
+         d="M 3239.631,-6194.9199 C 3317.2671,-6128.9176 3387.8785,-6081.686 3358.8229,-6185.1233 C 3318.0037,-6330.4396 3543.3256,-6457.7954 3543.3256,-6457.7954 C 3543.3256,-6457.7954 3218.4896,-6879.0756 3131.8683,-6725.5692 C 3065.2414,-6524.1416 3161.9947,-6260.9223 3239.631,-6194.9199 z"
+         id="path3522"
+         sodipodi:nodetypes="csccz"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         sodipodi:nodetypes="cscscc"
+         id="path3528"
+         d="M 4515.7208,-6463.6289 C 4604.9511,-6507.7221 4655.6149,-6563.9466 4709.8142,-6641.3133 C 4899.0346,-6911.4156 4923.4352,-6975.7237 4910.9042,-7059.946 C 4810.0774,-7064.7022 4652.661,-7041.2998 4356.9969,-6864.154 C 4241.5155,-6794.9639 4150.5467,-6722.1855 4089.7626,-6572.3036 C 4352.2638,-6665.0961 4402.7161,-6539.929 4515.7208,-6463.6289 z"
+         style="fill:#ed0000;fill-opacity:1;fill-rule:evenodd;stroke:url(#linearGradient3568);stroke-width:22.96441841px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;display:inline"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         sodipodi:nodetypes="ccscc"
+         id="path3526"
+         d="M 4469.7332,-6532.6646 C 4338.2798,-6606.847 4348.1855,-6606.8109 4159.8508,-6612.852 C 4227.2644,-6683.8602 4272.5588,-6717.7362 4362.7932,-6771.7376 C 4450.1524,-6824.0184 4601.425,-6898.2811 4680.7946,-6892.9871 C 4639.9854,-6728.7645 4578.4191,-6635.8393 4469.7332,-6532.6646 z"
+         style="fill:#c80000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;display:inline"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         sodipodi:nodetypes="ccccc"
+         id="path3418"
+         d="M 4039.8466,-6041.1806 C 3961.0095,-5896.8038 3958.9278,-5845.0894 3758.348,-5825.4961 C 3586.5144,-5833.7916 3400.0616,-5910.2779 3365.5894,-6110.6852 C 3298.7243,-6375.8557 3531.6442,-6490.9604 3732.2238,-6490.9604 C 3926.2725,-6464.8362 3896.6835,-6450.4736 3961.3377,-6392.161"
+         style="fill:#ffffff;fill-opacity:1;stroke:url(#linearGradient3428);stroke-width:48.22528076;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         style="fill:#ffffff;fill-opacity:1;stroke:url(#linearGradient3452);stroke-width:48.22528076;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+         d="M 3947.1608,-6416.377 C 4053.7263,-6588.1648 4179.7487,-6632.4937 4355.1334,-6580.9741 C 4537.049,-6503.3302 4621.7339,-6318.7881 4583.4167,-6144.8554 C 4509.1782,-5954.595 4326.529,-5901.6971 4187.9455,-5934.3089 C 4104.3388,-5953.5068 4076.247,-6008.2 4047.6152,-6032.536"
+         id="path3387"
+         sodipodi:nodetypes="ccccc"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         style="fill:url(#radialGradient3420);fill-opacity:1;stroke:url(#linearGradient3436);stroke-width:48.22528076;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+         d="M 3958.5137,-6398.5972 C 4014.0174,-6326.2914 4062.9373,-6339.6378 4062.9373,-6133.5439 C 4030.282,-5956.8398 4065.1456,-6122.179 4035.4377,-6042.5498"
+         id="path2612"
+         sodipodi:nodetypes="ccc"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         sodipodi:type="arc"
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.0999999;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+         id="path3404"
+         sodipodi:cx="212.16197"
+         sodipodi:cy="79.927315"
+         sodipodi:rx="4.4081912"
+         sodipodi:ry="4.1237917"
+         d="M 216.57016,79.927315 A 4.4081912,4.1237917 0 1 1 207.75378,79.927315 A 4.4081912,4.1237917 0 1 1 216.57016,79.927315 z"
+         transform="matrix(22.96442,0,0,22.96442,-610.43337,-8061.427)"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         d="M 216.57016,79.927315 A 4.4081912,4.1237917 0 1 1 207.75378,79.927315 A 4.4081912,4.1237917 0 1 1 216.57016,79.927315 z"
+         sodipodi:ry="4.1237917"
+         sodipodi:rx="4.4081912"
+         sodipodi:cy="79.927315"
+         sodipodi:cx="212.16197"
+         id="path3406"
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.0999999;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+         sodipodi:type="arc"
+         transform="matrix(22.96442,0,0,22.96442,-1191.6984,-8005.9129)"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:48.22528076;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+         d="M 4344.855,-5828.1079 C 4344.855,-5801.3411 4261.2845,-5742.6719 4192.4555,-5742.6719 C 4123.6263,-5742.6719 4047.3925,-5759.9161 4044.6741,-5786.5446 C 4040.056,-5831.784 4128.2444,-5890.4532 4197.0736,-5890.4532 C 4265.9026,-5890.4532 4344.855,-5854.8749 4344.855,-5828.1079 z"
+         id="path3454"
+         sodipodi:nodetypes="csssc"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:55.11460495;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;display:inline"
+         d="M 3709.9253,-5749.7153 C 3799.903,-5744.9612 3878.1607,-5694.3913 3961.547,-5678.0179 C 4051.7989,-5660.2964 4084.333,-5665.9402 4129.1536,-5673.6796 C 4347.2609,-5711.3412 4327.4545,-5761.4248 4327.4545,-5761.4248"
+         id="path3459"
+         sodipodi:nodetypes="cssc"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         style="fill:#ed0000;fill-opacity:1;fill-rule:evenodd;stroke:#202020;stroke-width:22.96441841px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;display:inline"
+         d="M 2336.1774,-7311.1706 C 2531.5665,-7309.545 2998.3688,-7269.9499 3657.5584,-7418.3374 C 4051.5996,-7507.0384 4118.5757,-7455.5174 4334.7871,-7510.5434 C 4551.129,-7565.6026 5051.0375,-7670.7064 5248.1189,-7672.6291 C 5826.4959,-7678.2718 6539.5484,-7800.6541 7489.2206,-7773.9442 C 7916.3843,-7761.9301 9102.5475,-7539.5041 9821.2315,-7440.8874 C 9422.8812,-7213.8572 8742.9064,-7304.4529 8278.1701,-7277.9212 C 7968.5178,-7260.2432 7421.3759,-7302.2414 7159.4445,-7268.7886 C 7187.2091,-7105.4721 7180.9323,-7002.328 7048.9968,-6946.4312 C 7081.8885,-7045.372 7102.3698,-7078.9512 7079.1124,-7203.1468 C 6916.0016,-7262.4105 6410.6081,-7384.1877 6125.4324,-7337.7113 C 5920.6412,-7304.3355 5593.4603,-7187.2829 5506.6954,-7028.6242 C 5416.2601,-7161.2272 5137.1591,-7195.0287 4969.8574,-7184.0247 C 4632.7773,-7161.8539 4228.2189,-6970.2675 3923.5786,-6756.9244 C 3554.0065,-6878.2303 3369.4996,-6963.1629 2336.1774,-7311.1706 z"
+         id="path3570"
+         sodipodi:nodetypes="csssscscccscscc"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         style="fill:url(#linearGradient3605);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;display:inline"
+         d="M 6517.1482,-7694.7139 L 5864.0975,-7674.62 C 5864.0973,-7674.62 6214.0159,-7676.7842 6510.6895,-7542.5746 C 6807.3632,-7408.3651 6913.2845,-7345.9418 6913.2845,-7345.9418 L 7054.6592,-7323.695 C 7054.659,-7323.695 6985.1259,-7390.6944 6963.5191,-7409.0939 C 6717.1878,-7618.8586 6517.1482,-7694.7139 6517.1482,-7694.7139 z M 4814.1931,-7556.9274 C 4247.2876,-7531.9536 4132.3718,-7372.5565 4016.8972,-7287.0955 C 3900.2169,-7200.7424 3604.9725,-6932.5822 3604.9729,-6932.5822 L 3744.9123,-6852.9245 C 3744.9123,-6852.9245 3855.7967,-7033.3629 4011.8736,-7155.05 C 4159.2191,-7269.9296 4351.7318,-7389.0538 4421.645,-7419.8585 C 4515.2679,-7441.2173 4763.9428,-7453.7752 4939.062,-7457.1757 C 5461.9246,-7467.3286 5437.935,-7469.2033 5957.3905,-7439.2347 C 6476.8457,-7409.2662 6861.6146,-7305.0364 6861.6146,-7305.0364 C 6861.6146,-7305.0364 6981.3737,-7302.1658 6591.7826,-7427.0349 C 6294.5942,-7476.9825 6129.9682,-7494.6005 5815.2982,-7528.9395 C 5425.7068,-7555.7863 5158.8315,-7556.9274 4814.1931,-7556.9274 z M 9490.323,-7403.3528 C 9490.323,-7403.3528 9088.3062,-7389.0001 8494.9588,-7389.0001 C 7901.6115,-7389.0001 7188.1398,-7363.8828 7188.1398,-7363.8827 L 7130.7288,-7297.1424 C 7130.7288,-7297.1424 7636.937,-7343.767 8238.762,-7344.5065 C 8289.5148,-7344.5689 9040.527,-7370.1317 9333.1597,-7382.5413 C 9517.184,-7386.6577 9490.323,-7403.3528 9490.323,-7403.3528 z"
+         id="path3572"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         style="fill:#ed0000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:22.96441841px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;display:inline"
+         d="M 1050.8744,-6664.9107 C 1191.386,-6605.65 1246.7271,-6583.7683 1388.0733,-6490.4508 C 1548.6855,-6384.4138 1572.5273,-6287.0028 1917.0898,-6190.0216 C 2221.9673,-6075.8607 2411.3353,-6152.3112 2596.3209,-5961.4343 C 2739.5401,-5763.1931 2690.8574,-5706.1624 2690.7894,-5575.2408 C 2589.1217,-5543.6099 2488.0567,-5399.1366 2367.4053,-5212.6027 C 2252.8795,-5035.5396 2228.8721,-4718.6186 2230.717,-4492.3403 C 2232.6178,-4259.2337 2358.2368,-3846.9529 2541.1068,-3794.7044 C 2723.9766,-3742.4558 2823.7302,-3748.447 3040.0373,-3824.6546 C 2979.2548,-3743.845 2950.4471,-3712.5738 2882.6353,-3682.9521 C 2774.0391,-3656.1879 2702.3303,-3717.8755 2581.4138,-3602.202 C 2438.7795,-3427.9262 2562.477,-2824.2127 2549.4149,-2451.9417 C 2536.3528,-2079.6711 2535.5602,-1451.7041 2411.47,-857.37678 C 2287.3796,-263.04986 2288.4322,-203.9301 2220.2242,-15.061443 C 2110.643,288.36857 1779.9375,817.81398 1779.9375,817.81398 C 1779.9375,817.81398 1711.7175,526.15684 1450.4748,343.2871 C 1189.2322,160.41708 825.67716,110.87407 825.67716,110.87407 C 825.67716,110.87407 946.99414,-228.33383 873.23956,-695.80927 C 826.59445,-989.99659 664.92317,-1221.5617 511.06533,-1459.0158 C 395.69816,-1637.0657 298.51539,-1678.6297 192.0956,-1724.356 C 253.94581,-2320.545 154.24012,-2695.6249 114.51514,-3420.849 C 61.915803,-4381.1093 -126.53229,-5249.7454 408.41318,-6065.9314 C 716.63867,-6536.2024 1011.9624,-6647.9717 1050.8744,-6664.9107 z"
+         id="path3461"
+         sodipodi:nodetypes="cscccssscccssscscsscssc"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+      <path
+         style="fill:url(#linearGradient3544);fill-opacity:1;stroke:none;stroke-width:2.4000001;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+         d="M 2361.306,-5970.9472 C 2311.6443,-5955.8598 2105.1343,-5728.0479 2034.7807,-5678.1508 C 1964.4271,-5628.2537 1688.2005,-5372.7599 1558.269,-5215.2743 C 1600.2929,-5035.4197 1745.5266,-4941.8479 1872.5945,-4747.3742 C 1999.6623,-4552.9006 2103.0826,-4323.331 2181.1789,-4115.135 C 2259.6705,-3905.8853 2287.6208,-3890.4342 2278.7776,-3675.2229 C 2191.5672,-3608.7219 2101.8129,-3517.7598 1970.9109,-3407.5439 C 1838.3861,-3295.9616 1567.5447,-3130.1822 1393.2122,-2987.0081 C 1220.8225,-2845.4293 1109.7874,-2785.2791 977.69976,-2654.0239 C 845.61188,-2522.7689 763.24439,-2461.8689 630.36291,-2327.4986 C 499.12388,-2194.7892 404.5479,-2086.6348 306.70812,-1955.762 C 451.91529,-2009.9447 479.2456,-2083.9588 610.26904,-2226.3116 C 739.78475,-2367.0262 1250.4473,-2802.936 1510.9049,-2986.2904 C 1771.3625,-3169.6449 1925.9077,-3257.6124 2065.6391,-3377.4031 C 2108.0553,-3413.7664 2140.2935,-3442.5766 2169.6966,-3469.9785 C 2134.0223,-3132.6806 2075.7251,-3067.9576 1891.9706,-2516.2374 C 1704.6488,-1953.8064 1258.9335,-877.0709 925.31207,-64.785635 C 1034.5998,-277.69565 1137.843,-493.80719 1237.4848,-711.3776 C 1458.9036,-1236.4849 1749.1736,-1802.9809 1903.4529,-2266.4993 C 2047.7499,-2700.0264 2232.2076,-3118.8208 2294.5656,-3530.2601 C 2297.5649,-3348.829 2293.2899,-2965.3054 2291.6951,-2581.5425 C 2289.9207,-2154.5231 2284.5479,-1727.1822 2285.9539,-1579.7197 C 2296.2798,-1324.5514 2248.558,-649.54219 2204.1433,-399.92258 C 2101.7358,-4.3832422 1851.1384,536.04553 1810.1599,685.1462 C 1941.5236,576.9038 2224.8712,-138.35063 2273.7541,-366.91127 C 2322.4449,-594.57368 2428.1591,-1329.2252 2411.5407,-3656.5643 C 2413.3271,-3657.6432 2414.7472,-3658.3451 2416.5642,-3659.4349 C 2476.33,-3867.1878 2375.6183,-3941.1427 2306.7655,-4130.2055 C 2196.9878,-4343.4701 2085.5735,-4631.3869 1964.4521,-4865.0669 C 1860.1505,-5054.538 1762.5342,-5150.8253 1740.549,-5242.5444 C 1792.4544,-5320.4093 1975.121,-5424.6551 2092.9093,-5534.6233 C 2212.4536,-5646.2306 2400.9428,-5805.3381 2550.7624,-5935.0652 C 2520.6024,-5926.3157 2417.499,-5976.238 2361.306,-5970.9472 z"
+         id="path3463"
+         inkscape:export-filename="/home/philippe/BaculaSystems/06-Technique/Reporting/bat.png"
+         inkscape:export-xdpi="120"
+         inkscape:export-ydpi="120" />
+    </g>
+  </g>
+</svg>

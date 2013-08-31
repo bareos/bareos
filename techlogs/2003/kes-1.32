@@ -1,0 +1,205 @@
+              Technical notes on version 1.32 28Sep03
+                        28 Sep 2003
+                        Kern Sibbald
+
+General:
+
+Changes submitted this submission:
+28Sep03
+- Enhance manual faq, regression ...
+- Make FreeBSD read sizes always be a multiple of 512. Needed
+  to read raw disks.
+- Make FreeBSD accept block AND character devices for raw
+  disk reads.  On FreeBSD there are no block devices.
+27Sep03
+- Fix printing of EndTime on job report after rescheduling.
+- Fix jobq.c error returns to clean up before returning.
+- Make Cleaning tape aware of "unlabeled" volumes.
+- If a job is rescheduled, ensure that old job is
+  removed from SD's jcr queue -- i.e. it is still waiting
+  for FD connection.
+- Test rescheduling code.
+- Change ./configure to detect Cygwin enviornments.
+26Sep03
+- Release beta version.
+25Sep03
+- Add regression and GUI-interface chapters to the manual.
+- Fix "label" of a volume that is already in the catalog,
+  but not yet labeled.
+- Correct the test for spooling attributes which was backward.
+  This caused the creation of a spool file in the working
+  directory for every job run.
+- Print to the job output stream when block checksum errors
+  occur, but continue processing. If more than one occurs,
+  print number at end of job.
+24Sep03
+- Remove a few unneeded tests from configure.in
+- Modify configure to use -pthread on FreeBSD 4.8,
+  but nothing on FreeBSD 5.1
+- Clarify that bmicrosleep() takes sec and microsecs
+- Apply Franc Carter's code to specify a DB host in 
+  bscan.
+- Fix sanity login length test in stored/dircmd.c
+- remove old code fro stored/job.c
+- Lots of work on regress so that it works on FreeBSD
+  and Solaris.
+20Sep03
+- Make the default gnome-console wider (console.c)
+- Add \r to the items that terminate a token.
+- Replace a number strcpy() calls with bstrncpy().
+- Added code to ensure that the names for each resource
+  type are unique. Two resources of different types can
+  have the same name.
+- More documentation
+- Added new full length modifiers for time intervals.
+  Compatible with previous method EXCEPT a modifier is now
+  manditory.
+18Sep03
+- Completely restructured recycling. It should work now, but
+  in any case, the logic is much cleaner. A lot of new
+  code in next_vol.c
+- Added a few pthread_xx_destroy() for items inited.
+- Nic Bellamy pointed out that it wasn't necessary to do 
+  destroy() of static initialized pthread variables -- fixed
+  watchdog.
+- update VolStatus asked for the media and volume twice.
+- Changed a few more strcpy() to bstrncpy().
+16Sep03
+- Made VolBytes=1 as indicator that the Volume is labeled.
+- Modified creation of Media record to include VolBytes,
+  same for sql_update - also set LabelDate if VolBytes = 1.
+- Copy any statically linked programs to install directory.
+- Change relabel flag to label in Update_media protocol Dir<->SD.
+- Change a few strcpy to bstrncpy ...
+- Update Media record after an automatic tape label.  
+- Added more debug code to bnet_server and bnet.c to attempt to
+  track down Alex's SD segfault (BSOCK==0)
+- Add additional debug code for authentication errors in cram-md5.     
+15Sep03
+- Implement "list nextvol job=xx" and add Volume to Dir status.
+- Retry waitpid if interrupted -- needed for FreeBSD!
+- Move lex.c debug level to 900
+12Sep03
+- Add new aliases SDAddress, ...
+- Final changes for variable expansion
+- Possible fix to Alex's SD crashes
+11Sep03
+- Correct incrementing counters not in catalog -- reported by
+  Chris Allen.
+- Correct memory leak in core var.c code -- reported by 
+  Chris Allen.
+- Make documentation of variable substitution a bit clearer.
+- Apply Nic Bellamy's patch to dbcheck.c to fix SQL to work
+  on both MySQL and SQLite.
+10Sep03
+- Finally fixed the .messages that was sent during prompts
+  in the console with no readline.
+- Implement new Include/Exclude semantics.
+- Fix a good number of segfaults reported by Chris Allen in
+  the variable expansion code. 
+- Print warning message if a job is blocked by user unmount.
+- Fix additional variable expansion problem reported by Chris Allen.
+- Fix pathconf() error status bug that caused a segfault on
+  a FreeBSD system -- reported by Gernot Hueber.
+07Sep03
+- Make sure the console sends ".messages" only when at the
+  command line prompt.
+- Apply a patch from Nic Bellamy that corrects a file descriptor
+  leak in the Storage deamon when a job is canceled. (Thanks)
+06Sep03
+- Implement < and | in File daemon.
+- Implement ClientRunBeforeJob and ClientRunAfterJob.
+- Corrected BSRatEOF to be BSFatEOF in btape --
+  reported by Lars Koller.
+- Documented BSFatEof
+- Eliminated save_level in FD replaced by JobLevel.
+- Increased MAX_RES_ITEMS from 35 to 50 to handle
+  new ClientRunBeforeJob ...
+05Sep03
+- Add line number in error message for restore from file.
+- Correct editing of jobids (misplaced comma).
+04Sep03
+- Implement restore files.
+03Sep03
+- Quickie patch to allow Purged Volumes to be mounted.   
+  Must review algorithm.
+02Sep03
+- Eliminate a duplicated query from query.sql
+- Restructure ua_restore.c so that I can add restore files.
+- Correct positioning problem at beginning of a second volume 
+  introduced with the new forward spacing code.
+01Sep03
+- Eliminated a sprintf() in the tree routines.
+- Doc updates
+- Added HOST_OS, DISTNAME, and DISTVER to the status output.
+- Eliminated a few stray Dmsgn(000, messages making them either
+  debug_level 100, or Pmsg().
+- Made the default "Maximum File Size" 1Gbyte in SD.
+- Cache path in tree.c to reduce calls to make_tree_path 
+31Aug03
+- Documentation updates
+- Implement forward space file and block when reading a bsr.
+- Fixed a bug in db_find_next_volume() where the VolStatus was
+  not being returned.
+- Rework some of the query.sql records that were incomplete.
+- Fixed an ambigous SQL statement in restore.
+- Fix proper sorting order in restore display last 20 jobs.
+- Remove duplicate JobId's in feeding the directory tree.
+- Fix an orphaned ua buffer due to a return that should have been 
+  break so that cleanup code executed.
+- Changed some strcats and sprintfs int bstrncat() ... to prevent
+  possible buffer overflows.
+- Fix max file size code on tape so that after writing EOF, 
+  an appropriate jobmedia record is created.
+- Fix error messages in dev.c, which were copied into lots of
+  different subroutines without updating the text.
+- Add reposition_dev(), and make more of the return statuses of
+  dev routine standard.
+24Aug03
+- Eliminate old semaphore and workq code. Keep only new jobq code.
+- Try to get a better default size for the gnome-console
+- Add code to avoid race conditions in starting/stoping the
+  heartbeat thread.
+22Aug03
+- Correct potential race condition in heartbeat_stop().
+20Aug03
+- Correct segmentation fault in mysql.c if no password given.
+19Aug03
+- make pm_strcat and pm_strcpy return the string length
+17Aug03 
+- Use Phil's code to get the unadorned job name.
+16Aug03
+- Move the MTIOCERRSTAT from just after a write() failure to
+  after writing the EOF marks on FreeBSD systems.
+- Enhance packet too big error in bnet.c and add some
+  ASSERTs in the send code.
+- Set heartbeat interval to zero by default.
+- Add Recycle to list of Update Volume parameters.
+- Use bget_dirmsg() wherever possible in Director.
+- Split next_volume code from catreq.c to next_vol.c
+- Consolidate editing job codes into a single routine.
+- Add Job resource name
+- Remove check for Win32 attributes in bls.  It doesn't
+  need to read them, only print ls -l.
+12Aug03
+- Add SDConnectTimeout in FD.
+11Aug03 
+- Add Scott's perlgui directory
+10Aug03
+- Upgrade from RH7.3 to RH9.  New autoconf.
+- Eliminate gnome2-console directory.
+08Aug03
+- Correct English in status command.
+- Eliminate old shell expansion code and use BPIPE to call shell      
+  with echo command.
+07Aug03
+- Documentation as usual.
+- Add a new bacula.spec for Mandrake
+- Add ownership to alist items. Default the list owns the items.
+- Make record_cb return a status (preparation for internal use).
+- Remove all clearing of remainder in read_record.c -- not necessary
+- Write a tapetest program for FreeBSD end of tape testing.
+- Modify read.c in Bacula to use read_record.c
+- Implement multiple records in read_record.c. One for each session that
+  is open.  Free the record with the EOS_LABEL is found (or at the
+  end of the scan).

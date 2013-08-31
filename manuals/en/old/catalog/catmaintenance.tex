@@ -1,0 +1,788 @@
+%%
+%%
+
+\chapter{Catalog Maintenance}
+\label{CatMaintenanceChapter}
+\index[general]{Maintenance!Catalog }
+\index[general]{Catalog Maintenance }
+
+Without proper setup and maintenance, your Catalog may continue to grow
+indefinitely as you run Jobs and backup Files, and/or it may become
+very inefficient and slow. How fast the size of your
+Catalog grows depends on the number of Jobs you run and how many files they
+backup. By deleting records within the database, you can make space available
+for the new records that will be added during the next Job. By constantly
+deleting old expired records (dates older than the Retention period), your
+database size will remain constant. 
+
+If you started with the default configuration files, they already contain
+reasonable defaults for a small number of machines (less than 5), so if you
+fall into that case, catalog maintenance will not be urgent if you have a few
+hundred megabytes of disk space free. Whatever the case may be, some knowledge
+of retention periods will be useful. 
+\label{Retention}
+
+\section{Setting Retention Periods}
+\index[general]{Setting Retention Periods }
+\index[general]{Periods!Setting Retention }
+
+{\bf Bacula} uses three Retention periods: the {\bf File Retention} period,
+the {\bf Job Retention} period, and the {\bf Volume Retention} period. Of
+these three, the File Retention period is by far the most important in
+determining how large your database will become. 
+
+The {\bf File Retention} and the {\bf Job Retention} are specified in each
+Client resource as is shown below. The {\bf Volume Retention} period is
+specified in the Pool resource, and the details are given in the next chapter
+of this manual. 
+
+\begin{description}
+
+\item [File Retention = \lt{}time-period-specification\gt{}]
+   \index[general]{File Retention  }
+   The  File Retention record defines the length of time that  Bacula will keep
+File records in the Catalog database.  When this time period expires, and if
+{\bf AutoPrune} is set to {\bf yes}, Bacula will prune (remove) File records
+that  are older than the specified File Retention period. The pruning  will
+occur at the end of a backup Job for the given Client.  Note that the Client
+database record contains a copy of the  File and Job retention periods, but
+Bacula uses the  current values found in the Director's Client resource to  do
+the pruning.  
+
+Since File records in the database account for probably 80 percent of the 
+size of the database, you should carefully determine exactly what File
+Retention period you need. Once the File records have been removed from
+the database, you will no longer be able to restore individual files
+in a Job. However, with Bacula version 1.37 and later, as long as the
+Job record still exists, you will be able to restore all files in the
+job.
+
+Retention periods are specified in seconds, but as a convenience, there are
+a number of modifiers that permit easy specification in terms of minutes,
+hours, days, weeks, months, quarters, or years on the record.  See the
+\ilink{ Configuration chapter}{Time} of this manual for additional details
+of modifier specification.
+
+The default File retention period is 60 days.  
+
+\item [Job Retention = \lt{}time-period-specification\gt{}]
+   \index[general]{Job Retention  }
+   The Job Retention record defines the length of time that {\bf Bacula}
+will keep Job records in the Catalog database.  When this time period
+expires, and if {\bf AutoPrune} is set to {\bf yes} Bacula will prune
+(remove) Job records that are older than the specified Job Retention
+period.  Note, if a Job record is selected for pruning, all associated File
+and JobMedia records will also be pruned regardless of the File Retention
+period set.  As a consequence, you normally will set the File retention
+period to be less than the Job retention period.
+
+As mentioned above, once the File records are removed from the database,
+you will no longer be able to restore individual files from the Job.
+However, as long as the Job record remains in the database, you will be
+able to restore all the files backuped for the Job (on version 1.37 and 
+later). As a consequence, it is generally a good idea to retain the Job
+records much longer than the File records.
+
+The retention period is specified in seconds, but as a convenience, there
+are a number of modifiers that permit easy specification in terms of
+minutes, hours, days, weeks, months, quarters, or years.  See the \ilink{
+Configuration chapter}{Time} of this manual for additional details of
+modifier specification.
+
+The default Job Retention period is 180 days.  
+
+\item [AutoPrune = \lt{}yes/no\gt{}]
+   \index[general]{AutoPrune  }
+   If AutoPrune is set to  {\bf yes} (default), Bacula will  automatically apply
+the File retention period and the Job  retention period for the Client at the
+end of the Job.  
+
+If you turn this off by setting it to {\bf no}, your  Catalog will grow each
+time you run a Job. 
+\end{description}
+
+\label{CompactingMySQL}
+\section{Compacting Your MySQL Database}
+\index[general]{Database!Compacting Your MySQL }
+\index[general]{Compacting Your MySQL Database }
+
+Over time, as noted above, your database will tend to grow. I've noticed that
+even though Bacula regularly prunes files, {\bf MySQL} does not effectively
+use the space, and instead continues growing. To avoid this, from time to
+time, you must compact your database. Normally, large commercial database such
+as Oracle have commands that will compact a database to reclaim wasted file
+space. MySQL has the {\bf OPTIMIZE TABLE} command that you can use, and SQLite
+version 2.8.4 and greater has the {\bf VACUUM} command. We leave it to you to
+explore the utility of the {\bf OPTIMIZE TABLE} command in MySQL. 
+
+All database programs have some means of writing the database out in ASCII
+format and then reloading it. Doing so will re-create the database from
+scratch producing a compacted result, so below, we show you how you can do
+this for MySQL, PostgreSQL and SQLite. 
+
+For a {\bf MySQL} database, you could write the Bacula database as an ASCII
+file (bacula.sql) then reload it by doing the following: 
+
+\footnotesize
+\begin{verbatim}
+mysqldump -f --opt bacula > bacula.sql
+mysql bacula < bacula.sql
+rm -f bacula.sql
+\end{verbatim}
+\normalsize
+
+Depending on the size of your database, this will take more or less time and a
+fair amount of disk space. For example, if I cd to the location of the MySQL
+Bacula database (typically /opt/mysql/var or something similar) and enter: 
+
+\footnotesize
+\begin{verbatim}
+du bacula
+\end{verbatim}
+\normalsize
+
+I get {\bf 620,644} which means there are that many blocks containing 1024
+bytes each or approximately 635 MB of data. After doing the {\bf mysqldump}, I
+had a bacula.sql file that had {\bf 174,356} blocks, and after doing the {\bf
+mysql} command to recreate the database, I ended up with a total of {\bf
+210,464} blocks rather than the original {\bf 629,644}. In other words, the
+compressed version of the database took approximately one third of the space
+of the database that had been in use for about a year. 
+
+As a consequence, I suggest you monitor the size of your database and from
+time to time (once every six months or year), compress it. 
+
+\label{DatabaseRepair}
+\label{RepairingMySQL}
+\section{Repairing Your MySQL Database}
+\index[general]{Database!Repairing Your MySQL }
+\index[general]{Repairing Your MySQL Database }
+
+If you find that you are getting errors writing to your MySQL database, or
+Bacula hangs each time it tries to access the database, you should consider
+running MySQL's database check and repair routines. The program you need to
+run depends on the type of database indexing you are using. If you are using
+the default, you will probably want to use {\bf myisamchk}. For more details
+on how to do this, please consult the MySQL document at: 
+\elink{
+http://www.mysql.com/doc/en/Repair.html}
+{http://www.mysql.com/doc/en/Repair.html}. 
+
+If the errors you are getting are simply SQL warnings, then you might try
+running dbcheck before (or possibly after) using the MySQL database repair
+program. It can clean up many of the orphaned record problems, and certain
+other inconsistencies in the Bacula database. 
+
+A typical cause of MySQL database problems is if your partition fills. In
+such a case, you will need to create additional space on the partition or
+free up some space then repair the database probably using {\bf myisamchk}.
+Recently my root partition filled and the MySQL database was corrupted.
+Simply running {\bf myisamchk -r} did not fix the problem. However,
+the following script did the trick for me:
+
+\footnotesize
+\begin{verbatim}
+#!/bin/sh
+for i in *.MYD ; do
+  mv $i x${i}
+  t=`echo $i | cut -f 1 -d '.' -`
+  mysql bacula <<END_OF_DATA
+set autocommit=1;
+truncate table $t;
+quit
+END_OF_DATA
+  cp x${i} ${i}
+  chown mysql:mysql ${i}
+  myisamchk -r ${t}
+done
+\end{verbatim}
+\normalsize
+
+I invoked it with the following commands:
+
+\footnotesize
+\begin{verbatim}
+cd /var/lib/mysql/bacula
+./repair
+\end{verbatim}
+\normalsize
+
+Then after ensuring that the database was correctly fixed, I did:
+\footnotesize
+\begin{verbatim}
+cd /var/lib/mysql/bacula
+rm -f x*.MYD
+\end{verbatim}
+\normalsize
+
+\section{MySQL Table is Full}
+\index[general]{Database!MySQL Table is Full}
+\index[general]{MySQL Table is Full}
+
+If you are running into the error {\bf The table 'File' is full ...}, 
+it is probably because on version 4.x MySQL, the table is limited by   
+default to a maximum size of 4 GB and you have probably run into
+the limit. The solution can be found at:
+\elink{http://dev.mysql.com/doc/refman/5.0/en/full-table.html}
+{http://dev.mysql.com/doc/refman/5.0/en/full-table.html}
+
+You can display the maximum length of your table with:
+
+\footnotesize
+\begin{verbatim}
+mysql bacula
+SHOW TABLE STATUS FROM bacula like "File";
+\end{verbatim}
+\normalsize
+
+If the column labeled "Max\_data\_length" is around 4Gb, this is likely
+to be the source of your problem, and you can modify it with:
+
+\footnotesize
+\begin{verbatim}
+mysql bacula
+ALTER TABLE File MAX_ROWS=281474976710656;
+\end{verbatim}
+\normalsize
+
+Alternatively you can modify your /etc/my.conf file before creating the
+Bacula tables, and in the [mysqld] section set:
+
+\footnotesize                                 
+\begin{verbatim}
+set-variable = myisam_data_pointer_size=6
+\end{verbatim}
+\normalsize
+
+The above myisam data pointer size must be made before you create your
+Bacula tables or it will have no effect.
+
+The row and pointer size changes should already be the default on MySQL
+version 5.x, so making these changes should only be necessary on MySQL 4.x
+depending on the size of your catalog database.
+
+\section{MySQL Server Has Gone Away}
+\index[general]{Database!MySQL Server Has Gone Away}
+\index[general]{MySQL Server Has Gone Away}
+If you are having problems with the MySQL server disconnecting or with
+messages saying that your MySQL server has gone away, then please read
+the MySQL documentation, which can be found at:
+
+\elink{http://dev.mysql.com/doc/refman/5.0/en/gone-away.html}
+{http://dev.mysql.com/doc/refman/5.0/en/gone-away.html}
+
+\section{MySQL Temporary Tables}
+When doing backups with large numbers of files, MySQL creates some
+temporary tables.  When these tables are small they can be held in
+system memory, but as they approach some size, they
+spool off to disk.  The default location for these temp tables is
+/tmp.  Once that space fills up, Bacula daemons such as the Storage
+daemon doing spooling can get strange errors. E.g.
+
+\footnotesize                                 
+\begin{verbatim}
+Fatal error: spool.c:402 Spool data read error.
+Fatal error: backup.c:892 Network send error to SD. ERR=Connection reset by
+peer
+\end{verbatim}
+\normalsize
+
+What you need to do is setup MySQL to use a different (larger) temp
+directory, which can be set in the /etc/my.cnf with these variables
+set:
+
+\footnotesize                                 
+\begin{verbatim}
+  tmpdir=/path/to/larger/tmpdir
+  bdb_tmpdir=/path/to/larger/tmpdir
+\end{verbatim}
+\normalsize
+
+\label{RepairingPSQL}
+\section{Repairing Your PostgreSQL Database}
+\index[general]{Database!Repairing Your PostgreSQL }
+\index[general]{Repairing Your PostgreSQL Database }
+
+The same considerations apply that are indicated above for MySQL. That is,
+consult the PostgreSQL documents for how to repair the database, and also
+consider using Bacula's dbcheck program if the conditions are reasonable for
+using (see above). 
+
+\label{DatabasePerformance}
+\section{Database Performance Issues}
+\index[general]{Database Performance Issues}
+\index[general]{Performance!Database}
+
+There are a considerable number of ways each of the databases can be
+tuned to improve the performance. Going from an untuned database to one
+that is properly tuned can make a difference of a factor of 100 or more
+in the time to insert or search for records.
+
+For each of the databases, you may get significant improvements by adding
+additional indexes. The comments in the Bacula make\_xxx\_tables give some
+indications as to what indexes may be appropriate.  Please see below
+for specific instructions on checking indexes.
+
+For MySQL, what is very important is to use the examine the    
+my.cnf file (usually in /etc/my.cnf).
+You may obtain significant performances by switching to
+the my-large.cnf or my-huge.cnf files that come with the MySQL source
+code.
+
+For SQLite3, one significant factor in improving the performance is
+to ensure that there is a "PRAGMA synchronous = NORMAL;" statement.
+This reduces the number of times that the database flushes the in memory
+cache to disk. There are other settings for this PRAGMA that can 
+give even further performance improvements at the risk of a database
+corruption if your system crashes.
+
+For PostgreSQL, you might want to consider turning fsync off.  Of course
+doing so can cause corrupted databases in the event of a machine crash.
+There are many different ways that you can tune PostgreSQL, the
+following document discusses a few of them:
+\elink{
+http://www.varlena.com/varlena/GeneralBits/Tidbits/perf.html}
+{http://www.varlena.com/varlena/GeneralBits/Tidbits/perf.html}.
+
+There is also a PostgreSQL FAQ question number 3.3 that may
+answer some of your questions about how to improve performance
+of the PostgreSQL engine:
+\elink{
+http://www.postgresql.org/docs/faqs.FAQ.html\#3.3}
+{http://www.postgresql.org/docs/faqs.FAQ.html\#3.3}.
+% TODO: verify above is correct. is this okay for book?
+
+Also for PostgreSQL, look at what "effective\_cache\_size". For a 2GB memory 
+machine, you probably want to set it at 131072, but don't set it too high.
+In addition, for a 2GB system, work\_mem = 256000 and
+maintenance\_work\_mem = 256000 seem to be reasonable values.  Make
+sure your checkpoint\_segments is set to at least 8.
+
+
+
+\section{Performance Issues Indexes}
+\index[general]{Database Performance Issues Indexes}
+\index[general]{Performance!Database}
+One of the most important considerations for improving performance on
+the Bacula database is to ensure that it has all the appropriate indexes.
+Several users have reported finding that their database did not have
+all the indexes in the default configuration.  In addition, you may
+find that because of your own usage patterns, you need additional indexes.
+
+The most important indexes for performance are the two indexes on the
+{\bf File} table.  The first index is on {\bf FileId} and is automatically
+made because it is the unique key used to access the table.  The other
+one is the (JobId, PathId, Filename) index.  If these Indexes
+are not present, your performance may suffer a lot.
+
+\subsection{PostgreSQL Indexes}
+On PostgreSQL, you can check to see if you have the proper indexes using
+the following commands:
+
+\footnotesize
+\begin{verbatim}
+psql bacula
+select * from pg_indexes where tablename='file';
+\end{verbatim}
+\normalsize
+
+If you do not see output that indicates that all three indexes
+are created, you can create the two additional indexes using:
+
+\footnotesize
+\begin{verbatim}
+psql bacula
+CREATE INDEX file_jobid_idx on file (jobid);
+CREATE INDEX file_fp_idx on file (jobid, pathid, filenameid);
+\end{verbatim}
+\normalsize
+
+\subsection{MySQL Indexes}
+On MySQL, you can check if you have the proper indexes by:
+
+\footnotesize
+\begin{verbatim}
+mysql bacula
+show index from File;
+\end{verbatim}
+\normalsize
+
+If the indexes are not present, especially the JobId index, you can
+create them with the following commands:
+
+\footnotesize
+\begin{verbatim}
+mysql bacula
+CREATE INDEX file_jobid_idx on File (JobId);
+CREATE INDEX file_jpf_idx on File (JobId, FilenameId, PathId);
+\end{verbatim}
+\normalsize
+
+Though normally not a problem, you should ensure that the indexes 
+defined for Filename and Path are both set to 255 characters. Some users 
+reported performance problems when their indexes were set to 50 characters.
+To check, do:
+
+\footnotesize
+\begin{verbatim}
+mysql bacula
+show index from Filename;
+show index from Path;
+\end{verbatim}
+\normalsize
+
+and what is important is that for Filename, you have an index with
+Key\_name "Name" and Sub\_part "255". For Path, you should have a Key\_name
+"Path" and Sub\_part "255".  If one or the other does not exist or the
+Sub\_part is less that 255, you can drop and recreate the appropriate
+index with:
+
+\footnotesize
+\begin{verbatim}
+mysql bacula
+DROP INDEX Path on Path;
+CREATE INDEX Path on Path (Path(255);
+
+DROP INDEX Name on Filename;
+CREATE INDEX Name on Filename (Name(255));
+\end{verbatim}
+\normalsize
+
+
+\subsection{SQLite Indexes}
+On SQLite, you can check if you have the proper indexes by:
+
+\footnotesize
+\begin{verbatim}
+sqlite <path>/bacula.db
+select * from sqlite_master where type='index' and tbl_name='File';
+\end{verbatim}
+\normalsize
+
+If the indexes are not present, especially the JobId index, you can
+create them with the following commands:
+
+\footnotesize
+\begin{verbatim}
+sqlite <path>/bacula.db
+CREATE INDEX file_jobid_idx on File (JobId);
+CREATE INDEX file_jfp_idx on File (JobId, PathId, FilenameId);
+\end{verbatim}
+\normalsize
+
+
+
+\label{CompactingPostgres}
+\section{Compacting Your PostgreSQL Database}
+\index[general]{Database!Compacting Your PostgreSQL }
+\index[general]{Compacting Your PostgreSQL Database }
+
+Over time, as noted above, your database will tend to grow. I've noticed that
+even though Bacula regularly prunes files, PostgreSQL has a {\bf VACUUM}
+command that will compact your database for you. Alternatively you may want to
+use the {\bf vacuumdb} command, which can be run from a cron job. 
+
+All database programs have some means of writing the database out in ASCII
+format and then reloading it. Doing so will re-create the database from
+scratch producing a compacted result, so below, we show you how you can do
+this for PostgreSQL. 
+
+For a {\bf PostgreSQL} database, you could write the Bacula database as an
+ASCII file (bacula.sql) then reload it by doing the following: 
+
+\footnotesize
+\begin{verbatim}
+pg_dump -c bacula > bacula.sql
+cat bacula.sql | psql bacula
+rm -f bacula.sql
+\end{verbatim}
+\normalsize
+
+Depending on the size of your database, this will take more or less time and a
+fair amount of disk space. For example, you can {\bf cd} to the location of
+the Bacula database (typically /usr/local/pgsql/data or possible
+/var/lib/pgsql/data) and check the size. 
+
+There are certain PostgreSQL users who do not recommend the above 
+procedure. They have the following to say:
+PostgreSQL does not
+need to be dumped/restored to keep the database efficient.  A normal
+process of vacuuming will prevent the database from every getting too
+large.  If you want to fine-tweak the database storage, commands such
+as VACUUM FULL, REINDEX, and CLUSTER exist specifically to keep you
+from having to do a dump/restore.
+
+Finally, you might want to look at the PostgreSQL documentation on
+this subject at
+\elink{http://www.postgresql.org/docs/8.1/interactive/maintenance.html}
+{http://www.postgresql.org/docs/8.1/interactive/maintenance.html}.  
+
+\section{Compacting Your SQLite Database}
+\index[general]{Compacting Your SQLite Database }
+\index[general]{Database!Compacting Your SQLite }
+
+First please read the previous section that explains why it is necessary to
+compress a database. SQLite version 2.8.4 and greater have the {\bf Vacuum}
+command for compacting the database. 
+
+\footnotesize
+\begin{verbatim}
+cd {\bf working-directory}
+echo 'vacuum;' | sqlite bacula.db
+\end{verbatim}
+\normalsize
+
+As an alternative, you can use the following commands, adapted to your system:
+
+
+\footnotesize
+\begin{verbatim}
+cd {\bf working-directory}
+echo '.dump' | sqlite bacula.db > bacula.sql
+rm -f bacula.db
+sqlite bacula.db < bacula.sql
+rm -f bacula.sql
+\end{verbatim}
+\normalsize
+
+Where {\bf working-directory} is the directory that you specified in the
+Director's configuration file. Note, in the case of SQLite, it is necessary to
+completely delete (rm) the old database before creating a new compressed
+version. 
+
+\section{Migrating from SQLite to MySQL or PostgreSQL}
+\index[general]{MySQL!Migrating from SQLite to }
+\index[general]{Migrating from SQLite to MySQL or PostgreSQL}
+
+You may begin using Bacula with SQLite then later find that you want to switch
+to MySQL or Postgres for any of a number of reasons: SQLite tends to use more
+disk than MySQL; when the database is corrupted it is often more catastrophic
+than with MySQL or PostgreSQL.  Several users have succeeded in converting by
+exporting the SQLite data and then processing it with Perl scripts prior to
+putting it into MySQL or PostgreSQL. This is, however, not a simple process.
+Scripts are available on bacula source distribution under
+\texttt{examples/database}.
+
+\label{BackingUpBacula}
+\section{Backing Up Your Bacula Database}
+\index[general]{Backing Up Your Bacula Database }
+\index[general]{Database!Backing Up Your Bacula }
+
+If ever the machine on which your Bacula database crashes, and you need to
+restore from backup tapes, one of your first priorities will probably be to
+recover the database. Although Bacula will happily backup your catalog
+database if it is specified in the FileSet, this is not a very good way to do
+it, because the database will be saved while Bacula is modifying it. Thus the
+database may be in an instable state. Worse yet, you will backup the database
+before all the Bacula updates have been applied. 
+
+To resolve these problems, you need to backup the database after all the backup
+jobs have been run. In addition, you will want to make a copy while Bacula is
+not modifying it. To do so, you can use two scripts provided in the release
+{\bf make\_catalog\_backup} and {\bf delete\_catalog\_backup}. These files
+will be automatically generated along with all the other Bacula scripts. The
+first script will make an ASCII copy of your Bacula database into {\bf
+bacula.sql} in the working directory you specified in your configuration, and
+the second will delete the {\bf bacula.sql} file. 
+
+The basic sequence of events to make this work correctly is as follows: 
+
+\begin{itemize}
+\item Run all your nightly backups  
+\item After running your nightly backups, run a Catalog backup Job  
+\item The Catalog backup job must be scheduled after your last nightly backup 
+
+\item You use {\bf RunBeforeJob} to create the ASCII  backup file and {\bf
+   RunAfterJob} to clean up 
+\end{itemize}
+
+Assuming that you start all your nightly backup jobs at 1:05 am (and that they
+run one after another), you can do the catalog backup with the following
+additional Director configuration statements: 
+
+\footnotesize
+\begin{verbatim}
+# Backup the catalog database (after the nightly save)
+Job {
+  Name = "BackupCatalog"
+  Type = Backup
+  Client=rufus-fd
+  FileSet="Catalog"
+  Schedule = "WeeklyCycleAfterBackup"
+  Storage = DLTDrive
+  Messages = Standard
+  Pool = Default
+  # WARNING!!! Passing the password via the command line is insecure.
+  # see comments in make_catalog_backup for details.
+  RunBeforeJob = "/home/kern/bacula/bin/make_catalog_backup"
+  RunAfterJob  = "/home/kern/bacula/bin/delete_catalog_backup"
+  Write Bootstrap = "/home/kern/bacula/working/BackupCatalog.bsr"
+}
+# This schedule does the catalog. It starts after the WeeklyCycle
+Schedule {
+  Name = "WeeklyCycleAfterBackup
+  Run = Level=Full sun-sat at 1:10
+}
+# This is the backup of the catalog
+FileSet {
+  Name = "Catalog"
+  Include {
+    Options {
+      signature=MD5
+    }
+    File = \lt{}working_directory\gt{}/bacula.sql
+  }
+}
+\end{verbatim}
+\normalsize
+
+Be sure to write a bootstrap file as in the above example. However, it is preferable
+to write or copy the bootstrap file to another computer. It will allow
+you to quickly recover the database backup should that be necessary.  If
+you do not have a bootstrap file, it is still possible to recover your
+database backup, but it will be more work and take longer. 
+
+
+\label{BackingUpBaculaSecurityConsiderations}
+\section{Security considerations}
+\index[general]{Backing Up Your Bacula Database - Security Considerations }
+\index[general]{Database!Backing Up Your Bacula Database - Security Considerations }
+
+We provide make\_catalog\_backup as an example of what can be used to backup
+your Bacula database.  We expect you to take security precautions relevant
+to your situation.  make\_catalog\_backup is designed to take a password on
+the command line.  This is fine on machines with only trusted users.  It is
+not acceptable on machines without trusted users.  Most database systems
+provide a alternative method, which does not place the password on the
+command line.
+
+The make\_catalog\_backup script contains some warnings about how to use it. Please
+read those tips.
+
+To help you get started, we know PostgreSQL has a password file,
+\elink{
+.pgpass}{http://www.postgresql.org/docs/8.2/static/libpq-pgpass.html}, and
+we know MySQL has
+\elink{ .my.cnf}{http://dev.mysql.com/doc/refman/4.1/en/password-security.html}.
+
+Only you can decide what is appropriate for your situation. We have provided
+you with a starting point.  We hope it helps.
+
+
+\label{BackingUPOtherDBs}
+\section{Backing Up Third Party Databases}
+\index[general]{Backing Up Third Party Databases }
+\index[general]{Databases!Backing Up Third Party }
+
+If you are running a database in production mode on your machine, Bacula will
+happily backup the files, but if the database is in use while Bacula is
+reading it, you may back it up in an unstable state. 
+
+The best solution is to shutdown your database before backing it up, or use
+some tool specific to your database to make a valid live copy perhaps by
+dumping the database in ASCII format. I am not a database expert, so I cannot
+provide you advice on how to do this, but if you are unsure about how to
+backup your database, you might try visiting the Backup Central site, which
+has been renamed Storage Mountain (www.backupcentral.com). In particular,
+their 
+\elink{ Free Backup and Recovery
+Software}{http://www.backupcentral.com/toc-free-backup-software.html} page has
+links to scripts that show you how to shutdown and backup most major
+databases. 
+\label{Size}
+
+\section{Database Size}
+\index[general]{Size!Database }
+\index[general]{Database Size }
+
+As mentioned above, if you do not do automatic pruning, your Catalog will grow
+each time you run a Job. Normally, you should decide how long you want File
+records to be maintained in the Catalog and set the {\bf File Retention}
+period to that time. Then you can either wait and see how big your Catalog
+gets or make a calculation assuming approximately 154 bytes for each File
+saved and knowing the number of Files that are saved during each backup and
+the number of Clients you backup. 
+
+For example, suppose you do a backup of two systems, each with 100,000 files.
+Suppose further that you do a Full backup weekly and an Incremental every day,
+and that the Incremental backup typically saves 4,000 files. The size of your
+database after a month can roughly be calculated as: 
+
+\footnotesize
+\begin{verbatim}
+   Size = 154 * No. Systems * (100,000 * 4 + 10,000 * 26)
+\end{verbatim}
+\normalsize
+
+where we have assumed four weeks in a month and 26 incremental backups per month.
+This would give the following: 
+
+\footnotesize
+\begin{verbatim}
+   Size = 154 * 2 * (100,000 * 4 + 10,000 * 26)
+or
+   Size = 308 * (400,000 + 260,000)
+or
+   Size = 203,280,000 bytes
+\end{verbatim}
+\normalsize
+
+So for the above two systems, we should expect to have a database size of
+approximately 200 Megabytes. Of course, this will vary according to how many
+files are actually backed up. 
+
+Below are some statistics for a MySQL database containing Job records for five
+Clients beginning September 2001 through May 2002 (8.5 months) and File
+records for the last 80 days. (Older File records have been pruned). For these
+systems, only the user files and system files that change are backed up. The
+core part of the system is assumed to be easily reloaded from the Red Hat rpms.
+
+
+In the list below, the files (corresponding to Bacula Tables) with the
+extension .MYD contain the data records whereas files with the extension .MYI
+contain indexes. 
+
+You will note that the File records (containing the file attributes) make up
+the large bulk of the number of records as well as the space used (459 Mega
+Bytes including the indexes). As a consequence, the most important Retention
+period will be the {\bf File Retention} period. A quick calculation shows that
+for each File that is saved, the database grows by approximately 150 bytes. 
+
+\footnotesize
+\begin{verbatim}
+      Size in
+       Bytes   Records    File
+ ============  =========  ===========
+          168          5  Client.MYD
+        3,072             Client.MYI
+  344,394,684  3,080,191  File.MYD
+  115,280,896             File.MYI
+    2,590,316    106,902  Filename.MYD
+    3,026,944             Filename.MYI
+          184          4  FileSet.MYD
+        2,048             FileSet.MYI
+       49,062      1,326  JobMedia.MYD
+       30,720             JobMedia.MYI
+      141,752      1,378  Job.MYD
+       13,312             Job.MYI
+        1,004         11  Media.MYD
+        3,072             Media.MYI
+    1,299,512     22,233  Path.MYD
+      581,632             Path.MYI
+           36          1  Pool.MYD
+        3,072             Pool.MYI
+            5          1  Version.MYD
+        1,024             Version.MYI
+\end{verbatim}
+\normalsize
+
+This database has a total size of approximately 450 Megabytes. 
+
+If we were using SQLite, the determination of the total database size would be
+much easier since it is a single file, but we would have less insight to the
+size of the individual tables as we have in this case. 
+
+Note, SQLite databases may be as much as 50\% larger than MySQL databases due
+to the fact that all data is stored as ASCII strings. That is even binary
+integers are stored as ASCII strings, and this seems to increase the space
+needed. 

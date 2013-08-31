@@ -1,0 +1,479 @@
+%%
+%%
+
+\chapter{Python Scripting}
+\label{PythonChapter}
+\index[general]{Python Scripting}
+\index[general]{Scripting!Python}
+
+You may be asking what Python is and why a scripting language is
+needed in Bacula. The answer to the first question is that Python
+is an Object Oriented scripting language with features similar
+to those found in Perl, but the syntax of the language is much
+cleaner and simpler.  The answer to why have scripting in Bacula is to
+give the user more control over the whole backup process. Probably 
+the simplest example is when Bacula needs a new Volume name, with
+a scripting language such as Python, you can generate any name 
+you want, based on the current state of Bacula.
+
+\section{Python Configuration}
+\index[general]{Python Configuration}
+\index[general]{Configuration!Python}
+
+Python must be enabled during the configuration process by adding
+a \verb:--:with-python, and possibly specifying an alternate
+directory if your Python is not installed in a standard system
+location. If you are using RPMs you will need the python-devel package
+installed.
+
+When Python is configured, it becomes an integral part of Bacula and
+runs in Bacula's address space, so even though it is an interpreted 
+language, it is very efficient.
+
+When the Director starts, it looks to see if you have a {\bf
+Scripts Directory} Directive defined (normal default {\bf
+/etc/bacula/scripts}, if so, it looks in that directory for a file named
+{\bf DirStartUp.py}.  If it is found, Bacula will pass this file to Python
+for execution.  The {\bf Scripts Directory} is a new directive that you add
+to the Director resource of your bacula-dir.conf file.
+
+Note: Bacula does not install Python scripts by default because these
+scripts are for you to program.  This means that with a default
+installation with Python enabled, Bacula will print the following error
+message:
+
+\begin{verbatim}
+09-Jun 15:14 bacula-dir: ERROR in pythonlib.c:131 Could not import
+Python script /etc/bacula/scripts/DirStartUp. Python disabled.
+\end{verbatim}
+
+The source code directory {\bf examples/python} contains sample scripts
+for DirStartUp.py, SDStartUp.py, and FDStartUp.py that you might want
+to use as a starting point. Normally, your scripts directory (at least
+where you store the Python scripts) should be writable by Bacula, because
+Python will attempt to write a compiled version of the scripts (e.g.
+DirStartUp.pyc) back to that directory.
+
+When starting with the sample scripts, you can delete any part that
+you will not need, but you should keep all the Bacula Event and Job Event
+definitions.  If you do not want a particular event, simply replace the
+existing code with a {\bf noop = 1}.
+
+\section{Bacula Events}
+\index[general]{Bacula Events}
+\index[general]{Events}
+A Bacula event is a point in the Bacula code where Bacula
+will call a subroutine (actually a method) that you have 
+defined in the Python StartUp script. Events correspond 
+to some significant event such as a Job Start, a Job End,
+Bacula needs a new Volume Name, ... When your script is
+called, it will have access to all the Bacula variables
+specific to the Job (attributes of the Job Object), and
+it can even call some of the Job methods (subroutines)
+or set new values in the Job attributes, such as the 
+Priority. You will see below how the events are used.
+
+\section{Python Objects}
+\index[general]{Python Objects}
+\index[general]{Objects!Python}
+
+There are four Python objects that you will need to work with:
+\begin{description}
+\item [The Bacula Object]
+   The Bacula object is created by the Bacula daemon (the Director
+   in the present case) when the daemon starts. It is available to
+   the Python startup script, {\bf DirStartup.py}, by importing the
+   Bacula definitions with {\bf import bacula}. The methods
+   available with this object are described below. 
+
+\item [The Bacula Events Class]
+   You create this class in the startup script, and you pass
+   it to the Bacula Object's {\bf set\_events} method. The 
+   purpose of the Bacula Events Class is to define what global
+   or daemon events you want to monitor. When one of those events
+   occurs, your Bacula Events Class will be called at the method
+   corresponding to the event. There are currently three events,
+   JobStart, JobEnd, and Exit, which are described in detail below.
+   
+\item [The Job Object]
+   When a Job starts, and assuming you have defined a JobStart method
+   in your Bacula Events Class, Bacula will create a Job Object. This
+   object will be passed to the JobStart event. The Job Object has a
+   has good number of read-only members or attributes providing many
+   details of the Job, and it also has a number of writable attributes
+   that allow you to pass information into the Job.  These attributes
+   are described below.
+   
+\item [The Job Events Class]
+   You create this class in the JobStart method of your Bacula Events
+   class, and it allows you to define which of the possible Job Object
+   events you want to see. You must pass an instance of your Job Events
+   class to the Job Object set\_events() method.
+   Normally, you will probably only have one
+   Job Events Class, which will be instantiated for each Job. However,
+   if you wish to see different events in different Jobs, you may have
+   as many Job Events classes as you wish.
+\end{description}
+
+
+The first thing the startup script must do is to define what global Bacula
+events (daemon events), it wants to see. This is done by creating a 
+Bacula Events class, instantiating it, then passing it to the 
+{\bf set\_events} method. There are three possible
+events.
+
+\begin{description}
+\item [JobStart]
+   \index[general]{JobStart}
+   This Python method, if defined, will be called each time a Job is started.
+   The method is passed the class instantiation object as the first argument,
+   and the Bacula Job object as the second argument.  The Bacula Job object
+   has several built-in methods, and you can define which ones you
+   want called. If you do not define this method, you will not be able
+   to interact with Bacula jobs.
+
+\item [JobEnd]
+   This Python method, if defined, will be called each time a Job terminates.
+   The method is passed the class instantiation object as the first argument,
+   and the Bacula Job object as the second argument.  
+
+\item [Exit]
+   This Python method, if defined, will be called when the Director terminates.
+   The method is passed the class instantiation object as the first argument.
+\end{description}
+
+Access to the Bacula variables and methods is done with:
+
+     import bacula
+
+The following are the read-only attributes provided by the bacula object.
+\begin{description}
+\item [Name]
+\item [ConfigFile]
+\item [WorkingDir]
+\item [Version] string consisting of "Version  Build-date"
+\end{description}
+
+
+A simple definition of the Bacula Events Class might be the following:
+
+\footnotesize
+\begin{verbatim}
+import sys, bacula
+class BaculaEvents:
+  def JobStart(self, job):
+     ...
+\end{verbatim}
+\normalsize
+
+Then to instantiate the class and pass it to Bacula, you
+would do:
+
+\footnotesize
+\begin{verbatim}
+bacula.set_events(BaculaEvents()) # register Bacula Events wanted
+\end{verbatim}
+\normalsize
+
+And at that point, each time a Job is started, your BaculaEvents JobStart
+method will be called.
+
+Now to actually do anything with a Job, you must define which Job events
+you want to see, and this is done by defining a JobEvents class containing
+the methods you want called.  Each method name corresponds to one of the
+Job Events that Bacula will generate.
+
+A simple Job Events class might look like the following:
+
+\footnotesize
+\begin{verbatim}
+class JobEvents:
+  def NewVolume(self, job):
+     ...
+\end{verbatim}
+\normalsize
+
+Here, your JobEvents class method NewVolume will be called each time
+the Job needs a new Volume name.  To actually register the events defined
+in your class with the Job, you must instantiate the JobEvents class and
+set it in the Job {\bf set\_events} variable. Note, this is a bit different 
+from how you registered the Bacula events. The registration process must
+be done in the Bacula JobStart event (your method).  So, you would modify 
+Bacula Events (not the Job events) as follows:
+
+\footnotesize
+\begin{verbatim}
+import sys, bacula
+class BaculaEvents:
+  def JobStart(self, job):
+     events = JobEvents()         # create instance of Job class
+     job.set_events(events)       # register Job events desired
+     ...
+\end{verbatim}
+\normalsize
+
+When a job event is triggered, the appropriate event definition is
+called in the JobEvents class. This is the means by which your Python
+script or code gets control. Once it has control, it may read job
+attributes, or set them. See below for a list of read-only attributes,
+and those that are writable.  
+
+In addition, the Bacula {\bf job} object in the Director has
+a number of methods (subroutines) that can be called. They
+are:
+\begin{description}
+\item [set\_events] The set\_events method takes a single
+   argument, which is the instantiation of the Job Events class
+   that contains the methods that you want called. The method
+   names that will be called must correspond to the Bacula
+   defined events. You may define additional methods but Bacula
+   will not use them.
+\item [run] The run method takes a single string
+   argument, which is the run command (same as in the Console)
+   that you want to submit to start a new Job. The value
+   returned by the run method is the JobId of the job that
+   started, or -1 if there was an error.
+\item [write] The write method is used to be able to send
+   print output to the Job Report. This will be described later.
+\item[cancel] The cancel method takes a single integer argument,
+   which is a JobId. If JobId is found, it will be canceled.
+\item [DoesVolumeExist] The DoesVolumeExist method takes a single
+   string argument, which is the Volume name, and returns 
+   1 if the volume exists in the Catalog and 0 if the volume
+   does not exist.
+\end{description}
+
+The following attributes are read/write within the Director 
+for the {\bf job} object.
+
+\begin{description}
+\item [Priority] Read or set the Job priority.
+   Note, that setting a Job Priority is effective only before
+   the Job actually starts.
+\item [Level] This attribute contains a string representing the Job 
+        level, e.g. Full, Differential, Incremental, ... if read.
+        The level can also be set.
+\end{description}
+
+The following read-only attributes are available within the Director
+for the {\bf job} object.
+
+\begin{description}
+\item [Type]  This attribute contains a string representing the Job
+       type, e.g. Backup, Restore, Verify, ...
+\item [JobId] This attribute contains an integer representing the
+       JobId.
+\item [Client] This attribute contains a string with the name of the
+       Client for this job.
+\item [NumVols]  This attribute contains an integer with the number of
+       Volumes in the Pool being used by the Job.
+\item [Pool] This attribute contains a string with the name of the Pool
+       being used by the Job.
+\item [Storage] This attribute contains a string with the name of the
+       Storage resource being used by the Job.
+\item [Catalog]  This attribute contains a string with the name of the
+       Catalog resource being used by the Job.
+\item [MediaType] This attribute contains a string with the name of the
+       Media Type associated with the Storage resource being used by the Job.
+\item [Job] This attribute contains a string containing the name of the
+       Job resource used by this job (not unique).
+\item [JobName] This attribute contains a string representing the full
+       unique Job name.
+\item [JobStatus] This attribute contains a single character string
+       representing the current Job status. The status may change
+       during execution of the job. It may take on the following
+       values:
+       \begin{description}
+       \item [C] Created, not yet running
+       \item [R] Running
+       \item [B] Blocked
+       \item [T] Completed successfully
+       \item [E] Terminated with errors
+       \item [e] Non-fatal error
+       \item [f] Fatal error
+       \item [D] Verify found differences
+       \item [A] Canceled by user
+       \item [F] Waiting for Client
+       \item [S] Waiting for Storage daemon
+       \item [m] Waiting for new media
+       \item [M] Waiting for media mount
+       \item [s] Waiting for storage resource
+       \item [j] Waiting for job resource
+       \item [c] Waiting for client resource
+       \item [d] Waiting on maximum jobs
+       \item [t] Waiting on start time
+       \item [p] Waiting on higher priority jobs
+       \end{description}
+
+\item [Priority]  This attribute contains an integer with the priority
+       assigned to the job.
+\item [CatalogRes] tuple consisting of (DBName, Address, User,
+       Password, Socket, Port, Database Vendor) taken from the Catalog resource 
+       for the Job with the exception of Database Vendor, which is
+       one of the following: MySQL, PostgreSQL, SQLite, Internal,
+       depending on what database you configured.
+\item [VolumeName]
+       After a Volume has been purged, this attribute will contain the
+       name of that Volume. At other times, this value may have no meaning.
+\end{description}
+
+The following write-only attributes are available within the
+Director:
+
+\begin{description}
+\item [JobReport] Send line to the Job Report.
+\item [VolumeName] Set a new Volume name. Valid only during the
+   NewVolume event.
+\end{description}
+
+\section{Python Console Command}
+\index[general]{Python Console Command}
+\index[general]{Console Command!Python}
+
+There is a new Console command named {\bf python}. It takes
+a single argument {\bf restart}. Example:
+\begin{verbatim}
+  python restart
+\end{verbatim}
+
+This command restarts the Python interpreter in the Director.
+This can be useful when you are modifying the DirStartUp script,
+because normally Python will cache it, and thus the
+script will be read one time.
+
+\section{Debugging Python Scripts}
+\index[general]{Debugging Python Scripts}
+In general, you debug your Python scripts by using print statements.
+You can also develop your script or important parts of it as a 
+separate file using the Python interpreter to run it.  Once you
+have it working correctly, you can then call the script from 
+within the Bacula Python script (DirStartUp.py).
+
+If you are having problems loading DirStartUp.py, you will probably
+not get any error messages because Bacula can only print Python 
+error messages after the Python interpreter is started.  However, you
+may be able to see the error messages by starting Bacula in
+a shell window with the {\bf -d1} option on the command line. That
+should cause the Python error messages to be printed in the shell
+window.
+
+If you are getting error messages such as the following when 
+loading DirStartUp.py:
+
+\begin{verbatim}
+ Traceback (most recent call last):
+   File "/etc/bacula/scripts/DirStartUp.py", line 6, in ?
+     import time, sys, bacula
+ ImportError: /usr/lib/python2.3/lib-dynload/timemodule.so: undefined
+ symbol: PyInt_FromLong
+ bacula-dir: pythonlib.c:134 Python Import error.
+\end{verbatim}
+     
+It is because the DirStartUp script is calling a dynamically loaded
+module (timemodule.so in the above case) that then tries to use
+Python functions exported from the Python interpreter (in this case
+PyInt\_FromLong). The way Bacula is currently linked with Python does
+not permit this.  The solution to the problem is to put such functions  
+(in this case the import of time into a separate Python script, which
+will do your calculations and return the values you want. Then call
+(not import) this script from the Bacula DirStartUp.py script, and
+it all should work as you expect.
+   
+                                    
+           
+
+
+\section{Python Example}
+\index[general]{Python Example}
+\index[general]{Example!Python}
+
+An example script for the Director startup file is provided in
+{\bf examples/python/DirStartup.py} as follows:
+
+\footnotesize
+\begin{verbatim}
+#
+# Bacula Python interface script for the Director
+#
+
+# You must import both sys and bacula
+import sys, bacula
+
+# This is the list of Bacula daemon events that you
+#  can receive.
+class BaculaEvents(object):
+  def __init__(self):
+     # Called here when a new Bacula Events class is
+     #  is created. Normally not used 
+     noop = 1
+
+  def JobStart(self, job):
+     """
+       Called here when a new job is started. If you want
+       to do anything with the Job, you must register
+       events you want to receive.
+     """
+     events = JobEvents()         # create instance of Job class
+     events.job = job             # save Bacula's job pointer
+     job.set_events(events)       # register events desired
+     sys.stderr = events          # send error output to Bacula
+     sys.stdout = events          # send stdout to Bacula
+     jobid = job.JobId; client = job.Client
+     numvols = job.NumVols 
+     job.JobReport="Python Dir JobStart: JobId=%d Client=%s NumVols=%d\n" % (jobid,client,numvols) 
+
+  # Bacula Job is going to terminate
+  def JobEnd(self, job):    
+     jobid = job.JobId
+     client = job.Client 
+     job.JobReport="Python Dir JobEnd output: JobId=%d Client=%s.\n" % (jobid, client) 
+
+  # Called here when the Bacula daemon is going to exit
+  def Exit(self, job):
+      print "Daemon exiting."
+     
+bacula.set_events(BaculaEvents()) # register daemon events desired
+
+"""
+  These are the Job events that you can receive.
+"""
+class JobEvents(object):
+  def __init__(self):
+     # Called here when you instantiate the Job. Not
+     # normally used
+     noop = 1
+     
+  def JobInit(self, job):
+     # Called when the job is first scheduled
+     noop = 1
+     
+  def JobRun(self, job):
+     # Called just before running the job after initializing
+     #  This is the point to change most Job parameters.
+     #  It is equivalent to the JobRunBefore point.
+     noop = 1
+
+  def NewVolume(self, job):
+     # Called when Bacula wants a new Volume name. The Volume
+     #  name returned, if any, must be stored in job.VolumeName
+     jobid = job.JobId
+     client = job.Client
+     numvol = job.NumVols;
+     print job.CatalogRes
+     job.JobReport = "JobId=%d Client=%s NumVols=%d" % (jobid, client, numvol)
+     job.JobReport="Python before New Volume set for Job.\n"
+     Vol = "TestA-%d" % numvol
+     job.JobReport = "Exists=%d TestA-%d" % (job.DoesVolumeExist(Vol), numvol)
+     job.VolumeName="TestA-%d" % numvol
+     job.JobReport="Python after New Volume set for Job.\n"
+     return 1
+
+  def VolumePurged(self, job):
+     # Called when a Volume is purged. The Volume name can be referenced
+     #  with job.VolumeName
+     noop = 1
+
+
+
+\end{verbatim}
+\normalsize

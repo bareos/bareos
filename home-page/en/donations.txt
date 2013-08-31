@@ -1,0 +1,20 @@
+Kern;;;2010/01/03;;;12:30 
+Donations Received
+
+The following people or organizations have made 
+donations or supplied finacial development support
+to the Bacula project and have specifically requested
+that their names appear here:
+
+Intevation GmbH, Osnabrueck, Germany -- Financial Support in 2008
+Intevation GmbH, Osnabrueck, Germany -- Financial Support in 2009!!!
+
+
+Many thanks to the many Bacula listed and non-listed
+supporters have provided support or made donations.
+Names listed here are by specific request. If you have
+made a donation or provided financial support and wish
+to appear in this list, please send an email to 
+kern at sibbald dot com.
+
+;;;

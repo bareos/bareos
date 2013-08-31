@@ -1,0 +1,40 @@
+              Technical notes on version 1.8 18Dec01
+                       19 December 2001
+                        Kern Sibbald
+
+General:
+- Did a nearly complete implementation of Job names.
+- Due to the above, the protocol between the daemons has
+  changed so all daemons must be updated.
+- Quite a lot of cleanup of the Console program remains
+  to be done to switch over to Job names rather than JobIds.
+- Major change to Console sqlquery command -- see below.
+
+Changes submitted this submission:
+- Modified some of the makefiles to do a better job
+  of cleaning up during a make distclean.
+- Added MediaType, VolStatus, and PoolId to values returned
+  by db_get_media_record(). This allows checking for anonymous
+  volumes.
+- In all places possible, I now use the Job rather than JobId,
+  there are still some vestiges that will need to be cleaned up,
+  and JobId is still the database key for the Job record.
+- Eliminated M_WARN, now replaced by M_WARNING everywhere.
+- Modified the sqlquery command so that it puts you in query
+  "mode" keeping you in the command until you terminate it
+  with a blank line. Enhanced the prompts to be clearer.
+- Fixed a bug with reminding the user to do a mount after
+  a label -- the erronous and confusing message should now
+  be supressed.
+- Removed very ancient JobId/password code from the File
+  daemon. This was implemented differently from the original
+  form.
+- Made a significant cleanup of handling reading tape labels
+  and allowing anonymous volumes (that is any volume that
+  is valid for the pool rather than the current volume).
+- Added additional error information to bnet.c when an error
+  occurs.
+- Changed the names of a couple of files to make their contents
+  more obvious from the name.
+- Combined the code for waiting for additional media to be
+  added to the database and for waiting for a mount.

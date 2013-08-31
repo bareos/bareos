@@ -1,0 +1,92 @@
+%%
+%%
+
+\chapter{Syst\`emes d'exploitation support\'es}
+\label{SupportedOSes}
+\index[general]{Syst\`emes d'exploitation support\'es }
+
+\begin{itemize}
+\item[X] Compl\`etement support\'e
+\item[$\star$] Fonctionne, mais non support\'e par le projet Bacula.
+\end{itemize}
+
+
+\begin{tabular}[h]{|l|l|c|c|c|}
+  \hline
+  OS & Version & Client \small{Daemon} & Director \small{Daemon} & Storage \small{Daemon} \\
+  \hline
+  \hline
+  GNU/Linux
+  & All & X & X & X \\
+  \hline
+  FreeBSD & $\geq$ 5.0 & X & X & X
+  \\
+  \hline
+  Solaris & $\geq$ 8 & X & X & X \\
+  \hline
+  OpenSolaris & ~ & X & X & X \\
+  \hline
+  \hline
+  MS Windows 32bit& Win98/Me & X  & ~ & ~ \\
+  \hline
+  ~ & WinNT/2K & X  & $\star$ & $\star$ \\
+  \hline
+  ~ & XP & X  & $\star$ & $\star$ \\
+  ~ & 2008/Vista & X  & $\star$ & $\star$ \\
+  MS Windows 64bit& 2008/Vista & X  & ~ & ~ \\
+  \hline
+  \hline
+  MacOS X/Darwin & ~ & X & ~ & ~ \\
+  \hline
+  OpenBSD & ~ & X & $\star$ & ~ \\
+  \hline
+  NetBSD & ~ & X & $\star$ & ~ \\
+  \hline
+  Irix & ~ & $\star$ & ~ & ~ \\
+  \hline
+  True64 & ~ & $\star$ & ~ & ~ \\
+  \hline
+  AIX & $\geq$ 4.3 & $\star$ & ~ & ~ \\
+  \hline
+  BSDI & ~ & $\star$ & ~ & ~ \\
+  \hline
+  HPUX & ~ & $\star$ & ~ & ~ \\
+  \hline
+\end{tabular}
+
+
+\section*{Notes importantes}
+
+\begin{itemize}
+\item Par GNU/Linux, nous pensons 32/64bit Gentoo, Red Hat, Fedora, Mandriva,
+    Debian, OpenSuSE, Ubuntu, Kubuntu, \dots
+
+  \item FreeBSD (pilote de bande support\'e \`a partir de la version 1.30 --
+    allez voir les consid\'erations {\bf importantes} dans la section
+    \ilink{Configuration des lecteurs de bandes sur FreeBSD}{FreeBSDTapes} du
+    chapitre Test des Bandes de ce manuel.)
+
+\item Le Director et le Storage Daemon MS Windows sont disponibles dans 
+  l'installeur du Client.
+
+\item  MacOS X/Darwin (voir 
+   \elink{ http://fink.sourceforge.net/}{http://fink.sourceforge.net/} pour
+   obtenir les paquets)  
+\end{itemize}
+
+Si vous avez un syst\`eme Red Hat r\'ecent ex\'ecutant le noyau 2.4.x et si
+vous avez le r\'epertoire {\bf /lib/tls} install\'e sur votre syst\`eme (par
+d\'efaut normalement), {\bf Bacula ne fonctionnera pas correctement} Ceci est
+d\^u \`a la nouvelle biblioth\`eque pthreads qui est d\'efectueuse. Vous devez
+supprimer ce r\'epertoire avant d'ex\'ecuter Bacula, ou vous pouvez simplement
+le renommer en {\bf /lib/tls-broken} puis red\'emarrer votre machine (une des
+rares occasions o\`u; Linux doit \^etre red\'emarr\'e).  Si vous ne souhaitez
+pas d\'eplacer/renommer /lib/tls, une autre alternative est de placer la
+variable d'environnement ``LD\_ASSUME\_KERNEL=2.4.19'' avant d'ex\'ecuter
+Bacula. Pour cette option, vous n'avez pas besoin de red\'emarrer, et tous les
+programmes autres que {\bf Bacula} continueront d'utiliser {\bf /lib/tls}.
+
+Le probl\`eme n'existe pas ur les noyaux 2.6.
+
+Voir le chapitre de Portage de la Documentation Pour Developpeurs pour les
+informations concernant le portage sur d'autres syst\`emes.

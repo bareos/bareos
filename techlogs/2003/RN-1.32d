@@ -1,0 +1,117 @@
+
+          Release Notes for Bacula 1.32d
+
+  Bacula code: Total files = 259 Total lines = 78,087 (*.h *.c *.in)
+
+Most Significant Changes since 1.32c
+- Mainly a bug fix release.
+- Do a clean of both Gnome directories.
+- Require that FileSet id match when finding an Incremental
+  previous job. This was already the case for a Full.
+- Print message if no status returned from FD.
+- Correct "Do not forget to mount the drive" message. Test was
+  backward.
+- "status dir" stopped scanning the run records on the first
+  one that matched giving an incomplete listing.
+- Edit commas in Bytes on "estimate" command output.
+
+Most Significant Changes since 1.32b
+- Implemented a RunAfterFailedJob record in the Job resource.
+- Implemented "delete job" command in the Console.
+- Gnome 2.0 console compiles and works. 
+- Implemented VerifyJob record in the Job resource
+  that tells Verify which job to verify (JobId not required) 
+- First cut Verify Disk to Catalog
+- Fix "status dir" to examine all run commands in Schedule.
+- Close unused file descriptors in bpipe.c
+- There is now a patch for FreeBSD 4.8 pthreads that
+  fixes the problems of data loss at the end of a tape.
+  Please see:
+  <bacula-source>/platforms/freebsd/pthreads-fix.txt
+- Fixed (I think) the elusive Windows "packet too big" bug.
+- Added %v to RunBefore/After editing codes. It edits in
+  a list of Volumes used for the job (not tested).
+
+Most Significant Changes since 1.32a:
+- Improve forward space file/block during restore, many
+  optimizations.
+- Fix a Bacula bug that did not allow appending to a tape    
+  on FreeBSD systems.
+- Fix pruning so that it will not prune the current job.
+- Modify configure to use non-threaded MySQL client lib if
+  the threaded version is not present.
+- Implement restore by file before date.
+- When pruning don't prune the current job.
+
+Major Changes 1.32a Release:
+- Implemented forward space file/block whenever possible 
+  during restore. Restoring a small number of files is now  
+  much faster.
+- There is a new option to restore that allows you   
+  to restore files based on their Filename. You can
+  also specify a file to read which contains the list.
+- Added ClientRunBeforeJob and ClientRunAfterJob.
+- Implemented Include | and < in File daemon.
+- Automatic labeling of tape Volumes should work now.
+- Recycling has been completely restructured and should work.
+- Implemented full length time interval qualifiers (e.g
+  "5n is now "5 min" or "5 minutes". A modifier is now required!
+- Fixed gnome-console to compile with RH9 (Gnome 2.0)
+- Implemented "list nextvol job=xxx", which displays the
+  next volume to be used by job xxx. The Volume name to
+  be used is also added to the "status dir" output.
+- Lots of fixes with variable expansion and counter variables
+- Implemented a new Include/Exclude syntax.
+- While writing a tape, an end of file mark will be written
+  every 1Gb. This makes restores faster. If you want to
+  change this use "Maximum File Size" in the SD Device
+  resource.
+
+
+Other Changes 1.32a Release:
+- Fixed sparse file bug.
+- A warning message is sent when a job starts that will be
+  blocked because the user did an "unmount".
+- Block checksum errors if any are printed in the job report.
+- Implemented a single routine to read_records. It also returns
+  a different record packet for each session.  This means
+  that multiple simultaneous jobs should work.
+- Added SDConnectTimeout to FD.    
+- Lots of doc enhancements
+- Fixed a PurgeOldestVolume bug (VolStatus not returned)
+- Don't crash if DB address record not specified.
+- Return VolStatus on find_next_volume.
+- Use alist for incexe name_list.
+- Use bget_dirmsg() everywhere possible when talking to FD.
+- Delete old semaphore job and workq job scheduling code.
+- edit_run_codes in one place (/lib)  Add Job name
+- Update query.sql to find current backups correctly.
+- Correct ambiguous SQL statement for pruning.
+- Set heartbeat interval to zero by default.
+- Fix a possible race condition in stopping the 
+  heartbeat thread.
+- Eliminate gnome2-console directory. Everything is in gnome-console
+- Enhanced "packet too big" message to indicate who sent it.
+- Corrected console prompt problem in non-readline versions.
+- Correct a number of variable expansion problems.
+- Added a number of new regression tests.
+- In an attempt to make configuration a bit less confusing, I've changed
+  the name of a number of variables. The old ones still work, but will
+  be phased out over time. FDAddress, FDPassword, SDAddress SDPassword,
+  SDDeviceName, and DBPassword.
+- A possible fix to the very intermittent SD crashes that Alex gets.
+              
+
+
+Items to note:  !!!!!
+- Modifiers (sec, min, hour, day, ...) are now required on conf file
+  time interval specifications.
+- Duplicate names within the same conf resource are prohibited.
+- If you have used a prior BETA version of 1.32, please do
+  the following to cleanup any zero length spool files:
+
+   cd <working-directory-as-in-Bacula-conf>
+   rm -f *.spool.*
+
+  Please be sure there are no spaces between the asterisks
+  and the periods.

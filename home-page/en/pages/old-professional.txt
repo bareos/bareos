@@ -1,0 +1,188 @@
+
+<!--
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr> <td colspan="3"><hr></td>
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr>
+              <td style="font-weight: bold">
+                     raptus ag
+              </td>
+              <td><img src="/images/spacer.gif" width="50px" height="1px"></td>
+              <td>
+                 <a href="mailto:infoNOSPAM@raptus.com">raptus ag</a><br>
+                 moderne kommunikation<br>
+                 burgweg 1<br>
+                 2563 ipsach -- switzerland<br>
+                 <br>
+                 Telephone +41 (0)32 332 9200<br>
+                 Fax +41 (0)32 332 9201<br>
+                 <br>
+                 <br>
+                 Modern communications, Internet projects and IT services since 1996!
+                 Specialized in heterogeneous networks (linux, mac, windows) and open 
+                 source solutions.<br>
+                 <br>
+                 <a href="http://www.raptus.com">http://www.raptus.com</a><br>
+              </td>
+      </tr>
+
+-->
+
+<!--
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr> <td colspan="3"><hr></td>
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr>
+              <td style="font-weight: bold">
+                      Axiom Networking
+              </td>
+              <td><img src="/images/spacer.gif" width="50px" height="1px"></td>
+              <td>
+                 <a href="mailto:supportNOSPAM@axiomnetworking.ca">Axiom Networking</a><br>
+                 Angus Jordan<br>
+                 PO Box 32004 Walnut Grove Post Office<br>
+                 Langley, BC, V1M 2M3, Canada<br>
+                 +1-604-637-7752<br>
+                 <br>
+                 We offer all types of IT related support services.  Platform support:  Linux,<br>
+                 Windows 2000/2003 etc.  Lots of experience with Bacula, DBMail, Nagios,<br>
+                 Postfix, Qmail, qpopper, BIND (8/9), and MANY others.<br>
+                 <br>
+                 <a href="http://www.axiomnetworking.ca">http://www.axiomnetworking.ca</a><br>
+              </td>
+      </tr>
+-->
+
+<!--
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr> <td colspan="3"><hr></td>
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr>
+              <td style="font-weight: bold">
+                      Bayer Technology Group
+              </td>
+              <td><img src="/images/spacer.gif" width="50px" height="1px"></td>
+              <td>
+                 <a href="mailto:jbayerNOSPAM@BayerTechnologyGroup.com"> Jonathan B Bayer</a><br>
+                Bayer Technology Group, 23 Exeter Rd., East Windsor, NJ 08520 USA<br>
+                 +1 (609) 632-1200<br>
+                 +1 (609) 658-9408 (mobile)<br>
+                 <br>
+                 Our focus is on assisting and providing high
+                 quality IT services to individuals, small businesses and
+                 organizations with computer and information technology needs,
+                 but who often don't need or have a budget for a full time IT
+                 staff.  We specialize in Desktop systems, Local Area Network
+                 (LAN), Internet, Computer Systems Security and Disaster
+                 Recovery Planning and Implementation using Microsoft and
+                 Linux based solutions.  <br> <br> <a
+                 href="http://www.BayerTechnologyGroup.com">http://www.BayerTechnologyGroup.com</a><br>
+              </td>
+      </tr>
+-->
+
+<!--
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr> <td colspan="3"><hr></td>
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr>
+              <td style="font-weight: bold">
+                     HEXONET Support GmbH
+              </td>
+              <td><img src="/images/spacer.gif" width="50px" height="1px"></td>
+              <td>
+                 <a href="mailto:infoNOSPAM@hexonet.com">Hexonet</a><br>
+                 Alexander Biehl<br>
+                 Talstrasse 27<br>
+                 66424 Homburg<br>
+                 Germany 
+                 <br>
+                 Tel: +49 6841 95961-70<br>
+                 Fax: +49 6841 95961-79<br>
+                 <br>
+                 HEXONET Support GmbH provides professional IT services and support. We 
+                 are specialized in OpenSource products.
+                 <br>
+                 <a href="http://www.hexonet.com">http://www.hexonet.com</a><br>
+              </td>
+      </tr>
+-->
+
+<!--
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr> <td colspan="3"><hr></td>
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr>
+              <td style="font-weight: bold">
+                      Instant Root HB
+              </td>
+              <td><img src="/images/spacer.gif" width="50px" height="1px"></td>
+              <td>
+                 <a href="mailto:infoNOSPAM@instant-root.com">Info-Mail</a><br>
+                 Box 1823 <br>
+                 SE-58117 Link&ouml;ping, Sweden<br>
+                 <br>
+                 Instant Root HB is a company specialized in Unix systems administration, network
+                 design and implementation, as well as education in various computer-related fields.<br> 
+                 <br>
+                 <a href="http://www.instant-root.com">http://www.instant-root.com</a><br>
+              </td>
+      </tr>
+-->
+
+<!--
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr> <td colspan="3"><hr></td>
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr>
+              <td style="font-weight: bold">
+                      Thinxsolutions 
+              </td>
+              <td><img src="/images/spacer.gif" width="50px" height="1px"></td>
+              <td>
+                 <a href="mailto:infoNOSPAM@thinxsolutions.com">
+                 M&uuml;ller, Bender, Guth GbR</a><br>
+                 &nbsp;&nbsp;Maarweg 139 <br>
+                 &nbsp;&nbsp;50825 Cologne, Germany <br>
+                 <br>
+                 &nbsp;&nbsp;+49 221 35503530<br>
+                 <br>
+                 We implement and manage corporate networks for our customers
+                 and offer consulting and professional support for various open source
+                 software solutions.<br>
+                 <br>
+                 <a href="http://www.thinxsolutions.com">http://www.thinxsolutions.com</a><br>
+              </td>
+      </tr>
+-->
+
+<!--
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr> <td colspan="3"><hr></td>
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr>
+              <td style="font-weight: bold">
+                      WinFix.IT
+              </td>
+              <td><img src="/images/spacer.gif" width="50px" height="1px"></td>
+              <td>
+                 <a href="mailto:JoNOSPAM@WinFix.IT">Jo at WinFix.IT</a><br>
+                 <br>
+                 &nbsp;&nbsp;In and around Leuven and Brussels (Belgium)
+                 <br>
+                 &nbsp;&nbsp;+32 (0)478-33 76 27<br>
+                 <br>
+                 Set up of SAMBA File and Print servers/domain controllers, mail
+                 servers (Postfix) with spam/virus killers 
+                 (Spamassassin/Amavis/Clamav/BitDefender)
+                 and backup (with Bacula of course). Network monitoring with Nagios.
+                 <br>
+                 <br>
+                 <a href="http://www.WinFix.IT">http://www.WinFix.IT</a><br>
+              </td>
+      </tr>
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+      <tr> <td colspan="3"><hr></td>
+      <tr> <td colspan="3"><img src="/images/spacer.gif" width="50px" height="25px"></td> </tr>
+-->
+

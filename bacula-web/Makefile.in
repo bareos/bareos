@@ -1,0 +1,101 @@
+#
+#
+#  Makefile for LaTeX  
+#
+# To build everything do
+#    make tex
+#    make web
+#    make html
+#    make dvipdf
+#
+# or simply
+#
+#    make
+#
+
+IMAGES=../images
+
+first_rule: bacula
+
+bacula: tex web html dvipdf
+
+.SUFFIXES:     .tex .html
+.PHONY:
+.DONTCARE:
+
+
+tex:
+	@cp -fp ${IMAGES}/*.eps .
+	@cp -fp ${IMAGES}/hires/*.eps .
+	touch bacula-web.idx bacula-webi-general.tex
+	-latex -interaction=batchmode bacula-web.tex
+	makeindex bacula-web.idx >/dev/null 2>/dev/null
+	-latex -interaction=batchmode bacula-web.tex
+
+pdf:
+	@echo "Making bacula-web pdf manual"
+	@cp -fp ${IMAGES}/*.eps .
+	@cp -fp ${IMAGES}/hires/*.eps .
+	dvipdf bacula-web.dvi bacula-web.pdf
+	@rm -f *.eps *.old
+
+dvipdf:
+	@echo "Making bacula-web pdfm"
+	@cp -fp ${IMAGES}/*.eps .
+	@cp -fp ${IMAGES}/hires/*.eps .
+	dvipdfm -p a4 bacula-web.dvi
+	@rm -f *.eps *.old
+
+html:
+	@echo "Making bacula-web html manual"
+	@cp -fp ${IMAGES}/*.eps .
+	@cp -fp ${IMAGES}/hires/*.eps .
+	@rm -f next.eps next.png prev.eps prev.png up.eps up.png
+	@(if [ -e imagename_translations ] ; then \
+	    ./translate_images.pl --from_meaningful_names bacula-web.html; \
+	 fi)
+	latex2html -white -no_subdir -split 0 -toc_stars -white -notransparent \
+		-init_file latex2html-init.pl bacula-web >tex.out 2>&1
+	./translate_images.pl --to_meaningful_names bacula-web.html
+	@rm -f *.gif *.jpg *.old
+
+web:
+	@echo "Making bacula-web web manual"
+	@mkdir -p bacula-web
+	@rm -f bacula-web/*
+	@cp -fp ${IMAGES}/*.eps .
+	@rm -f next.eps next.png prev.eps prev.png up.eps up.png
+	@cp -fp ${IMAGES}/*.eps ${IMAGES}/*.png bacula-web/
+	@rm -f bacula-web/next.eps bacula-web/next.png bacula-web/prev.eps bacula-web/prev.png bacula-web/up.eps bacula-web/up.png
+	@(if [ -e bacula-web/imagename_translations ] ; then \
+	   ./translate_images.pl --to_meaningful_names bacula-web/Bacula_Users_Guide.html; \
+	 fi)
+	@rm -rf bacula-web/*.html
+	latex2html -split 4 -local_icons -t "Bacula-web Guide" -long_titles 4 \
+		-contents_in_nav -toc_stars -white -notransparent bacula-web >/dev/null
+	./translate_images.pl --to_meaningful_names bacula-web/Bacula_web_Guide.html
+	@cp -f bacula-web/Bacula_web_Guide.html bacula-web/index.html
+	@rm -f *.gif *.jpg bacula-web/*.eps  *.old
+
+texcheck:
+	./check_tex.pl bacula-web.tex
+
+main_configs:
+	pic2graph -density 100 <main_configs.pic >main_configs.png
+
+clean:
+	@rm -f 1 2 3
+	@rm -f *.png *.gif *.jpg *.eps
+	@rm -f *.pdf *.aux *.cp *.fn *.ky *.log *.pg
+	@rm -f *.html *.backup *.pdf *.ps *.dvi *.ilg *.lof *.lot
+	@rm -f *.cdx *.cnd *.ddx *.ddn *.fdx *.fnd *.ind *.sdx *.snd
+	@rm -f *.dnd imagename_translations
+	@rm -f *.old WARNINGS *.out *.toc *.idx
+	@rm -f images.pl labels.pl internals.pl
+	@rm -rf bacula-web
+	@rm -f images.tex bacula-webi-general.tex
+
+
+distclean: clean
+	@rm -f images.tex bacula-webi-general.tex
+	@rm -f version.tex Makefile

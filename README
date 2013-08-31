@@ -1,0 +1,83 @@
+
+This is the Bacula documentation directory. It currently contains
+the following subdirectories:
+
+  Directory              Contents
+  home-page              The Bacula Web Site
+  manuals                All the manuals
+  manuals/en             English version of the manuals
+  manuals/en/catalog     Catalog 
+             concepts    Concepts
+             console     Console and Operators Guide
+             developers  Developer's guide
+             install     Installation and Configuration Guide
+             problems    Problem Resolution Guide
+             utility     Utility Programs
+
+  manuals/de             German translation of the manual
+  manuals/de/catalog     Catalog 
+             concepts    Concepts
+             console     Console and Operators Guide
+             developers  Developer's guide
+             install     Installation and Configuration Guide
+             problems    Problem Resolution Guide
+             utility     Utility Programs
+
+  manuals/fr             French translation of the manual
+  manuals/fr/catalog     Catalog 
+             concepts    Concepts
+             console     Console and Operators Guide
+             developers  Developer's guide
+             install     Installation and Configuration Guide
+             problems    Problem Resolution Guide
+             utility     Utility Programs
+
+  techlogs           Technical development logs
+
+Build instructions:                       
+
+You must have at least the following packages loaded:
+latex2html
+te_latex
+tetex
+
+First, you must do:
+
+  cd <docs>
+  ./configure --with-bacula=<path-to-bacula-source>
+
+  This will find the current Bacula version, and create
+  all the Makefiles from Makefile.in  
+
+  Do not edit the Makefiles or your changes will be lost. Always
+  edit Makefile.in
+
+Web site:  nothing to build, simply copy the files to the
+           Web site, then load the documents in the appropriate
+           places.
+
+
+English manual:
+   cd <docs>
+   make
+
+   The above builds all the Bacula English manuals.    
+   At some point in the future, it will also build the
+   other languages, when they are ready for distribution.
+
+   Each subdirectory of manuals/en/xxx contains a subdirectory
+   named xxx which contains the web version of that particular
+   manual.  The pdf is in manuals/en/xxx/xxx.pdf
+
+German manual:
+   cd <docs>
+   make german
+   Same as above
+
+French manual:
+   cd <docs>
+   make french
+   Same as above:
+
+A distribution is made by exporting the SVN then building everything
+and finally tarring it up.

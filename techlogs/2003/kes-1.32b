@@ -1,0 +1,57 @@
+              Technical notes on version 1.32b 14Oct03
+                        14 Oct 2003
+                        Kern Sibbald
+
+General:
+
+Changes submitted this submission:
+14Oct03
+- Modify configure so that if threaded MySQL client library
+  is not present, Bacula will link with the non-threaded 
+  version.
+- Updates to the Web pages and to the manual.
+- Remove trademark symbol from title. Phil pointed out that it
+  does not display correctly in a title.
+11Oct03
+- Implement restore by file before date. 
+- Change restore arguments a bit so that you can feed it
+  multiple jobid= specifications or multiple file= specifications.
+- Pass restore with run option on to run_cmd.
+- Make run-cmd not prompt if it has a "run" on the command line.
+10Oct03
+- When pruning, select only old orphanned jobs to delete so that
+  the current job is not pruned too.
+09Oct03
+- Corrected return status for bsf_dev and bsr_dev in block.c and btape.c
+- dev.c used incorrect ruturn status for bsf_dev in the BSF at EOM
+  code. This caused all appends on FreeBSD to fail.
+- Turn on fast block rejection code.
+08Oct03
+- Optimize file index searches by adding a count to the bootstrap.
+- Write single files/blocks to bootstrap without the second part.
+- Add current Volume status to the cannot use this Volume message.
+- Zero the rx->bsr in ua_restore when freeing so it doesn't get
+  freed twice.
+- Lots of testing on the restore
+- I noticed that SD and FD bootstrap files were not always
+  deleted, so delete them as soon as possible.
+- Restore by file (or by selecting files) created some
+  horrible looking bsr files that defeated the forward
+  spacing code, so fix write_findex to work right.
+- Add zlib_strerror() routine in filed/restore in case
+  of zlib errors.
+- In filed/restore.c make sure all error returns cleanup
+  and close the open file descriptor.
+- Make sure to set *non* over filename in attr packet
+  after file is found, so error messages that print the
+  filename don't print an old, incorrect name.
+- Allow bclose() to be called after closing the file.
+- Fix a number of unclear help messages, ... reported by
+  Phil in btape.
+- Retweak stored/read_record.c so that it does forward
+  spacing at the beginning of every tape, not just the
+  first one.
+- Print repositioning message if verbose is set.
+07Oct03
+- Fix check for tcp wrappers to try -lwrap, if that fails
+  try -lwrap -nsl.

@@ -1,0 +1,67 @@
+              Technical notes on version 1.32c 29Oct03
+                        29 Oct 2003
+                        Kern Sibbald
+
+General:
+
+Changes submitted this submission:
+29Oct03
+- Add %v to job edit codes. It edits in the VolumeName(s).
+- Add code to ensure that fds 0,1, and 2 are defined by dup'ing them
+  to /dev/null if necessary.  Mostly for Windows that does not have them.
+- Error check dir_create_jobmedia_record() 2 places in acquire.c
+26Oct03
+- More doc fixes.
+- Make message buffer longer for a status message that was    
+  truncated.        
+- Put termination on varargs calls in gnome2-console.
+- Scroll only if text sent and not for status update.
+- Add all possible Status codes the jobstatus_to_ascii()
+25Oct03
+- Add new spec file and cats patch from Scott.
+- Optimize tree.c a bit -- turn off debug code, keep node fname
+  length for fast rejection, add some statistics, allocate
+  in 100K and 1Meg chunks, use bool, uint16_t and uint8_t to
+  reduce node packet size.
+24Oct03
+- Eliminate ua_retention.c that was not used.
+- Improve error message when closing brace missing in conf file.
+- More doc updates.
+- Eliminate Don't forget to mount if it is a disk file.
+- Fix Gnome2 scrolling and blank screen problems.
+- Eliminate multiple JobIds in restore selection list.
+- Fix non-portable varargs code in var.c
+- Make doc fixes/changes suggested by Dan Languille
+23Oct03
+- Document new features.
+- Implement mod of Verify Job at the run prompt.
+- Correct SQL table definitions so that MySQL and SQLite
+  have all the values in the same position.
+- Correct a typo in configure.in when configuring GNOME.
+- In doing a "status dir" make it loop over all the run
+  commands in the Schedule rather than doing on the first one.
+- Close all unused file descriptors in bpipe.c otherwise if
+  a daemon is started, it will keep our TCP/IP port open.
+22Oct03
+- Print block read error (checksum, I/O, BB01, ...) once then
+  the number found at the end of the reading.
+- Implement RunAfterFailedJob
+- Change db_find_job_start_time() to require a Full save before
+  running an Incremental or Differential job.
+- Remove has_volume_expired from code that updates vol info
+21Oct03
+- Implement "delete job"
+20Oct03
+- More documentation, add Marc Brueckner's tips to manual.
+- Tweak gnome2-console scroll window.
+- Turn off some debug info.
+18Oct03
+- Modify Verify to accept VerifyJob = xx, where the last backup job
+  of job xxx will be verified.
+- Add changing the Pool name for a Volume to "update volume"
+- Write most of the code for Verify Disk to Catalog.
+- Recreate the src/gnome2-console directory.
+- Change all the text handling code to the Gnome 2.0 way.
+- Correct the way verify filenames are returned to the Director so
+  that directories are in canonical form (i.e. trailing /).
+- Handle casting bug in glade-2 by sed'ing support.c in gnome2-console.

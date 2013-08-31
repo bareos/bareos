@@ -1,0 +1,1392 @@
+%%
+%%
+
+\chapter{Une br\`eve documentation}
+\label{_ChapterStart1}
+\index[general]{Une br\`eve documentation}
+\index[general]{Documentation!br\`eve }
+
+Ce chapitre vous guidera \`a travers les \'etapes n\'ecessaires pour ex\'ecuter Bacula. 
+Pour cela, nous supposons que vous avez install\'e Bacula, peut \^etre dans un simple 
+r\'epertoire comme le d\'ecrit le chapitre pr\'ec\'edent, auquel cas vous pouvez ex\'ecuter 
+Bacula sans \^etre root pour ces tests. Nous supposons d'autre part que vous n'avez 
+pas modifi\'e les fichiers de configuration. Dans le cas contraire, nous vous 
+recommandons de d\'esinstaller Bacula et de le r\'einstaller sans rien modifier. Les 
+exemples de ce chapitre utilisent les fichiers de configuration par d\'efaut, et 
+cr\'eent les volumes dans le r\'epertoire {\bf /tmp} de votre disque. De plus, les 
+donn\'ees sauvegard\'ees seront celle du r\'epertoire des sources de Bacula o\`u vous 
+l'avez compil\'e. Par cons\'equent, tous les {\it daemons} peuvent \^etre ex\'ecut\'es 
+sans les droits root pour ces tests. Notez bien qu'en production, vos File 
+Daemons devront \^etre ex\'ecut\'es en tant que root. Voyez le chapitre sur la 
+s\'ecurit\'e pour plus d'informations sur ce sujet.
+
+Voici les \'etapes que nous suivrons :
+
+\begin{enumerate}
+\item cd \lt{}install-directory\gt{}  
+\item D\'emarrer la base de donn\'ees (si vous utilisez MySQL ou PostgreSQL)  
+\item D\'emarrer les {\it daemons} avec {\bf ./bacula start}  
+\item Lancer le programme Console pour interagir avec le Director 
+\item Lancer un job
+\item Lorsqu'un volume est plein, le d\'emonter, s'il s'agit d'une cartouche, en 
+   \'etiqueter une nouvelle et poursuivre. Dans ce chapitre, nous n'\'ecrirons que sur 
+   des volumes fichier, aussi vous n'avez pas \`a vous inqui\'eter au sujet des 
+   cartouches pour le moment.
+\item Tester la restauration de quelques fichiers depuis le volume fraichement \'ecrit 
+   pour s'assurer de la validit\'e de la sauvegarde et qu'il est possible de restaurer. 
+   Mieux vaut essayer avant qu'un d\'esastre ne survienne...   
+\item Ajouter un second client.
+   \end{enumerate}
+
+Chacune de ces \'etapes est d\'ecrite en d\'etail ci-dessous.
+
+\section{Avant d'ex\'ecuter Bacula}
+\index[general]{Bacula!Avant d'ex\'ecuter}
+\index[general]{Avant d'ex\'ecuter Bacula}
+\addcontentsline{toc}{section}{Avant d'ex\'ecuter Bacula}
+
+Avant d'utiliser Bacula pour la premi\`ere fois en production, nous vous recommandons 
+d'ex\'ecuter la commande {\bf test} du programme {\bf btape} ainsi qu'il est d\'ecrit 
+dans le chapitre \ilink{Programmes utilitaires}{btape} de ce manuel. 
+Ce programme vous aidera \`a vous assurer que votre lecteur de bandes fonctionne 
+correctement avec Bacula. Si vous avez un lecteur moderne de marque HP, Sony, ou 
+Quantum DDS ou DLT qui fonctionne sous Linux ou Solaris, vous pouvez probablement 
+vous dispenser de faire ce test car Bacula est bien test\'e avec ces lecteurs et ces 
+syst\`emes. Dans tous les autres cas, vous \^etes {\bf fortement} encourag\'e \`a 
+ex\'ecuter les tests avant de poursuivre. {\bf btape} dispose aussi d'une commande 
+{\bf fill} qui tente de reproduire le comportement de Bacula lorsqu'il remplit 
+une cartouche et qu'il poursuit son \'ecriture sur la suivante. Vous devriez 
+songer \`a faire ce test, sachez cependant qu'il peut \^etre long (environ 
+4 heures sur mon lecteur) de remplir une cartouche de haute capacit\'e. 
+
+\section{D\'emarrer la base de donn\'ees}
+\label{StartDB}
+\index[general]{D\'emarrer la base de donn\'ees}
+\index[general]{base de donn\'ees!D\'emarrer la }
+\addcontentsline{toc}{section}{D\'emarrer la base de donn\'ees}
+
+Si vous utilisez MySQL ou PostgreSQL pour votre catalogue Bacula, vous devez 
+d\'emarrer la base de donn\'ees avant d'essayer de lancer un job pour \'eviter 
+d'obtenir des messages d'erreur au d\'emarrage de Bacula. J'utilise les scripts 
+{\bf startmysql} et {\bf stopmysql} pour d\'emarrer mon MySQL local. Notez que si 
+vous utilisez SQLite, vous n'aurez pas \`a utiliser  {\bf startmysql} ou {\bf stopmysql}. 
+Si vous utilisez ceci en production, vous souhaiterez probablement trouver 
+un moyen pour d\'emarrer automatiquement MySQL ou PostgreSQL apr\`es chaque 
+red\'emarrage du syst\`eme.
+
+Si vous utilisez SQLite (c'est \`a dire, si vous avez sp\'ecifi\'e l'option 
+{\bf \verb:--:with-sqlite=xxx} de la commande {\bf ./configure}, vous n'avez rien \`a faire. 
+SQLite est d\'emarr\'ee automatiquement par {\bf Bacula}.
+
+\section{D\'emarrer les daemons}
+\label{StartDaemon}
+\index[general]{D\'emarrer les daemons}
+\index[general]{Daemons!D\'emarrer les}
+\addcontentsline{toc}{section}{D\'emarrer les daemons}
+
+Que vous ayez compil\'e Bacula depuis les sources ou que vous ayez install\'e les rpms, 
+tapez simplement :
+
+./bacula start
+
+dans votre r\'epertoire d'installation pour d\'emarrer les trois {\it daemons}.
+
+Le script {\bf bacula} lance le Storage Daemon, le File Daemon et le Director Daemon, qui 
+tournent tous trois en tant que {\it daemons} en t\^ache de fond. Si vous utilisez 
+la fonction de d\'emarrage automatique de Bacula, vous pouvez, au choix, lancer les 
+trois {\it daemons} lors du d\'emarrage, ou au contraire les lancer individuellement 
+avec les scripts  {\bf bacula-dir}, {\bf bacula-fd}, et {\bf bacula-sd} usuellement 
+situ\'es dans {\bf /etc/init.d}, bien que leur localisation effective soit d\'ependante du syst\`eme 
+d'exploitation.
+
+Notez que seul le File Daemon a \'et\'e port\'e sur les syst\`emes Windows, et qu'il doit \^etre 
+d\'emarr\'e diff\'eramment. Veuillez consulter le chapitre  
+\ilink{La version Windows de Bacula}{_ChapterStart7} de ce manuel.
+
+Les paquetages rpm configurent les {\it daemons} pour qu'ils s'ex\'ecutent en tant 
+qu'utilisateur root et en tant que groupe bacula. Le processus d'installation rpm 
+se charge de cr\'eer le groupe bacula s'il n'existe pas sur le syst\`eme. Tout utilisateur 
+ajout\'e au groupe bacula h\'erite de l'acc\`es aux fichiers cr\'e\'es par les {\it daemons}. Pour 
+modifier ce comportement, \'editez les scripts de d\'emarrage des {\it daemons} :
+
+\begin{itemize}
+  \item /etc/bacula/bacula 
+  \item /etc/init.d/bacula-dir 
+  \item /etc/init.d/bacula-sd 
+  \item /etc/init.d/bacula-fd 
+\end{itemize}
+
+puis red\'emarrez-les.
+
+Le chapitre 
+\ilink{installation}{_ChapterStart17} de ce manuel indique comment installer 
+les scripts de d\'emarrage automatique des {\it daemons}.
+
+\section{Interagir avec le Director pour l'interroger sur l'\'etat de Bacula ou lancer des jobs}
+\index[general]{Jobs!Interagir avec le Director pour interroger l'\'etat de Bacula ou lancer des}
+\index[general]{Interagir avec le Director pour interroger l'\'etat de Bacula ou lancer des jobs}
+\addcontentsline{toc}{section}{Interagir avec le Director pour interroger l'\'etat de Bacula ou lancer des jobs}
+
+Pour communiquer avec le Director et pour s'enqu\'erir de l'\'etat de Bacula ou de jobs en 
+cours d'ex\'ecution, tapez simplement :
+
+./bconsole
+
+dans le r\'epertoire de plus haut niveau.
+
+Si vous avez install\'e la console GNOME et utilis\'e l'option {\bf \verb:--:enable-gnome} 
+de la commande configure, vous pouvez aussi utiliser la console GNOME en tapant : 
+
+./gnome-console
+
+Vous pouvez aussi utiliser le programme wxWidgets {\bf bwx-console}.
+
+Pour simplifier, nous ne d\'ecrirons ici que le programme {\bf ./bconsole}. La plus 
+grande partie de ce qui est d\'ecrit ici s'applique aussi aux programmes {\bf ./gnome-console} 
+et {\bf bwx-console}.
+
+La commande {\bf ./bconsole} lance le programme Console, qui se connecte au Director. 
+Bacula \'etant un programme r\'eseau, vous pouvez utiliser la Console depuis n'importe quelle 
+machine de votre r\'eseau. Cependant, la plupart du temps le Console est ex\'ecut\'ee sur la 
+m\^eme machine que le Director. En principe, la Console devrait produire un affichage 
+similaire \`a :  
+
+\footnotesize
+\begin{verbatim}
+[kern@polymatou bin]$ ./bconsole
+Connecting to Director lpmatou:9101
+1000 OK: HeadMan Version: 1.30 (28 April 2003)
+*
+\end{verbatim}
+\normalsize
+
+L'ast\'erisque est l'invite de commande de la console.
+
+Tapez {\bf help} pour obtenir la liste des commandes disponibles :
+
+\footnotesize
+\begin{verbatim}
+*help
+  Command    Description
+  =======    ===========
+  add        add media to a pool
+  autodisplay autodisplay [on/off] -- console messages
+  automount  automount [on/off] -- after label
+  cancel     cancel job=nnn -- cancel a job
+  create     create DB Pool from resource
+  delete     delete [pool=<pool-name> | media volume=<volume-name>]
+  estimate   performs FileSet estimate debug=1 give full listing
+  exit       exit = quit
+  help       print this command
+  label      label a tape
+  list       list [pools | jobs | jobtotals | media <pool> |
+             files jobid=<nn>]; from catalog
+  llist      full or long list like list command
+  messages   messages
+  mount      mount <storage-name>
+  prune      prune expired records from catalog
+  purge      purge records from catalog
+  query      query catalog
+  quit       quit
+  relabel    relabel a tape
+  release    release <storage-name>
+  restore    restore files
+  run        run <job-name>
+  setdebug   sets debug level
+  show       show (resource records) [jobs | pools | ... | all]
+  sqlquery   use SQL to query catalog
+  status     status [storage | client]=<name>
+  time       print current time
+  unmount    unmount <storage-name>
+  update     update Volume or Pool
+  use        use catalog xxx
+  var        does variable expansion
+  version    print Director version
+  wait       wait until no jobs are running
+*
+\end{verbatim}
+\normalsize
+
+Pour plus de d\'etails sur les commandes de la console, consultez le chapitre 
+\ilink{Console}{_ConsoleChapter} de ce manuel. 
+
+\section{ex\'ecuter un job}
+\label{Running}
+\index[general]{Job!ex\'ecuter un}
+\index[general]{ex\'ecuter un job}
+\addcontentsline{toc}{section}{Ex\'ecuter un job}
+
+A ce stade, nous supposons que vous avez :
+
+\begin{itemize}
+\item Configur\'e Bacula avec la commande {\bf ./configure \verb:--:your-options} 
+\item Compil\'e Bacula avec la commande {\bf make} 
+\item Install\'e Bacula avec la commande {\bf make install} 
+\item Cr\'e\'e votre catalogue avec, par exemple, la commande {\bf
+   ./create\_sqlite\_database} 
+\item Cr\'e\'e les tables du catalogue avec la commande {\bf
+   ./make\_bacula\_tables} 
+\item Eventuellement \'edit\'e votre fichier  {\bf bacula-dir.conf} pour le personnaliser 
+   quelque peu. ATTENTION ! Si vous modifiez le nom du Director ou son mot de passe, 
+   vous devez faire les modifications correspondantes dans les autres fichiers de 
+   configuration. Il est sans dout pr\'ef\'erable, pour l'instant, de ne rien changer.
+\item D\'emarr\'e Bacula avec la commande {\bf ./bacula start}
+\item Invoqu\'e le programme Console avec la commande {\bf ./bconsole}.
+\end{itemize}
+
+En outre, nous supposons pour le moment que vous utilisez les fichiers de configuration 
+par d\'efaut.
+
+Maintenant, entrez les commandes suivantes :
+
+\footnotesize
+\begin{verbatim}
+show filesets
+\end{verbatim}
+\normalsize
+
+Vous devriez obtenir quelque chose comme :
+
+\footnotesize
+\begin{verbatim}
+FileSet: name=Full Set
+      O M
+      N
+      I /home/kern/bacula/regress/build
+      N
+      E /proc
+      E /tmp
+      E /.journal
+      E /.fsck
+      N
+FileSet: name=Catalog
+      O M
+      N
+      I /home/kern/bacula/regress/working/bacula.sql
+      N
+\end{verbatim}
+\normalsize
+
+Il s'agit d'un {\bf FileSet} pr\'ed\'efini qui sauvegardera le r\'epertoire des 
+sources de Bacula. Les noms de r\'epertoires qui seront r\'eellement affich\'es 
+devraient correspondre \`a votre configuration. Dans une perspective de tests, 
+nous avons choisi un r\'epertoire de taille et de complexit\'e mod\'er\'ee (environ 
+40 Mo). Le FileSet {\bf Catalog} est utilis\'e pour sauvegarder le catalogue 
+Bacula et nous ne nous y attarderons pas pour le moment. Les entr\'ees {\bf I} 
+sont les fichiers ou r\'epertoires qui seront inclus dans la sauvegarde, tandis 
+que les entr\'ees  {\bf E} sont ceux qui en seront exclus, quand aux entr\'ees {\bf O}, 
+ce sont les options sp\'ecifi\'ees pour ce FileSet. Vous pouvez changer ce qui est 
+sauvegard\'e en modifiant la ligne {\bf File =} de la ressource {\bf FileSet}.
+
+
+Il est maintenant temps de lancer votre premi\`ere sauvegarde. Nous allons 
+sauvegarder votre r\'epertoire sources de Bacula vers un volume File dans votre 
+r\'epertoire {\bf /tmp} afin de vous montrer combien c'est facile. Saisissez :  
+
+\footnotesize
+\begin{verbatim}
+status dir
+\end{verbatim}
+\normalsize
+
+Vous devriez obtenir :
+
+\footnotesize
+\begin{verbatim}
+rufus-dir Version: 1.30 (28 April 2003)
+Daemon started 28-Apr-2003 14:03, 0 Jobs run.
+Console connected at 28-Apr-2003 14:03
+No jobs are running.
+Level          Type     Scheduled          Name
+=================================================================
+Incremental    Backup   29-Apr-2003 01:05  Client1
+Full           Backup   29-Apr-2003 01:10  BackupCatalog
+====
+\end{verbatim}
+\normalsize
+
+O\`u les dates et le nom du Director seront diff\'erents et en accord avec votre 
+installation. Ceci montre qu'une sauvegarde incr\'ementale est planifi\'ee pour 
+le job {\bf Client1} \`a 1h05, et qu'une sauvegarde full est planifi\'ee pour 
+le job {\bf BackupCatalog} \`a 1h10. Vous devriez remplacer le nom {\bf Client1} 
+par celui de votre machine, sinon vous risquez la confusion lorsque vous 
+ajouterez de nouveaux clients. Pour ma machine r\'eelle, j'utilise {\bf Rufus} 
+plut\^ot que {\bf Client1}.
+
+A pr\'esent, tapez :
+
+\footnotesize
+\begin{verbatim}
+status client
+\end{verbatim}
+\normalsize
+
+Vous devriez obtenir :
+
+\footnotesize
+\begin{verbatim}
+The defined Client resources are:
+     1: rufus-fd
+Item 1 selected automatically.
+Connecting to Client rufus-fd at rufus:8102
+rufus-fd Version: 1.30 (28 April 2003)
+Daemon started 28-Apr-2003 14:03, 0 Jobs run.
+Director connected at: 28-Apr-2003 14:14
+No jobs running.
+====
+\end{verbatim}
+\normalsize
+
+Dans ce cas, le client se nomme {\bf rufus-fd}, votre nom sera diff\'erent, mais la 
+ligne qui d\'ebute par {\bf rufus-fd Version...} est produite par votre File Daemon, 
+nous sommes donc maintenant surs qu'il fonctionne.
+
+Finalement, faites de m\^eme pour votre Storage Daemon :
+
+\footnotesize
+\begin{verbatim}
+status storage
+\end{verbatim}
+\normalsize
+
+Vous devriez obtenir :
+
+\footnotesize
+\begin{verbatim}
+The defined Storage resources are:
+     1: File
+Item 1 selected automatically.
+Connecting to Storage daemon File at rufus:8103
+rufus-sd Version: 1.30 (28 April 2003)
+Daemon started 28-Apr-2003 14:03, 0 Jobs run.
+Device /tmp is not open.
+No jobs running.
+====
+\end{verbatim}
+\normalsize
+
+Vous noterez que le p\'eriph\'erique du Storage Daemon par d\'efaut est nomm\'e {\bf File} 
+et qu'il utilise le p\'eriph\'erique {\bf /tmp}, qui n'est actuellement pas ouvert. 
+
+Maintenant, lancez un job :
+
+\footnotesize
+\begin{verbatim}
+run
+\end{verbatim}
+\normalsize
+ 
+Vous devriez obtenir :
+
+\footnotesize
+\begin{verbatim}
+Using default Catalog name=MyCatalog DB=bacula
+A job name must be specified.
+The defined Job resources are:
+     1: Client1
+     2: BackupCatalog
+     3: RestoreFiles
+Select Job resource (1-3):
+\end{verbatim}
+\normalsize
+
+Ici, Bacula affiche la liste des trois diff\'erents jobs que vous pouvez ex\'ecuter. 
+Choisissez le num\'ero {\bf 1} et validez (entr\'ee).
+
+Vous devriez obtenir :
+
+\footnotesize
+\begin{verbatim}
+Run Backup job
+JobName:  Client1
+FileSet:  Full Set
+Level:    Incremental
+Client:   rufus-fd
+Storage:  File
+Pool:     Default
+When:     2003-04-28 14:18:57
+OK to run? (yes/mod/no):
+\end{verbatim}
+\normalsize
+
+Prenez un peu de temps pour examiner cet affichage et le comprendre. Il vous 
+est demand\'e de valider, modifier ou annuler l'ex\'ecution d'un job nomm\'e 
+{\bf Client1} avec le FileSet {\bf Full Set} que nous avons affich\'e plus haut 
+en incr\'emental sur votre client rufus, utilisant le p\'eriph\'erique de stockage 
+{\bf File} et le pool {\bf Default} \`a la date indiqu\'ee sur la ligne "When".
+
+Nous avons le choix de valider ({\bf yes}), modifier un ou plusieurs des 
+param\`etres ci-dessus ({\bf mod}), ou de ne pas ex\'ecuter le job ({\bf no}). 
+
+Validez l'ex\'ecution du job ({\bf yes}), vous devriez imm\'ediatement obtenir 
+l'invite de commande de la console (un ast\'erisque). Apr\`es quelques minutes, 
+la commande {\bf messages} devrait produire un r\'esultat tel que :
+
+\footnotesize
+\begin{verbatim}
+28-Apr-2003 14:22 rufus-dir: Last FULL backup time not found. Doing
+                  FULL backup.
+28-Apr-2003 14:22 rufus-dir: Start Backup JobId 1,
+                  Job=Client1.2003-04-28_14.22.33
+28-Apr-2003 14:22 rufus-sd: Job Client1.2003-04-28_14.22.33 waiting.
+                  Cannot find any appendable volumes.
+Please use the "label"  command to create a new Volume for:
+    Storage:      FileStorage
+    Media type:   File
+    Pool:         Default
+\end{verbatim}
+\normalsize
+
+Le premier message signale qu'aucune sauvegarde full n'a jamais \'et\'e faite, et 
+que par cons\'equent Bacula \'el\`eve votre incr\'ementale en une Full (ce comportement 
+est normal). Le second message indique que le job a d\'emarr\'e avec le JobId 1 et le 
+troisi\`eme message vous informe que Bacula ne peut trouver aucun volume dans le 
+pool Default sur lequel \'ecrire les donn\'ees du job. Ceci est normal, car nous 
+n'avons encore cr\'e\'e (ou \'etiquet\'e) aucun volume. Bacula vous fournit tous les d\'etails 
+concernant le volume dont il a besoin. 
+
+A ce point, le job est bloqu\'e en attente d'un volume. Vous pouvez le v\'erifier 
+en utilisant la commande {\bf status dir}. Pour continuer, vous devez cr\'eer un 
+volume sur lequel Bacula pourra \'ecrire. Voici la manipulation :
+
+\footnotesize
+\begin{verbatim}
+label
+\end{verbatim}
+\normalsize
+
+Bacula devrait afficher :
+
+\footnotesize
+\begin{verbatim}
+The defined Storage resources are:
+     1: File
+Item 1 selected automatically.
+Enter new Volume name:
+\end{verbatim}
+\normalsize
+
+Entrez un nom commen\c {c}ant par une lettre et ne contenant que des chiffres et des lettres 
+(p\'eriodes, tirets et soulign\'e "\_" sont aussi autoris\'es). Par exemple entrez {\bf TestVolume001}, 
+vous devriez obtenir : 
+
+\footnotesize
+\begin{verbatim}
+Defined Pools:
+     1: Default
+Item 1 selected automatically.
+Connecting to Storage daemon File at rufus:8103 ...
+Sending label command for Volume "TestVolume001" Slot 0 ...
+3000 OK label. Volume=TestVolume001 Device=/tmp
+Catalog record for Volume "TestVolume002", Slot 0  successfully created.
+Requesting mount FileStorage ...
+3001 OK mount. Device=/tmp
+\end{verbatim}
+\normalsize
+
+Finalement, tapez la commande {\bf messages}, vous devriez obtenir quelque chose comme :
+
+\footnotesize
+\begin{verbatim}
+28-Apr-2003 14:30 rufus-sd: Wrote label to prelabeled Volume
+   "TestVolume001" on device /tmp
+28-Apr-2003 14:30 rufus-dir: Bacula 1.30 (28Apr03): 28-Apr-2003 14:30
+JobId:                  1
+Job:                    Client1.2003-04-28_14.22.33
+FileSet:                Full Set
+Backup Level:           Full
+Client:                 rufus-fd
+Start time:             28-Apr-2003 14:22
+End time:               28-Apr-2003 14:30
+Files Written:          1,444
+Bytes Written:          38,988,877
+Rate:                   81.2 KB/s
+Software Compression:   None
+Volume names(s):        TestVolume001
+Volume Session Id:      1
+Volume Session Time:    1051531381
+Last Volume Bytes:      39,072,359
+FD termination status:  OK
+SD termination status:  OK
+Termination:            Backup OK
+28-Apr-2003 14:30 rufus-dir: Begin pruning Jobs.
+28-Apr-2003 14:30 rufus-dir: No Jobs found to prune.
+28-Apr-2003 14:30 rufus-dir: Begin pruning Files.
+28-Apr-2003 14:30 rufus-dir: No Files found to prune.
+28-Apr-2003 14:30 rufus-dir: End auto prune.
+\end{verbatim}
+\normalsize
+
+Si rien ne se passe dans l'imm\'ediat, vous pouvez continuer de rentrer la 
+commande {\bf messages} jusqu'\`a ce que le job se termine, ou utiliser la 
+commande {\bf autodisplay on} afin que les messages soient affich\'es d\`es-qu'ils 
+sont disponibles.
+
+si vous faites {\bf ls -l} dans votre r\'epertoire {\bf /tmp}, vous verrez 
+l'\'el\'ement suivant : 
+
+\footnotesize
+\begin{verbatim}
+-rw-r-----    1 kern     kern     39072153 Apr 28 14:30 TestVolume001
+\end{verbatim}
+\normalsize
+
+Il s'agit du volume File que vous venez juste d'\'ecrire, et qui contient toutes 
+les donn\'ees du job que vous venez d'ex\'ecuter. Si vous ex\'ecutez d'autres jobs, 
+il seront ajout\'es \`a la suite de ce volume, \`a moins que vous n'ayez sp\'ecifi\'e 
+un autre comportement.
+
+Vous vous demandez peut-\^etre s'il va vous falloir \'etiqueter vous m\^eme chaque 
+volume que Bacula sera amen\'e \`a utiliser. La r\'eponse, en ce qui concerne les 
+volumes disque tels que celui que nous avons utilis\'e, est non. Il est possible 
+de param\'etrer Bacula pour qu'il cr\'e\'ee lui m\^eme les volumes. En revanche, 
+pour les volumes de type cartouche, il vous faudra tr\`es probablement 
+\'etiqueter chaque volume que vous voulez utiliser.
+
+Si vous souhaitez en rester l\`a, saisissez simplement {\bf quit} dans la 
+console, puis stoppez Bacula avec {\bf ./bacula stop}. Pour nettoyer 
+votre installation des r\'esultats de vos tests, supprimez le fichier 
+ {\bf /tmp/TestVolume001}, et r\'einitialisez votre catalogue en utilisant :
+
+\footnotesize
+\begin{verbatim}
+./drop_bacula_tables
+./make_bacula_tables
+\end{verbatim}
+\normalsize
+
+Notez bien que ceci supprimera toutes les informations concernant les jobs pr\'ec\'edemment 
+ex\'ecut\'es et que, si c'est sans doute ce que vous souhaitez faire en fin de phase de 
+test, ce n'est g\'en\'eralement pas une op\'eration souhaitable en utilisation normale.
+
+Si vous souhaitez essayer de restaurer les fichiers que vous venez de sauvegarder, 
+lisez la section suivante.
+
+\label{restoring}
+
+\section{Restaurer vos fichiers}
+\index[general]{Fichiers!Restaurer vos}
+\index[general]{Restaurer vos fichiers}
+\addcontentsline{toc}{section}{Restaurer vos fichiers}
+
+Si vous avez utilis\'e la configuration par d\'efaut et sauvegard\'e les sources de Bacula 
+comme dans la d\'emonstration ci-dessus, vous pouvez restaurer les fichiers sauvegard\'es 
+en saisissant les commandes suivantes dans la Console :  
+
+\footnotesize
+\begin{verbatim}
+restore all
+\end{verbatim}
+\normalsize
+
+Vous obtiendrez :
+
+\footnotesize
+\begin{verbatim}
+First you select one or more JobIds that contain files
+to be restored. You will be presented several methods
+of specifying the JobIds. Then you will be allowed to
+select which files from those JobIds are to be restored.
+
+To select the JobIds, you have the following choices:
+     1: List last 20 Jobs run
+     2: List Jobs where a given File is saved
+     3: Enter list of comma separated JobIds to select
+     4: Enter SQL list command
+     5: Select the most recent backup for a client
+     6: Select backup for a client before a specified time
+     7: Enter a list of files to restore
+     8: Enter a list of files to restore before a specified time
+     9: Find the JobIds of the most recent backup for a client
+    10: Find the JobIds for a backup for a client before a specified time
+    11: Enter a list of directories to restore for found JobIds
+    12: Cancel
+Select item:  (1-12): 
+\end{verbatim}
+\normalsize
+
+Comme vous pouvez le constater, les options sont nombreuses, mais pour l'instant, 
+choisissez l'option {\bf 5} afin de s\'electionner la derni\`ere sauvegarde effectu\'ee. 
+Vous obtiendrez :  
+
+\footnotesize
+\begin{verbatim}
+Defined Clients:
+     1: rufus-fd
+Item 1 selected automatically.
+The defined FileSet resources are:
+     1: 1  Full Set  2003-04-28 14:22:33
+Item 1 selected automatically.
++-------+-------+----------+---------------------+---------------+
+| JobId | Level | JobFiles | StartTime           | VolumeName    |
++-------+-------+----------+---------------------+---------------+
+| 1     | F     | 1444     | 2003-04-28 14:22:33 | TestVolume002 |
++-------+-------+----------+---------------------+---------------+
+You have selected the following JobId: 1
+Building directory tree for JobId 1 ...
+1 Job inserted into the tree and marked for extraction.
+The defined Storage resources are:
+     1: File
+Item 1 selected automatically.
+You are now entering file selection mode where you add and
+remove files to be restored. All files are initially added.
+Enter "done" to leave this mode.
+cwd is: /
+$
+\end{verbatim}
+\normalsize
+
+(J'ai tronqu\'e l'affichage \`a droite par soucis de lisibilit\'e.)
+Comme vous pouvez le constater au d\'ebut de cet affichage, Bacula conna\^it 
+vos clients, et puisque vous n'en avez qu'un, il est automatiquement 
+s\'electionn\'e. Il en va de m\^eme pour le FileSet. Bacula produit alors une 
+liste de tous les jobs qui constituent la sauvegarde courante. Dans le cas 
+pr\'esent, il n'y en a qu'un. Notez que le Storage Daemon est aussi 
+s\'electionn\'e automatiquement. Bacula est maintenant en mesure de produire 
+une {\bf arborescence} \`a partir de tous les fichiers qui ont \'et\'e 
+sauvegard\'es (il s'agit d'une repr\'esentation en m\'emoire de votre syst\`eme de 
+fichiers). A ce stade, vous pouvez utiliser les commandes {\bf cd },  {\bf ls} 
+et {\bf dir} pour naviguer dans l'arborescence et voir quels fichiers 
+peuvent \^etre restaur\'es. Par exemple, si je saisis {\bf cd /home/kern/bacula/bacula-1.30} 
+suivi de {\bf dir}, j'obtiens la liste de tous les fichiers du r\'epertoire source de 
+Bacula. Pour plus d'information sur ce sujet, veuillez consulter le chapitre 
+\ilink{La commande Restore}{_ChapterStart13}.
+
+Pour quitter, tapez simplement :
+
+\footnotesize
+\begin{verbatim}
+done
+\end{verbatim}
+\normalsize
+
+Vous obtiendrez :
+
+\footnotesize
+\begin{verbatim}
+Bootstrap records written to
+   /home/kern/bacula/testbin/working/restore.bsr
+The restore job will require the following Volumes:
+   
+   TestVolume001
+1444 files selected to restore.
+Run Restore job
+JobName:    RestoreFiles
+Bootstrap:  /home/kern/bacula/testbin/working/restore.bsr
+Where:      /tmp/bacula-restores
+Replace:    always
+FileSet:    Full Set
+Client:     rufus-fd
+Storage:    File
+JobId:      *None*
+When:       2005-04-28 14:53:54
+OK to run? (yes/mod/no):
+\end{verbatim}
+\normalsize
+
+Si vous acceptez ({\bf yes}), vos fichiers seront restaur\'es vers le r\'epertoire 
+{\bf /tmp/bacula-restores}. Si vous pr\'ef\'erez restaurer les fichiers \`a leurs 
+emplacements d'origine, vous devez utiliser l'option {\bf mod} et r\'egler 
+explicitement le param\`etre {\bf Where} \`a vide ou "/". Nous vous conseillons de 
+poursuivre avec  {\bf yes}. Apr\`es quelques instants, la commande {\bf messages} 
+devrait produire la liste des fichiers restaur\'es, ainsi qu'un r\'esum\'e du job 
+qui devrait ressembler \`a ceci :
+
+\footnotesize
+\begin{verbatim}
+28-Apr-2005 14:56 rufus-dir: Bacula 1.30 (28Apr03): 28-Apr-2003 14:56
+JobId:                  2
+Job:                    RestoreFiles.2005-04-28_14.56.06
+Client:                 rufus-fd
+Start time:             28-Apr-2005 14:56
+End time:               28-Apr-2005 14:56
+Files Restored:         1,444
+Bytes Restored:         38,816,381
+Rate:                   9704.1 KB/s
+FD termination status:  OK
+Termination:            Restore OK
+28-Apr-2005 14:56 rufus-dir: Begin pruning Jobs.
+28-Apr-2005 14:56 rufus-dir: No Jobs found to prune.
+28-Apr-2005 14:56 rufus-dir: Begin pruning Files.
+28-Apr-2005 14:56 rufus-dir: No Files found to prune.
+28-Apr-2005 14:56 rufus-dir: End auto prune.
+\end{verbatim}
+\normalsize
+
+Apr\`es avoir quitt\'e la Console, vous pouvez examiner les fichiers dans le 
+r\'epertoire {\bf /tmp/bacula-restores}, il contient l'arborescence avec tous 
+vos fichiers. Supprimez-le apr\`es avoir v\'erifi\'e :
+
+\footnotesize
+\begin{verbatim}
+rm -rf /tmp/bacula-restore
+\end{verbatim}
+\normalsize
+
+\section{Quitter le programme Console}
+\index[general]{Programme!Quitter Console }
+\index[general]{Quitter le programme Console}
+\addcontentsline{toc}{section}{Quitter le programme Console}
+
+Saisissez simplement la commande {\bf quit}. 
+\label{SecondClient}
+
+\section{Ajouter un client}
+\index[general]{Client!Ajouter }
+\index[general]{Ajouter un client }
+\addcontentsline{toc}{section}{Ajouter un client}
+
+Si vous \^etes parvenus \`a faire fonctionner tous les exemples ci-dessus, vous \^etes 
+sans doute pr\`et \`a ajouter un nouveau client (File Daemon), c'est \`a dire une seconde 
+machine que vous souhaitez sauvegarder. La seule chose \`a installer sur la nouvelle 
+machine est le binaire {\bf bacula-fd} (ou {\bf bacula-fd.exe} pour Windows) et son 
+fichier de configuration {\bf bacula-fd.conf}. Vous pouvez d\'emarrer en copiant le fichier 
+pr\'ec\'edemment cr\'e\'e moyennant une modification mineure pour l'adapter au nouveau client : 
+changez le nom de File Daemon ({\bf rufus-fd} dans l'exemple ci-dessus) en le nom 
+que vous avez choisi pour le nouveau client. Le mieux est d'utiliser le nom de 
+la machine. Par exemple :
+
+\footnotesize
+\begin{verbatim}
+...
+#
+# "Global" File daemon configuration specifications
+#
+FileDaemon {                          # this is me
+  Name = rufus-fd
+  FDport = 9102                  # where we listen for the director
+  WorkingDirectory = /home/kern/bacula/working
+  Pid Directory = /var/run
+}
+...
+\end{verbatim}
+\normalsize
+
+devient :
+
+\footnotesize
+\begin{verbatim}
+...
+#
+# "Global" File daemon configuration specifications
+#
+FileDaemon {                          # this is me
+  Name = matou-fd
+  FDport = 9102                  # where we listen for the director
+  WorkingDirectory = /home/kern/bacula/working
+  Pid Directory = /var/run
+}
+...
+\end{verbatim}
+\normalsize
+
+O\`u {\bf rufus-fd} est devenu {\bf matou-fd} (je ne montre qu'une partie du fichier). 
+Le choix des noms vous appartient. Pour l'instant, je vous recommande de ne rien changer 
+d'autre. Plus tard, vous changerez le mot de passe.
+
+Installez cette configuration sur votre seconde machine. Il vous faut maintenant 
+ajouter quelques lignes \`a votre {\bf bacula-dir.conf} pour d\'efinir le nouveau 
+File Daemon. En vous basant sur l'exemple initial qui devrait \^etre install\'e 
+sur votre syst\`eme, ajoutez les lignes suivantes (essentiellement, une copie des lignes 
+existantes avec seulement les noms modifi\'es) \`a votre {\bf bacula-dir.conf} :
+
+\footnotesize
+\begin{verbatim}
+#
+# Define the main nightly save backup job
+#   By default, this job will back up to disk in /tmp
+Job {
+  Name = "Matou"
+  Type = Backup
+  Client = matou-fd
+  FileSet = "Full Set"
+  Schedule = "WeeklyCycle"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Write Bootstrap = "/home/kern/bacula/working/matou.bsr"
+}
+# Client (File Services) to backup
+Client {
+  Name = matou-fd
+  Address = matou
+  FDPort = 9102
+  Catalog = MyCatalog
+  Password = "xxxxx"                  # password for
+  File Retention = 30d                # 30 days
+  Job Retention = 180d                # six months
+  AutoPrune = yes                     # Prune expired Jobs/Files
+}
+\end{verbatim}
+\normalsize
+
+Assurez-vous que le param\`etre Address de la ressource Storage a pour valeur 
+le nom pleinement qualifi\'e et non quelque chose comme "localhost". L'adresse 
+sp\'ecifi\'ee est envoy\'ee au client et doit \^etre un nom pleinement qualifi\'e. Si vous 
+utilisez "localhost", l'adresse du Storage Daemon ne sera pas r\'esolue 
+correctement, il en r\'esultera un {\it timeout} lorsque le File Daemon 
+\'echouera \`a connecter le Storage Daemon.
+
+Il n'y a rien d'autre \`a faire. J'ai copi\'e les ressources existantes pour cr\'eer 
+un second job (Matou) pour sauvegarder le second client (matou-fd). le client 
+se nomme {\bf matou-fd} et le job {\bf Matou}, le fichier bootstrap est modifi\'e 
+mais tout le reste est inchang\'e. Ceci signifie que Matou sera sauvegard\'e 
+avec la m\^eme planification sur les m\^emes cartouches. Vous pourrez changer ceci 
+plus tard, pour le moment, restons simples.
+
+La seconde modification consiste en l'ajout d'une nouvelle ressource Client 
+qui d\'efinit {\bf matou-fd} et qui a l'adresse correcte {\bf matou} (mais dans 
+la vraie vie, vous pouvez avoir besoin d'un nom pleinement qualifi\'e ou d'une 
+adresse IP. J'ai aussi conserv\'e le m\^eme mot de passe (xxxxx dans l'exemple).
+
+A ce stade, il suffit de red\'emarrer Bacula pour qu'il prenne en compte vos 
+modifications. L'invite que vous avez vu plus haut devrait maintenant 
+inclure la nouvelle machine.
+
+Pour une utilisation en production vous voudrez probablement utiliser 
+plusieurs pools et diff\'erentes planifications. Il vous appartient de faire les 
+adaptations qui seyent \`a vos besoins. Dans tous les cas, n'oubliez pas de 
+changer les mots de passe dans les fichiers de configuration du Director et 
+du Client pour des raisons de s\'ecurit\'e.
+
+Vous trouverez des astuces importantes concernant le changement des noms et mots de 
+passe, ainsi qu'un diagramme d\'ecrivant leurs correspondances dans la section 
+\ilink{Erreurs d'authentification}{AuthorizationErrors} du chapitre FAQ de ce manuel.
+
+\section{Lorsque la cartouche est pleine}
+\label{FullTape}
+\index[general]{pleine!Lorsque la cartouche }
+\index[general]{Lorsque la cartouche est pleine}
+\addcontentsline{toc}{section}{Lorsque la cartouche est pleine}
+Si vous avez planifi\'e votre job, il viendra un moment o\`u la cartouche sera pleine 
+et o\`u {\bf Bacula} ne pourra continuer. Dans ce cas, Bacula vous enverra un message 
+tel que :
+
+\begin{verbatim}
+rufus-sd: block.c:337 === Write error errno=28: ERR=No space left
+          on device
+\end{verbatim}
+\normalsize
+
+Ceci indique que Bacula a re\c {c}u une erreur d'\'ecriture \`a cause de la carouche pleine.
+Bacula va maintenant rechercher une cartouche utilisable dans le pool sp\'ecifi\'e 
+pour le job. Dans la situation id\'eale, vous avez r\'egl\'e correctement vos r\'etentions 
+et sp\'ecifi\'e que vos cartouches peuvent \^etre recycl\'ees automatiquement. Dans ce cas, 
+Bacula recycle automatiquement vos cartouches sorties de r\'etention et est en mesure 
+de r\'e\'ecrire dessus. Pour plus d'informations sur le recyclage, veuillez consulter 
+le chapitre \ilink{Recyclage}{_ChapterStart22} de ce manuel. Si vous constatez que 
+vos cartouches ne sont pas recycl\'ees correctement, consultez la section sur le 
+\ilink{Recyclage manuel}{manualrecycling} du chapitre Recyclage.
+
+Si comme moi, vous avez un tr\`es grand nombre de cartouches que vous \'etiquetez 
+avec la date de premi\`ere \'ecriture, si vous n'avez pas r\'egl\'e vos p\'eriodes de 
+r\'etention, Bacula ne trouvera pas de cartouche dans le pool et il vous enverra 
+un message tel que :
+
+\footnotesize
+\begin{verbatim}
+rufus-sd: Job kernsave.2002-09-19.10:50:48 waiting. Cannot find any
+          appendable volumes.
+Please use the "label"  command to create a new Volume for:
+    Storage:      SDT-10000
+    Media type:   DDS-4
+    Pool:         Default
+\end{verbatim}
+\normalsize
+
+Ce message sera r\'ep\'et\'e une heure plus tard, puis deux heures plus tard et 
+ainsi de suite en doublant \`a chaque fois l'intervalle \`a concurrence d'un jour 
+jusqu'\`a ce que vous cr\'eiez un volume.
+
+Que faire dans cette situation ?
+
+La r\'eponse est simple : d'abord, fermez le lecteur \`a l'aide de la commande 
+{\bf unmount} du programme Console. Si vous n'avez qu'un lecteur, il sera 
+s\'electionn\'e automatiquement, sinon assurez-vous de d\'emonter celui sp\'ecifi\'e 
+dans le message (dans ce cas {\bf STD-10000}).
+
+Ensuite, retirez la cartouche du lecteur et ins\'erez-en une vierge. Notez que 
+sur certains lecteurs anciens, il peut \^etre n\'ecessaire d'\'ecrire une marque de 
+fin de fichier ({\bf mt \ -f \ /dev/nst0 \ weof}) pour \'eviter que le lecteur 
+ne d\'eroule toute la cartouche lorsque Bacula tente de lire le label. (NDT : j'ai un doute, la vo dit : "to prevent the drive from running away when Bacula attempts to read the label.") 
+
+Finalement, utilisez la commande {\bf label} dans la console pour \'ecrire un 
+label sur le nouveau volume. la commande {\bf label} va contacter le Storage 
+Daemon pour qu'il \'ecrive l'\'etiquette logicielle. Si cette op\'eration se termine 
+correctement, le nouveau volume est ajout\'e au pool et la commande {\bf mount} est 
+envoy\'ee au Storage Daemon. Voyez les sections pr\'ec\'edentes de ce chapitre pour plus 
+de d\'etails sur l'\'etiquetage des cartouches.
+
+Bacula peut maintenant poursuivre le job et continuer d'\'ecrire les donn\'ees 
+sauvegard\'ees sur le nouveau volume.
+
+Si Bacula cycle sur un pool de volumes, au lieu du message ci-dessus 
+ "Cannot find any appendable volumes.", Bacula peut vous demander de 
+monter un volume particulier. Dans ce cas, essayez de le satisfaire. Si, pour 
+quelque raison, vous n'avez plus le volume, vous pouvez monter n'importe quel 
+autre volume du pool, pourvu qu'il soit utilisable, Bacula l'utilisera. 
+La commande  {\bf list volumes} du programme Console permet de d\'eterminer 
+les volumes utilisables et ceux qui ne le sont pas.
+
+Si, comme moi, vous avez param\'etr\'e correctement vos p\'eriodes de r\'etention, mais 
+n'avez plus aucun volume libre, vous pouvez r\'e-\'etiqueter et r\'e-utiliser un volume 
+comme suit :
+
+\begin{itemize}
+\item Saisissez {\bf list volumes} dans la console et s\'electionnez le volume le plus 
+anciens pour le r\'e-\'etiqueter.
+\item Si vos p\'eriodes de r\'etention sont judicieusement choisies, le volume devrait 
+avoir le statut {\bf Purged}.
+\item Si le statut n'est pas {\bf Purged}, il vous faut purger le catalogue des jobs \'ecrits 
+sur ce volume. Ceci peut \^etre fait avec la commande {\bf purge jobs volume} dans 
+la console. Si vous avez plusieurs pools, vous serez invit\'e \`a choisir lequel avant 
+de devoir saisir le VolumeName (ou MediaId).
+\item Enfin, utilisez simplement la commande  {\bf relabel} pour r\'e-\'etiqueter le 
+volume.
+   \end{itemize}
+
+Pour r\'e-\'etiqueter manuellement le volume, suivez les \'etapes suppl\'ementaire ci-dessous :
+
+\begin{itemize}
+\item Effacez le volume du catalogue avec la commande {\bf delete volume} dans la 
+console (s\'electionnez le VolumeName ou le MediaId lorsque vous y \^etes invit\'e).
+\item Utilisez la commande  {\bf unmount} pour d\'emonter l'ancienne cartouche.
+\item R\'e-\'etiquetez physiquement l'ancienne cartouche de sorte qu'elle puisse 
+\^etre r\'eutilis\'ee.
+\item Ins\'erez l'ancienne cartouche dans le lecteur. 
+\item Depuis la ligne de commande, saississez : {\bf mt \ -f \ /dev/st0 \ rewind} et 
+{\bf mt \ -f \ /dev/st0 \ weof}, o\`u vous prendrez soin de substituer la cha\^ine d\'esignant 
+ votre lecteur \`a {\bf /dev/st0}.  
+\item Utilisez la commande {\bf label} dans la console pour \'ecrire une nouvelle 
+\'etiquette Bacula sur votre cartouche.
+\item Utilisez la commande  {\bf mount}, si ce n'est pas r\'ealis\'e automatiquement, afin 
+que Bacula commence \`a utiliser la cartouche fraichement \'etiquet\'ee.
+\end{itemize}
+
+\section{D'autres commandes utiles de la console Bacula}
+\index[general]{Commands!autres commandes utiles de la console Bacula}
+\index[general]{autres commandes utiles de la console Bacula}
+\addcontentsline{toc}{section}{D'autres commandes utiles de la console Bacula}
+
+\begin{description}
+
+\item [status dir]
+   \index[console]{status dir }
+   Affiche un \'etat de tous les jobs en cours d'ex\'ecution ainsi que tous les 
+   jobs programm\'es dans les prochine 24 heures
+
+\item [status]
+   \index[console]{status }
+   Le programme Console vous invite \`a s\'electionner un {\it daemon}, puis 
+   il s'enquiert de l'\'etat de ce  {\it daemon}. 
+
+\item [status jobid=nn]
+   \index[console]{status jobid }
+   Affiche un \'etat du JobId nn s'il est en cours d'ex\'ecution. Le Storage 
+   Daemon est aussi contact\'e pour produire un \'etat du job.
+
+\item [list pools]
+   \index[console]{list pools }
+   Affiche la liste des pools d\'efinis dans le catalogue.
+
+\item [list media]
+   \index[console]{list media }
+   Affiche la liste des m\'edia d\'efinis dans le catalogue.
+
+\item [list jobs]
+   \index[console]{list jobs }
+   Affiche la liste de tous les jobs enregistr\'es dans le catalogue et squi ont \'et\'e 
+   ex\'ecut\'es.
+
+\item [list jobid=nn]
+   \index[console]{list jobid }
+   Affiche le JobId nn depuis le catalogue.
+
+\item [list jobtotals]
+   \index[console]{list jobtotals }
+   Affiche les totaux pour tous le jobs du catalogue.
+
+\item [list files jobid=nn]
+   \index[console]{list files jobid }
+   Affiche la liste des fichiers sauvegard\'es pour le JobId nn. 
+
+\item [list jobmedia]
+   \index[console]{list jobmedia }
+   Affiche des informations relatives aux m\'edia utilis\'es pour chaque job ex\'ecut\'e.
+
+\item [messages]
+   \index[console]{messages }
+   Affiche tous les messages redirig\'es vers la console.
+
+\item [unmount storage=storage-name]
+   \index[console]{unmount storage }
+   D\'emonte le lecteur associ\'e au p\'eriph\'erique de stockage d\'esign\'e par 
+   {\bf storage-name} s'il n'est pas en cours d'utilisation. Cette commande 
+   est utile si vous souhaitez que Bacula lib\`ere le lecteur. 
+
+\item [mount storage=storage-name]
+   \index[sd]{mount storage }
+   Le lecteur associ\'e au p\'eriph\'erique de stockage est mont\'e \`a nouveau. Lorsque 
+   Bacula atteint la fin d'un volume et vous demande d'en monter un nouveau, 
+   vous devez utiliser cette commande apr\`es avoir introduit une nouvelle 
+   cartouche dans le lecteur. En effet, c'est le signal qui indique \`a Bacula 
+   qu'il peut commencer \`a lire ou \'ecrire sur la cartouche.
+
+\item [quit]
+   \index[sd]{quit }
+   Permet de quitter le programme Console.
+\end{description}
+
+La plupart des commandes cit\'ees ci-dessus, \`a l'exception de  {\bf list}, 
+vous invitent \`a compl\'eter la liste des arguments fournis si vous 
+vous contentez d'entrer le nom de la commande.
+
+\section{D\'ebugger la sortie des daemons}
+\index[general]{D\'ebugger sortie daemons}
+\index[general]{Output!D\'ebugger daemons}
+\addcontentsline{toc}{section}{D\'ebugger la sortie des daemons}
+
+Si vous voulez d\'ebugger la sortie des {\it daemons} en cours d'ex\'ecution, 
+lancez-les, depuis le r\'epertoire d'installation, comme suit :
+
+\footnotesize
+\begin{verbatim}
+./bacula start -d100
+\end{verbatim}
+\normalsize
+
+Cette possibilit\'e peut vous fournir une aide pr\'ecieuse si vos {\it daemons} 
+ne d\'emarrent pas correctement. Normalement, la sortie des {\it daemons} est 
+dirig\'ee vers le p\'eriph\'erique NULL, avec un niveau de d\'ebuggage sup\'erieur \`a 
+z\'ero, elle est dirig\'ee vers le terminal de lancement.   
+
+Pour stopper les trois {\it daemons}, tapez simplement :
+
+\footnotesize
+\begin{verbatim}
+./bacula stop
+\end{verbatim}
+\normalsize
+
+dans le r\'epertoire d'installation.
+
+L'ex\'ecution de {\bf bacula stop} peut signaler des pids non trouv\'es. C'est Ok, 
+sp\'ecialement si l'un des {\bf bacula stop} est mort, ce qui est tr\`es rare.
+
+Pour faire une sauvegarde compl\`ete (Full) du syst\`eme, chaque File Daemon doit 
+\^etre ex\'ecut\'e en tant que root afin d'avoir les permissions requises pour acc\'eder 
+\`a tous les fichiers. Les autres {\it daemons} n'ont pas besoin des privil\`eges 
+root. Cependant, le Storage Daemon doit \^etre capable d'acc\'eder aux lecteurs, ce qui  
+Sur beaucoup de syst\`emes, n'est possible que pour root. Vous pouvez, au choix, 
+ex\'ecuter le Storage Daemon en tant que root, ou changer les permissions sur les 
+lecteurs pour autoriser les acc\`es non-root. MySQL et PostgreSQL peuvent \^etre 
+install\'es et ex\'ecut\'es avec un userid quelconque, les privil\`eges root ne sont pas 
+requis. 
+
+\section{Soyez patient lorsque vous d\'emarrez les {\it daemons} ou montez des 
+cartouches vierges}
+\index[general]{Soyez patient lorsque vous d\'emarrez les {\it daemons} ou montez des 
+cartouches vierges}
+\index[general]{Cartouches!Soyez patient lorsque vous d\'emarrez les {\it daemon}s ou montez}
+\addcontentsline{toc}{section}{Soyez patient lorsque vous d\'emarrez les {\it daemon}s 
+ou montez des cartouches vierges}
+
+Lorsque vous lancez les {\it daemons} Bacula, le Storage Daemon tente d'ouvrir 
+tous les p\'eriph\'eriques de stockage d\'efinis et de v\'erifier le volumes courrament 
+mont\'es. Il n'accepte aucune connection de la console tant que tous les p\'eriph\'eriques 
+n'ont pas \'et\'e v\'erifi\'es. Une cartouche qui a \'et\'e utilis\'e pr\'ec\'edemment doit \^etre 
+rembobin\'ee, ce qui, sur certain lecteurs, peut prendre plusieurs minutes. 
+Par cons\'equent, vous devriez faire preuve d'un peu de patience lorsue vous 
+tentez de contacter le Storage Daemon pour la premi\`ere fois apr\`es le 
+lancement de Bacula. Si vous avez un acc\`es visuel \`a votre lecteur, celui-ci 
+devrait \^etre pr\`et \`a l'emploi lorsque son t\'emoin lumineux cesse de clignoter. 
+
+Les m\^emes consid\'erations s'appliquent si vous avez mont\'e une cartouche vierge 
+dans un lecteur tels qu'un HP DLT. Il peut s'\'ecouler une \`a deux minutes avant 
+que le lecteur se rende compte que la cartouche est vierge. Si vous tentez 
+de la monter pendant cette p\'eriode, il est probable que vous aller geler votre 
+pilote SCSI (c'est le cas sur mon syst\`eme RedHat). Par cons\'equent, nous vous 
+enjoignons une fois encore \`a \^etre patient lors de l'insertion de cartouches vierges. 
+Laissez le lecteur s'initialiser avant de tenter d'y acc\'eder.
+
+\section{Probl\`emes de connection du FD vers le SD}
+\index[general]{Probl\`emes de connection du FD vers le SD }
+\index[general]{SD!Probl\`emes de connection du FD vers le}
+\addcontentsline{toc}{section}{Probl\`emes de connection du FD vers le SD}
+
+Si l'un ou plusieurs de vos File Daemons rencontre des difficult\'es \`a se connecter 
+au Storage Daemon, c'est tr\`es probablement que vous n'avez pas utilis\'e un nom 
+pleinement qualifi\'e pour la directive {\bf Address} de la ressource Storage 
+du fichier de configuration du Director. Le r\'esolveur de la machine cliente 
+(celle qui ex\'ecute le FD) doit \^etre capable de r\'esoudre le nom que vous avez 
+sp\'ecifi\'e dans cette directive en une adresse IP. Un exemple d'adresse ne 
+fonctionnant pas est {\bf localhost}. Un exemple qui pourrait fonctionner : 
+{\bf megalon}. Un exemple qui a encore plus de chances de fonctionner : 
+{\bf magalon.mydomain.com}. Sur les syst\`emes Win32, si vous ne disposez pas d'un 
+bon r\'esolveur (c'est souvent le cas sur Win98), vous pouvez essayer en utilisant 
+une adresse IP plut\^ot qu'un nom.
+
+Si votre adresse est correcte, assurez vous qu'aucun autre programme n'utilise 
+le port 9103 sur la machine qui h\'eberge le Storage Daemon. Les num\'eros de ports 
+de Bacula sont autoris\'es par l'IANA, et ne devraient donc pas \^etre utilis\'es par 
+d'autres programmes, mais il semble que certaines imprimantes HP les utilisent.
+Ex\'ecutez la commande {\bf netstat -a} sur la machine qui h\'eberge le Storage 
+Daemon pour d\'eterminer qui utilise le port 9103 (utilis\'e pour les communications 
+du FD vers le SD).
+
+\section{Options en ligne de commande des Daemons}
+\index[general]{Options en ligne de commande des Daemons}
+\index[general]{Options!en ligne de commande des Daemons}
+\addcontentsline{toc}{section}{Options en ligne de commande des Daemons}
+
+Chacun des trois {\it daemons} (Director, File, Storage) acceptent quelques options 
+sur la ligne de commande. En g\'en\'eral, chacun d'entre eux, de m\^eme que le 
+programme Console, admet les otpions suivantes :
+
+
+\begin{description}
+
+\item [-c \lt{}file\gt{}]
+   \index[sd]{-c \lt{}file\gt{} }
+   D\'efinit le fichier de configuration \`a utiliser. La valeur par d\'efaut est le 
+nom du {\it daemon} suivi de {\bf conf}, par exemple {\bf bacula -dir.conf} pour 
+le Director, {\bf bacula-fd} pour le File Daemon, et {\bf bacula-sd.conf} pour 
+le Storage Daemon.   
+
+\item [-d nn]
+   \index[sd]{-d nn }
+   Fixe le niveau de d\'ebuggage \`a la valeur {\bf nn}. Les niveaux les plus \'elev\'e 
+permettent d'afficher plus d'information sur STDOUT concernant ce que le {\it daemon} est 
+en train de faire.
+
+\item [-f]
+   Ex\'ecute le {\it daemon} en arri\`ere plan. Cette option est requise pour ex\'ecuter les 
+{\it daemon}s avec le debugger.
+
+\item [-s]
+   Ne pas capturer les signaux. Cette option est requise pour ex\'ecuter les 
+{\it daemon}s avec le debugger.
+
+\item [-t]
+   Lire les fichiers de configuration et afficher les messages d'erreur, et quitter 
+imm\'ediatement. Tr\`es utile pour tester la syntaxe de nouveaux fichiers de configuration.
+
+\item [-v]
+   Mode verbeux. Utile pour rendre les messages d'erreur et d'information plus complets.
+
+\item [-?]
+   Affiche la version et la liste des options.
+   \end{description}
+
+Le Director a les options sp\'ecifiques suivantes :
+
+\begin{description}
+
+\item [-r \lt{}job\gt{}]
+   \index[fd]{-r \lt{}job\gt{} }
+   Ex\'ecute le job d\'esign\'e imm\'ediatement. Ceci ne devrait servir qu'\`a des fins 
+de d\'ebuggage.
+\end{description}
+
+Le File Daemon les options sp\'ecifiques suivantes :
+
+\begin{description}
+
+\item [-i]
+   Suppose que le {\it daemon} est appel\'e par {\bf inetd}  ou {\bf xinetd}. Dans ce cas, 
+le {\it daemon} suppose qu'une connection est d\'ej\`a \'etablie et qu'elle est pass\'ee en tant que 
+STDIN. Le {\it daemon} s'arr\`ete d\`es que la connection se termine.
+\end{description}
+
+Le Storage Daemon n'a pas d'options sp\'ecifiques.
+
+Le programme Console n'a pas d'options sp\'ecifiques.
+
+\section{Cr\'eer un Pool}
+\label{Pool}
+\index[general]{Pool!Cr\'eer un }
+\index[general]{Cr\'eer un Pool }
+\addcontentsline{toc}{section}{Cr\'eer un Pool}
+
+La cr\'eation de pool est automatique au d\'emarrage de Bacula, aussi si vous 
+comprenez d\'ej\`a le concept de pools et leur fonctionnement, vous pouvez passer 
+\`a la section suivante.
+
+Lorsque vous ex\'ecutez un job, Bacula doit d\'eterminer quel volume utiliser pour 
+sauvegarder le FileSet. Plut\^ot que de sp\'ecifier un volume directement, vous 
+sp\'ecifiez l'ensemble de volumes dans lequel vous autorisez Bacula \`a puiser 
+lorsqu'il lui faut un volume pour \'ecrire les donn\'ees sauvegard\'ees. D\`es lors, Bacula 
+se charge de s\'electionner le premier volume utilisable dans le pool appropri\'e 
+au p\'eriph\'erique que vous avez sp\'ecifi\'e pour le job ex\'ecut\'e. Lorsqu'un volume est 
+plein, Bacula change son VolStatus de {\bf Append} en {\bf Full}, et utilise le 
+volume suivant, et ainsi de de suite. S'il n'y a pas de volume utilisable, 
+Bacula envoie un message \`a l'op\'erateur pour r\'eclamer la cr\'eation d'un  
+volume appropri\'e.
+
+{\bf Bacula} garde trace des noms de pools, des volumes contenus dans les pools, 
+et de plusieurs caract\'eristiques de chacun de ces volumes. 
+
+Lorsque Bacula d\'emarre, il s'assure que toutes les d\'efinitions de ressources Pool 
+ont \'et\'e enregistr\'ees dans le catalogue. Vous pouvez le v\'erifier avec la commande :
+
+\footnotesize
+\begin{verbatim}
+list pools
+\end{verbatim}
+\normalsize
+
+du programme Console, qui devrait produire quelque chose comme :
+
+\footnotesize
+\begin{verbatim}
+*list pools
+Using default Catalog name=MySQL DB=bacula
++--------+---------+---------+---------+----------+-------------+
+| PoolId | Name    | NumVols | MaxVols | PoolType | LabelFormat |
++--------+---------+---------+---------+----------+-------------+
+| 1      | Default | 3       | 0       | Backup   | *           |
+| 2      | File    | 12      | 12      | Backup   | File        |
++--------+---------+---------+---------+----------+-------------+
+*
+\end{verbatim}
+\normalsize
+
+Si vous tentez de cr\'eer un pool existant, Bacula affiche :
+
+\footnotesize
+\begin{verbatim}
+Error: Pool Default already exists.
+Once created, you may use the {\bf update} command to
+modify many of the values in the Pool record.
+\end{verbatim}
+\normalsize
+
+\label{Labeling}
+
+\section{Etiqueter vos Volumes}
+\index[general]{Volumes!Etiqueter vos}
+\index[general]{Etiqueter vos Volumes}
+\addcontentsline{toc}{section}{Etiqueter vos Volumes}
+
+Bacula exige que chaque volume comporte une \'etiquette (NDT : label) logicielle. 
+Il existe plusieurs strat\'egies pour \'etiqueter les volumes. Celle que j'utilise 
+consiste \`a les \'etiqueter \`a l'aide du programme Console au fur et \`a mesure qu'ils 
+sont requis par Bacula. Ainsi, lorsqu'il a besoin d'un volume qu'il ne trouve pas 
+dans son catalogue, Bacula m'envoie un e-mail pour m'enjoindre \`a ajouter un 
+volume au pool. J'utilise alors la commande  {\bf label} dans la console pour 
+\'etiqueter un nouveau volume et le d\'efinir dans le catalogue, apr\`es quoi Bacula 
+est en mesure de l'utiliser. Alternativement, je peux utiliser la commande 
+{\bf relabel} pour r\'e-\'etiquter un volume qui n'est plus utilis\'e, pourvu qu'il ait 
+le VolStatus {\bf Purged}.
+
+Une autre strat\'egie consiste \`a \'etiqueter un ensemble de volumes, et \`a les 
+utiliser au fur et \`a mesure que Bacula les r\'eclame. C'est le plus souvent ce qui 
+est fait lorsque vous cyclez sur un groupe de volumes, par exemple avec une 
+librairie. Pour plus de d\'etails sur le recyclage, veuillez consulter le 
+chapitre  \ilink{Recyclage automatique des volumes}{_ChapterStart22} de ce 
+manuel.
+
+Si vous ex\'ecutez un job Bacula alors que vous n'avez pas de volumes 
+\'etiquet\'es dans le pool concern\'e, Bacula vous en informe, et vous pouvez les 
+cr\'eer "\`a la vol\'ee". Dans mon cas, j'\'etiquette mes cartouches avec la date, 
+par exemple :  {\bf DLT-18April02}. Voyez ci-dessous pour plus de d\'etails 
+sur l'usage de la commande {\bf label}.
+
+\section{Etiquetage des volumes dans la console}
+\index[general]{Etiquetage des volumes dans la console}
+\index[general]{Console!Etiquetage des volumes dans la}
+\addcontentsline{toc}{section}{Etiquetage des volumes dans la console}
+
+L'\'etiquetage des volumes se fait, en principe, avec le programme Console.
+
+\begin{enumerate}
+\item ./bconsole  
+\item label 
+   \end{enumerate}
+
+Si Bacula annonce que vous ne pouvez \'etiqueter une cartouche au motif qu'elle 
+porte d\'ej\`a une \'etiquette, d\'emontez-la avec la commande {\bf unmount}, puis 
+recommencez avec une cartouche vierge.  
+
+Etand donn\'e que le support de stockage physique est diff\'erent pour chaque 
+p\'eriph\'erique, la commande {\bf label} vous propose une liste de ressources 
+Storage d\'efinies telle que celle-ci :
+
+\footnotesize
+\begin{verbatim}
+The defined Storage resources are:
+     1: File
+     2: 8mmDrive
+     3: DLTDrive
+     4: SDT-10000
+Select Storage resource (1-4):
+\end{verbatim}
+\normalsize
+
+A ce stade, vous devriez avoir une cartouche vierge dans votre lecteur 
+d'un type correspondant \`a la ressource Storage que vous avez s\'electionn\'e. 
+
+Bacula vous demande le nom du volume :
+
+\footnotesize
+\begin{verbatim}
+Enter new Volume name:
+\end{verbatim}
+\normalsize
+
+S'il proteste :
+
+\footnotesize
+\begin{verbatim}
+Media record for Volume xxxx already exists.
+\end{verbatim}
+\normalsize
+
+Cela signifie que le nom de volume {\bf xxxx} que vous avez entr\'e existe d\`ej\`a 
+dans le catalogue. Vous pouvez afficher la liste des m\'edia d\'efinis avec la 
+commande {\bf list media}. Notez que la colonne LastWritten a ici \'et\'e 
+tronqu\'ee pour permettre un affichage propre.
+
+\footnotesize
+\begin{verbatim}
++---------------+---------+--------+----------------+-----/~/-+------------+-----+
+| VolumeName    | MediaTyp| VolStat| VolBytes       | LastWri | VolReten   | Recy|
++---------------+---------+--------+----------------+---------+------------+-----+
+| DLTVol0002    | DLT8000 | Purged | 56,128,042,217 | 2001-10 | 31,536,000 |   0 |
+| DLT-07Oct2001 | DLT8000 | Full   | 56,172,030,586 | 2001-11 | 31,536,000 |   0 |
+| DLT-08Nov2001 | DLT8000 | Full   | 55,691,684,216 | 2001-12 | 31,536,000 |   0 |
+| DLT-01Dec2001 | DLT8000 | Full   | 55,162,215,866 | 2001-12 | 31,536,000 |   0 |
+| DLT-28Dec2001 | DLT8000 | Full   | 57,888,007,042 | 2002-01 | 31,536,000 |   0 |
+| DLT-20Jan2002 | DLT8000 | Full   | 57,003,507,308 | 2002-02 | 31,536,000 |   0 |
+| DLT-16Feb2002 | DLT8000 | Full   | 55,772,630,824 | 2002-03 | 31,536,000 |   0 |
+| DLT-12Mar2002 | DLT8000 | Full   | 50,666,320,453 | 1970-01 | 31,536,000 |   0 |
+| DLT-27Mar2002 | DLT8000 | Full   | 57,592,952,309 | 2002-04 | 31,536,000 |   0 |
+| DLT-15Apr2002 | DLT8000 | Full   | 57,190,864,185 | 2002-05 | 31,536,000 |   0 |
+| DLT-04May2002 | DLT8000 | Full   | 60,486,677,724 | 2002-05 | 31,536,000 |   0 |
+| DLT-26May02   | DLT8000 | Append |  1,336,699,620 | 2002-05 | 31,536,000 |   1 |
++---------------+---------+--------+----------------+-----/~/-+------------+-----+
+\end{verbatim}
+\normalsize
+
+Une fois que Bacula a v\'erifi\'e que le volume n'existe pas encore, il vous 
+demande le pool dans lequel vous souhaitez que le volume soit cr\'e\'e. S'il 
+n'existe qu'un pool, il est s\'electionn\'e automatiquement.
+
+Si la cartouche est \'etiquet\'ee correctement, un enregistrement de volume est 
+aussi cr\'e\'e dans le pool. Ainsi, le nom du volume et tous ses attributs 
+appara\^itront lorque vous afficherez les volumes du pool. De plus, le volume 
+est disponible pour les sauvegardes, pourvu que le MediaType co\"¨incide avec 
+celui requis par le Storage Daemon.
+
+Lorsque vous avez \'etiquet\'e la cartouche, vous n'avez r\'epondu qu'\`a quelques 
+questions la concernant -- principalement son nom, et \'eventuellement le {\it Slot}. 
+Cependant, un enregistrement de volume dans le catalogue (connu au niveau interne 
+en tant qu'enregistrement Media) contient un certain nombre d'attributs. 
+La plupart d'entre eux sont renseign\'es selon les valeurs par d\'efaut qui ont \'et\'e 
+d\'efinies lors de la cr\'eation du pool (au trement dit, le pool comporte la plupart des 
+attributs par d\'efaut utilis\'es lors de la cr\'eation d'un volume).  
+
+Il est aussi possible d'ajouter des media aux pools sans les \'etiqueter 
+physiquement. C'est la fonction de la commande {\bf add}. Pour plus 
+d'informations, veuillez consulterle chapitre \ilink{Console}{_ConsoleChapter} 
+de ce manuel. 

@@ -1,0 +1,17 @@
+              Technical notes on version 1.27 25Nov02  
+                     25 November 2002
+                       Kern Sibbald
+
+General:
+- Mostly Cygwin changes
+
+Changes submitted this submission:
+- Updated bdb_find.c to have new calling sequence for db_find_job_start_time
+- dird/catreq.c edit in Volume name in error messages to SD
+- attribs.c switch to using the cygwin API to convert from POSIX paths
+  to Win32 paths. This now permits Win32 path specifications in Include
+  statements (all combinations not yet tested).  It also avoids the large
+  number of errors seen by Lutz if a Win32 path is specified in the Dir.
+- Update testfind help and remove set_attribsEx debug code.      
+- Build testfind as default.
+- Turn off debug message in stored/askdir.c

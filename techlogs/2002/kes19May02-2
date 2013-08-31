@@ -1,0 +1,13 @@
+              Technical notes on version 1.20 19May02
+                       19 May 2002
+                       Kern Sibbald
+
+General:
+- Modified rwlock to accept multiple nested write lock
+  requests.
+
+Changes submitted this submission:
+- Modified the cats directory to use the new rwlock mechanism
+  in place of P() and V(). 
+- Defined db_lock(mdb) and db_unlock(mdb). They are in effect
+  transaction locks. 

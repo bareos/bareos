@@ -1,0 +1,31 @@
+              Technical notes on version 1.26 08Oct02  
+                      9 October 2002
+                       Kern Sibbald
+
+General:
+- More documentation.
+- Implemented new fill command in btape that permits filling
+  a tape and then reading it back to ensure that it works
+  with Bacula.
+
+Changes submitted this submission:
+- Added ReadBytes to JCR, which contains Job bytes read by
+  FD, JobBytes contains compressed output of FD.
+- Modified FD to pass back JobStatus, ReadBytes, JobBytes, ...
+  for backup jobs.  This is upward compatible.
+- Modified backup termination status report to contain the
+  compression ratio 100 * (1 - compressed-bytes/uncompressed-bytes)
+  This will always be zero if no software compression was
+  done, or if you are using a version 1.25 or older FD.
+- Pickup Job termination status of FD in backup, so now
+  the termination status represents the state of all three
+  daemons.
+- Implemented new fill command in btape that permits filling
+  a tape and then reading it back to ensure that it works
+  with Bacula.
+- Modified the default restore directory to be /tmp/bacula-restores
+  rather than /tmp. This is because if you restore / into /tmp, 
+  Bacula will reset /tmp with the permissions of /, which is 
+  most likely not what you want.  This way, only bacula-restores
+  gets modified -- thanks to William Lewis Brown for pointing this
+  out.

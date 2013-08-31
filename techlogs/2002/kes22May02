@@ -1,0 +1,10 @@
+              Technical notes on version 1.20 22May02
+                       22 May 2002
+                       Kern Sibbald
+
+General:
+
+Changes submitted this submission:
+- Move cached Path into mdb structure and use POOLMEM.
+- Fix verify bug introduced last update causing incorrect diffs 
+  by turning off autopruning.

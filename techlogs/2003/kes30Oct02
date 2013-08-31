@@ -1,0 +1,28 @@
+              Technical notes on version 1.27 01Nov02  
+                     30 October 2002
+                 and  1 November 2002
+                       Kern Sibbald
+
+General:
+- Alex found a problem with GZIP compression -- fixed.
+- bacula stript fixes.
+- Segment fault in Director fixed.
+- Added openbsd to platforms
+
+Changes submitted this submission:
+- GZIP compression was broken for large files due to a variable that
+  is changed during the compression. This was relatively easy to fix.
+  However, there were a number of fixes required to make GZIP and SPARSE
+  files work together. Found one more place in bextract where SPARSE_GZIP
+  testing was missing.
+- During testing of the above, I ran into the restore problem of multiple
+  FileSet records. Fixed by including the FileSetId and the MD5 on the
+  selection string, then always using the FileSetId. It is a bit
+  confusing for the user, but ...
+- Francis found a problem with bacula.in (fixed - thanks)
+- I found another problem with bacula.in, so now it REALLY should work
+  on most systems.
+- Added the Replace options code for restores. Not tested.
+- Fixed an ugly stack overrun bug in reading the config file
+  that has been in for a long time.  I found this in testing on FreeBSD
+  where the Director seg faulted.

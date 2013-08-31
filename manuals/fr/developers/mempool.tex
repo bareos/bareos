@@ -1,0 +1,234 @@
+%%
+%%
+
+\chapter{Bacula Memory Management}
+\label{_ChapterStart7}
+\index{Management!Bacula Memory}
+\index{Bacula Memory Management}
+\addcontentsline{toc}{section}{Bacula Memory Management}
+
+\section{General}
+\index{General}
+\addcontentsline{toc}{subsection}{General}
+
+This document describes the memory management routines that are used in Bacula
+and is meant to be a technical discussion for developers rather than part of
+the user manual. 
+
+Since Bacula may be called upon to handle filenames of varying and more or
+less arbitrary length, special attention needs to be used in the code to
+ensure that memory buffers are sufficiently large. There are four
+possibilities for memory usage within {\bf Bacula}. Each will be described in
+turn. They are: 
+
+\begin{itemize}
+\item Statically allocated memory. 
+\item Dynamically allocated memory using malloc() and free(). 
+\item Non-pooled memory. 
+\item Pooled memory. 
+   \end{itemize}
+
+\subsection{Statically Allocated Memory}
+\index{Statically Allocated Memory}
+\index{Memory!Statically Allocated}
+\addcontentsline{toc}{subsubsection}{Statically Allocated Memory}
+
+Statically allocated memory is of the form: 
+
+\footnotesize
+\begin{verbatim}
+char buffer[MAXSTRING];
+\end{verbatim}
+\normalsize
+
+The use of this kind of memory is discouraged except when you are 100\% sure
+that the strings to be used will be of a fixed length. One example of where
+this is appropriate is for {\bf Bacula} resource names, which are currently
+limited to 127 characters (MAX\_NAME\_LENGTH). Although this maximum size may
+change, particularly to accommodate Unicode, it will remain a relatively small
+value. 
+
+\subsection{Dynamically Allocated Memory}
+\index{Dynamically Allocated Memory}
+\index{Memory!Dynamically Allocated}
+\addcontentsline{toc}{subsubsection}{Dynamically Allocated Memory}
+
+Dynamically allocated memory is obtained using the standard malloc() routines.
+As in: 
+
+\footnotesize
+\begin{verbatim}
+char *buf;
+buf = malloc(256);
+\end{verbatim}
+\normalsize
+
+This kind of memory can be released with: 
+
+\footnotesize
+\begin{verbatim}
+free(buf);
+\end{verbatim}
+\normalsize
+
+It is recommended to use this kind of memory only when you are sure that you
+know the memory size needed and the memory will be used for short periods of
+time -- that is it would not be appropriate to use statically allocated
+memory. An example might be to obtain a large memory buffer for reading and
+writing files. When {\bf SmartAlloc} is enabled, the memory obtained by
+malloc() will automatically be checked for buffer overwrite (overflow) during
+the free() call, and all malloc'ed memory that is not released prior to
+termination of the program will be reported as Orphaned memory. 
+
+\subsection{Pooled and Non-pooled Memory}
+\index{Memory!Pooled and Non-pooled}
+\index{Pooled and Non-pooled Memory}
+\addcontentsline{toc}{subsubsection}{Pooled and Non-pooled Memory}
+
+In order to facility the handling of arbitrary length filenames and to
+efficiently handle a high volume of dynamic memory usage, we have implemented
+routines between the C code and the malloc routines. The first is called
+``Pooled'' memory, and is memory, which once allocated and then released, is
+not returned to the system memory pool, but rather retained in a Bacula memory
+pool. The next request to acquire pooled memory will return any free memory
+block. In addition, each memory block has its current size associated with the
+block allowing for easy checking if the buffer is of sufficient size. This
+kind of memory would normally be used in high volume situations (lots of
+malloc()s and free()s) where the buffer length may have to frequently change
+to adapt to varying filename lengths. 
+
+The non-pooled memory is handled by routines similar to those used for pooled
+memory, allowing for easy size checking. However, non-pooled memory is
+returned to the system rather than being saved in the Bacula pool. This kind
+of memory would normally be used in low volume situations (few malloc()s and
+free()s), but where the size of the buffer might have to be adjusted
+frequently. 
+
+\paragraph*{Types of Memory Pool:}
+
+Currently there are three memory pool types: 
+
+\begin{itemize}
+\item PM\_NOPOOL -- non-pooled memory. 
+\item PM\_FNAME -- a filename pool. 
+\item PM\_MESSAGE -- a message buffer pool. 
+\item PM\_EMSG -- error message buffer pool. 
+   \end{itemize}
+
+\paragraph*{Getting Memory:}
+
+To get memory, one uses: 
+
+\footnotesize
+\begin{verbatim}
+void *get_pool_memory(pool);
+\end{verbatim}
+\normalsize
+
+where {\bf pool} is one of the above mentioned pool names. The size of the
+memory returned will be determined by the system to be most appropriate for
+the application. 
+
+If you wish non-pooled memory, you may alternatively call: 
+
+\footnotesize
+\begin{verbatim}
+void *get_memory(size_t size);
+\end{verbatim}
+\normalsize
+
+The buffer length will be set to the size specified, and it will be assigned
+to the PM\_NOPOOL pool (no pooling). 
+
+\paragraph*{Releasing Memory:}
+
+To free memory acquired by either of the above two calls, use: 
+
+\footnotesize
+\begin{verbatim}
+void free_pool_memory(void *buffer);
+\end{verbatim}
+\normalsize
+
+where buffer is the memory buffer returned when the memory was acquired. If
+the memory was originally allocated as type PM\_NOPOOL, it will be released to
+the system, otherwise, it will be placed on the appropriate Bacula memory pool
+free chain to be used in a subsequent call for memory from that pool. 
+
+\paragraph*{Determining the Memory Size:}
+
+To determine the memory buffer size, use: 
+
+\footnotesize
+\begin{verbatim}
+size_t sizeof_pool_memory(void *buffer);
+\end{verbatim}
+\normalsize
+
+\paragraph*{Resizing Pool Memory:}
+
+To resize pool memory, use: 
+
+\footnotesize
+\begin{verbatim}
+void *realloc_pool_memory(void *buffer);
+\end{verbatim}
+\normalsize
+
+The buffer will be reallocated, and the contents of the original buffer will
+be preserved, but the address of the buffer may change. 
+
+\paragraph*{Automatic Size Adjustment:}
+
+To have the system check and if necessary adjust the size of your pooled
+memory buffer, use: 
+
+\footnotesize
+\begin{verbatim}
+void *check_pool_memory_size(void *buffer, size_t new-size);
+\end{verbatim}
+\normalsize
+
+where {\bf new-size} is the buffer length needed. Note, if the buffer is
+already equal to or larger than {\bf new-size} no buffer size change will
+occur. However, if a buffer size change is needed, the original contents of
+the buffer will be preserved, but the buffer address may change. Many of the
+low level Bacula subroutines expect to be passed a pool memory buffer and use
+this call to ensure the buffer they use is sufficiently large. 
+
+\paragraph*{Releasing All Pooled Memory:}
+
+In order to avoid orphaned buffer error messages when terminating the program,
+use: 
+
+\footnotesize
+\begin{verbatim}
+void close_memory_pool();
+\end{verbatim}
+\normalsize
+
+to free all unused memory retained in the Bacula memory pool. Note, any memory
+not returned to the pool via free\_pool\_memory() will not be released by this
+call. 
+
+\paragraph*{Pooled Memory Statistics:}
+
+For debugging purposes and performance tuning, the following call will print
+the current memory pool statistics: 
+
+\footnotesize
+\begin{verbatim}
+void print_memory_pool_stats();
+\end{verbatim}
+\normalsize
+
+an example output is: 
+
+\footnotesize
+\begin{verbatim}
+Pool  Maxsize  Maxused  Inuse
+   0      256        0      0
+   1      256        1      0
+   2      256        1      0
+\end{verbatim}
+\normalsize

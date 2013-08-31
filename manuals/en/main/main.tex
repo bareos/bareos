@@ -1,0 +1,117 @@
+%%
+%%
+%%  The following characters must be preceded by a backslash
+%%    to be entered as printable characters:
+%%
+%%   # $ % & ~ _ ^ \ { }
+%%
+
+\documentclass[10pt,a4paper]{book}
+
+\topmargin -0.5in
+\oddsidemargin 0.0in
+\evensidemargin 0.0in
+\textheight 10in
+\textwidth 6.5in
+
+
+\usepackage{html}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{bacula}
+\usepackage{longtable}
+\usepackage{makeidx}
+\usepackage{index}
+\usepackage{setspace}
+\usepackage{hyperref}
+% \usepackage[linkcolor=black,colorlinks=true]{hyperref}
+\usepackage{url}
+
+\makeindex
+\newindex{dir}{ddx}{dnd}{Director Index}
+\newindex{fd}{fdx}{fnd}{File Daemon Index}
+\newindex{sd}{sdx}{snd}{Storage Daemon Index}
+\newindex{console}{cdx}{cnd}{Console Index}
+\newindex{general}{idx}{ind}{General Index}
+
+\sloppy
+
+\begin{document}
+\sloppy
+
+\include{coverpage}
+
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagestyle{myheadings}
+\markboth{Bacula Version \version}{Bacula Version \version}
+\pagenumbering{arabic}
+\include{general}
+%%% \include{newbsfeatures}
+\include{newfeatures}
+\include{state}
+\include{requirements}
+\include{supportedoses}
+\include{supporteddrives}
+
+\include{quickstart}   % install
+\include{install}      % install
+\include{critical}     % install
+
+\include{tutorial}
+
+\include{configure}    % install
+\include{dirdconf}     % install
+\include{filedconf}    % install
+\include{storedconf}   % install
+\include{messagesres}  % install
+\include{consoleconf}  % install
+\include{monitorconf}  % install
+
+\include{restore}
+\include{recycling}
+\include{disk}
+\include{pools}
+\include{migration}
+\include{basejob}
+\include{strategies}
+\include{autochangers}
+\include{supportedchangers}
+\include{spooling}
+\include{statistics}
+\include{ansi-labels}
+\include{win32}
+\include{rescue}
+\include{tls}
+\include{dataencryption}
+\include{verify}
+
+\include{mysql}           % catalog
+\include{postgresql}      % catalog
+\include{sqlite}          % catalog
+\include{catmaintenance}  %catalog
+
+\include{tapetesting}   % install
+\include{security}        % install
+
+\include{bootstrap}
+\include{license}
+\include{fdl}
+\include{gpl}
+\include{lesser}
+\include{projects}
+\include{thanks}
+\include{bugs}
+
+% pull in the index
+\clearpage
+\printindex[general]
+\printindex[dir]
+\printindex[fd]
+\printindex[sd]
+\printindex[console]
+
+\end{document}

@@ -1,0 +1,59 @@
+
+          Release Notes for Bacula 1.33.4
+
+  Bacula code: Total files = 301 Total lines = 89,118 (*.h *.c *.in)
+
+Previously Christopher Hull released a version of the new native 
+Win32 File daemon that he implemented in Bacula. Since then we have
+corrected a number of problems, and I have written an installer
+script for the program based on the script from Michel Meyers and
+including elements (the style) from the installer written by
+Christopher Hull.
+
+This release is the first one that I have entirely compiled,   
+built, and tested myself. If you have installed a prior version, 
+I strongly recommend you upgrade as a number of bugs are now
+fixed.
+
+Please note this is Beta code, so if you run into difficulties 
+or find problems *please* report them.
+
+To install it:
+
+- Preferably uninstall any current Bacula File daemon you
+  have installed (not required, but may eliminate and error
+  message during the new install).
+
+- Make a copy of your current /bacula/bin directory, and  
+  preferably delete the contents except for your bacula-fd.conf
+  file (though this is not necessary).
+
+- Execute the released program, and answer all the questions.
+  It should all be self evident.
+
+Files Installed:
+
+- bacula-fd.exe, pthreadsVCE.dll, bacula-fd.conf (or bacula-fd.conf.new
+  if you already have one installed), and License.txt.
+
+- Compared to the previous installation, there isn't much here.
+
+Known problems:           
+
+- You can get an error message about Bacula being unable to install
+  if you have not uninstalled the old version. This error can be
+  ignored providing you are installing into the same directory.
+
+- The documentation is not yet included.
+
+After installing, if you are using a WinXP, NT, 2K system, you will
+need to restart the Bacula service from the Service menu (the manual
+shows you how to do this), or you can reboot. I recommend the former.
+
+This version runs with Bacula 1.33.4. It is reported to work with 
+Bacula 1.32f-4, but I have not personally tested it.      
+
+Good luck.
+      
+Many thanks to Christopher Hull for this marvelous software!
+  

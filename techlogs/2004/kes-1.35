@@ -1,0 +1,634 @@
+              Technical notes on version 1.35  
+                        Kern Sibbald
+
+General:
+
+Changes to 1.35.9:
+20Oct04
+- Fix altering PostgreSQL table to be compatible with version 7.3.
+19Oct04
+- Modify install of make_catalog_backup and delete_catalog_backup so
+  that it will not overwrite any existing file.
+- Additional documentation.
+- Modified detection of largefiles to always set all flags regardless
+  of the machine.
+- Modify autostart scripts to start Bacula late in the process and
+  terminate it early.
+- Drop CDImages table in drop database tables scripts.
+- Alter casting of (void *) in gnome2-console/restore.c to pass
+  by a (long int) so that it works with 64 bit machines.
+- Add more debug to heartbeat.c in FD for problem of dropped connections.
+18Oct04
+- Adjust priorities for starting/stopping daemons to be
+  started late and stopped early as suggested by Marc Williams.
+18Oct04
+- Adjust priorities for starting/stopping daemons to be
+  started late and stopped early as suggested by Marc Williams.
+18Oct04
+- Fix crash on exit with -t option in FD on 2.6 kernels -- 
+  uninitialized thread id variable.
+- Add additional SD and FD debug info to detect network hang.
+- Fix bnet_strerror() routine not to return stack pointer.
+- Put latest update routines in updatedb.
+16Oct04
+- Fix error during restore error reported by Christopher Hull when
+  no tape in the drive (open fails).
+- Add more precise error reporting to FD when a network error
+  occurs.
+15Oct04
+- Fix empty files reported by Marin (zero file_size in dev.c).
+- Update all the db update scripts to include the new multiple
+  key index on File proposed by Martin, and to fix up a few
+  minor things with PostgreSQL.
+- Apply Christopher Hull's patch for getting the catalog correct
+  during a restore.
+- Created a patch for 1.34.6 (and code in 1.35) to detect passing
+  the A option to the FD, which means enable ACL processing.
+  Submitted by Ben Vitale.
+13Oct04
+- Fix syntax error in make_mysql_tables.in pointed out by Scott.
+12Oct04
+- Add a kludge to detect bad date/times, which cause a seg fault in
+  Microsoft's version of localtime_r().  So, now we know that Microsoft
+  programmers do not check return codes!
+- Minor update to web site (new projects page).
+- Remove bigint for filenameid from postgresql table -- as demonstrated
+  by Martin, it has negative performance repercussions.
+- Rework getuser() and getgroup() to avoid any possible race condition 
+  by returning the value in a buffer rather than from the cached table.
+- Add a bit more debug code to the FD status output.
+
+Changes to 1.35.8:
+09Oct04
+- Documentation.
+- Integrate Peter Ericksson's dbx traceback scripts into Bacula
+08Oct04
+- Fix segfault in lsmark command in restore tree.
+- Fix segfault in editing numbers in count command of restore tree.
+- Add missing #define for IPV6 found by Martin in address_conf.c
+- Use strcasecmp() instead of strcmp() in address_conf.c
+07Oct04
+- Fix bug where SD crashes on label if drive is not open
+  (i.e. Always Open = no).
+- Added "Rerun Failed Levels = yes/no"
+- Made calling offline_or_rewind() non-fatal if the
+  device is not open.
+- Added Martin's suggestion to have multiple level index on
+  the file table.
+- Update doc
+- Fix misspelled #define in mysql.c for threading pointed out
+  by a user. 
+- Fix incorrect prototype.
+- Attempt to fix Solaris crash in SD during status command. 
+04Oct04
+- Fix backspace to first character in conio.c
+- Add umount command for Phil. :-)
+- Fix update volume volfrompool.
+- Modify restore to print an error message if the size of a
+  restored file does not correspond to the saved stat packet.
+- Fix count of files to be restored *not* to include 
+  top level created directories.
+
+Changes to 1.35.7:
+03Oct04
+- Apply Martin's patch that puts back the run pool override
+  code -- dumb me for removing it.
+
+Changes to 1.35.6:
+02Oct04
+- Fix typo in SD sscanf() of relabel command.
+- Create patches/README and the patch summary file.
+- Use different share mode when opening files on WinMe/98/95 since
+  SHARE_DELETE is not implemented on those systems.
+- In new syntax Includes, pass *all* files through the acceptance
+  filter so that no error messages will be printed for files that
+  cannot be opened if they are excluded.
+01Oct04
+- Fix bug 126 (Martin) -- prevent failed console label request from 
+  going into fixup code and thus trying to update the catalog.
+- Always fold case in fnmatch() on Win32 systems
+30Sep04
+- Create patches directory
+- Apply Martin's patch for fixing console modifications to Verify Jobs.
+- Fix Win32 so that it can backup files that are opened by programs
+  such as Word (certain open system files cannot be backed up).
+
+Changes to 1.35.5:
+29Sep04
+- Fix Storage overrides in Run directive
+- Fix seg fault in AlertCommand
+- Fix btape "test" and "fill" commands to work with new SD
+  data structures.  There are still problems ...
+26Sep04
+- Correct buffer length passed to inet_ntop() in address_conf.c
+- Increase the debug level of a lot of messages to reduce the
+  debugging "noise".
+- Modify how ST_APPEND is handled so that nothing is written
+  to the Volume if it is not set. It is now set only when
+  the Volume label is verified, and released when the volume
+  is released. This required a number of minor but rather
+  critical and fundamental changes.
+- Improve quickly terminating a job in the SD when it errs.
+  More status checking and a few additional checks on
+  job_canceled() and check more error return statuses.
+- Added a number of debug statements (to be removed later) that
+  check the VolCatName for a name.
+- Create a single subroutine that handles terminating writing
+  on a Volume at the end of the volume (or after an error).
+- Continued to add use of the berrno classs for strerror().
+25Sep04
+- Apply conio patches supplied by Peter Eriksson for configure.in
+  conio.h and conio.c to make it work better on Solaris.
+- Make run_grub print manual procedure for installing grub
+- Add extra setsockopt keepalive.
+- Add code to set as many options as possible in the system
+  tape driver for different OSes.
+24Sep04
+- Apply Peter Eriksson's patch to configure.in fixes finding
+  correct libs on Solaris to link conio -- bug 121
+- Add expected number of files to Verify VolumeToCatalog, and
+  if it does not equal the examined files, fail the job.
+  Fixes bug -- 114
+- Modify the depend section of each Makefile.in to reference $(CXX)
+  instead of $(CC) -- bug 118
+- Remove the word "restore" from the Volumes needed message in
+  dird/bsr.c since the message is used for Restore and Verify.
+- Fix initialization and copying of the storage resource when
+  starting jobs (and in jobq.c when restarting). In some cases
+  jcr->store was not set causing a segfault -- bug 116
+23Sep04
+- More doc.
+- Pass EndFile and EndBlock to SD.  
+22Sep04
+- Fixed bscan to close() drive between tapes.
+- Turn on transactions for SQLite and PostgreSQL if
+  multiple connections are turned on.
+- Removed stripping of filename in ua_tree insertion routine.
+- Fix split_path_and_filename() routines to return zero length
+  path and files.
+- Modify update_tables scripts to convert a single blank filename
+  into an empty filename.
+- Incremented the release number because this version requires
+  an update to the database.
+  Use:
+    cd src/cats
+    ./update_bacula_tables  
+  to update an existing database.
+- Implemented EndFile and EndBlock in the Media record. This will
+  allow Bacula to know exactly when to stop reading a tape if the
+  stupid tape driver does not give a logical end of tape indication 
+  and Bacula writes to the end of the tape getting an I/O error.
+- Added new routines to update the database, and there are
+  new database creation routines to add the two new Media columns.
+- The Media record is updated each time a JobMedia record is created.
+  This keeps the Media record up to date.
+- Undid the code to use automatic type converions to char * in
+  POOL_MEM. This is due to the ugly consequences of essentially
+  destroying the class type nature of the class.
+- Removed all the old mp_char() #define code.
+
+Changes to 1.35.4:
+22Sep04
+- Add additional doc.
+- Implement automatic POOL_MEM type conversion to char *. Thanks
+  to Martin Simmons for the suggestion.
+- Remove some unneeded function overloading -- need removed by
+  automatic type conversion.
+21Sep04
+- Correct segfault in message.c with debug=200 (new code).
+- Fix bug 109 verify with no options prints garbage.
+- Add ioctl(MTIOCGET) call to clrerror_dev() in dev.c. As reported
+  by Frank Kardel, this should clear error conditions on NetBSD.
+20Sep04
+- Modify the rescue script to create mount_drives with
+  the order specified by Philip Nash (mkdir, mount).
+- Tweak install chapter of French manual to add new paragraph
+  from English.
+- Tweak restore tree message to be a bit clearer.
+- Modify watchdog to wakeup after 60 seconds, or wakeup if
+  there is work to do.
+- Modify watchdog stop routine to "ping" watchdog so that it
+  stops immediately rather than after sleep time.
+- Fix btape to use new dcr blocks rather than its own.
+- Fix butil.c to correctly handle Volume names for the
+  utility routines (broke when updating to dcrs).
+11-19Sep04 (vacation)
+- Implement multiple Storage specifications in the Job resource
+  (AND) each containing multiple specifications (OR). Not yet functional.
+  Note, this needs more work as most things now use
+  job->storage[0]->first() rather than looping through devices.
+- Implement "Multiple connections = yes/no" in Catalog record for
+  allowing multiple simultaneous connections to the database.
+- Add new mac.c (Migrate, Archive, Copy) to dird -- not yet implemented.
+- Implement a new POOL_MEM class that automatically allocates
+  and deallocates a pool buffer.
+- Overload a number of utility routines to permit using both
+  POOLMEM and POOL_MEM.
+- Start converting to using POOL_MEM.
+- There were a number of Bacula console ACL checks missing in
+  ua_run.c. It allowed users to run jobs they really should not.
+- Correct a number of dates on the Copyright.
+- Overload pm_strcpy() and pm_strcat() to handle new POOL_MEM
+  class.
+- Overload bash/unbash_spaces to handle new POOL_MEM class.
+- Make a *MASSIVE* pass through the Storage daemon eliminating
+  all use of jcr->VolumeName and jcr->VolCatInfo in favor of
+  dcr->...  
+- Eliminate all all redundant arguments from calling sequences
+  in SD. This poses a number of problems due to the old way blocks
+  and records were allocated and released all the time. They are
+  now contained in the dcr. The problem is that old habits die hard
+  and there are still places where everything is not right.
+- Implement "Block positioning = yes/no" in Device resource in SD.
+
+Changes to 1.35.3
+09Sep04
+- Add "Multiple Connections = yes/no" in catalog record. Only
+  the variable is implemented, no code yet.
+- Close *all* FD unless debug on. 
+08Sep04
+- Add first cut of UTF-8 support to conio. It "seems" to be working
+  pretty well. Moving by words will definitely not work though.
+- Improve detection and setting of gateway in the 
+  network_start script.
+07Sep04
+- Modify scan code so that in most places scanning will
+  continue across the end of a line.
+05Sep04
+- Begin major phase of 1.35 documentation.
+- All outstanding bugs are fixed.
+- Implement changes and improvements to rescue scripts as
+  proposed by Gaurav.
+05Sep04
+- Add correction to Phil's previous patch.
+- Send all queued messages in SD and FD prior to closing down    
+  the job.
+- Send queued messages in Jobs before terminating the job 
+  so that the messages print before the job report.
+- Add a destructor so that the Console ACLs are properly
+  freed.
+04Sep04
+- Implement isolinux boot disk.
+- Integrate Phil Stracchino's code (thanks for Matt's help).
+  It permits lists and ranges of jobids on the delete as in:
+  delete job jobid=1,3,5,11-16
+03Sep04
+- Apply Mike Acar's suggestion when looking for the next volume
+  to check purged volumes for recycling before doing a purge.
+- Make some improvements to CDROM disk.
+- Take another crack at ignoring drive open() errors during
+  polling.
+02Sep04
+- Add eliminate orphaned job records; eliminate admin records,
+  and eliminate restore records to dbcheck.
+- replace sprintf by bsnprintf() in dbcheck.
+- Added scan target to makefile in rescue cd to print scsi
+  devices.
+- Added argument to berrno::strerror() to pass errno.
+- Cleaned up a few more old strerror() calls and eliminated a
+  few of the now unnecessary set_errno() calls.
+- Fixed a bug in the polling code that prevented more than 100
+  label reads (insanity check disabled if polling).
+- Ignore bad return from open_device() if polling.
+- Short circuit code if fatal error return from read_label() in
+  mount.c
+01Sep04
+- Add index file to JobId field of File records for PostgreSQL.
+- Correct several bugs in the job queue scheduler concerning   
+  rescheduled jobs: 1. The SD status was not cleared causing a
+  wrong status to be displayed by Dir after rescheduling. 2. All
+  rescheduled jobs became zombies because the jcr use_count was
+  not decremented properly.
+- Make the Catalog resource required in Client records.
+- Order the listing of where a file is (item 2 on the restore
+  menu) by StartTime.
+- Clarify when a filename only and a full path + filename must
+  be entered in items 2 and 8 of the restore menu.
+- Fix logic error in resolution of names on IPv4 systems.
+
+Changes to 1.35.2 released 01Sep04:
+30Aug04
+- Inhibit printing of FileSet for a restore as it is misleading.
+- Cleaned up a number of minor scripting problems with the CDROM
+  creation.
+- Fixed a race condition causing a Director crash on termination,
+  if a large number of SIGHUPs were sent during a multiple concurrent
+  set of backups.
+28Aug04
+- Completed integration of Rescue CD scripts with Bacula source.
+28Aug04
+- Added Ignore FileSet Changes = yes
+- Added more error checking to the spooling code.
+24Aug04
+- Applied a patch from Peter Eriksson that removes a dynamic stack
+  allocation (replaced by alloca) and fixes some const problems.
+- Fixed a free() of a static variable in the new IP code bnet.c
+- Got the new Bacula Rescue CDROM booting.
+- Replaced a dynamic template by a simple store when using the
+  native C compiler.
+- Reworked some of the block.c error handling.
+- Changed a Dmsgx(000, to Dmsgx(100 in dev.c that was dumping
+  debug output on a user.
+- Integrated patch from 1.34.6 block.c to 1.35
+17Aug04
+- Fix conio.c problem on Solaris.
+- Add debug code to lock_jcr_chain().
+- Lock jcr chain around less code.
+- Implement call by reference for Mmsg() and pm_strxxx() to
+  simplify calls.
+- New IP address specification is used as follows:
+    [sdaddresses|diraddresses|fdaddresses] = { [[ip|ipv4|ipv6] = { 
+           [[addr|port] = [^ ]+[\n;]+] }] }
+
+  so it could look for example like this:
+     SDaddresses  = { ip = {
+            addr = 1.2.3.4; port = 1205; }
+        ipv4 = {
+            addr = 1.2.3.4; port = http; }
+        ipv6 = {
+            addr = 1.2.3.4;
+            port = 1205;
+        }
+        ip = {
+            addr = 1.2.3.4
+            port = 1205
+        }
+        ip = {
+            addr = 1.2.3.4
+        }
+        ip = {
+            addr = 2001:220:222::2
+        }
+        ip = {
+            addr = bluedot.thun.net
+        }
+     }
+  as a consequence, you can now specify multiple IP addresses and
+  ports to be used. In the case of a server, it will listen on
+  all those that you specify. In the case of connecting to the server,
+  Bacula will attempt connecting to one at a time until it succeeds.
+  And, in a few other special cases, Bacula will use only the first
+  address specified.
+
+  The default port numbers are still the same and the services and hosts 
+  are also resolved by name. So now  you could use the real names for the 
+  port numbers.
+
+
+Version 1.35.1 (14Aug04) released 16 Aug 2004:
+Changes to 1.35.1:
+14Aug04
+- Print error message if Alert Command fails in bpipe_open().
+- Doc Alert command.
+- Eliminate unnecessary class in findlib/attribs.c
+- Add necessary empty files to new tray-monitor directory.
+13Aug04
+- Implement Class with template in findlib/attribs.c to do casting
+  of uint64_t into stat packet types to avoid compiler warnings.
+  Thanks to Meno for this idea.
+- Make some modifications to satisfy VC++.
+- Apply Martin Simmons' second patch to compat.cpp to fix the line
+  I previously missed.
+- Apply Meno's fix to bnet that corrects use of ipaddr after free_addresses,
+  back out my kludges, and it works.
+- Modified configure.in to by default add -Wall.
+12Aug04
+- Found some problems with printing IP addresses -- will notify Meno.
+- Added printing Pool to Job report.
+- Fixed several places where dlists were not being released 
+  (term_job_server, ...)
+- Started implementing New() for dlists. Spent a lot of time,
+  but could not get it to work.
+- Fixed a mutex deadlock between the job queue scheduler and the
+  watchdog.
+- Made add_address() static.
+- Added bsnprintf to address_conf.c
+10Aug04
+- Apply Marin Simmons patch to inet_aton() in compat.
+06Aug04
+- Build on Win32 -- required a few changes because of new IP code.
+- Implement program reader code in Dir and FD -- not tested, and
+  a few corrections for writer code are needed in FD.
+- Rework SQL for pruning. Add Admin pruning. Prune failed
+  jobs in Verify and Restore.
+- Don't put commas in listing produced in restore so that users
+  can cut and past JobIds without having commas in the way.
+- Change size_t to socklen_t in filed.c -- reindent a bit.
+- Remove addr_list->size from buf size definition in bnet.c
+- Create a Developer's document.
+- Add prompt for Update volume from pool and update all 
+  Volumes from pool.
+05Aug04
+- Implement user friendly time duration input editing.
+- Add buf len argument to edit_utime().
+- Added eliminate orphaned Client records to dbcheck.
+04Aug04
+- Implement Alert Command in SD Device conf. 
+- Fix updating a Volume from the pool record -- it never changed
+  anything.
+- Implement updating all Volumes from pool record.
+- Add patch by Denis Shaposhnikov that fixes excludes of directories
+  in new style FileSets.
+03Aug04
+- Merge Meno's IPv6-1 code.
+- Update License to terminate rights of anyone suing a GPL licensor.
+- Add Pruning doc sent by Bryce Denney
+- Correct inconsistencies in restore command doc pointed out by user.
+- Don't edit commas in SQL intergers if they are not stricly integer.
+30Jul04
+- Update all pools in all DBs when starting the Director.
+28Jul04
+- Implement final cut of berrno and update Win32 code.
+- Update copyright to include a termination clause. Add copyright to
+  binaries.
+- Implement .backups client=xxx for Nicolas.
+27Jul04
+- Make first cut at implementing berrno class to handle Unix, Win32
+  and bpipe errors. Bpipe still needs to be implemented.
+  This fixes (not yet tested) the Win32 errno problems in the compat lib.
+- Fix btape compile problem reported by Martin Simmons -- thanks.
+- Add ./configure detection of sys/tape.h
+26Jul04
+- Apply two fixes to recent changes to dev.c submitted by
+  Martin Simmons.
+24Jul04
+- Add checks in btape for correct size of off_t, and correct editing
+  of 32 and 64 bit values.
+- Move supported OS/hardware into a chapter by itself.
+- Fix bscan, which did not handle walking dcr list.
+- Remove old attach_jcr_to_device() code.
+- Fix config from Andy Wettstein's patch to use bitypes.h and detect
+  uint32_t, ... definitions.
+- Fix a few compiler warnings because of casting pointers to int and
+  vise versa.
+- Do some minor cosmetics to query.sql. nothing changed.
+- Don't call stop_thread_timer() in backup.c if timer not started.
+- Fix bug with out of order JobIds on restore.
+- Make watchdog examine queues once every 10 seconds instead of once
+  a second.
+22Jul04
+- Add more bools to dev.c
+- Fix walking attached DCRs in bscan.c
+21Jul04
+- Doc updates
+- Start work on rescue files. Integrated RAID changes. 
+- Print a message when query.sql moved to query.sql.old during install.
+- Move setting of FreeBSD chflags() to after utime() to avoid error
+  messages is immutable bit is set.
+18Jul04
+- Turn off heartbeat in FD when -s is given so that we can 
+  debug without a flood of signals.
+- Close and reopen the device during an append test in
+  btape. This better tests appending as if Bacula stops/restarts.
+- Remove old attach/detach_jcr_to_device() code
+- Add new attached_dcrs code.
+- Remove unnecessary subroutine for bsnprintf.
+- Replace sprintf() by home-grown code in edit_uint64 ...
+- Begin implementation of dev->attached_dcrs. 
+17Jul04
+- Remove scripts/fd.in from configure.in
+- Add printing of JobId when a Job is started from the console.
+16Jul04
+- Remove fd/fd.in from scripts directory.
+- Fix a number of bugs in dbcheck concerning the -c option
+  (i.e. with a config file).
+- Made RH start scripts use -u and -g options.
+- Many more DCR changes.
+- Add job message indicating that the job has been rescheduled
+  and when.
+- Fix job end time so that it is always updated. Previously it
+  was not updated when a job was rescheduled.
+- Correct SQL for restoring job by path/name. It could sometimes
+  pickup the wrong JobId -- submitted by a user.
+- Add a number of "%s" in editing database errors -- security issue.
+- Ensure that the NumVols is incremented and decremented in the
+  pool record when Volumes are created or deleted.
+- Cleanup error handling when labeling a tape. If vol was read-only,
+  the device would still be marked as having found a label.
+09Jul04
+- Put ftCreationTime into st_ctime of stat packet. Hopefully
+  this will fix the problem of noticing files have been moved
+  into the save path after a Full save.
+- Fix bug in "status dir" where not all entries are listed.
+- Cleanup some improper result printing in configure.
+- Optimize a couple of insertions in binary_insert of dlists.
+
+Release 1.35.0 08 July 2004:
+08Jul04
+- Apply Christopher Hull's const patch for PostgreSQL
+- Add code to block.c to detect if block header is destroyed.
+- Add debug code for memset checking for zeroing 1900-3000 bytes
+  which is what happened to the block headers.
+- If block header is destroyed, read the next block. Probably
+  should return with new status similar to the SHORT block 
+  return.
+- Add more debug info to bls for bad blocks.
+- More implementation of DCRs.
+07Jul04
+- Eliminate argument passing in SD by using dcr.
+- More int->bool conversions.
+- Add file:block to a number of read/write error messages.
+04Jul04
+- More int -> bool conversions.
+- Modify the SD piece by piece to use DCRs everywhere.
+- Cleanup some printout for query command. 
+- Fix typo in cats/mysql.c
+- Work on cleaning up tape driver a bit (use bools, better calling
+  sequences).
+- Attempt to fix multi-Volume disk backup. Needs to be tested.
+01Jul04
+- Add Regular expressions to FileSet options.
+- Correct configure.in to use ${MAKE} for doing the dependencies.
+- Make MySQL and PostgreSQL try for 30 seconds to connect before
+  giving up.  
+- Correct Gnome 1.4 Makefile to build without cats library.
+- Correct a crash reported (with patch) by Jonathan Soong 
+  when attempting to backup an ACL on a symlinked file.
+27Jun04
+- Fixed an off by one bug in the new resources pointer code.      
+  res_head array was one too small.
+- Added Errors to last_job list. This allows detecting jobs
+  that terminated in a warning.
+- Implement setting the Win32 icon to yellow instead of red
+  when the job terminated OK but with warnings.
+- Fix the Win32 makefile and VC project file. The links were
+  not including the Win32 dlls.      
+- Delete some old Win32 code that was turned off.
+- Eliminate a few more Win32 compiler warnings.
+- Reduce the output produced by NIS (Win32 install builder).
+- Simplify some of the #ifdefing in compat.h
+26Jun04
+- Rewrite spooling error handling when I/O error occurs. It is
+  a bit tricky, requiring to truncate the file so that a despooling
+  will work correctly. Needs to be tested.
+- Make better subroutines for setting up for a new job.
+- Start putting all DB ids on #defines (going to 64 bits).
+- Fix gnome-console Makefile.in to work again.
+- All "level=Incremental/Decremental" to the estimate command. This
+  required some re-arrangement of subroutines at a fairly low level.
+25Jun04
+- Apply Piotr Jaworski's patch (patch-r-status.diff) to update the
+  catalog status when a backup job starts running.
+24Jun04
+- Add (char*) cast to readline call in console.c for old readlines.
+- Copy Makefile.in from gnome2-console to gnome-console (to eliminate
+  need for cats library).
+- Modify spooling code to handle write error (e.g. spooling disk full)
+  more gracefully. Previously despooling would fail.
+22Jun04 
+- Reduce casting in smartall.c a bit and add counters for 
+  bytes, max_bytes, buffers and max_buffers.
+- Fixed reload algorithm to stack both job end callback and the
+  table id.
+- Fixed the orphaned buffer after reload (job_end_push had to be
+  destroyed.
+- Destroy cond var (jcr->term_wait) only if initialized.
+21Jun04
+- Sort the Scheduled Jobs list by start-time, priority.
+- Implement resources on a pointer.
+- Fix Gnome console crash on up/down arrow with no history.
+19Jun04
+- Finish first cut of SIGHUP code. To make really work need res
+  on a single pointer rather than in fixed memory.
+- Fix a number of places in query.sql where multiple JobIds are
+  printed (due to JobMedia records).
+- Add new query: List jobs on Volume given Volume name.   
+- Correct socket close on Win32 in bnet.c (in addition to compat.cpp).
+  Caused fd leak in Win32 for each connection.
+- Remove vol labeled test in askdir update_volume_info so that non-labeled
+  Volume in catalog can be marked in error.
+- Close socket in SD when connection rejected. Caused fd leaks.
+- Initialize job_start_wait cond variable after every new_jcr() otherwise
+  NetBSD gets error in library when trying to delete it without being inited.
+- Fix typo (9 instead of 0) return status in write_new_volume_label.
+- Fix mount.c to call routine that correctly marks a volume in error.
+- Move code to rewrite volume label to subroutine -- a bit cleaner.
+18Jun04
+- Finish implementation and testing of new restore tree code.
+- Implement feedback while tree is loading.
+- Eliminate printing INFO message in UpdateDB (cats) -- it generates
+  "false" error messages.
+- Eliminate some GTK error messages when running the Gnome2 console.
+16Jun04
+- Begin restructuring tree.c for inclusion of the binary_insert()
+  routine.         
+- Apply Peter Eriksson's lib file order changes in linking for IRIX.
+- Abort configure if Internal is  selected as the database.
+- Add testimonials to the Web page
+- Add the bugs list to the Web page "lists".
+- Clarify the English in SuSE and Slackware when SD not running.
+15Jun04
+- Applied another extern "C" patch from Peter Eriksson.
+- Fixed a bunch of VC warning messages.
+- Applied the patches sent by Andreas Jellinghaus: build Gnome and  
+  wx-console in client-only build if configured; add ./configure option
+  to permit setting of sbin modes -- default is 0745 as before; remove
+  cats library from Gnome console build; remove old version from Gnome
+  About box. Thanks Andreas.
+14Jun04
+- Applied Peter Eriksson's const changes to the source code. Thanks Peter.
+- Implemented a binary_insert() method for dlists -- intended to be used
+  in the restore tree routines.
+- Turned on my bsscanf() code, which replaces sscanf() by my routines, which
+  are a subset of sscanf() used by Bacula, but which have known 32/64 bit
+  behavior rather than vendor dependent !@#$%*.

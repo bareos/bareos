@@ -1,0 +1,19 @@
+#!/bin/sh
+if [ $# != 1 ] ; then
+  echo "First argument must be language, e.g.: send en|es|de|fr"
+  echo " "
+  exit 1
+fi
+cwd=`pwd`
+lang=$1
+src=$cwd/manuals/${lang}
+
+dest=bacula:/var/www/bacula/5.2.x-manuals/${lang}
+
+for i in console developers main misc problems utility; do
+  echo " "
+  echo "Sending: $src/$i"
+  echo "To:      $dest/$i"
+  rsync -avz --delete -e ssh $src/$i/        $dest/$i/
+  rsync -avz --delete -e ssh $src/$i/$i.pdf  $dest/$i/
+done

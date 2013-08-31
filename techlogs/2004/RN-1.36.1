@@ -1,0 +1,76 @@
+
+          Release Notes for Bacula 1.36.1
+
+  Bacula code: Total files = 396 Total lines = 116,418 (*.h *.c *.in)
+
+
+Major Changes:
+- There is a new Win32 pebuilder rescue disk thanks to Scott. This
+  is worth the effort to checkout.
+- A number of indexes have been removed from the PostgreSQL
+  database to improve performance during backups. You may need to
+  add these indexes if you do Verifies. See the scripts.
+- We now have a Gentoo ebuild -- thanks Scott.
+- There are a number of new ./configure options for the 
+  bimagemgr. Please see the documentation or ./configure --help
+- The RedHat autostart scripts disable using /lib/tls. If you
+  don't want this you will need to turn it off.
+- Corrected a problem with the default SD and FD conf files that
+  incorrectly set Maximum Concurrent Jobs = 1. This prevented
+  running a job and obtaining the status at the same time.
+- All daemon messages are now prefixed with a short date/time,
+  and queued messages (generated in the comm routines) have the
+  time the message was generated rather than the time the message
+  was sent (usually much later).
+- Fixed a bug with the autochanger code not respecting the InChanger
+  flag.
+
+
+New Directives:
+- None since 1.36.0
+
+New Commands:
+- None since 1.36.0
+
+Items to note!!!
+- The output from Job reports has been modified to include the 
+  seconds on the start/end times, the Storage device used, and to
+  indent the output differently.
+- If you created a PostgreSQL database under version 1.36.0, there
+  are two things you might want to do. 1. manually remove some
+  of the File table indexes to improve backup performance. See the
+  make_postgresql_tables script. 2. run fix_postgresql_tables (in
+  src/cats and updatedb) to correct a table. This is necessary only
+  if you are creating disk Volumes greater than 2GB.
+- As of 1.35.5 you MUST do a database update.
+  
+  cd scripts-dir (or src/cats)
+  ./update_bacula_tables
+   
+- All daemons should be compatible with 1.34 with the exception
+  of the new FileSet features such as regular expressions.
+- Regular expressions are not supported in the Win32 FD.
+
+Other Items:
+- It is now possible to build the Rescue CDROM using a pre-installed
+  static Bacula FD.
+- Corrected a bug in the traceback code when Bacula was executed without
+  a path. Tracebacks should now work in more cases.
+- Corrected a typo in the traceback script.
+- Fixed the mtx autochanger script so that it correctly waits on
+  Linux systems (if you manually enable the code).
+- Added grant all on cdimages for PostgreSQL users of bimagemgr.
+- The actual Job start time is now correctly recorded in the catalog.
+- You can now specify a JobId (or multiple ones separated by commas) on
+  the restore command line.
+- A -d50 will now turn on lots of debug code if you are having
+  authentication errors.
+- Found a workaround to a /lib/tls pthreads bug (a library seg fault).
+- Added an ALERT message class for Alert messages.
+- Fixed a seg fault in the restore tree routine when attempting
+  to select certain files in the root directory.
+- Allow other jobs to request new Volumes while operator intervention
+  is needed -- previously all stalled.
+- Enhancements to btape test (don't loop if certain tape errors occur).
+- Improvements to the Win32 install.
+

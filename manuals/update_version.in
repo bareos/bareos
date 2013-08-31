@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# Script file to update the Bacula version
+#
+out=/tmp/$$
+VERSION=`sed -n -e 's/^#define VERSION.*"\(.*\)"$/\1/p' @bacula@/src/version.h`
+DATE=`sed -n -e 's/^#define BDATE.*"\(.*\)"$/\1/p' @bacula@/src/version.h`
+. @BUILD_DIR@/manuals/do_echo
+sed -f ${out} @BUILD_DIR@/manuals/version.tex.in >version.tex
+rm -f ${out}

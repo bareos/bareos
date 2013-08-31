@@ -1,0 +1,60 @@
+              Technical notes on version 1.7 10Dec01
+                       12 December 2001
+                        Kern Sibbald
+
+General:
+- The size keeps growing: Total files = 169 Total lines = 40504
+- All daemons must be updated at the same time as the
+  Job Start protocol between the Director and File daemon
+  changed.
+- Major rework of how JCRs are handled so that they
+  are always locked when walking the JCR chain. 
+- JCRs now have use_count, and global free_jcr() routine,
+  with daemon specific routine provided in new_jcr() call.
+- Storage daemon is now Job reentrant.
+- Updated the Copyright to include 2002.
+- Tested RESTORE, fixed to handle DOS restore to Unix,
+  and fixed some directory permission creation bugs.
+
+Changes submitted this submission:
+- Implemented a general db_list_sql_query() so that
+  the Console program can submit arbitrary catalog 
+  queries.
+- Reworked rl_catch_signals so that it works on Win32.
+- Added authentication between the Storage daemon and the
+  Client. Also provide a random authorization key.
+- Consolidated more variables in the global part of the
+  JCR record.
+- Improved setting JobStatus.
+- Storage daemon now passes JobStatus changes back to the
+  Director.
+- Removed obsoleted File daemon job id from Job Start protocol.
+- Require confirm on Cancel command if there is only
+  one Job to be cancelled.
+- Added a prompt for the run command when running a restore
+  job.
+- Added two new Console commands:
+
+  sqlquery    prompts for a command and submits it
+              to the SQL engine.  
+
+  query       prompts for submitting a "canned" command.
+              There are currently 3 canned commands.
+
+              "List where a file is saved"
+              "List total files/bytes by Job"
+              "List total files/bytes by Volume"
+
+- Improved Status output -- more precise information on wait
+  conditions when doing Director status.  More improvements
+  to come.
+- File deamon now reports "Files examined" in Status output.
+  This is significant when doing an incremental backup where
+  a lot of files are examined but few are saved.
+- Fixed a bad status check when opening a drive in the
+  Storage daemon (forgot to change for updated calling sequence).
+- When RESTORING if a file could not be created, there were a
+  pile of error messages due to a bug with the stream not being
+  synchronized -- fixed.
+- Removed debug code that set the interval between mount messages
+  to 1 hour -- this bit John.

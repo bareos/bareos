@@ -1,0 +1,23 @@
+              Technical notes on version 1.27 18Nov02  
+                     18 and 19 November 2002
+                       Kern Sibbald
+
+General:
+- Did a number of cleanups of string copying to limit the length
+  and prevent buffer overflows.
+
+Changes submitted this submission:
+- Added a mutex arount the gethostbyname() so that multiple simultaneous
+  jobs get the correct address.
+- Added the MaxVolJobs to the Media alter tables script for MySQL (forgot it).
+- Changed arg to db_find_job_start_time to be POOLMEM for returning the string.
+- Add the new VolUseDuration and MaxVolJobs to all the db_ routines.
+- Use bstrncpy() in most places in the db_ routines to prevent a bad 
+  database from crashing Bacula (self protection).
+19Nov02
+- Added the Bacula version to each job output so that I can more easily tell
+  what version a user is running.
+- Allowed commas to separate the options on an Include line. A subtle bug
+  prevented this from working previously.
+- Add Used to list of Volume Statuses that can be recycled.
+- Make a single copy of mark_media_purged() in ua_purge.c

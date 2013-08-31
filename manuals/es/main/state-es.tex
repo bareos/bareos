@@ -1,0 +1,249 @@
+%%
+%%
+
+\chapter{El estado actual de Bacula}
+\label{StateChapter}
+\index[general]{Estado actual de Bacula }
+
+En otras palabras, que está y que no está implementado y funcional..
+
+\section{Que está implementado}?
+\index[general]{Implemented!What}
+\index[general]{Que está implementado?}
+
+\begin{itemize}
+\item Control de trabajos (jobs) 
+
+   \begin{itemize}
+   \item Respaldos y restauraciones en red con un director centralizado.
+   \item Scheduler interno para ejecución automática de los 
+      \ilink{Jobs}{JobDef}.  
+   \item Scheduling de múltiples jobs al mismo tiempo.  
+   \item Se puede correr uno o múltiples jobs en forma simultánea 
+         (algunas veces, esto se denomina multiplexado (multiplexing)).
+   \item Uso de prioridades para la secuencialidad de los jobs.
+   \item \ilink{Interfaz de Consola}{UADef} con el director, permitiendo un control completo
+      de las operaciones. Diferentes versiones de programas de consola están disponibles,
+      tales como línea de comandos, Qt4 GUI, GNOME GUI y wxWidgets. Hay que destacar, que
+      el programa de Qt4 GUI, se denomina bacula administration tool o bat, y ofrece mas
+      funcionalidades adicionales al programa de shell.
+   \end{itemize}
+
+\item Seguridad 
+   \begin{itemize}
+   \item Verificación de archivos, que han sido previamente catalogados, permitiendo con esto, 
+      un conjunto de funcionalidadaes como las ofrecidas con Tripwire (sistema de detección
+      de vulnerabilidades)(\url{http://es.wikipedia.org/wiki/Tripwire} ).  
+   \item Autenticación con password CRAM-MD5 entre cada uno de los componentes (demonios).
+   \item Encriptación configurable de comunicaciones 
+      \ilink{TLS (SSL)}{CommEncryption} entre cada uno de los componentes.
+   \item Encriptación configurable de la 
+   \ilink{Data (en un Volumen)}{DataEncryption}
+      definidas cliente por cliente.
+   \item Firmas de MD5 y SHA1 de la data de los archivos, de ser necesaria.   
+   \end{itemize}
+
+\item Funcionalidades para las restauraciones
+   \begin{itemize}
+   \item Recuperación de uno o más archivos, seleccionados interativamente desde el backup
+      actual o previos a una hora y fecha indicada.  
+   \item Restauración de un sistema completo, para un equipo nuevo (bare metal). 
+      Este procedimiento está completamente automatizado para sistemas Linux y 
+      parcialmente automatizado para Solaris. Vea el capítulo de 
+      \ilink{Disaster Recovery utilizando Bacula}{RescueChapter}. También se ha reportado que 
+      funciona en sistemas con Win2K/XP.   
+   \item Listado y recuperación de archivos stand-alone, utilizando programas utilitarios como {\textbf bls} and  
+      \textbf {bextract}. Entre otras cosas, estos permiten la extracción
+      de archivos cuando bacula y/o el catálogo no están disponibles. Hay que tener presente,
+      que la manera adecuada para recuperar archivos es utilizando el comando restore en
+      la consola. Estos programas están diseñados para ser usados como un último recurso. 
+   \item Capacidad para restaurar la base de datos del catálogo de manera rápida con el uso
+      de archivos bootstrap (grabados previamente).
+   \item Capacidad para restaurar la base de datos del catalogo utilizando el programa 
+      \textbf {bscan}, a traves del escaneo de los volúmenes de backup.  
+   \end{itemize}
+
+\item Catálogo SQL
+   \begin{itemize}
+   \item Base de datos de catálogo para almacenar información de: volúmenes, pools, jobs y
+      archivos respaldados. 
+   \item Soporte para el catálogo con bases de datos MySQL, PostgreSQL y SQLite.  
+   \item Consultas de usuario extensibles a las bases de datos MySQL, PostgreSQL y SQLite.  
+   \end{itemize}
+
+\item Administración avanzada de pools y de volúmenes
+   \begin{itemize}
+   \item Etiquetado de volúmenes, para prevenir la sobreescritura accidental de los mismos
+      (al menos por Bacula).
+   \item Cualquier número de jobs y de clientes pueden ser respaldados a un simple volumen.
+      Es decir, se puede hacer backup y recuperaciones de máquinas Linux, Unix, Sun y Windows
+      a un mismo volumen.  
+   \item Backup multivolumen. Cuando un volumen está full, \textbf {Bacula}  automáticamente
+      busca el siguiente volumen y continúa el respaldo.  
+   \item La administración de la librería de
+      \ilink{pools y de volumenes}{PoolResource}  
+      brinda una gran flexibilidad para el manejo de estos últimos, y permite manejar:
+      conjuntos de volúmenes diarios, semanales y clasificados por cliente, entre otros). 
+   \item El formato de la data del volumen es independiente de la máquina. Los clientes Linux,
+      Solaris y Windows pueden ser respaldados en el mismo volumen, si se desea. 
+   \item El formato de data del volumen es compatible hacia arriba, para que los volúmenes
+      viejos siempre puedan ser leidos.
+   \item Un manejador flexible de
+      \ilink{mensajes}{MessagesChapter},  que incluye
+      el enrutamiento de mensajes desde cualquier demonio hacia el director y correo de
+      reporte de notificación automático. 
+   \item Spooling de la data en disco durante el backup, con la escritura subsiguiente de
+      los archivos grabados en el spool a la cinta. Esto previene el uso intensivo del
+      tape durante los respaldos incrementales y diferenciales.  
+   \end{itemize}
+
+\item Soporte avanzado para la mayoría de los dispositivos de almacenamiento
+    \begin{itemize}
+   \item Soporte a Autochanger, utilizando una interfaz simple de comandos que interactúa 
+      virtualmente con cualquier programa de autoloader. Un script para  {\textbf mtx} se
+      copia durante la instalación.   
+   \item Soporte para autochangers con códigos de barras, y etiquetado automático de cintas
+      desde los códigos de barras.  
+   \item Soporte automático para múltiples librerías de recambio automático, utilizando código
+      de barras o por la lectura de los tapes.  
+   \item Soporte para múltiples unidades de autochangers.
+   \item Backup y restauración de dispositivos crudos (raw devices). La recuperación debe
+      hacerse al mismo dispositivo. 
+   \item Todos los bloques de los volúmenes (aproximadamente 64K bytes) contienen un checksum
+         de la data.  
+   \item Soporte a migración – movimiento de la data de un pool a otro o de un volumen a otro.
+   \item Soporte para escritura en DVD.
+   \end{itemize}
+
+\item Soporte para múltiples sistemas operativos
+   \begin{itemize} 
+   \item Programado para el manejo arbitrario de nombre largos de archivos y mensajes.  
+   \item Compresión tipo GZIP archivo por archivo, hecha por el programa cliente, si se ha
+      configurado, antes de la copia en red.  
+   \item Grabado y recuperación de ACLs tipo POSIX en la mayoría de los sistemas operativos,
+      si está activadas. 
+   \item Listas de control de accesos para las consolas que permiten restringir a los usuarios
+      el acceso a su datos únicamente.  
+   \item Soporte para guardar y recuperar archivos más grandes que 2GB.  
+   \item Soporte para máquinas con 64 bits, tales como, amd64, Sparc.
+   \item Soporte para etiquetas de cintas ANSI e IBM.
+   \item Soporte para nombres de archivos Unicode (tales como chino) en equipos con Win32
+         a partir de la versión 1.37.28 y superiores.
+   \item Backup consistente de archivos abiertos en sistemas Win32 (WinXP, Win2003 y Vista), 
+         pero no en Win200, utilizando el Volume Shadow Copy (VSS).
+   \item Soporte para longitudes de nombres de archivo y path hasta 64K en máquinas Win32
+         (esta capacidad es ilimitada equipos con Unix/Linux).
+   \end{itemize}
+
+\item Misceláneos
+   \begin{itemize}
+   \item Implementación multi-threaded. 
+   \item Un  
+      \ilink{archivo de configuración}{DirectorChapter} comprensible y extensible
+      para cada servicio o demonio.  
+   \end{itemize}
+\end{itemize}
+
+\section{Ventajas sobre otros programas de backup}
+\index[general]{Ventajas sobre otros programas de backup }
+\index[general]{Programs!Advantages of Bacula Over Other Backup }
+
+\begin{itemize}
+\item Debido que existe un cliente por cada máquina, se puede hacer backup y recuperaciones
+   de clientes de cualquier tipo, asegurando que todos los atributos de archivos, son
+   grabados y restaurados de manera adecuada.
+\item Es posible respaldar clientes sin la instalación del software para el file daemon,
+   utilizando NFS o Samba. Sin embargo, se recomienda la instalación del mismo en cada
+   equipo a respaldar.
+\item Bacula maneja respaldos multi-volúmenes.  
+\item Base de datos SQL estándar con un registro completo de todos los archivos grabados.
+   Esto permite una visualización en línea de los archivos para cualquier volumen particular.  
+\item Pruning automático de la base de datos (eliminación de registros viejos), simplificando 
+   con esto la administración de la misma.  
+\item Cualquier engine de base de datos puede ser utilizado, logrando con esto que bacula  
+      sea muy flexible. Aunque actualmente, existen drivers para MySQL, PostgreSQL y SQLite.
+\item El diseño modular, pero integrado, hace de bacula una solución muy escalable.  
+\item Debido a que bacula utiliza archivos clientes para los servidores, cualquier base
+   de datos o aplicación pueden ser detenidas haciendo uso de las herramientas nativas
+   del sistema, luego hacer el backup y reiniciarlas, todo dentro un job de bacula.
+\item Bacula cuenta con un scheduler interno para la planificación de los jobs.  
+\item El formato del volumen está documentado y existen programas sencillos en lenguaje 
+   C que leen o escriben en ellos.  
+\item Bacula utiliza puertos TCPI/IP conocidos (registrados en IANA) -- no se utiliza rpc
+   ni memoria compartida.  
+\item La instalación y configuración de bacula es relativamente sencilla.
+\item De acuerdo a un usuario de bacula, es tan rápido como las más grandes aplicaciones
+   comerciales de backup.  
+\item De acuerdo con otro usuario de bacula, es cuatro veces más rápido que otra aplicación
+   comercial, probablemente, esto se debe a que esta última almacena la información
+   del catálogo en un gran número de archivos individuales, en vez de una base de datos
+   SQL, como lo hace bacula.  
+\item Adicional a las interfaces administrativas en modo gráfico (GUI), bacula cuenta con
+   una interfaz de línea de comandos muy comprensible, que permite el uso de herramientas,
+   tales como ssh para gestionar cualquier componente de bacula desde cualquier sitio (incluso
+   desde la casa). 
+\item Bacula cuenta con un CD de rescate para sistemas Linux, con las siguientes funcionalidades: 
+   \begin{itemize}
+   \item Permite construir el sistema original luego de un desastre con un simple comando:
+      make -- por supuesto, luego hay que hacer la copia. 
+   \item Utiliza su propio kernel. 
+   \item Captura los parámetros actuales del disco, y construye scripts que permiten el particionamiento
+      automático y formateo del mismo, y colocarlo en el estado original que se tenía.
+   \item Cuenta con un script que permite reiniciar los servicios de red (con la dirección
+      IP correcta).
+   \item Cuenta con un script que monta automáticamente los discos configurados.  
+   \item Cuenta con el software de bacula FD enlazado de manera estática. 
+   \item Se puede adicionar cualquier programa o data al disco de manera fácil.  
+   \end{itemize}
+
+\end{itemize}
+
+\section{Restricciones de la implementación actual}
+\index[general]{Restricciones de la implementación actual }
+\index[general]{Restrictions!Current Implementation }
+
+\begin{itemize}
+\item Es muy inusual restaurar dos jobs diferentes en la misma operación de restauración,
+   si estos jobs corrieron en forma simultánea, a menos que se haya habilitado el spooling
+   de la data y esta mantenga el contenido completo de ambos jobs. En otras palabras,
+   bacula no puede restaurar dos jobs en el mismo restore, si los bloques de datos de
+   los jobs están entremezclados en el medio de backup. El problema se resuelve simplemente
+   ejecutando dos restauraciones, una para cada Job.
+\item Bacula puede restaurar cualquier backup hecho desde un cliente a otro cliente. Sin
+   embargo, si la arquitectura es completamente diferente (tales como, arquitectura
+   de 32 bits a 64 bits, o de Win32 a Unix), algunas restricciones pueden aplicar (por
+   ejemplo, en Solaris existen archivos especiales que no existen en otros equipos Unix
+   o Linux; hay reportes que indican que la compresión de Zlib escrita con máquinas
+   de 64 bits no siempre es leida correctamente en una máquina de 32 bits).
+\end{itemize}
+
+\section{Restricciones y limitaciones de diseño}
+\index[general]{Restrictions!Design Limitations or }
+\index[general]{Restricciones y limitaciones de diseño }
+
+\begin{itemize}
+\item Los nombres (recursos de nombres, nombres de volúmenes, entre otros) definidos en
+   los archivos de configuración de bacula están limitados a un número fijo de caracteres.
+   Actualmente, el límite está definido a 127 caracteres. Hay que tener en cuenta, que
+   esto no aplica a nombres de archivos, los cuales pueden ser arbitrariamente largos. 
+\item La entrada para la línea de comandos de algunas de las herramientas stand alone, 
+   -- tales como btape, bconsole, está restringida a un máximo de varios cientos de caracteres. 
+\end{itemize}
+
+\section{Items para tener en cuenta}
+\index[general]{Items para tener en cuenta}
+\begin{itemize}
+\item Los respaldos \textsl{normales} de Bacula incrementales y diferenciales, están basados en 
+  modificaciones de tiempo. Por esto, si usted mueve archivos en un directorio existente
+  o mueve un directorio completo dentro del fileset de respaldo, después de la ejecución
+  de uno de tipo Full, probablemente no sean respaldados por los incrementales, puesto
+  que tienen fechas de modificación antiguas. Este problema se corrige utilizando el
+  modo Accurate en los backups o modificando de manera explícita la fecha y hora de
+  modificación de todos los archivos movidos.
+\item En versiones previas de Bacula ($<=$ 3.0.x), si usted está cerca de las 4 billones
+  de entradas de archivos almacenadas en el catálogo, la base de datos FileId probablemente
+  pueda hacer overflow.
+\item Cuando no se utiliza el modo \textsl{Accurate}, los archivos borrados después de un respaldo
+  Full no serán incluidos en la restauración. Esto es común en la mayoría de los programas
+  de backup similares.
+\end{itemize}

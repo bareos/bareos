@@ -1,0 +1,42 @@
+              Technical notes on version 1.7 07Dec01
+                       08 December 2001
+                        Kern Sibbald
+
+General:
+- This was a massive change to add use_count and locking
+  to handling of jcr's, to make the Storage daemon
+  accept any number of FD connections, and to add
+  authentication between the SD and FD.
+- With these changes, we should be able to do multiple
+  simultaneous backups.
+
+Changes submitted this submission:
+- Moved more variables into the common section of the jcr.
+- Made client_name a malloc()ed buffer.
+- Made routines that search for a jcr increment the
+  use count. This necessitated adding making a free_jcr()
+  and a free_locked_jcr() routines so that a jcr could
+  be freed up inside a loop walking down the jcr chain.
+- Restructured free_jcr() so that it consists of common
+  code (to remove the jcr from the chain and free 
+  common buffers) located in lib/jcr.c. The jcr now
+  also has a local free routine pointer. This pointer
+  is set during new_jcr(), and called from the global
+  free_jcr() routine.
+- Modified bnet_thread_server() so that it is passed the
+  work queue pointer. This allows it to be used for listening
+  to multiple sockets.
+- Major modifications to the storage daemon. It now listens
+  on two sockets and accepts connections at any time. 
+  Previously, it only accepted connections from the FD 
+  when a job was started. The new scheme permits multiple
+  jobs to be started, which then wait for a connection from
+  the FD. When a connection is made, the proper jcr is found,
+  the FD is authenticated (and vise-versa), and the waiting
+  thread is awaken. The waiting job thread will wait 30
+  minutes for a FD connection and then cancel the job.
+- Moved JobFiles and JobBytes into the common section of 
+  the jcr.
+- Added an improved random key generator for the Storage
+  daemon authentication key.
+  

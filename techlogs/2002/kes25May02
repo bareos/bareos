@@ -1,0 +1,41 @@
+              Technical notes on version 1.20 25May02
+                       25 May 2002
+                       Kern Sibbald
+
+General:
+- Started documenting Catalog Pruning and Recycling.
+  Added catmaintenance.html and recycling.html
+
+Changes submitted this submission:
+- Fixed the query command bug.
+- Implemented PID files to prevent two copies of Bacula
+  from running at the same time. Be sure you --with-pid-dir
+  points to a working directory.
+- Modified ASSERT() to cause a segmentation violation. This
+  permits a core dump.
+- Worked on gnome-console. It paints better, it tells you if it
+  is ready to accept a command or processing one, and it is
+  almost entirely GTK+ (rather than GNOME, I'm removing GNOME
+  a bit at a time).
+- Limit to 100 the number of tape labeling errors in a single Job.
+- Add some additional ASSERT()s to the database routines. I don't
+  like ASSERTs but they do catch bugs.
+- Tested and debugged recycling of Volumes.  Needed to change
+  the Director-SD protocol slightly.
+- Removed the experimental SIGHUP in the Director as it is a
+  potential source of errors.
+- Added Level, Pool, Messages, and Storage keyword/value scanning
+  to the Schedule Run record.
+- Improved printing of Schedule resources with "show schedules"
+- Do not autoprune Jobs/Files if the Job errs.
+- Updated newvol() to pass back the updated Media record.   
+- Fixed the "update pool" command, which was broken during a much
+  earlier code reorganization.
+- Improved a few of the pruning messages.
+- Removed readline inclusions from gnome-console (hang over from console).
+- Make Jmsg use daemon message handler if no message handler is defined.
+  This is always the case in the SD and FD.
+- Started removing __PROTO(). With C++ prototypes are manditory, so why
+  keep around legacy code.
+- Added a good deal of message internationalization -- more to be done.
+

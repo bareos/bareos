@@ -1,0 +1,11 @@
+              Technical notes on version 1.25 30Aug02  
+                      30 August 2002
+                       Kern Sibbald
+
+General:
+- Fixed a bug where only the first file was restored if
+  it is hard linked. The other links were lost.
+- In some cases of restoring to alternate directories, softlinks
+  were not properly restored.
+
+Changes submitted this submission:

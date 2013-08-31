@@ -1,0 +1,36 @@
+              Technical notes on version 1.27 26Oct02  
+                     29 October 2002
+                       Kern Sibbald
+
+General:
+- Major change to the bnet communications routines.
+
+Changes submitted this submission:
+- Modified the bacula script to use pid files, so this script should
+  now work on more platforms.  Updated devel_bacula as well.
+- Added the full GNU hostname on the configuration print output.
+- Added gettimeofday() to configure, and tweaked a few variables for
+  OpenBSD.
+- Added a chapter to the manual on Porting Bacula to other platforms.
+- Documented in Tips how to use the WriteBootstrap record.
+- Modified bc_types.h to error if 64 bit types are not found.
+- Pass replace option for restore to the FD (no code to use it yet).
+- Modify the FD to pass back the GNU OS string as well as the DISTNAME
+  and DISTVER. This needs to be put in the Client record in the catalog.
+- Major reworking of the bnet routines to eliminate the zero length which
+  previously indicated a signal. This risks to create some subtle communications
+  bugs.  The changes now permit blank lines to be sent from the user to the
+  Director.
+- Found and corrected a few more places where the Win32 attributes were not
+  being recognized.
+- Permit spaces in the Where string (restore) by bashing/unbashing them.
+- Handle quotes correctly in the Console program (actually Dir ua code).
+  Previously they were not handled in the middle of a string.
+- Corrected two error message (error reading file), which previously stated
+  it was a network error.
+- Reworked the files in the binary Windows release. Removed unused programs 
+  and added a README with the copyright as suggested by John. Also added
+  console.exe to the release.
+- Found and corrected an autoloader mount problem where the wrong tape
+  was specified.  Previously it looped, then gave up.  Now it correctly
+  detects the volume is not correct and zaps the Slot in the catalog.

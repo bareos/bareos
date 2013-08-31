@@ -1,0 +1,3 @@
+#!/bin/sh
+./configure --with-bacula=${HOME}/bacula/k/bacula
+manuals/update_version

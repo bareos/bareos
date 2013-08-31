@@ -1,0 +1,59 @@
+              Technical notes on version 1.1-14Oct
+                       14 October 2001
+                        Kern Sibbald
+
+General:
+- Lots of changes to the documentation.
+- Better handling of tapes at EOM.
+- Cancelling jobs should now work better (not tested).
+- Labelling of tapes is now done in the Console
+  program by preference.
+- Numerous improvements to the Console user interface
+  mainly by presenting a list of choices. This  
+  needs to be implemented in more places.
+- Created a smtp program that will send email.
+
+Changes submitted this submission:
+- Major reorganization and improvement of the documentation.
+  This is only a drop in the bucket, much more remains to
+  be done.
+- Fixed bstrdup() so that ophaned buffers will point
+ to the original code rather than the bstrdup() subroutine.
+- Added an MD5 signature to FileSets so that any change
+  in the file set will force a Full save.
+- Added a LabelDate to the Media record so that in code
+  to be implemented, we can ensure that a tape is labelled
+  only once.
+- Modified virtually all the Bacula internal database 
+  routines to use binary read/writes rather than sprintf
+  and sscanf. This simplifies the code, but makes the 
+  database byte order dependent. I added a lot of additional
+  functionality and did quite a bit of general cleanup.
+  The Job database still uses printf/sscanf.
+- Added code that creates a FileSet record that is
+  unique by its name and its MD5 signature. This ensures that
+  if you change the FileSet, a new FileSet record will be
+  created and a Full save will be forced.
+- Implement default values for integer and 64 bit configuration
+  variables.
+- Massive changes to the User Agent (console program). Separated
+  the code into multiple files, added code that prompts the
+  user and provides a list of appropriate responses. This new
+  code is now used in many places -- more work to be done.
+  More testing of the code is necessary, I have not yet tested
+  all possible paths where I changed the code.
+- Implemented a simple smtp program which sends email.
+- Implemented an MailCommand configuration record for the
+  Message resource, which specifies the mail program to be
+  used.
+- Implemented multiple email addresses on a single record.
+  Not tested.
+- Quite a lot of cleanup of handling Volume names in the Storage
+  daemon. Corrected a number of problems with End of Medium
+  handling and labelling of tapes. Corrected problems in 
+  cancelling a program.
+- Removed the code in message.c that automatically marked jobs
+  in error when an M_FATAL message is sent. It is a good idea,
+  but a bit premature because a thourough audit of error messages
+  is needed first.
+

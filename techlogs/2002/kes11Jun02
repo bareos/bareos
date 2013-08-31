@@ -1,0 +1,35 @@
+              Technical notes on version 1.21 11Jun02
+                       11 June 2002
+                       Kern Sibbald
+
+General:
+- Fixed several problems with filenames being truncated if
+  they contain spaces. Thanks to the user that reported this.
+- N.B. To get the new queries, after the "make" and 
+  "make install" you must explicitly replace the
+  existing query.sql by query.sql.new.  query.sql is a
+  user configuration file, so it is not overwritten.
+- Modified the M_TERM meaning to mean that Bacula has
+  terminated in error without producing a dump. Previously,
+  it meant that Bacula terminate (with or without error).
+  You should remove any !terminate from your messages
+  resources.
+
+Changes submitted this submission:
+- Changed the order of the libraries in the link so that
+  tcp wrappers link properly. Thanks Phil for reporting this.
+- A user reported that filenames containing spaces were truncated
+  in bextract. This was indeed the case. They were also truncated
+  in Restore as well as in Verify. They are, hopefully, all fixed
+  now.
+- Made a few error conditions in Verify non-fatal.
+- Modified the Console "query" command to permit multiple SQL
+  statements per command. 
+- Implemented three new "query" options: 
+    List last 10 Full Backups for a Client
+    List Volumes used by selected JobId
+    List Volumes to Restore All Files
+  To use them, simply type "query" to the Console program, and
+  select the one you want.
+- Modified bextract to default to extracting all files (i.e. /).
+- Cleaned up the code in bextract a bit.

@@ -1,0 +1,60 @@
+%%
+%%
+
+
+\chapter{Requerimientos del sistema} \label{SysReqs} \index{Requerimientos del sistema}
+\index{Requerimientos del!Sistema} 
+\begin{itemize}
+\item \textbf{Bacula} ha sido compilado y corre en sistemas OpenSuse Linux, FreeBSD
+y Solaris. 
+\item Requiere GNU C++, en la versión 2.95 o superior para compilar. En general, el
+paquete GNU C++ es adicional al paquete de GNU C, y se necesita que ambos estén
+instalados. En sistemas Red Hat, el compilador de C++ es parte del paquete rpm
+\textbf{gcc-c++}. 
+\item Hay algunos paquetes de terceros que Bacula puede necesitar. A excepción de
+MySQL y PostgreSQL que pueden ser hallados en los releases \textbf{depkgs} y
+\textbf{depkgs1}. Sin embargo, la mayoría de los sistemas Linux y FreeBSD los
+suministran como paquetes del sistema. 
+\item Las versiones mínimas para cada una de las bases de datos soportadas son las
+siguientes:
+
+\begin{itemize}
+\item MySQL 4.1 
+\item PostgreSQL 7.4 
+\item SQLite 2.8.16 o SQLite 3 
+\end{itemize}
+\item Si usted desea generar sus propios binarios Win32, por favor revise el archivo
+README.mingw32 en el directorio src/win32. El proyecto Bacula realizo una compilación
+cruzada del release de Win32 en Linux. De igual manera, se suministra documentación
+para la construcción de la versión para Win32, sin embargo, aunque este proceso
+puede resultar complejo, esta es de mucha ayuda en este proceso de desarrollo. 
+\item \textbf{Bacula} requiere una buena implementación de pthreads (\url{http://en.wikipedia.org/wiki/POSIX_Threads})
+para trabajar. Esto no es el caso para algunos de los sistemas BSD. 
+\item El código fuente ha sido escrito pensando en la portabilidad y la mayor parte
+es compatible con POSIX. Asi, la instalación en cualquier sistema operativo
+compatible con POSIX es muy sencilla. 
+\item El programa de consola en GNOME fue desarrollado y probado en GNOME 2.x. La
+versión de GNOME 1.4 no está soportada por completo. 
+\item El programa de consola de wxWidgets fue desarrollado y probado con la ultima
+versión estable ANSI o UNICODE de \elink{wxWidgets}{\url{http://www.wxwidgets.org/}}
+(2.6.1). Esta aplicación trabaja muy bien con la versión de Windows y GTK+\_2.x
+de wxWidgets, y debería funcionar en otras plataformas soportadas por wxWidgets. 
+\item El programa de Tray Monitor fue desarrollado en GTK+-2.x. Necesita la versión
+de GNOME menor o igual a 2.2, KDE mayor o igual a 3.1 o cualquier manejador
+de ventanas que soporte el sistema de bandeja estándar para \elink{ FreeDesktop}{\url{http://www.freedesktop.org/Standards/systemtray-spec}}. 
+\item Si se desea activar la edición de linea de comandos y el historial, se necesita
+/usr/include/termcap.h y el paquete termcap o la librería ncurses instalada
+(libtermcap-devel o ncurses-devel). 
+\item Si se desea utilizar DVDs como medios de respaldo, se necesita descargar el
+paquete \elink{dvd+rw-tools
+5.21.4.10.8}{\url{http://fy.chalmers.se/~appro/linux/DVD+RW/}},
+aplicar el patch, ubicado en el directorio \textbf{patches} del árbol de fuentes
+original, para hacer que estas herramientas sean compatibles con Bacula, luego
+se debe compilarlas e instalarlas. Hay un patch de dvd+rw-tools con versión
+6.1, y se espera que el mismo esté integrado en la ultima versión. Se recomienda
+no utilizar el utilitario de dvd+rw-tols suministrado con la distribución, a
+menos que este seguro que la misma contenga el patch. Las herramientas de dvd+rw-tools
+sin el patch instalado, no trabajarán con Bacula. Para finalizar, los dispositivos
+de DVD no se recomiendan para respaldos importantes y críticos, debido a su
+baja confiabilidad. 
+\end{itemize}
