@@ -204,10 +204,10 @@ int rerun_cmd(UAContext *ua, const char *cmd)
       strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
 
       if (since_jobid_given) {
-         Mmsg(query, "SELECT JobId FROM Job WHERE JobStatus = 'f' AND JobId >= %s",
+         Mmsg(query, "SELECT JobId FROM Job WHERE JobStatus = 'f' AND JobId >= %s ORDER BY JobId",
               edit_int64(since_jobid, ed1));
       } else {
-         Mmsg(query, "SELECT JobId FROM Job WHERE JobStatus = 'f' AND SchedTime > '%s'", dt);
+         Mmsg(query, "SELECT JobId FROM Job WHERE JobStatus = 'f' AND SchedTime > '%s' ORDER BY JobId", dt);
       }
 
       db_get_query_dbids(ua->jcr, ua->db, query, ids);
