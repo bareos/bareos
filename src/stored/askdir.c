@@ -205,7 +205,7 @@ static bool do_get_volume_info(DCR *dcr)
        }
     }
 
-    Dmsg2(dbglvl, "do_reqest_vol_info return true slot=%d Volume=%s\n",
+    Dmsg2(dbglvl, "do_get_volume_info return true slot=%d Volume=%s\n",
           vol.Slot, vol.VolCatName);
     return true;
 }

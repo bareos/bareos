@@ -2360,7 +2360,7 @@ bool open_client_db(UAContext *ua, bool need_private)
          return false;
       }
       job = GetJobResWithName(ua->argv[i]);
-      if (job) {
+      if (job && job->client) {
          catalog = job->client->catalog;
          if (ua->catalog && ua->catalog != catalog) {
             close_db(ua);

@@ -127,21 +127,16 @@ bool do_migration_init(JCR *jcr)
       Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
       return false;
    }
+
    /*
-    * Note, at this point, pool is the pool for this job.  We
-    * transfer it to rpool (read pool), and a bit later,
+    * Note, at this point, pool is the pool for this job.
+    * We transfer it to rpool (read pool), and a bit later,
     * pool will be changed to point to the write pool,
     * which comes from pool->NextPool.
     */
    jcr->res.rpool = jcr->res.pool;    /* save read pool */
    pm_strcpy(jcr->res.rpool_source, jcr->res.pool_source);
    Dmsg2(dbglevel, "Read pool=%s (From %s)\n", jcr->res.rpool->name(), jcr->res.rpool_source);
-
-   if (!get_or_create_fileset_record(jcr)) {
-      Dmsg1(dbglevel, "JobId=%d no FileSet\n", (int)jcr->JobId);
-      Jmsg(jcr, M_FATAL, 0, _("Could not get or create the FileSet record.\n"));
-      return false;
-   }
 
    /*
     * If we find a job or jobs to migrate it is previous_jr.JobId
@@ -150,6 +145,7 @@ bool do_migration_init(JCR *jcr)
    if (count < 0) {
       return false;
    }
+
    if (count == 0) {
       set_migration_next_pool(jcr, &pool);
       return true;                    /* no work */
@@ -190,10 +186,12 @@ bool do_migration_init(JCR *jcr)
    job = (JOBRES *)GetResWithName(R_JOB, jcr->jr.Name);
    prev_job = (JOBRES *)GetResWithName(R_JOB, jcr->previous_jr.Name);
    UnlockRes();
+
    if (!job) {
       Jmsg(jcr, M_FATAL, 0, _("Job resource not found for \"%s\".\n"), jcr->jr.Name);
       return false;
    }
+
    if (!prev_job) {
       Jmsg(jcr, M_FATAL, 0, _("Previous Job resource not found for \"%s\".\n"),
            jcr->previous_jr.Name);
@@ -252,8 +250,8 @@ bool do_migration_init(JCR *jcr)
    mig_jcr->res.job->IgnoreDuplicateJobChecking = true;
 
    Dmsg4(dbglevel, "mig_jcr: Name=%s JobId=%d Type=%c Level=%c\n",
-      mig_jcr->jr.Name, (int)mig_jcr->jr.JobId,
-      mig_jcr->jr.JobType, mig_jcr->jr.JobLevel);
+         mig_jcr->jr.Name, (int)mig_jcr->jr.JobId,
+         mig_jcr->jr.JobType, mig_jcr->jr.JobLevel);
 
    if (set_migration_next_pool(jcr, &pool)) {
       /*
@@ -301,7 +299,7 @@ static bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
    pr.PoolId = jcr->jr.PoolId;
    if (!db_get_pool_record(jcr, jcr->db, &pr)) {
       Jmsg(jcr, M_FATAL, 0, _("Pool for JobId %s not in database. ERR=%s\n"),
-            edit_int64(pr.PoolId, ed1), db_strerror(jcr->db));
+           edit_int64(pr.PoolId, ed1), db_strerror(jcr->db));
          return false;
    }
 
@@ -1645,35 +1643,32 @@ void migration_cleanup(JCR *jcr, int TermCode)
    jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
 
    Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
-"  Build OS:               %s %s %s\n"
-"  Prev Backup JobId:      %s\n"
-"  Prev Backup Job:        %s\n"
-"  New Backup JobId:       %s\n"
-"  Current JobId:          %s\n"
-"  Current Job:            %s\n"
-"  Backup Level:           %s%s\n"
-"  Client:                 %s\n"
-"  FileSet:                \"%s\" %s\n"
-"  Read Pool:              \"%s\" (From %s)\n"
-"  Read Storage:           \"%s\" (From %s)\n"
-"  Write Pool:             \"%s\" (From %s)\n"
-"  Write Storage:          \"%s\" (From %s)\n"
-"  Next Pool:              \"%s\" (From %s)\n"
-"  Catalog:                \"%s\" (From %s)\n"
-"  Start time:             %s\n"
-"  End time:               %s\n"
-"  Elapsed time:           %s\n"
-"  Priority:               %d\n"
-"  SD Files Written:       %s\n"
-"  SD Bytes Written:       %s (%sB)\n"
-"  Rate:                   %.1f KB/s\n"
-"  Volume name(s):         %s\n"
-"  Volume Session Id:      %d\n"
-"  Volume Session Time:    %d\n"
-"  Last Volume Bytes:      %s (%sB)\n"
-"  SD Errors:              %d\n"
-"  SD termination status:  %s\n"
-"  Termination:            %s\n\n"),
+        "  Build OS:               %s %s %s\n"
+        "  Prev Backup JobId:      %s\n"
+        "  Prev Backup Job:        %s\n"
+        "  New Backup JobId:       %s\n"
+        "  Current JobId:          %s\n"
+        "  Current Job:            %s\n"
+        "  Read Pool:              \"%s\" (From %s)\n"
+        "  Read Storage:           \"%s\" (From %s)\n"
+        "  Write Pool:             \"%s\" (From %s)\n"
+        "  Write Storage:          \"%s\" (From %s)\n"
+        "  Next Pool:              \"%s\" (From %s)\n"
+        "  Catalog:                \"%s\" (From %s)\n"
+        "  Start time:             %s\n"
+        "  End time:               %s\n"
+        "  Elapsed time:           %s\n"
+        "  Priority:               %d\n"
+        "  SD Files Written:       %s\n"
+        "  SD Bytes Written:       %s (%sB)\n"
+        "  Rate:                   %.1f KB/s\n"
+        "  Volume name(s):         %s\n"
+        "  Volume Session Id:      %d\n"
+        "  Volume Session Time:    %d\n"
+        "  Last Volume Bytes:      %s (%sB)\n"
+        "  SD Errors:              %d\n"
+        "  SD termination status:  %s\n"
+        "  Termination:            %s\n\n"),
         BAREOS, my_name, VERSION, LSMDATE,
         HOST_OS, DISTNAME, DISTVER,
         edit_uint64(jcr->previous_jr.JobId, ec6),
@@ -1681,9 +1676,6 @@ void migration_cleanup(JCR *jcr, int TermCode)
         mig_jcr ? edit_uint64(mig_jcr->jr.JobId, ec7) : "0",
         edit_uint64(jcr->jr.JobId, ec8),
         jcr->jr.Job,
-        level_to_str(jcr->getJobLevel()), jcr->since,
-        jcr->res.client->name(),
-        jcr->res.fileset->name(), jcr->FSCreateTime,
         jcr->res.rpool->name(), jcr->res.rpool_source,
         jcr->res.rstore ? jcr->res.rstore->name() : _("*None*"),
         NPRT(jcr->res.rstore_source),
