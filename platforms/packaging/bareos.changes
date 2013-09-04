@@ -1,3 +1,9 @@
+bareos (12.4.5-1) unstable; urgency=low
+
+  * Switch version number
+
+ -- Philipp Storz <philipp.storz@bareos.com>  Wed, 04 Sep 2013 11:30:11 +0200
+
 bareos (12.4.4-1) unstable; urgency=low
 
   * Switch version number
