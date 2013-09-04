@@ -177,8 +177,11 @@ bool setup_job(JCR *jcr, bool suppress_output)
     * Create Job record
     */
    init_jcr_job_record(jcr);
-   if (!get_or_create_client_record(jcr)) {
-      goto bail_out;
+
+   if (jcr->res.client) {
+      if (!get_or_create_client_record(jcr)) {
+         goto bail_out;
+      }
    }
 
    if (!db_create_job_record(jcr, jcr->db, &jcr->jr)) {
@@ -1463,10 +1466,14 @@ void set_jcr_defaults(JCR *jcr, JOBRES *job)
       copy_rwstorage(jcr, job->pool->storage, _("Pool resource"));
    }
    jcr->res.client = job->client;
-   if (!jcr->client_name) {
-      jcr->client_name = get_pool_memory(PM_NAME);
+
+   if (jcr->res.client) {
+      if (!jcr->client_name) {
+         jcr->client_name = get_pool_memory(PM_NAME);
+      }
+      pm_strcpy(jcr->client_name, jcr->res.client->hdr.name);
    }
-   pm_strcpy(jcr->client_name, jcr->res.client->hdr.name);
+
    pm_strcpy(jcr->res.pool_source, _("Job resource"));
    jcr->res.pool = job->pool;
    jcr->res.full_pool = job->full_pool;

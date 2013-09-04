@@ -537,25 +537,26 @@ void verify_cleanup(JCR *jcr, int TermCode)
    }
 
    jobstatus_to_ascii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
-   if (JobLevel == L_VERIFY_VOLUME_TO_CATALOG) {
+   switch (JobLevel) {
+   case L_VERIFY_VOLUME_TO_CATALOG:
       jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
       Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
-"  Build OS:               %s %s %s\n"
-"  JobId:                  %d\n"
-"  Job:                    %s\n"
-"  FileSet:                %s\n"
-"  Verify Level:           %s\n"
-"  Client:                 %s\n"
-"  Verify JobId:           %d\n"
-"  Verify Job:             %s\n"
-"  Start time:             %s\n"
-"  End time:               %s\n"
-"  Files Expected:         %s\n"
-"  Files Examined:         %s\n"
-"  Non-fatal FD errors:    %d\n"
-"  FD termination status:  %s\n"
-"  SD termination status:  %s\n"
-"  Termination:            %s\n\n"),
+           "  Build OS:               %s %s %s\n"
+           "  JobId:                  %d\n"
+           "  Job:                    %s\n"
+           "  FileSet:                %s\n"
+           "  Verify Level:           %s\n"
+           "  Client:                 %s\n"
+           "  Verify JobId:           %d\n"
+           "  Verify Job:             %s\n"
+           "  Start time:             %s\n"
+           "  End time:               %s\n"
+           "  Files Expected:         %s\n"
+           "  Files Examined:         %s\n"
+           "  Non-fatal FD errors:    %d\n"
+           "  FD termination status:  %s\n"
+           "  SD termination status:  %s\n"
+           "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE,
            HOST_OS, DISTNAME, DISTVER,
            jcr->jr.JobId,
@@ -573,22 +574,23 @@ void verify_cleanup(JCR *jcr, int TermCode)
            fd_term_msg,
            sd_term_msg,
            term_msg);
-   } else {
+      break;
+   default:
       Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
-"  Build:                  %s %s %s\n"
-"  JobId:                  %d\n"
-"  Job:                    %s\n"
-"  FileSet:                %s\n"
-"  Verify Level:           %s\n"
-"  Client:                 %s\n"
-"  Verify JobId:           %d\n"
-"  Verify Job:             %s\n"
-"  Start time:             %s\n"
-"  End time:               %s\n"
-"  Files Examined:         %s\n"
-"  Non-fatal FD errors:    %d\n"
-"  FD termination status:  %s\n"
-"  Termination:            %s\n\n"),
+           "  Build:                  %s %s %s\n"
+           "  JobId:                  %d\n"
+           "  Job:                    %s\n"
+           "  FileSet:                %s\n"
+           "  Verify Level:           %s\n"
+           "  Client:                 %s\n"
+           "  Verify JobId:           %d\n"
+           "  Verify Job:             %s\n"
+           "  Start time:             %s\n"
+           "  End time:               %s\n"
+           "  Files Examined:         %s\n"
+           "  Non-fatal FD errors:    %d\n"
+           "  FD termination status:  %s\n"
+           "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE,
            HOST_OS, DISTNAME, DISTVER,
            jcr->jr.JobId,
@@ -604,7 +606,9 @@ void verify_cleanup(JCR *jcr, int TermCode)
            jcr->JobErrors,
            fd_term_msg,
            term_msg);
+      break;
    }
+
    Dmsg0(100, "Leave verify_cleanup()\n");
 }
 
@@ -652,8 +656,8 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
       Dmsg1(200, "Atts+Digest=%s\n", fd->msg);
       if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &stream,
             fname)) != 3) {
-         Jmsg3(jcr, M_FATAL, 0, _("bird<filed: bad attributes, expected 3 fields got %d\n"
-" mslen=%d msg=%s\n"), len, fd->msglen, fd->msg);
+         Jmsg3(jcr, M_FATAL, 0, _("dird<filed: bad attributes, expected 3 fields got %d\n"
+                                  " mslen=%d msg=%s\n"), len, fd->msglen, fd->msg);
          goto bail_out;
       }
       /*

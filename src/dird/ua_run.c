@@ -771,7 +771,9 @@ static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc)
    }
 
    jcr->res.client = rc.client;
-   pm_strcpy(jcr->client_name, rc.client->name());
+   if (jcr->res.client) {
+      pm_strcpy(jcr->client_name, rc.client->name());
+   }
    jcr->res.fileset = rc.fileset;
    jcr->ExpectedFiles = rc.files;
 
@@ -1496,8 +1498,6 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          ua->send_msg(_("%s"
                      "JobName:       %s\n"
                      "Bootstrap:     %s\n"
-                     "Client:        %s\n"
-                     "FileSet:       %s\n"
                      "Pool:          %s\n"
                      "NextPool:      %s\n"
                      "Read Storage:  %s\n"
@@ -1509,8 +1509,6 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
            prt_type,
            job->name(),
            NPRT(jcr->RestoreBootstrap),
-           jcr->res.client->name(),
-           jcr->res.fileset->name(),
            NPRT(jcr->res.pool->name()),
            jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
            jcr->res.rstore->name(),
@@ -1528,8 +1526,6 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          ua->send_msg(_("%s"
                      "JobName:       %s\n"
                      "Bootstrap:     %s\n"
-                     "Client:        %s\n"
-                     "FileSet:       %s\n"
                      "Pool:          %s (From %s)\n"
                      "NextPool:      %s (From %s)\n"
                      "Read Storage:  %s (From %s)\n"
@@ -1541,8 +1537,6 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
            prt_type,
            job->name(),
            NPRT(jcr->RestoreBootstrap),
-           jcr->res.client->name(),
-           jcr->res.fileset->name(),
            NPRT(jcr->res.pool->name()), jcr->res.pool_source,
            jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
            NPRT(jcr->res.npool_source),
@@ -2017,9 +2011,8 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
    } else if (!rc.client) {
       rc.client = rc.job->client;           /* use default */
    }
-   if (!rc.client) {
-      return false;
-   } else if (!acl_access_ok(ua, Client_ACL, rc.client->name())) {
+
+   if (rc.client && !acl_access_ok(ua, Client_ACL, rc.client->name())) {
       ua->error_msg(_("No authorization. Client \"%s\".\n"),
                rc.client->name());
       return false;
@@ -2037,13 +2030,13 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
    } else if (!rc.client) {
       rc.client = rc.job->client;           /* use default */
    }
-   if (!rc.client) {
-      return false;
-   } else if (!acl_access_ok(ua, Client_ACL, rc.client->name())) {
+
+   if (rc.client && !acl_access_ok(ua, Client_ACL, rc.client->name())) {
       ua->error_msg(_("No authorization. Client \"%s\".\n"),
                rc.client->name());
       return false;
    }
+
    Dmsg1(800, "Using restore client=%s\n", rc.client->name());
 
    if (rc.fileset_name) {
@@ -2055,9 +2048,8 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
    } else if (!rc.fileset) {
       rc.fileset = rc.job->fileset;           /* use default */
    }
-   if (!rc.fileset) {
-      return false;
-   } else if (!acl_access_ok(ua, FileSet_ACL, rc.fileset->name())) {
+
+   if (rc.fileset && !acl_access_ok(ua, FileSet_ACL, rc.fileset->name())) {
       ua->send_msg(_("No authorization. FileSet \"%s\".\n"),
                rc.fileset->name());
       return false;

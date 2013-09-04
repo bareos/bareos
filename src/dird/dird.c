@@ -693,8 +693,6 @@ static bool check_resources()
    }
 
    foreach_res(job, R_JOB) {
-      int i;
-
       if (job->jobdefs) {
          /*
           * Handle Storage alists specifically
@@ -727,7 +725,7 @@ static bool check_resources()
          /*
           * Transfer default items from JobDefs Resource
           */
-         for (i=0; job_items[i].name; i++) {
+         for (int i = 0; job_items[i].name; i++) {
             char **def_svalue, **svalue;   /* string value */
             uint32_t *def_ivalue, *ivalue; /* integer value */
             bool *def_bvalue, *bvalue;     /* bool value */
@@ -742,7 +740,7 @@ static bool check_resources()
             if (!bit_is_set(i, job->hdr.item_present) &&
                  bit_is_set(i, job->jobdefs->hdr.item_present)) {
                Dmsg2(400, "Job \"%s\", field \"%s\": getting default.\n",
-                 job->name(), job_items[i].name);
+                     job->name(), job_items[i].name);
                offset = (char *)(job_items[i].value) - (char *)&res_all;
                if (job_items[i].handler == store_str ||
                    job_items[i].handler == store_dir) {
@@ -828,11 +826,12 @@ static bool check_resources()
       /*
        * Ensure that all required items are present
        */
-      for (i=0; job_items[i].name; i++) {
+      for (int i = 0; job_items[i].name; i++) {
          if (job_items[i].flags & ITEM_REQUIRED) {
                if (!bit_is_set(i, job->hdr.item_present)) {
-                  Jmsg(NULL, M_ERROR_TERM, 0, _("\"%s\" directive in Job \"%s\" resource is required, but not found.\n"),
-                    job_items[i].name, job->name());
+                  Jmsg(NULL, M_ERROR_TERM, 0,
+                       _("\"%s\" directive in Job \"%s\" resource is required, but not found.\n"),
+                       job_items[i].name, job->name());
                   OK = false;
                 }
          }
@@ -843,6 +842,33 @@ static bool check_resources()
          if (i >= MAX_RES_ITEMS) {
             Emsg0(M_ERROR_TERM, 0, _("Too many items in Job resource\n"));
          }
+      }
+
+      /*
+       * For Copy and Migrate we can have Jobs without a client or fileset.
+       */
+      switch (job->JobType) {
+      case JT_COPY:
+      case JT_MIGRATE:
+         break;
+      default:
+         /*
+          * All others must have a client and fileset.
+          */
+         if (!job->client) {
+            Jmsg(NULL, M_ERROR_TERM, 0,
+                 _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"),
+                 job->name());
+            OK = false;
+         }
+
+         if (!job->fileset) {
+            Jmsg(NULL, M_ERROR_TERM, 0,
+                 _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"),
+                 job->name());
+            OK = false;
+         }
+         break;
       }
 
       if (!job->storage && !job->pool->storage) {

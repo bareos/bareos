@@ -143,6 +143,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
    bool ok = true;
    STORERES *storage;
    char auth_key[100];
+   const char *fileset_md5;
    POOL_MEM store_name, device_name, pool_name, pool_type, media_type, backup_format;
    POOL_MEM job_name, client_name, fileset_name;
    int copy = 0;
@@ -156,15 +157,31 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
     */
    pm_strcpy(job_name, jcr->res.job->name());
    bash_spaces(job_name);
-   pm_strcpy(client_name, jcr->res.client->name());
+
+   if (jcr->res.client) {
+      pm_strcpy(client_name, jcr->res.client->name());
+   } else {
+      pm_strcpy(client_name, "**None**");
+   }
    bash_spaces(client_name);
-   pm_strcpy(fileset_name, jcr->res.fileset->name());
+
+   if (jcr->res.fileset) {
+      pm_strcpy(fileset_name, jcr->res.fileset->name());
+   } else {
+      pm_strcpy(fileset_name, "**None**");
+   }
    bash_spaces(fileset_name);
+
    pm_strcpy(backup_format, jcr->backup_format);
    bash_spaces(backup_format);
 
-   if (jcr->res.fileset->MD5[0] == 0) {
+   if (jcr->res.fileset && jcr->res.fileset->MD5[0] == 0) {
       bstrncpy(jcr->res.fileset->MD5, "**Dummy**", sizeof(jcr->res.fileset->MD5));
+      fileset_md5 = jcr->res.fileset->MD5;
+   } else if (jcr->res.fileset) {
+      fileset_md5 = jcr->res.fileset->MD5;
+   } else {
+      fileset_md5 = "**Dummy**";
    }
 
    /*
@@ -183,14 +200,14 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
    /*
     * Retrieve available quota 0 bytes means dont perform the check
     */
-   remainingquota = quota_fetch_remaining_quota(jcr);
+   remainingquota = fetch_remaining_quotas(jcr);
    Dmsg1(50,"Remainingquota: %llu\n", remainingquota);
 
    sd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job,
              job_name.c_str(), client_name.c_str(),
              jcr->getJobType(), jcr->getJobLevel(),
              fileset_name.c_str(), !jcr->res.pool->catalog_files,
-             jcr->res.job->SpoolAttributes, jcr->res.fileset->MD5, jcr->spool_data,
+             jcr->res.job->SpoolAttributes, fileset_md5, jcr->spool_data,
              jcr->res.job->PreferMountedVolumes, edit_int64(jcr->spool_size, ed2),
              jcr->rerunning, jcr->VolSessionId, jcr->VolSessionTime, remainingquota,
              jcr->getJobProtocol(), backup_format.c_str(), jcr->DumpLevel);

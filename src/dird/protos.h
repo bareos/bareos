@@ -193,9 +193,9 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
 bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORERES *store);
 
 /* quota.c */
-uint64_t quota_fetch_remaining_quota(JCR *jcr);
-bool quota_check_hardquotas(JCR *jcr);
-bool quota_check_softquotas(JCR *jcr);
+uint64_t fetch_remaining_quotas(JCR *jcr);
+bool check_hardquotas(JCR *jcr);
+bool check_softquotas(JCR *jcr);
 
 /* restore.c */
 bool do_native_restore(JCR *jcr);

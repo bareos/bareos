@@ -1689,12 +1689,12 @@ bool do_ndmp_backup(JCR *jcr)
       return false;
    }
 
-   if (quota_check_hardquotas(jcr)) {
+   if (check_hardquotas(jcr)) {
       Jmsg(jcr, M_FATAL, 0, "Quota Exceeded. Job terminated.");
       return false;
    }
 
-   if (quota_check_softquotas(jcr)) {
+   if (check_softquotas(jcr)) {
       Dmsg0(10, "Quota exceeded\n");
       Jmsg(jcr, M_FATAL, 0, "Soft Quota Exceeded / Grace Time expired. Job terminated.");
       return false;

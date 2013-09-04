@@ -35,7 +35,7 @@
  * Returns: unsigned long long containing remaining bytes before going over quota.
  *          0 if over quota
  */
-uint64_t quota_fetch_remaining_quota(JCR *jcr)
+uint64_t fetch_remaining_quotas(JCR *jcr)
 {
    uint64_t remaining = 0;
    uint64_t now = (uint64_t)time(NULL);
@@ -99,7 +99,7 @@ uint64_t quota_fetch_remaining_quota(JCR *jcr)
  * Returns: true on reaching quota
  *          false on not reaching quota.
  */
-bool quota_check_hardquotas(JCR *jcr)
+bool check_hardquotas(JCR *jcr)
 {
    bool retval = false;
 
@@ -155,7 +155,7 @@ bail_out:
  * Returns: true on reaching soft quota
  *          false on not reaching soft quota.
  */
-bool quota_check_softquotas(JCR *jcr)
+bool check_softquotas(JCR *jcr)
 {
    bool retval = false;
    uint64_t now = (uint64_t)time(NULL);

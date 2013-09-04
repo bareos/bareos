@@ -324,12 +324,12 @@ bool do_native_backup(JCR *jcr)
       return false;
    }
 
-   if (quota_check_hardquotas(jcr)) {
+   if (check_hardquotas(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Quota Exceeded. Job terminated.\n"));
       return false;
    }
 
-   if (quota_check_softquotas(jcr)) {
+   if (check_softquotas(jcr)) {
       Dmsg0(10, "Quota exceeded\n");
       Jmsg(jcr, M_FATAL, 0, _("Soft Quota Exceeded / Grace Time expired. Job terminated.\n"));
       return false;

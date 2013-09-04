@@ -462,7 +462,9 @@ void *jobq_server(void *arg)
          if (jcr->acquired_resource_locks) {
             dec_read_store(jcr);
             dec_write_store(jcr);
-            jcr->res.client->NumConcurrentJobs--;
+            if (jcr->res.client) {
+               jcr->res.client->NumConcurrentJobs--;
+            }
             jcr->res.job->NumConcurrentJobs--;
             jcr->acquired_resource_locks = false;
          }
@@ -768,20 +770,24 @@ static bool acquire_resources(JCR *jcr)
          skip_this_jcr = true;
       }
    }
+
    if (skip_this_jcr) {
       jcr->setJobStatus(JS_WaitStoreRes);
       return false;
    }
 
-   if (jcr->res.client->NumConcurrentJobs < jcr->res.client->MaxConcurrentJobs) {
-      jcr->res.client->NumConcurrentJobs++;
-   } else {
-      /* Back out previous locks */
-      dec_write_store(jcr);
-      dec_read_store(jcr);
-      jcr->setJobStatus(JS_WaitClientRes);
-      return false;
+   if (jcr->res.client) {
+      if (jcr->res.client->NumConcurrentJobs < jcr->res.client->MaxConcurrentJobs) {
+         jcr->res.client->NumConcurrentJobs++;
+      } else {
+         /* Back out previous locks */
+         dec_write_store(jcr);
+         dec_read_store(jcr);
+         jcr->setJobStatus(JS_WaitClientRes);
+         return false;
+      }
    }
+
    if (jcr->res.job->NumConcurrentJobs < jcr->res.job->MaxConcurrentJobs) {
       jcr->res.job->NumConcurrentJobs++;
    } else {
