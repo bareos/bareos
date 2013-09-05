@@ -80,6 +80,7 @@ SELECT JobId, Name, JobTDate, StartTime, Type, Level, JobFiles, JobStatus
 FROM Job ORDER BY StartTime;
 
 prune jobs jobtype=backup yes
+prune jobs jobtype=copy yes
 list jobs
 @################################################################
 @# now do a restore
