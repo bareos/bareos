@@ -43,8 +43,6 @@ Job {
   Name = "migrate-job"
   Type = Migrate
   Level = Full
-  Client=@hostname@-fd
-  FileSet="Full Set"
   Messages = Standard
   Storage = DiskChanger
   Write Bootstrap = "@working_dir@/migratejob.bsr"
@@ -59,8 +57,6 @@ Job {
   Name = "migrate-volume"
   Type = Migrate
   Level = Full
-  Client=@hostname@-fd
-  FileSet="Full Set"
   Messages = Standard
   Storage = DiskChanger
   Write Bootstrap = "@working_dir@/migratevol.bsr"
@@ -75,8 +71,6 @@ Job {
   Name = "copy-uncopied"
   Type = Copy
   Level = Full
-  Client=@hostname@-fd
-  FileSet="Full Set"
   Messages = Standard
   Storage = DiskChanger
   Write Bootstrap = "@working_dir@/migratevol.bsr"
@@ -90,8 +84,6 @@ Job {
   Name = "migrate-occupancy"
   Type = Migrate
   Level = Full
-  Client=@hostname@-fd
-  FileSet="Full Set"
   Messages = Standard
   Storage = DiskChanger
   Write Bootstrap = "@working_dir@/migratejob.bsr"
@@ -105,8 +97,6 @@ Job {
   Name = "migrate-time"
   Type = Migrate
   Level = Full
-  Client=@hostname@-fd
-  FileSet="Full Set"
   Messages = Standard
   Storage = DiskChanger
   Write Bootstrap = "@working_dir@/migratejob.bsr"

@@ -31,20 +31,9 @@ File Set {
   }
 }
 
-Client {
-  Name = Fake
-  Address = @hostname@
-  FDPort = @fdport@
-  Catalog = MyCatalog
-  Password = "xevrjURYoCHhn26RaJoWbeWXEY/a3VqGKp/37tgWiuHc"
-  Maximum Concurrent Jobs = 20
-}
-
 Job {
   Name = "HotMig"
   Type = Migrate
-  Client = Fake
-  File Set = "IncrData"
   Messages = "Standard"
   Priority = 10
   Maximum Concurrent Jobs = 2
