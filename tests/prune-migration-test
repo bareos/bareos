@@ -67,7 +67,6 @@ SELECT JobId, JobTDate, StartTime, EndTime FROM Job;
 
 list jobs
 prune jobs jobtype=backup yes
-prune jobs jobtype=migrate yes
 list jobs
 sql
 SELECT JobId, JobTDate, StartTime, EndTime FROM Job;
