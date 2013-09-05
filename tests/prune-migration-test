@@ -46,7 +46,6 @@ wait
 list jobs
 @# should migrate two jobs
 run job=migrate-job yes
-run job=migrate-job yes
 wait
 messages
 list jobs
@@ -101,7 +100,7 @@ check_restore_diff
 # anymore. See scripts/functions.pm for details.
 
 # M M g g F F I0 -> F
-$bperl -e "check_prune_list('$tmp/log10.out',1,2,3,4,5,7)"
+$bperl -e "check_prune_list('$tmp/log10.out',1,2,5,7)"
 estat=$(($estat + $?))
 
 end_test
