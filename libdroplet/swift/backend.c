@@ -211,80 +211,80 @@ dpl_swift_list_bucket(dpl_ctx_t *ctx,
 
 
 
-  req = dpl_req_new(ctx);
-  if (NULL == req)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
+  /* req = dpl_req_new(ctx); */
+  /* if (NULL == req) */
+  /*   { */
+  /*     ret = DPL_ENOMEM; */
+  /*     goto end; */
+  /*   } */
 
-  dpl_req_set_method(req, DPL_METHOD_GET);
-  dpl_req_set_object_type(req, DPL_FTYPE_ANY);
-  dpl_req_set_resource(req, DPL_SWIFT_AUTH_RSRC);
+  /* dpl_req_set_method(req, DPL_METHOD_GET); */
+  /* dpl_req_set_object_type(req, DPL_FTYPE_ANY); */
+  /* dpl_req_set_resource(req, DPL_SWIFT_AUTH_RSRC); */
   
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_KEEP_ALIVE);
+  /* dpl_req_rm_behavior(req, DPL_BEHAVIOR_KEEP_ALIVE); */
 
-  ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, NULL, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  /* ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, NULL, NULL); */
+  /* if (DPL_SUCCESS != ret2) */
+  /*   { */
+  /*     ret = ret2; */
+  /*     goto end; */
+  /*   } */
 
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+  /* dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING); */
 
-  ret2 = dpl_try_connect(ctx, req, &conn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  ret2 = dpl_add_host_to_headers(req, headers_request);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  /* ret2 = dpl_try_connect(ctx, req, &conn); */
+  /* if (DPL_SUCCESS != ret2) */
+  /*   { */
+  /*     ret = ret2; */
+  /*     goto end; */
+  /*   } */
+  /* ret2 = dpl_add_host_to_headers(req, headers_request); */
+  /* if (DPL_SUCCESS != ret2) */
+  /*   { */
+  /*     ret = ret2; */
+  /*     goto end; */
+  /*   } */
+  /* ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len); */
+  /* if (DPL_SUCCESS != ret2) */
+  /*   { */
+  /*     ret = ret2; */
+  /*     goto end; */
+  /*   } */
 
-  iov[n_iov].iov_base = header;
-  iov[n_iov].iov_len = header_len;
-  n_iov++;
+  /* iov[n_iov].iov_base = header; */
+  /* iov[n_iov].iov_len = header_len; */
+  /* n_iov++; */
 
-  //final crlf
-  iov[n_iov].iov_base = "\r\n";
-  iov[n_iov].iov_len = 2;
-  n_iov++;
+  /* //final crlf */
+  /* iov[n_iov].iov_base = "\r\n"; */
+  /* iov[n_iov].iov_len = 2; */
+  /* n_iov++; */
 
-  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
-      connection_close = 1;
-      ret = ret2;
-      goto end;
-    }
+  /* ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout); */
+  /* if (DPL_SUCCESS != ret2) */
+  /*   { */
+  /*     DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed"); */
+  /*     connection_close = 1; */
+  /*     ret = ret2; */
+  /*     goto end; */
+  /*   } */
 
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  /* ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close); */
+  /* if (DPL_SUCCESS != ret2) */
+  /*   { */
+  /*     ret = ret2; */
+  /*     goto end; */
+  /*   } */
 
-  /* WIP dpl_dict_print(headers_reply, stdout, -1); */
+  /* /\* WIP dpl_dict_print(headers_reply, stdout, -1); *\/ */
 
-  swift_ctx = calloc(1, sizeof(swift_ctx));
-  if (NULL == swift_ctx)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
+  /* swift_ctx = calloc(1, sizeof(swift_ctx)); */
+  /* if (NULL == swift_ctx) */
+  /*   { */
+  /*     ret = DPL_ENOMEM; */
+  /*     goto end; */
+  /*   } */
 
  /*  objects = dpl_vec_new(2, 2); */
  /*  if (NULL == objects) */
