@@ -60,7 +60,7 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
-@#label volume=TestVolume001 storage=File pool=File
+@#label volume=TestVolume001 storage=File pool=Full
 @#setdebug level=100 storage=File
 run job=$JobName yes
 @sleep 3
@@ -97,7 +97,7 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
-label volume=TestVolume001 storage=File pool=File
+label volume=TestVolume001 storage=File pool=Full
 @#setdebug level=100 storage=File
 wait
 messages
