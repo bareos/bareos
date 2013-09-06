@@ -43,11 +43,13 @@ all: Makefile $(TESTS) gigaslam grow
 
 bregtest: Makefile bregtest.o \
 	  ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bregtest.o -lbareos -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS)
 
 testls: Makefile testls.o \
 	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L. -L../lib -L../findlib -o $@ testls.o \
 	  $(DLIB) -lbareosfind -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
 
@@ -59,6 +61,7 @@ bbatch: Makefile bbatch.o \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
 	../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -o $@ bbatch.o \
 	  -lbareoscats -lbareossql -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
 
@@ -67,6 +70,7 @@ bvfs_test: Makefile bvfs_test.o \
 	   ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	   ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
 	   ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ bvfs_test.o  \
 	  -lbareoscats -lbareossql -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
 
@@ -75,6 +79,7 @@ ing_test: Makefile ing_test.o \
 	  ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	  ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
 	  ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ ing_test.o  \
 	  -lbareoscats -lbareossql -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
 
@@ -82,16 +87,20 @@ cats_test: Makefile cats_test.o \
 	   ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
 	   ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	   ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ cats_test.o  \
 	  -lbareoscats -lbareossql -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
 
 gigaslam.o: gigaslam.c
+	echo "Compiling $<"
 	$(CXX) $(CXXFLAGS) -c $<
 
 gigaslam: gigaslam.o
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -o $@ gigaslam.o
 
 grow: Makefile grow.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ grow.o -lbareos -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status

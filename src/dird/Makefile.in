@@ -76,6 +76,7 @@ bareos-dbcheck: Makefile $(DBCHKOBJS) \
 	 ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
 	 ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
 	 ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -L../cats -o $@ $(DBCHKOBJS) \
 	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
 
@@ -85,6 +86,7 @@ testfind: Makefile $(TSTFNDOBJS) \
 	 ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
 	 ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
 	 ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -L../cats -o $@ $(TSTFNDOBJS) \
 	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
 
