@@ -89,6 +89,41 @@ dpl_get_capabilities(dpl_ctx_t *ctx,
 }
 
 /**
+ * @brief login
+ *
+ * @param ctx droplet context
+ *
+ */
+dpl_status_t
+dpl_login(dpl_ctx_t *ctx)
+{
+  dpl_status_t ret, ret2;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "login");
+
+  if (NULL == ctx->backend->login)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+  
+  ret2 = ctx->backend->login(ctx);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret = DPL_SUCCESS;
+  
+ end:
+  
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+  
+  return ret;
+}
+
+/**
  * @brief convert the absolute URI in @a location string to a relative
  * resource (possibly removing ctx->base_path) and subresource
  *

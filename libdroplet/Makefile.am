@@ -37,6 +37,10 @@ libdroplet_la_SOURCES = \
 	cdmi/crcmodel.c \
 	cdmi/object_id.c \
 	cdmi/cdmi.c \
+	swift/backend.c \
+	swift/replyparser.c \
+	swift/reqbuilder.c \
+	swift/swift.c \
 	srws/backend.c \
 	srws/replyparser.c \
 	srws/reqbuilder.c \
@@ -99,6 +103,13 @@ libdropletdropletcdmiinclude_HEADERS = \
 	include/droplet/cdmi/object_id.h \
 	include/droplet/cdmi/crcmodel.h \
 	include/droplet/cdmi/cdmi.h
+
+libdropletdropletswiftincludedir = $(includedir)/droplet-3.0/droplet/swift
+libdropletdropletswiftinclude_HEADERS = \
+	include/droplet/swift/backend.h \
+	include/droplet/swift/replyparser.h \
+	include/droplet/swift/reqbuilder.h \
+	include/droplet/swift/swift.h
 
 libdropletdropletsrwsincludedir = $(includedir)/droplet-3.0/droplet/srws
 libdropletdropletsrwsinclude_HEADERS = \

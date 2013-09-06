@@ -36,6 +36,7 @@
 
 /* general */
 typedef dpl_status_t (*dpl_get_capabilities_t)(dpl_ctx_t *ctx, dpl_capability_t *maskp);
+typedef dpl_status_t (*dpl_login_t)(dpl_ctx_t *ctx);
 typedef dpl_status_t (*dpl_list_all_my_buckets_t)(dpl_ctx_t *ctx, dpl_vec_t **vecp, char **locationp);
 typedef dpl_status_t (*dpl_list_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
 typedef dpl_status_t (*dpl_make_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const dpl_sysmd_t *sysmd, char **locationp);
@@ -56,6 +57,7 @@ typedef struct dpl_backend_s
 {
   const char *name; /*!< name of the backend */
   dpl_get_capabilities_t get_capabilities;
+  dpl_login_t login;
   dpl_list_all_my_buckets_t list_all_my_buckets;
   dpl_list_bucket_t list_bucket;
   dpl_make_bucket_t make_bucket;
