@@ -525,6 +525,10 @@ x   */
   pthread_mutex_t lock;
   int canary; /*!< for debugging lock */
 
+  /*
+  * backend ctx (for session, etc...)
+  */
+  void *backend_ctx;
 } dpl_ctx_t;
 
 /**/

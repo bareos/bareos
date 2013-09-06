@@ -32,27 +32,20 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
-#include <droplet/s3/s3.h>
+#include <droplet/swift/swift.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
 dpl_backend_t
-dpl_backend_s3 = 
+dpl_backend_swift = 
   {
-    "s3",
-    .get_capabilities   = dpl_s3_get_capabilities,
-    .list_all_my_buckets = dpl_s3_list_all_my_buckets,
-    .list_bucket 	= dpl_s3_list_bucket,
-    .make_bucket 	= dpl_s3_make_bucket,
-    .delete_bucket 	= dpl_s3_delete_bucket,
-    .put 		= dpl_s3_put,
-    .put_buffered       = dpl_s3_put_buffered,
-    .get 		= dpl_s3_get,
-    .get_buffered       = dpl_s3_get_buffered,
-    .head 		= dpl_s3_head,
-    .head_raw 		= dpl_s3_head_raw,
-    .deletef 		= dpl_s3_delete,
-    .genurl             = dpl_s3_genurl,
-    .copy               = dpl_s3_copy,
+    "swift",
+    .list_bucket 	= dpl_swift_list_bucket,
+    .login	 	= dpl_swift_login
+    /* .put 		= dpl_swift_put, */
+    /* .get 		= dpl_swift_get, */
+    /* .head 		= dpl_swift_head, */
+    /* .deletef 		= dpl_swift_delete, */
+    /* .copy               = dpl_swift_copy, */
   };

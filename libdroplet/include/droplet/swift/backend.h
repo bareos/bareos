@@ -31,9 +31,13 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_POSIX_BACKEND_H__
-#define __DROPLET_POSIX_BACKEND_H__ 1
+#ifndef __DROPLET_SWIFT_BACKEND_H__
+#define __DROPLET_SWIFT_BACKEND_H__ 1
 
-extern dpl_backend_t dpl_backend_posix;
+/* PROTO backend.c */
+/* src/backend.c */
+dpl_status_t dpl_swift_get_capabilities(dpl_ctx_t *ctx, dpl_capability_t *maskp);
+dpl_status_t dpl_swift_list_bucket(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
 
+dpl_status_t dpl_swift_login(dpl_ctx_t *ctx);
 #endif

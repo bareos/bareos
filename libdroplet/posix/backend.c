@@ -362,120 +362,6 @@ dpl_posix_put(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_posix_put_buffered(dpl_ctx_t *ctx,
-                       const char *bucket,
-                       const char *resource,
-                       const char *subresource,
-                       const dpl_option_t *option, 
-                       dpl_ftype_t object_type,
-                       const dpl_condition_t *condition,
-                       const dpl_range_t *range,
-                       const dpl_dict_t *metadata,
-                       const dpl_sysmd_t *sysmd,
-                       unsigned int data_len,
-                       const dpl_dict_t *query_params, 
-                       dpl_conn_t **connp,
-                       char **locationp)
-{
-  dpl_conn_t *conn = NULL;
-  dpl_status_t ret, ret2;
-  char path[MAXPATHLEN];
-  int fd = -1;
-  int iret;
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
-  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
-
-  switch (object_type)
-    {
-    case DPL_FTYPE_UNDEF:
-    case DPL_FTYPE_ANY:
-    case DPL_FTYPE_CAP:
-    case DPL_FTYPE_DOM:
-    case DPL_FTYPE_DIR:
-    case DPL_FTYPE_CHRDEV:
-    case DPL_FTYPE_BLKDEV:
-    case DPL_FTYPE_FIFO:
-    case DPL_FTYPE_SOCKET:
-    case DPL_FTYPE_SYMLINK:
-      ret = DPL_EINVAL;
-      goto end;
-    case DPL_FTYPE_REG:
-      fd = creat(path, 0600);
-      if (-1 == fd)
-        {
-          if (ENOENT == errno)
-            {
-              ret = DPL_ENOENT;
-            }
-          else
-            {
-              perror("creat");
-              ret = DPL_FAILURE;
-            }
-          goto end;
-        }
-      break ;
-    }
-
-  ret2 = dpl_posix_setattr(path, metadata, sysmd);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (range)
-    {
-      int range_len;
-      
-      range_len = range->start - range->end;
-      if (data_len > range_len)
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-
-      iret = lseek(fd, range->start, SEEK_SET);
-      if (-1 == iret)
-        {
-          perror("lseek");
-          ret = DPL_FAILURE;
-          goto end;
-        }
-    }
-
-  conn = dpl_conn_open_file(ctx, fd);
-  if (NULL == conn)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-  fd = -1;
-
-  if (NULL != connp)
-    {
-      *connp = conn;
-      conn = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != conn)
-    dpl_conn_release(conn);
-
-  if (-1 == fd)
-    close(fd);
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
-
-  return ret;
-}
-
-dpl_status_t
 dpl_posix_get(dpl_ctx_t *ctx,
               const char *bucket,
               const char *resource,
@@ -662,143 +548,6 @@ cb_get_buffer(void *cb_arg,
     }
 
   return DPL_SUCCESS;
-}
-
-dpl_status_t
-dpl_posix_get_buffered(dpl_ctx_t *ctx,
-                       const char *bucket,
-                       const char *resource,
-                       const char *subresource,
-                       const dpl_option_t *option, 
-                       dpl_ftype_t object_type,
-                       const dpl_condition_t *condition,
-                       const dpl_range_t *range, 
-                       dpl_metadatum_func_t metadatum_func,
-                       dpl_dict_t **metadatap,
-                       dpl_sysmd_t *sysmdp,
-                       dpl_buffer_func_t buffer_func,
-                       void *cb_arg,
-                       char **locationp)
-{
-  dpl_status_t ret, ret2;
-  char path[MAXPATHLEN];
-  int fd = -1;
-  int iret;
-  char buf[8192];
-  ssize_t cc;
-  dpl_dict_t *all_mds = NULL;
-  struct get_conven gc;
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
-  memset(&gc, 0, sizeof (gc));
-  gc.metadata = dpl_dict_new(13);
-  if (NULL == gc.metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-  gc.sysmdp = sysmdp;
-  gc.metadatum_func = metadatum_func;
-  gc.buffer_func = buffer_func;
-  gc.cb_arg = cb_arg;
-
-  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
-
-  switch (object_type)
-    {
-    case DPL_FTYPE_UNDEF:
-    case DPL_FTYPE_CAP:
-    case DPL_FTYPE_DOM:
-    case DPL_FTYPE_DIR:
-    case DPL_FTYPE_CHRDEV:
-    case DPL_FTYPE_BLKDEV:
-    case DPL_FTYPE_FIFO:
-    case DPL_FTYPE_SOCKET:
-    case DPL_FTYPE_SYMLINK:
-      ret = DPL_EINVAL;
-      goto end;
-    case DPL_FTYPE_ANY:
-    case DPL_FTYPE_REG:
-      fd = open(path, O_RDONLY);
-      if (-1 == fd)
-        {
-          perror("open");
-          ret = DPL_FAILURE;
-          goto end;
-        }
-      break ;
-    }
-
-  if (range)
-    {
-      iret = lseek(fd, range->start, SEEK_SET);
-      if (-1 == iret)
-        {
-          perror("lseek");
-          ret = DPL_FAILURE;
-          goto end;
-        }
-    }
-
-  ret2 = dpl_posix_head_raw(ctx, bucket, resource, subresource, option,
-                            object_type, condition, &all_mds, locationp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_dict_iterate(all_mds, cb_get_value, &gc);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  while (1)
-    {
-      cc = read(fd, buf, sizeof (buf));
-      if (-1 == cc)
-        {
-          perror("read");
-          ret = DPL_FAILURE;
-          goto end;
-        }
-
-      ret2 = cb_get_buffer(&gc, buf, cc);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-      
-      if (0 == cc)
-        break ;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = gc.metadata;
-      gc.metadata = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != all_mds)
-    dpl_dict_free(all_mds);
-
-  if (NULL != gc.metadata)
-    dpl_dict_free(gc.metadata);
-
-  if (-1 == fd)
-    close(fd);
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
-
-  return ret;
 }
 
 dpl_status_t
@@ -1235,3 +984,17 @@ dpl_posix_copy(dpl_ctx_t *ctx,
 
   return ret;
 }
+
+dpl_backend_t
+dpl_backend_posix = 
+  {
+    "posix",
+    .get_capabilities   = dpl_posix_get_capabilities,
+    .list_bucket 	= dpl_posix_list_bucket,
+    .put 		= dpl_posix_put,
+    .get 		= dpl_posix_get,
+    .head 		= dpl_posix_head,
+    .head_raw 		= dpl_posix_head_raw,
+    .deletef 		= dpl_posix_delete,
+    .copy               = dpl_posix_copy,
+  };

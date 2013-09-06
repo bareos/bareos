@@ -32,23 +32,49 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
-#include <droplet/posix/posix.h>
+#include <json.h>
+#include <droplet/swift/reqbuilder.h>
+#include <droplet/swift/replyparser.h>
+
+/** @file */
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-dpl_backend_t
-dpl_backend_posix = 
-  {
-    "posix",
-    .get_capabilities   = dpl_posix_get_capabilities,
-    .list_bucket 	= dpl_posix_list_bucket,
-    .put 		= dpl_posix_put,
-    .put_buffered       = dpl_posix_put_buffered,
-    .get 		= dpl_posix_get,
-    .get_buffered       = dpl_posix_get_buffered,
-    .head 		= dpl_posix_head,
-    .head_raw 		= dpl_posix_head_raw,
-    .deletef 		= dpl_posix_delete,
-    .copy               = dpl_posix_copy,
-  };
+/*
+  ret2 = dpl_swift_parse_list_bucket(ctx, data_buf, data_len, prefix, objects, common_prefixes);
+*/
+
+
+dpl_status_t
+dpl_swift_parse_list_bucket(dpl_ctx_t *ctx,
+                           const char *buf,
+                           int len,
+                           const char *prefix,
+                           dpl_vec_t *objects,
+                           dpl_vec_t *common_prefixes)
+{
+  int ret, ret2;
+  int n_children, i;
+  dpl_common_prefix_t *common_prefix = NULL;
+  dpl_object_t *object = NULL;
+
+  if (buf != NULL)
+    {
+      ret = write(1, "TEST LIST: \n\t", strlen("TEST LIST: \n\t"));
+      ret = write(1, buf, len);
+    }
+  else
+    write(1, "no data\n", strlen("no data\n"));
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != common_prefix)
+    dpl_common_prefix_free(common_prefix);
+
+  if (NULL != object)
+    dpl_object_free(object);
+  return ret;
+}

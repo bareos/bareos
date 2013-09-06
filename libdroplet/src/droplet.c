@@ -375,6 +375,7 @@ dpl_size_str(uint64_t size)
 
 extern dpl_backend_t dpl_backend_s3;
 extern dpl_backend_t dpl_backend_cdmi;
+extern dpl_backend_t dpl_backend_swift;
 extern dpl_backend_t dpl_backend_srws;
 extern dpl_backend_t dpl_backend_sproxyd;
 extern dpl_backend_t dpl_backend_posix;
@@ -386,6 +387,8 @@ dpl_backend_find(const char *name)
     return &dpl_backend_s3;
   else if (!strcmp(name, "cdmi"))
     return &dpl_backend_cdmi;
+  else if (!strcmp(name, "swift"))
+    return &dpl_backend_swift;
   else if (!strcmp(name, "srws"))
     return &dpl_backend_srws;
   else if (!strcmp(name, "sproxyd"))

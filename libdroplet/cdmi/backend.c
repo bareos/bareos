@@ -515,217 +515,6 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_cdmi_put_buffered_internal(dpl_ctx_t *ctx,
-                               int post,
-                               const char *bucket,
-                               const char *resource,
-                               const char *subresource,
-                               const dpl_option_t *option,
-                               dpl_ftype_t object_type,
-                               const dpl_condition_t *condition,
-                               const dpl_range_t *range,
-                               const dpl_dict_t *metadata,
-                               const dpl_sysmd_t *sysmd,
-                               unsigned int data_len,
-                               const dpl_dict_t *query_params,
-                               dpl_conn_t **connp,
-                               char **locationp)
-{
-  int           ret, ret2;
-  dpl_conn_t    *conn = NULL;
-  char          header[dpl_header_size];
-  u_int         header_len;
-  struct iovec  iov[10];
-  int           n_iov = 0;
-  int           connection_close = 0;
-  dpl_dict_t    *headers_request = NULL;
-  dpl_dict_t    *headers_reply = NULL;
-  dpl_req_t     *req = NULL;
-  dpl_cdmi_req_mask_t req_mask = 0u;
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
-  if (option)
-    {
-      if (option->mask & DPL_OPTION_HTTP_COMPAT)
-        req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
-    }
-
-  req = dpl_req_new(ctx);
-  if (NULL == req)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  if (post)
-    dpl_req_set_method(req, DPL_METHOD_POST);
-  else
-    dpl_req_set_method(req, DPL_METHOD_PUT);
-
-  if (NULL != bucket)
-    {
-      ret2 = dpl_req_set_bucket(req, bucket);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  ret2 = dpl_cdmi_req_set_resource(req, resource);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != subresource)
-    {
-      ret2 = dpl_req_set_subresource(req, subresource);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  dpl_req_set_data(req, NULL, data_len);
-
-  if (NULL != condition)
-    {
-      dpl_req_set_condition(req, condition);
-    }
-
-  if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  if (range)
-    {
-      ret2 = dpl_cdmi_req_add_range(req, req_mask, range);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  dpl_req_set_object_type(req, object_type);
-
-  dpl_req_add_behavior(req, DPL_BEHAVIOR_EXPECT);
-
-  if (NULL != sysmd)
-    {
-      ret2 = dpl_cdmi_add_sysmd_to_req(sysmd, req);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  if (NULL != metadata)
-    {
-      ret2 = dpl_cdmi_req_add_metadata(req, metadata, option ? option->mask & DPL_OPTION_APPEND_METADATA : 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  ret2 = dpl_cdmi_req_build(req, req_mask, &headers_request, NULL, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
-  ret2 = dpl_try_connect(ctx, req, &conn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_add_host_to_headers(req, headers_request);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  iov[n_iov].iov_base = header;
-  iov[n_iov].iov_len = header_len;
-  n_iov++;
-
-  //final crlf
-  iov[n_iov].iov_base = "\r\n";
-  iov[n_iov].iov_len = 2;
-  n_iov++;
-
-  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
-      connection_close = 1;
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != connp)
-    {
-      *connp = conn;
-      conn = NULL; //consume it
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != conn)
-    {
-      if (1 == connection_close)
-        dpl_conn_terminate(conn);
-      else
-        dpl_conn_release(conn);
-    }
-
-  if (NULL != headers_reply)
-    dpl_dict_free(headers_reply);
-
-  if (NULL != headers_request)
-    dpl_dict_free(headers_request);
-
-  if (NULL != req)
-    dpl_req_free(req);
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
-
-  return ret;
-}
-
-dpl_status_t
 dpl_cdmi_post(dpl_ctx_t *ctx,
               const char *bucket,
               const char *resource,
@@ -750,28 +539,6 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_cdmi_post_buffered(dpl_ctx_t *ctx,
-                       const char *bucket,
-                       const char *resource,
-                       const char *subresource,
-                       const dpl_option_t *option,
-                       dpl_ftype_t object_type,
-                       const dpl_condition_t *condition,
-                       const dpl_range_t *range,
-                       const dpl_dict_t *metadata,
-                       const dpl_sysmd_t *sysmd,
-                       unsigned int data_len,
-                       const dpl_dict_t *query_params,
-                       dpl_conn_t **connp,
-                       char **locationp)
-{
-  return dpl_cdmi_put_buffered_internal(ctx, 1, bucket, resource, subresource, 
-                                        option, object_type, condition, range,
-                                        metadata, sysmd, data_len, 
-                                        query_params, connp, locationp);
-}
-
-dpl_status_t
 dpl_cdmi_put(dpl_ctx_t *ctx,
              const char *bucket,
              const char *resource,
@@ -793,46 +560,6 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
                                range, metadata, sysmd, 
                                data_buf, data_len, NULL,
                                NULL, locationp);
-}
-
-/** 
- * put range buffered
- *
- * @param ctx 
- * @param bucket 
- * @param resource 
- * @param subresource 
- * @param option DPL_OPTION_HTTP_COMPAT is mandatory
- * @param object_type 
- * @param range 
- * @param metadata 
- * @param sysmd 
- * @param data_len 
- * @param connp 
- * @param locationp 
- * 
- * @return 
- */
-dpl_status_t
-dpl_cdmi_put_buffered(dpl_ctx_t *ctx,
-                      const char *bucket,
-                      const char *resource,
-                      const char *subresource,
-                      const dpl_option_t *option,
-                      dpl_ftype_t object_type,
-                      const dpl_condition_t *condition,
-                      const dpl_range_t *range,
-                      const dpl_dict_t *metadata,
-                      const dpl_sysmd_t *sysmd,
-                      unsigned int data_len,
-                      const dpl_dict_t *query_params,
-                      dpl_conn_t **connp,
-                      char **locationp)
-{
-  return dpl_cdmi_put_buffered_internal(ctx, 0, bucket, resource, subresource, 
-                                        option, object_type, condition, range,
-                                        metadata, sysmd, data_len, 
-                                        query_params, connp, locationp);
 }
 
 dpl_status_t
@@ -1246,230 +973,6 @@ cb_get_buffer(void *cb_arg,
     }
 
   return DPL_SUCCESS;
-}
-
-/** 
- * get range buffered
- * 
- * @param ctx 
- * @param bucket 
- * @param resource 
- * @param subresource 
- * @param option DPL_OPTION_HTTP_COMPAT is mandatory
- * @param object_type 
- * @param condition 
- * @param range 
- * @param metadatum_func 
- * @param metadatap 
- * @param sysmdp 
- * @param buffer_func 
- * @param cb_arg 
- * @param locationp 
- * 
- * @return 
- */
-dpl_status_t
-dpl_cdmi_get_buffered(dpl_ctx_t *ctx,
-                      const char *bucket,
-                      const char *resource,
-                      const char *subresource,
-                      const dpl_option_t *option,
-                      dpl_ftype_t object_type,
-                      const dpl_condition_t *condition,
-                      const dpl_range_t *range,
-                      dpl_metadatum_func_t metadatum_func,
-                      dpl_dict_t **metadatap,
-                      dpl_sysmd_t *sysmdp,
-                      dpl_buffer_func_t buffer_func,
-                      void *cb_arg,
-                      char **locationp)
-{
-  int           ret, ret2;
-  dpl_conn_t   *conn = NULL;
-  char          header[dpl_header_size];
-  u_int         header_len;
-  struct iovec  iov[10];
-  int           n_iov = 0;
-  dpl_dict_t    *headers_request = NULL;
-  dpl_req_t     *req = NULL;
-  struct get_conven gc;
-  int http_status;
-  dpl_cdmi_req_mask_t req_mask = 0u;
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
-  memset(&gc, 0, sizeof (gc));
-  gc.metadata = dpl_dict_new(13);
-  if (NULL == gc.metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-  gc.sysmdp = sysmdp;
-  gc.metadatum_func = metadatum_func;
-  gc.buffer_func = buffer_func;
-  gc.cb_arg = cb_arg;
-
-  if (option)
-    {
-      if (option->mask & DPL_OPTION_HTTP_COMPAT)
-        {
-          req_mask |= DPL_CDMI_REQ_HTTP_COMPAT;
-          gc.http_compat = 1;
-        }
-    }
-
-  req = dpl_req_new(ctx);
-  if (NULL == req)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  dpl_req_set_method(req, DPL_METHOD_GET);
-
-  if (NULL != bucket)
-    {
-      ret2 = dpl_req_set_bucket(req, bucket);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  ret2 = dpl_cdmi_req_set_resource(req, resource);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != subresource)
-    {
-      ret2 = dpl_req_set_subresource(req, subresource);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  if (NULL != condition)
-    {
-      dpl_req_set_condition(req, condition);
-    }
-
-  if (!(req_mask & DPL_CDMI_REQ_HTTP_COMPAT))
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  //build request
-  ret2 = dpl_cdmi_req_build(req, req_mask, &headers_request, NULL, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  //contact default host
-  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
-
-  ret2 = dpl_try_connect(ctx, req, &conn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_add_host_to_headers(req, headers_request);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  iov[n_iov].iov_base = header;
-  iov[n_iov].iov_len = header_len;
-  n_iov++;
-
-  //final crlf
-  iov[n_iov].iov_base = "\r\n";
-  iov[n_iov].iov_len = 2;
-  n_iov++;
-
-  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
-      gc.connection_close = 1;
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_read_http_reply_buffered(conn, 1, &http_status, cb_get_header, cb_get_buffer, &gc);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "read http answer failed");
-      gc.connection_close = 1;
-      ret = ret2;
-      goto end;
-    }
-
-  if (!conn->ctx->keep_alive)
-    gc.connection_close = 1;
-
-  if (!gc.http_compat)
-    {
-      //XXX fetch metadata from overall buffer
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = gc.metadata;
-      gc.metadata = NULL;
-    }
-  
-  //map http_status to relevant value
-  ret = dpl_map_http_status(http_status);
-
-  //caller is responsible for logging the event
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != conn)
-    {
-      if (1 == gc.connection_close)
-        dpl_conn_terminate(conn);
-      else
-        dpl_conn_release(conn);
-    }
-
-  if (NULL != gc.metadata)
-    dpl_dict_free(gc.metadata);
-
-  if (NULL != headers_request)
-    dpl_dict_free(headers_request);
-
-  if (NULL != req)
-    dpl_req_free(req);
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
-
-  return ret;
 }
 
 dpl_status_t
@@ -2123,45 +1626,6 @@ dpl_cdmi_post_id(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_cdmi_post_id_buffered(dpl_ctx_t *ctx,
-                          const char *bucket,
-                          const char *resource,
-                          const char *subresource,
-                          const dpl_option_t *option,
-                          dpl_ftype_t object_type,
-                          const dpl_condition_t *condition,
-                          const dpl_range_t *range,
-                          const dpl_dict_t *metadata,
-                          const dpl_sysmd_t *sysmd,
-                          unsigned int data_len,
-                          const dpl_dict_t *query_params,
-                          dpl_conn_t **connp,
-                          char **locationp)
-{
-  dpl_status_t ret;
-  char *id_path = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "post_buffered_id bucket=%s subresource=%s", bucket, subresource);
-
-  ret = dpl_cdmi_get_id_path(ctx, bucket, &id_path);
-  if (DPL_SUCCESS != ret)
-    {
-      goto end;
-    }
-
-  ret = dpl_cdmi_post_buffered(ctx, bucket, id_path, subresource, option, object_type, condition, range, metadata, sysmd, data_len, query_params, connp, locationp);
-  
- end:
-
-  if (NULL != id_path)
-    free(id_path);
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t
 dpl_cdmi_put_id(dpl_ctx_t *ctx,
                 const char *bucket,
                 const char *id,
@@ -2216,78 +1680,6 @@ dpl_cdmi_put_id(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
- * put range buffered
- *
- * @param ctx 
- * @param bucket 
- * @param resource 
- * @param subresource 
- * @param option DPL_OPTION_HTTP_COMPAT is mandatory
- * @param object_type 
- * @param range 
- * @param metadata 
- * @param sysmd 
- * @param data_len 
- * @param connp 
- * @param locationp 
- * 
- * @return 
- */
-dpl_status_t
-dpl_cdmi_put_id_buffered(dpl_ctx_t *ctx,
-                         const char *bucket,
-                         const char *id,
-                         const char *subresource,
-                         const dpl_option_t *option,
-                         dpl_ftype_t object_type,
-                         const dpl_condition_t *condition,
-                         const dpl_range_t *range,
-                         const dpl_dict_t *metadata,
-                         const dpl_sysmd_t *sysmd,
-                         unsigned int data_len,
-                         const dpl_dict_t *query_params,
-                         dpl_conn_t **connp,
-                         char **locationp)
-{
-  dpl_status_t ret, ret2;
-  char *id_path = NULL;
-  char resource[DPL_MAXPATHLEN];
-  char *native_id = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "put_id_buffered bucket=%s id=%s subresource=%s", bucket, id, subresource);
-
-  ret = dpl_cdmi_get_id_path(ctx, bucket, &id_path);
-  if (DPL_SUCCESS != ret)
-    {
-      goto end;
-    }
-
-  ret2 = dpl_cdmi_convert_id_to_native(ctx, id, ctx->enterprise_number, &native_id);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
-
-  ret = dpl_cdmi_put_buffered(ctx, bucket, resource, subresource, option, object_type, condition,
-                              range, metadata, sysmd, data_len, query_params, connp, locationp);
-
- end:
-
-  if (NULL != native_id)
-    free(native_id);
-
-  if (NULL != id_path)
-    free(id_path);
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
-  
-  return ret;
-}
-
 dpl_status_t
 dpl_cdmi_get_id(dpl_ctx_t *ctx,
                 const char *bucket,
@@ -2326,59 +1718,6 @@ dpl_cdmi_get_id(dpl_ctx_t *ctx,
   snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
 
   ret = dpl_cdmi_get(ctx, bucket, resource, subresource, option, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp, locationp);
-  
- end:
-
-  if (NULL != native_id)
-    free(native_id);
-
-  if (NULL != id_path)
-    free(id_path);
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_cdmi_get_id_buffered(dpl_ctx_t *ctx,
-                         const char *bucket,
-                         const char *id,
-                         const char *subresource, 
-                         const dpl_option_t *option,
-                         dpl_ftype_t object_type,
-                         const dpl_condition_t *condition,
-                         const dpl_range_t *range,
-                         dpl_metadatum_func_t metadatum_func,
-                         dpl_dict_t **metadatap,
-                         dpl_sysmd_t *sysmdp, 
-                         dpl_buffer_func_t buffer_func,
-                         void *cb_arg,
-                         char **locationp)
-{
-  dpl_status_t ret, ret2;
-  char *id_path = NULL;
-  char resource[DPL_MAXPATHLEN];
-  char *native_id = NULL;
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "get_buffered_id bucket=%s id=%s subresource=%s", bucket, id, subresource);
-
-  ret = dpl_cdmi_get_id_path(ctx, bucket, &id_path);
-  if (DPL_SUCCESS != ret)
-    {
-      goto end;
-    }
-
-  ret2 = dpl_cdmi_convert_id_to_native(ctx, id, ctx->enterprise_number, &native_id);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(resource, sizeof (resource), "%s%s", id_path ? id_path : "", native_id);
-
-  ret = dpl_cdmi_get_buffered(ctx, bucket, resource, subresource, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, locationp);
   
  end:
 
@@ -2601,3 +1940,25 @@ dpl_cdmi_copy_id(dpl_ctx_t *ctx,
   return ret;
 }
 
+dpl_backend_t
+dpl_backend_cdmi = 
+  {
+    "cdmi",
+    .get_capabilities   = dpl_cdmi_get_capabilities,
+    .list_bucket 	= dpl_cdmi_list_bucket,
+    .post 		= dpl_cdmi_post,
+    .put 		= dpl_cdmi_put,
+    .get 		= dpl_cdmi_get,
+    .head 		= dpl_cdmi_head,
+    .head_raw 		= dpl_cdmi_head_raw,
+    .deletef 		= dpl_cdmi_delete,
+    .get_id_scheme      = dpl_cdmi_get_id_scheme,
+    .post_id 		= dpl_cdmi_post_id,
+    .put_id 		= dpl_cdmi_put_id,
+    .get_id 		= dpl_cdmi_get_id,
+    .head_id 		= dpl_cdmi_head_id,
+    .head_id_raw 	= dpl_cdmi_head_id_raw,
+    .delete_id 		= dpl_cdmi_delete_id,
+    .copy               = dpl_cdmi_copy,
+    .copy_id            = dpl_cdmi_copy_id,
+  };

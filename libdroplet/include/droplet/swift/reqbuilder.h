@@ -31,37 +31,27 @@
  *
  * https://github.com/scality/Droplet
  */
-#include "dropletp.h"
-#include <droplet/cdmi/cdmi.h>
+#ifndef __DROPLET_SWIFT_REQBUILDER_H__
+#define __DROPLET_SWIFT_REQBUILDER_H__ 1
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
-
-dpl_backend_t
-dpl_backend_cdmi = 
+typedef enum
   {
-    "cdmi",
-    .get_capabilities   = dpl_cdmi_get_capabilities,
-    .list_bucket 	= dpl_cdmi_list_bucket,
-    .post 		= dpl_cdmi_post,
-    .post_buffered      = dpl_cdmi_post_buffered,
-    .put 		= dpl_cdmi_put,
-    .put_buffered       = dpl_cdmi_put_buffered,
-    .get 		= dpl_cdmi_get,
-    .get_buffered       = dpl_cdmi_get_buffered,
-    .head 		= dpl_cdmi_head,
-    .head_raw 		= dpl_cdmi_head_raw,
-    .deletef 		= dpl_cdmi_delete,
-    .get_id_scheme      = dpl_cdmi_get_id_scheme,
-    .post_id 		= dpl_cdmi_post_id,
-    .post_id_buffered   = dpl_cdmi_post_id_buffered,
-    .put_id 		= dpl_cdmi_put_id,
-    .put_id_buffered    = dpl_cdmi_put_id_buffered,
-    .get_id 		= dpl_cdmi_get_id,
-    .get_id_buffered    = dpl_cdmi_get_id_buffered,
-    .head_id 		= dpl_cdmi_head_id,
-    .head_id_raw 	= dpl_cdmi_head_id_raw,
-    .delete_id 		= dpl_cdmi_delete_id,
-    .copy               = dpl_cdmi_copy,
-    .copy_id            = dpl_cdmi_copy_id,
-  };
+    DPL_SWIFT_REQ_HTTP_COMPAT = (1u<<0),
+  } dpl_swift_req_mask_t;
+
+#define DPL_SWIFT_CONTENT_TYPE_CONTAINER  "application/swift-container"
+#define DPL_SWIFT_CONTENT_TYPE_OBJECT     "application/swift-object"
+#define DPL_SWIFT_CONTENT_TYPE_CAPABILITY "application/swift-capability"
+#define DPL_SWIFT_CONTENT_TYPE_DOMAIN     "application/swift-domain"
+#define DPL_SWIFT_CONTENT_TYPE_CHARDEVICE     "inode/chardevice"
+#define DPL_SWIFT_CONTENT_TYPE_BLOCKDEVICE    "inode/blockdevice"
+#define DPL_SWIFT_CONTENT_TYPE_FIFO       "inode/fifo"
+#define DPL_SWIFT_CONTENT_TYPE_SOCKET     "inode/socket"
+#define DPL_SWIFT_CONTENT_TYPE_SYMLINK    "inode/symlink"
+#define DPL_SWIFT_CONTENT_TYPE_ANY        "*/*"
+
+/* PROTO reqbuilder.c */
+/* src/reqbuilder.c */
+dpl_status_t dpl_swift_req_set_resource(dpl_req_t *req, const char *resource);
+dpl_status_t dpl_swift_req_build(dpl_ctx_t *ctx, const dpl_req_t *req, dpl_swift_req_mask_t req_mask, dpl_dict_t **headersp, char **body_strp, int *lenp);
+#endif

@@ -30,13 +30,11 @@ libdroplet_la_SOURCES = \
 	s3/backend.c \
 	s3/replyparser.c \
 	s3/reqbuilder.c \
-	s3/s3.c \
 	cdmi/backend.c \
 	cdmi/replyparser.c \
 	cdmi/reqbuilder.c \
 	cdmi/crcmodel.c \
 	cdmi/object_id.c \
-	cdmi/cdmi.c \
 	swift/backend.c \
 	swift/replyparser.c \
 	swift/reqbuilder.c \
@@ -44,14 +42,11 @@ libdroplet_la_SOURCES = \
 	srws/backend.c \
 	srws/replyparser.c \
 	srws/reqbuilder.c \
-	srws/srws.c \
 	srws/key.c \
 	sproxyd/backend.c \
 	sproxyd/replyparser.c \
 	sproxyd/reqbuilder.c \
-	sproxyd/sproxyd.c \
 	sproxyd/key.c \
-	posix/posix.c \
 	posix/backend.c \
 	posix/reqbuilder.c \
 	posix/replyparser.c \

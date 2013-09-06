@@ -31,24 +31,11 @@
  *
  * https://github.com/scality/Droplet
  */
-#include "dropletp.h"
-#include <droplet/srws/srws.h>
+#ifndef __DROPLET_SWIFT_H__
+#define __DROPLET_SWIFT_H__ 1
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#include <droplet/swift/reqbuilder.h>
+#include <droplet/swift/replyparser.h>
+#include <droplet/swift/backend.h>
 
-dpl_backend_t
-dpl_backend_srws = 
-  {
-    "srws",
-    .get_capabilities   = dpl_srws_get_capabilities,
-    .get_id_scheme      = dpl_srws_get_id_scheme,
-    .put_id 		= dpl_srws_put,
-    .put_id_buffered	= dpl_srws_put_buffered,
-    .get_id 		= dpl_srws_get,
-    .get_id_buffered    = dpl_srws_get_buffered,
-    .head_id 		= dpl_srws_head,
-    .head_id_raw	= dpl_srws_head_raw,
-    .delete_id 		= dpl_srws_delete,
-    .copy_id            = dpl_srws_copy,
-  };
+#endif

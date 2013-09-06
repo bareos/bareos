@@ -31,24 +31,21 @@
  *
  * https://github.com/scality/Droplet
  */
-#include "dropletp.h"
-#include <droplet/sproxyd/sproxyd.h>
+#ifndef __DROPLET_SWIFT_REPLYPARSER_H__
+#define __DROPLET_SWIFT_REPLYPARSER_H__ 1
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPL_X_OBJECT_META_PREFIX "X-Object-Meta-"
+#define DPL_X_CONTAINER_META_PREFIX "X-Container-Meta-"
 
-dpl_backend_t
-dpl_backend_sproxyd = 
-  {
-    "sproxyd",
-    .get_capabilities   = dpl_sproxyd_get_capabilities,
-    .get_id_scheme      = dpl_sproxyd_get_id_scheme,
-    .put_id 		= dpl_sproxyd_put_id,
-    .put_id_buffered	= dpl_sproxyd_put_id_buffered,
-    .get_id 		= dpl_sproxyd_get_id,
-    .get_id_buffered    = dpl_sproxyd_get_id_buffered,
-    .head_id 		= dpl_sproxyd_head_id,
-    .head_id_raw	= dpl_sproxyd_head_id_raw,
-    .delete_id 		= dpl_sproxyd_delete_id,
-    .copy_id            = dpl_sproxyd_copy_id,
-  };
+/* PROTO replyparser.c */
+/* src/replyparser.c */
+dpl_status_t cb_swift_req_add_metadata(dpl_dict_var_t *var, void *cb_arg);
+dpl_status_t dpl_swift_req_add_metadata(dpl_req_t *req, const dpl_dict_t *metadata, int append);
+dpl_status_t dpl_swift_get_metadatum_from_value(const char *key, dpl_value_t *val, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_swift_get_metadatum_from_string(const char *key, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_swift_get_metadatum_from_header(const char *header, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_swift_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_swift_get_metadata_from_values(const dpl_dict_t *values, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
+dpl_status_t dpl_swift_parse_list_bucket(dpl_ctx_t *ctx, const char *buf, int len, const char *prefix, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
+dpl_ftype_t dpl_swift_content_type_to_ftype(const char *str);
+#endif

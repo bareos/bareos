@@ -192,7 +192,6 @@ dpl_req_set_resource(dpl_req_t *req,
     free(req->resource);
 
   req->resource = nstr;
-
   return DPL_SUCCESS;
 }
 
