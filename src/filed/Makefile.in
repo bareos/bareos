@@ -92,6 +92,7 @@ static-bareos-fd: Makefile $(SVROBJS) \
 		  ../findlib/libbareosfind.a \
 		  ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
 		  ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -L../findlib -o $@ $(SVROBJS) \
 	   $(FDLIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) \
 	   $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS)

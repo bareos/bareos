@@ -42,45 +42,55 @@ all: Makefile $(TOOLS)
 	@echo " "
 
 bsmtp: Makefile bsmtp.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bsmtp.o -lbareos -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS)
 
 fstype: Makefile fstype.o \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ fstype.o -lbareosfind -lbareos -lm \
 	  $(DLIB) $(LIBS) $(GETTEXT_LIBS)
 
 drivetype: Makefile drivetype.o \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ drivetype.o -lbareosfind -lbareos -lm \
 	  $(DLIB) $(LIBS) $(GETTEXT_LIBS)
 
 bregex: Makefile bregex.o \
 	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bregex.o \
 	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
 
 bwild:	Makefile bwild.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bwild.o \
 	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
 
 bscrypto: Makefile bscrypto.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bscrypto.o \
 	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
 
 bpluginfo.o: bpluginfo.c
+	@echo "Compiling $<"
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) -I../filed -I../dird -I../stored $(DINCLUDE) $(CFLAGS) $<
 
 bpluginfo: Makefile bpluginfo.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bpluginfo.o -lbareos $(GETTEXT_LIBS)
 
 timelimit.o: timelimit.c
+	@echo "Compiling $<"
 	${CC} ${DEFS} ${DEBUG} $(CFLAGS) -DHAVE_ERRNO_H -DHAVE_SETITIMER -DHAVE_SIGACTION -c timelimit.c
 
 timelimit: timelimit.o
-	$(LIBTOOL) --silent --mode=link $(CC) $(LDFLAGS) -o $@ timelimit.o
+	@echo "Linking $@ ..."
+	$(LIBTOOL_LINK) $(CC) $(LDFLAGS) -o $@ timelimit.o
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
