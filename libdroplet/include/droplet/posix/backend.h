@@ -34,18 +34,6 @@
 #ifndef __DROPLET_POSIX_BACKEND_H__
 #define __DROPLET_POSIX_BACKEND_H__ 1
 
-/* PROTO backend.c */
-/* src/backend.c */
-dpl_status_t dpl_posix_get_capabilities(dpl_ctx_t *ctx, dpl_capability_t *maskp);
-dpl_status_t dpl_posix_list_bucket(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
-dpl_status_t dpl_posix_put(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, dpl_sysmd_t *returned_sysmdp, char **locationp);
-dpl_status_t dpl_posix_put_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, unsigned int data_len, const dpl_dict_t *query_params, dpl_conn_t **connp, char **locationp);
-dpl_status_t dpl_posix_get(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, char **locationp);
-dpl_status_t dpl_posix_get_buffered(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, dpl_metadatum_func_t metadatum_func, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, dpl_buffer_func_t buffer_func, void *cb_arg, char **locationp);
-dpl_status_t dpl_posix_head(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, char **locationp);
-dpl_status_t dpl_posix_head_raw(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap, char **locationp);
-dpl_status_t dpl_posix_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_posix_delete(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, char **locationp);
-dpl_status_t dpl_posix_genurl(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const const dpl_option_t *option, time_t expires, char *buf, unsigned int len, unsigned int *lenp, char **locationp);
-dpl_status_t dpl_posix_copy(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, const const dpl_option_t *option, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition, char **locationp);
+extern dpl_backend_t dpl_backend_posix;
+
 #endif
