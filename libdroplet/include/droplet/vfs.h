@@ -71,60 +71,23 @@ typedef enum
   {
     DPL_VFILE_FLAG_CREAT =   (1u<<0),     /*!< create file if it doesnt exist */
     DPL_VFILE_FLAG_EXCL =    (1u<<1),     /*!< exclusive creation */
-    DPL_VFILE_FLAG_MD5 =     (1u<<2),     /*!< check MD5 */
-    DPL_VFILE_FLAG_ENCRYPT = (1u<<3),     /*!< encrypt on the fly */
-    DPL_VFILE_FLAG_POST =    (1u<<4),     /*!< use POST to write/creat file */
-    DPL_VFILE_FLAG_RANGE =   (1u<<5),     /*!< use specified range (get only) */
-    DPL_VFILE_FLAG_BLOB =    (1u<<6),     /*!< get/put file in one-shot */
-    DPL_VFILE_FLAG_RDONLY =  (1u<<7),     /*!< open in read-only mode */
-    DPL_VFILE_FLAG_WRONLY =  (1u<<8),     /*!< open in write-only mode */
-    DPL_VFILE_FLAG_RDWR =    (1u<<9),     /*!< open in read-write mode */
+    DPL_VFILE_FLAG_RDONLY =  (1u<<2),     /*!< open in read-only mode */
+    DPL_VFILE_FLAG_WRONLY =  (1u<<3),     /*!< open in write-only mode */
+    DPL_VFILE_FLAG_RDWR =    (1u<<4),     /*!< open in read-write mode */
   } dpl_vfile_flag_t;
 
 typedef struct
 {
   dpl_ctx_t *ctx;
-
-  unsigned int flags;
-
-  dpl_conn_t *conn;
-
-  /*
-   * MD5
-   */
-  MD5_CTX md5_ctx;
-
-  /*
-   * encrypt
-   */
-  unsigned char salt[PKCS5_SALT_LEN];
-  EVP_CIPHER_CTX *cipher_ctx;
-  int header_done;
-
-  /*
-   * read
-   */
-  dpl_buffer_func_t buffer_func;
-  void *cb_arg;
-
-  /*
-   * for one shot
-   */
+  dpl_vfile_flag_t flags;
   char *bucket;
-  char *resource;
   dpl_fqn_t obj_fqn;
+  dpl_option_t *option;
   dpl_condition_t *condition;
-  dpl_ftype_t obj_type;
   dpl_dict_t *metadata;
   dpl_sysmd_t *sysmd;
   dpl_dict_t *query_params;
-
 } dpl_vfile_t;
-
-#define DPL_ENCRYPT_MAGIC "Salted__"
-
-#define DPL_CIPHER      "dpl_cipher"
-#define DPL_CIPHER_TYPE "dpl_cipher_type"
 
 /* PROTO vfs.c */
 dpl_fqn_t dpl_cwd(dpl_ctx_t *ctx, const char *bucket);
@@ -134,22 +97,15 @@ dpl_status_t dpl_iterate(dpl_ctx_t *ctx, const char *locator, int (* cb)(dpl_dir
 int dpl_eof(void *dir_hdl);
 void dpl_closedir(void *dir_hdl);
 dpl_status_t dpl_chdir(dpl_ctx_t *ctx, const char *locator);
+dpl_status_t dpl_close(dpl_vfile_t *vfile);
+dpl_status_t dpl_pwrite(dpl_vfile_t *vfile, char *buf, unsigned int len, unsigned long long offset);
+dpl_status_t dpl_pread(dpl_vfile_t *vfile, unsigned int len, unsigned long long offset, char **bufp, int *buf_lenp);
+dpl_status_t dpl_open(dpl_ctx_t *ctx,const char *locator, dpl_vfile_flag_t flag, dpl_option_t *option, dpl_condition_t *condition, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_dict_t *query_params, dpl_vfile_t **vfilep);
+dpl_status_t dpl_fput(dpl_ctx_t *ctx, const char *locator, dpl_option_t *option, dpl_condition_t *condition, dpl_range_t *range, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len);
+dpl_status_t dpl_fget(dpl_ctx_t *ctx, const char *locator, const dpl_option_t *option, const dpl_condition_t *condition, const dpl_range_t *range, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
 dpl_status_t dpl_mknod(dpl_ctx_t *ctx, const char *locator, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
 dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, const char *locator);
-dpl_status_t dpl_close_ex(dpl_vfile_t *vfile, dpl_sysmd_t *returned_sysmdp, char **locationp);
-dpl_status_t dpl_close(dpl_vfile_t *vfile);
-
-dpl_status_t dpl_open(dpl_ctx_t *ctx,const char *locator, dpl_vfile_flag_t flag, dpl_condition_t *condition, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_dict_t *query_params, dpl_vfile_t **vfilep);
-
-dpl_status_t dpl_openwrite(dpl_ctx_t *ctx, const char *locator, dpl_ftype_t obj_type, dpl_vfile_flag_t flags, dpl_range_t *range, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, unsigned int data_len, dpl_dict_t *query_params, dpl_vfile_t **vfilep);
-dpl_status_t dpl_write(dpl_vfile_t *vfile, char *buf, unsigned int len);
-dpl_status_t dpl_pwrite(dpl_vfile_t *vfile, char *buf, unsigned int len, unsigned long long offset, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
-
-dpl_status_t dpl_openread(dpl_ctx_t *ctx, const char *locator, dpl_vfile_flag_t flags, dpl_condition_t *condition, dpl_range_t *range, dpl_buffer_func_t buffer_func, void *cb_arg, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_read(dpl_vfile_t *vfile, size_t nbytes, char **bufp, int *buf_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_pread(dpl_vfile_t *vfile, unsigned int len, unsigned long long offset, char **bufp, int *buf_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
-
 dpl_status_t dpl_unlink(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_getattr(dpl_ctx_t *ctx, const char *locator, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_getattr_raw(dpl_ctx_t *ctx, const char *locator, dpl_dict_t **metadatap);

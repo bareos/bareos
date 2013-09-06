@@ -5,6 +5,7 @@
  */
 
 #include <droplet.h>
+#include <droplet/backend.h>
 #include <droplet/srws/backend.h>
 
 void

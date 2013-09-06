@@ -1,4 +1,4 @@
-noinst_PROGRAMS = recurse idtest idrangetest restrangetest srwskey resttest resttest_async timo idgetnoalloc idtestbuffered2 idtestbuffered3 ukstest
+noinst_PROGRAMS = recurse idtest idrangetest restrangetest srwskey resttest resttest_async timo idgetnoalloc idtestbuffered3 ukstest
 
 recurse_CFLAGS = -I$(top_srcdir)/libdroplet/include
 recurse_LDADD = $(top_builddir)/libdroplet/libdroplet.la $(JSON_LIBS) -lcrypto
@@ -36,10 +36,6 @@ timo_SOURCES = timo.c
 idgetnoalloc_CFLAGS = -I$(top_srcdir)/libdroplet/include
 idgetnoalloc_LDADD = $(top_builddir)/libdroplet/libdroplet.la $(JSON_LIBS) -lcrypto
 idgetnoalloc_SOURCES = idgetnoalloc.c
-
-idtestbuffered2_CFLAGS = -I$(top_srcdir)/libdroplet/include
-idtestbuffered2_LDADD = $(top_builddir)/libdroplet/libdroplet.la $(JSON_LIBS) -lcrypto
-idtestbuffered2_SOURCES = idtestbuffered2.c
 
 idtestbuffered3_CFLAGS = -I$(top_srcdir)/libdroplet/include
 idtestbuffered3_LDADD = $(top_builddir)/libdroplet/libdroplet.la $(JSON_LIBS) -lcrypto

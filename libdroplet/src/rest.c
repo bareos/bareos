@@ -390,66 +390,6 @@ dpl_post(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
- * post a path with bufferization enabled
- * 
- * @param ctx the droplet context
- * @param bucket can be NULL
- * @param path can be NULL
- * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
- * @param object_type DPL_FTYPE_REG create a file
- * @param metadata the optional user metadata
- * @param sysmd the optional system metadata
- * @param data_len the data length
- * @param query_params the optional query parameters
- * @param connp the returned connection object
- * 
- * @return DPL_SUCCESS
- * @return DPL_FAILURE
- */
-dpl_status_t
-dpl_post_buffered(dpl_ctx_t *ctx,
-                  const char *bucket,
-                  const char *path,
-                  const dpl_option_t *option,
-                  dpl_ftype_t object_type,
-                  const dpl_condition_t *condition,
-                  const dpl_range_t *range,
-                  const dpl_dict_t *metadata,
-                  const dpl_sysmd_t *sysmd,
-                  unsigned int data_len,
-                  const dpl_dict_t *query_params,
-                  dpl_conn_t **connp)
-{
-  dpl_status_t ret, ret2;
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "post bucket=%s path=%s", bucket, path);
-
-  if (NULL == ctx->backend->post_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret2 = ctx->backend->post_buffered(ctx, bucket, path, NULL, option, object_type, condition, range, metadata, sysmd, data_len, query_params, connp, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
-  ret = DPL_SUCCESS;
-
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
-
-  if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "IN", data_len);
-  
-  return ret;
-}
-
 /**
  * put a path
  *
@@ -494,66 +434,6 @@ dpl_put(dpl_ctx_t *ctx,
     }
 
   ret2 = ctx->backend->put(ctx, bucket, path, NULL, option, object_type, condition, range, metadata, sysmd, data_buf, data_len, NULL, NULL, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
-  ret = DPL_SUCCESS;
-
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
-
-  if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "IN", data_len);
-  
-  return ret;
-}
-
-/** 
- * put a path with bufferization
- * 
- * @param ctx the droplet context
- * @param bucket the optional bucket
- * @param path mandatory path
- * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
- * @param object_type DPL_FTYPE_REG create a file
- * @param condition optional condition
- * @param range optional range
- * @param metadata optional user metadata
- * @param sysmd optional system metadata
- * @param data_len advertise the length
- * @param connp the connection object
- * 
- * @return DPL_SUCCESS
- * @return DPL_FAILURE
- */
-dpl_status_t
-dpl_put_buffered(dpl_ctx_t *ctx,
-                 const char *bucket,
-                 const char *path,
-                 const dpl_option_t *option,
-                 dpl_ftype_t object_type,
-                 const dpl_condition_t *condition,
-                 const dpl_range_t *range,
-                 const dpl_dict_t *metadata,
-                 const dpl_sysmd_t *sysmd,
-                 unsigned int data_len,
-                 dpl_conn_t **connp)
-{
-  dpl_status_t ret, ret2;
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "put_buffered bucket=%s path=%s", bucket, path);
-
-  if (NULL == ctx->backend->put_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret2 = ctx->backend->put_buffered(ctx, bucket, path, NULL, option, object_type, condition, range, metadata, sysmd, data_len, NULL, connp, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -649,84 +529,6 @@ dpl_get(dpl_ctx_t *ctx,
 
   if (DPL_SUCCESS == ret)
     (void) dpl_log_request(ctx, "DATA", "OUT", data_len);
-  
-  return ret;
-}
-
-/** 
- * get range with bufferization
- * 
- * @param ctx the droplet context
- * @param bucket the optional bucket
- * @param path the mandat path
- * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
- * @param object_type DPL_FTYPE_ANY get any type of path
- * @param condition the optional condition
- * @param range the optional range
- * @param metadatum_func each time a metadata is discovered into the stream it is called back
- * @param metadatap the returned user metadata client shall free
- * @param sysmdp the returned system metadata passed through stack
- * @param buffer_func the function called each time a buffer is discovered
- * @param cb_arg the callback argument
- * 
- * @return DPL_SUCCESS
- * @return DPL_FAILURE
- */
-dpl_status_t 
-dpl_get_buffered(dpl_ctx_t *ctx,
-                 const char *bucket,
-                 const char *path,
-                 const dpl_option_t *option,
-                 dpl_ftype_t object_type,
-                 const dpl_condition_t *condition,
-                 const dpl_range_t *range,
-                 dpl_metadatum_func_t metadatum_func,
-                 dpl_dict_t **metadatap,
-                 dpl_sysmd_t *sysmdp, 
-                 dpl_buffer_func_t buffer_func,
-                 void *cb_arg)
-{
-  dpl_status_t ret, ret2;
-  char *new_location = NULL;
-  char *new_location_resource;
-  char *new_location_subresource;
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "get_buffered bucket=%s path=%s", bucket, path);
-
-  if (NULL == ctx->backend->get_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret2 = ctx->backend->get_buffered(ctx, bucket, path, NULL, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, &new_location);
-
-  if (DPL_EREDIRECT == ret2)
-    {
-      dpl_location_to_resource(ctx,
-                               new_location,
-                               &new_location_resource,
-                               &new_location_subresource);
-
-      ret2 = ctx->backend->get_buffered(ctx, bucket, new_location_resource, new_location_subresource, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
-
-      free(new_location);
-    }
-
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
-  ret = DPL_SUCCESS;
-
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
-
-  if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "OUT", 0);
   
   return ret;
 }
@@ -980,46 +782,6 @@ dpl_post_id(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_post_id_buffered(dpl_ctx_t *ctx,
-                     const char *bucket,
-                     const char *id,
-                     const dpl_option_t *option,
-                     dpl_ftype_t object_type,
-                     const dpl_condition_t *condition,
-                     const dpl_range_t *range,
-                     const dpl_dict_t *metadata,
-                     const dpl_sysmd_t *sysmd,
-                     unsigned int data_len,
-                     const dpl_dict_t *query_params,
-                     dpl_conn_t **connp)
-{
-  dpl_status_t ret, ret2;
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "post_buffered_id bucket=%s", bucket);
-
-  if (NULL == ctx->backend->post_id_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret2 = ctx->backend->post_id_buffered(ctx, bucket, id, NULL, option, object_type, condition, range, metadata, sysmd, data_len, query_params, connp, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
-  ret = DPL_SUCCESS;
-
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t
 dpl_put_id(dpl_ctx_t *ctx,
            const char *bucket,
            const char *id,
@@ -1059,45 +821,6 @@ dpl_put_id(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_put_id_buffered(dpl_ctx_t *ctx,
-                    const char *bucket,
-                    const char *id,
-                    const dpl_option_t *option,
-                    dpl_ftype_t object_type,
-                    const dpl_condition_t *condition,
-                    const dpl_range_t *range,
-                    const dpl_dict_t *metadata,
-                    const dpl_sysmd_t *sysmd,
-                    unsigned int data_len,
-                    dpl_conn_t **connp)
-{
-  dpl_status_t ret, ret2;
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "put_buffered_id bucket=%s id=%s", bucket, id);
-
-  if (NULL == ctx->backend->put_id_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret2 = ctx->backend->put_id_buffered(ctx, bucket, id, NULL, option, object_type, condition, range, metadata, sysmd, data_len, NULL, connp, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
-  ret = DPL_SUCCESS;
-
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t
 dpl_get_id(dpl_ctx_t *ctx,
            const char *bucket,
            const char *id,
@@ -1121,46 +844,6 @@ dpl_get_id(dpl_ctx_t *ctx,
     }
 
   ret2 = ctx->backend->get_id(ctx, bucket, id, NULL, option, object_type, condition, range, data_bufp, data_lenp, metadatap, sysmdp, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
-  ret = DPL_SUCCESS;
-
- end:
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "ret=%d", ret);
-  
-  return ret;
-}
-
-dpl_status_t 
-dpl_get_id_buffered(dpl_ctx_t *ctx,
-                    const char *bucket,
-                    const char *id,
-                    const dpl_option_t *option,
-                    dpl_ftype_t object_type,
-                    const dpl_condition_t *condition,
-                    const dpl_range_t *range,
-                    dpl_metadatum_func_t metadatum_func,
-                    dpl_dict_t **metadatap,
-                    dpl_sysmd_t *sysmdp, 
-                    dpl_buffer_func_t buffer_func,
-                    void *cb_arg)
-{
-  dpl_status_t ret, ret2;
-
-  DPL_TRACE(ctx, DPL_TRACE_ID, "get_buffered_id bucket=%s id=%s", bucket, id);
-
-  if (NULL == ctx->backend->get_id_buffered)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-
-  ret2 = ctx->backend->get_id_buffered(ctx, bucket, id, NULL, option, object_type, condition, range, metadatum_func, metadatap, sysmdp, buffer_func, cb_arg, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

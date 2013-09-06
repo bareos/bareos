@@ -940,87 +940,12 @@ dpl_chdir(dpl_ctx_t *ctx,
  */
 
 dpl_status_t
-dpl_close_ex(dpl_vfile_t *vfile,
-             dpl_sysmd_t *returned_sysmdp,
-             char **locationp)
+dpl_close(dpl_vfile_t *vfile)
 {
-  int ret, ret2;
-  dpl_dict_t *headers_returned = NULL;
-  int connection_close = 0;
-  dpl_dict_var_t *var;
-
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "close vfile=%p", vfile);
-
-  ret = DPL_SUCCESS;
-
-  if (NULL != vfile->conn)
-    {
-      if (vfile->flags & DPL_VFILE_FLAG_BLOB)
-        {
-          //XXX ?
-        }
-      else
-        {
-          if (vfile->conn->type == DPL_CONN_TYPE_HTTP)
-            {
-              ret2 = dpl_read_http_reply(vfile->conn, 1, NULL, NULL, &headers_returned, &connection_close);
-              if (DPL_SUCCESS != ret2)
-                {
-                  //too common to print
-                  //fprintf(stderr, "read http_reply failed %s (%d)\n", dpl_status_str(ret2), ret2);
-                  ret = ret2;
-                }
-              else
-                {
-                  if (vfile->flags & DPL_VFILE_FLAG_MD5)
-                    {
-                      ret2 = dpl_dict_get_lowered(headers_returned, "Content-MD5", &var);
-                      if (DPL_SUCCESS != ret2 || NULL == var)
-                        {
-                          fprintf(stderr, "missing 'Content-MD5' in answer\n");
-                          //XXX ret = DPL_FAILURE;
-                        }
-                      else
-                        {
-                          //compare MD5's
-                          u_char digest[MD5_DIGEST_LENGTH];
-                          char bcd_digest[DPL_BCD_LENGTH(MD5_DIGEST_LENGTH) + 1];
-                          u_int bcd_digest_len;
-                          
-                          MD5_Final(digest, &vfile->md5_ctx);
-                          
-                          bcd_digest_len = dpl_bcd_encode(digest, MD5_DIGEST_LENGTH, bcd_digest);
-                          bcd_digest[bcd_digest_len] = 0;
-                          
-                          //skip quotes
-                          assert(var->val->type == DPL_VALUE_STRING);
-                          if (strncmp(dpl_sbuf_get_str(var->val->string) + 1, bcd_digest, DPL_BCD_LENGTH(MD5_DIGEST_LENGTH)))
-                            {
-                              fprintf(stderr, "MD5 checksum dont match\n");
-                            }
-                        }
-                    }
-                }
-            }
-          
-          if (1 == connection_close)
-            dpl_conn_terminate(vfile->conn);
-          else
-            dpl_conn_release(vfile->conn);
-        }
-    }
-
-  if (vfile->flags & DPL_VFILE_FLAG_ENCRYPT)
-    {
-      if (NULL != vfile->cipher_ctx)
-        EVP_CIPHER_CTX_free(vfile->cipher_ctx);
-    }
 
   if (NULL != vfile->bucket)
     free(vfile->bucket);
-
-  if (NULL != vfile->resource)
-    free(vfile->resource);
 
   if (NULL != vfile->metadata)
     dpl_dict_free(vfile->metadata);
@@ -1031,462 +956,36 @@ dpl_close_ex(dpl_vfile_t *vfile,
   if (NULL != vfile->query_params)
     dpl_dict_free(vfile->query_params);
 
+  if (NULL != vfile->option)
+    dpl_option_free(vfile->option);
+
+  if (NULL != vfile->condition)
+    dpl_condition_free(vfile->condition);
+
   free(vfile);
-
-  if (NULL != headers_returned)
-    dpl_dict_free(headers_returned);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_close(dpl_vfile_t *vfile)
-{
-  return dpl_close_ex(vfile, NULL, NULL);
-}
-
-static dpl_status_t
-encrypt_init(dpl_vfile_t *vfile,
-             int enc)
-{
-  int ret;
-  const EVP_CIPHER *cipher;
-  const EVP_MD *md;
-  u_char path[EVP_MAX_KEY_LENGTH];
-  u_char iv[EVP_MAX_IV_LENGTH];
-
-  if (NULL == vfile->ctx->encrypt_key)
-    {
-      fprintf(stderr, "missing encrypt_key in conf\n");
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  cipher = EVP_get_cipherbyname("aes-256-cfb");
-  if (NULL == cipher)
-    {
-      fprintf(stderr, "unsupported cipher\n");
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  vfile->cipher_ctx = EVP_CIPHER_CTX_new();
-  if (NULL == vfile->cipher_ctx)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  md = EVP_md5();
-  if (NULL == md)
-    {
-      fprintf(stderr, "unsupported md\n");
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  EVP_BytesToKey(cipher, md, vfile->salt, (u_char *) vfile->ctx->encrypt_key, strlen(vfile->ctx->encrypt_key), 1, path, iv);
-
-  EVP_CipherInit(vfile->cipher_ctx, cipher, path, iv, enc);
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
-}
-
-/** 
- * open a file for writing
- * 
- * @param ctx 
- * @param locator 
- * @param obj_type 
- * @param flags DPL_VFILE_FLAG_CREAT create file if it doesnt exist
- * @param flags DPL_VFILE_FLAG_EXCL exclusive creation
- * @param flags DPL_VFILE_FLAG_MD5 check MD5
- * @param flags DPL_VFILE_FLAG_ENCRYPT encrypt on the fly
- * @param flags DPL_VFILE_FLAG_POST use POST to write/creat file
- * @param flags DPL_VFILE_FLAG_BLOB put is done in one shot
- * @param flags DPL_VFILE_FLAG_RANGE put range
- * @param range
- * @param metadata 
- * @param sysmd 
- * @param data_len 
- * @param query_params 
- * @param vfilep 
- * 
- * @return DPL_SUCCESS
- * @return DPL_FAILURE
- * @return DPL_EEXIST if DPL_VFILE_FLAG_EXCL was specified
- */
-dpl_status_t
-dpl_openwrite(dpl_ctx_t *ctx,
-              const char *locator,
-              dpl_ftype_t obj_type,
-              dpl_vfile_flag_t flags,
-              dpl_range_t *range,
-              dpl_dict_t *metadata,
-              dpl_sysmd_t *sysmd,
-              unsigned int data_len,
-              dpl_dict_t *query_params,
-              dpl_vfile_t **vfilep)
-{
-  dpl_vfile_t *vfile = NULL;
-  int ret, ret2;
-  dpl_fqn_t obj_fqn;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path = NULL;
-  int own_metadata = 0;
-
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "openwrite locator=%s flags=0x%x", locator, flags);
-
-  if (flags & DPL_VFILE_FLAG_RANGE && !range)
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  nlocator = strdup(locator);
-  if (! nlocator)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  path = index(nlocator, ':');
-  if (path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (! bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (! bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
-
-  vfile = malloc(sizeof *vfile);
-  if (! vfile)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  memset(vfile, 0, sizeof (*vfile));
-
-  vfile->ctx = ctx;
-
-  /* s3 backend does not support range, so blob mode is mandatory */
-  if (0 != strcmp(dpl_get_backend_name(ctx), "s3"))
-    {
-      flags |= DPL_VFILE_FLAG_BLOB;
-    }
-
-  vfile->flags = flags;
-
-  ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (vfile->flags & DPL_VFILE_FLAG_MD5)
-    {
-      MD5_Init(&vfile->md5_ctx);
-    }
-
-  memcpy(&vfile->obj_fqn, &obj_fqn, sizeof vfile->obj_fqn);
-
-  if (vfile->flags & DPL_VFILE_FLAG_ENCRYPT)
-    {
-      ret2 = RAND_pseudo_bytes(vfile->salt, sizeof (vfile->salt));
-      if (0 == ret2)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
-
-      ret2 = encrypt_init(vfile, 1);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      if (! metadata)
-        {
-          metadata = dpl_dict_new(13);
-          if (! metadata)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
-          own_metadata = 1;
-        }
-
-      ret2 = dpl_dict_add(metadata, DPL_CIPHER, "yes", 1);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      ret2 = dpl_dict_add(metadata, DPL_CIPHER_TYPE, "aes-256-cfb", 1);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  if (flags & DPL_VFILE_FLAG_BLOB)
-    {
-      vfile->bucket = strdup(bucket);
-      if (! vfile->bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-
-      vfile->resource = strdup(obj_fqn.path);
-      if (! vfile->resource)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-
-      vfile->obj_type = obj_type;
-
-      if (metadata)
-        {
-          vfile->metadata = dpl_dict_new(13);
-          if (! vfile->metadata)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
-
-          ret2 = dpl_dict_copy(vfile->metadata, metadata);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-        }
-
-      if (sysmd)
-        {
-          vfile->sysmd = dpl_sysmd_dup(sysmd);
-          if (! vfile->sysmd)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
-        }
-
-      if (query_params)
-        {
-          vfile->query_params = dpl_dict_new(13);
-          if (! vfile->query_params)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
-
-          ret2 = dpl_dict_copy(vfile->query_params, query_params);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-        }
-    }
-  else
-    {
-      vfile->obj_type = obj_type;
-
-      if (flags & DPL_VFILE_FLAG_POST)
-        ret2 = dpl_post_buffered(ctx,
-                                 bucket,
-                                 obj_fqn.path,
-                                 NULL,
-                                 obj_type,
-                                 NULL,
-                                 NULL,
-                                 metadata,
-                                 sysmd,
-                                 data_len,
-                                 query_params,
-                                 &vfile->conn);
-      else
-        ret2 = dpl_put_buffered(ctx,
-                                bucket,
-                                obj_fqn.path,
-                                NULL,
-                                obj_type,
-                                NULL,
-                                NULL,
-                                metadata,
-                                sysmd,
-                                data_len,
-                                &vfile->conn);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  if (vfilep)
-    {
-      *vfilep = vfile;
-      vfile = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (vfile)
-    dpl_close(vfile);
-
-  free(nlocator);
-  free(bucket);
-
-  if (1 == own_metadata)
-    dpl_dict_free(metadata);
-
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
-
-  return ret;
-}
-
-
-/**/
-
-static dpl_status_t
-cb_vfile_metadatum(void *cb_arg,
-                   const char *key,
-                   dpl_value_t *val)
-{
-  //dpl_vfile_t *vfile = (dpl_vfile_t *) cb_arg;
-
-  //if (!strcmp(key, DPL_CIPHER))
-  //{
-  //if (val->type == DPL_VALUE_STRING &&
-  //!strcmp(val->string, "yes"))
-  //{
-  //vfile->flags |= DPL_VFILE_FLAG_ENCRYPT;
-  //}
-  //}
-
-  //XXX check DPL_CIPHER_TYPE
 
   return DPL_SUCCESS;
 }
 
-static dpl_status_t
-cb_vfile_buffer(void *cb_arg,
-                char *buf,
-                u_int len)
-{
-  dpl_vfile_t *vfile = (dpl_vfile_t *) cb_arg;
-  char *obuf = NULL;
-  int olen;
-  int ret, ret2;
-
-  if (vfile->flags & DPL_VFILE_FLAG_ENCRYPT)
-    {
-      if (0 == vfile->header_done)
-        {
-          u_int magic_len;
-          u_int header_len;
-
-          magic_len = strlen(DPL_ENCRYPT_MAGIC);
-
-          header_len = magic_len + sizeof (vfile->salt);
-          if (len < header_len)
-            {
-              DPL_TRACE(vfile->ctx, DPL_TRACE_ERR, "not enough bytes for decrypting");
-              ret = DPL_EINVAL;
-              goto end;
-            }
-
-          memcpy(vfile->salt, buf + magic_len, sizeof (vfile->salt));
-          buf += header_len;
-          len -= header_len;
-
-          ret2 = encrypt_init(vfile, 0);
-          if (DPL_SUCCESS != ret2)
-            {
-              ret = ret2;
-              goto end;
-            }
-
-          vfile->header_done = 1;
-        }
-
-      obuf = malloc(len);
-      if (NULL == obuf)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-
-      ret2 = EVP_CipherUpdate(vfile->cipher_ctx, (u_char *) obuf, &olen, (u_char *) buf, len);
-      if (0 == ret2)
-        {
-          DPL_TRACE(vfile->ctx, DPL_TRACE_ERR, "CipherUpdate failed\n");
-          ret = DPL_FAILURE;
-          goto end;
-        }
-
-      buf = obuf;
-      len = olen;
-    }
-
-  if (NULL != vfile->buffer_func)
-    {
-      ret2 = vfile->buffer_func(vfile->cb_arg, buf, len);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != obuf)
-    free(obuf);
-
-  return ret;
-}
-
+/**
+ * Write to a dpl_vfile_t* at a given offset
+ *
+ * XXX todo check DPL_CAP_PUT_RANGE
+ *
+ * @param vfile
+ * @param buf
+ * @param len
+ * @param offset
+ * @param metadata
+ * @param sysmd
+ *
+ * @return dpl_status_t
+ */
 dpl_status_t
 dpl_pwrite(dpl_vfile_t *vfile,
            char *buf,
            unsigned int len,
-           unsigned long long offset,
-           dpl_dict_t *metadata,
-           dpl_sysmd_t *sysmd)
+           unsigned long long offset)
 {
   dpl_status_t ret, ret2;
   dpl_range_t range;
@@ -1494,32 +993,20 @@ dpl_pwrite(dpl_vfile_t *vfile,
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "start=%llu end=%llu",
             offset, offset+len);
 
-  /* sanity check */
-  if (! (vfile->flags & (DPL_VFILE_FLAG_WRONLY |
-                         DPL_VFILE_FLAG_RDWR |
-                         DPL_VFILE_FLAG_CREAT)))
-    {
-      DPL_TRACE(vfile->ctx, DPL_TRACE_VFS,
-                "object '%s' not opened in write/post mode",
-                vfile->obj_fqn.path);
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
   range.start = offset;
   range.end   = offset+len;
 
   ret2 = dpl_put(vfile->ctx,
-                 vfile->bucket,
-                 vfile->obj_fqn.path,
-                 NULL, /* option */
-                 vfile->obj_type,
-                 vfile->condition,
-                 &range,
-                 metadata,
-                 sysmd,
-                 buf,
-                 len);
+		 vfile->bucket,
+		 vfile->obj_fqn.path,
+		 vfile->option,
+		 DPL_FTYPE_REG,
+		 vfile->condition,
+		 &range,
+		 vfile->metadata,
+		 vfile->sysmd,
+		 buf,
+		 len);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1534,127 +1021,48 @@ dpl_pwrite(dpl_vfile_t *vfile,
   return ret;
 }
 
-
 /**
- * write buffer
+ * Read from a dpl_vfile_t* at a given offset
+ *
+ * XXX todo check DPL_CAP_GET_RANGE
  *
  * @param vfile
- * @param buf
  * @param len
+ * @parma offset
+ * @param[out] bufp
+ * @param[out] buf_lenp
+ * @param[out] metadatap
+ * @param[out] sysmdp
  *
- * @note ensure that all the buffer is written
- *
- * @return
+ * @return dpl_status_t
  */
-
-dpl_status_t
-dpl_write(dpl_vfile_t *vfile,
-          char *buf,
-          unsigned int data_len)
-{
-  dpl_status_t ret, ret2;
-
-  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "%s", vfile->obj_fqn.path);
-
-  /* sanity check */
-  if (! (vfile->flags & (DPL_VFILE_FLAG_WRONLY |
-                         DPL_VFILE_FLAG_RDWR |
-                         DPL_VFILE_FLAG_POST)))
-    {
-      DPL_TRACE(vfile->ctx,
-                DPL_TRACE_VFS, "object '%s' not opened in write/post mode",
-                vfile->obj_fqn.path);
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  if (vfile->flags & DPL_VFILE_FLAG_POST)
-    {
-      ret2 = dpl_post(vfile->ctx,
-                      vfile->bucket,
-                      vfile->obj_fqn.path,
-                      NULL, /* option */
-                      vfile->obj_type,
-                      NULL,
-                      NULL,
-                      vfile->metadata,
-                      vfile->sysmd,
-                      buf,
-                      data_len,
-                      vfile->query_params,
-                      NULL);
-    }
-  else
-    {
-      ret2 = dpl_put(vfile->ctx,
-                     vfile->bucket,
-                     vfile->obj_fqn.path,
-                     NULL, /* option */
-                     vfile->obj_type,
-                     vfile->condition,
-                     NULL, /* no range */
-                     vfile->metadata,
-                     vfile->sysmd,
-                     buf,
-                     data_len);
-    }
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
- end:
-
-  return ret;
-}
-
 dpl_status_t
 dpl_pread(dpl_vfile_t *vfile,
           unsigned int len,
           unsigned long long offset,
           char **bufp,
-          int *buf_lenp,
-          dpl_dict_t **metadatap,
-          dpl_sysmd_t *sysmdp)
+          int *buf_lenp)
 {
   dpl_status_t ret, ret2;
   dpl_range_t range;
   unsigned int data_len = 0;
-  dpl_ftype_t ftype = DPL_FTYPE_ANY;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "start=%llu end=%llu", offset, offset+len);
-
-  /* sanity check */
-  if (! (vfile->flags & (DPL_VFILE_FLAG_RDONLY|DPL_VFILE_FLAG_RDWR)))
-    {
-      DPL_TRACE(vfile->ctx,
-                DPL_TRACE_VFS, "object '%s' wasn't opened in read mode",
-                vfile->obj_fqn.path);
-      ret = DPL_FAILURE;
-      goto end;
-    }
 
   range.start = offset;
   range.end   = offset+len;
 
-  if (vfile->sysmd && (vfile->sysmd->mask & DPL_SYSMD_MASK_FTYPE))
-    {
-      ftype = vfile->sysmd->ftype;
-    }
-
   ret2 = dpl_get(vfile->ctx,
                  vfile->bucket,
-                 vfile->resource,
-                 NULL,
-                 ftype,
+                 vfile->obj_fqn.path,
+                 vfile->option,
+                 DPL_FTYPE_ANY,
                  vfile->condition,
                  &range,
                  bufp,
                  buf_lenp,
-                 metadatap,
-                 sysmdp);
+                 NULL,
+                 NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1669,54 +1077,25 @@ dpl_pread(dpl_vfile_t *vfile,
   return ret;
 }
 
-dpl_status_t
-dpl_read(dpl_vfile_t *vfile,
-         size_t nbytes,
-         char **bufp,
-         int *buf_lenp,
-         dpl_dict_t **metadatap,
-         dpl_sysmd_t *sysmdp)
-{
-  dpl_status_t ret, ret2;
-
-  /* sanity check */
-  if (! (vfile->flags & (DPL_VFILE_FLAG_RDONLY|DPL_VFILE_FLAG_RDWR)))
-    {
-      DPL_TRACE(vfile->ctx,
-                DPL_TRACE_VFS, "object '%s' wasn't opened in read mode",
-                vfile->obj_fqn.path);
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  ret2 = dpl_get(vfile->ctx,
-                 vfile->bucket,
-                 vfile->obj_fqn.path,
-                 NULL,
-                 DPL_FTYPE_ANY,
-                 vfile->condition,
-                 NULL,
-                 bufp,
-                 buf_lenp,
-                 metadatap,
-                 sysmdp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
- end:
-
-  return ret;
-}
-
-
+/**
+ * Open a file
+ *
+ * @param ctx
+ * @param locator
+ * @param flag
+ * @param condition
+ * @param metadata
+ * @param sysmd
+ * @param query_params
+ * @param vfilep
+ *
+ * @return dpl_status_t
+ */
 dpl_status_t
 dpl_open(dpl_ctx_t *ctx,
          const char *locator,
          dpl_vfile_flag_t flag,
+	 dpl_option_t *option,
          dpl_condition_t *condition,
          dpl_dict_t *metadata,
          dpl_sysmd_t *sysmd,
@@ -1773,11 +1152,6 @@ dpl_open(dpl_ctx_t *ctx,
 
   memset(vfile, 0, sizeof *vfile);
 
-  vfile->ctx = ctx;
-  vfile->bucket = ctx->cur_bucket;
-  vfile->condition = condition;
-  vfile->flags = flag;
-
   ret2 = make_abs_path(ctx, bucket, path, &vfile->obj_fqn);
   if (DPL_SUCCESS != ret2)
     {
@@ -1785,12 +1159,63 @@ dpl_open(dpl_ctx_t *ctx,
       goto end;
     }
 
+  vfile->ctx = ctx;
+  vfile->flags = flag;
+  vfile->bucket = strdup(bucket);
+  if (NULL == vfile->bucket)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+  if (option)
+    {
+      vfile->option = dpl_option_dup(option);
+      if (NULL == vfile->option)
+	{
+	  ret = DPL_ENOMEM;
+	  goto end;
+	}
+    }
+  if (condition)
+    {
+      vfile->condition = dpl_condition_dup(condition);
+      if (NULL == vfile->condition)
+	{
+	  ret = DPL_ENOMEM;
+	  goto end;
+	}
+    }
+  if (metadata)
+    {
+      vfile->metadata = dpl_dict_dup(metadata);
+      if (NULL == vfile->metadata)
+	{
+	  ret = DPL_ENOMEM;
+	  goto end;
+	}
+    }
+  if (sysmd)
+    {
+      vfile->sysmd = dpl_sysmd_dup(sysmd);
+      if (NULL == vfile->sysmd)
+	{
+	  ret = DPL_ENOMEM;
+	  goto end;
+	}
+    }
+
+  if (vfilep)
+    {
+      *vfilep = vfile;
+      vfile = NULL;
+    }
+
   ret = DPL_SUCCESS;
 
  end:
 
-  if (vfilep)
-    *vfilep = vfile;
+  if (vfile)
+    dpl_close(vfile);
 
   free(bucket);
   free(nlocator);
@@ -1800,54 +1225,43 @@ dpl_open(dpl_ctx_t *ctx,
   return ret;
 }
 
+/*
+ * blob operations
+ */
+
 /** 
- * open a file for reading
- *
- * @note this function cannot be used to retrieve subresources
+ * put a blob
  * 
  * @param ctx 
  * @param locator 
- * @param flags DPL_VFILE_FLAG_RANGE
- * @param flags DPL_VFILE_FLAG_BLOB get is done in one shot
- * @param condition 
- * @param range_start 
- * @param range_end 
- * @param buffer_func 
- * @param cb_arg 
- * @param metadatap 
- * @param sysmdp 
+ * @param option
+ * @param condition
+ * @param range if not NULL then put range
+ * @param metadata 
+ * @param sysmd 
+ * @param data_len 
  * 
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
- * @return DPL_ENOENT
  */
 dpl_status_t
-dpl_openread(dpl_ctx_t *ctx,
-             const char *locator,
-             dpl_vfile_flag_t flags,
-             dpl_condition_t *condition,
-             dpl_range_t *range,
-             dpl_buffer_func_t buffer_func,
-             void *cb_arg,
-             dpl_dict_t **metadatap,
-             dpl_sysmd_t *sysmdp)
+dpl_fput(dpl_ctx_t *ctx,
+	 const char *locator,
+	 dpl_option_t *option,
+	 dpl_condition_t *condition,
+	 dpl_range_t *range,
+	 dpl_dict_t *metadata,
+	 dpl_sysmd_t *sysmd,
+	 char *data_buf,
+	 unsigned int data_len)
 {
-  dpl_vfile_t *vfile = NULL;
   int ret, ret2;
   dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path = NULL;
-  char *data_buf = NULL;
-  unsigned int data_len;
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "openread locator=%s flags=0x%x", locator, flags);
-
-  if (flags & DPL_VFILE_FLAG_RANGE && !range)
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "fput locator=%s", locator);
 
   nlocator = strdup(locator);
   if (! nlocator)
@@ -1880,19 +1294,94 @@ dpl_openread(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  vfile = malloc(sizeof *vfile);
-  if (! vfile)
+  ret2 = dpl_put(ctx,
+		 bucket,
+		 obj_fqn.path,
+		 option,
+		 DPL_FTYPE_REG,
+		 condition,
+		 range,
+		 metadata,
+		 sysmd,
+		 data_buf,
+		 data_len);
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  free(nlocator);
+  free(bucket);
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
+
+  return ret;
+}
+
+/** 
+ * get a blob
+ * 
+ * @param ctx 
+ * @param locator 
+ * @param option
+ * @param condition
+ * @param range if not NULL then get range
+ * @param metadata 
+ * @param sysmd 
+ * @param data_len 
+ * 
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_fget(dpl_ctx_t *ctx,
+	 const char *locator,
+	 const dpl_option_t *option,
+	 const dpl_condition_t *condition,
+	 const dpl_range_t *range, 
+	 char **data_bufp,
+	 unsigned int *data_lenp,
+	 dpl_dict_t **metadatap,
+	 dpl_sysmd_t *sysmdp)
+{
+  int ret, ret2;
+  dpl_fqn_t obj_fqn;
+  char *nlocator = NULL;
+  char *bucket = NULL;
+  char *path = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "fget locator=%s", locator);
+
+  nlocator = strdup(locator);
+  if (! nlocator)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  memset(vfile, 0, sizeof *vfile);
-
-  vfile->ctx = ctx;
-  vfile->flags = flags;
-  vfile->buffer_func = buffer_func;
-  vfile->cb_arg = cb_arg;
+  path = index(nlocator, ':');
+  if (path)
+    {
+      *path++ = 0;
+      bucket = strdup(nlocator);
+      if (! bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+  else
+    {
+      dpl_ctx_lock(ctx);
+      bucket = strdup(ctx->cur_bucket);
+      dpl_ctx_unlock(ctx);
+      if (! bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      path = nlocator;
+    }
 
   ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
   if (DPL_SUCCESS != ret2)
@@ -1901,65 +1390,38 @@ dpl_openread(dpl_ctx_t *ctx,
       goto end;
     }
 
-  if (flags & DPL_VFILE_FLAG_BLOB)
+  ret2 = dpl_get(ctx,
+		 bucket,
+		 obj_fqn.path,
+		 option,
+		 DPL_FTYPE_ANY,
+		 condition,
+		 range,
+		 data_bufp,
+		 data_lenp,
+		 metadatap,
+		 sysmdp);
+  if (DPL_SUCCESS != ret2)
     {
-      ret2 = dpl_get(ctx,
-                     bucket,
-                     obj_fqn.path,
-                     NULL,
-                     DPL_FTYPE_ANY,
-                     condition,
-                     flags & DPL_VFILE_FLAG_RANGE ? range : NULL,
-                     &data_buf,
-                     &data_len,
-                     metadatap,
-                     sysmdp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-      else
-        {
-          buffer_func(cb_arg, data_buf, data_len);
-        }
-    }
-  else
-    {
-      ret2 = dpl_get_buffered(ctx,
-                              bucket,
-                              obj_fqn.path,
-                              NULL,
-                              DPL_FTYPE_ANY,
-                              condition,
-                              flags & DPL_VFILE_FLAG_RANGE ? range : NULL,
-                              cb_vfile_metadatum,
-                              metadatap,
-                              sysmdp,
-                              cb_vfile_buffer,
-                              vfile);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
+      ret = ret2;
+      goto end;
     }
 
   ret = DPL_SUCCESS;
 
  end:
 
-  if (vfile)
-    dpl_close(vfile);
-
   free(bucket);
   free(nlocator);
-  free(data_buf);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
+
+/*
+ *
+ */
 
 static dpl_status_t
 dpl_mkobj(dpl_ctx_t *ctx,
