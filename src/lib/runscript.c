@@ -115,6 +115,16 @@ static inline bool script_dir_allowed(JCR *jcr, RUNSCRIPT *script, alist *allowe
    }
 
    /*
+    * Make sure there are no relative path elements in script dir by which the
+    * user tries to escape the allowed dir checking. For scripts we only allow
+    * absolute paths.
+    */
+   if (strstr(script_dir.c_str(), "..")) {
+      Dmsg1(200, "script_dir_allowed: relative pathnames not allowed: %s\n", script_dir.c_str());
+      return false;
+   }
+
+   /*
     * Match the path the script is in against the list of allowed script directories.
     */
    foreach_alist(allowed_script_dir, allowed_script_dirs) {
@@ -123,6 +133,9 @@ static inline bool script_dir_allowed(JCR *jcr, RUNSCRIPT *script, alist *allowe
          break;
       }
    }
+
+   Dmsg2(200, "script_dir_allowed: script %s %s allowed by Allowed Script Dir setting",
+         script->command, (allowed) ? "" : "NOT");
 
    return allowed;
 }
