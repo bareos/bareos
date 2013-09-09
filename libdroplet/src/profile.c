@@ -737,14 +737,11 @@ dpl_profile_load(dpl_ctx_t *ctx,
   char path[1024];
   char default_dir[1024];
   struct passwd *pwd;
-  int ret, ret2;
+  int ret;
 
-  ret2 = dpl_profile_default(ctx);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
+  ret = dpl_profile_default(ctx);
+  if (DPL_SUCCESS != ret)
       goto end;
-    }
 
   if (NULL == droplet_dir)
     {
@@ -788,21 +785,13 @@ dpl_profile_load(dpl_ctx_t *ctx,
 
   snprintf(path, sizeof (path), "%s/%s.profile", droplet_dir, profile_name);
 
-  ret2 = dpl_profile_parse(ctx, path);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
+  ret = dpl_profile_parse(ctx, path);
+  if (DPL_SUCCESS != ret)
       goto end;
-    }
 
   ret = dpl_profile_post(ctx);
   if (DPL_SUCCESS != ret)
-    {
-      ret = DPL_FAILURE;
       goto end;
-    }
-
-  ret = DPL_SUCCESS;
 
  end:
 
