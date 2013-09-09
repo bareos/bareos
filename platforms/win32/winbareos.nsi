@@ -182,32 +182,69 @@ FunctionEnd
   ${EndIf}
  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Edit ${fname}.lnk" "write.exe" '"$APPDATA\${PRODUCT_NAME}\${fname}"'
 
-# disable file access inheritance
- AccessControl::DisableFileInheritance "$APPDATA\${PRODUCT_NAME}\${fname}"
- Pop $R0
- DetailPrint `AccessControl result: $R0`
- ${If} $R0 == error
-    Pop $R0
-    DetailPrint `AccessControl error: $R0`
- ${EndIf}
 
-# set file owner to administrator
- AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)"  # administratoren
- Pop $R0
- DetailPrint `AccessControl result: $R0`
- ${If} $R0 == error
-    Pop $R0
-    DetailPrint `AccessControl error: $R0`
- ${EndIf}
+# for traymonitor.conf, set access and ownership to users
+${If} ${fname} == "tray-monitor.conf"
 
-# set fullaccess only for administrators (S-1-5-32-544)
- AccessControl::ClearOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)" "FullAccess"
- Pop $R0
- DetailPrint `AccessControl result: $R0`
- ${If} $R0 == error
+    # disable file access inheritance
+    AccessControl::DisableFileInheritance "$APPDATA\${PRODUCT_NAME}\${fname}"
     Pop $R0
-    DetailPrint `AccessControl error: $R0`
- ${EndIf}
+    DetailPrint `AccessControl result: $R0`
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error: $R0`
+    ${EndIf}
+
+    # set file owner to administrator
+    AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)"  # user
+    Pop $R0
+    DetailPrint `AccessControl result: $R0`
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error: $R0`
+    ${EndIf}
+
+    # set fullaccess only for administrators (S-1-5-32-544)
+    AccessControl::ClearOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)" "FullAccess"
+    Pop $R0
+    DetailPrint `AccessControl result: $R0`
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error: $R0`
+    ${EndIf}
+
+
+# all other config files admin owner and only access
+${Else}
+    # disable file access inheritance
+    AccessControl::DisableFileInheritance "$APPDATA\${PRODUCT_NAME}\${fname}"
+    Pop $R0
+    DetailPrint `AccessControl result: $R0`
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error: $R0`
+    ${EndIf}
+
+    # set file owner to administrator
+    AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)"  # administratoren
+    Pop $R0
+    DetailPrint `AccessControl result: $R0`
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error: $R0`
+    ${EndIf}
+
+    # set fullaccess only for administrators (S-1-5-32-544)
+    AccessControl::ClearOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)" "FullAccess"
+    Pop $R0
+    DetailPrint `AccessControl result: $R0`
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error: $R0`
+    ${EndIf}
+
+${EndIf}
+
 !macroend
 
 
