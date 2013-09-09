@@ -39,6 +39,9 @@
 #   Incremental Backups are written into the "Incremental" Pool   (#11)
 #   Incremental Backups are kept for 30 Days                      (#12)
 #
+#   What you also have to do is to change the default fileset     (#13)
+#   to either one of the demo filesets given or create our own fileset.
+#
 #
 #
 #  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
@@ -60,7 +63,7 @@ JobDefs {
   Type = Backup
   Level = Incremental
   Client = @basename@-fd
-  FileSet = "Linux All"
+  FileSet = "SelfTest"                     # selftest fileset                            (#13)
   Schedule = "WeeklyCycle"
   Storage = File
   Messages = Standard
@@ -169,6 +172,16 @@ FileSet {
 
 }
 
+# fileset just to backup some files for selftest
+FileSet {
+  Name = "SelfTest"
+  Include {
+    Options {
+      Signature = MD5 # calculate md5 checksum per file
+    }
+    File = @sbindir@
+  }
+}
 
 Schedule {
   Name = "WeeklyCycle"
