@@ -613,6 +613,7 @@ void dpl_free(void);
 void dpl_ctx_lock(dpl_ctx_t *ctx);
 void dpl_ctx_unlock(dpl_ctx_t *ctx);
 dpl_ctx_t *dpl_ctx_new(const char *droplet_dir, const char *profile_name);
+dpl_ctx_t *dpl_ctx_new_from_dict(const dpl_dict_t *profile);
 void dpl_ctx_free(dpl_ctx_t *ctx);
 double dpl_price_storage(dpl_ctx_t *ctx, size_t size);
 char *dpl_price_storage_str(dpl_ctx_t *ctx, size_t size);

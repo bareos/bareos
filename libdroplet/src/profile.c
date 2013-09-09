@@ -419,6 +419,13 @@ conf_cb_func(void *cb_arg,
     {
       ctx->write_timeout = strtoul(value, NULL, 0);
     }
+  else if (! strcmp(var, "droplet_dir") ||
+	   ! strcmp(var, "profile_name"))
+    {
+      /* silently ignore these if we see them in the profile
+       * file; they're handled elsewhere if we load a dict. */
+      return 0;
+    }
   else
     {
       fprintf(stderr, "no such variable '%s'\n", var);
@@ -580,6 +587,57 @@ dpl_close_event_log(dpl_ctx_t *ctx)
     }
 }
 
+static dpl_status_t
+dpl_profile_init(dpl_ctx_t *ctx,
+		 const char *droplet_dir,
+		 const char *profile_name)
+{
+  char default_dir[1024];
+  struct passwd *pwd;
+  int ret;
+
+  ret = dpl_profile_default(ctx);
+  if (DPL_SUCCESS != ret)
+    return DPL_FAILURE;
+
+  if (NULL == droplet_dir)
+    {
+      droplet_dir = getenv("DPLDIR");
+
+      if (NULL == droplet_dir)
+        {
+          pwd = getpwuid(getuid());
+          if (NULL == pwd)
+            {
+              fprintf(stderr, "unable to get home directory\n");
+              return DPL_SUCCESS;
+            }
+
+          snprintf(default_dir, sizeof (default_dir), "%s/.droplet", pwd->pw_dir);
+          droplet_dir = default_dir;
+        }
+    }
+
+  if (NULL == profile_name)
+    {
+      profile_name = getenv("DPLPROFILE");
+
+      if (NULL == profile_name)
+        profile_name = "default";
+    }
+
+  ctx->droplet_dir = strdup(droplet_dir);
+  if (NULL == ctx->droplet_dir)
+      return DPL_ENOMEM;
+
+  ctx->profile_name = strdup(profile_name);
+  if (NULL == ctx->profile_name)
+      return DPL_ENOMEM;
+
+  return DPL_SUCCESS;
+}
+
+
 /**
  * post processing of profile, e.g. init SSL
  *
@@ -735,57 +793,53 @@ dpl_profile_load(dpl_ctx_t *ctx,
                  const char *profile_name)
 {
   char path[1024];
-  char default_dir[1024];
-  struct passwd *pwd;
   int ret;
 
-  ret = dpl_profile_default(ctx);
+  ret = dpl_profile_init(ctx, droplet_dir, profile_name);
   if (DPL_SUCCESS != ret)
       goto end;
 
-  if (NULL == droplet_dir)
-    {
-      droplet_dir = getenv("DPLDIR");
-
-      if (NULL == droplet_dir)
-        {
-          pwd = getpwuid(getuid());
-          if (NULL == pwd)
-            {
-              fprintf(stderr, "unable to get home directory\n");
-              return DPL_SUCCESS;
-            }
-
-          snprintf(default_dir, sizeof (default_dir), "%s/.droplet", pwd->pw_dir);
-          droplet_dir = default_dir;
-        }
-    }
-
-  if (NULL == profile_name)
-    {
-      profile_name = getenv("DPLPROFILE");
-
-      if (NULL == profile_name)
-        profile_name = "default";
-    }
-
-  ctx->droplet_dir = strdup(droplet_dir);
-  if (NULL == ctx->droplet_dir)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  ctx->profile_name = strdup(profile_name);
-  if (NULL == ctx->profile_name)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  snprintf(path, sizeof (path), "%s/%s.profile", droplet_dir, profile_name);
+  snprintf(path, sizeof (path), "%s/%s.profile", ctx->droplet_dir, ctx->profile_name);
 
   ret = dpl_profile_parse(ctx, path);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+  ret = dpl_profile_post(ctx);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+ end:
+
+  return ret;
+}
+
+static dpl_status_t
+profile_dict_cb_func(dpl_dict_var_t *var, void *cb_arg)
+{
+  int ret;
+
+  assert(var->val->type == DPL_VALUE_STRING);
+  ret = conf_cb_func(cb_arg, var->key, dpl_sbuf_get_str(var->val->string));
+  return (ret < 0 ? DPL_FAILURE : DPL_SUCCESS);
+}
+
+dpl_status_t
+dpl_profile_set_from_dict(dpl_ctx_t *ctx,
+			  const dpl_dict_t *profile)
+{
+  const char *droplet_dir;
+  const char *profile_name;
+  int ret;
+
+  droplet_dir = dpl_dict_get_value(profile, "droplet_dir");
+  profile_name = dpl_dict_get_value(profile, "profile_name");
+
+  ret = dpl_profile_init(ctx, droplet_dir, profile_name);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+  ret = dpl_dict_iterate(profile, profile_dict_cb_func, ctx);
   if (DPL_SUCCESS != ret)
       goto end;
 
