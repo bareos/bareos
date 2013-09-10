@@ -3,6 +3,8 @@
 # Run a simple backup of the Bareos build directory
 #   then restore it.
 #
+
+unset LANG
 TestName="source-addr-test"
 JobName=backup
 . scripts/functions
