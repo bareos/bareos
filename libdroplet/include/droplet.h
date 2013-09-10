@@ -449,7 +449,7 @@ typedef struct dpl_ctx
 {
   /*
    * profile
-x   */
+   */
   int n_conn_buckets;         /*!< number of buckets         */
   int n_conn_max;             /*!< max connexions            */
   int n_conn_max_hits;        /*!< before auto-close         */
