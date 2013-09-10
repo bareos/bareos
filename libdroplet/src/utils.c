@@ -958,8 +958,10 @@ dpl_log(dpl_ctx_t *ctx,
   case DPL_WARNING: level_name = "warning"; break;
   case DPL_ERROR: level_name = "error"; break;
   }
-  if (level_name)
+  if (level_name) {
     DPL_APPEND_STR(level_name);
+    DPL_APPEND_STR(": ");
+  }
 
   if (file) {
     DPL_APPEND_STR(file);
