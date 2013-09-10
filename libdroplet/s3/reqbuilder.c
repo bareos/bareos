@@ -105,7 +105,7 @@ add_condition_to_headers(const dpl_condition_one_t *condition,
           if (1 == copy_source)
             header = "x-amz-copy-source-if-unmodified-since";
           else
-            header = "If-Unodified-Since";
+            header = "If-Unmodified-Since";
           ret = dpl_dict_add(headers, header, date_str, 0);
           if (DPL_SUCCESS != ret)
             {
