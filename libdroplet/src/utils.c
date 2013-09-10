@@ -985,9 +985,13 @@ dpl_log(dpl_ctx_t *ctx,
 
 /**
  * @addtogroup init
+ * @{
+ */
+
+/**
  * Set logging callback function.
  *
- * Set a function that will be called to handle every log messagee
+ * Set a function that will be called to handle every log message
  * emitted by the Droplet library.  Passing `NULL` for @a logfunc
  * resets the Droplet library to using it's default internal logging
  * which emits log messages to the process' stderr.  The @a logfunc
@@ -1007,3 +1011,5 @@ dpl_set_log_func(dpl_log_func_t logfunc)
 {
   dpl_logfunc = (logfunc == NULL ? dpl_default_logfunc : logfunc);
 }
+
+/** @} */

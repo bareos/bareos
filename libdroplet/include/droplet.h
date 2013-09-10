@@ -587,14 +587,17 @@ typedef struct
 
 } dpl_req_t;
 
+/** @addtogroup init
+ * @{ */
+/** Message severity levels for Droplet log messages. */
 typedef enum
   {
-    DPL_DEBUG,
-    DPL_INFO,
-    DPL_WARNING,
-    DPL_ERROR,
+    DPL_DEBUG,	    /*!< debug message (lowest) */
+    DPL_INFO,	    /*!< informational message */
+    DPL_WARNING,    /*!< warning message */
+    DPL_ERROR,	    /*!< error message (highest) */
   } dpl_log_level_t;
-
+/** @} */
 
 /*
  * public functions
@@ -603,7 +606,11 @@ typedef enum
 typedef dpl_status_t (*dpl_metadatum_func_t)(void *cb_arg,
                                              const char *key,
                                              dpl_value_t *val);
+/** @addtogroup init
+ * @{ */
+/** Callback function for log messages, see `dpl_set_log_func()` */
 typedef void (*dpl_log_func_t)(dpl_ctx_t *, dpl_log_level_t, const char *message);
+/** @} */
 
 
 #include <droplet/converters.h>
