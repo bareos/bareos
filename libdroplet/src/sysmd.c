@@ -112,7 +112,7 @@ dpl_sysmd_print(dpl_sysmd_t *sysmd,
     {
       for (i = 0;i < sysmd->n_aces;i++)
         {
-          printf("ace%d: type=0x%x flag=0x%x access_mask=0x%x who=0x%x\n",
+          fprintf(f, "ace%d: type=0x%x flag=0x%x access_mask=0x%x who=0x%x\n",
                  i, sysmd->aces[i].type, sysmd->aces[i].flag, sysmd->aces[i].access_mask,
                  sysmd->aces[i].who);
         }
