@@ -883,18 +883,18 @@ buf_point_error(char *buf,
   for (i = 0;i < len;i++)
     {
       if (nl == lineno)
-        putchar(buf[i]);
+        fputc(buf[i], stderr);
 
       if (buf[i] == '\n')
         nl++;
     }
 
-  printf("\n");
+  fputc('\n', stderr);
   for (i = 1; i < byteno;i++)
     {
-      putchar(' ');
+      fputc(' ', stderr);
     }
-  printf("^\n");
+  fputs("^\n", stderr);
 }
 
 static struct dpl_parse_ctx *
