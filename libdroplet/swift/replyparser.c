@@ -61,7 +61,6 @@ dpl_swift_parse_list_bucket(dpl_ctx_t *ctx,
 
   if (buf != NULL)
     {
-      ret = write(1, "TEST LIST: \n\t", strlen("TEST LIST: \n\t"));
       ret = write(1, buf, len);
     }
   else

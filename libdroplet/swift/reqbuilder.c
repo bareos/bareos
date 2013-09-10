@@ -134,8 +134,6 @@ dpl_swift_req_build(dpl_ctx_t *ctx,
       goto end;
     }
 
-  dpl_dict_add(headers, "X-Storage-User", ctx->access_key, 0);
-  dpl_dict_add(headers, "X-Storage-Pass", ctx->secret_key, 0);
 
   /*
    * common headers
