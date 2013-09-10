@@ -161,7 +161,7 @@ dpl_add_condition_to_headers(const dpl_condition_t *cond,
           
           if (condition->type == DPL_CONDITION_IF_UNMODIFIED_SINCE)
             {
-              header = "If-Unodified-Since";
+              header = "If-Unmodified-Since";
               ret = dpl_dict_add(headers, header, date_str, 0);
               if (DPL_SUCCESS != ret)
                 {
