@@ -55,7 +55,7 @@ main(int argc,
   ret = dpl_uks_gen_key(id, 
 			42, //oid
 			43, //volid
-			0xc, //serviceid
+			0xc0, //serviceid
 			0); //specific
   if (DPL_SUCCESS != ret)
     {
