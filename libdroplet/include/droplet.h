@@ -449,7 +449,7 @@ typedef struct dpl_ctx
 {
   /*
    * profile
-x   */
+   */
   int n_conn_buckets;         /*!< number of buckets         */
   int n_conn_max;             /*!< max connexions            */
   int n_conn_max_hits;        /*!< before auto-close         */
@@ -587,6 +587,18 @@ typedef struct
 
 } dpl_req_t;
 
+/** @addtogroup init
+ * @{ */
+/** Message severity levels for Droplet log messages. */
+typedef enum
+  {
+    DPL_DEBUG,	    /*!< debug message (lowest) */
+    DPL_INFO,	    /*!< informational message */
+    DPL_WARNING,    /*!< warning message */
+    DPL_ERROR,	    /*!< error message (highest) */
+  } dpl_log_level_t;
+/** @} */
+
 /*
  * public functions
  */
@@ -594,6 +606,11 @@ typedef struct
 typedef dpl_status_t (*dpl_metadatum_func_t)(void *cb_arg,
                                              const char *key,
                                              dpl_value_t *val);
+/** @addtogroup init
+ * @{ */
+/** Callback function for log messages, see `dpl_set_log_func()` */
+typedef void (*dpl_log_func_t)(dpl_ctx_t *, dpl_log_level_t, const char *message);
+/** @} */
 
 
 #include <droplet/converters.h>
@@ -610,9 +627,11 @@ typedef dpl_status_t (*dpl_metadatum_func_t)(void *cb_arg,
 const char *dpl_status_str(dpl_status_t status);
 dpl_status_t dpl_init(void);
 void dpl_free(void);
+void dpl_set_log_func(dpl_log_func_t);
 void dpl_ctx_lock(dpl_ctx_t *ctx);
 void dpl_ctx_unlock(dpl_ctx_t *ctx);
 dpl_ctx_t *dpl_ctx_new(const char *droplet_dir, const char *profile_name);
+dpl_ctx_t *dpl_ctx_new_from_dict(const dpl_dict_t *profile);
 void dpl_ctx_free(dpl_ctx_t *ctx);
 double dpl_price_storage(dpl_ctx_t *ctx, size_t size);
 char *dpl_price_storage_str(dpl_ctx_t *ctx, size_t size);

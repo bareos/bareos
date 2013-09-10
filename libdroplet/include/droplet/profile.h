@@ -46,5 +46,6 @@ dpl_status_t dpl_open_event_log(dpl_ctx_t *ctx);
 void dpl_close_event_log(dpl_ctx_t *ctx);
 dpl_status_t dpl_profile_post(dpl_ctx_t *ctx);
 dpl_status_t dpl_profile_load(dpl_ctx_t *ctx, const char *droplet_dir, const char *profile_name);
+dpl_status_t dpl_profile_set_from_dict(dpl_ctx_t *ctx, const dpl_dict_t *profile);
 void dpl_profile_free(dpl_ctx_t *ctx);
 #endif

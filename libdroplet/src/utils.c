@@ -923,3 +923,95 @@ dpl_pow2_next(u_int v)
   
   return v;
 }
+
+static void
+dpl_default_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
+{
+  fputs(message, stderr);
+  fputc('\n', stderr);
+}
+
+static dpl_log_func_t dpl_logfunc = dpl_default_logfunc;
+
+dpl_status_t
+dpl_log(dpl_ctx_t *ctx,
+	dpl_log_level_t level,
+        const char *file,
+        const char *func,
+        int lineno,
+	const char *fmt,
+	...)
+{
+  /* TODO: there is no dpl_dbuf_add_vprintf() */
+  va_list args;
+  const char *level_name = NULL;
+  int n;
+  char linebuf[32];
+  char message[2048] = "";
+  /* the following two are magic names used in DPL_APPEND_* macros */
+  size_t len = sizeof(message);
+  char *p = message;
+
+  switch (level) {
+  case DPL_DEBUG: level_name = "DEBUG"; break;
+  case DPL_INFO: level_name = "info"; break;
+  case DPL_WARNING: level_name = "warning"; break;
+  case DPL_ERROR: level_name = "error"; break;
+  }
+  if (level_name) {
+    DPL_APPEND_STR(level_name);
+    DPL_APPEND_STR(": ");
+  }
+
+  if (file) {
+    DPL_APPEND_STR(file);
+    DPL_APPEND_CHAR(':');
+    snprintf(linebuf, sizeof(linebuf), "%d", lineno);
+    DPL_APPEND_STR(linebuf);
+    DPL_APPEND_STR(": ");
+  }
+
+  if (func) {
+    DPL_APPEND_STR(func);
+    DPL_APPEND_STR(": ");
+  }
+
+  va_start(args, fmt);
+  n = vsnprintf(p, len, fmt, args);
+  va_end(args);
+  if (n > len)
+    return DPL_FAILURE;	/* sprintf output was truncated */
+
+  dpl_logfunc(ctx, level, message);
+}
+
+/**
+ * @addtogroup init
+ * @{
+ */
+
+/**
+ * Set logging callback function.
+ *
+ * Set a function that will be called to handle every log message
+ * emitted by the Droplet library.  Passing `NULL` for @a logfunc
+ * resets the Droplet library to using it's default internal logging
+ * which emits log messages to the process' stderr.  The @a logfunc
+ * is called with a pre-formatted string representing a single line
+ * of log output with no newline.  It is also passed a `dpl_ctx_t*`
+ * which may be NULL or may point to a context associated with the
+ * error.
+ *
+ * This function is not thread-safe.  Do not call it while other threads
+ * are running Droplet library code.  It is recommended you call the
+ * function just after calling `dpl_init()`.
+ *
+ * @param logfunc the callback function or NULL for default behaviour
+ */
+void
+dpl_set_log_func(dpl_log_func_t logfunc)
+{
+  dpl_logfunc = (logfunc == NULL ? dpl_default_logfunc : logfunc);
+}
+
+/** @} */

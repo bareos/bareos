@@ -238,7 +238,7 @@ conf_cb_func(void *cb_arg,
         ctx->use_https = 0;
       else
         {
-          fprintf(stderr, "invalid value '%s'\n", var);
+	  DPL_LOG(ctx, DPL_ERROR, "invalid value '%s'", var);
           return -1;
         }
     }
@@ -246,22 +246,22 @@ conf_cb_func(void *cb_arg,
     {
       if (NULL != ctx->addrlist)
         {
-          fprintf(stderr, "address list already defined\n");
+          DPL_LOG(ctx, DPL_ERROR, "address list already defined");
           return -1;
         }
 
       ctx->addrlist = dpl_addrlist_create_from_str(ctx->use_https ? "443" : "80", value);
       if (NULL == ctx->addrlist)
         {
-          fprintf(stderr, "error parsing address list\n");
+          DPL_LOG(ctx, DPL_ERROR, "error parsing address list");
           return -1;
         }
     }
   else if (!strcmp(var, "port"))
     {
-      fprintf(stderr, "Warning: the 'port' option in configuration file is ignored.\n");
-      fprintf(stderr, "The port(s) must be specified in the hostname(s).\n");
-      fprintf(stderr, "If nothing is specified, 80 is used (or 443 for https).\n");
+      DPL_LOG(ctx, DPL_WARNING, "The 'port' option in configuration file is ignored.");
+      DPL_LOG(ctx, DPL_WARNING, "The port(s) must be specified in the hostname(s).");
+      DPL_LOG(ctx, DPL_WARNING, "If nothing is specified, 80 is used (or 443 for https).");
     }
   else if (!strcmp(var, "blacklist_expiretime"))
     {
@@ -279,7 +279,7 @@ conf_cb_func(void *cb_arg,
         {
           if (value_len >= 1 && value[value_len-1] == '/')
             {
-              fprintf(stderr, "base_path must not end by a delimiter\n");
+              DPL_LOG(ctx, DPL_ERROR, "base_path must not end with a delimiter");
               return -1;
             }
         }
@@ -363,7 +363,7 @@ conf_cb_func(void *cb_arg,
       ctx->backend = dpl_backend_find(value);
       if (NULL == ctx->backend)
         {
-          fprintf(stderr, "no such backend '%s'\n", value);
+          DPL_LOG(ctx, DPL_ERROR, "no such backend '%s'", value);
           return -1;
         }
     }
@@ -375,7 +375,7 @@ conf_cb_func(void *cb_arg,
         ctx->encode_slashes = 0;
       else
         {
-          fprintf(stderr, "invalid value '%s'\n", var);
+          DPL_LOG(ctx, DPL_ERROR, "invalid boolean value for '%s'", var);
           return -1;
         }
     }
@@ -387,7 +387,7 @@ conf_cb_func(void *cb_arg,
         ctx->keep_alive = 0;
       else
         {
-          fprintf(stderr, "invalid value '%s'\n", var);
+          DPL_LOG(ctx, DPL_ERROR, "invalid boolean value for '%s'", var);
           return -1;
         }
     }
@@ -399,7 +399,7 @@ conf_cb_func(void *cb_arg,
         ctx->url_encoding = 0;
       else
         {
-          fprintf(stderr, "invalid value '%s'\n", var);
+          DPL_LOG(ctx, DPL_ERROR, "invalid boolean value for '%s'", var);
           return -1;
         }
     }
@@ -419,9 +419,16 @@ conf_cb_func(void *cb_arg,
     {
       ctx->write_timeout = strtoul(value, NULL, 0);
     }
+  else if (! strcmp(var, "droplet_dir") ||
+	   ! strcmp(var, "profile_name"))
+    {
+      /* silently ignore these if we see them in the profile
+       * file; they're handled elsewhere if we load a dict. */
+      return 0;
+    }
   else
     {
-      fprintf(stderr, "no such variable '%s'\n", var);
+      DPL_LOG(ctx, DPL_ERROR, "no such variable '%s'", var);
       return -1;
     }
 
@@ -448,7 +455,8 @@ dpl_profile_parse(dpl_ctx_t *ctx,
   fd = open(path, O_RDONLY);
   if (-1 == fd)
     {
-      fprintf(stderr, "droplet: error opening %s\n", path);
+      DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s\n",
+		path, strerror(errno));
       ret = DPL_FAILURE;
       goto end;
     }
@@ -580,6 +588,57 @@ dpl_close_event_log(dpl_ctx_t *ctx)
     }
 }
 
+static dpl_status_t
+dpl_profile_init(dpl_ctx_t *ctx,
+		 const char *droplet_dir,
+		 const char *profile_name)
+{
+  char default_dir[1024];
+  struct passwd *pwd;
+  int ret;
+
+  ret = dpl_profile_default(ctx);
+  if (DPL_SUCCESS != ret)
+    return DPL_FAILURE;
+
+  if (NULL == droplet_dir)
+    {
+      droplet_dir = getenv("DPLDIR");
+
+      if (NULL == droplet_dir)
+        {
+          pwd = getpwuid(getuid());
+          if (NULL == pwd)
+            {
+              DPL_LOG(ctx, DPL_ERROR, "unable to get home directory");
+              return DPL_SUCCESS;
+            }
+
+          snprintf(default_dir, sizeof (default_dir), "%s/.droplet", pwd->pw_dir);
+          droplet_dir = default_dir;
+        }
+    }
+
+  if (NULL == profile_name)
+    {
+      profile_name = getenv("DPLPROFILE");
+
+      if (NULL == profile_name)
+        profile_name = "default";
+    }
+
+  ctx->droplet_dir = strdup(droplet_dir);
+  if (NULL == ctx->droplet_dir)
+      return DPL_ENOMEM;
+
+  ctx->profile_name = strdup(profile_name);
+  if (NULL == ctx->profile_name)
+      return DPL_ENOMEM;
+
+  return DPL_SUCCESS;
+}
+
+
 /**
  * post processing of profile, e.g. init SSL
  *
@@ -598,7 +657,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
     {
       if (NULL == ctx->addrlist)
         {
-          fprintf(stderr, "missing 'host' in profile\n");
+          DPL_LOG(ctx, DPL_ERROR, "missing 'host' in profile");
           ret = DPL_FAILURE;
           goto end;
         }
@@ -735,74 +794,59 @@ dpl_profile_load(dpl_ctx_t *ctx,
                  const char *profile_name)
 {
   char path[1024];
-  char default_dir[1024];
-  struct passwd *pwd;
-  int ret, ret2;
+  int ret;
 
-  ret2 = dpl_profile_default(ctx);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
+  ret = dpl_profile_init(ctx, droplet_dir, profile_name);
+  if (DPL_SUCCESS != ret)
       goto end;
-    }
 
-  if (NULL == droplet_dir)
-    {
-      droplet_dir = getenv("DPLDIR");
+  snprintf(path, sizeof (path), "%s/%s.profile", ctx->droplet_dir, ctx->profile_name);
 
-      if (NULL == droplet_dir)
-        {
-          pwd = getpwuid(getuid());
-          if (NULL == pwd)
-            {
-              fprintf(stderr, "unable to get home directory\n");
-              return DPL_SUCCESS;
-            }
-
-          snprintf(default_dir, sizeof (default_dir), "%s/.droplet", pwd->pw_dir);
-          droplet_dir = default_dir;
-        }
-    }
-
-  if (NULL == profile_name)
-    {
-      profile_name = getenv("DPLPROFILE");
-
-      if (NULL == profile_name)
-        profile_name = "default";
-    }
-
-  ctx->droplet_dir = strdup(droplet_dir);
-  if (NULL == ctx->droplet_dir)
-    {
-      ret = DPL_FAILURE;
+  ret = dpl_profile_parse(ctx, path);
+  if (DPL_SUCCESS != ret)
       goto end;
-    }
-
-  ctx->profile_name = strdup(profile_name);
-  if (NULL == ctx->profile_name)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  snprintf(path, sizeof (path), "%s/%s.profile", droplet_dir, profile_name);
-
-  ret2 = dpl_profile_parse(ctx, path);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
 
   ret = dpl_profile_post(ctx);
   if (DPL_SUCCESS != ret)
-    {
-      ret = DPL_FAILURE;
       goto end;
-    }
 
-  ret = DPL_SUCCESS;
+ end:
+
+  return ret;
+}
+
+static dpl_status_t
+profile_dict_cb_func(dpl_dict_var_t *var, void *cb_arg)
+{
+  int ret;
+
+  assert(var->val->type == DPL_VALUE_STRING);
+  ret = conf_cb_func(cb_arg, var->key, dpl_sbuf_get_str(var->val->string));
+  return (ret < 0 ? DPL_FAILURE : DPL_SUCCESS);
+}
+
+dpl_status_t
+dpl_profile_set_from_dict(dpl_ctx_t *ctx,
+			  const dpl_dict_t *profile)
+{
+  const char *droplet_dir;
+  const char *profile_name;
+  int ret;
+
+  droplet_dir = dpl_dict_get_value(profile, "droplet_dir");
+  profile_name = dpl_dict_get_value(profile, "profile_name");
+
+  ret = dpl_profile_init(ctx, droplet_dir, profile_name);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+  ret = dpl_dict_iterate(profile, profile_dict_cb_func, ctx);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+  ret = dpl_profile_post(ctx);
+  if (DPL_SUCCESS != ret)
+      goto end;
 
  end:
 

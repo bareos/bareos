@@ -190,6 +190,39 @@ dpl_ctx_unlock(dpl_ctx_t *ctx)
   pthread_mutex_unlock(&ctx->lock);
 }
 
+static dpl_ctx_t *
+dpl_ctx_alloc(void)
+{
+  dpl_ctx_t *ctx;
+
+  ctx = malloc(sizeof (*ctx));
+  if (NULL == ctx)
+    return NULL;
+
+  memset(ctx, 0, sizeof (*ctx));
+
+  pthread_mutex_init(&ctx->lock, NULL);
+
+  return ctx;
+}
+
+static void
+dpl_ctx_post_load(dpl_ctx_t *ctx)
+{
+  char *str;
+
+  if ((str = getenv("DPL_TRACE_LEVEL")))
+    ctx->trace_level = strtoul(str, NULL, 0);
+
+  if ((str = getenv("DPL_TRACE_BUFFERS")))
+    ctx->trace_buffers = atoi(str);
+
+  if ((str = getenv("DPL_TRACE_BINARY")))
+    ctx->trace_binary = atoi(str);
+
+  dpl_header_size = ctx->header_size;
+}
+
 /**
  * Create a context.
  *
@@ -228,15 +261,10 @@ dpl_ctx_new(const char *droplet_dir,
 {
   dpl_ctx_t *ctx;
   int ret;
-  char *str;
 
-  ctx = malloc(sizeof (*ctx));
+  ctx = dpl_ctx_alloc();
   if (NULL == ctx)
     return NULL;
-
-  memset(ctx, 0, sizeof (*ctx));
-
-  pthread_mutex_init(&ctx->lock, NULL);
 
   ret = dpl_profile_load(ctx, droplet_dir, profile_name);
   if (DPL_SUCCESS != ret)
@@ -245,16 +273,47 @@ dpl_ctx_new(const char *droplet_dir,
       return NULL;
     }
 
-  if ((str = getenv("DPL_TRACE_LEVEL")))
-    ctx->trace_level = strtoul(str, NULL, 0);
+  dpl_ctx_post_load(ctx);
 
-  if ((str = getenv("DPL_TRACE_BUFFERS")))
-    ctx->trace_buffers = atoi(str);
+  return ctx;
+}
 
-  if ((str = getenv("DPL_TRACE_BINARY")))
-    ctx->trace_binary = atoi(str);
+/**
+ * Creates a new context with the profile specified in a dict.
+ *
+ * Creates a new profile and sets up the the profile information from a
+ * dict containing profile variable settings as if they had been read in
+ * from a profile file, without reading a file.  This function is provided
+ * for applications which need to use the Droplet library without a
+ * profile file.
+ *
+ * See @ref profile "Profile File" for details of the profile variables.
+ * The droplet directory is set by a special variable in the dict called
+ * @c droplet_dir, and the profile name by a special variable called @c
+ * profile_name.
+ *
+ * @param profile a dict containing profile variables
+ * @return a new context or NULL on error
+ */
+dpl_ctx_t *
+dpl_ctx_new_from_dict(const dpl_dict_t *profile)
+{
+  dpl_ctx_t *ctx;
+  int ret;
+  char *str;
 
-  dpl_header_size = ctx->header_size;
+  ctx = dpl_ctx_alloc();
+  if (NULL == ctx)
+    return NULL;
+
+  ret = dpl_profile_set_from_dict(ctx, profile);
+  if (DPL_SUCCESS != ret)
+    {
+      dpl_ctx_free(ctx);
+      return NULL;
+    }
+
+  dpl_ctx_post_load(ctx);
 
   return ctx;
 }
