@@ -587,6 +587,15 @@ typedef struct
 
 } dpl_req_t;
 
+typedef enum
+  {
+    DPL_DEBUG,
+    DPL_INFO,
+    DPL_WARNING,
+    DPL_ERROR,
+  } dpl_log_level_t;
+
+
 /*
  * public functions
  */
@@ -594,6 +603,7 @@ typedef struct
 typedef dpl_status_t (*dpl_metadatum_func_t)(void *cb_arg,
                                              const char *key,
                                              dpl_value_t *val);
+typedef void (*dpl_log_func_t)(dpl_ctx_t *, dpl_log_level_t, const char *message);
 
 
 #include <droplet/converters.h>
@@ -610,6 +620,7 @@ typedef dpl_status_t (*dpl_metadatum_func_t)(void *cb_arg,
 const char *dpl_status_str(dpl_status_t status);
 dpl_status_t dpl_init(void);
 void dpl_free(void);
+void dpl_set_log_func(dpl_log_func_t);
 void dpl_ctx_lock(dpl_ctx_t *ctx);
 void dpl_ctx_unlock(dpl_ctx_t *ctx);
 dpl_ctx_t *dpl_ctx_new(const char *droplet_dir, const char *profile_name);
