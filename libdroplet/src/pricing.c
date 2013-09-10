@@ -939,7 +939,7 @@ dpl_pricing_parse(dpl_ctx_t *ctx,
   fd = open(path, O_RDONLY);
   if (-1 == fd)
     {
-      fprintf(stderr, "droplet: error opening %s\n", path);
+      DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s\n", path, strerror(errno));
       ret = DPL_FAILURE;
       goto end;
     }

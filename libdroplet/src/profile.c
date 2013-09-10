@@ -238,7 +238,7 @@ conf_cb_func(void *cb_arg,
         ctx->use_https = 0;
       else
         {
-          fprintf(stderr, "invalid value '%s'\n", var);
+	  DPL_LOG(ctx, DPL_ERROR, "invalid value '%s'", var);
           return -1;
         }
     }
@@ -246,22 +246,22 @@ conf_cb_func(void *cb_arg,
     {
       if (NULL != ctx->addrlist)
         {
-          fprintf(stderr, "address list already defined\n");
+          DPL_LOG(ctx, DPL_ERROR, "address list already defined");
           return -1;
         }
 
       ctx->addrlist = dpl_addrlist_create_from_str(ctx->use_https ? "443" : "80", value);
       if (NULL == ctx->addrlist)
         {
-          fprintf(stderr, "error parsing address list\n");
+          DPL_LOG(ctx, DPL_ERROR, "error parsing address list");
           return -1;
         }
     }
   else if (!strcmp(var, "port"))
     {
-      fprintf(stderr, "Warning: the 'port' option in configuration file is ignored.\n");
-      fprintf(stderr, "The port(s) must be specified in the hostname(s).\n");
-      fprintf(stderr, "If nothing is specified, 80 is used (or 443 for https).\n");
+      DPL_LOG(ctx, DPL_WARNING, "The 'port' option in configuration file is ignored.");
+      DPL_LOG(ctx, DPL_WARNING, "The port(s) must be specified in the hostname(s).");
+      DPL_LOG(ctx, DPL_WARNING, "If nothing is specified, 80 is used (or 443 for https).");
     }
   else if (!strcmp(var, "blacklist_expiretime"))
     {
@@ -279,7 +279,7 @@ conf_cb_func(void *cb_arg,
         {
           if (value_len >= 1 && value[value_len-1] == '/')
             {
-              fprintf(stderr, "base_path must not end by a delimiter\n");
+              DPL_LOG(ctx, DPL_ERROR, "base_path must not end with a delimiter");
               return -1;
             }
         }
@@ -363,7 +363,7 @@ conf_cb_func(void *cb_arg,
       ctx->backend = dpl_backend_find(value);
       if (NULL == ctx->backend)
         {
-          fprintf(stderr, "no such backend '%s'\n", value);
+          DPL_LOG(ctx, DPL_ERROR, "no such backend '%s'", value);
           return -1;
         }
     }
@@ -375,7 +375,7 @@ conf_cb_func(void *cb_arg,
         ctx->encode_slashes = 0;
       else
         {
-          fprintf(stderr, "invalid value '%s'\n", var);
+          DPL_LOG(ctx, DPL_ERROR, "invalid boolean value for '%s'", var);
           return -1;
         }
     }
@@ -387,7 +387,7 @@ conf_cb_func(void *cb_arg,
         ctx->keep_alive = 0;
       else
         {
-          fprintf(stderr, "invalid value '%s'\n", var);
+          DPL_LOG(ctx, DPL_ERROR, "invalid boolean value for '%s'", var);
           return -1;
         }
     }
@@ -399,7 +399,7 @@ conf_cb_func(void *cb_arg,
         ctx->url_encoding = 0;
       else
         {
-          fprintf(stderr, "invalid value '%s'\n", var);
+          DPL_LOG(ctx, DPL_ERROR, "invalid boolean value for '%s'", var);
           return -1;
         }
     }
@@ -428,7 +428,7 @@ conf_cb_func(void *cb_arg,
     }
   else
     {
-      fprintf(stderr, "no such variable '%s'\n", var);
+      DPL_LOG(ctx, DPL_ERROR, "no such variable '%s'", var);
       return -1;
     }
 
@@ -455,7 +455,8 @@ dpl_profile_parse(dpl_ctx_t *ctx,
   fd = open(path, O_RDONLY);
   if (-1 == fd)
     {
-      fprintf(stderr, "droplet: error opening %s\n", path);
+      DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s\n",
+		path, strerror(errno));
       ret = DPL_FAILURE;
       goto end;
     }
@@ -609,7 +610,7 @@ dpl_profile_init(dpl_ctx_t *ctx,
           pwd = getpwuid(getuid());
           if (NULL == pwd)
             {
-              fprintf(stderr, "unable to get home directory\n");
+              DPL_LOG(ctx, DPL_ERROR, "unable to get home directory");
               return DPL_SUCCESS;
             }
 
@@ -656,7 +657,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
     {
       if (NULL == ctx->addrlist)
         {
-          fprintf(stderr, "missing 'host' in profile\n");
+          DPL_LOG(ctx, DPL_ERROR, "missing 'host' in profile");
           ret = DPL_FAILURE;
           goto end;
         }

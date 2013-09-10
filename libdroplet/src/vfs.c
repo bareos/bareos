@@ -93,7 +93,7 @@ dir_lookup(dpl_ctx_t *ctx,
       p = rindex(obj_fqn.path, '/');
       if (NULL == p)
         {
-          fprintf(stderr, "parent path shall contain delimiter\n");
+          DPL_LOG(ctx, DPL_ERROR, "parent path shall contain delimiter");
           ret = DPL_FAILURE;
           goto end;
         }
@@ -145,7 +145,7 @@ dir_lookup(dpl_ctx_t *ctx,
       p = rindex(prefix->prefix, '/');
       if (NULL == p)
         {
-          fprintf(stderr, "prefix %s shall contain delimiter\n", prefix->prefix);
+          DPL_LOG(ctx, DPL_ERROR, "prefix '%s' shall contain delimiter", prefix->prefix);
           continue ;
         }
 
