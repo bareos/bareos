@@ -103,7 +103,8 @@ cp qt-tray-monitor/bareos-tray-monitor.exe \
    qt-console/bat.exe console/bconsole.exe \
    filed/bareos-fd.exe lib/libbareos.dll \
    findlib/libbareosfind.dll \
-   plugins/fd/bpipe-fd.dll $RPM_BUILD_ROOT%{_mingw64_bindir}
+   plugins/fd/bpipe-fd.dll \
+   $RPM_BUILD_ROOT%{_mingw64_bindir}
 
 for cfg in  ../qt-tray-monitor/tray-monitor.conf.in \
    ../qt-console/bat.conf.in \

@@ -347,12 +347,10 @@ SectionIn 1 2 3
 
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  CreateDirectory "$INSTDIR\Plugins"
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}\Plugins"
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
   File "bareos-fd.exe"
-  File "bpipe-fd.dll"
   File "libbareos.dll"
   File "libbareosfind.dll"
   File "libcrypto-8.dll"
@@ -369,6 +367,15 @@ SectionIn 1 2 3
 
 #  File "bareos-fd.conf"
   !insertmacro InstallConfFile bareos-fd.conf
+SectionEnd
+
+Section /o "Bareos FileDaemon Plugins " SEC_PLUGINS
+SectionIn 1 2
+
+  SetShellVarContext all
+  SetOutPath "$INSTDIR\Plugins"
+  SetOverwrite ifnewer
+  File "bpipe-fd.dll"
 SectionEnd
 
 Section /o "Text Console (bconsole)" SEC_BCONSOLE
@@ -448,12 +455,12 @@ SectionIn 2
 SectionEnd
 
 Section "Open Firewall for Client" SEC_FIREWALL
-  SectionIn 1 2 3
+SectionIn 1 2 3
   SetShellVarContext current
   ${If} ${AtLeastWin7}
-#
-# See http://technet.microsoft.com/de-de/library/dd734783%28v=ws.10%29.aspx
-#
+    #
+    # See http://technet.microsoft.com/de-de/library/dd734783%28v=ws.10%29.aspx
+    #
     DetailPrint  "Opening Firewall, OS is Win7+"
     DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-fd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-fd.exe$\" enable=yes protocol=TCP localport=9102 description=$\"Bareos backup client rule$\""
     # profile=[private,domain]"
@@ -470,6 +477,7 @@ SectionEnd
 ; Section descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CLIENT} "Installs the Bareos File Daemon and required Files"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_PLUGINS} "Installs the Bareos File Daemon Plugins"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BCONSOLE} "Installs the CLI client console (bconsole)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the tray Icon to monitor the Bareos client"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BAT} "Installs the Qt Console (BAT)"
@@ -918,7 +926,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bat.exe"
   Delete "$INSTDIR\bareos-fd.exe"
   Delete "$INSTDIR\bconsole.exe"
-  Delete "$INSTDIR\bpipe-fd.dll"
+  Delete "$INSTDIR\Plugins\bpipe-fd.dll"
   Delete "$INSTDIR\libbareos.dll"
   Delete "$INSTDIR\libbareosfind.dll"
   Delete "$INSTDIR\libcrypto-8.dll"
