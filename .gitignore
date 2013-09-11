@@ -1,12 +1,9 @@
-Makefile
-*/Makefile
 *.sty
 *.dvi
 *.idx
 *.maf
 *.toc
 *.mtc*
-*/version.tex
 manuals/en/*/version.tex
 manuals/*/*/version.tex
 manuals/*/utility/utilityi*
@@ -36,6 +33,5 @@ manuals/*/problems/problems.pdf
 manuals/*/problems/problems/
 manuals/*/utility/utility.pdf
 manuals/*/utility/utility/
-version.tex
 bsysmanual
 manuals/en/images

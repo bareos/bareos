@@ -140,9 +140,7 @@ If you wish include all files in a specific directory, you can use the following
 @|"sh -c 'for f in /etc/bareos/clientdefs/*.conf ; do echo @${f} ; done'"
 \end{verbatim}
 
-\subsection{Variable Expansion}
-    \label{VarsChapter}
-    \TODO{to be written}
+
 
 \subsection{Recognized Primitive Data Types}
 \index[general]{Types!Recognized Primitive Data }
@@ -302,10 +300,132 @@ are valid date specifications.
 
 \end{description}
 
-\label{ResTypes}
+\subsection{Variable Expansion}
+    \label{VarsChapter}
+
+Depending on the type of directive, Bareos will expand following variables:
+
+\paragraph{Variable Expansion on Media Labels}
+
+When labeling a new media, following Bareos internal variables can be used:
+
+\begin{tabular}{p{2cm}p{7cm}}
+\textbf{Internal Variable} & \textbf{Description} \\
+\variable{Year} & Year \\
+\variable{Month} & Month: 1-12 \\
+\variable{Day} & Day: 1-31 \\
+\variable{Hour} & Hour: 0-24 \\
+\variable{Minute} & Minute: 0-59 \\
+\variable{Second} & Second: 0-59 \\
+\variable{WeekDay} & Day of the week: 0-6, using 0 for Sunday\\
+\variable{Job} & Name of the Job \\
+\variable{Dir} & Name of the Director \\
+\variable{Level} & Job Level \\
+\variable{Type} & Job Type \\
+\variable{JobId} & JobId \\
+\variable{JobName} & unique name of a job\\
+\variable{Storage} & Name of the Storage Daemon\\
+\variable{Client} &  Name of the Clients \\
+\variable{NumVols} & Numbers of volumes in the pool\\
+\variable{Pool} &  Name of the Pool  \\
+\variable{Catalog} &  Name of the Catalog\\
+\variable{MediaType} &  Type of the media
+\end{tabular}
+
+Additional, normal environment variables can be used, e.g.
+\variable{HOME} oder \variable{HOSTNAME}.
+
+\paragraph{Variable Expansion on RunScripts}
+
+At the configuration of RunScripts following variables can be used:
+
+\begin{tabular}{p{2cm}p{7cm}}
+\textbf{Variable} & \textbf{Description} \\
+\parameter{\%c} & Client's Name\\
+\parameter{\%d} & Director's Name\\
+\parameter{\%e} & Job Exit Code\\
+\parameter{\%i} & JobId\\
+\parameter{\%j} & Unique JobId\\
+\parameter{\%l} & Job Level\\
+\parameter{\%n} & Unadorned Job Name\\
+\parameter{\%r} & Recipients\\
+\parameter{\%s} & Since Time\\
+\parameter{\%b} & Job Bytes \\
+\parameter{\%f} & Job Files \\
+\parameter{\%t} & Job Type (Backup, ...)\\
+\parameter{\%v} & Volume Name (only on Director)
+\end{tabular}
+
+
+
+\paragraph{Variable Expansion in Autochanger Commands}
+
+At the configuration of autochanger commands following variables can be used:
+
+
+\begin{tabular}{p{2cm}p{7cm}}
+\textbf{Variable} & \textbf{Description} \\
+\parameter{\%a} & Archive Device Name\\
+\parameter{\%c} & Changer Device Name\\
+\parameter{\%d} & Changer Drive Index\\
+\parameter{\%f} & Client's Name\\
+\parameter{\%j} & Job Name\\
+\parameter{\%o} & Command\\
+\parameter{\%s} & Slot Base 0\\
+\parameter{\%S} & Slot Base 1\\
+\parameter{\%v} & Volume Name
+\end{tabular}
+
+
+
+\paragraph{Variable Expansion in Mount Commands}
+
+At the configuration of mount commands following variables can be used:
+
+
+
+\begin{tabular}{p{2cm}p{7cm}}
+\textbf{Variable} & \textbf{Description} \\
+\parameter{\%a} & Archive Device Name\\
+\parameter{\%e} & Erase\\
+\parameter{\%n} & Part Number\\
+\parameter{\%m} & Mount Point\\
+\parameter{\%v} & Last Part Name
+\end{tabular}
+
+
+
+
+
+
+
+\paragraph{Variable Expansion in Mail and Operator Commands}
+
+At the configuration of mail and operator commands following variables can be used:
+
+\begin{tabular}{p{2cm}p{7cm}}
+\textbf{Variable} & \textbf{Description} \\
+\parameter{\%c} & Client's Name\\
+\parameter{\%d} & Director's Name\\
+\parameter{\%e} & Job Exit Code\\
+\parameter{\%i} & JobId\\
+\parameter{\%j} & Unique Job Id\\
+\parameter{\%l} & Job Level\\
+\parameter{\%n} & Unadorned Job Name\\
+\parameter{\%s} & Since Time\\
+\parameter{\%t} & Job Type (Backup, ...)\\
+\parameter{\%r} & Recipients\\
+\parameter{\%v} & Volume Name\\
+\parameter{\%b} & Job Bytes\\
+\parameter{\%F} & Job Files
+\end{tabular}
+
+
+
 \section{Resource Types}
 \index[general]{Types!Resource }
 \index[general]{Resource Types }
+\label{ResTypes}
 
 The following table lists all current Bareos resource types. It shows what
 resources must be defined for each service (daemon). The default configuration

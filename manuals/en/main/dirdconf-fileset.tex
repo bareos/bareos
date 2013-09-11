@@ -1782,7 +1782,7 @@ enough disk to copy the directory or files, move them, but then initiate a
 Full backup.
 
 
-\paragraph*{Example File for Windows}
+\paragraph*{Example Fileset for Windows}
 \index[general]{FileSet!Windows Example}
 \index[general]{Windows Example FileSet}
 
@@ -1888,6 +1888,27 @@ Data/Microsoft/Network/Downloader/qmgr[01].dat"
 }
 \end{verbatim}
 \normalsize
+
+\begin{verbatim}
+FileSet {
+  Name = "Windows All Drives"
+  Enable VSS = yes
+  Include {
+    Options {
+      Signature = MD5
+      Drive Type = fixed
+      IgnoreCase = yes
+      WildFile = "[A-Z]:/pagefile.sys"
+      WildDir = "[A-Z]:/RECYCLER"
+      WildDir = "[A-Z]:/$RECYCLE.BIN"
+      WildDir = "[A-Z]:/System Volume Information"
+      Exclude = yes
+    }
+    File = /
+  }
+}
+\end{verbatim}
+
 
 Note, the three line of the above Exclude were split to fit on the document
 page, they should be written on a single line in real use.

@@ -106,25 +106,26 @@ in the {\bf Messages} resource {\bf before} the desired
 directive. In fact, each of those directives may be preceded by
 a different {\bf MailCommand}.
 
-The following is the command I (Kern) use. Note, the whole  command should
-appear on a single line in the configuration file  rather than split as is
-done here for presentation:
+A default installation will use the program {\bf bsmtp} as {\bf mailcommand}.
+The program {\bf bsmtp} is provided by Bareos and unifies the usage of a mail client
+to a certain degree:
 
-{\bf mailcommand = "/home/kern/bareos/bin/bsmtp -h mail.example.com -f
+
+\path|mailcommand = "/usr/sbin/bsmtp -h mail.example.com -f
 \textbackslash{}"\textbackslash{}(Bareos\textbackslash{})
 \%r\textbackslash{}" -s \textbackslash{}"Bareos: \%t \%e of \%c
-\%l\textbackslash{}" \%r"}
+\%l\textbackslash{}" \%r"|
 
 The {\bf bsmtp} program is provided as part of {\bf Bareos}.  For
 additional details, please see the
-\ilink{ bsmtp -- Customizing Your Email Messages}{bsmtp} section of
-the  Bareos Utility Programs chapter of this manual. Please test any  {\bf
-mailcommand} that you use to ensure that your bsmtp gateway accepts  the
+\ilink{bsmtp -- Customizing Your Email Messages}{bsmtp} section of
+the  Bareos Utility Programs chapter of this manual.
+Please test any  {\bf mailcommand} that you use to ensure that your smtp gateway accepts  the
 addressing form that you use. Certain programs such as Exim can be very
 selective as to what forms are permitted particularly in the from part.
 
 \item [OperatorCommand = {\textless}command{\textgreater}] \hfill \\
-\index[fd]{OperatorCommand}
+\index[dir]{OperatorCommand}
 This resource specification is  similar to the {\bf MailCommand} except that
 it is used for Operator  messages. The substitutions performed for the {\bf
 MailCommand} are  also done for this command. Normally, you will set this
@@ -132,33 +133,30 @@ command to the  same value as specified for the {\bf MailCommand}.
 The {\bf OperatorCommand} directive must appear in the {\bf Messages}
 resource before the {\bf Operator} directive.
 
-\item [{\textless}destination{\textgreater} = {\textless}message-type1{\textgreater}, \hfill \\
-{\textless}message-type2{\textgreater}, ...]
-\index[fd]{{\textless}destination{\textgreater}}
+% \item [{\textless}destination{\textgreater} = {\textless}message-type1{\textgreater},
+% {\textless}message-type2{\textgreater}, ...] \hfill \\
+% \index[fd]{{\textless}destination{\textgreater}}
+% where {\bf destination} may be one of the following:
+%
+% \begin{description}
+%     \item [stdout]
+%     \index[fd]{stdout}
+%     Send the message to standard output.
+%
+%     \item [stderr]
+%     \index[fd]{stderr}
+%     Send the message to standard error.
+%
+%     \item [console]
+%     \index[console]{console}
+%     Send the message to the console (Bareos Console).  These messages are held
+%     until the console program  connects to the Director.
+% \end{description}
 
-Where {\bf destination} may be one of the following:
-
-\begin{description}
-
-\item [stdout]
-\index[fd]{stdout}
-Send the message to standard output.
-
-\item [stderr]
-\index[fd]{stderr}
-Send the message to standard error.
-
-\item [console]
-\index[console]{console}
-Send the message to the console (Bareos Console).  These messages are held
-until the console program  connects to the Director.
-\end{description}
-
-\item {\bf {\textless}destination{\textgreater} = {\textless}address{\textgreater} = \hfill \\
-{\textless}message-type1{\textgreater}, {\textless}message-type2{\textgreater}, ...}
+\item[{\textless}destination{\textgreater} ( = {\textless}address{\textgreater} ) =
+{\textless}message-type1{\textgreater}, {\textless}message-type2{\textgreater}, ...] \hfill \\
 \index[console]{{\textless}destination{\textgreater}}
-
-Where {\bf address} depends on the {\bf destination}.
+where {\bf address} depends on the {\bf destination}.
 
 The {\bf destination} may be one of the following:
 
@@ -191,6 +189,7 @@ the {\bf address} field.  Note, for the moment, the {\bf address} field is
 ignored  and the message is always sent to the LOG\_DAEMON facility with
 level LOG\_ERR. See {\bf man 3 syslog} for more details. Example:
 
+\TODO{right? address is missing}
 \begin{verbatim}
 syslog = all, !skipped
 \end{verbatim}
@@ -208,8 +207,8 @@ Send the message to the email addresses that are given as a comma
 separated list in the {\bf address} field.  Mail messages are grouped
 together during a job and then sent as a single email message when the
 job terminates.  The advantage of this destination is that you are
-notified about every Job that runs.  However, if you backup five or ten
-machines every night, the volume of email messages can be important.
+notified about every Job that runs.  However, if you backup mutliple
+machines every night, the number of email messages can be annoying.
 Some users use filter programs such as {\bf procmail} to automatically
 file this email based on the Job termination code (see {\bf
 mailcommand}).
@@ -247,7 +246,8 @@ is one email per message.  This is most useful for {\bf mount} messages
 
 \item [console] \hfill \\
   \index[general]{console}
-  Send the message to the Bareos console.
+  Send the message to the Bareos console. These messages are held
+  until the console program  connects to the Director.
 
 \item [stdout] \hfill \\
   \index[general]{stdout}
@@ -266,7 +266,7 @@ be recorded in the Catalog so that they can be accessed by
 reporting software.  Bareos will prune the Log records associated
 with a Job when the Job records are pruned.  Otherwise, Bareos
 never uses these records internally, so this destination is only
-used for special purpose programs (e.g. {\bf bweb}).
+used for special purpose programs (e.g. frontend programs).
 
 \end{description}
 
@@ -350,8 +350,8 @@ messages generated.
 
 The following is an example of a valid Messages resource definition, where
 all messages except files explicitly skipped or daemon termination messages
-are sent by email to enforcement@sec.com.  In addition all mount messages
-are sent to the operator (i.e.  emailed to enforcement@sec.com).  Finally
+are sent by email to backupoperator@example.com.  In addition all mount messages
+are sent to the operator (i.e.  emailed to backupoperator@example.com).  Finally
 all messages other than explicitly skipped files and files saved are sent
 to the console:
 
@@ -359,31 +359,25 @@ to the console:
 \begin{verbatim}
 Messages {
   Name = Standard
-  mail = enforcement@sec.com = all, !skipped, !terminate
-  operator = enforcement@sec.com = mount
+  mail = backupoperator@example.com = all, !skipped, !terminate
+  operator = backupoperator@example.com = mount
   console = all, !skipped, !saved
 }
 \end{verbatim}
 \normalsize
 
-With the exception of the email address (changed to avoid junk mail from
-robot's), an example Director's Messages resource is as follows. Note, the {\bf
-mailcommand} and {\bf operatorcommand} are on a single line -- they had to be
-split for this manual:
+With the exception of the email address,
+an example Director's Messages resource is as follows:
 
 \footnotesize
 \begin{verbatim}
 Messages {
   Name = Standard
-  mailcommand = "bareos/bin/bsmtp -h mail.example.com \
- -f \"\(Bareos\) %r\" -s \"Bareos: %t %e of %c %l\" %r"
-  operatorcommand = "bareos/bin/bsmtp -h mail.example.com \
- -f \"\(Bareos\) %r\" -s \"Bareos: Intervention needed \
-     for %j\" %r"
-  MailOnError = security@example.com = all, !skipped, \
-             !terminate
-  append = "bareos/bin/log" = all, !skipped, !terminate
-  operator = security@example.com = mount
+  mailcommand = "/usr/sbin/bsmtp -h mail.example.com  -f \"\(Bareos\) %r\" -s \"Bareos: %t %e of %c %l\" %r"
+  operatorcommand = "/usr/sbin/bsmtp -h mail.example.com -f \"\(Bareos\) %r\" -s \"Bareos: Intervention needed for %j\" %r"
+  MailOnError = backupoperator@example.com = all, !skipped, !terminate
+  append = "/var/log/bareos/bareos.log" = all, !skipped, !terminate
+  operator = backupoperator@example.com = mount
   console = all, !skipped, !saved
 }
 \end{verbatim}

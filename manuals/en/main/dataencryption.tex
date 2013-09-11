@@ -15,16 +15,16 @@ contents.
 It is very important to specify what this implementation does NOT
 do:
 \begin{itemize}
-\item There is one important restore problem to be aware of, namely, it's
-  possible for the director to restore new keys or a Bareos configuration
-  file to the client, and thus force later backups to be made with a
-  compromised key and/or with no encryption at all.  You can avoid this by
-  not changing the location of the keys in your Bareos File daemon
-  configuration file, and not changing your File daemon keys.  If you do
-  change either one, you must ensure that no restore is done that restores
-  the old configuration or the old keys.  In general, the worst effect of
-  this will be that you can no longer connect the File daemon.\TODO{what does this sentence mean?}
-    \TODO{refer to SElinux?}
+% \item There is one important restore problem to be aware of, namely, it's
+%   possible for the director to restore new keys or a Bareos configuration
+%   file to the client, and thus force later backups to be made with a
+%   compromised key and/or with no encryption at all.  You can avoid this by
+%   not changing the location of the keys in your Bareos File daemon
+%   configuration file, and not changing your File daemon keys.  If you do
+%   change either one, you must ensure that no restore is done that restores
+%   the old configuration or the old keys.  In general, the worst effect of
+%   this will be that you can no longer connect the File daemon.\TODO{what does this sentence mean?}
+%     \TODO{refer to SElinux?}
 
 \item The implementation does not encrypt file metadata such as file path
   names, permissions, and ownership. Extended attributes are also currently

@@ -267,8 +267,8 @@ if they are present in the {\bf Autochanger} resource.
 
 \item [Autochanger = {\it Yes|No} ]
    \index[sd]{Autochanger  }
-   The {\bf Autochanger} record specifies that the current device  is or is not
-an autochanger. The default is {\bf no}. \TODO{check}
+   The {\bf Autochanger} record specifies if the current device belongs to an
+autochanger ressource. The default is {\bf no}.
 
 \item [Changer Device = {\textless}device-name{\textgreater}]
    \index[sd]{Changer Device  }
@@ -448,9 +448,8 @@ load the correct tape during the label command.
 
 You must also set
 {\bf Autochanger = yes} in the Storage daemon's Device resource
-as we have described above in
-order for the autochanger to be used.
-\TODO{check: why not in the example?}
+as we have described above in order for the autochanger to be used.
+%\TODO{check: why not in the example?}
 Please see the
 \ilink{Storage Resource}{Autochanger1} in the Director's chapter
 and the
@@ -665,6 +664,7 @@ not find any Volume names so will do nothing.
 \index[general]{Adapting Your mtx-changer script}
 \label{AutochangerTesting}
 
+\TODO{move to troubleshooting}
 Before attempting to use the autochanger with Bareos, it is preferable to
 "hand-test" that the changer works. To do so, we suggest you do the
 following commands:

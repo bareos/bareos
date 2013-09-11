@@ -33,15 +33,18 @@ Additionally, there are OPSI packages available under \path|http://download.bare
 
 This install is standard Windows .exe that runs an install wizard using the
 NSIS Free Software installer, so if you have already installed Windows
-software, it should be very familiar to you. If you have a previous version of Bareos installed,
-it is highly recommended to uninstall the installed version before. Providing you do not already
-have Bareos installed, the installer installs the binaries and dlls in \linebreak
-\path|C:\Program Files\Bareos| and the configuration files in \path|C:\ProgramData\Bareos|.
+software, it should be very familiar to you.
+Providing you do not already
+have Bareos installed, the installer installs the binaries and dlls in
+\path|C:\Program Files\Bareos| and the configuration files
+in windows xp \path|c:\Documents and Settings\All Users\Application Data\Bareos|. \TODO{verify}
+and from windows vista + in \path|c:\ProgramData\Bareos|.
 
 In addition, the {\bf Start\-{\textgreater}All Programs\-{\textgreater}Bareos} menu item
 will be created during the installation, and on that menu, you
 will find items for editing the configuration files, displaying
 the document, and starting \command{BAT} or \command{bconsole}.
+
 
 Finally, proceed with the installation.
 
@@ -121,8 +124,7 @@ installation e.g. as follows:
 
 \footnotesize
 \begin{verbatim}
-c:\winbareos-12.4.0-64-bit-r11.1.exe /S /CLIENTNAME=windows64-fd /CLIENTPASSWORD="verysecretpassword"
-/DIRECTORNAME=bareos-dir
+c:\winbareos.exe /S /CLIENTNAME=hostname-fd /CLIENTPASSWORD="verysecretpassword" /DIRECTORNAME=bareos-dir
 \end{verbatim}
 \normalsize
 
@@ -356,8 +358,7 @@ better with this configuration).
 
 The Windows buildin Firewall is enabled since Windows version WinXP SP2.
 The Bareos installer opens the required network ports for Bareos.
-However, if you are using another Firewall, you might need to manually open the Bareos network ports.
-\TODO{which ports?}
+However, if you are using another Firewall, you might need to manually open the Bareos network port 9102/TCP.
 
 \section{Windows Port Usage}
 \index[general]{Windows Port Usage}

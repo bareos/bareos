@@ -15,7 +15,7 @@ to restore files by automatically starting a job as you do with Backup,
 Verify, ... jobs.  However, in addition to the console restore command,
 there is a standalone program named {\bf bextract}, which also permits
 restoring files.  For more information on this program, please see the
-\TODO{missing link: \ilink{Bareos Utility Programs}{bextract}} chapter of this manual. We
+\ilink{Bareos Utility Programs}{bextract} chapter of this manual. We
 don't particularly recommend the {\bf bextract} program because it
 lacks many of the features of the normal Bareos restore, such as the
 ability to restore Win32 files to Unix systems, and the ability to
@@ -46,7 +46,8 @@ avoid this, but assuming the operating systems are not too different in their
 file structures, this should work perfectly well, if so desired.
 By default, Bareos will restore data to the same Client that was backed
 up, and those data will be restored not to the original places but to
-\TODO{right? {\bf /tmp/bareos-restores}}.  You may modify any of these defaults when the
+{\bf /tmp/bareos-restores}. This is configured in the default restore
+command ressource in bareos-dir.conf.  You may modify any of these defaults when the
 restore command prompts you to run the job by selecting the {\bf mod}
 option.
 
@@ -416,7 +417,7 @@ If you now enter {\bf yes}, Bareos will run the restore Job.
 
 \subsection{Restore a pruned job using a pattern}
 
-\TODO{relevant? if yes, fix example}
+\TODO{fix example and move to troubleshooting}
 
   During a restore, if all File records are pruned from the catalog
   for a Job, normally Bareos can restore only all files saved. That
@@ -804,7 +805,7 @@ the problem.
 \index[general]{Restoring Files Can Be Slow }
 
 
-\TODO{relevant? move to subsection?}
+\TODO{move to subsection.}
 
 
 Restoring files is generally {\bf much} slower than backing them up for several
@@ -831,7 +832,7 @@ backing up (sometimes it takes three times as long).
 \index[general]{Files!Problems Restoring }
 \index[general]{Problems Restoring Files }
 
-\TODO{relevant? move to appendix}
+\TODO{move to appendix/troubleshooting}
 
 The most frequent problems users have restoring files are error messages such
 as:
@@ -1103,7 +1104,7 @@ contains a \textbackslash{}, you can use
 \index[general]{Restoring Your Database}
 \index[general]{Database!Restoring}
 
-\TODO{move to Desaster Recovery Section?}
+\TODO{move to Desaster Recovery Section.}
 
 This and the following sections will try to present a few of the kinds of
 problems that can come up making restoring more difficult. We will try to

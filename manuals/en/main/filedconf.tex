@@ -60,13 +60,13 @@ required.
 % \index[fd]{Directive!Working Directory}
 This directive is optional and specifies a directory in which the File
 daemon  may put its status files.
-\TODO{This directory should be used only  by {\bf
-Bareos}, but may be shared by other Bareos daemons provided the daemon
-names on the {\bf Name} definition are unique for each daemon.}
+%\TODO{This directory should be used only by {\bf
+%Bareos}, but may be shared by other Bareos daemons provided the daemon
+%names on the {\bf Name} definition are unique for each daemon.}
 
 The bareos file daemon uses a platform specific default value, that is defined at compile time.
 For Linux systems, the default is \path|/var/lib/bareos/|.
-\TODO{for Windows systems it is ?}
+For Windows systems it is \%TEMP\%.
 
 On Win32 systems, in some circumstances you may need to specify a drive
 letter in the specified working directory path.  Also, please be sure
@@ -83,7 +83,6 @@ Bareos and to prevent multiple copies of  Bareos from running simultaneously.
 The bareos file daemon uses a platform specific default value,
 that is defined at compile time.
 Typically on Linux systems, it is set to \path|/var/lib/bareos/| or \path|/var/run/|.
-\TODO{?}
 
 % Standard shell expansion of the {\bf directory}  is
 % done when the configuration file is read so that values such  as {\bf \$HOME}
@@ -229,10 +228,10 @@ File daemon and in the Storage daemon.
 \directive{fd}{Compatible}{yes{\textbar}no}{}{{yes}}
 This directive enables the compatible mode of the file daemon. In
 this mode the file daemon will try to be as compatible to a native
-Bareos file daemon as possible. Enabling this option may mean that
+Bacula file daemon as possible. Enabling this option means that
 certain new options available in Bareos cannot be used as they would
 lead to data not being able to be restored by a Native Bareos file daemon.
-\TODO{still true with bareos? when to choose false?}
+When you want to use bareos-only features, you have to set it to false.
 
 \item [Maximum Bandwidth Per Job = {\textless}speed{\textgreater}] \hfill \\
 \index[fd]{Maximum Bandwidth Per Job}

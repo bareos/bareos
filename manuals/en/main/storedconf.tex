@@ -659,7 +659,7 @@ and position it to the end of the data. This  can be a very time consuming
 operation. In addition, with this directive set to no, certain multiple
 drive autochanger operations will fail.  We strongly recommend to keep
 {\bf Always Open} set to {\bf Yes}
-\TODO{still true for Bareos? If yes, optimize the code}
+
 
 \item [Volume Poll Interval = {\textless}time{\textgreater}] \hfill \\
 \index[sd]{Volume Poll Interval}
@@ -680,9 +680,9 @@ However, if you are using a Linux 2.6 kernel or other OSes
 such as FreeBSD or Solaris, the Offline On Unmount will leave the drive
 with no tape, and Bareos will not be able to properly open the drive and
 may fail the job.
-\TODO{reference is missing:  For more information on this problem, please see the
-\ilink{description of Offline On Unmount}{NoTapeInDrive} in the Tape
-Testing chapter.}
+%\TODO{reference is missing:  For more information on this problem, please see the
+%\ilink{description of Offline On Unmount}{NoTapeInDrive} in the Tape
+%Testing chapter.}
 
 \item [Close on Poll= {\textless}yes{\textbar}no{\textgreater}] \hfill \\
 \index[sd]{Close on Poll}
@@ -1003,9 +1003,9 @@ If you are using a Linux 2.6 kernel or other OSes
 such as FreeBSD or Solaris, the Offline On Unmount will leave the drive
 with no tape, and Bareos will not be able to properly open the drive and
 may fail the job.
-\TODO{missing reference:  For more information on this problem, please see the
-\ilink{description of Offline On Unmount}{NoTapeInDrive} in the Tape
-Testing chapter.}
+%\TODO{missing reference:  For more information on this problem, please see the
+%\ilink{description of Offline On Unmount}{NoTapeInDrive} in the Tape
+%Testing chapter.}
 
 \item [No Rewind On Close = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
 \index[sd]{No Rewind On Close}
