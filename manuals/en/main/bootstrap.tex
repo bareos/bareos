@@ -3,8 +3,9 @@
 
 \chapter{The Bootstrap File}
 \label{BootstrapChapter}
-\index[general]{File!Bootstrap }
-\index[general]{Bootstrap File }
+\index[general]{File!Bootstrap}
+\index[general]{Bootstrap!File}
+
 
 \TODO{rewrite by Philipp Storz}
 
@@ -25,7 +26,7 @@ any text editor.
 
 \section{Bootstrap File Format}
 \index[general]{Format!Bootstrap}
-\index[general]{Bootstrap File Format }
+\index[general]{Bootstrap!File Format}
 
 The general format of a {\bf bootstrap} file is:
 
@@ -66,7 +67,7 @@ matched against the Volume records are:
 \begin{description}
 
 \item [Volume]
-   \index[general]{Volume }
+   \index[general]{Bootstrap!Volume}
    The value field specifies what Volume the following commands apply to.
    Each Volume specification becomes the current Volume, to which all the
    following commands apply until a new current Volume (if any) is
@@ -74,13 +75,13 @@ matched against the Volume records are:
    quotes. At lease one Volume specification is required.
 
 \item [Count]
-   \index[general]{Count}
+   \index[general]{Bootstrap!Count}
    The value is the total number of files that  will be restored for this Volume.
    This allows the Storage  daemon to know when to stop reading the Volume.
    This value is optional.
 
 \item [VolFile]
-   \index[general]{VolFile}
+   \index[general]{Bootstrap!VolFile}
    The value is a file number, a list of file numbers, or a range of file
    numbers to match on the current Volume.  The file number represents the
    physical file on the Volume where the data is stored.  For a tape
@@ -88,7 +89,7 @@ matched against the Volume records are:
    and once the tape is past the last specified file, reading will stop.
 
 \item [VolBlock]
-   \index[general]{VolBlock}
+   \index[general]{Bootstrap!VolBlock}
    The value is a block number, a list of block numbers, or a range of
    block numbers to match on the current Volume.  The block number
    represents the physical block within the file on the Volume where the
@@ -96,19 +97,19 @@ matched against the Volume records are:
 
 
 \item [VolSessionTime]
-   \index[general]{VolSessionTime }
+   \index[general]{Bootstrap!VolSessionTime}
    The value specifies a Volume Session Time to  be matched from the current
    volume.
 
 \item [VolSessionId]
-   \index[general]{VolSessionId }
+   \index[general]{Bootstrap!VolSessionId}
    The value specifies a VolSessionId, a list of volume session ids, or a
    range of volume session ids to be matched from the current Volume.  Each
    VolSessionId and VolSessionTime pair corresponds to a unique Job that is
    backed up on the Volume.
 
 \item [JobId]
-   \index[general]{JobId }
+   \index[general]{Bootstrap!JobId}
    The value specifies a JobId, list of JobIds, or range of JobIds  to be
    selected from the current Volume. Note, the JobId may not be  unique if you
    have multiple Directors, or if you have reinitialized your  database. The
@@ -116,7 +117,7 @@ matched against the Volume records are:
    This value is optional and not used by Bareos to restore files.
 
 \item [Job]
-   \index[general]{Job }
+   \index[general]{Bootstrap!Job}
    The value specifies a Job name or list of Job names to  be matched on the
    current Volume. The Job corresponds to a unique  VolSessionId and
    VolSessionTime pair. However, the Job is perhaps a  bit more readable by
@@ -126,7 +127,7 @@ matched against the Volume records are:
    This value is optional and not used by Bareos to restore files.
 
 \item [Client]
-   \index[general]{Client }
+   \index[general]{Bootstrap!Client}
    The value specifies a Client name or list of Clients to  will be matched on
    the current Volume. Standard regular expressions  (wildcards) may be used to
    match Client names. The Client filter works  only if you do not run multiple
@@ -134,7 +135,7 @@ matched against the Volume records are:
    This value is optional and not used by Bareos to restore files.
 
 \item [FileIndex]
-   \index[general]{FileIndex}
+   \index[general]{Bootstrap!FileIndex}
    The value specifies a FileIndex, list of FileIndexes,  or range of FileIndexes
    to be selected from the current Volume.  Each file (data) stored on a Volume
    within a Session has a unique  FileIndex. For each Session, the first file
@@ -151,7 +152,7 @@ matched against the Volume records are:
    required.
 
 \item [FileRegex]
-   \index[general]{FileRegex}
+   \index[general]{Bootstrap!FileRegex}
    The value is a regular expression.  When specified, only matching
    filenames will be restored.
 
@@ -160,24 +161,24 @@ matched against the Volume records are:
 \end{verbatim}
 
 \item [Slot]
-   \index[general]{Slot }
+   \index[general]{Bootstrap!Slot}
    The value specifies the autochanger slot. There may  be only a single {\bf
    Slot} specification for each Volume.
 
 \item [Stream]
-   \index[general]{Stream }
+   \index[general]{Bootstrap!Stream}
    The value specifies a Stream, a list of Streams,  or a range of Streams to be
    selected from the current Volume.  Unless you really know what you are doing
    (the internals of  Bareos), you should avoid this specification.
    This value is optional and not used by Bareos to restore files.
 
-\item [*JobType]
-   \index[general]{*JobType }
-   Not yet implemented.
-
-\item [*JobLevel]
-   \index[general]{*JobLevel }
-   Not yet implemented.
+% \item [*JobType]
+%    \index[general]{*JobType }
+%    Not yet implemented.
+%
+% \item [*JobLevel]
+%    \index[general]{*JobLevel }
+%    Not yet implemented.
 \end{description}
 
 The {\bf Volume} record is a bit special in that it must be the first record.
@@ -325,8 +326,8 @@ VolSessionTime=1025025494
 \normalsize
 
 \section{Automatic Generation of Bootstrap Files}
-\index[general]{Files!Automatic Generation of Bootstrap }
-\index[general]{Automatic Generation of Bootstrap Files }
+\index[general]{Files!Automatic Generation of Bootstrap}
+\index[general]{Bootstrap!Automatic Generation}
 
 One thing that is probably worth knowing: the bootstrap files that are
 generated automatically at the end of the job are not as optimized as those
@@ -364,7 +365,9 @@ The {\bf no} answers the {\bf Do you want to run this (yes/mod/no)} question.
 \section{Bootstrap for bscan}
 \index[general]{bscan}
 \index[general]{bscan!bootstrap}
-\index[general]{bscan bootstrap}
+\index[general]{Bootstrap!bscan}
+\index[general]{Command!bscan}
+
 If you have a very large number of Volumes to scan with {\bf bscan},
 you may exceed the command line limit (511 characters). I that case,
 you can create a simple bootstrap file that consists of only the
@@ -382,8 +385,9 @@ Volume="Vol005"
 
 
 \section{A Final Bootstrap Example}
-\index[general]{Bootstrap Example}
 \index[general]{Example!Bootstrap}
+\index[general]{Bootstrap!Example}
+
 
 If you want to extract or copy a single Job, you can do it by selecting by
 JobId (code not tested) or better yet, if you know the VolSessionTime and the

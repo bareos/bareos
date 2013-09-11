@@ -39,7 +39,7 @@ specification followed by a list of {\bf message-types} in the format:
 \begin{description}
 
 \item [destination = message-type1, message-type2, message-type3, ...  ]
-\index[dir]{destination}
+\index[dir]{Messages!destination}
 \end{description}
 
 or for those destinations that need and address specification (e.g. email):
@@ -47,7 +47,7 @@ or for those destinations that need and address specification (e.g. email):
 \begin{description}
 
 \item [destination = address = message-type1, message-type2, message-type3, ...] \hfill \\
-\index[dir]{destination}
+\index[dir]{Messages!destination}
 
 Where {\bf destination} is one of a predefined set of keywords that define
 where the message is to be sent ({\bf stdout}, {\bf file}, ...), {\bf
@@ -67,13 +67,13 @@ in a message resource.
 Start of the Messages records.
 
 \item [Name = {\textless}name{\textgreater}] \hfill \\
-\index[dir]{Name}
+\index[dir]{Messages!Name}
 The name of the Messages resource.  The name you specify here will be used to
 tie this Messages  resource to a Job and/or to the daemon.
 
 \label{mailcommand}
 \item [MailCommand = {\textless}command{\textgreater}] \hfill \\
-\index[dir]{MailCommand}
+\index[dir]{Messages!MailCommand}
 In the absence of this resource,  Bareos will send all mail using the
 following command:
 
@@ -163,27 +163,24 @@ The {\bf destination} may be one of the following:
 \begin{description}
 
 \item [director] \hfill \\
-\index[dir]{director}
-\index[general]{director}
+\index[general]{Messages!director}
 Send the message to the Director whose name  is given in the {\bf address}
 field. Note, in the current  implementation, the Director Name is ignored, and
 the message  is sent to the Director that started the Job.
 
 \item [file] \hfill \\
-\index[dir]{file}
-\index[general]{file}
+\index[general]{Messages!file}
 Send the message to the filename given in  the {\bf address} field. If the
 file already exists, it will be  overwritten.
 
 \item [append] \hfill \\
-\index[dir]{append}
-\index[general]{append}
+\index[general]{Messages!append}
 Append the message to the filename given  in the {\bf address} field. If the
 file already exists, it will  be appended to. If the file does not exist, it
 will be created.
 
 \item [syslog] \hfill \\
-\index[general]{syslog}
+\index[general]{Messages!syslog}
 Send the message to the system log (syslog)  using the facility specified in
 the {\bf address} field.  Note, for the moment, the {\bf address} field is
 ignored  and the message is always sent to the LOG\_DAEMON facility with
@@ -202,7 +199,7 @@ check the {\bf syslog} for Bareos output (normally {\bf
 /var/log/syslog}).
 
 \item [mail] \hfill \\
-\index[general]{mail}
+\index[general]{Messages!mail}
 Send the message to the email addresses that are given as a comma
 separated list in the {\bf address} field.  Mail messages are grouped
 together during a job and then sent as a single email message when the
@@ -214,7 +211,7 @@ file this email based on the Job termination code (see {\bf
 mailcommand}).
 
 \item [mail on error] \hfill \\
-\index[general]{mail on error}
+\index[general]{Messages!mail on error}
 Send the message to the email addresses that are given as a comma
 separated list in the {\bf address} field if the Job terminates with an
 error condition.  MailOnError messages are grouped together during a job
@@ -226,7 +223,7 @@ other destinations such as {\bf append} you can ensure that even if the
 Job terminates normally, the output information is saved.
 
 \item [mail on success] \hfill \\
-\index[general]{mail on success}
+\index[general]{Messages!mail on success}
 Send the message to the email addresses that are given as a comma
 separated list in the {\bf address} field if the Job terminates
 normally (no error condition).  MailOnSuccess messages are grouped
@@ -237,7 +234,7 @@ totally discarded (for this destination).  If the Job terminates
 normally, it is emailed.
 
 \item [operator] \hfill \\
-\index[general]{operator}
+\index[general]{Messages!operator}
 Send the message to the email addresses that are specified as a comma
 separated list in the {\bf address} field.  This is similar to {\bf
 mail} above, except that each message is sent as received.  Thus there
@@ -245,20 +242,20 @@ is one email per message.  This is most useful for {\bf mount} messages
 (see below).
 
 \item [console] \hfill \\
-  \index[general]{console}
+  \index[general]{Messages!console}
   Send the message to the Bareos console. These messages are held
   until the console program  connects to the Director.
 
 \item [stdout] \hfill \\
-  \index[general]{stdout}
+  \index[general]{Messages!stdout}
   Send the message to the standard output (normally not used).
 
 \item [stderr] \hfill \\
-  \index[general]{stderr}
+  \index[general]{Messages!stderr}
   Send the message to the standard error output (normally not used).
 
 \item [catalog] \hfill \\
-\index[general]{catalog}
+\index[general]{Messages!catalog}
 Send the message to the Catalog database. The message will be
 written to the table named {\bf Log} and a timestamp field will
 also be added. This permits Job Reports and other messages to
@@ -276,36 +273,34 @@ list of the following types or classes of messages:
 \begin{description}
 
 \item [info] \hfill \\
-\index[general]{info}
+\index[general]{Messages!type!info}
 General information messages.
 
 \item [warning] \hfill \\
-\index[general]{warning}
+\index[general]{Messages!type!warning}
 Warning messages. Generally this is some  unusual condition but not expected
 to be serious.
 
 \item [error] \hfill \\
-\index[general]{error}
+\index[general]{Messages!type!error}
 Non-fatal error messages. The job continues running.  Any error message should
 be investigated as it means that something  went wrong.
 
 \item [fatal] \hfill \\
-\index[general]{fatal}
+\index[general]{Messages!type!fatal}
 Fatal error messages. Fatal errors cause the  job to terminate.
 
 \item [terminate] \hfill \\
-\index[general]{terminate}
+\index[general]{Messages!type!terminate}
 Message generated when the daemon shuts down.
 
 \item [notsaved] \hfill \\
-\index[fd]{notsaved}
-\index[general]{notsaved}
+\index[general]{Messages!type!notsaved}
 Files not saved because of some error.  Usually because the file cannot be
 accessed (i.e. it does not  exist or is not mounted).
 
 \item [skipped] \hfill \\
-\index[fd]{skipped}
-\index[general]{skipped}
+\index[general]{Messages!type!skipped}
 Files that were skipped because of a user supplied option such as an
 incremental backup or a file that matches an exclusion pattern.  This is
 not considered an error condition such as the files listed for the {\bf
@@ -315,33 +310,31 @@ incremental backup, or any subdirectory if the no recursion option is
 specified.
 
 \item [mount] \hfill \\
-\index[dir]{mount}
-\index[general]{mount}
+\index[general]{Messages!type!mount}
 Volume mount or intervention requests from the Storage daemon.  These
 requests require a specific operator intervention for the job to
 continue.
 
 \item [restored] \hfill \\
-\index[fd]{restored}
-\index[general]{restored}
+\index[general]{Messages!type!restored}
 The {\bf ls} style listing generated for each file restored is sent to
 this message class.
 
 \item [all] \hfill \\
-\index[general]{all}
+\index[general]{Messages!type!all}
 All message types.
 
 \item [security] \hfill \\
-\index[general]{security}
+\index[general]{Messages!type!security}
 Security info/warning messages principally from unauthorized
 connection attempts.
 
 \item [alert] \hfill \\
-\index[general]{alert}
+\index[general]{Messages!type!alert}
 Alert messages. These are messages generated by tape alerts.
 
 \item [volmgmt] \hfill \\
-\index[general]{volmgmt}
+\index[general]{Messages!type!volmgmt}
 Volume management messages. Currently there are no volume mangement
 messages generated.
 \end{description}

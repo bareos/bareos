@@ -3,8 +3,7 @@
 
 \chapter{A Brief Tutorial}
 \label{TutorialChapter}
-\index[general]{Brief Tutorial }
-\index[general]{Tutorial!Brief }
+\index[general]{Tutorial!Brief}
 
 This chapter will guide you through running Bareos. To do so, we assume you
 have installed Bareos.
@@ -40,8 +39,7 @@ The general flow of running Bareos is:
 Each of these steps is described in more detail below.
 
 \section{Before Running Bareos}
-\index[general]{Bareos!Before Running }
-\index[general]{Before Running Bareos }
+\index[general]{Bareos!Before Running}
 
 % TODO: some of this content is already covered once or twice critical
 % TODO: or quickstart. Consolidate!
@@ -60,8 +58,8 @@ it can take hours (about four hours on my drive) to fill a large capacity tape.
 
 \section{Starting the Database}
 \label{StartDB}
-\index[general]{Starting the Database }
-\index[general]{Database!Starting the }
+\index[general]{Starting the Database}
+\index[general]{Database!Starting the}
 
 If you are using MySQL or PostgreSQL as the Bareos database, you should start
 it before you attempt to run a job to avoid getting error messages from Bareos
@@ -72,12 +70,16 @@ started by {\bf Bareos}.
 \section{Starting the Daemons}
 \label{StartDaemon}
 \index[general]{Starting the Daemons }
-\index[general]{Daemons!Starting the }
+\index[general]{Daemons!Starting the}
 
-Assuming you have built from source or have installed the packages,
+Assuming you have installed the packages,
 to start the three daemons, from your installation directory, simply enter:
 
-./bareos start
+\begin{verbatim}
+service bareos-dir start
+service bareos-sd start
+service bareos-fd start
+\end{verbatim}
 
 The {\bf bareos} script starts the Storage daemon, the File daemon, and the
 Director daemon, which all normally run as daemons in the background. If you
@@ -1033,8 +1035,7 @@ To manually relabel the Volume use the following additional steps:
    \end{itemize}
 
 \section{Other Useful Console Commands}
-\index[general]{Commands!Other Useful Console }
-\index[general]{Other Useful Console Commands }
+\index[general]{Console!Commands!Useful}
 
 \begin{description}
 

@@ -4,8 +4,7 @@
 \chapter{Verify File Integrity with Bareos}
 \label{VerifyChapter}
 \index[general]{Security!Using Bareos to Improve Computer }
-\index[general]{Using Bareos to Improve Computer Security }
-\index[general]{verify}
+\index[general]{Verify!File Integrity}
 
 % TODO: only those two digest algorithms?
 % TODO: can it use multiple at a time? (record and use both SHA1 and MD5?)
@@ -50,7 +49,7 @@ comparison options on the {\bf Include} statements that you use in the {\bf
 FileSet} resource of your {\bf Catalog} Jobs.
 
 \section{The Details}
-\index[general]{Details }
+\index[general]{Verify!Details}
 
 In the discussion that follows, we will make reference to the Verify
 Configuration Example that is included below in the {\bf A Verify
@@ -109,8 +108,7 @@ me). On the other hand, as long as I don't load any new packages, none of
 these files change during normal operation of the system.
 
 \section{Running the Verify}
-\index[general]{Running the Verify }
-\index[general]{Verify!Running the }
+\index[general]{Verify!Running}
 
 The first thing you will want to do is to run an {\bf InitCatalog} level
 Verify Job. This will initialize the catalog to contain the file information
@@ -228,8 +226,7 @@ OK to run? (yes/mod/no):
 \end{verbatim}
 
 \section{What To Do When Differences Are Found}
-\index[general]{What To Do When Differences Are Found }
-\index[general]{Found!What To Do When Differences Are }
+\index[general]{Verify!Differences}
 
 If you have setup your messages correctly, you should be notified if there are
 any differences and exactly what they are. For example, below is the email
@@ -328,8 +325,7 @@ bit more thought, you can probably add quite a number of additional files that
 should be monitored.
 
 \section{A Verify Configuration Example}
-\index[general]{Verify Configuration Example }
-\index[general]{Example!Verify Configuration }
+\index[general]{Verify!Example}
 
 \footnotesize
 \begin{verbatim}

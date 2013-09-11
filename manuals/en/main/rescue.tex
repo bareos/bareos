@@ -3,13 +3,10 @@
 
 \chapter{Disaster Recovery Using Bareos}
 \label{RescueChapter}
-\index[general]{Disaster Recovery Using Bareos}
-\index[general]{Bareos!Disaster Recovery Using}
+\index[general]{Disaster!Recovery}
 \index[general]{Recovery!Disaster Recovery}
-\index[general]{Rescue!Disaster Recovery}
 
 \section{General}
-\index[general]{General}
 
 When disaster strikes, you must have a plan, and you must have prepared in
 advance otherwise the work of recovering your system and your files will be
@@ -27,8 +24,6 @@ reported success using BartPE.
 
 
 \subsection{Important Considerations}
-\index[general]{Important Considerations}
-\index[general]{Considerations!Important}
 \label{considerations1}
 
 Here are a few important considerations concerning disaster recovery that
@@ -46,8 +41,7 @@ you should take into account before a disaster strikes.
 \end{itemize}
 
 \section{Steps to Take Before Disaster Strikes}
-\index[general]{Steps to Take Before Disaster Strikes}
-\index[general]{Strikes!Steps to Take Before Disaster}
+\index[general]{Disaster!Before}
 \label{steps1}
 
 \TODO{describe REAR}
@@ -78,8 +72,7 @@ you should take into account before a disaster strikes.
 
 \label{rescueCDROM}
 \section{Bare Metal Recovery on Linux with a Rescue CD}
-\index[general]{Bare Metal Recovery on Linux with a Rescue CD}
-\index[general]{CDROM!Bare Metal Recovery on Linux with a Rescue}
+\index[general]{Disaster!Recovery!Linux}
 
 There are a number of good rescue systems available for Linux.
 A so called "Bare Metal" recovery is one where you start with an empty hard
@@ -102,8 +95,7 @@ Bare Metal Recovery assumes that you have the following items for your system:
 \end{itemize}
 
 \subsection{Restoring a Linux Client System}
-\index[general]{Restoring a Client System}
-\index[general]{System!Restoring a Client}
+\index[general]{Restore!Linux Client}
 \label{restore_client}
 
 Now, let's assume that your hard disk has just died and that you have replaced
@@ -137,8 +129,6 @@ You will take the following steps to get your system back up and running:
 Now for the details ...
 
 \subsection{Boot with your Rescue CDROM}
-\index[general]{CDROM!Boot with your Rescue}
-\index[general]{Boot with your Rescue CDROM}
 
 Each rescue disk boots somewhat differently.  Please see the
 instructions that go with your CDROM.
@@ -320,8 +310,7 @@ re-insert the emergency boot CDROM, boot, and figure out what is wrong.
 
 \label{restore_server}
 \section{Restoring a Bareos Server}
-\index[general]{Restoring a Server}
-\index[general]{Server!Restoring a}
+\index[general]{Restore!Baroes Server}
 
 Above, we considered how to recover a client machine where a valid Bareos
 server was running on another machine. However, what happens if your server
@@ -378,11 +367,10 @@ of the Console Restore Command chapter of this manual.
 
 
 
-\label{FreeBSD1}
 \section{FreeBSD Bare Metal Recovery}
-\index[general]{Recovery!FreeBSD Bare Metal}
-\index[general]{Rescue!FreeBSD Bare Metal}
-\index[general]{FreeBSD Bare Metal Recovery}
+\label{FreeBSD1}
+\index[general]{Disaster!Recovery!FreeBSD}
+\index[general]{FreeBSD!Disaster Recovery}
 
 The same basic techniques described above also apply to FreeBSD. Although we
 don't yet have a fully automated procedure, Alex Torres Molina has provided us
@@ -429,10 +417,10 @@ remote machine.
 \item You must create /proc
 \end{enumerate}
 
-\label{solaris}
 \section{Solaris Bare Metal Recovery}
-\index[general]{Solaris Bare Metal Recovery}
-\index[general]{Recovery!Solaris Bare Metal}
+\label{solaris}
+\index[general]{Solaris!Disaster Recovery}
+\index[general]{Disaster!Recovery!Solaris}
 
 The same basic techniques described above apply to Solaris:
 
@@ -456,8 +444,6 @@ Once the disk is partitioned, formatted and mounted, you can continue with
 bringing up the network and reloading Bareos.
 
 \subsection{Preparing Solaris Before a Disaster}
-\index[general]{Preparing Solaris Before a Disaster}
-\index[general]{Disaster!Preparing Solaris Before a}
 
 As mentioned above, before a disaster strikes, you should prepare the
 information needed in the case of problems. To do so, in the {\bf
@@ -495,8 +481,6 @@ Once you have your disks repartitioned and formatted, do the following:
 % not relevant
 \hide{
 \section{Bugs and Other Considerations}
-\index[general]{Considerations!Bugs and Other}
-\index[general]{Bugs and Other Considerations}
 \label{genbugs}
 
 \paragraph*{Strange Bootstrap Files:}
@@ -509,10 +493,10 @@ such circumstances, Bareos restores only the last of multiple copies of
 a file or directory.
 }
 
-\label{Win3233}
 \section{Disaster Recovery of Win32 Systems}
-\index[general]{Systems!Disaster Recovery of Win32}
-\index[general]{Disaster Recovery of Win32 Systems}
+\label{Win3233}
+\index[general]{Disaster!Recovery!Win32}
+\index[general]{Win32!Disaster Recovery}
 
 Due to open system files, and registry problems, Bareos cannot save and
 restore a complete Win2K/XP/NT environment.

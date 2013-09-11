@@ -93,8 +93,10 @@ and are named accordingly to the programs that use it: bareos-fd.conf, bareos-sd
 % often. Most of the work will simply be in changing the tape when it is full.
 
 \subsection{Configuring the Console Program}
-\index[general]{Configuring the Console Program }
-\index[general]{Program!Configuring the Console }
+\index[general]{Configuring the Console Program}
+\index[general]{Console!Configure}
+\index[general]{Configure!Console}
+
 
 The Console program is used by the administrator to interact with the Director
 and to manually start/stop Jobs or to obtain Job status information.
@@ -131,8 +133,8 @@ Further details are in the
 % \ilink{Monitor configuration}{_MonitorChapter} chapter.
 
 \subsection{Configuring the File daemon}
-\index[general]{Daemon!Configuring the File }
-\index[general]{Configuring the File daemon }
+\index[general]{Daemon!Configuring the File}
+\index[general]{Configuring the File daemon}
 
 The File daemon is a program that runs on each (Client) machine. At the
 request of the Director, finds the files to be backed up and sends them (their
@@ -151,8 +153,8 @@ Further details are in the
 \ilink{File daemon configuration}{FiledConfChapter} chapter.
 
 \subsection{Configuring the Director}
-\index[general]{Director!Configuring the }
-\index[general]{Configuring the Director }
+\index[general]{Director!Configuring the}
+\index[general]{Configuring the Director}
 
 The Director is the central control program for all the other daemons. It
 schedules and monitors all jobs to be backed up.
@@ -198,8 +200,8 @@ More information is in the
 \ilink{Director configuration}{DirectorChapter} chapter.
 
 \subsection{Configuring the Storage daemon}
-\index[general]{Daemon!Configuring the Storage }
-\index[general]{Configuring the Storage daemon }
+\index[general]{Daemon!Configuring the Storage}
+\index[general]{Configuring the Storage daemon}
 
 The Storage daemon is responsible, at the Director's request, for accepting
 data from a File daemon and placing it on Storage media, or in the case of a
@@ -308,8 +310,8 @@ you will get detailed instructions on how to run Bareos.
 
 
 \section{Disaster Recovery}
-\index[general]{Recovery!Disaster }
-\index[general]{Disaster Recovery }
+\index[general]{Recovery!Disaster}
+\index[general]{Disaster!Recovery}
 
 If you intend to use Bareos as a disaster recovery tool rather than simply a
 program to restore lost or damaged files, you will want to read the

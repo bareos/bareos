@@ -3,8 +3,8 @@
 
 \chapter{Using Tape Drives without Autochanger}
 \label{StrategiesChapter}
-\index[general]{Strategies!Backup }
-\index[general]{Backup Strategies }
+\index[general]{Strategy!Backup}
+\index[general]{Backup Strategies}
 
 Although Recycling and Backing Up to Disk Volume have been discussed in
 previous chapters, this chapter is meant to give you an overall view of
@@ -12,14 +12,13 @@ possible backup strategies and to explain their advantages and disadvantages.
 \label{Simple}
 
 \section{Simple One Tape Backup}
-\index[general]{Backup!Simple One Tape }
-\index[general]{Simple One Tape Backup }
+\index[general]{Backup!One Tape}
+\index[general]{One Tape Backup}
 
 Probably the simplest strategy is to back everything up to a single tape and
 insert a new (or recycled) tape when it fills and Bareos requests a new one.
 
 \subsection{Advantages}
-\index[general]{Advantages }
 
 \begin{itemize}
 \item The operator intervenes only when a tape change is needed  (e.g. once a
@@ -34,7 +33,6 @@ insert a new (or recycled) tape when it fills and Bareos requests a new one.
 \end{itemize}
 
 \subsection{Disadvantages}
-\index[general]{Disadvantages }
 
 \begin{itemize}
 \item If your site burns down, you will lose your current backups
@@ -43,8 +41,6 @@ insert a new (or recycled) tape when it fills and Bareos requests a new one.
    \end{itemize}
 
 \subsection{Practical Details}
-\index[general]{Details!Practical }
-\index[general]{Practical Details }
 
 This system is very simple. When the tape fills and Bareos requests a new
 tape, you {\bf unmount} the tape from the Console program, insert a new tape
@@ -60,8 +56,8 @@ incremental backups the rest of the week.
 \label{Manual}
 
 \section{Manually Changing Tapes}
-\index[general]{Tapes!Manually Changing }
-\index[general]{Manually Changing Tapes }
+\index[general]{Tapes!Manually Changing}
+\index[general]{Manually Changing Tapes}
 
 If you use the strategy presented above, Bareos will ask you to change the
 tape, and you will {\bf unmount} it and then remount it when you have inserted
@@ -119,8 +115,8 @@ autochangers because Bareos will still keep the  drive open.
 \label{Daily}
 
 \section{Daily Tape Rotation}
-\index[general]{Rotation!Daily Tape }
-\index[general]{Daily Tape Rotation }
+\index[general]{Rotation!Daily Tape}
+\index[general]{Daily Tape Rotation}
 
 This scheme is quite different from the one mentioned above in that a Full
 backup is done to a different tape every day of the week. Generally, the
@@ -132,7 +128,6 @@ run this way, or using modifications of it based on two week cycles or longer.
 
 
 \subsection{Advantages}
-\index[general]{Advantages }
 
 \begin{itemize}
 \item All the data is stored on a single tape, so recoveries  are simple and
@@ -142,7 +137,6 @@ run this way, or using modifications of it based on two week cycles or longer.
    \end{itemize}
 
 \subsection{Disadvantages}
-\index[general]{Disadvantages }
 
 \begin{itemize}
 \item The tape must be changed every day requiring a lot of  operator
@@ -160,8 +154,6 @@ run this way, or using modifications of it based on two week cycles or longer.
 \end{itemize}
 
 \subsection{Practical Details}
-\index[general]{Details!Practical }
-\index[general]{Practical Details }
 
 The simplest way to "force" Bareos to use a different tape each day is to
 define a different Pool for each day of the the week a backup is done. In

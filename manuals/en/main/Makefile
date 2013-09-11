@@ -1,10 +1,28 @@
 LATEX=latex
 DVI2PDF=dvipdf
+MAKEINDEX=makeindex
 LATEX2HTML=latex2html
+
+INDEXES = main.console.ind \
+	main.director.ind \
+	main.general.ind \
+	main.fd.ind \
+	main.sd.ind \
+	main.monitor.ind
 
 all: main.pdf
 
-main.dvi: *.sty *.tex
+
+%.idx:
+	$(LATEX) main.tex
+
+%.ind: %.idx
+	$(MAKEINDEX) $<
+
+main.toc: *.tex
+	$(LATEX) main.tex
+
+main.dvi: *.sty *.tex $(INDEXES) main.toc
 	$(LATEX) main.tex
 	$(LATEX) main.tex
 

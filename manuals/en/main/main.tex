@@ -36,12 +36,27 @@
 
 
 \makeindex
-\newindex{dir}{ddx}{dnd}{Director Index}
-\newindex{fd}{fdx}{fnd}{File Daemon Index}
-\newindex{sd}{sdx}{snd}{Storage Daemon Index}
-\newindex{console}{cdx}{cnd}{Console Index}
-\newindex{monitor}{mox}{mod}{Monitor Index}
-\newindex{general}{idx}{ind}{General Index}
+\newindex{general}{general.idx}{general.ind}{General Index}
+\newindex{dir}{director.idx}{director.ind}{Director Index}
+\newindex{fd}{fd.idx}{fd.ind}{File Daemon Index}
+\newindex{sd}{sd.idx}{sd.ind}{Storage Daemon Index}
+\newindex{console}{console.idx}{console.ind}{Console Index}
+\newindex{monitor}{monitor.idx}{monitor.ind}{Monitor Index}
+
+% rules for using index:
+%   use singular
+%   first letter: upper case letters
+%   everything to [general] (in the longterm)
+%
+% index keywords (instead of ...)
+%
+% Windows (Win32)
+% Configuration (configure)
+% Command (for executabel commands)
+% Console!Command (for bconsole commands)
+% Restore (Restoring)
+
+
 
 \sloppy
 
@@ -205,11 +220,14 @@
     \verbatiminput{lgpl.txt}
 
 % pull in the index
-\clearpage
+%\clearpage
+\part{Index}
 \printindex[general]
 \printindex[dir]
-\printindex[fd]
 \printindex[sd]
+\printindex[fd]
 \printindex[console]
+\printindex[monitor]
+
 
 \end{document}

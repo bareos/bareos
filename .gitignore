@@ -6,6 +6,8 @@
 *.dvi
 *.fdx
 *.idx
+*.ilg
+*.ind
 *.log
 *.maf
 *.mox

@@ -3,11 +3,10 @@
 \chapter{The Restore Command}
 \label{RestoreChapter}
 \label{_ConsoleChapter}
-\index[general]{Command!Console Restore}
-\index[general]{Console Restore Command}
+\index[general]{Console!Command!Restore}
+\index[general]{Restore}
 
 \section{General}
-\index[general]{General }
 
 Below, we will discuss restoring files with the Console {\bf restore} command,
 which is the recommended way of doing restoring files. It is not possible
@@ -51,10 +50,8 @@ command ressource in bareos-dir.conf.  You may modify any of these defaults when
 restore command prompts you to run the job by selecting the {\bf mod}
 option.
 
-\label{Example1}
 \section{The Restore Command}
-\index[general]{Command!Restore}
-\index[general]{Restore Command}
+\label{Example1}
 
 Since Bareos maintains a catalog of your files and on which Volumes (disk or
 tape), they are stored, it can do most of the bookkeeping work, allowing you
@@ -544,11 +541,9 @@ the {\bf mod} option.  You will be given a list of parameters to choose
 from.  Full details on this option can be found in the Job Resource section
 of the Director documentation.
 
-\label{CommandArguments}
 
 \section{Command Line Arguments}
-\index[general]{Arguments!Command Line }
-\index[general]{Command Line Arguments }
+\label{CommandArguments}
 
 If all the above sounds complicated, you will probably agree that it really
 isn't after trying it a few times. It is possible to do everything that was
@@ -720,8 +715,8 @@ Orignal filename & New filename & RegexWhere & Comments \\
 %       i   Do case-insensitive pattern matching.
 
 \section{Restoring Directory Attributes}
-\index[general]{Attributes!Restoring Directory }
-\index[general]{Restoring Directory Attributes }
+\index[general]{Attributes!Restoring Directory}
+\index[general]{Restoring Directory Attributes}
 
 Depending how you do the restore, you may or may not get the directory entries
 back to their original state. Here are a few of the problems you can
@@ -768,10 +763,10 @@ encounter, and for same machine restores, how to avoid them.
 
 \end{itemize}
 
-\label{Windows}
 \section{Restoring on Windows}
-\index[general]{Restoring on Windows }
-\index[general]{Windows!Restoring on }
+\label{Windows}
+\index[general]{Restoring on Windows}
+\index[general]{Windows!Restoring on}
 
 If you are restoring on Windows systems, Bareos will restore the files
 with the original ownerships and permissions as would be expected.  This is
@@ -801,8 +796,8 @@ the problem.
 
 
 \section{Restoring Files Can Be Slow}
-\index[general]{Slow!Restoring Files Can Be }
-\index[general]{Restoring Files Can Be Slow }
+\index[general]{Slow!Restoring Files Can Be}
+\index[general]{Restoring Files Can Be Slow}
 
 
 \TODO{move to subsection.}
@@ -829,8 +824,8 @@ For all the above reasons the restore process is generally much slower than
 backing up (sometimes it takes three times as long).
 
 \section{Problems Restoring Files}
-\index[general]{Files!Problems Restoring }
-\index[general]{Problems Restoring Files }
+\index[general]{Files!Problems Restoring}
+\index[general]{Problems Restoring Files}
 
 \TODO{move to appendix/troubleshooting}
 
@@ -928,8 +923,7 @@ warning messages. Some of the more common ones are:
 
 
 \section{Example Restore Job Resource}
-\index[general]{Example Restore Job Resource }
-\index[general]{Resource!Example Restore Job }
+\index[general]{Resource!Example Restore Job}
 
 \footnotesize
 \begin{verbatim}
@@ -951,8 +945,8 @@ be their original locations.
 \label{Selection}
 
 \section{File Selection Commands}
-\index[general]{Commands!File Selection }
-\index[general]{File Selection Commands }
+\index[general]{Console!File Selection}
+\index[general]{File Selection Commands}
 
 After you have selected the Jobs to be restored and Bareos has created the
 in-memory directory tree, you will enter file selection mode as indicated by
@@ -1008,13 +1002,13 @@ mark} command. The available commands are:
    ({\bf /}) to distinguish them  from filenames.
 
 \item [lsmark]
-   \index[fd]{lsmark}
+   \index[console]{lsmark}
    The {\bf lsmark} command is the same as the  {\bf ls} except that it will
    print only those files marked for  extraction. The other distinction is that
    it will recursively  descend into any directory selected.
 
 \item [mark]
-   \index[dir]{mark}
+   \index[console]{mark}
    The {\bf mark} command allows you to mark files to be restored. It takes a
    single argument which is the filename  or directory name in the current
    directory to be marked for extraction.  The argument may be a wildcard
@@ -1098,11 +1092,11 @@ contains a \textbackslash{}, you can use
 * mark weird_file\\\\with-backslash
 \end{verbatim}
 
-\label{database_restore}
 \section{Restoring When Things Go Wrong}
-\index[general]{Restoring When Things Go Wrong }
+\label{database_restore}
+\index[general]{Restoring When Things Go Wrong}
 \index[general]{Restoring Your Database}
-\index[general]{Database!Restoring}
+\index[general]{Database!Restore}
 
 \TODO{move to Desaster Recovery Section.}
 

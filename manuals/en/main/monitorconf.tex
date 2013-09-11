@@ -3,8 +3,8 @@
 
 \chapter{Monitor Configuration}
 \label{_MonitorChapter}
-\index[general]{Monitor Configuration }
-\index[general]{Configuration!Monitor }
+\index[general]{Monitor Configuration}
+\index[general]{Configuration!Monitor}
 
 The Monitor configuration file is a stripped down version of the Director
 configuration file, mixed with a Console configuration file. It simply
@@ -32,8 +32,8 @@ the  Monitor configuration file.
 
 \section{Monitor Resource}
 \label{MonitorResource}
-\index[general]{Monitor Resource }
-\index[general]{Resource!Monitor }
+\index[general]{Monitor Resource}
+\index[general]{Resource!Monitor}
 
 The Monitor resource defines the attributes of the Monitor running on the
 network. The parameters you define here must be configured as a Director
@@ -43,12 +43,12 @@ resource in Directors configuration files.
 \begin{description}
 
 \item [Name = {\textless}name{\textgreater}] \hfill \\
-\index[fd]{Name  }
+\index[fd]{Name}
 Specify the Director name used to connect  to Client and Storage, and the
 Console name used to connect to Director.  This record is required.
 
 \item [Password = {\textless}password{\textgreater}] \hfill \\
-\index[fd]{Password  }
+\index[fd]{Password}
 Where the password is needed for Directors to accept the Console
 connection.  This password must be identical to the {\bf Password} specified
 in  the {\bf Console} resource of the \ilink{Director's configuration}{DirectorChapter}
@@ -65,8 +65,8 @@ is 5 seconds.
 
 \section{Director Resource}
 \label{DirectorResource2}
-\index[general]{Director Resource }
-\index[general]{Resource!Director }
+\index[general]{Director Resource}
+\index[general]{Resource!Director}
 
 The Director resource defines the attributes of the Directors that are
 monitored by this Monitor.
@@ -85,11 +85,11 @@ configuration file.
 \begin{description}
 
 \item [Director]
-\index[fd]{Director }
+\index[fd]{Director}
 Start of the Director records.
 
 \item [Name = {\textless}name{\textgreater}] \hfill \\
-\index[fd]{Name  }
+\index[fd]{Name}
 The Director name used to identify  the Director in the list of monitored
 daemons. It is not required  to be the same as the one defined in the Director's
 configuration file.  This record is required.
@@ -101,15 +101,15 @@ identical to the  {\bf DIRport} specified in the {\bf Director} resource of the
 \ilink{Director's configuration}{DirectorChapter} file.
 
 \item [Address = {\textless}address{\textgreater}] \hfill \\
-\index[fd]{Address  }
+\index[fd]{Address}
 Where the address is a host name,  a fully qualified domain name, or a network
 address used to connect  to the Director.  This record is required.
 \end{description}
 
 \section{Client Resource}
 \label{ClientResource1}
-\index[general]{Resource!Client }
-\index[general]{Client Resource }
+\index[general]{Resource!Client}
+\index[general]{Client Resource}
 
 The Client resource defines the attributes of the Clients that are monitored
 by this Monitor.
@@ -126,28 +126,28 @@ configuration file.
 \begin{description}
 
 \item [Client (or FileDaemon)]
-\index[fd]{Client (or FileDaemon) }
+\index[fd]{Client (or FileDaemon)}
 Start of the Client records.
 
 \item [Name = {\textless}name{\textgreater}] \hfill \\
-\index[fd]{Name  }
+\index[fd]{Name}
 The Client name used to identify  the Director in the list of monitored
 daemons. It is not required  to be the same as the one defined in the Client's
 configuration file.  This record is required.
 
 \item [Address = {\textless}address{\textgreater}] \hfill \\
-\index[fd]{Address  }
+\index[fd]{Address}
 Where the address is a host  name, a fully qualified domain name, or a network
 address in  dotted quad notation for a Bareos File daemon.  This record is
 required.
 
 \item [FD Port = {\textless}port-number{\textgreater}] \hfill \\
-\index[fd]{FD Port  }
+\index[fd]{FD Port}
 Where the port is a port  number at which the Bareos File daemon can be
 contacted.  The default is 9102.
 
 \item [Password = {\textless}password{\textgreater}] \hfill \\
-\index[fd]{Password  }
+\index[fd]{Password}
 This is the password to be  used when establishing a connection with the File
 services, so  the Client configuration file on the machine to be backed up
 must  have the same password defined for this Director. This record is
@@ -156,8 +156,8 @@ required.
 
 \section{Storage Resource}
 \label{StorageResource1}
-\index[general]{Resource!Storage }
-\index[general]{Storage Resource }
+\index[general]{Resource!Storage}
+\index[general]{Storage Resource}
 
 The Storage resource defines the attributes of the Storages that are monitored
 by this Monitor.
@@ -173,29 +173,29 @@ configuration file.
 \begin{description}
 
 \item [Storage]
-\index[fd]{Storage }
+\index[fd]{Storage}
 Start of the Storage records.
 
 \item [Name = {\textless}name{\textgreater}] \hfill \\
-\index[fd]{Name  }
+\index[fd]{Name}
 The Storage name used to identify  the Director in the list of monitored
 daemons. It is not required  to be the same as the one defined in the Storage's
 configuration file.  This record is required.
 
 \item [Address = {\textless}address{\textgreater}] \hfill \\
-\index[fd]{Address  }
+\index[fd]{Address}
 Where the address is a host  name, a fully qualified domain name, or a network
 address in  dotted quad notation for a Bareos Storage daemon.  This record is
 required.
 
 \item [SD Port = {\textless}port{\textgreater}] \hfill \\
-\index[fd]{SD Port  }
+\index[fd]{SD Port}
 Where port is the port to use to  contact the storage daemon for information
 and to start jobs.  This same port number must appear in the Storage resource
 of the  Storage daemon's configuration file. The default is 9103.
 
 \item [Password = {\textless}password{\textgreater}] \hfill \\
-\index[sd]{Password  }
+\index[sd]{Password}
 This is the password to be used  when establishing a connection with the
 Storage services. This  same password also must appear in the Director
 resource of the Storage  daemon's configuration file. This record is required.
@@ -204,6 +204,7 @@ resource of the Storage  daemon's configuration file. This record is required.
 
 \section{Tray Monitor Security}
 \index[general]{Tray Monitor Security}
+\index[general]{Security!Tray Monitor}
 
 There is no security problem in relaxing the permissions on
 tray-monitor.conf as long as FD, SD and DIR are configured properly, so
@@ -231,7 +232,9 @@ is pretty simple).
 
 \section{Sample Tray Monitor configuration}
 \label{SampleConfiguration1}
-\index[general]{Sample Tray Monitor configuration}
+\index[general]{Tray Monitor!Configuration}
+\index[general]{Configuration!Tray Monitor}
+
 
 An example Tray Monitor configuration file might be the following:
 
@@ -267,8 +270,6 @@ Director {
 \normalsize
 
 \subsection{Sample File daemon's Director record.}
-\index[general]{Sample File daemon's Director record. }
-\index[general]{Record!Sample File daemon's Director }
 
 Click
 \ilink{here to see the full example.}{SampleClientConfiguration}
@@ -289,8 +290,6 @@ Director {
 \normalsize
 
 \subsection{Sample Storage daemon's Director record.}
-\index[general]{Record!Sample Storage daemon's Director }
-\index[general]{Sample Storage daemon's Director record. }
 
 Click
 \ilink{here to see the full example.}{SampleConfiguration}
@@ -309,9 +308,7 @@ Director {
 \end{verbatim}
 \normalsize
 
-\subsection{Sample Director's Console record.}
-\index[general]{Record!Sample Director's Console }
-\index[general]{Sample Director's Console record. }
+\subsection{Sample Director's Console record}
 
 Click
 \ilink{here to see the full

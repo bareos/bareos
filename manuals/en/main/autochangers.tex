@@ -86,12 +86,11 @@ sometimes the drive will remain BLOCKED for a good deal of time (up to 7
 minutes on a slow drive) waiting for the cassette to rewind and to unload
 before the drive can be used with a different Volume.
 
-\label{SCSI devices}
 \section{Knowing What SCSI Devices You Have}
-\index[general]{Have!Knowing What SCSI Devices You }
-\index[general]{Knowing What SCSI Devices You Have }
+\label{SCSI devices}
 \index[general]{SCSI devices}
-\index[general]{devices!SCSI}
+\index[general]{Devices!SCSI}
+\index[general]{Devices!Detecting}
 
 \subsection{Linux}
 Under Linux, you can
@@ -508,8 +507,7 @@ of the autochanger while it has the drive mounted.
 
 \label{Magazines}
 \section{Dealing with Multiple Magazines}
-\index[general]{Dealing with Multiple Magazines }
-\index[general]{Magazines!Dealing with Multiple }
+\index[general]{Magazines!Dealing with Multiple}
 
 If you have several magazines or if you insert or remove cartridges from a
 magazine, you should notify Bareos of this. By doing so, Bareos will as
@@ -615,8 +613,7 @@ your autochanger will appear to Bareos to be an autochanger with barcodes.
 
 
 \section{Update Slots Command}
-\index[general]{Full Form of the Update Slots Command }
-\index[general]{Command!Full Form of the Update Slots }
+\index[general]{Console!Command!update slots}
 \label{updateslots}
 
 If you change only one cartridge in the magazine, you may not want to scan all
@@ -660,9 +657,10 @@ not find any Volume names so will do nothing.
 
 
 \section{Testing Autochanger and Adapting mtx-changer script}
-\index[general]{Testing the Autochanger }
-\index[general]{Adapting Your mtx-changer script}
 \label{AutochangerTesting}
+\index[general]{Autochanger!Testing}
+\index[general]{Autochanger!mtx-changer}
+\index[general]{Command!mtx-changer}
 
 \TODO{move to troubleshooting}
 Before attempting to use the autochanger with Bareos, it is preferable to
@@ -813,8 +811,7 @@ If this solves your problems, set the parameter \parameter{offline} in the confi
 
 
 \section{Using the Autochanger}
-\index[general]{Using the Autochanger }
-\index[general]{Autochanger!Using the }
+\index[general]{Autochanger!Using the}
 \label{using}
 
 Let's assume that you have properly defined the necessary Storage daemon

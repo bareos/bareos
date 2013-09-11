@@ -3,8 +3,8 @@
 
 \chapter{Automatic Volume Recycling}
 \label{RecyclingChapter}
-\index[general]{Recycling!Automatic Volume }
-\index[general]{Automatic Volume Recycling }
+\index[general]{Recycle!Automatic Volume}
+\index[general]{Automatic Volume Recycling}
 
 By default, once Bareos starts writing a Volume, it can append to the
 volume, but it will not overwrite the existing data thus destroying it.
@@ -87,8 +87,8 @@ overwriting it. There are also a number of directives such as
 {\bf Volume Use Duration} that will automatically mark a volume as {\bf
 Used} and thus no longer appendable.
 
-\label{AutoPruning}
 \section{Automatic Pruning}
+\label{AutoPruning}
 \index[general]{Automatic Pruning}
 \index[general]{Pruning!Automatic}
 
@@ -115,8 +115,8 @@ the oldest jobs to save space.  Manual pruning is done with the \ilink{ prune
 above explanation).
 
 \section{Pruning Directives}
-\index[general]{Pruning Directives }
-\index[general]{Directives!Pruning }
+\index[general]{Pruning!Directives}
+\index[general]{Directives!Pruning}
 
 There are three pruning durations. All apply to catalog database records and
 not to the actual data in a Volume. The pruning (or retention) durations are
@@ -164,7 +164,7 @@ volume. The Pool records that control the pruning are described below.
 \begin{description}
 
 \item [AutoPrune = {\textless}yes|no{\textgreater}]
-   \index[console]{AutoPrune  }
+   \index[dir]{AutoPrune}
    If AutoPrune is set to  {\bf yes} (default), Bareos
    will  automatically apply the Volume retention period when running a Job  and
    it needs a new Volume but no appendable volumes are available.  At that point,
@@ -178,7 +178,7 @@ volume. The Pool records that control the pruning are described below.
    Busy, or Cleaning, the Volume status will not be changed to Purged.
 
 \item [Volume Retention = {\textless}time-period-specification{\textgreater}]
-   \index[console]{Volume Retention}
+   \index[dir]{Volume Retention}
    The Volume Retention record defines the length of time that Bareos will
    guarantee that the Volume is not reused counting from the time the last
    job stored on the Volume terminated.  A key point is that this time
@@ -216,7 +216,7 @@ The default is 1 year.
 % TODO: if that is the format, should it be in quotes? decide on a style
 
 \item [Recycle = {\textless}yes|no{\textgreater}]
-   \index[fd]{Recycle  }
+   \index[dir]{Recycle}
    This statement tells Bareos whether or not the particular Volume can be
    recycled (i.e.  rewritten).  If Recycle is set to {\bf no} (the
    default), then even if Bareos prunes all the Jobs on the volume and it
@@ -233,8 +233,8 @@ The default is 1 year.
 \label{Recycling}
 \label{RecyclingAlgorithm}
 \section{Recycling Algorithm}
-\index[general]{Algorithm!Recycling }
-\index[general]{Recycling Algorithm }
+\index[general]{Algorithm!Recycling}
+\index[general]{Recycling Algorithm}
 
 After all Volumes of a Pool have been pruned (as mentioned above, this happens
 when a Job needs a new Volume and no appendable Volumes are available), Bareos
@@ -340,8 +340,7 @@ A few points from Alan Brown to keep in mind:
 
 
 \section{Recycle Status}
-\index[general]{Status!Recycle }
-\index[general]{Recycle Status }
+\index[general]{Recycle Status}
 
 Each Volume inherits the Recycle status (yes or no) from the Pool resource
 record when the Media record is created (normally when the Volume is labeled).
@@ -425,7 +424,6 @@ A typical volume life cycle is like this:
 \section{Making Bareos Use a Single Tape}
 \label{singletape}
 \index[general]{Tape!Making Bareos Use a Single}
-\index[general]{Making Bareos Use a Single Tape}
 
 Most people will want Bareos to fill a tape and when it is full, a new tape
 will be mounted, and so on. However, as an extreme example, it is possible for
@@ -456,8 +454,8 @@ Pool {
 
 \section{Daily, Weekly, Monthly Tape Usage Example}
 \label{usageexample}
-\index[general]{Daily, Weekly, Monthly Tape Usage Example }
-\index[general]{Example!Daily Weekly Monthly Tape Usage }
+\index[general]{Daily, Weekly, Monthly Tape Usage Example}
+\index[general]{Example!Daily Weekly Monthly Tape Usage}
 
 This example is meant to show you how one could define a fixed set of volumes
 that Bareos will rotate through on a regular schedule. There are an infinite
@@ -571,10 +569,13 @@ Pool {
 \end{verbatim}
 \normalsize
 
-\section{ Automatic Pruning and Recycling Example}
+\section{Automatic Pruning and Recycling Example}
 \label{PruningExample}
-\index[general]{Automatic Pruning and Recycling Example }
-\index[general]{Example!Automatic Pruning and Recycling }
+\index[general]{Automatic Pruning and Recycling Example}
+\index[general]{Example!Automatic Pruning and Recycling}
+\index[general]{Pruning!Automatic!Example}
+\index[general]{Recycle!Automatic!Example}
+
 
 Perhaps the best way to understand the various resource records that come into
 play during automatic pruning and recycling is to run a Job that goes through
@@ -666,8 +667,10 @@ comment out the {\bf Schedule} record in the {\bf Job} resource.
 \section{Manually Recycling Volumes}
 \label{manualrecycling}
 \label{ManualPruning}
-\index[general]{Volumes!Manually Recycling }
-\index[general]{Manually Recycling Volumes }
+\index[general]{Volumes!Manually Recycling}
+\index[general]{Manually Recycling Volumes}
+\index[general]{Recycle!Manual}
+
 
 Although automatic recycling of Volumes is implemented in version 1.20 and
 later (see the
