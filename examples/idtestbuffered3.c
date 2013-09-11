@@ -251,7 +251,7 @@ main(int argc,
       ret = dpl_uks_gen_key(id, 
 			    file_identifier,  //file id
 			    0,                //volume id
-			    0xc0              //customer tag
+			    0xc0,              //customer tag
 			    block_nb);        //block nb
       if (DPL_SUCCESS != ret)
 	{

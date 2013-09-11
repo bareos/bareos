@@ -37,7 +37,8 @@
 /* PROTO backend.c */
 /* src/backend.c */
 dpl_status_t dpl_swift_get_capabilities(dpl_ctx_t *ctx, dpl_capability_t *maskp);
-dpl_status_t dpl_swift_list_bucket(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
+/* dpl_status_t dpl_swift_list_bucket(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp); */
 
 dpl_status_t dpl_swift_login(dpl_ctx_t *ctx);
+dpl_status_t dpl_swift_get(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, char **locationp);
 #endif

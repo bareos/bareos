@@ -41,39 +41,20 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
-/*
-  ret2 = dpl_swift_parse_list_bucket(ctx, data_buf, data_len, prefix, objects, common_prefixes);
-*/
-
-
 dpl_status_t
-dpl_swift_parse_list_bucket(dpl_ctx_t *ctx,
-                           const char *buf,
-                           int len,
-                           const char *prefix,
-                           dpl_vec_t *objects,
-                           dpl_vec_t *common_prefixes)
+dpl_swift_print_get(dpl_ctx_t *ctx,
+		    const char *buf,
+		    int len)
 {
-  int ret, ret2;
-  int n_children, i;
-  dpl_common_prefix_t *common_prefix = NULL;
-  dpl_object_t *object = NULL;
+  int ret;
 
   if (buf != NULL)
     {
       ret = write(1, buf, len);
     }
   else
-    write(1, "no data\n", strlen("no data\n"));
+    printf("%s.\n", "Empty");
 
   ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != common_prefix)
-    dpl_common_prefix_free(common_prefix);
-
-  if (NULL != object)
-    dpl_object_free(object);
   return ret;
 }

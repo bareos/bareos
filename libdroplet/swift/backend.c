@@ -202,14 +202,19 @@ dpl_swift_set_directory(dpl_req_t *req,
 }
 
 dpl_status_t
-dpl_swift_list_bucket(dpl_ctx_t *ctx,
-                     const char *bucket,
-                     const char *prefix,
-                     const char *delimiter,
-                     const int max_keys,
-                     dpl_vec_t **objectsp,
-                     dpl_vec_t **common_prefixesp,
-                     char **locationp)
+dpl_swift_get(dpl_ctx_t *ctx,
+             const char *bucket,
+             const char *resource,
+             const char *subresource,
+             const dpl_option_t *option,
+             dpl_ftype_t object_type,
+             const dpl_condition_t *condition,
+             const dpl_range_t *range,
+             char **data_bufp,
+             unsigned int *data_lenp,
+             dpl_dict_t **metadatap,
+             dpl_sysmd_t *sysmdp,
+             char **locationp)
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
@@ -218,8 +223,6 @@ dpl_swift_list_bucket(dpl_ctx_t *ctx,
   struct iovec  iov[10];
   int           n_iov = 0;
   int           connection_close = 0;
-  char          *data_buf = NULL;
-  u_int         data_len;
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
@@ -227,7 +230,6 @@ dpl_swift_list_bucket(dpl_ctx_t *ctx,
   dpl_vec_t     *objects = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
 
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -239,7 +241,7 @@ dpl_swift_list_bucket(dpl_ctx_t *ctx,
   dpl_req_set_method(req, DPL_METHOD_GET);
   dpl_req_set_object_type(req, DPL_FTYPE_ANY);
 
-  dpl_swift_set_directory(req, ctx, bucket);
+  dpl_swift_set_directory(req, ctx, resource);
   
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_KEEP_ALIVE);
 
@@ -291,7 +293,7 @@ dpl_swift_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_read_http_reply(conn, 1, &data_buf, &data_len, &headers_reply, &connection_close);
+  ret2 = dpl_read_http_reply(conn, 1, data_bufp, data_lenp, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -299,7 +301,6 @@ dpl_swift_list_bucket(dpl_ctx_t *ctx,
     }
 
   /* WIP */ dpl_dict_print(headers_reply, stdout, -1);
-
   objects = dpl_vec_new(2, 2);
   if (NULL == objects)
     {
@@ -307,45 +308,20 @@ dpl_swift_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  common_prefixes = dpl_vec_new(2, 2);
-  if (NULL == common_prefixes)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
   /* WIP */
-  ret2 = dpl_swift_parse_list_bucket(ctx, data_buf, data_len, prefix, objects, common_prefixes);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != objectsp)
-    {
-      *objectsp = objects;
-      objects = NULL; //consume it
-    }
-
-  if (NULL != common_prefixesp)
-    {
-      *common_prefixesp = common_prefixes;
-      common_prefixes = NULL; //consume it
-    }
+  /* ret2 = dpl_swift_print_get(ctx, *data_bufp, *data_lenp); */
+  /* if (DPL_SUCCESS != ret2) */
+  /*   { */
+  /*     ret = ret2; */
+  /*     goto end; */
+  /*   } */
 
   ret = DPL_SUCCESS;
-
 
  end:
 
   if (NULL != objects)
     dpl_vec_objects_free(objects);
-
-  if (NULL != common_prefixes)
-    dpl_vec_common_prefixes_free(common_prefixes);
-
-  if (NULL != data_buf)
-    free(data_buf);
 
   if (NULL != conn)
     {
