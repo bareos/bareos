@@ -436,8 +436,8 @@ If you now enter {\bf yes}, Bareos will run the restore Job.
   See also \ilink{FileRegex bsr option}{FileRegex} for more information.
 
 \section{Selecting Files by Filename}
-\index[general]{Selecting Files by Filename }
-\index[general]{Filename!Selecting Files by }
+\index[general]{Selecting Files by Filename}
+\index[general]{Filename!Selecting Files by}
 
 If you have a small number of files to restore, and you know the filenames,
 you can either put the list of filenames in a file to be read by Bareos, or
@@ -972,14 +972,14 @@ mark} command. The available commands are:
     C:} (note upper case) to get down to the first directory.
 
 \item [dir]
-   \index[dir]{dir }
+   \index[dir]{dir}
    The {\bf dir} command is similar to the {\bf ls} command, except that it
    prints it in long format (all details). This command can be a bit slower
    than the {\bf ls} command because it must access the catalog database for
    the detailed information for each file.
 
 \item [estimate]
-   \index[dir]{estimate }
+   \index[dir]{estimate}
    The {\bf estimate} command prints a summary of the total files in the tree,
    how many are marked to be restored, and an estimate of the number of bytes
    to be restored. This can be useful if you are short on disk space on the
@@ -1044,7 +1044,7 @@ or
    if some files are marked.
 
 \item [unmark]
-   \index[dir]{unmark }
+   \index[dir]{unmark}
    The {\bf unmark} is identical to the {\bf mark}  command, except that it
    unmarks the specified file or files so that  they will not be restored. Note:
    the {\bf unmark} command works from  the current directory, so it does not
@@ -1052,31 +1052,31 @@ or
    unmark *} command if  you want to unmark everything.
 
 \item [pwd]
-   \index[dir]{pwd }
+   \index[dir]{pwd}
    The {\bf pwd} command prints the current working  directory. It accepts no
    arguments.
 
 \item [count]
-   \index[dir]{count }
+   \index[dir]{count}
    The {\bf count} command prints the total files in the  directory tree and the
    number of files marked to be restored.
 
 \item [done]
-   \index[dir]{done }
+   \index[dir]{done}
    This command terminates file selection mode.
 
 \item [exit]
-   \index[fd]{exit }
+   \index[fd]{exit}
    This command terminates file selection mode (the same as  done).
 
 \item [quit]
-   \index[fd]{quit }
+   \index[fd]{quit}
    This command terminates the file selection and does  not run the restore
 job.
 
 
 \item [help]
-   \index[fd]{help }
+   \index[fd]{help}
    This command prints a summary of the commands available.
 
 \item [?]

@@ -3,8 +3,8 @@
 
 \chapter{Autochanger Support}
 \label{AutochangersChapter}
-\index[general]{Support!Autochanger }
-\index[general]{Autochanger Support }
+\index[general]{Support!Autochanger}
+\index[general]{Autochanger Support}
 
 Bareos provides autochanger support for reading and writing tapes.  In
 order to work with an autochanger, Bareos requires a number of things, each of
@@ -170,8 +170,8 @@ devices to make Bareos work when operating the AutoChanger after a reboot.
 % example directory does not exist:
 % \label{scripts}
 % \section{Example Scripts}
-% \index[general]{Scripts!Example }
-% \index[general]{Example Scripts }
+% \index[general]{Scripts!Example}
+% \index[general]{Example Scripts}
 %
 % Please read the sections below so that you understand how autochangers work
 % with Bareos. Although we supply a default {\bf mtx-changer} script, your
@@ -249,8 +249,8 @@ the Storage daemon to maximize the use of drives.
 
 \label{ConfigRecords}
 \section{Device Configuration Records}
-\index[general]{Records!Device Configuration }
-\index[general]{Device Configuration Records }
+\index[general]{Records!Device Configuration}
+\index[general]{Device Configuration Records}
 
 Configuration of autochangers within Bareos is done in the Device resource of
 the Storage daemon. Four records: {\bf Autochanger}, {\bf Changer Device},
@@ -265,12 +265,12 @@ if they are present in the {\bf Autochanger} resource.
 \begin{description}
 
 \item [Autochanger = {\it Yes|No} ]
-   \index[sd]{Autochanger  }
+   \index[sd]{Autochanger}
    The {\bf Autochanger} record specifies if the current device belongs to an
 autochanger ressource. The default is {\bf no}.
 
 \item [Changer Device = {\textless}device-name{\textgreater}]
-   \index[sd]{Changer Device  }
+   \index[sd]{Changer Device}
    In addition to the Archive Device name, you must specify a  {\bf Changer
 Device} name. This is because most autochangers are  controlled through a
 different device than is used for reading and  writing the cartridges. For
@@ -291,7 +291,7 @@ Please ensure that your Storage daemon has permission to access this
 device.
 
 \item [Changer Command = {\textless}command{\textgreater}]
-   \index[sd]{Changer Command  }
+   \index[sd]{Changer Command}
    This record is used to specify the external program to call  and what
 arguments to pass to it. The command is assumed to be  a standard program or
 shell script that can be executed by  the operating system. This command is
@@ -328,7 +328,7 @@ commands currently used by Bareos  (loaded, load, unload) as well as the
 output expected by  Bareos are given in the \ilink{Bareos Autochanger Interface}{autochanger-interface} section.
 
 \item [Maximum Changer Wait = {\textless}time{\textgreater}]
-   \index[sd]{Maximum Changer Wait  }
+   \index[sd]{Maximum Changer Wait}
    This record is used to define the maximum amount of time that Bareos
    will wait for an autoloader to respond to a command (e.g.  load).  The
    default is set to 120 seconds.  If you have a slow autoloader you may
@@ -338,7 +338,7 @@ If the autoloader program fails to respond in this time, it  will be killed
 and Bareos will request operator intervention.
 
 \item [Drive Index = {\textless}number{\textgreater}]
-   \index[sd]{Drive Index  }
+   \index[sd]{Drive Index}
    This record allows you to tell Bareos to use the second or subsequent
    drive in an autochanger with multiple drives.  Since the drives are
    numbered from zero, the second drive is defined by
@@ -360,8 +360,8 @@ define an Autochanger resource.
 
 \label{example}
 \section{An Example Configuration File}
-\index[general]{Example Configuration File }
-\index[general]{File!Example Configuration }
+\index[general]{Example Configuration File}
+\index[general]{File!Example Configuration}
 
 The following two resources implement an autochanger:
 
@@ -391,7 +391,7 @@ the path to the {\bf Changer Command} to correspond to the values used on your
 system.
 
 \section{A Multi-drive Example Configuration File}
-\index[general]{Multi-drive Example Configuration File }
+\index[general]{Multi-drive Example Configuration File}
 
 The following resources implement a multi-drive autochanger:
 
@@ -434,8 +434,8 @@ system.
 
 
 \section{Specifying Slots When Labeling}
-\index[general]{Specifying Slots When Labeling }
-\index[general]{Labeling!Specifying Slots When }
+\index[general]{Specifying Slots When Labeling}
+\index[general]{Labeling!Specifying Slots When}
 \label{SpecifyingSlots}
 
 If you add an {\bf Autochanger = yes} record to the Storage resource in your
@@ -486,7 +486,7 @@ and will not be mounted.
 
 
 \section{Changing Cartridges}
-\index[general]{Changing Cartridges }
+\index[general]{Changing Cartridges}
 If you wish to insert or remove cartridges in your autochanger or
 you manually run the {\bf mtx} program, you must first tell Bareos
 to release the autochanger by doing:
@@ -565,8 +565,8 @@ update slots scan
 \hide{
 % unwanted, commented out
 \section{Simulating Barcodes in your Autochanger}
-\index[general]{Autochanger!Simulating Barcodes in your }
-\index[general]{Simulating Barcodes in your Autochanger }
+\index[general]{Autochanger!Simulating Barcodes in your}
+\index[general]{Simulating Barcodes in your Autochanger}
 \label{simulating}
 
 You can simulate barcodes in your autochanger by making the {\bf mtx-changer}
@@ -919,8 +919,8 @@ Select the Pool (1-2): 1
 
 
 \section{Barcode Support}
-\index[general]{Support!Barcode }
-\index[general]{Barcode Support }
+\index[general]{Support!Barcode}
+\index[general]{Barcode Support}
 \label{Barcodes}
 
 Bareos provides barcode support with two Console commands, {\bf label
@@ -966,8 +966,8 @@ command to synchronize autochanger content with your catalog.
 
 
 \section{Bareos Autochanger Interface}
-\index[general]{Interface!Bareos Autochanger }
-\index[general]{Bareos Autochanger Interface }
+\index[general]{Interface!Bareos Autochanger}
+\index[general]{Bareos Autochanger Interface}
 \label{autochanger-interface}
 
 Bareos calls the autochanger script that you specify on the {\bf Changer

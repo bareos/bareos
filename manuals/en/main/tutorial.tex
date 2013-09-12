@@ -69,7 +69,7 @@ started by {\bf Bareos}.
 
 \section{Starting the Daemons}
 \label{StartDaemon}
-\index[general]{Starting the Daemons }
+\index[general]{Starting the Daemons}
 \index[general]{Daemons!Starting the}
 
 Assuming you have installed the packages,
@@ -213,8 +213,8 @@ Details of the console program's commands are explained in the
 
 \section{Running a Job}
 \label{Running}
-\index[general]{Job!Running a }
-\index[general]{Running a Job }
+\index[general]{Job!Running a}
+\index[general]{Running a Job}
 
 At this point, we assume you have done the following:
 
@@ -598,8 +598,8 @@ following section.
 \label{restoring}
 
 \section{Restoring Your Files}
-\index[general]{Files!Restoring Your }
-\index[general]{Restoring Your Files }
+\index[general]{Files!Restoring Your}
+\index[general]{Restoring Your Files}
 
 If you have run the default configuration and run the job as demonstrated above, 
 you can restore the backed up files in the Console
@@ -797,15 +797,15 @@ rm -rf /tmp/bareos-restore
 \normalsize
 
 \section{Quitting the Console Program}
-\index[general]{Program!Quitting the Console }
-\index[general]{Quitting the Console Program }
+\index[general]{Program!Quitting the Console}
+\index[general]{Quitting the Console Program}
 
 Simply enter the command {\bf quit}.
 \label{SecondClient}
 
 \section{Adding a Second Client}
-\index[general]{Client!Adding a Second }
-\index[general]{Adding a Second Client }
+\index[general]{Client!Adding a Second}
+\index[general]{Adding a Second Client}
 
 \subsection{Changes on the Client}
 
@@ -924,8 +924,8 @@ different Pool, or a different schedule. It is up to you to customize.
 
 \section{When The Tape Fills}
 \label{FullTape}
-\index[general]{Fills!When The Tape }
-\index[general]{When The Tape Fills }
+\index[general]{Fills!When The Tape}
+\index[general]{When The Tape Fills}
 
 If you have scheduled your job, typically nightly, there will come a time when
 the tape fills up and {\bf Bareos} cannot continue. In this case, Bareos will
@@ -1040,60 +1040,60 @@ To manually relabel the Volume use the following additional steps:
 \begin{description}
 
 \item [status dir]
-   \index[console]{status dir }
+   \index[console]{status dir}
    Print a status of all running jobs and jobs  scheduled in the next 24 hours.
 
 \item [status]
-   \index[console]{status }
+   \index[console]{status}
    The console program will prompt you to select  a daemon type, then will
 request the daemon's status.
 
 \item [status jobid=nn]
-   \index[console]{status jobid }
+   \index[console]{status jobid}
    Print a status of JobId nn if it is running.  The Storage daemon is contacted
 and requested to print a current  status of the job as well.
 
 \item [list pools]
-   \index[console]{list pools }
+   \index[console]{list pools}
    List the pools defined in the Catalog (normally  only Default is used).
 
 \item [list media]
-   \index[console]{list media }
+   \index[console]{list media}
    Lists all the media defined in the Catalog.
 
 \item [list jobs]
-   \index[console]{list jobs }
+   \index[console]{list jobs}
    Lists all jobs in the Catalog that have run.
 
 \item [list jobid=nn]
-   \index[console]{list jobid }
+   \index[console]{list jobid}
    Lists JobId nn from the Catalog.
 
 \item [list jobtotals]
-   \index[console]{list jobtotals }
+   \index[console]{list jobtotals}
    Lists totals for all jobs in the Catalog.
 
 \item [list files jobid=nn]
-   \index[console]{list files jobid }
+   \index[console]{list files jobid}
    List the files that were saved for JobId nn.
 
 \item [list jobmedia]
-   \index[console]{list jobmedia }
+   \index[console]{list jobmedia}
    List the media information for each Job run.
 
 \item [messages]
-   \index[console]{messages }
+   \index[console]{messages}
    Prints any messages that have been directed to the console.
 
 \item [unmount storage=storage-name]
-   \index[console]{unmount storage }
+   \index[console]{unmount storage}
    Unmounts the drive associated with the storage  device with the name {\bf
 storage-name} if the drive is not currently being  used. This command is used
 if you wish Bareos to free the drive so  that you can use it to label a tape.
 
 
 \item [mount storage=storage-name]
-   \index[sd]{mount storage }
+   \index[sd]{mount storage}
    Causes the drive associated with the  storage device to be mounted again. When
 Bareos reaches the end of a volume and requests you to mount a  new volume,
 you must issue this command after you have placed the  new volume in the
@@ -1101,7 +1101,7 @@ drive. In effect, it is the signal needed by  Bareos to know to start reading
 or writing the new volume.
 
 \item [quit]
-   \index[sd]{quit }
+   \index[sd]{quit}
    Exit or quit the console program.
 \end{description}
 
@@ -1110,8 +1110,8 @@ prompt you for the necessary arguments if you simply enter the command name.
 
 
 \section{Debug Daemon Output}
-\index[general]{Debug Daemon Output }
-\index[general]{Output!Debug Daemon }
+\index[general]{Debug Daemon Output}
+\index[general]{Output!Debug Daemon}
 
 \TODO{needs to be adapted}
  
@@ -1191,8 +1191,8 @@ daemon's machine can determine who is using the 9103 port (used for FD to SD
 communications in Bareos).
 
 \section{Daemon Command Line Options}
-\index[general]{Daemon Command Line Options }
-\index[general]{Options!Daemon Command Line }
+\index[general]{Daemon Command Line Options}
+\index[general]{Options!Daemon Command Line}
 
 Each of the three daemons (Director, File, Storage) accepts a small set of
 options on the command line. In general, each of the daemons as well as the
@@ -1208,7 +1208,7 @@ Console program accepts the following options:
    daemon.
 
 \item [-d nn]
-   \index[sd]{-d nn }
+   \index[sd]{-d nn}
    Set the debug level to {\bf nn}. Higher levels  of debug cause more
    information to be displayed on STDOUT concerning  what the daemon is doing.
 
@@ -1242,8 +1242,8 @@ Console program accepts the following options:
 
 \section{Creating a Pool}
 \label{Pool}
-\index[general]{Pool!Creating a }
-\index[general]{Creating a Pool }
+\index[general]{Pool!Creating a}
+\index[general]{Creating a Pool}
 
 Creating the Pool is automatically done when {\bf Bareos} starts, so if you
 understand Pools, you can skip to the next section.
@@ -1302,8 +1302,8 @@ modify many of the values in the Pool record.
 \label{Labeling}
 
 \section{Labeling Your Volumes}
-\index[general]{Volumes!Labeling Your }
-\index[general]{Labeling Your Volumes }
+\index[general]{Volumes!Labeling Your}
+\index[general]{Labeling Your Volumes}
 
 Bareos requires that each Volume contains a software label. There are several
 strategies for labeling volumes. The one I use is to label them as they are
@@ -1328,8 +1328,8 @@ case, I label my tapes with the date, for example: {\bf DLT-18April02}. See
 below for the details of using the {\bf label} command.
 
 \section{Labeling Volumes with the Console Program}
-\index[general]{Labeling Volumes with the Console Program }
-\index[general]{Program!Labeling Volumes with the Console }
+\index[general]{Labeling Volumes with the Console Program}
+\index[general]{Program!Labeling Volumes with the Console}
 
 Labeling volumes is normally done by using the console program.
 

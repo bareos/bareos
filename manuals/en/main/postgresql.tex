@@ -3,8 +3,8 @@
 
 \chapter{Installing and Configuring PostgreSQL}
 \label{PostgreSqlChapter}
-\index[general]{PostgreSQL!Installing and Configuring }
-\index[general]{Installing and Configuring PostgreSQL }
+\index[general]{PostgreSQL!Installing and Configuring}
+\index[general]{Installing and Configuring PostgreSQL}
 \index[general]{Upgrading}
 
 If you are considering using PostreSQL, you should be aware
@@ -23,7 +23,7 @@ the {\bf \verb:--:enable-thread-safety} option when doing the ./configure
 for PostgreSQL.
 
 \section{Installing PostgreSQL}
-\index[general]{PostgreSQL!Installing }
+\index[general]{PostgreSQL!Installing}
 
 If you use the {\bf ./configure \verb:--:with-postgresql=PostgreSQL-Directory}
 statement for configuring {\bf Bareos}, you will need PostgreSQL version 7.4
@@ -279,8 +279,8 @@ the user (so root:root for the copy in ~root, and so on), and the mode
 set to 600, limiting access to the owner of the file.
 
 \section{Re-initializing the Catalog Database}
-\index[general]{Database!Re-initializing the Catalog }
-\index[general]{Re-initializing the Catalog Database }
+\index[general]{Database!Re-initializing the Catalog}
+\index[general]{Re-initializing the Catalog Database}
 
 After you have done some initial testing with {\bf Bareos}, you will probably
 want to re-initialize the catalog database and throw away all the test Jobs
@@ -348,8 +348,8 @@ the database and create the tables as described above.
 
 
 \section{Converting from MySQL to PostgreSQL}
-\index[general]{PostgreSQL!Converting from MySQL to }
-\index[general]{Converting from MySQL to PostgreSQL }
+\index[general]{PostgreSQL!Converting from MySQL to}
+\index[general]{Converting from MySQL to PostgreSQL}
 
 The conversion procedure presented here was worked out by Norm Dressler
 {\textless}ndressler at dinmar dot com{\textgreater}
@@ -482,8 +482,8 @@ SELECT SETVAL('storage_storageid_seq', (SELECT MAX(storageid) FROM storage));
 \end{enumerate}
 
 \section{Upgrading PostgreSQL}
-\index[general]{Upgrading PostgreSQL }
-\index[general]{Upgrading!PostgreSQL }
+\index[general]{Upgrading PostgreSQL}
+\index[general]{Upgrading!PostgreSQL}
 \index[general]{Upgrading}
 If you upgrade PostgreSQL, you must reconfigure, rebuild, and re-install
 Bareos otherwise you are likely to get bizarre failures.  If you
@@ -503,6 +503,6 @@ ALTER SEQUENCE file_fileid_seq CACHE 1000;
 \end{verbatim}
 
 \section{Credits}
-\index[general]{Credits }
+\index[general]{Credits}
 Many thanks to Dan Langille for writing the PostgreSQL driver. This will
 surely become the most popular database that Bareos supports.

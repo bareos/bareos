@@ -3,8 +3,8 @@
 
 \chapter{Catalog Maintenance}
 \label{CatMaintenanceChapter}
-\index[general]{Maintenance!Catalog }
-\index[general]{Catalog Maintenance }
+\index[general]{Maintenance!Catalog}
+\index[general]{Catalog Maintenance}
 
 Without proper setup and maintenance, your Catalog may continue to grow
 indefinitely as you run Jobs and backup Files, and/or it may become
@@ -17,8 +17,8 @@ database size will remain constant.
 
 
 \section{Setting Retention Periods}
-\index[general]{Setting Retention Periods }
-\index[general]{Periods!Setting Retention }
+\index[general]{Setting Retention Periods}
+\index[general]{Periods!Setting Retention}
 \label{Retention}
 
 Bareos uses three Retention periods: the {\bf File Retention} period,
@@ -34,7 +34,7 @@ of this manual.
 \begin{description}
 
 \item [File Retention = {\textless}time-period-specification{\textgreater}]
-   \index[general]{File Retention  }
+   \index[general]{File Retention}
    The  File Retention record defines the length of time that  Bareos will keep
 File records in the Catalog database.  When this time period expires, and if
 {\bf AutoPrune} is set to {\bf yes}, Bareos will prune (remove) File records
@@ -61,7 +61,7 @@ of modifier specification.
 The default File retention period is 60 days.
 
 \item [Job Retention = {\textless}time-period-specification{\textgreater}]
-   \index[general]{Job Retention  }
+   \index[general]{Job Retention}
    The Job Retention record defines the length of time that {\bf Bareos}
 will keep Job records in the Catalog database.  When this time period
 expires, and if {\bf AutoPrune} is set to {\bf yes} Bareos will prune
@@ -87,7 +87,7 @@ modifier specification.
 The default Job Retention period is 180 days.
 
 \item [AutoPrune = {\textless}yes/no{\textgreater}]
-   \index[general]{AutoPrune  }
+   \index[general]{AutoPrune}
    If AutoPrune is set to  {\bf yes} (default), Bareos will  automatically apply
 the File retention period and the Job  retention period for the Client at the
 end of the Job.
@@ -98,8 +98,8 @@ time you run a Job.
 \section{MySQL}
 \label{CompactingMySQL}
 \subsection{Compacting Your MySQL Database}
-\index[general]{Database!Compacting Your MySQL }
-\index[general]{Compacting Your MySQL Database }
+\index[general]{Database!Compacting Your MySQL}
+\index[general]{Compacting Your MySQL Database}
 
 \TODO{check cleaner approaches (Sebastian?)}
 
@@ -152,8 +152,8 @@ time to time (once every six months or year), compress it.
 \label{DatabaseRepair}
 \label{RepairingMySQL}
 \subsection{Repairing Your MySQL Database}
-\index[general]{Database!Repairing Your MySQL }
-\index[general]{Repairing Your MySQL Database }
+\index[general]{Database!Repairing Your MySQL}
+\index[general]{Repairing Your MySQL Database}
 
 If you find that you are getting errors writing to your MySQL database, or
 Bareos hangs each time it tries to access the database, you should consider
@@ -261,8 +261,8 @@ set:
 
 \label{RepairingPSQL}
 \subsection{Repairing Your PostgreSQL Database}
-\index[general]{Database!Repairing Your PostgreSQL }
-\index[general]{Repairing Your PostgreSQL Database }
+\index[general]{Database!Repairing Your PostgreSQL}
+\index[general]{Repairing Your PostgreSQL Database}
 
 The same considerations apply that are indicated above for MySQL. That is,
 consult the PostgreSQL documents for how to repair the database, and also
@@ -270,8 +270,8 @@ consider using \command{bareos-dbcheck} program if the conditions are reasonable
 using (see above).
 
 \subsection{Compacting Your PostgreSQL Database}
-\index[general]{Database!Compacting Your PostgreSQL }
-\index[general]{Compacting Your PostgreSQL Database }
+\index[general]{Database!Compacting Your PostgreSQL}
+\index[general]{Compacting Your PostgreSQL Database}
 \label{CompactingPostgres}
 
 Over time, as noted above, your database will tend to grow. I've noticed that
@@ -489,8 +489,8 @@ CREATE INDEX file_jfp_idx on File (JobId, PathId, FilenameId);
 % hidE: sqlite is not supported
 \hide{
 \section{Compacting Your SQLite Database}
-\index[general]{Compacting Your SQLite Database }
-\index[general]{Database!Compacting Your SQLite }
+\index[general]{Compacting Your SQLite Database}
+\index[general]{Database!Compacting Your SQLite}
 
 First please read the previous section that explains why it is necessary to
 compress a database. SQLite version 2.8.4 and greater have the {\bf Vacuum}
@@ -523,8 +523,8 @@ version.
 }
 
 \section{Backing Up Your Bareos Database}
-\index[general]{Backing Up Your Bareos Database }
-\index[general]{Database!Backing Up Your Bareos }
+\index[general]{Backing Up Your Bareos Database}
+\index[general]{Database!Backing Up Your Bareos}
 \label{BackingUpBareos}
 
 If ever the machine on which your Bareos database crashes, and you need to
@@ -611,8 +611,8 @@ database backup, but it will be more work and take longer.
 
 \label{BackingUpBareosSecurityConsiderations}
 \section{Security considerations}
-\index[general]{Backing Up Your Bareos Database - Security Considerations }
-\index[general]{Database!Backing Up Your Bareos Database - Security Considerations }
+\index[general]{Backing Up Your Bareos Database - Security Considerations}
+\index[general]{Database!Backing Up Your Bareos Database - Security Considerations}
 
 We provide make\_catalog\_backup as an example of what can be used to backup
 your Bareos database.  We expect you to take security precautions relevant
@@ -637,8 +637,8 @@ you with a starting point.  We hope it helps.
 
 \label{BackingUPOtherDBs}
 \section{Backing Up Third Party Databases}
-\index[general]{Backing Up Third Party Databases }
-\index[general]{Databases!Backing Up Third Party }
+\index[general]{Backing Up Third Party Databases}
+\index[general]{Databases!Backing Up Third Party}
 
 If you are running a database in production mode on your machine, Bareos will
 happily backup the files, but if the database is in use while Bareos is
@@ -658,8 +658,8 @@ databases.
 \label{Size}
 
 \section{Database Size}
-\index[general]{Size!Database }
-\index[general]{Database Size }
+\index[general]{Size!Database}
+\index[general]{Database Size}
 
 As mentioned above, if you do not do automatic pruning, your Catalog will grow
 each time you run a Job. Normally, you should decide how long you want File
