@@ -1,14 +1,10 @@
-%%
-%%
 
 \chapter{Automated Disk Backup}
 \label{PoolsChapter}
 \index[general]{Volumes!Using Pools to Manage}
 \index[general]{Disk!Automated Backup}
-\index[general]{Using Pools to Manage Volumes}
 \index[general]{Automated Disk Backup}
-
-\TODO{file is called pools, but heading is Disk Backup}
+\index[general]{Pool}
 
 If you manage five or ten machines and have a nice tape backup, you don't need
 Pools, and you may wonder what they are good for. In this chapter, you will
@@ -19,32 +15,18 @@ various different Volumes to meet their needs.
 The rest of this chapter will give an example involving backup to disk
 Volumes, but most of the information applies equally well to tape Volumes.
 
-\label{TheProblem}
-\section{The Problem}
-\index[general]{Problem}
+Given is a scenario, where the size of a full backup is about 15GB.
 
-\TODO{reformulate / rewrite own example}
-
-A site that I administer (a charitable organization) had a tape DDS-3 tape
-drive that was failing. The exact reason for the failure is still unknown.
-Worse yet, their full backup size is about 15GB whereas the capacity of their
-broken DDS-3 was at best 8GB (rated 6/12). A new DDS-4 tape drive and the
-necessary cassettes was more expensive than their budget could handle.
-
-\label{TheSolution}
-\section{The Solution}
-\index[general]{Solution}
-
-They want to maintain six months of backup data, and be able to access the old
-files on a daily basis for a week, a weekly basis for a month, then monthly
-for six months. In addition, offsite capability was not needed (well perhaps
-it really is, but it was never used). Their daily changes amount to about
+It is required, that backup data is available for six months.
+Old files should be available on a daily basis for a week, a weekly basis for a month, then monthly
+for six months. In addition, offsite capability is not needed.
+The daily changes amount to about
 300MB on the average, or about 2GB per week.
 
 As a consequence, the total volume of data they need to keep to meet their
 needs is about 100GB (15GB x 6 + 2GB x 5 + 0.3 x 7) = 102.1GB.
 
-The chosen solution was to buy a 120GB hard disk for next to nothing -- far
+The chosen solution was to use a 120GB hard disk -- far
 less than 1/10th the price of a tape drive and the cassettes to handle the
 same amount of data, and to have the backup software write to disk files.
 
@@ -52,22 +34,11 @@ The rest of this chapter will explain how to setup Bareos so that it would
 automatically manage a set of disk files with the minimum sysadmin
 intervention.
 
-The system has been running since 22 January 2004 until today
-(23 June 2007) with no intervention, with the exception of adding
-a second 120GB hard disk after a year because their needs grew
-over that time to more than the 120GB (168GB to be exact).
-
-\label{OverallDesign}
 \section{Overall Design}
-\index[general]{Overall Design}
-\index[general]{Design!Overall}
+\label{OverallDesign}
 
 Getting Bareos to write to disk rather than tape in the simplest case is
-rather easy, and is documented in the previous chapter. In addition, all the
-directives discussed here are explained in that chapter. We'll leave it to you
-to look at the details there. If you haven't read it and are not familiar with
-Pools, you probably should at least read it once quickly for the ideas before
-continuing here.
+rather easy.
 
 One needs to consider about what happens if we have only a single large Bareos
 Volume defined on our hard disk. Everything works fine until the Volume fills,
@@ -87,6 +58,8 @@ discussed shortly.  This is a single client backup, so if you have multiple
 clients you will need to multiply those numbers by the number of clients,
 or use a different system for switching volumes, such as limiting the
 volume size.
+
+\TODO{This chapter will get rewritten. Instead of limiting a Volume to one job, we will utilize \variable{Max Use Duration = 24 hours}. This prevents problems when adding more clients, because otherwise each job has to run seperat.}
 
 The next problem to resolve is recycling of Volumes. As you noted from above,
 the requirements are to be able to restore monthly for 6 months, weekly for a
@@ -208,24 +181,19 @@ that you will be assured that in the next cycle (after 20 days) there is
 at least one volume that is pruned and can be recycled.
 
 
-\label{Example}
-\section{The Actual Conf Files}
-\index[general]{Files!Actual Conf}
-\index[general]{Actual Conf Files}
+\section{Configuration Files}
 
 The following example shows you the actual files used, with only a few minor
 modifications to simplify things.
 
 The Director's configuration file is as follows:
 
-\TODO{bconfig environment is limited to single page, therefore content is stripped}
-
 \begin{bconfig}{bareos-dir.conf}
 Director {          # define myself
   Name = bareos-dir
   QueryFile = "/usr/lib/bareos/scripts/query.sql"
   Maximum Concurrent Jobs = 1
-  Password = " *** CHANGE ME ***"
+  Password = "*** CHANGE ME ***"
   Messages = Standard
 }
 

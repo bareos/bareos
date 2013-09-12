@@ -3,7 +3,7 @@
 
 \chapter{The Windows Version of Bareos}
 \label{Win32Chapter}
-\index[general]{Windows Version of Bareos}
+\index[general]{Windows}
 
 At the current time only the File daemon or Client program has
 been thouroughly tested on Windows and is suitable for a
@@ -22,10 +22,11 @@ Once installed Bareos normally runs as a system service. This means that it is
 immediately started by the operating system when the system is booted, and
 runs in the background even if there is no user logged into the system.
 
-\section{Win32 Installation}
-\label{installation}
-\index[general]{Installation}
-\index[general]{Win32!Installation}
+\section{Windows Installation}
+\label{Windows:Installation}
+\label{Windows:Configuration:Files}
+\index[general]{Installation!Windows}
+\index[general]{Windows!File Daemon!Installation}
 
 Normally, you will install the Windows version of Bareos from the binaries.
 The winbareos binary packages are provided under \path|http://download.bareos.org/bareos/release/12.4/windows|.
@@ -37,8 +38,8 @@ software, it should be very familiar to you.
 Providing you do not already
 have Bareos installed, the installer installs the binaries and dlls in
 \path|C:\Program Files\Bareos| and the configuration files
-in windows xp \path|c:\Documents and Settings\All Users\Application Data\Bareos|. \TODO{verify}
-and from windows vista + in \path|c:\ProgramData\Bareos|.
+in Windows XP \path|c:\Documents and Settings\All Users\Application Data\Bareos|.
+and from Windows Vista + in \path|c:\ProgramData\Bareos|.
 
 In addition, the {\bf Start\-{\textgreater}All Programs\-{\textgreater}Bareos} menu item
 will be created during the installation, and on that menu, you
@@ -101,22 +102,21 @@ commandline, so that an automatic silent install is possible.
 \large Commandline Switches
 \normalsize
 
-\begin{itemize}
-\item /? shows the list of available parameters.
-\item /S sets the installer to silent. The Installation is done without user interaction.
+\begin{description}
+\item[/?] shows the list of available parameters.
+\item[/S] sets the installer to silent. The Installation is done without user interaction.
 This switch is also available for the uninstaller.
-\item /CLIENTNAME sets the name of the client ressource
-\item /CLIENTPASSWORD sets the password to access the client
-\item /DIRECTORNAME sets the name of the director to access the client and of the director to
+\item[/CLIENTNAME] sets the name of the client ressource
+\item[/CLIENTPASSWORD] sets the password to access the client
+\item[/DIRECTORNAME] sets the name of the director to access the client and of the director to
 accessed by bconsole and bat
-\item /CLIENTADDRESS network address of the client
-\item /CLIENTMONITORPASSWORD sets the password for monitor access
-\item /DIRECTORADDRESS sets network address of the director for bconsole or bat access
-\item /DIRECTORPASSWORD set the password to access the director
-\item /D=\path|C:\specify\installation\directory| (Important: It has to be the last option!)
-\item /SILENTKEEPCONFIG keep configuration files on silent uninstall and use exinsting config files during silent install
-
-\end{itemize}
+\item[/CLIENTADDRESS] network address of the client
+\item[/CLIENTMONITORPASSWORD] sets the password for monitor access
+\item[/DIRECTORADDRESS] sets network address of the director for bconsole or bat access
+\item[/DIRECTORPASSWORD] set the password to access the director
+\item[/D=\path|C:\specify\installation\directory|] (Important: It has to be the last option!)
+\item[/SILENTKEEPCONFIG] keep configuration files on silent uninstall and use exinsting config files during silent install
+\end{description}
 
 By setting the Installation Parameters via commandline and using the silent installer,
 you can install the bareos client without having to do any configuration after the
@@ -128,9 +128,10 @@ c:\winbareos.exe /S /CLIENTNAME=hostname-fd /CLIENTPASSWORD="verysecretpassword"
 \end{verbatim}
 \normalsize
 
-\section{Dealing with Win32 Problems}
+\section{Dealing with Windows Problems}
 \label{problems}
-\index[general]{Win32!Dealing with Problems}
+\index[general]{Problem!Windows}
+\index[general]{Windows!Dealing with Problems}
 
 If you are not using the portable option, and you have VSS
 (Volume Shadow Copy) enabled in the Director, and you experience
@@ -225,10 +226,10 @@ HKEY_LOCAL_MACHINE\HARDWARE\SYSTEM\CurrentControlSet\Services\Bareos-dir
 using regedit, then add -dnn after the /service option, where nn represents
 the debug level you want.
 
-\label{Compatibility}
 \section{Windows Compatibility Considerations}
-\index[general]{Windows Compatibility Considerations}
-\index[general]{Considerations!Windows Compatibility}
+\label{Compatibility}
+\index[general]{Windows!Compatibility Considerations}
+
 
 If you are not using the VSS (Volume Shadow Copy) option described in the
 next section of this chapter, and if any applications are running during
@@ -249,8 +250,8 @@ program specifically designed to make a copy or backup the registry.
 
 
 \section{Volume Shadow Copy Service}
-\index[general]{Volume Shadow Copy Service}
-\index[general]{VSS}
+\index[general]{Windows!Volume Shadow Copy Service}
+\index[general]{Windows!VSS}
 \label{VSS}
 
 VSS is available on Windows XP and newer. From the perspective of
@@ -331,10 +332,10 @@ reports from each of the writer program.  Here they all report VSS\_WS\_STABLE, 
 that you will get a consistent snapshot of the data handled by that writer.
 
 \section{VSS Problems}
-\index[general]{Problems!VSS}
-\index[fd]{Problems!VSS}
-\index[general]{VSS Problems}
-\index[fd]{VSS Problems}
+\index[general]{Windows!Problem!VSS}
+\index[fd]{Windows!Problem!VSS}
+\index[general]{Problem!Windows!VSS}
+
 
 If you are experiencing problems such as VSS hanging on MSDE, first try
 running {\bf vssadmin} to check for problems, then try running {\bf
@@ -352,16 +353,15 @@ better with this configuration).
 
 
 \section{Windows Firewalls}
-\index[general]{Firewalls!Windows}
-\index[general]{Windows Firewalls}
+\index[general]{Firewall!Windows}
+\index[general]{Windows!Firewall}
 
 The Windows buildin Firewall is enabled since Windows version WinXP SP2.
 The Bareos installer opens the required network ports for Bareos.
 However, if you are using another Firewall, you might need to manually open the Bareos network port 9102/TCP.
 
 \section{Windows Port Usage}
-\index[general]{Windows Port Usage}
-\index[general]{Usage!Windows Port}
+\index[general]{Windows!Port Usage}
 
 If you want to see if the File daemon has properly opened the port and is
 listening, you can enter the following command in a shell window:
@@ -374,15 +374,17 @@ listening, you can enter the following command in a shell window:
 
 
 \section{Windows Restore Problems}
-\index[general]{Problems!Windows Restore}
-\index[general]{Windows Restore Problems}
+\index[general]{Problem!Windows Restore}
+\index[general]{Windows!Restore Problem}
+
 Please see the
 \ilink{Restore Chapter}{Windows} of this manual for problems
 that you might encounter doing a restore.
 
 \section{Windows Backup Problems}
-\index[general]{Problems!Windows Backup}
-\index[general]{Windows Backup Problems}
+\index[general]{Problem!Windows Backup}
+\index[general]{Windows!Backup Problems}
+
 If during a Backup, you get the message:
 {\bf ERR=Access is denied} and you are using the portable option,
 you should try both adding both the non-portable (backup API) and
@@ -419,8 +421,8 @@ the file/folder and all child objects.
 Thanks to Georger Araujo for the above information.
 
 \section{Windows Ownership and Permissions Problems}
-\index[general]{Problems!Windows Ownership and Permissions}
-\index[general]{Windows Ownership and Permissions Problems}
+\index[general]{Problem!Windows Ownership and Permissions}
+\index[general]{Windows!Ownership and Permissions Problems}
 
 If you restore files backed up from Windows to an alternate directory,
 Bareos may need to create some higher level directories that were not saved
@@ -447,8 +449,7 @@ the problem.
 %hopefully not needed anymore
 \hide{
 \section{Manually resetting the Permissions}
-\index[general]{Manually resetting the Permissions}
-\index[general]{Permissions!Manually resetting the}
+\index[general]{Windows!Manually resetting the Permissions}
 
 The following solution was provided by Dan Langille {\textless}dan at langille in
 the dot org domain{\textgreater}. The steps are performed using Windows 2000 Server but
@@ -507,7 +508,6 @@ program named {\bf cacls} that can perform similar functions.
 
 
 \section{Fixing the Windows Boot Record}
-\index[general]{Fixing the Windows Boot Record}
 \index[general]{Windows!Fixing the Boot Record}
 
 An effective way to restore a Windows backup is to install Windows on a different
@@ -527,9 +527,9 @@ bootrec /fixmbr
 \end{verbatim}
 
 
-\section{Win32 Specific File daemon Command Line}
-\index[general]{Client!Win32 Specific File daemon Command Line Options}
-\index[general]{Win32 Specific File daemon Command Line Options}
+\section{Windows Specific File daemon Command Line}
+\index[general]{Windows!File Daemon!Command Line Options}
+\index[fd]{Windows!Command Line Options}
 
 These options are not normally seen or used by the user, and are documented
 here only for information purposes. At the current time, to change the default
@@ -546,43 +546,32 @@ version. In addition, the following Windows only options are implemented:
 \begin{description}
 
 \item [/service ]
-   \index[fd]{/service}
    Start Bareos as a service
 
 \item [/run ]
-   \index[fd]{/run}
    Run the Bareos application
 
 \item [/install ]
-   \index[fd]{/install}
    Install Bareos as a service in the system registry
 
 \item [/remove ]
-   \index[fd]{/remove}
    Uninstall Bareos from the system registry
 
 \item [/about ]
-   \index[fd]{/about}
    Show the Bareos about dialogue box
 
 \item [/status ]
-   \index[fd]{/status}
    Show the Bareos status dialogue box
 
 \item [/events ]
-   \index[fd]{/events}
    Show the Bareos events dialogue box (not  yet implemented)
 
 \item [/kill ]
-   \index[fd]{/kill}
    Stop any running {\bf Bareos}
 
 \item [/help ]
-   \index[fd]{/help}
    Show the Bareos help dialogue box
 \end{description}
-
-\TODO{verify}
 
 It is important to note that under normal circumstances the user should never
 need to use these options as they are normally handled by the system

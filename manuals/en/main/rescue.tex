@@ -19,7 +19,7 @@ a disaster are very operating system dependent.  As a consequence, this
 chapter will discuss in detail disaster recovery (also called Bare Metal
 Recovery) for {\bf Linux} and {\bf Solaris}.  For Solaris, the procedures
 are still quite manual.  For FreeBSD the same procedures may be used but
-they are not yet developed.  For Win32, a number of Bareos users have
+they are not yet developed.  For Windows, a number of Bareos users have
 reported success using BartPE.
 
 
@@ -51,8 +51,6 @@ you should take into account before a disaster strikes.
    they are offered by each distribution, and there are many good
    rescue disks on the Web (Knoppix, sysrescuecd, PLD Linux rescue CD,
    tomsrtbt, RIP ...
-\item Create a bareos-hostname directory on
-   each machine and save it somewhere -- possibly on a USB key.\TODO{what content?}
 \item Ensure that you always have a valid bootstrap file for your backup and
    that it is saved to an alternate machine.  This will permit you to
    easily do a full restore of your system.
@@ -493,10 +491,10 @@ such circumstances, Bareos restores only the last of multiple copies of
 a file or directory.
 }
 
-\section{Disaster Recovery of Win32 Systems}
+\section{Disaster Recovery of Windows Systems}
 \label{Win3233}
-\index[general]{Disaster!Recovery!Win32}
-\index[general]{Win32!Disaster Recovery}
+\index[general]{Disaster!Recovery!Windows}
+\index[general]{Windows!Disaster Recovery}
 
 Due to open system files, and registry problems, Bareos cannot save and
 restore a complete Win2K/XP/NT environment.

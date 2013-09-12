@@ -1,5 +1,3 @@
-%%
-%%
 
 \chapter{What is Bareos?}
 \label{GeneralChapter}
@@ -51,20 +49,13 @@ Bareos is made up of the following five major components or services:
 Director, Console, File, Storage, and Monitor services.
 
 
-%\addcontentsline{lof}{figure}{Bareos Applications}
-%\includegraphics{\idir bareos-applications.eps}
-%(thanks to Aristedes Maniatis for this graphic and the one below)
-% TODO: move the thanks to Credits section in preface
-
 \subsection*{Bareos Director}
    \label{DirDef}
    The Bareos Director service is the program that supervises
    all the backup, restore, verify and archive operations.  The system
    administrator uses the Bareos Director to schedule backups and to
-   recover files.  For more details see the Director Services Daemon Design
-   Document in the Bareos Developer's Guide.  The Director runs as a daemon
+   recover files. The Director runs as a daemon
    (or service) in the background.
-% TODO: tell reader where this Developer's Guide is at?
    \label{UADef}
 
 \subsection*{Bareos Console}
@@ -100,12 +91,9 @@ Director, Console, File, Storage, and Monitor services.
    perform the storage and recovery of the file attributes and data to the
    physical backup media or volumes.  In other words, the Storage daemon is
    responsible for reading and writing your tapes (or other storage media,
-   e.g.  files).  For more details see the Storage Services Daemon Design
-   Document in the Bareos Developer's Guide.  The Storage services runs as
-   a daemon on the machine that has the backup device (usually a tape
+   e.g.  files). The Storage services runs as
+   a daemon on the machine that has the backup device (such as a tape
    drive).
-% TODO: may switch e.g. to "for example" or "such as" as appropriate
-% TODO: is "usually" correct? Maybe "such as" instead?
 
 \subsection*{Catalog}
    \label{DBDefinition}
@@ -182,7 +170,6 @@ version of the manual,
 mind that this version describes the current version in development
 that may contain features not in the released version. Just the same, it
 generally lags behind the code a bit.
-% TODO: is this still true? there are separate websites
 
 \section{Quick Start}
 
@@ -326,7 +313,6 @@ and finally th chapter on
    directives (individual configuration statements).  For example, the {\bf
    Job} resource defines all the properties of a specific Job: name,
    schedule, Volume pool, backup type, backup level, ...
-% TODO: clean up "..." for book
 
 \item [Restore]
    \index[fd]{Restore}
@@ -336,9 +322,6 @@ and finally th chapter on
    files to restore, while normally a Save backs up all the files on the
    system.  Of course, after a disk crash, Bareos can be called upon to do
    a full Restore of all files that were on the system.
-
-% TODO: define "Save"
-% TODO: define "Full"
 
 \item [Schedule]
    \index[fd]{Schedule}

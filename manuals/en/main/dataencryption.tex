@@ -3,7 +3,6 @@
 \label{DataEncryption}
 \index[general]{Data Encryption}
 \index[general]{Encryption!Data}
-\index[general]{Data Encryption}
 
 Bareos permits file data encryption and signing within the File Daemon (or
 Client) prior to sending data to the Storage Daemon.  Upon restoration,
@@ -23,8 +22,9 @@ do:
 %   configuration file, and not changing your File daemon keys.  If you do
 %   change either one, you must ensure that no restore is done that restores
 %   the old configuration or the old keys.  In general, the worst effect of
-%   this will be that you can no longer connect the File daemon.\TODO{what does this sentence mean?}
-%     \TODO{refer to SElinux?}
+%   this will be that you can no longer connect the File daemon.
+%       %\TODO{what does this sentence mean?}
+%       %\TODO{refer to SElinux?}
 
 \item The implementation does not encrypt file metadata such as file path
   names, permissions, and ownership. Extended attributes are also currently

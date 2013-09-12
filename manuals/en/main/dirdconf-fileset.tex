@@ -1,10 +1,8 @@
-%%
-%%
 
 \section{FileSet Resource}
 \label{FileSetResource}
 \index[general]{Resource!FileSet}
-\index[general]{FileSet Resource}
+\index[general]{FileSet!Resource}
 
 The FileSet resource defines what files are to be included or excluded in a
 backup job.  A {\bf FileSet} resource is required for each backup Job.  It
@@ -1729,10 +1727,10 @@ FileSet {
 \end{verbatim}
 \normalsize
 
-\label{win32}
 \subsection{Windows FileSets}
-\index[general]{Windows FileSets}
-\index[general]{FileSets!Windows}
+\index[general]{Windows!FileSet}
+\index[general]{FileSet!Windows}
+\label{win32}
 If you are entering Windows file names, the directory path may be preceded by
 the drive and a colon (as in c:). However, the path separators must be
 specified in Unix convention (i.e. forward slash (/)). If you wish to include
@@ -1740,8 +1738,7 @@ a quote in a file name, precede the quote with a backslash
 (\textbackslash{}). For example you might use the following
 for a Windows machine to backup the "My Documents" directory:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{Windows FileSet}
 FileSet {
   Name = "Windows Set"
   Include {
@@ -1753,8 +1750,7 @@ FileSet {
      File = "c:/My Documents"
   }
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 For exclude lists to work correctly on Windows, you must observe the following
 rules:
@@ -1787,112 +1783,12 @@ Full backup.
 
 \paragraph*{Example Fileset for Windows}
 \index[general]{FileSet!Windows Example}
-\index[general]{Windows Example FileSet}
+\index[general]{Windows!FileSet!Example}
 
-\TODO{replace example}
+The following example demostrates a Windows FileSet.
+It backups all data from all fixed drives and only excludes some Windows temporary data.
 
-The following example was contributed by Russell Howe. Please note that
-for presentation purposes, the lines beginning with Data and Internet
-have been wrapped and should included on the previous line with one
-space.
-
-\footnotesize
-\begin{verbatim}
-This is my Windows 2000 fileset:
-FileSet {
- Name = "Windows 2000"
- Include {
-  Options {
-   signature = MD5
-   Exclude = yes
-   IgnoreCase = yes
-   # Exclude Mozilla-based programs' file caches
-   WildDir = "[A-Z]:/Documents and Settings/*/Application
-Data/*/Profiles/*/*/Cache"
-   WildDir = "[A-Z]:/Documents and Settings/*/Application
-Data/*/Profiles/*/*/Cache.Trash"
-   WildDir = "[A-Z]:/Documents and Settings/*/Application
-Data/*/Profiles/*/*/ImapMail"
-
-   # Exclude user's registry files - they're always in use anyway.
-   WildFile = "[A-Z]:/Documents and Settings/*/Local Settings/Application
-Data/Microsoft/Windows/usrclass.*"
-   WildFile = "[A-Z]:/Documents and Settings/*/ntuser.*"
-
-   # Exclude directories full of lots and lots of useless little files
-   WildDir = "[A-Z]:/Documents and Settings/*/Cookies"
-   WildDir = "[A-Z]:/Documents and Settings/*/Recent"
-   WildDir = "[A-Z]:/Documents and Settings/*/Local Settings/History"
-   WildDir = "[A-Z]:/Documents and Settings/*/Local Settings/Temp"
-   WildDir = "[A-Z]:/Documents and Settings/*/Local Settings/Temporary
-Internet Files"
-
-   # These are always open and unable to be backed up
-   WildFile = "[A-Z]:/Documents and Settings/All Users/Application
-Data/Microsoft/Network/Downloader/qmgr[01].dat"
-
-   # Some random bits of Windows we want to ignore
-   WildFile = "[A-Z]:/WINNT/security/logs/scepol.log"
-   WildDir = "[A-Z]:/WINNT/system32/config"
-   WildDir = "[A-Z]:/WINNT/msdownld.tmp"
-   WildDir = "[A-Z]:/WINNT/Internet Logs"
-   WildDir = "[A-Z]:/WINNT/$Nt*Uninstall*"
-   WildDir = "[A-Z]:/WINNT/sysvol"
-   WildFile = "[A-Z]:/WINNT/cluster/CLUSDB"
-   WildFile = "[A-Z]:/WINNT/cluster/CLUSDB.LOG"
-   WildFile = "[A-Z]:/WINNT/NTDS/edb.log"
-   WildFile = "[A-Z]:/WINNT/NTDS/ntds.dit"
-   WildFile = "[A-Z]:/WINNT/NTDS/temp.edb"
-   WildFile = "[A-Z]:/WINNT/ntfrs/jet/log/edb.log"
-   WildFile = "[A-Z]:/WINNT/ntfrs/jet/ntfrs.jdb"
-   WildFile = "[A-Z]:/WINNT/ntfrs/jet/temp/tmp.edb"
-   WildFile = "[A-Z]:/WINNT/system32/CPL.CFG"
-   WildFile = "[A-Z]:/WINNT/system32/dhcp/dhcp.mdb"
-   WildFile = "[A-Z]:/WINNT/system32/dhcp/j50.log"
-   WildFile = "[A-Z]:/WINNT/system32/dhcp/tmp.edb"
-   WildFile = "[A-Z]:/WINNT/system32/LServer/edb.log"
-   WildFile = "[A-Z]:/WINNT/system32/LServer/TLSLic.edb"
-   WildFile = "[A-Z]:/WINNT/system32/LServer/tmp.edb"
-   WildFile = "[A-Z]:/WINNT/system32/wins/j50.log"
-   WildFile = "[A-Z]:/WINNT/system32/wins/wins.mdb"
-   WildFile = "[A-Z]:/WINNT/system32/wins/winstmp.mdb"
-
-   # Temporary directories & files
-   WildDir = "[A-Z]:/WINNT/Temp"
-   WildDir = "[A-Z]:/temp"
-   WildFile = "*.tmp"
-   WildDir = "[A-Z]:/tmp"
-   WildDir = "[A-Z]:/var/tmp"
-
-   # Recycle bins
-   WildDir = "[A-Z]:/RECYCLER"
-
-   # Swap files
-   WildFile = "[A-Z]:/pagefile.sys"
-
-   # These are programs and are easier to reinstall than restore from
-   # backup
-   WildDir = "[A-Z]:/cygwin"
-   WildDir = "[A-Z]:/Program Files/Grisoft"
-   WildDir = "[A-Z]:/Program Files/Java"
-   WildDir = "[A-Z]:/Program Files/Java Web Start"
-   WildDir = "[A-Z]:/Program Files/JavaSoft"
-   WildDir = "[A-Z]:/Program Files/Microsoft Office"
-   WildDir = "[A-Z]:/Program Files/Mozilla Firefox"
-   WildDir = "[A-Z]:/Program Files/Mozilla Thunderbird"
-   WildDir = "[A-Z]:/Program Files/mozilla.org"
-   WildDir = "[A-Z]:/Program Files/OpenOffice*"
-  }
-
-  # Our Win2k boxen all have C: and D: as the main hard drives.
-  File = "C:/"
-  File = "D:/"
- }
-}
-\end{verbatim}
-\normalsize
-
-\begin{verbatim}
+\begin{bconfig}{Windows All Drives FileSet}
 FileSet {
   Name = "Windows All Drives"
   Enable VSS = yes
@@ -1910,11 +1806,14 @@ FileSet {
     File = /
   }
 }
-\end{verbatim}
+\end{bconfig}
 
+% only for kile editor
+\hide{$}
 
-Note, the three line of the above Exclude were split to fit on the document
-page, they should be written on a single line in real use.
+\variable{File = /} includes all Windows drives.
+Using \variable{Drive Type = fixed} excludes drives like USB-Stick or CD-ROM Drive.
+Using \variable{WildDir = "[A-Z]:/RECYCLER"} excludes the backup of the directory \path|RECYCLER| from all drives.
 
 
 \subsection{Testing Your FileSet}

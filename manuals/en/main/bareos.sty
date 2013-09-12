@@ -50,8 +50,8 @@
 %%
 \newcommand{\debug}[1]{\marginpar{#1}}
 %%
-\newcommand{\TODO}[1]{\textit{#1}\marginpar{TODO: #1}}
-%\newcommand{\TODO}[1]{\textit{#1}}
+%\newcommand{\TODO}[1]{\textit{#1}\marginpar{TODO: #1}}
+\newcommand{\TODO}[1]{\textit{TODO: #1}}
 %\newcommand{\TODO}[1]{}
 \newcommand{\hide}[1]{}
 %%
@@ -110,41 +110,48 @@
 }
 
 
-\floatstyle{boxed}
+
 \newfloat{config}{h}{lop}
-\floatname{config}{bconfig}
-%\newbox\examplebox
+\floatname{config}{Configuration}
+
 \newenvironment{bconfig}[1]{%
     % #1 caption
-    \config
     \footnotesize
-    \ifthenelse{\isempty{#1}}{
-    }{
-        \caption{#1}
-        \label{#1}
-    }
+    \def\bconfig1{#1}
+    \definecolor{shadecolor}{gray}{0.95}
+    \snugshade
     \verbatim
 }
-{    \endverbatim
-    \endconfig }
+{
+    \endverbatim
+    \endsnugshade
+    \ifthenelse{\isempty{\bconfig1}}{
+    }{
+        \captionof{config}{\bconfig1}
+        \label{config:\bconfig1}
+    }
+}
 
 
 
-\renewenvironment{theindex}
-               {\if@twocolumn
-                  \@restonecolfalse
-                \else
-                  \@restonecoltrue
-                \fi
-                \@mkboth{\MakeUppercase\indexname}%
-                        {\MakeUppercase\indexname}%
-                                \clearpage
-                                \subsection*{\indexname}
-                                \addcontentsline{toc}{subsection}{\indexname}
-                \thispagestyle{plain}\parindent\z@
-                \parskip\z@ \@plus .3\p@\relax
-                \let\item\@idxitem}
-                                {\if@restonecol\onecolumn\else\clearpage\fi}   %% Is this needed???
+
+% \renewenvironment{theindex}
+%                {\if@twocolumn
+%                   \@restonecolfalse
+%                 \else
+%                   \@restonecoltrue
+%                 \fi
+%                 \@mkboth{\MakeUppercase\indexname}%
+%                         {\MakeUppercase\indexname}%
+%                                 \clearpage
+%                                 \subsection*{\indexname}
+%                                 \addcontentsline{toc}{subsection}{\indexname}
+%                 \thispagestyle{plain}\parindent\z@
+%                 \parskip\z@ \@plus .3\p@\relax
+%                 \let\item\@idxitem}
+%                                 {\if@restonecol\onecolumn\else\clearpage\fi}   %% Is this needed???
+%
+
 
 %%
 \endinput

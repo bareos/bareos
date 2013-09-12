@@ -18,7 +18,6 @@
 \usepackage{html}
 \usepackage{float}
 \usepackage{graphicx}
-\usepackage{bareos}
 \usepackage{longtable}
 \usepackage{makeidx}
 \usepackage{index}
@@ -31,6 +30,12 @@
 \renewcommand\verbatimtabsize{4\relax}
 \usepackage{ifthen}
 \usepackage{xifthen}
+\usepackage[usenames,dvipsnames]{color} % required by framed
+\usepackage{framed} % framed, oframed, shaded, shaded*, snugshade, snugshade*, leftbar, titled-frame
+\usepackage{caption} % captionof
+%\usepackage{mdframed} % does not work on openSUSE 12.2
+
+\usepackage{bareos}
 
 
 \makeindex
@@ -40,20 +45,6 @@
 \newindex{sd}{sd.idx}{sd.ind}{Storage Daemon Index}
 \newindex{console}{console.idx}{console.ind}{Console Index}
 \newindex{monitor}{monitor.idx}{monitor.ind}{Monitor Index}
-
-% rules for using index:
-%   use singular
-%   first letter: upper case letters
-%   everything to [general] (in the longterm)
-%
-% index keywords (instead of ...)
-%
-% Windows (Win32)
-% Configuration (configure)
-% Command (for executabel commands)
-% Console!Command (for bconsole commands)
-% Restore (Restoring)
-
 
 
 \sloppy
@@ -191,6 +182,9 @@
 \include{bootstrap}
 
 \include{backward-compability}
+
+\chapter{Troubleshooting}
+\include{troubleshooting}
 
 \chapter{Bareos Copyright, Trademark, and Licenses}
 \label{LicenseChapter}

@@ -3,7 +3,7 @@
 
 \chapter{A Brief Tutorial}
 \label{TutorialChapter}
-\index[general]{Tutorial!Brief}
+\index[general]{Tutorial}
 
 This chapter will guide you through running Bareos. To do so, we assume you
 have installed Bareos.
@@ -15,9 +15,6 @@ directory, in addition, the data backed up will be the source directory where
 you built Bareos. As a consequence, you can run all the Bareos daemons for
 these tests as non-root. Please note, in production, your File daemon(s) must
 run as root. See the Security chapter for more information on this subject.
-
-% TODO: use crossreferences above
-% TODO: add a section here
 
 The general flow of running Bareos is:
 
@@ -40,9 +37,6 @@ Each of these steps is described in more detail below.
 
 \section{Before Running Bareos}
 \index[general]{Bareos!Before Running}
-
-% TODO: some of this content is already covered once or twice critical
-% TODO: or quickstart. Consolidate!
 
 Before running Bareos for the first time in production, we recommend that you
 run the {\bf test} command in the {\bf btape} program as described in the
@@ -92,12 +86,12 @@ Some distributions may do this differently.
 
 Note, on Windows, currently only the File daemon is ported, and it must be
 started differently. Please see the
-\ilink{Windows Version of Bareos}{Win32Chapter} Chapter of this
+\ilink{Windows Version of Bareos}{Win32Chapter} chapter of this
 manual.
 
 The rpm packages configure the daemons to run as user=root and group=bareos.
-The rpm installation also creates the group bareos if it does not exist on the
-system. Any users that you add to the group bareos will have access to files
+The rpm installation also creates the group \group{bareos} if it does not exist on the
+system. Any users that you add to the group \group{bareos} will have access to files
 created by the daemons. To disable or alter this behavior edit the daemon
 startup scripts:
 
@@ -115,14 +109,11 @@ explains how you can install scripts that will automatically restart the
 daemons when the system starts.
 
 \section{Using the Director to Query and Start Jobs}
-\index[general]{Jobs!Querying or Starting Jobs}
-\index[general]{Querying or starting Jobs}
-% TODO: section name is too long; maybe use "Using the Console Program" ??
 
 To communicate with the director and to query the state of Bareos or run jobs,
 from the top level directory, simply enter:
 
-bconsole
+\command{bconsole}
 
 % Alternatively to running the command line console, if you have
 % Qt4 installed and used the {\bf \verb:--:enable-bat} on the configure command,
@@ -132,7 +123,8 @@ bconsole
 % 
 % Which has a graphical interface, and many more features than bconsole.
 
-For simplicity, here we will describe only the {\bf bconsole} program.
+For simplicity, here we will describe only the \command{bconsole} program,
+also there is also a graphical interface called \command{BAT}.
 
 The {\bf bconsole} runs the Bareos Console program, which connects to the
 Director daemon. Since Bareos is a network program, you can run the Console
@@ -153,9 +145,7 @@ the asterisk is the console command prompt.
 
 Type {\bf help} to see a list of available commands:
 
-\footnotesize
-\begin{verbatim}
-*help
+\begin{bconsole}{*}{help}{}{}
   Command       Description
   =======       ===========
   add           Add media to a pool
@@ -204,9 +194,7 @@ Type {\bf help} to see a list of available commands:
   var           Does variable expansion
   version       Print Director version
   wait          Wait until no jobs are running
-*
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 Details of the console program's commands are explained in the
 \ilink{Console Chapter}{_ConsoleChapter} of this manual.
@@ -229,18 +217,9 @@ At this point, we assume you have done the following:
 Furthermore, we assume for the moment you are using the default configuration
 files.
 
-At this point, enter the following command:
+At this point, enter the \bcommand{show filesets} and you should get something similar this:
 
-\footnotesize
-\begin{verbatim}
-show filesets
-\end{verbatim}
-\normalsize
-
-and you should get something similar to:
-
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{*}{show filesets}{}{}
 FileSet: name=Full Set
       O M
       N
@@ -253,8 +232,7 @@ FileSet: name=Full Set
       E /.journal
       E /.fsck
       N
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 This is a pre-defined {\bf FileSet} that will backup the Bareos source
 directory. The actual directory names printed should correspond to your system
@@ -278,17 +256,6 @@ status dir
 \normalsize
 
 and you should get the following output:
-
-
-% rufus-dir Version: 1.30 (28 April 2003)
-% Daemon started 28-Apr-2003 14:03, 0 Jobs run.
-% Console connected at 28-Apr-2003 14:03
-% No jobs are running.
-% Level          Type     Scheduled          Name
-% =================================================================
-% Incremental    Backup   29-Apr-2003 01:05  Client1
-% Full           Backup   29-Apr-2003 01:10  BackupCatalog
-% ====
 
 \footnotesize
 \begin{verbatim}
@@ -445,8 +412,7 @@ yes}, at which point you should immediately get the command prompt (an
 asterisk). If you wait a few seconds, then enter the command {\bf messages}
 you will get back something like:
 
-\TODO{get output from real test environment}
-\TODO{auto on? messages?}
+\TODO{Replace bconsole output by current version of Bareos.}
 
 \footnotesize
 \begin{verbatim}
@@ -1109,12 +1075,12 @@ Most of the commands given above, with the exception of {\bf list}, will
 prompt you for the necessary arguments if you simply enter the command name.
 
 
-\section{Debug Daemon Output}
-\index[general]{Debug Daemon Output}
-\index[general]{Output!Debug Daemon}
-
-\TODO{needs to be adapted}
- 
+% \section{Debug Daemon Output}
+% \index[general]{Debug Daemon Output}
+% \index[general]{Output!Debug Daemon}
+%
+% %\TODO{needs to be adapted}
+%
 % If you want debug output from the daemons as they are running, start the
 % daemons from the install directory as follows:
 % 

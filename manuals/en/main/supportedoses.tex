@@ -1,8 +1,6 @@
 %%
 %%
 
-\TODO{move to (bareos.org)}
-
 The Bareos project provides and supports packages that have been released unter
 \elink{http://download.bareos.org/bareos/release/}{http://download.bareos.org/bareos/release/}
 
@@ -13,9 +11,9 @@ However, the following tabular gives an overview, what components are expected o
   Operating Systems & Version & Client \small{Daemon} & Director \small{Daemon} & Storage \small{Daemon} \\
   \hline
   \hline
-  GNU/Linux  & all & X & X & X \\
+  GNU/Linux  & all & v12.4 & v12.4 & v12.4 \\
   \hline
-  Univention Enterprise Linux & Univention App Center & X & X & X \\
+  Univention Corporate Linux & Univention App Center & v12.4 & v12.4 & v12.4 \\
   \hline
   FreeBSD & $\geq$ 5.0 & X & X & X
   \\
@@ -25,12 +23,12 @@ However, the following tabular gives an overview, what components are expected o
   OpenSolaris & ~ & X & X & X \\
   \hline
   \hline
-  MS Windows 32bit & XP & X  &  &  \\
-  ~ & 2008/Vista & X  &  &  \\
-  ~ & 7/8 & X  &  &  \\
+  MS Windows 32bit & XP & v12.4  &  &  \\
+  ~ & 2008/Vista & v12.4  &  &  \\
+  ~ & 7/8 & v12.4 &  &  \\
   \hline
-  MS Windows 64bit& 2008/Vista & X  &  &  \\
-  ~ & 7/2012/8 & X  &  &  \\
+  MS Windows 64bit& 2008/Vista & v12.4 &  &  \\
+  ~ & 7/2012/8 & v12.4 &  &  \\
   \hline
   \hline
   MacOS X/Darwin & ~ & X &  &  \\
@@ -51,18 +49,19 @@ However, the following tabular gives an overview, what components are expected o
   \hline
 \end{tabular}
 
-\begin{itemize}
+\begin{description}
+\item[vVV.V] starting with Bareos version VV.V, this platform is official supported by the Bareos.org project
 \item[X] known to work
 \item[$\star$] has been reported to work in many cases and the Community
    has committed code for them
-\end{itemize}
+\end{description}
 
 
 \paragraph{Important notes}
 
 \begin{itemize}
-\item by GNU/Linux, we mean 32/64bit Debian, Fedora, openSUSE, Red Hat Enterprise Linux, SLES, Ubuntu, \dots
-\item The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server
+    \item by GNU/Linux, we mean 32/64bit Debian, Fedora, openSUSE, Red Hat Enterprise Linux, SLES, Ubuntu, \dots
+    \item {The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server}
 % \item For FreeBSD older than version 5.0,
 %   please see some {\bf important} considerations in the
 %   \ilink{ Tape Modes on FreeBSD}{FreeBSDTapes}  section of the

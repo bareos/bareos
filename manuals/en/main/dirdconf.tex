@@ -3048,8 +3048,8 @@ and a Virtual Backup Job will write their data too.
 
 \label{PoolScratchPool}
 \item [ScratchPool = {\textless}pool-resource-name{\textgreater}] \hfill \\
-\index[dir]{ScrachPool}
-\index[dir]{Directive!ScrachPool}
+\index[dir]{ScratchPool}
+\index[dir]{Directive!ScratchPool}
 This directive permits to specify a dedicate \textsl{Scratch} for the
 current pool. This pool will replace the special pool named \textsl{Scrach}
 for volume selection. For more information about \textsl{Scratch} see
@@ -3297,6 +3297,8 @@ Pool {
 \subsection{Scratch Pool}
 \label{TheScratchPool}
 \index[general]{Scratch Pool}
+\index[general]{Pool!Scratch}
+
 In general, you can give your Pools any name you wish, but there is one
 important restriction: the Pool named {\bf Scratch}, if it exists behaves
 like a scratch pool of Volumes in that when Bareos needs a new Volume for
@@ -3700,159 +3702,12 @@ redefined each time that Bareos is started.
 
 \section{Example Director Configuration File}
 \label{SampleDirectorConfiguration}
-\index[general]{File!Example Director Configuration}
-\index[general]{Example Director Configuration File}
+\index[general]{Configuration!Director!Example}
+\index[dir]{Configuration File Example}
 
-An example Director configuration file might be the following:
+See below an example of a full Director configuration file:
 
-\TODO{replace with Bareos default config? https://github.com/bareos/bareos/blob/master/src/defaultconfigs/diskonly/bareos-dir.conf.in }
-
+{
 \footnotesize
-\begin{verbatim}
-#
-# Default Bareos Director Configuration file
-#
-#  The only thing that MUST be changed is to add one or more
-#   file or directory names in the Include directive of the
-#   FileSet resource.
-#
-#  For Bareos release 1.15 (5 March 2002) -- redhat
-#
-#  You might also want to change the default email address
-#   from root to your address.  See the "mail" and "operator"
-#   directives in the Messages resource.
-#
-Director {                            # define myself
-  Name = rufus-dir
-  QueryFile = "/home/kern/bareos/bin/query.sql"
-  WorkingDirectory = "/home/kern/bareos/bin/working"
-  PidDirectory = "/home/kern/bareos/bin/working"
-  Password = "XkSfzu/Cf/wX4L8Zh4G4/yhCbpLcz3YVdmVoQvU3EyF/"
+\verbatiminput{bareos-dir.conf.in}
 }
-# Define the backup Job
-Job {
-  Name = "NightlySave"
-  Type = Backup
-  Level = Incremental                 # default
-  Client=rufus-fd
-  FileSet="Full Set"
-  Schedule = "WeeklyCycle"
-  Storage = DLTDrive
-  Messages = Standard
-  Pool = Default
-}
-Job {
-  Name = "Restore"
-  Type = Restore
-  Client=rufus-fd
-  FileSet="Full Set"
-  Where = /tmp/bareos-restores
-  Storage = DLTDrive
-  Messages = Standard
-  Pool = Default
-}
-
-# List of files to be backed up
-FileSet {
-  Name = "Full Set"
-  Include {
-    Options { signature=SHA1}
-#
-#  Put your list of files here, one per line or include an
-#    external list with:
-#
-#    @file-name
-#
-#  Note: / backs up everything
-  File = /
-}
-  Exclude {}
-}
-# When to do the backups
-Schedule {
-  Name = "WeeklyCycle"
-  Run = level=Full sun at 2:05
-  Run = level=Incremental mon-sat at 2:05
-}
-# Client (File Services) to backup
-Client {
-  Name = rufus-fd
-  Address = rufus
-  Catalog = MyCatalog
-  Password = "MQk6lVinz4GG2hdIZk1dsKE/LxMZGo6znMHiD7t7vzF+"
-  File Retention = 60d      # sixty day file retention
-  Job Retention = 1y        # 1 year Job retention
-  AutoPrune = yes           # Auto apply retention periods
-}
-# Definition of DLT tape storage device
-Storage {
-  Name = DLTDrive
-  Address = rufus
-  Password = "jMeWZvfikUHvt3kzKVVPpQ0ccmV6emPnF2cPYFdhLApQ"
-  Device = "HP DLT 80"      # same as Device in Storage daemon
-  Media Type = DLT8000      # same as MediaType in Storage daemon
-}
-# Definition for a DLT autochanger device
-Storage {
-  Name = Autochanger
-  Address = rufus
-  Password = "jMeWZvfikUHvt3kzKVVPpQ0ccmV6emPnF2cPYFdhLApQ"
-  Device = "Autochanger"    # same as Device in Storage daemon
-  Media Type = DLT-8000     # Different from DLTDrive
-  Autochanger = yes
-}
-# Definition of DDS tape storage device
-Storage {
-  Name = SDT-10000
-  Address = rufus
-  Password = "jMeWZvfikUHvt3kzKVVPpQ0ccmV6emPnF2cPYFdhLApQ"
-  Device = SDT-10000        # same as Device in Storage daemon
-  Media Type = DDS-4        # same as MediaType in Storage daemon
-}
-# Definition of 8mm tape storage device
-Storage {
-  Name = "8mmDrive"
-  Address = rufus
-  Password = "jMeWZvfikUHvt3kzKVVPpQ0ccmV6emPnF2cPYFdhLApQ"
-  Device = "Exabyte 8mm"
-  MediaType = "8mm"
-}
-# Definition of file storage device
-Storage {
-  Name = File
-  Address = rufus
-  Password = "jMeWZvfikUHvt3kzKVVPpQ0ccmV6emPnF2cPYFdhLApQ"
-  Device = FileStorage
-  Media Type = File
-}
-# Generic catalog service
-Catalog {
-  Name = MyCatalog
-  dbname = bareos; user = bareos; password = ""
-}
-# Reasonable message delivery -- send most everything to
-#   the email address and to the console
-Messages {
-  Name = Standard
-  mail = root@localhost = all, !skipped, !terminate
-  operator = root@localhost = mount
-  console = all, !skipped, !saved
-}
-
-# Default pool definition
-Pool {
-  Name = Default
-  Pool Type = Backup
-  AutoPrune = yes
-  Recycle = yes
-}
-#
-# Restricted console used by tray-monitor to get the status of the director
-#
-Console {
-  Name = Monitor
-  Password = "GN0uRo7PTUmlMbqrJ2Gr1p0fk0HQJTxwnFyE4WSST3MWZseR"
-  CommandACL = status, .status
-}
-\end{verbatim}
-\normalsize
