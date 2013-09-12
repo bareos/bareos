@@ -25,6 +25,10 @@
 
 \def\version{12.4.0}
 
+\newcommand{\fileStoragePath}{\path|/var/lib/bareos/storage/|}
+\newcommand{\unixConfigPath}{\path|/etc/bareos/|}
+
+
 %%
 \newcommand*{\elink}[2]{%
   \htmladdnormallink{#1}{#2}%
@@ -44,8 +48,6 @@
 \newcommand{\group}[1]{\path|#1|}
 \newcommand{\parameter}[1]{\path|#1|}
 \newcommand{\variable}[1]{\path|#1|}
-
-
 \newcommand{\configdirective}[1]{\textbf{#1}}
 %%
 \newcommand{\debug}[1]{\marginpar{#1}}
@@ -129,6 +131,31 @@
     }{
         \captionof{config}{\bconfig1}
         \label{config:\bconfig1}
+    }
+}
+
+\newfloat{floatCommandOut}{h}{lop}
+\floatname{floatCommandOut}{Command}
+
+\newenvironment{commandOut}[3]{%
+    % #1 caption
+    % #2 prompt (TODO)
+    % #3 command
+    \footnotesize
+    \def\commandOut1{#1}
+    \definecolor{shadecolor}{gray}{0.95}
+    \snugshade
+    \verbatim
+% root@linux:~# #3
+root@linux:\~{}\# #3 ...
+}
+{
+    \endverbatim
+    \endsnugshade
+    \ifthenelse{\isempty{\commandOut1}}{
+    }{
+        \captionof{floatCommandOut}{\commandOut1}
+        \label{command:\commandOut1}
     }
 }
 

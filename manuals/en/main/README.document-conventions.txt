@@ -1,5 +1,11 @@
 Conventions
 
+Domain: example.com
+Hosts: ???
+
+\fileStoragePath
+\unixConfigPath
+
 Links, internal:
 \ilink{Description}{LaTex-Label}
 
@@ -13,6 +19,8 @@ Links, external
 \newcommand{\group}[1]{\path|#1|}
 \newcommand{\variable}[1]{\path|#1|}
 \newcommand{\parameter}[1]{\path|#1|}
+\newcommand{\configdirective}[1]{\textbf{#1}}
+
 
 Bareos configuration files:
 \begin{bconfig}{<CAPTION>}
@@ -31,6 +39,13 @@ output
 \begin{bconsole}{}{}{}{}
 \end{bconsole}
 
+Unix (Linux) Command with output:
+\begin{commandOut}{[caption]}{[prompt]}{command}
+output
+\end{commandOut}
+
+\begin{commandOut}{}{}{}
+\end{commandOut}
 
 
 
