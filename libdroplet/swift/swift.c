@@ -43,7 +43,7 @@ dpl_backend_swift =
     "swift",
     /* .list_bucket 	= dpl_swift_list_bucket, */
     .login	 	= dpl_swift_login,
-    /* .put 		= dpl_swift_put, */
+    .put 		= dpl_swift_put,
     .get 		= dpl_swift_get
     /* .head 		= dpl_swift_head, */
     /* .deletef 		= dpl_swift_delete, */

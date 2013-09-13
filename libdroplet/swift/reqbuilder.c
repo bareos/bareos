@@ -116,7 +116,7 @@ dpl_swift_req_build(dpl_ctx_t *ctx,
     }
   else if (DPL_METHOD_PUT == req->method)
     {
-      if (body_strp != NULL)
+      if (body_strp != NULL && body_str != NULL)
 	{
 	  body_len = strlen(body_str);
 	  snprintf(buf, sizeof (buf), "%u", body_len);
