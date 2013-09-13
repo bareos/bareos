@@ -64,3 +64,10 @@ Console!Command (for bconsole commands)
 Restore (Restoring)
 Catalog (Bareos Catalog, Bareos Database)
 Problem (Troubleshooting)
+
+Using \index:
+\index[index]{first!second!third}
+
+There are 4 indexes: general, dir, sd, fd, console, monitor.
+The default is general. Maybe the other indexes will get integrated into general.
+It is possible to define a hierachie of index words, seperated by "!".
