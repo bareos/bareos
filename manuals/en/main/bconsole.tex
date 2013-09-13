@@ -1,20 +1,18 @@
-%%
-%%
 
-\chapter{Bacula Console}
+\chapter{Bareos Console}
 \label{_ConsoleChapter}
-\index[general]{Console!Bacula}
-\index[general]{Bacula Console}
-\index[general]{Console!Bacula}
-\index[general]{Bacula Console}
+\index[general]{Bareos Console}
+\index[general]{bconsole}
+\index[general]{Command!bconsole}
 
-The {\bf Bacula Console} (sometimes called the User Agent) is a program that
-allows the user or the System Administrator, to interact with the Bacula
+
+The {\bf Bareos Console} (\command{bconsole}) is a program that
+allows the user or the System Administrator, to interact with the Bareos
 Director daemon while the daemon is running.
 
-The current Bacula Console comes in two versions: a shell interface (TTY
-style), and a QT GUI interface (Bat). Both permit the administrator or
-authorized users to interact with Bacula. You can determine the status of a
+The current Bareos Console comes as a shell interface (TTY
+style). It permit the administrator or
+authorized users to interact with Bareos. You can determine the status of a
 particular job, examine the contents of the Catalog as well as perform certain
 tape manipulations with the Console program.
 
@@ -23,19 +21,16 @@ Console and Director programs do not necessarily need to run on the same
 machine.
 
 In fact, a certain minimal knowledge of the Console program is needed in order
-for Bacula to be able to write on more than one tape, because when Bacula
+for Bareos to be able to write on more than one tape, because when Bareos
 requests a new tape, it waits until the user, via the Console program,
 indicates that the new tape is mounted.
 
 \section{Console Configuration}
-\index[general]{Console Configuration}
 \index[general]{Configuration!Console}
-\index[general]{Console Configuration}
-\index[general]{Configuration!Console}
+\index[general]{Configuration!bconsole}
 
-When the Console starts, it reads a standard Bacula configuration file
-named {\bf bconsole.conf} or {\bf bat.conf} in the case of the Bat
-QT Console version from the current directory unless you specify the {\bf {-}c}
+When the Console starts, it reads a standard Bareos configuration file
+named {\bf bconsole.conf} unless you specify the {\bf {-}c}
 command line option (see below). This file allows default configuration
 of the Console, and at the current time, the only Resource Record defined
 is the Director resource, which gives the Console the name and address of
@@ -44,24 +39,22 @@ program, please see the \ilink{Console Configuration
 File}{ConsoleConfChapter} Chapter of this document.
 
 \section{Running the Console Program}
-\index[general]{Running the Console Program}
-\index[general]{Program!Running the Console}
-\index[general]{Running the Console Program}
-\index[general]{Program!Running the Console}
 
 The console program can be run with the following options:
-\footnotesize
-\begin{verbatim}
+
+\begin{commandOut}{bconsole command line options}{}{bconsole -?}
 Usage: bconsole [-s] [-c config_file] [-d debug_level]
+       -D <dir>    select a Director
+       -l          list Directors defined
        -c <file>   set configuration file to file
-       -dnn        set debug level to nn
+       -d <nn>     set debug level to <nn>
+       -dt         print timestamp in debug output
        -n          no conio
        -s          no signals
        -u <nn>     set command execution timeout to <nn> seconds
        -t          test - read configuration and exit
        -?          print this message.
-\end{verbatim}
-\normalsize
+\end{commandOut}
 
 
 After launching the Console program (bconsole), it will prompt you for the next
@@ -106,11 +99,8 @@ The maximum command line length is limited to 511 characters, so if you
 are scripting the console, you may need to take some care to limit the
 line length.
 
-\section{Stopping the Console Program}
-\index[general]{Program!Stopping the Console}
-\index[general]{Stopping the Console Program}
-\index[general]{Program!Stopping the Console}
-\index[general]{Stopping the Console Program}
+\section{Exit the Console Program}
+\index[general]{Command!bconsole!exit}
 
 Normally, you simply enter {\bf quit} or {\bf exit} and the Console program
 will terminate. However, it waits until the Director acknowledges the command.
@@ -127,12 +117,9 @@ the case of nested prompts). In a few places such as where it is asking for a
 Volume name, the period will be taken to be the Volume name. In that case, you
 will most likely be able to cancel at the next prompt.
 
-\label{keywords}
 \section{Alphabetic List of Console Keywords}
-\index[general]{Keywords!Alphabetic List of Console}
-\index[general]{Alphabetic List of Console Keywords}
-\index[general]{Keywords!Alphabetic List of Console}
-\index[general]{Alphabetic List of Console Keywords}
+\index[general]{Console!Keywords}
+
 Unless otherwise specified, each of the following keywords
 takes an argument, which is specified after the keyword following
 an equal sign. For example:
@@ -141,15 +128,11 @@ an equal sign. For example:
 jobid=536
 \end{verbatim}
 
-Please note, this list is incomplete as it is currently in
-the process of being created and is not currently totally in
-alphabetic
-order ...
+Please note, this list is incomplete.
+
+\TODO{create bconsole keywords automatically}
 
 \begin{description}
-\item [restart]
-  Permitted on the python command, and causes the Python
-  interpreter to be restarted. Takes no argument.
 \item [all]
   Permitted on the status and show commands to specify all components or
   resources respectively.
@@ -266,25 +249,21 @@ order ...
   Used in the restore command. Takes no argument.
 \end{description}
 
-\label{list}
 \section{Alphabetic List of Console Commands}
-\index[general]{Commands!Alphabetic List of Console}
-\index[general]{Alphabetic List of Console Commands}
-\index[general]{Commands!Alphabetic List of Console}
-\index[general]{Alphabetic List of Console Commands}
+\index[general]{Console!Commands}
 
 The following commands are currently implemented:
 
 \begin{description}
 \item [{add [pool={\textless}pool-name{\textgreater} storage={\textless}storage{\textgreater}
    jobid={\textless}JobId{\textgreater}]} ]
-   \index[general]{add}
+   \index[general]{Console!Command!add}
    This command is used to add Volumes to an existing Pool.  That is,
    it creates the Volume name in the catalog and inserts into the Pool
    in the catalog, but does not attempt to access the physical Volume.
    Once
-   added, Bacula expects that Volume to exist and to be labeled.
-   This command is not normally used since Bacula will
+   added, Bareos expects that Volume to exist and to be labeled.
+   This command is not normally used since Bareos will
    automatically do the equivalent when Volumes are labeled. However,
    there may be times when you have removed a Volume from the catalog
    and want to later add it back.
@@ -301,7 +280,7 @@ The following commands are currently implemented:
    below for the list of legal characters in a Volume name.
 
 \item [autodisplay on/off]
-   \index[general]{autodisplay on/off}
+   \index[general]{Console!Command!autodisplay on/off}
    This command accepts {\bf on} or {\bf off} as an argument, and turns
    auto-display of messages on or off respectively.  The default for the
    console program is {\bf off}, which means that you will be notified when
@@ -313,7 +292,7 @@ The following commands are currently implemented:
    on, the messages will be displayed on the console as they are received.
 
 \item [automount on/off]
-   \index[general]{automount on/off}
+   \index[general]{Console!Command!automount on/off}
    This command accepts {\bf on} or {\bf off} as the argument, and turns
    auto-mounting of the Volume after a {\bf label} command on or off
    respectively.  The default is {\bf on}.  If {\bf automount} is turned
@@ -321,7 +300,7 @@ The following commands are currently implemented:
    use it.
 
 \item [{cancel [jobid={\textless}number{\textgreater} job={\textless}job-name{\textgreater} ujobid={\textless}unique-jobid{\textgreater}]}]
-   \index[general]{cancel jobid}
+   \index[general]{Console!Command!cancel jobid}
    This command is used to cancel a job and accepts {\bf jobid=nnn} or {\bf
    job=xxx} as an argument where nnn is replaced by the JobId and xxx is
    replaced by the job name.  If you do not specify a keyword, the Console
@@ -338,7 +317,7 @@ The following commands are currently implemented:
 
 
 \item [{create [pool={\textless}pool-name{\textgreater}]}]
-   \index[general]{create pool}
+   \index[general]{Console!Command!create pool}
    This command is not normally used as the Pool records are automatically
    created by the Director when it starts based on what it finds in
    the conf file.  If needed, this command can be
@@ -353,14 +332,14 @@ The following commands are currently implemented:
    will most likely use the {\bf label} command to label one or more
    volumes and add their names to the Media database.
 
-   When starting a Job, if Bacula determines that there is no Pool record
+   When starting a Job, if Bareos determines that there is no Pool record
    in the database, but there is a Pool resource of the appropriate name,
    it will create it for you.  If you want the Pool record to appear in the
    database immediately, simply use this command to force it to be created.
 
 \item [{delete [volume={\textless}vol-name{\textgreater} pool={\textless}pool-name{\textgreater}  job
    jobid={\textless}id{\textgreater}]}]
-   \index[general]{delete}
+   \index[general]{Console!Command!delete}
    The delete command is used to delete a Volume, Pool or Job record from
    the Catalog as well as all associated catalog Volume records that were
    created.  This command operates only on the Catalog database and has no
@@ -402,26 +381,26 @@ delete Job JobId=n,m,o-r,t ...
    jobids.
 
 \item [disable job{\textless}job-name{\textgreater}]
-  \index[general]{disable}
+  \index[general]{Console!Command!disable}
   This command permits you to disable a Job for automatic scheduling.
   The job may have been previously enabled with the Job resource
   {\bf Enabled} directive or using the console {\bf enable} command.
   The next time the Director is restarted or the conf file is reloaded,
   the Enable/Disable state will be set to the value in the Job resource
-  (default enabled) as defined in the bacula-dir.conf file.
+  (default enabled) as defined in the bareos-dir.conf file.
 
 \item [enable job{\textless}job-name{\textgreater}]
-  \index[general]{enable}
+  \index[general]{Console!Command!enable}
   This command permits you to enable a Job for automatic scheduling.
   The job may have been previously disabled with the Job resource
   {\bf Enabled} directive or using the console {\bf disable} command.
   The next time the Director is restarted or the conf file is reloaded,
   the Enable/Disable state will be set to the value in the Job resource
-  (default enabled) as defined in the bacula-dir.conf file.
+  (default enabled) as defined in the bareos-dir.conf file.
 
 \label{estimate}
 \item [estimate]
-   \index[general]{estimate}
+   \index[general]{Console!Command!estimate}
    Using this command, you can get an idea how many files will be backed
    up, or if you are unsure about your Include statements in your FileSet,
    you can test them without doing an actual backup.  The default is to
@@ -470,30 +449,26 @@ As an example, you might do:
    wildly incorrect estimates of the actual storage used if there are
    sparse files on your systems. Sparse files are often found on 64 bit
    systems for certain system files. The size that is returned is the size
-   Bacula will backup if the sparse option is not specified in the FileSet.
+   Bareos will backup if the sparse option is not specified in the FileSet.
    There is currently no way to get an estimate of the real file size that
    would be found should the sparse option be enabled.
 
 \item [exit]
-   \index[general]{exit}
+   \index[general]{Console!Command!exit}
    This command terminates the console program.
 
-\item [gui]
-   \index[general]{gui}
-   Invoke the non-interactive gui mode.
-\begin{verbatim}
-gui [on|off]
-\end{verbatim}
+\item [gui on/off]
+   \index[general]{Console!Command!gui}
+    Invoke the non-interactive gui mode.
+    This command is only used when \command{bconsole} is commanded by an external program.
 
 \item [help]
-   \index[general]{help}
+   \index[general]{Console!Command!help}
    This command displays the list of commands available.
 
 \item [label]
-   \index[general]{label}
-   \index[general]{relabel}
-   \index[general]{label}
-   \index[general]{relabel}
+   \index[general]{Console!Command!label}
+   \index[general]{Console!Command!relabel}
    This command is used to label physical volumes.  The full form of this command
    is:
 
@@ -515,7 +490,7 @@ label storage=<storage-name> volume=<volume-name>
    This restriction is to ensure good readability of Volume names to reduce
    operator errors.
 
-   Please note, when labeling a blank tape, Bacula will get {\bf read I/O
+   Please note, when labeling a blank tape, Bareos will get {\bf read I/O
    error} when it attempts to ensure that the tape is not already labeled.  If
    you wish to avoid getting these messages, please write an EOF mark on
    your tape before attempting to label it:
@@ -524,7 +499,6 @@ label storage=<storage-name> volume=<volume-name>
 \begin{verbatim}
        mt rewind
        mt weof
-
 \end{verbatim}
 \normalsize
 
@@ -537,14 +511,14 @@ The label command can fail for a number of reasons:
    device, in which case you must {\bf unmount} the device, insert a blank
    tape, then do the {\bf label} command.
 
-\item The Volume in the device is already a Bacula labeled Volume.  (Bacula will
-   never relabel a Bacula labeled Volume unless it is recycled and you use the
+\item The Volume in the device is already a Bareos labeled Volume.  (Bareos will
+   never relabel a Bareos labeled Volume unless it is recycled and you use the
    {\bf relabel} command).
 
 \item There is no Volume in the drive.
 \end{enumerate}
 
-There are two ways to relabel a volume that already has a Bacula label. The
+There are two ways to relabel a volume that already has a Bareos label. The
 brute  force method is to write an end of file mark on the tape  using the
 system {\bf mt} program, something like the  following:
 
@@ -566,7 +540,7 @@ the {\bf relabel} command described  below.
 
 If your autochanger has barcode labels, you can label all the Volumes in
 your autochanger one after another by using the {\bf label barcodes}
-command.  For each tape in the changer containing a barcode, Bacula will
+command.  For each tape in the changer containing a barcode, Bareos will
 mount the tape and then label it with the same name as the barcode.  An
 appropriate Media record will also be created in the catalog.  Any barcode
 that begins with the same characters as specified on the
@@ -594,7 +568,7 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
 \normalsize
 
 \item [list]
-   \index[general]{list}
+   \index[general]{Console!Command!list}
    The list command lists the requested contents of the Catalog.  The
    various fields of each record are listed on a single line.  The various
    forms of the list command are:
@@ -690,11 +664,11 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
 \normalsize
 
    As mentioned above, the {\bf list} command lists what is in the
-   database.  Some things are put into the database immediately when Bacula
+   database.  Some things are put into the database immediately when Bareos
    starts up, but in general, most things are put in only when they are
    first used, which is the case for a Client as with Job records, etc.
 
-   Bacula should create a client record in the database the first time you
+   Bareos should create a client record in the database the first time you
    run a job for that client.  Doing a {\bf status} will not cause a
    database record to be created.  The client database record will be
    created whether or not the job fails, but it must at least start.  When
@@ -705,7 +679,7 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
    file, you use the Console command {\bf show clients}.
 
 \item [llist]
-   \index[general]{llist}
+   \index[general]{Console!Command!llist}
    The llist or "long list" command takes all the same arguments that the
    list command described above does.  The difference is that the llist
    command list the full contents of each database record selected.  It
@@ -754,23 +728,23 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
 \normalsize
 
 \item [messages]
-   \index[general]{messages}
+   \index[general]{Console!Command!messages}
    This command causes any pending  console messages to be immediately displayed.
 
 \item [memory]
-   \index[general]{memory}
+   \index[general]{Console!Command!memory}
    Print current memory usage.
 
 
 \item [mount]
-   \index[general]{mount}
-   The mount command is used to get Bacula to read a volume on a physical
-   device.  It is a way to tell Bacula that you have mounted a tape and
-   that Bacula should examine the tape.  This command is normally
-   used only after there was no Volume in a drive and Bacula requests you to mount a new
+   \index[general]{Console!Command!mount}
+   The mount command is used to get Bareos to read a volume on a physical
+   device.  It is a way to tell Bareos that you have mounted a tape and
+   that Bareos should examine the tape.  This command is normally
+   used only after there was no Volume in a drive and Bareos requests you to mount a new
    Volume or when you have specifically unmounted a Volume with the {\bf
-   unmount} console command, which causes Bacula to close the drive.  If
-   you have an autoloader, the mount command will not cause Bacula to
+   unmount} console command, which causes Bareos to close the drive.  If
+   you have an autoloader, the mount command will not cause Bareos to
    operate the autoloader unless you specify a {\bf slot} and possibly a
    {\bf drive}. The various forms of the mount command are:
 
@@ -780,13 +754,13 @@ mount  storage={\textless}storage-name{\textgreater} [ slot={\textless}num{\text
 mount [ jobid={\textless}id{\textgreater} |  job={\textless}job-name{\textgreater} ]
 
    If you have specified {\bf Automatic  Mount = yes} in the Storage daemon's
-   Device resource,  under most circumstances, Bacula will automatically access
+   Device resource,  under most circumstances, Bareos will automatically access
    the Volume unless you have explicitly {\bf unmount}ed it in  the Console
    program.
 
-\label{ManualPruning}
 \item [prune]
-   \index[general]{prune}
+   \index[general]{Console!Command!prune}
+   \label{ManualPruning}
    The Prune command allows you to safely remove expired database records from
    Jobs, Volumes and Statistics.  This command works only on the Catalog
    database and does not affect data written to Volumes.  In all cases, the
@@ -802,7 +776,7 @@ volume={\textless}volume-name{\textgreater}
    Append, otherwise the pruning will not take place.
 
 \item [purge]
-   \index[general]{purge}
+   \index[general]{Console!Command!purge}
    The Purge command will delete associated Catalog database records from
    Jobs and Volumes without considering the retention period.  {\bf Purge}
    works only on the Catalog database and does not affect data written to
@@ -823,7 +797,7 @@ For the {\bf purge} command to work on Volume Catalog database  records the
 The actual data written to the Volume will be unaffected by this command unless
 you are using the \texttt{ActionOnPurge=Truncate} option on those Media.
 
-To ask Bacula to truncate your \texttt{Purged} volumes, you need to use the
+To ask Bareos to truncate your \texttt{Purged} volumes, you need to use the
 following command in interactive mode or in a RunScript:
 \begin{verbatim}
 *purge volume action=truncate storage=File allpools
@@ -835,51 +809,13 @@ This is possible to specify the volume name, the media type, the pool, the
 storage, etc\dots (see \texttt{help purge}) Be sure that your storage device is
 idle when you decide to run this command.
 
-\item[python]
-   \index[general]{python}
-  The python command takes a single argument {\bf restart}:
-
-python restart
-
-   This causes the Python interpreter in the Director to be reinitialized.
-   This can be helpful for testing because once the Director starts and the
-   Python interpreter is initialized, there is no other way to make it
-   accept any changes to the startup script {\bf DirStartUp.py}.  For more
-   details on Python scripting, please see the \ilink{Python
-   Scripting}{PythonChapter} chapter of this manual.
-
 \item [query]
-   \index[general]{query}
+   \index[general]{Console!Command!query}
    This command reads a predefined SQL query from  the query file (the name and
    location of the  query file is defined with the QueryFile resource record in
    the Director's configuration file). You are prompted to select  a query from
    the file, and possibly enter one or more parameters,  then the command is
    submitted to the Catalog database SQL engine.
-
-The following queries are currently available (version 2.2.7):
-
-\footnotesize
-\begin{verbatim}
-Available queries:
-1: List up to 20 places where a File is saved regardless of the directory
-2: List where the most recent copies of a file are saved
-3: List last 20 Full Backups for a Client
-4: List all backups for a Client after a specified time
-5: List all backups for a Client
-6: List Volume Attributes for a selected Volume
-7: List Volumes used by selected JobId
-8: List Volumes to Restore All Files
-9: List Pool Attributes for a selected Pool
-10: List total files/bytes by Job
-11: List total files/bytes by Volume
-12: List Files for a selected JobId
-13: List Jobs stored on a selected MediaId
-14: List Jobs stored for a given Volume name
-15: List Volumes Bacula thinks are in changer
-16: List Volumes likely to need replacement from age or errors
-Choose a query (1-16):
-\end{verbatim}
-\normalsize
 
 \item [quit]
    \index[general]{quit}
@@ -890,13 +826,12 @@ Choose a query (1-16):
    command (i.e. quit preceded by a period).
 
 \item [relabel]
-   \index[general]{relabel}
-   \index[general]{relabel}
+   \index[general]{Console!Command!relabel}
    This command is used to label physical volumes.  The full form of this
    command is:
 
-relabel storage={\textless}storage-name{\textgreater} oldvolume={\textless}old-volume-name{\textgreater}
-    volume={\textless}newvolume-name{\textgreater}
+%\bcommand{relabel storage={\textless}storage-name{\textgreater} oldvolume={\textless}old-volume-name{\textgreater}
+%    volume={\textless}newvolume-name{\textgreater}}
 
    If you leave out any part, you will be prompted for it.  In order for
    the Volume (old-volume-name) to be relabeled, it must be in the catalog,
@@ -908,24 +843,24 @@ relabel storage={\textless}storage-name{\textgreater} oldvolume={\textless}old-v
    on the Volume is lost and cannot be recovered.
 
 \item [release]
-   \index[general]{release}
+   \index[general]{Console!Command!release}
    This command is used to cause the Storage daemon to rewind (release) the
    current tape in the drive, and to re-read the Volume label the next time
    the tape is used.
 
 release storage={\textless}storage-name{\textgreater}
 
-   After a release command, the device is still kept open by Bacula (unless
+   After a release command, the device is still kept open by Bareos (unless
    Always Open is set to No in the Storage Daemon's configuration) so it
    cannot be used by another program.  However, with some tape drives, the
    operator can remove the current tape and to insert a different one, and
-   when the next Job starts, Bacula will know to re-read the tape label to
+   when the next Job starts, Bareos will know to re-read the tape label to
    find out what tape is mounted.  If you want to be able to use the drive
    with another program (e.g.  {\bf mt}), you must use the {\bf unmount}
-   command to cause Bacula to completely release (close) the device.
+   command to cause Bareos to completely release (close) the device.
 
 \item [reload]
-  \index[general]{reload}
+  \index[general]{Console!Command!reload}
   The reload command causes the Director to re-read its configuration
   file and apply the new values. The new values will take effect
   immediately for all new jobs.  However, if you change schedules,
@@ -945,15 +880,17 @@ release storage={\textless}storage-name{\textgreater}
    While it is possible to reload the Director's configuration on the fly,
    even while jobs are executing, this is a complex operation and not
    without side effects.  Accordingly, if you have to reload the Director's
-   configuration while Bacula is running, it is advisable to restart the
+   configuration while Bareos is running, it is advisable to restart the
    Director at the next convenient opportunity.
 
-\label{restore_command}
 \item [restore]
-   \index[general]{restore}
+   \index[general]{Restore}
+   \index[general]{Console!Command!restore}
+   \index[general]{Console!File Selection}
+   \label{restore_command}
    The restore command allows you to select one or more Jobs (JobIds) to be
    restored using various methods.  Once the JobIds are selected, the File
-   records for those Jobs are placed in an internal Bacula directory tree,
+   records for those Jobs are placed in an internal Bareos directory tree,
    and the restore enters a file selection mode that allows you to
    interactively walk up and down the file tree selecting individual files
    to be restored.  This mode is somewhat similar to the standard Unix {\bf
@@ -978,14 +915,16 @@ restore storage={\textless}storage-name{\textgreater} client={\textless}backup-c
    if the restoreclient keyword is specified, then the restore is written
    to that client.
 
-   The restore job rarely needs to be specified, as bacula installations
+   The restore job rarely needs to be specified, as bareos installations
    commonly only have a single restore job configured. However, for certain
    cases, such as a varying list of RunScript specifications, multiple
    restore jobs may be configured. The restorejob argument allows the
    selection of one of these jobs.
 
+    For more details, see the \ilink{Restore chapter}{RestoreChapter}.
+
 \item [run]
-   \index[general]{run}
+   \index[general]{Console!Command!run}
    This command allows you to schedule jobs  to be run immediately. The full form
    of the command is:
 
@@ -1000,81 +939,25 @@ run job={\textless}job-name{\textgreater} client={\textless}client-name{\textgre
    specified {\bf yes}, in which case the job will be immediately sent to
    the scheduler.
 
-   On my system, when I enter a run command, I get the following  prompt:
+   If you wish to start a job at a later time, you can do so by setting  the When
+   time. Use the {\bf mod} option and select {\bf When} (no. 6).  Then enter the
+   desired start time in YYYY-MM-DD HH:MM:SS format.
 
-\footnotesize
-\begin{verbatim}
-A job name must be specified.
-The defined Job resources are:
-     1: Matou
-     2: Polymatou
-     3: Rufus
-     4: Minimatou
-     5: Minou
-     6: PmatouVerify
-     7: MatouVerify
-     8: RufusVerify
-     9: Watchdog
-Select Job resource (1-9):
-
-\end{verbatim}
-\normalsize
-
-If I then select number 5, I am prompted with:
-
-\footnotesize
-\begin{verbatim}
-Run Backup job
-JobName:  Minou
-FileSet:  Minou Full Set
-Level:    Incremental
-Client:   Minou
-Storage:  DLTDrive
-Pool:     Default
-When:     2003-04-23 17:08:18
-OK to run? (yes/mod/no):
-
-\end{verbatim}
-\normalsize
-
-If I now enter {\bf yes}, the Job will be run. If I enter {\bf mod},  I will
-be presented with the following prompt.
-
-\footnotesize
-\begin{verbatim}
-Parameters to modify:
-     1: Level
-     2: Storage
-     3: Job
-     4: FileSet
-     5: Client
-     6: When
-     7: Pool
-Select parameter to modify (1-7):
-
-\end{verbatim}
-\normalsize
-
-If you wish to start a job at a later time, you can do so by setting  the When
-time. Use the {\bf mod} option and select {\bf When} (no. 6).  Then enter the
-desired start time in YYYY-MM-DD HH:MM:SS format.
-
-The spooldata argument of the run command cannot be modified through the menu
-and is only accessible by setting its value on the intial command line. If
-no spooldata flag is set, the job, storage or schedule flag is used.
+   The spooldata argument of the run command cannot be modified through the menu
+   and is only accessible by setting its value on the intial command line. If
+   no spooldata flag is set, the job, storage or schedule flag is used.
 
 \item[setbandwidth]
-  \index[general]{setbandwidth}
+  \index[general]{Console!Command!setbandwidth}
   This command is used to limit the bandwidth of a running job or a client.
 
 setbandwidth limit=<nb> [ jobid=<id> | client=<cli> ]
 
 \item [setdebug]
-   \index[general]{setdebug}
-   \index[general]{setdebug}
-   \index[general]{debugging}
-   \index[general]{debugging Win32}
-   \index[general]{Windows!debugging}
+   \index[general]{Console!Command!setdebug}
+   \index[general]{Debug!setdebug}
+   \index[general]{Debug!Windows}
+   \index[general]{Windows!Debug}
    This command is used to set the debug level in each  daemon. The form of this
    command is:
 
@@ -1083,15 +966,15 @@ setdebug level=nn [trace=0/1 client={\textless}client-name{\textgreater} | dir |
 
    If trace=1 is set, then tracing will be enabled, and the daemon will be
    placed in trace mode, which means that all debug output as set by the
-   debug level will be directed to the file {\bf bacula.trace} in the
+   debug level will be directed to the file {\bf bareos.trace} in the
    current directory of the daemon.  Normally, tracing is needed only for
-   Win32 clients where the debug output cannot be written to a terminal or
+   Windows clients where the debug output cannot be written to a terminal or
    redirected to a file.  When tracing, each debug output message is
    appended to the trace file.  You must explicitly delete the file when
    you are done.
 
 \item [setip]
-   \index[general]{setip}
+   \index[general]{Console!Command!setip}
    Sets new client address -- if authorized.
 
    A console is authorized to use the {\bf SetIP} command only if it has a
@@ -1106,10 +989,9 @@ setdebug level=nn [trace=0/1 client={\textless}client-name{\textgreater} | dir |
 
 
 \item [show]
-   \index[general]{show}
-   \index[general]{show}
+   \index[general]{Console!Command!show}
    The show command will list the Director's resource records as defined in
-   the Director's configuration file (normally {\bf bacula-dir.conf}).
+   the Director's configuration file (normally {\bf bareos-dir.conf}).
    This command is used mainly for debugging purposes by developers.
    The following keywords are accepted on the
    show command line: catalogs, clients, counters, devices, directors,
@@ -1118,7 +1000,7 @@ setdebug level=nn [trace=0/1 client={\textless}client-name{\textgreater} | dir |
    with the {\bf list}, which displays the contents of the catalog.
 
 \item [sqlquery]
-   \index[general]{sqlquery}
+   \index[general]{Console!Command!sqlquery}
    The sqlquery command puts the Console program into SQL query mode where
    each line you enter is concatenated to the previous line until a
    semicolon (;) is seen.  The semicolon terminates the command, which is
@@ -1138,7 +1020,7 @@ setdebug level=nn [trace=0/1 client={\textless}client-name{\textgreater} | dir |
    SQLite documentation.
 
 \item [status]
-   \index[general]{status}
+   \index[general]{Console!Command!status}
 
    This command will display the status of all components. For the director, it
    will display the next jobs that are scheduled during the next 24 hours as
@@ -1266,23 +1148,23 @@ Now, here it should be clear that if a job were running that wanted
 to use the Autochanger (with two devices), it would block because
 the user unmounted the device. The real problem for the Job I started
 using the "File" device is that the device is blocked waiting for
-media -- that is Bacula needs you to label a Volume.
+media -- that is Bareos needs you to label a Volume.
 
 \item [time]
-   \index[general]{time}
+   \index[general]{Console!Command!time}
    Prints the current time.
 
 \item [trace]
-   \index[general]{trace}
+   \index[general]{Console!Command!trace}
    Turn on/off trace to file.
 
 \item [umount]
-   \index[general]{umount}
-   For old-time Unix guys.  See the unmount command for full details.
+   \index[general]{Console!Command!umount}
+   Alias for \bcommand{unmount}.
 
 \item [unmount]
-   \index[general]{unmount}
-   This command causes the indicated Bacula Storage  daemon to unmount the
+   \index[general]{Console!Command!unmount}
+   This command causes the indicated Bareos Storage  daemon to unmount the
    specified device. The forms of the command  are the same as the mount command:
 \footnotesize
 \begin{verbatim}
@@ -1292,8 +1174,8 @@ unmount [ jobid=<id> | job=<job-name> ]
 \end{verbatim}
 \normalsize
 
-   Once you unmount a storage device, Bacula will no longer be able to use
-   it until you issue a mount command for that device. If Bacula needs to
+   Once you unmount a storage device, Bareos will no longer be able to use
+   it until you issue a mount command for that device. If Bareos needs to
    access that device, it will block and issue mount requests periodically
    to the operator.
 
@@ -1301,9 +1183,9 @@ unmount [ jobid=<id> | job=<job-name> ]
    the drive you have specified on the command line. If no drive is
    specified, it will assume drive 1.
 
-\label{UpdateCommand}
 \item [update]
-   \index[general]{update}
+   \index[general]{Console!Command!update}
+   \label{UpdateCommand}
    This command will update the catalog for either a specific Pool record, a Volume
    record, or the Slots in an  autochanger with barcode capability. In the case
    of updating a  Pool record, the new information will be automatically taken
@@ -1321,7 +1203,6 @@ wish to change.  The following Volume parameters may be changed:
 
 \footnotesize
 \begin{verbatim}
-
    Volume Status
    Volume Retention Period
    Volume Use Duration
@@ -1337,11 +1218,10 @@ wish to change.  The following Volume parameters may be changed:
    Volume from Pool
    All Volumes from Pool
    All Volumes from all Pools
-
 \end{verbatim}
 \normalsize
 
-   For slots {\bf update slots}, Bacula will obtain a list of slots and
+   For slots {\bf update slots}, Bareos will obtain a list of slots and
    their barcodes from the Storage daemon, and for each barcode found, it
    will automatically update the slot in the catalog Media record to
    correspond to the new value.  This is very useful if you have moved
@@ -1350,21 +1230,21 @@ wish to change.  The following Volume parameters may be changed:
    InChanger flag for that Volume will also be set, and any other Volumes
    in the Pool that were last mounted on the same Storage device
    will have their InChanger flag turned off.  This permits
-   Bacula to know what magazine (tape holder) is currently in the
+   Bareos to know what magazine (tape holder) is currently in the
    autochanger.
 
-   If you do not have barcodes, you can accomplish the same thing in
-   version 1.33 and later by using the {\bf update slots scan} command.
-   The {\bf scan} keyword tells Bacula to physically mount each tape and to
+   If you do not have barcodes, you can accomplish the same thing
+   by using the {\bf update slots scan} command.
+   The {\bf scan} keyword tells Bareos to physically mount each tape and to
    read its VolumeName.
 
-   For Pool {\bf update pool}, Bacula will move the Volume record from its
+   For Pool {\bf update pool}, Bareos will move the Volume record from its
    existing pool to the pool specified.
 
    For {\bf Volume from Pool}, {\bf All Volumes from Pool} and {\bf All Volumes
      from all Pools}, the following values are updated from the Pool record:
    Recycle, RecyclePool, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles,
-   and MaxVolBytes.  (RecyclePool feature is available with bacula 2.1.4 or
+   and MaxVolBytes.  (RecyclePool feature is available with bareos 2.1.4 or
    higher.)
 
    The full form of the update command with all command line arguments is:
@@ -1379,7 +1259,7 @@ wish to change.  The following Volume parameters may be changed:
 \normalsize
 
 \item [use]
-   \index[general]{use}
+   \index[general]{Console!Command!use}
    This command allows you to specify which Catalog  database to use. Normally,
 you will be using only one database so  this will be done automatically. In
 the case that you are using  more than one database, you can use this command
@@ -1394,7 +1274,7 @@ to switch from  one to another.
 
 \item [var]
    \label{var}
-   \index[general]{var name}
+   \index[general]{Console!Command!var name}
    This command takes a string or quoted string and  does variable expansion on
    it the same way variable expansion  is done on the {\bf LabelFormat} string.
    Thus, for the  most part, you can test your LabelFormat strings. The
@@ -1404,11 +1284,11 @@ to switch from  one to another.
    good idea of what is going to happen  in the real case.
 
 \item [version]
-   \index[general]{version}
+   \index[general]{Console!Command!version}
    The command prints the Director's version.
 
 \item [wait]
-   \index[general]{wait}
+   \index[general]{Console!Command!wait}
    The wait command causes the Director to pause  until there are no jobs
    running. This command is useful in  a batch situation such as regression
    testing where you  wish to start a job and wait until that job completes
@@ -1423,15 +1303,16 @@ to switch from  one to another.
 
 \end{description}
 
+\section{Special dot (.) Commands}
 \label{dotcommands}
-\section{Special dot Commands}
-\index[general]{Commands!Special dot}
-\index[general]{Special dot Commands}
+\index[general]{Console!Command!Special .}
+\index[general]{Console!Command!. Commands}
+
 
 There is a list of commands that are prefixed with a period (.). These
 commands are intended to be used either by batch programs or graphical user
-interface front-ends. They are not normally used by interactive users. Once
-GUI development begins, this list will be considerably expanded. The following
+interface front-ends. They are not normally used by interactive users.
+The following
 is the list of dot commands:
 
 \footnotesize
@@ -1457,27 +1338,25 @@ is the list of dot commands:
 \end{verbatim}
 \normalsize
 
-\label{atcommands}
 
 \section{Special At (@) Commands}
-\index[general]{Commands!Special At @}
-\index[general]{Special At (@) Commands}
+\label{atcommands}
 
 Normally, all commands entered to the Console program are immediately
 forwarded to the Director, which may be on another machine, to be executed.
 However, there is a small list of {\bf at} commands, all beginning with an at
 character (@), that will not be sent to the Director, but rather interpreted
 by the Console program directly. Note, these commands are implemented only in
-the tty console program and not in the Bat Console. These commands are:
+the TTY console program and not in the Bat Console. These commands are:
 
 \begin{description}
 
 \item [@input {\textless}filename{\textgreater}]
-   \index[general]{@input {\textless}filename{\textgreater}}
+   \index[general]{Console!Command!\at{}input {\textless}filename{\textgreater}}
    Read and execute the commands  contained in the file specified.
 
 \item [@output {\textless}filename{\textgreater} w/a]
-   \index[general]{@output {\textless}filename{\textgreater} w/a}
+   \index[general]{Console!Command!\at{}output {\textless}filename{\textgreater} w/a}
    Send all following output to the  filename specified either overwriting the
 file (w) or appending to  the file (a). To redirect the output to the
 terminal, simply enter  {\bf @output} without a filename specification.
@@ -1494,40 +1373,40 @@ regression  test might be:
 \normalsize
 
 \item [@tee {\textless}filename{\textgreater} w/a]
-   \index[general]{@tee {\textless}filename{\textgreater} w/a}
+   \index[general]{Console!Command!\at{}tee {\textless}filename{\textgreater} w/a}
    Send all subsequent output to  both the specified file and the terminal. It is
    turned off by  specifying {\bf @tee} or {\bf @output} without a filename.
 
 \item [@sleep {\textless}seconds{\textgreater}]
-   \index[general]{@sleep {\textless}seconds{\textgreater}}
+   \index[general]{Console!Command!\at{}sleep {\textless}seconds{\textgreater}}
    Sleep the specified number of seconds.
 
 \item [@time]
-   \index[general]{@time}
+   \index[general]{Console!Command!\at{}time}
    Print the current time and date.
 
 \item [@version]
-   \index[general]{@version}
+   \index[general]{Console!Command!\at{}version}
    Print the console's version.
 
 \item [@quit]
-   \index[general]{@quit}
+   \index[general]{Console!Command!\at{}quit}
    quit
 
 \item [@exit]
-   \index[general]{@exit}
+   \index[general]{Console!Command!\at{}exit}
    quit
 
 \item [@\# anything]
-   \index[general]{anything}
+   \index[general]{Console!Command!\at{}\# anything}
    Comment
 
 \item [@help]
-   \index[general]{@help}
+   \index[general]{Console!Command!\at{}help}
    Get the list of every special @ commands.
 
 \item [@separator {\textless}char{\textgreater}]
-\index[general]{@separator}
+\index[general]{Console!Command!\at{}separator}
   When using bconsole with readline, you can set the command separator to one
   of those characters to write commands who require multiple input on one line,
   or to put multiple commands on a single line.
@@ -1541,10 +1420,9 @@ regression  test might be:
 
 \end{description}
 
-\label{scripting}
 \section{Running the Console from a Shell Script}
-\index[general]{Script!Running the Console Program from a Shell}
-\index[general]{Running the Console Program from a Shell Script}
+\index[general]{Console!Running from a Shell}
+\label{scripting}
 
 You can automate many Console tasks by running the console program from a
 shell script. For example, if you have created a file containing the following
@@ -1552,7 +1430,7 @@ commands:
 
 \footnotesize
 \begin{verbatim}
- ./bconsole -c ./bconsole.conf <<END_OF_DATA
+ bconsole -c ./bconsole.conf <<END_OF_DATA
  unmount storage=DDS-4
  quit
  END_OF_DATA
@@ -1568,19 +1446,19 @@ contains the commands as follows:
 
 \footnotesize
 \begin{verbatim}
-./bconsole -c ./bconsole.conf <filename
+bconsole -c ./bconsole.conf <filename
 \end{verbatim}
 \normalsize
 
 where the file named {\bf filename} contains any set of console commands.
 
-As a real example, the following script is part of the Bacula regression
+As a real example, the following script is part of the Bareos regression
 tests. It labels a volume (a disk volume), runs a backup, then does a restore
 of the files saved.
 
 \footnotesize
 \begin{verbatim}
-bin/bconsole -c bin/bconsole.conf <<END_OF_DATA
+bconsole <<END_OF_DATA
 @output /dev/null
 messages
 @output /tmp/log1.out
@@ -1616,15 +1494,14 @@ restorestat=$?
 \normalsize
 
 \section{Adding Volumes to a Pool}
-\index[general]{Adding Volumes to a Pool}
-\index[general]{Pool!Adding Volumes to a}
+\index[general]{Console!Adding a Volume to a Pool}
 
 If you have used the {\bf label} command to label a Volume, it will be
 automatically added to the Pool, and you will not need to add any media to the
 pool.
 
 Alternatively, you may choose to add a number of Volumes to the pool without
-labeling them. At a later time when the Volume is requested by {\bf Bacula}
+labeling them. At a later time when the Volume is requested by {\bf Bareos}
 you will need to label it.
 
 Before adding a volume, you must know the following information:

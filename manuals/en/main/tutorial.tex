@@ -890,8 +890,9 @@ different Pool, or a different schedule. It is up to you to customize.
 
 \section{When The Tape Fills}
 \label{FullTape}
-\index[general]{Fills!When The Tape}
+\index[general]{Tape!Full}
 \index[general]{When The Tape Fills}
+\index[general]{Problem!Tape Full}
 
 If you have scheduled your job, typically nightly, there will come a time when
 the tape fills up and {\bf Bareos} cannot continue. In this case, Bareos will
@@ -1006,60 +1007,60 @@ To manually relabel the Volume use the following additional steps:
 \begin{description}
 
 \item [status dir]
-   \index[console]{status dir}
+   \index[general]{Console!Command!status dir}
    Print a status of all running jobs and jobs  scheduled in the next 24 hours.
 
 \item [status]
-   \index[console]{status}
+   \index[general]{Console!Command!status}
    The console program will prompt you to select  a daemon type, then will
 request the daemon's status.
 
 \item [status jobid=nn]
-   \index[console]{status jobid}
+   \index[general]{Console!Command!status jobid}
    Print a status of JobId nn if it is running.  The Storage daemon is contacted
 and requested to print a current  status of the job as well.
 
 \item [list pools]
-   \index[console]{list pools}
+   \index[general]{Console!Command!list pools}
    List the pools defined in the Catalog (normally  only Default is used).
 
 \item [list media]
-   \index[console]{list media}
+   \index[general]{Console!Command!list media}
    Lists all the media defined in the Catalog.
 
 \item [list jobs]
-   \index[console]{list jobs}
+   \index[general]{Console!Command!list jobs}
    Lists all jobs in the Catalog that have run.
 
 \item [list jobid=nn]
-   \index[console]{list jobid}
+   \index[general]{Console!Command!list jobid}
    Lists JobId nn from the Catalog.
 
 \item [list jobtotals]
-   \index[console]{list jobtotals}
+   \index[general]{Console!Command!list jobtotals}
    Lists totals for all jobs in the Catalog.
 
 \item [list files jobid=nn]
-   \index[console]{list files jobid}
+   \index[general]{Console!Command!list files jobid}
    List the files that were saved for JobId nn.
 
 \item [list jobmedia]
-   \index[console]{list jobmedia}
+   \index[general]{Console!Command!list jobmedia}
    List the media information for each Job run.
 
 \item [messages]
-   \index[console]{messages}
+   \index[general]{Console!Command!messages}
    Prints any messages that have been directed to the console.
 
 \item [unmount storage=storage-name]
-   \index[console]{unmount storage}
+   \index[general]{Console!Command!unmount storage}
    Unmounts the drive associated with the storage  device with the name {\bf
 storage-name} if the drive is not currently being  used. This command is used
 if you wish Bareos to free the drive so  that you can use it to label a tape.
 
 
 \item [mount storage=storage-name]
-   \index[sd]{mount storage}
+   \index[general]{Console!Command!mount storage}
    Causes the drive associated with the  storage device to be mounted again. When
 Bareos reaches the end of a volume and requests you to mount a  new volume,
 you must issue this command after you have placed the  new volume in the
@@ -1067,7 +1068,7 @@ drive. In effect, it is the signal needed by  Bareos to know to start reading
 or writing the new volume.
 
 \item [quit]
-   \index[sd]{quit}
+   \index[general]{Console!Command!quit}
    Exit or quit the console program.
 \end{description}
 
@@ -1076,8 +1077,8 @@ prompt you for the necessary arguments if you simply enter the command name.
 
 
 % \section{Debug Daemon Output}
-% \index[general]{Debug Daemon Output}
-% \index[general]{Output!Debug Daemon}
+% \index[general]{Debug!Daemon}
+% \index[general]{Daemon!Debug}
 %
 % %\TODO{needs to be adapted}
 %
@@ -1134,8 +1135,7 @@ consequence, you are again urged to have patience when inserting blank tapes.
 Let the device settle down before attempting to access it.
 
 \section{Difficulties Connecting from the FD to the SD}
-\index[general]{Difficulties Connecting from the FD to the SD}
-\index[general]{SD!Difficulties Connecting from the FD to the SD}
+\index[general]{Problem!Connecting from the FD to the SD}
 
 If you are having difficulties getting one or more of your File daemons to
 connect to the Storage daemon, it is most likely because you have not used a
@@ -1157,8 +1157,8 @@ daemon's machine can determine who is using the 9103 port (used for FD to SD
 communications in Bareos).
 
 \section{Daemon Command Line Options}
-\index[general]{Daemon Command Line Options}
-\index[general]{Options!Daemon Command Line}
+\index[general]{Daemon!Command Line Options}
+\index[general]{Command Line Options!Daemon}
 
 Each of the three daemons (Director, File, Storage) accepts a small set of
 options on the command line. In general, each of the daemons as well as the
@@ -1167,14 +1167,12 @@ Console program accepts the following options:
 \begin{description}
 
 \item [-c {\textless}file{\textgreater}]
-   \index[sd]{-c {\textless}file{\textgreater} }
    Define the file to use as a  configuration file. The default is the daemon
    name followed  by {\bf .conf} i.e. {\bf bareos-dir.conf} for the Director,
    {\bf bareos-fd.conf} for the File daemon, and {\bf bareos-sd}  for the Storage
    daemon.
 
 \item [-d nn]
-   \index[sd]{-d nn}
    Set the debug level to {\bf nn}. Higher levels  of debug cause more
    information to be displayed on STDOUT concerning  what the daemon is doing.
 
@@ -1265,11 +1263,11 @@ modify many of the values in the Pool record.
 \end{verbatim}
 \normalsize
 
-\label{Labeling}
 
 \section{Labeling Your Volumes}
-\index[general]{Volumes!Labeling Your}
+\index[general]{Volume!Label}
 \index[general]{Labeling Your Volumes}
+\label{Labeling}
 
 Bareos requires that each Volume contains a software label. There are several
 strategies for labeling volumes. The one I use is to label them as they are
@@ -1295,14 +1293,14 @@ below for the details of using the {\bf label} command.
 
 \section{Labeling Volumes with the Console Program}
 \index[general]{Labeling Volumes with the Console Program}
-\index[general]{Program!Labeling Volumes with the Console}
+\index[general]{Console!Command!label}
 
 Labeling volumes is normally done by using the console program.
 
 \begin{enumerate}
 \item bconsole
 \item label
-   \end{enumerate}
+\end{enumerate}
 
 If Bareos complains that you cannot label the tape because it is already
 labeled, simply {\bf unmount} the tape using the {\bf unmount} command in the

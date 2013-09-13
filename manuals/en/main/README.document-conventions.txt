@@ -57,13 +57,18 @@ rules for using index:
 
 index keywords (instead of ...)
 
-Windows (Win32)
-Configuration (configure)
-Command (for executabel commands)
-Console!Command (for bconsole commands)
-Restore (Restoring)
-Catalog (Bareos Catalog, Bareos Database)
-Problem (Troubleshooting)
+Catalog              (Bareos Catalog, Bareos Database)
+Configuration        (configure)
+Command              (for executabel commands)
+Console!Command      (for bconsole commands)
+Console!Restore      (for bconsole restore commands)
+Debug
+Problem              (Troubleshooting)
+Restore              (Restoring)
+Support
+Tape
+Windows              (Win32)
+
 
 Using \index:
 \index[index]{first!second!third}

@@ -39,6 +39,10 @@
 }
 %%
 \newcommand{\dq}{\verb+"+}
+\newcommand{\at}{\makeatletter @\makeatother}
+\newcommand{\lt}{\textless}
+\newcommand{\gt}{\textgreater}
+
 %%
 % TODO: path removes spaces from argument! This is a problem that needs to get fixed, esspecially for the windwos section
 \newcommand{\command}[1]{\path|#1|}
@@ -147,7 +151,7 @@
     \snugshade
     \verbatim
 % root@linux:~# #3
-root@linux:\~{}\# #3 ...
+root@linux:\~{}\# #3
 }
 {
     \endverbatim
