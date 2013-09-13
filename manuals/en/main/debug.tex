@@ -73,7 +73,7 @@ mail} program or its path, or change your email address. The key line in the
 
 \footnotesize
 \begin{verbatim}
-gdb -quiet -batch -x /home/kern/bareos/bin/btraceback.gdb \
+gdb -quiet -batch -x /home/user/bareos/bin/btraceback.gdb \
      $1 $2 2>\&1 | bsmtp -s "Bareos traceback" your-address@xxx.com
 \end{verbatim}
 \normalsize
@@ -93,15 +93,15 @@ Unfortunately, the output had to be split to fit on this page:
 
 \footnotesize
 \begin{verbatim}
-[kern@rufus kern]$ ps fax --columns 132 | grep bareos-dir
- 2103 ?        S      0:00 /home/kern/bareos/k/src/dird/bareos-dir -c
-                                       /home/kern/bareos/k/src/dird/dird.conf
- 2104 ?        S      0:00  \_ /home/kern/bareos/k/src/dird/bareos-dir -c
-                                       /home/kern/bareos/k/src/dird/dird.conf
- 2106 ?        S      0:00      \_ /home/kern/bareos/k/src/dird/bareos-dir -c
-                                       /home/kern/bareos/k/src/dird/dird.conf
- 2105 ?        S      0:00      \_ /home/kern/bareos/k/src/dird/bareos-dir -c
-                                       /home/kern/bareos/k/src/dird/dird.conf
+[user@host]$ ps fax --columns 132 | grep bareos-dir
+ 2103 ?        S      0:00 /home/user/bareos/src/dird/bareos-dir -c
+                                       /home/user/bareos/src/dird/dird.conf
+ 2104 ?        S      0:00  \_ /home/user/bareos/src/dird/bareos-dir -c
+                                       /home/user/bareos/src/dird/dird.conf
+ 2106 ?        S      0:00      \_ /home/user/bareos/src/dird/bareos-dir -c
+                                       /home/user/bareos/src/dird/dird.conf
+ 2105 ?        S      0:00      \_ /home/user/bareos/src/dird/bareos-dir -c
+                                       /home/user/bareos/src/dird/dird.conf
 \end{verbatim}
 \normalsize
 
@@ -111,7 +111,7 @@ it is:
 
 \footnotesize
 \begin{verbatim}
-./btraceback /home/kern/bareos/k/src/dird 2103
+./btraceback /home/user/bareos/src/dird 2103
 \end{verbatim}
 \normalsize
 

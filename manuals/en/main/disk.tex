@@ -386,12 +386,12 @@ Job {
 FileSet {
   Name = "Example FileSet"
   Include {
-        Options {
-        compression=GZIP
-        signature=SHA1
-                }
-    File = /home/kern/bareos/bin
-          }
+    Options {
+      compression=GZIP
+      signature=SHA1
+    }
+    File = /home/user/bareos/bin
+  }
 }
 
 Client {
@@ -652,12 +652,12 @@ Schedule {
 FileSet {
   Name = "Example FileSet"
   Include {
-	Options {
-	compression=GZIP
-	signature=SHA1
-		}
-    File = /home/kern/bareos/bin
-	  }
+    Options {
+      compression=GZIP
+      signature=SHA1
+    }
+    File = /home/user/bareos/bin
+  }
 }
 Job {
   Name = "Backup-client1"

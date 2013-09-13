@@ -94,7 +94,7 @@ will probably accomplish the same thing.
 
    where you replace {\bf mysql-directory} with the directory  name where you
    want to install mysql. Normally for system  wide use this is /usr/local/mysql.
-   In my case, I use  \~{}kern/mysql.
+   In my case, I use  \~{}user/mysql.
 
 \item make
 
@@ -234,7 +234,7 @@ device name for your machine.
 After configuring Bareos with
 
 ./configure \verb:--:enable-thread-safe-client \verb:--:prefix={\textless}mysql-directory{\textgreater}
-where {\textless}mysql-directory{\textgreater} is in my case {\bf /home/kern/mysql}, you may
+where {\textless}mysql-directory{\textgreater} is in my case {\bf /home/user/mysql}, you may
 have to configure the loader so that it can find the MySQL shared libraries.
 If you have previously followed this procedure and later add the {\bf
 \verb:--:enable-thread-safe-client} options, you will need to rerun the {\bf
@@ -246,7 +246,7 @@ operating systems, please consult your manuals on how to do the same thing:
 First edit: {\bf /etc/ld.so.conf} and add a new line to the end of the file
 with the name of the mysql-directory. In my case, it is:
 
-/home/kern/mysql/lib/mysql then rebuild the loader's cache with:
+/home/user/mysql/lib/mysql then rebuild the loader's cache with:
 
 /sbin/ldconfig If you upgrade to a new version of {\bf MySQL}, the shared
 library names will probably change, and you must re-run the {\bf
@@ -256,7 +256,7 @@ Alternatively, your system my have a loader environment variable that can be
 set. For example, on a Solaris system where I do not have root permission, I
 use:
 
-LD\_LIBRARY\_PATH=/home/kern/mysql/lib/mysql
+LD\_LIBRARY\_PATH=/home/user/mysql/lib/mysql
 
 Finally, if you have encryption enabled in MySQL, you may need to add {\bf
 -lssl -lcrypto} to the link. In that case, you can either export the
