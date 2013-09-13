@@ -1,33 +1,33 @@
 %%
 %%
 
-\chapter{What To Do When Bacula Crashes (Kaboom)}
+\chapter{What To Do When Bareos Crashes (Kaboom)}
 \label{KaboomChapter}
-\index[general]{Kaboom!What To Do When Bacula Crashes }
-\index[general]{What To Do When Bacula Crashes (Kaboom) }
+\index[general]{Kaboom!What To Do When Bareos Crashes }
+\index[general]{What To Do When Bareos Crashes (Kaboom) }
 
 If you are running on a Linux system, and you have a set of working
-configuration files, it is very unlikely that {\bf Bacula} will crash. As with
+configuration files, it is very unlikely that {\bf Bareos} will crash. As with
 all software, however, it is inevitable that someday, it may crash,
 particularly if you are running on another operating system or using a new or
 unusual feature.
 
-This chapter explains what you should do if one of the three {\bf Bacula}
+This chapter explains what you should do if one of the three {\bf Bareos}
 daemons (Director, File, Storage) crashes.  When we speak of crashing, we
 mean that the daemon terminates abnormally because of an error.  There are
-many cases where Bacula detects errors (such as PIPE errors) and will fail
+many cases where Bareos detects errors (such as PIPE errors) and will fail
 a job. These are not considered crashes.  In addition, under certain
-conditions, Bacula will detect a fatal in the configuration, such as
+conditions, Bareos will detect a fatal in the configuration, such as
 lack of permission to read/write the working directory. In that case,
-Bacula will force itself to crash with a SEGFAULT. However, before
-crashing, Bacula will normally display a message indicating why.
+Bareos will force itself to crash with a SEGFAULT. However, before
+crashing, Bareos will normally display a message indicating why.
 For more details, please read on.
 
 
 \section{Traceback}
 \index[general]{Traceback}
 
-Each of the three Bacula daemons has a built-in exception handler which, in
+Each of the three Bareos daemons has a built-in exception handler which, in
 case of an error, will attempt to produce a traceback. If successful the
 traceback will be emailed to you.
 
@@ -35,20 +35,20 @@ For this to work, you need to ensure that a few things are setup correctly on
 your system:
 
 \begin{enumerate}
-\item You must have a version of Bacula built with debug information turned
+\item You must have a version of Bareos built with debug information turned
    on and not stripped of debugging symbols.
 
 \item You must have an installed copy of {\bf gdb} (the GNU debugger),  and it
-   must be on {\bf Bacula's} path. On some systems such as Solaris, {\bf
+   must be on {\bf Bareos's} path. On some systems such as Solaris, {\bf
    gdb} may be replaced by {\bf dbx}.
 
-\item The Bacula installed script file {\bf btraceback} must  be in the same
+\item The Bareos installed script file {\bf btraceback} must  be in the same
    directory as the daemon which dies, and it must  be marked as executable.
 
 \item The script file {\bf btraceback.gdb} must  have the correct  path to it
    specified in the {\bf btraceback} file.
 
-\item You must have a {\bf mail} program which is on {\bf Bacula's}  path.
+\item You must have a {\bf mail} program which is on {\bf Bareos's}  path.
    By default, this {\bf mail} program is set to {\bf bsmtp}, so it must
    be correctly configured.
 
@@ -56,7 +56,7 @@ your system:
    userid, you will most likely need to modify the {\bf btraceback} file
    to do something like {\bf sudo} (raise to root priority) for the
    call to {\bf gdb} so that it has the proper permissions to debug
-   Bacula.
+   Bareos.
 \end{enumerate}
 
 If all the above conditions are met, the daemon that crashes will produce a
@@ -73,8 +73,8 @@ mail} program or its path, or change your email address. The key line in the
 
 \footnotesize
 \begin{verbatim}
-gdb -quiet -batch -x /home/kern/bacula/bin/btraceback.gdb \
-     $1 $2 2>\&1 | bsmtp -s "Bacula traceback" your-address@xxx.com
+gdb -quiet -batch -x /home/kern/bareos/bin/btraceback.gdb \
+     $1 $2 2>\&1 | bsmtp -s "Bareos traceback" your-address@xxx.com
 \end{verbatim}
 \normalsize
 
@@ -85,7 +85,7 @@ sufficient if you are running more than one daemon on a machine.
 \index[general]{Traceback!Testing The }
 \index[general]{Testing The Traceback }
 
-To "manually" test the traceback feature, you simply start {\bf Bacula} then
+To "manually" test the traceback feature, you simply start {\bf Bareos} then
 obtain the {\bf PID} of the main daemon thread (there are multiple threads).
 The output produced here will look different depending on what OS and what
 version of the kernel you are running.
@@ -93,30 +93,30 @@ Unfortunately, the output had to be split to fit on this page:
 
 \footnotesize
 \begin{verbatim}
-[kern@rufus kern]$ ps fax --columns 132 | grep bacula-dir
- 2103 ?        S      0:00 /home/kern/bacula/k/src/dird/bacula-dir -c
-                                       /home/kern/bacula/k/src/dird/dird.conf
- 2104 ?        S      0:00  \_ /home/kern/bacula/k/src/dird/bacula-dir -c
-                                       /home/kern/bacula/k/src/dird/dird.conf
- 2106 ?        S      0:00      \_ /home/kern/bacula/k/src/dird/bacula-dir -c
-                                       /home/kern/bacula/k/src/dird/dird.conf
- 2105 ?        S      0:00      \_ /home/kern/bacula/k/src/dird/bacula-dir -c
-                                       /home/kern/bacula/k/src/dird/dird.conf
+[kern@rufus kern]$ ps fax --columns 132 | grep bareos-dir
+ 2103 ?        S      0:00 /home/kern/bareos/k/src/dird/bareos-dir -c
+                                       /home/kern/bareos/k/src/dird/dird.conf
+ 2104 ?        S      0:00  \_ /home/kern/bareos/k/src/dird/bareos-dir -c
+                                       /home/kern/bareos/k/src/dird/dird.conf
+ 2106 ?        S      0:00      \_ /home/kern/bareos/k/src/dird/bareos-dir -c
+                                       /home/kern/bareos/k/src/dird/dird.conf
+ 2105 ?        S      0:00      \_ /home/kern/bareos/k/src/dird/bareos-dir -c
+                                       /home/kern/bareos/k/src/dird/dird.conf
 \end{verbatim}
 \normalsize
 
-which in this case is 2103. Then while Bacula is running, you call the program
-giving it the path to the Bacula executable and the {\bf PID}. In this case,
+which in this case is 2103. Then while Bareos is running, you call the program
+giving it the path to the Bareos executable and the {\bf PID}. In this case,
 it is:
 
 \footnotesize
 \begin{verbatim}
-./btraceback /home/kern/bacula/k/src/dird 2103
+./btraceback /home/kern/bareos/k/src/dird 2103
 \end{verbatim}
 \normalsize
 
 It should produce an email showing you the current state of the daemon (in
-this case the Director), and then exit leaving {\bf Bacula} running as if
+this case the Director), and then exit leaving {\bf Bareos} running as if
 nothing happened. If this is not the case, you will need to correct the
 problem by modifying the {\bf btraceback} script.
 
@@ -143,12 +143,12 @@ work, it will most likely need to run as root, so you may need to modify
 the {\bf btraceback} script accordingly.
 
 \label{ManuallyDebugging}
-\section{Manually Running Bacula Under The Debugger}
-\index[general]{Manually Running Bacula Under The Debugger}
-\index[general]{Debugger!Manually Running Bacula Under The}
+\section{Manually Running Bareos Under The Debugger}
+\index[general]{Manually Running Bareos Under The Debugger}
+\index[general]{Debugger!Manually Running Bareos Under The}
 
 If for some reason you cannot get the automatic traceback, or if you want to
-interactively examine the variable contents after a crash, you can run Bacula
+interactively examine the variable contents after a crash, you can run Bareos
 under the debugger. Assuming you want to run the Storage daemon under the
 debugger (the technique is the same for the other daemons, only the name
 changes), you would do the following:
@@ -156,7 +156,7 @@ changes), you would do the following:
 \begin{enumerate}
 \item Start the Director and the File daemon. If the  Storage daemon also
    starts, you will need to find its PID  as shown above (ps fax | grep
-   bacula-sd) and kill it  with a command like the following:
+   bareos-sd) and kill it  with a command like the following:
 
 \footnotesize
 \begin{verbatim}
@@ -175,7 +175,7 @@ where you replace {\bf PID} by the actual value.
 
    \footnotesize
 \begin{verbatim}
-    gdb ./bacula-sd
+    gdb ./bareos-sd
 \end{verbatim}
 \normalsize
 
@@ -183,19 +183,19 @@ where you replace {\bf PID} by the actual value.
 
    \footnotesize
 \begin{verbatim}
-     run -s -f -c ./bacula-sd.conf
+     run -s -f -c ./bareos-sd.conf
 \end{verbatim}
 \normalsize
 
-You may replace the {\bf ./bacula-sd.conf} with the full path  to the Storage
+You may replace the {\bf ./bareos-sd.conf} with the full path  to the Storage
 daemon's configuration file.
 
-\item At this point, Bacula will be fully operational.
+\item At this point, Bareos will be fully operational.
 
 \item In another shell command window, start the Console program  and do what
-   is necessary to cause Bacula to die.
+   is necessary to cause Bareos to die.
 
-\item When Bacula crashes, the {\bf gdb} shell window will  become active and
+\item When Bareos crashes, the {\bf gdb} shell window will  become active and
    {\bf gdb} will show you the error that  occurred.
 
 \item To get a general traceback of all threads, issue the following  command:
@@ -210,8 +210,8 @@ daemon's configuration file.
 After that you can issue any debugging command.
 \end{enumerate}
 
-\section{Getting Debug Output from Bacula}
-\index[general]{Getting Debug Output from Bacula }
+\section{Getting Debug Output from Bareos}
+\index[general]{Getting Debug Output from Bareos }
 Each of the daemons normally has debug compiled into the program, but
 disabled. There are two ways to enable the debug output. One is to add the
 {\bf -d nnn} option on the command line when starting the debugger. The {\bf
