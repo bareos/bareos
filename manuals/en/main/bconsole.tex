@@ -255,18 +255,21 @@ Please note, this list is incomplete.
 The following commands are currently implemented:
 
 \begin{description}
-\item [{add [pool={\textless}pool-name{\textgreater} storage={\textless}storage{\textgreater}
-   jobid={\textless}JobId{\textgreater}]} ]
+\item [add]
    \index[general]{Console!Command!add}
    This command is used to add Volumes to an existing Pool.  That is,
    it creates the Volume name in the catalog and inserts into the Pool
    in the catalog, but does not attempt to access the physical Volume.
-   Once
-   added, Bareos expects that Volume to exist and to be labeled.
+   Once added, Bareos expects that Volume to exist and to be labeled.
    This command is not normally used since Bareos will
    automatically do the equivalent when Volumes are labeled. However,
    there may be times when you have removed a Volume from the catalog
    and want to later add it back.
+
+   The full form of this command is:
+
+add {\textlbrack}pool={\textless}pool-name{\textgreater} storage={\textless}storage{\textgreater}
+  jobid={\textless}JobId{\textgreater}{\textrbrack}
 
    Normally, the {\bf label} command is used rather than this command
    because the {\bf label} command labels the physical media (tape, disk,
@@ -279,7 +282,7 @@ The following commands are currently implemented:
    importing a tape from another site.  Please see the {\bf label} command
    below for the list of legal characters in a Volume name.
 
-\item [autodisplay on/off]
+\item [autodisplay]
    \index[general]{Console!Command!autodisplay on/off}
    This command accepts {\bf on} or {\bf off} as an argument, and turns
    auto-display of messages on or off respectively.  The default for the
@@ -291,7 +294,7 @@ The following commands are currently implemented:
    messages with the {\bf messages} command.  When autodisplay is turned
    on, the messages will be displayed on the console as they are received.
 
-\item [automount on/off]
+\item [automount]
    \index[general]{Console!Command!automount on/off}
    This command accepts {\bf on} or {\bf off} as the argument, and turns
    auto-mounting of the Volume after a {\bf label} command on or off
@@ -299,13 +302,18 @@ The following commands are currently implemented:
    off, you must explicitly {\bf mount} tape Volumes after a label command to
    use it.
 
-\item [{cancel [jobid={\textless}number{\textgreater} job={\textless}job-name{\textgreater} ujobid={\textless}unique-jobid{\textgreater}]}]
+\item [cancel]
    \index[general]{Console!Command!cancel jobid}
    This command is used to cancel a job and accepts {\bf jobid=nnn} or {\bf
    job=xxx} as an argument where nnn is replaced by the JobId and xxx is
    replaced by the job name.  If you do not specify a keyword, the Console
    program will prompt you with the names of all the active jobs allowing
    you to choose one.
+
+   The full form of this command is:
+
+cancel {\textlbrack}jobid={\textless}number{\textgreater} job={\textless}job-name{\textgreater}
+  ujobid={\textless}unique-jobid{\textgreater}{\textrbrack}
 
    Once a Job is marked to be canceled, it may take a bit of time
    (generally within a minute but up to two hours) before the Job actually
@@ -315,8 +323,7 @@ The following commands are currently implemented:
    Messages numbered in the 1000's are from the Director, 2000's are from
    the File daemon and 3000's from the Storage daemon.
 
-
-\item [{create [pool={\textless}pool-name{\textgreater}]}]
+\item [create]
    \index[general]{Console!Command!create pool}
    This command is not normally used as the Pool records are automatically
    created by the Director when it starts based on what it finds in
@@ -332,13 +339,15 @@ The following commands are currently implemented:
    will most likely use the {\bf label} command to label one or more
    volumes and add their names to the Media database.
 
+   The full form of this command is:
+create {\textlbrack}pool={\textless}pool-name{\textgreater}{\textrbrack}
+
    When starting a Job, if Bareos determines that there is no Pool record
    in the database, but there is a Pool resource of the appropriate name,
    it will create it for you.  If you want the Pool record to appear in the
    database immediately, simply use this command to force it to be created.
 
-\item [{delete [volume={\textless}vol-name{\textgreater} pool={\textless}pool-name{\textgreater}  job
-   jobid={\textless}id{\textgreater}]}]
+\item [delete]
    \index[general]{Console!Command!delete}
    The delete command is used to delete a Volume, Pool or Job record from
    the Catalog as well as all associated catalog Volume records that were
@@ -351,26 +360,23 @@ The following commands are currently implemented:
    Volume will be deleted from the catalog, if the keyword {\bf Pool}
    appears on the command line, a Pool will be deleted, and if the keyword
    {\bf Job} appears on the command line, a Job and all its associated
-   records (File and JobMedia) will be deleted from the catalog.  The full
-   form of this command is:
+   records (File and JobMedia) will be deleted from the catalog.
 
-\begin{verbatim}
-delete pool=<pool-name>
-\end{verbatim}
+   The full form of this command is:
+
+delete pool={\textless}pool-name{\textgreater}
 
    or
 
-\begin{verbatim}
-delete volume=<volume-name> pool=<pool-name>  or
-\end{verbatim}
+delete volume={\textless}volume-name{\textgreater} pool={\textless}pool-name{\textgreater}
 
-\begin{verbatim}
-delete JobId=<job-id> JobId=<job-id2> ...  or
-\end{verbatim}
+   or
 
-\begin{verbatim}
+delete JobId={\textless}job-id{\textgreater} JobId={\textless}job-id2{\textgreater} ...
+
+   or
+
 delete Job JobId=n,m,o-r,t ...
-\end{verbatim}
 
    The first form deletes a Pool record from the catalog database.  The
    second form deletes a Volume record from the specified pool in the
@@ -380,7 +386,7 @@ delete Job JobId=n,m,o-r,t ...
    number. That is a "delete jobid" accepts lists and ranges of
    jobids.
 
-\item [disable job{\textless}job-name{\textgreater}]
+\item [disable]
   \index[general]{Console!Command!disable}
   This command permits you to disable a Job for automatic scheduling.
   The job may have been previously enabled with the Job resource
@@ -389,7 +395,11 @@ delete Job JobId=n,m,o-r,t ...
   the Enable/Disable state will be set to the value in the Job resource
   (default enabled) as defined in the bareos-dir.conf file.
 
-\item [enable job{\textless}job-name{\textgreater}]
+   The full form of this command is:
+
+disable job{\textless}job-name{\textgreater
+
+\item [enable]
   \index[general]{Console!Command!enable}
   This command permits you to enable a Job for automatic scheduling.
   The job may have been previously disabled with the Job resource
@@ -397,6 +407,10 @@ delete Job JobId=n,m,o-r,t ...
   The next time the Director is restarted or the conf file is reloaded,
   the Enable/Disable state will be set to the value in the Job resource
   (default enabled) as defined in the bareos-dir.conf file.
+
+   The full form of this command is:
+
+enable job{\textless}job-name{\textgreater}
 
 \label{estimate}
 \item [estimate]
@@ -422,15 +436,15 @@ delete Job JobId=n,m,o-r,t ...
    files to be backed up will be listed.  Note, it could take quite some time to
    display them if the  backup is large. The full form is:
 
-\begin{verbatim}
-estimate job=<job-name> listing client=<client-name> accurate=<yes/no>
-       fileset=<fileset-name> level=<level-name>
-\end{verbatim}
+   The full form of this command is:
+
+estimate job={\textless}job-name{\textgreater} listing client={\textless}client-name{\textgreater}
+  accurate={\textless}yes{\textbar}no{\textgreater} fileset={\textless}fileset-name{\textgreater}
+  level={\textless}level-name{\textgreater}
 
    Specification of the {\bf job} is sufficient, but you can also override the
    client, fileset, accurate and/or level by specifying them on the estimate
    command line.
-
 
 As an example, you might do:
 
@@ -466,9 +480,8 @@ As an example, you might do:
 
    The full form of this command is:
 
-\begin{verbatim}
-export storage=<storage-name> srcslots=<slot-selection> [dstslots=<slot-selection> volume=<volume-name> scan]
-\end{verbatim}
+export storage={\textless}storage-name{\textgreater} srcslots={\textless}slot-selection{\textgreater}
+  {\textlbrack} dstslots={\textless}slot-selection{\textgreater} volume={\textless}volume-name{\textgreater} scan {\textrbrack}
 
    The export command does exactly the opposite of the import command. You
    can specify which slots should be transferred to import/export slots. The
@@ -500,7 +513,7 @@ export srcslots=1-2 dstslots=37-38
 \end{verbatim}
 \normalsize
 
-\item [gui on/off]
+\item [gui]
    \index[general]{Console!Command!gui}
     Invoke the non-interactive gui mode.
     This command is only used when \command{bconsole} is commanded by an external program.
@@ -518,9 +531,8 @@ export srcslots=1-2 dstslots=37-38
 
    The full form of this command is:
 
-\begin{verbatim}
-import storage=<storage-name> [srcslots=<slot-selection> dstslots=<slot-selection> volume=<volume-name> scan]
-\end{verbatim}
+import storage={\textless}storage-name{\textgreater} {\textlbrack} srcslots={\textless}slot-selection{\textgreater}
+  dstslots={\textless}slot-selection{\textgreater} volume={\textless}volume-name{\textgreater} scan {\textrbrack}
 
    To import new tapes into the autochanger, you only have to load the new
    tapes into the import/export slots and call import from the cmdline.
@@ -573,13 +585,11 @@ Connecting to Storage daemon TandbergT40 at bareos:9103 ...
 \item [label]
    \index[general]{Console!Command!label}
    \index[general]{Console!Command!relabel}
-   This command is used to label physical volumes.  The full form of this command
-   is:
+   This command is used to label physical volumes.
+   The full form of this command is:
 
-\begin{verbatim}
-label storage=<storage-name> volume=<volume-name>
-      slot=<slot>
-\end{verbatim}
+label storage={\textless}storage-name{\textgreater} volume={\textless}volume-name{\textgreater}
+  slot={\textless}slot{\textgreater}
 
    If you leave out any part, you will be prompted for it.  The media type
    is automatically taken from the Storage resource definition that you
@@ -676,6 +686,7 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
    The list command lists the requested contents of the Catalog.  The
    various fields of each record are listed on a single line.  The various
    forms of the list command are:
+
 \footnotesize
 \begin{verbatim}
    list jobs
@@ -985,22 +996,22 @@ release storage={\textless}storage-name{\textgreater}
    command to cause Bareos to completely release (close) the device.
 
 \item [reload]
-  \index[general]{Console!Command!reload}
-  The reload command causes the Director to re-read its configuration
-  file and apply the new values. The new values will take effect
-  immediately for all new jobs.  However, if you change schedules,
-  be aware that the scheduler pre-schedules jobs up to two hours in
-  advance, so any changes that are to take place during the next two
-  hours may be delayed.  Jobs that have already been scheduled to run
-  (i.e. surpassed their requested start time) will continue with the
-  old values.  New jobs will use the new values. Each time you issue
-  a reload command while jobs are running, the prior config values
-  will queued until all jobs that were running before issuing
-  the reload terminate, at which time the old config values will
-  be released from memory. The Directory permits keeping up to
-  ten prior set of configurations before it will refuse a reload
-  command. Once at least one old set of config values has been
-  released it will again accept new reload commands.
+   \index[general]{Console!Command!reload}
+   The reload command causes the Director to re-read its configuration
+   file and apply the new values. The new values will take effect
+   immediately for all new jobs.  However, if you change schedules,
+   be aware that the scheduler pre-schedules jobs up to two hours in
+   advance, so any changes that are to take place during the next two
+   hours may be delayed.  Jobs that have already been scheduled to run
+   (i.e. surpassed their requested start time) will continue with the
+   old values.  New jobs will use the new values. Each time you issue
+   a reload command while jobs are running, the prior config values
+   will queued until all jobs that were running before issuing
+   the reload terminate, at which time the old config values will
+   be released from memory. The Directory permits keeping up to
+   ten prior set of configurations before it will refuse a reload
+   command. Once at least one old set of config values has been
+   released it will again accept new reload commands.
 
    While it is possible to reload the Director's configuration on the fly,
    even while jobs are executing, this is a complex operation and not
@@ -1021,11 +1032,8 @@ release storage={\textless}storage-name{\textgreater}
    By using the rerun command, it is much easier to rerun a jobs exactly
    as it was configured. You only have to specify the JobId of the failed job.
 
-   The full form of this command is:
-
-\begin{verbatim}
-rerun jobid=<jobid> | since_jobid=<jobid> | days=<nr_days> | hours=<nr_hours> | yes
-\end{verbatim}
+rerun jobid={\textless}jobid{\textgreater} since_jobid={\textless}jobid{\textgreater}
+  days={\textless}nr_days{\textgreater} hours={\textless}nr_hours{\textgreater} yes
 
    You can select the jobid(s) to rerun by using one of the selection criteria.
 
@@ -1045,7 +1053,7 @@ rerun jobid=<jobid> | since_jobid=<jobid> | days=<nr_days> | hours=<nr_hours> | 
 restore storage={\textless}storage-name{\textgreater} client={\textless}backup-client-name{\textgreater}
   where={\textless}path{\textgreater} pool={\textless}pool-name{\textgreater} fileset={\textless}fileset-name{\textgreater}
   restoreclient={\textless}restore-client-name{\textgreater}
-  restorejob=\lt{}job-name\gt{}
+  restorejob={\textless}job-name{\textgreater}
   select current all done
 
    Where {\bf current}, if specified, tells the restore command to
@@ -1131,8 +1139,6 @@ setdebug level=nn [trace=0/1 client={\textless}client-name{\textgreater} | dir |
    Director's client resource to the IP address of the Console.  This
    permits portables or other machines using DHCP (non-fixed IP addresses)
    to "notify" the Director of their current IP address.
-
-
 
 \item [show]
    \index[general]{Console!Command!show}
@@ -1312,13 +1318,10 @@ media -- that is Bareos needs you to label a Volume.
    \index[general]{Console!Command!unmount}
    This command causes the indicated Bareos Storage  daemon to unmount the
    specified device. The forms of the command  are the same as the mount command:
-\footnotesize
-\begin{verbatim}
-unmount storage=<storage-name> [ drive=<num> ]
 
-unmount [ jobid=<id> | job=<job-name> ]
-\end{verbatim}
-\normalsize
+unmount storage={\textless}storage-name{\textgreater} {\textlbrack}drive={\textless}num{\textgreater}{\textrbrack}
+
+unmount {\textlbrack}jobid={\textless}id{\textgreater} {\textbar} job={\textless}job-name{\textgreater}{\textrbrack}
 
    Once you unmount a storage device, Bareos will no longer be able to use
    it until you issue a mount command for that device. If Bareos needs to
@@ -1338,6 +1341,7 @@ unmount [ jobid=<id> | job=<job-name> ]
    from  the corresponding Director's configuration resource record. It  can be
    used to increase the maximum number of volumes permitted or  to set a maximum
    number of volumes. The following main  keywords may be specified:
+
 \footnotesize
 \begin{verbatim}
    media, volume, pool, slots, stats
@@ -1395,28 +1399,19 @@ wish to change.  The following Volume parameters may be changed:
 
    The full form of the update command with all command line arguments is:
 
-\footnotesize
-\begin{verbatim}
-       update volume=xxx pool=yyy slots volstatus=xxx VolRetention=ddd
-         VolUse=ddd MaxVolJobs=nnn MaxVolBytes=nnn Recycle=yes|no
-         slot=nnn enabled=n recyclepool=zzz
-
-\end{verbatim}
-\normalsize
+update volume={\textless}volume-name{\textgreater} pool={\textless}poolname{\textgreater}
+  slots volstatus={\textless}volume-status{\textgreater} VolRetention={\textless}volume-retention{\textgreater}
+  VolUse={\textless}volume-use-period{\textgreater} MaxVolJobs=nnn MaxVolBytes=nnn Recycle=yes{\textbar}no
+  slot=nnn enabled=n recyclepool={\textless}pool-name{\textgreater}
 
 \item [use]
    \index[general]{Console!Command!use}
    This command allows you to specify which Catalog  database to use. Normally,
-you will be using only one database so  this will be done automatically. In
-the case that you are using  more than one database, you can use this command
-to switch from  one to another.
+   you will be using only one database so  this will be done automatically. In
+   the case that you are using  more than one database, you can use this command
+   to switch from  one to another.
 
-\footnotesize
-\begin{verbatim}
-       use [catalog=name-of-catalog]
-\end{verbatim}
-\normalsize
-
+use {\textlbrack}catalog={\textless}catalog{\textgreater}{\textrbrack}
 
 \item [var]
    \label{var}
@@ -1439,11 +1434,10 @@ to switch from  one to another.
    running. This command is useful in  a batch situation such as regression
    testing where you  wish to start a job and wait until that job completes
    before continuing. This command now has the following options:
-\footnotesize
-\begin{verbatim}
-   wait [jobid=nn] [jobuid=unique id] [job=job name]
-\end{verbatim}
-\normalsize
+
+wait {\textlbrack}jobid={\textless}jobid{\textgreater}{\textrbrack} {\textlbrack}jobuid={\textless}unique id{\textgreater}{\textrbrack}
+  {\textlbrack}job={\textless}job name{\textgreater}{\textrbrack}
+
    If specified with a specific JobId, ... the wait command will wait
    for that particular job to terminate before continuing.
 
