@@ -268,8 +268,8 @@ The following commands are currently implemented:
 
    The full form of this command is:
 
-add {\textlbrack}pool={\textless}pool-name{\textgreater} storage={\textless}storage{\textgreater}
-  jobid={\textless}JobId{\textgreater}{\textrbrack}
+add [pool={\textless}pool-name{\textgreater} storage={\textless}storage{\textgreater}
+  jobid={\textless}JobId{\textgreater}]
 
    Normally, the {\bf label} command is used rather than this command
    because the {\bf label} command labels the physical media (tape, disk,
@@ -312,8 +312,8 @@ add {\textlbrack}pool={\textless}pool-name{\textgreater} storage={\textless}stor
 
    The full form of this command is:
 
-cancel {\textlbrack}jobid={\textless}number{\textgreater} job={\textless}job-name{\textgreater}
-  ujobid={\textless}unique-jobid{\textgreater}{\textrbrack}
+cancel [jobid={\textless}number{\textgreater} job={\textless}job-name{\textgreater}
+  ujobid={\textless}unique-jobid{\textgreater}]
 
    Once a Job is marked to be canceled, it may take a bit of time
    (generally within a minute but up to two hours) before the Job actually
@@ -340,7 +340,7 @@ cancel {\textlbrack}jobid={\textless}number{\textgreater} job={\textless}job-nam
    volumes and add their names to the Media database.
 
    The full form of this command is:
-create {\textlbrack}pool={\textless}pool-name{\textgreater}{\textrbrack}
+create [pool={\textless}pool-name{\textgreater}]
 
    When starting a Job, if Bareos determines that there is no Pool record
    in the database, but there is a Pool resource of the appropriate name,
@@ -481,7 +481,7 @@ As an example, you might do:
    The full form of this command is:
 
 export storage={\textless}storage-name{\textgreater} srcslots={\textless}slot-selection{\textgreater}
-  {\textlbrack} dstslots={\textless}slot-selection{\textgreater} volume={\textless}volume-name{\textgreater} scan {\textrbrack}
+  [ dstslots={\textless}slot-selection{\textgreater} volume={\textless}volume-name{\textgreater} scan ]
 
    The export command does exactly the opposite of the import command. You
    can specify which slots should be transferred to import/export slots. The
@@ -531,8 +531,8 @@ export srcslots=1-2 dstslots=37-38
 
    The full form of this command is:
 
-import storage={\textless}storage-name{\textgreater} {\textlbrack} srcslots={\textless}slot-selection{\textgreater}
-  dstslots={\textless}slot-selection{\textgreater} volume={\textless}volume-name{\textgreater} scan {\textrbrack}
+import storage={\textless}storage-name{\textgreater} [ srcslots={\textless}slot-selection{\textgreater}
+  dstslots={\textless}slot-selection{\textgreater} volume={\textless}volume-name{\textgreater} scan ]
 
    To import new tapes into the autochanger, you only have to load the new
    tapes into the import/export slots and call import from the cmdline.
@@ -1319,9 +1319,9 @@ media -- that is Bareos needs you to label a Volume.
    This command causes the indicated Bareos Storage  daemon to unmount the
    specified device. The forms of the command  are the same as the mount command:
 
-unmount storage={\textless}storage-name{\textgreater} {\textlbrack}drive={\textless}num{\textgreater}{\textrbrack}
+unmount storage={\textless}storage-name{\textgreater} [drive={\textless}num{\textgreater}]
 
-unmount {\textlbrack}jobid={\textless}id{\textgreater} {\textbar} job={\textless}job-name{\textgreater}{\textrbrack}
+unmount [jobid={\textless}id{\textgreater} {\textbar} job={\textless}job-name{\textgreater}]
 
    Once you unmount a storage device, Bareos will no longer be able to use
    it until you issue a mount command for that device. If Bareos needs to
@@ -1411,7 +1411,7 @@ update volume={\textless}volume-name{\textgreater} pool={\textless}poolname{\tex
    the case that you are using  more than one database, you can use this command
    to switch from  one to another.
 
-use {\textlbrack}catalog={\textless}catalog{\textgreater}{\textrbrack}
+use [catalog={\textless}catalog{\textgreater}]
 
 \item [var]
    \label{var}
@@ -1435,8 +1435,8 @@ use {\textlbrack}catalog={\textless}catalog{\textgreater}{\textrbrack}
    testing where you  wish to start a job and wait until that job completes
    before continuing. This command now has the following options:
 
-wait {\textlbrack}jobid={\textless}jobid{\textgreater}{\textrbrack} {\textlbrack}jobuid={\textless}unique id{\textgreater}{\textrbrack}
-  {\textlbrack}job={\textless}job name{\textgreater}{\textrbrack}
+wait [jobid={\textless}jobid{\textgreater}] [jobuid={\textless}unique id{\textgreater}]
+  [job={\textless}job name{\textgreater}]
 
    If specified with a specific JobId, ... the wait command will wait
    for that particular job to terminate before continuing.
