@@ -255,7 +255,11 @@ Job {
 # List of files to be backed up
 FileSet {
   Name = "Full Set"
-  Include = { Options { signature=SHA1; compression=GZIP9 }
+  Include = {
+    Options {
+      signature=SHA1;
+      compression=GZIP9
+    }
     File = /
     File = /usr
     File = /home

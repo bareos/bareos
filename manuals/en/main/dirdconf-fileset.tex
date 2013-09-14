@@ -126,7 +126,9 @@ Including a directory twice is very easy to do.  For example:
 \footnotesize
 \begin{verbatim}
   Include {
-    Options { compression=GZIP }
+    Options {
+      compression=GZIP
+    }
     File = /
     File = /usr
   }
@@ -1039,7 +1041,9 @@ There are a number of special cases when specifying directories and files in a
 \footnotesize
 \begin{verbatim}
 Include {
-  Options { compression=GZIP }
+  Options {
+    compression=GZIP
+  }
   @/home/files/my-files
 }
 \end{verbatim}
@@ -1087,7 +1091,9 @@ Include {
 \begin{verbatim}
 
 Include {
-   Options { signature = SHA1 }
+   Options {
+     signature = SHA1
+   }
    File = "|sh -c 'df -l | grep \"^/dev/hd[ab]\" | grep -v \".*/tmp\" \
       | awk \"{print \\$6}\"'"
 }
@@ -1135,7 +1141,10 @@ df -l | grep "^/dev/hd[ab]" | grep -v ".*/tmp" \
 FileSet {
   Name = "All local partitions"
   Include {
-    Options { signature=SHA1; onefs=yes; }
+    Options {
+      signature=SHA1
+      onefs=yes
+    }
     File = "\\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
   }
 }
@@ -1155,7 +1164,11 @@ FileSet {
 \begin{verbatim}
 
 Include {
-   Options { signature = SHA1; onfs=no; fstype=ext2 }
+   Options {
+     signature = SHA1
+     onfs=no
+     fstype=ext2
+   }
    File = /
 }
 \end{verbatim}
@@ -1175,7 +1188,9 @@ Include {
 \footnotesize
 \begin{verbatim}
 Include {
-  Options { signature = SHA1 }
+  Options {
+    signature = SHA1
+  }
   File = "</home/files/local-filelist"
 }
 \end{verbatim}
@@ -1189,7 +1204,9 @@ Include {
 \footnotesize
 \begin{verbatim}
 Include {
-  Options { signature = SHA1 }
+  Options {
+    signature = SHA1
+  }
   File = "\\</home/xxx/filelist-on-client"
 }
 \end{verbatim}
@@ -1204,7 +1221,10 @@ Include {
 \footnotesize
 \begin{verbatim}
 Include {
-  Options { signature=MD5; sparse=yes }
+  Options {
+    signature=MD5
+    sparse=yes
+  }
   File = /dev/hd6
 }
 \end{verbatim}
@@ -1528,7 +1548,9 @@ Please be aware that allowing Bareos to traverse or change file systems can be
 FileSet {
   Name = "Bad example"
   Include {
-    Options { onefs=no }
+    Options {
+      onefs=no
+    }
     File = /mnt/matou
   }
 }
@@ -1679,7 +1701,9 @@ The following FileSet definition will backup a raw partition:
 FileSet {
   Name = "RawPartition"
   Include {
-    Options { sparse=yes }
+    Options {
+      sparse=yes
+    }
     File = /dev/hda2
   }
 }
