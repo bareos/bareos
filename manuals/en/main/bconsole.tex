@@ -268,8 +268,11 @@ The following commands are currently implemented:
 
    The full form of this command is:
 
-add [pool={\textless}pool-name{\textgreater} storage={\textless}storage{\textgreater}
-  jobid={\textless}JobId{\textgreater}]
+\footnotesize
+\begin{verbatim}
+add [pool=<pool-name> storage=<storage> jobid=<JobId>
+\end{verbatim}
+\normalsize
 
    Normally, the {\bf label} command is used rather than this command
    because the {\bf label} command labels the physical media (tape, disk,
@@ -312,8 +315,11 @@ add [pool={\textless}pool-name{\textgreater} storage={\textless}storage{\textgre
 
    The full form of this command is:
 
-cancel [jobid={\textless}number{\textgreater} job={\textless}job-name{\textgreater}
-  ujobid={\textless}unique-jobid{\textgreater}]
+\footnotesize
+\begin{verbatim}
+cancel [jobid=<number> job=<job-name> ujobid=<unique-jobid>]
+\end{verbatim}
+\normalsize
 
    Once a Job is marked to be canceled, it may take a bit of time
    (generally within a minute but up to two hours) before the Job actually
@@ -340,7 +346,12 @@ cancel [jobid={\textless}number{\textgreater} job={\textless}job-name{\textgreat
    volumes and add their names to the Media database.
 
    The full form of this command is:
-create [pool={\textless}pool-name{\textgreater}]
+
+\footnotesize
+\begin{verbatim}
+create [pool=<pool-name>]
+\end{verbatim}
+\normalsize
 
    When starting a Job, if Bareos determines that there is no Pool record
    in the database, but there is a Pool resource of the appropriate name,
@@ -364,19 +375,14 @@ create [pool={\textless}pool-name{\textgreater}]
 
    The full form of this command is:
 
-delete pool={\textless}pool-name{\textgreater}
-
-   or
-
-delete volume={\textless}volume-name{\textgreater} pool={\textless}pool-name{\textgreater}
-
-   or
-
-delete JobId={\textless}job-id{\textgreater} JobId={\textless}job-id2{\textgreater} ...
-
-   or
-
+\footnotesize
+\begin{verbatim}
+delete pool=<pool-name>
+delete volume=<volume-name> pool=<pool-name>
+delete JobId=<job-id> JobId=<job-id2> ...
 delete Job JobId=n,m,o-r,t ...
+\end{verbatim}
+\normalsize
 
    The first form deletes a Pool record from the catalog database.  The
    second form deletes a Volume record from the specified pool in the
@@ -397,7 +403,11 @@ delete Job JobId=n,m,o-r,t ...
 
    The full form of this command is:
 
-disable job{\textless}job-name{\textgreater
+\footnotesize
+\begin{verbatim}
+disable job<job-name{\textgreater
+\end{verbatim}
+\normalsize
 
 \item [enable]
   \index[general]{Console!Command!enable}
@@ -410,7 +420,11 @@ disable job{\textless}job-name{\textgreater
 
    The full form of this command is:
 
-enable job{\textless}job-name{\textgreater}
+\footnotesize
+\begin{verbatim}
+enable job<job-name>
+\end{verbatim}
+\normalsize
 
 \label{estimate}
 \item [estimate]
@@ -438,9 +452,12 @@ enable job{\textless}job-name{\textgreater}
 
    The full form of this command is:
 
-estimate job={\textless}job-name{\textgreater} listing client={\textless}client-name{\textgreater}
-  accurate={\textless}yes{\textbar}no{\textgreater} fileset={\textless}fileset-name{\textgreater}
-  level={\textless}level-name{\textgreater}
+\footnotesize
+\begin{verbatim}
+estimate job=<job-name> listing client=<client-name> accurate=<yes|no>
+  fileset=<fileset-name> level=<level-name>
+\end{verbatim}
+\normalsize
 
    Specification of the {\bf job} is sufficient, but you can also override the
    client, fileset, accurate and/or level by specifying them on the estimate
@@ -480,8 +497,12 @@ As an example, you might do:
 
    The full form of this command is:
 
-export storage={\textless}storage-name{\textgreater} srcslots={\textless}slot-selection{\textgreater}
-  [ dstslots={\textless}slot-selection{\textgreater} volume={\textless}volume-name{\textgreater} scan ]
+\footnotesize
+\begin{verbatim}
+export storage=<storage-name> srcslots=<slot-selection>
+  [dstslots=<slot-selection> volume=<volume-name> scan]
+\end{verbatim}
+\normalsize
 
    The export command does exactly the opposite of the import command. You
    can specify which slots should be transferred to import/export slots. The
@@ -531,8 +552,12 @@ export srcslots=1-2 dstslots=37-38
 
    The full form of this command is:
 
-import storage={\textless}storage-name{\textgreater} [ srcslots={\textless}slot-selection{\textgreater}
-  dstslots={\textless}slot-selection{\textgreater} volume={\textless}volume-name{\textgreater} scan ]
+\footnotesize
+\begin{verbatim}
+import storage=<storage-name> [srcslots=<slot-selection>
+  dstslots=<slot-selection> volume=<volume-name> scan]
+\end{verbatim}
+\normalsize
 
    To import new tapes into the autochanger, you only have to load the new
    tapes into the import/export slots and call import from the cmdline.
@@ -588,8 +613,11 @@ Connecting to Storage daemon TandbergT40 at bareos:9103 ...
    This command is used to label physical volumes.
    The full form of this command is:
 
-label storage={\textless}storage-name{\textgreater} volume={\textless}volume-name{\textgreater}
-  slot={\textless}slot{\textgreater}
+\footnotesize
+\begin{verbatim}
+label storage=<storage-name> volume=<volume-name> slot=<slot>
+\end{verbatim}
+\normalsize
 
    If you leave out any part, you will be prompted for it.  The media type
    is automatically taken from the Storage resource definition that you
@@ -863,10 +891,13 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
    operate the autoloader unless you specify a {\bf slot} and possibly a
    {\bf drive}. The various forms of the mount command are:
 
-mount  storage={\textless}storage-name{\textgreater} [ slot={\textless}num{\textgreater} ] [
-       drive={\textless}num{\textgreater} ]
-
-mount [ jobid={\textless}id{\textgreater} |  job={\textless}job-name{\textgreater} ]
+\footnotesize
+\begin{verbatim}
+mount  storage=<storage-name> [slot=<num>] [
+       drive=<num> ]
+mount [jobid=<id> | job=<job-name>]
+\end{verbatim}
+\normalsize
 
    If you have specified {\bf Automatic  Mount = yes} in the Storage daemon's
    Device resource,  under most circumstances, Bareos will automatically access
@@ -905,8 +936,12 @@ Connecting to Storage daemon TandbergT40 at bareos:9103 ...
    records from the database, and you can Prune both expired Job and File
    records from specified Volumes.
 
-prune files|jobs|volume|stats client={\textless}client-name{\textgreater}
-volume={\textless}volume-name{\textgreater}
+\footnotesize
+\begin{verbatim}
+prune files|jobs|volume|stats client=<client-name>
+volume=<volume-name>
+\end{verbatim}
+\normalsize
 
    For a Volume to be pruned, the {\bf VolStatus} must be Full, Used, or
    Append, otherwise the pruning will not take place.
@@ -921,11 +956,13 @@ volume={\textless}volume-name{\textgreater}
    you do not use it unless you know what you are doing.  The permitted
    forms of {\bf purge} are:
 
-purge files jobid={\textless}jobid{\textgreater}|job={\textless}job-name{\textgreater}|client={\textless}client-name{\textgreater}
-
-purge jobs client={\textless}client-name{\textgreater} (of all jobs)
-
-purge volume|volume={\textless}vol-name{\textgreater} (of all jobs)
+\footnotesize
+\begin{verbatim}
+purge files jobid=<jobid>|job=<job-name> | client=<client-name>
+purge jobs client=<client-name> (of all jobs)
+purge volume|volume=<vol-name> (of all jobs)
+\end{verbatim}
+\normalsize
 
 For the {\bf purge} command to work on Volume Catalog database  records the
 {\bf VolStatus}  must be Append, Full, Used, or Error.
@@ -963,11 +1000,16 @@ idle when you decide to run this command.
 
 \item [relabel]
    \index[general]{Console!Command!relabel}
-   This command is used to label physical volumes.  The full form of this
-   command is:
+   This command is used to label physical volumes.
 
-%\bcommand{relabel storage={\textless}storage-name{\textgreater} oldvolume={\textless}old-volume-name{\textgreater}
-%    volume={\textless}newvolume-name{\textgreater}}
+   The full form of this command is:
+
+\footnotesize
+\begin{verbatim}
+relabel storage=<storage-name> oldvolume=<old-volume-name>
+  volume=<newvolume-name>}
+\end{verbatim}
+\normalsize
 
    If you leave out any part, you will be prompted for it.  In order for
    the Volume (old-volume-name) to be relabeled, it must be in the catalog,
@@ -984,7 +1026,11 @@ idle when you decide to run this command.
    current tape in the drive, and to re-read the Volume label the next time
    the tape is used.
 
-release storage={\textless}storage-name{\textgreater}
+\footnotesize
+\begin{verbatim}
+release storage=<storage-name>
+\end{verbatim}
+\normalsize
 
    After a release command, the device is still kept open by Bareos (unless
    Always Open is set to No in the Storage Daemon's configuration) so it
@@ -1032,8 +1078,12 @@ release storage={\textless}storage-name{\textgreater}
    By using the rerun command, it is much easier to rerun a jobs exactly
    as it was configured. You only have to specify the JobId of the failed job.
 
-rerun jobid={\textless}jobid{\textgreater} since_jobid={\textless}jobid{\textgreater}
-  days={\textless}nr_days{\textgreater} hours={\textless}nr_hours{\textgreater} yes
+\footnotesize
+\begin{verbatim}
+rerun jobid=<jobid> since_jobid=<jobid>
+  days=<nr_days> hours=<nr_hours> yes
+\end{verbatim}
+\normalsize
 
    You can select the jobid(s) to rerun by using one of the selection criteria.
 
@@ -1050,11 +1100,15 @@ rerun jobid={\textless}jobid{\textgreater} since_jobid={\textless}jobid{\textgre
    to be restored.  This mode is somewhat similar to the standard Unix {\bf
    restore} program's interactive file selection mode.
 
-restore storage={\textless}storage-name{\textgreater} client={\textless}backup-client-name{\textgreater}
-  where={\textless}path{\textgreater} pool={\textless}pool-name{\textgreater} fileset={\textless}fileset-name{\textgreater}
-  restoreclient={\textless}restore-client-name{\textgreater}
-  restorejob={\textless}job-name{\textgreater}
+\footnotesize
+\begin{verbatim}
+restore storage=<storage-name> client=<backup-client-name>
+  where=<path> pool=<pool-name> fileset=<fileset-name>
+  restoreclient=<restore-client-name>
+  restorejob=<job-name>
   select current all done
+\end{verbatim}
+\normalsize
 
    Where {\bf current}, if specified, tells the restore command to
    automatically select a restore to the most current backup.  If not
@@ -1079,13 +1133,18 @@ restore storage={\textless}storage-name{\textgreater} client={\textless}backup-c
 
 \item [run]
    \index[general]{Console!Command!run}
-   This command allows you to schedule jobs  to be run immediately. The full form
-   of the command is:
+   This command allows you to schedule jobs  to be run immediately.
 
-run job={\textless}job-name{\textgreater} client={\textless}client-name{\textgreater}
-  fileset={\textless}FileSet-name{\textgreater}  level={\textless}level-keyword{\textgreater}
-  storage={\textless}storage-name{\textgreater}  where={\textless}directory-prefix{\textgreater}
-  when={\textless}universal-time-specification{\textgreater} spooldata=yes|no yes
+   The full form of the command is:
+
+\footnotesize
+\begin{verbatim}
+run job=<job-name> client=<client-name>
+  fileset=<FileSet-name>  level=<level-keyword>
+  storage=<storage-name>  where=<directory-prefix>
+  when=<universal-time-specification> spooldata=yes|no yes
+\end{verbatim}
+\normalsize
 
    Any information that is needed but not specified will be listed for
    selection, and before starting the job, you will be prompted to accept,
@@ -1105,7 +1164,11 @@ run job={\textless}job-name{\textgreater} client={\textless}client-name{\textgre
   \index[general]{Console!Command!setbandwidth}
   This command is used to limit the bandwidth of a running job or a client.
 
-setbandwidth limit=<nb> [ jobid=<id> | client=<cli> ]
+\footnotesize
+\begin{verbatim}
+setbandwidth limit=<nb> [jobid=<id> | client=<cli>]
+\end{verbatim}
+\normalsize
 
 \item [setdebug]
    \index[general]{Console!Command!setdebug}
@@ -1115,8 +1178,12 @@ setbandwidth limit=<nb> [ jobid=<id> | client=<cli> ]
    This command is used to set the debug level in each  daemon. The form of this
    command is:
 
-setdebug level=nn [trace=0/1 client={\textless}client-name{\textgreater} | dir | director |
-  storage={\textless}storage-name{\textgreater} | all]
+\footnotesize
+\begin{verbatim}
+setdebug level=nn [trace=0/1 client=<client-name> | dir | director |
+  storage=<storage-name> | all]
+\end{verbatim}
+\normalsize
 
    If trace=1 is set, then tracing will be enabled, and the daemon will be
    placed in trace mode, which means that all debug output as set by the
@@ -1181,8 +1248,12 @@ setdebug level=nn [trace=0/1 client={\textless}client-name{\textgreater} | dir |
    information about current jobs like average speed or file accounting. The
    full form of this command is:
 
-status [all | dir={\textless}dir-name{\textgreater} | director [days=nnn] |
-  client={\textless}client-name{\textgreater} | [slots] storage={\textless}storage-name{\textgreater}]
+\footnotesize
+\begin{verbatim}
+status [all | dir=<dir-name> | director [days=nnn] |
+  client=<client-name> | [slots] storage=<storage-name>]
+\end{verbatim}
+\normalsize
 
    If you do a {\bf status dir}, the console will list any currently
    running jobs, a summary of all jobs scheduled to be run in the next 24
@@ -1319,9 +1390,12 @@ media -- that is Bareos needs you to label a Volume.
    This command causes the indicated Bareos Storage  daemon to unmount the
    specified device. The forms of the command  are the same as the mount command:
 
-unmount storage={\textless}storage-name{\textgreater} [drive={\textless}num{\textgreater}]
-
-unmount [jobid={\textless}id{\textgreater} {\textbar} job={\textless}job-name{\textgreater}]
+\footnotesize
+\begin{verbatim}
+unmount storage=<storage-name> [drive=<num>]
+unmount [jobid=<id> | job=<job-name>]
+\end{verbatim}
+\normalsize
 
    Once you unmount a storage device, Bareos will no longer be able to use
    it until you issue a mount command for that device. If Bareos needs to
@@ -1399,10 +1473,14 @@ wish to change.  The following Volume parameters may be changed:
 
    The full form of the update command with all command line arguments is:
 
-update volume={\textless}volume-name{\textgreater} pool={\textless}poolname{\textgreater}
-  slots volstatus={\textless}volume-status{\textgreater} VolRetention={\textless}volume-retention{\textgreater}
-  VolUse={\textless}volume-use-period{\textgreater} MaxVolJobs=nnn MaxVolBytes=nnn Recycle=yes{\textbar}no
-  slot=nnn enabled=n recyclepool={\textless}pool-name{\textgreater}
+\footnotesize
+\begin{verbatim}
+update volume=<volume-name> pool=<poolname>
+  slots volstatus=<volume-status> VolRetention=<volume-retention>
+  VolUse=<volume-use-period> MaxVolJobs=nnn MaxVolBytes=nnn Recycle=yes|no
+  slot=nnn enabled=n recyclepool=<pool-name>
+\end{verbatim}
+\normalsize
 
 \item [use]
    \index[general]{Console!Command!use}
@@ -1411,7 +1489,11 @@ update volume={\textless}volume-name{\textgreater} pool={\textless}poolname{\tex
    the case that you are using  more than one database, you can use this command
    to switch from  one to another.
 
-use [catalog={\textless}catalog{\textgreater}]
+\footnotesize
+\begin{verbatim}
+use [catalog=<catalog>]
+\end{verbatim}
+\normalsize
 
 \item [var]
    \label{var}
@@ -1435,8 +1517,11 @@ use [catalog={\textless}catalog{\textgreater}]
    testing where you  wish to start a job and wait until that job completes
    before continuing. This command now has the following options:
 
-wait [jobid={\textless}jobid{\textgreater}] [jobuid={\textless}unique id{\textgreater}]
-  [job={\textless}job name{\textgreater}]
+\footnotesize
+\begin{verbatim}
+wait [jobid=<jobid>] [jobuid=<unique id>] [job=<job name>]
+\end{verbatim}
+\normalsize
 
    If specified with a specific JobId, ... the wait command will wait
    for that particular job to terminate before continuing.
@@ -1447,7 +1532,6 @@ wait [jobid={\textless}jobid{\textgreater}] [jobuid={\textless}unique id{\textgr
 \label{dotcommands}
 \index[general]{Console!Command!Special .}
 \index[general]{Console!Command!. Commands}
-
 
 There is a list of commands that are prefixed with a period (.). These
 commands are intended to be used either by batch programs or graphical user
