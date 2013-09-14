@@ -457,6 +457,49 @@ As an example, you might do:
    \index[general]{Console!Command!exit}
    This command terminates the console program.
 
+\item [export]
+   \index[general]{Console!Command!export}
+   The export command is used to export tapes from an autochanger. Most Automatic
+   Tapechangers offer special slots for importing new tape cartridges or
+   exporting written tape cartridges. This can happen without having to set
+   the device offline.
+
+   The full form of this command is:
+
+\begin{verbatim}
+export storage=<storage-name> srcslots=<slot-selection> [dstslots=<slot-selection> volume=<volume-name> scan]
+\end{verbatim}
+
+   The export command does exactly the opposite of the import command. You
+   can specify which slots should be transferred to import/export slots. The
+   most usefull application of the export command is the possibility to
+   automatically transfer the volumes of a certain backup into the import/export
+   slots for external storage.
+
+   To be able to to this, the export command also accepts a list of volume names
+   to be exported.
+
+   Example:
+
+\footnotesize
+\begin{verbatim}
+export volume=A00020L4|A00007L4|A00005L4
+\end{verbatim}
+\normalsize
+
+   Instead of exporting volumes by names you can also select a number of slots via
+   the srcslots keyword and export those to the slots you specify in dstslots. The export
+   command will check if the slots have content (e.g. otherwise there is not much to
+   export) and if there are enough export slots and if those are really import/export slots.
+
+   Example:
+
+\footnotesize
+\begin{verbatim}
+export srcslots=1-2 dstslots=37-38
+\end{verbatim}
+\normalsize
+
 \item [gui on/off]
    \index[general]{Console!Command!gui}
     Invoke the non-interactive gui mode.
@@ -465,6 +508,67 @@ As an example, you might do:
 \item [help]
    \index[general]{Console!Command!help}
    This command displays the list of commands available.
+
+\item [import]
+   \index[general]{Console!Command!import}
+   The import command is used to import tapes into an autochanger. Most Automatic
+   Tapechangers offer special slots for importing new tape cartridges or
+   exporting written tape cartridges. This can happen without having to set
+   the device offline.
+
+   The full form of this command is:
+
+\begin{verbatim}
+import storage=<storage-name> [srcslots=<slot-selection> dstslots=<slot-selection> volume=<volume-name> scan]
+\end{verbatim}
+
+   To import new tapes into the autochanger, you only have to load the new
+   tapes into the import/export slots and call import from the cmdline.
+
+   The import command will automatically transfer the new tapes into free
+   slots of the autochanger. The slots are filled in order of the slot numbers.
+   To import all tapes, there have to be enough free slots to load all tapes.
+
+   Example with a Library with 36 Slots and 3 Import/Export Slots:
+
+\footnotesize
+\begin{verbatim}
+*import storage=TandbergT40
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger "slots" command.
+Device "Drive-1" has 39 slots.
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger "listall" command.
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger transfer command.
+3308 Successfully transfered volume from slot 37 to 20.
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger transfer command.
+3308 Successfully transfered volume from slot 38 to 21.
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger transfer command.
+3308 Successfully transfered volume from slot 39 to 25.
+\end{verbatim}
+\normalsize
+
+   You can also import certain slots when you don't have enough free slots
+   in your autochanger to put all the import/export slots in.
+
+   Example with a Library with 36 Slots and 3 Import/Export Slots importing one slot:
+
+\footnotesize
+\begin{verbatim}
+*import storage=TandbergT40 srcslots=37 dstslots=20
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger "slots" command.
+Device "Drive-1" has 39 slots.
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger "listall" command.
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger transfer command.
+3308 Successfully transfered volume from slot 37 to 20.
+\end{verbatim}
+\normalsize
 
 \item [label]
    \index[general]{Console!Command!label}
@@ -758,6 +862,27 @@ mount [ jobid={\textless}id{\textgreater} |  job={\textless}job-name{\textgreate
    the Volume unless you have explicitly {\bf unmount}ed it in  the Console
    program.
 
+\item [move]
+   \index[general]{Console!Command!move}
+   The move command allows to move volumes between slots in an autochanger without
+   having to leave the bconsole.
+
+   To move a volume from slot 32 to slots 33, use:
+
+\footnotesize
+\begin{verbatim}
+*move storage=TandbergT40 srcslots=32 dstslots=33
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger "slots" command.
+Device "Drive-1" has 39 slots.
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger "listall" command.
+Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+3306 Issuing autochanger transfer command.
+3308 Successfully transfered volume from slot 32 to 33.
+\end{verbatim}
+\normalsize
+
 \item [prune]
    \index[general]{Console!Command!prune}
    \label{ManualPruning}
@@ -882,6 +1007,27 @@ release storage={\textless}storage-name{\textgreater}
    without side effects.  Accordingly, if you have to reload the Director's
    configuration while Bareos is running, it is advisable to restart the
    Director at the next convenient opportunity.
+
+\item [rerun]
+   \index[general]{Console!Command!rerun}
+   The rerun command allows you to re-run a Job with exactly the same setting
+   as the original Job. In Bareos, the job configuration is often altered by job
+   overrides. These overrides alter the configuration of the job just for one job run.
+   If because of any reason, a job with overrides fails, it is not easy to restart
+   a new job that is exactly configured as the job that failed. The whole job
+   configuration is automatically set to the defaults and it is hard to
+   configure everything like it was.
+
+   By using the rerun command, it is much easier to rerun a jobs exactly
+   as it was configured. You only have to specify the JobId of the failed job.
+
+   The full form of this command is:
+
+\begin{verbatim}
+rerun jobid=<jobid> | since_jobid=<jobid> | days=<nr_days> | hours=<nr_hours> | yes
+\end{verbatim}
+
+   You can select the jobid(s) to rerun by using one of the selection criteria.
 
 \item [restore]
    \index[general]{Restore}
