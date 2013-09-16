@@ -107,10 +107,12 @@ Over time, as noted above, your database will tend to grow.
 Even though Bareos regularly prunes files, {\bf MySQL} does not automatically
 reuse the space, and instead continues growing.
 
+It is assumed that you are using the {\bf InnoDB} database engine (which is the default since MySQL Version 5.5).
+
 It is recommended that you use the {\bf OPTIMIZE TABLE} and {\bf ANALYZE TABLE}
 statements regularly. This is to make sure that all indices are up to date
 and to recycle space inside the database files.
-Please note that the database files are never shrunk by {\bf MySQL}.
+
 
 You can do this via the {\bf mysqlcheck} command:
 \footnotesize
@@ -118,6 +120,8 @@ You can do this via the {\bf mysqlcheck} command:
 mysqlcheck -a -o -A
 \end{verbatim}
 \normalsize
+
+Please note that the database files are never shrunk by {\bf MySQL}.
 
 If you really need to shrink the database files, you need to recreate the database.
 
@@ -145,13 +149,14 @@ fair amount of disk space.
 
 If you find that you are getting errors writing to your MySQL database, or
 Bareos hangs each time it tries to access the database, you should consider
-running MySQL's database check and repair routines. The program you need to
-run depends on the type of database indexing you are using. If you are using
-the default, you will probably want to use {\bf myisamchk}. For more details
-on how to do this, please consult the MySQL document at:
-\elink{
-http://www.mysql.com/doc/en/Repair.html}
-{http://www.mysql.com/doc/en/Repair.html}.
+running MySQL's database check and repair routines.
+
+This can be done by running the {\bf mysqlcheck } command:
+\footnotesize
+\begin{verbatim}
+mysqlcheck --all-databases
+\end{verbatim}
+\normalsize
 
 If the errors you are getting are simply SQL warnings, then you might try
 running \command{bareos-dbcheck} before (or possibly after) using the MySQL database repair
