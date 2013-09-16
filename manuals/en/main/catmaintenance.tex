@@ -101,8 +101,6 @@ time you run a Job.
 \index[general]{Database!Compacting Your MySQL}
 \index[general]{Compacting Your MySQL Database}
 
-\TODO{Alternative approaches are investigated (by Sebastian).}
-
 Over time, as noted above, your database will tend to grow.
 Even though Bareos regularly prunes files, {\bf MySQL} does not automatically
 reuse the space, and instead continues growing.
@@ -121,15 +119,11 @@ mysqlcheck -a -o -A
 \end{verbatim}
 \normalsize
 
-Please note that the database files are never shrunk by {\bf MySQL}.
-
-If you really need to shrink the database files, you need to recreate the database.
-
-This only works if you use per-table tablespaces by setting the {\bf innodb\_file\_per\_table} configuration option.
-
+Please note that the database files are never shrunk by {\bf MySQL}. If you really need to shrink the database files, you need to recreate the database. This only works if you use per-table tablespaces by setting the {\bf innodb\_file\_per\_table} configuration option.
 See
 \elink{http://dev.mysql.com/doc/refman/5.5/en/innodb-multiple-tablespaces.html}
-{here} for details.
+{http://dev.mysql.com/doc/refman/5.5/en/innodb-multiple-tablespaces.html} for details.
+
 \footnotesize
 \begin{verbatim}
 mysqldump -f --opt bareos > bareos.sql
