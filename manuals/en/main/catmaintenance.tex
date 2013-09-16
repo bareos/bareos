@@ -103,20 +103,22 @@ time you run a Job.
 
 \TODO{Alternative approaches are investigated (by Sebastian).}
 
-Over time, as noted above, your database will tend to grow. I've noticed that
-even though Bareos regularly prunes files, {\bf MySQL} does not effectively
-use the space, and instead continues growing. To avoid this, from time to
-time, you must compact your database. Normally, large commercial database such
-as Oracle have commands that will compact a database to reclaim wasted file
-space. MySQL has the {\bf OPTIMIZE TABLE} command that you can use, and SQLite
-version 2.8.4 and greater has the {\bf VACUUM} command. We leave it to you to
-explore the utility of the {\bf OPTIMIZE TABLE} command in MySQL.
+Over time, as noted above, your database will tend to grow.
+Even though Bareos regularly prunes files, {\bf MySQL} does not automatically
+reuse the space, and instead continues growing.
 
-All database programs have some means of writing the database out in ASCII
-format and then reloading it. Doing so will re-create the database from
-scratch producing a compacted result, so below, we show you how you can do
-this for MySQL, PostgreSQL and SQLite.
+It is recommended that you use the {\bf OPTIMIZE TABLE} and {\bf ANALYZE TABLE}
+statements regularly. This is to make sure that all indices are up to date
+and to recycle space inside the database files.
 
+You can do this via the {\bf mysqlcheck} command:
+\footnotesize
+\begin{verbatim}
+mysqlcheck -a -o -A
+\end{verbatim}
+\normalsize
+
+If you really need to shrink the database files, you need to recreate the database.
 For a {\bf MySQL} database, you could write the Bareos database as an ASCII
 file (bareos.sql) then reload it by doing the following:
 
@@ -129,25 +131,7 @@ rm -f bareos.sql
 \normalsize
 
 Depending on the size of your database, this will take more or less time and a
-fair amount of disk space. For example, if I cd to the location of the MySQL
-Bareos database (typically /opt/mysql/var or something similar) and enter:
-
-\footnotesize
-\begin{verbatim}
-du bareos
-\end{verbatim}
-\normalsize
-
-I get {\bf 620,644} which means there are that many blocks containing 1024
-bytes each or approximately 635 MB of data. After doing the {\bf mysqldump}, I
-had a bareos.sql file that had {\bf 174,356} blocks, and after doing the {\bf
-mysql} command to recreate the database, I ended up with a total of {\bf
-210,464} blocks rather than the original {\bf 629,644}. In other words, the
-compressed version of the database took approximately one third of the space
-of the database that had been in use for about a year.
-
-As a consequence, I suggest you monitor the size of your database and from
-time to time (once every six months or year), compress it.
+fair amount of disk space.
 
 \label{DatabaseRepair}
 \label{RepairingMySQL}
