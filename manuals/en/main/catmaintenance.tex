@@ -110,6 +110,7 @@ reuse the space, and instead continues growing.
 It is recommended that you use the {\bf OPTIMIZE TABLE} and {\bf ANALYZE TABLE}
 statements regularly. This is to make sure that all indices are up to date
 and to recycle space inside the database files.
+Please note that the database files are never shrunk by {\bf MySQL}.
 
 You can do this via the {\bf mysqlcheck} command:
 \footnotesize
@@ -119,9 +120,12 @@ mysqlcheck -a -o -A
 \normalsize
 
 If you really need to shrink the database files, you need to recreate the database.
-For a {\bf MySQL} database, you could write the Bareos database as an ASCII
-file (bareos.sql) then reload it by doing the following:
 
+This only works if you use per-table tablespaces by setting the {\bf innodb\_file\_per\_table} configuration option.
+
+See
+\elink{http://dev.mysql.com/doc/refman/5.5/en/innodb-multiple-tablespaces.html}
+{here} for details.
 \footnotesize
 \begin{verbatim}
 mysqldump -f --opt bareos > bareos.sql
