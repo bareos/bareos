@@ -43,8 +43,6 @@
 \newcommand{\lt}{\textless}
 \newcommand{\gt}{\textgreater}
 
-%%
-% TODO: path removes spaces from argument! This is a problem that needs to get fixed, esspecially for the windwos section
 \newcommand{\command}[1]{\path|#1|}
 \newcommand{\bcommand}[1]{\path|#1|}
 \newcommand{\file}[1]{\path|#1|}
@@ -83,60 +81,87 @@
 % \directive{}{}{}{required}{}
 
 
-\floatstyle{boxed}
-\newfloat{program}{h}{lop}
-\floatname{program}{bconsole}
-%\newbox\examplebox
-\newenvironment{bconsole}[4]{%
+% \floatstyle{boxed}
+% \newfloat{floatProgram}{h}{lop}
+% \floatname{floatProgram}{bconsole}
+% %\newbox\examplebox
+% \newenvironment{bconsole}[4]{%
+%     % #1 prompt
+%     % #2 command
+%     % #3 caption (caption is "command", if #3 is not given)
+%     % #4 input
+%     \ifthenelse{\isempty{#4}}{
+%         \def\bconsoleinput{\vskip-1.0\baselineskip}
+%     }{
+%         \def\bconsoleinput{{\it enter #4}}
+%     }
+%     %\floatProgram
+%     \footnotesize
+%     \ifthenelse{\isempty{#3}}{
+%         \captionof{floatProgram}{#2}
+%         \label{#2}
+%     }{
+%         \captionof{floatProgram}{#3}
+%         \label{#3}
+%     }
+%     \verbatim
+% #1 #2\\
+% }
+% {
+%     \endverbatim
+%     \bconsoleinput
+% %    \endfloatProgram
+% }
+
+\lstnewenvironment{bconsole}[4]{%
     % #1 prompt
     % #2 command
     % #3 caption (caption is "command", if #3 is not given)
     % #4 input
+    \renewcommand*{\lstlistingname}{bconsole} 
+    %\footnotesize
+    \definecolor{colorBconsole}{gray}{0.9}
     \ifthenelse{\isempty{#4}}{
         \def\bconsoleinput{\vskip-1.0\baselineskip}
     }{
         \def\bconsoleinput{{\it enter #4}}
     }
-    \program
-    \footnotesize
     \ifthenelse{\isempty{#3}}{
-        \caption{#2}
-        \label{#2}
+        \lstset{label=bconsole:#2,caption=#2}
     }{
-        \caption{#3}
-        \label{#3}
+        \lstset{label=bconsole:#3,caption=#3}
     }
-    \verbatim
-#1 #2\\
-}
-{
-    \endverbatim
-    \bconsoleinput
-    \endprogram
-}
+    \lstset{
+        %basicstyle=\ttfamily,
+        basicstyle=\small,
+        stringstyle=\ttfamily,
+        columns=fixed,
+        backgroundcolor=\color{colorBconsole},
+        frame=single,
+        framerule=0pt,
+        captionpos=b,
+    }
+\lstinline|#1 #2|
+}{}
 
 
 
-\newfloat{config}{h}{lop}
-\floatname{config}{Configuration}
-
-\newenvironment{bconfig}[1]{%
+\lstnewenvironment{bconfig}[1]{%
     % #1 caption
+    \renewcommand*{\lstlistingname}{Configuration} 
     \footnotesize
-    \def\bconfig1{#1}
-    \definecolor{shadecolor}{gray}{0.95}
-    \snugshade
-    \verbatim
-}
-{
-    \endverbatim
-    \endsnugshade
-    \ifthenelse{\isempty{\bconfig1}}{
-    }{
-        \captionof{config}{\bconfig1}
-        \label{config:\bconfig1}
-    }
-}
+    \definecolor{colorConfig}{gray}{0.9}
+    \lstset{
+        backgroundcolor=\color{colorConfig},
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        columns=fullflexible,
+        label=config:#1,
+        caption=#1}  
+}{}
+
+
 
 \newfloat{floatCommandOut}{h}{lop}
 \floatname{floatCommandOut}{Command}
@@ -147,15 +172,16 @@
     % #3 command
     \footnotesize
     \def\commandOut1{#1}
-    \definecolor{shadecolor}{gray}{0.95}
-    \snugshade
+    % \definecolor{shadecolor}{gray}{0.95}
+    % TODO: does not work with htlatex
+    % \snugshade
     \verbatim
 % root@linux:~# #3
 root@linux:\~{}\# #3
 }
 {
     \endverbatim
-    \endsnugshade
+    % \endsnugshade
     \ifthenelse{\isempty{\commandOut1}}{
     }{
         \captionof{floatCommandOut}{\commandOut1}
@@ -164,26 +190,4 @@ root@linux:\~{}\# #3
 }
 
 
-
-
-% \renewenvironment{theindex}
-%                {\if@twocolumn
-%                   \@restonecolfalse
-%                 \else
-%                   \@restonecoltrue
-%                 \fi
-%                 \@mkboth{\MakeUppercase\indexname}%
-%                         {\MakeUppercase\indexname}%
-%                                 \clearpage
-%                                 \subsection*{\indexname}
-%                                 \addcontentsline{toc}{subsection}{\indexname}
-%                 \thispagestyle{plain}\parindent\z@
-%                 \parskip\z@ \@plus .3\p@\relax
-%                 \let\item\@idxitem}
-%                                 {\if@restonecol\onecolumn\else\clearpage\fi}   %% Is this needed???
-%
-
-
-%%
 \endinput
-%%

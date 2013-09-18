@@ -21,7 +21,6 @@
 \usepackage{longtable}
 \usepackage{makeidx}
 \usepackage{index}
-%\usepackage{setspace}
 \usepackage{hyperref}
 % \usepackage[linkcolor=black,colorlinks=true]{hyperref}
 \usepackage{url}
@@ -31,9 +30,12 @@
 \usepackage{ifthen}
 \usepackage{xifthen}
 \usepackage[usenames,dvipsnames]{color} % required by framed
-\usepackage{framed} % framed, oframed, shaded, shaded*, snugshade, snugshade*, leftbar, titled-frame
+% framed does not work with htlatex, therefore replaced by listings
+%\usepackage{framed} % framed, oframed, shaded, shaded*, snugshade, snugshade*, leftbar, titled-frame
+\usepackage{listings}
 \usepackage{caption} % captionof
-%\usepackage{mdframed} % does not work on openSUSE 12.2
+% mdframed does not work on openSUSE 12.2
+%\usepackage{mdframed} 
 
 \usepackage{bareos}
 
@@ -46,16 +48,12 @@
 \newindex{console}{console.idx}{console.ind}{Console Index}
 \newindex{monitor}{monitor.idx}{monitor.ind}{Monitor Index}
 
-
-\sloppy
-
 \begin{document}
-\sloppy
 
+\sloppy
 \parindent 0pt
 
-
-\include{coverpage}
+\input{coverpage}
 
 \clearpage
 \pagenumbering{roman}
