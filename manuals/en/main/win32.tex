@@ -446,66 +446,6 @@ Bareos (bareos-fd.exe) runs, from SYSTEM to a Domain Admin userid, resolves
 the problem.
 
 
-%hopefully not needed anymore
-\hide{
-\section{Manually resetting the Permissions}
-\index[general]{Windows!Manually resetting the Permissions}
-
-The following solution was provided by Dan Langille {\textless}dan at langille in
-the dot org domain{\textgreater}. The steps are performed using Windows 2000 Server but
-they should apply to most Win32 platforms. The procedure outlines how to deal
-with a problem which arises when a restore creates a top-level new directory.
-In this example, "top-level" means something like {\bf
-c:\textbackslash{}src}, not {\bf c:\textbackslash{}tmp\textbackslash{}src}
-where {\bf c:\textbackslash{}tmp} already exists. If a restore job specifies /
-as the {\bf Where:} value, this problem will arise.
-
-The problem appears as a directory which cannot be browsed with Windows
-Explorer. The symptoms include the following message when you try to click on
-that directory:
-
-\includegraphics{\idir access-is-denied.eps}
-
-If you encounter this message, the following steps will change the permissions
-to allow full access.
-
-\begin{enumerate}
-\item right click on the top level directory (in this example, {\bf c:/src})
-   and  select {\bf Properties}.
-\item click on the Security tab.
-\item If the following message appears, you can ignore it, and click on {\bf
-   OK}.
-
-\includegraphics{\idir view-only.eps}
-
-You should see something like this:
-
-\includegraphics{\idir properties-security.eps}
-\item click on Advanced
-\item click on the Owner tab
-\item Change the owner to something other than the current owner (which is
-   {\bf SYSTEM} in this example as shown below).
-
-\includegraphics{\idir properties-security-advanced-owner.eps}
-\item ensure the "Replace owner on subcontainers and objects" box is
-   checked
-\item click on OK
-\item When the message "You do not have permission to read the contents of
-   directory c:\textbackslash{}src\textbackslash{}basis. Do you wish to replace
-   the directory permissions with permissions granting you Full Control?", click
-on Yes.
-
-\includegraphics{\idir confirm.eps}
-\item Click on OK to close the Properties tab
-   \end{enumerate}
-
-With the above procedure, you should now have full control over your restored
-directory.
-
-In addition to the above methods of changing permissions, there is a Microsoft
-program named {\bf cacls} that can perform similar functions.
-}
-
 
 \section{Fixing the Windows Boot Record}
 \index[general]{Windows!Fixing the Boot Record}
