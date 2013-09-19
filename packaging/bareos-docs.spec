@@ -12,7 +12,7 @@ License:        GFDL-1.3
 Summary:        Documentation
 Url:            http://www.bareos.org
 Group:          Productivity/Archiving/Backup
-Source:         %{name}-%version.tar.bz2
+Source:         %{name}-%version.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildRequires:  texlive-latex
 BuildRequires:  texlive-tex4ht ImageMagick
