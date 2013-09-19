@@ -95,6 +95,72 @@ If you turn this off by setting it to {\bf no}, your  Catalog will grow each
 time you run a Job.
 \end{description}
 
+
+\subsection{Job statistics}
+
+%\chapter{Using Bareos catalog to grab information}
+\label{UseBareosCatalogToExtractInformationChapter}
+\index[general]{Statistics}
+\index[general]{Job!Statistics}
+
+
+Bareos catalog contains lot of information about your IT infrastructure, how
+many files, their size, the number of video or music files etc. Using Bareos
+catalog during the day to get them permit to save resources on your servers.
+
+In this chapter, you will find tips and information to measure Bareos
+efficiency and report statistics.
+
+If you want to have statistics on your backups to
+provide some Service Level Agreement indicators, you could use a few
+SQL queries on the Job table to report how many:
+
+\begin{itemize}
+\item jobs have run
+\item jobs have been successful
+\item files have been backed up
+\item ...
+\end{itemize}
+
+However, these statistics are accurate only if your job retention is greater
+than your statistics period. Ie, if jobs are purged from the catalog, you won't
+be able to use them.
+
+Now, you can use the \textbf{update stats [days=num]} console command to fill
+the JobHistory table with new Job records. If you want to be sure to take in
+account only \textbf{good jobs}, ie if one of your important job has failed but
+you have fixed the problem and restarted it on time, you probably want to
+delete the first \textit{bad} job record and keep only the successful one. For
+that simply let your staff do the job, and update JobHistory table after two or
+three days depending on your organization using the \textbf{[days=num]} option.
+
+These statistics records aren't used for restoring, but mainly for
+capacity planning, billings, etc.
+
+The \configdirective{Statistics Retention = {\textless}time{\textgreater}} director directive defines
+the length of time that Bareos will keep statistics job records in the Catalog
+database after the Job End time. This information is stored in the \texttt{JobHistory} table.
+When this time
+period expires, and if user runs \texttt{prune stats} command, Bareos will
+prune (remove) Job records that are older than the specified period.
+
+You can use the following Job resource in your nightly \textbf{BackupCatalog}
+job to maintain statistics.
+\begin{verbatim}
+Job {
+  Name = BackupCatalog
+  ...
+  RunScript {
+    Console = "update stats days=3"
+    Console = "prune stats yes"
+    RunsWhen = After
+    RunsOnClient = no
+  }
+}
+\end{verbatim}
+
+
+
 \section{MySQL}
 \label{CompactingMySQL}
 \subsection{Compacting Your MySQL Database}
@@ -623,31 +689,11 @@ Only you can decide what is appropriate for your situation. We have provided
 you with a starting point.  We hope it helps.
 
 
-\label{BackingUPOtherDBs}
-\section{Backing Up Third Party Databases}
-\index[general]{Backing Up Third Party Databases}
-\index[general]{Databases!Backing Up Third Party}
-
-If you are running a database in production mode on your machine, Bareos will
-happily backup the files, but if the database is in use while Bareos is
-reading it, you may back it up in an unstable state.
-
-The best solution is to shutdown your database before backing it up, or use
-some tool specific to your database to make a valid live copy perhaps by
-dumping the database in ASCII format. I am not a database expert, so I cannot
-provide you advice on how to do this, but if you are unsure about how to
-backup your database, you might try visiting the Backup Central site, which
-has been renamed Storage Mountain (www.backupcentral.com). In particular,
-their
-\elink{ Free Backup and Recovery
-Software}{http://www.backupcentral.com/toc-free-backup-software.html} page has
-links to scripts that show you how to shutdown and backup most major
-databases.
-\label{Size}
 
 \section{Database Size}
 \index[general]{Size!Database}
 \index[general]{Database Size}
+\label{Size}
 
 As mentioned above, if you do not do automatic pruning, your Catalog will grow
 each time you run a Job. Normally, you should decide how long you want File
@@ -731,12 +777,3 @@ for each File that is saved, the database grows by approximately 150 bytes.
 \normalsize
 
 This database has a total size of approximately 450 Megabytes.
-
-If we were using SQLite, the determination of the total database size would be
-much easier since it is a single file, but we would have less insight to the
-size of the individual tables as we have in this case.
-
-Note, SQLite databases may be as much as 50\% larger than MySQL databases due
-to the fact that all data is stored as ASCII strings. That is even binary
-integers are stored as ASCII strings, and this seems to increase the space
-needed.

@@ -1,7 +1,7 @@
 %%
 %%
 
-\chapter{A Brief Tutorial}
+\chapter{Tutorial}
 \label{TutorialChapter}
 \index[general]{Tutorial}
 
@@ -19,7 +19,6 @@ run as root. See the Security chapter for more information on this subject.
 The general flow of running Bareos is:
 
 \begin{enumerate}
-\item cd {\textless}install-directory{\textgreater}
 \item Start the Database (if using MySQL or PostgreSQL)
 \item Start the Bareos Daemons
 \item Start the Console program to interact with the Director
@@ -35,20 +34,25 @@ The general flow of running Bareos is:
 
 Each of these steps is described in more detail below.
 
-\section{Before Running Bareos}
-\index[general]{Bareos!Before Running}
 
-Before running Bareos for the first time in production, we recommend that you
-run the {\bf test} command in the {\bf btape} program as described in the
-\ilink{Utility Program Chapter}{btape} of this manual. This will
-help ensure that Bareos functions correctly with your tape drive. If you have
-a modern HP, Sony, Tandberg Data or Quantum LTO tape drive running on Linux or
-Solaris, you can probably skip this test as Bareos is well tested with these
-drives and systems. For all other cases, you are {\bf strongly} encouraged to
-run the test before continuing. {\bf btape} also has a {\bf fill} command that
-attempts to duplicate what Bareos does when filling a tape and writing on the
-next tape. You should consider trying this command as well, but be forewarned,
-it can take hours (about four hours on my drive) to fill a large capacity tape.
+\section{Installing Bareos}
+
+For installing Bareos, follow the instructions from the \ilink{Installing Bareos}{InstallChapter} chapter.
+
+% \section{Before Running Bareos}
+% \index[general]{Bareos!Before Running}
+% 
+% Before running Bareos for the first time in production, we recommend that you
+% run the {\bf test} command in the {\bf btape} program as described in the
+% \ilink{Utility Program Chapter}{btape} of this manual. This will
+% help ensure that Bareos functions correctly with your tape drive. If you have
+% a modern HP, Sony, Tandberg Data or Quantum LTO tape drive running on Linux or
+% Solaris, you can probably skip this test as Bareos is well tested with these
+% drives and systems. For all other cases, you are {\bf strongly} encouraged to
+% run the test before continuing. {\bf btape} also has a {\bf fill} command that
+% attempts to duplicate what Bareos does when filling a tape and writing on the
+% next tape. You should consider trying this command as well, but be forewarned,
+% it can take hours (about four hours on my drive) to fill a large capacity tape.
 
 \section{Starting the Database}
 \label{StartDB}
@@ -1156,52 +1160,6 @@ some HP printers do use these port numbers. A {\bf netstat -a} on the Storage
 daemon's machine can determine who is using the 9103 port (used for FD to SD
 communications in Bareos).
 
-\section{Daemon Command Line Options}
-\index[general]{Daemon!Command Line Options}
-\index[general]{Command Line Options!Daemon}
-
-Each of the three daemons (Director, File, Storage) accepts a small set of
-options on the command line. In general, each of the daemons as well as the
-Console program accepts the following options:
-
-\begin{description}
-
-\item [-c {\textless}file{\textgreater}]
-   Define the file to use as a  configuration file. The default is the daemon
-   name followed  by {\bf .conf} i.e. {\bf bareos-dir.conf} for the Director,
-   {\bf bareos-fd.conf} for the File daemon, and {\bf bareos-sd}  for the Storage
-   daemon.
-
-\item [-d nn]
-   Set the debug level to {\bf nn}. Higher levels  of debug cause more
-   information to be displayed on STDOUT concerning  what the daemon is doing.
-
-\item [-f]
-   Run the daemon in the foreground. This option is  needed to run the daemon
-   under the debugger.
-
-\item [-g <group>]
-   Run the daemon under this group.  This must be a group name, not a GID.
-
-\item [-s]
-   Do not trap signals. This option is needed to run  the daemon under the
-   debugger.
-
-\item [-t]
-   Read the configuration file and print any error messages,  then immediately
-   exit. Useful for syntax testing of  new configuration files.
-
-\item [-u <user>]
-   Run the daemon as this user.  This must be a user name, not a UID.
-
-\item [-v]
-   Be more verbose or more complete in printing error  and informational
-   messages. Recommended.
-
-\item [-?]
-   Print the version and list of options.
-
-\end{description}
 
 
 \section{Creating a Pool}
@@ -1291,7 +1249,7 @@ will inform you, and you can create them "on-the-fly" so to speak. In my
 case, I label my tapes with the date, for example: {\bf DLT-18April02}. See
 below for the details of using the {\bf label} command.
 
-\section{Labeling Volumes with the Console Program}
+\subsection{Labeling Volumes with the Console Program}
 \index[general]{Labeling Volumes with the Console Program}
 \index[general]{Console!Command!label}
 

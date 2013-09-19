@@ -108,6 +108,54 @@ bls -V* /dev/nst0
 
 \section{Bareos Daemons}
 
+\subsection{Daemon Command Line Options}
+\index[general]{Daemon!Command Line Options}
+\index[general]{Command Line Options!Daemon}
+
+Each of the three daemons (Director, File, Storage) accepts a small set of
+options on the command line. In general, each of the daemons as well as the
+Console program accepts the following options:
+
+\begin{description}
+
+\item [-c {\textless}file{\textgreater}]
+   Define the file to use as a  configuration file. The default is the daemon
+   name followed  by {\bf .conf} i.e. {\bf bareos-dir.conf} for the Director,
+   {\bf bareos-fd.conf} for the File daemon, and {\bf bareos-sd}  for the Storage
+   daemon.
+
+\item [-d nn]
+   Set the debug level to {\bf nn}. Higher levels  of debug cause more
+   information to be displayed on STDOUT concerning  what the daemon is doing.
+
+\item [-f]
+   Run the daemon in the foreground. This option is  needed to run the daemon
+   under the debugger.
+
+\item [-g {\textless}group{\textgreater}]
+   Run the daemon under this group.  This must be a group name, not a GID.
+
+\item [-s]
+   Do not trap signals. This option is needed to run  the daemon under the
+   debugger.
+
+\item [-t]
+   Read the configuration file and print any error messages,  then immediately
+   exit. Useful for syntax testing of  new configuration files.
+
+\item [-u {\textless}user{\textgreater}]
+   Run the daemon as this user.  This must be a user name, not a UID.
+
+\item [-v]
+   Be more verbose or more complete in printing error  and informational
+   messages. Recommended.
+
+\item [-?]
+   Print the version and list of options.
+
+\end{description}
+
+
 \subsection{bareos-dir}
 \index[general]{Command!bareos-dir}
 \index[dir]{Command Line Options}
@@ -141,6 +189,10 @@ Bareos console.
 \TODO{Bareos console describe command line arguments}
 
 needs config file
+
+
+\subsection{bat}
+\index[general]{Command!bat}
 
 
 
@@ -561,7 +613,7 @@ database.  If your database exists but some records are missing because
 they were pruned, then you are all set. If your database was lost or
 destroyed, then you must first ensure that you have the SQL program running
 (MySQL or PostgreSQL), then you must create the Bareos database (normally
-named bareos), and you must create the Bacula tables.
+named bareos), and you must create the Bareos tables.
 This is explained in the
 \ilink{Installation}{CreateDatabase} chapter of the manual. Finally, before
 scanning into an empty database, you must start and stop the Director with

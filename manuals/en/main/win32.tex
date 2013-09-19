@@ -79,7 +79,7 @@ dialogue and the FQDN or ip address of your client.
 \label{fig:win32clientconfiguration}
 \end{figure}
 
-\pagebreak
+%\pagebreak
 
 \item Add the client ressource to your Bareos Director Configuration and a
 job ressource for the client as it is also described in the default bareos-dir.conf
@@ -93,7 +93,7 @@ job ressource for the client as it is also described in the default bareos-dir.c
 
 \end{itemize}
 
-\subsection{Commandline Installation}
+\subsection{Command Line (Silent) Installation}
 
 The windows installer is significantly enhanced since Version 12.4.4. All inputs
 that are given during interactive install can now directly be configured on the
@@ -249,7 +249,7 @@ program specifically designed to make a copy or backup the registry.
 
 
 
-\section{Volume Shadow Copy Service}
+\section{Volume Shadow Copy Service (VSS)}
 \index[general]{Windows!Volume Shadow Copy Service}
 \index[general]{Windows!VSS}
 \label{VSS}
@@ -331,8 +331,9 @@ other drives are backed up, they will be listed on the {\bf Drive(s)="C"}.  You 
 reports from each of the writer program.  Here they all report VSS\_WS\_STABLE, which means
 that you will get a consistent snapshot of the data handled by that writer.
 
-\section{VSS Problems}
+\subsection{VSS Problems}
 \index[general]{Windows!Problem!VSS}
+\index[general]{Windows!VSS!Problem}
 \index[fd]{Windows!Problem!VSS}
 \index[general]{Problem!Windows!VSS}
 
@@ -360,7 +361,7 @@ The Windows buildin Firewall is enabled since Windows version WinXP SP2.
 The Bareos installer opens the required network ports for Bareos.
 However, if you are using another Firewall, you might need to manually open the Bareos network port 9102/TCP.
 
-\section{Windows Port Usage}
+\subsection{Network TCP Port}
 \index[general]{Windows!Port Usage}
 
 If you want to see if the File daemon has properly opened the port and is
@@ -467,7 +468,7 @@ bootrec /fixmbr
 \end{verbatim}
 
 
-\section{Windows Specific File daemon Command Line}
+\section{File Daemon: Windows Specific Command Line Options}
 \index[general]{Windows!File Daemon!Command Line Options}
 \index[fd]{Windows!Command Line Options}
 

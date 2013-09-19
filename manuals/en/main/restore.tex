@@ -578,7 +578,8 @@ The full list of possible command line arguments are:
   where) (can't be used with {\bf where=}).
 \item {\bf add\_suffix=.old} -- add a suffix to all your files.
 \item {\bf regexwhere=!a.pdf!a.bkp.pdf!} -- do complex filename manipulation
-  like with sed unix command. Will overwrite other filename manipulation.
+  like with sed unix command. Will overwrite other filename manipulation. 
+  For details, see the \ilink{regexwhere}{regexwhere} section.
 \item {\bf restorejob=jobname} -- Pre-chooses a restore job. Bareos can be
   configured with multiple restore jobs ("Type = Restore" in the job
   definition). This allows the specification of different restore properties,
@@ -587,10 +588,10 @@ The full list of possible command line arguments are:
   interactively, or use the given restorejob.
 \end{itemize}
 
-\label{restorefilerelocation}
 \section{Using File Relocation}
 \index[general]{Using File Relocation}
 \label{filerelocation}
+\label{restorefilerelocation}
 
 \subsection{Introduction}
 
@@ -643,7 +644,7 @@ Select parameter to modify (1-6):
 
 
 \subsection{RegexWhere Format}
-    \label{useregexwhere}
+    \label{regexwhere}
 
 The format is very close to that used by sed or Perl (\texttt{s/replace this/by
   that/}) operator. A valid regexwhere expression has three fields :
@@ -661,7 +662,7 @@ character of the expression. The separator can be one of the following:
 
 You can use several expressions separated by a commas.
 
-\subsection*{Examples}
+\subsubsection*{Examples}
 
 \begin{tabular}{|c|c|c|l|}
 \hline

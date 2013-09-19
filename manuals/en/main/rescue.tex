@@ -68,8 +68,9 @@ you should take into account before a disaster strikes.
    and they can be difficult to rebuild from memory.
 \end{itemize}
 
-\label{rescueCDROM}
-\section{Bare Metal Recovery on Linux with a Rescue CD}
+\section{Bare Metal Recovery}
+
+\subsection{Linux}
 \index[general]{Disaster!Recovery!Linux}
 
 There are a number of good rescue systems available for Linux.
@@ -92,7 +93,7 @@ Bare Metal Recovery assumes that you have the following items for your system:
    around it is not yet documented here)
 \end{itemize}
 
-\subsection{Restoring a Linux Client System}
+\subsubsection{Restoring a Linux Client System}
 \index[general]{Restore!Linux Client}
 \label{restore_client}
 
@@ -126,7 +127,7 @@ You will take the following steps to get your system back up and running:
 
 Now for the details ...
 
-\subsection{Boot with your Rescue CDROM}
+\subsubsection{Boot with your Rescue CDROM}
 
 Each rescue disk boots somewhat differently.  Please see the
 instructions that go with your CDROM.
@@ -306,9 +307,171 @@ reboot.
 If everything went well, you should now be back up and running. If not,
 re-insert the emergency boot CDROM, boot, and figure out what is wrong.
 
-\label{restore_server}
+
+\subsection{FreeBSD}
+\label{FreeBSD1}
+\index[general]{Disaster!Recovery!FreeBSD}
+\index[general]{FreeBSD!Disaster Recovery}
+
+The same basic techniques described above also apply to FreeBSD. Although we
+don't yet have a fully automated procedure, Alex Torres Molina has provided us
+with the following instructions with a few additions from Jesse Guardiani and
+Dan Langille:
+
+\begin{enumerate}
+\item Boot with the FreeBSD installation disk
+\item Go to Custom, Partition and create your slices and go to Label and
+   create the partitions that you want. Apply changes.
+\item Go to Fixit to start an emergency console.
+\item Create devs ad0 .. .. if they don't exist under /mnt2/dev (in my  situation)
+   with MAKEDEV. The device or devices you  create depend on what hard drives you
+   have. ad0 is your  first ATA drive. da0 would by your first SCSI drive.  Under
+OS version 5 and greater, your device files are  most likely automatically
+created for you.
+\item mkdir /mnt/disk
+   this is the root of the new disk
+\item mount /mnt2/dev/ad0s1a /mnt/disk
+   mount /mnt2/dev/ad0s1c /mnt/disk/var
+   mount /mnt2/dev/ad0s1d /mnt/disk/usr
+.....
+The same hard drive issues as above apply here too.  Note, under OS version 5
+or higher, your disk devices may  be in /dev not /mnt2/dev.
+\item Network configuration (ifconfig xl0 ip/mask + route add default
+   ip-gateway)
+\item mkdir /mnt/disk/tmp
+\item cd /mnt/disk/tmp
+\item Copy bareos-fd and bareos-fd.conf to this path
+\item If you need to, use sftp to copy files, after which you must do this:
+   ln -s /mnt2/usr/bin /usr/bin
+\item chmod u+x bareos-fd
+\item Modify bareos-fd.conf to fit this machine
+\item Copy /bin/sh to /mnt/disk, necessary for chroot
+\item Don't forget to put your bareos-dir's IP address and domain  name in
+   /mnt/disk/etc/hosts if it's not on a public net.  Otherwise the FD on the
+   machine you are restoring to  won't be able to contact the SD and DIR on the
+remote machine.
+\item mkdir -p /mnt/disk/var/db/bareos
+\item chroot /mnt/disk /tmp/bareos-fd -c /tmp/bareos-fd.conf
+   to start bareos-fd
+\item Now you can go to bareos-dir and restore the job with the entire
+   contents of the broken server.
+\item You must create /proc
+\end{enumerate}
+
+\subsection{Solaris}
+\label{solaris}
+\index[general]{Solaris!Disaster Recovery}
+\index[general]{Disaster!Recovery!Solaris}
+
+The same basic techniques described above apply to Solaris:
+
+\begin{itemize}
+\item the same restrictions as those given for Linux apply
+\item you will need to create a Rescue disk
+   \end{itemize}
+
+However, during the recovery phase, the boot and disk preparation procedures
+are different:
+
+\begin{itemize}
+\item there is no need to create an emergency boot disk  since it is an
+   integrated part of the Solaris boot.
+\item you must partition and format your hard disk by hand  following manual
+   procedures as described in W. Curtis Preston's  book "Unix Backup \&
+   Recovery"
+\end{itemize}
+
+Once the disk is partitioned, formatted and mounted, you can continue with
+bringing up the network and reloading Bareos.
+
+\subsubsection{Preparing Solaris Before a Disaster}
+
+As mentioned above, before a disaster strikes, you should prepare the
+information needed in the case of problems. To do so, in the {\bf
+rescue/solaris} subdirectory enter:
+
+\footnotesize
+\begin{verbatim}
+su
+./getdiskinfo
+./make_rescue_disk
+\end{verbatim}
+\normalsize
+
+The {\bf getdiskinfo} script will, as in the case of Linux described above,
+create a subdirectory {\bf diskinfo} containing the output from several system
+utilities. In addition, it will contain the output from the {\bf SysAudit}
+program as described in Curtis Preston's book. This file {\bf
+diskinfo/sysaudit.bsi} will contain the disk partitioning information that
+will allow you to manually follow the procedures in the "Unix Backup \&
+Recovery" book to repartition and format your hard disk. In addition, the
+{\bf getdiskinfo} script will create a {\bf start\_network} script.
+
+Once you have your disks repartitioned and formatted, do the following:
+
+\begin{itemize}
+\item Start Your Network with the {\bf start\_network} script
+\item Restore the Bareos File daemon as documented above
+\item Perform a Bareos restore of all your files using the same  commands as
+   described above for Linux
+\item Re-install your boot loader using the instructions outlined  in the
+   "Unix Backup \& Recovery" book  using installboot
+\end{itemize}
+
+\subsection{Windows}
+\label{Win3233}
+\index[general]{Disaster!Recovery!Windows}
+\index[general]{Windows!Disaster Recovery}
+
+Due to open system files, and registry problems, Bareos cannot save and
+restore a complete Win2K/XP/NT environment.
+
+A suggestion by Damian Coutts using Microsoft's NTBackup utility in
+conjunction with Bareos should permit a Full bare metal restore of Win2K/XP
+(and possibly NT systems). His suggestion is to do an NTBackup of the critical
+system state prior to running a Bareos backup with the following command:
+
+\footnotesize
+\begin{verbatim}
+ntbackup backup systemstate /F c:\systemstate.bkf
+\end{verbatim}
+\normalsize
+
+The {\bf backup} is the command, the {\bf systemstate} says to backup only the
+system state and not all the user files, and the {\bf /F
+c:\textbackslash{}systemstate.bkf} specifies where to write the state file.
+this file must then be saved and restored by Bareos. This command
+can be put in a Client Run Before Job directive so that it is automatically
+run during each backup, and thus saved to a Bareos Volume.
+
+To restore the system state, you first reload a base operating system, then
+you would use Bareos to restore all the users files and to recover the {\bf
+c:\textbackslash{}systemstate.bkf} file, and finally, run {\bf NTBackup} and
+{\bf catalogue} the system statefile, and then select it for restore. The
+documentation says you can't run a command line restore of the systemstate.
+
+This procedure has been confirmed to work by Ludovic Strappazon -- many
+thanks!
+
+A new tool is provided in the form of a bareos plugin for the BartPE rescue
+CD. BartPE is a self-contained WindowsXP boot CD which you can make using the
+PeBuilder tools available at
+\elink{http://www.nu2.nu/pebuilder/}{http://www.nu2.nu/pebuilder/} and a valid
+Windows XP SP1 CDROM. The plugin is provided as a zip archive. Unzip the file
+and copy the bareos directory into the plugin directory of your BartPE
+installation. Edit the configuration files to suit your installation and build
+your CD according to the instructions at Bart's site. This will permit you to
+boot from the cd, configure and start networking, start the bareos file client
+and access your director with the console program. The programs menu on the
+booted CD contains entries to install the file client service, start the file
+client service, and start the WX-Console. You can also open a command line
+window and CD Programs\textbackslash{}Bareos and run the command line console
+bconsole.
+
+
 \section{Restoring a Bareos Server}
 \index[general]{Restore!Baroes Server}
+\label{restore_server}
 
 Above, we considered how to recover a client machine where a valid Bareos
 server was running on another machine. However, what happens if your server
@@ -364,179 +527,3 @@ For additional details of restoring your database, please see the
 of the Console Restore Command chapter of this manual.
 
 
-
-\section{FreeBSD Bare Metal Recovery}
-\label{FreeBSD1}
-\index[general]{Disaster!Recovery!FreeBSD}
-\index[general]{FreeBSD!Disaster Recovery}
-
-The same basic techniques described above also apply to FreeBSD. Although we
-don't yet have a fully automated procedure, Alex Torres Molina has provided us
-with the following instructions with a few additions from Jesse Guardiani and
-Dan Langille:
-
-\begin{enumerate}
-\item Boot with the FreeBSD installation disk
-\item Go to Custom, Partition and create your slices and go to Label and
-   create the partitions that you want. Apply changes.
-\item Go to Fixit to start an emergency console.
-\item Create devs ad0 .. .. if they don't exist under /mnt2/dev (in my  situation)
-   with MAKEDEV. The device or devices you  create depend on what hard drives you
-   have. ad0 is your  first ATA drive. da0 would by your first SCSI drive.  Under
-OS version 5 and greater, your device files are  most likely automatically
-created for you.
-\item mkdir /mnt/disk
-   this is the root of the new disk
-\item mount /mnt2/dev/ad0s1a /mnt/disk
-   mount /mnt2/dev/ad0s1c /mnt/disk/var
-   mount /mnt2/dev/ad0s1d /mnt/disk/usr
-.....
-The same hard drive issues as above apply here too.  Note, under OS version 5
-or higher, your disk devices may  be in /dev not /mnt2/dev.
-\item Network configuration (ifconfig xl0 ip/mask + route add default
-   ip-gateway)
-\item mkdir /mnt/disk/tmp
-\item cd /mnt/disk/tmp
-\item Copy bareos-fd and bareos-fd.conf to this path
-\item If you need to, use sftp to copy files, after which you must do this:
-   ln -s /mnt2/usr/bin /usr/bin
-\item chmod u+x bareos-fd
-\item Modify bareos-fd.conf to fit this machine
-\item Copy /bin/sh to /mnt/disk, necessary for chroot
-\item Don't forget to put your bareos-dir's IP address and domain  name in
-   /mnt/disk/etc/hosts if it's not on a public net.  Otherwise the FD on the
-   machine you are restoring to  won't be able to contact the SD and DIR on the
-remote machine.
-\item mkdir -p /mnt/disk/var/db/bareos
-\item chroot /mnt/disk /tmp/bareos-fd -c /tmp/bareos-fd.conf
-   to start bareos-fd
-\item Now you can go to bareos-dir and restore the job with the entire
-   contents of the broken server.
-\item You must create /proc
-\end{enumerate}
-
-\section{Solaris Bare Metal Recovery}
-\label{solaris}
-\index[general]{Solaris!Disaster Recovery}
-\index[general]{Disaster!Recovery!Solaris}
-
-The same basic techniques described above apply to Solaris:
-
-\begin{itemize}
-\item the same restrictions as those given for Linux apply
-\item you will need to create a Rescue disk
-   \end{itemize}
-
-However, during the recovery phase, the boot and disk preparation procedures
-are different:
-
-\begin{itemize}
-\item there is no need to create an emergency boot disk  since it is an
-   integrated part of the Solaris boot.
-\item you must partition and format your hard disk by hand  following manual
-   procedures as described in W. Curtis Preston's  book "Unix Backup \&
-   Recovery"
-\end{itemize}
-
-Once the disk is partitioned, formatted and mounted, you can continue with
-bringing up the network and reloading Bareos.
-
-\subsection{Preparing Solaris Before a Disaster}
-
-As mentioned above, before a disaster strikes, you should prepare the
-information needed in the case of problems. To do so, in the {\bf
-rescue/solaris} subdirectory enter:
-
-\footnotesize
-\begin{verbatim}
-su
-./getdiskinfo
-./make_rescue_disk
-\end{verbatim}
-\normalsize
-
-The {\bf getdiskinfo} script will, as in the case of Linux described above,
-create a subdirectory {\bf diskinfo} containing the output from several system
-utilities. In addition, it will contain the output from the {\bf SysAudit}
-program as described in Curtis Preston's book. This file {\bf
-diskinfo/sysaudit.bsi} will contain the disk partitioning information that
-will allow you to manually follow the procedures in the "Unix Backup \&
-Recovery" book to repartition and format your hard disk. In addition, the
-{\bf getdiskinfo} script will create a {\bf start\_network} script.
-
-Once you have your disks repartitioned and formatted, do the following:
-
-\begin{itemize}
-\item Start Your Network with the {\bf start\_network} script
-\item Restore the Bareos File daemon as documented above
-\item Perform a Bareos restore of all your files using the same  commands as
-   described above for Linux
-\item Re-install your boot loader using the instructions outlined  in the
-   "Unix Backup \& Recovery" book  using installboot
-\end{itemize}
-
-
-% not relevant
-\hide{
-\section{Bugs and Other Considerations}
-\label{genbugs}
-
-\paragraph*{Strange Bootstrap Files:}
-
-If any of you look closely at the bootstrap file that is produced and used for
-the restore, you will probably notice that the FileIndex item does
-not include all the files saved to the tape. This is because in some instances
-there are duplicates (especially in the case of an Incremental save), and in
-such circumstances, Bareos restores only the last of multiple copies of
-a file or directory.
-}
-
-\section{Disaster Recovery of Windows Systems}
-\label{Win3233}
-\index[general]{Disaster!Recovery!Windows}
-\index[general]{Windows!Disaster Recovery}
-
-Due to open system files, and registry problems, Bareos cannot save and
-restore a complete Win2K/XP/NT environment.
-
-A suggestion by Damian Coutts using Microsoft's NTBackup utility in
-conjunction with Bareos should permit a Full bare metal restore of Win2K/XP
-(and possibly NT systems). His suggestion is to do an NTBackup of the critical
-system state prior to running a Bareos backup with the following command:
-
-\footnotesize
-\begin{verbatim}
-ntbackup backup systemstate /F c:\systemstate.bkf
-\end{verbatim}
-\normalsize
-
-The {\bf backup} is the command, the {\bf systemstate} says to backup only the
-system state and not all the user files, and the {\bf /F
-c:\textbackslash{}systemstate.bkf} specifies where to write the state file.
-this file must then be saved and restored by Bareos. This command
-can be put in a Client Run Before Job directive so that it is automatically
-run during each backup, and thus saved to a Bareos Volume.
-
-To restore the system state, you first reload a base operating system, then
-you would use Bareos to restore all the users files and to recover the {\bf
-c:\textbackslash{}systemstate.bkf} file, and finally, run {\bf NTBackup} and
-{\bf catalogue} the system statefile, and then select it for restore. The
-documentation says you can't run a command line restore of the systemstate.
-
-This procedure has been confirmed to work by Ludovic Strappazon -- many
-thanks!
-
-A new tool is provided in the form of a bareos plugin for the BartPE rescue
-CD. BartPE is a self-contained WindowsXP boot CD which you can make using the
-PeBuilder tools available at
-\elink{http://www.nu2.nu/pebuilder/}{http://www.nu2.nu/pebuilder/} and a valid
-Windows XP SP1 CDROM. The plugin is provided as a zip archive. Unzip the file
-and copy the bareos directory into the plugin directory of your BartPE
-installation. Edit the configuration files to suit your installation and build
-your CD according to the instructions at Bart's site. This will permit you to
-boot from the cd, configure and start networking, start the bareos file client
-and access your director with the console program. The programs menu on the
-booted CD contains entries to install the file client service, start the file
-client service, and start the WX-Console. You can also open a command line
-window and CD Programs\textbackslash{}Bareos and run the command line console
-bconsole.

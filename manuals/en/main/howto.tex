@@ -1,0 +1,12 @@
+\section{Backing Up Third Party Databases}
+\index[general]{Backing Up Third Party Databases}
+\index[general]{Database!Backing Up Third Party}
+\label{BackingUPOtherDBs}
+
+If you are running a database in production mode on your machine, Bareos will
+happily backup the files, but if the database is in use while Bareos is
+reading it, you may back it up in an unstable state.
+
+The best solution is to shutdown your database before backing it up, or use
+some tool specific to your database to make a valid live copy perhaps by
+dumping the database in ASCII format.

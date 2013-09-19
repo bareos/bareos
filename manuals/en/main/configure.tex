@@ -27,6 +27,39 @@ it will be required, that you customize the configuration.
 %\includegraphics{\idir bareos-objects.eps}
 %\label{ResFormat}
 
+
+%\section{Detailed Information for each Daemon}
+\index[general]{Detailed Information for each Daemon}
+\index[general]{Daemon!Detailed Information for each}
+
+The details of each Resource and the directives permitted therein are
+described in the following chapters.
+
+The following configuration files must be defined:
+
+\begin{itemize}
+\item
+   \ilink{Console}{ConsoleConfChapter} -- to define the resources for
+   the Console program (user interface to the Director).  It defines which
+Directors are  available so that you may interact with them.
+\item
+   \ilink{Director}{DirectorChapter} -- to define the resources
+   necessary for the Director. You define all the Clients  and Storage daemons
+that you use in this configuration file.
+\item
+   \ilink{Client}{FiledConfChapter} -- to define the resources for
+   each client to be backed up. That is, you will have a separate  Client
+resource file on each machine that runs a File daemon.
+\item
+   \ilink{Storage}{StoredConfChapter} -- to define the resources to
+   be used by each Storage daemon. Normally, you will have  a single Storage
+daemon that controls your tape drive or tape  drives. However, if you have
+tape drives on several machines,  you will have at least one Storage daemon
+per machine.
+\end{itemize}
+
+
+
 \section{Character Sets}
 \index[general]{Character Sets}
 Bareos is designed to handle most character sets of the world,
@@ -508,33 +541,3 @@ daemon, which is most likely not what is desired. The password used for the
 File daemon to authorize with the Storage daemon is a temporary password
 unique to each Job created by the daemons and is not specified in any .conf
 file.
-
-\section{Detailed Information for each Daemon}
-\index[general]{Detailed Information for each Daemon}
-\index[general]{Daemon!Detailed Information for each}
-
-The details of each Resource and the directives permitted therein are
-described in the following chapters.
-
-The following configuration files must be defined:
-
-\begin{itemize}
-\item
-   \ilink{Console}{ConsoleConfChapter} -- to define the resources for
-   the Console program (user interface to the Director).  It defines which
-Directors are  available so that you may interact with them.
-\item
-   \ilink{Director}{DirectorChapter} -- to define the resources
-   necessary for the Director. You define all the Clients  and Storage daemons
-that you use in this configuration file.
-\item
-   \ilink{Client}{FiledConfChapter} -- to define the resources for
-   each client to be backed up. That is, you will have a separate  Client
-resource file on each machine that runs a File daemon.
-\item
-   \ilink{Storage}{StoredConfChapter} -- to define the resources to
-   be used by each Storage daemon. Normally, you will have  a single Storage
-daemon that controls your tape drive or tape  drives. However, if you have
-tape drives on several machines,  you will have at least one Storage daemon
-per machine.
-\end{itemize}

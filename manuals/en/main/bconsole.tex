@@ -35,8 +35,7 @@ command line option (see below). This file allows default configuration
 of the Console, and at the current time, the only Resource Record defined
 is the Director resource, which gives the Console the name and address of
 the Director.  For more information on configuration of the Console
-program, please see the \ilink{Console Configuration
-File}{ConsoleConfChapter} Chapter of this document.
+program, please see the \ilink{Console Configuration}{ConsoleConfChapter} chapter of this document.
 
 \section{Running the Console Program}
 
@@ -99,7 +98,7 @@ The maximum command line length is limited to 511 characters, so if you
 are scripting the console, you may need to take some care to limit the
 line length.
 
-\section{Exit the Console Program}
+\subsection{Exit the Console Program}
 \index[general]{Command!bconsole!exit}
 
 Normally, you simply enter {\bf quit} or {\bf exit} and the Console program
@@ -117,7 +116,82 @@ the case of nested prompts). In a few places such as where it is asking for a
 Volume name, the period will be taken to be the Volume name. In that case, you
 will most likely be able to cancel at the next prompt.
 
-\section{Alphabetic List of Console Keywords}
+
+\subsection{Running the Console from a Shell Script}
+\index[general]{Console!Running from a Shell}
+\label{scripting}
+
+You can automate many Console tasks by running the console program from a
+shell script. For example, if you have created a file containing the following
+commands:
+
+\footnotesize
+\begin{verbatim}
+ bconsole -c ./bconsole.conf <<END_OF_DATA
+ unmount storage=DDS-4
+ quit
+ END_OF_DATA
+\end{verbatim}
+\normalsize
+
+when that file is executed, it will unmount the current DDS-4 storage device.
+You might want to run this command during a Job by using the {\bf
+RunBeforeJob} or {\bf RunAfterJob} records.
+
+It is also possible to run the Console program from file input where the file
+contains the commands as follows:
+
+\footnotesize
+\begin{verbatim}
+bconsole -c ./bconsole.conf <filename
+\end{verbatim}
+\normalsize
+
+where the file named {\bf filename} contains any set of console commands.
+
+As a real example, the following script is part of the Bareos regression
+tests. It labels a volume (a disk volume), runs a backup, then does a restore
+of the files saved.
+
+\footnotesize
+\begin{verbatim}
+bconsole <<END_OF_DATA
+@output /dev/null
+messages
+@output /tmp/log1.out
+label volume=TestVolume001
+run job=Client1 yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@output /tmp/log2.out
+restore current all
+yes
+wait
+messages
+@output
+quit
+END_OF_DATA
+\end{verbatim}
+\normalsize
+
+The output from the backup is directed to /tmp/log1.out and the output from
+the restore is directed to /tmp/log2.out. To ensure that the backup and
+restore ran correctly, the output files are checked with:
+
+\footnotesize
+\begin{verbatim}
+grep "^ *Termination: *Backup OK" /tmp/log1.out
+backupstat=$?
+grep "^ *Termination: *Restore OK" /tmp/log2.out
+restorestat=$?
+\end{verbatim}
+\normalsize
+
+
+\section{Console Keywords}
 \index[general]{Console!Keywords}
 
 Unless otherwise specified, each of the following keywords
@@ -249,7 +323,7 @@ Please note, this list is incomplete.
   Used in the restore command. Takes no argument.
 \end{description}
 
-\section{Alphabetic List of Console Commands}
+\section{Console Commands}
 \index[general]{Console!Commands}
 
 The following commands are currently implemented:
@@ -1528,7 +1602,7 @@ wait [jobid=<jobid>] [jobuid=<unique id>] [job=<job name>]
 
 \end{description}
 
-\section{Special dot (.) Commands}
+\subsection{Special dot (.) Commands}
 \label{dotcommands}
 \index[general]{Console!Command!Special .}
 \index[general]{Console!Command!. Commands}
@@ -1563,7 +1637,7 @@ is the list of dot commands:
 \normalsize
 
 
-\section{Special At (@) Commands}
+\subsection{Special At (@) Commands}
 \label{atcommands}
 
 Normally, all commands entered to the Console program are immediately
@@ -1644,81 +1718,11 @@ regression  test might be:
 
 \end{description}
 
-\section{Running the Console from a Shell Script}
-\index[general]{Console!Running from a Shell}
-\label{scripting}
-
-You can automate many Console tasks by running the console program from a
-shell script. For example, if you have created a file containing the following
-commands:
-
-\footnotesize
-\begin{verbatim}
- bconsole -c ./bconsole.conf <<END_OF_DATA
- unmount storage=DDS-4
- quit
- END_OF_DATA
-\end{verbatim}
-\normalsize
-
-when that file is executed, it will unmount the current DDS-4 storage device.
-You might want to run this command during a Job by using the {\bf
-RunBeforeJob} or {\bf RunAfterJob} records.
-
-It is also possible to run the Console program from file input where the file
-contains the commands as follows:
-
-\footnotesize
-\begin{verbatim}
-bconsole -c ./bconsole.conf <filename
-\end{verbatim}
-\normalsize
-
-where the file named {\bf filename} contains any set of console commands.
-
-As a real example, the following script is part of the Bareos regression
-tests. It labels a volume (a disk volume), runs a backup, then does a restore
-of the files saved.
-
-\footnotesize
-\begin{verbatim}
-bconsole <<END_OF_DATA
-@output /dev/null
-messages
-@output /tmp/log1.out
-label volume=TestVolume001
-run job=Client1 yes
-wait
-messages
-@#
-@# now do a restore
-@#
-@output /tmp/log2.out
-restore current all
-yes
-wait
-messages
-@output
-quit
-END_OF_DATA
-\end{verbatim}
-\normalsize
-
-The output from the backup is directed to /tmp/log1.out and the output from
-the restore is directed to /tmp/log2.out. To ensure that the backup and
-restore ran correctly, the output files are checked with:
-
-\footnotesize
-\begin{verbatim}
-grep "^ *Termination: *Backup OK" /tmp/log1.out
-backupstat=$?
-grep "^ *Termination: *Restore OK" /tmp/log2.out
-restorestat=$?
-\end{verbatim}
-\normalsize
 
 \section{Adding Volumes to a Pool}
 \index[general]{Console!Adding a Volume to a Pool}
+
+\TODO{move to another chapter}
 
 If you have used the {\bf label} command to label a Volume, it will be
 automatically added to the Pool, and you will not need to add any media to the

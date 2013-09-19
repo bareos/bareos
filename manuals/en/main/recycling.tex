@@ -1,7 +1,7 @@
 %%
 %%
 
-\chapter{Automatic Volume Recycling}
+\section{Automatic Volume Recycling}
 \label{RecyclingChapter}
 \index[general]{Recycle!Automatic Volume}
 \index[general]{Automatic Volume Recycling}
@@ -87,7 +87,7 @@ overwriting it. There are also a number of directives such as
 {\bf Volume Use Duration} that will automatically mark a volume as {\bf
 Used} and thus no longer appendable.
 
-\section{Automatic Pruning}
+\subsection{Automatic Pruning}
 \label{AutoPruning}
 \index[general]{Automatic Pruning}
 \index[general]{Pruning!Automatic}
@@ -113,7 +113,7 @@ BE on a tape.  Or, if the catalog is starting to get too big, you could prune
 the oldest jobs to save space.  Manual pruning is done with the \ilink{prune
   command}{ManualPruning} in the console.
 
-\section{Pruning Directives}
+\subsection{Pruning Directives}
 \index[general]{Pruning!Directives}
 \index[general]{Directives!Pruning}
 
@@ -229,11 +229,12 @@ The default is 1 year.
    It is also possible to "force" pruning of all Volumes in the Pool
    associated with a Job by adding {\bf Prune Files = yes} to the Job resource.
 
-\label{Recycling}
-\label{RecyclingAlgorithm}
-\section{Recycling Algorithm}
+\subsection{Recycling Algorithm}
 \index[general]{Algorithm!Recycling}
 \index[general]{Recycling Algorithm}
+\label{RecyclingAlgorithm}
+\label{Recycling}
+
 
 After all Volumes of a Pool have been pruned (as mentioned above, this happens
 when a Job needs a new Volume and no appendable Volumes are available), Bareos
@@ -338,7 +339,7 @@ A few points from Alan Brown to keep in mind:
 \end{enumerate}
 
 
-\section{Recycle Status}
+\subsection{Recycle Status}
 \index[general]{Recycle Status}
 
 Each Volume inherits the Recycle status (yes or no) from the Pool resource
@@ -420,7 +421,7 @@ A typical volume life cycle is like this:
 \normalsize
 
 
-\section{Making Bareos Use a Single Tape}
+\subsection{Making Bareos Use a Single Tape}
 \label{singletape}
 \index[general]{Tape!Making Bareos Use a Single}
 
@@ -451,7 +452,7 @@ Pool {
 \end{verbatim}
 \normalsize
 
-\section{Daily, Weekly, Monthly Tape Usage Example}
+\subsection{Daily, Weekly, Monthly Tape Usage Example}
 \label{usageexample}
 \index[general]{Daily, Weekly, Monthly Tape Usage Example}
 \index[general]{Example!Daily Weekly Monthly Tape Usage}
@@ -570,7 +571,7 @@ Pool {
 \end{verbatim}
 \normalsize
 
-\section{Automatic Pruning and Recycling Example}
+\subsection{Automatic Pruning and Recycling Example}
 \label{PruningExample}
 \index[general]{Automatic Pruning and Recycling Example}
 \index[general]{Example!Automatic Pruning and Recycling}
@@ -667,7 +668,7 @@ create the Volumes (Files) the first time it uses them.
 To turn it off, either delete all the resources you've added, or simply
 comment out the {\bf Schedule} record in the {\bf Job} resource.
 
-\section{Manually Recycling Volumes}
+\subsection{Manually Recycling Volumes}
 \label{manualrecycling}
 \index[general]{Volumes!Manually Recycling}
 \index[general]{Manually Recycling Volumes}
