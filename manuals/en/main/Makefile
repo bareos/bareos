@@ -30,7 +30,8 @@ main.toc: *.tex
 
 version.tex.tmp: *.tex
 	printf -- "\\\\def\\\\bareosBranch{`git rev-parse --abbrev-ref HEAD`}\n" > version.tex.tmp
-	diff -q version.tex.tmp version.tex || cp -a version.tex.tmp version.tex
+	# disabled, because does not work with package building
+	#diff -q version.tex.tmp version.tex || cp -a version.tex.tmp version.tex
 
 main.dvi: *.sty *.tex version.tex.tmp $(INDEXES) main.toc
 	$(LATEX) main.tex
