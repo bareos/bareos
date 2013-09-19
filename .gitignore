@@ -23,6 +23,8 @@
 *.tmp
 *.xref
 manuals/*/developers/developers.pdf
+manuals/*/main/html/
+manuals/*/main/version.tex
 manuals/*/main/main.css
 manuals/*/main/main.html
 manuals/*/main/main.pdf
