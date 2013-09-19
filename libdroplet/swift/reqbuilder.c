@@ -84,8 +84,6 @@ dpl_swift_req_build(dpl_ctx_t *ctx,
   dpl_dict_t *headers = NULL;
   int ret, ret2;
   char *method = dpl_method_str(req->method);
-  char *body_str = NULL;
-  int body_len = 0;
   char buf[256];
 
   DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);
@@ -116,10 +114,9 @@ dpl_swift_req_build(dpl_ctx_t *ctx,
     }
   else if (DPL_METHOD_PUT == req->method)
     {
-      if (body_strp != NULL && body_str != NULL)
+      if (body_strp != NULL)
 	{
-	  body_len = strlen(body_str);
-	  snprintf(buf, sizeof (buf), "%u", body_len);
+	  snprintf(buf, sizeof (buf), "%u", *body_lenp);
 	  ret2 = dpl_dict_add(headers, "Content-Length", buf, 0);
 	  if (DPL_SUCCESS != ret2)
 	    {
@@ -127,6 +124,9 @@ dpl_swift_req_build(dpl_ctx_t *ctx,
 	      goto end;
 	    }
 	}
+    }
+  else if (DPL_METHOD_DELETE == req->method)
+    {
     }
   else
     {
@@ -147,26 +147,6 @@ dpl_swift_req_build(dpl_ctx_t *ctx,
           goto end;
         }
     }
-
-  if (NULL != body_strp)
-    {
-      if (NULL == body_str)
-        {
-          *body_strp = NULL;
-        }
-      else
-        {
-          *body_strp = strdup(body_str);
-          if (NULL == body_strp)
-            {
-              ret = DPL_ENOMEM;
-              goto end;
-            }
-        }
-    }
-
-  if (NULL != body_lenp)
-    *body_lenp = body_len;
 
   if (NULL != headersp)
     {

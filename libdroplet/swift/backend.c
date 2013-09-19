@@ -75,6 +75,7 @@ dpl_swift_login(dpl_ctx_t *ctx)
   int           connection_close = 0;
 
   dpl_swift_ctx_t *swift_ctx;
+  char *auth_token, *storage_url;
   
   req = dpl_req_new(ctx);
   if (NULL == req)
@@ -146,15 +147,22 @@ dpl_swift_login(dpl_ctx_t *ctx)
 
   /* WIP dpl_dict_print(headers_reply, stdout, -1); */
 
-  swift_ctx = calloc(1, sizeof(swift_ctx));
+  swift_ctx = calloc(1, sizeof(dpl_swift_ctx_t));
   if (NULL == swift_ctx)
     {
       ret = DPL_ENOMEM;
       goto end;
     }
 
-  swift_ctx->auth_token = strdup(dpl_dict_get_value(headers_reply, "x-auth-token"));
-  swift_ctx->storage_url = strdup(dpl_dict_get_value(headers_reply, "x-storage-url"));
+  auth_token = dpl_dict_get_value(headers_reply, "x-auth-token");
+  storage_url = dpl_dict_get_value(headers_reply, "x-storage-url");
+  if (auth_token == NULL || storage_url == NULL)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+  swift_ctx->auth_token = strdup(auth_token);
+  swift_ctx->storage_url = strdup(storage_url);
 
   ctx->backend_ctx = swift_ctx;
 
@@ -362,8 +370,6 @@ dpl_swift_put(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  char          *body_str = NULL;
-  int           body_len = 0;
   char *data_buf_returned = NULL;
   u_int data_len_returned;
   dpl_value_t *val = NULL;
@@ -419,7 +425,6 @@ dpl_swift_put(dpl_ctx_t *ctx,
   /*   } */
 
   dpl_req_set_object_type(req, object_type);
-
   dpl_req_set_data(req, data_buf, data_len);
 
   /* if (NULL != sysmd) */
@@ -443,8 +448,7 @@ dpl_swift_put(dpl_ctx_t *ctx,
   /*   } */
 
   //build request
-  ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, &body_str, &body_len);
-  dpl_dict_add(headers_request, "X-Auth-Token", ((dpl_swift_ctx_t *)(ctx->backend_ctx))->auth_token, 0);
+  ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, &data_buf, &data_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -468,6 +472,8 @@ dpl_swift_put(dpl_ctx_t *ctx,
       goto end;
     }
 
+  dpl_dict_add(headers_request, "X-Auth-Token", ((dpl_swift_ctx_t *)(ctx->backend_ctx))->auth_token, 0);
+
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
@@ -485,8 +491,8 @@ dpl_swift_put(dpl_ctx_t *ctx,
   n_iov++;
 
   //buffer
-  iov[n_iov].iov_base = body_str;
-  iov[n_iov].iov_len = body_len;
+  iov[n_iov].iov_base = data_buf;
+  iov[n_iov].iov_len = data_len;
   n_iov++;
 
   ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
@@ -498,11 +504,11 @@ dpl_swift_put(dpl_ctx_t *ctx,
       goto end;
     }
 
+  printf("\n\n%s\n\n", header);
+
   ret2 = dpl_read_http_reply(conn, 1, &data_buf_returned, &data_len_returned, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
-      printf("%s\n", "ERROR DUDE");
-      dpl_dict_print(headers_reply, stdout, -1);
       ret = ret2;
       goto end;
     }
@@ -518,8 +524,141 @@ dpl_swift_put(dpl_ctx_t *ctx,
   if (NULL != data_buf_returned)
     free(data_buf_returned);
 
-  if (NULL != body_str)
-    free(body_str);
+  if (NULL != conn)
+    {
+      if (1 == connection_close)
+        dpl_conn_terminate(conn);
+      else
+        dpl_conn_release(conn);
+    }
+
+  if (NULL != headers_reply)
+    dpl_dict_free(headers_reply);
+
+  if (NULL != headers_request)
+    dpl_dict_free(headers_request);
+
+  if (NULL != req)
+    dpl_req_free(req);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+
+dpl_status_t
+dpl_swift_delete(dpl_ctx_t *ctx,
+                const char *bucket,
+                const char *resource,
+                const char *subresource,
+                const dpl_option_t *option,
+                dpl_ftype_t object_type,
+                const dpl_condition_t *condition,
+                char **locationp)
+{
+  int           ret, ret2;
+  dpl_conn_t   *conn = NULL;
+  char          header[dpl_header_size];
+  u_int         header_len;
+  struct iovec  iov[10];
+  int           n_iov = 0;
+  int           connection_close = 0;
+  dpl_dict_t    *headers_request = NULL;
+  dpl_dict_t    *headers_reply = NULL;
+  dpl_req_t     *req = NULL;
+  dpl_vec_t     *common_prefixes = NULL;
+  dpl_vec_t     *objects = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  req = dpl_req_new(ctx);
+  if (NULL == req)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  dpl_req_set_method(req, DPL_METHOD_DELETE);
+  dpl_req_set_object_type(req, DPL_FTYPE_ANY);
+
+  dpl_swift_set_directory(req, ctx, resource);
+  
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_KEEP_ALIVE);
+
+  fprintf(stderr, "dpl_swift_req_build\n");
+  ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, NULL, NULL);  
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  fprintf(stderr, "_dpl_swift_req_build\n");
+
+  dpl_dict_add(headers_request, "X-Auth-Token", ((dpl_swift_ctx_t *)(ctx->backend_ctx))->auth_token, 0);
+
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  fprintf(stderr, "dpl_req_gen_http_request\n");
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  fprintf(stderr, "_dpl_req_gen_http_request\n");
+
+  iov[n_iov].iov_base = header;
+  iov[n_iov].iov_len = header_len;
+  n_iov++;
+
+  //final crlf
+  iov[n_iov].iov_base = "\r\n";
+  iov[n_iov].iov_len = 2;
+  n_iov++;
+
+  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
+  if (DPL_SUCCESS != ret2)
+    {
+      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
+      connection_close = 1;
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  /* WIP */ dpl_dict_print(headers_reply, stdout, -1);
+  objects = dpl_vec_new(2, 2);
+  if (NULL == objects)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+  if (NULL != objects)
+    dpl_vec_objects_free(objects);
 
   if (NULL != conn)
     {
