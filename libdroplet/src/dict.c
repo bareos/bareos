@@ -97,6 +97,9 @@ dpl_dict_new(int n_buckets)
 {
   dpl_dict_t *dict;
 
+  if (0 == n_buckets)
+      return NULL;
+
   dict = malloc(sizeof (*dict));
   if (NULL == dict)
     return NULL;

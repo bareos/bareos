@@ -48,7 +48,7 @@
 dpl_status_t
 dpl_ntinydb_set(dpl_sbuf_t *blob,
                 const char *key, 
-                char *data,
+                const char *data,
                 int datalen)
 {
   char flag;
