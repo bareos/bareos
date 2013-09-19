@@ -15,7 +15,7 @@ pdf: main.pdf
 
 html: html/main.html
 
-html/main.html: *.sty *.tex $(INDEXES) main.toc
+html/main.html: *.sty *.tex version.tex.tmp $(INDEXES) main.toc
 	mkdir -p html
 	htlatex main "" "" -d./html/
 
@@ -28,7 +28,11 @@ html/main.html: *.sty *.tex $(INDEXES) main.toc
 main.toc: *.tex
 	$(LATEX) main.tex
 
-main.dvi: *.sty *.tex $(INDEXES) main.toc
+version.tex.tmp: *.tex
+	printf -- "\\\\def\\\\bareosBranch{`git rev-parse --abbrev-ref HEAD`}\n" > version.tex.tmp
+	diff -q version.tex.tmp version.tex || cp -a version.tex.tmp version.tex
+
+main.dvi: *.sty *.tex version.tex.tmp $(INDEXES) main.toc
 	$(LATEX) main.tex
 	$(LATEX) main.tex
 
