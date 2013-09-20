@@ -1,10 +1,7 @@
 *~
 *.aux
 *.backup
-*.cdx
-*.ddx
 *.dvi
-*.fdx
 *.idx
 *.ilg
 *.ind
@@ -13,7 +10,6 @@
 *.mox
 *.mtc*
 *.out
-*.sdx
 *.toc
 *.sty
 *.4ct
@@ -24,6 +20,7 @@
 *.xref
 manuals/*/developers/developers.pdf
 manuals/*/main/html/
-manuals/*/main/main.css
-manuals/*/main/main.html
-manuals/*/main/main.pdf
+manuals/*/main/*.css
+manuals/*/main/*.html
+manuals/*/main/*.pdf
+

@@ -2,43 +2,38 @@ LATEX=latex
 DVI2PDF=dvipdf
 MAKEINDEX=makeindex
 
-INDEXES = main.console.ind \
-	main.director.ind \
-	main.general.ind \
-	main.fd.ind \
-	main.sd.ind \
-	main.monitor.ind
+INDEXES = bareos-manual-main-reference.console.ind \
+	bareos-manual-main-reference.director.ind \
+	bareos-manual-main-reference.general.ind \
+	bareos-manual-main-reference.fd.ind \
+	bareos-manual-main-reference.sd.ind \
+	bareos-manual-main-reference.monitor.ind
 
 all: pdf html
 
-pdf: main.pdf
+pdf: bareos-manual-main-reference.pdf
 
-html: html/main.html
+html: html/bareos-manual-main-reference.html
 
-html/main.html: *.sty *.tex version.tex.tmp $(INDEXES) main.toc
+html/bareos-manual-main-reference.html: *.sty *.tex $(INDEXES) bareos-manual-main-reference.toc
 	mkdir -p html
-	htlatex main "" "" -d./html/
+	htlatex bareos-manual-main-reference "" "" -d./html/
 
 %.idx:
-	$(LATEX) main.tex
+	$(LATEX) bareos-manual-main-reference.tex
 
 %.ind: %.idx
 	$(MAKEINDEX) $<
 
-main.toc: *.tex
-	$(LATEX) main.tex
+bareos-manual-main-reference.toc: *.tex
+	$(LATEX) bareos-manual-main-reference.tex
 
-version.tex.tmp: *.tex
-	printf -- "\\\\def\\\\bareosBranch{`git rev-parse --abbrev-ref HEAD`}\n" > version.tex.tmp
-	# disabled, because does not work with package building
-	#diff -q version.tex.tmp version.tex || cp -a version.tex.tmp version.tex
+bareos-manual-main-reference.dvi: *.sty *.tex $(INDEXES) bareos-manual-main-reference.toc
+	$(LATEX) bareos-manual-main-reference.tex
+	$(LATEX) bareos-manual-main-reference.tex
 
-main.dvi: *.sty *.tex version.tex.tmp $(INDEXES) main.toc
-	$(LATEX) main.tex
-	$(LATEX) main.tex
-
-main.pdf: main.dvi
-	$(DVI2PDF) main.dvi main.pdf
+bareos-manual-main-reference.pdf: bareos-manual-main-reference.dvi
+	$(DVI2PDF) bareos-manual-main-reference.dvi bareos-manual-main-reference.pdf
 
 clean:
-	rm -f *.aux *.cdx *.ddx *.dvi *.fdx *.idx *.log *.out *.pdf *.sdx *.toc *.4ct *.4tc *.idv *.lg *.tmp *.xref html/* main.html main.css
+	rm -f *.aux *.dvi *.idx *.log *.out *.pdf *.toc *.4ct *.4tc *.idv *.lg *.tmp *.xref html/* bareos-manual-main-reference.html bareos-manual-main-reference.css
