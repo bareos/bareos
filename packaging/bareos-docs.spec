@@ -17,7 +17,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 BuildRequires:  texlive-latex
 BuildRequires:  texlive-tex4ht ImageMagick
-%if ( 0%{?rhel_version} || 0%{?fedora} )
+%if ( 0%{?rhel_version} || 0%{?fedora_version} )
 BuildRequires:  texlive-collection-latexrecommended texlive-moreverb texlive-ifmtarg texlive-xifthen
 %endif
 
