@@ -116,7 +116,7 @@
     \renewcommand*{\lstlistingname}{bconsole}
     \definecolor{colorBconsole}{gray}{0.9}
     \lstset{
-        %label=bconsole:#1,
+        label=bconsole:#1,
         caption=#1,
         %basicstyle=\ttfamily,
         basicstyle=\small,
@@ -158,16 +158,21 @@
 
 \newenvironment{commandOut}[3]{%
     % #1 caption
-    % #2 prompt (TODO)
+    % #2 prompt
     % #3 command
     \footnotesize
     \def\commandOut1{#1}
+    \ifthenelse{\isempty{#2}}{
+        \def\commandPrompt{root@linux:\~{}\# }
+    }{
+        \def\commandPrompt{#2}
+    }
+
     % \definecolor{shadecolor}{gray}{0.95}
     % TODO: does not work with htlatex
     % \snugshade
     \verbatim
-% root@linux:~# #3
-root@linux:\~{}\# #3
+\commandPrompt{}#3
 }
 {
     \endverbatim
