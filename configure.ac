@@ -59,6 +59,7 @@ AC_CONFIG_FILES([
 Makefile
 examples/Makefile
 libdroplet/Makefile
+utests/Makefile
 droplet-3.0.pc
 libdroplet.spec
 ])
