@@ -7,16 +7,20 @@
 
 Name:           bareos-docs
 Version:        13.3.0
-Release:        1.1
+Release:        0
 License:        GFDL-1.3
 Summary:        Documentation
 Url:            http://www.bareos.org
 Group:          Productivity/Archiving/Backup
 Source:         %{name}-%version.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+BuildArch:      noarch
 BuildRequires:  texlive-latex
 BuildRequires:  texlive-tex4ht ImageMagick
-BuildArch:      noarch
+%if ( 0%{?rhel_version} || 0%{?fedora} )
+BuildRequires:  texlive-collection-latexrecommended texlive-moreverb texlive-ifmtarg texlive-xifthen
+%endif
+
 
 %description
 Bareos - Backup Archiving Recovery Open Sourced.
