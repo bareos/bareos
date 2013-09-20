@@ -49,7 +49,7 @@ find
 
 %files
 %defattr(-,root,root)
-%doc manuals/en/main/main.dvi
-%doc manuals/en/main/main.pdf
+%doc manuals/en/main/bareos-manual-main-reference.dvi
+%doc manuals/en/main/bareos-manual-main-reference.pdf
 %doc manuals/en/main/html
 %changelog
