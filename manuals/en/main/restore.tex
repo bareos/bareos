@@ -73,7 +73,8 @@ See \ilink{FileRegex option}{FileRegex} and below for more details on this.
 Within the Console program, after entering the {\bf restore} command, you are
 presented with the following selection prompt:
 
-\begin{bconsole}{*}{restore}{}{}
+\begin{bconsole}{restore}
+* <input>restore</input>
 First you select one or more JobIds that contain files
 to be restored. You will be presented several methods
 of specifying the JobIds. Then you will be allowed to
@@ -202,7 +203,8 @@ If you have not specified a client=xxx on the command line, it
 it will then ask for the desired Client, which on my system, will print all
 the Clients found in the database as follows:
 
-\begin{bconsole}{Select item:  (1-13):}{5}{restore: select client}{}
+\begin{bconsole}{restore: select client}
+Select item:  (1-13): <input>5</input>
 Defined clients:
      1: Rufus
      2: Matou
@@ -213,7 +215,7 @@ Defined clients:
      7: PmatouVerify
      8: RufusVerify
      9: Watchdog
-Select Client (File daemon) resource (1-9):
+Select Client (File daemon) resource (1-9): <input>1</input>
 \end{bconsole}
 
 The listed clients are only examples, yours will look differently.
@@ -423,7 +425,8 @@ path and filename. No wild cards are used.
 To enter the files, after the {\bf restore}, you select item number 7 from the
 prompt list:
 
-\begin{bconsole}{*}{restore}{restore list of files}{7}
+\begin{bconsole}{restore list of files}
+* <input>restore</input>
 First you select one or more JobIds that contain files
 to be restored. You will be presented several methods
 of specifying the JobIds. Then you will be allowed to
@@ -443,7 +446,7 @@ To select the JobIds, you have the following choices:
     11: Enter a list of directories to restore for found JobIds
     12: Select full restore to a specified Job date
     13: Cancel
-Select item:  (1-13): 7
+Select item:  (1-13): <input>7</input>
 \end{bconsole}
 
 

@@ -24,7 +24,7 @@
 \def\idir{../../images/}  %% images directory
 
 \newcommand{\fileStoragePath}{\path|/var/lib/bareos/storage/|}
-\newcommand{\unixConfigPath}{\path|/etc/bareos/|}
+\newcommand{\configPathUnix}{\path|/etc/bareos/|}
 
 
 %%
@@ -111,25 +111,13 @@
 % %    \endfloatProgram
 % }
 
-\lstnewenvironment{bconsole}[4]{%
-    % #1 prompt
-    % #2 command
-    % #3 caption (caption is "command", if #3 is not given)
-    % #4 input
-    \renewcommand*{\lstlistingname}{bconsole} 
-    %\footnotesize
+\lstnewenvironment{bconsole}[1]{
+    % #1 caption
+    \renewcommand*{\lstlistingname}{bconsole}
     \definecolor{colorBconsole}{gray}{0.9}
-    \ifthenelse{\isempty{#4}}{
-        \def\bconsoleinput{\vskip-1.0\baselineskip}
-    }{
-        \def\bconsoleinput{{\it enter #4}}
-    }
-    \ifthenelse{\isempty{#3}}{
-        \lstset{label=bconsole:#2,caption=#2}
-    }{
-        \lstset{label=bconsole:#3,caption=#3}
-    }
     \lstset{
+        %label=bconsole:#1,
+        caption=#1,
         %basicstyle=\ttfamily,
         basicstyle=\small,
         stringstyle=\ttfamily,
@@ -138,8 +126,12 @@
         frame=single,
         framerule=0pt,
         captionpos=b,
+        %moredelim=[l][\bf]{* },
+        %moredelim=[l][\bf]{Select\ item: },
+        %moredelim=[l][\bf]{Select\ Client },
+        moredelim=[is][\bf]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
     }
-\lstinline|#1 #2|
 }{}
 
 
