@@ -76,13 +76,13 @@ START_TEST(dict_test)
   fail_unless(0 == strcmp(value->string->buf, "a"), NULL);
   it++;
   dpl_dict_get_lowered(dict, *it, &var);
-  fail_if(NULL == value, NULL);
+  fail_if(NULL == var, NULL);
   value = var->val;
   fail_unless(DPL_VALUE_STRING == value->type, NULL);
   fail_unless(0 == strcmp(value->string->buf, "b"), NULL);
   it++;
   dpl_dict_get_lowered(dict, *it, &var);
-  fail_if(NULL == value, NULL);
+  fail_if(NULL == var, NULL);
   value = var->val;
   fail_unless(DPL_VALUE_STRING == value->type, NULL);
   fail_unless(0 == strcmp(value->string->buf, "c"), NULL);

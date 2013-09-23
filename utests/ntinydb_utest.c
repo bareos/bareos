@@ -45,7 +45,7 @@ START_TEST(ntinydb_test)
   dpl_status_t    s;
 
   fd = open("/dev/urandom", O_RDONLY);
-  fail_if(-1 == ret, NULL);
+  fail_if(-1 == fd, NULL);
 
   for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
     {
