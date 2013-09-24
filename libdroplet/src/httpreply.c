@@ -842,6 +842,7 @@ dpl_read_http_reply_ext(dpl_conn_t *conn,
 
   //map http_status to relevant value
   ret = dpl_map_http_status(http_status);
+  printf("http_status: %d\n", http_status);
 
  end:
 

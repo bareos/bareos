@@ -166,8 +166,10 @@ dpl_swift_login(dpl_ctx_t *ctx)
 
   ctx->backend_ctx = swift_ctx;
 
-  printf("X-auth-token: %s\n", swift_ctx->auth_token);
-  printf("X-storage-url: %s\n", ((dpl_swift_ctx_t *)(ctx->backend_ctx))->storage_url);
+  /*  */
+  /* printf("X-auth-token: %s\n", swift_ctx->auth_token); */
+  /* printf("X-storage-url: %s\n", ((dpl_swift_ctx_t *)(ctx->backend_ctx))->storage_url); */
+  /*  */
 
   ret = DPL_SUCCESS;
 
@@ -204,7 +206,7 @@ dpl_swift_set_directory(dpl_req_t *req,
   sprintf(rsrc, "/v1/%s/%s", basename(path), bucket ?: "");
 
   dpl_req_set_resource(req, rsrc);
-  printf("path: %s\naccess: %s\n", path, rsrc);
+  /* printf("path: %s\naccess: %s\n", path, rsrc); */
   
   return DPL_SUCCESS;
 }
@@ -308,7 +310,7 @@ dpl_swift_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  /* WIP */ dpl_dict_print(headers_reply, stdout, -1);
+  /* /\* WIP *\/ dpl_dict_print(headers_reply, stdout, -1); */
   objects = dpl_vec_new(2, 2);
   if (NULL == objects)
     {
@@ -399,20 +401,20 @@ dpl_swift_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  /* if (NULL != subresource) */
-  /*   { */
-  /*     ret2 = dpl_req_set_subresource(req, subresource); */
-  /*     if (DPL_SUCCESS != ret2) */
-  /*       { */
-  /*         ret = ret2; */
-  /*         goto end; */
-  /*       } */
-  /*   } */
+  if (NULL != subresource)
+    {
+      ret2 = dpl_req_set_subresource(req, subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
 
-  /* if (NULL != condition) */
-  /*   { */
-  /*     dpl_req_set_condition(req, condition); */
-  /*   } */
+  if (NULL != condition)
+    {
+      dpl_req_set_condition(req, condition);
+    }
 
   /* if (range) */
   /*   { */
@@ -504,7 +506,7 @@ dpl_swift_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  printf("\n\n%s\n\n", header);
+  /* printf("\n\n%s\n\n", header); */
 
   ret2 = dpl_read_http_reply(conn, 1, &data_buf_returned, &data_len_returned, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
@@ -586,14 +588,12 @@ dpl_swift_delete(dpl_ctx_t *ctx,
   
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_KEEP_ALIVE);
 
-  fprintf(stderr, "dpl_swift_req_build\n");
   ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, NULL, NULL);  
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
-  fprintf(stderr, "_dpl_swift_req_build\n");
 
   dpl_dict_add(headers_request, "X-Auth-Token", ((dpl_swift_ctx_t *)(ctx->backend_ctx))->auth_token, 0);
 
@@ -612,14 +612,12 @@ dpl_swift_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  fprintf(stderr, "dpl_req_gen_http_request\n");
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
-  fprintf(stderr, "_dpl_req_gen_http_request\n");
 
   iov[n_iov].iov_base = header;
   iov[n_iov].iov_len = header_len;
@@ -646,7 +644,7 @@ dpl_swift_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  /* WIP */ dpl_dict_print(headers_reply, stdout, -1);
+  /* /\* WIP *\/ dpl_dict_print(headers_reply, stdout, -1); */
   objects = dpl_vec_new(2, 2);
   if (NULL == objects)
     {
@@ -681,3 +679,15 @@ dpl_swift_delete(dpl_ctx_t *ctx,
 
   return ret;
 }
+
+dpl_backend_t
+dpl_backend_swift = 
+  {
+    "swift",
+    .login	 	= dpl_swift_login,
+    .put 		= dpl_swift_put,
+    .get 		= dpl_swift_get,
+    /* .head 		= dpl_swift_head, */
+    .deletef 		= dpl_swift_delete
+    /* .copy               = dpl_swift_copy, */
+  };

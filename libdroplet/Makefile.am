@@ -38,7 +38,6 @@ libdroplet_la_SOURCES = \
 	swift/backend.c \
 	swift/replyparser.c \
 	swift/reqbuilder.c \
-	swift/swift.c \
 	srws/backend.c \
 	srws/replyparser.c \
 	srws/reqbuilder.c \
