@@ -156,12 +156,20 @@ A ndmp backup configuration looks somethings like this:
 
 Configuration in bareos-dir.conf:
 
+Replace <ndmp_data_server> with the hostname of the storage device
+you are backing up e.g. the DATA AGENT in NDMP terms.
+
+#
+# Use the DUMP protocol (e.g. UNIX DUMP comparable to tar/cpio)
+# Generates FileHandle Information which can be used for single file
+# restore.
+#
 JobDefs {
   Name = "DefaultNDMPJob"
   Type = Backup
   Protocol = NDMP
   Level = Incremental
-  Client = ...-ndmp
+  Client = <ndmp_data_server>-ndmp
   Backup Format = dump
   FileSet = "NDMP Fileset"
   Schedule = "WeeklyCycle"
@@ -172,9 +180,12 @@ JobDefs {
   Write Bootstrap = "/var/opt/bareos/run/bareos/%c.bsr"
 }
 
+#
+# A special restore Job which has the protocol set right etc.
+#
 JobDefs {
   Name = "DefaultNDMPRestoreJob"
-  Client = ...-ndmp
+  Client = <ndmp_data_server>-ndmp
   Type = Restore
   Protocol = NDMP
   Backup Format = dump
@@ -185,24 +196,38 @@ JobDefs {
   Where = /
 }
 
+#
+# A NDMP Backup Job using the JobDef above.
+#
 Job {
   Name = "BackupNDMPDump"
   JobDefs = "DefaultNDMPJob"
 }
 
+#
+# Use the NETAPP SMTAPE protocol e.g. same protocol is used as replication protocol
+# between two NETAPP storage boxes. Doesn't allow single file restore all or nothing
+# restore of whole NETAPP volume.
+#
 Job {
   Name = "BackupNDMPSMTape"
   JobDefs = "DefaultNDMPJob"
   Backup Format = smtape
-  Client = ...-ndmp
+  Client = <ndmp_data_server>-ndmp
   FileSet = "NDMP SMtape Fileset"
 }
 
+#
+# A NDMP restore Job using the JobDef above.
+#
 Job {
   Name = "NDMPRestoreDump"
   JobDefs = "DefaultNDMPRestoreJob"
 }
 
+#
+# A NDMP restore Job using the JobDef above but for restoring a SMTAPE type of NDMP backup.
+#
 Job {
   Name = "NDMPRestoreSMTape"
   JobDefs = "DefaultNDMPRestoreJob"
@@ -220,6 +245,9 @@ Fileset {
   }
 }
 
+#
+# A NDMP Backup using SMPTAPE of a NetAPP storage box.
+#
 Fileset {
   Name = "NDMP SMtape Fileset"
   Include {
@@ -230,6 +258,9 @@ Fileset {
   }
 }
 
+#
+# A NDMP Restore using SMPTAPE of a NetAPP storage box.
+#
 Fileset {
   Name = "NDMP SMtape Restore Fileset"
   Include {
@@ -240,20 +271,22 @@ Fileset {
   }
 }
 
+#
+# A NDMP Client.
+#
 Client {
-  Name = ...-ndmp
+  Name = <ndmp_data_server>-ndmp
   Address = ...
   Port = 10000
   Protocol = NDMPv4
-  Auth Type = Clear
-  Catalog = MyCatalog
-  Username = "ndmp"
-  Password = "test"
-  File Retention = 30 days            # 30 days
-  Job Retention = 6 months            # six months
-  AutoPrune = yes                     # Prune expired Jobs/Files
+  Auth Type = Clear                   # Clear == Clear Text, MD5 == Challenge protocol
+  Username = "ndmp"                   # username of the NDMP user on the DATA AGENT e.g. storage box being backuped.
+  Password = "test"                   # password of the NDMP user on the DATA AGENT e.g. storage box being backuped.
 }
 
+#
+# Your normal Bareos SD definition should be already in your config.
+#
 Storage {
   Name = File
   Address = ...                       # N.B. Use a fully qualified name here
@@ -263,20 +296,26 @@ Storage {
   Media Type = File
 }
 
+#
 # Same storage daemon but via NDMP protocol.
+# We link via the PairedStorage config option the Bareos SD instance definition to a NDMP TAPE AGENT.
+#
 Storage {
   Name = NDMPFile
   Address = ...                       # N.B. Use a fully qualified name here
   Port = 10000
   Protocol = NDMPv4
-  Auth Type = Clear
-  Username = ndmp
-  Password = test
+  Auth Type = Clear                   # Clear == Clear Text, MD5 == Challenge protocol
+  Username = ndmp                     # username of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
+  Password = test                     # password of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
   Device = FileStorage
   Media Type = File
   PairedStorage = File
 }
 
+#
+# Your normal File based backup pool normally already defined.
+#
 Pool {
   Name = File
   Pool Type = Backup
@@ -288,7 +327,9 @@ Pool {
   Maximum Volumes = 100               # Limit number of Volumes in Pool
 }
 
+#
 # Seperate Pool for NDMP data so upgrading of Jobs works and selects the right storage.
+#
 Pool {
   Name = NDMPFile
   Pool Type = Backup
@@ -302,15 +343,25 @@ Pool {
 
 Configuration in bareos-sd.conf:
 
+#
+# Normal SD config block, should enable the NDMP protocol here otherwise it won't listen
+# on port 10000.
+#
 Storage {
    Name = ....
    ...
    NDMP Enable = yes
 }
 
+#
+# This entry gives the DMA in the Director access to the bareos SD via the NDMP protocol.
+# This option is used via the NDMP protocol to open the right TAPE AGENT connection to your
+# Bareos SD via the NDMP protocol. The initialization of the SD is done via the native protocol
+# and is handled via the PairedStorage keyword.
+#
 Ndmp {
-  Name = ...-ndmp-dma
-  Username = ndmp
-  Password = test
-  AuthType = Clear
+  Name = ...-ndmp-dma                # Can be any name but normally you should use the name of the Director here.
+  Username = ndmp                    # Same username as you specified in the NDMPFile storage definition.
+  Password = test                    # Same password as you specified in the NDMPFile storage definition.
+  AuthType = Clear                   # Clear == Clear Text, MD5 == Challenge protocol
 }
