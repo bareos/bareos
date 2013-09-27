@@ -22553,6 +22553,7 @@ fi
 
 
 
+
 MAKE_SHELL=/bin/sh
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether stat file-mode macros are broken" >&5
@@ -22808,6 +22809,41 @@ fi
 done
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_va_copy" >&5
+$as_echo_n "checking for __builtin_va_copy... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+   #include <stdarg.h>
+
+int
+main ()
+{
+
+   va_list ap, ap2;
+   __builtin_va_copy(ap2, ap);
+   return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE___BUILTIN_VA_COPY 1" >>confdefs.h
+
+
+else
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Python support" >&5
 $as_echo_n "checking for Python support... " >&6; }
