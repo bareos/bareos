@@ -1617,7 +1617,7 @@ static int delete_cmd(UAContext *ua, const char *cmd)
       NULL
    };
 
-   if (!open_client_db(ua)) {
+   if (!open_client_db(ua, true)) {
       return 1;
    }
 
@@ -2286,19 +2286,6 @@ static int version_cmd(UAContext *ua, const char *cmd)
 #endif
 
 /*
- * This call uses open_client_db() and force a
- * new private connection to the catalog
- */
-bool open_new_client_db(UAContext *ua)
-{
-   /*
-    * Force a new private connection
-    */
-   close_db(ua);
-   return open_client_db(ua, true);
-}
-
-/*
  * This call explicitly checks for a catalog=catalog-name and
  *  if given, opens that catalog.  It also checks for
  *  client=client-name and if found, opens the catalog
@@ -2306,7 +2293,7 @@ bool open_new_client_db(UAContext *ua)
  *  have a catalog, look for a Job keyword and get the
  *  catalog from its client record.
  */
-bool open_client_db(UAContext *ua, bool need_private)
+bool open_client_db(UAContext *ua, bool use_private)
 {
    int i;
    CATRES *catalog;
@@ -2326,7 +2313,7 @@ bool open_client_db(UAContext *ua, bool need_private)
             close_db(ua);
          }
          ua->catalog = catalog;
-         return open_db(ua, need_private);
+         return open_db(ua, use_private);
       }
    }
 
@@ -2348,7 +2335,7 @@ bool open_client_db(UAContext *ua, bool need_private)
             return false;
          }
          ua->catalog = catalog;
-         return open_db(ua, need_private);
+         return open_db(ua, use_private);
       }
    }
 
@@ -2370,23 +2357,37 @@ bool open_client_db(UAContext *ua, bool need_private)
             return false;
          }
          ua->catalog = catalog;
-         return open_db(ua, need_private);
+         return open_db(ua, use_private);
       }
    }
 
-   return open_db(ua, need_private);
+   return open_db(ua, use_private);
 }
 
 /*
  * Open the catalog database.
  */
-bool open_db(UAContext *ua, bool need_private)
+bool open_db(UAContext *ua, bool use_private)
 {
    bool mult_db_conn;
 
-   if (ua->db) {
+   /*
+    * See if we need to do any work at all.
+    * Point the current used db e.g. ua->db to the correct database connection.
+    */
+   if (use_private) {
+      if (ua->private_db) {
+         ua->db = ua->private_db;
+         return true;
+      }
+   } else if (ua->shared_db) {
+      ua->db = ua->shared_db;
       return true;
    }
+
+   /*
+    * Select the right catalog to use.
+    */
    if (!ua->catalog) {
       ua->catalog = get_catalog_resource(ua);
       if (!ua->catalog) {
@@ -2399,7 +2400,7 @@ bool open_db(UAContext *ua, bool need_private)
     * Some modules like bvfs need their own private catalog connection
     */
    mult_db_conn = ua->catalog->mult_db_connections;
-   if (need_private) {
+   if (use_private) {
       mult_db_conn = true;
    }
 
@@ -2415,26 +2416,43 @@ bool open_db(UAContext *ua, bool need_private)
                                          ua->catalog->db_socket,
                                          mult_db_conn,
                                          ua->catalog->disable_batch_insert,
-                                         need_private);
+                                         use_private);
    if (ua->db == NULL) {
       ua->error_msg(_("Could not open catalog database \"%s\".\n"), ua->catalog->db_name);
       return false;
    }
    ua->jcr->db = ua->db;
+
+   /*
+    * Save the new database connection under the right label e.g. shared or private.
+    */
+   if (use_private) {
+      ua->private_db = ua->db;
+   } else {
+      ua->shared_db = ua->db;
+   }
+
    if (!ua->api) {
       ua->send_msg(_("Using Catalog \"%s\"\n"), ua->catalog->name());
    }
+
    Dmsg1(150, "DB %s opened\n", ua->catalog->db_name);
    return true;
 }
 
 void close_db(UAContext *ua)
 {
-   if (ua->db) {
-      db_sql_close_pooled_connection(ua->jcr, ua->db);
-      ua->db = NULL;
-      if (ua->jcr) {
-         ua->jcr->db = NULL;
-      }
+   if (ua->jcr) {
+      ua->jcr->db = NULL;
+   }
+
+   if (ua->shared_db) {
+      db_sql_close_pooled_connection(ua->jcr, ua->shared_db);
+      ua->shared_db = NULL;
+   }
+
+   if (ua->private_db) {
+      db_sql_close_pooled_connection(ua->jcr, ua->private_db);
+      ua->private_db = NULL;
    }
 }

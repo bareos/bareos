@@ -273,8 +273,9 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    POOL_DBR pr;
    MEDIA_DBR mr;
 
-   if (!open_client_db(ua))
+   if (!open_client_db(ua, true)) {
       return 1;
+   }
 
    memset(&jr, 0, sizeof(jr));
    memset(&pr, 0, sizeof(pr));
@@ -292,7 +293,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    }
 
    /* Scan arguments looking for things to do */
-   for (i=1; i<ua->argc; i++) {
+   for (i = 1; i < ua->argc; i++) {
       /* List JOBS */
       if (bstrcasecmp(ua->argk[i], NT_("jobs"))) {
          db_list_job_records(ua->jcr, ua->db, &jr, prtit, ua, llist);

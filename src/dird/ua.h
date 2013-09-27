@@ -37,6 +37,8 @@ public:
    BSOCK *sd;
    JCR *jcr;
    B_DB *db;
+   B_DB *shared_db;                   /* Shared database connection used by multiple ua's */
+   B_DB *private_db;                  /* Private database connection only used by this ua */
    CATRES *catalog;
    CONRES *cons;                      /* Console resource */
    POOLMEM *cmd;                      /* Return command/name buffer */

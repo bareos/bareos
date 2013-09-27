@@ -158,7 +158,7 @@ int restore_cmd(UAContext *ua, const char *cmd)
       }
    }
 
-   if (!open_client_db(ua)) {
+   if (!open_client_db(ua, true)) {
       goto bail_out;
    }
 
@@ -1150,19 +1150,6 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
    char *p;
    bool OK = true;
    char ed1[50];
-   B_DB *batch_db;
-   bool extra_conn = false;
-
-   /*
-    * Lets open an extra connection to the database for selecting the directory tree.
-    * If it fails for what ever reason we fall back to the original database connection.
-    */
-   batch_db = db_clone_database_connection(ua->db, ua->jcr, true, true);
-   if (batch_db) {
-      extra_conn = true;
-   } else {
-      batch_db = ua->db;
-   }
 
    memset(&tree, 0, sizeof(TREE_CTX));
 
@@ -1186,8 +1173,8 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
        * Use first JobId as estimate of the number of files to restore
        */
       Mmsg(rx->query, uar_count_files, edit_int64(JobId, ed1));
-      if (!db_sql_query(batch_db, rx->query, restore_count_handler, (void *)rx)) {
-         ua->error_msg("%s\n", db_strerror(batch_db));
+      if (!db_sql_query(ua->db, rx->query, restore_count_handler, (void *)rx)) {
+         ua->error_msg("%s\n", db_strerror(ua->db));
       }
       if (rx->found) {
          /*
@@ -1201,11 +1188,11 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
    ua->info_msg(_("\nBuilding directory tree for JobId(s) %s ...  "),
                 rx->JobIds);
 
-   if (!db_get_file_list(ua->jcr, batch_db,
+   if (!db_get_file_list(ua->jcr, ua->db,
                          rx->JobIds, false /* do not use md5 */,
                          true /* get delta */,
                          insert_tree_handler, (void *)&tree)) {
-      ua->error_msg("%s", db_strerror(batch_db));
+      ua->error_msg("%s", db_strerror(ua->db));
    }
 
    if (*rx->BaseJobIds) {
@@ -1230,8 +1217,8 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
        * Find out if any Job is purged
        */
       Mmsg(rx->query, "SELECT SUM(PurgedFiles) FROM Job WHERE JobId IN (%s)", rx->JobIds);
-      if (!db_sql_query(batch_db, rx->query, restore_count_handler, (void *)rx)) {
-         ua->error_msg("%s\n", db_strerror(batch_db));
+      if (!db_sql_query(ua->db, rx->query, restore_count_handler, (void *)rx)) {
+         ua->error_msg("%s\n", db_strerror(ua->db));
       }
       /*
        * rx->JobId is the PurgedFiles flag
@@ -1295,13 +1282,6 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
     * The tree is freed by the DMA when its done.
     */
    ua->jcr->restore_tree_root = tree.root;
-
-   /*
-    * If we opened an extra database connection close it now.
-    */
-   if (extra_conn) {
-      db_close_database(ua->jcr, batch_db);
-   }
 
    return OK;
 }

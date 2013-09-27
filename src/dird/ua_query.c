@@ -57,7 +57,7 @@ int query_cmd(UAContext *ua, const char *cmd)
    int nprompt = 0;
    char *query_file = me->query_file;
 
-   if (!open_client_db(ua)) {
+   if (!open_client_db(ua, true)) {
       goto bail_out;
    }
    if ((fd=fopen(query_file, "rb")) == NULL) {
@@ -249,7 +249,7 @@ int sqlquery_cmd(UAContext *ua, const char *cmd)
    int len;
    const char *msg;
 
-   if (!open_client_db(ua)) {
+   if (!open_client_db(ua, true)) {
       return 1;
    }
    *query.c_str() = 0;

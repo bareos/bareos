@@ -115,7 +115,7 @@ int prune_cmd(UAContext *ua, const char *cmd)
       NULL
    };
 
-   if (!open_client_db(ua)) {
+   if (!open_client_db(ua, true)) {
       return false;
    }
 
