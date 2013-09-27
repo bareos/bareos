@@ -22,6 +22,7 @@ BuildArch:      noarch
 
 Source1:       fillup.sed
 Source2:       vss_headers.tar
+Source3:       vdi_headers.tar
 
 Patch1:        tray-monitor-conf.patch
 
@@ -80,17 +81,12 @@ bareos
 %patch1 -p1
 
 tar xvf %SOURCE2
+tar xvf %SOURCE3
 
 %build
 
 cd src/win32/
-
-
-make BUILD_QTGUI=yes WIN_VERSION=64  %{?jobs:-j%jobs}
-#make  %{?jobs:-j%jobs}
-
-#make BUILD_QTGUI=yes WIN_VERSION=64  %{?jobs:-j%jobs}
-
+make BUILD_QTGUI=yes WIN_VERSION=64 VISTACOMPAT=yes %{?jobs:-j%jobs}
 
 %install
 
@@ -105,6 +101,7 @@ cp qt-tray-monitor/bareos-tray-monitor.exe \
    filed/bareos-fd.exe lib/libbareos.dll \
    findlib/libbareosfind.dll \
    plugins/filed/bpipe-fd.dll \
+   plugins/filed/mssqlvdi-fd.dll \
    $RPM_BUILD_ROOT%{_mingw64_bindir}
 
 for cfg in  ../qt-tray-monitor/tray-monitor.conf.in \

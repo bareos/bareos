@@ -371,12 +371,13 @@ SectionIn 1 2 3
 SectionEnd
 
 Section /o "Bareos FileDaemon Plugins " SEC_PLUGINS
-SectionIn 1 2
+SectionIn 1 2 3
 
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
   File "bpipe-fd.dll"
+  File "mssqlvdi-fd.dll"
 SectionEnd
 
 Section /o "Text Console (bconsole)" SEC_BCONSOLE
@@ -928,6 +929,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bareos-fd.exe"
   Delete "$INSTDIR\bconsole.exe"
   Delete "$INSTDIR\Plugins\bpipe-fd.dll"
+  Delete "$INSTDIR\Plugins\mssqlvdi-fd.dll"
   Delete "$INSTDIR\libbareos.dll"
   Delete "$INSTDIR\libbareosfind.dll"
   Delete "$INSTDIR\libcrypto-8.dll"
