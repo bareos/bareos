@@ -398,7 +398,7 @@ static bacl_exit_code aix_parse_acl_streams(JCR *jcr,
       retval = bacl_exit_ok;
       goto bail_out;
    case STREAM_ACL_AIX_AIXC:
-      if (!aix_query_acl_support(jcr, acl_data->last_fname, ACL_AIXC, &type)) {
+      if (!aix_query_acl_support(jcr, acl_data, ACL_AIXC, &type)) {
          Mmsg1(jcr->errmsg,
                _("Trying to restore POSIX acl on file \"%s\" on filesystem without AIXC acl support\n"),
                acl_data->last_fname);
@@ -406,7 +406,7 @@ static bacl_exit_code aix_parse_acl_streams(JCR *jcr,
       }
       break;
    case STREAM_ACL_AIX_NFS4:
-      if (!aix_query_acl_support(jcr, ACL_NFS4, &type)) {
+      if (!aix_query_acl_support(jcr, acl_data, ACL_NFS4, &type)) {
          Mmsg1(jcr->errmsg,
                _("Trying to restore NFSv4 acl on file \"%s\" on filesystem without NFS4 acl support\n"),
                acl_data->last_fname);
