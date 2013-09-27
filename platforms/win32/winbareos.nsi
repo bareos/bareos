@@ -70,6 +70,12 @@ Var hwnd
 
 Var SilentKeepConfig
 
+# are we doing an upgrade or fresh install?
+# if we are doing an upgrade we automatically
+# keep the existing config files silently and skip
+# the param dialogs and the config snippet dialog
+Var Upgrading
+
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
 !include "Sections.nsh"
@@ -82,6 +88,7 @@ Var SilentKeepConfig
 # call functions once to have them included
 ${StrCase}
 ${StrTrimNewLines}
+${StrRep}
 
 ; MUI 1.67 compatible ------
 !include "MUI.nsh"
@@ -118,7 +125,6 @@ Page custom getDirectorParameters
 !insertmacro MUI_PAGE_INSTFILES
 ; Finish page
 
-
 ; Custom page shows director config snippet
 Page custom displayDirconfSnippet
 
@@ -152,101 +158,89 @@ FunctionEnd
 # the conf file
 #
 !macro InstallConfFile fname
-
-# This is important to have $APPDATA variable
-# point to ProgramData folder
-# instead of current user's Roaming folder
- SetShellVarContext all
+  # This is important to have $APPDATA variable
+  # point to ProgramData folder
+  # instead of current user's Roaming folder
+  SetShellVarContext all
 
   ${If} ${FileExists} "$APPDATA\${PRODUCT_NAME}\${fname}"
+    StrCmp $SilentKeepConfig "yes" keep # in silent install keep configs silently if desired
+    StrCmp $Upgrading "yes" keep        # during upgrade also keep configs silently
 
-  StrCmp $SilentKeepConfig "yes" keep
-
-  MessageBox MB_YESNO|MB_ICONQUESTION \
-    "Existing config file found: $APPDATA\${PRODUCT_NAME}\${fname}$\r$\nKeep existing config file?" \
-    /SD IDNO IDYES keep IDNO move
-    move:
-      Rename "$APPDATA\${PRODUCT_NAME}\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.old"
-      Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
-      MessageBox MB_OK|MB_ICONINFORMATION \
-        "Existing config file saved as $APPDATA\${PRODUCT_NAME}\${fname}.old" \
-        /SD IDOK
+    MessageBox MB_YESNO|MB_ICONQUESTION \
+      "Existing config file found: $APPDATA\${PRODUCT_NAME}\${fname}$\r$\nKeep existing config file?" \
+      /SD IDNO IDYES keep IDNO move
+move:
+    Rename "$APPDATA\${PRODUCT_NAME}\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.old"
+    Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
+    MessageBox MB_OK|MB_ICONINFORMATION \
+      "Existing config file saved as $APPDATA\${PRODUCT_NAME}\${fname}.old" \
+      /SD IDOK
     GOTO +3
-    keep:
-      Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.new"
-      MessageBox MB_OK|MB_ICONINFORMATION \
-        "New config file stored $APPDATA\${PRODUCT_NAME}\${fname}.new" \
-        /SD IDOK
+keep:
+    Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.new"
+    StrCmp $Upgrading "yes" skipmsgbox        # during upgrade keep existing file without messagebox
+    MessageBox MB_OK|MB_ICONINFORMATION \
+      "New config file stored $APPDATA\${PRODUCT_NAME}\${fname}.new" \
+      /SD IDOK
+skipmsgbox:
   ${Else}
     Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
   ${EndIf}
- CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Edit ${fname}.lnk" "write.exe" '"$APPDATA\${PRODUCT_NAME}\${fname}"'
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Edit ${fname}.lnk" "write.exe" '"$APPDATA\${PRODUCT_NAME}\${fname}"'
 
-
-# for traymonitor.conf, set access and ownership to users
-${If} ${fname} == "tray-monitor.conf"
-
-    # disable file access inheritance
+  # for traymonitor.conf, set access and ownership to users
+  ${If} ${fname} == "tray-monitor.conf"
+    # Disable file access inheritance
     AccessControl::DisableFileInheritance "$APPDATA\${PRODUCT_NAME}\${fname}"
     Pop $R0
-    DetailPrint `AccessControl result: $R0`
     ${If} $R0 == error
        Pop $R0
        DetailPrint `AccessControl error: $R0`
     ${EndIf}
 
-    # set file owner to administrator
+    # Set file owner to administrator
     AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)"  # user
     Pop $R0
-    DetailPrint `AccessControl result: $R0`
     ${If} $R0 == error
        Pop $R0
        DetailPrint `AccessControl error: $R0`
     ${EndIf}
 
-    # set fullaccess only for administrators (S-1-5-32-544)
+    # Set fullaccess only for administrators (S-1-5-32-544)
     AccessControl::ClearOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)" "FullAccess"
     Pop $R0
-    DetailPrint `AccessControl result: $R0`
     ${If} $R0 == error
        Pop $R0
        DetailPrint `AccessControl error: $R0`
     ${EndIf}
-
-
-# all other config files admin owner and only access
-${Else}
-    # disable file access inheritance
+  ${Else}
+    # All other config files admin owner and only access
+    # Disable file access inheritance
     AccessControl::DisableFileInheritance "$APPDATA\${PRODUCT_NAME}\${fname}"
     Pop $R0
-    DetailPrint `AccessControl result: $R0`
     ${If} $R0 == error
        Pop $R0
        DetailPrint `AccessControl error: $R0`
     ${EndIf}
 
-    # set file owner to administrator
+    # Set file owner to administrator
     AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)"  # administratoren
     Pop $R0
-    DetailPrint `AccessControl result: $R0`
     ${If} $R0 == error
        Pop $R0
        DetailPrint `AccessControl error: $R0`
     ${EndIf}
 
-    # set fullaccess only for administrators (S-1-5-32-544)
+    # Set fullaccess only for administrators (S-1-5-32-544)
     AccessControl::ClearOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)" "FullAccess"
     Pop $R0
-    DetailPrint `AccessControl result: $R0`
     ${If} $R0 == error
        Pop $R0
        DetailPrint `AccessControl error: $R0`
     ${EndIf}
-
-${EndIf}
-
+  ${EndIf}
 !macroend
-
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "${PRODUCT_NAME}-${PRODUCT_VERSION}.exe"
@@ -273,10 +267,10 @@ SectionEnd
 
 Section -SetPasswords
   SetShellVarContext all
-# Write sed file to replace the preconfigured variables by the configured values
-#
-# File Daemon and Tray Monitor configs
-#
+  # Write sed file to replace the preconfigured variables by the configured values
+  #
+  # File Daemon and Tray Monitor configs
+  #
   FileOpen $R1 $PLUGINSDIR\config.sed w
   #FileOpen $R1 config.sed w
 
@@ -301,10 +295,9 @@ Section -SetPasswords
 
   #Delete config.sed
 
-
-#
-# config files for bconsole and bat to access remote director
-#
+  #
+  # config files for bconsole and bat to access remote director
+  #
   FileOpen $R1 $PLUGINSDIR\bconsole.sed w
 
   FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-dir#$DirectorName#g$\r$\n"
@@ -584,14 +577,48 @@ Function .onInit
 
 
 # check if software is already installed
-  ClearErrors
-  ReadRegStr $2 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"
-  ReadRegStr $0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion"
-  StrCmp $2 "" +3
-  MessageBox MB_OK|MB_ICONSTOP "${PRODUCT_NAME} version $0 $\r$\nseems to be already installed on your system.$\r$\nPlease uninstall first."
+#  ClearErrors
+#  ReadRegStr $2 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"
+#  ReadRegStr $0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion"
+#  StrCmp $2 "" +3
+#  MessageBox MB_OK|MB_ICONSTOP "${PRODUCT_NAME} version $0 $\r$\nseems to be already installed on your system.$\r$\nPlease uninstall first."
+#  Abort
+#
+
+  # UPGRADE: if already installed allow to uninstall installed version
+  # inspired by http://nsis.sourceforge.net/Auto-uninstall_old_before_installing_new
+  strcpy $Upgrading "no"
+
+  ReadRegStr $2  ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"
+  ReadRegStr $0  ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion"
+  ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
+  StrCmp $R0 "" done
+  strcpy $Upgrading "yes"
+  ${StrRep} $INSTDIR $R0 "uninst.exe" "" # find current INSTDIR by cutting uninst.exe out of uninstall string
+
+  MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "${PRODUCT_NAME} version $0 is already installed in $\r$\n \
+         '$INSTDIR' on your system.$\r$\n$\n \
+         `OK` executes the uninstaller before installing the new version$\r$\n \
+         `Cancel` cancels this upgrade. $\r$\n  $\r$\n \
+         It is recommended that you make a copy of your configuration files before upgrading.$\r$\n \
+         " \
+  /SD IDCANCEL IDOK uninst
   Abort
 
+  ;Run the uninstaller
+uninst:
+  ClearErrors
+  ExecWait '$R0 /S /SILENTKEEPCONFIG _?=$INSTDIR'
+            ;Silent Uninstall, Keep Configuration files, Do not copy the uninstaller to a temp file
 
+  IfErrors no_remove_uninstaller done
+  # Exec $INSTDIR\uninst.exe
+
+no_remove_uninstaller:
+  MessageBox MB_OK|MB_ICONEXCLAMATION "Error during uninstall of ${PRODUCT_NAME} version $0. Aborting"
+  abort
+
+done:
 # Parameters:
 # Needed for Client and Tray-Mon:
 #
@@ -611,12 +638,11 @@ Function .onInit
 
   var /GLOBAL cmdLineParams
 
-# Installer Options
+  # Installer Options
   ${GetParameters} $cmdLineParams
   ClearErrors
 
-
-#  /? param (help)
+  #  /? param (help)
   ClearErrors
   ${GetOptions} $cmdLineParams '/?' $R0
   IfErrors +3 0
@@ -757,14 +783,13 @@ SectionSetFlags ${SEC_TRAYMON}  ${SF_SELECTED} # SF_SELECTED
   StrCpy $DirectorPassword "DIRECTORPASSWORD"
 FunctionEnd
 
-
-
-
 #
 # Client Configuration Dialog
 #
 Function getClientParameters
-  Push $R0
+push $R0
+# skip if we are upgrading
+strcmp $Upgrading "yes" skip
 
 # prefill the dialog fields with our passwords and other
 # information
@@ -788,8 +813,7 @@ ${If} ${SectionIsSelected} ${SEC_CLIENT}
 ${EndIf}
 #  MessageBox MB_OK "$ClientName$\r$\n$ClientPassword$\r$\n$ClientMonitorPassword "
 
-
-
+skip:
   Pop $R0
 FunctionEnd
 
@@ -798,6 +822,7 @@ FunctionEnd
 #
 Function getDirectorParameters
   Push $R0
+strcmp $Upgrading "yes" skip
 # prefill the dialog fields
   WriteINIStr "$PLUGINSDIR\directordialog.ini" "Field 2" "state" $DirectorAddress
   WriteINIStr "$PLUGINSDIR\directordialog.ini" "Field 3" "state" $DirectorPassword
@@ -810,6 +835,7 @@ ${If} ${SectionIsSelected} ${SEC_BCONSOLE}
 
 #  MessageBox MB_OK "$DirectorAddress$\r$\n$DirectorPassword"
 ${EndIf}
+skip:
   Pop $R0
 FunctionEnd
 
@@ -818,6 +844,7 @@ FunctionEnd
 #
 Function displayDirconfSnippet
 
+strcmp $Upgrading "yes" skip
 #
 # write client config snippet for director
 #
@@ -847,7 +874,7 @@ Function displayDirconfSnippet
       Pop $hwnd
 
   nsDialogs::Show
-
+skip:
 FunctionEnd
 
 
