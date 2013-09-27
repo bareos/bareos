@@ -640,7 +640,7 @@ static int job_select_handler(void *ctx, int num_fields, char **row)
  *
  * For Restore Jobs there are no restrictions.
  */
-bool prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
+static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
 {
    POOL_MEM query(PM_MESSAGE);
    POOL_MEM sql_where(PM_MESSAGE);
@@ -806,6 +806,19 @@ bail_out:
       delete jobids_check;
    }
    return 1;
+}
+
+/*
+ * Dispatch to the right prune jobs function.
+ */
+bool prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
+{
+   switch (JobType) {
+   case JT_BACKUP:
+      return prune_backup_jobs(ua, client, pool);
+   default:
+      return true;
+   }
 }
 
 /*
