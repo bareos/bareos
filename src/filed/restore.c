@@ -357,6 +357,7 @@ void do_restore(JCR *jcr)
    int64_t rsrc_len = 0;              /* Original length of resource fork */
    r_ctx rctx;
    ATTR *attr;
+   CLIENTRES *client;
    /* ***FIXME*** make configurable */
    crypto_digest_t signing_algorithm = have_sha2 ?
                                        CRYPTO_DIGEST_SHA256 : CRYPTO_DIGEST_SHA1;
@@ -378,9 +379,10 @@ void do_restore(JCR *jcr)
    sd = jcr->store_bsock;
    jcr->setJobStatus(JS_Running);
 
-   LockRes();
-   CLIENTRES *client = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
-   UnlockRes();
+   LockRes(my_config);
+   client = (CLIENTRES *)my_config->GetNextRes(R_CLIENT, NULL);
+   UnlockRes(my_config);
+
    if (client) {
       buf_size = client->max_network_buffer_size;
    } else {

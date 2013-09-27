@@ -44,15 +44,6 @@
 #include "bareos.h"
 #include "console_conf.h"
 
-/* Define the first and last resource ID record
- * types. Note, these should be unique for each
- * daemon though not a requirement.
- */
-int32_t r_first = R_FIRST;
-int32_t r_last  = R_LAST;
-static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
-
 /* Forward referenced subroutines */
 
 
@@ -68,7 +59,6 @@ extern "C" { // work around visual compiler mangling variables
 #else
 URES res_all;
 #endif
-int32_t res_all_size = sizeof(res_all);
 
 /* Definition of records permitted within each
  * resource with the routine to process the record
@@ -77,63 +67,65 @@ int32_t res_all_size = sizeof(res_all);
 
 /*  Console "globals" */
 static RES_ITEM cons_items[] = {
-   { "name", store_name, ITEM(res_cons.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_cons.hdr.desc), 0, 0, NULL },
-   { "rcfile", store_dir, ITEM(res_cons.rc_file), 0, 0, NULL },
-   { "historyfile", store_dir, ITEM(res_cons.hist_file), 0, 0, NULL },
-   { "password", store_password, ITEM(res_cons.password), 0, ITEM_REQUIRED, NULL },
-   { "tlsauthenticate",store_bool, ITEM(res_cons.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_cons.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_cons.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(res_cons.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(res_cons.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_cons.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_cons.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_cons.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_cons.tls_keyfile), 0, 0, NULL },
-   { "director", store_str, ITEM(res_cons.director), 0, 0, NULL },
-   { "heartbeatinterval", store_time, ITEM(res_cons.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_cons.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_cons.hdr.desc), 0, 0, NULL },
+   { "rcfile", CFG_TYPE_DIR, ITEM(res_cons.rc_file), 0, 0, NULL },
+   { "historyfile", CFG_TYPE_DIR, ITEM(res_cons.hist_file), 0, 0, NULL },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "tlsauthenticate",CFG_TYPE_BOOL, ITEM(res_cons.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_cons.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_cons.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_cons.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_cons.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_cons.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_cons.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_cons.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_cons.tls_keyfile), 0, 0, NULL },
+   { "director", CFG_TYPE_STR, ITEM(res_cons.director), 0, 0, NULL },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*  Director's that we can contact */
 static RES_ITEM dir_items[] = {
-   { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "dirport", store_pint32, ITEM(res_dir.DIRport), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "address", store_str, ITEM(res_dir.address), 0, 0, NULL },
-   { "password", store_password, ITEM(res_dir.password), 0, ITEM_REQUIRED, NULL },
-   { "tlsauthenticate",store_bool, ITEM(res_dir.tls_enable), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_dir.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_dir.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(res_dir.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_dir.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
-   { "heartbeatinterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
+   { "dirport", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "tlsauthenticate",CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
  * This is the master resource definition.
  * It must have one item for each of the resources.
+ *
+ * name items_table resource_code
  */
-RES_TABLE resources[] = {
-   { "console", cons_items, R_CONSOLE },
-   { "director", dir_items, R_DIRECTOR },
+static RES_TABLE resources[] = {
+   { "console", cons_items, R_CONSOLE, sizeof(CONRES) },
+   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
    { NULL, NULL, 0 }
 };
 
 /* Dump contents of resource */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
+void dump_resource(CONFIG *config, int type, RES *rres, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
-   URES *res = (URES *)reshdr;
+   URES *res = (URES *)rres;
    bool recurse = true;
 
    if (res == NULL) {
-      printf(_("No record for %d %s\n"), type, res_to_str(type));
+      printf(_("No record for %d %s\n"), type, config->res_to_str(type));
       return;
    }
    if (type < 0) {                    /* no recursion */
@@ -142,18 +134,20 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    }
    switch (type) {
    case R_CONSOLE:
-      printf(_("Console: name=%s rcfile=%s histfile=%s\n"), reshdr->name,
+      printf(_("Console: name=%s rcfile=%s histfile=%s\n"), rres->name,
              res->res_cons.rc_file, res->res_cons.hist_file);
       break;
    case R_DIRECTOR:
-      printf(_("Director: name=%s address=%s DIRport=%d\n"), reshdr->name,
+      printf(_("Director: name=%s address=%s DIRport=%d\n"), rres->name,
               res->res_dir.address, res->res_dir.DIRport);
       break;
    default:
       printf(_("Unknown resource type %d\n"), type);
    }
-   if (recurse && res->res_dir.hdr.next) {
-      dump_resource(type, res->res_dir.hdr.next, sendit, sock);
+
+   rres = config->GetNextRes(type, rres);
+   if (recurse && rres) {
+      dump_resource(config, type, rres, sendit, sock);
    }
 }
 
@@ -164,16 +158,15 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void free_resource(RES *sres, int type)
+void free_resource(RES *rres, int type)
 {
-   RES *nres;
-   URES *res = (URES *)sres;
+   URES *res = (URES *)rres;
 
-   if (res == NULL)
+   if (res == NULL) {
       return;
+   }
 
    /* common stuff -- free the resource name */
-   nres = (RES *)res->res_dir.hdr.next;
    if (res->res_dir.hdr.name) {
       free(res->res_dir.hdr.name);
    }
@@ -236,27 +229,23 @@ void free_resource(RES *sres, int type)
    }
    /* Common stuff again -- free the resource, recurse to next one */
    free(res);
-   if (nres) {
-      free_resource(nres, type);
-   }
 }
 
 /* Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
-void save_resource(int type, RES_ITEM *items, int pass)
+void save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
 {
-   URES *res;
-   int rindex = type - r_first;
-   int i, size;
+   int rindex = type - R_FIRST;
+   int i;
    int error = 0;
 
    /*
     * Ensure that all required items are present
     */
    for (i=0; items[i].name; i++) {
-      if (items[i].flags & ITEM_REQUIRED) {
+      if (items[i].flags & CFG_ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
                Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
                  items[i].name, resources[rindex]);
@@ -295,47 +284,14 @@ void save_resource(int type, RES_ITEM *items, int pass)
       return;
    }
 
-   /* The following code is only executed during pass 1 */
-   switch (type) {
-   case R_CONSOLE:
-      size = sizeof(CONRES);
-      break;
-   case R_DIRECTOR:
-      size = sizeof(DIRRES);
-      break;
-   default:
-      printf(_("Unknown resource type %d\n"), type);
-      error = 1;
-      size = 1;
-      break;
-   }
-   /* Common */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
-      if (!res_head[rindex]) {
-         res_head[rindex] = (RES *)res; /* store first entry */
-      } else {
-         RES *next, *last;
-         for (last=next=res_head[rindex]; next; next=next->next) {
-            last = next;
-            if (bstrcmp(next->name, res->res_dir.hdr.name)) {
-               Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->res_dir.hdr.name);
-            }
-         }
-         last->next = (RES *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type),
-               res->res_dir.hdr.name);
-      }
+      config->insert_resource(rindex, resources[rindex].size);
    }
 }
 
 bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, NULL, exit_code,
-                (void *)&res_all, res_all_size, r_first,
-                r_last, resources, res_head);
+   config->init(configfile, NULL, NULL, NULL, NULL, exit_code,
+                (void *)&res_all, sizeof(res_all), R_FIRST, R_LAST, resources);
    return config->parse_config();
 }

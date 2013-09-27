@@ -259,9 +259,9 @@ bool duration_to_utime(char *str, utime_t *value)
     * The "n" = mins and months appears before minutes so that m maps to months.
     */
    static const char *mod[] = {"n", "seconds", "months", "minutes", "mins",
-                  "hours", "days", "weeks",   "quarters",   "years", NULL};
+                  "hours", "days", "weeks",   "quarters",   "years", (char*)NULL};
    static const int32_t mult[] = {60,   1, 60*60*24*30, 60, 60,
-                  3600, 3600*24, 3600*24*7, 3600*24*91, 3600*24*365};
+                  3600, 3600*24, 3600*24*7, 3600*24*91, 3600*24*365, NULL};
 
    while (*str) {
       if (!get_modifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {

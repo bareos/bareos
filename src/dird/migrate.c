@@ -73,7 +73,7 @@ static inline bool is_same_storage_daemon(STORERES *rstore, STORERES *wstore)
 {
    return rstore->SDport == wstore->SDport &&
           bstrcasecmp(rstore->address, wstore->address) &&
-          bstrcasecmp(rstore->password, wstore->password);
+          bstrcasecmp(rstore->password.value, wstore->password.value);
 }
 
 /*
@@ -178,14 +178,12 @@ bool do_migration_init(JCR *jcr)
    }
 
    Dmsg5(dbglevel, "JobId=%d: Current: Name=%s JobId=%d Type=%c Level=%c\n",
-      (int)jcr->JobId,
-      jcr->jr.Name, (int)jcr->jr.JobId,
-      jcr->jr.JobType, jcr->jr.JobLevel);
+         (int)jcr->JobId, jcr->jr.Name, (int)jcr->jr.JobId, jcr->jr.JobType, jcr->jr.JobLevel);
 
-   LockRes();
-   job = (JOBRES *)GetResWithName(R_JOB, jcr->jr.Name);
-   prev_job = (JOBRES *)GetResWithName(R_JOB, jcr->previous_jr.Name);
-   UnlockRes();
+   LockRes(my_config);
+   job = (JOBRES *)my_config->GetResWithName(R_JOB, jcr->jr.Name);
+   prev_job = (JOBRES *)my_config->GetResWithName(R_JOB, jcr->previous_jr.Name);
+   UnlockRes(my_config);
 
    if (!job) {
       Jmsg(jcr, M_FATAL, 0, _("Job resource not found for \"%s\".\n"), jcr->jr.Name);
@@ -306,7 +304,7 @@ static bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
    /*
     * Get the pool resource corresponding to the original job
     */
-   pool = (POOLRES *)GetResWithName(R_POOL, pr.Name);
+   pool = (POOLRES *)my_config->GetResWithName(R_POOL, pr.Name);
    *retpool = pool;
    if (!pool) {
       Jmsg(jcr, M_FATAL, 0, _("Pool resource \"%s\" not found.\n"), pr.Name);

@@ -24,6 +24,16 @@
  * Resource codes -- they must be sequential for indexing
  */
 
+/*
+ * Program specific config types (start at 50)
+ */
+#define CFG_TYPE_AUTOPASSWORD       50  /* Password stored in clear when needed otherwise hashed */
+#define CFG_TYPE_AUTHTYPE           51  /* Authentication Type */
+#define CFG_TYPE_DEVTYPE            52  /* Device Type */
+#define CFG_TYPE_MAXBLOCKSIZE       53  /* Maximum Blocksize */
+#define CFG_TYPE_IODIRECTION        54  /* IO Direction */
+#define CFG_TYPE_CMPRSALGO          55  /* Compression Algorithm */
+
 enum {
    R_DIRECTOR = 3001,
    R_NDMP,
@@ -48,7 +58,7 @@ class DIRRES {
 public:
    RES hdr;
 
-   char *password;                    /* Director password */
+   s_password password;               /* Director password */
    char *address;                     /* Director IP address or zero */
    bool monitor;                      /* Have only access to status and .status functions */
    bool tls_authenticate;             /* Authenticate with TLS */
@@ -75,7 +85,7 @@ public:
    uint32_t AuthType;                 /* Authentication Type to use */
    uint32_t LogLevel;                 /* Log level to use for logging NDMP protocol msgs */
    char *username;                    /* NDMP username */
-   char *password;                    /* NDMP password */
+   s_password password;               /* NDMP password */
 };
 
 /* Storage daemon "global" definitions */
@@ -195,10 +205,4 @@ union URES {
    MSGSRES res_msgs;
    AUTOCHANGERRES res_changer;
    RES hdr;
-};
-
-/* Used for certain KeyWord tables */
-struct s_kw {
-   const char *name;
-   uint32_t token;
 };

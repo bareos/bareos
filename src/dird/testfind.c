@@ -163,7 +163,7 @@ main (int argc, char *const *argv)
 
    free_jcr(jcr);
    if (config) {
-      config->free_resources();
+      config->free_all_resources();
       free(config);
       config = NULL;
    }

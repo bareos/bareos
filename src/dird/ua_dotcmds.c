@@ -704,7 +704,7 @@ static bool admin_cmds(UAContext *ua, const char *cmd)
           bstrcasecmp(ua->argk[i], "fd")) {
          client = NULL;
          if (ua->argv[i]) {
-            client = (CLIENTRES *)GetResWithName(R_CLIENT, ua->argv[i]);
+            client = (CLIENTRES *)my_config->GetResWithName(R_CLIENT, ua->argv[i]);
          }
          if (!client) {
             client = select_client_resource(ua);
@@ -716,7 +716,7 @@ static bool admin_cmds(UAContext *ua, const char *cmd)
           bstrcasecmp(ua->argk[i], NT_("sd"))) {
          store = NULL;
          if (ua->argv[i]) {
-            store = (STORERES *)GetResWithName(R_STORAGE, ua->argv[i]);
+            store = (STORERES *)my_config->GetResWithName(R_STORAGE, ua->argv[i]);
          }
          if (!store) {
             store = get_storage_resource(ua, false/*no default*/);
@@ -806,94 +806,102 @@ static bool jobscmd(UAContext *ua, const char *cmd)
    JOBRES *job;
    uint32_t type = 0;
    int pos;
+
    if ((pos = find_arg_with_value(ua, "type")) >= 0) {
       type = ua->argv[pos][0];
    }
-   LockRes();
-   foreach_res(job, R_JOB) {
+
+   LockRes(my_config);
+   foreach_res(my_config, job, R_JOB) {
       if (!type || type == job->JobType) {
          if (acl_access_ok(ua, Job_ACL, job->name())) {
             ua->send_msg("%s\n", job->name());
          }
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    return true;
 }
 
 static bool filesetscmd(UAContext *ua, const char *cmd)
 {
    FILESETRES *fs;
-   LockRes();
-   foreach_res(fs, R_FILESET) {
+
+   LockRes(my_config);
+   foreach_res(my_config, fs, R_FILESET) {
       if (acl_access_ok(ua, FileSet_ACL, fs->name())) {
          ua->send_msg("%s\n", fs->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    return true;
 }
 
 static bool catalogscmd(UAContext *ua, const char *cmd)
 {
    CATRES *cat;
-   LockRes();
-   foreach_res(cat, R_CATALOG) {
+
+   LockRes(my_config);
+   foreach_res(my_config, cat, R_CATALOG) {
       if (acl_access_ok(ua, Catalog_ACL, cat->name())) {
          ua->send_msg("%s\n", cat->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    return true;
 }
 
 static bool clientscmd(UAContext *ua, const char *cmd)
 {
    CLIENTRES *client;
-   LockRes();
-   foreach_res(client, R_CLIENT) {
+
+   LockRes(my_config);
+   foreach_res(my_config, client, R_CLIENT) {
       if (acl_access_ok(ua, Client_ACL, client->name())) {
          ua->send_msg("%s\n", client->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    return true;
 }
 
 static bool msgscmd(UAContext *ua, const char *cmd)
 {
    MSGSRES *msgs = NULL;
-   LockRes();
-   foreach_res(msgs, R_MSGS) {
+
+   LockRes(my_config);
+   foreach_res(my_config, msgs, R_MSGS) {
       ua->send_msg("%s\n", msgs->name());
    }
-   UnlockRes();
+   UnlockRes(my_config);
    return true;
 }
 
 static bool poolscmd(UAContext *ua, const char *cmd)
 {
    POOLRES *pool;
-   LockRes();
-   foreach_res(pool, R_POOL) {
+
+   LockRes(my_config);
+   foreach_res(my_config, pool, R_POOL) {
       if (acl_access_ok(ua, Pool_ACL, pool->name())) {
          ua->send_msg("%s\n", pool->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    return true;
 }
 
 static bool storagecmd(UAContext *ua, const char *cmd)
 {
    STORERES *store;
-   LockRes();
-   foreach_res(store, R_STORAGE) {
+
+   LockRes(my_config);
+   foreach_res(my_config, store, R_STORAGE) {
       if (acl_access_ok(ua, Storage_ACL, store->name())) {
          ua->send_msg("%s\n", store->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    return true;
 }
 
@@ -1059,11 +1067,11 @@ static bool schedulecmd(UAContext *ua, const char *cmd)
 {
    SCHEDRES *sched;
 
-   LockRes();
-   foreach_res(sched, R_SCHEDULE) {
+   LockRes(my_config);
+   foreach_res(my_config, sched, R_SCHEDULE) {
       ua->send_msg("%s\n", sched->hdr.name);
    }
-   UnlockRes();
+   UnlockRes(my_config);
    return true;
 }
 
@@ -1085,7 +1093,10 @@ static bool locationscmd(UAContext *ua, const char *cmd)
 static bool levelscmd(UAContext *ua, const char *cmd)
 {
    int i;
-   /* Note some levels are blank, which means none is needed */
+
+   /*
+    * Note some levels are blank, which means none is needed
+    */
    if (ua->argc == 1) {
       for (i=0; joblevels[i].level_name; i++) {
          if (joblevels[i].level_name[0] != ' ') {
@@ -1093,15 +1104,19 @@ static bool levelscmd(UAContext *ua, const char *cmd)
          }
       }
    } else if (ua->argc == 2) {
-      int jobtype = 0;
-      /* Assume that first argument is the Job Type */
-      for (i=0; jobtypes[i].type_name; i++) {
+      uint32_t jobtype = 0;
+
+      /*
+       * Assume that first argument is the Job Type
+       */
+      for (i = 0; jobtypes[i].type_name; i++) {
          if (bstrcasecmp(ua->argk[1], jobtypes[i].type_name)) {
             jobtype = jobtypes[i].job_type;
             break;
          }
       }
-      for (i=0; joblevels[i].level_name; i++) {
+
+      for (i = 0; joblevels[i].level_name; i++) {
          if ((joblevels[i].job_type == jobtype) && (joblevels[i].level_name[0] != ' ')) {
             ua->send_msg("%s\n", joblevels[i].level_name);
          }
@@ -1141,7 +1156,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       if (!acl_access_ok(ua, Job_ACL, ua->argv[1])) {
          return true;
       }
-      job = (JOBRES *)GetResWithName(R_JOB, ua->argv[1]);
+      job = (JOBRES *)my_config->GetResWithName(R_JOB, ua->argv[1]);
       if (job) {
          USTORERES store;
          ua->send_msg("job=%s", job->name());
@@ -1162,7 +1177,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       if (!acl_access_ok(ua, Client_ACL, ua->argv[1])) {
          return true;
       }
-      client = (CLIENTRES *)GetResWithName(R_CLIENT, ua->argv[1]);
+      client = (CLIENTRES *)my_config->GetResWithName(R_CLIENT, ua->argv[1]);
       if (client) {
          ua->send_msg("client=%s", client->name());
          ua->send_msg("address=%s", client->address);
@@ -1177,7 +1192,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       if (!acl_access_ok(ua, Storage_ACL, ua->argv[1])) {
          return true;
       }
-      storage = (STORERES *)GetResWithName(R_STORAGE, ua->argv[1]);
+      storage = (STORERES *)my_config->GetResWithName(R_STORAGE, ua->argv[1]);
       DEVICERES *device;
       if (storage) {
          ua->send_msg("storage=%s", storage->name());
@@ -1198,7 +1213,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       if (!acl_access_ok(ua, Pool_ACL, ua->argv[1])) {
          return true;
       }
-      pool = (POOLRES *)GetResWithName(R_POOL, ua->argv[1]);
+      pool = (POOLRES *)my_config->GetResWithName(R_POOL, ua->argv[1]);
       if (pool) {
          ua->send_msg("pool=%s", pool->name());
          ua->send_msg("pool_type=%s", pool->pool_type);

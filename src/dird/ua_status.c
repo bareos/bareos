@@ -286,15 +286,15 @@ static void do_all_status(UAContext *ua)
    do_director_status(ua);
 
    /* Count Storage items */
-   LockRes();
+   LockRes(my_config);
    i = 0;
-   foreach_res(store, R_STORAGE) {
+   foreach_res(my_config, store, R_STORAGE) {
       i++;
    }
    unique_store = (STORERES **) malloc(i * sizeof(STORERES));
    /* Find Unique Storage address/port */
    i = 0;
-   foreach_res(store, R_STORAGE) {
+   foreach_res(my_config, store, R_STORAGE) {
       found = false;
       if (!acl_access_ok(ua, Storage_ACL, store->name())) {
          continue;
@@ -311,7 +311,7 @@ static void do_all_status(UAContext *ua)
          Dmsg2(40, "Stuffing: %s:%d\n", store->address, store->SDport);
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    /* Call each unique Storage daemon */
    for (j = 0; j < i; j++) {
@@ -329,15 +329,15 @@ static void do_all_status(UAContext *ua)
    free(unique_store);
 
    /* Count Client items */
-   LockRes();
+   LockRes(my_config);
    i = 0;
-   foreach_res(client, R_CLIENT) {
+   foreach_res(my_config, client, R_CLIENT) {
       i++;
    }
    unique_client = (CLIENTRES **)malloc(i * sizeof(CLIENTRES));
    /* Find Unique Client address/port */
    i = 0;
-   foreach_res(client, R_CLIENT) {
+   foreach_res(my_config, client, R_CLIENT) {
       found = false;
       if (!acl_access_ok(ua, Client_ACL, client->name())) {
          continue;
@@ -354,7 +354,7 @@ static void do_all_status(UAContext *ua)
          Dmsg2(40, "Stuffing: %s:%d\n", client->address, client->FDport);
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    /* Call each unique File daemon */
    for (j = 0; j < i; j++) {
@@ -636,8 +636,8 @@ static void do_scheduler_status(UAContext *ua)
    ua->send_msg("Schedule               Jobs Triggered\n");
    ua->send_msg("===========================================================\n");
 
-   LockRes();
-   foreach_res(sched, R_SCHEDULE) {
+   LockRes(my_config);
+   foreach_res(my_config, sched, R_SCHEDULE) {
       int cnt = 0;
 
       if (schedulegiven) {
@@ -654,7 +654,7 @@ static void do_scheduler_status(UAContext *ua)
             ua->send_msg("                       %s\n", job->name());
          }
       } else {
-         foreach_res(job, R_JOB) {
+         foreach_res(my_config, job, R_JOB) {
             if (client && job->client != client) {
                continue;
             }
@@ -676,7 +676,7 @@ static void do_scheduler_status(UAContext *ua)
          ua->send_msg("\n");
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    /*
     * Build an overview.
@@ -706,26 +706,26 @@ start_again:
                }
             }
          } else {
-            LockRes();
-            foreach_res(job, R_JOB) {
+            LockRes(my_config);
+            foreach_res(my_config, job, R_JOB) {
                if (job->schedule && job->client == client) {
                   if (!show_scheduled_preview(ua, job->schedule, overview,
                                               &max_date_len, tm, time_to_check)) {
                      job = NULL;
-                     UnlockRes();
+                     UnlockRes(my_config);
                      goto start_again;
                   }
                }
             }
-            UnlockRes();
+            UnlockRes(my_config);
             job = NULL;
          }
       } else {
          /*
           * List all schedules.
           */
-         LockRes();
-         foreach_res(sched, R_SCHEDULE) {
+         LockRes(my_config);
+         foreach_res(my_config, sched, R_SCHEDULE) {
             if (schedulegiven) {
                if (!bstrcmp(sched->hdr.name, schedulename)) {
                   continue;
@@ -734,11 +734,11 @@ start_again:
 
             if (!show_scheduled_preview(ua, sched, overview,
                                         &max_date_len, tm, time_to_check)) {
-               UnlockRes();
+               UnlockRes(my_config);
                goto start_again;
             }
          }
-         UnlockRes();
+         UnlockRes(my_config);
       }
 
       time_to_check += seconds_per_hour; /* next hour */
@@ -901,8 +901,8 @@ static void list_scheduled_jobs(UAContext *ua)
    }
 
    /* Loop through all jobs */
-   LockRes();
-   foreach_res(job, R_JOB) {
+   LockRes(my_config);
+   foreach_res(my_config, job, R_JOB) {
       if (!acl_access_ok(ua, Job_ACL, job->name()) || !job->enabled) {
          continue;
       }
@@ -933,7 +933,7 @@ static void list_scheduled_jobs(UAContext *ua)
          num_jobs++;
       }
    } /* end for loop over resources */
-   UnlockRes();
+   UnlockRes(my_config);
    foreach_dlist(sp, &sched) {
       prt_runtime(ua, sp);
    }

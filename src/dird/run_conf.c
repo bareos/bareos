@@ -247,7 +247,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
             case 'n':                 /* NextPool */
                token = lex_get_token(lc, T_NAME);
                if (pass == 2) {
-                  res = GetResWithName(R_POOL, lc->str);
+                  res = my_config->GetResWithName(R_POOL, lc->str);
                   if (res == NULL) {
                      scan_err1(lc, _("Could not find specified Pool Resource: %s"),
                                 lc->str);
@@ -275,7 +275,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
             case 'S':                 /* Storage */
                token = lex_get_token(lc, T_NAME);
                if (pass == 2) {
-                  res = GetResWithName(R_STORAGE, lc->str);
+                  res = my_config->GetResWithName(R_STORAGE, lc->str);
                   if (res == NULL) {
                      scan_err1(lc, _("Could not find specified Storage Resource: %s"),
                                 lc->str);
@@ -287,7 +287,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
             case 'M':                 /* Messages */
                token = lex_get_token(lc, T_NAME);
                if (pass == 2) {
-                  res = GetResWithName(R_MSGS, lc->str);
+                  res = my_config->GetResWithName(R_MSGS, lc->str);
                   if (res == NULL) {
                      scan_err1(lc, _("Could not find specified Messages Resource: %s"),
                                 lc->str);

@@ -119,15 +119,15 @@ bail_out:
 
 static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
 {
-   char name[MAXSTRING];
    char num[20];
    db_int64_ctx ctx;
-   POOL_MEM query(PM_MESSAGE);
+   POOL_MEM query(PM_MESSAGE),
+            name(PM_NAME);
    char ed1[50];
 
    /* See if volume already exists */
    mr->VolumeName[0] = 0;
-   bstrncpy(name, pr->LabelFormat, sizeof(name));
+   pm_strcpy(name, pr->LabelFormat);
    ctx.value = 0;
    Mmsg(query, "SELECT MAX(MediaId) FROM Media,Pool WHERE Pool.PoolId=%s",
         edit_int64(pr->PoolId, ed1));
@@ -138,7 +138,7 @@ static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
    for (int i=(int)ctx.value+1; i<(int)ctx.value+100; i++) {
       MEDIA_DBR tmr;
       sprintf(num, "%04d", i);
-      bstrncpy(tmr.VolumeName, name, sizeof(tmr.VolumeName));
+      bstrncpy(tmr.VolumeName, name.c_str(), sizeof(tmr.VolumeName));
       bstrncat(tmr.VolumeName, num, sizeof(tmr.VolumeName));
       if (db_get_media_record(jcr, jcr->db, &tmr)) {
          Jmsg(jcr, M_WARNING, 0,
@@ -146,7 +146,7 @@ static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
              tmr.VolumeName);
          continue;
       }
-      bstrncpy(mr->VolumeName, name, sizeof(mr->VolumeName));
+      bstrncpy(mr->VolumeName, name.c_str(), sizeof(mr->VolumeName));
       bstrncat(mr->VolumeName, num, sizeof(mr->VolumeName));
       break;                    /* Got good name */
    }

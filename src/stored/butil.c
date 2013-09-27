@@ -253,14 +253,16 @@ static DEVRES *find_device_res(char *device_name, int read_access)
    DEVRES *device;
 
    Dmsg0(900, "Enter find_device_res\n");
-   LockRes();
-   foreach_res(device, R_DEVICE) {
+   LockRes(my_config);
+
+   foreach_res(my_config, device, R_DEVICE) {
       Dmsg2(900, "Compare %s and %s\n", device->device_name, device_name);
       if (bstrcmp(device->device_name, device_name)) {
          found = true;
          break;
       }
    }
+
    if (!found) {
       /* Search for name of Device resource rather than archive name */
       if (device_name[0] == '"') {
@@ -271,7 +273,7 @@ static DEVRES *find_device_res(char *device_name, int read_access)
             device_name[len-1] = 0;   /* zap trailing " */
          }
       }
-      foreach_res(device, R_DEVICE) {
+      foreach_res(my_config, device, R_DEVICE) {
          Dmsg2(900, "Compare %s and %s\n", device->hdr.name, device_name);
          if (bstrcmp(device->hdr.name, device_name)) {
             found = true;
@@ -279,7 +281,9 @@ static DEVRES *find_device_res(char *device_name, int read_access)
          }
       }
    }
-   UnlockRes();
+
+   UnlockRes(my_config);
+
    if (!found) {
       Pmsg2(0, _("Could not find device \"%s\" in config file %s.\n"), device_name,
             configfile);

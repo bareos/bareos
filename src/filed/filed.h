@@ -38,5 +38,6 @@
 #include "protos.h"                   /* file daemon prototypes */
 
 extern CLIENTRES *me;                 /* "Global" Client resource */
+extern CONFIG *my_config;             /* "Global" Config */
 
 void terminate_filed(int sig);

@@ -46,7 +46,7 @@ extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_cod
 
 /* Forward referenced functions */
 void terminate_stored(int sig);
-static int check_resources();
+static int check_resources(CONFIG *config);
 static void cleanup_old_files();
 
 extern "C" void *device_initialization(void *arg);
@@ -54,9 +54,8 @@ extern "C" void *device_initialization(void *arg);
 #define CONFIG_FILE "bareos-sd.conf"  /* Default config file */
 
 /* Global variables exported */
-char OK_msg[]   = "3000 OK\n";
-char TERM_msg[] = "3999 Terminate\n";
-STORES *me = NULL;                    /* our Global resource */
+STORES *me = NULL;                    /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
 bool forge_on = false;                /* proceed inspite of I/O errors */
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
@@ -75,7 +74,6 @@ static workq_t dird_workq;            /* queue for processing connections */
 static workq_t ndmp_workq;            /* queue for processing NDMP connections */
 #endif
 static alist *sock_fds;
-static CONFIG *config;
 
 static void usage()
 {
@@ -224,14 +222,14 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_sd_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
-   if (!check_resources()) {
+   if (!check_resources(my_config)) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
 
@@ -319,36 +317,36 @@ uint32_t newVolSessionId()
 }
 
 /* Check Configuration file for necessary info */
-static int check_resources()
+static int check_resources(CONFIG *config)
 {
    bool OK = true;
    bool tls_needed;
 
-   me = (STORES *)GetNextRes(R_STORAGE, NULL);
+   me = (STORES *)config->GetNextRes(R_STORAGE, NULL);
    if (!me) {
       Jmsg1(NULL, M_ERROR, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
          configfile);
       OK = false;
    }
 
-   if (GetNextRes(R_STORAGE, (RES *)me) != NULL) {
+   if (config->GetNextRes(R_STORAGE, (RES *)me) != NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
          configfile);
       OK = false;
    }
-   if (GetNextRes(R_DIRECTOR, NULL) == NULL) {
+   if (config->GetNextRes(R_DIRECTOR, NULL) == NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("No Director resource defined in %s. Cannot continue.\n"),
          configfile);
       OK = false;
    }
-   if (GetNextRes(R_DEVICE, NULL) == NULL){
+   if (config->GetNextRes(R_DEVICE, NULL) == NULL){
       Jmsg1(NULL, M_ERROR, 0, _("No Device resource defined in %s. Cannot continue.\n"),
            configfile);
       OK = false;
    }
 
    if (!me->messages) {
-      me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
+      me->messages = (MSGSRES *)config->GetNextRes(R_MSGS, NULL);
       if (!me->messages) {
          Jmsg1(NULL, M_ERROR, 0, _("No Messages resource defined in %s. Cannot continue.\n"),
             configfile);
@@ -363,7 +361,7 @@ static int check_resources()
    }
 
    STORES *store;
-   foreach_res(store, R_STORAGE) {
+   foreach_res(config, store, R_STORAGE) {
       /* tls_require implies tls_enable */
       if (store->tls_require) {
          if (have_tls) {
@@ -425,7 +423,7 @@ static int check_resources()
    }
 
    DIRRES *director;
-   foreach_res(director, R_DIRECTOR) {
+   foreach_res(config, director, R_DIRECTOR) {
       /* tls_require implies tls_enable */
       if (director->tls_require) {
          director->tls_enable = true;
@@ -481,7 +479,7 @@ static int check_resources()
    }
 
    DEVRES *device;
-   foreach_res(device, R_DEVICE) {
+   foreach_res(config, device, R_DEVICE) {
       if (device->drive_crypto_enabled && device->cap_bits & CAP_LABEL) {
          Jmsg(NULL, M_FATAL, 0, _("LabelMedia enabled is incompatible with tape crypto on Device \"%s\" in %s.\n"),
               device->hdr.name, configfile);
@@ -594,7 +592,7 @@ void *device_initialization(void *arg)
    DEVICE *dev;
    int errstat;
 
-   LockRes();
+   LockRes(my_config);
 
    pthread_detach(pthread_self());
    jcr = new_jcr(sizeof(JCR), stored_free_jcr);
@@ -619,7 +617,7 @@ void *device_initialization(void *arg)
       Jmsg1(jcr, M_ABORT, 0, _("Unable to init job endstart cond variable: ERR=%s\n"), be.bstrerror(errstat));
    }
 
-   foreach_res(device, R_DEVICE) {
+   foreach_res(my_config, device, R_DEVICE) {
       Dmsg1(90, "calling init_dev %s\n", device->device_name);
       dev = init_dev(NULL, device);
       Dmsg1(10, "SD init done %s\n", device->device_name);
@@ -669,7 +667,7 @@ void *device_initialization(void *arg)
 #endif
    free_jcr(jcr);
    init_done = true;
-   UnlockRes();
+   UnlockRes(my_config);
    return NULL;
 }
 
@@ -743,7 +741,7 @@ void terminate_stored(int sig)
    flush_crypto_cache();
    free_volume_lists();
 
-   foreach_res(device, R_DEVICE) {
+   foreach_res(my_config, device, R_DEVICE) {
       Dmsg1(10, "Term device %s\n", device->device_name);
       if (device->dev) {
          device->dev->clear_volhdr();
@@ -758,10 +756,10 @@ void terminate_stored(int sig)
       free(configfile);
       configfile = NULL;
    }
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_all_resources();
+      free(my_config);
+      my_config = NULL;
    }
 
    if (debug_level > 10) {

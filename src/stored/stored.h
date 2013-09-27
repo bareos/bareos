@@ -78,6 +78,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 /* Daemon globals from stored.c */
 extern STORES *me;                    /* "Global" daemon resource */
+extern CONFIG *my_config;             /* "Global" Config */
 extern bool forge_on;                 /* proceed inspite of I/O errors */
 extern pthread_mutex_t device_release_mutex;
 extern pthread_cond_t wait_device_release; /* wait for any device to be released */

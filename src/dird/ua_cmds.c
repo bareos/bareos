@@ -207,7 +207,7 @@ static struct cmdstruct commands[] = {
      NT_(""), false },
    { NT_("show"), show_cmd, _("Show resource records"),
      NT_("job=<job-name> | pool=<pool-name> | fileset=<fileset-name> | schedule=<schedule-name> |\n"
-         "\tclient=<client-name> | jobs | pools | filesets | schedules | clients | disabled | all"), true },
+         "\tclient=<client-name> | jobs | pools | filesets | schedules | clients | messages | consoles | disabled | all"), true },
    { NT_("sqlquery"), sqlquery_cmd, _("Use SQL to query catalog"),
      NT_(""), false },
    { NT_("time"), time_cmd, _("Print current time"),
@@ -914,7 +914,7 @@ static int setip_cmd(UAContext *ua, const char *cmd)
       ua->error_msg(_("Unauthorized command from this console.\n"));
       return 1;
    }
-   LockRes();
+   LockRes(my_config);
    client = GetClientResWithName(ua->cons->name());
 
    if (!client) {
@@ -930,7 +930,7 @@ static int setip_cmd(UAContext *ua, const char *cmd)
    ua->send_msg(_("Client \"%s\" address set to %s\n"),
             client->name(), client->address);
 get_out:
-   UnlockRes();
+   UnlockRes(my_config);
    return 1;
 }
 
@@ -946,9 +946,9 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
          return;
       }
    } else {
-      LockRes();
+      LockRes(my_config);
       job = GetJobResWithName(ua->argv[i]);
-      UnlockRes();
+      UnlockRes(my_config);
    }
    if (!job) {
       ua->error_msg(_("Job \"%s\" not found.\n"), ua->argv[i]);
@@ -1049,18 +1049,18 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag, int hangup
    debug_level = level;
 
    /* Count Storage items */
-   LockRes();
+   LockRes(my_config);
    store = NULL;
    i = 0;
-   foreach_res(store, R_STORAGE) {
+   foreach_res(my_config, store, R_STORAGE) {
       i++;
    }
    unique_store = (STORERES **) malloc(i * sizeof(STORERES));
    /* Find Unique Storage address/port */
-   store = (STORERES *)GetNextRes(R_STORAGE, NULL);
+   store = (STORERES *)my_config->GetNextRes(R_STORAGE, NULL);
    i = 0;
    unique_store[i++] = store;
-   while ((store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store))) {
+   while ((store = (STORERES *)my_config->GetNextRes(R_STORAGE, (RES *)store))) {
       found = 0;
       for (j=0; j<i; j++) {
          if (bstrcmp(unique_store[j]->address, store->address) &&
@@ -1074,7 +1074,7 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag, int hangup
          Dmsg2(140, "Stuffing: %s:%d\n", store->address, store->SDport);
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    /* Call each unique Storage daemon */
    for (j=0; j<i; j++) {
@@ -1083,18 +1083,18 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag, int hangup
    free(unique_store);
 
    /* Count Client items */
-   LockRes();
+   LockRes(my_config);
    client = NULL;
    i = 0;
-   foreach_res(client, R_CLIENT) {
+   foreach_res(my_config, client, R_CLIENT) {
       i++;
    }
    unique_client = (CLIENTRES **) malloc(i * sizeof(CLIENTRES));
    /* Find Unique Client address/port */
-   client = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
+   client = (CLIENTRES *)my_config->GetNextRes(R_CLIENT, NULL);
    i = 0;
    unique_client[i++] = client;
-   while ((client = (CLIENTRES *)GetNextRes(R_CLIENT, (RES *)client))) {
+   while ((client = (CLIENTRES *)my_config->GetNextRes(R_CLIENT, (RES *)client))) {
       found = 0;
       for (j=0; j<i; j++) {
          if (bstrcmp(unique_client[j]->address, client->address) &&
@@ -1108,7 +1108,7 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag, int hangup
          Dmsg2(140, "Stuffing: %s:%d\n", client->address, client->FDport);
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    /* Call each unique File daemon */
    for (j=0; j<i; j++) {
@@ -2410,7 +2410,7 @@ bool open_db(UAContext *ua, bool use_private)
                                          ua->catalog->db_driver,
                                          ua->catalog->db_name,
                                          ua->catalog->db_user,
-                                         ua->catalog->db_password,
+                                         ua->catalog->db_password.value,
                                          ua->catalog->db_address,
                                          ua->catalog->db_port,
                                          ua->catalog->db_socket,

@@ -43,8 +43,8 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 /* Forward referenced subroutines */
 void terminate_dird(int sig);
-static bool check_resources();
-static bool initialize_sql_pooling(void);
+static bool check_resources(CONFIG *config);
+static bool initialize_sql_pooling(CONFIG *config);
 static void cleanup_old_files();
 
 /* Exported subroutines */
@@ -57,20 +57,15 @@ void start_UA_server(dlist *addrs);
 void stop_UA_server(void);
 void init_job_server(int max_workers);
 void term_job_server();
-void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_level(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_replace(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass);
 void init_device_resources();
 
 static char *runjob = NULL;
 static bool background = true;
 static void init_reload(void);
-static CONFIG *config;
 
 /* Globals Exported */
-DIRRES *me;           /* "Global" daemon resource */
+DIRRES *me = NULL;                    /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
 char *configfile = NULL;
 void *start_heap;
 
@@ -89,7 +84,7 @@ typedef enum {
    UPDATE_CATALOG,    /* Ensure that catalog is ok with conf */
    UPDATE_AND_FIX     /* Ensure that catalog is ok, and fix old jobs */
 } cat_op;
-static bool check_catalog(cat_op mode);
+static bool check_catalog(CONFIG *config, cat_op mode);
 
 #define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
 
@@ -282,14 +277,14 @@ int main (int argc, char *argv[])
       drop(uid, gid, false);                    /* reduce privileges if requested */
    }
 
-   config = new_config_parser();
-   parse_dir_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_dir_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
-   if (!check_resources()) {
+   if (!check_resources(my_config)) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
 
@@ -315,7 +310,7 @@ int main (int argc, char *argv[])
    /* If we are in testing mode, we don't try to fix the catalog */
    cat_op mode=(test_config)?CHECK_CONNECTION:UPDATE_AND_FIX;
 
-   if (!check_catalog(mode)) {
+   if (!check_catalog(my_config, mode)) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
 
@@ -323,7 +318,7 @@ int main (int argc, char *argv[])
       terminate_dird(0);
    }
 
-   if (!initialize_sql_pooling()) {
+   if (!initialize_sql_pooling(my_config)) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
 
@@ -396,10 +391,10 @@ void terminate_dird(int sig)
    if (debug_level > 5) {
       print_memory_pool_stats();
    }
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_all_resources();
+      free(my_config);
+      my_config = NULL;
    }
    stop_UA_server();
    term_msg();                        /* terminate message handler */
@@ -410,9 +405,12 @@ void terminate_dird(int sig)
    exit(sig);
 }
 
+/*
+ * Save pointer to res_containers and job count
+ */
 struct RELOAD_TABLE {
    int job_count;
-   RES **res_table;
+   RES_CONTAINER **res_containers;
 };
 
 static const int max_reloads = 32;
@@ -420,27 +418,49 @@ static RELOAD_TABLE reload_table[max_reloads];
 
 static void init_reload(void)
 {
-   for (int i=0; i < max_reloads; i++) {
+   int i;
+
+   for (i = 0; i < max_reloads; i++) {
       reload_table[i].job_count = 0;
-      reload_table[i].res_table = NULL;
+      reload_table[i].res_containers = NULL;
    }
 }
 
-static void free_saved_resources(int table)
+/*
+ * This subroutine frees a saved resource table.
+ *  It was saved when a new table was created with "reload"
+ */
+static void free_saved_resources(CONFIG *config, int table)
 {
-   int num = r_last - r_first + 1;
-   RES **res_tab = reload_table[table].res_table;
-   if (!res_tab) {
+   RES *next, *res;
+   int j;
+   int num = config->m_r_last - config->m_r_first + 1;
+   RES_CONTAINER **res_containers = reload_table[table].res_containers;
+
+   if (res_containers == NULL) {
       Dmsg1(100, "res_tab for table %d already released.\n", table);
       return;
    }
+
    Dmsg1(100, "Freeing resources for table %d\n", table);
-   for (int j=0; j<num; j++) {
-      free_resource(res_tab[j], r_first + j);
+
+   for (j = 0; j < num; j++) {
+      if (res_containers[j]) {
+         next = res_containers[j]->head;
+         while (next) {
+            res = next;
+            next = res->res_next;
+            free_resource(res, config->m_r_first + j);
+         }
+         free(res_containers[j]->list);
+         free(res_containers[j]);
+         res_containers[j] = NULL;
+      }
    }
-   free(res_tab);
+
+   free(res_containers);
    reload_table[table].job_count = 0;
-   reload_table[table].res_table = NULL;
+   reload_table[table].res_containers = NULL;
 }
 
 /*
@@ -452,14 +472,18 @@ static void free_saved_resources(int table)
 static void reload_job_end_cb(JCR *jcr, void *ctx)
 {
    int reload_id = (int)((intptr_t)ctx);
+
    Dmsg3(100, "reload job_end JobId=%d table=%d cnt=%d\n", jcr->JobId,
       reload_id, reload_table[reload_id].job_count);
+
    lock_jobs();
-   LockRes();
+   LockRes(my_config);
+
    if (--reload_table[reload_id].job_count <= 0) {
-      free_saved_resources(reload_id);
+      free_saved_resources(my_config, reload_id);
    }
-   UnlockRes();
+
+   UnlockRes(my_config);
    unlock_jobs();
 }
 
@@ -467,7 +491,7 @@ static int find_free_reload_table_entry()
 {
    int table = -1;
    for (int i=0; i < max_reloads; i++) {
-      if (reload_table[i].res_table == NULL) {
+      if (reload_table[i].res_containers == NULL) {
          table = i;
          break;
       }
@@ -518,7 +542,7 @@ void reload_config(int sig)
 #endif
 
    lock_jobs();
-   LockRes();
+   LockRes(my_config);
 
    table = find_free_reload_table_entry();
    if (table < 0) {
@@ -532,13 +556,24 @@ void reload_config(int sig)
    db_sql_pool_flush();
 
    Dmsg1(100, "Reload_config njobs=%d\n", njobs);
-   reload_table[table].res_table = config->save_resources();
+
+   /*
+    * Save current res_containers
+    */
+   reload_table[table].res_containers = my_config->m_res_containers;
    Dmsg1(100, "Saved old config in table %d\n", table);
 
-   ok = parse_dir_config(config, configfile, M_ERROR);
+   /*
+    * Create a new res_containers and parse into it
+    */
+   my_config->new_res_containers();
+   ok = parse_dir_config(my_config, configfile, M_ERROR);
 
    Dmsg0(100, "Reloaded config file\n");
-   if (!ok || !check_resources() || !check_catalog(UPDATE_CATALOG) || !initialize_sql_pooling()) {
+   if (!ok ||
+       !check_resources(my_config) ||
+       !check_catalog(my_config, UPDATE_CATALOG) ||
+       !initialize_sql_pooling(my_config)) {
       rtable = find_free_reload_table_entry();    /* save new, bad table */
       if (rtable < 0) {
          Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
@@ -547,16 +582,20 @@ void reload_config(int sig)
          Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
          Jmsg(NULL, M_ERROR, 0, _("Resetting previous configuration.\n"));
       }
-      reload_table[rtable].res_table = config->save_resources();
-      /* Now restore old resource values */
-      int num = r_last - r_first + 1;
-      RES **res_tab = reload_table[table].res_table;
-      for (int i=0; i<num; i++) {
-         res_head[i] = res_tab[i];
-      }
-      table = rtable;                 /* release new, bad, saved table below */
+
+      /*
+       * Save broken res_containers pointer
+       */
+      reload_table[rtable].res_containers = my_config->m_res_containers;
+
+      /*
+       * Now restore old resource pointer
+       */
+      my_config->m_res_containers = reload_table[table].res_containers;
+      table = rtable;           /* release new, bad, saved table below */
    } else {
       invalidate_schedules();
+
       /*
        * Hook all active jobs so that they release this table
        */
@@ -576,11 +615,11 @@ void reload_config(int sig)
 
    /* Now release saved resources, if no jobs using the resources */
    if (njobs == 0) {
-      free_saved_resources(table);
+      free_saved_resources(my_config, table);
    }
 
 bail_out:
-   UnlockRes();
+   UnlockRes(my_config);
    unlock_jobs();
 #if !defined(HAVE_WIN32)
    sigprocmask(SIG_UNBLOCK, &set, NULL);
@@ -596,16 +635,14 @@ bail_out:
  *  **** FIXME **** this routine could be a lot more
  *   intelligent and comprehensive.
  */
-static bool check_resources()
+static bool check_resources(CONFIG *config)
 {
    bool OK = true;
    JOBRES *job;
    bool need_tls;
 
-   LockRes();
-
-   job = (JOBRES *)GetNextRes(R_JOB, NULL);
-   me = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+   job = (JOBRES *)config->GetNextRes(R_JOB, NULL);
+   me = (DIRRES *)config->GetNextRes(R_DIRECTOR, NULL);
    if (!me) {
       Jmsg(NULL, M_FATAL, 0, _("No Director resource defined in %s\n"
                                "Without that I don't know who I am :-(\n"), configfile);
@@ -613,19 +650,24 @@ static bool check_resources()
    } else {
       set_working_directory(me->working_directory);
       if (!me->messages) {       /* If message resource not specified */
-         me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
+         me->messages = (MSGSRES *)config->GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
             Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
             OK = false;
          }
       }
 
-      if (me->optimize_for_size && me->optimize_for_speed) {
+      /*
+       * When the user didn't force use we optimize for size.
+       */
+      if (!me->optimize_for_size && !me->optimize_for_speed) {
+         me->optimize_for_size = true;
+      } else if (me->optimize_for_size && me->optimize_for_speed) {
          Jmsg(NULL, M_FATAL, 0, _("Cannot optimize for speed and size define only one in %s\n"), configfile);
          OK = false;
       }
 
-      if (GetNextRes(R_DIRECTOR, (RES *)me) != NULL) {
+      if (config->GetNextRes(R_DIRECTOR, (RES *)me) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
             configfile);
          OK = false;
@@ -692,7 +734,7 @@ static bool check_resources()
       OK = false;
    }
 
-   foreach_res(job, R_JOB) {
+   foreach_res(config, job, R_JOB) {
       if (job->jobdefs) {
          /*
           * Handle Storage alists specifically
@@ -742,8 +784,9 @@ static bool check_resources()
                Dmsg2(400, "Job \"%s\", field \"%s\": getting default.\n",
                      job->name(), job_items[i].name);
                offset = (char *)(job_items[i].value) - (char *)&res_all;
-               if (job_items[i].handler == store_str ||
-                   job_items[i].handler == store_dir) {
+               switch (job_items[i].type) {
+               case CFG_TYPE_STR:
+               case CFG_TYPE_DIR:
                   /*
                    * Handle strings and directory strings
                    */
@@ -756,7 +799,8 @@ static bool check_resources()
                   }
                   *svalue = bstrdup(*def_svalue);
                   set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_res) {
+                  break;
+               case CFG_TYPE_RES:
                   /*
                    * Handle resources
                    */
@@ -769,22 +813,24 @@ static bool check_resources()
                   }
                   *svalue = *def_svalue;
                   set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_alist_res) {
+                  break;
+               case CFG_TYPE_ALIST_RES:
                   /*
                    * Handle alist resources
                    */
                   if (bit_is_set(i, job->jobdefs->hdr.item_present)) {
                      set_bit(i, job->hdr.item_present);
                   }
-               } else if (job_items[i].handler == store_bit ||
-                          job_items[i].handler == store_pint32 ||
-                          job_items[i].handler == store_jobtype ||
-                          job_items[i].handler == store_protocoltype ||
-                          job_items[i].handler == store_level ||
-                          job_items[i].handler == store_int32 ||
-                          job_items[i].handler == store_size32 ||
-                          job_items[i].handler == store_migtype ||
-                          job_items[i].handler == store_replace) {
+                  break;
+               case CFG_TYPE_BIT:
+               case CFG_TYPE_PINT32:
+               case CFG_TYPE_JOBTYPE:
+               case CFG_TYPE_PROTOCOLTYPE:
+               case CFG_TYPE_LEVEL:
+               case CFG_TYPE_INT32:
+               case CFG_TYPE_SIZE32:
+               case CFG_TYPE_MIGTYPE:
+               case CFG_TYPE_REPLACE:
                   /*
                    * Handle integer fields
                    *    Note, our store_bit does not handle bitmaped fields
@@ -795,10 +841,11 @@ static bool check_resources()
                   ivalue = (uint32_t *)((char *)job + offset);
                   *ivalue = *def_ivalue;
                   set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_time ||
-                          job_items[i].handler == store_size64 ||
-                          job_items[i].handler == store_int64 ||
-                          job_items[i].handler == store_speed) {
+                  break;
+               case CFG_TYPE_TIME:
+               case CFG_TYPE_SIZE64:
+               case CFG_TYPE_INT64:
+               case CFG_TYPE_SPEED:
                   /*
                    * Handle 64 bit integer fields
                    */
@@ -808,7 +855,8 @@ static bool check_resources()
                   lvalue = (int64_t *)((char *)job + offset);
                   *lvalue = *def_lvalue;
                   set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_bool) {
+                  break;
+               case CFG_TYPE_BOOL:
                   /*
                    * Handle bool fields
                    */
@@ -818,6 +866,9 @@ static bool check_resources()
                   bvalue = (bool *)((char *)job + offset);
                   *bvalue = *def_bvalue;
                   set_bit(i, job->hdr.item_present);
+                  break;
+               default:
+                  break;
                }
             }
          }
@@ -827,7 +878,7 @@ static bool check_resources()
        * Ensure that all required items are present
        */
       for (int i = 0; job_items[i].name; i++) {
-         if (job_items[i].flags & ITEM_REQUIRED) {
+         if (job_items[i].flags & CFG_ITEM_REQUIRED) {
                if (!bit_is_set(i, job->hdr.item_present)) {
                   Jmsg(NULL, M_ERROR_TERM, 0,
                        _("\"%s\" directive in Job \"%s\" resource is required, but not found.\n"),
@@ -883,7 +934,7 @@ static bool check_resources()
     * Loop over Consoles
     */
    CONRES *cons;
-   foreach_res(cons, R_CONSOLE) {
+   foreach_res(config, cons, R_CONSOLE) {
       /*
        * tls_require implies tls_enable
        */
@@ -948,7 +999,7 @@ static bool check_resources()
     */
    me->subscriptions_used = 0;
    CLIENTRES *client;
-   foreach_res(client, R_CLIENT) {
+   foreach_res(config, client, R_CLIENT) {
       /*
        * Count the number of clients
        *
@@ -1001,7 +1052,7 @@ static bool check_resources()
     * Loop over Storages
     */
    STORERES *store;
-   foreach_res(store, R_STORAGE) {
+   foreach_res(config, store, R_STORAGE) {
       /*
        * tls_require implies tls_enable
        */
@@ -1044,7 +1095,6 @@ static bool check_resources()
       }
    }
 
-   UnlockRes();
    if (OK) {
       close_msg(NULL);                    /* close temp message handler */
       init_msg(NULL, me->messages); /* open daemon message handler */
@@ -1055,15 +1105,19 @@ static bool check_resources()
 /*
  * Initialize the sql pooling.
  */
-static bool initialize_sql_pooling(void)
+static bool initialize_sql_pooling(CONFIG *config)
 {
    bool retval = true;
    CATRES *catalog;
 
-   foreach_res(catalog, R_CATALOG) {
-      if (!db_sql_pool_initialize(catalog->db_driver, catalog->db_name, catalog->db_user,
-                                  catalog->db_password, catalog->db_address,
-                                  catalog->db_port, catalog->db_socket,
+   foreach_res(config, catalog, R_CATALOG) {
+      if (!db_sql_pool_initialize(catalog->db_driver,
+                                  catalog->db_name,
+                                  catalog->db_user,
+                                  catalog->db_password.value,
+                                  catalog->db_address,
+                                  catalog->db_port,
+                                  catalog->db_socket,
                                   catalog->disable_batch_insert,
                                   catalog->pooling_min_connections,
                                   catalog->pooling_max_connections,
@@ -1086,13 +1140,13 @@ static bool initialize_sql_pooling(void)
  *  - we can synchronize the catalog with the configuration (mode=UPDATE_CATALOG)
  *  - we can synchronize, and fix old job records (mode=UPDATE_AND_FIX)
  */
-static bool check_catalog(cat_op mode)
+static bool check_catalog(CONFIG *config, cat_op mode)
 {
    bool OK = true;
 
    /* Loop over databases */
    CATRES *catalog;
-   foreach_res(catalog, R_CATALOG) {
+   foreach_res(config, catalog, R_CATALOG) {
       B_DB *db;
       /*
        * Make sure we can open catalog, otherwise print a warning
@@ -1102,7 +1156,7 @@ static bool check_catalog(cat_op mode)
                             catalog->db_driver,
                             catalog->db_name,
                             catalog->db_user,
-                            catalog->db_password,
+                            catalog->db_password.value,
                             catalog->db_address,
                             catalog->db_port,
                             catalog->db_socket,
@@ -1136,7 +1190,7 @@ static bool check_catalog(cat_op mode)
 
       /* Loop over all pools, defining/updating them in each database */
       POOLRES *pool;
-      foreach_res(pool, R_POOL) {
+      foreach_res(config, pool, R_POOL) {
          /*
           * If the Pool has a catalog resource create the pool only
           *   in that catalog.
@@ -1149,7 +1203,7 @@ static bool check_catalog(cat_op mode)
       /* Once they are created, we can loop over them again, updating
        * references (RecyclePool)
        */
-      foreach_res(pool, R_POOL) {
+      foreach_res(config, pool, R_POOL) {
          /*
           * If the Pool has a catalog resource update the pool only
           *   in that catalog.
@@ -1161,7 +1215,7 @@ static bool check_catalog(cat_op mode)
 
       /* Ensure basic client record is in DB */
       CLIENTRES *client;
-      foreach_res(client, R_CLIENT) {
+      foreach_res(config, client, R_CLIENT) {
          CLIENT_DBR cr;
          /* Create clients only if they use the current catalog */
          if (client->catalog != catalog) {
@@ -1178,7 +1232,7 @@ static bool check_catalog(cat_op mode)
 
       /* Ensure basic storage record is in DB */
       STORERES *store;
-      foreach_res(store, R_STORAGE) {
+      foreach_res(config, store, R_STORAGE) {
          STORAGE_DBR sr;
          MEDIATYPE_DBR mtr;
          memset(&sr, 0, sizeof(sr));
@@ -1211,7 +1265,7 @@ static bool check_catalog(cat_op mode)
       /* Loop over all counters, defining them in each database */
       /* Set default value in all counters */
       COUNTERRES *counter;
-      foreach_res(counter, R_COUNTER) {
+      foreach_res(config, counter, R_COUNTER) {
          /* Write to catalog? */
          if (!counter->created && counter->Catalog == catalog) {
             COUNTER_DBR cr;
@@ -1245,6 +1299,7 @@ static bool check_catalog(cat_op mode)
 
       db_close_database(NULL, db);
    }
+
    return OK;
 }
 

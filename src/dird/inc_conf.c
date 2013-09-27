@@ -38,24 +38,10 @@
 
 /* Forward referenced subroutines */
 
-void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
-
-static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_regex(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_wild(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_meta(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_opts(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_base(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass);
-static void setup_current_opts(void);
-
-/* Include and Exclude items */
-static void store_fname(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
-static void store_plugin_name(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
-static void options_res(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
-static void store_excludedir(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
+/*
+ * Imported subroutines
+ */
+extern void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
 
 /*
  * We build the current resource here as we are
@@ -70,7 +56,6 @@ extern "C" { // work around visual compiler mangling variables
 #else
 extern URES res_all;
 #endif
-extern int32_t  res_all_size;
 
 /* We build the current new Include and Exclude items here */
 static INCEXE res_incexe;
@@ -79,12 +64,12 @@ static INCEXE res_incexe;
  * new Include/Exclude items
  * name handler value code flags default_value
  */
-static RES_ITEM2 newinc_items[] = {
-   { "file", store_fname, { 0 }, 0, 0, NULL },
-   { "plugin", store_plugin_name, { 0 }, 0, 0, NULL },
-   { "excludedircontaining", store_excludedir,  { 0 }, 0, 0, NULL },
-   { "options", options_res, { 0 }, 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+static RES_ITEM newinc_items[] = {
+   { "file", CFG_TYPE_FNAME, { 0 }, 0, 0, NULL },
+   { "plugin", CFG_TYPE_PLUGINNAME, { 0 }, 0, 0, NULL },
+   { "excludedircontaining", CFG_TYPE_EXCLUDEDIR,  { 0 }, 0, 0, NULL },
+   { "options", CFG_TYPE_OPTIONS, { 0 }, 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -92,196 +77,47 @@ static RES_ITEM2 newinc_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM options_items[] = {
-   { "compression", store_opts, { 0 }, 0, 0, NULL },
-   { "signature", store_opts, { 0 }, 0, 0, NULL },
-   { "basejob", store_opts, { 0 }, 0, 0, NULL },
-   { "accurate", store_opts, { 0 }, 0, 0, NULL },
-   { "verify", store_opts, { 0 }, 0, 0, NULL },
-   { "onefs", store_opts, { 0 }, 0, 0, NULL },
-   { "recurse", store_opts, { 0 }, 0, 0, NULL },
-   { "sparse", store_opts, { 0 }, 0, 0, NULL },
-   { "hardlinks", store_opts, { 0 }, 0, 0, NULL },
-   { "readfifo", store_opts, { 0 }, 0, 0, NULL },
-   { "replace", store_opts, { 0 }, 0, 0, NULL },
-   { "portable", store_opts, { 0 }, 0, 0, NULL },
-   { "mtimeonly", store_opts, { 0 }, 0, 0, NULL },
-   { "keepatime", store_opts, { 0 }, 0, 0, NULL },
-   { "regex", store_regex, { 0 }, 0, 0, NULL },
-   { "regexdir", store_regex, { 0 }, 1, 0, NULL },
-   { "regexfile", store_regex, { 0 }, 2, 0, NULL },
-   { "base", store_base, { 0 }, 0, 0, NULL },
-   { "wild", store_wild, { 0 }, 0, 0, NULL },
-   { "wilddir", store_wild, { 0 }, 1, 0, NULL },
-   { "wildfile", store_wild, { 0 }, 2, 0, NULL },
-   { "exclude", store_opts, { 0 }, 0, 0, NULL },
-   { "aclsupport", store_opts, { 0 }, 0, 0, NULL },
-   { "plugin", store_plugin, { 0 }, 0, 0, NULL },
-   { "ignorecase", store_opts, { 0 }, 0, 0, NULL },
-   { "fstype", store_fstype, { 0 }, 0, 0, NULL },
-   { "hfsplussupport", store_opts, { 0 }, 0, 0, NULL },
-   { "noatime", store_opts, { 0 }, 0, 0, NULL },
-   { "enhancedwild", store_opts, { 0 }, 0, 0, NULL },
-   { "drivetype", store_drivetype, { 0 }, 0, 0, NULL },
-   { "checkfilechanges", store_opts, { 0 }, 0, 0, NULL },
-   { "strippath", store_opts, { 0 }, 0, 0, NULL },
-   { "honornodumpflag", store_opts, { 0 }, 0, 0, NULL },
-   { "xattrsupport", store_opts, { 0 }, 0, 0, NULL },
-   { "size", store_opts, { 0 }, 0, 0, NULL },
-   { "shadowing", store_opts, { 0 }, 0, 0, NULL },
-   { "meta", store_meta, { 0 }, 0, 0, 0 },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "compression", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "signature", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "basejob", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "accurate", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "verify", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "onefs", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "recurse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "sparse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "hardlinks", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "readfifo", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "replace", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "portable", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "mtimeonly", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "keepatime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "regex", CFG_TYPE_REGEX, { 0 }, 0, 0, NULL },
+   { "regexdir", CFG_TYPE_REGEX, { 0 }, 1, 0, NULL },
+   { "regexfile", CFG_TYPE_REGEX, { 0 }, 2, 0, NULL },
+   { "base", CFG_TYPE_BASE, { 0 }, 0, 0, NULL },
+   { "wild", CFG_TYPE_WILD, { 0 }, 0, 0, NULL },
+   { "wilddir", CFG_TYPE_WILD, { 0 }, 1, 0, NULL },
+   { "wildfile", CFG_TYPE_WILD, { 0 }, 2, 0, NULL },
+   { "exclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "aclsupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "plugin", CFG_TYPE_PLUGIN, { 0 }, 0, 0, NULL },
+   { "ignorecase", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "fstype", CFG_TYPE_FSTYPE, { 0 }, 0, 0, NULL },
+   { "hfsplussupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "noatime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "enhancedwild", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "drivetype", CFG_TYPE_DRIVETYPE, { 0 }, 0, 0, NULL },
+   { "checkfilechanges", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "strippath", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "honornodumpflag", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "xattrsupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "size", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "shadowing", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "meta", CFG_TYPE_META, { 0 }, 0, 0, 0 },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
-/*
- * Define FileSet KeyWord values
- */
-enum {
-   INC_KW_NONE,
-   INC_KW_COMPRESSION,
-   INC_KW_DIGEST,
-   INC_KW_ENCRYPTION,
-   INC_KW_VERIFY,
-   INC_KW_BASEJOB,
-   INC_KW_ACCURATE,
-   INC_KW_ONEFS,
-   INC_KW_RECURSE,
-   INC_KW_SPARSE,
-   INC_KW_HARDLINK,
-   INC_KW_REPLACE, /* restore options */
-   INC_KW_READFIFO, /* Causes fifo data to be read */
-   INC_KW_PORTABLE,
-   INC_KW_MTIMEONLY,
-   INC_KW_KEEPATIME,
-   INC_KW_EXCLUDE,
-   INC_KW_ACL,
-   INC_KW_IGNORECASE,
-   INC_KW_HFSPLUS,
-   INC_KW_NOATIME,
-   INC_KW_ENHANCEDWILD,
-   INC_KW_CHKCHANGES,
-   INC_KW_STRIPPATH,
-   INC_KW_HONOR_NODUMP,
-   INC_KW_XATTR,
-   INC_KW_SIZE,
-   INC_KW_SHADOWING
-};
-
-/*
- * This is the list of options that can be stored by store_opts
- * Note, now that the old style Include/Exclude code is gone,
- * the INC_KW code could be put into the "code" field of the
- * options given above.
- */
-static struct s_kw FS_option_kw[] = {
-   { "compression", INC_KW_COMPRESSION },
-   { "signature", INC_KW_DIGEST },
-   { "encryption", INC_KW_ENCRYPTION },
-   { "verify", INC_KW_VERIFY },
-   { "basejob", INC_KW_BASEJOB },
-   { "accurate", INC_KW_ACCURATE },
-   { "onefs", INC_KW_ONEFS },
-   { "recurse", INC_KW_RECURSE },
-   { "sparse", INC_KW_SPARSE },
-   { "hardlinks", INC_KW_HARDLINK },
-   { "replace", INC_KW_REPLACE },
-   { "readfifo", INC_KW_READFIFO },
-   { "portable", INC_KW_PORTABLE },
-   { "mtimeonly", INC_KW_MTIMEONLY },
-   { "keepatime", INC_KW_KEEPATIME },
-   { "exclude", INC_KW_EXCLUDE },
-   { "aclsupport", INC_KW_ACL },
-   { "ignorecase", INC_KW_IGNORECASE },
-   { "hfsplussupport", INC_KW_HFSPLUS },
-   { "noatime", INC_KW_NOATIME },
-   { "enhancedwild", INC_KW_ENHANCEDWILD },
-   { "checkfilechanges", INC_KW_CHKCHANGES },
-   { "strippath", INC_KW_STRIPPATH },
-   { "honornodumpflag", INC_KW_HONOR_NODUMP },
-   { "xattrsupport", INC_KW_XATTR },
-   { "size", INC_KW_SIZE },
-   { "shadowing", INC_KW_SHADOWING },
-   { NULL, 0 }
-};
-
-/* Options for FileSet keywords */
-
-struct s_fs_opt {
-   const char *name;
-   int keyword;
-   const char *option;
-};
-
-/*
- * Options permitted for each keyword and resulting value.
- * The output goes into opts, which are then transmitted to
- * the FD for application as options to the following list of
- * included files.
- */
-static struct s_fs_opt FS_options[] = {
-   { "md5", INC_KW_DIGEST, "M" },
-   { "sha1", INC_KW_DIGEST, "S" },
-   { "sha256", INC_KW_DIGEST, "S2" },
-   { "sha512", INC_KW_DIGEST, "S3" },
-   { "gzip", INC_KW_COMPRESSION, "Z6" },
-   { "gzip1", INC_KW_COMPRESSION, "Z1" },
-   { "gzip2", INC_KW_COMPRESSION, "Z2" },
-   { "gzip3", INC_KW_COMPRESSION, "Z3" },
-   { "gzip4", INC_KW_COMPRESSION, "Z4" },
-   { "gzip5", INC_KW_COMPRESSION, "Z5" },
-   { "gzip6", INC_KW_COMPRESSION, "Z6" },
-   { "gzip7", INC_KW_COMPRESSION, "Z7" },
-   { "gzip8", INC_KW_COMPRESSION, "Z8" },
-   { "gzip9", INC_KW_COMPRESSION, "Z9" },
-   { "lzo", INC_KW_COMPRESSION, "Zo" },
-   { "lzfast", INC_KW_COMPRESSION, "Zff" },
-   { "lz4", INC_KW_COMPRESSION, "Zf4" },
-   { "lz4hc", INC_KW_COMPRESSION, "Zfh" },
-   { "blowfish", INC_KW_ENCRYPTION, "B"}, /* ***FIXME*** not implemented */
-   { "3des", INC_KW_ENCRYPTION, "3"}, /* ***FIXME*** not implemented */
-   { "yes", INC_KW_ONEFS, "0" },
-   { "no", INC_KW_ONEFS, "f" },
-   { "yes", INC_KW_RECURSE, "0" },
-   { "no", INC_KW_RECURSE, "h" },
-   { "yes", INC_KW_SPARSE, "s" },
-   { "no", INC_KW_SPARSE, "0" },
-   { "yes", INC_KW_HARDLINK, "0" },
-   { "no", INC_KW_HARDLINK, "H" },
-   { "always", INC_KW_REPLACE, "a" },
-   { "ifnewer", INC_KW_REPLACE, "w" },
-   { "never", INC_KW_REPLACE, "n" },
-   { "yes", INC_KW_READFIFO, "r" },
-   { "no", INC_KW_READFIFO, "0" },
-   { "yes", INC_KW_PORTABLE, "p" },
-   { "no", INC_KW_PORTABLE, "0" },
-   { "yes", INC_KW_MTIMEONLY, "m" },
-   { "no", INC_KW_MTIMEONLY, "0" },
-   { "yes", INC_KW_KEEPATIME, "k" },
-   { "no", INC_KW_KEEPATIME, "0" },
-   { "yes", INC_KW_EXCLUDE, "e" },
-   { "no", INC_KW_EXCLUDE, "0" },
-   { "yes", INC_KW_ACL, "A" },
-   { "no", INC_KW_ACL, "0" },
-   { "yes", INC_KW_IGNORECASE, "i" },
-   { "no", INC_KW_IGNORECASE, "0" },
-   { "yes", INC_KW_HFSPLUS, "R"}, /* "R" for resource fork */
-   { "no", INC_KW_HFSPLUS, "0" },
-   { "yes", INC_KW_NOATIME, "K" },
-   { "no", INC_KW_NOATIME, "0" },
-   { "yes", INC_KW_ENHANCEDWILD, "K" },
-   { "no", INC_KW_ENHANCEDWILD, "0" },
-   { "yes", INC_KW_CHKCHANGES, "c" },
-   { "no", INC_KW_CHKCHANGES, "0" },
-   { "yes", INC_KW_HONOR_NODUMP, "N" },
-   { "no", INC_KW_HONOR_NODUMP, "0" },
-   { "yes", INC_KW_XATTR, "X" },
-   { "no", INC_KW_XATTR, "0" },
-   { "localwarn", INC_KW_SHADOWING, "d1" },
-   { "localremove", INC_KW_SHADOWING, "d2" },
-   { "globalwarn", INC_KW_SHADOWING, "d3" },
-   { "globalremove", INC_KW_SHADOWING, "d4" },
-   { "none", INC_KW_SHADOWING, "0" },
-   { NULL, 0, 0 }
-};
+#include "inc_conf.h"
 
 /*
  * determine used compression algorithms
@@ -412,101 +248,6 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
    if (lc->ch == ',') {
       lex_get_token(lc, T_ALL);      /* yes, eat comma */
    }
-}
-
-/*
- *
- * Store FileSet Include/Exclude info
- *  new style includes are handled in store_newinc()
- */
-void store_inc(LEX *lc, RES_ITEM *item, int index, int pass)
-{
-   int token;
-
-   /*
-    * Decide if we are doing a new Include or an old include. The
-    *  new Include is followed immediately by open brace, whereas the
-    *  old include has options following the Include.
-    */
-   token = lex_get_token(lc, T_SKIP_EOL);
-   if (token == T_BOB) {
-      store_newinc(lc, item, index, pass);
-      return;
-   }
-   scan_err0(lc, _("Old style Include/Exclude not supported\n"));
-}
-
-/*
- * Store new style FileSet Include/Exclude info
- *
- *  Note, when this routine is called, we are inside a FileSet
- *  resource.  We treat the Include/Execlude like a sort of
- *  mini-resource within the FileSet resource.
- */
-static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
-{
-   int token, i;
-   INCEXE *incexe;
-   bool options;
-
-   if (!res_all.res_fs.have_MD5) {
-      MD5Init(&res_all.res_fs.md5c);
-      res_all.res_fs.have_MD5 = true;
-   }
-   memset(&res_incexe, 0, sizeof(INCEXE));
-   res_all.res_fs.new_include = true;
-   while ((token = lex_get_token(lc, T_SKIP_EOL)) != T_EOF) {
-      if (token == T_EOB) {
-         break;
-      }
-      if (token != T_IDENTIFIER) {
-         scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
-      }
-      for (i=0; newinc_items[i].name; i++) {
-         options = bstrcasecmp(lc->str, "options");
-         if (bstrcasecmp(newinc_items[i].name, lc->str)) {
-            if (!options) {
-               token = lex_get_token(lc, T_SKIP_EOL);
-               if (token != T_EQUALS) {
-                  scan_err1(lc, _("expected an equals, got: %s"), lc->str);
-               }
-            }
-            /* Call item handler */
-            newinc_items[i].handler(lc, &newinc_items[i], i, pass, item->code);
-            i = -1;
-            break;
-         }
-      }
-      if (i >=0) {
-         scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
-      }
-   }
-   if (pass == 1) {
-      incexe = (INCEXE *)malloc(sizeof(INCEXE));
-      memcpy(incexe, &res_incexe, sizeof(INCEXE));
-      memset(&res_incexe, 0, sizeof(INCEXE));
-      if (item->code == 0) { /* include */
-         if (res_all.res_fs.num_includes == 0) {
-            res_all.res_fs.include_items = (INCEXE **)malloc(sizeof(INCEXE *));
-         } else {
-            res_all.res_fs.include_items = (INCEXE **)realloc(res_all.res_fs.include_items,
-                           sizeof(INCEXE *) * (res_all.res_fs.num_includes + 1));
-         }
-         res_all.res_fs.include_items[res_all.res_fs.num_includes++] = incexe;
-         Dmsg1(900, "num_includes=%d\n", res_all.res_fs.num_includes);
-      } else {    /* exclude */
-         if (res_all.res_fs.num_excludes == 0) {
-            res_all.res_fs.exclude_items = (INCEXE **)malloc(sizeof(INCEXE *));
-         } else {
-            res_all.res_fs.exclude_items = (INCEXE **)realloc(res_all.res_fs.exclude_items,
-                           sizeof(INCEXE *) * (res_all.res_fs.num_excludes + 1));
-         }
-         res_all.res_fs.exclude_items[res_all.res_fs.num_excludes++] = incexe;
-         Dmsg1(900, "num_excludes=%d\n", res_all.res_fs.num_excludes);
-      }
-   }
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
 }
 
 /* Store regex info */
@@ -653,21 +394,6 @@ static void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/* Store exclude directory containing  info */
-static void store_excludedir(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude)
-{
-
-   if (exclude) {
-      scan_err0(lc, _("ExcludeDirContaining directive not permitted in Exclude.\n"));
-      /* NOT REACHED */
-   }
-   lex_get_token(lc, T_NAME);
-   if (pass == 1) {
-      res_incexe.ignoredir = bstrdup(lc->str);
-   }
-   scan_to_eol(lc);
-}
-
 /* Store drivetype info */
 static void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
@@ -691,12 +417,165 @@ static void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
+static void store_meta(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int token;
+
+   token = lex_get_token(lc, T_SKIP_EOL);
+   if (pass == 1) {
+      /* Pickup fstype string */
+      switch (token) {
+      case T_IDENTIFIER:
+      case T_UNQUOTED_STRING:
+      case T_QUOTED_STRING:
+         res_incexe.current_opts->meta.append(bstrdup(lc->str));
+         Dmsg3(900, "set meta %p size=%d %s\n",
+            res_incexe.current_opts, res_incexe.current_opts->meta.size(), lc->str);
+         break;
+      default:
+         scan_err1(lc, _("Expected a meta string, got: %s\n"), lc->str);
+      }
+   }
+   scan_to_eol(lc);
+}
+
+/*
+ * New style options come here
+ */
+static void store_option(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int i;
+   int keyword;
+   char inc_opts[100];
+
+   inc_opts[0] = 0;
+   keyword = INC_KW_NONE;
+   /* Look up the keyword */
+   for (i=0; FS_option_kw[i].name; i++) {
+      if (bstrcasecmp(item->name, FS_option_kw[i].name)) {
+         keyword = FS_option_kw[i].token;
+         break;
+      }
+   }
+   if (keyword == INC_KW_NONE) {
+      scan_err1(lc, _("Expected a FileSet keyword, got: %s"), lc->str);
+   }
+   /* Now scan for the value */
+   scan_include_options(lc, keyword, inc_opts, sizeof(inc_opts));
+   if (pass == 1) {
+      bstrncat(res_incexe.current_opts->opts, inc_opts, MAX_FOPTS);
+      Dmsg2(900, "new pass=%d incexe opts=%s\n", pass, res_incexe.current_opts->opts);
+   }
+   scan_to_eol(lc);
+}
+
+/* If current_opts not defined, create first entry */
+static void setup_current_opts(void)
+{
+   FOPTS *fo = (FOPTS *)malloc(sizeof(FOPTS));
+   memset(fo, 0, sizeof(FOPTS));
+   fo->regex.init(1, true);
+   fo->regexdir.init(1, true);
+   fo->regexfile.init(1, true);
+   fo->wild.init(1, true);
+   fo->wilddir.init(1, true);
+   fo->wildfile.init(1, true);
+   fo->wildbase.init(1, true);
+   fo->base.init(1, true);
+   fo->fstype.init(1, true);
+   fo->drivetype.init(1, true);
+   fo->meta.init(1, true);
+   res_incexe.current_opts = fo;
+   if (res_incexe.num_opts == 0) {
+      res_incexe.opts_list = (FOPTS **)malloc(sizeof(FOPTS *));
+   } else {
+      res_incexe.opts_list = (FOPTS **)realloc(res_incexe.opts_list,
+                     sizeof(FOPTS *) * (res_incexe.num_opts + 1));
+   }
+   res_incexe.opts_list[res_incexe.num_opts++] = fo;
+}
+
+/*
+ * Come here when Options seen in Include/Exclude
+ */
+static void store_options_res(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
+{
+   int token, i;
+
+   if (exclude) {
+      scan_err0(lc, _("Options section not permitted in Exclude\n"));
+      /* NOT REACHED */
+   }
+   token = lex_get_token(lc, T_SKIP_EOL);
+   if (token != T_BOB) {
+      scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
+   }
+
+   if (pass == 1) {
+      setup_current_opts();
+   }
+
+   while ((token = lex_get_token(lc, T_ALL)) != T_EOF) {
+      if (token == T_EOL) {
+         continue;
+      }
+      if (token == T_EOB) {
+         break;
+      }
+      if (token != T_IDENTIFIER) {
+         scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
+      }
+      for (i=0; options_items[i].name; i++) {
+         if (bstrcasecmp(options_items[i].name, lc->str)) {
+            token = lex_get_token(lc, T_SKIP_EOL);
+            if (token != T_EQUALS) {
+               scan_err1(lc, _("expected an equals, got: %s"), lc->str);
+            }
+            /* Call item handler */
+            switch (options_items[i].type) {
+            case CFG_TYPE_OPTION:
+               store_option(lc, &options_items[i], i, pass);
+               break;
+            case CFG_TYPE_REGEX:
+               store_regex(lc, &options_items[i], i, pass);
+               break;
+            case CFG_TYPE_BASE:
+               store_base(lc, &options_items[i], i, pass);
+               break;
+            case CFG_TYPE_WILD:
+               store_wild(lc, &options_items[i], i, pass);
+               break;
+            case CFG_TYPE_PLUGIN:
+               store_plugin(lc, &options_items[i], i, pass);
+               break;
+            case CFG_TYPE_FSTYPE:
+               store_fstype(lc, &options_items[i], i, pass);
+               break;
+            case CFG_TYPE_DRIVETYPE:
+               store_drivetype(lc, &options_items[i], i, pass);
+               break;
+            case CFG_TYPE_META:
+               store_meta(lc, &options_items[i], i, pass);
+               break;
+            default:
+               break;
+            }
+            i = -1;
+            break;
+         }
+      }
+      if (i >=0) {
+         scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
+      }
+   }
+}
+
 /*
  * Store Filename info. Note, for minor efficiency reasons, we
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void store_fname(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude)
+static void store_fname(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
 {
    int token;
    INCEXE *incexe;
@@ -735,7 +614,7 @@ static void store_fname(LEX *lc, RES_ITEM2 *item, int index, int pass, bool excl
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void store_plugin_name(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude)
+static void store_plugin_name(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
 {
    int token;
    INCEXE *incexe;
@@ -774,66 +653,73 @@ static void store_plugin_name(LEX *lc, RES_ITEM2 *item, int index, int pass, boo
    scan_to_eol(lc);
 }
 
-static void store_meta(LEX *lc, RES_ITEM *item, int index, int pass)
+/* Store exclude directory containing  info */
+static void store_excludedir(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
 {
-   int token;
-
-   token = lex_get_token(lc, T_SKIP_EOL);
+   if (exclude) {
+      scan_err0(lc, _("ExcludeDirContaining directive not permitted in Exclude.\n"));
+      /* NOT REACHED */
+   }
+   lex_get_token(lc, T_NAME);
    if (pass == 1) {
-      /* Pickup fstype string */
-      switch (token) {
-      case T_IDENTIFIER:
-      case T_UNQUOTED_STRING:
-      case T_QUOTED_STRING:
-         res_incexe.current_opts->meta.append(bstrdup(lc->str));
-         Dmsg3(900, "set meta %p size=%d %s\n",
-            res_incexe.current_opts, res_incexe.current_opts->meta.size(), lc->str);
-         break;
-      default:
-         scan_err1(lc, _("Expected a meta string, got: %s\n"), lc->str);
-      }
+      res_incexe.ignoredir = bstrdup(lc->str);
    }
    scan_to_eol(lc);
 }
 
 /*
- * Come here when Options seen in Include/Exclude
+ * Store new style FileSet Include/Exclude info
+ *
+ *  Note, when this routine is called, we are inside a FileSet
+ *  resource.  We treat the Include/Exclude like a sort of
+ *  mini-resource within the FileSet resource.
  */
-static void options_res(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude)
+static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token, i;
+   INCEXE *incexe;
+   bool options;
 
-   if (exclude) {
-      scan_err0(lc, _("Options section not permitted in Exclude\n"));
-      /* NOT REACHED */
+   if (!res_all.res_fs.have_MD5) {
+      MD5Init(&res_all.res_fs.md5c);
+      res_all.res_fs.have_MD5 = true;
    }
-   token = lex_get_token(lc, T_SKIP_EOL);
-   if (token != T_BOB) {
-      scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
-   }
-
-   if (pass == 1) {
-      setup_current_opts();
-   }
-
-   while ((token = lex_get_token(lc, T_ALL)) != T_EOF) {
-      if (token == T_EOL) {
-         continue;
-      }
+   memset(&res_incexe, 0, sizeof(INCEXE));
+   res_all.res_fs.new_include = true;
+   while ((token = lex_get_token(lc, T_SKIP_EOL)) != T_EOF) {
       if (token == T_EOB) {
          break;
       }
       if (token != T_IDENTIFIER) {
          scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
       }
-      for (i=0; options_items[i].name; i++) {
-         if (bstrcasecmp(options_items[i].name, lc->str)) {
-            token = lex_get_token(lc, T_SKIP_EOL);
-            if (token != T_EQUALS) {
-               scan_err1(lc, _("expected an equals, got: %s"), lc->str);
+      for (i=0; newinc_items[i].name; i++) {
+         options = bstrcasecmp(lc->str, "options");
+         if (bstrcasecmp(newinc_items[i].name, lc->str)) {
+            if (!options) {
+               token = lex_get_token(lc, T_SKIP_EOL);
+               if (token != T_EQUALS) {
+                  scan_err1(lc, _("expected an equals, got: %s"), lc->str);
+               }
             }
+
             /* Call item handler */
-            options_items[i].handler(lc, &options_items[i], i, pass);
+            switch (newinc_items[i].type) {
+            case CFG_TYPE_FNAME:
+               store_fname(lc, &newinc_items[i], i, pass, item->code);
+               break;
+            case CFG_TYPE_PLUGINNAME:
+               store_plugin_name(lc, &newinc_items[i], i, pass, item->code);
+               break;
+            case CFG_TYPE_EXCLUDEDIR:
+               store_excludedir(lc, &newinc_items[i], i, pass, item->code);
+               break;
+            case CFG_TYPE_OPTIONS:
+               store_options_res(lc, &newinc_items[i], i, pass, item->code);
+               break;
+            default:
+               break;
+            }
             i = -1;
             break;
          }
@@ -842,63 +728,51 @@ static void options_res(LEX *lc, RES_ITEM2 *item, int index, int pass, bool excl
          scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
       }
    }
-}
-
-
-/*
- * New style options come here
- */
-static void store_opts(LEX *lc, RES_ITEM *item, int index, int pass)
-{
-   int i;
-   int keyword;
-   char inc_opts[100];
-
-   inc_opts[0] = 0;
-   keyword = INC_KW_NONE;
-   /* Look up the keyword */
-   for (i=0; FS_option_kw[i].name; i++) {
-      if (bstrcasecmp(item->name, FS_option_kw[i].name)) {
-         keyword = FS_option_kw[i].token;
-         break;
+   if (pass == 1) {
+      incexe = (INCEXE *)malloc(sizeof(INCEXE));
+      memcpy(incexe, &res_incexe, sizeof(INCEXE));
+      memset(&res_incexe, 0, sizeof(INCEXE));
+      if (item->code == 0) { /* include */
+         if (res_all.res_fs.num_includes == 0) {
+            res_all.res_fs.include_items = (INCEXE **)malloc(sizeof(INCEXE *));
+         } else {
+            res_all.res_fs.include_items = (INCEXE **)realloc(res_all.res_fs.include_items,
+                           sizeof(INCEXE *) * (res_all.res_fs.num_includes + 1));
+         }
+         res_all.res_fs.include_items[res_all.res_fs.num_includes++] = incexe;
+         Dmsg1(900, "num_includes=%d\n", res_all.res_fs.num_includes);
+      } else {    /* exclude */
+         if (res_all.res_fs.num_excludes == 0) {
+            res_all.res_fs.exclude_items = (INCEXE **)malloc(sizeof(INCEXE *));
+         } else {
+            res_all.res_fs.exclude_items = (INCEXE **)realloc(res_all.res_fs.exclude_items,
+                           sizeof(INCEXE *) * (res_all.res_fs.num_excludes + 1));
+         }
+         res_all.res_fs.exclude_items[res_all.res_fs.num_excludes++] = incexe;
+         Dmsg1(900, "num_excludes=%d\n", res_all.res_fs.num_excludes);
       }
    }
-   if (keyword == INC_KW_NONE) {
-      scan_err1(lc, _("Expected a FileSet keyword, got: %s"), lc->str);
-   }
-   /* Now scan for the value */
-   scan_include_options(lc, keyword, inc_opts, sizeof(inc_opts));
-   if (pass == 1) {
-      bstrncat(res_incexe.current_opts->opts, inc_opts, MAX_FOPTS);
-      Dmsg2(900, "new pass=%d incexe opts=%s\n", pass, res_incexe.current_opts->opts);
-   }
    scan_to_eol(lc);
+   set_bit(index, res_all.hdr.item_present);
 }
 
-
-
-/* If current_opts not defined, create first entry */
-static void setup_current_opts(void)
+/*
+ * Store FileSet Include/Exclude info
+ *  new style includes are handled in store_newinc()
+ */
+void store_inc(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   FOPTS *fo = (FOPTS *)malloc(sizeof(FOPTS));
-   memset(fo, 0, sizeof(FOPTS));
-   fo->regex.init(1, true);
-   fo->regexdir.init(1, true);
-   fo->regexfile.init(1, true);
-   fo->wild.init(1, true);
-   fo->wilddir.init(1, true);
-   fo->wildfile.init(1, true);
-   fo->wildbase.init(1, true);
-   fo->base.init(1, true);
-   fo->fstype.init(1, true);
-   fo->drivetype.init(1, true);
-   fo->meta.init(1, true);
-   res_incexe.current_opts = fo;
-   if (res_incexe.num_opts == 0) {
-      res_incexe.opts_list = (FOPTS **)malloc(sizeof(FOPTS *));
-   } else {
-      res_incexe.opts_list = (FOPTS **)realloc(res_incexe.opts_list,
-                     sizeof(FOPTS *) * (res_incexe.num_opts + 1));
+   int token;
+
+   /*
+    * Decide if we are doing a new Include or an old include. The
+    *  new Include is followed immediately by open brace, whereas the
+    *  old include has options following the Include.
+    */
+   token = lex_get_token(lc, T_SKIP_EOL);
+   if (token == T_BOB) {
+      store_newinc(lc, item, index, pass);
+      return;
    }
-   res_incexe.opts_list[res_incexe.num_opts++] = fo;
+   scan_err0(lc, _("Old style Include/Exclude not supported\n"));
 }

@@ -43,6 +43,7 @@
 
 extern MainWin *mainWin;
 extern QApplication *app;
+extern CONFIG *my_config;
 
 bool isWin32Path(QString &fullPath);
 

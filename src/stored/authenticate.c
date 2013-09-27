@@ -78,7 +78,7 @@ static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
 
    director = NULL;
    unbash_spaces(dirname);
-   foreach_res(director, rcode) {
+   foreach_res(my_config, director, rcode) {
       if (bstrcmp(director->hdr.name, dirname)) {
          break;
       }
@@ -113,13 +113,15 @@ static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
       verify_list = director->tls_allowed_cns;
    }
 
+   ASSERT(director->password.encoding == p_encoding_md5);
+
    /*
     * Timeout Hello after 10 mins
     */
    btimer_t *tid = start_bsock_timer(bs, AUTH_TIMEOUT);
-   auth_success = cram_md5_challenge(bs, director->password, tls_local_need, compatible);
+   auth_success = cram_md5_challenge(bs, director->password.value, tls_local_need, compatible);
    if (auth_success) {
-      auth_success = cram_md5_respond(bs, director->password, &tls_remote_need, &compatible);
+      auth_success = cram_md5_respond(bs, director->password.value, &tls_remote_need, &compatible);
       if (!auth_success) {
          Dmsg1(dbglvl, "cram_get_auth failed with %s\n", bs->who());
       }

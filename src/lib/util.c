@@ -32,6 +32,44 @@
  *
  */
 
+/*
+ *  Escape special characters in bareos configuration strings
+ *  needed for dumping config strings
+ */
+void escape_string(char *snew, char *old, int len)
+{
+   char *n, *o;
+
+   n = snew;
+   o = old;
+   while (len--) {
+      switch (*o) {
+      case '\'':
+         *n++ = '\'';
+         *n++ = '\'';
+         o++;
+         break;
+      case 0:
+         *n++ = '\\';
+         *n++ = 0;
+         o++;
+         break;
+      case '(':
+      case ')':
+      case '<':
+      case '>':
+      case '"':
+         *n++ = '\\';
+         *n++ = *o++;
+         break;
+      default:
+         *n++ = *o++;
+         break;
+      }
+   }
+   *n = 0;
+}
+
 /* Return true of buffer has all zero bytes */
 bool is_buf_zero(char *buf, int len)
 {
@@ -526,9 +564,9 @@ int do_shell_expansion(char *name, int name_len)
    static char meta[] = "~\\$[]*?`'<>\"";
    bool found = false;
    int len, i, status;
-   POOLMEM *cmd;
+   POOLMEM *cmd,
+           *line;
    BPIPE *bpipe;
-   char line[MAXSTRING];
    const char *shellcmd;
 
    /* Check if any meta characters are present */
@@ -540,7 +578,8 @@ int do_shell_expansion(char *name, int name_len)
       }
    }
    if (found) {
-      cmd =  get_pool_memory(PM_FNAME);
+      cmd = get_pool_memory(PM_FNAME);
+      line = get_pool_memory(PM_FNAME);
       /* look for shell */
       if ((shellcmd = getenv("SHELL")) == NULL) {
          shellcmd = "/bin/sh";
@@ -551,8 +590,7 @@ int do_shell_expansion(char *name, int name_len)
       pm_strcat(&cmd, "\"");
       Dmsg1(400, "Send: %s\n", cmd);
       if ((bpipe = open_bpipe(cmd, 0, "r"))) {
-         *line = 0;
-         fgets(line, sizeof(line), bpipe->rfd);
+         bfgets(line, bpipe->rfd);
          strip_trailing_junk(line);
          status = close_bpipe(bpipe);
          Dmsg2(400, "status=%d got: %s\n", status, line);
@@ -560,6 +598,7 @@ int do_shell_expansion(char *name, int name_len)
          status = 1;                    /* error */
       }
       free_pool_memory(cmd);
+      free_pool_memory(line);
       if (status == 0) {
          bstrncpy(name, line, name_len);
       }

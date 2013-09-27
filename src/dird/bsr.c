@@ -67,7 +67,7 @@ static bool get_storage_device(char *device, char *storage)
    if (storage[0] == 0) {
       return false;
    }
-   store = (STORERES *)GetResWithName(R_STORAGE, storage);
+   store = (STORERES *)my_config->GetResWithName(R_STORAGE, storage);
    if (!store) {
       return false;
    }
@@ -781,7 +781,7 @@ static inline bool is_on_same_storage(JCR *jcr, char *new_one)
       return true;
    }
 
-   new_store = (STORERES *)GetResWithName(R_STORAGE, new_one);
+   new_store = (STORERES *)my_config->GetResWithName(R_STORAGE, new_one);
    if (!new_store) {
       Jmsg(jcr, M_WARNING, 0,
            _("Could not get storage resource '%s'.\n"), new_one);

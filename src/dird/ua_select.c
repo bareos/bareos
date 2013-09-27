@@ -149,17 +149,17 @@ STORERES *select_storage_resource(UAContext *ua)
    STORERES *store;
 
    start_prompt(ua, _("The defined Storage resources are:\n"));
-   LockRes();
-   foreach_res(store, R_STORAGE) {
+   LockRes(my_config);
+   foreach_res(my_config, store, R_STORAGE) {
       if (acl_access_ok(ua, Storage_ACL, store->name())) {
          add_prompt(ua, store->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    if (do_prompt(ua, _("Storage"),  _("Select Storage resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   store = (STORERES *)GetResWithName(R_STORAGE, name);
+   store = (STORERES *)my_config->GetResWithName(R_STORAGE, name);
    return store;
 }
 
@@ -172,17 +172,17 @@ FILESETRES *select_fileset_resource(UAContext *ua)
    FILESETRES *fs;
 
    start_prompt(ua, _("The defined FileSet resources are:\n"));
-   LockRes();
-   foreach_res(fs, R_FILESET) {
+   LockRes(my_config);
+   foreach_res(my_config, fs, R_FILESET) {
       if (acl_access_ok(ua, FileSet_ACL, fs->name())) {
          add_prompt(ua, fs->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    if (do_prompt(ua, _("FileSet"), _("Select FileSet resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   fs = (FILESETRES *)GetResWithName(R_FILESET, name);
+   fs = (FILESETRES *)my_config->GetResWithName(R_FILESET, name);
    return fs;
 }
 
@@ -198,15 +198,15 @@ CATRES *get_catalog_resource(UAContext *ua)
    for (i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("catalog")) && ua->argv[i]) {
          if (acl_access_ok(ua, Catalog_ACL, ua->argv[i])) {
-            catalog = (CATRES *)GetResWithName(R_CATALOG, ua->argv[i]);
+            catalog = (CATRES *)my_config->GetResWithName(R_CATALOG, ua->argv[i]);
             break;
          }
       }
    }
    if (ua->gui && !catalog) {
-      LockRes();
-      catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
-      UnlockRes();
+      LockRes(my_config);
+      catalog = (CATRES *)my_config->GetNextRes(R_CATALOG, NULL);
+      UnlockRes(my_config);
       if (!catalog) {
          ua->error_msg(_("Could not find a Catalog resource\n"));
          return NULL;
@@ -218,17 +218,17 @@ CATRES *get_catalog_resource(UAContext *ua)
    }
    if (!catalog) {
       start_prompt(ua, _("The defined Catalog resources are:\n"));
-      LockRes();
-      foreach_res(catalog, R_CATALOG) {
+      LockRes(my_config);
+      foreach_res(my_config, catalog, R_CATALOG) {
          if (acl_access_ok(ua, Catalog_ACL, catalog->name())) {
             add_prompt(ua, catalog->name());
          }
       }
-      UnlockRes();
+      UnlockRes(my_config);
       if (do_prompt(ua, _("Catalog"),  _("Select Catalog resource"), name, sizeof(name)) < 0) {
          return NULL;
       }
-      catalog = (CATRES *)GetResWithName(R_CATALOG, name);
+      catalog = (CATRES *)my_config->GetResWithName(R_CATALOG, name);
    }
    return catalog;
 }
@@ -242,9 +242,9 @@ JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable)
    char name[MAX_NAME_LENGTH];
    JOBRES *job;
 
-   LockRes();
+   LockRes(my_config);
    start_prompt(ua, _("The defined Job resources are:\n"));
-   foreach_res(job, R_JOB) {
+   foreach_res(my_config, job, R_JOB) {
       if (!acl_access_ok(ua, Job_ACL, job->name())) {
          continue;
       }
@@ -253,11 +253,11 @@ JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable)
       }
       add_prompt(ua, job->name());
    }
-   UnlockRes();
+   UnlockRes(my_config);
    if (do_prompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   job = (JOBRES *)GetResWithName(R_JOB, name);
+   job = (JOBRES *)my_config->GetResWithName(R_JOB, name);
    return job;
 }
 
@@ -270,17 +270,17 @@ JOBRES *select_job_resource(UAContext *ua)
    JOBRES *job;
 
    start_prompt(ua, _("The defined Job resources are:\n"));
-   LockRes();
-   foreach_res(job, R_JOB) {
+   LockRes(my_config);
+   foreach_res(my_config, job, R_JOB) {
       if (acl_access_ok(ua, Job_ACL, job->name())) {
          add_prompt(ua, job->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    if (do_prompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   job = (JOBRES *)GetResWithName(R_JOB, name);
+   job = (JOBRES *)my_config->GetResWithName(R_JOB, name);
    return job;
 }
 
@@ -292,7 +292,7 @@ JOBRES *get_restore_job(UAContext *ua)
    JOBRES *job;
    int i = find_arg_with_value(ua, NT_("restorejob"));
    if (i >= 0 && acl_access_ok(ua, Job_ACL, ua->argv[i])) {
-      job = (JOBRES *)GetResWithName(R_JOB, ua->argv[i]);
+      job = (JOBRES *)my_config->GetResWithName(R_JOB, ua->argv[i]);
       if (job && job->JobType == JT_RESTORE) {
          return job;
       }
@@ -311,17 +311,17 @@ JOBRES *select_restore_job_resource(UAContext *ua)
    JOBRES *job;
 
    start_prompt(ua, _("The defined Restore Job resources are:\n"));
-   LockRes();
-   foreach_res(job, R_JOB) {
+   LockRes(my_config);
+   foreach_res(my_config, job, R_JOB) {
       if (job->JobType == JT_RESTORE && acl_access_ok(ua, Job_ACL, job->name())) {
          add_prompt(ua, job->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    if (do_prompt(ua, _("Job"), _("Select Restore Job"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   job = (JOBRES *)GetResWithName(R_JOB, name);
+   job = (JOBRES *)my_config->GetResWithName(R_JOB, name);
    return job;
 }
 
@@ -334,17 +334,17 @@ CLIENTRES *select_client_resource(UAContext *ua)
    CLIENTRES *client;
 
    start_prompt(ua, _("The defined Client resources are:\n"));
-   LockRes();
-   foreach_res(client, R_CLIENT) {
+   LockRes(my_config);
+   foreach_res(my_config, client, R_CLIENT) {
       if (acl_access_ok(ua, Client_ACL, client->name())) {
          add_prompt(ua, client->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    if (do_prompt(ua, _("Client"),  _("Select Client (File daemon) resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   client = (CLIENTRES *)GetResWithName(R_CLIENT, name);
+   client = (CLIENTRES *)my_config->GetResWithName(R_CLIENT, name);
    return client;
 }
 
@@ -364,7 +364,7 @@ CLIENTRES *get_client_resource(UAContext *ua)
          if (!acl_access_ok(ua, Client_ACL, ua->argv[i])) {
             break;
          }
-         client = (CLIENTRES *)GetResWithName(R_CLIENT, ua->argv[i]);
+         client = (CLIENTRES *)my_config->GetResWithName(R_CLIENT, ua->argv[i]);
          if (client) {
             return client;
          }
@@ -645,17 +645,17 @@ POOLRES *select_pool_resource(UAContext *ua)
    POOLRES *pool;
 
    start_prompt(ua, _("The defined Pool resources are:\n"));
-   LockRes();
-   foreach_res(pool, R_POOL) {
+   LockRes(my_config);
+   foreach_res(my_config, pool, R_POOL) {
       if (acl_access_ok(ua, Pool_ACL, pool->name())) {
          add_prompt(ua, pool->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    if (do_prompt(ua, _("Pool"), _("Select Pool resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
-   pool = (POOLRES *)GetResWithName(R_POOL, name);
+   pool = (POOLRES *)my_config->GetResWithName(R_POOL, name);
    return pool;
 }
 
@@ -672,7 +672,7 @@ POOLRES *get_pool_resource(UAContext *ua)
 
    i = find_arg_with_value(ua, NT_("pool"));
    if (i >= 0 && acl_access_ok(ua, Pool_ACL, ua->argv[i])) {
-      pool = (POOLRES *)GetResWithName(R_POOL, ua->argv[i]);
+      pool = (POOLRES *)my_config->GetResWithName(R_POOL, ua->argv[i]);
       if (pool) {
          return pool;
       }
@@ -786,15 +786,14 @@ void add_prompt(UAContext *ua, const char *prompt)
  * Display prompts and get user's choice
  *
  *  Returns: -1 on error
- *            index base 0 on success, and choice
- *               is copied to prompt if not NULL
- *             prompt is set to the chosen prompt item string
+ *            index base 0 on success, and choice is copied to prompt if not NULL
+ *            prompt is set to the chosen prompt item string
  */
 int do_prompt(UAContext *ua, const char *automsg, const char *msg,
               char *prompt, int max_prompt)
 {
    int i, item;
-   char pmsg[MAXSTRING];
+   POOL_MEM pmsg(PM_MESSAGE);
    BSOCK *user = ua->UA_sock;
 
    if (prompt) {
@@ -846,11 +845,11 @@ int do_prompt(UAContext *ua, const char *automsg, const char *msg,
          }
          break;
       } else {
-         sprintf(pmsg, "%s (1-%d): ", msg, ua->num_prompts-1);
+         Mmsg(pmsg, "%s (1-%d): ", msg, ua->num_prompts - 1);
       }
       /* Either a . or an @ will get you out of the loop */
       if (ua->api) user->signal(BNET_SELECT_INPUT);
-      if (!get_pint(ua, pmsg)) {
+      if (!get_pint(ua, pmsg.c_str())) {
          item = -1;                   /* error */
          ua->info_msg(_("Selection aborted, nothing done.\n"));
          break;
@@ -978,7 +977,7 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default)
    }
 
    if (!store && store_name && store_name[0] != 0) {
-      store = (STORERES *)GetResWithName(R_STORAGE, store_name);
+      store = (STORERES *)my_config->GetResWithName(R_STORAGE, store_name);
       if (!store) {
          ua->error_msg(_("Storage resource \"%s\": not found\n"), store_name);
       }
@@ -1083,11 +1082,11 @@ int get_media_type(UAContext *ua, char *MediaType, int max_media)
    }
 
    start_prompt(ua, _("Media Types defined in conf file:\n"));
-   LockRes();
-   foreach_res(store, R_STORAGE) {
+   LockRes(my_config);
+   foreach_res(my_config, store, R_STORAGE) {
       add_prompt(ua, store->media_type);
    }
-   UnlockRes();
+   UnlockRes(my_config);
    return (do_prompt(ua, _("Media Type"), _("Select the Media Type"), MediaType, max_media) < 0) ? 0 : 1;
 }
 

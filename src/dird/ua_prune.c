@@ -599,17 +599,17 @@ static int job_select_handler(void *ctx, int num_fields, char **row)
 
 #ifdef bug5507
    /* If this job doesn't exist anymore in the configuration, delete it */
-   if (GetResWithName(R_JOB, row[0]) == NULL) {
+   if (GetResWithName(my_config, R_JOB, row[0]) == NULL) {
       return 0;
    }
 
    /* If this fileset doesn't exist anymore in the configuration, delete it */
-   if (GetResWithName(R_FILESET, row[1]) == NULL) {
+   if (GetResWithName(my_config, R_FILESET, row[1]) == NULL) {
       return 0;
    }
 
    /* If this client doesn't exist anymore in the configuration, delete it */
-   if (GetResWithName(R_CLIENT, row[2]) == NULL) {
+   if (GetResWithName(my_config, R_CLIENT, row[2]) == NULL) {
       return 0;
    }
 #endif

@@ -29,11 +29,48 @@
 /* NOTE:  #includes at the end of this file */
 
 /*
+ * Program specific config types (start at 50)
+ */
+#define CFG_TYPE_AUTOPASSWORD       50  /* Password stored in clear when needed otherwise hashed */
+#define CFG_TYPE_ACL                51  /* User Access Control List */
+#define CFG_TYPE_AUTHPROTOCOLTYPE   52  /* Authentication Protocol */
+#define CFG_TYPE_AUTHTYPE           53  /* Authentication Type */
+#define CFG_TYPE_DEVICE             54  /* Device resource */
+#define CFG_TYPE_JOBTYPE            55  /* Type of Job */
+#define CFG_TYPE_PROTOCOLTYPE       56  /* Protocol */
+#define CFG_TYPE_LEVEL              57  /* Backup Level */
+#define CFG_TYPE_REPLACE            58  /* Replace option */
+#define CFG_TYPE_SHRTRUNSCRIPT      59  /* Short Runscript definition */
+#define CFG_TYPE_RUNSCRIPT          60  /* Runscript */
+#define CFG_TYPE_RUNSCRIPT_CMD      61  /* Runscript Command */
+#define CFG_TYPE_RUNSCRIPT_TARGET   62  /* Runscript Target (Host) */
+#define CFG_TYPE_RUNSCRIPT_BOOL     63  /* Runscript Boolean */
+#define CFG_TYPE_RUNSCRIPT_WHEN     64  /* Runscript When expression */
+#define CFG_TYPE_MIGTYPE            65  /* Migration Type */
+#define CFG_TYPE_INCEXC             66  /* Include/Exclude item */
+#define CFG_TYPE_RUN                67  /* Schedule Run Command */
+#define CFG_TYPE_ACTIONONPURGE      68  /* Action to perform on Purge */
+
+#define CFG_TYPE_FNAME              80  /* Filename */
+#define CFG_TYPE_PLUGINNAME         81  /* Pluginname */
+#define CFG_TYPE_EXCLUDEDIR         82  /* Exclude directory */
+#define CFG_TYPE_OPTIONS            83  /* Options block */
+#define CFG_TYPE_OPTION             84  /* Option of Options block */
+#define CFG_TYPE_REGEX              85  /* Regular Expression */
+#define CFG_TYPE_BASE               86  /* Basejob Expression */
+#define CFG_TYPE_WILD               87  /* Wildcard Expression */
+#define CFG_TYPE_PLUGIN             88  /* Plugin definition */
+#define CFG_TYPE_FSTYPE             89  /* FileSytem match criterium (UNIX)*/
+#define CFG_TYPE_DRIVETYPE          90  /* DriveType match criterium (Windows) */
+#define CFG_TYPE_META               91  /* Meta tag */
+
+/*
  * Resource codes -- they must be sequential for indexing
  */
 enum {
    R_DIRECTOR = 1001,
    R_CLIENT,
+   R_JOBDEFS,
    R_JOB,
    R_STORAGE,
    R_CATALOG,
@@ -43,7 +80,6 @@ enum {
    R_MSGS,
    R_COUNTER,
    R_CONSOLE,
-   R_JOBDEFS,
    R_DEVICE,
    R_FIRST = R_DIRECTOR,
    R_LAST = R_DEVICE                  /* keep this updated */
@@ -60,27 +96,27 @@ enum {
    R_BACKUP
 };
 
-/* Used for certain KeyWord tables */
-struct s_kw {
-   const char *name;
-   uint32_t token;
-};
-
-/* Job Level keyword structure */
+/*
+ * Job Level keyword structure
+ */
 struct s_jl {
-   const char *level_name;                 /* level keyword */
-   int32_t  level;                         /* level */
-   int32_t  job_type;                      /* JobType permitting this level */
+   const char *level_name;                 /* Level keyword */
+   uint32_t level;                         /* Level */
+   uint32_t job_type;                      /* JobType permitting this level */
 };
 
-/* Job Type keyword structure */
+/*
+ * Job Type keyword structure
+ */
 struct s_jt {
    const char *type_name;
    int32_t job_type;
 };
 
-/* Definition of the contents of each Resource */
-/* Needed for forward references */
+/*
+ * Definition of the contents of each Resource
+ * Needed for forward references
+ */
 class SCHEDRES;
 class CLIENTRES;
 class FILESETRES;
@@ -90,16 +126,13 @@ class DEVICERES;
 class RUNSCRIPTRES;
 
 /*
- *   Director Resource
- *
+ * Director Resource
  */
-class DIRRES {
+class DIRRES: public BRSRES {
 public:
-   RES hdr;
-
    dlist *DIRaddrs;
    dlist *DIRsrc_addr;                /* address to source connections from */
-   char *password;                    /* Password for UA access */
+   s_password password;               /* Password for UA access */
    char *query_file;                  /* SQL query file */
    char *working_directory;           /* WorkingDirectory */
    char *scripts_directory;           /* ScriptsDirectory */
@@ -128,31 +161,26 @@ public:
    bool tls_verify_peer;              /* TLS Verify Peer Certificate */
    bool optimize_for_size;            /* Optimize daemon for minimum memory size */
    bool optimize_for_speed;           /* Optimize daemon for speed which may need more memory */
+   bool omit_defaults;                /* Omit config variables with default values when dumping the config */
    bool ndmp_snooping;                /* NDMP Protocol specific snooping enabled */
    uint32_t ndmp_loglevel;            /* NDMP Protocol specific loglevel to use */
    uint32_t subscriptions;            /* Number of subscribtions available */
    uint32_t subscriptions_used;       /* Number of subscribtions used */
    char *verid;                       /* Custom Id to print in version command */
    char *keyencrkey;                  /* Key Encryption Key */
-
-   /* Methods */
-   char *name() const;
 };
-
-inline char *DIRRES::name() const { return hdr.name; }
 
 /*
  * Device Resource
- *  This resource is a bit different from the other resources
- *  because it is not defined in the Director
- *  by DEVICE { ... }, but rather by a "reference" such as
- *  DEVICE = xxx; Then when the Director connects to the
- *  SD, it requests the information about the device.
+ *
+ * This resource is a bit different from the other resources
+ * because it is not defined in the Director
+ * by DEVICE { ... }, but rather by a "reference" such as
+ * DEVICE = xxx; Then when the Director connects to the
+ * SD, it requests the information about the device.
  */
-class DEVICERES {
+class DEVICERES : public BRSRES {
 public:
-   RES hdr;
-
    bool found;                        /* found with SD */
    int32_t num_writers;               /* number of writers */
    int32_t max_writers;               /* = 1 for files */
@@ -169,12 +197,7 @@ public:
    char ChangerName[MAX_NAME_LENGTH];
    char VolumeName[MAX_NAME_LENGTH];
    char MediaType[MAX_NAME_LENGTH];
-
-   /* Methods */
-   char *name() const;
 };
-
-inline char *DEVICERES::name() const { return hdr.name; }
 
 /*
  * Console ACL positions
@@ -195,12 +218,11 @@ enum {
 };
 
 /*
- *    Console Resource
+ * Console Resource
  */
-class CONRES {
+class CONRES : public BRSRES {
 public:
-   RES hdr;
-   char *password;                    /* UA server password */
+   s_password password;               /* UA server password */
    alist *ACL_lists[Num_ACL];         /* pointers to ACLs */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
@@ -214,25 +236,18 @@ public:
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
    bool tls_verify_peer;              /* TLS Verify Peer Certificate */
-
-   /* Methods */
-   char *name() const;
 };
 
-inline char *CONRES::name() const { return hdr.name; }
 
 /*
- *   Catalog Resource
- *
+ * Catalog Resource
  */
-class CATRES {
+class CATRES : public BRSRES {
 public:
-   RES hdr;
-
    uint32_t db_port;                  /* Port */
    char *db_address;                  /* Hostname for remote access */
    char *db_socket;                   /* Socket for local access */
-   char *db_password;
+   s_password db_password;
    char *db_user;
    char *db_name;
    char *db_driver;                   /* Select appropriate driver */
@@ -245,19 +260,14 @@ public:
    uint32_t pooling_validate_timeout; /* When using sql pooling set this to the number of seconds after a idle connection should be validated */
 
    /* Methods */
-   char *name() const;
    char *display(POOLMEM *dst);       /* Get catalog information */
 };
 
-inline char *CATRES::name() const { return hdr.name; }
-
 /*
- *   Client Resource
- *
+ * Client Resource
  */
-class CLIENTRES {
+class CLIENTRES: public BRSRES {
 public:
-   RES hdr;
 
    uint32_t Protocol;                 /* Protocol to use to connect */
    uint32_t AuthType;                 /* Authentication Type to use for protocol */
@@ -274,7 +284,7 @@ public:
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    char *address;                     /* Hostname for remote access to Client */
    char *username;                    /* Username to use for authentication if protocol supports it */
-   char *password;
+   s_password password;
    CATRES *catalog;                   /* Catalog resource */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
@@ -286,6 +296,7 @@ public:
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    bool passive;                      /* Passive Client */
+
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
@@ -294,27 +305,20 @@ public:
    bool QuotaIncludeFailedJobs;       /* Ignore failed jobs when calculating quota */
    int64_t max_bandwidth;             /* Limit speed on this client */
 
-   /* Methods */
-   char *name() const;
 };
 
-inline char *CLIENTRES::name() const { return hdr.name; }
-
 /*
- *   Store Resource
- *
+ * Store Resource
  */
-class STORERES {
+class STORERES : public BRSRES {
 public:
-   RES hdr;
-
    uint32_t Protocol;                 /* Protocol to use to connect */
    uint32_t AuthType;                 /* Authentication Type to use for protocol */
    uint32_t SDport;                   /* Port where Directors connect */
    uint32_t SDDport;                  /* Data port for File daemon */
    char *address;                     /* Hostname for remote access to Storage */
    char *username;                    /* Username to use for authentication if protocol supports it */
-   char *password;
+   s_password password;
    char *media_type;                  /* Media Type provided by this Storage */
    alist *device;                     /* Alternate devices for this Storage */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
@@ -341,7 +345,6 @@ public:
 
    /* Methods */
    char *dev_name() const;
-   char *name() const;
 };
 
 inline char *STORERES::dev_name() const
@@ -350,12 +353,10 @@ inline char *STORERES::dev_name() const
    return dev->name();
 }
 
-inline char *STORERES::name() const { return hdr.name; }
-
 /*
  * This is a sort of "unified" store that has both the
- *  storage pointer and the text of where the pointer was
- *  found.
+ * storage pointer and the text of where the pointer was
+ * found.
  */
 class USTORERES {
 public:
@@ -387,12 +388,10 @@ inline void USTORERES::set_source(const char *where)
 }
 
 /*
- *   Job Resource
+ * Job Resource
  */
-class JOBRES {
+class JOBRES : public BRSRES {
 public:
-   RES hdr;
-
    uint32_t Protocol;                 /* Protocol to use to connect */
    uint32_t JobType;                  /* job type (backup, verify, restore */
    uint32_t JobLevel;                 /* default backup/verify level */
@@ -474,15 +473,14 @@ public:
    int64_t max_bandwidth;             /* Speed limit on this job */
 
    /* Methods */
-   char *name() const;
 };
-
-inline char *JOBRES::name() const { return hdr.name; }
 
 #undef  MAX_FOPTS
 #define MAX_FOPTS 40
 
-/* File options structure */
+/*
+ * File options structure
+ */
 struct FOPTS {
    char opts[MAX_FOPTS];              /* options string */
    alist regex;                       /* regex string(s) */
@@ -501,7 +499,9 @@ struct FOPTS {
    char *plugin;                      /* plugin program */
 };
 
-/* This is either an include item or an exclude item */
+/*
+ * This is either an include item or an exclude item
+ */
 struct INCEXE {
    FOPTS *current_opts;               /* points to current options structure */
    FOPTS **opts_list;                 /* options list */
@@ -512,8 +512,7 @@ struct INCEXE {
 };
 
 /*
- *   FileSet Resource
- *
+ * FileSet Resource
  */
 class FILESETRES {
 public:
@@ -532,49 +531,37 @@ public:
 
    /* Methods */
    char *name() const;
+   bool print_config(POOL_MEM& buff);
 };
 
 inline char *FILESETRES::name() const { return hdr.name; }
 
 /*
- *   Schedule Resource
- *
+ * Schedule Resource
  */
-class SCHEDRES {
+class SCHEDRES: public BRSRES {
 public:
-   RES hdr;
-
    RUNRES *run;
 };
 
 /*
- *   Counter Resource
+ * Counter Resource
  */
-class COUNTERRES {
+class COUNTERRES: public BRSRES {
 public:
-   RES hdr;
-
    int32_t MinValue;                  /* Minimum value */
    int32_t MaxValue;                  /* Maximum value */
    int32_t CurrentValue ;             /* Current value */
    COUNTERRES *WrapCounter;           /* Wrap counter name */
    CATRES *Catalog;                   /* Where to store */
    bool created;                      /* Created in DB */
-
-   /* Methods */
-   char *name() const;
 };
 
-inline char *COUNTERRES::name() const { return hdr.name; }
-
 /*
- *   Pool Resource
- *
+ * Pool Resource
  */
-class POOLRES {
+class POOLRES: public BRSRES {
 public:
-   RES hdr;
-
    char *pool_type;                   /* Pool type */
    char *label_format;                /* Label format string */
    char *cleaning_prefix;             /* Cleaning label prefix */
@@ -605,14 +592,10 @@ public:
    CATRES *catalog;                   /* Catalog to be used */
    utime_t FileRetention;             /* file retention period in seconds */
    utime_t JobRetention;              /* job retention period in seconds */
-
-   /* Methods */
-   char *name() const;
 };
 
-inline char *POOLRES::name() const { return hdr.name; }
-
-/* Define the Union of all the above
+/*
+ * Define the Union of all the above
  * resource structure definitions.
  */
 union URES {
@@ -631,8 +614,10 @@ union URES {
    RES hdr;
 };
 
-/* Run structure contained in Schedule Resource */
-class RUNRES {
+/*
+ * Run structure contained in Schedule Resource
+ */
+class RUNRES: public BRSRES {
 public:
    RUNRES *next;                      /* points to next run record */
    uint32_t level;                    /* level override */
@@ -657,18 +642,18 @@ public:
    uint32_t minute;                   /* minute to run job */
    time_t last_run;                   /* last time run */
    time_t next_run;                   /* next time to run */
-   char hour[nbytes_for_bits(24)];    /* bit set for each hour */
-   char mday[nbytes_for_bits(31)];    /* bit set for each day of month */
-   char month[nbytes_for_bits(12)];   /* bit set for each month */
-   char wday[nbytes_for_bits(7)];     /* bit set for each day of the week */
-   char wom[nbytes_for_bits(5)];      /* week of month */
-   char woy[nbytes_for_bits(54)];     /* week of year */
-   bool last_set;                     /* last week of month */
+   char hour[nbytes_for_bits(24 + 1)];  /* bit set for each hour */
+   char mday[nbytes_for_bits(31 + 1)];  /* bit set for each day of month */
+   char month[nbytes_for_bits(12 + 1)]; /* bit set for each month */
+   char wday[nbytes_for_bits(7 + 1)];   /* bit set for each day of the week */
+   char wom[nbytes_for_bits(5 + 1)];    /* week of month */
+   char woy[nbytes_for_bits(54 + 1)];   /* week of year */
+   bool last_set;                       /* last week of month */
 };
 
-#define GetPoolResWithName(x) ((POOLRES *)GetResWithName(R_POOL, (x)))
-#define GetStoreResWithName(x) ((STORERES *)GetResWithName(R_STORAGE, (x)))
-#define GetClientResWithName(x) ((CLIENTRES *)GetResWithName(R_CLIENT, (x)))
-#define GetJobResWithName(x) ((JOBRES *)GetResWithName(R_JOB, (x)))
-#define GetFileSetResWithName(x) ((FILESETRES *)GetResWithName(R_FILESET, (x)))
-#define GetCatalogResWithName(x) ((CATRES *)GetResWithName(R_CATALOG, (x)))
+#define GetPoolResWithName(x) ((POOLRES *)my_config->GetResWithName(R_POOL, (x)))
+#define GetStoreResWithName(x) ((STORERES *)my_config->GetResWithName(R_STORAGE, (x)))
+#define GetClientResWithName(x) ((CLIENTRES *)my_config->GetResWithName(R_CLIENT, (x)))
+#define GetJobResWithName(x) ((JOBRES *)my_config->GetResWithName(R_JOB, (x)))
+#define GetFileSetResWithName(x) ((FILESETRES *)my_config->GetResWithName(R_FILESET, (x)))
+#define GetCatalogResWithName(x) ((CATRES *)my_config->GetResWithName(R_CATALOG, (x)))

@@ -101,9 +101,10 @@ bool authenticate_storage_daemon(JCR *jcr, STORERES *store)
       tls_local_need = BNET_TLS_REQUIRED;
    }
 
-   auth_success = cram_md5_respond(sd, store->password, &tls_remote_need, &compatible);
+   ASSERT(store->password.encoding == p_encoding_md5);
+   auth_success = cram_md5_respond(sd, store->password.value, &tls_remote_need, &compatible);
    if (auth_success) {
-      auth_success = cram_md5_challenge(sd, store->password, tls_local_need, compatible);
+      auth_success = cram_md5_challenge(sd, store->password.value, tls_local_need, compatible);
       if (!auth_success) {
          Dmsg1(dbglvl, "cram_challenge failed for %s\n", sd->who());
       }
@@ -226,9 +227,10 @@ bool authenticate_file_daemon(JCR *jcr)
       tls_local_need = BNET_TLS_REQUIRED;
    }
 
-   auth_success = cram_md5_respond(fd, client->password, &tls_remote_need, &compatible);
+   ASSERT(client->password.encoding == p_encoding_md5);
+   auth_success = cram_md5_respond(fd, client->password.value, &tls_remote_need, &compatible);
    if (auth_success) {
-      auth_success = cram_md5_challenge(fd, client->password, tls_local_need, compatible);
+      auth_success = cram_md5_challenge(fd, client->password.value, tls_local_need, compatible);
       if (!auth_success) {
          Dmsg1(dbglvl, "cram_auth failed for %s\n", fd->who());
       }
@@ -361,11 +363,12 @@ bool authenticate_user_agent(UAContext *uac)
          verify_list = me->tls_allowed_cns;
       }
 
-      auth_success = cram_md5_challenge(ua, me->password, tls_local_need, compatible) &&
-                     cram_md5_respond(ua, me->password, &tls_remote_need, &compatible);
+      ASSERT(me->password.encoding == p_encoding_md5);
+      auth_success = cram_md5_challenge(ua, me->password.value, tls_local_need, compatible) &&
+                     cram_md5_respond(ua, me->password.value, &tls_remote_need, &compatible);
    } else {
       unbash_spaces(name);
-      cons = (CONRES *)GetResWithName(R_CONSOLE, name);
+      cons = (CONRES *)my_config->GetResWithName(R_CONSOLE, name);
       if (cons) {
          /*
           * TLS Requirement
@@ -388,8 +391,9 @@ bool authenticate_user_agent(UAContext *uac)
             verify_list = cons->tls_allowed_cns;
          }
 
-         auth_success = cram_md5_challenge(ua, cons->password, tls_local_need, compatible) &&
-                        cram_md5_respond(ua, cons->password, &tls_remote_need, &compatible);
+         ASSERT(cons->password.encoding == p_encoding_md5);
+         auth_success = cram_md5_challenge(ua, cons->password.value, tls_local_need, compatible) &&
+                        cram_md5_respond(ua, cons->password.value, &tls_remote_need, &compatible);
 
          if (auth_success) {
             uac->cons = cons;           /* save console resource pointer */

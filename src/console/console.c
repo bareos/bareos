@@ -47,7 +47,6 @@
 #endif
 
 /* Exported variables */
-
 //extern int rl_catch_signals;
 
 /* Imported functions */
@@ -55,7 +54,7 @@ extern bool parse_cons_config(CONFIG *config, const char *configfile, int exit_c
 
 /* Forward referenced functions */
 static void terminate_console(int sig);
-static int check_resources();
+static int check_resources(CONFIG *config);
 int get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec);
 static int do_outputcmd(FILE *input, BSOCK *UA_sock);
 void senditf(const char *fmt, ...);
@@ -81,7 +80,7 @@ static int numdir;
 static POOLMEM *args;
 static char *argk[MAX_CMD_ARGS];
 static char *argv[MAX_CMD_ARGS];
-static CONFIG *config;
+static CONFIG *my_config;
 static bool file_selection = false;
 
 /* Command prototypes */
@@ -927,7 +926,7 @@ static int console_init_history(const char *histfile)
    return ret;
 }
 
-static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret_cons)
+static bool select_director(CONFIG *config, const char *director, DIRRES **ret_dir, CONRES **ret_cons)
 {
    int numcon=0, numdir=0;
    int i=0, item=0;
@@ -940,29 +939,29 @@ static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret
    *ret_cons = NULL;
    *ret_dir = NULL;
 
-   LockRes();
+   LockRes(config);
    numdir = 0;
-   foreach_res(dir, R_DIRECTOR) {
+   foreach_res(config, dir, R_DIRECTOR) {
       numdir++;
    }
    numcon = 0;
-   foreach_res(cons, R_CONSOLE) {
+   foreach_res(config, cons, R_CONSOLE) {
       numcon++;
    }
-   UnlockRes();
+   UnlockRes(config);
 
    if (numdir == 1) {           /* No choose */
-      dir = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+      dir = (DIRRES *)config->GetNextRes(R_DIRECTOR, NULL);
    }
 
    if (director) {    /* Command line choice overwrite the no choose option */
-      LockRes();
-      foreach_res(dir, R_DIRECTOR) {
+      LockRes(config);
+      foreach_res(config, dir, R_DIRECTOR) {
          if (bstrcmp(dir->hdr.name, director)) {
             break;
          }
       }
-      UnlockRes();
+      UnlockRes(config);
       if (!dir) {               /* Can't find Director used as argument */
          senditf(_("Can't find %s in Director list\n"), director);
          return 0;
@@ -973,13 +972,13 @@ static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret
       UA_sock = init_bsock(NULL, 0, "", "", 0, &client_addr);
 try_again:
       sendit(_("Available Directors:\n"));
-      LockRes();
+      LockRes(config);
       numdir = 0;
-      foreach_res(dir, R_DIRECTOR) {
+      foreach_res(config, dir, R_DIRECTOR) {
          senditf( _("%2d:  %s at %s:%d\n"), 1+numdir++, dir->hdr.name,
                   dir->address, dir->DIRport);
       }
-      UnlockRes();
+      UnlockRes(config);
       if (get_cmd(stdin, _("Select Director by entering a number: "),
                   UA_sock, 600) < 0)
       {
@@ -998,19 +997,17 @@ try_again:
          goto try_again;
       }
       term_bsock(UA_sock);
-      LockRes();
+      LockRes(config);
       for (i=0; i<item; i++) {
-         dir = (DIRRES *)GetNextRes(R_DIRECTOR, (RES *)dir);
+         dir = (DIRRES *)config->GetNextRes(R_DIRECTOR, (RES *)dir);
       }
-      UnlockRes();
+      UnlockRes(config);
    }
 
-   /*
-    * Look for a console linked to this director
-    */
-   LockRes();
+   LockRes(config);
+   /* Look for a console linked to this director */
    for (i=0; i<numcon; i++) {
-      cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)cons);
+      cons = (CONRES *)config->GetNextRes(R_CONSOLE, (RES *)cons);
       if (cons->director && bstrcmp(cons->director, dir->hdr.name)) {
          break;
       }
@@ -1022,7 +1019,7 @@ try_again:
     */
    if (cons == NULL) {
       for (i=0; i<numcon; i++) {
-         cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)cons);
+         cons = (CONRES *)config->GetNextRes(R_CONSOLE, (RES *)cons);
          if (cons->director == NULL)
             break;
          cons = NULL;
@@ -1033,9 +1030,9 @@ try_again:
     * If no console, take first one
     */
    if (!cons) {
-      cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)NULL);
+      cons = (CONRES *)config->GetNextRes(R_CONSOLE, (RES *)NULL);
    }
-   UnlockRes();
+   UnlockRes(config);
 
    *ret_dir = dir;
    *ret_cons = cons;
@@ -1155,14 +1152,14 @@ int main(int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_cons_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_cons_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
-   if (!check_resources()) {
+   if (!check_resources(my_config)) {
       Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
 
@@ -1171,11 +1168,11 @@ int main(int argc, char *argv[])
    }
 
    if (list_directors) {
-      LockRes();
-      foreach_res(dir, R_DIRECTOR) {
+      LockRes(my_config);
+      foreach_res(my_config, dir, R_DIRECTOR) {
          senditf("%s\n", dir->hdr.name);
       }
-      UnlockRes();
+      UnlockRes(my_config);
    }
 
    if (test_config) {
@@ -1189,7 +1186,7 @@ int main(int argc, char *argv[])
 
    start_watchdog();                        /* Start socket watchdog */
 
-   if (!select_director(director, &dir, &cons)) {
+   if (!select_director(my_config, director, &dir, &cons)) {
       return 1;
    }
 
@@ -1282,11 +1279,13 @@ int main(int argc, char *argv[])
     */
    if (cons) {
       name = cons->hdr.name;
-      password = cons->password;
+      ASSERT(cons->password.encoding == p_encoding_md5);
+      password = cons->password.value;
       tls_ctx = cons->tls_ctx;
    } else {
       name = "*UserAgent*";
-      password = dir->password;
+      ASSERT(dir->password.encoding == p_encoding_md5);
+      password = dir->password.value;
       tls_ctx = dir->tls_ctx;
    }
 
@@ -1346,9 +1345,9 @@ static void terminate_console(int sig)
    }
    already_here = true;
    stop_watchdog();
-   config->free_resources();
-   free(config);
-   config = NULL;
+   my_config->free_all_resources();
+   free(my_config);
+   my_config = NULL;
    cleanup_crypto();
    free_pool_memory(args);
    if (!no_conio) {
@@ -1367,16 +1366,16 @@ static void terminate_console(int sig)
  * Make a quick check to see that we have all the
  * resources needed.
  */
-static int check_resources()
+static int check_resources(CONFIG *config)
 {
    bool OK = true;
    DIRRES *director;
    bool tls_needed;
 
-   LockRes();
+   LockRes(config);
 
    numdir = 0;
-   foreach_res(director, R_DIRECTOR) {
+   foreach_res(config, director, R_DIRECTOR) {
 
       numdir++;
       /* tls_require implies tls_enable */
@@ -1408,7 +1407,7 @@ static int check_resources()
 
    CONRES *cons;
    /* Loop over Consoles */
-   foreach_res(cons, R_CONSOLE) {
+   foreach_res(config, cons, R_CONSOLE) {
       /* tls_require implies tls_enable */
       if (cons->tls_require) {
          if (have_tls) {
@@ -1428,7 +1427,7 @@ static int check_resources()
       }
    }
 
-   UnlockRes();
+   UnlockRes(config);
 
    return OK;
 }

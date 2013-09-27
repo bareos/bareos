@@ -103,10 +103,10 @@ JCR *new_control_jcr(const char *base_name, int job_type)
     *  we set them up to ensure that everything is correctly
     *  initialized.
     */
-   LockRes();
-   jcr->res.job = (JOBRES *)GetNextRes(R_JOB, NULL);
+   LockRes(my_config);
+   jcr->res.job = (JOBRES *)my_config->GetNextRes(R_JOB, NULL);
    set_jcr_defaults(jcr, jcr->res.job);
-   UnlockRes();
+   UnlockRes(my_config);
    jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
    create_unique_job_name(jcr, base_name);
    jcr->sched_time = jcr->start_time;

@@ -104,22 +104,22 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
 {
    JCR *jcr = (JCR *)(lc->caller_ctx);
    va_list arg_ptr;
-   char buf[MAXSTRING];
+   POOL_MEM buf(PM_NAME);
 
    va_start(arg_ptr, msg);
-   bvsnprintf(buf, sizeof(buf), msg, arg_ptr);
+   vMmsg(buf, msg, arg_ptr);
    va_end(arg_ptr);
 
    if (jcr) {
       Jmsg(jcr, M_FATAL, 0, _(
            "Bootstrap file error: %s\n"
            "            : Line %d, col %d of file %s\n%s\n"),
-         buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
    } else {
       e_msg(file, line, M_FATAL, 0, _(
             "Bootstrap file error: %s\n"
             "            : Line %d, col %d of file %s\n%s\n"),
-         buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
    }
 }
 
@@ -130,22 +130,22 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 {
    JCR *jcr = (JCR *)(lc->caller_ctx);
    va_list arg_ptr;
-   char buf[MAXSTRING];
+   POOL_MEM buf(PM_NAME);
 
    va_start(arg_ptr, msg);
-   bvsnprintf(buf, sizeof(buf), msg, arg_ptr);
+   vMmsg(buf, msg, arg_ptr);
    va_end(arg_ptr);
 
    if (jcr) {
       Jmsg(jcr, M_WARNING, 0, _(
            "Bootstrap file warning: %s\n"
            "            : Line %d, col %d of file %s\n%s\n"),
-         buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
    } else {
       p_msg(file, line, 0, _(
             "Bootstrap file warning: %s\n"
             "            : Line %d, col %d of file %s\n%s\n"),
-         buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
    }
 }
 

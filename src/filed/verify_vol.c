@@ -42,6 +42,7 @@ static char rec_header[] =
 void do_verify_volume(JCR *jcr)
 {
    BSOCK *sd, *dir;
+   CLIENTRES *client;
    POOLMEM *fname;                    /* original file name */
    POOLMEM *lname;                    /* link name */
    int32_t stream;
@@ -60,9 +61,10 @@ void do_verify_volume(JCR *jcr)
    dir = jcr->dir_bsock;
    jcr->setJobStatus(JS_Running);
 
-   LockRes();
-   CLIENTRES *client = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
-   UnlockRes();
+   LockRes(my_config);
+   client = (CLIENTRES *)my_config->GetNextRes(R_CLIENT, NULL);
+   UnlockRes(my_config);
+
    uint32_t buf_size;
    if (client) {
       buf_size = client->max_network_buffer_size;

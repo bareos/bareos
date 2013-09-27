@@ -35,10 +35,11 @@ extern void *handle_connection_request(void *dir_sock);
 extern bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
-static bool check_resources();
+static bool check_resources(CONFIG *config);
 
 /* Exported variables */
-CLIENTRES *me;                        /* my resource */
+CLIENTRES *me = NULL;                 /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
 bool no_signals = false;
 bool backup_only_mode = false;
 bool restore_only_mode = false;
@@ -51,7 +52,6 @@ static bool foreground = false;
 static workq_t dir_workq;             /* queue of work from Director */
 static alist *sock_fds;
 static pthread_t server_tid;
-static CONFIG *config;
 
 static void usage()
 {
@@ -209,15 +209,15 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_fd_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_fd_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
       terminate_filed(1);
    }
 
-   if (!check_resources()) {
+   if (!check_resources(my_config)) {
       Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
       terminate_filed(1);
    }
@@ -298,10 +298,10 @@ void terminate_filed(int sig)
    if (debug_level > 0) {
       print_memory_pool_stats();
    }
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_all_resources();
+      free(my_config);
+      my_config = NULL;
    }
    term_msg();
    cleanup_crypto();
@@ -315,28 +315,27 @@ void terminate_filed(int sig)
 * Make a quick check to see that we have all the
 * resources needed.
 */
-static bool check_resources()
+static bool check_resources(CONFIG *config)
 {
    bool OK = true;
    DIRRES *director;
    bool need_tls;
 
-   LockRes();
-
-   me = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
+   LockRes(my_config);
+   me = (CLIENTRES *)config->GetNextRes(R_CLIENT, NULL);
    if (!me) {
       Emsg1(M_FATAL, 0, _("No File daemon resource defined in %s\n"
             "Without that I don't know who I am :-(\n"), configfile);
       OK = false;
    } else {
-      if (GetNextRes(R_CLIENT, (RES *) me) != NULL) {
+      if (config->GetNextRes(R_CLIENT, (RES *) me) != NULL) {
          Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
               configfile);
          OK = false;
       }
       my_name_is(0, NULL, me->hdr.name);
       if (!me->messages) {
-         me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
+         me->messages = (MSGSRES *)config->GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
              Emsg1(M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
              OK = false;
@@ -500,16 +499,16 @@ static bool check_resources()
 
 
    /* Verify that a director record exists */
-   LockRes();
-   director = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
-   UnlockRes();
+   LockRes(my_config);
+   director = (DIRRES *)config->GetNextRes(R_DIRECTOR, NULL);
+   UnlockRes(my_config);
    if (!director) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"),
             configfile);
       OK = false;
    }
 
-   foreach_res(director, R_DIRECTOR) {
+   foreach_res(my_config, director, R_DIRECTOR) {
       /* tls_require implies tls_enable */
       if (director->tls_require) {
 #ifndef HAVE_TLS
@@ -568,8 +567,7 @@ static bool check_resources()
          set_tls_require(director->tls_ctx, director->tls_require);
       }
    }
-
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (OK) {
       close_msg(NULL);                /* close temp message handler */

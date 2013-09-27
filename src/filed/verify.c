@@ -69,8 +69,8 @@ void do_verify(JCR *jcr)
  */
 static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 {
-   char attribs[MAXSTRING];
-   char attribsEx[MAXSTRING];
+   POOL_MEM attribs(PM_NAME),
+            attribsEx(PM_NAME);
    int digest_stream = STREAM_NONE;
    int status;
    DIGEST *digest = NULL;
@@ -165,8 +165,8 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    }
 
    /* Encode attributes and possibly extend them */
-   encode_stat(attribs, &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, 0);
-   encode_attribsEx(jcr, attribsEx, ff_pkt);
+   encode_stat(attribs.c_str(), &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, 0);
+   encode_attribsEx(jcr, attribsEx.c_str(), ff_pkt);
 
    jcr->lock();
    jcr->JobFiles++;                  /* increment number of files sent */
@@ -189,17 +189,17 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    if (ff_pkt->type == FT_LNK || ff_pkt->type == FT_LNKSAVED) {
       status = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
                           STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
-                          0, attribs, 0, ff_pkt->link, 0);
+                          0, attribs.c_str(), 0, ff_pkt->link, 0);
    } else if (ff_pkt->type == FT_DIREND || ff_pkt->type == FT_REPARSE ||
               ff_pkt->type == FT_JUNCTION) {
       /* Here link is the canonical filename (i.e. with trailing slash) */
       status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
                           STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->link,
-                          0, attribs, 0, 0);
+                          0, attribs.c_str(), 0, 0);
    } else {
       status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
                           STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
-                          0, attribs, 0, 0);
+                          0, attribs.c_str(), 0, 0);
    }
    Dmsg2(20, "filed>dir: attribs len=%d: msg=%s\n", dir->msglen, dir->msg);
    if (!status) {
