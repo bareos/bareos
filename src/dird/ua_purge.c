@@ -97,7 +97,7 @@ int purge_cmd(UAContext *ua, const char *cmd)
       "to retention periods. Normally you should use the\n"
       "PRUNE command, which respects retention periods.\n"));
 
-   if (!open_db(ua)) {
+   if (!open_client_db(ua, true)) {
       return 1;
    }
    switch (find_arg_keyword(ua, keywords)) {

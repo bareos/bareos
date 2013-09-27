@@ -182,7 +182,7 @@ bool do_a_dot_command(UAContext *ua)
 
 static bool dot_bvfs_update(UAContext *ua, const char *cmd)
 {
-   if (!open_new_client_db(ua)) {
+   if (!open_client_db(ua, true)) {
       return 1;
    }
 
@@ -197,13 +197,12 @@ static bool dot_bvfs_update(UAContext *ua, const char *cmd)
       bvfs_update_cache(ua->jcr, ua->db);
    }
 
-   close_db(ua);
    return true;
 }
 
 static bool dot_bvfs_clear_cache(UAContext *ua, const char *cmd)
 {
-   if (!open_new_client_db(ua)) {
+   if (!open_client_db(ua, true)) {
       return 1;
    }
 
@@ -216,7 +215,6 @@ static bool dot_bvfs_clear_cache(UAContext *ua, const char *cmd)
       ua->error_msg("Can't find 'yes' argument\n");
    }
 
-   close_db(ua);
    return true;
 }
 
@@ -269,12 +267,12 @@ static bool bvfs_parse_arg_version(UAContext *ua,
                                    bool *versions,
                                    bool *copies)
 {
-   *fnid=0;
-   *client=NULL;
-   *versions=false;
-   *copies=false;
+   *fnid = 0;
+   *client = NULL;
+   *versions = false;
+   *copies = false;
 
-   for (int i=1; i<ua->argc; i++) {
+   for (int i = 1; i < ua->argc; i++) {
       if (fnid && bstrcasecmp(ua->argk[i], NT_("fnid"))) {
          if (is_a_number(ua->argv[i])) {
             *fnid = str_to_int64(ua->argv[i]);
@@ -293,6 +291,7 @@ static bool bvfs_parse_arg_version(UAContext *ua,
          *versions = true;
       }
    }
+
    return (*client && *fnid > 0);
 }
 
@@ -304,12 +303,12 @@ static bool bvfs_parse_arg(UAContext *ua,
                            int *limit,
                            int *offset)
 {
-   *pathid=0;
-   *limit=2000;
-   *offset=0;
-   *path=NULL;
-   *jobid=NULL;
-   *username=NULL;
+   *pathid = 0;
+   *limit = 2000;
+   *offset = 0;
+   *path = NULL;
+   *jobid = NULL;
+   *username = NULL;
 
    for (int i=1; i<ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("pathid"))) {
@@ -349,27 +348,32 @@ static bool bvfs_parse_arg(UAContext *ua,
       return false;
    }
 
-   if (!open_client_db(ua)) {
+   if (!open_client_db(ua, true)) {
       return false;
    }
 
    return true;
 }
 
-/* .bvfs_cleanup path=b2XXXXX
+/*
+ * .bvfs_cleanup path=b2XXXXX
  */
 static bool dot_bvfs_cleanup(UAContext *ua, const char *cmd)
 {
    int i;
+
    if ((i = find_arg_with_value(ua, "path")) >= 0) {
-      open_client_db(ua);
+      if (!open_client_db(ua), true) {
+         return false;
+      }
       Bvfs fs(ua->jcr, ua->db);
       fs.drop_restore_list(ua->argv[i]);
    }
    return true;
 }
 
-/* .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
+/*
+ * .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
  */
 static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
 {
@@ -380,11 +384,9 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
    char *fileid, *dirid, *hardlink;
    fileid = dirid = hardlink = empty;
 
-   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username,
-                       &limit, &offset))
-   {
+   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
-      return true;              /* not enough param */
+      return false;             /* not enough param */
    }
 
    Bvfs fs(ua->jcr, ua->db);
@@ -421,12 +423,11 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
    char *pattern=NULL;
    int i;
 
-   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username,
-                       &limit, &offset))
-   {
+   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
-      return true;              /* not enough param */
+      return false;             /* not enough param */
    }
+
    if ((i = find_arg_with_value(ua, "pattern")) >= 0) {
       pattern = ua->argv[i];
    }
@@ -463,9 +464,7 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
    int limit=2000, offset=0;
    char *path=NULL, *jobid=NULL, *username=NULL;
 
-   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username,
-                       &limit, &offset))
-   {
+   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
       return true;              /* not enough param */
    }
@@ -491,8 +490,7 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
 }
 
 /*
- * .bvfs_versions jobid=x fnid=10 pathid=10 copies versions
- * (jobid isn't used)
+ * .bvfs_versions jobid=x fnid=10 pathid=10 copies versions (jobid isn't used)
  */
 static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
 {
@@ -500,15 +498,13 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
    int limit=2000, offset=0;
    char *path=NULL, *jobid=NULL, *client=NULL, *username=NULL;
    bool copies=false, versions=false;
-   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username,
-                       &limit, &offset))
-   {
+
+   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
-      return true;              /* not enough param */
+      return false;             /* not enough param */
    }
 
-   if (!bvfs_parse_arg_version(ua, &client, &fnid, &versions, &copies))
-   {
+   if (!bvfs_parse_arg_version(ua, &client, &fnid, &versions, &copies)) {
       ua->error_msg("Can't find client or fnid argument\n");
       return true;              /* not enough param */
    }
@@ -524,7 +520,8 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
    return true;
 }
 
-/* .bvfs_get_jobids jobid=1
+/*
+ * .bvfs_get_jobids jobid=1
  *  -> returns needed jobids to restore
  * .bvfs_get_jobids jobid=1 all
  *  -> returns needed jobids to restore with all filesets a JobId=1 time
@@ -540,7 +537,7 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
    POOL_MEM query;
    dbid_list ids;               /* Store all FileSetIds for this client */
 
-   if (!open_client_db(ua)) {
+   if (!open_client_db(ua, true)) {
       return true;
    }
 
@@ -1003,19 +1000,23 @@ static int sql_handler(void *ctx, int num_field, char **row)
 static bool sql_cmd(UAContext *ua, const char *cmd)
 {
    int index;
-   if (!open_client_db(ua)) {
+
+   if (!open_client_db(ua, true)) {
       return true;
    }
+
    index = find_arg_with_value(ua, "query");
    if (index < 0) {
       ua->error_msg(_("query keyword not found.\n"));
       return true;
    }
+
    if (!db_sql_query(ua->db, ua->argv[index], sql_handler, (void *)ua)) {
       Dmsg1(100, "Query failed: ERR=%s\n", db_strerror(ua->db));
       ua->error_msg(_("Query failed: %s. ERR=%s\n"), ua->cmd, db_strerror(ua->db));
       return true;
    }
+
    return true;
 }
 
