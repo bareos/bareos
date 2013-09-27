@@ -1190,8 +1190,25 @@ void BSOCK::control_bwlimit(int bytes)
       if (debug_level >= 400) {
          Dmsg1(400, "control_bwlimit: sleeping for %lld usecs\n", usec_sleep);
       }
-      bmicrosleep(0, usec_sleep);
-      m_last_tick = get_current_btime();
+
+      /*
+       * Sleep the right number of usecs.
+       */
+      while (1) {
+         bmicrosleep(0, usec_sleep);
+         now = get_current_btime();
+
+         /*
+          * See if we slept enough or that bmicrosleep() returned early.
+          */
+         if ((now - m_last_tick) < usec_sleep) {
+            usec_sleep -= (now - m_last_tick);
+            continue;
+         } else {
+            m_last_tick = now;
+            break;
+         }
+      }
 
       /*
        * Subtract the number of bytes we could have sent during the sleep

@@ -1468,24 +1468,13 @@ int inet_aton(const char *a, struct in_addr *inp)
    return 1;
 }
 
-int nanosleep(const struct timespec *req, struct timespec *rem)
-{
-    if (rem)
-        rem->tv_sec = rem->tv_nsec = 0;
-    Sleep((req->tv_sec * 1000) + (req->tv_nsec/1000000));
-    return 0;
-}
-
 void init_signals(void terminate(int sig))
 {
-
 }
 
 void init_stack_dump(void)
 {
-
 }
-
 
 long pathconf(const char *path, int name)
 {
