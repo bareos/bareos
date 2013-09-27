@@ -82,9 +82,9 @@ int safer_unlink(const char *pathname, const char *regx)
 
 /*
  * This routine will sleep (sec, microsec).  Note, however, that if a
- *   signal occurs, it will return early.  It is up to the caller
- *   to recall this routine if he/she REALLY wants to sleep the
- *   requested time.
+ * signal occurs, it will return early.  It is up to the caller
+ * to recall this routine if he/she REALLY wants to sleep the
+ * requested time.
  */
 int bmicrosleep(int32_t sec, int32_t usec)
 {
@@ -101,10 +101,14 @@ int bmicrosleep(int32_t sec, int32_t usec)
    if (!(status < 0 && errno == ENOSYS)) {
       return status;
    }
-   /* If we reach here it is because nanosleep is not supported by the OS */
+   /*
+    * If we reach here it is because nanosleep is not supported by the OS
+    */
 #endif
 
-   /* Do it the old way */
+   /*
+    * Do it the old way
+    */
    gettimeofday(&tv, &tz);
    timeout.tv_nsec += tv.tv_usec * 1000;
    timeout.tv_sec += tv.tv_sec;
@@ -114,15 +118,14 @@ int bmicrosleep(int32_t sec, int32_t usec)
    }
 
    Dmsg2(200, "pthread_cond_timedwait sec=%lld usec=%d\n", sec, usec);
-   /* Note, this unlocks mutex during the sleep */
+
+   /*
+    * Note, this unlocks mutex during the sleep
+    */
    P(timer_mutex);
    status = pthread_cond_timedwait(&timer, &timer_mutex, &timeout);
-   if (status != 0) {
-      berrno be;
-      Dmsg2(200, "pthread_cond_timedwait status=%d ERR=%s\n", status,
-         be.bstrerror(status));
-   }
    V(timer_mutex);
+
    return status;
 }
 
