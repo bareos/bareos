@@ -676,8 +676,8 @@ done:
 
   # make first section mandatory
   SectionSetFlags ${SEC_CLIENT} 17 # SF_SELECTED & SF_RO
-  # SectionSetFlags ${SEC_BCONSOLE}  ${SF_SELECTED} # SF_SELECTED
-  SectionSetFlags ${SEC_PLUGINS} ${SEC_TRAYMON} ${SF_SELECTED} # SF_SELECTED
+  SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED} # SF_SELECTED
+  SectionSetFlags ${SEC_PLUGINS} ${SF_SELECTED} # SF_SELECTED
 
   # find out the computer name
   Call GetComputerName
