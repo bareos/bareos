@@ -7,6 +7,15 @@ TestName="sparse-lzo-test"
 JobName=Sparse-lzo
 . scripts/functions
 
+#
+# See if library is linked against liblzo2
+#
+cnt=`ldd ${bin}/libbareos.so 2>/dev/null | grep -c liblzo2`
+if test ${cnt} -lt 1; then
+   echo "$TestName skipped: not linked for lzo2 compression"
+   exit 0
+fi
+
 cwd=`pwd`
 scripts/cleanup
 scripts/copy-test-confs
