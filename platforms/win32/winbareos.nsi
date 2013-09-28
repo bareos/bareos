@@ -50,28 +50,18 @@ Var DirectorAddress       #XXX_REPLACE_WITH_HOSTNAME_XXX
 Var DirectorPassword      #XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX
 Var DirectorName
 
-# Needed for tray monitor:
-
-# can stay like it is if we dont monitor any director -> Default
-Var DirectorMonitorPassword #XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX
-
-# this is the one we need to make sure it is the same like configured in the fd
-#Var ClientMonitorPassword   #XXX_REPLACE_WITH_FD_MONITOR_PASSWORD_XXX
-
-
-# generated configuration snippet for bareos director config  (client ressource)
+# Generated configuration snippet for bareos director config (client ressource)
 Var ConfigSnippet
 
-
+Var OsIsNT
 Var dialog
 Var hwnd
 
-# keep the configuration files also when running silently?
-
+# Keep the configuration files also when running silently?
 Var SilentKeepConfig
 
-# are we doing an upgrade or fresh install?
-# if we are doing an upgrade we automatically
+# Are we doing an upgrade or fresh install?
+# If we are doing an upgrade we automatically
 # keep the existing config files silently and skip
 # the param dialogs and the config snippet dialog
 Var Upgrading
@@ -523,7 +513,14 @@ Function GetHostName
 FunctionEnd
 
 Function .onInit
-# check if we are installing on 64Bit, then do some settings
+  # Check if this is Windows NT.
+  StrCpy $OsIsNT 0
+  ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+  ${If} $R0 != ""
+    StrCpy $OsIsNT 1
+  ${EndIf}
+
+  # Check if we are installing on 64Bit, then do some settings
   ${If} ${RunningX64} # 64Bit OS
     ${If} ${BIT_WIDTH} == '32'
       MessageBox MB_OK|MB_ICONSTOP "You are running a 32 Bit installer on a 64 Bit OS.$\r$\nPlease use the 64 Bit installer."
@@ -657,23 +654,24 @@ done:
   ClearErrors
 
   InitPluginsDir
-  File "/oname=$PLUGINSDIR\clientdialog.ini"    "clientdialog.ini"
-  File "/oname=$PLUGINSDIR\directordialog.ini"  "directordialog.ini"
-  File "/oname=$PLUGINSDIR\openssl.exe"  	      "openssl.exe"
-  File "/oname=$PLUGINSDIR\sed.exe"  	         "sed.exe"
-  File "/oname=$PLUGINSDIR\libcrypto-8.dll" 	   "libcrypto-8.dll"
+  File "/oname=$PLUGINSDIR\clientdialog.ini" "clientdialog.ini"
+  File "/oname=$PLUGINSDIR\directordialog.ini" "directordialog.ini"
+  File "/oname=$PLUGINSDIR\openssl.exe" "openssl.exe"
+  File "/oname=$PLUGINSDIR\sed.exe" "sed.exe"
+  File "/oname=$PLUGINSDIR\libcrypto-8.dll" "libcrypto-8.dll"
 
+  # Either one of this two files will be available depending on 32/64 bits.
   File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_sjlj-1.dll" "libgcc_s_sjlj-1.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll"  "libgcc_s_seh-1.dll"
+  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll" "libgcc_s_seh-1.dll"
 
-  File "/oname=$PLUGINSDIR\libssl-8.dll" 	      "libssl-8.dll"
-  File "/oname=$PLUGINSDIR\libstdc++-6.dll" 	   "libstdc++-6.dll"
-  File "/oname=$PLUGINSDIR\zlib1.dll" 	         "zlib1.dll"
+  File "/oname=$PLUGINSDIR\libssl-8.dll" "libssl-8.dll"
+  File "/oname=$PLUGINSDIR\libstdc++-6.dll" "libstdc++-6.dll"
+  File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
 
-  File "/oname=$PLUGINSDIR\bareos-fd.conf"     "bareos-fd.conf"
-  File "/oname=$PLUGINSDIR\bconsole.conf"      "bconsole.conf"
-  File "/oname=$PLUGINSDIR\bat.conf"           "bat.conf"
-  File "/oname=$PLUGINSDIR\tray-monitor.conf"  "tray-monitor.conf"
+  File "/oname=$PLUGINSDIR\bareos-fd.conf" "bareos-fd.conf"
+  File "/oname=$PLUGINSDIR\bconsole.conf" "bconsole.conf"
+  File "/oname=$PLUGINSDIR\bat.conf" "bat.conf"
+  File "/oname=$PLUGINSDIR\tray-monitor.conf" "tray-monitor.conf"
 
   # make first section mandatory
   SectionSetFlags ${SEC_CLIENT} 17 # SF_SELECTED & SF_RO
