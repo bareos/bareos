@@ -331,12 +331,11 @@ SectionEnd
 
 Section "Bareos Client (FileDaemon) and base libs" SEC_CLIENT
 SectionIn 1 2 3
-
   SetShellVarContext all
-# TODO: only do this if the file exists
-#  nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /kill'
-#  sleep 3000
-#  nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /remove'
+  # TODO: only do this if the file exists
+  #  nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /kill'
+  #  sleep 3000
+  #  nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /remove'
 
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -354,17 +353,15 @@ SectionIn 1 2 3
   File "zlib1.dll"
   File "liblzo2-2.dll"
 
-# for password generation
+  # for password generation
   File "openssl.exe"
   File "sed.exe"
 
-#  File "bareos-fd.conf"
   !insertmacro InstallConfFile bareos-fd.conf
 SectionEnd
 
 Section /o "Bareos FileDaemon Plugins " SEC_PLUGINS
-SectionIn 1 2
-
+SectionIn 1 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -373,78 +370,51 @@ SectionEnd
 
 Section /o "Text Console (bconsole)" SEC_BCONSOLE
 SectionIn 2
-
   SetShellVarContext all
+  SetOutPath "$INSTDIR"
+  SetOverwrite ifnewer
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe" '-c "$APPDATA\${PRODUCT_NAME}\bconsole.conf"'
 
   File "bconsole.exe"
-#  File "libbareos.dll"
-#  File "libcrypto-8.dll"
-#  File "libgcc_s_*-1.dll"
   File "libhistory6.dll"
   File "libreadline6.dll"
-#  File "libssl-8.dll"
-#  File "libstdc++-6.dll"
   File "libtermcap-0.dll"
-#  File "pthreadGCE2.dll"
-#  File "zlib1.dll"
-#
- !insertmacro InstallConfFile "bconsole.conf"
-#  File "bconsole.conf
 
+  !insertmacro InstallConfFile "bconsole.conf"
 SectionEnd
 
 Section /o "Tray-Monitor" SEC_TRAYMON
 SectionIn 1 2
-
-
   SetShellVarContext all
+  SetOutPath "$INSTDIR"
+  SetOverwrite ifnewer
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe" '-c "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"'
 
-# autostart
+  # autostart
   CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe" '-c "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"'
 
   File "bareos-tray-monitor.exe"
-#  File "libbareos.dll"
-#  File "libcrypto-8.dll"
-#  File "libgcc_s_*-1.dll"
   File "libpng15-15.dll"
-#  File "libssl-8.dll"
-#  File "libstdc++-6.dll"
-#  File "pthreadGCE2.dll"
   File "QtCore4.dll"
   File "QtGui4.dll"
-#  File "zlib1.dll"
-
 
   !insertmacro InstallConfFile "tray-monitor.conf"
-#  File "tray-monitor.conf"
-
 SectionEnd
-
 
 Section /o "Qt Console (BAT)" SEC_BAT
 SectionIn 2
-
   SetShellVarContext all
+  SetOutPath "$INSTDIR"
+  SetOverwrite ifnewer
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\BAT.lnk" "$INSTDIR\bat.exe" '-c "$APPDATA\${PRODUCT_NAME}\bat.conf"'
   CreateShortCut "$DESKTOP\BAT.lnk" "$INSTDIR\bat.exe" '-c "$APPDATA\${PRODUCT_NAME}\bat.conf"'
 
   File "bat.exe"
-#  File "libbareos.dll"
-#  File "libcrypto-8.dll"
-#  File "libgcc_s_*-1.dll"
   File "libpng15-15.dll"
-#  File "libssl-8.dll"
-#  File "libstdc++-6.dll"
-#  File "pthreadGCE2.dll"
   File "QtCore4.dll"
   File "QtGui4.dll"
-#  File "zlib1.dll"
 
   !insertmacro InstallConfFile "bat.conf"
-#  File "bat.conf"
-
 SectionEnd
 
 Section "Open Firewall for Client" SEC_FIREWALL
@@ -466,7 +436,6 @@ SectionIn 1 2 3
   ${EndIf}
 SectionEnd
 
-
 ; Section descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CLIENT} "Installs the Bareos File Daemon and required Files"
@@ -476,8 +445,6 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BAT} "Installs the Qt Console (BAT)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL} "Opens Port 9102/TCP for bareos-fd.exe (Client program) in the Windows Firewall"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
-
-
 
 Section -AdditionalIcons
   SetShellVarContext all
@@ -502,9 +469,7 @@ Section -Post
   sleep 3000
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /remove'
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /install -c "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf"'
-
 SectionEnd
-
 
 Section -StartDaemon
   nsExec::ExecToLog "net start bareos-fd"
@@ -555,8 +520,6 @@ Function GetHostName
   Exch $R0
 FunctionEnd
 
-
-
 Function .onInit
 # check if we are installing on 64Bit, then do some settings
   ${If} ${RunningX64} # 64Bit OS
@@ -574,16 +537,14 @@ Function .onInit
     ${EndIf}
   ${EndIf}
 
-
-
-# check if software is already installed
-#  ClearErrors
-#  ReadRegStr $2 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"
-#  ReadRegStr $0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion"
-#  StrCmp $2 "" +3
-#  MessageBox MB_OK|MB_ICONSTOP "${PRODUCT_NAME} version $0 $\r$\nseems to be already installed on your system.$\r$\nPlease uninstall first."
-#  Abort
-#
+  # check if software is already installed
+  #  ClearErrors
+  #  ReadRegStr $2 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"
+  #  ReadRegStr $0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion"
+  #  StrCmp $2 "" +3
+  #  MessageBox MB_OK|MB_ICONSTOP "${PRODUCT_NAME} version $0 $\r$\nseems to be already installed on your system.$\r$\nPlease uninstall first."
+  #  Abort
+  #
 
   # UPGRADE: if already installed allow to uninstall installed version
   # inspired by http://nsis.sourceforge.net/Auto-uninstall_old_before_installing_new
@@ -693,12 +654,6 @@ done:
     StrCpy $SilentKeepConfig "no"
   ClearErrors
 
-##
-##   MessageBox MB_YESNO|MB_ICONQUESTION \
-##       "SilentKeepConfig is $SilentKeepConfig"
-##
-
-
   InitPluginsDir
   File "/oname=$PLUGINSDIR\clientdialog.ini"    "clientdialog.ini"
   File "/oname=$PLUGINSDIR\directordialog.ini"  "directordialog.ini"
@@ -718,24 +673,21 @@ done:
   File "/oname=$PLUGINSDIR\bat.conf"           "bat.conf"
   File "/oname=$PLUGINSDIR\tray-monitor.conf"  "tray-monitor.conf"
 
-# make first section mandatory
-  SectionSetFlags ${SEC_CLIENT}  17 # SF_SELECTED & SF_RO
-#  SectionSetFlags ${SEC_BCONSOLE}  ${SF_SELECTED} # SF_SELECTED
-SectionSetFlags ${SEC_TRAYMON}  ${SF_SELECTED} # SF_SELECTED
+  # make first section mandatory
+  SectionSetFlags ${SEC_CLIENT} 17 # SF_SELECTED & SF_RO
+  SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED} # SF_SELECTED
+  SectionSetFlags ${SEC_PLUGINS} ${SF_SELECTED} # SF_SELECTED
 
-# find out the computer name
+  # find out the computer name
   Call GetComputerName
   Pop $HostName
 
   Call GetHostName
   Pop $LocalHostAddress
 
-#  MessageBox MB_OK "Hostname: $HostName"
-#  MessageBox MB_OK "LocalHostAddress: $LocalHostAddress"
-
   SetPluginUnload alwaysoff
 
-# check if password is set by cmdline. If so, skip creation
+  # check if password is set by cmdline. If so, skip creation
   strcmp $ClientPassword "" genclientpassword skipclientpassword
   genclientpassword:
     nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
