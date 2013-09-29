@@ -852,20 +852,23 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp)
 /*
  * Sort items by runtime, priority
  */
-static int my_compare(void *item1, void *item2)
+static int compare_by_runtime_priority(void *item1, void *item2)
 {
    sched_pkt *p1 = (sched_pkt *)item1;
    sched_pkt *p2 = (sched_pkt *)item2;
+
    if (p1->runtime < p2->runtime) {
       return -1;
    } else if (p1->runtime > p2->runtime) {
       return 1;
    }
+
    if (p1->priority < p2->priority) {
       return -1;
    } else if (p1->priority > p2->priority) {
       return 1;
    }
+
    return 0;
 }
 
@@ -926,7 +929,7 @@ static void list_scheduled_jobs(UAContext *ua)
          get_job_storage(&store, job, run);
          sp->store = store.store;
          Dmsg3(250, "job=%s store=%s MediaType=%s\n", job->name(), sp->store->name(), sp->store->media_type);
-         sched.binary_insert_multiple(sp, my_compare);
+         sched.binary_insert_multiple(sp, compare_by_runtime_priority);
          num_jobs++;
       }
    } /* end for loop over resources */

@@ -44,7 +44,7 @@ static void debug_list_volumes(const char *imsg);
 /*
  * For append volumes the key is the VolumeName.
  */
-static int my_compare(void *item1, void *item2)
+static int compare_by_volumename(void *item1, void *item2)
 {
    return strcmp(((VOLRES *)item1)->vol_name, ((VOLRES *)item2)->vol_name);
 }
@@ -401,7 +401,7 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
    /*
     * Now try to insert the new Volume
     */
-   vol = (VOLRES *)vol_list->binary_insert(nvol, my_compare);
+   vol = (VOLRES *)vol_list->binary_insert(nvol, compare_by_volumename);
    if (vol != nvol) {
       Dmsg2(dbglvl, "Found vol=%s dev-same=%d\n", vol->vol_name, dev==vol->dev);
       /*
@@ -565,7 +565,7 @@ VOLRES *find_volume(const char *VolumeName)
    /* Do not lock reservations here */
    lock_volumes();
    vol.vol_name = bstrdup(VolumeName);
-   fvol = (VOLRES *)vol_list->binary_search(&vol, my_compare);
+   fvol = (VOLRES *)vol_list->binary_search(&vol, compare_by_volumename);
    free(vol.vol_name);
    Dmsg2(dbglvl, "find_vol=%s found=%d\n", VolumeName, fvol!=NULL);
    debug_list_volumes("find_volume");
@@ -590,8 +590,8 @@ static VOLRES *find_read_volume(const char *VolumeName)
    /* Do not lock reservations here */
    lock_read_volumes();
    vol.vol_name = bstrdup(VolumeName);
-   /* Note, we do want a simple my_compare on volume name only here */
-   fvol = (VOLRES *)read_vol_list->binary_search(&vol, my_compare);
+   /* Note, we do want a simple compare_by_volumename on volume name only here */
+   fvol = (VOLRES *)read_vol_list->binary_search(&vol, compare_by_volumename);
    free(vol.vol_name);
    Dmsg2(dbglvl, "find_read_vol=%s found=%d\n", VolumeName, fvol!=NULL);
    unlock_read_volumes();
@@ -820,7 +820,7 @@ dlist *dup_vol_list(JCR *jcr)
       memset(tvol, 0, sizeof(VOLRES));
       tvol->vol_name = bstrdup(vol->vol_name);
       tvol->dev = vol->dev;
-      nvol = (VOLRES *)temp_vol_list->binary_insert(tvol, my_compare);
+      nvol = (VOLRES *)temp_vol_list->binary_insert(tvol, compare_by_volumename);
       if (tvol != nvol) {
          tvol->dev = NULL;                   /* don't zap dev entry */
          free_vol_item(tvol);
