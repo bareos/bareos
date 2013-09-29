@@ -1,7 +1,7 @@
 #undef  VERSION
-#define VERSION "13.3.0"
-#define BDATE   "01 August 2013"
-#define LSMDATE "01Aug13"
+#define VERSION "13.4.0"
+#define BDATE   "01 October 2013"
+#define LSMDATE "01oct13"
 
 #define PROG_COPYRIGHT "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
                        "Copyright (C) 2013-2013 Bareos GmbH & Co. KG\n"
@@ -31,12 +31,12 @@
 /* Shared object library versions */
 
 /* Uncomment to overwrite default value from VERSION */
-/* #define LIBBAREOS_LT_RELEASE "13.3.0" */
-/* #define LIBBAREOSCFG_LT_RELEASE "13.3.0" */
-/* #define LIBBAREOSSQL_LT_RELEASE "13.3.0" */
-/* #define LIBBAREOSCATS_LT_RELEASE "13.3.0" */
-/* #define LIBBAREOSCATS_LT_RELEASE "13.3.0" */
-/* #define LIBBAREOSNDMP_LT_RELEASE "13.3.0" */
+/* #define LIBBAREOS_LT_RELEASE "13.4.0" */
+/* #define LIBBAREOSCFG_LT_RELEASE "13.4.0" */
+/* #define LIBBAREOSSQL_LT_RELEASE "13.4.0" */
+/* #define LIBBAREOSCATS_LT_RELEASE "13.4.0" */
+/* #define LIBBAREOSCATS_LT_RELEASE "13.4.0" */
+/* #define LIBBAREOSNDMP_LT_RELEASE "13.4.0" */
 
 /* Debug flags */
 #undef  DEBUG
