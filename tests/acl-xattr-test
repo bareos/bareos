@@ -230,43 +230,44 @@ run_bareos
 check_for_zombie_jobs storage=File1
 stop_bareos
 
+rd=$cwd/tmp/bareos-restores/$cwd/build/acl
 case `uname -s` in
    Linux)
-      ( cd $cwd/tmp/bareos-restores/$cwd/build
+      ( cd $rd/..
         getfacl -R acl > $cwd/tmp/new
-        getfattr -h -n user.bareos.test $d/other 2>/dev/null > $cwd/tmp/attr.new
-        getfattr -h -n user.bareos.secondtest $d/other 2>/dev/null >> $cwd/tmp/attr.new
+        getfattr -h -n user.bareos.test $rd/other 2>/dev/null > $cwd/tmp/attr.new
+        getfattr -h -n user.bareos.secondtest $rd/other 2>/dev/null >> $cwd/tmp/attr.new
       )
       ;;
    Darwin)
-      ( cd $cwd/tmp/bareos-restores/$cwd/build
+      ( cd $rd/..
         ls -lde -R acl > $cwd/tmp/new
-        xattr -p bareos.test $d/other > $cwd/tmp/attr.new
-        xattr -p bareos.secondtest $d/other >> $cwd/tmp/attr.new
+        xattr -p bareos.test $rd/other > $cwd/tmp/attr.new
+        xattr -p bareos.secondtest $rd/other >> $cwd/tmp/attr.new
       )
       ;;
    SunOS)
-      ( cd $cwd/tmp/bareos-restores/$cwd/build
+      ( cd $rd/..
         /bin/ls -ldv -R acl > $cwd/tmp/new
-        /bin/runat $d/other 'cat bareos.test' > $cwd/tmp/attr.new
-        /bin/runat $d/other 'cat bareos.secondtest' >> $cwd/tmp/attr.new
+        /bin/runat $rd/other 'cat bareos.test' > $cwd/tmp/attr.new
+        /bin/runat $rd/other 'cat bareos.secondtest' >> $cwd/tmp/attr.new
       )
       ;;
    FreeBSD)
-      ( cd $cwd/tmp/bareos-restores/$cwd/build
+      ( cd $rd/..
         for file in acl/*
         do
            getfacl $file
         done > $cwd/tmp/new
-        getextattr user bareos.test $d/other > $cwd/tmp/attr.new
-        getextattr user bareos.secondtest $d/other >> $cwd/tmp/attr.new
+        getextattr user bareos.test $rd/other > $cwd/tmp/attr.new
+        getextattr user bareos.secondtest $rd/other >> $cwd/tmp/attr.new
       )
       ;;
    NetBSD)
-      ( cd $cwd/tmp/bareos-restores/$cwd/build
+      ( cd $rd/..
         cp /dev/null $cwd/tmp/new
-        getextattr user bareos.test $d/other > $cwd/tmp/attr.new
-        getextattr user bareos.secondtest $d/other >> $cwd/tmp/attr.new
+        getextattr user bareos.test $rd/other > $cwd/tmp/attr.new
+        getextattr user bareos.secondtest $rd/other >> $cwd/tmp/attr.new
       )
       ;;
 esac
