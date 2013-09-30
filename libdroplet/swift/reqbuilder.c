@@ -128,6 +128,9 @@ dpl_swift_req_build(dpl_ctx_t *ctx,
   else if (DPL_METHOD_DELETE == req->method)
     {
     }
+  else if (DPL_METHOD_HEAD == req->method)
+    {
+    }
   else
     {
       ret = DPL_EINVAL;
