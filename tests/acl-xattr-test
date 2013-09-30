@@ -114,9 +114,9 @@ case `uname -s` in
       setfattr -h -n user.bareos.secondtest -v rulez $d/other 2>/dev/null 1>/dev/null
 
       ( cd $cwd/build
-        getfacl -R acl 2>/dev/null > $cwd/tmp/org
-        getfattr -h -n user.bareos.test $d/other 2>/dev/null > $cwd/tmp/attr.org
-        getfattr -h -n user.bareos.secondtest $d/other 2>/dev/null >> $cwd/tmp/attr.org
+        getfacl --omit-header -R acl 2>/dev/null > $cwd/tmp/org
+        getfattr --only-values -h -n user.bareos.test $d/other 2>/dev/null > $cwd/tmp/attr.org
+        getfattr --only-values -h -n user.bareos.secondtest $d/other 2>/dev/null >> $cwd/tmp/attr.org
       )
       ;;
    Darwin)
@@ -230,13 +230,13 @@ run_bareos
 check_for_zombie_jobs storage=File1
 stop_bareos
 
-rd=$cwd/tmp/bareos-restores/$cwd/build/acl
+rd=$cwd/tmp/bareos-restores$cwd/build/acl
 case `uname -s` in
    Linux)
       ( cd $rd/..
-        getfacl -R acl > $cwd/tmp/new
-        getfattr -h -n user.bareos.test $rd/other 2>/dev/null > $cwd/tmp/attr.new
-        getfattr -h -n user.bareos.secondtest $rd/other 2>/dev/null >> $cwd/tmp/attr.new
+        getfacl --omit-header -R acl > $cwd/tmp/new
+        getfattr --only-values -h -n user.bareos.test $rd/other 2>/dev/null > $cwd/tmp/attr.new
+        getfattr --only-values -h -n user.bareos.secondtest $rd/other 2>/dev/null >> $cwd/tmp/attr.new
       )
       ;;
    Darwin)
