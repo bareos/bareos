@@ -115,7 +115,7 @@ static RES_ITEM dir_items[] = {
 static RES_TABLE resources[] = {
    { "console", cons_items, R_CONSOLE, sizeof(CONRES) },
    { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
-   { NULL, NULL, 0 }
+   { NULL, NULL, 0, 0 }
 };
 
 /* Dump contents of resource */
