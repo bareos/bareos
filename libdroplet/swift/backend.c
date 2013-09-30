@@ -166,8 +166,10 @@ dpl_swift_login(dpl_ctx_t *ctx)
 
   ctx->backend_ctx = swift_ctx;
 
-  printf("X-auth-token: %s\n", swift_ctx->auth_token);
-  printf("X-storage-url: %s\n", ((dpl_swift_ctx_t *)(ctx->backend_ctx))->storage_url);
+  /*  */
+  /* printf("X-auth-token: %s\n", swift_ctx->auth_token); */
+  /* printf("X-storage-url: %s\n", ((dpl_swift_ctx_t *)(ctx->backend_ctx))->storage_url); */
+  /*  */
 
   ret = DPL_SUCCESS;
 
@@ -204,7 +206,7 @@ dpl_swift_set_directory(dpl_req_t *req,
   sprintf(rsrc, "/v1/%s/%s", basename(path), bucket ?: "");
 
   dpl_req_set_resource(req, rsrc);
-  printf("path: %s\naccess: %s\n", path, rsrc);
+  /* printf("path: %s\naccess: %s\n", path, rsrc); */
   
   return DPL_SUCCESS;
 }
@@ -308,7 +310,7 @@ dpl_swift_get(dpl_ctx_t *ctx,
       goto end;
     }
 
-  /* WIP */ dpl_dict_print(headers_reply, stdout, -1);
+  /* /\* WIP *\/ dpl_dict_print(headers_reply, stdout, -1); */
   objects = dpl_vec_new(2, 2);
   if (NULL == objects)
     {
@@ -399,20 +401,20 @@ dpl_swift_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  /* if (NULL != subresource) */
-  /*   { */
-  /*     ret2 = dpl_req_set_subresource(req, subresource); */
-  /*     if (DPL_SUCCESS != ret2) */
-  /*       { */
-  /*         ret = ret2; */
-  /*         goto end; */
-  /*       } */
-  /*   } */
+  if (NULL != subresource)
+    {
+      ret2 = dpl_req_set_subresource(req, subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
 
-  /* if (NULL != condition) */
-  /*   { */
-  /*     dpl_req_set_condition(req, condition); */
-  /*   } */
+  if (NULL != condition)
+    {
+      dpl_req_set_condition(req, condition);
+    }
 
   /* if (range) */
   /*   { */
@@ -504,8 +506,6 @@ dpl_swift_put(dpl_ctx_t *ctx,
       goto end;
     }
 
-  printf("\n\n%s\n\n", header);
-
   ret2 = dpl_read_http_reply(conn, 1, &data_buf_returned, &data_len_returned, &headers_reply, &connection_close);
   if (DPL_SUCCESS != ret2)
     {
@@ -586,14 +586,12 @@ dpl_swift_delete(dpl_ctx_t *ctx,
   
   dpl_req_rm_behavior(req, DPL_BEHAVIOR_KEEP_ALIVE);
 
-  fprintf(stderr, "dpl_swift_req_build\n");
   ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, NULL, NULL);  
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
-  fprintf(stderr, "_dpl_swift_req_build\n");
 
   dpl_dict_add(headers_request, "X-Auth-Token", ((dpl_swift_ctx_t *)(ctx->backend_ctx))->auth_token, 0);
 
@@ -612,14 +610,12 @@ dpl_swift_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  fprintf(stderr, "dpl_req_gen_http_request\n");
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
-  fprintf(stderr, "_dpl_req_gen_http_request\n");
 
   iov[n_iov].iov_base = header;
   iov[n_iov].iov_len = header_len;
@@ -646,7 +642,7 @@ dpl_swift_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  /* WIP */ dpl_dict_print(headers_reply, stdout, -1);
+  /* /\* WIP *\/ dpl_dict_print(headers_reply, stdout, -1); */
   objects = dpl_vec_new(2, 2);
   if (NULL == objects)
     {
@@ -681,3 +677,249 @@ dpl_swift_delete(dpl_ctx_t *ctx,
 
   return ret;
 }
+
+dpl_status_t
+dpl_swift_head_get(dpl_ctx_t *ctx,
+             const char *bucket,
+             const char *resource,
+             const char *subresource,
+             const dpl_option_t *option,
+             dpl_ftype_t object_type,
+             const dpl_condition_t *condition,
+             const dpl_range_t *range,
+             dpl_dict_t **metadatap,
+             dpl_sysmd_t *sysmdp,
+             char **locationp)
+{
+  int           ret, ret2;
+  dpl_conn_t   *conn = NULL;
+  char          header[dpl_header_size];
+  u_int         header_len;
+  struct iovec  iov[10];
+  int           n_iov = 0;
+  int           connection_close = 0;
+  dpl_dict_t    *headers_request = NULL;
+  dpl_dict_t    *headers_reply = NULL;
+  dpl_req_t     *req = NULL;
+  dpl_vec_t     *common_prefixes = NULL;
+  dpl_swift_req_mask_t req_mask = 0u;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_HTTP_COMPAT)
+        req_mask |= DPL_SWIFT_REQ_HTTP_COMPAT;
+    }
+
+  req = dpl_req_new(ctx);
+  if (NULL == req)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  dpl_req_set_method(req, DPL_METHOD_HEAD);
+  dpl_req_set_object_type(req, DPL_FTYPE_ANY);
+
+  dpl_swift_set_directory(req, ctx, resource);
+  
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_KEEP_ALIVE);
+
+  ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, NULL, NULL);  
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  dpl_dict_add(headers_request, "X-Auth-Token", ((dpl_swift_ctx_t *)(ctx->backend_ctx))->auth_token, 0);
+
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  iov[n_iov].iov_base = header;
+  iov[n_iov].iov_len = header_len;
+  n_iov++;
+
+  //final crlf
+  iov[n_iov].iov_base = "\r\n";
+  iov[n_iov].iov_len = 2;
+  n_iov++;
+
+  ret2 = dpl_conn_writev_all(conn, iov, n_iov, conn->ctx->write_timeout);
+  if (DPL_SUCCESS != ret2)
+    {
+
+      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "writev failed");
+      connection_close = 1;
+      ret = ret2;
+      goto end;
+    }
+
+  fprintf(stderr, "read\n");
+  ret2 = dpl_read_http_reply(conn, 1, NULL, NULL, &headers_reply, &connection_close);
+  fprintf(stderr, "read\n");
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (req_mask & DPL_SWIFT_REQ_HTTP_COMPAT)
+    {
+      //metadata are in headers
+
+      ret2 = dpl_swift_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+      fprintf(stderr, "TEST\n");
+      dpl_dict_print(*metadatap, stderr, -1);
+      fprintf(stderr, "TEST\n");
+    }
+
+
+  /* WIP */ dpl_dict_print(headers_reply, stdout, -1);
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != conn)
+    {
+      if (1 == connection_close)
+        dpl_conn_terminate(conn);
+      else
+        dpl_conn_release(conn);
+    }
+
+  if (NULL != headers_reply)
+    dpl_dict_free(headers_reply);
+
+  if (NULL != headers_request)
+    dpl_dict_free(headers_request);
+
+  if (NULL != req)
+    dpl_req_free(req);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_swift_head_raw(dpl_ctx_t *ctx,
+                  const char *bucket,
+                  const char *resource,
+                  const char *subresource,
+                  const dpl_option_t *option,
+                  dpl_ftype_t object_type,
+                  const dpl_condition_t *condition,
+                  dpl_dict_t **metadatap,
+                  char **locationp)
+{
+  int ret, ret2;
+  char *md_buf = NULL;
+  u_int md_len;
+  dpl_value_t *val = NULL;
+  dpl_option_t option2;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+  
+  memset(&option2, 0, sizeof (option2));
+  option2.mask |= DPL_OPTION_HTTP_COMPAT;
+  ret2 = dpl_swift_head_get(ctx, bucket, resource, NULL , &option2, object_type, condition, NULL, metadatap, NULL, locationp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+    
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != val)
+    dpl_value_free(val);
+
+  if (NULL != md_buf)
+    free(md_buf);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+  
+  return ret;
+}
+
+dpl_status_t
+dpl_swift_head(dpl_ctx_t *ctx,
+              const char *bucket,
+              const char *resource,
+              const char *subresource,
+              const dpl_option_t *option,
+              dpl_ftype_t object_type,
+              const dpl_condition_t *condition,
+              dpl_dict_t **metadatap,
+              dpl_sysmd_t *sysmdp,
+              char **locationp)
+{
+  int ret, ret2;
+  dpl_dict_t *metadata = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  ret2 = dpl_swift_head_raw(ctx, bucket, resource, subresource, option, object_type, condition, &metadata, locationp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_backend_t
+dpl_backend_swift = 
+  {
+    "swift",
+    .login	 	= dpl_swift_login,
+    .put 		= dpl_swift_put,
+    .get 		= dpl_swift_get,
+    .head 		= dpl_swift_head,
+    .deletef 		= dpl_swift_delete
+  };
