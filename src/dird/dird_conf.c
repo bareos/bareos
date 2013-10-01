@@ -2545,11 +2545,6 @@ void save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
          res->res_pool.storage = res_all.res_pool.storage;
          if (res_all.res_pool.catalog || !res->res_pool.use_catalog) {
             res->res_pool.catalog = res_all.res_pool.catalog;
-         } else {
-            /*
-             * No catalog overwrite given use the first catalog definition.
-             */
-            res->res_pool.catalog = (CATRES *)config->GetNextRes(R_CATALOG, NULL);
          }
          break;
       case R_CONSOLE:
