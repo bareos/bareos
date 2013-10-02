@@ -16741,9 +16741,9 @@ if test x$use_libtool != xno; then
    LIBTOOL_INSTALL_TARGET="libtool-install"
    LIBTOOL_CLEAN_TARGET="libtool-clean"
    QMAKE_LIBTOOL="${BUILD_DIR}/libtool"
-   FD_PLUGIN_DIR="src/plugins/fd"
-   SD_PLUGIN_DIR="src/plugins/sd"
-   DIR_PLUGIN_DIR="src/plugins/dir"
+   FD_PLUGIN_DIR="src/plugins/filed"
+   SD_PLUGIN_DIR="src/plugins/stored"
+   DIR_PLUGIN_DIR="src/plugins/dird"
    have_plugins=yes
 else
    DEFAULT_OBJECT_TYPE=".o"
@@ -31742,7 +31742,7 @@ if test "x${subsysdir}" = "x${sbindir}" ; then
    exit 1
 fi
 
-ac_config_files="$ac_config_files autoconf/Make.common Makefile manpages/Makefile debian/bareos-common.preinst debian/bareos-filedaemon.preinst debian/bareos-director.preinst debian/bareos-storage.preinst scripts/bareos-config scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_postgresql_database src/cats/update_postgresql_tables src/cats/make_postgresql_tables src/cats/grant_postgresql_privileges src/cats/drop_postgresql_tables src/cats/drop_postgresql_database src/cats/create_mysql_database src/cats/update_mysql_tables src/cats/make_mysql_tables src/cats/grant_mysql_privileges src/cats/drop_mysql_tables src/cats/drop_mysql_database src/cats/create_sqlite3_database src/cats/update_sqlite3_tables src/cats/make_sqlite3_tables src/cats/grant_sqlite3_privileges src/cats/drop_sqlite3_tables src/cats/drop_sqlite3_database src/cats/sqlite src/cats/mysql src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/findlib/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/fd/Makefile src/plugins/sd/Makefile src/plugins/dir/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
+ac_config_files="$ac_config_files autoconf/Make.common Makefile manpages/Makefile debian/bareos-common.preinst debian/bareos-filedaemon.preinst debian/bareos-director.preinst debian/bareos-storage.preinst scripts/bareos-config scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_postgresql_database src/cats/update_postgresql_tables src/cats/make_postgresql_tables src/cats/grant_postgresql_privileges src/cats/drop_postgresql_tables src/cats/drop_postgresql_database src/cats/create_mysql_database src/cats/update_mysql_tables src/cats/make_mysql_tables src/cats/grant_mysql_privileges src/cats/drop_mysql_tables src/cats/drop_mysql_database src/cats/create_sqlite3_database src/cats/update_sqlite3_tables src/cats/make_sqlite3_tables src/cats/grant_sqlite3_privileges src/cats/drop_sqlite3_tables src/cats/drop_sqlite3_database src/cats/sqlite src/cats/mysql src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/findlib/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
 
 ac_config_commands="$ac_config_commands default"
 
@@ -32906,9 +32906,9 @@ do
     "src/ndmp/Makefile") CONFIG_FILES="$CONFIG_FILES src/ndmp/Makefile" ;;
     "src/tests/Makefile") CONFIG_FILES="$CONFIG_FILES src/tests/Makefile" ;;
     "src/tools/Makefile") CONFIG_FILES="$CONFIG_FILES src/tools/Makefile" ;;
-    "src/plugins/fd/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/fd/Makefile" ;;
-    "src/plugins/sd/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/sd/Makefile" ;;
-    "src/plugins/dir/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/dir/Makefile" ;;
+    "src/plugins/filed/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/filed/Makefile" ;;
+    "src/plugins/stored/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/stored/Makefile" ;;
+    "src/plugins/dird/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/dird/Makefile" ;;
     "po/Makefile.in") CONFIG_FILES="$CONFIG_FILES po/Makefile.in" ;;
     "src/defaultconfigs/diskonly/bareos-sd.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/diskonly/bareos-sd.conf" ;;
     "src/defaultconfigs/diskonly/bareos-dir.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/diskonly/bareos-dir.conf" ;;

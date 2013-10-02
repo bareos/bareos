@@ -15,7 +15,7 @@ basedir = ../..
 # top dir
 topdir = ../../..
 # this dir relative to top dir
-thisdir = src/plugins/sd
+thisdir = src/plugins/stored
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/stored
 

@@ -13,7 +13,7 @@ basedir = ../..
 # top dir
 topdir = ../../..
 # this dir relative to top dir
-thisdir = src/plugins/dir
+thisdir = src/plugins/dird
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/dird
 

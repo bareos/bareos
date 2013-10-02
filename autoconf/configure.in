@@ -173,9 +173,9 @@ if test x$use_libtool != xno; then
    LIBTOOL_INSTALL_TARGET="libtool-install"
    LIBTOOL_CLEAN_TARGET="libtool-clean"
    QMAKE_LIBTOOL="${BUILD_DIR}/libtool"
-   FD_PLUGIN_DIR="src/plugins/fd"
-   SD_PLUGIN_DIR="src/plugins/sd"
-   DIR_PLUGIN_DIR="src/plugins/dir"
+   FD_PLUGIN_DIR="src/plugins/filed"
+   SD_PLUGIN_DIR="src/plugins/stored"
+   DIR_PLUGIN_DIR="src/plugins/dird"
    have_plugins=yes
 else
    DEFAULT_OBJECT_TYPE=".o"
@@ -3793,9 +3793,9 @@ AC_OUTPUT([autoconf/Make.common \
 	   src/ndmp/Makefile \
 	   src/tests/Makefile \
 	   src/tools/Makefile \
-	   src/plugins/fd/Makefile \
-	   src/plugins/sd/Makefile \
-	   src/plugins/dir/Makefile \
+	   src/plugins/filed/Makefile \
+	   src/plugins/stored/Makefile \
+	   src/plugins/dird/Makefile \
 	   po/Makefile.in \
 	   src/defaultconfigs/diskonly/bareos-sd.conf \
 	   src/defaultconfigs/diskonly/bareos-dir.conf \
