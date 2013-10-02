@@ -1479,13 +1479,25 @@ void set_jcr_defaults(JCR *jcr, JOBRES *job)
    jcr->res.full_pool = job->full_pool;
    jcr->res.inc_pool = job->inc_pool;
    jcr->res.diff_pool = job->diff_pool;
+
    if (job->pool->catalog) {
       jcr->res.catalog = job->pool->catalog;
       pm_strcpy(jcr->res.catalog_source, _("Pool resource"));
    } else {
-      jcr->res.catalog = job->client->catalog;
-      pm_strcpy(jcr->res.catalog_source, _("Client resource"));
+      if (job->catalog) {
+         jcr->res.catalog = job->catalog;
+         pm_strcpy(jcr->res.catalog_source, _("Job resource"));
+      } else {
+         if (job->client) {
+            jcr->res.catalog = job->client->catalog;
+            pm_strcpy(jcr->res.catalog_source, _("Client resource"));
+         } else {
+            jcr->res.catalog = (CATRES *)my_config->GetNextRes(R_CATALOG, NULL);
+            pm_strcpy(jcr->res.catalog_source, _("Default catalog"));
+         }
+      }
    }
+
    jcr->res.fileset = job->fileset;
    jcr->accurate = job->accurate;
    jcr->res.messages = job->messages;
