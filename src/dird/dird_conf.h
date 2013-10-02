@@ -434,6 +434,7 @@ public:
    SCHEDRES *schedule;                /* When -- Automatic schedule */
    CLIENTRES *client;                 /* Who to backup */
    FILESETRES *fileset;               /* What to backup -- Fileset */
+   CATRES *catalog;                   /* Which Catalog to use */
    alist *storage;                    /* Where is device -- list of Storage to be used */
    POOLRES *pool;                     /* Where is media -- Media Pool */
    POOLRES *full_pool;                /* Pool for Full backups */

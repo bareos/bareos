@@ -1687,6 +1687,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          res->res_job.client = res_all.res_job.client;
          res->res_job.fileset = res_all.res_job.fileset;
          res->res_job.storage = res_all.res_job.storage;
+         res->res_job.catalog = res_all.res_job.catalog;
          res->res_job.base = res_all.res_job.base;
          res->res_job.pool = res_all.res_job.pool;
          res->res_job.full_pool = res_all.res_job.full_pool;
