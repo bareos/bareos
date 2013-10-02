@@ -546,6 +546,10 @@ The full list of possible command line arguments are:
 \item {\bf all} -- select all Files to be restored.
 \item {\bf select} -- use the tree selection method.
 \item {\bf done} -- do not prompt the user in tree mode.
+\item {\bf copies} -- instead of using the actual backup jobs for restoring
+   use the copies which were made of these backup Jobs. This could mean that
+   on restore the client will contact a remote storage daemon if the data is
+   copied to a remote storage daemon as part of your copy Job scheme.
 \item {\bf current} -- automatically select the most current set of  backups
    for the specified client.
 \item {\bf client=xxxx} -- initially specifies the client from which the
