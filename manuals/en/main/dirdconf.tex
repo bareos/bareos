@@ -203,8 +203,9 @@ specified at the Director level.  It is implemented only on systems
 that provide the {\bf setsockopt} TCP\_KEEPIDLE function (Linux, ...).
 The default value is zero, which means no change is made to the socket.
 
+\directive{dir}{Maximum Concurrent Jobs}{number}{}{1}
 \label{DirMaxConJobs}
-\item [Maximum Concurrent Jobs = {\textless}number{\textgreater}] \hfill \\
+%\item [Maximum Concurrent Jobs = {\textless}number{\textgreater}] \hfill \\
 \index[dir]{Maximum Concurrent Jobs}
 \index[dir]{Directive!Maximum Concurrent Jobs}
 \index[general]{Simultaneous Jobs}
@@ -220,6 +221,8 @@ jobs. This can be avoided by having each simultaneous job write to
 a different volume or  by using data spooling, which will first spool the data
 to disk simultaneously, then write one spool file at a time to the volume
 thus avoiding excessive interleaving of the different job blocks.
+
+See also the section about \ilink{Concurrent Jobs}{ConcurrentJobs}.
 
 \item [FD Connect Timeout = {\textless}time{\textgreater}] \hfill \\
 \index[dir]{FD Connect Timeout}
