@@ -799,6 +799,13 @@ all your backups, then run Verify jobs on those that you wish to be
 verified (most often a {\bf VolumeToCatalog}) so that the tape just
 written is re-read.
 
+\item [Catalog = {\textless}Catalog-resource-name{\textgreater}] \hfill \\
+\index[dir]{Catalog}
+\index[dir]{Directive!Catalog}
+This specifies the name of the catalog resource to be used for this Job.
+When a catalog is defined in a Job it will override the definition in
+the client. (This keyword was introduced in Bareos 13.4.0)
+
 \item [JobDefs = {\textless}JobDefs-Resource-Name{\textgreater}] \hfill \\
 \index[dir]{JobDefs}
 \index[dir]{Directive!JobDefs}
@@ -882,7 +889,8 @@ Client runs on the machine to be backed up,  and sends the requested files to
 the Storage daemon for backup,  or receives them when restoring. For
 additional details, see the
 \ilink{Client Resource section}{ClientResource2} of this chapter.
-This directive is required.
+This directive is required (For versions before 13.3.0 for all Jobtypes
+and for versions after that for all Jobtypes but Copy and Migrate).
 
 \item [FileSet = {\textless}FileSet-resource-name{\textgreater}] \hfill \\
 \index[dir]{FileSet}
@@ -892,7 +900,9 @@ current Job.  The FileSet specifies which directories (or files) are to
 be backed up, and what options to use (e.g.  compression, ...).  Only a
 single FileSet resource may be specified in any one Job.  For additional
 details, see the \ilink{FileSet Resource section}{FileSetResource} of
-this chapter.  This directive is required.
+this chapter.
+This directive is required (For versions before 13.3.0 for all Jobtypes
+and for versions after that for all Jobtypes but Copy and Migrate).
 
 \item [Base = {\textless}job-resource-name, ...{\textgreater}] \hfill \\
 \index[dir]{Base}
@@ -2296,7 +2306,7 @@ be contacted.  The default is 9102. For NDMP backups set this to 10000.
 \index[dir]{Catalog}
 \index[dir]{Directive!Catalog}
 This specifies the  name of the catalog resource to be used for this Client.
-This directive is required.
+If none is specified the first defined catalog is used.
 
 \item [Username = {\textless}Client-Username{\textgreater}] \hfill \\
 \index[dir]{Username}
@@ -2953,6 +2963,14 @@ you will not be able to produce a Catalog listing of the files backed up
 for each Job (this is often called Browsing).  Also, without the File
 entries in the catalog, you will not be able to use the Console {\bf
 restore} command nor any other command that references File entries.
+
+\item [Catalog = {\textless}Catalog-resource-name{\textgreater}] \hfill \\
+\index[dir]{Catalog}
+\index[dir]{Directive!Catalog}
+This specifies the name of the catalog resource to be used for this Pool.
+When a catalog is defined in a Pool it will override the definition in
+the client (and the Catalog definition in a Job since 13.4.0). e.g.
+this catalog setting takes precedence over any other definition.
 
 \label{PoolAutoPrune}
 \item [AutoPrune = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
