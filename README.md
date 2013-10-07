@@ -8,6 +8,18 @@ Release 13.2.x
 
 * Allow to cancel multiple jobids with cancel cmd from bconsole.
 
+* Enhanced help for run and restore command.
+* Refactor windows version detection code.
+* Sortable tables in bRestore.
+* Windows config files admin-only access.
+* Plugin framework enhancements.
+* Conditionally enable VSS.
+* Implement plugin options passing.
+* Added usage to the plugin information block.
+* Upgrade all filed plugins to use fd_common.h
+* Plugin to do backup of Microsoft Sql Server (mssql) server.
+* Cleanup win api compat layer.
+
 Release 13.1.x
 ==============
 
