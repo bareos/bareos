@@ -6,8 +6,35 @@ Release 13.3.x
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
 
+Release 13.3.x
+==============
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+
 * NDMP enhancements (first code for doing filelevel restores, preliminary).
+* Plugin framework enhancements.
 * Auto inflation/deflation storage daemon plugin (needs more testing).
+* Interactive path selection refactoring.
+* Add config option for storing a diagnostic device.
+* Plugin framework enhancements.
+* Conditionally enable VSS.
+* Refactor windows version detection code.
+* Implement plugin options passing.
+* Upgrade all filed plugins to use fd_common.h
+* Windows config files admin-only access.
+* Use modern autoconf idioms.
+* Enhanced help for run and restore command.
+* Add command for doing a name resolution on client.
+* Implement a store_alist_dir function.
+* Fill the process environment with an BAREOS_CFGDIR.
+* Cleanup win api compat layer.
+* Sortable tables in bRestore.
+* Copy job definition requires unnecessary settings (relax config).
+* Added usage to the plugin information block.
+* Make new diskonly configs the default installed configs.
+* Private connection to database for some long running operations.
+* Plugin to do backup of Microsoft Sql Server (mssql) server.
+* Config engine redesign Phase 1.
 
 Release 13.2.x
 ==============
