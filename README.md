@@ -1,7 +1,7 @@
 [BAREOS](http://www.bareos.org/) is a fork of the Bacula source code with the following
 changes (highlevel):
 
-Release 13.3.x
+Release 13.4.x
 ==============
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
