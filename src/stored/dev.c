@@ -1713,6 +1713,7 @@ void DEVICE::clear_volhdr()
  */
 void DEVICE::close(DCR *dcr)
 {
+   int status;
    Dmsg1(100, "close_dev %s\n", print_name());
 
    if (!norewindonclose) {
@@ -1720,8 +1721,7 @@ void DEVICE::close(DCR *dcr)
    }
 
    if (!is_open()) {
-      Dmsg2(100, "device %s already closed vol=%s\n", print_name(),
-         VolHdr.VolumeName);
+      Dmsg2(100, "device %s already closed vol=%s\n", print_name(), VolHdr.VolumeName);
       return;                         /* already closed */
    }
 
@@ -1732,7 +1732,13 @@ void DEVICE::close(DCR *dcr)
       unlock_door();
       /* Fall through wanted */
    default:
-      d_close(m_fd);
+      status = d_close(m_fd);
+      if (status < 0) {
+         berrno be;
+
+         Mmsg2(errmsg, _("Unable to close device %s. ERR=%s\n"), print_name(), be.bstrerror());
+         Jmsg(dcr->jcr, M_FATAL, 0, errmsg);
+      }
       break;
    }
 
