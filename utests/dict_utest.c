@@ -107,11 +107,11 @@ START_TEST(dict_test)
 END_TEST
 
 
-    Suite *
-dict_suite (void)
+Suite *
+dict_suite(void)
 {
-  Suite * s = suite_create("dict");
-  TCase * d = tcase_create("base");
+  Suite *s = suite_create("dict");
+  TCase *d = tcase_create("base");
   tcase_add_test(d, dict_test);
   suite_add_tcase(s, d);
   return s;

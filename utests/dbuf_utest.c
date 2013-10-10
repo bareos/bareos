@@ -36,11 +36,11 @@ START_TEST(dbuf_test)
 END_TEST
 
 
-    Suite *
-dbuf_suite ()
+Suite *
+dbuf_suite()
 {
-  Suite * s = suite_create("dbuf");
-  TCase * t = tcase_create("base");
+  Suite *s = suite_create("dbuf");
+  TCase *t = tcase_create("base");
   tcase_add_test(t, dbuf_test);
   suite_add_tcase(s, t);
   return s;

@@ -1,7 +1,7 @@
 #include <check.h>
 #include <droplet.h>
 
-static int reverse_sort (const void * a, const void * b)
+static int reverse_sort(const void * a, const void * b)
 {
   unsigned int  x = (unsigned int) a;
   unsigned int  y = (unsigned int) b;
@@ -12,9 +12,9 @@ static int reverse_sort (const void * a, const void * b)
 
 START_TEST(vec_test)
 {
-  unsigned int    i, j;
-  dpl_vec_t     * v, * v2;
-  dpl_status_t    ret;
+  unsigned int	    i, j;
+  dpl_vec_t	    *v, *v2;
+  dpl_status_t	    ret;
 
   v = dpl_vec_new(0, 0);
   fail_unless(NULL == v, NULL);
@@ -61,11 +61,11 @@ START_TEST(vec_test)
 END_TEST
 
 
-    Suite *
-vec_suite (void)
+Suite *
+vec_suite(void)
 {
-  Suite * s = suite_create("vec");
-  TCase * t = tcase_create("base");
+  Suite *s = suite_create("vec");
+  TCase *t = tcase_create("base");
   tcase_add_test(t, vec_test);
   suite_add_tcase(s, t);
   return s;

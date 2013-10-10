@@ -15,12 +15,12 @@ typedef struct {
     bool             * found;
 } arg_list;
 
-static int check_keys (const char   * k,
-                       int            kl,
-                       void         * arg)
+static int check_keys(const char *k,
+		      int kl,
+		      void *arg)
 {
-  arg_list      * a = (arg_list*) arg;
-  unsigned int    i;
+  arg_list	    *a = (arg_list*) arg;
+  unsigned int	    i;
   for (i = 0; i < a->nelem; i++)
     {
       if (0 == strncmp(k, a->keys[i], kl))
@@ -84,11 +84,11 @@ START_TEST(ntinydb_test)
 END_TEST
 
 
-    Suite *
-ntinydb_suite (void)
+Suite *
+ntinydb_suite(void)
 {
-  Suite * s = suite_create("ntinydb");
-  TCase * d = tcase_create("base");
+  Suite *s = suite_create("ntinydb");
+  TCase *d = tcase_create("base");
   tcase_add_test(d, ntinydb_test);
   suite_add_tcase(s, d);
   return s;

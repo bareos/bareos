@@ -3,12 +3,10 @@
 
 #include "utest_main.h"
 
-
-    int
-main (int      argc,
-      char  ** argv)
+int
+main(int argc, char ** argv)
 {
-  SRunner   * r = srunner_create(dict_suite());
+  SRunner   *r = srunner_create(dict_suite());
   srunner_add_suite(r, vec_suite());
   srunner_add_suite(r, sbuf_suite());
   srunner_add_suite(r, dbuf_suite());

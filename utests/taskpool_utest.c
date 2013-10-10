@@ -10,8 +10,8 @@
 //
 // Retrieve a fake ctx for task pool initialization
 //
-    static dpl_ctx_t *
-get_ctx (void)
+static dpl_ctx_t *
+get_ctx(void)
 {
   static pthread_once_t once = PTHREAD_ONCE_INIT;
   static dpl_ctx_t      t;
@@ -29,7 +29,7 @@ get_ctx (void)
 
 START_TEST(taskpool_test)
 {
-  dpl_task_pool_t    * p;
+  dpl_task_pool_t	*p;
   p = dpl_task_pool_create(get_ctx(), "taskpool_test", 100);
   fail_if(NULL == p);
   dpl_task_pool_destroy(p);
@@ -71,7 +71,7 @@ START_TEST(taskpool_test)
       return NULL;
     }
 
-  dpl_task_t    * tasks = calloc(1000, sizeof(*tasks));
+  dpl_task_t	    *tasks = calloc(1000, sizeof(*tasks));
   fail_if(NULL == tasks, NULL);
   for (unsigned int i = 0; i < 100; i++)
     {
@@ -94,11 +94,11 @@ START_TEST(taskpool_test)
 END_TEST
 
 
-    Suite *
-taskpool_suite ()
+Suite *
+taskpool_suite()
 {
-  Suite * s = suite_create("taskpool");
-  TCase * t = tcase_create("base");
+  Suite *s = suite_create("taskpool");
+  TCase *t = tcase_create("base");
   tcase_add_test(t, taskpool_test);
   suite_add_tcase(s, t);
   return s;

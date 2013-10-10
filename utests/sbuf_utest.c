@@ -5,8 +5,8 @@
 
 START_TEST(sbuf_test)
 {
-  dpl_sbuf_t    * b;
-  dpl_sbuf_t    * b2;
+  dpl_sbuf_t	*b;
+  dpl_sbuf_t    *b2;
 
   int sizes[] = { 1, 2, 4, 8, 16, 32, 65};
   unsigned int  i;
@@ -49,11 +49,11 @@ START_TEST(sbuf_test)
 END_TEST
 
 
-    Suite *
-sbuf_suite ()
+Suite *
+sbuf_suite()
 {
-  Suite * s = suite_create("sbuf");
-  TCase * t = tcase_create("base");
+  Suite *s = suite_create("sbuf");
+  TCase *t = tcase_create("base");
   tcase_add_test(t, sbuf_test);
   suite_add_tcase(s, t);
   return s;
