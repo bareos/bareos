@@ -15,7 +15,7 @@ START_TEST(dbuf_test)
   b = dpl_dbuf_new();
   fail_if(NULL == b, NULL);
 
-  const char    * str = "abcdefghijklmnopqrstuvwxyz";
+  const char str[] = "abcdefghijklmnopqrstuvwxyz";
   int             ret;
 
   ret = dpl_dbuf_add(b, str, sizeof(str));
