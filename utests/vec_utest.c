@@ -3,10 +3,7 @@
 
 static int reverse_sort(const void * a, const void * b)
 {
-  unsigned int  x = (unsigned int) a;
-  unsigned int  y = (unsigned int) b;
-
-  return (x == y) ? 0 : (x < y ? 1 : -1);
+  return (a == b) ? 0 : (a < b ? 1 : -1);
 }
 
 
@@ -29,14 +26,14 @@ START_TEST(vec_test)
       v = dpl_vec_new(1, ics[i]);
       for (j = 0; j < 1000; j++)
         {
-          ret = dpl_vec_add(v, (void*)j);
+          ret = dpl_vec_add(v, (void*)(unsigned long)j);
           fail_unless(DPL_SUCCESS == ret, NULL);
         }
       v2 = dpl_vec_dup(v);
       for (j = 0; j < 1000; j++)
         {
           unsigned int  t;
-          t = (unsigned int) dpl_vec_get(v2, j);
+          t = (unsigned int)(unsigned long) dpl_vec_get(v2, j);
           fail_unless((unsigned int) t == j, NULL);
         }
       dpl_vec_print(v, stdout, 0);
@@ -48,13 +45,13 @@ START_TEST(vec_test)
   v = dpl_vec_new(1000, 0);
   for (i = 0; i < 1000; i++)
     {
-      ret = dpl_vec_add(v, (void*) i);
+      ret = dpl_vec_add(v, (void*)(unsigned long) i);
       fail_unless(DPL_SUCCESS == ret, NULL);
     }
   dpl_vec_sort(v, reverse_sort);
   for (i = 0; i < 1000; i++)
     {
-      j = (unsigned int) dpl_vec_get(v, i);
+      j = (unsigned int)(unsigned long) dpl_vec_get(v, i);
       fail_unless(j == (1000 - 1 - i), NULL);
     }
 }

@@ -59,7 +59,7 @@ START_TEST(taskpool_test)
     //
   static int                incr = 0;
   static pthread_mutex_t    mtx = PTHREAD_MUTEX_INITIALIZER;
-  void * tf (void * arg)
+  void tf (void * arg)
     {
       unsigned int  i = 0;
       for (i = 0; i < 10000; i++)
@@ -68,7 +68,6 @@ START_TEST(taskpool_test)
           incr++;
           pthread_mutex_unlock(&mtx);
         }
-      return NULL;
     }
 
   dpl_task_t	    *tasks = calloc(1000, sizeof(*tasks));
