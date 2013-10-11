@@ -180,6 +180,7 @@ void dpl_task_pool_destroy(dpl_task_pool_t *pool)
   pthread_cond_destroy(&pool->task_cond);
   pthread_cond_destroy(&pool->idle_cond);
   free(pool->name);
+  free(pool);
 }
 
 dpl_task_pool_t *
