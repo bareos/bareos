@@ -80,6 +80,11 @@ START_TEST(ntinydb_test)
     {
       fail_if(false == all_keys.found[i], NULL);
     }
+  free(all_keys.found);
+
+  for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
+      free(datas[i]);
+  dpl_sbuf_free(b);
 }
 END_TEST
 

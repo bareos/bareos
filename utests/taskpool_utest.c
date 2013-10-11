@@ -37,6 +37,7 @@ START_TEST(taskpool_test)
   p = dpl_task_pool_create(get_ctx(), "taskpool_test", 100);
   fail_if(NULL == p);
   dpl_task_pool_cancel(p);
+  dpl_task_pool_destroy(p);
 
   p = dpl_task_pool_create(get_ctx(), "taskpool_test", 100);
   fail_if(NULL == p);

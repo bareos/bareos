@@ -54,6 +54,7 @@ START_TEST(vec_test)
       j = (unsigned int)(unsigned long) dpl_vec_get(v, i);
       fail_unless(j == (1000 - 1 - i), NULL);
     }
+  dpl_vec_free(v);
 }
 END_TEST
 
