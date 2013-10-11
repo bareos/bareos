@@ -41,7 +41,7 @@ dpl_status_t dpl_swift_get_capabilities(dpl_ctx_t *ctx, dpl_capability_t *maskp)
 
 dpl_status_t dpl_swift_login(dpl_ctx_t *ctx);
 dpl_status_t dpl_swift_get(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, char **locationp);
-dpl_status_t dpl_swift_put(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, char **locationp);
+dpl_status_t dpl_swift_put(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, dpl_sysmd_t *returned_sysmdp, char **locationp);
 dpl_status_t dpl_swift_delete(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, char **locationp);
 
 
