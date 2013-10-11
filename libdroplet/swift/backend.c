@@ -416,38 +416,42 @@ dpl_swift_put(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  /* if (range) */
-  /*   { */
-  /*     ret2 = dpl_swift_req_add_range(req, req_mask, range); */
-  /*     if (DPL_SUCCESS != ret2) */
-  /*       { */
-  /*         ret = ret2; */
-  /*         goto end; */
-  /*       } */
-  /*   } */
+#if 0
+  if (range)
+    {
+      ret2 = dpl_swift_req_add_range(req, req_mask, range);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+#endif
 
   dpl_req_set_object_type(req, object_type);
   dpl_req_set_data(req, data_buf, data_len);
 
-  /* if (NULL != sysmd) */
-  /*   { */
-  /*     ret2 = dpl_swift_add_sysmd_to_req(sysmd, req); */
-  /*     if (DPL_SUCCESS != ret2) */
-  /*       { */
-  /*         ret = ret2; */
-  /*         goto end; */
-  /*       } */
-  /*   } */
+#if 0
+  if (NULL != sysmd)
+    {
+      ret2 = dpl_swift_add_sysmd_to_req(sysmd, req);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
 
-  /* if (NULL != metadata) */
-  /*   { */
-  /*     ret2 = dpl_swift_req_add_metadata(req, metadata, option ? option->mask & DPL_OPTION_APPEND_METADATA : 0); */
-  /*     if (DPL_SUCCESS != ret2) */
-  /*       { */
-  /*         ret = ret2; */
-  /*         goto end; */
-  /*       } */
-  /*   } */
+  if (NULL != metadata)
+    {
+      ret2 = dpl_swift_req_add_metadata(req, metadata, option ? option->mask & DPL_OPTION_APPEND_METADATA : 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+#endif
 
   //build request
   ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, &data_buf, &data_len);
