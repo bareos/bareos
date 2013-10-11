@@ -93,6 +93,7 @@ START_TEST(taskpool_test)
   dpl_task_pool_cancel(p);
   fail_unless(100 * 10000 == incr, NULL);
   dpl_task_pool_destroy(p);
+  free(tasks);
 }
 END_TEST
 
