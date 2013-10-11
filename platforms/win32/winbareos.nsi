@@ -74,6 +74,7 @@ Var Upgrading
 !include "nsDialogs.nsh"
 !include "x64.nsh"
 !include "WinVer.nsh"
+!include "WordFunc.nsh"
 
 # call functions once to have them included
 ${StrCase}
@@ -550,7 +551,22 @@ Function .onInit
   ReadRegStr $2  ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"
   ReadRegStr $0  ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion"
   ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
+
+  #
+  # If there is no version installed there is not much to upgrade so jump to done.
+  #
   StrCmp $R0 "" done
+
+  #
+  # As versions before 12.4.5 cannot keep the config files during silent install, we do not support upgrading here
+  #
+  ${VersionCompare} "12.4.5" "$0" $1
+  ${select} $1
+  ${case} 1
+      MessageBox MB_OK|MB_ICONSTOP "Upgrade from version $0 is not supported.$\r$\nPlease uninstall and then install again."
+      Abort
+  ${endselect}
+
   strcpy $Upgrading "yes"
   ${StrRep} $INSTDIR $R0 "uninst.exe" "" # find current INSTDIR by cutting uninst.exe out of uninstall string
 
