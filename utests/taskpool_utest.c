@@ -50,9 +50,12 @@ START_TEST(taskpool_test)
       int   ret;
       ret = dpl_task_pool_set_workers(p, wn[i]);
       fail_unless(0 == ret, NULL);
-      usleep(100000); // give a chance to the threads to stop themselves
-      ret = dpl_task_pool_get_workers(p);
-      fail_unless(wn[i] == ret, "Fail at loop iteration %d: expected workers %d, retrieved workers %d", i, wn[i], ret);
+
+      // give a chance to the threads to stop themselves
+      // note we rely on the per-test timeout to catch
+      // bugs where it never converges
+      while (dpl_task_pool_get_workers(p) != wn[i])
+	usleep(100);
     }
 
     //
