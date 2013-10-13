@@ -630,10 +630,10 @@ void do_restore(JCR *jcr)
       /*
        * Data stream
        */
-      case STREAM_ENCRYPTED_SESSION_DATA: {
-         crypto_error_t cryptoerr;
-
+      case STREAM_ENCRYPTED_SESSION_DATA:
          if (rctx.extract) {
+            crypto_error_t cryptoerr;
+
             /*
              * Is this an unexpected session data entry?
              */
@@ -697,7 +697,6 @@ void do_restore(JCR *jcr)
             }
          }
          break;
-      }
 
       case STREAM_FILE_DATA:
       case STREAM_SPARSE_DATA:
