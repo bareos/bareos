@@ -30,6 +30,30 @@ static int check_keys(const char *k,
   return 0;
 }
 
+static char *
+new_pseudorandom_bytes(int n)
+{
+  unsigned char *x;
+  int i;
+  unsigned long bits;
+  int shift = -1;
+
+  x = malloc(n);
+  fail_if(NULL == x);
+  for (i = 0 ; i < n ; i++)
+    {
+      if (shift < 0)
+	{
+	  bits = lrand48();
+	  /* lrand48() always returns 32b regardless of sizeof(long) */
+	  shift = 24;
+	}
+      x[i] = (bits >> shift) & 0xff;
+      shift -= 8;
+    }
+  return (char *)x;
+}
+
 
 START_TEST(ntinydb_test)
 {
@@ -38,19 +62,14 @@ START_TEST(ntinydb_test)
       "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};  
   char          * datas[sizeof(keys) / sizeof(keys[0])];
   unsigned int    i;
-  int             fd;
   int             ret;
   dpl_status_t    s;
 
-  fd = open("/dev/urandom", O_RDONLY);
-  ck_assert_int_ne(-1, fd);
+  srand48(0xdeadbeef);
 
   for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
     {
-      datas[i] = malloc(512);
-      fail_if(NULL == datas[i], NULL);
-      ret = read(fd, datas[i], 512);
-      ck_assert_int_eq(512, ret);
+      datas[i] = new_pseudorandom_bytes(512);
       s = dpl_ntinydb_set(b, keys[i], datas[i], 512);
       ck_assert_int_eq(DPL_SUCCESS, s);
     }
