@@ -200,13 +200,20 @@ dpl_swift_set_directory(dpl_req_t *req,
 			dpl_ctx_t *ctx,
 			const char *bucket)
 {
-  char rsrc[256];
+  int len;
+  char *rsrc;
   char *path = ((dpl_swift_ctx_t *)(ctx->backend_ctx))->storage_url;
+  char *base = basename(path);
 
-  sprintf(rsrc, "/v1/%s/%s", basename(path), bucket ?: "");
+  len = 6 + strlen(base) + (bucket ? strlen(bucket) : 0);
+  rsrc = malloc(len);
+  if (rsrc)
+    return DPL_ENOMEM;
+  snprintf(rsrc, len, "/v1/%s/%s", base, bucket ?: "");
 
   dpl_req_set_resource(req, rsrc);
   /* printf("path: %s\naccess: %s\n", path, rsrc); */
+  free(rsrc);
   
   return DPL_SUCCESS;
 }
