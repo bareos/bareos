@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <check.h>
 #include <droplet.h>
+#include "utest_main.h"
 
 
 START_TEST(sbuf_test)

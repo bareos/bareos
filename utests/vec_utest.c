@@ -1,5 +1,5 @@
-#include <check.h>
 #include <droplet.h>
+#include "utest_main.h"
 
 static int reverse_sort(const void * a, const void * b)
 {

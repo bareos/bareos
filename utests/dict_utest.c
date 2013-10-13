@@ -1,6 +1,4 @@
-#include <check.h>
 #include <droplet.h>
-
 #include "utest_main.h"
 
 

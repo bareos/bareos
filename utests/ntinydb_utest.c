@@ -3,10 +3,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdbool.h>
-#include <check.h>
 #include <droplet.h>
 #include <droplet/ntinydb.h>
-
 #include "utest_main.h"
 
 typedef struct {

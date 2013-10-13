@@ -1,8 +1,6 @@
 #include <stdio.h>
-#include <check.h>
 #include <droplet.h>
 #include <droplet/dbuf.h>
-
 #include "utest_main.h"
 
 START_TEST(dbuf_test)
