@@ -736,10 +736,10 @@ bool setup_decompression_buffers(JCR *jcr)
 
 bool compress_data(JCR *jcr,
                    uint32_t compression_algorithm,
-                   unsigned char *rbuf,
-                   int32_t rsize,
+                   char *rbuf,
+                   uint32_t rsize,
                    unsigned char *cbuf,
-                   int32_t max_compress_len,
+                   uint32_t max_compress_len,
                    uint32_t *compress_len)
 {
    return true;

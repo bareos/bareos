@@ -206,7 +206,12 @@ bail_out:
 
 #else
 
-bool adjust_compression_buffers(JCR *jcr, bool compatible, findFILESET *fileset)
+bool adjust_compression_buffers(JCR *jcr)
+{
+   return true;
+}
+
+bool setup_compression_context(b_ctx &bctx)
 {
    return true;
 }
