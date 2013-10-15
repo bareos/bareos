@@ -1,29 +1,28 @@
-#include <check.h>
 #include <droplet.h>
-
 #include "utest_main.h"
 
 
 static int
 utest_dpl_dict_dump_one(dpl_dict_var_t * v, void *user_data)
 {
-  fail_unless(user_data == NULL, NULL);
   fail_if(NULL == v, NULL);
-  fail_unless(v->val->type == DPL_VALUE_STRING, NULL);
-  printf("%s: %s\n", v->key, v->val->string->buf);
+  ck_assert_int_eq(v->val->type, DPL_VALUE_STRING);
+  fprintf((FILE *)user_data, "%s: %s\n", v->key, v->val->string->buf);
 
   return 0;
 }
 
 START_TEST(dict_test)
 {
-  dpl_dict_t            * dict;
-  const char * const    * it;
+  dpl_dict_t             *dict;
+  const char * const     *it;
   char                    init_value[] = "a";
-  dpl_dict_var_t        * var;
-  const dpl_value_t     * value;
+  dpl_dict_var_t         *var;
+  const dpl_value_t      *value;
   dpl_status_t            ret;
   int                     c;
+  FILE			 *fp = NULL;
+  char			  pbuf[1024];
 
   static const char * const utest_strings[] = { "Foo", "bAr", "baz", NULL };
 
@@ -87,8 +86,18 @@ START_TEST(dict_test)
   fail_unless(DPL_VALUE_STRING == value->type, NULL);
   fail_unless(0 == strcmp(value->string->buf, "c"), NULL);
 
-  dpl_dict_iterate(dict, utest_dpl_dict_dump_one, NULL);
-  dpl_dict_print(dict, stdout, 0);
+  memset(pbuf, 0xff, sizeof(pbuf));
+  fp = fmemopen(pbuf, sizeof(pbuf), "w");
+  fail_if(NULL == fp, NULL);
+
+  dpl_dict_iterate(dict, utest_dpl_dict_dump_one, fp);
+  dpl_dict_print(dict, fp, 0);
+
+  fflush(fp);
+  static const char expected[] =
+	"baz: c\nbar: b\nfoo: a\n"
+	"baz=c\nbar=b\nfoo=a";
+  fail_unless(0 == memcmp(expected, pbuf, sizeof(expected)-1), NULL);
 
   c = dpl_dict_count(dict);
   fail_unless(3 == c, NULL);
@@ -103,15 +112,16 @@ START_TEST(dict_test)
 #endif
 
   dpl_dict_free(dict);
+  fclose(fp);
 }
 END_TEST
 
 
-    Suite *
-dict_suite (void)
+Suite *
+dict_suite(void)
 {
-  Suite * s = suite_create("dict");
-  TCase * d = tcase_create("base");
+  Suite *s = suite_create("dict");
+  TCase *d = tcase_create("base");
   tcase_add_test(d, dict_test);
   suite_add_tcase(s, d);
   return s;

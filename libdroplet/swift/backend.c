@@ -198,15 +198,22 @@ dpl_swift_login(dpl_ctx_t *ctx)
 static dpl_status_t
 dpl_swift_set_directory(dpl_req_t *req,
 			dpl_ctx_t *ctx,
-			char *bucket)
+			const char *bucket)
 {
-  char rsrc[256];
+  int len;
+  char *rsrc;
   char *path = ((dpl_swift_ctx_t *)(ctx->backend_ctx))->storage_url;
+  char *base = basename(path);
 
-  sprintf(rsrc, "/v1/%s/%s", basename(path), bucket ?: "");
+  len = 6 + strlen(base) + (bucket ? strlen(bucket) : 0);
+  rsrc = malloc(len);
+  if (rsrc)
+    return DPL_ENOMEM;
+  snprintf(rsrc, len, "/v1/%s/%s", base, bucket ?: "");
 
   dpl_req_set_resource(req, rsrc);
   /* printf("path: %s\naccess: %s\n", path, rsrc); */
+  free(rsrc);
   
   return DPL_SUCCESS;
 }
@@ -360,6 +367,8 @@ dpl_swift_put(dpl_ctx_t *ctx,
 	      const dpl_sysmd_t *sysmd,
 	      const char *data_buf,
 	      unsigned int data_len,
+	      const dpl_dict_t *query_params,
+	      dpl_sysmd_t *returned_sysmdp,
 	      char **locationp)
 {
   int           ret, ret2;
@@ -416,41 +425,45 @@ dpl_swift_put(dpl_ctx_t *ctx,
       dpl_req_set_condition(req, condition);
     }
 
-  /* if (range) */
-  /*   { */
-  /*     ret2 = dpl_swift_req_add_range(req, req_mask, range); */
-  /*     if (DPL_SUCCESS != ret2) */
-  /*       { */
-  /*         ret = ret2; */
-  /*         goto end; */
-  /*       } */
-  /*   } */
+#if 0
+  if (range)
+    {
+      ret2 = dpl_swift_req_add_range(req, req_mask, range);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+#endif
 
   dpl_req_set_object_type(req, object_type);
   dpl_req_set_data(req, data_buf, data_len);
 
-  /* if (NULL != sysmd) */
-  /*   { */
-  /*     ret2 = dpl_swift_add_sysmd_to_req(sysmd, req); */
-  /*     if (DPL_SUCCESS != ret2) */
-  /*       { */
-  /*         ret = ret2; */
-  /*         goto end; */
-  /*       } */
-  /*   } */
+#if 0
+  if (NULL != sysmd)
+    {
+      ret2 = dpl_swift_add_sysmd_to_req(sysmd, req);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
 
-  /* if (NULL != metadata) */
-  /*   { */
-  /*     ret2 = dpl_swift_req_add_metadata(req, metadata, option ? option->mask & DPL_OPTION_APPEND_METADATA : 0); */
-  /*     if (DPL_SUCCESS != ret2) */
-  /*       { */
-  /*         ret = ret2; */
-  /*         goto end; */
-  /*       } */
-  /*   } */
+  if (NULL != metadata)
+    {
+      ret2 = dpl_swift_req_add_metadata(req, metadata, option ? option->mask & DPL_OPTION_APPEND_METADATA : 0);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+#endif
 
   //build request
-  ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, &data_buf, &data_len);
+  ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, (char **)&data_buf, &data_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -493,7 +506,7 @@ dpl_swift_put(dpl_ctx_t *ctx,
   n_iov++;
 
   //buffer
-  iov[n_iov].iov_base = data_buf;
+  iov[n_iov].iov_base = (char *)data_buf;
   iov[n_iov].iov_len = data_len;
   n_iov++;
 

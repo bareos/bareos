@@ -1,14 +1,60 @@
 #include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/stat.h>
 #include <check.h>
 
 #include "utest_main.h"
 
+/*
+ * Arrange to valgrind ourself.  Normally this would be done outside in
+ * the Makefile or a shell script by just running the executable under
+ * valgrind, but using libtool and a local shared library makes this
+ * pretty much impossible.  So we have to do it this way.
+ */
+#define VALGRIND_BIN	"/usr/bin/valgrind"
+#define MAGIC_VAR "DONT_VALGRIND_YOURSELF_FOOL"
 
-    int
-main (int      argc,
-      char  ** argv)
+static void
+be_valground(int argc, char **argv)
 {
-  SRunner   * r = srunner_create(dict_suite());
+  struct stat sb;
+  int r;
+  char **newargv;
+  int newargc = 0;
+
+  /* Note: we don't use VALGRIND_IS_RUNNING() to avoid
+   * depending on the valgrind package at build time */
+  if (getenv(MAGIC_VAR))
+    return;
+
+  r = stat(VALGRIND_BIN, &sb);
+  if (r < 0 || !S_ISREG(sb.st_mode))
+    return;
+
+  newargv = (char **)malloc((argc+5) * sizeof(char **));
+  newargv[newargc++] = VALGRIND_BIN;
+  newargv[newargc++] = "--tool=memcheck";
+  newargv[newargc++] = "-q";
+  newargv[newargc++] = "--leak-check=full";
+  while (*argv)
+    newargv[newargc++] = *argv++;
+  newargv[newargc] = NULL;
+
+  fprintf(stderr, "Running self under valgrind\n");
+  putenv(MAGIC_VAR "=yes");
+
+  execv(newargv[0], newargv);
+
+  perror(VALGRIND_BIN);
+  exit(1);
+}
+
+int
+main(int argc, char ** argv)
+{
+  be_valground(argc, argv);
+  SRunner   *r = srunner_create(dict_suite());
   srunner_add_suite(r, vec_suite());
   srunner_add_suite(r, sbuf_suite());
   srunner_add_suite(r, dbuf_suite());
