@@ -1,7 +1,9 @@
 #include <pthread.h>
+#include <check.h>
 #include <droplet.h>
 #include <droplet/task.h>
 #include <unistd.h>
+
 #include "utest_main.h"
 
 
