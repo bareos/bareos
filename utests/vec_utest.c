@@ -96,12 +96,14 @@ START_TEST(vec_test)
       for (j = 0; j < 1000; j++)
         {
           ret = dpl_vec_add(v, (void*)(unsigned long)j);
-          ck_assert_int_eq(DPL_SUCCESS, ret);
+          fail_unless(DPL_SUCCESS == ret, NULL);
         }
       v2 = dpl_vec_dup(v);
       for (j = 0; j < 1000; j++)
         {
-	  ck_assert_int_eq((unsigned long)dpl_vec_get(v2, j), j);
+          unsigned int  t;
+          t = (unsigned int)(unsigned long) dpl_vec_get(v2, j);
+          fail_unless((unsigned int) t == j, NULL);
         }
 
       memset(pbuf, 0xff, 6000);
@@ -120,12 +122,13 @@ START_TEST(vec_test)
   for (i = 0; i < 1000; i++)
     {
       ret = dpl_vec_add(v, (void*)(unsigned long) i);
-      ck_assert_int_eq(DPL_SUCCESS, ret);
+      fail_unless(DPL_SUCCESS == ret, NULL);
     }
   dpl_vec_sort(v, reverse_sort);
   for (i = 0; i < 1000; i++)
     {
-      ck_assert_int_eq((unsigned long)dpl_vec_get(v, i), (1000 - 1 - i));
+      j = (unsigned int)(unsigned long) dpl_vec_get(v, i);
+      fail_unless(j == (1000 - 1 - i), NULL);
     }
   dpl_vec_free(v);
   free(pbuf);
