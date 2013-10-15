@@ -417,7 +417,7 @@ public:
    const char *mode_to_str(int mode);
    void set_unload();
    void clear_volhdr();
-   void close(DCR *dcr);
+   bool close(DCR *dcr);
    bool open(DCR *dcr, int mode);
    void term();
    ssize_t read(void *buf, size_t len);
