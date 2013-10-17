@@ -10,6 +10,8 @@ concerns.
 All source code is hosted here, documentation is also available here in the
 wiki section: http://github.com/scality/Droplet/wiki
 
+The doxygen generated documentation is also availbale here: http://scality.github.io/Droplet
+
 Please report bugs, comments and questions to
 http://groups.google.com/group/scality-scop. You can also reach us on 
 the #droplet IRC channel on Freenode.
