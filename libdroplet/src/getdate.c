@@ -2393,12 +2393,13 @@ static TABLE const TimezoneTable[] = {
     { "zp4",	tZONE,     -HOUR (4) },	/* USSR Zone 3 */
     { "zp5",	tZONE,     -HOUR (5) },	/* USSR Zone 4 */
     { "zp6",	tZONE,     -HOUR (6) },	/* USSR Zone 5 */
-    { "wast",	tZONE,     -HOUR (7) },	/* West Australian Standard */
-    { "wadt",	tDAYZONE,  -HOUR (7) },	/* West Australian Daylight */
+    { "wst",	tZONE,     -HOUR (8) },	/* West Australian Standard */
     { "cct",	tZONE,     -HOUR (8) },	/* China Coast, USSR Zone 7 */
     { "jst",	tZONE,     -HOUR (9) },	/* Japan Standard, USSR Zone 8 */
-    { "east",	tZONE,     -HOUR (10) },	/* Eastern Australian Standard */
-    { "eadt",	tDAYZONE,  -HOUR (10) },	/* Eastern Australian Daylight */
+    { "acst",	tZONE,     -(HOUR (9) + 30)},	/* Australian Central Standard */
+    { "acdt",	tDAYZONE,  -(HOUR (9) + 30)},	/* Australian Central Daylight */
+    { "aest",	tZONE,     -HOUR (10) },	/* Australian Eastern Standard */
+    { "aedt",	tDAYZONE,  -HOUR (10) },	/* Australian Eastern Daylight */
     { "gst",	tZONE,     -HOUR (10) },	/* Guam Standard, USSR Zone 9 */
     { "nzt",	tZONE,     -HOUR (12) },	/* New Zealand */
     { "nzst",	tZONE,     -HOUR (12) },	/* New Zealand Standard */
