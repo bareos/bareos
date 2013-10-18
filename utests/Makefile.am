@@ -10,6 +10,7 @@ alltests_SOURCES = \
 	dbuf_utest.c \
 	sbuf_utest.c \
 	dict_utest.c \
+	utest_utest.c \
 	vec_utest.c \
 	utest_main.c
 
