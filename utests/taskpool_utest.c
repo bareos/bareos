@@ -49,7 +49,7 @@ START_TEST(taskpool_test)
     {
       int   ret;
       ret = dpl_task_pool_set_workers(p, wn[i]);
-      fail_unless(0 == ret, NULL);
+      dpl_assert_int_eq(0, ret);
 
       // give a chance to the threads to stop themselves
       // note we rely on the per-test timeout to catch
@@ -82,7 +82,7 @@ START_TEST(taskpool_test)
       dpl_task_pool_put(p, &tasks[i]);
     }
   dpl_task_pool_wait_idle(p);
-  fail_unless(100 * 10000 == incr, NULL);
+  dpl_assert_int_eq(100 * 10000, incr);
 
   incr = 0;
   for (unsigned int i = 0; i < 100; i++)
@@ -91,7 +91,7 @@ START_TEST(taskpool_test)
       dpl_task_pool_put(p, &tasks[i]);
     }
   dpl_task_pool_cancel(p);
-  fail_unless(100 * 10000 == incr, NULL);
+  dpl_assert_int_eq(100 * 10000, incr);
   dpl_task_pool_destroy(p);
   free(tasks);
 }

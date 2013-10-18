@@ -8,7 +8,7 @@ static int
 utest_dpl_dict_dump_one(dpl_dict_var_t * v, void *user_data)
 {
   fail_if(NULL == v, NULL);
-  fail_unless(v->val->type == DPL_VALUE_STRING, NULL);
+  dpl_assert_int_eq(v->val->type, DPL_VALUE_STRING);
   fprintf((FILE *)user_data, "%s: %s\n", v->key, v->val->string->buf);
 
   return 0;
