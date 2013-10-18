@@ -74,6 +74,5 @@ void dpl_addrlist_clear_nolock(dpl_addrlist_t *addrlist);
 dpl_status_t dpl_addrlist_add_from_str(dpl_addrlist_t *addrlist, const char *addrlist_str);
 dpl_status_t dpl_addrlist_set_from_str(dpl_addrlist_t *addrlist, const char *addrlist_str);
 char *dpl_addrlist_get(dpl_addrlist_t *addrlist);
-void utest_addrlist(void);
 
 #endif
