@@ -444,7 +444,7 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   int           ret2;
   struct hostent hret, *hresult;
   char          hbuf[1024];
-  int           herr;
+  int           herr = 0;
   struct in_addr addr;
   u_short       port;
   dpl_conn_t    *conn = NULL;
@@ -453,7 +453,8 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   ret2 = dpl_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
   if (0 != ret2)
     {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "gethostbyname failed");
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "gethostbyname failed: %s: %s",
+		host, hstrerror(herr));
       goto bad;
     }
 
