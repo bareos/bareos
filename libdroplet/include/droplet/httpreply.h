@@ -50,6 +50,7 @@ typedef enum
     DPL_HTTP_CODE_NOT_FOUND        = 404,
     DPL_HTTP_CODE_CONFLICT         = 409,
     DPL_HTTP_CODE_PRECOND_FAILED   = 412,
+    DPL_HTTP_CODE_RANGE_UNAVAIL	   = 416,
   } dpl_http_code_t;
 
 struct dpl_http_reply

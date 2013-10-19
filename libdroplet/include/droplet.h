@@ -97,6 +97,7 @@ typedef enum
     DPL_EPERM                = (-18),/*!< Permission denied */
     DPL_EPRECOND             = (-19),/*!< Precondition failed */
     DPL_ECONFLICT            = (-20),/*!< Conflict */
+    DPL_ERANGEUNAVAIL        = (-21),/*!< Range Unavailable */
   } dpl_status_t;
 
 #include <droplet/queue.h>
