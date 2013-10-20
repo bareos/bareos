@@ -227,13 +227,10 @@ dpl_dbuf_read(dpl_dbuf_t *nbuf, int fd, int size)
 int
 dpl_dbuf_consume(dpl_dbuf_t *nbuf, void *buf, int size)
 {
-  if (size <= dpl_dbuf_length(nbuf)) {
-    memcpy(buf, nbuf->data + nbuf->offset, size);
-    nbuf->offset += size;
-    return size;
-  }
+  if (size > dpl_dbuf_length(nbuf))
+    size = dpl_dbuf_length(nbuf);
 
-  memcpy(buf, nbuf->data + nbuf->offset, dpl_dbuf_length(nbuf));
-  nbuf->offset += dpl_dbuf_length(nbuf);
-  return dpl_dbuf_length(nbuf);
+  memcpy(buf, nbuf->data + nbuf->offset, size);
+  nbuf->offset += size;
+  return size;
 }
