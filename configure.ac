@@ -57,6 +57,26 @@ PKG_CHECK_MODULES(OPENSSL, openssl)
 AC_SEARCH_LIBS([sqrt], [m], [], [AC_MSG_ERROR([libm library missing])])
 AX_PTHREAD
 
+AC_ARG_ENABLE(coverage, AS_HELP_STRING([--enable-coverage],
+	     [Build with test coverage instrumentation]))
+if test "$enable_coverage" = yes ; then
+    if test "$GCC" = yes ; then
+	AC_MSG_NOTICE([Adding --coverage to CFLAGS because --enable-coverage given]);
+	CFLAGS="$CFLAGS --coverage"
+	AC_MSG_NOTICE([Removing optimisation flags from CFLAGS because --enable-coverage given]);
+	dnl autoconf uses [] as the m4 quoting characters
+	dnl but that makes it really hard to build a regexp
+	dnl so shove that aside temporarily
+	changequote(%,%)
+	CFLAGS=`echo " $CFLAGS " | sed -e 's/[ \t]-O[0-9]*[ \t]/ /g'`
+	changequote([,])
+    else
+	AC_MSG_WARN([Compiler is not gcc, ignoring --enable-coverage]);
+	enable_coverage=no
+    fi
+fi
+AM_CONDITIONAL(COVERAGE,[test "$enable_coverage" = yes])
+
 AC_CONFIG_FILES([
 Makefile
 examples/Makefile

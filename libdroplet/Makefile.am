@@ -135,3 +135,9 @@ libdropletdropletuksinclude_HEADERS = \
 libdropletdropletscalincludedir = $(includedir)/droplet-3.0/droplet/scal
 libdropletdropletscalinclude_HEADERS = \
 	include/droplet/scal/gc.h
+
+if COVERAGE
+clean: clean-am
+	nodefiles=`find $(SUBDIRS) -type f -name \*.gcno -print` ; test -z "$$nodefiles" || $(RM) $$nodefiles
+	datafiles=`find $(SUBDIRS) -type f -name \*.gcno -print` ; test -z "$$datafiles" || $(RM) $$datafiles
+endif
