@@ -36,12 +36,34 @@ START_TEST(dbuf_test)
 END_TEST
 
 
+START_TEST(long_consume_test)
+{
+  dpl_dbuf_t *b = dpl_dbuf_new();
+  int r;
+  unsigned char cb[20];
+
+  dpl_assert_int_eq(1, dpl_dbuf_add(b, "abcdefghij", 10));
+  dpl_assert_int_eq(10, dpl_dbuf_length(b));
+
+  /* try to consume more bytes than there are */
+  memset(cb, 0xff, sizeof(cb));
+  r = dpl_dbuf_consume(b, cb, 20);
+  dpl_assert_int_eq(10, r); /* we only get as many as there are */
+  fail_unless(0 == memcmp(cb, "abcdefghij", 10), NULL);
+  dpl_assert_int_eq(0xff, cb[10]);
+  dpl_assert_int_eq(0, dpl_dbuf_length(b));
+
+  dpl_dbuf_free(b);
+}
+END_TEST;
+
 Suite *
 dbuf_suite()
 {
   Suite *s = suite_create("dbuf");
   TCase *t = tcase_create("base");
   tcase_add_test(t, dbuf_test);
+  tcase_add_test(t, long_consume_test);
   suite_add_tcase(s, t);
   return s;
 }
