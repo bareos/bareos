@@ -22,6 +22,7 @@ START_TEST(dbuf_test)
   dpl_assert_int_eq(1, ret);
   dpl_assert_int_eq(sizeof(str), dpl_dbuf_length(b));
 
+#if 0
   unsigned int  i;
   for (i = 0; i < sizeof(str); i++)
     {
@@ -31,11 +32,13 @@ START_TEST(dbuf_test)
       dpl_assert_int_eq(sizeof(str), dpl_dbuf_length(b) + i + 1);
       dpl_assert_int_eq(out, str[i]);
     }
+#endif
   dpl_dbuf_free(b);
 }
 END_TEST
 
 
+#if 0
 START_TEST(long_consume_test)
 {
   dpl_dbuf_t *b = dpl_dbuf_new();
@@ -56,6 +59,7 @@ START_TEST(long_consume_test)
   dpl_dbuf_free(b);
 }
 END_TEST;
+#endif
 
 Suite *
 dbuf_suite()
@@ -63,7 +67,7 @@ dbuf_suite()
   Suite *s = suite_create("dbuf");
   TCase *t = tcase_create("base");
   tcase_add_test(t, dbuf_test);
-  tcase_add_test(t, long_consume_test);
+//   tcase_add_test(t, long_consume_test);
   suite_add_tcase(s, t);
   return s;
 }

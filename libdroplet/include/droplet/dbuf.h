@@ -45,10 +45,10 @@ typedef struct
 dpl_dbuf_t *dpl_dbuf_new(void);
 void dpl_dbuf_free(dpl_dbuf_t *nbuf);
 int dpl_dbuf_add(dpl_dbuf_t *nbuf, const void *buf, int len);
-int dpl_dbuf_add_buffer(dpl_dbuf_t *nbuf, dpl_dbuf_t *nbuf2);
-int dpl_dbuf_add_printf(dpl_dbuf_t *nbuf, const char *fmt, ...);
-int dpl_dbuf_write(dpl_dbuf_t *nbuf, int fd);
-int dpl_dbuf_read(dpl_dbuf_t *nbuf, int fd, int size);
+// int dpl_dbuf_add_buffer(dpl_dbuf_t *nbuf, dpl_dbuf_t *nbuf2);
+// int dpl_dbuf_add_printf(dpl_dbuf_t *nbuf, const char *fmt, ...);
+// int dpl_dbuf_write(dpl_dbuf_t *nbuf, int fd);
+// int dpl_dbuf_read(dpl_dbuf_t *nbuf, int fd, int size);
 int dpl_dbuf_length(dpl_dbuf_t *nbuf);
-int dpl_dbuf_consume(dpl_dbuf_t *nbuf, void *buf, int size);
+// int dpl_dbuf_consume(dpl_dbuf_t *nbuf, void *buf, int size);
 #endif
