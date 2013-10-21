@@ -280,6 +280,49 @@ START_TEST(iterate_break_test)
 }
 END_TEST
 
+/*
+ * Test replacing an existing value with dpl_dict_add(
+ */
+START_TEST(replace_test)
+{
+  dpl_dict_t *dict;
+  int i;
+  dpl_status_t r;
+  char valbuf[128];
+  /* strings courtesy http://hipsteripsum.me/ */
+  static const char key0[] = "Sriracha";
+  static const char val0[] = "Banksy";
+  static const char val0_new[] = "polaroid";
+  static const char key1[] = "trust";
+  static const char val1[] = "fund";
+
+  dict = dpl_dict_new(13);
+  fail_if(NULL == dict, NULL);
+
+  /* add the values */
+  dpl_dict_add(dict, key0, val0, /* lowered */0);
+  dpl_dict_add(dict, key1, val1, /* lowered */0);
+  dpl_assert_int_eq(2, dpl_dict_count(dict));
+
+  /* check the values are there */
+  dpl_assert_str_eq(dpl_dict_get_value(dict, key0), val0);
+  dpl_assert_str_eq(dpl_dict_get_value(dict, key1), val1);
+
+  /* replace one of the values */
+  dpl_dict_add(dict, key0, val0_new, /* lowered */0);
+
+  /* check the element count is correct */
+  dpl_assert_int_eq(2, dpl_dict_count(dict));
+
+  /* check the new value is there */
+  dpl_assert_str_eq(dpl_dict_get_value(dict, key0), val0_new);
+  /* check the other key is unaffected */
+  dpl_assert_str_eq(dpl_dict_get_value(dict, key1), val1);
+
+  dpl_dict_free(dict);
+}
+END_TEST
+
 Suite *
 dict_suite(void)
 {
@@ -288,6 +331,7 @@ dict_suite(void)
   tcase_add_test(d, dict_test);
   tcase_add_test(d, long_key_test);
   tcase_add_test(d, iterate_break_test);
+  tcase_add_test(d, replace_test);
   suite_add_tcase(s, d);
   return s;
 }
