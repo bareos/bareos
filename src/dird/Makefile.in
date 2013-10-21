@@ -22,6 +22,8 @@ GETTEXT_LIBS = @LIBINTL@
 CAP_LIBS = @CAP_LIBS@
 NDMP_LIBS = @NDMP_LIBS@
 DB_LIBS=@DB_LIBS@
+OPENSSL_LIBS_NONSHARED = @OPENSSL_LIBS_NONSHARED@
+GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
 first_rule: all
 dummy:
@@ -68,7 +70,8 @@ bareos-dir: Makefile $(SVROBJS) \
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
 	      $(NDMP_LIBS) -lbareosfind -lbareossql -lbareoscats -lbareoscfg -lbareos -lm $(DLIB) \
-	      $(DB_LIBS) $(LIBS) $(WRAPLIBS) $(GETTEXT_LIBS) $(CAP_LIBS)
+	      $(DB_LIBS) $(LIBS) $(WRAPLIBS) $(GETTEXT_LIBS) $(CAP_LIBS) \
+	      $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 bareos-dbcheck: Makefile $(DBCHKOBJS) \
 	 ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
@@ -78,7 +81,8 @@ bareos-dbcheck: Makefile $(DBCHKOBJS) \
 	 ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -L../cats -o $@ $(DBCHKOBJS) \
-	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
+	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) \
+	      $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 testfind: Makefile $(TSTFNDOBJS) \
 	 ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
@@ -88,7 +92,8 @@ testfind: Makefile $(TSTFNDOBJS) \
 	 ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -L../cats -o $@ $(TSTFNDOBJS) \
-	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
+	      -lbareoscats -lbareossql -lbareoscfg -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) \
+	      $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 static-bareos-dir:  Makefile $(SVROBJS) \
 	            ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \

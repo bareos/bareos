@@ -21,6 +21,8 @@ CONSSRCS = console.c console_conf.c @CONS_SRC@
 CONSOBJS = $(CONSSRCS:.c=.o)
 
 GETTEXT_LIBS = @LIBINTL@
+OPENSSL_LIBS_NONSHARED = @OPENSSL_LIBS_NONSHARED@
+GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
 CONS_INC = @CONS_INC@
 CONS_LIBS = @CONS_LIBS@
@@ -44,7 +46,8 @@ all: Makefile bconsole @STATIC_CONS@
 
 bconsole: Makefile $(CONSOBJS) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) $(CONS_LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
-	      $(DLIB) $(CONS_LIBS) -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
+	      $(DLIB) $(CONS_LIBS) -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) \
+	      $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 static-bconsole: Makefile $(CONSOBJS) ../lib/libbareos.a ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) -static $(LDFLAGS) $(CONS_LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \

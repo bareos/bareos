@@ -21,6 +21,8 @@ thisdir = src/filed
 DEBUG=@DEBUG@
 
 GETTEXT_LIBS = @LIBINTL@
+OPENSSL_LIBS_NONSHARED = @OPENSSL_LIBS_NONSHARED@
+GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
 COMPRESS_CPPFLAGS += @ZLIB_INC@ @LZO_INC@ @FASTLZ_INC@
 
@@ -86,7 +88,7 @@ bareos-fd: Makefile $(SVROBJS) \
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(SVROBJS) \
 	  $(FDLIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) \
-	  $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS)
+	  $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 static-bareos-fd: Makefile $(SVROBJS) \
 		  ../findlib/libbareosfind.a \
