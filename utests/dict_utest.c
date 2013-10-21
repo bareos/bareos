@@ -176,6 +176,109 @@ START_TEST(long_key_test)
 }
 END_TEST
 
+/*
+ * Test that the dpl_dict_iterate() function will return early
+ * if the callback returns a non-zero number.
+ */
+struct break_test_state
+{
+  int count;
+  int special_count;
+  int special_code;
+};
+
+static dpl_status_t
+break_test_cb(dpl_dict_var_t *var, void *arg)
+{
+  struct break_test_state *state = arg;
+  state->count++;
+  return (state->count == state->special_count ? state->special_code : DPL_SUCCESS);
+}
+
+START_TEST(iterate_break_test)
+{
+  dpl_dict_t *dict;
+  int i;
+  dpl_status_t r;
+  struct break_test_state state = { 0, 0, 0 };
+  char valbuf[128];
+  /* strings courtesy http://hipsteripsum.me/ */
+  static const char * const keys[] = {
+    "Sriracha", "Banksy", "trust", "fund", "Brooklyn",
+    "polaroid", "Viral", "selfies", "kogi", "Austin",
+    "PBR", "stumptown", "artisan", "bespoke", "8-bit",
+    "Odd", "Future", "Pinterest", "mlkshk", "McSweeney's",
+    "ennui", "Wes", "Anderson" };
+  static const int nkeys = sizeof(keys)/sizeof(keys[0]);
+
+  dict = dpl_dict_new(13);
+  fail_if(NULL == dict, NULL);
+
+  for (i = 0 ; i < nkeys ; i++)
+    {
+      dpl_dict_add(dict, keys[i],
+			 make_value(i, valbuf, sizeof(valbuf)),
+			 /* lowered */0);
+    }
+  dpl_assert_int_eq(nkeys, dpl_dict_count(dict));
+
+  /* Basic check: can iterate over everything */
+  state.count = 0;	    /* initialise */
+  state.special_count = 0;  /* no special return */
+  state.special_code = 0;
+  r = dpl_dict_iterate(dict, break_test_cb, &state);
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(nkeys, state.count);
+
+  /* If the callback returns non-zero partway through,
+   * we see that return code from dpl_dict_iterate(). */
+  state.count = 0;	    /* initialise */
+  state.special_count = 10; /* return an error on the 10th element */
+  state.special_code = DPL_ECONNECT;
+  r = dpl_dict_iterate(dict, break_test_cb, &state);
+  dpl_assert_int_eq(DPL_ECONNECT, r);
+  /* iteration does not proceed beyond the error return */
+  dpl_assert_int_eq(10, state.count);
+
+  /* Ditto for the 1st element */
+  state.count = 0;	    /* initialise */
+  state.special_count = 1; /* return an error on the 1st element */
+  state.special_code = DPL_ECONNECT;
+  r = dpl_dict_iterate(dict, break_test_cb, &state);
+  dpl_assert_int_eq(DPL_ECONNECT, r);
+  /* iteration does not proceed beyond the error return */
+  dpl_assert_int_eq(1, state.count);
+
+  /* Ditto for the last element */
+  state.count = 0;	    /* initialise */
+  state.special_count = nkeys; /* return an error on the last element */
+  state.special_code = DPL_ECONNECT;
+  r = dpl_dict_iterate(dict, break_test_cb, &state);
+  dpl_assert_int_eq(DPL_ECONNECT, r);
+  /* iteration does not proceed beyond the error return */
+  dpl_assert_int_eq(nkeys, state.count);
+
+  /* This also works for non-zero numbers which aren't real error codes */
+  state.count = 0;	    /* initialise */
+  state.special_count = 10; /* return an error on the 10th element */
+  state.special_code = -511;
+  r = dpl_dict_iterate(dict, break_test_cb, &state);
+  dpl_assert_int_eq(-511, r);
+  /* iteration does not proceed beyond the error return */
+  dpl_assert_int_eq(10, state.count);
+
+  /* This also works for positive numbers */
+  state.count = 0;	    /* initialise */
+  state.special_count = 10; /* return an error on the 10th element */
+  state.special_code = 127;
+  r = dpl_dict_iterate(dict, break_test_cb, &state);
+  dpl_assert_int_eq(127, r);
+  /* iteration does not proceed beyond the error return */
+  dpl_assert_int_eq(10, state.count);
+
+  dpl_dict_free(dict);
+}
+END_TEST
 
 Suite *
 dict_suite(void)
@@ -184,6 +287,7 @@ dict_suite(void)
   TCase *d = tcase_create("base");
   tcase_add_test(d, dict_test);
   tcase_add_test(d, long_key_test);
+  tcase_add_test(d, iterate_break_test);
   suite_add_tcase(s, d);
   return s;
 }
