@@ -118,6 +118,64 @@ START_TEST(dict_test)
 }
 END_TEST
 
+static const char *
+make_key(int i, char *buf, size_t maxlen)
+{
+  int j;
+  static const char chars[] = "abcdefghijklmnopqrstuvwxyz";
+  if (i >= maxlen)
+    return NULL;
+  for (j = 0 ; j < i ; j++)
+    buf[j] = chars[j % (sizeof(chars)-1)];
+  buf[j] = '\0';
+  return buf;
+}
+
+static const char *
+make_value(int i, char *buf, size_t maxlen)
+{
+    snprintf(buf, maxlen, "X%dY", i);
+    return buf;
+}
+
+/*
+ * Use the dict with long key strings; tests
+ * some corner cases e.g. in the hash function.
+ */
+START_TEST(long_key_test)
+{
+#define N 512
+  dpl_dict_t *dict;
+  int i;
+  int j;
+  const char *act;
+  const char *exp;
+  char keybuf[1024];
+  char valbuf[1024];
+
+  dict = dpl_dict_new(13);
+  fail_if(NULL == dict, NULL);
+
+  for (i = 0 ; i < N ; i++)
+    {
+      dpl_dict_add(dict, make_key(i, keybuf, sizeof(keybuf)),
+			 make_value(i, valbuf, sizeof(valbuf)),
+			 /* lowered */0);
+    }
+  dpl_assert_int_eq(N, dpl_dict_count(dict));
+
+  for (i = 0 ; i < N ; i++)
+    {
+      act = dpl_dict_get_value(dict, make_key(i, keybuf, sizeof(keybuf)));
+      exp = make_value(i, valbuf, sizeof(valbuf));
+      dpl_assert_str_eq(act, exp);
+    }
+
+  dpl_dict_free(dict);
+#undef N
+}
+END_TEST
+
 
 Suite *
 dict_suite(void)
@@ -125,6 +183,7 @@ dict_suite(void)
   Suite *s = suite_create("dict");
   TCase *d = tcase_create("base");
   tcase_add_test(d, dict_test);
+  tcase_add_test(d, long_key_test);
   suite_add_tcase(s, d);
   return s;
 }
