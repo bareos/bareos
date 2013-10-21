@@ -1121,8 +1121,15 @@ if test "$have_openssl" = "no"; then
    OPENSSL_INC=""
 fi
 
+if test x$use_libtool != xno; then
+   OPENSSL_LIBS_NONSHARED=""
+else
+   OPENSSL_LIBS_NONSHARED="${OPENSSL_LIBS}"
+fi
+
 AC_SUBST(OPENSSL_LIBS)
 AC_SUBST(OPENSSL_INC)
+AC_SUBST(OPENSSL_LIBS_NONSHARED)
 
 dnl -----------------------------------------------------------
 dnl Check whether GNUTLS is available
@@ -1192,8 +1199,15 @@ if test "$have_gnutls" = "no"; then
    GNUTLS_INC=""
 fi
 
+if test x$use_libtool != xno; then
+   GNUTLS_LIBS_NONSHARED=""
+else
+   GNUTLS_LIBS_NONSHARED="${GNUTLS_LIBS}"
+fi
+
 AC_SUBST(GNUTLS_LIBS)
 AC_SUBST(GNUTLS_INC)
+AC_SUBST(GNUTLS_LIBS_NONSHARED)
 
 dnl -----------------------------------------------------------
 dnl dlopen is needed for plugins

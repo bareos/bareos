@@ -39,6 +39,9 @@ const int sd_dbglvl = 300;
 #include <mtio.h>
 #else
 #ifdef HAVE_SYS_MTIO_H
+#ifdef HAVE_AIX_OS
+#define _MTEXTEND_H 1
+#endif
 #include <sys/mtio.h>
 #else
 #ifdef HAVE_SYS_TAPE_H
