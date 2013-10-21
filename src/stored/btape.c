@@ -1144,10 +1144,11 @@ static bool write_two_files()
     * doesn't insert any additional EOF marks
     */
    if (dev->max_block_size) {
-      dev->max_file_size = 2 * num_recs * dev->max_block_size;
+      dev->max_file_size = (uint64_t)2 * (num_recs * dev->max_block_size);
    } else {
-      dev->max_file_size = 2 * num_recs * DEFAULT_BLOCK_SIZE;
+      dev->max_file_size = 2 * (num_recs * DEFAULT_BLOCK_SIZE);
    }
+
    Pmsg2(-1, _("\n=== Write, rewind, and re-read test ===\n\n"
       "I'm going to write %d records and an EOF\n"
       "then write %d records and an EOF, then rewind,\n"
