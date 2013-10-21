@@ -73,15 +73,15 @@ START_TEST(ntinydb_test)
     {
       datas[i] = new_pseudorandom_bytes(512);
       s = dpl_ntinydb_set(b, keys[i], datas[i], 512);
-      fail_unless(DPL_SUCCESS == s, NULL);
+      dpl_assert_int_eq(DPL_SUCCESS, s);
     }
   for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
     {
       const char    * datas_check[sizeof(keys) / sizeof(keys[0])];
       int             out_len;
       s = dpl_ntinydb_get(b->buf, b->len, keys[i], datas_check + i, &out_len);
-      fail_unless(DPL_SUCCESS == s, NULL);
-      fail_unless(512 == out_len);
+      dpl_assert_int_eq(DPL_SUCCESS, s);
+      dpl_assert_int_eq(512, out_len);
       fail_unless(0 == memcmp(datas_check[i], datas[i], 512));
     }
   arg_list  all_keys;
@@ -94,10 +94,10 @@ START_TEST(ntinydb_test)
     }
 
   s = dpl_ntinydb_list(b->buf, b->len, check_keys, &all_keys);
-  fail_unless(DPL_SUCCESS == s, NULL);
+  dpl_assert_int_eq(DPL_SUCCESS, s);
   for (i = 0; i < all_keys.nelem; i++)
     {
-      fail_if(false == all_keys.found[i], NULL);
+      dpl_assert_int_eq(true, all_keys.found[i]);
     }
   free(all_keys.found);
 

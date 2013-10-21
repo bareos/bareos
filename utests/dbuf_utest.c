@@ -9,7 +9,7 @@ START_TEST(dbuf_test)
 {
   dpl_dbuf_t    * b = dpl_dbuf_new();
   fail_if(NULL == b, NULL);
-  fail_unless(0 == dpl_dbuf_length(b), NULL);
+  dpl_assert_int_eq(0, dpl_dbuf_length(b));
   dpl_dbuf_free(b);
 
   b = dpl_dbuf_new();
@@ -19,17 +19,17 @@ START_TEST(dbuf_test)
   int             ret;
 
   ret = dpl_dbuf_add(b, str, sizeof(str));
-  fail_unless(1 == ret, NULL);
-  fail_unless(sizeof(str) == dpl_dbuf_length(b), NULL);
+  dpl_assert_int_eq(1, ret);
+  dpl_assert_int_eq(sizeof(str), dpl_dbuf_length(b));
 
   unsigned int  i;
   for (i = 0; i < sizeof(str); i++)
     {
       char  out;
       ret = dpl_dbuf_consume(b, &out, sizeof(out));
-      fail_unless(1 == ret, NULL);
-      fail_unless(sizeof(str) == dpl_dbuf_length(b) + i + 1, NULL);
-      fail_unless(out == str[i], NULL);
+      dpl_assert_int_eq(1, ret);
+      dpl_assert_int_eq(sizeof(str), dpl_dbuf_length(b) + i + 1);
+      dpl_assert_int_eq(out, str[i]);
     }
   dpl_dbuf_free(b);
 }

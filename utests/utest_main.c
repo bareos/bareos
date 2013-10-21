@@ -55,11 +55,15 @@ main(int argc, char ** argv)
 {
   be_valground(argc, argv);
   SRunner   *r = srunner_create(dict_suite());
+  srunner_add_suite(r, getdate_suite());
   srunner_add_suite(r, vec_suite());
   srunner_add_suite(r, sbuf_suite());
   srunner_add_suite(r, dbuf_suite());
   srunner_add_suite(r, ntinydb_suite());
   srunner_add_suite(r, taskpool_suite());
+  srunner_add_suite(r, addrlist_suite());
+  srunner_add_suite(r, util_suite());
+  srunner_add_suite(r, utest_suite());
   srunner_run_all(r, CK_NORMAL);
   int number_failed = srunner_ntests_failed(r);
   srunner_free(r);

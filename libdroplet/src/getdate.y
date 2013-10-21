@@ -476,12 +476,13 @@ static TABLE const TimezoneTable[] = {
     { "zp4",	tZONE,     -HOUR (4) },	/* USSR Zone 3 */
     { "zp5",	tZONE,     -HOUR (5) },	/* USSR Zone 4 */
     { "zp6",	tZONE,     -HOUR (6) },	/* USSR Zone 5 */
-    { "wast",	tZONE,     -HOUR (7) },	/* West Australian Standard */
-    { "wadt",	tDAYZONE,  -HOUR (7) },	/* West Australian Daylight */
+    { "wst",	tZONE,     -HOUR (8) },	/* West Australian Standard */
     { "cct",	tZONE,     -HOUR (8) },	/* China Coast, USSR Zone 7 */
     { "jst",	tZONE,     -HOUR (9) },	/* Japan Standard, USSR Zone 8 */
-    { "east",	tZONE,     -HOUR (10) },	/* Eastern Australian Standard */
-    { "eadt",	tDAYZONE,  -HOUR (10) },	/* Eastern Australian Daylight */
+    { "acst",	tZONE,     -(HOUR (9) + 30)},	/* Australian Central Standard */
+    { "acdt",	tDAYZONE,  -(HOUR (9) + 30)},	/* Australian Central Daylight */
+    { "aest",	tZONE,     -HOUR (10) },	/* Australian Eastern Standard */
+    { "aedt",	tDAYZONE,  -HOUR (10) },	/* Australian Eastern Daylight */
     { "gst",	tZONE,     -HOUR (10) },	/* Guam Standard, USSR Zone 9 */
     { "nzt",	tZONE,     -HOUR (12) },	/* New Zealand */
     { "nzst",	tZONE,     -HOUR (12) },	/* New Zealand Standard */
@@ -889,32 +890,3 @@ dpl_get_date (const char *p, const time_t *now)
   return Start;
 }
 
-#if	defined (TEST)
-
-/* ARGSUSED */
-int
-main (ac, av)
-     int ac;
-     char *av[];
-{
-  char buff[MAX_BUFF_LEN + 1];
-  time_t d;
-
-  (void) printf ("Enter date, or blank line to exit.\n\t> ");
-  (void) fflush (stdout);
-
-  buff[MAX_BUFF_LEN] = 0;
-  while (fgets (buff, MAX_BUFF_LEN, stdin) && buff[0])
-    {
-      d = dpl_get_date (buff, (time_t *) NULL);
-      if (d == -1)
-	(void) printf ("Bad format - couldn't convert.\n");
-      else
-	(void) printf ("%s", ctime (&d));
-      (void) printf ("\t> ");
-      (void) fflush (stdout);
-    }
-  exit (0);
-  /* NOTREACHED */
-}
-#endif /* defined (TEST) */
