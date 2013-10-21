@@ -20,6 +20,8 @@ DB_LIBS = @DB_LIBS@
 AFS_LIBS = @AFS_LIBS_NONSHARED@
 ACL_LIBS = @ACL_LIBS_NONSHARED@
 XATTR_LIBS = @XATTR_LIBS_NONSHARED@
+OPENSSL_LIBS_NONSHARED = @OPENSSL_LIBS_NONSHARED@
+GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
 first_rule: all
 dummy:
@@ -103,7 +105,7 @@ bareos-sd: Makefile $(SDOBJS) \
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -o $@ $(SDOBJS) \
 	   $(NDMP_LIBS) -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
-	   $(SD_LIBS) $(GETTEXT_LIBS)
+	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 static-bareos-sd: Makefile $(SDOBJS) \
 	          ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
@@ -119,31 +121,46 @@ ndmp_tape.o: ndmp_tape.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I../lib $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
-btape: Makefile  $(TAPEOBJS) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
+btape: Makefile  $(TAPEOBJS) \
+       ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
+       ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(TAPEOBJS) \
-	   -lbareoscfg -lbareos $(DLIB) -lm $(LIBS) $(GETTEXT_LIBS)
+	   -lbareoscfg -lbareos $(DLIB) -lm $(LIBS) $(GETTEXT_LIBS) \
+	   $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
-bls:	Makefile $(BLSOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+bls: Makefile $(BLSOBJS) \
+     ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+     ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+     ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BLSOBJS) $(DLIB) \
-	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
+	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) \
+	   $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
-bextract: Makefile $(BEXTOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+bextract: Makefile $(BEXTOBJS) \
+          ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	  ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+          ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BEXTOBJS) $(DLIB) \
-	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(BEXTRACT_LIBS) $(GETTEXT_LIBS)
+	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(BEXTRACT_LIBS) \
+	   $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
-bscan:	Makefile $(SCNOBJS) ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
-	../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
+bscan:	Makefile $(SCNOBJS) \
+        ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
+	../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
+	../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
+	../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SCNOBJS) \
-	   -lbareossql -lbareoscats $(DB_LIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(GETTEXT_LIBS)
+	   -lbareossql -lbareoscats $(DB_LIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) \
+	   $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 bcopy:	Makefile $(COPYOBJS) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(COPYOBJS) \
-	   -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
+	   -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \

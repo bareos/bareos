@@ -22,6 +22,8 @@ first_rule: all
 dummy:
 
 GETTEXT_LIBS = @LIBINTL@
+OPENSSL_LIBS_NONSHARED = @OPENSSL_LIBS_NONSHARED@
+GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
 TOOLS = bsmtp drivetype fstype bregex bwild bpluginfo bscrypto timelimit
 INSTOOLS = bsmtp bwild bregex bpluginfo bscrypto
@@ -43,38 +45,39 @@ all: Makefile $(TOOLS)
 
 bsmtp: Makefile bsmtp.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bsmtp.o -lbareos -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bsmtp.o -lbareos -lm $(DLIB) $(LIBS) \
+	$(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 fstype: Makefile fstype.o \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ fstype.o -lbareosfind -lbareos -lm \
-	  $(DLIB) $(LIBS) $(GETTEXT_LIBS)
+	  $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 drivetype: Makefile drivetype.o \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ drivetype.o -lbareosfind -lbareos -lm \
-	  $(DLIB) $(LIBS) $(GETTEXT_LIBS)
+	  $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 bregex: Makefile bregex.o \
 	../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
 	../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bregex.o \
-	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
+	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 bwild:	Makefile bwild.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bwild.o \
-	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
+	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 bscrypto: Makefile bscrypto.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -o $@ bscrypto.o \
-	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS)
+	  $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 bpluginfo.o: bpluginfo.c
 	@echo "Compiling $<"
@@ -82,7 +85,8 @@ bpluginfo.o: bpluginfo.c
 
 bpluginfo: Makefile bpluginfo.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bpluginfo.o -lbareos $(GETTEXT_LIBS)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bpluginfo.o -lbareos $(LIBS) \
+	$(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 timelimit.o: timelimit.c
 	@echo "Compiling $<"
