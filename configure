@@ -722,8 +722,10 @@ hostname
 basename
 archivedir
 working_dir
+GNUTLS_LIBS_NONSHARED
 GNUTLS_INC
 GNUTLS_LIBS
+OPENSSL_LIBS_NONSHARED
 OPENSSL_INC
 OPENSSL_LIBS
 PYTHON_INC
@@ -23548,6 +23550,13 @@ if test "$have_openssl" = "no"; then
    OPENSSL_INC=""
 fi
 
+if test x$use_libtool != xno; then
+   OPENSSL_LIBS_NONSHARED=""
+else
+   OPENSSL_LIBS_NONSHARED="${OPENSSL_LIBS}"
+fi
+
+
 
 
 
@@ -23671,6 +23680,13 @@ if test "$have_gnutls" = "no"; then
    GNUTLS_LIBS=""
    GNUTLS_INC=""
 fi
+
+if test x$use_libtool != xno; then
+   GNUTLS_LIBS_NONSHARED=""
+else
+   GNUTLS_LIBS_NONSHARED="${GNUTLS_LIBS}"
+fi
+
 
 
 
