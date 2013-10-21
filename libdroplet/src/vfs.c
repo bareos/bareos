@@ -1256,7 +1256,6 @@ dpl_fput(dpl_ctx_t *ctx,
 	 unsigned int data_len)
 {
   int ret, ret2;
-  dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path = NULL;
@@ -1296,7 +1295,7 @@ dpl_fput(dpl_ctx_t *ctx,
 
   ret2 = dpl_put(ctx,
 		 bucket,
-		 obj_fqn.path,
+                 path,
 		 option,
 		 DPL_FTYPE_REG,
 		 condition,
