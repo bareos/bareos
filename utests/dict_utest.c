@@ -323,6 +323,69 @@ START_TEST(replace_test)
 }
 END_TEST
 
+START_TEST(remove_test)
+{
+  dpl_dict_t *dict;
+  int i;
+  dpl_status_t r;
+  char valbuf[128];
+  /* strings courtesy http://hipsteripsum.me/ */
+  static const char * const keys[] = {
+    "Sriracha", "Banksy", "trust", "fund", "Brooklyn",
+    "polaroid", "Viral", "selfies", "kogi", "Austin",
+    "PBR", "stumptown", "artisan", "bespoke", "8-bit",
+    "Odd", "Future", "Pinterest", "mlkshk", "McSweeney's",
+    "ennui", "Wes", "Anderson" };
+  static const int nkeys = sizeof(keys)/sizeof(keys[0]);
+
+  /* create with a small table to ensure we have some chains */
+  dict = dpl_dict_new(5);
+  fail_if(NULL == dict, NULL);
+
+  /* add all the keys */
+  for (i = 0 ; i < nkeys ; i++)
+    {
+      dpl_dict_add(dict, keys[i],
+			 make_value(i, valbuf, sizeof(valbuf)),
+			 /* lowered */0);
+    }
+  dpl_assert_int_eq(nkeys, dpl_dict_count(dict));
+
+  /* remove the keys again */
+  for (i = 0 ; i < nkeys ; i++)
+    {
+      dpl_dict_var_t *var = dpl_dict_get(dict, keys[i]);
+      fail_if(NULL == var, NULL);
+      dpl_assert_str_eq(var->key, keys[i]);
+      dpl_dict_remove(dict, var);
+      dpl_assert_int_eq(nkeys-1-i, dpl_dict_count(dict));
+    }
+
+  /* add all the keys back again */
+  for (i = 0 ; i < nkeys ; i++)
+    {
+      dpl_dict_add(dict, keys[i],
+			 make_value(i, valbuf, sizeof(valbuf)),
+			 /* lowered */0);
+    }
+  dpl_assert_int_eq(nkeys, dpl_dict_count(dict));
+
+  /* remove the keys again in reverse order; we do
+   * this to exercise some hash chain manipulation
+   * corner cases */
+  for (i = nkeys-1 ; i >= 0 ; i--)
+    {
+      dpl_dict_var_t *var = dpl_dict_get(dict, keys[i]);
+      fail_if(NULL == var, NULL);
+      dpl_assert_str_eq(var->key, keys[i]);
+      dpl_dict_remove(dict, var);
+      dpl_assert_int_eq(i, dpl_dict_count(dict));
+    }
+
+  dpl_dict_free(dict);
+}
+END_TEST
+
 Suite *
 dict_suite(void)
 {
@@ -332,6 +395,7 @@ dict_suite(void)
   tcase_add_test(d, long_key_test);
   tcase_add_test(d, iterate_break_test);
   tcase_add_test(d, replace_test);
+  tcase_add_test(d, remove_test);
   suite_add_tcase(s, d);
   return s;
 }
