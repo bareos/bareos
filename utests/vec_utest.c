@@ -81,13 +81,13 @@ START_TEST(vec_test)
   char		    *pbuf;
 
   pbuf = malloc(6000);
-  fail_if(NULL == pbuf, NULL);
+  dpl_assert_ptr_not_null(pbuf);
 
   v = dpl_vec_new(0, 0);
   fail_unless(NULL == v, NULL);
 
   v = dpl_vec_new(100, 10);
-  fail_if(NULL == v, NULL);
+  dpl_assert_ptr_not_null(v);
   dpl_vec_free(v);
 
   int   ics[] = {0, 10};
@@ -107,7 +107,7 @@ START_TEST(vec_test)
 
       memset(pbuf, 0xff, 6000);
       fp = fmemopen(pbuf, 6000, "w");
-      fail_if(NULL == fp, NULL);
+      dpl_assert_ptr_not_null(fp);
       dpl_vec_print(v, fp, 0);
       fflush(fp);
       fail_unless(0 == memcmp(expected, pbuf, sizeof(expected)-1), NULL);

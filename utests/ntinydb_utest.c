@@ -41,7 +41,7 @@ new_pseudorandom_bytes(int n)
   int shift = -1;
 
   x = malloc(n);
-  fail_if(NULL == x);
+  dpl_assert_ptr_not_null(x);
   for (i = 0 ; i < n ; i++)
     {
       if (shift < 0)

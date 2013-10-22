@@ -36,7 +36,7 @@ make_value(int i, char *buf, size_t maxlen)
 static int
 utest_dpl_dict_dump_one(dpl_dict_var_t * v, void *user_data)
 {
-  fail_if(NULL == v, NULL);
+  dpl_assert_ptr_not_null(v);
   dpl_assert_int_eq(v->val->type, DPL_VALUE_STRING);
   fprintf((FILE *)user_data, "%s: %s\n", v->key, v->val->string->buf);
 
@@ -58,7 +58,7 @@ START_TEST(dict_test)
   static const char * const utest_strings[] = { "Foo", "bAr", "baz", NULL };
 
   dict = dpl_dict_new(0);
-  fail_unless(NULL == dict, NULL);
+  dpl_assert_ptr_null(dict);
   dict = dpl_dict_new(10);
 
   it = utest_strings;
@@ -90,36 +90,36 @@ START_TEST(dict_test)
   fail_unless(var == NULL, NULL);
   it++;
   var = dpl_dict_get(dict, *it);
-  fail_unless(var == NULL, NULL);
+  dpl_assert_ptr_null(var);
   it++;
   var = dpl_dict_get(dict, *it);
-  fail_if(NULL == var, NULL);
+  dpl_assert_ptr_not_null(var);
   value = var->val;
   fail_unless(DPL_VALUE_STRING == value->type, NULL);
   fail_unless(0 == strcmp(value->string->buf, "c"), NULL);
 
   it = utest_strings;
   dpl_dict_get_lowered(dict, *it, &var);
-  fail_if(NULL == var, NULL);
+  dpl_assert_ptr_not_null(var);
   value = var->val;
   fail_unless(DPL_VALUE_STRING == value->type, NULL);
   fail_unless(0 == strcmp(value->string->buf, "a"), NULL);
   it++;
   dpl_dict_get_lowered(dict, *it, &var);
-  fail_if(NULL == var, NULL);
+  dpl_assert_ptr_not_null(var);
   value = var->val;
   fail_unless(DPL_VALUE_STRING == value->type, NULL);
   fail_unless(0 == strcmp(value->string->buf, "b"), NULL);
   it++;
   dpl_dict_get_lowered(dict, *it, &var);
-  fail_if(NULL == var, NULL);
+  dpl_assert_ptr_not_null(var);
   value = var->val;
   fail_unless(DPL_VALUE_STRING == value->type, NULL);
   fail_unless(0 == strcmp(value->string->buf, "c"), NULL);
 
   memset(pbuf, 0xff, sizeof(pbuf));
   fp = fmemopen(pbuf, sizeof(pbuf), "w");
-  fail_if(NULL == fp, NULL);
+  dpl_assert_ptr_not_null(fp);
 
   dpl_dict_iterate(dict, utest_dpl_dict_dump_one, fp);
   dpl_dict_print(dict, fp, 0);
@@ -163,7 +163,7 @@ START_TEST(long_key_test)
   char valbuf[1024];
 
   dict = dpl_dict_new(13);
-  fail_if(NULL == dict, NULL);
+  dpl_assert_ptr_not_null(dict);
 
   for (i = 0 ; i < N ; i++)
     {
@@ -213,7 +213,7 @@ START_TEST(iterate_break_test)
   char valbuf[128];
 
   dict = dpl_dict_new(13);
-  fail_if(NULL == dict, NULL);
+  dpl_assert_ptr_not_null(dict);
 
   for (i = 0 ; i < nkeys ; i++)
     {
@@ -298,7 +298,7 @@ START_TEST(replace_test)
   static const char val1[] = "fund";
 
   dict = dpl_dict_new(13);
-  fail_if(NULL == dict, NULL);
+  dpl_assert_ptr_not_null(dict);
 
   /* add the values */
   dpl_dict_add(dict, key0, val0, /* lowered */0);
@@ -333,7 +333,7 @@ START_TEST(remove_test)
 
   /* create with a small table to ensure we have some chains */
   dict = dpl_dict_new(5);
-  fail_if(NULL == dict, NULL);
+  dpl_assert_ptr_not_null(dict);
 
   /* add all the keys */
   for (i = 0 ; i < nkeys ; i++)
@@ -348,7 +348,7 @@ START_TEST(remove_test)
   for (i = 0 ; i < nkeys ; i++)
     {
       dpl_dict_var_t *var = dpl_dict_get(dict, keys[i]);
-      fail_if(NULL == var, NULL);
+      dpl_assert_ptr_not_null(var);
       dpl_assert_str_eq(var->key, keys[i]);
       dpl_dict_remove(dict, var);
       dpl_assert_int_eq(nkeys-1-i, dpl_dict_count(dict));
@@ -369,7 +369,7 @@ START_TEST(remove_test)
   for (i = nkeys-1 ; i >= 0 ; i--)
     {
       dpl_dict_var_t *var = dpl_dict_get(dict, keys[i]);
-      fail_if(NULL == var, NULL);
+      dpl_assert_ptr_not_null(var);
       dpl_assert_str_eq(var->key, keys[i]);
       dpl_dict_remove(dict, var);
       dpl_assert_int_eq(i, dpl_dict_count(dict));
@@ -402,7 +402,7 @@ START_TEST(filter_test)
   static const int nmehs = 4;
 
   dict = dpl_dict_new(13);
-  fail_if(NULL == dict, NULL);
+  dpl_assert_ptr_not_null(dict);
 
   /* add all the keys */
   for (i = 0 ; i < nkeys ; i++)

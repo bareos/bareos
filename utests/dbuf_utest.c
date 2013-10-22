@@ -8,12 +8,12 @@
 START_TEST(dbuf_test)
 {
   dpl_dbuf_t    * b = dpl_dbuf_new();
-  fail_if(NULL == b, NULL);
+  dpl_assert_ptr_not_null(b);
   dpl_assert_int_eq(0, dpl_dbuf_length(b));
   dpl_dbuf_free(b);
 
   b = dpl_dbuf_new();
-  fail_if(NULL == b, NULL);
+  dpl_assert_ptr_not_null(b);
 
   const char str[] = "abcdefghijklmnopqrstuvwxyz";
   int             ret;

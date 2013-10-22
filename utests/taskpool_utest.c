@@ -31,16 +31,16 @@ START_TEST(taskpool_test)
 {
   dpl_task_pool_t	*p;
   p = dpl_task_pool_create(get_ctx(), "taskpool_test", 100);
-  fail_if(NULL == p);
+  dpl_assert_ptr_not_null(p);
   dpl_task_pool_destroy(p);
 
   p = dpl_task_pool_create(get_ctx(), "taskpool_test", 100);
-  fail_if(NULL == p);
+  dpl_assert_ptr_not_null(p);
   dpl_task_pool_cancel(p);
   dpl_task_pool_destroy(p);
 
   p = dpl_task_pool_create(get_ctx(), "taskpool_test", 100);
-  fail_if(NULL == p);
+  dpl_assert_ptr_not_null(p);
     //
     // Increase and decrease the number of workers
     //
@@ -75,7 +75,7 @@ START_TEST(taskpool_test)
     }
 
   dpl_task_t	    *tasks = calloc(1000, sizeof(*tasks));
-  fail_if(NULL == tasks, NULL);
+  dpl_assert_ptr_not_null(tasks);
   for (unsigned int i = 0; i < 100; i++)
     {
       tasks[i].func = tf;

@@ -16,7 +16,7 @@ START_TEST(empty_test)
   memset(&ipaddr, 0, sizeof(ipaddr));
 
   addrlist = dpl_addrlist_create("4244");
-  fail_if(NULL == addrlist, NULL);
+  dpl_assert_ptr_not_null(addrlist);
 
   /* an empty addrlist has a zero count */
   dpl_assert_int_eq(0, dpl_addrlist_count(addrlist));
@@ -46,7 +46,7 @@ START_TEST(create_from_str_1_test)
 
   /* create the addrlist */
   addrlist = dpl_addrlist_create_from_str("4244", "192.168.1.1");
-  fail_if(NULL == addrlist, NULL);
+  dpl_assert_ptr_not_null(addrlist);
 
   /* verify length */
   dpl_assert_int_eq(1, dpl_addrlist_count(addrlist));
@@ -112,7 +112,7 @@ START_TEST(create_from_str_3_test)
   /* create the addrlist */
   addrlist = dpl_addrlist_create_from_str("4244",
 					  "192.168.1.1:4242,192.168.1.2:4243,192.168.1.3");
-  fail_if(NULL == addrlist, NULL);
+  dpl_assert_ptr_not_null(addrlist);
 
   /* verify length */
   dpl_assert_int_eq(3, dpl_addrlist_count(addrlist));
