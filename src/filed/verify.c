@@ -337,11 +337,10 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
 static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr)
 {
    char buf[DEFAULT_NETWORK_BUFFER_SIZE];
-   int64_t n;
-   int64_t bufsiz = (int64_t)sizeof(buf);
+   uint64_t n;
+   uint64_t bufsiz = (uint64_t)sizeof(buf);
    FF_PKT *ff_pkt = (FF_PKT *)jcr->ff;
    uint64_t fileAddr = 0;             /* file address */
-
 
    Dmsg0(50, "=== read_digest\n");
    while ((n=bread(bfd, buf, bufsiz)) > 0) {

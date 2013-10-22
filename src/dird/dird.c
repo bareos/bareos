@@ -729,7 +729,7 @@ static bool check_resources()
             char **def_svalue, **svalue;   /* string value */
             uint32_t *def_ivalue, *ivalue; /* integer value */
             bool *def_bvalue, *bvalue;     /* bool value */
-            int64_t *def_lvalue, *lvalue;  /* 64 bit values */
+            uint64_t *def_lvalue, *lvalue;  /* 64 bit values */
             uint32_t offset;
 
             Dmsg4(1400, "Job \"%s\", field \"%s\" bit=%d def=%d\n",
@@ -802,10 +802,10 @@ static bool check_resources()
                   /*
                    * Handle 64 bit integer fields
                    */
-                  def_lvalue = (int64_t *)((char *)(job->jobdefs) + offset);
+                  def_lvalue = (uint64_t *)((char *)(job->jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_lvalue=%" lld " item %d offset=%u\n",
                        job->name(), job_items[i].name, *def_lvalue, i, offset);
-                  lvalue = (int64_t *)((char *)job + offset);
+                  lvalue = (uint64_t *)((char *)job + offset);
                   *lvalue = *def_lvalue;
                   set_bit(i, job->hdr.item_present);
                } else if (job_items[i].handler == store_bool) {
