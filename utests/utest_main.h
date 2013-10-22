@@ -50,4 +50,22 @@ extern Suite *  util_suite      (void);
 #define dpl_assert_str_eq(X, Y) _dpl_assert_str(X, ==, Y)
 #define dpl_assert_str_ne(X, Y) _dpl_assert_str(X, !=, Y)
 
+/* hopefully this will compile and silently truncate
+ * the literal when used on 32b platforms */
+#define BADPOINTER ((void *)(unsigned long)0xdeadbeefcafebabeULL)
+
+/* Pointer comparison macros with improved output compared to fail_unless() */
+/* O may be either == or != */
+#define _dpl_assert_ptr(X, O, Y) \
+    do { \
+	const void *_x = (X); \
+	const void *_y = (Y); \
+	ck_assert_msg(_x O _y, \
+		      "Assertion '"#X#O#Y"' failed: "#X"==%p, "#Y"==%p", _x, _y); \
+    } while(0)
+#define dpl_assert_ptr_eq(X, Y) _dpl_assert_ptr(X, ==, Y)
+#define dpl_assert_ptr_ne(X, Y) _dpl_assert_ptr(X, !=, Y)
+#define dpl_assert_ptr_null(X) _dpl_assert_ptr(X, ==, NULL)
+#define dpl_assert_ptr_not_null(X) _dpl_assert_ptr(X, !=, NULL)
+
 #endif

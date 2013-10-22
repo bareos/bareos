@@ -8,6 +8,9 @@ static int forty_two = 42;
 static const char *ford = "Ford";
 static const char *henrys_company = "Ford";
 static const char *gmc = "General Motors";
+static void *goodpointer1 = (void *)&three;
+static void *goodpointer2 = (void *)&forty_two;
+static void *nullpointer = NULL;
 
 /* Test the dpl_assert_*() macros in utest_main.h */
 
@@ -35,6 +38,16 @@ START_TEST(pass_test)
     dpl_assert_str_ne(ford, gmc);
     dpl_assert_str_ne(ford, "Chrysler");
     dpl_assert_str_ne("Chrysler", ford);
+
+    dpl_assert_ptr_not_null(goodpointer1);
+    dpl_assert_ptr_null(nullpointer);
+
+    dpl_assert_ptr_ne(goodpointer1, BADPOINTER);
+    dpl_assert_ptr_ne(BADPOINTER, goodpointer1);
+    dpl_assert_ptr_ne(goodpointer1, nullpointer);
+    dpl_assert_ptr_ne(nullpointer, goodpointer1);
+    dpl_assert_ptr_ne(goodpointer1, goodpointer2);
+    dpl_assert_ptr_ne(goodpointer2, goodpointer1);
 }
 END_TEST
 
@@ -46,7 +59,7 @@ END_TEST
  *
  * DPL_UTEST_UTEST_DO_FAILS=yes make check
  *
- * The expected result is that all of fail1..fail16 will fail.
+ * The expected result is that all of fail1..fail24 will fail.
  */
 
 START_TEST(fail1_test)
@@ -146,6 +159,54 @@ START_TEST(fail16_test)
 }
 END_TEST
 
+START_TEST(fail17_test)
+{
+    dpl_assert_ptr_null(goodpointer1);
+}
+END_TEST
+
+START_TEST(fail18_test)
+{
+    dpl_assert_ptr_not_null(nullpointer);
+}
+END_TEST
+
+START_TEST(fail19_test)
+{
+    dpl_assert_ptr_eq(goodpointer1, BADPOINTER);
+}
+END_TEST
+
+START_TEST(fail20_test)
+{
+    dpl_assert_ptr_eq(BADPOINTER, goodpointer1);
+}
+END_TEST
+
+START_TEST(fail21_test)
+{
+    dpl_assert_ptr_eq(goodpointer1, nullpointer);
+}
+END_TEST
+
+START_TEST(fail22_test)
+{
+    dpl_assert_ptr_eq(nullpointer, goodpointer1);
+}
+END_TEST
+
+START_TEST(fail23_test)
+{
+    dpl_assert_ptr_eq(goodpointer1, goodpointer2);
+}
+END_TEST
+
+START_TEST(fail24_test)
+{
+    dpl_assert_ptr_eq(goodpointer2, goodpointer1);
+}
+END_TEST
+
 
 Suite *
 utest_suite(void)
@@ -171,6 +232,14 @@ utest_suite(void)
       tcase_add_test(t, fail14_test);
       tcase_add_test(t, fail15_test);
       tcase_add_test(t, fail16_test);
+      tcase_add_test(t, fail17_test);
+      tcase_add_test(t, fail18_test);
+      tcase_add_test(t, fail19_test);
+      tcase_add_test(t, fail20_test);
+      tcase_add_test(t, fail21_test);
+      tcase_add_test(t, fail22_test);
+      tcase_add_test(t, fail23_test);
+      tcase_add_test(t, fail24_test);
     }
   suite_add_tcase(s, t);
   return s;
