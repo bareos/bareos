@@ -3,6 +3,25 @@
 
 #include "utest_main.h"
 
+/*
+ * TODO: Conditions known to be untested:
+ *
+ * - passing prefix=NULL to dpl_dict_filter_{no_,}prefix() should
+ *   be semantically identical to prefix="".  This will fail.
+ *
+ * - passing src=NULL to dpl_dict_filter_{no_,}prefix() should do
+ *   nothing.  This test will fail.
+ *
+ * - malloc() failures anywhere (really hard to test with
+ *   the check.h framework).
+ *
+ * - dpl_dict_get_value() looking up a missing key
+ *
+ * - dpl_dict_print() printing a dict inside a dict
+ *
+ * - passing dst=NULL to dpl_dict_copy()
+ */
+
 /* strings courtesy http://hipsteripsum.me/ */
 static const char * const keys[] = {
   "Sriracha", "Banksy", "trust", "fund", "Brooklyn",
@@ -132,15 +151,6 @@ START_TEST(dict_test)
 
   c = dpl_dict_count(dict);
   fail_unless(3 == c, NULL);
-
-#if 0
-  dpl_dict_var_free();
-  dpl_dict_add_value();
-  dpl_dict_remove();
-  dpl_dict_dup();
-  dpl_dict_filter_prefix();
-  dpl_dict_get_value();
-#endif
 
   dpl_dict_free(dict);
   fclose(fp);
