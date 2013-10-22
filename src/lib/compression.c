@@ -687,7 +687,12 @@ bool decompress_data(JCR *jcr, const char *last_fname, int32_t stream, char **da
       break;
    }
    default:
+#ifdef HAVE_LIBZ
       return decompress_with_zlib(jcr, last_fname, data, length, false);
+#else
+      Qmsg(jcr, M_ERROR, 0, _("Compression algorithm GZIP found, but not supported!\n"));
+      return false;
+#endif
    }
 }
 
