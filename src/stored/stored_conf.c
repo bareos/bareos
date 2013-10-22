@@ -188,7 +188,6 @@ static RES_ITEM dev_items[] = {
    { "maximumspoolsize", CFG_TYPE_SIZE64, ITEM(res_dev.max_spool_size), 0, 0, NULL },
    { "maximumjobspoolsize", CFG_TYPE_SIZE64, ITEM(res_dev.max_job_spool_size), 0, 0, NULL },
    { "driveindex", CFG_TYPE_PINT32, ITEM(res_dev.drive_index), 0, 0, NULL },
-   { "maximumpartsize", CFG_TYPE_SIZE64, ITEM(res_dev.max_part_size), 0, CFG_ITEM_DEPRECATED, NULL },
    { "mountpoint", CFG_TYPE_STRNAME, ITEM(res_dev.mount_point), 0, 0, NULL },
    { "mountcommand", CFG_TYPE_STRNAME, ITEM(res_dev.mount_command), 0, 0, NULL },
    { "unmountcommand", CFG_TYPE_STRNAME, ITEM(res_dev.unmount_command), 0, 0, NULL },

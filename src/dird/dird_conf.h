@@ -274,10 +274,13 @@ public:
    uint32_t ndmp_loglevel;            /* NDMP Protocol specific loglevel to use */
    uint32_t ndmp_blocksize;           /* NDMP Protocol specific blocksize to use */
    uint32_t FDport;                   /* Where File daemon listens */
+   uint32_t MaxConcurrentJobs;        /* Maximum concurrent jobs */
+   uint32_t NumConcurrentJobs;        /* number of concurrent jobs running */
    uint64_t SoftQuota;                /* Soft Quota permitted in bytes */
    uint64_t HardQuota;                /* Maximum permitted quota in bytes */
    uint64_t GraceTime;                /* Time remaining on gracetime */
    uint64_t QuotaLimit;               /* The total softquota supplied if over grace */
+   uint64_t max_bandwidth;            /* Limit speed on this client */
    utime_t SoftQuotaGracePeriod;      /* Grace time for softquota */
    utime_t FileRetention;             /* file retention period in seconds */
    utime_t JobRetention;              /* job retention period in seconds */
@@ -286,8 +289,6 @@ public:
    char *username;                    /* Username to use for authentication if protocol supports it */
    s_password password;
    CATRES *catalog;                   /* Catalog resource */
-   int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
-   int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
@@ -296,15 +297,12 @@ public:
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    bool passive;                      /* Passive Client */
-
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
    bool AutoPrune;                    /* Do automatic pruning? */
    bool StrictQuotas;                 /* Enable strict quotas? */
    bool QuotaIncludeFailedJobs;       /* Ignore failed jobs when calculating quota */
-   int64_t max_bandwidth;             /* Limit speed on this client */
-
 };
 
 /*
@@ -337,8 +335,8 @@ public:
    bool enabled;                      /* Set if device is enabled */
    bool autochanger;                  /* Set if autochanger */
    bool AllowCompress;                /* Set if this Storage should allow jobs to enable compression */
-   int64_t StorageId;                 /* Set from Storage DB record */
-   int64_t max_bandwidth;             /* Limit speed on this storage daemon for replication */
+   uint64_t StorageId;                /* Set from Storage DB record */
+   uint64_t max_bandwidth;            /* Limit speed on this storage daemon for replication */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    uint32_t drives;                   /* Number of drives in autochanger */
    STORERES *paired_storage;          /* Paired storage configuration item for protocols like NDMP */
@@ -424,9 +422,9 @@ public:
    utime_t MaxFullInterval;           /* Maximum time interval between Fulls */
    utime_t MaxDiffInterval;           /* Maximum time interval between Diffs */
    utime_t DuplicateJobProximity;     /* Permitted time between duplicicates */
-   int64_t spool_size;                /* Size of spool file for this job */
-   int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
-   int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
+   uint64_t spool_size;               /* Size of spool file for this job */
+   uint32_t MaxConcurrentJobs;        /* Maximum concurrent jobs */
+   uint32_t NumConcurrentJobs;        /* number of concurrent jobs running */
    bool allow_mixed_priority;         /* Allow jobs with higher priority concurrently with this */
 
    MSGSRES *messages;                 /* How and where to send messages */
@@ -471,7 +469,7 @@ public:
    bool IgnoreDuplicateJobChecking;   /* Ignore Duplicate Job Checking */
 
    alist *base;                       /* Base jobs */
-   int64_t max_bandwidth;             /* Speed limit on this job */
+   uint64_t max_bandwidth;            /* Speed limit on this job */
 
    /* Methods */
 };

@@ -738,7 +738,7 @@ static int create_cmd(UAContext *ua, const char *cmd)
 }
 
 static inline int setbwlimit_filed(UAContext *ua, CLIENTRES *client,
-                                   int64_t limit, char *Job)
+                                   uint64_t limit, char *Job)
 {
    /*
     * Connect to File daemon
@@ -774,7 +774,7 @@ static inline int setbwlimit_filed(UAContext *ua, CLIENTRES *client,
 }
 
 static inline int setbwlimit_stored(UAContext *ua, STORERES *store,
-                                    int64_t limit, char *Job)
+                                    uint64_t limit, char *Job)
 {
    /*
     * Check the storage daemon protocol.

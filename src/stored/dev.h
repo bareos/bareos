@@ -181,9 +181,9 @@ struct VOLUME_CAT_INFO {
    uint32_t VolCatMaxFiles;           /* Maximum files to write to volume */
    uint64_t VolCatMaxBytes;           /* Max bytes to write to volume */
    uint64_t VolCatCapacityBytes;      /* capacity estimate */
+   uint64_t VolMediaId;               /* MediaId */
    btime_t VolReadTime;               /* time spent reading */
    btime_t VolWriteTime;              /* time spent writing this Volume */
-   int64_t VolMediaId;                /* MediaId */
    utime_t VolFirstWritten;           /* Time of first write */
    utime_t VolLastWritten;            /* Time of last write */
    bool InChanger;                    /* Set if vol in current magazine */
@@ -536,9 +536,9 @@ public:
    uint32_t StartFile;                /* Start write file */
    uint32_t StartBlock;               /* Start write block */
    uint32_t EndBlock;                 /* Ending block written */
-   int64_t  VolMediaId;               /* MediaId */
-   int64_t job_spool_size;            /* Current job spool size */
-   int64_t max_job_spool_size;        /* Max job spool size */
+   uint64_t  VolMediaId;              /* MediaId */
+   uint64_t job_spool_size;           /* Current job spool size */
+   uint64_t max_job_spool_size;       /* Max job spool size */
    char VolumeName[MAX_NAME_LENGTH];  /* Volume name */
    char pool_name[MAX_NAME_LENGTH];   /* Pool name */
    char pool_type[MAX_NAME_LENGTH];   /* Pool type */

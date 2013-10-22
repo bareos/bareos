@@ -916,7 +916,7 @@ static int getJob_to_migrate(JCR *jcr)
    char *p;
    idpkt ids, mid, jids;
    db_int64_ctx ctx;
-   int64_t pool_bytes;
+   uint64_t pool_bytes;
    time_t ttime;
    struct tm tm;
    char dt[MAX_TIME_LENGTH];
@@ -996,7 +996,7 @@ static int getJob_to_migrate(JCR *jcr)
          pool_bytes = ctx.value;
          Dmsg2(dbglevel, "highbytes=%lld pool=%lld\n", jcr->res.rpool->MigrationHighBytes,
                pool_bytes);
-         if (pool_bytes < (int64_t)jcr->res.rpool->MigrationHighBytes) {
+         if (pool_bytes < jcr->res.rpool->MigrationHighBytes) {
             Jmsg(jcr, M_INFO, 0, _("No Volumes found to %s.\n"), jcr->get_ActionName());
             goto ok_out;
          }
@@ -1052,7 +1052,7 @@ static int getJob_to_migrate(JCR *jcr)
             Dmsg2(dbglevel, "lowbytes=%s poolafter=%s\n",
                   edit_int64_with_commas(jcr->res.rpool->MigrationLowBytes, ed1),
                   edit_int64_with_commas(pool_bytes, ed2));
-            if (pool_bytes <= (int64_t)jcr->res.rpool->MigrationLowBytes) {
+            if (pool_bytes <= jcr->res.rpool->MigrationLowBytes) {
                Dmsg0(dbglevel, "We should be done.\n");
                break;
             }

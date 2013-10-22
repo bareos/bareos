@@ -387,7 +387,7 @@ static bool die_cmd(JCR *jcr)
 static bool setbandwidth_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
-   int64_t bw = 0;
+   uint64_t bw = 0;
    JCR *cjcr;
    char Job[MAX_NAME_LENGTH];
 
