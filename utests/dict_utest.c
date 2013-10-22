@@ -472,6 +472,103 @@ START_TEST(filter_test)
 }
 END_TEST
 
+/*
+ * Test the "lowered" feature, which is almost but not quite
+ * the same as case insensitivity.
+ */
+START_TEST(lowered_test)
+{
+  dpl_dict_t *dict;
+  dpl_status_t r;
+  const char *s;
+  dpl_dict_var_t *var;
+  const char value[] = "World";
+  const char value2[] = "Mondo";
+  const char value3[] = "Monde";
+
+  dict = dpl_dict_new(13);
+  dpl_assert_ptr_not_null(dict);
+
+  /* Add a value, lowered */
+  r = dpl_dict_add(dict, "Hello", value, /*lowered*/1);
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(1, dpl_dict_count(dict));
+
+  /* The actual key used is internally lowercased, so
+   * doing a normal get on the key originally given
+   * should fail */
+  dpl_assert_str_eq(NULL, dpl_dict_get_value(dict, "Hello"));
+
+  /* Likewise, doing a normal get on a lowercase version
+   * of the original key should succeed */
+  dpl_assert_str_eq(value, dpl_dict_get_value(dict, "hello"));
+
+  /* dpl_dict_get_lowered internally lowercases the key it's
+   * given, so it can be used with keys of any casing */
+
+  var = BADPOINTER;
+  r = dpl_dict_get_lowered(dict, "hello", &var);
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_ptr_not_null(var);
+  dpl_assert_ptr_ne(var, BADPOINTER);
+  dpl_assert_str_eq(value, dpl_sbuf_get_str(var->val->string));
+
+  var = BADPOINTER;
+  r = dpl_dict_get_lowered(dict, "Hello", &var);
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_ptr_not_null(var);
+  dpl_assert_ptr_ne(var, BADPOINTER);
+  dpl_assert_str_eq(value, dpl_sbuf_get_str(var->val->string));
+
+  var = BADPOINTER;
+  r = dpl_dict_get_lowered(dict, "HELLO", &var);
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_ptr_not_null(var);
+  dpl_assert_ptr_ne(var, BADPOINTER);
+  dpl_assert_str_eq(value, dpl_sbuf_get_str(var->val->string));
+
+  var = BADPOINTER;
+  r = dpl_dict_get_lowered(dict, "hElLo", &var);
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_ptr_not_null(var);
+  dpl_assert_ptr_ne(var, BADPOINTER);
+  dpl_assert_str_eq(value, dpl_sbuf_get_str(var->val->string));
+
+  /* check that dpl_dict_get_lowered() will report as missing
+   * some keys that we know not to be present */
+
+  var = BADPOINTER;
+  r = dpl_dict_get_lowered(dict, "HellonEarth", &var);
+  dpl_assert_int_eq(DPL_ENOENT, r);
+  /* the value of `var' on failure is not documented */
+
+  var = BADPOINTER;
+  r = dpl_dict_get_lowered(dict, "Hell", &var);
+  dpl_assert_int_eq(DPL_ENOENT, r);
+  /* the value of `var' on failure is not documented */
+
+  var = BADPOINTER;
+  r = dpl_dict_get_lowered(dict, "daffyduck", &var);
+  dpl_assert_int_eq(DPL_ENOENT, r);
+  /* the value of `var' on failure is not documented */
+
+  /* Verify that inserting another key which maps to the
+   * same lowercased string, replaces the first key */
+
+  r = dpl_dict_add(dict, "hello", value2, /*lowered*/1);
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(1, dpl_dict_count(dict));
+  dpl_assert_str_eq(value2, dpl_dict_get_value(dict, "hello"));
+
+  r = dpl_dict_add(dict, "hELLo", value3, /*lowered*/1);
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(1, dpl_dict_count(dict));
+  dpl_assert_str_eq(value3, dpl_dict_get_value(dict, "hello"));
+
+  dpl_dict_free(dict);
+}
+END_TEST
+
 Suite *
 dict_suite(void)
 {
@@ -483,6 +580,7 @@ dict_suite(void)
   tcase_add_test(d, replace_test);
   tcase_add_test(d, remove_test);
   tcase_add_test(d, filter_test);
+  tcase_add_test(d, lowered_test);
   suite_add_tcase(s, d);
   return s;
 }
