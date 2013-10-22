@@ -3,6 +3,35 @@
 
 #include "utest_main.h"
 
+/* strings courtesy http://hipsteripsum.me/ */
+static const char * const keys[] = {
+  "Sriracha", "Banksy", "trust", "fund", "Brooklyn",
+  "polaroid", "Viral", "selfies", "kogi", "Austin",
+  "PBR", "stumptown", "artisan", "bespoke", "8-bit",
+  "Odd", "Future", "Pinterest", "mlkshk", "McSweeney's",
+  "ennui", "Wes", "Anderson" };
+static const int nkeys = sizeof(keys)/sizeof(keys[0]);
+
+static const char *
+make_key(int i, char *buf, size_t maxlen)
+{
+  int j;
+  static const char chars[] = "abcdefghijklmnopqrstuvwxyz";
+  if (i >= maxlen)
+    return NULL;
+  for (j = 0 ; j < i ; j++)
+    buf[j] = chars[j % (sizeof(chars)-1)];
+  buf[j] = '\0';
+  return buf;
+}
+
+static const char *
+make_value(int i, char *buf, size_t maxlen)
+{
+    snprintf(buf, maxlen, "X%dY", i);
+    return buf;
+}
+
 
 static int
 utest_dpl_dict_dump_one(dpl_dict_var_t * v, void *user_data)
@@ -118,26 +147,6 @@ START_TEST(dict_test)
 }
 END_TEST
 
-static const char *
-make_key(int i, char *buf, size_t maxlen)
-{
-  int j;
-  static const char chars[] = "abcdefghijklmnopqrstuvwxyz";
-  if (i >= maxlen)
-    return NULL;
-  for (j = 0 ; j < i ; j++)
-    buf[j] = chars[j % (sizeof(chars)-1)];
-  buf[j] = '\0';
-  return buf;
-}
-
-static const char *
-make_value(int i, char *buf, size_t maxlen)
-{
-    snprintf(buf, maxlen, "X%dY", i);
-    return buf;
-}
-
 /*
  * Use the dict with long key strings; tests
  * some corner cases e.g. in the hash function.
@@ -202,14 +211,6 @@ START_TEST(iterate_break_test)
   dpl_status_t r;
   struct break_test_state state = { 0, 0, 0 };
   char valbuf[128];
-  /* strings courtesy http://hipsteripsum.me/ */
-  static const char * const keys[] = {
-    "Sriracha", "Banksy", "trust", "fund", "Brooklyn",
-    "polaroid", "Viral", "selfies", "kogi", "Austin",
-    "PBR", "stumptown", "artisan", "bespoke", "8-bit",
-    "Odd", "Future", "Pinterest", "mlkshk", "McSweeney's",
-    "ennui", "Wes", "Anderson" };
-  static const int nkeys = sizeof(keys)/sizeof(keys[0]);
 
   dict = dpl_dict_new(13);
   fail_if(NULL == dict, NULL);
@@ -329,14 +330,6 @@ START_TEST(remove_test)
   int i;
   dpl_status_t r;
   char valbuf[128];
-  /* strings courtesy http://hipsteripsum.me/ */
-  static const char * const keys[] = {
-    "Sriracha", "Banksy", "trust", "fund", "Brooklyn",
-    "polaroid", "Viral", "selfies", "kogi", "Austin",
-    "PBR", "stumptown", "artisan", "bespoke", "8-bit",
-    "Odd", "Future", "Pinterest", "mlkshk", "McSweeney's",
-    "ennui", "Wes", "Anderson" };
-  static const int nkeys = sizeof(keys)/sizeof(keys[0]);
 
   /* create with a small table to ensure we have some chains */
   dict = dpl_dict_new(5);
