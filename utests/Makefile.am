@@ -1,6 +1,12 @@
 check_PROGRAMS = alltests
 TESTS = alltests
 
+TESTENV_ARGS= --top-srcdir $(top_srcdir)
+if COVERAGE
+TESTENV_ARGS+= --coverage
+endif
+TESTS_ENVIRONMENT= sh $(srcdir)/testenv.sh $(TESTENV_ARGS) --
+
 alltests_CPPFLAGS = -I$(top_srcdir)/libdroplet/include $(CHECK_CFLAGS)
 alltests_CFLAGS = -std=gnu99
 alltests_LDADD = $(top_builddir)/libdroplet/libdroplet.la $(JSON_LIBS) -lcrypto $(CHECK_LIBS) -lrt
