@@ -423,11 +423,7 @@ dpl_dict_add_value(dpl_dict_t *dict,
 
       nval = dpl_value_dup(value);
       if (NULL == nval)
-        {
-          free(var->key);
-          free(var);
           return DPL_ENOMEM;
-        }
 
       dpl_value_free(var->val);
       var->val = nval;
