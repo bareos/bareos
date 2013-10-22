@@ -379,6 +379,99 @@ START_TEST(remove_test)
 }
 END_TEST
 
+/*
+ * Test the dpl_dict_filter_prefix() and
+ * dpl_dict_filter_no_prefix() functions.
+ */
+START_TEST(filter_test)
+{
+  dpl_dict_t *dict;
+  dpl_dict_t *d2;
+  int i;
+  dpl_status_t r;
+  const char *exp;
+  const char *act;
+  char valbuf[128];
+  /* strings courtesy http://hipsteripsum.me/ */
+  static const char * const keys[] = {
+    "Sriracha", "mehBanksy", "trust", "fund", "Brooklyn",
+    "mehpolaroid", "Viral", "mehselfies", "mehkogi", "Austin" };
+  static const int nkeys = sizeof(keys)/sizeof(keys[0]);
+  static const int is_meh[] = { 0, 1, 0, 0, 0,
+				1, 0, 1, 1, 0 };
+  static const int nmehs = 4;
+
+  dict = dpl_dict_new(13);
+  fail_if(NULL == dict, NULL);
+
+  /* add all the keys */
+  for (i = 0 ; i < nkeys ; i++)
+    {
+      dpl_dict_add(dict, keys[i],
+			 make_value(i, valbuf, sizeof(valbuf)),
+			 /* lowered */0);
+    }
+  dpl_assert_int_eq(nkeys, dpl_dict_count(dict));
+
+  /* create a new dict and copy everything across using an empty prefix */
+  d2 = dpl_dict_new(13);
+  r = dpl_dict_filter_prefix(d2, dict, "");
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(nkeys, dpl_dict_count(dict));
+  dpl_assert_int_eq(nkeys, dpl_dict_count(d2));
+  for (i = 0 ; i < nkeys ; i++)
+    {
+      exp = make_value(i, valbuf, sizeof(valbuf));
+      act = dpl_dict_get_value(d2, keys[i]);
+      dpl_assert_str_eq(exp, act);
+    }
+  dpl_dict_free(d2);
+
+  /* create a new dict and copy just the matching ones */
+  d2 = dpl_dict_new(13);
+  r = dpl_dict_filter_prefix(d2, dict, "meh");
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(nkeys, dpl_dict_count(dict));
+  dpl_assert_int_eq(nmehs, dpl_dict_count(d2));
+  for (i = 0 ; i < nkeys ; i++)
+    {
+      if (is_meh[i])
+	{
+	  exp = make_value(i, valbuf, sizeof(valbuf));
+	  /*
+	   * dpl_dict_filter_prefix() inexplicably removes the prefix
+	   * from the keys it copies across.  This was probably very
+	   * convenient for the person who wrote the code, but isn't
+	   * all that easy to explain.  But this is why we add a
+	   * strlen() here.
+	   */
+	  act = dpl_dict_get_value(d2, keys[i]+strlen("meh"));
+	  dpl_assert_str_eq(exp, act);
+	}
+    }
+  dpl_dict_free(d2);
+
+  /* create a new dict and copy just the non-matching ones */
+  d2 = dpl_dict_new(13);
+  r = dpl_dict_filter_no_prefix(d2, dict, "meh");
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(nkeys, dpl_dict_count(dict));
+  dpl_assert_int_eq(nkeys-nmehs, dpl_dict_count(d2));
+  for (i = 0 ; i < nkeys ; i++)
+    {
+      if (!is_meh[i])
+	{
+	  exp = make_value(i, valbuf, sizeof(valbuf));
+	  act = dpl_dict_get_value(d2, keys[i]);
+	  dpl_assert_str_eq(exp, act);
+	}
+    }
+  dpl_dict_free(d2);
+
+  dpl_dict_free(dict);
+}
+END_TEST
+
 Suite *
 dict_suite(void)
 {
@@ -389,6 +482,7 @@ dict_suite(void)
   tcase_add_test(d, iterate_break_test);
   tcase_add_test(d, replace_test);
   tcase_add_test(d, remove_test);
+  tcase_add_test(d, filter_test);
   suite_add_tcase(s, d);
   return s;
 }
