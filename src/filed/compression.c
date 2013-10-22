@@ -102,12 +102,12 @@ bool setup_compression_context(b_ctx &bctx)
           */
          if ((bctx.ff_pkt->flags & FO_SPARSE) ||
              (bctx.ff_pkt->flags & FO_OFFSETS)) {
-            bctx.chead = (Bytef *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
-            bctx.cbuf = (Bytef *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
+            bctx.chead = (uint8_t *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
+            bctx.cbuf = (uint8_t *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
             bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size - (sizeof(comp_stream_header) + OFFSET_FADDR_SIZE);
          } else {
-            bctx.chead = (Bytef *)bctx.jcr->compress.deflate_buffer;
-            bctx.cbuf = (Bytef *)bctx.jcr->compress.deflate_buffer + sizeof(comp_stream_header);
+            bctx.chead = (uint8_t *)bctx.jcr->compress.deflate_buffer;
+            bctx.cbuf = (uint8_t *)bctx.jcr->compress.deflate_buffer + sizeof(comp_stream_header);
             bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size - sizeof(comp_stream_header);
          }
 
@@ -122,10 +122,10 @@ bool setup_compression_context(b_ctx &bctx)
          bctx.chead = NULL;
          if ((bctx.ff_pkt->flags & FO_SPARSE) ||
              (bctx.ff_pkt->flags & FO_OFFSETS)) {
-            bctx.cbuf = (Bytef *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
+            bctx.cbuf = (uint8_t *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
             bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size - OFFSET_FADDR_SIZE;
          } else {
-            bctx.cbuf = (Bytef *)bctx.jcr->compress.deflate_buffer;
+            bctx.cbuf = (uint8_t *)bctx.jcr->compress.deflate_buffer;
             bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size;
          }
          bctx.wbuf = bctx.jcr->compress.deflate_buffer; /* compressed output here */

@@ -784,12 +784,17 @@ bool decompress_data(JCR *jcr,
       break;
    }
    default:
+#ifdef HAVE_LIBZ
       switch (stream) {
       case STREAM_SPARSE_GZIP_DATA:
          return decompress_with_zlib(jcr, last_fname, data, length, true, false, want_data_stream);
       default:
          return decompress_with_zlib(jcr, last_fname, data, length, false, false, want_data_stream);
       }
+#else
+      Qmsg(jcr, M_ERROR, 0, _("Compression algorithm GZIP found, but not supported!\n"));
+      return false;
+#endif
    }
 }
 
