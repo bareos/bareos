@@ -57,6 +57,36 @@ START_TEST(default_default_port_test)
 }
 END_TEST
 
+START_TEST(multiple_add_test)
+{
+  dpl_addrlist_t *addrlist;
+  dpl_status_t r;
+
+  /* create the addrlist */
+  addrlist = dpl_addrlist_create(NULL);
+  dpl_assert_ptr_not_null(addrlist);
+
+  /* add an address */
+  r = dpl_addrlist_add_from_str(addrlist, "192.168.1.1:80");
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(1, dpl_addrlist_count(addrlist));
+
+  /* adding the same address again is a no-op (well not
+   * quite but close enough). */
+  r = dpl_addrlist_add_from_str(addrlist, "192.168.1.1:80");
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(1, dpl_addrlist_count(addrlist));
+
+  /* an address which is the same IP but a different
+   * port counts as a different address */
+  r = dpl_addrlist_add_from_str(addrlist, "192.168.1.1:8080");
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(2, dpl_addrlist_count(addrlist));
+
+  dpl_addrlist_free(addrlist);
+}
+END_TEST
+
 START_TEST(create_from_str_1_test)
 {
   dpl_addrlist_t *addrlist;
@@ -215,6 +245,7 @@ addrlist_suite(void)
   TCase *t = tcase_create("base");
   tcase_add_test(t, empty_test);
   tcase_add_test(t, default_default_port_test);
+  tcase_add_test(t, multiple_add_test);
   tcase_add_test(t, create_from_str_1_test);
   tcase_add_test(t, create_from_str_3_test);
   suite_add_tcase(s, t);
