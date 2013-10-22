@@ -34,6 +34,29 @@ START_TEST(empty_test)
 }
 END_TEST
 
+START_TEST(default_default_port_test)
+{
+  dpl_addrlist_t *addrlist;
+  dpl_status_t r;
+  char *s;
+
+  /* create the addrlist */
+  addrlist = dpl_addrlist_create(NULL);
+  dpl_assert_ptr_not_null(addrlist);
+
+  r = dpl_addrlist_add_from_str(addrlist, "192.168.1.1");
+  dpl_assert_int_eq(DPL_SUCCESS, r);
+  dpl_assert_int_eq(1, dpl_addrlist_count(addrlist));
+
+  /* verify the string form of the addrlist */
+  s = dpl_addrlist_get(addrlist);
+  dpl_assert_str_eq(s, "192.168.1.1:80");
+
+  free(s);
+  dpl_addrlist_free(addrlist);
+}
+END_TEST
+
 START_TEST(create_from_str_1_test)
 {
   dpl_addrlist_t *addrlist;
@@ -191,6 +214,7 @@ addrlist_suite(void)
   Suite *s = suite_create("addrlist");
   TCase *t = tcase_create("base");
   tcase_add_test(t, empty_test);
+  tcase_add_test(t, default_default_port_test);
   tcase_add_test(t, create_from_str_1_test);
   tcase_add_test(t, create_from_str_3_test);
   suite_add_tcase(s, t);
