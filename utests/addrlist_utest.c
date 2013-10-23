@@ -484,6 +484,29 @@ START_TEST(blacklist_timeout_test)
 }
 END_TEST
 
+/* Passing addrlist=null to various functions fails cleanly */
+START_TEST(null_test)
+{
+  char *s;
+
+  /* dpl_addrlist_get() has an odd return for this corner case, but whatever */
+  s = dpl_addrlist_get(NULL);
+  dpl_assert_str_eq(s, "");
+  free(s);
+
+  dpl_assert_int_eq(0, dpl_addrlist_count(NULL));
+  dpl_addrlist_free(NULL);
+  dpl_assert_int_eq(DPL_FAILURE, dpl_addrlist_blacklist(NULL, "192.168.1.32", "80", 30));
+  dpl_assert_int_eq(DPL_FAILURE, dpl_addrlist_unblacklist(NULL, "192.168.1.32", "80"));
+  dpl_assert_int_eq(DPL_FAILURE, dpl_addrlist_set_from_str(NULL, "192.168.1.32"));
+  dpl_assert_ptr_null(dpl_addrlist_create_from_str(NULL, NULL));
+  dpl_addrlist_lock(NULL);
+  dpl_addrlist_unlock(NULL);
+  dpl_assert_int_eq(DPL_ENOENT, dpl_addrlist_get_nth(NULL, 1, &s, &s, NULL, NULL));
+  dpl_assert_int_eq(DPL_FAILURE, dpl_addrlist_add(NULL, "192.168.1.32", "80"));
+}
+END_TEST
+
 
 Suite *
 addrlist_suite(void)
@@ -497,6 +520,7 @@ addrlist_suite(void)
   tcase_add_test(t, create_from_str_3_test);
   tcase_add_test(t, blacklist_test);
   tcase_add_test(t, blacklist_timeout_test);
+  tcase_add_test(t, null_test);
   suite_add_tcase(s, t);
   return s;
 }
