@@ -4,6 +4,7 @@
 #include <check.h>
 
 extern Suite *  dict_suite      (void);
+extern Suite *  droplet_suite   (void);
 extern Suite *  vec_suite       (void);
 extern Suite *  sbuf_suite      (void);
 extern Suite *  dbuf_suite      (void);
