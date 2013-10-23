@@ -321,6 +321,7 @@ typedef enum
     DPL_SYSMD_MASK_VERSION       = (1u<<17),
   } dpl_sysmd_mask_t;
 
+#define DPL_ETAG_SIZE 64
 typedef struct
 {
   dpl_sysmd_mask_t mask;
@@ -330,7 +331,7 @@ typedef struct
   time_t atime;
   time_t mtime;
   time_t ctime;
-#define DPL_SYSMD_ETAG_SIZE 64
+#define DPL_SYSMD_ETAG_SIZE DPL_ETAG_SIZE
   char etag[DPL_SYSMD_ETAG_SIZE+1];
   dpl_location_constraint_t location_constraint;
 #define DPL_SYSMD_OWNER_SIZE 32
@@ -365,7 +366,7 @@ typedef struct
   union
   {
     time_t time;
-    char etag[MD5_DIGEST_LENGTH];
+    char etag[DPL_ETAG_SIZE+1];
   };
 } dpl_condition_one_t;
 
