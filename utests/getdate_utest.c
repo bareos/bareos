@@ -26,6 +26,26 @@ START_TEST(rfc3501_test)
 }
 END_TEST
 
+/* The getdate.y parser allows for RFC-822 style (comments)
+ * which are stripped out. */
+START_TEST(bracket_test)
+{
+  time_t t;
+
+  /* This is a quick and dirty way to break up the tokens
+   * in a date without introducing spaces. */
+  t = dpl_get_date("15-Oct-2010()03:19:52()+1100", (time_t *)NULL);
+  dpl_assert_int_eq(t, 1287073192);
+
+  t = dpl_get_date("15-Oct-2010(  )03:19:52(\t  )+1100", (time_t *)NULL);
+  dpl_assert_int_eq(t, 1287073192);
+
+  t = dpl_get_date("15-Oct-2010 ( hello ) 03:19:52(world)+1100", (time_t *)NULL);
+  dpl_assert_int_eq(t, 1287073192);
+
+}
+END_TEST
+
 START_TEST(standard_timezone_test)
 {
     static const time_t zulu = 813727192;
@@ -302,6 +322,7 @@ getdate_suite(void)
   Suite *s = suite_create("getdate");
   TCase *t = tcase_create("base");
   tcase_add_test(t, rfc3501_test);
+  tcase_add_test(t, bracket_test);
   tcase_add_test(t, standard_timezone_test);
   tcase_add_test(t, military_timezone_test);
   tcase_add_test(t, numeric_timezone_test);
