@@ -13,6 +13,7 @@
 #
 [Unit]
 Description=Bareos Storage Daemon service
+Documentation=man:bareos-sd(8)
 Requires=nss-lookup.target network.target remote-fs.target time-sync.target
 After=nss-lookup.target network.target remote-fs.target time-sync.target
 # Wants=
@@ -28,6 +29,7 @@ PIDFile=@piddir@/bareos-sd.@sd_port@.pid
 # EnvironmentFile=-/etc/sysconfig/bareos-sd
 StandardOutput=syslog
 ExecStart=@sbindir@/bareos-sd -c @sysconfdir@/bareos-sd.conf
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
