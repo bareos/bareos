@@ -14,7 +14,6 @@
 [Unit]
 Description=Bareos Director Daemon service
 Documentation=man:bareos-dir(8)
-Alias=bareos-dir
 Requires=nss-lookup.target network.target remote-fs.target time-sync.target
 After=nss-lookup.target network.target remote-fs.target time-sync.target postgresql.service mysql.service
 # Dependency about the database
