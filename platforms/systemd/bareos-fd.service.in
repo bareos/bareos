@@ -13,6 +13,7 @@
 #
 [Unit]
 Description=Bareos File Daemon service
+Documentation=man:bareos-fd(8)
 Requires=nss-lookup.target network.target remote-fs.target time-sync.target
 After=nss-lookup.target network.target remote-fs.target time-sync.target
 # Wants=
@@ -27,6 +28,8 @@ WorkingDirectory=@working_dir@
 PIDFile=@piddir@/bareos-fd.@fd_port@.pid
 StandardOutput=syslog
 ExecStart=@sbindir@/bareos-fd -c @sysconfdir@/bareos-fd.conf
+Restart=on-failure
+# IOSchedulingClass=idle
 
 [Install]
 WantedBy=multi-user.target
