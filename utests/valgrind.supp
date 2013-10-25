@@ -1,0 +1,11 @@
+{
+    memleak_in_mocked_getpwuid
+    Memcheck:Leak
+    fun:malloc
+    ...
+    fun:getpwuid
+    ...
+    fun:dpl_ctx_new
+    fun:ctx_new_defaults_test
+    ...
+}

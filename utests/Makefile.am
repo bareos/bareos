@@ -29,3 +29,7 @@ clean: clean-am
 	nodefiles=`find $(SUBDIRS) -type f -name \*.gcno -print` ; test -z "$$nodefiles" || $(RM) $$nodefiles
 	datafiles=`find $(SUBDIRS) -type f -name \*.gcno -print` ; test -z "$$datafiles" || $(RM) $$datafiles
 endif
+
+EXTRA_DIST= \
+    testenv.sh \
+    valgrind.supp
