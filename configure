@@ -30960,10 +30960,11 @@ COMPRESS_MANPAGES=yes
 
 case "$DISTNAME" in
 aix)
+   TAPEDRIVE="/dev/rmt0.1"
    PSCMD="ps -e -o pid,comm"
    PFILES="${PFILES} \
       platforms/aix/Makefile"
-   TAPEDRIVE="/dev/rmt0.1"
+   largefile_support="yes"
   ;;
 alpha)
    PTHREAD_LIB="-lpthread -lexc"
