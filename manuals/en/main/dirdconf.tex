@@ -1776,7 +1776,7 @@ with the same name starts.  This happens most frequently when the first job
 runs longer than expected because no tapes are available.
 
 If this directive is enabled duplicate jobs will be run.  If
-the directive is set to {\bf no} (default) then only one job of a given name
+the directive is set to {\bf no} then only one job of a given name
 may run at one time, and the action that Bareos takes to ensure only
 one job runs is determined by the other directives (see below).
 
@@ -1784,6 +1784,8 @@ If {\bf Allow Duplicate Jobs} is set to {\bf no} and two jobs
 are present and none of the three directives given below permit
 cancelling a job, then the current job (the second one started)
 will be cancelled.
+
+The default is {\bf yes}.
 
 % \item [Allow Higher Duplicates = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
 % \index[general]{Allow Higher Duplicates}
