@@ -129,6 +129,7 @@ void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
    char buf[128];
 #ifdef HAVE_POLL
    nfds_t nfds;
+   int events;
    struct pollfd *pfds;
 #endif
 
@@ -235,9 +236,20 @@ void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
    memset(pfds, 0, sizeof(struct pollfd) * nfds);
 
    nfds = 0;
+   events = POLLIN;
+#if defined(POLLRDNORM)
+   events |= POLLRDNORM;
+#endif
+#if defined(POLLRDBAND)
+   events |= POLLRDBAND;
+#endif
+#if defined(POLLPRI)
+   events |= POLLPRI;
+#endif
+
    foreach_alist(fd_ptr, sockfds) {
       pfds[nfds].fd = fd_ptr->fd;
-      pfds[nfds].events |= POLL_IN;
+      pfds[nfds].events = events;
       nfds++;
    }
 #endif
@@ -285,7 +297,7 @@ void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
 
       cnt = 0;
       foreach_alist(fd_ptr, sockfds) {
-         if (pfds[cnt++].revents & POLLIN) {
+         if (pfds[cnt++].revents & events) {
 #endif
             /*
              * Got a connection, now accept it.
