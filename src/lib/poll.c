@@ -41,10 +41,22 @@
 int wait_for_readable_fd(int fd, int msec, bool ignore_interupts)
 {
    struct pollfd pfds[1];
+   int events;
+
+   events = POLLIN;
+#if defined(POLLRDNORM)
+   events |= POLLRDNORM;
+#endif
+#if defined(POLLRDBAND)
+   events |= POLLRDBAND;
+#endif
+#if defined(POLLPRI)
+   events |= POLLPRI;
+#endif
 
    memset(pfds, 0, sizeof(pfds));
    pfds[0].fd = fd;
-   pfds[0].events |= POLLIN;
+   pfds[0].events = events;
 
    for ( ;; ) {
       switch(poll(pfds, 1, msec)) {
@@ -56,7 +68,7 @@ int wait_for_readable_fd(int fd, int msec, bool ignore_interupts)
          }
          return -1;                  /* error return */
       default:
-         if (pfds[0].revents & POLLIN) {
+         if (pfds[0].revents & events) {
             return 1;
          } else {
             return 0;
@@ -73,10 +85,19 @@ int wait_for_readable_fd(int fd, int msec, bool ignore_interupts)
 int wait_for_writable_fd(int fd, int msec, bool ignore_interupts)
 {
    struct pollfd pfds[1];
+   int events;
+
+   events = POLLOUT;
+#if defined(POLLWRNORM)
+   events |= POLLWRNORM;
+#endif
+#if defined POLLWRBAND
+   events |= POLLWRBAND;
+#endif
 
    memset(pfds, 0, sizeof(pfds));
    pfds[0].fd = fd;
-   pfds[0].events |= POLLOUT;
+   pfds[0].events = events;
 
    for ( ;; ) {
       switch(poll(pfds, 1, msec)) {
@@ -88,7 +109,7 @@ int wait_for_writable_fd(int fd, int msec, bool ignore_interupts)
          }
          return -1;                  /* error return */
       default:
-         if (pfds[0].revents & POLLOUT) {
+         if (pfds[0].revents & events) {
             return 1;
          } else {
             return 0;
