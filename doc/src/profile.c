@@ -173,14 +173,15 @@ This path is prepended to all HTTP resource names (or pathnames of
 files, for the `posix` backend).  The default is `"/"`.
 
 @par access_key = \<string\>
-Used as to perform HTTP Basic Authorization for the `cdmi` backend,
-or Amazon's AWS authorization for the `s3` backend.  There is no default.
+Used as the username for HTTP Basic Authorization in the `cdmi` and
+`sproxy` backends, or Amazon's AWS authorization for the `s3` backend.
+There is no default.
 
 @par secret_key = \<string\>
-Used as to perform HTTP Basic Authorization for the `cdmi` backend,
-or Amazon's AWS authorization for the `s3` backend.  Note that for the
-`cdmi` backend this string is sent unencrypted, so you should make sure
-to set `use_https` to `true` to provide any level of security at all.
+Used as the password for HTTP Basic Authorization for the `cdmi` and
+`sproxyd` backends, or Amazon's AWS authorization for the `s3` backend.
+Note that with Basic the password is sent unencrypted, so you should make
+sure to set `use_https` to `true` to provide any level of security at all.
 There is no default.
 
 @par ssl_cert_file = \<path\>

@@ -742,38 +742,6 @@ add_data_to_json_body(const dpl_req_t *req,
   return ret;
 }
 
-static dpl_status_t
-add_authorization_to_headers(const dpl_req_t *req,
-                             dpl_dict_t *headers)
-{
-  int ret, ret2;
-  char basic_str[1024];
-  int basic_len;
-  char base64_str[1024];
-  int base64_len;
-  char auth_str[1024];
-
-  snprintf(basic_str, sizeof (basic_str), "%s:%s", req->ctx->access_key, req->ctx->secret_key);
-  basic_len = strlen(basic_str);
-
-  base64_len = dpl_base64_encode((const u_char *) basic_str, basic_len, (u_char *) base64_str);
-
-  snprintf(auth_str, sizeof (auth_str), "Basic %.*s", base64_len, base64_str);
-
-  ret2 = dpl_dict_add(headers, "Authorization", auth_str, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
-}
-
 /**
  * build headers from request
  *
@@ -1155,7 +1123,7 @@ dpl_cdmi_req_build(const dpl_req_t *req,
         }
     }
 
-  ret2 = add_authorization_to_headers(req, headers);
+  ret2 = dpl_add_basic_authorization_to_headers(req, headers);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

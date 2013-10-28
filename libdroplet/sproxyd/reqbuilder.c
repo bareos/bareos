@@ -221,6 +221,13 @@ dpl_sproxyd_req_build(const dpl_req_t *req,
       goto end;
     }
 
+  ret2 = dpl_add_basic_authorization_to_headers(req, headers);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
   if (req_mask & DPL_SPROXYD_REQ_CONSISTENT)
     {
       ret2 = dpl_dict_add(headers, DPL_SPROXYD_X_SCAL_REPLICA_POLICY, DPL_SPROXYD_CONSISTENT, 0);

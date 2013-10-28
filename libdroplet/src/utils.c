@@ -920,6 +920,7 @@ dpl_default_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
 {
   fputs(message, stderr);
   fputc('\n', stderr);
+  fflush(stderr);
 }
 
 static dpl_log_func_t dpl_logfunc = dpl_default_logfunc;
