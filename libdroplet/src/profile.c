@@ -691,6 +691,11 @@ dpl_profile_post(dpl_ctx_t *ctx)
 
       method = SSLv23_method();
       ctx->ssl_ctx = SSL_CTX_new(method);
+      if (NULL == ctx->ssl_ctx)
+	{
+	  ret = DPL_FAILURE;
+	  goto end;
+	}
 
       //SSL_CTX_set_ssl_version(ctx->ssl_ctx, TLSv1_method());
 
