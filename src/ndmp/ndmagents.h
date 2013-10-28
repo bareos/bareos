@@ -278,8 +278,8 @@ struct ndm_job_param {
 	unsigned long		n_node_entry;
 	unsigned long long	root_node;
 
-	unsigned long		bytes_written;
-	unsigned long		bytes_read;
+	unsigned long long	bytes_written;
+	unsigned long long	bytes_read;
 };
 
 /* ndma_job.c */
