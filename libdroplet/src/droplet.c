@@ -289,6 +289,10 @@ dpl_ctx_new(const char *droplet_dir,
  * for applications which need to use the Droplet library without a
  * profile file.
  *
+ * Note that to create a context without needing a droplet directory at
+ * all, applications should set the profile variable @c pricing_dir to
+ * an empty string.
+ *
  * See @ref profile "Profile File" for details of the profile variables.
  * The droplet directory is set by a special variable in the dict called
  * @c droplet_dir, and the profile name by a special variable called @c
