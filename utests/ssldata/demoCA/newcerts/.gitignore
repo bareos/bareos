@@ -1,0 +1,3 @@
+# This directory needs to exist or 'openssl ca' complains
+# but the stuff written here is redundant
+*.pem

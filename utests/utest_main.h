@@ -14,6 +14,7 @@ extern Suite *  utest_suite     (void);
 extern Suite *  addrlist_suite  (void);
 extern Suite *  getdate_suite   (void);
 extern Suite *  util_suite      (void);
+extern Suite *  profile_suite   (void);
 
 /* Provide versions of the <check.h> comparison assert macros which do
  * not expand their arguments twice.  This allows arguments to have side

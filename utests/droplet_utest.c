@@ -1,16 +1,9 @@
 /* unit test the code in droplet.c */
-#define _GNU_SOURCE	/* for RTLD_NEXT */
 #include <sys/types.h>
 #include <limits.h>
 #include <stdio.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
-#ifdef __linux__
-#include <pwd.h>
-#include <dlfcn.h>
-#endif
 #include <errno.h>
 #include <check.h>
 #include <droplet.h>
@@ -180,144 +173,6 @@ START_TEST(condition_test)
 }
 END_TEST
 
-static char *
-make_unique_directory(void)
-{
-  char *path;
-  int len;
-  char cwd[PATH_MAX];
-  static int idx;
-
-  dpl_assert_ptr_not_null(getcwd(cwd, sizeof(cwd)));
-  len = strlen(cwd) + sizeof("/tmp.utest.") + 32 + 32;
-  path = malloc(len);
-  dpl_assert_ptr_not_null(path);
-  snprintf(path, len, "%s/tmp.utest.%d.%d", cwd, (int)getpid(), idx++);
-
-  if (mkdir(path, 0755) < 0)
-    {
-      perror(path);
-      fail();
-    }
-
-  return path;
-}
-
-static void
-rmtree(const char *path)
-{
-  char cmd[PATH_MAX];
-
-  snprintf(cmd, sizeof(cmd), "/bin/rm -rf '%s'", path);
-  system(cmd);
-}
-
-static void
-write_file(const char *filename, const char *contents)
-{
-  int fd;
-  int remain;
-  int n;
-
-  fd = open(filename, O_WRONLY|O_TRUNC|O_CREAT, 0644);
-  if (fd < 0)
-    {
-      perror(filename);
-      fail();
-    }
-
-  remain = strlen(contents);
-  while (remain > 0)
-    {
-      n = write(fd, contents, strlen(contents));
-      if (n < 0)
-	{
-	  if (errno == EINTR)
-	    continue;
-	  perror(filename);
-	  fail();
-	}
-      remain -= n;
-      contents += n;
-    }
-
-  close(fd);
-}
-
-#ifdef __linux__
-static char *force_home = NULL;
-
-struct passwd *
-getpwuid(uid_t uid)
-{
-  static struct passwd *(*real_getpwuid)(uid_t) = NULL;
-  struct passwd *pwd = NULL;
-
-  if (real_getpwuid == NULL)
-    {
-      real_getpwuid = (struct passwd *(*)(uid_t))dlsym(RTLD_NEXT, "getpwuid");
-    }
-  pwd = real_getpwuid(uid);
-  if (force_home && pwd)
-    pwd->pw_dir = force_home;
-  return pwd;
-}
-
-
-
-/* Note that because the libcheck framework runs each test in it's
- * process, we can get away with futzing with our own environment and
- * not cleaning up afterwards. */
-
-START_TEST(ctx_new_defaults_test)
-{
-  dpl_ctx_t *ctx;
-  char *home;
-  char dir[PATH_MAX];
-  char profile[PATH_MAX];
-
-  /* Make sure there's a directory ~/.droplet
-   * containing a file default.profile */
-
-  /*
-   * Note, we can't just change the $HOME environment variable because
-   * Droplet doesn't look at it, instead it does a getpwuid(getuid()) to
-   * work out the home directory.  So we have to do some horrible
-   * juggling to mock getpwuid().
-   */
-  home = make_unique_directory();
-  force_home = home;
-
-  strcpy(dir, home);
-  strcat(dir, "/.droplet");
-  if (mkdir(dir, 0755) < 0)
-    {
-      perror(dir);
-      fail();
-    }
-
-  strcpy(profile, dir);
-  strcat(profile, "/default.profile");
-  write_file(profile,
-    "host = localhost\n");
-
-  /* create a context with all defaults */
-  unsetenv("DPLDIR");
-  unsetenv("DPLPROFILE");
-  ctx = dpl_ctx_new(NULL, NULL);
-  dpl_assert_ptr_not_null(ctx);
-  dpl_assert_str_eq(ctx->droplet_dir, dir);
-  dpl_assert_str_eq(ctx->profile_name, "default");
-
-  dpl_ctx_free(ctx);
-  rmtree(home);
-  free(home);
-  force_home = NULL;
-}
-END_TEST
-#endif
-
-
 Suite *
 droplet_suite()
 {
@@ -327,9 +182,6 @@ droplet_suite()
   tcase_add_test(t, init_test);
   tcase_add_test(t, option_test);
   tcase_add_test(t, condition_test);
-#ifdef __linux__
-  tcase_add_test(t, ctx_new_defaults_test);
-#endif
   suite_add_tcase(s, t);
   return s;
 }

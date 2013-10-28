@@ -6,6 +6,13 @@
     fun:getpwuid
     ...
     fun:dpl_ctx_new
-    fun:ctx_new_defaults_test
+    ...
+}
+{
+    bug_in_libssl_1
+    Memcheck:Cond
+    fun:ASN1_STRING_set
+    ...
+    fun:SSL_CTX_use_certificate_chain_file
     ...
 }
