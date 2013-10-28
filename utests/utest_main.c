@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <check.h>
@@ -52,11 +53,51 @@ be_valground(int argc, char **argv)
   exit(1);
 }
 
+/*
+ * How to run the test driver under a debugger.
+ *
+ * $ libtool --mode=execute gdb utests/.libs/alltests
+ * (gdb) set args --debug
+ * (gdb) break whichever_test
+ * (gdb) run
+ *
+ */
+
 int
 main(int argc, char ** argv)
 {
-  be_valground(argc, argv);
-  SRunner   *r = srunner_create(dict_suite());
+  int i;
+  SRunner *r;
+  int debug_flag = 0;
+  enum print_output output = CK_NORMAL;
+  enum { OPT_DEBUG=1, OPT_VERBOSE };
+  static const struct option options[] = {
+    { "--debug", no_argument, NULL, OPT_DEBUG },
+    { "--verbose", no_argument, NULL, OPT_VERBOSE },
+    { NULL, 0, NULL, 0 }
+  };
+
+  while (i = getopt_long(argc, argv, "", options, NULL) > 0)
+    {
+      switch (i)
+	{
+	case OPT_VERBOSE:
+	  output = CK_VERBOSE;
+	  break;
+	case OPT_DEBUG:
+	  debug_flag = 1;
+	  break;
+	default:
+	  exit(1);
+	}
+    }
+
+  if (debug_flag)
+    putenv("CK_DEFAULT_TIMEOUT=1000000");
+  else
+    be_valground(argc, argv);
+
+  r = srunner_create(dict_suite());
   srunner_add_suite(r, getdate_suite());
   srunner_add_suite(r, droplet_suite());
   srunner_add_suite(r, vec_suite());
@@ -70,7 +111,9 @@ main(int argc, char ** argv)
 #ifdef __linux__
   srunner_add_suite(r, profile_suite());
 #endif
-  srunner_run_all(r, CK_NORMAL);
+  if (debug_flag)
+    srunner_set_fork_status(r, CK_NOFORK);
+  srunner_run_all(r, output);
   int number_failed = srunner_ntests_failed(r);
   srunner_free(r);
   return (0 == number_failed) ? EXIT_SUCCESS : EXIT_FAILURE;
