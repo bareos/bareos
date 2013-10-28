@@ -32,12 +32,13 @@ be_valground(int argc, char **argv)
   if (r < 0 || !S_ISREG(sb.st_mode))
     return;
 
-  newargv = (char **)malloc((argc+6) * sizeof(char **));
+  newargv = (char **)malloc((argc+7) * sizeof(char **));
   newargv[newargc++] = VALGRIND_BIN;
   newargv[newargc++] = "--tool=memcheck";
   newargv[newargc++] = "-q";
   newargv[newargc++] = "--leak-check=full";
   newargv[newargc++] = "--suppressions=valgrind.supp";
+  newargv[newargc++] = "--num-callers=32";
   while (*argv)
     newargv[newargc++] = *argv++;
   newargv[newargc] = NULL;
