@@ -213,8 +213,11 @@ file. It is called:
 \begin{verbatim}
 Usage: bls [options] <device-name>
        -b <file>       specify a bootstrap file
-       -c <file>       specify a config file
-       -d <level>      specify debug level
+       -c <file>       specify a Storage configuration file
+       -D <director>   specify a director name specified in the Storage
+                       configuration file for the Key Encryption Key selection
+       -d <nn>         set debug level to <nn>
+       -dt             print timestamp in debug output
        -e <file>       exclude list
        -i <file>       include list
        -j              list jobs
@@ -450,13 +453,18 @@ It is called:
 
 \footnotesize
 \begin{verbatim}
-Usage: bextract [-d debug_level] <device-name> <directory-to-store-files>
+Usage: bextract <options> <bareos-archive-device-name> <directory-to-store-files>
        -b <file>       specify a bootstrap file
-       -dnn            set debug level to nn
+       -c <file>       specify a Storage configuration file
+       -D <director>   specify a director name specified in the Storage
+                       configuration file for the Key Encryption Key selection
+       -d <nn>         set debug level to <nn>
+       -dt             print timestamp in debug output
        -e <file>       exclude list
        -i <file>       include list
        -p              proceed inspite of I/O errors
-       -V              specify Volume names (separated by |)
+       -v              verbose
+       -V <volumes>    specify Volume names (separated by |)
        -?              print this message
 \end{verbatim}
 \normalsize
@@ -584,23 +592,32 @@ It is called:
 \begin{verbatim}
 
 Usage: bscan [options] <Bareos-archive>
-       -b bootstrap   specify a bootstrap file
-       -c <file>      specify configuration file
-       -d <nn>        set debug level to nn
-       -m             update media info in database
-       -n <name>      specify the database name (default Bareos)
-       -u <user>      specify database user name (default Bareos)
-       -P <password>  specify database password (default none)
-       -h <host>      specify database host (default NULL)
-       -p             proceed inspite of I/O errors
-       -r             list records
-       -s             synchronize or store in database
-       -v             verbose
-       -V <Volumes>   specify Volume names (separated by |)
-       -w <dir>       specify working directory (default from conf file)
-       -?             print this message
+       -B <driver name>  specify the database driver name (default NULL) <postgresql|mysql|sqlite>
+       -b bootstrap      specify a bootstrap file
+       -c <file>         specify configuration file
+       -d <nn>           set debug level to nn
+       -dt               print timestamp in debug output
+       -m                update media info in database
+       -D <director>     specify a director name specified in the Storage
+                         configuration file for the Key Encryption Key selection
+       -n <name>         specify the database name (default Bareos)
+       -u <user>         specify database user name (default Bareos)
+       -P <password>     specify database password (default none)
+       -h <host>         specify database host (default NULL)
+       -t <port>         specify database port (default 0)
+       -p                proceed inspite of I/O errors
+       -r                list records
+       -s                synchronize or store in database
+       -S                show scan progress periodically
+       -v                verbose
+       -V <Volumes>      specify Volume names (separated by |)
+       -w <dir>          specify working directory (default from conf file)
+       -?                print this message
 \end{verbatim}
 \normalsize
+
+As Bareos supports loading its database backend dynamically you need to specify
+the right database driver to use using the {\bf -B} option.
 
 If you are using MySQL or PostgreSQL, there is no need to supply a working
 directory since in that case, bscan knows where the databases are. However, if
@@ -908,15 +925,18 @@ command, for example, you must first bscan the new Volume into the catalog.
 \footnotesize
 \begin{verbatim}
 Usage: bcopy [-d debug_level] <input-archive> <output-archive>
-       -b bootstrap      specify a bootstrap file
-       -c <file>         specify configuration file
-       -dnn              set debug level to nn
-       -i                specify input Volume names (separated by |)
-       -o                specify output Volume names (separated by |)
-       -p                proceed inspite of I/O errors
-       -v                verbose
-       -w dir            specify working directory (default /tmp)
-       -?                print this message
+       -b bootstrap    specify a bootstrap file
+       -c <file>       specify configuration file
+       -D <director>   specify a director name specified in the Storage
+                       configuration file for the Key Encryption Key selection
+       -dnn            set debug level to nn
+       -dt             print timestamp in debug output
+       -i              specify input Volume names (separated by |)
+       -o              specify output Volume names (separated by |)
+       -p              proceed inspite of I/O errors
+       -v              verbose
+       -w dir          specify working directory (default /tmp)
+       -?              print this message
 \end{verbatim}
 \normalsize
 
@@ -961,13 +981,16 @@ read by {\bf btape}
 \footnotesize
 \begin{verbatim}
 Usage: btape <options> <device_name>
-       -b <file>   specify bootstrap file
-       -c <file>   set configuration file to file
-       -d <nn>     set debug level to nn
-       -p          proceed inspite of I/O errors
-       -s          turn off signals
-       -v          be verbose
-       -?          print this message.
+       -b <file>     specify bootstrap file
+       -c <file>     set configuration file to file
+       -D <director> specify a director name specified in the Storage
+                     configuration file for the Key Encryption Key selection
+       -d <nn>       set debug level to nn
+       -dt           print timestamp in debug output
+       -p            proceed inspite of I/O errors
+       -s            turn off signals
+       -v            be verbose
+       -?            print this message.
 \end{verbatim}
 \normalsize
 
@@ -1118,13 +1141,19 @@ It is called:
 
 \footnotesize
 \begin{verbatim}
-Usage: bsmtp [-f from] [-h mailhost] [-s subject] [-c copy] [recipient ...]
+Usage: bsmtp [-f from] [-h mailhost] [-s subject] [-c copy] [recipient ...t
+       -4          forces bsmtp to use IPv4 addresses only.
+       -6          forces bsmtp to use IPv6 addresses only.
+       -8          set charset to UTF-8
+       -a          use any ip protocol for address resolution
        -c          set the Cc: field
-       -dnn        set debug level to nn
+       -d <nn>     set debug level to <nn>
+       -dt         print a timestamp in debug output
        -f          set the From: field
-       -h          use mailhost:port as the bsmtp server
-       -l          limit the lines accepted to nn
+       -h          use mailhost:port as the SMTP server
        -s          set the Subject: field
+       -r          set the Reply-To: field
+       -l          set the maximum number of lines to send (default: unlimited)
        -?          print this message.
 \end{verbatim}
 \normalsize
@@ -1217,19 +1246,22 @@ It is called:
 
 \footnotesize
 \begin{verbatim}
-Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug_level]
-  <working-directory> <Bareos-database> <user> <password> [<dbhost>] [<dbport>]
-       -b              batch mode
-       -C              catalog name in the director conf file
-       -c              Director conf filename
-       -B              print catalog configuration and exit
-       -d <nn>         set debug level to <nn>
-       -dt             print timestamp in debug output
-       -f              fix inconsistencies
-       -v              verbose
-       -?              print this message
+Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug level] [-D driver name] <working-directory> <bareos-database> <user> <password> [<dbhost>] [<dbport>]
+       -b                batch mode
+       -C                catalog name in the director conf file
+       -c                Director conf filename
+       -B                print catalog configuration and exit
+       -d <nn>           set debug level to <nn>
+       -dt               print a timestamp in debug output
+       -D <driver name>  specify the database driver name (default NULL) <postgresql|mysql|sqlite>
+       -f                fix inconsistencies
+       -v                verbose
+       -?                print this message
 \end{verbatim}
 \normalsize
+
+As Bareos supports loading its database backend dynamically you need to specify
+the right database driver to use using the {\bf -D} option.
 
 If the \textbf{-B} option is specified, bareos-dbcheck will print out catalog
 information in a simple text based format. This is useful to backup it in a
@@ -1537,7 +1569,7 @@ applied against a list of filenames.
 \index[general]{bpluginfo}
 \index[general]{Command!bpluginfo}
 
-The  main purpose of bpluginfo is to display different information about Bareos plugin. You can
-       use it to check a plugin name, author, license and short description. You can use -f option  to
-       display API implemented by the plugin. Some plugins may require additional '-a' option for val-
-       idating a Bareos Daemons API. In most cases it is not required.
+The main purpose of bpluginfo is to display different information about Bareos plugin. You can
+use it to check a plugin name, author, license and short description. You can use -f option  to
+display API implemented by the plugin. Some plugins may require additional '-a' option for val-
+idating a Bareos Daemons API. In most cases it is not required.
