@@ -1,0 +1,47 @@
+<?php
+
+$title = 'File';
+$this->headTitle($title);
+
+?>
+
+<table class="table">
+
+<tr>
+	<th>File ID</th>
+	<th>Job ID</th>
+	<th>Path ID</th>
+	<th>Filename ID</th>
+	<th>Filename</th>
+	<th></th>
+	<th></th>
+</tr>
+
+<?php foreach($this->paginator as $file) : ?>
+
+<tr>
+
+	<td><?php echo $this->escapeHtml($file->fileid); ?></td>
+	<td><?php echo $this->escapeHtml($file->jobid); ?></td>
+	<td><?php echo $this->escapeHtml($file->pathid); ?></td>
+	<td><?php echo $this->escapeHtml($file->filenameid); ?></td>
+	<td><?php echo $this->escapeHtml($file->name); ?></td>
+	<td><a href="#">Show revisions</a></td>
+	<td><a href="#">Restore last revision</a></td>
+	
+</tr>
+
+<?php endforeach; ?>
+
+</table>
+
+<?php
+
+echo $this->paginationControl(
+			$this->paginator, 
+			'Elastic',
+			array('partial/paginator.phtml', 'File'),
+			array('route' => $this->route)
+		);
+
+?>

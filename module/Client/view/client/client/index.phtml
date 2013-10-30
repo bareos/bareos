@@ -1,0 +1,34 @@
+<?php
+
+$title = 'Client';
+$this->headTitle($title);
+
+?>
+
+<table class="table">
+
+<tr>
+	<th>Client</th>
+	<th>Name</th>
+	<th>Version</th>
+	<th>Autoprune</th>
+	<th>Fileretention</th>
+	<th>Jobretention</th>
+</tr>
+
+<?php foreach($clients as $client) : ?>
+
+<tr>
+
+	<td><a href="<?php echo $this->url('client', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($client->clientid); ?></a></td>
+	<td><?php echo $this->escapeHtml($client->name); ?></td>
+	<td><?php echo $this->escapeHtml($client->uname); ?></td>
+	<td><?php echo $this->escapeHtml($client->autoprune); ?></td>
+	<td><?php echo $this->escapeHtml($client->fileretention); ?></td>
+	<td><?php echo $this->escapeHtml($client->jobretention); ?></td>
+
+</tr>
+
+<?php endforeach; ?>
+
+</table>

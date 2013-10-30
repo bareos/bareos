@@ -1,0 +1,28 @@
+<?php
+
+$title = 'Pool';
+$this->headTitle($title);
+
+?>
+
+<table class="table">
+
+<tr>
+	<th>ID</th>
+	<th>Name</th>
+	<th>Type</th>
+</tr>
+
+<?php foreach($pools as $pool) : ?>
+
+<tr>
+
+	<td><a href="<?php echo $this->url('pool', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($pool->poolid); ?></a></td>
+	<td><?php echo $this->escapeHtml($pool->name); ?></td>
+	<td><?php echo $this->escapeHtml($pool->pooltype); ?></td>
+
+</tr>
+
+<?php endforeach; ?>
+
+</table>

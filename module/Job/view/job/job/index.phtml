@@ -1,0 +1,54 @@
+<?php
+
+$title = 'Job';
+$this->headTitle($title);
+
+?>
+
+<table class="table table-striped table-hover">
+
+<tr>
+	<th>Job</th>
+	<th>Name</th>
+	<th>Client</th>
+	<th>Type</th>
+	<th>Level</th>
+	<th>Start</th>
+	<th>End</th>
+	<th>Duration</th>
+	<th>Status</th>
+	<th>Log</th>
+	
+</tr>
+
+<?php foreach ($this->paginator as $job) : ?>
+
+<tr>
+
+	<td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $job->jobid)); ?>"><?php echo $this->escapeHtml($job->jobid); ?></a></td>
+	<td><?php echo $this->escapeHtml($job->jobname); ?></td>
+	<td><a href="<?php echo $this->url('client', array('action' => 'details', 'clientid' => $job->clientid)); ?>"><?php echo $this->escapeHtml($job->clientname); ?></a></td>
+	<td><?php echo $this->printJobType($job->type); ?></td>
+	<td><?php echo $this->printJobLevel($job->level); ?></td>
+	<td><?php echo $this->escapeHtml($job->starttime); ?></td>
+	<td><?php echo $this->escapeHtml($job->endtime); ?></td>
+	<td><?php echo $this->printJobDuration($job->starttime, $job->endtime); ?></td>
+	<td><?php echo $this->printJobStatus($job->jobstatus); ?></td>
+	<td><a href="<?php echo $this->url('log', array('action' => 'job', 'jobid' => $job->clientid)); ?>">View</a></td>
+	
+</tr>
+
+<?php endforeach; ?>
+
+</table>
+
+<?php
+
+echo $this->paginationControl(
+			$this->paginator, 
+			'Elastic',
+			array('partial/paginator.phtml', 'Job'),
+			array('route' => 'job')
+		);
+
+?>

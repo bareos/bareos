@@ -1,0 +1,140 @@
+<?php
+
+$title = 'Dashboard';
+$this->headTitle($title);
+
+?>
+
+<script type="text/javascript">
+    
+    function chart1() {
+
+      var data = [
+	  ['Running', <?php echo $this->jobsRunning; ?>],
+	  ['Completed successful', <?php echo $this->jobsTerminated; ?>],
+	  ['Terminated with Errors', <?php echo $this->jobsTerminatedWithErrors; ?>],
+	  ['Non-fatal Errors', <?php echo $this->jobsWithNonFatalErrors; ?>],
+	  ['Fatal Errors', <?php echo $this->jobsWithFatalErrors; ?>],
+	  ['Canceled by user', <?php echo $this->jobsCanceled; ?>],
+	  ['Verify found difference', <?php echo $this->jobsVerifyFoundDiff; ?>],
+	  ['Waiting for Client', <?php echo $this->jobsWaitingForClient; ?>],
+	  ['Waiting for Storage daemon', <?php echo $this->jobsWaitingForStorageDaemon; ?>],
+	  ['Waiting for new media', <?php echo $this->jobsWaitingForNewMedia; ?>],
+	  ['Waiting for media mount', <?php echo $this->jobsWaitingForMediaMount; ?>],
+	  ['Waiting for storage resource', <?php echo $this->jobsWaitingForStorageResource; ?>],
+	  ['Waiting for job resource', <?php echo $this->jobsWaitingForJobResource; ?>],
+	  ['Waiting for client resource', <?php echo $this->jobsWaitingForClientResource; ?>],
+	  ['Waiting on maximum jobs', <?php echo $this->jobsWaitingOnMaximumJobs; ?>],
+	  ['Waiting on start time', <?php echo $this->jobsWaitingOnStartTime; ?>],
+	  ['Waiting on higher priority jobs', <?php echo $this->jobsWaitingOnHigherPriorityJobs; ?>],
+	  ['SD despooling attributes', <?php echo $this->jobsSDdespoolingAttributes; ?>],
+	  ['Doing batch insert file records', <?php echo $this->jobsBatchInsertFileRecords; ?>],
+	  ['Created not yet running', <?php echo $this->jobsCreatedNotRunning; ?>],
+	  ['Blocked', <?php echo $this->jobsBlocked; ?>]
+      ];
+      
+      var plot1 = jQuery.jqplot('chart1',[data],
+      {
+	seriesDefaults: {
+	  renderer: jQuery.jqplot.PieRenderer,
+	  rendererOptions: { 
+	    showDataLabels: true
+	  }
+      },
+	legend:{ 
+	  show: true,
+	  location: 'w'
+	},
+	grid: {
+	  drawGridLines: true
+        }
+      });
+      
+    }
+
+    $(document).ready(
+      function(){
+	chart1();
+      }
+    );
+    
+</script>
+
+<div class="row">
+
+<div class="col-md-9">
+        
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title"><?php echo $this->translate('Last 24 hours job statistic') ?></h3>
+            </div>
+            
+            <div class="panel-body">
+            
+            <div class="col-md-4">
+            
+	      <table class="table" style="font-size: 9pt;">
+		<tr><td>Running</td><td><?php echo $this->jobsRunning; ?></td></tr>
+		<tr><td>Completed successful</td><td><?php echo $this->jobsTerminated; ?></td></tr>
+		<tr><td>Terminated with errors</td><td><?php echo $this->jobsTerminatedWithErrors; ?></td></tr>
+		<tr><td>Non-fatal errors</td><td><?php echo $this->jobsWithNonFatalErrors; ?></td></tr>
+		<tr><td>Fatal errors</td><td><?php echo $this->jobsWithFatalErrors; ?></td></tr>
+		<tr><td>Canceled by user</td><td><?php echo $this->jobsCanceled; ?></td></tr>
+		<tr><td>Verify found difference</td><td><?php echo $this->jobsVerifyFoundDiff; ?></td></tr>
+		<tr><td>Waiting for client</td><td><?php echo $this->jobsWaitingForClient; ?></td></tr>
+		<tr><td>Waiting for storage daemon</td><td><?php echo $this->jobsWaitingForStorageDaemon; ?></td></tr>
+		<tr><td>Waiting for new media</td><td><?php echo $this->jobsWaitingForNewMedia; ?></td></tr>
+		<tr><td>Waiting for media mount</td><td><?php echo $this->jobsWaitingForMediaMount; ?></td></tr>
+		<tr><td>Waiting for storage resource</td><td><?php echo $this->jobsWaitingForStorageResource; ?></td></tr>
+		<tr><td>Waiting for job resource</td><td><?php echo $this->jobsWaitingForJobResource; ?></td></tr>
+		<tr><td>Waiting for client resource</td><td><?php echo $this->jobsWaitingForClientResource; ?></td></tr>
+		<tr><td>Waiting on maximum jobs</td><td><?php echo $this->jobsWaitingOnMaximumJobs; ?></td></tr>
+		<tr><td>Waiting on start time</td><td><?php echo $this->jobsWaitingOnStartTime; ?></td></tr>
+		<tr><td>Waiting on higher priority jobs</td><td><?php echo $this->jobsWaitingOnHigherPriorityJobs; ?></td></tr>
+		<tr><td>SD despooling attributes</td><td><?php echo $this->jobsSDdespoolingAttributes; ?></td></tr>
+		<tr><td>Doing batch insert file records</td><td><?php echo $this->jobsBatchInsertFileRecords; ?></td></tr>
+		<tr><td>Created not yet running</td><td><?php echo $this->jobsCreatedNotRunning; ?></td></tr>
+		<tr><td>Blocked</td><td><?php echo $this->jobsBlocked; ?></td></tr>
+	      </table>
+	      
+            </div>
+            
+            <div class="col-md-5">
+            
+	      <div id="chart1" style="width:500px; height:500px;"></div>
+            
+            </div>
+            
+            </div>
+            
+        </div>
+        
+</div>
+    
+<div class="col-md-3">
+        
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title"><?php echo $this->translate('Catalog statistic') ?></h3>
+            </div>
+            
+            <div class="panel-body">
+                        
+	      <table class="table">
+		<tr><td>Clients</td><td><?php echo $this->clientNum; ?></td></tr>
+		<tr><td>Filesets</td><td><?php echo $this->filesetNum; ?></td></tr>
+		<tr><td>Pools</td><td><?php echo $this->poolNum; ?></td></tr>
+		<tr><td>Volumes</td><td><?php echo $this->volumeNum; ?></td></tr>
+		<tr><td>Total Jobs</td><td><?php echo $this->jobNum; ?></td></tr>
+		<tr><td>Total files</td><td><?php echo $this->fileNum; ?></td></tr>
+		<tr><td>Total logs</td><td><?php echo $this->logNum; ?></td></tr>
+	      </table>
+            
+            </div>
+            
+        </div>
+        
+</div>
+            
+    
+</div>

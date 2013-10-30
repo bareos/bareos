@@ -1,0 +1,158 @@
+<?php
+
+namespace Job\Model;
+
+use Zend\Db\ResultSet\ResultSet;
+use Zend\Db\TableGateway\TableGateway;
+use Zend\Db\Sql\Select;
+use Zend\Paginator\Adapter\DbSelect;
+use Zend\Paginator\Paginator;
+
+class JobTable
+{
+	protected $tableGateway;
+
+	public function __construct(TableGateway $tableGateway)
+	{
+		$this->tableGateway = $tableGateway;
+	}
+
+	public function fetchAll($paginated=false)
+	{
+		if($paginated) {
+			$select = new Select();
+			$select->from('job');
+			$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
+			$select->order('job.jobid DESC');
+			$resultSetPrototype = new ResultSet();
+			$resultSetPrototype->setArrayObjectPrototype(new Job());
+			$paginatorAdapter = new DbSelect(
+						$select,
+						$this->tableGateway->getAdapter(),
+						$resultSetPrototype
+					);
+			$paginator = new Paginator($paginatorAdapter);
+			return $paginator;
+		}
+
+		$resultSet = $this->tableGateway->select();
+		return $resultSet;
+	}
+
+	public function getJob($jobid)
+	{
+		$jobid = (int) $jobid;
+		$rowset = $this->tableGateway->select(array('jobid' => $jobid));
+		$row = $rowset->current();
+		if(!$row) {
+			throw new \Exception("Could not find row $jobid");
+		}
+		return $row;
+	}
+
+	public function getJobCountLast24HoursByStatus($status) 
+	{
+		$current_time = date("Y-m-d H:i:s",time());
+		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*23));
+	
+		$select = new Select();
+		$select->from('job');
+		
+		if($status == "C")
+		{
+			$select->where("jobstatus = 'C' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "B")
+		{
+			$select->where("jobstatus = 'B' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "T")
+		{
+			$select->where("jobstatus = 'T' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "R")
+		{
+			$select->where("jobstatus = 'R' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "E")
+		{
+			$select->where("jobstatus = 'E' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "e")
+		{
+			$select->where("jobstatus = 'e' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "f")
+		{
+			$select->where("jobstatus = 'f' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "A")
+		{
+			$select->where("jobstatus = 'A' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "D")
+		{
+			$select->where("jobstatus = 'D' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "F")
+		{
+			$select->where("jobstatus = 'F' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "S")
+		{
+			$select->where("jobstatus = 'S' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "m")
+		{
+			$select->where("jobstatus = 'm' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "M")
+		{
+			$select->where("jobstatus = 'M' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "s")
+		{
+			$select->where("jobstatus = 's' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "j")
+		{
+			$select->where("jobstatus = 'j' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "c")
+		{
+			$select->where("jobstatus = 'c' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "d")
+		{
+			$select->where("jobstatus = 'd' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "t")
+		{
+			$select->where("jobstatus = 't' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "p")
+		{
+			$select->where("jobstatus = 'p' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "a")
+		{
+			$select->where("jobstatus = 'a' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+		if($status == "i")
+		{
+			$select->where("jobstatus = 'i' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+		}
+				
+		$resultSetPrototype = new ResultSet();
+		$resultSetPrototype->setArrayObjectPrototype(new Job());
+		$rowset = new DbSelect(
+			$select,
+			$this->tableGateway->getAdapter(),
+			$resultSetPrototype
+		);
+		$num = $rowset->count();		  
+		
+		return $num;
+	}
+	
+}

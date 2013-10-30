@@ -1,0 +1,28 @@
+<?php
+
+$title = 'Storage';
+$this->headTitle($title);
+
+?>
+
+<table class="table">
+
+<tr>
+	<th>ID</th>
+	<th>Name</th>
+	<th>Autochanger</th>
+</tr>
+
+<?php foreach($storages as $storage) : ?>
+
+<tr>
+
+	<td><a href="<?php echo $this->url('storage', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($storage->storageid); ?></a></td>
+	<td><?php echo $this->escapeHtml($storage->name); ?></td>
+	<td><?php echo $this->escapeHtml($storage->autochanger); ?></td>
+
+</tr>
+
+<?php endforeach; ?>
+
+</table>

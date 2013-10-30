@@ -1,0 +1,98 @@
+<?php echo $this->doctype(); ?>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <?php echo $this->headTitle('barbossa | '. $this->translate('Version 1.0.0'))->setSeparator(' - ')->setAutoEscape(false) ?>
+
+        <?php echo $this->headMeta()
+            ->appendName('viewport', 'width=device-width, initial-scale=1.0')
+            ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
+        ?>
+
+        <!-- Le styles -->
+        <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'))
+                        ->prependStylesheet($this->basePath() . '/css/style.css')
+                        ->prependStylesheet($this->basePath() . '/css/bootstrap-theme.min.css')
+                        ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css') 
+                        ->prependStylesheet($this->basePath() . '/css/jquery.jqplot.min.css')
+        ?>
+
+        <!-- Scripts -->
+        <?php echo $this->headScript()
+            ->prependFile($this->basePath() . '/js/bootstrap.min.js')
+            ->prependFile($this->basePath() . '/js/excanvas.min.js')
+            ->prependFile($this->basePath() . '/js/jqplot.pieRenderer.min.js')
+            ->prependFile($this->basePath() . '/js/jquery.jqplot.min.js')
+            ->prependFile($this->basePath() . '/js/jquery.min.js')
+            ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9',))
+            ->prependFile($this->basePath() . '/js/html5shiv.js',   'text/javascript', array('conditional' => 'lt IE 9',))
+        ; ?>
+        
+    </head>
+    <body>
+    
+	<!-- Navigation start -->
+        <nav class="navbar navbar-fixed-top" role="navigation">
+            <div class="container">
+		
+		<div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="<?php echo $this->url('dashboard') ?>"><!--<img src="<?php echo $this->basePath('img/zf2-logo.png') ?>" alt="barbossa"/>&nbsp;--><?php echo $this->translate('barbossa') ?></a>
+                </div>
+                
+                <!--<div class="container">-->
+                <!--<div class="collapse navbar-collapse">-->
+			<?php 
+		    		echo $this->navigation('navigation')
+			    		->menu()
+					->setMinDepth(0)
+					->setMaxDepth(0)
+					->setUlClass('nav navbar-nav'); 
+			?>
+			<!--                
+			<ul class="nav navbar-nav">
+                        <li class="active"><a href="<?php echo $this->url('home') ?>"><?php echo $this->translate('Home') ?></a></li>
+        	        <li class="active"><a href="<?php echo $this->url('job') ?>"><?php echo $this->translate('Jobs') ?></a></li>
+                	</ul> 
+		    	-->
+                <!--</div>-->
+                <!--</div>-->
+              
+            </div>
+        </nav>
+        <!-- Navigation end -->
+        
+
+        <div class="container">
+	
+	<!-- Breadcrumbs start -->
+	<p>
+		<?php echo $this->navigation('navigation')
+			->breadcrumbs()
+			->setMinDepth(0)
+			->setPartial(array('partial/breadcrumb.phtml', 'Home')); 
+		?>
+	</p>
+	<!-- Breadcrumbs end -->
+	        
+    		<?php echo $this->content; ?>
+
+            <hr>
+
+            <footer>
+                <p>&copy; 2013 - <?php echo date('Y') ?> Frank Bergkemper, <?php echo $this->translate('GNU Affero General Public License Version 3') ?></p>
+            </footer>
+
+        </div> <!-- /container -->
+
+        <?php echo $this->inlineScript() ?>
+
+	</body>
+
+</html>
+

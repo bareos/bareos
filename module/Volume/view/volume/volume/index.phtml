@@ -1,0 +1,54 @@
+<?php
+
+$title = 'Volume';
+$this->headTitle($title);
+
+?>
+
+<table class="table">
+
+<tr>
+	<th>Volume</th>
+	<th>Name</th>
+	<th>Storage</th>
+	<th>Type</th>
+	<th>Last written</th>
+	<th>Status</th>
+	<th>Retention</th>
+	<th>Maximum bytes</th>
+	<th>Current bytes</th>
+	<th>Free bytes</th>
+	
+</tr>
+
+<?php foreach($this->paginator as $volume) : ?>
+
+<tr>
+
+	<td><a href="<?php echo $this->url('volume', array('action'=>'details', 'id' => $volume->mediaid)); ?>"><?php echo $this->escapeHtml($volume->mediaid); ?></a></td>
+	<td><?php echo $this->escapeHtml($volume->volumename); ?></td>
+	<td><a href="<?php echo $this->url('storage', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($volume->storageid); ?></a></td>
+	<td><?php echo $this->escapeHtml($volume->mediatype); ?></td>
+	<td><?php echo $this->escapeHtml($volume->lastwritten); ?></td>
+	<td><?php echo $this->escapeHtml($volume->volstatus); ?></td>
+	<td><?php echo $this->printRetention($volume->volretention) . " days"; ?></td>
+	<td><?php echo $this->printBytes($volume->maxvolbytes); ?></td>
+	<td><?php echo $this->printBytes($volume->volbytes); ?></td>
+	<td><?php echo $this->printBytes($volume->maxvolbytes - $volume->volbytes); ?></td>
+	
+</tr>
+
+<?php endforeach; ?>
+
+</table>
+
+<?php
+
+echo $this->paginationControl(
+			$this->paginator, 
+			'Elastic',
+			array('partial/paginator.phtml', 'Volume'),
+			array('route' => 'volume')
+		);
+
+?>
