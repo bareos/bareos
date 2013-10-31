@@ -47,6 +47,7 @@ dpl_dbuf_free(dpl_dbuf_t *nbuf)
   free(nbuf);
 }
 
+#if 0
 static void
 buf_drain(dpl_dbuf_t *nbuf, size_t len)
 {
@@ -66,6 +67,7 @@ buf_drain(dpl_dbuf_t *nbuf, size_t len)
     nbuf->real_size = 0;
   }
 }
+#endif
 
 int
 dpl_dbuf_length(dpl_dbuf_t *nbuf)
@@ -121,6 +123,7 @@ dpl_dbuf_add(dpl_dbuf_t *nbuf, const void *buf, int size)
   return 1;
 }
 
+#if 0
 int
 dpl_dbuf_add_buffer(dpl_dbuf_t *nbuf, dpl_dbuf_t *nbuf2)
 {
@@ -227,13 +230,11 @@ dpl_dbuf_read(dpl_dbuf_t *nbuf, int fd, int size)
 int
 dpl_dbuf_consume(dpl_dbuf_t *nbuf, void *buf, int size)
 {
-  if (size <= dpl_dbuf_length(nbuf)) {
-    memcpy(buf, nbuf->data + nbuf->offset, size);
-    nbuf->offset += size;
-    return size;
-  }
+  if (size > dpl_dbuf_length(nbuf))
+    size = dpl_dbuf_length(nbuf);
 
-  memcpy(buf, nbuf->data + nbuf->offset, dpl_dbuf_length(nbuf));
-  nbuf->offset += dpl_dbuf_length(nbuf);
-  return dpl_dbuf_length(nbuf);
+  memcpy(buf, nbuf->data + nbuf->offset, size);
+  nbuf->offset += size;
+  return size;
 }
+#endif

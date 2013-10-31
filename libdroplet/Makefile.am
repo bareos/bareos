@@ -1,7 +1,8 @@
 lib_LTLIBRARIES = libdroplet.la
 
-libdroplet_la_LDFLAGS = $(LIBXML_LIBS) $(OPENSSL_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined $(JSON_LIBS)
-libdroplet_la_CFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS) #-Werror -Wall
+AM_LDFLAGS = $(LIBXML_LIBS) $(OPENSSL_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined $(JSON_LIBS)
+AM_CPPFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS)
+#AM_CFLAGS = -Werror -Wall
 
 libdroplet_la_SOURCES = \
 	src/conn.c \
@@ -135,3 +136,9 @@ libdropletdropletuksinclude_HEADERS = \
 libdropletdropletscalincludedir = $(includedir)/droplet-3.0/droplet/scal
 libdropletdropletscalinclude_HEADERS = \
 	include/droplet/scal/gc.h
+
+if COVERAGE
+clean: clean-am
+	nodefiles=`find $(SUBDIRS) -type f -name \*.gcno -print` ; test -z "$$nodefiles" || $(RM) $$nodefiles
+	datafiles=`find $(SUBDIRS) -type f -name \*.gcno -print` ; test -z "$$datafiles" || $(RM) $$datafiles
+endif

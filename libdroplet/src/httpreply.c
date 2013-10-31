@@ -768,6 +768,9 @@ dpl_map_http_status(int http_status)
     case DPL_HTTP_CODE_REDIR_FOUND:
       ret = DPL_EREDIRECT;
       break ;
+    case DPL_HTTP_CODE_RANGE_UNAVAIL:
+      ret = DPL_ERANGEUNAVAIL;
+      break;
     default:
       ret = DPL_FAILURE;
       break;

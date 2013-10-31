@@ -1,5 +1,6 @@
 #include <check.h>
 #include <droplet.h>
+#include "utest_main.h"
 
 static int reverse_sort(const void * a, const void * b)
 {
@@ -80,13 +81,13 @@ START_TEST(vec_test)
   char		    *pbuf;
 
   pbuf = malloc(6000);
-  fail_if(NULL == pbuf, NULL);
+  dpl_assert_ptr_not_null(pbuf);
 
   v = dpl_vec_new(0, 0);
   fail_unless(NULL == v, NULL);
 
   v = dpl_vec_new(100, 10);
-  fail_if(NULL == v, NULL);
+  dpl_assert_ptr_not_null(v);
   dpl_vec_free(v);
 
   int   ics[] = {0, 10};
@@ -96,19 +97,17 @@ START_TEST(vec_test)
       for (j = 0; j < 1000; j++)
         {
           ret = dpl_vec_add(v, (void*)(unsigned long)j);
-          fail_unless(DPL_SUCCESS == ret, NULL);
+          dpl_assert_int_eq(DPL_SUCCESS, ret);
         }
       v2 = dpl_vec_dup(v);
       for (j = 0; j < 1000; j++)
         {
-          unsigned int  t;
-          t = (unsigned int)(unsigned long) dpl_vec_get(v2, j);
-          fail_unless((unsigned int) t == j, NULL);
+	  dpl_assert_int_eq((unsigned long)dpl_vec_get(v2, j), j);
         }
 
       memset(pbuf, 0xff, 6000);
       fp = fmemopen(pbuf, 6000, "w");
-      fail_if(NULL == fp, NULL);
+      dpl_assert_ptr_not_null(fp);
       dpl_vec_print(v, fp, 0);
       fflush(fp);
       fail_unless(0 == memcmp(expected, pbuf, sizeof(expected)-1), NULL);
@@ -122,13 +121,12 @@ START_TEST(vec_test)
   for (i = 0; i < 1000; i++)
     {
       ret = dpl_vec_add(v, (void*)(unsigned long) i);
-      fail_unless(DPL_SUCCESS == ret, NULL);
+      dpl_assert_int_eq(DPL_SUCCESS, ret);
     }
   dpl_vec_sort(v, reverse_sort);
   for (i = 0; i < 1000; i++)
     {
-      j = (unsigned int)(unsigned long) dpl_vec_get(v, i);
-      fail_unless(j == (1000 - 1 - i), NULL);
+      dpl_assert_int_eq((unsigned long)dpl_vec_get(v, i), (1000 - 1 - i));
     }
   dpl_vec_free(v);
   free(pbuf);

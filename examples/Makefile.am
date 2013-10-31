@@ -44,3 +44,9 @@ idtestbuffered3_SOURCES = idtestbuffered3.c
 ukstest_CFLAGS = -I$(top_srcdir)/libdroplet/include
 ukstest_LDADD = $(top_builddir)/libdroplet/libdroplet.la $(JSON_LIBS) -lcrypto
 ukstest_SOURCES = ukstest.c
+
+if COVERAGE
+clean: clean-am
+	nodefiles=`find $(SUBDIRS) -type f -name \*.gcno -print` ; test -z "$$nodefiles" || $(RM) $$nodefiles
+	datafiles=`find $(SUBDIRS) -type f -name \*.gcno -print` ; test -z "$$datafiles" || $(RM) $$datafiles
+endif

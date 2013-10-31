@@ -284,24 +284,28 @@ conf_cb_func(void *cb_arg,
             }
         }
 
+      free(ctx->base_path);
       ctx->base_path = strdup(value);
       if (NULL == ctx->base_path)
         return -1;
     }
   else if (!strcmp(var, "access_key"))
     {
+      free(ctx->access_key);
       ctx->access_key = strdup(value);
       if (NULL == ctx->access_key)
         return -1;
     }
   else if (!strcmp(var, "secret_key"))
     {
+      free(ctx->secret_key);
       ctx->secret_key = strdup(value);
       if (NULL == ctx->secret_key)
         return -1;
     }
   else if (!strcmp(var, "ssl_cert_file"))
     {
+      free(ctx->ssl_cert_file);
       if (value[0] != '/')
         {
           snprintf(path, sizeof (path), "%s/%s", ctx->droplet_dir, value);
@@ -314,6 +318,7 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "ssl_key_file"))
     {
+      free(ctx->ssl_key_file);
       if (value[0] != '/')
         {
           snprintf(path, sizeof (path), "%s/%s", ctx->droplet_dir, value);
@@ -326,24 +331,28 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "ssl_password"))
     {
+      free(ctx->ssl_password);
       ctx->ssl_password = strdup(value);
       if (NULL == ctx->ssl_password)
         return -1;
     }
   else if (!strcmp(var, "ssl_ca_list"))
     {
+      free(ctx->ssl_ca_list);
       ctx->ssl_ca_list = strdup(value);
       if (NULL == ctx->ssl_ca_list)
         return -1;
     }
   else if (!strcmp(var, "pricing"))
     {
+      free(ctx->pricing);
       ctx->pricing = strdup(value);
       if (NULL == ctx->pricing)
         return -1;
     }
   else if (!strcmp(var, "pricing_dir"))
     {
+      free(ctx->pricing_dir);
       ctx->pricing_dir = strdup(value);
       if (NULL == ctx->pricing_dir)
         return -1;
@@ -354,6 +363,7 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "encrypt_key"))
     {
+      free(ctx->encrypt_key);
       ctx->encrypt_key = strdup(value);
       if (NULL == ctx->encrypt_key)
         return -1;
@@ -681,6 +691,11 @@ dpl_profile_post(dpl_ctx_t *ctx)
 
       method = SSLv23_method();
       ctx->ssl_ctx = SSL_CTX_new(method);
+      if (NULL == ctx->ssl_ctx)
+	{
+	  ret = DPL_FAILURE;
+	  goto end;
+	}
 
       //SSL_CTX_set_ssl_version(ctx->ssl_ctx, TLSv1_method());
 

@@ -158,8 +158,6 @@ dpl_dict_get(const dpl_dict_t *dict,
  * Looks up and returns an entry in the dict matching a lower case
  * version of @a key.
  *
- * @note the use of `dpl_dict_get_lowered()` is buggy and should be avoided.
- *
  * @param dict the dict to look up in
  * @param key the key to look up
  * @param[out] varp if a matching entry is found, `*varp` will be
@@ -363,8 +361,6 @@ dpl_dict_print(const dpl_dict_t *dict,
  * If the value is a string, you should use `dpl_dict_add()` which is
  * a more convenient interface.
  *
- * @note passing a non-zero value for `lowered` is buggy and should be avoided.
- *
  * @param dict the dict to add an entry to
  * @param key the key for the new
  * @param value the new value to be entered
@@ -378,9 +374,13 @@ dpl_dict_add_value(dpl_dict_t *dict,
                    dpl_value_t *value,
                    int lowered)
 {
-  dpl_dict_var_t *var;
+  dpl_dict_var_t *var = NULL;
 
-  var = dpl_dict_get(dict, key);
+  if (lowered)
+    dpl_dict_get_lowered(dict, key, &var);
+  else
+    var = dpl_dict_get(dict, key);
+
   if (NULL == var)
     {
       int bucket;
@@ -423,11 +423,7 @@ dpl_dict_add_value(dpl_dict_t *dict,
 
       nval = dpl_value_dup(value);
       if (NULL == nval)
-        {
-          free(var->key);
-          free(var);
           return DPL_ENOMEM;
-        }
 
       dpl_value_free(var->val);
       var->val = nval;
@@ -443,8 +439,6 @@ dpl_dict_add_value(dpl_dict_t *dict,
  * value @a string.  If the dict already contains an entry with
  * the same key, the old entry is replaced.  Both @a key and
  * @a string are copied.
- *
- * @note passing a non-zero value for `lowered` is buggy and should be avoided.
  *
  * @param dict the dict to add an entry to
  * @param key the key for the new entry

@@ -345,6 +345,13 @@ add_authorization_to_headers(const dpl_req_t *req,
   u_int base64_len;
   char auth_str[1024];
 
+  if (NULL == req->ctx->secret_key)
+    {
+      DPL_TRACE(req->ctx, DPL_TRACE_REQ, "no secret_key, proceeding unauthenticated");
+      return DPL_SUCCESS;
+    }
+
+  ret = DPL_SUCCESS;
   //resource
   if ('/' != req->resource[0])
     {

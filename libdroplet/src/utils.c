@@ -464,15 +464,6 @@ dpl_strrstr(const char *haystack,
   return NULL;
 }
 
-#if 1
-void
-test_strrstr()
-{
-  printf("%s\n", dpl_strrstr("lev1DIRlev2DIRlev3", "DIR"));
-  printf("%s\n", dpl_strrstr("foo/bar/", "/"));
-}
-#endif
-
 void
 dpl_strlower(char *str)
 {

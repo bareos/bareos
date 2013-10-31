@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <check.h>
 #include <droplet.h>
+#include "utest_main.h"
 
 
 START_TEST(sbuf_test)
@@ -15,26 +16,26 @@ START_TEST(sbuf_test)
   for (i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++)
     {
       b = dpl_sbuf_new(sizes[i]);
-      fail_if(NULL == b, NULL);
+      dpl_assert_ptr_not_null(b);
       b2 = dpl_sbuf_dup(b);
-      fail_if(NULL == b2, NULL);
+      dpl_assert_ptr_not_null(b2);
       dpl_sbuf_free(b);
       dpl_sbuf_free(b2);
     }
 
   memset(pbuf, 0xff, sizeof(pbuf));
   fp = fmemopen(pbuf, sizeof(pbuf), "w");
-  fail_if(NULL == fp, NULL);
+  dpl_assert_ptr_not_null(fp);
 
   const char  * strs[] = { "truc", "bidule", "machin", "chose" };
   for (i = 0; i < sizeof(strs) / sizeof(strs[0]); i++)
     {
       b = dpl_sbuf_new_from_str(strs[i]);
-      fail_if(NULL == b, NULL);
-      fail_unless(0 == strcmp(strs[i], dpl_sbuf_get_str(b)), NULL);
+      dpl_assert_ptr_not_null(b);
+      dpl_assert_str_eq(strs[i], dpl_sbuf_get_str(b));
       b2 = dpl_sbuf_dup(b);
-      fail_if(NULL == b2, NULL);
-      fail_unless(0 == strcmp(strs[i], dpl_sbuf_get_str(b2)), NULL);
+      dpl_assert_ptr_not_null(b2);
+      dpl_assert_str_eq(strs[i], dpl_sbuf_get_str(b2));
       dpl_sbuf_print(fp, b);
       dpl_sbuf_free(b);
       dpl_sbuf_free(b2);
@@ -51,7 +52,7 @@ START_TEST(sbuf_test)
       ret = dpl_sbuf_add_str(b, strs[i]);
       fail_unless(DPL_SUCCESS == ret, NULL);
     }
-  fail_unless(0 == strcmp(full_str, dpl_sbuf_get_str(b)), NULL);
+  dpl_assert_str_eq(full_str, dpl_sbuf_get_str(b));
   dpl_sbuf_free(b);
   fclose(fp);
 }

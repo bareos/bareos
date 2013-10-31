@@ -404,6 +404,8 @@ condition_add(dpl_condition_t *cond,
               char *value)
 {
   dpl_condition_type_t type;
+  size_t len;
+  time_t dt;
 
   if (cond->n_conds >= DPL_COND_MAX)
     {
@@ -427,11 +429,17 @@ condition_add(dpl_condition_t *cond,
     {
     case DPL_CONDITION_IF_MODIFIED_SINCE:
     case DPL_CONDITION_IF_UNMODIFIED_SINCE:
-      cond->conds[cond->n_conds].time = dpl_get_date(value, now);
+      dt = dpl_get_date(value, now);
+      if (dt < 0)
+	return DPL_EINVAL;
+      cond->conds[cond->n_conds].time = dt;
       break ;
     case DPL_CONDITION_IF_MATCH:
     case DPL_CONDITION_IF_NONE_MATCH:
-      snprintf(cond->conds[cond->n_conds].etag, sizeof (cond->conds[cond->n_conds].etag), "%s", value);
+      len = strlen(value);
+      if (len > DPL_ETAG_SIZE)
+	return DPL_EINVAL;
+      strcpy(cond->conds[cond->n_conds].etag, value);
       break ;
     }
 

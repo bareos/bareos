@@ -226,6 +226,8 @@ do_connect(dpl_ctx_t *ctx,
   int ret;
   struct pollfd fds;
   int on;
+  int error;
+  socklen_t errorlen;
 
   fd = socket(AF_INET, SOCK_STREAM, 0);
   if (-1 == fd)
@@ -243,6 +245,7 @@ do_connect(dpl_ctx_t *ctx,
   ret = ioctl(fd, FIONBIO, &on);
   if (-1 == ret)
     {
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "ioctl(FIONBIO) failed: %s", strerror(errno));
       (void) safe_close(fd);
       fd = -1;
       goto end;
@@ -273,14 +276,19 @@ do_connect(dpl_ctx_t *ctx,
     {
       if (errno == EINTR)
         goto retry;
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "poll failed: %s", strerror(errno));
       fd = -1;
       goto end;
     }
 
   if (0 == ret)
-    return -1;
+    {
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "timed out connecting to %s:%d", inet_ntoa(addr), port);
+      return -1;
+    }
   else if (!(fds.revents & POLLOUT))
     {
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "poll returned strange results");
       fd = -1;
       goto end;
     }
@@ -289,6 +297,29 @@ do_connect(dpl_ctx_t *ctx,
   ret = ioctl(fd, FIONBIO, &on);
   if (-1 == ret)
     {
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "ioctl(FIONBIO) failed: %s", strerror(errno));
+      (void) safe_close(fd);
+      fd = -1;
+      goto end;
+    }
+
+  /* errors from the async connect() are reported through the SO_ERROR sockopt */
+
+  errorlen = sizeof(error);
+  error = 0;
+  ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &errorlen);
+  if (-1 == ret)
+    {
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "getsockopt(SO_ERROR) failed: %s", strerror(errno));
+      (void) safe_close(fd);
+      fd = -1;
+      goto end;
+    }
+
+  if (error != 0)
+    {
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "connect to %s:%d failed: %s",
+		inet_ntoa(addr), port, strerror(error));
       (void) safe_close(fd);
       fd = -1;
       goto end;
@@ -417,7 +448,9 @@ conn_open(dpl_ctx_t *ctx,
       ret = SSL_connect(conn->ssl);
       if (ret <= 0)
         {
-          DPL_LOG(ctx, DPL_ERROR, "SSL_connect failed with %d", SSL_get_error(conn->ssl, ret));
+	  char msg[128];
+	  ERR_error_string_n(SSL_get_error(conn->ssl, ret), msg, sizeof(msg));
+	  DPL_LOG(ctx, DPL_ERROR, "SSL_connect failed with %s", msg);
           dpl_conn_free(conn);
           conn = NULL;
           goto end;
@@ -444,7 +477,7 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   int           ret2;
   struct hostent hret, *hresult;
   char          hbuf[1024];
-  int           herr;
+  int           herr = 0;
   struct in_addr addr;
   u_short       port;
   dpl_conn_t    *conn = NULL;
@@ -453,7 +486,8 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   ret2 = dpl_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
   if (0 != ret2)
     {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "gethostbyname failed");
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "gethostbyname failed: %s: %s",
+		host, hstrerror(herr));
       goto bad;
     }
 
