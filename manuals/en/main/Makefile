@@ -17,7 +17,7 @@ html: html/bareos-manual-main-reference.html
 
 html/bareos-manual-main-reference.html: *.sty *.tex $(INDEXES) bareos-manual-main-reference.toc
 	mkdir -p html
-	htlatex bareos-manual-main-reference "" "" -d./html/
+	htlatex bareos-manual-main-reference "bareos-manual-main-reference.htlatex.cfg" "" -d./html/
 
 %.idx:
 	$(LATEX) bareos-manual-main-reference.tex
