@@ -1172,19 +1172,34 @@ bool DEVICE::fsf(int num)
             if (errno == ENOMEM) {     /* tape record exceeds buf len */
                status = rbuf_len;        /* This is OK */
             /*
-             * On IBM drives, they return ENOSPC at EOM
-             *  instead of EOF status
+             * On IBM drives, they return ENOSPC at EOM instead of EOF status
              */
             } else if (at_eof() && errno == ENOSPC) {
                status = 0;
+            } else if (has_cap(CAP_IOERRATEOM) && at_eof() && errno == EIO) {
+               if (has_cap(CAP_IBMLINTAPE)) {
+                  Dmsg0(100, "Got EIO on read, checking lin_tape sense data\n");
+                  if (check_scsi_at_eod(m_fd)) {
+                     Dmsg0(100, "Sense data confirms it's EOD\n");
+                     status = 0;
+                  } else {
+                     Dmsg0(100, "Not at EOD, might be a real error. Check sense trace from lin_taped logs.\n");
+                     set_eot();
+                     clrerror(-1);
+                     Mmsg1(errmsg, _("read error on %s. ERR=Input/Output error.\n"), print_name());
+                     break;
+                  }
+               } else {
+                  Dmsg0(100, "Got EIO on read, assuming that's due to EOD\n");
+                  status = 0;
+               }
             } else {
                berrno be;
+
                set_eot();
                clrerror(-1);
-               Dmsg2(100, "Set ST_EOT read errno=%d. ERR=%s\n", dev_errno,
-                  be.bstrerror());
-               Mmsg2(errmsg, _("read error on %s. ERR=%s.\n"),
-                  print_name(), be.bstrerror());
+               Dmsg2(100, "Set ST_EOT read errno=%d. ERR=%s\n", dev_errno, be.bstrerror());
+               Mmsg2(errmsg, _("read error on %s. ERR=%s.\n"), print_name(), be.bstrerror());
                Dmsg1(100, "%s", errmsg);
                break;
             }

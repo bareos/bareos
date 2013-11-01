@@ -323,6 +323,7 @@ bool recv_scsi_cmd_page(int fd, const char *device_name,
 bool send_scsi_cmd_page(int fd, const char *device_name,
                         void *cdb, unsigned int cdb_len,
                         void *cmd_page, unsigned int cmd_page_len);
+bool check_scsi_at_eod(int fd);
 
 /* signal.c */
 void init_signals(void terminate(int sig));

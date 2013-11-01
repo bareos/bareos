@@ -39,6 +39,10 @@
 #include <scsi/sg.h>
 #include <scsi/scsi.h>
 
+#ifndef SIOC_REQSENSE
+#define SIOC_REQSENSE _IOR ('C',0x02,SCSI_PAGE_SENSE)
+#endif
+
 /*
  * Core interface function to lowlevel SCSI interface.
  */
@@ -135,6 +139,26 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
                         void *cmd_page, unsigned int cmd_page_len)
 {
    return do_scsi_cmd_page(fd, device_name, cdb, cdb_len, cmd_page, cmd_page_len, SG_DXFER_TO_DEV);
+}
+
+/*
+ * Check if the SCSI sense is EOD.
+ */
+bool check_scsi_at_eod(int fd)
+{
+   int rc;
+   SCSI_PAGE_SENSE sense;
+
+   memset(&sense, 0, sizeof(sense));
+
+   rc = ioctl(fd, SIOC_REQSENSE, &sense);
+   if (rc != 0) {
+      return false;
+   }
+
+   return sense.senseKey == 0x08 && /* BLANK CHECK. */
+          sense.addSenseCode == 0x00 && /* End of data (Combination of asc and ascq)*/
+          sense.addSenseCodeQual == 0x05;
 }
 
 #elif defined(HAVE_SUN_OS)
@@ -234,6 +258,11 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
 {
    return do_scsi_cmd_page(fd, device_name, cdb, cdb_len, cmd_page, cmd_page_len,
                           (USCSI_WRITE | USCSI_SILENT | USCSI_RQENABLE));
+}
+
+bool check_scsi_at_eod(int fd)
+{
+   return false;
 }
 
 #elif defined(HAVE_FREEBSD_OS)
@@ -370,6 +399,11 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
    return do_scsi_cmd_page(fd, device_name, cdb, cdb_len, cmd_page, cmd_page_len, CAM_DIR_OUT);
 }
 
+bool check_scsi_at_eod(int fd)
+{
+   return false;
+}
+
 #elif defined(HAVE_NETBSD_OS) || defined(HAVE_OPENBSD_OS)
 
 #if defined(HAVE_NETBSD_OS)
@@ -498,5 +532,32 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
 {
    return do_scsi_cmd_page(fd, device_name, cdb, cdb_len, cmd_page, cmd_page_len, SCCMD_WRITE);
 }
+
+bool check_scsi_at_eod(int fd)
+{
+   return false;
+}
 #endif
+#else
+/*
+ * Dummy lowlevel functions when no support for platform.
+ */
+bool recv_scsi_cmd_page(int fd, const char *device_name,
+                        void *cdb, unsigned int cdb_len,
+                        void *cmd_page, unsigned int cmd_page_len)
+{
+   return false;
+}
+
+bool send_scsi_cmd_page(int fd, const char *device_name,
+                        void *cdb, unsigned int cdb_len,
+                        void *cmd_page, unsigned int cmd_page_len)
+{
+   return false;
+}
+
+bool check_scsi_at_eod(int fd)
+{
+   return false;
+}
 #endif /* HAVE_LOWLEVEL_SCSI_INTERFACE */
