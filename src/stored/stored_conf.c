@@ -168,6 +168,8 @@ static RES_ITEM dev_items[] = {
    { "requiresmount", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_REQMOUNT, CFG_ITEM_DEFAULT, "off" },
    { "offlineonunmount", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_OFFLINEUNMOUNT, CFG_ITEM_DEFAULT, "off" },
    { "blockchecksum", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_BLOCKCHECKSUM, CFG_ITEM_DEFAULT, "on" },
+   { "ioerrorateom", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_IOERRATEOM, CFG_ITEM_DEFAULT, "off" },
+   { "ibmlintape", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_IBMLINTAPE, CFG_ITEM_DEFAULT, "off" },
    { "autoselect", CFG_TYPE_BOOL, ITEM(res_dev.autoselect), 0, CFG_ITEM_DEFAULT, "true" },
    { "changerdevice", CFG_TYPE_STRNAME, ITEM(res_dev.changer_name), 0, 0, NULL },
    { "changercommand", CFG_TYPE_STRNAME, ITEM(res_dev.changer_command), 0, 0, NULL },
