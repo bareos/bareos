@@ -46,7 +46,7 @@
 /*
  * For OpenSSL version 1.x, EVP_PKEY_encrypt no longer exists. It was not an official API.
  */
-#ifdef HAVE_OPENSSLv1
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L)
 #define EVP_PKEY_encrypt EVP_PKEY_encrypt_old
 #define EVP_PKEY_decrypt EVP_PKEY_decrypt_old
 #endif
