@@ -1086,7 +1086,6 @@ if test "x$support_crypto" != "xno" -o "x$support_tls" != "xno"; then
 
       if test "$have_openssl" = "yes"; then
          AC_DEFINE(HAVE_OPENSSL, 1, [Define to 1 if OpenSSL library is available])
-         AC_CHECK_LIB(crypto, EVP_PKEY_encrypt_old, AC_DEFINE(HAVE_OPENSSLv1, 1, [Set if have OpenSSL version 1.x]))
       fi
 
       if test "$support_crypto" != "no" -a "$have_openssl" = "yes"; then
