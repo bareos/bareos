@@ -300,7 +300,7 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
          extname = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
 
          if (bstrcmp(extname, "subjectAltName")) {
-#ifdef HAVE_OPENSSLv1
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L)
             const X509V3_EXT_METHOD *method;
 #else
             X509V3_EXT_METHOD *method;
