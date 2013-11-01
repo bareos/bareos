@@ -302,3 +302,17 @@ For Disaster Recovery (DR) you need the following information:
 
   Or something similar (change paths to follow where you
   installed the software or where the package put it.)
+
+NOTE: As described at the beginning of this README there are different
+      types of key management:
+
+- A backup application that supports Application Managed Encryption (AME)
+- A tape library that supports Library Managed Encryption (LME)
+- Using a Key Management Appliance (KMA).
+
+If the Library is setup for LME or KMA it probably won't allow our AME setup
+and the scsi-crypto plugin will fail to set/clear the encryption key. To be
+able to use AME you need to "Modify Encryption Method" and set it to something
+like "Application Managed". If you decide to use LME or KMA you don't have to
+bother with the whole setup of AME which may for big libraries be easier, although
+the overhead of using AME even for very big libraries should be minimal.
