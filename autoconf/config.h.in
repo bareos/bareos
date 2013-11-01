@@ -551,9 +551,6 @@
    */
 #undef HAVE_OPENSSL_EXPORT_LIBRARY
 
-/* Set if have OpenSSL version 1.x */
-#undef HAVE_OPENSSLv1
-
 /* Define to 1 if you are running Tru64 */
 #undef HAVE_OSF1_OS
 
