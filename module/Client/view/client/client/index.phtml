@@ -5,7 +5,10 @@ $this->headTitle($title);
 
 ?>
 
-<table class="table">
+<h2><?php echo $title; ?></h2>
+<hr />
+
+<table class="table table-striped table-hover">
 
 <tr>
 	<th>Client</th>
@@ -24,8 +27,8 @@ $this->headTitle($title);
 	<td><?php echo $this->escapeHtml($client->name); ?></td>
 	<td><?php echo $this->escapeHtml($client->uname); ?></td>
 	<td><?php echo $this->escapeHtml($client->autoprune); ?></td>
-	<td><?php echo $this->escapeHtml($client->fileretention); ?></td>
-	<td><?php echo $this->escapeHtml($client->jobretention); ?></td>
+	<td><?php echo $this->printRetention($client->fileretention) . " days"; ?></td>
+	<td><?php echo $this->printRetention($client->jobretention) . " days"; ?></td>
 
 </tr>
 

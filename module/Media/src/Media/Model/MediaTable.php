@@ -1,6 +1,6 @@
 <?php
 
-namespace Volume\Model;
+namespace Media\Model;
 
 use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
@@ -9,7 +9,7 @@ use Zend\Db\Sql\Sql;
 use Zend\Paginator\Adapter\DbSelect;
 use Zend\Paginator\Paginator;
 
-class VolumeTable
+class MediaTable
 {
 
 	protected $tableGateway;
@@ -25,7 +25,7 @@ class VolumeTable
 			$select = new Select('media');
 			$select->order('mediaid ASC');
 			$resultSetPrototype = new ResultSet();
-			$resultSetPrototype->setArrayObjectPrototype(new Volume());
+			$resultSetPrototype->setArrayObjectPrototype(new Media());
 			$paginatorAdapter = new DbSelect(
 						$select,
 						$this->tableGateway->getAdapter(),
@@ -38,17 +38,26 @@ class VolumeTable
 		return $resultSet;
 	}
 
-	public function getVolume($id)
+	public function getMedia($id)
 	{
-				
+		$mediaid = (int) $id;
+		
+		$select = new Select();
+		$select->from('media');
+		$select->where('mediaid = ' . $mediaid);
+		
+		$resultSet = $this->tableGateway->selectWith($select);
+		$row = $resultSet->current();
+		
+		return $row;		
 	}
 
-	public function getVolumeNum()
+	public function getMediaNum()
 	{
 		$select = new Select();
 		$select->from('media');
 		$resultSetPrototype = new ResultSet();
-		$resultSetPrototype->setArrayObjectPrototype(new Volume());
+		$resultSetPrototype->setArrayObjectPrototype(new Media());
 		$rowset = new DbSelect(
 			$select,
 			$this->tableGateway->getAdapter(),

@@ -4,22 +4,22 @@ return array(
 
 	'controllers' => array(
 		'invokables' => array(
-			'Volume\Controller\Volume' => 'Volume\Controller\VolumeController',
+			'Fileset\Controller\Fileset' => 'Fileset\Controller\FilesetController',
 		),
 	),
 
 	'router' => array(
 		'routes' => array(
-			'volume' => array(
+			'fileset' => array(
 				'type' => 'segment',
 				'options' => array(
-					'route' => '/volume[/][:action][/:id]',
+					'route' => '/fileset[/][:action][/:id]',
 					'constraints' => array(
 						'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
 						'id' => '[0-9]+',
 					),
 					'defaults' => array(
-						'controller' => 'Volume\Controller\Volume',
+						'controller' => 'Fileset\Controller\Fileset',
 						'action' => 'index',
 					),
 				),
@@ -30,7 +30,7 @@ return array(
 
 	'view_manager' => array(
 		'template_path_stack' => array(
-			'volume' => __DIR__ . '/../view',
+			'fileset' => __DIR__ . '/../view',
 		),
 	),
 

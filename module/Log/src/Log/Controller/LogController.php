@@ -15,7 +15,7 @@ class LogController extends AbstractActionController
 
 		$paginator = $this->getLogTable()->fetchAll(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(5);
+		$paginator->setItemCountPerPage(10);
 
 		return new ViewModel(array('paginator' => $paginator));
 

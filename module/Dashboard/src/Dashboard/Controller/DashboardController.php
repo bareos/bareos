@@ -11,13 +11,18 @@ class DashboardController extends AbstractActionController
 	protected $jobTable;
 	protected $clientTable;
 	protected $poolTable;
-	protected $volumeTable;
+	protected $mediaTable;
 	protected $fileTable;
+	protected $logTable;
+	protected $filesetTable;
 
 	public function indexAction()
 	{
 		return new ViewModel(
 			array(
+			
+				'lastSuccessfulJobs' => $this->getJobTable()->getLast24HoursSuccessfulJobs(),
+				'lastUnsuccessfulJobs' => $this->getJobTable()->getLast24HoursUnsuccessfulJobs(),
 			
 				'jobsCreatedNotRunning' => $this->getJobTable()->getJobCountLast24HoursByStatus("C"),
 				'jobsBlocked' => $this->getJobTable()->getJobCountLast24HoursByStatus("B"),
@@ -43,8 +48,11 @@ class DashboardController extends AbstractActionController
 				
 				'clientNum' => $this->getClientTable()->getClientNum(),
 				'poolNum' => $this->getPoolTable()->getPoolNum(),
-				'volumeNum' => $this->getVolumeTable()->getVolumeNum(),
+				'volumeNum' => $this->getMediaTable()->getMediaNum(),
 				'fileNum' => $this->getFileTable()->getFileNum(),
+				'jobNum' => $this->getJobTable()->getJobNum(),
+				'logNum' => $this->getLogTable()->getLogNum(),
+				'filesetNum' => $this->getFilesetTable()->getFilesetNum(),
 				
 			)
 		);
@@ -80,14 +88,14 @@ class DashboardController extends AbstractActionController
 		return $this->poolTable;
 	}
 	
-	public function getVolumeTable() 
+	public function getMediaTable() 
 	{
-		if(!$this->volumeTable)
+		if(!$this->mediaTable)
 		{
 			$sm = $this->getServiceLocator();
-			$this->volumeTable = $sm->get('Volume\Model\VolumeTable');
+			$this->mediaTable = $sm->get('Media\Model\MediaTable');
 		}
-		return $this->volumeTable;
+		return $this->mediaTable;
 	}
 	
 	public function getFileTable() 
@@ -98,6 +106,26 @@ class DashboardController extends AbstractActionController
 			$this->fileTable = $sm->get('File\Model\FileTable');
 		}
 		return $this->fileTable;
+	}
+	
+	public function getLogTable() 
+	{
+		if(!$this->logTable)
+		{
+			$sm = $this->getServiceLocator();
+			$this->logTable = $sm->get('Log\Model\LogTable');
+		}
+		return $this->logTable;
+	}
+	
+	public function getFilesetTable() 
+	{
+		if(!$this->filesetTable)
+		{
+			$sm = $this->getServiceLocator();
+			$this->filesetTable = $sm->get('Fileset\Model\FilesetTable');
+		}
+		return $this->filesetTable;
 	}
 	
 }

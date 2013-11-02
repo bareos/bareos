@@ -5,12 +5,23 @@ $this->headTitle($title);
 
 ?>
 
-<table class="table">
+<h2><?php echo $title; ?></h2>
+<hr />
+
+<table class="table table-striped table-hover">
 
 <tr>
-	<th>ID</th>
-	<th>Name</th>
-	<th>Type</th>
+	<th>Pool ID</th>
+	<th>Pool name</th>
+	<th>Pool type</th>
+	<th>Current volume number</th>
+	<th>Maximum volume number</th>
+	<th>Volume retention</th>
+	<th>Maximum volume jobs</th>
+	<th>Maximum volume files</th>
+	<th>Maximum volume bytes</th>
+	
+	
 </tr>
 
 <?php foreach($pools as $pool) : ?>
@@ -20,6 +31,12 @@ $this->headTitle($title);
 	<td><a href="<?php echo $this->url('pool', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($pool->poolid); ?></a></td>
 	<td><?php echo $this->escapeHtml($pool->name); ?></td>
 	<td><?php echo $this->escapeHtml($pool->pooltype); ?></td>
+	<td><?php echo $this->escapeHtml($pool->numvols); ?></td>
+	<td><?php echo $this->escapeHtml($pool->maxvols); ?></td>
+	<td><?php echo $this->printRetention($pool->volretention) . " days"; ?></td>
+	<td><?php echo $this->escapeHtml($pool->maxvoljobs); ?></td>
+	<td><?php echo $this->escapeHtml($pool->maxvolfiles); ?></td>
+	<td><?php echo $this->printBytes($pool->maxvolbytes); ?></td>
 
 </tr>
 

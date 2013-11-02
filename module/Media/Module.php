@@ -1,9 +1,9 @@
 <?php
 
-namespace Volume;
+namespace Media;
 
-use Volume\Model\Volume;
-use Volume\Model\VolumeTable;
+use Media\Model\Media;
+use Media\Model\MediaTable;
 use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
 
@@ -33,16 +33,16 @@ class Module
 	{
 		return array(
 			'factories' => array(
-				'Volume\Model\VolumeTable' => function($sm) {
-					$tableGateway = $sm->get('VolumeTableGateway');
-					$table = new VolumeTable($tableGateway);
+				'Media\Model\MediaTable' => function($sm) {
+					$tableGateway = $sm->get('MediaTableGateway');
+					$table = new MediaTable($tableGateway);
 					return $table;
 				},
-				'VolumeTableGateway' => function($sm) {
+				'MediaTableGateway' => function($sm) {
 					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
 					$resultSetPrototype = new ResultSet();
-					$resultSetPrototype->setArrayObjectPrototype(new Volume());
-					return new TableGateway('volume', $dbAdapter, null, $resultSetPrototype);
+					$resultSetPrototype->setArrayObjectPrototype(new Media());
+					return new TableGateway('media', $dbAdapter, null, $resultSetPrototype);
 				},
 			),
 		);

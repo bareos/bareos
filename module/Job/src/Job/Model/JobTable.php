@@ -42,7 +42,13 @@ class JobTable
 	public function getJob($jobid)
 	{
 		$jobid = (int) $jobid;
-		$rowset = $this->tableGateway->select(array('jobid' => $jobid));
+		
+		$select = new Select();
+		$select->from('job');
+		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
+		$select->where('jobid =' . $jobid);
+		
+		$rowset = $this->tableGateway->selectWith($select);
 		$row = $rowset->current();
 		if(!$row) {
 			throw new \Exception("Could not find row $jobid");
@@ -50,6 +56,38 @@ class JobTable
 		return $row;
 	}
 
+	public function getLast24HoursSuccessfulJobs()
+	{
+		$current_time = date("Y-m-d H:i:s",time());
+		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*23));
+		
+		$select = new Select();
+		$select->from('job');
+		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
+		$select->order('job.jobid DESC');
+		$select->where("jobstatus = 'T' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+				
+		$resultSet = $this->tableGateway->selectWith($select);
+		
+		return $resultSet;
+	}
+	
+	public function getLast24HoursUnsuccessfulJobs()
+	{
+		$current_time = date("Y-m-d H:i:s",time());
+		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*23));
+		
+		$select = new Select();
+		$select->from('job');
+		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
+		$select->order('job.jobid DESC');
+		$select->where("jobstatus != 'T' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+				
+		$resultSet = $this->tableGateway->selectWith($select);
+		
+		return $resultSet;
+	}
+	
 	public function getJobCountLast24HoursByStatus($status) 
 	{
 		$current_time = date("Y-m-d H:i:s",time());
@@ -152,6 +190,21 @@ class JobTable
 		);
 		$num = $rowset->count();		  
 		
+		return $num;
+	}
+	
+	public function getJobNum()
+	{
+		$select = new Select();
+		$select->from('job');
+		$resultSetPrototype = new ResultSet();
+		$resultSetPrototype->setArrayObjectPrototype(new Job());
+		$rowset = new DbSelect(
+			$select,
+			$this->tableGateway->getAdapter(),
+			$resultSetPrototype
+		);
+		$num = $rowset->count();		  
 		return $num;
 	}
 	

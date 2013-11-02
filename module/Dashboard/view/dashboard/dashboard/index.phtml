@@ -5,6 +5,9 @@ $this->headTitle($title);
 
 ?>
 
+<h2><?php echo $title; ?></h2>
+<hr />
+
 <script type="text/javascript">
     
     function chart1() {
@@ -60,20 +63,142 @@ $this->headTitle($title);
     
 </script>
 
+<!-- UNSUCCESSFUL JOBS -->
+<?php if(count($this->lastUnsuccessfulJobs) > 0) : ?>
+
+<div class="row">
+
+<div class="col-md-12">
+
+	<div class="panel panel-default">
+	
+            <div class="panel-heading">
+                <h3 class="panel-title"><?php echo $this->translate('Unsuccessful jobs (last 24 hours)') ?></h3>
+            </div>
+  
+	    <div class="panel-body">
+            
+            <table class="table table-striped table-hover" style="font-size: 9pt;">
+            
+            <tr>
+		<th>Job</th>
+		<th>Name</th>
+		<th>Client</th>
+		<th>Type</th>
+		<th>Level</th>
+		<th>Start</th>
+		<th>End</th>
+		<th>Duration</th>
+		<th>Status</th>
+		<th>Log</th>
+	    </tr>
+            
+            <?php foreach ($this->lastUnsuccessfulJobs as $jobUnsuccess) : ?>
+
+	      <tr>
+
+	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $jobUnsuccess->jobid)); ?>"><?php echo $this->escapeHtml($jobUnsuccess->jobid); ?></a></td>
+	      <td><?php echo $this->escapeHtml($jobSuccess->jobname); ?></td>
+	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'clientid' => $jobUnsuccess->clientid)); ?>"><?php echo $this->escapeHtml($jobUnsuccess->clientname); ?></a></td>
+	      <td><?php echo $this->printJobType($jobUnsuccess->type); ?></td>
+	      <td><?php echo $this->printJobLevel($jobUnsuccess->level); ?></td>
+	      <td><?php echo $this->escapeHtml($jobUnsuccess->starttime); ?></td>
+	      <td><?php echo $this->escapeHtml($jobUnsuccess->endtime); ?></td>
+	      <td><?php echo $this->printJobDuration($jobUnsuccess->starttime, $jobUnsuccess->endtime); ?></td>
+	      <td><?php echo $this->printJobStatus($jobUnsuccess->jobstatus); ?></td>
+	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'jobid' => $jobUnsuccess->clientid)); ?>">View</a></td>
+	  
+	      </tr>
+
+	    <?php endforeach; ?>
+	    </table>
+            
+            </div>
+            
+	</div>
+            
+</div>
+
+</div>
+
+<?php endif; ?>
+
+
+<!-- SUCCESSFUL JOBS -->
+<?php if(count($this->lastSuccessfulJobs) > 0) : ?>
+
+<div class="row">
+
+<div class="col-md-12">
+
+	<div class="panel panel-default">
+	
+            <div class="panel-heading">
+                <h3 class="panel-title"><?php echo $this->translate('Successful jobs (last 24 hours)') ?></h3>
+            </div>
+  
+	    <div class="panel-body">
+            
+            <table class="table table-striped table-hover" style="font-size: 9pt;">
+            
+            <tr>
+		<th>Job</th>
+		<th>Name</th>
+		<th>Client</th>
+		<th>Type</th>
+		<th>Level</th>
+		<th>Start</th>
+		<th>End</th>
+		<th>Duration</th>
+		<th>Status</th>
+		<th>Log</th>
+	    </tr>
+            
+            <?php foreach ($this->lastSuccessfulJobs as $jobSuccess) : ?>
+
+	      <tr>
+
+	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $jobSuccess->jobid)); ?>"><?php echo $this->escapeHtml($jobSuccess->jobid); ?></a></td>
+	      <td><?php echo $this->escapeHtml($jobSuccess->jobname); ?></td>
+	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'clientid' => $jobSuccess->clientid)); ?>"><?php echo $this->escapeHtml($jobSuccess->clientname); ?></a></td>
+	      <td><?php echo $this->printJobType($jobSuccess->type); ?></td>
+	      <td><?php echo $this->printJobLevel($jobSuccess->level); ?></td>
+	      <td><?php echo $this->escapeHtml($jobSuccess->starttime); ?></td>
+	      <td><?php echo $this->escapeHtml($jobSuccess->endtime); ?></td>
+	      <td><?php echo $this->printJobDuration($jobSuccess->starttime, $jobSuccess->endtime); ?></td>
+	      <td><?php echo $this->printJobStatus($jobSuccess->jobstatus); ?></td>
+	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'jobid' => $jobSuccess->clientid)); ?>">View</a></td>
+	  
+	      </tr>
+
+	    <?php endforeach; ?>
+	    </table>
+            
+            </div>
+            
+	</div>
+            
+</div>
+
+</div>
+<?php endif; ?>
+
+
+<!-- JOB STATISTICS -->
 <div class="row">
 
 <div class="col-md-9">
         
         <div class="panel panel-default">
             <div class="panel-heading">
-                <h3 class="panel-title"><?php echo $this->translate('Last 24 hours job statistic') ?></h3>
+                <h3 class="panel-title"><?php echo $this->translate('Job statistic (last 24 hours)') ?></h3>
             </div>
             
             <div class="panel-body">
             
             <div class="col-md-4">
             
-	      <table class="table" style="font-size: 9pt;">
+	      <table class="table table-striped table-hover" style="font-size: 9pt;">
 		<tr><td>Running</td><td><?php echo $this->jobsRunning; ?></td></tr>
 		<tr><td>Completed successful</td><td><?php echo $this->jobsTerminated; ?></td></tr>
 		<tr><td>Terminated with errors</td><td><?php echo $this->jobsTerminatedWithErrors; ?></td></tr>
@@ -120,12 +245,12 @@ $this->headTitle($title);
             
             <div class="panel-body">
                         
-	      <table class="table">
-		<tr><td>Clients</td><td><?php echo $this->clientNum; ?></td></tr>
-		<tr><td>Filesets</td><td><?php echo $this->filesetNum; ?></td></tr>
-		<tr><td>Pools</td><td><?php echo $this->poolNum; ?></td></tr>
-		<tr><td>Volumes</td><td><?php echo $this->volumeNum; ?></td></tr>
-		<tr><td>Total Jobs</td><td><?php echo $this->jobNum; ?></td></tr>
+	      <table class="table table-striped table-hover" style="font-size: 9pt;">
+		<tr><td>Total clients</td><td><?php echo $this->clientNum; ?></td></tr>
+		<tr><td>Total filesets</td><td><?php echo $this->filesetNum; ?></td></tr>
+		<tr><td>Total pools</td><td><?php echo $this->poolNum; ?></td></tr>
+		<tr><td>Total volumes</td><td><?php echo $this->volumeNum; ?></td></tr>
+		<tr><td>Total jobs</td><td><?php echo $this->jobNum; ?></td></tr>
 		<tr><td>Total files</td><td><?php echo $this->fileNum; ?></td></tr>
 		<tr><td>Total logs</td><td><?php echo $this->logNum; ?></td></tr>
 	      </table>

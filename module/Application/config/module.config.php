@@ -131,12 +131,16 @@ return array(
 			'route' => 'director',
 		),
 		array(
+			'label' => 'Fileset',
+			'route' => 'fileset',
+		),
+		array(
 			'label' => 'Pool',
 			'route' => 'pool',
 		),
 		array(
 			'label' => 'Volume',
-			'route' => 'volume',
+			'route' => 'media',
 		),
 		array(
 			'label' => 'Storage',

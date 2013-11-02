@@ -48,4 +48,19 @@ class LogTable
 		return $row;
 	}
 
+	public function getLogNum()
+	{
+		$select = new Select();
+		$select->from('log');
+		$resultSetPrototype = new ResultSet();
+		$resultSetPrototype->setArrayObjectPrototype(new Log());
+		$rowset = new DbSelect(
+			$select,
+			$this->tableGateway->getAdapter(),
+			$resultSetPrototype
+		);
+		$num = $rowset->count();		  
+		return $num;
+	}
+	
 }

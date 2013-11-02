@@ -1,0 +1,33 @@
+<?php
+
+$title = 'Fileset';
+$this->headTitle($title);
+
+?>
+
+<h2><?php echo $title; ?></h2>
+<hr />
+
+<table class="table table-striped table-hover">
+
+<tr>
+	<th>Fileset ID</th>
+	<th>Fileset Name</th>
+	<th>MD5</th>
+	<th>Createtime</th>
+</tr>
+
+<?php foreach($filesets as $fileset) : ?>
+
+<tr>
+
+	<td><a href="<?php echo $this->url('fileset', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($fileset->filesetid); ?></a></td>
+	<td><?php echo $this->escapeHtml($fileset->fileset); ?></td>
+	<td><?php echo $this->escapeHtml($fileset->md5); ?></td>
+	<td><?php echo $this->escapeHtml($fileset->createtime); ?></td>
+
+</tr>
+
+<?php endforeach; ?>
+
+</table>
