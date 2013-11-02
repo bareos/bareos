@@ -59,6 +59,11 @@ static bool auto_deflate_record(DCR *dcr);
 static bool auto_inflate_record(DCR *dcr);
 
 /*
+ * Is the SD in compatible mode or not.
+ */
+static bool sd_enabled_compatible = false;
+
+/*
  * Pointers to Bareos functions
  */
 static bsdFuncs *bfuncs = NULL;
@@ -113,6 +118,11 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
    Dmsg2(dbglvl, "autoxflate-sd: Loaded: size=%d version=%d\n", bfuncs->size, bfuncs->version);
    *pinfo  = &pluginInfo;  /* return pointer to our info */
    *pfuncs = &pluginFuncs; /* return pointer to our functions */
+
+   /*
+    * Get the current setting of the compatible flag.
+    */
+   bfuncs->getBareosValue(NULL, bsdCompatible, (void *)&sd_enabled_compatible);
 
    return bRC_OK;
 }
@@ -345,7 +355,7 @@ static bool setup_auto_deflation(DCR *dcr)
       jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
    }
 
-   if (!setup_compression_buffers(jcr, me->compatible,
+   if (!setup_compression_buffers(jcr, sd_enabled_compatible,
                                   dcr->device->autodeflate_algorithm,
                                   &compress_buf_size)) {
       goto bail_out;
@@ -496,8 +506,8 @@ static bool auto_deflate_record(DCR *dcr)
     * DEV_RECORD without a new memory buffer so we call new_record here
     * with the with_data boolean set explicitly to false.
     */
-   nrec = new_record(false);
-   copy_record_state(nrec, rec);
+   nrec = bfuncs->new_record(false);
+   bfuncs->copy_record_state(nrec, rec);
 
    /*
     * Setup the converted DEV_RECORD to point with its data buffer to the compression buffer.
@@ -520,7 +530,7 @@ static bool auto_deflate_record(DCR *dcr)
     */
    if (!compress_data(dcr->jcr, dcr->device->autodeflate_algorithm, rec->data, rec->data_len,
                       data, max_compression_length, &nrec->data_len)) {
-      free_record(nrec);
+      bfuncs->free_record(nrec);
       goto bail_out;
    }
 
@@ -585,7 +595,7 @@ static bool auto_deflate_record(DCR *dcr)
     * If the input is just an intermediate value free it now.
     */
    if (intermediate_value) {
-      free_record(dcr->after_rec);
+      bfuncs->free_record(dcr->after_rec);
    }
    dcr->after_rec = nrec;
    retval = true;
@@ -639,8 +649,8 @@ static bool auto_inflate_record(DCR *dcr)
     * DEV_RECORD without a new memory buffer so we call new_record here
     * with the with_data boolean set explicitly to false.
     */
-   nrec = new_record(false);
-   copy_record_state(nrec, rec);
+   nrec = bfuncs->new_record(false);
+   bfuncs->copy_record_state(nrec, rec);
 
    /*
     * Setup the converted record to point to the original data.
@@ -653,7 +663,7 @@ static bool auto_inflate_record(DCR *dcr)
 
    if (!decompress_data(dcr->jcr, "Unknown", rec->maskedStream,
                         &nrec->data, &nrec->data_len, true)) {
-      free_record(nrec);
+      bfuncs->free_record(nrec);
       goto bail_out;
    }
 
@@ -684,7 +694,7 @@ static bool auto_inflate_record(DCR *dcr)
     * If the input is just an intermediate value free it now.
     */
    if (intermediate_value) {
-      free_record(dcr->after_rec);
+      bfuncs->free_record(dcr->after_rec);
    }
    dcr->after_rec = nrec;
    retval = true;

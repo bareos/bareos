@@ -77,7 +77,8 @@ typedef enum {
   bsdVarSDJobFiles = 18,
   bsdVarSDErrors = 19,
   bsdVarFDJobStatus = 20,
-  bsdVarSDJobStatus = 21
+  bsdVarSDJobStatus = 21,
+  bsdCompatible = 22
 } bsdrVariable;
 
 /*
@@ -135,6 +136,8 @@ extern "C" {
  * Bareos interface version and function pointers
  */
 class DCR;
+struct DEV_RECORD;
+
 typedef struct s_sdbareosFuncs {
    uint32_t size;
    uint32_t version;
@@ -149,6 +152,9 @@ typedef struct s_sdbareosFuncs {
                             const char *imsg, const char *cmd);
    char *(*LookupCryptoKey)(const char *VolumeName);
    bool (*UpdateVolumeInfo)(DCR *dcr);
+   DEV_RECORD *(*new_record)(bool with_data);
+   void (*copy_record_state)(DEV_RECORD *dst, DEV_RECORD *src);
+   void (*free_record)(DEV_RECORD *rec);
 } bsdFuncs;
 
 /*
@@ -176,7 +182,7 @@ typedef enum {
 } psdVariable;
 
 #define SD_PLUGIN_MAGIC     "*SDPluginData*"
-#define SD_PLUGIN_INTERFACE_VERSION  2
+#define SD_PLUGIN_INTERFACE_VERSION  3
 
 /*
  * Functions that must be defined in every plugin

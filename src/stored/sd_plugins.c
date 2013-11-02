@@ -46,6 +46,9 @@ static char *bareosEditDeviceCodes(DCR *dcr, char *omsg,
                                    const char *imsg, const char *cmd);
 static char *bareosLookupCryptoKey(const char *VolumeName);
 static bool bareosUpdateVolumeInfo(DCR *dcr);
+static DEV_RECORD *bareosNewRecord(bool with_data);
+static void bareosCopyRecordState(DEV_RECORD *dst, DEV_RECORD *src);
+static void bareosFreeRecord(DEV_RECORD *rec);
 static bool is_plugin_compatible(Plugin *plugin);
 
 /* Bareos info */
@@ -65,7 +68,10 @@ static bsdFuncs bfuncs = {
    bareosDebugMsg,
    bareosEditDeviceCodes,
    bareosLookupCryptoKey,
-   bareosUpdateVolumeInfo
+   bareosUpdateVolumeInfo,
+   bareosNewRecord,
+   bareosCopyRecordState,
+   bareosFreeRecord
 };
 
 /*
@@ -475,16 +481,29 @@ void free_plugins(JCR *jcr)
 static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
 {
    JCR *jcr;
+
+   if (!value) {
+      return bRC_Error;
+   }
+
+   switch (var) {               /* General variables, no need of ctx */
+   case bsdCompatible:
+      *((bool *)value) = me->compatible;
+      Dmsg1(dbglvl, "Bareos: return Compatible=%s\n", (me->compatible) ? "true" : "false");
+      break;
+   default:
+      break;
+   }
+
    if (!ctx) {
       return bRC_Error;
    }
+
    jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    if (!jcr) {
       return bRC_Error;
    }
-   if (!value) {
-      return bRC_Error;
-   }
+
    switch (var) {
    case bsdVarJobId:
       *((int *)value) = jcr->JobId;
@@ -497,6 +516,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
    default:
       break;
    }
+
    return bRC_OK;
 }
 
@@ -587,8 +607,22 @@ static bool bareosUpdateVolumeInfo(DCR *dcr)
    return dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ);
 }
 
-#ifdef TEST_PROGRAM
+static DEV_RECORD *bareosNewRecord(bool with_data)
+{
+   return new_record(with_data);
+}
 
+static void bareosCopyRecordState(DEV_RECORD *dst, DEV_RECORD *src)
+{
+   copy_record_state(dst, src);
+}
+
+static void bareosFreeRecord(DEV_RECORD *rec)
+{
+   free_record(rec);
+}
+
+#ifdef TEST_PROGRAM
 int main(int argc, char *argv[])
 {
    char plugin_dir[1000];
