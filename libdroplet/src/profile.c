@@ -682,13 +682,6 @@ dpl_profile_post(dpl_ctx_t *ctx)
       SSL_METHOD *method;
 #endif
 
-      ctx->ssl_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
-      if (NULL == ctx->ssl_bio_err)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
-
       method = SSLv23_method();
       ctx->ssl_ctx = SSL_CTX_new(method);
       if (NULL == ctx->ssl_ctx)
@@ -703,9 +696,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
         {
           if (!(SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)))
             {
-              BIO_printf(ctx->ssl_bio_err, "use_certificate_chain_file: ");
-              ERR_print_errors(ctx->ssl_bio_err);
-              BIO_printf(ctx->ssl_bio_err, "\n");
+	      DPL_SSL_PERROR(ctx, "SSL_CTX_use_certificate_chain_file");
               ret = DPL_FAILURE;
               goto end;
             }
@@ -721,9 +712,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
         {
           if (!(SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)))
             {
-              BIO_printf(ctx->ssl_bio_err, "use_private_key_file: ");
-              ERR_print_errors(ctx->ssl_bio_err);
-              BIO_printf(ctx->ssl_bio_err, "\n");
+	      DPL_SSL_PERROR(ctx, "SSL_CTX_use_PrivateKey_file");
               ret = DPL_FAILURE;
               goto end;
             }
@@ -733,9 +722,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
         {
           if (!(SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, 0)))
             {
-              BIO_printf(ctx->ssl_bio_err, "load_verify_location: ");
-              ERR_print_errors(ctx->ssl_bio_err);
-              BIO_printf(ctx->ssl_bio_err, "\n");
+	      DPL_SSL_PERROR(ctx, "SSL_CTX_load_verify_locations");
               ret = DPL_FAILURE;
               goto end;
             }
@@ -881,7 +868,6 @@ dpl_profile_free(dpl_ctx_t *ctx)
   if (1 == ctx->use_https)
     {
       SSL_CTX_free(ctx->ssl_ctx);
-      BIO_vfree(ctx->ssl_bio_err);
     }
 
   /*

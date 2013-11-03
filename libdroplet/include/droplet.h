@@ -497,7 +497,6 @@ typedef struct dpl_ctx
   /*
    * ssl
    */
-  BIO *ssl_bio_err;
   SSL_CTX *ssl_ctx;
   BIO *ssl_bio;
 

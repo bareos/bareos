@@ -448,9 +448,7 @@ conn_open(dpl_ctx_t *ctx,
       ret = SSL_connect(conn->ssl);
       if (ret <= 0)
         {
-	  char msg[128];
-	  ERR_error_string_n(SSL_get_error(conn->ssl, ret), msg, sizeof(msg));
-	  DPL_LOG(ctx, DPL_ERROR, "SSL_connect failed with %s", msg);
+	  DPL_SSL_PERROR(ctx, "SSL_connect");
           dpl_conn_free(conn);
           conn = NULL;
           goto end;
@@ -874,7 +872,7 @@ writev_all_ssl(dpl_conn_t *conn,
   ret = SSL_write(conn->ssl, ptr, total_size);
   if (ret <= 0)
     {
-      DPL_LOG(conn->ctx, DPL_ERROR, "SSL_write failed with %d", SSL_get_error(conn->ssl, ret));
+      DPL_SSL_PERROR(conn->ctx, "SSL_write");
       ret = DPL_FAILURE;
       goto end;
     }
