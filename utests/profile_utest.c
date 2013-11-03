@@ -398,6 +398,152 @@ START_TEST(ctx_new_params_test)
 }
 END_TEST
 
+static void
+redirect_stdio(FILE *fp, const char *name)
+{
+  char *logfile;
+  int fd;
+
+  logfile = strconcat(home, "/", name, ".log", (char *)NULL);
+  fd = open(logfile, O_WRONLY|O_CREAT|O_TRUNC, 0666);
+  if (fd < 0)
+    {
+      perror(logfile);
+      fail();
+    }
+  fflush(fp);
+  if (dup2(fd, fileno(fp)) < 0)
+    {
+      perror("dup2");
+      fail();
+    }
+  close(fd);
+  free(logfile);
+}
+
+static off_t
+file_size(FILE *fp)
+{
+  struct stat sb;
+
+  fflush(fp);
+  if (fstat(fileno(fp), &sb) < 0)
+    {
+      perror("fstat");
+      fail();
+    }
+  return sb.st_size;
+}
+
+#define MAXLOGGED 128
+static struct {
+  dpl_log_level_t level;
+  char *message;
+} logged[MAXLOGGED];
+static int nlogged = 0;
+
+static int
+log_find(const char *needle)
+{
+  int i;
+
+  for (i = 0 ; i < nlogged ; i++)
+    {
+      if (strstr(logged[i].message, needle))
+	return i;
+    }
+
+  return -1;
+}
+
+static void
+log_func(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
+{
+  fail_unless(nlogged < MAXLOGGED);
+  logged[nlogged].level = level;
+  logged[nlogged].message = strdup(message);
+  nlogged++;
+}
+
+START_TEST(logging_test)
+{
+  dpl_ctx_t *ctx;
+  dpl_dict_t *profile;
+  char *stderr_logfile;
+  char *stdout_logfile;
+  char *dropdir;
+  off_t logsize;
+  int nerrs;
+
+  /* because libcheck forks a new process for each testcase, we
+   * can feel free to futz around with the process state like stderr */
+  redirect_stdio(stdout, "stdout");
+  redirect_stdio(stderr, "stderr");
+
+  /* At this point we have a pretend ~ with NO
+   * .droplet/ directory in it.  We don't create
+   * a dropdir on disk at all, nor a profile, it's
+   * all in memory. */
+  dropdir = strconcat(home, "/trust-fund", (char *)NULL);  /* never created */
+
+  profile = dpl_dict_new(13);
+  dpl_assert_ptr_not_null(profile);
+  /* the host is an unparseable IPv4 address literal, which should
+   * result in a predicable error */
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "host", "123.456.789.012", 0));
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "droplet_dir", dropdir, 0));
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "profile_name", "viral", 0));
+  /* need this to disable the event log, otherwise the droplet_dir needs to exist */
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "pricing_dir", "", 0));
+  unsetenv("DPLDIR");
+  unsetenv("DPLPROFILE");
+
+  /* Create a context which will fail with a logged error message.
+   * By default error messages go to stderr only. */
+  dpl_assert_int_eq(0, file_size(stdout));
+  dpl_assert_int_eq(0, file_size(stderr));
+  ctx = dpl_ctx_new_from_dict(profile);
+  dpl_assert_ptr_null(ctx);
+  /* nothing went to stdout */
+  dpl_assert_int_eq(0, file_size(stdout));
+  /* something went to stderr */
+  logsize = file_size(stderr);
+  fail_unless(logsize > 0);
+
+  /* Create a context which will fail with a logged error message.
+   * Calling dpl_set_log_func redirects errors to the given function.  */
+  dpl_assert_int_eq(nlogged, 0);
+  dpl_set_log_func(log_func);
+  ctx = dpl_ctx_new_from_dict(profile);
+  dpl_assert_ptr_null(ctx);
+  /* at least one error message logged */
+  dpl_assert_int_ne(nlogged, 0);
+  /* nothing went to stdout */
+  dpl_assert_int_eq(0, file_size(stdout));
+  /* nothing more went to stderr */
+  dpl_assert_int_eq(logsize, file_size(stderr));
+  /* errors mention the broken address */
+  dpl_assert_int_ne(-1, log_find("123.456.789.012"));
+
+  /* Create a context which will fail with a logged error message.
+   * Calling dpl_set_log_func(NULL) redirects errors back to stderr. */
+  nerrs = nlogged;
+  dpl_set_log_func(NULL);
+  ctx = dpl_ctx_new_from_dict(profile);
+  dpl_assert_ptr_null(ctx);
+  /* no more errors went to the log function */
+  dpl_assert_int_eq(nerrs, nlogged);
+  /* nothing went to stdout */
+  dpl_assert_int_eq(0, file_size(stdout));
+  /* some more went to stderr */
+  fail_unless(file_size(stderr) > logsize);
+
+  /* cleanup */
+  dpl_dict_free(profile);
+  free(dropdir);
+}
+END_TEST
+
 Suite *
 profile_suite()
 {
@@ -410,6 +556,7 @@ profile_suite()
   tcase_add_test(t, ctx_new_dropdir_profile_test);
   tcase_add_test(t, ctx_new_from_dict_test);
   tcase_add_test(t, ctx_new_params_test);
+  tcase_add_test(t, logging_test);
   suite_add_tcase(s, t);
   return s;
 }
