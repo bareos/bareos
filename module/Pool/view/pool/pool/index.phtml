@@ -8,14 +8,25 @@ $this->headTitle($title);
 <h2><?php echo $title; ?></h2>
 <hr />
 
+<?php foreach($pools as $pool) : ?>
+
+<div class="col-md-12">
+<div class="panel panel-default">
+	  
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->escapeHtml($pool->name); ?></h3>
+</div>
+    
+<div class="panel-body">
+
 <table class="table table-striped table-hover">
 
 <tr>
 	<th>Pool ID</th>
 	<th>Pool name</th>
 	<th>Pool type</th>
-	<th>Current volume number</th>
-	<th>Maximum volume number</th>
+	<th>Volumes</th>
+	<th>Maximum volumes</th>
 	<th>Volume retention</th>
 	<th>Maximum volume jobs</th>
 	<th>Maximum volume files</th>
@@ -24,12 +35,10 @@ $this->headTitle($title);
 	
 </tr>
 
-<?php foreach($pools as $pool) : ?>
-
 <tr>
 
 	<td><a href="<?php echo $this->url('pool', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($pool->poolid); ?></a></td>
-	<td><?php echo $this->escapeHtml($pool->name); ?></td>
+	<td><a href="<?php echo $this->url('pool', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($pool->name); ?></a></td>
 	<td><?php echo $this->escapeHtml($pool->pooltype); ?></td>
 	<td><?php echo $this->escapeHtml($pool->numvols); ?></td>
 	<td><?php echo $this->escapeHtml($pool->maxvols); ?></td>
@@ -40,6 +49,12 @@ $this->headTitle($title);
 
 </tr>
 
+</table>
+
+</div>
+</div>
+</div>
+
 <?php endforeach; ?>
 
-</table>
+

@@ -8,6 +8,17 @@ $this->headTitle($title);
 <h2><?php echo $title; ?></h2>
 <hr />
 
+<?php foreach($clients as $client) : ?>
+
+<div class="col-md-12">
+<div class="panel panel-default">
+	  
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo "Client " . $this->escapeHtml($client->clientid); ?></h3>
+</div>
+    
+<div class="panel-body">
+
 <table class="table table-striped table-hover">
 
 <tr>
@@ -18,9 +29,6 @@ $this->headTitle($title);
 	<th>Fileretention</th>
 	<th>Jobretention</th>
 </tr>
-
-<?php foreach($clients as $client) : ?>
-
 <tr>
 
 	<td><a href="<?php echo $this->url('client', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($client->clientid); ?></a></td>
@@ -32,6 +40,11 @@ $this->headTitle($title);
 
 </tr>
 
+</table>
+
+</div>
+</div>
+</div>
+
 <?php endforeach; ?>
 
-</table>
