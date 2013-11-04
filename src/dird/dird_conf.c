@@ -2174,10 +2174,13 @@ void free_resource(RES *rres, int type)
          free(res->res_dir.working_directory);
       }
       if (res->res_dir.scripts_directory) {
-         free((char *)res->res_dir.scripts_directory);
+         free(res->res_dir.scripts_directory);
       }
       if (res->res_dir.plugin_directory) {
-         free((char *)res->res_dir.plugin_directory);
+         free(res->res_dir.plugin_directory);
+      }
+      if (res->res_dir.plugin_names) {
+         free(res->res_dir.plugin_names);
       }
       if (res->res_dir.pid_directory) {
          free(res->res_dir.pid_directory);
