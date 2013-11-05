@@ -1,4 +1,4 @@
-check_PROGRAMS = alltests
+check_PROGRAMS = alltests toyserver
 TESTS = alltests
 
 TESTENV_ARGS= --top-srcdir $(top_srcdir)
@@ -7,8 +7,9 @@ TESTENV_ARGS+= --coverage
 endif
 TESTS_ENVIRONMENT= sh $(srcdir)/testenv.sh $(TESTENV_ARGS) --
 
-alltests_CPPFLAGS = -I$(top_srcdir)/libdroplet/include $(CHECK_CFLAGS)
-alltests_CFLAGS = -std=gnu99
+AM_CPPFLAGS = -I$(top_srcdir)/libdroplet/include $(CHECK_CFLAGS)
+AM_CFLAGS = -std=gnu99
+
 alltests_LDADD = $(top_builddir)/libdroplet/libdroplet.la $(JSON_LIBS) -lcrypto $(CHECK_LIBS) -lrt
 alltests_SOURCES = \
 	addrlist_utest.c \
@@ -23,7 +24,8 @@ alltests_SOURCES = \
 	utest_utest.c \
 	util_utest.c \
 	vec_utest.c \
-	utest_main.c
+	utest_main.c \
+	toyctl.c toyctl.h
 
 
 SSL_INCLUDE_FILES =  ssldata/client-cert.c ssldata/client.c ssldata/demoCA/cacert.c
@@ -41,3 +43,6 @@ endif
 EXTRA_DIST= \
     testenv.sh \
     valgrind.supp
+
+toyserver_LDADD = -lcrypto
+toyserver_SOURCES = toyserver.c toyserver.h
