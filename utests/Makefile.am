@@ -25,6 +25,7 @@ alltests_SOURCES = \
 	util_utest.c \
 	vec_utest.c \
 	utest_main.c \
+	testutils.c testutils.h \
 	toyctl.c toyctl.h
 
 
