@@ -48,6 +48,11 @@ class LogTable
 		return $row;
 	}
 
+	public function getLogsByJob($id)
+	{
+		
+	}
+	
 	public function getLogNum()
 	{
 		$select = new Select();

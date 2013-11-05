@@ -33,6 +33,18 @@ class LogController extends AbstractActionController
 			));
 	}
 
+	public function jobAction() 
+	{
+		$id = (int) $this->params()->fromRoute('id', 0);
+		if (!$id) {
+		    return $this->redirect()->toRoute('log');
+		}
+	  
+		return new ViewModel(array(
+				'log' => $this->getLogTable()->getLogsByJob($id),
+			));
+	}
+	
 	public function getLogTable()
        	{
 		if(!$this->logTable) {

@@ -56,7 +56,7 @@ $this->headTitle($title);
     
 	      <div class="panel-body">
 
-	      <table class="table table-striped table-hover">
+	      <table class="table table-striped table-hover" style="font-size: 9pt;">
 	      <tr><td>Volume ID</td><td><a href="<?php echo $this->url('media', array('action'=>'details', 'id' => $media->mediaid)); ?>"><?php echo $this->escapeHtml($media->mediaid); ?></a></td></tr>
 	      <tr><td>Volumename</td><td><?php echo $this->escapeHtml($media->volumename); ?></td></tr>
 	      <tr><td>Mediatype</td><td><?php echo $this->escapeHtml($media->mediatype); ?></td></tr>

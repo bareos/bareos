@@ -15,7 +15,7 @@ class JobController extends AbstractActionController
 
 		$paginator = $this->getJobTable()->fetchAll(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(10);
+		$paginator->setItemCountPerPage(15);
 
 		return new ViewModel(array('paginator' => $paginator));
 

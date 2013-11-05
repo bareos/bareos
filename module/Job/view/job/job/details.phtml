@@ -23,7 +23,7 @@ $this->headTitle($title);
 	<table class="table table-striped table-hover">
 	<tr><td>Job</td><td><?php echo $this->escapeHtml($job->jobid); ?></td></tr>
 	<tr><td>Name</td><td><?php echo $this->escapeHtml($job->jobname); ?></td></tr>
-	<tr><td>Client</td><td><a href="<?php echo $this->url('client', array('action' => 'details', 'clientid' => $job->clientid)); ?>"><?php echo $this->escapeHtml($job->clientname); ?></a></td></tr>
+	<tr><td>Client</td><td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $job->clientid)); ?>"><?php echo $this->escapeHtml($job->clientname); ?></a></td></tr>
 	<tr><td>Type</td><td><?php echo $this->printJobType($job->type); ?></td></tr>
 	<tr><td>Level</td><td><?php echo $this->printJobLevel($job->level); ?></td></tr>
 	<tr><td>Scheduled start</td><td><?php echo $this->printDate($job->schedtime, 'long'); ?></td></tr>
