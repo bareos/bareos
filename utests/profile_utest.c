@@ -8,8 +8,6 @@
 #include <check.h>
 #include <droplet.h>
 #include <droplet/backend.h>
-#include <droplet/uks/uks.h>
-#include "toyctl.h"
 
 #include "testutils.h"
 #include "utest_main.h"
@@ -378,81 +376,6 @@ START_TEST(logging_test)
 }
 END_TEST
 
-START_TEST(toyserver_test)
-{
-  dpl_ctx_t *ctx;
-  dpl_dict_t *profile;
-  dpl_status_t s;
-  char *dropdir;
-  char *expected_uri;
-  struct server_state *state = NULL;
-  int r;
-  char id[41];
-  static const char data[] =
-    "Carles wolf yr Austin, chambray twee lo-fi iPhone brunch Neutra"
-    "slow-carb. Viral +1 kitsch fashion axe wolf.  Selvage flexitarian"
-    "ugh banjo Godard, jean shorts occupy Marfa fingerstache literally"
-    "whatever keffiyeh put a bird on it biodiesel brunch. Forage plaid"
-    "wolf kitsch Etsy. Literally ugh Carles, Intelligentsia sartorial";
-
-  r = toyserver_start(NULL, &state);
-  dpl_assert_int_eq(r, 0);
-
-  /* At this point we have a pretend ~ with NO
-   * .droplet/ directory in it.  We don't create
-   * a dropdir on disk at all, nor a profile, it's
-   * all in memory. */
-  dropdir = strconcat(home, "/trust-fund", (char *)NULL);  /* never created */
-
-  profile = dpl_dict_new(13);
-  dpl_assert_ptr_not_null(profile);
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "host", toyserver_addrlist(state), 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "backend", "sproxyd", 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "base_path", "/proxy/chord", 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "droplet_dir", dropdir, 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "profile_name", "viral", 0));
-  /* need this to disable the event log, otherwise the droplet_dir needs to exist */
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "pricing_dir", "", 0));
-
-  /* create a context with all defaults */
-  unsetenv("DPLDIR");
-  unsetenv("DPLPROFILE");
-  ctx = dpl_ctx_new_from_dict(profile);
-  dpl_assert_ptr_not_null(ctx);
-
-  s = dpl_gen_random_key(ctx, DPL_STORAGE_CLASS_STANDARD, /*custom*/NULL, id, sizeof(id));
-  dpl_assert_int_eq(DPL_SUCCESS, s);
-
-  s = dpl_put_id(ctx,
-		"foobucket",
-		id,
-		/*options*/NULL,
-		DPL_FTYPE_REG,
-		/*condition*/NULL,
-		/*range*/NULL,
-		/*metadata*/NULL,
-		/*sysmd*/NULL,
-		data, sizeof(data)-1);
-  dpl_assert_int_eq(DPL_SUCCESS, s);
-
-  dpl_assert_str_eq(state->request.host, toyserver_addrlist(state));
-  expected_uri = strconcat("/proxy/chord/", id, (char *)NULL);
-  dpl_assert_str_eq(state->request.uri, expected_uri);
-  dpl_assert_str_eq(state->request.body, data);
-  dpl_assert_int_eq(state->reply.status, 200);
-
-//   s = dpl_get_id(ctx, "foobucket", id, /*options*/NULL, DPL_FTYPE_REG,
-//   /*condition*/NULL, /*range*/NULL, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
-//   dpl_assert_int_eq(DPL_SUCCESS, s);
-
-  dpl_ctx_free(ctx);
-  dpl_dict_free(profile);
-  free(dropdir);
-  free(expected_uri);
-  toyserver_stop(state);
-}
-END_TEST
-
 Suite *
 profile_suite()
 {
@@ -466,7 +389,6 @@ profile_suite()
   tcase_add_test(t, ctx_new_from_dict_test);
   tcase_add_test(t, ctx_new_params_test);
   tcase_add_test(t, logging_test);
-  tcase_add_test(t, toyserver_test);
   suite_add_tcase(s, t);
   return s;
 }

@@ -107,6 +107,7 @@ main(int argc, char ** argv)
   srunner_add_suite(r, taskpool_suite());
   srunner_add_suite(r, addrlist_suite());
   srunner_add_suite(r, util_suite());
+  srunner_add_suite(r, sproxyd_suite());
   srunner_add_suite(r, utest_suite());
 #ifdef __linux__
   srunner_add_suite(r, profile_suite());

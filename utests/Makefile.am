@@ -20,6 +20,7 @@ alltests_SOURCES = \
 	profile_utest.c \
 	dbuf_utest.c \
 	sbuf_utest.c \
+	sproxyd_utest.c \
 	dict_utest.c \
 	utest_utest.c \
 	util_utest.c \
