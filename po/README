@@ -21,20 +21,7 @@ added or removed from the repository, run:
 # make gen-potfiles && make update-po
 
 Note, the gen-potfiles pulls in all files found under the top
-directory, so it is much better to do something like:
-
-cd bareos
-rm -rf x
-svn checkout https://bareos.svn.sourceforge.net/svnroot/bareos/trunk/bareos x
-cd x
-./configure <options>
-cd po
-make gen-potfiles
-cp POTFILES.in <real-source-tree/po>
-cd ..
-./configure <options>
-
-This avoids picking up any files that are not in the SVN.
+directory.
 
 ---
 
@@ -47,14 +34,10 @@ Open the newly created file in an editor (e.g. de.po), and look for this line:
 If it still look like this:
 "Project-Id-Version: PACKAGE VERSION\n"
 Correct it to:
-"Project-Id-Version: Bareos 1.38\n"
+"Project-Id-Version: Bareos 12.4\n"
 
 You may also want to correct the language team to:
-"Language-Team: German <bareos-devel@lists.sourceforge.net>\n"
-
-Finally, add <language code>.mo (e.g. de.mo) to .cvsignore, and don't forget to
-run:
-# svn add <language code>.po <language code>.gmo
+"Language-Team: German <bareos-devel@googlegroups.com>\n"
 
 ---
 
