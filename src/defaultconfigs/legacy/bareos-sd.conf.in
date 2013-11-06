@@ -37,10 +37,6 @@ Director {
 }
 
 #
-# Note, for a list of additional Device templates please
-#  see the directory <bareos-source>/examples/devices
-# Or follow the following link:
-#  http://bareos.svn.sourceforge.net/viewvc/bareos/trunk/bareos/examples/devices/
 #
 
 #
@@ -71,10 +67,16 @@ Device {
 #  Changer Device = /dev/sg0
 #}
 
+# For the settings of Max/Min Block Size and File Size, see
+# http://www.bareos.org/en/Whitepapers/articles/Speed_Tuning_of_Tape_Drives.html
+
 #Device {
 #  Name = Drive-1                      #
 #  Drive Index = 0
-#  Media Type = DLT-8000
+#  Media Type = LTO
+#  Minimum Block Size = 1048576
+#  Maximum Block Size = 1048576
+#  Maximum File Size = 50g
 #  Archive Device = /dev/nst0
 #  AutomaticMount = yes;               # when device opened, read it
 #  AlwaysOpen = yes;
@@ -96,7 +98,10 @@ Device {
 #Device {
 #  Name = Drive-2                      #
 #  Drive Index = 1
-#  Media Type = DLT-8000
+#  Media Type = LTO
+#  Minimum Block Size = 1048576
+#  Maximum Block Size = 1048576
+#  Maximum File Size = 50g
 #  Archive Device = /dev/nst1
 #  AutomaticMount = yes;               # when device opened, read it
 #  AlwaysOpen = yes;

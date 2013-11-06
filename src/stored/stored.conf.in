@@ -27,11 +27,16 @@ Director {
 # To connect, the Director must have the same Name and MediaType,
 #  which are sent to the File daemon
 #
+# For the settings of Block and File Sizes, see:
+# http://www.bareos.org/en/Whitepapers/articles/Speed_Tuning_of_Tape_Drives.html
+
 Device {
-  Name = "HP DLT 80"
-  Media Type = DLT8000
+  Name = "LTO-6"
+  Media Type = LTO
   Archive Device = /dev/nst0
-# LabelMedia = yes;                   # lets Bareos label unlabelled media
+  Minimum Block Size = 1048576
+  Maximum Block Size = 1048576
+  Maximum File Size = 50g             # 20g for LTO4, 40g for LTO5
   AutomaticMount = yes;               # when device opened, read it
   AlwaysOpen = yes;
   RemovableMedia = yes;
@@ -42,7 +47,7 @@ Device {
 #  Media Type = "8mm"
 #  Archive Device = /dev/nst1
 #  Hardware end of medium = No;
-## LabelMedia = yes;                   # lets Bareos label unlabelled media
+## LabelMedia = yes;                   # lets Bareos label unlabeled media
 #  AutomaticMount = yes;               # when device opened, read it
 #  AlwaysOpen = Yes;
 #  RemovableMedia = yes;
