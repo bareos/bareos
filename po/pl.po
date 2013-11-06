@@ -44,22 +44,6 @@ msgstr "Zła odpowiedź na komend Hello: ERR="
 msgid "Director rejected Hello command\n"
 msgstr "Director odrzucił komendę Hello\n"
 
-#: src/wx-console/authenticate.c:167 src/console/authenticate.c:172
-msgid ""
-"Director authorization problem.\n"
-"Most likely the passwords do not agree.\n"
-"If you are using TLS, there may have been a certificate validation error "
-"during the TLS handshake.\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Problem autoryzacji Director'a.\n"
-"Najprawdopodobniej się nie zgadzają się hasła.\n"
-"Jeżeli używasz TLS, może to być także błąd weryfikacji certyfikatu podczas "
-"negocjacji TLS.\n"
-"Zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 w celu uzyskania pomocy.\n"
-
 #: src/wx-console/console_conf.c:147 src/console/console_conf.c:140
 #: src/qt-console/bat_conf.cpp:141
 #, c-format
@@ -325,16 +309,6 @@ msgstr "Negocjacja TLS nieudana.\n"
 #: src/filed/authenticate.c:207 src/stored/dircmd.c:208
 msgid "Unable to authenticate Director\n"
 msgstr "Nie mogę zautentykowa Directora\n"
-
-#: src/filed/authenticate.c:262
-msgid ""
-"Authorization key rejected by Storage daemon.\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Autoryzacja klucza odrzucona przez Storage daemona.\n"
-"Proszę zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 w celu uzyskania pomocy.\n"
 
 #: src/filed/verify_vol.c:65
 msgid "Storage command not issued before Verify.\n"
@@ -1795,18 +1769,6 @@ msgstr "Zbyt duo elementw w zasobie %s\n"
 msgid "Unknown resource type %d in save_resource.\n"
 msgstr "Nieznany typ zasobu %d w save_resource.\n"
 
-#: src/tray-monitor/authenticate.c:88
-msgid ""
-"Director authorization problem.\n"
-"Most likely the passwords do not agree.\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Problem autoryzacji Dyrektora.\n"
-"Najprawdopodobniej nie zgadzaj się hasa.\n"
-"Proszę zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 dla uzyskania pomocy.\n"
-
 #: src/tray-monitor/authenticate.c:97 src/console/authenticate.c:155
 #, c-format
 msgid "Bad response to Hello command: ERR=%s\n"
@@ -1817,16 +1779,6 @@ msgstr "Za odpowiedź na komend Hello: ERR=%s\n"
 #, c-format
 msgid "Error sending Hello to Storage daemon. ERR=%s\n"
 msgstr "Błąd w wysyaniu Hello do demona Przechowywania. ERR=%s\n"
-
-#: src/tray-monitor/authenticate.c:138
-msgid ""
-"Director and Storage daemon passwords or names not the same.\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Hasła demonów Dyrektora i Przechowywania nie s takie same.\n"
-"Proszę zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 dla uzyskania pomocy.\n"
 
 #: src/tray-monitor/authenticate.c:145
 msgid "bdird<stored: bad response to Hello command: ERR=%s\n"
@@ -1840,16 +1792,6 @@ msgstr "Demon Przechowywania odrzuci komend Hello\n"
 #, c-format
 msgid "Error sending Hello to File daemon. ERR=%s\n"
 msgstr "Błąd w wysyaniu Hello do demona Plików. ERR=%s\n"
-
-#: src/tray-monitor/authenticate.c:184
-msgid ""
-"Director and File daemon passwords or names not the same.\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Hasła demonów Dyrektora i Plików nie s takie same.\n"
-"Proszę zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 dla uzyskania pomocy.\n"
 
 #: src/tray-monitor/authenticate.c:191 src/dird/authenticate.c:266
 #, c-format
@@ -4544,23 +4486,6 @@ msgstr "Za odpowiedź na komend Hello: ERR=%s\n"
 msgid "Director at \"%s:%d\" rejected Hello command\n"
 msgstr "Director odrzuci komend Hello\n"
 
-#: src/lib/bsock.c:1021 src/qt-console/bcomm/dircomm_auth.cpp:171
-#, fuzzy, c-format
-msgid ""
-"Authorization problem with Director at \"%s:%d\"\n"
-"Most likely the passwords do not agree.\n"
-"If you are using TLS, there may have been a certificate validation error "
-"during the TLS handshake.\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Problem autoryzacji Director'a.\n"
-"Najprawdopodobniej się nie zgadzaj.\n"
-"Jeżeli używasz TLS, może to być także błąd weryfikacji certyfikatu podczas "
-"negocjacji TLS.\n"
-"Zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 w celu uzyskania pomocy.\n"
-
 #: src/lib/tls.c:90
 #, c-format
 msgid ""
@@ -6271,21 +6196,6 @@ msgstr "Wtyczka: \"%s\" nie znaleziona.\n"
 msgid "Director and Storage daemon passwords or names not the same.\n"
 msgstr ""
 
-#: src/dird/authenticate.c:115
-#, fuzzy, c-format
-msgid ""
-"Director unable to authenticate with Storage daemon at \"%s:%d\". Possible "
-"causes:\n"
-"Passwords or names not the same or\n"
-"Maximum Concurrent Jobs exceeded on the SD or\n"
-"SD networking messed up (restart daemon).\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Hasła demonów Dyrektora i Przechowywania nie s takie same.\n"
-"Proszę zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 dla uzyskania pomocy.\n"
-
 #: src/dird/authenticate.c:143
 #, fuzzy, c-format
 msgid "TLS negotiation failed with SD at \"%s:%d\"\n"
@@ -6309,20 +6219,6 @@ msgstr "Błąd w wysyaniu Hello do demona Plików. ERR=%s\n"
 #: src/dird/authenticate.c:222
 msgid "Director and File daemon passwords or names not the same.\n"
 msgstr ""
-
-#: src/dird/authenticate.c:224
-#, fuzzy, c-format
-msgid ""
-"Unable to authenticate with File daemon at \"%s:%d\". Possible causes:\n"
-"Passwords or names not the same or\n"
-"Maximum Concurrent Jobs exceeded on the FD or\n"
-"FD networking messed up (restart daemon).\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Hasła demonów Dyrektora i Plików nie s takie same.\n"
-"Proszę zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 dla uzyskania pomocy.\n"
 
 #: src/dird/authenticate.c:236
 #, fuzzy, c-format
@@ -12867,28 +12763,6 @@ msgstr "    Plików=%s Bajtów=%s Bajtów/sek=%s Błędów=%d\n"
 msgid "I only authenticate Directors, not %d\n"
 msgstr "Autentykuj wycznie directory, nie %d\n"
 
-#: src/stored/authenticate.c:93
-#, fuzzy, c-format
-msgid ""
-"Connection from unknown Director %s at %s rejected.\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Autoryzacja klucza odrzucona przez Storage daemona.\n"
-"Proszę zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 w celu uzyskania pomocy.\n"
-
-#: src/stored/authenticate.c:130
-#, fuzzy
-msgid ""
-"Incorrect password given by Director.\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Autoryzacja klucza odrzucona przez Storage daemona.\n"
-"Proszę zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 w celu uzyskania pomocy.\n"
-
 #: src/stored/authenticate.c:156
 #, fuzzy, c-format
 msgid "TLS negotiation failed with DIR at \"%s:%d\"\n"
@@ -12898,17 +12772,6 @@ msgstr "Negocjacje TLS nie powiody si\n"
 #, fuzzy, c-format
 msgid "Unable to authenticate Director at %s.\n"
 msgstr "Nie mogę zautentykowa Directora\n"
-
-#: src/stored/authenticate.c:240 src/stored/authenticate.c:280
-#, fuzzy, c-format
-msgid ""
-"Incorrect authorization key from File daemon at %s rejected.\n"
-"Please see http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 for help.\n"
-msgstr ""
-"Autoryzacja klucza odrzucona przez Storage daemona.\n"
-"Proszę zobacz http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 w celu uzyskania pomocy.\n"
 
 #: src/stored/authenticate.c:267
 #, fuzzy, c-format
