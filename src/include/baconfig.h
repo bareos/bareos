@@ -53,7 +53,7 @@
 #define ioctl_req_t int
 #endif
 
-#define MANUAL_AUTH_URL "http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi.html#SECTION003760000000000000000"
+#define MANUAL_AUTH_URL "http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors"
 
 #ifdef PROTOTYPES
 # define __PROTO(p)     p
