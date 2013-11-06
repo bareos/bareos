@@ -62,8 +62,9 @@ msgstr ""
 "El más probable es que las contraseñas no están de acuerdo.\n"
 "Si usted esta utilizando TLS, puede haber habido un error de validación de "
 "certificado durante el apretón de manos TLS.\n"
-"Por favor, consulte http://www.bareos.org/en/rel-manual/"
-"Bareos_Freque_Asked_Questi.html#SECTION003760000000000000000 para ayuda.\n"
+"Por favor, consulte "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors"
+" para ayuda.\n"
 
 #: src/console/console.c:123
 #, c-format
@@ -4528,8 +4529,9 @@ msgstr ""
 "Contraseñas o nombres no son los mismos o\n"
 "el Máximo de Concurrentes Jobs ha superado en el SD o\n"
 "red SD desordenada (reiniciar demonio).\n"
-"Por favor, consulte http://www.bareos.org/en/rel-manual/"
-"Bareos_Freque_Asked_Questi.html#SECTION003760000000000000000 por ayuda.\n"
+"Por favor, consulte "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors"
+" para ayuda.\n"
 
 #: src/dird/authenticate.c:135
 #, c-format
@@ -4573,8 +4575,9 @@ msgstr ""
 "Contraseñas o nombres no son los mismos o\n"
 "el Máximo de Concurrentes Jobs ha superado en el FD o\n"
 "red FD desordenada (reiniciar demonio).\n"
-"Por favor, consulte http://www.bareos.org/en/rel-manual/"
-"Bareos_Freque_Asked_Questi.html#SECTION003760000000000000000 por ayuda.\n"
+"Por favor, consulte "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors"
+" para ayuda.\n"
 
 #: src/dird/authenticate.c:228
 #, c-format
@@ -11427,8 +11430,9 @@ msgstr ""
 "Lo mas probable es que las contraseñas no están de acuerdo.\n"
 "Si está usando TLS, puede haber habido un error de validación de "
 "certificados durante la negociación TLS.\n"
-" Por favor vea http://www.bareos.org/en/rel-manual/"
-"Bareos_Freque_Asked_Questi.html#SECTION003760000000000000000 para ayuda.\n"
+"Por favor, consulte "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors"
+" para ayuda.\n"
 
 #: src/lib/smartall.c:142 src/lib/smartall.c:253 src/lib/smartall.c:268
 msgid "Out of memory\n"
@@ -19363,8 +19367,9 @@ msgid ""
 msgstr ""
 "Director problema de autorización.\n"
 "Lo mas probable es que las contraseñas no están de acuerdo.\n"
-"Por favor vea http://www.bareos.org/en/rel-manual/Bareos_Freque_Asked_Questi."
-"html#SECTION003760000000000000000 para ayuda.\n"
+"Por favor, consulte "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors"
+" para ayuda.\n"
 
 #: src/qt-console/tray-monitor/authenticate.cpp:134
 #, fuzzy

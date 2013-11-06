@@ -61,8 +61,8 @@ msgstr ""
 "Швидше за все, проблема у паролях.\n"
 "Якщо Ви використовуєте TLS, можливо, невдала перевірка сертифікату під час "
 "TLS handshake.\n"
-"Для отримання допомоги, будь ласка, перегляньте http://www.bareos.org/en/rel-"
-"manual/Bareos_Freque_Asked_Questi.html#SECTION003760000000000000000.\n"
+"Для отримання допомоги, будь ласка, перегляньте "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
 
 #: src/console/console.c:123
 #, c-format
@@ -10607,8 +10607,8 @@ msgstr ""
 "Швидше за все, проблема у паролях.\n"
 "Якщо Ви використовуєте TLS, можливо, невдала перевірка сертифікату під час "
 "TLS handshake.\n"
-"Для отримання допомоги, будь ласка, перегляньте http://www.bareos.org/en/rel-"
-"manual/Bareos_Freque_Asked_Questi.html#SECTION003760000000000000000.\n"
+"Для отримання допомоги, будь ласка, перегляньте "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
 
 #: src/lib/smartall.c:142 src/lib/smartall.c:253 src/lib/smartall.c:268
 msgid "Out of memory\n"
@@ -17819,8 +17819,8 @@ msgid ""
 msgstr ""
 "Проблеми під час авторизації Керівником.\n"
 "Швидше за все, невірні паролі.\n"
-"Для отримання допомоги, будь ласка, перегляньте http://www.bareos.org/en/rel-"
-"manual/Bareos_Freque_Asked_Questi.html#SECTION003760000000000000000.\n"
+"Для отримання допомоги, будь ласка, перегляньте "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
 
 #: src/qt-console/tray-monitor/authenticate.cpp:134
 msgid ""
