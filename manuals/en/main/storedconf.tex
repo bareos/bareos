@@ -205,7 +205,7 @@ Specify the ports and addresses on which the Storage daemon will listen
 for NDMP Tape Server connections.  Normally, the default is sufficient and you
 do not need to specify this directive.
 
-\directive{sd}{NDMP Port}{}{}{10000}
+\directive{sd}{NDMP Port}{port-specification}{}{10000}
 Specifies port number on which the Storage daemon listens for NDMP Tape Server
 connections.
 
@@ -828,12 +828,8 @@ data.
 drives or for disk Volumes where doing so may allow corrupted data to go
 undetected.
 
-\item [Minimum block size = {\textless}size-in-bytes{\textgreater}] \hfill \\
-\index[sd]{Minimum block size}
-\index[sd]{Directive!Minimum block size}
-On most modern tape drives, you will not need or want to specify this
-directive, and if you do so, it will be to make Bareos use fixed block
-sizes.  This statement applies only to non-random access devices (e.g.
+\directive{sd}{Minimum block size}{size-in-bytes}{}{0}
+This statement applies only to non-random access devices (e.g.
 tape drives).  Blocks written by the storage daemon to a non-random
 archive device will never be smaller than the given {\bf size-in-bytes}.
 The Storage daemon will attempt to efficiently fill blocks with data
@@ -842,46 +838,35 @@ block to achieve the required minimum size.
 
 To force the block size to be fixed, as is the case for some non-random
 access devices (tape drives), set the {\bf Minimum block size} and the
-{\bf Maximum block size} to the same value (zero included).  The default
+{\bf Maximum block size} to the same value.  The default
 is that both the minimum and maximum block size are zero and the default
 block size is 64,512 bytes.
 
 For  example, suppose you want a fixed block size of 100K bytes, then you
 would specify:
 
-\footnotesize
-\begin{verbatim}
-
- Minimum block size = 100K
- Maximum block size = 100K
-
-\end{verbatim}
-\normalsize
+\begin{bconfig}{Fixed Block Size}
+Minimum block size = 100K
+Maximum block size = 100K
+\end{bconfig}
 
 Please note that if you specify a fixed block size as shown above,  the tape
 drive must either be in variable block size mode, or  if it is in fixed block
-size mode, the block size (generally  defined by {\bf mt}) {\bf must} be
+size mode, the block size (generally  defined by \command{mt}) {\bf must} be
 identical to the size specified  in Bareos -- otherwise when you attempt to
 re-read your Volumes,  you will get an error.
 
 If you want the  block size to be variable but with a 64K minimum and 200K
 maximum (and  default as well), you would specify:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{Variable Block Size}
+Minimum block size =  64K
+Maximum block size = 200K
+\end{bconfig}
 
- Minimum block size = 64K
- Maximum blocksize = 200K
 
-\end{verbatim}
-\normalsize
-
-\item [Maximum block size = {\textless}size-in-bytes{\textgreater}] \hfill \\
-\index[sd]{Maximum block size}
-\index[sd]{Directive!Maximum block size}
-On most modern tape drives, you will not need to specify this directive.
-If you do so, it will most likely be to use fixed block sizes (see
-Minimum block size above).  The Storage daemon will always attempt to
+\directive{sd}{Maximum block size}{size-in-bytes}{}{64512}
+The Storage daemon will always attempt to
 write blocks of the specified {\bf size-in-bytes} to the archive device.
 As a consequence, this statement specifies both the default block size
 and the maximum block size.  The size written never exceed the given
@@ -892,7 +877,17 @@ and the new data will begin a new block.
 If no value is specified or zero is specified, the Storage daemon will
 use a default block size of 64,512 bytes (126 * 512).
 
-The maximum {\bf size-in-bytes} possible is 2,000,000.
+This default size is far too low for modern tape drives. If you
+are using a modern tape drive like LTO-4 or newer, you should use
+a block size of 512k or 1M.
+
+For more information, please see the tape speed whitepaper:
+\elink{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html}{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html}
+
+%The maximum {\bf size-in-bytes} possible is 2,000,000.
+
+\warning{If your are using LTO drives, changing the block size after labeling the tape will result into unreadable tapes. So normally you will not change the block size in an existing configuration.}
+
 
 \directive{sd}{Hardware End of Medium}{yes{\textbar}no}{}{yes}
 All modern (after 1998) tape drives should support this
@@ -1075,9 +1070,12 @@ restore operations. If you set this to a small value (e.g. 1MB),
 you will generate lots of database records (JobMedia) and may
 significantly increase CPU/disk overhead.
 
-If you are configuring an LTO-3 or LTO-4 tape, you probably will
-want to set the {\bf Maximum File Size} to 2GB to avoid making
+If you are configuring an modern drive like LTO-4 or newer, you probably will
+want to set the {\bf Maximum File Size} to 20GB or bigger to avoid making
 the drive stop to write an EOF mark.
+
+For more info regarding this parameter, read the tape speed whitepaper:
+\elink{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html}{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html}
 
 Note, this directive does not limit the size of Volumes that Bareos
 will create regardless of whether they are tape or disk volumes. It
