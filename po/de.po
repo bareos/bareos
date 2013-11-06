@@ -63,8 +63,8 @@ msgstr ""
 "Passworte oder Namen nicht gleich oder\n"
 "Maximum Concurrent Jobs überschritten auf dem FD oder\n"
 "FD Netzwerk durcheinander (Daemon neustarten).\n"
-"Für Hilfe bitte unter http://www.bareos.org/rel-manual/faq."
-"html#AuthorizationErrors nachsehen.\n"
+"Weitere Informationen unter "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
 
 #: src/console/console.c:123
 #, c-format
@@ -4326,8 +4326,8 @@ msgstr ""
 "Passworte oder Namen nicht gleich oder\n"
 "Maximum Concurrent Jobs überschritten am SD oder\n"
 "SD Netzwerk durcheinander (daemon neustarten).\n"
-"Für Hilfe bitte unter http://www.bareos.org/rel-manual/faq."
-"html#AuthorizationErrors nachsehen.\n"
+"Weitere Informationen unter "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
 
 #: src/dird/authenticate.c:135
 #, fuzzy, c-format
@@ -4373,8 +4373,8 @@ msgstr ""
 "Passworte oder Namen nicht gleich oder\n"
 "Maximum Concurrent Jobs überschritten auf dem FD oder\n"
 "FD Netzwerk durcheinander (Daemon neustarten).\n"
-"Für Hilfe bitte unter http://www.bareos.org/rel-manual/faq."
-"html#AuthorizationErrors nachsehen.\n"
+"Weitere Informationen unter "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
 
 #: src/dird/authenticate.c:228
 #, c-format
@@ -10860,8 +10860,8 @@ msgstr ""
 "Passworte oder Namen nicht gleich oder\n"
 "Maximum Concurrent Jobs überschritten auf dem FD oder\n"
 "FD Netzwerk durcheinander (Daemon neustarten).\n"
-"Für Hilfe bitte unter http://www.bareos.org/rel-manual/faq."
-"html#AuthorizationErrors nachsehen.\n"
+"Weitere Informationen unter "
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
 
 #: src/lib/smartall.c:142 src/lib/smartall.c:253 src/lib/smartall.c:268
 msgid "Out of memory\n"

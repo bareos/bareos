@@ -59,7 +59,8 @@ msgstr ""
 "certificat\n"
 "pendant l'initialisation de la connexion TLS.\n"
 "Vous trouverez de l'aide sur\n"
-"http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors\n"
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
+
 
 #: src/console/console.c:123
 #, c-format
@@ -4495,7 +4496,8 @@ msgstr ""
 "- Le nombre maximum de job concurrent est atteint sur le SD ;\n"
 "- La connexion réseau du SD est tombée (il faut le redémarrer).\n"
 "Vous trouverez de l'aide sur\n"
-"http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors\n"
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
+
 
 #: src/dird/authenticate.c:135
 #, fuzzy, c-format
@@ -4543,7 +4545,7 @@ msgstr ""
 "- Le nombre maximum de job concurrent est atteint sur le FD ;\n"
 "- La connexion réseau du FD est tombée (il faut le redémarrer).\n"
 "Vous trouverez de l'aide sur\n"
-"http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors\n"
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
 
 #: src/dird/authenticate.c:228
 #, c-format
@@ -11193,7 +11195,7 @@ msgstr ""
 "certificat\n"
 "pendant l'initialisation de la connexion TLS.\n"
 "Vous trouverez de l'aide sur\n"
-"http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors\n"
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
 
 #: src/lib/smartall.c:142 src/lib/smartall.c:253 src/lib/smartall.c:268
 msgid "Out of memory\n"
@@ -18693,7 +18695,8 @@ msgstr ""
 "Problème d'authentification avec le director.\n"
 "Le plus souvent, les mots de pass ne correspondent pas.\n"
 "Vous trouverez de l'aide sur\n"
-"http://www.bareos.org/rel-manual/faq.html#AuthorizationErrors\n"
+"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors.\n"
+
 
 #: src/qt-console/tray-monitor/authenticate.cpp:134
 #, fuzzy
