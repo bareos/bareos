@@ -50,7 +50,18 @@ class LogTable
 
 	public function getLogsByJob($id)
 	{
+
+		$jobid = (int) $id;
 		
+		$select = new Select();
+		$select->from('log');
+		$select->where('jobid = ' . $jobid);
+		$select->order('logid DESC');
+
+		$resultSet = $this->tableGateway->selectWith($select);
+
+		return $resultSet;
+
 	}
 	
 	public function getLogNum()
@@ -69,3 +80,4 @@ class LogTable
 	}
 	
 }
+

@@ -47,7 +47,6 @@ $this->headTitle($title);
 	<th>Type</th>
 	<th>Level</th>
 	<th>Start</th>
-	<th>End</th>
 	<th>Duration</th>
 	<th>Status</th>
 	<th>Log</th>
@@ -64,7 +63,6 @@ $this->headTitle($title);
 	<td><?php echo $this->printJobType($job->type); ?></td>
 	<td><?php echo $this->printJobLevel($job->level); ?></td>
 	<td><?php echo $this->escapeHtml($job->starttime); ?></td>
-	<td><?php echo $this->escapeHtml($job->endtime); ?></td>
 	<td><?php echo $this->printJobDuration($job->starttime, $job->endtime); ?></td>
 	<td><?php echo $this->printJobStatus($job->jobstatus); ?></td>
 	<td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>">View</a></td>

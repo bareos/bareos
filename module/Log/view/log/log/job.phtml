@@ -1,6 +1,6 @@
 <?php
 
-$title = 'Logs for job ...';
+$title = 'Logs for job ...'; // TODO
 $this->headTitle($title);
 
 ?>
@@ -8,4 +8,30 @@ $this->headTitle($title);
 <h2><?php echo $title; ?></h2>
 <hr />
 
+<div class="panel panel-default">
+<div class="panel-body">
 
+<table class="table table-striped table-hover" style="font-size: 9pt;">
+
+<tr>
+	<th>Timestamp</th>
+	<th>Log</th>
+	<th>Job</th>
+	<th>Message</th>
+</tr>
+
+<?php foreach($this->log as $logitem) : ?>
+
+<tr>
+	<td><?php echo $this->escapeHtml($logitem->time); ?></td>
+	<td><?php echo $this->escapeHtml($logitem->logid); ?></td>
+	<td><?php echo $this->escapeHtml($logitem->jobid); ?></td>
+	<td><?php echo $this->escapeHtml($logitem->logtext); ?></td>
+</tr>
+
+<?php endforeach; ?>
+
+</table>
+
+</div>
+</div>
