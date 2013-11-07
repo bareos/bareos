@@ -1,9 +1,10 @@
 <?php
-return array(
-    // This should be an array of module namespaces used in the application.
-    'modules' => array(
-	'ZendDeveloperTools',
-        'Application',
+
+$env = getenv('APP_ENV') ?: 'production';
+
+// Use the $env value to dtermine which module to load
+$modules = array(
+	'Application',
         'Dashboard',
 	'Director',
 	'Fileset',
@@ -14,8 +15,16 @@ return array(
 	'Job',
 	'File',
 	'Log',
-    ),
+	'Admin',
+);
+if($env == 'development') {
+  $modules[] = 'ZendDeveloperTools';
+}
 
+return array(
+    // This should be an array of module namespaces used in the application.
+    'modules' => $modules,
+    
     // These are various options for the listeners attached to the ModuleManager
     'module_listener_options' => array(
         // This should be an array of paths in which modules reside.

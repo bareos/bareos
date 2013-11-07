@@ -26,7 +26,7 @@ $this->headTitle($title);
 	<td><?php echo $this->escapeHtml($logitem->time); ?></td>
 	<td><?php echo $this->escapeHtml($logitem->logid); ?></td>
 	<td><?php echo $this->escapeHtml($logitem->jobid); ?></td>
-	<td><?php echo $this->escapeHtml($logitem->logtext); ?></td>
+	<td><?php echo nl2br($this->escapeHtml($logitem->logtext)); ?></td>
 </tr>
 
 <?php endforeach; ?>

@@ -10,6 +10,8 @@ env:
 	- DB=pgsql
 
 before_install:
+	- composer self-update
+	- composer update --prefer-source --dev
 
 before_script:
 

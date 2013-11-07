@@ -167,10 +167,12 @@ return array(
 			'label' => 'Restore',
 			'route' => 'restore',
 		),
+		*/
 		array(
 			'label' => 'Administration',
 			'route' => 'admin',
 		),
+		/*
 		array(
 			'label' => 'User',
 			'route' => 'user',

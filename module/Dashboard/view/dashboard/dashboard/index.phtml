@@ -87,7 +87,6 @@ $this->headTitle($title);
 		<th>Type</th>
 		<th>Level</th>
 		<th>Start</th>
-		<th>End</th>
 		<th>Duration</th>
 		<th>Status</th>
 		<th>Log</th>
@@ -103,7 +102,6 @@ $this->headTitle($title);
 	      <td><?php echo $this->printJobType($jobUnsuccess->type); ?></td>
 	      <td><?php echo $this->printJobLevel($jobUnsuccess->level); ?></td>
 	      <td><?php echo $this->escapeHtml($jobUnsuccess->starttime); ?></td>
-	      <td><?php echo $this->escapeHtml($jobUnsuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobDuration($jobUnsuccess->starttime, $jobUnsuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobStatus($jobUnsuccess->jobstatus); ?></td>
 	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobUnsuccess->jobid)); ?>">View</a></td>
@@ -148,7 +146,6 @@ $this->headTitle($title);
 		<th>Type</th>
 		<th>Level</th>
 		<th>Start</th>
-		<th>End</th>
 		<th>Duration</th>
 		<th>Status</th>
 		<th>Log</th>
@@ -161,10 +158,9 @@ $this->headTitle($title);
 	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $jobSuccess->jobid)); ?>"><?php echo $this->escapeHtml($jobSuccess->jobid); ?></a></td>
 	      <td><?php echo $this->escapeHtml($jobSuccess->jobname); ?></td>
 	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $jobSuccess->clientid)); ?>"><?php echo $this->escapeHtml($jobSuccess->clientname); ?></a></td>
-	      <td><?php echo $this->printJobType($jobSuccess->type); ?></td>
 	      <td><?php echo $this->printJobLevel($jobSuccess->level); ?></td>
+	      <td><?php echo $this->printJobType($jobSuccess->type); ?></td>
 	      <td><?php echo $this->escapeHtml($jobSuccess->starttime); ?></td>
-	      <td><?php echo $this->escapeHtml($jobSuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobDuration($jobSuccess->starttime, $jobSuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobStatus($jobSuccess->jobstatus); ?></td>
 	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobSuccess->jobid)); ?>">View</a></td>

@@ -26,7 +26,7 @@ $this->headTitle($title);
 
 	<td><?php echo $this->escapeHtml($log->logid); ?></td>
 	<td width="150"><?php echo $this->escapeHtml($log->time); ?></td>
-	<td><?php echo $this->escapeHtml($log->logtext); ?></td>
+	<td><?php echo nl2br($this->escapeHtml($log->logtext)); ?></td>
 	<td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $log->jobid)); ?>"><?php echo $this->escapeHtml($log->jobid); ?></a></td>
 	
 </tr>
