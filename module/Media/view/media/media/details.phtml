@@ -8,46 +8,6 @@ $this->headTitle($title);
 <h2><?php echo $title; ?></h2>
 <hr />
 
-<!--
-
-<script type="text/javascript">
-    
-    function chart1() {
-
-      var data = [
-	  ['Free bytes', <?php echo ($media->maxvolbytes - $media->volbytes); ?>],
-	  ['Used bytes', <?php echo $media->volbytes; ?>]
-      ];
-      
-      var plot1 = jQuery.jqplot('chart1',[data],
-      {
-	seriesDefaults: {
-	  renderer: jQuery.jqplot.PieRenderer,
-	  rendererOptions: { 
-	    showDataLabels: true
-	  }
-      },
-	legend:{ 
-	  show: true,
-	  location: 'w'
-	},
-	grid: {
-	  drawGridLines: true
-        }
-      });
-      
-    }
-
-    $(document).ready(
-      function(){
-	chart1();
-      }
-    );
-    
-</script>
-
--->
-
 <div class="row">
 
   <div class="col-md-5">
@@ -61,7 +21,7 @@ $this->headTitle($title);
 	      <div class="panel-body">
 
 	      <table class="table table-striped table-hover" style="font-size: 9pt;">
-	      <tr><td>Volume ID</td><td><a href="<?php echo $this->url('media', array('action'=>'details', 'id' => $media->mediaid)); ?>"><?php echo $this->escapeHtml($media->mediaid); ?></a></td></tr>
+	      <tr><td>Volume ID</td><td><?php echo $this->escapeHtml($media->mediaid); ?></td></tr>
 	      <tr><td>Volumename</td><td><?php echo $this->escapeHtml($media->volumename); ?></td></tr>
 	      <tr><td>Mediatype</td><td><?php echo $this->escapeHtml($media->mediatype); ?></td></tr>
 	      <tr><td>Mediatype ID</td><td><?php echo $this->escapeHtml($media->mediatypeid); ?></td></tr>
@@ -108,27 +68,5 @@ $this->headTitle($title);
 	  </div>
 	  
   </div>
-
-<!--
-
-  <div class="col-md-5">
-	  
-	  <div class="panel panel-default">
-	  
-	      <div class="panel-heading">
-		  <h3 class="panel-title"><?php echo $this->translate('Volume usage') ?></h3>
-	      </div>
-    
-	      <div class="panel-body">
-	  
-	      <div id="chart1" style="width:400px; height:400px;"></div>
-	      
-	      </div>
-	      
-	  </div>
-	      
-  </div>
-
--->
 
 </div>

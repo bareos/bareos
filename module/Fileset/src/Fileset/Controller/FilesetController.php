@@ -21,7 +21,17 @@ class FilesetController extends AbstractActionController
 
 	public function detailsAction() 
 	{
-
+		$id = (int) $this->params()->fromRoute('id', 0);
+		
+		if (!$id) {
+		    return $this->redirect()->toRoute('fileset');
+		}
+	
+		return new ViewModel(
+			array(
+				'fileset' => $this->getFilesetTable()->getFileset($id),
+			)
+		);
 	}
 
 	public function getFilesetTable() 

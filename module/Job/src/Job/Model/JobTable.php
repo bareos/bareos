@@ -208,4 +208,22 @@ class JobTable
 		return $num;
 	}
 	
+	public function getLastSuccessfulClientJob($id) 
+	{
+		$select = new Select();
+		$select->from('job');
+		$select->where("clientid = " . $id . " AND jobstatus = 'T'");
+		$select->order('jobid DESC');
+		$select->limit(1);
+		
+		$rowset = $this->tableGateway->selectWith($select);
+		$row = $rowset->current();
+		
+		if(!$row) {
+			throw new \Exception("Could not find row $jobid");
+		}
+		
+		return $row;
+	}
+	
 }

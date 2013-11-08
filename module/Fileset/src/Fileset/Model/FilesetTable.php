@@ -26,7 +26,7 @@ class FilesetTable
 	public function getFileset($id)
 	{
 		$id = (int) $id;
-		$rowset = $this->tableGateway->select(array('id' => $id));
+		$rowset = $this->tableGateway->select(array('filesetid' => $id));
 		$row = $rowset->current();
 		if(!$row) {
 			throw new \Exception("Could not find row $id");

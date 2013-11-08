@@ -14,7 +14,7 @@ class MediaController extends AbstractActionController
 	{
 		$paginator = $this->getMediaTable()->fetchAll(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(20);
+		$paginator->setItemCountPerPage(10);
 
 		return new ViewModel(array('paginator' => $paginator));
 	}

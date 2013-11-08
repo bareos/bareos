@@ -9,6 +9,7 @@ class PoolController extends AbstractActionController
 {
 
 	protected $poolTable;
+	protected $mediaTable;
 
 	public function indexAction()
 	{
@@ -21,7 +22,19 @@ class PoolController extends AbstractActionController
 
 	public function detailsAction() 
 	{
-
+		$id = (int) $this->params()->fromRoute('id', 0);
+		
+		if (!$id) {
+		    return $this->redirect()->toRoute('pool');
+		}
+		
+		return new ViewModel(
+			array(
+				'pool' => $this->getPoolTable()->getPool($id),
+				'media' => $this->getMediaTable()->getPoolVolumes($id),
+			)
+		);
+		
 	}
 
 	public function getPoolTable() 
@@ -31,6 +44,15 @@ class PoolController extends AbstractActionController
 			$this->poolTable = $sm->get('Pool\Model\PoolTable');
 		}
 		return $this->poolTable;
+	}
+	
+	public function getMediaTable()
+	{
+		if(!$this->mediaTable) {
+			$sm = $this->getServiceLocator();
+			$this->mediaTable = $sm->get('Media\Model\MediaTable');
+		}
+		return $this->mediaTable;
 	}
 	
 }

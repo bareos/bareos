@@ -8,14 +8,10 @@ $this->headTitle($title);
 <h2><?php echo $title; ?></h2>
 <hr />
 
-<?php foreach($pools as $pool) : ?>
+<div class="row">
 
 <div class="col-md-12">
 <div class="panel panel-default">
-	  
-<div class="panel-heading">
-<h3 class="panel-title"><?php echo $this->escapeHtml($pool->name); ?></h3>
-</div>
     
 <div class="panel-body">
 
@@ -30,10 +26,11 @@ $this->headTitle($title);
 	<th>Volume retention</th>
 	<th>Maximum volume jobs</th>
 	<th>Maximum volume files</th>
-	<th>Maximum volume bytes</th>
-	
+	<th>Maximum volume bytes</th>	
 	
 </tr>
+
+<?php foreach($pools as $pool) : ?>
 
 <tr>
 
@@ -49,12 +46,14 @@ $this->headTitle($title);
 
 </tr>
 
+<?php endforeach; ?>
+
 </table>
 
 </div>
 </div>
 </div>
 
-<?php endforeach; ?>
+</div>
 
 

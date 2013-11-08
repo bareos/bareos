@@ -14,7 +14,7 @@ class FileController extends AbstractActionController
 	{
 		$paginator = $this->getFileTable()->fetchAll(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(20);
+		$paginator->setItemCountPerPage(15);
 
 		return new ViewModel( array('paginator' => $paginator) );
 	}

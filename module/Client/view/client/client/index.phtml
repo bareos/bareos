@@ -10,16 +10,14 @@ $this->headTitle($title);
 
 <?php foreach($clients as $client) : ?>
 
+<div class="row">
+
 <div class="col-md-12">
 <div class="panel panel-default">
-	  
-<div class="panel-heading">
-<h3 class="panel-title"><?php echo "Client " . $this->escapeHtml($client->clientid); ?></h3>
-</div>
     
 <div class="panel-body">
 
-<table class="table table-striped table-hover">
+<table class="table table-striped table-hover" style="font-size: 9pt;">
 
 <tr>
 	<th>Client</th>
@@ -31,7 +29,7 @@ $this->headTitle($title);
 </tr>
 <tr>
 
-	<td><a href="<?php echo $this->url('client', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($client->clientid); ?></a></td>
+	<td><a href="<?php echo $this->url('client', array('action'=>'details', 'id' => $client->clientid)); ?>"><?php echo $this->escapeHtml($client->clientid); ?></a></td>
 	<td><?php echo $this->escapeHtml($client->name); ?></td>
 	<td><?php echo $this->escapeHtml($client->uname); ?></td>
 	<td><?php echo $this->escapeHtml($client->autoprune); ?></td>
@@ -44,6 +42,8 @@ $this->headTitle($title);
 
 </div>
 </div>
+</div>
+
 </div>
 
 <?php endforeach; ?>

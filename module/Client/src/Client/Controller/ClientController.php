@@ -9,6 +9,7 @@ class ClientController extends AbstractActionController
 {
 
 	protected $clientTable;
+	protected $jobTable;
 
 	public function indexAction()
 	{
@@ -21,7 +22,19 @@ class ClientController extends AbstractActionController
 
 	public function detailsAction() 
 	{
-
+		
+		$id = (int) $this->params()->fromRoute('id', 0);
+		if(!$id) {
+		    return $this->redirect()->toRoute('client');
+		}
+		
+		return new ViewModel(
+		    array(
+		      'client' => $this->getClientTable()->getClient($id),
+		      'job' => $this->getJobTable()->getLastSuccessfulClientJob($id),
+		    )
+		);
+		
 	}
 
 	public function getClientTable() 
@@ -31,6 +44,15 @@ class ClientController extends AbstractActionController
 			$this->clientTable = $sm->get('Client\Model\ClientTable');
 		}
 		return $this->clientTable;
+	}
+	
+	public function getJobTable() 
+	{
+		if(!$this->jobTable) {
+			$sm = $this->getServiceLocator();
+			$this->jobTable = $sm->get('Job\Model\JobTable');
+		}
+		return $this->jobTable;
 	}
 	
 }

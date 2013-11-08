@@ -42,6 +42,7 @@ class LogController extends AbstractActionController
 	  
 		return new ViewModel(array(
 				'log' => $this->getLogTable()->getLogsByJob($id),
+				'jobid' => (int) $this->params()->fromRoute('id'),
 			));
 	}
 	

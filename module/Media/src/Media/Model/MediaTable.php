@@ -67,5 +67,20 @@ class MediaTable
 		return $num;
 	}
 	
+	public function getPoolVolumes($id) 
+	{
+		$poolid = (int) $id;
+		
+		$select = new Select();
+		$select->from('media');
+		$select->where('poolid = ' . $poolid);
+		$select->order('mediaid ASC');
+		
+		$resultSet = $this->tableGateway->selectWith($select);
+		
+		return $resultSet;
+		
+	}
+	
 }
 
