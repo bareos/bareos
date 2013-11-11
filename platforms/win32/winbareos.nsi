@@ -44,6 +44,7 @@ Var ClientName            #XXX_REPLACE_WITH_HOSTNAME_XXX
 Var ClientPassword        #XXX_REPLACE_WITH_FD_PASSWORD_XXX
 Var ClientMonitorPassword #XXX_REPLACE_WITH_FD_MONITOR_PASSWORD_XXX
 Var ClientAddress         #XXX_REPLACE_WITH_FD_MONITOR_PASSWORD_XXX
+Var ClientCompatible      # is  client compatible?
 
 # Needed for bconsole and bat:
 Var DirectorAddress       #XXX_REPLACE_WITH_HOSTNAME_XXX
@@ -279,6 +280,12 @@ Section -SetPasswords
   FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-dir#$DirectorName#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-mon#$HostName-mon#g$\r$\n"
 
+  # if we do not want to be compatible we uncomment the setting for compatible
+  #
+  ${If} $ClientCompatible != ${BST_CHECKED}
+    FileWrite $R1 "s@# compatible@compatible@g$\r$\n"
+  ${EndIf}
+
   FileClose $R1
 
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-fd.conf"'
@@ -317,7 +324,6 @@ Section -SetPasswords
 #  FileWrite $R1 '}$\n'
 #
 #  FileClose $R1
-#
 SectionEnd
 
 Section "Bareos Client (FileDaemon) and base libs" SEC_CLIENT
@@ -465,7 +471,7 @@ SectionEnd
 Section -StartDaemon
   nsExec::ExecToLog "net start bareos-fd"
   ${If} ${SectionIsSelected} ${SEC_TRAYMON}
-    MessageBox MB_OK|MB_ICONINFORMATION "The tray monitor will be started automatically on next login" /SD IDOK
+    MessageBox MB_OK|MB_ICONINFORMATION "The tray monitor will be started automatically on next login. $\r$\n Alternatively it can be started from the start menu entry now." /SD IDOK
   ${EndIf}
 SectionEnd
 
@@ -625,6 +631,7 @@ done:
                     [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole/BAT]  $\r$\n\
                     [/CLIENTADDRESS=Network Address of the client] $\r$\n\
                     [/CLIENTMONITORPASSWORD=Password for monitor access] $\r$\n\
+                    [/CLIENTCOMPATIBLE=(0/1) client compatible setting (0=no,1=yes)]$\r$\n\
                     $\r$\n\
                     [/DIRECTORADDRESS=Network Address of the Director (for bconsole or BAT)] $\r$\n\
                     [/DIRECTORPASSWORD=Password to access Director]$\r$\n\
@@ -650,6 +657,9 @@ done:
   ClearErrors
 
   ${GetOptions} $cmdLineParams "/CLIENTMONITORPASSWORD=" $ClientMonitorPassword
+  ClearErrors
+
+  ${GetOptions} $cmdLineParams "/CLIENTCOMPATIBLE=" $ClientCompatible
   ClearErrors
 
   ${GetOptions} $cmdLineParams "/DIRECTORADDRESS=" $DirectorAddress
@@ -730,11 +740,6 @@ done:
 
 
 
-#  MessageBox MB_OK "RandomPassword: $ClientPassword"
-#  MessageBox MB_OK "RandomPassword: $ClientMonitorPassword"
-
-
-
 # if the variables are not empty (because of cmdline params),
 # dont set them with our own logic but leave them as they are
   strcmp $ClientName     "" +1 +2
@@ -771,13 +776,15 @@ strcmp $Upgrading "yes" skip
 ${If} ${SectionIsSelected} ${SEC_CLIENT}
   InstallOptions::dialog $PLUGINSDIR\clientdialog.ini
   Pop $R0
-  ReadINIStr  $ClientName             "$PLUGINSDIR\clientdialog.ini" "Field 2" "state"
+  ReadINIStr  $ClientName              "$PLUGINSDIR\clientdialog.ini" "Field 2" "state"
   ReadINIStr  $DirectorName            "$PLUGINSDIR\clientdialog.ini" "Field 3" "state"
   ReadINIStr  $ClientPassword          "$PLUGINSDIR\clientdialog.ini" "Field 4" "state"
   ReadINIStr  $ClientMonitorPassword   "$PLUGINSDIR\clientdialog.ini" "Field 14" "state"
   ReadINIStr  $ClientAddress           "$PLUGINSDIR\clientdialog.ini" "Field 5" "state"
+  ReadINIStr  $ClientCompatible        "$PLUGINSDIR\clientdialog.ini" "Field 16" "state"
+
 ${EndIf}
-#  MessageBox MB_OK "$ClientName$\r$\n$ClientPassword$\r$\n$ClientMonitorPassword "
+#  MessageBox MB_OK "Compatible:$\r$\n$Compatible"
 
 skip:
   Pop $R0
