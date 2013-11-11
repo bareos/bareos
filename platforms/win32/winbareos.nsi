@@ -280,6 +280,12 @@ Section -SetPasswords
   FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-dir#$DirectorName#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-mon#$HostName-mon#g$\r$\n"
 
+  # if we do not want to be compatible we uncomment the setting for compatible
+  #
+  ${If} $ClientCompatible != ${BST_CHECKED}
+    FileWrite $R1 "s@# compatible@compatible@g$\r$\n"
+  ${EndIf}
+
   FileClose $R1
 
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-fd.conf"'
@@ -296,11 +302,6 @@ Section -SetPasswords
   FileWrite $R1 "s#XXX_REPLACE_WITH_HOSTNAME_XXX#$DirectorAddress#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX#$DirectorPassword#g$\r$\n"
 
-  # if we do not want to be compatible we uncomment the setting for compatible
-  #
-  ${If} $ClientCompatible != ${BST_CHECKED}
-    FileWrite $R1 "s@# compatible@compatible@g$\r$\n"
-  ${EndIf}
   FileClose $R1
 
 
