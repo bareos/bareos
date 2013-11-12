@@ -342,9 +342,9 @@ SectionIn 1 2 3
   File "bareos-fd.exe"
   File "libbareos.dll"
   File "libbareosfind.dll"
-  File "libcrypto-8.dll"
+  File "libcrypto-*.dll"
   File "libgcc_s_*-1.dll"
-  File "libssl-8.dll"
+  File "libssl-*.dll"
   File "libstdc++-6.dll"
   File "pthreadGCE2.dll"
   File "zlib1.dll"
@@ -682,13 +682,18 @@ done:
   File "/oname=$PLUGINSDIR\directordialog.ini" "directordialog.ini"
   File "/oname=$PLUGINSDIR\openssl.exe" "openssl.exe"
   File "/oname=$PLUGINSDIR\sed.exe" "sed.exe"
-  File "/oname=$PLUGINSDIR\libcrypto-8.dll" "libcrypto-8.dll"
+
+  # one of the two files  have to be available depending onwhat openssl Version we sue
+  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-8.dll" "libcrypto-8.dll"
+  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-10.dll" "libcrypto-10.dll"
 
   # Either one of this two files will be available depending on 32/64 bits.
   File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_sjlj-1.dll" "libgcc_s_sjlj-1.dll"
   File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll" "libgcc_s_seh-1.dll"
 
-  File "/oname=$PLUGINSDIR\libssl-8.dll" "libssl-8.dll"
+  File /nonfatal "/oname=$PLUGINSDIR\libssl-8.dll" "libssl-8.dll"
+  File /nonfatal "/oname=$PLUGINSDIR\libssl-10.dll" "libssl-10.dll"
+
   File "/oname=$PLUGINSDIR\libstdc++-6.dll" "libstdc++-6.dll"
   File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
 
@@ -929,11 +934,11 @@ ConfDeleteSkip:
   Delete "$INSTDIR\Plugins\bpipe-fd.dll"
   Delete "$INSTDIR\libbareos.dll"
   Delete "$INSTDIR\libbareosfind.dll"
-  Delete "$INSTDIR\libcrypto-8.dll"
+  Delete "$INSTDIR\libcrypto-*.dll"
   Delete "$INSTDIR\libgcc_s_*-1.dll"
   Delete "$INSTDIR\libhistory6.dll"
   Delete "$INSTDIR\libreadline6.dll"
-  Delete "$INSTDIR\libssl-8.dll"
+  Delete "$INSTDIR\libssl-*.dll"
   Delete "$INSTDIR\libstdc++-6.dll"
   Delete "$INSTDIR\libtermcap-0.dll"
   Delete "$INSTDIR\pthreadGCE2.dll"
