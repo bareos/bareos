@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Bareos 3.0.2\n"
 "Report-Msgid-Bugs-To: info@bareos.org\n"
-"POT-Creation-Date: 2013-09-04 11:37+0200\n"
+"POT-Creation-Date: 2013-11-12 14:36+0100\n"
 "PO-Revision-Date: 2009-12-01 16:04-0300\n"
 "Last-Translator: Victor Hugo dos Santos <listas.vhs@gmail.com>\n"
 "Language-Team: Bareos Spanish Team <bareos-users-es@lists.sourceforge.net>\n"
@@ -528,57 +528,57 @@ msgstr "Nombre de volumen debe ser de al menos un carácter de largo.\n"
 msgid "Could not destroy client queue: ERR=%s\n"
 msgstr "No es posible destruir la cola de cliente: ERR=%s\n"
 
-#: src/lib/bnet_server.c:180 src/stored/ndmp_tape.c:1274
+#: src/lib/bnet_server.c:181 src/stored/ndmp_tape.c:1274
 #, c-format
 msgid "Cannot open stream socket. ERR=%s. Current %s All %s\n"
 msgstr "No se puede abrir el socket de flujo. ERR=%s. Actual %s Todos %s\n"
 
-#: src/lib/bnet_server.c:194 src/stored/ndmp_tape.c:1289
+#: src/lib/bnet_server.c:195 src/stored/ndmp_tape.c:1289
 #, c-format
 msgid "Cannot set SO_REUSEADDR on socket: %s\n"
 msgstr "No se puede establecer SO_REUSEADDR en el socket: %s\n"
 
-#: src/lib/bnet_server.c:203 src/stored/ndmp_tape.c:1299
+#: src/lib/bnet_server.c:204 src/stored/ndmp_tape.c:1299
 #, c-format
 msgid "Cannot bind port %d: ERR=%s: Retrying ...\n"
 msgstr "No se puede enlazar a puerto %d: ERR=%s: Reintentando ...\n"
 
-#: src/lib/bnet_server.c:208 src/stored/ndmp_tape.c:1305
+#: src/lib/bnet_server.c:209 src/stored/ndmp_tape.c:1305
 #, c-format
 msgid "Cannot bind port %d: ERR=%s.\n"
 msgstr "No se puede enlazar a puerto %d: ERR=%s.\n"
 
-#: src/lib/bnet_server.c:227
+#: src/lib/bnet_server.c:228
 #, c-format
 msgid "Could not init client queue: ERR=%s\n"
 msgstr "No se pudo iniciar cola cliente: ERR=%s\n"
 
-#: src/lib/bnet_server.c:267 src/stored/ndmp_tape.c:1364
+#: src/lib/bnet_server.c:279 src/stored/ndmp_tape.c:1364
 #, c-format
 msgid "Error in select: %s\n"
 msgstr "Error al seleccionar: %s\n"
 
-#: src/lib/bnet_server.c:282 src/stored/ndmp_tape.c:1379
+#: src/lib/bnet_server.c:294 src/stored/ndmp_tape.c:1379
 #, fuzzy, c-format
 msgid "Error in poll: %s\n"
 msgstr "Error al seleccionar: %s\n"
 
-#: src/lib/bnet_server.c:307 src/stored/ndmp_tape.c:1404
+#: src/lib/bnet_server.c:319 src/stored/ndmp_tape.c:1404
 #, c-format
 msgid "Connection from %s:%d refused by hosts.access\n"
 msgstr "Conexión desde %s:%d rechazada por hosts.access\n"
 
-#: src/lib/bnet_server.c:322 src/lib/bsock.c:293 src/lib/bsock.c:329
+#: src/lib/bnet_server.c:334 src/lib/bsock.c:293 src/lib/bsock.c:329
 #: src/stored/ndmp_tape.c:1420
 #, c-format
 msgid "Cannot set SO_KEEPALIVE on socket: %s\n"
 msgstr "No se puede establecer SO_KEEPALIVE en el socket: %s\n"
 
-#: src/lib/bnet_server.c:335
+#: src/lib/bnet_server.c:347
 msgid "Could not create client BSOCK.\n"
 msgstr "No es posible crear cliente BSOCK. \n"
 
-#: src/lib/bnet_server.c:344
+#: src/lib/bnet_server.c:356
 #, c-format
 msgid "Could not add job to client queue: ERR=%s\n"
 msgstr "No se pudo agregar job a la cola de cliente: ERR=%s\n"
@@ -668,7 +668,7 @@ msgid "Cannot open config file %s: %s\n"
 msgstr "No se pudo abrir archivo de configuración \"%s\": %s\n"
 
 #: src/lib/ini.c:626 src/lib/parse_conf.c:854 src/lib/parse_conf.c:872
-#: src/dird/dird_conf.c:2183 src/dird/dird_conf.c:2294
+#: src/dird/dird_conf.c:2178 src/dird/dird_conf.c:2289
 #, c-format
 msgid "Expect %s, got: %s"
 msgstr "Esperaba %s, obtuvo: %s"
@@ -1099,7 +1099,7 @@ msgid "Blocked"
 msgstr "Bloqueado"
 
 #: src/lib/util.c:179 src/lib/util.c:314 src/dird/ua_status.c:1226
-#: src/filed/status.c:363 src/stored/btape.c:1549 src/stored/status.c:621
+#: src/filed/status.c:363 src/stored/btape.c:1550 src/stored/status.c:621
 msgid "OK"
 msgstr "OK"
 
@@ -1393,8 +1393,8 @@ msgstr "Invalido estado de volumen"
 
 #: src/lib/util.c:750 src/lib/util.c:760 src/lib/util.c:768 src/lib/util.c:775
 #: src/lib/util.c:782 src/lib/util.c:798 src/lib/util.c:808 src/lib/util.c:815
-#: src/lib/util.c:823 src/lib/util.c:826 src/dird/dird_conf.c:2455
-#: src/dird/dird_conf.c:2458 src/filed/compression.c:62
+#: src/lib/util.c:823 src/lib/util.c:826 src/dird/dird_conf.c:2450
+#: src/dird/dird_conf.c:2453 src/filed/compression.c:62
 msgid "*none*"
 msgstr "*ninguno*"
 
@@ -1891,7 +1891,7 @@ msgstr "tipo de mensaje: %s no encontrado"
 msgid "Attempt to redefine name \"%s\" to \"%s\"."
 msgstr "Intento de redefinir el nombre \"%s\" para \"%s\"."
 
-#: src/lib/parse_conf.c:551 src/dird/dird_conf.c:2205
+#: src/lib/parse_conf.c:551 src/dird/dird_conf.c:2200
 #, c-format
 msgid "Could not find config Resource %s referenced on line %d : %s\n"
 msgstr ""
@@ -3425,7 +3425,7 @@ msgstr "Nodo %s no tiene hijos.\n"
 msgid "%d total files; %d marked to be restored; %s bytes.\n"
 msgstr "%d total de los archivos; %d marcado para ser restaurado; %s bytes.\n"
 
-#: src/dird/ua_tree.c:837 src/stored/btape.c:2983
+#: src/dird/ua_tree.c:837 src/stored/btape.c:2984
 #, c-format
 msgid ""
 "  Command    Description\n"
@@ -4486,7 +4486,7 @@ msgstr ""
 msgid "Too many failures. Giving up creating Volume name.\n"
 msgstr "Demasiados errores. Abandono el intento de crear nombre de Volumen\n"
 
-#: src/dird/run_conf.c:206 src/dird/dird_conf.c:2339
+#: src/dird/run_conf.c:206 src/dird/dird_conf.c:2334
 #, c-format
 msgid "Expected an equals, got: %s"
 msgstr "Esperaba una igual, obtuvo: %s"
@@ -5800,12 +5800,12 @@ msgstr "Esperaba una palabra clave Tipo FileSet, obtuvo: %s"
 msgid "Old style Include/Exclude not supported\n"
 msgstr "Antiguo estilo Incluir/Excluir no soportado\n"
 
-#: src/dird/inc_conf.c:408 src/dird/inc_conf.c:772 src/dird/dird_conf.c:2333
+#: src/dird/inc_conf.c:408 src/dird/inc_conf.c:772 src/dird/dird_conf.c:2328
 #, c-format
 msgid "Expecting keyword, got: %s\n"
 msgstr "Esperando palabra clave, obtuvo: %s\n"
 
-#: src/dird/inc_conf.c:426 src/dird/inc_conf.c:787 src/dird/dird_conf.c:2352
+#: src/dird/inc_conf.c:426 src/dird/inc_conf.c:787 src/dird/dird_conf.c:2347
 #, c-format
 msgid "Keyword %s not permitted in this resource"
 msgstr "Palabra clave %s no esta permitido en este recurso"
@@ -5863,7 +5863,7 @@ msgstr "Esperaba una cadena, obtuvo: %s"
 msgid "Options section not permitted in Exclude\n"
 msgstr "Sección Options no permitida en Exclude\n"
 
-#: src/dird/inc_conf.c:757 src/dird/dird_conf.c:2317
+#: src/dird/inc_conf.c:757 src/dird/dird_conf.c:2312
 #, c-format
 msgid "Expecting open brace. Got %s"
 msgstr "Esperando abrir paréntesis. Obtuvo %s"
@@ -9067,54 +9067,54 @@ msgstr "Ítem %s es necesario en recurso %s, pero no se encuentra.\n"
 msgid "Cannot find Pool resource %s\n"
 msgstr "No se puede encontrar el recurso Pool %s\n"
 
-#: src/dird/dird_conf.c:1637
+#: src/dird/dird_conf.c:1632
 #, c-format
 msgid "Cannot find Console resource %s\n"
 msgstr "No se puede encontrar el recurso Console %s\n"
 
-#: src/dird/dird_conf.c:1643 src/filed/filed_conf.c:394
+#: src/dird/dird_conf.c:1638 src/filed/filed_conf.c:394
 #: src/stored/stored_conf.c:731
 #, c-format
 msgid "Cannot find Director resource %s\n"
 msgstr "No se puede encontrar el recurso Director %s\n"
 
-#: src/dird/dird_conf.c:1650 src/stored/stored_conf.c:737
+#: src/dird/dird_conf.c:1645 src/stored/stored_conf.c:737
 #, c-format
 msgid "Cannot find Storage resource %s\n"
 msgstr "No se puede encontrar el recurso Storage %s\n"
 
-#: src/dird/dird_conf.c:1663
+#: src/dird/dird_conf.c:1658
 #, c-format
 msgid "Cannot find Job resource %s\n"
 msgstr "No se puede encontrar el recurso Job %s\n"
 
-#: src/dird/dird_conf.c:1713
+#: src/dird/dird_conf.c:1708
 #, c-format
 msgid "Cannot find Counter resource %s\n"
 msgstr "No se puede encontrar el recurso Counter %s\n"
 
-#: src/dird/dird_conf.c:1720 src/filed/filed_conf.c:400
+#: src/dird/dird_conf.c:1715 src/filed/filed_conf.c:400
 #, c-format
 msgid "Cannot find Client resource %s\n"
 msgstr "No se puede encontrar el recurso Cliente %s\n"
 
-#: src/dird/dird_conf.c:1740
+#: src/dird/dird_conf.c:1735
 #, c-format
 msgid "Cannot find Schedule resource %s\n"
 msgstr "No se puede encontrar el recurso Schedule %s\n"
 
-#: src/dird/dird_conf.c:1745 src/dird/dird_conf.c:1806
+#: src/dird/dird_conf.c:1740 src/dird/dird_conf.c:1801
 #: src/qt-tray-monitor/tray_conf.cpp:329 src/qt-tray-monitor/tray_conf.cpp:368
 #, c-format
 msgid "Unknown resource type %d in save_resource.\n"
 msgstr "Tipo de recurso desconocido %d en  save_resource.\n"
 
-#: src/dird/dird_conf.c:1823
+#: src/dird/dird_conf.c:1818
 #, c-format
 msgid "Name item is required in %s resource, but not found.\n"
 msgstr "Nombre del ítem se requiere en recurso %s, pero no se encuentra.\n"
 
-#: src/dird/dird_conf.c:1833 src/filed/filed_conf.c:466
+#: src/dird/dird_conf.c:1828 src/filed/filed_conf.c:466
 #: src/console/console_conf.c:314 src/qt-console/bat_conf.cpp:342
 #: src/qt-tray-monitor/tray_conf.cpp:392
 #, c-format
@@ -9122,47 +9122,47 @@ msgid "Attempt to define second %s resource named \"%s\" is not permitted.\n"
 msgstr ""
 "Segundo intento de definir recurso %s llamado \"%s\" no está permitido.\n"
 
-#: src/dird/dird_conf.c:1838
+#: src/dird/dird_conf.c:1833
 #, c-format
 msgid "Inserting %s res: %s index=%d pass=%d\n"
 msgstr "Insertando %s res: %s index=%d pass=%d\n"
 
-#: src/dird/dird_conf.c:1861
+#: src/dird/dird_conf.c:1856
 #, fuzzy, c-format
 msgid "Expected an Action On Purge option, got: %s"
 msgstr "Esperaba una opción de reemplazo de Restauración, obtuvo: %s"
 
-#: src/dird/dird_conf.c:1935
+#: src/dird/dird_conf.c:1930
 #, c-format
 msgid "Expected a Migration Job Type keyword, got: %s"
 msgstr "Espera una palabra clave Tipo Job de Migración, obtuvo: %s"
 
-#: src/dird/dird_conf.c:1960
+#: src/dird/dird_conf.c:1955
 #, c-format
 msgid "Expected a Job Type keyword, got: %s"
 msgstr "Esperaba una palabra clave Tipo Job, obtuvo: %s"
 
-#: src/dird/dird_conf.c:1985
+#: src/dird/dird_conf.c:1980
 #, fuzzy, c-format
 msgid "Expected a Protocol Type keyword, got: %s"
 msgstr "Esperaba una palabra clave Tipo Job, obtuvo: %s"
 
-#: src/dird/dird_conf.c:2006
+#: src/dird/dird_conf.c:2001
 #, c-format
 msgid "Expected a Restore replacement option, got: %s"
 msgstr "Esperaba una opción de reemplazo de Restauración, obtuvo: %s"
 
-#: src/dird/dird_conf.c:2031
+#: src/dird/dird_conf.c:2026
 #, fuzzy, c-format
 msgid "Expected a Auth Protocol Type keyword, got: %s"
 msgstr "Esperaba una palabra clave Tipo Job, obtuvo: %s"
 
-#: src/dird/dird_conf.c:2056 src/stored/stored_conf.c:280
+#: src/dird/dird_conf.c:2051 src/stored/stored_conf.c:280
 #, fuzzy, c-format
 msgid "Expected a Authentication Type keyword, got: %s"
 msgstr "Espera una palabra clave Tipo Job de Migración, obtuvo: %s"
 
-#: src/dird/dird_conf.c:2081
+#: src/dird/dird_conf.c:2076
 #, c-format
 msgid "Expected a Job Level keyword, got: %s"
 msgstr "Esperaba una palabra clave Tipo Level, obtuvo: %s"
@@ -14435,7 +14435,7 @@ msgstr "Dispositivo %s en el final de la cinta.\n"
 msgid "ioctl MTFSF error on %s. ERR=%s.\n"
 msgstr "ioctl MTFSF error en %s. ERR=%s.\n"
 
-#: src/stored/dev.c:1186 src/stored/btape.c:2003
+#: src/stored/dev.c:1186 src/stored/btape.c:2004
 #, c-format
 msgid "read error on %s. ERR=%s.\n"
 msgstr "error de lectura en %s. ERR=%s.\n"
@@ -14509,32 +14509,37 @@ msgstr "código de función %d desconocido"
 msgid "I/O function \"%s\" not supported on this device.\n"
 msgstr "I/O función \"%s\" no es compatible con este dispositivo. \n"
 
-#: src/stored/dev.c:1792
+#: src/stored/dev.c:1739
+#, fuzzy, c-format
+msgid "Unable to close device %s. ERR=%s\n"
+msgstr "No se pudo stat dispositivo %s. ERR=%s\n"
+
+#: src/stored/dev.c:1798
 #, c-format
 msgid "Unable to truncate device %s. ERR=%s\n"
 msgstr "No se puede truncar el dispositivo %s. ERR=%s\n"
 
-#: src/stored/dev.c:1809
+#: src/stored/dev.c:1815
 #, c-format
 msgid "Unable to stat device %s. ERR=%s\n"
 msgstr "No se pudo stat dispositivo %s. ERR=%s\n"
 
-#: src/stored/dev.c:1823
+#: src/stored/dev.c:1829
 #, c-format
 msgid "Device %s doesn't support ftruncate(). Recreating file %s.\n"
 msgstr "Dispositivo %s no admite ftruncate(). Recreando el archivo %s.\n"
 
-#: src/stored/dev.c:1835
+#: src/stored/dev.c:1841
 #, c-format
 msgid "Could not reopen: %s, ERR=%s\n"
 msgstr "No se pudo reabrir: %s, ERR=%s\n"
 
-#: src/stored/dev.c:2000 src/stored/dev.c:2068
+#: src/stored/dev.c:2006 src/stored/dev.c:2074
 #, c-format
 msgid "Device %s cannot be %smounted. ERR=%s\n"
 msgstr "Dispositivo %s no puede ser %smounted. ERR=%s\n"
 
-#: src/stored/dev.c:2436
+#: src/stored/dev.c:2442
 #, c-format
 msgid "Unable to set eotmodel on device %s: ERR=%s\n"
 msgstr "No se puede establecer eotmodel en el dispositivo %s: ERR=%s\n"
@@ -14743,7 +14748,7 @@ msgstr "No se puede establecer el tamaño del búfer de red.\n"
 msgid "NULL Volume name. This shouldn't happen!!!\n"
 msgstr "Nombre de volumen VACÍO. Esto no debería suceder!\n"
 
-#: src/stored/append.c:101 src/stored/btape.c:2263 src/stored/ndmp_tape.c:646
+#: src/stored/append.c:101 src/stored/btape.c:2264 src/stored/ndmp_tape.c:646
 #, c-format
 msgid "Write session label failed. ERR=%s\n"
 msgstr "Fallo al escribir la etiqueta de sesión. ERR=%s\n"
@@ -14778,7 +14783,7 @@ msgstr "Máximo tiempo de ejecución excedido. Job cancelado.\n"
 msgid "Network error reading from FD. ERR=%s\n"
 msgstr "Error al leer la red desde FD. ERR=%s\n"
 
-#: src/stored/append.c:261 src/stored/btape.c:2382 src/stored/ndmp_tape.c:1039
+#: src/stored/append.c:261 src/stored/btape.c:2383 src/stored/ndmp_tape.c:1039
 #, c-format
 msgid "Error writing end session label. ERR=%s\n"
 msgstr "Error escribiendo etiqueta de fin de sesión. ERR=%s\n"
@@ -15329,7 +15334,7 @@ msgstr ""
 "Posición de la cinta no válida en el volumen \"%s\" en el dispositivo %s. "
 "Esperaba %d, obtuvo %d\n"
 
-#: src/stored/mount.c:868 src/stored/btape.c:3155
+#: src/stored/mount.c:868 src/stored/btape.c:3156
 #, c-format
 msgid "Cannot open Dev=%s, Vol=%s\n"
 msgstr "No se puede abrir Dev=%s, Vol=%s\n"
@@ -15732,7 +15737,7 @@ msgstr "No se pudo agregar MD5/SHA1 al registro File. ERR=%s\n"
 msgid "Updated MD5/SHA1 record\n"
 msgstr "Actualizado registro MD5/SHA1\n"
 
-#: src/stored/bscan.c:1408 src/stored/bls.c:511 src/stored/btape.c:3083
+#: src/stored/bscan.c:1408 src/stored/bls.c:511 src/stored/btape.c:3084
 #: src/stored/bextract.c:849 src/stored/bcopy.c:401
 #, c-format
 msgid "Mount Volume \"%s\" on device %s and press return when ready: "
@@ -16649,18 +16654,18 @@ msgstr "Malo estado de carga. ERR=%s\n"
 msgid "Loaded %s\n"
 msgstr "Cargado %s\n"
 
-#: src/stored/btape.c:598 src/stored/btape.c:1165 src/stored/btape.c:1238
-#: src/stored/btape.c:1318 src/stored/btape.c:1589
+#: src/stored/btape.c:598 src/stored/btape.c:1166 src/stored/btape.c:1239
+#: src/stored/btape.c:1319 src/stored/btape.c:1590
 #, c-format
 msgid "Bad status from rewind. ERR=%s\n"
 msgstr "Malo estado de rebobinado. ERR=%s\n"
 
-#: src/stored/btape.c:601 src/stored/btape.c:1597
+#: src/stored/btape.c:601 src/stored/btape.c:1598
 #, c-format
 msgid "Rewound %s\n"
 msgstr "Rebobinado %s\n"
 
-#: src/stored/btape.c:627 src/stored/btape.c:1601
+#: src/stored/btape.c:627 src/stored/btape.c:1602
 #, c-format
 msgid "Bad status from weof. ERR=%s\n"
 msgstr "Malo estado de weof. ERR=%s\n"
@@ -16737,7 +16742,7 @@ msgstr ""
 msgid "Do you want to continue? (y/n): "
 msgstr "Desea continuar? (y/n)"
 
-#: src/stored/btape.c:770 src/stored/btape.c:2226
+#: src/stored/btape.c:770 src/stored/btape.c:2227
 msgid "Command aborted.\n"
 msgstr "Comando Abortado.\n"
 
@@ -16775,14 +16780,14 @@ msgstr ""
 "\n"
 
 #: src/stored/btape.c:831 src/stored/btape.c:842 src/stored/btape.c:853
-#: src/stored/btape.c:1175 src/stored/btape.c:1191 src/stored/btape.c:1933
-#: src/stored/btape.c:2857
+#: src/stored/btape.c:1176 src/stored/btape.c:1192 src/stored/btape.c:1934
+#: src/stored/btape.c:2858
 msgid "Error writing record to block.\n"
 msgstr "Error al escribir registro al bloque.\n"
 
 #: src/stored/btape.c:835 src/stored/btape.c:846 src/stored/btape.c:857
-#: src/stored/btape.c:1179 src/stored/btape.c:1195 src/stored/btape.c:1937
-#: src/stored/btape.c:2861
+#: src/stored/btape.c:1180 src/stored/btape.c:1196 src/stored/btape.c:1938
+#: src/stored/btape.c:2862
 msgid "Error writing block to device.\n"
 msgstr "Error al escribir bloque al dispositivo.\n"
 
@@ -16869,7 +16874,7 @@ msgstr ""
 msgid "Begin writing %i files of %sB with raw blocks of %u bytes.\n"
 msgstr "Inicia escribiendo %i archivos de %sB con raw bloques de %u bytes.\n"
 
-#: src/stored/btape.c:950 src/stored/btape.c:2913
+#: src/stored/btape.c:950 src/stored/btape.c:2914
 #, fuzzy, c-format
 msgid "Write failed at block %u. status=%d ERR=%s\n"
 msgstr "Error al escritura en el bloque %u. stat=%d ERR=%s\n"
@@ -16912,7 +16917,7 @@ msgstr "Prueba con datos aleatorios, deben dar el rendimiento mínimo.\n"
 msgid "Test with zero data and bareos block structure.\n"
 msgstr "Prueba con cero de datos y estructura del bloque de Bareos.\n"
 
-#: src/stored/btape.c:1151
+#: src/stored/btape.c:1152
 #, c-format
 msgid ""
 "\n"
@@ -16935,42 +16940,42 @@ msgstr ""
 "Este es una característica *esencial*...\n"
 "\n"
 
-#: src/stored/btape.c:1183 src/stored/btape.c:1199
+#: src/stored/btape.c:1184 src/stored/btape.c:1200
 #, c-format
 msgid "Wrote %d blocks of %d bytes.\n"
 msgstr "Escribió %d bloques de %d bytes.\n"
 
-#: src/stored/btape.c:1241 src/stored/btape.c:1321
+#: src/stored/btape.c:1242 src/stored/btape.c:1322
 msgid "Rewind OK.\n"
 msgstr "Rebobinar OK.\n"
 
-#: src/stored/btape.c:1254 src/stored/btape.c:1373
+#: src/stored/btape.c:1255 src/stored/btape.c:1374
 msgid "Got EOF on tape.\n"
 msgstr "Obtuvo EOF en la cinta.\n"
 
-#: src/stored/btape.c:1259
+#: src/stored/btape.c:1260
 #, c-format
 msgid "Read block %d failed! ERR=%s\n"
 msgstr "Fallo al leer bloque %d! ERR=%s\n"
 
-#: src/stored/btape.c:1265
+#: src/stored/btape.c:1266
 #, c-format
 msgid "Read record failed. Block %d! ERR=%s\n"
 msgstr "Fallo al leer registro. Bloque %d! ERR =%s\n"
 
-#: src/stored/btape.c:1271 src/stored/btape.c:1403
+#: src/stored/btape.c:1272 src/stored/btape.c:1404
 #, c-format
 msgid "Bad data in record. Expected %d, got %d at byte %d. Test failed!\n"
 msgstr ""
 "Datos incorrectos en el registro. Esperaba %d, obtuvo %d en byte %d. Prueba "
 "Fallida!\n"
 
-#: src/stored/btape.c:1278
+#: src/stored/btape.c:1279
 #, c-format
 msgid "%d blocks re-read correctly.\n"
 msgstr "%d bloques releídos correctamente.\n"
 
-#: src/stored/btape.c:1281 src/stored/btape.c:1410
+#: src/stored/btape.c:1282 src/stored/btape.c:1411
 msgid ""
 "=== Test Succeeded. End Write, rewind, and re-read test ===\n"
 "\n"
@@ -16979,20 +16984,20 @@ msgstr ""
 "===\n"
 "\n"
 
-#: src/stored/btape.c:1309
+#: src/stored/btape.c:1310
 msgid "Block position test\n"
 msgstr "Prueba de posición del bloque\n"
 
-#: src/stored/btape.c:1364
+#: src/stored/btape.c:1365
 #, c-format
 msgid "Reposition to file:block %d:%d\n"
 msgstr "Reposición para archivo:bloque %d:%d\n"
 
-#: src/stored/btape.c:1366
+#: src/stored/btape.c:1367
 msgid "Reposition error.\n"
 msgstr "Error de reposición.\n"
 
-#: src/stored/btape.c:1379
+#: src/stored/btape.c:1380
 #, c-format
 msgid ""
 "Read block %d failed! file=%d blk=%d. ERR=%s\n"
@@ -17001,7 +17006,7 @@ msgstr ""
 "Fallo al leer bloque %d! archivo=%d blk=%d. ERR=%s\n"
 "\n"
 
-#: src/stored/btape.c:1381
+#: src/stored/btape.c:1382
 msgid ""
 "This may be because the tape drive block size is not\n"
 " set to variable blocking as normally used by Bareos.\n"
@@ -17026,17 +17031,17 @@ msgstr ""
 " Fast Forward Space File = no\n"
 "en su recurso de Dispositivos.\n"
 
-#: src/stored/btape.c:1397
+#: src/stored/btape.c:1398
 #, c-format
 msgid "Read record failed! ERR=%s\n"
 msgstr "Fallo al leer registro! ERR=%s\n"
 
-#: src/stored/btape.c:1408
+#: src/stored/btape.c:1409
 #, c-format
 msgid "Block %d re-read correctly.\n"
 msgstr "Bloque %d re-leído correctamente.\n"
 
-#: src/stored/btape.c:1429
+#: src/stored/btape.c:1430
 msgid ""
 "\n"
 "\n"
@@ -17060,26 +17065,26 @@ msgstr ""
 " y tres registros en el archivo de 2\n"
 "\n"
 
-#: src/stored/btape.c:1453
+#: src/stored/btape.c:1454
 msgid "Now moving to end of medium.\n"
 msgstr "Moviendo ahora a final de medio.\n"
 
-#: src/stored/btape.c:1455 src/stored/btape.c:1684
+#: src/stored/btape.c:1456 src/stored/btape.c:1685
 #, c-format
 msgid "We should be in file 3. I am at file %d. %s\n"
 msgstr "Deberíamos estar en el archivo 3. Estoy en el archivo %d. %s\n"
 
-#: src/stored/btape.c:1456 src/stored/btape.c:1474 src/stored/btape.c:1673
-#: src/stored/btape.c:1685 src/stored/btape.c:1698 src/stored/btape.c:1715
+#: src/stored/btape.c:1457 src/stored/btape.c:1475 src/stored/btape.c:1674
+#: src/stored/btape.c:1686 src/stored/btape.c:1699 src/stored/btape.c:1716
 msgid "This is correct!"
 msgstr "Esto es correcto!"
 
-#: src/stored/btape.c:1456 src/stored/btape.c:1474 src/stored/btape.c:1673
-#: src/stored/btape.c:1685 src/stored/btape.c:1698 src/stored/btape.c:1715
+#: src/stored/btape.c:1457 src/stored/btape.c:1475 src/stored/btape.c:1674
+#: src/stored/btape.c:1686 src/stored/btape.c:1699 src/stored/btape.c:1716
 msgid "This is NOT correct!!!!"
 msgstr "Esto NO es correcto!"
 
-#: src/stored/btape.c:1462
+#: src/stored/btape.c:1463
 msgid ""
 "\n"
 "Now the important part, I am going to attempt to append to the tape.\n"
@@ -17089,7 +17094,7 @@ msgstr ""
 "Ahora la parte importante, voy a tratar de anexar a la cinta.\n"
 "\n"
 
-#: src/stored/btape.c:1469
+#: src/stored/btape.c:1470
 msgid ""
 "Done appending, there should be no I/O errors\n"
 "\n"
@@ -17097,20 +17102,20 @@ msgstr ""
 "Añadiendo hecho, no debería haber ningún error de E/S\n"
 "\n"
 
-#: src/stored/btape.c:1470
+#: src/stored/btape.c:1471
 msgid "Doing Bareos scan of blocks:\n"
 msgstr "Hacer Bareos exploración de los bloques:\n"
 
-#: src/stored/btape.c:1472
+#: src/stored/btape.c:1473
 msgid "End scanning the tape.\n"
 msgstr "Fin del escaneo de la cinta.\n"
 
-#: src/stored/btape.c:1473 src/stored/btape.c:1697
+#: src/stored/btape.c:1474 src/stored/btape.c:1698
 #, c-format
 msgid "We should be in file 4. I am at file %d. %s\n"
 msgstr "Deberíamos estar en el archivo 4. Estoy en el archivo %d. %s\n"
 
-#: src/stored/btape.c:1498
+#: src/stored/btape.c:1499
 msgid ""
 "\n"
 "Autochanger enabled, but no name or no command device specified.\n"
@@ -17119,7 +17124,7 @@ msgstr ""
 "Auto-cambiador habilitado, pero ningún nombre o comando de dispositivo "
 "especificado.\n"
 
-#: src/stored/btape.c:1502
+#: src/stored/btape.c:1503
 msgid ""
 "\n"
 "Ah, I see you have an autochanger configured.\n"
@@ -17131,7 +17136,7 @@ msgstr ""
 "Para probar el auto-cargador debe tener una cinta en blanco\n"
 " que yo pueda escribir en la Ranura 1.\n"
 
-#: src/stored/btape.c:1505
+#: src/stored/btape.c:1506
 msgid ""
 "\n"
 "Do you wish to continue with the Autochanger test? (y/n): "
@@ -17139,7 +17144,7 @@ msgstr ""
 "\n"
 "¿Desea continuar con la prueba del auto-cambiador? (y/n):"
 
-#: src/stored/btape.c:1512
+#: src/stored/btape.c:1513
 msgid ""
 "\n"
 "\n"
@@ -17151,74 +17156,74 @@ msgstr ""
 "=== Prueba Auto-cambiador ===\n"
 "\n"
 
-#: src/stored/btape.c:1521
+#: src/stored/btape.c:1522
 msgid "3301 Issuing autochanger \"loaded\" command.\n"
 msgstr "3301 Emitiendo comando auto-cambiador \"cargado\".\n"
 
-#: src/stored/btape.c:1530
+#: src/stored/btape.c:1531
 #, c-format
 msgid "3991 Bad autochanger command: %s\n"
 msgstr "3991 Malo comando cargador: %s\n"
 
-#: src/stored/btape.c:1531
+#: src/stored/btape.c:1532
 #, c-format
 msgid "3991 result=\"%s\": ERR=%s\n"
 msgstr "3991 resultado=\"%s\": ERR=%s\n"
 
-#: src/stored/btape.c:1535
+#: src/stored/btape.c:1536
 #, c-format
 msgid "Slot %d loaded. I am going to unload it.\n"
 msgstr "Ranura %d cargada. Voy a descargarla.\n"
 
-#: src/stored/btape.c:1537
+#: src/stored/btape.c:1538
 msgid "Nothing loaded in the drive. OK.\n"
 msgstr "Nada cargado en la unidad. OK.\n"
 
-#: src/stored/btape.c:1544
+#: src/stored/btape.c:1545
 #, c-format
 msgid "3302 Issuing autochanger \"unload %d %d\" command.\n"
 msgstr "3302 Emitiendo comando auto-cambiador \"descargar %d %d\".\n"
 
-#: src/stored/btape.c:1549
+#: src/stored/btape.c:1550
 #, c-format
 msgid "unload status=%s %d\n"
 msgstr "estado descargar=%s %d\n"
 
-#: src/stored/btape.c:1549
+#: src/stored/btape.c:1550
 msgid "Bad"
 msgstr "Malo"
 
-#: src/stored/btape.c:1552
+#: src/stored/btape.c:1553
 #, c-format
 msgid "3992 Bad autochanger command: %s\n"
 msgstr "3992 Malo comando cargador: %s\n"
 
-#: src/stored/btape.c:1553
+#: src/stored/btape.c:1554
 #, c-format
 msgid "3992 result=\"%s\": ERR=%s\n"
 msgstr "3992 resultado=\"%s\": ERR=%s\n"
 
-#: src/stored/btape.c:1563
+#: src/stored/btape.c:1564
 #, c-format
 msgid "3303 Issuing autochanger \"load %d %d\" command.\n"
 msgstr "3303 Emitiendo comando auto-cambiador \"cargar %d %d\".\n"
 
-#: src/stored/btape.c:1571
+#: src/stored/btape.c:1572
 #, c-format
 msgid "3303 Autochanger \"load %d %d\" status is OK.\n"
 msgstr "3303 Estado auto-cambiador \"carga %d %d\" está OK.\n"
 
-#: src/stored/btape.c:1575
+#: src/stored/btape.c:1576
 #, c-format
 msgid "3993 Bad autochanger command: %s\n"
 msgstr "3993 Malo comando cargador: %s\n"
 
-#: src/stored/btape.c:1576
+#: src/stored/btape.c:1577
 #, c-format
 msgid "3993 result=\"%s\": ERR=%s\n"
 msgstr "3993 resultado=\"%s\": ERR=%s\n"
 
-#: src/stored/btape.c:1591
+#: src/stored/btape.c:1592
 msgid ""
 "\n"
 "The test failed, probably because you need to put\n"
@@ -17230,12 +17235,12 @@ msgstr ""
 "un mayor tiempo de espera en su mtx-script en la clausula load).\n"
 "Añadiendo 30 segundos de espera y volviendo a intentarlo...\n"
 
-#: src/stored/btape.c:1604
+#: src/stored/btape.c:1605
 #, c-format
 msgid "Wrote EOF to %s\n"
 msgstr "Escribió EOF para %s\n"
 
-#: src/stored/btape.c:1608
+#: src/stored/btape.c:1609
 #, c-format
 msgid ""
 "\n"
@@ -17254,7 +17259,7 @@ msgstr ""
 "en su script mtx-cambiador dentro de de la clausula load).\n"
 "\n"
 
-#: src/stored/btape.c:1613
+#: src/stored/btape.c:1614
 msgid ""
 "\n"
 "The test autochanger worked!!\n"
@@ -17264,11 +17269,11 @@ msgstr ""
 "La prueba del auto-cargador funcionó!!\n"
 "\n"
 
-#: src/stored/btape.c:1624
+#: src/stored/btape.c:1625
 msgid "You must correct this error or the Autochanger will not work.\n"
 msgstr "Usted debe corregir este error o la Auto-cambiador no funcionará.\n"
 
-#: src/stored/btape.c:1642
+#: src/stored/btape.c:1643
 msgid ""
 "\n"
 "\n"
@@ -17289,30 +17294,30 @@ msgstr ""
 "adelante\n"
 "\n"
 
-#: src/stored/btape.c:1667
+#: src/stored/btape.c:1668
 msgid "Now forward spacing 1 file.\n"
 msgstr "Ahora espaciando 1 archivo hacia adelante.\n"
 
-#: src/stored/btape.c:1669 src/stored/btape.c:1681 src/stored/btape.c:1694
-#: src/stored/btape.c:1712 src/stored/btape.c:1888
+#: src/stored/btape.c:1670 src/stored/btape.c:1682 src/stored/btape.c:1695
+#: src/stored/btape.c:1713 src/stored/btape.c:1889
 #, c-format
 msgid "Bad status from fsr. ERR=%s\n"
 msgstr "Malo estado desde FSR. ERR=%s\n"
 
-#: src/stored/btape.c:1672
+#: src/stored/btape.c:1673
 #, c-format
 msgid "We should be in file 1. I am at file %d. %s\n"
 msgstr "Debemos estar en el archivo 1. Estoy en el archivo %d. %s\n"
 
-#: src/stored/btape.c:1679
+#: src/stored/btape.c:1680
 msgid "Now forward spacing 2 files.\n"
 msgstr "Ahora espaciando 2 archivo hacia adelante.\n"
 
-#: src/stored/btape.c:1692
+#: src/stored/btape.c:1693
 msgid "Now forward spacing 4 files.\n"
 msgstr "Ahora espaciando 4 archivo hacia adelante.\n"
 
-#: src/stored/btape.c:1704
+#: src/stored/btape.c:1705
 msgid ""
 "The test worked this time. Please add:\n"
 "\n"
@@ -17326,16 +17331,16 @@ msgstr ""
 "\n"
 "a su recurso Device para esta unidad.\n"
 
-#: src/stored/btape.c:1710
+#: src/stored/btape.c:1711
 msgid "Now forward spacing 1 more file.\n"
 msgstr "Ahora espaciando un archivo mas hacia adelante.\n"
 
-#: src/stored/btape.c:1714
+#: src/stored/btape.c:1715
 #, c-format
 msgid "We should be in file 5. I am at file %d. %s\n"
 msgstr "Debemos estar en el archivo 5. Estoy en el archivo %d. %s\n"
 
-#: src/stored/btape.c:1719
+#: src/stored/btape.c:1720
 msgid ""
 "\n"
 "=== End Forward space files test ===\n"
@@ -17345,7 +17350,7 @@ msgstr ""
 "=== Finalizo prueba de Espaciar archivos hacia adelante ===\n"
 "\n"
 
-#: src/stored/btape.c:1723
+#: src/stored/btape.c:1724
 msgid ""
 "\n"
 "The forward space file test failed.\n"
@@ -17353,7 +17358,7 @@ msgstr ""
 "\n"
 "Fallida la prueba de espaciar archivos hacia adelante.\n"
 
-#: src/stored/btape.c:1725
+#: src/stored/btape.c:1726
 msgid ""
 "You have Fast Forward Space File enabled.\n"
 "I am turning it off then retrying the test.\n"
@@ -17361,7 +17366,7 @@ msgstr ""
 "usted tiene habilitado Espaciar Archivos Hacia Adelante Rápido.\n"
 "Voy deshabilitarlo y luego volver a intentar la prueba.\n"
 
-#: src/stored/btape.c:1731
+#: src/stored/btape.c:1732
 msgid ""
 "You must correct this error or Bareos will not work.\n"
 "Some systems, e.g. OpenBSD, require you to set\n"
@@ -17373,7 +17378,7 @@ msgstr ""
 "Use MTIOCGET = no\n"
 "en su recurso de dispositivo. Utilizar con precaución.\n"
 
-#: src/stored/btape.c:1765
+#: src/stored/btape.c:1766
 msgid ""
 "\n"
 "Append test failed. Attempting again.\n"
@@ -17389,7 +17394,7 @@ msgstr ""
 "y volviendo a intentar la prueba de añadir.\n"
 "\n"
 
-#: src/stored/btape.c:1773
+#: src/stored/btape.c:1774
 msgid ""
 "\n"
 "\n"
@@ -17409,7 +17414,7 @@ msgstr ""
 " Fast Forward Space File = No\n"
 "a su recurso de Device en el archivo configuración del Storage.\n"
 
-#: src/stored/btape.c:1780
+#: src/stored/btape.c:1781
 msgid ""
 "\n"
 "\n"
@@ -17419,7 +17424,7 @@ msgstr ""
 "\n"
 "Parece que *NO* se ha corregido el problema.\n"
 
-#: src/stored/btape.c:1785
+#: src/stored/btape.c:1786
 msgid ""
 "\n"
 "\n"
@@ -17431,7 +17436,7 @@ msgstr ""
 "Parece que ha fallado el añadir.Intentando de nuevo.\n"
 "Configurando  \"BSF en EOM = yes\" y reintentando probar añadir.\n"
 
-#: src/stored/btape.c:1790
+#: src/stored/btape.c:1791
 msgid ""
 "\n"
 "\n"
@@ -17453,7 +17458,7 @@ msgstr ""
 "\n"
 "en su recurso Device en el archivo de configuración del Storage.\n"
 
-#: src/stored/btape.c:1801
+#: src/stored/btape.c:1802
 msgid ""
 "\n"
 "Append test failed.\n"
@@ -17504,7 +17509,7 @@ msgstr ""
 "Use MTIOCGET= no\n"
 "en su recurso de dispositivo. Utilice con precaución.\n"
 
-#: src/stored/btape.c:1823
+#: src/stored/btape.c:1824
 msgid ""
 "\n"
 "The above Bareos scan should have output identical to what follows.\n"
@@ -17548,99 +17553,99 @@ msgstr ""
 "la cinta.\n"
 "\n"
 
-#: src/stored/btape.c:1866
+#: src/stored/btape.c:1867
 #, c-format
 msgid "Bad status from fsf. ERR=%s\n"
 msgstr "Malo estado desde FSF. ERR=%s\n"
 
-#: src/stored/btape.c:1870
+#: src/stored/btape.c:1871
 msgid "Forward spaced 1 file.\n"
 msgstr "Espaciado 1 archivo hacia adelante.\n"
 
-#: src/stored/btape.c:1873
+#: src/stored/btape.c:1874
 #, c-format
 msgid "Forward spaced %d files.\n"
 msgstr "Espaciados %d archivos hacia adelante.\n"
 
-#: src/stored/btape.c:1892
+#: src/stored/btape.c:1893
 msgid "Forward spaced 1 record.\n"
 msgstr "Espaciado 1 registro hacia adelante.\n"
 
-#: src/stored/btape.c:1895
+#: src/stored/btape.c:1896
 #, c-format
 msgid "Forward spaced %d records.\n"
 msgstr "Espaciados %d registros hacia adelante.\n"
 
-#: src/stored/btape.c:1940
+#: src/stored/btape.c:1941
 #, c-format
 msgid "Wrote one record of %d bytes.\n"
 msgstr "Escribió un registro de %d bytes.\n"
 
-#: src/stored/btape.c:1942
+#: src/stored/btape.c:1943
 msgid "Wrote block to device.\n"
 msgstr "Escribió bloques al dispositivo.\n"
 
-#: src/stored/btape.c:1956
+#: src/stored/btape.c:1957
 msgid "Enter length to read: "
 msgstr "Introduzca la longitud para leer:"
 
-#: src/stored/btape.c:1961
+#: src/stored/btape.c:1962
 msgid "Bad length entered, using default of 1024 bytes.\n"
 msgstr "Mala longitud introducida, utilizando 1024 bytes por defecto.\n"
 
-#: src/stored/btape.c:1970
+#: src/stored/btape.c:1971
 #, fuzzy, c-format
 msgid "Read of %d bytes gives status=%d. ERR=%s\n"
 msgstr "Lectura de %d bytes obtuvo stat=%d. ERR=%s\n"
 
-#: src/stored/btape.c:1993 src/stored/btape.c:2042
+#: src/stored/btape.c:1994 src/stored/btape.c:2043
 #, c-format
 msgid "End of tape\n"
 msgstr "Fin de la cinta\n"
 
-#: src/stored/btape.c:1998
+#: src/stored/btape.c:1999
 #, c-format
 msgid "Starting scan at file %u\n"
 msgstr "Iniciando escaneo en el archivo %u\n"
 
-#: src/stored/btape.c:2005
+#: src/stored/btape.c:2006
 #, c-format
 msgid "Bad status from read %d. ERR=%s\n"
 msgstr "Malo estado desde lectura %d. ERR=%s\n"
 
-#: src/stored/btape.c:2008 src/stored/btape.c:2022 src/stored/btape.c:2086
-#: src/stored/btape.c:2098 src/stored/btape.c:2111 src/stored/btape.c:2127
+#: src/stored/btape.c:2009 src/stored/btape.c:2023 src/stored/btape.c:2087
+#: src/stored/btape.c:2099 src/stored/btape.c:2112 src/stored/btape.c:2128
 #, c-format
 msgid "1 block of %d bytes in file %d\n"
 msgstr "1 bloque de %d bytes en el archivo %d\n"
 
-#: src/stored/btape.c:2011 src/stored/btape.c:2025 src/stored/btape.c:2089
-#: src/stored/btape.c:2101 src/stored/btape.c:2114 src/stored/btape.c:2130
+#: src/stored/btape.c:2012 src/stored/btape.c:2026 src/stored/btape.c:2090
+#: src/stored/btape.c:2102 src/stored/btape.c:2115 src/stored/btape.c:2131
 #, c-format
 msgid "%d blocks of %d bytes in file %d\n"
 msgstr "%d bloques de %d bytes en archivo %d\n"
 
-#: src/stored/btape.c:2033 src/stored/btape.c:2105
+#: src/stored/btape.c:2034 src/stored/btape.c:2106
 #, c-format
 msgid "End of File mark.\n"
 msgstr "Fin de la marca de archivo.\n"
 
-#: src/stored/btape.c:2054 src/stored/btape.c:2158
+#: src/stored/btape.c:2055 src/stored/btape.c:2159
 #, c-format
 msgid "Total files=%d, blocks=%d, bytes = %s\n"
 msgstr "Total de archivos=%d, bloques=%d, bytes = %s\n"
 
-#: src/stored/btape.c:2118
+#: src/stored/btape.c:2119
 #, c-format
 msgid "Short block read.\n"
 msgstr "Leer bloque corto.\n"
 
-#: src/stored/btape.c:2121
+#: src/stored/btape.c:2122
 #, c-format
 msgid "Error reading block. ERR=%s\n"
 msgstr "Error leyendo el bloque. ERR=%s\n"
 
-#: src/stored/btape.c:2145
+#: src/stored/btape.c:2146
 #, c-format
 msgid ""
 "Block=%u file,blk=%u,%u blen=%u First rec FI=%s SessId=%u SessTim=%u Strm=%s "
@@ -17649,12 +17654,12 @@ msgstr ""
 "Bloque=%u archivo,blk=%u,%u blen=%u Primero rec FI=%s SessId=%u SessTim=%u "
 "Strm=%s rlen=%d\n"
 
-#: src/stored/btape.c:2167
+#: src/stored/btape.c:2168
 #, c-format
 msgid "Device status: %u. ERR=%s\n"
 msgstr "Estado del dispositivo: %u. ERR=%s\n"
 
-#: src/stored/btape.c:2199
+#: src/stored/btape.c:2200
 #, c-format
 msgid ""
 "\n"
@@ -17701,7 +17706,7 @@ msgstr ""
 "\n"
 "Esto puede tomar mucho tiempo - horas! ...\n"
 
-#: src/stored/btape.c:2217
+#: src/stored/btape.c:2218
 msgid ""
 "Do you want to run the simplified test (s) with one tape\n"
 "or the complete multiple tape (m) test: (s/m) "
@@ -17709,73 +17714,73 @@ msgstr ""
 "¿Desea ejecutar la prueba simplificada (s) con una cinta\n"
 "o la prueba completa con múltiples (m) cintas?: (s/m)"
 
-#: src/stored/btape.c:2220
+#: src/stored/btape.c:2221
 msgid "Simple test (single tape) selected.\n"
 msgstr "Prueba simple (una sola cinta) seleccionada.\n"
 
-#: src/stored/btape.c:2223
+#: src/stored/btape.c:2224
 msgid "Multiple tape test selected.\n"
 msgstr "Múltiples cintas de prueba seleccionados.\n"
 
-#: src/stored/btape.c:2267
+#: src/stored/btape.c:2268
 msgid "Wrote Start of Session label.\n"
 msgstr "Escribe la etiqueta de Inicio de Sesión.\n"
 
-#: src/stored/btape.c:2286
+#: src/stored/btape.c:2287
 #, c-format
 msgid "%s Begin writing Bareos records to tape ...\n"
 msgstr "%s Empezar a escribir registros Bareos en cinta ...\n"
 
-#: src/stored/btape.c:2288
+#: src/stored/btape.c:2289
 #, c-format
 msgid "%s Begin writing Bareos records to first tape ...\n"
 msgstr "%s Empezar a escribir registros Bareos en la primera cinta ...\n"
 
-#: src/stored/btape.c:2314
+#: src/stored/btape.c:2315
 msgid "Flush block failed.\n"
 msgstr "Fallo Flush bloque.\n"
 
-#: src/stored/btape.c:2328
+#: src/stored/btape.c:2329
 #, c-format
 msgid "Wrote block=%u, file,blk=%u,%u VolBytes=%s rate=%sB/s\n"
 msgstr "Escribió bloque=%u, archivo,blk=%u,%u VolBytes=%s tasa=%sB/s\n"
 
-#: src/stored/btape.c:2339
+#: src/stored/btape.c:2340
 #, c-format
 msgid "%s Flush block, write EOF\n"
 msgstr "%s Flush bloque, escribir EOF\n"
 
-#: src/stored/btape.c:2348
+#: src/stored/btape.c:2349
 msgid "Wrote 1000 blocks on second tape. Done.\n"
 msgstr "Escribió 1000 bloques en segunda cinta. Hecho.\n"
 
-#: src/stored/btape.c:2353
+#: src/stored/btape.c:2354
 msgid "Not OK\n"
 msgstr "No OK\n"
 
-#: src/stored/btape.c:2377
+#: src/stored/btape.c:2378
 msgid "Job canceled.\n"
 msgstr "Job cancelado.\n"
 
-#: src/stored/btape.c:2388
+#: src/stored/btape.c:2389
 msgid "Set ok=false after write_block_to_device.\n"
 msgstr "Establecer ok=false después de write_block_to_device.\n"
 
-#: src/stored/btape.c:2392
+#: src/stored/btape.c:2393
 msgid "Wrote End of Session label.\n"
 msgstr "Escribió etiqueta de Fin de Sesión.\n"
 
-#: src/stored/btape.c:2416
+#: src/stored/btape.c:2417
 #, c-format
 msgid "Wrote state file last_block_num1=%d last_block_num2=%d\n"
 msgstr "Escribió archivo de estado last_block_num1=%d last_block_num2=%d\n"
 
-#: src/stored/btape.c:2420
+#: src/stored/btape.c:2421
 #, c-format
 msgid "Could not create state file: %s ERR=%s\n"
 msgstr "No se puede crear archivo de estado: %s ERR=%s\n"
 
-#: src/stored/btape.c:2431
+#: src/stored/btape.c:2432
 #, c-format
 msgid ""
 "\n"
@@ -17786,7 +17791,7 @@ msgstr ""
 "\n"
 "%s Hecho llenado de cinta en %d:%d. Ahora empezando a releer la cinta ...\n"
 
-#: src/stored/btape.c:2434
+#: src/stored/btape.c:2435
 #, c-format
 msgid ""
 "\n"
@@ -17798,16 +17803,16 @@ msgstr ""
 "%s Hecho llenado de cintas en %d:%d. Ahora empezando a releer la primera "
 "cinta ...\n"
 
-#: src/stored/btape.c:2440
+#: src/stored/btape.c:2441
 msgid "do_unfill failed.\n"
 msgstr "do_unfill fallido.\n"
 
-#: src/stored/btape.c:2445
+#: src/stored/btape.c:2446
 #, c-format
 msgid "%s: Error during test.\n"
 msgstr "%s: Error durante la prueba.\n"
 
-#: src/stored/btape.c:2480
+#: src/stored/btape.c:2481
 msgid ""
 "\n"
 "The state file level has changed. You must redo\n"
@@ -17817,7 +17822,7 @@ msgstr ""
 "El estado del archivo de nivel de ha cambiado. Usted debe rehacer\n"
 "el comando llenar.\n"
 
-#: src/stored/btape.c:2487
+#: src/stored/btape.c:2488
 #, c-format
 msgid ""
 "\n"
@@ -17828,40 +17833,40 @@ msgstr ""
 "No se pudo encontrar el archivo de estado: %s ERR=%s\n"
 "Usted debe rehacer el comando llenar.\n"
 
-#: src/stored/btape.c:2553
+#: src/stored/btape.c:2554
 msgid "Mount first tape. Press enter when ready: "
 msgstr "Monte primera cinta. Cuando esté listo, presione ENTER:"
 
-#: src/stored/btape.c:2569
+#: src/stored/btape.c:2570
 msgid "Rewinding.\n"
 msgstr "Rebobinado.\n"
 
-#: src/stored/btape.c:2574
+#: src/stored/btape.c:2575
 #, c-format
 msgid "Reading the first 10000 records from %u:%u.\n"
 msgstr "Leyendo los primeros 10.000 registros desde %u:%u.\n"
 
-#: src/stored/btape.c:2578 src/stored/btape.c:2646
+#: src/stored/btape.c:2579 src/stored/btape.c:2647
 #, c-format
 msgid "Reposition from %u:%u to %u:%u\n"
 msgstr "Reposición desde %u:%u para %u:%u\n"
 
-#: src/stored/btape.c:2581 src/stored/btape.c:2633 src/stored/btape.c:2649
+#: src/stored/btape.c:2582 src/stored/btape.c:2634 src/stored/btape.c:2650
 #, c-format
 msgid "Reposition error. ERR=%s\n"
 msgstr "Error de reposición. ERR=%s\n"
 
-#: src/stored/btape.c:2584
+#: src/stored/btape.c:2585
 #, c-format
 msgid "Reading block %u.\n"
 msgstr "Leyendo bloque %u.\n"
 
-#: src/stored/btape.c:2586 src/stored/btape.c:2638 src/stored/btape.c:2654
+#: src/stored/btape.c:2587 src/stored/btape.c:2639 src/stored/btape.c:2655
 #, c-format
 msgid "Error reading block: ERR=%s\n"
 msgstr "Error leyendo bloque: ERR=%s.\n"
 
-#: src/stored/btape.c:2591
+#: src/stored/btape.c:2592
 msgid ""
 "\n"
 "The last block on the tape matches. Test succeeded.\n"
@@ -17871,7 +17876,7 @@ msgstr ""
 "El último bloque de la cinta concuerdan. Prueba Satisfactoria.\n"
 "\n"
 
-#: src/stored/btape.c:2594
+#: src/stored/btape.c:2595
 msgid ""
 "\n"
 "The last block of the first tape matches.\n"
@@ -17881,21 +17886,21 @@ msgstr ""
 "El último bloque de la primera cinta concuerdan.\n"
 "\n"
 
-#: src/stored/btape.c:2618
+#: src/stored/btape.c:2619
 msgid "Mount second tape. Press enter when ready: "
 msgstr "Monte la segunda cinta. Cuando esté listo, presione ENTER:"
 
-#: src/stored/btape.c:2631
+#: src/stored/btape.c:2632
 #, c-format
 msgid "Reposition from %u:%u to 0:1\n"
 msgstr "Reposición desde %u:%u para 0:1\n"
 
-#: src/stored/btape.c:2636 src/stored/btape.c:2652
+#: src/stored/btape.c:2637 src/stored/btape.c:2653
 #, c-format
 msgid "Reading block %d.\n"
 msgstr "Leyendo bloque %d.\n"
 
-#: src/stored/btape.c:2642
+#: src/stored/btape.c:2643
 msgid ""
 "\n"
 "The first block on the second tape matches.\n"
@@ -17905,7 +17910,7 @@ msgstr ""
 "El primer bloque de la segunda cinta concuerdan.\n"
 "\n"
 
-#: src/stored/btape.c:2658
+#: src/stored/btape.c:2659
 msgid ""
 "\n"
 "The last block on the second tape matches. Test succeeded.\n"
@@ -17915,20 +17920,20 @@ msgstr ""
 "El último bloque de la segunda cinta concuerdan. Prueba Satisfactoria.\n"
 "\n"
 
-#: src/stored/btape.c:2681
+#: src/stored/btape.c:2682
 #, c-format
 msgid "10000 records read now at %d:%d\n"
 msgstr "Leer 10000 registros ahora desde %d:%d\n"
 
-#: src/stored/btape.c:2707 src/stored/btape.c:2718 src/stored/btape.c:2763
+#: src/stored/btape.c:2708 src/stored/btape.c:2719 src/stored/btape.c:2764
 msgid "Last block written"
 msgstr "Ultimo bloque escrito"
 
-#: src/stored/btape.c:2709 src/stored/btape.c:2719
+#: src/stored/btape.c:2710 src/stored/btape.c:2720
 msgid "Block read back"
 msgstr "Bloque que leer"
 
-#: src/stored/btape.c:2710
+#: src/stored/btape.c:2711
 #, c-format
 msgid ""
 "\n"
@@ -17939,7 +17944,7 @@ msgstr ""
 "\n"
 "Los bloques difieren en %u byte\n"
 
-#: src/stored/btape.c:2711
+#: src/stored/btape.c:2712
 msgid ""
 "\n"
 "\n"
@@ -17955,135 +17960,135 @@ msgstr ""
 "Esto debe ser corregido antes de utilizar Bareos\n"
 "para escribir volúmenes multi-cinta !!!!\n"
 
-#: src/stored/btape.c:2747
+#: src/stored/btape.c:2748
 #, c-format
 msgid "Last block at: %u:%u this_dev_block_num=%d\n"
 msgstr "Último bloque en: %u:%u this_dev_block_num=%d\n"
 
-#: src/stored/btape.c:2761
+#: src/stored/btape.c:2762
 #, c-format
 msgid "Block not written: FileIndex=%u blk_block=%u Size=%u\n"
 msgstr "Bloque no está escrito: FileIndex=%u blk_block=%u Tamaño=%u\n"
 
-#: src/stored/btape.c:2765
+#: src/stored/btape.c:2766
 msgid "Block not written"
 msgstr "Bloque no escrito"
 
-#: src/stored/btape.c:2780
+#: src/stored/btape.c:2781
 #, c-format
 msgid "End of tape %d:%d. Volume Bytes=%s. Write rate = %sB/s\n"
 msgstr ""
 "Fin de la cinta %d:%d. Volumen Bytes=%s. Velocidad de Escritura = %sB/s\n"
 
-#: src/stored/btape.c:2790 src/stored/bcopy.c:311 src/stored/bcopy.c:319
+#: src/stored/btape.c:2791 src/stored/bcopy.c:311 src/stored/bcopy.c:319
 #: src/stored/bcopy.c:347
 #, c-format
 msgid "Cannot fixup device error. %s\n"
 msgstr "No se puede corregir error de dispositivo. %s\n"
 
-#: src/stored/btape.c:2831
+#: src/stored/btape.c:2832
 msgid "Test writing blocks of 64512 bytes to tape.\n"
 msgstr "Prueba de escritura de bloques de 64512 bytes a cinta.\n"
 
-#: src/stored/btape.c:2833
+#: src/stored/btape.c:2834
 msgid "How many blocks do you want to write? (1000): "
 msgstr "¿Cuántos bloques usted quiere escribir? (1000):"
 
-#: src/stored/btape.c:2850
+#: src/stored/btape.c:2851
 #, c-format
 msgid "Begin writing %d Bareos blocks to tape ...\n"
 msgstr "Empezando a escribir %d bloques Bareos en la cinta ...\n"
 
-#: src/stored/btape.c:2893
+#: src/stored/btape.c:2894
 #, c-format
 msgid "Begin writing raw blocks of %u bytes.\n"
 msgstr "Empezando a escribir bloques raw de %u bytes.\n"
 
-#: src/stored/btape.c:2924
+#: src/stored/btape.c:2925
 msgid "test autochanger"
 msgstr "prueba Autochanger"
 
-#: src/stored/btape.c:2925
+#: src/stored/btape.c:2926
 msgid "backspace file"
 msgstr "archivo de retroceso"
 
-#: src/stored/btape.c:2926
+#: src/stored/btape.c:2927
 msgid "backspace record"
 msgstr "registro de retroceso"
 
-#: src/stored/btape.c:2927
+#: src/stored/btape.c:2928
 msgid "list device capabilities"
 msgstr "lista de las capacidades del dispositivo"
 
-#: src/stored/btape.c:2928
+#: src/stored/btape.c:2929
 msgid "clear tape errors"
 msgstr "Errores Cinta de Limpieza"
 
-#: src/stored/btape.c:2929
+#: src/stored/btape.c:2930
 msgid "go to end of Bareos data for append"
 msgstr "ir al final de los datos de Bareos para añadir"
 
-#: src/stored/btape.c:2930
+#: src/stored/btape.c:2931
 msgid "go to the physical end of medium"
 msgstr "ir al final del medio físico"
 
-#: src/stored/btape.c:2931
+#: src/stored/btape.c:2932
 msgid "fill tape, write onto second volume"
 msgstr "llenar cinta, escribir en segundo volumen"
 
-#: src/stored/btape.c:2932
+#: src/stored/btape.c:2933
 msgid "read filled tape"
 msgstr "leer cinta llena"
 
-#: src/stored/btape.c:2933
+#: src/stored/btape.c:2934
 msgid "forward space a file"
 msgstr "espaciar un archivo hacia adelante"
 
-#: src/stored/btape.c:2934
+#: src/stored/btape.c:2935
 msgid "forward space a record"
 msgstr "espaciar un registro hacia adelante"
 
-#: src/stored/btape.c:2935
+#: src/stored/btape.c:2936
 msgid "print this command"
 msgstr "imprimir este comando"
 
-#: src/stored/btape.c:2936
+#: src/stored/btape.c:2937
 msgid "write a Bareos label to the tape"
 msgstr "escribir una etiqueta Bareos en la cinta"
 
-#: src/stored/btape.c:2937
+#: src/stored/btape.c:2938
 msgid "load a tape"
 msgstr "cargar una cinta"
 
-#: src/stored/btape.c:2938
+#: src/stored/btape.c:2939
 msgid "quit btape"
 msgstr "salir btape"
 
-#: src/stored/btape.c:2939
+#: src/stored/btape.c:2940
 msgid "use write() to fill tape"
 msgstr "usar write() para llenar la cinta"
 
-#: src/stored/btape.c:2940
+#: src/stored/btape.c:2941
 msgid "read and print the Bareos tape label"
 msgstr "leer e imprimir la etiqueta Bareos de la cinta"
 
-#: src/stored/btape.c:2941
+#: src/stored/btape.c:2942
 msgid "test record handling functions"
 msgstr "prueba de manejo de registro de funciones"
 
-#: src/stored/btape.c:2942
+#: src/stored/btape.c:2943
 msgid "rewind the tape"
 msgstr "rebobinar la cinta"
 
-#: src/stored/btape.c:2943
+#: src/stored/btape.c:2944
 msgid "read() tape block by block to EOT and report"
 msgstr "leer() cinta bloque por bloque para EOT y reportar"
 
-#: src/stored/btape.c:2944
+#: src/stored/btape.c:2945
 msgid "Bareos read block by block to EOT and report"
 msgstr "Bareos leer bloque por bloque para EOT y reportar"
 
-#: src/stored/btape.c:2945
+#: src/stored/btape.c:2946
 msgid ""
 "[file_size=n(GB)|nb_file=3|skip_zero|skip_random|skip_raw|skip_block] report "
 "drive speed"
@@ -18091,45 +18096,45 @@ msgstr ""
 "[file_size=n(GB)|nb_file=3|skip_zero|skip_random|skip_raw|skip_block] "
 "informe de velocidad de la unidad"
 
-#: src/stored/btape.c:2946
+#: src/stored/btape.c:2947
 msgid "print tape status"
 msgstr "imprimir estado de la cinta"
 
-#: src/stored/btape.c:2947
+#: src/stored/btape.c:2948
 msgid "General test Bareos tape functions"
 msgstr "Prueba general de las funciones de cinta Bareos"
 
-#: src/stored/btape.c:2948
+#: src/stored/btape.c:2949
 msgid "write an EOF on the tape"
 msgstr "escribir un EOF en la cinta"
 
-#: src/stored/btape.c:2949
+#: src/stored/btape.c:2950
 msgid "write a single Bareos block"
 msgstr "escribir un único bloque de Bareos"
 
-#: src/stored/btape.c:2950
+#: src/stored/btape.c:2951
 msgid "read a single record"
 msgstr "leer un solo registro"
 
-#: src/stored/btape.c:2951
+#: src/stored/btape.c:2952
 msgid "read a single Bareos block"
 msgstr "leer un único bloque de Bareos"
 
-#: src/stored/btape.c:2952
+#: src/stored/btape.c:2953
 msgid "quick fill command"
 msgstr "comando de llenado rápido"
 
-#: src/stored/btape.c:2973
+#: src/stored/btape.c:2974
 #, c-format
 msgid "\"%s\" is an invalid command\n"
 msgstr "\"%s\" es un comando inválido\n"
 
-#: src/stored/btape.c:2982
+#: src/stored/btape.c:2983
 #, c-format
 msgid "Interactive commands:\n"
 msgstr "Comandos interactivos:\n"
 
-#: src/stored/btape.c:2993
+#: src/stored/btape.c:2994
 #, fuzzy, c-format
 msgid ""
 "\n"
@@ -18163,26 +18168,26 @@ msgstr ""
 " -? imprime esta mensaje.\n"
 "\n"
 
-#: src/stored/btape.c:3080
+#: src/stored/btape.c:3081
 #, c-format
 msgid "Mount second Volume on device %s and press return when ready: "
 msgstr ""
 "Monte el segundo volumen en el dispositivo %s y pulse ENTER cuando esté "
 "listo:"
 
-#: src/stored/btape.c:3108
+#: src/stored/btape.c:3109
 #, c-format
 msgid "Mount blank Volume on device %s and press return when ready: "
 msgstr ""
 "Monte un volumen en blanco en el dispositivo %s y pulse ENTER cuando esté "
 "listo:"
 
-#: src/stored/btape.c:3128
+#: src/stored/btape.c:3129
 #, c-format
 msgid "End of Volume \"%s\" %d records.\n"
 msgstr "Fin del Volumen \"%s\" %d registros.\n"
 
-#: src/stored/btape.c:3142
+#: src/stored/btape.c:3143
 #, c-format
 msgid "Read block=%u, VolBytes=%s rate=%sB/s\n"
 msgstr "Leer bloque=%u, VolBytes=%s velocidad=%sB/s\n"

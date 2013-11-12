@@ -1,5 +1,5 @@
 #undef  VERSION
-#define VERSION "12.4.5"
+#define VERSION "12.4.6"
 #define BDATE   "04 September 2013"
 #define LSMDATE "12Sep13"
 
@@ -31,12 +31,12 @@
 /* Shared object library versions */
 
 /* Uncomment to overwrite default value from VERSION */
-/* #define LIBBAREOS_LT_RELEASE "12.4.5" */
-/* #define LIBBAREOSCFG_LT_RELEASE "12.4.5" */
-/* #define LIBBAREOSSQL_LT_RELEASE "12.4.5" */
-/* #define LIBBAREOSCATS_LT_RELEASE "12.4.5" */
-/* #define LIBBAREOSCATS_LT_RELEASE "12.4.5" */
-/* #define LIBBAREOSNDMP_LT_RELEASE "12.4.5" */
+/* #define LIBBAREOS_LT_RELEASE "12.4.6" */
+/* #define LIBBAREOSCFG_LT_RELEASE "12.4.6" */
+/* #define LIBBAREOSSQL_LT_RELEASE "12.4.6" */
+/* #define LIBBAREOSCATS_LT_RELEASE "12.4.6" */
+/* #define LIBBAREOSCATS_LT_RELEASE "12.4.6" */
+/* #define LIBBAREOSNDMP_LT_RELEASE "12.4.6" */
 
 /* Debug flags */
 #undef  DEBUG

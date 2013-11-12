@@ -8,7 +8,7 @@
 
 
 Name:           mingw32-winbareos
-Version:        12.4.5
+Version:        12.4.6
 Release:        0
 Summary:        bareos
 License:        LGPLv2+
