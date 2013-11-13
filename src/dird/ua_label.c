@@ -139,6 +139,7 @@ static int do_label(UAContext *ua, const char *cmd, bool relabel)
          ua->warning_msg(_("Storage has non-native protocol.\n"));
          return 1;
       }
+      break;
    default:
       break;
    }
