@@ -53,9 +53,13 @@
 
 /*
  * Sanity checks.
+ *
+ * Various places in the bareos source code define arrays of size
+ * CRYPTO_DIGEST_MAX_SIZE. Make sure this is large enough for all EVP digest
+ * routines supported by openssl.
  */
-#if (EVP_MAX_MD_SIZE != CRYPTO_DIGEST_MAX_SIZE)
-#error "EVP_MAX_MD_SIZE != CRYPTO_DIGEST_MAX_SIZE, please update src/lib/crypto.h"
+#if (EVP_MAX_MD_SIZE > CRYPTO_DIGEST_MAX_SIZE)
+#error "EVP_MAX_MD_SIZE > CRYPTO_DIGEST_MAX_SIZE, please update src/lib/crypto.h"
 #endif
 
 #if (EVP_MAX_BLOCK_LENGTH != CRYPTO_CIPHER_MAX_BLOCK_SIZE)
