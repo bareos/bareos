@@ -65,7 +65,7 @@ $this->headTitle($title);
 	<td><?php echo $this->escapeHtml($job->starttime); ?></td>
 	<td><?php echo $this->printJobDuration($job->starttime, $job->endtime); ?></td>
 	<td><?php echo $this->printJobStatus($job->jobstatus); ?></td>
-	<td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>">View</a></td>
+	<td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>"><span class="glyphicon glyphicon-file"></span></a></td>
 	
 </tr>
 

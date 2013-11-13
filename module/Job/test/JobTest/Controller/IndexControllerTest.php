@@ -25,5 +25,5 @@ class JobControllerTest extends AbstractHttpControllerTestCase
 		$this->assertControllerClass('JobController');
 		$this->assertMatchedRouteName('job');
 	}
-
+	
 }

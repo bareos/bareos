@@ -14,16 +14,16 @@ class JobStatus extends AbstractHelper
 	switch($jobStatus)
 	{
 	    case 'e':
-	      $output = "<div class='text-danger'>Non-fatal error</div>";
+	      $output = '<span class="label label-danger">Non-fatal error</span>';
 	      break;
 	    case 'E':
-	      $output = "<div class='text-danger'>Terminated with errors</div>";
+	      $output = '<span class="label label-danger">Terminated with errors</span>';
 	      break;
 	    case 'f':
-	      $output = "<div class='text-danger'>Fatal error</div>";
+	      $output = '<span class="label label-danger">Fatal error</span>';
 	      break;
 	    case 'T':
-	      $output = "<div class='text-success'>Completed successfully</div>";
+	      $output = '<span class="label label-success">Success</span>';
 	      break;
 	    default:
 	      $output = $jobStatus;

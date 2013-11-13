@@ -77,7 +77,7 @@ return array(
     ),
     'controllers' => array(
         'invokables' => array(
-            'Application\Controller\Index' => 'Application\Controller\IndexController'
+	    'Application\Controller\Index' => 'Application\Controller\IndexController',
         ),
     ),
     'view_helpers' => array(
@@ -106,6 +106,9 @@ return array(
         'template_path_stack' => array(
             __DIR__ . '/../view',
         ),
+	'strategies' => array(
+		'ViewJsonStrategy',	
+	),
     ),
     // Placeholder for console routes
     'console' => array(
@@ -154,10 +157,12 @@ return array(
 			'label' => 'Job',
 			'route' => 'job',
 		),
+		/*
 		array(
 			'label' => 'File',
 			'route' => 'file',
 		),
+		*/
 		array(
 			'label' => 'Log',
 			'route' => 'log',

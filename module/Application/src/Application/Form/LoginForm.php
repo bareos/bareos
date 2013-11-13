@@ -18,7 +18,7 @@ class LoginForm extends Form
 	    $passwordElement = new Password('password');
 	    $passwordElement->setLabel('Password');
 	    $submitElement = new Submit('login');
-	    $submitElement->setValue('Login');
+	    $submitElement->setValue('Sign in');
 	    $submitElement->setAttribute('class', 'btn');
 	    
 	    $this->add($usernameElement);
