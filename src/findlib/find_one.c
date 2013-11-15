@@ -299,14 +299,14 @@ bool has_file_changed(JCR *jcr, FF_PKT *ff_pkt)
    }
 
    if (statp.st_mtime != ff_pkt->statp.st_mtime) {
-      Jmsg(jcr, M_ERROR, 0, _("%s mtime changed during backup.\n"), ff_pkt->fname);
+      Jmsg(jcr, M_ERROR, 0, _("%s: mtime changed during backup.\n"), ff_pkt->fname);
       Dmsg3(50, "%s mtime (%lld) changed during backup (%lld).\n", ff_pkt->fname,
             (int64_t)ff_pkt->statp.st_mtime, (int64_t)statp.st_mtime);
       return true;
    }
 
    if (statp.st_ctime != ff_pkt->statp.st_ctime) {
-      Jmsg(jcr, M_ERROR, 0, _("%s ctime changed during backup.\n"), ff_pkt->fname);
+      Jmsg(jcr, M_ERROR, 0, _("%s: ctime changed during backup.\n"), ff_pkt->fname);
       Dmsg3(50, "%s ctime (%lld) changed during backup (%lld).\n", ff_pkt->fname,
             (int64_t)ff_pkt->statp.st_ctime, (int64_t)statp.st_ctime);
       return true;
@@ -314,7 +314,7 @@ bool has_file_changed(JCR *jcr, FF_PKT *ff_pkt)
 
    if (statp.st_size != ff_pkt->statp.st_size) {
       /* TODO: add size change */
-      Jmsg(jcr, M_ERROR, 0, _("%s size changed during backup.\n"),ff_pkt->fname);
+      Jmsg(jcr, M_ERROR, 0, _("%s: size changed during backup.\n"),ff_pkt->fname);
       Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
             (int64_t)ff_pkt->statp.st_size, (int64_t)statp.st_size);
       return true;
@@ -322,7 +322,7 @@ bool has_file_changed(JCR *jcr, FF_PKT *ff_pkt)
 
    if ((statp.st_blksize != ff_pkt->statp.st_blksize) ||
        (statp.st_blocks  != ff_pkt->statp.st_blocks)) {
-      Jmsg(jcr, M_ERROR, 0, _("%s size changed during backup.\n"),ff_pkt->fname);
+      Jmsg(jcr, M_ERROR, 0, _("%s: size changed during backup.\n"),ff_pkt->fname);
       Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
             (int64_t)ff_pkt->statp.st_blocks, (int64_t)statp.st_blocks);
       return true;
@@ -720,8 +720,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
    ff_pkt->link = ff_pkt->fname;     /* reset "link" */
 
    /*
-    * Descend into or "recurse" into the directory to read
-    * all the files in it.
+    * Descend into or "recurse" into the directory to read all the files in it.
     */
    errno = 0;
    if ((directory = opendir(fname)) == NULL) {
@@ -742,37 +741,54 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
     * before traversing it.
     */
    rtn_stat = 1;
-   entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 100);
-   for ( ; !job_canceled(jcr); ) {
-      char *p, *q;
-      int i;
 
-      status  = readdir_r(directory, entry, &result);
+   /*
+    * Allocate some extra room so an overflow of the d_name with more then
+    * name_max bytes doesn't kill us right away. We check in the loop if
+    * an overflow has not happened.
+    */
+   entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 100);
+   while (!job_canceled(jcr)) {
+      int name_length;
+
+      status = readdir_r(directory, entry, &result);
       if (status != 0 || result == NULL) {
 //          Dmsg2(99, "readdir returned stat=%d result=0x%x\n",
 //             status, (long)result);
          break;
       }
-      ASSERT(name_max+1 > (int)sizeof(struct dirent) + (int)NAMELEN(entry));
-      p = entry->d_name;
+
+      name_length = (int)NAMELEN(entry);
+
+      /*
+       * Some filesystems violate against the rules and return filenames
+       * longer then _PC_NAME_MAX. Log the error and continue.
+       */
+      if ((name_max + 1) <= ((int)sizeof(struct dirent) + name_length)) {
+         Jmsg2(jcr, M_ERROR, 0, _("%s: File name too long [%d]\n"), entry->d_name, name_length);
+         continue;
+      }
 
       /*
        * Skip `.', `..', and excluded file names.
        */
-      if (p[0] == '\0' || (p[0] == '.' && (p[1] == '\0' ||
-          (p[1] == '.' && p[2] == '\0')))) {
+      if (entry->d_name[0] == '\0' ||
+         (entry->d_name[0] == '.' && (entry->d_name[1] == '\0' ||
+         (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))) {
          continue;
       }
 
-      if ((int)NAMELEN(entry) + len >= link_len) {
-          link_len = len + NAMELEN(entry) + 1;
-          link = (char *)brealloc(link, link_len + 1);
+      /*
+       * Make sure there is enough room to store the whole name.
+       */
+      if (name_length + len >= link_len) {
+         link_len = len + name_length + 1;
+         link = (char *)brealloc(link, link_len + 1);
       }
-      q = link + len;
-      for (i=0; i < (int)NAMELEN(entry); i++) {
-         *q++ = *p++;
-      }
-      *q = 0;
+
+      memcpy(link + len, entry->d_name, name_length);
+      link[len + name_length] = '\0';
+
       if (!file_is_excluded(ff_pkt, link)) {
          rtn_stat = find_one_file(jcr, ff_pkt, handle_file, link, our_device, false);
          if (ff_pkt->linked) {
@@ -780,6 +796,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
          }
       }
    }
+
    closedir(directory);
    free(link);
    free(entry);
