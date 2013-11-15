@@ -5,7 +5,7 @@
 db_user=${db_user:-@db_user@}
 bindir=@POSTGRESQL_BINDIR@
 db_name=${db_name:-@db_name@}
-db_password=@db_password@
+db_password=${db_password:-@db_password@}
 if [ "$db_password" != "" ]; then
    pass="password '$db_password'"
 fi
