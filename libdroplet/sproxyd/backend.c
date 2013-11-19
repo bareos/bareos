@@ -641,13 +641,6 @@ dpl_sproxyd_head_id_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
   iov[n_iov].iov_base = header;
   iov[n_iov].iov_len = header_len;
   n_iov++;
