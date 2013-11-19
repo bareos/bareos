@@ -231,7 +231,6 @@ do_connect(dpl_ctx_t *ctx,
   if (-1 == fd)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "socket failed");
-      fd = -1;
       goto end;
     }
 
@@ -275,6 +274,7 @@ do_connect(dpl_ctx_t *ctx,
       if (errno == EINTR)
         goto retry;
       DPL_TRACE(ctx, DPL_TRACE_ERR, "poll failed: %s", strerror(errno));
+      safe_close(fd);
       fd = -1;
       goto end;
     }
@@ -282,11 +282,14 @@ do_connect(dpl_ctx_t *ctx,
   if (0 == ret)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "timed out connecting to %s:%d", inet_ntoa(addr), port);
-      return -1;
+      safe_close(fd);
+      fd = -1;
+      goto end;
     }
   else if (!(fds.revents & POLLOUT))
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "poll returned strange results");
+      safe_close(fd);
       fd = -1;
       goto end;
     }
