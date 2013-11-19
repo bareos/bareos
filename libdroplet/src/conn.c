@@ -166,7 +166,7 @@ dpl_conn_remove_nolock(dpl_ctx_t *ctx,
 
 }
 
-static int
+static void
 safe_close(int fd)
 {
   int ret;
@@ -180,10 +180,8 @@ safe_close(int fd)
       if (EINTR == errno)
         goto retry;
 
-      return -1;
+      return;
     }
-
-  return 0;
 }
 
 static void
@@ -193,7 +191,7 @@ dpl_conn_free(dpl_conn_t *conn)
     SSL_free(conn->ssl);
 
   if (-1 != conn->fd)
-    (void) safe_close(conn->fd);
+    safe_close(conn->fd);
 
   if (NULL != conn->read_buf)
     free(conn->read_buf);
@@ -246,7 +244,7 @@ do_connect(dpl_ctx_t *ctx,
   if (-1 == ret)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "ioctl(FIONBIO) failed: %s", strerror(errno));
-      (void) safe_close(fd);
+      safe_close(fd);
       fd = -1;
       goto end;
     }
@@ -260,7 +258,7 @@ do_connect(dpl_ctx_t *ctx,
       if (EINPROGRESS != errno)
         {
           DPL_TRACE(ctx, DPL_TRACE_ERR, "connect failed");
-          (void) safe_close(fd);
+	  safe_close(fd);
           fd = -1;
           goto end;
         }
@@ -298,7 +296,7 @@ do_connect(dpl_ctx_t *ctx,
   if (-1 == ret)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "ioctl(FIONBIO) failed: %s", strerror(errno));
-      (void) safe_close(fd);
+      safe_close(fd);
       fd = -1;
       goto end;
     }
@@ -311,7 +309,7 @@ do_connect(dpl_ctx_t *ctx,
   if (-1 == ret)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "getsockopt(SO_ERROR) failed: %s", strerror(errno));
-      (void) safe_close(fd);
+      safe_close(fd);
       fd = -1;
       goto end;
     }
@@ -320,7 +318,7 @@ do_connect(dpl_ctx_t *ctx,
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "connect to %s:%d failed: %s",
 		inet_ntoa(addr), port, strerror(error));
-      (void) safe_close(fd);
+      safe_close(fd);
       fd = -1;
       goto end;
     }
