@@ -1,16 +1,12 @@
 #ifndef __TOYSERVER_H__
 #define __TOYSERVER_H__ 1
 
+#define TOY_USERNAME	"leviathan"
+#define TOY_PASSWORD	"shibboleth"
+
 struct server_config
 {
-#if 0
-    int sasl_plain;
-    int sasl_login;
-    int sasl_digestmd5;
-    int starttls;
-    int deflate;
-    int caps_one_per_line;
-#endif
+    int require_basic_auth;
 };
 
 struct connection
@@ -36,6 +32,9 @@ struct request
     char uri[1024];
     char host[1024];
     struct kv *headers;
+    int has_authorization;
+    char username[128];
+    char password[128];
     int body_len;
     char body[4096];
 };

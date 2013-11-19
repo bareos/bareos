@@ -96,8 +96,105 @@ START_TEST(get_set_test)
 
   free(expected_uri);
 }
-
 END_TEST
+
+static dpl_status_t
+send_authenticated_request(const char *username, const char *password, struct request *reqp)
+{
+  dpl_status_t s;
+  dpl_dict_t *prof2;
+  char id[41];
+  static const char data[] =
+    "Carles wolf yr Austin, chambray twee lo-fi iPhone brunch Neutra"
+    "slow-carb. Viral";
+
+  prof2 = dpl_dict_dup(profile);
+  if (username)
+    dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(prof2, "access_key", username, 0));
+  if (password)
+    dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(prof2, "secret_key", password, 0));
+
+  /* create an unauthenticated context */
+  ctx = dpl_ctx_new_from_dict(prof2);
+  dpl_assert_ptr_not_null(ctx);
+  dpl_dict_free(prof2);
+
+  s = dpl_gen_random_key(ctx, DPL_STORAGE_CLASS_STANDARD, /*custom*/NULL, id, sizeof(id));
+  dpl_assert_int_eq(DPL_SUCCESS, s);
+
+  s = dpl_put_id(ctx,
+		"foobucket",
+		id,
+		/*options*/NULL,
+		DPL_FTYPE_REG,
+		/*condition*/NULL,
+		/*range*/NULL,
+		/*metadata*/NULL,
+		/*sysmd*/NULL,
+		data, sizeof(data)-1);
+  if (reqp)
+    *reqp = state->request;	/* sample before disconnection */
+
+  dpl_ctx_free(ctx);
+  ctx = NULL;
+
+  return s;
+}
+
+START_TEST(basic_auth_test)
+{
+#define TESTCASE(u, p, ehasa, eu, ep, es) \
+    { \
+      dpl_status_t s; \
+      struct request req; \
+      memset(&req, 0, sizeof(req)); \
+      s = send_authenticated_request(u, p, &req); \
+      dpl_assert_int_eq(req.has_authorization, ehasa); \
+      dpl_assert_str_eq(req.username, eu); \
+      dpl_assert_str_eq(req.password, ep); \
+      dpl_assert_int_eq(s, es); \
+    }
+
+
+  /* By default, server notices authentication but doesn't care */
+
+  /* unauthenticated request succeeds */
+  TESTCASE(NULL, NULL,
+	   /*has_authorization*/0, "", "",
+	   DPL_SUCCESS);
+
+  /* authenticated request with random username & password succeeds */
+  TESTCASE("brooklyn", "sriracha",
+	   /*has_authorization*/1, "brooklyn", "sriracha",
+	   DPL_SUCCESS);
+
+  /* Server will now refuse unauthenticated requests
+   * and requests with the wrong username or password. */
+  state->config.require_basic_auth = 1;
+
+  /* unauthenticated request fails */
+  TESTCASE(NULL, NULL,
+	   /*has_authorization*/0, "", "",
+	   DPL_FAILURE);
+
+  /* authenticated request with bad username fails */
+  TESTCASE("not"TOY_USERNAME, TOY_PASSWORD,
+	   /*has_authorization*/1, "not"TOY_USERNAME, TOY_PASSWORD,
+	   DPL_EPERM);
+
+  /* authenticated request with bad password fails */
+  TESTCASE(TOY_USERNAME, "not"TOY_PASSWORD,
+	   /*has_authorization*/1, TOY_USERNAME, "not"TOY_PASSWORD,
+	   DPL_EPERM);
+
+  /* authenticated request with good username and password succeeds */
+  TESTCASE(TOY_USERNAME, TOY_PASSWORD,
+	   /*has_authorization*/1, TOY_USERNAME, TOY_PASSWORD,
+	   DPL_SUCCESS);
+#undef TESTCASE
+}
+END_TEST
+
 Suite *
 sproxyd_suite()
 {
@@ -105,6 +202,7 @@ sproxyd_suite()
   TCase *t = tcase_create("base");
   tcase_add_checked_fixture(t, setup, teardown);
   tcase_add_test(t, get_set_test);
+  tcase_add_test(t, basic_auth_test);
   suite_add_tcase(s, t);
   return s;
 }

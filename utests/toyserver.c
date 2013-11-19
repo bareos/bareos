@@ -16,6 +16,8 @@
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <assert.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
 #include "toyserver.h"
 
 struct kv
@@ -541,6 +543,9 @@ server_setup_request(void)
   req->host[0] = '\0';
   req->body[0] = '\0';
   req->body_len = -1;
+  req->username[0] = '\0';
+  req->password[0] = '\0';
+  req->has_authorization = 0;
 }
 
 /* Returns 0 on EOF, 200 on success, an HTTP status or -1 on error */
@@ -601,6 +606,55 @@ server_read_request_start_line(void)
 }
 
 static int
+server_set_request_authorization(char *str)
+{
+  struct request *req = &state->request;
+  BIO *bio;
+  char *p;
+  int len;
+  char buf[256];
+  static const char sep[] = " \t\n\r";
+
+  /* The Authorization: header is a type token naming the
+   * scheme, here "Basic", followed by scheme specific data,
+   * here base64(username:password) */
+  p = strtok(str, sep);
+  if (strcasecmp(p, "basic"))
+    return 401;
+
+  p = strtok(NULL, sep);
+  if (!p)
+    return 401;
+
+  bio = BIO_new(BIO_f_base64());
+  BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+  bio = BIO_push(bio, BIO_new_mem_buf(p, -1));
+  len = BIO_read(bio, buf, sizeof(buf));
+  BIO_free_all(bio);
+  if (len <= 0 || len >= sizeof(buf))
+    return 401;
+  buf[len] = '\0';
+
+  p = strchr(buf, ':');
+  if (!p)
+    return 401;
+  *p++ = '\0';
+
+  strncpy(req->username, buf, sizeof(req->username));
+  req->username[sizeof(req->username)-1] = '\0';
+
+  strncpy(req->password, p, sizeof(req->password));
+  req->password[sizeof(req->password)-1] = '\0';
+
+  req->has_authorization = 1;
+  if (verbose)
+    fprintf(stderr, "Request has authorization header, "
+	    "scheme=basic username=\"%s\" password=\"%s\"\n",
+	    req->username, req->password);
+  return 0;
+}
+
+static int
 request_is_persistent(struct request *req)
 {
   const char *p;
@@ -623,6 +677,8 @@ static int
 server_read_request_headers(void)
 {
   struct request *req = &state->request;
+  int authorization_seen = 0;
+  int r;
   char *p;
   char buf[1024];
 
@@ -657,6 +713,14 @@ server_read_request_headers(void)
       else if (!strcasecmp(buf, "Content-Length"))
 	{
 	  req->body_len = atoi(p);
+	}
+      else if (!strcasecmp(buf, "Authorization"))
+	{
+	  if (authorization_seen++)
+	    return 400;	/* Bad Request */
+	  r = server_set_request_authorization(p);
+	  if (r)
+	    return r;
 	}
     }
 
@@ -731,17 +795,30 @@ server_handle_request(void)
   struct connection *conn = &state->connection;
   const char *p;
 
+  if (state->config.require_basic_auth)
+    {
+      /* enforce authorisation */
+      if (!req->has_authorization)
+	return 401;   /* Unauthorized */
+      if (strcmp(req->username, TOY_USERNAME))
+	return 403;   /* Forbidden */
+      if (strcmp(req->password, TOY_PASSWORD))
+	return 403;   /* Forbidden */
+    }
+
   if (!strncmp(req->uri, "/proxy/chord/", 13))
     {
       const char *id = &req->uri[13];
       switch (req->method)
 	{
 	case M_PUT:
-	  fprintf(stderr, "Fake sproxyd PUT\n");
+	  if (verbose)
+	    fprintf(stderr, "Fake sproxyd PUT\n");
 	  kv_set(&objects, id, req->body);
 	  return 0;
 	case M_GET:
-	  fprintf(stderr, "Fake sproxyd GET\n");
+	  if (verbose)
+	    fprintf(stderr, "Fake sproxyd GET\n");
 	  p = kv_ifind(&objects, id);
 	  if (NULL == p)
 	    return 404; /* Not Found */
@@ -791,6 +868,9 @@ server_send_reply(void)
 		strmap_to_name(version_strs, state->request.version),
 		rep->status,
 		ss ? ss : "Unknown status");
+
+  if (rep->status == 401)
+    kv_add(&rep->headers, "WWW-Authenticate", "Basic realm=\"WallyWorld\"");
 
   /* Reply headers */
   for (kv = rep->headers ; kv ; kv = kv->next)
