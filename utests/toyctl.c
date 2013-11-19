@@ -16,7 +16,7 @@
 #include <assert.h>
 #include "toyctl.h"
 
-static int verbose = 1;
+extern int verbose;
 
 static int
 toyserver_wait(pid_t pid)

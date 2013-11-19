@@ -7,6 +7,8 @@
 
 #include "utest_main.h"
 
+int verbose = 0;
+
 /*
  * Arrange to valgrind ourself.  Normally this would be done outside in
  * the Makefile or a shell script by just running the executable under
@@ -83,6 +85,7 @@ main(int argc, char ** argv)
 	{
 	case OPT_VERBOSE:
 	  output = CK_VERBOSE;
+	  verbose = 1;
 	  break;
 	case OPT_DEBUG:
 	  debug_flag = 1;
