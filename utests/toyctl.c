@@ -35,6 +35,8 @@ toyserver_wait(pid_t pid)
 	    continue;
 	  if (errno == ESRCH)
 	    return -1;	  /* it's gone */
+	  if (errno == ECHILD)
+	    return -1;	  /* it's gone */
 	  fprintf(stderr, "Couldn't wait for toyserver pid %d: %s\n",
 		  pid, strerror(errno));
 	  return -1;
