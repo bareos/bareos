@@ -5,7 +5,7 @@ $this->headTitle($title);
 
 ?>
 
-<h2><?php echo $title; ?></h2>
+<h2><?php echo $this->translate($title); ?></h2>
 <hr />
 
 <script type="text/javascript">
@@ -82,6 +82,38 @@ $flash->setMessageOpenFormat('
 
 ?>
 
+<!-- RUNNING JOBS -->
+<?php if(count($this->runningJobs) > 0) : ?>
+
+	<?php 
+		// TODO 
+	?>
+
+<?php elseif(count($this->runningJobs) == 0) : ?>
+	<div class="alert alert-dismissable alert-info">
+	<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+	<ul>
+	<li><?php echo $this->translate("Currently, there are no jobs running."); ?></li>
+	</ul>
+	</div>
+<?php endif; ?>
+
+<!-- WAITING JOBS -->
+<?php if(count($this->waitingJobs) > 0) : ?>
+
+	<?php
+		// TODO
+	?>
+
+<?php elseif(count($this->waitingJobs) == 0) : ?>
+	<div class="alert alert-dismissable alert-info">
+	<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+	<ul>
+	<li><?php echo $this->translate("Currently, there are no jobs waiting."); ?></li>
+	</ul>
+	</div>
+<?php endif; ?>
+
 <!-- UNSUCCESSFUL JOBS -->
 <?php if(count($this->lastUnsuccessfulJobs) > 0) : ?>
 
@@ -143,7 +175,7 @@ $flash->setMessageOpenFormat('
 <div class="alert alert-dismissable alert-info">
 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 <ul>
-<li>No unsuccessful jobs during the last 24 hours!</li>
+<li><?php echo $this->translate("No unsuccessful jobs during the last 24 hours!"); ?></li>
 </ul>
 </div>
 
@@ -211,7 +243,7 @@ $flash->setMessageOpenFormat('
 <div class="alert alert-dismissable alert-info">
 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 <ul>
-<li>No successful jobs during the last 24 hours!</li>
+<li><?php echo $this->translate("No successful jobs during the last 24 hours!"); ?></li>
 </ul>
 </div>
 
