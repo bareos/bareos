@@ -23,6 +23,8 @@ class DashboardController extends AbstractActionController
 			
 				'lastSuccessfulJobs' => $this->getJobTable()->getLast24HoursSuccessfulJobs(),
 				'lastUnsuccessfulJobs' => $this->getJobTable()->getLast24HoursUnsuccessfulJobs(),
+				'waitingJobs' => $this->getJobTable()->getWaitingJobs(),
+				'runningJobs' => $this->getJobTable()->getRunningJobs(),
 			
 				'jobsCreatedNotRunning' => $this->getJobTable()->getJobCountLast24HoursByStatus("C"),
 				'jobsBlocked' => $this->getJobTable()->getJobCountLast24HoursByStatus("B"),

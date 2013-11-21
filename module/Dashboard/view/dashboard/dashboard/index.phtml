@@ -85,9 +85,58 @@ $flash->setMessageOpenFormat('
 <!-- RUNNING JOBS -->
 <?php if(count($this->runningJobs) > 0) : ?>
 
-	<?php 
-		// TODO 
-	?>
+<div class="row">
+
+<div class="col-md-12">
+
+	<div class="panel panel-default">
+	
+            <div class="panel-heading">
+                <h3 class="panel-title"><?php echo $this->translate('Running jobs') ?></h3>
+            </div>
+  
+	    <div class="panel-body">
+            
+            <table class="table table-striped table-hover" style="font-size: 9pt;">
+            
+            <tr>
+		<th>Job</th>
+		<th>Name</th>
+		<th>Client</th>
+		<th>Type</th>
+		<th>Level</th>
+		<th>Start</th>
+		<th>Duration</th>
+		<th>Status</th>
+		<th>Log</th>
+	    </tr>
+            
+            <?php foreach ($this->runningJobs as $item) : ?>
+
+	      <tr>
+
+	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $item->jobid)); ?>"><?php echo $this->escapeHtml($item->jobid); ?></a></td>
+	      <td><?php echo $this->escapeHtml($item->jobname); ?></td>
+	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $item->clientid)); ?>"><?php echo $this->escapeHtml($item->clientname); ?></a></td>
+	      <td><?php echo $this->printJobType($item->type); ?></td>
+	      <td><?php echo $this->printJobLevel($item->level); ?></td>
+	      <td><?php echo $this->escapeHtml($item->starttime); ?></td>
+	      <td><?php echo $this->printJobDuration($item->starttime, $item->endtime); ?></td>
+	      <td><?php echo $this->printJobStatus($item->jobstatus); ?></td>
+	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>"><span class="glyphicon glyphicon-file"></a></td>
+	  
+	      </tr>
+
+	    <?php endforeach; ?>
+	    </table>
+            
+            </div>
+            
+	</div>
+            
+</div>
+
+</div>
 
 <?php elseif(count($this->runningJobs) == 0) : ?>
 	<div class="alert alert-dismissable alert-info">
@@ -101,9 +150,58 @@ $flash->setMessageOpenFormat('
 <!-- WAITING JOBS -->
 <?php if(count($this->waitingJobs) > 0) : ?>
 
-	<?php
-		// TODO
-	?>
+<div class="row">
+
+<div class="col-md-12">
+
+	<div class="panel panel-default">
+	
+            <div class="panel-heading">
+                <h3 class="panel-title"><?php echo $this->translate('Waiting jobs') ?></h3>
+            </div>
+  
+	    <div class="panel-body">
+            
+            <table class="table table-striped table-hover" style="font-size: 9pt;">
+            
+            <tr>
+		<th>Job</th>
+		<th>Name</th>
+		<th>Client</th>
+		<th>Type</th>
+		<th>Level</th>
+		<th>Start</th>
+		<th>Duration</th>
+		<th>Status</th>
+		<th>Log</th>
+	    </tr>
+            
+            <?php foreach ($this->waitingJobs as $item) : ?>
+
+	      <tr>
+
+	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $item->jobid)); ?>"><?php echo $this->escapeHtml($item->jobid); ?></a></td>
+	      <td><?php echo $this->escapeHtml($item->jobname); ?></td>
+	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $item->clientid)); ?>"><?php echo $this->escapeHtml($item->clientname); ?></a></td>
+	      <td><?php echo $this->printJobType($item->type); ?></td>
+	      <td><?php echo $this->printJobLevel($item->level); ?></td>
+	      <td><?php echo $this->escapeHtml($item->starttime); ?></td>
+	      <td><?php echo $this->printJobDuration($item->starttime, $item->endtime); ?></td>
+	      <td><?php echo $this->printJobStatus($item->jobstatus); ?></td>
+	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>"><span class="glyphicon glyphicon-file"></a></td>
+	  
+	      </tr>
+
+	    <?php endforeach; ?>
+	    </table>
+            
+            </div>
+            
+	</div>
+            
+</div>
+
+</div>
 
 <?php elseif(count($this->waitingJobs) == 0) : ?>
 	<div class="alert alert-dismissable alert-info">
