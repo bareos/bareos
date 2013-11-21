@@ -12,7 +12,7 @@ class JobControllerTest extends AbstractHttpControllerTestCase
 	public function setUp()
 	{
 		$this->setApplicationConfig(
-			include '/srv/www/htdocs/barbossa/config/application.config.php'		
+			include './config/application.config.php'		
 		);
 	}
 
