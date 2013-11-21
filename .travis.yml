@@ -1,21 +1,22 @@
 language: php
 
 php:
-	- 5.5
-	- 5.4
-	- 5.3
+  - 5.5
+  - 5.4
+  - 5.3
 
 env:
-	- DB=mysql
-	- DB=pgsql
+  - DB=mysql
+  - DB=pgsql
 
 before_install:
-	- composer self-update
-	- composer update --prefer-source --dev
+  - composer self-update
+  - composer update --prefer-source --dev
 
 before_script:
 
 script:
+  phpunit --configuration ./tests/phpunit.xml --coverage-text
 
 after_script:
 
