@@ -56,6 +56,41 @@ class JobTable
 		return $row;
 	}
 
+	public function getRunningJobs()
+	{
+		$select = new Select();
+		$select->from('job');
+		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
+		$select->order('job.jobid DESC');
+		$select->where("jobstatus = 'R'");
+		
+		$resultSet = $this->tableGateway->selectWith($select);
+		
+		return $resultSet;
+	}
+	
+	public function getWaitingJobs() 
+	{
+		$select = new Select();
+		$select->from('job');
+		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
+		$select->order('job.jobid DESC');
+		$select->where("jobstatus = 'F' OR 
+				jobstatus = 'S' OR 
+				jobstatus = 'm' OR 
+				jobstatus = 'M' OR 
+				jobstatus = 's' OR 
+				jobstatus = 'j' OR 
+				jobstatus = 'c' OR 
+				jobstatus = 'd' OR 
+				jobstatus = 't' OR 
+				jobstatus = 'p'");
+		
+		$resultSet = $this->tableGateway->selectWith($select);
+		
+		return $resultSet;
+	}
+	
 	public function getLast24HoursSuccessfulJobs()
 	{
 		$current_time = date("Y-m-d H:i:s",time());

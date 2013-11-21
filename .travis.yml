@@ -1,22 +1,29 @@
 language: php
 
 php:
-	- 5.5
-	- 5.4
-	- 5.3
+  - 5.5
+  - 5.4
+  - 5.3
 
 env:
-	- DB=mysql
-	- DB=pgsql
+#  - DB=mysql
+  - DB=pgsql
 
 before_install:
-	- composer self-update
-	- composer update --prefer-source --dev
+  - composer self-update
+  - composer update --prefer-source --dev
 
 before_script:
+  - if [[ "$DB" == "pgsql" ]]; then psql -c "DROP DATABASE IF EXISTS bareos;" -U postgres; fi
+  - if [[ "$DB" == "pgsql" ]]; then psql -c "create database bareos;" -U postgres; fi
+#- if [[ "$DB" == "mysql" ]]; then mysql -e "create database IF NOT EXISTS bareos;" -uroot; fi
 
 script:
+<<<<<<< HEAD
 	- ./vendor/bin/phpunit
+=======
+  phpunit --configuration ./tests/phpunit.xml --coverage-text
+>>>>>>> barbossa-0.0.1
 
 after_script:
 
