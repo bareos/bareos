@@ -34,6 +34,20 @@ class FilesetTable
 		return $row;
 	}
 
+	public function getFilesetHistory($id)
+	{
+		$fset = $this->getFileSet($id);
+                  
+                $select = new Select();
+                $select->from('fileset');
+                $select->where("fileset = '". $fset->fileset ."'");
+                $select->order('createtime DESC');
+                
+                $resultSet = $this->tableGateway->selectWith($select);
+                  
+                return $resultSet;
+        }
+	
 	public function getFilesetNum()
 	{
 		$select = new Select();

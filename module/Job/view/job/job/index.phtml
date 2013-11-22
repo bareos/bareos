@@ -8,32 +8,17 @@ $this->headTitle($title);
 <h2><?php echo $title; ?></h2>
 <hr />
 
+<ul class="nav nav-tabs">
+	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Job history'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running jobs'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Job timeline'); ?></a></li>
+</ul>
+
+<br />
+
 <div class="row">
 
-<div class="col-md-2">
-
-	  <div class="panel panel-default">
-	  
-	      <div class="panel-heading">
-		  <h3 class="panel-title"><?php echo $this->translate('Job'); ?></h3>
-	      </div>
-    
-	      <div class="panel-body">
-	      
-	      <table class="table" style="font-size: 9pt;">
-		<tr><td><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Job history'); ?></a></td></tr>
-		<tr><td><a href="<?php echo $this->url('job', array('action'=>'todo')); ?>"><?php echo $this->translate('Running jobs'); ?></a></td></tr>
-		<tr><td><a href="<?php echo $this->url('job', array('action'=>'todo')); ?>"><?php echo $this->translate('todo'); ?></a></td></tr>
-		<tr><td><a href="<?php echo $this->url('job', array('action'=>'todo')); ?>"><?php echo $this->translate('Job timeline'); ?></a></td></tr>
-	      </table>
-	      
-	      </div>
-	      
-	  </div>
-
-</div>
-
-<div class="col-md-10">
+<div class="col-md-12">
 
 <div class="panel panel-default">
 <div class="panel-body">

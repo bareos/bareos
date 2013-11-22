@@ -1,0 +1,17 @@
+<?php
+
+$title = 'Running jobs';
+$this->headTitle($title);
+
+?>
+
+<h2><?php echo $title; ?></h2>
+<hr />
+
+<ul class="nav nav-tabs">
+	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Job history'); ?></a></li>
+	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running jobs'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Job timeline'); ?></a></li>
+</ul>
+
+<br />
