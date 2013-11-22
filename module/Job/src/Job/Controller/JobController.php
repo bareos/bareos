@@ -15,7 +15,7 @@ class JobController extends AbstractActionController
 
 		$paginator = $this->getJobTable()->fetchAll(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(15);
+		$paginator->setItemCountPerPage(10);
 
 		return new ViewModel(array('paginator' => $paginator));
 
@@ -33,6 +33,16 @@ class JobController extends AbstractActionController
 			));
 	}
 
+	public function runningAction() 
+	{
+		return new ViewModel();
+	}
+	
+	public function timelineAction() 
+	{
+		return new ViewModel();
+	}
+	
 	public function getJobTable()
        	{
 		if(!$this->jobTable) {
