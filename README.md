@@ -9,6 +9,10 @@ Bacula 5.2.13 (original version forked.):
 Release 13.4.x
 ==============
 
+* First attempt at supporting IBM lin_tape driver.
+* Fix storage daemon plugin interface.
+* AIX compile fixes.
+
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
 
 Release 13.3.x
