@@ -16,7 +16,7 @@ nothing:
 
 install: install-dir install-conf install-autostart
 
-install-dir: $(DESTDIR)/$(SYSTEMD_UNITDIR)
+install-dir:
 	@$(MKDIR) $(DESTDIR)/$(SYSTEMD_UNITDIR)
 	@$(MKDIR) $(DESTDIR)/$(SYSTEMD_TMPFILES)
 
