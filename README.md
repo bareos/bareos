@@ -3,7 +3,8 @@
 If you want to contribute somethings to this repo please read our contribution
 policy at https://www.bareos.org/en/howto-contribute.html
 
-This source code has the following changes (highlevel):
+This source code has the following changes (highlevel) compared with
+Bacula 5.2.13 (original version forked.):
 
 Release 13.4.x
 ==============
@@ -222,6 +223,7 @@ Build System
       * OpenSuse 12.1
       * OpenSuse 12.2
       * OpenSuse 12.3
+      * OpenSuse 13.1
       * OpenSuse factory
       * Ubuntu 10.04
       * Ubuntu 12.04
