@@ -1,5 +1,9 @@
-[BAREOS](http://www.bareos.org/) is a fork of the Bacula source code with the following
-changes (highlevel):
+[BAREOS](http://www.bareos.org/) is a fork of the Bacula project.
+
+If you want to contribute somethings to this repo please read our contribution
+policy at https://www.bareos.org/en/howto-contribute.html
+
+This source code has the following changes (highlevel):
 
 Release 13.4.x
 ==============
