@@ -59,7 +59,7 @@ class FilesetController extends AbstractActionController
 		);
 
 		$cwd = '/usr/sbin';
-		$env = NULL;
+		$env = array('/usr/sbin');
 
 		$process = proc_open('bconsole', $descriptorspec, $pipes, $cwd, $env);
 
