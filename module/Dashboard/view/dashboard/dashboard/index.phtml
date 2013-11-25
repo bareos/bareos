@@ -246,7 +246,7 @@ $flash->setMessageOpenFormat('
 	      <tr>
 
 	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $jobUnsuccess->jobid)); ?>"><?php echo $this->escapeHtml($jobUnsuccess->jobid); ?></a></td>
-	      <td><?php echo $this->escapeHtml($jobSuccess->jobname); ?></td>
+	      <td><?php echo $this->escapeHtml($jobUnsuccess->jobname); ?></td>
 	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $jobUnsuccess->clientid)); ?>"><?php echo $this->escapeHtml($jobUnsuccess->clientname); ?></a></td>
 	      <td><?php echo $this->printJobType($jobUnsuccess->type); ?></td>
 	      <td><?php echo $this->printJobLevel($jobUnsuccess->level); ?></td>
