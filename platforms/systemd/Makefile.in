@@ -31,6 +31,7 @@ install-autostart-fd:
 	   /bin/systemctl disable bareos-fd.service; \
 	fi
 	@$(INSTALL_DATA) bareos-fd.service $(DESTDIR)/$(SYSTEMD_UNITDIR)/bareos-fd.service
+	@$(INSTALL_DATA) bareos-fd.socket  $(DESTDIR)/$(SYSTEMD_UNITDIR)/bareos-fd.socket
 	# set symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
 	   /bin/systemctl enable bareos-fd.service; \
@@ -43,6 +44,7 @@ install-autostart-sd:
 	   /bin/systemctl disable bareos-sd.service; \
 	fi
 	@$(INSTALL_DATA) bareos-sd.service $(DESTDIR)/$(SYSTEMD_UNITDIR)/bareos-sd.service
+	@$(INSTALL_DATA) bareos-sd.socket  $(DESTDIR)/$(SYSTEMD_UNITDIR)/bareos-sd.socket 
 	# set symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
 	   /bin/systemctl enable bareos-sd.service; \
@@ -55,6 +57,7 @@ install-autostart-dir:
 	   /bin/systemctl disable bareos-dir.service; \
 	fi
 	@$(INSTALL_DATA) bareos-dir.service $(DESTDIR)/$(SYSTEMD_UNITDIR)/bareos-dir.service
+	@$(INSTALL_DATA) bareos-dir.socket  $(DESTDIR)/$(SYSTEMD_UNITDIR)/bareos-dir.socket
 	# set symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
 	   /bin/systemctl enable bareos-dir.service; \

@@ -1,0 +1,9 @@
+[Unit]
+Conflicts=bareos-dir.service
+
+[Socket]
+ListenStream=9101
+Accept=yes
+
+[Install]
+WantedBy=sockets.target
