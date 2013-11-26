@@ -920,6 +920,7 @@ dpl_default_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
 {
   fputs(message, stderr);
   fputc('\n', stderr);
+  fflush(stderr);
 }
 
 static dpl_log_func_t dpl_logfunc = dpl_default_logfunc;
@@ -975,6 +976,44 @@ dpl_log(dpl_ctx_t *ctx,
 
   dpl_logfunc(ctx, level, message);
 }
+
+struct ssl_err_state
+{
+  dpl_ctx_t *ctx;
+  const char *file;
+  const char *func;
+  int line;
+  const char *str;
+};
+
+static int
+dpl_ssl_log_one_error(const char *str,
+		      size_t len __attribute__((unused)),
+		      void *clientdata)
+{
+  struct ssl_err_state *state = clientdata;
+
+  /* we know that str is nul-terminated so we can just ignore len */
+  dpl_log(state->ctx, DPL_ERROR, state->file, state->func, state->line,
+	  "%s failed with %s", state->str, str);
+
+  /* ERR_print_errors_cb returns early if we return <= 0 */
+  return 1;
+}
+
+void
+dpl_ssl_perror(dpl_ctx_t *ctx,
+	       const char *file,
+	       const char *func,
+	       int line,
+	       const char *str)
+{
+  struct ssl_err_state state = {
+    .ctx = ctx, .file = file, .func = func, .line = line, .str = str
+  };
+  ERR_print_errors_cb(dpl_ssl_log_one_error, &state);
+}
+
 
 /**
  * @addtogroup init

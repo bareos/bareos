@@ -1,172 +1,18 @@
 /* unit test the code in droplet.c */
-#define _GNU_SOURCE	/* for RTLD_NEXT */
 #include <sys/types.h>
-#include <limits.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#ifdef __linux__
-#include <pwd.h>
-#include <dlfcn.h>
-#endif
-#include <errno.h>
 #include <check.h>
 #include <droplet.h>
 #include <droplet/backend.h>
 
+#include "testutils.h"
 #include "utest_main.h"
 
-/*
- * Note that because the libcheck framework runs each test in it's
- * process, we can get away with futzing with our own environment and
- * not cleaning up afterwards.
- *
- * Note we can't just change the $HOME environment variable because
- * Droplet doesn't look at it, instead it does a getpwuid(getuid()) to
- * work out the home directory.  So we have to do some horrible
- * juggling to mock getpwuid().  That juggling currently uses some
- * Linux-specific runtime linker voodoo, so we only build these
- * tests on Linux.
- *
- * random words courtesy http://hipsteripsum.me/
- */
-
 #ifdef __linux__
-
-/* really dumb and inefficient but simple strconcat() */
-static char *
-strconcat(const char *s, ...)
-{
-  int len = 0;	  /* not including trailing NUL */
-  int i;
-#define MAX_STRS  32
-  int nstrs = 0;
-  const char *strs[MAX_STRS];
-  char *res;
-  va_list args;
-
-  va_start(args, s);
-  while (NULL != s)
-    {
-      fail_unless(nstrs < MAX_STRS);
-      strs[nstrs++] = s;
-      len += strlen(s);
-      s = va_arg(args, const char*);
-    }
-  va_end(args);
-
-  res = malloc(len+1);
-  dpl_assert_ptr_not_null(res);
-  res[0] = '\0';
-
-  for (i = 0 ; i < nstrs ; i++)
-    strcat(res, strs[i]);
-
-  return res;
-#undef MAX_STRS
-}
-
-static char *
-make_unique_directory(void)
-{
-  char *path;
-  char cwd[PATH_MAX];
-  char unique[64];
-  static int idx;
-
-  dpl_assert_ptr_not_null(getcwd(cwd, sizeof(cwd)));
-  snprintf(unique, sizeof(unique), "%d.%d", (int)getpid(), idx++);
-  path = strconcat(cwd, "/tmp.utest.", unique, (char*)NULL);
-
-  if (mkdir(path, 0755) < 0)
-    {
-      perror(path);
-      fail();
-    }
-
-  return path;
-}
-
-static char *
-make_sub_directory(const char *parent, const char *child)
-{
-  char *path = strconcat(parent, "/", child, (char *)NULL);
-
-  if (mkdir(path, 0755) < 0)
-    {
-      perror(path);
-      fail();
-    }
-
-  return path;
-}
-
-static void
-rmtree(const char *path)
-{
-  char cmd[PATH_MAX];
-
-  snprintf(cmd, sizeof(cmd), "/bin/rm -rf '%s'", path);
-  system(cmd);
-}
-
-static char *
-write_file(const char *parent, const char *child, const char *contents)
-{
-  char *path = strconcat(parent, "/", child, (char *)NULL);
-  int fd;
-  int remain;
-  int n;
-
-  fd = open(path, O_WRONLY|O_TRUNC|O_CREAT, 0666);
-  if (fd < 0)
-    {
-      perror(path);
-      fail();
-    }
-
-  remain = strlen(contents);
-  while (remain > 0)
-    {
-      n = write(fd, contents, strlen(contents));
-      if (n < 0)
-	{
-	  if (errno == EINTR)
-	    continue;
-	  perror(path);
-	  fail();
-	}
-      remain -= n;
-      contents += n;
-    }
-
-  close(fd);
-
-  return path;
-}
-
-static char *home = NULL;
-
-/* mocked version of getpwuid(). */
-
-struct passwd *
-getpwuid(uid_t uid)
-{
-  static struct passwd *(*real_getpwuid)(uid_t) = NULL;
-  struct passwd *pwd = NULL;
-
-  if (real_getpwuid == NULL)
-    {
-      real_getpwuid = (struct passwd *(*)(uid_t))dlsym(RTLD_NEXT, "getpwuid");
-    }
-  pwd = real_getpwuid(uid);
-  if (home && pwd)
-    pwd->pw_dir = home;
-  return pwd;
-}
 
 static void
 setup(void)
@@ -398,6 +244,138 @@ START_TEST(ctx_new_params_test)
 }
 END_TEST
 
+static void
+redirect_stdio(FILE *fp, const char *name)
+{
+  char *logfile;
+  int fd;
+
+  logfile = strconcat(home, "/", name, ".log", (char *)NULL);
+  fd = open(logfile, O_WRONLY|O_CREAT|O_TRUNC, 0666);
+  if (fd < 0)
+    {
+      perror(logfile);
+      fail();
+    }
+  fflush(fp);
+  if (dup2(fd, fileno(fp)) < 0)
+    {
+      perror("dup2");
+      fail();
+    }
+  close(fd);
+  free(logfile);
+}
+
+#define MAXLOGGED 128
+static struct {
+  dpl_log_level_t level;
+  char *message;
+} logged[MAXLOGGED];
+static int nlogged = 0;
+
+static int
+log_find(const char *needle)
+{
+  int i;
+
+  for (i = 0 ; i < nlogged ; i++)
+    {
+      if (strstr(logged[i].message, needle))
+	return i;
+    }
+
+  return -1;
+}
+
+static void
+log_func(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
+{
+  fail_unless(nlogged < MAXLOGGED);
+  logged[nlogged].level = level;
+  logged[nlogged].message = strdup(message);
+  nlogged++;
+}
+
+START_TEST(logging_test)
+{
+  dpl_ctx_t *ctx;
+  dpl_dict_t *profile;
+  char *stderr_logfile;
+  char *stdout_logfile;
+  char *dropdir;
+  off_t logsize;
+  int nerrs;
+
+  /* because libcheck forks a new process for each testcase, we
+   * can feel free to futz around with the process state like stderr */
+  redirect_stdio(stdout, "stdout");
+  redirect_stdio(stderr, "stderr");
+
+  /* At this point we have a pretend ~ with NO
+   * .droplet/ directory in it.  We don't create
+   * a dropdir on disk at all, nor a profile, it's
+   * all in memory. */
+  dropdir = strconcat(home, "/trust-fund", (char *)NULL);  /* never created */
+
+  profile = dpl_dict_new(13);
+  dpl_assert_ptr_not_null(profile);
+  /* the host is an unparseable IPv4 address literal, which should
+   * result in a predicable error */
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "host", "123.456.789.012", 0));
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "droplet_dir", dropdir, 0));
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "profile_name", "viral", 0));
+  /* need this to disable the event log, otherwise the droplet_dir needs to exist */
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "pricing_dir", "", 0));
+  unsetenv("DPLDIR");
+  unsetenv("DPLPROFILE");
+
+  /* Create a context which will fail with a logged error message.
+   * By default error messages go to stderr only. */
+  dpl_assert_int_eq(0, file_size(stdout));
+  dpl_assert_int_eq(0, file_size(stderr));
+  ctx = dpl_ctx_new_from_dict(profile);
+  dpl_assert_ptr_null(ctx);
+  /* nothing went to stdout */
+  dpl_assert_int_eq(0, file_size(stdout));
+  /* something went to stderr */
+  logsize = file_size(stderr);
+  fail_unless(logsize > 0);
+
+  /* Create a context which will fail with a logged error message.
+   * Calling dpl_set_log_func redirects errors to the given function.  */
+  dpl_assert_int_eq(nlogged, 0);
+  dpl_set_log_func(log_func);
+  ctx = dpl_ctx_new_from_dict(profile);
+  dpl_assert_ptr_null(ctx);
+  /* at least one error message logged */
+  dpl_assert_int_ne(nlogged, 0);
+  /* nothing went to stdout */
+  dpl_assert_int_eq(0, file_size(stdout));
+  /* nothing more went to stderr */
+  dpl_assert_int_eq(logsize, file_size(stderr));
+  /* errors mention the broken address */
+  dpl_assert_int_ne(-1, log_find("123.456.789.012"));
+
+  /* Create a context which will fail with a logged error message.
+   * Calling dpl_set_log_func(NULL) redirects errors back to stderr. */
+  nerrs = nlogged;
+  dpl_set_log_func(NULL);
+  ctx = dpl_ctx_new_from_dict(profile);
+  dpl_assert_ptr_null(ctx);
+  /* no more errors went to the log function */
+  dpl_assert_int_eq(nerrs, nlogged);
+  /* nothing went to stdout */
+  dpl_assert_int_eq(0, file_size(stdout));
+  /* some more went to stderr */
+  fail_unless(file_size(stderr) > logsize);
+
+  /* cleanup */
+  dpl_dict_free(profile);
+  free(dropdir);
+}
+END_TEST
+
 Suite *
 profile_suite()
 {
@@ -410,6 +388,7 @@ profile_suite()
   tcase_add_test(t, ctx_new_dropdir_profile_test);
   tcase_add_test(t, ctx_new_from_dict_test);
   tcase_add_test(t, ctx_new_params_test);
+  tcase_add_test(t, logging_test);
   suite_add_tcase(s, t);
   return s;
 }

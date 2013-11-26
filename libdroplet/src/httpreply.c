@@ -228,6 +228,7 @@ read_line(dpl_conn_t *conn)
               conn->cc = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
               if (conn->cc <= 0)
                 {
+		  DPL_SSL_PERROR(conn->ctx, "SSL_read");
                   free(line);
                   conn->status = DPL_EIO;
                   return NULL;
@@ -393,7 +394,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   conn->cc = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
                   if (conn->cc <= 0)
                     {
-                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "SSL_read");
+		      DPL_SSL_PERROR(conn->ctx, "SSL_read");
                       ret = DPL_FAILURE;
                       goto end;
                     }
@@ -845,7 +846,6 @@ dpl_read_http_reply_ext(dpl_conn_t *conn,
 
   //map http_status to relevant value
   ret = dpl_map_http_status(http_status);
-  printf("http_status: %d\n", http_status);
 
  end:
 

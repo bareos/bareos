@@ -617,7 +617,7 @@ dpl_addrlist_add(dpl_addrlist_t *addrlist,
                             &hresult, &herr); 
   if (0 != ret || hresult == NULL) /* workaround for CentOS: see #5748 */
     {
-      DPL_LOG(NULL, DPL_ERROR, "cannot lookup host %s: %s\n",
+      DPL_LOG(NULL, DPL_ERROR, "cannot lookup host %s: %s",
 		host, hstrerror(herr));
       return DPL_FAILURE;
     }

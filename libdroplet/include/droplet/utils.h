@@ -218,6 +218,7 @@ int dpl_base64_init(void);
 
 #define DPL_TRACE(ctx, level, format, ...) do {if (ctx->trace_level & level) dpl_trace(ctx, level, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__  );} while (0)
 #define DPL_LOG(ctx, level, format, ...) do { dpl_log(ctx, level, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__); } while(0)
+#define DPL_SSL_PERROR(ctx, str) do { dpl_ssl_perror(ctx, __FILE__, __func__, __LINE__, str); } while(0)
 
 /* PROTO utils.c */
 /* src/utils.c */
@@ -251,4 +252,7 @@ time_t dpl_get_date(const char *p, const time_t *now);
 u_int dpl_pow2_next(u_int v);
 dpl_status_t dpl_log(dpl_ctx_t *ctx, dpl_log_level_t level, const char *file,
 		     const char *func, int lineno, const char *fmt, ...);
+void dpl_ssl_perror(dpl_ctx_t *ctx, const char *file, const char *func,
+		    int line, const char *str);
+
 #endif

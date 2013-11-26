@@ -7,6 +7,8 @@
 
 #include "utest_main.h"
 
+int verbose = 0;
+
 /*
  * Arrange to valgrind ourself.  Normally this would be done outside in
  * the Makefile or a shell script by just running the executable under
@@ -83,6 +85,7 @@ main(int argc, char ** argv)
 	{
 	case OPT_VERBOSE:
 	  output = CK_VERBOSE;
+	  verbose = 1;
 	  break;
 	case OPT_DEBUG:
 	  debug_flag = 1;
@@ -107,6 +110,7 @@ main(int argc, char ** argv)
   srunner_add_suite(r, taskpool_suite());
   srunner_add_suite(r, addrlist_suite());
   srunner_add_suite(r, util_suite());
+  srunner_add_suite(r, sproxyd_suite());
   srunner_add_suite(r, utest_suite());
 #ifdef __linux__
   srunner_add_suite(r, profile_suite());

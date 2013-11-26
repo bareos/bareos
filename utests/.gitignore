@@ -1,2 +1,4 @@
 alltests
 tmp.utest.*
+toyserver
+toyserver.state

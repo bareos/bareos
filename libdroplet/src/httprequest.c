@@ -194,6 +194,46 @@ dpl_add_condition_to_headers(const dpl_condition_t *cond,
   return DPL_SUCCESS;
 }
 
+/* Add RFC2617 Basic authorization to a request's headers */
+dpl_status_t
+dpl_add_basic_authorization_to_headers(const dpl_req_t *req,
+				       dpl_dict_t *headers)
+{
+  int ret, ret2;
+  char basic_str[1024];
+  int basic_len;
+  char base64_str[1024];
+  int base64_len;
+  char auth_str[1024];
+
+  /* No username or no password in the profile means
+   * we silently don't send the header */
+  if (NULL == req->ctx->access_key ||
+      NULL == req->ctx->secret_key)
+    return DPL_SUCCESS;
+
+  snprintf(basic_str, sizeof (basic_str), "%s:%s", req->ctx->access_key, req->ctx->secret_key);
+  basic_len = strlen(basic_str);
+
+  base64_len = dpl_base64_encode((const u_char *) basic_str, basic_len, (u_char *) base64_str);
+
+  snprintf(auth_str, sizeof (auth_str), "Basic %.*s", base64_len, base64_str);
+
+  ret2 = dpl_dict_add(headers, "Authorization", auth_str, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  return ret;
+}
+
+
 /**
  * generate HTTP request
  *
