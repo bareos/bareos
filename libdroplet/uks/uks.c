@@ -119,7 +119,6 @@ dpl_uks_gen_key_raw(BIGNUM *id,
 		    uint32_t specific)
 {
   int off, i;
-  MD5_CTX ctx;
 
   BN_zero(id);
   
