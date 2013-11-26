@@ -59,7 +59,10 @@
 %%
 \newcommand{\warning}[1]{Please note! \textit{#1}}
 %%
-\newcommand{\sinceVersion}[3]{\index[#1]{#2}Included since version #3}
+\newcommand{\sinceVersion}[3]{
+    \index[#1]{#2}Included since version #3
+    \index[general]{#3!#2}
+}
 \newcommand{\betaSince}[3]{\index[#1]{#2}Included as beta since version #3. Don't use in productive environment!}
 \newcommand{\deprecatedSince}[3]{This option is deprecated since version #3}
 \newcommand{\removedSince}[3]{This option is removed since version #3}

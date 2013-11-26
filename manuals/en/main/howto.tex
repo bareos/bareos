@@ -39,31 +39,32 @@ some tool specific to your database to make a valid live copy perhaps by
 dumping the database in ASCII format.
 
 \subsection{Backing Up MSSQL Databases with Bareos Plugin}
-\label{BackingUPOtherDBs}
-\TODO{Not Complete and not proofread yet}
+\index[general]{MSSQL Backup}
+\index[general]{Database!MSSQL}
+\label{MSSQL}
 
-\subsection {Preparation Notes}
-\index[general]{Preparation Notes}
-\label{Preparation Notes}
+\sinceVersion{general}{MSSQL}{13.2}
+
+\subsubsection {Preparation}
 If you like to use the MSSQL-Plugin to backing up your Databases you need to consider some things:
 
 \begin{itemize}
 
 \item {\bf Database Mode}\\
-The database need to run in {\bf Full Recovery Mouds}. Otherwise you are not able to use differential and incremental backups or to use point in time recovery.\\
-\warning{If you set the databases into the mentionend mode you have to consider some maintance facts. The database doesnt shrink or delete the logs unanttended, so you have to shrink them manual once a week and you have to truncate the logs once in a mounth.}
+The database need to run in {\bf Full Recovery Mode}. Otherwise you are not able to use differential and incremental backups or to use point in time recovery.\\
+\warning{If you set the databases into the mentionend mode you have to consider some maintance facts. The database doesn't shrink or delete the logs unanttended, so you have to shrink them manual once a week and you have to truncate the logs once in a month.}
 
 \item {\bf Security and Access}\\
-For connections you can use a SQL-User or a integrated systemaccount (windows NT user). Both connection types are supported.
+For connections you can use a SQL-User or a integrated systemaccount (Windows NT user). Both connection types are supported.
 	\begin{itemize}
         \item Standard Security \\
-You have to provide user credentials within your options which are belong to user with the sufficent right performing restores and backups from the Database. This way stands for an extra backup/restore user.
+You have to provide user credentials within your options which do belong to user with the sufficent right performing restores and backups from the database. This way stands for an extra backup/restore user.
 	\item Trusted Security \\
 	You use a systemaccount which have the sufficent rights to performing backups and restores on a database. This systemaccount have to be same account like the {\bf bareos-filedeamon} runs on.
 	\end{itemize}
 \item{\bf Permissions and Roles}
 	\begin{itemize}
-	\item Sever-Role\\
+	\item Server-Role\\
 	The user should be in the groups {\bf sysadmin} and {\bf dbcreator}.
 	\item Database permissions\\
 	The user have to be a {\bf backupoperator} and {\bf dbowner} of the database which you like to backup.
@@ -72,23 +73,22 @@ You have to provide user credentials within your options which are belong to use
 There is no difference for the rights and roles between using a systemaccount (trusted security method) or a extra backup user (standard security method).
 Please keep in mind if you use the trusted security method you have to use the same system account like the bareos-filedeamon runs on.
 
-\subsection{Install the plugin}
-\index[general]{Installing the Plugin}
+\subsubsection{MSSQL Plugin Installation}
 \label{MssqlPluginInstallation}
 
-{\bf With winbareos-installer}\\
-Install the bareos fileadaemon on the MS SQL Server Computer and install also the component "Bareos FileDameon Plugins".
+\paragraph{Bareos Windows-Installer}
+
+Install the bareos fileadaemon on the MSSQL server computer and install also the component "Bareos FileDameon Plugins".
 Make sure, that you install the file daemon {\bf without the "compatible" option}.\\
 
-{\bf Manual install}\\
+\paragraph{Manual install}
+
 After downloading the plugin you need to copy it into \path|C:\Program Files\Bareos\Plugins|.
 Then you need to define the plugin directory and which plugin the {\bf bareos-filedaemon} should use.
 You have to edit the {\bf bareos-filedaemon} ressource in  \path|C:\Program Data\bareos-fd.conf| as followed.\\
 
-{\bf bareos-fd.conf FD-Ressource}\\
-\footnotesize
-\begin{verbatim}
-FileDaemon {                          # this is me
+\begin{bconfig}{MSSQL plugin configuration}
+FileDaemon {
   Name = mssqlserver-fd
   Maximum Concurrent Jobs = 20
 
@@ -100,19 +100,14 @@ FileDaemon {                          # this is me
   Plugin Names = "mssqlvdi"
   compatible = no
 }
-}
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
-{\warning You can only use the new plugin with bareos 13.2 . The {\bf bareos-filedaemon} and {\bf bareos-director} have to be the same version.}
+%\warning{The Bareos filedaemon and Bareos director have to be the same version.}
 
-\subsection{Short Plugin Test}
-\index[general]{Test if the Plugin is Active}
-\label{plugintest}
+\subsubsection{Plugin Test}
 
-\footnotesize
-\begin{verbatim}
-*status client=mssqlserver-fd
+\begin{bconsole}{status client=mssqlserver-fd}
+*<input>status client=mssqlserver-fd</input>
 Connecting to Client mssqlserver-fd at 192.168.10.101:9102
 
 mssqlserver-fd Version: 13.2.2 (12 November 2013)  VSS Linux Cross-compile Win64
@@ -142,16 +137,14 @@ Plugin Info:
  examples:
   timestamp: 'Apr 15, 2020 12:00 AM'
   log sequence number: 'lsn:15000000040000037'
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
-\subsection{Configure the FileSet}
+\subsubsection{Configure the FileSet}
 \index[general]{Backupconfiguration}
 \label{filesetconfig}
-To use the plugin you need to configure it in the fileset as a plugin ressource. For each database instanz you need to define a exclusive backup job and fileset.
+To use the plugin you need to configure it in the fileset as a plugin ressource. For each database instance you need to define a exclusive backup job and fileset.
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{MSSQL FileSet}
 Fileset {
   Name = "Mssql"
   Enable VSS = no
@@ -162,8 +155,7 @@ Fileset {
     Plugin = "mssqlvdi:instance=default:database=myDatabase:username=bareos:password=bareos"
   }
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 In this example we use the standard security method for the connection.
 
@@ -171,27 +163,22 @@ Used options in the plugin string are:
 
 \begin{description}
   \item[mssqlvdi]
-  This is the reference for the plugin which is used.
-  \item[instance]
-  Its define the server instance whithin the database is running.
-  \item[database]
-  Here need to name the database you want to backup.
-  \item[username and password]
-  This is needed to use a mssql user and not a systemaccount which is full trusted.
+  This is the reference to the MSSQL plugin.
+  \item[instance] Defines the instance within the database server.
+  \item[database] Defines the database that should get backuped.
+  \item[username and password] Username and Password are required, when the connection is done using a MSSQL user. If the systemaccount the bareos-fd runs with has succifient permissions, this is not required.
 \end{description}
 
+It is recommend to define an additional restore job. 
 
-So we recommend that you define an additional restore job. You need a extra job and FileSet for each database.
+For every database seperat job and FileSet are required.
 
-\subsection{Run Backups}
-\index[general]{Backups}
-\label{filesetconfig}
+\subsubsection{Run Backups}
 
 Here you can see an example for a backup:
 
-\footnotesize
-\begin{verbatim}
-*run job=MSSQLBak
+\begin{bconsole}{run MSSQL backup job}
+*<input>run job=MSSQLBak</input>
 Using Catalog "MyCatalog"
 Run Backup job
 JobName:  MSSQLBak
@@ -203,10 +190,10 @@ Pool:     File (From Job resource)
 Storage:  File (From Job resource)
 When:     2013-11-21 09:48:27
 Priority: 10
-OK to run? (yes/mod/no): yes
+OK to run? (yes/mod/no): <input>yes</input>
 Job queued. JobId=7
 You have no messages.
-*mess
+*<input>mess</input>
 21-Nov 09:48 bareos-dir JobId 7: Start Backup JobId 7, Job=MSSQLBak.2013-11-21_09.48.30_04
 21-Nov 09:48 bareos-dir JobId 7: Using Device "FileStorage" to write.
 21-Nov 09:49 bareos-sd JobId 7: Volume "test1" previously written, moving to end of data.
@@ -246,9 +233,7 @@ You have no messages.
   FD termination status:  OK
   SD termination status:  OK
   Termination:            Backup OK
-
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 At least you gain a full backup which contains the follow:
 
@@ -267,7 +252,6 @@ Differntial FileSet example:
 
 \footnotesize
 \begin{verbatim}
-
 /@MSSQL/
 /@MSSQL/default/
 /@MSSQL/default/myDatabase/
@@ -289,28 +273,23 @@ Incremental FileSet example:
 \end{verbatim}
 \normalsize
 
-\subsection{Restores}
-\index[general]{Restores}
-\label{restoreways}
-
-{\bf Full Restore}
+\subsubsection{Restores}
 
 If you want to perfom a restore of a full backup without differentials or incrementals you have some options which helps you to restore even the corrupted database still exist. But you have to specifiy the options like plugin, instance and database during every backup.
 
 \begin{description}
   \item[replace=\textless yes|no\textgreater]
-  With this option you can replace the corrupted database if it still exist.
+  With this option you can replace the database if it still exist.
   \item[instance]
-  Its define the server instance whithin the database is running.
+  Defines the server instance whithin the database is running.
   \item[database]
-  Here need to name the database you want to backup.
+  Defines the database you want to backup.
 \end{description}
 
 Example for a full restore:
 
-\footnotesize
-\begin{verbatim}
-*restore client=mssqlserver-fd
+\begin{bconsole}{restore MSSQL database}
+*<input>restore client=mssqlserver-fd</input>
 Using Catalog "MyCatalog"
 
 First you select one or more JobIds that contain files
@@ -332,7 +311,7 @@ To select the JobIds, you have the following choices:
     11: Enter a list of directories to restore for found JobIds
     12: Select full restore to a specified Job date
     13: Cancel
-Select item:  (1-13): 5
+Select item:  (1-13): <input>5</input>
 Automatically selected FileSet: Mssql
 +-------+-------+----------+-------------+---------------------+------------+
 | JobId | Level | JobFiles | JobBytes    | StartTime           | VolumeName |
@@ -350,9 +329,9 @@ you used the "all" keyword on the command line.
 Enter "done" to leave this mode.
 
 cwd is: /
-$ mark *
+$ <input>mark *</input>
 1 file marked.
-$ done
+$ <input>done</input>
 Bootstrap records written to /var/lib/bareos/bareos-dir.restore.4.bsr
 
 The job will require the following
@@ -369,7 +348,7 @@ Volumes marked with "*" are online.
 The defined Restore Job resources are:
      1: RestoreMSSQL
      2: RestoreFiles
-Select Restore Job (1-2): 1
+Select Restore Job (1-2): <input>1</input>
 Using Catalog "MyCatalog"
 Run Restore job
 JobName:         RestoreMSSQL
@@ -385,7 +364,7 @@ When:            2013-11-21 17:12:05
 Catalog:         MyCatalog
 Priority:        10
 Plugin Options:  *None*
-OK to run? (yes/mod/no): mod
+OK to run? (yes/mod/no): <input>mod</input>
 Parameters to modify:
      1: Level
      2: Storage
@@ -401,8 +380,8 @@ Parameters to modify:
     12: Replace
     13: JobId
     14: Plugin Options
-Select parameter to modify (1-14): 14
-Please enter Plugin Options string: mssqlvdi:instance=default:database=myDatabase:replace=yes
+Select parameter to modify (1-14): <input>14</input>
+Please enter Plugin Options string: <input>mssqlvdi:instance=default:database=myDatabase:replace=yes</input>
 Run Restore job
 JobName:         RestoreMSSQL
 Bootstrap:       /var/lib/bareos/bareos-dir.restore.4.bsr
@@ -417,10 +396,10 @@ When:            2013-11-21 17:12:05
 Catalog:         MyCatalog
 Priority:        10
 Plugin Options:  mssqlvdi:instance=default:database=myDatabase:replace=yes
-OK to run? (yes/mod/no): yes
+OK to run? (yes/mod/no): <input>yes</input>
 Job queued. JobId=10
 You have messages.
-*mess
+*<input>mess</input>
 21-Nov 17:12 bareos-dir JobId 10: Start Restore Job RestoreMSSQL.2013-11-21_17.12.26_11
 21-Nov 17:12 bareos-dir JobId 10: Using Device "FileStorage" to read.
 21-Nov 17:13 damorgan-sd JobId 10: Ready to read from volume "test1" on device "FileStorage" (/storage).
@@ -442,19 +421,18 @@ You have messages.
   FD termination status:  OK
   SD termination status:  OK
   Termination:            Restore OK
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
-{\bf Restore a backup Chain}
+\paragraph{Restore a Backup Chain}
 
-If you like to restore a specific state or a hole chain consits of full, incremental and differential backups you need to use the "norecovery=yes" option. After this the Database is in "recovery mode". You can also use a option which put the database right after the restore back into the right mode. If you like to restore certains point with protocols or
+If you like to restore a specific state or a whole chain consists of full, incremental and differential backups you need to use the "norecovery=yes" option. After this the database is in "recovery mode". You can also use a option which put the database right after the restore back into the right mode. If you like to restore certains point with protocols or
 "LSN" it it not recommend to work with this option.
 
 \begin{description}
   \item[norecovery=\textless yes|no\textgreater]
-  This option is needed to left the database in recovery mode after each restore of a certain level.
+  This option must be set to yes, if the database server should not do a automatic recovery after the backup. Instead, additional manual maintenace operations are possible.
   \item[recoverafterrestore=\textless yes|no\textgreater]
-  With this command you the database is right after backup in the correct mode. If you not use this you have to use the followed tsql statement:
+  With this command the database is right after backup in the correct mode. If you not use this you have to use the followed tsql statement:
   \footnotesize
   \begin{verbatim}
     Restore DATABASE yourDatabase WITH RECOVERY
@@ -462,18 +440,17 @@ If you like to restore a specific state or a hole chain consits of full, increme
   \end{verbatim}
   \normalsize
   \item[stopbeforemark=\textless log sequence number specification\textgreater]
-  Are used to perform point in time recovery.
+  used for point in time recovery.
   \item[stopatmark=\textless log sequence number specification\textgreater]
-  Are used to perform point in time recovery.
+  used for point in time recovery.
   \item[stopat=\textless timestamp\textgreater]
-  Are used to perform point in time recovery.
+  used for point in time recovery.
 \end{description}
 
 Followed is a example for a restore of full, differential and incremental backup with a replace of the original database:
 
-\footnotesize
-\begin{verbatim}
-*restore client=mssqlserver-fd
+\begin{bconsole}{restore MSSQL database chain}
+*<input>restore client=mssqlserver-fd</input>
 
 First you select one or more JobIds that contain files
 to be restored. You will be presented several methods
@@ -494,7 +471,7 @@ To select the JobIds, you have the following choices:
     11: Enter a list of directories to restore for found JobIds
     12: Select full restore to a specified Job date
     13: Cancel
-Select item:  (1-13): 5
+Select item:  (1-13): <input>5</input>
 Automatically selected FileSet: Mssql
 +-------+-------+----------+-------------+---------------------+------------+
 | JobId | Level | JobFiles | JobBytes    | StartTime           | VolumeName |
@@ -514,16 +491,16 @@ you used the "all" keyword on the command line.
 Enter "done" to leave this mode.
 
 cwd is: /
-$ mark *
+$ <input>mark *</input>
 3 files marked.
-$ lsmark
+$ <input>lsmark</input>
 *@MSSQL/
   *default/
     *myDatabase/
       *db-diff
       *db-full
       *log-2013-11-21 17:32:20
-$ done
+$ <input>done</input>
 Bootstrap records written to /var/lib/bareos/bareos-dir.restore.6.bsr
 
 The job will require the following
@@ -540,7 +517,7 @@ Volumes marked with "*" are online.
 The defined Restore Job resources are:
      1: RestoreMSSQL
      2: RestoreFiles
-Select Restore Job (1-2): 1
+Select Restore Job (1-2): <input>1</input>
 Run Restore job
 JobName:         RestoreMSSQL
 Bootstrap:       /var/lib/bareos/bareos-dir.restore.6.bsr
@@ -555,7 +532,7 @@ When:            2013-11-21 17:34:23
 Catalog:         MyCatalog
 Priority:        10
 Plugin Options:  *None*
-OK to run? (yes/mod/no): mod
+OK to run? (yes/mod/no): <input>mod</input>
 Parameters to modify:
      1: Level
      2: Storage
@@ -571,8 +548,8 @@ Parameters to modify:
     12: Replace
     13: JobId
     14: Plugin Options
-Select parameter to modify (1-14): 14
-Please enter Plugin Options string: mssqlvdi:instance=default:database=myDatabase:replace=yes:norecovery=yes
+Select parameter to modify (1-14): <input>14</input>
+Please enter Plugin Options string: <input>mssqlvdi:instance=default:database=myDatabase:replace=yes:norecovery=yes</input>
 Run Restore job
 JobName:         RestoreMSSQL
 Bootstrap:       /var/lib/bareos/bareos-dir.restore.6.bsr
@@ -587,7 +564,7 @@ When:            2013-11-21 17:34:23
 Catalog:         MyCatalog
 Priority:        10
 Plugin Options:  mssqlvdi:instance=default:database=myDatabase:replace=yes:norecovery=yes
-OK to run? (yes/mod/no): yes
+OK to run? (yes/mod/no): <input>yes</input>
 Job queued. JobId=14
 21-Nov 17:34 bareos-dir JobId 14: Start Restore Job RestoreMSSQL.2013-11-21_17.34.40_16
 21-Nov 17:34 bareos-dir JobId 14: Using Device "FileStorage" to read.
@@ -610,6 +587,5 @@ Job queued. JobId=14
   FD termination status:  OK
   SD termination status:  OK
   Termination:            Restore OK
+\end{bconsole}
 
-\end{verbatim}
-\normalsize
