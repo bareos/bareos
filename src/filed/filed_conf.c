@@ -118,6 +118,7 @@ static RES_ITEM cli_items[] = {
    { "tlscertificaterevocationlist", store_dir, ITEM(res_client.tls_crlfile), 0, 0, NULL },
    { "tlscertificate", store_dir, ITEM(res_client.tls_certfile), 0, 0, NULL },
    { "tlskey", store_dir, ITEM(res_client.tls_keyfile), 0, 0, NULL },
+   { "tlsallowedcn", store_alist_str, ITEM(res_client.tls_allowed_cns), 0, 0, NULL },
    { "verid", store_str, ITEM(res_client.verid), 0, 0, NULL },
    { "compatible", store_bool, ITEM(res_client.compatible), 0, ITEM_DEFAULT, "true" },
    { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
@@ -344,6 +345,9 @@ void free_resource(RES *sres, int type)
       if (res->res_client.tls_keyfile) {
          free(res->res_client.tls_keyfile);
       }
+      if (res->res_client.tls_allowed_cns) {
+         delete res->res_client.tls_allowed_cns;
+      }
       if (res->res_client.verid) {
          free(res->res_client.verid);
       }
@@ -434,6 +438,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
             res->res_client.pki_signers = res_all.res_client.pki_signers;
             res->res_client.pki_recipients = res_all.res_client.pki_recipients;
             res->res_client.messages = res_all.res_client.messages;
+            res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
             res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
             res->res_client.allowed_job_cmds = res_all.res_client.allowed_job_cmds;
             break;
