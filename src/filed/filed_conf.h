@@ -70,7 +70,7 @@ struct DIRRES {
    char *tls_certfile;                /* TLS Server Certificate File */
    char *tls_keyfile;                 /* TLS Server Key File */
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
-   alist *tls_allowed_cns;            /* TLS Allowed Clients */
+   alist *tls_allowed_cns;            /* TLS Allowed Common Names */
    alist *allowed_script_dirs;        /* Only allow to run scripts in this directories */
    alist *allowed_job_cmds;           /* Only allow the following Job commands to be executed */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (per director) */
@@ -113,6 +113,7 @@ struct CLIENTRES {
    X509_KEYPAIR *pki_keypair;         /* Shared PKI Public/Private Keypair */
    alist *pki_signers;                /* Shared PKI Trusted Signers */
    alist *pki_recipients;             /* Shared PKI Recipients */
+   alist *tls_allowed_cns;            /* TLS Allowed Common Names */
    alist *allowed_script_dirs;        /* Only allow to run scripts in this directories */
    alist *allowed_job_cmds;           /* Only allow the following Job commands to be executed */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */

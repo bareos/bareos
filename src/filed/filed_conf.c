@@ -344,6 +344,9 @@ void free_resource(RES *sres, int type)
       if (res->res_client.tls_keyfile) {
          free(res->res_client.tls_keyfile);
       }
+      if (res->res_client.tls_allowed_cns) {
+         delete res->res_client.tls_allowed_cns;
+      }
       if (res->res_client.verid) {
          free(res->res_client.verid);
       }
