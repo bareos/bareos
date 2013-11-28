@@ -122,7 +122,7 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
    /*
     * Get the current setting of the compatible flag.
     */
-   bfuncs->getBareosValue(NULL, bsdCompatible, (void *)&sd_enabled_compatible);
+   bfuncs->getBareosValue(NULL, bsdVarCompatible, (void *)&sd_enabled_compatible);
 
    return bRC_OK;
 }
