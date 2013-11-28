@@ -78,7 +78,7 @@ typedef enum {
   bsdVarSDErrors = 19,
   bsdVarFDJobStatus = 20,
   bsdVarSDJobStatus = 21,
-  bsdCompatible = 22
+  bsdVarCompatible = 22
 } bsdrVariable;
 
 /*

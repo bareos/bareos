@@ -487,9 +487,9 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
    }
 
    switch (var) {               /* General variables, no need of ctx */
-   case bsdCompatible:
+   case bsdVarCompatible:
       *((bool *)value) = me->compatible;
-      Dmsg1(dbglvl, "Bareos: return Compatible=%s\n", (me->compatible) ? "true" : "false");
+      Dmsg1(dbglvl, "sd-plugin: return bsdVarCompatible=%s\n", (me->compatible) ? "true" : "false");
       break;
    default:
       break;
@@ -511,7 +511,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
       break;
    case bsdVarJobName:
       *((char **)value) = jcr->Job;
-      Dmsg1(dbglvl, "Bareos: return Job name=%s\n", jcr->Job);
+      Dmsg1(dbglvl, "sd-plugin: return Job name=%s\n", jcr->Job);
       break;
    default:
       break;
