@@ -273,7 +273,7 @@ $flash->setMessageOpenFormat('
 <div class="alert alert-dismissable alert-info">
 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 <ul>
-<li><?php echo $this->translate("No unsuccessful jobs during the last 24 hours!"); ?></li>
+<li><?php echo $this->translate("Congratulation, no unsuccessful jobs during the last 24 hours!"); ?></li>
 </ul>
 </div>
 
@@ -293,10 +293,11 @@ $flash->setMessageOpenFormat('
                 <h3 class="panel-title">
 		<span class="glyphicon glyphicon-list"></span>
 		<a data-toggle="collapse" href="#collapseSuccessful"><?php echo $this->translate('Successful jobs (last 24 hours)') ?></a>
+		<span class="caret"></span>
 		</h3>
             </div>
   
-	    <div class="panel-body panel-collapse collapse in" id="collapseSuccessful">
+	    <div class="panel-body panel-collapse collapse out" id="collapseSuccessful">
             
             <table class="table table-striped table-hover" style="font-size: 9pt;">
             
@@ -324,7 +325,9 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->escapeHtml($jobSuccess->starttime); ?></td>
 	      <td><?php echo $this->printJobDuration($jobSuccess->starttime, $jobSuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobStatus($jobSuccess->jobstatus); ?></td>
-	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobSuccess->jobid)); ?>"><span class="glyphicon glyphicon-file"></a></td>
+	      <td>
+	      <a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobSuccess->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span></a>
+	      </td>
 	  
 	      </tr>
 
@@ -360,11 +363,12 @@ $flash->setMessageOpenFormat('
             <div class="panel-heading">
                 <h3 class="panel-title">
 	    	<span class="glyphicon glyphicon-stats"></span>
-		<?php echo $this->translate('Job statistic (last 24 hours)') ?>
+		<a data-toggle="collapse" href="#collapseJobStats"><?php echo $this->translate('Job statistic (last 24 hours)') ?></a>
+		<span class="caret"></span>
 		</h3>
             </div>
             
-            <div class="panel-body">
+            <div class="panel-body panel-collapse collapse in" id="collapseJobStats">
             
             <div class="col-md-4">
             
@@ -419,13 +423,13 @@ $flash->setMessageOpenFormat('
             <div class="panel-body">
                         
 	      <table class="table table-striped table-hover" style="font-size: 9pt;">
-		<tr><td>Total clients</td><td><?php echo $this->clientNum; ?></td></tr>
-		<tr><td>Total filesets</td><td><?php echo $this->filesetNum; ?></td></tr>
-		<tr><td>Total pools</td><td><?php echo $this->poolNum; ?></td></tr>
-		<tr><td>Total volumes</td><td><?php echo $this->volumeNum; ?></td></tr>
-		<tr><td>Total jobs</td><td><?php echo $this->jobNum; ?></td></tr>
-		<tr><td>Total files</td><td><?php echo $this->fileNum; ?></td></tr>
-		<tr><td>Total logs</td><td><?php echo $this->logNum; ?></td></tr>
+		<tr><td>Total clients</td><td><span class="badge"><?php echo $this->clientNum; ?></span></td></tr>
+		<tr><td>Total filesets</td><td><span class="badge"><?php echo $this->filesetNum; ?></span></td></tr>
+		<tr><td>Total pools</td><td><span class="badge"><?php echo $this->poolNum; ?></span></td></tr>
+		<tr><td>Total volumes</td><td><span class="badge"><?php echo $this->volumeNum; ?></span></td></tr>
+		<tr><td>Total jobs</td><td><span class="badge"><?php echo $this->jobNum; ?></span></td></tr>
+		<tr><td>Total files</td><td><span class="badge"><?php echo $this->fileNum; ?></span></td></tr>
+		<tr><td>Total logs</td><td><span class="badge"><?php echo $this->logNum; ?></span></td></tr>
 	      </table>
             
             </div>
