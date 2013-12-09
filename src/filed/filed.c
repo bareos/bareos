@@ -224,6 +224,14 @@ int main (int argc, char *argv[])
 
    set_working_directory(me->working_directory);
 
+#if defined(HAVE_WIN32)
+   if (me->compatible) {
+      Win32SetCompatible();
+   } else {
+      Win32ClearCompatible();
+   }
+#endif
+
    if (test_config) {
       terminate_filed(0);
    }
@@ -243,10 +251,6 @@ int main (int argc, char *argv[])
                    get_first_port_host_order(me->FDaddrs));
 
    load_fd_plugins(me->plugin_directory, me->plugin_names);
-
-#ifdef BOMB
-   me += 1000000;
-#endif
 
    if (!no_signals) {
       start_watchdog();               /* start watchdog thread */

@@ -1043,6 +1043,15 @@ bail_out:
    jcr->setJobStatus(JS_ErrorTerminated);
 
 ok_out:
+#ifdef HAVE_WIN32
+   /*
+    * Cleanup the copy thread if we restored any EFS data.
+    */
+   if (jcr->cp_thread) {
+      win32_cleanup_copy_thread(jcr);
+   }
+#endif
+
    /*
     * First output the statistics.
     */
@@ -1146,24 +1155,24 @@ int do_file_digest(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 
 bool sparse_data(JCR *jcr, BFILE *bfd, uint64_t *addr, char **data, uint32_t *length)
 {
-      unser_declare;
-      uint64_t faddr;
-      char ec1[50];
-      unser_begin(*data, OFFSET_FADDR_SIZE);
-      unser_uint64(faddr);
-      if (*addr != faddr) {
-         *addr = faddr;
-         if (blseek(bfd, (boffset_t)*addr, SEEK_SET) < 0) {
-            berrno be;
-            Jmsg3(jcr, M_ERROR, 0, _("Seek to %s error on %s: ERR=%s\n"),
-                  edit_uint64(*addr, ec1), jcr->last_fname,
-                  be.bstrerror(bfd->berrno));
-            return false;
-         }
+   unser_declare;
+   uint64_t faddr;
+   char ec1[50];
+
+   unser_begin(*data, OFFSET_FADDR_SIZE);
+   unser_uint64(faddr);
+   if (*addr != faddr) {
+      *addr = faddr;
+      if (blseek(bfd, (boffset_t)*addr, SEEK_SET) < 0) {
+         berrno be;
+         Jmsg3(jcr, M_ERROR, 0, _("Seek to %s error on %s: ERR=%s\n"),
+               edit_uint64(*addr, ec1), jcr->last_fname, be.bstrerror(bfd->berrno));
+         return false;
       }
-      *data += OFFSET_FADDR_SIZE;
-      *length -= OFFSET_FADDR_SIZE;
-      return true;
+   }
+   *data += OFFSET_FADDR_SIZE;
+   *length -= OFFSET_FADDR_SIZE;
+   return true;
 }
 
 bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win32_decomp)
@@ -1178,12 +1187,25 @@ bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win
                jcr->last_fname, be.bstrerror(bfd->berrno));
          return false;
       }
+#ifdef HAVE_WIN32
+   } else if (!bfd->encrypted && bwrite(bfd, data, length) != (ssize_t)length) {
+#else
    } else if (bwrite(bfd, data, length) != (ssize_t)length) {
+#endif
+      berrno be;
+      Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
+            jcr->last_fname, be.bstrerror(bfd->berrno));
+      return false;
+#ifdef HAVE_WIN32
+   } else if (win32_send_to_copy_thread(jcr, bfd, data, length) != (ssize_t)length) {
       berrno be;
       Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
             jcr->last_fname, be.bstrerror(bfd->berrno));
       return false;
    }
+#else
+   }
+#endif
 
    return true;
 }
@@ -1244,8 +1266,7 @@ int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
        */
       if (cipher_ctx->buf_len > 0) {
          Dmsg1(130, "Moving %u buffered bytes to start of buffer\n", cipher_ctx->buf_len);
-         memmove(cipher_ctx->buf, &cipher_ctx->buf[cipher_ctx->packet_len],
-            cipher_ctx->buf_len);
+         memmove(cipher_ctx->buf, &cipher_ctx->buf[cipher_ctx->packet_len], cipher_ctx->buf_len);
       }
       /*
        * The packet was successfully written, reset the length so that the next
@@ -1253,6 +1274,7 @@ int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
        */
       cipher_ctx->packet_len = 0;
    }
+
    return wsize;
 
 bail_out:
@@ -1279,6 +1301,12 @@ static bool close_previous_stream(JCR *jcr, r_ctx &rctx)
          deallocate_cipher(rctx);
          deallocate_fork_cipher(rctx);
       }
+
+#ifdef HAVE_WIN32
+      if (jcr->cp_thread) {
+         win32_flush_copy_thread(jcr);
+      }
+#endif
 
       if (rctx.jcr->plugin) {
          plugin_set_attributes(rctx.jcr, rctx.attr, &rctx.bfd);

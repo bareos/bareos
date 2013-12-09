@@ -1043,6 +1043,7 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    struct restore_pkt rp;
    int flags;
    int rc;
+   int status;
 
    Dsm_check(999);
    if (!plugin || !ctx || !set_cmd_plugin(bfd, jcr) || jcr->is_job_canceled()) {
@@ -1066,6 +1067,7 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    rp.RegexWhere = jcr->RegexWhere;
    rp.replace = jcr->replace;
    rp.create_status = CF_ERROR;
+
    Dmsg4(dbglvl, "call plugin createFile stream=%d type=%d LinkFI=%d File=%s\n",
          rp.stream, rp.type, rp.LinkFI, rp.ofname);
    if (rp.attrEx) {
@@ -1109,7 +1111,8 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 
    flags =  O_WRONLY | O_CREAT | O_TRUNC | O_BINARY;
    Dmsg0(dbglvl, "call bopen\n");
-   int status = bopen(bfd, attr->ofname, flags, S_IRUSR | S_IWUSR);
+
+   status = bopen(bfd, attr->ofname, flags, S_IRUSR | S_IWUSR, attr->statp.st_rdev);
    Dmsg1(dbglvl, "bopen status=%d\n", stat);
    if (status < 0) {
       berrno be;

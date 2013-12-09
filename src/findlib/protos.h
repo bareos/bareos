@@ -45,7 +45,6 @@ int find_files(JCR *jcr, FF_PKT *ff, int file_sub(JCR *, FF_PKT *ff_pkt, bool),
                int plugin_sub(JCR *, FF_PKT *ff_pkt, bool));
 bool match_files(JCR *jcr, FF_PKT *ff, int sub(JCR *, FF_PKT *ff_pkt, bool));
 int term_find_files(FF_PKT *ff);
-int get_win32_driveletters(FF_PKT *ff, char *szDrives);
 bool is_in_fileset(FF_PKT *ff);
 bool accept_file(FF_PKT *ff);
 
@@ -91,8 +90,18 @@ bool fstype_equals(const char *fname, const char *fstypename);
 /* drivetype.c */
 bool drivetype(const char *fname, char *fs, int fslen);
 
-/* shadowing.h */
+/* shadowing.c */
 void check_include_list_shadowing(JCR *jcr, findFILESET *fileset);
+
+#if defined(HAVE_WIN32)
+/* win32.c */
+int get_win32_driveletters(findFILESET *fileset, char *szDrives);
+int get_win32_virtualmountpoints(findFILESET *fileset, dlist **szVmps);
+bool expand_win32_fileset(findFILESET *fileset);
+int win32_send_to_copy_thread(JCR *jcr, BFILE *bfd, char *data, const int32_t length);
+void win32_flush_copy_thread(JCR *jcr);
+void win32_cleanup_copy_thread(JCR *jcr);
+#endif
 
 /* xattr.c */
 bxattr_exit_code build_xattr_streams(JCR *jcr, struct xattr_data_t *xattr_data, FF_PKT *ff_pkt);

@@ -57,7 +57,7 @@ void deallocate_cipher(r_ctx &rctx);
 void deallocate_fork_cipher(r_ctx &rctx);
 bool setup_encryption_context(b_ctx &bctx);
 bool setup_decryption_context(r_ctx &rctx, RESTORE_CIPHER_CTX &rcctx);
-bool encrypt_data(b_ctx &bctx, bool *need_more_data);
+bool encrypt_data(b_ctx *bctx, bool *need_more_data);
 bool decrypt_data(JCR *jcr, char **data, uint32_t *length, RESTORE_CIPHER_CTX *cipher_ctx);
 
 /* estimate.c */

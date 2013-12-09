@@ -1,21 +1,11 @@
 VPATH = .:../../lib:../compat
 
-DEFINES = -DHAVE_WIN32 \
-	  -DHAVE_MINGW \
-	  -DMINGW64
-
 include ../Makefile.inc
-ifeq ($(WIN_VERSION),32)
+
 INCLUDES = -I../.. \
 	   -I../../include \
 	   -I../include \
 	   -I../compat/include
-else
-INCLUDES = -I../.. \
-	   -I../../include \
-	   -I../include \
-	   -I../compat/include
-endif
 LDLIBS = $(MINGW_LIB)/libssl.dll.a \
          $(MINGW_LIB)/libcrypto.dll.a \
          $(MINGW_LIB)/libpthreadGCE2.a \
@@ -27,7 +17,7 @@ LDLIBS = $(MINGW_LIB)/libssl.dll.a \
 LIBBAREOS_SRCS =  address_conf.c alist.c attr.c attribs.c base64.c \
 		  berrno.c bget_msg.c binflate.c bnet_server.c bnet.c \
 		  bpipe.c breg.c bregex.c bsnprintf.c bsock.c bsys.c \
-		  btime.c btimers.c compression.c cram-md5.c crypto.c \
+		  btime.c btimers.c compression.c cram-md5.c cbuf.c crypto.c \
 		  crypto_cache.c crypto_gnutls.c crypto_none.c crypto_nss.c \
 		  crypto_openssl.c crypto_wrap.c daemon.c devlock.c dlist.c \
 		  edit.c fnmatch.c guid_to_name.c hmac.c htable.c jcr.c \

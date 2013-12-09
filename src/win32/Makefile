@@ -45,10 +45,10 @@ rc-files: console/consoleres.rc filed/filedres.rc qt-console/batres.rc qt-tray-m
 qt-gui: qt-console/Makefile qt-tray-monitor/Makefile
 
 qt-console/Makefile: qt-console/bat.pro
-	cd qt-console; $(QMAKE) bat.pro
+	cd qt-console; $(QMAKE) $(QMAKE_ARGS) bat.pro
 
 qt-tray-monitor/Makefile: qt-tray-monitor/tray-monitor.pro
-	cd qt-tray-monitor; $(QMAKE) tray-monitor.pro
+	cd qt-tray-monitor; $(QMAKE) $(QMAKE_ARGS) tray-monitor.pro
 
 qt-console/batres.rc: qt-console/batres.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@

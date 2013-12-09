@@ -34,11 +34,13 @@ static gid_t my_gid = 1;
 static bool uid_set = false;
 
 #if defined(HAVE_WIN32)
+
+/* Imported Functions */
+extern void unix_name_to_win32(POOLMEM **win32_name, const char *name);
+
 /* Forward referenced subroutines */
 static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd);
-void unix_name_to_win32(POOLMEM **win32_name, char *name);
 void win_error(JCR *jcr, const char *prefix, POOLMEM *ofile);
-HANDLE bget_handle(BFILE *bfd);
 #endif /* HAVE_WIN32 */
 
 /* For old systems that don't have lchown() use chown() */
@@ -279,7 +281,12 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
             attr->ofname, be.bstrerror());
          ok = false;
       }
+
+#if defined(HAVE_WIN32)
+      if (win32_chmod(attr->ofname, attr->statp.st_mode, attr->statp.st_rdev) < 0 && my_uid == 0) {
+#else
       if (chmod(attr->ofname, attr->statp.st_mode) < 0 && my_uid == 0) {
+#endif
          berrno be;
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
@@ -423,22 +430,28 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
    return STREAM_UNIX_ATTRIBUTES_EX;
 }
 
-/* Define attributes that are legal to set with SetFileAttributes() */
+/*
+ * Define attributes that are legal to set with SetFileAttributes()
+ */
 #define SET_ATTRS ( \
-         FILE_ATTRIBUTE_ARCHIVE| \
-         FILE_ATTRIBUTE_HIDDEN| \
-         FILE_ATTRIBUTE_NORMAL| \
-         FILE_ATTRIBUTE_NOT_CONTENT_INDEXED| \
-         FILE_ATTRIBUTE_OFFLINE| \
-         FILE_ATTRIBUTE_READONLY| \
-         FILE_ATTRIBUTE_SYSTEM| \
-         FILE_ATTRIBUTE_TEMPORARY)
+   FILE_ATTRIBUTE_ARCHIVE | \
+   FILE_ATTRIBUTE_HIDDEN | \
+   FILE_ATTRIBUTE_NORMAL | \
+   FILE_ATTRIBUTE_NOT_CONTENT_INDEXED | \
+   FILE_ATTRIBUTE_OFFLINE | \
+   FILE_ATTRIBUTE_READONLY | \
+   FILE_ATTRIBUTE_SYSTEM | \
+   FILE_ATTRIBUTE_TEMPORARY)
 
-/* Do casting according to unknown type to keep compiler happy */
+/*
+ * Do casting according to unknown type to keep compiler happy
+ */
 #ifdef HAVE_TYPEOF
-  #define plug(st, val) st = (typeof st)val
+   #define plug(st, val) st = (typeof st)val
 #else
-  /* Use templates to do the casting */
+  /*
+   * Use templates to do the casting
+   */
   template <class T> void plug(T &st, uint64_t val)
   { st = static_cast<T>(val); }
 #endif
@@ -446,8 +459,8 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
 /**
  * Set Extended File Attributes for Win32
  *
- *  fname is the original filename
- *  ofile is the output filename (may be in a different directory)
+ * fname is the original filename
+ * ofile is the output filename (may be in a different directory)
  *
  * Returns:  true  on success
  *           false on failure
@@ -507,39 +520,62 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
 
    if (!is_bopen(ofd)) {
       Dmsg1(100, "File not open: %s\n", attr->ofname);
-      bopen(ofd, attr->ofname, O_WRONLY|O_BINARY, 0);   /* attempt to open the file */
+      bopen(ofd, attr->ofname, O_WRONLY | O_BINARY, 0, 0); /* attempt to open the file */
    }
 
    if (is_bopen(ofd)) {
+      /*
+       * Restore file times on the restored file.
+       */
       Dmsg1(100, "SetFileTime %s\n", attr->ofname);
       if (!SetFileTime(bget_handle(ofd),
-                         &atts.ftCreationTime,
-                         &atts.ftLastAccessTime,
-                         &atts.ftLastWriteTime)) {
+                       &atts.ftCreationTime,
+                       &atts.ftLastAccessTime,
+                       &atts.ftLastWriteTime)) {
          win_error(jcr, "SetFileTime:", win32_ofile);
       }
+
+      /*
+       * Restore the sparse file attribute on the restored file.
+       */
+      if (atts.dwFileAttributes & FILE_ATTRIBUTE_SPARSE_FILE) {
+         Dmsg1(100, "Restore FILE_ATTRIBUTE_SPARSE_FILE on %s\n", attr->ofname);
+         DeviceIoControl(ofd->fh, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, NULL, NULL);
+      }
+
+      /*
+       * Restore the compressed file attribute on the restored file.
+       */
+      if (atts.dwFileAttributes & FILE_ATTRIBUTE_COMPRESSED) {
+         int format = COMPRESSION_FORMAT_DEFAULT;
+
+         Dmsg1(100, "Restore FILE_ATTRIBUTE_COMPRESSED on %s\n", attr->ofname);
+         DeviceIoControl(ofd->fh, FSCTL_SET_COMPRESSION, &format, sizeof(format), NULL, 0, NULL, NULL);
+      }
+
       bclose(ofd);
    }
 
    Dmsg1(100, "SetFileAtts %s\n", attr->ofname);
    if (!(atts.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
       if (p_SetFileAttributesW) {
-         POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
+         POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
          make_win32_path_UTF8_2_wchar(&pwszBuf, attr->ofname);
 
-         BOOL b=p_SetFileAttributesW((LPCWSTR)pwszBuf, atts.dwFileAttributes & SET_ATTRS);
+         BOOL b = p_SetFileAttributesW((LPCWSTR)pwszBuf, atts.dwFileAttributes & SET_ATTRS);
          free_pool_memory(pwszBuf);
 
-         if (!b)
+         if (!b) {
             win_error(jcr, "SetFileAttributesW:", win32_ofile);
-      }
-      else {
+         }
+      } else {
          if (!p_SetFileAttributesA(win32_ofile, atts.dwFileAttributes & SET_ATTRS)) {
             win_error(jcr, "SetFileAttributesA:", win32_ofile);
          }
       }
    }
    free_pool_memory(win32_ofile);
+
    return true;
 }
 
@@ -547,8 +583,7 @@ void win_error(JCR *jcr, const char *prefix, POOLMEM *win32_ofile)
 {
    DWORD lerror = GetLastError();
    LPTSTR msg;
-   FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|
-                 FORMAT_MESSAGE_FROM_SYSTEM,
+   FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
                  NULL,
                  lerror,
                  0,
@@ -564,8 +599,7 @@ void win_error(JCR *jcr, const char *prefix, POOLMEM *win32_ofile)
 void win_error(JCR *jcr, const char *prefix, DWORD lerror)
 {
    LPTSTR msg;
-   FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|
-                 FORMAT_MESSAGE_FROM_SYSTEM,
+   FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
                  NULL,
                  lerror,
                  0,
@@ -580,4 +614,4 @@ void win_error(JCR *jcr, const char *prefix, DWORD lerror)
    }
    LocalFree(msg);
 }
-#endif  /* HAVE_WIN32 */
+#endif /* HAVE_WIN32 */

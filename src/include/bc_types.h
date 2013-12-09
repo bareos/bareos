@@ -39,6 +39,47 @@
 #ifndef __bc_types_INCLUDED
 #define __bc_types_INCLUDED
 
+#ifdef HAVE_WIN32
+typedef UINT64 u_int64_t;
+typedef UINT64 uint64_t;
+typedef INT64 int64_t;
+typedef UINT32 uint32_t;
+typedef INT64 intmax_t;
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef signed short int16_t;
+typedef signed char int8_t;
+typedef int __daddr_t;
+
+#if !defined(HAVE_MINGW)
+typedef long int32_t;
+typedef float float32_t;
+typedef double float64_t;
+#endif
+
+#if !defined(_MSC_VER) || (_MSC_VER < 1400) // VC8+
+#ifndef _TIME_T_DEFINED
+#define _TIME_T_DEFINED
+typedef long time_t;
+#endif
+#endif
+
+#if __STDC__ && !defined(HAVE_MINGW)
+typedef _dev_t dev_t;
+#if !defined(HAVE_WXCONSOLE)
+typedef __int64 ino_t;
+#endif
+#endif
+
+typedef UINT32 u_int32_t;
+typedef unsigned char u_int8_t;
+typedef unsigned short u_int16_t;
+
+#if !defined(HAVE_MINGW)
+#undef uint32_t
+#endif
+#endif /* HAVE_WIN32 */
+
 /*
  * These are the sizes of the current definitions of database
  *  Ids.  In general, FileId_t can be set to uint64_t and it
@@ -221,11 +262,15 @@ typedef float             float32_t;
 #define socklen_t int
 #endif
 
+#ifdef HAVE_WIN32
+#define sockopt_val_t const char *
+#else
 #ifdef HAVE_OLD_SOCKOPT
 #define sockopt_val_t char *
 #else
 #define sockopt_val_t void *
 #endif
+#endif /* HAVE_WIN32 */
 
 /*
  * Status codes returned by create_file()

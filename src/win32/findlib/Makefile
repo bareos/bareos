@@ -1,28 +1,20 @@
-VPATH = ../../findlib
-
-DEFINES = -DHAVE_WIN32 \
-	  -DHAVE_MINGW \
-	  -DMINGW64
+VPATH = .:../../findlib
 
 include ../Makefile.inc
-ifeq ($(WIN_VERSION),32)
+
 INCLUDES = -I../.. \
 	   -I../../include \
 	   -I../include \
+	   -I../../findlib \
 	   -I../compat/include
-else
-INCLUDES = -I../.. \
-	   -I../../include \
-	   -I../include \
-	   -I../compat/include
-endif
 LDLIBS = ../lib/libbareos.dll \
+	 $(MINGW_LIB)/libpthreadGCE2.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
 LIBBACFIND_SRCS = acl.c attribs.c bfile.c create_file.c \
 		  drivetype.c enable_priv.c find_one.c \
 		  find.c fstype.c match.c mkpath.c \
-		  shadowing.c xattr.c
+		  shadowing.c win32.c xattr.c
 LIBBACFIND_OBJS = $(LIBBACFIND_SRCS:.c=.o)
 
 all: libbareosfind.dll

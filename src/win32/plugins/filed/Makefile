@@ -1,15 +1,7 @@
 VPATH = .:../../../plugins/filed
 
-DEFINES = -DHAVE_WIN32 \
-	  -DHAVE_MINGW \
-	  -DHAVE_ZLIB_H \
-	  -DHAVE_LIBZ \
-	  -DHAVE_CRYPTO \
-	  -DHAVE_OPENSSL \
-	  -DHAVE_TLS \
-	  -DMINGW64
-
 include ../../Makefile.inc
+
 ifeq ($(WIN_VERSION),32)
 INCLUDES = -I../../.. \
 	   -I../../../include \

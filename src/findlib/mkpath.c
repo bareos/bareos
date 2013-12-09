@@ -156,7 +156,11 @@ static void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t
       Jmsg2(attr->jcr, M_WARNING, 0, _("Cannot change owner and/or group of %s: ERR=%s\n"),
            path, be.bstrerror());
    }
+#if defined(HAVE_WIN32)
+   if (win32_chmod(path, mode, 0) != 0 && attr->uid == 0) {
+#else
    if (chmod(path, mode) != 0 && attr->uid == 0) {
+#endif
       berrno be;
       Jmsg2(attr->jcr, M_WARNING, 0, _("Cannot change permissions of %s: ERR=%s\n"),
            path, be.bstrerror());

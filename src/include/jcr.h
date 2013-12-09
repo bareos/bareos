@@ -180,6 +180,9 @@ struct ATTR_DBR;
 class Plugin;
 struct save_pkt;
 struct bpContext;
+#ifdef HAVE_WIN32
+struct CP_THREAD_CTX;
+#endif
 
 #ifdef FILE_DAEMON
 class htable;
@@ -269,8 +272,8 @@ public:
    void inc_use_count(void) {lock(); _use_count++; unlock(); };
    void dec_use_count(void) {lock(); _use_count--; unlock(); };
    int32_t use_count() const { return _use_count; };
-   void init_mutex(void) {pthread_mutex_init(&mutex, NULL); };
-   void destroy_mutex(void) {pthread_mutex_destroy(&mutex); };
+   void init_mutex(void) { pthread_mutex_init(&mutex, NULL); };
+   void destroy_mutex(void) { pthread_mutex_destroy(&mutex); };
    bool is_job_canceled() {return job_canceled(this); };
    bool is_canceled() {return job_canceled(this); };
    bool is_incomplete() { return JobStatus == JS_Incomplete; };
@@ -373,6 +376,9 @@ public:
 
    int32_t buf_size;                      /* Length of buffer */
    CMPRS_CTX compress;                    /* Compression ctx */
+#ifdef HAVE_WIN32
+   CP_THREAD_CTX *cp_thread;              /* Copy Thread ctx */
+#endif
    POOLMEM *attr;                         /* Attribute string from SD */
    B_DB *db;                              /* database pointer */
    B_DB *db_batch;                        /* database pointer for batch and accurate */
@@ -500,7 +506,6 @@ public:
    htable *file_list;                     /* Previous file list (accurate mode) */
    uint64_t base_size;                    /* Compute space saved with base job */
 #endif /* FILE_DAEMON */
-
 
 #ifdef STORAGE_DAEMON
    /*

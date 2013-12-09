@@ -33,12 +33,11 @@
 
 const int dbglvl = 200;
 
-int       (*plugin_bopen)(BFILE *bfd, const char *fname, int flags, mode_t mode) = NULL;
-int       (*plugin_bclose)(BFILE *bfd) = NULL;
-ssize_t   (*plugin_bread)(BFILE *bfd, void *buf, size_t count) = NULL;
-ssize_t   (*plugin_bwrite)(BFILE *bfd, void *buf, size_t count) = NULL;
+int (*plugin_bopen)(BFILE *bfd, const char *fname, int flags, mode_t mode) = NULL;
+int (*plugin_bclose)(BFILE *bfd) = NULL;
+ssize_t (*plugin_bread)(BFILE *bfd, void *buf, size_t count) = NULL;
+ssize_t (*plugin_bwrite)(BFILE *bfd, void *buf, size_t count) = NULL;
 boffset_t (*plugin_blseek)(BFILE *bfd, boffset_t offset, int whence) = NULL;
-
 
 #ifdef HAVE_DARWIN_OS
 #include <sys/paths.h>
@@ -360,7 +359,8 @@ bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
 
 #if defined(HAVE_WIN32)
 
-void unix_name_to_win32(POOLMEM **win32_name, char *name);
+/* Imported Functions */
+extern void unix_name_to_win32(POOLMEM **win32_name, const char *name);
 extern "C" HANDLE get_osfhandle(int fd);
 
 void binit(BFILE *bfd)
@@ -416,14 +416,15 @@ bool have_win32_api()
  * Return true  if we support the stream
  *        false if we do not support the stream
  *
- *  This code is running under Win32, so we
- *    do not need #ifdef on MACOS ...
+ *  This code is running under Win32, so we do not need #ifdef on MACOS ...
  */
 bool is_restore_stream_supported(int stream)
 {
    switch (stream) {
 
-/* Streams known not to be supported */
+   /*
+    * Streams known not to be supported
+    */
 #ifndef HAVE_LIBZ
    case STREAM_GZIP_DATA:
    case STREAM_SPARSE_GZIP_DATA:
@@ -434,7 +435,9 @@ bool is_restore_stream_supported(int stream)
    case STREAM_ENCRYPTED_MACOS_FORK_DATA:
       return false;
 
-   /* Known streams */
+   /*
+    * Known streams
+    */
 #ifdef HAVE_LIBZ
    case STREAM_GZIP_DATA:
    case STREAM_SPARSE_GZIP_DATA:
@@ -464,7 +467,7 @@ bool is_restore_stream_supported(int stream)
    case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
    case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
    case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
-#endif     /* !HAVE_CRYPTO */
+#endif /* !HAVE_CRYPTO */
    case 0:                            /* compatibility with old tapes */
       return true;
    }
@@ -492,18 +495,23 @@ HANDLE bget_handle(BFILE *bfd)
 #define OVERWRITE_HIDDEN 4
 #endif
 
-int bopen_encrypted(BFILE *bfd, const char *fname, int flags, mode_t mode, bool is_dir)
+static inline int bopen_encrypted(BFILE *bfd, const char *fname, int flags, mode_t mode)
 {
+   bool is_dir;
    ULONG ulFlags = 0;
    POOLMEM *win32_fname;
    POOLMEM *win32_fname_wchar;
 
-   if (!(p_OpenEncryptedFileRawA || p_OpenEncryptedFileRawW)) {
+   if (!p_OpenEncryptedFileRawA && !p_OpenEncryptedFileRawW) {
       Dmsg0(50, "No p_OpenEncryptedFileRawA and no p_OpenEncryptedFileRawW!!!!!\n");
       return 0;
    }
 
-   /* Convert to Windows path format */
+   is_dir = S_ISDIR(mode);
+
+   /*
+    * Convert to Windows path format
+    */
    win32_fname = get_pool_memory(PM_FNAME);
    win32_fname_wchar = get_pool_memory(PM_FNAME);
 
@@ -513,29 +521,35 @@ int bopen_encrypted(BFILE *bfd, const char *fname, int flags, mode_t mode, bool 
       make_win32_path_UTF8_2_wchar(&win32_fname_wchar, fname);
    }
 
-   /* See if we open the file for create or read-write. */
+   /*
+    * See if we open the file for create or read-write.
+    */
    if ((flags & O_CREAT) || (flags & O_WRONLY)) {
       if (is_dir) {
          ulFlags |= CREATE_FOR_IMPORT | OVERWRITE_HIDDEN | CREATE_FOR_DIR;
       } else {
          ulFlags |= CREATE_FOR_IMPORT | OVERWRITE_HIDDEN;
       }
-      bfd->mode=BF_WRITE;
+      bfd->mode = BF_WRITE;
    } else {
       ulFlags = CREATE_FOR_EXPORT;
-      bfd->mode=BF_READ;
+      bfd->mode = BF_READ;
    }
 
    if (p_OpenEncryptedFileRawW && p_MultiByteToWideChar) {
-      /* Unicode open. */
+      /*
+       * Unicode open.
+       */
       Dmsg1(100, "OpenEncryptedFileRawW=%s\n", win32_fname);
       if (p_OpenEncryptedFileRawW((LPCWSTR)win32_fname_wchar,
                                   ulFlags,
                                   &(bfd->pvContext))) {
-         bfd->mode=BF_CLOSED;
+         bfd->mode = BF_CLOSED;
       }
    } else {
-      /* ASCII open. */
+      /*
+       * ASCII open.
+       */
       Dmsg1(100, "OpenEncryptedFileRawA=%s\n", win32_fname);
       if (p_OpenEncryptedFileRawA(win32_fname_wchar,
                                   ulFlags,
@@ -547,17 +561,20 @@ int bopen_encrypted(BFILE *bfd, const char *fname, int flags, mode_t mode, bool 
    free_pool_memory(win32_fname_wchar);
    free_pool_memory(win32_fname);
 
+   bfd->encrypted = true;
+
    return bfd->mode == BF_CLOSED ? -1 : 1;
 }
 
-int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
+static inline int bopen_nonencrypted(BFILE *bfd, const char *fname, int flags, mode_t mode)
 {
    POOLMEM *win32_fname;
    POOLMEM *win32_fname_wchar;
-
    DWORD dwaccess, dwflags, dwshare;
 
-   /* Convert to Windows path format */
+   /*
+    * Convert to Windows path format
+    */
    win32_fname = get_pool_memory(PM_FNAME);
    win32_fname_wchar = get_pool_memory(PM_FNAME);
 
@@ -604,68 +621,89 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
          dwflags = 0;
       }
 
+      /*
+       * Unicode open for create write
+       */
       if (p_CreateFileW && p_MultiByteToWideChar) {
-         // unicode open for create write
          Dmsg1(100, "Create CreateFileW=%s\n", win32_fname);
          bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
-                dwaccess,                /* Requested access */
-                0,                       /* Shared mode */
-                NULL,                    /* SecurityAttributes */
-                CREATE_ALWAYS,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
+                                  dwaccess,      /* Requested access */
+                                  0,             /* Shared mode */
+                                  NULL,          /* SecurityAttributes */
+                                  CREATE_ALWAYS, /* CreationDisposition */
+                                  dwflags,       /* Flags and attributes */
+                                  NULL);         /* TemplateFile */
       } else {
-         // ascii open
+         /*
+          * ASCII open
+          */
          Dmsg1(100, "Create CreateFileA=%s\n", win32_fname);
          bfd->fh = p_CreateFileA(win32_fname,
-                dwaccess,                /* Requested access */
-                0,                       /* Shared mode */
-                NULL,                    /* SecurityAttributes */
-                CREATE_ALWAYS,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
+                                 dwaccess,      /* Requested access */
+                                 0,             /* Shared mode */
+                                 NULL,          /* SecurityAttributes */
+                                 CREATE_ALWAYS, /* CreationDisposition */
+                                 dwflags,       /* Flags and attributes */
+                                 NULL);         /* TemplateFile */
       }
 
       bfd->mode = BF_WRITE;
-   } else if (flags & O_WRONLY) {     /* Open existing for write */
+   } else if (flags & O_WRONLY) {
+      /*
+       * Open existing for write
+       */
       if (bfd->use_backup_api) {
          dwaccess = GENERIC_WRITE | WRITE_OWNER | WRITE_DAC;
-         dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
+         if (flags & O_NOFOLLOW) {
+            dwflags = FILE_FLAG_BACKUP_SEMANTICS;
+         } else {
+            dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
+         }
       } else {
          dwaccess = GENERIC_WRITE;
          dwflags = 0;
       }
 
       if (p_CreateFileW && p_MultiByteToWideChar) {
-         // unicode open for open existing write
+         /*
+          * unicode open for open existing write
+          */
          Dmsg1(100, "Write only CreateFileW=%s\n", win32_fname);
          bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
-                dwaccess,                /* Requested access */
-                0,                       /* Shared mode */
-                NULL,                    /* SecurityAttributes */
-                OPEN_EXISTING,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
+                                 dwaccess,      /* Requested access */
+                                 0,             /* Shared mode */
+                                 NULL,          /* SecurityAttributes */
+                                 OPEN_EXISTING, /* CreationDisposition */
+                                 dwflags,       /* Flags and attributes */
+                                 NULL);         /* TemplateFile */
       } else {
-         // ascii open
+         /*
+          * ASCII open
+          */
          Dmsg1(100, "Write only CreateFileA=%s\n", win32_fname);
          bfd->fh = p_CreateFileA(win32_fname,
-                dwaccess,                /* Requested access */
-                0,                       /* Shared mode */
-                NULL,                    /* SecurityAttributes */
-                OPEN_EXISTING,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
+                                 dwaccess,      /* Requested access */
+                                 0,             /* Shared mode */
+                                 NULL,          /* SecurityAttributes */
+                                 OPEN_EXISTING, /* CreationDisposition */
+                                 dwflags,       /* Flags and attributes */
+                                 NULL);         /* TemplateFile */
 
       }
 
       bfd->mode = BF_WRITE;
-   } else {                           /* Read */
+   } else {
+      /*
+       * Open existing for read
+       */
       if (bfd->use_backup_api) {
          dwaccess = GENERIC_READ | READ_CONTROL | ACCESS_SYSTEM_SECURITY;
-         dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_SEQUENTIAL_SCAN |
-                   FILE_FLAG_OPEN_REPARSE_POINT;
-         dwshare = FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE;
+         if (flags & O_NOFOLLOW) {
+            dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_SEQUENTIAL_SCAN;
+         } else {
+            dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_SEQUENTIAL_SCAN | FILE_FLAG_OPEN_REPARSE_POINT;
+         }
+         dwshare = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
       } else {
          dwaccess = GENERIC_READ;
          dwflags = 0;
@@ -673,25 +711,29 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
       }
 
       if (p_CreateFileW && p_MultiByteToWideChar) {
-         // unicode open for open existing read
+         /*
+          * Unicode open for open existing read
+          */
          Dmsg1(100, "Read CreateFileW=%s\n", win32_fname);
          bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
-                dwaccess,                /* Requested access */
-                dwshare,                 /* Share modes */
-                NULL,                    /* SecurityAttributes */
-                OPEN_EXISTING,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
+                                 dwaccess,      /* Requested access */
+                                 dwshare,       /* Share modes */
+                                 NULL,          /* SecurityAttributes */
+                                 OPEN_EXISTING, /* CreationDisposition */
+                                 dwflags,       /* Flags and attributes */
+                                 NULL);         /* TemplateFile */
       } else {
-         // ascii open
+         /*
+          * ASCII open for open existing read
+          */
          Dmsg1(100, "Read CreateFileA=%s\n", win32_fname);
          bfd->fh = p_CreateFileA(win32_fname,
-                dwaccess,                /* Requested access */
-                dwshare,                 /* Share modes */
-                NULL,                    /* SecurityAttributes */
-                OPEN_EXISTING,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
+                                 dwaccess,      /* Requested access */
+                                 dwshare,       /* Share modes */
+                                 NULL,          /* SecurityAttributes */
+                                 OPEN_EXISTING, /* CreationDisposition */
+                                 dwflags,       /* Flags and attributes */
+                                 NULL);         /* TemplateFile */
       }
 
       bfd->mode = BF_READ;
@@ -711,23 +753,55 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
    free_pool_memory(win32_fname_wchar);
    free_pool_memory(win32_fname);
 
+   bfd->encrypted = false;
+
    return bfd->mode == BF_CLOSED ? -1 : 1;
+}
+
+int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode, dev_t rdev)
+{
+   Dmsg4(100, "bopen: fname %s, flags %d, mode %d, rdev %u\n", fname, flags, mode, rdev);
+
+   /*
+    * If the FILE_ATTRIBUTES_DEDUPED_ITEM bit is set this is a deduped file
+    * we let the bopen function know it should open the file without the
+    * FILE_FLAG_OPEN_REPARSE_POINT flag by setting in the O_NOFOLLOW open flag.
+    */
+   if (rdev & FILE_ATTRIBUTES_DEDUPED_ITEM) {
+      flags |= O_NOFOLLOW;
+   }
+
+   /*
+    * If the FILE_ATTRIBUTE_ENCRYPTED bit is set this is an file on an EFS filesystem.
+    * For that we need some special handling.
+    */
+   if (rdev & FILE_ATTRIBUTE_ENCRYPTED) {
+      return bopen_encrypted(bfd, fname, flags, mode);
+   } else {
+      return bopen_nonencrypted(bfd, fname, flags, mode);
+   }
 }
 
 /*
  * Returns  0 on success
  *         -1 on error
  */
-int bclose_encrypted(BFILE *bfd)
+static inline int bclose_encrypted(BFILE *bfd)
 {
    if (bfd->mode == BF_CLOSED) {
       Dmsg0(50, "=== BFD already closed.\n");
       return 0;
    }
 
-   CloseEncryptedFileRaw(bfd->pvContext);
+   if (!p_CloseEncryptedFileRaw) {
+      Dmsg0(50, "No p_CloseEncryptedFileRaw !!!!!\n");
+      return 0;
+   }
+
+   p_CloseEncryptedFileRaw(bfd->pvContext);
    bfd->pvContext = NULL;
    bfd->mode = BF_CLOSED;
+
    return 0;
 }
 
@@ -735,7 +809,7 @@ int bclose_encrypted(BFILE *bfd)
  * Returns  0 on success
  *         -1 on error
  */
-int bclose(BFILE *bfd)
+static inline int bclose_nonencrypted(BFILE *bfd)
 {
    int status = 0;
 
@@ -758,24 +832,24 @@ int bclose(BFILE *bfd)
    if (bfd->use_backup_api && bfd->mode == BF_READ) {
       BYTE buf[10];
       if (bfd->lpContext && !p_BackupRead(bfd->fh,
-              buf,                    /* buffer */
-              (DWORD)0,               /* bytes to read */
-              &bfd->rw_bytes,         /* bytes read */
-              1,                      /* Abort */
-              1,                      /* ProcessSecurity */
-              &bfd->lpContext)) {     /* Read context */
+                                          buf,                 /* buffer */
+                                          (DWORD)0,            /* bytes to read */
+                                          &bfd->rw_bytes,      /* bytes read */
+                                          1,                   /* Abort */
+                                          1,                   /* ProcessSecurity */
+                                          &bfd->lpContext)) {  /* Read context */
          errno = b_errno_win32;
          status = -1;
       }
    } else if (bfd->use_backup_api && bfd->mode == BF_WRITE) {
       BYTE buf[10];
       if (bfd->lpContext && !p_BackupWrite(bfd->fh,
-              buf,                    /* buffer */
-              (DWORD)0,               /* bytes to read */
-              &bfd->rw_bytes,         /* bytes written */
-              1,                      /* Abort */
-              1,                      /* ProcessSecurity */
-              &bfd->lpContext)) {     /* Write context */
+                                           buf,                /* buffer */
+                                           (DWORD)0,           /* bytes to read */
+                                           &bfd->rw_bytes,     /* bytes written */
+                                           1,                  /* Abort */
+                                           1,                  /* ProcessSecurity */
+                                           &bfd->lpContext)) { /* Write context */
          errno = b_errno_win32;
          status = -1;
       }
@@ -797,6 +871,19 @@ all_done:
    return status;
 }
 
+/*
+ * Returns  0 on success
+ *         -1 on error
+ */
+int bclose(BFILE *bfd)
+{
+   if (bfd->encrypted) {
+      return bclose_encrypted(bfd);
+   } else {
+      return bclose_nonencrypted(bfd);
+   }
+}
+
 /* Returns: bytes read on success
  *           0         on EOF
  *          -1         on error
@@ -811,23 +898,19 @@ ssize_t bread(BFILE *bfd, void *buf, size_t count)
 
    if (bfd->use_backup_api) {
       if (!p_BackupRead(bfd->fh,
-           (BYTE *)buf,
-           count,
-           &bfd->rw_bytes,
-           0,                           /* no Abort */
-           1,                           /* Process Security */
-           &bfd->lpContext)) {          /* Context */
+                        (BYTE *)buf,
+                        count,
+                        &bfd->rw_bytes,
+                        0,                  /* no Abort */
+                        1,                  /* Process Security */
+                        &bfd->lpContext)) { /* Context */
          bfd->lerror = GetLastError();
          bfd->berrno = b_errno_win32;
          errno = b_errno_win32;
          return -1;
       }
    } else {
-      if (!ReadFile(bfd->fh,
-           buf,
-           count,
-           &bfd->rw_bytes,
-           NULL)) {
+      if (!ReadFile(bfd->fh, buf, count, &bfd->rw_bytes, NULL)) {
          bfd->lerror = GetLastError();
          bfd->berrno = b_errno_win32;
          errno = b_errno_win32;
@@ -848,23 +931,19 @@ ssize_t bwrite(BFILE *bfd, void *buf, size_t count)
 
    if (bfd->use_backup_api) {
       if (!p_BackupWrite(bfd->fh,
-           (BYTE *)buf,
-           count,
-           &bfd->rw_bytes,
-           0,                           /* No abort */
-           1,                           /* Process Security */
-           &bfd->lpContext)) {          /* Context */
+                         (BYTE *)buf,
+                         count,
+                         &bfd->rw_bytes,
+                         0,                  /* No abort */
+                         1,                  /* Process Security */
+                         &bfd->lpContext)) { /* Context */
          bfd->lerror = GetLastError();
          bfd->berrno = b_errno_win32;
          errno = b_errno_win32;
          return -1;
       }
    } else {
-      if (!WriteFile(bfd->fh,
-           buf,
-           count,
-           &bfd->rw_bytes,
-           NULL)) {
+      if (!WriteFile(bfd->fh, buf, count, &bfd->rw_bytes, NULL)) {
          bfd->lerror = GetLastError();
          bfd->berrno = b_errno_win32;
          errno = b_errno_win32;
@@ -927,7 +1006,6 @@ bool set_win32_backup(BFILE *bfd)
 {
    return false;                       /* no can do */
 }
-
 
 bool set_portable_backup(BFILE *bfd)
 {
@@ -1018,8 +1096,10 @@ bool is_restore_stream_supported(int stream)
    return false;
 }
 
-int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
+int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode, dev_t rdev)
 {
+   Dmsg4(100, "bopen: fname %s, flags %d, mode %d, rdev %u\n", fname, flags, mode, rdev);
+
    if (bfd->cmd_plugin && plugin_bopen) {
       Dmsg1(400, "call plugin_bopen fname=%s\n", fname);
       bfd->fid = plugin_bopen(bfd, fname, flags, mode);
@@ -1069,7 +1149,9 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
 }
 
 #ifdef HAVE_DARWIN_OS
-/* Open the resource fork of a file. */
+/*
+ * Open the resource fork of a file.
+ */
 int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode)
 {
    POOLMEM *rsrc_fname;
@@ -1079,6 +1161,7 @@ int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode)
    pm_strcat(rsrc_fname, _PATH_RSRCFORKSPEC);
    bopen(bfd, rsrc_fname, flags, mode);
    free_pool_memory(rsrc_fname);
+
    return bfd->fid;
 }
 #else

@@ -1,12 +1,9 @@
 VPATH = .:../../filed
 
-DEFINES = -DHAVE_WIN32 \
-	  -DHAVE_MINGW \
-	  -DWIN32_VSS \
-	  -DWINVER=0x500 \
-	  -DMINGW64
-
 include ../Makefile.inc
+
+DEFINES += -DWIN32_VSS
+
 ifeq ($(WIN_VERSION),32)
 INCLUDES = -I../.. \
 	   -I../../include \

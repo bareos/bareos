@@ -48,86 +48,48 @@
 #endif
 
 #include <malloc.h>
-
-#ifdef MINGW64
 #include <direct.h>
+
+#if defined(HAVE_MINGW)
+/*
+ * MINGW uses __declspec while Microsoft Visual C uses _declspec so map all _declspec to __declspec
+ */
 #define _declspec __declspec
-
-/* Missing in 64 bit mingw */
-typedef struct _REPARSE_DATA_BUFFER {
-        DWORD  ReparseTag;
-        WORD   ReparseDataLength;
-        WORD   Reserved;
-        union {
-                struct {
-                        WORD   SubstituteNameOffset;
-                        WORD   SubstituteNameLength;
-                        WORD   PrintNameOffset;
-                        WORD   PrintNameLength;
-                        WCHAR PathBuffer[1];
-                } SymbolicLinkReparseBuffer;
-                struct {
-                        WORD   SubstituteNameOffset;
-                        WORD   SubstituteNameLength;
-                        WORD   PrintNameOffset;
-                        WORD   PrintNameLength;
-                        WCHAR PathBuffer[1];
-                } MountPointReparseBuffer;
-                struct {
-                        BYTE   DataBuffer[1];
-                } GenericReparseBuffer;
-        } DUMMYUNIONNAME;
-} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
-
 #endif
+
+typedef struct _REPARSE_DATA_BUFFER {
+   DWORD ReparseTag;
+   WORD ReparseDataLength;
+   WORD Reserved;
+   union {
+      struct {
+         WORD SubstituteNameOffset;
+         WORD SubstituteNameLength;
+         WORD PrintNameOffset;
+         WORD PrintNameLength;
+         WCHAR PathBuffer[1];
+      } SymbolicLinkReparseBuffer;
+      struct {
+         WORD SubstituteNameOffset;
+         WORD SubstituteNameLength;
+         WORD PrintNameOffset;
+         WORD PrintNameLength;
+         WCHAR PathBuffer[1];
+      } MountPointReparseBuffer;
+      struct {
+         BYTE DataBuffer[1];
+      } GenericReparseBuffer;
+   } DUMMYUNIONNAME;
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 
 #include <winioctl.h>
 
 #ifdef _WIN64
-# define GWL_USERDATA  GWLP_USERDATA
+#define GWL_USERDATA  GWLP_USERDATA
 #endif
 
 #ifndef INT64
 #define INT64 long long int
-#endif
-
-typedef UINT64 u_int64_t;
-typedef UINT64 uint64_t;
-typedef INT64 int64_t;
-typedef UINT32 uint32_t;
-typedef INT64 intmax_t;
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef signed short int16_t;
-typedef signed char int8_t;
-typedef int __daddr_t;
-
-#if !defined(HAVE_MINGW)
-typedef long int32_t;
-typedef float float32_t;
-typedef double float64_t;
-#endif
-
-#if !defined(_MSC_VER) || (_MSC_VER < 1400) // VC8+
-#ifndef _TIME_T_DEFINED
-#define _TIME_T_DEFINED
-typedef long time_t;
-#endif
-#endif
-
-#if __STDC__ && !defined(HAVE_MINGW)
-typedef _dev_t dev_t;
-#if !defined(HAVE_WXCONSOLE)
-typedef __int64 ino_t;
-#endif
-#endif
-
-typedef UINT32 u_int32_t;
-typedef unsigned char u_int8_t;
-typedef unsigned short u_int16_t;
-
-#if !defined(HAVE_MINGW)
-#undef uint32_t
 #endif
 
 void sleep(int);
@@ -174,7 +136,9 @@ struct timezone {
 };
 #endif
 
+#ifndef HAVE_MINGW
 int strcasecmp(const char*, const char *);
+#endif
 int gettimeofday(struct timeval *, struct timezone *);
 
 #if !defined(EETXTBUSY)
@@ -195,65 +159,68 @@ int gettimeofday(struct timeval *, struct timezone *);
 
 struct stat
 {
-    _dev_t      st_dev;
-    uint64_t    st_ino;
-    uint16_t    st_mode;
-    int16_t     st_nlink;
-    uint32_t    st_uid;
-    uint32_t    st_gid;
-    _dev_t      st_rdev;
-    uint64_t    st_size;
-    time_t      st_atime;
-    time_t      st_mtime;
-    time_t      st_ctime;
-    uint32_t    st_blksize;
-    uint64_t    st_blocks;
+   _dev_t      st_dev;
+   uint64_t    st_ino;
+   uint16_t    st_mode;
+   int16_t     st_nlink;
+   uint32_t    st_uid;
+   uint32_t    st_gid;
+   _dev_t      st_rdev;
+   uint64_t    st_size;
+   time_t      st_atime;
+   time_t      st_mtime;
+   time_t      st_ctime;
+   uint32_t    st_blksize;
+   uint64_t    st_blocks;
 };
 
 #undef  S_IFMT
-#define S_IFMT         0170000         /* file type mask */
+#define S_IFMT      0170000         /* file type mask */
 #undef  S_IFDIR
-#define S_IFDIR        0040000         /* directory */
-#define S_IFCHR        0020000         /* character special */
-#define S_IFBLK        0060000         /* block special */
-#define S_IFIFO        0010000         /* pipe */
+#define S_IFDIR     0040000         /* directory */
+#define S_IFCHR     0020000         /* character special */
+#define S_IFBLK     0060000         /* block special */
+#define S_IFIFO     0010000         /* pipe */
 #undef  S_IFREG
-#define S_IFREG        0100000         /* regular */
-#define S_IREAD        0000400         /* read permission, owner */
-#define S_IWRITE       0000200         /* write permission, owner */
-#define S_IEXEC        0000100         /* execute/search permission, owner */
+#define S_IFREG     0100000         /* regular */
+#define S_IREAD     0000400         /* read permission, owner */
+#define S_IWRITE    0000200         /* write permission, owner */
+#define S_IEXEC     0000100         /* execute/search permission, owner */
 
-#define S_IRUSR         S_IREAD
-#define S_IWUSR         S_IWRITE
-#define S_IXUSR         S_IEXEC
+#define S_IRUSR     S_IREAD
+#define S_IWUSR     S_IWRITE
+#define S_IXUSR     S_IEXEC
 #define S_ISREG(x)  (((x) & S_IFMT) == S_IFREG)
 #define S_ISDIR(x)  (((x) & S_IFMT) == S_IFDIR)
-#define S_ISCHR(x) 0
+#define S_ISCHR(x)  0
 #define S_ISBLK(x)  (((x) & S_IFMT) == S_IFBLK)
 #define S_ISFIFO(x) 0
 
-#define S_IRGRP         000040
-#define S_IWGRP         000020
-#define S_IXGRP         000010
+#define S_IRGRP     000040
+#define S_IWGRP     000020
+#define S_IXGRP     000010
 
-#define S_IROTH         00004
-#define S_IWOTH         00002
-#define S_IXOTH         00001
+#define S_IROTH     00004
+#define S_IWOTH     00002
+#define S_IXOTH     00001
 
-#define S_IRWXO         000007
-#define S_IRWXG         000070
-#define S_ISUID         004000
-#define S_ISGID         002000
-#define S_ISVTX         001000
+#define S_IRWXO     000007
+#define S_IRWXG     000070
+#define S_ISUID     004000
+#define S_ISGID     002000
+#define S_ISVTX     001000
 #define S_ISSOCK(x) 0
-#define S_ISLNK(x)      0
+#define S_ISLNK(x)  0
 
 #if __STDC__
-#define O_RDONLY _O_RDONLY
-#define O_WRONLY _O_WRONLY
-#define O_RDWR   _O_RDWR
-#define O_CREAT  _O_CREAT
-#define O_TRUNC  _O_TRUNC
+#define O_RDONLY    _O_RDONLY
+#define O_WRONLY    _O_WRONLY
+#define O_RDWR      _O_RDWR
+#define O_CREAT     _O_CREAT
+#define O_TRUNC     _O_TRUNC
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW  0x80000
+#endif
 
 #define isascii __isascii
 #define toascii __toascii
@@ -261,29 +228,16 @@ struct stat
 #define iscsym  __iscsym
 #endif
 
-typedef  BOOL (*t_pVSSPathConvert)(const char *szFilePath, char *szShadowPath, int nBuflen);
-typedef  BOOL (*t_pVSSPathConvertW)(const wchar_t  *szFilePath, wchar_t  *szShadowPath, int nBuflen);
+typedef bool (*t_pVSSPathConvert)(const char *szFilePath, char *szShadowPath, int nBuflen);
+typedef bool (*t_pVSSPathConvertW)(const wchar_t  *szFilePath, wchar_t  *szShadowPath, int nBuflen);
 
 void SetVSSPathConvert(t_pVSSPathConvert pPathConvert, t_pVSSPathConvertW pPathConvertW);
 
 int lchown(const char *, uid_t uid, gid_t gid);
 int chown(const char *, uid_t uid, gid_t gid);
-#if !defined(HAVE_MINGW)
-int chmod(const char *, mode_t mode);
-#endif
 #define O_NONBLOCK   04000
 #define F_GETFL      3
 #define F_SETFL      4
-
-int win32_tape_open(const char *file, int flags, ...);
-int win32_tape_ioctl(int fd, unsigned long int request, ...);
-int win32_tape_close(int fd);
-ssize_t win32_tape_read(int fd, void *buffer, size_t count);
-ssize_t win32_tape_write(int fd, const void *buffer, size_t count);
-
-ssize_t win32_read(int fd, void *buffer, size_t count);
-ssize_t win32_write(int fd, const void *buffer, size_t count);
-int win32_ioctl(int fd, unsigned long int req, ...);
 
 #ifndef MINGW64
 #define open   _open
@@ -305,7 +259,6 @@ int utime(const char *filename, struct utimbuf *buf);
 #define vsnprintf _vsnprintf
 #define snprintf _snprintf
 #endif //HAVE_MINGW
-
 
 #define WNOHANG 0
 #define WIFEXITED(x) 0
@@ -355,7 +308,6 @@ struct sigaction {
 #define mkdir(p, m) win32_mkdir(p)
 #define unlink win32_unlink
 #define chdir win32_chdir
-#define chmod win32_chmod
 extern "C" void syslog(int type, const char *fmt, ...);
 #if !defined(LOG_DAEMON)
 #define LOG_DAEMON 0
@@ -382,19 +334,20 @@ extern "C" void *  __cdecl _alloca(size_t);
 
 #define getcwd win32_getcwd
 #define chdir win32_chdir
-#define chmod win32_chmod
 #define fputs win32_fputs
 char *win32_getcwd(char *buf, int maxlen);
 int win32_chdir(const char *buf);
 int win32_mkdir(const char *buf);
 int win32_fputs(const char *string, FILE *stream);
 int win32_unlink(const char *filename);
-int win32_chmod(const char *, mode_t);
-
+int win32_chmod(const char *, mode_t, _dev_t);
 
 char* win32_cgets (char* buffer, int len);
 
 int WSA_Init(void);
+void Win32ClearCompatible();
+void Win32SetCompatible();
+bool Win32IsCompatible();
 void Win32ConvCleanupCache();
 
 #if defined(HAVE_MINGW)
@@ -408,20 +361,19 @@ void allow_os_suspensions();
 
 typedef DWORD EXECUTION_STATE;
 #ifndef ES_CONTINUOUS
-#define ES_CONTINUOUS            0x80000000
+#define ES_CONTINUOUS 0x80000000
 #endif
 #ifndef ES_SYSTEM_REQUIRED
-#define ES_SYSTEM_REQUIRED       0x00000001
+#define ES_SYSTEM_REQUIRED 0x00000001
 #endif
 #ifndef ES_DISPLAY_REQUIRED
-#define ES_DISPLAY_REQUIRED      0x00000002
+#define ES_DISPLAY_REQUIRED 0x00000002
 #endif
 #ifndef ES_USER_PRESENT
-# define ES_USER_PRESENT          0x00000004
+#define ES_USER_PRESENT 0x00000004
 #endif
 
 WINBASEAPI EXECUTION_STATE WINAPI SetThreadExecutionState(EXECUTION_STATE esFlags);
-
 
 extern void LogErrorMsg(const char *message);
 
@@ -444,10 +396,18 @@ inline unsigned long ffs(unsigned long word)
 #define  ffs   __builtin_ffs
 #endif
 
-
+bool win32_get_vmp_devicename(const char *file, POOLMEM **device);
 int win32_ftruncate(int fd, int64_t length);
 
 #undef ftruncate
 #define ftruncate win32_ftruncate
+
+#define FILE_ATTRIBUTE_VOLUME_MOUNT_POINT 0x10000000
+#define FILE_ATTRIBUTES_JUNCTION_POINT 0x20000000
+#define FILE_ATTRIBUTES_DEDUPED_ITEM 0x40000000
+
+#ifndef IO_REPARSE_TAG_DEDUP
+#define IO_REPARSE_TAG_DEDUP (0x80000013)
+#endif
 
 #endif /* __COMPAT_H_ */

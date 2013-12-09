@@ -134,16 +134,18 @@ extern "C" {
 #include <arpa/inet.h>
 #include <pthread.h>
 
-/* Local Bareos includes. Be sure to put all the system
- *  includes before these.
- */
 #if defined(HAVE_WIN32)
 #include <windows.h>
-#include "compat.h"
 #endif
 
+/*
+ * Local Bareos includes. Be sure to put all the system includes before these.
+ */
 #include "version.h"
 #include "bc_types.h"
+#if defined(HAVE_WIN32)
+#include "compat.h"
+#endif
 #include "streams.h"
 #include "filetypes.h"
 #include "baconfig.h"

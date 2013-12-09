@@ -29,7 +29,6 @@
 
 #ifdef WIN32_VSS
 #include "bareos.h"
-#include "compat.h"
 
 #include "ms_atl.h"
 #include <objbase.h>
@@ -43,8 +42,7 @@ VSSClient *g_pVSSClient;
 static const GUID VSS_SWPRV_ProviderID =
    { 0xb5946137, 0x7b9f, 0x4925, { 0xaf, 0x80, 0x51, 0xab, 0xd6, 0x0b, 0x20, 0xd5 } };
 
-void
-VSSCleanup()
+void VSSCleanup()
 {
    if (g_pVSSClient) {
       delete (g_pVSSClient);
@@ -79,14 +77,12 @@ void VSSInit()
    }
 }
 
-BOOL
-VSSPathConvert(const char *szFilePath, char *szShadowPath, int nBuflen)
+bool VSSPathConvert(const char *szFilePath, char *szShadowPath, int nBuflen)
 {
    return g_pVSSClient->GetShadowPath(szFilePath, szShadowPath, nBuflen);
 }
 
-BOOL
-VSSPathConvertW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen)
+bool VSSPathConvertW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen)
 {
    return g_pVSSClient->GetShadowPathW(szFilePath, szShadowPath, nBuflen);
 }
@@ -239,5 +235,4 @@ void VSSClient::DestroyWriterInfo()
       m_pAlistWriterState->pop();
    }
 }
-
 #endif
