@@ -152,25 +152,40 @@ bool MonitorItem::doconnect()
      dird = static_cast<DIRRES*>(d->resource);
      message = QString("Connecting to Director %1:%2").arg(dird->address).arg(dird->DIRport);
      emit showStatusbarMessage(message);
-     d->DSock = bnet_connect(NULL, d->connectTimeout,
-                                 0, 0, "Director daemon", dird->address, NULL, dird->DIRport, false);
-     jcr.dir_bsock = d->DSock;
+     d->DSock =  New(BSOCK_TCP);
+     if (!d->DSock->connect(NULL, d->connectTimeout, 0, 0, "Director daemon",
+                            dird->address, NULL, dird->DIRport, false)) {
+        delete d->DSock;
+        d->DSock = NULL;
+     } else {
+        jcr.dir_bsock = d->DSock;
+     }
      break;
   case R_CLIENT:
      filed = static_cast<CLIENTRES*>(d->resource);
      message = QString("Connecting to Client %1:%2").arg(filed->address).arg(filed->FDport);
      emit showStatusbarMessage(message);
-     d->DSock = bnet_connect(NULL, d->connectTimeout,
-                                 0, 0, "File daemon", filed->address, NULL, filed->FDport, false);
-     jcr.file_bsock = d->DSock;
+     d->DSock =  New(BSOCK_TCP);
+     if (!d->DSock->connect(NULL, d->connectTimeout, 0, 0, "File daemon",
+                            filed->address, NULL, filed->FDport, false)) {
+        delete d->DSock;
+        d->DSock = NULL;
+     } else {
+        jcr.file_bsock = d->DSock;
+     }
      break;
   case R_STORAGE:
      stored = static_cast<STORERES*>(d->resource);
      message = QString("Connecting to Storage %1:%2").arg(stored->address).arg(stored->SDport);
      emit showStatusbarMessage(message);
-     d->DSock = bnet_connect(NULL, d->connectTimeout,
-                                 0, 0, "Storage daemon", stored->address, NULL, stored->SDport, false);
-     jcr.store_bsock = d->DSock;
+     d->DSock =  New(BSOCK_TCP);
+     if (!d->DSock->connect(NULL, d->connectTimeout, 0, 0, "Storage daemon",
+                            stored->address, NULL, stored->SDport, false)) {
+        delete d->DSock;
+        d->DSock = NULL;
+     } else {
+        jcr.store_bsock = d->DSock;
+     }
      break;
   default:
      printf("Error, currentitem is not a Client, a Storage or a Director..\n");
@@ -230,6 +245,7 @@ void MonitorItem::disconnect()
       writecmd("quit");
       d->DSock->signal(BNET_TERMINATE); /* send EOF */
       d->DSock->close();
+      delete d->DSock;
       d->DSock = NULL;
    }
 }

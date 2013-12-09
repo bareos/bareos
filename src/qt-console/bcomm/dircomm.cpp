@@ -62,6 +62,7 @@ void DirComm::terminate()
       if (mainWin->m_connDebug)
          Pmsg2(000, "DirComm %i terminating connections %s\n", m_conn, m_console->m_dir->name());
       m_sock->close();
+      delete m_sock;
       m_sock = NULL;
    }
 }
@@ -167,14 +168,16 @@ bool DirComm::connect_dir()
       heart_beat = 0;
    }
 
-   m_sock = bnet_connect(NULL, 5, 15, heart_beat,
-                          _("Director daemon"), m_console->m_dir->address,
-                          NULL, m_console->m_dir->DIRport, false);
-   if (m_sock == NULL) {
+   m_sock = New(BSOCK_TCP);
+   if (!m_sock->connect(NULL, 5, 15, heart_beat, "Director daemon",
+                        m_console->m_dir->address, NULL,
+                        m_console->m_dir->DIRport, false)) {
       mainWin->set_status("Connection failed");
       if (mainWin->m_connDebug) {
          Pmsg2(000, "DirComm %i BAILING Connection failed %s\n", m_conn, m_console->m_dir->name());
       }
+      delete m_sock;
+      m_sock = NULL;
       goto bail_out;
    } else {
       /* Update page selector to green to indicate that Console is connected */
