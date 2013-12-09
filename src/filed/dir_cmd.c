@@ -1410,6 +1410,9 @@ static bool storage_cmd(JCR *jcr)
    BSOCK *sd;                      /* storage daemon bsock */
 
    sd = New(BSOCK_TCP);
+   if (me->nokeepalive) {
+      sd->clear_keepalive();
+   }
    Dmsg1(100, "StorageCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->msglen);
    if (sscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port,

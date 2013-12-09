@@ -162,6 +162,7 @@ public:
    bool optimize_for_size;            /* Optimize daemon for minimum memory size */
    bool optimize_for_speed;           /* Optimize daemon for speed which may need more memory */
    bool omit_defaults;                /* Omit config variables with default values when dumping the config */
+   bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
    bool ndmp_snooping;                /* NDMP Protocol specific snooping enabled */
    uint32_t ndmp_loglevel;            /* NDMP Protocol specific loglevel to use */
    uint32_t subscriptions;            /* Number of subscribtions available */

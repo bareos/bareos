@@ -97,6 +97,9 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, boo
    utime_t heart_beat;
 
    fd = New(BSOCK_TCP);
+   if (me->nokeepalive) {
+      fd->clear_keepalive();
+   }
    if (jcr->res.client->heartbeat_interval) {
       heart_beat = jcr->res.client->heartbeat_interval;
    } else {

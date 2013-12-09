@@ -87,6 +87,7 @@ static RES_ITEM store_items[] = {
    { "clientconnectwait", CFG_TYPE_TIME, ITEM(res_store.client_wait), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */ },
    { "verid", CFG_TYPE_STR, ITEM(res_store.verid), 0, 0, NULL },
    { "compatible", CFG_TYPE_BOOL, ITEM(res_store.compatible), 0, CFG_ITEM_DEFAULT, "true" },
+   { "nokeepalive", CFG_TYPE_BOOL, ITEM(res_store.nokeepalive), 0, CFG_ITEM_DEFAULT, "false" },
    { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_store.max_bandwidth_per_job), 0, 0, NULL },
    { "allowbandwidthbursting", CFG_TYPE_BOOL, ITEM(res_store.allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false" },
    { "ndmpenable", CFG_TYPE_BOOL, ITEM(res_store.ndmp_enable), 0, 0, NULL },

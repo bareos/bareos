@@ -109,6 +109,7 @@ static RES_ITEM cli_items[] = {
    { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_client.tls_allowed_cns), 0, 0, NULL },
    { "verid", CFG_TYPE_STR, ITEM(res_client.verid), 0, 0, NULL },
    { "compatible", CFG_TYPE_BOOL, ITEM(res_client.compatible), 0, CFG_ITEM_DEFAULT, "true" },
+   { "nokeepalive", CFG_TYPE_BOOL, ITEM(res_client.nokeepalive), 0, CFG_ITEM_DEFAULT, "false" },
    { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
    { "allowbandwidthbursting", CFG_TYPE_BOOL, ITEM(res_client.allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false" },
    { "allowedscriptdir", CFG_TYPE_ALIST_DIR, ITEM(res_client.allowed_script_dirs), 0, 0, NULL },

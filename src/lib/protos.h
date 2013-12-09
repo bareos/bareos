@@ -80,8 +80,12 @@ BSOCK *bnet_accept(BSOCK *bsock, char *who);
 
 /* bnet_server_tcp.c */
 void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq);
-void bnet_thread_server_tcp(dlist *addr_list, int max_clients, alist *sockfds,
-                            workq_t *client_wq, void *handle_client_request(void *bsock));
+void bnet_thread_server_tcp(dlist *addr_list,
+                            int max_clients,
+                            alist *sockfds,
+                            workq_t *client_wq,
+                            bool nokeepalive,
+                            void *handle_client_request(void *bsock));
 void bnet_stop_thread_server_tcp(pthread_t tid);
 
 /* bpipe.c */
