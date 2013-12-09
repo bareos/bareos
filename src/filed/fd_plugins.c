@@ -1404,26 +1404,29 @@ static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode
    if (!plugin || !jcr->plugin_ctx) {
       return 0;
    }
+
+   memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
    io.pkt_end = sizeof(io);
+
    io.func = IO_OPEN;
-   io.count = 0;
-   io.buf = NULL;
    io.fname = fname;
    io.flags = flags;
    io.mode = mode;
-   io.win32 = false;
-   io.lerror = 0;
+
    plug_func(plugin)->pluginIO(jcr->plugin_ctx, &io);
    bfd->berrno = io.io_errno;
+
    if (io.win32) {
       errno = b_errno_win32;
    } else {
       errno = io.io_errno;
       bfd->lerror = io.lerror;
    }
+
    Dmsg1(dbglvl, "Return from plugin open status=%d\n", io.status);
    Dsm_check(999);
+
    return io.status;
 }
 
@@ -1441,23 +1444,26 @@ static int my_plugin_bclose(BFILE *bfd)
    if (!plugin || !jcr->plugin_ctx) {
       return 0;
    }
+
+   memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
    io.pkt_end = sizeof(io);
+
    io.func = IO_CLOSE;
-   io.count = 0;
-   io.buf = NULL;
-   io.win32 = false;
-   io.lerror = 0;
+
    plug_func(plugin)->pluginIO(jcr->plugin_ctx, &io);
    bfd->berrno = io.io_errno;
+
    if (io.win32) {
       errno = b_errno_win32;
    } else {
       errno = io.io_errno;
       bfd->lerror = io.lerror;
    }
+
    Dmsg1(dbglvl, "plugin_bclose stat=%d\n", io.status);
    Dsm_check(999);
+
    return io.status;
 }
 
@@ -1475,24 +1481,28 @@ static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count)
    if (!plugin || !jcr->plugin_ctx) {
       return 0;
    }
+
+   memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
    io.pkt_end = sizeof(io);
+
    io.func = IO_READ;
    io.count = count;
    io.buf = (char *)buf;
-   io.win32 = false;
-   io.offset = 0;
-   io.lerror = 0;
+
    plug_func(plugin)->pluginIO(jcr->plugin_ctx, &io);
    bfd->offset = io.offset;
    bfd->berrno = io.io_errno;
+
    if (io.win32) {
       errno = b_errno_win32;
    } else {
       errno = io.io_errno;
       bfd->lerror = io.lerror;
    }
+
    Dsm_check(999);
+
    return (ssize_t)io.status;
 }
 
@@ -1511,21 +1521,25 @@ static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count)
       Dmsg0(0, "No plugin context\n");
       return 0;
    }
+
+   memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
    io.pkt_end = sizeof(io);
+
    io.func = IO_WRITE;
    io.count = count;
    io.buf = (char *)buf;
-   io.win32 = false;
-   io.lerror = 0;
+
    plug_func(plugin)->pluginIO(jcr->plugin_ctx, &io);
    bfd->berrno = io.io_errno;
+
    if (io.win32) {
       errno = b_errno_win32;
    } else {
       errno = io.io_errno;
       bfd->lerror = io.lerror;
    }
+
    Dsm_check(999);
    return (ssize_t)io.status;
 }
@@ -1571,7 +1585,7 @@ static boffset_t my_plugin_blseek(BFILE *bfd, boffset_t offset, int whence)
  */
 static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
 {
-   JCR *jcr;
+   JCR *jcr = NULL;
    if (!value) {
       return bRC_Error;
    }
@@ -1594,89 +1608,87 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
       *(char **)value = dist_name;
       break;
    default:
+      if (!ctx) {               /* Other variables need context */
+         return bRC_Error;
+      }
+
+      jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
+      if (!jcr) {
+         return bRC_Error;
+      }
       break;
    }
 
-   if (!ctx) {                  /* Other variables need context */
-      return bRC_Error;
-   }
-
-   jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
-   if (!jcr) {
-      return bRC_Error;
-   }
-
-   switch (var) {
-   case bVarJobId:
-      *((int *)value) = jcr->JobId;
-      Dmsg1(dbglvl, "Bareos: return bVarJobId=%d\n", jcr->JobId);
-      break;
-   case bVarLevel:
-      *((int *)value) = jcr->getJobLevel();
-      Dmsg1(dbglvl, "Bareos: return bVarJobLevel=%d\n", jcr->getJobLevel());
-      break;
-   case bVarType:
-      *((int *)value) = jcr->getJobType();
-      Dmsg1(dbglvl, "Bareos: return bVarJobType=%d\n", jcr->getJobType());
-      break;
-   case bVarClient:
-      *((char **)value) = jcr->client_name;
-      Dmsg1(dbglvl, "Bareos: return Client_name=%s\n", jcr->client_name);
-      break;
-   case bVarJobName:
-      *((char **)value) = jcr->Job;
-      Dmsg1(dbglvl, "Bareos: return Job name=%s\n", jcr->Job);
-      break;
-   case bVarPrevJobName:
-      *((char **)value) = jcr->PrevJob;
-      Dmsg1(dbglvl, "Bareos: return Previous Job name=%s\n", jcr->PrevJob);
-      break;
-   case bVarJobStatus:
-      *((int *)value) = jcr->JobStatus;
-      Dmsg1(dbglvl, "Bareos: return bVarJobStatus=%d\n", jcr->JobStatus);
-      break;
-   case bVarSinceTime:
-      *((int *)value) = (int)jcr->mtime;
-      Dmsg1(dbglvl, "Bareos: return since=%d\n", (int)jcr->mtime);
-      break;
-   case bVarAccurate:
-      *((int *)value) = (int)jcr->accurate;
-      Dmsg1(dbglvl, "Bareos: return accurate=%d\n", (int)jcr->accurate);
-      break;
-   case bVarFileSeen:
-      break;                 /* a write only variable, ignore read request */
-   case bVarVssObject:
-#ifdef HAVE_WIN32
-      if (g_pVSSClient) {
-         *(void **)value = g_pVSSClient->GetVssObject();
+   if (jcr) {
+      switch (var) {
+      case bVarJobId:
+         *((int *)value) = jcr->JobId;
+         Dmsg1(dbglvl, "Bareos: return bVarJobId=%d\n", jcr->JobId);
          break;
-       }
+      case bVarLevel:
+         *((int *)value) = jcr->getJobLevel();
+         Dmsg1(dbglvl, "Bareos: return bVarJobLevel=%d\n", jcr->getJobLevel());
+         break;
+      case bVarType:
+         *((int *)value) = jcr->getJobType();
+         Dmsg1(dbglvl, "Bareos: return bVarJobType=%d\n", jcr->getJobType());
+         break;
+      case bVarClient:
+         *((char **)value) = jcr->client_name;
+         Dmsg1(dbglvl, "Bareos: return Client_name=%s\n", jcr->client_name);
+         break;
+      case bVarJobName:
+         *((char **)value) = jcr->Job;
+         Dmsg1(dbglvl, "Bareos: return Job name=%s\n", jcr->Job);
+         break;
+      case bVarPrevJobName:
+         *((char **)value) = jcr->PrevJob;
+         Dmsg1(dbglvl, "Bareos: return Previous Job name=%s\n", jcr->PrevJob);
+         break;
+      case bVarJobStatus:
+         *((int *)value) = jcr->JobStatus;
+         Dmsg1(dbglvl, "Bareos: return bVarJobStatus=%d\n", jcr->JobStatus);
+         break;
+      case bVarSinceTime:
+         *((int *)value) = (int)jcr->mtime;
+         Dmsg1(dbglvl, "Bareos: return since=%d\n", (int)jcr->mtime);
+         break;
+      case bVarAccurate:
+         *((int *)value) = (int)jcr->accurate;
+         Dmsg1(dbglvl, "Bareos: return accurate=%d\n", (int)jcr->accurate);
+         break;
+      case bVarFileSeen:
+         break;                 /* a write only variable, ignore read request */
+      case bVarVssObject:
+#ifdef HAVE_WIN32
+         if (g_pVSSClient) {
+            *(void **)value = g_pVSSClient->GetVssObject();
+            break;
+          }
+#endif
+          return bRC_Error;
+      case bVarVssDllHandle:
+#ifdef HAVE_WIN32
+         if (g_pVSSClient) {
+            *(void **)value = g_pVSSClient->GetVssDllHandle();
+            break;
+          }
 #endif
        return bRC_Error;
-   case bVarVssDllHandle:
-#ifdef HAVE_WIN32
-      if (g_pVSSClient) {
-         *(void **)value = g_pVSSClient->GetVssDllHandle();
+      case bVarWhere:
+         *(char **)value = jcr->where;
          break;
-       }
-#endif
-       return bRC_Error;
-   case bVarWhere:
-      *(char **)value = jcr->where;
-      break;
-   case bVarRegexWhere:
-      *(char **)value = jcr->RegexWhere;
-      break;
-   case bVarPrefixLinks:
-      *(int *)value = (int)jcr->prefix_links;
-      break;
-   case bVarFDName:             /* get warning with g++ if we missed one */
-   case bVarWorkingDir:
-   case bVarExePath:
-   case bVarVersion:
-   case bVarDistName:
-      break;
+      case bVarRegexWhere:
+         *(char **)value = jcr->RegexWhere;
+         break;
+      case bVarPrefixLinks:
+         *(int *)value = (int)jcr->prefix_links;
+         break;
+      default:
+         break;
+      }
    }
+
    Dsm_check(999);
    return bRC_OK;
 }
@@ -1684,6 +1696,7 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
 static bRC bareosSetValue(bpContext *ctx, bVariable var, void *value)
 {
    JCR *jcr;
+
    Dsm_check(999);
    if (!value || !ctx) {
       return bRC_Error;
@@ -1703,6 +1716,7 @@ static bRC bareosSetValue(bpContext *ctx, bVariable var, void *value)
    default:
       break;
    }
+
    Dsm_check(999);
    return bRC_OK;
 }
