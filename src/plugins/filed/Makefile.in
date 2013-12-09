@@ -35,7 +35,7 @@ example-plugin-fd.la: Makefile example-plugin-fd$(DEFAULT_OBJECT_TYPE)
 bpipe-fd.la: Makefile bpipe-fd$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared bpipe-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
 
-python-fd.lo: python-fd.c
+python-fd.lo: python-fd.c python-fd.h
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(PYTHON_CPPFLAGS) -c $<
 
 python-fd.la: Makefile \
