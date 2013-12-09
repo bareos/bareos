@@ -46,17 +46,13 @@ Device {
   EOF {
     int32  size=0;
   }
-
-
  */
 
-#include "bareos.h"             /* define 64bit file usage */
+#include "bareos.h"
 #include "stored.h"
 
-#include "vtape.h"
-
-
 #ifdef USE_VTAPE
+#include "vtape.h"
 
 static int dbglevel = 100;
 #define FILE_OFFSET 30
@@ -706,6 +702,11 @@ int vtape::bsr(int count)
    return 0;
 }
 
+boffset_t vtape::lseek(DCR *dcr, boffset_t offset, int whence)
+{
+   return -1;
+}
+
 boffset_t vtape::lseek(int fd, off_t offset, int whence)
 {
    return ::lseek(fd, offset, whence);
@@ -851,9 +852,9 @@ ssize_t vtape::d_read(int, void *buffer, size_t count)
    return nb;
 }
 
-int vtape::d_open(const char *pathname, int uflags)
+int vtape::d_open(const char *pathname, int flags)
 {
-   Dmsg2(dbglevel, "vtape::d_open(%s, %i)\n", pathname, uflags);
+   Dmsg2(dbglevel, "vtape::d_open(%s, %i)\n", pathname, flags);
 
    online = true;               /* assume that drive contains a tape */
 
@@ -861,7 +862,7 @@ int vtape::d_open(const char *pathname, int uflags)
    if (stat(pathname, &statp) != 0) {
       fd = -1;
       Dmsg1(dbglevel, "Can't stat on %s\n", pathname);
-      if (uflags & O_NONBLOCK) {
+      if (flags & O_NONBLOCK) {
          online = false;
          fd = ::open("/dev/null", O_CREAT | O_RDWR | O_LARGEFILE, 0600);
       }
@@ -920,5 +921,4 @@ void vtape::dump()
    Dmsg4(dbglevel+1, "EOF=%i EOT=%i EOD=%i BOT=%i\n",
          atEOF, atEOT, atEOD, atBOT);
 }
-
 #endif  /* ! USE_VTAPE */

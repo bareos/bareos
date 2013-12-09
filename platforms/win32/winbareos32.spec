@@ -25,6 +25,7 @@ Source2:       vss_headers.tar
 Source3:       vdi_headers.tar
 
 Patch1:        tray-monitor-conf.patch
+Patch2:        tray-monitor-conf-fd-sd.patch
 
 BuildRequires:  mingw32-filesystem
 BuildRequires:  mingw32-cross-gcc
@@ -78,7 +79,13 @@ bareos
 %prep
 #setup
 %setup -q -n bareos-%{version}
+cp src/qt-tray-monitor/tray-monitor.conf.in src/qt-tray-monitor/tray-monitor.conf.in.orig
 %patch1 -p1
+mv src/qt-tray-monitor/tray-monitor.conf.in src/qt-tray-monitor/tray-monitor.conf.in.fd
+cp src/qt-tray-monitor/tray-monitor.conf.in.orig src/qt-tray-monitor/tray-monitor.conf.in
+%patch2 -p1
+mv src/qt-tray-monitor/tray-monitor.conf.in src/qt-tray-monitor/tray-monitor.fd-sd.conf.in
+mv src/qt-tray-monitor/tray-monitor.conf.in.fd src/qt-tray-monitor/tray-monitor.conf.in
 
 tar xvf %SOURCE2
 tar xvf %SOURCE3
@@ -97,28 +104,36 @@ mkdir -p $RPM_BUILD_ROOT/etc/%name
 pushd src/win32
 
 cp qt-tray-monitor/bareos-tray-monitor.exe \
-   qt-console/bat.exe console/bconsole.exe \
-   filed/bareos-fd.exe lib/libbareos.dll \
+   qt-console/bat.exe \
+   console/bconsole.exe \
+   filed/bareos-fd.exe \
+   stored/bareos-sd.exe \
+   stored/btape.exe \
+   stored/bls.exe \
+   stored/bextract.exe \
+   lib/libbareos.dll \
    findlib/libbareosfind.dll \
    plugins/filed/bpipe-fd.dll \
    plugins/filed/mssqlvdi-fd.dll \
+   plugins/stored/autoxflate-sd.dll \
    $RPM_BUILD_ROOT%{_mingw32_bindir}
 
 for cfg in  ../qt-tray-monitor/tray-monitor.conf.in \
+   ../qt-tray-monitor/tray-monitor.fd-sd.conf.in \
    ../qt-console/bat.conf.in \
    ../filed/bareos-fd.conf.in \
+   ../stored/bareos-sd.conf.in \
    ../console/bconsole.conf.in \
    ; do cp $cfg $RPM_BUILD_ROOT/etc/%name/$(basename $cfg .in)
 done
 
-for cfg in $RPM_BUILD_ROOT/etc/%name//*.conf;
+for cfg in $RPM_BUILD_ROOT/etc/%name/*.conf;
 do
   sed -f %SOURCE1 $cfg -i ;
 done
 
 %clean
 rm -rf $RPM_BUILD_ROOT
-
 
 %files
 %defattr(-,root,root)

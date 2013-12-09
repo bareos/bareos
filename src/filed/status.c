@@ -76,6 +76,9 @@ static void  list_status_header(STATUS_PKT *sp)
    char b1[32], b2[32], b3[32], b4[32], b5[35];
    int len;
    char dt[MAX_TIME_LENGTH];
+#if defined(HAVE_WIN32)
+   char buf[300];
+#endif
 
    len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s %s\n"),
               my_name, VERSION, BDATE, VSS, HOST_OS, DISTNAME, DISTVER);
@@ -84,56 +87,58 @@ static void  list_status_header(STATUS_PKT *sp)
    len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d.\n"),
         dt, num_jobs_run, job_count());
    sendit(msg.c_str(), len, sp);
+
 #if defined(HAVE_WIN32)
-   char buf[300];
    if (GetWindowsVersionString(buf, sizeof(buf))) {
       len = Mmsg(msg, "%s\n", buf);
       sendit(msg.c_str(), len, sp);
    }
+
    if (debug_level > 0) {
       if (!privs) {
          privs = enable_backup_privileges(NULL, 1);
       }
-      len = Mmsg(msg, "VSS %s, Priv 0x%x\n", g_pVSSClient?"enabled":"disabled", privs);
+      len = Mmsg(msg, "VSS %s, Priv 0x%x\n", g_pVSSClient ? "enabled" : "disabled", privs);
       sendit(msg.c_str(), len, sp);
       len = Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",
-                 p_OpenProcessToken?"":"!",
-                 p_AdjustTokenPrivileges?"":"!",
-                 p_LookupPrivilegeValue?"":"!",
-                 p_CreateFileA?"":"!",
-                 p_CreateFileW?"":"!");
+                 p_OpenProcessToken ? "" : "!",
+                 p_AdjustTokenPrivileges ? "" : "!",
+                 p_LookupPrivilegeValue ? "" : "!",
+                 p_CreateFileA ? "" : "!",
+                 p_CreateFileW ? "" : "!");
       sendit(msg.c_str(), len, sp);
       len = Mmsg(msg, " %sWUL,%sWMKD,%sGFAA,%sGFAW,%sGFAEA,%sGFAEW,%sSFAA,%sSFAW,%sBR,%sBW,%sSPSP,\n",
-                 p_wunlink?"":"!",
-                 p_wmkdir?"":"!",
-                 p_GetFileAttributesA?"":"!",
-                 p_GetFileAttributesW?"":"!",
-                 p_GetFileAttributesExA?"":"!",
-                 p_GetFileAttributesExW?"":"!",
-                 p_SetFileAttributesA?"":"!",
-                 p_SetFileAttributesW?"":"!",
-                 p_BackupRead?"":"!",
-                 p_BackupWrite?"":"!",
-                 p_SetProcessShutdownParameters?"":"!");
+                 p_wunlink ? "" : "!",
+                 p_wmkdir ? "" : "!",
+                 p_GetFileAttributesA ? "" : "!",
+                 p_GetFileAttributesW ? "" : "!",
+                 p_GetFileAttributesExA ? "" : "!",
+                 p_GetFileAttributesExW ? "" : "!",
+                 p_SetFileAttributesA ? "" : "!",
+                 p_SetFileAttributesW ? "" : "!",
+                 p_BackupRead ? "" : "!",
+                 p_BackupWrite ? "" : "!",
+                 p_SetProcessShutdownParameters ? "" : "!");
       sendit(msg.c_str(), len, sp);
       len = Mmsg(msg, " %sWC2MB,%sMB2WC,%sFFFA,%sFFFW,%sFNFA,%sFNFW,%sSCDA,%sSCDW,\n",
-                 p_WideCharToMultiByte?"":"!",
-                 p_MultiByteToWideChar?"":"!",
-                 p_FindFirstFileA?"":"!",
-                 p_FindFirstFileW?"":"!",
-                 p_FindNextFileA?"":"!",
-                 p_FindNextFileW?"":"!",
-                 p_SetCurrentDirectoryA?"":"!",
-                 p_SetCurrentDirectoryW?"":"!");
+                 p_WideCharToMultiByte ? "" : "!",
+                 p_MultiByteToWideChar ? "" : "!",
+                 p_FindFirstFileA ? "" : "!",
+                 p_FindFirstFileW ? "" : "!",
+                 p_FindNextFileA ? "" : "!",
+                 p_FindNextFileW ? "" : "!",
+                 p_SetCurrentDirectoryA ? "" : "!",
+                 p_SetCurrentDirectoryW ? "" : "!");
       sendit(msg.c_str(), len, sp);
       len = Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW\n",
-                 p_GetCurrentDirectoryA?"":"!",
-                 p_GetCurrentDirectoryW?"":"!",
-                 p_GetVolumePathNameW?"":"!",
-                 p_GetVolumeNameForVolumeMountPointW?"":"!");
-     sendit(msg.c_str(), len, sp);
+                 p_GetCurrentDirectoryA ? "" : "!",
+                 p_GetCurrentDirectoryW ? "" : "!",
+                 p_GetVolumePathNameW ? "" : "!",
+                 p_GetVolumeNameForVolumeMountPointW ? "" : "!");
+      sendit(msg.c_str(), len, sp);
    }
 #endif
+
    len = Mmsg(msg, _(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
          edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
          edit_uint64_with_commas(sm_bytes, b2),
@@ -540,12 +545,12 @@ static const char *level_to_str(int level)
 
 
 #if defined(HAVE_WIN32)
-int bacstat = 0;
+int bareosstat = 0;
 
 /*
  * Put message in Window List Box
  */
-char *bac_status(char *buf, int buf_len)
+char *bareos_status(char *buf, int buf_len)
 {
    JCR *njcr;
    const char *termstat = _("Bareos Client: Idle");
@@ -555,7 +560,7 @@ char *bac_status(char *buf, int buf_len)
    if (!last_jobs) {
       goto done;
    }
-   Dmsg0(1000, "Begin bac_status jcr loop.\n");
+   Dmsg0(1000, "Begin bareos_status jcr loop.\n");
    foreach_jcr(njcr) {
       if (njcr->JobId != 0) {
          status = JS_Running;
@@ -586,9 +591,9 @@ char *bac_status(char *buf, int buf_len)
          break;
       }
    }
-   Dmsg0(1000, "End bac_status jcr loop.\n");
+   Dmsg0(1000, "End bareos_status jcr loop.\n");
 done:
-   bacstat = status;
+   bareosstat = status;
    if (buf) {
       bstrncpy(buf, termstat, buf_len);
    }

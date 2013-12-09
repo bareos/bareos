@@ -20,8 +20,6 @@ INCLUDES = -I../../.. \
 VDI_INCLUDES = -I../../vdi/include
 endif
 LDLIBS = ../../lib/libbareos.dll \
-	 $(MINGW_LIB)/libssl.dll.a \
-         $(MINGW_LIB)/libcrypto.dll.a \
          $(MINGW_LIB)/libpthreadGCE2.a \
          $(MINGW_LIB)/libz.dll.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid

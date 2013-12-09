@@ -72,6 +72,15 @@
 
 #include "bareos.h"
 #include "stored.h"
+#ifdef USE_VTAPE
+#include "vtape.h"
+#endif
+#ifdef HAVE_WIN32
+#include "win32_tape_device.h"
+#include "win32_file_device.h"
+#else
+#include "unix_device.h"
+#endif
 
 #ifndef O_NONBLOCK
 #define O_NONBLOCK 0
@@ -139,16 +148,12 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       }
    }
    switch (device->dev_type) {
+#ifdef USE_VTAPE
    case B_VTAPE_DEV:
       dev = New(vtape);
       break;
-#ifdef USE_FTP
-   case B_FTP_DEV:
-      dev = New(ftp_device);
-      break;
 #endif
 #ifdef HAVE_WIN32
-/* TODO: defined in src/win32/stored/mtops.cpp */
    case B_TAPE_DEV:
       dev = New(win32_tape_device);
       break;
@@ -159,7 +164,7 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    case B_TAPE_DEV:
    case B_FILE_DEV:
    case B_FIFO_DEV:
-      dev = New(DEVICE);
+      dev = New(unix_device);
       break;
 #endif
    default:
@@ -302,32 +307,6 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    return dev;
 }
 
-/* default primitives are designed for file */
-int DEVICE::d_open(const char *pathname, int flags)
-{
-   return ::open(pathname, flags);
-}
-
-int DEVICE::d_close(int fd)
-{
-   return ::close(fd);
-}
-
-int DEVICE::d_ioctl(int fd, ioctl_req_t request, char *mt_com)
-{
-   return ::ioctl(fd, request, mt_com);
-}
-
-ssize_t DEVICE::d_read(int fd, void *buffer, size_t count)
-{
-   return ::read(fd, buffer, count);
-}
-
-ssize_t DEVICE::d_write(int fd, const void *buffer, size_t count)
-{
-   return ::write(fd, buffer, count);
-}
-
 /*
  * Open the device with the operating system and
  * initialize buffer pointers.
@@ -366,8 +345,6 @@ bool DEVICE::open(DCR *dcr, int omode)
 
    if (is_tape() || is_fifo()) {
       open_tape_device(dcr, omode);
-   } else if (is_ftp()) {
-      open_device(dcr, omode);
    } else {
       Dmsg1(100, "call open_file_device mode=%s\n", mode_to_str(omode));
       open_file_device(dcr, omode);
@@ -501,11 +478,6 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
       tid = 0;
    }
    Dmsg1(100, "open dev: tape %d opened\n", m_fd);
-}
-
-void DEVICE::open_device(DCR *dcr, int omode)
-{
-   /* do nothing waiting to split open_file/tape_device */
 }
 
 /*
@@ -1776,19 +1748,6 @@ void DEVICE::close(DCR *dcr)
       stop_thread_timer(tid);
       tid = 0;
    }
-}
-
-boffset_t DEVICE::lseek(DCR *dcr, boffset_t offset, int whence)
-{
-   switch (dev_type) {
-   case B_FILE_DEV:
-#if defined(HAVE_WIN32)
-      return ::_lseeki64(m_fd, (__int64)offset, whence);
-#else
-      return ::lseek(m_fd, offset, whence);
-#endif
-   }
-   return -1;
 }
 
 /*

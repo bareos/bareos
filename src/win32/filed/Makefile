@@ -1,17 +1,19 @@
-VPATH = .:../../filed
+VPATH = .:../../filed:../generic
 
 include ../Makefile.inc
 
 DEFINES += -DWIN32_VSS
 
 ifeq ($(WIN_VERSION),32)
-INCLUDES = -I../.. \
+INCLUDES = -I. \
+	   -I../.. \
 	   -I../../include \
 	   -I../include \
 	   -I../compat/include \
 	   -I../vss/include
 else
-INCLUDES = -I../.. \
+INCLUDES = -I. \
+	   -I../.. \
 	   -I../../include \
 	   -I../include \
 	   -I../compat/include \
@@ -58,3 +60,7 @@ distclean:: clean
 %.o : %.rc
 	@echo "Ressource Compiling $^"
 	$(WINDRES) $^ -o $@
+
+main.o: ../generic/main.c
+	@echo "Compiling $<"
+	$(CXX) -DFILE_DAEMON $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

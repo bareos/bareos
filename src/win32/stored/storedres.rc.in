@@ -8,11 +8,11 @@ BEGIN
     BLOCK "080904E4"
     BEGIN
       VALUE "CompanyName", "Bareos GmbH & Co. KG"
-      VALUE "FileDescription", "Bareos File Daemon"
+      VALUE "FileDescription", "Bareos Storage Daemon"
       VALUE "FileVersion", @VERSION@
-      VALUE "InternalName", "bareos-fd.exe"
-      VALUE "OriginalFilename", "bareos-fd.exe"
-      VALUE "ProductName", "Bareos File Daemon"
+      VALUE "InternalName", "bareos-sd.exe"
+      VALUE "OriginalFilename", "bareos-sd.exe"
+      VALUE "ProductName", "Bareos Storage Daemon"
       VALUE "ProductVersion", @VERSION@
       VALUE "LegalCopyright", "Copyright 2000-2012 Free Software Foundation Europe e.V. "
                               "Copyright 2013-2013 Bareos GmbH & Co. KG "
