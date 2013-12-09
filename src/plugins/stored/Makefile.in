@@ -43,7 +43,7 @@ autoxflate-sd.la: Makefile \
 example-plugin-sd.la: Makefile example-plugin-sd$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared example-plugin-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
 
-python-sd.lo: python-sd.c
+python-sd.lo: python-sd.c python-sd.h
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(PYTHON_CPPFLAGS) -c $<
 
 python-sd.la: Makefile \
