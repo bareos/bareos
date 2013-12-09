@@ -39,7 +39,7 @@ static void *handle_UA_client_request(void *arg);
 static int started = FALSE;
 static workq_t ua_workq;
 static alist *sock_fds;
-static pthread_t server_tid;
+static pthread_t tcp_server_tid;
 
 struct s_addr_port {
    char *addr;
@@ -55,7 +55,7 @@ void start_UA_server(dlist *addrs)
    int status;
    static dlist *myaddrs = addrs;
 
-   if ((status = pthread_create(&server_tid, NULL, connect_thread, (void *)myaddrs)) != 0) {
+   if ((status = pthread_create(&tcp_server_tid, NULL, connect_thread, (void *)myaddrs)) != 0) {
       berrno be;
       Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
    }
@@ -70,9 +70,8 @@ void stop_UA_server()
       return;
    }
 
-   bnet_stop_thread_server(server_tid);
-
-   cleanup_bnet_thread_server(sock_fds, &ua_workq);
+   bnet_stop_thread_server_tcp(tcp_server_tid);
+   cleanup_bnet_thread_server_tcp(sock_fds, &ua_workq);
    delete sock_fds;
    sock_fds = NULL;
 }
@@ -85,7 +84,7 @@ void *connect_thread(void *arg)
 
    /* Permit MaxConsoleConnect console connections */
    sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server((dlist*)arg, me->MaxConsoleConnect, sock_fds, &ua_workq, handle_UA_client_request);
+   bnet_thread_server_tcp((dlist*)arg, me->MaxConsoleConnect, sock_fds, &ua_workq, handle_UA_client_request);
 
    return NULL;
 }

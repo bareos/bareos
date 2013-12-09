@@ -1512,8 +1512,9 @@ static bool replicate_cmd(JCR *jcr)
    char stored_addr[MAX_NAME_LENGTH];
    POOL_MEM sd_auth_key(PM_MESSAGE);
    BSOCK *dir = jcr->dir_bsock;
-   BSOCK *sd = new_bsock();        /* storage daemon bsock */
+   BSOCK *sd;                      /* storage daemon bsock */
 
+   sd = New(BSOCK_TCP);
    Dmsg1(100, "ReplicateCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->msglen);
 
@@ -1547,8 +1548,8 @@ static bool replicate_cmd(JCR *jcr)
     */
    if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
                     _("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
-     sd->destroy();
-     sd = NULL;
+      delete sd;
+      sd = NULL;
    }
 
    if (sd == NULL) {
@@ -1565,6 +1566,7 @@ static bool replicate_cmd(JCR *jcr)
    sd->fsend("Hello Start Storage Job %s\n", JobName);
    if (!authenticate_with_storagedaemon(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
+      delete sd;
       goto bail_out;
    }
    Dmsg0(110, "Authenticated with SD.\n");
@@ -1604,8 +1606,9 @@ static bool passive_cmd(JCR *jcr)
    int enable_ssl;                 /* enable ssl to fd */
    char filed_addr[MAX_NAME_LENGTH];
    BSOCK *dir = jcr->dir_bsock;
-   BSOCK *fd = new_bsock();        /* file daemon bsock */
+   BSOCK *fd;                      /* file daemon bsock */
 
+   fd = New(BSOCK_TCP);
    Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
    if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
       pm_strcpy(jcr->errmsg, dir->msg);
@@ -1624,8 +1627,8 @@ static bool passive_cmd(JCR *jcr)
     */
    if (!fd->connect(jcr, 10, (int)me->FDConnectTimeout, me->heartbeat_interval,
                     _("File Daemon"), filed_addr, NULL, filed_port, 1)) {
-     fd->destroy();
-     fd = NULL;
+      delete fd;
+      fd = NULL;
    }
 
    if (fd == NULL) {
@@ -1638,10 +1641,11 @@ static bool passive_cmd(JCR *jcr)
    Dmsg0(110, "Connection OK to FD.\n");
 
    jcr->file_bsock = fd;
-
    fd->fsend("Hello Storage calling Start Job %s\n", jcr->Job);
    if (!authenticate_with_filedaemon(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate File daemon.\n"));
+      delete fd;
+      jcr->file_bsock = NULL;
       goto bail_out;
    }
    Dmsg0(110, "Authenticated with FD.\n");

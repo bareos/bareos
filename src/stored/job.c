@@ -463,11 +463,13 @@ void stored_free_jcr(JCR *jcr)
 
    if (jcr->store_bsock) {
       jcr->store_bsock->close();
+      delete jcr->store_bsock;
       jcr->store_bsock = NULL;
    }
 
    if (jcr->file_bsock) {
       jcr->file_bsock->close();
+      delete jcr->file_bsock;
       jcr->file_bsock = NULL;
    }
 

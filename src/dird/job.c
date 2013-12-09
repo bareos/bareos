@@ -1299,12 +1299,14 @@ void dird_free_jcr_pointers(JCR *jcr)
    if (jcr->file_bsock) {
       Dmsg0(200, "Close File bsock\n");
       jcr->file_bsock->close();
+      delete jcr->file_bsock;
       jcr->file_bsock = NULL;
    }
 
    if (jcr->store_bsock) {
       Dmsg0(200, "Close Store bsock\n");
       jcr->store_bsock->close();
+      delete jcr->store_bsock;
       jcr->store_bsock = NULL;
    }
 
@@ -1855,6 +1857,7 @@ bool select_next_rstore(JCR *jcr, bootstrap_info &info)
     */
    if (jcr->store_bsock) {
       jcr->store_bsock->close();
+      delete jcr->store_bsock;
       jcr->store_bsock = NULL;
    }
 

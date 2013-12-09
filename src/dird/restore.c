@@ -369,6 +369,7 @@ bail_out:
    if (jcr->file_bsock) {
       jcr->file_bsock->signal(BNET_TERMINATE);
       jcr->file_bsock->close();
+      delete jcr->file_bsock;
       jcr->file_bsock = NULL;
    }
 

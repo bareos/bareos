@@ -934,8 +934,6 @@ static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret
    BSOCK *UA_sock;
    DIRRES *dir = NULL;
    CONRES *cons = NULL;
-   struct sockaddr client_addr;
-   memset(&client_addr, 0, sizeof(client_addr));
 
    *ret_cons = NULL;
    *ret_dir = NULL;
@@ -970,7 +968,7 @@ static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret
    }
 
    if (!dir) {                  /* prompt for director */
-      UA_sock = init_bsock(NULL, 0, "", "", 0, &client_addr);
+      UA_sock = New(BSOCK_TCP);
 try_again:
       sendit(_("Available Directors:\n"));
       LockRes();
@@ -997,8 +995,8 @@ try_again:
          senditf(_("You must enter a number between 1 and %d\n"), numdir);
          goto try_again;
       }
-      term_bsock(UA_sock);
-      LockRes();
+      delete UA_sock;
+      LockRes(config);
       for (i=0; i<item; i++) {
          dir = (DIRRES *)GetNextRes(R_DIRECTOR, (RES *)dir);
       }
@@ -1269,9 +1267,10 @@ int main(int argc, char *argv[])
    } else {
       heart_beat = 0;
    }
-   UA_sock = bnet_connect(NULL, 5, 15, heart_beat, "Director daemon", dir->address,
-                          NULL, dir->DIRport, false);
-   if (UA_sock == NULL) {
+
+   UA_sock = New(BSOCK_TCP);
+   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", dir->address, NULL, dir->DIRport, false)) {
+      delete UA_sock;
       terminate_console(0);
       return 1;
    }

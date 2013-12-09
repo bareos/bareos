@@ -50,8 +50,7 @@ char *configfile = NULL;
 static bool foreground = false;
 static workq_t dir_workq;             /* queue of work from Director */
 static alist *sock_fds;
-static pthread_t server_tid;
-static CONFIG *config;
+static pthread_t tcp_server_tid;
 
 static void usage()
 {
@@ -197,7 +196,7 @@ int main (int argc, char *argv[])
       drop(uid, gid, keep_readall_caps);
    }
 
-   server_tid = pthread_self();
+   tcp_server_tid = pthread_self();
    if (!no_signals) {
       init_signals(terminate_filed);
    } else {
@@ -256,7 +255,7 @@ int main (int argc, char *argv[])
       start_watchdog();               /* start watchdog thread */
       init_jcr_subsystem();           /* start JCR watchdogs etc. */
    }
-   server_tid = pthread_self();
+   tcp_server_tid = pthread_self();
 
    /* Become server, and handle requests */
    IPADDR *p;
@@ -265,7 +264,7 @@ int main (int argc, char *argv[])
    }
 
    sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server(me->FDaddrs, me->MaxConcurrentJobs, sock_fds, &dir_workq, handle_connection_request);
+   bnet_thread_server_tcp(me->FDaddrs, me->MaxConcurrentJobs, sock_fds, &dir_workq, handle_connection_request);
 
    terminate_filed(0);
 
@@ -284,9 +283,8 @@ void terminate_filed(int sig)
    debug_level = 0;                   /* turn off debug */
    stop_watchdog();
 
-   bnet_stop_thread_server(server_tid);
-
-   cleanup_bnet_thread_server(sock_fds, &dir_workq);
+   bnet_stop_thread_server_tcp(tcp_server_tid);
+   cleanup_bnet_thread_server_tcp(sock_fds, &dir_workq);
    delete sock_fds;
    sock_fds = NULL;
 

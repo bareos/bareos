@@ -45,6 +45,8 @@
 #include "tls.h"
 #include "address_conf.h"
 #include "bsock.h"
+#include "bsock_tcp.h"
+#include "bsock_udt.h"
 #include "workq.h"
 #ifndef HAVE_FNMATCH
 #include "fnmatch.h"

@@ -63,7 +63,7 @@ struct s_sockfd {
  * Stop the Threaded Network Server if its realy running in a seperate thread.
  * e.g. set the quit flag and wait for the other thread to exit cleanly.
  */
-void bnet_stop_thread_server(pthread_t tid)
+void bnet_stop_thread_server_tcp(pthread_t tid)
 {
    quit = true;
    if (!pthread_equal(tid, pthread_self())) {
@@ -75,7 +75,7 @@ void bnet_stop_thread_server(pthread_t tid)
  * Perform a cleanup for the Threaded Network Server check if there is still
  * something to do or that the cleanup already took place.
  */
-void cleanup_bnet_thread_server(alist *sockfds, workq_t *client_wq)
+void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq)
 {
    int status;
    s_sockfd *fd_ptr = NULL;
@@ -113,8 +113,8 @@ void cleanup_bnet_thread_server(alist *sockfds, workq_t *client_wq)
  *
  * At the moment it is impossible to bind to different ports.
  */
-void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
-                        workq_t *client_wq, void *handle_client_request(void *bsock))
+void bnet_thread_server_tcp(dlist *addr_list, int max_clients, alist *sockfds,
+                            workq_t *client_wq, void *handle_client_request(void *bsock))
 {
    int newsockfd, status;
    socklen_t clilen;
@@ -341,11 +341,16 @@ void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
             P(mutex);
             sockaddr_to_ascii(&cli_addr, buf, sizeof(buf));
             V(mutex);
+
             BSOCK *bs;
-            bs = init_bsock(NULL, newsockfd, "client", buf, ntohs(fd_ptr->port), &cli_addr);
-            if (bs == NULL) {
-               Jmsg0(NULL, M_ABORT, 0, _("Could not create client BSOCK.\n"));
-            }
+            bs = New(BSOCK_TCP);
+
+            bs->m_fd = newsockfd;
+            bs->set_who(bstrdup("client"));
+            bs->set_host(bstrdup(buf));
+            bs->set_port(ntohs(fd_ptr->port));
+            memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
+            memcpy(&bs->client_addr, &cli_addr, sizeof(bs->client_addr));
 
             /*
              * Queue client to be served
@@ -360,5 +365,5 @@ void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
       }
    }
 
-   cleanup_bnet_thread_server(sockfds, client_wq);
+   cleanup_bnet_thread_server_tcp(sockfds, client_wq);
 }

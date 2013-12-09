@@ -42,6 +42,7 @@ void *handle_stored_connection(BSOCK *sd)
       Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), sd->who(), sd->msglen);
       bmicrosleep(5, 0);   /* make user wait 5 seconds */
       sd->close();
+      delete sd;
       return NULL;
    }
 
@@ -53,6 +54,7 @@ void *handle_stored_connection(BSOCK *sd)
       Dmsg2(dbglvl, "Bad Hello command from Director at %s: %s\n", sd->who(), sd->msg);
       Jmsg2(NULL, M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"), who, sd->msg);
       sd->close();
+      delete sd;
       return NULL;
    }
 
@@ -60,6 +62,7 @@ void *handle_stored_connection(BSOCK *sd)
       Jmsg1(NULL, M_FATAL, 0, _("SD connect failed: Job name not found: %s\n"), job_name);
       Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
       sd->close();
+      delete sd;
       return NULL;
    }
 

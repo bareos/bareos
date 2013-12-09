@@ -32,8 +32,8 @@
  * See below for SIGNAL codes.
  */
 
-#ifndef __BSOCK_H_
-#define __BSOCK_H_
+#ifndef BRS_BSOCK_H
+#define BRS_BSOCK_H
 
 struct btimer_t;                      /* forward reference */
 class BSOCK;
@@ -41,82 +41,86 @@ btimer_t *start_bsock_timer(BSOCK *bs, uint32_t wait);
 void stop_bsock_timer(btimer_t *wid);
 
 
-class BSOCK {
+class BSOCK : public SMARTALLOC {
 /*
  * Note, keep this public part before the private otherwise
  *  bat breaks on some systems such as RedHat.
  */
 public:
-   uint64_t read_seqno;               /* read sequence number */
-   POOLMEM *msg;                      /* message pool buffer */
-   POOLMEM *errmsg;                   /* edited error message */
+   int m_fd;                          /* Socket file descriptor */
+   uint64_t read_seqno;               /* Read sequence number */
+   POOLMEM *msg;                      /* Message pool buffer */
+   POOLMEM *errmsg;                   /* Edited error message */
    RES *res;                          /* Resource to which we are connected */
-   FILE *m_spool_fd;                  /* spooling file */
-   TLS_CONNECTION *tls;               /* associated tls connection */
+   FILE *m_spool_fd;                  /* Spooling file */
+   TLS_CONNECTION *tls;               /* Associated tls connection */
    IPADDR *src_addr;                  /* IP address to source connections from */
-   uint32_t in_msg_no;                /* input message number */
-   uint32_t out_msg_no;               /* output message number */
-   int32_t msglen;                    /* message length */
-   volatile time_t timer_start;       /* time started read/write */
-   volatile time_t timeout;           /* timeout BSOCK after this interval */
-   int m_fd;                          /* socket file descriptor */
-   int b_errno;                       /* bsock errno */
-   int m_blocking;                    /* blocking state (0 = nonblocking, 1 = blocking) */
-   volatile int errors;               /* incremented for each error on socket */
-   volatile bool m_suppress_error_msgs; /* set to suppress error messages */
+   uint32_t in_msg_no;                /* Input message number */
+   uint32_t out_msg_no;               /* Output message number */
+   int32_t msglen;                    /* Message length */
+   volatile time_t timer_start;       /* Time started read/write */
+   volatile time_t timeout;           /* Timeout BSOCK after this interval */
+   int b_errno;                       /* BSOCK errno */
+   int m_blocking;                    /* Blocking state (0 = nonblocking, 1 = blocking) */
+   volatile int errors;               /* Incremented for each error on socket */
+   volatile bool m_suppress_error_msgs; /* Set to suppress error messages */
 
-   struct sockaddr client_addr;       /* client's IP address */
-   struct sockaddr_in peer_addr;      /* peer's IP address */
+   struct sockaddr client_addr;       /* Client's IP address */
+   struct sockaddr_in peer_addr;      /* Peer's IP address */
 
-private:
-   BSOCK *m_next;                     /* next BSOCK if duped */
-   JCR *m_jcr;                        /* jcr or NULL for error msgs */
-   pthread_mutex_t m_mutex;           /* for locking if use_locking set */
+protected:
+   JCR *m_jcr;                        /* JCR or NULL for error msgs */
+   pthread_mutex_t m_mutex;           /* For locking if use_locking set */
    char *m_who;                       /* Name of daemon to which we are talking */
    char *m_host;                      /* Host name/IP */
-   int m_port;                        /* desired port */
-   btimer_t *m_tid;                   /* timer id */
-   boffset_t m_data_end;              /* offset of last valid data written */
-   int32_t m_FileIndex;               /* last valid attr spool FI */
-   volatile bool m_timed_out:1;       /* timed out in read/write */
-   volatile bool m_terminated:1;      /* set when BNET_TERMINATE arrives */
-   bool m_duped:1;                    /* set if duped BSOCK */
-   bool m_spool:1;                    /* set for spooling */
-   bool m_use_locking:1;              /* set to use locking */
-   bool m_use_bursting:1;             /* set to use bandwidth bursting */
-   int64_t m_bwlimit;                 /* set to limit bandwidth */
-   int64_t m_nb_bytes;                /* bytes sent/recv since the last tick */
-   btime_t m_last_tick;               /* last tick used by bwlimit */
+   int m_port;                        /* Desired port */
+   btimer_t *m_tid;                   /* Timer id */
+   boffset_t m_data_end;              /* Offset of last valid data written */
+   int32_t m_FileIndex;               /* Last valid attr spool FI */
+   volatile bool m_timed_out:1;       /* Timed out in read/write */
+   volatile bool m_terminated:1;      /* Set when BNET_TERMINATE arrives */
+   bool m_cloned:1;                   /* Set if cloned BSOCK */
+   bool m_spool:1;                    /* Set for spooling */
+   bool m_use_locking:1;              /* Set to use locking */
+   bool m_use_bursting:1;             /* Set to use bandwidth bursting */
+   int64_t m_bwlimit;                 /* Set to limit bandwidth */
+   int64_t m_nb_bytes;                /* Bytes sent/recv since the last tick */
+   btime_t m_last_tick;               /* Last tick used by bwlimit */
 
-   void fin_init(JCR * jcr, int sockfd, const char *who, const char *host, int port,
-                 struct sockaddr *lclient_addr);
-   bool open(JCR *jcr, const char *name, char *host, char *service,
-             int port, utime_t heart_beat, int *fatal);
+   virtual void fin_init(JCR * jcr, int sockfd, const char *who, const char *host, int port,
+                         struct sockaddr *lclient_addr) = 0;
+   virtual bool open(JCR *jcr, const char *name, char *host, char *service,
+                     int port, utime_t heart_beat, int *fatal) = 0;
 
 public:
+   BSOCK() {};
+   virtual ~BSOCK() {};
    /* methods -- in bsock.c */
-   void init();
+   virtual void init() = 0;
    void free_bsock();
    void free_tls();
-   bool connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
-                utime_t heart_beat, const char *name, char *host,
-                char *service, int port, bool verbose);
-   int32_t recv();
-   bool send();
+   virtual BSOCK *clone() = 0;
+   virtual bool connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
+                        utime_t heart_beat, const char *name, char *host,
+                        char *service, int port, bool verbose) = 0;
+   virtual int32_t recv() = 0;
+   virtual bool send() = 0;
+   virtual int32_t read_nbytes(char *ptr, int32_t nbytes) = 0;
+   virtual int32_t write_nbytes(char *ptr, int32_t nbytes) = 0;
+   virtual void close() = 0;          /* close connection and destroy packet */
+   virtual void destroy() = 0;        /* destroy socket packet */
+   virtual int get_peer(char *buf, socklen_t buflen) = 0;
+   virtual bool set_buffer_size(uint32_t size, int rw) = 0;
+   virtual int set_nonblocking() = 0;
+   virtual int set_blocking() = 0;
+   virtual void restore_blocking(int flags) = 0;
+   virtual int wait_data(int sec, int usec = 0) = 0;
+   virtual int wait_data_intr(int sec, int usec = 0) = 0;
    bool fsend(const char*, ...);
-   bool signal(int signal);
-   void close();                      /* close connection and destroy packet */
-   void destroy();                    /* destroy socket packet */
-   const char *bstrerror();           /* last error on socket */
-   int get_peer(char *buf, socklen_t buflen);
-   bool despool(void update_attr_spool_size(ssize_t size), ssize_t tsize);
-   bool set_buffer_size(uint32_t size, int rw);
-   int set_nonblocking();
-   int set_blocking();
-   void restore_blocking(int flags);
    void set_killable(bool killable);
-   int wait_data(int sec, int usec=0);
-   int wait_data_intr(int sec, int usec=0);
+   bool signal(int signal);
+   const char *bstrerror();           /* last error on socket */
+   bool despool(void update_attr_spool_size(ssize_t size), ssize_t tsize);
    bool authenticate_with_director(const char *name, const char *password,
                                    TLS_CONTEXT *tls_ctx, char *response, int response_len);
    bool set_locking();                /* in bsock.c */
@@ -135,7 +139,6 @@ public:
    JCR *jcr() { return m_jcr; };
    JCR *get_jcr() { return m_jcr; };
    bool is_spooling() { return m_spool; };
-   bool is_duped() { return m_duped; };
    bool is_terminated() { return m_terminated; };
    bool is_timed_out() { return m_timed_out; };
    bool is_stop() { return errors || is_terminated(); }
@@ -154,7 +157,6 @@ public:
    void clear_bwlimit_bursting() { m_use_bursting = false; };
    void set_spooling() { m_spool = true; };
    void clear_spooling() { m_spool = false; };
-   void set_duped() { m_duped = true; };
    void set_timed_out() { m_timed_out = true; };
    void clear_timed_out() { m_timed_out = false; };
    void set_terminated() { m_terminated = true; };
@@ -222,9 +224,4 @@ enum {
    BNET_TLS_REQUIRED    = 2           /* TLS is required */
 };
 
-int32_t read_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes);
-int32_t write_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes);
-
-BSOCK *new_bsock();
-
-#endif /* __BSOCK_H_ */
+#endif /* BRS_BSOCK_H */

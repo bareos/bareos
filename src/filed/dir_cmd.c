@@ -573,6 +573,7 @@ void *handle_connection_request(void *arg)
       Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
       bmicrosleep(5, 0);   /* make user wait 5 seconds */
       bs->close();
+      delete bs;
       return NULL;
    }
 
@@ -1374,7 +1375,7 @@ static void set_storage_auth_key(JCR *jcr, char *key)
     * So, make sure that any old jcr->store_bsock is cleaned up.
     */
    if (jcr->store_bsock) {
-      jcr->store_bsock->destroy();
+      delete jcr->store_bsock;
       jcr->store_bsock = NULL;
    }
 
@@ -1406,8 +1407,9 @@ static bool storage_cmd(JCR *jcr)
    char stored_addr[MAX_NAME_LENGTH];
    POOL_MEM sd_auth_key(PM_MESSAGE);
    BSOCK *dir = jcr->dir_bsock;
-   BSOCK *sd = new_bsock();        /* storage daemon bsock */
+   BSOCK *sd;                      /* storage daemon bsock */
 
+   sd = New(BSOCK_TCP);
    Dmsg1(100, "StorageCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->msglen);
    if (sscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port,
@@ -1447,7 +1449,7 @@ static bool storage_cmd(JCR *jcr)
     */
    if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
                     _("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
-     sd->destroy();
+     delete sd;
      sd = NULL;
    }
 
@@ -2111,6 +2113,14 @@ static void filed_free_jcr(JCR *jcr)
 {
    if (jcr->store_bsock) {
       jcr->store_bsock->close();
+      delete jcr->store_bsock;
+      jcr->store_bsock = NULL;
+   }
+
+   if (jcr->dir_bsock) {
+      jcr->dir_bsock->close();
+      delete jcr->dir_bsock;
+      jcr->dir_bsock = NULL;
    }
 
    if (jcr->last_fname) {
