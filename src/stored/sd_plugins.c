@@ -30,7 +30,7 @@
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
 
-const int dbglvl = 250;
+const int dbglvl = 150;
 const char *plugin_type = "-sd.so";
 static alist *sd_plugin_list = NULL;
 
@@ -480,7 +480,7 @@ void free_plugins(JCR *jcr)
  */
 static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
 {
-   JCR *jcr;
+   JCR *jcr = NULL;
 
    if (!value) {
       return bRC_Error;
@@ -491,30 +491,35 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
       *((bool *)value) = me->compatible;
       Dmsg1(dbglvl, "sd-plugin: return bsdVarCompatible=%s\n", (me->compatible) ? "true" : "false");
       break;
-   default:
-      break;
-   }
-
-   if (!ctx) {
-      return bRC_Error;
-   }
-
-   jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
-   if (!jcr) {
-      return bRC_Error;
-   }
-
-   switch (var) {
-   case bsdVarJobId:
-      *((int *)value) = jcr->JobId;
-      Dmsg1(dbglvl, "sd-plugin: return bVarJobId=%d\n", jcr->JobId);
-      break;
-   case bsdVarJobName:
-      *((char **)value) = jcr->Job;
-      Dmsg1(dbglvl, "sd-plugin: return Job name=%s\n", jcr->Job);
+   case bsdVarPluginDir:
+      *((char **)value) = me->plugin_directory;
+      Dmsg1(dbglvl, "sd-plugin: return bsdVarPluginDir=%s\n", me->plugin_directory);
       break;
    default:
+      if (!ctx) {
+         return bRC_Error;
+      }
+
+      jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
+      if (!jcr) {
+         return bRC_Error;
+      }
       break;
+   }
+
+   if (jcr) {
+      switch (var) {
+      case bsdVarJobId:
+         *((int *)value) = jcr->JobId;
+         Dmsg1(dbglvl, "sd-plugin: return bVarJobId=%d\n", jcr->JobId);
+         break;
+      case bsdVarJobName:
+         *((char **)value) = jcr->Job;
+         Dmsg1(dbglvl, "sd-plugin: return Job name=%s\n", jcr->Job);
+         break;
+      default:
+         break;
+      }
    }
 
    return bRC_OK;
@@ -532,8 +537,21 @@ static bRC bareosSetValue(bpContext *ctx, bsdwVariable var, void *value)
       return bRC_Error;
    }
 // Dmsg1(dbglvl, "Bareos: jcr=%p\n", jcr);
-   /* Nothing implemented yet */
    Dmsg1(dbglvl, "sd-plugin: bareosSetValue var=%d\n", var);
+   switch (var) {
+   case bsdwVarVolumeName:
+      pm_strcpy(jcr->VolumeName, ((char *)value));
+      break;
+   case bsdwVarPriority:
+      jcr->JobPriority = *((int *)value);
+      break;
+   case bsdwVarJobLevel:
+      jcr->setJobLevel(*((int *)value));
+      break;
+   default:
+      break;
+   }
+
    return bRC_OK;
 }
 
