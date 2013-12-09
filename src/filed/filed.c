@@ -264,7 +264,12 @@ int main (int argc, char *argv[])
    }
 
    sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server_tcp(me->FDaddrs, me->MaxConcurrentJobs, sock_fds, &dir_workq, handle_connection_request);
+   bnet_thread_server_tcp(me->FDaddrs,
+                          me->MaxConcurrentJobs,
+                          sock_fds,
+                          &dir_workq,
+                          me->nokeepalive,
+                          handle_connection_request);
 
    terminate_filed(0);
 

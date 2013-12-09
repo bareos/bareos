@@ -73,6 +73,7 @@ void BSOCK_SCTP::init()
    m_spool = false;
    m_use_locking = false;
    m_use_bursting = false;
+   m_use_keepalive = true;
    m_bwlimit = 0;
    m_nb_bytes = 0;
    m_last_tick = 0;

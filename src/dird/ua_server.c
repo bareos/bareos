@@ -84,7 +84,12 @@ void *connect_thread(void *arg)
 
    /* Permit MaxConsoleConnect console connections */
    sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server_tcp((dlist*)arg, me->MaxConsoleConnect, sock_fds, &ua_workq, handle_UA_client_request);
+   bnet_thread_server_tcp((dlist*)arg,
+                          me->MaxConsoleConnect,
+                          sock_fds,
+                          &ua_workq,
+                          me->nokeepalive,
+                          handle_UA_client_request);
 
    return NULL;
 }

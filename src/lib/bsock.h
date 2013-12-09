@@ -83,6 +83,7 @@ protected:
    bool m_spool:1;                    /* Set for spooling */
    bool m_use_locking:1;              /* Set to use locking */
    bool m_use_bursting:1;             /* Set to use bandwidth bursting */
+   bool m_use_keepalive:1;            /* Set to use keepalive on the socket */
    int64_t m_bwlimit;                 /* Set to limit bandwidth */
    int64_t m_nb_bytes;                /* Bytes sent/recv since the last tick */
    btime_t m_last_tick;               /* Last tick used by bwlimit */
@@ -155,6 +156,8 @@ public:
    bool use_bwlimit() { return m_bwlimit > 0;};
    void set_bwlimit_bursting() { m_use_bursting = true; };
    void clear_bwlimit_bursting() { m_use_bursting = false; };
+   void set_keepalive() { m_use_keepalive = true; };
+   void clear_keepalive() { m_use_keepalive = false; };
    void set_spooling() { m_spool = true; };
    void clear_spooling() { m_spool = false; };
    void set_timed_out() { m_timed_out = true; };

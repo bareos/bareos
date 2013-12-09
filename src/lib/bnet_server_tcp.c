@@ -113,14 +113,18 @@ void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq)
  *
  * At the moment it is impossible to bind to different ports.
  */
-void bnet_thread_server_tcp(dlist *addr_list, int max_clients, alist *sockfds,
-                            workq_t *client_wq, void *handle_client_request(void *bsock))
+void bnet_thread_server_tcp(dlist *addr_list,
+                            int max_clients,
+                            alist *sockfds,
+                            workq_t *client_wq,
+                            bool nokeepalive,
+                            void *handle_client_request(void *bsock))
 {
    int newsockfd, status;
    socklen_t clilen;
    struct sockaddr cli_addr;       /* client's address */
    int tlog, tmax;
-   int turnon = 1;
+   int value;
 #ifdef HAVE_LIBWRAP
    struct request_info request;
 #endif
@@ -161,6 +165,12 @@ void bnet_thread_server_tcp(dlist *addr_list, int max_clients, alist *sockfds,
 
    Dmsg1(100, "Addresses %s\n", build_addresses_str(addr_list, allbuf, sizeof(allbuf)));
 
+   if (nokeepalive) {
+      value = 0;
+   } else {
+      value = 1;
+   }
+
 #ifdef HAVE_POLL
    nfds = 0;
 #endif
@@ -189,8 +199,7 @@ void bnet_thread_server_tcp(dlist *addr_list, int max_clients, alist *sockfds,
       /*
        * Reuse old sockets
        */
-      if (setsockopt(fd_ptr->fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&turnon,
-           sizeof(turnon)) < 0) {
+      if (setsockopt(fd_ptr->fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&value, sizeof(value)) < 0) {
          berrno be;
          Emsg1(M_WARNING, 0, _("Cannot set SO_REUSEADDR on socket: %s\n"),
                be.bstrerror());
@@ -328,11 +337,9 @@ void bnet_thread_server_tcp(dlist *addr_list, int max_clients, alist *sockfds,
             /*
              * Receive notification when connection dies.
              */
-            if (setsockopt(newsockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&turnon,
-                 sizeof(turnon)) < 0) {
+            if (setsockopt(newsockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value, sizeof(value)) < 0) {
                berrno be;
-               Emsg1(M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
-                     be.bstrerror());
+               Emsg1(M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"), be.bstrerror());
             }
 
             /*
@@ -344,6 +351,9 @@ void bnet_thread_server_tcp(dlist *addr_list, int max_clients, alist *sockfds,
 
             BSOCK *bs;
             bs = New(BSOCK_TCP);
+            if (nokeepalive) {
+               bs->clear_keepalive();
+            }
 
             bs->m_fd = newsockfd;
             bs->set_who(bstrdup("client"));

@@ -302,6 +302,7 @@ int main (int argc, char *argv[])
                       me->max_concurrent_jobs * 2 + 1,
                       sock_fds,
                       &dird_workq,
+                      me->nokeepalive,
                       handle_connection_request);
    exit(1);                           /* to keep compiler quiet */
 }

@@ -1515,6 +1515,9 @@ static bool replicate_cmd(JCR *jcr)
    BSOCK *sd;                      /* storage daemon bsock */
 
    sd = New(BSOCK_TCP);
+   if (me->nokeepalive) {
+      sd->clear_keepalive();
+   }
    Dmsg1(100, "ReplicateCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->msglen);
 
@@ -1609,6 +1612,9 @@ static bool passive_cmd(JCR *jcr)
    BSOCK *fd;                      /* file daemon bsock */
 
    fd = New(BSOCK_TCP);
+   if (me->nokeepalive) {
+      fd->clear_keepalive();
+   }
    Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
    if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
       pm_strcpy(jcr->errmsg, dir->msg);

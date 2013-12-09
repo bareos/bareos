@@ -93,6 +93,7 @@ void BSOCK_TCP::init()
    m_spool = false;
    m_use_locking = false;
    m_use_bursting = false;
+   m_use_keepalive = true;
    m_bwlimit = 0;
    m_nb_bytes = 0;
    m_last_tick = 0;
@@ -216,7 +217,7 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
    dlist *addr_list;
    IPADDR *ipaddr, *next, *to_free;
    bool connected = false;
-   int turnon = 1;
+   int value;
    const char *errstr;
    int save_errno = 0;
 
@@ -258,6 +259,12 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
             next = (IPADDR *)addr_list->next(next);
          }
       }
+   }
+
+   if (m_use_keepalive) {
+      value = 1;
+   } else {
+      value = 0;
    }
 
    foreach_dlist(ipaddr, addr_list) {
@@ -314,11 +321,11 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
       /*
        * Keep socket from timing out from inactivity
        */
-      if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&turnon, sizeof(turnon)) < 0) {
+      if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value, sizeof(value)) < 0) {
          berrno be;
-         Qmsg1(jcr, M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
-               be.bstrerror());
+         Qmsg1(jcr, M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"), be.bstrerror());
       }
+
 #if defined(TCP_KEEPIDLE)
       if (heart_beat) {
          int opt = heart_beat;
@@ -348,15 +355,16 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
       errno = save_errno | b_errno_win32;
       return false;
    }
+
    /*
     * Keep socket from timing out from inactivity
     * Do this a second time out of paranoia
     */
-   if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&turnon, sizeof(turnon)) < 0) {
+   if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value, sizeof(value)) < 0) {
       berrno be;
-      Qmsg1(jcr, M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
-            be.bstrerror());
+      Qmsg1(jcr, M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"), be.bstrerror());
    }
+
    fin_init(jcr, sockfd, name, host, port, ipaddr->get_sockaddr());
    free_addresses(addr_list);
    return true;
