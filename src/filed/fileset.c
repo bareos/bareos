@@ -454,117 +454,15 @@ void add_fileset(JCR *jcr, const char *item)
    ff->fileset->state = state;
 }
 
-#ifdef HAVE_WIN32
-static inline bool wanted_drive_type(const char *drive, findINCEXE *incexe)
-{
-   int i,j;
-   char dt[16];
-   findFOPTS *fo;
-   bool done = false;
-   bool wanted = true;
-
-   /*
-    * Lookup the drive type.
-    */
-   if (!drivetype(drive, dt, sizeof(dt))) {
-      return false;
-   }
-
-   /*
-    * We start the loop with done set to false and wanted
-    * to true so when there are no drivetype selections we
-    * select any drivetype.
-    */
-   for (i = 0; !done && i < incexe->opts_list.size(); i++) {
-      fo = (findFOPTS *)incexe->opts_list.get(i);
-
-      /*
-       * If there is any drivetype selection set the default
-       * selection to false.
-       */
-      if (fo->drivetype.size()) {
-         wanted = false;
-      }
-
-      for (j = 0; !done && j < fo->drivetype.size(); j++) {
-         if (bstrcasecmp(dt, (char *)fo->drivetype.get(j))) {
-            wanted = true;
-            done = true;
-         }
-      }
-   }
-
-   return wanted;
-}
-
-static inline bool expand_fileset(JCR *jcr)
-{
-   int i;
-   char *bp;
-   dlistString *node;
-   findINCEXE *incexe;
-   findFILESET *fileset;
-   char drives[MAX_NAME_LENGTH];
-
-   fileset = jcr->ff->fileset;
-   for (i = 0; i < fileset->include_list.size(); i++) {
-      incexe = (findINCEXE *)fileset->include_list.get(i);
-      foreach_dlist(node, &incexe->name_list) {
-         Dmsg1(000, "Checking %s\n", node->c_str());
-         if (bstrcmp(node->c_str(), "/")) {
-            /*
-             * we want to add all available local drives to our fileset
-             * if we have "/" specified in the fileset. We want to remove
-             * the "/" pattern itself that gets expanded into all
-             * available drives.
-             */
-            incexe->name_list.remove(node);
-            if (GetLogicalDriveStrings(sizeof(drives), drives) != 0) {
-               bp = drives;
-               while (bp && strlen(bp) > 0) {
-                  /*
-                   * Apply any drivetype selection to the currently
-                   * processed item.
-                   */
-                  if (wanted_drive_type(bp, incexe)) {
-                     if (*(bp + 2) == '\\') {
-                        *(bp + 2) = '/';       /* 'x:\' -> 'x:/' */
-                     }
-                     Dmsg1(000, "adding drive %s\n", bp);
-                     incexe->name_list.append(new_dlistString(bp));
-                  }
-                  if ((bp = strchr(bp, '\0'))) {
-                     bp++;
-                  }
-               }
-            } else {
-               return false;
-            }
-
-            /*
-             * No need to search further in the include list when we have
-             * found what we were looking for.
-             */
-            break;
-         }
-      }
-   }
-   return true;
-}
-#else
-static inline bool expand_fileset(JCR *jcr)
-{
-   return true;
-}
-#endif
-
 bool term_fileset(JCR *jcr)
 {
    FF_PKT *ff = jcr->ff;
 
-   if (!expand_fileset(jcr)) {
+#ifdef HAVE_WIN32
+   if (!expand_win32_fileset(ff->fileset)) {
       return false;
    }
+#endif
 
 #ifdef xxx_DEBUG_CODE
    findFILESET *fileset = ff->fileset;

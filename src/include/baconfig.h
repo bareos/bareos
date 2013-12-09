@@ -82,17 +82,16 @@
 #define ASSERT2(x, y)
 #endif
 
-/* Allow printing of NULL pointers */
+/*
+ * Allow printing of NULL pointers
+ */
 #define NPRT(x) (x)?(x):_("*None*")
 #define NPRTB(x) (x)?(x):""
 
 #if defined(HAVE_WIN32)
-
-#define WIN32_REPARSE_POINT  1   /* Can be any number of "funny" directories except the next two */
-#define WIN32_MOUNT_POINT    2   /* Directory link to Volume */
-#define WIN32_JUNCTION_POINT 3   /* Directory link to a directory */
-
-/* Reduce compiler warnings from Windows vss code */
+/*
+ * Reduce compiler warnings from Windows vss code
+ */
 #define uuid(x)
 
 void InitWinAPIWrapper();
@@ -104,17 +103,17 @@ void InitWinAPIWrapper();
 #define clear_thread_id(x) memset(&(x), 0, sizeof(x))
 
 #if defined(BUILDING_DLL)
-#  define DLL_IMP_EXP   _declspec(dllexport)
+#define DLL_IMP_EXP _declspec(dllexport)
 #elif defined(USING_DLL)
-#  define DLL_IMP_EXP   _declspec(dllimport)
+#define DLL_IMP_EXP _declspec(dllimport)
 #else
-#  define DLL_IMP_EXP
+#define DLL_IMP_EXP
 #endif
 
 #if defined(USING_CATS)
-#  define CATS_IMP_EXP   _declspec(dllimport)
+#define CATS_IMP_EXP _declspec(dllimport)
 #else
-#  define CATS_IMP_EXP
+#define CATS_IMP_EXP
 #endif
 
 #else  /* HAVE_WIN32 */

@@ -39,17 +39,17 @@
 #define WIN32_BACKUP_DATA 1
 
 typedef struct _BWIN32_STREAM_ID {
-        int32_t        dwStreamId;
-        int32_t        dwStreamAttributes;
-        int64_t        Size;
-        int32_t        dwStreamNameSize;
+   int32_t dwStreamId;
+   int32_t dwStreamAttributes;
+   int64_t Size;
+   int32_t dwStreamNameSize;
 } BWIN32_STREAM_ID, *LPBWIN32_STREAM_ID ;
 
 
 typedef struct _PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT {
-        int64_t          liNextHeader;
-        bool             bIsInData;
-        BWIN32_STREAM_ID header_stream;
+   int64_t liNextHeader;
+   bool bIsInData;
+   BWIN32_STREAM_ID header_stream;
 } PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT;
 
 /*  =======================================================
@@ -71,6 +71,7 @@ enum {
 /* Basic Win32 low level I/O file packet */
 struct BFILE {
    bool use_backup_api;               /* set if using BackupRead/Write */
+   bool encrypted;                    /* set if using ReadEncryptedFileRaw/WriteEncryptedFileRaw */
    int mode;                          /* set if file is open */
    HANDLE fh;                         /* Win32 file handle */
    int fid;                           /* fd if doing Unix style */
@@ -124,12 +125,9 @@ bool have_win32_api();
 bool is_portable_backup(BFILE *bfd);
 bool is_restore_stream_supported(int stream);
 bool is_win32_stream(int stream);
-char *xberror(BFILE *bfd);          /* DO NOT USE  -- use berrno class */
-int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode);
-int bopen_encrypted(BFILE *bfd, const char *fname, int flags, mode_t mode, bool is_dir);
+int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode, dev_t rdev);
 int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode);
 int bclose(BFILE *bfd);
-int bclose_encrypted(BFILE *bfd);
 ssize_t bread(BFILE *bfd, void *buf, size_t count);
 ssize_t bwrite(BFILE *bfd, void *buf, size_t count);
 boffset_t blseek(BFILE *bfd, boffset_t offset, int whence);

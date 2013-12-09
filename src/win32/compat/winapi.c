@@ -55,9 +55,16 @@ t_CreateDirectoryW p_CreateDirectoryW;
 
 t_OpenEncryptedFileRawA p_OpenEncryptedFileRawA = NULL;
 t_OpenEncryptedFileRawW p_OpenEncryptedFileRawW = NULL;
+t_ReadEncryptedFileRaw p_ReadEncryptedFileRaw = NULL;
+t_WriteEncryptedFileRaw p_WriteEncryptedFileRaw = NULL;
+t_CloseEncryptedFileRaw p_CloseEncryptedFileRaw = NULL;
 
 t_wunlink p_wunlink = NULL;
 t_wmkdir p_wmkdir = NULL;
+
+#if (_WIN32_WINNT >= 0x0600)
+t_GetFileInformationByHandleEx p_GetFileInformationByHandleEx = NULL;
+#endif
 
 t_GetFileAttributesA p_GetFileAttributesA = NULL;
 t_GetFileAttributesW p_GetFileAttributesW = NULL;
@@ -96,6 +103,9 @@ t_SHGetFolderPath p_SHGetFolderPath = NULL;
 t_CreateProcessA p_CreateProcessA = NULL;
 t_CreateProcessW p_CreateProcessW = NULL;
 
+t_GetLogicalDriveStringsA p_GetLogicalDriveStringsA = NULL;
+t_GetLogicalDriveStringsW p_GetLogicalDriveStringsW = NULL;
+
 t_InetPton p_InetPton = NULL;
 
 void InitWinAPIWrapper()
@@ -116,92 +126,86 @@ void InitWinAPIWrapper()
    HMODULE hLib = LoadLibraryA("KERNEL32.DLL");
    if (hLib) {
       /*
+       * Get logical drive calls
+       */
+      p_GetLogicalDriveStringsA = (t_GetLogicalDriveStringsA) GetProcAddress(hLib, "GetLogicalDriveStringsA");
+      p_GetLogicalDriveStringsW = (t_GetLogicalDriveStringsW) GetProcAddress(hLib, "GetLogicalDriveStringsW");
+
+      /*
        * Create process calls
        */
-      p_CreateProcessA = (t_CreateProcessA)
-         GetProcAddress(hLib, "CreateProcessA");
-      p_CreateProcessW = (t_CreateProcessW)
-         GetProcAddress(hLib, "CreateProcessW");
+      p_CreateProcessA = (t_CreateProcessA) GetProcAddress(hLib, "CreateProcessA");
+      p_CreateProcessW = (t_CreateProcessW) GetProcAddress(hLib, "CreateProcessW");
 
       /*
        * Create file calls
        */
-      p_CreateFileA = (t_CreateFileA)GetProcAddress(hLib, "CreateFileA");
-      p_CreateDirectoryA = (t_CreateDirectoryA)GetProcAddress(hLib, "CreateDirectoryA");
+      p_CreateFileA = (t_CreateFileA) GetProcAddress(hLib, "CreateFileA");
+      p_CreateDirectoryA = (t_CreateDirectoryA) GetProcAddress(hLib, "CreateDirectoryA");
+
+#if (_WIN32_WINNT >= 0x0600)
+      /*
+       * File Information calls
+       */
+      p_GetFileInformationByHandleEx = (t_GetFileInformationByHandleEx) GetProcAddress(hLib, "GetFileInformationByHandleEx");
+#endif
 
       /*
        * Attribute calls
        */
-      p_GetFileAttributesA = (t_GetFileAttributesA)GetProcAddress(hLib, "GetFileAttributesA");
-      p_GetFileAttributesExA = (t_GetFileAttributesExA)GetProcAddress(hLib, "GetFileAttributesExA");
-      p_SetFileAttributesA = (t_SetFileAttributesA)GetProcAddress(hLib, "SetFileAttributesA");
+      p_GetFileAttributesA = (t_GetFileAttributesA) GetProcAddress(hLib, "GetFileAttributesA");
+      p_GetFileAttributesExA = (t_GetFileAttributesExA) GetProcAddress(hLib, "GetFileAttributesExA");
+      p_SetFileAttributesA = (t_SetFileAttributesA) GetProcAddress(hLib, "SetFileAttributesA");
 
       /*
        * Process calls
        */
-      p_SetProcessShutdownParameters = (t_SetProcessShutdownParameters)
-          GetProcAddress(hLib, "SetProcessShutdownParameters");
+      p_SetProcessShutdownParameters = (t_SetProcessShutdownParameters) GetProcAddress(hLib, "SetProcessShutdownParameters");
 
       /*
        * Char conversion calls
        */
-      p_WideCharToMultiByte = (t_WideCharToMultiByte)
-          GetProcAddress(hLib, "WideCharToMultiByte");
-      p_MultiByteToWideChar = (t_MultiByteToWideChar)
-          GetProcAddress(hLib, "MultiByteToWideChar");
+      p_WideCharToMultiByte = (t_WideCharToMultiByte) GetProcAddress(hLib, "WideCharToMultiByte");
+      p_MultiByteToWideChar = (t_MultiByteToWideChar) GetProcAddress(hLib, "MultiByteToWideChar");
 
       /*
        * Find files
        */
-      p_FindFirstFileA = (t_FindFirstFileA)GetProcAddress(hLib, "FindFirstFileA");
-      p_FindNextFileA = (t_FindNextFileA)GetProcAddress(hLib, "FindNextFileA");
+      p_FindFirstFileA = (t_FindFirstFileA) GetProcAddress(hLib, "FindFirstFileA");
+      p_FindNextFileA = (t_FindNextFileA) GetProcAddress(hLib, "FindNextFileA");
 
       /*
        * Get and set directory
        */
-      p_GetCurrentDirectoryA = (t_GetCurrentDirectoryA)
-          GetProcAddress(hLib, "GetCurrentDirectoryA");
-      p_SetCurrentDirectoryA = (t_SetCurrentDirectoryA)
-          GetProcAddress(hLib, "SetCurrentDirectoryA");
+      p_GetCurrentDirectoryA = (t_GetCurrentDirectoryA) GetProcAddress(hLib, "GetCurrentDirectoryA");
+      p_SetCurrentDirectoryA = (t_SetCurrentDirectoryA) GetProcAddress(hLib, "SetCurrentDirectoryA");
 
       if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS) {
-         p_CreateFileW = (t_CreateFileW)
-             GetProcAddress(hLib, "CreateFileW");
-         p_CreateDirectoryW = (t_CreateDirectoryW)
-             GetProcAddress(hLib, "CreateDirectoryW");
+         p_CreateFileW = (t_CreateFileW) GetProcAddress(hLib, "CreateFileW");
+         p_CreateDirectoryW = (t_CreateDirectoryW) GetProcAddress(hLib, "CreateDirectoryW");
 
          /*
           * Backup calls
           */
-         p_BackupRead = (t_BackupRead)GetProcAddress(hLib, "BackupRead");
-         p_BackupWrite = (t_BackupWrite)GetProcAddress(hLib, "BackupWrite");
+         p_BackupRead = (t_BackupRead) GetProcAddress(hLib, "BackupRead");
+         p_BackupWrite = (t_BackupWrite) GetProcAddress(hLib, "BackupWrite");
 
-         p_GetFileAttributesW = (t_GetFileAttributesW)
-             GetProcAddress(hLib, "GetFileAttributesW");
-         p_GetFileAttributesExW = (t_GetFileAttributesExW)
-             GetProcAddress(hLib, "GetFileAttributesExW");
-         p_SetFileAttributesW = (t_SetFileAttributesW)
-             GetProcAddress(hLib, "SetFileAttributesW");
-         p_FindFirstFileW = (t_FindFirstFileW)
-             GetProcAddress(hLib, "FindFirstFileW");
-         p_FindNextFileW = (t_FindNextFileW)
-             GetProcAddress(hLib, "FindNextFileW");
-         p_GetCurrentDirectoryW = (t_GetCurrentDirectoryW)
-             GetProcAddress(hLib, "GetCurrentDirectoryW");
-         p_SetCurrentDirectoryW = (t_SetCurrentDirectoryW)
-             GetProcAddress(hLib, "SetCurrentDirectoryW");
+         p_GetFileAttributesW = (t_GetFileAttributesW) GetProcAddress(hLib, "GetFileAttributesW");
+         p_GetFileAttributesExW = (t_GetFileAttributesExW) GetProcAddress(hLib, "GetFileAttributesExW");
+         p_SetFileAttributesW = (t_SetFileAttributesW) GetProcAddress(hLib, "SetFileAttributesW");
+         p_FindFirstFileW = (t_FindFirstFileW) GetProcAddress(hLib, "FindFirstFileW");
+         p_FindNextFileW = (t_FindNextFileW) GetProcAddress(hLib, "FindNextFileW");
+         p_GetCurrentDirectoryW = (t_GetCurrentDirectoryW) GetProcAddress(hLib, "GetCurrentDirectoryW");
+         p_SetCurrentDirectoryW = (t_SetCurrentDirectoryW) GetProcAddress(hLib, "SetCurrentDirectoryW");
 
          /*
           * Some special stuff we need for VSS
           * but static linkage doesn't work on Win 9x
           */
-         p_GetVolumePathNameW = (t_GetVolumePathNameW)
-             GetProcAddress(hLib, "GetVolumePathNameW");
-         p_GetVolumeNameForVolumeMountPointW = (t_GetVolumeNameForVolumeMountPointW)
-             GetProcAddress(hLib, "GetVolumeNameForVolumeMountPointW");
+         p_GetVolumePathNameW = (t_GetVolumePathNameW) GetProcAddress(hLib, "GetVolumePathNameW");
+         p_GetVolumeNameForVolumeMountPointW = (t_GetVolumeNameForVolumeMountPointW) GetProcAddress(hLib, "GetVolumeNameForVolumeMountPointW");
 
-         p_AttachConsole = (t_AttachConsole)
-             GetProcAddress(hLib, "AttachConsole");
+         p_AttachConsole = (t_AttachConsole) GetProcAddress(hLib, "AttachConsole");
       }
    }
 
@@ -209,47 +213,44 @@ void InitWinAPIWrapper()
       hLib = LoadLibraryA("MSVCRT.DLL");
       if (hLib) {
          /* unlink */
-         p_wunlink = (t_wunlink)
-         GetProcAddress(hLib, "_wunlink");
+         p_wunlink = (t_wunlink) GetProcAddress(hLib, "_wunlink");
          /* wmkdir */
-         p_wmkdir = (t_wmkdir)
-         GetProcAddress(hLib, "_wmkdir");
+         p_wmkdir = (t_wmkdir) GetProcAddress(hLib, "_wmkdir");
       }
 
       hLib = LoadLibraryA("ADVAPI32.DLL");
       if (hLib) {
-         p_OpenProcessToken = (t_OpenProcessToken)
-            GetProcAddress(hLib, "OpenProcessToken");
-         p_AdjustTokenPrivileges = (t_AdjustTokenPrivileges)
-            GetProcAddress(hLib, "AdjustTokenPrivileges");
-         p_LookupPrivilegeValue = (t_LookupPrivilegeValue)
-            GetProcAddress(hLib, "LookupPrivilegeValueA");
-         p_OpenEncryptedFileRawA = (t_OpenEncryptedFileRawA)
-            GetProcAddress(hLib, "OpenEncryptedFileRawA");
-         p_OpenEncryptedFileRawW = (t_OpenEncryptedFileRawW)
-            GetProcAddress(hLib, "OpenEncryptedFileRawW");
+         p_OpenProcessToken = (t_OpenProcessToken) GetProcAddress(hLib, "OpenProcessToken");
+         p_AdjustTokenPrivileges = (t_AdjustTokenPrivileges) GetProcAddress(hLib, "AdjustTokenPrivileges");
+         p_LookupPrivilegeValue = (t_LookupPrivilegeValue) GetProcAddress(hLib, "LookupPrivilegeValueA");
+
+         /*
+          * EFS calls
+          */
+         p_OpenEncryptedFileRawA = (t_OpenEncryptedFileRawA) GetProcAddress(hLib, "OpenEncryptedFileRawA");
+         p_OpenEncryptedFileRawW = (t_OpenEncryptedFileRawW) GetProcAddress(hLib, "OpenEncryptedFileRawW");
+         p_ReadEncryptedFileRaw = (t_ReadEncryptedFileRaw) GetProcAddress(hLib, "ReadEncryptedFileRaw");
+         p_WriteEncryptedFileRaw = (t_WriteEncryptedFileRaw) GetProcAddress(hLib, "WriteEncryptedFileRaw");
+         p_CloseEncryptedFileRaw = (t_CloseEncryptedFileRaw) GetProcAddress(hLib, "CloseEncryptedFileRaw");
       }
    }
 
    hLib = LoadLibraryA("SHELL32.DLL");
    if (hLib) {
-      p_SHGetFolderPath = (t_SHGetFolderPath)
-         GetProcAddress(hLib, "SHGetFolderPathA");
+      p_SHGetFolderPath = (t_SHGetFolderPath) GetProcAddress(hLib, "SHGetFolderPathA");
    } else {
       /*
        * If SHELL32 isn't found try SHFOLDER for older systems
        */
       hLib = LoadLibraryA("SHFOLDER.DLL");
       if (hLib) {
-         p_SHGetFolderPath = (t_SHGetFolderPath)
-            GetProcAddress(hLib, "SHGetFolderPathA");
+         p_SHGetFolderPath = (t_SHGetFolderPath) GetProcAddress(hLib, "SHGetFolderPathA");
       }
    }
 
    hLib = LoadLibraryA("WS2_32.DLL");
    if (hLib) {
-       p_InetPton = (t_InetPton)
-          GetProcAddress(hLib, "InetPtonA");
+       p_InetPton = (t_InetPton) GetProcAddress(hLib, "InetPtonA");
    }
 
    atexit(Win32ConvCleanupCache);

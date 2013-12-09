@@ -26,8 +26,8 @@
  * Kern Sibbald MMI
  */
 
-#ifndef __FILES_H
-#define __FILES_H
+#ifndef __FIND_H
+#define __FIND_H
 
 #include "jcr.h"
 #include "fileopts.h"

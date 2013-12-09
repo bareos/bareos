@@ -39,7 +39,7 @@ INCLUDE_FILES = ../include/baconfig.h ../include/bareos.h \
 		../include/jcr.h ../include/version.h \
 		address_conf.h alist.h attr.h base64.h berrno.h \
 		bits.h bpipe.h breg.h bregex.h bsock.h bsr.h \
-		btime.h btimers.h crypto.h crypto_cache.h devlock.h \
+		btime.h btimers.h cbuf.h crypto.h crypto_cache.h devlock.h \
 		dlist.h fnmatch.h guid_to_name.h htable.h ini.h lex.h \
 		lib.h lockmgr.h md5.h mem_pool.h message.h mntent_cache.h \
 		parse_conf.h plugins.h protos.h queue.h rblist.h \
@@ -53,7 +53,7 @@ INCLUDE_FILES = ../include/baconfig.h ../include/bareos.h \
 LIBBAREOS_SRCS = address_conf.c alist.c attr.c attribs.c base64.c \
 	         berrno.c bget_msg.c binflate.c bnet_server.c bnet.c \
 	         bpipe.c breg.c bregex.c bsnprintf.c bsock.c bsys.c \
-	         btime.c btimers.c compression.c cram-md5.c crypto.c \
+	         btime.c btimers.c cbuf.c compression.c cram-md5.c crypto.c \
 		 crypto_cache.c crypto_gnutls.c crypto_none.c crypto_nss.c \
 		 crypto_openssl.c crypto_wrap.c daemon.c devlock.c dlist.c \
 		 edit.c fnmatch.c guid_to_name.c hmac.c htable.c jcr.c \

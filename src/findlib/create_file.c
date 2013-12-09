@@ -45,21 +45,20 @@ static int path_already_seen(JCR *jcr, char *path, int pnl);
 /*
  * Create the file, or the directory
  *
- *  fname is the original filename
- *  ofile is the output filename (may be in a different directory)
+ * fname is the original filename
+ * ofile is the output filename (may be in a different directory)
  *
  * Returns:  CF_SKIP     if file should be skipped
  *           CF_ERROR    on error
  *           CF_EXTRACT  file created and data to restore
  *           CF_CREATED  file created no data to restore
  *
- *   Note, we create the file here, except for special files,
- *     we do not set the attributes because we want to first
- *     write the file, then when the writing is done, set the
- *     attributes.
- *   So, we return with the file descriptor open for normal
- *     files.
+ * Note, we create the file here, except for special files,
+ * we do not set the attributes because we want to first
+ * write the file, then when the writing is done, set the
+ * attributes.
  *
+ * So, we return with the file descriptor open for normal files.
  */
 int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 {
@@ -120,14 +119,12 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
             return CF_SKIP;
          }
          break;
-
       case REPLACE_IFOLDER:
          if (attr->statp.st_mtime >= mstatp.st_mtime) {
             Qmsg(jcr, M_SKIPPED, 0, _("File skipped. Not older: %s\n"), attr->ofname);
             return CF_SKIP;
          }
          break;
-
       case REPLACE_NEVER:
          /* Set attributes if we created this directory */
          if (attr->type == FT_DIREND && path_list_lookup(jcr, attr->ofname)) {
@@ -135,24 +132,24 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
          }
          Qmsg(jcr, M_SKIPPED, 0, _("File skipped. Already exists: %s\n"), attr->ofname);
          return CF_SKIP;
-
       case REPLACE_ALWAYS:
          break;
       }
    }
+
    switch (attr->type) {
-   case FT_RAW:                       /* raw device to be written */
+   case FT_RAW:                       /* Raw device to be written */
    case FT_FIFO:                      /* FIFO to be written to */
    case FT_LNKSAVED:                  /* Hard linked, file already saved */
    case FT_LNK:
-   case FT_SPEC:                      /* fifo, ... to be backed up */
-   case FT_REGE:                      /* empty file */
-   case FT_REG:                       /* regular file */
+   case FT_SPEC:                      /* Fifo, ... to be backed up */
+   case FT_REGE:                      /* Empty file */
+   case FT_REG:                       /* Regular file */
       /*
        * Note, we do not delete FT_RAW because these are device files
-       *  or FIFOs that should already exist. If we blow it away,
-       *  we may blow away a FIFO that is being used to read the
-       *  restore data, or we may blow away a partition definition.
+       * or FIFOs that should already exist. If we blow it away,
+       * we may blow away a FIFO that is being used to read the
+       * restore data, or we may blow away a partition definition.
        */
       if (exists && attr->type != FT_RAW && attr->type != FT_FIFO) {
          /* Get rid of old copy */
@@ -200,29 +197,33 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
          attr->ofname[pnl] = savechr;           /* restore full name */
       }
 
-      /* Now we do the specific work for each file type */
+      /*
+       * Now we do the specific work for each file type
+       */
       switch(attr->type) {
       case FT_REGE:
       case FT_REG:
          Dmsg1(100, "Create=%s\n", attr->ofname);
-         flags =  O_WRONLY | O_CREAT | O_TRUNC | O_BINARY; /*  O_NOFOLLOW; */
+         flags = O_WRONLY | O_CREAT | O_TRUNC | O_BINARY; /*  O_NOFOLLOW; */
          if (IS_CTG(attr->statp.st_mode)) {
             flags |= O_CTG;              /* set contiguous bit if needed */
          }
+
          if (is_bopen(bfd)) {
             Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
             bclose(bfd);
          }
 
-
-         if ((bopen(bfd, attr->ofname, flags, S_IRUSR | S_IWUSR)) < 0) {
+         if (bopen(bfd, attr->ofname, flags, 0, attr->statp.st_rdev) < 0) {
             berrno be;
+
             be.set_errno(bfd->berrno);
-            Qmsg2(jcr, M_ERROR, 0, _("Could not create %s: ERR=%s\n"),
-                  attr->ofname, be.bstrerror());
+            Qmsg2(jcr, M_ERROR, 0, _("Could not create %s: ERR=%s\n"), attr->ofname, be.bstrerror());
             Dmsg2(100,"Could not create %s: ERR=%s\n", attr->ofname, be.bstrerror());
+
             return CF_ERROR;
          }
+
          return CF_EXTRACT;
 
 #ifndef HAVE_WIN32  // none of these exist in MS Windows
@@ -242,11 +243,11 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
             }
          } else if (S_ISSOCK(attr->statp.st_mode)) {
              Dmsg1(200, "Skipping restore of socket: %s\n", attr->ofname);
-#ifdef S_IFDOOR     // Solaris high speed RPC mechanism
+#ifdef S_IFDOOR /* Solaris high speed RPC mechanism */
          } else if (S_ISDOOR(attr->statp.st_mode)) {
              Dmsg1(200, "Skipping restore of door file: %s\n", attr->ofname);
 #endif
-#ifdef S_IFPORT     // Solaris event port for handling AIO
+#ifdef S_IFPORT /* Solaris event port for handling AIO */
          } else if (S_ISPORT(attr->statp.st_mode)) {
              Dmsg1(200, "Skipping restore of event port file: %s\n", attr->ofname);
 #endif
@@ -269,11 +270,12 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
                return CF_ERROR;
             }
          }
+
          /*
           * Here we are going to attempt to restore to a FIFO, which
-          *   means that the FIFO must already exist, AND there must
-          *   be some process already attempting to read from the
-          *   FIFO, so we open it write-only.
+          * means that the FIFO must already exist, AND there must
+          * be some process already attempting to read from the
+          * FIFO, so we open it write-only.
           */
          if (attr->type == FT_RAW || attr->type == FT_FIFO) {
             btimer_t *tid;
@@ -289,7 +291,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
                Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
             }
             Dmsg2(400, "open %s flags=0x%x\n", attr->ofname, flags);
-            if ((bopen(bfd, attr->ofname, flags, 0)) < 0) {
+            if ((bopen(bfd, attr->ofname, flags, 0, 0)) < 0) {
                berrno be;
                be.set_errno(bfd->berrno);
                Qmsg2(jcr, M_ERROR, 0, _("Could not open %s: ERR=%s\n"),
@@ -321,17 +323,17 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 #ifdef HAVE_CHFLAGS
             struct stat s;
 
-        /*
-            * If using BSD user flags, maybe has a file flag
-            * preventing this. So attempt to disable, retry link,
-            * and reset flags.
-            * Note that BSD securelevel may prevent disabling flag.
-        */
-
+            /*
+             * If using BSD user flags, maybe has a file flag preventing this.
+             * So attempt to disable, retry link, and reset flags.
+             * Note that BSD securelevel may prevent disabling flag.
+             */
             if (stat(attr->olname, &s) == 0 && s.st_flags != 0) {
                if (chflags(attr->olname, 0) == 0) {
                   if (link(attr->olname, attr->ofname) != 0) {
-                     /* restore original file flags even when linking failed */
+                     /*
+                      * Restore original file flags even when linking failed
+                      */
                      if (chflags(attr->olname, s.st_flags) < 0) {
                         Qmsg2(jcr, M_ERROR, 0, _("Could not restore file flags for file %s: ERR=%s\n"),
                               attr->olname, be.bstrerror());
@@ -344,7 +346,9 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
             return CF_ERROR;
 #ifdef HAVE_CHFLAGS
                   }
-                  /* finally restore original file flags */
+                  /*
+                   * Finally restore original file flags
+                   */
                   if (chflags(attr->olname, s.st_flags) < 0) {
                      Qmsg2(jcr, M_ERROR, 0, _("Could not restore file flags for file %s: ERR=%s\n"),
                             attr->olname, be.bstrerror());
@@ -368,27 +372,31 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    case FT_REPARSE:
    case FT_JUNCTION:
       bfd->reparse_point = true;
-      /* Fall through wanted */
+      /*
+       * Fall through wanted
+       */
    case FT_DIRBEGIN:
    case FT_DIREND:
       Dmsg2(200, "Make dir mode=%o dir=%s\n", new_mode, attr->ofname);
       if (!makepath(attr, attr->ofname, new_mode, parent_mode, uid, gid, 0)) {
          return CF_ERROR;
       }
+
       /*
-       * If we are using the Win32 Backup API, we open the
-       *   directory so that the security info will be read
-       *   and saved.
+       * If we are using the Win32 Backup API, we open the directory so
+       * that the security info will be read and saved.
        */
       if (!is_portable_backup(bfd)) {
          if (is_bopen(bfd)) {
             Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
          }
-         if ((bopen(bfd, attr->ofname, O_WRONLY|O_BINARY, 0)) < 0) {
+         if (bopen(bfd, attr->ofname, O_WRONLY | O_BINARY, 0, attr->statp.st_rdev) < 0) {
             berrno be;
             be.set_errno(bfd->berrno);
 #ifdef HAVE_WIN32
-            /* Check for trying to create a drive, if so, skip */
+            /*
+             * Check for trying to create a drive, if so, skip
+             */
             if (attr->ofname[1] == ':' &&
                 IsPathSeparator(attr->ofname[2]) &&
                 attr->ofname[3] == '\0') {
@@ -407,7 +415,9 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    case FT_DELETED:
       Qmsg2(jcr, M_INFO, 0, _("Original file %s have been deleted: type=%d\n"), attr->fname, attr->type);
       break;
-   /* The following should not occur */
+   /*
+    * The following should not occur
+    */
    case FT_NOACCESS:
    case FT_NOFOLLOW:
    case FT_NOSTAT:

@@ -293,7 +293,7 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
        ff_pkt->type == FT_RAW ||
        ff_pkt->type == FT_FIFO) {
       int noatime = ff_pkt->flags & FO_NOATIME ? O_NOATIME : 0;
-      if ((bopen(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0)) < 0) {
+      if ((bopen(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0, ff_pkt->statp.st_rdev)) < 0) {
          ff_pkt->ff_errno = errno;
          berrno be;
          be.set_errno(bfd.berrno);

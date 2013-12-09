@@ -50,7 +50,6 @@
  **************************************************************/
 
 #include "bareos.h"
-#include "compat.h"
 
 typedef void (prfun)(char *, size_t *, size_t, int);
 

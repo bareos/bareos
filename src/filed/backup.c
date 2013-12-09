@@ -183,7 +183,7 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
  */
 static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
 {
-   int flags, status;
+   int flags;
    int rsrc_stream;
    BSOCK *sd = bsctx.jcr->store_bsock;
    bool retval = false;
@@ -200,15 +200,16 @@ static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
             bclose(&bsctx.ff_pkt->bfd);
          }
       } else {
+         int status;
+
          flags = bsctx.ff_pkt->flags;
-         bsctx.ff_pkt->flags &= ~(FO_COMPRESS|FO_SPARSE|FO_OFFSETS);
-         if (flags & FO_ENCRYPT) {
-            rsrc_stream = STREAM_ENCRYPTED_MACOS_FORK_DATA;
-         } else {
-            rsrc_stream = STREAM_MACOS_FORK_DATA;
-         }
+         bsctx.ff_pkt->flags &= ~(FO_COMPRESS | FO_SPARSE | FO_OFFSETS);
+         rsrc_stream = (flags & FO_ENCRYPT) ? STREAM_ENCRYPTED_MACOS_FORK_DATA :
+                                              STREAM_MACOS_FORK_DATA;
+
          status = send_data(bsctx.jcr, rsrc_stream, bsctx.ff_pkt,
                             bsctx.digest, bsctx.signing_digest);
+
          bsctx.ff_pkt->flags = flags;
          bclose(&bsctx.ff_pkt->bfd);
          if (!status) {
@@ -560,8 +561,8 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       break;
    case FT_NOACCESS: {
       berrno be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"), ff_pkt->fname,
-         be.bstrerror(ff_pkt->ff_errno));
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
+           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
       return 1;
    }
@@ -574,8 +575,8 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    }
    case FT_NOSTAT: {
       berrno be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"), ff_pkt->fname,
-         be.bstrerror(ff_pkt->ff_errno));
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
+           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
       return 1;
    }
@@ -722,20 +723,24 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    Dmsg2(150, "type=%d do_read=%d\n", ff_pkt->type, do_read);
    if (do_read) {
       btimer_t *tid;
+      int noatime;
 
       if (ff_pkt->type == FT_FIFO) {
          tid = start_thread_timer(jcr, pthread_self(), 60);
       } else {
          tid = NULL;
       }
-      int noatime = ff_pkt->flags & FO_NOATIME ? O_NOATIME : 0;
+
+      noatime = ff_pkt->flags & FO_NOATIME ? O_NOATIME : 0;
       ff_pkt->bfd.reparse_point = (ff_pkt->type == FT_REPARSE ||
                                    ff_pkt->type == FT_JUNCTION);
-      if (bopen(&ff_pkt->bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0) < 0) {
+
+      if (bopen(&ff_pkt->bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0, ff_pkt->statp.st_rdev) < 0) {
          ff_pkt->ff_errno = errno;
          berrno be;
-         Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"), ff_pkt->fname,
-              be.bstrerror());
+         Jmsg(jcr, M_NOTSAVED, 0,
+              _("     Cannot open \"%s\": ERR=%s.\n"),
+              ff_pkt->fname, be.bstrerror());
          jcr->JobErrors++;
          if (tid) {
             stop_thread_timer(tid);
@@ -743,6 +748,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          }
          goto good_rtn;
       }
+
       if (tid) {
          stop_thread_timer(tid);
          tid = NULL;
@@ -855,136 +861,226 @@ bail_out:
    return rtnstat;
 }
 
+/*
+ * Handle the data just read and send it to the SD after doing any postprocessing needed.
+ */
+static inline bool send_data_to_sd(b_ctx *bctx)
+{
+   BSOCK *sd = bctx->jcr->store_bsock;
+   bool need_more_data;
+
+   /*
+    * Check for sparse blocks
+    */
+   if (bctx->ff_pkt->flags & FO_SPARSE) {
+      bool allZeros;
+      ser_declare;
+
+      allZeros = false;
+      if ((sd->msglen == bctx->rsize &&
+          (bctx->fileAddr + sd->msglen < (uint64_t)bctx->ff_pkt->statp.st_size)) ||
+          ((bctx->ff_pkt->type == FT_RAW ||
+            bctx->ff_pkt->type == FT_FIFO) &&
+          ((uint64_t)bctx->ff_pkt->statp.st_size == 0))) {
+         allZeros = is_buf_zero(bctx->rbuf, bctx->rsize);
+      }
+
+      if (!allZeros) {
+         /*
+          * Put file address as first data in buffer
+          */
+         ser_begin(bctx->wbuf, OFFSET_FADDR_SIZE);
+         ser_uint64(bctx->fileAddr); /* store fileAddr in begin of buffer */
+      }
+
+      bctx->fileAddr += sd->msglen; /* update file address */
+
+      /*
+       * Skip block of all zeros
+       */
+      if (allZeros) {
+         return true;
+      }
+   } else if (bctx->ff_pkt->flags & FO_OFFSETS) {
+      ser_declare;
+      ser_begin(bctx->wbuf, OFFSET_FADDR_SIZE);
+      ser_uint64(bctx->ff_pkt->bfd.offset); /* store offset in begin of buffer */
+   }
+
+   bctx->jcr->ReadBytes += sd->msglen; /* count bytes read */
+
+   /*
+    * Uncompressed cipher input length
+    */
+   bctx->cipher_input_len = sd->msglen;
+
+   /*
+    * Update checksum if requested
+    */
+   if (bctx->digest) {
+      crypto_digest_update(bctx->digest, (uint8_t *)bctx->rbuf, sd->msglen);
+   }
+
+   /*
+    * Update signing digest if requested
+    */
+   if (bctx->signing_digest) {
+      crypto_digest_update(bctx->signing_digest, (uint8_t *)bctx->rbuf, sd->msglen);
+   }
+
+   /*
+    * Compress the data.
+    */
+   if ((bctx->ff_pkt->flags & FO_COMPRESS)) {
+      if (!compress_data(bctx->jcr, bctx->ff_pkt->Compress_algo, bctx->rbuf,
+                         bctx->jcr->store_bsock->msglen, bctx->cbuf,
+                         bctx->max_compress_len, &bctx->compress_len)) {
+         return false;
+      }
+
+      /*
+       * See if we need to generate a compression header.
+       */
+      if (bctx->chead) {
+         ser_declare;
+
+         /*
+          * Complete header
+          */
+         ser_begin(bctx->chead, sizeof(comp_stream_header));
+         ser_uint32(bctx->ch.magic);
+         ser_uint32(bctx->compress_len);
+         ser_uint16(bctx->ch.level);
+         ser_uint16(bctx->ch.version);
+         ser_end(bctx->chead, sizeof(comp_stream_header));
+
+         bctx->compress_len += sizeof(comp_stream_header); /* add size of header */
+      }
+
+      bctx->jcr->store_bsock->msglen = bctx->compress_len; /* set compressed length */
+      bctx->cipher_input_len = bctx->compress_len;
+   }
+
+   /*
+    * Encrypt the data.
+    */
+   need_more_data = false;
+   if ((bctx->ff_pkt->flags & FO_ENCRYPT) && !encrypt_data(bctx, &need_more_data)) {
+      if (need_more_data) {
+         return true;
+      }
+      return false;
+   }
+
+   /*
+    * Send the buffer to the Storage daemon
+    */
+   if ((bctx->ff_pkt->flags & FO_SPARSE) || (bctx->ff_pkt->flags & FO_OFFSETS)) {
+      sd->msglen += OFFSET_FADDR_SIZE; /* include fileAddr in size */
+   }
+   sd->msg = bctx->wbuf; /* set correct write buffer */
+
+   if (!sd->send()) {
+      if (!bctx->jcr->is_job_canceled()) {
+         Jmsg1(bctx->jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
+      }
+      return false;
+   }
+
+   Dmsg1(130, "Send data to SD len=%d\n", sd->msglen);
+   bctx->jcr->JobBytes += sd->msglen; /* count bytes saved possibly compressed/encrypted */
+   sd->msg = bctx->msgsave; /* restore read buffer */
+
+   return true;
+}
+
+#ifdef HAVE_WIN32
+/*
+ * Callback method for ReadEncryptedFileRaw()
+ */
+static DWORD WINAPI send_efs_data(PBYTE pbData, PVOID pvCallbackContext, ULONG ulLength)
+{
+   b_ctx *bctx = (b_ctx *)pvCallbackContext;
+   BSOCK *sd = bctx->jcr->store_bsock;
+
+   if (ulLength == 0) {
+      return ERROR_SUCCESS;
+   }
+
+   /*
+    * See if we can fit the data into the current bctx->rbuf which can hold bctx->rsize bytes.
+    */
+   if (ulLength <= (ULONG)bctx->rsize) {
+      sd->msglen = ulLength;
+      memcpy(bctx->rbuf, pbData, ulLength);
+      if (!send_data_to_sd(bctx)) {
+         return ERROR_NET_WRITE_FAULT;
+      }
+   } else {
+      /*
+       * Need to chunk the data into pieces.
+       */
+      ULONG offset = 0;
+
+      while (ulLength > 0) {
+         sd->msglen = MIN((ULONG)bctx->rsize, ulLength);
+         memcpy(bctx->rbuf, pbData + offset, sd->msglen);
+         if (!send_data_to_sd(bctx)) {
+            return ERROR_NET_WRITE_FAULT;
+         }
+
+         offset += sd->msglen;
+         ulLength -= sd->msglen;
+      }
+   }
+
+   return ERROR_SUCCESS;
+}
+
+/*
+ * Send the content of an Encrypted file on an EFS filesystem.
+ */
+static inline bool send_encrypted_data(b_ctx &bctx)
+{
+   bool retval = false;
+
+   if (!p_ReadEncryptedFileRaw) {
+      Jmsg0(bctx.jcr, M_FATAL, 0, _("Encrypted file but no EFS support functions\n"));
+   }
+
+   /*
+    * The EFS read function, ReadEncryptedFileRaw(), works in a specific way.
+    * You have to give it a function that it calls repeatedly every time the
+    * read buffer is filled.
+    *
+    * So ReadEncryptedFileRaw() will not return until it has read the whole file.
+    */
+   if (p_ReadEncryptedFileRaw((PFE_EXPORT_FUNC)send_efs_data, &bctx, bctx.ff_pkt->bfd.pvContext)) {
+      goto bail_out;
+   }
+   retval = true;
+
+bail_out:
+   return retval;
+}
+#endif
+
+/*
+ * Send the content of a file on anything but an EFS filesystem.
+ */
 static inline bool send_plain_data(b_ctx &bctx)
 {
-   bool allZeros;
-   bool need_more_data;
    bool retval = false;
    BSOCK *sd = bctx.jcr->store_bsock;
 
    /*
     * Read the file data
     */
-   while ((sd->msglen=(uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize)) > 0) {
-      /*
-       * Check for sparse blocks
-       */
-      if (bctx.ff_pkt->flags & FO_SPARSE) {
-         ser_declare;
-         allZeros = false;
-         if ((sd->msglen == bctx.rsize &&
-             (bctx.fileAddr + sd->msglen < (uint64_t)bctx.ff_pkt->statp.st_size)) ||
-             ((bctx.ff_pkt->type == FT_RAW ||
-               bctx.ff_pkt->type == FT_FIFO) &&
-             ((uint64_t)bctx.ff_pkt->statp.st_size == 0))) {
-            allZeros = is_buf_zero(bctx.rbuf, bctx.rsize);
-         }
-         if (!allZeros) {
-            /*
-             * Put file address as first data in buffer
-             */
-            ser_begin(bctx.wbuf, OFFSET_FADDR_SIZE);
-            ser_uint64(bctx.fileAddr); /* store fileAddr in begin of buffer */
-         }
-         bctx.fileAddr += sd->msglen; /* update file address */
-         /*
-          * Skip block of all zeros
-          */
-         if (allZeros) {
-            continue;
-         }
-      } else if (bctx.ff_pkt->flags & FO_OFFSETS) {
-         ser_declare;
-         ser_begin(bctx.wbuf, OFFSET_FADDR_SIZE);
-         ser_uint64(bctx.ff_pkt->bfd.offset); /* store offset in begin of buffer */
-      }
-
-      bctx.jcr->ReadBytes += sd->msglen; /* count bytes read */
-
-      /*
-       * Uncompressed cipher input length
-       */
-      bctx.cipher_input_len = sd->msglen;
-
-      /*
-       * Update checksum if requested
-       */
-      if (bctx.digest) {
-         crypto_digest_update(bctx.digest, (uint8_t *)bctx.rbuf, sd->msglen);
-      }
-
-      /*
-       * Update signing digest if requested
-       */
-      if (bctx.signing_digest) {
-         crypto_digest_update(bctx.signing_digest, (uint8_t *)bctx.rbuf, sd->msglen);
-      }
-
-      /*
-       * Compress the data.
-       */
-      if ((bctx.ff_pkt->flags & FO_COMPRESS)) {
-         if (!compress_data(bctx.jcr, bctx.ff_pkt->Compress_algo, bctx.rbuf,
-                            bctx.jcr->store_bsock->msglen, bctx.cbuf,
-                            bctx.max_compress_len, &bctx.compress_len)) {
-            goto bail_out;
-         }
-
-         /*
-          * See if we need to generate a compression header.
-          */
-         if (bctx.chead) {
-            ser_declare;
-
-            /*
-             * Complete header
-             */
-            ser_begin(bctx.chead, sizeof(comp_stream_header));
-            ser_uint32(bctx.ch.magic);
-            ser_uint32(bctx.compress_len);
-            ser_uint16(bctx.ch.level);
-            ser_uint16(bctx.ch.version);
-            ser_end(bctx.chead, sizeof(comp_stream_header));
-
-            bctx.compress_len += sizeof(comp_stream_header); /* add size of header */
-         }
-
-         bctx.jcr->store_bsock->msglen = bctx.compress_len; /* set compressed length */
-         bctx.cipher_input_len = bctx.compress_len;
-      }
-
-      /*
-       * Encrypt the data.
-       */
-      need_more_data = false;
-      if ((bctx.ff_pkt->flags & FO_ENCRYPT) && !encrypt_data(bctx, &need_more_data)) {
-         if (need_more_data) {
-            continue;
-         }
+   while ((sd->msglen = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize)) > 0) {
+      if (!send_data_to_sd(&bctx)) {
          goto bail_out;
       }
-
-      /*
-       * Send the buffer to the Storage daemon
-       */
-      if ((bctx.ff_pkt->flags & FO_SPARSE) || (bctx.ff_pkt->flags & FO_OFFSETS)) {
-         sd->msglen += OFFSET_FADDR_SIZE; /* include fileAddr in size */
-      }
-      sd->msg = bctx.wbuf; /* set correct write buffer */
-
-      if (!sd->send()) {
-         if (!bctx.jcr->is_job_canceled()) {
-            Jmsg1(bctx.jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
-                  sd->bstrerror());
-         }
-         goto bail_out;
-      }
-
-      Dmsg1(130, "Send data to SD len=%d\n", sd->msglen);
-      bctx.jcr->JobBytes += sd->msglen; /* count bytes saved possibly compressed/encrypted */
-      sd->msg = bctx.msgsave; /* restore read buffer */
-
-   } /* end while read file data */
+   }
    retval = true;
 
 bail_out:
@@ -1041,8 +1137,7 @@ static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
     */
    if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
       if (!jcr->is_job_canceled()) {
-         Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
-               sd->bstrerror());
+         Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
       }
       goto bail_out;
    }
@@ -1070,16 +1165,25 @@ static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
    if (S_ISBLK(ff_pkt->statp.st_mode)) {
       bctx.rsize = (bctx.rsize / 512) * 512;
    }
-#endif
 
+   if (ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_ENCRYPTED) {
+      if (!send_encrypted_data(bctx)) {
+         goto bail_out;
+      }
+   } else {
+      if (!send_plain_data(bctx)) {
+         goto bail_out;
+      }
+   }
+#else
    if (!send_plain_data(bctx)) {
       goto bail_out;
    }
+#endif
 
    if (sd->msglen < 0) { /* error */
       berrno be;
-      Jmsg(jcr, M_ERROR, 0, _("Read error on file %s. ERR=%s\n"),
-         ff_pkt->fname, be.bstrerror(ff_pkt->bfd.berrno));
+      Jmsg(jcr, M_ERROR, 0, _("Read error on file %s. ERR=%s\n"), ff_pkt->fname, be.bstrerror(ff_pkt->bfd.berrno));
       if (jcr->JobErrors++ > 1000) { /* insanity check */
          Jmsg(jcr, M_FATAL, 0, _("Too many errors. JobErrors=%d.\n"), jcr->JobErrors);
       }
@@ -1087,8 +1191,9 @@ static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
       /*
        * For encryption, we must call finalize to push out any buffered data.
        */
-      if (!crypto_cipher_finalize(bctx.cipher_ctx, (uint8_t *)jcr->crypto.crypto_buf,
-           &bctx.encrypted_len)) {
+      if (!crypto_cipher_finalize(bctx.cipher_ctx,
+                                  (uint8_t *)jcr->crypto.crypto_buf,
+                                  &bctx.encrypted_len)) {
          /*
           * Padding failed. Shouldn't happen.
           */
@@ -1104,8 +1209,7 @@ static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
          sd->msg = jcr->crypto.crypto_buf; /* set correct write buffer */
          if (!sd->send()) {
             if (!jcr->is_job_canceled()) {
-               Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
-                     sd->bstrerror());
+               Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
             }
             goto bail_out;
          }
@@ -1117,8 +1221,7 @@ static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
 
    if (!sd->signal(BNET_EOD)) { /* indicate end of file data */
       if (!jcr->is_job_canceled()) {
-         Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
-               sd->bstrerror());
+         Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
       }
       goto bail_out;
    }
@@ -1129,6 +1232,7 @@ static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
    if (bctx.cipher_ctx) {
       crypto_cipher_free(bctx.cipher_ctx);
    }
+
    return 1;
 
 bail_out:
@@ -1141,6 +1245,7 @@ bail_out:
 
    sd->msg = bctx.msgsave; /* restore bnet buffer */
    sd->msglen = 0;
+
    return 0;
 }
 
@@ -1159,15 +1264,21 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
 #endif
 
    Dmsg1(300, "encode_and_send_attrs fname=%s\n", ff_pkt->fname);
-   /** Find what data stream we will use, then encode the attributes */
+   /**
+    * Find what data stream we will use, then encode the attributes
+    */
    if ((data_stream = select_data_stream(ff_pkt, me->compatible)) == STREAM_NONE) {
-      /* This should not happen */
+      /*
+       * This should not happen
+       */
       Jmsg0(jcr, M_FATAL, 0, _("Invalid file flags, no supported data stream type.\n"));
       return false;
    }
    encode_stat(attribs, &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, data_stream);
 
-   /** Now possibly extend the attributes */
+   /**
+    * Now possibly extend the attributes
+    */
    if (IS_FT_OBJECT(ff_pkt->type)) {
       attr_stream = STREAM_RESTORE_OBJECT;
    } else {
@@ -1183,7 +1294,9 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
    pm_strcpy(jcr->last_fname, ff_pkt->fname);
    jcr->unlock();
 
-   /* Debug code: check if we must hangup */
+   /*
+    * Debug code: check if we must hangup
+    */
    if (hangup && (jcr->JobFiles > (uint32_t)hangup)) {
       jcr->setJobStatus(JS_Incomplete);
       Jmsg1(jcr, M_FATAL, 0, "Debug hangup requested after %d files.\n", hangup);
@@ -1197,8 +1310,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
     */
    if (!sd->fsend("%ld %d 0", jcr->JobFiles, attr_stream)) {
       if (!jcr->is_canceled() && !jcr->is_incomplete()) {
-         Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
-               sd->bstrerror());
+         Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
       }
       return false;
    }
@@ -1251,28 +1363,39 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
    case FT_RESTORE_FIRST:
       comp_len = ff_pkt->object_len;
       ff_pkt->object_compression = 0;
+
       if (ff_pkt->object_len > 1000) {
-         /* Big object, compress it */
+         /*
+          * Big object, compress it
+          */
          comp_len = ff_pkt->object_len + 1000;
          POOLMEM *comp_obj = get_memory(comp_len);
-         /* *** FIXME *** check Zdeflate error */
+         /*
+          * FIXME: check Zdeflate error
+          */
          Zdeflate(ff_pkt->object, ff_pkt->object_len, comp_obj, comp_len);
          if (comp_len < ff_pkt->object_len) {
             ff_pkt->object = comp_obj;
             ff_pkt->object_compression = 1;    /* zlib level 9 compression */
          } else {
-            /* Uncompressed object smaller, use it */
+            /*
+             * Uncompressed object smaller, use it
+             */
             comp_len = ff_pkt->object_len;
          }
          Dmsg2(100, "Object compressed from %d to %d bytes\n", ff_pkt->object_len, comp_len);
       }
+
       sd->msglen = Mmsg(sd->msg, "%d %d %d %d %d %d %s%c%s%c",
                         jcr->JobFiles, ff_pkt->type, ff_pkt->object_index,
                         comp_len, ff_pkt->object_len, ff_pkt->object_compression,
                         ff_pkt->fname, 0, ff_pkt->object_name, 0);
       sd->msg = check_pool_memory_size(sd->msg, sd->msglen + comp_len + 2);
       memcpy(sd->msg + sd->msglen, ff_pkt->object, comp_len);
-      /* Note we send one extra byte so Dir can store zero after object */
+
+      /*
+       * Note we send one extra byte so Dir can store zero after object
+       */
       sd->msglen += comp_len + 1;
       status = sd->send();
       if (ff_pkt->object_compression) {
@@ -1297,10 +1420,11 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
 
    Dmsg2(300, ">stored: attr len=%d: %s\n", sd->msglen, sd->msg);
    if (!status && !jcr->is_job_canceled()) {
-      Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
-            sd->bstrerror());
+      Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
    }
+
    sd->signal(BNET_EOD);            /* indicate end of attributes data */
+
    return status;
 }
 
@@ -1313,7 +1437,9 @@ static bool do_strip(int count, char *in)
    int stripped;
    int numsep = 0;
 
-   /** Copy to first path separator -- Win32 might have c: ... */
+   /**
+    * Copy to first path separator -- Win32 might have c: ...
+    */
    while (*in && !IsPathSeparator(*in)) {
       out++; in++;
    }
@@ -1330,7 +1456,10 @@ static bool do_strip(int count, char *in)
          in++;                   /* skip separator */
       }
    }
-   /* Copy to end */
+
+   /*
+    * Copy to end
+    */
    while (*in) {                /* copy to end */
       if (IsPathSeparator(*in)) {
          numsep++;
@@ -1345,10 +1474,10 @@ static bool do_strip(int count, char *in)
 
 /**
  * If requested strip leading components of the path so that we can
- *   save file as if it came from a subdirectory.  This is most useful
- *   for dealing with snapshots, by removing the snapshot directory, or
- *   in handling vendor migrations where files have been restored with
- *   a vendor product into a subdirectory.
+ * save file as if it came from a subdirectory.  This is most useful
+ * for dealing with snapshots, by removing the snapshot directory, or
+ * in handling vendor migrations where files have been restored with
+ * a vendor product into a subdirectory.
  */
 void strip_path(FF_PKT *ff_pkt)
 {
@@ -1369,18 +1498,19 @@ void strip_path(FF_PKT *ff_pkt)
    }
 
    /**
-    * Strip path.  If it doesn't succeed put it back.  If
-    *  it does, and there is a different link string,
-    *  attempt to strip the link. If it fails, back them
-    *  both back.
-    * Do not strip symlinks.
-    * I.e. if either stripping fails don't strip anything.
+    * Strip path. If it doesn't succeed put it back. If it does, and there
+    * is a different link string, attempt to strip the link. If it fails,
+    * back them both back. Do not strip symlinks. I.e. if either stripping
+    * fails don't strip anything.
     */
    if (!do_strip(ff_pkt->strip_path, ff_pkt->fname)) {
       unstrip_path(ff_pkt);
       goto rtn;
    }
-   /** Strip links but not symlinks */
+
+   /**
+    * Strip links but not symlinks
+    */
    if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
       if (!do_strip(ff_pkt->strip_path, ff_pkt->link)) {
          unstrip_path(ff_pkt);
@@ -1388,8 +1518,7 @@ void strip_path(FF_PKT *ff_pkt)
    }
 
 rtn:
-   Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname_save, ff_pkt->fname,
-       ff_pkt->link);
+   Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname_save, ff_pkt->fname, ff_pkt->link);
 }
 
 void unstrip_path(FF_PKT *ff_pkt)

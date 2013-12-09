@@ -1596,26 +1596,31 @@ static bool backup_cmd(JCR *jcr)
     */
    if (jcr->VSS) {
       if (g_pVSSClient->InitializeForBackup(jcr)) {
-        char szWinDriveLetters[27];
+         int drive_count, vmp_count;
+         char szWinDriveLetters[27];
+         dlist *szWinVolumeMountpoints = NULL;
 
-        generate_plugin_event(jcr, bEventVssBackupAddComponents);
+         generate_plugin_event(jcr, bEventVssBackupAddComponents);
 
-        /*
-         * Tell vss which drives to snapshot
-         */
-        *szWinDriveLetters = 0;
+         /*
+          * Tell vss which drives to snapshot
+          */
+         *szWinDriveLetters = 0;
 
-        /*
-         * Plugin driver can return drive letters
-         */
-        generate_plugin_event(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
+         /*
+          * Plugin driver can return drive letters
+          */
+         generate_plugin_event(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
 
-        if (get_win32_driveletters(jcr->ff, szWinDriveLetters)) {
-            Jmsg(jcr, M_INFO, 0, _("Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\"\n"), g_pVSSClient->GetDriverName(), szWinDriveLetters);
-            if (!g_pVSSClient->CreateSnapshots(szWinDriveLetters)) {
+         drive_count = get_win32_driveletters(jcr->ff->fileset, szWinDriveLetters);
+         vmp_count = get_win32_virtualmountpoints(jcr->ff->fileset, &szWinVolumeMountpoints);
+
+         if (drive_count > 0 || vmp_count > 0) {
+            Jmsg(jcr, M_INFO, 0, _("Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\" VMP(s)=%d\n"),
+                 g_pVSSClient->GetDriverName(), (drive_count) ? szWinDriveLetters : "None", vmp_count);
+            if (!g_pVSSClient->CreateSnapshots(szWinDriveLetters, szWinVolumeMountpoints)) {
                berrno be;
-               Jmsg(jcr, M_FATAL, 0, _("CreateSGenerate VSS snapshots failed. ERR=%s\n"),
-                    be.bstrerror());
+               Jmsg(jcr, M_FATAL, 0, _("CreateSGenerate VSS snapshots failed. ERR=%s\n"), be.bstrerror());
             } else {
                /*
                 * Tell user if snapshot creation of a specific drive failed
@@ -1635,13 +1640,18 @@ static bool backup_cmd(JCR *jcr)
                   }
                }
             }
-        } else {
-            Jmsg(jcr, M_FATAL, 0, _("No drive letters found for generating VSS snapshots.\n"));
-        }
+
+            if (szWinVolumeMountpoints) {
+               szWinVolumeMountpoints->destroy();
+               free(szWinVolumeMountpoints);
+            }
+         } else {
+            Jmsg(jcr, M_FATAL, 0, _("No drive letters or Volume Mount Points found for generating VSS snapshots.\n"));
+         }
       } else {
          berrno be;
-         Jmsg(jcr, M_FATAL, 0, _("VSS was not initialized properly. ERR=%s\n"),
-            be.bstrerror());
+
+         Jmsg(jcr, M_FATAL, 0, _("VSS was not initialized properly. ERR=%s\n"), be.bstrerror());
       }
 
       run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS",

@@ -614,33 +614,15 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
    } else {
       ff_pkt->type = FT_DIRBEGIN;
    }
+
 #if defined(HAVE_WIN32)
-   /*
-    * We have set st_rdev to 1 if it is a reparse point, otherwise 0,
-    * if st_rdev is 2, it is a mount point
-    *
-    * A reparse point (WIN32_REPARSE_POINT)
-    * is something special like one of the following:
-    *  IO_REPARSE_TAG_DFS              0x8000000A
-    *  IO_REPARSE_TAG_DFSR             0x80000012
-    *  IO_REPARSE_TAG_HSM              0xC0000004
-    *  IO_REPARSE_TAG_HSM2             0x80000006
-    *  IO_REPARSE_TAG_SIS              0x80000007
-    *  IO_REPARSE_TAG_SYMLINK          0xA000000C
-    *
-    * A junction point is a:
-    *  IO_REPARSE_TAG_MOUNT_POINT      0xA0000003
-    * which can be either a link to a Volume (WIN32_MOUNT_POINT)
-    * or a link to a directory (WIN32_JUNCTION_POINT)
-    *
-    * Ignore WIN32_REPARSE_POINT and WIN32_JUNCTION_POINT
-    */
-   if (ff_pkt->statp.st_rdev == WIN32_REPARSE_POINT) {
-      ff_pkt->type = FT_REPARSE;
-   } else if (ff_pkt->statp.st_rdev == WIN32_JUNCTION_POINT) {
+   if (ff_pkt->statp.st_rdev & FILE_ATTRIBUTES_JUNCTION_POINT) {
       ff_pkt->type = FT_JUNCTION;
+   } else if (ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_REPARSE_POINT) {
+      ff_pkt->type = FT_REPARSE;
    }
 #endif
+
    /*
     * Note, we return the directory to the calling program (handle_file)
     * when we first see the directory (FT_DIRBEGIN.
@@ -650,11 +632,13 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
     * in the directory is seen (i.e. the FT_DIREND).
     */
    rtn_stat = handle_file(jcr, ff_pkt, top_level);
-   if (rtn_stat < 1 || ff_pkt->type == FT_REPARSE ||
+   if (rtn_stat < 1 ||
+       ff_pkt->type == FT_REPARSE ||
        ff_pkt->type == FT_JUNCTION) {   /* ignore or error status */
       free(link);
       return rtn_stat;
    }
+
    /*
     * Done with DIRBEGIN, next call will be DIREND
     */
@@ -683,7 +667,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
     */
    bool is_win32_mount_point = false;
 #if defined(HAVE_WIN32)
-   is_win32_mount_point = ff_pkt->statp.st_rdev == WIN32_MOUNT_POINT;
+   is_win32_mount_point = ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
 #endif
    if (!top_level && ff_pkt->flags & FO_NO_RECURSION) {
       ff_pkt->type = FT_NORECURSE;

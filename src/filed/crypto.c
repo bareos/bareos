@@ -452,7 +452,7 @@ bool setup_decryption_context(r_ctx &rctx, RESTORE_CIPHER_CTX &rcctx)
    return true;
 }
 
-bool encrypt_data(b_ctx &bctx, bool *need_more_data)
+bool encrypt_data(b_ctx *bctx, bool *need_more_data)
 {
    bool retval = false;
    uint32_t initial_len = 0;
@@ -472,9 +472,9 @@ bool encrypt_data(b_ctx &bctx, bool *need_more_data)
     */
    ser_declare;
 
-   if ((bctx.ff_pkt->flags & FO_SPARSE) ||
-       (bctx.ff_pkt->flags & FO_OFFSETS)) {
-         bctx.cipher_input_len += OFFSET_FADDR_SIZE;
+   if ((bctx->ff_pkt->flags & FO_SPARSE) ||
+       (bctx->ff_pkt->flags & FO_OFFSETS)) {
+         bctx->cipher_input_len += OFFSET_FADDR_SIZE;
    }
 
    /*
@@ -483,25 +483,25 @@ bool encrypt_data(b_ctx &bctx, bool *need_more_data)
    uint8_t packet_len[sizeof(uint32_t)];
 
    ser_begin(packet_len, sizeof(uint32_t));
-   ser_uint32(bctx.cipher_input_len); /* store data len in begin of buffer */
-   Dmsg1(20, "Encrypt len=%d\n", bctx.cipher_input_len);
+   ser_uint32(bctx->cipher_input_len); /* store data len in begin of buffer */
+   Dmsg1(20, "Encrypt len=%d\n", bctx->cipher_input_len);
 
-   if (!crypto_cipher_update(bctx.cipher_ctx, packet_len, sizeof(packet_len),
-                             (uint8_t *)bctx.jcr->crypto.crypto_buf, &initial_len)) {
+   if (!crypto_cipher_update(bctx->cipher_ctx, packet_len, sizeof(packet_len),
+                             (uint8_t *)bctx->jcr->crypto.crypto_buf, &initial_len)) {
       /*
        * Encryption failed. Shouldn't happen.
        */
-      Jmsg(bctx.jcr, M_FATAL, 0, _("Encryption error\n"));
+      Jmsg(bctx->jcr, M_FATAL, 0, _("Encryption error\n"));
       goto bail_out;
    }
 
    /*
     * Encrypt the input block
     */
-   if (crypto_cipher_update(bctx.cipher_ctx, bctx.cipher_input, bctx.cipher_input_len,
-                            (uint8_t *)&bctx.jcr->crypto.crypto_buf[initial_len],
-                            &bctx.encrypted_len)) {
-      if ((initial_len + bctx.encrypted_len) == 0) {
+   if (crypto_cipher_update(bctx->cipher_ctx, bctx->cipher_input, bctx->cipher_input_len,
+                            (uint8_t *)&bctx->jcr->crypto.crypto_buf[initial_len],
+                            &bctx->encrypted_len)) {
+      if ((initial_len + bctx->encrypted_len) == 0) {
          /*
           * No full block of data available, read more data
           */
@@ -510,14 +510,14 @@ bool encrypt_data(b_ctx &bctx, bool *need_more_data)
       }
 
       Dmsg2(400, "encrypted len=%d unencrypted len=%d\n",
-            bctx.encrypted_len, bctx.jcr->store_bsock->msglen);
+            bctx->encrypted_len, bctx->jcr->store_bsock->msglen);
 
-      bctx.jcr->store_bsock->msglen = initial_len + bctx.encrypted_len; /* set encrypted length */
+      bctx->jcr->store_bsock->msglen = initial_len + bctx->encrypted_len; /* set encrypted length */
    } else {
       /*
        * Encryption failed. Shouldn't happen.
        */
-      Jmsg(bctx.jcr, M_FATAL, 0, _("Encryption error\n"));
+      Jmsg(bctx->jcr, M_FATAL, 0, _("Encryption error\n"));
       goto bail_out;
    }
 

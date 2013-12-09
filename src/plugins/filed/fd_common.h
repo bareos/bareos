@@ -33,13 +33,13 @@
 #define L_DIFFERENTIAL           'D'  /* since last full backup */
 
 #ifndef DLL_IMP_EXP
-# if defined(BUILDING_DLL)
-#   define DLL_IMP_EXP   __declspec(dllexport)
-# elif defined(USING_DLL)
-#   define DLL_IMP_EXP   __declspec(dllimport)
-# else
-#   define DLL_IMP_EXP
-# endif
+#if defined(BUILDING_DLL)
+#define DLL_IMP_EXP _declspec(dllexport)
+#elif defined(USING_DLL)
+#define DLL_IMP_EXP _declspec(dllimport)
+#else
+#define DLL_IMP_EXP
+#endif
 #endif
 
 DLL_IMP_EXP void *sm_malloc(const char *fname, int lineno, unsigned int nbytes);
