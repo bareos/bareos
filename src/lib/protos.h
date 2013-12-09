@@ -61,16 +61,8 @@ bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK *bsock,
                      alist *verify_list);
 bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock,
                      alist *verify_list);
-BSOCK * bnet_connect(JCR *jcr, int retry_interval,
-                     utime_t max_retry_time, utime_t heart_beat,
-                     const char *name, char *host, char *service,
-                     int port, bool verbose);
-void bnet_close(BSOCK *bsock);
-BSOCK *init_bsock(JCR *jcr, int sockfd, const char *who, const char *ip,
-                  int port, struct sockaddr *client_addr);
 int bnet_get_peer(BSOCK *bs, char *buf, socklen_t buflen);
 BSOCK *dup_bsock(BSOCK *bsock);
-void term_bsock(BSOCK *bsock);
 const char *bnet_strerror(BSOCK *bsock);
 const char *bnet_sig_to_ascii(BSOCK *bsock);
 int bnet_wait_data(BSOCK *bsock, int sec);
@@ -86,11 +78,11 @@ int net_connect(int port);
 BSOCK *bnet_bind(int port);
 BSOCK *bnet_accept(BSOCK *bsock, char *who);
 
-/* bnet_server.c */
-void cleanup_bnet_thread_server(alist *sockfds, workq_t *client_wq);
-void bnet_thread_server(dlist *addr_list, int max_clients, alist *sockfds,
-                        workq_t *client_wq, void *handle_client_request(void *bsock));
-void bnet_stop_thread_server(pthread_t tid);
+/* bnet_server_tcp.c */
+void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq);
+void bnet_thread_server_tcp(dlist *addr_list, int max_clients, alist *sockfds,
+                            workq_t *client_wq, void *handle_client_request(void *bsock));
+void bnet_stop_thread_server_tcp(pthread_t tid);
 
 /* bpipe.c */
 BPIPE *open_bpipe(char *prog, int wait, const char *mode);

@@ -283,7 +283,7 @@ int run_cmd(UAContext *ua, const char *cmd)
    }
 
    if (find_arg(ua, NT_("fdcalled")) > 0) {
-      jcr->file_bsock = dup_bsock(ua->UA_sock);
+      jcr->file_bsock = ua->UA_sock->clone();
       ua->quit = true;
    }
 

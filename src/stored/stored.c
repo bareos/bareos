@@ -296,7 +296,7 @@ int main (int argc, char *argv[])
 
    /* Single server used for Director/Storage and File daemon */
    sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server(me->SDaddrs,
+   bnet_thread_server_tcp(me->SDaddrs,
                       me->max_concurrent_jobs * 2 + 1,
                       sock_fds,
                       &dird_workq,
@@ -692,7 +692,7 @@ void terminate_stored(int sig)
 #endif
    stop_watchdog();
 
-   cleanup_bnet_thread_server(sock_fds, &dird_workq);
+   cleanup_bnet_thread_server_tcp(sock_fds, &dird_workq);
    delete sock_fds;
    sock_fds = NULL;
 

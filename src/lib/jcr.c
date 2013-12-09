@@ -496,6 +496,7 @@ static void free_common_jcr(JCR *jcr)
 
    if (jcr->dir_bsock) {
       jcr->dir_bsock->close();
+      delete jcr->dir_bsock;
       jcr->dir_bsock = NULL;
    }
 

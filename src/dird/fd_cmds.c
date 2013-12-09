@@ -92,10 +92,11 @@ extern DIRRES *director;
 
 int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, bool verbose, bool start_job)
 {
-   BSOCK *fd = new_bsock();
+   BSOCK *fd;
    char ed1[30];
    utime_t heart_beat;
 
+   fd = New(BSOCK_TCP);
    if (jcr->res.client->heartbeat_interval) {
       heart_beat = jcr->res.client->heartbeat_interval;
    } else {
@@ -111,8 +112,8 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, boo
       if (!fd->connect(jcr,retry_interval,max_retry_time, heart_beat, name,
                        jcr->res.client->address, NULL,
                        jcr->res.client->FDport, verbose)) {
-        fd->destroy();
-        fd = NULL;
+         delete fd;
+         fd = NULL;
       }
 
       if (fd == NULL) {
@@ -881,6 +882,7 @@ bool cancel_file_daemon_job(UAContext *ua, JCR *jcr)
    }
    fd->signal(BNET_TERMINATE);
    fd->close();
+   delete ua->jcr->file_bsock;
    ua->jcr->file_bsock = NULL;
    jcr->file_bsock->set_terminated();
    jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
@@ -912,6 +914,7 @@ void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
          client->name());
       if (ua->jcr->file_bsock) {
          ua->jcr->file_bsock->close();
+         delete ua->jcr->file_bsock;
          ua->jcr->file_bsock = NULL;
       }
       return;
@@ -931,6 +934,7 @@ void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
 
    fd->signal(BNET_TERMINATE);
    fd->close();
+   delete ua->jcr->file_bsock;
    ua->jcr->file_bsock = NULL;
 
    return;
@@ -961,6 +965,7 @@ void do_client_resolve(UAContext *ua, CLIENTRES *client)
          client->name());
       if (ua->jcr->file_bsock) {
          ua->jcr->file_bsock->close();
+         delete ua->jcr->file_bsock;
          ua->jcr->file_bsock = NULL;
       }
       return;
@@ -982,6 +987,7 @@ void do_client_resolve(UAContext *ua, CLIENTRES *client)
 
    fd->signal(BNET_TERMINATE);
    fd->close();
+   delete ua->jcr->file_bsock;
    ua->jcr->file_bsock = NULL;
 
    return;

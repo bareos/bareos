@@ -33,165 +33,13 @@
 #include "jcr.h"
 #include <netdb.h>
 
-#ifndef   INADDR_NONE
-#define   INADDR_NONE    -1
-#endif
-
-#ifdef HAVE_WIN32
-#define socketRead(fd, buf, len)  recv(fd, buf, len, 0)
-#define socketWrite(fd, buf, len) send(fd, buf, len, 0)
-#define socketClose(fd)           closesocket(fd)
-#else
-#define socketRead(fd, buf, len)  read(fd, buf, len)
-#define socketWrite(fd, buf, len) write(fd, buf, len)
-#define socketClose(fd)           close(fd)
+#ifndef INADDR_NONE
+#define INADDR_NONE    -1
 #endif
 
 #ifndef HAVE_GETADDRINFO
 static pthread_mutex_t ip_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
-
-/*
- * Read a nbytes from the network.
- * It is possible that the total bytes require in several
- * read requests
- */
-int32_t read_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes)
-{
-   int32_t nleft, nread;
-
-#ifdef HAVE_TLS
-   if (bsock->tls) {
-      /* TLS enabled */
-      return (tls_bsock_readn(bsock, ptr, nbytes));
-   }
-#endif /* HAVE_TLS */
-
-   nleft = nbytes;
-   while (nleft > 0) {
-      errno = 0;
-      nread = socketRead(bsock->m_fd, ptr, nleft);
-      if (bsock->is_timed_out() || bsock->is_terminated()) {
-         return -1;
-      }
-
-#ifdef HAVE_WIN32
-      /*
-       * For Windows, we must simulate Unix errno on a socket
-       *  error in order to handle errors correctly.
-       */
-      if (nread == SOCKET_ERROR) {
-        DWORD err = WSAGetLastError();
-        nread = -1;
-        if (err == WSAEINTR) {
-           errno = EINTR;
-        } else if (err == WSAEWOULDBLOCK) {
-           errno = EAGAIN;
-        } else {
-           errno = EIO;            /* some other error */
-        }
-     }
-#endif
-
-      if (nread == -1) {
-         if (errno == EINTR) {
-            continue;
-         }
-         if (errno == EAGAIN) {
-            bmicrosleep(0, 20000);  /* try again in 20ms */
-            continue;
-         }
-      }
-      if (nread <= 0) {
-         return -1;                /* error, or EOF */
-      }
-      nleft -= nread;
-      ptr += nread;
-      if (bsock->use_bwlimit()) {
-         bsock->control_bwlimit(nread);
-      }
-   }
-   return nbytes - nleft;          /* return >= 0 */
-}
-
-/*
- * Write nbytes to the network.
- * It may require several writes.
- */
-
-int32_t write_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes)
-{
-   int32_t nleft, nwritten;
-
-   if (bsock->is_spooling()) {
-      nwritten = fwrite(ptr, 1, nbytes, bsock->m_spool_fd);
-      if (nwritten != nbytes) {
-         berrno be;
-         bsock->b_errno = errno;
-         Qmsg1(bsock->jcr(), M_FATAL, 0, _("Attr spool write error. ERR=%s\n"),
-               be.bstrerror());
-         Dmsg2(400, "nwritten=%d nbytes=%d.\n", nwritten, nbytes);
-         errno = bsock->b_errno;
-         return -1;
-      }
-      return nbytes;
-   }
-
-#ifdef HAVE_TLS
-   if (bsock->tls) {
-      /* TLS enabled */
-      return (tls_bsock_writen(bsock, ptr, nbytes));
-   }
-#endif /* HAVE_TLS */
-
-   nleft = nbytes;
-   while (nleft > 0) {
-      do {
-         errno = 0;
-         nwritten = socketWrite(bsock->m_fd, ptr, nleft);
-         if (bsock->is_timed_out() || bsock->is_terminated()) {
-            return -1;
-         }
-
-#ifdef HAVE_WIN32
-         /*
-          * For Windows, we must simulate Unix errno on a socket
-          *  error in order to handle errors correctly.
-          */
-         if (nwritten == SOCKET_ERROR) {
-            DWORD err = WSAGetLastError();
-            nwritten = -1;
-            if (err == WSAEINTR) {
-               errno = EINTR;
-            } else if (err == WSAEWOULDBLOCK) {
-               errno = EAGAIN;
-            } else {
-               errno = EIO;        /* some other error */
-            }
-         }
-#endif
-
-      } while (nwritten == -1 && errno == EINTR);
-      /*
-       * If connection is non-blocking, we will get EAGAIN, so
-       * use select()/poll() to keep from consuming all
-       * the CPU and try again.
-       */
-      if (nwritten == -1 && errno == EAGAIN) {
-         wait_for_writable_fd(bsock->m_fd, 1, false);
-         continue;
-      }
-      if (nwritten <= 0) {
-         return -1;                /* error */
-      }
-      nleft -= nwritten;
-      ptr += nwritten;
-      if (bsock->use_bwlimit()) {
-         bsock->control_bwlimit(nwritten);
-      }
-   }
-   return nbytes - nleft;
-}
 
 /*
  * Receive a message from the other end. Each message consists of
@@ -609,25 +457,6 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
 }
 
 /*
- * This is the "old" way of opening a connection.  The preferred way is
- *   now to do what this subroutine does, but inline. That allows the
- *   connect() call to return error status, ...
- */
-BSOCK *bnet_connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
-                    utime_t heart_beat,
-                    const char *name, char *host, char *service, int port,
-                    bool verbose)
-{
-   BSOCK *bsock = new_bsock();
-   if (!bsock->connect(jcr, retry_interval, max_retry_time, heart_beat,
-                       name, host, service, port, verbose)) {
-       bsock->destroy();
-       bsock = NULL;
-   }
-   return bsock;
-}
-
-/*
  * Return the string for the error that occurred
  * on the socket. Only the first error is retained.
  */
@@ -752,63 +581,4 @@ const char *bnet_sig_to_ascii(BSOCK * bs)
       sprintf(buf, _("Unknown sig %d"), (int)bs->msglen);
       return buf;
    }
-}
-
-/* Initialize internal socket structure.
- *  This probably should be done in net_open
- */
-BSOCK *init_bsock(JCR * jcr, int sockfd, const char *who, const char *host, int port,
-                  struct sockaddr *client_addr)
-{
-   Dmsg3(100, "who=%s host=%s port=%d\n", who, host, port);
-   BSOCK *bsock = (BSOCK *)malloc(sizeof(BSOCK));
-   memset(bsock, 0, sizeof(BSOCK));
-   bsock->m_fd = sockfd;
-   bsock->tls = NULL;
-   bsock->errors = 0;
-   bsock->m_blocking = 1;
-   bsock->msg = get_pool_memory(PM_BSOCK);
-   bsock->errmsg = get_pool_memory(PM_MESSAGE);
-   bsock->set_who(bstrdup(who));
-   bsock->set_host(bstrdup(host));
-   bsock->set_port(port);
-   memset(&bsock->peer_addr, 0, sizeof(bsock->peer_addr));
-   memcpy(&bsock->client_addr, client_addr, sizeof(bsock->client_addr));
-   /*
-    * ****FIXME**** reduce this to a few hours once
-    *   heartbeats are implemented
-    */
-   bsock->timeout = 60 * 60 * 6 * 24;   /* 6 days timeout */
-   bsock->set_jcr(jcr);
-   return bsock;
-}
-
-BSOCK *dup_bsock(BSOCK *osock)
-{
-   BSOCK *bsock = (BSOCK *)malloc(sizeof(BSOCK));
-   memcpy(bsock, osock, sizeof(BSOCK));
-   bsock->msg = get_pool_memory(PM_BSOCK);
-   bsock->errmsg = get_pool_memory(PM_MESSAGE);
-   if (osock->who()) {
-      bsock->set_who(bstrdup(osock->who()));
-   }
-   if (osock->host()) {
-      bsock->set_host(bstrdup(osock->host()));
-   }
-   if (osock->src_addr) {
-      bsock->src_addr = New(IPADDR(*(osock->src_addr)));
-   }
-   bsock->set_duped();
-   return bsock;
-}
-
-/* Close the network connection */
-void bnet_close(BSOCK * bsock)
-{
-   bsock->close();
-}
-
-void term_bsock(BSOCK * bsock)
-{
-   bsock->destroy();
 }

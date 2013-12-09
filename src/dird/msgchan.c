@@ -521,6 +521,7 @@ extern "C" void *device_thread(void *arg)
       }
       UnlockRes();
       jcr->store_bsock->close();
+      delete jcr->store_bsock;
       jcr->store_bsock = NULL;
       break;
 

@@ -1225,13 +1225,13 @@ bail_out:
 
 /*
  * Create a seperate thread that accepts NDMP connections.
- * We don't use the Bareos native bnet_thread_server which
+ * We don't use the Bareos native bnet_thread_server_tcp which
  * uses the bsock class which is a bit to much overhead
  * for simple sockets which we need and has all kinds of
  * extra features likes TLS and keep-alive support etc.
  * which wouldn't work for NDMP anyhow.
  *
- * So this is a bnet_thread_server put on a diet which
+ * So this is a bnet_thread_server_tcp put on a diet which
  * also contains the absolute minimum code needed to
  * have a robust connection handler.
  */

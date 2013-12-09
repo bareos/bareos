@@ -103,6 +103,7 @@ void *handle_stored_connection(BSOCK *sd, char *job_name)
       Jmsg1(NULL, M_FATAL, 0, _("SD connect failed: Job name not found: %s\n"), job_name);
       Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
       sd->close();
+      delete sd;
       return NULL;
    }
 
@@ -114,6 +115,7 @@ void *handle_stored_connection(BSOCK *sd, char *job_name)
       Dmsg2(50, "Hey!!!! JobId %u Job %s already authenticated.\n",
          (uint32_t)jcr->JobId, jcr->Job);
       sd->close();
+      delete sd;
       free_jcr(jcr);
       return NULL;
    }

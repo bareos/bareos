@@ -73,13 +73,15 @@ static char changerdrivesresponse[] =
 bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
                                int max_retry_time, bool verbose)
 {
-   BSOCK *sd = new_bsock();
+   BSOCK *sd;
    STORERES *store;
    utime_t heart_beat;
 
    if (jcr->store_bsock) {
       return true;                    /* already connected */
    }
+
+   sd = New(BSOCK_TCP);
 
    /*
     * If there is a write storage use it
@@ -103,7 +105,7 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
    sd->set_source_address(me->DIRsrc_addr);
    if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat, _("Storage daemon"),
                     store->address, NULL, store->SDport, verbose)) {
-      sd->destroy();
+      delete sd;
       sd = NULL;
    }
 
@@ -115,6 +117,7 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
 
    if (!authenticate_storage_daemon(jcr, store)) {
       sd->close();
+      delete jcr->store_bsock;
       jcr->store_bsock = NULL;
       return false;
    }
@@ -148,6 +151,7 @@ void close_sd_bsock(UAContext *ua)
    if (ua->jcr->store_bsock) {
       ua->jcr->store_bsock->signal(BNET_TERMINATE);
       ua->jcr->store_bsock->close();
+      delete ua->jcr->store_bsock;
       ua->jcr->store_bsock = NULL;
    }
 }
@@ -629,6 +633,7 @@ bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId)
    }
    sd->signal(BNET_TERMINATE);
    sd->close();
+   delete control_jcr->store_bsock;
    control_jcr->store_bsock = NULL;
 
    free_jcr(control_jcr);
@@ -677,6 +682,7 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent)
    }
    sd->signal(BNET_TERMINATE);
    sd->close();
+   delete ua->jcr->store_bsock;
    ua->jcr->store_bsock = NULL;
    if (silent) {
       jcr->sd_canceled = true;
@@ -743,10 +749,12 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
                    store->name());
       if (ua->jcr->store_bsock) {
          ua->jcr->store_bsock->close();
+         delete ua->jcr->store_bsock;
          ua->jcr->store_bsock = NULL;
       }
       return;
    }
+
    Dmsg0(20, _("Connected to storage daemon\n"));
    sd = ua->jcr->store_bsock;
    if (cmd) {
@@ -754,12 +762,16 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
    } else {
       sd->fsend(statuscmd);
    }
+
    while (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
    }
+
    sd->signal( BNET_TERMINATE);
    sd->close();
+   delete ua->jcr->store_bsock;
    ua->jcr->store_bsock = NULL;
+
    return;
 }
 
@@ -893,6 +905,7 @@ bool do_storage_resolve(UAContext *ua, STORERES *store)
 
    sd->signal(BNET_TERMINATE);
    sd->close();
+   delete ua->jcr->store_bsock;
    ua->jcr->store_bsock = NULL;
 
    return true;

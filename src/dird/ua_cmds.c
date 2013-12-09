@@ -766,6 +766,7 @@ static inline int setbwlimit_filed(UAContext *ua, CLIENTRES *client,
 
    ua->jcr->file_bsock->signal(BNET_TERMINATE);
    ua->jcr->file_bsock->close();
+   delete ua->jcr->file_bsock;
    ua->jcr->file_bsock = NULL;
    ua->jcr->res.client = NULL;
    ua->jcr->max_bandwidth = 0;
@@ -815,6 +816,7 @@ static inline int setbwlimit_stored(UAContext *ua, STORERES *store,
 
    ua->jcr->store_bsock->signal(BNET_TERMINATE);
    ua->jcr->store_bsock->close();
+   delete ua->jcr->store_bsock;
    ua->jcr->store_bsock = NULL;
    ua->jcr->res.wstore = NULL;
    ua->jcr->max_bandwidth = 0;
@@ -985,57 +987,73 @@ static void do_storage_setdebug(UAContext *ua, STORERES *store, int level, int t
    lstore.store = store;
    pm_strcpy(lstore.store_source, _("unknown source"));
    set_wstorage(jcr, &lstore);
-   /* Try connecting for up to 15 seconds */
+
+   /*
+    * Try connecting for up to 15 seconds
+    */
    ua->send_msg(_("Connecting to Storage daemon %s at %s:%d\n"),
-      store->name(), store->address, store->SDport);
+                store->name(), store->address, store->SDport);
+
    if (!connect_to_storage_daemon(jcr, 1, 15, false)) {
       ua->error_msg(_("Failed to connect to Storage daemon.\n"));
       return;
    }
+
    Dmsg0(120, _("Connected to storage daemon\n"));
    sd = jcr->store_bsock;
    sd->fsend("setdebug=%d trace=%d\n", level, trace_flag);
    if (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
    }
+
    sd->signal(BNET_TERMINATE);
    sd->close();
+   delete jcr->store_bsock;
    jcr->store_bsock = NULL;
+
    return;
 }
 
 /*
- * For the client, we have the following values that can be set
- *  level = debug level
- *  trace = send debug output to a file
- *  hangup = how many records to send to SD before hanging up
- *    obviously this is most useful for testing restarting
- *    failed jobs.
+ * For the client, we have the following values that can be set :
+ *    level = debug level
+ *    trace = send debug output to a file
+ *    hangup = how many records to send to SD before hanging up
+ *             obviously this is most useful for testing restarting
+ *             failed jobs.
  */
-static void do_client_setdebug(UAContext *ua, CLIENTRES *client,
-              int level, int trace, int hangup)
+static void do_client_setdebug(UAContext *ua, CLIENTRES *client, int level, int trace, int hangup)
 {
    BSOCK *fd;
 
-   /* Connect to File daemon */
-
+   /*
+    * Connect to File daemon
+    */
    ua->jcr->res.client = client;
-   /* Try to connect for 15 seconds */
+
+   /*
+    * Try to connect for 15 seconds
+    */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address, client->FDport);
+                client->name(), client->address, client->FDport);
+
    if (!connect_to_file_daemon(ua->jcr, 1, 15, false, false)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return;
    }
+
    Dmsg0(120, "Connected to file daemon\n");
    fd = ua->jcr->file_bsock;
    fd->fsend("setdebug=%d trace=%d hangup=%d\n", level, trace, hangup);
    if (fd->recv() >= 0) {
       ua->send_msg("%s", fd->msg);
    }
+
    fd->signal(BNET_TERMINATE);
    fd->close();
+   delete ua->jcr->file_bsock;
    ua->jcr->file_bsock = NULL;
+
    return;
 }
 
@@ -1532,7 +1550,9 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
       return 1;
    }
 
-   /* The level string change if accurate mode is enabled */
+   /*
+    * The level string change if accurate mode is enabled
+    */
    if (accurate >= 0) {
       jcr->accurate = accurate;
    } else {
@@ -1554,8 +1574,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
    }
 
    /*
-    * If the job is in accurate mode, we send the list of
-    * all files to FD.
+    * If the job is in accurate mode, we send the list of all files to FD.
     */
    Dmsg1(40, "estimate accurate=%d\n", jcr->accurate);
    if (!send_accurate_current_files(jcr)) {
@@ -1571,6 +1590,7 @@ bail_out:
    if (jcr->file_bsock) {
       jcr->file_bsock->signal(BNET_TERMINATE);
       jcr->file_bsock->close();
+      delete jcr->file_bsock;
       jcr->file_bsock = NULL;
    }
    return 1;
@@ -1604,9 +1624,9 @@ static int reload_cmd(UAContext *ua, const char *cmd)
 /*
  * Delete Pool records (should purge Media with it).
  *
- *  delete pool=<pool-name>
- *  delete volume pool=<pool-name> volume=<name>
- *  delete jobid=<jobid>
+ * delete pool=<pool-name>
+ * delete volume pool=<pool-name> volume=<name>
+ * delete jobid=<jobid>
  */
 static int delete_cmd(UAContext *ua, const char *cmd)
 {

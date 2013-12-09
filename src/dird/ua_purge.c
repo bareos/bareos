@@ -782,6 +782,7 @@ bail_out:
    if (sd) {
       sd->signal(BNET_TERMINATE);
       sd->close();
+      delete ua->jcr->store_bsock;
       ua->jcr->store_bsock = NULL;
    }
    ua->jcr->res.wstore = NULL;
