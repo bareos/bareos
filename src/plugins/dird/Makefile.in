@@ -33,7 +33,7 @@ example-plugin-dir.la: Makefile \
 		       example-plugin-dir$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared example-plugin-dir.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
 
-python-dir.lo: python-dir.c
+python-dir.lo: python-dir.c python-dir.h
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(PYTHON_CPPFLAGS) -c $<
 
 python-dir.la: Makefile \
