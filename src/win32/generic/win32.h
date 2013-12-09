@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2007-2007 Free Software Foundation Europe e.V.
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,10 +22,5 @@
  * Kern Sibbald, August 2007
  */
 
-#define APP_NAME "Bareos-fd"
-#define LC_APP_NAME "bareos-fd"
-#define APP_DESC "Bareos File Backup Service"
-
-#define terminate_app(x) terminate_filed(x)
-extern void terminate_filed(int sig);
-extern void VSSInit();
+#include "protos.h"
+#include "res.h"

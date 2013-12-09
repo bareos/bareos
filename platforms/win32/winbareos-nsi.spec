@@ -31,15 +31,16 @@ BuildRequires: mingw64-sed
 BuildRequires:  sed
 BuildRequires:  vim, procps, bc
 
-BuildRequires:  mingw32-winbareos  = %{version}
-BuildRequires:  mingw64-winbareos  = %{version}
+BuildRequires:  mingw32-winbareos = %{version}
+BuildRequires:  mingw64-winbareos = %{version}
 
 Source1:         winbareos.nsi
 Source2:         clientdialog.ini
 Source3:         directordialog.ini
-Source4:         KillProcWMI.dll
-Source5:         bareos.ico
-Source6:         AccessControl.dll
+Source4:         storagedialog.ini
+Source5:         KillProcWMI.dll
+Source6:         bareos.ico
+Source7:         AccessControl.dll
 %description
 bareos
 
@@ -59,16 +60,17 @@ bareos
 %build
 
 mkdir -p $RPM_BUILD_ROOT/nsisplugins
-cp %SOURCE4 $RPM_BUILD_ROOT/nsisplugins  #  KillProcWMI
-cp %SOURCE6 $RPM_BUILD_ROOT/nsisplugins  #  AccessControl
+cp %SOURCE5 $RPM_BUILD_ROOT/nsisplugins  #  KillProcWMI
+cp %SOURCE7 $RPM_BUILD_ROOT/nsisplugins  #  AccessControl
 
 mkdir  $RPM_BUILD_ROOT/release32
 mkdir  $RPM_BUILD_ROOT/release64
 
 for file in \
       bareos-tray-monitor.exe bat.exe bareos-fd.exe bconsole.exe \
-      bpipe-fd.dll mssqlvdi-fd.dll libbareos.dll libbareosfind.dll \
-      libcrypto-*.dll libgcc_s_*-1.dll libhistory6.dll \
+      bareos-sd.exe btape.exe bls.exe bextract.exe bpipe-fd.dll \
+      mssqlvdi-fd.dll autoxflate-sd.dll libbareos.dll libbareosfind.dll \
+      libcrypto-8.dll libgcc_s_*-1.dll libhistory6.dll \
       libreadline6.dll libssl-*.dll libstdc++-6.dll \
       libtermcap-0.dll pthreadGCE2.dll zlib1.dll \
       QtCore4.dll QtGui4.dll liblzo2-2.dll libfastlz.dll \
@@ -85,8 +87,8 @@ for cfg in /etc/mingw64-winbareos/*.conf; do
       cp $cfg $RPM_BUILD_ROOT/release64
 done
 
-cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %SOURCE6 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release32
-cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %SOURCE6 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
+cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %SOURCE6 %SOURCE7 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release32
+cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %SOURCE6 %SOURCE7 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
 
 makensis -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=32 $RPM_BUILD_ROOT/release32/winbareos.nsi
 makensis -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=64 $RPM_BUILD_ROOT/release64/winbareos.nsi

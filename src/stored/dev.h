@@ -86,7 +86,6 @@ enum {
    B_TAPE_DEV,
    B_FIFO_DEV,
    B_VTAPE_DEV,                       /* change to B_TAPE_DEV after init */
-   B_FTP_DEV,
    B_VTL_DEV
 };
 
@@ -304,7 +303,6 @@ public:
    int is_removable() const { return capabilities & CAP_REM; }
    int is_tape() const { return (dev_type == B_TAPE_DEV ||
                                  dev_type == B_VTAPE_DEV); }
-   int is_ftp() const { return dev_type == B_FTP_DEV; }
    int is_file() const { return (dev_type == B_FILE_DEV); }
    int is_fifo() const { return dev_type == B_FIFO_DEV; }
    int is_vtl() const  { return dev_type == B_VTL_DEV; }
@@ -422,16 +420,15 @@ public:
    int fd() const { return m_fd; };
 
    /* low level operations */
-   virtual int d_ioctl(int fd, ioctl_req_t request, char *mt_com=NULL);
-   virtual int d_open(const char *pathname, int flags);
-   virtual int d_close(int fd);
-   virtual ssize_t d_read(int fd, void *buffer, size_t count);
-   virtual ssize_t d_write(int fd, const void *buffer, size_t count);
-   virtual boffset_t lseek(DCR *dcr, boffset_t offset, int whence);
+   virtual int d_ioctl(int fd, ioctl_req_t request, char *mt_com = NULL) = 0;
+   virtual int d_open(const char *pathname, int flags) = 0;
+   virtual int d_close(int fd) = 0;
+   virtual ssize_t d_read(int fd, void *buffer, size_t count) = 0;
+   virtual ssize_t d_write(int fd, const void *buffer, size_t count) = 0;
+   virtual boffset_t lseek(DCR *dcr, boffset_t offset, int whence) = 0;
    virtual bool update_pos(DCR *dcr);
    virtual bool rewind(DCR *dcr);
    virtual bool truncate(DCR *dcr);
-   virtual void open_device(DCR *dcr, int omode);
    /*
     * Locking and blocking calls
     */

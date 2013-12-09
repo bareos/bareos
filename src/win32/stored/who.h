@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2007-2007 Free Software Foundation Europe e.V.
+   Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,11 +22,9 @@
  * Kern Sibbald, August 2007
  */
 
-#include "protos.h"
-#include "res.h"
+#define APP_NAME "Bareos-sd"
+#define LC_APP_NAME "bareos-sd"
+#define APP_DESC "Bareos Storage Backup Service"
 
-#ifdef HAVE_TRAY_MONITOR
-#include "aboutDialog.h"
-#include "statusDialog.h"
-#include "trayMonitor.h"
-#endif
+#define terminate_app(x) terminate_stored(x)
+extern void terminate_stored(int sig);

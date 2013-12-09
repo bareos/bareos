@@ -2,7 +2,7 @@ include Makefile.inc
 
 VERSION_STRING := $(shell grep 'VERSION "' ../include/version.h | cut -d ' ' -f3)
 
-all_subdirs = lib findlib filed console plugins
+all_subdirs = lib findlib filed stored console plugins
 ifeq ($(BUILD_QTGUI),yes)
 all_subdirs += qt-console qt-tray-monitor
 endif
@@ -36,11 +36,11 @@ distclean:
 	done
 
 ifeq ($(BUILD_QTGUI),)
-rc-files: console/consoleres.rc filed/filedres.rc
+rc-files: console/consoleres.rc filed/filedres.rc stored/storedres.rc
 
 qt-gui:
 else
-rc-files: console/consoleres.rc filed/filedres.rc qt-console/batres.rc qt-tray-monitor/traymon.rc
+rc-files: console/consoleres.rc filed/filedres.rc stored/storedres.rc qt-console/batres.rc qt-tray-monitor/traymon.rc
 
 qt-gui: qt-console/Makefile qt-tray-monitor/Makefile
 
@@ -61,4 +61,7 @@ console/consoleres.rc: console/consoleres.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
 
 filed/filedres.rc: filed/filedres.rc.in
+	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
+
+stored/storedres.rc: stored/storedres.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@

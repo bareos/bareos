@@ -46,6 +46,14 @@ Var ClientMonitorPassword #XXX_REPLACE_WITH_FD_MONITOR_PASSWORD_XXX
 Var ClientAddress         #XXX_REPLACE_WITH_FD_MONITOR_PASSWORD_XXX
 Var ClientCompatible      # is  client compatible?
 
+# Needed for configuring the storage config file
+Var StorageName        # name of the storage in the director config (Device)
+Var StorageDaemonName  # name of the storage daemon
+Var StoragePassword
+Var StorageMonitorPassword
+Var StorageAddress
+
+
 # Needed for bconsole and bat:
 Var DirectorAddress       #XXX_REPLACE_WITH_HOSTNAME_XXX
 Var DirectorPassword      #XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX
@@ -91,6 +99,8 @@ ${StrRep}
 !define MUI_UNICON "bareos.ico"
 #!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
 #!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+!define MUI_COMPONENTSPAGE_SMALLDESC
+
 
 !insertmacro GetParameters
 !insertmacro GetOptions
@@ -112,6 +122,9 @@ Page custom getClientParameters
 
 ; Custom für Abfragen benötigter Parameter für den Zugriff auf director
 Page custom getDirectorParameters
+
+; Custom für Abfragen benötigter Parameter für den Storage
+Page custom getStorageParameters
 
 ; Instfiles page
 !insertmacro MUI_PAGE_INSTFILES
@@ -253,6 +266,7 @@ Section -StopDaemon
 # cannot start
 # so we use the shotgun:
   KillProcWMI::KillProc "bareos-fd.exe"
+  KillProcWMI::KillProc "bareos-sd.exe"
   KillProcWMI::KillProc "bareos-tray-monitor.exe"
 SectionEnd
 
@@ -280,16 +294,23 @@ Section -SetPasswords
   FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-dir#$DirectorName#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-mon#$HostName-mon#g$\r$\n"
 
-  # if we do not want to be compatible we uncomment the setting for compatible
+  #
+  # If we do not want to be compatible we uncomment the setting for compatible
   #
   ${If} $ClientCompatible != ${BST_CHECKED}
     FileWrite $R1 "s@# compatible@compatible@g$\r$\n"
   ${EndIf}
 
+  FileWrite $R1 "s#XXX_REPLACE_WITH_SD_MONITOR_PASSWORD_XXX#$StorageMonitorPassword#g$\r$\n"
+  FileWrite $R1 "s#XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX#$StoragePassword#g$\r$\n"
+  FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-sd#$StorageDaemonName#g$\r$\n"
+
   FileClose $R1
 
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-fd.conf"'
+  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-sd.conf"'
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\tray-monitor.conf"'
+  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\tray-monitor.fd-sd.conf"'
 
   #Delete config.sed
 
@@ -326,7 +347,9 @@ Section -SetPasswords
 #  FileClose $R1
 SectionEnd
 
-Section "Bareos Client (FileDaemon) and base libs" SEC_CLIENT
+SubSection "File Daemon (Client)" SUBSEC_FD
+
+Section "File Daemon and base libs" SEC_FD
 SectionIn 1 2 3
   SetShellVarContext all
   # TODO: only do this if the file exists
@@ -357,7 +380,7 @@ SectionIn 1 2 3
   !insertmacro InstallConfFile bareos-fd.conf
 SectionEnd
 
-Section /o "Bareos FileDaemon Plugins " SEC_PLUGINS
+Section /o "File Daemon Plugins " SEC_FDPLUGINS
 SectionIn 1 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
@@ -365,6 +388,77 @@ SectionIn 1 2 3
   File "bpipe-fd.dll"
   File "mssqlvdi-fd.dll"
 SectionEnd
+
+Section "Open Firewall for File Daemon" SEC_FIREWALL_FD
+SectionIn 1 2 3
+  SetShellVarContext current
+  ${If} ${AtLeastWin7}
+    #
+    # See http://technet.microsoft.com/de-de/library/dd734783%28v=ws.10%29.aspx
+    #
+    DetailPrint  "Opening Firewall, OS is Win7+"
+    DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-fd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-fd.exe$\" enable=yes protocol=TCP localport=9102 description=$\"Bareos backup client rule$\""
+    # profile=[private,domain]"
+    nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-fd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-fd.exe$\" enable=yes protocol=TCP localport=9102 description=$\"Bareos backup client rule$\""
+    # profile=[private,domain]"
+  ${Else}
+    DetailPrint  "Opening Firewall, OS is < Win7"
+    DetailPrint  "netsh firewall add portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
+    nsExec::Exec "netsh firewall add portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
+  ${EndIf}
+SectionEnd
+
+
+
+SubSectionEnd #FileDaemon Subsection
+
+
+SubSection "Storage Daemon" SUBSEC_SD
+
+Section /o "Storage Daemon" SEC_SD
+SectionIn 2
+  SetShellVarContext all
+  SetOutPath "$INSTDIR"
+  SetOverwrite ifnewer
+  File "bareos-sd.exe"
+  File "btape.exe"
+  File "bls.exe"
+  File "bextract.exe"
+
+  !insertmacro InstallConfFile bareos-sd.conf
+SectionEnd
+
+Section /o "Storage Daemon Plugins " SEC_SDPLUGINS
+SectionIn 2
+  SetShellVarContext all
+  SetOutPath "$INSTDIR\Plugins"
+  SetOverwrite ifnewer
+  File "autoxflate-sd.dll"
+SectionEnd
+
+
+Section "Open Firewall for Storage Daemon" SEC_FIREWALL_SD
+SectionIn 2
+  SetShellVarContext current
+  ${If} ${AtLeastWin7}
+    DetailPrint  "Opening Firewall, OS is Win7+"
+    DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-sd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-sd.exe$\" enable=yes protocol=TCP localport=9103 description=$\"Bareos backup client rule$\""
+    # profile=[private,domain]"
+    nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-sd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-sd.exe$\" enable=yes protocol=TCP localport=9103 description=$\"Bareos backup client rule$\""
+    # profile=[private,domain]"
+  ${Else}
+    DetailPrint  "Opening Firewall, OS is < Win7"
+    DetailPrint  "netsh firewall add portopening protocol=TCP port=9103 name=$\"Bareos backup client (bareos-sd) access$\""
+    nsExec::Exec "netsh firewall add portopening protocol=TCP port=9103 name=$\"Bareos backup client (bareos-sd) access$\""
+  ${EndIf}
+SectionEnd
+
+
+SubSectionEnd # Storage Daemon Subsection
+
+
+
+SubSection "Consoles" SUBSEC_CONSOLES
 
 Section /o "Text Console (bconsole)" SEC_BCONSOLE
 SectionIn 2
@@ -395,7 +489,10 @@ SectionIn 1 2
   File "libpng15-15.dll"
   File "QtCore4.dll"
   File "QtGui4.dll"
-
+${If} ${SectionIsSelected} ${SEC_SD}
+  delete "$PLUGINSDIR\tray-monitor.conf"
+  rename "$PLUGINSDIR\tray-monitor.fd-sd.conf" "$PLUGINSDIR\tray-monitor.conf"
+${EndIf}
   !insertmacro InstallConfFile "tray-monitor.conf"
 SectionEnd
 
@@ -414,34 +511,24 @@ SectionIn 2
 
   !insertmacro InstallConfFile "bat.conf"
 SectionEnd
-
-Section "Open Firewall for Client" SEC_FIREWALL
-SectionIn 1 2 3
-  SetShellVarContext current
-  ${If} ${AtLeastWin7}
-    #
-    # See http://technet.microsoft.com/de-de/library/dd734783%28v=ws.10%29.aspx
-    #
-    DetailPrint  "Opening Firewall, OS is Win7+"
-    DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-fd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-fd.exe$\" enable=yes protocol=TCP localport=9102 description=$\"Bareos backup client rule$\""
-    # profile=[private,domain]"
-    nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-fd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-fd.exe$\" enable=yes protocol=TCP localport=9102 description=$\"Bareos backup client rule$\""
-    # profile=[private,domain]"
-  ${Else}
-    DetailPrint  "Opening Firewall, OS is < Win7"
-    DetailPrint  "netsh firewall add portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
-    nsExec::Exec "netsh firewall add portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
-  ${EndIf}
-SectionEnd
+SubSectionEnd # Consoles Subsection
 
 ; Section descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_CLIENT} "Installs the Bareos File Daemon and required Files"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_PLUGINS} "Installs the Bareos File Daemon Plugins"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FD} "Installs the Bareos File Daemon and required Files"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FDPLUGINS} "Installs the Bareos File Daemon Plugins"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SD} "Installs the Bareos Storage Daemon"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SDPLUGINS} "Installs the Bareos Storage Daemon Plugins"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BCONSOLE} "Installs the CLI client console (bconsole)"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the tray Icon to monitor the Bareos client"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the Tray Icon to monitor the Bareos File Daemon"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BAT} "Installs the Qt Console (BAT)"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL} "Opens Port 9102/TCP for bareos-fd.exe (Client program) in the Windows Firewall"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_SD} "Opens the needed ports for the Storage Daemon in the windows firewall"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_FD} "Opens the needed ports for the File Daemon in the windows firewall"
+
+  !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_FD} "Programs belonging to the Bareos File Daemon (client)"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_SD} "Programs belonging to the Bareos Storage Daemon"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_CONSOLES} "Programs to access and monitor the Bareos system (Consoles and Tray Monitor)"
+
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 Section -AdditionalIcons
@@ -462,15 +549,25 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
 
-# install service
+  # install service
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /kill'
   sleep 3000
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /remove'
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /install -c "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf"'
+
+  ${If} ${SectionIsSelected} ${SEC_SD}
+    nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /kill'
+    sleep 3000
+    nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /remove'
+    nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /install -c "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf"'
+  ${EndIf}
 SectionEnd
 
 Section -StartDaemon
   nsExec::ExecToLog "net start bareos-fd"
+  ${If} ${SectionIsSelected} ${SEC_SD}
+    nsExec::ExecToLog "net start bareos-sd"
+  ${EndIf}
   ${If} ${SectionIsSelected} ${SEC_TRAYMON}
     MessageBox MB_OK|MB_ICONINFORMATION "The tray monitor will be started automatically on next login. $\r$\n Alternatively it can be started from the start menu entry now." /SD IDOK
   ${EndIf}
@@ -542,17 +639,10 @@ Function .onInit
     ${EndIf}
   ${EndIf}
 
-  # check if software is already installed
-  #  ClearErrors
-  #  ReadRegStr $2 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"
-  #  ReadRegStr $0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion"
-  #  StrCmp $2 "" +3
-  #  MessageBox MB_OK|MB_ICONSTOP "${PRODUCT_NAME} version $0 $\r$\nseems to be already installed on your system.$\r$\nPlease uninstall first."
-  #  Abort
   #
-
   # UPGRADE: if already installed allow to uninstall installed version
   # inspired by http://nsis.sourceforge.net/Auto-uninstall_old_before_installing_new
+  #
   strcpy $Upgrading "no"
 
   ReadRegStr $2  ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"
@@ -637,6 +727,11 @@ done:
                     [/DIRECTORADDRESS=Network Address of the Director (for bconsole or BAT)] $\r$\n\
                     [/DIRECTORPASSWORD=Password to access Director]$\r$\n\
                     $\r$\n\
+                    [/STORAGENAME=Name of the storage ressource] $\r$\n\
+                    [/STORAGEPASSWORD=Password to access the storage]  $\r$\n\
+                    [/STORAGEADDRESS=Network Address of the storage] $\r$\n\
+                    [/STORAGEMONITORPASSWORD=Password for monitor access] $\r$\n\
+                    $\r$\n\
                     [/S silent install without user interaction]$\r$\n\
                         (deletes config files on uinstall, moves existing config files away and uses newly new ones) $\r$\n\
                     [/SILENTKEEPCONFIG keep configuration files on silent uninstall and use exinsting config files during silent install]$\r$\n\
@@ -644,6 +739,8 @@ done:
                     [/? (this help dialog)"
 #                   [/DIRECTORNAME=Name of the Director to be accessed from bconsole/BAT]"
   Abort
+
+
 
   ${GetOptions} $cmdLineParams "/CLIENTNAME="  $ClientName
   ClearErrors
@@ -672,6 +769,23 @@ done:
   ${GetOptions} $cmdLineParams "/DIRECTORNAME=" $DirectorName
   ClearErrors
 
+
+  ${GetOptions} $cmdLineParams "/STORAGENAME="  $StorageName
+  ClearErrors
+
+  ${GetOptions} $cmdLineParams "/STORAGEDAEMONNAME="  $StorageDaemonName
+  ClearErrors
+
+  ${GetOptions} $cmdLineParams "/STORAGEPASSWORD=" $StoragePassword
+  ClearErrors
+
+  ${GetOptions} $cmdLineParams "/STORAGEADDRESS=" $StorageAddress
+  ClearErrors
+
+  ${GetOptions} $cmdLineParams "/STORAGEMONITORPASSWORD=" $StorageMonitorPassword
+  ClearErrors
+
+
   StrCpy $SilentKeepConfig "yes"
   ${GetOptions} $cmdLineParams "/SILENTKEEPCONFIG"  $R0
   IfErrors 0 +2         # error is set if NOT found
@@ -679,6 +793,7 @@ done:
   ClearErrors
 
   InitPluginsDir
+  File "/oname=$PLUGINSDIR\storagedialog.ini" "storagedialog.ini"
   File "/oname=$PLUGINSDIR\clientdialog.ini" "clientdialog.ini"
   File "/oname=$PLUGINSDIR\directordialog.ini" "directordialog.ini"
   File "/oname=$PLUGINSDIR\openssl.exe" "openssl.exe"
@@ -699,14 +814,18 @@ done:
   File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
 
   File "/oname=$PLUGINSDIR\bareos-fd.conf" "bareos-fd.conf"
+  File "/oname=$PLUGINSDIR\bareos-sd.conf" "bareos-sd.conf"
   File "/oname=$PLUGINSDIR\bconsole.conf" "bconsole.conf"
   File "/oname=$PLUGINSDIR\bat.conf" "bat.conf"
+
   File "/oname=$PLUGINSDIR\tray-monitor.conf" "tray-monitor.conf"
+  File "/oname=$PLUGINSDIR\tray-monitor.fd-sd.conf" "tray-monitor.fd-sd.conf"
 
   # make first section mandatory
-  SectionSetFlags ${SEC_CLIENT} 17 # SF_SELECTED & SF_RO
+  SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
   SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED} # SF_SELECTED
-  SectionSetFlags ${SEC_PLUGINS} ${SF_SELECTED} # SF_SELECTED
+  SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} # SF_SELECTED
+  SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
 
   # find out the computer name
   Call GetComputerName
@@ -745,6 +864,33 @@ done:
   skipclientmonpassword:
 
 
+  # check if password is set by cmdline. If so, skip creation
+  strcmp $StoragePassword "" genstoragepassword skipstoragepassword
+  genstoragepassword:
+    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
+    pop $R0
+    ${If} $R0 = 0
+     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
+     IfErrors +4
+       FileRead $R1 $R0
+       ${StrTrimNewLines} $StoragePassword $R0
+       FileClose $R1
+    ${EndIf}
+  skipstoragepassword:
+
+  strcmp $StorageMonitorPassword "" genstoragemonpassword skipstoragemonpassword
+  genstoragemonpassword:
+    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
+    pop $R0
+    ${If} $R0 = 0
+     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
+     IfErrors +4
+       FileRead $R1 $R0
+       ${StrTrimNewLines} $StorageMonitorPassword $R0
+       FileClose $R1
+    ${EndIf}
+  skipstoragemonpassword:
+
 
 # if the variables are not empty (because of cmdline params),
 # dont set them with our own logic but leave them as they are
@@ -758,6 +904,16 @@ done:
   StrCpy $DirectorAddress  "bareos-dir.example.com"
   strcmp $DirectorPassword "" +1 +2
   StrCpy $DirectorPassword "DIRECTORPASSWORD"
+
+  strcmp $StorageDaemonName     "" +1 +2
+  StrCpy $StorageDaemonName    "$HostName-sd"
+
+  strcmp $StorageName     "" +1 +2
+  StrCpy $StorageName    "File"
+
+  strcmp $StorageAddress "" +1 +2
+  StrCpy $StorageAddress "$HostName"
+
 FunctionEnd
 
 #
@@ -779,7 +935,7 @@ strcmp $Upgrading "yes" skip
 #  WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 7" "state" "Director console password"
 
 
-${If} ${SectionIsSelected} ${SEC_CLIENT}
+${If} ${SectionIsSelected} ${SEC_FD}
   InstallOptions::dialog $PLUGINSDIR\clientdialog.ini
   Pop $R0
   ReadINIStr  $ClientName              "$PLUGINSDIR\clientdialog.ini" "Field 2" "state"
@@ -795,6 +951,43 @@ ${EndIf}
 skip:
   Pop $R0
 FunctionEnd
+
+
+
+#
+# Storage Configuration Dialog
+#
+Function getStorageParameters
+push $R0
+# skip if we are upgrading
+strcmp $Upgrading "yes" skip
+
+# prefill the dialog fields with our passwords and other
+# information
+
+  WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 2" "state" $StorageDaemonName
+  WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 3" "state" $DirectorName
+  WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 4" "state" $StoragePassword
+  WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 14" "state" $StorageMonitorPassword
+  WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 5" "state" $StorageAddress
+#  WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 7" "state" "Director console password"
+
+
+${If} ${SectionIsSelected} ${SEC_SD}
+  InstallOptions::dialog $PLUGINSDIR\storagedialog.ini
+  Pop $R0
+  ReadINIStr  $StorageDaemonName        "$PLUGINSDIR\storagedialog.ini" "Field 2" "state"
+  ReadINIStr  $DirectorName             "$PLUGINSDIR\storagedialog.ini" "Field 3" "state"
+  ReadINIStr  $StoragePassword          "$PLUGINSDIR\storagedialog.ini" "Field 4" "state"
+  ReadINIStr  $StorageMonitorPassword   "$PLUGINSDIR\storagedialog.ini" "Field 14" "state"
+  ReadINIStr  $StorageAddress           "$PLUGINSDIR\storagedialog.ini" "Field 5" "state"
+${EndIf}
+#  MessageBox MB_OK "$StorageName$\r$\n$StoragePassword$\r$\n$StorageMonitorPassword "
+
+skip:
+  Pop $R0
+FunctionEnd
+
 
 #
 # Director Configuration Dialog (for bconsole and bat configuration)
@@ -830,6 +1023,23 @@ strcmp $Upgrading "yes" skip
 # Multiline text edits cannot be created before but have to be created at runtime.
 # see http://nsis.sourceforge.net/NsDialogs_FAQ#How_to_create_a_multi-line_edit_.28text.29_control
 
+${If} ${SectionIsSelected} ${SEC_SD} # if sd is selected, also generate sd snippet
+  StrCpy $ConfigSnippet "Client {$\r$\n  \
+                              Name = $ClientName$\r$\n  \
+                              Address = $ClientAddress$\r$\n  \
+                              Password = $\"$ClientPassword$\"$\r$\n  \
+                              # uncomment the following if using bacula $\r$\n  \
+                              # Catalog = $\"MyCatalog$\"$\r$\n\
+                           }$\r$\n $\r$\n\
+                         Storage {$\r$\n  \
+                              Name = $StorageName$\r$\n  \
+                              Address = $StorageAddress$\r$\n  \
+                              Password = $\"$StoragePassword$\"$\r$\n  \
+                              Device = FileStorage$\r$\n  \
+                              Media Type = File$\r$\n\
+                           }$\r$\n \
+                           "
+${Else}
   StrCpy $ConfigSnippet "Client {$\r$\n  \
                               Name = $ClientName$\r$\n  \
                               Address = $ClientAddress$\r$\n  \
@@ -837,13 +1047,12 @@ strcmp $Upgrading "yes" skip
                               # uncomment the following if using bacula $\r$\n  \
                               # Catalog = $\"MyCatalog$\"$\r$\n  \
                            }$\r$\n"
-
-
+${EndIf}
 
   nsDialogs::Create 1018
   Pop $dialog
-  ${NSD_CreateGroupBox} 0 0 100% 100% "Add this Client Ressource to your Bareos Director Configuration"
-      Pop $hwnd
+  ${NSD_CreateGroupBox} 0 0 100% 100% "Add this configuration snippet to your Bareos Director Configuration"
+  Pop $hwnd
 
   nsDialogs::CreateControl EDIT \
       "${__NSD_Text_STYLE}|${WS_VSCROLL}|${ES_MULTILINE}|${ES_WANTRETURN}" \
@@ -855,6 +1064,8 @@ strcmp $Upgrading "yes" skip
   nsDialogs::Show
 skip:
 FunctionEnd
+
+
 
 
 Function un.onUninstSuccess
@@ -881,8 +1092,6 @@ Section Uninstall
     StrCpy $SilentKeepConfig "no"
   ClearErrors
 
-
-
   # on 64Bit Systems, change the INSTDIR and Registry view to remove the right entries
   ${If} ${RunningX64} # 64Bit OS
     StrCpy $INSTDIR "$PROGRAMFILES64\${PRODUCT_NAME}"
@@ -891,22 +1100,18 @@ Section Uninstall
   ${EndIf}
 
   SetShellVarContext all
-# uninstall service
+
+  # uninstall service
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /kill'
   sleep 3000
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /remove'
 
+  nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /kill'
+  sleep 3000
+  nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /remove'
 
-#  KillProcWMI::KillProc "bareos-fd.exe"
-# kill tray monitor
+  # kill tray monitor
   KillProcWMI::KillProc "bareos-tray-monitor.exe"
-
-
-##
-##   MessageBox MB_YESNO|MB_ICONQUESTION \
-##       "SilentKeepConfig is $SilentKeepConfig"
-##
-
 
   StrCmp $SilentKeepConfig "yes" ConfDeleteSkip # keep if silent and  $SilentKeepConfig is yes
 
@@ -914,12 +1119,14 @@ Section Uninstall
     "Do you want to keep the existing configuration files?" /SD IDNO IDYES ConfDeleteSkip
 
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf"
   Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf"
   Delete "$APPDATA\${PRODUCT_NAME}\bat.conf"
 
 ConfDeleteSkip:
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.old"
   Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.old"
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.old"
   Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.old"
@@ -931,9 +1138,14 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bareos-tray-monitor.exe"
   Delete "$INSTDIR\bat.exe"
   Delete "$INSTDIR\bareos-fd.exe"
+  Delete "$INSTDIR\bareos-sd.exe"
+  Delete "$INSTDIR\btape.exe"
+  Delete "$INSTDIR\bls.exe"
+  Delete "$INSTDIR\bextract.exe"
   Delete "$INSTDIR\bconsole.exe"
   Delete "$INSTDIR\Plugins\bpipe-fd.dll"
   Delete "$INSTDIR\Plugins\mssqlvdi-fd.dll"
+  Delete "$INSTDIR\Plugins\autoxflate-sd.dll"
   Delete "$INSTDIR\libbareos.dll"
   Delete "$INSTDIR\libbareosfind.dll"
   Delete "$INSTDIR\libcrypto-*.dll"
@@ -960,14 +1172,14 @@ ConfDeleteSkip:
   Delete "$DESKTOP\${PRODUCT_NAME}.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"
 
-# shortcuts
+  # shortcuts
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Edit*.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\BAT.lnk"
   Delete "$DESKTOP\BAT.lnk"
-# traymon
+  # traymon
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk"
-# traymon autostart
+  # traymon autostart
   Delete "$SMSTARTUP\bareos-tray-monitor.lnk"
 
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk"
@@ -979,19 +1191,21 @@ ConfDeleteSkip:
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
   SetAutoClose true
 
-# close Firewall
+  # close Firewall
   ${If} ${AtLeastWin7}
     DetailPrint  "Closing Firewall, OS is Win7+"
     DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos backup client (bareos-fd) access$\""
     nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos backup client (bareos-fd) access$\""
+    DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos backup client (bareos-sd) access$\""
+    nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos backup client (bareos-sd) access$\""
   ${Else}
     DetailPrint  "Closing Firewall, OS is < Win7"
     DetailPrint  "netsh firewall delete portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
     nsExec::Exec "netsh firewall delete portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
+    DetailPrint  "netsh firewall delete portopening protocol=TCP port=9103 name=$\"Bareos backup client (bareos-sd) access$\""
+    nsExec::Exec "netsh firewall delete portopening protocol=TCP port=9103 name=$\"Bareos backup client (bareos-sd) access$\""
   ${EndIf}
-
 SectionEnd
-
 
 Function .onSelChange
 Push $R0

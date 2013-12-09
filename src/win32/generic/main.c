@@ -65,7 +65,7 @@ bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz);
 
 
 #define MAX_COMMAND_ARGS 100
-static char *command_args[MAX_COMMAND_ARGS] = {LC_APP_NAME, NULL};
+static char *command_args[MAX_COMMAND_ARGS] = { (char *)LC_APP_NAME, NULL };
 static int num_command_args = 1;
 static pid_t main_pid;
 static pthread_t main_tid;
@@ -244,8 +244,9 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE /*PrevInstance*/, PSTR CmdLine,
    return BareosAppMain();
 }
 
-#ifndef HAVE_TRAY_MONITOR
-/* Minimalist winproc when don't have tray monitor */
+/*
+ * Minimalist winproc when don't have tray monitor
+ */
 LRESULT CALLBACK bacWinProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
    switch (iMsg) {
@@ -255,8 +256,6 @@ LRESULT CALLBACK bacWinProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
    }
    return DefWindowProc(hwnd, iMsg, wParam, lParam);
 }
-#endif
-
 
 /*
  * Called as a thread from BareosAppMain()
@@ -275,14 +274,6 @@ void *Main_Msg_Loop(LPVOID lpwThreadParam)
     */
    service_thread_id = GetCurrentThreadId();
 
-#ifdef HAVE_TRAY_MONITOR
-   /* Create tray icon & menu if we're running as an app */
-   trayMonitor *monitor = new trayMonitor();
-   if (monitor == NULL) {
-      PostQuitMessage(0);
-   }
-
-#else
    /* Create a window to handle Windows messages */
    WNDCLASSEX baclass;
 
@@ -306,7 +297,6 @@ void *Main_Msg_Loop(LPVOID lpwThreadParam)
                 NULL, NULL, appInstance, NULL) == NULL) {
       PostQuitMessage(0);
    }
-#endif
 
    /* Now enter the Windows message handling loop until told to quit! */
    while (GetMessage(&msg, NULL, 0,0)) {
@@ -315,12 +305,6 @@ void *Main_Msg_Loop(LPVOID lpwThreadParam)
    }
 
    /* If we get here, we are shutting down */
-
-#ifdef HAVE_TRAY_MONITOR
-   if (monitor != NULL) {
-      delete monitor;
-   }
-#endif
 
    if (have_service_api) {
       /* Mark that we're no longer running */
@@ -358,8 +342,10 @@ int BareosAppMain()
    }
    WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), "\r\n", 2, &dwCharsWritten, NULL);
 
+#ifdef FILE_DAEMON
    /* Start up Volume Shadow Copy (only on FD) */
    VSSInit();
+#endif
 
    /* Startup networking */
    WSA_Init();

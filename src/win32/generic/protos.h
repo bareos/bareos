@@ -29,7 +29,7 @@ extern void LogLastErrorMsg(const char *msg, const char *fname, int lineno);
 extern int BareosMain(int argc, char *argv[]);
 extern BOOL ReportStatus(DWORD state, DWORD exitcode, DWORD waithint);
 extern void d_msg(const char *, int, int, const char *, ...);
-extern char *bac_status(char *buf, int buf_len);
+extern char *bareos_status(char *buf, int buf_len);
 
 /* service.cpp */
 bool postToBareos(UINT message, WPARAM wParam, LPARAM lParam);
@@ -45,4 +45,4 @@ extern DWORD service_error;
 extern bool opt_debug;
 extern bool have_service_api;
 extern HINSTANCE appInstance;
-extern int bacstat;
+extern int bareosstat;

@@ -49,9 +49,9 @@
 
 /* adjust DEVELOPER_MODE for status command */
 #ifdef DEVELOPER
-# define DEVELOPER_MODE 1
+#define DEVELOPER_MODE 1
 #else
-# define DEVELOPER_MODE 0
+#define DEVELOPER_MODE 0
 #endif
 
 /*
@@ -60,7 +60,7 @@
  *  penalties.
  */
 #ifdef DEVELOPER
-# define SMCHECK
+#define SMCHECK
 #endif
 
 /*
@@ -68,9 +68,9 @@
  *   it can always be turned on, but we advise to use it only
  *   for debug
  */
-# ifndef _USE_LOCKMGR
-#  define _USE_LOCKMGR
-# endif /* _USE_LOCKMGR */
+#ifndef _USE_LOCKMGR
+#define _USE_LOCKMGR
+#endif /* _USE_LOCKMGR */
 /*
  * Enable priority management with the lock manager
  *
@@ -90,21 +90,15 @@
 /* #define USE_LOCKMGR_SAFEKILL */
 
 #if !HAVE_LINUX_OS && !HAVE_SUN_OS && !HAVE_DARWIN_OS && !HAVE_FREEBSD_OS
-# undef _USE_LOCKMGR
+#undef _USE_LOCKMGR
 #endif
 
 /*
- * USE_VTAPE is a dummy tape driver. This is useful to
- *  run regress test.
+ * USE_VTAPE is a dummy tape driver. This is useful to run regress test.
  */
 #ifdef HAVE_LINUX_OS
-# define USE_VTAPE
+#define USE_VTAPE
 #endif
-
-/*
- * USE_FTP is a ftp driver for the FD using curl.
- */
-// #define USE_FTP
 
 /*
  * for fastest speed but you must have a UPS to avoid unwanted shutdowns

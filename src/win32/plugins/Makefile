@@ -1,4 +1,4 @@
-all_subdirs = filed
+all_subdirs = filed stored
 
 all:
 	@for I in ${all_subdirs}; \
