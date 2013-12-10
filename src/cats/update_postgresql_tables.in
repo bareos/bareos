@@ -46,8 +46,6 @@ UPDATE Version SET VersionId = @BDB_VERSION@;
 COMMIT;
 
 set client_min_messages = fatal;
-CREATE INDEX media_poolid_idx on Media (PoolId);
-CREATE INDEX media_storageid_idx ON Media (StorageId);
 
 ANALYSE;
 

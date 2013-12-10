@@ -1044,12 +1044,12 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
 
    if (res == 1) {
       Dmsg0(500, "ok\n");
-      m_status = 0;
+      m_status = 1;
    }
 
    if (res <= 0) {
       Dmsg0(500, "we failed\n");
-      m_status = 1;
+      m_status = 0;
       Mmsg1(&errmsg, _("error ending batch mode: %s"), PQerrorMessage(m_db_handle));
       Dmsg1(500, "failure %s\n", errmsg);
    }
@@ -1060,13 +1060,8 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
    pg_result = PQgetResult(m_db_handle);
    if (PQresultStatus(pg_result) != PGRES_COMMAND_OK) {
       Mmsg1(&errmsg, _("error ending batch mode: %s"), PQerrorMessage(m_db_handle));
-      m_status = 1;
+      m_status = 0;
    }
-
-   /*
-    * Get some statistics to compute the best plan
-    */
-   sql_query("ANALYZE batch");
 
    PQclear(pg_result);
 

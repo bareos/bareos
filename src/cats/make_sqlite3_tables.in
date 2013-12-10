@@ -227,7 +227,6 @@ CREATE TABLE Media (
    PRIMARY KEY(MediaId)
 );
 CREATE INDEX inx8 ON Media (PoolId);
-CREATE INDEX inx9 ON Media (StorageId);
 
 CREATE TABLE MediaType (
    MediaTypeId INTEGER,

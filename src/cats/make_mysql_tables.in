@@ -273,8 +273,7 @@ CREATE TABLE Media (
    Comment BLOB,
    PRIMARY KEY(MediaId),
    UNIQUE (VolumeName(128)),
-   INDEX (PoolId),
-   INDEX (StorageId)
+   INDEX (PoolId)
 );
 
 CREATE TABLE Pool (

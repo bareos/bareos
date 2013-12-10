@@ -218,7 +218,6 @@ CREATE TABLE Media
 
 CREATE UNIQUE INDEX media_volumename_id ON Media (VolumeName);
 CREATE INDEX media_poolid_idx ON Media (PoolId);
-CREATE INDEX media_storageid_idx ON Media (StorageId);
 
 CREATE TABLE MediaType (
     MediaTypeId       SERIAL,
