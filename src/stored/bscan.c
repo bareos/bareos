@@ -94,10 +94,10 @@ static int num_pools = 0;
 static int num_media = 0;
 static int num_files = 0;
 
+static CONFIG *config;
 #define CONFIG_FILE "bareos-sd.conf"
 char *configfile = NULL;
-STORES *me = NULL;                    /* Our Global resource */
-CONFIG *my_config = NULL;             /* Our Global config */
+STORES *me = NULL;                    /* our Global resource */
 bool forge_on = false;                /* proceed inspite of I/O errors */
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
@@ -256,30 +256,29 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   my_config = new_config_parser();
-   parse_sd_config(my_config, configfile, M_ERROR_TERM);
+   config = new_config_parser();
+   parse_sd_config(config, configfile, M_ERROR_TERM);
 
-   LockRes(my_config);
-   me = (STORES *)my_config->GetNextRes(R_STORAGE, NULL);
+   LockRes();
+   me = (STORES *)GetNextRes(R_STORAGE, NULL);
    if (!me) {
-      UnlockRes(my_config);
+      UnlockRes();
       Emsg1(M_ERROR_TERM, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
          configfile);
    }
+   UnlockRes();
 
    if (DirectorName) {
-      foreach_res(my_config, director, R_DIRECTOR) {
+      foreach_res(director, R_DIRECTOR) {
          if (bstrcmp(director->hdr.name, DirectorName)) {
             break;
          }
       }
       if (!director) {
-         UnlockRes(my_config);
          Emsg2(M_ERROR_TERM, 0, _("No Director resource named %s defined in %s. Cannot continue.\n"),
                DirectorName, configfile);
       }
    }
-   UnlockRes(my_config);
 
    load_sd_plugins(me->plugin_directory, me->plugin_names);
 
@@ -345,12 +344,6 @@ int main (int argc, char *argv[])
    dev->term();
    free_dcr(bjcr->dcr);
    free_jcr(bjcr);
-
-   if (my_config) {
-      my_config->free_all_resources();
-      free(my_config);
-      my_config = NULL;
-   }
 
    return 0;
 }

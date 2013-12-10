@@ -163,8 +163,8 @@ int restore_cmd(UAContext *ua, const char *cmd)
    }
 
    /* Ensure there is at least one Restore Job */
-   LockRes(my_config);
-   foreach_res(my_config, job, R_JOB) {
+   LockRes();
+   foreach_res(job, R_JOB) {
       if (job->JobType == JT_RESTORE) {
          if (!rx.restore_job) {
             rx.restore_job = job;
@@ -172,7 +172,7 @@ int restore_cmd(UAContext *ua, const char *cmd)
          rx.restore_jobs++;
       }
    }
-   UnlockRes(my_config);
+   UnlockRes();
    if (!rx.restore_jobs) {
       ua->error_msg(_(
          "No Restore Job Resource found in bareos-dir.conf.\n"
@@ -594,7 +594,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          if (!has_value(ua, i)) {
             return 0;
          }
-         rx->pool = (POOLRES *)my_config->GetResWithName(R_POOL, ua->argv[i]);
+         rx->pool = (POOLRES *)GetResWithName(R_POOL, ua->argv[i]);
          if (!rx->pool) {
             ua->error_msg(_("Error: Pool resource \"%s\" does not exist.\n"), ua->argv[i]);
             return 0;
@@ -1538,8 +1538,8 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
    /*
     * Try looking up Storage by name
     */
-   LockRes(my_config);
-   foreach_res(my_config, store, R_STORAGE) {
+   LockRes();
+   foreach_res(store, R_STORAGE) {
       if (bstrcmp(Storage, store->name())) {
          if (acl_access_ok(ua, Storage_ACL, store->name())) {
             rx.store = store;
@@ -1547,7 +1547,7 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
          break;
       }
    }
-   UnlockRes(my_config);
+   UnlockRes();
 
    if (rx.store) {
       int i;
@@ -1558,7 +1558,7 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
       store = NULL;
       i = find_arg_with_value(ua, "storage");
       if (i > 0) {
-         store = (STORERES *)my_config->GetResWithName(R_STORAGE, ua->argv[i]);
+         store = (STORERES *)GetResWithName(R_STORAGE, ua->argv[i]);
          if (store && !acl_access_ok(ua, Storage_ACL, store->name())) {
             store = NULL;
          }
@@ -1576,8 +1576,8 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
     * If no storage resource, try to find one from MediaType
     */
    if (!rx.store) {
-      LockRes(my_config);
-      foreach_res(my_config, store, R_STORAGE) {
+      LockRes();
+      foreach_res(store, R_STORAGE) {
          if (bstrcmp(MediaType, store->media_type)) {
             if (acl_access_ok(ua, Storage_ACL, store->name())) {
                rx.store = store;
@@ -1590,11 +1590,11 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
                                   Storage, store->name(), MediaType);
                }
             }
-            UnlockRes(my_config);
+            UnlockRes();
             return;
          }
       }
-      UnlockRes(my_config);
+      UnlockRes();
       ua->warning_msg(_("\nUnable to find Storage resource for\n"
                         "MediaType \"%s\", needed by the Jobs you selected.\n"), MediaType);
    }

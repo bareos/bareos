@@ -431,13 +431,13 @@ void restorePage::unmarkButtonPushed()
 bool restorePage::cwd(const char *dir)
 {
    int stat;
-   POOL_MEM cd_cmd(PM_NAME);
+   char cd_cmd[MAXSTRING];
 
    mainWin->waitEnter();
    statusLine->setText("");
-   Mmsg(cd_cmd, "cd \"%s\"", dir);
-   Dmsg2(dbglvl, "dir=%s cmd=%s\n", dir, cd_cmd.c_str());
-   m_console->write_dir(m_conn, cd_cmd.c_str(), false);
+   bsnprintf(cd_cmd, sizeof(cd_cmd), "cd \"%s\"", dir);
+   Dmsg2(dbglvl, "dir=%s cmd=%s\n", dir, cd_cmd);
+   m_console->write_dir(m_conn, cd_cmd, false);
    lineEdit->clear();
    if ((stat = m_console->read(m_conn)) > 0) {
       m_cwd = m_console->msg(m_conn);

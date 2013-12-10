@@ -96,7 +96,7 @@
 
 void InitWinAPIWrapper();
 
-#define OSDependentInit() InitWinAPIWrapper()
+#define  OSDependentInit()    InitWinAPIWrapper()
 
 #define sbrk(x)  0
 
@@ -126,6 +126,7 @@ void InitWinAPIWrapper();
 #define  OSDependentInit()
 
 #endif /* HAVE_WIN32 */
+
 
 #ifdef ENABLE_NLS
    #include <libintl.h>
@@ -164,6 +165,9 @@ void InitWinAPIWrapper();
 /* Use the following for strings not to be translated */
 #define NT_(s) (s)
 
+/* This should go away! ****FIXME***** */
+#define MAXSTRING 500
+
 /* Maximum length to edit time/date */
 #define MAX_TIME_LENGTH 50
 
@@ -178,11 +182,6 @@ void InitWinAPIWrapper();
 
 /* All tape operations MUST be a multiple of this */
 #define TAPE_BSIZE 1024
-
-/* Maximum length of a hostname */
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
 
 /* Default length of passphrases used */
 #define DEFAULT_PASSPHRASE_LENGTH 32
@@ -271,14 +270,14 @@ typedef int (INTHANDLER)();
 #endif
 
 #ifdef TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
+# include <sys/time.h>
+# include <time.h>
 #else
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#else
-#include <time.h>
-#endif
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
 #endif
 
 #ifndef O_BINARY
@@ -313,20 +312,12 @@ typedef off_t     boffset_t;
            strerror(errstat)); \
    } while(0)
 
+#define LockRes()   b_LockRes(__FILE__, __LINE__)
+#define UnlockRes() b_UnlockRes(__FILE__, __LINE__)
+
 #ifdef DEBUG_MEMSET
 #define memset(a, v, n) b_memset(__FILE__, __LINE__, a, v, n)
 void b_memset(const char *file, int line, void *mem, int val, size_t num);
-#endif
-
-/*
- * Work around platforms without a proper va_copy.
- */
-#if defined(HAVE_VA_COPY)
-#define VA_COPY(dest, src) va_copy((dest), (src))
-#elif defined(HAVE___BUILTIN_VA_COPY)
-#define VA_COPY(dest, src) __builtin_va_copy((dest), (src));
-#else
-#define VA_COPY(dest, src) (dest) = (src);
 #endif
 
 /**
@@ -535,21 +526,19 @@ m_msg(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 
 class POOL_MEM;
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
-int vMmsg(POOLMEM **pool_buf, const char *fmt, va_list ap);
-int vMmsg(POOLMEM *&msgbuf, const char *fmt, va_list ap);
-int vMmsg(POOL_MEM &msgbuf, const char *fmt, va_list ap);
-int Mmsg(POOLMEM **msgbuf, const char *fmt, ...);
-int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
-int Mmsg(POOL_MEM &msgbuf, const char *fmt, ...);
+int  Mmsg(POOLMEM **msgbuf, const char *fmt,...);
+int  Mmsg(POOLMEM *&msgbuf, const char *fmt,...);
+int  Mmsg(POOL_MEM &msgbuf, const char *fmt,...);
 
 class JCR;
-void d_msg(const char *file, int line, int level, const char *fmt, ...);
-void p_msg(const char *file, int line, int level, const char *fmt, ...);
-void e_msg(const char *file, int line, int type, int level, const char *fmt, ...);
-void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
-void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
-int m_msg(const char *file, int line, POOLMEM **msgbuf, const char *fmt, ...);
-int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
+void d_msg(const char *file, int line, int level, const char *fmt,...);
+void p_msg(const char *file, int line, int level, const char *fmt,...);
+void e_msg(const char *file, int line, int type, int level, const char *fmt,...);
+void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt,...);
+void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt,...);
+int  m_msg(const char *file, int line, POOLMEM **msgbuf, const char *fmt,...);
+int  m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
+
 
 /** Use our strdup with smartalloc */
 #ifndef HAVE_WXCONSOLE

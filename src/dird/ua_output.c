@@ -98,8 +98,7 @@ static void show_disabled_jobs(UAContext *ua)
 {
    JOBRES *job;
    bool first = true;
-
-   foreach_res(my_config, job, R_JOB) {
+   foreach_res(job, R_JOB) {
       if (!acl_access_ok(ua, Job_ACL, job->name())) {
          continue;
       }
@@ -133,7 +132,6 @@ static struct showstruct avail_resources[] = {
    { NT_("filesets"), R_FILESET },
    { NT_("pools"), R_POOL },
    { NT_("messages"), R_MSGS },
-   { NT_("consoles"), R_CONSOLE },
    { NT_("all"), -1 },
    { NT_("help"), -2 },
    { NULL, 0 }
@@ -154,14 +152,13 @@ int show_cmd(UAContext *ua, const char *cmd)
    int i, j, type, len;
    int recurse;
    char *res_name;
-   RES_CONTAINER *res_container = NULL;
    RES *res = NULL;
 
    Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
 
-   LockRes(my_config);
-   for (i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("disabled"))) {
+   LockRes();
+   for (i=1; i<ua->argc; i++) {
+      if (bstrcasecmp(ua->argk[i], _("disabled"))) {
          show_disabled_jobs(ua);
          goto bail_out;
       }
@@ -171,13 +168,13 @@ int show_cmd(UAContext *ua, const char *cmd)
          /* No name, dump all resources of specified type */
          recurse = 1;
          len = strlen(res_name);
-         for (j = 0; avail_resources[j].res_name; j++) {
-            if (bstrncasecmp(res_name, avail_resources[j].res_name, len)) {
+         for (j=0; avail_resources[j].res_name; j++) {
+            if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
                type = avail_resources[j].type;
                if (type > 0) {
-                  res_container = my_config->m_res_containers[type - my_config->m_r_first];
+                  res = res_head[type-r_first];
                } else {
-                  res_container = NULL;
+                  res = NULL;
                }
                break;
             }
@@ -186,10 +183,10 @@ int show_cmd(UAContext *ua, const char *cmd)
          /* Dump a single resource with specified name */
          recurse = 0;
          len = strlen(res_name);
-         for (j = 0; avail_resources[j].res_name; j++) {
-            if (bstrncasecmp(res_name, avail_resources[j].res_name, len)) {
+         for (j=0; avail_resources[j].res_name; j++) {
+            if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
                type = avail_resources[j].type;
-               res = (RES *)my_config->GetResWithName(type, ua->argv[i]);
+               res = (RES *)GetResWithName(type, ua->argv[i]);
                if (!res) {
                   type = -3;
                }
@@ -199,42 +196,33 @@ int show_cmd(UAContext *ua, const char *cmd)
       }
 
       switch (type) {
-      /* All resources */
-      case -1:
-         for (j = my_config->m_r_first; j <= my_config->m_r_last; j++) {
+      case -1:                           /* all */
+         for (j=r_first; j<=r_last; j++) {
             /* Skip R_DEVICE since it is really not used or updated */
             if (j != R_DEVICE) {
-               my_config->dump_all_resources(j, bsendmsg, ua);
+               dump_resource(j, res_head[j-r_first], bsendmsg, ua);
             }
          }
          break;
-      /* Help */
       case -2:
          ua->send_msg(_("Keywords for the show command are:\n"));
          for (j=0; avail_resources[j].res_name; j++) {
-            ua->error_msg("%s\n", avail_resources[j].res_name);
+            ua->error_msg("%s\n", _(avail_resources[j].res_name));
          }
          goto bail_out;
-      /* Resource not found */
       case -3:
          ua->error_msg(_("%s resource %s not found.\n"), res_name, ua->argv[i]);
          goto bail_out;
-      /* Resource not found */
       case 0:
          ua->error_msg(_("Resource %s not found\n"), res_name);
          goto bail_out;
-      /* Dump a specific type */
       default:
-         if (res) {             /* keyword and argument, ie: show job=name */
-            dump_resource(my_config, recurse ? type : -type, res, bsendmsg, ua);
-         } else if (res_container) {  /* keyword only, ie: show job */
-            my_config->dump_all_resources(-type, bsendmsg, ua);
-         }
+         dump_resource(recurse?type:-type, res, bsendmsg, ua);
          break;
       }
    }
 bail_out:
-   UnlockRes(my_config);
+   UnlockRes();
    return 1;
 }
 
@@ -551,7 +539,7 @@ static bool list_nextvol(UAContext *ua, int ndays)
          return false;
       }
    } else {
-      job = (JOBRES *)my_config->GetResWithName(R_JOB, ua->argv[i]);
+      job = (JOBRES *)GetResWithName(R_JOB, ua->argv[i]);
       if (!job) {
          Jmsg(ua->jcr, M_ERROR, 0, _("%s is not a job name.\n"), ua->argv[i]);
          if ((job = select_job_resource(ua)) == NULL) {
@@ -720,7 +708,7 @@ bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool)
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
                                           jcr->res.catalog->db_user,
-                                          jcr->res.catalog->db_password.value,
+                                          jcr->res.catalog->db_password,
                                           jcr->res.catalog->db_address,
                                           jcr->res.catalog->db_port,
                                           jcr->res.catalog->db_socket,

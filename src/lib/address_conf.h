@@ -63,7 +63,7 @@ class IPADDR : public SMARTALLOC {
    void set_addr6(struct in6_addr *ip6);
 #endif
    const char *get_address(char *outputbuf, int outlen);
-   const char *build_config_str(char *buf, int blen);
+
    const char *build_address_str(char *buf, int blen, bool print_port=true);
 
    /* private */

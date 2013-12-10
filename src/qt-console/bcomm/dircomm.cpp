@@ -100,10 +100,10 @@ bool DirComm::connect_dir()
    /* Give GUI a chance */
    app->processEvents();
 
-   LockRes(my_config);
+   LockRes();
    /* If cons==NULL, default console will be used */
-   cons = (CONRES *)my_config->GetNextRes(R_CONSOLE, NULL);
-   UnlockRes(my_config);
+   cons = (CONRES *)GetNextRes(R_CONSOLE, NULL);
+   UnlockRes();
 
    /* Initialize Console TLS context once */
    if (cons && !cons->tls_ctx && (cons->tls_enable || cons->tls_require)) {
@@ -560,14 +560,12 @@ bool DirComm::authenticate_with_director(JCR *jcr, DIRRES *director, CONRES *con
 
    errmsg[0] = 0;
    if (cons) {
-      ASSERT(cons->password.encoding == p_encoding_md5);
       name = cons->hdr.name;
-      password = cons->password.value;
+      password = cons->password;
       tls_ctx = cons->tls_ctx;
    } else {
-      ASSERT(director->password.encoding == p_encoding_md5);
       name = "*UserAgent*";
-      password = director->password.value;
+      password = director->password;
       tls_ctx = director->tls_ctx;
    }
 

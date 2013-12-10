@@ -1,4 +1,5 @@
-/* BAREOS® - Backup Archiving REcovery Open Sourced
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.

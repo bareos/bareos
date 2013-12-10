@@ -78,7 +78,7 @@ struct MONITORRES {
 
    bool require_ssl;                  /* Require SSL for all connections */
    MSGSRES *messages;                 /* Daemon message handler */
-   s_password password;               /* UA server password */
+   char *password;                    /* UA server password */
    utime_t RefreshInterval;           /* Status refresh interval */
    utime_t FDConnectTimeout;          /* timeout for connect in seconds */
    utime_t SDConnectTimeout;          /* timeout in seconds */
@@ -94,7 +94,7 @@ struct CLIENTRES {
 
    uint32_t FDport;                   /* Where File daemon listens */
    char *address;
-   s_password password;
+   char *password;
    bool enable_ssl;                   /* Use SSL */
 };
 
@@ -107,7 +107,7 @@ struct STORERES {
 
    uint32_t SDport;                   /* port where Directors connect */
    char *address;
-   s_password password;
+   char *password;
    bool enable_ssl;                   /* Use SSL */
 };
 

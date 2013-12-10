@@ -43,17 +43,16 @@ QApplication *app;
 /* Forward referenced functions */
 void terminate_console(int sig);
 static void usage();
-static int check_resources(CONFIG *config);
+static int check_resources();
 
 extern bool parse_bat_config(CONFIG *config, const char *configfile, int exit_code);
 extern void message_callback(int /* type */, char *msg);
 
+
 #define CONFIG_FILE "bat.conf"     /* default configuration file */
 
-/* Global variables */
-CONFIG *my_config = NULL;
-
 /* Static variables */
+static CONFIG *config;
 static char *configfile = NULL;
 
 int main(int argc, char *argv[])
@@ -150,14 +149,14 @@ int main(int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   my_config = new_config_parser();
-   parse_bat_config(my_config, configfile, M_ERROR_TERM);
+   config = new_config_parser();
+   parse_bat_config(config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
-   if (!check_resources(my_config)) {
+   if (!check_resources()) {
       Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
    if (test_config) {
@@ -173,11 +172,6 @@ int main(int argc, char *argv[])
 void terminate_console(int /*sig*/)
 {
 // WSA_Cleanup();                  /* TODO: check when we have to call it */
-   my_config->free_all_resources();
-   free(my_config);
-   my_config = NULL;
-   term_msg();
-
    exit(0);
 }
 
@@ -201,16 +195,17 @@ PROG_COPYRIGHT
  * Make a quick check to see that we have all the
  * resources needed.
  */
-static int check_resources(CONFIG *config)
+static int check_resources()
 {
    bool ok = true;
    DIRRES *director;
    int numdir;
    bool tls_needed;
 
-   LockRes(config);
+   LockRes();
+
    numdir = 0;
-   foreach_res(config, director, R_DIRECTOR) {
+   foreach_res(director, R_DIRECTOR) {
       numdir++;
       /* tls_require implies tls_enable */
       if (director->tls_require) {
@@ -241,7 +236,7 @@ static int check_resources(CONFIG *config)
 
    CONRES *cons;
    /* Loop over Consoles */
-   foreach_res(config, cons, R_CONSOLE) {
+   foreach_res(cons, R_CONSOLE) {
       /* tls_require implies tls_enable */
       if (cons->tls_require) {
          if (have_tls) {
@@ -261,7 +256,8 @@ static int check_resources(CONFIG *config)
          ok = false;
       }
    }
-   UnlockRes(config);
+
+   UnlockRes();
 
    return ok;
 }

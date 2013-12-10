@@ -2780,7 +2780,7 @@ static bxattr_exit_code solaris_save_xattr(JCR *jcr,
    char target_attrname[PATH_MAX];
    char link_source[PATH_MAX];
    char *acl_text = NULL;
-   char attribs[XATTR_BUFSIZ];
+   char attribs[MAXSTRING];
    char buffer[XATTR_BUFSIZ];
    bxattr_exit_code retval = bxattr_exit_error;
 

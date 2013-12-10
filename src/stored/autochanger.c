@@ -42,7 +42,7 @@ bool init_autochangers()
    bool OK = true;
    AUTOCHANGERRES *changer;
    /* Ensure that the media_type for each device is the same */
-   foreach_res(my_config, changer, R_AUTOCHANGER) {
+   foreach_res(changer, R_AUTOCHANGER) {
       DEVRES *device;
       foreach_alist(device, changer->device) {
          /*

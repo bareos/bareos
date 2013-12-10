@@ -51,7 +51,7 @@ static inline bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
    /*
     * Find Pool resource
     */
-   ua->jcr->res.pool = (POOLRES *)my_config->GetResWithName(R_POOL, pr->Name);
+   ua->jcr->res.pool = (POOLRES *)GetResWithName(R_POOL, pr->Name);
    if (!ua->jcr->res.pool) {
       ua->error_msg(_("Pool \"%s\" resource not found for volume \"%s\"!\n"),
                     pr->Name, mr->VolumeName);

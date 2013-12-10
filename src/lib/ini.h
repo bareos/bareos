@@ -22,18 +22,6 @@
 #define INI_H
 
 /*
- * Standard global types with handlers defined in ini.c
- */
-#define INI_CFG_TYPE_INT32       1  /* 32 bits Integer */
-#define INI_CFG_TYPE_PINT32      2  /* Positive 32 bits Integer (unsigned) */
-#define INI_CFG_TYPE_INT64       3  /* 64 bits Integer */
-#define INI_CFG_TYPE_PINT64      4  /* Positive 64 bits Integer (unsigned) */
-#define INI_CFG_TYPE_NAME        5  /* Name */
-#define INI_CFG_TYPE_STR         6  /* String */
-#define INI_CFG_TYPE_BOOL        7  /* Boolean */
-#define INI_CFG_TYPE_ALIST_STR   8  /* List of strings */
-
-/*
  * Plugin has a internal C structure that describes the configuration:
  * struct ini_items[]
  *
@@ -73,12 +61,19 @@ typedef union {
 } item_value;
 
 /*
+ * These functions are used to convert a string to the appropriate value
+ */
+typedef
+bool (INI_ITEM_HANDLER)(LEX *lc, ConfigFile *inifile,
+                        struct ini_items *item);
+
+/*
  * If no items are registred at the scan time, we detect this list from
  * the file itself
  */
 struct ini_items {
    const char *name;            /* keyword name */
-   int type;                    /* type accepted */
+   INI_ITEM_HANDLER *handler;   /* type accepted */
    const char *comment;         /* comment associated, used in prompt */
 
    int required;                /* optional required or not */
@@ -225,13 +220,27 @@ public:
 };
 
 /*
- * Get handler code from storage type.
+ * Standard global parsers defined in ini.c
+ * When called with lc=NULL, it converts the item value back in inifile->edit
+ * buffer.
  */
-const char *ini_get_store_code(int type);
+bool ini_store_str(LEX *lc, ConfigFile *inifile, ini_items *item);
+bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item);
+bool ini_store_alist_str(LEX *lc, ConfigFile *inifile, ini_items *item);
+bool ini_store_pint64(LEX *lc, ConfigFile *inifile, ini_items *item);
+bool ini_store_int64(LEX *lc, ConfigFile *inifile, ini_items *item);
+bool ini_store_pint32(LEX *lc, ConfigFile *inifile, ini_items *item);
+bool ini_store_int32(LEX *lc, ConfigFile *inifile, ini_items *item);
+bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item);
 
 /*
- * Get storage type from handler name.
+ * Get handler code from handler @
  */
-int ini_get_store_type(const char *key);
+const char *ini_get_store_code(INI_ITEM_HANDLER *handler);
+
+/*
+ * Get handler function from handler name
+ */
+INI_ITEM_HANDLER *ini_get_store_handler(const char *);
 
 #endif

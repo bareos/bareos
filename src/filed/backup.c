@@ -70,7 +70,6 @@ static void close_vss_backup_session(JCR *jcr);
 bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
 {
    BSOCK *sd;
-   CLIENTRES *client;
    bool ok = true;
    // TODO landonf: Allow user to specify encryption algorithm
 
@@ -80,9 +79,9 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
 
    Dmsg1(300, "filed: opened data connection %d to stored\n", sd->m_fd);
 
-   LockRes(my_config);
-   client = (CLIENTRES *)my_config->GetNextRes(R_CLIENT, NULL);
-   UnlockRes(my_config);
+   LockRes();
+   CLIENTRES *client = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
+   UnlockRes();
    uint32_t buf_size;
    if (client) {
       buf_size = client->max_network_buffer_size;
@@ -1253,8 +1252,8 @@ bail_out:
 bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
 {
    BSOCK *sd = jcr->store_bsock;
-   POOL_MEM attribs(PM_NAME),
-            attribsExBuf(PM_NAME);
+   char attribs[MAXSTRING];
+   char attribsExBuf[MAXSTRING];
    char *attribsEx = NULL;
    int attr_stream;
    int comp_len;
@@ -1265,29 +1264,23 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
 #endif
 
    Dmsg1(300, "encode_and_send_attrs fname=%s\n", ff_pkt->fname);
-   /**
-    * Find what data stream we will use, then encode the attributes
-    */
+   /** Find what data stream we will use, then encode the attributes */
    if ((data_stream = select_data_stream(ff_pkt, me->compatible)) == STREAM_NONE) {
-      /*
-       * This should not happen
-       */
+      /* This should not happen */
       Jmsg0(jcr, M_FATAL, 0, _("Invalid file flags, no supported data stream type.\n"));
       return false;
    }
-   encode_stat(attribs.c_str(), &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, data_stream);
+   encode_stat(attribs, &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, data_stream);
 
-   /**
-    * Now possibly extend the attributes
-    */
+   /** Now possibly extend the attributes */
    if (IS_FT_OBJECT(ff_pkt->type)) {
       attr_stream = STREAM_RESTORE_OBJECT;
    } else {
-      attribsEx = attribsExBuf.c_str();
+      attribsEx = attribsExBuf;
       attr_stream = encode_attribsEx(jcr, attribsEx, ff_pkt);
    }
 
-   Dmsg3(300, "File %s\nattribs=%s\nattribsEx=%s\n", ff_pkt->fname, attribs.c_str(), attribsEx);
+   Dmsg3(300, "File %s\nattribs=%s\nattribsEx=%s\n", ff_pkt->fname, attribs, attribsEx);
 
    jcr->lock();
    jcr->JobFiles++;                    /* increment number of files sent */
@@ -1349,7 +1342,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
    case FT_LNKSAVED:
       Dmsg3(300, "Link %d %s to %s\n", jcr->JobFiles, ff_pkt->fname, ff_pkt->link);
       status = sd->fsend("%ld %d %s%c%s%c%s%c%s%c%u%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0,
+                         ff_pkt->type, ff_pkt->fname, 0, attribs, 0,
                          ff_pkt->link, 0, attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
    case FT_DIREND:
@@ -1357,7 +1350,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
    case FT_JUNCTION:
       /* Here link is the canonical filename (i.e. with trailing slash) */
       status = sd->fsend("%ld %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->link, 0, attribs.c_str(), 0, 0,
+                         ff_pkt->type, ff_pkt->link, 0, attribs, 0, 0,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
    case FT_PLUGIN_CONFIG:
@@ -1405,12 +1398,12 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
       break;
    case FT_REG:
       status = sd->fsend("%ld %d %s%c%s%c%c%s%c%d%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,
+                         ff_pkt->type, ff_pkt->fname, 0, attribs, 0, 0,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
    default:
       status = sd->fsend("%ld %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,
+                         ff_pkt->type, ff_pkt->fname, 0, attribs, 0, 0,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
    }

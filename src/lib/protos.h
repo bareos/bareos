@@ -363,7 +363,6 @@ bool get_tls_enable(TLS_CONTEXT *ctx);
 void set_tls_enable(TLS_CONTEXT *ctx, bool value);
 
 /* util.c */
-void escape_string(char *snew, char *old, int len);
 bool is_buf_zero(char *buf, int len);
 void lcase(char *str);
 void bash_spaces(char *str);

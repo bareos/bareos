@@ -73,7 +73,7 @@ static inline bool is_same_storage_daemon(STORERES *rstore, STORERES *wstore)
 {
    return rstore->SDport == wstore->SDport &&
           bstrcasecmp(rstore->address, wstore->address) &&
-          bstrcasecmp(rstore->password.value, wstore->password.value);
+          bstrcasecmp(rstore->password, wstore->password);
 }
 
 /*
@@ -178,12 +178,14 @@ bool do_migration_init(JCR *jcr)
    }
 
    Dmsg5(dbglevel, "JobId=%d: Current: Name=%s JobId=%d Type=%c Level=%c\n",
-         (int)jcr->JobId, jcr->jr.Name, (int)jcr->jr.JobId, jcr->jr.JobType, jcr->jr.JobLevel);
+      (int)jcr->JobId,
+      jcr->jr.Name, (int)jcr->jr.JobId,
+      jcr->jr.JobType, jcr->jr.JobLevel);
 
-   LockRes(my_config);
-   job = (JOBRES *)my_config->GetResWithName(R_JOB, jcr->jr.Name);
-   prev_job = (JOBRES *)my_config->GetResWithName(R_JOB, jcr->previous_jr.Name);
-   UnlockRes(my_config);
+   LockRes();
+   job = (JOBRES *)GetResWithName(R_JOB, jcr->jr.Name);
+   prev_job = (JOBRES *)GetResWithName(R_JOB, jcr->previous_jr.Name);
+   UnlockRes();
 
    if (!job) {
       Jmsg(jcr, M_FATAL, 0, _("Job resource not found for \"%s\".\n"), jcr->jr.Name);
@@ -304,7 +306,7 @@ static bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
    /*
     * Get the pool resource corresponding to the original job
     */
-   pool = (POOLRES *)my_config->GetResWithName(R_POOL, pr.Name);
+   pool = (POOLRES *)GetResWithName(R_POOL, pr.Name);
    *retpool = pool;
    if (!pool) {
       Jmsg(jcr, M_FATAL, 0, _("Pool resource \"%s\" not found.\n"), pr.Name);
@@ -916,7 +918,7 @@ static int getJob_to_migrate(JCR *jcr)
    char *p;
    idpkt ids, mid, jids;
    db_int64_ctx ctx;
-   uint64_t pool_bytes;
+   int64_t pool_bytes;
    time_t ttime;
    struct tm tm;
    char dt[MAX_TIME_LENGTH];
@@ -996,7 +998,7 @@ static int getJob_to_migrate(JCR *jcr)
          pool_bytes = ctx.value;
          Dmsg2(dbglevel, "highbytes=%lld pool=%lld\n", jcr->res.rpool->MigrationHighBytes,
                pool_bytes);
-         if (pool_bytes < jcr->res.rpool->MigrationHighBytes) {
+         if (pool_bytes < (int64_t)jcr->res.rpool->MigrationHighBytes) {
             Jmsg(jcr, M_INFO, 0, _("No Volumes found to %s.\n"), jcr->get_ActionName());
             goto ok_out;
          }
@@ -1052,7 +1054,7 @@ static int getJob_to_migrate(JCR *jcr)
             Dmsg2(dbglevel, "lowbytes=%s poolafter=%s\n",
                   edit_int64_with_commas(jcr->res.rpool->MigrationLowBytes, ed1),
                   edit_int64_with_commas(pool_bytes, ed2));
-            if (pool_bytes <= jcr->res.rpool->MigrationLowBytes) {
+            if (pool_bytes <= (int64_t)jcr->res.rpool->MigrationLowBytes) {
                Dmsg0(dbglevel, "We should be done.\n");
                break;
             }

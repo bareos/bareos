@@ -44,12 +44,23 @@
 #include "tray_conf.h"
 
 /*
+ * Define the first and last resource ID record
+ * types. Note, these should be unique for each
+ * daemon though not a requirement.
+ */
+int32_t r_first = R_FIRST;
+int32_t r_last  = R_LAST;
+static RES *sres_head[R_LAST - R_FIRST + 1];
+RES **res_head = sres_head;
+
+/*
  * We build the current resource here as we are
  * scanning the resource configuration definition,
  * then move it to allocated memory when the resource
  * scan is complete.
  */
 URES res_all;
+int32_t res_all_size = sizeof(res_all);
 
 /*
  * Definition of records permitted within each
@@ -62,15 +73,15 @@ URES res_all;
  * name handler value code flags default_value
  */
 static RES_ITEM mon_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0 },
-   { "description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0 },
-   { "requiressl", CFG_TYPE_BOOL, ITEM(res_monitor.require_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "refreshinterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60" },
-   { "fdconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
-   { "sdconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
-   { "dirconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "name", store_name, ITEM(res_monitor.hdr.name), 0, ITEM_REQUIRED, 0 },
+   { "description", store_str, ITEM(res_monitor.hdr.desc), 0, 0, 0 },
+   { "requiressl", store_bool, ITEM(res_monitor.require_ssl), 0, ITEM_DEFAULT, "false" },
+   { "password", store_password, ITEM(res_monitor.password), 0, ITEM_REQUIRED, NULL },
+   { "refreshinterval", store_time, ITEM(res_monitor.RefreshInterval), 0, ITEM_DEFAULT, "60" },
+   { "fdconnecttimeout", store_time, ITEM(res_monitor.FDConnectTimeout), 0, ITEM_DEFAULT, "10" },
+   { "sdconnecttimeout", store_time, ITEM(res_monitor.SDConnectTimeout), 0, ITEM_DEFAULT, "10" },
+   { "dirconnecttimeout", store_time, ITEM(res_monitor.DIRConnectTimeout), 0, ITEM_DEFAULT, "10" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -79,12 +90,12 @@ static RES_ITEM mon_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM dir_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "dirport", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL },
-   { "enablessl", CFG_TYPE_BOOL, ITEM(res_dir.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
+   { "dirport", store_pint32, ITEM(res_dir.DIRport), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "address", store_str, ITEM(res_dir.address), 0, ITEM_REQUIRED, NULL },
+   { "enablessl", store_bool, ITEM(res_dir.enable_ssl), 0, ITEM_DEFAULT, "false" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -93,13 +104,13 @@ static RES_ITEM dir_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM cli_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL },
-   { "address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL },
-   { "fdport", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
-   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "enablessl", CFG_TYPE_BOOL, ITEM(res_client.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "name", store_name, ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(res_client.hdr.desc), 0, 0, NULL },
+   { "address", store_str, ITEM(res_client.address), 0, ITEM_REQUIRED, NULL },
+   { "fdport", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "password", store_password, ITEM(res_client.password), 0, ITEM_REQUIRED, NULL },
+   { "enablessl", store_bool, ITEM(res_client.enable_ssl), 0, ITEM_DEFAULT, "false" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -108,15 +119,15 @@ static RES_ITEM cli_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM store_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL },
-   { "sdport", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL },
-   { "sdaddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL },
-   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "sdpassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL },
-   { "enablessl", CFG_TYPE_BOOL, ITEM(res_store.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "name", store_name, ITEM(res_store.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(res_store.hdr.desc), 0, 0, NULL },
+   { "sdport", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "address", store_str, ITEM(res_store.address), 0, ITEM_REQUIRED, NULL },
+   { "sdaddress", store_str, ITEM(res_store.address), 0, 0, NULL },
+   { "password", store_password, ITEM(res_store.password), 0, ITEM_REQUIRED, NULL },
+   { "sdpassword", store_password, ITEM(res_store.password), 0, 0, NULL },
+   { "enablessl", store_bool, ITEM(res_store.enable_ssl), 0, ITEM_DEFAULT, "false" },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -125,10 +136,10 @@ static RES_ITEM store_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM con_font_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL },
-   { "font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "name", store_name, ITEM(con_font.hdr.name), 0, ITEM_REQUIRED, NULL },
+   { "description", store_str, ITEM(con_font.hdr.desc), 0, 0, NULL },
+   { "font", store_str, ITEM(con_font.fontface), 0, 0, NULL },
+   { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -138,29 +149,28 @@ static RES_ITEM con_font_items[] = {
  * NOTE!!! keep it in the same order as the R_codes
  *   or eliminate all resources[rindex].name
  *
- * name items_table resource_code
+ *  name items rcode res_head
  */
-static RES_TABLE resources[] = {
-   { "monitor", mon_items, R_MONITOR, sizeof(MONITORRES) },
-   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
-   { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
-   { "storage", store_items, R_STORAGE, sizeof(STORERES) },
-   { "consolefont", con_font_items, R_CONSOLE_FONT, sizeof(CONFONTRES) },
-   { NULL, NULL, 0, 0 }
+RES_TABLE resources[] = {
+   { "monitor", mon_items, R_MONITOR },
+   { "director", dir_items, R_DIRECTOR },
+   { "client", cli_items, R_CLIENT },
+   { "storage", store_items, R_STORAGE },
+   { "consolefont", con_font_items, R_CONSOLE_FONT },
+   { NULL, NULL, 0 }
 };
 
 /*
  * Dump contents of resource
  */
-void dump_resource(CONFIG *config, int type, RES *ares, void sendit(void *sock, const char *fmt, ...), void *sock)
+void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
-   RES *next;
-   URES *res = (URES *)ares;
+   URES *res = (URES *)reshdr;
    bool recurse = true;
    char ed1[100], ed2[100];
 
    if (res == NULL) {
-      sendit(sock, _("No %s resource defined\n"), config->res_to_str(type));
+      sendit(sock, _("No %s resource defined\n"), res_to_str(type));
       return;
    }
    if (type < 0) { /* no recursion */
@@ -170,7 +180,7 @@ void dump_resource(CONFIG *config, int type, RES *ares, void sendit(void *sock, 
    switch (type) {
    case R_MONITOR:
       sendit(sock, _("Monitor: name=%s FDtimeout=%s SDtimeout=%s\n"),
-             ares->name,
+             reshdr->name,
              edit_uint64(res->res_monitor.FDConnectTimeout, ed1),
              edit_uint64(res->res_monitor.SDConnectTimeout, ed2));
       break;
@@ -188,17 +198,14 @@ void dump_resource(CONFIG *config, int type, RES *ares, void sendit(void *sock, 
       break;
    case R_CONSOLE_FONT:
       sendit(sock, _("ConsoleFont: name=%s font face=%s\n"),
-             ares->name, NPRT(res->con_font.fontface));
+             reshdr->name, NPRT(res->con_font.fontface));
       break;
    default:
       sendit(sock, _("Unknown resource type %d in dump_resource.\n"), type);
       break;
    }
-   if (recurse) {
-      next = config->GetNextRes(0, (RES *)res);
-      if (next) {
-         dump_resource(config, type, next, sendit, sock);
-      }
+   if (recurse && res->res_monitor.hdr.next) {
+      dump_resource(type, res->res_monitor.hdr.next, sendit, sock);
    }
 }
 
@@ -211,6 +218,7 @@ void dump_resource(CONFIG *config, int type, RES *ares, void sendit(void *sock, 
  */
 void free_resource(RES *sres, int type)
 {
+   RES *nres; /* next resource if linked */
    URES *res = (URES *)sres;
 
    if (res == NULL)
@@ -219,6 +227,7 @@ void free_resource(RES *sres, int type)
    /*
     * Common stuff -- free the resource name and description
     */
+   nres = (RES *)res->res_monitor.hdr.next;
    if (res->res_monitor.hdr.name) {
       free(res->res_monitor.hdr.name);
    }
@@ -238,16 +247,16 @@ void free_resource(RES *sres, int type)
       if (res->res_client.address) {
          free(res->res_client.address);
       }
-      if (res->res_client.password.value) {
-         free(res->res_client.password.value);
+      if (res->res_client.password) {
+         free(res->res_client.password);
       }
       break;
    case R_STORAGE:
       if (res->res_store.address) {
          free(res->res_store.address);
       }
-      if (res->res_store.password.value) {
-         free(res->res_store.password.value);
+      if (res->res_store.password) {
+         free(res->res_store.password);
       }
       break;
    case R_CONSOLE_FONT:
@@ -265,6 +274,9 @@ void free_resource(RES *sres, int type)
    if (res) {
       free(res);
    }
+   if (nres) {
+      free_resource(nres, type);
+   }
 }
 
 /*
@@ -273,17 +285,18 @@ void free_resource(RES *sres, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-void save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
+void save_resource(int type, RES_ITEM *items, int pass)
 {
-   int rindex = type - config->m_r_first;
-   int i;
+   URES *res;
+   int rindex = type - r_first;
+   int i, size;
    int error = 0;
 
    /*
     * Ensure that all required items are present
     */
    for (i = 0; items[i].name; i++) {
-      if (items[i].flags & CFG_ITEM_REQUIRED) {
+      if (items[i].flags & ITEM_REQUIRED) {
          if (!bit_is_set(i, res_all.res_monitor.hdr.item_present)) {
                Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
                   items[i].name, resources[rindex]);
@@ -332,14 +345,65 @@ void save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
       return;
    }
 
+   /*
+    * The following code is only executed during pass 1
+    */
+   switch (type) {
+   case R_MONITOR:
+      size = sizeof(MONITORRES);
+      break;
+   case R_DIRECTOR:
+      size = sizeof(DIRRES);
+      break;
+   case R_CLIENT:
+      size = sizeof(CLIENTRES);
+      break;
+   case R_STORAGE:
+      size = sizeof(STORERES);
+      break;
+   case R_CONSOLE_FONT:
+      size = sizeof(CONFONTRES);
+      break;
+   default:
+      printf(_("Unknown resource type %d in save_resource.\n"), type);
+      error = 1;
+      size = 1;
+      break;
+   }
+   /*
+    * Common
+    */
    if (!error) {
-      config->insert_resource(rindex, resources[rindex].size);
+      res = (URES *)malloc(size);
+      memcpy(res, &res_all, size);
+      if (!res_head[rindex]) {
+        res_head[rindex] = (RES *)res; /* store first entry */
+         Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
+         res->res_monitor.hdr.name, rindex);
+      } else {
+         RES *next, *last;
+         /*
+          * Add new res to end of chain
+          */
+         for (last = next = res_head[rindex]; next; next=next->next) {
+            last = next;
+            if (strcmp(next->name, res->res_monitor.hdr.name) == 0) {
+               Emsg2(M_ERROR_TERM, 0,
+                     _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
+               resources[rindex].name, res->res_monitor.hdr.name);
+            }
+         }
+         last->next = (RES *)res;
+         Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n", res_to_str(type),
+         res->res_monitor.hdr.name, rindex, pass);
+      }
    }
 }
 
 bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, NULL, NULL, exit_code,
-                (void *)&res_all, sizeof(res_all), R_FIRST, R_LAST, resources);
+   config->init(configfile, NULL, NULL, NULL, exit_code,
+                (void *)&res_all, res_all_size, r_first,
+                r_last, resources, res_head);
    return config->parse_config();
 }

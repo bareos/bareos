@@ -27,8 +27,6 @@
 #include "monitoritem.h"
 #include "tray_conf.h"
 
-extern CONFIG *my_config;
-
 MonitorItemThread* MonitorItemThread::monitorItemThreadSingleton;
 bool MonitorItemThread::already_destroyed = false;
 
@@ -104,11 +102,11 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
 {
    QStringList tabRefs;
 
-   LockRes(my_config);
+   LockRes();
 
    int monitorItems = 0;
    MONITORRES *monitorRes;
-   foreach_res(my_config, monitorRes, R_MONITOR) {
+   foreach_res(monitorRes, R_MONITOR) {
       monitorItems++;
    }
 
@@ -119,12 +117,12 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
             monitorItems, cl.configfile);
    }
 
-   monitor = reinterpret_cast<MONITORRES*>(my_config->GetNextRes(R_MONITOR, (RES *)NULL));
+   monitor = reinterpret_cast<MONITORRES*>(GetNextRes(R_MONITOR, (RES *)NULL));
 
    int nitems = 0;
 
    DIRRES* dird;
-   foreach_res(my_config, dird, R_DIRECTOR) {
+   foreach_res(dird, R_DIRECTOR) {
       MonitorItem* item = new MonitorItem;
       item->setType(R_DIRECTOR);
       item->setResource(dird);
@@ -136,7 +134,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
    }
 
    CLIENTRES* filed;
-   foreach_res(my_config, filed, R_CLIENT) {
+   foreach_res(filed, R_CLIENT) {
       MonitorItem* item = new MonitorItem;
       item->setType(R_CLIENT);
       item->setResource(filed);
@@ -148,7 +146,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
    }
 
    STORERES* stored;
-   foreach_res(my_config, stored, R_STORAGE) {
+   foreach_res(stored, R_STORAGE) {
       MonitorItem* item = new MonitorItem;
       item->setType(R_STORAGE);
       item->setResource(stored);
@@ -159,7 +157,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
       nitems++;
    }
 
-   UnlockRes(my_config);
+   UnlockRes();
 
    if (nitems == 0) {
       Emsg1(M_ERROR_TERM, 0, "No Client, Storage or Director resource defined in %s\n"

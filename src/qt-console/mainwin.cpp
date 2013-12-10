@@ -117,8 +117,8 @@ void MainWin::createPages()
    QTreeWidgetItem *item, *topItem;
    m_firstItem = NULL;
 
-   LockRes(my_config);
-   foreach_res(my_config, dir, R_DIRECTOR) {
+   LockRes();
+   foreach_res(dir, R_DIRECTOR) {
 
       /* Create console tree stacked widget item */
       m_currentConsole = new Console(tabWidget);
@@ -172,7 +172,7 @@ void MainWin::createPages()
       treeWidget->expandItem(topItem);
       tabWidget->setCurrentWidget(m_currentConsole);
    }
-   UnlockRes(my_config);
+   UnlockRes();
 }
 
 /*

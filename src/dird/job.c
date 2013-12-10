@@ -140,7 +140,7 @@ bool setup_job(JCR *jcr, bool suppress_output)
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
                                           jcr->res.catalog->db_user,
-                                          jcr->res.catalog->db_password.value,
+                                          jcr->res.catalog->db_password,
                                           jcr->res.catalog->db_address,
                                           jcr->res.catalog->db_port,
                                           jcr->res.catalog->db_socket,
@@ -1494,7 +1494,7 @@ void set_jcr_defaults(JCR *jcr, JOBRES *job)
             jcr->res.catalog = job->client->catalog;
             pm_strcpy(jcr->res.catalog_source, _("Client resource"));
          } else {
-            jcr->res.catalog = (CATRES *)my_config->GetNextRes(R_CATALOG, NULL);
+            jcr->res.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
             pm_strcpy(jcr->res.catalog_source, _("Default catalog"));
          }
       }
@@ -1746,13 +1746,13 @@ void set_paired_storage(JCR *jcr)
        */
       jcr->pstorage = New(alist(10, not_owned_by_alist));
       foreach_alist(pstore, jcr->rstorage) {
-         store = (STORERES *)my_config->GetNextRes(R_STORAGE, NULL);
+         store = (STORERES *)GetNextRes(R_STORAGE, NULL);
          while (store) {
             if (store->paired_storage == pstore) {
                break;
             }
 
-            store = (STORERES *)my_config->GetNextRes(R_STORAGE, (RES *)store);
+            store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store);
          }
 
          /*
@@ -1844,7 +1844,7 @@ bool select_next_rstore(JCR *jcr, bootstrap_info &info)
       return true;                 /* Same SD nothing to change */
    }
 
-   if (!(ustore.store = (STORERES *)my_config->GetResWithName(R_STORAGE,info.storage))) {
+   if (!(ustore.store = (STORERES *)GetResWithName(R_STORAGE,info.storage))) {
       Jmsg(jcr, M_FATAL, 0,
            _("Could not get storage resource '%s'.\n"), info.storage);
       jcr->setJobStatus(JS_ErrorTerminated);

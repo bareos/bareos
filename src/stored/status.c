@@ -114,7 +114,7 @@ static void list_resources(STATUS_PKT *sp)
 
    len = Mmsg(msg, _("\nSD Resources:\n"));
    if (!sp->api) sendit(msg, len, sp);
-   dump_resource(R_DEVICE, resources[R_DEVICE - R_FIRST], sp);
+   dump_resource(R_DEVICE, resources[R_DEVICE-r_first], sp);
    if (!sp->api) sendit("====\n\n", 6, sp);
 #endif
 }
@@ -122,14 +122,14 @@ static void list_resources(STATUS_PKT *sp)
 #ifdef xxxx
 static find_device(char *devname)
 {
-   foreach_res(my_config, device, R_DEVICE) {
+   foreach_res(device, R_DEVICE) {
       if (strcasecmp(device->hdr.name, devname) == 0) {
          found = true;
          break;
       }
    }
    if (!found) {
-      foreach_res(my_config, changer, R_AUTOCHANGER) {
+      foreach_res(changer, R_AUTOCHANGER) {
          if (strcasecmp(changer->hdr.name, devname) == 0) {
             break;
          }
@@ -151,7 +151,7 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
    len = Mmsg(msg, _("\nDevice status:\n"));
    if (!sp->api) sendit(msg, len, sp);
 
-   foreach_res(my_config, changer, R_AUTOCHANGER) {
+   foreach_res(changer, R_AUTOCHANGER) {
       len = Mmsg(msg, _("Autochanger \"%s\" with devices:\n"),
          changer->hdr.name);
       sendit(msg, len, sp);
@@ -167,7 +167,7 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
       }
    }
 
-   foreach_res(my_config, device, R_DEVICE) {
+   foreach_res(device, R_DEVICE) {
       dev = device->dev;
       if (dev && dev->is_open()) {
          if (dev->is_labeled()) {

@@ -24,16 +24,6 @@
  * Resource codes -- they must be sequential for indexing
  */
 
-/*
- * Program specific config types (start at 50)
- */
-#define CFG_TYPE_AUTOPASSWORD       50  /* Password stored in clear when needed otherwise hashed */
-#define CFG_TYPE_AUTHTYPE           51  /* Authentication Type */
-#define CFG_TYPE_DEVTYPE            52  /* Device Type */
-#define CFG_TYPE_MAXBLOCKSIZE       53  /* Maximum Blocksize */
-#define CFG_TYPE_IODIRECTION        54  /* IO Direction */
-#define CFG_TYPE_CMPRSALGO          55  /* Compression Algorithm */
-
 enum {
    R_DIRECTOR = 3001,
    R_NDMP,
@@ -58,7 +48,7 @@ class DIRRES {
 public:
    RES hdr;
 
-   s_password password;               /* Director password */
+   char *password;                    /* Director password */
    char *address;                     /* Director IP address or zero */
    bool monitor;                      /* Have only access to status and .status functions */
    bool tls_authenticate;             /* Authenticate with TLS */
@@ -85,7 +75,7 @@ public:
    uint32_t AuthType;                 /* Authentication Type to use */
    uint32_t LogLevel;                 /* Log level to use for logging NDMP protocol msgs */
    char *username;                    /* NDMP username */
-   s_password password;               /* NDMP password */
+   char *password;                    /* NDMP password */
 };
 
 /* Storage daemon "global" definitions */
@@ -177,13 +167,14 @@ public:
    uint32_t autodeflate;              /* Perform auto deflation in this IO direction */
    uint32_t autoinflate;              /* Perform auto inflation in this IO direction */
    utime_t vol_poll_interval;         /* Interval between polling volume during mount */
-   uint64_t max_volume_files;         /* Max files to put on one volume */
-   uint64_t max_volume_size;          /* Max bytes to put on one volume */
-   uint64_t max_file_size;            /* Max file size in bytes */
-   uint64_t volume_capacity;          /* Advisory capacity */
-   uint64_t max_spool_size;           /* Max spool size for all jobs */
-   uint64_t max_job_spool_size;       /* Max spool size for any single job */
+   int64_t max_volume_files;          /* Max files to put on one volume */
+   int64_t max_volume_size;           /* Max bytes to put on one volume */
+   int64_t max_file_size;             /* Max file size in bytes */
+   int64_t volume_capacity;           /* Advisory capacity */
+   int64_t max_spool_size;            /* Max spool size for all jobs */
+   int64_t max_job_spool_size;        /* Max spool size for any single job */
 
+   int64_t max_part_size;             /* Max part size */
    char *mount_point;                 /* Mount point for require mount devices */
    char *mount_command;               /* Mount command */
    char *unmount_command;             /* Unmount command */
@@ -205,4 +196,10 @@ union URES {
    MSGSRES res_msgs;
    AUTOCHANGERRES res_changer;
    RES hdr;
+};
+
+/* Used for certain KeyWord tables */
+struct s_kw {
+   const char *name;
+   uint32_t token;
 };

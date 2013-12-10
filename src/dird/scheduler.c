@@ -101,7 +101,7 @@ JCR *wait_for_next_job(char *one_shot_job_to_run)
       /* Create scheduled jobs list */
       jobs_to_run = New(dlist(next_job, &next_job->link));
       if (one_shot_job_to_run) {            /* one shot */
-         job = (JOBRES *)my_config->GetResWithName(R_JOB, one_shot_job_to_run);
+         job = (JOBRES *)GetResWithName(R_JOB, one_shot_job_to_run);
          if (!job) {
             Emsg1(M_ABORT, 0, _("Job %s not found\n"), one_shot_job_to_run);
          }
@@ -340,8 +340,8 @@ static void find_runs()
    /*
     * Loop through all jobs
     */
-   LockRes(my_config);
-   foreach_res(my_config, job, R_JOB) {
+   LockRes();
+   foreach_res(job, R_JOB) {
       sched = job->schedule;
       if (sched == NULL || !job->enabled) { /* scheduled? or enabled? */
          continue;                    /* no, skip this job */
@@ -409,7 +409,7 @@ static void find_runs()
          }
       }
    }
-   UnlockRes(my_config);
+   UnlockRes();
    Dmsg0(dbglvl, "Leave find_runs()\n");
 }
 

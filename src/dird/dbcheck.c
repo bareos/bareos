@@ -50,6 +50,9 @@ typedef struct s_name_ctx {
    int tot_ids;                       /* total to process */
 } NAME_LIST;
 
+/*
+ * Global variables
+ */
 static bool fix = false;
 static bool batch = false;
 static B_DB *db;
@@ -57,13 +60,8 @@ static ID_LIST id_list;
 static NAME_LIST name_list;
 static char buf[20000];
 static bool quit = false;
+static CONFIG *config;
 static const char *idx_tmp_name;
-
-/*
- * Global variables
- */
-DIRRES *me = NULL;                    /* Our Global resource */
-CONFIG *my_config = NULL;             /* Our Global config */
 
 #define MAX_ID_LIST_LEN 10000000
 
@@ -184,16 +182,13 @@ int main (int argc, char *argv[])
    if (configfile) {
       CATRES *catalog = NULL;
       int found = 0;
-
       if (argc > 0) {
          Pmsg0(0, _("Warning skipping the additional parameters for working directory/dbname/user/password/host.\n"));
       }
-
-      my_config = new_config_parser();
-      parse_dir_config(my_config, configfile, M_ERROR_TERM);
-
-      LockRes(my_config);
-      foreach_res(my_config, catalog, R_CATALOG) {
+      config = new_config_parser();
+      parse_dir_config(config, configfile, M_ERROR_TERM);
+      LockRes();
+      foreach_res(catalog, R_CATALOG) {
          if (catalogname && bstrcmp(catalog->hdr.name, catalogname)) {
             ++found;
             break;
@@ -202,8 +197,7 @@ int main (int argc, char *argv[])
            break;
          }
       }
-      UnlockRes(my_config);
-
+      UnlockRes();
       if (!found) {
          if (catalogname) {
             Pmsg2(0, _("Error can not find the Catalog name[%s] in the given config file [%s]\n"), catalogname, configfile);
@@ -212,27 +206,27 @@ int main (int argc, char *argv[])
          }
          exit(1);
       } else {
-         LockRes(my_config);
-         me = (DIRRES *)my_config->GetNextRes(R_DIRECTOR, NULL);
-         UnlockRes(my_config);
-
-         if (!me) {
+         DIRRES *director;
+         LockRes();
+         director = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+         UnlockRes();
+         if (!director) {
             Pmsg0(0, _("Error no Director resource defined.\n"));
             exit(1);
          }
-         set_working_directory(me->working_directory);
+         set_working_directory(director->working_directory);
 
          /*
           * Print catalog information and exit (-B)
           */
          if (print_catalog) {
-            print_catalog_details(catalog, me->working_directory);
+            print_catalog_details(catalog, director->working_directory);
             exit(0);
          }
 
          db_name = catalog->db_name;
          user = catalog->db_user;
-         password = catalog->db_password.value;
+         password = catalog->db_password;
          dbhost = catalog->db_address;
          db_driver = catalog->db_driver;
          if (dbhost && dbhost[0] == 0) {
@@ -355,7 +349,7 @@ static void print_catalog_details(CATRES *catalog, const char *working_dir)
                          catalog->db_driver,
                          catalog->db_name,
                          catalog->db_user,
-                         catalog->db_password.value,
+                         catalog->db_password,
                          catalog->db_address,
                          catalog->db_port,
                          catalog->db_socket,

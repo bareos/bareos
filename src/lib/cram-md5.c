@@ -46,34 +46,30 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, boo
    struct timezone tz;
    int i;
    bool ok;
-   POOL_MEM chal(PM_NAME),
-            host(PM_NAME);
+   char chal[MAXSTRING];
+   char host[MAXSTRING];
    uint8_t hmac[20];
 
    gettimeofday(&t1, &tz);
    for (i=0; i<4; i++) {
       gettimeofday(&t2, &tz);
    }
-   srandom((t1.tv_sec & 0xffff) * (t2.tv_usec & 0xff));
-
-   host.check_size(MAXHOSTNAMELEN);
-   if (!gethostname(host.c_str(), MAXHOSTNAMELEN)) {
-      pm_strcpy(host, my_name);
+   srandom((t1.tv_sec&0xffff) * (t2.tv_usec&0xff));
+   if (!gethostname(host, sizeof(host))) {
+      bstrncpy(host, my_name, sizeof(host));
    }
-
    /* Send challenge -- no hashing yet */
-   Mmsg(chal, "<%u.%u@%s>", (uint32_t)random(), (uint32_t)time(NULL), host.c_str());
-
+   bsnprintf(chal, sizeof(chal), "<%u.%u@%s>", (uint32_t)random(), (uint32_t)time(NULL), host);
    if (compatible) {
-      Dmsg2(dbglvl, "send: auth cram-md5 %s ssl=%d\n", chal.c_str(), tls_local_need);
-      if (!bs->fsend("auth cram-md5 %s ssl=%d\n", chal.c_str(), tls_local_need)) {
+      Dmsg2(dbglvl, "send: auth cram-md5 %s ssl=%d\n", chal, tls_local_need);
+      if (!bs->fsend("auth cram-md5 %s ssl=%d\n", chal, tls_local_need)) {
          Dmsg1(dbglvl, "Bnet send challenge comm error. ERR=%s\n", bs->bstrerror());
          return false;
       }
    } else {
       /* Old non-compatible system */
-      Dmsg2(dbglvl, "send: auth cram-md5 %s ssl=%d\n", chal.c_str(), tls_local_need);
-      if (!bs->fsend("auth cram-md5 %s ssl=%d\n", chal.c_str(), tls_local_need)) {
+      Dmsg2(dbglvl, "send: auth cram-md5 %s ssl=%d\n", chal, tls_local_need);
+      if (!bs->fsend("auth cram-md5 %s ssl=%d\n", chal, tls_local_need)) {
          Dmsg1(dbglvl, "Bnet send challenge comm error. ERR=%s\n", bs->bstrerror());
          return false;
       }
@@ -87,16 +83,16 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, boo
    }
 
    /* Attempt to duplicate hash with our password */
-   hmac_md5((uint8_t *)chal.c_str(), strlen(chal.c_str()), (uint8_t *)password, strlen(password), hmac);
-   bin_to_base64(host.c_str(), MAXHOSTNAMELEN, (char *)hmac, 16, compatible);
-   ok = bstrcmp(bs->msg, host.c_str());
+   hmac_md5((uint8_t *)chal, strlen(chal), (uint8_t *)password, strlen(password), hmac);
+   bin_to_base64(host, sizeof(host), (char *)hmac, 16, compatible);
+   ok = bstrcmp(bs->msg, host);
    if (ok) {
-      Dmsg1(dbglvl, "Authenticate OK %s\n", host.c_str());
+      Dmsg1(dbglvl, "Authenticate OK %s\n", host);
    } else {
-      bin_to_base64(host.c_str(), MAXHOSTNAMELEN, (char *)hmac, 16, false);
-      ok = bstrcmp(bs->msg, host.c_str());
+      bin_to_base64(host, sizeof(host), (char *)hmac, 16, false);
+      ok = bstrcmp(bs->msg, host);
       if (!ok) {
-         Dmsg2(dbglvl, "Authenticate NOT OK: wanted %s, got %s\n", host.c_str(), bs->msg);
+         Dmsg2(dbglvl, "Authenticate NOT OK: wanted %s, got %s\n", host, bs->msg);
       }
    }
    if (ok) {
@@ -111,7 +107,7 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, boo
 /* Respond to challenge from other end */
 bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, bool *compatible)
 {
-   POOL_MEM chal(PM_NAME);
+   char chal[MAXSTRING];
    uint8_t hmac[20];
 
    *compatible = false;
@@ -119,13 +115,16 @@ bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, boo
       bmicrosleep(5, 0);
       return false;
    }
-
+   if (bs->msglen >= MAXSTRING) {
+      Dmsg1(dbglvl, "Msg too long wanted auth cram... Got: %s", bs->msg);
+      bmicrosleep(5, 0);
+      return false;
+   }
    Dmsg1(100, "cram-get received: %s", bs->msg);
-   chal.check_size(bs->msglen);
-   if (sscanf(bs->msg, "auth cram-md5c %s ssl=%d", chal.c_str(), tls_remote_need) == 2) {
+   if (sscanf(bs->msg, "auth cram-md5c %s ssl=%d", chal, tls_remote_need) == 2) {
       *compatible = true;
-   } else if (sscanf(bs->msg, "auth cram-md5 %s ssl=%d", chal.c_str(), tls_remote_need) != 2) {
-      if (sscanf(bs->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
+   } else if (sscanf(bs->msg, "auth cram-md5 %s ssl=%d", chal, tls_remote_need) != 2) {
+      if (sscanf(bs->msg, "auth cram-md5 %s\n", chal) != 1) {
          Dmsg1(dbglvl, "Cannot scan challenge: %s", bs->msg);
          bs->fsend(_("1999 Authorization failed.\n"));
          bmicrosleep(5, 0);
@@ -133,9 +132,9 @@ bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, boo
       }
    }
 
-   hmac_md5((uint8_t *)chal.c_str(), strlen(chal.c_str()), (uint8_t *)password, strlen(password), hmac);
+   hmac_md5((uint8_t *)chal, strlen(chal), (uint8_t *)password, strlen(password), hmac);
    bs->msglen = bin_to_base64(bs->msg, 50, (char *)hmac, 16, *compatible) + 1;
-// Dmsg3(100, "get_auth: chal=%s pw=%s hmac=%s\n", chal.c_str(), password, bs->msg);
+// Dmsg3(100, "get_auth: chal=%s pw=%s hmac=%s\n", chal, password, bs->msg);
    if (!bs->send()) {
       Dmsg1(dbglvl, "Send challenge failed. ERR=%s\n", bs->bstrerror());
       return false;

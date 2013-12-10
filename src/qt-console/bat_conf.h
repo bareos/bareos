@@ -55,7 +55,7 @@ public:
    RES   hdr;
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
-   s_password password;               /* UA server password */
+   char *password;                    /* UA server password */
    bool tls_authenticate;             /* Authenticate with tls */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
@@ -84,7 +84,7 @@ struct CONFONTRES {
 class CONRES {
 public:
    RES   hdr;
-   s_password password;               /* UA server password */
+   char *password;                    /* UA server password */
    bool tls_authenticate;             /* Authenticate with tls */
    bool tls_enable;                   /* Enable TLS on all connections */
    bool tls_require;                  /* Require TLS on all connections */

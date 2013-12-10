@@ -551,7 +551,7 @@ int search_res_for_device(RCTX &rctx)
 
    Dmsg1(dbglvl, "search res for %s\n", rctx.device_name);
    /* Look through Autochangers first */
-   foreach_res(my_config, changer, R_AUTOCHANGER) {
+   foreach_res(changer, R_AUTOCHANGER) {
       Dmsg1(dbglvl, "Try match changer res=%s\n", changer->hdr.name);
       /* Find resource, and make sure we were able to open it */
       if (bstrcmp(rctx.device_name, changer->hdr.name)) {
@@ -582,7 +582,7 @@ int search_res_for_device(RCTX &rctx)
 
    /* Now if requested look through regular devices */
    if (!rctx.autochanger_only) {
-      foreach_res(my_config, rctx.device, R_DEVICE) {
+      foreach_res(rctx.device, R_DEVICE) {
          Dmsg1(dbglvl, "Try match res=%s\n", rctx.device->hdr.name);
          /* Find resource, and make sure we were able to open it */
          if (bstrcmp(rctx.device_name, rctx.device->hdr.name)) {

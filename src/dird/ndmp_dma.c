@@ -991,22 +991,20 @@ static inline bool build_ndmp_job(JCR *jcr,
    /*
     * The data_agent is the client being backuped or restored using NDMP.
     */
-   ASSERT(client->password.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(jcr, &job->data_agent, client->Protocol,
                                client->AuthType, client->address,
                                client->FDport, client->username,
-                               client->password.value)) {
+                               client->password)) {
       goto bail_out;
    }
 
    /*
     * The tape_agent is the storage daemon via the NDMP protocol.
     */
-   ASSERT(store->password.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(jcr, &job->tape_agent, store->Protocol,
                                store->AuthType, store->address,
                                store->SDport, store->username,
-                               store->password.value)) {
+                               store->password)) {
       goto bail_out;
    }
 
@@ -1080,7 +1078,7 @@ static inline void store_attribute_record(JCR *jcr, char *fname, char *linked_fn
 }
 
 static inline void convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
-                                 int8_t *FileType, POOL_MEM &attribs)
+                                 int8_t *FileType, char *attribs)
 {
    struct stat statp;
 
@@ -1162,7 +1160,7 @@ static inline void convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
    /*
     * Encode a stat structure into an ASCII string.
     */
-   encode_stat(attribs.c_str(), &statp, sizeof(statp), FileIndex, STREAM_UNIX_ATTRIBUTES);
+   encode_stat(attribs, &statp, sizeof(statp), FileIndex, STREAM_UNIX_ATTRIBUTES);
 }
 
 extern "C" int bndmp_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
@@ -1170,9 +1168,9 @@ extern "C" int bndmp_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
 {
    NIS *nis;
    int8_t FileType = 0;
+   char attribs[MAXSTRING];
    char namebuf[NDMOS_CONST_PATH_MAX];
-   POOL_MEM attribs(PM_FNAME),
-            pathname(PM_FNAME);
+   POOL_MEM pathname(PM_FNAME);
 
    ndmcstr_from_str(raw_name, namebuf, sizeof(namebuf));
 
@@ -1211,7 +1209,7 @@ extern "C" int bndmp_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
          }
       }
 
-      store_attribute_record(nis->jcr, pathname.c_str(), nis->virtual_filename, attribs.c_str(), FileType,
+      store_attribute_record(nis->jcr, pathname.c_str(), nis->virtual_filename, attribs, FileType,
                             (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) ? fstat->fh_info.value : 0);
    }
 
@@ -1276,7 +1274,7 @@ extern "C" int bndmp_add_node(struct ndmlog *ixlog, int tagc,
    int attr_size;
    int8_t FileType = 0;
    N_TREE_NODE *wanted_node;
-   POOL_MEM attribs(PM_FNAME);
+   char attribs[MAXSTRING];
 
    Dmsg1(100, "bndmp_add_node: New node [%llu]\n", node);
 
@@ -1294,7 +1292,7 @@ extern "C" int bndmp_add_node(struct ndmlog *ixlog, int tagc,
    }
 
    convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
-   attr_size = strlen(attribs.c_str()) + 1;
+   attr_size = strlen(attribs) + 1;
 
    wanted_node->attr = ndmp_fhdb_tree_alloc(nis->fhdb_root, attr_size);
    bstrncpy(wanted_node->attr, attribs, attr_size);
@@ -2670,11 +2668,10 @@ void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd)
       /*
        * Query the TAPE agent of the NDMP server.
        */
-      ASSERT(store->password.encoding == p_encoding_clear);
       if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.tape_agent,
                                   store->Protocol, store->AuthType,
                                   store->address, store->SDport,
-                                  store->username, store->password.value)) {
+                                  store->username, store->password)) {
          return;
       }
 
@@ -2684,7 +2681,7 @@ void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd)
       if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.robot_agent,
                                   store->Protocol, store->AuthType,
                                   store->address, store->SDport,
-                                  store->username, store->password.value)) {
+                                  store->username, store->password)) {
          return;
       }
 
@@ -2706,11 +2703,10 @@ void do_ndmp_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
    /*
     * Query the DATA agent of the NDMP server.
     */
-   ASSERT(client->password.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.data_agent,
                                client->Protocol, client->AuthType,
                                client->address, client->FDport,
-                               client->username, client->password.value)) {
+                               client->username, client->password)) {
       return;
    }
 

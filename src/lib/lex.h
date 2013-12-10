@@ -97,9 +97,8 @@ typedef struct s_lex_context {
    char *fname;                       /* filename */
    FILE *fd;                          /* file descriptor */
    POOLMEM *line;                     /* input line */
-   POOLMEM *str;                      /* string being scanned */
+   char str[MAXSTRING];               /* string being scanned */
    int str_len;                       /* length of string */
-   int str_max_len;                   /* maximum length of string */
    int line_no;                       /* file line number */
    int col_no;                        /* char position on line */
    int begin_line_no;                 /* line no of beginning of string */

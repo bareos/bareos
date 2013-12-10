@@ -48,8 +48,7 @@ int quit = 0;
 char buf[100000];
 int bsize = TAPE_BSIZE;
 char VolName[MAX_NAME_LENGTH];
-STORES *me = NULL;                    /* Our Global resource */
-CONFIG *my_config = NULL;             /* Our Global config */
+STORES *me = NULL;                    /* our Global resource */
 bool forge_on = false;                /* proceed inspite of I/O errors */
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
@@ -94,6 +93,7 @@ static bool do_unfill();
 
 
 /* Static variables */
+static CONFIG *config;
 #define CONFIG_FILE "bareos-sd.conf"
 char *configfile = NULL;
 
@@ -269,30 +269,29 @@ int main(int margc, char *margv[])
 
    daemon_start_time = time(NULL);
 
-   my_config = new_config_parser();
-   parse_sd_config(my_config, configfile, M_ERROR_TERM);
+   config = new_config_parser();
+   parse_sd_config(config, configfile, M_ERROR_TERM);
 
-   LockRes(my_config);
-   me = (STORES *)my_config->GetNextRes(R_STORAGE, NULL);
+   LockRes();
+   me = (STORES *)GetNextRes(R_STORAGE, NULL);
    if (!me) {
-      UnlockRes(my_config);
+      UnlockRes();
       Emsg1(M_ERROR_TERM, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
          configfile);
    }
+   UnlockRes();
 
-   if (DirectorName) {
-      foreach_res(my_config, director, R_DIRECTOR) {
+  if (DirectorName) {
+      foreach_res(director, R_DIRECTOR) {
          if (bstrcmp(director->hdr.name, DirectorName)) {
             break;
          }
       }
       if (!director) {
-         UnlockRes(my_config);
          Emsg2(M_ERROR_TERM, 0, _("No Director resource named %s defined in %s. Cannot continue.\n"),
                DirectorName, configfile);
       }
    }
-   UnlockRes(my_config);
 
    load_sd_plugins(me->plugin_directory, me->plugin_names);
 
@@ -364,10 +363,10 @@ static void terminate_btape(int status)
       free(configfile);
    }
 
-   if (my_config) {
-      my_config->free_all_resources();
-      free(my_config);
-      my_config = NULL;
+   if (config) {
+      config->free_resources();
+      free(config);
+      config = NULL;
    }
 
    if (debug_level > 10) {

@@ -25,6 +25,7 @@ STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
 WORKING_DIR = /var/lib/bareos
 
 override_dh_auto_configure:
+	export LDFLAGS="" && \
 	dh_auto_configure --    \
   --with-sbin-perm=755 \
   --sysconfdir=/etc/bareos \

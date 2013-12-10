@@ -43,7 +43,6 @@
 #include "jobq.h"
 
 /* Globals that dird.c exports */
-extern CONFIG *my_config;
 extern DIRRES *me;                   /* "Global" daemon resource */
 
 /* Used in ua_prune.c and ua_purge.c */
