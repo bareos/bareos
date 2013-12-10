@@ -185,6 +185,8 @@ getout:
    close_db(ua);
    free_ua_context(ua);
    free_jcr(jcr);
+   user->close();
+   delete user;
 
    return NULL;
 }
