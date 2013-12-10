@@ -70,7 +70,7 @@ for file in \
       bareos-tray-monitor.exe bat.exe bareos-fd.exe bconsole.exe \
       bareos-sd.exe btape.exe bls.exe bextract.exe bpipe-fd.dll \
       mssqlvdi-fd.dll autoxflate-sd.dll libbareos.dll libbareosfind.dll \
-      libcrypto-8.dll libgcc_s_*-1.dll libhistory6.dll \
+      libcrypto-*.dll libgcc_s_*-1.dll libhistory6.dll \
       libreadline6.dll libssl-*.dll libstdc++-6.dll \
       libtermcap-0.dll pthreadGCE2.dll zlib1.dll \
       QtCore4.dll QtGui4.dll liblzo2-2.dll libfastlz.dll \
