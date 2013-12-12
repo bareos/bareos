@@ -1773,6 +1773,9 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
       Dmsg(ctx, dbglvl, "PyBareosSetValue: Unknown variable requested %d\n", var);
       break;
    }
+
+   Py_INCREF(Py_None);
+   return Py_None;
 }
 
 /*
