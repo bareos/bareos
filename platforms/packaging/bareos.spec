@@ -67,6 +67,7 @@ Vendor: 	The Bareos Team
 %define build_qt_monitor 1
 %define build_sqlite3 1
 %define systemd 0
+%define python_plugins 1
 
 # firewall installation
 %define install_suse_fw 0
@@ -84,6 +85,7 @@ Vendor: 	The Bareos Team
 %if 0%{?centos_version} == 505 || 0%{?rhel_version} == 505
 %define build_bat 0
 %define build_qt_monitor 0
+%define python_plugins 0
 %endif
 
 %if 0%{?sles_version} == 10
@@ -177,7 +179,11 @@ BuildRequires: lsb-release
 BuildRequires: tcp_wrappers-devel
 %endif
 
-Summary:  Bares All-In-One package (dir,sd,fd)
+%if 0%{?python_plugins}
+BuildRequires: python-devel >= 2.6
+%endif
+
+Summary:  Bareos All-In-One package (dir,sd,fd)
 #BuildArch: noarch
 Requires: %{name}-director = %{version}
 Requires: %{name}-storage = %{version}
@@ -331,6 +337,37 @@ Requires: sqlite-devel
 Requires: libopenssl-devel
 Requires: libcap-devel
 
+%if 0%{?python_plugins}
+%package director-python-plugin
+Summary: Python plugin for Director Daemon
+Requires: bareos-director = %{version}
+
+%package filedaemon-python-plugin
+Summary: Python plugin for File Daemon
+Requires: bareos-filedaemon = %{version}
+
+%package storage-python-plugin
+Summary: Python plugin for Storage Daemon
+Requires: bareos-storage = %{version}
+
+%description director-python-plugin
+%{dscr}
+
+This package contains the python plugin for the director daemon
+
+%description filedaemon-python-plugin
+%{dscr}
+
+This package contains the python plugin for the filedaemon
+
+%description storage-python-plugin
+%{dscr}
+
+This package contains the python plugin for the storagedaemon
+
+%endif
+
+
 %description client
 %{dscr}
 
@@ -449,6 +486,9 @@ export MTX=/usr/sbin/mtx
   --with-bsrdir=%{bsr_dir} \
   --with-logdir=/var/log/bareos \
   --with-subsys-dir=%{_subsysdir} \
+%if 0%{?python_plugins}
+  --with-python \
+%endif
   --enable-smartalloc \
   --disable-conio \
   --enable-readline \
@@ -527,6 +567,10 @@ do
 rm -f "%{buildroot}/$F"
 done
 
+%if ! 0%{?python_plugins}
+rm -f %{buildroot}/%{plugin_dir}/python-*.so
+%endif
+
 %if 0%{?build_bat}
 %if 0%{?suse_version} > 1010
 %suse_update_desktop_file -i bat System Utility Archiving
@@ -568,6 +612,11 @@ install -m 644 platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
 echo "This meta package emulates the former bareos-client package" > %{buildroot}%{_docdir}/%{name}/README.bareos-client
 echo "This is a meta package to install a full bareos system" > %{buildroot}%{_docdir}/%{name}/README.bareos
 
+%if 0%{?python_plugins}
+# copy the python files for the python plugins
+install -m 644 src/plugins/*/*.py %{buildroot}%{plugin_dir}
+%endif
+
 %files
 %defattr(-, root, root)
 %{_docdir}/%{name}/README.bareos
@@ -601,7 +650,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.conf
 %attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{name}-dir
-%{plugin_dir}/*-dir.so
+# we do not have any dir plugin but the python plugin
+#%%{plugin_dir}/*-dir.so
 %{script_dir}/delete_catalog_backup
 %{script_dir}/make_catalog_backup
 %{script_dir}/make_catalog_backup.pl
@@ -635,7 +685,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_sysconfdir}/rc.d/init.d/bareos-sd
 %endif
 %{_sbindir}/bscrypto
-%{plugin_dir}/*-sd.so
+%{plugin_dir}/autoxflate-sd.so
+%{plugin_dir}/scsicrypto-sd.so
 %{script_dir}/disk-changer
 %{_sbindir}/bareos-sd
 %{_mandir}/man8/bscrypto.8.gz
@@ -668,7 +719,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_sysconfdir}/rc.d/init.d/bareos-fd
 %endif
 %{_sbindir}/bareos-fd
-%{plugin_dir}/*-fd.so
+%{plugin_dir}/bpipe-fd.so
 %{_mandir}/man8/bareos-fd.8.gz
 # tray monitor
 %if 0%{?systemd_support}
@@ -802,6 +853,26 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 /usr/include/bareos
 %{_libdir}/*.la
+
+
+%if 0%{?python_plugins}
+%files filedaemon-python-plugin
+%{plugin_dir}/python-fd.so
+%{plugin_dir}/bareos-fd.py
+%{plugin_dir}/bareos_fd_consts.py
+
+%files director-python-plugin
+%{plugin_dir}/python-dir.so
+%{plugin_dir}/bareos-dir.py
+%{plugin_dir}/bareos_dir_consts.py
+
+
+%files storage-python-plugin
+%{plugin_dir}/python-sd.so
+%{plugin_dir}/bareos-sd.py
+%{plugin_dir}/bareos_sd_consts.py
+
+%endif # python_plugins
 
 #
 # Define some macros for updating the system settings.
