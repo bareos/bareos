@@ -11,8 +11,6 @@
 SUBDIRS = hurd freebsd redhat suse solaris unknown openbsd osx irix gentoo \
 	  debian darwin aix bsdi mandrake slackware alpha ubuntu systemd
 
-MAKE = make
-
 DISTNAME=@DISTNAME@
 DISTVER=@DISTVER@
 
