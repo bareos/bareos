@@ -886,7 +886,7 @@ static char **backtrace_symbols(void *const *array, int size)
    if (ret_buffer) {
       for (i = 0; i < size; i++) {
          (void) addrtosymstr(array[i], linebuffer, sizeof(linebuffer));
-         ret_buffer[i] = actuallymalloc(len = strlen(linebuffer) + 1);
+         ret_buffer[i] = (char *)actuallymalloc(len = strlen(linebuffer) + 1);
          strcpy(ret_buffer[i], linebuffer);
          bufferlen += len;
       }
