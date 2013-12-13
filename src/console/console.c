@@ -1293,6 +1293,7 @@ int main(int argc, char *argv[])
       terminate_console(0);
       return 1;
    }
+   sendit(errmsg);
 
    Dmsg0(40, "Opened connection with Director daemon\n");
 
