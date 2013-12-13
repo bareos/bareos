@@ -339,15 +339,18 @@ Requires: libcap-devel
 
 %if 0%{?python_plugins}
 %package director-python-plugin
-Summary: Python plugin for Director Daemon
+Summary:  Python plugin for Director Daemon
+Group:    Productivity/Archiving/Backup
 Requires: bareos-director = %{version}
 
 %package filedaemon-python-plugin
-Summary: Python plugin for File Daemon
+Summary:  Python plugin for File Daemon
+Group:    Productivity/Archiving/Backup
 Requires: bareos-filedaemon = %{version}
 
 %package storage-python-plugin
-Summary: Python plugin for Storage Daemon
+Summary:  Python plugin for Storage Daemon
+Group:    Productivity/Archiving/Backup
 Requires: bareos-storage = %{version}
 
 %description director-python-plugin
@@ -615,6 +618,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %if 0%{?python_plugins}
 # copy the python files for the python plugins
 install -m 644 src/plugins/*/*.py %{buildroot}%{plugin_dir}
+
 %endif
 
 %files
@@ -857,17 +861,20 @@ install -m 644 src/plugins/*/*.py %{buildroot}%{plugin_dir}
 
 %if 0%{?python_plugins}
 %files filedaemon-python-plugin
+%defattr(-, root, root)
 %{plugin_dir}/python-fd.so
 %{plugin_dir}/bareos-fd.py*
 %{plugin_dir}/bareos_fd_consts.py*
 
 %files director-python-plugin
+%defattr(-, root, root)
 %{plugin_dir}/python-dir.so
 %{plugin_dir}/bareos-dir.py*
 %{plugin_dir}/bareos_dir_consts.py*
 
 
 %files storage-python-plugin
+%defattr(-, root, root)
 %{plugin_dir}/python-sd.so
 %{plugin_dir}/bareos-sd.py*
 %{plugin_dir}/bareos_sd_consts.py*
