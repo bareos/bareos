@@ -858,19 +858,19 @@ install -m 644 src/plugins/*/*.py %{buildroot}%{plugin_dir}
 %if 0%{?python_plugins}
 %files filedaemon-python-plugin
 %{plugin_dir}/python-fd.so
-%{plugin_dir}/bareos-fd.py
-%{plugin_dir}/bareos_fd_consts.py
+%{plugin_dir}/bareos-fd.py*
+%{plugin_dir}/bareos_fd_consts.py*
 
 %files director-python-plugin
 %{plugin_dir}/python-dir.so
-%{plugin_dir}/bareos-dir.py
-%{plugin_dir}/bareos_dir_consts.py
+%{plugin_dir}/bareos-dir.py*
+%{plugin_dir}/bareos_dir_consts.py*
 
 
 %files storage-python-plugin
 %{plugin_dir}/python-sd.so
-%{plugin_dir}/bareos-sd.py
-%{plugin_dir}/bareos_sd_consts.py
+%{plugin_dir}/bareos-sd.py*
+%{plugin_dir}/bareos_sd_consts.py*
 
 %endif # python_plugins
 
