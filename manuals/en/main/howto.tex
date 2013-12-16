@@ -589,3 +589,97 @@ Job queued. JobId=14
   Termination:            Restore OK
 \end{bconsole}
 
+\section{The bpipe Plugin}
+\label{bpipe}
+
+The bpipe plugin is a generic pipe program, that simply transmits the data from a specified program to Bareos for backup, and
+from Bareos to a specified program for restore. The purpose of the plugin is to provide an interface to any system program
+for backup and restore. That allows you, for example, to do database backups without a local dump. By using different command 
+lines to bpipe, you can backup any kind of data (ASCII or binary) depending on the program called.
+
+The bpipe plugin is provided in the directory \path|src/plugins/filed/bpipe-fd.c| of the Bareos source distribution or by the 
+bareos-common binary package of your distributions repository and has to be installed on the client where the FileDaemon is running. 
+
+The following line has to be present in your bareos-fd.conf, so the FileDaemon knows the path where to look for the plugin, 
+when it's called.
+
+\begin{bconfig}{bpipe fdconfig}
+PluginDirectory = /usr/lib64/bareos/plugins
+\end{bconfig}
+
+Please note that this is a very simple plugin that was written for demonstration and test purposes. It is and can be used 
+in production, but that was never intended. The bpipe plugin is so simple and flexible, you may call it the 
+"Swiss Army Knife" of the current existing plugins for Bareos.
+
+The bpipe plugin is specified in the Include section of your Job's FileSet resource in your bareos-dir.conf.
+
+\begin{bconfig}{bpipe fileset}
+FileSet {
+  Name = "MyFileSet"
+  Include {
+    Options {
+      signature = MD5
+      compression = gzip
+    }
+    Plugin = "bpipe:..."
+  }
+}
+\end{bconfig}
+
+The syntax and semantics of the Plugin directive require the first part of the string up to the colon to be the name of the plugin.
+Everything after the first colon is ignored by the File daemon but is passed to the plugin. Thus the plugin writer may define the 
+meaning of the rest of the string as he wishes. The full syntax of the plugin directive as interpreted by the bpipe plugin is:
+
+\begin{bconfig}{bpipe directive}
+Plugin = "<plugin>:<path>:<command1>:<command2>"
+\end{bconfig}
+
+\begin{description}
+\item[plugin] is the name of the plugin with the trailing -fd.so stripped off, so in this case, we would put bpipe in the field.
+\item[path] specifies the namespace, which for bpipe is the pseudo path and filename under which the backup will be saved. This
+pseudo path and filename will be seen by the user in the restore file tree. For example, if the value is /MySQL/mydump.sql, the data
+backed up by the plugin will be put under that "pseudo" path and filename. You must be careful to choose a naming convention that is unique
+to avoid a conflict with a path and filename that actually exists on your system.
+\item[command1] for the bpipe plugin specifies the "reader" program that is called by the plugin during backup to read the data. bpipe
+will call this program by doing a popen on it.
+\item[command2] for the bpipe plugin specifies the "writer" program that is called by the plugin during restore to write the data back 
+to the filesystem.
+\end{description}
+
+Please note that the two items above describing the "reader" and "writer", these programs are "executed" by Bareos, which means 
+there is no shell inerpretation of any command line arguments you might use. If you want to use shell characters (redirection of input 
+or output, ...), then we recommend that you put your command or commands in a shell script and execute the script. In addition if you
+backup a file with reader program, when running the writer program during the restore, Bareos will not automatically create the path
+to the file. Either the path must exist, or you must explicitly do so with your command or in a shell script.
+
+Putting it all together, the full plugin directive line might look like the following:
+
+\begin{bconfig}{bpipe directive PostgreSQL dump}
+Plugin = "bpipe:/POSTGRESQL/bareos.sql:pg_dumpall -U postgres:psql -U postgres"
+\end{bconfig}
+
+This causes the File daemon to call bpipe plugin, which will write its data into the "pseudo" file \path|/POSTGRESQL/bareos.sql| by
+calling the program \command{pg_dumpall -U postgres} to read the data during backup. The \command{pg_dumpall} command outputs all 
+the data for the database, which will be read by the plugin and stored in the backup. During restore, the data that was backed up will
+be sent to the program specified in the last field, which in this case is psql. When psql is called, it will read the data sent to it by 
+the plugin then write it back to the same database from which it came from.
+
+Here is a complete FileSet example, where first your \path|/home| is backed up and then a mysqldump is done.
+
+\begin{bconfig}{bpipe fileset MySQL dump}
+FileSet {
+  Name = "<YourFileSetName>"
+  Include = {
+    File = /home
+    Plugin = "bpipe:/MYSQL/<dumpname.sql>:mysqldump -u <user> --password=<password> --opt --all-databases:mysql -u <user> -p <password>"
+    Options {
+      signature = MD5
+      compression = gzip
+    }
+  }
+  Exclude {
+  }
+}
+\end{bconfig}
+
+Note: It is also possible to define more than one plugin directive in a FileSet to do several database dumps at once.
