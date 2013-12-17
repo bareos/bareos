@@ -224,7 +224,7 @@ Include {
 }
 \end{bconfig}
 % workaround for kile editor
-\comment{$}
+\hide{$}
    will produce a list of all the local partitions on a Linux system.
    Quoting is a real problem because you must quote for Bareos  which consists of
    preceding every \textbackslash{} and every " with a \textbackslash{}, and
@@ -1333,7 +1333,7 @@ Include {
 FileSet Exclude-Ressources very similar to Include-Ressources, except that they only allow following directives:
 
 \begin{description}
-\directive{dir}{File}{}{}{}
+\directive{dir}{File}{ filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server }{}{}
     Files to exclude are descripted in the same way as at the \ilink{Include ressource}{fileset-include}.
 \end{description}
 
@@ -1804,7 +1804,7 @@ FileSet {
 }
 \end{bconfig}
 
-% only for kile editor
+% workaround for kile editor
 \hide{$}
 
 \variable{File = /} includes all Windows drives.
