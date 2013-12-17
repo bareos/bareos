@@ -24,14 +24,27 @@ Bareos will ensure that the next backup is always a Full save.
 Start of the FileSet resource. One {\bf FileSet}  resource must be
 defined for each Backup job.
 
-\item [Name = {\textless}name{\textgreater}] \hfill \\
-\index[dir]{Name}
-\index[dir]{Directive!Name}
-   The name of the FileSet resource.  This directive is required.
+\directive{dir}{Name}{name}{required}{}
+    The name of the FileSet resource.  This directive is required.
 
-\item [Ignore FileSet Changes = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
-\index[dir]{Ignore FileSet Changes}
-\index[dir]{Directive!Ignore FileSet Changes}
+\directive{dir}{Description}{text}{}{}
+    Information only.
+
+\directive{dir}{Enable VSS}{yes{\textbar}no}{}{yes (on Windows)}
+  If this directive is set to {\bf yes} the File daemon will be notified
+  that the user wants to use a Volume Shadow Copy Service (VSS) backup
+  for this job. This directive is effective only on the Windows File Daemon.
+  It permits a consistent copy
+  of open files to be made for cooperating writer applications, and for
+  applications that are not VSS away, Bareos can at least copy open files.
+  The Volume Shadow Copy will only be done on Windows drives where the
+  drive (e.g. C:, D:, ...) is explicitly mentioned in a {\bf File}
+  directive.
+  For more information, please see the
+  \ilink{Windows}{VSS} chapter of this manual.
+
+
+\directive{dir}{Ignore FileSet Changes}{yes{\textbar}no}{}{no}
    Normally, if you modify the FileSet Include or Exclude lists,
    the next backup will be forced to a Full so that Bareos can
    guarantee that any additions or deletions are properly saved.
@@ -47,38 +60,21 @@ defined for each Backup job.
    Exclude, Bareos will force a Full backup to ensure that everything is
    properly backed up.
 
-\item [Enable VSS = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
-\index[dir]{Enable VSS}
-\index[dir]{Directive!Enable VSS}
-  If this directive is set to {\bf yes} the File daemon will be notified
-  that the user wants to use a Volume Shadow Copy Service (VSS) backup
-  for this job. The default is {\bf yes}. This directive is effective
-  only for VSS enabled Win32 File daemons. It permits a consistent copy
-  of open files to be made for cooperating writer applications, and for
-  applications that are not VSS away, Bareos can at least copy open files.
-  The Volume Shadow Copy will only be done on Windows drives where the
-  drive (e.g. C:, D:, ...) is explicitly mentioned in a {\bf File}
-  directive.
-  For more information, please see the
-  \ilink{Windows}{VSS} chapter of this manual.
+\directive{dir}{Include}{$\ldots$}{}{}
+    Describe the files, that should get included to a backup, see section about the \ilink{Include Ressource}{fileset-include}.
 
-\item [Include \{ Options \{{\textless}file-options{\textgreater}\} ...;
-   {\textless}file-list{\textgreater} \} ] \hfill \\
-\index[dir]{Include \{ [ Options \{{\textless}file-options{\textgreater}\} ...]
-   {\textless}file-list{\textgreater} \}  }
-\index[dir]{Directive!Include}
-
-\item [Options \{ {\textless}file-options{\textgreater} \} ] \hfill \\
-\index[dir]{Options  \{ {\textless}file-options{\textgreater} \}  }
-
-\item [Exclude \{ {\textless}file-list{\textgreater} \}] \hfill \\
-\index[dir]{Exclude \{ {\textless}file-list{\textgreater} \} }
-\index[dir]{Directive!Exclude}
+\directive{dir}{Exclude}{$\ldots$}{}{}
+    Describe the files, that should get excluded from a backup, see section about the \ilink{Exclude Ressource}{fileset-exclude}.
 
 \end{description}
 
+\subsection{FileSet Include Ressource}
+\label{fileset-include}
+
 The Include resource must contain a list of directories and/or files to be
-processed in the backup job.  Normally, all files found in all
+processed in the backup job.  
+
+Normally, all files found in all
 subdirectories of any directory in the Include File list will be backed up.
 Note, see below for the definition of {\textless}file-list{\textgreater}.
 The Include resource may also contain one or more Options resources that
@@ -88,55 +84,7 @@ below for more details concerning Options resources.
 
 There can be any number of {\bf Include} resources within the FileSet, each
 having its own list of directories or files to be backed up and the backup
-options defined by one or more Options resources.  The {\bf file-list}
-consists of one file or directory name per line.  Directory names should be
-specified without a trailing slash with Unix path notation.
-
-Windows users, please take note to specify directories (even c:/...) in
-Unix path notation. If you use Windows conventions, you will most likely
-not be able to restore your files due to the fact that the Windows
-path separator was defined as an escape character long before Windows
-existed, and Bareos adheres to that convention (i.e. \\  means the next character
-appears as itself).
-
-You should always specify a full path for every directory and file that you
-list in the FileSet.  In addition, on Windows machines, you should {\bf
-always} prefix the directory or filename with the drive specification
-(e.g.  {\bf c:/xxx}) using Unix directory name separators
-(forward slash).  The drive letter itself can be upper or lower case (e.g.
-c:/xxx or C:/xxx).
-
-Bareos's default for processing directories is to recursively descend in
-the directory saving all files and subdirectories.  Bareos will not by
-default cross filesystems (or mount points in Unix parlance).  This means
-that if you specify the root partition (e.g.  {\bf /}), Bareos will save
-only the root partition and not any of the other mounted filesystems.
-Similarly on Windows systems, you must explicitly specify each of the
-drives you want saved (e.g.
-{\bf c:/} and {\bf d:/} ...). In addition, at least for Windows systems, you
-will most likely want to enclose each specification within double quotes
-particularly if the directory (or file) name contains spaces. The {\bf df}
-command on Unix systems will show you which mount points you must specify to
-save everything. See below for an example.
-
-Take special care not to include a directory twice or Bareos will backup
-the same files two times wasting a lot of space on your archive device.
-Including a directory twice is very easy to do.  For example:
-
-\footnotesize
-\begin{verbatim}
-  Include {
-    Options {
-      compression=GZIP
-    }
-    File = /
-    File = /usr
-  }
-\end{verbatim}
-\normalsize
-
-on a Unix system where /usr is a subdirectory (rather than a mounted
-filesystem) will cause /usr to be backed up twice.
+options defined by one or more Options resources.  
 
 Please take note of the following items in the FileSet syntax:
 
@@ -145,12 +93,346 @@ Please take note of the following items in the FileSet syntax:
    brace (\{). The same is true for the Exclude.
 \item Each directory (or filename) to be included or excluded is preceded by a {\bf File
    =}.  Previously they were simply listed on separate lines.
-\item The options that previously appeared on the Include line now must be
-   specified within their own Options resource.
 \item The Exclude resource does not accept Options.
 \item When using wild-cards or regular expressions, directory names are
    always terminated with a slash (/) and filenames have no trailing slash.
 \end{enumerate}
+
+
+\begin{description}
+\directive{dir}{File}{ filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server }{}{}
+    The file list
+    consists of one file or directory name per line.  Directory names should be
+    specified without a trailing slash with Unix path notation.
+
+    Windows users, please take note to specify directories (even c:/...) in
+    Unix path notation. If you use Windows conventions, you will most likely
+    not be able to restore your files due to the fact that the Windows
+    path separator was defined as an escape character long before Windows
+    existed, and Bareos adheres to that convention (i.e. means the next character
+    appears as itself).
+
+    You should always specify a full path for every directory and file that you
+    list in the FileSet.  In addition, on Windows machines, you should {\bf
+    always} prefix the directory or filename with the drive specification
+    (e.g.  {\bf c:/xxx}) using Unix directory name separators
+    (forward slash).  The drive letter itself can be upper or lower case (e.g.
+    c:/xxx or C:/xxx).
+
+    Bareos's default for processing directories is to recursively descend in
+    the directory saving all files and subdirectories.  Bareos will not by
+    default cross filesystems (or mount points in Unix parlance).  This means
+    that if you specify the root partition (e.g.  {\bf /}), Bareos will save
+    only the root partition and not any of the other mounted filesystems.
+    Similarly on Windows systems, you must explicitly specify each of the
+    drives you want saved (e.g.
+    {\bf c:/} and {\bf d:/} ...). In addition, at least for Windows systems, you
+    will most likely want to enclose each specification within double quotes
+    particularly if the directory (or file) name contains spaces. The {\bf df}
+    command on Unix systems will show you which mount points you must specify to
+    save everything. See below for an example.
+
+Take special care not to include a directory twice or Bareos will backup
+the same files two times wasting a lot of space on your archive device.
+Including a directory twice is very easy to do.  For example:
+
+\begin{bconfig}{File Set}
+  Include {
+    Options {
+      compression=GZIP
+    }
+    File = /
+    File = /usr
+  }
+\end{bconfig}
+on a Unix system where /usr is a subdirectory (rather than a mounted
+filesystem) will cause /usr to be backed up twice.
+
+{\bf {\textless}file-list{\textgreater}} is a list of directory and/or filename names
+specified with a {\bf File =} directive. To include names containing spaces,
+enclose the name between double-quotes. Wild-cards are not interpreted
+in file-lists. They can only be specified in Options resources.
+
+There are a number of special cases when specifying directories and files in a
+{\bf file-list}. They are:
+
+\begin{itemize}
+\item Any name preceded by an at-sign (@) is assumed to be the  name of a
+   file, which contains a list of files each preceded by a "File =".  The
+   named file is read once when the configuration file is parsed during the
+   Director startup.  Note, that the file is read on the Director's machine
+   and not on the Client's.  In fact, the @filename can appear anywhere
+   within the conf file where a token would be read, and the contents of
+   the named file will be logically inserted in the place of the @filename.
+   What must be in the file depends on the location the @filename is
+   specified in the conf file.  For example:
+
+\begin{bconfig}{File Set with Include File}
+Include {
+  Options {
+    compression=GZIP
+  }
+  @/home/files/my-files
+}
+\end{bconfig}
+
+
+\item Any name beginning with a vertical bar ({\textbar}) is  assumed to
+   be the name of a program.  This program will be executed on the Director's
+   machine at the time the Job starts (not when the Director reads the
+   configuration file), and any output from that program will be assumed to
+   be a list of files or directories, one per line, to be included. Before
+   submitting the specified command Bareos will performe
+   \ilink{character substitution}{character substitution}.
+
+   This allows you to have a job that, for example, includes all the local
+   partitions even if you change the partitioning by adding a disk.  The
+   examples below show you how to do this.  However, please note two
+   things: \\
+   1.  if you want the local filesystems, you probably should be
+   using the new {\bf fstype} directive, which was added in version 1.36.3
+   and set {\bf onefs=no}.
+   \\
+
+   2.  the exact syntax of the command needed in the examples below is very
+   system dependent.  For example, on recent Linux systems, you may need to
+   add the -P option, on FreeBSD systems, the options will be different as
+   well.
+
+   In general, you will need to prefix your command or commands with a {\bf
+   sh -c} so that they are invoked by a shell.  This will not be the case
+   if you are invoking a script as in the second example below.  Also, you
+   must take care to escape (precede with a \textbackslash{}) wild-cards,
+   shell character, and to ensure that any spaces in your command are
+   escaped as well.  If you use a single quotes (') within a double quote
+   ("), Bareos will treat everything between the single quotes as one field
+   so it will not be necessary to escape the spaces.  In general, getting
+   all the quotes and escapes correct is a real pain as you can see by the
+   next example.  As a consequence, it is often easier to put everything in
+   a file and simply use the file name within Bareos.  In that case the
+   {\bf sh -c} will not be necessary providing the first line of the file
+   is {\bf \#!/bin/sh}.
+
+   As an  example:
+
+\begin{bconfig}{File Set with inline script}
+Include {
+   Options {
+     signature = SHA1
+   }
+   File = "|sh -c 'df -l | grep \"^/dev/hd[ab]\" | grep -v \".*/tmp\" | awk \"{print \\$6}\"'"
+}
+\end{bconfig}
+% workaround for kile editor
+\comment{$}
+   will produce a list of all the local partitions on a Linux system.
+   Quoting is a real problem because you must quote for Bareos  which consists of
+   preceding every \textbackslash{} and every " with a \textbackslash{}, and
+   you must also quote for the shell command. In the end, it is probably  easier
+   just to execute a script file with:
+
+\begin{bconfig}{File Set with external script}
+Include {
+  Options {
+    signature=MD5
+  }
+  File = "|my_partitions"
+}
+\end{bconfig}
+
+   where \command{my_partitions} has:
+
+\footnotesize
+\begin{verbatim}
+#!/bin/sh
+df -l | grep "^/dev/hd[ab]" | grep -v ".*/tmp" \
+      | awk "{print \$6}"
+\end{verbatim}
+\normalsize
+
+   If the vertical bar (\verb+|+) in front of \command{my_partitions} is preceded by a
+   backslash as in \textbackslash{}\verb+|+, the program will be executed on the
+   Client's machine instead of on the Director's machine.
+   Please note that if the filename is given within quotes, you
+   will need to use two slashes.  An example, provided by John Donagher,
+   that backs up all the local UFS partitions on a remote system is:
+
+\begin{bconfig}{File Set with inline script in quotes}
+FileSet {
+  Name = "All local partitions"
+  Include {
+    Options {
+      signature=SHA1
+      onefs=yes
+    }
+    File = "\\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
+  }
+}
+\end{bconfig}
+
+   The above requires two backslash characters after the double quote (one
+   preserves  the next one). If you are a Linux user, just change the {\bf ufs}
+   to  {\bf ext3} (or your preferred filesystem type), and you will be in
+   business.
+
+   If you know what filesystems you have mounted on your system, e.g.
+   for Linux only using ext2, ext3 or ext4, you can backup
+   all local filesystems using something like:
+
+\begin{bconfig}{File Set to backup all extfs partions}
+Include {
+   Options {
+     signature = SHA1
+     onfs=no
+     fstype=ext2
+   }
+   File = /
+}
+\end{bconfig}
+
+\item Any file-list item preceded by a less-than sign ({\textless})  will be taken
+   to be a file. This file will be read on the Director's machine (see
+   below for doing it on the Client machine) at the time
+   the Job starts, and the  data will be assumed to be a list of directories or
+   files,  one per line, to be included. The names should start in  column 1 and
+   should not be quoted even if they contain  spaces. This feature allows you to
+   modify the external  file and change what will be saved without stopping and
+   restarting Bareos as would be necessary if using the @  modifier noted above.
+   For example:
+
+\footnotesize
+\begin{verbatim}
+Include {
+  Options {
+    signature = SHA1
+  }
+  File = "</home/files/local-filelist"
+}
+\end{verbatim}
+\normalsize
+
+   If you precede the less-than sign ({\textless}) with a backslash as in
+   \textbackslash{}{\textless}, the file-list will be read on the Client machine
+   instead of on the Director's machine.  Please note that if the filename
+   is given within quotes, you will need to use two slashes.
+
+\footnotesize
+\begin{verbatim}
+Include {
+  Options {
+    signature = SHA1
+  }
+  File = "\\</home/xxx/filelist-on-client"
+}
+\end{verbatim}
+\normalsize
+
+\item     
+    \index[general]{Backing up!Partitions}
+    \index[general]{Backing up Raw Partitions}
+    If you explicitly specify a block device such as {\bf /dev/hda1},  then
+   Bareos will assume that this  is a raw partition
+   to be backed up. In this case, you are strongly  urged to specify a {\bf
+   sparse=yes} include option, otherwise, you  will save the whole partition
+   rather than just the actual data that  the partition contains. For example:
+
+\begin{bconfig}{Backup Raw Partitions}
+Include {
+  Options {
+    signature=MD5
+    sparse=yes
+  }
+  File = /dev/hd6
+}
+\end{bconfig}
+
+   will backup the data in device /dev/hd6. Note, the {bf /dev/hd6} must be
+   the raw partition itself. Bareos will not back it up as a raw device if
+   you specify a symbolic link to a raw device such as my be created by the
+   LVM Snapshot utilities.
+
+
+\item A file-list may not contain wild-cards. Use directives in the
+   Options resource if you wish to specify wild-cards or regular expression
+   matching.
+
+\end{itemize}
+
+
+
+\directive{dir}{Exclude Dir Containing}{filename}{}{}
+    This directive can be added to the Include section of the FileSet resource.  If the specified
+    filename ({\bf filename-string}) is found on the Client in any directory to be
+    backed up, the whole directory will be ignored (not backed up).
+    We recommend to use the filename \file{.nobackup}, as it is a hidden file on unix
+    systems, and explains what is the purpose of the file.
+
+    For example:
+
+    \begin{bconfig}{Exlude Directories containing the file .nobackup}
+    # List of files to be backed up
+    FileSet {
+        Name = "MyFileSet"
+        Include {
+            Options {
+                signature = MD5
+            }
+            File = /home
+            Exclude Dir Containing = .nobackup
+        }
+    }
+    \end{bconfig}
+
+    But in /home, there may be hundreds of directories of users and some
+    people want to indicate that they don't want to have certain
+    directories backed up. For example, with the above FileSet, if
+    the user or sysadmin creates a file named {\bf .nobackup} in
+    specific directories, such as
+
+    \begin{verbatim}
+    /home/user/www/cache/.nobackup
+    /home/user/temp/.nobackup
+    \end{verbatim}
+
+    then Bareos will not backup the two directories named:
+
+    \begin{verbatim}
+    /home/user/www/cache
+    /home/user/temp
+    \end{verbatim}
+
+    NOTE: subdirectories will not be backed up.  That is, the directive
+    applies to the two directories in question and any children (be they
+    files, directories, etc).
+
+
+\directive{dir}{Plugin}{plugin-name:plugin-parameter1:plugin-parameter2:$\ldots$}{}{}
+\label{directive-fileset-plugin}
+        Instead of only specifying files, a file set can also use plugins.
+        Plugins are additional libraries that handle specific requirements.
+        The purpose of plugins is to provide an interface to any system program
+        for backup and restore. That allows you, for example, to do database backups without a local dump.
+
+        The syntax and semantics of the Plugin directive require 
+        the first part of the string up to the colon to be the name of the plugin.
+        Everything after the first colon is ignored by the File daemon but is passed to the plugin. 
+        Thus the plugin writer may define the 
+        meaning of the rest of the string as he wishes.
+
+        The program \command{bpluginfo} can be used, to retreive information about a specific plugin, see the  \ilink{bpluginfo}{bpluginfo} section.
+
+        Examples about the bpipe- and the mssql-plugin can be found in the sections about the \ilink{bpipe plugin}{bpipe} and the \ilink{MSSQL plugin}{MSSQL}.
+
+        Note: It is also possible to define more than one plugin directive in a FileSet to do several database dumps at once.
+
+\directive{dir}{Options}{$\ldots$}{}{}
+    See the \ilink{File Set Options}{fileset-options} section.
+
+\end{description}
+
+
+\subsubsection{FileSet Options Ressource}
+\label{fileset-options}
 
 The Options resource is optional, but when specified, it will contain a
 list of {\bf keyword=value} options to be applied to the file-list.
@@ -201,134 +483,130 @@ The directives within an Options resource may be one of the following:
 \begin{description}
     \item [compression={\textless}GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC{\textgreater}] \hfill \\
     \begin{description}
+        \item [compression=GZIP] \hfill \\
+        \index[dir]{compression}
+        \index[dir]{Directive!compression}
+        All files saved will be software compressed using the GNU ZIP
+        compression format.  The compression is done on a file by file basis by
+        the File daemon.  If there is a problem reading the tape in a single
+        record of a file, it will at most affect that file and none of the other
+        files on the tape.  Normally this option is {\bf not} needed if you have
+        a modern tape drive as the drive will do its own compression.  In fact,
+        if you specify software compression at the same time you have hardware
+        compression turned on, your files may actually take more space on the
+        volume.
 
+        Software compression is very important if you are writing your Volumes
+        to a file, and it can also be helpful if you have a fast computer but a
+        slow network, otherwise it is generally better to rely your tape drive's
+        hardware compression.  As noted above, it is not generally a good idea
+        to do both software and hardware compression.
 
-    \item [compression=GZIP] \hfill \\
-    \index[dir]{compression}
-    \index[dir]{Directive!compression}
-    All files saved will be software compressed using the GNU ZIP
-    compression format.  The compression is done on a file by file basis by
-    the File daemon.  If there is a problem reading the tape in a single
-    record of a file, it will at most affect that file and none of the other
-    files on the tape.  Normally this option is {\bf not} needed if you have
-    a modern tape drive as the drive will do its own compression.  In fact,
-    if you specify software compression at the same time you have hardware
-    compression turned on, your files may actually take more space on the
-    volume.
+        Specifying {\bf GZIP} uses the default compression level 6 (i.e.  {\bf
+        GZIP} is identical to {\bf GZIP6}).  If you want a different compression
+        level (1 through 9), you can specify it by appending the level number
+        with no intervening spaces to {\bf GZIP}.  Thus {\bf compression=GZIP1}
+        would give minimum compression but the fastest algorithm, and {\bf
+        compression=GZIP9} would give the highest level of compression, but
+        requires more computation.  According to the GZIP documentation,
+        compression levels greater than six generally give very little extra
+        compression and are rather CPU intensive.
 
-    Software compression is very important if you are writing your Volumes
-    to a file, and it can also be helpful if you have a fast computer but a
-    slow network, otherwise it is generally better to rely your tape drive's
-    hardware compression.  As noted above, it is not generally a good idea
-    to do both software and hardware compression.
+        You can overwrite this option per Storage resource with
+        \ilink{AllowCompression}{AllowCompression} option.
 
-    Specifying {\bf GZIP} uses the default compression level 6 (i.e.  {\bf
-    GZIP} is identical to {\bf GZIP6}).  If you want a different compression
-    level (1 through 9), you can specify it by appending the level number
-    with no intervening spaces to {\bf GZIP}.  Thus {\bf compression=GZIP1}
-    would give minimum compression but the fastest algorithm, and {\bf
-    compression=GZIP9} would give the highest level of compression, but
-    requires more computation.  According to the GZIP documentation,
-    compression levels greater than six generally give very little extra
-    compression and are rather CPU intensive.
+        \item [compression=LZO] \hfill \\
+        \index[dir]{compression}
+        \index[dir]{Directive!compression}
+        All files saved will be software compressed using the LZO
+        compression format. The compression is done on a file by file basis by
+        the File daemon. Everything else about GZIP is true for LZO.
 
-    You can overwrite this option per Storage resource with
-    \ilink{AllowCompression}{AllowCompression} option.
+        LZO provides much faster compression and decompression speed but lower
+        compression ratio than GZIP. If your CPU is fast enough you should be able
+        to compress your data without making the backup duration longer.
 
-    \item [compression=LZO] \hfill \\
-    \index[dir]{compression}
-    \index[dir]{Directive!compression}
-    All files saved will be software compressed using the LZO
-    compression format. The compression is done on a file by file basis by
-    the File daemon. Everything else about GZIP is true for LZO.
+        Note that Bareos only use one compression level LZO1X-1 specified by LZO.
 
-    LZO provides much faster compression and decompression speed but lower
-    compression ratio than GZIP. If your CPU is fast enough you should be able
-    to compress your data without making the backup duration longer.
+        You can overwrite this option per Storage resource with
+        \ilink{AllowCompression}{AllowCompression} option.
 
-    Note that bareos only use one compression level LZO1X-1 specified by LZO.
+        \item [compression=LZFAST] \hfill \\
+        \index[dir]{compression}
+        \index[dir]{Directive!compression}
+        All files saved will be software compressed using the LZFAST
+        compression format. The compression is done on a file by file basis by
+        the File daemon. Everything else about GZIP is true for LZFAST.
 
-    You can overwrite this option per Storage resource with
-    \ilink{AllowCompression}{AllowCompression} option.
+        LZFAST provides much faster compression and decompression speed but lower
+        compression ratio than GZIP. If your CPU is fast enough you should be able
+        to compress your data without making the backup duration longer.
 
-    \item [compression=LZFAST] \hfill \\
-    \index[dir]{compression}
-    \index[dir]{Directive!compression}
-    All files saved will be software compressed using the LZFAST
-    compression format. The compression is done on a file by file basis by
-    the File daemon. Everything else about GZIP is true for LZFAST.
+        You can overwrite this option per Storage resource with
+        \ilink{AllowCompression}{AllowCompression} option.
 
-    LZFAST provides much faster compression and decompression speed but lower
-    compression ratio than GZIP. If your CPU is fast enough you should be able
-    to compress your data without making the backup duration longer.
+        \item [compression=LZ4] \hfill \\
+        \index[dir]{compression}
+        \index[dir]{Directive!compression}
+        All files saved will be software compressed using the LZ4
+        compression format. The compression is done on a file by file basis by
+        the File daemon. Everything else about GZIP is true for LZ4.
 
-    You can overwrite this option per Storage resource with
-    \ilink{AllowCompression}{AllowCompression} option.
+        LZ4 provides much faster compression and decompression speed but lower
+        compression ratio than GZIP. If your CPU is fast enough you should be able
+        to compress your data without making the backup duration longer.
 
-    \item [compression=LZ4] \hfill \\
-    \index[dir]{compression}
-    \index[dir]{Directive!compression}
-    All files saved will be software compressed using the LZ4
-    compression format. The compression is done on a file by file basis by
-    the File daemon. Everything else about GZIP is true for LZ4.
+        Both LZ4 and LZ4HC have the same decompression speed which is about twice
+        the speed of the LZO compression. So for a restore both LZ4 and LZ4HC are
+        good candidates.
 
-    LZ4 provides much faster compression and decompression speed but lower
-    compression ratio than GZIP. If your CPU is fast enough you should be able
-    to compress your data without making the backup duration longer.
+        You can overwrite this option per Storage resource with
+        \ilink{AllowCompression}{AllowCompression} option.
 
-    Both LZ4 and LZ4HC have the same decompression speed which is about twice
-    the speed of the LZO compression. So for a restore both LZ4 and LZ4HC are
-    good candidates.
+        \item [compression=LZ4HC] \hfill \\
+        \index[dir]{compression}
+        \index[dir]{Directive!compression}
+        All files saved will be software compressed using the LZ4HC
+        compression format. The compression is done on a file by file basis by
+        the File daemon. Everything else about GZIP is true for LZ4.
 
-    You can overwrite this option per Storage resource with
-    \ilink{AllowCompression}{AllowCompression} option.
+        LZ4HC is the High Compression version of the LZ4 compression. It has
+        a higher compression ratio than LZ4 and is more comparable to GZIP-6
+        in both compression rate and cpu usage.
 
-    \item [compression=LZ4HC] \hfill \\
-    \index[dir]{compression}
-    \index[dir]{Directive!compression}
-    All files saved will be software compressed using the LZ4HC
-    compression format. The compression is done on a file by file basis by
-    the File daemon. Everything else about GZIP is true for LZ4.
+        Both LZ4 and LZ4HC have the same decompression speed which is about twice
+        the speed of the LZO compression. So for a restore both LZ4 and LZ4HC are
+        good candidates.
 
-    LZ4HC is the High Compression version of the LZ4 compression. It has
-    a higher compression ratio than LZ4 and is more comparable to GZIP-6
-    in both compression rate and cpu usage.
-
-    Both LZ4 and LZ4HC have the same decompression speed which is about twice
-    the speed of the LZO compression. So for a restore both LZ4 and LZ4HC are
-    good candidates.
-
-    You can overwrite this option per Storage resource with
-    \ilink{AllowCompression}{AllowCompression} option.
-
+        You can overwrite this option per Storage resource with
+        \ilink{AllowCompression}{AllowCompression} option.
     \end{description}
 
  \item [signature={\textless}SHA1{\textbar}MD5{\textgreater}] \hfill \\
-\begin{description}
+    \begin{description}
+        \item [signature=SHA1] \hfill \\
+        \index[dir]{signature}
+        \index[dir]{SHA1}
+        \index[dir]{Directive!signature}
+        An SHA1 signature will be computed for all The SHA1 algorithm is
+        purported to be some what slower than the MD5 algorithm, but at the same
+        time is significantly better from a cryptographic point of view (i.e.
+        much fewer collisions, much lower probability of being hacked.) It adds
+        four more bytes than the MD5 signature.  We strongly recommend that
+        either this option or MD5 be specified as a default for all files.
+        Note, only one of the two options MD5 or SHA1 can be computed for any
+        file.
 
-\item [signature=SHA1] \hfill \\
-\index[dir]{signature}
-\index[dir]{SHA1}
-\index[dir]{Directive!signature}
-   An SHA1 signature will be computed for all The SHA1 algorithm is
-   purported to be some what slower than the MD5 algorithm, but at the same
-   time is significantly better from a cryptographic point of view (i.e.
-   much fewer collisions, much lower probability of being hacked.) It adds
-   four more bytes than the MD5 signature.  We strongly recommend that
-   either this option or MD5 be specified as a default for all files.
-   Note, only one of the two options MD5 or SHA1 can be computed for any
-   file.
-
-\item [signature=MD5] \hfill \\
-\index[dir]{signature}
-\index[dir]{MD5}
-\index[dir]{Directive!signature}
-   An MD5 signature will be computed for all files saved.  Adding this
-   option generates about 5\% extra overhead for each file saved.  In
-   addition to the additional CPU time, the MD5 signature adds 16 more
-   bytes per file to your catalog.  We strongly recommend that this option
-   or the SHA1 option be specified as a default for all files.
-\end{description}
+        \item [signature=MD5] \hfill \\
+        \index[dir]{signature}
+        \index[dir]{MD5}
+        \index[dir]{Directive!signature}
+        An MD5 signature will be computed for all files saved.  Adding this
+        option generates about 5\% extra overhead for each file saved.  In
+        addition to the additional CPU time, the MD5 signature adds 16 more
+        bytes per file to your catalog.  We strongly recommend that this option
+        or the SHA1 option be specified as a default for all files.
+    \end{description}
 
 
 \item[basejob={\textless}options{\textgreater}]
@@ -509,10 +787,10 @@ Change: 2005-11-06 12:36:48.000000000 +0100
    or set to {\bf no} every file and directory will be eligible for
    backup.
 
-\label{portable}
 \item [portable=yes{\textbar}no] \hfill \\
 \index[dir]{portable}
 \index[dir]{Directive!portable}
+\label{portable}
    If set to {\bf yes} (default is {\bf no}), the Bareos File daemon will
    backup Win32 files in a portable format, but not all Win32 file
    attributes will be saved and restored.  By default, this option is set
@@ -576,10 +854,10 @@ Change: 2005-11-06 12:36:48.000000000 +0100
    You probably should not use this option on files or raw disk devices
    that are not really sparse files (i.e. have holes in them).
 
-\label{readfifo}
 \item [readfifo=yes{\textbar}no] \hfill \\
 \index[dir]{readfifo}
 \index[dir]{Directive!readfifo}
+\label{readfifo}
    If enabled, tells the Client to read the data on a backup and write the
    data on a restore to any FIFO (pipe) that is explicitly mentioned in the
    FileSet.  In this case, you must have a program already running that
@@ -589,7 +867,7 @@ Change: 2005-11-06 12:36:48.000000000 +0100
    FIFO. When this is not enabled (default), the Client simply saves the
    directory entry for the FIFO.
 
-   Unfortunately, when Bareos runs a RunBeforeJob, it waits until that
+   Normally, when Bareos runs a RunBeforeJob, it waits until that
    script terminates, and if the script accesses the FIFO to write
    into it, the Bareos job will block and everything will stall.
    However, Vladimir Stavrinov as supplied tip that allows this feature
@@ -599,6 +877,33 @@ Change: 2005-11-06 12:36:48.000000000 +0100
 \begin{verbatim}
    exec > /dev/null
 \end{verbatim}
+
+
+\begin{bconfig}{FileSet with Fifo}
+Include {
+  Options {
+    signature=SHA1
+    readfifo=yes
+  }
+  File = /home/abc/fifo
+}
+\end{bconfig}
+
+   This feature can be used to do a "hot" database backup.  
+   You can use the {\bf RunBeforeJob} to create the fifo
+   and to start a program that dynamically reads your database and writes
+   it to the fifo.  Bareos will then write it to the Volume. 
+
+   During the restore operation, the inverse is true, after Bareos creates
+   the fifo if there was any data stored with it (no need to explicitly
+   list it or add any options), that data will be written back to the fifo.
+   As a consequence, if any such FIFOs exist in the fileset to be restored,
+   you must ensure that there is a reader program or Bareos will block, and
+   after one minute, Bareos will time out the write to the fifo and move on
+   to the next file.
+
+    If you are planing to use a Fifo for backup, better take a look to the \ilink{bpipe plugin}{bpipe} section.
+
 
 \item [noatime=yes{\textbar}no] \hfill \\
 \index[dir]{noatime}
@@ -610,7 +915,7 @@ Change: 2005-11-06 12:36:48.000000000 +0100
    the atime back to its previous value).  It also prevents a race
    condition when two programs are reading the same file, but only one does
    not want to change the atime.  It's most useful for backup programs and
-   file integrity checkers (and bareos can fit on both categories).
+   file integrity checkers (and Bareos can fit on both categories).
 
    This option is particularly useful for sites where users are sensitive
    to their MailBox file access time.  It replaces both the {\bf keepatime}
@@ -831,10 +1136,10 @@ Change: 2005-11-06 12:36:48.000000000 +0100
    The default is {\bf no}.  When enabled, any files matched within the
    Options will be excluded from the backup.
 
-\label{ACLSupport}
 \item [aclsupport=yes{\textbar}no] \hfill \\
 \index[dir]{aclsupport}
 \index[dir]{Directive!aclsupport}
+\label{ACLSupport}
    The default is {\bf no}.  If this option is set to yes, and you have the
    POSIX {\bf libacl} installed on your Linux system, Bareos will backup the
    file and directory Unix Access Control Lists (ACL) as defined in IEEE Std
@@ -1019,319 +1324,45 @@ Change: 2005-11-06 12:36:48.000000000 +0100
 
 \end{description}
 
-{\bf {\textless}file-list{\textgreater}} is a list of directory and/or filename names
-specified with a {\bf File =} directive. To include names containing spaces,
-enclose the name between double-quotes. Wild-cards are not interpreted
-in file-lists. They can only be specified in Options resources.
-
-There are a number of special cases when specifying directories and files in a
-{\bf file-list}. They are:
-
-\begin{itemize}
-\item Any name preceded by an at-sign (@) is assumed to be the  name of a
-   file, which contains a list of files each preceded by a "File =".  The
-   named file is read once when the configuration file is parsed during the
-   Director startup.  Note, that the file is read on the Director's machine
-   and not on the Client's.  In fact, the @filename can appear anywhere
-   within the conf file where a token would be read, and the contents of
-   the named file will be logically inserted in the place of the @filename.
-   What must be in the file depends on the location the @filename is
-   specified in the conf file.  For example:
-
-\footnotesize
-\begin{verbatim}
-Include {
-  Options {
-    compression=GZIP
-  }
-  @/home/files/my-files
-}
-\end{verbatim}
-\normalsize
-
-\item Any name beginning with a vertical bar ({\textbar}) is  assumed to
-   be the name of a program.  This program will be executed on the Director's
-   machine at the time the Job starts (not when the Director reads the
-   configuration file), and any output from that program will be assumed to
-   be a list of files or directories, one per line, to be included. Before
-   submitting the specified command bareos will performe
-   \ilink{character substitution}{character substitution}.
-
-   This allows you to have a job that, for example, includes all the local
-   partitions even if you change the partitioning by adding a disk.  The
-   examples below show you how to do this.  However, please note two
-   things: \\
-   1.  if you want the local filesystems, you probably should be
-   using the new {\bf fstype} directive, which was added in version 1.36.3
-   and set {\bf onefs=no}.
-   \\
-
-   2.  the exact syntax of the command needed in the examples below is very
-   system dependent.  For example, on recent Linux systems, you may need to
-   add the -P option, on FreeBSD systems, the options will be different as
-   well.
-
-   In general, you will need to prefix your command or commands with a {\bf
-   sh -c} so that they are invoked by a shell.  This will not be the case
-   if you are invoking a script as in the second example below.  Also, you
-   must take care to escape (precede with a \textbackslash{}) wild-cards,
-   shell character, and to ensure that any spaces in your command are
-   escaped as well.  If you use a single quotes (') within a double quote
-   ("), Bareos will treat everything between the single quotes as one field
-   so it will not be necessary to escape the spaces.  In general, getting
-   all the quotes and escapes correct is a real pain as you can see by the
-   next example.  As a consequence, it is often easier to put everything in
-   a file and simply use the file name within Bareos.  In that case the
-   {\bf sh -c} will not be necessary providing the first line of the file
-   is {\bf \#!/bin/sh}.
-
-   As an  example:
-
-\footnotesize
-\begin{verbatim}
-
-Include {
-   Options {
-     signature = SHA1
-   }
-   File = "|sh -c 'df -l | grep \"^/dev/hd[ab]\" | grep -v \".*/tmp\" \
-      | awk \"{print \\$6}\"'"
-}
-\end{verbatim}
-\normalsize
-
-   will produce a list of all the local partitions on a Red Hat Linux system.
-   Note, the above line was split, but should normally  be written on one line.
-   Quoting is a real problem because you must quote for Bareos  which consists of
-   preceding every \textbackslash{} and every " with a \textbackslash{}, and
-   you must also quote for the shell command. In the end, it is probably  easier
-   just to execute a small file with:
 
 
-\footnotesize
-\begin{verbatim}
-Include {
-  Options {
-    signature=MD5
-  }
-  File = "|my_partitions"
-}
-\end{verbatim}
-\normalsize
+\subsection{FileSet Exclude Ressource}
+\label{fileset-exclude}
+\index[general]{Excluding Files and Directories}
 
-   where my\_partitions has:
+FileSet Exclude-Ressources very similar to Include-Ressources, except that they only allow following directives:
 
-\footnotesize
-\begin{verbatim}
-#!/bin/sh
-df -l | grep "^/dev/hd[ab]" | grep -v ".*/tmp" \
-      | awk "{print \$6}"
-\end{verbatim}
-\normalsize
-
-   If the vertical bar (\verb+|+) in front of my\_partitions is preceded by a
-   backslash as in \textbackslash{}\verb+|+, the program will be executed on the
-   Client's machine instead of on the Director's machine.
-   Please note that if the filename is given within quotes, you
-   will need to use two slashes.  An example, provided by John Donagher,
-   that backs up all the local UFS partitions on a remote system is:
-
-\footnotesize
-\begin{verbatim}
-FileSet {
-  Name = "All local partitions"
-  Include {
-    Options {
-      signature=SHA1
-      onefs=yes
-    }
-    File = "\\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
-  }
-}
-\end{verbatim}
-\normalsize
-
-   The above requires two backslash characters after the double quote (one
-   preserves  the next one). If you are a Linux user, just change the {\bf ufs}
-   to  {\bf ext3} (or your preferred filesystem type), and you will be in
-   business.
-
-   If you know what filesystems you have mounted on your system, e.g.
-   for Red Hat Linux normally only ext2 and ext3, you can backup
-   all local filesystems using something like:
-
-\footnotesize
-\begin{verbatim}
-
-Include {
-   Options {
-     signature = SHA1
-     onfs=no
-     fstype=ext2
-   }
-   File = /
-}
-\end{verbatim}
-\normalsize
-
-
-\item Any file-list item preceded by a less-than sign ({\textless})  will be taken
-   to be a file. This file will be read on the Director's machine (see
-   below for doing it on the Client machine) at the time
-   the Job starts, and the  data will be assumed to be a list of directories or
-   files,  one per line, to be included. The names should start in  column 1 and
-   should not be quoted even if they contain  spaces. This feature allows you to
-   modify the external  file and change what will be saved without stopping and
-   restarting Bareos as would be necessary if using the @  modifier noted above.
-   For example:
-
-\footnotesize
-\begin{verbatim}
-Include {
-  Options {
-    signature = SHA1
-  }
-  File = "</home/files/local-filelist"
-}
-\end{verbatim}
-\normalsize
-
-   If you precede the less-than sign ({\textless}) with a backslash as in
-   \textbackslash{}{\textless}, the file-list will be read on the Client machine
-   instead of on the Director's machine.  Please note that if the filename
-   is given within quotes, you will need to use two slashes.
-
-\footnotesize
-\begin{verbatim}
-Include {
-  Options {
-    signature = SHA1
-  }
-  File = "\\</home/xxx/filelist-on-client"
-}
-\end{verbatim}
-\normalsize
-
-\item If you explicitly specify a block device such as {\bf /dev/hda1},  then
-   Bareos (starting with version 1.28) will assume that this  is a raw partition
-   to be backed up. In this case, you are strongly  urged to specify a {\bf
-   sparse=yes} include option, otherwise, you  will save the whole partition
-   rather than just the actual data that  the partition contains. For example:
-
-\footnotesize
-\begin{verbatim}
-Include {
-  Options {
-    signature=MD5
-    sparse=yes
-  }
-  File = /dev/hd6
-}
-\end{verbatim}
-\normalsize
-
-   will backup the data in device /dev/hd6. Note, the {bf /dev/hd6} must be
-   the raw partition itself. Bareos will not back it up as a raw device if
-   you specify a symbolic link to a raw device such as my be created by the
-   LVM Snapshot utilities.
-
-   Ludovic Strappazon has pointed out that this feature can be  used to backup a
-   full Microsoft Windows disk. Simply boot into  the system using a Linux Rescue
-   disk, then load a statically  linked Bareos as described in the
-   \ilink{ Disaster Recovery Using Bareos}{RescueChapter} chapter of
-   this manual. Then  save the whole disk partition. In the case of a disaster,
-   you  can then restore the desired partition by again booting with  the rescue
-   disk and doing a restore of the partition.
-   \item If you explicitly specify a FIFO device name (created with mkfifo),  and
-   you add the option {\bf readfifo=yes} as an option, Bareos  will read the FIFO
-   and back its data up to the Volume. For  example:
-
-\footnotesize
-\begin{verbatim}
-Include {
-  Options {
-    signature=SHA1
-    readfifo=yes
-  }
-  File = /home/abc/fifo
-}
-\end{verbatim}
-\normalsize
-
-   if {\bf /home/abc/fifo} is a fifo device, Bareos will open the fifo,
-   read it, and store all data thus obtained on the Volume.  Please note,
-   you must have a process on the system that is writing into the fifo, or
-   Bareos will hang, and after one minute of waiting, Bareos will give up
-   and go on to the next file.  The data read can be anything since Bareos
-   treats it as a stream.
-
-   This feature can be an excellent way to do a "hot" backup of a very
-   large database.  You can use the {\bf RunBeforeJob} to create the fifo
-   and to start a program that dynamically reads your database and writes
-   it to the fifo.  Bareos will then write it to the Volume.  Be sure to
-   read the \ilink{readfifo section}{readfifo} that gives a
-   tip to ensure that the RunBeforeJob does not block Bareos.
-
-   During the restore operation, the inverse is true, after Bareos creates
-   the fifo if there was any data stored with it (no need to explicitly
-   list it or add any options), that data will be written back to the fifo.
-   As a consequence, if any such FIFOs exist in the fileset to be restored,
-   you must ensure that there is a reader program or Bareos will block, and
-   after one minute, Bareos will time out the write to the fifo and move on
-   to the next file.
-
-\item A file-list may not contain wild-cards. Use directives in the
-   Options resource if you wish to specify wild-cards or regular expression
-   matching.
-
-\item
-\index[general]{IgnoreDir}
-The {\bf ExcludeDirContaining = {\textless}filename{\textgreater}} is a directive that
-can be added to the Include section of the FileSet resource.  If the specified
-filename ({\bf filename-string}) is found on the Client in any directory to be
-backed up, the whole directory will be ignored (not backed up).
-We recommend to use the filename {\bf .nobackup}, as it is a hidden file on unix
-systems, and explains what is the purpose of the file.
+\begin{description}
+\directive{dir}{File}{}{}{}
+    Files to exclude are descripted in the same way as at the \ilink{Include ressource}{fileset-include}.
+\end{description}
 
 For example:
 
-\begin{verbatim}
-  # List of files to be backed up
-  FileSet {
-    Name = "MyFileSet"
-    Include {
-      Options {
-        signature = MD5
-      }
-      File = /home
-      Exclude Dir Containing = .nobackup
+\begin{bconfig}{FileSet using Exclude}
+FileSet {
+  Name = Exclusion_example
+  Include {
+    Options {
+      Signature = SHA1
     }
+    File = /
+    File = /boot
+    File = /home
+    File = /rescue
+    File = /usr
   }
-\end{verbatim}
+  Exclude {
+    File = /proc
+    File = /tmp                          # Don't add trailing /
+    File = .journal
+    File = .autofsck
+  }
+}
+\end{bconfig}
 
-But in /home, there may be hundreds of directories of users and some
-people want to indicate that they don't want to have certain
-directories backed up. For example, with the above FileSet, if
-the user or sysadmin creates a file named {\bf .nobackup} in
-specific directories, such as
+Another way to exclude files and directories is to use the \configdirective{Exclude} option from the Include section.
 
-\begin{verbatim}
-   /home/user/www/cache/.nobackup
-   /home/user/temp/.nobackup
-\end{verbatim}
-
-then Bareos will not backup the two directories named:
-
-\begin{verbatim}
-   /home/user/www/cache
-   /home/user/temp
-\end{verbatim}
-
-NOTE: subdirectories will not be backed up.  That is, the directive
-applies to the two directories in question and any children (be they
-files, directories, etc).
-
-\end{itemize}
 
 \subsection{FileSet Examples}
 \index[general]{Example!FileSet}
@@ -1690,66 +1721,7 @@ FileSet {
 \end{verbatim}
 \normalsize
 
-\subsection{Backing up Raw Partitions}
-\index[general]{Backing up!Partitions}
-\index[general]{Backing up Raw Partitions}
 
-The following FileSet definition will backup a raw partition:
-
-\footnotesize
-\begin{verbatim}
-FileSet {
-  Name = "RawPartition"
-  Include {
-    Options {
-      sparse=yes
-    }
-    File = /dev/hda2
-  }
-}
-\end{verbatim}
-\normalsize
-
-While backing up and restoring a raw partition, you should ensure that no
-other process including the system is writing to that partition. As a
-precaution, you are strongly urged to ensure that the raw partition is not
-mounted or is mounted read-only. If necessary, this can be done using the {\bf
-RunBeforeJob} directive.
-
-
-\subsection{Excluding Files and Directories}
-\index[general]{Directories!Excluding Files and}
-\index[general]{Excluding Files and Directories}
-
-You may also include full filenames or directory names in addition to using
-wild-cards and {\bf Exclude=yes} in the Options resource as specified above by
-simply including the files to be excluded in an Exclude resource within the
-FileSet. It accepts wild-cards pattern, so for a directory, don't add a trailing
-/. For example:
-
-\footnotesize
-\begin{verbatim}
-FileSet {
-  Name = Exclusion_example
-  Include {
-    Options {
-      Signature = SHA1
-    }
-    File = /
-    File = /boot
-    File = /home
-    File = /rescue
-    File = /usr
-  }
-  Exclude {
-    File = /proc
-    File = /tmp                          # Don't add trailing /
-    File = .journal
-    File = .autofsck
-  }
-}
-\end{verbatim}
-\normalsize
 
 \subsection{Windows FileSets}
 \index[general]{Windows!FileSet}

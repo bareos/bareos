@@ -1,0 +1,70 @@
+\chapter{Plugins}
+\index[general]{Plugin}
+
+\section{File Daemon Plugins}
+
+File Daemon plugins are configured by the \configdirective{plugin} directive of a FileSet, see the \ilink{File Set}{directive-fileset-plugin} section.
+
+\subsection{bpipe Plugin}
+\label{bpipe}
+
+The bpipe plugin is a generic pipe program, that simply transmits the data from a specified program to Bareos for backup, and
+from Bareos to a specified program for restore. The purpose of the plugin is to provide an interface to any system program
+for backup and restore. That allows you, for example, to do database backups without a local dump. By using different command 
+lines to bpipe, you can backup any kind of data (ASCII or binary) depending on the program called.
+
+On Linux, the Bareos bpipe plugin is part of the \package{bareos-filedaemon} package and is therefore installed on any system running the filedaemon.
+
+The bpipe plugin is so simple and flexible, you may call it the 
+"Swiss Army Knife" of the current existing plugins for Bareos.
+
+The bpipe plugin is specified in the Include section of your Job's FileSet resource in your \file{bareos-dir.conf}.
+
+\begin{bconfig}{bpipe fileset}
+FileSet {
+  Name = "MyFileSet"
+  Include {
+    Options {
+      signature = MD5
+      compression = gzip
+    }
+    Plugin = "bpipe:<path>:<backup-command>:<restore-command>"
+  }
+}
+\end{bconfig}
+
+The syntax and semantics of the Plugin directive require the first part of the string up to the colon to be the name of the plugin.
+Everything after the first colon is ignored by the File daemon but is passed to the plugin. Thus the plugin writer may define the 
+meaning of the rest of the string as he wishes. The full syntax of the plugin directive as interpreted by the bpipe plugin is:
+
+\begin{bconfig}{bpipe directive}
+Plugin = "<plugin>:<path>:<backup-command>:<restore-command>"
+\end{bconfig}
+
+\begin{description}
+\item[plugin] is the name of the plugin with the trailing -fd.so stripped off, so in this case, we would put bpipe in the field.
+
+\item[path] specifies the namespace, which for bpipe is the pseudo path and filename under which the backup will be saved. This
+pseudo path and filename will be seen by the user in the restore file tree. For example, if the value is /MySQL/mydump.sql, the data
+backed up by the plugin will be put under that "pseudo" path and filename. You must be careful to choose a naming convention that is unique
+to avoid a conflict with a path and filename that actually exists on your system.
+
+\item[backup-command] for the bpipe plugin specifies the "reader" program that is called by the plugin during backup to read the data. bpipe
+will call this program by doing a popen on it.
+
+\item[restore-command] for the bpipe plugin specifies the "writer" program that is called by the plugin during restore to write the data back 
+to the filesystem.
+\end{description}
+
+Please note that the two items above describing the "reader" and "writer", these programs are "executed" by Bareos, which means 
+there is no shell inerpretation of any command line arguments you might use. If you want to use shell characters (redirection of input 
+or output, ...), then we recommend that you put your command or commands in a shell script and execute the script. In addition if you
+backup a file with reader program, when running the writer program during the restore, Bareos will not automatically create the path
+to the file. Either the path must exist, or you must explicitly do so with your command or in a shell script.
+
+See the examples about \ilink{Backup PostgreSQL}{backup-postgresql} and \ilink{Backup MySQL}{backup-mysql}.
+
+\subsection{MSSQL Plugin}
+
+See chapter \ilink{Backup Of MSSQL Databases}{MSSQL}.
+
