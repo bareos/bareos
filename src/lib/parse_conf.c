@@ -1199,10 +1199,8 @@ bool CONFIG::parse_config()
          }
 
          lex_set_error_handler_error_type(lc, err_type) ;
-         bstrncpy(lc->str, cf, sizeof(lc->str));
-         lc->fname = lc->str;
          scan_err2(lc, _("Cannot open config file \"%s\": %s\n"),
-            lc->str, be.bstrerror());
+            cf, be.bstrerror());
          free(lc);
          return 0;
       }
