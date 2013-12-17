@@ -84,7 +84,8 @@ class JobTable
 				jobstatus = 'c' OR 
 				jobstatus = 'd' OR 
 				jobstatus = 't' OR 
-				jobstatus = 'p'");
+				jobstatus = 'p' OR
+				jobstatus = 'C'");
 		
 		$resultSet = $this->tableGateway->selectWith($select);
 		
