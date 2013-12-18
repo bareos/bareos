@@ -1217,14 +1217,13 @@ alist *select_jobs(UAContext *ua, const char *reason)
                ua->error_msg(_("Unauthorized command from this console.\n"));
                goto bail_out;
             }
-         }
 
-         if (insert_selected_jobid(selected_jobids, jcr->JobId)) {
-            cnt++;
-         }
-
+            if (insert_selected_jobid(selected_jobids, jcr->JobId)) {
+               cnt++;
+            }
          free_jcr(jcr);
          jcr = NULL;
+         }
       }
    }
 
