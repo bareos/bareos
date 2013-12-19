@@ -1221,8 +1221,9 @@ alist *select_jobs(UAContext *ua, const char *reason)
             if (insert_selected_jobid(selected_jobids, jcr->JobId)) {
                cnt++;
             }
-         free_jcr(jcr);
-         jcr = NULL;
+
+            free_jcr(jcr);
+            jcr = NULL;
          }
       }
    }
