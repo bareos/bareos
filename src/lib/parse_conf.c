@@ -1199,10 +1199,13 @@ bool CONFIG::parse_config()
          }
 
          lex_set_error_handler_error_type(lc, err_type) ;
-         bstrncpy(lc->str, cf, sizeof(lc->str));
+         lc->str = get_memory(256);
+         lc->str_max_len = sizeof_pool_memory(lc->str);
+         bstrncpy(lc->str, cf, lc->str_max_len);
          lc->fname = lc->str;
          scan_err2(lc, _("Cannot open config file \"%s\": %s\n"),
             lc->str, be.bstrerror());
+         free_memory(lc->str);
          free(lc);
          return 0;
       }
