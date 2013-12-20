@@ -588,6 +588,7 @@ Job queued. JobId=14
   SD termination status:  OK
   Termination:            Restore OK
 \end{bconsole}
+\hide{$}
 
 
 \subsection{Backup of a PostgreSQL Database}
@@ -599,32 +600,29 @@ In this section, we describe different methods how to do a full backup of the Po
 
 
 \subsubsection{Backup of a PostgreSQL Database by using the RunBeforeJob directive}
-\index[general]{PostgreSQL Backup}
-\index[general]{Database!PostgreSQL!Backup}
-\label{back-postgresql}
+\index[general]{RunScript!Example}
+
+One method to backup a PostgreSQL database is to call a \configdirective{RunBeforeJob} script to dump the database into a file and than backup it as a normal file.
+After the backup, the file can be removed by a \configdirective{RunAfterJob} script.
 
 The RunBeforeJob directive is configured inside a Job Resource, e.g.:
-
-\begin{bconfig}{RunBeforeJob job resource PostgreSQL dump}
+\begin{bconfig}{RunBeforeJob job resource for a PostgreSQL backup}
 Job {
   Name = "BackupDatabase"
   JobDefs = "DefaultJob"
   Level = Full
   FileSet="Database"
-  Schedule = "WeeklyCycleAfterBackup"
 
   # This creates a dump of our database in the local filesystem
-  RunBeforeJob = "pg_dumpall -U postgres > postgresql_dump.sql"
+  RunBeforeJob = "pg_dumpall -U postgres > /var/lib/bareos/postgresql_dump.sql"
 
   # This deletes the dump in our local filesystem
   RunAfterJob = "rm /var/lib/bareos/postgresql_dump.sql"
-
 }
 \end{bconfig}
 
 The corresponding FileSet configuration should look something like this, e.g.:
-
-\begin{bconfig}{RunBeforeJob fileset PostgreSQL dump}
+\begin{bconfig}{FileSet for a PostgreSQL dump file}
 FileSet {
   Name = "Database"
   Include {
@@ -632,20 +630,20 @@ FileSet {
       signature = MD5
       compression = gzip
     }
-    File = "/var/lib/bareos/postgresql_dump.sql" # database dump
+    # database dump file
+    File = "/var/lib/bareos/postgresql_dump.sql"
   }
 }
 \end{bconfig}
 
-\subsubsection{Backup of a local PostgreSQL Databases by using the bpipe plugin}
-\index[general]{PostgreSQL Backup}
-\index[general]{Database!PostgreSQL!Backup}
-\label{backup-postgresql}
+\subsubsection{Backup of a PostgreSQL Databases by using the bpipe plugin}
+\index[general]{bpipe!PostgreSQL backup}
 
+Instead of creating a temporary database dump file,
+the bpipe plugin can be used. 
 For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section. 
 The bpipe plugin is configured inside the Include section of a File Set, e.g.:
-
-\begin{bconfig}{bpipe directive PostgreSQL dump}
+\begin{bconfig}{bpipe directive for PostgreSQL backup}
 FileSet {
   Name = "postgresql-all"
   Include {
@@ -664,20 +662,12 @@ the data for the database, which will be read by the plugin and stored in the ba
 be sent to the program specified in the last field, which in this case is psql. When psql is called, it will read the data sent to it by 
 the plugin then write it back to the same database from which it came from.
 
-
-\subsubsection{Backup of a remote PostgreSQL Database by using the bpipe plugin}
-\index[general]{PostgreSQL Backup}
-\index[general]{Database!PostgreSQL!Backup}
-\label{remote-backup-postgresql}
-
-For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section.
-The bpipe plugin is configured inside the Include section of a File Set, e.g.:
-
-\begin{bconfig}{bpipe directive PostgreSQL dump remote host}
+This can also be used, to backup a database that is running on a remote host:
+\begin{bconfig}{bpipe directive to backup a PostgreSQL database that is running on a remote host}
 FileSet {
-  Name = "postgresql-all"
+  Name = "postgresql-remote"
   Include {
-    Plugin = "bpipe:/POSTGRESQL/dump.sql:pg_dumpall -h <hostname> -p <port> -U <username> -W <password>:psql -h <hostname> -p <port> -U <username> -W <password>"
+    Plugin = "bpipe:/POSTGRESQL/dump.sql:pg_dumpall -h <hostname> -U <username> -W <password>:psql -h <hostname> -U <username> -W <password>"
     Options {
       signature = MD5
       compression = gzip
@@ -694,39 +684,31 @@ FileSet {
 
 In this section, we describe different methods to do a full backup of a MySQL database.
 
-
 \subsubsection{Backup of a MySQL Database by using the RunBeforeJob directive}
-\index[general]{MySQL Backup}
-\index[general]{Database!MySQL!Backup}
-\index[general]{RunBeforeJob!MySQL}
-\label{backup-mysql}
+\index[general]{RunScript!Example}
+
+One method to backup a MySQL database is to call a \configdirective{RunBeforeJob} script 
+to dump the database into a file and than backup it as a normal file.
+After the backup, the file can be removed by a \configdirective{RunAfterJob} script.
 
 The RunBeforeJob directive is configured inside a Job Resource, e.g.:
-
-\begin{bconfig}{RunBeforeJob job resource MySQL dump}
-#
-# Backup our database after the nightly save
-#
+\begin{bconfig}{RunBeforeJob job resource for a MySQL backup}
 Job {
   Name = "BackupDatabase"
   JobDefs = "DefaultJob"
   Level = Full
   FileSet="Database"
-  Schedule = "WeeklyCycleAfterBackup"
 
   # This creates a dump of our database in the local filesystem
   RunBeforeJob = "mysqldump --user=<username> --password=<password> --opt --all-databases > /var/lib/bareos/mysql_dump.sql"
 
   # This deletes the dump in our local filesystem
   RunAfterJob = "rm /var/lib/bareos/mysql_dump.sql"
-
 }
 \end{bconfig}
 
 The correspondig FileSet configuration should look something like this, e.g.:
-
 \begin{bconfig}{RunBeforeJob fileset MySQL dump}
-# This is the backup of the database dump
 FileSet {
   Name = "Database"
   Include {
@@ -734,22 +716,21 @@ FileSet {
       signature = MD5
       compression = gzip
     }
-  File = "/var/lib/bareos/mysql_dump.sql" # database dump
+  # database dump file
+  File = "/var/lib/bareos/mysql_dump.sql" 
   }
 }
 \end{bconfig}
 
 
-\subsubsection{Backup a local MySQL Databases by using the bpipe plugin}
-\index[general]{MySQL Backup}
-\index[general]{Database!MySQL!Backup}
-\index[general]{plugin!bpipe!MySQL}
-\label{backup-mysql}
+\subsubsection{Backup of a MySQL Databases by using the bpipe plugin}
+\index[general]{bpipe!MySQL backup}
 
-For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section.
+Instead of creating a temporary database dump file,
+the bpipe plugin can be used. 
+For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section. 
 The bpipe plugin is configured inside the Include section of a File Set, e.g.:
-
-\begin{bconfig}{bpipe fileset MySQL local dump}
+\begin{bconfig}{bpipe fileset for MySQL backup}
 FileSet {
   Name = "mysql-all"
   Include = {
@@ -762,17 +743,8 @@ FileSet {
 }
 \end{bconfig}
 
-
-\subsubsection{Backup a remote MySQL Database by using the bpipe plugin}
-\index[general]{MySQL Backup}
-\index[general]{Database!MySQL!Backup}
-\index[general]{plugin!bpipe!MySQL}
-\label{backup-mysql}
-
-For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section.
-The bpipe plugin is configured inside the Include section of a File Set, e.g.:
-
-\begin{bconfig}{bpipe fileset MySQL remote dump}
+This can also be used, to backup a database that is running on a remote host:
+\begin{bconfig}{bpipe directive to backup a MySQL database that is running on a remote host}
 FileSet{
   Name = "mysql-all"
   Include {
@@ -784,4 +756,3 @@ FileSet{
   }
 }
 \end{bconfig}
-
