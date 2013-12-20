@@ -61,10 +61,12 @@ plugtest: Makefile fd_plugins.c fileset.c \
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(CP) *.py $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bpipe-fd.la $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bpipe-fd.la
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) python-fd.la $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/python-fd.la
+
 
 install-test-plugin: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
