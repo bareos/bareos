@@ -590,15 +590,59 @@ Job queued. JobId=14
 \end{bconsole}
 
 
-\subsection{Backup PostgreSQL Databases using the bpipe plugin}
+\subsection{Backup of a PostgreSQL Database}
 \index[general]{PostgreSQL Backup}
-\index[general]{Database!PostgreSQL}
+\index[general]{Database!PostgreSQL!Backup}
 \label{backup-postgresql}
 
+In this section, we describe different methods how to do a full backup of the PostgreSQL database.
 
-In this section, we describe how to do a full backup of the PostgreSQL database using the bpipe plugin.
+
+\subsubsection{Backup of a PostgreSQL Database by using the RunBeforeJob directive}
+\index[general]{PostgreSQL Backup}
+\index[general]{Database!PostgreSQL!Backup}
+\label{back-postgresql}
+
+The RunBeforeJob directive is configured inside a Job Resource, e.g.:
+
+\begin{bconfig}{RunBeforeJob job resource PostgreSQL dump}
+Job {
+  Name = "BackupDatabase"
+  JobDefs = "DefaultJob"
+  Level = Full
+  FileSet="Database"
+  Schedule = "WeeklyCycleAfterBackup"
+
+  # This creates a dump of our database in the local filesystem
+  RunBeforeJob = "pg_dumpall -U postgres > postgresql_dump.sql"
+
+  # This deletes the dump in our local filesystem
+  RunAfterJob = "rm /var/lib/bareos/postgresql_dump.sql"
+
+}
+\end{bconfig}
+
+The corresponding FileSet configuration should look something like this, e.g.:
+
+\begin{bconfig}{RunBeforeJob fileset PostgreSQL dump}
+FileSet {
+  Name = "Database"
+  Include {
+    Options {
+      signature = MD5
+      compression = gzip
+    }
+    File = "/var/lib/bareos/postgresql_dump.sql" # database dump
+  }
+}
+\end{bconfig}
+
+\subsubsection{Backup of a local PostgreSQL Databases by using the bpipe plugin}
+\index[general]{PostgreSQL Backup}
+\index[general]{Database!PostgreSQL!Backup}
+\label{backup-postgresql}
+
 For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section. 
-
 The bpipe plugin is configured inside the Include section of a File Set, e.g.:
 
 \begin{bconfig}{bpipe directive PostgreSQL dump}
@@ -621,19 +665,93 @@ be sent to the program specified in the last field, which in this case is psql. 
 the plugin then write it back to the same database from which it came from.
 
 
-\subsection{Backup MySQL Databases using the bpipe plugin}
-\index[general]{MySQL Backup}
-\index[general]{Database!MySQL}
-\label{backup-mysql}
+\subsubsection{Backup of a remote PostgreSQL Database by using the bpipe plugin}
+\index[general]{PostgreSQL Backup}
+\index[general]{Database!PostgreSQL!Backup}
+\label{remote-backup-postgresql}
 
-In this section, we describe how to do a full backup of the MySQL database using the bpipe plugin.
-For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section. 
-
+For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section.
 The bpipe plugin is configured inside the Include section of a File Set, e.g.:
 
-\begin{bconfig}{bpipe fileset MySQL dump}
+\begin{bconfig}{bpipe directive PostgreSQL dump remote host}
 FileSet {
-  Name = "mysql"
+  Name = "postgresql-all"
+  Include {
+    Plugin = "bpipe:/POSTGRESQL/dump.sql:pg_dumpall -h <hostname> -p <port> -U <username> -W <password>:psql -h <hostname> -p <port> -U <username> -W <password>"
+    Options {
+      signature = MD5
+      compression = gzip
+    }
+  }
+}
+\end{bconfig}
+
+
+\subsection{Backup of a MySQL Database}
+\index[general]{MySQL Backup}
+\index[general]{Database!MySQL!Backup}
+\label{backup-mysql}
+
+In this section, we describe different methods to do a full backup of a MySQL database.
+
+
+\subsubsection{Backup of a MySQL Database by using the RunBeforeJob directive}
+\index[general]{MySQL Backup}
+\index[general]{Database!MySQL!Backup}
+\index[general]{RunBeforeJob!MySQL}
+\label{backup-mysql}
+
+The RunBeforeJob directive is configured inside a Job Resource, e.g.:
+
+\begin{bconfig}{RunBeforeJob job resource MySQL dump}
+#
+# Backup our database after the nightly save
+#
+Job {
+  Name = "BackupDatabase"
+  JobDefs = "DefaultJob"
+  Level = Full
+  FileSet="Database"
+  Schedule = "WeeklyCycleAfterBackup"
+
+  # This creates a dump of our database in the local filesystem
+  RunBeforeJob = "mysqldump --user=<username> --password=<password> --opt --all-databases > /var/lib/bareos/mysql_dump.sql"
+
+  # This deletes the dump in our local filesystem
+  RunAfterJob = "rm /var/lib/bareos/mysql_dump.sql"
+
+}
+\end{bconfig}
+
+The correspondig FileSet configuration should look something like this, e.g.:
+
+\begin{bconfig}{RunBeforeJob fileset MySQL dump}
+# This is the backup of the database dump
+FileSet {
+  Name = "Database"
+  Include {
+    Options {
+      signature = MD5
+      compression = gzip
+    }
+  File = "/var/lib/bareos/mysql_dump.sql" # database dump
+  }
+}
+\end{bconfig}
+
+
+\subsubsection{Backup a local MySQL Databases by using the bpipe plugin}
+\index[general]{MySQL Backup}
+\index[general]{Database!MySQL!Backup}
+\index[general]{plugin!bpipe!MySQL}
+\label{backup-mysql}
+
+For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section.
+The bpipe plugin is configured inside the Include section of a File Set, e.g.:
+
+\begin{bconfig}{bpipe fileset MySQL local dump}
+FileSet {
+  Name = "mysql-all"
   Include = {
     Plugin = "bpipe:/MYSQL/dump.sql:mysqldump --user=<user> --password=<password> --opt --all-databases:mysql --user=<user> --password=<password>"
     Options {
@@ -641,7 +759,29 @@ FileSet {
       compression = gzip
     }
   }
-  Exclude {
+}
+\end{bconfig}
+
+
+\subsubsection{Backup a remote MySQL Database by using the bpipe plugin}
+\index[general]{MySQL Backup}
+\index[general]{Database!MySQL!Backup}
+\index[general]{plugin!bpipe!MySQL}
+\label{backup-mysql}
+
+For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section.
+The bpipe plugin is configured inside the Include section of a File Set, e.g.:
+
+\begin{bconfig}{bpipe fileset MySQL remote dump}
+FileSet{
+  Name = "mysql-all"
+  Include {
+    Plugin = "bpipe:/MYSQL/dump.sql:mysqldump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:mysql --host=<hostname> --user=<user> --password=<password>"
+    Options {
+      signature = MD5
+      compression = gzip
+    }
   }
 }
 \end{bconfig}
+
