@@ -49,6 +49,7 @@ plugtest: Makefile dir_plugins.c \
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(CP) *.py $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) python-dir.la $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/python-dir.la
 

@@ -64,6 +64,7 @@ plugtest: Makefile sd_plugins.c \
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(CP) *.py $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) autoxflate-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/autoxflate-sd.la
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) python-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)

@@ -615,12 +615,6 @@ install -m 644 platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
 echo "This meta package emulates the former bareos-client package" > %{buildroot}%{_docdir}/%{name}/README.bareos-client
 echo "This is a meta package to install a full bareos system" > %{buildroot}%{_docdir}/%{name}/README.bareos
 
-%if 0%{?python_plugins}
-# copy the python files for the python plugins
-install -m 644 src/plugins/*/*.py %{buildroot}%{plugin_dir}
-
-%endif
-
 %files
 %defattr(-, root, root)
 %{_docdir}/%{name}/README.bareos
