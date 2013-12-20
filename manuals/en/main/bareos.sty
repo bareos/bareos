@@ -120,7 +120,7 @@
     \renewcommand*{\lstlistingname}{bconsole}
     \definecolor{colorBconsole}{gray}{0.9}
     \lstset{
-        label=bconsole:#1,
+        %label=bconsole:#1,
         caption=#1,
         %basicstyle=\ttfamily,
         basicstyle=\small,
@@ -151,8 +151,10 @@
         framerule=0pt,
         basicstyle=\ttfamily,
         columns=fullflexible,
-        label=config:#1,
-        caption=#1}  
+        %label=config:#1,
+        caption=#1,  
+        captionpos=b,
+    }
 }{}
 
 
@@ -184,7 +186,7 @@
     \ifthenelse{\isempty{\commandOut1}}{
     }{
         \captionof{floatCommandOut}{\commandOut1}
-        \label{command:\commandOut1}
+        %\label{command:\commandOut1}
     }
 }
 
