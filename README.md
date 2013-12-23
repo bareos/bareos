@@ -191,6 +191,7 @@ Build System
       * Suse Linux Enterprise 11 SP2 (SLE_11_SP2)
       * Suse Linux Enterprise 11 SP3 (SLE_11_SP3)
       * Univention 3.1
+      * Univention 3.2
       * OpenSuse 11.4
       * OpenSuse 12.1
       * OpenSuse 12.2
