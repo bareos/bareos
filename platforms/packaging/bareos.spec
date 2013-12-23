@@ -572,6 +572,7 @@ done
 
 %if ! 0%{?python_plugins}
 rm -f %{buildroot}/%{plugin_dir}/python-*.so
+rm -f %{buildroot}/%{plugin_dir}/bar*.py*
 %endif
 
 %if 0%{?build_bat}
