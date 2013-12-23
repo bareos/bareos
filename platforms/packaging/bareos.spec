@@ -255,6 +255,7 @@ Provides: %{name}-fd
 %package common
 Summary:  Generic libs needed by every package
 Group:    Productivity/Archiving/Backup
+Requires: openssl
 Provides: %{name}-libs
 
 %package database-common
