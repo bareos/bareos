@@ -47,6 +47,7 @@
 #endif
 
 /* Exported variables */
+CONRES *me = NULL;                        /* my resource */
 
 //extern int rl_catch_signals;
 
@@ -891,16 +892,27 @@ again:
 
 static int console_update_history(const char *histfile)
 {
-   int ret=0;
+   int ret = 0;
 
 #ifdef HAVE_READLINE
-/*
- * first, try to truncate the history file, and if it
- * fails, the file is probably not present, and we
- * can use write_history to create it
- */
+   int max_history_length,
+       truncate_entries;
 
-   if (history_truncate_file(histfile, 100) == 0) {
+   /*
+    * Calculate how much we should keep in the current history file.
+    */
+   max_history_length = (me) ? me->history_length : 100;
+   truncate_entries = max_history_length - history_length;
+   if (truncate_entries < 0) {
+      truncate_entries = 0;
+   }
+
+   /*
+    * First, try to truncate the history file, and if it
+    * fails, the file is probably not present, and we
+    * can use write_history to create it.
+    */
+   if (history_truncate_file(histfile, truncate_entries) == 0) {
       ret = append_history(history_length, histfile);
    } else {
       ret = write_history(histfile);
@@ -912,16 +924,31 @@ static int console_update_history(const char *histfile)
 
 static int console_init_history(const char *histfile)
 {
-   int ret=0;
+   int ret = 0;
 
 #ifdef HAVE_READLINE
+   int max_history_length;
+
    using_history();
+
+   /*
+    * First truncate the history size to an reasonable size.
+    */
+   max_history_length = (me) ? me->history_length : 100;
+   history_truncate_file(histfile, max_history_length);
+
+   /*
+    * Read the content of the history file into memory.
+    */
    ret = read_history(histfile);
-   /* Tell the completer that we want a complete . */
+
+   /*
+    * Tell the completer that we want a complete.
+    */
    rl_completion_entry_function = dummy_completion_function;
    rl_attempted_completion_function = readline_completion;
    rl_filename_completion_desired = 0;
-   stifle_history(100);
+   stifle_history(max_history_length);
 #endif
 
    return ret;
@@ -1300,24 +1327,41 @@ int main(int argc, char *argv[])
 
    sendit(_("Enter a period to cancel a command.\n"));
 
-   /* Read/Update history file if HOME exists */
+   /*
+    * Read/Update history file if HOME exists
+    */
    POOL_MEM history_file;
-
-   /* Run commands in ~/.bconsolerc if any */
    char *env = getenv("HOME");
+
+   /*
+    * Run commands in ~/.bconsolerc if any
+    */
    if (env) {
-      FILE *fd;
+      FILE *fp;
+
       pm_strcpy(&UA_sock->msg, env);
       pm_strcat(&UA_sock->msg, "/.bconsolerc");
-      fd = fopen(UA_sock->msg, "rb");
-      if (fd) {
-         read_and_process_input(fd, UA_sock);
-         fclose(fd);
+      fp = fopen(UA_sock->msg, "rb");
+      if (fp) {
+         read_and_process_input(fp, UA_sock);
+         fclose(fp);
       }
+   }
 
-      pm_strcpy(history_file, env);
-      pm_strcat(history_file, "/.bconsole_history");
+   /*
+    * See if there is an explicit setting of a history file to use.
+    */
+   if (me && me->history_file) {
+      pm_strcpy(history_file, me->history_file);
       console_init_history(history_file.c_str());
+   } else {
+      if (env) {
+         pm_strcpy(history_file, env);
+         pm_strcat(history_file, "/.bconsole_history");
+         console_init_history(history_file.c_str());
+      } else {
+         pm_strcpy(history_file, "");
+      }
    }
 
    read_and_process_input(stdin, UA_sock);
@@ -1327,7 +1371,7 @@ int main(int argc, char *argv[])
       UA_sock->close();
    }
 
-   if (env) {
+   if (history_file.size()) {
       console_update_history(history_file.c_str());
    }
 
@@ -1364,8 +1408,7 @@ static void terminate_console(int sig)
 }
 
 /*
- * Make a quick check to see that we have all the
- * resources needed.
+ * Make a quick check to see that we have all the resources needed.
  */
 static int check_resources()
 {
@@ -1377,9 +1420,11 @@ static int check_resources()
 
    numdir = 0;
    foreach_res(director, R_DIRECTOR) {
-
       numdir++;
-      /* tls_require implies tls_enable */
+
+      /*
+       * tls_require implies tls_enable
+       */
       if (director->tls_require) {
          if (have_tls) {
             director->tls_enable = true;
@@ -1407,9 +1452,13 @@ static int check_resources()
    }
 
    CONRES *cons;
-   /* Loop over Consoles */
+   /*
+    * Loop over Consoles
+    */
    foreach_res(cons, R_CONSOLE) {
-      /* tls_require implies tls_enable */
+      /*
+       * tls_require implies tls_enable
+       */
       if (cons->tls_require) {
          if (have_tls) {
             cons->tls_enable = true;
@@ -1427,6 +1476,8 @@ static int check_resources()
          OK = false;
       }
    }
+
+   me = (CONRES *)GetNextRes(R_CONSOLE, NULL);
 
    UnlockRes();
 

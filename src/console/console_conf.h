@@ -54,9 +54,10 @@ enum {
 struct CONRES {
    RES hdr;
 
-   char *rc_file;                     /* startup file */
-   char *hist_file;                   /* command history file */
    char *password;                    /* UA server password */
+   char *rc_file;                     /* startup file */
+   char *history_file;                /* command history file */
+   uint32_t history_length;           /* readline history length */
    bool tls_authenticate;             /* Authenticate with TLS */
    bool tls_enable;                   /* Enable TLS on all connections */
    bool tls_require;                  /* Require TLS on all connections */
@@ -101,3 +102,5 @@ union URES {
    CONRES res_cons;
    RES hdr;
 };
+
+extern CONRES *me;                    /* "Global" Client resource */
