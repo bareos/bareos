@@ -80,7 +80,8 @@ static RES_ITEM cons_items[] = {
    { "name", store_name, ITEM(res_cons.hdr.name), 0, ITEM_REQUIRED, NULL },
    { "description", store_str, ITEM(res_cons.hdr.desc), 0, 0, NULL },
    { "rcfile", store_dir, ITEM(res_cons.rc_file), 0, 0, NULL },
-   { "historyfile", store_dir, ITEM(res_cons.hist_file), 0, 0, NULL },
+   { "historyfile", store_dir, ITEM(res_cons.history_file), 0, 0, NULL },
+   { "historylength", store_pint32, ITEM(res_cons.history_length), 0, ITEM_DEFAULT, "100" },
    { "password", store_password, ITEM(res_cons.password), 0, ITEM_REQUIRED, NULL },
    { "tlsauthenticate",store_bool, ITEM(res_cons.tls_authenticate), 0, 0, NULL },
    { "tlsenable", store_bool, ITEM(res_cons.tls_enable), 0, 0, NULL },
@@ -142,8 +143,8 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    }
    switch (type) {
    case R_CONSOLE:
-      printf(_("Console: name=%s rcfile=%s histfile=%s\n"), reshdr->name,
-             res->res_cons.rc_file, res->res_cons.hist_file);
+      printf(_("Console: name=%s rcfile=%s histfile=%s histsize=%d\n"), reshdr->name,
+             res->res_cons.rc_file, res->res_cons.history_file, res->res_cons.history_length);
       break;
    case R_DIRECTOR:
       printf(_("Director: name=%s address=%s DIRport=%d\n"), reshdr->name,
@@ -186,8 +187,8 @@ void free_resource(RES *sres, int type)
       if (res->res_cons.rc_file) {
          free(res->res_cons.rc_file);
       }
-      if (res->res_cons.hist_file) {
-         free(res->res_cons.hist_file);
+      if (res->res_cons.history_file) {
+         free(res->res_cons.history_file);
       }
       if (res->res_cons.tls_ctx) {
          free_tls_context(res->res_cons.tls_ctx);
