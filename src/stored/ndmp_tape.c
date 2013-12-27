@@ -1082,7 +1082,9 @@ void end_of_ndmp_backup(JCR *jcr)
    }
 
    if (jcr->is_JobStatus(JS_Terminated)) {
-      /* Note: if commit is OK, the device will remain blocked */
+      /*
+       * Note: if commit is OK, the device will remain blocked
+       */
       commit_data_spool(dcr);
    } else {
       discard_data_spool(dcr);

@@ -276,14 +276,13 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
    wait_for_storage_daemon_termination(jcr);
    jcr->setJobStatus(jcr->SDJobStatus);
    db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
-   if (jcr->JobStatus != JS_Terminated) {
+   if (!jcr->is_JobStatus(JS_Terminated)) {
       return false;
    }
 
    native_vbackup_cleanup(jcr, jcr->JobStatus);
    return true;
 }
-
 
 /*
  * Release resources allocated during backup.
@@ -304,6 +303,12 @@ void native_vbackup_cleanup(JCR *jcr, int TermCode)
    jcr->jr.JobLevel = L_FULL;         /* we want this to appear as a Full backup */
    jcr->JobFiles = jcr->SDJobFiles;
    jcr->JobBytes = jcr->SDJobBytes;
+
+   if (jcr->getJobStatus() == JS_Terminated &&
+       (jcr->JobErrors || jcr->SDErrors)) {
+      TermCode = JS_Warnings;
+   }
+
    update_job_end(jcr, TermCode);
 
    /* Update final items to set them to the previous job's values */
@@ -331,11 +336,10 @@ void native_vbackup_cleanup(JCR *jcr, int TermCode)
 
    switch (jcr->JobStatus) {
       case JS_Terminated:
-         if (jcr->JobErrors || jcr->SDErrors) {
-            term_msg = _("Backup OK -- with warnings");
-         } else {
-            term_msg = _("Backup OK");
-         }
+         term_msg = _("Backup OK");
+         break;
+      case JS_Warnings:
+         term_msg = _("Backup OK -- with warnings");
          break;
       case JS_FatalError:
       case JS_ErrorTerminated:

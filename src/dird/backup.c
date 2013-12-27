@@ -697,17 +697,10 @@ void native_backup_cleanup(JCR *jcr, int TermCode)
    Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
 
-#ifdef xxxx
-   /* The current implementation of the JS_Warning status is not
-    * completed. SQL part looks to be ok, but the code is using
-    * JS_Terminated almost everywhere instead of (JS_Terminated || JS_Warning)
-    * as we do with is_canceled()
-    */
-   if (jcr->getJobStatus() == JS_Terminated &&
-        (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
+   if (jcr->is_JobStatus(JS_Terminated) &&
+      (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
       TermCode = JS_Warnings;
    }
-#endif
 
    update_job_end(jcr, TermCode);
 
@@ -727,11 +720,7 @@ void native_backup_cleanup(JCR *jcr, int TermCode)
 
    switch (jcr->JobStatus) {
       case JS_Terminated:
-         if (jcr->JobErrors || jcr->SDErrors) {
-            term_msg = _("Backup OK -- with warnings");
-         } else {
-            term_msg = _("Backup OK");
-         }
+         term_msg = _("Backup OK");
          break;
       case JS_Incomplete:
          term_msg = _("Backup failed -- incomplete");
@@ -772,8 +761,10 @@ void native_backup_cleanup(JCR *jcr, int TermCode)
 
 void update_bootstrap_file(JCR *jcr)
 {
-   /* Now update the bootstrap file if any */
-   if (jcr->JobStatus == JS_Terminated &&
+   /*
+    * Now update the bootstrap file if any
+    */
+   if (jcr->is_terminated_ok() &&
        jcr->jr.JobBytes &&
        jcr->res.job->WriteBootstrap) {
       FILE *fd;
@@ -882,11 +873,11 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
    if (!db_get_job_volume_names(jcr, jcr->db, jcr->jr.JobId, &jcr->VolumeName)) {
       /*
        * Note, if the job has erred, most likely it did not write any
-       *  tape, so suppress this "error" message since in that case
-       *  it is normal.  Or look at it the other way, only for a
-       *  normal exit should we complain about this error.
+       * tape, so suppress this "error" message since in that case
+       * it is normal.  Or look at it the other way, only for a
+       * normal exit should we complain about this error.
        */
-      if (jcr->JobStatus == JS_Terminated && jcr->jr.JobBytes) {
+      if (jcr->is_terminated_ok() && jcr->jr.JobBytes) {
          Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
       }
       jcr->VolumeName[0] = 0;         /* none */
