@@ -1290,8 +1290,10 @@ static bool find_jobids_of_pool_uncopied_jobs(JCR *jcr, idpkt *ids)
    bool ok = false;
    POOL_MEM query(PM_MESSAGE);
 
-   /* Only a copy job is allowed */
-   if (jcr->getJobType() != JT_COPY) {
+   /*
+    * Only a copy job is allowed
+    */
+   if (!jcr->is_JobType(JT_COPY)) {
       Jmsg(jcr, M_FATAL, 0,
            _("Selection Type 'pooluncopiedjobs' only applies to Copy Jobs"));
       goto bail_out;
@@ -1486,7 +1488,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
        * - move any Log records to the new JobId
        * - Purge the File records from the previous job
        */
-      if (jcr->getJobType() == JT_MIGRATE && jcr->is_terminated_ok()) {
+      if (jcr->is_JobType(JT_MIGRATE) && jcr->is_terminated_ok()) {
          UAContext *ua;
 
          Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
@@ -1521,7 +1523,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
        * - copy any Log records to the new JobId
        * - set type="Job Copy" for the new job
        */
-      if (jcr->getJobType() == JT_COPY && jcr->is_terminated_ok()) {
+      if (jcr->is_JobType(JT_COPY) && jcr->is_terminated_ok()) {
          /*
           * Copy JobLog to new JobId
           */
@@ -1623,7 +1625,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
          break;
       }
    } else {
-      if (jcr->getJobType() == JT_MIGRATE && jcr->previous_jr.JobId != 0) {
+      if (jcr->is_JobType(JT_MIGRATE) && jcr->previous_jr.JobId != 0) {
          /*
           * Mark previous job as migrated
           */

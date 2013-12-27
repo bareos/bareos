@@ -131,7 +131,7 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
       return true;                    /* don't write vol labels */
    }
 
-//   if (jcr->getJobType() == JT_BACKUP) {
+//   if (jcr->is_JobType(JT_BACKUP)) {
       /*
        * For normal migration jobs, FileIndex values are sequential because
        *  we are dealing with one job.  However, for Vbackup (consolidation),

@@ -961,7 +961,7 @@ static void list_running_jobs(UAContext *ua)
          /* this is a console or other control job. We only show console
           * jobs in the status output.
           */
-         if (jcr->getJobType() == JT_CONSOLE && !ua->api) {
+         if (jcr->is_JobType(JT_CONSOLE) && !ua->api) {
             bstrftime_nc(dt, sizeof(dt), jcr->start_time);
             ua->send_msg(_("Console connected at %s\n"), dt);
          }

@@ -175,7 +175,7 @@ static bool is_checksum_needed_by_fileset(JCR *jcr)
          for (char *k = fopts->opts; *k; k++) { /* Try to find one request */
             switch (*k) {
             case 'V':           /* verify */
-               in_block = (jcr->getJobType() == JT_VERIFY); /* not used now */
+               in_block = jcr->is_JobType(JT_VERIFY); /* not used now */
                break;
             case 'J':           /* Basejob keyword */
                have_basejob_option = in_block = jcr->HasBase;

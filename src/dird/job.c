@@ -801,7 +801,7 @@ bool allow_duplicate_job(JCR *jcr)
             }
          }
          if (job->CancelLowerLevelDuplicates &&
-             djcr->getJobType() == 'B' && jcr->getJobType() == 'B') {
+             djcr->is_JobType(JT_BACKUP) && jcr->is_JobType(JT_BACKUP)) {
             switch (jcr->getJobLevel()) {
             case L_FULL:
                if (djcr->getJobLevel() == L_DIFFERENTIAL ||
