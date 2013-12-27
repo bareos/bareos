@@ -403,7 +403,7 @@ bool DCR::write_block_to_device()
    }
 
    if (!dcr->write_block_to_dev()) {
-       if (job_canceled(jcr) || jcr->getJobType() == JT_SYSTEM) {
+       if (job_canceled(jcr) || jcr->is_JobType(JT_SYSTEM)) {
           status = false;
        } else {
           status = fixup_device_block_write_error(dcr);
