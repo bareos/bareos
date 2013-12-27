@@ -2024,17 +2024,10 @@ void ndmp_backup_cleanup(JCR *jcr, int TermCode)
    Dmsg2(100, "Enter ndmp_backup_cleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
 
-#ifdef xxxx
-   /* The current implementation of the JS_Warning status is not
-    * completed. SQL part looks to be ok, but the code is using
-    * JS_Terminated almost everywhere instead of (JS_Terminated || JS_Warning)
-    * as we do with is_canceled()
-    */
-   if (jcr->getJobStatus() == JS_Terminated &&
-        (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
+   if (jcr->is_JobStatus(JS_Terminated) &&
+      (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
       TermCode = JS_Warnings;
    }
-#endif
 
    update_job_end(jcr, TermCode);
 
@@ -2054,11 +2047,7 @@ void ndmp_backup_cleanup(JCR *jcr, int TermCode)
 
    switch (jcr->JobStatus) {
       case JS_Terminated:
-         if (jcr->JobErrors || jcr->SDErrors) {
-            term_msg = _("Backup OK -- with warnings");
-         } else {
-            term_msg = _("Backup OK");
-         }
+         term_msg = _("Backup OK");
          break;
       case JS_Warnings:
          term_msg = _("Backup OK -- with warnings");

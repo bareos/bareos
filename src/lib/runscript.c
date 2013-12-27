@@ -184,7 +184,7 @@ int run_scripts(JCR *jcr, alist *runscripts, const char *label, alist *allowed_s
       }
 
       if ((script->when & SCRIPT_After) && (when & SCRIPT_After)) {
-         if ((script->on_success && (jcr->JobStatus == JS_Terminated || jcr->JobStatus == JS_Warnings)) ||
+         if ((script->on_success && jcr->is_terminated_ok()) ||
              (script->on_failure && (job_canceled(jcr) || jcr->JobStatus == JS_Differences))) {
             Dmsg4(200, "runscript: Run it because SCRIPT_After (%s,%i,%i,%c)\n",
                   script->command, script->on_success, script->on_failure, jcr->JobStatus );

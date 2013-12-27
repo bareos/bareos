@@ -622,7 +622,7 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
           !jcr->is_JobLevel(L_BASE)) ||
          /* Check for failed jobs */
          (jcr->res.job->RescheduleOnError &&
-          !jcr->is_JobStatus(JS_Terminated) &&
+          !jcr->is_terminated_ok() &&
           !jcr->is_JobStatus(JS_Canceled) &&
           jcr->is_JobType(JT_BACKUP));
    }

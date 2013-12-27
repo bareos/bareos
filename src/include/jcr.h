@@ -139,6 +139,11 @@ enum {
    MT_SQLQUERY
 };
 
+#define job_terminated_successfully(jcr) \
+  (jcr->JobStatus == JS_Terminated || \
+   jcr->JobStatus == JS_Warnings \
+  )
+
 #define job_canceled(jcr) \
   (jcr->JobStatus == JS_Canceled || \
    jcr->JobStatus == JS_ErrorTerminated || \
@@ -272,10 +277,11 @@ public:
    void inc_use_count(void) {lock(); _use_count++; unlock(); };
    void dec_use_count(void) {lock(); _use_count--; unlock(); };
    int32_t use_count() const { return _use_count; };
-   void init_mutex(void) { pthread_mutex_init(&mutex, NULL); };
-   void destroy_mutex(void) { pthread_mutex_destroy(&mutex); };
-   bool is_job_canceled() {return job_canceled(this); };
-   bool is_canceled() {return job_canceled(this); };
+   void init_mutex(void) {pthread_mutex_init(&mutex, NULL); };
+   void destroy_mutex(void) {pthread_mutex_destroy(&mutex); };
+   bool is_job_canceled() { return job_canceled(this); };
+   bool is_canceled() { return job_canceled(this); };
+   bool is_terminated_ok() { return job_terminated_successfully(this); };
    bool is_incomplete() { return JobStatus == JS_Incomplete; };
    bool is_JobLevel(int32_t JobLevel) { return JobLevel == m_JobLevel; };
    bool is_JobType(int32_t JobType) { return JobType == m_JobType; };

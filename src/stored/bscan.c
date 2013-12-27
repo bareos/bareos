@@ -633,7 +633,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          update_job_record(db, &jr, &elabel, rec);
 
          mjcr->end_time = jr.EndTime;
-         mjcr->JobStatus = JS_Terminated;
+         mjcr->setJobStatus(JS_Terminated);
 
          /* Create JobMedia record */
          mjcr->read_dcr->VolLastIndex = dcr->VolLastIndex;

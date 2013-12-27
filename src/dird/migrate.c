@@ -677,7 +677,7 @@ bail_out:
       mig_jcr->res.wstore = NULL;
    }
 
-   if (jcr->JobStatus == JS_Terminated) {
+   if (jcr->is_JobStatus(JS_Terminated)) {
       migration_cleanup(jcr, jcr->JobStatus);
       retval = true;
    }
@@ -1463,6 +1463,11 @@ void migration_cleanup(JCR *jcr, int TermCode)
       mig_jcr->jr.RealEndTime = 0;
       mig_jcr->jr.PriorJobId = jcr->previous_jr.JobId;
 
+      if (jcr->is_JobStatus(JS_Terminated) &&
+         (jcr->JobErrors || jcr->SDErrors)) {
+         TermCode = JS_Warnings;
+      }
+
       update_job_end(mig_jcr, TermCode);
 
       /*
@@ -1481,7 +1486,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
        * - move any Log records to the new JobId
        * - Purge the File records from the previous job
        */
-      if (jcr->getJobType() == JT_MIGRATE && jcr->JobStatus == JS_Terminated) {
+      if (jcr->getJobType() == JT_MIGRATE && jcr->is_terminated_ok()) {
          UAContext *ua;
 
          Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
@@ -1516,7 +1521,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
        * - copy any Log records to the new JobId
        * - set type="Job Copy" for the new job
        */
-      if (jcr->getJobType() == JT_COPY && jcr->JobStatus == JS_Terminated) {
+      if (jcr->getJobType() == JT_COPY && jcr->is_terminated_ok()) {
          /*
           * Copy JobLog to new JobId
           */
@@ -1545,7 +1550,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
           * it is normal.  Or look at it the other way, only for a
           * normal exit should we complain about this error.
           */
-         if (jcr->JobStatus == JS_Terminated && jcr->jr.JobBytes) {
+         if (jcr->is_terminated_ok() && jcr->jr.JobBytes) {
             Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(mig_jcr->db));
          }
          mig_jcr->VolumeName[0] = 0;         /* none */
@@ -1570,11 +1575,10 @@ void migration_cleanup(JCR *jcr, int TermCode)
 
       switch (jcr->JobStatus) {
       case JS_Terminated:
-         if (jcr->JobErrors || jcr->SDErrors) {
-            term_msg = _("%s OK -- with warnings");
-         } else {
-            term_msg = _("%s OK");
-         }
+         term_msg = _("%s OK");
+         break;
+      case JS_Warnings:
+         term_msg = _("%s OK -- with warnings");
          break;
       case JS_FatalError:
       case JS_ErrorTerminated:

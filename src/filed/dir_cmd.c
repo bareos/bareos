@@ -1677,7 +1677,7 @@ static bool backup_cmd(JCR *jcr)
    } else {
       jcr->setJobStatus(JS_Terminated);
       /* Note, the above set status will not override an error */
-      if (!(jcr->JobStatus == JS_Terminated || jcr->JobStatus == JS_Warnings)) {
+      if (!jcr->is_terminated_ok()) {
          bnet_suppress_error_messages(sd, 1);
          goto cleanup;                /* bail out now */
       }
@@ -1979,7 +1979,7 @@ static bool restore_cmd(JCR *jcr)
    stop_dir_heartbeat(jcr);
 
    jcr->setJobStatus(JS_Terminated);
-   if (jcr->JobStatus != JS_Terminated) {
+   if (!jcr->is_JobStatus(JS_Terminated)) {
       bnet_suppress_error_messages(sd, 1);
    }
 

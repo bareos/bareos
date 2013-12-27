@@ -102,6 +102,7 @@ void jobStatusComboFill(QComboBox *combo)
 {
    static const char js[] = {
 		      JS_Terminated,
+                      JS_Warnings,
                       JS_Created,
 		      JS_Running,
 		      JS_Blocked,
