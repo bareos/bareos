@@ -626,16 +626,14 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
           * Actually acquire the device which we reserved.
           */
          if (!acquire_device_for_append(dcr)) {
-            jcr->setJobStatus(JS_ErrorTerminated);
-            return NDMP9_NO_DEVICE_ERR;
+            goto bail_out;
          }
 
          /*
           * Let any SD plugin know now its time to setup the record translation infra.
           */
          if (generate_plugin_event(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
-            jcr->setJobStatus(JS_ErrorTerminated);
-            return NDMP9_NO_DEVICE_ERR;
+            goto bail_out;
          }
 
          /*
@@ -655,7 +653,10 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
           * set per NDMP backup stream we only setup data spooling and not
           * attribute spooling.
           */
-         begin_data_spool(dcr);
+
+         if (!begin_data_spool(dcr) ) {
+            goto bail_out;
+         }
 
          /*
           * Write Begin Session Record
@@ -664,8 +665,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
             Jmsg1(jcr, M_FATAL, 0,
                   _("Write session label failed. ERR=%s\n"),
                   dcr->dev->bstrerror());
-            jcr->setJobStatus(JS_ErrorTerminated);
-            return NDMP9_NO_DEVICE_ERR;
+            goto bail_out;
          }
 
          dcr->VolFirstIndex = dcr->VolLastIndex = 0;
@@ -696,8 +696,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
       if (!bndmp_create_virtual_file(jcr, virtual_filename.c_str())) {
          Jmsg0(jcr, M_FATAL, 0,
                _("Creating virtual file attributes failed.\n"));
-         jcr->setJobStatus(JS_ErrorTerminated);
-         return NDMP9_NO_DEVICE_ERR;
+         goto bail_out;
       }
    } else {
       bool ok = true;
@@ -711,8 +710,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
 
          if (jcr->NumReadVolumes == 0) {
             Jmsg(jcr, M_FATAL, 0, _("No Volume names found for restore.\n"));
-            jcr->setJobStatus(JS_ErrorTerminated);
-            return NDMP9_NO_DEVICE_ERR;
+            goto bail_out;
          }
 
          Dmsg2(200, "Found %d volumes names to restore. First=%s\n",
@@ -722,16 +720,14 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
           * Ready device for reading
           */
          if (!acquire_device_for_read(dcr)) {
-            jcr->setJobStatus(JS_ErrorTerminated);
-            return NDMP9_NO_DEVICE_ERR;
+            goto bail_out;
          }
 
          /*
           * Let any SD plugin know now its time to setup the record translation infra.
           */
          if (generate_plugin_event(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
-            jcr->setJobStatus(JS_ErrorTerminated);
-            return NDMP9_NO_DEVICE_ERR;
+            goto bail_out;
          }
 
          /*
@@ -763,8 +759,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
             Jmsg1(jcr, M_FATAL, 0,
                   _("Read session label failed. ERR=%s\n"),
                   dcr->dev->bstrerror());
-            jcr->setJobStatus(JS_ErrorTerminated);
-            return NDMP9_NO_DEVICE_ERR;
+            goto bail_out;
          }
 
          read_context_set_record(dcr, rctx);
@@ -793,6 +788,10 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
    ta->tape_state.space_remain.valid = NDMP9_VALIDITY_INVALID;
 
    return NDMP9_NO_ERR;
+
+bail_out:
+   jcr->setJobStatus(JS_ErrorTerminated);
+   return NDMP9_NO_DEVICE_ERR;
 }
 
 extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
