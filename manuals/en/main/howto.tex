@@ -756,3 +756,26 @@ FileSet{
   }
 }
 \end{bconfig}
+
+If you do not want a direct restore of your data in your plugin directive, as shown in the examples above, 
+there is the possibility to restore the dump to the filesystem first, which offers you more control over the restore process, e.g.:
+\begin{bconfig}{bpipe directive to backup a MySQL database and restore the dump to the filesystem first}
+FileSet{
+  Name = "mysql-all"
+  Include {
+    Plugin = "bpipe:/MYSQL/dump.sql:mysqldump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:/usr/lib/bareos/scripts/bpipe-restore.sh"
+    Options {
+      signature = MD5
+      compression = gzip
+    }
+  }
+}
+\end{bconfig}
+
+A very simple corresponding shell script (bpipe-restore.sh) to the method above might look like the following one:
+\begin{bconfig}{bpipe shell script for a restore to filesystem}
+#!/bin/bash
+cat - > /tmp/dump.sql
+exit 0
+\end{bconfig}
+

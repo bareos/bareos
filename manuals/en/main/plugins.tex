@@ -68,3 +68,5 @@ See the examples about \ilink{Backup PostgreSQL}{backup-postgresql} and \ilink{B
 
 See chapter \ilink{Backup Of MSSQL Databases}{MSSQL}.
 
+Even keep in mind that currently the plugin command is being stored as part of the backup. The restore command in your directive 
+should be flexible enough if things might change in future, otherwise you could run into trouble.
