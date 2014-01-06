@@ -71,14 +71,12 @@ bool do_append_data(JCR *jcr, BSOCK *bs, const char *what)
    memset(&rec, 0, sizeof(rec));
 
    if (!bs->set_buffer_size(dcr->device->max_network_buffer_size, BNET_SETBUF_WRITE)) {
-      jcr->setJobStatus(JS_ErrorTerminated);
       Jmsg0(jcr, M_FATAL, 0, _("Unable to set network buffer size.\n"));
-      return false;
+      goto bail_out;
    }
 
    if (!acquire_device_for_append(dcr)) {
-      jcr->setJobStatus(JS_ErrorTerminated);
-      return false;
+      goto bail_out;
    }
 
    jcr->sendJobStatus(JS_Running);
@@ -88,8 +86,14 @@ bool do_append_data(JCR *jcr, BSOCK *bs, const char *what)
    }
    Dmsg1(50, "Begin append device=%s\n", dev->print_name());
 
-   begin_data_spool(dcr);
-   begin_attribute_spool(jcr);
+   if (!begin_data_spool(dcr) ) {
+      goto bail_out;
+   }
+
+   if (!begin_attribute_spool(jcr)) {
+      discard_data_spool(dcr);
+      goto bail_out;
+   }
 
    Dmsg0(100, "Just after acquire_device_for_append\n");
    if (dev->VolCatInfo.VolCatName[0] == 0) {
@@ -338,6 +342,10 @@ fi_checked:
 
    Dmsg1(100, "return from do_append_data() ok=%d\n", ok);
    return ok;
+
+bail_out:
+   jcr->setJobStatus(JS_ErrorTerminated);
+   return false;
 }
 
 /*

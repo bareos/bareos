@@ -393,7 +393,7 @@ bool do_mac_run(JCR *jcr)
        * Ready devices for reading.
        */
       if (!acquire_device_for_read(jcr->read_dcr)) {
-         jcr->setJobStatus(JS_ErrorTerminated);
+         ok = false;
          goto bail_out;
       }
 
@@ -406,8 +406,8 @@ bool do_mac_run(JCR *jcr)
        */
       sd = jcr->store_bsock;
       if (!sd->set_buffer_size(me->max_network_buffer_size, BNET_SETBUF_WRITE)) {
-         jcr->setJobStatus(JS_ErrorTerminated);
          Jmsg(jcr, M_FATAL, 0, _("Cannot set buffer size SD->SD.\n"));
+         ok = false;
          goto bail_out;
       }
 
@@ -442,7 +442,7 @@ bool do_mac_run(JCR *jcr)
        * Expect to get response to the replicate data cmd from Storage daemon
        */
       if (!response(jcr, sd, OK_data, "replicate data")) {
-         jcr->setJobStatus(JS_ErrorTerminated);
+         ok = false;
          goto bail_out;
       }
 
@@ -467,7 +467,7 @@ bool do_mac_run(JCR *jcr)
        * Expect to get response that the replicate data succeeded.
        */
       if (!response(jcr, sd, OK_replicate, "replicate data")) {
-         jcr->setJobStatus(JS_ErrorTerminated);
+         ok = false;
          goto bail_out;
       }
 
@@ -481,7 +481,7 @@ bool do_mac_run(JCR *jcr)
        * Expect to get response to the end replicate cmd from Storage daemon
        */
       if (!response(jcr, sd, OK_end_replicate, "end replicate")) {
-         jcr->setJobStatus(JS_ErrorTerminated);
+         ok = false;
          goto bail_out;
       }
 
@@ -502,7 +502,7 @@ bool do_mac_run(JCR *jcr)
        */
       if (!acquire_device_for_read(jcr->read_dcr) ||
           !acquire_device_for_append(jcr->dcr)) {
-         jcr->setJobStatus(JS_ErrorTerminated);
+         ok = false;
          goto bail_out;
       }
 
@@ -510,8 +510,15 @@ bool do_mac_run(JCR *jcr)
 
       jcr->sendJobStatus(JS_Running);
 
-      begin_data_spool(jcr->dcr);
-      begin_attribute_spool(jcr);
+      if (!begin_data_spool(jcr->dcr) ) {
+         ok = false;
+         goto bail_out;
+      }
+
+      if (!begin_attribute_spool(jcr)) {
+         ok = false;
+         goto bail_out;
+      }
 
       jcr->dcr->VolFirstIndex = jcr->dcr->VolLastIndex = 0;
       jcr->run_time = time(NULL);
@@ -525,6 +532,10 @@ bool do_mac_run(JCR *jcr)
    }
 
 bail_out:
+   if (!ok) {
+      jcr->setJobStatus(JS_ErrorTerminated);
+   }
+
    if (!jcr->remote_replicate && jcr->dcr) {
       /*
        * Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
