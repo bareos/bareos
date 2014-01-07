@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,10 +32,10 @@ static const int dbglvl = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Kern Sibbald"
-#define PLUGIN_DATE         "January 2008"
-#define PLUGIN_VERSION      "1"
+#define PLUGIN_DATE         "January 2014"
+#define PLUGIN_VERSION      "2"
 #define PLUGIN_DESCRIPTION  "Bareos Pipe File Daemon Plugin"
-#define PLUGIN_USAGE        "bpipe:<filepath>:<readprogram>:<writeprogram>\n" \
+#define PLUGIN_USAGE        "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>\n" \
                             " readprogram runs on backup and its stdout is saved\n" \
                             " writeprogram runs on restore and gets restored data into stdin\n" \
                             " the data is internally stored as filepath (e.g. mybackup/backup1)"
@@ -55,6 +56,8 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC checkFile(bpContext *ctx, char *fname);
 
 static char *apply_rp_codes(struct plugin_ctx * p_ctx);
+static bRC parse_plugin_definition(bpContext *ctx, void *value);
+static bRC plugin_has_all_arguments(bpContext *ctx);
 
 /* Pointers to Bareos functions */
 static bFuncs *bfuncs = NULL;
@@ -100,14 +103,34 @@ static pFuncs pluginFuncs = {
 struct plugin_ctx {
    boffset_t offset;
    BPIPE *pfd;                        /* bpipe() descriptor */
-   bool backup;                       /* set for backup (not needed) */
-   char *cmd;                         /* plugin command line */
-   char *fname;                       /* filename to "backup/restore" */
-   char *reader;                      /* reader program for backup */
-   char *writer;                      /* writer program for backup */
+   char *fname;                       /* Filename to "backup/restore" */
+   char *reader;                      /* Reader program for backup */
+   char *writer;                      /* Writer program for backup */
 
    char where[512];
    int replace;
+};
+
+/*
+ * This defines the arguments that the plugin parser understands.
+ */
+enum plugin_argument_type {
+   argument_none = 0,
+   argument_file,
+   argument_reader,
+   argument_writer
+};
+
+struct plugin_argument {
+   const char *name;
+   enum plugin_argument_type type;
+};
+
+static plugin_argument plugin_arguments[] = {
+   { "file", argument_file },
+   { "reader", argument_reader },
+   { "writer", argument_writer },
+   { NULL, argument_none }
 };
 
 #ifdef __cplusplus
@@ -182,12 +205,21 @@ static bRC newPlugin(bpContext *ctx)
 static bRC freePlugin(bpContext *ctx)
 {
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
    if (!p_ctx) {
       return bRC_Error;
    }
-   if (p_ctx->cmd) {
-      free(p_ctx->cmd);                  /* free any allocated command string */
+
+   if (p_ctx->fname) {
+      free(p_ctx->fname);
    }
+   if (p_ctx->reader) {
+      free(p_ctx->reader);
+   }
+   if (p_ctx->writer) {
+      free(p_ctx->writer);
+   }
+
    free(p_ctx);                          /* free our private context */
    p_ctx = NULL;
    return bRC_OK;
@@ -219,53 +251,24 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       return bRC_Error;
    }
 
-// char *name;
-
    switch (event->eventType) {
-   case bEventPluginCommand:
-      Dmsg(ctx, dbglvl, "bpipe-fd: PluginCommand=%s\n", (char *)value);
-      break;
    case bEventJobStart:
       Dmsg(ctx, dbglvl, "bpipe-fd: JobStart=%s\n", (char *)value);
       break;
    case bEventRestoreCommand:
-      /* Fall-through wanted */
-   case bEventEstimateCommand:
-      /* Fall-through wanted */
-   case bEventBackupCommand: {
       /*
-       * Plugin command e.g. plugin = <plugin-name>:<name-space>:read command:write command
+       * Fall-through wanted
        */
-      char *p;
-
-      Dmsg(ctx, dbglvl, "bpipe-fd: pluginEvent cmd=%s\n", (char *)value);
-      p_ctx->cmd = bstrdup((char *)value);
-      p = strchr(p_ctx->cmd, ':');
-      if (!p) {
-         Jmsg(ctx, M_FATAL, "Plugin terminator not found: %s\n", (char *)value);
-         Dmsg(ctx, dbglvl, "Plugin terminator not found: %s\n", (char *)value);
-         return bRC_Error;
-      }
-      *p++ = 0;           /* terminate plugin */
-      p_ctx->fname = p;
-      p = strchr(p, ':');
-      if (!p) {
-         Jmsg(ctx, M_FATAL, "File terminator not found: %s\n", (char *)value);
-         Dmsg(ctx, dbglvl, "File terminator not found: %s\n", (char *)value);
-         return bRC_Error;
-      }
-      *p++ = 0;           /* terminate file */
-      p_ctx->reader = p;
-      p = strchr(p, ':');
-      if (!p) {
-         Jmsg(ctx, M_FATAL, "Reader terminator not found: %s\n", (char *)value);
-         Dmsg(ctx, dbglvl, "Reader terminator not found: %s\n", (char *)value);
-         return bRC_Error;
-      }
-      *p++ = 0;           /* terminate reader string */
-      p_ctx->writer = p;
-      break;
-   }
+   case bEventBackupCommand:
+      /*
+       * Fall-through wanted
+       */
+   case bEventEstimateCommand:
+      /*
+       * Fall-through wanted
+       */
+   case bEventPluginCommand:
+      return parse_plugin_definition(ctx, value);
    default:
       Jmsg(ctx, M_FATAL, "bpipe-fd: unknown event=%d\n", event->eventType);
       Dmsg(ctx, dbglvl, "bpipe-fd: unknown event=%d\n", event->eventType);
@@ -283,6 +286,10 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    time_t now;
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
 
+   if (plugin_has_all_arguments(ctx) != bRC_OK) {
+      return bRC_Error;
+   }
+
    if (!p_ctx) {
       return bRC_Error;
    }
@@ -297,7 +304,6 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    sp->statp.st_size = -1;
    sp->statp.st_blksize = 4096;
    sp->statp.st_blocks = 1;
-   p_ctx->backup = true;
 
    return bRC_OK;
 }
@@ -308,8 +314,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
 static bRC endBackupFile(bpContext *ctx)
 {
    /*
-    * We would return bRC_More if we wanted startBackupFile to be
-    * called again to backup another file
+    * We would return bRC_More if we wanted startBackupFile to be called again to backup another file
     */
    return bRC_OK;
 }
@@ -413,7 +418,10 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
  */
 static bRC startRestoreFile(bpContext *ctx, const char *cmd)
 {
-// printf("bpipe-fd: startRestoreFile cmd=%s\n", cmd);
+   if (plugin_has_all_arguments(ctx) != bRC_OK) {
+      return bRC_Error;
+   }
+
    return bRC_OK;
 }
 
@@ -423,7 +431,6 @@ static bRC startRestoreFile(bpContext *ctx, const char *cmd)
  */
 static bRC endRestoreFile(bpContext *ctx)
 {
-// printf("bpipe-fd: endRestoreFile\n");
    return bRC_OK;
 }
 
@@ -550,4 +557,236 @@ static char *apply_rp_codes(struct plugin_ctx * p_ctx)
       strcat(omsg, str);
    }
    return omsg;
+}
+
+/*
+ * Parse a boolean value e.g. check if its yes or true anything else translates to false.
+ */
+static inline bool parse_boolean(const char *argument_value)
+{
+   if (bstrcasecmp(argument_value, "yes") ||
+       bstrcasecmp(argument_value, "true")) {
+      return true;
+   } else {
+      return false;
+   }
+}
+
+/*
+ * Only set destination to value when it has no previous setting.
+ */
+static inline void set_if_null(char **destination, char *value)
+{
+   if (!*destination) {
+      *destination = bstrdup(value);
+   }
+}
+
+/*
+ * Parse the plugin definition passed in.
+ *
+ * The definition is in this form:
+ *
+ * bpipe:file=<filepath>:read=<readprogram>:write=<writeprogram>
+ */
+static bRC parse_plugin_definition(bpContext *ctx, void *value)
+{
+   int i, cnt;
+   char *plugin_definition, *bp, *argument, *argument_value;
+   plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
+   bool allow_old_plugin_definition = true;
+
+   if (!p_ctx || !value) {
+      return bRC_Error;
+   }
+
+   /*
+    * Parse the plugin definition.
+    * Make a private copy of the whole string.
+    */
+   plugin_definition = bstrdup((char *)value);
+
+   bp = strchr(plugin_definition, ':');
+   if (!bp) {
+      Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", plugin_definition);
+      Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", plugin_definition);
+      goto bail_out;
+   }
+
+   /*
+    * Skip the first ':'
+    */
+   bp++;
+   cnt = 1;
+   while (bp) {
+      if (strlen(bp) == 0) {
+         break;
+      }
+
+      /*
+       * Each argument is in the form:
+       *    <argument> = <argument_value>
+       *
+       * So we setup the right pointers here, argument to the beginning
+       * of the argument, argument_value to the beginning of the argument_value.
+       */
+      argument = bp;
+      argument_value = strchr(bp, '=');
+      if (!argument_value) {
+         char **str_destination = NULL;
+         bool *bool_destination = NULL;
+
+         /*
+          * We seem to be parsing an old bpipe plugin definition.
+          * Only allow that when we didn't see any argument in the form of
+          * <argument> = <argument_value>
+          */
+         if (!allow_old_plugin_definition) {
+            Jmsg(ctx, M_FATAL, "Illegal argument %s without value\n", argument);
+            Dmsg(ctx, dbglvl, "Illegal argument %s without value\n", argument);
+            goto bail_out;
+         }
+
+         /*
+          * See if there are more arguments and setup for the next run.
+          */
+         bp = strchr(argument, ':');
+         if (bp) {
+            *bp++ = '\0';
+         }
+
+         /*
+          * See which field this is in the argument string.
+          */
+         switch (cnt) {
+         case 1:
+            str_destination = &p_ctx->fname;
+            break;
+         case 2:
+            str_destination = &p_ctx->reader;
+            break;
+         case 3:
+            str_destination = &p_ctx->writer;
+            break;
+         default:
+            break;
+         }
+
+         /*
+          * Keep the first value, ignore any next setting.
+          */
+         if (str_destination) {
+            set_if_null(str_destination, argument);
+         }
+
+         /*
+          * Set any boolean variable.
+          */
+         if (bool_destination) {
+            *bool_destination = parse_boolean(argument);
+         }
+      } else {
+         /*
+          * When we encounter one argument in the form <argument> = <argument_value>
+          * we don't allow any old style bpipe plugin definition configuration data.
+          */
+         allow_old_plugin_definition = false;
+         *argument_value++ = '\0';
+
+         /*
+          * See if there are more arguments and setup for the next run.
+          */
+         bp = strchr(argument_value, ':');
+         if (bp) {
+            *bp++ = '\0';
+         }
+
+         for (i = 0; plugin_arguments[i].name; i++) {
+            if (bstrcasecmp(argument, plugin_arguments[i].name)) {
+               char **str_destination = NULL;
+               bool *bool_destination = NULL;
+
+               switch (plugin_arguments[i].type) {
+               case argument_file:
+                  str_destination = &p_ctx->fname;
+                  break;
+               case argument_reader:
+                  str_destination = &p_ctx->reader;
+                  break;
+               case argument_writer:
+                  str_destination = &p_ctx->writer;
+                  break;
+               default:
+                  break;
+               }
+
+               /*
+                * Keep the first value, ignore any next setting.
+                */
+               if (str_destination) {
+                  set_if_null(str_destination, argument_value);
+               }
+
+               /*
+                * Set any boolean variable.
+                */
+               if (bool_destination) {
+                  *bool_destination = parse_boolean(argument_value);
+               }
+
+               /*
+                * When we have a match break the loop.
+                */
+               break;
+            }
+         }
+
+         /*
+          * Got an invalid keyword ?
+          */
+         if (!plugin_arguments[i].name) {
+            Jmsg(ctx, M_FATAL, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+            Dmsg(ctx, dbglvl, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+            goto bail_out;
+         }
+      }
+      cnt++;
+   }
+
+   free(plugin_definition);
+   return bRC_OK;
+
+bail_out:
+   free(plugin_definition);
+   return bRC_Error;
+}
+
+static bRC plugin_has_all_arguments(bpContext *ctx)
+{
+   bRC retval = bRC_OK;
+   plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
+
+   if (!p_ctx) {
+      retval = bRC_Error;
+   }
+
+   if (!p_ctx->fname) {
+      Jmsg(ctx, M_FATAL, _("Plugin File argument not specified.\n"));
+      Dmsg(ctx, dbglvl, "Plugin File argument not specified.\n");
+      retval = bRC_Error;
+   }
+
+   if (!p_ctx->reader) {
+      Jmsg(ctx, M_FATAL, _("Plugin Reader argument not specified.\n"));
+      Dmsg(ctx, dbglvl, "Plugin Reader argument not specified.\n");
+      retval = bRC_Error;
+   }
+
+   if (!p_ctx->writer) {
+      Jmsg(ctx, M_FATAL, _("Plugin Writer argument not specified.\n"));
+      Dmsg(ctx, dbglvl, "Plugin Writer argument not specified.\n");
+      retval = bRC_Error;
+   }
+
+   return retval;
 }
