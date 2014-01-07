@@ -252,6 +252,7 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
                       unsigned int data_len,
                       const dpl_dict_t *query_params,
                       dpl_sysmd_t *returned_sysmdp,
+                      int mdonly,
                       char **locationp)
 {
   int           ret, ret2;
@@ -325,7 +326,10 @@ dpl_cdmi_put_internal(dpl_ctx_t *ctx,
 
   dpl_req_set_object_type(req, object_type);
 
-  dpl_req_set_data(req, data_buf, data_len);
+  if (0 == mdonly)
+    {
+      dpl_req_set_data(req, data_buf, data_len);
+    }
 
   dpl_req_add_behavior(req, DPL_BEHAVIOR_MD5);
 
@@ -535,7 +539,7 @@ dpl_cdmi_post(dpl_ctx_t *ctx,
                                option, object_type, condition,
                                range, metadata, sysmd, 
                                data_buf, data_len, query_params,
-                               returned_sysmdp, locationp);
+                               returned_sysmdp, 0, locationp);
 }
 
 dpl_status_t
@@ -559,7 +563,7 @@ dpl_cdmi_put(dpl_ctx_t *ctx,
                                option, object_type, condition,
                                range, metadata, sysmd, 
                                data_buf, data_len, NULL,
-                               NULL, locationp);
+                               NULL, 0, locationp);
 }
 
 dpl_status_t
@@ -1271,9 +1275,10 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
 
   if (DPL_COPY_DIRECTIVE_METADATA_REPLACE == copy_directive)
     {
-      ret = dpl_cdmi_put(ctx, dst_bucket, dst_resource, NULL, NULL,
-                         object_type, condition, NULL, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, 
-                         NULL, NULL, locationp);
+      ret = dpl_cdmi_put_internal(ctx, 0, dst_bucket, dst_resource, NULL, NULL,
+                                  object_type, condition, NULL, metadata,
+                                  DPL_CANNED_ACL_UNDEF, NULL, 0, NULL, NULL, 1,
+                                  locationp);
       goto end;
     }
       
