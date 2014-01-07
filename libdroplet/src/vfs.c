@@ -1255,7 +1255,7 @@ dpl_fput(dpl_ctx_t *ctx,
 	 char *data_buf,
 	 unsigned int data_len)
 {
-  int ret, ret2;
+  int ret = DPL_SUCCESS;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path = NULL;
@@ -1293,19 +1293,17 @@ dpl_fput(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  ret2 = dpl_put(ctx,
-		 bucket,
-                 path,
-		 option,
-		 DPL_FTYPE_REG,
-		 condition,
-		 range,
-		 metadata,
-		 sysmd,
-		 data_buf,
-		 data_len);
-
-  ret = DPL_SUCCESS;
+  ret = dpl_put(ctx,
+                bucket,
+                path,
+                option,
+                DPL_FTYPE_REG,
+                condition,
+                range,
+                metadata,
+                sysmd,
+                data_buf,
+                data_len);
 
  end:
 
